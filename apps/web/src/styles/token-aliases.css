@@ -440,7 +440,7 @@ html.dark:not([data-theme]) {
 
 	--violet-50: rgba(0, 240, 255, 0.15);
 	--violet-200: rgba(0, 240, 255, 0.35);
-	--violet-700: #38bdf8;
+	--violet-700: #7dd3fc;
 }
 
 :root[data-theme="warm_sand"] {

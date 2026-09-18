@@ -100,6 +100,7 @@ import {
 	type TreatmentPlanStage,
 	type TreatmentPlanTier,
 } from "./patientCabinetEngine";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import {
 	generateCareMemo,
 	buildWhatsAppLink,
@@ -562,7 +563,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 			// Честный запрос к API клиники для проверки статуса счета
 			try {
 				const response = await fetch(`/api/invoices/${encodeURIComponent(activeSbpInvoice.id)}`, {
-					headers: { Accept: "application/json" },
+					headers: denteAdminSecretRequestHeaders({ Accept: "application/json" }),
 				});
 
 				if (response.ok) {

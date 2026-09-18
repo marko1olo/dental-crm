@@ -313,12 +313,15 @@ export function safeBuildSlotIso(
 	let cleanHour = "09:00:00";
 	if (typeof hour === "string" && hour.trim()) {
 		const parts = hour.trim().split(":").map((p) => p.trim());
+		const p0 = (parts[0] || "09").padStart(2, "0");
+		const p1 = (parts[1] || "00").padStart(2, "0");
+		const p2 = (parts[2] ? parts[2].slice(0, 2) : "00").padStart(2, "0");
 		if (parts.length === 1) {
-			cleanHour = `${parts[0].padStart(2, "0")}:00:00`;
+			cleanHour = `${p0}:00:00`;
 		} else if (parts.length === 2) {
-			cleanHour = `${parts[0].padStart(2, "0")}:${parts[1].padStart(2, "0")}:00`;
+			cleanHour = `${p0}:${p1}:00`;
 		} else if (parts.length >= 3) {
-			cleanHour = `${parts[0].padStart(2, "0")}:${parts[1].padStart(2, "0")}:${parts[2].slice(0, 2).padStart(2, "0")}`;
+			cleanHour = `${p0}:${p1}:${p2}`;
 		}
 	}
 
@@ -375,6 +378,27 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		return safeLocalStorageGetItem("dente_schedule_show_revenue") === "true";
 	});
 	const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const gridContainerRef = useRef<HTMLDivElement>(null);
+
+	// Low-Spec Laptop Optimization: Passive scroll listener throttled with requestAnimationFrame
+	useEffect(() => {
+		const el = gridContainerRef.current;
+		if (!el) return;
+
+		let rafId: number | null = null;
+		const handleScroll = () => {
+			if (rafId !== null) return;
+			rafId = requestAnimationFrame(() => {
+				rafId = null;
+			});
+		};
+
+		el.addEventListener("scroll", handleScroll, { passive: true });
+		return () => {
+			el.removeEventListener("scroll", handleScroll);
+			if (rafId !== null) cancelAnimationFrame(rafId);
+		};
+	}, []);
 
 	const handleToggleShowRevenue = useCallback(() => {
 		setShowRevenue((prev) => {
@@ -1633,6 +1657,55 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		});
 	}, [appointments, dateKey, toDateTimeLocalValue, timezone]);
 
+	// Low-Spec Laptop Optimization: Precalculate slot minutes for dayAppointments
+	// to eliminate 16,000+ date parsing calls in the nested timeSlots.map x effectiveChairs.map loop
+	const parsedDayAppointments = useMemo(() => {
+		return dayAppointments.map((a) => {
+			const startStr = toDateTimeLocalValue
+				? toDateTimeLocalValue(a.startsAt, timezone).slice(11, 16)
+				: a.startsAt.slice(11, 16);
+			const [sH, sM] = startStr.split(":").map(Number);
+			const startMin = (sH ?? 0) * 60 + (sM ?? 0);
+
+			const endStr = a.endsAt
+				? (toDateTimeLocalValue ? toDateTimeLocalValue(a.endsAt, timezone).slice(11, 16) : a.endsAt.slice(11, 16))
+				: startStr;
+			const [eH, eM] = endStr.split(":").map(Number);
+			const endMin = (eH ?? 0) * 60 + (eM ?? 0);
+
+			return {
+				appointment: a,
+				chairId: a.chairId,
+				startMin,
+				endMin,
+			};
+		});
+	}, [dayAppointments, toDateTimeLocalValue, timezone]);
+
+	// Precalculate maintenance block minutes for dateKey
+	const parsedDayMaintenanceBlocks = useMemo(() => {
+		const safeBlocks = effectiveMaintenanceBlocks || [];
+		return safeBlocks
+			.filter((m) => {
+				const mDate = m.startsAt
+					? (toDateTimeLocalValue ? toDateTimeLocalValue(m.startsAt, timezone).slice(0, 10) : m.startsAt.slice(0, 10))
+					: dateKey;
+				return mDate === dateKey;
+			})
+			.map((m) => {
+				const mTime = m.startsAt
+					? (toDateTimeLocalValue ? toDateTimeLocalValue(m.startsAt, timezone).slice(11, 16) : m.startsAt.slice(11, 16))
+					: "13:00";
+				const [mH, mM] = mTime.split(":").map(Number);
+				const startMin = (mH ?? 0) * 60 + (mM ?? 0);
+				return {
+					block: m,
+					chairId: m.chairId,
+					startMin,
+				};
+			});
+	}, [effectiveMaintenanceBlocks, dateKey, toDateTimeLocalValue, timezone]);
+
 	// Calculate dedicated 30-min emergency reserve buffers per doctor shift
 	const emergencyReserveSlots = useMemo(() => {
 		const targetDocs = selectedDoctorId ? doctors.filter((d) => d.id === selectedDoctorId) : doctors;
@@ -1840,6 +1913,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			</div>
 
 			<div
+				ref={gridContainerRef}
 				className="schedule-grid-container overflow-x-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm p-1 sm:p-2 touch-pan-x"
 				data-testid="schedule-grid-view"
 				role="region"
@@ -3074,47 +3148,27 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 								const chairPalette = getStomxWorkplacePalette((chair as any).colorId ?? chair.id ?? chairIndex);
 								const chairAccentColor = chair.color || chairPalette.bright_code;
 								const { startIso: slotStartIso } = safeBuildSlotIso(dateKey, hour, 30);
-								const cellAppointments = dayAppointments.filter((a) => {
-									if (chair.id !== DEFAULT_SOLO_CHAIR.id && a.chairId !== chair.id) {
-										return false;
-									}
-									const aTime = toDateTimeLocalValue(a.startsAt, timezone).slice(
-										11,
-										16,
-									);
-									const [aH, aM] = aTime.split(":").map(Number);
-									const aTotalMin = (aH ?? 0) * 60 + (aM ?? 0);
-									return aTotalMin >= slotStartMin && aTotalMin < slotEndMin;
-								});
+								const cellAppointments = parsedDayAppointments
+									.filter((p) => {
+										if (chair.id !== DEFAULT_SOLO_CHAIR.id && p.chairId !== chair.id) {
+											return false;
+										}
+										return p.startMin >= slotStartMin && p.startMin < slotEndMin;
+									})
+									.map((p) => p.appointment);
 
-								const continuingAppointments = dayAppointments.filter((a) => {
-									if (chair.id !== DEFAULT_SOLO_CHAIR.id && a.chairId !== chair.id) {
-										return false;
-									}
-									const aStartStr = toDateTimeLocalValue(a.startsAt, timezone).slice(11, 16);
-									const [aStartH, aStartM] = aStartStr.split(":").map(Number);
-									const aStartTotalMin = (aStartH ?? 0) * 60 + (aStartM ?? 0);
+								const continuingAppointments = parsedDayAppointments
+									.filter((p) => {
+										if (chair.id !== DEFAULT_SOLO_CHAIR.id && p.chairId !== chair.id) {
+											return false;
+										}
+										return p.startMin < slotStartMin && p.endMin > slotStartMin;
+									})
+									.map((p) => p.appointment);
 
-									const aEndStr = toDateTimeLocalValue(a.endsAt, timezone).slice(11, 16);
-									const [aEndH, aEndM] = aEndStr.split(":").map(Number);
-									const aEndTotalMin = (aEndH ?? 0) * 60 + (aEndM ?? 0);
-
-									return aStartTotalMin < slotStartMin && aEndTotalMin > slotStartMin;
-								});
-
-								const cellMaintenance = effectiveMaintenanceBlocks.filter((m) => {
-									if (m.chairId !== chair.id) return false;
-									const mDate = m.startsAt
-										? toDateTimeLocalValue(m.startsAt, timezone).slice(0, 10)
-										: dateKey;
-									if (mDate !== dateKey) return false;
-									const mTime = m.startsAt
-										? toDateTimeLocalValue(m.startsAt, timezone).slice(11, 16)
-										: "13:00";
-									const [mH, mM] = mTime.split(":").map(Number);
-									const mTotalMin = (mH ?? 0) * 60 + (mM ?? 0);
-									return mTotalMin >= slotStartMin && mTotalMin < slotEndMin;
-								});
+								const cellMaintenance = parsedDayMaintenanceBlocks
+									.filter((m) => m.chairId === chair.id && m.startMin >= slotStartMin && m.startMin < slotEndMin)
+									.map((m) => m.block);
 
 								if (
 									cellAppointments.length > 0 ||

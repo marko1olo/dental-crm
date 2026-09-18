@@ -709,6 +709,10 @@
 	stroke-width: 1.2px;
 }
 
+.tooth-surface-interactive-group g.tooth-surface-target:hover polygon[fill="transparent"] {
+	fill: rgba(239, 68, 68, 0.35) !important;
+}
+
 .resorption-boundary-line {
 	stroke: var(--odontogram-border-strong);
 	stroke-dasharray: 2.5 2;

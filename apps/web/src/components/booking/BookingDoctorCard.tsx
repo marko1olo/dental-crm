@@ -40,7 +40,7 @@ export const BookingDoctorCard: React.FC<BookingDoctorCardProps> = ({
 			<div className="dbw-doctor-main min-w-0">
 				<div className="dbw-doctor-avatar flex-shrink-0" aria-hidden="true">
 					{doctor.avatarUrl ? (
-						<img src={doctor.avatarUrl} alt={doctor.fullName} />
+						<img src={doctor.avatarUrl} alt={doctor.fullName} loading="lazy" decoding="async" />
 					) : (
 						<span>{initial}</span>
 					)}

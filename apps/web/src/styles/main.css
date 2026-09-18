@@ -632,7 +632,7 @@ html.light,
 	--glass-border: rgba(0, 240, 255, 0.35);
 	--ink: #ffffff;
 	--ink-2: #e0f2fe;
-	--muted: #38bdf8;
+	--muted: #7dd3fc;
 	--line: rgba(0, 240, 255, 0.25);
 	--line-strong: rgba(0, 240, 255, 0.5);
 
@@ -3124,21 +3124,21 @@ section.imaging-panel {
 
 .imaging-viewer-meta span,
 .imaging-viewer-meta p {
-	color: #c4eee8;
+	color: var(--muted);
 	margin: 0;
 }
 
 .imaging-viewer-toolbar {
-	background: #092022;
-	border-top: 1px solid rgba(215, 255, 246, 0.16);
+	background: var(--paper-soft);
+	border-top: 1px solid var(--line);
 	display: grid;
 	gap: 10px;
 	padding: 10px;
 }
 
 .imaging-viewer-plan {
-	background: #0a1d1f;
-	border-top: 1px solid rgba(215, 255, 246, 0.14);
+	background: var(--paper-strong);
+	border-top: 1px solid var(--line);
 	border-left: 5px solid var(--teal);
 	display: grid;
 	gap: 8px;
@@ -3157,14 +3157,14 @@ section.imaging-panel {
 }
 
 .imaging-viewer-plan strong {
-	color: #eafffa;
+	color: var(--ink);
 	font-size: 13px;
 	line-height: 1.2;
 }
 
 .imaging-viewer-plan span,
 .imaging-viewer-plan small {
-	color: #c4eee8;
+	color: var(--muted);
 	font-size: 12px;
 	font-weight: 850;
 	line-height: 1.35;
@@ -3178,16 +3178,16 @@ section.imaging-panel {
 }
 
 .viewer-plan-chip-row span {
-	background: rgba(234, 255, 250, 0.08);
-	border: 1px solid rgba(215, 255, 246, 0.18);
+	background: var(--teal-surface);
+	border: 1px solid var(--line);
 	border-radius: 999px;
-	color: #d7fff6;
+	color: var(--ink);
 	padding: 5px 7px;
 }
 
 .imaging-compare-strip {
-	background: #0a1d1f;
-	border-top: 1px solid rgba(215, 255, 246, 0.14);
+	background: var(--paper-strong);
+	border-top: 1px solid var(--line);
 	display: grid;
 	gap: 8px;
 	padding: 10px;
@@ -3201,13 +3201,13 @@ section.imaging-panel {
 }
 
 .imaging-compare-head strong {
-	color: #eafffa;
+	color: var(--ink);
 	font-size: 13px;
 	font-weight: 950;
 }
 
 .imaging-compare-head span {
-	color: #a7d4ce;
+	color: var(--muted);
 	font-size: 11px;
 	font-weight: 850;
 	text-align: right;
@@ -3221,10 +3221,10 @@ section.imaging-panel {
 
 .imaging-compare-list button {
 	align-items: center;
-	background: rgba(234, 255, 250, 0.07);
-	border: 1px solid rgba(215, 255, 246, 0.16);
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
 	border-radius: 8px;
-	color: #eafffa;
+	color: var(--ink);
 	cursor: pointer;
 	display: grid;
 	gap: 8px;
@@ -3232,11 +3232,12 @@ section.imaging-panel {
 	min-height: 62px;
 	padding: 6px;
 	text-align: left;
+	transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .imaging-compare-list button:hover {
-	background: rgba(215, 255, 246, 0.14);
-	border-color: rgba(215, 255, 246, 0.32);
+	background: var(--teal-soft);
+	border-color: var(--teal);
 }
 
 .imaging-compare-list img {
@@ -3265,36 +3266,48 @@ section.imaging-panel {
 }
 
 .imaging-compare-list small {
-	color: #b7d5d1;
+	color: var(--muted);
 	font-size: 11px;
 	font-weight: 850;
 	line-height: 1.25;
 }
 
 .imaging-viewer-tools {
-	display: grid;
-	gap: 6px;
-	grid-template-columns: repeat(7, minmax(44px, 1fr));
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: 4px;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.imaging-viewer-tools::-webkit-scrollbar {
+	display: none;
 }
 
 .viewer-tool-button {
 	align-items: center;
-	background: rgba(234, 255, 250, 0.08);
-	border: 1px solid rgba(215, 255, 246, 0.18);
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
 	border-radius: 8px;
-	color: #eafffa;
+	color: var(--ink);
 	display: inline-flex;
 	font-weight: 900;
 	height: 32px;
 	min-height: 32px;
 	justify-content: center;
 	min-width: 32px;
+	padding: 0 6px;
+	flex-shrink: 0;
+	white-space: nowrap;
+	transition: all 0.15s ease-in-out;
 }
 
 .viewer-tool-button.active,
 .viewer-tool-button:hover {
-	background: #d7fff6;
-	color: #0b2426;
+	background: var(--teal-fill, var(--teal));
+	color: var(--on-teal, #ffffff);
+	border-color: var(--teal);
 }
 
 .viewer-tool-button svg {
@@ -3309,7 +3322,7 @@ section.imaging-panel {
 }
 
 .viewer-slider-grid label {
-	color: #c4eee8;
+	color: var(--muted);
 	display: grid;
 	font-size: 12px;
 	font-weight: 900;
@@ -3317,13 +3330,13 @@ section.imaging-panel {
 }
 
 .viewer-slider-grid input {
-	accent-color: #d7fff6;
+	accent-color: var(--teal);
 	width: 100%;
 }
 
 .viewer-session-strip {
 	align-items: center;
-	border-top: 1px solid rgba(215, 255, 246, 0.28);
+	border-top: 1px solid var(--line);
 	display: grid;
 	gap: 8px;
 	grid-template-columns: minmax(130px, 0.8fr) minmax(160px, 1fr) auto;
@@ -14370,10 +14383,8 @@ html.dark .communication-side .panel-heading h3,
 	#payment-capture #payment-checkout-bar,
 	#payment-checkout-bar,
 	.payment-checkout-bar {
-		position: fixed !important;
-		bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
-		left: 0 !important;
-		right: 0 !important;
+		position: sticky !important;
+		bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
 		background: var(--paper) !important;
 		padding: 6px 12px calc(6px + env(safe-area-inset-bottom, 0px)) 12px !important;
 		margin: 0 !important;

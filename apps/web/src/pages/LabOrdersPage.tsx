@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import {
 	AlertCircle,
 	AlertOctagon,
@@ -31,10 +31,20 @@ import {
 } from "lucide-react";
 import { denteAdminSecretRequestHeaders, money } from "../AppHelpers";
 import { showToast } from "../components/GlobalToast";
-import { DentalLabOrderModal, type DentalLabOrderData } from "../components/lab/DentalLabOrderModal";
-import { LabTrackingDrawer } from "../components/lab/LabTrackingDrawer";
+import type { DentalLabOrderData } from "../components/lab/DentalLabOrderModal";
 import { useAppStore } from "../store/appStore";
 import { formatLabOrderTeethOrJaw, isJawWideConstruction } from "../components/lab/labMath";
+
+const DentalLabOrderModal = lazy(() =>
+	import("../components/lab/DentalLabOrderModal").then((module) => ({
+		default: module.DentalLabOrderModal,
+	})),
+);
+const LabTrackingDrawer = lazy(() =>
+	import("../components/lab/LabTrackingDrawer").then((module) => ({
+		default: module.LabTrackingDrawer,
+	})),
+);
 
 export function LabOrdersPage() {
 	const [orders, setOrders] = useState<DentalLabOrderData[]>([]);
@@ -387,7 +397,7 @@ export function LabOrdersPage() {
 						data-testid="lab-orders-new-order-btn"
 					>
 						<Plus className="w-3.5 h-3.5" />
-						<span>+ Наряд ЗТЛ</span>
+						<span>Наряд ЗТЛ</span>
 					</button>
 				</div>
 			</div>
@@ -421,7 +431,7 @@ export function LabOrdersPage() {
 						style={{ minHeight: "44px" }}
 					>
 						<Plus className="w-4 h-4" />
-						<span>+ Оформить заказ-наряд в лабораторию</span>
+						<span>Оформить заказ-наряд в лабораторию</span>
 					</button>
 				</div>
 			) : (
@@ -430,7 +440,12 @@ export function LabOrdersPage() {
 						return (
 							<div
 								key={order.id}
-								className="bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+								className="lab-order-card bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+								style={{
+									contentVisibility: "auto",
+									containIntrinsicSize: "1px 220px",
+									contain: "content",
+								}}
 							>
 								<div className="space-y-3">
 									{/* Card Top */}
@@ -626,21 +641,29 @@ export function LabOrdersPage() {
 			)}
 
 			{/* Modal Instance */}
-			<DentalLabOrderModal
-				isOpen={isModalOpen}
-				onClose={() => setIsModalOpen(false)}
-				initialOrder={selectedOrderForEdit}
-				initialTab={modalInitialTab}
-				onOrderSaved={() => fetchOrders()}
-			/>
+			{isModalOpen && (
+				<Suspense fallback={null}>
+					<DentalLabOrderModal
+						isOpen={isModalOpen}
+						onClose={() => setIsModalOpen(false)}
+						initialOrder={selectedOrderForEdit}
+						initialTab={modalInitialTab}
+						onOrderSaved={() => fetchOrders()}
+					/>
+				</Suspense>
+			)}
 
 			{/* Tracking Drawer Instance */}
-			<LabTrackingDrawer
-				isOpen={isTrackingDrawerOpen}
-				onClose={() => setIsTrackingDrawerOpen(false)}
-				order={selectedOrderForTracking}
-				onStageUpdate={handleDrawerStageUpdate}
-			/>
+			{isTrackingDrawerOpen && (
+				<Suspense fallback={null}>
+					<LabTrackingDrawer
+						isOpen={isTrackingDrawerOpen}
+						onClose={() => setIsTrackingDrawerOpen(false)}
+						order={selectedOrderForTracking}
+						onStageUpdate={handleDrawerStageUpdate}
+					/>
+				</Suspense>
+			)}
 		</div>
 	);
 }

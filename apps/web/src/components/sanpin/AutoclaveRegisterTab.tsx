@@ -929,7 +929,7 @@ export function AutoclaveRegisterTab() {
 											style={{ minHeight: "44px", padding: "0.5rem 1.5rem", fontSize: "0.875rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.4rem", marginTop: "0.25rem" }}
 											data-testid="add-first-autoclave-table-btn"
 										>
-											<Plus size={16} /> + Зарегистрировать автоклав клиники
+											<Plus size={16} /> <span>Зарегистрировать автоклав клиники</span>
 										</button>
 									</div>
 								</td>
@@ -970,7 +970,16 @@ export function AutoclaveRegisterTab() {
 							filteredLogs.map((log) => {
 								const isStamped = stampedRows[log.id] || Boolean(log.notes?.includes("ЭЦП"));
 								return (
-									<tr key={log.id} style={{ minHeight: "38px" }}>
+									<tr
+										key={log.id}
+										className="sanpin-log-row"
+										style={{
+											minHeight: "44px",
+											contentVisibility: "auto",
+											containIntrinsicSize: "1px 44px",
+											contain: "content",
+										}}
+									>
 										<td style={{ width: "140px", minWidth: "130px" }} className="whitespace-nowrap shrink-0">
 											<div style={{ display: "flex", alignItems: "center", gap: "0.35rem", whiteSpace: "nowrap" }}>
 												<span style={{ fontWeight: 700, fontSize: "0.825rem", color: "var(--ink)" }}>

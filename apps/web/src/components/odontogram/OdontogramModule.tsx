@@ -168,7 +168,7 @@ const TEETH_SUBJECT: PanelSubject = {
 		"Схема ниже показывает зубы БЕЗ отметок — это не значит, что зубы здоровы: диагнозы, пломбы и коронки не прочитаны. Не считайте формулу полной и не печатайте её пациенту, пока она не загрузится.",
 };
 
-export const OdontogramModule = ({
+export const OdontogramModule = React.memo(({
 	patientId,
 	pediatricMode,
 }: {
@@ -1125,6 +1125,55 @@ export const OdontogramModule = ({
 		}
 	};
 
+	const handleQuickStateChange = useCallback(
+		(targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => {
+			void updateToothState(targets, state, surfaces ? [...surfaces] : undefined);
+			try {
+				const findings = targets.map((num) => {
+					const existing = teethDataRef.current.find((t) => t.toothNumber === num);
+					const toothSurfaces =
+						surfaces && surfaces.length > 0
+							? surfaces
+							: existing?.surfaces && existing.surfaces.length > 0
+								? existing.surfaces
+								: undefined;
+					return toothSurfaces && toothSurfaces.length > 0
+						? { toothNumber: num, state, surfaces: toothSurfaces }
+						: { toothNumber: num, state };
+				});
+				const soap =
+					findings.length > 1
+						? generateSoapFromOdontogramStates(findings)
+						: generateSoapFromOdontogramFinding(findings[0]!);
+				window.dispatchEvent(
+					new CustomEvent("dente-apply-soap-protocol", {
+						detail: {
+							finding: findings[0],
+							soap,
+							mode: "smart_append",
+							immediate: true,
+						},
+					}),
+				);
+			} catch {
+				// Safe event dispatch fallback
+			}
+		},
+		[updateToothState],
+	);
+	const handleOpenVoiceDictation = useCallback(() => setIsVoiceOpen(true), []);
+	const handleOpenPediatricModal = useCallback(() => setIsPediatricModalOpen(true), []);
+	const handleTogglePerio = useCallback(() => setIsPerioOpen((prev) => !prev), []);
+	const handleToggleEstimator = useCallback(() => setIsEstimatorOpen((prev) => !prev), []);
+	const handleToggleMultiSelect = useCallback((enabled: boolean) => {
+		setIsMultiSelectMode(enabled);
+		if (!enabled) setMenuConfig(null);
+	}, []);
+	const handleSelectTeethGroup = useCallback((targets: number[]) => {
+		setSelectedTeeth(targets);
+		setIsMultiSelectMode(true);
+	}, []);
+
 	return (
 		<div className="flex flex-col gap-1.5 w-full text-[var(--odontogram-ink,#0f172a)]">
 			<div
@@ -1400,57 +1449,19 @@ export const OdontogramModule = ({
 					onToothClick={handleToothClick}
 					onMarkIntactDentition={handleMarkAllHealthy}
 					onMarkWisdomTeethMissing={handleMarkWisdomMissing}
-					onQuickStateChange={(targets, state, surfaces) => {
-						void updateToothState(targets, state, surfaces ? [...surfaces] : undefined);
-						try {
-							const findings = targets.map((num) => {
-								const existing = teethData.find((t) => t.toothNumber === num);
-								const toothSurfaces =
-									surfaces && surfaces.length > 0
-										? surfaces
-										: existing?.surfaces && existing.surfaces.length > 0
-											? existing.surfaces
-											: undefined;
-								return toothSurfaces && toothSurfaces.length > 0
-									? { toothNumber: num, state, surfaces: toothSurfaces }
-									: { toothNumber: num, state };
-							});
-							const soap =
-								findings.length > 1
-									? generateSoapFromOdontogramStates(findings)
-									: generateSoapFromOdontogramFinding(findings[0]!);
-							window.dispatchEvent(
-								new CustomEvent("dente-apply-soap-protocol", {
-									detail: {
-										finding: findings[0],
-										soap,
-										mode: "smart_append",
-										immediate: true,
-									},
-								}),
-							);
-						} catch {
-							// Safe event dispatch fallback
-						}
-					}}
+					onQuickStateChange={handleQuickStateChange}
 					useSurfaces={odontogramUseSurfaces}
-					onOpenVoiceDictation={() => setIsVoiceOpen(true)}
-					onOpenPediatricModal={() => setIsPediatricModalOpen(true)}
-					onTogglePerio={() => setIsPerioOpen((prev) => !prev)}
+					onOpenVoiceDictation={handleOpenVoiceDictation}
+					onOpenPediatricModal={handleOpenPediatricModal}
+					onTogglePerio={handleTogglePerio}
 					isPerioOpen={isPerioOpen}
-					onToggleEstimator={() => setIsEstimatorOpen((prev) => !prev)}
+					onToggleEstimator={handleToggleEstimator}
 					isEstimatorOpen={isEstimatorOpen}
 					onLoadDiagnocat={loadDiagnocatReport}
 					diagnocatLoading={diagnocatLoading}
 					isMultiSelectMode={isMultiSelectMode}
-					onToggleMultiSelect={(enabled) => {
-						setIsMultiSelectMode(enabled);
-						if (!enabled && selectedTeeth.length === 0) setMenuConfig(null);
-					}}
-					onSelectTeethGroup={(targets) => {
-						setSelectedTeeth(targets);
-						setIsMultiSelectMode(true);
-					}}
+					onToggleMultiSelect={handleToggleMultiSelect}
+					onSelectTeethGroup={handleSelectTeethGroup}
 				/>
 
 				{/* Floating Tooth Action Popup anchored directly to the clicked tooth */}
@@ -2117,4 +2128,5 @@ export const OdontogramModule = ({
 			)}
 		</div>
 	);
-};
+}, (prev, next) => prev.patientId === next.patientId && prev.pediatricMode === next.pediatricMode);
+OdontogramModule.displayName = "OdontogramModule";

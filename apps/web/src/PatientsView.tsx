@@ -1173,7 +1173,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											data-testid="empty-state-create-patient-btn"
 										>
 											<Plus size={16} aria-hidden="true" />
-											<span>+ Создать карту</span>
+											<span>Создать карту</span>
 										</button>
 										<button
 											type="button"
@@ -1201,7 +1201,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											data-testid="empty-state-create-patient-btn"
 										>
 											<Plus size={16} aria-hidden="true" />
-											<span>+ Создать карту</span>
+											<span>Создать карту</span>
 										</button>
 										<button
 											type="button"

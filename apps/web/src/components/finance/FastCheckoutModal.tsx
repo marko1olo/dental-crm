@@ -828,7 +828,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 				</div>
 
 				{/* Body Content */}
-				<div className="p-3 sm:p-4 overflow-y-auto flex flex-col gap-4 flex-1">
+				<div className="p-3 sm:p-4 pb-24 overflow-y-auto flex flex-col gap-4 flex-1 min-h-0">
 					{/* Step-by-Step Guidance Ribbon & Autosave Status */}
 					<div className="flex items-center gap-2 py-1.5 px-3 rounded-xl bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-xs flex-wrap">
 						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300 min-w-0">
@@ -1883,92 +1883,94 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 					<div className="text-xs text-[var(--muted)] mr-auto hidden sm:block min-w-0 truncate">
 						ФФД 1.2 • {patientPhone ? `Чек будет отправлен на ${patientPhone}` : "Печать фискального чека"}
 					</div>
-					<div className="w-full sm:w-auto flex items-center gap-2 relative">
-						{/* Secondary / Rare Actions Popover Menu (Mandate 8d: max 1-2 direct buttons) */}
-						<div className="relative">
-							<button
-								type="button"
-								data-testid="btn-fast-checkout-more-actions"
-								onClick={() => setIsMoreMenuOpen((prev) => !prev)}
-								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line)] text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer select-none"
-								title="Дополнительные действия с чеком"
-								aria-label="Дополнительные действия с чеком"
-							>
-								<MoreHorizontal className="w-4 h-4 text-[var(--muted)]" />
-							</button>
-
-							{isMoreMenuOpen && (
-								<div
-									data-testid="menu-fast-checkout-more-options"
-									className="absolute bottom-full right-0 mb-2 w-64 rounded-xl border border-[var(--line)] bg-[var(--paper)] p-2 shadow-xl z-50 text-xs flex flex-col gap-1.5"
+					<div className="w-full sm:w-auto flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 relative">
+						<div className="flex items-center gap-2 w-full sm:w-auto">
+							{/* Secondary / Rare Actions Popover Menu (Mandate 8d: max 1-2 direct buttons) */}
+							<div className="relative">
+								<button
+									type="button"
+									data-testid="btn-fast-checkout-more-actions"
+									onClick={() => setIsMoreMenuOpen((prev) => !prev)}
+									className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line)] text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer select-none"
+									title="Дополнительные действия с чеком"
+									aria-label="Дополнительные действия с чеком"
 								>
-									<div className="font-semibold text-[var(--ink)] px-2 py-1 border-b border-[var(--line)] flex items-center justify-between">
-										<span>Опции фискализации</span>
-										<span className="text-[10px] text-[var(--muted)] font-mono">54-ФЗ</span>
-									</div>
+									<MoreHorizontal className="w-4 h-4 text-[var(--muted)]" />
+								</button>
 
-									<button
-										type="button"
-										onClick={() => {
-											setIsElectronicReceiptOnly((prev) => !prev);
-											setIsMoreMenuOpen(false);
-											showToast(
-												!isElectronicReceiptOnly
-													? "Только электронный чек (бумажный не печатается)"
-													: "Печать бумажного чека включена",
-												"info",
-											);
-										}}
-										className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink)] flex items-center justify-between cursor-pointer"
+								{isMoreMenuOpen && (
+									<div
+										data-testid="menu-fast-checkout-more-options"
+										className="absolute bottom-full right-0 mb-2 w-64 rounded-xl border border-[var(--line)] bg-[var(--paper)] p-2 shadow-xl z-50 text-xs flex flex-col gap-1.5"
 									>
-										<span>Только электронный чек</span>
-										<span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${isElectronicReceiptOnly ? "bg-teal-500/20 text-teal-600 dark:text-teal-400 font-bold" : "bg-[var(--line)] text-[var(--muted)]"}`}>
-											{isElectronicReceiptOnly ? "Да" : "Нет"}
-										</span>
-									</button>
+										<div className="font-semibold text-[var(--ink)] px-2 py-1 border-b border-[var(--line)] flex items-center justify-between">
+											<span>Опции фискализации</span>
+											<span className="text-[10px] text-[var(--muted)] font-mono">54-ФЗ</span>
+										</div>
 
-									{patientPhone && (
+										<button
+											type="button"
+											onClick={() => {
+												setIsElectronicReceiptOnly((prev) => !prev);
+												setIsMoreMenuOpen(false);
+												showToast(
+													!isElectronicReceiptOnly
+														? "Только электронный чек (бумажный не печатается)"
+														: "Печать бумажного чека включена",
+													"info",
+												);
+											}}
+											className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink)] flex items-center justify-between cursor-pointer"
+										>
+											<span>Только электронный чек</span>
+											<span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${isElectronicReceiptOnly ? "bg-teal-500/20 text-teal-600 dark:text-teal-400 font-bold" : "bg-[var(--line)] text-[var(--muted)]"}`}>
+												{isElectronicReceiptOnly ? "Да" : "Нет"}
+											</span>
+										</button>
+
+										{patientPhone && (
+											<button
+												type="button"
+												onClick={() => {
+													setIsMoreMenuOpen(false);
+													showToast(
+														`Копия чека будет направлена по SMS/WhatsApp на ${patientPhone}`,
+														"success",
+													);
+												}}
+												className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink)] flex items-center gap-1.5 cursor-pointer"
+											>
+												<Send className="w-3.5 h-3.5 text-teal-600" />
+												<span>Отправить копию по SMS</span>
+											</button>
+										)}
+
 										<button
 											type="button"
 											onClick={() => {
 												setIsMoreMenuOpen(false);
-												showToast(
-													`Копия чека будет направлена по SMS/WhatsApp на ${patientPhone}`,
-													"success",
-												);
+												void handleExecutePayment(true);
 											}}
+											disabled={isPrinting}
+											title={isPrinting ? "Идет печать фискального чека 54-ФЗ..." : undefined}
 											className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink)] flex items-center gap-1.5 cursor-pointer"
 										>
-											<Send className="w-3.5 h-3.5 text-teal-600" />
-											<span>Отправить копию по SMS</span>
+											<WifiOff className="w-3.5 h-3.5 text-amber-600" />
+											<span>Отложить в офлайн-буфер</span>
 										</button>
-									)}
+									</div>
+								)}
+							</div>
 
-									<button
-										type="button"
-										onClick={() => {
-											setIsMoreMenuOpen(false);
-											void handleExecutePayment(true);
-										}}
-										disabled={isPrinting}
-										title={isPrinting ? "Идет печать фискального чека 54-ФЗ..." : undefined}
-										className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink)] flex items-center gap-1.5 cursor-pointer"
-									>
-										<WifiOff className="w-3.5 h-3.5 text-amber-600" />
-										<span>Отложить в офлайн-буфер</span>
-									</button>
-								</div>
-							)}
+							<button
+								type="button"
+								onClick={onClose}
+								data-testid="btn-close-fast-checkout"
+								className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer transition-colors select-none text-center"
+							>
+								Закрыть
+							</button>
 						</div>
-
-						<button
-							type="button"
-							onClick={onClose}
-							data-testid="btn-close-fast-checkout"
-							className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#cbd5e1)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer transition-colors select-none"
-						>
-							Закрыть
-						</button>
 
 						<button
 							type="button"
@@ -1976,17 +1978,17 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							onClick={() => void handleExecutePayment()}
 							disabled={isPrinting}
 							title={isPrinting ? "Идет печать фискального чека 54-ФЗ..." : undefined}
-							className="w-full sm:w-auto min-h-[44px] sm:min-h-[40px] sm:h-10 px-4 sm:px-6 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 disabled:opacity-50 text-white text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-98"
+							className="w-full sm:w-auto min-h-[44px] sm:min-h-[40px] sm:h-10 px-3 sm:px-6 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 disabled:opacity-50 text-white text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-98 min-w-0"
 						>
 							{isPrinting ? (
 								<>
-									<Printer className="w-4 h-4 animate-spin" />
-									<span>Печать фискального чека 54-ФЗ...</span>
+									<Printer className="w-4 h-4 animate-spin shrink-0" />
+									<span className="truncate">Печать фискального чека 54-ФЗ...</span>
 								</>
 							) : (
 								<>
-									<Check className="w-4 h-4" />
-									<span>
+									<Check className="w-4 h-4 shrink-0" />
+									<span className="truncate">
 										{targetBillKop === 0
 											? "Закрыть визит: 100% Гарантия / Скидка (0 ₽)"
 											: `Пробить чек 54-ФЗ (${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)`}

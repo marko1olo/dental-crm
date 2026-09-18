@@ -9,7 +9,7 @@
  * 1. In-Memory Read Cache: повторные чтения берутся из RAM за 0 мс без синхронных
  *    системных вызовов к диску, предотвращая микрофризы главного потока.
  * 2. Debounced Batch Writing: частые сохранения UI-состояний, вкладок, фильтров
- *    и черновиков группируются в очереди и сбрасываются пачкой через 200 мс
+ *    и черновиков группируются в очереди и сбрасываются пачкой через 400 мс
  *    вместо постоянного насилия головок механического жесткого диска.
  * 3. Immediate Token Guarantee: токены авторизации и сессий (`DENTE_STAFF_TOKEN_KEY`,
  *    `DENTE_CLINIC_TOKEN_KEY`, `PATIENT_TOKEN_KEY`) всегда пишутся немедленно.
@@ -339,7 +339,7 @@ export function safeLocalStorageGetJson<T>(key: string, defaultValue: T): T {
 }
 
 /**
- * Запись JSON с отложенным сбросом на диск (Debounced 200ms) для защиты HDD от фризов.
+ * Запись JSON с отложенным сбросом на диск (Debounced 400ms) для защиты HDD от фризов.
  */
 export function safeLocalStorageSetJson(
 	key: string,

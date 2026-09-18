@@ -182,7 +182,7 @@ describe("Wave 124: Patient Relationships & Kinship Graph Engine", () => {
 			assert.equal(direct.isFinancialPayer, true, "Parent defaults to isFinancialPayer: true");
 			assert.equal(direct.isEmergencyContact, true, "Parent defaults to isEmergencyContact: true");
 			assert.ok(direct.id.length > 0);
-			assert.ok(direct.createdAt.length > 0);
+			assert.ok(direct.createdAt && direct.createdAt.length > 0);
 
 			// Inverse assertion
 			assert.equal(inverse.patientId, MOCK_PATIENT_PARENT_ID);

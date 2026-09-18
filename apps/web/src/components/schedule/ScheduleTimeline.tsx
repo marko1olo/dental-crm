@@ -77,7 +77,7 @@ export interface ScheduleTimelineProps {
 	todayScheduleDate?: (() => string) | undefined;
 }
 
-export function ScheduleTimeline(props: ScheduleTimelineProps) {
+function ScheduleTimelineInner(props: ScheduleTimelineProps) {
 	const {
 		visibleDayGroups,
 		dashboard,
@@ -322,6 +322,10 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 									className="schedule-day-gap group my-2 ml-3 pr-2 sm:pr-0 p-2.5 rounded-xl border border-dashed border-[var(--teal)]/40 hover:border-[var(--teal)] bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] transition-all cursor-pointer flex items-center justify-between gap-3 text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)] focus:outline-none min-h-[44px]"
 									data-testid="schedule-day-gap"
 									aria-label={`Свободное окно: ${formatMinutesForHumans(row.minutes)}. Нажмите для быстрой записи`}
+									style={{
+										contentVisibility: "auto",
+										containIntrinsicSize: "1px 48px",
+									}}
 								>
 									<div className="flex items-center gap-2 min-w-0 flex-1">
 										<Clock size={14} className="text-[var(--teal)] shrink-0" />
@@ -363,6 +367,10 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 									className="schedule-day-overlap my-2 ml-3 pr-2 sm:pr-0 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-center gap-2"
 									data-testid="schedule-day-overlap"
 									role="alert"
+									style={{
+										contentVisibility: "auto",
+										containIntrinsicSize: "1px 48px",
+									}}
 								>
 									<AlertTriangle size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />
 									<span>
@@ -395,7 +403,11 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 								key={appointment.id}
 								data-timeline-focusable="true"
 								tabIndex={-1}
-								className="focus:outline-none"
+								className="focus:outline-none schedule-timeline-item"
+								style={{
+									contentVisibility: "auto",
+									containIntrinsicSize: "1px 48px",
+								}}
 							>
 								<AppointmentCard
 									appointment={appointment}
@@ -508,3 +520,7 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 		</div>
 	);
 }
+
+export const ScheduleTimeline = React.memo(ScheduleTimelineInner);
+ScheduleTimeline.displayName = "ScheduleTimeline";
+

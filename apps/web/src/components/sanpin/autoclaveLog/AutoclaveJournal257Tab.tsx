@@ -345,7 +345,16 @@ export function AutoclaveJournal257Tab({
 							{filteredRecords.map((rec) => {
 								const ptPassedCount = rec.chamberPoints.filter((p) => p.status === "passed").length;
 								return (
-									<tr key={rec.id}>
+									<tr
+										key={rec.id}
+										className="sanpin-log-row"
+										style={{
+											minHeight: "44px",
+											contentVisibility: "auto",
+											containIntrinsicSize: "1px 44px",
+											contain: "content",
+										}}
+									>
 										<td>
 											<div style={{ fontWeight: 700 }}>{rec.date}</div>
 											<div style={{ fontSize: "0.75rem", color: "var(--teal, #0d9488)", fontWeight: 600 }}>

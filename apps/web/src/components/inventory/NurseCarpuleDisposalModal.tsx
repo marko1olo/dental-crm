@@ -595,7 +595,7 @@ export function NurseCarpuleDisposalModal({
 				</div>
 
 				{/* FOOTER ACTIONS (МАНДАТ 8d: не более 1-2 кнопок прямого действия по Закону Миллера) */}
-				<div className="flex items-center justify-between p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] gap-2">
+				<div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between p-3 sm:p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] gap-2 shrink-0">
 					<button
 						type="button"
 						onClick={onClose}
@@ -604,16 +604,16 @@ export function NurseCarpuleDisposalModal({
 						Отмена
 					</button>
 
-					<div className="flex items-center gap-2 relative min-w-0">
+					<div className="flex items-center gap-2 relative min-w-0 w-full sm:w-auto">
 						{/* 1. Вторичная кнопка прямого действия: Печать акта утилизации Б */}
 						<button
 							type="button"
 							onClick={handlePrintAct}
-							className="min-h-[44px] h-9 px-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#e2e8f0)] transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs min-w-0"
+							className="hidden sm:flex min-h-[44px] h-9 px-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#e2e8f0)] transition-colors items-center gap-1.5 cursor-pointer shadow-xs min-w-0"
 							title="Печать акта утилизации карпул по СанПиН 3.3686-21 (Класс Б)"
 						>
 							<Printer size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-							<span className="truncate">Печать акта утилизации Б</span>
+							<span className="truncate">Печать акта Б</span>
 						</button>
 
 						{/* 2. Контекстное меню дополнительных действий (...) для третичных операций */}
@@ -633,6 +633,14 @@ export function NurseCarpuleDisposalModal({
 									className="absolute bottom-full right-0 mb-2 w-52 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-xl shadow-xl p-1.5 z-50 flex flex-col gap-1"
 									onClick={() => setShowMoreMenu(false)}
 								>
+									<button
+										type="button"
+										onClick={handlePrintAct}
+										className="sm:hidden w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer"
+									>
+										<Printer size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+										<span className="truncate">Печать акта Б</span>
+									</button>
 									<button
 										type="button"
 										onClick={handleCopyActDetails}
@@ -658,7 +666,7 @@ export function NurseCarpuleDisposalModal({
 							type="button"
 							onClick={handleFastDispose}
 							disabled={isSubmitting || isDisposed}
-							className={`min-h-[44px] h-9 flex items-center gap-2 px-5 rounded-xl text-xs font-bold text-white shadow-md transition-all cursor-pointer min-w-0 ${
+							className={`min-h-[44px] h-9 flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 sm:px-5 rounded-xl text-xs font-bold text-white shadow-md transition-all cursor-pointer min-w-0 ${
 								isDisposed
 									? "bg-emerald-600"
 									: "bg-teal-600 hover:bg-teal-700 active:scale-98"

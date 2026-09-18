@@ -36,7 +36,12 @@ import {
 	type UpdateSterilizerEquipmentDto,
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
-import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import {
+	readDenteClinicToken,
+	readDenteStaffToken,
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../../lib/safeLocalStorage";
 
 export interface ClinicAutoclaveDevice {
 	id: string;
@@ -98,7 +103,7 @@ const STORAGE_KEY = "dente_clinic_autoclaves_v1";
 
 export function loadSavedClinicAutoclaves(): ClinicAutoclaveDevice[] {
 	try {
-		const raw = localStorage.getItem(STORAGE_KEY);
+		const raw = safeLocalStorageGetItem(STORAGE_KEY);
 		if (raw !== null) {
 			const parsed = JSON.parse(raw);
 			if (Array.isArray(parsed)) {
@@ -113,7 +118,7 @@ export function loadSavedClinicAutoclaves(): ClinicAutoclaveDevice[] {
 
 export function saveClinicAutoclaves(devices: ClinicAutoclaveDevice[]): void {
 	try {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(devices));
+		safeLocalStorageSetItem(STORAGE_KEY, JSON.stringify(devices));
 	} catch (e) {
 		console.warn("Failed to persist clinic autoclaves", e);
 	}
@@ -438,7 +443,7 @@ export function AutoclaveEquipmentModal({
 											style={{ minHeight: "44px", padding: "0.5rem 1.5rem", fontSize: "0.875rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
 											data-testid="add-first-autoclave-dialog-btn"
 										>
-											<Plus size={16} /> + Зарегистрировать автоклав клиники
+											<Plus size={16} /> <span>Зарегистрировать автоклав клиники</span>
 										</button>
 										<div style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.25rem" }}>
 											Быстрое добавление популярного аппарата (1 клик):

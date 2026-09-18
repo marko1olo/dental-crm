@@ -1286,6 +1286,31 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 			? getPeriodontalBoneLevelPath(number, boneLossLevel, boneLossType ?? "horizontal")
 			: null;
 
+	const handleSurfaceClick = useCallback((e: React.MouseEvent<SVGGElement>) => {
+		const target = (e.target as Element).closest("[data-surface]");
+		if (target) {
+			const surf = target.getAttribute("data-surface");
+			if (surf) {
+				e.stopPropagation();
+				onClick(e as unknown as React.MouseEvent, number, surf);
+			}
+		}
+	}, [onClick, number]);
+
+	const handleSurfaceKeyDown = useCallback((e: React.KeyboardEvent<SVGGElement>) => {
+		if (e.key === "Enter" || e.key === " ") {
+			const target = (e.target as Element).closest("[data-surface]");
+			if (target) {
+				const surf = target.getAttribute("data-surface");
+				if (surf) {
+					e.preventDefault();
+					e.stopPropagation();
+					onClick(e as unknown as React.MouseEvent, number, surf);
+				}
+			}
+		}
+	}, [onClick, number]);
+
 	const renderImplant = () => (
 		<svg
 			width={scaledWidth}
@@ -1672,43 +1697,23 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 					</g>
 				)}
 
-				{/* Interactive Surfaces (O, V, L/P, M, D) */}
+				{/* Interactive Surfaces (O, V, L/P, M, D, C) with stable delegated handlers (GC & render loop micro-optimized) */}
 				{useSurfaces && (
 					<g
 						transform={`translate(${cfg.viewX + cfg.viewWidth / 2 - 12}, ${isTop ? 95 : 35})`}
 						stroke="rgba(255,255,255,0.7)"
 						strokeWidth="0.5"
 						className="tooth-surface-interactive-group"
+						onClick={handleSurfaceClick}
+						onKeyDown={handleSurfaceKeyDown}
 					>
 						{/* O - Occlusal */}
 						<g
 							role="tab"
 							tabIndex={0}
+							data-surface="O"
 							aria-label={`Поверхность O зуба ${number}`}
-							style={{ cursor: "pointer" }}
-							onClick={(e) => {
-								e.stopPropagation();
-								onClick(e as unknown as React.MouseEvent, number, "O");
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									e.stopPropagation();
-									onClick(e as unknown as React.MouseEvent, number, "O");
-								}
-							}}
-							onMouseEnter={(e) => {
-								if (!surfaces?.includes("O")) {
-									const polygon = e.currentTarget.querySelector("polygon");
-									if (polygon) polygon.style.fill = "rgba(239, 68, 68, 0.35)";
-								}
-							}}
-							onMouseLeave={(e) => {
-								if (!surfaces?.includes("O")) {
-									const polygon = e.currentTarget.querySelector("polygon");
-									if (polygon) polygon.style.fill = "transparent";
-								}
-							}}
+							className="tooth-surface-target cursor-pointer"
 						>
 							<polygon
 								points="8,8 16,8 16,16 8,16"
@@ -1727,39 +1732,9 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 						<g
 							role="tab"
 							tabIndex={0}
+							data-surface="V"
 							aria-label={`Поверхность V зуба ${number}`}
-							style={{ cursor: "pointer" }}
-							onClick={(e) => {
-								e.stopPropagation();
-								onClick(
-									e as unknown as React.MouseEvent,
-									number,
-									"V",
-								);
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									e.stopPropagation();
-									onClick(
-										e as unknown as React.MouseEvent,
-										number,
-										"V",
-									);
-								}
-							}}
-							onMouseEnter={(e) => {
-								if (!(surfaces?.includes("V") || surfaces?.includes("B"))) {
-									const polygon = e.currentTarget.querySelector("polygon");
-									if (polygon) polygon.style.fill = "rgba(239, 68, 68, 0.35)";
-								}
-							}}
-							onMouseLeave={(e) => {
-								if (!(surfaces?.includes("V") || surfaces?.includes("B"))) {
-									const polygon = e.currentTarget.querySelector("polygon");
-									if (polygon) polygon.style.fill = "transparent";
-								}
-							}}
+							className="tooth-surface-target cursor-pointer"
 						>
 							<polygon
 								points="0,0 24,0 16,8 8,8"
@@ -1778,39 +1753,9 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 						<g
 							role="tab"
 							tabIndex={0}
+							data-surface={isTop ? "P" : "L"}
 							aria-label={`Поверхность ${isTop ? "P" : "L"} зуба ${number}`}
-							style={{ cursor: "pointer" }}
-							onClick={(e) => {
-								e.stopPropagation();
-								onClick(
-									e as unknown as React.MouseEvent,
-									number,
-									isTop ? "P" : "L",
-								);
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									e.stopPropagation();
-									onClick(
-										e as unknown as React.MouseEvent,
-										number,
-										isTop ? "P" : "L",
-									);
-								}
-							}}
-							onMouseEnter={(e) => {
-								if (!(surfaces?.includes("L") || surfaces?.includes("P"))) {
-									const polygon = e.currentTarget.querySelector("polygon");
-									if (polygon) polygon.style.fill = "rgba(239, 68, 68, 0.35)";
-								}
-							}}
-							onMouseLeave={(e) => {
-								if (!(surfaces?.includes("L") || surfaces?.includes("P"))) {
-									const polygon = e.currentTarget.querySelector("polygon");
-									if (polygon) polygon.style.fill = "transparent";
-								}
-							}}
+							className="tooth-surface-target cursor-pointer"
 						>
 							<polygon
 								points="8,16 16,16 24,24 0,24"
@@ -1829,31 +1774,9 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 						<g
 							role="tab"
 							tabIndex={0}
+							data-surface="D"
 							aria-label={`Поверхность D зуба ${number}`}
-							style={{ cursor: "pointer" }}
-							onClick={(e) => {
-								e.stopPropagation();
-								onClick(e as unknown as React.MouseEvent, number, "D");
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									e.stopPropagation();
-									onClick(e as unknown as React.MouseEvent, number, "D");
-								}
-							}}
-							onMouseEnter={(e) => {
-								if (!surfaces?.includes("D")) {
-									const polygon = e.currentTarget.querySelector("polygon");
-									if (polygon) polygon.style.fill = "rgba(239, 68, 68, 0.35)";
-								}
-							}}
-							onMouseLeave={(e) => {
-								if (!surfaces?.includes("D")) {
-									const polygon = e.currentTarget.querySelector("polygon");
-									if (polygon) polygon.style.fill = "transparent";
-								}
-							}}
+							className="tooth-surface-target cursor-pointer"
 						>
 							<polygon
 								points="0,0 8,8 8,16 0,24"
@@ -1872,31 +1795,9 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 						<g
 							role="tab"
 							tabIndex={0}
+							data-surface="M"
 							aria-label={`Поверхность M зуба ${number}`}
-							style={{ cursor: "pointer" }}
-							onClick={(e) => {
-								e.stopPropagation();
-								onClick(e as unknown as React.MouseEvent, number, "M");
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									e.stopPropagation();
-									onClick(e as unknown as React.MouseEvent, number, "M");
-								}
-							}}
-							onMouseEnter={(e) => {
-								if (!surfaces?.includes("M")) {
-									const polygon = e.currentTarget.querySelector("polygon");
-									if (polygon) polygon.style.fill = "rgba(239, 68, 68, 0.35)";
-								}
-							}}
-							onMouseLeave={(e) => {
-								if (!surfaces?.includes("M")) {
-									const polygon = e.currentTarget.querySelector("polygon");
-									if (polygon) polygon.style.fill = "transparent";
-								}
-							}}
+							className="tooth-surface-target cursor-pointer"
 						>
 							<polygon
 								points="24,0 24,24 16,16 16,8"
@@ -1915,31 +1816,9 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 						<g
 							role="tab"
 							tabIndex={0}
+							data-surface="C"
 							aria-label={`Поверхность C зуба ${number}`}
-							style={{ cursor: "pointer" }}
-							onClick={(e) => {
-								e.stopPropagation();
-								onClick(e as unknown as React.MouseEvent, number, "C");
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									e.stopPropagation();
-									onClick(e as unknown as React.MouseEvent, number, "C");
-								}
-							}}
-							onMouseEnter={(e) => {
-								if (!surfaces?.includes("C")) {
-									const polygon = e.currentTarget.querySelector("polygon");
-									if (polygon) polygon.style.fill = "rgba(239, 68, 68, 0.35)";
-								}
-							}}
-							onMouseLeave={(e) => {
-								if (!surfaces?.includes("C")) {
-									const polygon = e.currentTarget.querySelector("polygon");
-									if (polygon) polygon.style.fill = "transparent";
-								}
-							}}
+							className="tooth-surface-target cursor-pointer"
 						>
 							<polygon
 								points="0,25 24,25 20,29 4,29"

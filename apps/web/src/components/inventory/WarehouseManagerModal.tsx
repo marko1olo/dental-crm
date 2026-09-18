@@ -389,7 +389,7 @@ export function WarehouseManagerModal({
 
 				{/* 1-ROW TOOLBAR (Mandates 8c, 8d: 32-36px compact desktop toolbar) */}
 				{activeView === "inventory" && (
-					<div className="h-9 min-h-[36px] px-5 bg-[var(--paper,#ffffff)] border-b border-[var(--border,#e2e8f0)] flex items-center gap-2 overflow-x-auto no-scrollbar text-xs shrink-0">
+					<div className="min-h-[36px] h-auto py-1 px-5 bg-[var(--paper,#ffffff)] border-b border-[var(--border,#e2e8f0)] flex flex-wrap items-center gap-2 text-xs shrink-0">
 						{/* Поиск */}
 						<div className="relative flex-1 min-w-[180px] max-w-xs">
 							<Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted,#94a3b8)]" />

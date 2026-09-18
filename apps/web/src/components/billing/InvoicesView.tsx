@@ -735,7 +735,7 @@ th { background: #f8fafc; font-weight: 700; }
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по пациенту или № счета..."
-							className="h-11 min-h-[44px] sm:h-7 sm:min-h-[28px] w-48 sm:w-60 pl-8 pr-3 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] outline-none focus:border-teal-500"
+							className="h-11 min-h-[44px] sm:h-7 sm:min-h-[28px] w-48 sm:w-60 pl-9.5 pr-3 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] outline-none focus:border-teal-500"
 							data-testid="input-search-invoices"
 						/>
 						{searchQuery && (
@@ -1106,7 +1106,20 @@ th { background: #f8fafc; font-weight: 700; }
 				<PaymentModal
 					isOpen={true}
 					onClose={() => setActivePaymentInvoice(null)}
-					amountKopecks={rubToKopecks(activePaymentInvoice.totalAmountRub)}
+					amountKopecks={rubToKopecks(
+						activePaymentInvoice.totalAmountRub ??
+						(activePaymentInvoice as unknown as { amountRub?: number }).amountRub ??
+						(activePaymentInvoice as unknown as { total?: number }).total ??
+						(activePaymentInvoice as unknown as { amount?: number }).amount ??
+						0
+					)}
+					amountRub={
+						activePaymentInvoice.totalAmountRub ??
+						(activePaymentInvoice as unknown as { amountRub?: number }).amountRub ??
+						(activePaymentInvoice as unknown as { total?: number }).total ??
+						(activePaymentInvoice as unknown as { amount?: number }).amount ??
+						0
+					}
 					patientId={activePaymentInvoice.patientId}
 					patientName={activePaymentInvoice.patientName}
 					patientPhone={activePaymentInvoice.patientPhone}

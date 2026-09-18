@@ -22,6 +22,10 @@ import { useCallback, useEffect, useState } from "react";
 import { showToast } from "./components/GlobalToast";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { actionFailureToast } from "./lib/panelStateText";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "./lib/safeLocalStorage";
 import { logger } from "./utils/logger";
 
 export type ClinicalTaskStatus = "pending" | "in_progress" | "completed" | "cancelled";
@@ -175,9 +179,8 @@ export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 const LOCAL_STORAGE_KEY_PREFIX = "dente_clinical_local_tasks_";
 
 export function getLocalTasks(patientId: string): ClinicalTask[] {
-	if (typeof window === "undefined" || !window.localStorage) return [];
 	try {
-		const raw = localStorage.getItem(`${LOCAL_STORAGE_KEY_PREFIX}${patientId}`);
+		const raw = safeLocalStorageGetItem(`${LOCAL_STORAGE_KEY_PREFIX}${patientId}`);
 		if (!raw) return [];
 		const parsed = JSON.parse(raw);
 		return Array.isArray(parsed) ? (parsed as ClinicalTask[]) : [];
@@ -187,11 +190,10 @@ export function getLocalTasks(patientId: string): ClinicalTask[] {
 }
 
 export function saveLocalTask(patientId: string, task: ClinicalTask): void {
-	if (typeof window === "undefined" || !window.localStorage) return;
 	try {
 		const current = getLocalTasks(patientId);
 		const updated = [task, ...current.filter((t) => t.id !== task.id)];
-		localStorage.setItem(
+		safeLocalStorageSetItem(
 			`${LOCAL_STORAGE_KEY_PREFIX}${patientId}`,
 			JSON.stringify(updated.slice(0, 50)),
 		);
@@ -642,7 +644,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 								: t,
 						);
 						try {
-							localStorage.setItem(
+							safeLocalStorageSetItem(
 								`${LOCAL_STORAGE_KEY_PREFIX}${patientId}`,
 								JSON.stringify(updated),
 							);

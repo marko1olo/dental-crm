@@ -1054,7 +1054,7 @@ export function WaitlistQuickFillModal({
 											data-testid="match-empty-add-btn"
 										>
 											<Plus className="w-3.5 h-3.5 shrink-0" />
-											<span>+ Добавить в лист ожидания</span>
+											<span>Добавить в лист ожидания</span>
 										</button>
 									}
 								/>

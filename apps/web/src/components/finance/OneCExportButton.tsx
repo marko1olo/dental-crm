@@ -6,7 +6,10 @@ import {
   type OneCExportParams,
 } from '@dental/shared';
 import { showToast } from '../GlobalToast';
-import { Billing1CExportModal } from './Billing1CExportModal';
+
+const Billing1CExportModal = React.lazy(() =>
+  import('./Billing1CExportModal').then((m) => ({ default: m.Billing1CExportModal }))
+);
 
 export interface OneCExportItem {
   id?: string | undefined;
@@ -194,23 +197,25 @@ export const OneCExportButton: React.FC<OneCExportButtonProps> = ({
       </button>
 
       {isModalOpen && (
-        <Billing1CExportModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          actNumber={actNumber}
-          contractNumber={contractNumber}
-          contractDate={contractDate}
-          doctorName={doctorName}
-          patientName={patientName}
-          patientId={patientId}
-          patientPhone={patientPhone}
-          patientAddress={patientAddress}
-          clinicName={clinicName}
-          clinicInn={clinicInn}
-          clinicKpp={clinicKpp}
-          items={items}
-          totalRub={totalRub}
-        />
+        <React.Suspense fallback={null}>
+          <Billing1CExportModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            actNumber={actNumber}
+            contractNumber={contractNumber}
+            contractDate={contractDate}
+            doctorName={doctorName}
+            patientName={patientName}
+            patientId={patientId}
+            patientPhone={patientPhone}
+            patientAddress={patientAddress}
+            clinicName={clinicName}
+            clinicInn={clinicInn}
+            clinicKpp={clinicKpp}
+            items={items}
+            totalRub={totalRub}
+          />
+        </React.Suspense>
       )}
     </>
   );

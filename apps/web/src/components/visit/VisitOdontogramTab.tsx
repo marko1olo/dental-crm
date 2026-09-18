@@ -1,3 +1,4 @@
+import React, { useMemo } from "react";
 import { calculateAge } from "@dental/shared";
 import { FileText, Sparkles } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -6,6 +7,10 @@ import { EgiszMonitor } from "../EgiszMonitor";
 import { OdontogramModule } from "../odontogram/OdontogramModule";
 import { VisitDiarySection } from "./VisitDiarySection";
 import { realVisitFieldId } from "./visitIdentity";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../../lib/safeLocalStorage";
 
 export interface VisitOdontogramTabPatient {
 	id: string;
@@ -59,7 +64,7 @@ function resolveValidVisitUuid(
 	if (!patientId) return null;
 	const cacheKey = `dente_draft_visit_uuid_${patientId}`;
 	try {
-		const cached = typeof localStorage !== "undefined" ? localStorage.getItem(cacheKey) : null;
+		const cached = safeLocalStorageGetItem(cacheKey);
 		if (cached && UUID_REGEX.test(cached)) {
 			return cached;
 		}
@@ -67,9 +72,7 @@ function resolveValidVisitUuid(
 			typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
 				? crypto.randomUUID()
 				: "00000000-0000-4000-8000-000000000001";
-		if (typeof localStorage !== "undefined") {
-			localStorage.setItem(cacheKey, generated);
-		}
+		safeLocalStorageSetItem(cacheKey, generated);
 		return generated;
 	} catch {
 		return typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
@@ -78,7 +81,7 @@ function resolveValidVisitUuid(
 	}
 }
 
-export function VisitOdontogramTab(props?: VisitOdontogramTabProps) {
+export const VisitOdontogramTab: React.FC<VisitOdontogramTabProps> = React.memo(function VisitOdontogramTab(props: VisitOdontogramTabProps = {}) {
 	const ctx = useAppLogicContext();
 	const activePatient = props?.activePatient ?? ctx?.activePatient;
 	const activeAppointment = props?.activeAppointment ?? ctx?.activeAppointment;
@@ -121,6 +124,14 @@ export function VisitOdontogramTab(props?: VisitOdontogramTabProps) {
 				: null,
 		) ?? realVisitFieldId(activePatient?.id);
 
+	const isPediatric = useMemo(() => {
+		return (
+			(activePatient?.birthDate ? (calculateAge(activePatient.birthDate) ?? 99) < 12 : false) ||
+			Boolean(workspaceFlags.hasPediatricMode) ||
+			Boolean(dashboard?.clinicSettings?.profile?.hasPediatricMode)
+		);
+	}, [activePatient?.birthDate, workspaceFlags.hasPediatricMode, dashboard?.clinicSettings?.profile?.hasPediatricMode]);
+
 	if (!activePatient?.id) {
 		return (
 			<div className="text-center py-12 px-6 text-slate-500 dark:text-slate-400">
@@ -144,11 +155,7 @@ export function VisitOdontogramTab(props?: VisitOdontogramTabProps) {
 			<div className="w-full">
 				<OdontogramModule
 					patientId={activePatient.id}
-					pediatricMode={
-						(activePatient.birthDate ? (calculateAge(activePatient.birthDate) ?? 99) < 12 : false) ||
-						workspaceFlags.hasPediatricMode ||
-						(dashboard?.clinicSettings?.profile?.hasPediatricMode ?? false)
-					}
+					pediatricMode={isPediatric}
 				/>
 			</div>
 
@@ -212,4 +219,5 @@ export function VisitOdontogramTab(props?: VisitOdontogramTabProps) {
 			</div>
 		</div>
 	);
-}
+});
+VisitOdontogramTab.displayName = "VisitOdontogramTab";

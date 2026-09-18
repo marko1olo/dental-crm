@@ -1047,7 +1047,16 @@ export function BactericidalRegisterTab() {
 							</tr>
 						) : (
 							filteredLogs.map((log) => (
-								<tr key={log.id}>
+								<tr
+									key={log.id}
+									className="sanpin-log-row"
+									style={{
+										minHeight: "44px",
+										contentVisibility: "auto",
+										containIntrinsicSize: "1px 44px",
+										contain: "content",
+									}}
+								>
 									<td style={{ fontWeight: 600 }}>{log.date}</td>
 									<td>
 										<div>{log.roomName}</div>

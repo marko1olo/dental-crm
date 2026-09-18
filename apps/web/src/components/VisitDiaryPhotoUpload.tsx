@@ -499,6 +499,8 @@ export function VisitDiaryPhotoUpload({
 								<img
 									src={objectUrl}
 									alt={att.name}
+									loading="lazy"
+									decoding="async"
 									className="h-20 w-20 object-cover rounded-lg border border-[var(--line)] shadow-sm"
 								/>
 								<a

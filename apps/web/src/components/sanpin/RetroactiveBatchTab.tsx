@@ -633,7 +633,7 @@ export function RetroactiveBatchTab({
 									gap: "0.2rem",
 								}}
 							>
-								<Plus size={12} /> + Добавить аппарат
+								<Plus size={12} /> Добавить аппарат
 							</button>
 						</div>
 						<select
@@ -1038,7 +1038,12 @@ export function RetroactiveBatchTab({
 									return (
 										<tr
 											key={day.id}
+											className="sanpin-log-row"
 											style={{
+												minHeight: "44px",
+												contentVisibility: "auto",
+												containIntrinsicSize: "1px 44px",
+												contain: "content",
 												opacity: day.isWorkingDay ? 1 : 0.65,
 												background: day.isSavedToDb ? "rgba(16, 185, 129, 0.03)" : undefined,
 											}}

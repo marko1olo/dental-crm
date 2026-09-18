@@ -559,7 +559,7 @@
 	--elev: #081026;
 	--ink: #ffffff;
 	--ink-2: #e0f2fe;
-	--muted: #38bdf8;
+	--muted: #7dd3fc;
 	--line: rgba(0, 240, 255, 0.25);
 	--line-strong: rgba(0, 240, 255, 0.5);
 	--teal: #00f0ff;
@@ -909,6 +909,9 @@ select:focus {
 	display: flex;
 	flex-direction: column;
 	min-height: 100vh;
+	height: 100vh;
+	max-height: 100vh;
+	overflow: hidden;
 	background: var(--side-bg);
 	border-right: 1px solid var(--line);
 	padding: 16px 14px;
@@ -987,6 +990,11 @@ html.dark .sidebar .nav-item.active,
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
+	overflow-y: auto;
+	overflow-x: hidden;
+	scrollbar-width: thin;
+	min-height: 0;
+	flex: 1 1 auto;
 }
 .nav-item {
 	display: flex;
@@ -1065,9 +1073,40 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 	color: var(--teal, #2dd4bf) !important;
 }
 
+/* Компактная клиническая плотность на экранах высотой <= 960px */
+@media (max-height: 960px) {
+	.sidebar {
+		padding: 10px 10px 8px;
+	}
+	.brand-mark {
+		padding: 2px 6px 8px;
+	}
+	.sidebar nav {
+		gap: 2px;
+	}
+	.nav-item {
+		padding: 5px 10px;
+		gap: 8px;
+		font-size: 13px;
+	}
+	.nav-label {
+		font-size: 13px;
+	}
+	.nav-copy small {
+		font-size: 10px;
+	}
+	.sidebar-footer {
+		padding-top: 8px;
+		padding-bottom: 8px;
+		flex-shrink: 0;
+		margin-top: auto;
+	}
+}
+
 /* футер сайдбара & переключатель тем */
 .sidebar-footer {
 	margin-top: auto;
+	flex-shrink: 0;
 	display: flex;
 	align-items: center;
 	gap: 8px;

@@ -1,4 +1,8 @@
 import { type ComponentType, type LazyExoticComponent, lazy } from "react";
+import {
+	safeSessionStorageGetItem,
+	safeSessionStorageSetItem,
+} from "./safeLocalStorage";
 
 export interface LazyRetryOptions {
 	/** Максимальное количество попыток (по умолчанию 3) */
@@ -77,9 +81,9 @@ export async function retryDynamicImport<T>(
 	) {
 		const storageKey =
 			chunkReloadKey ?? `dente_chunk_reload_${window.location.pathname}`;
-		const hasReloaded = window.sessionStorage.getItem(storageKey);
+		const hasReloaded = safeSessionStorageGetItem(storageKey);
 		if (!hasReloaded) {
-			window.sessionStorage.setItem(storageKey, "1");
+			safeSessionStorageSetItem(storageKey, "1", true);
 			window.location.reload();
 			// Возвращаем вечный промис пока страница перезагружается, чтобы не взрывать Suspense / ErrorBoundary
 			return new Promise<never>(() => {});

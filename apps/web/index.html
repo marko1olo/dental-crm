@@ -29,11 +29,39 @@
         }
       }
       html.dark,
-      [data-theme="dark"] {
+      [data-theme="dark"],
+      [data-theme="night"],
+      [data-theme="ocean"],
+      [data-theme="emerald"],
+      [data-theme="cyber_xray"] {
         --boot-bg: #090d11;
         --boot-title: #ffffff;
         --boot-subtitle: #14b8a6;
         --boot-logo: #14b8a6;
+      }
+      [data-theme="warm_sand"] {
+        --boot-bg: #fefce8;
+        --boot-title: #451a03;
+        --boot-subtitle: #78350f;
+        --boot-logo: #78350f;
+      }
+      [data-theme="sakura"] {
+        --boot-bg: #fff1f2;
+        --boot-title: #4c0519;
+        --boot-subtitle: #db2777;
+        --boot-logo: #db2777;
+      }
+      [data-theme="calm_teal"] {
+        --boot-bg: #f0fdfa;
+        --boot-title: #134e4a;
+        --boot-subtitle: #0f766e;
+        --boot-logo: #0f766e;
+      }
+      [data-theme="contrast"] {
+        --boot-bg: #ffffff;
+        --boot-title: #000000;
+        --boot-subtitle: #005f56;
+        --boot-logo: #005f56;
       }
       body {
         margin: 0;
@@ -96,11 +124,31 @@
         }
       }
       html.dark body,
-      [data-theme="dark"] body {
+      [data-theme="dark"] body,
+      [data-theme="night"] body,
+      [data-theme="ocean"] body,
+      [data-theme="emerald"] body,
+      [data-theme="cyber_xray"] body {
         background-color: #090d11;
       }
+      [data-theme="warm_sand"] body {
+        background-color: #fefce8;
+      }
+      [data-theme="sakura"] body {
+        background-color: #fff1f2;
+      }
+      [data-theme="calm_teal"] body {
+        background-color: #f0fdfa;
+      }
+      [data-theme="contrast"] body {
+        background-color: #ffffff;
+      }
       html.dark .boot-state,
-      [data-theme="dark"] .boot-state {
+      [data-theme="dark"] .boot-state,
+      [data-theme="night"] .boot-state,
+      [data-theme="ocean"] .boot-state,
+      [data-theme="emerald"] .boot-state,
+      [data-theme="cyber_xray"] .boot-state {
         background-color: #090d11;
       }
       html.dark .boot-state svg,

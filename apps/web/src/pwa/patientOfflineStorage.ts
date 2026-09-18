@@ -6,6 +6,11 @@
 import { useEffect, useState, useCallback } from "react";
 import { showToast } from "../components/GlobalToast";
 import { logger } from "../utils/logger";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+	safeLocalStorageRemoveItem,
+} from "../lib/safeLocalStorage";
 
 export interface UpcomingVisit {
 	id: string;
@@ -122,16 +127,6 @@ function openPatientOfflineDb(): Promise<IDBDatabase> {
 	return dbInstancePromise;
 }
 
-function getFallbackStorage(): Storage | null {
-	if (typeof window !== "undefined" && window.localStorage) {
-		return window.localStorage;
-	}
-	if (typeof globalThis !== "undefined" && (globalThis as any).localStorage) {
-		return (globalThis as any).localStorage;
-	}
-	return null;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Upcoming Visit Caching (Offline Subway Invariant)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -159,10 +154,7 @@ export async function cacheUpcomingVisit(visit: UpcomingVisit): Promise<void> {
 
 	// Always update localStorage as immediate synchronous fallback
 	try {
-		const storage = getFallbackStorage();
-		if (storage) {
-			storage.setItem(LOCAL_STORAGE_UPCOMING_VISIT_KEY, JSON.stringify(enrichedVisit));
-		}
+		safeLocalStorageSetItem(LOCAL_STORAGE_UPCOMING_VISIT_KEY, JSON.stringify(enrichedVisit));
 	} catch {
 		// quota exceeded or private mode ignore
 	}
@@ -197,12 +189,9 @@ export async function getCachedUpcomingVisit(): Promise<UpcomingVisit | null> {
 
 	// Fallback to localStorage
 	try {
-		const storage = getFallbackStorage();
-		if (storage) {
-			const raw = storage.getItem(LOCAL_STORAGE_UPCOMING_VISIT_KEY);
-			if (raw) {
-				return JSON.parse(raw) as UpcomingVisit;
-			}
+		const raw = safeLocalStorageGetItem(LOCAL_STORAGE_UPCOMING_VISIT_KEY);
+		if (raw) {
+			return JSON.parse(raw) as UpcomingVisit;
 		}
 	} catch {
 		// parse error
@@ -228,10 +217,7 @@ export async function clearCachedUpcomingVisit(): Promise<void> {
 	}
 
 	try {
-		const storage = getFallbackStorage();
-		if (storage) {
-			storage.removeItem(LOCAL_STORAGE_UPCOMING_VISIT_KEY);
-		}
+		safeLocalStorageRemoveItem(LOCAL_STORAGE_UPCOMING_VISIT_KEY);
 	} catch {
 		// ignore
 	}
@@ -271,13 +257,10 @@ export async function enqueueOfflinePatientBooking(
 
 	// Always sync to localStorage
 	try {
-		const storage = getFallbackStorage();
-		if (storage) {
-			const raw = storage.getItem(LOCAL_STORAGE_BOOKING_QUEUE_KEY);
-			const queue: OfflinePatientBookingRequest[] = raw ? JSON.parse(raw) : [];
-			queue.push(booking);
-			storage.setItem(LOCAL_STORAGE_BOOKING_QUEUE_KEY, JSON.stringify(queue));
-		}
+		const raw = safeLocalStorageGetItem(LOCAL_STORAGE_BOOKING_QUEUE_KEY);
+		const queue: OfflinePatientBookingRequest[] = raw ? JSON.parse(raw) : [];
+		queue.push(booking);
+		safeLocalStorageSetItem(LOCAL_STORAGE_BOOKING_QUEUE_KEY, JSON.stringify(queue));
 	} catch {
 		// ignore
 	}
@@ -308,12 +291,9 @@ export async function getQueuedOfflinePatientBookings(): Promise<OfflinePatientB
 
 	// Fallback to localStorage
 	try {
-		const storage = getFallbackStorage();
-		if (storage) {
-			const raw = storage.getItem(LOCAL_STORAGE_BOOKING_QUEUE_KEY);
-			if (raw) {
-				return JSON.parse(raw) as OfflinePatientBookingRequest[];
-			}
+		const raw = safeLocalStorageGetItem(LOCAL_STORAGE_BOOKING_QUEUE_KEY);
+		if (raw) {
+			return JSON.parse(raw) as OfflinePatientBookingRequest[];
 		}
 	} catch {
 		// ignore
@@ -339,14 +319,11 @@ export async function removeQueuedOfflinePatientBooking(id: string): Promise<voi
 	}
 
 	try {
-		const storage = getFallbackStorage();
-		if (storage) {
-			const raw = storage.getItem(LOCAL_STORAGE_BOOKING_QUEUE_KEY);
-			if (raw) {
-				const queue: OfflinePatientBookingRequest[] = JSON.parse(raw);
-				const filtered = queue.filter((item) => item.id !== id);
-				storage.setItem(LOCAL_STORAGE_BOOKING_QUEUE_KEY, JSON.stringify(filtered));
-			}
+		const raw = safeLocalStorageGetItem(LOCAL_STORAGE_BOOKING_QUEUE_KEY);
+		if (raw) {
+			const queue: OfflinePatientBookingRequest[] = JSON.parse(raw);
+			const filtered = queue.filter((item) => item.id !== id);
+			safeLocalStorageSetItem(LOCAL_STORAGE_BOOKING_QUEUE_KEY, JSON.stringify(filtered));
 		}
 	} catch {
 		// ignore

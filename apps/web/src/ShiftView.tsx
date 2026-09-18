@@ -23,6 +23,10 @@ import { PatientAvatar } from "./components/PatientAvatar";
 import { DoctorShiftControlBar, ShiftCallout } from "./components/shift";
 import { EmkControlBoard } from "./components/visit/EmkControlBoard";
 import { countLabel } from "./lib/russianPlural";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "./lib/safeLocalStorage";
 import { DoctorPayrollModal } from "./components/finance/payroll/DoctorPayrollModal";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 
@@ -379,7 +383,7 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 
 	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(() => {
 		try {
-			const saved = localStorage.getItem("dente_doctor_shift_active");
+			const saved = safeLocalStorageGetItem("dente_doctor_shift_active");
 			return saved !== null ? saved === "true" : true;
 		} catch {
 			return true;
@@ -391,7 +395,7 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 		const next = !isShiftOpen;
 		setIsShiftOpen(next);
 		try {
-			localStorage.setItem("dente_doctor_shift_active", String(next));
+			safeLocalStorageSetItem("dente_doctor_shift_active", String(next));
 		} catch {}
 	};
 

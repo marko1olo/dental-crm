@@ -160,13 +160,13 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 					</div>
 				</div>
 
-				{/* Marketing Acquisition Source (StomX Catalog) */}
-				<div className="p-4 bg-[var(--paper-soft,rgba(0,0,0,0.02))] dark:bg-slate-900/60 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2.5">
+				{/* Marketing Acquisition Source */}
+				<div className="p-3 bg-[var(--paper-soft,rgba(0,0,0,0.02))] dark:bg-slate-900/60 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2">
 					<div className="flex items-center justify-between gap-2 flex-wrap">
 						<div className="flex items-center gap-2">
 							<Megaphone className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 							<span className="font-bold text-xs text-[var(--ink,#1e293b)] dark:text-slate-100">
-								Канал привлечения пациента (Маркетинг / StomX):
+								Канал привлечения пациента:
 							</span>
 						</div>
 						{patient?.acquisitionSource && (
@@ -176,7 +176,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 						)}
 					</div>
 
-					<div className="flex items-center gap-1.5 flex-wrap">
+					<div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none whitespace-nowrap flex-nowrap touch-pan-x min-w-0">
 						{STOMX_MARKETING_SOURCES_CATALOG.slice(0, 9).map((src) => {
 							const isSelected = patient?.acquisitionSource === src.nameRu;
 							return (
@@ -184,7 +184,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 									key={src.channel}
 									type="button"
 									data-testid={`chip-marketing-${src.channel}`}
-									className={`min-h-[36px] px-3 py-1.5 text-xs rounded-lg font-bold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+									className={`min-h-[28px] h-7 px-2.5 text-xs rounded-lg font-bold border transition-colors inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none ${
 										isSelected
 											? "bg-teal-600 text-white border-teal-600 dark:bg-teal-600 dark:border-teal-500"
 											: "bg-[var(--paper,#ffffff)] text-[var(--ink,#1e293b)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
@@ -203,7 +203,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 				</div>
 
 				{/* Statutory & Family Legal Representative (СК РФ ст. 64 / 323-ФЗ ст. 20) */}
-				<div className="p-4 bg-[var(--paper-soft,rgba(0,0,0,0.02))] dark:bg-slate-900/60 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-3">
+				<div className="p-3 bg-[var(--paper-soft,rgba(0,0,0,0.02))] dark:bg-slate-900/60 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2">
 					<div className="flex items-center justify-between gap-2 flex-wrap">
 						<div className="flex items-center gap-2">
 							<Users className="w-4 h-4 text-[var(--teal,#0d9488)]" />
@@ -218,7 +218,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 						)}
 					</div>
 
-					<div className="flex items-center gap-1.5 flex-wrap">
+					<div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none whitespace-nowrap flex-nowrap touch-pan-x min-w-0">
 						{STOMX_REPRESENTATIVE_CATALOG.map((rep) => {
 							const isSelected =
 								patient?.representativeType === rep.nameRu ||
@@ -228,7 +228,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 									key={rep.code}
 									type="button"
 									data-testid={`chip-representative-${rep.code}`}
-									className={`min-h-[44px] sm:min-h-[32px] px-3 py-1.5 text-xs rounded-xl font-bold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+									className={`min-h-[28px] h-7 px-2.5 text-xs rounded-lg font-bold border transition-colors inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none ${
 										isSelected
 											? "bg-indigo-600 text-white border-indigo-600 dark:bg-indigo-600 dark:border-indigo-500 shadow-xs"
 											: "bg-[var(--paper,#ffffff)] text-[var(--ink,#1e293b)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"

@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useState, useCallback } from "react";
+import { safeLocalStorageSetItem } from "../lib/safeLocalStorage";
 
 interface BeforeInstallPromptEvent extends Event {
 	readonly platforms: string[];
@@ -83,10 +84,8 @@ export function useA2hsPrompt(): UseA2hsPromptResult {
 	const dismissForCooldown = useCallback((days = DEFAULT_COOLDOWN_DAYS) => {
 		setIsPromptOpen(false);
 		try {
-			if (typeof window !== "undefined" && window.localStorage) {
-				const expiryMs = Date.now() + days * 24 * 60 * 60 * 1000;
-				window.localStorage.setItem(A2HS_DISMISSED_STORAGE_KEY, String(expiryMs));
-			}
+			const expiryMs = Date.now() + days * 24 * 60 * 60 * 1000;
+			safeLocalStorageSetItem(A2HS_DISMISSED_STORAGE_KEY, String(expiryMs));
 		} catch {
 			// ignore
 		}

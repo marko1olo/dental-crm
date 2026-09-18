@@ -553,7 +553,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	};
 
 	useEffect(() => {
-		if (isOpen && initialSplit5050 && totalDueRub > 0) {
+		if (!isOpen) return;
+		setReceivedCashRub(totalDueRub);
+
+		if (initialSplit5050 && totalDueRub > 0) {
 			const totalKop = rubToKopecks(totalDueRub);
 			const res = applyQuickCheckoutPreset({
 				totalBillKop: totalKop,
@@ -562,6 +565,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			const splitState = paymentsToSplitState(res.payments);
 			resetSplitTenders({ cash: splitState.cashRub, card: splitState.cardRub });
 			setActiveMethod("split");
+		} else if (
+			splitCardRub === 0 &&
+			splitCashRub === 0 &&
+			splitDepositRub === 0 &&
+			splitSbpRub === 0 &&
+			splitCertificateRub === 0 &&
+			splitBonusRub === 0
+		) {
+			setSplitCardRub(totalDueRub);
 		}
 	}, [isOpen, initialSplit5050, totalDueRub]);
 
@@ -1145,7 +1157,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			aria-modal="true"
 			aria-labelledby="payment-modal-title"
 		>
-			<div className="w-full max-w-xl rounded-2xl bg-[var(--paper-strong,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] min-h-0">
+			<div className="w-full max-w-xl sm:max-w-2xl md:max-w-3xl rounded-2xl bg-[var(--paper-strong,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] min-h-0">
 				{/* Modal Header */}
 				<div className="p-4 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)] shrink-0">
 					<div>
@@ -1275,7 +1287,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 				</div>
 
 				{/* Method Selector Tabs */}
-				<div className="p-3 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex items-center gap-2 overflow-x-auto shrink-0 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+				<div className="p-3 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex items-center gap-2 overflow-x-auto flex-nowrap shrink-0 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 					<button
 						type="button"
 						onClick={() => setActiveMethod("card_terminal")}
@@ -2004,11 +2016,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								onClick={handleCashSubmit}
 								disabled={isSubmittingCash}
 								title={isSubmittingCash ? "Идет фиксация наличных в кассе..." : undefined}
-								className="min-h-[44px] w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all"
+								className="min-h-[44px] w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all min-w-0"
 								data-testid="btn-cash-submit"
 							>
-								<CheckCircle size={16} />
-								<span>
+								<CheckCircle size={16} className="shrink-0" />
+								<span className="truncate">
 									{isSubmittingCash
 										? "Фиксация..."
 										: `Подтвердить прием ${
@@ -2455,6 +2467,84 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 							</div>
 						</div>
 					)}
+				</div>
+
+				{/* Dedicated Fixed Footer (Mandates 8c, 8d, 8e: Fitts's Law, always visible total due & primary fiscalization trigger) */}
+				<div
+					className="p-3 sm:px-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex items-center justify-between gap-3 shrink-0 select-none shadow-md"
+					data-testid="payment-modal-fixed-footer"
+				>
+					<div className="flex items-center gap-2 min-w-0">
+						<span className="text-xs text-[var(--muted,#64748b)] hidden sm:inline">К оплате:</span>
+						<span className="font-mono text-base sm:text-lg font-black text-[var(--ink,#0f172a)] truncate" data-testid="payment-modal-footer-total">
+							{totalDueRub.toLocaleString("ru-RU")} ₽
+						</span>
+						{discountRub > 0 && (
+							<span className="text-xs text-amber-600 dark:text-amber-400 font-bold truncate">
+								(-{discountRub.toLocaleString("ru-RU")} ₽)
+							</span>
+						)}
+					</div>
+					<div className="flex items-center gap-2 min-w-0">
+						<button
+							type="button"
+							onClick={onClose}
+							className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors shrink-0"
+						>
+							Отмена
+						</button>
+						{activeMethod === "cash" ? (
+							<button
+								type="button"
+								onClick={handleCashSubmit}
+								disabled={isSubmittingCash}
+								title={isSubmittingCash ? "Идет фиксация наличных в кассе..." : undefined}
+								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all min-w-0 truncate"
+								data-testid="btn-cash-submit-footer"
+							>
+								<CheckCircle size={16} className="shrink-0" />
+								<span className="truncate">
+									{isSubmittingCash
+										? "Фиксация..."
+										: `Принять наличные (${
+												receivedCashRub > 0 && receivedCashRub < totalDueRub
+													? receivedCashRub.toLocaleString("ru-RU")
+													: totalDueRub.toLocaleString("ru-RU")
+											} ₽)`}
+								</span>
+							</button>
+						) : activeMethod === "split" ? (
+							<button
+								type="button"
+								onClick={handleSplitSubmit}
+								disabled={isSubmittingSplit}
+								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all min-w-0 truncate"
+								data-testid="btn-split-submit-footer"
+							>
+								<CheckCircle size={16} className="shrink-0" />
+								<span className="truncate">
+									{isSubmittingSplit ? "Фиксация..." : `Пробить сплит (${totalDueRub.toLocaleString("ru-RU")} ₽)`}
+								</span>
+							</button>
+						) : activeMethod === "family_deposit" ? (
+							<button
+								type="button"
+								disabled={isSubmittingDeposit || (patientDepositRub === 0 && patientFamilyBalanceRub === 0)}
+								onClick={() => handleDepositOrPartialCombo(patientDepositRub >= totalDueRub ? "deposit" : "family")}
+								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all disabled:opacity-50 min-w-0 truncate"
+								data-testid="btn-deposit-submit-footer"
+							>
+								<Wallet size={16} className="shrink-0" />
+								<span className="truncate">
+									{isSubmittingDeposit
+										? "Списание..."
+										: patientDepositRub >= totalDueRub
+										? `Списать с депозита (${totalDueRub.toLocaleString("ru-RU")} ₽)`
+										: `Зачесть баланс (${Math.min(totalDueRub, patientDepositRub + patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽)`}
+								</span>
+							</button>
+						) : null}
+					</div>
 				</div>
 			</div>
 		</div>

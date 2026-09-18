@@ -394,6 +394,8 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 								<img
 									src={capturedDataUrl}
 									alt="Захваченный скан документа"
+									loading="lazy"
+									decoding="async"
 									className="max-h-[400px] w-auto rounded-lg object-contain shadow-lg"
 								/>
 							) : null}

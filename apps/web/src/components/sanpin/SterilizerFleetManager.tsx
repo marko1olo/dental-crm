@@ -36,7 +36,12 @@ import {
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
-import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import {
+	readDenteClinicToken,
+	readDenteStaffToken,
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../../lib/safeLocalStorage";
 import { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
 
 const LOCAL_STORAGE_KEY = "dente_sterilizer_equipments";
@@ -78,14 +83,14 @@ export function SterilizerFleetManager({
 				const data = await res.json();
 				if (Array.isArray(data)) {
 					setEquipments(data);
-					localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+					safeLocalStorageSetItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
 					if (onEquipmentsChange) onEquipmentsChange(data);
 					return;
 				}
 			}
 
 			// Fallback to local storage cache if server response is not available
-			const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
+			const cached = safeLocalStorageGetItem(LOCAL_STORAGE_KEY);
 			if (cached) {
 				try {
 					const parsed = JSON.parse(cached);
@@ -190,7 +195,7 @@ export function SterilizerFleetManager({
 				};
 				const updated = [...equipments, newLocalItem];
 				setEquipments(updated);
-				localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+				safeLocalStorageSetItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
 				if (onEquipmentsChange) onEquipmentsChange(updated);
 				showToast(`Аппарат «${preset.brandModel}» добавлен в парк клиники!`, "success");
 			}
@@ -229,7 +234,7 @@ export function SterilizerFleetManager({
 				const updatedStatus: SterilizerEquipmentStatus = item.status === "in_maintenance" ? "active" : "in_maintenance";
 				const updated = equipments.map((e) => (e.id === item.id ? { ...e, status: updatedStatus } : e));
 				setEquipments(updated);
-				localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+				safeLocalStorageSetItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
 				if (onEquipmentsChange) onEquipmentsChange(updated);
 				showToast(`Статус аппарата «${item.name}» обновлен`, "success");
 			}
@@ -255,13 +260,13 @@ export function SterilizerFleetManager({
 					body: JSON.stringify({ action: "recommission" }),
 				}).catch(() => null);
 
-				if (res && res.ok) {
+			if (res && res.ok) {
 					showToast(`Аппарат «${item.name}» восстановлен в эксплуатации`, "success");
 					fetchEquipments();
 				} else {
 					const updated = equipments.map((e) => (e.id === item.id ? { ...e, status: "active" as const, isCommissioned: true } : e));
 					setEquipments(updated);
-					localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+					safeLocalStorageSetItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
 					if (onEquipmentsChange) onEquipmentsChange(updated);
 					showToast(`Аппарат «${item.name}» восстановлен`, "success");
 				}
@@ -309,7 +314,7 @@ export function SterilizerFleetManager({
 						: e,
 				);
 				setEquipments(updated);
-				localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+				safeLocalStorageSetItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
 				if (onEquipmentsChange) onEquipmentsChange(updated);
 				showToast(`Аппарат «${decommissionTarget.name}» списан`, "success");
 			}
@@ -340,7 +345,7 @@ export function SterilizerFleetManager({
 			} else {
 				const updated = equipments.filter((e) => e.id !== item.id);
 				setEquipments(updated);
-				localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+				safeLocalStorageSetItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
 				if (onEquipmentsChange) onEquipmentsChange(updated);
 				showToast(`Аппарат «${item.name}» удален`, "success");
 			}

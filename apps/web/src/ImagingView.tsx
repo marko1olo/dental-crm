@@ -3,6 +3,7 @@ import {
 	Bot,
 	Check,
 	ClipboardList,
+	Contrast,
 	ExternalLink,
 	FileText,
 	FlipHorizontal,
@@ -645,7 +646,7 @@ export function ImagingView(props: ImagingViewProps) {
 					/>
 					{/* Primary actions — always visible on both Mobile & Desktop (32-36px) */}
 					<button
-						className="primary-button h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2.5 sm:px-3 text-xs font-bold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5"
+						className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 sm:px-3 text-xs font-bold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5"
 						type="button"
 						data-testid="imaging-pick-dicom-folder"
 						onClick={() => void pickBrowserImagingFolder()}
@@ -656,7 +657,7 @@ export function ImagingView(props: ImagingViewProps) {
 						<span>{isBrowserImagingFolderPicking ? "Сканирую" : "Папка DICOM"}</span>
 					</button>
 					<button
-						className="secondary-button h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2.5 sm:px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5"
+						className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 sm:px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5"
 						type="button"
 						data-testid="imaging-pick-dicom-files"
 						onClick={pickBrowserImagingFiles}
@@ -709,7 +710,7 @@ export function ImagingView(props: ImagingViewProps) {
 							className="secondary-button h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 text-xs font-medium inline-flex items-center gap-1 cursor-pointer select-none list-none shrink-0"
 						>
 							<Plus aria-hidden="true" size={13} className="shrink-0" />
-							<span>+ Вручную</span>
+							<span>Вручную</span>
 							<span style={{ fontSize: "0.65rem", marginLeft: "2px" }}>▼</span>
 						</summary>
 						<div
@@ -1368,7 +1369,8 @@ export function ImagingView(props: ImagingViewProps) {
 													}))
 												}
 											>
-												± Негатив
+												<Contrast size={14} className="mr-1 shrink-0" />
+												<span>Негатив</span>
 											</button>
 											<button
 												className="viewer-tool-button"

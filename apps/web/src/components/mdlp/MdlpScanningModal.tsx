@@ -33,6 +33,10 @@ import {
 	generateMdlpSchema701Payload,
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../../lib/safeLocalStorage";
 import "./mdlpScanning.css";
 
 export interface MdlpOfflinePackage {
@@ -51,9 +55,8 @@ export interface MdlpOfflinePackage {
 const OFFLINE_QUEUE_STORAGE_KEY = "dente_mdlp_offline_disposal_queue_v1";
 
 export function loadMdlpOfflineQueue(): MdlpOfflinePackage[] {
-	if (typeof window === "undefined" || !window.localStorage) return [];
 	try {
-		const raw = window.localStorage.getItem(OFFLINE_QUEUE_STORAGE_KEY);
+		const raw = safeLocalStorageGetItem(OFFLINE_QUEUE_STORAGE_KEY);
 		return raw ? JSON.parse(raw) : [];
 	} catch {
 		return [];
@@ -61,9 +64,8 @@ export function loadMdlpOfflineQueue(): MdlpOfflinePackage[] {
 }
 
 export function saveMdlpOfflineQueue(queue: readonly MdlpOfflinePackage[]): void {
-	if (typeof window === "undefined" || !window.localStorage) return;
 	try {
-		window.localStorage.setItem(OFFLINE_QUEUE_STORAGE_KEY, JSON.stringify(queue));
+		safeLocalStorageSetItem(OFFLINE_QUEUE_STORAGE_KEY, JSON.stringify(queue));
 	} catch {
 		// Ignore storage write issues
 	}

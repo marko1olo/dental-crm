@@ -1696,7 +1696,7 @@ export function PaymentCapture({
 			{/* Панель оформления чека и кнопок оплаты (Мандат 8e / 8c / 8p) */}
 			<div
 				id="payment-checkout-bar"
-				className="payment-checkout-bar col-span-full max-sm:fixed max-sm:bottom-[calc(60px+env(safe-area-inset-bottom,0px))] max-sm:left-0 max-sm:right-0 max-sm:z-[35] max-sm:bg-[var(--paper)] max-sm:px-3 max-sm:py-2 max-sm:border-t max-sm:border-[var(--line)] max-sm:shadow-lg max-sm:flex max-sm:flex-row max-sm:flex-wrap max-sm:items-center max-sm:justify-between max-sm:gap-2 max-sm:box-border sm:flex sm:flex-row sm:items-center sm:justify-between sm:gap-4 max-w-full min-w-0"
+				className="payment-checkout-bar col-span-full max-sm:sticky max-sm:bottom-[calc(72px+env(safe-area-inset-bottom,0px))] max-sm:z-[35] max-sm:bg-[var(--paper)] max-sm:px-3 max-sm:py-2 max-sm:border-t max-sm:border-[var(--line)] max-sm:shadow-lg max-sm:flex max-sm:flex-row max-sm:flex-wrap max-sm:items-center max-sm:justify-between max-sm:gap-2 max-sm:box-border sm:flex sm:flex-row sm:items-center sm:justify-between sm:gap-4 max-w-full min-w-0"
 				style={{ gridColumn: "1 / -1" }}
 				data-testid="payment-checkout-bar"
 			>

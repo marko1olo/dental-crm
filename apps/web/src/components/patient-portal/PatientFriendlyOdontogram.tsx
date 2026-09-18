@@ -32,7 +32,7 @@ import {
 	Zap,
 } from "lucide-react";
 import type React from "react";
-import { useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 
 export type PatientToothStatus = "healthy" | "in_treatment" | "needs_treatment" | "missing_or_implant";
 
@@ -191,7 +191,76 @@ export interface PatientFriendlyOdontogramProps {
 	readonly showHealthIndexHeader?: boolean | undefined;
 }
 
-export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps> = ({
+function getPatientToothStatusColor(status: PatientToothStatus) {
+	switch (status) {
+		case "healthy":
+			return { bg: "#10b981", light: "rgba(16, 185, 129, 0.15)", text: "#065f46", border: "#059669" };
+		case "in_treatment":
+			return { bg: "#f59e0b", light: "rgba(245, 158, 11, 0.15)", text: "#92400e", border: "#d97706" };
+		case "needs_treatment":
+			return { bg: "#ef4444", light: "rgba(239, 68, 68, 0.15)", text: "#991b1b", border: "#dc2626" };
+		case "missing_or_implant":
+			return { bg: "#64748b", light: "rgba(100, 116, 139, 0.15)", text: "#334155", border: "#475569" };
+	}
+}
+
+interface PatientToothButtonProps {
+	readonly tooth: PatientToothInfo;
+	readonly isSelected: boolean;
+	readonly isDimmed: boolean;
+	readonly onSelect: (tooth: PatientToothInfo) => void;
+}
+
+const PatientToothButton: React.FC<PatientToothButtonProps> = memo(({
+	tooth,
+	isSelected,
+	isDimmed,
+	onSelect,
+}) => {
+	const color = getPatientToothStatusColor(tooth.status);
+
+	return (
+		<button
+			key={tooth.fdiCode}
+			type="button"
+			onClick={() => onSelect(tooth)}
+			data-testid={`tooth-btn-${tooth.fdiCode}`}
+			style={{
+				minWidth: "44px",
+				minHeight: "44px",
+				width: "44px",
+				height: "48px",
+				borderRadius: "6px",
+				border: `2px solid ${isSelected ? "var(--pc-primary, #0d9488)" : color.border}`,
+				backgroundColor: color.bg,
+				color: "#ffffff",
+				display: "flex",
+				flexDirection: "column",
+				alignItems: "center",
+				justifyContent: "center",
+				cursor: "pointer",
+				padding: "2px",
+				boxShadow: isSelected ? "0 0 0 3px rgba(13, 148, 136, 0.5)" : "0 1px 2px rgba(0, 0, 0, 0.2)",
+				transition: "all 0.2s ease",
+				touchAction: "manipulation",
+				userSelect: "none",
+				flexShrink: 0,
+				opacity: isDimmed ? 0.35 : 1,
+				transform: isSelected ? "scale(1.08)" : isDimmed ? "scale(0.95)" : "scale(1)",
+			}}
+			title={`${tooth.fdiCode}: ${tooth.humanNameRu}`}
+		>
+			<span style={{ fontSize: "11px", fontWeight: 800, textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>{tooth.fdiCode}</span>
+			{tooth.status === "healthy" && <Check size={12} strokeWidth={3} />}
+			{tooth.status === "in_treatment" && <Clock size={11} strokeWidth={2.5} />}
+			{tooth.status === "needs_treatment" && <AlertTriangle size={11} strokeWidth={2.5} />}
+			{tooth.status === "missing_or_implant" && <span style={{ fontSize: "10px", fontWeight: 800 }}>—</span>}
+		</button>
+	);
+});
+PatientToothButton.displayName = "PatientToothButton";
+
+export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps> = memo(({
 	teeth = DEFAULT_PATIENT_TEETH,
 	onSelectTooth,
 	showHealthIndexHeader = true,
@@ -207,70 +276,22 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 	const lowerRight = teeth.filter((t) => ["48", "47", "46", "45", "44", "43", "42", "41"].includes(t.fdiCode));
 	const lowerLeft = teeth.filter((t) => ["31", "32", "33", "34", "35", "36", "37", "38"].includes(t.fdiCode));
 
-	const handleToothClick = (tooth: PatientToothInfo) => {
+	const handleToothClick = useCallback((tooth: PatientToothInfo) => {
 		setSelectedTooth(tooth);
 		if (onSelectTooth) {
 			onSelectTooth(tooth);
 		}
-	};
+	}, [onSelectTooth]);
 
-	const getStatusColor = (status: PatientToothStatus) => {
-		switch (status) {
-			case "healthy":
-				return { bg: "#10b981", light: "rgba(16, 185, 129, 0.15)", text: "#065f46", border: "#059669" };
-			case "in_treatment":
-				return { bg: "#f59e0b", light: "rgba(245, 158, 11, 0.15)", text: "#92400e", border: "#d97706" };
-			case "needs_treatment":
-				return { bg: "#ef4444", light: "rgba(239, 68, 68, 0.15)", text: "#991b1b", border: "#dc2626" };
-			case "missing_or_implant":
-				return { bg: "#64748b", light: "rgba(100, 116, 139, 0.15)", text: "#334155", border: "#475569" };
-		}
-	};
-
-	const renderToothButton = (tooth: PatientToothInfo) => {
-		const color = getStatusColor(tooth.status);
-		const isSelected = selectedTooth?.fdiCode === tooth.fdiCode;
-		const isDimmed = statusFilter !== "all" && tooth.status !== statusFilter;
-
-		return (
-			<button
-				key={tooth.fdiCode}
-				type="button"
-				onClick={() => handleToothClick(tooth)}
-				data-testid={`tooth-btn-${tooth.fdiCode}`}
-				style={{
-					minWidth: "44px",
-					minHeight: "44px",
-					width: "44px",
-					height: "48px",
-					borderRadius: "6px",
-					border: `2px solid ${isSelected ? "var(--pc-primary, #0d9488)" : color.border}`,
-					backgroundColor: color.bg,
-					color: "#ffffff",
-					display: "flex",
-					flexDirection: "column",
-					alignItems: "center",
-					justifyContent: "center",
-					cursor: "pointer",
-					padding: "2px",
-					boxShadow: isSelected ? "0 0 0 3px rgba(13, 148, 136, 0.5)" : "0 1px 2px rgba(0, 0, 0, 0.2)",
-					transition: "all 0.2s ease",
-					touchAction: "manipulation",
-					userSelect: "none",
-					flexShrink: 0,
-					opacity: isDimmed ? 0.35 : 1,
-					transform: isSelected ? "scale(1.08)" : isDimmed ? "scale(0.95)" : "scale(1)",
-				}}
-				title={`${tooth.fdiCode}: ${tooth.humanNameRu}`}
-			>
-				<span style={{ fontSize: "11px", fontWeight: 800, textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>{tooth.fdiCode}</span>
-				{tooth.status === "healthy" && <Check size={12} strokeWidth={3} />}
-				{tooth.status === "in_treatment" && <Clock size={11} strokeWidth={2.5} />}
-				{tooth.status === "needs_treatment" && <AlertTriangle size={11} strokeWidth={2.5} />}
-				{tooth.status === "missing_or_implant" && <span style={{ fontSize: "10px", fontWeight: 800 }}>—</span>}
-			</button>
-		);
-	};
+	const renderToothButton = (tooth: PatientToothInfo) => (
+		<PatientToothButton
+			key={tooth.fdiCode}
+			tooth={tooth}
+			isSelected={selectedTooth?.fdiCode === tooth.fdiCode}
+			isDimmed={statusFilter !== "all" && tooth.status !== statusFilter}
+			onSelect={handleToothClick}
+		/>
+	);
 
 	return (
 		<div
@@ -619,6 +640,8 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 			)}
 		</div>
 	);
-};
+});
+
+PatientFriendlyOdontogram.displayName = "PatientFriendlyOdontogram";
 
 export default PatientFriendlyOdontogram;

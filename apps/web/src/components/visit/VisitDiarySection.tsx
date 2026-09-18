@@ -22,7 +22,7 @@ import {
 	X,
 } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { PremiumDocumentPrintSheet } from "../documents/PremiumDocumentPrintSheet";
 import { showToast } from "../GlobalToast";
@@ -56,18 +56,28 @@ import {
 } from "../odontogram/pediatricDentitionEngine";
 import { ClinicalQuickPresetsBar } from "./ClinicalQuickPresetsBar";
 import { CryptoProSigner } from "./CryptoProSigner";
-import { EgiszRemdHubModal } from "../egisz/EgiszRemdHubModal";
 import { KraftPackageQuickScanner } from "../sterilization/KraftPackageQuickScanner";
-import { PrescriptionModal } from "./PrescriptionModal";
-import { RadiologyReferralModal } from "../radiology/RadiologyReferralModal";
 import { realVisitFieldId } from "./visitIdentity";
-import {
-	type RadiologySnapshotItem,
-	VisitSummaryModal,
-} from "./VisitSummaryModal";
-import { ClinicalDiaryTemplatesModal } from "../emr/templates";
+import type { RadiologySnapshotItem } from "./VisitSummaryModal";
 import { PeriodontogramChart } from "../perio/PeriodontogramChart";
 import "../../styles/visit-diary-043.css";
+
+// Lazy-loaded heavy secondary modals for low-spec hardware (4GB RAM, 5400 RPM HDD)
+const EgiszRemdHubModal = lazy(() =>
+	import("../egisz/EgiszRemdHubModal").then((m) => ({ default: m.EgiszRemdHubModal }))
+);
+const PrescriptionModal = lazy(() =>
+	import("./PrescriptionModal").then((m) => ({ default: m.PrescriptionModal }))
+);
+const RadiologyReferralModal = lazy(() =>
+	import("../radiology/RadiologyReferralModal").then((m) => ({ default: m.RadiologyReferralModal }))
+);
+const VisitSummaryModal = lazy(() =>
+	import("./VisitSummaryModal").then((m) => ({ default: m.VisitSummaryModal }))
+);
+const ClinicalDiaryTemplatesModal = lazy(() =>
+	import("../emr/templates").then((m) => ({ default: m.ClinicalDiaryTemplatesModal }))
+);
 
 const COMPLAINT_QUICK_CHIPS = [
 	"Острая боль от сладкого/холодного",
@@ -1990,130 +2000,150 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 			/>
 
 			{/* ── Summary Modal ── */}
-			<VisitSummaryModal
-				isOpen={showSummaryModal}
-				onClose={() => setShowSummaryModal(false)}
-				patient={printPatient || activePatient}
-				diary={diary}
-				doctorName={doctorName}
-				doctorSpecialty={doctorSpecialty}
-				lockedAt={lockedAt}
-				diaryHash={diaryHash}
-				hasCryptoSignature={hasCryptoSignature}
-				isLocked={isLocked}
-				teethData={activeTeeth}
-				radiologySnapshots={radiologySnapshots}
-				onPrint={() => setShowPreview(true)}
-				onOpenPrescription={() => setShowPrescriptionModal(true)}
-				onOpenRadiologyReferral={() => setShowRadiologyReferralModal(true)}
-				onOpenEgiszExport={() => setShowEgiszModal(true)}
-				onCompleteVisit={async () => {
-					await doSave(false);
-					setShowSummaryModal(false);
-				}}
-			/>
+			{showSummaryModal && (
+				<Suspense fallback={null}>
+					<VisitSummaryModal
+						isOpen={showSummaryModal}
+						onClose={() => setShowSummaryModal(false)}
+						patient={printPatient || activePatient}
+						diary={diary}
+						doctorName={doctorName}
+						doctorSpecialty={doctorSpecialty}
+						lockedAt={lockedAt}
+						diaryHash={diaryHash}
+						hasCryptoSignature={hasCryptoSignature}
+						isLocked={isLocked}
+						teethData={activeTeeth}
+						radiologySnapshots={radiologySnapshots}
+						onPrint={() => setShowPreview(true)}
+						onOpenPrescription={() => setShowPrescriptionModal(true)}
+						onOpenRadiologyReferral={() => setShowRadiologyReferralModal(true)}
+						onOpenEgiszExport={() => setShowEgiszModal(true)}
+						onCompleteVisit={async () => {
+							await doSave(false);
+							setShowSummaryModal(false);
+						}}
+					/>
+				</Suspense>
+			)}
 
 			{/* ── Prescription 107-1/u Modal ── */}
-			<PrescriptionModal
-				isOpen={showPrescriptionModal}
-				onClose={() => setShowPrescriptionModal(false)}
-				patient={
-					printPatient || activePatient
-						? {
-								fullName: patientFullName,
-								birthDate: patientBirthDate,
-								medicalCardNumber: patientCardNumber,
-							}
-						: null
-				}
-				diary={diary}
-				doctorName={doctorName}
-				doctorSpecialty={doctorSpecialty}
-				clinicName={clinicName}
-				onInsertToDiary={(diaryText) => {
-					setDiary((prev) => ({
-						...prev,
-						treatmentDescription: prev.treatmentDescription
-							? `${prev.treatmentDescription}\n\n${diaryText}`
-							: diaryText,
-					}));
-					scheduleDebouncedSave();
-				}}
-			/>
+			{showPrescriptionModal && (
+				<Suspense fallback={null}>
+					<PrescriptionModal
+						isOpen={showPrescriptionModal}
+						onClose={() => setShowPrescriptionModal(false)}
+						patient={
+							printPatient || activePatient
+								? {
+										fullName: patientFullName,
+										birthDate: patientBirthDate,
+										medicalCardNumber: patientCardNumber,
+									}
+								: null
+						}
+						diary={diary}
+						doctorName={doctorName}
+						doctorSpecialty={doctorSpecialty}
+						clinicName={clinicName}
+						onInsertToDiary={(diaryText) => {
+							setDiary((prev) => ({
+								...prev,
+								treatmentDescription: prev.treatmentDescription
+									? `${prev.treatmentDescription}\n\n${diaryText}`
+									: diaryText,
+							}));
+							scheduleDebouncedSave();
+						}}
+					/>
+				</Suspense>
+			)}
 
 			{/* ── Radiology Referral Modal ── */}
-			<RadiologyReferralModal
-				isOpen={showRadiologyReferralModal}
-				onClose={() => setShowRadiologyReferralModal(false)}
-				patient={
-					printPatient || activePatient
-						? {
-								fullName: patientFullName,
-								birthDate: patientBirthDate,
-								medicalCardNumber: patientCardNumber,
-							}
-						: null
-				}
-				diary={diary}
-				doctorName={doctorName}
-				doctorSpecialty={doctorSpecialty}
-				clinicName={clinicName}
-			/>
+			{showRadiologyReferralModal && (
+				<Suspense fallback={null}>
+					<RadiologyReferralModal
+						isOpen={showRadiologyReferralModal}
+						onClose={() => setShowRadiologyReferralModal(false)}
+						patient={
+							printPatient || activePatient
+								? {
+										fullName: patientFullName,
+										birthDate: patientBirthDate,
+										medicalCardNumber: patientCardNumber,
+									}
+								: null
+						}
+						diary={diary}
+						doctorName={doctorName}
+						doctorSpecialty={doctorSpecialty}
+						clinicName={clinicName}
+					/>
+				</Suspense>
+			)}
 
 			{/* ── EGISZ SEMD CDA Export Modal ── */}
-			<EgiszRemdHubModal
-				isOpen={showEgiszModal}
-				onClose={() => setShowEgiszModal(false)}
-				initialTab="xml"
-			/>
+			{showEgiszModal && (
+				<Suspense fallback={null}>
+					<EgiszRemdHubModal
+						isOpen={showEgiszModal}
+						onClose={() => setShowEgiszModal(false)}
+						initialTab="xml"
+					/>
+				</Suspense>
+			)}
 
 			{/* ── 1-Click Clinical Protocols & Templates Modal ── */}
-			<ClinicalDiaryTemplatesModal
-				isOpen={showTemplatesModal}
-				onClose={() => setShowTemplatesModal(false)}
-				initialToothNumber={diary.diagnosisTooth}
-				doctorFullName={doctorName}
-				doctorSpecialty={doctorSpecialty}
-				patientFullName={patientFullName}
-				onApplyDiary={(res) => {
-					if (isLocked && !isRevising) {
-						beginRevise();
-					}
-					setDiary((prev) =>
-						mergeSoapDiaryState(
-							prev,
-							{
-								anamnesis: res.anamnesisMorbi,
-								statusLocalis: res.objectiveStatusLocalis,
-								treatmentDescription: res.procedureProtocol,
-								diagnosisIcd10: res.assessmentIcd10Code,
-								diagnosisTooth: res.toothNumber ? String(res.toothNumber) : prev.diagnosisTooth,
-							},
-							{ strategy: "smart_append" },
-						),
-					);
-					if (res.assessmentIcd10Code) {
-						setIcdSearch(res.assessmentIcd10Code);
-					}
-					scheduleDebouncedSave();
-				}}
-				onApplySoapText={(text, icd) => {
-					if (isLocked && !isRevising) {
-						beginRevise();
-					}
-					setDiary((prev) => ({
-						...prev,
-						treatmentDescription: prev.treatmentDescription
-							? `${prev.treatmentDescription}\n\n${text}`
-							: text,
-						diagnosisIcd10: prev.diagnosisIcd10 || icd,
-					}));
-					if (icd && !diary.diagnosisIcd10) {
-						setIcdSearch(icd);
-					}
-					scheduleDebouncedSave();
-				}}
-			/>
+			{showTemplatesModal && (
+				<Suspense fallback={null}>
+					<ClinicalDiaryTemplatesModal
+						isOpen={showTemplatesModal}
+						onClose={() => setShowTemplatesModal(false)}
+						initialToothNumber={diary.diagnosisTooth}
+						doctorFullName={doctorName}
+						doctorSpecialty={doctorSpecialty}
+						patientFullName={patientFullName}
+						onApplyDiary={(res) => {
+							if (isLocked && !isRevising) {
+								beginRevise();
+							}
+							setDiary((prev) =>
+								mergeSoapDiaryState(
+									prev,
+									{
+										anamnesis: res.anamnesisMorbi,
+										statusLocalis: res.objectiveStatusLocalis,
+										treatmentDescription: res.procedureProtocol,
+										diagnosisIcd10: res.assessmentIcd10Code,
+										diagnosisTooth: res.toothNumber ? String(res.toothNumber) : prev.diagnosisTooth,
+									},
+									{ strategy: "smart_append" },
+								),
+							);
+							if (res.assessmentIcd10Code) {
+								setIcdSearch(res.assessmentIcd10Code);
+							}
+							scheduleDebouncedSave();
+						}}
+						onApplySoapText={(text, icd) => {
+							if (isLocked && !isRevising) {
+								beginRevise();
+							}
+							setDiary((prev) => ({
+								...prev,
+								treatmentDescription: prev.treatmentDescription
+									? `${prev.treatmentDescription}\n\n${text}`
+									: text,
+								diagnosisIcd10: prev.diagnosisIcd10 || icd,
+							}));
+							if (icd && !diary.diagnosisIcd10) {
+								setIcdSearch(icd);
+							}
+							scheduleDebouncedSave();
+						}}
+					/>
+				</Suspense>
+			)}
 
 			{/* ═══════════════════════════════════════════════════════════════════
 			    TIER 3 / DEEP WORKSPACE: SPECIALIZED PERIODONTOLOGY STUDIO (FLORIDA PROBE)

@@ -756,7 +756,16 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 											const storageCheck = validateStorageDuration(r.timestamp, r.storageLocation);
 
 											return (
-												<tr key={r.id}>
+												<tr
+													key={r.id}
+													className="sanpin-log-row"
+													style={{
+														minHeight: "44px",
+														contentVisibility: "auto",
+														containIntrinsicSize: "1px 44px",
+														contain: "content",
+													}}
+												>
 													<td className="whitespace-nowrap font-medium">{r.timestamp}</td>
 													<td>
 														<span

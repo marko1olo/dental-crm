@@ -23,7 +23,12 @@ import {
 } from "./seniorNurseKraftAudio.js";
 import { hardwareScanner } from "../../../services/hardware/HardwareScanner.js";
 import { useVisitStore } from "../../../store/visitStore.js";
-import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage.js";
+import {
+	readDenteClinicToken,
+	readDenteStaffToken,
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../../../lib/safeLocalStorage.js";
 import "./seniorNurseKraft.css";
 
 export const KRAFT_STORAGE_KEY = "dente_sterilization_kraft_packages";
@@ -55,9 +60,8 @@ export function SeniorNurseKraftUnsealModal({
 }: SeniorNurseKraftUnsealModalProps) {
 	// Реестр пакетов из локального хранилища браузера (без хардкоженных мок-дат)
 	const [storedPackages, setStoredPackages] = useState<KraftPackageRecord[]>(() => {
-		if (typeof window === "undefined") return [];
 		try {
-			const raw = localStorage.getItem(KRAFT_STORAGE_KEY);
+			const raw = safeLocalStorageGetItem(KRAFT_STORAGE_KEY);
 			if (raw) {
 				const parsed = JSON.parse(raw);
 				if (Array.isArray(parsed) && parsed.length > 0) {
@@ -331,9 +335,7 @@ export function SeniorNurseKraftUnsealModal({
 					? { ...p, isBreached: true, breachedAt: new Date().toISOString() }
 					: p,
 			);
-			if (typeof window !== "undefined") {
-				localStorage.setItem(KRAFT_STORAGE_KEY, JSON.stringify(updated));
-			}
+			safeLocalStorageSetItem(KRAFT_STORAGE_KEY, JSON.stringify(updated));
 		} catch (storageErr) {
 			console.warn("Storage update skipped", storageErr);
 		}

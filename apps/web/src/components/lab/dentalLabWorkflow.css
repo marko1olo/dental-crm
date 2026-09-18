@@ -424,6 +424,9 @@
 	gap: 6px;
 	transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 	position: relative;
+	contain: content;
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 80px;
 }
 
 .ztl-order-card:hover {

@@ -124,30 +124,30 @@ export const ClinicalQuickPresetsBar: React.FC<
 
 	return (
 		<div
-			className={`clinical-quick-presets-bar p-4 rounded-2xl border border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] space-y-3.5 ${className}`.trim()}
+			className={`clinical-quick-presets-bar p-3 sm:p-3.5 rounded-xl border border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] space-y-2.5 ${className}`.trim()}
 			data-testid="clinical-quick-presets-bar"
 		>
 			{/* Шапка бара пресетов с подсказкой и кнопками каталога */}
 			<div className="flex items-center justify-between flex-wrap gap-2">
-				<div className="flex items-center gap-2.5">
-					<div className="flex items-center justify-center w-8 h-8 rounded-xl bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] shadow-2xs">
-						<Zap size={18} />
+				<div className="flex items-center gap-2">
+					<div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] shadow-2xs shrink-0">
+						<Zap size={16} />
 					</div>
 					<div>
-						<h4 className="text-sm font-extrabold text-[var(--ink)] flex items-center gap-2">
+						<h4 className="text-xs sm:text-sm font-extrabold text-[var(--ink)] flex items-center gap-1.5">
 							<span>Клинические протоколы СтАР</span>
-							<span className="text-xs px-2 py-0.5 rounded-md font-mono font-black bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)]">
+							<span className="text-[10px] sm:text-xs px-1.5 py-0.2 rounded font-mono font-black bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)]">
 								Стандарты Минздрава РФ
 							</span>
 						</h4>
-						<p className="text-xs text-[var(--muted)]">
+						<p className="text-[11px] text-[var(--muted)]">
 							Пакетное заполнение: статус зуба на схеме • протокол 043/у •
 							анестезия • номенклатура 804н
 						</p>
 					</div>
 				</div>
 
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-1.5 sm:gap-2">
 					<button
 						type="button"
 						onClick={() => {
@@ -158,11 +158,11 @@ export const ClinicalQuickPresetsBar: React.FC<
 								handlePresetClick(normPreset);
 							}
 						}}
-						className="min-h-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-all flex items-center gap-2 cursor-pointer touch-manipulation active:scale-[0.98]"
+						className="min-h-[48px] sm:min-h-[32px] sm:h-8 px-3 sm:px-2.5 py-1.5 sm:py-0 rounded-lg text-xs font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
 						title="1-клик норма Формы 043/у (Z01.2): пациент соматически здоров, патологий твердых тканей и пародонта не выявлено"
 						data-testid="btn-quick-apply-physio-norm"
 					>
-						<ShieldCheck size={16} />
+						<ShieldCheck size={15} className="shrink-0" />
 						<span>Норма (1-клик)</span>
 					</button>
 
@@ -170,11 +170,11 @@ export const ClinicalQuickPresetsBar: React.FC<
 						<button
 							type="button"
 							onClick={onOpenTemplatesModal}
-							className="min-h-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-xs transition-all flex items-center gap-2 cursor-pointer touch-manipulation active:scale-[0.98]"
+							className="min-h-[48px] sm:min-h-[32px] sm:h-8 px-3 sm:px-2.5 py-1.5 sm:py-0 rounded-lg text-xs font-extrabold bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
 							title="Открыть полный каталог клинических протоколов Формы 043/у со списанием материалов"
 							data-testid="btn-open-soap-templates-modal-bar"
 						>
-							<BookOpen size={16} />
+							<BookOpen size={15} className="shrink-0" />
 							<span>Все шаблоны 043/у</span>
 						</button>
 					)}
@@ -183,33 +183,33 @@ export const ClinicalQuickPresetsBar: React.FC<
 						<button
 							type="button"
 							onClick={onOpenPriceSearch}
-							className="min-h-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition-all flex items-center gap-2 cursor-pointer touch-manipulation active:scale-[0.98]"
+							className="min-h-[48px] sm:min-h-[32px] sm:h-8 px-3 sm:px-2.5 py-1.5 sm:py-0 rounded-lg text-xs font-extrabold bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
 							title="Быстрый поиск и добавление процедур из прайса клиники в протокол и счет"
 							data-testid="btn-quick-add-from-pricelist"
 						>
-							<PlusCircle size={16} />
-							<span>+ Каталог 804н</span>
+							<PlusCircle size={15} className="shrink-0" />
+							<span>Каталог 804н</span>
 						</button>
 					)}
 				</div>
 			</div>
 
 			{/* ── АКТИВНЫЙ ЗУБ FDI (ДИНАМИЧЕСКИЙ ВЫБОР ДЛЯ SMART-BUNDLE) ── */}
-			<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between gap-2 flex-wrap shadow-2xs">
-				<div className="flex items-center gap-2">
-					<span className="text-xs font-black uppercase tracking-wider text-[var(--teal,var(--brand-primary))] flex items-center gap-1.5">
-						<Activity size={14} className="shrink-0" />
+			<div className="p-2 sm:p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between gap-2 flex-wrap shadow-2xs">
+				<div className="flex items-center gap-1.5">
+					<span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-[var(--teal,var(--brand-primary))] flex items-center gap-1">
+						<Activity size={13} className="shrink-0" />
 						<span>Активный зуб:</span>
 					</span>
-					<span className="text-sm font-black font-mono px-2.5 py-1 rounded-lg bg-[var(--teal-surface)] text-[var(--teal-dark)] border border-[var(--teal-soft)] shadow-2xs">
+					<span className="text-xs sm:text-sm font-black font-mono px-2 py-0.5 rounded-lg bg-[var(--teal-surface)] text-[var(--teal-dark)] border border-[var(--teal-soft)] shadow-2xs">
 						{currentTooth
 							? `Зуб FDI #${currentTooth}`
 							: "Не выбран (общий осмотр)"}
 					</span>
 				</div>
 
-				<div className="flex items-center gap-1.5 flex-wrap">
-					<span className="text-[11px] font-bold text-[var(--muted)] mr-1 hidden sm:inline">
+				<div className="flex items-center gap-1 flex-wrap">
+					<span className="text-[10px] sm:text-[11px] font-bold text-[var(--muted)] mr-0.5 hidden sm:inline">
 						Быстрый выбор:
 					</span>
 					{COMMON_FDI_TEETH.slice(0, 8).map((t) => (
@@ -217,7 +217,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 							key={t}
 							type="button"
 							onClick={() => handleToothSelect(t)}
-							className={`min-h-[48px] px-2.5 py-1 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer touch-manipulation active:scale-95 ${
+							className={`min-h-[44px] sm:min-h-[28px] sm:h-7 px-2 py-0.5 rounded-md text-xs font-mono font-black border transition-all cursor-pointer touch-manipulation active:scale-95 ${
 								currentTooth === t
 									? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
 									: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
@@ -231,7 +231,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 					<select
 						value={currentTooth ?? 16}
 						onChange={(e) => handleToothSelect(Number(e.target.value))}
-						className="min-h-[48px] px-2 py-1 text-xs font-mono font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
+						className="min-h-[44px] sm:min-h-[28px] sm:h-7 px-2 py-0.5 text-xs font-mono font-bold rounded-md border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
 						title="Выбрать любой другой зуб из формулы"
 					>
 						{[
@@ -290,7 +290,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 								key={`top-${preset.id}`}
 								type="button"
 								onClick={() => handlePresetClick(preset)}
-								className={`clinical-protocol-card min-h-[50px] min-w-[155px] sm:min-w-0 shrink-0 whitespace-nowrap px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left ${bgGradient}`}
+								className={`clinical-protocol-card min-h-[50px] sm:min-h-[42px] min-w-[150px] sm:min-w-0 shrink-0 px-3 sm:px-2.5 py-2 sm:py-1.5 rounded-xl text-xs sm:text-sm font-extrabold border transition-all flex flex-col items-start justify-center gap-0.5 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left ${bgGradient}`}
 								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
 								data-testid={`express-preset-${preset.id}`}
 							>
@@ -298,47 +298,47 @@ export const ClinicalQuickPresetsBar: React.FC<
 									<div className="flex items-center gap-1.5 min-w-0">
 										{isNorm && (
 											<ShieldCheck
-												size={17}
+												size={15}
 												className="text-emerald-600 dark:text-emerald-400 shrink-0"
 											/>
 										)}
 										{isHygiene && (
 											<Sparkles
-												size={17}
+												size={15}
 												className="text-[var(--ok-fg)] shrink-0"
 											/>
 										)}
 										{isCaries && (
 											<Stethoscope
-												size={17}
+												size={15}
 												className="text-blue-600 dark:text-blue-400 shrink-0"
 											/>
 										)}
 										{isPulpitis && (
 											<Flame
-												size={17}
+												size={15}
 												className="text-rose-600 dark:text-rose-400 shrink-0"
 											/>
 										)}
 										{isPerio && (
 											<HeartPulse
-												size={17}
+												size={15}
 												className="text-amber-600 dark:text-amber-400 shrink-0"
 											/>
 										)}
 										{isSurgery && (
 											<Bone
-												size={17}
+												size={15}
 												className="text-purple-600 dark:text-purple-400 shrink-0"
 											/>
 										)}
-										<span className="truncate font-black">{dynamicBadge}</span>
+										<span className="whitespace-nowrap shrink-0 font-black">{dynamicBadge}</span>
 									</div>
-									<span className="text-xs font-mono px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--border)] font-bold shrink-0">
+									<span className="text-[10px] sm:text-xs font-mono px-1.5 py-0.2 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--border)] font-bold shrink-0">
 										{preset.icd10}
 									</span>
 								</div>
-								<span className="text-xs font-medium text-[var(--muted)] truncate w-full">
+								<span className="text-[11px] font-medium text-[var(--muted)] whitespace-nowrap overflow-hidden text-ellipsis w-full">
 									{isNorm
 										? "Осмотр: Здоров, норма 043/у"
 										: isHygiene
@@ -392,23 +392,23 @@ export const ClinicalQuickPresetsBar: React.FC<
 								key={`therapy-endo-${preset.id}`}
 								type="button"
 								onClick={() => handlePresetClick(preset)}
-								className="clinical-protocol-card min-h-[50px] px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left bg-blue-500/15 text-blue-950 dark:text-blue-200 border-blue-500/30 hover:bg-blue-500/25"
+								className="clinical-protocol-card min-h-[50px] sm:min-h-[42px] px-3 sm:px-2.5 py-2 sm:py-1.5 rounded-xl text-xs sm:text-sm font-extrabold border transition-all flex flex-col items-start justify-center gap-0.5 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left bg-blue-500/15 text-blue-950 dark:text-blue-200 border-blue-500/30 hover:bg-blue-500/25"
 								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
 								data-testid={`btn-therapy-endo-${preset.id}`}
 							>
 								<div className="flex items-center justify-between w-full gap-1.5">
 									<div className="flex items-center gap-1.5 min-w-0">
 										<Stethoscope
-											size={17}
+											size={15}
 											className="text-blue-600 dark:text-blue-400 shrink-0"
 										/>
-										<span className="truncate font-black">{dynamicBadge}</span>
+										<span className="whitespace-nowrap shrink-0 font-black">{dynamicBadge}</span>
 									</div>
-									<span className="text-xs font-mono px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--border)] font-bold shrink-0">
+									<span className="text-[10px] sm:text-xs font-mono px-1.5 py-0.2 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--border)] font-bold shrink-0">
 										{preset.icd10}
 									</span>
 								</div>
-								<span className="text-xs font-medium text-[var(--muted)] truncate w-full">
+								<span className="text-[11px] font-medium text-[var(--muted)] whitespace-nowrap overflow-hidden text-ellipsis w-full">
 									{subtitle}
 								</span>
 							</button>
@@ -450,23 +450,23 @@ export const ClinicalQuickPresetsBar: React.FC<
 								key={`surgery-quick-${preset.id}`}
 								type="button"
 								onClick={() => handlePresetClick(preset)}
-								className="clinical-protocol-card min-h-[50px] px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left bg-rose-500/15 text-rose-900 dark:text-rose-200 border-rose-500/30 hover:bg-rose-500/25"
+								className="clinical-protocol-card min-h-[50px] sm:min-h-[42px] px-3 sm:px-2.5 py-2 sm:py-1.5 rounded-xl text-xs sm:text-sm font-extrabold border transition-all flex flex-col items-start justify-center gap-0.5 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left bg-rose-500/15 text-rose-900 dark:text-rose-200 border-rose-500/30 hover:bg-rose-500/25"
 								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
 								data-testid={`btn-surgery-quick-${preset.id}`}
 							>
 								<div className="flex items-center justify-between w-full gap-1.5">
 									<div className="flex items-center gap-1.5 min-w-0">
 										<Bone
-											size={17}
+											size={15}
 											className="text-rose-600 dark:text-rose-400 shrink-0"
 										/>
-										<span className="truncate font-black">{dynamicBadge}</span>
+										<span className="whitespace-nowrap shrink-0 font-black">{dynamicBadge}</span>
 									</div>
-									<span className="text-xs font-mono px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--border)] font-bold shrink-0">
+									<span className="text-[10px] sm:text-xs font-mono px-1.5 py-0.2 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--border)] font-bold shrink-0">
 										{preset.icd10}
 									</span>
 								</div>
-								<span className="text-xs font-medium text-[var(--muted)] truncate w-full">
+								<span className="text-[11px] font-medium text-[var(--muted)] whitespace-nowrap overflow-hidden text-ellipsis w-full">
 									{subtitle}
 								</span>
 							</button>
@@ -492,7 +492,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 								key={cat.id}
 								type="button"
 								onClick={() => setActiveCategory(cat.id)}
-								className={`min-h-[48px] px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap touch-manipulation ${
+								className={`min-h-[44px] sm:min-h-[28px] sm:h-7 px-3 sm:px-2.5 py-1 sm:py-0 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap touch-manipulation ${
 									activeCategory === cat.id
 										? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] shadow-xs"
 										: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
@@ -532,32 +532,32 @@ export const ClinicalQuickPresetsBar: React.FC<
 								key={preset.id}
 								type="button"
 								onClick={() => handlePresetClick(preset)}
-								className={`min-h-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all flex items-center justify-between gap-2 cursor-pointer shadow-xs active:scale-95 min-w-0 break-words touch-manipulation ${categoryBadgeColor}`}
+								className={`min-h-[48px] sm:min-h-[32px] sm:h-8 px-3 sm:px-2.5 py-1 sm:py-0 rounded-lg text-xs font-bold border transition-all flex items-center justify-between gap-2 cursor-pointer shadow-xs active:scale-95 min-w-0 break-words touch-manipulation ${categoryBadgeColor}`}
 								title={`${preset.title} · МКБ-10: ${preset.icd10}${preset.service804n ? ` · Услуга: ${preset.service804n.title}` : ""}`}
 								data-testid={`quick-preset-${preset.id}`}
 							>
 								<div className="flex items-center gap-1.5 min-w-0 truncate">
 									{preset.category === "pediatric" && (
-										<Baby size={15} className="shrink-0 text-teal-600" />
+										<Baby size={14} className="shrink-0 text-teal-600" />
 									)}
 									{preset.category === "therapy" && (
-										<Stethoscope size={15} className="shrink-0" />
+										<Stethoscope size={14} className="shrink-0" />
 									)}
 									{preset.category === "surgery" && (
-										<Bone size={15} className="shrink-0" />
+										<Bone size={14} className="shrink-0" />
 									)}
 									{preset.category === "orthopedics" && (
-										<Crown size={15} className="shrink-0" />
+										<Crown size={14} className="shrink-0" />
 									)}
 									{preset.category === "periodontology" && (
-										<HeartPulse size={15} className="shrink-0" />
+										<HeartPulse size={14} className="shrink-0" />
 									)}
 									{preset.category === "hygiene" && (
-										<Sparkles size={15} className="shrink-0" />
+										<Sparkles size={14} className="shrink-0" />
 									)}
 									<span className="font-extrabold truncate">{badgeTitle}</span>
 								</div>
-								<span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--border)] shrink-0 font-bold">
+								<span className="text-[10px] sm:text-[11px] font-mono px-1 py-0.2 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--border)] shrink-0 font-bold">
 									{preset.icd10}
 								</span>
 							</button>

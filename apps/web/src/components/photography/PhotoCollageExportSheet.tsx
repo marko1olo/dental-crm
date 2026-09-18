@@ -55,7 +55,7 @@ export const PhotoCollageExportSheet: React.FC<PhotoCollageExportSheetProps> = (
 						return (
 							<div key={slotDef.id} className="photo-collage-item">
 								{rec.imageUrl ? (
-									<img src={rec.imageUrl} alt={slotDef.titleRu} className="photo-collage-thumb" />
+									<img src={rec.imageUrl} alt={slotDef.titleRu} loading="lazy" decoding="async" className="photo-collage-thumb" />
 								) : (
 									<div className="photo-collage-thumb" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#94a3b8' }}>
 										Кадр отсутствует

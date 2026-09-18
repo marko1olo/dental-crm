@@ -10,6 +10,10 @@
 
 import { logger } from "../../utils/logger";
 import { isLocalOrLanHostname } from "../../utils/networkConnectivity";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../../lib/safeLocalStorage";
 
 export interface DiscoveredLanServer {
 	serverName: string;
@@ -93,7 +97,7 @@ function getStorage(): Storage | null {
 
 let cachedDiscoveredServer: DiscoveredLanServer | null = null;
 let activeApiBaseUrl: string =
-	getStorage()?.getItem(STORAGE_KEY_ACTIVE_BASE_URL) || "/api";
+	safeLocalStorageGetItem(STORAGE_KEY_ACTIVE_BASE_URL) || "/api";
 
 /**
  * Generates candidate IP addresses for common LAN clinic subnets.
@@ -134,7 +138,7 @@ export function getLanDiscoveryCandidates(additional: string[] = []): string[] {
 	}
 
 	// 2. Previously cached LAN server URL
-	const cached = getStorage()?.getItem(STORAGE_KEY_LAN_SERVER);
+	const cached = safeLocalStorageGetItem(STORAGE_KEY_LAN_SERVER);
 	if (cached) {
 		try {
 			const parsed = new URL(cached);
@@ -301,7 +305,7 @@ export async function discoverLocalClinicServer(
 	if (bestServer) {
 		cachedDiscoveredServer = bestServer;
 		try {
-			getStorage()?.setItem(STORAGE_KEY_LAN_SERVER, bestServer.baseUrl);
+			safeLocalStorageSetItem(STORAGE_KEY_LAN_SERVER, bestServer.baseUrl, true);
 		} catch {}
 		logger.info(`[LanDiscovery] Found active Clinic LAN Server at ${bestServer.baseUrl} (${bestServer.latencyMs}ms)`);
 	}
@@ -322,7 +326,7 @@ export function getActiveApiBaseUrl(): string {
 export function setActiveApiBaseUrl(url: string): void {
 	activeApiBaseUrl = url;
 	try {
-		getStorage()?.setItem(STORAGE_KEY_ACTIVE_BASE_URL, url);
+		safeLocalStorageSetItem(STORAGE_KEY_ACTIVE_BASE_URL, url, true);
 	} catch {}
 	if (typeof window !== "undefined") {
 		try {

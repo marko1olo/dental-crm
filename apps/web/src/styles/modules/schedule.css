@@ -220,6 +220,8 @@
 
 /* --- APPOINTMENT CARD PREMIUM AESTHETICS --- */
 .appointment-card {
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 48px;
 	padding: 16px;
 	background: var(--paper);
 	border: 1px solid var(--line);
@@ -237,6 +239,12 @@
 	transform: translateY(-2px);
 	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 	border-color: var(--line-strong);
+}
+.schedule-day-gap,
+.schedule-day-overlap,
+.schedule-timeline-item {
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 48px;
 }
 .appointment-card-header {
 	display: flex;

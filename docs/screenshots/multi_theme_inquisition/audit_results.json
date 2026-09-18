@@ -6,9 +6,9 @@
     "viewId": "schedule",
     "viewName": "Расписание (Schedule)",
     "filename": "theme_01_light_schedule.png",
-    "sizeBytes": 132067,
-    "sizeKb": "129.0",
-    "md5": "f667b12e604c7c5da5002bf484295b69",
+    "sizeBytes": 130996,
+    "sizeKb": "127.9",
+    "md5": "06ffdfa07d0b5fb02222297f984f2ad0",
     "passSize": true
   },
   {
@@ -18,9 +18,9 @@
     "viewId": "visit",
     "viewName": "Визит / ЭМК 043/у (Visit EMR)",
     "filename": "theme_02_light_visit.png",
-    "sizeBytes": 171356,
-    "sizeKb": "167.3",
-    "md5": "7284c66afc0019cfdc699e74c9e620fe",
+    "sizeBytes": 168882,
+    "sizeKb": "164.9",
+    "md5": "d5de5e946f905d997481905538eb3023",
     "passSize": true
   },
   {
@@ -30,9 +30,9 @@
     "viewId": "finance",
     "viewName": "Касса / Счета 54-ФЗ (Finance)",
     "filename": "theme_03_light_finance.png",
-    "sizeBytes": 150377,
-    "sizeKb": "146.9",
-    "md5": "2b1fbf83be7600900bf9107823c7ae72",
+    "sizeBytes": 147460,
+    "sizeKb": "144.0",
+    "md5": "67344048520db182af1c383d2e10c330",
     "passSize": true
   },
   {
@@ -42,9 +42,9 @@
     "viewId": "schedule",
     "viewName": "Расписание (Schedule)",
     "filename": "theme_04_dark_schedule.png",
-    "sizeBytes": 139962,
-    "sizeKb": "136.7",
-    "md5": "b22ce8bed3e0dee25cdd3af1b7e2338c",
+    "sizeBytes": 139019,
+    "sizeKb": "135.8",
+    "md5": "b574366c15eec886845e64df0db4cc06",
     "passSize": true
   },
   {
@@ -54,10 +54,10 @@
     "viewId": "visit",
     "viewName": "Визит / ЭМК 043/у (Visit EMR)",
     "filename": "theme_05_dark_visit.png",
-    "sizeBytes": 10504,
-    "sizeKb": "10.3",
-    "md5": "f978042485bb3513010e8018ab15e930",
-    "passSize": false
+    "sizeBytes": 167642,
+    "sizeKb": "163.7",
+    "md5": "15c61acc15c116bc452b6f28168f2119",
+    "passSize": true
   },
   {
     "index": 6,
@@ -66,9 +66,9 @@
     "viewId": "finance",
     "viewName": "Касса / Счета 54-ФЗ (Finance)",
     "filename": "theme_06_dark_finance.png",
-    "sizeBytes": 145940,
-    "sizeKb": "142.5",
-    "md5": "dd8a544af754337895cdbdfa79e5c4fe",
+    "sizeBytes": 147129,
+    "sizeKb": "143.7",
+    "md5": "89d6656327b654c1ea10d3293f5d6eb0",
     "passSize": true
   },
   {
@@ -78,9 +78,9 @@
     "viewId": "schedule",
     "viewName": "Расписание (Schedule)",
     "filename": "theme_07_ocean_schedule.png",
-    "sizeBytes": 135074,
-    "sizeKb": "131.9",
-    "md5": "b427e6e4f19a5ab6864312ebc228b1fd",
+    "sizeBytes": 138462,
+    "sizeKb": "135.2",
+    "md5": "08d2d1d989393e35afb897a3765b4f58",
     "passSize": true
   },
   {
@@ -90,9 +90,9 @@
     "viewId": "visit",
     "viewName": "Визит / ЭМК 043/у (Visit EMR)",
     "filename": "theme_08_ocean_visit.png",
-    "sizeBytes": 170076,
-    "sizeKb": "166.1",
-    "md5": "6912b5a9dc0ec337f5617decd9065fc4",
+    "sizeBytes": 169323,
+    "sizeKb": "165.4",
+    "md5": "c73eff9b99558a67cbf8ddbe6791cde8",
     "passSize": true
   },
   {
@@ -102,9 +102,9 @@
     "viewId": "finance",
     "viewName": "Касса / Счета 54-ФЗ (Finance)",
     "filename": "theme_09_ocean_finance.png",
-    "sizeBytes": 146819,
-    "sizeKb": "143.4",
-    "md5": "3f5873126fe688585f1164b19ff8b084",
+    "sizeBytes": 148496,
+    "sizeKb": "145.0",
+    "md5": "841bb300c532b544db5eebf81a20c842",
     "passSize": true
   },
   {
@@ -114,10 +114,10 @@
     "viewId": "schedule",
     "viewName": "Расписание (Schedule)",
     "filename": "theme_10_sakura_schedule.png",
-    "sizeBytes": 10486,
-    "sizeKb": "10.2",
-    "md5": "a9e542ea954546dcd5f728c5c8a324b2",
-    "passSize": false
+    "sizeBytes": 134100,
+    "sizeKb": "131.0",
+    "md5": "1499049ede270b0e49be7eb78413a234",
+    "passSize": true
   },
   {
     "index": 11,
@@ -126,9 +126,9 @@
     "viewId": "visit",
     "viewName": "Визит / ЭМК 043/у (Visit EMR)",
     "filename": "theme_11_sakura_visit.png",
-    "sizeBytes": 164332,
-    "sizeKb": "160.5",
-    "md5": "241a4f3e003cf4c1802d14291d35a6b5",
+    "sizeBytes": 162307,
+    "sizeKb": "158.5",
+    "md5": "34706cda136eb0ff10dfd5de39197a66",
     "passSize": true
   },
   {
@@ -138,9 +138,9 @@
     "viewId": "finance",
     "viewName": "Касса / Счета 54-ФЗ (Finance)",
     "filename": "theme_12_sakura_finance.png",
-    "sizeBytes": 149803,
-    "sizeKb": "146.3",
-    "md5": "1f6ac8c74e92aacad8b4642901ed1d75",
+    "sizeBytes": 147232,
+    "sizeKb": "143.8",
+    "md5": "2a732bcb55920102b8e6b0dfb7ee06cf",
     "passSize": true
   },
   {
@@ -150,9 +150,9 @@
     "viewId": "schedule",
     "viewName": "Расписание (Schedule)",
     "filename": "theme_13_emerald_schedule.png",
-    "sizeBytes": 204912,
-    "sizeKb": "200.1",
-    "md5": "fa839be4ab01ba274c8c4dc03aab4191",
+    "sizeBytes": 137426,
+    "sizeKb": "134.2",
+    "md5": "9b8ff01db6bd488ad4db86f76f6da794",
     "passSize": true
   },
   {
@@ -162,9 +162,9 @@
     "viewId": "visit",
     "viewName": "Визит / ЭМК 043/у (Visit EMR)",
     "filename": "theme_14_emerald_visit.png",
-    "sizeBytes": 169548,
-    "sizeKb": "165.6",
-    "md5": "15499902b9fcc08b5d74304fcfff7fb0",
+    "sizeBytes": 162046,
+    "sizeKb": "158.2",
+    "md5": "946111e794280df8e8c5b6d571beb114",
     "passSize": true
   },
   {
@@ -174,9 +174,9 @@
     "viewId": "finance",
     "viewName": "Касса / Счета 54-ФЗ (Finance)",
     "filename": "theme_15_emerald_finance.png",
-    "sizeBytes": 149821,
-    "sizeKb": "146.3",
-    "md5": "4522e37aded914f56f2970682ed14ee0",
+    "sizeBytes": 148230,
+    "sizeKb": "144.8",
+    "md5": "c35c2374389cc5962cdc1db34e02f482",
     "passSize": true
   },
   {
@@ -186,9 +186,9 @@
     "viewId": "schedule",
     "viewName": "Расписание (Schedule)",
     "filename": "theme_16_cyber_xray_schedule.png",
-    "sizeBytes": 138581,
-    "sizeKb": "135.3",
-    "md5": "ba69c5d9429bb0162cc83f973ca4f5bd",
+    "sizeBytes": 137597,
+    "sizeKb": "134.4",
+    "md5": "eed52bd687e658b7127a4193ccb01480",
     "passSize": true
   },
   {
@@ -198,9 +198,9 @@
     "viewId": "visit",
     "viewName": "Визит / ЭМК 043/у (Visit EMR)",
     "filename": "theme_17_cyber_xray_visit.png",
-    "sizeBytes": 166607,
-    "sizeKb": "162.7",
-    "md5": "80d148296752fc99198026448fe69b06",
+    "sizeBytes": 158501,
+    "sizeKb": "154.8",
+    "md5": "f5b36c00b1c5e990fb5f81dbf4c15003",
     "passSize": true
   },
   {
@@ -210,9 +210,9 @@
     "viewId": "finance",
     "viewName": "Касса / Счета 54-ФЗ (Finance)",
     "filename": "theme_18_cyber_xray_finance.png",
-    "sizeBytes": 146894,
-    "sizeKb": "143.5",
-    "md5": "76b50043131c8e424d72e2d6585fa4fa",
+    "sizeBytes": 144933,
+    "sizeKb": "141.5",
+    "md5": "456ab516d5c35c30edd64493ab4d6d98",
     "passSize": true
   },
   {
@@ -222,9 +222,9 @@
     "viewId": "schedule",
     "viewName": "Расписание (Schedule)",
     "filename": "theme_19_night_schedule.png",
-    "sizeBytes": 200266,
-    "sizeKb": "195.6",
-    "md5": "b83fcf4464b8b8dc8cd245ecd0595a1d",
+    "sizeBytes": 127122,
+    "sizeKb": "124.1",
+    "md5": "5178c38004eccdb04ecbf8fe2ee78dfa",
     "passSize": true
   },
   {
@@ -234,9 +234,9 @@
     "viewId": "visit",
     "viewName": "Визит / ЭМК 043/у (Visit EMR)",
     "filename": "theme_20_night_visit.png",
-    "sizeBytes": 203929,
-    "sizeKb": "199.1",
-    "md5": "180ba8cc1c7c0802e3a8439c7df11caa",
+    "sizeBytes": 153877,
+    "sizeKb": "150.3",
+    "md5": "3649e0e27b843578ae6cfacc3f2d6167",
     "passSize": true
   },
   {
@@ -246,9 +246,9 @@
     "viewId": "finance",
     "viewName": "Касса / Счета 54-ФЗ (Finance)",
     "filename": "theme_21_night_finance.png",
-    "sizeBytes": 197317,
-    "sizeKb": "192.7",
-    "md5": "5c602129dcc462ea1d5dfdc4fa3b6331",
+    "sizeBytes": 141518,
+    "sizeKb": "138.2",
+    "md5": "a714a327f57c97ecc959b0710bd5c36f",
     "passSize": true
   },
   {
@@ -258,9 +258,9 @@
     "viewId": "schedule",
     "viewName": "Расписание (Schedule)",
     "filename": "theme_22_warm_sand_schedule.png",
-    "sizeBytes": 209003,
-    "sizeKb": "204.1",
-    "md5": "15198df806802ca60bbd30c351fac9ce",
+    "sizeBytes": 138718,
+    "sizeKb": "135.5",
+    "md5": "d9a1a2027224559502f1783d5a6170fc",
     "passSize": true
   },
   {
@@ -270,9 +270,9 @@
     "viewId": "visit",
     "viewName": "Визит / ЭМК 043/у (Visit EMR)",
     "filename": "theme_23_warm_sand_visit.png",
-    "sizeBytes": 213548,
-    "sizeKb": "208.5",
-    "md5": "5f03481fc5849b6ecebd2fe8102ab758",
+    "sizeBytes": 163101,
+    "sizeKb": "159.3",
+    "md5": "d68c81ab21897fcf7f8b2acf416353aa",
     "passSize": true
   },
   {
@@ -282,9 +282,9 @@
     "viewId": "finance",
     "viewName": "Касса / Счета 54-ФЗ (Finance)",
     "filename": "theme_24_warm_sand_finance.png",
-    "sizeBytes": 207088,
-    "sizeKb": "202.2",
-    "md5": "30654b277a3c80409e9d15ea6979d561",
+    "sizeBytes": 148507,
+    "sizeKb": "145.0",
+    "md5": "10c62255aacd803dab5053776d8bf564",
     "passSize": true
   },
   {
@@ -294,9 +294,9 @@
     "viewId": "schedule",
     "viewName": "Расписание (Schedule)",
     "filename": "theme_25_calm_teal_schedule.png",
-    "sizeBytes": 208726,
-    "sizeKb": "203.8",
-    "md5": "fdf07f9f726fcffe2e9e1bb29b4e6bd3",
+    "sizeBytes": 140650,
+    "sizeKb": "137.4",
+    "md5": "103b871e145be35d06edf420ca86aa63",
     "passSize": true
   },
   {
@@ -306,9 +306,9 @@
     "viewId": "visit",
     "viewName": "Визит / ЭМК 043/у (Visit EMR)",
     "filename": "theme_26_calm_teal_visit.png",
-    "sizeBytes": 171585,
-    "sizeKb": "167.6",
-    "md5": "cc08a4b31aea572863ca368d7f83f7c9",
+    "sizeBytes": 170418,
+    "sizeKb": "166.4",
+    "md5": "697a35db9119ea275f9bcd8b2c4e2448",
     "passSize": true
   },
   {
@@ -318,9 +318,9 @@
     "viewId": "finance",
     "viewName": "Касса / Счета 54-ФЗ (Finance)",
     "filename": "theme_27_calm_teal_finance.png",
-    "sizeBytes": 151455,
-    "sizeKb": "147.9",
-    "md5": "2adcfe53b113b06a5ab15ef303521b8d",
+    "sizeBytes": 148692,
+    "sizeKb": "145.2",
+    "md5": "9b20421923bbdfa402d0de2b4c1560e9",
     "passSize": true
   },
   {
@@ -330,9 +330,9 @@
     "viewId": "schedule",
     "viewName": "Расписание (Schedule)",
     "filename": "theme_28_contrast_schedule.png",
-    "sizeBytes": 133396,
-    "sizeKb": "130.3",
-    "md5": "c5a12729dc3b9407483db6b7ba977d49",
+    "sizeBytes": 137094,
+    "sizeKb": "133.9",
+    "md5": "243dd54f7dc80c2ed4cd3245976d6502",
     "passSize": true
   },
   {
@@ -342,9 +342,9 @@
     "viewId": "visit",
     "viewName": "Визит / ЭМК 043/у (Visit EMR)",
     "filename": "theme_29_contrast_visit.png",
-    "sizeBytes": 208892,
-    "sizeKb": "204.0",
-    "md5": "e063d2e7a966be4e4f896a9c68b12803",
+    "sizeBytes": 162114,
+    "sizeKb": "158.3",
+    "md5": "bb178c58fb802c13389f2366975bb4b4",
     "passSize": true
   },
   {
@@ -354,9 +354,9 @@
     "viewId": "finance",
     "viewName": "Касса / Счета 54-ФЗ (Finance)",
     "filename": "theme_30_contrast_finance.png",
-    "sizeBytes": 144558,
-    "sizeKb": "141.2",
-    "md5": "207b72b5d84e063fd3c959abb2a9c580",
+    "sizeBytes": 142672,
+    "sizeKb": "139.3",
+    "md5": "996b3846dfa1ee0a2a5fcd614c367d22",
     "passSize": true
   }
 ]

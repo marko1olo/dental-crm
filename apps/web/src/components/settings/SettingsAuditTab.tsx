@@ -11,9 +11,13 @@ import {
 	ShieldCheck,
 	SlidersHorizontal,
 } from "lucide-react";
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { OfflineBackupVaultPanel } from "./OfflineBackupVaultPanel";
-import { AuditTrailHubModal } from "../security/AuditTrailHubModal";
+
+// Lazy-loaded security audit modal for low-spec hardware (4GB RAM, 5400 RPM HDD)
+const AuditTrailHubModal = lazy(() =>
+	import("../security/AuditTrailHubModal").then((m) => ({ default: m.AuditTrailHubModal }))
+);
 import { humanizeMigrationText } from "./SettingsViewHelpers";
 
 type BrowserContinuityCheck = { label: string; value: string; detail: string };
@@ -464,10 +468,14 @@ export function SettingsAuditTab(props: Record<string, any>) {
 				</div>
 			</div>
 
-			<AuditTrailHubModal
-				isOpen={isAuditTrailOpen}
-				onClose={() => setIsAuditTrailOpen(false)}
-			/>
+			{isAuditTrailOpen && (
+				<Suspense fallback={null}>
+					<AuditTrailHubModal
+						isOpen={isAuditTrailOpen}
+						onClose={() => setIsAuditTrailOpen(false)}
+					/>
+				</Suspense>
+			)}
 		</section>
 	);
 }

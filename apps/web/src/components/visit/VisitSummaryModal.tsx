@@ -766,6 +766,8 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 											<img
 												src={snap.thumbnailDataUri || snap.imageDataUri}
 												alt={snap.title || `Снимок зуба ${snap.toothCode || "043/у"}`}
+												loading="lazy"
+												decoding="async"
 												className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
 												style={{ printColorAdjust: "exact", WebkitPrintColorAdjust: "exact" }}
 											/>
@@ -1010,6 +1012,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 								<img
 									src={zoomImage.url}
 									alt={zoomImage.title || "Снимок"}
+									decoding="async"
 									className="max-w-full max-h-full object-contain rounded"
 								/>
 							</div>

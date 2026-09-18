@@ -30,11 +30,9 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import {
-	formatCurrencyRu,
-	generateSbpPaymentShareText,
-} from "./omnichannelEngine.js";
+import { formatCurrencyRu, generateSbpPaymentShareText } from "./omnichannelEngine.js";
 import type { SbpPaymentInvoice, SbpPaymentStatus } from "./omnichannelTypes.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import "./omnichannelHub.css";
 
 export interface SbpPaymentQrModalProps {
@@ -229,7 +227,7 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 				// Запрос статуса счета через API клиники
 				try {
 					const response = await fetch(`/api/invoices/${encodeURIComponent(invoice.orderId)}`, {
-						headers: { Accept: "application/json" },
+						headers: denteAdminSecretRequestHeaders({ Accept: "application/json" }),
 					});
 					if (response.ok) {
 						const data = (await response.json().catch(() => null)) as {

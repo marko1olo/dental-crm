@@ -21,6 +21,10 @@ import {
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../../lib/safeLocalStorage";
 
 export interface VisitAnamnesisTabProps {
 	onAppendAnamnesis?: (text: string) => void;
@@ -121,7 +125,7 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 	// Restore draft on mount or patient switch
 	useEffect(() => {
 		try {
-			const saved = localStorage.getItem(storageKey);
+			const saved = safeLocalStorageGetItem(storageKey);
 			if (saved) {
 				const parsed = JSON.parse(saved);
 				if (Array.isArray(parsed.selectedComplaints)) setSelectedComplaints(parsed.selectedComplaints);
@@ -134,7 +138,7 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 		}
 	}, [storageKey]);
 
-	// Debounced autosave draft on modification (300ms debounce)
+	// Debounced autosave draft on modification (300ms debounce per Mandate 8e & safeLocalStorage)
 	useEffect(() => {
 		const timer = setTimeout(() => {
 			try {
@@ -145,7 +149,7 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 					customNotes,
 					updatedAt: new Date().toISOString(),
 				};
-				localStorage.setItem(storageKey, JSON.stringify(payload));
+				safeLocalStorageSetItem(storageKey, JSON.stringify(payload));
 			} catch {
 				// ignore storage errors
 			}

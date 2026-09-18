@@ -541,7 +541,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 	}, [isInvoicesOpen, isPnlOpen, isFinanceOptionsOpen, isCashShiftOpen]);
 
 	return (
-		<div className="finance-panel border-0 bg-transparent p-0 shadow-none pb-6 max-w-full min-w-0 overflow-x-hidden" id="finance">
+		<div className="finance-panel border-0 bg-transparent p-0 shadow-none pb-6 max-sm:pb-36 max-w-full min-w-0 overflow-x-hidden" id="finance">
 			<div className="finance-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-1.5 sm:mb-2 flex-nowrap overflow-hidden shrink-0 select-none">
 				<div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
 					<span className="truncate text-xs sm:text-sm font-bold text-[var(--ink)] shrink-0">

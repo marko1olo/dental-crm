@@ -270,7 +270,6 @@ export function PatientSearchModal({
 						className="h-9 min-h-[36px] min-w-[44px] px-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer shrink-0"
 						title="+ Быстрый пациент за 5 сек: ФИО + Телефон"
 					>
-						<Plus className="w-4 h-4" />
 						<span>+ Быстрый пациент за 5 сек: ФИО + Телефон</span>
 					</button>
 				</div>
@@ -400,11 +399,15 @@ export function PatientSearchModal({
 										}
 									}}
 									onMouseEnter={() => setSelectedIndex(index)}
-									className={`p-3 rounded-xl transition-all cursor-pointer flex flex-wrap items-center justify-between gap-3 ${
+									className={`patient-search-item p-3 rounded-xl transition-all cursor-pointer flex flex-wrap items-center justify-between gap-3 ${
 										isSelected
 											? "bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 shadow-xs"
 											: "hover:bg-[var(--paper-soft)]"
 									}`}
+									style={{
+										contentVisibility: "auto",
+										containIntrinsicSize: "1px 48px",
+									}}
 									data-testid={`patient-search-result-${patient.id}`}
 								>
 									{/* Patient Info */}

@@ -1223,10 +1223,8 @@
 	#payment-capture #payment-checkout-bar,
 	#payment-checkout-bar,
 	.payment-checkout-bar {
-		position: fixed !important;
-		bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
-		left: 0 !important;
-		right: 0 !important;
+		position: sticky !important;
+		bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
 		z-index: 35 !important;
 		background: var(--paper) !important;
 		padding: 6px 12px calc(6px + env(safe-area-inset-bottom, 0px)) 12px !important;

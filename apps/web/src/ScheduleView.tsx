@@ -20,6 +20,10 @@ import {
 	appointmentScheduleMissingFields,
 	denteAdminSecretRequestHeaders,
 } from "./AppHelpers";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "./lib/safeLocalStorage";
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
 import { AppointmentCard } from "./components/schedule/AppointmentCard";
@@ -437,10 +441,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	 */
 	const [savedDoctorShifts, setSavedDoctorShifts] = useState<DoctorShift[]>(() => {
 		try {
-			const stored =
-				typeof localStorage !== "undefined"
-					? localStorage.getItem("dente_doctor_shifts")
-					: null;
+			const stored = safeLocalStorageGetItem("dente_doctor_shifts");
 			if (stored) {
 				const parsed = JSON.parse(stored);
 				if (Array.isArray(parsed) && parsed.length > 0) {
@@ -479,12 +480,10 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 						setSavedDoctorShifts((prev) => {
 							if (prev.length === 0) {
 								try {
-									if (typeof localStorage !== "undefined") {
-										localStorage.setItem(
-											"dente_doctor_shifts",
-											JSON.stringify(data.shifts),
-										);
-									}
+									safeLocalStorageSetItem(
+										"dente_doctor_shifts",
+										JSON.stringify(data.shifts),
+									);
 								} catch {}
 								return data.shifts;
 							}
@@ -503,17 +502,15 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const handleSaveDoctorShifts = useCallback(async (shifts: DoctorShift[]) => {
 		setSavedDoctorShifts(shifts);
 		try {
-			if (typeof localStorage !== "undefined") {
-				localStorage.setItem("dente_doctor_shifts", JSON.stringify(shifts));
+			safeLocalStorageSetItem("dente_doctor_shifts", JSON.stringify(shifts));
 
-				// Group and sync date-keyed chair assignments so ScheduleGrid fallback state is completely coherent across all days
-				const shiftsByDate = buildChairDoctorAssignmentsByDate(shifts);
-				for (const [dateIsoKey, dateMap] of Object.entries(shiftsByDate)) {
-					localStorage.setItem(
-						`dente_chair_doctor_assignments_${dateIsoKey}`,
-						JSON.stringify(dateMap),
-					);
-				}
+			// Group and sync date-keyed chair assignments so ScheduleGrid fallback state is completely coherent across all days
+			const shiftsByDate = buildChairDoctorAssignmentsByDate(shifts);
+			for (const [dateIsoKey, dateMap] of Object.entries(shiftsByDate)) {
+				safeLocalStorageSetItem(
+					`dente_chair_doctor_assignments_${dateIsoKey}`,
+					JSON.stringify(dateMap),
+				);
 			}
 		} catch {
 			/* ignore storage error */
@@ -978,7 +975,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const [scheduleViewMode, setScheduleViewMode] = useState<"timeline" | "grid" | "chairs">(
 		() => {
 			try {
-				const saved = typeof window !== "undefined" ? localStorage.getItem("dente_schedule_view_mode") : null;
+				const saved = safeLocalStorageGetItem("dente_schedule_view_mode");
 				if (saved === "timeline" || saved === "grid" || saved === "chairs") return saved;
 				if (typeof window !== "undefined" && window.innerWidth < 640) {
 					return "timeline";
@@ -992,7 +989,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
 	useEffect(() => {
 		try {
-			localStorage.setItem("dente_schedule_view_mode", scheduleViewMode);
+			safeLocalStorageSetItem("dente_schedule_view_mode", scheduleViewMode);
 		} catch {
 			/* ignore */
 		}
@@ -1020,17 +1017,15 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		(chairId: string, assignment: ChairDoctorShiftAssignment | null) => {
 			const persistAndSyncShifts = (nextShifts: DoctorShift[]) => {
 				try {
-					if (typeof localStorage !== "undefined") {
-						localStorage.setItem(
-							"dente_doctor_shifts",
-							JSON.stringify(nextShifts),
-						);
-						const dateMap = buildChairDoctorAssignmentsFromShifts(nextShifts, currentDateKey);
-						localStorage.setItem(
-							`dente_chair_doctor_assignments_${currentDateKey}`,
-							JSON.stringify(dateMap),
-						);
-					}
+					safeLocalStorageSetItem(
+						"dente_doctor_shifts",
+						JSON.stringify(nextShifts),
+					);
+					const dateMap = buildChairDoctorAssignmentsFromShifts(nextShifts, currentDateKey);
+					safeLocalStorageSetItem(
+						`dente_chair_doctor_assignments_${currentDateKey}`,
+						JSON.stringify(dateMap),
+					);
 				} catch {}
 				try {
 					if (typeof fetch !== "undefined") {

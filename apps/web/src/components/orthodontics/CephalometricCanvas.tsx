@@ -691,6 +691,8 @@ export function CephalometricCanvas({
 							<img
 								src={imageUrl}
 								alt="Lateral Cephalogram X-Ray (ТРГ боковая)"
+								loading="lazy"
+								decoding="async"
 								className="w-full h-full object-contain pointer-events-none"
 							/>
 						</div>

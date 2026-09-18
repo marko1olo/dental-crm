@@ -167,6 +167,7 @@ export function ToothHistoryChronicle({
 										alt={`Снимок зуба ${toothNumber} (${m.photoType})`}
 										className="w-full h-[120px] object-cover"
 										loading="lazy"
+										decoding="async"
 									/>
 									<div className="p-1.5 text-[11px] bg-white/95 dark:bg-slate-900/95 border-t border-slate-200 dark:border-slate-700">
 										<div className="font-semibold text-slate-800 dark:text-slate-100 truncate">

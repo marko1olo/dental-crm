@@ -734,6 +734,8 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 						<img
 							src={beforeSlotRecord.imageUrl}
 							alt="До лечения"
+							loading="lazy"
+							decoding="async"
 							className="ba-image-layer"
 							style={{
 								position: 'absolute',
@@ -769,6 +771,8 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 						<img
 							src={afterSlotRecord.imageUrl}
 							alt="После лечения"
+							loading="lazy"
+							decoding="async"
 							className="ba-image-layer"
 							style={{
 								position: 'absolute',
@@ -951,6 +955,8 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 								<img
 									src={beforeSlotRecord.imageUrl}
 									alt="До лечения"
+									loading="lazy"
+									decoding="async"
 									style={{
 										width: '100%',
 										height: '100%',
@@ -986,6 +992,8 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 								<img
 									src={afterSlotRecord.imageUrl}
 									alt="После лечения"
+									loading="lazy"
+									decoding="async"
 									style={{
 										width: '100%',
 										height: '100%',
@@ -1038,10 +1046,10 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 
 					<div style={{ position: 'relative', width: '100%', height: '520px', background: '#020617', borderRadius: '16px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 						{beforeSlotRecord.imageUrl && (
-							<img src={beforeSlotRecord.imageUrl} alt="До" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+							<img src={beforeSlotRecord.imageUrl} alt="До" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
 						)}
 						{afterSlotRecord.imageUrl && (
-							<img src={afterSlotRecord.imageUrl} alt="После" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', opacity: blendOpacity }} />
+							<img src={afterSlotRecord.imageUrl} alt="После" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', opacity: blendOpacity }} />
 						)}
 						{!beforeSlotRecord.imageUrl && !afterSlotRecord.imageUrl && (
 							<div

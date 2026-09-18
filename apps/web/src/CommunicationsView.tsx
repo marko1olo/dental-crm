@@ -13,11 +13,20 @@ import {
 	MessageSquare,
 	Send,
 } from "lucide-react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { WhatsAppChatPanel } from "./components/chat/WhatsAppChatPanel";
-import { PatientRecallsHubModal } from "./components/recalls/PatientRecallsHubModal";
-import { PatientOmnichannelHubModal } from "./components/messaging/PatientOmnichannelHubModal";
 import { CampaignPanel } from "./components/communications/CampaignPanel";
+
+const PatientRecallsHubModal = lazy(() =>
+	import("./components/recalls/PatientRecallsHubModal").then((module) => ({
+		default: module.PatientRecallsHubModal,
+	})),
+);
+const PatientOmnichannelHubModal = lazy(() =>
+	import("./components/messaging/PatientOmnichannelHubModal").then((module) => ({
+		default: module.PatientOmnichannelHubModal,
+	})),
+);
 import {
 	journalDirectionLabel,
 	journalEntryNotice,
@@ -217,6 +226,11 @@ function CommunicationTaskCard({
 		<article
 			className={`communication-task priority-${task.priority}`}
 			key={task.id}
+			style={{
+				contentVisibility: "auto",
+				containIntrinsicSize: "1px 64px",
+				contain: "content",
+			}}
 		>
 			<MessageSquare aria-hidden="true" />
 			<div>
@@ -443,7 +457,16 @@ function CommunicationEventRow({
 	const notice = journalEntryNotice(event);
 	const isUndelivered = event.status === "failed" || event.status === "skipped";
 	return (
-		<article key={event.id} data-status={event.status}>
+		<article
+			key={event.id}
+			className="communication-event-row"
+			data-status={event.status}
+			style={{
+				contentVisibility: "auto",
+				containIntrinsicSize: "1px 44px",
+				contain: "content",
+			}}
+		>
 			<History aria-hidden="true" />
 			<div>
 				<strong>
@@ -1010,15 +1033,23 @@ export function CommunicationsView(
 				</>
 			)}
 
-			<PatientRecallsHubModal
-				isOpen={isRecallsHubOpen}
-				onClose={() => setIsRecallsHubOpen(false)}
-			/>
+			{isRecallsHubOpen && (
+				<Suspense fallback={null}>
+					<PatientRecallsHubModal
+						isOpen={isRecallsHubOpen}
+						onClose={() => setIsRecallsHubOpen(false)}
+					/>
+				</Suspense>
+			)}
 
-			<PatientOmnichannelHubModal
-				isOpen={isOmnichannelHubOpen}
-				onClose={() => setIsOmnichannelHubOpen(false)}
-			/>
+			{isOmnichannelHubOpen && (
+				<Suspense fallback={null}>
+					<PatientOmnichannelHubModal
+						isOpen={isOmnichannelHubOpen}
+						onClose={() => setIsOmnichannelHubOpen(false)}
+					/>
+				</Suspense>
+			)}
 		</div>
 	);
 }

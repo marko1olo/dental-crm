@@ -1,6 +1,11 @@
 import type React from "react";
 import { useState } from "react";
 import { Check, CheckCircle2, ListPlus } from "lucide-react";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "./lib/safeLocalStorage";
+import { denteAdminSecretRequestHeaders } from "./lib/denteRequestHeaders";
 import type { CtPlanningTaskCard, CtPlanningTaskSnapshot } from "./ctPlanningState";
 
 export type CtPlanningTaskBoardPanelProps = {
@@ -47,11 +52,10 @@ export function CtPlanningTaskBoardPanel({
 		// Sync with backend / localStorage
 		try {
 			const storedToken =
-				typeof window !== "undefined"
-					? localStorage.getItem("dental_crm_token") || localStorage.getItem("token")
-					: null;
+				safeLocalStorageGetItem("dental_crm_token") || safeLocalStorageGetItem("token");
 			const headers: Record<string, string> = {
 				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
 			};
 			if (storedToken) {
 				headers.Authorization = `Bearer ${storedToken}`;
@@ -71,24 +75,22 @@ export function CtPlanningTaskBoardPanel({
 			}).catch(() => null);
 
 			// Also persist to local tickets fallback for offline/test reliability
-			if (typeof window !== "undefined") {
-				const existingStr = localStorage.getItem("dental_patient_tickets") || "[]";
-				try {
-					const tickets = JSON.parse(existingStr);
-					tickets.unshift({
-						id: `ticket-ct-${Date.now()}`,
-						patientId: patientId || "demo-patient",
-						title,
-						description,
-						priority,
-						status: "open",
-						dueDate,
-						createdAt: new Date().toISOString(),
-					});
-					localStorage.setItem("dental_patient_tickets", JSON.stringify(tickets));
-				} catch {
-					// Ignore json parse error
-				}
+			try {
+				const existingStr = safeLocalStorageGetItem("dental_patient_tickets") || "[]";
+				const tickets = JSON.parse(existingStr);
+				tickets.unshift({
+					id: `ticket-ct-${Date.now()}`,
+					patientId: patientId || "demo-patient",
+					title,
+					description,
+					priority,
+					status: "open",
+					dueDate,
+					createdAt: new Date().toISOString(),
+				});
+				safeLocalStorageSetItem("dental_patient_tickets", JSON.stringify(tickets));
+			} catch {
+				// Ignore json parse error
 			}
 		} catch {
 			// Non-blocking network failure fallback
@@ -177,8 +179,8 @@ export function CtPlanningTaskBoardPanel({
 						title="Создать срочную задачу в клинике (+1 день)"
 					>
 						<ListPlus className="w-3.5 h-3.5" />
-						<span className="hidden sm:inline">+ Задача «Снимок КТ / планирование»</span>
-						<span className="sm:hidden">+ В задачи</span>
+						<span className="hidden sm:inline">Задача «Снимок КТ / планирование»</span>
+						<span className="sm:hidden">В задачи</span>
 					</button>
 				</div>
 			</div>

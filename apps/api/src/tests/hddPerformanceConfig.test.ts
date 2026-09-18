@@ -93,8 +93,8 @@ describe("hddPerformanceConfig — Порционное выполнение з�
 		);
 
 		assert.strictEqual(result.length, 650);
-		assert.strictEqual(result[0].id, "item-1");
-		assert.strictEqual(result[649].id, "item-650");
+		assert.strictEqual(result[0]?.id, "item-1");
+		assert.strictEqual(result[649]?.id, "item-650");
 		// 650 строк пачками по 200: запросы с offset 0, 200, 400, 600
 		assert.strictEqual(chunkRequests.length, 4);
 		assert.deepStrictEqual(chunkRequests[0], { limit: 200, offset: 0 });
@@ -246,7 +246,7 @@ describe("hddPerformanceConfig — Защита от Seq Scan в запроса�
 			const offset = await getPatientsFromDb("test-org", { offset: 1, limit: 1 });
 			assert.strictEqual(offset.length, 1);
 			if (all.length > 1) {
-				assert.notStrictEqual(limited[0].id, offset[0].id);
+				assert.notStrictEqual(limited[0]?.id, offset[0]?.id);
 			}
 		} finally {
 			if (prev !== undefined) process.env.DENTAL_STATE_PERSISTENCE = prev;

@@ -22,6 +22,11 @@ import {
 	setGlobalClockSkew,
 } from "@dental/shared";
 import { logger } from "../../utils/logger";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageRemoveItem,
+	safeLocalStorageSetItem,
+} from "../../lib/safeLocalStorage";
 import type {
 	CachedActiveSchedule,
 	CachedIcd10Dictionary,
@@ -381,29 +386,28 @@ const CHUNK_SIZE_BYTES = 512 * 1024; // 512 KB per chunk
 const CHUNK_MANIFEST_PREFIX = "__chunk_manifest__";
 
 function cleanupChunkedLocalStorage(key: string): void {
-	if (typeof window === "undefined" || !window.localStorage) return;
+	if (typeof window === "undefined") return;
 	try {
-		const manifestRaw = window.localStorage.getItem(`${CHUNK_MANIFEST_PREFIX}${key}`);
+		const manifestRaw = safeLocalStorageGetItem(`${CHUNK_MANIFEST_PREFIX}${key}`);
 		if (manifestRaw) {
 			const manifest = JSON.parse(manifestRaw) as { totalChunks?: number };
 			if (manifest && typeof manifest.totalChunks === "number") {
 				for (let i = 0; i < manifest.totalChunks; i++) {
-					window.localStorage.removeItem(`${key}__chk_${i}`);
+					safeLocalStorageRemoveItem(`${key}__chk_${i}`);
 				}
 			}
-			window.localStorage.removeItem(`${CHUNK_MANIFEST_PREFIX}${key}`);
+			safeLocalStorageRemoveItem(`${CHUNK_MANIFEST_PREFIX}${key}`);
 		}
 	} catch {}
 }
 
 function saveToLocalStorageSafe(key: string, valueStr: string): boolean {
-	if (typeof window === "undefined" || !window.localStorage) return false;
+	if (typeof window === "undefined") return false;
 	try {
 		cleanupChunkedLocalStorage(key);
 
 		if (valueStr.length <= CHUNK_SIZE_BYTES) {
-			window.localStorage.setItem(key, valueStr);
-			return true;
+			return safeLocalStorageSetItem(key, valueStr);
 		}
 
 		// Chunking for large payloads
@@ -416,10 +420,10 @@ function saveToLocalStorageSafe(key: string, valueStr: string): boolean {
 
 		for (let i = 0; i < totalChunks; i++) {
 			const chunk = valueStr.substring(i * CHUNK_SIZE_BYTES, (i + 1) * CHUNK_SIZE_BYTES);
-			window.localStorage.setItem(`${key}__chk_${i}`, chunk);
+			safeLocalStorageSetItem(`${key}__chk_${i}`, chunk);
 		}
-		window.localStorage.setItem(`${CHUNK_MANIFEST_PREFIX}${key}`, JSON.stringify(manifest));
-		window.localStorage.removeItem(key);
+		safeLocalStorageSetItem(`${CHUNK_MANIFEST_PREFIX}${key}`, JSON.stringify(manifest));
+		safeLocalStorageRemoveItem(key);
 		return true;
 	} catch (err) {
 		logger.warn(
@@ -431,18 +435,18 @@ function saveToLocalStorageSafe(key: string, valueStr: string): boolean {
 }
 
 function getFromLocalStorageSafe(key: string): string | null {
-	if (typeof window === "undefined" || !window.localStorage) return null;
+	if (typeof window === "undefined") return null;
 	try {
-		const direct = window.localStorage.getItem(key);
+		const direct = safeLocalStorageGetItem(key);
 		if (direct) return direct;
 
-		const manifestRaw = window.localStorage.getItem(`${CHUNK_MANIFEST_PREFIX}${key}`);
+		const manifestRaw = safeLocalStorageGetItem(`${CHUNK_MANIFEST_PREFIX}${key}`);
 		if (manifestRaw) {
 			const manifest = JSON.parse(manifestRaw) as { totalChunks?: number };
 			if (manifest && typeof manifest.totalChunks === "number") {
 				const chunks: string[] = [];
 				for (let i = 0; i < manifest.totalChunks; i++) {
-					const chunk = window.localStorage.getItem(`${key}__chk_${i}`);
+					const chunk = safeLocalStorageGetItem(`${key}__chk_${i}`);
 					if (chunk === null) return null;
 					chunks.push(chunk);
 				}
@@ -457,9 +461,9 @@ function getFromLocalStorageSafe(key: string): string | null {
 }
 
 function removeFromLocalStorageSafe(key: string): void {
-	if (typeof window === "undefined" || !window.localStorage) return;
+	if (typeof window === "undefined") return;
 	try {
-		window.localStorage.removeItem(key);
+		safeLocalStorageRemoveItem(key);
 		cleanupChunkedLocalStorage(key);
 	} catch {}
 }

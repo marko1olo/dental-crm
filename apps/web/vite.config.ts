@@ -304,6 +304,8 @@ export default defineConfig({
 						return "dicom-components";
 					if (normalizedId.includes("/apps/web/src/components/imaging/"))
 						return "imaging-components";
+					if (normalizedId.endsWith("/apps/web/src/ImagingView.tsx"))
+						return "imaging-view";
 					if (
 						normalizedId.includes(
 							"/apps/web/src/components/SmartMicrophoneButton",
@@ -314,7 +316,10 @@ export default defineConfig({
 						return "global-toast";
 					if (normalizedId.includes("/apps/web/src/components/Omnibar"))
 						return "omnibar";
-					if (normalizedId.includes("/apps/web/src/components/Odontogram"))
+					if (
+						normalizedId.includes("/apps/web/src/components/Odontogram") ||
+						normalizedId.includes("/apps/web/src/components/odontogram/")
+					)
 						return "odontogram";
 					if (
 						normalizedId.includes("/apps/web/src/components/VoiceAssistantUI")
@@ -389,6 +394,13 @@ export default defineConfig({
 						normalizedId.includes("/node_modules/victory-vendor")
 					)
 						return "charts-vendor";
+					// Изоляция аналитических панелей и графиков от основного бандла приёма врача
+					if (
+						normalizedId.includes("/apps/web/src/components/analytics/") ||
+						normalizedId.includes("/apps/web/src/pages/AnalyticsDashboardView") ||
+						normalizedId.endsWith("/apps/web/src/AnalyticsView.tsx")
+					)
+						return "analytics-components";
 					if (normalizedId.includes("/node_modules/react-rnd"))
 						return "rnd-vendor";
 					if (normalizedId.includes("/apps/web/src/components/lab/"))
@@ -399,11 +411,25 @@ export default defineConfig({
 						return "treatment-plans";
 					if (normalizedId.includes("/apps/web/src/components/perspectives/"))
 						return "perspectives";
+					if (normalizedId.includes("/apps/web/src/components/sanpin/"))
+						return "sanpin-components";
+					if (normalizedId.includes("/apps/web/src/components/schedule/"))
+						return "schedule-components";
+					if (normalizedId.includes("/apps/web/src/components/onboarding/"))
+						return "onboarding-components";
+					if (normalizedId.includes("/apps/web/src/components/doctor-portal/"))
+						return "doctor-portal";
 					if (
 						normalizedId.includes("/packages/shared") ||
 						normalizedId.includes("/node_modules/@dental/shared/")
 					)
 						return "dental-shared";
+					// Изоляция ORM и DB-клиентов при возможном импорте из общих схем
+					if (
+						normalizedId.includes("/node_modules/drizzle-orm") ||
+						normalizedId.includes("/node_modules/@electric-sql/")
+					)
+						return "db-vendor";
 					return undefined;
 				},
 			},

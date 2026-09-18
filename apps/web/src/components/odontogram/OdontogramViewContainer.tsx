@@ -187,6 +187,99 @@ const STAMP_ITEMS: Array<{
 	},
 ];
 
+function areSurfacesEqual(
+	a?: readonly string[] | string[] | undefined,
+	b?: readonly string[] | string[] | undefined,
+): boolean {
+	if (a === b) return true;
+	if (!a || !b) return !a && !b;
+	if (a.length !== b.length) return false;
+	for (let i = 0; i < a.length; i++) {
+		if (a[i] !== b[i]) return false;
+	}
+	return true;
+}
+
+function areTeethDataEqual(prev?: ToothData[], next?: ToothData[]): boolean {
+	if (prev === next) return true;
+	if (!prev || !next) return !prev && !next;
+	if (prev.length !== next.length) return false;
+	for (let i = 0; i < prev.length; i++) {
+		const pt = prev[i];
+		const nt = next[i];
+		if (!pt || !nt) return false;
+		if (pt.toothNumber !== nt.toothNumber) return false;
+		if (pt.state !== nt.state) return false;
+		if (pt.material !== nt.material) return false;
+		if (pt.canalObturation !== nt.canalObturation) return false;
+		if (pt.hasPost !== nt.hasPost) return false;
+		if (pt.postType !== nt.postType) return false;
+		if (pt.boneLossLevel !== nt.boneLossLevel) return false;
+		if (pt.boneLossType !== nt.boneLossType) return false;
+		if ((pt.rootResorptionStage ?? pt.rootResorption) !== (nt.rootResorptionStage ?? nt.rootResorption)) return false;
+		if (pt.periapicalLesion !== nt.periapicalLesion) return false;
+		const pDepth = pt.pocketDepth ?? pt.pocketDepthMm ?? pt.maxPocketDepth;
+		const nDepth = nt.pocketDepth ?? nt.pocketDepthMm ?? nt.maxPocketDepth;
+		if (pDepth !== nDepth) return false;
+		if (!areSurfacesEqual(pt.surfaces, nt.surfaces)) return false;
+	}
+	return true;
+}
+
+export function areOdontogramViewContainerPropsEqual(
+	prev: OdontogramViewContainerProps,
+	next: OdontogramViewContainerProps,
+): boolean {
+	if (prev.pediatricMode !== next.pediatricMode) return false;
+	if (prev.mixedDentition !== next.mixedDentition) return false;
+	if (prev.dentitionMode !== next.dentitionMode) return false;
+	if (prev.useSurfaces !== next.useSurfaces) return false;
+	if (prev.hideHeader !== next.hideHeader) return false;
+	if (prev.hideLegend !== next.hideLegend) return false;
+	if (prev.hideModeSwitcher !== next.hideModeSwitcher) return false;
+	if (prev.hideQuadrantSwitcher !== next.hideQuadrantSwitcher) return false;
+	if (prev.activeQuadrant !== next.activeQuadrant) return false;
+	if (prev.isPerioOpen !== next.isPerioOpen) return false;
+	if (prev.isEstimatorOpen !== next.isEstimatorOpen) return false;
+	if (prev.diagnocatLoading !== next.diagnocatLoading) return false;
+	if (prev.isMultiSelectMode !== next.isMultiSelectMode) return false;
+	if (prev.patientId !== next.patientId) return false;
+	if (prev.className !== next.className) return false;
+
+	// Compare selectedTeeth array
+	if (prev.selectedTeeth !== next.selectedTeeth) {
+		const prevLen = prev.selectedTeeth?.length ?? 0;
+		const nextLen = next.selectedTeeth?.length ?? 0;
+		if (prevLen !== nextLen) return false;
+		for (let i = 0; i < prevLen; i++) {
+			if (prev.selectedTeeth![i] !== next.selectedTeeth![i]) return false;
+		}
+	}
+
+	// Compare topTeeth & bottomTeeth
+	if (prev.topTeeth !== next.topTeeth) {
+		const pLen = prev.topTeeth?.length ?? 0;
+		const nLen = next.topTeeth?.length ?? 0;
+		if (pLen !== nLen) return false;
+		for (let i = 0; i < pLen; i++) {
+			if (prev.topTeeth![i] !== next.topTeeth![i]) return false;
+		}
+	}
+	if (prev.bottomTeeth !== next.bottomTeeth) {
+		const pLen = prev.bottomTeeth?.length ?? 0;
+		const nLen = next.bottomTeeth?.length ?? 0;
+		if (pLen !== nLen) return false;
+		for (let i = 0; i < pLen; i++) {
+			if (prev.bottomTeeth![i] !== next.bottomTeeth![i]) return false;
+		}
+	}
+
+	// Compare teethData
+	if (!areTeethDataEqual(prev.teethData, next.teethData)) return false;
+
+	return true;
+}
+
 export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = React.memo(({
 	teethData,
 	pediatricMode,
@@ -562,15 +655,15 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			data-testid="odontogram-view-container"
 			data-view-mode={activeMode}
 		>
-			{/* Unified Clinical Toolbar - Sleek Single Horizontal Scroll Track */}
+			{/* Unified Clinical Toolbar - Responsive 1-Click Track */}
 			{!hideModeSwitcher && (
 				<div
-					className="odontogram-toolbar flex items-center justify-between gap-1.5 py-1 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full select-none flex-nowrap h-9 sm:h-[36px]"
+					className="odontogram-toolbar flex items-center justify-between gap-1.5 py-1 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full select-none flex-wrap min-h-[36px] h-auto"
 					role="toolbar"
 					aria-label="Панель управления зубной формулой"
 				>
 					{/* Left Group: Modes, Dentition, Stamp, Actions */}
-					<div className="flex items-center gap-1.5 shrink-0 flex-nowrap">
+					<div className="flex items-center gap-1.5 flex-wrap">
 						{/* Segmented View Mode Radios: 3D / 6-гран. / ГОСТ */}
 						<div
 							className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 h-8"
@@ -666,7 +759,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 							<button
 								type="button"
 								onClick={handleMarkIntactDentition}
-								className="h-8 px-2.5 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center gap-1.5 shrink-0 active:scale-98"
+								className="h-8 px-2 sm:px-2.5 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center gap-1 sm:gap-1.5 shrink-0 active:scale-98"
 								title="1-клик Санирован: вся зубная формула отмечается интактной (здоровой) без ручного прокликивания 32 зубов"
 								data-testid="mark-intact-dentition-btn"
 							>
@@ -685,7 +778,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 								<button
 									type="button"
 									onClick={() => handleQuickTriggerState("Healthy")}
-									className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
+									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
 										activeStampTool === "Healthy"
 											? "bg-emerald-600 text-white font-black shadow-xs"
 											: "text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15"
@@ -699,7 +792,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 								<button
 									type="button"
 									onClick={() => handleQuickTriggerState("Caries")}
-									className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
+									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
 										activeStampTool === "Caries"
 											? "bg-amber-600 text-white font-black shadow-xs"
 											: "text-amber-700 dark:text-amber-400 hover:bg-amber-500/15"
@@ -713,7 +806,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 								<button
 									type="button"
 									onClick={() => handleQuickTriggerState("Pulpitis")}
-									className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
+									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
 										activeStampTool === "Pulpitis"
 											? "bg-red-600 text-white font-black shadow-xs"
 											: "text-red-700 dark:text-red-400 hover:bg-red-500/15"
@@ -727,7 +820,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 								<button
 									type="button"
 									onClick={() => handleQuickTriggerState("Filled")}
-									className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
+									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
 										activeStampTool === "Filled"
 											? "bg-sky-600 text-white font-black shadow-xs"
 											: "text-sky-700 dark:text-sky-400 hover:bg-sky-500/15"
@@ -741,7 +834,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 								<button
 									type="button"
 									onClick={() => handleQuickTriggerState("Missing")}
-									className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
+									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
 										activeStampTool === "Missing"
 											? "bg-zinc-700 text-white font-black shadow-xs"
 											: "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-500/15"
@@ -755,7 +848,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 								<button
 									type="button"
 									onClick={() => handleQuickTriggerState("Implant")}
-									className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
+									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
 										activeStampTool === "Implant"
 											? "bg-slate-700 text-white font-black shadow-xs"
 											: "text-slate-700 dark:text-slate-300 hover:bg-slate-500/15"
@@ -1586,5 +1679,5 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			)}
 		</div>
 	);
-});
+}, areOdontogramViewContainerPropsEqual);
 OdontogramViewContainer.displayName = "OdontogramViewContainer";

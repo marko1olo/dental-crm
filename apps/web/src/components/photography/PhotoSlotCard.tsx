@@ -52,6 +52,8 @@ export const PhotoSlotCard: React.FC<PhotoSlotCardProps> = ({
 						<img
 							src={record.imageUrl}
 							alt={slotDef.titleRu}
+							loading="lazy"
+							decoding="async"
 							className="photo-image-preview"
 							style={{
 								transform: `rotate(${record.rotationDegrees || 0}deg) scaleX(${record.flipHorizontal ? -1 : 1}) scaleY(${record.flipVertical ? -1 : 1})`,

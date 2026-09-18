@@ -846,6 +846,8 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 									<img
 										src={activeItem.imageUrl}
 										alt={activeItem.filename}
+										loading="lazy"
+										decoding="async"
 										className="hfi-radiology-image"
 										data-testid="hfi-active-radiology-image"
 										draggable={false}

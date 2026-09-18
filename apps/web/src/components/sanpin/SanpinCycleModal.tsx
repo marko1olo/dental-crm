@@ -32,7 +32,12 @@ import {
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
-import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import {
+	readDenteClinicToken,
+	readDenteStaffToken,
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../../lib/safeLocalStorage";
 import { generateThermalStickerHtml, type KraftPackageRecord } from "./kraft/kraftPackageEngine";
 
 export interface SanpinCycleModalProps {
@@ -303,7 +308,7 @@ export function SanpinCycleModal({
 
 			// Save batch to local kraft packages registry for chairside scanner
 			try {
-				const existingRaw = localStorage.getItem("dente_kraft_packages_v1");
+				const existingRaw = safeLocalStorageGetItem("dente_kraft_packages_v1");
 				const existingList: KraftPackageRecord[] = existingRaw ? JSON.parse(existingRaw) : [];
 				const packDate = new Date().toISOString().slice(0, 10);
 				const expFormatted = estimatedExpiration
@@ -341,7 +346,7 @@ export function SanpinCycleModal({
 						createdAt: new Date().toISOString(),
 					});
 				}
-				localStorage.setItem("dente_kraft_packages_v1", JSON.stringify([...newBatchRecords, ...existingList].slice(0, 300)));
+				safeLocalStorageSetItem("dente_kraft_packages_v1", JSON.stringify([...newBatchRecords, ...existingList].slice(0, 300)));
 			} catch (storageErr) {
 				console.warn("Could not save to local kraft storage", storageErr);
 			}

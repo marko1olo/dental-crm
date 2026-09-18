@@ -38,7 +38,7 @@ import {
 	X,
 	XCircle,
 } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { CabinetReadinessTab } from "./CabinetReadinessTab";
@@ -233,11 +233,15 @@ const DEFAULT_DISINFECTANT_RECORDS: DisinfectantSolutionRecord[] = [
 function DisinfectantsRegisterTab() {
 	const [query, setQuery] = useState("");
 	const [records, setRecords] = useState<DisinfectantSolutionRecord[]>(DEFAULT_DISINFECTANT_RECORDS);
-	const filtered = records.filter(
-		(r) =>
-			r.tradeNameRu.toLowerCase().includes(query.toLowerCase()) ||
-			r.purposeRu.toLowerCase().includes(query.toLowerCase())
-	);
+	const filtered = useMemo(() => {
+		const q = query.trim().toLowerCase();
+		if (!q) return records;
+		return records.filter(
+			(r) =>
+				r.tradeNameRu.toLowerCase().includes(q) ||
+				r.purposeRu.toLowerCase().includes(q)
+		);
+	}, [records, query]);
 
 	const handleAddSolution = () => {
 		const now = new Date();
@@ -410,11 +414,15 @@ const DEFAULT_BAC_LAB_RECORDS: BacLabRecord[] = [
 function BacLabRegisterTab() {
 	const [query, setQuery] = useState("");
 	const [records, setRecords] = useState<BacLabRecord[]>(DEFAULT_BAC_LAB_RECORDS);
-	const filtered = records.filter(
-		(r) =>
-			r.actNumberRu.toLowerCase().includes(query.toLowerCase()) ||
-			r.targetObjectRu.toLowerCase().includes(query.toLowerCase())
-	);
+	const filtered = useMemo(() => {
+		const q = query.trim().toLowerCase();
+		if (!q) return records;
+		return records.filter(
+			(r) =>
+				r.actNumberRu.toLowerCase().includes(q) ||
+				r.targetObjectRu.toLowerCase().includes(q)
+		);
+	}, [records, query]);
 
 	const handleAddProtocol = () => {
 		const nextActNum = 268 + records.length - DEFAULT_BAC_LAB_RECORDS.length;
@@ -553,11 +561,15 @@ const DEFAULT_NEEDLE_DISPOSAL_RECORDS: NeedleDisposalRecord[] = [
 function NeedleDisposalRegisterTab() {
 	const [query, setQuery] = useState("");
 	const [records, setRecords] = useState<NeedleDisposalRecord[]>(DEFAULT_NEEDLE_DISPOSAL_RECORDS);
-	const filtered = records.filter(
-		(r) =>
-			r.wasteTypeRu.toLowerCase().includes(query.toLowerCase()) ||
-			r.containerCodeRu.toLowerCase().includes(query.toLowerCase())
-	);
+	const filtered = useMemo(() => {
+		const q = query.trim().toLowerCase();
+		if (!q) return records;
+		return records.filter(
+			(r) =>
+				r.wasteTypeRu.toLowerCase().includes(q) ||
+				r.containerCodeRu.toLowerCase().includes(q)
+		);
+	}, [records, query]);
 
 	const handleAddNeedleBatch = () => {
 		const now = new Date();
@@ -648,7 +660,7 @@ function NeedleDisposalRegisterTab() {
 	);
 }
 
-export function SanpinRegisters() {
+function SanpinRegistersInner() {
 	const appLogic = useOptionalAppLogicContext();
 	const auth = appLogic?.auth;
 	const [activeTab, setActiveTab] = useState<SanpinRegisterTab>("autoclave");
@@ -670,29 +682,37 @@ export function SanpinRegisters() {
 	const tabsNavRef = useRef<HTMLDivElement>(null);
 
 	// Select Tab and automatically sync Active Category
-	const handleSelectTab = (tabId: SanpinRegisterTab) => {
+	const handleSelectTab = useCallback((tabId: SanpinRegisterTab) => {
 		setActiveTab(tabId);
 		const foundCat = SANPIN_CATEGORIES.find((cat) => cat.tabs.some((t) => t.id === tabId));
-		if (foundCat && foundCat.id !== activeCategory) {
-			setActiveCategory(foundCat.id);
+		if (foundCat) {
+			setActiveCategory((prevCat) => foundCat.id !== prevCat ? foundCat.id : prevCat);
 		}
-	};
+	}, []);
 
 	// Select Category and ensure valid Tab is active
-	const handleSelectCategory = (catId: SanpinCategory) => {
+	const handleSelectCategory = useCallback((catId: SanpinCategory) => {
 		setActiveCategory(catId);
 		const targetCat = SANPIN_CATEGORIES.find((c) => c.id === catId);
-		if (targetCat && !targetCat.tabs.some((t) => t.id === activeTab)) {
-			setActiveTab(targetCat.tabs[0]!.id);
+		if (targetCat) {
+			setActiveTab((prevTab) => targetCat.tabs.some((t) => t.id === prevTab) ? prevTab : targetCat.tabs[0]!.id);
 		}
-	};
+	}, []);
 
-	const scrollTabs = (direction: "left" | "right") => {
+	const scrollTabs = useCallback((direction: "left" | "right") => {
 		if (tabsNavRef.current) {
 			const offset = direction === "left" ? -260 : 260;
 			tabsNavRef.current.scrollBy({ left: offset, behavior: "smooth" });
 		}
-	};
+	}, []);
+
+	const activeCategoryTabs = useMemo(() => {
+		return SANPIN_CATEGORIES.find((c) => c.id === activeCategory)?.tabs || SANPIN_CATEGORIES[0]!.tabs;
+	}, [activeCategory]);
+
+	const wasteTotalKg = useMemo(() => {
+		return ((summary?.wasteMonth ?? []).reduce((acc: number, w: any) => acc + (w.totalKg || 0), 0) as number).toFixed(1);
+	}, [summary?.wasteMonth]);
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -1277,7 +1297,7 @@ export function SanpinRegisters() {
 									data-testid="sanpin-new-cycle-dropdown-btn"
 								>
 									<Plus size={15} color="var(--teal)" />
-									<span>+ Новый цикл (ф. 257/у + ПСО ф. 366/у)</span>
+									<span>Новый цикл (ф. 257/у + ПСО ф. 366/у)</span>
 								</button>
 
 								{/* Обновить сводку */}
@@ -1644,7 +1664,7 @@ export function SanpinRegisters() {
 					className="flex-1 flex items-center justify-start flex-nowrap overflow-x-auto scrollbar-none gap-1 touch-pan-x min-w-0 pl-1"
 					data-testid="sanpin-active-category-subtabs"
 				>
-					{(SANPIN_CATEGORIES.find((c) => c.id === activeCategory)?.tabs || SANPIN_CATEGORIES[0]!.tabs).map((tab) => {
+					{activeCategoryTabs.map((tab) => {
 						const Icon = tab.icon;
 						const isActive = activeTab === tab.id;
 						return (
@@ -1734,7 +1754,7 @@ export function SanpinRegisters() {
 					>
 						<span className="sanpin-kpi-label">Медотходы (мес.)</span>
 						<span className="sanpin-kpi-value">
-							{(summary.wasteMonth ?? []).reduce((acc: number, w: any) => acc + (w.totalKg || 0), 0).toFixed(1)} кг
+							{wasteTotalKg} кг
 						</span>
 						<span className="sanpin-kpi-subtext">Классы А, Б, Г</span>
 					</div>
@@ -1915,6 +1935,9 @@ export function SanpinRegisters() {
 		</div>
 	);
 }
+
+export const SanpinRegisters = React.memo(SanpinRegistersInner);
+SanpinRegisters.displayName = "SanpinRegisters";
 
 // Canonical re-export for backward-compatible views
 export { SanpinRegisters as SanpinRegistersView };

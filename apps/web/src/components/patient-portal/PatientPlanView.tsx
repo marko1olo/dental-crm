@@ -1028,6 +1028,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 											src={scan.previewUrl}
 											alt={scan.titleRu}
 											loading="lazy"
+											decoding="async"
 											style={{
 												maxHeight: "100%",
 												maxWidth: "100%",
@@ -1480,6 +1481,8 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 								<img
 									src={selectedDiagnosticScan.previewUrl}
 									alt={selectedDiagnosticScan.titleRu}
+									loading="lazy"
+									decoding="async"
 									style={{
 										maxWidth: "100%",
 										maxHeight: "100%",

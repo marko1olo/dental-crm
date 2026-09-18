@@ -130,6 +130,8 @@ export function AuthArtBackground() {
 				<img
 					src={`/auth-art/${selectedArt.webp || selectedArt.avif}`}
 					alt=""
+					loading="lazy"
+					decoding="async"
 					onLoad={() => setLoaded(true)}
 					style={{
 						width: "100%",

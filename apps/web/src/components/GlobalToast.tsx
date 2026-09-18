@@ -52,22 +52,16 @@ export function GlobalToast() {
 	// Re-use sa-toast styles from ShadowAnalyst or define minimal inline/fallback
 	return (
 		<div
-			className={`sa-toast sa-toast--${toast.type} fixed top-16 right-6 z-[99999] flex items-center gap-2 px-4 py-3 max-w-[420px] rounded-lg shadow-2xl transition-all select-none border font-medium text-xs sm:text-sm bg-neutral-900 text-white border-neutral-700 dark:bg-neutral-900 dark:text-white ${toast.type === "error" ? "border-rose-500/60 dark:border-rose-500/50" : toast.type === "warning" ? "border-amber-500/60 dark:border-amber-500/50" : "border-neutral-700 dark:border-neutral-700"}`}
+			className={`sa-toast sa-toast--${toast.type} fixed top-16 right-6 max-sm:top-[calc(env(safe-area-inset-top,0px)+12px)] max-sm:bottom-auto max-sm:left-4 max-sm:right-4 z-[99999] flex items-center gap-2 px-4 py-3 max-w-[420px] max-sm:max-w-[calc(100vw-2rem)] rounded-lg shadow-2xl transition-all select-none border font-medium text-xs sm:text-sm bg-neutral-900 text-slate-100 dark:bg-neutral-900 dark:text-slate-100 ${toast.type === "error" ? "border-rose-500/60 dark:border-rose-500/50" : toast.type === "warning" ? "border-amber-500/60 dark:border-amber-500/50" : "border-neutral-700 dark:border-neutral-700"}`}
 			data-testid="global-toast"
 			style={{
-				position: "fixed",
-				top: "4rem",
-				right: "1.5rem",
-				bottom: "auto",
-				left: "auto",
 				zIndex: 99999,
 				display: "flex",
 				alignItems: "center",
 				gap: "8px",
 				padding: "12px 16px",
-				maxWidth: "420px",
 				backgroundColor: "#171717",
-				color: "#ffffff",
+				color: "#f8fafc",
 				borderRadius: "8px",
 				boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
 				border:
@@ -82,14 +76,16 @@ export function GlobalToast() {
 			{toast.type === "warning" && <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />}
 			{toast.type === "success" && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
 			{toast.type === "info" && <Info className="w-4 h-4 text-cyan-400 shrink-0" />}
-			<span className="font-medium">{toast.text}</span>
+			<span className="font-medium text-slate-100 dark:text-slate-100" style={{ color: "#f8fafc" }}>
+				{toast.text}
+			</span>
 			<button
 				type="button"
 				onClick={() => setToast(null)}
 				style={{
 					background: "transparent",
 					border: "none",
-					color: "#ffffff",
+					color: "#f8fafc",
 					cursor: "pointer",
 					marginLeft: "auto",
 					display: "flex",

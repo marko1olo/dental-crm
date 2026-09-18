@@ -244,8 +244,8 @@ export const patientRelationshipSchema = z.object({
 	relatedPatientName: z.string().min(1, "ФИО связанного лица обязательно").optional().default("Связанное лицо"),
 	relationshipType: z.string(),
 	inverseType: z.string().optional(),
-	isLegalGuardian: z.boolean().optional().default(false),
-	canShareBalance: z.boolean().optional().default(false),
+	isLegalGuardian: z.boolean().optional(),
+	canShareBalance: z.boolean().optional(),
 	canSignConsent: z.boolean().optional().default(false),
 	isFinancialPayer: z.boolean().optional().default(false),
 	isEmergencyContact: z.boolean().optional().default(true),
@@ -284,7 +284,7 @@ export const createRelationshipInputSchema = z.object({
 	createdAt: z.string().optional(),
 });
 
-export type CreateRelationshipInput = z.infer<typeof createRelationshipInputSchema>;
+export type CreateRelationshipInput = z.input<typeof createRelationshipInputSchema>;
 export const createPatientRelationshipSchema = createRelationshipInputSchema;
 export type CreatePatientRelationshipInput = CreateRelationshipInput;
 
@@ -761,7 +761,10 @@ export function createRelationshipPair(
 		id: params.id || generateUUID(),
 		patientId,
 		relatedPatientId,
-		relatedPatientName: params.relatedPatientName.trim(),
+		relatedPatientName:
+			params.relatedPatientName && params.relatedPatientName.trim()
+				? params.relatedPatientName.trim()
+				: "Связанное лицо",
 		relationshipType: relType,
 		inverseType: invType,
 		isLegalGuardian: relType === "parent" || relType === "guardian",

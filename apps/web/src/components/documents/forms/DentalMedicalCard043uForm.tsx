@@ -23,6 +23,7 @@ import {
 	createSanitizedOdontogramRecords,
 	createWisdomExtractedOdontogramRecords,
 } from "../../../lib/clinicalProtocols043";
+import { safeLocalStorageSetItem } from "../../../lib/safeLocalStorage";
 
 export interface DentalMedicalCard043uFormProps {
 	initialPayload?: Partial<FullForm043uPayload> & {
@@ -445,53 +446,55 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 			});
 		};
 
-		// ── Dual-Layer 5-Second Local Draft Protection & BeforeUnload (IndexedDB + LocalStorage)
+		// ── Dual-Layer Local Draft Protection & BeforeUnload (IndexedDB + Debounced LocalStorage)
 		const form043DraftKey = `dente_form043_draft_${initialPayload?.medicalCardNumber || "local_current"}`;
 		const latestPayloadRef = React.useRef<FullForm043uPayload | null>(null);
+		const isInitialMountRef = React.useRef(true);
 
 		React.useEffect(() => {
 			if (effectiveDisabled) return;
 
-			const flushDraft = () => {
-				const payloadToSave: FullForm043uPayload = {
-					...initialPayload,
-					formNumber: "043/у",
-					clinicLegalName: initialPayload?.clinicLegalName || "ООО «Денте»",
-					medicalCardNumber: initialPayload?.medicalCardNumber || "043-DRAFT",
-					cardOpenedDate: initialPayload?.cardOpenedDate || new Date().toISOString().slice(0, 10),
-					patientFullName: initialPayload?.patientFullName || "Пациент",
-					patientBirthDate: initialPayload?.patientBirthDate || "1990-01-01",
-					patientSex: initialPayload?.patientSex || "male",
-					attendingDoctorFullName: initialPayload?.attendingDoctorFullName || "Врач-стоматолог",
-					attendingDoctorSpecialty: initialPayload?.attendingDoctorSpecialty || "Врач-стоматолог-терапевт",
-					allergologicalHistory,
-					concomitantDiseases,
-					currentMedications,
-					pregnancyLactationStatus,
-					pastDentalInterventions,
-					chiefComplaint,
-					historyOfPresentIllness,
-					odontogramTeeth: Object.values(odontogram),
-					dmftIndex: dmftResult,
-					cpitnIndex: cpitn,
-					hygieneIndexOhiS,
-					biteType,
-					biteDescription,
-					oralMucosaStatus: oralMucosa,
-					xrayFindingsDescription,
-					generalTreatmentPlan,
-					soapDiaries: initialPayload?.soapDiaries || [],
-					...(revisionCount > 0 || isRevising
-						? {
-								revisionCount: revisionCount + (isRevising ? 1 : 0),
-								revisionReason: revisionReason.trim() || "Исправленному верить",
-							}
-						: {}),
-				};
+			const payloadToSave: FullForm043uPayload = {
+				...initialPayload,
+				formNumber: "043/у",
+				clinicLegalName: initialPayload?.clinicLegalName || "ООО «Денте»",
+				medicalCardNumber: initialPayload?.medicalCardNumber || "043-DRAFT",
+				cardOpenedDate: initialPayload?.cardOpenedDate || new Date().toISOString().slice(0, 10),
+				patientFullName: initialPayload?.patientFullName || "Пациент",
+				patientBirthDate: initialPayload?.patientBirthDate || "1990-01-01",
+				patientSex: initialPayload?.patientSex || "male",
+				attendingDoctorFullName: initialPayload?.attendingDoctorFullName || "Врач-стоматолог",
+				attendingDoctorSpecialty: initialPayload?.attendingDoctorSpecialty || "Врач-стоматолог-терапевт",
+				allergologicalHistory,
+				concomitantDiseases,
+				currentMedications,
+				pregnancyLactationStatus,
+				pastDentalInterventions,
+				chiefComplaint,
+				historyOfPresentIllness,
+				odontogramTeeth: Object.values(odontogram),
+				dmftIndex: dmftResult,
+				cpitnIndex: cpitn,
+				hygieneIndexOhiS,
+				biteType,
+				biteDescription,
+				oralMucosaStatus: oralMucosa,
+				xrayFindingsDescription,
+				generalTreatmentPlan,
+				soapDiaries: initialPayload?.soapDiaries || [],
+				...(revisionCount > 0 || isRevising
+					? {
+							revisionCount: revisionCount + (isRevising ? 1 : 0),
+							revisionReason: revisionReason.trim() || "Исправленному верить",
+						}
+					: {}),
+			};
 
-				latestPayloadRef.current = payloadToSave;
+			latestPayloadRef.current = payloadToSave;
+
+			const flushDraft = () => {
 				try {
-					localStorage.setItem(form043DraftKey, JSON.stringify(payloadToSave));
+					safeLocalStorageSetItem(form043DraftKey, JSON.stringify(payloadToSave));
 				} catch {
 					// ignore
 				}
@@ -500,12 +503,16 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 				}
 			};
 
-			// Flush immediate
-			flushDraft();
+			// Initial mount: instant flush to register draft
+			if (isInitialMountRef.current) {
+				isInitialMountRef.current = false;
+				flushDraft();
+				return;
+			}
 
-			// Resilient 5-second interval
-			const timer = setInterval(flushDraft, 5000);
-			return () => clearInterval(timer);
+			// Debounced autosave (400ms: Mandates 8e item 6 & 8n: anti-HDD thrashing on fast typing)
+			const timer = setTimeout(flushDraft, 400);
+			return () => clearTimeout(timer);
 		}, [
 			odontogram,
 			dmftResult,
@@ -532,6 +539,19 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 			onChange,
 		]);
 
+		// Flush pending draft on unmount (navigation away / tab switch)
+		React.useEffect(() => {
+			return () => {
+				if (latestPayloadRef.current) {
+					try {
+						safeLocalStorageSetItem(form043DraftKey, JSON.stringify(latestPayloadRef.current));
+					} catch {
+						// ignore
+					}
+				}
+			};
+		}, [form043DraftKey]);
+
 		React.useEffect(() => {
 			if (effectiveDisabled) return;
 
@@ -542,7 +562,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 				if (hasModifiedTeeth) {
 					if (latestPayloadRef.current) {
 						try {
-							localStorage.setItem(form043DraftKey, JSON.stringify(latestPayloadRef.current));
+							safeLocalStorageSetItem(form043DraftKey, JSON.stringify(latestPayloadRef.current));
 						} catch {
 							// ignore
 						}

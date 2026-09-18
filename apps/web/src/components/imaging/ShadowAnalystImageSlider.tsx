@@ -5,6 +5,7 @@ import React, {
 	useRef,
 	useState,
 } from "react";
+import { UploadCloud } from "lucide-react";
 
 interface ShadowAnalystImageSliderProps {
 	imageUrl: string;
@@ -79,6 +80,24 @@ export function ShadowAnalystImageSlider({
 		"--sa-viewer-transform": (viewerStyle?.transform as string) ?? "none",
 	} as CSSProperties;
 
+	if (!imageUrl || !imageUrl.trim()) {
+		return (
+			<div
+				className="sa-image-container flex flex-col items-center justify-center p-8 text-center rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] min-h-[260px] w-full"
+				ref={containerRef}
+				data-testid="shadow-analyst-placeholder"
+			>
+				<UploadCloud size={40} className="mb-2 text-[var(--teal,var(--brand-primary))] opacity-75" />
+				<strong className="text-sm font-bold text-[var(--ink)] mb-1">
+					Снимок не выбран или ожидает загрузки
+				</strong>
+				<p className="text-xs text-[var(--muted)] max-w-sm m-0">
+					Выберите файл DICOM/Рентген из списка слева или перетащите снимок в рабочую область
+				</p>
+			</div>
+		);
+	}
+
 	if (!enhanced) {
 		return (
 			<div
@@ -89,6 +108,8 @@ export function ShadowAnalystImageSlider({
 				<img
 					src={imageUrl}
 					alt="Рентгеновский снимок"
+					loading="lazy"
+					decoding="async"
 					className="sa-img-original"
 				/>
 			</div>
@@ -125,6 +146,8 @@ export function ShadowAnalystImageSlider({
 			<img
 				src={imageUrl}
 				alt="Снимок без обработки"
+				loading="lazy"
+				decoding="async"
 				className="sa-img-original"
 			/>
 
@@ -136,6 +159,8 @@ export function ShadowAnalystImageSlider({
 				<img
 					src={imageUrl}
 					alt="Снимок с усилением контраста"
+					loading="lazy"
+					decoding="async"
 					className="sa-img-enhanced"
 				/>
 			</div>

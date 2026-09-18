@@ -793,6 +793,8 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 												<img
 													src={slot.imageUrl}
 													alt={angle.titleRu}
+													loading="lazy"
+													decoding="async"
 													className="ortho-slot-img"
 													style={{
 														transform: `rotate(${slot.rotationDegrees || 0}deg) scale(${slot.zoom || 1}) ${

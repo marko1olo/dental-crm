@@ -29,6 +29,10 @@ import {
 	X,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../../lib/safeLocalStorage";
 
 export interface VisitSoapNoteValues {
 	complaint?: string;
@@ -197,7 +201,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 
 	useEffect(() => {
 		try {
-			const saved = localStorage.getItem(soapStorageKey);
+			const saved = safeLocalStorageGetItem(soapStorageKey);
 			if (saved && (!initialValues?.complaint && !initialValues?.treatmentPlan)) {
 				const parsed = JSON.parse(saved);
 				if (parsed && typeof parsed === "object") {
@@ -251,17 +255,20 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		}
 	}, [initialValues]);
 
-	// Дебаунс автосохранения (300ms debounced autosave per Mandate 8e)
+	// Дебаунс автосохранения (300ms debounced autosave per Mandate 8e & safeLocalStorage low-spec HDD)
 	useEffect(() => {
 		if (saveStatus !== "saving") return;
 		const timer = setTimeout(() => {
 			onChange?.(values);
 			onSave?.(values);
+			try {
+				safeLocalStorageSetItem(soapStorageKey, JSON.stringify(values));
+			} catch {}
 			setSaveStatus("saved");
 		}, 300);
 
 		return () => clearTimeout(timer);
-	}, [values, saveStatus, onChange, onSave]);
+	}, [values, saveStatus, onChange, onSave, soapStorageKey]);
 
 	// Немедленный сброс несохраненного черновика при размонтировании (защита при смене вкладок)
 	useEffect(() => {
@@ -269,9 +276,12 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			if (saveStatus === "saving") {
 				onChange?.(values);
 				onSave?.(values);
+				try {
+					safeLocalStorageSetItem(soapStorageKey, JSON.stringify(values));
+				} catch {}
 			}
 		};
-	}, [saveStatus, values, onChange, onSave]);
+	}, [saveStatus, values, onChange, onSave, soapStorageKey]);
 
 	// Мандат 8e: Автономия врача и версионный аудит («Исправленному верить»)
 	const handleEnableCorrection = useCallback(() => {
@@ -299,7 +309,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			};
 			setSaveStatus("saved");
 			try {
-				localStorage.setItem(soapStorageKey, JSON.stringify(next));
+				safeLocalStorageSetItem(soapStorageKey, JSON.stringify(next));
 			} catch {}
 			onSave?.(next);
 			onChange?.(next);
@@ -327,23 +337,14 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							? `${next.treatmentPlan}\n\n${stamp}`
 							: stamp;
 					}
-					try {
-						localStorage.setItem(soapStorageKey, JSON.stringify(next));
-					} catch {}
 					return next;
 				});
 				return;
 			}
 			setSaveStatus("saving");
-			setValues((prev) => {
-				const next = { ...prev, [field]: val };
-				try {
-					localStorage.setItem(soapStorageKey, JSON.stringify(next));
-				} catch {}
-				return next;
-			});
+			setValues((prev) => ({ ...prev, [field]: val }));
 		},
-		[isLocked, isCorrectionMode, soapStorageKey],
+		[isLocked, isCorrectionMode],
 	);
 
 	// Фильтрация протоколов StomX среди всех 448 шаблонов
@@ -423,6 +424,9 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 				};
 				setValues(nextValues);
 				setSaveStatus("saved");
+				try {
+					safeLocalStorageSetItem(soapStorageKey, JSON.stringify(nextValues));
+				} catch {}
 				onSave?.(nextValues);
 				onChange?.(nextValues);
 
@@ -447,6 +451,9 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						icd10: prev.icd10 || protocol.mkbCode,
 					};
 					setSaveStatus("saved");
+					try {
+						safeLocalStorageSetItem(soapStorageKey, JSON.stringify(next));
+					} catch {}
 					onSave?.(next);
 					onChange?.(next);
 					return next;
@@ -456,7 +463,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			setIsTemplatesOpen(false);
 			setPreviewProtocol(null);
 		},
-		[selectedTooth, selectedSurfaces, values.anamnesis, isLocked, isCorrectionMode, onSave, onChange, onApplyFullDiary, setIsTemplatesOpen],
+		[selectedTooth, selectedSurfaces, values.anamnesis, isLocked, isCorrectionMode, onSave, onChange, onApplyFullDiary, setIsTemplatesOpen, soapStorageKey],
 	);
 
 	// 1-клик физиологическая норма (Мандат 8e)
@@ -488,9 +495,12 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		};
 		setValues(normValues);
 		setSaveStatus("saved");
+		try {
+			safeLocalStorageSetItem(soapStorageKey, JSON.stringify(normValues));
+		} catch {}
 		onSave?.(normValues);
 		onChange?.(normValues);
-	}, [selectedTooth, isLocked, isCorrectionMode, onSave, onChange]);
+	}, [selectedTooth, isLocked, isCorrectionMode, onSave, onChange, soapStorageKey]);
 
 	// Копирование целостной записи 043/у в буфер
 	const handleCopyFullText = useCallback(() => {

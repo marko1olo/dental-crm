@@ -25,10 +25,25 @@ import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { money } from "../../utils/financeUtils";
 import { showToast } from "../GlobalToast";
-import { DmsGuaranteeLetterModal } from "../insurance/DmsGuaranteeLetterModal";
-import { DmsRegistryExportModal } from "../insurance/DmsRegistryExportModal";
 import type { DmsGuaranteeLetter } from "../insurance/insuranceMath";
-import { LoyaltyProgramModal } from "../loyalty/program/LoyaltyProgramModal";
+
+const DmsGuaranteeLetterModal = React.lazy(() =>
+	import("../insurance/DmsGuaranteeLetterModal").then((m) => ({
+		default: m.DmsGuaranteeLetterModal,
+	})),
+);
+
+const DmsRegistryExportModal = React.lazy(() =>
+	import("../insurance/DmsRegistryExportModal").then((m) => ({
+		default: m.DmsRegistryExportModal,
+	})),
+);
+
+const LoyaltyProgramModal = React.lazy(() =>
+	import("../loyalty/program/LoyaltyProgramModal").then((m) => ({
+		default: m.LoyaltyProgramModal,
+	})),
+);
 import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
 import { printBlankMedicalContract } from "./blankContractPrint";
 import { PatientAllergySafetyBanner } from "./PatientAllergySafetyBanner";
@@ -729,30 +744,42 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 					)}
 
 					{/* DMS Guarantee Letter Modal */}
-					<DmsGuaranteeLetterModal
-						isOpen={isDmsLetterOpen}
-						onClose={() => setIsDmsLetterOpen(false)}
-						patient={{
-							id: patientId,
-							fullName: patientName || "",
-						}}
-						onSave={handleSaveDmsLetter}
-					/>
+					{isDmsLetterOpen && (
+						<React.Suspense fallback={null}>
+							<DmsGuaranteeLetterModal
+								isOpen={isDmsLetterOpen}
+								onClose={() => setIsDmsLetterOpen(false)}
+								patient={{
+									id: patientId,
+									fullName: patientName || "",
+								}}
+								onSave={handleSaveDmsLetter}
+							/>
+						</React.Suspense>
+					)}
 
 					{/* DMS Registry Export Modal */}
-					<DmsRegistryExportModal
-						isOpen={isDmsRegistryOpen}
-						onClose={() => setIsDmsRegistryOpen(false)}
-					/>
+					{isDmsRegistryOpen && (
+						<React.Suspense fallback={null}>
+							<DmsRegistryExportModal
+								isOpen={isDmsRegistryOpen}
+								onClose={() => setIsDmsRegistryOpen(false)}
+							/>
+						</React.Suspense>
+					)}
 
 					{/* Loyalty & Gift Certificate Modal */}
-					<LoyaltyProgramModal
-						isOpen={isLoyaltyModalOpen}
-						onClose={() => setIsLoyaltyModalOpen(false)}
-						patientId={patientId}
-						patientName={patientName || undefined}
-						medicalCardNumber={`043/у-${patientId.slice(0, 8)}`}
-					/>
+					{isLoyaltyModalOpen && (
+						<React.Suspense fallback={null}>
+							<LoyaltyProgramModal
+								isOpen={isLoyaltyModalOpen}
+								onClose={() => setIsLoyaltyModalOpen(false)}
+								patientId={patientId}
+								patientName={patientName || undefined}
+								medicalCardNumber={`043/у-${patientId.slice(0, 8)}`}
+							/>
+						</React.Suspense>
+					)}
 
 					{/* FAB clearance bottom spacer */}
 					<div

@@ -443,7 +443,7 @@ export function WorkspaceSidebar({
 					</a>
 				</p>
 			) : null}
-			<div className="sidebar-footer max-w-full overflow-hidden pb-3">
+			<div className="sidebar-footer max-w-full overflow-hidden shrink-0 mt-auto pb-2">
 				<ThemeSwitcher />
 				<button
 					className="icon-button sidebar-collapse-button"

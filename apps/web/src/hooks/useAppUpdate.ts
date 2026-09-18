@@ -15,6 +15,11 @@ import {
 } from "@dental/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { showToast } from "../components/GlobalToast";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+	safeLocalStorageRemoveItem,
+} from "../lib/safeLocalStorage";
 import { logger } from "../utils/logger";
 
 export const DEFAULT_BASE_VERSION = "2.4.0";
@@ -35,43 +40,24 @@ export const STORAGE_KEYS = {
 } as const;
 
 /**
- * Безопасное чтение из localStorage.
+ * Безопасное чтение из localStorage с in-memory кэшированием (0 мс, анти-HDD фриз).
  */
 export function safeGetStorage(key: string): string | null {
-	try {
-		if (typeof window !== "undefined" && window.localStorage) {
-			return window.localStorage.getItem(key);
-		}
-	} catch {
-		// Ignore storage access issues
-	}
-	return null;
+	return safeLocalStorageGetItem(key);
 }
 
 /**
- * Безопасная запись в localStorage.
+ * Безопасная дебаунсированная запись в localStorage (Мандаты 8n, 8k).
  */
 export function safeSetStorage(key: string, value: string): void {
-	try {
-		if (typeof window !== "undefined" && window.localStorage) {
-			window.localStorage.setItem(key, value);
-		}
-	} catch {
-		// Ignore storage write issues
-	}
+	safeLocalStorageSetItem(key, value);
 }
 
 /**
  * Безопасное удаление из localStorage.
  */
 export function safeRemoveStorage(key: string): void {
-	try {
-		if (typeof window !== "undefined" && window.localStorage) {
-			window.localStorage.removeItem(key);
-		}
-	} catch {
-		// Ignore storage removal issues
-	}
+	safeLocalStorageRemoveItem(key);
 }
 
 /**

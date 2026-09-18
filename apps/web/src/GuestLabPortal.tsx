@@ -475,6 +475,8 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 							<img
 								src={order.attachedImageUrl}
 								alt="Клинический снимок"
+								loading="lazy"
+								decoding="async"
 								className="guest-portal-image"
 							/>
 						) : (

@@ -800,7 +800,16 @@ export function CabinetReadinessTab() {
 						</thead>
 						<tbody>
 							{historyRecords.map((rec) => (
-								<tr key={rec.id}>
+								<tr
+									key={rec.id}
+									className="sanpin-log-row"
+									style={{
+										minHeight: "44px",
+										contentVisibility: "auto",
+										containIntrinsicSize: "1px 44px",
+										contain: "content",
+									}}
+								>
 									<td style={{ whiteSpace: "nowrap" }}>
 										{new Date(rec.timestamp).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
 									</td>

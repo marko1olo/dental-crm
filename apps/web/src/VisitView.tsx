@@ -1444,7 +1444,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									type="button"
 									onClick={() => setIsHeaderMoreMenuOpen((prev) => !prev)}
 									data-testid="visit-header-more-actions-btn"
-									className="secondary-button h-7 min-h-[28px] min-w-[28px] sm:min-w-0 sm:min-h-0 sm:h-7 px-1 sm:px-2 py-0 text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer shrink-0 rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
+									className="secondary-button min-h-[32px] min-w-[32px] sm:min-h-7 sm:min-w-0 sm:h-7 px-1.5 sm:px-2 py-0 text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer shrink-0 rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
 									title="Дополнительные действия и бланки приема"
 									aria-label="Дополнительные действия приема"
 									aria-expanded={isHeaderMoreMenuOpen}
@@ -1465,7 +1465,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												handlePrintForm043uFast();
 											}}
 											data-testid="visit-more-action-print-043u"
-											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[38px]"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 											role="menuitem"
 										>
 											<Printer size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
@@ -1482,7 +1482,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												setIsEmergencyModalOpen(true);
 											}}
 											data-testid="visit-more-action-emergency"
-											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-rose-500/10 cursor-pointer text-rose-700 dark:text-rose-300 transition-colors min-h-[38px]"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-rose-500/10 cursor-pointer text-rose-700 dark:text-rose-300 transition-colors min-h-[44px] sm:min-h-[38px]"
 											role="menuitem"
 										>
 											<AlertOctagon size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
@@ -1499,7 +1499,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												setIsWarrantyModalOpen(true);
 											}}
 											data-testid="visit-more-action-warranty-passport"
-											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[38px]"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 											role="menuitem"
 										>
 											<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -1516,7 +1516,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												setIsDoctorCockpitModalOpen(true);
 											}}
 											data-testid="visit-more-action-doctor-shift"
-											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[38px]"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 											role="menuitem"
 										>
 											<FileText size={14} className="text-violet-600 dark:text-violet-400 shrink-0" />
@@ -1533,7 +1533,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												setIsPriceValidatorModalOpen(true);
 											}}
 											data-testid="visit-more-action-price-lock"
-											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[38px]"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 											role="menuitem"
 										>
 											<ShieldCheck size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
@@ -1550,7 +1550,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												setIsStagePaymentModalOpen(true);
 											}}
 											data-testid="visit-more-action-stage-payment"
-											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[38px]"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 											role="menuitem"
 										>
 											<Lock size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -1573,7 +1573,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						/>
 						{/* Градиентный индикатор горизонтального скролла на мобильных (защита от резкого среза вкладок [Рентген]/[Согласия]) */}
 						<div
-							className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[var(--paper)] to-transparent sm:hidden z-10"
+							className="pointer-events-none absolute right-0 top-0 bottom-0 w-5 bg-gradient-to-l from-[var(--paper)] to-transparent sm:hidden z-10 opacity-70"
 							aria-hidden="true"
 						/>
 					</div>

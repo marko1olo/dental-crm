@@ -31,6 +31,10 @@ import {
 	nowIsoWithMs,
 	updateOfflineMutationStatus,
 } from "./offlineStorage";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../../lib/safeLocalStorage";
 import type {
 	MutationAction,
 	MutationEntityType,
@@ -47,14 +51,14 @@ const CLIENT_ID_STORAGE_KEY = "dente_client_instance_id_v1";
  * Получение стабильного идентификатора инстанса клиента
  */
 export function getOrCreateClientId(): string {
-	if (typeof window === "undefined" || !window.localStorage) {
+	if (typeof window === "undefined") {
 		return "node-offline-client-0";
 	}
 	try {
-		let id = window.localStorage.getItem(CLIENT_ID_STORAGE_KEY);
+		let id = safeLocalStorageGetItem(CLIENT_ID_STORAGE_KEY);
 		if (!id) {
 			id = `client-${generateMutationUuid()}`;
-			window.localStorage.setItem(CLIENT_ID_STORAGE_KEY, id);
+			safeLocalStorageSetItem(CLIENT_ID_STORAGE_KEY, id, true);
 		}
 		return id;
 	} catch {

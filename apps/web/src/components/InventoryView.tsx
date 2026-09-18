@@ -21,7 +21,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import React, { lazy, Suspense, useState } from "react";
+import React, { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import { money } from "../AppHelpers";
 import { showToast } from "./GlobalToast";
 import { InventoryConfirmDialog } from "./inventory/InventoryConfirmDialog";
@@ -145,7 +145,7 @@ function daysLabel(count: number): string {
 	return `осталось ${count} дней`;
 }
 
-export const InventoryView: React.FC<{ organizationId: string }> = ({
+const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 	organizationId,
 }) => {
 	const inventory = useInventoryLogic(organizationId);
@@ -269,13 +269,13 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	const paperSoftBg = "var(--paper-soft)";
 	const borderColor = "var(--line)";
 
-	const renderRulesTab = () => {
+	const renderRulesTab = useCallback(() => {
 		return (
 			<Suspense fallback={<div className="p-8 text-center text-xs text-[var(--muted)]">Загрузка технологических карт с диска...</div>}>
 				<MaterialBomsSettingsPanel organizationId={organizationId} />
 			</Suspense>
 		);
-	};
+	}, [organizationId]);
 
 	/*
 	 * Предпросмотр движения остатка — честный, без прикрытия нулём.
@@ -292,17 +292,30 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	 * Поэтому расхождение надо показать ДО записи: либо количество набрано неверно,
 	 * либо остаток на складе неверный, и то и другое разбирают до нажатия.
 	 */
-	const adjustAmountNumber = Number.parseInt(adjustAmount, 10);
-	const adjustHasAmount =
-		Number.isFinite(adjustAmountNumber) && adjustAmountNumber > 0;
-	const adjustDelta =
-		(adjustType === "in" ? 1 : -1) * (adjustHasAmount ? adjustAmountNumber : 0);
-	const adjustResultQuantity = adjustingItem
-		? adjustingItem.stockQuantity + adjustDelta
-		: 0;
-	const adjustExceedsStock = Boolean(
-		adjustingItem && adjustType === "out" && adjustResultQuantity < 0,
-	);
+	const {
+		adjustAmountNumber,
+		adjustHasAmount,
+		adjustDelta,
+		adjustResultQuantity,
+		adjustExceedsStock,
+	} = useMemo(() => {
+		const parsed = Number.parseInt(adjustAmount, 10);
+		const hasAmt = Number.isFinite(parsed) && parsed > 0;
+		const delta = (adjustType === "in" ? 1 : -1) * (hasAmt ? parsed : 0);
+		const resultQty = adjustingItem
+			? adjustingItem.stockQuantity + delta
+			: 0;
+		const exceeds = Boolean(
+			adjustingItem && adjustType === "out" && resultQty < 0,
+		);
+		return {
+			adjustAmountNumber: parsed,
+			adjustHasAmount: hasAmt,
+			adjustDelta: delta,
+			adjustResultQuantity: resultQty,
+			adjustExceedsStock: exceeds,
+		};
+	}, [adjustAmount, adjustType, adjustingItem]);
 
 	if (isLoading && items.length === 0) {
 		return (
@@ -2565,6 +2578,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		</div>
 	);
 };
+
+export const InventoryView = React.memo(InventoryViewInner);
 
 
 

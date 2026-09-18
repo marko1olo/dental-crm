@@ -626,7 +626,16 @@ export function GeneralCleaningRegisterTab() {
 							</tr>
 						) : (
 							filteredLogs.map((log) => (
-								<tr key={log.id}>
+								<tr
+									key={log.id}
+									className="sanpin-log-row"
+									style={{
+										minHeight: "44px",
+										contentVisibility: "auto",
+										containIntrinsicSize: "1px 44px",
+										contain: "content",
+									}}
+								>
 									<td>
 										<div style={{ fontWeight: 600 }}>{log.scheduledDate}</div>
 										<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>

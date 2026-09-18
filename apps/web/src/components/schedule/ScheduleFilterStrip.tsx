@@ -374,7 +374,7 @@ export function ScheduleFilterStrip({
 				}
 			`}</style>
 			<div
-				className="schedule-filter-chips hidden sm:flex flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none py-0.5 min-w-0 pr-2"
+				className="schedule-filter-chips hidden sm:flex flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-none py-0.5 min-w-0 pr-2"
 				onWheel={(e) => {
 					if (e.deltaY !== 0) {
 						e.currentTarget.scrollLeft += e.deltaY;
@@ -477,7 +477,7 @@ export function ScheduleFilterStrip({
 								title={`Фильтр по кабинету / креслу: ${chairLabel}${chair.room ? ` (${chair.room})` : ""}`}
 								aria-label={`Фильтр по кабинету / креслу: ${chairLabel}`}
 							>
-								<span className="min-w-0 max-w-[145px] truncate" title={chairLabel}>
+								<span className="shrink-0 flex-shrink-0 whitespace-nowrap min-w-max font-medium" title={chairLabel}>
 									{compactChairLabel}
 								</span>
 							</button>

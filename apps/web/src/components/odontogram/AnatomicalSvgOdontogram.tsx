@@ -1,5 +1,5 @@
 import { Sparkles } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
 	DenteToothSvgDefs,
 	type ToothData,
@@ -54,6 +54,9 @@ const PEDIATRIC_TOP_TEETH = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
 const PEDIATRIC_BOTTOM_TEETH = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
 const MIXED_TOP_TEETH = [16, 55, 54, 53, 52, 51, 61, 62, 63, 64, 65, 26];
 const MIXED_BOTTOM_TEETH = [46, 85, 84, 83, 82, 81, 71, 72, 73, 74, 75, 36];
+
+const TOP_SURFACE_KEYS = ["O", "V", "P", "M", "D", "C"] as const;
+const BOTTOM_SURFACE_KEYS = ["O", "V", "L", "M", "D", "C"] as const;
 
 const MIN_ARCH_SCALE = 0.28;
 
@@ -393,6 +396,31 @@ const AnatomicalToothSVG = React.memo(({
 		showPeriodontalBoneLoss && (boneLossLevel !== undefined && boneLossLevel > 0)
 			? getPeriodontalBoneLevelPath(number, boneLossLevel, boneLossType ?? "horizontal")
 			: null;
+
+	const handleSurfaceClick = React.useCallback((e: React.MouseEvent<SVGGElement>) => {
+		const target = (e.target as Element).closest("[data-surface]");
+		if (target) {
+			const surf = target.getAttribute("data-surface");
+			if (surf) {
+				e.stopPropagation();
+				onClick(e, number, surf);
+			}
+		}
+	}, [onClick, number]);
+
+	const handleSurfaceKeyDown = React.useCallback((e: React.KeyboardEvent<SVGGElement>) => {
+		if (e.key === "Enter" || e.key === " ") {
+			const target = (e.target as Element).closest("[data-surface]");
+			if (target) {
+				const surf = target.getAttribute("data-surface");
+				if (surf) {
+					e.preventDefault();
+					e.stopPropagation();
+					onClick(e as unknown as React.MouseEvent, number, surf);
+				}
+			}
+		}
+	}, [onClick, number]);
 
 	const furcationMarkers =
 		furcation && furcation > 0 && geom.periodontal?.furcationSites
@@ -1151,10 +1179,14 @@ const AnatomicalToothSVG = React.memo(({
 					</g>
 				)}
 
-				{/* 6-Surface Interactive Polygons directly mapped on the Anatomical Crown */}
+				{/* 6-Surface Interactive Polygons directly mapped on the Anatomical Crown (GC & render loop micro-optimized) */}
 				{useSurfaces && (
-					<g className="tooth-surface-interactive-group">
-						{(["O", "V", isTop ? "P" : "L", "M", "D", "C"] as const).map((surfKey) => {
+					<g
+						className="tooth-surface-interactive-group"
+						onClick={handleSurfaceClick}
+						onKeyDown={handleSurfaceKeyDown}
+					>
+						{(isTop ? TOP_SURFACE_KEYS : BOTTOM_SURFACE_KEYS).map((surfKey) => {
 							const geomKey = surfKey === "P" ? "L" : surfKey;
 							const surfPath = geom.surfaces[geomKey as AnatomicalSurfaceKey];
 							if (!surfPath) return null;
@@ -1166,6 +1198,7 @@ const AnatomicalToothSVG = React.memo(({
 									d={surfPath}
 									role="tab"
 									tabIndex={0}
+									data-surface={surfKey}
 									aria-label={`${labelInfo?.nameRu ?? `Поверхность ${surfKey}`} зуба ${number}`}
 									fill={
 										isHighlighted
@@ -1183,17 +1216,6 @@ const AnatomicalToothSVG = React.memo(({
 										isHighlighted ? "surface-active" : ""
 									}`}
 									style={{ cursor: "pointer", transition: "fill 0.2s, fill-opacity 0.2s, stroke 0.2s" }}
-									onClick={(e) => {
-										e.stopPropagation();
-										onClick(e, number, surfKey);
-									}}
-									onKeyDown={(e) => {
-										if (e.key === "Enter" || e.key === " ") {
-											e.preventDefault();
-											e.stopPropagation();
-											onClick(e as unknown as React.MouseEvent, number, surfKey);
-										}
-									}}
 								>
 									<title>{`${labelInfo?.nameRu ?? surfKey} — Зуб ${number}`}</title>
 								</path>
@@ -1744,6 +1766,88 @@ export interface AnatomicalSvgOdontogramProps {
 	className?: string | undefined;
 }
 
+export function areAnatomicalSvgOdontogramPropsEqual(
+	prev: AnatomicalSvgOdontogramProps,
+	next: AnatomicalSvgOdontogramProps,
+): boolean {
+	if (prev.pediatricMode !== next.pediatricMode) return false;
+	if (prev.mixedDentition !== next.mixedDentition) return false;
+	if (prev.dentitionMode !== next.dentitionMode) return false;
+	if (prev.activeStamp !== next.activeStamp) return false;
+	if (prev.useSurfaces !== next.useSurfaces) return false;
+	if (prev.hideHeader !== next.hideHeader) return false;
+	if (prev.hideLegend !== next.hideLegend) return false;
+	if (prev.showWisdomTeeth !== next.showWisdomTeeth) return false;
+	if (prev.showPulpAndCanals !== next.showPulpAndCanals) return false;
+	if (prev.showPeriapicalHalos !== next.showPeriapicalHalos) return false;
+	if (prev.showPeriodontalBoneLoss !== next.showPeriodontalBoneLoss) return false;
+	if (prev.activeQuadrant !== next.activeQuadrant) return false;
+	if (prev.hideQuadrantSwitcher !== next.hideQuadrantSwitcher) return false;
+	if (prev.className !== next.className) return false;
+
+	// Compare selectedTeeth array
+	if (prev.selectedTeeth !== next.selectedTeeth) {
+		const prevLen = prev.selectedTeeth?.length ?? 0;
+		const nextLen = next.selectedTeeth?.length ?? 0;
+		if (prevLen !== nextLen) return false;
+		for (let i = 0; i < prevLen; i++) {
+			if (prev.selectedTeeth![i] !== next.selectedTeeth![i]) return false;
+		}
+	}
+
+	// Compare topTeeth & bottomTeeth
+	if (prev.topTeeth !== next.topTeeth) {
+		const pLen = prev.topTeeth?.length ?? 0;
+		const nLen = next.topTeeth?.length ?? 0;
+		if (pLen !== nLen) return false;
+		for (let i = 0; i < pLen; i++) {
+			if (prev.topTeeth![i] !== next.topTeeth![i]) return false;
+		}
+	}
+	if (prev.bottomTeeth !== next.bottomTeeth) {
+		const pLen = prev.bottomTeeth?.length ?? 0;
+		const nLen = next.bottomTeeth?.length ?? 0;
+		if (pLen !== nLen) return false;
+		for (let i = 0; i < pLen; i++) {
+			if (prev.bottomTeeth![i] !== next.bottomTeeth![i]) return false;
+		}
+	}
+
+	// Compare teethData using granular areToothDataEqual
+	if (prev.teethData !== next.teethData) {
+		const pLen = prev.teethData?.length ?? 0;
+		const nLen = next.teethData?.length ?? 0;
+		if (pLen !== nLen) return false;
+		for (let i = 0; i < pLen; i++) {
+			const pt = prev.teethData[i];
+			const nt = next.teethData[i];
+			if (!pt || !nt) return false;
+			if (!areToothDataEqual(pt, nt)) return false;
+		}
+	}
+
+	// Compare globalTreatments
+	if (prev.globalTreatments !== next.globalTreatments) {
+		const pLen = prev.globalTreatments?.length ?? 0;
+		const nLen = next.globalTreatments?.length ?? 0;
+		if (pLen !== nLen) return false;
+		for (let i = 0; i < pLen; i++) {
+			const p = prev.globalTreatments![i];
+			const n = next.globalTreatments![i];
+			if (!p || !n) return false;
+			if (
+				p.id !== n.id ||
+				p.title !== n.title ||
+				p.clinicalType !== n.clinicalType ||
+				p.status !== n.status
+			)
+				return false;
+		}
+	}
+
+	return true;
+}
+
 export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = React.memo(({
 	teethData = [],
 	pediatricMode,
@@ -1776,6 +1880,19 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 	const [hoveredArch, setHoveredArch] = useState<"upper" | "lower" | null>(null);
 	const [internalGlobals, setInternalGlobals] = useState<GlobalTreatmentItem[]>([]);
 	const currentGlobals = globalTreatments ?? internalGlobals;
+
+	const teethDataMap = useMemo(() => {
+		const map = new Map<number, ToothData>();
+		if (Array.isArray(teethData)) {
+			for (let i = 0; i < teethData.length; i++) {
+				const t = teethData[i];
+				if (t && typeof t.toothNumber === "number") {
+					map.set(t.toothNumber, t);
+				}
+			}
+		}
+		return map;
+	}, [teethData]);
 
 	const effectiveDentition = dentitionMode ?? (mixedDentition ? "mixed" : pediatricMode ? "pediatric" : "adult");
 	const isPediatricEffective = effectiveDentition === "pediatric";
@@ -1887,8 +2004,8 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 				if (quickState) {
 					e.preventDefault();
 					const singleTooth =
-						selectedTeeth.length === 1
-							? (teethData ?? []).find((t) => t.toothNumber === selectedTeeth[0])
+						selectedTeeth.length === 1 && selectedTeeth[0] !== undefined
+							? teethDataMap.get(selectedTeeth[0])
 							: undefined;
 					onQuickStateChange(selectedTeeth, quickState, singleTooth?.surfaces);
 					return;
@@ -1925,7 +2042,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 		return () => {
 			window.removeEventListener("keydown", handleGlobalKeyDown);
 		};
-	}, [selectedTeeth, onQuickStateChange, isPediatricEffective, currentQuadrant, teethData]);
+	}, [selectedTeeth, onQuickStateChange, isPediatricEffective, currentQuadrant, teethDataMap]);
 
 	const handleToothClick = React.useCallback(
 		(
@@ -1961,7 +2078,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 		spans: readonly BridgeSpanInfo[],
 	) => {
 		const span = getBridgeSpanForTooth(num, spans);
-		const toothItem = (teethData ?? []).find((t) => t.toothNumber === num);
+		const toothItem = teethDataMap.get(num);
 		const isPonticByRole = toothItem?.bridgeRole === "pontic";
 		if (!span) {
 			return {
@@ -2219,7 +2336,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 						}`}>
 							<div className="tooth-quadrant-group focused-quadrant-group">
 								{(Array.isArray(activeQuadrantTeeth) ? activeQuadrantTeeth : []).map((num) => {
-									const tData: ToothData = (teethData ?? []).find((t) => t.toothNumber === num) ?? {
+									const tData: ToothData = teethDataMap.get(num) ?? {
 										toothNumber: num,
 										state: "Healthy",
 									};
@@ -2265,7 +2382,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 						<div className={`teeth-row top-row ${hoveredArch === "upper" ? "ring-2 ring-blue-400/80 shadow-lg shadow-blue-500/20 bg-blue-50/20 dark:bg-blue-950/20 rounded-xl transition-all duration-300" : ""}`}>
 							<div className="tooth-quadrant-group top-left-quad">
 								{topSplit.left.map((num) => {
-									const tData: ToothData = (teethData ?? []).find((t) => t.toothNumber === num) ?? {
+									const tData: ToothData = teethDataMap.get(num) ?? {
 										toothNumber: num,
 										state: "Healthy",
 									};
@@ -2298,7 +2415,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 
 							<div className="tooth-quadrant-group top-right-quad">
 								{topSplit.right.map((num) => {
-									const tData: ToothData = (teethData ?? []).find((t) => t.toothNumber === num) ?? {
+									const tData: ToothData = teethDataMap.get(num) ?? {
 										toothNumber: num,
 										state: "Healthy",
 									};
@@ -2337,7 +2454,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 						<div className={`teeth-row bottom-row ${hoveredArch === "lower" ? "ring-2 ring-blue-400/80 shadow-lg shadow-blue-500/20 bg-blue-50/20 dark:bg-blue-950/20 rounded-xl transition-all duration-300" : ""}`}>
 							<div className="tooth-quadrant-group bottom-left-quad">
 								{bottomSplit.left.map((num) => {
-									const tData: ToothData = (teethData ?? []).find((t) => t.toothNumber === num) ?? {
+									const tData: ToothData = teethDataMap.get(num) ?? {
 										toothNumber: num,
 										state: "Healthy",
 									};
@@ -2370,7 +2487,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 
 							<div className="tooth-quadrant-group bottom-right-quad">
 								{bottomSplit.right.map((num) => {
-									const tData: ToothData = (teethData ?? []).find((t) => t.toothNumber === num) ?? {
+									const tData: ToothData = teethDataMap.get(num) ?? {
 										toothNumber: num,
 										state: "Healthy",
 									};
@@ -2402,5 +2519,6 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 			</div>
 		</div>
 	);
-});
+}, areAnatomicalSvgOdontogramPropsEqual);
+AnatomicalSvgOdontogram.displayName = "AnatomicalSvgOdontogram";
 

@@ -8,6 +8,14 @@
  * - Native offline storage and filesystem cache.
  */
 
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+	safeSessionStorageGetItem,
+	safeSessionStorageSetItem,
+	safeSessionStorageRemoveItem,
+} from "../lib/safeLocalStorage";
+
 export interface MobileScanResult {
 	success: boolean;
 	barcode?: string | undefined;
@@ -496,16 +504,13 @@ export async function saveSecureToken(
 	if (api?.setSecureSecret) {
 		return api.setSecureSecret(key, value);
 	}
-	if (typeof window !== "undefined" && window.sessionStorage) {
-		try {
-			window.sessionStorage.setItem(`dente_sec_${key}`, value);
-			return { success: true };
-		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : "Session storage unavailable";
-			return { success: false, error: msg };
-		}
+	try {
+		safeSessionStorageSetItem(`dente_sec_${key}`, value);
+		return { success: true };
+	} catch (err: unknown) {
+		const msg = err instanceof Error ? err.message : "Session storage unavailable";
+		return { success: false, error: msg };
 	}
-	return { success: true };
 }
 
 /**
@@ -518,12 +523,9 @@ export async function getSecureToken(
 	if (api?.getSecureSecret) {
 		return api.getSecureSecret(key);
 	}
-	if (typeof window !== "undefined" && window.sessionStorage) {
-		const val = window.sessionStorage.getItem(`dente_sec_${key}`);
-		if (val !== null) {
-			return { success: true, value: val };
-		}
-		return { success: true };
+	const val = safeSessionStorageGetItem(`dente_sec_${key}`);
+	if (val !== null) {
+		return { success: true, value: val };
 	}
 	return { success: true };
 }
@@ -538,9 +540,7 @@ export async function removeSecureToken(
 	if (api?.removeSecureSecret) {
 		return api.removeSecureSecret(key);
 	}
-	if (typeof window !== "undefined" && window.sessionStorage) {
-		window.sessionStorage.removeItem(`dente_sec_${key}`);
-	}
+	safeSessionStorageRemoveItem(`dente_sec_${key}`);
 	return { success: true };
 }
 
@@ -1473,28 +1473,16 @@ const MUTE_STORAGE_KEY = "dente_clinical_audio_muted";
  * Gets or sets the global clinical audio mute state.
  */
 export function isClinicalAudioMuted(): boolean {
-	if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
-		try {
-			const stored = localStorage.getItem(MUTE_STORAGE_KEY);
-			if (stored !== null) {
-				return stored === "true";
-			}
-		} catch {
-			// Ignore localStorage access restrictions
-		}
+	const stored = safeLocalStorageGetItem(MUTE_STORAGE_KEY);
+	if (stored !== null) {
+		return stored === "true";
 	}
 	return isAudioMutedState;
 }
 
 export function setClinicalAudioMuted(muted: boolean): void {
 	isAudioMutedState = muted;
-	if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
-		try {
-			localStorage.setItem(MUTE_STORAGE_KEY, String(muted));
-		} catch {
-			// Ignore localStorage error
-		}
-	}
+	safeLocalStorageSetItem(MUTE_STORAGE_KEY, String(muted));
 }
 
 function getOrCreateAudioContext(): AudioContext | null {

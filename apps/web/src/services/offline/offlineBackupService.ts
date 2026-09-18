@@ -28,6 +28,10 @@ import {
 } from "@dental/shared";
 import { logger } from "../../utils/logger";
 import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../../lib/safeLocalStorage";
+import {
 	CLINICAL_CACHE_STORE_NAME,
 	DRAFTS_STORE_NAME,
 	ICD10_CACHE_STORE_NAME,
@@ -596,11 +600,11 @@ function recordLocalVaultSnapshot(
 		logger.warn("[OfflineBackup] IndexedDB vault snapshot fallback write failed", idbErr);
 	});
 
-	if (typeof window === "undefined" || !window.localStorage) return;
+	if (typeof window === "undefined") return;
 
 	// 2. Synchronous fast-access in localStorage with QuotaExceededError protection
 	try {
-		const rawHistory = window.localStorage.getItem(LOCAL_VAULT_STORAGE_KEY);
+		const rawHistory = safeLocalStorageGetItem(LOCAL_VAULT_STORAGE_KEY);
 		let snapshots: Array<{ meta: LocalVaultSnapshotMeta; content: string }> = [];
 		if (rawHistory) {
 			try {
@@ -617,7 +621,7 @@ function recordLocalVaultSnapshot(
 			snapshots = snapshots.slice(0, LOCAL_VAULT_MAX_DEFAULT_SNAPSHOTS);
 		}
 
-		window.localStorage.setItem(LOCAL_VAULT_STORAGE_KEY, JSON.stringify(snapshots));
+		safeLocalStorageSetItem(LOCAL_VAULT_STORAGE_KEY, JSON.stringify(snapshots));
 		autoBackupStatus.totalSnapshotsInVault = snapshots.length;
 	} catch (err: any) {
 		const isQuotaExceeded =
@@ -635,7 +639,7 @@ function recordLocalVaultSnapshot(
 
 		// If full snapshot exceeds localStorage quota, store metadata with empty content so metadata listing survives
 		try {
-			const rawHistory = window.localStorage.getItem(LOCAL_VAULT_STORAGE_KEY);
+			const rawHistory = safeLocalStorageGetItem(LOCAL_VAULT_STORAGE_KEY);
 			let snapshots: Array<{ meta: LocalVaultSnapshotMeta; content: string }> = [];
 			if (rawHistory) {
 				try {
@@ -648,7 +652,7 @@ function recordLocalVaultSnapshot(
 			if (snapshots.length > LOCAL_VAULT_MAX_DEFAULT_SNAPSHOTS) {
 				snapshots = snapshots.slice(0, LOCAL_VAULT_MAX_DEFAULT_SNAPSHOTS);
 			}
-			window.localStorage.setItem(LOCAL_VAULT_STORAGE_KEY, JSON.stringify(snapshots));
+			safeLocalStorageSetItem(LOCAL_VAULT_STORAGE_KEY, JSON.stringify(snapshots));
 			autoBackupStatus.totalSnapshotsInVault = snapshots.length;
 		} catch {
 			// Ignore secondary metadata storage error
@@ -660,10 +664,10 @@ function recordLocalVaultSnapshot(
  * Возвращает список всех локальных снимков в хранилище Vault
  */
 export function listLocalVaultSnapshots(): LocalVaultSnapshotMeta[] {
-	if (typeof window === "undefined" || !window.localStorage) return [];
+	if (typeof window === "undefined") return [];
 
 	try {
-		const raw = window.localStorage.getItem(LOCAL_VAULT_STORAGE_KEY);
+		const raw = safeLocalStorageGetItem(LOCAL_VAULT_STORAGE_KEY);
 		if (!raw) return [];
 		const list = JSON.parse(raw) as Array<{ meta: LocalVaultSnapshotMeta }>;
 		return list.map((item) => item.meta);
@@ -676,9 +680,9 @@ export function listLocalVaultSnapshots(): LocalVaultSnapshotMeta[] {
  * Получает содержимое снимка по ID (с поиском в LocalStorage и IndexedDB fallback)
  */
 export function getLocalVaultSnapshotContent(snapshotId: string): string | null {
-	if (typeof window !== "undefined" && window.localStorage) {
+	if (typeof window !== "undefined") {
 		try {
-			const raw = window.localStorage.getItem(LOCAL_VAULT_STORAGE_KEY);
+			const raw = safeLocalStorageGetItem(LOCAL_VAULT_STORAGE_KEY);
 			if (raw) {
 				const list = JSON.parse(raw) as Array<{ meta: LocalVaultSnapshotMeta; content: string }>;
 				const found = list.find((item) => item.meta.id === snapshotId);
@@ -714,14 +718,14 @@ export function getLocalVaultSnapshotContent(snapshotId: string): string | null 
 export function deleteLocalVaultSnapshot(snapshotId: string): boolean {
 	void deletePatientClinicalCache(`vault_snap_${snapshotId}`).catch(() => {});
 
-	if (typeof window === "undefined" || !window.localStorage) return false;
+	if (typeof window === "undefined") return false;
 
 	try {
-		const raw = window.localStorage.getItem(LOCAL_VAULT_STORAGE_KEY);
+		const raw = safeLocalStorageGetItem(LOCAL_VAULT_STORAGE_KEY);
 		if (!raw) return false;
 		let list = JSON.parse(raw) as Array<{ meta: LocalVaultSnapshotMeta; content: string }>;
 		list = list.filter((item) => item.meta.id !== snapshotId);
-		window.localStorage.setItem(LOCAL_VAULT_STORAGE_KEY, JSON.stringify(list));
+		safeLocalStorageSetItem(LOCAL_VAULT_STORAGE_KEY, JSON.stringify(list));
 		autoBackupStatus.totalSnapshotsInVault = list.length;
 		return true;
 	} catch {

@@ -1298,7 +1298,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 				</div>
 
 				{/* Center: Scrollable Chair Palette Chips with Accent Bars (StomX Parity, Feature 190) */}
-				<div className="flex items-center gap-1.5 overflow-x-auto flex-1 py-0.5 touch-pan-x scrollbar-none min-w-0">
+				<div className="flex items-center gap-1.5 overflow-x-auto flex-1 py-0.5 touch-pan-x scrollbar-none min-w-0 flex-nowrap whitespace-nowrap">
 					{chairs.map((chair) => {
 						const chairColor = (chair as { color?: string }).color || "var(--teal, #0d9488)";
 						const isSelected = effectiveSelectedChairId === chair.id;
@@ -1740,7 +1740,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 						data-testid="chair-view-add-chair-strip-btn"
 					>
 						<Plus size={11} className="shrink-0" />
-						<span className="whitespace-nowrap shrink-0">+ Кресло</span>
+						<span className="whitespace-nowrap shrink-0">Кресло</span>
 					</button>
 				</div>
 
@@ -1929,7 +1929,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 						data-testid="btn-chair-view-add-doctor"
 					>
 						<UserPlus size={12} className="text-[var(--teal)]" />
-						<span className="hidden sm:inline">+ Врач</span>
+						<span className="hidden sm:inline">Врач</span>
 					</button>
 
 					<button
@@ -1940,7 +1940,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 						data-testid="btn-add-chair-header"
 					>
 						<Plus size={12} />
-						<span className="hidden sm:inline">+ Кресло</span>
+						<span className="hidden sm:inline">Кресло</span>
 					</button>
 				</div>
 			</div>

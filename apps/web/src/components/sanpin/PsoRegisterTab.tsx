@@ -532,7 +532,16 @@ export function PsoRegisterTab() {
 							filteredLogs.map((log) => {
 								const isStamped = stampedRows[log.id] || Boolean(log.notes?.includes("ЭЦП"));
 								return (
-									<tr key={log.id} style={{ minHeight: "44px" }}>
+									<tr
+										key={log.id}
+										className="sanpin-log-row"
+										style={{
+											minHeight: "44px",
+											contentVisibility: "auto",
+											containIntrinsicSize: "1px 44px",
+											contain: "content",
+										}}
+									>
 										<td style={{ width: "125px", minWidth: "115px", whiteSpace: "nowrap", fontSize: "0.825rem" }} className="whitespace-nowrap shrink-0">
 											<div style={{ fontWeight: 600, color: "var(--ink)" }}>
 												{new Date(log.timestamp).toLocaleDateString("ru-RU")}

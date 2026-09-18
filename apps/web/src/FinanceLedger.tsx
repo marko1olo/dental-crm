@@ -131,7 +131,7 @@ export function FinanceLedger({
 								key={item.id}
 								style={{
 									contentVisibility: "auto",
-									containIntrinsicSize: "1px 44px",
+									containIntrinsicSize: "1px 40px",
 									contain: "content",
 								}}
 							>
@@ -215,7 +215,7 @@ export function FinanceLedger({
 								key={payment.id}
 								style={{
 									contentVisibility: "auto",
-									containIntrinsicSize: "1px 44px",
+									containIntrinsicSize: "1px 40px",
 									contain: "content",
 								}}
 							>

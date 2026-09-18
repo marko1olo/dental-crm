@@ -80,6 +80,8 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 							<img
 								src={imageSrc}
 								alt={`RVG визиограф зуба ${toothNumber}`}
+								loading="lazy"
+								decoding="async"
 								className="dente-rvg-img"
 								style={{
 									filter: `invert(${isInverted ? 1 : 0}) contrast(${contrast}%) brightness(${brightness}%)`,

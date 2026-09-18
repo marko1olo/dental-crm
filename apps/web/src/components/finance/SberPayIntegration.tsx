@@ -267,10 +267,10 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 				<button
 					type="button"
 					onClick={() => handleStartPayment(operation)}
-					className="min-h-[44px] px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-sm transition-all"
+					className="min-h-[44px] w-full sm:w-auto px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all min-w-0"
 				>
-					<RefreshCw size={14} />
-					<span>Запустить оплату ({amountRubString} ₽)</span>
+					<RefreshCw size={14} className="shrink-0" />
+					<span className="truncate">Запустить оплату ({amountRubString} ₽)</span>
 				</button>
 
 				{lastResponse?.success && (

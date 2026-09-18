@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	AlertOctagon,
 	Calendar,
@@ -27,9 +27,17 @@ import {
 import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
 import { LabOrdersPage } from "../../pages/LabOrdersPage";
-import { DentalLabOrderModal } from "../lab/DentalLabOrderModal";
-import { DentalLabOrdersHubModal } from "../lab/DentalLabOrdersHubModal";
-import { LabTrackingDrawer } from "../lab/LabTrackingDrawer";
+
+// Lazy-loaded secondary modals for low-spec hardware (4GB RAM, 5400 RPM HDD)
+const DentalLabOrderModal = lazy(() =>
+	import("../lab/DentalLabOrderModal").then((m) => ({ default: m.DentalLabOrderModal }))
+);
+const DentalLabOrdersHubModal = lazy(() =>
+	import("../lab/DentalLabOrdersHubModal").then((m) => ({ default: m.DentalLabOrdersHubModal }))
+);
+const LabTrackingDrawer = lazy(() =>
+	import("../lab/LabTrackingDrawer").then((m) => ({ default: m.LabTrackingDrawer }))
+);
 import {
 	type DentalLabOrderData,
 	type CanonicalLabOrderStatus,
@@ -1246,7 +1254,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						data-testid="empty-state-add-first-patient-lab-order-btn"
 					>
 						<Plus size={15} />
-						<span>+ Оформить заказ-наряд в лабораторию</span>
+						<span>Оформить заказ-наряд в лабораторию</span>
 					</button>
 				</div>
 			) : (
@@ -1497,55 +1505,67 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 			)}
 
 			{/* Full CAD/CAM Order Modal */}
-			<DentalLabOrderModal
-				isOpen={isOrderModalOpen}
-				onClose={() => setIsOrderModalOpen(false)}
-				initialOrder={selectedOrderForEdit}
-				initialTab={modalInitialTab}
-				patientId={patientId}
-				onOrderSaved={() => fetchOrders()}
-			/>
+			{isOrderModalOpen && (
+				<Suspense fallback={null}>
+					<DentalLabOrderModal
+						isOpen={isOrderModalOpen}
+						onClose={() => setIsOrderModalOpen(false)}
+						initialOrder={selectedOrderForEdit}
+						initialTab={modalInitialTab}
+						patientId={patientId}
+						onOrderSaved={() => fetchOrders()}
+					/>
+				</Suspense>
+			)}
 
 			{/* 7-Stage Tracking Drawer */}
-			<LabTrackingDrawer
-				isOpen={isTrackingDrawerOpen}
-				onClose={() => setIsTrackingDrawerOpen(false)}
-				order={selectedOrderForTracking}
-				onStageUpdate={async (orderId, newStage, note) => {
-					try {
-						const res = await fetch(`/api/lab/orders/${orderId}`, {
-							method: "PATCH",
-							headers: {
-								"Content-Type": "application/json",
-								...denteAdminSecretRequestHeaders(),
-							},
-							body: JSON.stringify({
-								stage: newStage,
-								notes: note,
-							}),
-						});
-						if (!res.ok) {
-							const errData = await res.json().catch(() => null);
-							throw new Error(errData?.message || `Ошибка смены этапа (${res.status})`);
-						}
-						showToast("Этап наряда ЗТЛ успешно сохранен в базе данных", "success");
-						await fetchOrders();
-					} catch (err: any) {
-						showToast(err.message || "Не удалось обновить этап наряда в БД", "error");
-					}
-				}}
-			/>
+			{isTrackingDrawerOpen && (
+				<Suspense fallback={null}>
+					<LabTrackingDrawer
+						isOpen={isTrackingDrawerOpen}
+						onClose={() => setIsTrackingDrawerOpen(false)}
+						order={selectedOrderForTracking}
+						onStageUpdate={async (orderId, newStage, note) => {
+							try {
+								const res = await fetch(`/api/lab/orders/${orderId}`, {
+									method: "PATCH",
+									headers: {
+										"Content-Type": "application/json",
+										...denteAdminSecretRequestHeaders(),
+									},
+									body: JSON.stringify({
+										stage: newStage,
+										notes: note,
+									}),
+								});
+								if (!res.ok) {
+									const errData = await res.json().catch(() => null);
+									throw new Error(errData?.message || `Ошибка смены этапа (${res.status})`);
+								}
+								showToast("Этап наряда ЗТЛ успешно сохранен в базе данных", "success");
+								await fetchOrders();
+							} catch (err: any) {
+								showToast(err.message || "Не удалось обновить этап наряда в БД", "error");
+							}
+						}}
+					/>
+				</Suspense>
+			)}
 
-			<DentalLabOrdersHubModal
-				isOpen={isLabHubOpen}
-				onClose={() => setIsLabHubOpen(false)}
-				currentPatientId={patientId}
-				currentPatientName={orders[0]?.patientName}
-				currentDoctorName={appLogic?.activeDoctor?.fullName || appLogic?.activeDoctor?.name}
-				onSaveOrder={() => {
-					void fetchOrders();
-				}}
-			/>
+			{isLabHubOpen && (
+				<Suspense fallback={null}>
+					<DentalLabOrdersHubModal
+						isOpen={isLabHubOpen}
+						onClose={() => setIsLabHubOpen(false)}
+						currentPatientId={patientId}
+						currentPatientName={orders[0]?.patientName}
+						currentDoctorName={appLogic?.activeDoctor?.fullName || appLogic?.activeDoctor?.name}
+						onSaveOrder={() => {
+							void fetchOrders();
+						}}
+					/>
+				</Suspense>
+			)}
 		</div>
 	);
 }
