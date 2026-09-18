@@ -8803,3 +8803,30 @@
       - Применено CSS-содержание (`content-visibility: auto`, `containIntrinsicSize`) для быстрого рендеринга больших реестров автоклава на слабых моноблоках (коммит `a22c5e533`).
   - **Защита хост-машины и Single-Compiler Gate (Мандат 8t)**:
     * В полном соответствии с Мандатом 8t компиляторные команды (`tsc`, `npm run typecheck`, `npm run build`) не запускались воркером; ресурсы хост-машины сохранены для L1 Оркестратора.
+
+### 420. Academic Bloat & SSOT Duplicate Executioner — Искоренение госпитального трансфузиологического блоата из пресетов ЭМК и шаблонов 043/у (Мандаты 8i, 8s, 8t)
+
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Архитектурно реализовано, подтверждено и верифицировано 2026-09-18)
+* **Задействованные модули и файлы**:
+  - `apps/web/src/components/visit/clinicalSoapPresets.ts`
+  - `apps/web/src/components/emr/templates/ClinicalDiaryTemplatesModal.tsx`
+  - `apps/web/src/tests/emrPerioAutonomyInquisition.test.ts`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Описание**:
+  - **Искоренение трансфузиологического блоата из амбулаторной стоматологии (Мандат 8i — Outpatient Bounded Context Sovereignty)**:
+    * В `apps/web/src/components/visit/clinicalSoapPresets.ts`:
+      - Из анамнеза канонического пресета Z01.2 физиологической нормы `norm_healthy` полностью вычищен стационарный рудимент «Гемотрансфузий не было.»;
+    * В `apps/web/src/components/emr/templates/ClinicalDiaryTemplatesModal.tsx`:
+      - Из анамнеза эталонного шаблона `somatic_healthy_norm` физиологической нормы вычищен госпитальный рудимент «Гемотрансфузии, »;
+    * В `apps/web/src/tests/emrPerioAutonomyInquisition.test.ts`:
+      - Добавлены автоматизированные тесты 2.5 и 2.6, верифицирующие отсутствие запрещенных госпитальных терминов (гемотрансфузии, койко-дни, паллиатив, лапаротомия, стационар) во всех пресетах `CLINICAL_SOAP_PRESETS`, `PHYSIOLOGICAL_NORM_PRESET` и `CLINICAL_1CLICK_TEMPLATES_CATALOG` (100% PASS, 48 из 48 тестов).
+  - **Закон Единого Неделимого Авторитета и аудит дубликатов (Мандат 8s)**:
+    * Проведен тотальный AST-аудит компонентов `apps/web/src`: подтверждено отсутствие параллельных дубликатов компонентов (`*V2`, `*Advanced*`, `*Mobile*`); существующие фасадные адаптеры (`LabWorkOrderModal`, `Fiscal54FzReceiptModal`, `CbctMprWorkspace`, `reorderEngine`) функционируют как сверхкомпактные канонические делегаты ($\le 36$ строк) в полном соответствии с Мандатом 8s;
+  - **Анти-диорамы и ноль процедурных симуляторов (Core Route пп. 7, 11)**:
+    * Подтверждено отсутствие синтетических процедурных диорам: использование `Math.sin` и `<canvas>` строго ограничено подлинной геометрией и физикой (косые проекции 3D DICOM MPR, дельта цвета CIEDE2000, аппаратный спектроанализатор Web Audio API `AnalyserNode`).
+  - **Гигиена репозитория**:
+    * В корне проекта подтверждено отсутствие мусорных скриптов (`tmp_*`, `test_*.js`, `*.log`).
+  - **Защита хост-машины и Single-Compiler Gate (Мандат 8t)**:
+    * В полном соответствии с Мандатом 8t компиляторные команды (`tsc`, `npm run typecheck`, `npm run build`) не запускались воркером; проверка проведена через точечный тест `node --test` (48/48 PASS) и скрипт валидации кодировок `check:encoding` (0 ошибок).
+

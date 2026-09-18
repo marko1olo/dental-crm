@@ -52,8 +52,15 @@ import {
 } from "../components/odontogram/JawOcclusionModal.js";
 import {
 	CANONICAL_SOAP_TEMPLATES,
+	CLINICAL_SOAP_PRESETS,
 	type CanonicalSoapTemplateKey,
 } from "../components/visit/clinicalSoapPresets.js";
+import {
+	CLINICAL_1CLICK_TEMPLATES_CATALOG,
+} from "../components/emr/templates/clinicalDiaryTemplatesEngine.js";
+import {
+	PHYSIOLOGICAL_NORM_PRESET,
+} from "../components/emr/templates/ClinicalDiaryTemplatesModal.js";
 import {
 	FORM_043_PHYSIOLOGICAL_NORM,
 	createForm043PhysiologicalNorm,
@@ -247,6 +254,35 @@ describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisiti
 					!normBlob.includes(term),
 					`Форма 043/у содержит запрещенный госпитальный термин: «${term}»`,
 				);
+			}
+		});
+
+		it("2.5. В CLINICAL_SOAP_PRESETS отсутствуют запрещенные госпитальные термины", () => {
+			assert.ok(CLINICAL_SOAP_PRESETS.length > 0, "Ожидались пресеты SOAP");
+			for (const preset of CLINICAL_SOAP_PRESETS) {
+				const blob = `${preset.title} ${preset.complaint} ${preset.anamnesis} ${preset.statusLocalis} ${preset.treatmentDescription}`.toLowerCase();
+				for (const term of FORBIDDEN_HOSPITAL_TERMS) {
+					assert.ok(
+						!blob.includes(term),
+						`Пресет «${preset.id}» содержит запрещенный госпитальный термин: «${term}»`,
+					);
+				}
+			}
+		});
+
+		it("2.6. В шаблонах ЭМК (PHYSIOLOGICAL_NORM_PRESET, CLINICAL_1CLICK_TEMPLATES_CATALOG) нет госпитального блоата", () => {
+			const allDiaryTemplates = [
+				PHYSIOLOGICAL_NORM_PRESET,
+				...CLINICAL_1CLICK_TEMPLATES_CATALOG,
+			];
+			for (const t of allDiaryTemplates) {
+				const blob = `${t.title} ${t.defaultSubjectiveComplaints} ${t.defaultAnamnesisMorbi} ${t.defaultObjectiveStatus} ${t.defaultProcedureProtocol}`.toLowerCase();
+				for (const term of FORBIDDEN_HOSPITAL_TERMS) {
+					assert.ok(
+						!blob.includes(term),
+						`Шаблон ЭМК «${t.id}» содержит запрещенный госпитальный термин: «${term}»`,
+					);
+				}
 			}
 		});
 	});

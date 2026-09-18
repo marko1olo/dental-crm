@@ -5669,3 +5669,24 @@
   - `docs/competitive-audit/FEATURES_REGISTRY.md`
   - `docs/competitive-audit/BACKLOG.md`
   - `docs/competitive-audit/OUR_CRM_MAP.md`
+
+### 2.10.355. Wave 261: Academic Bloat & SSOT Duplicate Executioner — Тотальное искоренение трансфузиологического блоата из пресетов ЭМК и шаблонов 043/у, аудит параллельных дублей SSOT и защита Single-Compiler Gate (Мандаты 8i, 8s, 8t)
+
+- **Цель**: Искоренение оставшихся рудиментов госпитального трансфузиологического блоата, подтверждение чистоты единого авторитета компонентов (SSOT) и расширение инквизиционного теста Формы 043/у:
+  1. *Амбулаторный стоматологический суверенитет (Мандат 8i)*:
+     - В `clinicalSoapPresets.ts` из анамнеза пресета Z01.2 `norm_healthy` устранен стационарный рудимент «Гемотрансфузий не было.»;
+     - В `ClinicalDiaryTemplatesModal.tsx` из анамнеза эталонного шаблона `somatic_healthy_norm` удален термин «Гемотрансфузии, »;
+     - В `emrPerioAutonomyInquisition.test.ts` внедрены авто-тесты 2.5 и 2.6, предотвращающие проникновение стационарного блоата в шаблоны ЭМК (48/48 PASS).
+  2. *Закон Единого Неделимого Авторитета (Мандат 8s)*:
+     - Подтверждено отсутствие неконтролируемых дубликатов React-компонентов в `apps/web/src` (0 дублей); канонические фасады зафиксированы.
+  3. *Защита Single-Compiler Gate (Мандат 8t)*:
+     - Проверка выполнена без запуска компилятора хоста, с сохранением ресурсов для централизованного гейта L1 Оркестратора.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/visit/clinicalSoapPresets.ts`
+  - `apps/web/src/components/emr/templates/ClinicalDiaryTemplatesModal.tsx`
+  - `apps/web/src/tests/emrPerioAutonomyInquisition.test.ts`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+
