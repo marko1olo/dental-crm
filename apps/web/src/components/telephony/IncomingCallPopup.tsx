@@ -137,9 +137,9 @@ export function CallAudioPlayer({
 			audioRef.current
 				.play()
 				.then(() => setIsPlaying(true))
-				.catch(() => {
-					// Audio play fallback/simulation for synthetic URLs
-					setIsPlaying(true);
+				.catch((err) => {
+					console.warn("[IncomingCallPopup] Audio playback failed:", err);
+					setIsPlaying(false);
 				});
 		}
 	};
@@ -230,8 +230,9 @@ export function CallAudioPlayer({
 				src={recordingUrl}
 				onTimeUpdate={handleTimeUpdate}
 				onEnded={() => setIsPlaying(false)}
-				onError={() => {
-					// Fallback for simulation links
+				onError={(e) => {
+					console.warn("[IncomingCallPopup] Audio element error:", e);
+					setIsPlaying(false);
 				}}
 			>
 				<track kind="captions" />

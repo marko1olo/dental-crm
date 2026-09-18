@@ -105,8 +105,6 @@ export interface PatientDemographicsSnapshot {
 export interface SomaticAnamnesisSnapshot {
 	readonly allergies: readonly string[];
 	readonly chronicDiseases: readonly string[];
-	readonly bloodGroup?: string | null;
-	readonly rhesusFactor?: string | null;
 	readonly isPregnantOrLactating?: boolean;
 	readonly contraindications: readonly string[];
 }
@@ -375,8 +373,6 @@ export function buildPatientClinicalSnapshot(params: {
 		somaticAnamnesis: {
 			allergies: params.somaticAnamnesis?.allergies || [],
 			chronicDiseases: params.somaticAnamnesis?.chronicDiseases || [],
-			bloodGroup: params.somaticAnamnesis?.bloodGroup || null,
-			rhesusFactor: params.somaticAnamnesis?.rhesusFactor || null,
 			isPregnantOrLactating: params.somaticAnamnesis?.isPregnantOrLactating || false,
 			contraindications: params.somaticAnamnesis?.contraindications || [],
 		},

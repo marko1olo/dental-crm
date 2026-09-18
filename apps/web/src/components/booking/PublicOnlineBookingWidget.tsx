@@ -1864,7 +1864,7 @@ export const PublicOnlineBookingWidget: React.FC<
 				)}
 
 				{/* ================================================================ */}
-				{/* STEP 4: Patient Info Form & SMS Verification Simulation           */}
+				{/* STEP 4: Patient Info Form & Direct Booking Confirmation          */}
 				{/* ================================================================ */}
 				{step === 4 && (
 					<form onSubmit={handleFinalSubmit} noValidate aria-labelledby="step4-heading">

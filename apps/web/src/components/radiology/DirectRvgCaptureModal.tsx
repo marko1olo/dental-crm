@@ -693,7 +693,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 							<span>{radiationDoseInfo.fullText}</span>
 						</div>
 
-						{/* Action Trigger Simulation Button */}
+						{/* Hardware RVG Exposure & Frame Capture Trigger */}
 						<button
 							type="button"
 							onClick={handleTriggerCapture}

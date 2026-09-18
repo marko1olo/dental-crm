@@ -290,7 +290,10 @@ export function TelephonyFloatingWidget({
 			audioRef.current
 				.play()
 				.then(() => setIsPlayingAudio(true))
-				.catch(() => setIsPlayingAudio(true));
+				.catch((err) => {
+					console.warn("[TelephonyFloatingWidget] Audio playback failed:", err);
+					setIsPlayingAudio(false);
+				});
 		}
 	};
 
@@ -324,7 +327,10 @@ export function TelephonyFloatingWidget({
 				audioRef.current
 					.play()
 					.then(() => setIsPlayingAudio(true))
-					.catch(() => setIsPlayingAudio(true));
+					.catch((err) => {
+						console.warn("[TelephonyFloatingWidget] Audio seek-play failed:", err);
+						setIsPlayingAudio(false);
+					});
 			}
 		}
 	};
@@ -1085,6 +1091,10 @@ export function TelephonyFloatingWidget({
 													src={activeCall.recordingUrl}
 													onTimeUpdate={handleAudioTimeUpdate}
 													onEnded={() => setIsPlayingAudio(false)}
+													onError={(e) => {
+														console.warn("[TelephonyFloatingWidget] Audio element error:", e);
+														setIsPlayingAudio(false);
+													}}
 												>
 													<track kind="captions" />
 												</audio>

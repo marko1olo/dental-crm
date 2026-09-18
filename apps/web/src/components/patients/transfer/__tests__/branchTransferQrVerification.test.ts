@@ -71,8 +71,6 @@ function createTestSnapshot(overrides: Partial<Parameters<typeof buildPatientCli
 		somaticAnamnesis: {
 			allergies: ["Лидокаин"],
 			chronicDiseases: ["Гипертоническая болезнь I ст."],
-			bloodGroup: "A(II)",
-			rhesusFactor: "Rh+",
 			isPregnantOrLactating: false,
 			contraindications: ["Амидные анестетики с адреналином 1:100000"],
 		},

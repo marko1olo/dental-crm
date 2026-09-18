@@ -1216,7 +1216,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 								</button>
 							</div>
 
-							{/* Thermal Receipt Paper Visual Simulation */}
+							{/* Thermal Receipt Paper Preview Container */}
 							<div className="w-full lg:w-96 flex flex-col items-center">
 								{activeFiscalReceipt ? (
 									<div className="fiscal-slip-container w-full">

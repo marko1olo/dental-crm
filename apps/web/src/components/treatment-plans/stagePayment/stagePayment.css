@@ -209,7 +209,7 @@
 	opacity: 0.9;
 }
 
-/* Fiscal Receipt Paper Simulation */
+/* Fiscal Receipt Paper Preview */
 .fiscal-slip-container {
 	background-color: var(--paper-strong);
 	border: 1px dashed var(--line);
