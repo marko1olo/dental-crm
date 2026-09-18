@@ -1,0 +1,107 @@
+{
+  "capturedRegistry": [
+    {
+      "fileName": "01_invoices_registry_desktop_light.png",
+      "view": "Invoices Registry",
+      "mode": "Desktop Light (1440x900)",
+      "sizeBytes": 363426,
+      "sizeKb": "354.9",
+      "md5": "2c9d21aaa326b4b980c834ba8d6db782",
+      "path": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\payment_modal_audit\\01_invoices_registry_desktop_light.png",
+      "passSize": true
+    },
+    {
+      "fileName": "02_payment_modal_card_desktop_light.png",
+      "view": "Payment Modal (Terminal)",
+      "mode": "Desktop Light (1440x900)",
+      "sizeBytes": 425534,
+      "sizeKb": "415.6",
+      "md5": "99e1aadc97b2862dbbb3604e5e3ff8cd",
+      "path": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\payment_modal_audit\\02_payment_modal_card_desktop_light.png",
+      "passSize": true
+    },
+    {
+      "fileName": "03_payment_modal_cash_desktop_light.png",
+      "view": "Payment Modal (Cash & 54-FZ)",
+      "mode": "Desktop Light (1440x900)",
+      "sizeBytes": 423404,
+      "sizeKb": "413.5",
+      "md5": "fae0a3ef20c1d496c284e3ac8d12eb8b",
+      "path": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\payment_modal_audit\\03_payment_modal_cash_desktop_light.png",
+      "passSize": true
+    },
+    {
+      "fileName": "04_payment_modal_cash_desktop_dark.png",
+      "view": "Payment Modal (Cash & 54-FZ)",
+      "mode": "Desktop Dark (1440x900)",
+      "sizeBytes": 421882,
+      "sizeKb": "412.0",
+      "md5": "a9f50db6be823cd41fa2fb3740837c9f",
+      "path": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\payment_modal_audit\\04_payment_modal_cash_desktop_dark.png",
+      "passSize": true
+    },
+    {
+      "fileName": "05_payment_modal_card_desktop_dark.png",
+      "view": "Payment Modal (Terminal)",
+      "mode": "Desktop Dark (1440x900)",
+      "sizeBytes": 424164,
+      "sizeKb": "414.2",
+      "md5": "a4c22beb8b88cbf05b4c937f8ad6eea9",
+      "path": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\payment_modal_audit\\05_payment_modal_card_desktop_dark.png",
+      "passSize": true
+    },
+    {
+      "fileName": "06_invoices_registry_mobile_light.png",
+      "view": "Invoices Registry",
+      "mode": "Mobile Light (390x844)",
+      "sizeBytes": 102209,
+      "sizeKb": "99.8",
+      "md5": "e5a27bf6fdb558467b5baadacef783a7",
+      "path": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\payment_modal_audit\\06_invoices_registry_mobile_light.png",
+      "passSize": true
+    },
+    {
+      "fileName": "07_payment_modal_cash_mobile_light.png",
+      "view": "Payment Modal (Cash Top)",
+      "mode": "Mobile Light (390x844)",
+      "sizeBytes": 109911,
+      "sizeKb": "107.3",
+      "md5": "4906b6ad6476b8cf452f1a9afe5d2416",
+      "path": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\payment_modal_audit\\07_payment_modal_cash_mobile_light.png",
+      "passSize": true
+    },
+    {
+      "fileName": "08_payment_modal_cash_scrolled_mobile_light.png",
+      "view": "Payment Modal (Cash Scrolled to Submit)",
+      "mode": "Mobile Light (390x844)",
+      "sizeBytes": 128400,
+      "sizeKb": "125.4",
+      "md5": "828c6ffef58ecb43c31d2fc2e9dbddb8",
+      "path": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\payment_modal_audit\\08_payment_modal_cash_scrolled_mobile_light.png",
+      "passSize": true
+    },
+    {
+      "fileName": "09_payment_modal_cash_mobile_dark.png",
+      "view": "Payment Modal (Cash Top)",
+      "mode": "Mobile Dark (390x844)",
+      "sizeBytes": 114310,
+      "sizeKb": "111.6",
+      "md5": "e9440bd6e05fd458f1d7008aa7de68d1",
+      "path": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\payment_modal_audit\\09_payment_modal_cash_mobile_dark.png",
+      "passSize": true
+    },
+    {
+      "fileName": "10_payment_modal_cash_scrolled_mobile_dark.png",
+      "view": "Payment Modal (Cash Scrolled to Submit)",
+      "mode": "Mobile Dark (390x844)",
+      "sizeBytes": 133162,
+      "sizeKb": "130.0",
+      "md5": "71d91d7da5b136d57b18a1f5a0aa8cf3",
+      "path": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\payment_modal_audit\\10_payment_modal_cash_scrolled_mobile_dark.png",
+      "passSize": true
+    }
+  ],
+  "allUnique": true,
+  "allGe40Kb": true,
+  "timestamp": "2026-09-18T11:27:42.846Z"
+}

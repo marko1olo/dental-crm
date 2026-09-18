@@ -1136,7 +1136,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
 	return (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+			className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="payment-modal-title"
@@ -1270,218 +1270,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					</div>
 				</div>
 
-				{/* 1-Click Fast Presets & Doctor Discounts Bar (Mandates 8c, 8d, 8e п. 7, 8k, 8n: Frictionless checkout & doctor autonomy discounts) */}
-				<div className="p-2.5 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] space-y-2">
-					{/* Doctor Discounts Row */}
-					<div className="flex items-center justify-between gap-2 flex-wrap">
-						<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink,#0f172a)]">
-							<Percent size={14} className="text-amber-500 shrink-0" />
-							<span>Скидки врача:</span>
-							{discountRub > 0 && (
-								<span
-									className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
-									data-testid="badge-discount-active"
-								>
-									-{effectiveDiscountPercent}% ({discountRub.toLocaleString("ru-RU")} ₽)
-									{discountReason ? ` • ${discountReason}` : ""}
-								</span>
-							)}
-						</div>
-						<div className="flex items-center gap-1.5">
-							<label htmlFor="input-discount-custom-percent" className="text-[11px] font-medium text-[var(--muted,#64748b)]">
-								Своя скидка, %:
-							</label>
-							<div className="relative">
-								<input
-									id="input-discount-custom-percent"
-									type="number"
-									min={0}
-									max={100}
-									step="1"
-									value={discountPercent || ""}
-									onChange={(e) => handleCustomPercentChange(parseFloat(e.target.value) || 0)}
-									placeholder="0%"
-									data-testid="input-discount-custom-percent"
-									className="h-8 w-20 px-2 text-xs font-bold font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-amber-500"
-								/>
-								<span className="absolute right-2 top-2 text-[10px] text-[var(--muted,#64748b)] pointer-events-none">%</span>
-							</div>
-						</div>
-					</div>
-
-					{/* 1-Click Discount Preset Buttons */}
-					<div className="flex items-center gap-1.5 flex-wrap">
-						{DISCOUNT_PRESETS.map((p) => {
-							const isActive = effectiveDiscountPercent === p.percent && !isWarranty100;
-							const isZero = p.percent === 0;
-							const activeClass = isZero
-								? "bg-slate-700 text-white border-slate-700 shadow-2xs"
-								: "bg-amber-600 text-white border-amber-600 shadow-2xs";
-							const inactiveClass = isZero
-								? "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-slate-400 text-[var(--ink,#0f172a)]"
-								: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]";
-							return (
-								<button
-									key={p.percent}
-									type="button"
-									onClick={() => applyDiscountPreset(p.percent, p.reason)}
-									className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 min-w-0 ${
-										isActive ? activeClass : inactiveClass
-									}`}
-									data-testid={p.testId}
-									title={p.title}
-								>
-									{!isZero && (
-										<Percent
-											size={12}
-											className={isActive ? "text-white" : "text-amber-600"}
-										/>
-									)}
-									<span className="truncate">{p.label}</span>
-								</button>
-							);
-						})}
-
-						<button
-							type="button"
-							onClick={applyWarranty100Preset}
-							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 min-w-0 ${
-								isWarranty100
-									? "bg-amber-600 text-white border-amber-600 shadow-2xs"
-									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
-							}`}
-							data-testid="preset-warranty-100"
-							title="Гарантийная переделка 100% (0 ₽, без фискального чека ККТ)"
-						>
-							<ShieldCheck size={14} className={isWarranty100 ? "text-white" : "text-amber-600"} />
-							<span className="truncate">Гарантия 100% (0 ₽)</span>
-						</button>
-					</div>
-
-					{/* 1-Click Tender Presets Row */}
-					<div className="pt-1.5 border-t border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 flex-wrap">
-						<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--muted,#64748b)]">
-							<Zap size={14} className="text-amber-500 shrink-0" />
-							<span>1-клик оплата:</span>
-						</div>
-						<div className="flex items-center gap-1.5 flex-wrap">
-							<button
-								type="button"
-								onClick={applyExactCashPreset}
-								className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 min-w-0 ${
-									activeMethod === "cash" && cashChange.isExact
-										? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
-										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
-								}`}
-								data-testid="preset-exact-cash"
-							>
-								<Banknote size={14} className={activeMethod === "cash" && cashChange.isExact ? "text-white" : "text-emerald-600"} />
-								<span className="truncate">Без сдачи (Ровно сумма счёта: {totalDueRub.toLocaleString("ru-RU")} ₽)</span>
-							</button>
-							<button
-								type="button"
-								onClick={applySpendAllDepositBonusPreset}
-								className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 min-w-0 ${
-									(activeMethod === "family_deposit" || (activeMethod === "split" && (splitDepositRub > 0 || splitBonusRub > 0)))
-										? "bg-purple-600 text-white border-purple-600 shadow-2xs"
-										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
-								}`}
-								data-testid="preset-spend-all-deposit-bonus"
-								title="Списать весь доступный аванс или бонусы"
-							>
-								<Wallet size={14} className={(activeMethod === "family_deposit" || (activeMethod === "split" && (splitDepositRub > 0 || splitBonusRub > 0))) ? "text-white" : "text-purple-600"} />
-								<span className="truncate">Списать весь аванс/бонусы</span>
-							</button>
-							<button
-								type="button"
-								onClick={apply5050CashCardPreset}
-								className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 min-w-0 ${
-									activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0
-										? "bg-indigo-600 text-white border-indigo-600 shadow-2xs"
-										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-indigo-400 text-[var(--ink,#0f172a)]"
-								}`}
-								data-testid="preset-50-50-cash-card"
-								title="50% суммы наличными в кассу + 50% картой через терминал"
-							>
-								<Coins size={14} className={activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 ? "text-white" : "text-indigo-600"} />
-								<span className="truncate">50/50 Нал + Карта</span>
-							</button>
-							<button
-								type="button"
-								onClick={applyThreeWayCashCardAdvancePreset}
-								className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 min-w-0 ${
-									activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 && splitDepositRub > 0
-										? "bg-teal-600 text-white border-teal-600 shadow-2xs"
-										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
-								}`}
-								data-testid="preset-three-way-split"
-								title="Комбинированная оплата в 1 клик: Нал + Карта + Аванс"
-							>
-								<Users size={14} className={activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 && splitDepositRub > 0 ? "text-white" : "text-teal-600"} />
-								<span className="truncate">Нал + Карта + Аванс</span>
-							</button>
-							<button
-								type="button"
-								onClick={applyFullCardPreset}
-								className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 min-w-0 ${
-									activeMethod === "card_terminal"
-										? "bg-blue-600 text-white border-blue-600 shadow-2xs"
-										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-blue-400 text-[var(--ink,#0f172a)]"
-								}`}
-								data-testid="preset-full-card"
-							>
-								<CreditCard size={14} className={activeMethod === "card_terminal" ? "text-white" : "text-blue-600"} />
-								<span className="truncate">Картой 100% ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
-							</button>
-							{patientDepositRub > 0 && (
-								<button
-									type="button"
-									onClick={applyDepositPlusCardPreset}
-									className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 min-w-0 ${
-										activeMethod === "split" && splitDepositRub > 0 && splitCardRub > 0
-											? "bg-purple-600 text-white border-purple-600 shadow-2xs"
-											: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
-									}`}
-									data-testid="preset-deposit-plus-card"
-								>
-									<Wallet size={14} className={activeMethod === "split" && splitDepositRub > 0 && splitCardRub > 0 ? "text-white" : "text-purple-600"} />
-									<span className="truncate">Весь аванс ({Math.min(totalDueRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + Карта</span>
-								</button>
-							)}
-							<button
-								type="button"
-								onClick={() => setActiveMethod("sbp_qr")}
-								className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-400 text-[var(--ink,#0f172a)] min-w-0"
-								data-testid="preset-sbp-qr"
-								title="Сформировать QR СБП для быстрой оплаты пациентом"
-							>
-								<QrCode size={14} className="text-teal-600" />
-								<span className="truncate">Оплата СБП по QR ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
-							</button>
-						</div>
-					</div>
-				</div>
-
-				{/* Debt Autonomy Banner (Mandates 8e & 8n: Patient debt never blocks receipt or tender) */}
-				{(patientDebtRub > 0 || patientDepositRub < 0) && (
-					<div
-						data-testid="debt-autonomy-banner"
-						className="px-3.5 py-2 bg-amber-500/10 border-b border-amber-500/20 text-xs font-medium text-amber-700 dark:text-amber-300 flex items-center gap-2"
-					>
-						<AlertTriangle size={14} className="shrink-0 text-amber-600" />
-						<span>
-							Задолженность пациента: {(patientDebtRub > 0 ? patientDebtRub : Math.abs(patientDepositRub)).toLocaleString("ru-RU")} ₽.
-							Долг не блокирует приём оплаты на фактически внесённую сумму и фискализацию чека.
-						</span>
-					</div>
-				)}
-
 				{/* Method Selector Tabs */}
 				<div className="p-3 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex items-center gap-2 overflow-x-auto shrink-0 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 					<button
 						type="button"
 						onClick={() => setActiveMethod("card_terminal")}
-						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+						data-testid="tab-payment-card-terminal"
+						className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "card_terminal"
 								? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
@@ -1494,7 +1289,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveMethod("sberpay_qr")}
-						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+						data-testid="tab-payment-sberpay-qr"
+						className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "sberpay_qr"
 								? "border-teal-500 bg-teal-500/10 text-teal-700 dark:text-teal-300"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
@@ -1507,7 +1303,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveMethod("sbp_qr")}
-						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+						className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "sbp_qr"
 								? "border-teal-500 bg-teal-500/10 text-teal-700 dark:text-teal-300 ring-2 ring-teal-400"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-teal-400"
@@ -1522,7 +1318,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveMethod("cash")}
-						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+						data-testid="tab-payment-cash"
+						className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "cash"
 								? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
@@ -1535,12 +1332,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveMethod("family_deposit")}
-						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+						data-testid="tab-payment-family-deposit"
+						className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "family_deposit"
 								? "border-pink-500 bg-pink-500/10 text-pink-700 dark:text-pink-300 ring-2 ring-pink-400"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
 						}`}
-						data-testid="tab-payment-family-deposit"
 					>
 						<Users size={16} className="text-pink-600 shrink-0" />
 						<span className="whitespace-nowrap shrink-0">Депозит / Семья</span>
@@ -1549,7 +1346,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveMethod("split")}
-						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+						data-testid="tab-payment-split"
+						className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "split"
 								? "border-purple-500 bg-purple-500/10 text-purple-700 dark:text-purple-300 ring-2 ring-purple-400"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
@@ -1560,8 +1358,217 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					</button>
 				</div>
 
+				{/* Debt Autonomy Banner (Mandates 8e & 8n: Patient debt never blocks receipt or tender) */}
+				{(patientDebtRub > 0 || patientDepositRub < 0) && (
+					<div
+						data-testid="debt-autonomy-banner"
+						className="px-3.5 py-2 bg-amber-500/10 border-b border-amber-500/20 text-xs font-medium text-amber-700 dark:text-amber-300 flex items-center gap-2 shrink-0"
+					>
+						<AlertTriangle size={14} className="shrink-0 text-amber-600" />
+						<span>
+							Задолженность пациента: {(patientDebtRub > 0 ? patientDebtRub : Math.abs(patientDepositRub)).toLocaleString("ru-RU")} ₽.
+							Долг не блокирует приём оплаты на фактически внесённую сумму и фискализацию чека.
+						</span>
+					</div>
+				)}
+
 				{/* Modal Body */}
 				<div className="p-4 overflow-y-auto flex-1 min-h-0 space-y-4">
+					{/* 1-Click Fast Presets & Doctor Discounts Bar (Mandates 8c, 8d, 8e п. 7, 8k, 8n: Frictionless checkout & doctor autonomy discounts) */}
+					<div
+						className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2.5 text-xs"
+						data-testid="payment-modal-presets-bar"
+					>
+						{/* Doctor Discounts Row */}
+						<div className="flex items-center justify-between gap-2 flex-wrap">
+							<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
+								<Percent size={14} className="text-amber-500 shrink-0" />
+								<span>Скидки врача:</span>
+								{discountRub > 0 && (
+									<span
+										className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
+										data-testid="badge-discount-active"
+									>
+										-{effectiveDiscountPercent}% ({discountRub.toLocaleString("ru-RU")} ₽)
+										{discountReason ? ` • ${discountReason}` : ""}
+									</span>
+								)}
+							</div>
+							<div className="flex items-center gap-1.5">
+								<label htmlFor="input-discount-custom-percent" className="text-[11px] font-medium text-[var(--muted,#64748b)]">
+									Своя скидка, %:
+								</label>
+								<div className="relative">
+									<input
+										id="input-discount-custom-percent"
+										type="number"
+										min={0}
+										max={100}
+										step="1"
+										value={discountPercent || ""}
+										onChange={(e) => handleCustomPercentChange(parseFloat(e.target.value) || 0)}
+										placeholder="0%"
+										data-testid="input-discount-custom-percent"
+										className="h-8 w-20 px-2 text-xs font-bold font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-amber-500"
+									/>
+									<span className="absolute right-2 top-2 text-[10px] text-[var(--muted,#64748b)] pointer-events-none">%</span>
+								</div>
+							</div>
+						</div>
+
+						{/* 1-Click Discount Preset Buttons */}
+						<div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap">
+							{DISCOUNT_PRESETS.map((p) => {
+								const isActive = effectiveDiscountPercent === p.percent && !isWarranty100;
+								const isZero = p.percent === 0;
+								const activeClass = isZero
+									? "bg-slate-700 text-white border-slate-700 shadow-2xs"
+									: "bg-amber-600 text-white border-amber-600 shadow-2xs";
+								const inactiveClass = isZero
+									? "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-slate-400 text-[var(--ink,#0f172a)]"
+									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]";
+								return (
+									<button
+										key={p.percent}
+										type="button"
+										onClick={() => applyDiscountPreset(p.percent, p.reason)}
+										className={`h-8 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+											isActive ? activeClass : inactiveClass
+										}`}
+										data-testid={p.testId}
+										title={p.title}
+									>
+										{!isZero && (
+											<Percent
+												size={12}
+												className={isActive ? "text-white" : "text-amber-600"}
+											/>
+										)}
+										<span className="truncate">{p.label}</span>
+									</button>
+								);
+							})}
+
+							<button
+								type="button"
+								onClick={applyWarranty100Preset}
+								className={`h-8 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+									isWarranty100
+										? "bg-amber-600 text-white border-amber-600 shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="preset-warranty-100"
+								title="Гарантийная переделка 100% (0 ₽, без фискального чека ККТ)"
+							>
+								<ShieldCheck size={14} className={isWarranty100 ? "text-white" : "text-amber-600"} />
+								<span className="truncate">Гарантия 100% (0 ₽)</span>
+							</button>
+						</div>
+
+						{/* 1-Click Tender Presets Row */}
+						<div className="pt-2 border-t border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 flex-wrap">
+							<div className="flex items-center gap-1.5 font-bold text-[var(--muted,#64748b)]">
+								<Zap size={14} className="text-amber-500 shrink-0" />
+								<span>1-клик оплата:</span>
+							</div>
+						</div>
+						<div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap">
+							<button
+								type="button"
+								onClick={applyExactCashPreset}
+								className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+									activeMethod === "cash" && cashChange.isExact
+										? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="preset-exact-cash"
+							>
+								<Banknote size={14} className={activeMethod === "cash" && cashChange.isExact ? "text-white" : "text-emerald-600"} />
+								<span className="truncate">Без сдачи (Ровно: {totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+							</button>
+							<button
+								type="button"
+								onClick={applySpendAllDepositBonusPreset}
+								className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+									(activeMethod === "family_deposit" || (activeMethod === "split" && (splitDepositRub > 0 || splitBonusRub > 0)))
+										? "bg-purple-600 text-white border-purple-600 shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="preset-spend-all-deposit-bonus"
+								title="Списать весь доступный аванс или бонусы"
+							>
+								<Wallet size={14} className={(activeMethod === "family_deposit" || (activeMethod === "split" && (splitDepositRub > 0 || splitBonusRub > 0))) ? "text-white" : "text-purple-600"} />
+								<span className="truncate">Списать аванс/бонусы</span>
+							</button>
+							<button
+								type="button"
+								onClick={apply5050CashCardPreset}
+								className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+									activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0
+										? "bg-indigo-600 text-white border-indigo-600 shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-indigo-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="preset-50-50-cash-card"
+								title="50% суммы наличными в кассу + 50% картой через терминал"
+							>
+								<Coins size={14} className={activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 ? "text-white" : "text-indigo-600"} />
+								<span className="truncate">50/50 Нал + Карта</span>
+							</button>
+							<button
+								type="button"
+								onClick={applyThreeWayCashCardAdvancePreset}
+								className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+									activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 && splitDepositRub > 0
+										? "bg-teal-600 text-white border-teal-600 shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="preset-three-way-split"
+								title="Комбинированная оплата в 1 клик: Нал + Карта + Аванс"
+							>
+								<Users size={14} className={activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 && splitDepositRub > 0 ? "text-white" : "text-teal-600"} />
+								<span className="truncate">Нал + Карта + Аванс</span>
+							</button>
+							<button
+								type="button"
+								onClick={applyFullCardPreset}
+								className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+									activeMethod === "card_terminal"
+										? "bg-blue-600 text-white border-blue-600 shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-blue-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="preset-full-card"
+							>
+								<CreditCard size={14} className={activeMethod === "card_terminal" ? "text-white" : "text-blue-600"} />
+								<span className="truncate">Картой 100% ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+							</button>
+							{patientDepositRub > 0 && (
+								<button
+									type="button"
+									onClick={applyDepositPlusCardPreset}
+									className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+										activeMethod === "split" && splitDepositRub > 0 && splitCardRub > 0
+											? "bg-purple-600 text-white border-purple-600 shadow-2xs"
+											: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
+									}`}
+									data-testid="preset-deposit-plus-card"
+								>
+									<Wallet size={14} className={activeMethod === "split" && splitDepositRub > 0 && splitCardRub > 0 ? "text-white" : "text-purple-600"} />
+									<span className="truncate">Весь аванс ({Math.min(totalDueRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + Карта</span>
+								</button>
+							)}
+							<button
+								type="button"
+								onClick={() => setActiveMethod("sbp_qr")}
+								className="h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-400 text-[var(--ink,#0f172a)] shrink-0"
+								data-testid="preset-sbp-qr"
+								title="Сформировать QR СБП для быстрой оплаты пациентом"
+							>
+								<QrCode size={14} className="text-teal-600" />
+								<span className="truncate">Оплата СБП по QR ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+							</button>
+						</div>
+					</div>
+
 					{/* StomX 6 Cash Boxes & Cash Flow Category (ДДС) Selector (Mandates 8e, 8n) */}
 					<div
 						className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2.5 text-xs"
