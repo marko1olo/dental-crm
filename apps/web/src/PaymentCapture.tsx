@@ -1688,19 +1688,19 @@ export function PaymentCapture({
 			{/* Панель оформления чека и кнопок оплаты (Мандат 8e / 8c / 8p) */}
 			<div
 				id="payment-checkout-bar"
-				className="payment-checkout-bar col-span-full max-sm:fixed max-sm:bottom-[calc(60px+env(safe-area-inset-bottom,0px))] max-sm:left-0 max-sm:right-0 max-sm:z-[35] max-sm:bg-[var(--paper)] max-sm:p-3 max-sm:border-t max-sm:border-[var(--line)] max-sm:shadow-lg max-sm:flex max-sm:flex-col max-sm:gap-2 max-sm:box-border sm:flex sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+				className="payment-checkout-bar col-span-full max-sm:fixed max-sm:bottom-[calc(60px+env(safe-area-inset-bottom,0px))] max-sm:left-0 max-sm:right-0 max-sm:z-[35] max-sm:bg-[var(--paper)] max-sm:px-3 max-sm:py-2 max-sm:border-t max-sm:border-[var(--line)] max-sm:shadow-lg max-sm:flex max-sm:flex-row max-sm:flex-wrap max-sm:items-center max-sm:justify-between max-sm:gap-2 max-sm:box-border sm:flex sm:flex-row sm:items-center sm:justify-between sm:gap-4 max-w-full min-w-0"
 				style={{ gridColumn: "1 / -1" }}
 				data-testid="payment-checkout-bar"
 			>
 				{/* Итого к списанию / оплате по 54-ФЗ */}
 				<div
-					className="payment-total-due-banner flex items-center justify-between gap-3 px-3 py-1 sm:py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] select-none mb-1 sm:mb-0 max-sm:w-full max-sm:bg-transparent max-sm:border-none max-sm:p-0 shrink-0 min-w-[140px] sm:min-w-[220px] pr-3"
+					className="payment-total-due-banner flex items-center justify-between gap-2 sm:gap-3 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] select-none mb-0 max-sm:bg-transparent max-sm:border-none max-sm:p-0 shrink-0 min-w-0 sm:min-w-[220px]"
 					data-testid="payment-total-due-banner"
 				>
-					<span className="text-sm sm:text-xs font-bold text-[var(--muted)] max-sm:text-sm max-sm:leading-none whitespace-nowrap pr-2">
+					<span className="text-xs sm:text-xs font-bold text-[var(--muted)] max-sm:text-xs max-sm:leading-none whitespace-nowrap pr-1 sm:pr-2">
 						Итого к списанию:
 					</span>
-					<span className="text-xl sm:text-base font-black font-mono text-[var(--ink)] max-sm:text-xl max-sm:leading-tight whitespace-nowrap text-right flex-1 min-w-[50px]">
+					<span className="text-base sm:text-base font-black font-mono text-[var(--ink)] max-sm:text-base max-sm:leading-tight whitespace-nowrap text-right flex-1 min-w-0">
 						{amount && normalizeRubAmountInput(amount) !== null
 							? `${(normalizeRubAmountInput(amount) ?? 0).toLocaleString("ru-RU")} ₽`
 							: remainingDebt && remainingDebt > 0
@@ -1710,14 +1710,14 @@ export function PaymentCapture({
 				</div>
 
 				<div
-					className="payment-actions max-sm:w-full max-sm:flex max-sm:flex-row max-sm:gap-2 flex-1 min-w-0"
+					className="payment-actions max-sm:flex-1 max-sm:flex max-sm:flex-row max-sm:items-center max-sm:justify-end max-sm:gap-1.5 flex-1 min-w-0"
 					style={{
 						display: "flex",
 						gap: "8px",
 					}}
 				>
 					<button
-						className="primary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-bold text-sm min-w-[140px] whitespace-nowrap"
+						className="primary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 sm:flex-initial font-bold text-xs sm:text-sm min-w-0 px-2.5 sm:px-3 whitespace-nowrap"
 						type="button"
 						onClick={handlePrimarySubmit}
 						aria-busy={isSaving || undefined}
@@ -1731,7 +1731,7 @@ export function PaymentCapture({
 						<span>{isSaving ? "Записываю..." : "Принять оплату"}</span>
 					</button>
 					<button
-						className="secondary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-semibold text-xs max-sm:hidden"
+						className="secondary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-semibold text-xs max-sm:!hidden"
 						type="button"
 						onClick={handleSberPosClick}
 						aria-describedby={

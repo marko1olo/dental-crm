@@ -2923,8 +2923,9 @@ section.imaging-panel {
 
 .imaging-actions {
 	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
+	flex-wrap: nowrap;
+	gap: 6px;
+	align-items: center;
 	justify-content: flex-end;
 }
 
@@ -14378,13 +14379,15 @@ html.dark .communication-side .panel-heading h3,
 		margin: 0 !important;
 		border-top: 1px solid var(--line) !important;
 		box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15) !important;
-		z-index: 9999 !important;
+		z-index: 35 !important;
 		display: flex !important;
 		flex-direction: row !important;
+		flex-wrap: wrap !important;
 		align-items: center !important;
 		justify-content: space-between !important;
-		gap: 8px !important;
+		gap: 6px !important;
 		width: 100% !important;
+		max-width: 100vw !important;
 		box-sizing: border-box !important;
 	}
 	#payment-checkout-bar .payment-total-due-banner,
@@ -14394,22 +14397,23 @@ html.dark .communication-side .panel-heading h3,
 		background: transparent !important;
 		border: none !important;
 		display: flex !important;
-		flex-direction: column !important;
-		align-items: flex-start !important;
-		justify-content: center !important;
-		flex-shrink: 0 !important;
-		min-width: 90px !important;
+		flex-direction: row !important;
+		align-items: center !important;
+		justify-content: space-between !important;
+		gap: 4px !important;
+		flex: 1 1 auto !important;
+		min-width: 0 !important;
 	}
 	#payment-checkout-bar .payment-total-due-banner span:first-child,
 	.payment-total-due-banner span:first-child {
-		font-size: 10px !important;
+		font-size: 11px !important;
 		line-height: 1.1 !important;
 		color: var(--muted) !important;
 		white-space: nowrap !important;
 	}
 	#payment-checkout-bar .payment-total-due-banner span:last-child,
 	.payment-total-due-banner span:last-child {
-		font-size: 16px !important;
+		font-size: 15px !important;
 		line-height: 1.15 !important;
 		font-weight: 900 !important;
 		white-space: nowrap !important;
@@ -14426,35 +14430,44 @@ html.dark .communication-side .panel-heading h3,
 		display: flex !important;
 		flex-direction: row !important;
 		align-items: center !important;
+		justify-content: flex-end !important;
 		gap: 6px !important;
-		flex: 1 !important;
+		flex: 1 1 auto !important;
 		min-width: 0 !important;
 		width: auto !important;
+		max-width: 100% !important;
 	}
 	#payment-capture .payment-actions .primary-button,
 	#payment-checkout-bar .payment-actions .primary-button,
 	.payment-actions .primary-button {
-		flex: 2 !important;
+		flex: 1 1 auto !important;
 		min-height: 44px !important;
 		height: 44px !important;
-		font-size: 13px !important;
+		font-size: 12px !important;
 		font-weight: 800 !important;
+		min-width: 0 !important;
 		width: auto !important;
 		padding: 0 10px !important;
 		white-space: nowrap !important;
 		justify-content: center !important;
 	}
-	#payment-capture .payment-actions .secondary-button,
-	#payment-checkout-bar .payment-actions .secondary-button,
-	.payment-actions .secondary-button {
-		flex: 1 !important;
+	#payment-capture .payment-actions .secondary-button:not([aria-label="Дополнительные способы оплаты"]),
+	#payment-checkout-bar .payment-actions .secondary-button:not([aria-label="Дополнительные способы оплаты"]),
+	.payment-actions .secondary-button:not([aria-label="Дополнительные способы оплаты"]) {
+		display: none !important;
+	}
+	#payment-capture .payment-actions .secondary-button[aria-label="Дополнительные способы оплаты"],
+	#payment-checkout-bar .payment-actions .secondary-button[aria-label="Дополнительные способы оплаты"],
+	.payment-actions .secondary-button[aria-label="Дополнительные способы оплаты"] {
+		flex: 0 0 44px !important;
 		min-height: 44px !important;
 		height: 44px !important;
-		font-size: 11px !important;
-		padding: 0 6px !important;
-		white-space: nowrap !important;
-		width: auto !important;
+		width: 44px !important;
+		min-width: 44px !important;
+		max-width: 44px !important;
+		padding: 0 !important;
 		justify-content: center !important;
+		align-items: center !important;
 	}
 	.clinical-recommendations-accordion {
 		margin: 2px 0 !important;
@@ -14836,20 +14849,36 @@ html.dark .communication-side .panel-heading h3,
 	.imaging-copy {
 		align-items: stretch;
 		flex-direction: column;
+		gap: 6px;
 	}
 
 	.imaging-actions {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		justify-content: stretch;
+		display: flex !important;
+		flex-direction: row !important;
+		flex-wrap: nowrap !important;
+		align-items: center !important;
+		gap: 6px !important;
+		overflow-x: auto !important;
+		-webkit-overflow-scrolling: touch !important;
+		scrollbar-width: none !important;
+		max-width: 100% !important;
+		padding-bottom: 2px !important;
+	}
+	.imaging-actions::-webkit-scrollbar {
+		display: none !important;
 	}
 
 	.imaging-actions .primary-button,
 	.imaging-actions .secondary-button {
-		justify-content: center;
-		min-width: 0;
-		white-space: normal;
-		width: 100%;
+		justify-content: center !important;
+		min-width: fit-content !important;
+		white-space: nowrap !important;
+		width: auto !important;
+		height: 34px !important;
+		min-height: 34px !important;
+		padding: 0 10px !important;
+		font-size: 12px !important;
+		flex-shrink: 0 !important;
 	}
 
 	.imaging-upload-status > div:first-child {

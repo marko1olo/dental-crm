@@ -1,5 +1,5 @@
 import type { Dashboard, Patient, PaymentMethod } from "@dental/shared";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { TrendingUp, Receipt, ChevronDown, FileText, CreditCard, MoreHorizontal, ShieldCheck } from "lucide-react";
 import { money as formatMoney } from "./AppHelpers";
 import { denteAdminSecretRequestHeaders } from "./lib/denteRequestHeaders";
@@ -14,10 +14,19 @@ import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { CashDayTally } from "./components/finance/CashDayTally";
 import { CashShiftWidget } from "./components/finance/CashShiftWidget";
 import { FamilyWalletPanel } from "./components/finance/FamilyWalletPanel";
-import { ManagerialPnlDashboardModal } from "./components/finance/pnl/ManagerialPnlDashboardModal";
-import { InvoicesView } from "./components/billing/InvoicesView.js";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { FinanceLedger } from "./FinanceLedger";
+
+const ManagerialPnlDashboardModal = lazy(() =>
+	import("./components/finance/pnl/ManagerialPnlDashboardModal").then((m) => ({
+		default: m.ManagerialPnlDashboardModal,
+	})),
+);
+const InvoicesView = lazy(() =>
+	import("./components/billing/InvoicesView.js").then((m) => ({
+		default: m.InvoicesView,
+	})),
+);
 import {
 	FinancePlanningOverview,
 	ServiceCatalogStrip,
@@ -532,7 +541,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 	}, [isInvoicesOpen, isPnlOpen, isFinanceOptionsOpen, isCashShiftOpen]);
 
 	return (
-		<div className="finance-panel border-0 bg-transparent p-0 shadow-none pb-6" id="finance">
+		<div className="finance-panel border-0 bg-transparent p-0 shadow-none pb-6 max-w-full min-w-0 overflow-x-hidden" id="finance">
 			<div className="finance-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-1.5 sm:mb-2 flex-nowrap overflow-hidden shrink-0 select-none">
 				<div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
 					<span className="truncate text-xs sm:text-sm font-bold text-[var(--ink)] shrink-0">
@@ -864,10 +873,14 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				/>
 			</div>
 
-			<ManagerialPnlDashboardModal
-				isOpen={isPnlOpen}
-				onClose={() => setIsPnlOpen(false)}
-			/>
+			{isPnlOpen && (
+				<Suspense fallback={null}>
+					<ManagerialPnlDashboardModal
+						isOpen={isPnlOpen}
+						onClose={() => setIsPnlOpen(false)}
+					/>
+				</Suspense>
+			)}
 
 			{isInvoicesOpen && (
 				<div
@@ -878,12 +891,14 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 					data-testid="modal-finance-invoices"
 				>
 					<div className="w-full max-w-5xl h-[92vh] max-h-[920px] rounded-2xl overflow-hidden shadow-2xl border border-[var(--line)] flex flex-col bg-[var(--paper)]">
-						<InvoicesView
-							currentDoctorName="Врач-стоматолог"
-							patientId={documentPatient?.id}
-							patientName={documentPatient?.fullName}
-							onClose={() => setIsInvoicesOpen(false)}
-						/>
+						<Suspense fallback={<div className="p-8 text-center text-xs text-[var(--muted)]">Загрузка модуля счетов 804н...</div>}>
+							<InvoicesView
+								currentDoctorName="Врач-стоматолог"
+								patientId={documentPatient?.id}
+								patientName={documentPatient?.fullName}
+								onClose={() => setIsInvoicesOpen(false)}
+							/>
+						</Suspense>
 					</div>
 				</div>
 			)}

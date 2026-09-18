@@ -73,8 +73,8 @@ export function FinanceLedger({
 	}, [safePayments, paymentsLimit]);
 
 	return (
-		<div className="finance-split">
-			<section className="finance-list" aria-label="План лечения">
+		<div className="finance-split max-w-full min-w-0 overflow-x-hidden">
+			<section className="finance-list min-w-0 max-w-full" aria-label="План лечения">
 				<div className="panel-heading">
 					<h3>План лечения</h3>
 					<span className="status-pill status-arrived">
@@ -129,6 +129,11 @@ export function FinanceLedger({
 							<article
 								className={`finance-row plan-${item.status}`}
 								key={item.id}
+								style={{
+									contentVisibility: "auto",
+									containIntrinsicSize: "1px 44px",
+									contain: "content",
+								}}
 							>
 								<ClipboardList aria-hidden="true" />
 								<div>
@@ -171,7 +176,7 @@ export function FinanceLedger({
 				)}
 			</section>
 
-			<section className="finance-list" aria-label="История оплат">
+			<section className="finance-list min-w-0 max-w-full" aria-label="История оплат">
 				<div
 					className="panel-heading"
 					style={{
@@ -205,7 +210,15 @@ export function FinanceLedger({
 				{safePayments.length ? (
 					<>
 						{paginatedPayments.visibleItems.map((payment) => (
-							<article className="finance-row" key={payment.id}>
+							<article
+								className="finance-row"
+								key={payment.id}
+								style={{
+									contentVisibility: "auto",
+									containIntrinsicSize: "1px 44px",
+									contain: "content",
+								}}
+							>
 								<CreditCard aria-hidden="true" />
 								<div>
 									<h3>{paymentMethodLabels[payment.method]}</h3>

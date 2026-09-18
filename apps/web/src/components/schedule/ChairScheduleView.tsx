@@ -1278,6 +1278,14 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 					>
 						{countLabel(chairs.length || 1, "кресло", "кресла", "кресел")}
 					</span>
+					{chairs.length > 3 && (
+						<span
+							className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] shrink-0"
+							title={`Всего установок: ${chairs.length}. Все установки доступны в полосе фильтров`}
+						>
+							+{chairs.length - 3}
+						</span>
+					)}
 					{isSoloDoctor && (
 						<span className="text-[10px] text-[var(--muted)] hidden 2xl:inline">
 							(Соло: авто-привязка)
@@ -1286,7 +1294,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 				</div>
 
 				{/* Center: Scrollable Chair Palette Chips with Accent Bars (StomX Parity, Feature 190) */}
-				<div className="flex items-center gap-1.5 overflow-x-auto flex-1 py-0.5 touch-pan-x">
+				<div className="flex items-center gap-1.5 overflow-x-auto flex-1 py-0.5 touch-pan-x scrollbar-none min-w-0">
 					{chairs.map((chair) => {
 						const chairColor = (chair as { color?: string }).color || "var(--teal, #0d9488)";
 						const isSelected = effectiveSelectedChairId === chair.id;
@@ -1353,22 +1361,22 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 									aria-hidden="true"
 								/>
 								<span
-									className="font-bold text-xs truncate max-w-[140px]"
+									className="font-bold text-xs whitespace-nowrap shrink-0"
 									title={chair.name}
 								>
 									{chair.name}
 								</span>
 								{roomLabel && (
 									<span
-										className="text-xs text-[var(--muted)] font-normal shrink-0"
+										className="text-xs text-[var(--muted)] font-normal shrink-0 whitespace-nowrap"
 										data-testid={`chair-view-room-${chair.id}`}
 									>
-										(Каб. {roomLabel})
+										({roomLabel})
 									</span>
 								)}
 								{(assignedDocName || hasTwoSubShifts) && (
 									<span
-										className="text-xs text-[var(--muted)] font-normal truncate max-w-[180px] hidden md:inline shrink-0"
+										className="text-xs text-[var(--muted)] font-normal truncate max-w-[130px] hidden xl:inline shrink-0"
 										title={
 											hasTwoSubShifts && morningSub && eveningSub
 												? `У: ${morningSub.doctorName} / В: ${eveningSub.doctorName}`
@@ -1377,8 +1385,8 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 										data-testid={`chair-view-doc-${chair.id}`}
 									>
 										{hasTwoSubShifts && morningSub && eveningSub
-											? `(У: ${formatDoctorShortName(morningSub.doctorName)} / В: ${formatDoctorShortName(eveningSub.doctorName)})`
-											: `(${assignedDocName}${assignedShiftLabel ? ` • ${assignedShiftLabel}` : ""})`}
+											? `(${formatDoctorShortName(morningSub.doctorName)} / ${formatDoctorShortName(eveningSub.doctorName)})`
+											: `(${formatDoctorShortName(assignedDocName)})`}
 									</span>
 								)}
 								{!assignedDocName && !hasTwoSubShifts && chair.active !== false && (
@@ -1723,12 +1731,12 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 					<button
 						type="button"
 						onClick={handleOpenAddChair}
-						className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-dashed border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--teal)]/5 text-[11px] font-medium text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors shrink-0 cursor-pointer h-7"
+						className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-dashed border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--teal)]/5 text-[11px] font-medium text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors shrink-0 cursor-pointer h-7 whitespace-nowrap select-none"
 						title="Добавить стоматологическую установку"
 						data-testid="chair-view-add-chair-strip-btn"
 					>
-						<Plus size={11} />
-						<span>Кресло</span>
+						<Plus size={11} className="shrink-0" />
+						<span className="whitespace-nowrap shrink-0">+ Кресло</span>
 					</button>
 				</div>
 

@@ -8,6 +8,7 @@ import {
 	FlipHorizontal,
 	History,
 	Image as ImageIcon,
+	MoreVertical,
 	Plus,
 	RefreshCw,
 	RotateCcw,
@@ -117,9 +118,13 @@ function imagingDescriptionTemplate(
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 // Русское склонение счётного слова: «1 находка», «2 находки», «5 находок».
 import { countLabel } from "./AppHelpers";
-import { CbctMprWorkspace } from "./components/dicom/CbctMprWorkspace";
 
-// Mandate 8s: Tier 3 isolation — lazy-loading heavy 3D DICOM & Panoramic engines
+// Mandate 8s / Tier 3: Ленивая загрузка тяжелых 3D DICOM / КТ движков для защиты 5400 RPM HDD
+const CbctMprWorkspace = lazy(() =>
+	import("./components/dicom/CbctMprWorkspace").then((m) => ({
+		default: m.CbctMprWorkspace,
+	})),
+);
 const Cornerstone3DViewer = lazy(() =>
 	import("./components/dicom/Cornerstone3DViewer").then((m) => ({
 		default: m.Cornerstone3DViewer,
@@ -317,6 +322,32 @@ export function ImagingView(props: ImagingViewProps) {
 	const [enhancementOn, setEnhancementOn] = useState(false);
 	const [isCbctWorkspaceOpen, setIsCbctWorkspaceOpen] = useState(false);
 	const [isPanoramicWindowOpen, setIsPanoramicWindowOpen] = useState(false);
+	const [isMobileImagingMenuOpen, setIsMobileImagingMenuOpen] = useState(false);
+	const mobileImagingMenuRef = useRef<HTMLDivElement | null>(null);
+
+	useEffect(() => {
+		const handleOutside = (e: MouseEvent) => {
+			if (
+				mobileImagingMenuRef.current &&
+				!mobileImagingMenuRef.current.contains(e.target as Node)
+			) {
+				setIsMobileImagingMenuOpen(false);
+			}
+		};
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				setIsMobileImagingMenuOpen(false);
+			}
+		};
+		if (isMobileImagingMenuOpen) {
+			document.addEventListener("mousedown", handleOutside);
+			document.addEventListener("keydown", handleKeyDown);
+		}
+		return () => {
+			document.removeEventListener("mousedown", handleOutside);
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [isMobileImagingMenuOpen]);
 
 	useEffect(() => {
 		const handleOpen = (e: Event) => {
@@ -577,12 +608,15 @@ export function ImagingView(props: ImagingViewProps) {
 			id="imaging"
 			aria-label="Снимки пациента"
 		>
-			<div className="imaging-copy">
-				<div>
-					<p className="eyebrow">Снимки пациента</p>
-					<h2>Прицельные, ОПТГ, ТРГ, КТ и фото в одной ленте</h2>
+			<div className="imaging-copy flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2 select-none">
+				<div className="min-w-0 flex-1">
+					<p className="eyebrow text-xs text-[var(--muted)] m-0">Снимки пациента</p>
+					<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] m-0 truncate" title="Прицельные, ОПТГ, ТРГ, КТ и фото в одной ленте">
+						<span className="sm:hidden">Снимки и КТ</span>
+						<span className="hidden sm:inline">Прицельные, ОПТГ, ТРГ, КТ и фото</span>
+					</h2>
 				</div>
-				<div className="imaging-actions">
+				<div className="imaging-actions flex items-center gap-1.5 flex-nowrap shrink-0 overflow-x-auto scrollbar-none py-0.5">
 					<input
 						ref={attachBrowserDirectoryInputRef}
 						data-testid="imaging-browser-local-folder-input"
@@ -601,21 +635,6 @@ export function ImagingView(props: ImagingViewProps) {
 						style={{ display: "none" }}
 						accept={browserImagingFileInputAccept}
 						onChange={(event) => {
-							/*
-							 * ЧТО БЫЛО. Значение этого поля не сбрасывалось никогда.
-							 * Обработчик handleBrowserDirectoryInputChange чистит только
-							 * поле выбора ПАПКИ (browserDirectoryInputRef), а это —
-							 * отдельное поле кнопки «Файлы». Браузер не выдаёт событие
-							 * change, если выбран тот же файл, что и в прошлый раз:
-							 * врач нажимал «Файлы», выбирал тот же снимок и не получал
-							 * ничего — ни статуса, ни ошибки. Кнопка выглядела сломанной,
-							 * а обойти это можно было только перезагрузкой страницы.
-							 *
-							 * Сброс делается ПОСЛЕ разбора выбранных файлов: очистка
-							 * value обнуляет список файлов у поля, поэтому чистить его
-							 * до конца обработки нельзя. Ссылка на поле берётся
-							 * синхронно — после await у события её уже не спросить.
-							 */
 							const input = event.currentTarget;
 							void Promise.resolve(
 								handleBrowserDirectoryInputChange(input.files),
@@ -624,48 +643,55 @@ export function ImagingView(props: ImagingViewProps) {
 							});
 						}}
 					/>
+					{/* Primary actions — always visible on both Mobile & Desktop (32-36px) */}
 					<button
-						className="primary-button"
+						className="primary-button h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2.5 sm:px-3 text-xs font-bold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5"
 						type="button"
 						data-testid="imaging-pick-dicom-folder"
 						onClick={() => void pickBrowserImagingFolder()}
 						disabled={isBrowserImagingFolderPicking}
 						title="Выбрать папку DICOM/КТ или папку со снимками"
 					>
-						<UploadCloud aria-hidden="true" />{" "}
-						{isBrowserImagingFolderPicking ? "Сканирую" : "Папка DICOM"}
+						<UploadCloud aria-hidden="true" size={14} className="shrink-0" />{" "}
+						<span>{isBrowserImagingFolderPicking ? "Сканирую" : "Папка DICOM"}</span>
 					</button>
 					<button
-						className="secondary-button"
+						className="secondary-button h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2.5 sm:px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5"
 						type="button"
 						data-testid="imaging-pick-dicom-files"
 						onClick={pickBrowserImagingFiles}
 						disabled={isBrowserImagingFolderPicking}
 						title="Выбрать отдельные DICOM, RVG, JPG/PNG/TIFF, ZIP/RAR/7z или 3D-файлы"
 					>
-						<FileText aria-hidden="true" /> Файлы
+						<FileText aria-hidden="true" size={14} className="shrink-0" />{" "}
+						<span>Файлы</span>
 					</button>
+
+					{/* Desktop Secondary Actions (3D MPR & ОПТГ) — strictly 1 row (32-36px) */}
 					<button
-						className="secondary-button"
+						className="secondary-button hidden md:inline-flex items-center gap-1 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 text-xs font-medium shrink-0 whitespace-nowrap"
 						type="button"
 						data-testid="imaging-open-3d-mpr"
 						onClick={() => setIsCbctWorkspaceOpen(true)}
 						title="Открыть 3D MPR рабочее пространство"
 					>
-						<Activity aria-hidden="true" className="w-4 h-4 text-teal-500 inline-block mr-1" /> 3D MPR / КТ
+						<Activity aria-hidden="true" className="w-3.5 h-3.5 text-teal-500 shrink-0" />{" "}
+						<span>3D MPR / КТ</span>
 					</button>
 					<button
-						className="secondary-button"
+						className="secondary-button hidden md:inline-flex items-center gap-1 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 text-xs font-medium shrink-0 whitespace-nowrap"
 						type="button"
 						data-testid="imaging-open-panoramic"
 						onClick={() => setIsPanoramicWindowOpen(true)}
 						title="Открыть панорамную реконструкцию (ОПТГ)"
 					>
-						<Sparkles aria-hidden="true" className="w-4 h-4 text-amber-400 inline-block mr-1" /> ОПТГ
+						<Sparkles aria-hidden="true" className="w-3.5 h-3.5 text-amber-400 shrink-0" />{" "}
+						<span>ОПТГ</span>
 					</button>
+
 					{isBrowserImagingFolderPicking && browserImagingScanProgress ? (
 						<button
-							className="secondary-button browser-scan-stop-button"
+							className="secondary-button browser-scan-stop-button h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 text-xs font-semibold shrink-0 whitespace-nowrap"
 							type="button"
 							data-testid="imaging-cancel-local-imaging-scan"
 							onClick={cancelBrowserImagingFolderScan}
@@ -673,101 +699,65 @@ export function ImagingView(props: ImagingViewProps) {
 							Остановить
 						</button>
 					) : null}
+
+					{/* Desktop Dropdown: "+ Вручную ▼" (compact 32-36px, fits in single desktop row) */}
 					<details
-						className="imaging-add-dropdown"
-						style={{ position: "relative", display: "inline-block" }}
+						className="imaging-add-dropdown hidden sm:inline-block relative shrink-0"
+						style={{ position: "relative" }}
 					>
 						<summary
-							className="secondary-button"
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "0.25rem",
-								cursor: "pointer",
-								height: "36px",
-								listStyle: "none",
-							}}
+							className="secondary-button h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 text-xs font-medium inline-flex items-center gap-1 cursor-pointer select-none list-none shrink-0"
 						>
-							<Plus aria-hidden="true" />
-							Добавить снимок вручную
-							<span style={{ fontSize: "0.65rem", marginLeft: "4px" }}>▼</span>
+							<Plus aria-hidden="true" size={13} className="shrink-0" />
+							<span>+ Вручную</span>
+							<span style={{ fontSize: "0.65rem", marginLeft: "2px" }}>▼</span>
 						</summary>
 						<div
 							style={{
 								position: "absolute",
 								right: 0,
 								top: "100%",
-								marginTop: "6px",
+								marginTop: "4px",
 								background: "var(--paper)",
 								border: "1px solid var(--line)",
 								borderRadius: "8px",
 								boxShadow:
 									"0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)",
 								zIndex: 9999,
-								padding: "8px",
+								padding: "6px",
 								display: "flex",
 								flexDirection: "column",
-								gap: "6px",
-								minWidth: "160px",
-								maxWidth: "calc(100vw - 32px)",
+								gap: "4px",
+								minWidth: "150px",
 							}}
 						>
 							<button
-								className="secondary-button"
+								className="secondary-button text-xs py-1 px-2 text-left justify-start border-0 bg-transparent hover:bg-[var(--paper-soft)] rounded"
 								type="button"
-								style={{
-									border: "none",
-									width: "100%",
-									justifyContent: "flex-start",
-									margin: 0,
-									background: "none",
-								}}
 								onClick={() => createImagingStudy("periapical")}
 								disabled={Boolean(imagingCreateSavingKind)}
 							>
-								Прицельный{" "}
-								{imagingCreateSavingKind === "periapical" ? "(создаю)" : ""}
+								Прицельный {imagingCreateSavingKind === "periapical" ? "(создаю)" : ""}
 							</button>
 							<button
-								className="secondary-button"
+								className="secondary-button text-xs py-1 px-2 text-left justify-start border-0 bg-transparent hover:bg-[var(--paper-soft)] rounded"
 								type="button"
-								style={{
-									border: "none",
-									width: "100%",
-									justifyContent: "flex-start",
-									margin: 0,
-									background: "none",
-								}}
 								onClick={() => createImagingStudy("opg")}
 								disabled={Boolean(imagingCreateSavingKind)}
 							>
 								ОПТГ {imagingCreateSavingKind === "opg" ? "(создаю)" : ""}
 							</button>
 							<button
-								className="secondary-button"
+								className="secondary-button text-xs py-1 px-2 text-left justify-start border-0 bg-transparent hover:bg-[var(--paper-soft)] rounded"
 								type="button"
-								style={{
-									border: "none",
-									width: "100%",
-									justifyContent: "flex-start",
-									margin: 0,
-									background: "none",
-								}}
 								onClick={() => createImagingStudy("ceph")}
 								disabled={Boolean(imagingCreateSavingKind)}
 							>
 								ТРГ {imagingCreateSavingKind === "ceph" ? "(создаю)" : ""}
 							</button>
 							<button
-								className="secondary-button"
+								className="secondary-button text-xs py-1 px-2 text-left justify-start border-0 bg-transparent hover:bg-[var(--paper-soft)] rounded"
 								type="button"
-								style={{
-									border: "none",
-									width: "100%",
-									justifyContent: "flex-start",
-									margin: 0,
-									background: "none",
-								}}
 								onClick={() => createImagingStudy("cbct")}
 								disabled={Boolean(imagingCreateSavingKind)}
 							>
@@ -775,6 +765,97 @@ export function ImagingView(props: ImagingViewProps) {
 							</button>
 						</div>
 					</details>
+
+					{/* Mobile "..." Popover for secondary actions (3D MPR, ОПТГ, Добавить вручную) */}
+					<div className="relative shrink-0 md:hidden" ref={mobileImagingMenuRef}>
+						<button
+							className="secondary-button h-8 min-h-[32px] w-8 min-w-[32px] p-0 inline-flex items-center justify-center rounded-lg"
+							type="button"
+							onClick={() => setIsMobileImagingMenuOpen((prev) => !prev)}
+							aria-expanded={isMobileImagingMenuOpen}
+							aria-label="Вторичные действия со снимками"
+							title="Дополнительно (3D MPR, ОПТГ, Добавить вручную)"
+						>
+							<MoreVertical size={16} className="text-[var(--muted)]" />
+						</button>
+						{isMobileImagingMenuOpen && (
+							<div
+								className="absolute right-0 top-full mt-1.5 w-52 p-2 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl z-50 flex flex-col gap-1 text-left animate-in fade-in zoom-in-95"
+								role="menu"
+							>
+								<button
+									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start font-medium border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
+									type="button"
+									onClick={() => {
+										setIsMobileImagingMenuOpen(false);
+										setIsCbctWorkspaceOpen(true);
+									}}
+								>
+									<Activity size={14} className="text-teal-500 shrink-0" />
+									<span>3D MPR / КТ</span>
+								</button>
+								<button
+									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start font-medium border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
+									type="button"
+									onClick={() => {
+										setIsMobileImagingMenuOpen(false);
+										setIsPanoramicWindowOpen(true);
+									}}
+								>
+									<Sparkles size={14} className="text-amber-400 shrink-0" />
+									<span>ОПТГ панорама</span>
+								</button>
+								<div className="border-t border-[var(--line)] my-1" />
+								<span className="text-[10px] font-bold text-[var(--muted)] px-2 uppercase tracking-wider">
+									Добавить вручную:
+								</span>
+								<button
+									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
+									type="button"
+									onClick={() => {
+										setIsMobileImagingMenuOpen(false);
+										createImagingStudy("periapical");
+									}}
+								>
+									<Plus size={13} className="shrink-0 text-[var(--teal)]" />
+									<span>Прицельный</span>
+								</button>
+								<button
+									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
+									type="button"
+									onClick={() => {
+										setIsMobileImagingMenuOpen(false);
+										createImagingStudy("opg");
+									}}
+								>
+									<Plus size={13} className="shrink-0 text-[var(--teal)]" />
+									<span>ОПТГ</span>
+								</button>
+								<button
+									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
+									type="button"
+									onClick={() => {
+										setIsMobileImagingMenuOpen(false);
+										createImagingStudy("ceph");
+									}}
+								>
+									<Plus size={13} className="shrink-0 text-[var(--teal)]" />
+									<span>ТРГ</span>
+								</button>
+								<button
+									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
+									type="button"
+									onClick={() => {
+										setIsMobileImagingMenuOpen(false);
+										createImagingStudy("cbct");
+									}}
+								>
+									<Plus size={13} className="shrink-0 text-[var(--teal)]" />
+									<span>КТ</span>
+								</button>
+							</div>
+						)}
+					</div>
 				</div>
 			</div>
 
@@ -2385,12 +2466,14 @@ export function ImagingView(props: ImagingViewProps) {
 			) : null}
 
 			{isCbctWorkspaceOpen && (
-				<CbctMprWorkspace
-					isOpen={true}
-					onClose={() => setIsCbctWorkspaceOpen(false)}
-					patientId={activePatient?.id ?? null}
-					{...(activePatient?.fullName ? { patientName: activePatient.fullName } : {})}
-				/>
+				<Suspense fallback={<div className="cbct-mpr-workspace-modal fixed inset-0 z-50 flex items-center justify-center bg-black/90 text-white text-xs">Загрузка 3D КТ...</div>}>
+					<CbctMprWorkspace
+						isOpen={true}
+						onClose={() => setIsCbctWorkspaceOpen(false)}
+						patientId={activePatient?.id ?? null}
+						{...(activePatient?.fullName ? { patientName: activePatient.fullName } : {})}
+					/>
+				</Suspense>
 			)}
 
 			{isPanoramicWindowOpen && (
