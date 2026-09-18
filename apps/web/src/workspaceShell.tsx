@@ -392,11 +392,11 @@ export function WorkspaceSidebar({
 							aria-current={currentView === view ? "page" : undefined}
 							aria-label={`${viewLabels[view]}: ${viewHints[view]}`}
 							title={`${viewLabels[view]}: ${viewHints[view]}`}
-							onPointerEnter={() => onViewIntent?.(view)}
+							onPointerEnter={() => onViewIntent?.(view, "hover")}
 							onPointerLeave={() => onViewIntent?.(view, "cancel")}
-							onFocus={() => onViewIntent?.(view)}
+							onFocus={() => onViewIntent?.(view, "hover")}
 							onBlur={() => onViewIntent?.(view, "cancel")}
-							onTouchStart={() => onViewIntent?.(view)}
+							onTouchStart={() => onViewIntent?.(view, "hover")}
 						>
 							<span className={navSlotClass}>
 								<SidebarIcon section={view} />
@@ -433,14 +433,16 @@ export function WorkspaceSidebar({
 					</span>
 					<a
 						href="#settings"
-						onPointerEnter={() => onViewIntent?.("settings")}
-						onFocus={() => onViewIntent?.("settings")}
+						onPointerEnter={() => onViewIntent?.("settings", "hover")}
+						onPointerLeave={() => onViewIntent?.("settings", "cancel")}
+						onFocus={() => onViewIntent?.("settings", "hover")}
+						onBlur={() => onViewIntent?.("settings", "cancel")}
 					>
 						Изменить режим
 					</a>
 				</p>
 			) : null}
-			<div className="sidebar-footer max-w-full overflow-hidden">
+			<div className="sidebar-footer max-w-full overflow-hidden pb-3">
 				<ThemeSwitcher />
 				<button
 					className="icon-button sidebar-collapse-button"
@@ -808,9 +810,11 @@ export function WorkspaceTopbar({
 					className="primary-button"
 					type="button"
 					title={workspaceTopbarLabels.book.title}
-					onPointerEnter={() => onViewIntent?.("schedule")}
-					onFocus={() => onViewIntent?.("schedule")}
-					onTouchStart={() => onViewIntent?.("schedule")}
+					onPointerEnter={() => onViewIntent?.("schedule", "hover")}
+					onPointerLeave={() => onViewIntent?.("schedule", "cancel")}
+					onFocus={() => onViewIntent?.("schedule", "hover")}
+					onBlur={() => onViewIntent?.("schedule", "cancel")}
+					onTouchStart={() => onViewIntent?.("schedule", "hover")}
 					onClick={onGoToSchedule}
 				>
 					<Plus aria-hidden="true" /> {workspaceTopbarLabels.book.label}
@@ -838,9 +842,11 @@ export function WorkspaceTopbar({
 						className="secondary-button daily-top-button"
 						type="button"
 						title={workspaceTopbarLabels.visit.title}
-						onPointerEnter={() => onViewIntent?.("visit")}
-						onFocus={() => onViewIntent?.("visit")}
-						onTouchStart={() => onViewIntent?.("visit")}
+						onPointerEnter={() => onViewIntent?.("visit", "hover")}
+						onPointerLeave={() => onViewIntent?.("visit", "cancel")}
+						onFocus={() => onViewIntent?.("visit", "hover")}
+						onBlur={() => onViewIntent?.("visit", "cancel")}
+						onTouchStart={() => onViewIntent?.("visit", "hover")}
 						onClick={onGoToDictation}
 					>
 						<ClipboardCheck aria-hidden="true" />{" "}

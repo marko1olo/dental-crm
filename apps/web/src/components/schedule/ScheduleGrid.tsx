@@ -1908,6 +1908,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 										<span className="truncate max-w-full">{chair.name}</span>
 										<span
 											className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider border shrink-0 transition-colors"
+											data-chair-palette={chairPalette.nameRu}
 											style={{
 												color: chairPalette.bright_code,
 												borderColor: `${chairPalette.bright_code}50`,

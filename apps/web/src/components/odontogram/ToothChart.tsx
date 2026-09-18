@@ -1,6 +1,6 @@
 import { Settings, Sparkles, Trash2, Zap } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, memo, useRef, useState } from "react";
+import { useCallback, useEffect, memo, useRef, useState, useMemo } from "react";
 import { getToothConfig, getToothPath } from "../../utils/math/toothGeometry";
 import {
 	getNextFocusedTooth,
@@ -2094,12 +2094,12 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Caries", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 									title="Кариес"
 									data-testid={`quick-caries-${number}`}
 								>
 									<span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block shadow-xs shrink-0" />
-									<span>Кариес</span>
+									<span className="whitespace-nowrap shrink-0 font-bold">Кариес</span>
 								</button>
 								<button
 									type="button"
@@ -2108,12 +2108,12 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Filled", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 									title="Пломба"
 									data-testid={`quick-filled-${number}`}
 								>
 									<span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block shadow-xs shrink-0" />
-									<span>Пломба</span>
+									<span className="whitespace-nowrap shrink-0 font-bold">Пломба</span>
 								</button>
 								<button
 									type="button"
@@ -2122,12 +2122,12 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Pulpitis", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 									title="Пульпит"
 									data-testid={`quick-pulpitis-${number}`}
 								>
 									<span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block shadow-xs shrink-0" />
-									<span>Пульпит</span>
+									<span className="whitespace-nowrap shrink-0 font-bold">Пульпит</span>
 								</button>
 								<button
 									type="button"
@@ -2136,12 +2136,12 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Crown", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 									title="Коронка"
 									data-testid={`quick-crown-${number}`}
 								>
 									<span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block shadow-xs shrink-0" />
-									<span>Коронка</span>
+									<span className="whitespace-nowrap shrink-0 font-bold">Коронка</span>
 								</button>
 								<button
 									type="button"
@@ -2150,12 +2150,12 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Implant", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-indigo-500/15 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-indigo-500/15 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 									title="Имплантат"
 									data-testid={`quick-implant-${number}`}
 								>
 									<span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block shadow-xs shrink-0" />
-									<span>Имплант</span>
+									<span className="whitespace-nowrap shrink-0 font-bold">Имплант</span>
 								</button>
 								<button
 									type="button"
@@ -2164,12 +2164,12 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Missing", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-red-600/15 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-red-600/15 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 									title="Удален"
 									data-testid={`quick-missing-${number}`}
 								>
 									<span className="w-2.5 h-2.5 rounded-full bg-red-600 inline-block shadow-xs shrink-0" />
-									<span>Удален</span>
+									<span className="whitespace-nowrap shrink-0 font-bold">Удален</span>
 								</button>
 								<button
 									type="button"
@@ -2178,12 +2178,12 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 										onQuickStateChange(targets, "Healthy", surfaces);
 									}}
-									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+									className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 									title="Здоров (Интактный)"
 									data-testid={`quick-healthy-${number}`}
 								>
 									<span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shadow-xs shrink-0" />
-									<span>Здоров</span>
+									<span className="whitespace-nowrap shrink-0 font-bold">Здоров</span>
 								</button>
 							</>
 						)}
@@ -2365,6 +2365,7 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 		</button>
 	);
 }, areToothSvgPropsEqual);
+ToothSVG.displayName = "ToothSVG";
 
 export const SurfaceSelector = ({
 	selected,
@@ -2712,7 +2713,84 @@ export function getQuadrantTeeth(
 	}
 }
 
-export const ToothChart: React.FC<ToothChartProps> = ({
+export function areToothChartPropsEqual(
+	prev: ToothChartProps,
+	next: ToothChartProps,
+): boolean {
+	if (prev.pediatricMode !== next.pediatricMode) return false;
+	if (prev.mixedDentition !== next.mixedDentition) return false;
+	if (prev.dentitionMode !== next.dentitionMode) return false;
+	if (prev.activeStamp !== next.activeStamp) return false;
+	if (prev.useSurfaces !== next.useSurfaces) return false;
+	if (prev.hideHeader !== next.hideHeader) return false;
+	if (prev.hideLegend !== next.hideLegend) return false;
+	if (prev.hideQuadrantSwitcher !== next.hideQuadrantSwitcher) return false;
+	if (prev.hideDentitionSwitcher !== next.hideDentitionSwitcher) return false;
+	if (prev.showPulpAndCanals !== next.showPulpAndCanals) return false;
+	if (prev.showPeriapicalHalos !== next.showPeriapicalHalos) return false;
+	if (prev.showPeriodontalBoneLoss !== next.showPeriodontalBoneLoss) return false;
+	if (prev.activeQuadrant !== next.activeQuadrant) return false;
+	if (prev.hideExpressActions !== next.hideExpressActions) return false;
+	if (prev.className !== next.className) return false;
+
+	// Compare selectedTeeth array
+	if (prev.selectedTeeth !== next.selectedTeeth) {
+		const prevLen = prev.selectedTeeth?.length ?? 0;
+		const nextLen = next.selectedTeeth?.length ?? 0;
+		if (prevLen !== nextLen) return false;
+		for (let i = 0; i < prevLen; i++) {
+			if (prev.selectedTeeth![i] !== next.selectedTeeth![i]) return false;
+		}
+	}
+
+	// Compare topTeeth & bottomTeeth
+	if (prev.topTeeth !== next.topTeeth) {
+		const pLen = prev.topTeeth?.length ?? 0;
+		const nLen = next.topTeeth?.length ?? 0;
+		if (pLen !== nLen) return false;
+		for (let i = 0; i < pLen; i++) {
+			if (prev.topTeeth![i] !== next.topTeeth![i]) return false;
+		}
+	}
+	if (prev.bottomTeeth !== next.bottomTeeth) {
+		const pLen = prev.bottomTeeth?.length ?? 0;
+		const nLen = next.bottomTeeth?.length ?? 0;
+		if (pLen !== nLen) return false;
+		for (let i = 0; i < pLen; i++) {
+			if (prev.bottomTeeth![i] !== next.bottomTeeth![i]) return false;
+		}
+	}
+
+	// Compare teethData
+	if (prev.teethData !== next.teethData) {
+		const pLen = prev.teethData?.length ?? 0;
+		const nLen = next.teethData?.length ?? 0;
+		if (pLen !== nLen) return false;
+		for (let i = 0; i < pLen; i++) {
+			const pt = prev.teethData[i];
+			const nt = next.teethData[i];
+			if (!pt || !nt) return false;
+			if (pt.toothNumber !== nt.toothNumber) return false;
+			if (pt.state !== nt.state) return false;
+			if (pt.material !== nt.material) return false;
+			if (pt.canalObturation !== nt.canalObturation) return false;
+			if (pt.hasPost !== nt.hasPost) return false;
+			if (pt.postType !== nt.postType) return false;
+			if (pt.boneLossLevel !== nt.boneLossLevel) return false;
+			if (pt.boneLossType !== nt.boneLossType) return false;
+			if ((pt.rootResorptionStage ?? pt.rootResorption) !== (nt.rootResorptionStage ?? nt.rootResorption)) return false;
+			if (pt.periapicalLesion !== nt.periapicalLesion) return false;
+			const pDepth = pt.pocketDepth ?? pt.pocketDepthMm ?? pt.maxPocketDepth;
+			const nDepth = nt.pocketDepth ?? nt.pocketDepthMm ?? nt.maxPocketDepth;
+			if (pDepth !== nDepth) return false;
+			if (!areSurfacesEqual(pt.surfaces, nt.surfaces)) return false;
+		}
+	}
+
+	return true;
+}
+
+export const ToothChart: React.FC<ToothChartProps> = memo(({
 	teethData = [],
 	pediatricMode,
 	mixedDentition,
@@ -2748,6 +2826,14 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 	const archContainerRef = useRef<HTMLDivElement>(null);
 	const [archScale, setArchScale] = useState(1);
 	const appliedArchScaleRef = useRef(1);
+
+	const toothDataMap = useMemo(() => {
+		const map = new Map<number, ToothData>();
+		for (const t of teethData ?? []) {
+			map.set(t.toothNumber, t);
+		}
+		return map;
+	}, [teethData]);
 
 	const [localDentitionMode, setLocalDentitionMode] = useState<DentitionMode>(
 		dentitionMode ?? (mixedDentition ? "mixed" : pediatricMode ? "pediatric" : "adult"),
@@ -3055,9 +3141,10 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 				const quickState = getToothStateFromHotkey(e.key);
 				if (quickState) {
 					e.preventDefault();
+					const firstTooth = selectedTeeth[0];
 					const singleTooth =
-						selectedTeeth.length === 1
-							? (teethData ?? []).find((t) => t.toothNumber === selectedTeeth[0])
+						selectedTeeth.length === 1 && firstTooth !== undefined
+							? toothDataMap.get(firstTooth)
 							: undefined;
 					onQuickStateChange(selectedTeeth, quickState, singleTooth?.surfaces);
 					return;
@@ -3175,9 +3262,13 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 
 		window.addEventListener("keydown", handleGlobalKeyDown);
 		return () => {
+			if (digitBufferRef.current.timer) {
+				clearTimeout(digitBufferRef.current.timer);
+				digitBufferRef.current.timer = null;
+			}
 			window.removeEventListener("keydown", handleGlobalKeyDown);
 		};
-	}, [selectedTeeth, onQuickStateChange, pediatricMode, teethData, currentQuadrant]);
+	}, [selectedTeeth, onQuickStateChange, pediatricMode, toothDataMap, currentQuadrant]);
 
 	const handleToothClick = useCallback(
 		(
@@ -3456,7 +3547,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 						<div className={`teeth-row ${isTopQuadrant ? "top-row" : "bottom-row"} quadrant-row`}>
 							<div className="tooth-quadrant-group focused-quadrant-group">
 								{(Array.isArray(activeQuadrantTeeth) ? activeQuadrantTeeth : []).map((num) => {
-									const tData = (teethData ?? []).find((t) => t.toothNumber === num);
+									const tData = toothDataMap.get(num);
 									return (
 										<ToothSVG
 											key={num}
@@ -3507,7 +3598,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 							{/* Left Half (Q1: 18..11 or Q5: 55..51) */}
 							<div className="tooth-quadrant-group top-left-quad">
 								{topSplit.left.map((num) => {
-									const tData = (teethData ?? []).find((t) => t.toothNumber === num);
+									const tData = toothDataMap.get(num);
 									return (
 										<ToothSVG
 											key={num}
@@ -3550,7 +3641,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 							{/* Right Half (Q2: 21..28 or Q6: 61..65) */}
 							<div className="tooth-quadrant-group top-right-quad">
 								{topSplit.right.map((num) => {
-									const tData = (teethData ?? []).find((t) => t.toothNumber === num);
+									const tData = toothDataMap.get(num);
 									return (
 										<ToothSVG
 											key={num}
@@ -3599,7 +3690,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 							{/* Left Half (Q4: 48..41 or Q8: 85..81) */}
 							<div className="tooth-quadrant-group bottom-left-quad">
 								{bottomSplit.left.map((num) => {
-									const tData = (teethData ?? []).find((t) => t.toothNumber === num);
+									const tData = toothDataMap.get(num);
 									return (
 										<ToothSVG
 											key={num}
@@ -3642,7 +3733,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 							{/* Right Half (Q3: 31..38 or Q7: 71..75) */}
 							<div className="tooth-quadrant-group bottom-right-quad">
 								{bottomSplit.right.map((num) => {
-									const tData = (teethData ?? []).find((t) => t.toothNumber === num);
+									const tData = toothDataMap.get(num);
 									return (
 										<ToothSVG
 											key={num}
@@ -3682,7 +3773,8 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			</div>
 		</div>
 	);
-};
+}, areToothChartPropsEqual);
+ToothChart.displayName = "ToothChart";
 
 export { ToothSVG, splitArchAtMidline, type RootResorptionStage };
 export * from "./ToothRadialMenu";

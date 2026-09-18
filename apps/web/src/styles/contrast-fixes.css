@@ -278,3 +278,13 @@ html.dark .document-package-item-sub {
 	color: var(--on-teal) !important;
 }
 
+/* StomX chair palette high contrast override for Olive badge (WCAG AAA) */
+[data-theme="contrast"] [data-chair-palette*="Олив"],
+[data-chair-palette*="Олив"].contrast-badge,
+[data-theme="contrast"] [data-chair-palette="Олива"] {
+	color: #0a0a0a !important;
+	background-color: #a3e635 !important;
+	border-color: #65a30d !important;
+	font-weight: 900 !important;
+}
+

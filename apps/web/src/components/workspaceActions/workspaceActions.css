@@ -360,8 +360,10 @@
    Единственный слой группы, который перекрывает страницу. Вызывается человеком,
    закрывается им же. В топбаре — выпадающая панель под группой; в узкой
    раскладке — блок в потоке панели, выше строки кнопок. */
-.dnt-actions__notice:empty {
-	display: none;
+.dnt-actions__notice:empty,
+.dnt-actions__notice:not(:has(*)) {
+	display: none !important;
+	pointer-events: none !important;
 }
 
 .dnt-actions[data-placement="header"] .dnt-actions__notice {
@@ -377,6 +379,11 @@
 	width: min(24rem, calc(100vw - 3rem));
 	max-height: min(70vh, 34rem);
 	overflow-y: auto;
+	pointer-events: none;
+}
+
+.dnt-actions__notice > * {
+	pointer-events: auto;
 }
 
 .dnt-actions[data-placement="nav"] .dnt-actions__notice {

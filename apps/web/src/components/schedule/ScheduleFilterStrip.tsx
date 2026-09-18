@@ -463,8 +463,8 @@ export function ScheduleFilterStrip({
 								key={chair.id}
 								type="button"
 								data-testid={`chair-view-badge-${chair.id}`}
-								className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit !max-w-none !shrink-0 shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center gap-1 select-none`}
-								style={{ whiteSpace: "nowrap", minWidth: "fit-content", flexShrink: 0 }}
+								className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 shrink-0 px-2 text-xs font-medium cursor-pointer rounded-lg inline-flex items-center gap-1 select-none`}
+								style={{ whiteSpace: "nowrap", flexShrink: 0 }}
 								onClick={() =>
 									setScheduleChairFilterId(
 										scheduleChairFilterId === chair.id ? null : chair.id,
@@ -473,7 +473,9 @@ export function ScheduleFilterStrip({
 								title={`Фильтр по кабинету / креслу: ${chairLabel}${chair.room ? ` (${chair.room})` : ""}`}
 								aria-label={`Фильтр по кабинету / креслу: ${chairLabel}`}
 							>
-								<span className="whitespace-nowrap min-w-fit shrink-0">{chairLabel}</span>
+								<span className="max-w-[150px] truncate" title={chairLabel}>
+									{chairLabel}
+								</span>
 							</button>
 						);
 					})}
@@ -640,7 +642,7 @@ export function ScheduleFilterStrip({
 											resetScheduleFilters();
 											setIsOptionsMenuOpen(false);
 										}}
-										className={`quick-chip ${activeScheduleFilterCount === 0 ? "active font-bold" : ""} min-h-[36px] px-2.5 text-xs font-semibold rounded-lg`}
+										className={`quick-chip ${activeScheduleFilterCount === 0 ? "active font-bold" : ""} min-h-[44px] px-2.5 text-xs font-semibold rounded-lg`}
 									>
 										Все записи
 									</button>
@@ -653,7 +655,7 @@ export function ScheduleFilterStrip({
 													handleSelectMyChair();
 													setIsOptionsMenuOpen(false);
 												}}
-												className={`quick-chip ${isMyChairActive ? "active font-bold" : ""} min-h-[36px] px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1`}
+												className={`quick-chip ${isMyChairActive ? "active font-bold" : ""} min-h-[44px] px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1`}
 											>
 												<Armchair size={12} />
 												<span>Моё ({cleanChairName})</span>
@@ -671,7 +673,7 @@ export function ScheduleFilterStrip({
 														setScheduleDoctorFilterId(scheduleDoctorFilterId === m.id ? null : m.id);
 														setIsOptionsMenuOpen(false);
 													}}
-													className={`quick-chip ${scheduleDoctorFilterId === m.id ? "active font-bold" : ""} min-h-[36px] px-2 text-xs rounded-lg`}
+													className={`quick-chip ${scheduleDoctorFilterId === m.id ? "active font-bold" : ""} min-h-[44px] px-2 text-xs rounded-lg`}
 												>
 													{m.fullName?.split(" ")[0] || "Врач"}
 												</button>
@@ -689,7 +691,7 @@ export function ScheduleFilterStrip({
 									setScheduleDateFilter(tomorrowIso);
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+								className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 								role="menuitem"
 							>
 								<Calendar size={14} className="text-[var(--teal,var(--brand-primary))]" />
@@ -706,7 +708,7 @@ export function ScheduleFilterStrip({
 									}
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+								className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 								role="menuitem"
 							>
 								<Calendar size={14} className="text-[var(--teal,var(--brand-primary))]" />
@@ -723,7 +725,7 @@ export function ScheduleFilterStrip({
 									handleRepeatBookingOffset(7);
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
+								className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
 								role="menuitem"
 							>
 								<span>Через 7 дней</span>
@@ -735,7 +737,7 @@ export function ScheduleFilterStrip({
 									handleRepeatBookingOffset(14);
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
+								className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
 								role="menuitem"
 							>
 								<span>Через 14 дней</span>
@@ -747,7 +749,7 @@ export function ScheduleFilterStrip({
 									handleRepeatBookingOffset(30);
 									setIsOptionsMenuOpen(false);
 								}}
-								className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
+								className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
 								role="menuitem"
 							>
 								<span>Через 1 месяц</span>
@@ -771,7 +773,7 @@ export function ScheduleFilterStrip({
 												onGridStepChange?.(step);
 												setIsOptionsMenuOpen(false);
 											}}
-											className={`px-2.5 py-1 sm:py-0.5 min-h-[36px] sm:min-h-0 rounded text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
+											className={`px-2.5 py-1 sm:py-0.5 min-h-[44px] sm:min-h-0 rounded text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
 												(gridStepMinutes ?? 30) === step
 													? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
 													: "bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)]"
@@ -807,7 +809,7 @@ export function ScheduleFilterStrip({
 										onQuickBooking();
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 									role="menuitem"
 									data-testid="schedule-toolbar-quick-booking-btn"
 									title="Новая запись пациента на прием (горячая клавиша N)"
@@ -824,7 +826,7 @@ export function ScheduleFilterStrip({
 										onOpenPatientSearch();
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 									role="menuitem"
 									data-testid="schedule-search-patient-btn"
 									title="Мгновенный поиск пациента по телефону или фамилии (Ctrl+K)"
@@ -840,7 +842,7 @@ export function ScheduleFilterStrip({
 									setIsOptionsMenuOpen(false);
 									void printBlankMedicalContract(null);
 								}}
-								className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+								className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 								role="menuitem"
 								title="Распечатать пустой договор со строками _______ для ручного заполнения"
 								data-testid="schedule-toolbar-print-blank-contract-btn"
@@ -856,7 +858,7 @@ export function ScheduleFilterStrip({
 										onToggleSmartAi();
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 									role="menuitem"
 								>
 									<Bot size={14} className="text-[var(--teal,var(--brand-primary))]" />
@@ -877,7 +879,7 @@ export function ScheduleFilterStrip({
 										setScheduleViewMode(nextMode);
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 									role="menuitem"
 									data-testid="schedule-options-mode-toggle"
 								>
@@ -907,7 +909,7 @@ export function ScheduleFilterStrip({
 										onOpenDoctorFreeSlots();
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 									role="menuitem"
 								>
 									<Search size={14} className="text-[var(--teal,var(--brand-primary))]" />
@@ -922,7 +924,7 @@ export function ScheduleFilterStrip({
 										onOpenTomorrowReminders();
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 									role="menuitem"
 									aria-label="Напомнить всем на завтра: рассылка WhatsApp и СМС"
 								>
@@ -938,7 +940,7 @@ export function ScheduleFilterStrip({
 										onEmergencyCitoBooking();
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center gap-2 cursor-pointer"
 									role="menuitem"
 									aria-label="Пациент с острой болью CITO: быстрая запись дежурному врачу"
 								>
@@ -955,7 +957,7 @@ export function ScheduleFilterStrip({
 										onToggleShiftAnalytics();
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 									role="menuitem"
 								>
 									<BarChart3 size={14} className="text-[var(--teal,var(--brand-primary))]" />
@@ -970,7 +972,7 @@ export function ScheduleFilterStrip({
 										onOpenShiftRoster();
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 									role="menuitem"
 								>
 									<Users size={14} className="text-[var(--teal,var(--brand-primary))]" />
@@ -985,7 +987,7 @@ export function ScheduleFilterStrip({
 										onOpenWaitlist();
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 									role="menuitem"
 								>
 									<UserPlus size={14} className="text-[var(--teal,var(--brand-primary))]" />
@@ -1000,7 +1002,7 @@ export function ScheduleFilterStrip({
 										onToggleConfirmations();
 										setIsOptionsMenuOpen(false);
 									}}
-									className={`w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-2 cursor-pointer ${
+									className={`w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-2 cursor-pointer ${
 										showConfirmationsPanel
 											? "bg-[var(--teal-soft)] text-[var(--teal-dark)] font-bold"
 											: "text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)]"
@@ -1021,7 +1023,7 @@ export function ScheduleFilterStrip({
 										onToggleFreedSlots();
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 									role="menuitem"
 								>
 									<Clock size={14} className="text-[var(--teal,var(--brand-primary))]" />
@@ -1036,7 +1038,7 @@ export function ScheduleFilterStrip({
 										onToggleClipboard();
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 									role="menuitem"
 								>
 									<Clipboard size={14} className="text-[var(--teal,var(--brand-primary))]" />
@@ -1051,7 +1053,7 @@ export function ScheduleFilterStrip({
 										onOpenCalendarSync();
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full min-h-[40px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 									role="menuitem"
 									data-testid="open-calendar-sync-modal-btn"
 									title="Синхронизация с Яндекс Календарём, Apple Calendar и Google Calendar (iCal/CalDAV)"

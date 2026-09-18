@@ -328,7 +328,7 @@ function DisinfectantsRegisterTab() {
 					</thead>
 					<tbody>
 						{filtered.map((r) => (
-							<tr key={r.id} style={{ minHeight: "54px" }}>
+							<tr key={r.id} className="sanpin-log-row" style={{ minHeight: "40px", contentVisibility: "auto", containIntrinsicSize: "1px 40px", contain: "content" }}>
 								<td style={{ fontWeight: 700, color: "var(--ink)" }}>{r.tradeNameRu}</td>
 								<td style={{ fontSize: "0.875rem" }}>{r.purposeRu}</td>
 								<td>
@@ -481,7 +481,7 @@ function BacLabRegisterTab() {
 					</thead>
 					<tbody>
 						{filtered.map((r) => (
-							<tr key={r.id} style={{ minHeight: "54px" }}>
+							<tr key={r.id} className="sanpin-log-row" style={{ minHeight: "40px", contentVisibility: "auto", containIntrinsicSize: "1px 40px", contain: "content" }}>
 								<td style={{ fontWeight: 700, color: "var(--ink)" }}>{r.actNumberRu}</td>
 								<td style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{r.sampleDate}</td>
 								<td style={{ fontSize: "0.875rem", fontWeight: 600 }}>{r.targetObjectRu}</td>
@@ -627,7 +627,7 @@ function NeedleDisposalRegisterTab() {
 					</thead>
 					<tbody>
 						{filtered.map((r) => (
-							<tr key={r.id} style={{ minHeight: "54px" }}>
+							<tr key={r.id} className="sanpin-log-row" style={{ minHeight: "40px", contentVisibility: "auto", containIntrinsicSize: "1px 40px", contain: "content" }}>
 								<td style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{r.shiftDateRu}</td>
 								<td style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--ink)" }}>{r.wasteTypeRu}</td>
 								<td style={{ fontSize: "0.825rem" }}>{r.treatmentMethodRu}</td>
@@ -1578,7 +1578,7 @@ export function SanpinRegisters() {
 
 			{/* Unified 2-in-1 Category & Sub-Tab Navigation Bar (Miller's Law 7±2, <= 52px, 0 Visual Collision) */}
 			<div
-				className="sanpin-unified-nav"
+				className="sanpin-unified-nav overflow-x-auto no-scrollbar scrollbar-none flex-nowrap min-w-0 max-w-full touch-pan-x"
 				style={{
 					display: "flex",
 					alignItems: "center",
@@ -1586,7 +1586,6 @@ export function SanpinRegisters() {
 					gap: "0.6rem",
 					borderBottom: "1px solid var(--line, rgba(148, 163, 184, 0.2))",
 					padding: "0.2rem 0",
-					overflowX: "auto",
 					whiteSpace: "nowrap",
 					WebkitOverflowScrolling: "touch",
 					minHeight: "36px",

@@ -1393,11 +1393,11 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Caries");
 						}}
-						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Кариес"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block shadow-xs shrink-0" />
-						<span>Кариес</span>
+						<span className="whitespace-nowrap shrink-0 font-bold">Кариес</span>
 					</button>
 					<button
 						type="button"
@@ -1406,11 +1406,11 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Filled");
 						}}
-						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Пломба"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block shadow-xs shrink-0" />
-						<span>Пломба</span>
+						<span className="whitespace-nowrap shrink-0 font-bold">Пломба</span>
 					</button>
 					<button
 						type="button"
@@ -1419,11 +1419,11 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Pulpitis");
 						}}
-						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Пульпит"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block shadow-xs shrink-0" />
-						<span>Пульпит</span>
+						<span className="whitespace-nowrap shrink-0 font-bold">Пульпит</span>
 					</button>
 					<button
 						type="button"
@@ -1432,11 +1432,11 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Crown");
 						}}
-						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Коронка"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block shadow-xs shrink-0" />
-						<span>Коронка</span>
+						<span className="whitespace-nowrap shrink-0 font-bold">Коронка</span>
 					</button>
 					<button
 						type="button"
@@ -1445,12 +1445,12 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Implant");
 						}}
-						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-indigo-500/15 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-indigo-500/15 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Имплантат"
 						data-testid={`quick-implant-${number}`}
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block shadow-xs shrink-0" />
-						<span>Имплант</span>
+						<span className="whitespace-nowrap shrink-0 font-bold">Имплант</span>
 					</button>
 					<button
 						type="button"
@@ -1459,11 +1459,11 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Missing");
 						}}
-						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-red-600/15 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-red-600/15 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Удален"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-red-600 inline-block shadow-xs shrink-0" />
-						<span>Удален</span>
+						<span className="whitespace-nowrap shrink-0 font-bold">Удален</span>
 					</button>
 					<button
 						type="button"
@@ -1472,11 +1472,11 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Retained");
 						}}
-						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-purple-500/15 hover:bg-purple-500 text-purple-800 dark:text-purple-300 hover:text-white border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-purple-500/15 hover:bg-purple-500 text-purple-800 dark:text-purple-300 hover:text-white border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Ретинированный"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block shadow-xs shrink-0" />
-						<span>Ретинирован</span>
+						<span className="whitespace-nowrap shrink-0 font-bold">Ретинирован</span>
 					</button>
 					<button
 						type="button"
@@ -1485,11 +1485,11 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Root");
 						}}
-						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-rose-700/15 hover:bg-rose-700 text-rose-900 dark:text-rose-200 hover:text-white border border-rose-700/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-rose-700/15 hover:bg-rose-700 text-rose-900 dark:text-rose-200 hover:text-white border border-rose-700/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Корень"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-rose-700 inline-block shadow-xs shrink-0" />
-						<span>Корень</span>
+						<span className="whitespace-nowrap shrink-0 font-bold">Корень</span>
 					</button>
 					<button
 						type="button"
@@ -1498,11 +1498,11 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 							onQuickStateChange(targets, "Healthy");
 						}}
-						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-teal-500/15 hover:bg-teal-500 text-teal-800 dark:text-teal-300 hover:text-white border border-teal-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-teal-500/15 hover:bg-teal-500 text-teal-800 dark:text-teal-300 hover:text-white border border-teal-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Здоров"
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-teal-400 inline-block shadow-xs shrink-0" />
-						<span>Здоров</span>
+						<span className="whitespace-nowrap shrink-0 font-bold">Здоров</span>
 					</button>
 				</div>
 			)}

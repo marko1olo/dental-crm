@@ -187,7 +187,7 @@ const STAMP_ITEMS: Array<{
 	},
 ];
 
-export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = ({
+export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = React.memo(({
 	teethData,
 	pediatricMode,
 	mixedDentition,
@@ -499,31 +499,62 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 		[radialMenuData, onQuickStateChange],
 	);
 
-	const sharedViewProps = {
-		teethData,
-		pediatricMode: isPediatricEffective,
-		mixedDentition: isMixedEffective,
-		dentitionMode: effectiveDentition,
-		onDentitionModeChange,
-		topTeeth,
-		bottomTeeth,
-		selectedTeeth,
-		onToothClick: handleToothClickIntercept,
-		onQuickStateChange,
-		useSurfaces,
-		hideHeader,
-		hideLegend,
-		hideQuadrantSwitcher,
-		activeQuadrant: controlledQuadrant,
-		onQuadrantChange,
-		activeStamp: activeStampTool,
-		onMarkIntactDentition: handleMarkIntactDentition,
-		onMarkWisdomTeethMissing: handleMarkWisdomTeethMissing,
-		onJawClick: (target: "JU" | "JL" | "C") => setActiveJawModalTarget(target),
-		showWisdomTeeth,
-		showPulpAndCanals,
-		className: "",
-	};
+	const handleJawClick = useCallback(
+		(target: "JU" | "JL" | "C") => setActiveJawModalTarget(target),
+		[],
+	);
+
+	const sharedViewProps = useMemo(
+		() => ({
+			teethData,
+			pediatricMode: isPediatricEffective,
+			mixedDentition: isMixedEffective,
+			dentitionMode: effectiveDentition,
+			onDentitionModeChange,
+			topTeeth,
+			bottomTeeth,
+			selectedTeeth,
+			onToothClick: handleToothClickIntercept,
+			onQuickStateChange,
+			useSurfaces,
+			hideHeader,
+			hideLegend,
+			hideQuadrantSwitcher,
+			activeQuadrant: controlledQuadrant,
+			onQuadrantChange,
+			activeStamp: activeStampTool,
+			onMarkIntactDentition: handleMarkIntactDentition,
+			onMarkWisdomTeethMissing: handleMarkWisdomTeethMissing,
+			onJawClick: handleJawClick,
+			showWisdomTeeth,
+			showPulpAndCanals,
+			className: "",
+		}),
+		[
+			teethData,
+			isPediatricEffective,
+			isMixedEffective,
+			effectiveDentition,
+			onDentitionModeChange,
+			topTeeth,
+			bottomTeeth,
+			selectedTeeth,
+			handleToothClickIntercept,
+			onQuickStateChange,
+			useSurfaces,
+			hideHeader,
+			hideLegend,
+			hideQuadrantSwitcher,
+			controlledQuadrant,
+			onQuadrantChange,
+			activeStampTool,
+			handleMarkIntactDentition,
+			handleMarkWisdomTeethMissing,
+			handleJawClick,
+			showWisdomTeeth,
+			showPulpAndCanals,
+		],
+	);
 
 	return (
 		<div
@@ -663,7 +694,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									data-testid="quick-trigger-healthy-btn"
 								>
 									<span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-									<span className="truncate">Норма</span>
+									<span className="whitespace-nowrap shrink-0">Норма</span>
 								</button>
 								<button
 									type="button"
@@ -677,7 +708,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									data-testid="quick-trigger-caries-btn"
 								>
 									<span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-									<span className="truncate">Кариес</span>
+									<span className="whitespace-nowrap shrink-0">Кариес</span>
 								</button>
 								<button
 									type="button"
@@ -691,7 +722,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									data-testid="quick-trigger-pulpitis-btn"
 								>
 									<span className="w-2 h-2 rounded-full bg-[#ef4444] shrink-0" />
-									<span className="truncate">Пульпит</span>
+									<span className="whitespace-nowrap shrink-0">Пульпит</span>
 								</button>
 								<button
 									type="button"
@@ -705,7 +736,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									data-testid="quick-trigger-filling-btn"
 								>
 									<span className="w-2 h-2 rounded-full bg-sky-500 shrink-0" />
-									<span className="truncate">Пломба</span>
+									<span className="whitespace-nowrap shrink-0">Пломба</span>
 								</button>
 								<button
 									type="button"
@@ -719,7 +750,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									data-testid="quick-trigger-extracted-btn"
 								>
 									<span className="w-2 h-2 rounded-full bg-zinc-500 shrink-0" />
-									<span className="truncate">Удален</span>
+									<span className="whitespace-nowrap shrink-0">Удален</span>
 								</button>
 								<button
 									type="button"
@@ -733,7 +764,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									data-testid="quick-trigger-implant-btn"
 								>
 									<span className="w-2 h-2 rounded-full bg-[#64748b] shrink-0" />
-									<span className="truncate">Имплант</span>
+									<span className="whitespace-nowrap shrink-0">Имплант</span>
 								</button>
 							</div>
 						)}
@@ -1555,4 +1586,5 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 			)}
 		</div>
 	);
-};
+});
+OdontogramViewContainer.displayName = "OdontogramViewContainer";

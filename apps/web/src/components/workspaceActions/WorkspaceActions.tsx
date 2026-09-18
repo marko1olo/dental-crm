@@ -336,6 +336,9 @@ export function WorkspaceActionsMount(): React.ReactElement {
 		const dom = ensureHost();
 		dom.host.dataset.placement = "header";
 		applyBarOrder(dom, "header");
+		if (dom.host.parentElement && dom.host.parentElement !== anchor) {
+			dom.host.remove();
+		}
 		anchor.append(dom.host);
 		return () => {
 			if (dom.host.parentElement === anchor) dom.host.remove();
@@ -393,6 +396,15 @@ export function WorkspaceActionsSlot({
 	children,
 }: WorkspaceActionsSlotProps): React.ReactElement | null {
 	const target = useWorkspaceActionSlot(slot);
+
+	useEffect(() => {
+		return () => {
+			if (target) {
+				target.replaceChildren();
+			}
+		};
+	}, [target]);
+
 	if (!target) return null;
 	return createPortal(children, target);
 }

@@ -21,19 +21,48 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { lazy, Suspense, useState } from "react";
 import { money } from "../AppHelpers";
 import { showToast } from "./GlobalToast";
 import { InventoryConfirmDialog } from "./inventory/InventoryConfirmDialog";
-import { MaterialBomsSettingsPanel } from "./inventory/MaterialBomsSettingsPanel";
 import { useInventoryLogic } from "./inventory/useInventoryLogic";
-import { WarehouseTransferModal } from "./inventory/transfers/WarehouseTransferModal";
-import { ClinicalWriteoffModal } from "./inventory/writeoff/ClinicalWriteoffModal";
-import { WarehouseInventoryAuditModal } from "./inventory/WarehouseInventoryAuditModal";
-import { MdlpDisposalQueueModal } from "./inventory/mdlp/index.js";
 import { WarehousePackageWriteOffBar } from "./inventory/WarehousePackageWriteOffBar";
-import { WarehouseManagerModal } from "./inventory/WarehouseManagerModal";
-import { MdlpScanningModal } from "./mdlp/MdlpScanningModal";
+
+const MaterialBomsSettingsPanel = lazy(() =>
+	import("./inventory/MaterialBomsSettingsPanel").then((module) => ({
+		default: module.MaterialBomsSettingsPanel,
+	})),
+);
+const WarehouseTransferModal = lazy(() =>
+	import("./inventory/transfers/WarehouseTransferModal").then((module) => ({
+		default: module.WarehouseTransferModal,
+	})),
+);
+const ClinicalWriteoffModal = lazy(() =>
+	import("./inventory/writeoff/ClinicalWriteoffModal").then((module) => ({
+		default: module.ClinicalWriteoffModal,
+	})),
+);
+const WarehouseInventoryAuditModal = lazy(() =>
+	import("./inventory/WarehouseInventoryAuditModal").then((module) => ({
+		default: module.WarehouseInventoryAuditModal,
+	})),
+);
+const MdlpDisposalQueueModal = lazy(() =>
+	import("./inventory/mdlp/index.js").then((module) => ({
+		default: module.MdlpDisposalQueueModal,
+	})),
+);
+const WarehouseManagerModal = lazy(() =>
+	import("./inventory/WarehouseManagerModal").then((module) => ({
+		default: module.WarehouseManagerModal,
+	})),
+);
+const MdlpScanningModal = lazy(() =>
+	import("./mdlp/MdlpScanningModal").then((module) => ({
+		default: module.MdlpScanningModal,
+	})),
+);
 
 /**
  * Как показать срок годности расходника.
@@ -235,7 +264,11 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	const borderColor = "var(--line)";
 
 	const renderRulesTab = () => {
-		return <MaterialBomsSettingsPanel organizationId={organizationId} />;
+		return (
+			<Suspense fallback={<div className="p-8 text-center text-xs text-[var(--muted)]">Загрузка технологических карт с диска...</div>}>
+				<MaterialBomsSettingsPanel organizationId={organizationId} />
+			</Suspense>
+		);
 	};
 
 	/*
@@ -305,7 +338,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 				aria-label="Панель склада материалов"
 			>
 				{/* Left: Section Identity, Sub-tabs, and Inline KPI */}
-				<div className="flex items-center gap-2 overflow-x-auto shrink-0 min-w-0">
+				<div className="flex items-center gap-2 overflow-x-auto no-scrollbar scrollbar-none flex-nowrap min-w-0 max-w-full touch-pan-x shrink-0">
 					<div className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink,#0f172a)] shrink-0">
 						<Package size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span>Склад материалов</span>
@@ -394,7 +427,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							placeholder="Поиск..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="!pl-7 w-36 lg:w-48 text-xs min-h-[32px] sm:min-h-[28px] sm:h-7 shrink-0"
+							className="!pl-7 w-36 lg:w-48 text-xs min-h-[44px] sm:min-h-[28px] sm:h-7 shrink-0"
 							style={{
 								padding: "4px 8px 4px 28px",
 								borderRadius: 6,
@@ -412,7 +445,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					<button
 						type="button"
 						onClick={() => setIsQuickPackagesOpen((prev) => !prev)}
-						className="min-h-[32px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 rounded-md text-xs font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors border shrink-0 whitespace-nowrap"
+						className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 rounded-md text-xs font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors border shrink-0 whitespace-nowrap"
 						style={{
 							background: isQuickPackagesOpen ? "var(--teal-soft)" : paperSoftBg,
 							color: isQuickPackagesOpen ? "var(--teal-dark, #0f766e)" : "var(--ink)",
@@ -435,14 +468,12 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						data-testid="nurse-quick-carpules-btn"
 						disabled={isWritingOffCarpules}
 						onClick={() => handleQuickWriteoffCarpules()}
-						className="secondary-button shrink-0 whitespace-nowrap"
+						className="secondary-button min-h-[44px] sm:min-h-[28px] sm:h-7 shrink-0 whitespace-nowrap"
 						style={{
 							display: "inline-flex",
 							alignItems: "center",
 							gap: 5,
 							padding: "4px 8px",
-							minHeight: "28px",
-							height: "28px",
 							borderRadius: 6,
 							fontWeight: 700,
 							fontSize: 12,
@@ -464,15 +495,13 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					<div ref={opsMenuRef} className="shrink-0" style={{ position: "relative", display: "inline-block" }}>
 						<button
 							type="button"
-							className="secondary-button shrink-0 whitespace-nowrap"
+							className="secondary-button min-h-[44px] sm:min-h-[28px] sm:h-7 shrink-0 whitespace-nowrap"
 							onClick={() => setIsOpsMenuOpen((prev) => !prev)}
 							style={{
 								display: "inline-flex",
 								alignItems: "center",
 								gap: 5,
 								padding: "4px 9px",
-								minHeight: "28px",
-								height: "28px",
 								borderRadius: 6,
 								border: `1px solid ${borderColor}`,
 								background: paperSoftBg,
@@ -499,6 +528,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 
 								{isOpsMenuOpen && (
 									<div
+										className="warehouse-ops-menu"
 										style={{
 											position: "absolute",
 											right: 0,
@@ -976,15 +1006,13 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					{/* Add Inventory Item Button */}
 					<button
 						type="button"
-						className="primary-button shrink-0 whitespace-nowrap"
+						className="primary-button min-h-[44px] sm:min-h-[28px] sm:h-7 shrink-0 whitespace-nowrap"
 						onClick={openAddModal}
 						style={{
 							display: "inline-flex",
 							alignItems: "center",
 							gap: 5,
 							padding: "4px 11px",
-							minHeight: "28px",
-							height: "28px",
 							borderRadius: 6,
 							fontWeight: 700,
 							fontSize: 12,
@@ -1355,9 +1383,13 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										return (
 											<tr
 												key={item.id}
+												className="inventory-item-row"
 												style={{
 													borderBottom: `1px solid ${borderColor}`,
 													transition: "background 0.15s",
+													contentVisibility: "auto",
+													containIntrinsicSize: "1px 40px",
+													contain: "content",
 												}}
 											>
 												<td
@@ -2363,92 +2395,116 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 				/>
 			) : null}
 
-			<ClinicalWriteoffModal
-				isOpen={isClinicalWriteoffOpen}
-				onClose={() => setIsClinicalWriteoffOpen(false)}
-				onConfirmWriteoff={async (doc) => {
-					try {
-						let deductedCount = 0;
-						for (const line of doc.lines) {
-							if (line.actualQuantity <= 0) continue;
-							const matchingItem = items.find(
-								(it) => it.name.toLowerCase() === line.nameRu.toLowerCase(),
-							);
-							if (matchingItem) {
-								const res = await fetch(
-									`/api/inventory/${organizationId}/${matchingItem.id}/stock`,
-									{
-										method: "PATCH",
-										headers: getHeaders({ "Content-Type": "application/json" }),
-										body: JSON.stringify({
-											adjustment: -line.actualQuantity,
-											allowOverdraft: true,
-											reason: `Акт 804н ${doc.actNumber}: ${line.nameRu}`,
-										}),
-									},
+			{isClinicalWriteoffOpen && (
+				<Suspense fallback={null}>
+					<ClinicalWriteoffModal
+						isOpen={isClinicalWriteoffOpen}
+						onClose={() => setIsClinicalWriteoffOpen(false)}
+						onConfirmWriteoff={async (doc) => {
+							try {
+								let deductedCount = 0;
+								for (const line of doc.lines) {
+									if (line.actualQuantity <= 0) continue;
+									const matchingItem = items.find(
+										(it) => it.name.toLowerCase() === line.nameRu.toLowerCase(),
+									);
+									if (matchingItem) {
+										const res = await fetch(
+											`/api/inventory/${organizationId}/${matchingItem.id}/stock`,
+											{
+												method: "PATCH",
+												headers: getHeaders({ "Content-Type": "application/json" }),
+												body: JSON.stringify({
+													adjustment: -line.actualQuantity,
+													allowOverdraft: true,
+													reason: `Акт 804н ${doc.actNumber}: ${line.nameRu}`,
+												}),
+											},
+										);
+										if (res.ok) deductedCount++;
+									}
+								}
+								showToast(
+									`Акт списания 804н зарегистрирован (проведено ${deductedCount} поз., мягкий овердрафт разрешен)`,
+									"success",
 								);
-								if (res.ok) deductedCount++;
+							} catch (e) {
+								console.error(e);
+								showToast("Ошибка при фиксации акта списания", "error");
+							} finally {
+								setIsClinicalWriteoffOpen(false);
+								fetchItems();
 							}
-						}
-						showToast(
-							`Акт списания 804н зарегистрирован (проведено ${deductedCount} поз., мягкий овердрафт разрешен)`,
-							"success",
-						);
-					} catch (e) {
-						console.error(e);
-						showToast("Ошибка при фиксации акта списания", "error");
-					} finally {
-						setIsClinicalWriteoffOpen(false);
-						fetchItems();
-					}
-				}}
-			/>
+						}}
+					/>
+				</Suspense>
+			)}
 
-			<WarehouseTransferModal
-				isOpen={isWarehouseTransferOpen}
-				onClose={() => setIsWarehouseTransferOpen(false)}
-				onDocumentSaved={async () => {
-					setIsWarehouseTransferOpen(false);
-					fetchItems();
-				}}
-			/>
+			{isWarehouseTransferOpen && (
+				<Suspense fallback={null}>
+					<WarehouseTransferModal
+						isOpen={isWarehouseTransferOpen}
+						onClose={() => setIsWarehouseTransferOpen(false)}
+						onDocumentSaved={async () => {
+							setIsWarehouseTransferOpen(false);
+							fetchItems();
+						}}
+					/>
+				</Suspense>
+			)}
 
-			<WarehouseInventoryAuditModal
-				isOpen={isInventoryAuditOpen}
-				onClose={() => setIsInventoryAuditOpen(false)}
-				onApplyAudit={async () => {
-					setIsInventoryAuditOpen(false);
-					fetchItems();
-				}}
-				onDocumentSaved={() => {
-					fetchItems();
-				}}
-			/>
+			{isInventoryAuditOpen && (
+				<Suspense fallback={null}>
+					<WarehouseInventoryAuditModal
+						isOpen={isInventoryAuditOpen}
+						onClose={() => setIsInventoryAuditOpen(false)}
+						onApplyAudit={async () => {
+							setIsInventoryAuditOpen(false);
+							fetchItems();
+						}}
+						onDocumentSaved={() => {
+							fetchItems();
+						}}
+					/>
+				</Suspense>
+			)}
 
-			<MdlpDisposalQueueModal
-				isOpen={isMdlpDisposalOpen}
-				onClose={() => setIsMdlpDisposalOpen(false)}
-				onConfirmDisposal={async () => {
-					setIsMdlpDisposalOpen(false);
-					fetchItems();
-				}}
-			/>
+			{isMdlpDisposalOpen && (
+				<Suspense fallback={null}>
+					<MdlpDisposalQueueModal
+						isOpen={isMdlpDisposalOpen}
+						onClose={() => setIsMdlpDisposalOpen(false)}
+						onConfirmDisposal={async () => {
+							setIsMdlpDisposalOpen(false);
+							fetchItems();
+						}}
+					/>
+				</Suspense>
+			)}
 
-			<WarehouseManagerModal
-				isOpen={isWarehouseManagerOpen}
-				onClose={() => setIsWarehouseManagerOpen(false)}
-				initialItems={items}
-				onConfirmWriteoff={async () => {
-					setIsWarehouseManagerOpen(false);
-					fetchItems();
-				}}
-			/>
+			{isWarehouseManagerOpen && (
+				<Suspense fallback={null}>
+					<WarehouseManagerModal
+						isOpen={isWarehouseManagerOpen}
+						onClose={() => setIsWarehouseManagerOpen(false)}
+						initialItems={items}
+						onConfirmWriteoff={async () => {
+							setIsWarehouseManagerOpen(false);
+							fetchItems();
+						}}
+					/>
+				</Suspense>
+			)}
 
-			<MdlpScanningModal
-				isOpen={isMdlpScanningOpen}
-				onClose={() => setIsMdlpScanningOpen(false)}
-				initialMode="disposal_531"
-			/>
+			{isMdlpScanningOpen && (
+				<Suspense fallback={null}>
+					<MdlpScanningModal
+						isOpen={isMdlpScanningOpen}
+						onClose={() => setIsMdlpScanningOpen(false)}
+						initialMode="disposal_531"
+					/>
+				</Suspense>
+			)}
 		</div>
 	);
 };

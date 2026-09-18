@@ -1,6 +1,6 @@
 import type { Dashboard, Patient, PaymentMethod } from "@dental/shared";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { TrendingUp, Receipt, ChevronDown, FileText, CreditCard, MoreHorizontal, ShieldCheck } from "lucide-react";
+import { TrendingUp, ReceiptText, ChevronDown, FileText, CreditCard, MoreHorizontal, ShieldCheck } from "lucide-react";
 import { money as formatMoney } from "./AppHelpers";
 import { denteAdminSecretRequestHeaders } from "./lib/denteRequestHeaders";
 import {
@@ -610,7 +610,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 						aria-label="Счета и акты (804н)"
 						data-testid="btn-finance-open-invoices"
 					>
-						<Receipt size={13} className="shrink-0" />
+						<ReceiptText size={13} className="shrink-0" />
 						<span className="truncate hidden sm:inline">Счета и акты (804н)</span>
 					</button>
 
@@ -638,7 +638,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 										setIsFinanceOptionsOpen(false);
 										setIsPnlOpen(true);
 									}}
-									className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
+									className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[32px]"
 									role="menuitem"
 								>
 									<TrendingUp size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
@@ -650,7 +650,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 										setIsFinanceOptionsOpen(false);
 										onGoToDocuments();
 									}}
-									className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
+									className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[32px]"
 									role="menuitem"
 								>
 									<FileText size={14} className="shrink-0 text-sky-600 dark:text-sky-400" />
@@ -662,7 +662,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 										setIsFinanceOptionsOpen(false);
 										setIsCashShiftOpen((prev) => !prev);
 									}}
-									className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
+									className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[32px]"
 									role="menuitem"
 									data-testid="menuitem-toggle-cash-shift"
 								>
