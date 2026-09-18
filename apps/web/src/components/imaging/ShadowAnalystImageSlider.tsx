@@ -6,10 +6,12 @@ import React, {
 	useState,
 } from "react";
 import { UploadCloud } from "lucide-react";
+import { useSafeObjectUrl } from "../../hooks/useMemoryLeakGuard";
 
 interface ShadowAnalystImageSliderProps {
-	imageUrl: string;
+	imageUrl: string | Blob | File;
 	enhanced?: boolean;
+	autoRevokeBlobUrl?: boolean;
 	/**
 	 * Яркость, контраст, инверсия, поворот и масштаб из панели просмотра.
 	 *
@@ -29,7 +31,11 @@ export function ShadowAnalystImageSlider({
 	imageUrl,
 	enhanced = true,
 	viewerStyle,
+	autoRevokeBlobUrl,
 }: ShadowAnalystImageSliderProps) {
+	const resolvedImageUrl = useSafeObjectUrl(imageUrl, {
+		autoRevokeBlobStrings: autoRevokeBlobUrl,
+	});
 	const [sliderPos, setSliderPos] = useState(50);
 	const [isDragging, setIsDragging] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -80,7 +86,7 @@ export function ShadowAnalystImageSlider({
 		"--sa-viewer-transform": (viewerStyle?.transform as string) ?? "none",
 	} as CSSProperties;
 
-	if (!imageUrl || !imageUrl.trim()) {
+	if (!resolvedImageUrl || !resolvedImageUrl.trim()) {
 		return (
 			<div
 				className="sa-image-container flex flex-col items-center justify-center p-8 text-center rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] min-h-[260px] w-full"
@@ -106,7 +112,7 @@ export function ShadowAnalystImageSlider({
 				style={viewerVariables}
 			>
 				<img
-					src={imageUrl}
+					src={resolvedImageUrl}
 					alt="Рентгеновский снимок"
 					loading="lazy"
 					decoding="async"
@@ -144,7 +150,7 @@ export function ShadowAnalystImageSlider({
 		>
 			{/* Исходный снимок — нижний слой */}
 			<img
-				src={imageUrl}
+				src={resolvedImageUrl}
 				alt="Снимок без обработки"
 				loading="lazy"
 				decoding="async"
@@ -157,7 +163,7 @@ export function ShadowAnalystImageSlider({
 				style={{ clipPath: `inset(0 0 0 ${sliderPos}%)` }}
 			>
 				<img
-					src={imageUrl}
+					src={resolvedImageUrl}
 					alt="Снимок с усилением контраста"
 					loading="lazy"
 					decoding="async"

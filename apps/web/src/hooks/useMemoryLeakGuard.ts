@@ -87,6 +87,9 @@ export interface MemoryLeakGuardController {
 	readonly registerObserver: <T extends { disconnect: () => void }>(
 		observer: T,
 	) => T;
+	readonly safeCreateObjectURL: (blob: Blob | MediaSource) => string;
+	readonly safeRevokeObjectURL: (url: string) => void;
+	readonly registerObjectUrl: (url: string) => string;
 	readonly disposeAll: () => void;
 }
 
@@ -107,16 +110,26 @@ export function useMemoryLeakGuard(
 	const lifecycleAbortControllerRef = useRef<AbortController | null>(null);
 	const disposersRef = useRef<Set<MemoryLeakGuardDisposer>>(new Set());
 	const observersRef = useRef<Set<{ disconnect: () => void }>>(new Set());
+	const objectUrlsRef = useRef<Set<string>>(new Set());
 
 	const isMounted = useCallback(() => isMountedRef.current, []);
 
 	const safeClearTimeout = useCallback((id: ReturnType<typeof setTimeout>) => {
-		clearTimeout(id);
+		try {
+			clearTimeout(id);
+		} catch {
+			// Ignore
+		}
 		timeoutsRef.current.delete(id);
 	}, []);
 
 	const safeSetTimeout = useCallback(
 		(callback: () => void, ms: number): ReturnType<typeof setTimeout> => {
+			if (!isMountedRef.current) {
+				const dummy = setTimeout(() => {}, 0);
+				clearTimeout(dummy);
+				return dummy;
+			}
 			const timerId = setTimeout(() => {
 				timeoutsRef.current.delete(timerId);
 				if (isMountedRef.current) {
@@ -131,7 +144,11 @@ export function useMemoryLeakGuard(
 
 	const safeClearInterval = useCallback(
 		(id: ReturnType<typeof setInterval>) => {
-			clearInterval(id);
+			try {
+				clearInterval(id);
+			} catch {
+				// Ignore
+			}
 			intervalsRef.current.delete(id);
 		},
 		[],
@@ -139,6 +156,11 @@ export function useMemoryLeakGuard(
 
 	const safeSetInterval = useCallback(
 		(callback: () => void, ms: number): ReturnType<typeof setInterval> => {
+			if (!isMountedRef.current) {
+				const dummy = setInterval(() => {}, 999999);
+				clearInterval(dummy);
+				return dummy;
+			}
 			const intervalId = setInterval(() => {
 				if (isMountedRef.current) {
 					callback();
@@ -155,14 +177,18 @@ export function useMemoryLeakGuard(
 
 	const safeCancelAnimationFrame = useCallback((id: number) => {
 		if (typeof cancelAnimationFrame !== "undefined") {
-			cancelAnimationFrame(id);
+			try {
+				cancelAnimationFrame(id);
+			} catch {
+				// Ignore
+			}
 		}
 		animationFramesRef.current.delete(id);
 	}, []);
 
 	const safeRequestAnimationFrame = useCallback(
 		(callback: FrameRequestCallback): number => {
-			if (typeof requestAnimationFrame === "undefined") {
+			if (typeof requestAnimationFrame === "undefined" || !isMountedRef.current) {
 				return 0;
 			}
 			const rafId = requestAnimationFrame((time) => {
@@ -184,6 +210,10 @@ export function useMemoryLeakGuard(
 			listener: EventListenerOrEventListenerObject,
 			listenerOptions?: boolean | AddEventListenerOptions,
 		): MemoryLeakGuardDisposer => {
+			if (!isMountedRef.current) {
+				return () => {};
+			}
+
 			const tracked: TrackedListener = {
 				target,
 				type,
@@ -191,8 +221,12 @@ export function useMemoryLeakGuard(
 				options: listenerOptions,
 			};
 
-			target.addEventListener(type, listener, listenerOptions);
-			listenersRef.current.add(tracked);
+			try {
+				target.addEventListener(type, listener, listenerOptions);
+				listenersRef.current.add(tracked);
+			} catch {
+				return () => {};
+			}
 
 			const remove = () => {
 				try {
@@ -243,22 +277,79 @@ export function useMemoryLeakGuard(
 		[],
 	);
 
+	const safeCreateObjectURL = useCallback(
+		(blob: Blob | MediaSource): string => {
+			if (
+				typeof URL === "undefined" ||
+				typeof URL.createObjectURL !== "function"
+			) {
+				return "";
+			}
+			if (!isMountedRef.current) {
+				return "";
+			}
+			try {
+				const url = URL.createObjectURL(blob);
+				objectUrlsRef.current.add(url);
+				return url;
+			} catch {
+				return "";
+			}
+		},
+		[],
+	);
+
+	const safeRevokeObjectURL = useCallback((url: string): void => {
+		if (
+			typeof URL !== "undefined" &&
+			typeof URL.revokeObjectURL === "function" &&
+			url &&
+			url.startsWith("blob:")
+		) {
+			try {
+				URL.revokeObjectURL(url);
+			} catch {
+				// Ignore
+			}
+		}
+		objectUrlsRef.current.delete(url);
+	}, []);
+
+	const registerObjectUrl = useCallback((url: string): string => {
+		if (url && url.startsWith("blob:")) {
+			objectUrlsRef.current.add(url);
+		}
+		return url;
+	}, []);
+
 	const disposeAll = useCallback(() => {
 		// 1. Clear timers
 		for (const tid of timeoutsRef.current) {
-			clearTimeout(tid);
+			try {
+				clearTimeout(tid);
+			} catch {
+				// Ignore
+			}
 		}
 		timeoutsRef.current.clear();
 
 		for (const iid of intervalsRef.current) {
-			clearInterval(iid);
+			try {
+				clearInterval(iid);
+			} catch {
+				// Ignore
+			}
 		}
 		intervalsRef.current.clear();
 
 		// 2. Clear animation frames
 		if (typeof cancelAnimationFrame !== "undefined") {
 			for (const rafId of animationFramesRef.current) {
-				cancelAnimationFrame(rafId);
+				try {
+					cancelAnimationFrame(rafId);
+				} catch {
+					// Ignore
+				}
 			}
 		}
 		animationFramesRef.current.clear();
@@ -296,7 +387,19 @@ export function useMemoryLeakGuard(
 		}
 		observersRef.current.clear();
 
-		// 6. Execute custom teardown disposers
+		// 6. Revoke all object URLs (prevent 2-3 GB RAM leaks on long 12h shifts)
+		if (typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
+			for (const url of objectUrlsRef.current) {
+				try {
+					URL.revokeObjectURL(url);
+				} catch {
+					// Ignore
+				}
+			}
+		}
+		objectUrlsRef.current.clear();
+
+		// 7. Execute custom teardown disposers
 		for (const disposer of disposersRef.current) {
 			try {
 				disposer();
@@ -328,6 +431,9 @@ export function useMemoryLeakGuard(
 		getAbortSignal,
 		registerDisposer,
 		registerObserver,
+		safeCreateObjectURL,
+		safeRevokeObjectURL,
+		registerObjectUrl,
 		disposeAll,
 	};
 }
@@ -417,3 +523,63 @@ export function useSafeInterval(): {
 		clearSafeInterval: guard.safeClearInterval,
 	};
 }
+
+export interface UseSafeObjectUrlOptions {
+	readonly autoRevokeBlobStrings?: boolean;
+}
+
+/**
+ * Standalone safe object URL hook.
+ * Manages Blob URL lifecycle, automatically revoking previous URL on change and on unmount.
+ * Prevents browser memory leaks (2-3 GB RAM) on 12-hour clinic shifts.
+ */
+export function useSafeObjectUrl(
+	source?: Blob | File | string | null | undefined,
+	options?: UseSafeObjectUrlOptions,
+): string {
+	const guard = useMemoryLeakGuard({ debugName: "useSafeObjectUrl" });
+	const lastCreatedUrlRef = useRef<string | null>(null);
+
+	const computeUrl = useCallback((): string => {
+		if (typeof source === "string") return source;
+		if (
+			typeof URL !== "undefined" &&
+			typeof URL.createObjectURL === "function" &&
+			source instanceof Blob
+		) {
+			const url = guard.safeCreateObjectURL(source);
+			lastCreatedUrlRef.current = url;
+			return url;
+		}
+		return "";
+	}, [source, guard]);
+
+	const [activeUrl, setActiveUrl] = useState<string>(computeUrl);
+
+	useEffect(() => {
+		if (lastCreatedUrlRef.current) {
+			guard.safeRevokeObjectURL(lastCreatedUrlRef.current);
+			lastCreatedUrlRef.current = null;
+		}
+
+		if (typeof source === "string") {
+			setActiveUrl(source);
+			if (options?.autoRevokeBlobStrings && source.startsWith("blob:")) {
+				guard.registerObjectUrl(source);
+			}
+		} else if (
+			typeof URL !== "undefined" &&
+			typeof URL.createObjectURL === "function" &&
+			source instanceof Blob
+		) {
+			const url = guard.safeCreateObjectURL(source);
+			lastCreatedUrlRef.current = url;
+			setActiveUrl(url);
+		} else {
+			setActiveUrl("");
+		}
+	}, [source, guard, options?.autoRevokeBlobStrings]);
+
+	return activeUrl;
+}
+

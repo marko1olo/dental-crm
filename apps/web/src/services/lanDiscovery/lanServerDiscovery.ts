@@ -45,6 +45,7 @@ export const DEFAULT_LAN_PROBE_TIMEOUT_MS = 300;
 export const HEARTBEAT_INTERVAL_ACTIVE_MS = 4000;
 export const HEARTBEAT_INTERVAL_IDLE_MS = 45000;
 export const HEARTBEAT_INTERVAL_LOW_BATTERY_MS = 120000; // 120 сек (ультра-тихий режим при батарее <= 15% и discharging)
+export const HEARTBEAT_INTERVAL_HIDDEN_MS = 180000; // 180 сек (3 мин) при фоновой/скрытой вкладке (document.hidden)
 export const LOW_BATTERY_THRESHOLD = 0.15; // 15%
 
 export interface BatteryState {
@@ -306,6 +307,10 @@ export async function discoverLocalClinicServer(
 		cachedDiscoveredServer = bestServer;
 		try {
 			safeLocalStorageSetItem(STORAGE_KEY_LAN_SERVER, bestServer.baseUrl, true);
+			const storage = getStorage();
+			if (storage) {
+				storage.setItem(STORAGE_KEY_LAN_SERVER, bestServer.baseUrl);
+			}
 		} catch {}
 		logger.info(`[LanDiscovery] Found active Clinic LAN Server at ${bestServer.baseUrl} (${bestServer.latencyMs}ms)`);
 	}
@@ -417,12 +422,14 @@ export interface LanHeartbeatState {
 	currentIntervalMs: number;
 	lastDiscoveredServer: DiscoveredLanServer | null;
 	isCloudReachable: boolean;
+	isDocumentHidden?: boolean;
 }
 
 /**
  * Менеджер динамического адаптивного хартбита LAN Discovery:
  * - 3–5 сек (4000 мс) при обрыве интернета, ошибках сети и событиях window.offline;
- * - 30–60 сек (45000 мс) в стабильном фоновом режиме для сбережения аккумулятора.
+ * - 30–60 сек (45000 мс) в стабильном фоновом режиме для сбережения аккумулятора;
+ * - 180 сек (180000 мс) или пропуск сетевого сканирования при неактивной/скрытой вкладке (document.hidden / visibilitychange).
  */
 export class LanDiscoveryHeartbeatManager {
 	private static instance: LanDiscoveryHeartbeatManager | null = null;
@@ -431,7 +438,12 @@ export class LanDiscoveryHeartbeatManager {
 	private currentIntervalMs = HEARTBEAT_INTERVAL_IDLE_MS;
 	private isCloudReachable = true;
 	private isLowBatteryDischarging = false;
+	private isDocumentHidden = false;
 	private listeners = new Set<(server: DiscoveredLanServer | null) => void>();
+	private onlineListener: (() => void) | null = null;
+	private offlineListener: (() => void) | null = null;
+	private visibilityListener: (() => void) | null = null;
+	private batteryCleanup: (() => void) | null = null;
 
 	public static getInstance(): LanDiscoveryHeartbeatManager {
 		if (!LanDiscoveryHeartbeatManager.instance) {
@@ -444,6 +456,7 @@ export class LanDiscoveryHeartbeatManager {
 		if (this.isRunning) return;
 		this.isRunning = true;
 		this.initNetworkListeners();
+		this.initVisibilityListener();
 		void this.initBatteryListener();
 		this.scheduleNextTick(0);
 	}
@@ -454,6 +467,42 @@ export class LanDiscoveryHeartbeatManager {
 			clearTimeout(this.timerId);
 			this.timerId = null;
 		}
+		if (typeof window !== "undefined") {
+			if (this.onlineListener) {
+				window.removeEventListener("online", this.onlineListener);
+				this.onlineListener = null;
+			}
+			if (this.offlineListener) {
+				window.removeEventListener("offline", this.offlineListener);
+				this.offlineListener = null;
+			}
+		}
+		if (typeof document !== "undefined" && this.visibilityListener) {
+			document.removeEventListener("visibilitychange", this.visibilityListener);
+			this.visibilityListener = null;
+		}
+		if (this.batteryCleanup) {
+			try {
+				this.batteryCleanup();
+			} catch {
+				// Ignore errors during battery cleanup
+			}
+			this.batteryCleanup = null;
+		}
+	}
+
+	public setDocumentHidden(hidden: boolean): void {
+		const wasHidden = this.isDocumentHidden;
+		this.isDocumentHidden = hidden;
+		this.recalculateInterval();
+		if (wasHidden && !hidden && this.isRunning) {
+			// При возвращении врача на вкладку сразу запускаем опрос без ожидания таймера
+			this.scheduleNextTick(0);
+		}
+	}
+
+	public isHidden(): boolean {
+		return this.isDocumentHidden;
 	}
 
 	public setCloudReachable(reachable: boolean): void {
@@ -477,7 +526,14 @@ export class LanDiscoveryHeartbeatManager {
 	}
 
 	private recalculateInterval(): void {
-		if (!this.isCloudReachable) {
+		if (this.isDocumentHidden) {
+			// При неактивной вкладке снижаем частоту опроса до минимума,
+			// чтобы не греть CPU и не высаживать батарею ноутбука врача (HDD 5400 / 4GB RAM)
+			const hiddenInterval = this.isCloudReachable
+				? HEARTBEAT_INTERVAL_HIDDEN_MS
+				: Math.max(30000, HEARTBEAT_INTERVAL_ACTIVE_MS * 7);
+			this.setInterval(hiddenInterval);
+		} else if (!this.isCloudReachable) {
 			this.setInterval(HEARTBEAT_INTERVAL_ACTIVE_MS);
 		} else if (this.isLowBatteryDischarging) {
 			this.setInterval(HEARTBEAT_INTERVAL_LOW_BATTERY_MS);
@@ -498,13 +554,14 @@ export class LanDiscoveryHeartbeatManager {
 		return this.currentIntervalMs;
 	}
 
-	public getState(): LanHeartbeatState & { isLowBatteryDischarging: boolean } {
+	public getState(): LanHeartbeatState & { isLowBatteryDischarging: boolean; isDocumentHidden: boolean } {
 		return {
 			isRunning: this.isRunning,
 			currentIntervalMs: this.currentIntervalMs,
 			lastDiscoveredServer: cachedDiscoveredServer,
 			isCloudReachable: this.isCloudReachable,
 			isLowBatteryDischarging: this.isLowBatteryDischarging,
+			isDocumentHidden: this.isDocumentHidden,
 		};
 	}
 
@@ -515,17 +572,36 @@ export class LanDiscoveryHeartbeatManager {
 
 	private initNetworkListeners(): void {
 		if (typeof window === "undefined") return;
+		if (this.onlineListener && this.offlineListener) return;
 
-		window.addEventListener("online", () => {
+		this.onlineListener = () => {
 			logger.info("[LanDiscovery] Network online event received — restoring idle/battery heartbeat");
 			this.setCloudReachable(true);
 			this.scheduleNextTick(0);
-		});
+		};
 
-		window.addEventListener("offline", () => {
+		this.offlineListener = () => {
 			logger.info("[LanDiscovery] Network offline event received — activating fast LAN discovery");
 			this.setCloudReachable(false);
-		});
+		};
+
+		window.addEventListener("online", this.onlineListener);
+		window.addEventListener("offline", this.offlineListener);
+	}
+
+	private initVisibilityListener(): void {
+		if (typeof document === "undefined") return;
+		if (this.visibilityListener) return;
+
+		this.isDocumentHidden = Boolean(document.hidden);
+
+		this.visibilityListener = () => {
+			const hidden = Boolean(document.hidden);
+			logger.debug(`[LanDiscovery] Visibility changed: document.hidden=${hidden}`);
+			this.setDocumentHidden(hidden);
+		};
+
+		document.addEventListener("visibilitychange", this.visibilityListener);
 	}
 
 	private async initBatteryListener(): Promise<void> {
@@ -541,6 +617,7 @@ export class LanDiscoveryHeartbeatManager {
 					level?: number;
 					charging?: boolean;
 					addEventListener?: (type: string, listener: () => void) => void;
+					removeEventListener?: (type: string, listener: () => void) => void;
 				}>;
 			}).getBattery();
 			if (!battery) return;
@@ -552,6 +629,12 @@ export class LanDiscoveryHeartbeatManager {
 			if (typeof battery.addEventListener === "function") {
 				battery.addEventListener("levelchange", update);
 				battery.addEventListener("chargingchange", update);
+				this.batteryCleanup = () => {
+					if (typeof battery.removeEventListener === "function") {
+						battery.removeEventListener("levelchange", update);
+						battery.removeEventListener("chargingchange", update);
+					}
+				};
 			}
 			await this.checkBatteryStatus();
 		} catch (err) {
@@ -565,6 +648,15 @@ export class LanDiscoveryHeartbeatManager {
 
 		this.timerId = setTimeout(async () => {
 			try {
+				// При скрытой неактивной вкладке (document.hidden) и доступном облаке
+				// полностью пропускаем тяжелые сетевые опросы подсети, предотвращая нагрев CPU и разряд батареи
+				if (this.isDocumentHidden && this.isCloudReachable) {
+					logger.debug(
+						"[LanDiscovery] Background tab (document.hidden): skipping LAN probe tick to preserve CPU & battery",
+					);
+					return;
+				}
+
 				const prevServerId = cachedDiscoveredServer?.serverId;
 				const server = await discoverLocalClinicServer({ forceRefresh: true });
 				if (server?.serverId !== prevServerId) {

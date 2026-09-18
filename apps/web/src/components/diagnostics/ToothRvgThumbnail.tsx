@@ -8,11 +8,14 @@ import {
 	ZoomIn,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
+import { useSafeObjectUrl } from "../../hooks/useMemoryLeakGuard";
 
 export interface ToothRvgThumbnailProps {
 	toothNumber: number;
 	patientId?: string | undefined;
-	scanImageUrl?: string | undefined;
+	scanImageUrl?: string | Blob | File | undefined;
+	scanImageBlob?: Blob | File | undefined;
+	autoRevokeBlobUrl?: boolean | undefined;
 	capturedAtIso?: string | undefined;
 	onOpenFullRadiology?: ((toothNumber: number) => void) | undefined;
 	onInsertToProtocol?: ((text: string) => void) | undefined;
@@ -22,6 +25,8 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 	toothNumber,
 	patientId,
 	scanImageUrl,
+	scanImageBlob,
+	autoRevokeBlobUrl,
 	capturedAtIso,
 	onOpenFullRadiology,
 	onInsertToProtocol,
@@ -32,8 +37,13 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 	const [isZoomedApex, setIsZoomedApex] = useState<boolean>(false);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-	const hasImage = Boolean(scanImageUrl && scanImageUrl.trim().length > 0);
-	const imageSrc = scanImageUrl || "";
+	const rawSource = scanImageBlob ?? scanImageUrl;
+	const resolvedImageUrl = useSafeObjectUrl(rawSource, {
+		autoRevokeBlobStrings: autoRevokeBlobUrl,
+	});
+
+	const hasImage = Boolean(resolvedImageUrl && resolvedImageUrl.trim().length > 0);
+	const imageSrc = resolvedImageUrl;
 
 	const handleResetFilters = () => {
 		setIsInverted(false);
