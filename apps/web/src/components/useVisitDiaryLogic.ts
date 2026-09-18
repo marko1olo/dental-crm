@@ -781,6 +781,13 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				diary,
 			);
 			setLocalDraftSavedAt(new Date());
+			if (debounceTimerRef.current) {
+				clearTimeout(debounceTimerRef.current);
+				debounceTimerRef.current = null;
+			}
+			if (!isLocked && doSaveRef.current) {
+				void doSaveRef.current(true);
+			}
 		};
 
 		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
