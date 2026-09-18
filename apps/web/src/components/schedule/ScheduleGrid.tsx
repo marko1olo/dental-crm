@@ -336,7 +336,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 	const [activeHeaderDoctorPopoverChairId, setActiveHeaderDoctorPopoverChairId] = useState<string | null>(null);
 	const [activeHeaderMaintenanceChairId, setActiveHeaderMaintenanceChairId] = useState<string | null>(null);
 	const [isQuickAddDoctorOpen, setIsQuickAddDoctorOpen] = useState(false);
-	const [internalGridStep, setInternalGridStep] = useState<15 | 30 | 60>(props.gridStepMinutes || 60);
+	const [internalGridStep, setInternalGridStep] = useState<15 | 30 | 60>(props.gridStepMinutes || 30);
 	const [internalMaintenanceBlocks, setInternalMaintenanceBlocks] = useState<ChairMaintenanceBlock[]>([]);
 	const [showRevenue, setShowRevenue] = useState<boolean>(() => {
 		return safeLocalStorageGetItem("dente_schedule_show_revenue") === "true";
@@ -1741,7 +1741,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					style={{ minHeight: "44px" }}
 				>
 					<Plus size={18} />
-					<span>+ Создать первое кресло</span>
+					<span>Создать первое кресло</span>
 				</button>
 				{!props.onOpenAddChair && isInternalAddChairModalOpen && (
 					<QuickAddChairModal
@@ -4216,7 +4216,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														effectiveChairAssignments[chair.id]?.doctorName ||
 														undefined;
 													const slotDuration = data.durationMinutes || 30;
-													const targetStartIso = `${dateKey}T${hour}:00:00.000Z`;
+													const targetStartIso = hour.includes(":") ? `${dateKey}T${hour}:00.000Z` : `${dateKey}T${hour}:00:00.000Z`;
 													const targetEndIso = new Date(Date.parse(targetStartIso) + slotDuration * 60000).toISOString();
 
 													const isSourceCito = isCitoAppointment(sourceAppt);
@@ -4287,7 +4287,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														effectiveChairAssignments[chair.id]?.doctorName ||
 														undefined;
 													const slotDuration = waitlistItem.durationMinutes || 30;
-													const targetStartIso = `${dateKey}T${hour}:00:00.000Z`;
+													const targetStartIso = hour.includes(":") ? `${dateKey}T${hour}:00.000Z` : `${dateKey}T${hour}:00:00.000Z`;
 													const targetEndIso = new Date(Date.parse(targetStartIso) + slotDuration * 60000).toISOString();
 
 													// Pre-check collision before booking from waitlist
@@ -4338,7 +4338,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													}
 
 													showToast(
-														`Пациент «${waitlistItem.patientName || "из очереди"}» назначен в свободное окно (${hour}:00)`,
+														`Пациент «${waitlistItem.patientName || "из очереди"}» назначен в свободное окно (${hour})`,
 														"success",
 														4000,
 													);

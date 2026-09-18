@@ -63,6 +63,11 @@ const MdlpScanningModal = lazy(() =>
 		default: module.MdlpScanningModal,
 	})),
 );
+const NurseCarpuleDisposalModal = lazy(() =>
+	import("./inventory/NurseCarpuleDisposalModal").then((module) => ({
+		default: module.NurseCarpuleDisposalModal,
+	})),
+);
 
 /**
  * Как показать срок годности расходника.
@@ -217,6 +222,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	const [isMdlpDisposalOpen, setIsMdlpDisposalOpen] = useState(false);
 	const [isWarehouseManagerOpen, setIsWarehouseManagerOpen] = useState(false);
 	const [isMdlpScanningOpen, setIsMdlpScanningOpen] = useState(false);
+	const [isNurseCarpuleModalOpen, setIsNurseCarpuleModalOpen] = useState(false);
 	const [isOpsMenuOpen, setIsOpsMenuOpen] = useState(false);
 	const [isQuickPackagesOpen, setIsQuickPackagesOpen] = useState(false);
 	const opsMenuRef = React.useRef<HTMLDivElement>(null);
@@ -333,7 +339,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		>
 			{/* 1-LINE COMPACT TOOLBAR (Mandates 8d, 8e, 8p, Apple HIG standard) */}
 			<div
-				className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 bg-[var(--paper,#ffffff)] border-b border-[var(--line,#e2e8f0)] flex flex-nowrap items-center justify-between gap-2 shrink-0 overflow-x-auto"
+				className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 py-1 bg-[var(--paper,#ffffff)] border-b border-[var(--line,#e2e8f0)] flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 shrink-0"
 				role="toolbar"
 				aria-label="Панель склада материалов"
 			>
@@ -403,7 +409,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 				</div>
 
 				{/* Right: Search, Quick Packages Toggle, Carpule Disposal, Ops Menu, Add Item */}
-				<div className="flex items-center gap-1.5 shrink-0 flex-nowrap">
+				<div className="flex items-center gap-1.5 shrink-0 flex-wrap sm:flex-nowrap">
 					{/* Compact Search Input */}
 					<div
 						className="relative flex items-center shrink-0"
@@ -783,6 +789,36 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										>
 											<Syringe size={16} className="text-teal-600 shrink-0" />
 											<span>Списать карпулу анестетика (Септанест/Убистезин)</span>
+										</button>
+
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="nurse-carpule-disposal-modal-trigger"
+											onClick={() => {
+												setIsNurseCarpuleModalOpen(true);
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+											}}
+											title="Учет и акт утилизации пустых карпул анестетиков по СанПиН 3.3686-21 без комиссии из 3 человек"
+											role="menuitem"
+										>
+											<Syringe size={16} className="text-teal-600 shrink-0" />
+											<span>Акт утилизации карпул (СанПиН 3.3686-21)</span>
 										</button>
 
 										<button
@@ -1351,7 +1387,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 														data-testid="empty-state-add-first-material-btn"
 													>
 														<Plus size={16} />
-														<span>+ Оформить первую приходную накладную</span>
+														<span className="hidden sm:inline">Приходная накладная</span>
+														<span className="sm:hidden">Приход</span>
 													</button>
 												</div>
 											)}
@@ -1579,7 +1616,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 														}}
 														className="shrink-0 flex-nowrap"
 													>
-														{/* Action 1: Списать расход (Direct primary action) */}
+														{/* Action 1: Списание (Direct primary action) */}
 														<button
 															type="button"
 															onClick={() => {
@@ -1598,10 +1635,10 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 															data-testid={`btn-item-writeoff-${item.id}`}
 														>
 															<ArrowUpFromLine size={13} className="shrink-0" />
-															<span className="whitespace-nowrap shrink-0">Списать расход</span>
+															<span className="whitespace-nowrap shrink-0">Списание</span>
 														</button>
 
-														{/* Action 2: Приход/Накладная (Direct primary action) */}
+														{/* Action 2: Приход (Direct primary action) */}
 														<button
 															type="button"
 															onClick={() => {
@@ -1620,7 +1657,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 															data-testid={`btn-item-arrival-${item.id}`}
 														>
 															<ArrowDownToLine size={13} className="shrink-0" />
-															<span className="whitespace-nowrap shrink-0">Приход/Накладная</span>
+															<span className="whitespace-nowrap shrink-0">Приход</span>
 														</button>
 
 														{/* Secondary Actions Menu (MoreHorizontal) - Miller's Law <=2 direct controls */}
@@ -2502,6 +2539,26 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						isOpen={isMdlpScanningOpen}
 						onClose={() => setIsMdlpScanningOpen(false)}
 						initialMode="disposal_531"
+					/>
+				</Suspense>
+			)}
+
+			{isNurseCarpuleModalOpen && (
+				<Suspense fallback={null}>
+					<NurseCarpuleDisposalModal
+						isOpen={isNurseCarpuleModalOpen}
+						onClose={() => setIsNurseCarpuleModalOpen(false)}
+						currentStockAvailable={
+							items.find((i) => /артикаин|убистезин|септонест|анесте/i.test(i.name))?.stockQuantity ?? 0
+						}
+						onDisposalConfirmed={async (details) => {
+							await handleQuickWriteoffCarpules({
+								carpulesCount: details.carpulesCount,
+								drugName: details.drugName,
+							});
+							setIsNurseCarpuleModalOpen(false);
+							fetchItems();
+						}}
 					/>
 				</Suspense>
 			)}

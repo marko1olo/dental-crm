@@ -98,6 +98,8 @@ export interface ChairScheduleViewProps {
 	onOpenRosterModal?: () => void;
 	onSelectChair?: ((chairId: string | null) => void) | undefined;
 	hideToolbar?: boolean;
+	gridStepMinutes?: 15 | 30 | 60 | undefined;
+	onGridStepChange?: ((step: 15 | 30 | 60) => void) | undefined;
 }
 
 const defaultAppointmentLabels: Record<Appointment["status"], string> = {
@@ -232,6 +234,8 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 	onOpenRosterModal,
 	onSelectChair,
 	hideToolbar = false,
+	gridStepMinutes,
+	onGridStepChange,
 }) => {
 	const rawChairs = dashboard?.clinicSettings?.chairs ?? [];
 	const chairs = rawChairs.length > 0 ? rawChairs : [DEFAULT_SOLO_CHAIR as any];
@@ -1376,7 +1380,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 								)}
 								{(assignedDocName || hasTwoSubShifts) && (
 									<span
-										className="text-xs text-[var(--muted)] font-normal truncate max-w-[130px] hidden xl:inline shrink-0"
+										className="text-xs text-[var(--muted)] font-normal whitespace-nowrap hidden xl:inline shrink-0"
 										title={
 											hasTwoSubShifts && morningSub && eveningSub
 												? `У: ${morningSub.doctorName} / В: ${eveningSub.doctorName}`
@@ -1747,7 +1751,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsShiftsMenuOpen((prev) => !prev)}
-							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] hover:border-[var(--teal)] text-[11px] font-semibold text-[var(--ink)] transition-colors cursor-pointer h-7 sm:h-8 shrink-0 select-none"
+							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] hover:border-[var(--teal)] text-[11px] font-semibold text-[var(--ink)] transition-colors cursor-pointer min-h-[44px] sm:min-h-0 h-auto sm:h-8 shrink-0 select-none"
 							title="Пакетные действия со сменами (копирование, ротация, закрепления, очистка)"
 							data-testid="btn-chair-shifts-menu-trigger"
 							aria-expanded={isShiftsMenuOpen}
@@ -1908,7 +1912,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 						<button
 							type="button"
 							onClick={onOpenRosterModal}
-							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[11px] font-semibold text-[var(--ink)] transition-colors cursor-pointer h-7 sm:h-8 shrink-0 select-none"
+							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[11px] font-semibold text-[var(--ink)] transition-colors cursor-pointer min-h-[44px] sm:min-h-0 h-auto sm:h-8 shrink-0 select-none"
 							title="График работы врачей по сменам и креслам (StomX / IDENT)"
 							data-testid="btn-open-chair-roster"
 						>
@@ -1920,7 +1924,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 					<button
 						type="button"
 						onClick={() => setIsAddDoctorOpen(true)}
-						className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] hover:border-[var(--teal)] text-[11px] font-semibold text-[var(--ink)] transition-colors cursor-pointer h-7 sm:h-8 shrink-0 select-none"
+						className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] hover:border-[var(--teal)] text-[11px] font-semibold text-[var(--ink)] transition-colors cursor-pointer min-h-[44px] sm:min-h-0 h-auto sm:h-8 shrink-0 select-none"
 						title="Быстро добавить врача в расписание (+ Врач)"
 						data-testid="btn-chair-view-add-doctor"
 					>
@@ -1931,7 +1935,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 					<button
 						type="button"
 						onClick={handleOpenAddChair}
-						className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white text-[11px] font-semibold shadow-xs transition-colors cursor-pointer h-7 sm:h-8 shrink-0 select-none"
+						className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white text-[11px] font-semibold shadow-xs transition-colors cursor-pointer min-h-[44px] sm:min-h-0 h-auto sm:h-8 shrink-0 select-none"
 						title="Добавить стоматологическую установку"
 						data-testid="btn-add-chair-header"
 					>
@@ -1948,6 +1952,8 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 					dashboard={dashboard}
 					hideInlineAddChair={true}
 					dateKey={dateKey}
+					gridStepMinutes={gridStepMinutes}
+					onGridStepChange={onGridStepChange}
 					appointments={appointments}
 					onSlotClick={handleSlotClick}
 					onAppointmentClick={onAppointmentClick}

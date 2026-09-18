@@ -83,12 +83,12 @@ export function formatChairSpecialtyLabel(rawSpec?: string | null): string | nul
 	const lower = rawSpec.toLowerCase().trim();
 	if (lower === "surgeon" || lower === "хирург" || lower === "хирургия") return "Хирургия";
 	if (lower === "therapist" || lower === "терапевт" || lower === "терапия") return "Терапия";
-	if (lower === "orthodontist" || lower === "ортодонт" || lower === "ортодонтия") return "Ортодонтия";
+	if (lower === "orthodontist" || lower === "ортодонт" || lower === "ортодонтия") return "Ортодонт.";
 	if (lower === "orthopedist" || lower === "ортопед" || lower === "ортопедия") return "Ортопедия";
-	if (lower === "periodontist" || lower === "пародонтолог" || lower === "пародонтология") return "Пародонтология";
+	if (lower === "periodontist" || lower === "пародонтолог" || lower === "пародонтология") return "Пародонт.";
 	if (lower === "hygienist" || lower === "гигиенист" || lower === "гигиена") return "Гигиена";
 	if (lower === "pediatric" || lower === "детский" || lower === "детская") return "Детская";
-	if (lower === "implantologist" || lower === "имплантолог" || lower === "имплантация") return "Имплантология";
+	if (lower === "implantologist" || lower === "имплантолог" || lower === "имплантация") return "Имплант.";
 	const specKey = rawSpec as DentalSpecialty;
 	const label = specialtyLabels[specKey] || rawSpec;
 	return label.charAt(0).toUpperCase() + label.slice(1);
@@ -457,6 +457,10 @@ export function ScheduleFilterStrip({
 						const chairLabel = specName && !chair.name.includes("(")
 							? `${chair.name} (${specName})`
 							: chair?.name || "Кресло";
+						const shortChairName = (chair?.name || "Кресло").replace(/Кресло\s*/i, "Кр. ");
+						const compactChairLabel = specName && !chair.name.includes("(")
+							? `${shortChairName} (${specName})`
+							: shortChairName;
 
 						return (
 							<button
@@ -473,8 +477,8 @@ export function ScheduleFilterStrip({
 								title={`Фильтр по кабинету / креслу: ${chairLabel}${chair.room ? ` (${chair.room})` : ""}`}
 								aria-label={`Фильтр по кабинету / креслу: ${chairLabel}`}
 							>
-								<span className="max-w-[150px] truncate" title={chairLabel}>
-									{chairLabel}
+								<span className="min-w-0 max-w-[145px] truncate" title={chairLabel}>
+									{compactChairLabel}
 								</span>
 							</button>
 						);
@@ -678,6 +682,27 @@ export function ScheduleFilterStrip({
 													{m.fullName?.split(" ")[0] || "Врач"}
 												</button>
 											))}
+									{displayChairs.map((c) => {
+										const specName = formatChairSpecialtyLabel(c?.specialization);
+										const shortName = (c?.name || "Кресло").replace(/Кресло\s*/i, "Кр. ");
+										const label = specName && !c.name.includes("(") ? `${shortName} (${specName})` : shortName;
+										return (
+											<button
+												key={`m-opt-chair-${c.id}`}
+												type="button"
+												data-testid={`m-opt-chair-${c.id}`}
+												onClick={() => {
+													setScheduleChairFilterId(scheduleChairFilterId === c.id ? null : c.id);
+													setIsOptionsMenuOpen(false);
+												}}
+												className={`quick-chip ${scheduleChairFilterId === c.id ? "active font-bold" : ""} min-h-[44px] px-2 text-xs rounded-lg flex items-center gap-1`}
+												title={c.name}
+											>
+												<Armchair size={12} className="shrink-0" />
+												<span>{label}</span>
+											</button>
+										);
+									})}
 								</div>
 							</div>
 

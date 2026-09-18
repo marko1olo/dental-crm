@@ -2108,6 +2108,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			{scheduleViewMode === "chairs" ? (
 				<ChairScheduleView
 					hideToolbar={true}
+					gridStepMinutes={scheduleGridStep}
+					onGridStepChange={setScheduleGridStep}
 					dashboard={dashboard}
 					dateKey={scheduleDateFilter || clinicToday || todayScheduleDate()}
 					appointments={dashboard?.appointments ?? []}
