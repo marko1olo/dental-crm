@@ -106,8 +106,12 @@ export {
 	TelephonyFloatingWidget,
 	resolveTelephonyWsUrl,
 };
+import type { WorkspacePreloadIntent } from "./workspacePreload";
 
-type WorkspaceViewIntentHandler = (view: AppView) => void;
+type WorkspaceViewIntentHandler = (
+	view: AppView,
+	intent?: WorkspacePreloadIntent,
+) => void;
 
 /*
  * Раньше это были две цепочки if с общим `return <Sparkles/>` в конце. У «Смены»
@@ -389,7 +393,9 @@ export function WorkspaceSidebar({
 							aria-label={`${viewLabels[view]}: ${viewHints[view]}`}
 							title={`${viewLabels[view]}: ${viewHints[view]}`}
 							onPointerEnter={() => onViewIntent?.(view)}
+							onPointerLeave={() => onViewIntent?.(view, "cancel")}
 							onFocus={() => onViewIntent?.(view)}
+							onBlur={() => onViewIntent?.(view, "cancel")}
 							onTouchStart={() => onViewIntent?.(view)}
 						>
 							<span className={navSlotClass}>

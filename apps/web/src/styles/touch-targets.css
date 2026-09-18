@@ -54,6 +54,13 @@
 		min-height: 44px !important;
 	}
 
+	/* --- Компактный 2-строчный хедер приёма 043/у (Мандаты 8c, 8e, 8p; бюджет <= 68-72px, DEFECT-MOB-01) --- */
+	.visit-monolithic-header .primary-button,
+	.visit-monolithic-header .secondary-button {
+		min-height: 28px !important;
+		height: 28px !important;
+	}
+
 	/* --- Вкладки ---
      ДВА ИЗ ТРЁХ СЕЛЕКТОРОВ ЗДЕСЬ БЫЛИ МЁРТВЫМИ. `.settings-tab-button` и
      `.visit-tab-button` не встречаются в разметке ни разу (проверено по всему
@@ -63,7 +70,8 @@
      существовало, но ни к чему не применялось, и вкладки оставались 29px даже
      на телефоне. */
 	.visit-sub-nav-tabs button {
-		min-height: 44px !important;
+		min-height: 34px !important;
+		height: 32px !important;
 	}
 	.emk-tab-button {
 		min-height: 44px !important;

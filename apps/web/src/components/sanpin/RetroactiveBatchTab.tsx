@@ -61,9 +61,21 @@ import { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
 import { POPULAR_STERILIZER_BRAND_PRESETS, type SterilizerEquipment } from "@dental/shared";
 import { loadSavedClinicAutoclaves } from "./AutoclaveEquipmentModal";
 
-export function RetroactiveBatchTab() {
+export interface RetroactiveBatchTabProps {
+	readonly initialPreset?: PeriodPreset | undefined;
+	readonly onSuccess?: (() => void) | undefined;
+	readonly onClose?: (() => void) | undefined;
+	readonly isModal?: boolean | undefined;
+}
+
+export function RetroactiveBatchTab({
+	initialPreset = "current_month",
+	onSuccess,
+	onClose,
+	isModal = false,
+}: RetroactiveBatchTabProps = {}) {
 	// Period Selection State
-	const [periodPreset, setPeriodPreset] = useState<PeriodPreset>("current_month");
+	const [periodPreset, setPeriodPreset] = useState<PeriodPreset>(initialPreset);
 	const [customStartDate, setCustomStartDate] = useState<string>(() => {
 		const d = new Date();
 		return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
@@ -261,6 +273,9 @@ export function RetroactiveBatchTab() {
 				`Все журналы СанПиН за период (${stats.workingDaysCount} рабочих смен) успешно внесены в государственные реестры клиники и заверены ЭЦП!`,
 				"success",
 			);
+			if (onSuccess) {
+				onSuccess();
+			}
 		} catch (err) {
 			console.error("Batch save error", err);
 			showToast("Ошибка сохранения реестров СанПиН", "error");
@@ -794,7 +809,7 @@ export function RetroactiveBatchTab() {
 								background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
 								cursor: "pointer",
 							}}
-							data-testid="save-batch-to-registers-btn"
+							data-testid={isModal ? "modal-save-batch-to-registers-btn" : "save-batch-to-registers-btn"}
 						>
 							<Save size={18} />
 							<span>{isSaving ? "Сохранение..." : "Сохранить в реестры клиники"}</span>
@@ -813,7 +828,7 @@ export function RetroactiveBatchTab() {
 								color: "var(--brand-primary, #2563eb)",
 								cursor: "pointer",
 							}}
-							data-testid="print-batch-dossier-btn"
+							data-testid={isModal ? "modal-print-batch-dossier-btn" : "print-batch-dossier-btn"}
 						>
 							<Printer size={18} />
 							<span>Распечатать готовые сшивы</span>

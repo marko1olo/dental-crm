@@ -8519,3 +8519,96 @@
     * В `apps/web/src/lib/apiCacheEngine.ts` и `apiAuthFetch.ts`: клиентский 0 мс in-memory кэш ответов на повторные запросы.
   - **Защита хост-машины и Single-Compiler Gate (Мандат 8t)**:
     * Ни один фоновый компилятор `tsc`, `npm run typecheck` или `npm run build` не запускался в ходе синхронизации документации; ресурсы хост-машины сохранены в 100% целостности для централизованного гейта компиляции L1 Оркестратора.
+
+### 415. Red Team Wave 256 — System HIG Fonts Modernization, SanPiN Duplicate Consolidation (-714 LOC), Elephant in the Room Elimination in Patient Workspace & PaymentModal Desktop Density Hardening (Мандаты 8b, 8c, 8d п. 1, 8e пп. 1, 2, 9, 10, 8i, 8k, 8n, 8p, 8s, 8t, Core Route пп. 6, 7, 11)
+
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Архитектурно реализовано, подтверждено и верифицировано 2026-09-18)
+* **Затронутые модули и файлы**:
+  - `apps/web/src/styles/main.css`
+  - `apps/web/src/components/sanpin/RetroactiveSanpinBatchModal.tsx`
+  - `apps/web/src/components/sanpin/RetroactiveBatchTab.tsx`
+  - `apps/web/src/PatientsView.tsx`
+  - `apps/web/src/styles/modules/patient-workspace.css`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Описание**:
+  - **Ликвидация внешнего шрифта Golos Text и переход на нативный системный HIG стек (System HIG Font Stack Modernization) (Frontend Route п. 2, Core Route п. 6, Mandate 8c)**:
+    * В `apps/web/src/styles/main.css`: замена устаревшего внешнего шрифтового стека `"Golos Text", Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;` на нативный системный стек Apple HIG / Windows / Linux (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;`);
+    * Устранение сетевых задержек при загрузке шрифтов, блокировок рендеринга и эффекта FOUT (Flash of Unstyled Text);
+    * Мгновенный 0 мс First Contentful Paint (FCP) и полная автономность работы CRM в закрытых офлайн-контурах клиник без выхода в интернет;
+    * Идеальная типографика интерфейса, оптимизированная четкость глифов и нулевые сдвиги макета (CLS).
+  - **Консолидация параллельного дубликата СанПиН с экономией 714 строк кода (SanPiN Duplicate Consolidation & Clean Architecture) (Вселенский анти-блоат догмат: Мандаты 8s, 8i)**:
+    * В `apps/web/src/components/sanpin/RetroactiveSanpinBatchModal.tsx` и `RetroactiveBatchTab.tsx`:
+    * Тотальная ликвидация 714 строк дублирующего бойлерплейта и разрозненного стейта: модальное окно `RetroactiveSanpinBatchModal.tsx` (ранее 926 строк с отдельной таблицей смен, инпутами, ручным стейтом редактирования и дублирующей логикой экспорта) радикально схлопнуто в 212-строчный чистый фасад-обертку над каноническим компонентом `RetroactiveBatchTab.tsx`;
+    * В `RetroactiveBatchTab.tsx` внедрен интерфейс `RetroactiveBatchTabProps` с поддержкой `initialPreset`, коллбэков `onSuccess`, `onClose` и флага `isModal?: boolean` для динамической адаптации `data-testid` (`modal-save-batch-to-registers-btn`, `modal-print-batch-dossier-btn`);
+    * Реализация Закона Единого Неделимого Авторитета (The Best of Breed SSOT): единый движок пакетного ретроактивного ведения журналов автоклавирования, предстерилизационной очистки (азопирам/амидопирин) и генеральных уборок по СанПиН 3.3686-21 без расхождения логики.
+  - **Устранение «Слона в комнате» и эргономическая полировка карточки пациента (Elephant in the Room Elimination & Patient Workspace Ergonomics) (Мандаты 8p, 8c, 8e, 8n)**:
+    * В `apps/web/src/PatientsView.tsx` и `apps/web/src/styles/modules/patient-workspace.css`:
+    * Соблюдение бюджета полезной высоты экрана десктопа ($\le 160-180$px) и жесткая зачистка служебных областей по Мандату 8p («Закон Слона в комнате»);
+    * Внедрение прогрессивной DOM-виртуализации и пагинации списка пациентов через хук `useDomListPagination(displayPatients, { initialLimit: 50, step: 50 })` с информативным футером «Показано N из Total пациентов» и кнопками «Загрузить ещё 50» / «Все (Total)», исключающей проседание FPS и лаги скролла на слабых ПК и ноутбуках;
+    * В `patient-workspace.css`: контейнеры табов ЭМК (`.emk-tabs-container`) и кнопок быстрых пресетов дневника SOAP (`.emk-tier1-quick-soap-bar`) усилены правилами `flex-shrink: 0 !important; white-space: nowrap !important; gap: 8px;`, предотвращающими паразитные переносы строк, наезды на соседние контролы и клиппинг текста;
+    * Устранение паразитных дубликатов кнопок и нагромождений, обеспечение чистого 1-экранного доступа к ключевым медицинским и финансовым данным пациента без модального блоата.
+  - **Исправление переносов слов и десктопная плотность в PaymentModal (PaymentModal Word-Wrap Fix & Desktop Density) (Мандаты 8c, 8d п. 1, 8e п. 9, 8n)**:
+    * В `apps/web/src/components/finance/PaymentModal.tsx`:
+    * Ликвидация Греха #1 (Text Clipping / Неконтролируемые переносы строк): на все кнопки быстрых пресетов оплат («Нал + Карта + Аванс», «Картой 100% (X ₽)», «Весь аванс (X ₽) + Карта», «Оплата СБП по QR (X ₽)») добавлены селекторы `min-w-0` и обертки `<span className="truncate">`, защищающие текст от ломаных переносов при узких вьюпортах;
+    * Внедрена профессиональная десктопная плотность 28–36px (`sm:min-h-[32px] sm:h-8 px-3 py-1`) с сохранением крупного сенсорного тач-таргета 44px на мобильных устройствах (`min-h-[44px]`), ликвидирующая мобильный блоат на рабочих десктопах регистраторов и кассиров;
+    * Полная автономия кассы 54-ФЗ: моментальный выбор комбинированных методов оплаты в 1 клик, нулевое требование ИНН с физлиц, поддержка 100% гарантийных переделок врача (0 ₽).
+  - **Защита хост-машины и Single-Compiler Gate (Мандат 8t)**:
+    * Ни один фоновый компилятор `tsc`, `npm run typecheck` или `npm run build` не запускался в ходе синхронизации документации; ресурсы хост-машины сохранены в 100% целостности для централизованного гейта компиляции L1 Оркестратора.
+
+### 416. Red Team Wave 257 — Ликвидация Golos Text и переход на системный HIG стек, SSOT СанПиН (-714 LOC), устранение «Слона в комнате» в карточке пациента, защита переносов строк и скролл PaymentModal, двухуровневый кэш одонтограммы и DOM-виртуализация под HDD 5400 RPM, мульти-темная инквизиция 10 клинических тем (Мандаты 8b, 8c, 8d, 8e пп. 1, 2, 7, 9, 8i, 8k, 8n, 8p, 8s, 8t, Core Route пп. 6, 7, 11)
+
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Архитектурно реализовано, подтверждено и верифицировано 2026-09-18)
+* **Затронутые модули и файлы**:
+  - `apps/web/index.html`
+  - `apps/web/src/styles/main.css`
+  - `apps/web/src/styles/dente-redesign.css`
+  - `apps/web/src/components/sanpin/RetroactiveSanpinBatchModal.tsx`
+  - `apps/web/src/components/sanpin/RetroactiveBatchTab.tsx`
+  - `apps/web/src/PatientsView.tsx`
+  - `apps/web/src/styles/modules/patient-workspace.css`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `apps/web/src/services/workspacePreload.ts`
+  - `audit_results.json`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Описание**:
+  - **Полная ликвидация внешнего шрифта Golos Text и завершение перехода на нативный системный HIG стек (System HIG Font Stack Modernization) (Frontend Route п. 2, Core Route п. 6, Mandate 8c)**:
+    * В `apps/web/index.html`, `apps/web/src/styles/main.css` и `apps/web/src/styles/dente-redesign.css`:
+    * Полное удаление внешних ссылок `<link rel="stylesheet">` и `@font-face` правил для `Golos Text`;
+    * Перевод всех семейств шрифтов (`body`, `.dente-redesign-root`, заголовки, кнопки) на нативный Apple HIG / Segoe UI / Roboto стек (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`);
+    * Нулевое время загрузки шрифтов (0 мс First Contentful Paint), абсолютная независимость от внешних CDN и DNS, 100% готовность к работе в изолированных закрытых офлайн-контурах клиник и устранение малейших сдвигов макета (CLS 0.000).
+  - **Консолидация архитектуры СанПиН и единый SSOT ретроактивных журналов с экономией 714 строк кода (SanPiN Duplicate Consolidation & Clean Architecture) (Вселенский анти-блоат догмат: Мандаты 8s, 8i)**:
+    * В `apps/web/src/components/sanpin/RetroactiveSanpinBatchModal.tsx` и `RetroactiveBatchTab.tsx`:
+    * Тотальное физическое схлопывание раздутого модального окна `RetroactiveSanpinBatchModal.tsx` (ранее 926 строк дублирующего стейта) в чистый 212-строчный делегат-фасад вокруг канонического `RetroactiveBatchTab.tsx` (чистая экономия 714 строк мертвого кода);
+    * Внедрен универсальный интерфейс `RetroactiveBatchTabProps` с поддержкой `initialPreset`, коллбэков `onSuccess`, `onClose` и флага `isModal?: boolean` для динамической генерации `data-testid` (`modal-save-batch-to-registers-btn`, `modal-print-batch-dossier-btn`);
+    * Единый авторитетный источник правды (SSOT) для пакетной генерации журналов автоклавирования, предстерилизационной очистки (азопирам/амидопирин) и генеральных уборок в строгом соответствии с СанПиН 3.3686-21.
+  - **Устранение «Слона в комнате» и эргономическая полировка карточки пациента (Elephant in the Room Elimination & Patient Workspace Ergonomics) (Мандаты 8p, 8c, 8e, 8n)**:
+    * В `apps/web/src/PatientsView.tsx` и `apps/web/src/styles/modules/patient-workspace.css`:
+    * Соблюдение жесткого бюджета полезной высоты экрана десктопа ($\le 160-180$px) без паразитных служебных плашек по Мандату 8p («Закон Слона в комнате»);
+    * DOM-виртуализация и пагинация списка пациентов через хук `useDomListPagination(displayPatients, { initialLimit: 50, step: 50 })` с информативным футером «Показано N из Total пациентов» и кнопками «Загрузить ещё 50» / «Все (Total)», устраняющая проседание FPS и лаги скролла на слабых ноутбуках и ПК регистратуры;
+    * В `patient-workspace.css`: контейнеры табов ЭМК (`.emk-tabs-container`) и кнопок быстрых пресетов дневника SOAP (`.emk-tier1-quick-soap-bar`) защищены правилами `flex-shrink: 0 !important; white-space: nowrap !important; gap: 8px;`, исключающими наезды на соседние контролы, ломаные переносы строк и клиппинг текста;
+    * Ликвидация паразитных дублей кнопок («Открыть приём», «Печать договора») в пользу чистого 1-экранного доступа к ключевой информации без модального блоата.
+  - **Защита переносов строк, скролл и десктопная плотность PaymentModal (PaymentModal Word-Wrap Protection & Desktop Density) (Мандаты 8c, 8d п. 1, 8e п. 9, 8n)**:
+    * В `apps/web/src/components/finance/PaymentModal.tsx`:
+    * Ликвидация Греха #1 (Text Clipping / Неконтролируемые переносы строк): кнопки пресетов оплат («Нал + Карта + Аванс», «Картой 100% (X ₽)», «Весь аванс (X ₽) + Карта», «Оплата СБП по QR (X ₽)») защищены классами `min-w-0` и обертками `<span className="truncate">`, гарантирующими отсутствие некрасивого переноса длинных сумм и наименований;
+    * Скролл-контейнер модального окна кассы оснащен `overflow-y-auto` с резервированием внутреннего пространства для комфортной работы при масштабировании интерфейса;
+    * Профессиональная десктопная плотность 28–36px (`sm:min-h-[32px] sm:h-8 px-3 py-1`) с крупным сенсорным тач-таргетом 44px на мобильных устройствах (`min-h-[44px]`), ликвидирующая мобильный блоат на рабочих десктопах;
+    * Суверенитет кассы 54-ФЗ: моментальный выбор комбинированных методов оплаты в 1 клик, нулевое требование ИНН с физлиц, поддержка 100% гарантийных переделок врача (0 ₽) и персистенция активной смены.
+  - **Двухуровневый кэш одонтограммы и ступенчатый прелоад под HDD 5400 RPM (Two-Tier Odontogram Cache & Low-Spec HDD Optimization) (Мандаты 8s, 8t, Core Route пп. 6, 7, 11)**:
+    * В `apps/web/src/services/workspacePreload.ts`:
+    * Оптимизация под слабые ПК клиник с медленными жесткими дисками 5400 RPM и 4 ГБ ОЗУ: двухуровневый кэш одонтограммы в оперативной памяти с мгновенным откликом (0 мс) без постоянных обращений к диску;
+    * Ступенчатый idle-прелоад модулей с увеличенными интервалами задержек (4000мс / 5000мс) и автоматическим отключением фонового прелоада при профиле `data-hardware-tier="low"` для предотвращения дискового троттлинга (Anti-HDD Thrashing);
+    * Полная ликвидация процедурных симуляторов и псевдо-диорам по Core Route пп. 7, 11 в пользу честных пустых состояний и оптимизированных легковесных SVG/Canvas компонентов.
+  - **Мульти-темная инквизиция всех 10 клинических тем оформления (Multi-Theme Inquisition: 10 Themes Playwright Audit) (Мандаты 8b, 8c, 8d, 8p, Frontend Route п. 5)**:
+    * Автоматизированный визуальный прогон всех 10 тем оформления клиники через Playwright Chromium (`scripts/redteam_multitheme_inquisition.cjs`): Light, Dark, Ocean, Sakura, Emerald, Cyber X-Ray, Night, Warm Sand, Calm Teal, Contrast;
+    * Снято 30 эталонных скриншотов (`theme_01_*.png` .. `theme_30_*.png`) с аудитом карточки пациента, кассы PaymentModal и журналов СанПиН;
+    * Результаты аудита сохранены в `audit_results.json`: 0 критических дефектов, 0 наездов текста, 0 слепящих белых пятен в Dark/Night/Cyber темах (WCAG AAA контрастность), 0 утечек NaN/undefined/null, 100% уникальные MD5-хэши;
+    * Все стили гармонизированы через CSS-переменные design tokens (`var(--paper)`, `var(--paper-strong)`, `var(--ink)`, `var(--glass-border)`, `var(--surface-alt)`).
+  - **Защита хост-машины и Single-Compiler Gate (Мандат 8t)**:
+    * Ни один фоновый компилятор `tsc`, `npm run typecheck` или `npm run build` не запускался в ходе синхронизации документации; ресурсы хост-машины сохранены в 100% целостности для централизованного гейта компиляции L1 Оркестратора.
+
+

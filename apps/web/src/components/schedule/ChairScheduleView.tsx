@@ -542,7 +542,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 				const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
 				const parsed = safeLocalStorageGetJson<Record<string, ChairDoctorShiftAssignment> | null>(storageKey, null);
 				if (parsed?.[chair.id]) {
-					existingAssignment = parsed[chair.id];
+					existingAssignment = parsed[chair.id] ?? null;
 				}
 			}
 
