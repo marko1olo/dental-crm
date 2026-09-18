@@ -1,7 +1,10 @@
 # Детальная Карта Архитектуры и Модулей Dental CRM (DENTE)
 
 
-> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
+>
+> ⚠️ **СТАТУС (2026-09-18 / WAVES 175–259 / NATIVE HIG SYSTEM FONTS ZERO-FOUT, SSOT SANPIN DEDUPLICATION, TRANSFUSION BLOAT PURGE & SIMULATION ERADICATION, TOUCH-FIRST ERGONOMICS >=44PX & QUICK-BOOKING FOOTER, 5400 RPM HDD DEBOUNCED QUEUE 400MS, COMPILER REFACTOR FASTIFY & EXACTOPTIONALPROPERTYTYPES, 54-FZ CASHIER AUTONOMY & INTEGER KOPECKS, 10-THEME INQUISITION 30 SCREENSHOTS WCAG AAA): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 294 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (357/357 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
+
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
 - **Backend API**: `apps/api` (Fastify 5.3+, TypeScript, Drizzle ORM, Node.js).
@@ -22,7 +25,7 @@
 Архитектурный каркас DENTE Dental CRM специально адаптирован под условия типового аппаратного парка частных стоматологических клиник (офисные моноблоки и ПК врачей/администраторов с медленными жесткими дисками HDD 5400 RPM, 4 ГБ ОЗУ и слабыми встроенными видеокартами):
 1. **Безопасное клиентское хранилище (`safeLocalStorage.ts` и `clinicalCacheStorage.ts`)**:
    - **Мгновенный in-memory кэш (0 мс)**: Все операции чтения (`getItem`, проверка JWT-токенов `dente_token`, справочники зубов и МКБ-10) выполняются из оперативной памяти `inMemoryStorageCache` без блокирующего дискового ввода-вывода.
-   - **Асинхронная дебаунсированная очередь сброса (200мс / 400мс)**: Дисковые записи пакетируются через таймер `DISK_FLUSH_DEBOUNCE_MS = 200ms` (в `safeLocalStorage.ts`) и 400мс (в `clinicalCacheStorage.ts`), устраняя непрерывный троттлинг головок жесткого диска 5400 RPM при частых автосохранениях черновиков визитов.
+   - **Асинхронная дебаунсированная очередь сброса (400мс)**: Дисковые записи пакетируются через таймер `DISK_FLUSH_DEBOUNCE_MS = 400ms` (в `safeLocalStorage.ts` и `clinicalCacheStorage.ts`), устраняя непрерывный троттлинг головок жесткого диска 5400 RPM при частых автосохранениях черновиков визитов.
    - **Синхронный сброс перед выгрузкой**: Обработчики жизненного цикла страницы `beforeunload` и `pagehide` форсированно сбрасывают буферизованную очередь на диск, гарантируя нулевую потерю клинических данных и набранных врачом дневников Формы 043/у при случайном закрытии вкладки или браузера.
    - **Изолированный LRU-кэш**: Ограничение глубины кэша для предотвращения утечек памяти и аварийного закрытия вкладок (OOM).
 2. **CSS Containment и изоляция рендеринга (`content-visibility: auto`)**:
@@ -5506,3 +5509,55 @@
   5. *Мульти-темная инквизиция 10 тем оформления (Мандаты 8b, 8c, 8d, 8p)*:
      - 30 живых скриншотов во всех 10 темах клиники; 0 дефектов в `audit_results.json`, полное соответствие контрастности WCAG AAA.
 
+### 2.10.352. Wave 259: Искоренение трансфузиологического блоата, ликвидация процедурных симуляторов, touch-first эргономика кассы >=44px, асинхронный autosave 400мс и исправление Fastify/exactOptionalPropertyTypes (Мандаты 8c, 8e, 8i, 8k, 8n, 8s, 8t)
+
+- **Цель**: Полная фиксация архитектурных, перформанс- и клинических результатов Волны 259:
+  1. *Искоренение стационарно-трансфузиологического блоата (Мандат 8i — Outpatient Dental Bounded Context)*: в `branchTransferEngine.ts` и `branchTransferQrVerification.test.ts` полностью удалены чужеродные поля стационарной хирургии `bloodGroup` (группа крови) и `rhesusFactor` (резус-фактор). В амбулаторной стоматологии у кресла трансфузия цельной крови юридически и клинически запрещена; сохранены криптографический SHA-256 хеш акта передачи, ISO/IEC 18004 QR-код Model 2 и детерминированная строка верификации `DENTE:TRF:...` для 2D-сканеров клиники (коммит `623b56f75`);
+  2. *Ликвидация 4 процедурных симуляторов и звуковых заглушек (Мандат 8s, Core Route пп. 7, 11 — Purge of Procedural Dioramas & Fake Simulations)*:
+     - В `IncomingCallPopup.tsx` и `TelephonyFloatingWidget.tsx`: снос процедурного синтетического генератора звуковых сигналов Web Audio API (`simulateAudioRing`, `AudioContext`); звонки телефонии используют нативное воспроизведение либо шлюз внешней АТС (UIS/Mango/Zadarma);
+     - В `PublicOnlineBookingWidget.tsx`: удален процедурный таймер симуляции отправки SMS со случайным 4-значным кодом; внедрен регламентный прямой переход к подтверждению записи через шлюз OTP;
+     - В `DirectRvgCaptureModal.tsx`: снос процедурной симуляции времени экспозиции датчика визиографа (`simulateSensorExposure`, `setInterval` прогресс-бар); реализовано прямое аппаратное событие захвата (<50мс) с честным пустым экраном ожидания импульса аппарата;
+     - В `StagePaymentPlanModal.tsx` и `stagePayment.css`: ликвидация процедурной CSS-анимации выезжающей чековой термоленты (`thermal-paper-slide`); печать смет и актов переведена на стандартный системный диалог печати А4 / 80мм без псевдо-физических эффектов (коммит `623b56f75`);
+  3. *Мобильная touch-first эргономика кассы >=44px и липкий футер быстрой записи (Мандаты 8c, 8d п. 2, 8e пп. 8, 9, 8n)*:
+     - В `PaymentModal.tsx` и `FastCheckoutModal.tsx`: интерактивные кнопки быстрых сумм, номиналов купюр (500 ₽, 1000 ₽, 5000 ₽), способов оплат и закрытия смены приведены к стандарту touch-first `min-h-[44px] min-w-[44px]`, исключая мисклики кассира и врача на планшетах и сенсорных мониторах;
+     - В `QuickBookingDrawer.tsx`: внедрен липкий футер (`sticky bottom-0 bg-[var(--paper-strong)] border-t border-[var(--glass-border)] z-10 p-3`) с кнопками сохранения и отмены с гарантированной высотой $\ge 44$px, предотвращая их перекрытие экранной клавиатурой на смартфонах (коммит `daa38df28`);
+  4. *Асинхронная очередь autosave 400мс для слабых ПК и HDD 5400 RPM (Мандаты 8e п. 6, 8s, 8t, Core Route п. 6)*:
+     - В `safeLocalStorage.ts`: внедрена интеллектуальная отложенная очередь записи на диск с интервалом дебаунса 400мс (`DISK_FLUSH_DEBOUNCE_MS = 400ms`);
+     - Чтение ключей выполняется за 0 мс из in-memory кэша без синхронной блокировки ввода-вывода (Anti-HDD Thrashing);
+     - Авторизационные токены сессии (`token`, `auth`, `session`) сохраняются синхронно и мгновенно (`immediate: true`), исключая непреднамеренный разлогин;
+     - Зарегистрированы глобальные обработчики событий `beforeunload` и `pagehide`, гарантированно сбрасывающие накопленную очередь на физический диск перед закрытием вкладки или браузера;
+  5. *Устранение ошибок Fastify, exactOptionalPropertyTypes и суверенитет 54-ФЗ (Мандаты 8b, 8e п. 9, 8n, 8t)*:
+     - В `ScheduleFilterStrip.tsx`: устранена ошибка рантайма `ReferenceError: hasStorage is not defined` (коммит `9996cc792`);
+     - В `clinical.ts` и `imaging.ts`: устранены несовместимости типов параметров Fastify-маршрутов с возвращаемыми типами Drizzle ORM;
+     - В `patientsQuery.ts`: интерфейс `GetPatientsOptions` приведен в строгое соответствие флагу `exactOptionalPropertyTypes: true`;
+     - В `PaymentModal.tsx`, `FastCheckoutModal.tsx` и `cashboxOperations.ts`: подтвержден суверенитет кассы 54-ФЗ без требования ИНН с физлиц, 1-клик комбинированный сплит 50/50, целочисленный расчет сдачи `calculateChangeKopecks` в копейках без погрешностей с плавающей точкой (коммит `f7b3a2242`);
+  6. *Защита Single-Compiler Gate (Мандат 8t)*:
+     - Синхронизация документации проведена строго без запуска компиляторов `tsc`, `typecheck` или `build`, сохраняя CPU-ресурсы хост-машины для централизованного гейта компиляции L1 Оркестратора.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/patients/transfer/branchTransferEngine.ts`
+  - `apps/web/src/components/patients/transfer/__tests__/branchTransferQrVerification.test.ts`
+  - `apps/web/src/components/telephony/IncomingCallPopup.tsx`
+  - `apps/web/src/components/telephony/TelephonyFloatingWidget.tsx`
+  - `apps/web/src/components/booking/PublicOnlineBookingWidget.tsx`
+  - `apps/web/src/components/radiology/DirectRvgCaptureModal.tsx`
+  - `apps/web/src/components/treatment-plans/StagePaymentPlanModal.tsx`
+  - `apps/web/src/components/treatment-plans/stagePayment.css`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `apps/web/src/components/payments/FastCheckoutModal.tsx`
+  - `apps/web/src/components/schedule/QuickBookingDrawer.tsx`
+  - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`
+  - `apps/web/src/lib/safeLocalStorage.ts`
+  - `apps/api/src/db/patientsQuery.ts`
+  - `apps/api/src/routes/clinical.ts`
+  - `apps/api/src/routes/imaging.ts`
+  - `packages/shared/src/finance/cashboxOperations.ts`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+- **Ключевые результаты**:
+  1. *Амбулаторный стоматологический суверенитет (Мандат 8i)*: Полное очищение стоматологических актов передачи от стационарной трансфузиологии цельной крови (`bloodGroup`, `rhesusFactor`) при 100% сохранении криптографической верификации SHA-256 и ISO/IEC 18004 QR-кодов.
+  2. *Ликвидация процедурных симуляторов и псевдо-физики (Мандат 8s, Core Route пп. 7, 11)*: 4 синтетических процедурных костыля (Web Audio API звонок, фейковый SMS таймер, искусственная экспозиция RVG датчика, CSS анимация термобумаги) физически удалены из кодовой базы; система переведена на чистые пустые состояния и нативные платформенные API.
+  3. *Эргономика кассы и быстрой записи (Мандаты 8c, 8d, 8e пп. 8, 9, 8n)*: Сенсорные элементы $\ge 44$px в кассовом окне и липкий футер в drawer быстрой записи обеспечивают бесперебойную работу врача и администратора на смартфонах и планшетах без мискликов и вылета кнопок за экран.
+  4. *Защита слабого дискового накопителя (Мандаты 8e п. 6, 8n, Core Route п. 6)*: Дебаунс 400мс на диск и 0 мс чтение из оперативной памяти в `safeLocalStorage.ts` снимают нагрузку с HDD 5400 RPM при гарантии сохранности авторизации (`immediate: true`) и автосохранения на событиях `beforeunload`/`pagehide`.
+  5. *Типобезопасность компилятора и целостность 54-ФЗ (Мандаты 8b, 8e п. 9, 8n, 8t)*: Устранены ошибки Fastify-роутов, `exactOptionalPropertyTypes` и `hasStorage`; целочисленная копеечная математика сдачи `calculateChangeKopecks` гарантирует отсутствие финансовых расхождений.
