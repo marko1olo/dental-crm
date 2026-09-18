@@ -4959,10 +4959,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			{/* ─── HEADER BAR (TIER 1 CLEAN STATUS & WORKSPACE SWITCHER — TRUE DARK MANDATE) ─── */}
 			<header
 				data-theme="dark"
-				className="h-9 min-h-[36px] px-2 sm:px-3 py-0.5 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between shrink-0 gap-1.5 sm:gap-2 text-zinc-200 overflow-x-auto min-w-0 w-full max-w-full"
+				className="h-9 min-h-[36px] px-2 sm:px-3 py-0.5 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between shrink-0 gap-1.5 sm:gap-2 text-zinc-200 overflow-x-auto min-w-0 w-full max-w-full relative"
 			>
 				{/* Left: 3D Cube Icon + Title + Quiet Study Status */}
-				<div className="flex items-center gap-2 min-w-0 max-w-[260px] lg:max-w-[340px] shrink">
+				<div className="flex items-center gap-1.5 sm:gap-2 min-w-0 max-w-[180px] sm:max-w-[260px] lg:max-w-[340px] shrink-0">
 					<div className="w-7 h-7 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
 						<Box className="w-3.5 h-3.5" />
 					</div>
@@ -4973,7 +4973,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 								className="text-xs font-bold text-zinc-100 tracking-wide flex items-center gap-1.5 whitespace-nowrap leading-none"
 							>
 								3D CBCT Studio
-								<span className="text-[9px] px-1 py-0.2 rounded bg-zinc-900 text-zinc-300 font-mono border border-zinc-800">
+								<span className="hidden lg:inline-block text-[9px] px-1 py-0.2 rounded bg-zinc-900 text-zinc-300 font-mono border border-zinc-800">
 									Romexis 6 / Ez3D-i
 								</span>
 							</h2>
@@ -5050,24 +5050,24 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				</div>
 
 				{/* Right: Primary Clinical Actions (В ЭМК, Панель), More Options Menu (...), Window Controls */}
-				<div className="flex items-center gap-1.5 shrink-0">
+				<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 sticky right-0 z-20 bg-zinc-950 pl-1.5 shadow-[-6px_0_12px_rgba(9,9,11,0.9)]">
 					{/* Primary Action 1: Clinical EMR Snapshot Export Button */}
 					<button
 						type="button"
 						onClick={handleExportToEmr}
-						className="px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white shadow-xs transition-colors cursor-pointer"
+						className="px-2 sm:px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white shadow-xs transition-colors cursor-pointer"
 						data-testid="cbct-btn-export-emr"
 						title="Сохранить снимок и протокол планирования в карту 043/у"
 					>
 						<Camera className="w-3.5 h-3.5" />
-						<span>В ЭМК</span>
+						<span className="hidden sm:inline">В ЭМК</span>
 					</button>
 
 					{/* Primary Action 2: Sidebar Toggle Button with Colored Indicator */}
 					<button
 						type="button"
 						onClick={() => setIsSidebarOpen((prev) => !prev)}
-						className={`px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-colors border shadow-xs ${
+						className={`px-2 sm:px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-colors border shadow-xs ${
 							isSidebarOpen
 								? "bg-zinc-900 text-cyan-400 border-cyan-500/60"
 								: "bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:bg-zinc-900"
@@ -5077,7 +5077,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					>
 						<span className={`w-1.5 h-1.5 rounded-full transition-colors ${isSidebarOpen ? "bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.8)]" : "bg-zinc-500"}`} />
 						<Columns2 className="w-3.5 h-3.5" />
-						<span>Панель</span>
+						<span className="hidden sm:inline">Панель</span>
 					</button>
 
 					{/* Secondary Actions: Popover Menu (Miller's Law <= 2 Primary Toolbar Actions) */}
@@ -5085,7 +5085,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<button
 							type="button"
 							onClick={() => setIsStudioMenuOpen((prev) => !prev)}
-							className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 border transition-colors cursor-pointer ${
+							className={`px-1.5 sm:px-2 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 border transition-colors cursor-pointer ${
 								isStudioMenuOpen
 									? "bg-zinc-800 text-cyan-400 border-cyan-500/60"
 									: "bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-700 hover:border-zinc-600"
@@ -5096,7 +5096,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							aria-expanded={isStudioMenuOpen}
 						>
 							<MoreHorizontal className="w-3.5 h-3.5" />
-							<span>Опции</span>
+							<span className="hidden sm:inline">Опции</span>
 						</button>
 
 						{isStudioMenuOpen && (
@@ -5231,12 +5231,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					</div>
 
 					{/* Window Control Actions: Maximize & Close */}
-					<div className="flex items-center gap-1 pl-1.5 border-l border-zinc-800 shrink-0">
+					<div className="flex items-center gap-1 pl-1 sm:pl-1.5 border-l border-zinc-800 shrink-0">
 						{/* Modal Maximize / Fullscreen Button */}
 						<button
 							type="button"
 							onClick={handleToggleFullscreenModal}
-							className={`w-7 h-7 min-h-0 min-w-0 rounded flex items-center justify-center border transition-colors ${
+							className={`w-7 h-7 min-h-0 min-w-0 rounded flex items-center justify-center border transition-colors cursor-pointer shrink-0 ${
 								isFullscreen
 									? "bg-zinc-900 text-cyan-400 border-cyan-500/60 shadow-xs"
 									: "bg-zinc-950 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 border-zinc-800"
@@ -5252,7 +5252,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						<button
 							type="button"
 							onClick={onClose}
-							className="w-7 h-7 min-h-0 min-w-0 rounded bg-zinc-950 hover:bg-zinc-900 text-zinc-400 hover:text-white flex items-center justify-center border border-zinc-800 transition-colors"
+							className="w-7 h-7 min-h-0 min-w-0 rounded bg-zinc-950 hover:bg-zinc-900 text-zinc-400 hover:text-white flex items-center justify-center border border-zinc-800 transition-colors cursor-pointer shrink-0"
 							aria-label="Закрыть КЛКТ студию"
 							data-testid="close-cbct-mpr-3d-studio-btn"
 						>

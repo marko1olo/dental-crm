@@ -607,7 +607,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							role="dialog"
 							aria-label="Настройки толщины среза и проекции MIP"
 							data-testid="cbct-slab-flyout"
-							className="absolute left-full ml-2 top-0 z-50 w-64 bg-[var(--paper-strong,#09090b)] border border-[var(--line,#27272a)] shadow-2xl rounded-xl p-3 text-[var(--ink,#f4f4f5)]"
+							className="absolute left-full ml-2 top-0 max-sm:top-auto max-sm:bottom-0 z-50 w-64 bg-[var(--paper-strong,#09090b)] border border-[var(--line,#27272a)] shadow-2xl rounded-xl p-3 text-[var(--ink,#f4f4f5)] max-sm:max-h-[calc(100vh-120px)] max-sm:overflow-y-auto"
 						>
 							<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#27272a)] mb-2.5">
 								<div className="flex items-center gap-1.5">
@@ -757,7 +757,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							role="dialog"
 							aria-label="Клинические пресеты плотности HU"
 							data-testid="cbct-hu-flyout"
-							className="absolute left-full ml-2 top-0 z-50 w-72 bg-[var(--paper-strong,#09090b)] border border-[var(--line,#27272a)] shadow-2xl rounded-xl p-3 text-[var(--ink,#f4f4f5)]"
+							className="absolute left-full ml-2 top-0 max-sm:top-auto max-sm:bottom-0 z-50 w-72 bg-[var(--paper-strong,#09090b)] border border-[var(--line,#27272a)] shadow-2xl rounded-xl p-3 text-[var(--ink,#f4f4f5)] max-sm:max-h-[calc(100vh-120px)] max-sm:overflow-y-auto"
 						>
 							<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#27272a)] mb-2">
 								<div className="flex items-center gap-1.5">
@@ -918,7 +918,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							role="dialog"
 							aria-label="Загрузка файлов DICOM"
 							data-testid="cbct-dicom-flyout"
-							className="absolute left-full ml-2 bottom-0 z-50 w-60 bg-[var(--paper-strong,#09090b)] border border-[var(--line,#27272a)] shadow-2xl rounded-xl p-3 text-[var(--ink,#f4f4f5)]"
+							className="absolute left-full ml-2 bottom-0 z-50 w-60 bg-[var(--paper-strong,#09090b)] border border-[var(--line,#27272a)] shadow-2xl rounded-xl p-3 text-[var(--ink,#f4f4f5)] max-sm:max-h-[calc(100vh-120px)] max-sm:overflow-y-auto"
 						>
 							<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#27272a)] mb-2">
 								<span className="text-xs font-bold text-[var(--ink,#f4f4f5)] flex items-center gap-1.5">
