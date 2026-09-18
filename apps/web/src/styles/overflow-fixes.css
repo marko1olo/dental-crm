@@ -250,3 +250,129 @@
 	}
 }
 
+/* --- 8. ЭМК: Единый 1-рядный тулбар 32-36px на десктопе (Мандаты 8c, 8d, 8p) --- */
+@media (min-width: 1024px) {
+	.emk-unified-toolbar {
+		height: 36px !important;
+		min-height: 36px !important;
+		max-height: 36px !important;
+		padding-top: 0 !important;
+		padding-bottom: 0 !important;
+		overflow: hidden !important;
+		flex-wrap: nowrap !important;
+		align-items: center !important;
+	}
+
+	.emk-tabs-container {
+		height: 32px !important;
+		min-height: 32px !important;
+		max-height: 32px !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto !important;
+	}
+
+	.emk-tier1-quick-soap-bar {
+		height: 32px !important;
+		min-height: 32px !important;
+		max-height: 32px !important;
+		padding-top: 0 !important;
+		padding-bottom: 0 !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto !important;
+	}
+
+	.emk-formatting-toolbar {
+		height: 32px !important;
+		min-height: 32px !important;
+		max-height: 32px !important;
+		padding-top: 0 !important;
+		padding-bottom: 0 !important;
+	}
+}
+
+@media (max-width: 1023px) {
+	.emk-unified-toolbar {
+		max-width: 100% !important;
+		min-width: 0 !important;
+		box-sizing: border-box !important;
+	}
+
+	.emk-tabs-container,
+	.emk-tier1-quick-soap-bar {
+		max-width: 100% !important;
+		min-width: 0 !important;
+		overflow-x: auto !important;
+		overscroll-behavior-x: contain;
+		-webkit-overflow-scrolling: touch;
+	}
+}
+
+/* --- 9. Защита длинных русских строк и переносы чипов (Мандат 8d, грех №1) --- */
+.quick-chip,
+.visit-quick-chip {
+	max-width: 100% !important;
+	min-width: 0 !important;
+	box-sizing: border-box !important;
+}
+
+.quick-chip span,
+.visit-quick-chip span {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.visit-completion-banner,
+.visit-note-foreign-text,
+.ai-draft,
+.visit-fields,
+.emk-field-container,
+.visit-compliance-panel {
+	min-width: 0 !important;
+	max-width: 100% !important;
+	box-sizing: border-box !important;
+}
+
+.visit-note-panel h1,
+.visit-note-panel h2,
+.visit-note-panel h3,
+.visit-note-panel h4,
+.visit-note-panel p,
+.visit-note-panel span,
+.visit-note-panel strong {
+	overflow-wrap: anywhere;
+}
+
+/* --- 10. Тотальная гигиена темных поверхностей (WCAG AAA, 0 белых утечек) --- */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], [data-theme="contrast"], html.dark) .panel,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], [data-theme="contrast"], html.dark) .card,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], [data-theme="contrast"], html.dark) .visit-note-panel,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], [data-theme="contrast"], html.dark) .emk-field-container,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], [data-theme="contrast"], html.dark) .ai-draft,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], [data-theme="contrast"], html.dark) .onboarding-source-section,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], [data-theme="contrast"], html.dark) .telegram-preview-box {
+	background-color: var(--paper-strong) !important;
+	color: var(--ink) !important;
+	border-color: var(--line) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], [data-theme="contrast"], html.dark) input:not([type="checkbox"]):not([type="radio"]),
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], [data-theme="contrast"], html.dark) select,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], [data-theme="contrast"], html.dark) textarea {
+	background-color: var(--paper) !important;
+	color: var(--ink) !important;
+	border-color: var(--line) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], [data-theme="contrast"], html.dark) .weekday-toggle-row button,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], [data-theme="contrast"], html.dark) .onboarding-telegram-status span,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], [data-theme="contrast"], html.dark) .onboarding-feature-list label,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], [data-theme="contrast"], html.dark) .onboarding-telegram-visual-cards label,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], [data-theme="contrast"], html.dark) .telegram-link-ledger-row,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], [data-theme="contrast"], html.dark) .telegram-feature-grid label,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], [data-theme="contrast"], html.dark) .telegram-voice-toggle {
+	background-color: var(--paper-strong) !important;
+	color: var(--ink) !important;
+	border-color: var(--line) !important;
+}
+

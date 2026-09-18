@@ -1807,13 +1807,13 @@ export function VisitEmkTab() {
 			{completionResult && (
 				<div
 					data-testid="visit-completion-banner"
-					className="my-3 p-4 rounded-2xl bg-[var(--ok-bg)] border-2 border-[var(--ok-fg)]/50 flex items-center justify-between gap-4 flex-wrap shadow-sm animate-in fade-in slide-in-from-top-2"
+					className="my-3 p-3.5 sm:p-4 rounded-2xl bg-[var(--ok-bg)] border-2 border-[var(--ok-fg)]/50 flex items-center justify-between gap-3 sm:gap-4 flex-wrap shadow-sm animate-in fade-in slide-in-from-top-2 min-w-0 max-w-full"
 				>
-					<div className="flex items-center gap-3">
-						<div className="w-11 h-11 rounded-xl bg-[var(--ok-fg)] text-white flex items-center justify-center font-black text-xl shrink-0 shadow-xs">
+					<div className="flex items-center gap-3 min-w-0 flex-1">
+						<div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[var(--ok-fg)] text-white flex items-center justify-center font-black text-xl shrink-0 shadow-xs">
 							<Check size={20} className="stroke-[3]" />
 						</div>
-						<div>
+						<div className="min-w-0 flex-1">
 							<div className="text-xs font-bold text-[var(--ok-fg)] uppercase tracking-wider flex items-center gap-1.5">
 								<svg
 									aria-hidden="true"
@@ -1831,43 +1831,43 @@ export function VisitEmkTab() {
 								</svg>
 								<span>Приём завершён • Дневник 043/у зафиксирован</span>
 							</div>
-							<div className="text-sm sm:text-base font-extrabold text-[var(--ink)]">
+							<div className="text-sm sm:text-base font-extrabold text-[var(--ink)] break-words min-w-0">
 								{completionResult.statusBannerText}
 							</div>
-							<div className="text-xs text-[var(--muted)] flex items-center gap-2">
+							<div className="text-xs text-[var(--muted)] flex items-center gap-2 flex-wrap min-w-0">
 								<span>Позиций в смете: {completionResult.items.length}</span>
 								<span>•</span>
-								<span>{completionResult.receiptNumber}</span>
+								<span className="break-all">{completionResult.receiptNumber}</span>
 							</div>
 						</div>
 					</div>
-					<div className="flex items-center gap-2 flex-wrap">
+					<div className="flex items-center gap-2 flex-wrap shrink-0">
 						<button
 							type="button"
 							onClick={() => handleOpenNextVisitBooking(5)}
-							className="min-h-[44px] px-4 py-2 text-xs sm:text-sm font-extrabold rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-xs transition-all cursor-pointer inline-flex items-center gap-2 active:scale-98"
+							className="min-h-[32px] sm:min-h-[36px] h-8 sm:h-9 px-3.5 py-1 text-xs sm:text-sm font-extrabold rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5 active:scale-98"
 							data-testid="btn-completion-schedule-next-visit"
 							title="Записать на повторный приём через 5-7 дней"
 						>
-							<Calendar size={16} />
+							<Calendar size={14} />
 							<span>След. приём (+5 дней)</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setIsSbpQrModalOpen(true)}
-							className="min-h-[44px] px-4 py-2 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--ok-fg)] hover:opacity-90 text-white shadow-xs transition-all cursor-pointer inline-flex items-center gap-2"
+							className="min-h-[32px] sm:min-h-[36px] h-8 sm:h-9 px-3.5 py-1 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--ok-fg)] hover:opacity-90 text-white shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5"
 							data-testid="btn-pay-sbp-qr"
 						>
-							<QrCode size={16} />
+							<QrCode size={14} />
 							<span>Оплата СБП (QR-код)</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setIsBillingActModalOpen(true)}
-							className="min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5"
+							className="min-h-[32px] sm:min-h-[36px] h-8 sm:h-9 px-3 py-1 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5"
 							data-testid="btn-print-estimate-receipt"
 						>
-							<Printer size={14} />
+							<Printer size={13} />
 							<span>Смета и Акт (А4)</span>
 						</button>
 					</div>
@@ -1879,12 +1879,12 @@ export function VisitEmkTab() {
 					aria-live="assertive"
 					id="visit-note-foreign-text"
 					data-testid="visit-note-foreign-text"
-					className="mt-3 mb-3 p-4 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-900/60 text-sm text-rose-900 dark:text-rose-200"
+					className="mt-3 mb-3 p-3.5 sm:p-4 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-900/60 text-sm text-rose-900 dark:text-rose-200 min-w-0 max-w-full"
 				>
-					<strong className="block mb-1">
+					<strong className="block mb-1 break-words">
 						В полях остался текст предыдущего приёма
 					</strong>
-					<p className="m-0">
+					<p className="m-0 break-words leading-relaxed">
 						Открыт другой приём
 						{activePatient?.fullName ? ` — ${activePatient.fullName}` : ""}, а в
 						полях лежит незаписанный текст прошлого приёма. Сохранять его отсюда
@@ -1896,7 +1896,7 @@ export function VisitEmkTab() {
 					<div className="mt-3 flex items-center gap-2 flex-wrap">
 						<button
 							type="button"
-							className="px-3.5 py-2 min-h-[44px] rounded-xl text-xs sm:text-sm font-bold bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+							className="px-3 py-1.5 min-h-[32px] sm:min-h-[36px] h-8 sm:h-9 rounded-xl text-xs sm:text-sm font-bold bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
 							onClick={copyAllVisitNoteText}
 						>
 							<Copy size={14} />
@@ -1904,7 +1904,7 @@ export function VisitEmkTab() {
 						</button>
 						<button
 							type="button"
-							className="px-3.5 py-2 min-h-[44px] rounded-xl text-xs sm:text-sm font-bold bg-rose-600 hover:bg-rose-500 text-white transition-colors flex items-center gap-1.5 cursor-pointer"
+							className="px-3 py-1.5 min-h-[32px] sm:min-h-[36px] h-8 sm:h-9 rounded-xl text-xs sm:text-sm font-bold bg-rose-600 hover:bg-rose-500 text-white transition-colors flex items-center gap-1.5 cursor-pointer"
 							onClick={() => setIsConfirmSwitchModalOpen(true)}
 						>
 							<Trash2 size={14} />
@@ -1928,7 +1928,7 @@ export function VisitEmkTab() {
 			/>
 
 			{/* Единый компактный тулбар ЭМК: Ряд 1 (Вкладки протокола ЭМК + Запись/Статус) + Ряд 2 (1-Клик SOAP) */}
-			<div className="emk-unified-toolbar flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 lg:gap-3 my-1 py-1 border-b border-[var(--line)] min-w-0 max-w-full">
+			<div className="emk-unified-toolbar flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 lg:gap-3 my-1 py-1 lg:py-0 lg:h-9 lg:min-h-[36px] lg:max-h-[36px] lg:overflow-hidden border-b border-[var(--line)] min-w-0 max-w-full">
 				{/* РЯД 1 (На десктопе - слева): Вкладки 6 секций ЭМК */}
 				<div
 					className="emk-tabs-container flex items-center gap-2 min-w-0 shrink-0 flex-nowrap overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden m-0 py-0.5 pr-4 lg:pr-0 border-b-0 touch-pan-x"
@@ -1962,7 +1962,7 @@ export function VisitEmkTab() {
 				{/* РЯД 2 (На десктопе - справа): 1-Клик Экспресс-Бар SOAP + Запись/Статус */}
 				<div className="relative flex-1 min-w-0 flex items-center overflow-hidden">
 					<div
-						className="emk-tier1-quick-soap-bar flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none pr-3 lg:pr-0 shrink-0 flex-nowrap min-w-0 py-1 justify-start touch-pan-x w-full"
+						className="emk-tier1-quick-soap-bar flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none pr-3 lg:pr-0 shrink-0 flex-nowrap min-w-0 py-1 lg:py-0 justify-start touch-pan-x w-full"
 						data-testid="emk-tier1-quick-soap-bar"
 					>
 						<span className="text-[10px] font-bold text-[var(--muted)] shrink-0 uppercase tracking-wider inline-flex items-center gap-1 pr-0.5">
@@ -2102,9 +2102,9 @@ export function VisitEmkTab() {
 			</div>
 
 			{isRevisingVisitNote && (
-				<div className="flex items-center gap-2 p-2 my-1 rounded-lg bg-amber-500/15 border border-amber-500/40 text-amber-900 dark:text-amber-200 text-xs font-bold animate-in fade-in">
+				<div className="flex items-center gap-2 p-2 my-1 rounded-lg bg-amber-500/15 border border-amber-500/40 text-amber-900 dark:text-amber-200 text-xs font-bold animate-in fade-in min-w-0 max-w-full">
 					<AlertTriangle size={14} className="text-amber-600 shrink-0" />
-					<span>
+					<span className="min-w-0 break-words flex-1">
 						Режим исправления закрытого дневника («Исправленному верить»).
 						История изменений сохраняется в юридическом журнале ревизий ЭМК без
 						согласований начмедов.
@@ -2536,23 +2536,24 @@ export function VisitEmkTab() {
 											key={chip}
 											type="button"
 											onClick={() => handleChipClick(chip)}
-											className="quick-chip visit-quick-chip h-auto min-h-[28px] sm:min-h-[30px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation shadow-2xs inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap"
+											title={chip}
+											className="quick-chip visit-quick-chip h-auto min-h-[28px] sm:min-h-[30px] max-w-full px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation shadow-2xs inline-flex items-center gap-1.5 shrink-0 min-w-0"
 										>
 											<span className="text-[var(--teal,var(--brand-primary))] font-extrabold shrink-0">
 												+
 											</span>
-											<span className="whitespace-nowrap">{chip}</span>
+											<span className="truncate max-w-[260px] sm:max-w-[420px] md:max-w-none">{chip}</span>
 										</button>
 									))}
 								</div>
 							)}
 
 							{field.key === "treatmentPlan" && (
-								<div className="flex flex-col gap-2.5 mt-1">
+								<div className="flex flex-col gap-2.5 mt-1 min-w-0 max-w-full">
 									{/* Быстрый протокол анестезии (1-клик пресеты) — чистый разделитель без двойных рамок (Анти-Матрёшка) */}
-									<div className="flex items-center justify-between gap-2 flex-wrap pt-3 border-t border-[var(--line)] bg-transparent">
-										<div className="flex items-center gap-1.5 flex-wrap">
-											<span className="text-[11px] font-extrabold text-[var(--muted)] flex items-center gap-1">
+									<div className="flex items-center justify-between gap-2 flex-wrap pt-3 border-t border-[var(--line)] bg-transparent min-w-0">
+										<div className="flex items-center gap-1.5 flex-wrap min-w-0">
+											<span className="text-[11px] font-extrabold text-[var(--muted)] flex items-center gap-1 shrink-0">
 												<Syringe
 													size={13}
 													className="text-[var(--teal,var(--brand-primary))]"
@@ -2576,7 +2577,7 @@ export function VisitEmkTab() {
 														2500,
 													);
 												}}
-												className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5"
+												className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0"
 												data-testid="btn-anes-ultracain-ds"
 												title="1 клик: внести стандартную анестезию 1:200 000 в протокол"
 											>
@@ -2600,7 +2601,7 @@ export function VisitEmkTab() {
 														2500,
 													);
 												}}
-												className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5"
+												className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0"
 												data-testid="btn-anes-ultracain-ds-forte"
 												title="1 клик: внести глубокую анестезию 1:100 000 в протокол"
 											>
@@ -2624,7 +2625,7 @@ export function VisitEmkTab() {
 														2500,
 													);
 												}}
-												className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5"
+												className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0"
 												data-testid="btn-anes-scandonest-3"
 												title="1 клик: безадреналиновая анестезия для кардио-пациентов"
 											>
@@ -2637,17 +2638,17 @@ export function VisitEmkTab() {
 									{/* Предупреждение о кардиоваскулярном риске */}
 									{anesthesiaRisk.isWarningTriggered && (
 										<div
-											className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 flex items-start justify-between gap-2.5 text-xs text-amber-950 dark:text-amber-200"
+											className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 flex items-start justify-between gap-2.5 text-xs text-amber-950 dark:text-amber-200 min-w-0 max-w-full"
 											role="alert"
 										>
-											<div className="flex items-start gap-2">
+											<div className="flex items-start gap-2 min-w-0 flex-1">
 												<AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-												<div className="space-y-1">
-													<strong className="font-extrabold block text-amber-950 dark:text-amber-100">
+												<div className="space-y-1 min-w-0 flex-1">
+													<strong className="font-extrabold block text-amber-950 dark:text-amber-100 break-words">
 														Внимание: Группа кардиоваскулярного риска
 														(Гипертония / ССЗ)
 													</strong>
-													<p className="m-0 leading-relaxed font-medium">
+													<p className="m-0 leading-relaxed font-medium break-words">
 														{anesthesiaRisk.warningMessage}
 													</p>
 												</div>
@@ -2655,7 +2656,7 @@ export function VisitEmkTab() {
 											<button
 												type="button"
 												onClick={() => setSelectedAnesDrugKey("scandonest_3")}
-												className="px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-200 dark:bg-amber-800 text-amber-950 dark:text-amber-100 hover:bg-amber-300 shrink-0 cursor-pointer"
+												className="px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-200 dark:bg-amber-800 text-amber-950 dark:text-amber-100 hover:bg-amber-300 shrink-0 cursor-pointer min-h-[30px]"
 											>
 												Выбрать Скандонест 3%
 											</button>
@@ -3017,10 +3018,10 @@ export function VisitEmkTab() {
 															3000,
 														);
 													}}
-													className="min-h-[44px] sm:min-h-[38px] px-4 py-1.5 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 transition-all cursor-pointer inline-flex items-center gap-2 shrink-0 touch-manipulation"
+													className="min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 px-3 py-1 text-xs sm:text-sm font-extrabold rounded-lg bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 touch-manipulation"
 													data-testid="btn-apply-endo-to-plan"
 												>
-													<Zap className="w-4 h-4" />
+													<Zap className="w-3.5 h-3.5" />
 													<span>+ Внести эндо-протокол в 043/у</span>
 												</button>
 											</div>
@@ -3163,12 +3164,12 @@ export function VisitEmkTab() {
 				</div>
 			) : null}
 
-			<div className="ai-draft mt-4 p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col gap-3">
-				<div className="flex items-center gap-3">
+			<div className="ai-draft mt-4 p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col gap-3 min-w-0 max-w-full">
+				<div className="flex items-center gap-3 min-w-0">
 					<div className="flex items-center justify-center w-8 h-8 rounded-xl bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] shrink-0">
 						<ShieldCheck aria-hidden="true" size={20} />
 					</div>
-					<p className="m-0 text-xs sm:text-sm font-medium text-[var(--ink)] leading-relaxed">
+					<p className="m-0 text-xs sm:text-sm font-medium text-[var(--ink)] leading-relaxed min-w-0 break-words flex-1">
 						{noteTextOfAnotherVisit
 							? "Сохранение заперто: в полях текст другого приёма. Разберите предупреждение выше."
 							: draft
@@ -3184,10 +3185,10 @@ export function VisitEmkTab() {
 					</p>
 				</div>
 
-				<div className="flex items-center gap-3 flex-wrap">
+				<div className="flex items-center gap-2.5 flex-wrap">
 					{pendingVisitSaveCount ? (
 						<button
-							className="secondary-button min-h-[48px] px-5 py-2.5 text-sm font-bold rounded-xl"
+							className="secondary-button min-h-[34px] sm:min-h-[36px] h-8.5 sm:h-9 px-4 py-1 text-xs sm:text-sm font-bold rounded-xl"
 							type="button"
 							onClick={() => void flushPendingVisitSaves({ silent: false })}
 							disabled={isPendingVisitSyncing}
@@ -3197,13 +3198,13 @@ export function VisitEmkTab() {
 					) : null}
 
 					{isSignedVisit && !isRevisingVisitNote ? (
-						<div className="flex items-center gap-3 flex-wrap">
-							<div className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
-								<Check size={16} className="stroke-[3]" />
+						<div className="flex items-center gap-2.5 flex-wrap">
+							<div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
+								<Check size={15} className="stroke-[3]" />
 								<span>ПОДПИСАНО ВРАЧОМ</span>
 							</div>
 							<button
-								className="secondary-button min-h-[48px] px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40 cursor-pointer flex items-center gap-2 transition-all shadow-2xs"
+								className="secondary-button min-h-[34px] sm:min-h-[36px] h-8.5 sm:h-9 px-3.5 py-1 text-xs sm:text-sm font-bold rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40 cursor-pointer flex items-center gap-2 transition-all shadow-2xs"
 								type="button"
 								data-testid="btn-revise-signed-visit"
 								onClick={() => {
@@ -3216,7 +3217,7 @@ export function VisitEmkTab() {
 								}}
 								title="Внести исправление в закрытый дневник с сохранением истории ревизий («Исправленному верить»)"
 							>
-								<FileText size={16} />
+								<FileText size={15} />
 								<span>Внести исправление («Исправленному верить»)</span>
 							</button>
 						</div>
@@ -3378,7 +3379,7 @@ export function VisitEmkTab() {
 												"K02.1 Кариес дентина",
 											)
 										}
-										className="min-h-[44px] px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer"
+										className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 px-2.5 py-0.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer shadow-2xs whitespace-nowrap"
 									>
 										+ K02.1 Кариес
 									</button>
@@ -3390,7 +3391,7 @@ export function VisitEmkTab() {
 												"K04.0 Пульпит необратимый",
 											)
 										}
-										className="min-h-[44px] px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer"
+										className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 px-2.5 py-0.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer shadow-2xs whitespace-nowrap"
 									>
 										+ K04.0 Пульпит
 									</button>
@@ -3402,7 +3403,7 @@ export function VisitEmkTab() {
 												"Z01.2 Стоматологическое обследование (здоров)",
 											)
 										}
-										className="min-h-[44px] px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer"
+										className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 px-2.5 py-0.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer shadow-2xs whitespace-nowrap"
 									>
 										+ Z01.2 Осмотр (здоров)
 									</button>
@@ -3418,7 +3419,7 @@ export function VisitEmkTab() {
 												"Инфильтрационная анестезия (Артикаин 4% 1.7 мл). Препарирование, адгезивный протокол, послойная реставрация светоотверждаемым композитом, шлифовка, полировка.",
 											)
 										}
-										className="min-h-[44px] px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer"
+										className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 px-2.5 py-0.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer shadow-2xs whitespace-nowrap"
 									>
 										+ Анестезия + Пломба
 									</button>
@@ -3430,7 +3431,7 @@ export function VisitEmkTab() {
 												"Инфильтрационная/проводниковая анестезия (Артикаин 4% с эпинефрином 1:100 000, 1.7 мл). Коффердам. Экстирпация пульпы, NiTi обработка каналов, ирригация NaOCl 3%, Calcept, временная пломба.",
 											)
 										}
-										className="min-h-[44px] px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer"
+										className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 px-2.5 py-0.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer shadow-2xs whitespace-nowrap"
 									>
 										+ Анестезия + Эндодонтия
 									</button>
@@ -3449,7 +3450,7 @@ export function VisitEmkTab() {
 											"Хронические соматические заболевания отрицает. Аллергоанамнез не отягощен.",
 										);
 									}}
-									className="min-h-[44px] px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer"
+									className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 px-2.5 py-0.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer shadow-2xs whitespace-nowrap"
 								>
 									+ Жалоб нет (Профосмотр)
 								</button>
@@ -3477,48 +3478,48 @@ export function VisitEmkTab() {
 					</div>
 					<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none py-1 max-w-full">
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))] shrink-0"
+							className="secondary-button flex items-center gap-1.5 text-xs font-bold py-1 px-3 min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 rounded-lg touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))] shrink-0 shadow-2xs"
 							type="button"
 							onClick={() => setIsSoapTemplatesModalOpen(true)}
 							data-testid="btn-open-soap-templates-modal"
 							title="Шаблоны протоколов Формы 043/у по МКБ-10 с услугами 804н и списанием со склада"
 						>
-							<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
+							<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
 							Шаблоны 043/у (МКБ-10 + 804н + Склад)
 						</button>
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer border-[var(--line)] hover:border-indigo-400 shrink-0"
+							className="secondary-button flex items-center gap-1.5 text-xs font-bold py-1 px-3 min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 rounded-lg touch-manipulation cursor-pointer border-[var(--line)] hover:border-indigo-400 shrink-0 shadow-2xs"
 							type="button"
 							onClick={() => setIsForm043ModalOpen(true)}
 							data-testid="btn-print-visit-note-043"
 							title="Печать официальной карты стоматологического пациента (Форма 043/у) на чистом листе А4 со штампом ЧЕРНОВИК или ПОДПИСАНО"
 						>
-							<Printer className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+							<Printer className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
 							<span>
 								Печать 043/у {isSignedVisit ? "(Подписано)" : "(Черновик)"}
 							</span>
 						</button>
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-[var(--ok-fg)] border-[var(--ok-fg)]/30 hover:bg-[var(--ok-bg)] shrink-0"
+							className="secondary-button flex items-center gap-1.5 text-xs font-bold py-1 px-3 min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 rounded-lg touch-manipulation cursor-pointer text-[var(--ok-fg)] border-[var(--ok-fg)]/30 hover:bg-[var(--ok-bg)] shrink-0 shadow-2xs"
 							type="button"
 							onClick={() => setIsInformedConsentModalOpen(true)}
 							data-testid="btn-print-informed-consent-1051n"
 							title="Официальный бланк информированного добровольного согласия (ИДС) по Приказу Минздрава РФ № 1051н"
 						>
-							<ShieldCheck className="w-4 h-4 text-[var(--ok-fg)]" />
+							<ShieldCheck className="w-3.5 h-3.5 text-[var(--ok-fg)]" />
 							Печать ИДС (Приказ № 1051н)
 						</button>
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer shrink-0"
+							className="secondary-button flex items-center gap-1.5 text-xs font-bold py-1 px-3 min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 rounded-lg touch-manipulation cursor-pointer shrink-0 shadow-2xs"
 							type="button"
 							onClick={() => setIsPrescriptionModalOpen(true)}
 							data-testid="btn-open-prescription-modal"
 						>
-							<Pill className="w-4 h-4 text-rose-500" />
+							<Pill className="w-3.5 h-3.5 text-rose-500" />
 							Рецепт (Форма 107-1/у)
 						</button>
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))] shrink-0"
+							className="secondary-button flex items-center gap-1.5 text-xs font-bold py-1 px-3 min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 rounded-lg touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))] shrink-0 shadow-2xs"
 							type="button"
 							onClick={() => {
 								setSelectedMemoIdForPrint("surgery_extraction");
@@ -3527,43 +3528,43 @@ export function VisitEmkTab() {
 							data-testid="btn-open-patient-memo-modal"
 							title="Послеоперационные памятки пациенту (Удаление, Анестезия, Эндодонтия) с 1-клик печатью А4/А5"
 						>
-							<FileText className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
+							<FileText className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
 							Памятка пациенту (А4/А5)
 						</button>
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))] shrink-0"
+							className="secondary-button flex items-center gap-1.5 text-xs font-bold py-1 px-3 min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 rounded-lg touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))] shrink-0 shadow-2xs"
 							type="button"
 							onClick={() => setIsBillingActModalOpen(true)}
 							data-testid="btn-open-billing-act-modal"
 							title="Акт выполненных работ и гарантийный талон (А4) по Приказу Минздрава № 804н и Закону РФ № 2300-1"
 						>
-							<FileCheck className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
+							<FileCheck className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
 							Акт и гарантийный талон (А4)
 						</button>
 						<button
-							className="primary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] rounded-xl shadow-xs touch-manipulation cursor-pointer shrink-0"
+							className="primary-button flex items-center gap-1.5 text-xs font-bold py-1 px-3 min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] rounded-lg shadow-2xs touch-manipulation cursor-pointer shrink-0"
 							type="button"
 							onClick={() => setIsEgiszModalOpen(true)}
 							data-testid="btn-open-egisz-cda-modal"
 						>
-							<ShieldCheck className="w-4 h-4" />
+							<ShieldCheck className="w-3.5 h-3.5" />
 							СЭМД ЕГИСЗ (Валидатор & Экспорт)
 						</button>
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer shrink-0"
+							className="secondary-button flex items-center gap-1.5 text-xs font-bold py-1 px-3 min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 rounded-lg touch-manipulation cursor-pointer shrink-0 shadow-2xs"
 							type="button"
 							onClick={handleDownloadCdaXml}
 							disabled={isExportingCda}
 							data-testid="btn-download-cda-xml"
 						>
-							<Download className="w-4 h-4" />
+							<Download className="w-3.5 h-3.5" />
 							{isExportingCda ? "Формирование XML…" : "Скачать CDA R2 (XML)"}
 						</button>
 					</div>
 				</div>
 
 				{/* 1-клик быстрые кнопки печати послеоперационных памяток */}
-				<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none py-1 max-w-full pt-2.5 border-t border-[var(--line)]/70 mb-2">
+				<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none py-1 max-w-full pt-2 border-t border-[var(--line)]/70 mb-1.5">
 					<span className="text-xs font-extrabold text-[var(--muted)] flex items-center gap-1 shrink-0">
 						<Printer className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
 						1-клик печать памятки пациенту:
@@ -3574,7 +3575,7 @@ export function VisitEmkTab() {
 							setSelectedMemoIdForPrint("surgery_extraction");
 							setIsPatientMemoModalOpen(true);
 						}}
-						className="min-h-[44px] sm:min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
+						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
 						data-testid="btn-quick-memo-surgery"
 					>
 						<FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
@@ -3586,7 +3587,7 @@ export function VisitEmkTab() {
 							setSelectedMemoIdForPrint("anesthesia_caries");
 							setIsPatientMemoModalOpen(true);
 						}}
-						className="min-h-[44px] sm:min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
+						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
 						data-testid="btn-quick-memo-caries"
 					>
 						<ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
@@ -3598,7 +3599,7 @@ export function VisitEmkTab() {
 							setSelectedMemoIdForPrint("endodontics");
 							setIsPatientMemoModalOpen(true);
 						}}
-						className="min-h-[44px] sm:min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
+						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
 						data-testid="btn-quick-memo-endo"
 					>
 						<Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -3607,7 +3608,7 @@ export function VisitEmkTab() {
 				</div>
 
 				{/* 1-клик быстрые кнопки выписки рецептов (Форма № 107-1/у) */}
-				<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none py-1 max-w-full pt-2.5 border-t border-[var(--line)]/70 mb-2">
+				<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none py-1 max-w-full pt-2 border-t border-[var(--line)]/70 mb-1.5">
 					<span className="text-xs font-extrabold text-[var(--muted)] flex items-center gap-1 shrink-0">
 						<Pill className="w-3.5 h-3.5 text-rose-500" />
 						1-клик выписка рецепта (Форма 107-1/у):
@@ -3622,7 +3623,7 @@ export function VisitEmkTab() {
 							]);
 							setIsPrescriptionModalOpen(true);
 						}}
-						className="min-h-[44px] sm:min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
+						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
 						data-testid="btn-quick-rx-post-surgery"
 					>
 						<Pill className="w-3.5 h-3.5 text-rose-500 shrink-0" />
@@ -3637,7 +3638,7 @@ export function VisitEmkTab() {
 							]);
 							setIsPrescriptionModalOpen(true);
 						}}
-						className="min-h-[44px] sm:min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
+						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
 						data-testid="btn-quick-rx-anti-inflammatory"
 					>
 						<Pill className="w-3.5 h-3.5 text-blue-500 shrink-0" />
@@ -3652,7 +3653,7 @@ export function VisitEmkTab() {
 							]);
 							setIsPrescriptionModalOpen(true);
 						}}
-						className="min-h-[44px] sm:min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
+						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
 						data-testid="btn-quick-rx-antiseptic"
 					>
 						<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
@@ -3895,7 +3896,7 @@ export function VisitEmkTab() {
 									}}
 									disabled={isLinkingTray}
 									title={`Привязать ${preset.label} (${preset.code}) в 1 клик`}
-									className={`inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-xl text-xs font-medium border transition-colors cursor-pointer touch-manipulation ${
+									className={`inline-flex items-center gap-1.5 px-2.5 py-1 min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 rounded-lg text-xs font-medium border transition-colors cursor-pointer touch-manipulation whitespace-nowrap shadow-2xs ${
 										isSelected
 											? "bg-[var(--teal,var(--brand-primary))]/10 border-[var(--teal,var(--brand-primary))] text-[var(--teal,var(--brand-primary))] font-bold shadow-xs"
 											: "bg-[var(--paper-soft,var(--paper))] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)] hover:border-[var(--line-strong)]"
@@ -3926,7 +3927,7 @@ export function VisitEmkTab() {
 						<input
 							id="visit-tray-barcode-input"
 							type="text"
-							className="flex-1 text-xs sm:text-sm px-3.5 py-2.5 min-h-[44px] sm:min-h-[48px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] font-mono"
+							className="flex-1 text-xs sm:text-sm px-3 py-1.5 min-h-[34px] sm:min-h-[36px] h-8.5 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] font-mono"
 							placeholder="Отсканируйте или выберите пресет (напр. TRAY-THERAPY-STD)"
 							value={trayBarcode}
 							onChange={(e) => setTrayBarcode(e.target.value)}
@@ -3934,7 +3935,7 @@ export function VisitEmkTab() {
 							data-testid="input-tray-barcode"
 						/>
 						<button
-							className="secondary-button text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[44px] sm:min-h-[48px] rounded-xl inline-flex items-center justify-center gap-1.5 touch-manipulation shrink-0 cursor-pointer"
+							className="secondary-button text-xs sm:text-sm font-bold py-1 px-3 min-h-[34px] sm:min-h-[36px] h-8.5 sm:h-9 rounded-lg inline-flex items-center justify-center gap-1.5 touch-manipulation shrink-0 cursor-pointer shadow-2xs"
 							type="submit"
 							disabled={isLinkingTray}
 							data-testid="btn-link-tray-barcode"
@@ -4133,7 +4134,7 @@ export function VisitEmkTab() {
 									key={cat.id}
 									type="button"
 									onClick={() => setSelectedPriceCategory(cat.id)}
-									className={`min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap border ${
+									className={`min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap border ${
 										selectedPriceCategory === cat.id
 											? "bg-indigo-600 text-white border-indigo-700 shadow-xs"
 											: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
@@ -4154,10 +4155,10 @@ export function VisitEmkTab() {
 								filteredPriceServices.map((srv) => (
 									<div
 										key={srv.id}
-										className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:border-indigo-500/50 transition-all flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap"
+										className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:border-indigo-500/50 transition-all flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap"
 									>
 										<div className="space-y-1 min-w-0 flex-1">
-											<div className="text-sm sm:text-base font-bold text-[var(--ink)] leading-snug">
+											<div className="text-sm font-bold text-[var(--ink)] leading-snug break-words">
 												{srv.title}
 											</div>
 											<div className="flex items-center gap-2 text-xs text-[var(--muted)] flex-wrap">
@@ -4172,7 +4173,7 @@ export function VisitEmkTab() {
 											</div>
 										</div>
 
-										<div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+										<div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
 											<span className="text-sm sm:text-base font-mono font-black text-[var(--ok-fg)]">
 												{srv.basePriceRub.toLocaleString("ru-RU")} ₽
 											</span>
@@ -4182,10 +4183,10 @@ export function VisitEmkTab() {
 													handleAddServiceToPlan(srv);
 													setIsPriceSearchModalOpen(false);
 												}}
-												className="min-h-[48px] px-4 py-2 rounded-xl text-xs sm:text-sm font-black bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 touch-manipulation"
+												className="min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 touch-manipulation"
 												data-testid={`btn-select-price-service-${srv.id}`}
 											>
-												<PlusCircle size={16} />
+												<PlusCircle size={14} />
 												<span>Добавить</span>
 											</button>
 										</div>

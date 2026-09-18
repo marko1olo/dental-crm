@@ -1745,7 +1745,7 @@ body.dark-mode .onboarding-draft-strip span {
 .clinic-profile-form-grid input,
 .clinic-profile-form-grid select,
 .clinic-profile-form-grid textarea {
-	background: #ffffff;
+	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	color: var(--ink);
@@ -1810,7 +1810,7 @@ body.dark-mode .onboarding-draft-strip span {
 }
 
 .weekday-toggle-row button {
-	background: #ffffff;
+	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	color: var(--muted);
@@ -1859,7 +1859,7 @@ body.dark-mode .onboarding-draft-strip span {
 }
 
 .onboarding-source-section {
-	background: #ffffff;
+	background: var(--paper-strong);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	display: grid;
@@ -1940,7 +1940,7 @@ body.dark-mode .onboarding-draft-strip span {
 }
 
 .onboarding-telegram-status span {
-	background: #ffffff;
+	background: var(--paper-strong);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	color: var(--muted);
@@ -1966,7 +1966,7 @@ body.dark-mode .onboarding-draft-strip span {
 
 .onboarding-feature-list label {
 	align-items: center;
-	background: #ffffff;
+	background: var(--paper-strong);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	color: var(--muted);
@@ -1996,7 +1996,7 @@ body.dark-mode .onboarding-draft-strip span {
 }
 
 .onboarding-telegram-visual-cards label {
-	background: #ffffff;
+	background: var(--paper-strong);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	color: var(--muted);
@@ -2009,7 +2009,7 @@ body.dark-mode .onboarding-draft-strip span {
 }
 
 .onboarding-telegram-visual-cards input {
-	background: #ffffff;
+	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	color: var(--ink);
@@ -7427,7 +7427,7 @@ section.imaging-panel {
 }
 
 .staff-schedule-editor input {
-	background: #ffffff;
+	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	color: var(--ink);
@@ -7617,7 +7617,7 @@ section.imaging-panel {
 
 .telegram-link-controls input,
 .telegram-link-controls select {
-	background: #ffffff;
+	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	color: var(--ink);
@@ -7699,7 +7699,7 @@ section.imaging-panel {
 
 .telegram-link-ledger-row {
 	align-items: center;
-	background: #ffffff;
+	background: var(--paper-strong);
 	border: 1px solid var(--line);
 	border-left: 4px solid var(--teal);
 	border-radius: 8px;
@@ -7841,7 +7841,7 @@ section.imaging-panel {
 .telegram-external-links input,
 .telegram-visual-card-fields input,
 .telegram-checkup-delay-fields input {
-	background: #ffffff;
+	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	color: var(--ink);
@@ -7871,7 +7871,7 @@ section.imaging-panel {
 .telegram-feature-grid label,
 .telegram-voice-toggle {
 	align-items: start;
-	background: #ffffff;
+	background: var(--paper-strong);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	display: grid;
@@ -7929,7 +7929,7 @@ section.imaging-panel {
 }
 
 .telegram-preview-box {
-	background: #ffffff;
+	background: var(--paper-strong);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	display: grid;
@@ -8051,7 +8051,7 @@ section.imaging-panel {
 }
 
 .telegram-outbox-controls select {
-	background: #ffffff;
+	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	color: var(--ink);
@@ -17343,7 +17343,11 @@ body.dark-mode .document-manual-override {
 
 html.dark .quick-chip,
 [data-theme="dark"] .quick-chip,
-[data-theme="night"] .quick-chip {
+[data-theme="night"] .quick-chip,
+[data-theme="ocean"] .quick-chip,
+[data-theme="emerald"] .quick-chip,
+[data-theme="cyber_xray"] .quick-chip,
+[data-theme="contrast"] .quick-chip {
 	background: var(--paper-soft, rgba(30, 41, 59, 0.7)) !important;
 	border-color: var(--line, rgba(255, 255, 255, 0.15)) !important;
 	color: var(--ink, #f8fafc) !important;
@@ -17351,7 +17355,11 @@ html.dark .quick-chip,
 
 html.dark .quick-chip:hover,
 [data-theme="dark"] .quick-chip:hover,
-[data-theme="night"] .quick-chip:hover {
+[data-theme="night"] .quick-chip:hover,
+[data-theme="ocean"] .quick-chip:hover,
+[data-theme="emerald"] .quick-chip:hover,
+[data-theme="cyber_xray"] .quick-chip:hover,
+[data-theme="contrast"] .quick-chip:hover {
 	background: var(--paper-strong, rgba(51, 65, 85, 0.85)) !important;
 	border-color: var(--teal, #0d9488) !important;
 	color: #ffffff !important;
@@ -17360,6 +17368,10 @@ html.dark .quick-chip:hover,
 html.dark .quick-chip.active,
 [data-theme="dark"] .quick-chip.active,
 [data-theme="night"] .quick-chip.active,
+[data-theme="ocean"] .quick-chip.active,
+[data-theme="emerald"] .quick-chip.active,
+[data-theme="cyber_xray"] .quick-chip.active,
+[data-theme="contrast"] .quick-chip.active,
 .dark .quick-chip.active,
 body.dark-mode .quick-chip.active {
 	background: rgba(13, 148, 136, 0.25) !important;
@@ -17367,4 +17379,5 @@ body.dark-mode .quick-chip.active {
 	color: #5eead4 !important;
 	font-weight: 800 !important;
 }
+
 
