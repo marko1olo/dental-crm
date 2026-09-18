@@ -176,6 +176,13 @@ export const treatmentConsumablesRoutes: FastifyPluginAsync = async (
 		return reply.status(200).send(result);
 	});
 
+	// =========================================================================
+	// MANDATE 8s (CANONICAL AUTHORITY & ANTI-BLOAT LAW):
+	// Canonical master route: `apps/api/src/routes/inventory.ts` (GET /api/inventory/reorder-suggestions).
+	// This endpoint is maintained as a transparent alias under /api/treatment-consumables
+	// for backward compatibility without logic desynchronization.
+	// Both routes delegate execution to ReorderSuggestionService.getSuggestions.
+	// =========================================================================
 	// GET /reorder-suggestions — Predictive reorder point calculation
 	server.get<{ Querystring: { onlyNeedingReorder?: string | boolean } }>(
 		"/reorder-suggestions",
@@ -671,6 +678,14 @@ export const treatmentConsumablesRoutes: FastifyPluginAsync = async (
 		return result;
 	});
 
+	// =========================================================================
+	// MANDATE 8s (CANONICAL AUTHORITY & ANTI-BLOAT LAW):
+	// Canonical master route for warehouse alerts: `apps/api/src/routes/inventory.ts`
+	// (GET /api/inventory/:organizationId/alerts).
+	// This route under /api/treatment-consumables serves as a transparent alias/facade
+	// delegating directly to TreatmentConsumablesService.getInventoryAlerts, ensuring
+	// 100% parity of stock deficiency and expiration logic without code divergence.
+	// =========================================================================
 	// GET /:organizationId/alerts — Low stock & batch expiration alerts
 	server.get<{
 		Params: { organizationId: string };
@@ -800,10 +815,19 @@ export const treatmentConsumablesRoutes: FastifyPluginAsync = async (
 		}
 	});
 
+	// =========================================================================
+	// MANDATE 8s (CANONICAL AUTHORITY & ANTI-BLOAT LAW):
+	// Canonical master route: `apps/api/src/routes/inventory.ts`
+	// (POST /api/inventory/:organizationId/quick-writeoff-carpules).
+	// This endpoint is maintained as a transparent alias under /api/treatment-consumables
+	// to preserve backward compatibility for existing consumers.
+	// Both routes delegate execution to the canonical TreatmentConsumablesService.quickWriteoffCarpules
+	// with identical transaction semantics, preventing any logic desynchronization.
+	// =========================================================================
 	// POST /:organizationId/quick-writeoff-carpules — 1-Click carpules writeoff by nurse
 	server.post<{
 		Params: { organizationId: string };
-		Body: {
+		Body?: {
 			carpulesCount?: number;
 			drugName?: string;
 			visitId?: string | null;
@@ -838,6 +862,15 @@ export const treatmentConsumablesRoutes: FastifyPluginAsync = async (
 		return result;
 	});
 
+	// =========================================================================
+	// MANDATE 8s (CANONICAL AUTHORITY & ANTI-BLOAT LAW):
+	// Canonical master route: `apps/api/src/routes/inventory.ts`
+	// (POST /api/inventory/:organizationId/quick-writeoff-visit-bundle).
+	// This endpoint is maintained as a transparent alias under /api/treatment-consumables
+	// to preserve backward compatibility for existing consumers.
+	// Both routes delegate execution to the canonical TreatmentConsumablesService.quickWriteoffVisitBundle
+	// with identical transaction semantics, preventing any logic desynchronization.
+	// =========================================================================
 	// POST /:organizationId/quick-writeoff-visit-bundle — 1-клик списание набора клинического приёма
 	server.post<{
 		Params: { organizationId: string };

@@ -1161,48 +1161,35 @@ function escapeXml(value: string) {
  * в `kind` молча даёт undefined, и в SVG-предпросмотр снимка уехала бы пустая
  * подпись вместо названия исследования.
  */
+/**
+ * MANDATE 8s & CORE RULE 11 (ZERO SYNTHETIC DIORAMAS / HONEST DICOM PLACEHOLDER):
+ * Procedural synthetic dioramas (fake jaws, skulls, vector tooth curves, and 14-tooth loops)
+ * are strictly eradicated. When a raw DICOM study has no rendered bitmap preview,
+ * this function generates an honest, minimalist, technical clinical placeholder
+ * with exact metadata and medical film framing instead of procedural fiction.
+ */
 function previewSvg(study: ImagingStudy) {
-	const label = kindLabels[study.kind];
+	const label = kindLabels[study.kind] ?? "Снимок";
 	const detail = study.toothCode
 		? `Зуб ${study.toothCode}`
 		: (study.region ?? "Область не указана");
-	const anatomy =
-		study.kind === "cbct"
-			? `<circle cx="172" cy="126" r="72" fill="none" stroke="#d7fff6" stroke-width="14" opacity=".42"/>
-         <circle cx="172" cy="126" r="42" fill="none" stroke="#d7fff6" stroke-width="8" opacity=".34"/>
-         <path d="M100 126h144M172 54v144" stroke="#d7fff6" stroke-width="3" opacity=".35"/>`
-			: study.kind === "ceph"
-				? `<path d="M122 58c54-18 99 16 106 70 6 43-24 72-63 77-28 3-61-9-73-35-13-29 2-87 30-112Z" fill="none" stroke="#d7fff6" stroke-width="10" opacity=".48"/>
-           <path d="M137 101c22 10 49 12 78 2M124 148h94" stroke="#d7fff6" stroke-width="6" stroke-linecap="round" opacity=".34"/>
-           <circle cx="151" cy="112" r="8" fill="#d7fff6" opacity=".55"/>`
-				: study.kind === "opg"
-					? `<path d="M48 120c34-58 92-78 124-50 32-28 90-8 124 50" fill="none" stroke="#d7fff6" stroke-width="15" stroke-linecap="round" opacity=".45"/>
-           <path d="M58 137c28 46 198 46 228 0" fill="none" stroke="#d7fff6" stroke-width="13" stroke-linecap="round" opacity=".32"/>
-           <g opacity=".42">${Array.from({ length: 14 }, (_, index) => {
-							const x = 72 + index * 15;
-							const h = index < 7 ? 22 + index * 2 : 50 - index * 2;
-							return `<rect x="${x}" y="${118 - h / 2}" width="8" height="${h}" rx="4" fill="#d7fff6"/>`;
-						}).join("")}</g>`
-					: `<rect x="78" y="45" width="188" height="150" rx="18" fill="#102f33" stroke="#d7fff6" stroke-width="3" opacity=".86"/>
-           <path d="M124 105c10-28 34-35 48-12 13-23 40-16 48 12 8 29-12 67-28 74-11 5-15-18-20-18s-9 23-20 18c-16-7-36-45-28-74Z" fill="#d7fff6" opacity=".62"/>`;
 
 	return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 344 220" role="img" aria-label="${escapeXml(study.title)}">
-  <defs>
-    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-      <stop stop-color="#092b2e"/>
-      <stop offset="1" stop-color="#145f62"/>
-    </linearGradient>
-    <radialGradient id="glow" cx=".5" cy=".45" r=".7">
-      <stop stop-color="#eafffa" stop-opacity=".34"/>
-      <stop offset="1" stop-color="#eafffa" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect width="344" height="220" rx="18" fill="url(#bg)"/>
-  <rect x="12" y="12" width="320" height="196" rx="14" fill="url(#glow)" opacity=".9"/>
-  ${anatomy}
-  <text x="24" y="34" fill="#eafffa" font-family="Inter, Arial" font-size="17" font-weight="800">${escapeXml(label)}</text>
-  <text x="24" y="58" fill="#c9eee8" font-family="Inter, Arial" font-size="13" font-weight="700">${escapeXml(detail)}</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 344 220" role="img" aria-label="${escapeXml(study.title || label)}">
+  <rect width="344" height="220" rx="12" fill="#0a0f18"/>
+  <rect x="8" y="8" width="328" height="204" rx="8" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+  <path d="M20 32 V20 H32 M312 20 H324 V32 M20 188 V200 H32 M312 200 H324 V188" stroke="#334155" stroke-width="1.5" fill="none"/>
+  <rect x="24" y="24" width="70" height="20" rx="4" fill="#0f172a" stroke="#1e293b"/>
+  <text x="59" y="38" text-anchor="middle" fill="#06b6d4" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="700" letter-spacing="1">DICOM</text>
+  <g transform="translate(148, 60)" stroke="#334155" stroke-width="1.5" fill="none">
+    <rect x="0" y="0" width="48" height="42" rx="6" stroke="#1e293b" fill="#0f172a"/>
+    <circle cx="24" cy="21" r="11" stroke="#0ea5e9" stroke-width="1.5" opacity="0.6"/>
+    <circle cx="24" cy="21" r="4" fill="#0ea5e9" opacity="0.8"/>
+    <path d="M24 4 V8 M24 34 V38 M6 21 H10 M38 21 H42" stroke="#0ea5e9" opacity="0.4"/>
+  </g>
+  <text x="172" y="132" text-anchor="middle" fill="#f1f5f9" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700">${escapeXml(study.title || label)}</text>
+  <text x="172" y="152" text-anchor="middle" fill="#94a3b8" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="500">${escapeXml(label)}${detail ? ` • ${escapeXml(detail)}` : ""}</text>
+  <text x="172" y="182" text-anchor="middle" fill="#475569" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500">Для детального анализа откройте снимок в DICOM-просмотрщике</text>
 </svg>`;
 }
 
