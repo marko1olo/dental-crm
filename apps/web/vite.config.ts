@@ -7,8 +7,7 @@ import { VitePWA } from "vite-plugin-pwa";
 
 declare const process: { env: Record<string, string | undefined> };
 
-const apiProxyTarget =
-	process.env.DENTAL_API_PROXY_TARGET ?? "http://127.0.0.1:4100";
+const apiProxyTarget = process.env.DENTAL_API_PROXY_TARGET ?? "http://127.0.0.1:4100";
 
 // __dirname equivalent for ESM configs
 const __filename = fileURLToPath(import.meta.url);
@@ -288,14 +287,24 @@ export default defineConfig({
 						return "features-selector";
 					if (normalizedId.includes("/apps/web/src/components/settings/"))
 						return "settings-components";
-					// Cornerstone3D и DICOM-парсеры: тяжелейшие библиотеки 3D/MPR визуализации.
-					// Захватываются ДО компонентов dicom/imaging, чтобы Rollup не утаскивал их
-					// внутрь компонентов и не раздувал чанки до 4+ МБ на медленном HDD.
+					// dicom-parser и dcmjs: легковесные парсеры заголовков и тегов DICOM.
+					// Выделены в отдельный чанк от 3D WebGL движков Cornerstone3D и VTK.js,
+					// чтобы инспекция снимков и чтение метаданных не тянули многомегабайтный рантайм на медленном 5400 RPM HDD.
+					if (
+						normalizedId.includes("/node_modules/dicom-parser") ||
+						normalizedId.includes("/node_modules/dcmjs")
+					)
+						return "dicom-parser-vendor";
+					// @kitware/vtk.js: тяжелейший научный WebGL-конвейер визуализации объемных КТ/МПР данных.
+					// Изолирован в отдельный vendor-чанк, исключая замедление парсинга основного бандла на Celeron/Pentium.
+					if (
+						normalizedId.includes("/node_modules/@kitware/vtk.js") ||
+						normalizedId.includes("/node_modules/@kitware/")
+					)
+						return "vtk-vendor";
+					// Cornerstone3D и математические библиотеки матриц gl-matrix / hammerjs
 					if (
 						normalizedId.includes("/node_modules/@cornerstonejs/") ||
-						normalizedId.includes("/node_modules/dcmjs") ||
-						normalizedId.includes("/node_modules/dicom-parser") ||
-						normalizedId.includes("/node_modules/@kitware/vtk.js") ||
 						normalizedId.includes("/node_modules/gl-matrix") ||
 						normalizedId.includes("/node_modules/hammerjs")
 					)
@@ -356,11 +365,18 @@ export default defineConfig({
 						normalizedId.includes("/node_modules/d3/")
 					)
 						return "d3-vendor";
+					// react-rnd выносим до react-vendor, иначе includes("/node_modules/react") захватывает его
+					if (normalizedId.includes("/node_modules/react-rnd"))
+						return "rnd-vendor";
 					if (
-						normalizedId.includes("/node_modules/react") ||
-						normalizedId.includes("/node_modules/react-dom")
+						normalizedId.includes("/node_modules/react/") ||
+						normalizedId.includes("/node_modules/react-dom/") ||
+						normalizedId.endsWith("/node_modules/react") ||
+						normalizedId.endsWith("/node_modules/react-dom")
 					)
 						return "react-vendor";
+					// lucide-react: векторные иконки интерфейса. Выделены в отдельный чанк,
+					// чтобы критический клинический путь (расписание, визит, карточка) стартовал < 1.5 сек.
 					if (normalizedId.includes("/node_modules/lucide-react"))
 						return "lucide-vendor";
 					if (normalizedId.includes("/node_modules/framer-motion"))
@@ -369,12 +385,15 @@ export default defineConfig({
 						return "query-vendor";
 					if (normalizedId.includes("/node_modules/zod"))
 						return "schema-vendor";
+					// three.js и 3D-математика: отдельный чанк для трехмерных моделей зубов и имплантатов.
 					if (
 						normalizedId.includes("/node_modules/three/") ||
 						normalizedId.includes("/node_modules/three") ||
-						normalizedId.includes("/node_modules/@types/three")
+						normalizedId.includes("/node_modules/@types/three") ||
+						normalizedId.includes("/node_modules/three-stdlib")
 					)
 						return "three-vendor";
+					// date-fns и dayjs: календарная математика слотов расписания.
 					if (
 						normalizedId.includes("/node_modules/date-fns") ||
 						normalizedId.includes("/node_modules/dayjs")
@@ -401,8 +420,9 @@ export default defineConfig({
 						normalizedId.endsWith("/apps/web/src/AnalyticsView.tsx")
 					)
 						return "analytics-components";
-					if (normalizedId.includes("/node_modules/react-rnd"))
-						return "rnd-vendor";
+					// Изоляция телефонии и софтфона от основного бандла рабочего места
+					if (normalizedId.includes("/apps/web/src/components/telephony/"))
+						return "telephony-components";
 					if (normalizedId.includes("/apps/web/src/components/lab/"))
 						return "dental-lab";
 					if (normalizedId.includes("/apps/web/src/components/inventory/"))

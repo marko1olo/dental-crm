@@ -39,15 +39,26 @@ import {
 	Waves,
 	Zap,
 } from "lucide-react";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { ClinicControlPill } from "./components/Header";
-import {
-	IncomingCallPopup,
-	resolveTelephonyWsUrl,
-} from "./components/telephony/IncomingCallPopup";
-import { TelephonyFloatingWidget } from "./components/telephony/TelephonyFloatingWidget";
+import { resolveTelephonyWsUrl } from "./components/telephony/IncomingCallPopup";
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
 import { WorkspaceActionsMount } from "./components/workspaceActions/WorkspaceActions";
+import { lazyWithRetry } from "./lib/lazyWithRetry";
+
+// Ленивая загрузка тяжелых виджетов телефонии (160+ КБ кода).
+// Не раздувает стартовый бандл рабочего места врача и исключает тормоза на HDD 5400 RPM.
+const LazyIncomingCallPopup = lazyWithRetry(() =>
+	import("./components/telephony/IncomingCallPopup").then((m) => ({
+		default: m.IncomingCallPopup,
+	})),
+);
+
+const LazyTelephonyFloatingWidget = lazyWithRetry(() =>
+	import("./components/telephony/TelephonyFloatingWidget").then((m) => ({
+		default: m.TelephonyFloatingWidget,
+	})),
+);
 import { useWebsocket } from "./hooks/useWebsocket";
 import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
 import {
@@ -100,9 +111,9 @@ export {
 	appViews,
 	getFallbackAppView,
 	getFilteredAppViews,
-	IncomingCallPopup,
+	LazyIncomingCallPopup as IncomingCallPopup,
 	resolveTelephonyWsUrl,
-	TelephonyFloatingWidget,
+	LazyTelephonyFloatingWidget as TelephonyFloatingWidget,
 	viewHints,
 	viewLabels,
 };
@@ -1118,11 +1129,13 @@ export function WorkspaceTopbar({
 				) : null}
 			</div>
 			{!isDoctorMode ? (
-				isIncomingCall ? (
-					<IncomingCallPopup />
-				) : (
-					<TelephonyFloatingWidget defaultExpanded={false} />
-				)
+				<Suspense fallback={null}>
+					{isIncomingCall ? (
+						<LazyIncomingCallPopup />
+					) : (
+						<LazyTelephonyFloatingWidget defaultExpanded={false} />
+					)}
+				</Suspense>
 			) : null}
 		</header>
 	);

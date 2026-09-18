@@ -412,6 +412,7 @@ html.low-spec-mode .transition-all {
 .workspace-section,
 .documents-archive-list,
 .patient-admin-panel,
+.patient-list,
 .analytics-chart-container,
 .service-pricelist-table-container,
 .warehouse-table-container,
@@ -422,7 +423,10 @@ html.low-spec-mode .transition-all {
 .tab-content,
 .tab-pane,
 .invoices-table-container,
+.invoices-list,
 .billing-history-container,
+.visit-history-list,
+.visits-history-feed,
 .treatment-plan-view,
 .odontogram-module-container,
 .finance-split,
@@ -432,7 +436,7 @@ html.low-spec-mode .transition-all {
 	contain-intrinsic-size: auto 300px;
 }
 
-/* Virtualized long lists, table rows and cards (Mandate 8c, 8n - 40px CSS containment) */
+/* Virtualized long lists, table rows and cards (Mandate 8c, 8n - 48px CSS containment for 60 FPS on HDD) */
 /* 1. Schedule */
 .today-schedule-item,
 .appointment-card,
@@ -453,7 +457,7 @@ html.low-spec-mode .transition-all {
 .patient-search-item,
 .patient-history-row,
 .curator-patient-card,
-/* 3. Cashier invoices register */
+/* 3. Cashier invoices and finance register */
 .invoice-card,
 .invoices-table tbody tr,
 .invoices-data-table tbody tr,
@@ -497,7 +501,17 @@ html.low-spec-mode .transition-all {
 .lab-order-card,
 .lab-order-row,
 .lab-orders-table tbody tr,
-/* Additional lists & rows */
+/* 7. Visit history, EMK & clinical diaries */
+.visit-history-item,
+.visit-history-card,
+.visit-history-entry,
+.visit-history-row,
+.diary-timeline-item,
+.emk-history-row,
+.emk-timeline-card,
+.soap-protocol-card,
+.clinical-protocol-card,
+/* 8. Additional lists & rows */
 .communication-task,
 .communication-event-row,
 .message-delivery-row,
@@ -507,13 +521,10 @@ html.low-spec-mode .transition-all {
 .pricelist-data-table tbody tr,
 .pricelist-row,
 .cd-template-item-card,
-.cd-template-list,
-.visit-history-card,
-.soap-protocol-card,
-.clinical-protocol-card {
-	contain: content;
+.cd-template-list {
+	contain: paint layout;
 	content-visibility: auto;
-	contain-intrinsic-size: 1px 40px;
+	contain-intrinsic-size: 1px 48px;
 }
 
 /* --------------------------------------------------------------------------

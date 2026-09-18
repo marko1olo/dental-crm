@@ -18,6 +18,40 @@ export interface LazyRetryOptions {
 }
 
 /**
+ * Определение слабых ПК с медленными HDD 5400 RPM и малым объемом RAM (<= 4GB).
+ * На таких устройствах очередь дискового ввода-вывода (I/O) и подкачка страниц (swap)
+ * вызывают периодические задержки чтения скриптов до 1-3 секунд.
+ */
+export function isLowSpecHardware(): boolean {
+	if (typeof document !== "undefined") {
+		const docEl = document.documentElement;
+		if (
+			docEl.getAttribute("data-low-spec") === "true" ||
+			docEl.getAttribute("data-hardware-tier") === "low" ||
+			docEl.classList.contains("low-spec-mode")
+		) {
+			return true;
+		}
+	}
+	if (typeof navigator !== "undefined") {
+		const nav = navigator as {
+			hardwareConcurrency?: number;
+			deviceMemory?: number;
+		};
+		if (
+			typeof nav.hardwareConcurrency === "number" &&
+			nav.hardwareConcurrency <= 4
+		) {
+			return true;
+		}
+		if (typeof nav.deviceMemory === "number" && nav.deviceMemory <= 4) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
  * Проверяет, является ли ошибка следствием сбоя чтения или загрузки чанка:
  * на медленном 5400 RPM HDD диск может не успеть отдать файл, либо после деплоя
  * обновился хэш в имени чанка.
@@ -34,7 +68,12 @@ export function isChunkLoadError(error: unknown): boolean {
 		message.includes("importing a module script failed") ||
 		message.includes("networkerror") ||
 		message.includes("failed to load") ||
-		message.includes("chunkloaderror")
+		message.includes("chunkloaderror") ||
+		message.includes("load failed") ||
+		message.includes("dynamically imported module") ||
+		message.includes("unable to load") ||
+		message.includes("error resolving module specifier") ||
+		message.includes("timed out")
 	);
 }
 
@@ -46,9 +85,10 @@ export async function retryDynamicImport<T>(
 	importer: () => Promise<T>,
 	options: LazyRetryOptions = {},
 ): Promise<T> {
+	const isLowSpec = isLowSpecHardware();
 	const {
-		maxRetries = 3,
-		intervalMs = 500,
+		maxRetries = isLowSpec ? 4 : 3,
+		intervalMs = isLowSpec ? 600 : 500,
 		backoffFactor = 2,
 		chunkReloadKey,
 		onRetry,
@@ -129,3 +169,15 @@ export function lazyWithNamedRetry<
 			: ComponentType<unknown>
 	>;
 }
+
+/**
+ * Упреждающая фоновая предзагрузка чанка с защитой от сбоев I/O на медленных HDD 5400 RPM.
+ * Позволяет заранее прогревать тяжелые модули в моменты простоя (idle).
+ */
+export function preloadWithRetry<T>(
+	importer: () => Promise<T>,
+	options?: LazyRetryOptions,
+): Promise<T> {
+	return retryDynamicImport(importer, options);
+}
+
