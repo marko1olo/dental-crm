@@ -4966,11 +4966,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					<div className="w-7 h-7 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
 						<Box className="w-3.5 h-3.5" />
 					</div>
-					<div className="flex flex-col min-w-0 justify-center">
+					<div className="flex flex-col min-w-0 justify-center gap-0.5">
 						<div className="flex items-center gap-1.5">
 							<h2
 								id={`cbct-studio-title-${modalId}`}
-								className="text-xs font-bold text-zinc-100 tracking-wide flex items-center gap-1.5 whitespace-nowrap"
+								className="text-xs font-bold text-zinc-100 tracking-wide flex items-center gap-1.5 whitespace-nowrap leading-none"
 							>
 								3D CBCT Studio
 								<span className="text-[9px] px-1 py-0.2 rounded bg-zinc-900 text-zinc-300 font-mono border border-zinc-800">
