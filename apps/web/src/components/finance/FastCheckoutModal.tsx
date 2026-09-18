@@ -129,6 +129,15 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	const [pendingOfflineCount, setPendingOfflineCount] = useState<number>(0);
 	const [isFlushingQueue, setIsFlushingQueue] = useState<boolean>(false);
 
+	// Acquiring & Fiscalization Emergency Fault-Tolerance (Mandates 8e, 8n)
+	const [interruptedPaymentState, setInterruptedPaymentState] = useState<{
+		isInterrupted: boolean;
+		reason: string;
+		amountRub: number;
+		method: string;
+	} | null>(null);
+	const [isSubmittingManualCard, setIsSubmittingManualCard] = useState<boolean>(false);
+
 	useEffect(() => {
 		if (isOpen && initialPaymentMethod) {
 			setActiveMethod(initialPaymentMethod);
@@ -757,6 +766,12 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 				err instanceof Error ? err.message : "Аварийный сбой связи с ККТ",
 				compositeIdempotencyKey
 			);
+			setInterruptedPaymentState({
+				isInterrupted: true,
+				reason: err instanceof Error ? err.message : "Аварийный сбой связи с ККТ",
+				amountRub: targetBillRub,
+				method: activeMethod,
+			});
 			setIsOfflineBuffered(true);
 			showToast(
 				"ККТ не отвечает: чек сохранен в локальный буфер отложенной фискализации 54-ФЗ. Пациент отпущен!",
@@ -772,6 +787,156 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 				inFlightRef.current = false;
 				onClose();
 			}, 600);
+		}
+	};
+
+	// Acquiring Emergency Collision Resolver: Manual Card Terminal Confirmation (Mandates 8e, 8n)
+	const handleManualCardTerminalConfirm = async (overrideAmountRub?: number) => {
+		const amountRub = overrideAmountRub ?? targetBillRub;
+		setIsSubmittingManualCard(true);
+		try {
+			const rawUuid = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+				? crypto.randomUUID()
+				: `idemp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+			const compositeIdempotencyKey = createFiscalCompositeIdempotencyKey(
+				rawUuid,
+				`manual-card:${orderId}:${amountRub}`
+			);
+
+			// 1. Buffer receipt into offline queue so 54-FZ is preserved without blocking the counter
+			FiscalReceiptQueueManager.enqueueReceipt(
+				{
+					operationType: "income",
+					customerContact: patientPhone || patientEmail || "",
+					cashierFullName: effectiveCashierFullName,
+					totalRub: amountRub,
+					items: [
+						{
+							name: "Стоматологические услуги по плану лечения",
+							priceRub: amountRub,
+							quantity: 1,
+							amountRub: amountRub,
+							paymentMethod: "full_payment",
+							paymentSubject: "service",
+						},
+					],
+					cashRub: 0,
+					electronicRub: amountRub,
+					prepaidRub: 0,
+					taxationSystem: "usn_income_expense",
+				},
+				"Оплата картой подтверждена на терминале вручную (без повторного списания с карты)",
+				compositeIdempotencyKey
+			);
+			setIsOfflineBuffered(true);
+
+			// 2. Record payment in CRM billing
+			if (patientId && amountRub > 0 && typeof fetch === "function") {
+				const headers = denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": compositeIdempotencyKey,
+				});
+				await fetch("/api/billing/payments", {
+					method: "POST",
+					headers,
+					body: JSON.stringify({
+						patientId,
+						amountRub,
+						method: "card",
+						clientMutationId: compositeIdempotencyKey,
+						note: `Оплата картой подтверждена на терминале вручную (${effectiveCashierFullName}): ${amountRub} ₽ [Без повторного списания с карты]`,
+					}),
+				}).catch((err) => {
+					console.warn("[FastCheckoutModal] Manual card payment recording warning:", err);
+				});
+			}
+
+			showToast(
+				`Оплата картой на сумму ${amountRub} ₽ подтверждена вручную на терминале. Чек поставлен в очередь фискализации, визит закрыт!`,
+				"success",
+				5000
+			);
+
+			if (onPaymentComplete) {
+				const payload = generate54FzFiscalPayload(
+					{
+						orderId,
+						totalBillKop: Math.round(amountRub * 100),
+						payments: [{ method: "bank_card", amountKop: Math.round(amountRub * 100) }],
+						patientPhone,
+						patientEmail,
+						clientType,
+						buyerInn: buyerInn || undefined,
+						buyerName: buyerName || undefined,
+						isElectronicReceiptOnly,
+						idempotencyKey: compositeIdempotencyKey,
+					},
+					{
+						paymentMethodTag1214: stageCalc.ffdTag1214,
+						paymentSubjectTag1212: stageCalc.ffdTag1212,
+						idempotencyKey: compositeIdempotencyKey,
+						isElectronicReceiptOnly,
+						offlineBuffered: true,
+					}
+				);
+				onPaymentComplete({ ...payload, offlineBuffered: true });
+			}
+
+			setInterruptedPaymentState(null);
+			setTimeout(() => {
+				setIsSubmittingManualCard(false);
+				onClose();
+			}, 400);
+		} catch (err: unknown) {
+			const errMsg = err instanceof Error ? err.message : "Ошибка ручного подтверждения оплаты";
+			showToast(errMsg, "error");
+			setIsSubmittingManualCard(false);
+		}
+	};
+
+	// 54-FZ Fiscalization Retry: Resends receipt to KKT/OFD without altering account balance or ledger (Mandate 8e)
+	const handleRetryFiscalizationDirect = async () => {
+		setIsFlushingQueue(true);
+		try {
+			const printResult = await KktLanPrinterService.printReceipt({
+				operationType: "income",
+				customerContact: patientPhone || patientEmail || "",
+				cashierFullName: effectiveCashierFullName,
+				totalRub: targetBillRub,
+				items: [
+					{
+						name: "Стоматологические услуги по плану лечения",
+						priceRub: targetBillRub,
+						quantity: 1,
+						amountRub: targetBillRub,
+						paymentMethod: "full_payment",
+						paymentSubject: "service",
+					},
+				],
+				cashRub: cashAmountRub,
+				electronicRub: cardAmountRub + sbpAmountRub,
+				prepaidRub: depositAmountRub + loyaltyAmountRub,
+				taxationSystem: "usn_income_expense",
+			});
+
+			if (printResult.success) {
+				showToast("Чек 54-ФЗ успешно фискализирован на ККТ без повторного изменения баланса!", "success", 4500);
+				setInterruptedPaymentState(null);
+			} else {
+				const res = await FiscalReceiptQueueManager.flushAllPending();
+				if (res.failedCount === 0 && res.flushedCount > 0) {
+					showToast(`Очередь фискализации успешно отправлена в ОФД (${res.flushedCount} чеков)!`, "success");
+					setInterruptedPaymentState(null);
+				} else {
+					showToast(printResult.error || "ККТ недоступна. Чек сохранён в очереди", "warning");
+				}
+			}
+		} catch (err: unknown) {
+			const errMsg = err instanceof Error ? err.message : "Сбой связи при повторной фискализации";
+			showToast(errMsg, "error");
+		} finally {
+			setIsFlushingQueue(false);
 		}
 	};
 
@@ -829,6 +994,59 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 
 				{/* Body Content */}
 				<div className="p-3 sm:p-4 pb-24 overflow-y-auto flex flex-col gap-4 flex-1 min-h-0">
+					{/* Acquiring & Fiscalization Emergency Fault-Tolerance Banner (Mandates 8e, 8n) */}
+					{interruptedPaymentState?.isInterrupted && (
+						<div
+							className="p-3.5 rounded-xl bg-amber-500/15 dark:bg-amber-950/50 border border-amber-500/40 space-y-2.5"
+							data-testid="banner-fast-checkout-interrupted"
+						>
+							<div className="flex items-start justify-between gap-2">
+								<div className="flex items-center gap-2">
+									<AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+									<div>
+										<h4 className="text-xs font-bold text-amber-900 dark:text-amber-200 m-0">
+											Внимание: обрыв связи или задержка ответа ККТ / эквайринга
+										</h4>
+										<p className="text-[11px] text-amber-800 dark:text-amber-300 m-0 leading-tight">
+											{interruptedPaymentState.reason}. Если оплата по терминалу прошла успешно, подтвердите её вручную без повторного списания с карты пациента.
+										</p>
+									</div>
+								</div>
+								<button
+									type="button"
+									onClick={() => setInterruptedPaymentState(null)}
+									className="text-amber-600 dark:text-amber-400 hover:text-amber-800 text-xs font-bold cursor-pointer"
+								>
+									Скрыть
+								</button>
+							</div>
+							<div className="flex items-center gap-2 flex-wrap pt-1">
+								<button
+									type="button"
+									onClick={() => handleManualCardTerminalConfirm(interruptedPaymentState.amountRub)}
+									disabled={isSubmittingManualCard}
+									title={isSubmittingManualCard ? "Идет фиксация..." : "Зафиксировать оплату в CRM без повторного списания с карты"}
+									className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+									data-testid="btn-fast-manual-card-confirm"
+								>
+									<Check className="w-4 h-4" />
+									<span>Оплата картой подтверждена на терминале вручную</span>
+								</button>
+								<button
+									type="button"
+									onClick={handleRetryFiscalizationDirect}
+									disabled={isFlushingQueue}
+									title={isFlushingQueue ? "Отправка на ККТ..." : "Повторно отправить чек на фискализацию в ККТ без повторного списания"}
+									className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+									data-testid="btn-fast-retry-fiscalization"
+								>
+									<RefreshCw size={14} className={isFlushingQueue ? "animate-spin" : ""} />
+									<span>Повторить фискализацию чека</span>
+								</button>
+							</div>
+						</div>
+					)}
+
 					{/* Step-by-Step Guidance Ribbon & Autosave Status */}
 					<div className="flex items-center gap-2 py-1.5 px-3 rounded-xl bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-xs flex-wrap">
 						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300 min-w-0">
@@ -1851,6 +2069,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								type="button"
 								onClick={handleFlushQueue}
 								disabled={isFlushingQueue}
+								title={isFlushingQueue ? "Выполняется синхронизация очереди с ОФД..." : "Отправить чеки из очереди на ККТ"}
 								className="min-h-[44px] px-3.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
 							>
 								<RefreshCw size={14} className={isFlushingQueue ? "animate-spin" : ""} />
@@ -1957,6 +2176,36 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 										>
 											<WifiOff className="w-3.5 h-3.5 text-amber-600" />
 											<span>Отложить в офлайн-буфер</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												setIsMoreMenuOpen(false);
+												void handleManualCardTerminalConfirm();
+											}}
+											disabled={isSubmittingManualCard}
+											title={isSubmittingManualCard ? "Идет фиксация..." : "Зафиксировать оплату в CRM без повторного списания с карты"}
+											className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-soft,#f8fafc)] text-blue-700 dark:text-blue-300 font-bold flex items-center gap-1.5 cursor-pointer"
+											data-testid="btn-fast-manual-card-confirm-menu"
+										>
+											<CreditCard className="w-3.5 h-3.5 text-blue-600" />
+											<span>Оплата картой подтверждена на терминале</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												setIsMoreMenuOpen(false);
+												void handleRetryFiscalizationDirect();
+											}}
+											disabled={isFlushingQueue}
+											title={isFlushingQueue ? "Отправка на ККТ..." : "Повторно отправить чек на фискализацию без изменения баланса"}
+											className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-soft,#f8fafc)] text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-1.5 cursor-pointer"
+											data-testid="btn-fast-retry-fiscalization-menu"
+										>
+											<RefreshCw className="w-3.5 h-3.5 text-emerald-600" />
+											<span>Повторить фискализацию чека</span>
 										</button>
 									</div>
 								)}

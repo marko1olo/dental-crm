@@ -416,6 +416,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	const [splitCertificateRub, setSplitCertificateRub] = useState<number>(0);
 	const [splitBonusRub, setSplitBonusRub] = useState<number>(0);
 
+	// Acquiring & 54-FZ Emergency Collision Resolution (Mandates 8e, 8n)
+	const [interruptedPaymentState, setInterruptedPaymentState] = useState<{
+		isInterrupted: boolean;
+		reason: string;
+		method: string;
+		amountRub: number;
+		lastMutationId?: string;
+	} | null>(null);
+	const [isSubmittingManualCard, setIsSubmittingManualCard] = useState<boolean>(false);
+	const [fiscalizationRetryPending, setFiscalizationRetryPending] = useState<boolean>(false);
+	const [isRetryingFiscalization, setIsRetryingFiscalization] = useState<boolean>(false);
+
 	// 54-FZ Buyer Details & Cashier Autonomy state (Mandates 8e & 8n)
 	const [payerType, setPayerType] = useState<PayerType>("physical");
 	const [buyerInn, setBuyerInn] = useState<string>("");
@@ -890,6 +902,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			const errorMsg =
 				err instanceof Error ? err.message : "Сбой соединения при приёме оплаты наличными";
 			showToast(errorMsg, "error");
+			setInterruptedPaymentState({
+				isInterrupted: true,
+				reason: errorMsg,
+				method: "cash",
+				amountRub: effectiveAmountRub,
+			});
 		} finally {
 			setIsSubmittingCash(false);
 		}
@@ -1019,6 +1037,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		} catch (err: unknown) {
 			const errorMsg = err instanceof Error ? err.message : "Сбой соединения при приёме комбинированной оплаты";
 			showToast(errorMsg, "error");
+			setInterruptedPaymentState({
+				isInterrupted: true,
+				reason: errorMsg,
+				method: "split",
+				amountRub: totalDueRub,
+			});
 		} finally {
 			setIsSubmittingSplit(false);
 		}
@@ -1068,6 +1092,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					(errorData && typeof errorData.message === "string" && errorData.message) ||
 					`Ошибка списания со счета: HTTP ${res.status}`;
 				showToast(errorMsg, "error");
+				setInterruptedPaymentState({
+					isInterrupted: true,
+					reason: errorMsg,
+					method: source,
+					amountRub: totalDueRub,
+				});
 				return;
 			}
 
@@ -1091,6 +1121,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		} catch (err: unknown) {
 			const errorMsg = err instanceof Error ? err.message : "Сбой соединения при списании со счета";
 			showToast(errorMsg, "error");
+			setInterruptedPaymentState({
+				isInterrupted: true,
+				reason: errorMsg,
+				method: source,
+				amountRub: totalDueRub,
+			});
 		} finally {
 			setIsSubmittingDeposit(false);
 		}
@@ -1131,6 +1167,126 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 				"info",
 				3500,
 			);
+		}
+	};
+
+	// Acquiring Emergency Collision Resolver: Manual Card Terminal Confirmation (Mandates 8e, 8n)
+	const handleManualCardTerminalConfirm = async (overrideAmountRub?: number) => {
+		const amountToConfirm = overrideAmountRub ?? (interruptedPaymentState?.amountRub || totalDueRub);
+		setIsSubmittingManualCard(true);
+		try {
+			const clientMutationId = createCompositeIdempotencyKey(
+				`manual-card:${Date.now()}-${++paymentMutationSeq}`,
+				{ patientId, amountRub: amountToConfirm, method: "card", manualConfirmed: true }
+			);
+			const headers = denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": clientMutationId,
+			});
+
+			const activeCategoryTitle =
+				STOMX_CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name || "Оплата услуг";
+			const activeBoxTitle =
+				STOMX_CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
+
+			const res = await fetch("/api/billing/payments", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					patientId,
+					amountRub: amountToConfirm,
+					method: "card",
+					cashBoxType: selectedCashBoxType,
+					receiptTypeAlias: selectedReceiptAlias,
+					cashFlowCategory: activeCategoryTitle,
+					visitId: visitId || null,
+					documentId: documentId || (invoiceId ? invoiceId : null),
+					clientMutationId,
+					note: `Оплата картой подтверждена на терминале вручную (${amountToConfirm} ₽ • ${effectiveCashier}) [Без повторного списания с карты] [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`,
+				}),
+			});
+
+			if (!res.ok) {
+				const errData = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+				const errMsg =
+					(errData && typeof errData.message === "string" && errData.message) ||
+					`Ошибка фиксации ручного подтверждения: HTTP ${res.status}`;
+				showToast(errMsg, "error");
+				setInterruptedPaymentState({
+					isInterrupted: true,
+					reason: errMsg,
+					method: "card",
+					amountRub: amountToConfirm,
+					lastMutationId: clientMutationId,
+				});
+				return;
+			}
+
+			const paymentData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+			showToast(`Оплата картой подтверждена на терминале вручную (${amountToConfirm} ₽). Платеж сохранен!`, "success", 5000);
+			setInterruptedPaymentState(null);
+			setFiscalizationRetryPending(true);
+			onSuccess({
+				method: "card",
+				amountKopecks: rubToKopecks(amountToConfirm),
+				cardChargedManually: true,
+				discountRub,
+				discountPercent: effectiveDiscountPercent,
+				rawTotalRub: rawTotalDueRub,
+				discountReason: discountReason || undefined,
+				...paymentData,
+			});
+			onClose();
+		} catch (err: unknown) {
+			const errMsg = err instanceof Error ? err.message : "Сбой связи при ручном подтверждении терминала";
+			showToast(errMsg, "error");
+			setInterruptedPaymentState({
+				isInterrupted: true,
+				reason: errMsg,
+				method: "card",
+				amountRub: amountToConfirm,
+			});
+		} finally {
+			setIsSubmittingManualCard(false);
+		}
+	};
+
+	// 54-FZ Fiscalization Retry: Resends receipt to KKT/OFD without altering account balance or ledger (Mandate 8e)
+	const handleRetryFiscalization = async () => {
+		setIsRetryingFiscalization(true);
+		try {
+			const printRes = await hardwarePrinter.printFiscalReceipt({
+				clinicName: clinicLegalName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				cashierFullName: effectiveCashier,
+				customerContact: patientPhone || patientName || "",
+				operationType: "income",
+				items: [
+					{
+						name: "Стоматологические услуги по плану лечения",
+						priceRub: totalDueRub,
+						quantity: 1,
+						amountRub: totalDueRub,
+						vatRate: "vat_0",
+					},
+				],
+				totalRub: totalDueRub,
+				electronicRub: activeMethod === "cash" ? 0 : totalDueRub,
+				cashRub: activeMethod === "cash" ? totalDueRub : 0,
+			});
+
+			if (printRes && printRes.status === "error") {
+				showToast(`Ошибка фискализации на ККТ: ${printRes.message || "Устройство недоступно"}`, "error");
+				setFiscalizationRetryPending(true);
+			} else {
+				showToast("Чек повторно отправлен на фискализацию в ККТ (баланс пациента не затронут)!", "success", 5000);
+				setFiscalizationRetryPending(false);
+			}
+		} catch (err: unknown) {
+			const errMsg = err instanceof Error ? err.message : "Ошибка повторной фискализации чека";
+			showToast(errMsg, "error");
+			setFiscalizationRetryPending(true);
+		} finally {
+			setIsRetryingFiscalization(false);
 		}
 	};
 
@@ -1782,6 +1938,85 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						)}
 					</div>
 
+					{/* Acquiring & 54-FZ Emergency Collision Resolution Banner (Mandates 8e, 8n) */}
+					{interruptedPaymentState?.isInterrupted && (
+						<div
+							className="p-3.5 rounded-xl bg-amber-500/15 dark:bg-amber-950/50 border border-amber-500/40 space-y-2.5"
+							data-testid="banner-interrupted-payment-recovery"
+						>
+							<div className="flex items-start justify-between gap-2">
+								<div className="flex items-center gap-2">
+									<AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+									<div>
+										<h4 className="text-xs font-bold text-amber-900 dark:text-amber-200 m-0">
+											Аварийная ситуация: обрыв связи / тайм-аут эквайринга
+										</h4>
+										<p className="text-[11px] text-amber-800 dark:text-amber-300 m-0 leading-tight">
+											{interruptedPaymentState.reason}. Если терминал уже списал средства с карты или выдал слип-чек, подтвердите оплату вручную без повторного списания с карты!
+										</p>
+									</div>
+								</div>
+								<button
+									type="button"
+									onClick={() => setInterruptedPaymentState(null)}
+									className="text-amber-600 dark:text-amber-400 hover:text-amber-800 text-xs font-bold cursor-pointer"
+								>
+									Скрыть
+								</button>
+							</div>
+							<div className="flex items-center gap-2 flex-wrap pt-1">
+								<button
+									type="button"
+									onClick={() => handleManualCardTerminalConfirm(interruptedPaymentState.amountRub)}
+									disabled={isSubmittingManualCard}
+									title={isSubmittingManualCard ? "Идет фиксация..." : "Зафиксировать оплату в CRM без повторного списания с карты"}
+									className="min-h-[36px] px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+									data-testid="btn-recovery-manual-card-confirm"
+								>
+									<CheckCircle size={14} />
+									<span>Оплата картой подтверждена на терминале вручную</span>
+								</button>
+								<button
+									type="button"
+									onClick={handleRetryFiscalization}
+									disabled={isRetryingFiscalization}
+									title={isRetryingFiscalization ? "Идет отправка на ККТ..." : "Повторно отправить чек на фискализацию в ККТ/ОФД без изменения баланса"}
+									className="min-h-[36px] px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+									data-testid="btn-recovery-retry-fiscalization"
+								>
+									<RotateCcw size={14} className={isRetryingFiscalization ? "animate-spin" : ""} />
+									<span>Повторить фискализацию чека</span>
+								</button>
+							</div>
+						</div>
+					)}
+
+					{/* 54-FZ Fiscalization Retry Banner */}
+					{fiscalizationRetryPending && !interruptedPaymentState?.isInterrupted && (
+						<div
+							className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-between flex-wrap gap-2 text-xs"
+							data-testid="banner-fiscalization-pending"
+						>
+							<div className="flex items-center gap-2">
+								<Printer size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
+								<span className="font-semibold text-blue-950 dark:text-blue-200">
+									Платёж сохранён в базе CRM. Требуется повторить печать фискального чека 54-ФЗ?
+								</span>
+							</div>
+							<button
+								type="button"
+								onClick={handleRetryFiscalization}
+								disabled={isRetryingFiscalization}
+								title={isRetryingFiscalization ? "Печать..." : "Отправить чек на фискализатор ККТ без повторного изменения баланса пациента"}
+								className="min-h-[32px] px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+								data-testid="btn-fiscalization-retry-direct"
+							>
+								<RotateCcw size={13} className={isRetryingFiscalization ? "animate-spin" : ""} />
+								<span>Повторить фискализацию чека</span>
+							</button>
+						</div>
+					)}
+
 					{totalDueRub === 0 && (
 						<div
 							className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 flex items-center justify-between gap-3 flex-wrap"
@@ -1817,19 +2052,41 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					)}
 
 					{activeMethod === "card_terminal" || activeMethod === "sberpay_qr" || activeMethod === "biometry" ? (
-						<SberPayIntegration
-							patientId={patientId}
-							patientName={patientName}
-							amountKopecks={discountCalc.totalDueKopecks}
-							invoiceId={invoiceId}
-							visitId={visitId}
-							documentId={documentId}
-							onPaymentSuccess={handleSberSuccess}
-							onSelectAlternativeMethod={(alt) => {
-								if (alt === "cash") setActiveMethod("cash");
-								if (alt === "deposit") setActiveMethod("family_deposit");
-							}}
-						/>
+						<div className="space-y-3">
+							<SberPayIntegration
+								patientId={patientId}
+								patientName={patientName}
+								amountKopecks={discountCalc.totalDueKopecks}
+								invoiceId={invoiceId}
+								visitId={visitId}
+								documentId={documentId}
+								onPaymentSuccess={handleSberSuccess}
+								onSelectAlternativeMethod={(alt) => {
+									if (alt === "cash") setActiveMethod("cash");
+									if (alt === "deposit") setActiveMethod("family_deposit");
+								}}
+							/>
+							{/* Standalone manual terminal fallback (Mandates 8e, 8n) */}
+							<div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-between flex-wrap gap-2 text-xs">
+								<div className="flex items-center gap-2">
+									<ShieldCheck size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
+									<span className="font-medium text-[var(--ink,#0f172a)]">
+										Карта списана на автономном терминале или эквайринг подвис?
+									</span>
+								</div>
+								<button
+									type="button"
+									onClick={() => handleManualCardTerminalConfirm()}
+									disabled={isSubmittingManualCard}
+									title={isSubmittingManualCard ? "Идет фиксация..." : "Зафиксировать оплату в CRM без повторного списания с карты"}
+									className="min-h-[36px] px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+									data-testid="btn-manual-terminal-confirm"
+								>
+									<CheckCircle size={14} />
+									<span>Оплата картой подтверждена на терминале вручную</span>
+								</button>
+							</div>
+						</div>
 					) : activeMethod === "sbp_qr" ? (
 						<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-3" data-testid="sbp-qr-embedded-container">
 							<SbpPaymentQrModal
@@ -2518,6 +2775,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								type="button"
 								onClick={handleSplitSubmit}
 								disabled={isSubmittingSplit}
+								title={isSubmittingSplit ? "Идет фиксация комбинированной оплаты..." : undefined}
 								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all min-w-0 truncate"
 								data-testid="btn-split-submit-footer"
 							>
@@ -2531,6 +2789,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								type="button"
 								disabled={isSubmittingDeposit || (patientDepositRub === 0 && patientFamilyBalanceRub === 0)}
 								onClick={() => handleDepositOrPartialCombo(patientDepositRub >= totalDueRub ? "deposit" : "family")}
+								title={
+									isSubmittingDeposit
+										? "Идет списание со счета..."
+										: patientDepositRub === 0 && patientFamilyBalanceRub === 0
+											? "На лицевом и семейном счетах пациента нет средств (0 ₽)"
+											: undefined
+								}
 								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all disabled:opacity-50 min-w-0 truncate"
 								data-testid="btn-deposit-submit-footer"
 							>
@@ -2541,6 +2806,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										: patientDepositRub >= totalDueRub
 										? `Списать с депозита (${totalDueRub.toLocaleString("ru-RU")} ₽)`
 										: `Зачесть баланс (${Math.min(totalDueRub, patientDepositRub + patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽)`}
+								</span>
+							</button>
+						) : activeMethod === "card_terminal" || activeMethod === "sberpay_qr" || activeMethod === "biometry" ? (
+							<button
+								type="button"
+								onClick={() => handleManualCardTerminalConfirm()}
+								disabled={isSubmittingManualCard}
+								title={isSubmittingManualCard ? "Идет фиксация в CRM..." : "Зафиксировать оплату в CRM, если терминал уже списал средства"}
+								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all min-w-0 truncate"
+								data-testid="btn-manual-terminal-confirm-footer"
+							>
+								<CheckCircle size={16} className="shrink-0" />
+								<span className="truncate">
+									{isSubmittingManualCard ? "Фиксация..." : `Подтвердить оплату картой (${totalDueRub.toLocaleString("ru-RU")} ₽)`}
 								</span>
 							</button>
 						) : null}

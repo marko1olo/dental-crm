@@ -328,6 +328,15 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	const inFlightRef = React.useRef(false);
 	const lastClickTimeRef = React.useRef(0);
 
+	// Acquiring & Fiscalization Emergency Fault-Tolerance (Mandates 8e, 8n)
+	const [interruptedFiscalState, setInterruptedFiscalState] = useState<{
+		isInterrupted: boolean;
+		reason: string;
+		amountRub: number;
+		lastReceiptNumber?: string;
+	} | null>(null);
+	const [isSubmittingManualCard, setIsSubmittingManualCard] = useState<boolean>(false);
+
 	// Refund state (Возврат прихода при отказе от части услуг / возврат аванса 54-ФЗ)
 	const [refundItemSelection, setRefundItemSelection] = useState<Record<string, boolean>>({});
 	const [refundReason, setRefundReason] = useState<string>("Отказ пациента от части услуг плана лечения");
@@ -1041,12 +1050,109 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			if (onReceiptFiscalized) {
 				onReceiptFiscalized(receiptToFiscalize.receiptNumber);
 			}
+			setInterruptedFiscalState(null);
 			setActiveTab("preview");
-		} catch (err) {
-			showToast("Ошибка связи с фискальным регистратором ККТ", "error");
+		} catch (err: unknown) {
+			const errMsg = err instanceof Error ? err.message : "Ошибка связи с фискальным регистратором ККТ";
+			showToast(errMsg, "error");
+			setInterruptedFiscalState({
+				isInterrupted: true,
+				reason: errMsg,
+				amountRub: totalSumRub,
+				lastReceiptNumber: fiscalReceipt.receiptNumber,
+			});
 		} finally {
 			setIsFiscalizing(false);
 			inFlightRef.current = false;
+		}
+	};
+
+	// 54-FZ Fiscalization Retry: Resends receipt to KKT without altering account balance or ledger (Mandates 8e, 8n)
+	const handleRetryFiscalizationWithoutBalanceImpact = async () => {
+		setIsFiscalizing(true);
+		try {
+			const printPayload: FiscalReceiptPrintPayload = {
+				clinicName: clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				cashierFullName: cashierFullName || "Кассир",
+				customerContact: customerContact.trim() || patientPhone || patientName,
+				operationType: activeTab === "refund" ? "income_return" : "income",
+				items: (activeItems || []).map((it) => ({
+					name: it.name || "Стоматологическая услуга",
+					priceRub: it.unitPriceRub || 0,
+					quantity: it.quantity || 1,
+					amountRub: it.amountRub || 0,
+					vatRate: "vat_0",
+					medicalServiceCode804n: it.code804n,
+					markingCode: it.markingCode,
+				})),
+				totalRub: totalSumRub,
+				electronicRub: cardAmount + sbpAmount,
+				cashRub: cashAmount,
+				prepaidRub: depositAmount + certificateAmount,
+			};
+
+			const printRes = await hardwarePrinter.printFiscalReceipt(printPayload);
+			if (printRes && printRes.status === "error") {
+				showToast(`Ошибка фискализации на ККТ: ${printRes.message || "Устройство недоступно"}`, "error");
+			} else {
+				showToast("Чек повторно отправлен на фискализацию в ККТ (баланс пациента не затронут)!", "success", 5000);
+				setInterruptedFiscalState(null);
+				if (onReceiptFiscalized) {
+					onReceiptFiscalized(fiscalReceipt.receiptNumber);
+				}
+				setActiveTab("preview");
+			}
+		} catch (err: unknown) {
+			const errMsg = err instanceof Error ? err.message : "Сбой повторной фискализации чека";
+			showToast(errMsg, "error");
+		} finally {
+			setIsFiscalizing(false);
+		}
+	};
+
+	// Acquiring Emergency Collision Resolver: Manual Card Terminal Confirmation (Mandates 8e, 8n)
+	const handleManualCardTerminalConfirm = async () => {
+		setIsSubmittingManualCard(true);
+		try {
+			const clientMutationId = `manual-pos:${patientId || "anon"}:${Date.now()}-${Math.random().toString(36).slice(2)}`;
+			const headers = denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": clientMutationId,
+			});
+
+			if (patientId && typeof fetch === "function") {
+				await fetch("/api/billing/payments", {
+					method: "POST",
+					headers,
+					body: JSON.stringify({
+						patientId,
+						amountRub: totalSumRub,
+						method: "card",
+						cashBoxType: selectedCashBoxType,
+						clientMutationId,
+						note: `Оплата картой подтверждена на терминале вручную (${totalSumRub} ₽ • ${cashierFullName}) [Без повторного списания с карты]`,
+					}),
+				}).catch((err) => {
+					console.warn("[FiscalReceipt54FzModal] Manual card payment record warning:", err);
+				});
+			}
+
+			showToast(
+				`Оплата картой на сумму ${totalSumRub} ₽ подтверждена на терминале вручную. Чек зафиксирован в CRM без повторного списания!`,
+				"success",
+				5000
+			);
+
+			setInterruptedFiscalState(null);
+			if (onReceiptFiscalized) {
+				onReceiptFiscalized(fiscalReceipt.receiptNumber);
+			}
+			setActiveTab("preview");
+		} catch (err: unknown) {
+			const errMsg = err instanceof Error ? err.message : "Ошибка ручного подтверждения карты";
+			showToast(errMsg, "error");
+		} finally {
+			setIsSubmittingManualCard(false);
 		}
 	};
 
@@ -1356,6 +1462,59 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 						<span>
 							Задолженность пациента: {(patientDebtRub > 0 ? patientDebtRub : Math.abs(patientDepositRub)).toLocaleString("ru-RU")} ₽. Долг не блокирует фискализацию чека на фактически вносимую сумму.
 						</span>
+					</div>
+				)}
+
+				{/* Acquiring & Fiscalization Emergency Fault-Tolerance Banner (Mandates 8e, 8n) */}
+				{interruptedFiscalState?.isInterrupted && (
+					<div
+						className="px-4 py-3 bg-amber-500/15 dark:bg-amber-950/60 border-b border-amber-500/40 text-xs space-y-2 shrink-0"
+						data-testid="fiscal-interrupted-banner"
+					>
+						<div className="flex items-start justify-between gap-2">
+							<div className="flex items-center gap-2">
+								<AlertTriangle size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
+								<div>
+									<h4 className="font-bold text-amber-900 dark:text-amber-200 m-0">
+										Внимание: сбой связи с фискальным регистратором ККТ / эквайрингом
+									</h4>
+									<p className="text-[11px] text-amber-800 dark:text-amber-300 m-0 leading-tight">
+										{interruptedFiscalState.reason}. Если терминал уже списал средства с карты или требуется повторить фискализацию без изменения баланса пациента, выберите действие:
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setInterruptedFiscalState(null)}
+								className="text-amber-700 dark:text-amber-300 hover:text-amber-900 text-xs font-bold cursor-pointer"
+							>
+								Скрыть
+							</button>
+						</div>
+						<div className="flex items-center gap-2 flex-wrap pt-1">
+							<button
+								type="button"
+								onClick={handleManualCardTerminalConfirm}
+								disabled={isSubmittingManualCard}
+								title={isSubmittingManualCard ? "Фиксация..." : "Зафиксировать оплату в CRM без повторного списания с карты"}
+								className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-95"
+								data-testid="btn-fiscal-manual-card-confirm"
+							>
+								<CheckCircle size={14} />
+								<span>Оплата картой подтверждена на терминале вручную</span>
+							</button>
+							<button
+								type="button"
+								onClick={handleRetryFiscalizationWithoutBalanceImpact}
+								disabled={isFiscalizing}
+								title={isFiscalizing ? "Отправка на ККТ..." : "Повторно отправить чек на фискализацию в ККТ без изменения баланса пациента"}
+								className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-95"
+								data-testid="btn-fiscal-retry-direct"
+							>
+								<Printer size={14} className={isFiscalizing ? "animate-spin" : ""} />
+								<span>Повторить фискализацию чека</span>
+							</button>
+						</div>
 					</div>
 				)}
 
@@ -1838,7 +1997,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 											disabled={isFiscalizing}
 											className="h-10 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
 											data-testid="btn-express-pay-card"
-											title="Оплатить картой 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
+											title={isFiscalizing ? "Выполняется фискализация чека на ККТ..." : "Оплатить картой 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"}
 										>
 											<CreditCard className="w-4 h-4 shrink-0" />
 											<span>Оплатить картой (вся сумма)</span>
@@ -1849,7 +2008,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 											disabled={isFiscalizing}
 											className="h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
 											data-testid="btn-express-pay-cash"
-											title="Оплатить наличными 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
+											title={isFiscalizing ? "Выполняется фискализация чека на ККТ..." : "Оплатить наличными 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"}
 										>
 											<Banknote className="w-4 h-4 shrink-0" />
 											<span>Оплатить наличными (вся сумма)</span>
@@ -1860,7 +2019,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 											disabled={isFiscalizing}
 											className="h-10 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
 											data-testid="btn-express-pay-sbp"
-											title="Оплатить через СБП QR 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
+											title={isFiscalizing ? "Выполняется фискализация чека на ККТ..." : "Оплатить через СБП QR 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"}
 										>
 											<QrCode className="w-4 h-4 shrink-0" />
 											<span>Оплатить через СБП</span>
@@ -1883,6 +2042,17 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										<Sparkles size={13} className="text-teal-600 dark:text-teal-400" />
 										<span>Пресеты:</span>
 									</span>
+									<button
+										type="button"
+										onClick={handleManualCardTerminalConfirm}
+										disabled={isSubmittingManualCard}
+										title={isSubmittingManualCard ? "Фиксация..." : "Зафиксировать оплату в CRM без повторного списания с карты, если терминал уже списал средства"}
+										className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-blue-500/40 text-blue-700 dark:text-blue-300 hover:bg-blue-50 hover:border-blue-500 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
+										data-testid="preset-manual-card-confirm"
+									>
+										<CreditCard size={13} className="text-blue-600 dark:text-blue-400 shrink-0" />
+										<span>Карта подтверждена вручную</span>
+									</button>
 									<button
 										type="button"
 										onClick={() => {

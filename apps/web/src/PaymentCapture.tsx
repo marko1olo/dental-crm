@@ -1100,6 +1100,33 @@ export function PaymentCapture({
 
 		setIsSberPosModalOpen(true);
 	};
+
+	// Acquiring Emergency Collision Resolution: Manual Card Terminal Confirmation (Mandate 8e)
+	const handleManualCardTerminalSubmit = () => {
+		if (isSaving) return;
+		if (!patientId) {
+			showToast("Выберите пациента для проведения платежа", "warning");
+			return;
+		}
+		if (!paymentReadyToSubmit) {
+			const parsed = normalizeRubAmountInput(amount);
+			if (parsed === null || parsed === 0 || !amount.trim()) {
+				if (remainingDebt && remainingDebt > 0) {
+					onAmountChange(rubAmountForInput(remainingDebt));
+				} else {
+					showToast("Укажите сумму платежа", "warning");
+					return;
+				}
+			}
+		}
+		onMethodChange("card");
+		showToast(
+			"Оплата картой подтверждена на терминале вручную (без повторного списания с карты). Сохраняю платёж...",
+			"success",
+			4500
+		);
+		onSubmit();
+	};
 	const applyPatientTaxDefaults = () => {
 		const hasPatientData = Boolean(
 			patientDefaults?.fullName?.trim() ||
@@ -1759,7 +1786,7 @@ export function PaymentCapture({
 							aria-expanded={isMoreActionsOpen}
 							aria-label="Дополнительные способы оплаты"
 							disabled={isSaving}
-							title="Дополнительные способы оплаты"
+							title={isSaving ? "Операция выполняется..." : "Дополнительные способы оплаты"}
 						>
 							<MoreVertical
 								size={16}
@@ -1768,7 +1795,7 @@ export function PaymentCapture({
 						</button>
 						{isMoreActionsOpen && (
 							<div
-								className="absolute right-0 bottom-full mb-1 w-48 py-1.5 px-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg z-50 flex flex-col gap-1 text-left"
+								className="absolute right-0 bottom-full mb-1 w-56 py-1.5 px-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg z-50 flex flex-col gap-1 text-left"
 								role="menu"
 							>
 								<button
@@ -1780,6 +1807,7 @@ export function PaymentCapture({
 									className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] sm:hidden flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px]"
 									role="menuitem"
 									disabled={isSaving}
+									title={isSaving ? "Операция выполняется..." : "Сбер POS"}
 								>
 									<CreditCard
 										size={15}
@@ -1797,13 +1825,31 @@ export function PaymentCapture({
 									role="menuitem"
 									disabled={isSaving}
 									data-testid="payment-split-modal-button"
-									title="Комбинированная оплата: Нал + Карта + Баланс (Сплит)"
+									title={isSaving ? "Операция выполняется..." : "Комбинированная оплата: Нал + Карта + Баланс (Сплит)"}
 								>
 									<Coins
 										size={15}
 										className="shrink-0 text-indigo-600 dark:text-indigo-400"
 									/>
 									<span>Комбо (Сплит)</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setIsMoreActionsOpen(false);
+										handleManualCardTerminalSubmit();
+									}}
+									className="w-full text-left px-2.5 py-2 text-xs font-bold rounded-lg hover:bg-[var(--line)] text-blue-700 dark:text-blue-300 flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px]"
+									role="menuitem"
+									disabled={isSaving}
+									title={isSaving ? "Операция выполняется..." : "Зафиксировать оплату в CRM, если карта списана на терминале вручную"}
+									data-testid="payment-manual-card-terminal-button"
+								>
+									<CreditCard
+										size={15}
+										className="shrink-0 text-blue-600 dark:text-blue-400"
+									/>
+									<span>Карта подтверждена вручную</span>
 								</button>
 							</div>
 						)}
