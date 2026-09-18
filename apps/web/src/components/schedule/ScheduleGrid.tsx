@@ -298,6 +298,39 @@ export function generateTimeSlots(stepMinutes: 15 | 30 | 60 = 60): string[] {
 	return slots;
 }
 
+/**
+ * Безопасная сборка ISO дат слота (Мандат 8e / 8n) без вылетов RangeError: Invalid time value.
+ * Корректно нормализует dateKey (YYYY-MM-DD) и hour (H, HH, HH:mm, HH:mm:ss).
+ */
+export function safeBuildSlotIso(
+	dateKey: string,
+	hour: string,
+	durationMinutes = 30,
+): { startIso: string; endIso: string } {
+	const cleanDate = dateKey ? dateKey.slice(0, 10) : new Date().toISOString().slice(0, 10);
+	const dur = Number.isFinite(durationMinutes) && durationMinutes > 0 ? durationMinutes : 30;
+
+	let cleanHour = "09:00:00";
+	if (typeof hour === "string" && hour.trim()) {
+		const parts = hour.trim().split(":").map((p) => p.trim());
+		if (parts.length === 1) {
+			cleanHour = `${parts[0].padStart(2, "0")}:00:00`;
+		} else if (parts.length === 2) {
+			cleanHour = `${parts[0].padStart(2, "0")}:${parts[1].padStart(2, "0")}:00`;
+		} else if (parts.length >= 3) {
+			cleanHour = `${parts[0].padStart(2, "0")}:${parts[1].padStart(2, "0")}:${parts[2].slice(0, 2).padStart(2, "0")}`;
+		}
+	}
+
+	const candidateStartIso = `${cleanDate}T${cleanHour}.000Z`;
+	const parsedMs = Date.parse(candidateStartIso);
+	const startMs = Number.isFinite(parsedMs) ? parsedMs : Date.now();
+	const startIso = new Date(startMs).toISOString();
+	const endIso = new Date(startMs + dur * 60_000).toISOString();
+
+	return { startIso, endIso };
+}
+
 export const DEFAULT_SOLO_CHAIR = {
 	id: "default-chair",
 	name: "Кресло 1 (Основное)",
@@ -365,8 +398,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		durationMinutes: number,
 		startTimeStr = "13:00",
 	) => {
-		const startIso = `${dateKey}T${startTimeStr}:00.000Z`;
-		const endIso = new Date(Date.parse(startIso) + durationMinutes * 60000).toISOString();
+		const { startIso, endIso } = safeBuildSlotIso(dateKey, startTimeStr, durationMinutes);
 		const newBlock: ChairMaintenanceBlock = {
 			id: `maint-${chairId}-${dateKey}-${startTimeStr.replace(":", "")}-${Date.now()}`,
 			chairId,
@@ -3041,7 +3073,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 							{effectiveChairs.map((chair, chairIndex) => {
 								const chairPalette = getStomxWorkplacePalette((chair as any).colorId ?? chair.id ?? chairIndex);
 								const chairAccentColor = chair.color || chairPalette.bright_code;
-								const slotStartIso = `${dateKey}T${hour}:00.000Z`;
+								const { startIso: slotStartIso } = safeBuildSlotIso(dateKey, hour, 30);
 								const cellAppointments = dayAppointments.filter((a) => {
 									if (chair.id !== DEFAULT_SOLO_CHAIR.id && a.chairId !== chair.id) {
 										return false;
@@ -4216,8 +4248,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														effectiveChairAssignments[chair.id]?.doctorName ||
 														undefined;
 													const slotDuration = data.durationMinutes || 30;
-													const targetStartIso = hour.includes(":") ? `${dateKey}T${hour}:00.000Z` : `${dateKey}T${hour}:00:00.000Z`;
-													const targetEndIso = new Date(Date.parse(targetStartIso) + slotDuration * 60000).toISOString();
+													const { startIso: targetStartIso, endIso: targetEndIso } = safeBuildSlotIso(dateKey, hour, slotDuration);
 
 													const isSourceCito = isCitoAppointment(sourceAppt);
 
@@ -4287,8 +4318,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														effectiveChairAssignments[chair.id]?.doctorName ||
 														undefined;
 													const slotDuration = waitlistItem.durationMinutes || 30;
-													const targetStartIso = hour.includes(":") ? `${dateKey}T${hour}:00.000Z` : `${dateKey}T${hour}:00:00.000Z`;
-													const targetEndIso = new Date(Date.parse(targetStartIso) + slotDuration * 60000).toISOString();
+													const { startIso: targetStartIso, endIso: targetEndIso } = safeBuildSlotIso(dateKey, hour, slotDuration);
 
 													// Pre-check collision before booking from waitlist
 													const collisionCheck = checkAppointmentResourceCollision(

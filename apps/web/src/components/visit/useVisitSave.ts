@@ -277,29 +277,40 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 		};
 	}, [visitNoteForm, transcript, debounceMs, isLocked, computeSignature, executeSave]);
 
-	// Auto-flush on tab switch / window unload to guarantee 0 data loss
+	// Auto-flush on tab switch / window unload / pagehide to guarantee 0 data loss (Mandate 8e)
 	useEffect(() => {
 		isMountedRef.current = true;
 
+		const flushOnExit = () => {
+			if (debounceTimerRef.current) {
+				clearTimeout(debounceTimerRef.current);
+				debounceTimerRef.current = null;
+			}
+			void executeSave({ silent: true, force: true });
+		};
+
 		const handleVisibilityChange = () => {
 			if (document.visibilityState === "hidden") {
-				void executeSave({ silent: true });
+				flushOnExit();
 			}
 		};
 
 		const handleBeforeUnload = () => {
-			void executeSave({ silent: true });
+			flushOnExit();
 		};
 
 		document.addEventListener("visibilitychange", handleVisibilityChange);
 		window.addEventListener("beforeunload", handleBeforeUnload);
+		window.addEventListener("pagehide", handleBeforeUnload);
 
 		return () => {
 			isMountedRef.current = false;
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
 			window.removeEventListener("beforeunload", handleBeforeUnload);
+			window.removeEventListener("pagehide", handleBeforeUnload);
 			if (debounceTimerRef.current) {
 				clearTimeout(debounceTimerRef.current);
+				debounceTimerRef.current = null;
 			}
 		};
 	}, [executeSave]);
