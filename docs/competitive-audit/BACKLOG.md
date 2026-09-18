@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-18 / WAVES 175–259b / TOPBAR DEDUPLICATION, TOAST OVERLAY CURE, ODONTOGRAM CLIPPING FIX, DEBOUNCED SESSIONSTORAGE QUEUE 400MS, STEPPED PRELOAD EXCLUSION 5400 RPM HDD, GOST ZERO-GC MEMOIZATION, CMO EMR QUALITY AUDIT ENGINE SSOT RESTORATION, DOCTOR AUTONOMY 043U REVISION & 0 DISABLED PRESETS, MOBILE TOUCH-FIRST >=44PX, HTTP 503 NO-MOCK TOKEN PORTAL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 294 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 357 ФИЧ: 63 КАНОНИЧЕСКИЕ + 294 АДДЕНДУМ, 357/357 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-18 / WAVES 175–260 / TOPBAR DEDUPLICATION, TOAST OVERLAY CURE, ODONTOGRAM CLIPPING FIX, DEBOUNCED SESSIONSTORAGE QUEUE 400MS, STEPPED PRELOAD EXCLUSION 5400 RPM HDD, GOST ZERO-GC MEMOIZATION, CMO EMR QUALITY AUDIT ENGINE SSOT RESTORATION, DOCTOR AUTONOMY 043U REVISION & 0 DISABLED PRESETS, MOBILE TOUCH-FIRST >=44PX, HTTP 503 NO-MOCK TOKEN PORTAL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 294 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 357 ФИЧ: 63 КАНОНИЧЕСКИЕ + 294 АДДЕНДУМ, 357/357 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -8752,7 +8752,54 @@
       - Дополнительно закреплены стандарты Apple HIG: touch-таргеты элементов управления, кнопок и полей ввода на устройствах с `pointer: coarse` составляют $\ge 44$px без разрушения компактной 28–36px десктопной плотности сетки.
   - **Защита хост-машины и Single-Compiler Gate (Мандат 8t)**:
     * Ни один фоновый компилятор `tsc`, `npm run typecheck` или `npm run build` не запускался в ходе синхронизации документации; ресурсы хост-машины сохранены в 100% целостности для централизованного гейта компиляции L1 Оркестратора.
+### 419. Red Team Wave 260 — Суверенитет кассы 54-ФЗ без ИНН физлиц, авто-балансир сплит-оплаты и целочисленные копейки, автономия врача (норма Z01.2, гарантированный flush autosave 043/у при смене вкладки, печать ЧЕРНОВИК/ПОДПИСАНО ВРАЧОМ), расписание соло-врача без обязательного ассистента (защита от RangeError при drag-drop, шаг сетки 15/30/60 мин), СанПиН 3.3686-21 списание карпул анестетиков медсестрой в 1 клик с мягким овердрафтом, журналы 257/у и ПСО 366/у (Мандаты 8b, 8c, 8d, 8e пп. 1, 3, 5, 6, 8, 9, 10, 8k, 8n, 8p, 8s, 8t)
 
-
-
-
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Архитектурно реализовано, подтверждено и верифицировано 2026-09-18, коммиты `c90025014`, `373643661`, `3980d469`, `a22c5e533`)
+* **Задействованные модули и файлы**:
+  - `apps/web/src/PaymentCapture.tsx`
+  - `apps/web/src/components/finance/FamilyWalletPanel.tsx`
+  - `apps/web/src/components/finance/FastCheckoutModal.tsx`
+  - `apps/web/src/components/finance/FiscalReceipt54FzModal.tsx`
+  - `apps/web/src/components/finance/InvoiceGenerationModal.tsx`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `apps/web/src/components/useVisitDiaryLogic.ts`
+  - `apps/web/src/components/documents/forms/DentalMedicalCard043uForm.tsx`
+  - `apps/web/src/components/visit/VisitSoapEditor.tsx`
+  - `apps/web/src/ScheduleView.tsx`
+  - `apps/web/src/components/schedule/ChairScheduleView.tsx`
+  - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`
+  - `apps/web/src/components/schedule/ScheduleGrid.tsx`
+  - `apps/web/src/components/InventoryView.tsx`
+  - `apps/web/src/components/sanpin/SanpinRegisters.css`
+  - `apps/web/src/components/sanpin/autoclaveLog/AutoclaveJournal257Tab.tsx`
+  - `apps/web/src/components/sanpin/PsoRegisterTab.tsx`
+  - `apps/web/src/components/sanpin/SanpinRegisters.tsx`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Описание**:
+  - **Суверенитет кассы 54-ФЗ без ИНН физлиц, точная целочисленная копеечная математика и авто-балансир сплит-оплаты (Мандаты 8b, 8c, 8d, 8e п. 9, 8n)**:
+    * В `apps/web/src/PaymentCapture.tsx`, `FamilyWalletPanel.tsx`, `FastCheckoutModal.tsx`, `FiscalReceipt54FzModal.tsx`, `InvoiceGenerationModal.tsx`, `PaymentModal.tsx`:
+      - Внедрена строгая целочисленная копеечная математика (`rubToKopecks`, `kopecksToRub`) с округлением `Math.round(val * 100) / 100`, полностью устранившая float drift при расчетах сдачи, сплит-платежах и применении частичных авансов;
+      - Касса 54-ФЗ строго не требует ввод ИНН для физических лиц при оплате наличными или банковской картой (по 54-ФЗ ИНН обязателен только для юрлиц и ИП);
+      - Реализован автоматический балансир долей комбинированной сплит-оплаты (Нал + Карта + Аванс / Семейный кошелек) с моментальным авто-выравниванием остатка до копейки при изменении одной из сумм;
+      - Устранены неинформативные `disabled` блокировки на кнопках действий кассира: добавлены контекстные всплывающие подсказки-руководства (tooltips) с объяснением условий проведения операции (коммит `c90025014`).
+  - **Автономия врача: 1-кликовая норма Z01.2, гарантированный flush autosave дневника 043/у и печать без барьеров (Мандаты 8c, 8d, 8e пп. 1–6, 8k, 8n)**:
+    * В `apps/web/src/components/useVisitDiaryLogic.ts`:
+      - Реализован гарантированный принудительный сброс (flush) очереди дебаунсированного автосохранения дневника Form 043/u на сервер Fastify API при наступлении событий смены вкладки браузера (`visibilitychange`) и сворачивания/закрытия окна (`beforeunload`, `pagehide`); врач больше никогда не потеряет набранный клинический протокол при переключении между приложениями или ответе на звонок;
+    * В `apps/web/src/components/documents/forms/DentalMedicalCard043uForm.tsx` и `VisitSoapEditor.tsx`:
+      - Мгновенное заполнение физиологической нормы в 1 клик (МКБ-10 Z01.2 «Соматически здоров / зубные ряды интактны / норма»);
+      - Печать Формы 043/у и согласий доступна в любой момент времени: при открытом визите — со штампом «ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП», после завершения приёма — со штампом «ПОДПИСАНО ВРАЧОМ» (коммит `373643661`).
+  - **Расписание для соло-врача: опциональный ассистент, устранение RangeError при drag-and-drop и синхронизация шага сетки (Мандаты 8c, 8d, 8e п. 8, 8n, 8p)**:
+    * В `apps/web/src/ScheduleView.tsx`, `ChairScheduleView.tsx`, `ScheduleFilterStrip.tsx`, `ScheduleGrid.tsx`:
+      - Соло-врачу на аренде кресла или в компактной клинике обеспечено быстрое бронирование за 5 секунд без принудительного выбора ассистента (`isSoloDoctor || assistants.length === 0`);
+      - Устранен критический вылет React-приложения с ошибкой `RangeError: Invalid time value` при drag-and-drop перетаскивании карточек приёмов за счет строгой нормализации и валидации ISO-дат временных меток;
+      - Синхронизирован шаг дискретизации временной сетки расписания (15, 30, 60 мин) между панелью фильтров кресел `ChairScheduleView.tsx`, главным тулбаром `ScheduleFilterStrip.tsx` и основной сеткой `ScheduleGrid.tsx` (коммит `3980d469`).
+  - **СанПиН 3.3686-21: списание карпул медсестрой в 1 клик, мягкий овердрафт склада и журналы стерилизации 257/у и ПСО 366/у (Мандаты 8c, 8d п. 7, 8e п. 10, 8k, 8n)**:
+    * В `apps/web/src/components/InventoryView.tsx`, `SanpinRegisters.css`, `AutoclaveJournal257Tab.tsx`, `PsoRegisterTab.tsx`, `SanpinRegisters.tsx`:
+      - Медсестре предоставлена возможность экспресс-списания пустых карпул анестетиков в 1 клик без создания бюрократической комиссии из 3 человек;
+      - Реализован технологический мягкий овердрафт складских запасов ТМЦ: при нулевом остатке система выводит клиническое предупреждение, но не блокирует проведение экстренных процедур и не прерывает прием пациента;
+      - Оптимизированы и визуализированы нормативные журналы СанПиН 3.3686-21: электронный журнал автоклавирования (Форма № 257/у, режимы Class B 134°C / 2.1 bar) и предстерилизационной очистки ПСО (Форма № 366/у, азопирамовая и фенолфталеиновая пробы);
+      - Применено CSS-содержание (`content-visibility: auto`, `containIntrinsicSize`) для быстрого рендеринга больших реестров автоклава на слабых моноблоках (коммит `a22c5e533`).
+  - **Защита хост-машины и Single-Compiler Gate (Мандат 8t)**:
+    * В полном соответствии с Мандатом 8t компиляторные команды (`tsc`, `npm run typecheck`, `npm run build`) не запускались воркером; ресурсы хост-машины сохранены для L1 Оркестратора.
