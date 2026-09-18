@@ -3,7 +3,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
 >
-> ⚠️ **СТАТУС (2026-09-18 / WAVES 175–259 / NATIVE HIG SYSTEM FONTS ZERO-FOUT, SSOT SANPIN DEDUPLICATION, TRANSFUSION BLOAT PURGE & SIMULATION ERADICATION, TOUCH-FIRST ERGONOMICS >=44PX & QUICK-BOOKING FOOTER, 5400 RPM HDD DEBOUNCED QUEUE 400MS, COMPILER REFACTOR FASTIFY & EXACTOPTIONALPROPERTYTYPES, 54-FZ CASHIER AUTONOMY & INTEGER KOPECKS, 10-THEME INQUISITION 30 SCREENSHOTS WCAG AAA): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 294 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (357/357 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
+> ⚠️ **СТАТУС (2026-09-18 / WAVES 175–259b / TOPBAR DEDUPLICATION, TOAST OVERLAY CURE, ODONTOGRAM CLIPPING FIX, DEBOUNCED SESSIONSTORAGE QUEUE 400MS, STEPPED PRELOAD EXCLUSION 5400 RPM HDD, GOST ZERO-GC MEMOIZATION, CMO EMR QUALITY AUDIT ENGINE SSOT RESTORATION, DOCTOR AUTONOMY 043U REVISION & 0 DISABLED PRESETS, MOBILE TOUCH-FIRST >=44PX, HTTP 503 NO-MOCK TOKEN PORTAL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 294 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (357/357 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
@@ -5561,3 +5561,61 @@
   3. *Эргономика кассы и быстрой записи (Мандаты 8c, 8d, 8e пп. 8, 9, 8n)*: Сенсорные элементы $\ge 44$px в кассовом окне и липкий футер в drawer быстрой записи обеспечивают бесперебойную работу врача и администратора на смартфонах и планшетах без мискликов и вылета кнопок за экран.
   4. *Защита слабого дискового накопителя (Мандаты 8e п. 6, 8n, Core Route п. 6)*: Дебаунс 400мс на диск и 0 мс чтение из оперативной памяти в `safeLocalStorage.ts` снимают нагрузку с HDD 5400 RPM при гарантии сохранности авторизации (`immediate: true`) и автосохранения на событиях `beforeunload`/`pagehide`.
   5. *Типобезопасность компилятора и целостность 54-ФЗ (Мандаты 8b, 8e п. 9, 8n, 8t)*: Устранены ошибки Fastify-роутов, `exactOptionalPropertyTypes` и `hasStorage`; целочисленная копеечная математика сдачи `calculateChangeKopecks` гарантирует отсутствие финансовых расхождений.
+
+### 2.10.353. Wave 259b: Дедупликация действий топбара, устранение оверлея тостов, ликвидация клиппинга одонтограммы, расширение in-memory кэша sessionStorage, ступенчатый idle-прелоад под HDD 5400 RPM, Zero-GC мемоизация ГОСТ, восстановление SSOT cmoEmkQualityAuditEngine, автономия ревизии 043/у и ликвидация мок-токена портала (Мандаты 8c, 8d, 8e пп. 1, 4, 6, 8s, 8t, Core Route пп. 6, 7, 11)
+
+- **Цель**: Полная синхронизация и закрепление результатов Волны 259b (коммиты `d3536d726`, `dc89adbd3`):
+  1. *Дедупликация действий топбара и нормализация полезной высоты экрана (Закон Хика, Мандаты 8c, 8d, 8p)*:
+     - В `FinanceView.tsx`, `workspaceShell.tsx` и `WorkspaceActions.tsx` полностью ликвидировано дублирование кнопок действий («Новый счет», «Принять оплату», «Кассовая смена»);
+     - Суммарная высота служебных областей десктопа удержана в пределах нормы $\le 160\text{--}180$px, освободив экранное пространство для финансового реестра и кассы 54-ФЗ.
+  2. *Устранение оверлея глобальных тостов и клиппинга одонтограммы (Мандаты 8c, 8d, 8e)*:
+     - В `GlobalToast.tsx` внешний контейнер переведен в `pointer-events: none` с точечным `pointer-events: auto` на карточках уведомлений, что исключило блокировку кликов по интерактивным элементам подложки;
+     - В `OdontogramViewContainer.tsx`, `AnatomicalSvgOdontogram.tsx` и `ToothChart.tsx` устранен клиппинг кнопок инструментов переключения зубной формулы при сжатии вьюпорта.
+  3. *Расширение in-memory кэша sessionStorage и debounced очередь записи для HDD 5400 RPM (Мандаты 8e п. 6, 8s, 8t)*:
+     - В `safeLocalStorage.ts` архитектура устойчивого in-memory кэширования расширена на `sessionStorage`: чтение данных выполняется за 0 мс без синхронного дискового I/O;
+     - Реализована отложенная очередь записи на диск с интервалом дебаунса 400мс (`flushPendingSessionStorageWrites`) и обязательным сбросом очереди на физический диск перед размонтированием страницы (`beforeunload`, `pagehide`).
+  4. *Оптимизация ступенчатого idle-прелоада под слабое железо (Anti-HDD Thrashing) (Мандаты 8s, 8t, Core Route п. 6)*:
+     - В `workspacePreload.ts` ресурсоемкие модули (3D CT MPR, Cornerstone DICOM, Recharts аналитика) полностью исключены из фонового прелоада в режиме ожидания `requestIdleCallback`, исключая насыщение I/O диска 5400 RPM;
+     - Задержка фонового прелоада увеличена до 4500–5000мс на low-spec оборудовании, внедрен 500мс hover-дебаунс перед динамическим импортом.
+  5. *Zero-GC мемоизация ячеек ГОСТ-одонтограммы (Clinical Performance & Zero-GC) (Мандаты 8c, 8s, Core Route п. 4)*:
+     - В `ClassicGostOdontogram.tsx` ячейка зуба вынесена в мемоизированный компонент `ClassicGostToothCell` со строгим компаратором `areGostToothCellPropsEqual`;
+     - Устранены паразитные ре-рендеры всей одонтограммы из 32 зубов при выборе или изменении статуса одного зуба;
+     - Сохранена быстрая навигация клавишами стрелок и скоростной клавиатурный ввод горячих клавиш ГОСТ (К, П, Е, Ф, Ц, И, 0, З).
+  6. *Восстановление канонического SSOT движка аудита историй болезни начмедом (Мандаты 8s, 8h, 8i)*:
+     - В `packages/shared/src/clinical/cmoEmkQualityAuditEngine.ts` и `packages/shared/src/clinical/index.ts` восстановлен канонический SSOT движок аудита ЭМК начмедом (`evaluateVisitForCmoAudit`, `calculateCmoAuditSummary`, `buildCmoApprovalPayload`, `buildCmoRejectionPayload`, `CmoAuditSummaryMetrics`) с классификацией дефектов по критериям СтАР и Приказу Минздрава России № 834н.
+  7. *Автономия врача в ревизии подписанных дневников 043/у и пресеты без блокировок (Мандат 8e пп. 1, 4)*:
+     - В `apps/api/src/routes/diary.ts` внедрена модель `DoctorOrClinicalSignerRequired` («Исправленному верить»): лечащий врач имеет право внести исправление в подписанный дневник приёма 043/у без бюрократических замков начмеда (тест `diaryRefusalText.test.ts` PASS);
+     - В `ClinicalQuickPresetsBar.tsx` и `VisitEmkTab.tsx` обеспечено 100% отсутствие disabled кнопок пресетов по всем профилям стоматологии.
+  8. *Ликвидация фиктивного мок-токена портала и изоляция тестовых ошибок API (Мандат 8b, Core Route п. 4)*:
+     - В `apps/api/src/routes/patientPortal.ts` исключена генерация фиктивного `mock-portal-token-${patientId}` в пользу возврата штатного HTTP 503 при отсутствии конфигурации бота;
+     - В `apps/api/src/routes/visits.ts` симуляция ошибки автосохранения дневника визита строго изолирована условием `process.env.NODE_ENV === "test"`.
+  9. *Touch-First адаптация мобильных устройств у кресла (Мандаты 8c, 8d п. 2)*:
+     - В `touch-targets.css` и `low-spec-hardware.css` закреплены touch-таргеты $\ge 44$px для сенсорных экранов без ущерба для плотной десктопной сетки 28–36px.
+  10. *Защита Single-Compiler Gate (Мандат 8t)*:
+      - Документация синхронизирована без запуска тяжелых компиляторов (`tsc`, `typecheck`, `build`), сохранив 100% ресурсов хост-машины для L1 Оркестратора.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `packages/shared/src/clinical/cmoEmkQualityAuditEngine.ts`
+  - `packages/shared/src/clinical/index.ts`
+  - `apps/api/src/routes/diary.ts`
+  - `apps/api/src/tests/diaryRefusalText.test.ts`
+  - `apps/api/src/routes/patientPortal.ts`
+  - `apps/api/src/routes/visits.ts`
+  - `apps/web/src/lib/safeLocalStorage.ts`
+  - `apps/web/src/workspacePreload.ts`
+  - `apps/web/src/components/odontogram/ClassicGostOdontogram.tsx`
+  - `apps/web/src/components/odontogram/OdontogramViewContainer.tsx`
+  - `apps/web/src/components/odontogram/AnatomicalSvgOdontogram.tsx`
+  - `apps/web/src/components/odontogram/ToothChart.tsx`
+  - `apps/web/src/components/GlobalToast.tsx`
+  - `apps/web/src/components/visit/presets/ClinicalQuickPresetsBar.tsx`
+  - `apps/web/src/components/visit/VisitEmkTab.tsx`
+  - `apps/web/src/FinanceView.tsx`
+  - `apps/web/src/components/shell/workspaceShell.tsx`
+  - `apps/web/src/components/shell/WorkspaceActions.tsx`
+  - `apps/web/src/styles/touch-targets.css`
+  - `apps/web/src/styles/low-spec-hardware.css`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+
