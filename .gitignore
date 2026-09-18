@@ -72,6 +72,9 @@ secrets.json
 keys.json
 
 # ---- Scratch / one-off agent scripts (never track) -------------------------
+check-*.cjs
+e2e*.cjs
+*.tmp
 fix*.cjs
 fix*.js
 fix*.py
