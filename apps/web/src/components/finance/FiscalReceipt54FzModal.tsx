@@ -2777,6 +2777,13 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								type="button"
 								onClick={() => handleExecuteFiscalization()}
 								disabled={refundFiscalData.totalRub <= 0 || isFiscalizing}
+								title={
+									isFiscalizing
+										? "Идет фискализация возврата в ККТ..."
+										: refundFiscalData.totalRub <= 0
+											? "Укажите сумму возврата больше 0 ₽"
+											: undefined
+								}
 								data-testid="btn-execute-refund"
 								className="w-full min-h-[52px] flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99]"
 							>
@@ -2879,6 +2886,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								type="button"
 								onClick={() => handleExecuteFiscalization()}
 								disabled={isFiscalizing}
+								title={isFiscalizing ? "Идет фискализация чека коррекции в ККТ..." : undefined}
 								className="w-full min-h-[52px] flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99]"
 							>
 								<ShieldCheck size={18} />
@@ -3532,6 +3540,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									type="button"
 									onClick={() => handleExecuteFiscalization()}
 									disabled={isFiscalizing}
+									title={isFiscalizing ? "Идет фискализация чека в ККТ..." : undefined}
 									className="h-9 px-5 rounded-xl font-bold text-xs bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
 								>
 									<ShieldCheck size={16} />
@@ -3679,6 +3688,13 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									type="button"
 									onClick={() => handleExecuteFiscalization()}
 									disabled={refundFiscalData.totalRub <= 0 || isFiscalizing}
+									title={
+										isFiscalizing
+											? "Идет фискализация возврата в ККТ..."
+											: refundFiscalData.totalRub <= 0
+												? "Укажите сумму возврата больше 0 ₽"
+												: undefined
+									}
 									data-testid="btn-refund-footer-execute"
 									className="h-9 px-5 rounded-xl font-bold text-xs bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
 								>
@@ -3706,6 +3722,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									type="button"
 									onClick={() => handleExecuteFiscalization()}
 									disabled={isFiscalizing}
+									title={isFiscalizing ? "Идет фискализация чека коррекции в ККТ..." : undefined}
 									className="h-9 px-5 rounded-xl font-bold text-xs bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
 								>
 									<ShieldCheck size={15} />

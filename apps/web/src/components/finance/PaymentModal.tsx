@@ -403,8 +403,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
 	const { discountRub, totalDueRub, effectiveDiscountPercent } = discountCalc;
 
-	const initialSplit5050Cash = initialSplit5050 ? Math.floor(totalDueRub / 2) : 0;
-	const initialSplit5050Card = initialSplit5050 ? totalDueRub - initialSplit5050Cash : totalDueRub;
+	const initialSplit5050Cash = initialSplit5050
+		? kopecksToRub(Math.floor(rubToKopecks(totalDueRub) / 2))
+		: 0;
+	const initialSplit5050Card = initialSplit5050
+		? kopecksToRub(rubToKopecks(totalDueRub) - rubToKopecks(initialSplit5050Cash))
+		: totalDueRub;
 	const [splitCardRub, setSplitCardRub] = useState<number>(initialSplit5050Card);
 	const [splitCashRub, setSplitCashRub] = useState<number>(initialSplit5050Cash);
 	const [splitDepositRub, setSplitDepositRub] = useState<number>(0);
@@ -1999,6 +2003,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								type="button"
 								onClick={handleCashSubmit}
 								disabled={isSubmittingCash}
+								title={isSubmittingCash ? "Идет фиксация наличных в кассе..." : undefined}
 								className="min-h-[44px] w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all"
 								data-testid="btn-cash-submit"
 							>
@@ -2268,7 +2273,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								type="button"
 								onClick={handleSplitSubmit}
 								disabled={isSubmittingSplit}
-								title={!isBalanced ? "Автоматически сбалансирует остаток и проведет оплату" : undefined}
+								title={
+									isSubmittingSplit
+										? "Идет фиксация комбинированной оплаты..."
+										: !isBalanced
+											? "Автоматически сбалансирует остаток и проведет оплату"
+											: undefined
+								}
 								className="min-h-[44px] w-full rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all bg-purple-600 hover:bg-purple-700 active:scale-98 disabled:opacity-50"
 							>
 								<CheckCircle size={16} />

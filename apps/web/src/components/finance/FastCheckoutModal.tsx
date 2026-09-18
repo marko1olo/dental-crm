@@ -1951,6 +1951,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 											void handleExecutePayment(true);
 										}}
 										disabled={isPrinting}
+										title={isPrinting ? "Идет печать фискального чека 54-ФЗ..." : undefined}
 										className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink)] flex items-center gap-1.5 cursor-pointer"
 									>
 										<WifiOff className="w-3.5 h-3.5 text-amber-600" />
@@ -1974,6 +1975,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							data-testid="execute-fast-checkout-btn"
 							onClick={() => void handleExecutePayment()}
 							disabled={isPrinting}
+							title={isPrinting ? "Идет печать фискального чека 54-ФЗ..." : undefined}
 							className="w-full sm:w-auto min-h-[44px] sm:min-h-[40px] sm:h-10 px-4 sm:px-6 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 disabled:opacity-50 text-white text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-98"
 						>
 							{isPrinting ? (

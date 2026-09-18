@@ -680,6 +680,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 								className="quick-chip quick-chip--sm"
 								onClick={() => setAmountInput(String(debtSuggestionRub))}
 								disabled={isPaying}
+								title={isPaying ? "Идет операция списания..." : undefined}
 							>
 								Долг: {money(debtSuggestionRub)}
 							</button>
@@ -691,6 +692,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 						type="button"
 						onClick={handlePay}
 						disabled={isPaying}
+						title={isPaying ? "Идет списание средств с семейного баланса..." : undefined}
 						className="family-wallet-btn"
 					>
 						{isPaying ? "Списание..." : "Списать с баланса"}{" "}
@@ -855,6 +857,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 						type="button"
 						onClick={handleTopup}
 						disabled={isToppingUp}
+						title={isToppingUp ? "Идет зачисление средств на семейный счет..." : undefined}
 						className="family-wallet-btn"
 					>
 						{isToppingUp ? "Зачисление..." : "Пополнить"}{" "}

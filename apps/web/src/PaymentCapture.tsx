@@ -19,7 +19,11 @@ import { useEffect, useRef, useState } from "react";
 import { money } from "./AppHelpers";
 import { PaymentModal } from "./components/finance/PaymentModal";
 import { showToast } from "./components/GlobalToast";
-import { rubAmountForInput } from "./components/payments/cashDeskAmounts";
+import {
+	fromKopecks,
+	rubAmountForInput,
+	toKopecks,
+} from "./components/payments/cashDeskAmounts";
 import { SberPosTerminalModal } from "./components/payments/sberPos/SberPosTerminalModal";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { DictationHints } from "./DictationHints";
@@ -490,6 +494,9 @@ function InstallmentCalculator({
 	const lastMonthPayment = lastMonthPaymentKopecks / 100;
 	const hasUnevenLastPayment =
 		months > 0 && lastMonthPaymentKopecks !== monthlyPaymentKopecks;
+	const scheduleTotalKopecks =
+		downPaymentKopecks +
+		parts.reduce((acc, part) => acc + (part ?? 0), 0);
 
 	return (
 		<details
@@ -671,12 +678,7 @@ function InstallmentCalculator({
 						marginTop: "12px",
 					}}
 				>
-					Итого по графику:{" "}
-					{money(
-						downPayment +
-							monthlyPayment * Math.max(0, months - 1) +
-							lastMonthPayment,
-					)}
+					Итого по графику: {money(fromKopecks(scheduleTotalKopecks))}
 				</div>
 			</div>
 		</details>
@@ -906,23 +908,29 @@ export function PaymentCapture({
 		}
 
 		if (base > 0) {
-			if (preset === "percent_50") {
-				const discounted = Math.round(base * 0.5);
-				onAmountChange(rubAmountForInput(discounted));
-				showToast(`Применена скидка врача 50%: ${money(discounted)}`, "info");
-				return;
-			}
-			if (preset === "percent_20") {
-				const discounted = Math.round(base * 0.8);
-				onAmountChange(rubAmountForInput(discounted));
-				showToast(`Применена скидка врача 20%: ${money(discounted)}`, "info");
-				return;
-			}
-			if (preset === "percent_10") {
-				const discounted = Math.round(base * 0.9);
-				onAmountChange(rubAmountForInput(discounted));
-				showToast(`Применена скидка врача 10%: ${money(discounted)}`, "info");
-				return;
+			const baseKop = toKopecks(base);
+			if (baseKop !== null && baseKop > 0) {
+				if (preset === "percent_50") {
+					const discountedKop = percentageOfKopecks(baseKop, 5000);
+					const discountedRub = fromKopecks(discountedKop);
+					onAmountChange(rubAmountForInput(discountedRub));
+					showToast(`Применена скидка врача 50%: ${money(discountedRub)}`, "info");
+					return;
+				}
+				if (preset === "percent_20") {
+					const discountedKop = percentageOfKopecks(baseKop, 8000);
+					const discountedRub = fromKopecks(discountedKop);
+					onAmountChange(rubAmountForInput(discountedRub));
+					showToast(`Применена скидка врача 20%: ${money(discountedRub)}`, "info");
+					return;
+				}
+				if (preset === "percent_10") {
+					const discountedKop = percentageOfKopecks(baseKop, 9000);
+					const discountedRub = fromKopecks(discountedKop);
+					onAmountChange(rubAmountForInput(discountedRub));
+					showToast(`Применена скидка врача 10%: ${money(discountedRub)}`, "info");
+					return;
+				}
 			}
 		} else {
 			showToast(
@@ -1710,11 +1718,7 @@ export function PaymentCapture({
 				</div>
 
 				<div
-					className="payment-actions max-sm:flex-1 max-sm:flex max-sm:flex-row max-sm:items-center max-sm:justify-end max-sm:gap-1.5 flex-1 min-w-0"
-					style={{
-						display: "flex",
-						gap: "8px",
-					}}
+					className="payment-actions flex items-center gap-2 max-sm:flex-1 max-sm:flex max-sm:flex-row max-sm:items-center max-sm:justify-end max-sm:gap-1.5 flex-1 min-w-0"
 				>
 					<button
 						className="primary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 sm:flex-initial font-bold text-xs sm:text-sm min-w-0 px-2.5 sm:px-3 whitespace-nowrap"
@@ -1725,6 +1729,7 @@ export function PaymentCapture({
 							!paymentReadyToSubmit ? paymentMissingId : undefined
 						}
 						disabled={isSaving}
+						title={isSaving ? "Идет сохранение платежа в базе данных..." : undefined}
 						data-testid="payment-submit-button"
 					>
 						<CreditCard aria-hidden="true" size={16} className="shrink-0" />{" "}
@@ -1738,6 +1743,7 @@ export function PaymentCapture({
 							!paymentReadyToSubmit ? paymentMissingId : undefined
 						}
 						disabled={isSaving}
+						title={isSaving ? "Идет сохранение платежа, терминал занят..." : undefined}
 						data-testid="payment-sberpos-button"
 					>
 						<CreditCard aria-hidden="true" size={15} className="shrink-0" />{" "}
@@ -1771,7 +1777,7 @@ export function PaymentCapture({
 										setIsMoreActionsOpen(false);
 										handleSberPosClick();
 									}}
-									className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] sm:hidden flex items-center gap-2 cursor-pointer transition-colors"
+									className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] sm:hidden flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px]"
 									role="menuitem"
 									disabled={isSaving}
 								>
@@ -1787,7 +1793,7 @@ export function PaymentCapture({
 										setIsMoreActionsOpen(false);
 										handleOpenSplitModal();
 									}}
-									className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
+									className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px]"
 									role="menuitem"
 									disabled={isSaving}
 									data-testid="payment-split-modal-button"
