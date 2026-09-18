@@ -355,9 +355,9 @@ export function PsoRegisterTab() {
 			</div>
 
 			{/* Table of logs with Integrated Compact Header */}
-			<div className="sanpin-table-wrapper">
+			<div className="sanpin-table-wrapper w-full overflow-x-auto min-w-0" style={{ position: "relative", zIndex: 1, width: "100%", overflowX: "auto" }}>
 				<div
-					className="sanpin-table-toolbar"
+					className="sanpin-table-toolbar min-w-0 flex-nowrap"
 					style={{
 						display: "flex",
 						alignItems: "center",
@@ -366,27 +366,27 @@ export function PsoRegisterTab() {
 						padding: "0.35rem 0.65rem",
 						background: "var(--paper-soft, #f8fafc)",
 						borderBottom: "1px solid var(--line, #e2e8f0)",
-						flexWrap: "wrap",
+						overflowX: "auto",
 					}}
 				>
-					<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flex: "1 1 200px", minWidth: "160px", maxWidth: "340px", position: "relative" }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flex: "1 1 180px", minWidth: "140px", maxWidth: "320px", position: "relative" }} className="min-w-0 shrink">
 						<Search size={14} style={{ position: "absolute", left: "0.6rem", color: "var(--muted, #94a3b8)" }} />
 						<input
 							type="text"
 							placeholder="Поиск по инструментарию, моющему средству, оператору..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="sanpin-input"
-							style={{ paddingLeft: "1.9rem", minHeight: "44px", height: "44px", fontSize: "0.85rem", width: "100%", borderRadius: "8px" }}
+							className="sanpin-input min-w-0"
+							style={{ paddingLeft: "1.9rem", minHeight: "36px", height: "36px", fontSize: "0.825rem", width: "100%", borderRadius: "8px" }}
 						/>
 					</div>
 
-					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }} className="shrink-0 flex-nowrap">
 						<select
 							value={testFilter}
 							onChange={(e) => setTestFilter(e.target.value)}
-							className="sanpin-select"
-							style={{ minHeight: "44px", height: "44px", fontSize: "0.85rem", padding: "0.4rem 0.75rem", borderRadius: "8px" }}
+							className="sanpin-select shrink-0 whitespace-nowrap"
+							style={{ minHeight: "36px", height: "36px", fontSize: "0.825rem", padding: "0.35rem 0.75rem", borderRadius: "8px", flexShrink: 0, whiteSpace: "nowrap" }}
 						>
 							<option value="all">Все пробы ПСО</option>
 							<option value="approved">Партия допущена (Проба отрицательная)</option>
@@ -396,15 +396,16 @@ export function PsoRegisterTab() {
 						<button
 							type="button"
 							onClick={handleGenerateMonthlyForm366}
-							className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+							className="sanpin-btn sanpin-btn-secondary touch-manipulation shrink-0 whitespace-nowrap"
 							style={{
-								minHeight: "44px",
-								height: "44px",
-								padding: "0.4rem 0.85rem",
-								fontSize: "0.85rem",
+								minHeight: "36px",
+								height: "36px",
+								padding: "0.35rem 0.75rem",
+								fontSize: "0.825rem",
 								fontWeight: 600,
 								cursor: "pointer",
 								whiteSpace: "nowrap",
+								flexShrink: 0,
 								display: "inline-flex",
 								alignItems: "center",
 								gap: "0.35rem",
@@ -413,23 +414,24 @@ export function PsoRegisterTab() {
 							title="Автоматическое формирование и печать нормативного журнала ПСО (Форма 366/у) с синей печатью ЭЦП ГОСТ"
 							data-testid="generate-monthly-form366-btn"
 						>
-							<Sparkles size={15} color="#0d9488" />
-							<span>Форма 366/у (Печать с ЭЦП)</span>
+							<Sparkles size={14} color="#0d9488" className="shrink-0" />
+							<span className="shrink-0 whitespace-nowrap">Форма 366/у (Печать)</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={handleQuickMarkBatchNorm}
 							disabled={submitting}
-							className="sanpin-btn touch-manipulation"
+							className="sanpin-btn touch-manipulation shrink-0 whitespace-nowrap"
 							style={{
-								minHeight: "44px",
-								height: "44px",
-								padding: "0.4rem 0.95rem",
-								fontSize: "0.85rem",
+								minHeight: "36px",
+								height: "36px",
+								padding: "0.35rem 0.85rem",
+								fontSize: "0.825rem",
 								fontWeight: 700,
 								cursor: "pointer",
 								whiteSpace: "nowrap",
+								flexShrink: 0,
 								display: "inline-flex",
 								alignItems: "center",
 								gap: "0.4rem",
@@ -442,46 +444,48 @@ export function PsoRegisterTab() {
 							title="1-клик отметка: «Азопирамовая проба — норма (реакция отрицательная, следов крови и моющих средств не обнаружено по СанПиН 3.3686-21)»"
 							data-testid="quick-pso-norm-btn"
 						>
-							<CheckCircle2 size={16} />
-							<span>Азопирамовая проба — 1 клик норма (реакция отрицательная)</span>
+							<CheckCircle2 size={15} className="shrink-0" />
+							<span className="shrink-0 whitespace-nowrap">Азопирам — 1 клик норма</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={() => setIsModalOpen(true)}
-							className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+							className="sanpin-btn sanpin-btn-secondary touch-manipulation shrink-0 whitespace-nowrap"
 							style={{
-								minHeight: "44px",
-								height: "44px",
-								padding: "0.4rem 0.85rem",
-								fontSize: "0.85rem",
+								minHeight: "36px",
+								height: "36px",
+								padding: "0.35rem 0.75rem",
+								fontSize: "0.825rem",
 								fontWeight: 600,
 								cursor: "pointer",
 								whiteSpace: "nowrap",
+								flexShrink: 0,
 								display: "inline-flex",
 								alignItems: "center",
 								gap: "0.35rem",
 								borderRadius: "8px",
 							}}
 						>
-							<Plus size={15} /> <span>Внести пробу ПСО</span>
+							<Plus size={14} className="shrink-0" /> <span className="shrink-0 whitespace-nowrap">Внести пробу</span>
 						</button>
 					</div>
 				</div>
-				<table className="sanpin-table">
-					<thead>
-						<tr>
-							<th style={{ fontSize: "0.85rem" }}>Дата и время</th>
-							<th style={{ fontSize: "0.85rem" }}>Наименование инструментария</th>
-							<th style={{ fontSize: "0.85rem" }}>Объем партии</th>
-							<th style={{ fontSize: "0.85rem" }}>Контроль</th>
-							<th style={{ fontSize: "0.85rem" }}>Азопирам (кровь)</th>
-							<th style={{ fontSize: "0.85rem" }}>Фенолфталеин (щелочь)</th>
-							<th style={{ fontSize: "0.85rem" }}>Моющее средство</th>
-							<th style={{ fontSize: "0.85rem" }}>Результат контроля</th>
-							<th style={{ fontSize: "0.85rem" }}>Заверка / Ответственный</th>
-						</tr>
-					</thead>
+				<div className="w-full overflow-x-auto min-w-0" style={{ width: "100%", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+					<table className="sanpin-table w-full min-w-0" style={{ width: "100%", minWidth: "1040px", tableLayout: "auto" }}>
+						<thead>
+							<tr>
+								<th style={{ fontSize: "0.825rem", width: "125px", minWidth: "115px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Дата и время</th>
+								<th style={{ fontSize: "0.825rem", minWidth: "180px" }} className="min-w-0">Наименование инструментария</th>
+								<th style={{ fontSize: "0.825rem", width: "95px", minWidth: "90px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Объем партии</th>
+								<th style={{ fontSize: "0.825rem", width: "95px", minWidth: "90px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Контроль</th>
+								<th style={{ fontSize: "0.825rem", width: "135px", minWidth: "130px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Азопирам (кровь)</th>
+								<th style={{ fontSize: "0.825rem", width: "145px", minWidth: "140px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Фенолфталеин (щелочь)</th>
+								<th style={{ fontSize: "0.825rem", width: "150px", minWidth: "140px" }} className="min-w-0">Моющее средство</th>
+								<th style={{ fontSize: "0.825rem", width: "155px", minWidth: "150px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Результат контроля</th>
+								<th style={{ fontSize: "0.825rem", width: "155px", minWidth: "150px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Заверка / Ответственный</th>
+							</tr>
+						</thead>
 					<tbody>
 						{loading ? (
 							<tr>
@@ -528,12 +532,12 @@ export function PsoRegisterTab() {
 							filteredLogs.map((log) => {
 								const isStamped = stampedRows[log.id] || Boolean(log.notes?.includes("ЭЦП"));
 								return (
-									<tr key={log.id} style={{ minHeight: "56px" }}>
-										<td style={{ whiteSpace: "nowrap", fontSize: "0.85rem" }}>
+									<tr key={log.id} style={{ minHeight: "44px" }}>
+										<td style={{ width: "125px", minWidth: "115px", whiteSpace: "nowrap", fontSize: "0.825rem" }} className="whitespace-nowrap shrink-0">
 											<div style={{ fontWeight: 600, color: "var(--ink)" }}>
 												{new Date(log.timestamp).toLocaleDateString("ru-RU")}
 											</div>
-											<div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
+											<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
 												{new Date(log.timestamp).toLocaleTimeString("ru-RU", {
 													hour: "2-digit",
 													minute: "2-digit",
@@ -541,50 +545,50 @@ export function PsoRegisterTab() {
 											</div>
 										</td>
 
-										<td style={{ fontWeight: 600, fontSize: "0.9rem", color: "var(--ink)" }}>
+										<td style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--ink)", minWidth: "180px" }} className="min-w-0 break-words">
 											{log.instrumentName}
 										</td>
 
-										<td style={{ fontSize: "0.875rem", fontWeight: 600 }}>{log.batchItemCount} шт.</td>
-										<td style={{ fontSize: "0.875rem", fontWeight: 600 }}>{log.testedSampleCount} шт.</td>
+										<td style={{ width: "95px", minWidth: "90px", fontSize: "0.825rem", fontWeight: 600, whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">{log.batchItemCount} шт.</td>
+										<td style={{ width: "95px", minWidth: "90px", fontSize: "0.825rem", fontWeight: 600, whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">{log.testedSampleCount} шт.</td>
 
-										<td>
+										<td style={{ width: "135px", minWidth: "130px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">
 											{log.isAzopyramNegative ? (
-												<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.825rem", padding: "0.3rem 0.6rem" }}>
-													<CheckCircle2 size={14} /> Отрицат. (Норма)
+												<span className="sanpin-tag sanpin-tag-success shrink-0 whitespace-nowrap" style={{ fontSize: "0.75rem", padding: "0.2rem 0.5rem" }}>
+													<CheckCircle2 size={12} className="shrink-0" /> Отрицат. (Норма)
 												</span>
 											) : (
-												<span className="sanpin-tag sanpin-tag-danger" style={{ fontSize: "0.825rem", padding: "0.3rem 0.6rem" }}>
-													<XCircle size={14} /> Положит. (КРОВЬ)
+												<span className="sanpin-tag sanpin-tag-danger shrink-0 whitespace-nowrap" style={{ fontSize: "0.75rem", padding: "0.2rem 0.5rem" }}>
+													<XCircle size={12} className="shrink-0" /> Положит. (КРОВЬ)
 												</span>
 											)}
 										</td>
 
-										<td>
+										<td style={{ width: "145px", minWidth: "140px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">
 											{log.isPhenolphthaleinNegative ? (
-												<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.825rem", padding: "0.3rem 0.6rem" }}>
-													<CheckCircle2 size={14} /> Отрицат. (Норма)
+												<span className="sanpin-tag sanpin-tag-success shrink-0 whitespace-nowrap" style={{ fontSize: "0.75rem", padding: "0.2rem 0.5rem" }}>
+													<CheckCircle2 size={12} className="shrink-0" /> Отрицат. (Норма)
 												</span>
 											) : (
-												<span className="sanpin-tag sanpin-tag-danger" style={{ fontSize: "0.825rem", padding: "0.3rem 0.6rem" }}>
-													<XCircle size={14} /> Положит. (ЩЕЛОЧЬ)
+												<span className="sanpin-tag sanpin-tag-danger shrink-0 whitespace-nowrap" style={{ fontSize: "0.75rem", padding: "0.2rem 0.5rem" }}>
+													<XCircle size={12} className="shrink-0" /> Положит. (ЩЕЛОЧЬ)
 												</span>
 											)}
 										</td>
 
-										<td style={{ fontSize: "0.825rem", color: "var(--muted)" }}>
+										<td style={{ width: "150px", minWidth: "140px", fontSize: "0.8rem", color: "var(--muted)" }} className="min-w-0 break-words">
 											{log.detergentBrand || "—"}
 										</td>
 
-										<td>
+										<td style={{ width: "155px", minWidth: "150px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">
 											{log.isBatchApproved ? (
-												<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.825rem" }}>
+												<span className="sanpin-tag sanpin-tag-success shrink-0 whitespace-nowrap" style={{ fontSize: "0.75rem", padding: "0.2rem 0.5rem" }}>
 													Допущено к стерилизации
 												</span>
 											) : (
 												<span
-													className="sanpin-tag sanpin-tag-danger"
-													style={{ fontSize: "0.825rem" }}
+													className="sanpin-tag sanpin-tag-danger shrink-0 whitespace-nowrap"
+													style={{ fontSize: "0.75rem", padding: "0.2rem 0.5rem" }}
 													title={log.rejectionReason || "Партия забракована"}
 												>
 													БРАК: {log.rejectionReason || "Повторная очистка"}
@@ -592,25 +596,25 @@ export function PsoRegisterTab() {
 											)}
 										</td>
 
-										<td>
-											<div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-												<div style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+										<td style={{ width: "155px", minWidth: "150px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">
+											<div style={{ display: "flex", flexDirection: "column", gap: "3px" }} className="shrink-0 whitespace-nowrap">
+												<div style={{ fontSize: "0.8rem", fontWeight: 600 }} className="truncate">
 													{log.operatorName || "Сотрудник ЦСО"}
 												</div>
 
 												{isStamped ? (
-													<span className="sanpin-badge-gov" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem" }}>
-														<CheckCircle2 size={12} /> ЭЦП проставлена
+													<span className="sanpin-badge-gov shrink-0 whitespace-nowrap" style={{ fontSize: "0.7rem", padding: "0.1rem 0.4rem" }}>
+														<CheckCircle2 size={11} className="shrink-0" /> ЭЦП проставлена
 													</span>
 												) : (
 													<button
 														type="button"
 														onClick={() => handleStampVerification(log.id)}
-														className="sanpin-btn sanpin-btn-secondary touch-manipulation"
-														style={{ minHeight: "44px", minWidth: "80px", padding: "0.4rem 0.85rem", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+														className="sanpin-btn sanpin-btn-secondary touch-manipulation shrink-0 whitespace-nowrap"
+														style={{ minHeight: "26px", height: "26px", minWidth: "70px", padding: "0.2rem 0.6rem", fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "0.3rem", cursor: "pointer" }}
 														title="Поставить штамп заверки медсестры"
 													>
-														<Award size={15} color="var(--brand-primary)" /> Заверить
+														<Award size={13} color="var(--brand-primary)" className="shrink-0" /> Заверить
 													</button>
 												)}
 											</div>
@@ -621,6 +625,7 @@ export function PsoRegisterTab() {
 						)}
 					</tbody>
 				</table>
+				</div>
 			</div>
 
 			{/* Modal for new PSO entry */}

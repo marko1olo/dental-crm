@@ -602,10 +602,10 @@ export function AutoclaveRegisterTab() {
 
 			{/* Compact 1-Click Autoclave Shift Cycle Strip (<= 38px) */}
 			<div
-				className="flex items-center justify-between gap-3 px-3 py-1.5 my-1.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)]"
+				className="flex items-center justify-between gap-3 px-3 py-1.5 my-1.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] min-w-0 overflow-x-auto"
 			>
-				<div className="flex items-center gap-2 min-w-0">
-					<span className="px-1.5 py-0.5 rounded bg-[var(--primary,#0284c7)] text-white text-[10px] font-bold uppercase tracking-wider shrink-0">
+				<div className="flex items-center gap-2 min-w-0 shrink">
+					<span className="px-1.5 py-0.5 rounded bg-[var(--primary,#0284c7)] text-white text-[10px] font-bold uppercase tracking-wider shrink-0 whitespace-nowrap">
 						СанПиН • Форма № 257/у
 					</span>
 					<span className="text-xs font-semibold text-ink truncate">
@@ -613,25 +613,25 @@ export function AutoclaveRegisterTab() {
 					</span>
 				</div>
 
-				<div className="flex items-center gap-2 shrink-0">
+				<div className="flex items-center gap-2 shrink-0 flex-nowrap">
 					<button
 						type="button"
 						onClick={handleQuickShiftBatch}
 						disabled={isLoggingBatch}
-						className="sanpin-btn touch-manipulation h-8 px-3 text-xs font-bold rounded-md bg-[var(--primary,#0284c7)] text-white hover:bg-sky-600 inline-flex items-center gap-1.5 cursor-pointer border-0 shadow-sm"
+						className="sanpin-btn touch-manipulation h-8 px-3 text-xs font-bold rounded-md bg-[var(--primary,#0284c7)] text-white hover:bg-sky-600 inline-flex items-center gap-1.5 cursor-pointer border-0 shadow-sm shrink-0 whitespace-nowrap"
 						data-testid="banner-autoclave-quick-shift-btn"
 						title="Запустить типовой цикл автоклава (134°C, 2.1 бар, 5 мин) и внести в Форму 257/у"
 					>
-						<Sparkles size={14} />
-						<span>Запустить типовой цикл автоклава (134°C, 2.1 бар, 5 мин)</span>
+						<Sparkles size={14} className="shrink-0" />
+						<span className="shrink-0 whitespace-nowrap">Запустить типовой цикл (134°C, 2.1 бар, 5 мин)</span>
 					</button>
 				</div>
 			</div>
 
 			{/* Table of Sterilization Cycles with Integrated Compact Header (Height <= 36px) */}
-			<div className="sanpin-table-wrapper w-full overflow-x-auto" style={{ position: "relative", zIndex: 1, width: "100%", overflowX: "auto" }}>
+			<div className="sanpin-table-wrapper w-full overflow-x-auto min-w-0" style={{ position: "relative", zIndex: 1, width: "100%", overflowX: "auto" }}>
 				<div
-					className="sanpin-table-toolbar"
+					className="sanpin-table-toolbar min-w-0 flex-nowrap"
 					style={{
 						display: "flex",
 						alignItems: "center",
@@ -640,27 +640,27 @@ export function AutoclaveRegisterTab() {
 						padding: "0.35rem 0.65rem",
 						background: "var(--paper-soft, #f8fafc)",
 						borderBottom: "1px solid var(--line, #e2e8f0)",
-						flexWrap: "wrap",
+						overflowX: "auto",
 					}}
 				>
-					<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flex: "1 1 200px", minWidth: "160px", maxWidth: "340px", position: "relative" }}>
-						<Search size={16} style={{ position: "absolute", left: "0.75rem", color: "var(--muted, #94a3b8)" }} />
+					<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flex: "1 1 180px", minWidth: "140px", maxWidth: "320px", position: "relative" }} className="min-w-0 shrink">
+						<Search size={15} style={{ position: "absolute", left: "0.75rem", color: "var(--muted, #94a3b8)" }} />
 						<input
 							type="text"
 							placeholder="Поиск по аппарату, лотку, штрихкоду, оператору..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="sanpin-input"
-							style={{ paddingLeft: "2.2rem", minHeight: "44px", height: "44px", fontSize: "0.85rem", width: "100%", borderRadius: "8px" }}
+							className="sanpin-input min-w-0"
+							style={{ paddingLeft: "2.2rem", minHeight: "36px", height: "36px", fontSize: "0.825rem", width: "100%", borderRadius: "8px" }}
 						/>
 					</div>
 
-					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }} className="shrink-0 flex-nowrap">
 						<select
 							value={deviceFilter}
 							onChange={(e) => setDeviceFilter(e.target.value)}
-							className="sanpin-select"
-							style={{ minHeight: "44px", height: "44px", fontSize: "0.85rem", padding: "0.4rem 0.75rem", borderRadius: "8px" }}
+							className="sanpin-select shrink-0 whitespace-nowrap"
+							style={{ minHeight: "36px", height: "36px", fontSize: "0.825rem", padding: "0.35rem 0.75rem", borderRadius: "8px", flexShrink: 0, whiteSpace: "nowrap" }}
 						>
 							<option value="all">Все циклы</option>
 							<option value="passed">Стерильно (Норма)</option>
@@ -671,15 +671,16 @@ export function AutoclaveRegisterTab() {
 						<button
 							type="button"
 							onClick={() => setIsEquipmentModalOpen(true)}
-							className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+							className="sanpin-btn sanpin-btn-secondary touch-manipulation shrink-0 whitespace-nowrap"
 							style={{
-								minHeight: "44px",
-								height: "44px",
-								padding: "0.4rem 0.85rem",
-								fontSize: "0.85rem",
+								minHeight: "36px",
+								height: "36px",
+								padding: "0.35rem 0.75rem",
+								fontSize: "0.825rem",
 								fontWeight: 600,
 								cursor: "pointer",
 								whiteSpace: "nowrap",
+								flexShrink: 0,
 								display: "inline-flex",
 								alignItems: "center",
 								gap: "0.35rem",
@@ -688,7 +689,7 @@ export function AutoclaveRegisterTab() {
 							data-testid="autoclave-equipment-btn"
 							title="Управление парком автоклавов и стерилизаторов клиники"
 						>
-							<ShieldCheck size={16} color="#2563eb" /> <span>Оборудование ({clinicDevices.length})</span>
+							<ShieldCheck size={15} color="#2563eb" className="shrink-0" /> <span className="shrink-0 whitespace-nowrap">Оборудование ({clinicDevices.length})</span>
 						</button>
 
 						{/* Action: ⚡ 1-Клик печать наклеек (10 шт. / 30 дн.) без модалок */}
@@ -701,15 +702,16 @@ export function AutoclaveRegisterTab() {
 									showToast("Сначала зафиксируйте цикл стерилизации смены", "warning");
 								}
 							}}
-							className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+							className="sanpin-btn sanpin-btn-secondary touch-manipulation shrink-0 whitespace-nowrap"
 							style={{
-								minHeight: "44px",
-								height: "44px",
-								padding: "0.4rem 0.85rem",
-								fontSize: "0.85rem",
+								minHeight: "36px",
+								height: "36px",
+								padding: "0.35rem 0.75rem",
+								fontSize: "0.825rem",
 								fontWeight: 700,
 								cursor: "pointer",
 								whiteSpace: "nowrap",
+								flexShrink: 0,
 								display: "inline-flex",
 								alignItems: "center",
 								gap: "0.35rem",
@@ -721,22 +723,23 @@ export function AutoclaveRegisterTab() {
 							title="1-Клик печать пачки из 10 наклеек крафт-пакетов (срок 30 дней для запечатанных пакетов по СанПиН 3.3686-21) без блокирующих окон"
 							data-testid="autoclave-quick-batch-labels-btn"
 						>
-							<Printer size={16} /> <span>Печать наклеек (10 шт. / 30 дн.)</span>
+							<Printer size={15} className="shrink-0" /> <span className="shrink-0 whitespace-nowrap">Печать наклеек (10 шт.)</span>
 						</button>
 
 						{/* Action: + Зафиксировать цикл */}
 						<button
 							type="button"
 							onClick={() => setIsModalOpen(true)}
-							className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+							className="sanpin-btn sanpin-btn-secondary touch-manipulation shrink-0 whitespace-nowrap"
 							style={{
-								minHeight: "44px",
-								height: "44px",
-								padding: "0.4rem 0.85rem",
-								fontSize: "0.85rem",
+								minHeight: "36px",
+								height: "36px",
+								padding: "0.35rem 0.75rem",
+								fontSize: "0.825rem",
 								fontWeight: 600,
 								cursor: "pointer",
 								whiteSpace: "nowrap",
+								flexShrink: 0,
 								display: "inline-flex",
 								alignItems: "center",
 								gap: "0.35rem",
@@ -745,21 +748,21 @@ export function AutoclaveRegisterTab() {
 							data-testid="sanpin-autoclave-new-cycle-btn"
 							title="Зафиксировать новый цикл стерилизации"
 						>
-							<Plus size={16} /> <span>Зафиксировать цикл</span>
+							<Plus size={15} className="shrink-0" /> <span className="shrink-0 whitespace-nowrap">Зафиксировать цикл</span>
 						</button>
 
 						{/* Dropdown: [⋮ Дополнительно] */}
-						<div ref={moreMenuRef} style={{ position: "relative", display: "inline-block", zIndex: 60 }}>
+						<div ref={moreMenuRef} className="shrink-0" style={{ position: "relative", display: "inline-block", zIndex: 60 }}>
 							<button
 								type="button"
 								onClick={() => setIsMoreMenuOpen((prev) => !prev)}
-								className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+								className="sanpin-btn sanpin-btn-secondary touch-manipulation shrink-0 whitespace-nowrap"
 								style={{
-									minHeight: "44px",
-									minWidth: "44px",
-									height: "44px",
-									padding: "0.4rem 0.75rem",
-									fontSize: "0.85rem",
+									minHeight: "36px",
+									minWidth: "36px",
+									height: "36px",
+									padding: "0.35rem 0.5rem",
+									fontSize: "0.825rem",
 									fontWeight: 600,
 									cursor: "pointer",
 									display: "inline-flex",
@@ -767,12 +770,13 @@ export function AutoclaveRegisterTab() {
 									justifyContent: "center",
 									gap: "0.25rem",
 									borderRadius: "8px",
+									flexShrink: 0,
 								}}
 								aria-expanded={isMoreMenuOpen}
 								title="Дополнительные операции: Форма 257/у, вскрытие крафт-пакетов"
 								data-testid="autoclave-more-options-btn"
 							>
-								<MoreVertical size={13} color="var(--brand-primary, #2563eb)" />
+								<MoreVertical size={14} color="var(--brand-primary, #2563eb)" />
 								<ChevronDown size={11} style={{ transform: isMoreMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
 							</button>
 
@@ -885,19 +889,19 @@ export function AutoclaveRegisterTab() {
 						</div>
 					</div>
 				</div>
-				<div className="w-full overflow-x-auto" style={{ width: "100%", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-					<table className="sanpin-table w-full" style={{ width: "100%", minWidth: "1080px", tableLayout: "auto" }}>
+				<div className="w-full overflow-x-auto min-w-0" style={{ width: "100%", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+					<table className="sanpin-table w-full min-w-0" style={{ width: "100%", minWidth: "1080px", tableLayout: "auto" }}>
 						<thead>
 						<tr>
-							<th style={{ fontSize: "0.825rem", width: "140px", minWidth: "130px", whiteSpace: "nowrap" }}>Дата / № Цикла</th>
-							<th style={{ fontSize: "0.825rem", width: "130px", minWidth: "120px" }}>Марка аппарата</th>
-							<th style={{ fontSize: "0.825rem", width: "160px", minWidth: "150px" }}>Стерилизуемые изделия</th>
-							<th style={{ fontSize: "0.825rem", width: "110px", minWidth: "100px" }}>Вид упаковки</th>
-							<th style={{ fontSize: "0.825rem", width: "120px", minWidth: "115px", whiteSpace: "nowrap" }}>Режим (T°, P, t)</th>
-							<th style={{ fontSize: "0.825rem", width: "95px", minWidth: "90px", whiteSpace: "nowrap" }}>Индикатор</th>
-							<th style={{ fontSize: "0.825rem", width: "95px", minWidth: "90px", whiteSpace: "nowrap" }}>Срок годности</th>
-							<th style={{ fontSize: "0.825rem", width: "175px", minWidth: "165px", whiteSpace: "nowrap" }}>Штрихкод / Статус</th>
-							<th style={{ fontSize: "0.825rem", width: "140px", minWidth: "135px", whiteSpace: "nowrap" }}>Заверка / Оператор</th>
+							<th style={{ fontSize: "0.825rem", width: "140px", minWidth: "130px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Дата / № Цикла</th>
+							<th style={{ fontSize: "0.825rem", width: "130px", minWidth: "120px" }} className="min-w-0">Марка аппарата</th>
+							<th style={{ fontSize: "0.825rem", width: "160px", minWidth: "150px" }} className="min-w-0">Стерилизуемые изделия</th>
+							<th style={{ fontSize: "0.825rem", width: "110px", minWidth: "100px" }} className="min-w-0">Вид упаковки</th>
+							<th style={{ fontSize: "0.825rem", width: "120px", minWidth: "115px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Режим (T°, P, t)</th>
+							<th style={{ fontSize: "0.825rem", width: "95px", minWidth: "90px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Индикатор</th>
+							<th style={{ fontSize: "0.825rem", width: "95px", minWidth: "90px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Срок годности</th>
+							<th style={{ fontSize: "0.825rem", width: "175px", minWidth: "165px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Штрихкод / Статус</th>
+							<th style={{ fontSize: "0.825rem", width: "140px", minWidth: "135px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">Заверка / Оператор</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -967,7 +971,7 @@ export function AutoclaveRegisterTab() {
 								const isStamped = stampedRows[log.id] || Boolean(log.notes?.includes("ЭЦП"));
 								return (
 									<tr key={log.id} style={{ minHeight: "38px" }}>
-										<td style={{ width: "140px", minWidth: "130px" }}>
+										<td style={{ width: "140px", minWidth: "130px" }} className="whitespace-nowrap shrink-0">
 											<div style={{ display: "flex", alignItems: "center", gap: "0.35rem", whiteSpace: "nowrap" }}>
 												<span style={{ fontWeight: 700, fontSize: "0.825rem", color: "var(--ink)" }}>
 													№{log.cycleNumber}
@@ -979,7 +983,7 @@ export function AutoclaveRegisterTab() {
 											</div>
 										</td>
 
-										<td style={{ width: "130px", minWidth: "120px" }}>
+										<td style={{ width: "130px", minWidth: "120px" }} className="min-w-0">
 											<div
 												style={{
 													fontWeight: 600,
@@ -997,7 +1001,7 @@ export function AutoclaveRegisterTab() {
 											</div>
 										</td>
 
-										<td style={{ width: "160px", minWidth: "150px" }}>
+										<td style={{ width: "160px", minWidth: "150px" }} className="min-w-0">
 											<div
 												style={{
 													fontSize: "0.8125rem",
@@ -1015,7 +1019,7 @@ export function AutoclaveRegisterTab() {
 											</div>
 										</td>
 
-										<td style={{ width: "110px", minWidth: "100px" }}>
+										<td style={{ width: "110px", minWidth: "100px" }} className="min-w-0">
 											<div
 												style={{
 													fontSize: "0.775rem",
@@ -1055,7 +1059,7 @@ export function AutoclaveRegisterTab() {
 											</div>
 										</td>
 
-										<td style={{ width: "120px", minWidth: "115px", whiteSpace: "nowrap" }}>
+										<td style={{ width: "120px", minWidth: "115px", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">
 											<div style={{ fontSize: "0.8125rem", whiteSpace: "nowrap" }}>
 												<span style={{ fontWeight: 700, color: "var(--ink)" }}>
 													{log.temperatureCelsius || 134} °C
@@ -1066,19 +1070,19 @@ export function AutoclaveRegisterTab() {
 											</div>
 										</td>
 
-										<td style={{ width: "95px", minWidth: "90px" }}>
+										<td style={{ width: "95px", minWidth: "90px" }} className="whitespace-nowrap shrink-0">
 											{log.passedIndicator ? (
-												<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", whiteSpace: "nowrap", flexShrink: 0 }}>
-													<CheckCircle2 size={12} /> {log.indicatorType === "class5_integrating" ? "Класс 5" : log.indicatorType === "class6_emulating" ? "Класс 6" : log.indicatorType || "Класс 5"}
+												<span className="sanpin-tag sanpin-tag-success shrink-0 whitespace-nowrap" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", whiteSpace: "nowrap", flexShrink: 0 }}>
+													<CheckCircle2 size={12} className="shrink-0" /> {log.indicatorType === "class5_integrating" ? "Класс 5" : log.indicatorType === "class6_emulating" ? "Класс 6" : log.indicatorType || "Класс 5"}
 												</span>
 											) : (
-												<span className="sanpin-tag sanpin-tag-danger" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", whiteSpace: "nowrap", flexShrink: 0 }}>
-													<XCircle size={12} /> Брак
+												<span className="sanpin-tag sanpin-tag-danger shrink-0 whitespace-nowrap" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", whiteSpace: "nowrap", flexShrink: 0 }}>
+													<XCircle size={12} className="shrink-0" /> Брак
 												</span>
 											)}
 										</td>
 
-										<td style={{ width: "95px", minWidth: "90px", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
+										<td style={{ width: "95px", minWidth: "90px", fontSize: "0.8rem", whiteSpace: "nowrap" }} className="whitespace-nowrap shrink-0">
 											{log.expiresAt ? (
 												<span style={{ fontWeight: 600, color: "#059669" }}>
 													{new Date(log.expiresAt).toLocaleDateString("ru-RU")}
@@ -1088,15 +1092,15 @@ export function AutoclaveRegisterTab() {
 											)}
 										</td>
 
-										<td style={{ width: "175px", minWidth: "165px" }}>
+										<td style={{ width: "175px", minWidth: "165px" }} className="whitespace-nowrap shrink-0">
 											<div style={{ display: "flex", alignItems: "center", gap: "0.35rem", whiteSpace: "nowrap" }}>
 												{(log.status as string) === "passed" || (log.status as string) === "sterile" ? (
-													<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", whiteSpace: "nowrap", flexShrink: 0 }} title="Стерилизация завершена успешно, контроль пройден">
-														<CheckCircle2 size={12} /> Стерильно
+													<span className="sanpin-tag sanpin-tag-success shrink-0 whitespace-nowrap" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", whiteSpace: "nowrap", flexShrink: 0 }} title="Стерилизация завершена успешно, контроль пройден">
+														<CheckCircle2 size={12} className="shrink-0" /> Стерильно
 													</span>
 												) : (
-													<span className="sanpin-tag sanpin-tag-danger" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", whiteSpace: "nowrap", flexShrink: 0 }} title="Нарушение параметров стерилизации — брак!">
-														<XCircle size={12} /> БРАК
+													<span className="sanpin-tag sanpin-tag-danger shrink-0 whitespace-nowrap" style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", whiteSpace: "nowrap", flexShrink: 0 }} title="Нарушение параметров стерилизации — брак!">
+														<XCircle size={12} className="shrink-0" /> БРАК
 													</span>
 												)}
 												{log.barcode ? (
@@ -1121,7 +1125,7 @@ export function AutoclaveRegisterTab() {
 											</div>
 										</td>
 
-										<td style={{ width: "140px", minWidth: "135px" }}>
+										<td style={{ width: "140px", minWidth: "135px" }} className="whitespace-nowrap shrink-0">
 											<div style={{ display: "flex", alignItems: "center", gap: "0.25rem", whiteSpace: "nowrap" }}>
 												<span style={{ fontSize: "0.775rem", fontWeight: 600, maxWidth: "70px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={log.operatorName || "Медсестра"}>
 													{log.operatorName ? log.operatorName.split(" ")[0] : "Медсестра"}

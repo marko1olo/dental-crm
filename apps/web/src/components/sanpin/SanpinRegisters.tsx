@@ -1582,7 +1582,7 @@ export function SanpinRegisters() {
 				style={{
 					display: "flex",
 					alignItems: "center",
-					justifyContent: "space-between",
+					justifyContent: "flex-start",
 					gap: "0.6rem",
 					borderBottom: "1px solid var(--line, rgba(148, 163, 184, 0.2))",
 					padding: "0.2rem 0",
@@ -1642,7 +1642,7 @@ export function SanpinRegisters() {
 
 				{/* 2. Sub-Tabs for Active Category */}
 				<div
-					className="flex-1 flex items-center overflow-x-auto whitespace-nowrap scrollbar-none gap-1 touch-pan-x min-w-0"
+					className="flex-1 flex items-center justify-start flex-nowrap overflow-x-auto scrollbar-none gap-1 touch-pan-x min-w-0 pl-1"
 					data-testid="sanpin-active-category-subtabs"
 				>
 					{(SANPIN_CATEGORIES.find((c) => c.id === activeCategory)?.tabs || SANPIN_CATEGORIES[0]!.tabs).map((tab) => {
@@ -1653,7 +1653,7 @@ export function SanpinRegisters() {
 								key={tab.id}
 								type="button"
 								onClick={() => handleSelectTab(tab.id)}
-								className={`sanpin-tab-btn touch-manipulation ${isActive ? "active" : ""}`}
+								className={`sanpin-tab-btn touch-manipulation shrink-0 whitespace-nowrap ${isActive ? "active" : ""}`}
 								style={{
 									minHeight: "32px",
 									height: "32px",
@@ -1675,8 +1675,8 @@ export function SanpinRegisters() {
 								}}
 								data-testid={`tab-${tab.id}-btn`}
 							>
-								<Icon size={13} color={isActive ? "#ffffff" : "currentColor"} />
-								<span className="whitespace-nowrap">{tab.shortLabel}</span>
+								<Icon size={13} color={isActive ? "#ffffff" : "currentColor"} className="shrink-0" />
+								<span className="whitespace-nowrap shrink-0">{tab.shortLabel}</span>
 							</button>
 						);
 					})}

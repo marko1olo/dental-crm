@@ -341,42 +341,39 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						</button>
 					</div>
 
-					{/* Compact Inline KPI */}
-					<div className="hidden md:flex items-center gap-2 text-xs text-[var(--muted,#64748b)] shrink-0 pl-1 border-l border-[var(--line,#e2e8f0)]">
-						<span>
-							Позиций: <strong className="text-[var(--ink,#0f172a)]">{totalItems}</strong>
+					{/* Compact Inline KPI Badges */}
+					<div className="hidden md:flex items-center gap-1.5 text-xs text-[var(--muted,#64748b)] shrink-0 pl-1 border-l border-[var(--line,#e2e8f0)]">
+						<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[11px] font-medium shrink-0 whitespace-nowrap">
+							Поз: <strong className="text-[var(--ink,#0f172a)] font-bold">{totalItems}</strong>
 						</span>
-						<span>•</span>
-						<span>
-							В дефиците:{" "}
+						<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[11px] font-medium shrink-0 whitespace-nowrap">
+							Дефицит:{" "}
 							<strong
 								className={
 									lowStockCount > 0
 										? "text-rose-600 dark:text-rose-400 font-bold"
-										: "text-teal-600 dark:text-teal-400"
+										: "text-teal-600 dark:text-teal-400 font-bold"
 								}
 							>
 								{lowStockCount}
 							</strong>
 						</span>
 						{totalValue > 0 && (
-							<>
-								<span>•</span>
-								<span className="inline-flex items-center gap-1">
-									Стоимость:{" "}
-									<strong className="text-teal-600 dark:text-teal-400">
-										{money(totalValue)}
-									</strong>
-								</span>
-							</>
+							<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[11px] font-medium shrink-0 whitespace-nowrap">
+								Стоимость:{" "}
+								<strong className="text-teal-600 dark:text-teal-400 font-bold">
+									{money(totalValue)}
+								</strong>
+							</span>
 						)}
 					</div>
 				</div>
 
 				{/* Right: Search, Quick Packages Toggle, Carpule Disposal, Ops Menu, Add Item */}
-				<div className="flex items-center gap-1.5 shrink-0">
+				<div className="flex items-center gap-1.5 shrink-0 flex-nowrap">
 					{/* Compact Search Input */}
 					<div
+						className="relative flex items-center shrink-0"
 						style={{
 							position: "relative",
 							display: "flex",
@@ -397,7 +394,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							placeholder="Поиск..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="!pl-7 w-32 sm:w-48 text-xs min-h-[44px] sm:min-h-[28px] sm:h-7"
+							className="!pl-7 w-36 lg:w-48 text-xs min-h-[32px] sm:min-h-[28px] sm:h-7 shrink-0"
 							style={{
 								padding: "4px 8px 4px 28px",
 								borderRadius: 6,
@@ -415,7 +412,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					<button
 						type="button"
 						onClick={() => setIsQuickPackagesOpen((prev) => !prev)}
-						className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 rounded-md text-xs font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors border"
+						className="min-h-[32px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 rounded-md text-xs font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors border shrink-0 whitespace-nowrap"
 						style={{
 							background: isQuickPackagesOpen ? "var(--teal-soft)" : paperSoftBg,
 							color: isQuickPackagesOpen ? "var(--teal-dark, #0f766e)" : "var(--ink)",
@@ -427,7 +424,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					>
 						<Zap
 							size={13}
-							className={isQuickPackagesOpen ? "text-teal-600 dark:text-teal-400" : "text-amber-500"}
+							className={isQuickPackagesOpen ? "text-teal-600 dark:text-teal-400 shrink-0" : "text-amber-500 shrink-0"}
 						/>
 						<span className="hidden sm:inline">Пакеты</span>
 					</button>
@@ -438,14 +435,15 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						data-testid="nurse-quick-carpules-btn"
 						disabled={isWritingOffCarpules}
 						onClick={() => handleQuickWriteoffCarpules()}
-						className="secondary-button"
+						className="secondary-button shrink-0 whitespace-nowrap"
 						style={{
 							display: "inline-flex",
 							alignItems: "center",
 							gap: 5,
-							padding: "4px 10px",
-							minHeight: "36px",
-							borderRadius: 8,
+							padding: "4px 8px",
+							minHeight: "28px",
+							height: "28px",
+							borderRadius: 6,
 							fontWeight: 700,
 							fontSize: 12,
 							whiteSpace: "nowrap",
@@ -463,18 +461,19 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					</button>
 
 					{/* Operations Dropdown Menu (Hick's Law grouping) */}
-					<div ref={opsMenuRef} style={{ position: "relative", display: "inline-block" }}>
+					<div ref={opsMenuRef} className="shrink-0" style={{ position: "relative", display: "inline-block" }}>
 						<button
 							type="button"
-							className="secondary-button"
+							className="secondary-button shrink-0 whitespace-nowrap"
 							onClick={() => setIsOpsMenuOpen((prev) => !prev)}
 							style={{
 								display: "inline-flex",
 								alignItems: "center",
-								gap: 6,
-								padding: "4px 10px",
-								minHeight: "36px",
-								borderRadius: 8,
+								gap: 5,
+								padding: "4px 9px",
+								minHeight: "28px",
+								height: "28px",
+								borderRadius: 6,
 								border: `1px solid ${borderColor}`,
 								background: paperSoftBg,
 								color: "var(--ink)",
@@ -488,7 +487,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							data-testid="btn-warehouse-ops-menu"
 						>
 							<PackageCheck size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-							<span className="hidden md:inline">Операции</span>
+							<span>Операции</span>
 							<ChevronDown
 								size={12}
 								style={{
@@ -977,15 +976,16 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					{/* Add Inventory Item Button */}
 					<button
 						type="button"
-						className="primary-button"
+						className="primary-button shrink-0 whitespace-nowrap"
 						onClick={openAddModal}
 						style={{
 							display: "inline-flex",
 							alignItems: "center",
 							gap: 5,
-							padding: "4px 12px",
-							minHeight: "36px",
-							borderRadius: 8,
+							padding: "4px 11px",
+							minHeight: "28px",
+							height: "28px",
+							borderRadius: 6,
 							fontWeight: 700,
 							fontSize: 12,
 							whiteSpace: "nowrap",
@@ -996,7 +996,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						}}
 						data-testid="btn-add-inventory-item"
 					>
-						<Plus size={14} />
+						<Plus size={14} className="shrink-0" />
 						<span>Позиция</span>
 					</button>
 				</div>
@@ -1188,7 +1188,10 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 											textTransform: "uppercase",
 											letterSpacing: 0.5,
 											textAlign: "right",
+											minWidth: 320,
+											width: 320,
 										}}
+										className="whitespace-nowrap shrink-0"
 									>
 										Действия
 									</th>
@@ -1532,7 +1535,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 													)}
 												</td>
 												<td
-													style={{ padding: "14px 20px", textAlign: "right" }}
+													style={{ padding: "14px 20px", textAlign: "right", minWidth: 320 }}
+													className="shrink-0 whitespace-nowrap"
 												>
 													<div
 														style={{
@@ -1541,6 +1545,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 															alignItems: "center",
 															gap: 6,
 														}}
+														className="shrink-0 flex-nowrap"
 													>
 														{/* Action 1: Списать расход (Direct primary action) */}
 														<button
@@ -1550,7 +1555,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																setAdjustType("out");
 																setAdjustAmount("");
 															}}
-															className="min-h-[36px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5"
+															className="min-h-[36px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
 															style={{
 																background: "var(--bad-bg, rgba(239, 68, 68, 0.1))",
 																color: "var(--bad-fg, #ef4444)",
@@ -1560,8 +1565,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 															title="Списать расход материала (Primary Action: Расход)"
 															data-testid={`btn-item-writeoff-${item.id}`}
 														>
-															<ArrowUpFromLine size={13} />
-															<span>Списать расход</span>
+															<ArrowUpFromLine size={13} className="shrink-0" />
+															<span className="whitespace-nowrap shrink-0">Списать расход</span>
 														</button>
 
 														{/* Action 2: Приход/Накладная (Direct primary action) */}
@@ -1572,7 +1577,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																setAdjustType("in");
 																setAdjustAmount("");
 															}}
-															className="min-h-[36px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5"
+															className="min-h-[36px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
 															style={{
 																background: "var(--teal-soft)",
 																color: "var(--teal-dark, #0f766e)",
@@ -1582,13 +1587,14 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 															title="Оприходовать материал на склад / накладная (Primary Action: Приход)"
 															data-testid={`btn-item-arrival-${item.id}`}
 														>
-															<ArrowDownToLine size={13} />
-															<span>Приход/Накладная</span>
+															<ArrowDownToLine size={13} className="shrink-0" />
+															<span className="whitespace-nowrap shrink-0">Приход/Накладная</span>
 														</button>
 
 														{/* Secondary Actions Menu (MoreHorizontal) - Miller's Law <=2 direct controls */}
 														<div
 															style={{ position: "relative", display: "inline-flex" }}
+															className="shrink-0"
 															ref={activeMenuRowId === item.id ? rowMenuRef : null}
 														>
 															<button
@@ -1599,7 +1605,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																		prev === item.id ? null : item.id,
 																	);
 																}}
-																className="min-h-[36px] sm:min-h-0 sm:h-8 w-8 rounded-lg cursor-pointer inline-flex items-center justify-center transition-colors"
+																className="min-h-[36px] sm:min-h-0 sm:h-8 w-8 rounded-lg cursor-pointer inline-flex items-center justify-center transition-colors shrink-0"
 																style={{
 																	background: "var(--paper-soft, rgba(0,0,0,0.04))",
 																	color: "var(--muted)",
