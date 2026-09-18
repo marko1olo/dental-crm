@@ -727,7 +727,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	app.get("/api/hr/recent-patients", async (request, reply) => {
 		try {
 			const identity = await requireStaffIdentity(request, reply);
-			if (!identity) return;
+			if (!identity) return reply;
 			const { getRecentPatientHistoryFromDb } = await import(
 				"../db/recentPatientHistoryQuery.js"
 			);
@@ -760,7 +760,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	app.post("/api/hr/recent-patients", async (request, reply) => {
 		try {
 			const identity = await requireStaffIdentity(request, reply);
-			if (!identity) return;
+			if (!identity) return reply;
 			const parsedBody = recentPatientViewBodySchema.safeParse(
 				request.body ?? {},
 			);

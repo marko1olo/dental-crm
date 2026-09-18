@@ -374,7 +374,7 @@ export function ScheduleFilterStrip({
 				}
 			`}</style>
 			<div
-				className="schedule-filter-chips hidden sm:flex flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none py-0.5 min-w-0"
+				className="schedule-filter-chips hidden sm:flex flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none py-0.5 min-w-0 pr-2"
 				onWheel={(e) => {
 					if (e.deltaY !== 0) {
 						e.currentTarget.scrollLeft += e.deltaY;
@@ -463,7 +463,7 @@ export function ScheduleFilterStrip({
 								key={chair.id}
 								type="button"
 								data-testid={`chair-view-badge-${chair.id}`}
-								className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit !max-w-none !shrink-0 shrink-0 px-3 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center gap-1 select-none`}
+								className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-fit !max-w-none !shrink-0 shrink-0 px-2 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center gap-1 select-none`}
 								style={{ whiteSpace: "nowrap", minWidth: "fit-content", flexShrink: 0 }}
 								onClick={() =>
 									setScheduleChairFilterId(
@@ -483,7 +483,6 @@ export function ScheduleFilterStrip({
 					type="button"
 					onClick={handleOpenAddChair}
 					className="schedule-add-chair-chip-btn min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 sm:min-w-0 shrink-0 px-2.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-[var(--paper)] text-[var(--teal-dark)] dark:text-[var(--teal)] dark:bg-[var(--teal-soft)] text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 select-none"
-					style={{ minHeight: "44px", minWidth: "44px" }}
 					title="Быстрое добавление кресла или кабинета в расписание (1 клик)"
 					aria-label="Добавить кресло в расписание"
 					data-testid="schedule-add-chair-btn"

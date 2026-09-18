@@ -8934,7 +8934,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 				"dicom workbench bundle save",
 			))
 		)
-			return;
+			return reply;
 		const parsed = parseImagingPayload(
 			saveDicomWorkbenchBundleRequestSchema,
 			request.body,
@@ -8947,7 +8947,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 		// клиники Б получал 404 на собственное исследование, а в худшем случае —
 		// доступ к снимкам клиники А. Организация берётся из проверенного токена.
 		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
+		if (!orgId) return reply;
 		const bundle = await saveDicomWorkbenchBundle(orgId, input);
 		return reply.code(201).send(
 			dicomWorkbenchBundleResponseSchema.parse({
@@ -8965,7 +8965,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 				"dicom workbench bundles",
 			))
 		)
-			return;
+			return reply;
 		const query = request.query as { limit?: string | number | undefined };
 		const requestedLimit = Number(query.limit ?? 8);
 		// БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
@@ -8973,7 +8973,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 		// клиники Б получал 404 на собственное исследование, а в худшем случае —
 		// доступ к снимкам клиники А. Организация берётся из проверенного токена.
 		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
+		if (!orgId) return reply;
 		const bundles = await listDicomWorkbenchBundles(
 			orgId,
 			Number.isFinite(requestedLimit) ? requestedLimit : 8,
