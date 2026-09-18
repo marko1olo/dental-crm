@@ -1,19 +1,38 @@
 import type { Appointment, Dashboard, TreatmentPlanItem } from "@dental/shared";
-import { Calendar, Camera, Clock, FileSpreadsheet, FileText, Gift, MoreVertical, Plus, Printer, Receipt, Shield, Stethoscope, UserCheck } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import {
+	Calendar,
+	Camera,
+	Clock,
+	FileSpreadsheet,
+	FileText,
+	Gift,
+	MoreVertical,
+	Plus,
+	Printer,
+	Receipt,
+	Shield,
+	Stethoscope,
+	UserCheck,
+} from "lucide-react";
+import React, {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
-import { showToast } from "../GlobalToast";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { money } from "../../utils/financeUtils";
-import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
+import { showToast } from "../GlobalToast";
 import { DmsGuaranteeLetterModal } from "../insurance/DmsGuaranteeLetterModal";
-import type { DmsGuaranteeLetter } from "../insurance/insuranceMath";
 import { DmsRegistryExportModal } from "../insurance/DmsRegistryExportModal";
+import type { DmsGuaranteeLetter } from "../insurance/insuranceMath";
 import { LoyaltyProgramModal } from "../loyalty/program/LoyaltyProgramModal";
-
+import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
+import { printBlankMedicalContract } from "./blankContractPrint";
 import { PatientAllergySafetyBanner } from "./PatientAllergySafetyBanner";
 import { PatientDuplicateAlert } from "./PatientDuplicateAlert";
-import { printBlankMedicalContract } from "./blankContractPrint";
 
 export interface PatientWorkspaceViewProps {
 	patientId: string;
@@ -70,13 +89,16 @@ const TreatmentPlanCardItem: React.FC<{
 			</div>
 			{item.toothCode ? (
 				<div className="text-xs text-[var(--muted)]">
-					Зуб / область: <strong className="text-[var(--ink)]">{item.toothCode}</strong>
+					Зуб / область:{" "}
+					<strong className="text-[var(--ink)]">{item.toothCode}</strong>
 				</div>
 			) : null}
 			<div className="flex items-center justify-between mt-0.5 pt-1.5 border-t border-[var(--line)] text-xs">
 				<div className="flex items-center gap-2">
 					<span className="text-[var(--ink)] font-bold font-mono text-xs">
-						{item.unitPriceRub !== undefined && item.unitPriceRub !== null ? money(item.unitPriceRub) : "—"}
+						{item.unitPriceRub !== undefined && item.unitPriceRub !== null
+							? money(item.unitPriceRub)
+							: "—"}
 					</span>
 					<span className="inline-flex items-center gap-0.5 text-[10px] text-teal-700 dark:text-teal-300 font-medium">
 						<Shield className="w-2.5 h-2.5" /> Согласовано
@@ -133,7 +155,7 @@ const VisitHistoryCardItem: React.FC<{
 	}, [appointment.status]);
 
 	return (
-		<div className="p-3 rounded-lg flex flex-col gap-1.5 bg-[var(--paper-soft)] border border-[var(--line)] transition-colors shadow-xs">
+		<div className="visit-history-card p-3 rounded-lg flex flex-col gap-1.5 bg-[var(--paper-soft)] border border-[var(--line)] transition-colors shadow-xs">
 			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink)]">
 					<Calendar className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
@@ -144,7 +166,10 @@ const VisitHistoryCardItem: React.FC<{
 				</span>
 			</div>
 			<div className="text-xs text-[var(--muted)] truncate min-w-0">
-				Врач: <strong className="text-[var(--ink)]">{doctorFullName || "Врач не назначен"}</strong>
+				Врач:{" "}
+				<strong className="text-[var(--ink)]">
+					{doctorFullName || "Врач не назначен"}
+				</strong>
 			</div>
 			{appointment.reason ? (
 				<div className="text-xs text-[var(--ink)] line-clamp-2">
@@ -178,9 +203,9 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 		}) => {
 			const appLogic = useAppLogicContext();
 			const dashboard = propDashboard ?? appLogic?.dashboard;
-			const [activeTab, setActiveTab] = useState<"timeline" | "plans" | "visits">(
-				"timeline",
-			);
+			const [activeTab, setActiveTab] = useState<
+				"timeline" | "plans" | "visits"
+			>("timeline");
 
 			useEffect(() => {
 				let isMounted = true;
@@ -305,7 +330,9 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 						});
 						if (!res.ok) {
 							const errBody = await res.json().catch(() => null);
-							throw new Error(errBody?.message || `Ошибка сохранения (${res.status})`);
+							throw new Error(
+								errBody?.message || `Ошибка сохранения (${res.status})`,
+							);
 						}
 						showToast(
 							`Гарантийное письмо № ${letter.letterNumber} (${letter.insurerName}) сохранено в базе данных`,
@@ -313,7 +340,10 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 						);
 						setIsDmsLetterOpen(false);
 					} catch (err: any) {
-						showToast(err.message || "Не удалось сохранить гарантийное письмо", "error");
+						showToast(
+							err.message || "Не удалось сохранить гарантийное письмо",
+							"error",
+						);
 					}
 				},
 				[],
@@ -380,7 +410,10 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 							</button>
 
 							{/* Вторичные действия: аккуратное выпадающее меню [⋮ Документы и ДМС] */}
-							<div className="relative inline-block text-left" ref={docsMenuRef}>
+							<div
+								className="relative inline-block text-left"
+								ref={docsMenuRef}
+							>
 								<button
 									type="button"
 									className="secondary-button min-h-[34px] h-8 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer inline-flex items-center gap-1"
@@ -427,7 +460,10 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 												if (typeof window !== "undefined") {
 													window.print();
 												}
-												showToast("Печать и экспорт карты 043/у запущены", "info");
+												showToast(
+													"Печать и экспорт карты 043/у запущены",
+													"info",
+												);
 											}}
 											title="Распечатать амбулаторную медицинскую карту Форма 043/у"
 											data-testid="patient-workspace-print-043u-btn"
@@ -460,7 +496,10 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 											className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
 											onClick={() => {
 												setIsDocsMenuOpen(false);
-												showToast("Семейный баланс и распределение авансов", "info");
+												showToast(
+													"Семейный баланс и распределение авансов",
+													"info",
+												);
 											}}
 											title="Семейный баланс и распределение авансовых платежей"
 											data-testid="patient-workspace-family-balance-btn"
@@ -540,7 +579,10 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 												setIsDocsMenuOpen(false);
 												void printBlankMedicalContract(
 													{ id: patientId, fullName: patientName },
-													{ clinicName: dashboard?.clinicSettings?.profile?.legalName },
+													{
+														clinicName:
+															dashboard?.clinicSettings?.profile?.legalName,
+													},
 												);
 											}}
 											title="Распечатать пустой договор со строками _______ для ручного заполнения"
@@ -611,7 +653,8 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 											Защита согласий и сметы (ПП РФ №659 и ст. 16 ЗоЗПП)
 										</span>
 										<p className="text-[11px] text-[var(--muted)] m-0">
-											Все манипуляции фиксируются в плане. Новые позиции требуют Дополнительного соглашения.
+											Все манипуляции фиксируются в плане. Новые позиции требуют
+											Дополнительного соглашения.
 										</p>
 									</div>
 								</div>
@@ -674,7 +717,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 											appointment={appt}
 											doctorFullName={
 												appt.doctorUserId
-													? staffMap.get(appt.doctorUserId) ?? null
+													? (staffMap.get(appt.doctorUserId) ?? null)
 													: null
 											}
 											onOpenVisit={handleOpenVisitCallback}
@@ -712,7 +755,10 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 					/>
 
 					{/* FAB clearance bottom spacer */}
-					<div className="h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />
+					<div
+						className="h-24 w-full shrink-0 pointer-events-none"
+						aria-hidden="true"
+					/>
 				</div>
 			);
 		},

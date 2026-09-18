@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import type { StaffRole } from "@dental/shared";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -40,17 +39,16 @@ import {
 	Waves,
 	Zap,
 } from "lucide-react";
+import { useEffect } from "react";
 import { ClinicControlPill } from "./components/Header";
 import {
 	IncomingCallPopup,
 	resolveTelephonyWsUrl,
 } from "./components/telephony/IncomingCallPopup";
 import { TelephonyFloatingWidget } from "./components/telephony/TelephonyFloatingWidget";
-import { useWebsocket } from "./hooks/useWebsocket";
-import { useTelephonyStore } from "./store/telephonyStore";
-import { useAppStore } from "./store/appStore";
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
 import { WorkspaceActionsMount } from "./components/workspaceActions/WorkspaceActions";
+import { useWebsocket } from "./hooks/useWebsocket";
 import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
 import {
 	type ClinicMode,
@@ -58,15 +56,17 @@ import {
 	hasCapability,
 	staffRoleChoices,
 } from "./lib/clinicCapabilities";
-import { useSettingsStore } from "./store/settingsStore";
-import { type ThemeMode, useThemeStore } from "./store/themeStore";
+import { useAppStore } from "./store/appStore";
 import {
-	type WorkspacePerspective,
 	perspectiveDescriptions,
 	perspectiveLabels,
 	perspectiveShortLabels,
 	usePerspectiveStore,
+	type WorkspacePerspective,
 } from "./store/perspectiveStore";
+import { useSettingsStore } from "./store/settingsStore";
+import { useTelephonyStore } from "./store/telephonyStore";
+import { type ThemeMode, useThemeStore } from "./store/themeStore";
 import {
 	type AppView,
 	appViews,
@@ -100,12 +100,13 @@ export {
 	appViews,
 	getFallbackAppView,
 	getFilteredAppViews,
+	IncomingCallPopup,
+	resolveTelephonyWsUrl,
+	TelephonyFloatingWidget,
 	viewHints,
 	viewLabels,
-	IncomingCallPopup,
-	TelephonyFloatingWidget,
-	resolveTelephonyWsUrl,
 };
+
 import type { WorkspacePreloadIntent } from "./workspacePreload";
 
 type WorkspaceViewIntentHandler = (
@@ -470,26 +471,103 @@ function ThemeSwitcher() {
 		Icon: LucideIcon;
 		dot: string;
 	}> = [
-		{ mode: "auto", label: "Авто", hint: "Следовать системной теме устройства", Icon: Laptop, dot: "#94a3b8" },
-		{ mode: "light", label: "День", hint: "Клиническая светлая тема", Icon: Sun, dot: "#0d9488" },
-		{ mode: "dark", label: "Тьма", hint: "Хирургическая тёмная (Slate)", Icon: Moon, dot: "#2dd4bf" },
-		{ mode: "night", label: "OLED", hint: "Истинный глубокий чёрный для OLED", Icon: Sparkles, dot: "#ffffff" },
-		{ mode: "calm_teal", label: "Морская", hint: "Мягкая мятная успокаивающая тема", Icon: Waves, dot: "#14b8a6" },
-		{ mode: "sakura", label: "Сакура", hint: "Нежная розовая сакура для детской и эстетики", Icon: Flower2, dot: "#f43f5e" },
-		{ mode: "ocean", label: "Океан", hint: "Глубокий сапфировый ультрамарин", Icon: Droplets, dot: "#38bdf8" },
-		{ mode: "emerald", label: "Изумруд", hint: "Хвойно-изумрудная свежесть", Icon: Trees, dot: "#34d399" },
-		{ mode: "cyber_xray", label: "Рентген", hint: "Неоновый кибер-КТ визиограф", Icon: Zap, dot: "#00f0ff" },
-		{ mode: "warm_sand", label: "Песок", hint: "Тёплый уют шамотной керамики", Icon: Flame, dot: "#d97706" },
-		{ mode: "contrast", label: "Контраст", hint: "Высокий контраст WCAG AAA (7:1)", Icon: Eye, dot: "#000000" },
+		{
+			mode: "auto",
+			label: "Авто",
+			hint: "Следовать системной теме устройства",
+			Icon: Laptop,
+			dot: "#94a3b8",
+		},
+		{
+			mode: "light",
+			label: "День",
+			hint: "Клиническая светлая тема",
+			Icon: Sun,
+			dot: "#0d9488",
+		},
+		{
+			mode: "dark",
+			label: "Тьма",
+			hint: "Хирургическая тёмная (Slate)",
+			Icon: Moon,
+			dot: "#2dd4bf",
+		},
+		{
+			mode: "night",
+			label: "OLED",
+			hint: "Истинный глубокий чёрный для OLED",
+			Icon: Sparkles,
+			dot: "#ffffff",
+		},
+		{
+			mode: "calm_teal",
+			label: "Морская",
+			hint: "Мягкая мятная успокаивающая тема",
+			Icon: Waves,
+			dot: "#14b8a6",
+		},
+		{
+			mode: "sakura",
+			label: "Сакура",
+			hint: "Нежная розовая сакура для детской и эстетики",
+			Icon: Flower2,
+			dot: "#f43f5e",
+		},
+		{
+			mode: "ocean",
+			label: "Океан",
+			hint: "Глубокий сапфировый ультрамарин",
+			Icon: Droplets,
+			dot: "#38bdf8",
+		},
+		{
+			mode: "emerald",
+			label: "Изумруд",
+			hint: "Хвойно-изумрудная свежесть",
+			Icon: Trees,
+			dot: "#34d399",
+		},
+		{
+			mode: "cyber_xray",
+			label: "Рентген",
+			hint: "Неоновый кибер-КТ визиограф",
+			Icon: Zap,
+			dot: "#00f0ff",
+		},
+		{
+			mode: "warm_sand",
+			label: "Песок",
+			hint: "Тёплый уют шамотной керамики",
+			Icon: Flame,
+			dot: "#d97706",
+		},
+		{
+			mode: "contrast",
+			label: "Контраст",
+			hint: "Высокий контраст WCAG AAA (7:1)",
+			Icon: Eye,
+			dot: "#000000",
+		},
 	];
 
-	const currentOption = options.find((opt) => opt.mode === themeMode) ?? options[0]!;
+	const currentOption =
+		options.find((opt) => opt.mode === themeMode) ?? options[0]!;
 
 	return (
-		<details className="workspace-role-switcher workspace-theme-switcher" aria-label="Тема оформления">
+		<details
+			className="workspace-role-switcher workspace-theme-switcher"
+			aria-label="Тема оформления"
+		>
 			<summary title={currentOption.hint}>
-				<span className="theme-dot" style={{ backgroundColor: currentOption.dot }} />
-				<currentOption.Icon size={13} className="shrink-0 opacity-80" aria-hidden="true" />
+				<span
+					className="theme-dot"
+					style={{ backgroundColor: currentOption.dot }}
+				/>
+				<currentOption.Icon
+					size={13}
+					className="shrink-0 opacity-80"
+					aria-hidden="true"
+				/>
 				<strong>{currentOption.label}</strong>
 			</summary>
 			<div className="role-switcher-options theme-switcher-grid">
@@ -505,8 +583,15 @@ function ThemeSwitcher() {
 							event.currentTarget.closest("details")?.removeAttribute("open");
 						}}
 					>
-						<span className="theme-dot" style={{ backgroundColor: option.dot }} />
-						<option.Icon size={13} className="shrink-0 opacity-80" aria-hidden="true" />
+						<span
+							className="theme-dot"
+							style={{ backgroundColor: option.dot }}
+						/>
+						<option.Icon
+							size={13}
+							className="shrink-0 opacity-80"
+							aria-hidden="true"
+						/>
 						<span>{option.label}</span>
 					</button>
 				))}
@@ -529,12 +614,24 @@ export function PerspectiveSwitcher() {
 	];
 
 	return (
-		<details className="workspace-role-switcher workspace-perspective-switcher" aria-label="Клинический режим">
+		<details
+			className="workspace-role-switcher workspace-perspective-switcher"
+			aria-label="Клинический режим"
+		>
 			<summary title={perspectiveDescriptions[perspective]}>
 				<span className="hidden 2xl:inline">Режим</span>
-				<strong className="hidden 2xl:inline truncate max-w-[130px] align-middle">{perspectiveLabels[perspective]}</strong>
-				<strong className="2xl:hidden truncate max-w-[100px] align-middle">{perspectiveShortLabels[perspective] || perspectiveLabels[perspective]}</strong>
-				<ChevronDown size={13} className="switcher-chevron opacity-60" aria-hidden="true" />
+				<strong className="hidden 2xl:inline truncate max-w-[130px] align-middle">
+					{perspectiveLabels[perspective]}
+				</strong>
+				<strong className="2xl:hidden truncate max-w-[100px] align-middle">
+					{perspectiveShortLabels[perspective] ||
+						perspectiveLabels[perspective]}
+				</strong>
+				<ChevronDown
+					size={13}
+					className="switcher-chevron opacity-60"
+					aria-hidden="true"
+				/>
 			</summary>
 			<div className="role-switcher-options">
 				{options.map((mode) => (
@@ -602,7 +699,9 @@ export function formatDisplayClinicName(name?: string | null): string {
 	let cleaned = trimmed.replace(/[_-\s]+\d{10,14}$/, "").trim();
 	// If clinic name starts with generic medical category ("Стоматология " or "Стоматологическая клиника ")
 	// followed by a specific clinic brand (e.g. "Стоматология Дент-Премиум"), extract the brand for clean, non-clipped typography
-	const brand = cleaned.replace(/^(стоматологическая\s+клиника|стоматология)\s+/i, "").trim();
+	const brand = cleaned
+		.replace(/^(стоматологическая\s+клиника|стоматология)\s+/i, "")
+		.trim();
 	if (brand && brand.length >= 2) {
 		cleaned = brand;
 	}
@@ -663,12 +762,11 @@ export function WorkspaceTopbar({
 	const setWsConnected = useTelephonyStore((s) => s.setWsConnected);
 	const currentView = useAppStore((s) => s.currentView);
 	// Absolute doctor immunity: when treating at chair (visit) or role is doctor, calls stay silent/background
-	const isDoctorMode = selectedWorkspaceRole === "doctor" || currentView === "visit";
+	const isDoctorMode =
+		selectedWorkspaceRole === "doctor" || currentView === "visit";
 	const isDndActive = agentState === "dnd";
 	const isIncomingCall = Boolean(
-		(activeCall || isCallDrawerOpen) &&
-		!isDoctorMode &&
-		!isDndActive,
+		(activeCall || isCallDrawerOpen) && !isDoctorMode && !isDndActive,
 	);
 
 	// Background telephony WebSocket listener at top shell level
@@ -708,8 +806,13 @@ export function WorkspaceTopbar({
 						{formattedDate.replace(" г.", "").replace(",", " ·")}
 					</p>
 					<h1 className="truncate whitespace-nowrap text-ellipsis overflow-hidden text-sm font-bold leading-tight m-0">
-						<span className="sm:hidden">{formatDisplayClinicName(clinicName).split(/\s+/)[0] || formatDisplayClinicName(clinicName)}</span>
-						<span className="hidden sm:inline">{formatDisplayClinicName(clinicName)}</span>
+						<span className="sm:hidden">
+							{formatDisplayClinicName(clinicName).split(/\s+/)[0] ||
+								formatDisplayClinicName(clinicName)}
+						</span>
+						<span className="hidden sm:inline">
+							{formatDisplayClinicName(clinicName)}
+						</span>
 					</h1>
 				</div>
 				<div className="topbar-selectors shrink-0 flex items-center gap-1.5 mr-2">
@@ -718,9 +821,17 @@ export function WorkspaceTopbar({
 						aria-label={workspaceTopbarLabels.role.region}
 					>
 						<summary>
-							<span className="hidden 2xl:inline">{workspaceTopbarLabels.role.caption}</span>
-							<strong className="truncate max-w-[130px] 2xl:max-w-none inline-block align-middle">{staffRoleLabels[selectedWorkspaceRole]}</strong>
-							<ChevronDown size={13} className="switcher-chevron opacity-60" aria-hidden="true" />
+							<span className="hidden 2xl:inline">
+								{workspaceTopbarLabels.role.caption}
+							</span>
+							<strong className="truncate max-w-[130px] 2xl:max-w-none inline-block align-middle">
+								{staffRoleLabels[selectedWorkspaceRole]}
+							</strong>
+							<ChevronDown
+								size={13}
+								className="switcher-chevron opacity-60"
+								aria-hidden="true"
+							/>
 						</summary>
 						<div className="role-switcher-options">
 							{availableRoles.map((role) => (
@@ -875,7 +986,10 @@ export function WorkspaceTopbar({
 							fontWeight: 600,
 						}}
 					>
-						<Activity className="w-4 h-4 text-[var(--teal)] animate-pulse" aria-hidden="true" />
+						<Activity
+							className="w-4 h-4 text-[var(--teal)] animate-pulse"
+							aria-hidden="true"
+						/>
 						{workspaceTopbarLabels.doctorCockpit.label}
 					</button>
 				) : null}
@@ -939,7 +1053,10 @@ export function WorkspaceTopbar({
 						fontWeight: 600,
 					}}
 				>
-					<Sparkles className="w-4 h-4 text-[var(--teal)] shrink-0 animate-pulse" aria-hidden="true" />{" "}
+					<Sparkles
+						className="w-4 h-4 text-[var(--teal)] shrink-0 animate-pulse"
+						aria-hidden="true"
+					/>{" "}
 					{workspaceTopbarLabels.copilot.label}
 				</button>
 

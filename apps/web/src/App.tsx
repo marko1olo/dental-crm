@@ -40,14 +40,11 @@ import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { AuthHub } from "./components/auth/AuthHub";
 import { StaffPinPad } from "./components/auth/StaffPinPad";
 import { showToast } from "./components/GlobalToast";
-import { OnboardingWizardModal } from "./components/onboarding/OnboardingWizardModal";
-import { DoctorMobileShiftModal } from "./components/doctor-portal/DoctorMobileShiftModal";
 import { Omnibar } from "./components/Omnibar";
-import { A2hsPromptModal } from "./pwa/A2hsPromptModal";
-
 import { VoiceAssistantUI } from "./components/VoiceAssistantUI";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
-import { CtPlanningToolsPanel } from "./ctPlanningTools";
+import { useNetworkConnectivity } from "./hooks/useNetworkConnectivity";
+import { useOfflineMutationQueue } from "./hooks/useOfflineMutationQueue";
 import { resolveClinicMode, staffRoleChoices } from "./lib/clinicCapabilities";
 import { actionFailureToast } from "./lib/panelStateText";
 import {
@@ -59,11 +56,11 @@ import {
 	safeLocalStorageRemoveItem,
 	safeLocalStorageSetItem,
 } from "./lib/safeLocalStorage";
+import { A2hsPromptModal } from "./pwa/A2hsPromptModal";
+import { usePerspectiveStore } from "./store/perspectiveStore";
 import { useAppLogic } from "./useAppLogic";
 import { logger } from "./utils/logger";
 import { WorkspaceContinuityStrip } from "./workspaceContinuityStrip";
-import { useNetworkConnectivity } from "./hooks/useNetworkConnectivity";
-import { useOfflineMutationQueue } from "./hooks/useOfflineMutationQueue";
 import {
 	preloadWorkspaceView,
 	scheduleIdleWorkspacePreload,
@@ -74,7 +71,6 @@ import {
 	WorkspaceSidebar,
 	WorkspaceTopbar,
 } from "./workspaceShell";
-import { usePerspectiveStore } from "./store/perspectiveStore";
 
 const TreatmentPlanModule = lazy(() =>
 	import("./components/treatment-plans/TreatmentPlanModule").then((module) => ({
@@ -82,9 +78,11 @@ const TreatmentPlanModule = lazy(() =>
 	})),
 );
 const OrthodonticPerspectiveView = lazy(() =>
-	import("./components/perspectives/OrthodonticPerspectiveView").then((module) => ({
-		default: module.OrthodonticPerspectiveView,
-	})),
+	import("./components/perspectives/OrthodonticPerspectiveView").then(
+		(module) => ({
+			default: module.OrthodonticPerspectiveView,
+		}),
+	),
 );
 
 const ImagingView = lazy(() =>
@@ -172,6 +170,18 @@ const ManagerReportsPanel = lazy(() =>
 	import("./components/reports/ManagerReportsPanel").then((module) => ({
 		default: module.ManagerReportsPanel,
 	})),
+);
+const OnboardingWizardModal = lazy(() =>
+	import("./components/onboarding/OnboardingWizardModal").then((module) => ({
+		default: module.OnboardingWizardModal,
+	})),
+);
+const DoctorMobileShiftModal = lazy(() =>
+	import("./components/doctor-portal/DoctorMobileShiftModal").then(
+		(module) => ({
+			default: module.DoctorMobileShiftModal,
+		}),
+	),
 );
 function _speechGatewayCanUpload(status: SpeechGatewayStatus | null): boolean {
 	return Boolean(
@@ -926,7 +936,8 @@ export function App() {
 		};
 		handleDirectHashRoutes();
 		window.addEventListener("hashchange", handleDirectHashRoutes);
-		return () => window.removeEventListener("hashchange", handleDirectHashRoutes);
+		return () =>
+			window.removeEventListener("hashchange", handleDirectHashRoutes);
 	}, [setCurrentView]);
 	const [resetting, setResetting] = useState(false);
 	// --- DUAL-TIER AUTH STATE ---
@@ -946,7 +957,11 @@ export function App() {
 
 	// On mount: if clinic token already in localStorage (page refresh / persisted session), load dashboard + restore user profile
 	useEffect(() => {
-		if (clinicAuthed && !dashboard && !initialDashboardLoadTriggeredRef.current) {
+		if (
+			clinicAuthed &&
+			!dashboard &&
+			!initialDashboardLoadTriggeredRef.current
+		) {
 			initialDashboardLoadTriggeredRef.current = true;
 			void loadDashboardRef.current().catch((e) => {
 				// Only force re-login on explicit 401 auth failure, not network/db errors
@@ -1170,13 +1185,13 @@ export function App() {
 					aria-label="Первичная настройка клиники"
 				>
 					{/* Onboarding Header */}
-						<div className="onboarding-head">
-							<div>
-								<p className="eyebrow">Первый запуск</p>
-								<h2>Быстрая настройка CRM Dente</h2>
-							</div>
+					<div className="onboarding-head">
+						<div>
+							<p className="eyebrow">Первый запуск</p>
+							<h2>Быстрая настройка CRM Dente</h2>
 						</div>
-						{/*
+					</div>
+					{/*
               ОТКАЗ ВНУТРИ МАСТЕРА ВИДЕН ЗДЕСЬ, А НЕ В РАБОЧЕЙ ОБЛАСТИ.
               Полоса отказа в этом файле одна, и стоит она ниже — внутри рабочей
               области (ищите `<section className="app-notice"` после этой ветки).
@@ -1191,46 +1206,40 @@ export function App() {
               Ровно тот класс дефекта, из-за которого удалили семишаговый мастер:
               запрос отказывает, а экран об отказе молчит.
             */}
-						{error ? (
-							<section
-								className="app-notice"
-								role="alert"
-								aria-live="assertive"
+					{error ? (
+						<section className="app-notice" role="alert" aria-live="assertive">
+							<AlertTriangle aria-hidden="true" />
+							<p>{error}</p>
+							<button
+								className="secondary-button"
+								type="button"
+								onClick={() => setError(null)}
 							>
-								<AlertTriangle aria-hidden="true" />
-								<p>{error}</p>
-								<button
-									className="secondary-button"
-									type="button"
-									onClick={() => setError(null)}
+								Понятно
+							</button>
+						</section>
+					) : null}
+					{/* Step list if not intro */}
+					{onboardingStep !== "intro" ? (
+						<ol
+							className="wizard-step-list"
+							aria-label={`Шаг ${currentOnboardingIndex + 1} из ${onboardingSteps.length}`}
+						>
+							{onboardingSteps.map((step, index) => (
+								<li
+									className="wizard-step"
+									key={step.id}
+									data-active={step.id === onboardingStep}
+									aria-current={step.id === onboardingStep ? "step" : undefined}
 								>
-									Понятно
-								</button>
-							</section>
-						) : null}
-						{/* Step list if not intro */}
-						{onboardingStep !== "intro" ? (
-							<ol
-								className="wizard-step-list"
-								aria-label={`Шаг ${currentOnboardingIndex + 1} из ${onboardingSteps.length}`}
-							>
-								{onboardingSteps.map((step, index) => (
-									<li
-										className="wizard-step"
-										key={step.id}
-										data-active={step.id === onboardingStep}
-										aria-current={
-											step.id === onboardingStep ? "step" : undefined
-										}
-									>
-										<span className="wizard-step-index">Шаг {index + 1}</span>
-										<strong className="wizard-step-title">{step.title}</strong>
-										<span className="wizard-step-detail">{step.detail}</span>
-									</li>
-								))}
-							</ol>
-						) : null}
-						{/*
+									<span className="wizard-step-index">Шаг {index + 1}</span>
+									<strong className="wizard-step-title">{step.title}</strong>
+									<span className="wizard-step-detail">{step.detail}</span>
+								</li>
+							))}
+						</ol>
+					) : null}
+					{/*
               ШАГ «РЕЖИМ ЗАПУСКА» — ЕДИНСТВЕННЫЙ ВЫХОД НОВОЙ КЛИНИКИ В ПРОГРАММУ.
               ЧТО БЫЛО СЛОМАНО. Новая клиника всегда попадает именно на этот шаг:
               AppHelpers.tsx:4325 принудительно ставит onboardingStep в "intro",
@@ -1269,248 +1278,241 @@ export function App() {
               отсутствующего: по «полностью пустой базе» клиника начнёт вносить
               настоящих пациентов рядом с тестовыми.
             */}
-						{onboardingStep === "intro" ? (
-							<div className="onboarding-panel">
-								<div>
-									<h3>Режим запуска приложения</h3>
-									<p>
-										Выберите, с чего начать. Настройку клиники можно закончить
-										позже в разделе «Настройки» — приём, расписание и картотека
-										работают и без неё.
-									</p>
-								</div>
-								<div className="wizard-mode-grid">
-									<button
-										className="wizard-mode-card wizard-mode-card--demo"
-										type="button"
-										onClick={async () => {
-											setResetting(true);
-											await continueOnboardingInDraftMode();
-											await loadDashboard({});
-											setResetting(false);
-										}}
-										disabled={resetting}
-									>
-										<span className="wizard-mode-icon" aria-hidden="true">
-											<Rocket className="w-5 h-5 text-[var(--teal)]" aria-hidden="true" />
-										</span>
-										<strong className="wizard-mode-title">
-											Сначала осмотреться
-										</strong>
-										<span className="wizard-mode-note">
-											Открыть рабочее место с тем, что уже есть в базе клиники,
-											и пройтись по разделам. Ничего не удаляется и не
-											досоздаётся.
-										</span>
-									</button>
-									<button
-										className="wizard-mode-card wizard-mode-card--clean"
-										type="button"
-										onClick={() => void moveOnboardingTo("clinic")}
-										disabled={resetting}
-									>
-										<span className="wizard-mode-icon" aria-hidden="true">
-											✨
-										</span>
-										<strong className="wizard-mode-title">
-											Настроить клинику сейчас
-										</strong>
-										<span className="wizard-mode-note">
-											Название и телефон клиники, первый специалист и кресло —
-											по шагам. Выйти в рабочее место можно на любом шаге.
-										</span>
-									</button>
-								</div>
+					{onboardingStep === "intro" ? (
+						<div className="onboarding-panel">
+							<div>
+								<h3>Режим запуска приложения</h3>
+								<p>
+									Выберите, с чего начать. Настройку клиники можно закончить
+									позже в разделе «Настройки» — приём, расписание и картотека
+									работают и без неё.
+								</p>
 							</div>
-						) : null}
-						{/* Clinic step */}
-						{onboardingStep === "clinic" ? (
-							<div className="onboarding-panel">
-								<div>
-									<h3>О клинике</h3>
-									<p>
-										Название и телефон понадобятся для генерации договоров и
-										медицинских карт.
-									</p>
-								</div>
-								<div className="wizard-field-list">
-									<div className="wizard-field">
-										<label htmlFor="onboarding-clinic-name">
-											Название клиники
-										</label>
-										<input
-											id="onboarding-clinic-name"
-											value={clinicProfileDraft.clinicName}
-											onChange={(event) =>
-												updateClinicProfileDraft(
-													"clinicName",
-													event.target.value,
-												)
-											}
-											placeholder="Стоматология..."
-										/>
-									</div>
-									<div className="wizard-field">
-										<label htmlFor="onboarding-clinic-phone">
-											Телефон для связи
-										</label>
-										<input
-											id="onboarding-clinic-phone"
-											type="tel"
-											inputMode="tel"
-											autoComplete="tel"
-											value={clinicProfileDraft.phone}
-											onChange={(event) =>
-												updateClinicProfileDraft("phone", event.target.value)
-											}
-											placeholder="89..."
-										/>
-									</div>
-								</div>
-							</div>
-						) : null}
-						{/* Team step */}
-						{onboardingStep === "team" ? (
-							<div className="onboarding-panel">
-								<div>
-									<h3>Ваша роль и данные</h3>
-									<p>
-										Укажите свою рабочую роль в клинике и личные данные для
-										настройки интерфейса.
-									</p>
-								</div>
-								<div className="wizard-field-list">
-									<div className="wizard-field">
-										<span id="onboarding-role-label">Ваша рабочая роль</span>
-										<fieldset
-											className="wizard-role-row"
-											aria-labelledby="onboarding-role-label"
-											style={{ border: "none", padding: 0, margin: 0 }}
-										>
-											{onboardingRoleChoices.map((role) => (
-												<button
-													className={`wizard-role-chip${selectedWorkspaceRole === role ? " active" : ""}`}
-													key={role}
-													type="button"
-													aria-pressed={selectedWorkspaceRole === role}
-													onClick={() => setSelectedWorkspaceRole(role)}
-												>
-													{staffRoleLabels[role]}
-												</button>
-											))}
-										</fieldset>
-									</div>
-									<div className="wizard-field">
-										<label htmlFor="onboarding-staff-name">
-											{selectedWorkspaceRole === "owner"
-												? "ФИО владельца клиники"
-												: selectedWorkspaceRole === "doctor"
-													? "ФИО врача"
-													: selectedWorkspaceRole === "administrator"
-														? "ФИО администратора"
-														: selectedWorkspaceRole === "assistant"
-															? "ФИО ассистента"
-															: "ФИО сотрудника"}
-										</label>
-										<input
-											id="onboarding-staff-name"
-											autoComplete="name"
-											value={newStaffName}
-											onChange={(event) => setNewStaffName(event.target.value)}
-											placeholder="Иванов Иван Иванович"
-										/>
-									</div>
-									{(selectedWorkspaceRole === "doctor" ||
-										selectedWorkspaceRole === "assistant") && (
-										<div className="wizard-field">
-											<label htmlFor="onboarding-chair-name">
-												Название кабинета/кресла
-											</label>
-											<input
-												id="onboarding-chair-name"
-												value={newChairName}
-												onChange={(event) =>
-													setNewChairName(event.target.value)
-												}
-												placeholder="Кабинет терапевта"
-											/>
-										</div>
-									)}
-								</div>
-							</div>
-						) : null}
-						{/* Done step */}
-						{onboardingStep === "done" ? (
-							<div className="onboarding-panel">
-								<div>
-									<h3>Все готово к запуску!</h3>
-									<p>
-										Проверьте параметры перед открытием рабочей смены. Вы
-										сможете изменить любые настройки позже.
-									</p>
-								</div>
-								<div className="wizard-summary-grid">
-									<div>
-										<span className="wizard-summary-label">
-											Название клиники
-										</span>
-										<strong className="wizard-summary-value">
-											{clinicProfileDraft.clinicName || "Новая стоматология"}
-										</strong>
-									</div>
-									<div>
-										<span className="wizard-summary-label">
-											Ваша рабочая роль
-										</span>
-										<strong className="wizard-summary-value">
-											{staffRoleLabels[selectedWorkspaceRole]}
-										</strong>
-									</div>
-									<div>
-										<span className="wizard-summary-label">
-											Первый специалист
-										</span>
-										<strong className="wizard-summary-value">
-											{newStaffName || "Администратор"}
-										</strong>
-									</div>
-									{(selectedWorkspaceRole === "doctor" ||
-										selectedWorkspaceRole === "assistant") && (
-										<div>
-											<span className="wizard-summary-label">
-												Кабинет / кресло
-											</span>
-											<strong className="wizard-summary-value">
-												{newChairName || "Кабинет №1"}
-											</strong>
-										</div>
-									)}
-								</div>
-							</div>
-						) : null}
-						{/* Actions Footer */}
-						<div className="onboarding-actions">
-							{onboardingStep !== "intro" && previousOnboardingStep ? (
+							<div className="wizard-mode-grid">
 								<button
-									className="secondary-button"
+									className="wizard-mode-card wizard-mode-card--demo"
 									type="button"
-									onClick={() =>
-										void moveOnboardingTo(previousOnboardingStep.id)
-									}
+									onClick={async () => {
+										setResetting(true);
+										await continueOnboardingInDraftMode();
+										await loadDashboard({});
+										setResetting(false);
+									}}
+									disabled={resetting}
 								>
-									Назад
+									<span className="wizard-mode-icon" aria-hidden="true">
+										<Rocket
+											className="w-5 h-5 text-[var(--teal)]"
+											aria-hidden="true"
+										/>
+									</span>
+									<strong className="wizard-mode-title">
+										Сначала осмотреться
+									</strong>
+									<span className="wizard-mode-note">
+										Открыть рабочее место с тем, что уже есть в базе клиники, и
+										пройтись по разделам. Ничего не удаляется и не досоздаётся.
+									</span>
 								</button>
-							) : null}
-							{onboardingStep !== "intro" && nextOnboardingStep ? (
 								<button
-									className="primary-button"
+									className="wizard-mode-card wizard-mode-card--clean"
 									type="button"
-									onClick={() => void moveOnboardingTo(nextOnboardingStep.id)}
+									onClick={() => void moveOnboardingTo("clinic")}
+									disabled={resetting}
 								>
-									Дальше
+									<span className="wizard-mode-icon" aria-hidden="true">
+										✨
+									</span>
+									<strong className="wizard-mode-title">
+										Настроить клинику сейчас
+									</strong>
+									<span className="wizard-mode-note">
+										Название и телефон клиники, первый специалист и кресло — по
+										шагам. Выйти в рабочее место можно на любом шаге.
+									</span>
 								</button>
-							) : null}
-							{/*
+							</div>
+						</div>
+					) : null}
+					{/* Clinic step */}
+					{onboardingStep === "clinic" ? (
+						<div className="onboarding-panel">
+							<div>
+								<h3>О клинике</h3>
+								<p>
+									Название и телефон понадобятся для генерации договоров и
+									медицинских карт.
+								</p>
+							</div>
+							<div className="wizard-field-list">
+								<div className="wizard-field">
+									<label htmlFor="onboarding-clinic-name">
+										Название клиники
+									</label>
+									<input
+										id="onboarding-clinic-name"
+										value={clinicProfileDraft.clinicName}
+										onChange={(event) =>
+											updateClinicProfileDraft("clinicName", event.target.value)
+										}
+										placeholder="Стоматология..."
+									/>
+								</div>
+								<div className="wizard-field">
+									<label htmlFor="onboarding-clinic-phone">
+										Телефон для связи
+									</label>
+									<input
+										id="onboarding-clinic-phone"
+										type="tel"
+										inputMode="tel"
+										autoComplete="tel"
+										value={clinicProfileDraft.phone}
+										onChange={(event) =>
+											updateClinicProfileDraft("phone", event.target.value)
+										}
+										placeholder="89..."
+									/>
+								</div>
+							</div>
+						</div>
+					) : null}
+					{/* Team step */}
+					{onboardingStep === "team" ? (
+						<div className="onboarding-panel">
+							<div>
+								<h3>Ваша роль и данные</h3>
+								<p>
+									Укажите свою рабочую роль в клинике и личные данные для
+									настройки интерфейса.
+								</p>
+							</div>
+							<div className="wizard-field-list">
+								<div className="wizard-field">
+									<span id="onboarding-role-label">Ваша рабочая роль</span>
+									<fieldset
+										className="wizard-role-row"
+										aria-labelledby="onboarding-role-label"
+										style={{ border: "none", padding: 0, margin: 0 }}
+									>
+										{onboardingRoleChoices.map((role) => (
+											<button
+												className={`wizard-role-chip${selectedWorkspaceRole === role ? " active" : ""}`}
+												key={role}
+												type="button"
+												aria-pressed={selectedWorkspaceRole === role}
+												onClick={() => setSelectedWorkspaceRole(role)}
+											>
+												{staffRoleLabels[role]}
+											</button>
+										))}
+									</fieldset>
+								</div>
+								<div className="wizard-field">
+									<label htmlFor="onboarding-staff-name">
+										{selectedWorkspaceRole === "owner"
+											? "ФИО владельца клиники"
+											: selectedWorkspaceRole === "doctor"
+												? "ФИО врача"
+												: selectedWorkspaceRole === "administrator"
+													? "ФИО администратора"
+													: selectedWorkspaceRole === "assistant"
+														? "ФИО ассистента"
+														: "ФИО сотрудника"}
+									</label>
+									<input
+										id="onboarding-staff-name"
+										autoComplete="name"
+										value={newStaffName}
+										onChange={(event) => setNewStaffName(event.target.value)}
+										placeholder="Иванов Иван Иванович"
+									/>
+								</div>
+								{(selectedWorkspaceRole === "doctor" ||
+									selectedWorkspaceRole === "assistant") && (
+									<div className="wizard-field">
+										<label htmlFor="onboarding-chair-name">
+											Название кабинета/кресла
+										</label>
+										<input
+											id="onboarding-chair-name"
+											value={newChairName}
+											onChange={(event) => setNewChairName(event.target.value)}
+											placeholder="Кабинет терапевта"
+										/>
+									</div>
+								)}
+							</div>
+						</div>
+					) : null}
+					{/* Done step */}
+					{onboardingStep === "done" ? (
+						<div className="onboarding-panel">
+							<div>
+								<h3>Все готово к запуску!</h3>
+								<p>
+									Проверьте параметры перед открытием рабочей смены. Вы сможете
+									изменить любые настройки позже.
+								</p>
+							</div>
+							<div className="wizard-summary-grid">
+								<div>
+									<span className="wizard-summary-label">Название клиники</span>
+									<strong className="wizard-summary-value">
+										{clinicProfileDraft.clinicName || "Новая стоматология"}
+									</strong>
+								</div>
+								<div>
+									<span className="wizard-summary-label">
+										Ваша рабочая роль
+									</span>
+									<strong className="wizard-summary-value">
+										{staffRoleLabels[selectedWorkspaceRole]}
+									</strong>
+								</div>
+								<div>
+									<span className="wizard-summary-label">
+										Первый специалист
+									</span>
+									<strong className="wizard-summary-value">
+										{newStaffName || "Администратор"}
+									</strong>
+								</div>
+								{(selectedWorkspaceRole === "doctor" ||
+									selectedWorkspaceRole === "assistant") && (
+									<div>
+										<span className="wizard-summary-label">
+											Кабинет / кресло
+										</span>
+										<strong className="wizard-summary-value">
+											{newChairName || "Кабинет №1"}
+										</strong>
+									</div>
+								)}
+							</div>
+						</div>
+					) : null}
+					{/* Actions Footer */}
+					<div className="onboarding-actions">
+						{onboardingStep !== "intro" && previousOnboardingStep ? (
+							<button
+								className="secondary-button"
+								type="button"
+								onClick={() => void moveOnboardingTo(previousOnboardingStep.id)}
+							>
+								Назад
+							</button>
+						) : null}
+						{onboardingStep !== "intro" && nextOnboardingStep ? (
+							<button
+								className="primary-button"
+								type="button"
+								onClick={() => void moveOnboardingTo(nextOnboardingStep.id)}
+							>
+								Дальше
+							</button>
+						) : null}
+						{/*
                 «НАЧАТЬ РАБОТУ» ЗВАЛО ФУНКЦИЮ, КОТОРОЙ В ДЕРЕВЕ НЕТ.
                 Здесь стояло handleFinishOnboarding(newStaffName, newChairName).
                 Такого имени нет ни в useAppLogic, ни в двух его подмешанных
@@ -1534,30 +1536,30 @@ export function App() {
                 сначала завести людей и кресло, потом входить — иначе отказ
                 сервера уехал бы за пределы экрана вместе с мастером.
               */}
-							{onboardingStep === "done" ? (
-								<button
-									className="primary-button"
-									type="button"
-									disabled={resetting}
-									onClick={async () => {
-										setResetting(true);
-										if (newStaffName.trim())
-											await addStaffMember(selectedWorkspaceRole);
-										if (
-											(selectedWorkspaceRole === "doctor" ||
-												selectedWorkspaceRole === "assistant") &&
-											newChairName.trim()
-										) {
-											await addChair();
-										}
-										await continueOnboardingInDraftMode();
-										setResetting(false);
-									}}
-								>
-									Начать работу
-								</button>
-							) : null}
-						</div>
+						{onboardingStep === "done" ? (
+							<button
+								className="primary-button"
+								type="button"
+								disabled={resetting}
+								onClick={async () => {
+									setResetting(true);
+									if (newStaffName.trim())
+										await addStaffMember(selectedWorkspaceRole);
+									if (
+										(selectedWorkspaceRole === "doctor" ||
+											selectedWorkspaceRole === "assistant") &&
+										newChairName.trim()
+									) {
+										await addChair();
+									}
+									await continueOnboardingInDraftMode();
+									setResetting(false);
+								}}
+							>
+								Начать работу
+							</button>
+						) : null}
+					</div>
 				</div>
 			</main>
 		);
@@ -1682,7 +1684,10 @@ export function App() {
 							<div className="default-clinic-banner" role="status">
 								<div className="banner-content">
 									<span className="banner-icon" aria-hidden="true">
-										<Rocket className="w-5 h-5 text-amber-500" aria-hidden="true" />
+										<Rocket
+											className="w-5 h-5 text-amber-500"
+											aria-hidden="true"
+										/>
 									</span>
 									<p>
 										<strong>Клиника ещё не настроена?</strong> Её название
@@ -1832,181 +1837,201 @@ export function App() {
 						</section>
 					) : null}
 					{isDoctorShiftCockpitOpen ? (
-						<DoctorMobileShiftModal
-							isOpen={isDoctorShiftCockpitOpen}
-							onClose={closeDoctorShiftCockpit}
-							initialDoctorId={activeDoctor?.id || "doc-1"}
-							initialDoctorName={activeDoctor?.fullName || "Лечащий врач"}
-							initialDoctorSpecialty={activeDoctor?.specialty || "Терапевт-ортопед"}
-							initialShiftDateIso={dashboard?.todayIso || "2026-08-29"}
-						/>
+						<Suspense fallback={null}>
+							<DoctorMobileShiftModal
+								isOpen={isDoctorShiftCockpitOpen}
+								onClose={closeDoctorShiftCockpit}
+								initialDoctorId={activeDoctor?.id || "doc-1"}
+								initialDoctorName={activeDoctor?.fullName || "Лечащий врач"}
+								initialDoctorSpecialty={
+									activeDoctor?.specialty || "Терапевт-ортопед"
+								}
+								initialShiftDateIso={dashboard?.todayIso || "2026-08-29"}
+							/>
+						</Suspense>
 					) : null}
 					{showFullOnboardingGuide ? (
-						<OnboardingWizardModal
-							currentOnboardingIndex={currentOnboardingIndex}
-							onboardingSteps={onboardingSteps}
-							legalReadinessPercent={legalReadinessPercent}
-							continueOnboardingInDraftMode={continueOnboardingInDraftMode}
-							moveOnboardingTo={moveOnboardingTo}
-							onboardingStep={onboardingStep}
-							onboardingReadyToFinish={onboardingReadyToFinish}
-							onboardingFinishGuidanceId={onboardingFinishGuidanceId}
-							onboardingRoleChoices={onboardingRoleChoices}
-							selectedWorkspaceRole={selectedWorkspaceRole}
-							setSelectedWorkspaceRole={setSelectedWorkspaceRole}
-							staffRoleLabels={staffRoleLabels}
-							specialtyLabels={specialtyLabels}
-							selectedSpecialty={selectedSpecialty}
-							setSelectedSpecialty={setSelectedSpecialty}
-							dashboard={dashboard}
-							clinicModeLabels={clinicModeLabels}
-							changeClinicMode={changeClinicMode}
-							clinicProfileDraft={clinicProfileDraft}
-							updateClinicProfileDraft={updateClinicProfileDraft}
-							uiLanguage={uiLanguage}
-							setUiLanguage={setUiLanguage}
-							normalizeUiLanguageInput={normalizeUiLanguageInput}
-							uiLanguageOptions={uiLanguageOptions}
-							selectedUiLanguageOption={selectedUiLanguageOption}
-							weekdayOptions={weekdayOptions}
-							toggleClinicWorkingDay={toggleClinicWorkingDay}
-							legalMissingFields={legalMissingFields}
-							newStaffName={newStaffName}
-							setNewStaffName={setNewStaffName}
-							newStaffRole={newStaffRole}
-							setNewStaffRole={setNewStaffRole}
-							newStaffSpecialty={newStaffSpecialty}
-							setNewStaffSpecialty={setNewStaffSpecialty}
-							addStaffMember={addStaffMember}
-							newStaffReadyToCreate={newStaffReadyToCreate}
-							onboardingStaffCreateGuidanceId={onboardingStaffCreateGuidanceId}
-							newChairName={newChairName}
-							setNewChairName={setNewChairName}
-							addChair={addChair}
-							newChairReadyToCreate={newChairReadyToCreate}
-							onboardingChairCreateGuidanceId={onboardingChairCreateGuidanceId}
-							staffScheduleDrafts={staffScheduleDrafts}
-							staffScheduleDraftFromWorkingHours={
-								staffScheduleDraftFromWorkingHours
-							}
-							staffScheduleSaveStates={staffScheduleSaveStates}
-							staffScheduleDirtyIds={staffScheduleDirtyIds}
-							staffScheduleSavingId={staffScheduleSavingId}
-							updateStaffScheduleDraft={updateStaffScheduleDraft}
-							toggleStaffWorkingDay={toggleStaffWorkingDay}
-							saveStaffSchedule={saveStaffSchedule}
-							chairScheduleDrafts={chairScheduleDrafts}
-							chairScheduleSaveStates={chairScheduleSaveStates}
-							chairScheduleDirtyIds={chairScheduleDirtyIds}
-							chairScheduleSavingId={chairScheduleSavingId}
-							updateChairScheduleDraft={updateChairScheduleDraft}
-							toggleChairWorkingDay={toggleChairWorkingDay}
-							saveChairSchedule={saveChairSchedule}
-							pricelistSourceKindLabels={pricelistSourceKindLabels}
-							pricelistSourceKind={pricelistSourceKind}
-							setPricelistSourceKind={setPricelistSourceKind}
-							clearPricelistImage={clearPricelistImage}
-							setPricelistAnalysis={setPricelistAnalysis}
-							importSourceLabels={importSourceLabels}
-							importSourceKind={importSourceKind}
-							setImportSourceKind={setImportSourceKind}
-							setImportPreview={setImportPreview}
-							setImportCommit={setImportCommit}
-							smartImportModeLabels={smartImportModeLabels}
-							smartImportMode={smartImportMode}
-							setSmartImportMode={setSmartImportMode}
-							setSmartImportPreview={setSmartImportPreview}
-							setSmartImportCommit={setSmartImportCommit}
-							ingestionTargetLabels={ingestionTargetLabels}
-							documentIngestionTarget={documentIngestionTarget}
-							setDocumentIngestionTarget={setDocumentIngestionTarget}
-							imagingSourceChoices={imagingSourceChoices}
-							imagingImportSourceKind={imagingImportSourceKind}
-							imagingSourceLabels={imagingSourceLabels}
-							setImagingImportSourceKind={setImagingImportSourceKind}
-							setImagingImportPreview={setImagingImportPreview}
-							setImagingImportCommit={setImagingImportCommit}
-							setDicomSeriesPreview={setDicomSeriesPreview}
-							dicomWebEndpointUrl={dicomWebEndpointUrl}
-							setDicomWebEndpointUrl={setDicomWebEndpointUrl}
-							setDicomWebCheck={setDicomWebCheck}
-							setDicomViewerLaunchManifest={setDicomViewerLaunchManifest}
-							setDicomViewerToolStateBundle={setDicomViewerToolStateBundle}
-							setDicomViewerWorkbenchManifest={setDicomViewerWorkbenchManifest}
-							ohifBaseUrl={ohifBaseUrl}
-							setOhifBaseUrl={setOhifBaseUrl}
-							setSettingsTab={setSettingsTab}
-							telegramStatus={telegramStatus}
-							telegramBotUsernameDraft={telegramBotUsernameDraft}
-							setTelegramBotUsernameDraft={setTelegramBotUsernameDraft}
-							markTelegramSettingsDirty={markTelegramSettingsDirty}
-							telegramPatientPortalBaseUrlDraft={telegramPatientPortalBaseUrlDraft}
-							setTelegramPatientPortalBaseUrlDraft={
-								setTelegramPatientPortalBaseUrlDraft
-							}
-							telegramWelcomeImageUrlDraft={telegramWelcomeImageUrlDraft}
-							setTelegramWelcomeImageUrlDraft={setTelegramWelcomeImageUrlDraft}
-							telegramReviewUrlDraft={telegramReviewUrlDraft}
-							setTelegramReviewUrlDraft={setTelegramReviewUrlDraft}
-							telegramMapsUrlDraft={telegramMapsUrlDraft}
-							setTelegramMapsUrlDraft={setTelegramMapsUrlDraft}
-							telegramTokenTtlDraft={telegramTokenTtlDraft}
-							setTelegramTokenTtlDraft={setTelegramTokenTtlDraft}
-							telegramReminderLeadTimesDraft={telegramReminderLeadTimesDraft}
-							setTelegramReminderLeadTimesDraft={
-								setTelegramReminderLeadTimesDraft
-							}
-							telegramReviewRequestDelayDraft={telegramReviewRequestDelayDraft}
-							setTelegramReviewRequestDelayDraft={
-								setTelegramReviewRequestDelayDraft
-							}
-							telegramPostVisitCheckupDelayFields={
-								telegramPostVisitCheckupDelayFields
-							}
-							telegramPostVisitCheckupDelayDrafts={
-								telegramPostVisitCheckupDelayDrafts
-							}
-							updateTelegramPostVisitCheckupDelayDraft={
-								updateTelegramPostVisitCheckupDelayDraft
-							}
-							telegramAdminSecretDraft={telegramAdminSecretDraft}
-							setTelegramAdminSecretDraft={setTelegramAdminSecretDraft}
-							unlockTelegramAdminSession={unlockTelegramAdminSession}
-							telegramAdminSecretSession={telegramAdminSecretSession}
-							telegramPrivacyModeDraft={telegramPrivacyModeDraft}
-							setTelegramPrivacyModeDraft={setTelegramPrivacyModeDraft}
-							normalizedTelegramPrivacyMode={normalizedTelegramPrivacyMode}
-							telegramPrivacyModeLabels={telegramPrivacyModeLabels}
-							telegramVisualCardFields={telegramVisualCardFields}
-							onboardingTelegramVisualCardKeys={
-								onboardingTelegramVisualCardKeys
-							}
-							telegramVisualCardUrlDrafts={telegramVisualCardUrlDrafts}
-							updateTelegramVisualCardUrlDraft={updateTelegramVisualCardUrlDraft}
-							telegramFeatureOptions={telegramFeatureOptions}
-							telegramEnabledFeaturesDraft={telegramEnabledFeaturesDraft}
-							toggleTelegramFeature={toggleTelegramFeature}
-							telegramFeatureLabel={telegramFeatureLabel}
-							saveTelegramSettings={saveTelegramSettings}
-							isTelegramSettingsSaving={isTelegramSettingsSaving}
-							telegramSettingsSaveState={telegramSettingsSaveState}
-							telegramSettingsSaveError={telegramSettingsSaveError}
-							telegramSettingsDirty={telegramSettingsDirty}
-							documentFactoryGroups={documentFactoryGroups}
-							onboardingDocumentsReady={onboardingDocumentsReady}
-							onboardingBlockingIssues={onboardingBlockingIssues}
-							onboardingDocumentReadinessIssues={
-								onboardingDocumentReadinessIssues
-							}
-							onboardingTelegramRecommendations={
-								onboardingTelegramRecommendations
-							}
-							dismissOnboarding={dismissOnboarding}
-							saveClinicProfileFromDraft={saveClinicProfileFromDraft}
-							clinicProfileSaveState={clinicProfileSaveState}
-							previousOnboardingStep={previousOnboardingStep}
-							nextOnboardingStep={nextOnboardingStep}
-						/>
+						<Suspense fallback={null}>
+							<OnboardingWizardModal
+								currentOnboardingIndex={currentOnboardingIndex}
+								onboardingSteps={onboardingSteps}
+								legalReadinessPercent={legalReadinessPercent}
+								continueOnboardingInDraftMode={continueOnboardingInDraftMode}
+								moveOnboardingTo={moveOnboardingTo}
+								onboardingStep={onboardingStep}
+								onboardingReadyToFinish={onboardingReadyToFinish}
+								onboardingFinishGuidanceId={onboardingFinishGuidanceId}
+								onboardingRoleChoices={onboardingRoleChoices}
+								selectedWorkspaceRole={selectedWorkspaceRole}
+								setSelectedWorkspaceRole={setSelectedWorkspaceRole}
+								staffRoleLabels={staffRoleLabels}
+								specialtyLabels={specialtyLabels}
+								selectedSpecialty={selectedSpecialty}
+								setSelectedSpecialty={setSelectedSpecialty}
+								dashboard={dashboard}
+								clinicModeLabels={clinicModeLabels}
+								changeClinicMode={changeClinicMode}
+								clinicProfileDraft={clinicProfileDraft}
+								updateClinicProfileDraft={updateClinicProfileDraft}
+								uiLanguage={uiLanguage}
+								setUiLanguage={setUiLanguage}
+								normalizeUiLanguageInput={normalizeUiLanguageInput}
+								uiLanguageOptions={uiLanguageOptions}
+								selectedUiLanguageOption={selectedUiLanguageOption}
+								weekdayOptions={weekdayOptions}
+								toggleClinicWorkingDay={toggleClinicWorkingDay}
+								legalMissingFields={legalMissingFields}
+								newStaffName={newStaffName}
+								setNewStaffName={setNewStaffName}
+								newStaffRole={newStaffRole}
+								setNewStaffRole={setNewStaffRole}
+								newStaffSpecialty={newStaffSpecialty}
+								setNewStaffSpecialty={setNewStaffSpecialty}
+								addStaffMember={addStaffMember}
+								newStaffReadyToCreate={newStaffReadyToCreate}
+								onboardingStaffCreateGuidanceId={
+									onboardingStaffCreateGuidanceId
+								}
+								newChairName={newChairName}
+								setNewChairName={setNewChairName}
+								addChair={addChair}
+								newChairReadyToCreate={newChairReadyToCreate}
+								onboardingChairCreateGuidanceId={
+									onboardingChairCreateGuidanceId
+								}
+								staffScheduleDrafts={staffScheduleDrafts}
+								staffScheduleDraftFromWorkingHours={
+									staffScheduleDraftFromWorkingHours
+								}
+								staffScheduleSaveStates={staffScheduleSaveStates}
+								staffScheduleDirtyIds={staffScheduleDirtyIds}
+								staffScheduleSavingId={staffScheduleSavingId}
+								updateStaffScheduleDraft={updateStaffScheduleDraft}
+								toggleStaffWorkingDay={toggleStaffWorkingDay}
+								saveStaffSchedule={saveStaffSchedule}
+								chairScheduleDrafts={chairScheduleDrafts}
+								chairScheduleSaveStates={chairScheduleSaveStates}
+								chairScheduleDirtyIds={chairScheduleDirtyIds}
+								chairScheduleSavingId={chairScheduleSavingId}
+								updateChairScheduleDraft={updateChairScheduleDraft}
+								toggleChairWorkingDay={toggleChairWorkingDay}
+								saveChairSchedule={saveChairSchedule}
+								pricelistSourceKindLabels={pricelistSourceKindLabels}
+								pricelistSourceKind={pricelistSourceKind}
+								setPricelistSourceKind={setPricelistSourceKind}
+								clearPricelistImage={clearPricelistImage}
+								setPricelistAnalysis={setPricelistAnalysis}
+								importSourceLabels={importSourceLabels}
+								importSourceKind={importSourceKind}
+								setImportSourceKind={setImportSourceKind}
+								setImportPreview={setImportPreview}
+								setImportCommit={setImportCommit}
+								smartImportModeLabels={smartImportModeLabels}
+								smartImportMode={smartImportMode}
+								setSmartImportMode={setSmartImportMode}
+								setSmartImportPreview={setSmartImportPreview}
+								setSmartImportCommit={setSmartImportCommit}
+								ingestionTargetLabels={ingestionTargetLabels}
+								documentIngestionTarget={documentIngestionTarget}
+								setDocumentIngestionTarget={setDocumentIngestionTarget}
+								imagingSourceChoices={imagingSourceChoices}
+								imagingImportSourceKind={imagingImportSourceKind}
+								imagingSourceLabels={imagingSourceLabels}
+								setImagingImportSourceKind={setImagingImportSourceKind}
+								setImagingImportPreview={setImagingImportPreview}
+								setImagingImportCommit={setImagingImportCommit}
+								setDicomSeriesPreview={setDicomSeriesPreview}
+								dicomWebEndpointUrl={dicomWebEndpointUrl}
+								setDicomWebEndpointUrl={setDicomWebEndpointUrl}
+								setDicomWebCheck={setDicomWebCheck}
+								setDicomViewerLaunchManifest={setDicomViewerLaunchManifest}
+								setDicomViewerToolStateBundle={setDicomViewerToolStateBundle}
+								setDicomViewerWorkbenchManifest={
+									setDicomViewerWorkbenchManifest
+								}
+								ohifBaseUrl={ohifBaseUrl}
+								setOhifBaseUrl={setOhifBaseUrl}
+								setSettingsTab={setSettingsTab}
+								telegramStatus={telegramStatus}
+								telegramBotUsernameDraft={telegramBotUsernameDraft}
+								setTelegramBotUsernameDraft={setTelegramBotUsernameDraft}
+								markTelegramSettingsDirty={markTelegramSettingsDirty}
+								telegramPatientPortalBaseUrlDraft={
+									telegramPatientPortalBaseUrlDraft
+								}
+								setTelegramPatientPortalBaseUrlDraft={
+									setTelegramPatientPortalBaseUrlDraft
+								}
+								telegramWelcomeImageUrlDraft={telegramWelcomeImageUrlDraft}
+								setTelegramWelcomeImageUrlDraft={
+									setTelegramWelcomeImageUrlDraft
+								}
+								telegramReviewUrlDraft={telegramReviewUrlDraft}
+								setTelegramReviewUrlDraft={setTelegramReviewUrlDraft}
+								telegramMapsUrlDraft={telegramMapsUrlDraft}
+								setTelegramMapsUrlDraft={setTelegramMapsUrlDraft}
+								telegramTokenTtlDraft={telegramTokenTtlDraft}
+								setTelegramTokenTtlDraft={setTelegramTokenTtlDraft}
+								telegramReminderLeadTimesDraft={telegramReminderLeadTimesDraft}
+								setTelegramReminderLeadTimesDraft={
+									setTelegramReminderLeadTimesDraft
+								}
+								telegramReviewRequestDelayDraft={
+									telegramReviewRequestDelayDraft
+								}
+								setTelegramReviewRequestDelayDraft={
+									setTelegramReviewRequestDelayDraft
+								}
+								telegramPostVisitCheckupDelayFields={
+									telegramPostVisitCheckupDelayFields
+								}
+								telegramPostVisitCheckupDelayDrafts={
+									telegramPostVisitCheckupDelayDrafts
+								}
+								updateTelegramPostVisitCheckupDelayDraft={
+									updateTelegramPostVisitCheckupDelayDraft
+								}
+								telegramAdminSecretDraft={telegramAdminSecretDraft}
+								setTelegramAdminSecretDraft={setTelegramAdminSecretDraft}
+								unlockTelegramAdminSession={unlockTelegramAdminSession}
+								telegramAdminSecretSession={telegramAdminSecretSession}
+								telegramPrivacyModeDraft={telegramPrivacyModeDraft}
+								setTelegramPrivacyModeDraft={setTelegramPrivacyModeDraft}
+								normalizedTelegramPrivacyMode={normalizedTelegramPrivacyMode}
+								telegramPrivacyModeLabels={telegramPrivacyModeLabels}
+								telegramVisualCardFields={telegramVisualCardFields}
+								onboardingTelegramVisualCardKeys={
+									onboardingTelegramVisualCardKeys
+								}
+								telegramVisualCardUrlDrafts={telegramVisualCardUrlDrafts}
+								updateTelegramVisualCardUrlDraft={
+									updateTelegramVisualCardUrlDraft
+								}
+								telegramFeatureOptions={telegramFeatureOptions}
+								telegramEnabledFeaturesDraft={telegramEnabledFeaturesDraft}
+								toggleTelegramFeature={toggleTelegramFeature}
+								telegramFeatureLabel={telegramFeatureLabel}
+								saveTelegramSettings={saveTelegramSettings}
+								isTelegramSettingsSaving={isTelegramSettingsSaving}
+								telegramSettingsSaveState={telegramSettingsSaveState}
+								telegramSettingsSaveError={telegramSettingsSaveError}
+								telegramSettingsDirty={telegramSettingsDirty}
+								documentFactoryGroups={documentFactoryGroups}
+								onboardingDocumentsReady={onboardingDocumentsReady}
+								onboardingBlockingIssues={onboardingBlockingIssues}
+								onboardingDocumentReadinessIssues={
+									onboardingDocumentReadinessIssues
+								}
+								onboardingTelegramRecommendations={
+									onboardingTelegramRecommendations
+								}
+								dismissOnboarding={dismissOnboarding}
+								saveClinicProfileFromDraft={saveClinicProfileFromDraft}
+								clinicProfileSaveState={clinicProfileSaveState}
+								previousOnboardingStep={previousOnboardingStep}
+								nextOnboardingStep={nextOnboardingStep}
+							/>
+						</Suspense>
 					) : null}
 					{onboardingDismissed &&
 					onboardingDraftMode &&
@@ -2059,7 +2084,7 @@ export function App() {
 						</section>
 					) : null}
 
-							{currentView === "shift" ? (
+					{currentView === "shift" ? (
 						/*
           Граница и Suspense здесь появились последними из всех разделов, и это
           было не украшение. `ShiftView` объявлен через `lazy()` (строка 399),
@@ -2172,7 +2197,6 @@ export function App() {
 								}
 							>
 								<ImagingView
-									CtPlanningToolsPanel={CtPlanningToolsPanel}
 									ExternalLink={ExternalLink}
 									FlipHorizontal={FlipHorizontal}
 									ImageIcon={ImageIcon}
@@ -2370,68 +2394,68 @@ export function App() {
 										}
 									>
 										<ScheduleView
-												appointmentLabels={appointmentLabels}
-												appointmentReadinessById={appointmentReadinessById}
-												appointmentReadinessLabels={appointmentReadinessLabels}
-												appointmentScheduleDraftFromAppointment={
-													appointmentScheduleDraftFromAppointment
-												}
-												closeAppointmentEditor={closeAppointmentEditor}
-												createAppointmentFromDraft={createAppointmentFromDraft}
-												dashboard={dashboard}
-												editingAppointmentId={editingAppointmentId}
-												formatTime={formatTime}
-												fromDateTimeLocalValue={fromDateTimeLocalValue}
-												lockScheduleAdminSession={() =>
-													lockTelegramAdminSession("schedule")
-												}
-												newAppointmentError={newAppointmentError}
-												normalizedAppointmentStatus={normalizedAppointmentStatus}
-												normalizedAppointmentStatusFilter={
-													normalizedAppointmentStatusFilter
-												}
-												openAppointmentEditor={openAppointmentEditor}
-												openScheduleWarning={openScheduleWarning}
-												patientName={patientName}
-												recommendedActionPriorityLabels={
-													recommendedActionPriorityLabels
-												}
-												resetNewAppointmentDraft={resetNewAppointmentDraft}
-												saveAppointmentSchedule={saveAppointmentSchedule}
-												shiftWarnings={shiftWarnings}
-												sortedAppointments={sortedAppointments}
-												staffRoleLabels={staffRoleLabels}
-												scheduleAdminSecretDraft={scheduleAdminSecretDraft}
-												scheduleAdminSecretSession={scheduleAdminSecretSession}
-												toDateTimeLocalValue={toDateTimeLocalValue}
-												unlockScheduleAdminSession={() =>
-													unlockTelegramAdminSession("schedule")
-												}
-												updateAppointmentScheduleDraft={
-													updateAppointmentScheduleDraft
-												}
-												updateNewAppointmentDraft={updateNewAppointmentDraft}
-												visibleScheduleSuggestions={visibleScheduleSuggestions}
-												// Нужен для живого обновления сетки, когда запись создал или
-												// перенёс другой администратор.
-												//
-												// ЗДЕСЬ СТОЯЛО «этот ScheduleView отрисован ВЫШЕ
-												// AppLogicProvider, поэтому useAppLogicContext() здесь пуст».
-												// ЭТО НЕВЕРНО и было неверно с тех пор, как провайдер обнял всё
-												// рабочее место: он открывается на строке 2509 и закрывается на
-												// 5070, а этот вызов — на 3947, то есть ВНУТРИ. Утверждение
-												// опасно вдвойне: во-первых, оно объясняло пропсы причиной,
-												// которой нет; во-вторых, «контекст здесь пуст» описывало
-												// выдуманный пустой объект, которого больше не существует —
-												// useAppLogicContext() вне провайдера теперь бросает исключение
-												// (contexts/AppLogicContext.tsx).
-												//
-												// Пропс остаётся, и это осознанно: экран получает loadDashboard
-												// явно, а не выуживает его из общего объекта, так видно, кто чем
-												// пользуется. Менять на чтение из контекста без прогона живого
-												// расписания не за чем.
-												loadDashboard={loadDashboard}
-											/>
+											appointmentLabels={appointmentLabels}
+											appointmentReadinessById={appointmentReadinessById}
+											appointmentReadinessLabels={appointmentReadinessLabels}
+											appointmentScheduleDraftFromAppointment={
+												appointmentScheduleDraftFromAppointment
+											}
+											closeAppointmentEditor={closeAppointmentEditor}
+											createAppointmentFromDraft={createAppointmentFromDraft}
+											dashboard={dashboard}
+											editingAppointmentId={editingAppointmentId}
+											formatTime={formatTime}
+											fromDateTimeLocalValue={fromDateTimeLocalValue}
+											lockScheduleAdminSession={() =>
+												lockTelegramAdminSession("schedule")
+											}
+											newAppointmentError={newAppointmentError}
+											normalizedAppointmentStatus={normalizedAppointmentStatus}
+											normalizedAppointmentStatusFilter={
+												normalizedAppointmentStatusFilter
+											}
+											openAppointmentEditor={openAppointmentEditor}
+											openScheduleWarning={openScheduleWarning}
+											patientName={patientName}
+											recommendedActionPriorityLabels={
+												recommendedActionPriorityLabels
+											}
+											resetNewAppointmentDraft={resetNewAppointmentDraft}
+											saveAppointmentSchedule={saveAppointmentSchedule}
+											shiftWarnings={shiftWarnings}
+											sortedAppointments={sortedAppointments}
+											staffRoleLabels={staffRoleLabels}
+											scheduleAdminSecretDraft={scheduleAdminSecretDraft}
+											scheduleAdminSecretSession={scheduleAdminSecretSession}
+											toDateTimeLocalValue={toDateTimeLocalValue}
+											unlockScheduleAdminSession={() =>
+												unlockTelegramAdminSession("schedule")
+											}
+											updateAppointmentScheduleDraft={
+												updateAppointmentScheduleDraft
+											}
+											updateNewAppointmentDraft={updateNewAppointmentDraft}
+											visibleScheduleSuggestions={visibleScheduleSuggestions}
+											// Нужен для живого обновления сетки, когда запись создал или
+											// перенёс другой администратор.
+											//
+											// ЗДЕСЬ СТОЯЛО «этот ScheduleView отрисован ВЫШЕ
+											// AppLogicProvider, поэтому useAppLogicContext() здесь пуст».
+											// ЭТО НЕВЕРНО и было неверно с тех пор, как провайдер обнял всё
+											// рабочее место: он открывается на строке 2509 и закрывается на
+											// 5070, а этот вызов — на 3947, то есть ВНУТРИ. Утверждение
+											// опасно вдвойне: во-первых, оно объясняло пропсы причиной,
+											// которой нет; во-вторых, «контекст здесь пуст» описывало
+											// выдуманный пустой объект, которого больше не существует —
+											// useAppLogicContext() вне провайдера теперь бросает исключение
+											// (contexts/AppLogicContext.tsx).
+											//
+											// Пропс остаётся, и это осознанно: экран получает loadDashboard
+											// явно, а не выуживает его из общего объекта, так видно, кто чем
+											// пользуется. Менять на чтение из контекста без прогона живого
+											// расписания не за чем.
+											loadDashboard={loadDashboard}
+										/>
 									</Suspense>
 									{/*
               Утренний обзвон живёт в ScheduleView: кнопка «Подтверждения» рядом
@@ -3428,8 +3452,10 @@ export function App() {
 							className={currentView === view ? "active" : ""}
 							href={`#${view}`}
 							aria-current={currentView === view ? "page" : undefined}
-							onPointerEnter={() => preloadWorkspaceView(view)}
-							onFocus={() => preloadWorkspaceView(view)}
+							onPointerEnter={() => preloadWorkspaceView(view, "hover")}
+							onPointerLeave={() => preloadWorkspaceView(view, "cancel")}
+							onFocus={() => preloadWorkspaceView(view, "hover")}
+							onBlur={() => preloadWorkspaceView(view, "cancel")}
 						>
 							<ActionIcon section={view} />
 							<span>{viewLabels[view]}</span>
@@ -3438,6 +3464,10 @@ export function App() {
 					<a
 						href="#settings"
 						className={currentView === "settings" ? "active" : ""}
+						onPointerEnter={() => preloadWorkspaceView("settings", "hover")}
+						onPointerLeave={() => preloadWorkspaceView("settings", "cancel")}
+						onFocus={() => preloadWorkspaceView("settings", "hover")}
+						onBlur={() => preloadWorkspaceView("settings", "cancel")}
 					>
 						<Database aria-hidden="true" />
 						<span>Ещё</span>

@@ -1,8 +1,8 @@
 import {
 	type CommunicationTaskOutcome,
 	type Dashboard,
-	type DenteTelegramChatLinkPublic,
 	type DentalPricelistAnalysisResponse,
+	type DenteTelegramChatLinkPublic,
 	documentFactoryGroups,
 	type ImagingStudyKind,
 	type ImportCommitResponse,
@@ -177,10 +177,10 @@ import { usePatientIntakeLogic } from "./hooks/domains/usePatientIntakeLogic";
 import { usePatientLogic } from "./hooks/domains/usePatientLogic";
 import { useScheduleFilterController } from "./hooks/domains/useScheduleFilterController";
 import { useScheduleLogic } from "./hooks/domains/useScheduleLogic";
+import { useScheduleSettingsLogic } from "./hooks/domains/useScheduleSettingsLogic";
 import { useStaffSettingsLogic } from "./hooks/domains/useStaffSettingsLogic";
 import { useTelegramModule } from "./hooks/domains/useTelegramModule";
 import { useVisitLogic } from "./hooks/domains/useVisitLogic";
-import { useScheduleSettingsLogic } from "./hooks/domains/useScheduleSettingsLogic";
 import { useSoundNotifications } from "./hooks/useSoundNotifications";
 
 import { loadWorkspaceProfile } from "./hooks/useWorkspaceProfile";
@@ -1492,11 +1492,18 @@ export function useAppLogic(): any {
 			// обрабатывается прямо здесь (setAccessUnlockRequired выше) — именно
 			// этого добивались внешние .catch(), которые раньше не срабатывали.
 		}
-		void loadPersistenceHealth({
-			silent: true,
-			adminSecret: options.adminSecret,
-		});
-		void refreshSpeechRuntime({ silent: true });
+		const runBackgroundTasks = () => {
+			void loadPersistenceHealth({
+				silent: true,
+				adminSecret: options.adminSecret,
+			});
+			void refreshSpeechRuntime({ silent: true });
+		};
+		if (typeof window !== "undefined" && typeof (window as any).requestIdleCallback === "function") {
+			(window as any).requestIdleCallback(runBackgroundTasks, { timeout: 3000 });
+		} else {
+			setTimeout(runBackgroundTasks, 300);
+		}
 	}
 
 	const modalOrchestrator = useModalOrchestrator();

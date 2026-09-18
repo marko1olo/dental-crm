@@ -83,32 +83,44 @@ export function usePatientLogic({
 	setQuery,
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 }: any) {
-	const {
-		selectedPatientId,
-		patientCoreDraft,
-		patientCoreSaveState,
-		patientCoreDirty,
-		patientAdministrativeProfileDraft,
-		patientAdministrativeProfileSaveState,
-		patientAdministrativeProfileDirty,
-		newPatientName,
-		newPatientPhone,
-		newPatientBirthDate,
-		isPatientCreating,
-		newRulePatientText,
-		setSelectedPatientId,
-		setPatientCoreDraft,
-		setPatientCoreSaveState,
-		setPatientCoreDirty,
-		setPatientAdministrativeProfileDraft,
-		setPatientAdministrativeProfileSaveState,
-		setPatientAdministrativeProfileDirty,
-		setNewPatientName,
-		setNewPatientPhone,
-		setNewPatientBirthDate,
-		setIsPatientCreating,
-		setNewRulePatientText,
-	} = usePatientStore();
+	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
+	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
+
+	const patientCoreDraft = usePatientStore((s) => s.patientCoreDraft);
+	const setPatientCoreDraft = usePatientStore((s) => s.setPatientCoreDraft);
+	const patientCoreSaveState = usePatientStore((s) => s.patientCoreSaveState);
+	const setPatientCoreSaveState = usePatientStore(
+		(s) => s.setPatientCoreSaveState,
+	);
+	const patientCoreDirty = usePatientStore((s) => s.patientCoreDirty);
+	const setPatientCoreDirty = usePatientStore((s) => s.setPatientCoreDirty);
+
+	const patientAdministrativeProfileDraft = usePatientStore(
+		(s) => s.patientAdministrativeProfileDraft,
+	);
+	const setPatientAdministrativeProfileDraft = usePatientStore(
+		(s) => s.setPatientAdministrativeProfileDraft,
+	);
+	const patientAdministrativeProfileSaveState = usePatientStore(
+		(s) => s.patientAdministrativeProfileSaveState,
+	);
+	const setPatientAdministrativeProfileSaveState = usePatientStore(
+		(s) => s.setPatientAdministrativeProfileSaveState,
+	);
+	const patientAdministrativeProfileDirty = usePatientStore(
+		(s) => s.patientAdministrativeProfileDirty,
+	);
+	const setPatientAdministrativeProfileDirty = usePatientStore(
+		(s) => s.setPatientAdministrativeProfileDirty,
+	);
+
+	const setNewPatientName = usePatientStore((s) => s.setNewPatientName);
+	const setNewPatientPhone = usePatientStore((s) => s.setNewPatientPhone);
+	const setNewPatientBirthDate = usePatientStore(
+		(s) => s.setNewPatientBirthDate,
+	);
+	const setIsPatientCreating = usePatientStore((s) => s.setIsPatientCreating);
+	const setNewRulePatientText = usePatientStore((s) => s.setNewRulePatientText);
 
 	/*
 	 * Отметка времени, которую вернуло НАШЕ собственное сохранение.
@@ -612,12 +624,12 @@ export function usePatientLogic({
 	}
 
 	async function createPatient(): Promise<Patient | null> {
-		if (isPatientCreating) {
+		if (usePatientStore.getState().isPatientCreating) {
 			setError("Дождитесь завершения создания карточки пациента.");
 			return null;
 		}
 		const storeState = usePatientStore.getState();
-		const fullName = (storeState.newPatientName || newPatientName).trim();
+		const fullName = (storeState.newPatientName || "").trim();
 		if (!fullName) {
 			setError("Укажите ФИО пациента перед созданием карточки.");
 			return null;
@@ -627,13 +639,13 @@ export function usePatientLogic({
 				patientAdministrativeProfileDraft.isAnonymous) === true;
 		const payload = {
 			fullName,
-			phone: nullablePatientDraftValue(storeState.newPatientPhone || newPatientPhone),
-			birthDate: nullablePatientDraftValue(storeState.newPatientBirthDate || newPatientBirthDate),
+			phone: nullablePatientDraftValue(storeState.newPatientPhone),
+			birthDate: nullablePatientDraftValue(storeState.newPatientBirthDate),
 			isAnonymous: isAnon,
 			anonymousCode: isAnon
-				? (storeState.patientAdministrativeProfileDraft.anonymousCode ||
-						patientAdministrativeProfileDraft.anonymousCode ||
-						null)
+				? storeState.patientAdministrativeProfileDraft.anonymousCode ||
+					patientAdministrativeProfileDraft.anonymousCode ||
+					null
 				: null,
 		};
 		setIsPatientCreating(true);
@@ -695,11 +707,21 @@ export function usePatientLogic({
 		patientAdministrativeProfileDraft,
 		patientAdministrativeProfileSaveState,
 		patientAdministrativeProfileDirty,
-		newPatientName,
-		newPatientPhone,
-		newPatientBirthDate,
-		isPatientCreating,
-		newRulePatientText,
+		get newPatientName() {
+			return usePatientStore.getState().newPatientName;
+		},
+		get newPatientPhone() {
+			return usePatientStore.getState().newPatientPhone;
+		},
+		get newPatientBirthDate() {
+			return usePatientStore.getState().newPatientBirthDate;
+		},
+		get isPatientCreating() {
+			return usePatientStore.getState().isPatientCreating;
+		},
+		get newRulePatientText() {
+			return usePatientStore.getState().newRulePatientText;
+		},
 		setSelectedPatientId,
 		setPatientCoreDraft,
 		setPatientCoreSaveState,

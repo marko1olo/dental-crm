@@ -150,7 +150,7 @@ export const GlobalTreatmentsStrip: React.FC<GlobalTreatmentsStripProps> = ({
 						title="Добавить профгигиену Air-Flow на всю полость рта"
 					>
 						<Plus className="w-3 h-3" />
-						<span>+ Air-Flow</span>
+						<span>Air-Flow</span>
 					</button>
 					<button
 						type="button"
@@ -159,7 +159,7 @@ export const GlobalTreatmentsStrip: React.FC<GlobalTreatmentsStripProps> = ({
 						title="Добавить элайнеры на верхнюю челюсть"
 					>
 						<Plus className="w-3 h-3" />
-						<span>+ В/Ч</span>
+						<span>В/Ч</span>
 					</button>
 					<button
 						type="button"
@@ -168,7 +168,7 @@ export const GlobalTreatmentsStrip: React.FC<GlobalTreatmentsStripProps> = ({
 						title="Добавить элайнеры на нижнюю челюсть"
 					>
 						<Plus className="w-3 h-3" />
-						<span>+ Н/Ч</span>
+						<span>Н/Ч</span>
 					</button>
 				</div>
 			)}

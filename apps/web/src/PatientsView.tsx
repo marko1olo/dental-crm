@@ -28,21 +28,33 @@ import {
 	X,
 } from "lucide-react";
 import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, startTransition, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
-import { LoyaltyProgramModal } from "./components/loyalty/program/LoyaltyProgramModal";
 import { OdontogramModule } from "./components/odontogram/OdontogramModule";
 import { PatientAvatar } from "./components/PatientAvatar";
 import { printBlankMedicalContract } from "./components/patients/blankContractPrint";
 import { PatientAdministrativeForm } from "./components/patients/PatientAdministrativeForm";
-import { PatientCardModal } from "./components/patients/PatientCardModal";
-import {
-	PatientCreationModal as CreatePatientModal,
-	PatientCreationModal,
-} from "./components/patients/PatientCreationModal";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
+
+const LoyaltyProgramModal = lazy(() =>
+	import("./components/loyalty/program/LoyaltyProgramModal").then((module) => ({
+		default: module.LoyaltyProgramModal,
+	})),
+);
+const PatientCardModal = lazy(() =>
+	import("./components/patients/PatientCardModal").then((module) => ({
+		default: module.PatientCardModal,
+	})),
+);
+const PatientCreationModal = lazy(() =>
+	import("./components/patients/PatientCreationModal").then((module) => ({
+		default: module.PatientCreationModal,
+	})),
+);
+const CreatePatientModal = PatientCreationModal;
+
 import { PatientCardSavePill } from "./components/patients/patientCardSavePill";
 import {
 	featureDistinguishes,
@@ -50,12 +62,12 @@ import {
 } from "./components/patients/patientListFeatureSalience";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { useDomListPagination } from "./hooks/useMemoryLeakGuard";
 import { actionFailureToast } from "./lib/panelStateText";
 import { useAppStore } from "./store/appStore";
 import { usePatientStore } from "./store/patientStore";
 import { useScheduleStore } from "./store/scheduleStore";
 import { formatPhoneNumber } from "./utils/inputSanitation";
-import { useDomListPagination } from "./hooks/useMemoryLeakGuard";
 
 type PatientInsight = Dashboard["patientInsights"][number];
 export type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
@@ -358,16 +370,20 @@ export type TextFieldChangeEvent = ChangeEvent<
 export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const logicContext = useAppLogicContext();
 	const props = { ...logicContext, ...rawProps } as PatientsViewProps;
-	const {
-		selectedPatientId,
-		patientCoreDraft,
-		patientCoreSaveState,
-		patientCoreDirty,
-		patientAdministrativeProfileDraft,
-		patientAdministrativeProfileSaveState,
-		patientAdministrativeProfileDirty,
-		setSelectedPatientId,
-	} = usePatientStore();
+	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
+	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
+	const patientCoreDraft = usePatientStore((s) => s.patientCoreDraft);
+	const patientCoreSaveState = usePatientStore((s) => s.patientCoreSaveState);
+	const patientCoreDirty = usePatientStore((s) => s.patientCoreDirty);
+	const patientAdministrativeProfileDraft = usePatientStore(
+		(s) => s.patientAdministrativeProfileDraft,
+	);
+	const patientAdministrativeProfileSaveState = usePatientStore(
+		(s) => s.patientAdministrativeProfileSaveState,
+	);
+	const patientAdministrativeProfileDirty = usePatientStore(
+		(s) => s.patientAdministrativeProfileDirty,
+	);
 
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
@@ -419,6 +435,40 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	} = props;
 
 	const triggerToast = showToastProp ?? showToast;
+
+	const [localQuery, setLocalQuery] = useState(query);
+	const searchDebounceTimerRef = useRef<number | null>(null);
+
+	useEffect(() => {
+		setLocalQuery(query);
+	}, [query]);
+
+	const handleSearchChange = useCallback(
+		(val: string) => {
+			setLocalQuery(val);
+			if (searchDebounceTimerRef.current !== null) {
+				window.clearTimeout(searchDebounceTimerRef.current);
+			}
+			searchDebounceTimerRef.current = window.setTimeout(() => {
+				searchDebounceTimerRef.current = null;
+				startTransition(() => {
+					setQuery(val);
+				});
+			}, 120);
+		},
+		[setQuery],
+	);
+
+	const handleClearSearch = useCallback(() => {
+		if (searchDebounceTimerRef.current !== null) {
+			window.clearTimeout(searchDebounceTimerRef.current);
+			searchDebounceTimerRef.current = null;
+		}
+		setLocalQuery("");
+		startTransition(() => {
+			setQuery("");
+		});
+	}, [setQuery]);
 
 	const [showLostPatientsOnly, setShowLostPatientsOnly] = useState(false);
 	const [lostPatientIds, setLostPatientIds] = useState<Set<string> | null>(
@@ -530,8 +580,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					return;
 				}
 				if (document.activeElement === searchInputRef.current) {
-					if (query) {
-						setQuery("");
+					if (localQuery || query) {
+						handleClearSearch();
 					} else {
 						searchInputRef.current?.blur();
 					}
@@ -737,17 +787,17 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						aria-label="Поиск пациента"
 						type="search"
 						autoComplete="off"
-						value={query}
+						value={localQuery}
 						onChange={(event: TextFieldChangeEvent) =>
-							setQuery(event.target.value)
+							handleSearchChange(event.target.value)
 						}
 						placeholder="ФИО / тел."
 					/>
-					{query ? (
+					{localQuery ? (
 						<button
 							type="button"
 							className="patients-search-clear-btn"
-							onClick={() => setQuery("")}
+							onClick={handleClearSearch}
 							aria-label="Очистить поисковый запрос"
 							title="Очистить"
 						>
@@ -825,7 +875,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								data-patient-id={patient.id}
 								style={{
 									contentVisibility: "auto",
-									containIntrinsicSize: "1px 48px",
+									containIntrinsicSize: "1px 40px",
+									contain: "content",
 								}}
 								tabIndex={0}
 								aria-label={`Карточка пациента: ${patient.fullName}`}
@@ -1077,7 +1128,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					{patientPagination.hasMore && (
 						<div className="patient-list-pagination flex items-center justify-between p-2.5 my-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--muted)]">
 							<span>
-								Показано {patientPagination.displayedCount} из {patientPagination.totalCount} пациентов
+								Показано {patientPagination.displayedCount} из{" "}
+								{patientPagination.totalCount} пациентов
 							</span>
 							<div className="flex items-center gap-2">
 								<button
@@ -1154,7 +1206,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										<button
 											type="button"
 											className="text-button min-h-[44px] px-3.5"
-											onClick={() => setQuery("")}
+											onClick={handleClearSearch}
 										>
 											Сбросить поиск
 										</button>
@@ -1190,7 +1242,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									onClick={() =>
 										executeOpenPatientVisitAutonomy({ selectedPatient })
 									}
-									className="min-h-[40px] px-3 py-1 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-[var(--on-teal,#ffffff)] text-xs font-bold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
+									className="min-h-[44px] px-3 py-1.5 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-[var(--on-teal,#ffffff)] text-xs font-bold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
 									title="Открыть амбулаторный приём 043/у"
 									data-testid="patient-mobile-header-open-visit-btn"
 								>
@@ -1202,7 +1254,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									onClick={() =>
 										void printBlankMedicalContract(selectedPatient)
 									}
-									className="min-h-[40px] px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
+									className="min-h-[44px] px-2.5 py-1.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
 									title="Распечатать бланк договора"
 									data-testid="patient-mobile-header-print-contract-btn"
 								>
@@ -1275,8 +1327,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											: undefined
 									}
 									disabled={patientCoreSaveState === "saving"}
-									className="primary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-all shadow-xs"
-									style={{ minHeight: "36px" }}
+									className="primary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-all shadow-xs"
 									title="Сохранить изменения в карточке пациента"
 									data-testid="patient-core-save-btn"
 								>
@@ -1291,7 +1342,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										executeOpenPatientVisitAutonomy({ selectedPatient })
 									}
 									disabled={false}
-									className="secondary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal-dark)] dark:text-[var(--teal)] border border-[var(--teal)]/30"
+									className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal-dark)] dark:text-[var(--teal)] border border-[var(--teal)]/30"
 									title="Открыть амбулаторный приём 043/у"
 									data-testid="patient-card-open-visit-btn"
 								>
@@ -1320,7 +1371,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												"info",
 											);
 										}}
-										className="min-h-[36px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/30 font-semibold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
+										className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/30 font-semibold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
 										title={`Следующий приём: ${new Date(nextPatientAppointment.startsAt!).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`}
 										data-testid="patient-quick-next-appointment-btn"
 									>
@@ -1350,7 +1401,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								>
 									<button
 										type="button"
-										className="secondary-button min-h-[36px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--ink)] border border-[var(--line)]"
+										className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--ink)] border border-[var(--line)]"
 										onClick={() => setIsPatientActionsMenuOpen((v) => !v)}
 										title="Дополнительные действия с пациентом"
 										aria-label="Дополнительные действия с пациентом"
@@ -2040,40 +2091,53 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			</div>
 
 			{/* Create Patient Modal Pop-up */}
-			<PatientCreationModal
-				isOpen={isCreateModalOpen}
-				onClose={() => setIsCreateModalOpen(false)}
-				createPatient={createPatient}
-				updatePatientCoreDraft={updatePatientCoreDraft}
-			/>
+			{isCreateModalOpen && (
+				<Suspense fallback={null}>
+					<PatientCreationModal
+						isOpen={isCreateModalOpen}
+						onClose={() => setIsCreateModalOpen(false)}
+						createPatient={createPatient}
+						updatePatientCoreDraft={updatePatientCoreDraft}
+					/>
+				</Suspense>
+			)}
 
 			{/* Loyalty Program Modal */}
-			<LoyaltyProgramModal
-				isOpen={isLoyaltyModalOpen}
-				onClose={() => setIsLoyaltyModalOpen(false)}
-				{...(selectedPatient?.id ? { patientId: selectedPatient.id } : {})}
-				{...(selectedPatient?.fullName
-					? { patientName: selectedPatient.fullName }
-					: patientCoreDraft.fullName
-						? { patientName: patientCoreDraft.fullName }
-						: {})}
-				{...(selectedPatient?.id
-					? { medicalCardNumber: `043/у-${selectedPatient.id.slice(0, 8)}` }
-					: {})}
-			/>
+			{isLoyaltyModalOpen && (
+				<Suspense fallback={null}>
+					<LoyaltyProgramModal
+						isOpen={isLoyaltyModalOpen}
+						onClose={() => setIsLoyaltyModalOpen(false)}
+						{...(selectedPatient?.id ? { patientId: selectedPatient.id } : {})}
+						{...(selectedPatient?.fullName
+							? { patientName: selectedPatient.fullName }
+							: patientCoreDraft.fullName
+								? { patientName: patientCoreDraft.fullName }
+								: {})}
+						{...(selectedPatient?.id
+							? { medicalCardNumber: `043/у-${selectedPatient.id.slice(0, 8)}` }
+							: {})}
+					/>
+				</Suspense>
+			)}
 
 			{/* Ambulatory Patient Card 043/u Modal (Mandates 8e, 8n) */}
-			<PatientCardModal
-				isOpen={isPatientCardModalOpen}
-				onClose={() => setIsPatientCardModalOpen(false)}
-				patient={{
-					id: selectedPatient?.id,
-					fullName: selectedPatient?.fullName || patientCoreDraft?.fullName,
-					phone: selectedPatient?.phone || patientCoreDraft?.phone,
-					birthDate: selectedPatient?.birthDate || patientCoreDraft?.birthDate,
-					notes: selectedPatient?.notes || patientCoreDraft?.notes,
-				}}
-			/>
+			{isPatientCardModalOpen && (
+				<Suspense fallback={null}>
+					<PatientCardModal
+						isOpen={isPatientCardModalOpen}
+						onClose={() => setIsPatientCardModalOpen(false)}
+						patient={{
+							id: selectedPatient?.id,
+							fullName: selectedPatient?.fullName || patientCoreDraft?.fullName,
+							phone: selectedPatient?.phone || patientCoreDraft?.phone,
+							birthDate:
+								selectedPatient?.birthDate || patientCoreDraft?.birthDate,
+							notes: selectedPatient?.notes || patientCoreDraft?.notes,
+						}}
+					/>
+				</Suspense>
+			)}
 		</div>
 	);
 }

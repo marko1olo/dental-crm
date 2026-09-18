@@ -13,6 +13,11 @@ import {
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+	safeLocalStorageRemoveItem,
+} from "../../lib/safeLocalStorage";
 import { CopilotComposer } from "./CopilotComposer";
 import { CopilotActionConfirm } from "./CopilotActionConfirm";
 import { useCopilotContextSync } from "./CopilotContextSync";
@@ -91,26 +96,21 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 	const { context: uiContext, enrichMessage } = useCopilotContextSync();
 
 	const [input, setInput] = useState(() => {
-		if (typeof window !== "undefined" && window.localStorage) {
-			try {
-				return localStorage.getItem("dente_copilot_draft_text") || "";
-			} catch {
-				return "";
-			}
+		try {
+			return safeLocalStorageGetItem("dente_copilot_draft_text") || "";
+		} catch {
+			return "";
 		}
-		return "";
 	});
 	const feedRef = useRef<HTMLDivElement>(null);
 
 	const handleInputChange = (newVal: string) => {
 		setInput(newVal);
 		try {
-			if (typeof window !== "undefined" && window.localStorage) {
-				if (newVal.trim()) {
-					localStorage.setItem("dente_copilot_draft_text", newVal);
-				} else {
-					localStorage.removeItem("dente_copilot_draft_text");
-				}
+			if (newVal.trim()) {
+				safeLocalStorageSetItem("dente_copilot_draft_text", newVal);
+			} else {
+				safeLocalStorageRemoveItem("dente_copilot_draft_text");
 			}
 		} catch {
 			// ignore storage access errors
@@ -120,9 +120,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 	const handleReset = () => {
 		setInput("");
 		try {
-			if (typeof window !== "undefined" && window.localStorage) {
-				localStorage.removeItem("dente_copilot_draft_text");
-			}
+			safeLocalStorageRemoveItem("dente_copilot_draft_text");
 		} catch {
 			// ignore storage access errors
 		}
@@ -141,9 +139,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 		handleSendEnriched(text);
 		setInput("");
 		try {
-			if (typeof window !== "undefined" && window.localStorage) {
-				localStorage.removeItem("dente_copilot_draft_text");
-			}
+			safeLocalStorageRemoveItem("dente_copilot_draft_text");
 		} catch {
 			// ignore storage access errors
 		}

@@ -39,7 +39,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { visitDraftQualityLabels } from "../../AppConstants";
 import {
 	denteAdminSecretRequestHeaders,
@@ -69,19 +69,32 @@ import {
 	InformedConsentModal,
 	type SignedConsentPayload,
 } from "../consents/InformedConsentModal";
-import { EgiszRemdHubModal } from "../egisz/EgiszRemdHubModal";
 import type { MedicalCardForm043uData } from "../emr/emr043Types";
-import { Form043PrintModal } from "../emr/Form043PrintModal";
-import { ClinicalDiaryTemplatesModal } from "../emr/templates/ClinicalDiaryTemplatesModal";
 import {
 	type EndoCanalData,
-	EndoCanalLogModal,
 	getDefaultCanalsForTooth,
 } from "../endo/EndoCanalLogModal";
-import { PatientBillingModal } from "../finance/PatientBillingModal";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { AppointmentModal } from "../schedule/AppointmentModal";
+
+const EgiszRemdHubModal = lazy(() =>
+	import("../egisz/EgiszRemdHubModal").then((m) => ({ default: m.EgiszRemdHubModal })),
+);
+const Form043PrintModal = lazy(() =>
+	import("../emr/Form043PrintModal").then((m) => ({ default: m.Form043PrintModal })),
+);
+const ClinicalDiaryTemplatesModal = lazy(() =>
+	import("../emr/templates/ClinicalDiaryTemplatesModal").then((m) => ({
+		default: m.ClinicalDiaryTemplatesModal,
+	})),
+);
+const EndoCanalLogModal = lazy(() =>
+	import("../endo/EndoCanalLogModal").then((m) => ({ default: m.EndoCanalLogModal })),
+);
+const PatientBillingModal = lazy(() =>
+	import("../finance/PatientBillingModal").then((m) => ({ default: m.PatientBillingModal })),
+);
 import {
 	type ClinicalQuickPreset,
 	ClinicalQuickPresetsBar,
@@ -3681,28 +3694,32 @@ export function VisitEmkTab() {
 				/>
 
 				{/* Модальное окно эндодонтического протокола корневых каналов */}
-				<EndoCanalLogModal
-					isOpen={isEndoModalOpen}
-					onClose={() => setIsEndoModalOpen(false)}
-					toothNumber={Number(
-						typeof visitNoteForm?.diagnosis === "string"
-							? visitNoteForm.diagnosis.match(/\b\d{2}\b/)?.[0] || 46
-							: 46,
-					)}
-					onInsertToProtocol={(protocolText) => {
-						if (!updateVisitNoteField) return;
-						const curr = visitNoteForm.treatmentPlan || "";
-						updateVisitNoteField(
-							"treatmentPlan",
-							appendClinicalText(curr, protocolText, "\n\n"),
-						);
-						showToast(
-							"Эндодонтический протокол внесен в карту 043/у",
-							"success",
-							3500,
-						);
-					}}
-				/>
+				{isEndoModalOpen && (
+					<Suspense fallback={null}>
+						<EndoCanalLogModal
+							isOpen={isEndoModalOpen}
+							onClose={() => setIsEndoModalOpen(false)}
+							toothNumber={Number(
+								typeof visitNoteForm?.diagnosis === "string"
+									? visitNoteForm.diagnosis.match(/\b\d{2}\b/)?.[0] || 46
+									: 46,
+							)}
+							onInsertToProtocol={(protocolText) => {
+								if (!updateVisitNoteField) return;
+								const curr = visitNoteForm.treatmentPlan || "";
+								updateVisitNoteField(
+									"treatmentPlan",
+									appendClinicalText(curr, protocolText, "\n\n"),
+								);
+								showToast(
+									"Эндодонтический протокол внесен в карту 043/у",
+									"success",
+									3500,
+								);
+							}}
+						/>
+					</Suspense>
+				)}
 
 				{/* Модальное окно рецептурного бланка 107-1/у */}
 				<PrescriptionModal
@@ -3746,27 +3763,31 @@ export function VisitEmkTab() {
 				/>
 
 				{/* Модальное окно Акта выполненных работ и гарантийного талона (А4) */}
-				<PatientBillingModal
-					isOpen={isBillingActModalOpen}
-					onClose={() => setIsBillingActModalOpen(false)}
-					patient={activePatient}
-					doctor={{
-						fullName:
-							appLogic?.activeDoctor?.fullName ||
-							appLogic?.auth?.currentUser?.name ||
-							"Лечащий врач стоматолог",
-						specialty:
-							appLogic?.activeDoctor?.specialties?.[0] || "Стоматолог-терапевт",
-					}}
-					clinicLegalName={
-						dashboard?.clinicSettings?.profile?.brandName ||
-						"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
-					}
-					clinicLicenseNumber={
-						dashboard?.clinicSettings?.profile?.medicalLicenseNumber ||
-						"ЛО41-01137-77/00368421"
-					}
-				/>
+				{isBillingActModalOpen && (
+					<Suspense fallback={null}>
+						<PatientBillingModal
+							isOpen={isBillingActModalOpen}
+							onClose={() => setIsBillingActModalOpen(false)}
+							patient={activePatient}
+							doctor={{
+								fullName:
+									appLogic?.activeDoctor?.fullName ||
+									appLogic?.auth?.currentUser?.name ||
+									"Лечащий врач стоматолог",
+								specialty:
+									appLogic?.activeDoctor?.specialties?.[0] || "Стоматолог-терапевт",
+							}}
+							clinicLegalName={
+								dashboard?.clinicSettings?.profile?.brandName ||
+								"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
+							}
+							clinicLicenseNumber={
+								dashboard?.clinicSettings?.profile?.medicalLicenseNumber ||
+								"ЛО41-01137-77/00368421"
+							}
+						/>
+					</Suspense>
+				)}
 
 				{/* Модальное окно Информированного добровольного согласия (Приказ № 1051н) */}
 				<InformedConsentModal
@@ -3806,20 +3827,28 @@ export function VisitEmkTab() {
 				/>
 
 				{/* Официальная медицинская карта стоматологического пациента (Форма № 043/у, Приказ Минздрава РФ № 834н) */}
-				<Form043PrintModal
-					isOpen={isForm043ModalOpen}
-					onClose={() => setIsForm043ModalOpen(false)}
-					initialData={form043InitialData}
-					isDraft={!isSignedVisit}
-					status={isSignedVisit ? "signed" : "draft"}
-				/>
+				{isForm043ModalOpen && (
+					<Suspense fallback={null}>
+						<Form043PrintModal
+							isOpen={isForm043ModalOpen}
+							onClose={() => setIsForm043ModalOpen(false)}
+							initialData={form043InitialData}
+							isDraft={!isSignedVisit}
+							status={isSignedVisit ? "signed" : "draft"}
+						/>
+					</Suspense>
+				)}
 
 				{/* Модальное окно валидатора и экспорта СЭМД ЕГИСЗ */}
-				<EgiszRemdHubModal
-					isOpen={isEgiszModalOpen}
-					onClose={() => setIsEgiszModalOpen(false)}
-					initialTab="xml"
-				/>
+				{isEgiszModalOpen && (
+					<Suspense fallback={null}>
+						<EgiszRemdHubModal
+							isOpen={isEgiszModalOpen}
+							onClose={() => setIsEgiszModalOpen(false)}
+							initialTab="xml"
+						/>
+					</Suspense>
+				)}
 
 				<div className="mb-4">
 					<EgiszMultipleDiagnosesWidget />
@@ -4269,78 +4298,90 @@ export function VisitEmkTab() {
 			)}
 
 			{/* Форма 043/у Каталог Клинических Протоколов со списанием и услугами 804н */}
-			<ClinicalDiaryTemplatesModal
-				isOpen={isSoapTemplatesModalOpen}
-				onClose={() => setIsSoapTemplatesModalOpen(false)}
-				initialToothNumber={activeSelectedTooth}
-				doctorFullName={
-					appLogic?.activeDoctor?.fullName ||
-					dashboard?.activeVisit?.doctorName ||
-					appLogic?.currentUser?.fullName
-				}
-				patientFullName={activePatient?.fullName}
-				onApplyDiary={(result) => {
-					const matchedPreset =
-						getPresetById(result.templateId) ||
-						CLINICAL_SOAP_PRESETS.find((p) =>
-							result.templateId.startsWith(p.id),
-						) ||
-						CLINICAL_SOAP_PRESETS.find((p) => p.icd10 === result.icd10Code) ||
-						CLINICAL_SOAP_PRESETS[0];
+			{isSoapTemplatesModalOpen && (
+				<Suspense fallback={null}>
+					<ClinicalDiaryTemplatesModal
+						isOpen={isSoapTemplatesModalOpen}
+						onClose={() => setIsSoapTemplatesModalOpen(false)}
+						initialToothNumber={activeSelectedTooth}
+						doctorFullName={
+							appLogic?.activeDoctor?.fullName ||
+							dashboard?.activeVisit?.doctorName ||
+							appLogic?.currentUser?.fullName
+						}
+						patientFullName={activePatient?.fullName}
+						onApplyDiary={(result) => {
+							const matchedPreset =
+								getPresetById(result.templateId) ||
+								CLINICAL_SOAP_PRESETS.find((p) =>
+									result.templateId.startsWith(p.id),
+								) ||
+								CLINICAL_SOAP_PRESETS.find((p) => p.icd10 === result.icd10Code) ||
+								CLINICAL_SOAP_PRESETS[0];
 
-					const targetTooth =
-						result.toothNumber ??
-						activeSelectedTooth ??
-						matchedPreset?.defaultTooth ??
-						16;
-					const effectivePreset: ClinicalSoapPreset = matchedPreset
-						? {
-								...matchedPreset,
-								complaint:
-									result.subjectiveComplaints || matchedPreset.complaint,
-								anamnesis: result.anamnesisMorbi || matchedPreset.anamnesis,
-								statusLocalis:
-									result.objectiveStatusLocalis || matchedPreset.statusLocalis,
-								treatmentDescription:
-									result.procedureProtocol ||
-									matchedPreset.treatmentDescription,
-							}
-						: {
-								id: result.templateId,
-								title: result.title,
-								shortBadge: result.icd10Code,
-								category: "therapy",
-								icd10: result.icd10Code,
-								icd10Label: `${result.icd10Code} ${result.title}`,
-								complaint: result.subjectiveComplaints,
-								anamnesis: result.anamnesisMorbi,
-								statusLocalis: result.objectiveStatusLocalis,
-								treatmentDescription: result.procedureProtocol,
-								toothState: "Caries",
-								defaultTooth: targetTooth,
-								service804n: {
-									code804n:
-										result.order804nServices?.[0]?.code || "A16.07.002.001",
-									title: result.order804nServices?.[0]?.nameRu || result.title,
-									basePriceRub: 4500,
-									category: "therapy",
-								},
-								materialsToDeduct: [],
-								recommendations:
-									result.homeCareRecommendations ||
-									"Соблюдение гигиены полости рта",
-								warrantyMonths: 12,
-								serviceLifeMonths: 24,
-							};
+							const targetTooth =
+								result.toothNumber ??
+								matchedPreset?.defaultTooth ??
+								activeSelectedTooth ??
+								16;
 
-					handleApplyClinicalSoapPreset(
-						effectivePreset,
-						targetTooth,
-						"clean_replace",
-					);
-					setIsSoapTemplatesModalOpen(false);
-				}}
-			/>
+							const effectivePreset: ClinicalSoapPreset = matchedPreset
+								? {
+										...matchedPreset,
+										icd10: result.icd10Code || matchedPreset.icd10,
+										icd10Label: `${result.icd10Code} ${result.title}`,
+										complaint:
+											result.subjectiveComplaints || matchedPreset.complaint,
+										anamnesis: result.anamnesisMorbi || matchedPreset.anamnesis,
+										statusLocalis:
+											result.objectiveStatusLocalis ||
+											matchedPreset.statusLocalis,
+										treatmentDescription:
+											result.procedureProtocol ||
+											matchedPreset.treatmentDescription,
+										defaultTooth: targetTooth,
+										recommendations:
+											result.homeCareRecommendations ||
+											matchedPreset.recommendations,
+									}
+								: {
+										id: result.templateId,
+										title: result.title,
+										shortBadge: result.icd10Code || "ТЕРАПИЯ",
+										category: "therapy",
+										icd10: result.icd10Code,
+										icd10Label: `${result.icd10Code} ${result.title}`,
+										complaint: result.subjectiveComplaints,
+										anamnesis: result.anamnesisMorbi,
+										statusLocalis: result.objectiveStatusLocalis,
+										treatmentDescription: result.procedureProtocol,
+										toothState: "Caries",
+										defaultTooth: targetTooth,
+										service804n: {
+											code804n:
+												result.order804nServices?.[0]?.code || "A16.07.002.001",
+											title: result.order804nServices?.[0]?.nameRu || result.title,
+											basePriceRub: 4500,
+											category: "therapy",
+										},
+										materialsToDeduct: [],
+										recommendations:
+											result.homeCareRecommendations ||
+											"Соблюдение гигиены полости рта",
+										warrantyMonths: 12,
+										serviceLifeMonths: 24,
+									};
+
+							handleApplyClinicalSoapPreset(
+								effectivePreset,
+								targetTooth,
+								"clean_replace",
+							);
+							setIsSoapTemplatesModalOpen(false);
+						}}
+					/>
+				</Suspense>
+			)}
 
 			{/* ── ПЕЧАТНАЯ ВЕРСИЯ КАРТЫ 043/У И ДНЕВНИКА ПРИЁМА ДЛЯ А4 ── */}
 			<div

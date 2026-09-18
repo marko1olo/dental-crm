@@ -38,8 +38,14 @@ const pendingDiskWrites = new Map<string, string>();
 let diskFlushTimer: ReturnType<typeof setTimeout> | null = null;
 let isFlushingDisk = false;
 
-/** Задержка дебаунса для сброса на диск (мс) */
-const DISK_FLUSH_DEBOUNCE_MS = 200;
+/** Задержка дебаунса для сброса на диск (мс) per Mandate 8n (5400 RPM HDD & 4GB RAM) */
+const DISK_FLUSH_DEBOUNCE_MS = 400;
+
+/** In-memory кэш для 0 мс чтения sessionStorage без дискового I/O */
+const inMemorySessionStorageCache = new Map<string, string | null>();
+const pendingSessionDiskWrites = new Map<string, string>();
+let sessionDiskFlushTimer: ReturnType<typeof setTimeout> | null = null;
+let isFlushingSessionDisk = false;
 
 function isImmediateDiskKey(key: string): boolean {
 	if (
@@ -59,6 +65,32 @@ function isImmediateDiskKey(key: string): boolean {
 }
 
 /**
+ * Принудительно сбрасывает все накопленные в очереди записи sessionStorage на диск.
+ */
+export function flushPendingSessionStorageWrites(): void {
+	if (sessionDiskFlushTimer !== null) {
+		clearTimeout(sessionDiskFlushTimer);
+		sessionDiskFlushTimer = null;
+	}
+	if (typeof window === "undefined" || pendingSessionDiskWrites.size === 0 || isFlushingSessionDisk) {
+		return;
+	}
+	isFlushingSessionDisk = true;
+	try {
+		for (const [key, value] of pendingSessionDiskWrites.entries()) {
+			try {
+				window.sessionStorage.setItem(key, value);
+			} catch {
+				// Защита от QuotaExceededError или запрета хранения в Safari Private
+			}
+		}
+		pendingSessionDiskWrites.clear();
+	} finally {
+		isFlushingSessionDisk = false;
+	}
+}
+
+/**
  * Принудительно сбрасывает все накопленные в очереди записи на диск.
  */
 export function flushPendingStorageWrites(): void {
@@ -66,6 +98,7 @@ export function flushPendingStorageWrites(): void {
 		clearTimeout(diskFlushTimer);
 		diskFlushTimer = null;
 	}
+	flushPendingSessionStorageWrites();
 	if (typeof window === "undefined" || pendingDiskWrites.size === 0 || isFlushingDisk) {
 		return;
 	}
@@ -90,9 +123,15 @@ export function flushPendingStorageWrites(): void {
 export function clearInMemoryStorageCache(): void {
 	inMemoryStorageCache.clear();
 	pendingDiskWrites.clear();
+	inMemorySessionStorageCache.clear();
+	pendingSessionDiskWrites.clear();
 	if (diskFlushTimer !== null) {
 		clearTimeout(diskFlushTimer);
 		diskFlushTimer = null;
+	}
+	if (sessionDiskFlushTimer !== null) {
+		clearTimeout(sessionDiskFlushTimer);
+		sessionDiskFlushTimer = null;
 	}
 	resetInMemoryAuthTokens();
 }
@@ -236,25 +275,47 @@ export function readPatientToken(): string {
  */
 
 export function safeSessionStorageGetItem(key: string): string | null {
+	if (pendingSessionDiskWrites.has(key)) {
+		return pendingSessionDiskWrites.get(key) ?? null;
+	}
+	if (inMemorySessionStorageCache.has(key)) {
+		return inMemorySessionStorageCache.get(key) ?? null;
+	}
 	if (typeof window === "undefined") return null;
 	try {
-		return window.sessionStorage.getItem(key);
+		const val = window.sessionStorage.getItem(key);
+		inMemorySessionStorageCache.set(key, val);
+		return val;
 	} catch {
 		return null;
 	}
 }
 
-export function safeSessionStorageSetItem(key: string, value: string): boolean {
+export function safeSessionStorageSetItem(key: string, value: string, immediate = false): boolean {
+	inMemorySessionStorageCache.set(key, value);
 	if (typeof window === "undefined") return false;
-	try {
-		window.sessionStorage.setItem(key, value);
-		return true;
-	} catch {
-		return false;
+	if (immediate) {
+		pendingSessionDiskWrites.delete(key);
+		try {
+			window.sessionStorage.setItem(key, value);
+			return true;
+		} catch {
+			return false;
+		}
 	}
+	pendingSessionDiskWrites.set(key, value);
+	if (sessionDiskFlushTimer === null) {
+		sessionDiskFlushTimer = setTimeout(() => {
+			sessionDiskFlushTimer = null;
+			flushPendingSessionStorageWrites();
+		}, DISK_FLUSH_DEBOUNCE_MS);
+	}
+	return true;
 }
 
 export function safeSessionStorageRemoveItem(key: string): boolean {
+	inMemorySessionStorageCache.set(key, null);
+	pendingSessionDiskWrites.delete(key);
 	if (typeof window === "undefined") return false;
 	try {
 		window.sessionStorage.removeItem(key);

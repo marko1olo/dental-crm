@@ -31,6 +31,11 @@ import {
 } from "../utils/offlineMutationQueue";
 import { parseAndValidateKraftBarcode } from "@dental/shared";
 import { showToast } from "./GlobalToast";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+	safeLocalStorageRemoveItem,
+} from "../lib/safeLocalStorage";
 
 export interface DiaryState {
 	anamnesis: string;
@@ -665,9 +670,9 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		if (loadState.phase !== "empty" || !visitId) return;
 		let cancelled = false;
 
-		// Fast synchronous restoration from localStorage
+		// Fast synchronous restoration from localStorage via safeLocalStorage in-memory cache
 		try {
-			const cached = localStorage.getItem(localDiaryStorageKey);
+			const cached = safeLocalStorageGetItem(localDiaryStorageKey);
 			if (cached) {
 				const parsed = JSON.parse(cached) as Partial<DiaryState>;
 				if (parsed && typeof parsed === "object") {
@@ -728,7 +733,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			if (hasContent) {
 				const storageKey = isRevising ? `${localDiaryStorageKey}_revision` : localDiaryStorageKey;
 				try {
-					localStorage.setItem(storageKey, JSON.stringify(diary));
+					safeLocalStorageSetItem(storageKey, JSON.stringify(diary));
 				} catch {
 					// ignore localStorage quota errors
 				}
@@ -742,13 +747,16 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			}
 		};
 
-		// Immediate save on modification
-		flushLocalDraft();
+		// 400ms debounced save on modification (anti-HDD thrashing on 5400 RPM drives)
+		const debounceTimer = setTimeout(flushLocalDraft, 400);
 
-		// Periodic 5-second resilient interval
+		// Periodic 5-second resilient interval for background sync
 		const intervalTimer = setInterval(flushLocalDraft, 5000);
 
-		return () => clearInterval(intervalTimer);
+		return () => {
+			clearTimeout(debounceTimer);
+			clearInterval(intervalTimer);
+		};
 	}, [diary, visitId, isLocked, isRevising, loadState.phase, localDiaryStorageKey]);
 
 	// ── Window beforeunload, visibilitychange, blur, pagehide & incoming call tab closure protection
@@ -762,7 +770,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			if (!hasUnsavedContent) return;
 			const storageKey = isRevising ? `${localDiaryStorageKey}_revision` : localDiaryStorageKey;
 			try {
-				localStorage.setItem(storageKey, JSON.stringify(diary));
+				safeLocalStorageSetItem(storageKey, JSON.stringify(diary), true);
 			} catch {
 				// ignore localStorage quota errors
 			}
@@ -808,6 +816,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		window.addEventListener("dente-telephony-incoming-call", handleTelephonyCall);
 
 		return () => {
+			flushImmediately();
 			window.removeEventListener("beforeunload", handleBeforeUnload);
 			window.removeEventListener("pagehide", flushImmediately);
 			window.removeEventListener("blur", handleBlur);
@@ -1055,12 +1064,12 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 
 	doSaveRef.current = doSave;
 
-	// ── Debounced Auto-Save (300ms) with immediate synchronous localStorage protection
+	// ── Debounced Auto-Save (400ms) with in-memory safeLocalStorage protection
 	const scheduleDebouncedSave = useCallback(() => {
 		if (isLocked && !isRevising) return;
 		const storageKey = isRevising ? `${localDiaryStorageKey}_revision` : localDiaryStorageKey;
 		try {
-			localStorage.setItem(storageKey, JSON.stringify(diary));
+			safeLocalStorageSetItem(storageKey, JSON.stringify(diary));
 		} catch {
 			// ignore localStorage quota errors
 		}
@@ -1077,7 +1086,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				);
 				setLocalDraftSavedAt(new Date());
 			}
-		}, 300);
+		}, 400);
 	}, [isLocked, isRevising, diary, localDiaryStorageKey, visitId]);
 
 	// ── Populate from Odontogram
@@ -1548,7 +1557,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			const detail = operatorReadableErrorDetail(
 				typeof json?.message === "string" ? json.message : null,
 			);
-			// 403 OnlyAdminsCanRevise — сервер уже отдаёт полный RU текст.
+			// 403 DoctorOrClinicalSignerRequired — сервер уже отдаёт полный RU текст.
 			showToast(
 				detail ??
 					(res.status === 403
@@ -1851,7 +1860,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					if (spec) setDiaryDoctorSpecialty(spec);
 				}
 				try {
-					localStorage.removeItem(localDiaryStorageKey);
+					safeLocalStorageRemoveItem(localDiaryStorageKey);
 				} catch {
 					// ignore
 				}
@@ -1864,7 +1873,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			} else if (res.status === 409) {
 				setIsLocked(true);
 				try {
-					localStorage.removeItem(localDiaryStorageKey);
+					safeLocalStorageRemoveItem(localDiaryStorageKey);
 				} catch {
 					// ignore
 				}
@@ -2172,7 +2181,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	const clearDraft = useCallback(() => {
 		void deleteOfflineDraft(localDiaryStorageKey);
 		try {
-			localStorage.removeItem(localDiaryStorageKey);
+			safeLocalStorageRemoveItem(localDiaryStorageKey);
 		} catch {
 			// ignore
 		}

@@ -111,7 +111,7 @@ const PROBES: Probe[] = [
 	 * только когда организация определена (`if (identity.organizationId)`).
 	 * Значит без кабинета роль смены ВСЕГДА читается как «assistant», а в обоих
 	 * маршрутах проверка права стоит РАНЬШЕ проверки клиники — выполнение
-	 * останавливается на `OnlyDoctorsCanLock` и `OnlyAdminsCanRevise` и до
+	 * останавливается на `OnlyDoctorsCanLock` и `DoctorOrClinicalSignerRequired` и до
 	 * `OrgRequired` не доходит никогда. Роль без клиники в этом продукте
 	 * невозможна, поэтому ветка мертва по построению, а не по случайности.
 	 *
@@ -124,7 +124,7 @@ const PROBES: Probe[] = [
 		method: "POST",
 		url: `/api/diaries/${MISSING_DIARY}/revise`,
 		expectedStatus: 403,
-		expectedError: "OnlyAdminsCanRevise",
+		expectedError: "DoctorOrClinicalSignerRequired",
 	},
 	{
 		name: "история правок: дневника с таким номером в клинике нет",
@@ -260,7 +260,7 @@ describe("отказ дневника приёма объяснён врачу",
 			method: "POST",
 			url: `/api/diaries/${MISSING_DIARY}/revise`,
 			expectedStatus: 403,
-			expectedError: "OnlyAdminsCanRevise",
+			expectedError: "DoctorOrClinicalSignerRequired",
 		});
 		assert.match(
 			message,

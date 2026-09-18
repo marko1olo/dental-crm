@@ -567,7 +567,10 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 		const input = outcome.data;
 
 		try {
-			if (process.env.DENTAL_MOCK_UPSERT_VISIT_DRAFT_AUTOSAVE_ERROR) {
+			if (
+				process.env.NODE_ENV === "test" &&
+				process.env.DENTAL_MOCK_UPSERT_VISIT_DRAFT_AUTOSAVE_ERROR
+			) {
 				throw new Error(process.env.DENTAL_MOCK_UPSERT_VISIT_DRAFT_AUTOSAVE_ERROR);
 			}
 			const serverDraft = await upsertVisitDraftAutosaveInDb(orgId, input);

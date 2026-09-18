@@ -387,7 +387,22 @@ html.low-spec-mode .transition-all {
 .diary-timeline-item,
 .finance-row,
 .patient-row,
-.invoice-card {
+.invoice-card,
+.appointment-card,
+.schedule-day-gap,
+.schedule-day-overlap,
+.schedule-timeline-item,
+.sanpin-table tbody tr,
+.sanpin-log-row,
+.patient-search-item,
+.visit-history-card,
+.cd-template-item-card,
+.pricelist-data-table tbody tr,
+.pricelist-row,
+.soap-protocol-card,
+.clinical-protocol-card,
+.inventory-batch-card,
+.inventory-item-card {
 	contain: paint layout;
 	content-visibility: auto;
 	contain-intrinsic-size: 1px 48px;
@@ -415,4 +430,67 @@ html.low-spec-mode .transition-all {
 	contain: paint layout;
 	content-visibility: auto;
 	contain-intrinsic-size: auto 300px;
+}
+
+/* Virtualized long lists, table rows and cards (Mandate 8c, 8n - 44px CSS virtualization) */
+.finance-row,
+.finance-planning-row,
+.payment-row,
+.lab-order-card,
+.lab-order-row,
+.lab-orders-table tbody tr,
+.communication-task,
+.communication-event-row,
+.message-delivery-row,
+.campaign-card,
+.inventory-item-row,
+.inventory-table tbody tr,
+.bom-rule-row,
+.quick-package-card,
+.patient-row,
+.patient-card,
+.patient-table tbody tr,
+.patient-search-item,
+.patient-history-row,
+.invoice-card,
+.invoices-table tbody tr,
+.sanpin-table tbody tr,
+.sanpin-log-row,
+.journal257-table tbody tr,
+.waste-table tbody tr,
+.kraft-table tbody tr,
+.pricelist-data-table tbody tr,
+.pricelist-row,
+.cd-template-item-card,
+.cd-template-list,
+.visit-history-card,
+.soap-protocol-card,
+.clinical-protocol-card,
+.sanpin-table-wrapper,
+.inventory-batch-card,
+.inventory-item-card {
+	contain: content;
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 40px;
+}
+
+/* --------------------------------------------------------------------------
+   8. Conservative will-change Policy (Anti-GPU VRAM / RAM Thrashing on 4GB PCs)
+   -------------------------------------------------------------------------- */
+html[data-hardware-tier="low"] *,
+html[data-low-spec="true"] *,
+html.low-spec-mode *,
+[data-hardware-tier="low"] *,
+[data-low-spec="true"] *,
+.low-spec-mode * {
+	/* Disallow arbitrary GPU layer creation on low-spec hardware */
+	will-change: auto !important;
+}
+
+/* Allow will-change ONLY point-wise on active interactive overlay surfaces */
+html[data-hardware-tier="low"] .drawer-open,
+html[data-hardware-tier="low"] .modal-active,
+html[data-low-spec="true"] .drawer-open,
+html[data-low-spec="true"] .modal-active {
+	will-change: transform, opacity !important;
 }

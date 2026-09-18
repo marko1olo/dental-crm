@@ -1,5 +1,5 @@
 import { Award, Check, Copy, FileText, ShieldCheck, Sparkles, Zap } from "lucide-react";
-import React, { useMemo, useState, useRef, useEffect, memo } from "react";
+import React, { useMemo, useState, useRef, useEffect, memo, useCallback } from "react";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { showToast } from "../GlobalToast";
 import type { ToothData, ToothState } from "./ToothChart";
@@ -514,6 +514,88 @@ export interface ClassicGostOdontogramProps {
 	className?: string | undefined;
 }
 
+export function areClassicGostOdontogramPropsEqual(
+	prev: ClassicGostOdontogramProps,
+	next: ClassicGostOdontogramProps,
+): boolean {
+	if (prev.pediatricMode !== next.pediatricMode) return false;
+	if (prev.mixedDentition !== next.mixedDentition) return false;
+	if (prev.useSurfaces !== next.useSurfaces) return false;
+	if (prev.hideHeader !== next.hideHeader) return false;
+	if (prev.hideLegend !== next.hideLegend) return false;
+	if (prev.className !== next.className) return false;
+
+	// Compare selectedTeeth array values
+	if (prev.selectedTeeth !== next.selectedTeeth) {
+		const prevLen = prev.selectedTeeth?.length ?? 0;
+		const nextLen = next.selectedTeeth?.length ?? 0;
+		if (prevLen !== nextLen) return false;
+		for (let i = 0; i < prevLen; i++) {
+			if (prev.selectedTeeth![i] !== next.selectedTeeth![i]) return false;
+		}
+	}
+
+	// Compare topTeeth & bottomTeeth array values
+	if (prev.topTeeth !== next.topTeeth) {
+		const pLen = prev.topTeeth?.length ?? 0;
+		const nLen = next.topTeeth?.length ?? 0;
+		if (pLen !== nLen) return false;
+		for (let i = 0; i < pLen; i++) {
+			if (prev.topTeeth![i] !== next.topTeeth![i]) return false;
+		}
+	}
+	if (prev.bottomTeeth !== next.bottomTeeth) {
+		const pLen = prev.bottomTeeth?.length ?? 0;
+		const nLen = next.bottomTeeth?.length ?? 0;
+		if (pLen !== nLen) return false;
+		for (let i = 0; i < pLen; i++) {
+			if (prev.bottomTeeth![i] !== next.bottomTeeth![i]) return false;
+		}
+	}
+
+	// Compare teethData
+	if (prev.teethData !== next.teethData) {
+		const pLen = prev.teethData?.length ?? 0;
+		const nLen = next.teethData?.length ?? 0;
+		if (pLen !== nLen) return false;
+		for (let i = 0; i < pLen; i++) {
+			const pt = prev.teethData[i];
+			const nt = next.teethData[i];
+			if (!pt || !nt) return false;
+			if (pt.toothNumber !== nt.toothNumber) return false;
+			if (pt.state !== nt.state) return false;
+			const prevPocket = pt.pocketDepth ?? pt.pocketDepthMm ?? pt.maxPocketDepth;
+			const nextPocket = nt.pocketDepth ?? nt.pocketDepthMm ?? nt.maxPocketDepth;
+			if (prevPocket !== nextPocket) return false;
+			if (pt.surfaces !== nt.surfaces) {
+				const pSurfsLen = pt.surfaces?.length ?? 0;
+				const nSurfsLen = nt.surfaces?.length ?? 0;
+				if (pSurfsLen !== nSurfsLen) return false;
+				for (let s = 0; s < pSurfsLen; s++) {
+					if (pt.surfaces![s] !== nt.surfaces![s]) return false;
+				}
+			}
+			const prevCanals =
+				pt.clinicalData &&
+				typeof pt.clinicalData === "object" &&
+				"canals" in pt.clinicalData &&
+				Array.isArray((pt.clinicalData as { canals?: unknown[] }).canals)
+					? (pt.clinicalData as { canals?: unknown[] }).canals!.length
+					: 0;
+			const nextCanals =
+				nt.clinicalData &&
+				typeof nt.clinicalData === "object" &&
+				"canals" in nt.clinicalData &&
+				Array.isArray((nt.clinicalData as { canals?: unknown[] }).canals)
+					? (nt.clinicalData as { canals?: unknown[] }).canals!.length
+					: 0;
+			if (prevCanals !== nextCanals) return false;
+		}
+	}
+
+	return true;
+}
+
 export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = memo(({
 	teethData = [],
 	pediatricMode,
@@ -528,27 +610,33 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = memo(
 	hideLegend = false,
 	className = "",
 }) => {
-	const topList =
-		customTopTeeth ??
-		(mixedDentition
-			? TOP_TEETH_MIXED
-			: pediatricMode
-				? UPPER_TEETH_PEDIATRIC
-				: UPPER_TEETH_ADULT);
+	const topList = useMemo(
+		() =>
+			customTopTeeth ??
+			(mixedDentition
+				? TOP_TEETH_MIXED
+				: pediatricMode
+					? UPPER_TEETH_PEDIATRIC
+					: UPPER_TEETH_ADULT),
+		[customTopTeeth, mixedDentition, pediatricMode],
+	);
 
-	const bottomList =
-		customBottomTeeth ??
-		(mixedDentition
-			? BOTTOM_TEETH_MIXED
-			: pediatricMode
-				? LOWER_TEETH_PEDIATRIC
-				: LOWER_TEETH_ADULT);
+	const bottomList = useMemo(
+		() =>
+			customBottomTeeth ??
+			(mixedDentition
+				? BOTTOM_TEETH_MIXED
+				: pediatricMode
+					? LOWER_TEETH_PEDIATRIC
+					: LOWER_TEETH_ADULT),
+		[customBottomTeeth, mixedDentition, pediatricMode],
+	);
 
-	const topQ1 = topList.slice(0, Math.ceil(topList.length / 2));
-	const topQ2 = topList.slice(Math.ceil(topList.length / 2));
+	const topQ1 = useMemo(() => topList.slice(0, Math.ceil(topList.length / 2)), [topList]);
+	const topQ2 = useMemo(() => topList.slice(Math.ceil(topList.length / 2)), [topList]);
 
-	const bottomQ4 = bottomList.slice(0, Math.ceil(bottomList.length / 2));
-	const bottomQ3 = bottomList.slice(Math.ceil(bottomList.length / 2));
+	const bottomQ4 = useMemo(() => bottomList.slice(0, Math.ceil(bottomList.length / 2)), [bottomList]);
+	const bottomQ3 = useMemo(() => bottomList.slice(Math.ceil(bottomList.length / 2)), [bottomList]);
 
 	const toothStateMap = useMemo(() => {
 		const map = new Map<number, ToothData>();
@@ -606,9 +694,10 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = memo(
 				const quickState = getToothStateFromHotkey(e.key);
 				if (quickState) {
 					e.preventDefault();
+					const firstTooth = selectedTeeth[0];
 					const singleTooth =
-						selectedTeeth.length === 1
-							? (teethData ?? []).find((t) => t.toothNumber === selectedTeeth[0])
+						selectedTeeth.length === 1 && firstTooth !== undefined
+							? (teethData ?? []).find((t) => t.toothNumber === firstTooth)
 							: undefined;
 					onQuickStateChange(selectedTeeth, quickState, singleTooth?.surfaces);
 					return;
@@ -707,141 +796,241 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = memo(
 
 		window.addEventListener("keydown", handleGlobalKeyDown);
 		return () => {
+			if (digitBufferRef.current.timer) {
+				clearTimeout(digitBufferRef.current.timer);
+				digitBufferRef.current.timer = null;
+			}
 			window.removeEventListener("keydown", handleGlobalKeyDown);
 		};
 	}, [selectedTeeth, onQuickStateChange, pediatricMode, teethData]);
 
-	const renderToothCell = (toothNumber: number, isUpper: boolean) => {
-		const tooth = toothStateMap.get(toothNumber);
-		const state: ToothState = tooth ? tooth.state : "Healthy";
-		const gost = GOST_TOOTH_STATES[state] || GOST_TOOTH_STATES.Healthy;
-		const isSelected = selectedTeeth.includes(toothNumber);
-		const surfaces = tooth?.surfaces;
-		const pocketDepth = tooth?.pocketDepth ?? tooth?.pocketDepthMm ?? tooth?.maxPocketDepth;
-		const hasCanals =
-			tooth?.clinicalData &&
-			typeof tooth.clinicalData === "object" &&
-			"canals" in tooth.clinicalData &&
-			Array.isArray(tooth.clinicalData.canals) &&
-			tooth.clinicalData.canals.length > 0;
+interface ClassicGostToothCellProps {
+	readonly toothNumber: number;
+	readonly isUpper: boolean;
+	readonly tooth?: ToothData | undefined;
+	readonly isSelected: boolean;
+	readonly selectedTeeth: readonly number[];
+	readonly onToothClick: (toothNumber: number, rect: DOMRect) => void;
+	readonly onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[]) => void) | undefined;
+	readonly useSurfaces?: boolean | undefined;
+	readonly pediatricMode?: boolean | undefined;
+}
 
-		const anatomicalName = getToothAnatomicalNameRu(toothNumber);
+function areGostToothCellPropsEqual(
+	prev: ClassicGostToothCellProps,
+	next: ClassicGostToothCellProps,
+): boolean {
+	if (prev.toothNumber !== next.toothNumber) return false;
+	if (prev.isUpper !== next.isUpper) return false;
+	if (prev.isSelected !== next.isSelected) return false;
+	if (prev.useSurfaces !== next.useSurfaces) return false;
+	if (prev.pediatricMode !== next.pediatricMode) return false;
+	if (prev.onToothClick !== next.onToothClick) return false;
+	if (prev.onQuickStateChange !== next.onQuickStateChange) return false;
 
-		return (
-			<button
-				key={toothNumber}
-				type="button"
-				data-tooth-id={toothNumber}
-				title={`${anatomicalName}: ${gost.nameRu}${surfaces && surfaces.length > 0 ? ` [${surfaces.join(",")}]` : ""}${pocketDepth && pocketDepth > 4 ? ` | Карман: ${pocketDepth}мм` : ""}`}
-				aria-label={`Зуб ${toothNumber}, ${gost.nameRu}`}
-				aria-pressed={isSelected ? true : undefined}
-				onClick={(e) => {
+	const prevTooth = prev.tooth;
+	const nextTooth = next.tooth;
+	if (prevTooth !== nextTooth) {
+		if (!prevTooth || !nextTooth) return false;
+		if (prevTooth.state !== nextTooth.state) return false;
+		const prevPocket = prevTooth.pocketDepth ?? prevTooth.pocketDepthMm ?? prevTooth.maxPocketDepth;
+		const nextPocket = nextTooth.pocketDepth ?? nextTooth.pocketDepthMm ?? nextTooth.maxPocketDepth;
+		if (prevPocket !== nextPocket) return false;
+		const prevSurfaces = prevTooth.surfaces;
+		const nextSurfaces = nextTooth.surfaces;
+		if (prevSurfaces !== nextSurfaces) {
+			const pLen = prevSurfaces?.length ?? 0;
+			const nLen = nextSurfaces?.length ?? 0;
+			if (pLen !== nLen) return false;
+			for (let i = 0; i < pLen; i++) {
+				if (prevSurfaces![i] !== nextSurfaces![i]) return false;
+			}
+		}
+		const prevCanals =
+			prevTooth.clinicalData &&
+			typeof prevTooth.clinicalData === "object" &&
+			"canals" in prevTooth.clinicalData &&
+			Array.isArray((prevTooth.clinicalData as { canals?: unknown[] }).canals)
+				? (prevTooth.clinicalData as { canals?: unknown[] }).canals!.length
+				: 0;
+		const nextCanals =
+			nextTooth.clinicalData &&
+			typeof nextTooth.clinicalData === "object" &&
+			"canals" in nextTooth.clinicalData &&
+			Array.isArray((nextTooth.clinicalData as { canals?: unknown[] }).canals)
+				? (nextTooth.clinicalData as { canals?: unknown[] }).canals!.length
+				: 0;
+		if (prevCanals !== nextCanals) return false;
+	}
+
+	if (
+		(prev.isSelected || next.isSelected) &&
+		prev.selectedTeeth !== next.selectedTeeth
+	) {
+		const prevLen = prev.selectedTeeth?.length ?? 0;
+		const nextLen = next.selectedTeeth?.length ?? 0;
+		if (prevLen !== nextLen) return false;
+		for (let i = 0; i < prevLen; i++) {
+			if (prev.selectedTeeth[i] !== next.selectedTeeth[i]) return false;
+		}
+	}
+	return true;
+}
+
+const ClassicGostToothCell: React.FC<ClassicGostToothCellProps> = memo(({
+	toothNumber,
+	isUpper,
+	tooth,
+	isSelected,
+	selectedTeeth,
+	onToothClick,
+	onQuickStateChange,
+	useSurfaces,
+	pediatricMode,
+}) => {
+	const state: ToothState = tooth ? tooth.state : "Healthy";
+	const gost = GOST_TOOTH_STATES[state] || GOST_TOOTH_STATES.Healthy;
+	const surfaces = tooth?.surfaces;
+	const pocketDepth = tooth?.pocketDepth ?? tooth?.pocketDepthMm ?? tooth?.maxPocketDepth;
+	const hasCanals =
+		tooth?.clinicalData &&
+		typeof tooth.clinicalData === "object" &&
+		"canals" in tooth.clinicalData &&
+		Array.isArray((tooth.clinicalData as { canals?: unknown[] }).canals) &&
+		(tooth.clinicalData as { canals?: unknown[] }).canals!.length > 0;
+
+	const anatomicalName = getToothAnatomicalNameRu(toothNumber);
+
+	return (
+		<button
+			type="button"
+			data-tooth-id={toothNumber}
+			title={`${anatomicalName}: ${gost.nameRu}${surfaces && surfaces.length > 0 ? ` [${surfaces.join(",")}]` : ""}${pocketDepth && pocketDepth > 4 ? ` | Карман: ${pocketDepth}мм` : ""}`}
+			aria-label={`Зуб ${toothNumber}, ${gost.nameRu}`}
+			aria-pressed={isSelected ? true : undefined}
+			onClick={(e) => {
+				const rect = e.currentTarget.getBoundingClientRect();
+				onToothClick(toothNumber, rect);
+			}}
+			onKeyDown={(e) => {
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
 					const rect = e.currentTarget.getBoundingClientRect();
 					onToothClick(toothNumber, rect);
-				}}
-				onKeyDown={(e) => {
-					if (e.key === "Enter" || e.key === " ") {
-						e.preventDefault();
-						const rect = e.currentTarget.getBoundingClientRect();
-						onToothClick(toothNumber, rect);
-						return;
-					}
+					return;
+				}
 
-					// Arrow key navigation across dental arches
-					const navKeys: Record<string, "left" | "right" | "up" | "down" | "home" | "end"> = {
-						ArrowLeft: "left",
-						ArrowRight: "right",
-						ArrowUp: "up",
-						ArrowDown: "down",
-						Home: "home",
-						End: "end",
-					};
+				// Arrow key navigation across dental arches
+				const navKeys: Record<string, "left" | "right" | "up" | "down" | "home" | "end"> = {
+					ArrowLeft: "left",
+					ArrowRight: "right",
+					ArrowUp: "up",
+					ArrowDown: "down",
+					Home: "home",
+					End: "end",
+				};
 
-					const dir = navKeys[e.key];
-					if (dir) {
-						e.preventDefault();
-						const nextTooth = getNextFocusedTooth(
-							toothNumber,
-							dir,
-							pediatricMode,
-						);
-						const nextEl = document.querySelector<HTMLButtonElement>(
-							`[data-tooth-id="${nextTooth}"]`,
-						);
-						nextEl?.focus();
-						return;
-					}
+				const dir = navKeys[e.key];
+				if (dir) {
+					e.preventDefault();
+					const nextTooth = getNextFocusedTooth(
+						toothNumber,
+						dir,
+						pediatricMode,
+					);
+					const nextEl = document.querySelector<HTMLButtonElement>(
+						`[data-tooth-id="${nextTooth}"]`,
+					);
+					nextEl?.focus();
+					return;
+				}
 
-					// 1-Click fast keys (К, П, Е, Ф, Ц, И, 0, З)
-					const quickState = getToothStateFromHotkey(e.key);
-					if (quickState && onQuickStateChange) {
-						e.preventDefault();
-						onQuickStateChange([toothNumber], quickState, surfaces ? [...surfaces] : undefined);
-					}
-				}}
-				className={`gost-cell-tooth relative flex flex-col items-center justify-between min-w-[44px] sm:min-w-[50px] min-h-[56px] p-1.5 sm:p-2 rounded-xl border transition-all duration-150 select-none text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50 shrink-0 ${
-					isSelected
-						? "bg-indigo-500/15 border-indigo-500 shadow-md ring-2 ring-indigo-500/40"
-						: pocketDepth && pocketDepth > 4
-							? pocketDepth >= 6
-								? "bg-rose-500/10 border-rose-500/60 ring-2 ring-rose-500/40 shadow-xs"
-								: "bg-amber-500/10 border-amber-500/50 ring-1 ring-amber-500/30 shadow-xs"
-							: "bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] border-[var(--odontogram-border-subtle)] shadow-xs"
-				}`}
-			>
-				{/* FDI Tooth Number */}
-				<span className="text-xs font-black tracking-tight text-[var(--odontogram-ink)] font-mono">
-					{toothNumber}
+				// 1-Click fast keys (К, П, Е, Ф, Ц, И, 0, З)
+				const quickState = getToothStateFromHotkey(e.key);
+				if (quickState && onQuickStateChange) {
+					e.preventDefault();
+					onQuickStateChange([toothNumber], quickState, surfaces ? [...surfaces] : undefined);
+				}
+			}}
+			className={`gost-cell-tooth relative flex flex-col items-center justify-between min-w-[44px] sm:min-w-[50px] min-h-[56px] p-1.5 sm:p-2 rounded-xl border transition-all duration-150 select-none text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50 shrink-0 ${
+				isSelected
+					? "bg-indigo-500/15 border-indigo-500 shadow-md ring-2 ring-indigo-500/40"
+					: pocketDepth && pocketDepth > 4
+						? pocketDepth >= 6
+							? "bg-rose-500/10 border-rose-500/60 ring-2 ring-rose-500/40 shadow-xs"
+							: "bg-amber-500/10 border-amber-500/50 ring-1 ring-amber-500/30 shadow-xs"
+						: "bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] border-[var(--odontogram-border-subtle)] shadow-xs"
+			}`}
+		>
+			{/* FDI Tooth Number */}
+			<span className="text-xs font-black tracking-tight text-[var(--odontogram-ink)] font-mono">
+				{toothNumber}
+			</span>
+
+			{/* GOST Code Badge + Pocket Depth Badge */}
+			<div className="flex items-center justify-center gap-1 my-1">
+				<span
+					className={`inline-flex items-center justify-center min-w-[28px] sm:min-w-[32px] h-[24px] sm:h-[26px] px-1.5 rounded font-black text-xs sm:text-sm border transition-colors shadow-xs ${gost.badgeBg} ${gost.badgeText} ${gost.badgeBorder}`}
+				>
+					{gost.abbr}
 				</span>
-
-				{/* GOST Code Badge + Pocket Depth Badge */}
-				<div className="flex items-center justify-center gap-1 my-1">
+				{pocketDepth !== undefined && pocketDepth > 4 && (
 					<span
-						className={`inline-flex items-center justify-center min-w-[28px] sm:min-w-[32px] h-[24px] sm:h-[26px] px-1.5 rounded font-black text-xs sm:text-sm border transition-colors shadow-xs ${gost.badgeBg} ${gost.badgeText} ${gost.badgeBorder}`}
+						className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded text-2xs font-black text-white shadow-2xs leading-none ${
+							pocketDepth >= 6 ? "bg-rose-600 animate-pulse" : "bg-amber-500"
+						}`}
+						title={`Пародонтальный карман ${pocketDepth} мм (Риск пародонтита K05.3)`}
 					>
-						{gost.abbr}
+						P{pocketDepth}
 					</span>
-					{pocketDepth !== undefined && pocketDepth > 4 && (
-						<span
-							className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded text-2xs font-black text-white shadow-2xs leading-none ${
-								pocketDepth >= 6 ? "bg-rose-600 animate-pulse" : "bg-amber-500"
-							}`}
-							title={`Пародонтальный карман ${pocketDepth} мм (Риск пародонтита K05.3)`}
-						>
-							P{pocketDepth}
-						</span>
-					)}
-				</div>
+				)}
+			</div>
 
-				{/* Surfaces Chips or Canal Badge */}
-				<div className="flex flex-wrap items-center justify-center gap-0.5 min-h-[14px]">
-					{useSurfaces && surfaces && surfaces.length > 0 ? (
-						<span
-							className="text-xs font-bold px-1 py-0.2 rounded bg-teal-500/20 text-teal-800 dark:text-teal-200 border border-teal-500/30 font-mono"
-							title={`Поверхности: ${surfaces.join(", ")}`}
-						>
-							{surfaces.join("")}
-						</span>
-					) : hasCanals ? (
-						<span
-							className="text-xs font-bold px-1 py-0.2 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 font-mono"
-							title="Заполнены корневые каналы"
-						>
-							{
-								(tooth?.clinicalData as { canals?: unknown[] })
-									.canals?.length
-							}
-							к
-						</span>
-					) : (
-						<span className="text-xs text-[var(--odontogram-ink-muted)]">
-							{isUpper ? "в/ч" : "н/ч"}
-						</span>
-					)}
-				</div>
-			</button>
-		);
-	};
+			{/* Surfaces Chips or Canal Badge */}
+			<div className="flex flex-wrap items-center justify-center gap-0.5 min-h-[14px]">
+				{useSurfaces && surfaces && surfaces.length > 0 ? (
+					<span
+						className="text-xs font-bold px-1 py-0.2 rounded bg-teal-500/20 text-teal-800 dark:text-teal-200 border border-teal-500/30 font-mono"
+						title={`Поверхности: ${surfaces.join(", ")}`}
+					>
+						{surfaces.join("")}
+					</span>
+				) : hasCanals ? (
+					<span
+						className="text-xs font-bold px-1 py-0.2 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 font-mono"
+						title="Заполнены корневые каналы"
+					>
+						{
+							(tooth?.clinicalData as { canals?: unknown[] })
+								.canals?.length
+						}
+						к
+					</span>
+				) : (
+					<span className="text-xs text-[var(--odontogram-ink-muted)]">
+						{isUpper ? "в/ч" : "н/ч"}
+					</span>
+				)}
+			</div>
+		</button>
+	);
+}, areGostToothCellPropsEqual);
+ClassicGostToothCell.displayName = "ClassicGostToothCell";
+
+	const renderToothCell = (toothNumber: number, isUpper: boolean) => (
+		<ClassicGostToothCell
+			key={toothNumber}
+			toothNumber={toothNumber}
+			isUpper={isUpper}
+			tooth={toothStateMap.get(toothNumber)}
+			isSelected={selectedTeeth.includes(toothNumber)}
+			selectedTeeth={selectedTeeth}
+			onToothClick={onToothClick}
+			onQuickStateChange={onQuickStateChange}
+			useSurfaces={useSurfaces}
+			pediatricMode={pediatricMode}
+		/>
+	);
 
 	return (
 		<div
@@ -1147,5 +1336,6 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = memo(
 			)}
 		</div>
 	);
-});
+}, areClassicGostOdontogramPropsEqual);
+ClassicGostOdontogram.displayName = "ClassicGostOdontogram";
 

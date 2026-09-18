@@ -356,7 +356,14 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 			};
 		}
 
-		const botToken = process.env.TELEGRAM_BOT_TOKEN || process.env.DENTE_TELEGRAM_BOT_TOKEN || "mock_token";
+		const botToken = process.env.TELEGRAM_BOT_TOKEN || process.env.DENTE_TELEGRAM_BOT_TOKEN;
+		if (!botToken) {
+			reply.status(503);
+			return {
+				error: "ConfigurationError",
+				message: "Telegram Bot Token is not configured on server",
+			};
+		}
 		const validation = validateTelegramWebAppData(initData, botToken);
 
 		const isDev = process.env.NODE_ENV !== "production";

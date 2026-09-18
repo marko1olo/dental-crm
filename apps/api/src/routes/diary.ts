@@ -1351,15 +1351,15 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 		const identity = getRequestIdentity(req);
 		const userContext = req.user;
 		const userId: string | null = identity.userId ?? userContext?.id ?? null;
-		const role: string = identity.role ?? userContext?.role ?? "doctor";
+		const role: string = identity.role ?? userContext?.role ?? "assistant";
 
 		const isPrivilegedRole = isDoctorOrClinicalSigner(role);
 
 		if (!isPrivilegedRole) {
 			return reply.code(403).send({
-				error: "OnlyAdminsCanRevise",
+				error: "DoctorOrClinicalSignerRequired",
 				message:
-					"Исправить уже подписанный дневник приёма может лечащий врач или администратор клиники. Внесите правку с пометкой «Исправленному верить» — прежний текст надёжно сохранится в истории версий.",
+					"Исправить уже подписанный дневник приёма может лечащий врач или администратор клиники. Обратитесь к лечащему врачу или администратору клиники — он внесёт правку с пометкой «Исправленному верить», а прежний текст надёжно сохранится в истории версий.",
 			});
 		}
 
@@ -1639,7 +1639,7 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 		}
 		if (reviseResult.kind === "forbidden") {
 			return reply.code(403).send({
-				error: "OnlyAdminsCanRevise",
+				error: "DoctorOrClinicalSignerRequired",
 				message:
 					"Исправить уже подписанный дневник приёма может лечащий врач или администратор клиники. Обратитесь к лечащему врачу или администратору клиники — он внесёт правку так, что прежний текст останется в истории дневника.",
 			});

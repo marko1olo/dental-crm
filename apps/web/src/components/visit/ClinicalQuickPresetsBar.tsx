@@ -1,4 +1,3 @@
-import React from "react";
 import {
 	Activity,
 	Baby,
@@ -16,23 +15,32 @@ import {
 	Syringe,
 	Zap,
 } from "lucide-react";
+import React from "react";
 import { showToast } from "../GlobalToast";
 import {
+	CLINICAL_PRESETS,
+	CLINICAL_SOAP_PRESETS,
 	type ClinicalPresetCategory,
 	type ClinicalQuickPreset,
 	type ClinicalSoapPreset,
-	type ToothClinicalState,
-	CLINICAL_PRESETS,
-	CLINICAL_SOAP_PRESETS,
-	TOP_EXPRESS_PRESET_IDS,
 	THERAPY_ENDO_QUICK_PRESET_IDS,
+	TOP_EXPRESS_PRESET_IDS,
+	type ToothClinicalState,
 } from "./clinicalSoapPresets";
 
-export type { ToothClinicalState, ClinicalQuickPreset, ClinicalSoapPreset, ClinicalPresetCategory };
+export type {
+	ClinicalPresetCategory,
+	ClinicalQuickPreset,
+	ClinicalSoapPreset,
+	ToothClinicalState,
+};
 export { CLINICAL_PRESETS, CLINICAL_SOAP_PRESETS };
 
 export interface ClinicalQuickPresetsBarProps {
-	readonly onSelectPreset: (preset: ClinicalQuickPreset, targetTooth?: number | null) => void;
+	readonly onSelectPreset: (
+		preset: ClinicalQuickPreset,
+		targetTooth?: number | null,
+	) => void;
 	readonly isLocked?: boolean;
 	readonly className?: string;
 	readonly onOpenPriceSearch?: () => void;
@@ -41,9 +49,13 @@ export interface ClinicalQuickPresetsBarProps {
 	readonly onSelectActiveTooth?: (tooth: number) => void;
 }
 
-const COMMON_FDI_TEETH = [16, 26, 36, 46, 11, 21, 31, 41, 14, 24, 34, 44, 18, 48];
+const COMMON_FDI_TEETH = [
+	16, 26, 36, 46, 11, 21, 31, 41, 14, 24, 34, 44, 18, 48,
+];
 
-export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = ({
+export const ClinicalQuickPresetsBar: React.FC<
+	ClinicalQuickPresetsBarProps
+> = ({
 	onSelectPreset,
 	isLocked = false,
 	className = "",
@@ -53,7 +65,9 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 	onSelectActiveTooth,
 }) => {
 	const [activeCategory, setActiveCategory] = React.useState<string>("all");
-	const [localSelectedTooth, setLocalSelectedTooth] = React.useState<number | null>(activeTooth ?? 16);
+	const [localSelectedTooth, setLocalSelectedTooth] = React.useState<
+		number | null
+	>(activeTooth ?? 16);
 
 	React.useEffect(() => {
 		if (activeTooth) {
@@ -71,10 +85,17 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 	};
 
 	const handlePresetClick = (preset: ClinicalQuickPreset) => {
-		const effectiveTooth = preset.category !== "hygiene" ? (currentTooth || preset.defaultTooth || 16) : null;
+		const effectiveTooth =
+			preset.category !== "hygiene"
+				? currentTooth || preset.defaultTooth || 16
+				: null;
 		onSelectPreset(preset, effectiveTooth);
 		const toothSuffix = effectiveTooth ? ` (Зуб ${effectiveTooth})` : "";
-		showToast(`Применен 1-Click Smart-Bundle: «${preset.title}»${toothSuffix}`, "success", 3000);
+		showToast(
+			`Применен 1-Click Smart-Bundle: «${preset.title}»${toothSuffix}`,
+			"success",
+			3000,
+		);
 	};
 
 	const filteredPresets = React.useMemo(() => {
@@ -120,7 +141,8 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 							</span>
 						</h4>
 						<p className="text-xs text-[var(--muted)]">
-							Пакетное заполнение: статус зуба на схеме • протокол 043/у • анестезия • номенклатура 804н
+							Пакетное заполнение: статус зуба на схеме • протокол 043/у •
+							анестезия • номенклатура 804н
 						</p>
 					</div>
 				</div>
@@ -129,7 +151,9 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 					<button
 						type="button"
 						onClick={() => {
-							const normPreset = CLINICAL_SOAP_PRESETS.find((p) => p.id === "norm_healthy");
+							const normPreset = CLINICAL_SOAP_PRESETS.find(
+								(p) => p.id === "norm_healthy",
+							);
 							if (normPreset) {
 								handlePresetClick(normPreset);
 							}
@@ -178,7 +202,9 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 						<span>Активный зуб:</span>
 					</span>
 					<span className="text-sm font-black font-mono px-2.5 py-1 rounded-lg bg-[var(--teal-surface)] text-[var(--teal-dark)] border border-[var(--teal-soft)] shadow-2xs">
-						{currentTooth ? `Зуб FDI #${currentTooth}` : "Не выбран (общий осмотр)"}
+						{currentTooth
+							? `Зуб FDI #${currentTooth}`
+							: "Не выбран (общий осмотр)"}
 					</span>
 				</div>
 
@@ -208,7 +234,10 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 						className="min-h-[48px] px-2 py-1 text-xs font-mono font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
 						title="Выбрать любой другой зуб из формулы"
 					>
-						{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28, 48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
+						{[
+							18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,
+							48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38,
+						].map((t) => (
 							<option key={t} value={t}>
 								Зуб {t}
 							</option>
@@ -249,7 +278,9 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 							: isHygiene
 								? "Профгигиена"
 								: isSurgery
-									? currentTooth ? `Удаление ${currentTooth}` : "Удаление"
+									? currentTooth
+										? `Удаление ${currentTooth}`
+										: "Удаление"
 									: currentTooth
 										? `${preset.shortBadge.replace(/\s*\d{2}/, "")} ${currentTooth}`
 										: preset.shortBadge;
@@ -259,18 +290,48 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 								key={`top-${preset.id}`}
 								type="button"
 								onClick={() => handlePresetClick(preset)}
-								className={`min-h-[50px] min-w-[155px] sm:min-w-0 shrink-0 whitespace-nowrap px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left ${bgGradient}`}
+								className={`clinical-protocol-card min-h-[50px] min-w-[155px] sm:min-w-0 shrink-0 whitespace-nowrap px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left ${bgGradient}`}
 								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
 								data-testid={`express-preset-${preset.id}`}
 							>
 								<div className="flex items-center justify-between w-full gap-1.5">
 									<div className="flex items-center gap-1.5 min-w-0">
-										{isNorm && <ShieldCheck size={17} className="text-emerald-600 dark:text-emerald-400 shrink-0" />}
-										{isHygiene && <Sparkles size={17} className="text-[var(--ok-fg)] shrink-0" />}
-										{isCaries && <Stethoscope size={17} className="text-blue-600 dark:text-blue-400 shrink-0" />}
-										{isPulpitis && <Flame size={17} className="text-rose-600 dark:text-rose-400 shrink-0" />}
-										{isPerio && <HeartPulse size={17} className="text-amber-600 dark:text-amber-400 shrink-0" />}
-										{isSurgery && <Bone size={17} className="text-purple-600 dark:text-purple-400 shrink-0" />}
+										{isNorm && (
+											<ShieldCheck
+												size={17}
+												className="text-emerald-600 dark:text-emerald-400 shrink-0"
+											/>
+										)}
+										{isHygiene && (
+											<Sparkles
+												size={17}
+												className="text-[var(--ok-fg)] shrink-0"
+											/>
+										)}
+										{isCaries && (
+											<Stethoscope
+												size={17}
+												className="text-blue-600 dark:text-blue-400 shrink-0"
+											/>
+										)}
+										{isPulpitis && (
+											<Flame
+												size={17}
+												className="text-rose-600 dark:text-rose-400 shrink-0"
+											/>
+										)}
+										{isPerio && (
+											<HeartPulse
+												size={17}
+												className="text-amber-600 dark:text-amber-400 shrink-0"
+											/>
+										)}
+										{isSurgery && (
+											<Bone
+												size={17}
+												className="text-purple-600 dark:text-purple-400 shrink-0"
+											/>
+										)}
 										<span className="truncate font-black">{dynamicBadge}</span>
 									</div>
 									<span className="text-xs font-mono px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--border)] font-bold shrink-0">
@@ -278,7 +339,17 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 									</span>
 								</div>
 								<span className="text-xs font-medium text-[var(--muted)] truncate w-full">
-									{isNorm ? "Осмотр: Здоров, норма 043/у" : isHygiene ? "Осмотр, Air-Flow, фторирование" : isCaries ? "Кариес → Пломба + 804н" : isPulpitis ? "Анестезия + Экстирпация + Ca(OH)2" : isPerio ? "УЗ + AirFlow + Хлоргексидин" : "Удаление + Гемостаз + Шов"}
+									{isNorm
+										? "Осмотр: Здоров, норма 043/у"
+										: isHygiene
+											? "Осмотр, Air-Flow, фторирование"
+											: isCaries
+												? "Кариес → Пломба + 804н"
+												: isPulpitis
+													? "Анестезия + Экстирпация + Ca(OH)2"
+													: isPerio
+														? "УЗ + AirFlow + Хлоргексидин"
+														: "Удаление + Гемостаз + Шов"}
 								</span>
 							</button>
 						);
@@ -287,11 +358,16 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 			</div>
 
 			{/* ── ТЕРАПИЯ И ЭНДОДОНТИЯ 1-КЛИК (БЕЗ СИМУЛЯТОРА: ПУЛЬПИТ / ОБТУРАЦИЯ / ПЕРИОДОНТИТ / КАРИЕС) ── */}
-			<div className="space-y-1.5 pt-1 border-t border-[var(--border)]" data-testid="therapy-endo-quick-actions-section">
+			<div
+				className="space-y-1.5 pt-1 border-t border-[var(--border)]"
+				data-testid="therapy-endo-quick-actions-section"
+			>
 				<div className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center justify-between">
 					<div className="flex items-center gap-1.5">
 						<Stethoscope size={14} className="text-blue-500 shrink-0" />
-						<span>Терапия и эндодонтия в 1 клик (СтАР / 804н / Без симулятора):</span>
+						<span>
+							Терапия и эндодонтия в 1 клик (СтАР / 804н / Без симулятора):
+						</span>
 					</div>
 					<span className="text-[11px] font-mono text-[var(--muted)] font-normal hidden sm:inline">
 						Пульпит (1/2 эт.) · Периодонтит · Кариес + списание
@@ -316,13 +392,16 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 								key={`therapy-endo-${preset.id}`}
 								type="button"
 								onClick={() => handlePresetClick(preset)}
-								className="min-h-[50px] px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left bg-blue-500/15 text-blue-950 dark:text-blue-200 border-blue-500/30 hover:bg-blue-500/25"
+								className="clinical-protocol-card min-h-[50px] px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left bg-blue-500/15 text-blue-950 dark:text-blue-200 border-blue-500/30 hover:bg-blue-500/25"
 								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
 								data-testid={`btn-therapy-endo-${preset.id}`}
 							>
 								<div className="flex items-center justify-between w-full gap-1.5">
 									<div className="flex items-center gap-1.5 min-w-0">
-										<Stethoscope size={17} className="text-blue-600 dark:text-blue-400 shrink-0" />
+										<Stethoscope
+											size={17}
+											className="text-blue-600 dark:text-blue-400 shrink-0"
+										/>
 										<span className="truncate font-black">{dynamicBadge}</span>
 									</div>
 									<span className="text-xs font-mono px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--border)] font-bold shrink-0">
@@ -339,7 +418,10 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 			</div>
 
 			{/* ── ХИРУРГИЧЕСКИЕ БЫСТРЫЕ ДЕЙСТВИЯ (ОСТРАЯ БОЛЬ / ЭКСТРЕННАЯ ХИРУРГИЯ) ── */}
-			<div className="space-y-1.5 pt-1 border-t border-[var(--border)]" data-testid="surgery-quick-actions-section">
+			<div
+				className="space-y-1.5 pt-1 border-t border-[var(--border)]"
+				data-testid="surgery-quick-actions-section"
+			>
 				<div className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center justify-between">
 					<div className="flex items-center gap-1.5">
 						<Flame size={14} className="text-rose-500 shrink-0" />
@@ -353,8 +435,12 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 					{surgeryQuickPresets.map((preset) => {
 						const isComplex = preset.id === "surgery_extraction_complex";
 						const dynamicBadge = isComplex
-							? currentTooth ? `Сложн. удаление ${currentTooth}` : "Сложн. удаление"
-							: currentTooth ? `Периостотомия ${currentTooth}` : "Периостотомия";
+							? currentTooth
+								? `Сложн. удаление ${currentTooth}`
+								: "Сложн. удаление"
+							: currentTooth
+								? `Периостотомия ${currentTooth}`
+								: "Периостотомия";
 						const subtitle = isComplex
 							? "Разъединение корней + Кюретаж + Швы"
 							: "Разрез + Вскрытие абсцесса + Дренаж";
@@ -364,13 +450,16 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 								key={`surgery-quick-${preset.id}`}
 								type="button"
 								onClick={() => handlePresetClick(preset)}
-								className="min-h-[50px] px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left bg-rose-500/15 text-rose-900 dark:text-rose-200 border-rose-500/30 hover:bg-rose-500/25"
+								className="clinical-protocol-card min-h-[50px] px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left bg-rose-500/15 text-rose-900 dark:text-rose-200 border-rose-500/30 hover:bg-rose-500/25"
 								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
 								data-testid={`btn-surgery-quick-${preset.id}`}
 							>
 								<div className="flex items-center justify-between w-full gap-1.5">
 									<div className="flex items-center gap-1.5 min-w-0">
-										<Bone size={17} className="text-rose-600 dark:text-rose-400 shrink-0" />
+										<Bone
+											size={17}
+											className="text-rose-600 dark:text-rose-400 shrink-0"
+										/>
 										<span className="truncate font-black">{dynamicBadge}</span>
 									</div>
 									<span className="text-xs font-mono px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--border)] font-bold shrink-0">
@@ -424,18 +513,19 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 							preset.category === "pediatric"
 								? "bg-teal-500/10 text-teal-800 dark:text-teal-200 border-teal-500/20 hover:bg-teal-500/20"
 								: preset.category === "therapy"
-								? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20 hover:bg-blue-500/20"
-								: preset.category === "surgery"
-									? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20 hover:bg-rose-500/20"
-									: preset.category === "orthopedics"
-										? "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20 hover:bg-purple-500/20"
-										: preset.category === "periodontology"
-											? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20 hover:bg-amber-500/20"
-											: "bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/20 hover:opacity-90";
+									? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20 hover:bg-blue-500/20"
+									: preset.category === "surgery"
+										? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20 hover:bg-rose-500/20"
+										: preset.category === "orthopedics"
+											? "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20 hover:bg-purple-500/20"
+											: preset.category === "periodontology"
+												? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20 hover:bg-amber-500/20"
+												: "bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/20 hover:opacity-90";
 
-						const badgeTitle = preset.category !== "hygiene" && currentTooth
-							? `${preset.shortBadge} ${currentTooth}`
-							: preset.shortBadge;
+						const badgeTitle =
+							preset.category !== "hygiene" && currentTooth
+								? `${preset.shortBadge} ${currentTooth}`
+								: preset.shortBadge;
 
 						return (
 							<button
@@ -447,12 +537,24 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 								data-testid={`quick-preset-${preset.id}`}
 							>
 								<div className="flex items-center gap-1.5 min-w-0 truncate">
-									{preset.category === "pediatric" && <Baby size={15} className="shrink-0 text-teal-600" />}
-									{preset.category === "therapy" && <Stethoscope size={15} className="shrink-0" />}
-									{preset.category === "surgery" && <Bone size={15} className="shrink-0" />}
-									{preset.category === "orthopedics" && <Crown size={15} className="shrink-0" />}
-									{preset.category === "periodontology" && <HeartPulse size={15} className="shrink-0" />}
-									{preset.category === "hygiene" && <Sparkles size={15} className="shrink-0" />}
+									{preset.category === "pediatric" && (
+										<Baby size={15} className="shrink-0 text-teal-600" />
+									)}
+									{preset.category === "therapy" && (
+										<Stethoscope size={15} className="shrink-0" />
+									)}
+									{preset.category === "surgery" && (
+										<Bone size={15} className="shrink-0" />
+									)}
+									{preset.category === "orthopedics" && (
+										<Crown size={15} className="shrink-0" />
+									)}
+									{preset.category === "periodontology" && (
+										<HeartPulse size={15} className="shrink-0" />
+									)}
+									{preset.category === "hygiene" && (
+										<Sparkles size={15} className="shrink-0" />
+									)}
 									<span className="font-extrabold truncate">{badgeTitle}</span>
 								</div>
 								<span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--border)] shrink-0 font-bold">

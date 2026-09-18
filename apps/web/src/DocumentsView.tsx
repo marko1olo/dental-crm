@@ -31,28 +31,19 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isoDateLabel } from "./AppHelpers";
 import { AnamnesisField } from "./components/documents/AnamnesisField";
 import { DocumentUkepSignButton } from "./components/documents/DocumentUkepSignButton";
 import { appendChipToText } from "./components/documents/documentChipText";
-import { TaxDeductionCertificateModal } from "./components/finance/TaxDeductionCertificateModal";
-import { EgiszRemdHubModal } from "./components/egisz/EgiszRemdHubModal";
-import { SickLeaveElnModal } from "./components/documents/sickLeave/SickLeaveElnModal";
-import { AutoclaveLog257Modal } from "./components/sanpin/autoclaveLog/AutoclaveLog257Modal";
 import "./components/documents/documentNavigation.css";
 import {
 	DocumentNavTabs,
 	type DocumentCategoryTab,
 } from "./components/documents/DocumentNavTabs";
 import { DocumentQuickRoleScenarios } from "./components/documents/DocumentQuickRoleScenarios";
-import { PrimaryIntakePackageModal } from "./components/documents/PrimaryIntakePackageModal";
 import { printPrimaryIntakePackage } from "./components/documents/primaryIntakePackagePrintEngine";
 import { printBlankMedicalContract } from "./components/patients/blankContractPrint";
-import { SurgicalPackageModal } from "./components/documents/SurgicalPackageModal";
-import { ClinicalVisitPackageModal } from "./components/documents/ClinicalVisitPackageModal";
-import { TaxAccountingPackageModal } from "./components/documents/TaxAccountingPackageModal";
-import { SanpinRegistryPackageModal } from "./components/documents/SanpinRegistryPackageModal";
 import {
 	DocumentRegistryFilterBar,
 	type DocumentStatusFilter,
@@ -91,6 +82,52 @@ import {
 	useDocumentStore,
 } from "./store/documentStore";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
+
+const TaxDeductionCertificateModal = lazy(() =>
+	import("./components/finance/TaxDeductionCertificateModal").then((m) => ({
+		default: m.TaxDeductionCertificateModal,
+	}))
+);
+const EgiszRemdHubModal = lazy(() =>
+	import("./components/egisz/EgiszRemdHubModal").then((m) => ({
+		default: m.EgiszRemdHubModal,
+	}))
+);
+const SickLeaveElnModal = lazy(() =>
+	import("./components/documents/sickLeave/SickLeaveElnModal").then((m) => ({
+		default: m.SickLeaveElnModal,
+	}))
+);
+const AutoclaveLog257Modal = lazy(() =>
+	import("./components/sanpin/autoclaveLog/AutoclaveLog257Modal").then((m) => ({
+		default: m.AutoclaveLog257Modal,
+	}))
+);
+const PrimaryIntakePackageModal = lazy(() =>
+	import("./components/documents/PrimaryIntakePackageModal").then((m) => ({
+		default: m.PrimaryIntakePackageModal,
+	}))
+);
+const SurgicalPackageModal = lazy(() =>
+	import("./components/documents/SurgicalPackageModal").then((m) => ({
+		default: m.SurgicalPackageModal,
+	}))
+);
+const ClinicalVisitPackageModal = lazy(() =>
+	import("./components/documents/ClinicalVisitPackageModal").then((m) => ({
+		default: m.ClinicalVisitPackageModal,
+	}))
+);
+const TaxAccountingPackageModal = lazy(() =>
+	import("./components/documents/TaxAccountingPackageModal").then((m) => ({
+		default: m.TaxAccountingPackageModal,
+	}))
+);
+const SanpinRegistryPackageModal = lazy(() =>
+	import("./components/documents/SanpinRegistryPackageModal").then((m) => ({
+		default: m.SanpinRegistryPackageModal,
+	}))
+);
 
 type TaxDocumentPayerOption = {
 	key: string;
@@ -1334,14 +1371,14 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 			(documentFactoryGroups ?? []).map((group) => ({
 				...group,
 				kinds: group.kinds.filter(
-					(kind) => kind !== "outpatient_medical_card_025u",
+					(kind) => (kind as string) !== "outpatient_medical_card_025u",
 				),
 			})),
 		[],
 	);
 
 	useEffect(() => {
-		if (selectedDocumentKind === "outpatient_medical_card_025u") {
+		if ((selectedDocumentKind as string) === "outpatient_medical_card_025u") {
 			setSelectedDocumentKind("dental_medical_card_043u");
 		}
 	}, [selectedDocumentKind, setSelectedDocumentKind]);
@@ -6498,97 +6535,113 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				) : null}
 			</div>
 
-			<PrimaryIntakePackageModal
-				isOpen={isPrimaryIntakeOpen}
-				onClose={() => setIsPrimaryIntakeOpen(false)}
-				patient={activePatient ?? null}
-				doctorFullName={activeDoctor?.fullName}
-				clinicProfileDraft={clinicProfileDraft}
-				existingDocuments={typedActiveDocuments ?? []}
-				onCreateDocument={(kind) => void createDocument(kind)}
-				onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
-				onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
-			/>
+			<Suspense fallback={null}>
+				{isPrimaryIntakeOpen && (
+					<PrimaryIntakePackageModal
+						isOpen={isPrimaryIntakeOpen}
+						onClose={() => setIsPrimaryIntakeOpen(false)}
+						patient={activePatient ?? null}
+						doctorFullName={activeDoctor?.fullName}
+						clinicProfileDraft={clinicProfileDraft}
+						existingDocuments={typedActiveDocuments ?? []}
+						onCreateDocument={(kind) => void createDocument(kind)}
+						onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
+						onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
+					/>
+				)}
 
-			<SurgicalPackageModal
-				isOpen={isSurgicalPackageOpen}
-				onClose={() => setIsSurgicalPackageOpen(false)}
-				patient={activePatient ?? null}
-				doctorFullName={activeDoctor?.fullName}
-				existingDocuments={typedActiveDocuments ?? []}
-				onCreateDocument={(kind) => void createDocument(kind)}
-				onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
-				onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
-				clinicProfileDraft={clinicProfileDraft}
-			/>
+				{isSurgicalPackageOpen && (
+					<SurgicalPackageModal
+						isOpen={isSurgicalPackageOpen}
+						onClose={() => setIsSurgicalPackageOpen(false)}
+						patient={activePatient ?? null}
+						doctorFullName={activeDoctor?.fullName}
+						existingDocuments={typedActiveDocuments ?? []}
+						onCreateDocument={(kind) => void createDocument(kind)}
+						onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
+						onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
+						clinicProfileDraft={clinicProfileDraft}
+					/>
+				)}
 
-			<ClinicalVisitPackageModal
-				isOpen={isClinicalVisitOpen}
-				onClose={() => setIsClinicalVisitOpen(false)}
-				patient={activePatient ?? null}
-				doctorFullName={activeDoctor?.fullName}
-				existingDocuments={typedActiveDocuments ?? []}
-				onCreateDocument={(kind) => void createDocument(kind)}
-				onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
-				onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
-				clinicProfileDraft={clinicProfileDraft}
-			/>
+				{isClinicalVisitOpen && (
+					<ClinicalVisitPackageModal
+						isOpen={isClinicalVisitOpen}
+						onClose={() => setIsClinicalVisitOpen(false)}
+						patient={activePatient ?? null}
+						doctorFullName={activeDoctor?.fullName}
+						existingDocuments={typedActiveDocuments ?? []}
+						onCreateDocument={(kind) => void createDocument(kind)}
+						onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
+						onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
+						clinicProfileDraft={clinicProfileDraft}
+					/>
+				)}
 
-			<TaxAccountingPackageModal
-				isOpen={isTaxAccountingOpen}
-				onClose={() => setIsTaxAccountingOpen(false)}
-				patient={activePatient ?? null}
-				taxYear={taxDocumentYear}
-				setTaxYear={setTaxDocumentYear}
-				payerOptions={typedTaxDocumentPayerOptions}
-				selectedPayerKey={selectedTaxDocumentPayerKey}
-				onSelectPayerKey={(key) => setTaxDocumentPayerInn(key)}
-				existingDocuments={typedActiveDocuments ?? []}
-				onCreateDocument={(kind) => void createDocument(kind)}
-				onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
-				onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
-				onOpenFnsXmlModal={() => setIsFnsNdflXmlOpen(true)}
-			/>
+				{isTaxAccountingOpen && (
+					<TaxAccountingPackageModal
+						isOpen={isTaxAccountingOpen}
+						onClose={() => setIsTaxAccountingOpen(false)}
+						patient={activePatient ?? null}
+						taxYear={taxDocumentYear}
+						setTaxYear={setTaxDocumentYear}
+						payerOptions={typedTaxDocumentPayerOptions}
+						selectedPayerKey={selectedTaxDocumentPayerKey}
+						onSelectPayerKey={(key) => setTaxDocumentPayerInn(key)}
+						existingDocuments={typedActiveDocuments ?? []}
+						onCreateDocument={(kind) => void createDocument(kind)}
+						onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
+						onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
+						onOpenFnsXmlModal={() => setIsFnsNdflXmlOpen(true)}
+					/>
+				)}
 
-			<SanpinRegistryPackageModal
-				isOpen={isSanpinRegistryOpen}
-				onClose={() => setIsSanpinRegistryOpen(false)}
-				patient={activePatient ?? null}
-				existingDocuments={typedActiveDocuments ?? []}
-				onOpenSickLeaveEln={() => setIsSickLeaveElnOpen(true)}
-				onOpenAutoclaveLog257={() => setIsAutoclaveLogOpen(true)}
-				onOpenEgiszRemd={() => setIsEgiszRemdOpen(true)}
-				onCreateDocument={(kind) => void createDocument(kind)}
-				onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
-			/>
+				{isSanpinRegistryOpen && (
+					<SanpinRegistryPackageModal
+						isOpen={isSanpinRegistryOpen}
+						onClose={() => setIsSanpinRegistryOpen(false)}
+						patient={activePatient ?? null}
+						existingDocuments={typedActiveDocuments ?? []}
+						onOpenSickLeaveEln={() => setIsSickLeaveElnOpen(true)}
+						onOpenAutoclaveLog257={() => setIsAutoclaveLogOpen(true)}
+						onOpenEgiszRemd={() => setIsEgiszRemdOpen(true)}
+						onCreateDocument={(kind) => void createDocument(kind)}
+						onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
+					/>
+				)}
 
-			<AutoclaveLog257Modal
-				isOpen={isAutoclaveLogOpen}
-				onClose={() => setIsAutoclaveLogOpen(false)}
-			/>
+				{isAutoclaveLogOpen && (
+					<AutoclaveLog257Modal
+						isOpen={isAutoclaveLogOpen}
+						onClose={() => setIsAutoclaveLogOpen(false)}
+					/>
+				)}
 
-			{isFnsNdflXmlOpen && (
-				<TaxDeductionCertificateModal
-					isOpen={isFnsNdflXmlOpen}
-					onClose={() => setIsFnsNdflXmlOpen(false)}
-					selectedYear={taxDocumentYear}
-				/>
-			)}
+				{isFnsNdflXmlOpen && (
+					<TaxDeductionCertificateModal
+						isOpen={isFnsNdflXmlOpen}
+						onClose={() => setIsFnsNdflXmlOpen(false)}
+						selectedYear={taxDocumentYear}
+					/>
+				)}
 
-			{isEgiszRemdOpen && (
-				<EgiszRemdHubModal
-					isOpen={isEgiszRemdOpen}
-					onClose={() => setIsEgiszRemdOpen(false)}
-					initialTab="xml"
-					initialXmlPayload={egiszInitialPayload}
-				/>
-			)}
+				{isEgiszRemdOpen && (
+					<EgiszRemdHubModal
+						isOpen={isEgiszRemdOpen}
+						onClose={() => setIsEgiszRemdOpen(false)}
+						initialTab="xml"
+						initialXmlPayload={egiszInitialPayload}
+					/>
+				)}
 
-			<SickLeaveElnModal
-				isOpen={isSickLeaveElnOpen}
-				onClose={() => setIsSickLeaveElnOpen(false)}
-				initialPatientName={activePatient?.fullName}
-			/>
+				{isSickLeaveElnOpen && (
+					<SickLeaveElnModal
+						isOpen={isSickLeaveElnOpen}
+						onClose={() => setIsSickLeaveElnOpen(false)}
+						initialPatientName={activePatient?.fullName}
+					/>
+				)}
+			</Suspense>
 		</div>
 	);
 }

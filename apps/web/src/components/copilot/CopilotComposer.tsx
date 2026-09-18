@@ -3,6 +3,7 @@ import { Send, Mic, MicOff, RotateCcw, ShieldCheck, Check, Activity } from 'luci
 import { useUnifiedDictation } from '../../hooks/useUnifiedDictation';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import { showToast } from '../GlobalToast';
+import { safeLocalStorageSetItem, safeLocalStorageRemoveItem } from '../../lib/safeLocalStorage';
 
 export interface CopilotComposerProps {
   value: string;
@@ -58,12 +59,10 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
         lastEmittedRef.current = combined;
         onChange(combined);
         try {
-          if (typeof window !== 'undefined' && window.localStorage) {
-            if (combined.trim()) {
-              localStorage.setItem('dente_copilot_draft_text', combined);
-            } else {
-              localStorage.removeItem('dente_copilot_draft_text');
-            }
+          if (combined.trim()) {
+            safeLocalStorageSetItem('dente_copilot_draft_text', combined);
+          } else {
+            safeLocalStorageRemoveItem('dente_copilot_draft_text');
           }
         } catch {
           // ignore storage access errors
@@ -128,12 +127,10 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
     onChange(newText);
     lastEmittedRef.current = newText;
     try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        if (newText.trim()) {
-          localStorage.setItem('dente_copilot_draft_text', newText);
-        } else {
-          localStorage.removeItem('dente_copilot_draft_text');
-        }
+      if (newText.trim()) {
+        safeLocalStorageSetItem('dente_copilot_draft_text', newText);
+      } else {
+        safeLocalStorageRemoveItem('dente_copilot_draft_text');
       }
     } catch {
       // ignore storage access errors

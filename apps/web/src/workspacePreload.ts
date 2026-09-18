@@ -62,7 +62,7 @@ type IdlePreloadWindow = Window &
 		cancelIdleCallback?: (handle: number) => void;
 	};
 
-export type WorkspacePreloadIntent = "explicit" | "idle";
+export type WorkspacePreloadIntent = "explicit" | "idle" | "hover" | "cancel";
 
 type NetworkAwareNavigator = Navigator & {
 	connection?: {
@@ -76,9 +76,64 @@ type NetworkAwareNavigator = Navigator & {
 const preloadedViewCache = new Set<AppView>();
 
 /**
+ * Набор особо тяжелых разделов (3D КТ визуализация, многомегабайтные графики).
+ * Они никогда не должны предзагружаться в фоновом режиме (idle) и требуют
+ * дебаунсированного подтверждения намерения пользователя при наведении.
+ */
+export const HEAVY_WORKSPACE_VIEWS: ReadonlySet<AppView> = new Set<AppView>([
+	"imaging",
+	"analytics",
+]);
+
+export function isHeavyWorkspaceView(view: AppView): boolean {
+	return HEAVY_WORKSPACE_VIEWS.has(view);
+}
+
+const heavyPreloadTimers = new Map<AppView, number>();
+const hoverPreloadTimers = new Map<AppView, number>();
+
+/**
+ * Отменяет запланированную предзагрузку раздела при отводе курсора (pointer leave / blur).
+ */
+export function cancelHeavyViewPreload(view?: AppView): void {
+	if (typeof window === "undefined") return;
+	if (view) {
+		const timer = heavyPreloadTimers.get(view);
+		if (timer !== undefined) {
+			window.clearTimeout(timer);
+			heavyPreloadTimers.delete(view);
+		}
+		const hoverTimer = hoverPreloadTimers.get(view);
+		if (hoverTimer !== undefined) {
+			window.clearTimeout(hoverTimer);
+			hoverPreloadTimers.delete(view);
+		}
+	} else {
+		for (const timer of heavyPreloadTimers.values()) {
+			window.clearTimeout(timer);
+		}
+		heavyPreloadTimers.clear();
+		for (const timer of hoverPreloadTimers.values()) {
+			window.clearTimeout(timer);
+		}
+		hoverPreloadTimers.clear();
+	}
+}
+
+/**
  * Определение слабых ПК (двухъядерные ноутбуки с 5400 RPM HDD и малым RAM <= 2-4 ГБ).
  */
 export function isLowSpecDevice(): boolean {
+	if (typeof document !== "undefined") {
+		const docEl = document.documentElement;
+		if (
+			docEl.getAttribute("data-low-spec") === "true" ||
+			docEl.getAttribute("data-hardware-tier") === "low" ||
+			docEl.classList.contains("low-spec-mode")
+		) {
+			return true;
+		}
+	}
 	if (typeof navigator === "undefined") return false;
 	const nav = navigator as NetworkAwareNavigator;
 	// Двухъядерный процессор врача (<= 2 физических ядер или <= 4 виртуальных потоков)
@@ -98,7 +153,11 @@ export function isLowSpecDevice(): boolean {
 	return false;
 }
 
-function shouldPreloadWorkspaceRoutes(intent: WorkspacePreloadIntent): boolean {
+function shouldPreloadWorkspaceRoutes(
+	intent: WorkspacePreloadIntent,
+	view?: AppView,
+): boolean {
+	if (intent === "cancel") return false;
 	if (typeof navigator === "undefined") return true;
 	const nav = navigator as NetworkAwareNavigator;
 	const connection = nav.connection;
@@ -118,9 +177,21 @@ function shouldPreloadWorkspaceRoutes(intent: WorkspacePreloadIntent): boolean {
 		}
 	}
 
-	// На слабых машинах (<=4GB RAM, <=4 ядра, медленный 5400 RPM HDD) фоновый idle-прелоад отключается,
-	// чтобы не занимать диск фоновым парсингом тяжелых бандлов во время приёма пациента
-	if (intent === "idle" && isLowSpecDevice()) {
+	// Тяжелые модули (imaging, analytics) НИКОГДА не предзагружаются в фоновом режиме (idle),
+	// чтобы не создавать дисковую очередь (I/O saturation) на 5400 RPM HDD и не забивать RAM
+	// многомегабайтными 3D/графическими движками (Cornerstone, VTK, Recharts)
+	if (intent === "idle" && view && isHeavyWorkspaceView(view)) {
+		return false;
+	}
+
+	// На слабых машинах с 5400 RPM HDD фоновый idle-прелоад и hover-прелоад тяжелых модулей
+	// запрещены: загрузка разрешена СТРОГО по прямому переходу пользователя (explicit)
+	if (
+		isLowSpecDevice() &&
+		view &&
+		isHeavyWorkspaceView(view) &&
+		intent !== "explicit"
+	) {
 		return false;
 	}
 
@@ -131,12 +202,115 @@ export function preloadWorkspaceView(
 	view: AppView,
 	intent: WorkspacePreloadIntent = "explicit",
 ) {
-	if (!shouldPreloadWorkspaceRoutes(intent)) return;
+	if (intent === "cancel") {
+		cancelHeavyViewPreload(view);
+		return;
+	}
+
+	if (!shouldPreloadWorkspaceRoutes(intent, view)) return;
 	const preloader = workspaceViewPreloaders[view];
 	if (!preloader) return;
 
 	// Защита от дублирующих запросов и дисковой очереди на 5400 RPM HDD
 	if (preloadedViewCache.has(view)) return;
+
+	// Для тяжелых модулей (imaging, analytics) предотвращаем случайный запуск
+	// при быстром движении мыши по меню. Загрузка откладывается на квант времени
+	// (400 мс на десктопе, 800 мс на слабом ПК) и исполняется строго через
+	// requestIdleCallback, чтобы исключить забивание диска параллельными операциями.
+	if (isHeavyWorkspaceView(view)) {
+		if (intent === "idle") {
+			return; // В idle тяжелые модули никогда не грузятся автоматически
+		}
+		// На слабых машинах с 5400 RPM HDD тяжелые модули (3D КТ, Cornerstone, Recharts)
+		// грузятся ИСКЛЮЧИТЕЛЬНО по прямому клику (explicit), предотвращая фриз очереди I/O
+		if (isLowSpecDevice() && intent !== "explicit") {
+			return;
+		}
+		cancelHeavyViewPreload(view);
+		if (typeof window === "undefined") return;
+
+		const delay = isLowSpecDevice() ? 800 : 400;
+		const timerId = window.setTimeout(() => {
+			heavyPreloadTimers.delete(view);
+			if (preloadedViewCache.has(view)) return;
+			preloadedViewCache.add(view);
+
+			const idleWindow = window as IdlePreloadWindow;
+			const executeLoad = () => {
+				void retryDynamicImport(preloader, {
+					maxRetries: 2,
+					intervalMs: 800,
+					backoffFactor: 2,
+				}).catch((error) => {
+					preloadedViewCache.delete(view);
+					if (typeof console !== "undefined" && console.warn) {
+						console.warn(
+							`[preload] Не удалось предзагрузить тяжелый раздел ${view}:`,
+							error,
+						);
+					}
+				});
+			};
+
+			if (idleWindow.requestIdleCallback) {
+				idleWindow.requestIdleCallback(executeLoad, {
+					timeout: isLowSpecDevice() ? 6000 : 3000,
+				});
+			} else {
+				executeLoad();
+			}
+		}, delay);
+
+		heavyPreloadTimers.set(view, timerId);
+		return;
+	}
+
+	// Для обычных разделов при hover:
+	// На слабых машинах с 5400 RPM HDD и 4GB RAM не допускаем немедленной загрузки при случайном
+	// скольжении мыши по боковому меню. Дебаунсим на 500 мс и исполняем через requestIdleCallback.
+	if (intent === "hover") {
+		if (typeof window === "undefined") return;
+		const existingTimer = hoverPreloadTimers.get(view);
+		if (existingTimer !== undefined) return;
+
+		const delay = isLowSpecDevice() ? 500 : 80;
+		const timerId = window.setTimeout(() => {
+			hoverPreloadTimers.delete(view);
+			if (preloadedViewCache.has(view)) return;
+			preloadedViewCache.add(view);
+
+			const idleWindow = window as IdlePreloadWindow;
+			const executeLoad = () => {
+				void retryDynamicImport(preloader, {
+					maxRetries: 2,
+					intervalMs: 800,
+					backoffFactor: 2,
+				}).catch((error) => {
+					preloadedViewCache.delete(view);
+					if (typeof console !== "undefined" && console.warn) {
+						console.warn(
+							`[preload] Не удалось предзагрузить раздел ${view}:`,
+							error,
+						);
+					}
+				});
+			};
+
+			if (idleWindow.requestIdleCallback) {
+				idleWindow.requestIdleCallback(executeLoad, {
+					timeout: isLowSpecDevice() ? 5000 : 2500,
+				});
+			} else {
+				executeLoad();
+			}
+		}, delay);
+
+		hoverPreloadTimers.set(view, timerId);
+		return;
+	}
+
+	cancelHeavyViewPreload(view);
 	preloadedViewCache.add(view);
 
 	void retryDynamicImport(preloader, {
@@ -158,9 +332,10 @@ export function scheduleIdleWorkspacePreload(
 	if (typeof window === "undefined") return undefined;
 	if (!shouldPreloadWorkspaceRoutes("idle")) return undefined;
 
-	let preloadViews = (idleWorkspacePreloadPlan[currentView] ?? []).filter(
-		(view) => !preloadedViewCache.has(view),
-	);
+	let preloadViews = (idleWorkspacePreloadPlan[currentView] ?? [])
+		.filter((view) => !preloadedViewCache.has(view))
+		.filter((view) => !isHeavyWorkspaceView(view)); // Тяжелые модули исключены из фонового плана
+
 	if (!preloadViews.length) return undefined;
 
 	// На слабых 2-ядерных ноутбуках врача ограничиваемся 1 наиболее вероятным разделом,
@@ -198,7 +373,7 @@ export function scheduleIdleWorkspacePreload(
 
 		if (queueIndex < preloadViews.length && !cancelled) {
 			// Дозируем нагрузку на диск: даем HDD время на спокойное чтение первого раздела
-			scheduleStep(lowSpec ? 4000 : 1800);
+			scheduleStep(lowSpec ? 4500 : 2000);
 		}
 	};
 
@@ -206,28 +381,40 @@ export function scheduleIdleWorkspacePreload(
 		clearScheduled();
 		if (cancelled) return;
 
-		if (idleWindow.requestIdleCallback) {
-			currentIdleHandle = idleWindow.requestIdleCallback(
-				(deadline) => {
-					// Предотвращаем фризы UI: выполняем только если есть время в текущем кадре
-					// (> 10 мс на слабых двухъядерных ПК) или если браузер уведомил о таймауте
-					if (deadline.timeRemaining() > 10 || deadline.didTimeout) {
-						processNextView();
-					} else {
-						// CPU или рендер занят — переносим на следующий квант покоя
-						scheduleStep(1200);
-					}
-				},
-				{ timeout: lowSpec ? 5000 : 2500 },
-			);
-		} else {
-			// Мягкий fallback для браузеров без requestIdleCallback
-			currentTimerHandle = window.setTimeout(processNextView, delayMs);
-		}
+		// КРИТИЧЕСКИ ВАЖНО ДЛЯ 5400 RPM HDD:
+		// Сначала выдерживаем гарантированную временную задержку (delayMs) через setTimeout,
+		// чтобы диск и главный поток завершили фазу интерактивного старта и рендера.
+		// И ТОЛЬКО ПОСЛЕ ЭТОГО запрашиваем свободный квант времени через requestIdleCallback.
+		// Это исключает насыщение очереди диска (I/O queue saturation) на 5400 RPM HDD
+		// в критические моменты рендеринга активного экрана.
+		currentTimerHandle = window.setTimeout(() => {
+			currentTimerHandle = null;
+			if (cancelled) return;
+
+			if (idleWindow.requestIdleCallback) {
+				currentIdleHandle = idleWindow.requestIdleCallback(
+					(deadline) => {
+						currentIdleHandle = null;
+						if (cancelled) return;
+						// Предотвращаем фризы UI: выполняем только если есть время в текущем кадре
+						// (> 10 мс на слабых двухъядерных ПК) или если браузер уведомил о таймауте
+						if (deadline.timeRemaining() > 10 || deadline.didTimeout) {
+							processNextView();
+						} else {
+							// CPU или рендер занят — переносим на следующий квант покоя
+							scheduleStep(1500);
+						}
+					},
+					{ timeout: lowSpec ? 6000 : 3000 },
+				);
+			} else {
+				processNextView();
+			}
+		}, delayMs);
 	};
 
-	// Начальный старт: даем активному экрану врача полностью отрисоваться и диску 5400 RPM успокоиться (5 сек на lowSpec)
-	scheduleStep(lowSpec ? 5000 : 1500);
+	// Начальный старт: даем активному экрану врача полностью отрисоваться и диску 5400 RPM успокоиться (5 сек на lowSpec, 2 сек на обычном ПК)
+	scheduleStep(lowSpec ? 5000 : 2000);
 
 	return () => {
 		cancelled = true;

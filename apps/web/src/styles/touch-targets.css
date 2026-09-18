@@ -245,9 +245,17 @@
 	.form-043u-wrapper button,
 	.document-payload-card button,
 	.patient-core-form-grid input,
-	.patient-core-form-grid select {
-		min-height: 44px;
-		min-width: 44px;
+	.patient-core-form-grid select,
+	[role="menuitem"],
+	.patient-dropdown-item,
+	.patient-mobile-back-header button,
+	.schedule-options-dropdown button,
+	.visit-header-more-actions-dropdown button,
+	.imaging-actions > button,
+	.payment-actions button,
+	.warehouse-ops-menu button {
+		min-height: 44px !important;
+		min-width: 44px !important;
 		box-sizing: border-box;
 	}
 
