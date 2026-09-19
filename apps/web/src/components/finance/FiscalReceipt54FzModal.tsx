@@ -70,6 +70,7 @@ import {
 	type LoyaltyDiscountPreset,
 	type FiscalItemDraft,
 } from "./fiscal/fiscal54fzEngine";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export type FlexibleFiscalItem =
 	| FiscalItemDraft
@@ -1076,15 +1077,20 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 				cashierFullName: cashierFullName || "Кассир",
 				customerContact: customerContact.trim() || patientPhone || patientName,
 				operationType: activeTab === "refund" ? "income_return" : "income",
-				items: (activeItems || []).map((it) => ({
-					name: it.name || "Стоматологическая услуга",
-					priceRub: it.unitPriceRub || 0,
-					quantity: it.quantity || 1,
-					amountRub: it.amountRub || 0,
-					vatRate: "vat_0",
-					medicalServiceCode804n: it.code804n,
-					markingCode: it.markingCode,
-				})),
+				items: (activeItems || []).map((it) => {
+					const qty = it.quantity && it.quantity > 0 ? it.quantity : 1;
+					const price = it.priceRub || 0;
+					const disc = it.discountRub || 0;
+					const itemTotal = Math.max(0, price * qty - disc);
+					return {
+						name: it.name || "Стоматологическая услуга",
+						priceRub: price,
+						quantity: qty,
+						amountRub: itemTotal,
+						vatRate: "vat_none" as const,
+						medicalServiceCode804n: it.code804n || undefined,
+					};
+				}),
 				totalRub: totalSumRub,
 				electronicRub: cardAmount + sbpAmount,
 				cashRub: cashAmount,
@@ -1092,8 +1098,8 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			};
 
 			const printRes = await hardwarePrinter.printFiscalReceipt(printPayload);
-			if (printRes && printRes.status === "error") {
-				showToast(`Ошибка фискализации на ККТ: ${printRes.message || "Устройство недоступно"}`, "error");
+			if (printRes && (printRes.status === "failed" || !printRes.success)) {
+				showToast(`Ошибка фискализации на ККТ: ${printRes.error || "Устройство недоступно"}`, "error");
 			} else {
 				showToast("Чек повторно отправлен на фискализацию в ККТ (баланс пациента не затронут)!", "success", 5000);
 				setInterruptedFiscalState(null);
@@ -1500,7 +1506,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-95"
 								data-testid="btn-fiscal-manual-card-confirm"
 							>
-								<CheckCircle size={14} />
+								<CheckCircle2 size={14} />
 								<span>Оплата картой подтверждена на терминале вручную</span>
 							</button>
 							<button

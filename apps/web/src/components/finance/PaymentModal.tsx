@@ -833,17 +833,17 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			}
 		}
 
+		const effectiveAmountRub =
+			receivedCashRub > 0 && receivedCashRub < totalDueRub
+				? receivedCashRub
+				: totalDueRub;
+
 		setIsSubmittingCash(true);
 		try {
 			const activeCategoryTitle =
 				STOMX_CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name || "Оплата услуг";
 			const activeBoxTitle =
 				STOMX_CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
-
-			const effectiveAmountRub =
-				receivedCashRub > 0 && receivedCashRub < totalDueRub
-					? receivedCashRub
-					: totalDueRub;
 
 			const clientMutationId = createCompositeIdempotencyKey(
 				`cash:${Date.now()}-${++paymentMutationSeq}`,
@@ -1274,8 +1274,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 				cashRub: activeMethod === "cash" ? totalDueRub : 0,
 			});
 
-			if (printRes && printRes.status === "error") {
-				showToast(`Ошибка фискализации на ККТ: ${printRes.message || "Устройство недоступно"}`, "error");
+			if (printRes && (printRes.status === "failed" || !printRes.success)) {
+				showToast(`Ошибка фискализации на ККТ: ${printRes.error || "Устройство недоступно"}`, "error");
 				setFiscalizationRetryPending(true);
 			} else {
 				showToast("Чек повторно отправлен на фискализацию в ККТ (баланс пациента не затронут)!", "success", 5000);

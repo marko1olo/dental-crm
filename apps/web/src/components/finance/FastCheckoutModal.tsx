@@ -801,7 +801,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 
 			const compositeIdempotencyKey = createFiscalCompositeIdempotencyKey(
 				rawUuid,
-				`manual-card:${orderId}:${amountRub}`
+				{ method: "manual-card", orderId, amountRub }
 			);
 
 			// 1. Buffer receipt into offline queue so 54-FZ is preserved without blocking the counter
@@ -925,8 +925,8 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 				setInterruptedPaymentState(null);
 			} else {
 				const res = await FiscalReceiptQueueManager.flushAllPending();
-				if (res.failedCount === 0 && res.flushedCount > 0) {
-					showToast(`Очередь фискализации успешно отправлена в ОФД (${res.flushedCount} чеков)!`, "success");
+				if (res.failedCount === 0 && res.printedCount > 0) {
+					showToast(`Очередь фискализации успешно отправлена в ОФД (${res.printedCount} чеков)!`, "success");
 					setInterruptedPaymentState(null);
 				} else {
 					showToast(printResult.error || "ККТ недоступна. Чек сохранён в очереди", "warning");
