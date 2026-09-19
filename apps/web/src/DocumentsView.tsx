@@ -1535,7 +1535,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				<div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
 					<button
 						type="button"
-						className="secondary-button min-h-[44px] sm:min-h-[36px]"
+						className="secondary-button hidden sm:inline-flex min-h-[44px] sm:min-h-[36px]"
 						onClick={() => setIsSickLeaveElnOpen(true)}
 						data-testid="open-sick-leave-eln-modal-btn"
 					>
@@ -1543,7 +1543,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 					</button>
 					<button
 						type="button"
-						className="secondary-button min-h-[44px] sm:min-h-[36px]"
+						className="secondary-button hidden sm:inline-flex min-h-[44px] sm:min-h-[36px]"
 						onClick={() => setIsAutoclaveLogOpen(true)}
 						data-testid="open-autoclave-log-257-btn"
 					>
@@ -1657,7 +1657,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 						</span>
 					</div>
 					<span className="document-intake-quick-badge !text-xs !py-0.5 shrink-0">
-						0 ₽ · Без 403
+						Чистый бланк
 					</span>
 				</button>
 			</div>

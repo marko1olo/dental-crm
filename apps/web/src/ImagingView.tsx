@@ -668,9 +668,9 @@ export function ImagingView(props: ImagingViewProps) {
 						<span>Файлы</span>
 					</button>
 
-					{/* Desktop Secondary Actions (3D MPR & ОПТГ) — strictly 1 row (32-36px) */}
+					{/* Desktop Secondary Actions (3D MPR & ОПТГ) — strictly 1 row (32-36px), hidden on mobile where they live in '...' menu */}
 					<button
-						className="secondary-button hidden md:inline-flex items-center gap-1 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 text-xs font-medium shrink-0 whitespace-nowrap"
+						className="secondary-button !hidden md:!inline-flex items-center gap-1 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 text-xs font-medium shrink-0 whitespace-nowrap"
 						type="button"
 						data-testid="imaging-open-3d-mpr"
 						onClick={() => setIsCbctWorkspaceOpen(true)}
@@ -680,7 +680,7 @@ export function ImagingView(props: ImagingViewProps) {
 						<span>3D MPR / КТ</span>
 					</button>
 					<button
-						className="secondary-button hidden md:inline-flex items-center gap-1 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 text-xs font-medium shrink-0 whitespace-nowrap"
+						className="secondary-button !hidden md:!inline-flex items-center gap-1 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 text-xs font-medium shrink-0 whitespace-nowrap"
 						type="button"
 						data-testid="imaging-open-panoramic"
 						onClick={() => setIsPanoramicWindowOpen(true)}
@@ -868,15 +868,15 @@ export function ImagingView(props: ImagingViewProps) {
 				</article>
 				<article>
 					<span>В ленте</span>
-					<strong>{activeImagingStudies?.length}</strong>
-					<small>локально и на сервере, без удаления сырья</small>
+					<strong>{activeImagingStudies?.length ?? 0}</strong>
+					<small>локально и на сервере</small>
 				</article>
 				<article>
 					<span>Режим</span>
 					<strong>{selectedImagingViewerPlan?.label ?? "просмотрщик"}</strong>
 					<small>
 						{selectedImagingViewerPlan?.warnings[0] ??
-							"ИИ только помогает, решение остается за врачом"}
+							"клинический просмотр"}
 					</small>
 				</article>
 			</section>

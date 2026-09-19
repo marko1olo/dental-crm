@@ -31,7 +31,10 @@ import { usePatientStore } from "../../store/patientStore";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { PatientLoyaltyHeader } from "./PatientLoyaltyHeader";
 import { PatientSentimentBadge } from "./PatientSentimentBadge";
-import { printBlankMedicalContract } from "./blankContractPrint";
+import {
+	printBlankMedicalContract,
+	printBlankMedicalConsent,
+} from "./blankContractPrint";
 
 export interface PatientHeaderCardProps {
 	patientId?: string | null | undefined;
@@ -454,6 +457,23 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 									>
 										<FileText size={13} className="text-amber-600 shrink-0" />
 										<span className="truncate">Бланк договора (_______)</span>
+									</button>
+
+									{/* 4b. Бланк ИДС / согласий (_______) */}
+									<button
+										type="button"
+										onClick={() => {
+											setIsActionsMenuOpen(false);
+											void printBlankMedicalConsent(resolvedPatient, {
+												clinicName: dashboard?.clinicSettings?.profile?.legalName,
+											});
+										}}
+										className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
+										title="Распечатать пустой бланк информированного согласия (ИДС) со строками _______"
+										data-testid="header-print-blank-consent-btn"
+									>
+										<FileText size={13} className="text-teal-600 shrink-0" />
+										<span className="truncate">Бланк ИДС / согласий (_______)</span>
 									</button>
 
 									{/* 5. Анамнез 043/у */}

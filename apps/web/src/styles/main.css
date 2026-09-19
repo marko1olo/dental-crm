@@ -14880,7 +14880,7 @@ html.dark .communication-side .panel-heading h3,
 	}
 
 	.imaging-actions .primary-button,
-	.imaging-actions .secondary-button {
+	.imaging-actions .secondary-button:not(.hidden):not(.\!hidden) {
 		justify-content: center !important;
 		min-width: fit-content !important;
 		white-space: nowrap !important;
@@ -14890,6 +14890,38 @@ html.dark .communication-side .panel-heading h3,
 		padding: 0 10px !important;
 		font-size: 12px !important;
 		flex-shrink: 0 !important;
+	}
+
+	.imaging-actions .secondary-button.hidden,
+	.imaging-actions .secondary-button.\!hidden,
+	.imaging-actions [data-testid="imaging-open-3d-mpr"].\!hidden,
+	.imaging-actions [data-testid="imaging-open-panoramic"].\!hidden {
+		display: none !important;
+	}
+
+	.imaging-patient-strip {
+		display: flex !important;
+		flex-direction: row !important;
+		gap: 6px !important;
+		margin-bottom: 8px !important;
+	}
+
+	.imaging-patient-strip article {
+		flex: 1 1 0 !important;
+		padding: 6px 8px !important;
+		gap: 2px !important;
+		min-width: 0 !important;
+	}
+
+	.imaging-patient-strip strong {
+		font-size: 13px !important;
+		line-height: 1.2 !important;
+	}
+
+	.imaging-patient-strip span,
+	.imaging-patient-strip small {
+		font-size: 10px !important;
+		line-height: 1.1 !important;
 	}
 
 	.imaging-upload-status > div:first-child {

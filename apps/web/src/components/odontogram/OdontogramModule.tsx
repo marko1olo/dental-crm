@@ -1201,50 +1201,49 @@ export const OdontogramModule = React.memo(({
 				{/* ── КРИТИЧЕСКИЙ АЛЛЕРГО- И СОМАТИЧЕСКИЙ АЛЕРТ БЕЗОПАСНОСТИ (TIER 1) ── */}
 				{(Boolean(allergyText) || (rawSomaticAlerts && rawSomaticAlerts.length > 0) || rawRiskLevel === "high" || isCardiacOrDiabetes) && (
 					<div
-						className="p-3.5 sm:p-4 rounded-2xl bg-rose-500/15 dark:bg-rose-950/40 border-2 border-rose-500/40 dark:border-rose-500/50 text-rose-950 dark:text-rose-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md animate-in fade-in duration-200"
+						className="min-h-[32px] sm:h-[32px] py-1 px-3 rounded-xl bg-rose-500/15 dark:bg-rose-950/40 border border-rose-500/40 dark:border-rose-500/50 text-rose-950 dark:text-rose-100 flex items-center justify-between gap-2 shadow-2xs animate-in fade-in duration-200 text-xs font-bold"
 						role="alert"
 						aria-live="assertive"
 						data-testid="odontogram-critical-somatic-alert"
 					>
-						<div className="flex items-start gap-3 min-w-0">
-							<div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-sm animate-pulse">
-								<AlertTriangle className="w-5 h-5" />
+						<div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+							<div className="w-5 h-5 rounded-md bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-2xs animate-pulse">
+								<AlertTriangle className="w-3.5 h-3.5" />
 							</div>
-							<div className="min-w-0 space-y-1">
-								<div className="flex items-center gap-2 flex-wrap">
-									<span className="text-xs sm:text-sm font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
-										<ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
-										<span>АЛЛЕРГИИ И СОМАТИЧЕСКИЕ РИСКИ БЕЗОПАСНОСТИ:</span>
+							<span className="text-xs font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 flex items-center gap-1 shrink-0">
+								<ShieldAlert className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
+								<span>АЛЛЕРГИИ И РИСКИ:</span>
+							</span>
+							{rawRiskLevel === "high" && (
+								<span className="px-1.5 py-0.5 rounded bg-rose-600 text-white text-[10px] font-black tracking-wide shrink-0">
+									ASA III/IV
+								</span>
+							)}
+							<div className="flex items-center gap-1.5 min-w-0 overflow-hidden text-xs font-bold text-rose-900 dark:text-rose-100">
+								{allergyText && (
+									<span
+										className="px-2 py-0.5 rounded-md bg-rose-600 text-white font-mono font-black text-xs inline-flex items-center gap-1 shadow-2xs shrink-0 max-w-[300px] truncate"
+										data-testid="badge-critical-allergy-tier1"
+										title={allergyText}
+									>
+										<AlertTriangle className="w-3 h-3 shrink-0" aria-hidden="true" />
+										<span className="truncate">{allergyText}</span>
 									</span>
-									{rawRiskLevel === "high" && (
-										<span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black tracking-wide">
-											ВЫСОКИЙ РИСК (ASA III/IV)
-										</span>
-									)}
-								</div>
-								<div className="text-xs sm:text-sm font-bold text-rose-900 dark:text-rose-100 flex items-center gap-2 flex-wrap break-words">
-									{allergyText && (
-										<span
-											className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-mono font-black text-xs inline-flex items-center gap-1.5 shadow-xs"
-											data-testid="badge-critical-allergy-tier1"
-										>
-											<AlertTriangle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-											<span>{allergyText}</span>
-										</span>
-									)}
-									{rawSomaticAlerts && rawSomaticAlerts.map((alert, idx) => (
-										<span key={idx} className="px-2 py-0.5 rounded-lg bg-rose-500/20 dark:bg-rose-900/40 text-rose-900 dark:text-rose-200 font-semibold text-xs border border-rose-500/30">
-											{alert}
-										</span>
-									))}
-									{isCardiacOrDiabetes && !allergyText && (!rawSomaticAlerts || rawSomaticAlerts.length === 0) && (
-										<span>Кардио- / эндокринный мониторинг при анестезии (ограничение вазоконстриктора 1:200 000).</span>
-									)}
-								</div>
+								)}
+								{rawSomaticAlerts && rawSomaticAlerts.map((alert, idx) => (
+									<span key={idx} className="px-1.5 py-0.5 rounded-md bg-rose-500/20 dark:bg-rose-900/40 text-rose-900 dark:text-rose-200 font-semibold text-xs border border-rose-500/30 shrink-0 truncate max-w-[200px]" title={alert}>
+										{alert}
+									</span>
+								))}
+								{isCardiacOrDiabetes && !allergyText && (!rawSomaticAlerts || rawSomaticAlerts.length === 0) && (
+									<span className="truncate text-xs text-rose-900 dark:text-rose-100">
+										Кардио- / эндокринный мониторинг (вазоконстриктор 1:200 000).
+									</span>
+								)}
 							</div>
 						</div>
-						<div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-							<span className="text-[11px] font-bold text-rose-700 dark:text-rose-300 hidden md:inline">
+						<div className="flex items-center gap-2 shrink-0">
+							<span className="text-[11px] font-bold text-rose-700 dark:text-rose-300 hidden lg:inline">
 								Учтено в протоколе 043/у
 							</span>
 						</div>
@@ -1252,17 +1251,17 @@ export const OdontogramModule = React.memo(({
 				)}
 
 				{/* ── ШАПКА ОДОНТОГРАММЫ: ДЕЙСТВИЯ + КОМПАКТНЫЙ ФИНАНСОВЫЙ БЕЙДЖ + АВТОСОХРАНЕНИЕ (TIER 1) ── */}
-				<div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 p-2.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-900/60 border border-[var(--line,#e2e8f0)] dark:border-zinc-800 shadow-2xs">
+				<div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2 p-1.5 sm:p-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-900/60 border border-[var(--line,#e2e8f0)] dark:border-zinc-800 shadow-2xs">
 					<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
 						{/* 1-клик перенос клинического статуса зубной формулы в Дневник 043/у */}
 						<button
 							type="button"
 							onClick={handleSyncAllToDiary}
-							className="min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
+							className="min-h-[32px] h-[32px] px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
 							title="Перенести клинический статус зубной формулы в Дневник 043/у в 1 клик"
 							data-testid="btn-hotpath-sync-all-to-diary"
 						>
-							<FileText size={16} className="shrink-0" />
+							<FileText size={15} className="shrink-0" />
 							<span>В дневник 043/у</span>
 						</button>
 
@@ -1270,23 +1269,23 @@ export const OdontogramModule = React.memo(({
 						<button
 							type="button"
 							onClick={() => window.print()}
-							className="min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 dark:bg-zinc-100 hover:bg-slate-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-[0.98]"
+							className="min-h-[32px] h-[32px] px-3 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft)] dark:bg-zinc-800 text-[var(--ink)] dark:text-zinc-100 hover:bg-[var(--paper-strong)] dark:hover:bg-zinc-750 border border-[var(--line)] dark:border-zinc-700 transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-[0.98]"
 							title="Распечатать графическую одонтограмму со всеми патологиями на лист A4 для вклейки в амбулаторную карту"
 							data-testid="print-odontogram-a4-btn"
 						>
-							<Printer size={16} />
+							<Printer size={15} />
 							<span>Печать зубной формулы (А4)</span>
 						</button>
 
 						{/* Компактный финансовый бейдж приема (Tier 1, 32-34px, 1-Click FastCheckout Modal) */}
 						<div
-							className="flex items-center gap-2 px-3 py-1 min-h-[34px] h-[34px] rounded-xl bg-teal-500/10 dark:bg-teal-950/40 border border-teal-500/30 text-teal-900 dark:text-teal-200 text-xs font-bold shrink-0 shadow-2xs"
+							className="flex items-center gap-1.5 px-2.5 min-h-[32px] h-[32px] rounded-lg bg-teal-500/10 dark:bg-teal-950/40 border border-teal-500/30 text-teal-900 dark:text-teal-200 text-xs font-bold shrink-0 shadow-2xs"
 							data-testid="odontogram-compact-bill-badge"
 						>
-							<Coins className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+							<Coins className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
 							<span>
 								Итого к оплате:{" "}
-								<strong className="font-mono font-black text-sm text-teal-800 dark:text-teal-200">
+								<strong className="font-mono font-black text-xs sm:text-sm text-teal-800 dark:text-teal-200">
 									{liveGrossTotalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 								</strong>
 							</span>
@@ -1296,7 +1295,7 @@ export const OdontogramModule = React.memo(({
 									setFastCheckoutMethod("sbp_qr");
 									setIsFastCheckoutOpen(true);
 								}}
-								className="ml-1 min-h-[26px] h-[26px] px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold text-xs flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+								className="ml-1 min-h-[24px] h-[24px] px-2 rounded-md bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold text-xs flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
 								title="Открыть быструю кассу приема (54-ФЗ)"
 								data-testid="btn-open-fast-checkout"
 							>
@@ -1305,9 +1304,9 @@ export const OdontogramModule = React.memo(({
 						</div>
 					</div>
 
-					{/* Крупный понятный бейдж автосохранения на диск */}
+					{/* Понятный бейдж автосохранения на диск */}
 					<div
-						className="flex items-center gap-2 px-3 py-1.5 min-h-[34px] h-[34px] rounded-xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 text-xs font-bold shrink-0 shadow-2xs"
+						className="flex items-center gap-1.5 px-2.5 min-h-[32px] h-[32px] rounded-lg bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 text-xs font-bold shrink-0 shadow-2xs"
 						title="Все отметки и диагнозы непрерывно сохраняются в локальное хранилище и базу данных клиники"
 					>
 						<Check size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -1316,7 +1315,7 @@ export const OdontogramModule = React.memo(({
 				</div>
 
 				{/* Народная и анатомическая расшифровка выбранного зуба простым русским языком */}
-				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-indigo-500/10 dark:bg-indigo-950/30 border border-indigo-500/20 text-indigo-950 dark:text-indigo-200 text-xs sm:text-sm font-bold transition-all">
+				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-1.5 min-h-[34px] rounded-xl bg-indigo-500/10 dark:bg-indigo-950/30 border border-indigo-500/20 text-indigo-950 dark:text-indigo-200 text-xs sm:text-sm font-bold transition-all">
 					<div className="flex items-center gap-2 min-w-0">
 						<Info className="w-4 h-4 text-indigo-500 shrink-0" />
 						<span className="font-black text-indigo-600 dark:text-indigo-400 shrink-0">Зуб:</span>
@@ -1332,7 +1331,7 @@ export const OdontogramModule = React.memo(({
 						<button
 							type="button"
 							onClick={() => void handleOneClickLabOrder(selectedTeeth)}
-							className="min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-black text-amber-900 dark:text-amber-100 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 flex items-center gap-1.5 cursor-pointer shrink-0 transition-all active:scale-95 shadow-2xs whitespace-nowrap"
+							className="min-h-[28px] sm:h-[28px] px-2.5 py-0.5 rounded-lg text-xs font-black text-amber-900 dark:text-amber-100 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 flex items-center gap-1.5 cursor-pointer shrink-0 transition-all active:scale-95 shadow-2xs whitespace-nowrap"
 							title="Оформить наряд в зуботехническую лабораторию для выбранных зубов в 1 клик (Диоксид циркония / E.max, цвет VITA A2, +7 рабочих дней)"
 							data-testid="selected-teeth-lab-order-btn"
 						>

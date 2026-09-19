@@ -34,7 +34,10 @@ import { showToast } from "./components/GlobalToast";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 import { OdontogramModule } from "./components/odontogram/OdontogramModule";
 import { PatientAvatar } from "./components/PatientAvatar";
-import { printBlankMedicalContract } from "./components/patients/blankContractPrint";
+import {
+	printBlankMedicalContract,
+	printBlankMedicalConsent,
+} from "./components/patients/blankContractPrint";
 import { PatientAdministrativeForm } from "./components/patients/PatientAdministrativeForm";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 
@@ -1094,6 +1097,22 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 													/>
 													<span>Печать бланка договора (____)</span>
 												</button>
+												<button
+													type="button"
+													className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+													role="menuitem"
+													onClick={() => {
+														setRowMenuPatientId(null);
+														void printBlankMedicalConsent(patient);
+													}}
+													data-testid="row-print-blank-consent"
+												>
+													<ShieldCheck
+														size={14}
+														className="text-teal-600 dark:text-teal-400 shrink-0"
+													/>
+													<span>Печать бланка ИДС (____)</span>
+												</button>
 												{patient.phone && (
 													<button
 														type="button"
@@ -1260,6 +1279,18 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								>
 									<FileText size={14} aria-hidden="true" />
 									<span>Договор</span>
+								</button>
+								<button
+									type="button"
+									onClick={() =>
+										void printBlankMedicalConsent(selectedPatient)
+									}
+									className="min-h-[44px] px-2.5 py-1.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
+									title="Распечатать бланк ИДС"
+									data-testid="patient-mobile-header-print-consent-btn"
+								>
+									<ShieldCheck size={14} aria-hidden="true" />
+									<span>ИДС</span>
 								</button>
 							</div>
 						)}
@@ -1539,6 +1570,40 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 													aria-hidden="true"
 												/>
 												<span>Печать договора</span>
+											</button>
+
+											{/* 3b. Печать бланка ИДС */}
+											<button
+												type="button"
+												className="patient-dropdown-item hover:bg-[var(--paper-hover)] text-[var(--ink)]"
+												onClick={() => {
+													setIsPatientActionsMenuOpen(false);
+													void printBlankMedicalConsent(selectedPatient);
+												}}
+												style={{
+													display: "flex",
+													alignItems: "center",
+													gap: "8px",
+													width: "100%",
+													padding: "8px 12px",
+													minHeight: "36px",
+													fontSize: "12px",
+													fontWeight: 600,
+													border: "none",
+													background: "transparent",
+													borderRadius: "6px",
+													cursor: "pointer",
+													textAlign: "left",
+												}}
+												title="Распечатать бланк ИДС / согласий"
+												data-testid="patient-card-print-consent-btn"
+											>
+												<ShieldCheck
+													size={14}
+													className="text-teal-600 dark:text-teal-400 shrink-0"
+													aria-hidden="true"
+												/>
+												<span>Бланк ИДС / согласий</span>
 											</button>
 
 											{/* 4. Медицинская карта 043/у */}

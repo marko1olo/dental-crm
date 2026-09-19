@@ -450,6 +450,7 @@ export function ScheduleFilterStrip({
 						<button
 							type="button"
 							className={`quick-chip schedule-my-chair-chip ${isMyChairActive ? "active font-bold border-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] bg-[var(--teal,var(--brand-primary))]" : ""} min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 min-w-max whitespace-nowrap text-xs font-semibold shrink-0 flex-shrink-0 cursor-pointer rounded-lg inline-flex items-center gap-1.5 transition-all select-none`}
+							style={{ whiteSpace: "nowrap", flexShrink: 0 }}
 							onClick={handleSelectMyChair}
 							title={`Моё дежурное кресло: ${cleanChairName}. Нажмите для быстрой фильтрации (1 клик)`}
 							aria-label={`Моё дежурное кресло: ${cleanChairName}`}
@@ -474,6 +475,7 @@ export function ScheduleFilterStrip({
 								key={member.id}
 								type="button"
 								className={`quick-chip schedule-doctor-chip ${scheduleDoctorFilterId === member.id ? "active font-bold" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-max shrink-0 flex-shrink-0 px-2.5 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center justify-center select-none`}
+								style={{ whiteSpace: "nowrap", flexShrink: 0 }}
 								onClick={() =>
 									setScheduleDoctorFilterId(
 										scheduleDoctorFilterId === member.id ? null : member.id,
@@ -513,7 +515,7 @@ export function ScheduleFilterStrip({
 								key={chair.id}
 								type="button"
 								data-testid={`chair-view-badge-${chair.id}`}
-								className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 shrink-0 px-2 text-xs font-medium cursor-pointer rounded-lg inline-flex items-center gap-1 select-none`}
+								className={`quick-chip ${scheduleChairFilterId === chair.id ? "active" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-max shrink-0 flex-shrink-0 px-2 text-xs font-medium cursor-pointer rounded-lg inline-flex items-center gap-1 select-none whitespace-nowrap`}
 								style={{ whiteSpace: "nowrap", flexShrink: 0 }}
 								onClick={() =>
 									setScheduleChairFilterId(
@@ -535,12 +537,13 @@ export function ScheduleFilterStrip({
 					<button
 						type="button"
 						onClick={handleOpenAddChair}
-						className="schedule-add-chair-chip-btn min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 sm:min-w-0 shrink-0 px-2.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-[var(--paper)] text-[var(--teal-dark)] dark:text-[var(--teal)] dark:bg-[var(--teal-soft)] text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 select-none"
+						className="schedule-add-chair-chip-btn min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 sm:min-w-0 shrink-0 flex-shrink-0 px-2.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-[var(--paper)] text-[var(--teal-dark)] dark:text-[var(--teal)] dark:bg-[var(--teal-soft)] text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 select-none whitespace-nowrap min-w-max"
+						style={{ whiteSpace: "nowrap", flexShrink: 0 }}
 						title="Быстрое добавление кресла или кабинета в расписание (1 клик)"
 						aria-label="Добавить кресло в расписание"
 						data-testid="schedule-add-chair-btn"
 					>
-						<span className="whitespace-nowrap font-bold">+ Кресло</span>
+						<span className="whitespace-nowrap shrink-0 flex-shrink-0 font-bold">+ Кресло</span>
 					</button>
 				)}
 

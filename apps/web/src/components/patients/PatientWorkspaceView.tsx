@@ -45,7 +45,10 @@ const LoyaltyProgramModal = React.lazy(() =>
 	})),
 );
 import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
-import { printBlankMedicalContract } from "./blankContractPrint";
+import {
+	printBlankMedicalContract,
+	printBlankMedicalConsent,
+} from "./blankContractPrint";
 import { PatientAllergySafetyBanner } from "./PatientAllergySafetyBanner";
 import { PatientDuplicateAlert } from "./PatientDuplicateAlert";
 
@@ -605,6 +608,25 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 										>
 											<FileText className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
 											<span>Бланк договора (_______)</span>
+										</button>
+										<button
+											type="button"
+											className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-teal-500/10 text-teal-900 dark:text-teal-200 flex items-center gap-2 cursor-pointer transition-colors"
+											onClick={() => {
+												setIsDocsMenuOpen(false);
+												void printBlankMedicalConsent(
+													{ id: patientId, fullName: patientName },
+													{
+														clinicName:
+															dashboard?.clinicSettings?.profile?.legalName,
+													},
+												);
+											}}
+											title="Распечатать пустой бланк ИДС со строками _______ для ручного заполнения"
+											data-testid="patient-print-blank-consent-btn"
+										>
+											<Shield className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+											<span>Бланк ИДС / согласий (_______)</span>
 										</button>
 									</div>
 								)}
