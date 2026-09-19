@@ -420,8 +420,16 @@
 
 .document-intake-quick-action-bar {
 	display: flex;
-	align-items: center;
-	margin-bottom: 2px;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 4px;
+}
+
+@media (min-width: 640px) {
+	.document-intake-quick-action-bar {
+		flex-direction: row;
+		gap: 12px;
+	}
 }
 
 .document-intake-quick-print-btn {
@@ -680,6 +688,7 @@
 	color: var(--muted);
 	cursor: pointer;
 	white-space: nowrap;
+	flex-shrink: 0;
 	transition: all var(--transition-fast);
 	position: relative;
 	min-height: 34px;
@@ -722,6 +731,8 @@
 	color: var(--muted);
 	border: 1px solid var(--line);
 	line-height: 1;
+	flex-shrink: 0;
+	margin-left: 4px;
 }
 
 .document-nav-tab-btn.active .document-nav-tab-badge {
@@ -903,6 +914,8 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	white-space: nowrap;
+	flex-shrink: 0;
 	transition: all var(--transition-fast);
 	user-select: none;
 	font-family: inherit;
@@ -1145,6 +1158,16 @@
 	.doc-nav-action-btn {
 		flex: 1;
 		min-height: 44px;
+	}
+	.document-filters-row {
+		overflow-x: auto;
+		flex-wrap: nowrap;
+		-webkit-overflow-scrolling: touch;
+		padding-bottom: 4px;
+	}
+	.document-filter-group {
+		flex-wrap: nowrap;
+		flex-shrink: 0;
 	}
 }
 

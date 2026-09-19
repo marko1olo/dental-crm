@@ -1,4 +1,4 @@
-import { Award, Check, Copy, FileText, ShieldCheck, Sparkles, Zap } from "lucide-react";
+import { Award, Check, ChevronLeft, ChevronRight, Copy, FileText, ShieldCheck, Sparkles, Zap } from "lucide-react";
 import React, { useMemo, useState, useRef, useEffect, memo, useCallback } from "react";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { showToast } from "../GlobalToast";
@@ -1287,9 +1287,9 @@ ClassicGostToothCell.displayName = "ClassicGostToothCell";
 								el?.click();
 							}}
 							title="Предыдущий зуб (влево)"
-							className="gost-keypad-btn px-2 text-xs"
+							className="gost-keypad-btn px-2 text-xs flex items-center justify-center"
 						>
-							◀
+							<ChevronLeft size={13} aria-hidden="true" />
 						</button>
 						<button
 							type="button"
@@ -1302,9 +1302,9 @@ ClassicGostToothCell.displayName = "ClassicGostToothCell";
 								el?.click();
 							}}
 							title="Следующий зуб (вправо)"
-							className="gost-keypad-btn px-2 text-xs"
+							className="gost-keypad-btn px-2 text-xs flex items-center justify-center"
 						>
-							▶
+							<ChevronRight size={13} aria-hidden="true" />
 						</button>
 					</div>
 				</div>

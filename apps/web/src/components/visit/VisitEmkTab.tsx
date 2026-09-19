@@ -477,8 +477,8 @@ export function VisitEmkTab() {
 			appLogic?.activeDoctor?.specialties?.[0] || "Стоматолог-терапевт";
 		const diagIcd =
 			typeof visitNoteForm?.diagnosis === "string"
-				? visitNoteForm.diagnosis.match(/[A-Z]\d{2}(?:\.\d+)?/i)?.[0] || "K02.1"
-				: "K02.1";
+				? visitNoteForm.diagnosis.match(/[A-Z]\d{2}(?:\.\d+)?/i)?.[0] || "Z01.2"
+				: "Z01.2";
 		return {
 			formNumber: "043/у",
 			passport: {
@@ -767,8 +767,8 @@ export function VisitEmkTab() {
 					diagnosisIcd10:
 						typeof visitNoteForm?.diagnosis === "string"
 							? visitNoteForm.diagnosis.match(/[A-Z]\d{2}(?:\.\d+)?/i)?.[0] ||
-								"K02.1"
-							: "K02.1",
+								"Z01.2"
+							: "Z01.2",
 					diagnosisTooth:
 						typeof visitNoteForm?.diagnosis === "string"
 							? visitNoteForm.diagnosis.match(/\b\d{2}\b/)?.[0] || ""
@@ -2272,7 +2272,7 @@ export function VisitEmkTab() {
 						// Auto-match ICD-10 when clicking complaint chips if diagnosis is empty or default
 						if (field.key === "complaint") {
 							const currDiag = (visitNoteForm.diagnosis || "").trim();
-							if (!currDiag || currDiag === "K02.1" || currDiag.length < 4) {
+							if (!currDiag || currDiag === "K02.1" || currDiag === "Z01.2" || currDiag.includes("Z01.2") || currDiag.length < 4) {
 								const COMPLAINT_ICD10_MAP: Record<string, string> = {
 									"Острая боль": "K04.0 Пульпит необратимый",
 									Пульпит: "K04.0 Пульпит необратимый",
@@ -3735,7 +3735,7 @@ export function VisitEmkTab() {
 						diagnosisIcd10:
 							(typeof visitNoteForm?.diagnosis === "string"
 								? visitNoteForm.diagnosis.match(/[A-Z]\d{2}(?:\.\d+)?/i)?.[0]
-								: undefined) || "K02.1",
+								: undefined) || "Z01.2",
 						diagnosisTooth: "",
 						treatmentDescription: visitNoteForm?.treatmentPlan || "",
 						complications: "",

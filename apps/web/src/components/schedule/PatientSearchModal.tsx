@@ -289,7 +289,7 @@ export function PatientSearchModal({
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-2 text-xs font-bold text-teal-950 dark:text-teal-200">
 								<UserPlus className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
-								<span>Быстрое создание пациента (5 сек без обязательного ассистента, Мандат 8e / 8n)</span>
+								<span>Быстрое создание пациента: ФИО и телефон</span>
 							</div>
 							<button
 								type="button"
@@ -388,7 +388,7 @@ export function PatientSearchModal({
 										data-testid="search-modal-instant-book-enter-btn"
 										onClick={() => handleQuickSubmit()}
 										className="h-9 px-4 rounded-xl bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95"
-										title="Записать в 1 клик по Enter (Мандат 8e / 8n)"
+										title="Записать сразу по нажатию клавиши Enter"
 									>
 										<CalendarPlus className="w-4 h-4" />
 										<span>Записать сразу [Enter]</span>

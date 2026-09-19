@@ -2263,7 +2263,7 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 			{isTop && renderNumberBadge()}
 			{isSelected && isTouchScreen && (
 				<div
-					className={`tooth-touch-surface-hud absolute z-[999] left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 p-2 bg-slate-900/95 backdrop-blur-md border border-teal-500/60 rounded-xl shadow-2xl ${
+					className={`tooth-touch-surface-hud absolute z-[999] left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 p-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-teal-600/40 dark:border-teal-500/60 rounded-xl shadow-2xl ${
 						isTop ? "top-full mt-2" : "bottom-full mb-2"
 					}`}
 					onClick={(e) => e.stopPropagation()}
@@ -2290,7 +2290,7 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 									className={`touch-surface-btn px-2.5 py-2 min-h-[44px] min-w-[44px] rounded-lg text-xs font-bold border transition-all touch-manipulation flex items-center justify-center ${
 										isSurfActive
 											? "bg-teal-500 text-white border-teal-400 shadow-md scale-105"
-											: "bg-slate-800/90 text-slate-200 border-slate-700 hover:bg-slate-700 active:scale-95"
+											: "bg-slate-100 dark:bg-slate-800/90 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95"
 									}`}
 									title={`${surf.full} поверхность`}
 									onClick={(e) => {
@@ -2310,7 +2310,7 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 					</div>
 					{/* Quick State Row */}
 					{onQuickStateChange && (
-						<div className="flex items-center gap-1 overflow-x-auto max-w-[280px] py-0.5">
+						<div className="flex items-center gap-1 overflow-x-auto max-w-[340px] sm:max-w-none py-0.5">
 							<button
 								type="button"
 								onClick={(e) => {
@@ -2318,7 +2318,7 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 									onQuickStateChange(targets, "Caries", surfaces);
 								}}
-								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap"
+								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap cursor-pointer active:scale-95"
 							>
 								<span className="w-2 h-2 rounded-full bg-amber-500" />
 								Кариес
@@ -2330,7 +2330,7 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 									onQuickStateChange(targets, "Filled", surfaces);
 								}}
-								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap"
+								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-blue-500/15 text-blue-900 dark:text-blue-200 border border-blue-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap cursor-pointer active:scale-95"
 							>
 								<span className="w-2 h-2 rounded-full bg-blue-500" />
 								Пломба
@@ -2342,7 +2342,7 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 									onQuickStateChange(targets, "Pulpitis", surfaces);
 								}}
-								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap"
+								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-rose-500/15 text-rose-900 dark:text-rose-200 border border-rose-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap cursor-pointer active:scale-95"
 							>
 								<span className="w-2 h-2 rounded-full bg-rose-500" />
 								Пульпит
@@ -2354,7 +2354,7 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 									onQuickStateChange(targets, "Crown", surfaces);
 								}}
-								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap"
+								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap cursor-pointer active:scale-95"
 							>
 								<span className="w-2 h-2 rounded-full bg-amber-500" />
 								Коронка
@@ -2366,7 +2366,7 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 									onQuickStateChange(targets, "Missing", surfaces);
 								}}
-								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-red-600/20 text-red-300 border border-red-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap"
+								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-red-600/15 text-red-900 dark:text-red-200 border border-red-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap cursor-pointer active:scale-95"
 							>
 								<span className="w-2 h-2 rounded-full bg-red-600" />
 								Удален
@@ -2378,7 +2378,7 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 									onQuickStateChange(targets, "Healthy", []);
 								}}
-								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-teal-500/20 text-teal-300 border border-teal-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap"
+								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-teal-500/15 text-teal-900 dark:text-teal-200 border border-teal-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap cursor-pointer active:scale-95"
 							>
 								<span className="w-2 h-2 rounded-full bg-teal-400" />
 								Здоров

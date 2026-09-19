@@ -1069,7 +1069,7 @@ export function ImagingView(props: ImagingViewProps) {
 								</strong>
 								<span>
 									{selectedImagingStudy
-										? `${imagingKindLabels[selectedImagingStudy.kind]} · ${selectedImagingStudy.toothCode ?? selectedImagingStudy.region}`
+										? `${imagingKindLabels[selectedImagingStudy.kind]} · ${selectedImagingStudy.toothCode || selectedImagingStudy.region || "Область не указана"}`
 										: "Локальные файлы DICOM (КТ)"}
 								</span>
 								{/*

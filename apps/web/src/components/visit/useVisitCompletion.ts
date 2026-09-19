@@ -113,7 +113,7 @@ export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisi
 				const effectiveDiary = {
 					anamnesis: rawDiary.anamnesis || "Жалоб на момент осмотра активно не предъявляет.",
 					statusLocalis: rawDiary.statusLocalis || "Слизистая оболочка полости рта бледно-розовая, влажная.",
-					diagnosisIcd10: rawDiary.diagnosisIcd10 || "K02.1",
+					diagnosisIcd10: rawDiary.diagnosisIcd10 || "Z01.2",
 					diagnosisTooth: rawDiary.diagnosisTooth || "",
 					treatmentDescription: rawDiary.treatmentDescription || "Проведен осмотр и санация полости рта.",
 				};
