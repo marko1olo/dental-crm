@@ -388,6 +388,28 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 									</>
 								)}
 							</span>
+
+							<button
+								type="button"
+								data-testid="btn-somatic-healthy-norm"
+								onClick={() => {
+									if (disabled) return;
+									if (onApplySomaticNorm) {
+										onApplySomaticNorm();
+									} else if (onUpdateSafetyProfile) {
+										onUpdateSafetyProfile({
+											...DEFAULT_SOMATIC_HEALTHY_NORM,
+											customChronicNotes: "Соматически здоров. Физиологическая норма.",
+										});
+									}
+								}}
+								disabled={disabled}
+								className="min-h-[28px] h-7 px-2.5 text-xs rounded-lg font-bold border border-emerald-500/40 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-xs select-none"
+								title="Установить статус физиологической нормы в 1 клик (Мандат 8e п. 3)"
+							>
+								<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+								<span>Соматически здоров (Норма)</span>
+							</button>
 						</div>
 					</div>
 

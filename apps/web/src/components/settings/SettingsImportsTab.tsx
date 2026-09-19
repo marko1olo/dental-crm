@@ -6179,10 +6179,10 @@ export function SettingsImportsTab(props: Record<string, any>) {
 					<div className="import-workbench">
 						<textarea
 							aria-label="Данные для проверки импорта"
-							/* Поле стало пустым (раньше в нём лежали выдуманные пациенты),
-                   поэтому нужна подсказка, что именно сюда вставлять. */
 							placeholder={
-								"Вставьте выгрузку из старой программы или из Excel.\nПо строке на пациента, поля через точку с запятой:\nФИО;Телефон;Дата рождения;Комментарий"
+								importSourceKind === "image_ocr"
+									? "Вставьте распознанный текст (OCR) со страницы бумажного журнала регистрации пациентов..."
+									: "Вставьте выгрузку из старой программы или из Excel.\nПо строке на пациента, поля через точку с запятой:\nФИО;Телефон;Дата рождения;Комментарий"
 							}
 							value={importText}
 							onChange={(event: TextInputChangeEvent) => {
@@ -6210,13 +6210,11 @@ export function SettingsImportsTab(props: Record<string, any>) {
 								type="button"
 								onClick={() => {
 									setImportSourceKind("image_ocr");
-									setImportText(
-										"Фото журнала -> OCR текст:\nИванов Иван Иванович +7 900 111-22-33 01.01.1980 первичный прием\nПетров Петр Петрович 8 927 333-44-55 12.02.1975 нужен вычет",
-									);
 									setImportPreview(null);
 									setImportCommit(null);
 									setImportIntake(null);
 								}}
+								title="Режим распознавания фото бумажного журнала (OCR)"
 							>
 								<ImageIcon aria-hidden="true" /> Фото журнала
 							</button>
