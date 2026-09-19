@@ -525,7 +525,7 @@ export function useSafeInterval(): {
 }
 
 export interface UseSafeObjectUrlOptions {
-	readonly autoRevokeBlobStrings?: boolean;
+	readonly autoRevokeBlobStrings?: boolean | undefined;
 }
 
 /**

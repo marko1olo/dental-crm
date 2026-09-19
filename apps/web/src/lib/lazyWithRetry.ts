@@ -138,7 +138,7 @@ export async function retryDynamicImport<T>(
  * Поддерживает как дефолтные экспорты, так и маппинг именованных:
  * lazyWithRetry(() => import("./ScheduleView").then(m => ({ default: m.ScheduleView })))
  */
-export function lazyWithRetry<T extends ComponentType<unknown>>(
+export function lazyWithRetry<T extends ComponentType<any>>(
 	importer: () => Promise<{ default: T }>,
 	options?: LazyRetryOptions,
 ): LazyExoticComponent<T> {
@@ -156,17 +156,17 @@ export function lazyWithNamedRetry<
 	exportName: TKey,
 	options?: LazyRetryOptions,
 ): LazyExoticComponent<
-	TModule[TKey] extends ComponentType<unknown>
+	TModule[TKey] extends ComponentType<any>
 		? TModule[TKey]
-		: ComponentType<unknown>
+		: ComponentType<any>
 > {
 	return lazyWithRetry(async () => {
 		const mod = await importer();
-		return { default: mod[exportName] as unknown as ComponentType<unknown> };
+		return { default: mod[exportName] as unknown as ComponentType<any> };
 	}, options) as LazyExoticComponent<
-		TModule[TKey] extends ComponentType<unknown>
+		TModule[TKey] extends ComponentType<any>
 			? TModule[TKey]
-			: ComponentType<unknown>
+			: ComponentType<any>
 	>;
 }
 
