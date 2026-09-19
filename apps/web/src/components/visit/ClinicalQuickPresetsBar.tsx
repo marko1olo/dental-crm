@@ -85,10 +85,11 @@ export const ClinicalQuickPresetsBar: React.FC<
 	};
 
 	const handlePresetClick = (preset: ClinicalQuickPreset) => {
-		const effectiveTooth =
-			preset.category !== "hygiene"
-				? currentTooth || preset.defaultTooth || 16
-				: null;
+		const isFullMouthOrNorm =
+			preset.category === "hygiene" || preset.id === "norm_healthy";
+		const effectiveTooth = !isFullMouthOrNorm
+			? currentTooth || preset.defaultTooth || 16
+			: null;
 		onSelectPreset(preset, effectiveTooth);
 		const toothSuffix = effectiveTooth ? ` (Зуб ${effectiveTooth})` : "";
 		showToast(
@@ -159,11 +160,11 @@ export const ClinicalQuickPresetsBar: React.FC<
 							}
 						}}
 						className="min-h-[48px] sm:min-h-[32px] sm:h-8 px-3 sm:px-2.5 py-1.5 sm:py-0 rounded-lg text-xs font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
-						title="1-клик норма Формы 043/у (Z01.2): пациент соматически здоров, патологий твердых тканей и пародонта не выявлено"
+						title="1-клик норма Формы 043/у (Z01.2): соматически здоров, норма прикуса и пародонта (Мандат 8e / 8n)"
 						data-testid="btn-quick-apply-physio-norm"
 					>
 						<ShieldCheck size={15} className="shrink-0" />
-						<span>Норма (1-клик)</span>
+						<span>Соматически здоров / Норма Z01.2</span>
 					</button>
 
 					{onOpenTemplatesModal && (

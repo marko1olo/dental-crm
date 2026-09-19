@@ -519,6 +519,17 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		setTimeout(() => setCopied(false), 2000);
 	}, [values, selectedTooth]);
 
+	// Плавный скролл при открытии виртуальной клавиатуры на мобильных устройствах
+	const handleInputFocus = useCallback(
+		(e: React.FocusEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+			const target = e.currentTarget;
+			setTimeout(() => {
+				target.scrollIntoView({ behavior: "smooth", block: "center" });
+			}, 300);
+		},
+		[],
+	);
+
 	return (
 		<div
 			className={`flex flex-col bg-[var(--paper,white)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-xl overflow-hidden shadow-xs ${className}`}
@@ -795,7 +806,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					</div>
 
 					{/* Сетка шаблонов */}
-					<div className="max-h-60 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pr-1">
+					<div className="max-h-[50dvh] sm:max-h-60 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pr-1">
 						{filteredProtocols.map((protocol) => (
 							<div
 								key={protocol.id}
@@ -854,7 +865,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			{/* Модальное окно предпросмотра протокола */}
 			{previewProtocol && (
 				<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-					<div className="bg-[var(--paper)] text-[var(--ink)] rounded-2xl max-w-xl w-full p-5 border border-[var(--line)] shadow-2xl max-h-[85vh] flex flex-col">
+					<div className="bg-[var(--paper)] text-[var(--ink)] rounded-2xl max-w-xl w-full p-5 border border-[var(--line)] shadow-2xl max-h-[85dvh] sm:max-h-[85vh] flex flex-col">
 						<div className="flex items-center justify-between border-b border-[var(--line)] pb-3 mb-3">
 							<div className="flex items-center gap-2 min-w-0">
 								<span className="text-xs font-bold px-2 py-0.5 rounded bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200 shrink-0">
@@ -917,7 +928,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 
 			{/* ── ТЕЛО РЕДАКТОРА: ПОЛЯ SOAP ── */}
 			{activeViewMode === "fields" ? (
-				<div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+				<div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 pb-[calc(env(safe-area-inset-bottom,0px)+80px)] md:pb-4">
 					{/* S1: Жалобы (Subjective) */}
 					<div className="flex flex-col gap-1">
 						<div className="flex items-center justify-between">
@@ -934,8 +945,10 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							rows={3}
 							value={values.complaint || ""}
 							onChange={(e) => handleFieldChange("complaint", e.target.value)}
+							onFocus={handleInputFocus}
 							placeholder="Боль при приеме пищи, ночные боли, выпадение пломбы..."
-							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y"
+							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y touch-manipulation"
+							style={{ scrollMarginBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
 						/>
 					</div>
 
@@ -955,8 +968,10 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							rows={3}
 							value={values.anamnesis || ""}
 							onChange={(e) => handleFieldChange("anamnesis", e.target.value)}
+							onFocus={handleInputFocus}
 							placeholder="Зуб ранее лечен, боли возникли 2 дня назад. Соматически здоров..."
-							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y"
+							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y touch-manipulation"
+							style={{ scrollMarginBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
 						/>
 					</div>
 
@@ -980,8 +995,10 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							onChange={(e) =>
 								handleFieldChange("objectiveStatus", e.target.value)
 							}
+							onFocus={handleInputFocus}
 							placeholder="Кариозная полость средней глубины на окклюзионной поверхности, зондирование слабо болезненно..."
-							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y"
+							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y touch-manipulation"
+							style={{ scrollMarginBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
 						/>
 					</div>
 
@@ -1004,17 +1021,21 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								type="text"
 								value={values.icd10 || ""}
 								onChange={(e) => handleFieldChange("icd10", e.target.value)}
+								onFocus={handleInputFocus}
 								placeholder="K02.1"
 								aria-label="Код МКБ-10"
-								className="w-24 h-8 px-2 text-xs font-bold text-[var(--teal,var(--brand-primary))] bg-[var(--paper)] border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+								className="w-24 min-h-[44px] sm:min-h-0 sm:h-8 px-2 text-xs font-bold text-[var(--teal,var(--brand-primary))] bg-[var(--paper)] border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--teal)] touch-manipulation"
+								style={{ scrollMarginBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
 							/>
 							<input
 								id="soap-diagnosis"
 								type="text"
 								value={values.diagnosis || ""}
 								onChange={(e) => handleFieldChange("diagnosis", e.target.value)}
+								onFocus={handleInputFocus}
 								placeholder="Клинический диагноз: Кариес дентина зуба 16..."
-								className="flex-1 h-8 px-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+								className="flex-1 min-h-[44px] sm:min-h-0 sm:h-8 px-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--teal)] touch-manipulation"
+								style={{ scrollMarginBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
 							/>
 						</div>
 					</div>
@@ -1039,8 +1060,10 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							onChange={(e) =>
 								handleFieldChange("treatmentPlan", e.target.value)
 							}
+							onFocus={handleInputFocus}
 							placeholder="Анестезия sol. Articaini 1:200000 1.8 мл. Препарирование кариозной полости, коффердам..."
-							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y font-mono text-[11px]"
+							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y font-mono text-[11px] touch-manipulation"
+							style={{ scrollMarginBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
 						/>
 					</div>
 
@@ -1059,8 +1082,10 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							onChange={(e) =>
 								handleFieldChange("recommendations", e.target.value)
 							}
+							onFocus={handleInputFocus}
 							placeholder="Щадящая диета 2 часа, гигиена полости рта, НПВП при боли..."
-							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y"
+							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y touch-manipulation"
+							style={{ scrollMarginBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
 						/>
 					</div>
 				</div>
@@ -1171,6 +1196,59 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					</div>
 				</div>
 			)}
+
+			{/* ── МОБИЛЬНЫЙ ДОК ДЕЙСТВИЙ (ФИКСИРОВАН ВНИЗУ ЭКРАНА С SAFE-AREA) ── */}
+			<div
+				className="soap-mobile-action-bar sticky bottom-0 z-30 md:hidden flex items-center justify-between gap-1.5 p-2 bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--line)] shadow-lg"
+				style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom, 8px))" }}
+			>
+				<button
+					type="button"
+					onClick={() => setIsTemplatesOpen(!isTemplatesOpen)}
+					className="flex-1 min-h-[44px] px-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 bg-teal-600 active:bg-teal-700 text-white shadow-xs touch-manipulation cursor-pointer"
+					title="Каталог 448 шаблонов StomX"
+				>
+					<Sparkles className="w-4 h-4 shrink-0" />
+					<span className="truncate">Шаблоны (448)</span>
+				</button>
+
+				<button
+					type="button"
+					onClick={handleApplyNorm}
+					className="min-h-[44px] px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-1 bg-emerald-500/15 active:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 touch-manipulation cursor-pointer shrink-0"
+					title="Заполнить нормой в 1 клик"
+				>
+					<Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+					<span>Норма</span>
+				</button>
+
+				<div className="flex items-center bg-[var(--paper-soft)] border border-[var(--line)] p-0.5 rounded-xl shrink-0">
+					<button
+						type="button"
+						onClick={() => setActiveViewMode("fields")}
+						className={`min-h-[44px] px-2.5 text-xs font-bold rounded-lg flex items-center justify-center touch-manipulation cursor-pointer ${
+							activeViewMode === "fields"
+								? "bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] shadow-2xs"
+								: "text-[var(--muted)]"
+						}`}
+						title="Режим редактирования полей"
+					>
+						<Edit3 className="w-3.5 h-3.5" />
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveViewMode("full_text")}
+						className={`min-h-[44px] px-2.5 text-xs font-bold rounded-lg flex items-center justify-center touch-manipulation cursor-pointer ${
+							activeViewMode === "full_text"
+								? "bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] shadow-2xs"
+								: "text-[var(--muted)]"
+						}`}
+						title="Печатный предпросмотр 043/у"
+					>
+						<Eye className="w-3.5 h-3.5" />
+					</button>
+				</div>
+			</div>
 		</div>
 	);
 };

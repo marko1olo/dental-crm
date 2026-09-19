@@ -180,10 +180,52 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 		setSelectedComplaints(["Плановый осмотр (жалоб нет)"]);
 		setSelectedRisks([]);
 		setSelectedHistory(["Опыт анестезии положительный (без осложнений)"]);
-		setCustomNotes(
-			"Соматически здоров. Хронические соматические патологии, сердечно-сосудистые риски и аллергологический статус со слов пациента не отягощены.",
+		const normNotes =
+			"Соматически здоров. Хронические соматические патологии, сердечно-сосудистые риски и аллергологический статус со слов пациента не отягощены.";
+		setCustomNotes(normNotes);
+
+		const normComplaints =
+			"Жалоб на момент осмотра не предъявляет (профилактический осмотр).";
+		const normAnamnesis =
+			"Соматически здоров. Аллергологический анамнез не отягощен. Перенесенные и сопутствующие заболевания со слов отрицает. Стоматологический анамнез: регулярная санация полости рта, опыт местной анестезии без осложнений.";
+		const normObjective =
+			"Конфигурация лица не изменена, симметрично. Открывание рта свободное, безболезненное, в полном объеме. ВНЧС без патологии. Регионарные лимфоузлы не пальпируются. Слизистая оболочка полости рта физиологической окраски, влажная, без патологических элементов. Десна бледно-розовая, плотная, прикреплена, не кровоточит. Прикус физиологический (ортогнатический). Зубные ряды непрерывные, твердые ткани зубов без видимых кариозных поражений. Гигиеническое состояние полости рта удовлетворительное.";
+		const normDiagnosis =
+			"Z01.2 Стоматологическое обследование и исследование зубных рядов (патологий твердых тканей, пародонта и СОПР не выявлено / норма)";
+		const normTreatment =
+			"В специальном стоматологическом лечении на момент осмотра не нуждается. Полость рта санирована.";
+		const normRecommendations =
+			"Индивидуальная контролируемая гигиена полости рта 2 раза в день (зубная щетка средней жесткости, паста с фторидами 1450 ppm, зубная нить / флосс). Профилактический осмотр и профессиональная гигиена полости рта через 6 месяцев.";
+
+		if (onAppendAnamnesis) {
+			onAppendAnamnesis(normAnamnesis);
+		}
+		if (onAppendComorbidities) {
+			onAppendComorbidities(
+				"Сопутствующие патологии: отсутствуют (соматически здоров, норма).",
+			);
+		}
+
+		// Also update Emk visitNoteForm if available
+		// biome-ignore lint/suspicious/noExplicitAny: integration context
+		const ctx = appLogic as any;
+		if (ctx?.updateVisitNoteField) {
+			ctx.updateVisitNoteField("complaint", normComplaints);
+			ctx.updateVisitNoteField("complaints", normComplaints);
+			ctx.updateVisitNoteField("anamnesis", normAnamnesis);
+			ctx.updateVisitNoteField("objectiveStatus", normObjective);
+			ctx.updateVisitNoteField("objectiveInspection", normObjective);
+			ctx.updateVisitNoteField("diagnosis", normDiagnosis);
+			ctx.updateVisitNoteField("treatmentPlan", normTreatment);
+			ctx.updateVisitNoteField("treatment", normTreatment);
+			ctx.updateVisitNoteField("recommendations", normRecommendations);
+		}
+
+		showToast(
+			"Применена норма Формы 043/у (Z01.2): соматически здоров",
+			"success",
+			3000,
 		);
-		showToast("Применена норма: соматически здоров", "success", 3000);
 	};
 
 	const applyToDiary = () => {
@@ -298,10 +340,10 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 						onClick={handleApplyPhysiologicalNorm}
 						className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer active:scale-98"
 						data-testid="btn-somatic-norm-one-click"
-						title="1 клик: заполнить осмотр физиологической нормой (соматически здоров)"
+						title="1 клик: заполнить осмотр физиологической нормой Формы 043/у (Z01.2: соматически здоров)"
 					>
 						<ShieldCheck className="w-4 h-4" />
-						<span>Соматически здоров / норма (1-клик)</span>
+						<span>Соматически здоров / Норма Z01.2 (1-клик)</span>
 					</button>
 					<button
 						type="button"
