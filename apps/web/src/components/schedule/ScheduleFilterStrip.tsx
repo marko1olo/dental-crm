@@ -18,6 +18,12 @@ export interface ScheduleStaffMember {
 	specialty?: string;
 }
 
+export interface ScheduleBranch {
+	id: string;
+	name: string;
+	active?: boolean;
+}
+
 export interface ScheduleChair {
 	id: string;
 	name: string;
@@ -41,6 +47,9 @@ export interface ScheduleFilterStripProps {
 	staffMembers?: ScheduleStaffMember[];
 	chairs?: ScheduleChair[];
 	isSoloDoctor?: boolean;
+	branches?: readonly ScheduleBranch[] | ScheduleBranch[];
+	selectedBranchId?: string | null;
+	onSelectBranch?: (branchId: string | null) => void;
 	scheduleDoctorFilterId: string | null;
 	setScheduleDoctorFilterId: (id: string | null) => void;
 	scheduleChairFilterId: string | null;
@@ -110,6 +119,9 @@ export function ScheduleFilterStrip({
 	staffMembers = [],
 	chairs = [],
 	isSoloDoctor = false,
+	branches = [],
+	selectedBranchId = null,
+	onSelectBranch,
 	scheduleDoctorFilterId,
 	setScheduleDoctorFilterId,
 	scheduleChairFilterId,
@@ -151,6 +163,23 @@ export function ScheduleFilterStrip({
 	const todayIso = new Date().toISOString().slice(0, 10);
 	const tomorrowIso = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
 	const currentDateIso = scheduleDateFilter || todayIso;
+
+	// Branch management (Mandates 8n, 8p: if <= 1 branch, selector is strictly hidden)
+	const activeBranches = useMemo(() => {
+		return (branches || []).filter((b) => b?.active !== false);
+	}, [branches]);
+	const hasMultipleBranches = activeBranches.length > 1;
+
+	// Doctor & chair concurrency detection for solo-doctor & 1-3 chairs ergonomics (Mandates 8n, 8p)
+	const activeDoctors = useMemo(() => {
+		return staffMembers.filter(
+			(member) =>
+				member?.active &&
+				(member?.role === "doctor" || member?.role === "owner"),
+		);
+	}, [staffMembers]);
+	const hasMultipleDoctors = activeDoctors.length > 1 && !isSoloDoctor;
+	const hasMultipleChairs = displayChairs.length > 1 && !isSoloDoctor;
 
 	// Doctor's on-duty chair detection for 1-click "Моё кресло" filter (StomX / DentalPRO parity, Mandates 8e, 8n)
 	const effectiveDoctorIdForMyChair =
@@ -391,8 +420,31 @@ export function ScheduleFilterStrip({
 					<span className="hidden sm:inline">Все записи</span>
 				</button>
 
+				{/* 1-Click Branch Selector: auto-hidden when branches <= 1 (Mandates 8n, 8p) */}
+				{hasMultipleBranches && (
+					<div
+						className="schedule-branch-selector-group flex items-center gap-1 shrink-0"
+						data-testid="schedule-branch-selector"
+					>
+						<select
+							value={selectedBranchId || ""}
+							onChange={(e) => onSelectBranch?.(e.target.value ? e.target.value : null)}
+							className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all"
+							aria-label="Выбор филиала клиники"
+							data-testid="schedule-branch-select"
+						>
+							<option value="">Все филиалы</option>
+							{activeBranches.map((b) => (
+								<option key={b.id} value={b.id}>
+									{b.name}
+								</option>
+							))}
+						</select>
+					</div>
+				)}
+
 				{/* 1-Click "Моё кресло" filter chip (StomX / DentalPRO parity, Mandates 8e, 8n) */}
-				{myChair && (() => {
+				{hasMultipleChairs && myChair && (() => {
 					const cleanChairName = myChair.name.replace(/\s*\(.*\)/, "").trim();
 					return (
 						<button
@@ -411,38 +463,32 @@ export function ScheduleFilterStrip({
 					);
 				})()}
 
-				{/* Doctor filter chips */}
-				{!isSoloDoctor &&
-					staffMembers
-						.filter(
-							(member) =>
-								member?.active &&
-								(member?.role === "doctor" || member?.role === "owner"),
-						)
-						.map((member) => {
-							const rawName = member?.fullName || "Врач";
-							const formattedShort = formatDoctorShortName(rawName) || rawName;
+				{/* Doctor filter chips - auto-collapsed when doctor is single on shift or solo doctor (Mandates 8n, 8p) */}
+				{hasMultipleDoctors &&
+					activeDoctors.map((member) => {
+						const rawName = member?.fullName || "Врач";
+						const formattedShort = formatDoctorShortName(rawName) || rawName;
 
-							return (
-								<button
-									key={member.id}
-									type="button"
-									className={`quick-chip schedule-doctor-chip ${scheduleDoctorFilterId === member.id ? "active font-bold" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-max shrink-0 flex-shrink-0 px-2.5 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center justify-center select-none`}
-									onClick={() =>
-										setScheduleDoctorFilterId(
-											scheduleDoctorFilterId === member.id ? null : member.id,
-										)
-									}
-									title={`Фильтр по врачу: ${member?.fullName || "Врач"}`}
-								>
-									<span className="shrink-0 flex-shrink-0 whitespace-nowrap min-w-max font-medium">
-										{formattedShort}
-									</span>
-								</button>
-							);
-						})}
+						return (
+							<button
+								key={member.id}
+								type="button"
+								className={`quick-chip schedule-doctor-chip ${scheduleDoctorFilterId === member.id ? "active font-bold" : ""} min-h-[44px] sm:min-h-0 sm:h-7 min-w-max shrink-0 flex-shrink-0 px-2.5 whitespace-nowrap text-xs font-medium cursor-pointer rounded-lg inline-flex items-center justify-center select-none`}
+								onClick={() =>
+									setScheduleDoctorFilterId(
+										scheduleDoctorFilterId === member.id ? null : member.id,
+									)
+								}
+								title={`Фильтр по врачу: ${member?.fullName || "Врач"}`}
+							>
+								<span className="shrink-0 flex-shrink-0 whitespace-nowrap min-w-max font-medium">
+									{formattedShort}
+								</span>
+							</button>
+						);
+					})}
 
-				{/* Chair filter chips with specializations */}
+				{/* Chair filter chips with specializations - auto-collapsed when clinic has 1 chair or solo doctor (Mandates 8n, 8p) */}
 				{displayChairs.length > 0 && (
 					<span
 						className="sr-only"
@@ -451,8 +497,8 @@ export function ScheduleFilterStrip({
 						{displayChairs.length}
 					</span>
 				)}
-				{displayChairs
-					.map((chair) => {
+				{hasMultipleChairs &&
+					displayChairs.map((chair) => {
 						const specName = formatChairSpecialtyLabel(chair?.specialization);
 						const chairLabel = specName && !chair.name.includes("(")
 							? `${chair.name} (${specName})`
@@ -485,16 +531,18 @@ export function ScheduleFilterStrip({
 					})}
 
 				{/* 1-Click Inline "+ Кресло" addition button (StomX / DentalPRO parity, Mandates 8e, 8n) */}
-				<button
-					type="button"
-					onClick={handleOpenAddChair}
-					className="schedule-add-chair-chip-btn min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 sm:min-w-0 shrink-0 px-2.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-[var(--paper)] text-[var(--teal-dark)] dark:text-[var(--teal)] dark:bg-[var(--teal-soft)] text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 select-none"
-					title="Быстрое добавление кресла или кабинета в расписание (1 клик)"
-					aria-label="Добавить кресло в расписание"
-					data-testid="schedule-add-chair-btn"
-				>
-					<span className="whitespace-nowrap font-bold">+ Кресло</span>
-				</button>
+				{hasMultipleChairs && (
+					<button
+						type="button"
+						onClick={handleOpenAddChair}
+						className="schedule-add-chair-chip-btn min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 sm:min-w-0 shrink-0 px-2.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-[var(--paper)] text-[var(--teal-dark)] dark:text-[var(--teal)] dark:bg-[var(--teal-soft)] text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 select-none"
+						title="Быстрое добавление кресла или кабинета в расписание (1 клик)"
+						aria-label="Добавить кресло в расписание"
+						data-testid="schedule-add-chair-btn"
+					>
+						<span className="whitespace-nowrap font-bold">+ Кресло</span>
+					</button>
+				)}
 
 				{/* Active filter summary & shift warning chips integrated directly into single-row filter strip (Mandates 8d, 8p) */}
 				{activeFilterSummary}
@@ -634,6 +682,32 @@ export function ScheduleFilterStrip({
 								</div>
 							)}
 
+							{/* Branch Selector in Mobile / Options dropdown when multiple branches (hidden when <= 1 branch) */}
+							{hasMultipleBranches && (
+								<div className="px-2 py-1.5 border-b border-[var(--line)] mb-1 pb-1.5">
+									<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1">
+										Филиал клиники
+									</div>
+									<select
+										value={selectedBranchId || ""}
+										onChange={(e) => {
+											onSelectBranch?.(e.target.value ? e.target.value : null);
+											setIsOptionsMenuOpen(false);
+										}}
+										className="w-full min-h-[44px] sm:min-h-0 sm:h-7 px-2 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer"
+										aria-label="Выбор филиала"
+										data-testid="schedule-options-branch-select"
+									>
+										<option value="">Все филиалы</option>
+										{activeBranches.map((b) => (
+											<option key={b.id} value={b.id}>
+												{b.name}
+											</option>
+										))}
+									</select>
+								</div>
+							)}
+
 							{/* Mobile Filter Chips by Doctor & Chair (visible strictly on < sm) */}
 							<div className="sm:hidden mb-1.5 pb-1.5 border-b border-[var(--line)]">
 								<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
@@ -650,7 +724,7 @@ export function ScheduleFilterStrip({
 									>
 										Все записи
 									</button>
-									{myChair && (() => {
+									{hasMultipleChairs && myChair && (() => {
 										const cleanChairName = myChair.name.replace(/\s*\(.*\)/, "").trim();
 										return (
 											<button
@@ -666,43 +740,42 @@ export function ScheduleFilterStrip({
 											</button>
 										);
 									})()}
-									{!isSoloDoctor &&
-										staffMembers
-											.filter((m) => m?.active && (m?.role === "doctor" || m?.role === "owner"))
-											.map((m) => (
-												<button
-													key={`m-opt-doc-${m.id}`}
-													type="button"
-													onClick={() => {
-														setScheduleDoctorFilterId(scheduleDoctorFilterId === m.id ? null : m.id);
-														setIsOptionsMenuOpen(false);
-													}}
-													className={`quick-chip ${scheduleDoctorFilterId === m.id ? "active font-bold" : ""} min-h-[44px] px-2 text-xs rounded-lg`}
-												>
-													{m.fullName?.split(" ")[0] || "Врач"}
-												</button>
-											))}
-									{displayChairs.map((c) => {
-										const specName = formatChairSpecialtyLabel(c?.specialization);
-										const shortName = (c?.name || "Кресло").replace(/Кресло\s*/i, "Кр. ");
-										const label = specName && !c.name.includes("(") ? `${shortName} (${specName})` : shortName;
-										return (
+									{hasMultipleDoctors &&
+										activeDoctors.map((m) => (
 											<button
-												key={`m-opt-chair-${c.id}`}
+												key={`m-opt-doc-${m.id}`}
 												type="button"
-												data-testid={`m-opt-chair-${c.id}`}
 												onClick={() => {
-													setScheduleChairFilterId(scheduleChairFilterId === c.id ? null : c.id);
+													setScheduleDoctorFilterId(scheduleDoctorFilterId === m.id ? null : m.id);
 													setIsOptionsMenuOpen(false);
 												}}
-												className={`quick-chip ${scheduleChairFilterId === c.id ? "active font-bold" : ""} min-h-[44px] px-2 text-xs rounded-lg flex items-center gap-1`}
-												title={c.name}
+												className={`quick-chip ${scheduleDoctorFilterId === m.id ? "active font-bold" : ""} min-h-[44px] px-2 text-xs rounded-lg`}
 											>
-												<Armchair size={12} className="shrink-0" />
-												<span>{label}</span>
+												{m.fullName?.split(" ")[0] || "Врач"}
 											</button>
-										);
-									})}
+										))}
+									{hasMultipleChairs &&
+										displayChairs.map((c) => {
+											const specName = formatChairSpecialtyLabel(c?.specialization);
+											const shortName = (c?.name || "Кресло").replace(/Кресло\s*/i, "Кр. ");
+											const label = specName && !c.name.includes("(") ? `${shortName} (${specName})` : shortName;
+											return (
+												<button
+													key={`m-opt-chair-${c.id}`}
+													type="button"
+													data-testid={`m-opt-chair-${c.id}`}
+													onClick={() => {
+														setScheduleChairFilterId(scheduleChairFilterId === c.id ? null : c.id);
+														setIsOptionsMenuOpen(false);
+													}}
+													className={`quick-chip ${scheduleChairFilterId === c.id ? "active font-bold" : ""} min-h-[44px] px-2 text-xs rounded-lg flex items-center gap-1`}
+													title={c.name}
+												>
+													<Armchair size={12} className="shrink-0" />
+													<span>{label}</span>
+												</button>
+											);
+										})}
 								</div>
 							</div>
 

@@ -100,6 +100,8 @@ export interface ChairScheduleViewProps {
 	hideToolbar?: boolean;
 	gridStepMinutes?: 15 | 30 | 60 | undefined;
 	onGridStepChange?: ((step: 15 | 30 | 60) => void) | undefined;
+	selectedBranchId?: string | null | undefined;
+	onSelectBranch?: ((branchId: string | null) => void) | undefined;
 }
 
 const defaultAppointmentLabels: Record<Appointment["status"], string> = {
@@ -236,10 +238,18 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 	hideToolbar = false,
 	gridStepMinutes,
 	onGridStepChange,
+	selectedBranchId,
+	onSelectBranch,
 }) => {
 	const rawChairs = dashboard?.clinicSettings?.chairs ?? [];
 	const chairs = rawChairs.length > 0 ? rawChairs : [DEFAULT_SOLO_CHAIR as any];
 	const isSoloDoctor = chairs.length <= 1;
+
+	const rawBranches = useMemo(() => {
+		const b = (dashboard?.clinicSettings as any)?.branches;
+		return Array.isArray(b) ? b.filter((item: any) => item && item.active !== false) : [];
+	}, [dashboard?.clinicSettings]);
+	const hasMultipleBranches = rawBranches.length > 1;
 
 	const doctors = useMemo(() => {
 		return (dashboard?.clinicSettings?.staff ?? []).filter(
@@ -1295,6 +1305,27 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 							(Соло: авто-привязка)
 						</span>
 					)}
+
+					{/* Auto-hide branch selector when branches <= 1 (Mandate 8n Solo Doctor / Small Clinic Sovereignty) */}
+					{hasMultipleBranches && (
+						<div className="flex items-center gap-1 ml-1 pl-1.5 border-l border-[var(--line)] shrink-0">
+							<span className="text-[10px] text-[var(--muted)] font-medium hidden lg:inline">Филиал:</span>
+							<select
+								value={selectedBranchId || ""}
+								onChange={(e) => onSelectBranch?.(e.target.value || null)}
+								className="text-[11px] h-6 px-1.5 rounded-md border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium cursor-pointer hover:border-[var(--teal)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)] transition-colors"
+								data-testid="chair-view-branch-select"
+								aria-label="Выбор филиала клиники"
+							>
+								<option value="">Все филиалы</option>
+								{rawBranches.map((b: any) => (
+									<option key={b.id} value={b.id}>
+										{b.name}
+									</option>
+								))}
+							</select>
+						</div>
+					)}
 				</div>
 
 				{/* Center: Scrollable Chair Palette Chips with Accent Bars (StomX Parity, Feature 190) */}
@@ -1731,17 +1762,19 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 						);
 					})}
 
-					{/* Inline Add Chair Strip Button */}
-					<button
-						type="button"
-						onClick={handleOpenAddChair}
-						className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-dashed border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--teal)]/5 text-[11px] font-medium text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors shrink-0 cursor-pointer h-7 whitespace-nowrap select-none"
-						title="Добавить стоматологическую установку"
-						data-testid="chair-view-add-chair-strip-btn"
-					>
-						<Plus size={11} className="shrink-0" />
-						<span className="whitespace-nowrap shrink-0">Кресло</span>
-					</button>
+					{/* Inline Add Chair Strip Button (Collapsed when solo doctor / 1 chair to eliminate clutter) */}
+					{!isSoloDoctor && (
+						<button
+							type="button"
+							onClick={handleOpenAddChair}
+							className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-dashed border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--teal)]/5 text-[11px] font-medium text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors shrink-0 cursor-pointer h-7 whitespace-nowrap select-none"
+							title="Добавить стоматологическую установку"
+							data-testid="chair-view-add-chair-strip-btn"
+						>
+							<Plus size={11} className="shrink-0" />
+							<span className="whitespace-nowrap shrink-0">Кресло</span>
+						</button>
+					)}
 				</div>
 
 				{/* Right: Actions — Compact 1-Row Toolbar (Hick's Law, Apple HIG, Mandate 8d) */}

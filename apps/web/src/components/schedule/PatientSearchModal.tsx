@@ -196,15 +196,20 @@ export function PatientSearchModal({
 		} else if (e.key === "ArrowUp" && !isInlineQuickCreate) {
 			e.preventDefault();
 			setSelectedIndex((prev) => (prev > 0 ? prev - 1 : Math.max(0, searchResults.length - 1)));
-		} else if (e.key === "Enter" && !isInlineQuickCreate && searchResults[selectedIndex]) {
-			e.preventDefault();
-			const target = searchResults[selectedIndex].patient;
-			if (onSelectPatientForBooking) {
-				onSelectPatientForBooking(target);
-				onClose();
-			} else if (onOpenPatientCard) {
-				onOpenPatientCard(target.id);
-				onClose();
+		} else if (e.key === "Enter" && !isInlineQuickCreate) {
+			if (searchResults[selectedIndex]) {
+				e.preventDefault();
+				const target = searchResults[selectedIndex].patient;
+				if (onSelectPatientForBooking) {
+					onSelectPatientForBooking(target);
+					onClose();
+				} else if (onOpenPatientCard) {
+					onOpenPatientCard(target.id);
+					onClose();
+				}
+			} else if (searchResults.length === 0 && rawQuery.trim()) {
+				e.preventDefault();
+				handleQuickSubmit();
 			}
 		}
 	};
@@ -284,7 +289,7 @@ export function PatientSearchModal({
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-2 text-xs font-bold text-teal-950 dark:text-teal-200">
 								<UserPlus className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
-								<span>Быстрое создание пациента: ФИО + Телефон</span>
+								<span>Быстрое создание пациента (5 сек без обязательного ассистента, Мандат 8e / 8n)</span>
 							</div>
 							<button
 								type="button"
@@ -367,16 +372,28 @@ export function PatientSearchModal({
 									? `По запросу «${rawQuery}» ничего не найдено`
 									: "Проверьте номер телефона или напишите первые буквы фамилии"}
 							</p>
-							<div className="pt-2">
+							<div className="pt-2 flex items-center justify-center gap-2 flex-wrap">
 								<button
 									type="button"
 									data-testid="search-modal-empty-quick-btn"
 									onClick={handleQuickCreate}
-									className="h-9 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+									className="h-9 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95"
 								>
 									<Plus className="w-4 h-4" />
 									<span>Зарегистрировать за 5 сек: «{rawQuery.trim() || "Новый пациент"}»</span>
 								</button>
+								{rawQuery.trim() && (
+									<button
+										type="button"
+										data-testid="search-modal-instant-book-enter-btn"
+										onClick={() => handleQuickSubmit()}
+										className="h-9 px-4 rounded-xl bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95"
+										title="Записать в 1 клик по Enter (Мандат 8e / 8n)"
+									>
+										<CalendarPlus className="w-4 h-4" />
+										<span>Записать сразу [Enter]</span>
+									</button>
+								)}
 							</div>
 						</div>
 					) : (
