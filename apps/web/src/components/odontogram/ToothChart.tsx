@@ -1266,6 +1266,29 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 	const cfg = getToothConfig(number);
 	const colors = getToothColors(state, material);
 
+	const [isTouchScreen, setIsTouchScreen] = useState<boolean>(() => {
+		if (typeof window !== "undefined") {
+			return (
+				window.innerWidth <= 768 ||
+				"ontouchstart" in window ||
+				(typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints) && navigator.maxTouchPoints > 0)
+			);
+		}
+		return false;
+	});
+
+	useEffect(() => {
+		const checkTouch = () => {
+			setIsTouchScreen(
+				window.innerWidth <= 768 ||
+				"ontouchstart" in window ||
+				(typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints) && navigator.maxTouchPoints > 0)
+			);
+		};
+		window.addEventListener("resize", checkTouch);
+		return () => window.removeEventListener("resize", checkTouch);
+	}, []);
+
 	const scaledWidth = scaleCssPx(cfg.width, scale);
 	const scaledHeight = scaleCssPx(cfg.height, scale);
 
@@ -2107,11 +2130,12 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 };
 
 	return (
-		<button
-			type="button"
+		<div
+			role="button"
+			tabIndex={0}
 			className={`tooth-svg-wrapper group ${isTop ? "top" : "bottom"} ${
 				isSelected ? "selected ring-2 ring-indigo-500/70" : ""
-			}`}
+			} ${isSelected && isTouchScreen ? "touch-zoomed" : ""}`}
 			data-tooth-id={number}
 			title={`${getToothFolkAndAnatomicalNameRu(number)} — Статус: ${TOOTH_STATE_LABELS[state]}`}
 			aria-label={`${getToothFolkAndAnatomicalNameRu(number)}, статус: ${TOOTH_STATE_LABELS[state]}`}
@@ -2237,11 +2261,137 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 			}}
 		>
 			{isTop && renderNumberBadge()}
+			{isSelected && isTouchScreen && (
+				<div
+					className={`tooth-touch-surface-hud absolute z-[999] left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 p-2 bg-slate-900/95 backdrop-blur-md border border-teal-500/60 rounded-xl shadow-2xl ${
+						isTop ? "top-full mt-2" : "bottom-full mb-2"
+					}`}
+					onClick={(e) => e.stopPropagation()}
+					onPointerDown={(e) => e.stopPropagation()}
+				>
+					{/* Surface Selector row (touch targets >= 44x44px) */}
+					<div className="flex items-center gap-1">
+						{(
+							[
+								{ key: "O", label: "O", full: "Окклюзионная" },
+								{ key: "V", label: "V", full: "Вестибулярная" },
+								{ key: isTop ? "P" : "L", label: isTop ? "P" : "L", full: isTop ? "Небная" : "Язычная" },
+								{ key: "M", label: "M", full: "Медиальная" },
+								{ key: "D", label: "D", full: "Дистальная" },
+								{ key: "C", label: "C", full: "Пришеечная" },
+							] as const
+						).map((surf) => {
+							const currSurfaces = surfaces ?? [];
+							const isSurfActive = currSurfaces.includes(surf.key) || (surf.key === "P" && currSurfaces.includes("L")) || (surf.key === "L" && currSurfaces.includes("P"));
+							return (
+								<button
+									key={surf.key}
+									type="button"
+									className={`touch-surface-btn px-2.5 py-2 min-h-[44px] min-w-[44px] rounded-lg text-xs font-bold border transition-all touch-manipulation flex items-center justify-center ${
+										isSurfActive
+											? "bg-teal-500 text-white border-teal-400 shadow-md scale-105"
+											: "bg-slate-800/90 text-slate-200 border-slate-700 hover:bg-slate-700 active:scale-95"
+									}`}
+									title={`${surf.full} поверхность`}
+									onClick={(e) => {
+										e.stopPropagation();
+										const nextSurfaces = isSurfActive
+											? currSurfaces.filter((s) => s !== surf.key && s !== (surf.key === "P" ? "L" : surf.key === "L" ? "P" : ""))
+											: [...currSurfaces, surf.key];
+										const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+										const nextState = nextSurfaces.length > 0 ? (state === "Healthy" ? "Caries" : state) : state;
+										onQuickStateChange?.(targets, nextState, nextSurfaces);
+									}}
+								>
+									{surf.label}
+								</button>
+							);
+						})}
+					</div>
+					{/* Quick State Row */}
+					{onQuickStateChange && (
+						<div className="flex items-center gap-1 overflow-x-auto max-w-[280px] py-0.5">
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+									onQuickStateChange(targets, "Caries", surfaces);
+								}}
+								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap"
+							>
+								<span className="w-2 h-2 rounded-full bg-amber-500" />
+								Кариес
+							</button>
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+									onQuickStateChange(targets, "Filled", surfaces);
+								}}
+								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap"
+							>
+								<span className="w-2 h-2 rounded-full bg-blue-500" />
+								Пломба
+							</button>
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+									onQuickStateChange(targets, "Pulpitis", surfaces);
+								}}
+								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap"
+							>
+								<span className="w-2 h-2 rounded-full bg-rose-500" />
+								Пульпит
+							</button>
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+									onQuickStateChange(targets, "Crown", surfaces);
+								}}
+								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap"
+							>
+								<span className="w-2 h-2 rounded-full bg-amber-500" />
+								Коронка
+							</button>
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+									onQuickStateChange(targets, "Missing", surfaces);
+								}}
+								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-red-600/20 text-red-300 border border-red-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap"
+							>
+								<span className="w-2 h-2 rounded-full bg-red-600" />
+								Удален
+							</button>
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+									onQuickStateChange(targets, "Healthy", []);
+								}}
+								className="touch-quick-state-btn px-2.5 py-1.5 min-h-[44px] min-w-[44px] rounded-lg bg-teal-500/20 text-teal-300 border border-teal-500/40 text-xs font-bold flex items-center gap-1 whitespace-nowrap"
+							>
+								<span className="w-2 h-2 rounded-full bg-teal-400" />
+								Здоров
+							</button>
+						</div>
+					)}
+				</div>
+			)}
 			{state === "Implant" || state === "Planned_Implant"
 				? renderImplant()
 				: renderStandard()}
 			{!isTop && renderNumberBadge()}
-		</button>
+		</div>
 	);
 }, areToothSvgPropsEqual);
 ToothSVG.displayName = "ToothSVG";
@@ -3159,7 +3309,9 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 				onQuickStateChange([num], activeStamp);
 				return;
 			}
-			const rect = e.currentTarget.getBoundingClientRect();
+			const targetEl = (e.currentTarget as HTMLElement | null) ?? (e.target as HTMLElement | null);
+			const wrapperEl = targetEl?.closest(".tooth-svg-wrapper") ?? targetEl;
+			const rect = wrapperEl ? wrapperEl.getBoundingClientRect() : (e.currentTarget as HTMLElement).getBoundingClientRect();
 			onToothClick(num, rect, surface);
 		},
 		[activeStamp, onQuickStateChange, onToothClick],

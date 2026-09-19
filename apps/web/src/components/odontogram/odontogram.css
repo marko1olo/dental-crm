@@ -2428,4 +2428,127 @@
 	}
 }
 
+/* ── Mobile Touch Tap-to-Zoom & Surface Inspector Ergonomics (390x844 Touch Screens) ── */
+@media (pointer: coarse), (max-width: 768px) {
+	.tooth-svg-wrapper {
+		touch-action: manipulation;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	.tooth-svg-wrapper.selected,
+	.tooth-svg-wrapper.touch-zoomed {
+		transform: translateY(-6px) scale(1.2) translateZ(0) !important;
+		z-index: 50 !important;
+		box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.4), 0 0 0 2.5px var(--teal) !important;
+		background-color: var(--odontogram-surface-hover) !important;
+	}
+
+	.tooth-svg-wrapper.selected .tooth-svg-element,
+	.tooth-svg-wrapper.touch-zoomed .tooth-svg-element {
+		filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3)) !important;
+	}
+
+	.tooth-surface-target {
+		stroke-width: 2.5px !important;
+	}
+}
+
+.tooth-touch-surface-hud {
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 60;
+	background-color: var(--odontogram-paper);
+	border: 1.5px solid var(--odontogram-border-strong);
+	border-radius: 18px;
+	padding: 8px 10px;
+	box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	pointer-events: auto;
+	animation: touchHudPop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+	max-width: calc(100vw - 20px);
+}
+
+.tooth-touch-surface-hud.top-pos {
+	bottom: calc(100% + 8px);
+}
+
+.tooth-touch-surface-hud.bottom-pos {
+	top: calc(100% + 8px);
+}
+
+@keyframes touchHudPop {
+	from {
+		opacity: 0;
+		transform: translateX(-50%) scale(0.92);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(-50%) scale(1);
+	}
+}
+
+.touch-surface-btn {
+	min-height: 44px;
+	min-width: 44px;
+	height: 44px;
+	padding: 4px 10px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: 0.01em;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	border: 1px solid var(--odontogram-border);
+	background-color: var(--odontogram-surface);
+	color: var(--odontogram-ink);
+	cursor: pointer;
+	touch-action: manipulation;
+	user-select: none;
+	-webkit-tap-highlight-color: transparent;
+	transition: all 0.15s ease;
+}
+
+.touch-surface-btn:active {
+	transform: scale(0.95);
+}
+
+.touch-surface-btn.active {
+	background-color: var(--teal) !important;
+	color: var(--paper-strong, #ffffff) !important;
+	border-color: var(--teal) !important;
+	box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+}
+
+.touch-quick-state-btn {
+	min-height: 44px;
+	min-width: 44px;
+	height: 44px;
+	padding: 4px 10px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 800;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	touch-action: manipulation;
+	user-select: none;
+	-webkit-tap-highlight-color: transparent;
+	transition: all 0.15s ease;
+}
+
+.touch-quick-state-btn:active {
+	transform: scale(0.95);
+}
+
 

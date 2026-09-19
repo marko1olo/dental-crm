@@ -1389,6 +1389,29 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 	const effectiveResorption = rootResorptionStage ?? rootResorption ?? 0;
 	const colors = getAnatomicalToothColors(state, material);
 
+	const [isTouchScreen, setIsTouchScreen] = useState<boolean>(() => {
+		if (typeof window !== "undefined") {
+			return (
+				window.innerWidth <= 768 ||
+				"ontouchstart" in window ||
+				(typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints) && navigator.maxTouchPoints > 0)
+			);
+		}
+		return false;
+	});
+
+	useEffect(() => {
+		const checkTouch = () => {
+			setIsTouchScreen(
+				window.innerWidth <= 768 ||
+				"ontouchstart" in window ||
+				(typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints) && navigator.maxTouchPoints > 0)
+			);
+		};
+		window.addEventListener("resize", checkTouch);
+		return () => window.removeEventListener("resize", checkTouch);
+	}, []);
+
 	const renderNumberBadge = () => {
 		const isLeftMolar = (number >= 16 && number <= 18) || (number >= 46 && number <= 48) || (number >= 54 && number <= 55) || (number >= 84 && number <= 85);
 		const isRightMolar = (number >= 26 && number <= 28) || (number >= 36 && number <= 38) || (number >= 64 && number <= 65) || (number >= 74 && number <= 75);
@@ -1400,8 +1423,8 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 
 		return (
 			<div className="relative flex flex-col items-center group/badge">
-				{/* Hover Quick Action Micro-HUD (Clinical Russian Presets) when no global stamp is active */}
-				{!activeStamp && onQuickStateChange && (
+				{/* Hover Quick Action Micro-HUD (Clinical Russian Presets) when no global stamp is active and not touch */}
+				{!activeStamp && onQuickStateChange && !isTouchScreen && (
 					<div
 						className={`tooth-hover-quick-hud absolute ${hudAlignClass} hidden group-hover:flex group-hover/badge:flex transition-all duration-200 z-40 items-center gap-1.5 px-2 py-1.5 rounded-2xl bg-[var(--odontogram-paper)]/95 border border-[var(--odontogram-border-strong)] shadow-2xl backdrop-blur-xl pointer-events-auto whitespace-nowrap ${
 							isTop ? "bottom-full mb-2" : "top-full mt-2"
@@ -1594,7 +1617,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 			tabIndex={0}
 			className={`tooth-svg-wrapper group relative ${isTop ? "top" : "bottom"} ${
 				isSelected ? "selected ring-2 ring-indigo-500/70" : ""
-			}`}
+			} ${isSelected && isTouchScreen ? "touch-zoomed" : ""}`}
 			data-tooth-id={number}
 			aria-label={`Зуб ${number}, ${TOOTH_STATE_LABELS[state]}`}
 			aria-pressed={isSelected ? true : undefined}
@@ -1715,6 +1738,135 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 				showPeriodontalBoneLoss={showPeriodontalBoneLoss}
 			/>
 			{!isTop && renderNumberBadge()}
+
+			{/* Mobile Touch Tap-to-Zoom Surface Inspector & 1-Click State HUD */}
+			{isSelected && isTouchScreen && !activeStamp && (
+				<div
+					className={`tooth-touch-surface-hud ${isTop ? "bottom-pos" : "top-pos"}`}
+					data-testid={`touch-zoom-hud-${number}`}
+					onClick={(e) => e.stopPropagation()}
+				>
+					<div className="flex items-center justify-between w-full gap-2 px-1 pb-1 border-b border-[var(--odontogram-border-subtle)] text-[11px]">
+						<span className="font-extrabold text-[var(--odontogram-ink)]">
+							Зуб {number}
+						</span>
+						<span className="text-[10px] text-[var(--odontogram-ink-muted)] font-medium">
+							{TOOTH_STATE_LABELS[state]}
+						</span>
+					</div>
+
+					{/* Surface Selection Row (>= 44x44px Touch Targets) */}
+					{useSurfaces && (
+						<div className="flex items-center gap-1.5 flex-wrap justify-center py-1">
+							{(isTop ? TOP_SURFACE_KEYS : BOTTOM_SURFACE_KEYS).map((sKey) => {
+								const geomKey = sKey === "P" ? "L" : sKey;
+								const isActive = isSurfaceActive(geomKey as AnatomicalSurfaceKey, surfaces);
+								const labelInfo = ANATOMICAL_SURFACE_LABELS_RU[geomKey as AnatomicalSurfaceKey];
+								const shortLabel = sKey === "O" ? "О (Жев)" : sKey === "V" ? "В (Вест)" : sKey === "P" ? "П (Небн)" : sKey === "L" ? "Я (Язычн)" : sKey === "M" ? "М (Медиал)" : sKey === "D" ? "Д (Дистал)" : "C (Шеечн)";
+								return (
+									<button
+										key={sKey}
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											onClick(e, number, sKey);
+										}}
+										className={`touch-surface-btn ${isActive ? "active" : ""}`}
+										title={`${labelInfo?.nameRu ?? sKey} зуба ${number}`}
+										data-testid={`touch-surface-btn-${number}-${sKey}`}
+									>
+										<span>{shortLabel}</span>
+									</button>
+								);
+							})}
+						</div>
+					)}
+
+					{/* 1-Click Clinical State Presets for Mobile Touch */}
+					{onQuickStateChange && (
+						<div className="flex items-center gap-1.5 flex-wrap justify-center pt-1 border-t border-[var(--odontogram-border-subtle)]">
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+									onQuickStateChange(targets, "Caries", surfaces);
+								}}
+								className="touch-quick-state-btn bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40"
+								title="Кариес"
+							>
+								<span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+								<span>Кариес</span>
+							</button>
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+									onQuickStateChange(targets, "Filled", surfaces);
+								}}
+								className="touch-quick-state-btn bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40"
+								title="Пломба"
+							>
+								<span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+								<span>Пломба</span>
+							</button>
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+									onQuickStateChange(targets, "Pulpitis", surfaces);
+								}}
+								className="touch-quick-state-btn bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40"
+								title="Пульпит"
+							>
+								<span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+								<span>Пульпит</span>
+							</button>
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+									onQuickStateChange(targets, "Crown", surfaces);
+								}}
+								className="touch-quick-state-btn bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40"
+								title="Коронка"
+							>
+								<span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+								<span>Коронка</span>
+							</button>
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+									onQuickStateChange(targets, "Missing", surfaces);
+								}}
+								className="touch-quick-state-btn bg-slate-500/15 hover:bg-slate-500 text-slate-800 dark:text-slate-300 hover:text-white border border-slate-500/40"
+								title="Удален"
+							>
+								<span className="w-2.5 h-2.5 rounded-full bg-slate-500" />
+								<span>Удален</span>
+							</button>
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+									onQuickStateChange(targets, "Healthy", surfaces);
+								}}
+								className="touch-quick-state-btn bg-teal-500/15 hover:bg-teal-500 text-teal-800 dark:text-teal-300 hover:text-white border border-teal-500/40"
+								title="Здоров"
+							>
+								<span className="w-2.5 h-2.5 rounded-full bg-teal-500" />
+								<span>Здоров</span>
+							</button>
+						</div>
+					)}
+				</div>
+			)}
 		</div>
 	);
 }, areToothWrapperPropsEqual);
@@ -2050,7 +2202,10 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 			num: number,
 			surface?: string,
 		) => {
-			const rect = e.currentTarget.getBoundingClientRect();
+			const wrapper =
+				(e.target as HTMLElement)?.closest(".tooth-svg-wrapper") ??
+				(e.currentTarget as HTMLElement);
+			const rect = wrapper.getBoundingClientRect();
 			onToothClick(num, rect, surface);
 		},
 		[onToothClick],
