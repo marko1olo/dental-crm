@@ -115,6 +115,7 @@
 	--primary-hover: var(--teal-dark);
 	--primary-muted: var(--teal-surface);
 	--primary-light: var(--teal-soft);
+	--primary-soft: var(--teal-soft);
 	--ok: var(--ok-fg);
 	--success: var(--ok-fg);
 	--warning: var(--warn-fg);

@@ -1013,9 +1013,9 @@ html.dark .sidebar .nav-item.active,
 	color: var(--ink);
 }
 .nav-item.active {
-	color: var(--teal-dark);
-	background: var(--teal-soft);
-	box-shadow: inset 3px 0 0 var(--teal);
+	color: var(--primary, var(--teal-dark));
+	background: var(--primary-soft, var(--teal-soft));
+	box-shadow: inset 3px 0 0 var(--primary, var(--teal));
 	font-weight: 600;
 }
 [data-theme="dark"] .nav-item.active,

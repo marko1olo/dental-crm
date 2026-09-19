@@ -1369,8 +1369,7 @@ export function ImagingView(props: ImagingViewProps) {
 													}))
 												}
 											>
-												<Contrast size={14} className="mr-1 shrink-0" />
-												<span>Негатив</span>
+												<Contrast aria-hidden="true" />
 											</button>
 											<button
 												className="viewer-tool-button"
