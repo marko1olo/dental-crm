@@ -614,73 +614,55 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 
 				let diaryId: string;
 				if (existing) {
+					/*
+					 * АТОМАРНЫЙ ЧАСТИЧНЫЙ UPDATE (DEFECT #MULTI-DEVICE-LWW):
+					 * БЫЛО: в .set({...}) безусловно передавались все клинические поля
+					 * через `data.X !== undefined ? data.X : existing.X`.
+					 * При одновременной работе нескольких устройств (например, врач на планшете
+					 * пишет анамнез, а ассистент на десктопе отмечает лоток или статус)
+					 * снимок existing одного устройства затирал свежие данные другого.
+					 * СТАЛО: в diaryUpdateData попадают ТОЛЬКО поля, переданные в запросе
+					 * (data.X !== undefined). Непереданные клинические поля не затрагиваются.
+					 */
+					const diaryUpdateData: Partial<typeof visitDiaries.$inferInsert> = {
+						updatedAt: new Date(),
+						draftAuthorId: userId,
+					};
+					if (!existing.authorId) {
+						diaryUpdateData.authorId = userId;
+					}
+					if (!existing.doctorId) {
+						diaryUpdateData.doctorId = userId;
+					}
+					if (data.anamnesis !== undefined) {
+						diaryUpdateData.anamnesis = data.anamnesis;
+					}
+					if (data.statusLocalis !== undefined) {
+						diaryUpdateData.statusLocalis = data.statusLocalis;
+					}
+					if (data.diagnosisIcd10 !== undefined) {
+						diaryUpdateData.diagnosisIcd10 = data.diagnosisIcd10;
+					}
+					if (data.diagnosisTooth !== undefined) {
+						diaryUpdateData.diagnosisTooth = data.diagnosisTooth;
+					}
+					if (data.treatmentDescription !== undefined) {
+						diaryUpdateData.treatmentDescription = data.treatmentDescription;
+					}
+					if (data.complications !== undefined) {
+						diaryUpdateData.complications = data.complications;
+					}
+					if (data.comorbidities !== undefined) {
+						diaryUpdateData.comorbidities = data.comorbidities;
+					}
+					if (data.instrumentTrayBarcode !== undefined) {
+						diaryUpdateData.instrumentTrayBarcode =
+							data.instrumentTrayBarcode.trim() || null;
+					}
+
 					const updatedRows = await tx
 						.update(visitDiaries)
-						// БЫЛО: `data.X ?? existing.X` по всем клиническим полям. Пустая
-						// строка — это не undefined, но фронтенд часто не присылает поле
-						// вовсе, и врач НЕ МОГ удалить ошибочно внесённый текст: он стирал
-						// поле, сохранял, а прежняя запись молча возвращалась. Для истории
-						// болезни это опаснее опечатки — в карте остаётся неверный анамнез
-						// или несуществующее осложнение.
-						// Теперь поле переписывается, если оно ПРИСУТСТВУЕТ в запросе
-						// (включая пустую строку), и сохраняется, только если не передано.
-						.set({
-							anamnesis:
-								data.anamnesis !== undefined
-									? data.anamnesis
-									: existing.anamnesis,
-							statusLocalis:
-								data.statusLocalis !== undefined
-									? data.statusLocalis
-									: existing.statusLocalis,
-							diagnosisIcd10:
-								data.diagnosisIcd10 !== undefined
-									? data.diagnosisIcd10
-									: existing.diagnosisIcd10,
-							diagnosisTooth:
-								data.diagnosisTooth !== undefined
-									? data.diagnosisTooth
-									: existing.diagnosisTooth,
-							treatmentDescription:
-								data.treatmentDescription !== undefined
-									? data.treatmentDescription
-									: existing.treatmentDescription,
-							complications:
-								data.complications !== undefined
-									? data.complications
-									: existing.complications,
-							comorbidities:
-								data.comorbidities !== undefined
-									? data.comorbidities
-									: existing.comorbidities,
-							updatedAt: new Date(),
-							/*
-							 * Лоток в draft (DEFECT #33).
-							 * БЫЛО: пустая строка писалась как ""; клиент опускал
-							 * поле при clear → existing barcode оставался.
-							 * СТАЛО: поле есть → trim; пусто → null.
-							 */
-							instrumentTrayBarcode:
-								data.instrumentTrayBarcode !== undefined
-									? data.instrumentTrayBarcode.trim() || null
-									: existing.instrumentTrayBarcode,
-							/*
-							 * DEFECT #40: progressive author/doctor + last draft editor.
-							 * БЫЛО: draft UPDATE не трогал authorId/doctorId/draftAuthorId.
-							 * Insert (#35) пишет их только при ПЕРВОМ create. Legacy-строки
-							 * с null doctorId и черновики, созданные до #35, оставались
-							 * без врача до /lock — GET doctorFullName null, печать 043/у
-							 * и BI на незакрытых приёмах пустые. draftAuthorId застывал
-							 * на создателе, хотя правки вносит другой сотрудник.
-							 * СТАЛО: authorId/doctorId заполняются только если null
-							 * (не переписываем лечащего после ассистента→врач до lock);
-							 * draftAuthorId = текущий userId (последний редактор черновика).
-							 * Lock ceremony по-прежнему authoritative для doctorId.
-							 */
-							authorId: existing.authorId ?? userId,
-							doctorId: existing.doctorId ?? userId,
-							draftAuthorId: userId,
-						})
+						.set(diaryUpdateData)
 						.where(
 							and(
 								eq(visitDiaries.id, existing.id),

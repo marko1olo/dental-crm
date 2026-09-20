@@ -608,27 +608,33 @@ export async function updateAppointmentInDb(
 		}
 
 		/*
-		 * БЫЛО: UPDATE только по appointments.id. SELECT+FOR UPDATE выше уже с org,
-		 * но после patients (live cross-tenant PUT) область обязана быть на самом
-		 * UPDATE: не полагаться на порядок вызовов.
-		 * СТАЛО: organizationId + id в WHERE.
+		 * АТОМАРНЫЙ ЧАСТИЧНЫЙ UPDATE (DEFECT #MULTI-DEVICE-LWW):
+		 * БЫЛО: в .set({...}) безусловно передавались все поля через `input.X ?? existing.X`.
+		 * Если Врач с планшета обновлял comment/reason (без передачи status), а Администратор
+		 * на ресепшене одновременно менял status на "completed", снимок existing Врача содержал
+		 * старый status ("in_treatment"), и запись Врача молча затирала статус Администратора.
+		 * СТАЛО: в updateData включаются ТОЛЬКО переданные в input поля. Непереданные колонки
+		 * не затрагиваются в SQL UPDATE, защищая от LWW-гонок между устройствами.
 		 */
+		const updateData: Partial<typeof schema.appointments.$inferInsert> = {};
+
+		if (input.patientId !== undefined) updateData.patientId = input.patientId;
+		if (input.doctorUserId !== undefined) updateData.doctorUserId = input.doctorUserId;
+		if (input.assistantUserId !== undefined) updateData.assistantUserId = input.assistantUserId;
+		if (input.chairId !== undefined) updateData.chairId = input.chairId;
+		if (input.status !== undefined) updateData.status = input.status;
+		if (input.startsAt !== undefined) updateData.startsAt = new Date(startsAtMs);
+		if (input.endsAt !== undefined) updateData.endsAt = new Date(endsAtMs);
+		if (input.reason !== undefined) updateData.reason = input.reason;
+		if (input.comment !== undefined) updateData.comment = input.comment;
+
+		if (Object.keys(updateData).length === 0) {
+			return existing;
+		}
+
 		const [row] = await tx
 			.update(schema.appointments)
-			.set({
-				patientId: input.patientId ?? existing.patientId,
-				doctorUserId: input.doctorUserId ?? existing.doctorUserId,
-				assistantUserId:
-					input.assistantUserId !== undefined
-						? input.assistantUserId
-						: existing.assistantUserId,
-				chairId: input.chairId ?? existing.chairId,
-				status: input.status ?? existing.status,
-				startsAt: new Date(startsAtMs),
-				endsAt: new Date(endsAtMs),
-				reason: input.reason !== undefined ? input.reason : existing.reason,
-				comment: input.comment !== undefined ? input.comment : existing.comment,
-			})
+			.set(updateData)
 			.where(
 				and(
 					eq(schema.appointments.organizationId, organizationId),

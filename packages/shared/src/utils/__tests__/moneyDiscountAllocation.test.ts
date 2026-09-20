@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { allocateGlobalDiscountCents } from "../money.js";
+import { allocateGlobalDiscountCents } from "../../money.js";
 
 describe("Exact Kopeck Global Discount Allocation (Mandate 8b)", () => {
 	it("divides 1000 RUB discount across 3 services of 3333.33 RUB with exact kopeck equality", () => {
@@ -33,11 +33,11 @@ describe("Exact Kopeck Global Discount Allocation (Mandate 8b)", () => {
 		assert.equal(totalAllocated, discountCents);
 	});
 
-	it("allocates discount proportionally with remainder placed on the last item with highest amount", () => {
+	it("allocates discount proportionally via Hamilton-Hare largest remainder method", () => {
 		const items = [
 			{ id: "treatment-a", amountCents: 200000n }, // 2000 RUB
 			{ id: "treatment-b", amountCents: 500000n }, // 5000 RUB
-			{ id: "treatment-c", amountCents: 500000n }, // 5000 RUB (last item with max amount)
+			{ id: "treatment-c", amountCents: 500000n }, // 5000 RUB
 			{ id: "treatment-d", amountCents: 100000n }, // 1000 RUB
 		];
 		// Total = 1300000n (13 000 RUB)
@@ -47,17 +47,20 @@ describe("Exact Kopeck Global Discount Allocation (Mandate 8b)", () => {
 		const result = allocateGlobalDiscountCents(items, discount);
 
 		// Base shares:
-		// A: 100001 * 200000 / 1300000 = 15384n
-		// B: 100001 * 500000 / 1300000 = 38461n
-		// C: 100001 * 500000 / 1300000 = 38461n
-		// D: 100001 * 100000 / 1300000 = 7692n
+		// A: 100001 * 200000 / 1300000 = 15384n (remainder 10/13)
+		// B: 100001 * 500000 / 1300000 = 38461n (remainder 12/13)
+		// C: 100001 * 500000 / 1300000 = 38461n (remainder 12/13)
+		// D: 100001 * 100000 / 1300000 = 7692n  (remainder 5/13)
 		// Sum of base shares: 15384 + 38461 + 38461 + 7692 = 99998n
 		// Remainder = 100001 - 99998 = 3n
-		// Max amount is 500000n (shared by B and C).
-		// Remainder lands on treatment-c (last item with max amount): 38461 + 3 = 38464n.
-		assert.equal(result.get("treatment-a"), 15384n);
-		assert.equal(result.get("treatment-b"), 38461n);
-		assert.equal(result.get("treatment-c"), 38464n);
+		// Hamilton-Hare method distributes the 3 remainder pennies to the 3 items with highest fractional parts:
+		// B (12/13) -> +1n (38462n)
+		// C (12/13) -> +1n (38462n)
+		// A (10/13) -> +1n (15385n)
+		// D (5/13)  -> +0n (7692n)
+		assert.equal(result.get("treatment-a"), 15385n);
+		assert.equal(result.get("treatment-b"), 38462n);
+		assert.equal(result.get("treatment-c"), 38462n);
 		assert.equal(result.get("treatment-d"), 7692n);
 
 		const totalAllocated = Array.from(result.values()).reduce((acc, v) => acc + v, 0n);
@@ -105,5 +108,33 @@ describe("Exact Kopeck Global Discount Allocation (Mandate 8b)", () => {
 		const zeroItems = [{ id: "free-1", amountCents: 0n }];
 		const resZeroItems = allocateGlobalDiscountCents(zeroItems, 5000n);
 		assert.equal(resZeroItems.get("free-1"), 0n);
+	});
+
+	it("prevents negative prices when discount is close to 100% and remainder exceeds item amount", () => {
+		// 3 cheap items of 10 cents (0.10 RUB), discount = 29 cents (0.29 RUB)
+		// Total amount = 30 cents
+		const items = [
+			{ id: "cheap-1", amountCents: 10n },
+			{ id: "cheap-2", amountCents: 10n },
+			{ id: "cheap-3", amountCents: 10n },
+		];
+		const discount = 29n;
+
+		const res = allocateGlobalDiscountCents(items, discount);
+
+		// With naive remainder dump, cheap-3 would get 9 + 2 = 11 cents discount (net price: -1 cent!)
+		// With Hamilton-Hare, remainder of 2 cents is distributed 1 cent to cheap-2 and 1 cent to cheap-3:
+		assert.equal(res.get("cheap-1"), 9n);
+		assert.equal(res.get("cheap-2"), 10n);
+		assert.equal(res.get("cheap-3"), 10n);
+
+		// Verify zero negative prices
+		for (const it of items) {
+			const net = it.amountCents - (res.get(it.id) ?? 0n);
+			assert.ok(net >= 0n, `Item ${it.id} must not have negative net amount: ${net}`);
+		}
+
+		const totalAllocated = Array.from(res.values()).reduce((acc, v) => acc + v, 0n);
+		assert.equal(totalAllocated, discount);
 	});
 });

@@ -268,10 +268,12 @@ function assertWholeKopecks(value: Kopecks): void {
 
 /**
  * Распределяет глобальную скидку (в копейках / центах) между позициями счёта
- * строго пропорционально их стоимости, без потери ни одной копейки.
+ * строго пропорционально их стоимости методом наибольшего остатка Гамильтона-Хэра (Hamilton-Hare),
+ * без потери ни одной копейки и без риска отрицательных цен (Мандат 8b).
  *
- * Остаток от округления целочисленного деления (remainder) падает на
- * последнюю позицию с наибольшей суммой, исключая расхождения в 1 копейку (Мандат 8b).
+ * Остаток от округления целочисленного деления распределяется по 1 копейке
+ * на позиции с наибольшим дробным остатком, гарантируя строгое равенство сумм
+ * и отсутствие отрицательных цен даже при 99% скидках.
  *
  * @param items Массив позиций с id и стоимостью в копейках (bigint)
  * @param totalDiscountCents Сумма скидки в копейках (bigint)
@@ -312,32 +314,53 @@ export function allocateGlobalDiscountCents(
 			: totalDiscountCents;
 
 	let allocatedTotal = 0n;
-	for (const item of items) {
+	interface ItemRemainder {
+		id: string;
+		amountCents: bigint;
+		remainder: bigint;
+		index: number;
+	}
+	const itemRemainders: ItemRemainder[] = [];
+
+	for (let i = 0; i < items.length; i++) {
+		const item = items[i]!;
 		if (item.amountCents <= 0n) {
 			result.set(item.id, 0n);
 			continue;
 		}
 		const share = (effectiveDiscount * item.amountCents) / totalAmountCents;
+		const rem = (effectiveDiscount * item.amountCents) % totalAmountCents;
 		result.set(item.id, share);
 		allocatedTotal += share;
+		itemRemainders.push({
+			id: item.id,
+			amountCents: item.amountCents,
+			remainder: rem,
+			index: i,
+		});
 	}
 
-	const remainder = effectiveDiscount - allocatedTotal;
-	if (remainder > 0n) {
-		// Ищем последнюю позицию с максимальной суммой
-		let maxAmount = -1n;
-		let targetItem: { id: string; amountCents: bigint } | null = null;
-
-		for (const item of items) {
-			if (item.amountCents >= maxAmount) {
-				maxAmount = item.amountCents;
-				targetItem = item;
+	let remainder = effectiveDiscount - allocatedTotal;
+	if (remainder > 0n && itemRemainders.length > 0) {
+		// Сортируем остатки по убыванию (метод Гамильтона-Хэра).
+		// Стабильные tie-breakers: больший amountCents, затем больший индекс
+		itemRemainders.sort((a, b) => {
+			if (b.remainder !== a.remainder) {
+				return b.remainder > a.remainder ? 1 : -1;
 			}
-		}
+			if (b.amountCents !== a.amountCents) {
+				return b.amountCents > a.amountCents ? 1 : -1;
+			}
+			return b.index - a.index;
+		});
 
-		if (targetItem) {
-			const currentShare = result.get(targetItem.id) ?? 0n;
-			result.set(targetItem.id, currentShare + remainder);
+		for (let i = 0; i < itemRemainders.length && remainder > 0n; i++) {
+			const candidate = itemRemainders[i]!;
+			const currentShare = result.get(candidate.id) ?? 0n;
+			if (currentShare < candidate.amountCents) {
+				result.set(candidate.id, currentShare + 1n);
+				remainder -= 1n;
+			}
 		}
 	}
 
