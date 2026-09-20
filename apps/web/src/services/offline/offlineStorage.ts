@@ -876,12 +876,35 @@ export async function saveOfflineDraft<T = unknown>(
 }
 
 /**
+ * Синхронный мгновенный доступ к черновику из L1 оперативной памяти (0 мс, 0 байт I/O).
+ * Защищает от лагов и фризов интерфейса при активном вводе текста в карте 043/у.
+ */
+export function getSynchronousDraft<T = unknown>(draftKey: string): OfflineDraft<T> | null {
+	const memDraft = (inMemoryDraftsMap.get(draftKey) as OfflineDraft<T>) || null;
+	if (memDraft) return memDraft;
+	return getLocalStorageDraft<T>(draftKey);
+}
+
+/**
+ * Синхронный мгновенный доступ к черновику визита (SOAP дневник 043/у) из L1 RAM (0 мс).
+ */
+export function loadVisitDraftSync<T = unknown>(visitId: string): OfflineDraft<T> | null {
+	return getSynchronousDraft<T>(`${VISIT_DRAFT_KEY_PREFIX}${visitId}`);
+}
+
+/**
  * Загрузка черновика по ключу
  * (с многоуровневым чтением IndexedDB -> chunked LocalStorage -> in-memory buffer)
  */
 export async function loadOfflineDraft<T = unknown>(
 	draftKey: string,
 ): Promise<OfflineDraft<T> | null> {
+	// 0ms L1 RAM Fast Path: if actively typed in-memory draft is fresh (< 5 min), return immediately without IDB disk queue
+	const memDraft = (inMemoryDraftsMap.get(draftKey) as OfflineDraft<T>) || null;
+	if (memDraft && memDraft.updatedAtMs && Date.now() - memDraft.updatedAtMs < 300_000) {
+		return memDraft;
+	}
+
 	let idbDraft: OfflineDraft<T> | null = null;
 	try {
 		idbDraft = await withIdbTransactionRetry(async (db) => {
@@ -902,7 +925,6 @@ export async function loadOfflineDraft<T = unknown>(
 	}
 
 	const localDraft = getLocalStorageDraft<T>(draftKey);
-	const memDraft = (inMemoryDraftsMap.get(draftKey) as OfflineDraft<T>) || null;
 
 	const candidates = [idbDraft, localDraft, memDraft].filter(
 		(d): d is OfflineDraft<T> => Boolean(d),

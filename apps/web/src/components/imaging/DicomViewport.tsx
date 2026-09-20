@@ -344,6 +344,17 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 			if (glRef.current) {
 				disposeWebGlRenderingContext(glRef.current);
 				glRef.current = null;
+			} else if (canvasRef.current) {
+				try {
+					const webglContext =
+						canvasRef.current.getContext("webgl") ||
+						canvasRef.current.getContext("experimental-webgl");
+					if (webglContext) {
+						disposeWebGlRenderingContext(webglContext);
+					}
+				} catch {
+					// 2D context already bound
+				}
 			}
 			if (canvasRef.current) {
 				const ctx = canvasRef.current.getContext("2d");
