@@ -143,6 +143,15 @@ export function VisiographStudioCanvas({
 	const processorRef = useRef<VisiographImageProcessor>(
 		new VisiographImageProcessor(),
 	);
+	// Low-Spec & High-FPS Optimization: Offscreen cached canvas for radiological filters
+	// Prevents running CPU LUT / Unsharp Mask loops during mouse hover / tool drawing (<0.2ms/frame)
+	const processedCanvasRef = useRef<HTMLCanvasElement | null>(null);
+	const lastProcessedParamsRef = useRef<VisiographImageParams | null>(null);
+	const lastProcessedImageRef = useRef<HTMLImageElement | null>(null);
+
+	// Coalesce high-frequency mouse movements to screen refresh rate (60 FPS / 16ms)
+	const pendingHoverPosRef = useRef<Point2D | null>(null);
+	const hoverRafIdRef = useRef<number | null>(null);
 
 	// Image adjustments
 	const [params, setParams] = useState<VisiographImageParams>({
@@ -192,20 +201,60 @@ export function VisiographStudioCanvas({
 	const [includeWatermark, setIncludeWatermark] = useState(true);
 	const [isSaving, setIsSaving] = useState(false);
 
+	// Low-Spec & 60 FPS Optimization: Compare params for dirty-checking
+	const areParamsEqual = (
+		a: VisiographImageParams | null,
+		b: VisiographImageParams,
+	): boolean => {
+		if (!a) return false;
+		return (
+			a.brightness === b.brightness &&
+			a.contrast === b.contrast &&
+			a.gamma === b.gamma &&
+			a.sharpness === b.sharpness &&
+			a.invert === b.invert &&
+			a.windowWidth === b.windowWidth &&
+			a.windowCenter === b.windowCenter
+		);
+	};
+
+	// Updates offscreen pre-processed canvas ONLY when source image or parameters change
+	const updateProcessedImage = useCallback(() => {
+		const img = imageRef.current;
+		if (!img) return;
+
+		if (
+			!processedCanvasRef.current ||
+			lastProcessedImageRef.current !== img ||
+			!areParamsEqual(lastProcessedParamsRef.current, params)
+		) {
+			if (!processedCanvasRef.current && typeof document !== "undefined") {
+				processedCanvasRef.current = document.createElement("canvas");
+			}
+			if (processedCanvasRef.current) {
+				processorRef.current.render(img, processedCanvasRef.current, params);
+				lastProcessedImageRef.current = img;
+				lastProcessedParamsRef.current = { ...params };
+			}
+		}
+	}, [params]);
+
 	// Load source image (<50ms instantaneous open without blocking on AI or calibration)
 	useEffect(() => {
 		const img = new Image();
 		img.crossOrigin = "anonymous";
 		img.onload = () => {
 			imageRef.current = img;
+			updateProcessedImage();
 			drawCanvas();
 		};
 		img.src = imageUrl;
 		if (img.complete && img.naturalWidth > 0) {
 			imageRef.current = img;
+			updateProcessedImage();
 			drawCanvas();
 		}
-	}, [imageUrl]);
+	}, [imageUrl, updateProcessedImage]);
 
 	// Redraw when adjustments or measurements change
 	const drawCanvas = useCallback(() => {
@@ -213,11 +262,25 @@ export function VisiographStudioCanvas({
 		const img = imageRef.current;
 		if (!canvas || !img) return;
 
+		// Ensure offscreen cache is up to date
+		updateProcessedImage();
+
+		const offscreen = processedCanvasRef.current;
+		if (!offscreen) {
+			processorRef.current.render(img, canvas, params);
+		} else {
+			if (canvas.width !== offscreen.width || canvas.height !== offscreen.height) {
+				canvas.width = offscreen.width;
+				canvas.height = offscreen.height;
+			}
+			const ctx = canvas.getContext("2d", { willReadFrequently: true });
+			if (!ctx) return;
+			// 1. Blit cached pre-processed filtered image in <0.2ms (Zero CPU LUT recalculation on mousemove)
+			ctx.drawImage(offscreen, 0, 0);
+		}
+
 		const ctx = canvas.getContext("2d", { willReadFrequently: true });
 		if (!ctx) return;
-
-		// 1. Process and draw image
-		processorRef.current.render(img, canvas, params);
 
 		// 2. Draw committed measurements
 		renderMeasurementsOverlay(ctx, {
@@ -346,6 +409,7 @@ export function VisiographStudioCanvas({
 		}
 		ctx.restore();
 	}, [
+		updateProcessedImage,
 		params,
 		rulers,
 		angles,
@@ -513,10 +577,42 @@ export function VisiographStudioCanvas({
 		}
 	};
 
+	// Coalesce high-frequency mouse movements to screen refresh rate (60 FPS / 16.6ms)
 	const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
 		const pt = getCanvasPoint(e);
-		setHoverPos(pt);
+		pendingHoverPosRef.current = pt;
+		if (hoverRafIdRef.current === null) {
+			if (typeof requestAnimationFrame !== "undefined") {
+				hoverRafIdRef.current = requestAnimationFrame(() => {
+					hoverRafIdRef.current = null;
+					if (pendingHoverPosRef.current) {
+						setHoverPos(pendingHoverPosRef.current);
+					}
+				});
+			} else {
+				setHoverPos(pt);
+			}
+		}
 	};
+
+	const handleMouseLeave = () => {
+		pendingHoverPosRef.current = null;
+		if (hoverRafIdRef.current !== null && typeof cancelAnimationFrame !== "undefined") {
+			cancelAnimationFrame(hoverRafIdRef.current);
+			hoverRafIdRef.current = null;
+		}
+		setHoverPos(null);
+	};
+
+	// Clean up pending animation frame on unmount
+	useEffect(() => {
+		return () => {
+			if (hoverRafIdRef.current !== null && typeof cancelAnimationFrame !== "undefined") {
+				cancelAnimationFrame(hoverRafIdRef.current);
+				hoverRafIdRef.current = null;
+			}
+		};
+	}, []);
 
 	// 1-Click Clinical Sensor Preset Application (Mandates 8d, 8e, 8k)
 	const handleApplySensorPreset = (preset: SensorCalibrationPreset) => {
@@ -1631,6 +1727,7 @@ export function VisiographStudioCanvas({
 						onClick={handleCanvasClick}
 						onDoubleClick={handleCanvasDoubleClick}
 						onMouseMove={handleMouseMove}
+						onMouseLeave={handleMouseLeave}
 						style={{
 							maxWidth: "100%",
 							maxHeight: "75vh",

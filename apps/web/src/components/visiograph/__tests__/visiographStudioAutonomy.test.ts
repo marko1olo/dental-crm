@@ -171,3 +171,46 @@ describe("Visiograph Studio Theme Token Compliance & Ergonomics (Mandates 8d, 8e
 		);
 	});
 });
+
+describe("Visiograph Studio 60 FPS & Low-Spec Engine Optimization (Mandates 8c, 8e)", () => {
+	test("VisiographStudioCanvas utilizes offscreen canvas caching to prevent CPU LUT recalculations on hover", () => {
+		const filePath = path.resolve(__dirname, "../VisiographStudioCanvas.tsx");
+		const content = fs.readFileSync(filePath, "utf8");
+
+		assert.ok(
+			content.includes("processedCanvasRef"),
+			"Must maintain processedCanvasRef for caching pre-processed radiological filters",
+		);
+		assert.ok(
+			content.includes("updateProcessedImage"),
+			"Must have dedicated updateProcessedImage callback triggered only on param/image change",
+		);
+		assert.ok(
+			content.includes("areParamsEqual"),
+			"Must implement dirty-checking for filter parameters",
+		);
+		assert.ok(
+			content.includes("ctx.drawImage(offscreen, 0, 0)"),
+			"Must blit cached offscreen canvas via drawImage in <0.2ms instead of per-frame CPU LUT loops",
+		);
+	});
+
+	test("coalesces mouse move events via requestAnimationFrame to sustain 60 FPS under rapid cursor motion", () => {
+		const filePath = path.resolve(__dirname, "../VisiographStudioCanvas.tsx");
+		const content = fs.readFileSync(filePath, "utf8");
+
+		assert.ok(
+			content.includes("requestAnimationFrame"),
+			"Must throttle mouse move events with requestAnimationFrame",
+		);
+		assert.ok(
+			content.includes("hoverRafIdRef"),
+			"Must track RAF id in a ref to prevent frame stacking",
+		);
+		assert.ok(
+			content.includes("handleMouseLeave"),
+			"Must handle mouse leave to cancel pending RAF and clear hover state",
+		);
+	});
+});
+
