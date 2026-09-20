@@ -2012,14 +2012,18 @@ export function useVisitLogic({
 			if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
 				try {
 					mediaRecorderRef.current.stop();
-				} catch {}
+				} catch (err: unknown) {
+					logger.warn("[useVisitLogic] Failed to stop mediaRecorder on unmount:", err);
+				}
 				mediaRecorderRef.current = null;
 			}
 			if (mediaStreamRef.current) {
 				mediaStreamRef.current.getTracks().forEach((track) => {
 					try {
 						track.stop();
-					} catch {}
+					} catch (err: unknown) {
+						logger.warn("[useVisitLogic] Failed to stop mediaStream track on unmount:", err);
+					}
 				});
 				mediaStreamRef.current = null;
 			}

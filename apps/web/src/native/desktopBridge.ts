@@ -18,6 +18,7 @@ import {
 	type ClinicalAudioFeedbackType,
 	type ParsedGs1DataMatrix,
 } from "./mobileBridge";
+import { logger } from "../utils/logger";
 
 export interface DesktopSerialPortInfo {
 	path: string;
@@ -245,7 +246,8 @@ export async function listDesktopPrinters(): Promise<DesktopPrinterInfo[]> {
 	if (!api || !api.listPrinters) return [];
 	try {
 		return await api.listPrinters();
-	} catch {
+	} catch (err: unknown) {
+		logger.warn("[desktopBridge] listDesktopPrinters failed:", err);
 		return [];
 	}
 }
@@ -362,7 +364,8 @@ export async function listDesktopSerialPorts(): Promise<DesktopSerialPortInfo[]>
 	if (!api) return [];
 	try {
 		return await api.listSerialPorts();
-	} catch {
+	} catch (err: unknown) {
+		console.warn("[desktopBridge] listSerialPorts failed:", err);
 		return [];
 	}
 }
@@ -375,7 +378,8 @@ export async function listDesktopTwainDevices(): Promise<DesktopTwainDevice[]> {
 	if (!api) return [];
 	try {
 		return await api.listTwainDevices();
-	} catch {
+	} catch (err: unknown) {
+		console.warn("[desktopBridge] listTwainDevices failed:", err);
 		return [];
 	}
 }
@@ -628,7 +632,9 @@ export async function getDesktopLocalServerStatus() {
 	if (api?.getLocalServerStatus) {
 		try {
 			return await api.getLocalServerStatus();
-		} catch {}
+		} catch (err: unknown) {
+			logger.warn("[desktopBridge] getLocalServerStatus failed:", err);
+		}
 	}
 	return {
 		isRunning: true,
@@ -697,7 +703,8 @@ export async function unwatchDesktopDicomFolder(
 	if (!api) return { success: false };
 	try {
 		return await api.unwatchLocalDicomFolder(folderPath);
-	} catch {
+	} catch (err: unknown) {
+		logger.warn("[desktopBridge] unwatchLocalDicomFolder failed:", err);
 		return { success: false };
 	}
 }
@@ -761,7 +768,8 @@ export async function toggleDesktopFullScreen(flag?: boolean): Promise<DesktopWi
 	if (api?.toggleFullScreen) {
 		try {
 			return await api.toggleFullScreen(flag);
-		} catch {
+		} catch (err: unknown) {
+			logger.warn("[desktopBridge] native toggleFullScreen failed, falling back to Web API:", err);
 			// Fall through to standard Web Fullscreen API
 		}
 	}
@@ -776,7 +784,8 @@ export async function toggleDesktopFullScreen(flag?: boolean): Promise<DesktopWi
 				await document.exitFullscreen();
 				return { isFullScreen: false, isKiosk: false, isMaximized: false };
 			}
-		} catch {
+		} catch (err: unknown) {
+			logger.warn("[desktopBridge] document fullscreen request/exit failed:", err);
 			// Ignore fullscreen restrictions
 		}
 	}
@@ -792,7 +801,8 @@ export async function toggleDesktopKioskMode(flag?: boolean): Promise<DesktopWin
 	if (api?.toggleKioskMode) {
 		try {
 			return await api.toggleKioskMode(flag);
-		} catch {
+		} catch (err: unknown) {
+			logger.warn("[desktopBridge] native toggleKioskMode failed, falling back:", err);
 			// Fall through
 		}
 	}
@@ -810,7 +820,8 @@ export async function getDesktopWindowState(): Promise<DesktopWindowState> {
 	if (api?.getWindowState) {
 		try {
 			return await api.getWindowState();
-		} catch {
+		} catch (err: unknown) {
+			logger.warn("[desktopBridge] native getWindowState failed, falling back:", err);
 			// Fall through
 		}
 	}

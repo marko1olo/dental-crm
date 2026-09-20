@@ -117,21 +117,22 @@ function imagingDescriptionTemplate(
 }
 
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import { lazyWithRetry } from "./lib/lazyWithRetry";
 // Русское склонение счётного слова: «1 находка», «2 находки», «5 находок».
 import { countLabel } from "./AppHelpers";
 
 // Mandate 8s / Tier 3: Ленивая загрузка тяжелых 3D DICOM / КТ движков для защиты 5400 RPM HDD
-const CbctMprWorkspace = lazy(() =>
+const CbctMprWorkspace = lazyWithRetry(() =>
 	import("./components/dicom/CbctMprWorkspace").then((m) => ({
 		default: m.CbctMprWorkspace,
 	})),
 );
-const Cornerstone3DViewer = lazy(() =>
+const Cornerstone3DViewer = lazyWithRetry(() =>
 	import("./components/dicom/Cornerstone3DViewer").then((m) => ({
 		default: m.Cornerstone3DViewer,
 	})),
 );
-const PanoramicRendererWindow = lazy(() =>
+const PanoramicRendererWindow = lazyWithRetry(() =>
 	import("./components/dicom/PanoramicRendererWindow").then((m) => ({
 		default: m.PanoramicRendererWindow,
 	})),
@@ -860,25 +861,29 @@ export function ImagingView(props: ImagingViewProps) {
 				</div>
 			</div>
 
-			<section className="imaging-patient-strip" aria-label="Контекст снимков">
-				<article>
+			<section className="imaging-patient-strip flex flex-col sm:grid gap-1.5 sm:gap-2.5" aria-label="Контекст снимков">
+				<article className="min-w-0 w-full">
 					<span>Пациент</span>
-					<strong>{activePatient?.fullName ?? "Пациент не выбран"}</strong>
-					<small>{activeAppointment?.reason ?? "текущий прием"}</small>
+					<strong className="break-words [word-break:normal] [overflow-wrap:break-word] min-w-0 font-bold">
+						{activePatient?.fullName ?? "Пациент не выбран"}
+					</strong>
+					<small className="truncate">{activeAppointment?.reason ?? "текущий прием"}</small>
 				</article>
-				<article>
-					<span>В ленте</span>
-					<strong>{activeImagingStudies?.length ?? 0}</strong>
-					<small>локально и на сервере</small>
-				</article>
-				<article>
-					<span>Режим</span>
-					<strong>{selectedImagingViewerPlan?.label ?? "просмотрщик"}</strong>
-					<small>
-						{selectedImagingViewerPlan?.warnings[0] ??
-							"клинический просмотр"}
-					</small>
-				</article>
+				<div className="grid grid-cols-2 sm:contents gap-1.5 sm:gap-0">
+					<article className="min-w-0">
+						<span>В ленте</span>
+						<strong>{activeImagingStudies?.length ?? 0}</strong>
+						<small className="truncate">локально и на сервере</small>
+					</article>
+					<article className="min-w-0">
+						<span>Режим</span>
+						<strong className="truncate">{selectedImagingViewerPlan?.label ?? "просмотрщик"}</strong>
+						<small className="truncate">
+							{selectedImagingViewerPlan?.warnings[0] ??
+								"клинический просмотр"}
+						</small>
+					</article>
+				</div>
 			</section>
 
 			{browserImagingScanProgress || browserPickedImagingFolder ? (
@@ -1587,12 +1592,6 @@ export function ImagingView(props: ImagingViewProps) {
 														className="secondary-button"
 														type="button"
 														onClick={retryImagingViewerSessionSave}
-														aria-describedby={
-															!isOnline
-																? imagingViewerRetryMissingId
-																: undefined
-														}
-														disabled={!isOnline}
 													>
 														<RefreshCw aria-hidden="true" /> Повторить
 													</button>
@@ -1625,8 +1624,8 @@ export function ImagingView(props: ImagingViewProps) {
 													role="status"
 													aria-live="polite"
 												>
-													Повторная отправка просмотра станет доступна после
-													подключения к сети.
+													Внимание: нет подключения к сети. Повторная отправка
+													сохранит снимок локально и синхронизирует при появлении связи.
 												</p>
 											) : null}
 										</section>

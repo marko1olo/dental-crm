@@ -49,6 +49,7 @@ import {
 	type MobileBiometricAuthResult,
 	type ParsedGs1DataMatrix,
 } from "./mobileBridge";
+import { logger } from "../utils/logger";
 
 export type RuntimePlatform = "desktop_win" | "mobile_android" | "web_pwa";
 
@@ -172,7 +173,9 @@ export async function dispatchThermalLabelPrint(
 			let printWindow: Window | null = null;
 			try {
 				printWindow = window.open("", "_blank");
-			} catch {}
+			} catch (openErr: unknown) {
+				logger.warn("[HardwareDispatcher] window.open failed, trying iframe fallback", openErr);
+			}
 
 			const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Печать этикетки</title><style>@media print { body { margin: 0; padding: 2px; } }</style></head><body>${params.html}</body></html>`;
 
@@ -183,7 +186,9 @@ export async function dispatchThermalLabelPrint(
 				setTimeout(() => {
 					try {
 						printWindow?.print();
-					} catch {}
+					} catch (printErr: unknown) {
+						logger.warn("[HardwareDispatcher] printWindow.print() failed", printErr);
+					}
 				}, 250);
 				return {
 					success: true,
@@ -257,7 +262,9 @@ export async function dispatchEscPosReceiptPrint(
 			let printWindow: Window | null = null;
 			try {
 				printWindow = window.open("", "_blank");
-			} catch {}
+			} catch (openErr: unknown) {
+				logger.warn("[HardwareDispatcher] window.open for receipt failed, trying iframe fallback", openErr);
+			}
 
 			let receiptText = params.text;
 			if (!receiptText && params.rawEscPosBase64) {
@@ -266,7 +273,9 @@ export async function dispatchEscPosReceiptPrint(
 						const raw = atob(params.rawEscPosBase64);
 						receiptText = raw.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "").trim();
 					}
-				} catch {}
+				} catch (decodeErr: unknown) {
+					logger.warn("[HardwareDispatcher] atob decoding failed for rawEscPosBase64", decodeErr);
+				}
 			}
 
 			const content = params.html || `<pre style="font-family:monospace;font-size:11px;padding:3mm;">${receiptText || "Чек"}</pre>`;
@@ -279,7 +288,9 @@ export async function dispatchEscPosReceiptPrint(
 				setTimeout(() => {
 					try {
 						printWindow?.print();
-					} catch {}
+					} catch (printErr: unknown) {
+						logger.warn("[HardwareDispatcher] printWindow.print() for receipt failed", printErr);
+					}
 				}, 250);
 				return {
 					success: true,

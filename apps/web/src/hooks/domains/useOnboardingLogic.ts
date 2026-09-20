@@ -234,18 +234,14 @@ async function dismissOnboarding() {
 				pendingUiPreferencesSyncRef.current = null;
 				setUiPreferencesSyncError(null);
 			} catch (preferencesError) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(preferencesError as { status?: number })?.status ?? null,
-					),
-					"error",
+				logger.warn(
+					"[Onboarding] Background server UI preferences sync failed, preferences preserved locally",
+					preferencesError,
 				);
-				const message = uiPreferencesSyncErrorMessage(preferencesError);
 				pendingUiPreferencesSyncRef.current = null;
-				setUiPreferencesSyncError(message);
-				setError(message);
-				return;
+				setUiPreferencesSyncError(
+					uiPreferencesSyncErrorMessage(preferencesError),
+				);
 			}
 		}
 		if (!persistUiPreferences(savedPreferences)) {

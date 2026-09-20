@@ -382,7 +382,8 @@ export class HardwarePrinter {
 				return await this.printHtmlWithPopupFallback(printableHtml, {
 					downloadFilename: `receipt_${Date.now()}.html`,
 				});
-			} catch {
+			} catch (err: unknown) {
+				console.warn("[HardwarePrinter] Desktop OS thermal print fallback failed:", err);
 				return {
 					success: false,
 					status: "failed",
@@ -420,7 +421,8 @@ export class HardwarePrinter {
 				return await this.printHtmlWithPopupFallback(printableHtml, {
 					downloadFilename: `receipt_${Date.now()}.html`,
 				});
-			} catch {
+			} catch (printErr: unknown) {
+				console.warn("[HardwarePrinter] Web browser print fallback failed:", printErr);
 				return {
 					success: false,
 					status: "failed",
@@ -544,7 +546,9 @@ export class HardwarePrinter {
 			try {
 				window.focus();
 				window.print();
-			} catch (e) {}
+			} catch (e) {
+				console.warn("[thermal print template] window.print error:", e);
+			}
 		};
 	</script>
 </body>
@@ -583,7 +587,8 @@ export class HardwarePrinter {
 				"_blank",
 				"width=460,height=680,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes",
 			);
-		} catch {
+		} catch (popupErr: unknown) {
+			console.warn("[HardwarePrinter] window.open failed due to popup restriction:", popupErr);
 			printWindow = null;
 		}
 
@@ -801,7 +806,9 @@ export class HardwarePrinter {
 			try {
 				window.focus();
 				window.print();
-			} catch (e) {}
+			} catch (e) {
+				console.warn("[bank slip template] window.print error:", e);
+			}
 		};
 	</script>
 </body>

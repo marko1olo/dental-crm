@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useRef } from "react";
+import { logger } from "../utils/logger";
 
 export interface UseDesktopShortcutsOptions {
 	/** Callback for Ctrl+S / Cmd+S (Save active diary / document / record) */
@@ -128,7 +129,9 @@ export function dispatchDesktopShortcut(
 	if (typeof window === "undefined" || !window.dispatchEvent) return;
 	try {
 		window.dispatchEvent(new CustomEvent(`dente:shortcut:${shortcut}`, { bubbles: true }));
-	} catch {}
+	} catch (err: unknown) {
+		logger.warn("[useDesktopShortcuts] Failed to dispatch shortcut event:", err);
+	}
 }
 
 export function useDesktopShortcuts(options: UseDesktopShortcutsOptions = {}): void {
