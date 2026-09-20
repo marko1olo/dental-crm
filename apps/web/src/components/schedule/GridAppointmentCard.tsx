@@ -89,8 +89,8 @@ export interface GridAppointmentCardProps {
 	patientLookupMap: Map<string, any>;
 	staffLookupMap: Map<string, any>;
 	collisionMap: Map<string, any>;
-	patientNameFn?: (patients: any, patientId?: string | null) => string;
-	getPatientName?: (patients: any, patientId?: string | null) => string;
+	patientNameFn?: ((patients: any, patientId: string | null) => string) | undefined;
+	getPatientName?: ((patients: any, patientId: string | null) => string) | undefined;
 	dashboard: Dashboard;
 	timezone?: string | null;
 	toDateTimeLocalValue: (iso: string, timezone?: string | null) => string;
@@ -102,7 +102,7 @@ export interface GridAppointmentCardProps {
 	isNearRightEdge: boolean;
 	onAppointmentClick: (appt: Appointment) => void;
 	onSelectMobileAppt: (appt: Appointment) => void;
-	onQuickStatusChange?: (id: string, status: any) => void;
+	onQuickStatusChange?: ((id: string, status: any) => void) | undefined;
 	onAdjustDuration: (appt: Appointment, deltaMinutes: number) => void;
 	onShiftLateness: (appt: Appointment, deltaMinutes: number) => void;
 	onReassignChair: (appt: Appointment, chairId: string) => void;
