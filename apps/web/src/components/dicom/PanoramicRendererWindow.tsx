@@ -116,6 +116,7 @@ export function PanoramicRendererWindow({
 	authHeaders = {},
 }: PanoramicRendererWindowProps) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const canvasRectRef = useRef<DOMRect | null>(null);
 	const crossSectionCanvasRef = useRef<HTMLCanvasElement>(null);
 	const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
 	const workerRef = useRef<Worker | null>(null);
@@ -478,6 +479,12 @@ export function PanoramicRendererWindow({
 			}
 			rawPixelsRef.current = null;
 			if (canvasRef.current) {
+				try {
+					const gl = canvasRef.current.getContext("webgl2") || canvasRef.current.getContext("webgl");
+					if (gl) {
+						(gl as WebGLRenderingContext | WebGL2RenderingContext).getExtension("WEBGL_lose_context")?.loseContext();
+					}
+				} catch {}
 				const ctx = canvasRef.current.getContext("2d");
 				if (ctx)
 					ctx.clearRect(
@@ -491,6 +498,12 @@ export function PanoramicRendererWindow({
 				canvasRef.current.height = 0;
 			}
 			if (crossSectionCanvasRef.current) {
+				try {
+					const gl = crossSectionCanvasRef.current.getContext("webgl2") || crossSectionCanvasRef.current.getContext("webgl");
+					if (gl) {
+						(gl as WebGLRenderingContext | WebGL2RenderingContext).getExtension("WEBGL_lose_context")?.loseContext();
+					}
+				} catch {}
 				const ctx = crossSectionCanvasRef.current.getContext("2d");
 				if (ctx)
 					ctx.clearRect(
@@ -504,6 +517,12 @@ export function PanoramicRendererWindow({
 				crossSectionCanvasRef.current.height = 0;
 			}
 			if (offscreenCanvasRef.current) {
+				try {
+					const gl = offscreenCanvasRef.current.getContext("webgl2") || offscreenCanvasRef.current.getContext("webgl");
+					if (gl) {
+						(gl as WebGLRenderingContext | WebGL2RenderingContext).getExtension("WEBGL_lose_context")?.loseContext();
+					}
+				} catch {}
 				offscreenCanvasRef.current.width = 0;
 				offscreenCanvasRef.current.height = 0;
 				offscreenCanvasRef.current = null;
@@ -511,7 +530,17 @@ export function PanoramicRendererWindow({
 		};
 	}, []);
 
-	// Handle Canvas Mouse Move for HU Probe & Synchronized Crosshair
+	// Handle Canvas Mouse Move for HU Probe & Synchronized Crosshair (cached rect prevents layout thrashing)
+	const handleCanvasMouseEnter = () => {
+		if (canvasRef.current) {
+			canvasRectRef.current = canvasRef.current.getBoundingClientRect();
+		}
+	};
+
+	const handleCanvasMouseLeave = () => {
+		canvasRectRef.current = null;
+	};
+
 	const handleCanvasMouseMove = (
 		e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
 	) => {
@@ -519,7 +548,7 @@ export function PanoramicRendererWindow({
 		const raw = rawPixelsRef.current;
 		if (!canvas || !raw) return;
 
-		const rect = canvas.getBoundingClientRect();
+		const rect = canvasRectRef.current || (canvasRectRef.current = canvas.getBoundingClientRect());
 		const scaleX = raw.width / rect.width;
 		const scaleY = raw.height / rect.height;
 
@@ -808,8 +837,10 @@ export function PanoramicRendererWindow({
 						ref={canvasRef}
 						width={800}
 						height={300}
+						onMouseEnter={handleCanvasMouseEnter}
+						onMouseLeave={handleCanvasMouseLeave}
 						onMouseMove={handleCanvasMouseMove}
-						className="w-full h-full object-contain cursor-crosshair"
+						className="w-full h-full object-contain cursor-crosshair panoramic-canvas-overlay"
 					/>
 				</div>
 

@@ -176,6 +176,19 @@ export interface DesktopNativeApi {
 		timeoutMs?: number | undefined;
 		payloadJson: string;
 	}) => Promise<DesktopFiscalPrintResult>;
+	printFiscalReceiptSerial?: (params: {
+		port: string;
+		baudRate?: number | undefined;
+		protocol?: "atol" | "shtrih" | undefined;
+		timeoutMs?: number | undefined;
+		payloadJson: string;
+	}) => Promise<DesktopFiscalPrintResult>;
+	sendSerialCommand?: (params: {
+		port: string;
+		baudRate?: number | undefined;
+		dataHex: string;
+		timeoutMs?: number | undefined;
+	}) => Promise<{ success: boolean; responseHex?: string; error?: string }>;
 	printAtol10FiscalReceipt?: (params: {
 		host?: string;
 		port?: number;
@@ -714,6 +727,68 @@ export async function printDesktopShtrihMFiscalReceipt(params: {
 		protocol: "shtrih",
 		payload: params.payload,
 	});
+}
+
+/**
+ * Direct print on ATOL / Shtrikh-M fiscal registrar via COM/USB serial port in Desktop mode.
+ */
+export async function printDesktopFiscalReceiptSerial(params: {
+	port: string;
+	baudRate?: number | undefined;
+	protocol?: "atol" | "shtrih" | undefined;
+	payload: DesktopFiscalReceiptPayload;
+	timeoutMs?: number | undefined;
+}): Promise<DesktopFiscalPrintResult> {
+	const api = getDesktopNativeApi();
+	if (!api?.printFiscalReceiptSerial) {
+		return {
+			success: false,
+			error: "Прямое COM/USB serial подключение к кассе доступно в настольном приложении DENTE Desktop (.exe). В браузере используйте TCP-сервер или агент клиники.",
+		};
+	}
+
+	try {
+		return await api.printFiscalReceiptSerial({
+			port: params.port,
+			baudRate: params.baudRate ?? 115200,
+			protocol: params.protocol ?? "atol",
+			timeoutMs: params.timeoutMs,
+			payloadJson: JSON.stringify(params.payload),
+		});
+	} catch (err: unknown) {
+		const message = err instanceof Error ? err.message : "Ошибка COM-подключения к ККТ";
+		return { success: false, error: message };
+	}
+}
+
+/**
+ * Direct send of raw hex command to COM/USB serial port (dental sensor, barcode scanner, or controller).
+ */
+export async function sendDesktopSerialCommand(params: {
+	port: string;
+	baudRate?: number | undefined;
+	dataHex: string;
+	timeoutMs?: number | undefined;
+}): Promise<{ success: boolean; responseHex?: string; error?: string }> {
+	const api = getDesktopNativeApi();
+	if (!api?.sendSerialCommand) {
+		return {
+			success: false,
+			error: "Прямой доступ к COM/USB serial портам доступен только в настольном приложении DENTE Desktop (.exe).",
+		};
+	}
+
+	try {
+		return await api.sendSerialCommand({
+			port: params.port,
+			baudRate: params.baudRate ?? 9600,
+			dataHex: params.dataHex,
+			timeoutMs: params.timeoutMs,
+		});
+	} catch (err: unknown) {
+		const message = err instanceof Error ? err.message : "Ошибка передачи команды в COM-порт";
+		return { success: false, error: message };
+	}
 }
 
 /**

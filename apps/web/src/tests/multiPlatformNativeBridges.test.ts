@@ -16,6 +16,8 @@ import {
 	listDesktopSerialPorts,
 	listDesktopTwainDevices,
 	printDesktopFiscalReceiptTcp,
+	printDesktopFiscalReceiptSerial,
+	sendDesktopSerialCommand,
 	printDesktopDocumentSilent,
 	printDesktopA4DocumentSilent,
 	setupDesktopExitProtection,
@@ -70,6 +72,8 @@ import {
 	queueBatchedStorePut,
 	flushBatchedStoreWrites,
 	yieldToMainThread,
+	scheduleVisitDraftAutosave,
+	loadVisitDraft,
 } from "../services/offline/offlineStorage";
 import { disposeWebGlRenderingContext } from "@dental/shared";
 import { printA4Document } from "../lib/hardwarePrinting";
@@ -1042,6 +1046,86 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 		assert.equal(stats.buffersDisposed, 1);
 		assert.equal(stats.programsDisposed, 1);
 	});
+
+	await t.test("scheduleVisitDraftAutosave immediately registers in L1 in-memory map before debounce flush", async () => {
+		const visitId = "visit-turbo-1";
+		const testData = { complaints: "Острая боль 46 зуба", diagnosis: "K04.0 Пульпит" };
+
+		// Schedule autosave with 5000ms debounce
+		void scheduleVisitDraftAutosave(visitId, testData, "org-1", 5000);
+
+		// 0ms L1 RAM Read should immediately return the draft
+		const immediateDraft = await loadVisitDraft<{ complaints: string; diagnosis: string }>(visitId);
+		assert.ok(immediateDraft);
+		assert.equal(immediateDraft.data.complaints, "Острая боль 46 зуба");
+
+		// Clean up
+		clinicalDraftAutosaver.cancel(`dente_diary_draft_${visitId}`);
+	});
+
+	await t.test("Desktop Native Bridge routes serial fiscal print and raw serial commands", async () => {
+		const originalWindowDesc = Object.getOwnPropertyDescriptor(globalThis, "window");
+		let serialPrintedPort = "";
+		let serialSentData = "";
+
+		const mockDesktopNative: DesktopNativeApi = {
+			isDesktop: true,
+			platform: "win32",
+			version: "1.0.0",
+			listSerialPorts: async () => [{ path: "COM3", manufacturer: "Atol" }],
+			listTwainDevices: async () => [],
+			acquireTwainImage: async () => ({ success: true }),
+			printFiscalReceiptTcp: async () => ({ success: true }),
+			watchLocalDicomFolder: async () => ({ success: true }),
+			unwatchLocalDicomFolder: async () => ({ success: true }),
+			printFiscalReceiptSerial: async (params) => {
+				serialPrintedPort = params.port;
+				return { success: true, fiscalDocNumber: 12345 };
+			},
+			sendSerialCommand: async (params) => {
+				serialSentData = params.dataHex;
+				return { success: true, responseHex: "06" };
+			},
+		};
+
+		Object.defineProperty(globalThis, "window", {
+			value: {
+				denteDesktopNative: mockDesktopNative,
+				location: { hostname: "localhost" },
+			},
+			configurable: true,
+			writable: true,
+		});
+
+		try {
+			const res = await printDesktopFiscalReceiptSerial({
+				port: "COM3",
+				payload: {
+					operation: "sale",
+					items: [{ name: "Лечение кариеса", priceKopecks: 350000, quantity: 1, department: 1, paymentMethod: "full_payment" }],
+					payments: [{ type: "cash", amountKopecks: 350000 }],
+					taxationSystem: "usn_income",
+				},
+			});
+			assert.equal(res.success, true);
+			assert.equal(serialPrintedPort, "COM3");
+
+			const cmdRes = await sendDesktopSerialCommand({
+				port: "COM3",
+				dataHex: "05",
+			});
+			assert.equal(cmdRes.success, true);
+			assert.equal(serialSentData, "05");
+			assert.equal(cmdRes.responseHex, "06");
+		} finally {
+			if (originalWindowDesc) {
+				Object.defineProperty(globalThis, "window", originalWindowDesc);
+			} else {
+				delete (globalThis as any).window;
+			}
+		}
+	});
 });
+
 
 

@@ -1311,6 +1311,20 @@ export class ClinicalDraftAutosaveManager {
 				clearTimeout(existing.timer);
 			}
 
+			// Low-Spec 0ms L1 Hit: update in-memory draft map immediately before debounce write
+			const now = new Date();
+			const inMemDraft: OfflineDraft<T> = {
+				draftKey,
+				entityType,
+				entityId,
+				data,
+				updatedAt: now.toISOString(),
+				updatedAtMs: now.getTime(),
+				organizationId,
+				version: 1,
+			};
+			inMemoryDraftsMap.set(draftKey, inMemDraft as OfflineDraft<unknown>);
+
 			const entry: AutosaveEntry<T> = {
 				draftKey,
 				entityType,
@@ -1572,6 +1586,66 @@ export function scheduleOdontogramAutosave<T = unknown>(
 		key,
 		"ODONTOGRAM_STATUS",
 		patientId,
+		data,
+		organizationId,
+		debounceMs,
+	);
+}
+
+/**
+ * Хелпер автосохранения дневника визита (SOAP) с дебаунсом
+ */
+export function scheduleVisitDraftAutosave<T = unknown>(
+	visitId: string,
+	data: T,
+	organizationId?: string | undefined,
+	debounceMs = DEFAULT_CLINICAL_AUTOSAVE_DEBOUNCE_MS,
+): Promise<OfflineDraft<T>> {
+	const key = `${VISIT_DRAFT_KEY_PREFIX}${visitId}`;
+	return clinicalDraftAutosaver.scheduleAutosave<T>(
+		key,
+		"DIARY_043_DRAFT",
+		visitId,
+		data,
+		organizationId,
+		debounceMs,
+	);
+}
+
+/**
+ * Хелпер автосохранения рецепта / назначения (107-1/у) с дебаунсом
+ */
+export function schedulePrescriptionAutosave<T = unknown>(
+	id: string,
+	data: T,
+	organizationId?: string | undefined,
+	debounceMs = DEFAULT_CLINICAL_AUTOSAVE_DEBOUNCE_MS,
+): Promise<OfflineDraft<T>> {
+	const key = `${PRESCRIPTION_DRAFT_KEY_PREFIX}${id}`;
+	return clinicalDraftAutosaver.scheduleAutosave<T>(
+		key,
+		"PRESCRIPTION_107_1U",
+		id,
+		data,
+		organizationId,
+		debounceMs,
+	);
+}
+
+/**
+ * Хелпер автосохранения черновика приема в расписании с дебаунсом
+ */
+export function scheduleAppointmentAutosave<T = unknown>(
+	appointmentId: string,
+	data: T,
+	organizationId?: string | undefined,
+	debounceMs = DEFAULT_CLINICAL_AUTOSAVE_DEBOUNCE_MS,
+): Promise<OfflineDraft<T>> {
+	const key = `${APPOINTMENT_DRAFT_KEY_PREFIX}${appointmentId}`;
+	return clinicalDraftAutosaver.scheduleAutosave<T>(
+		key,
+		"APPOINTMENT_RECORD",
+		appointmentId,
 		data,
 		organizationId,
 		debounceMs,
