@@ -142,11 +142,15 @@ const DicomArchiveUploader = lazyWithRetry(() =>
 		default: m.DicomArchiveUploader,
 	})),
 );
+const CtPlanningToolsPanel = lazyWithRetry(() =>
+	import("./ctPlanningTools").then((module) => ({
+		default: module.CtPlanningToolsPanel,
+	})),
+);
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
 import { ShadowAnalystImageSlider } from "./components/imaging/ShadowAnalystImageSlider";
 import { ShadowAnalystReport } from "./components/imaging/ShadowAnalystReport";
-import { CtPlanningToolsPanel } from "./ctPlanningTools";
 import type { MprWindowPreset } from "./imagingUiLabels";
 
 import { type ToothState, useVisitStore } from "./store/visitStore";
@@ -1910,22 +1914,24 @@ export function ImagingView(props: ImagingViewProps) {
 							</article>
 						))}
 					</section>
-					<CtPlanningToolsPanel
-						canPlan={mprControlsReady}
-						activeTool={imagingViewerActiveTool}
-						activeQuickActionId={ctPlanningActiveQuickActionId}
-						onActivateTool={applyCtPlanningQuickAction}
-						selectedImplantId={ctPlanningImplantPlan?.itemId ?? null}
-						selectedImplantPlan={ctPlanningImplantPlan}
-						onSelectImplant={selectCtPlanningImplant}
-						localAnnotations={imagingViewerAnnotations}
-						annotationRefs={ctPlanningAnnotationRefs}
-						onCreateArtifact={createCtPlanningArtifact}
-						toolStateBundle={
-							dicomViewerWorkbenchManifest?.toolStateBundle ??
-							dicomViewerToolStateBundle
-						}
-					/>
+					<Suspense fallback={null}>
+						<CtPlanningToolsPanel
+							canPlan={mprControlsReady}
+							activeTool={imagingViewerActiveTool}
+							activeQuickActionId={ctPlanningActiveQuickActionId}
+							onActivateTool={applyCtPlanningQuickAction}
+							selectedImplantId={ctPlanningImplantPlan?.itemId ?? null}
+							selectedImplantPlan={ctPlanningImplantPlan}
+							onSelectImplant={selectCtPlanningImplant}
+							localAnnotations={imagingViewerAnnotations}
+							annotationRefs={ctPlanningAnnotationRefs}
+							onCreateArtifact={createCtPlanningArtifact}
+							toolStateBundle={
+								dicomViewerWorkbenchManifest?.toolStateBundle ??
+								dicomViewerToolStateBundle
+							}
+						/>
+					</Suspense>
 					<details className="clinical-mpr-advanced" open={mprControlsAutoOpen}>
 						<summary>
 							<span>Управление КТ-срезами</span>

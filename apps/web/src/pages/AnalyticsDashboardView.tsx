@@ -4,14 +4,17 @@ import {
 	BarChart3,
 	Building2,
 	Calendar,
+	Check,
+	ChevronDown,
 	DollarSign,
+	MoreHorizontal,
 	Printer,
 	RefreshCw,
 	TrendingUp,
 	Users,
 } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
 	Area,
 	AreaChart,
@@ -33,7 +36,11 @@ import { LostPatientsPanel } from "../components/analytics/LostPatientsPanel";
 import { EmptyState } from "../components/EmptyState.js";
 import { RecallListPanel } from "../components/patients/RecallListPanel";
 import { FreedSlotsPanel } from "../components/schedule/FreedSlotsPanel";
-import { MarketingRoiModal } from "../components/analytics/MarketingRoiModal";
+const MarketingRoiModal = lazy(() =>
+	import("../components/analytics/MarketingRoiModal").then((module) => ({
+		default: module.MarketingRoiModal,
+	})),
+);
 import { MarketingAttributionDashboard } from "../components/analytics/MarketingAttributionDashboard";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import {
@@ -124,6 +131,34 @@ export function AnalyticsDashboardView() {
 		"executive" | "operational" | "curators" | "lost_patients" | "freed_slots" | "marketing"
 	>("executive");
 	const [isMarketingRoiOpen, setIsMarketingRoiOpen] = useState(false);
+	const [isSectionMoreOpen, setIsSectionMoreOpen] = useState(false);
+	const [isDateMoreOpen, setIsDateMoreOpen] = useState(false);
+	const sectionMoreRef = useRef<HTMLDivElement>(null);
+	const dateMoreRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const handleClickOutside = (e: MouseEvent) => {
+			if (
+				sectionMoreRef.current &&
+				!sectionMoreRef.current.contains(e.target as Node)
+			) {
+				setIsSectionMoreOpen(false);
+			}
+			if (
+				dateMoreRef.current &&
+				!dateMoreRef.current.contains(e.target as Node)
+			) {
+				setIsDateMoreOpen(false);
+			}
+		};
+		if (isSectionMoreOpen || isDateMoreOpen) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, [isSectionMoreOpen, isDateMoreOpen]);
+
 	// Счётчик ручных повторов. Кнопка «Повторить» без него не работает: период
 	// не менялся, значит зависимости эффекта те же и он бы не перезапустился.
 	const [_retryToken, setRetryToken] = useState(0);
@@ -199,13 +234,30 @@ export function AnalyticsDashboardView() {
 
 		void load("initial");
 		const interval = setInterval(() => {
+			// Дропаем тяжелый фоновый опрос (6 параллельных HTTP-запросов и парсинг), когда вкладка скрыта (CPU & RAM saver)
+			if (typeof document !== "undefined" && document.hidden) {
+				return;
+			}
 			void load("background");
 		}, REFRESH_INTERVAL_MS);
+
+		const handleVisibilityChange = () => {
+			if (typeof document !== "undefined" && !document.hidden && mounted) {
+				void load("background");
+			}
+		};
+
+		if (typeof document !== "undefined") {
+			document.addEventListener("visibilitychange", handleVisibilityChange);
+		}
 
 		return () => {
 			mounted = false;
 			controller.abort();
 			clearInterval(interval);
+			if (typeof document !== "undefined") {
+				document.removeEventListener("visibilitychange", handleVisibilityChange);
+			}
 		};
 	}, [
 		dateRange,
@@ -276,25 +328,80 @@ export function AnalyticsDashboardView() {
 						))}
 					</div>
 
-					{/* Период (Compact 32px SegmentedControl) */}
+					{/* Период (Compact 32px SegmentedControl with ... menu for rare ranges) */}
 					<div className="analytics-segmented" role="radiogroup" aria-label="Выбор периода">
-						{DATE_RANGES.map((r) => (
+						{DATE_RANGES.slice(0, 3).map((r) => (
 							<button
 								key={r.value}
 								type="button"
 								className={`analytics-segmented-btn ${dateRange === r.value ? "analytics-segmented-btn--active" : ""}`}
-								onClick={() => setDateRange(r.value)}
+								onClick={() => {
+									setDateRange(r.value);
+									setIsDateMoreOpen(false);
+								}}
 								aria-checked={dateRange === r.value}
 								role="radio"
 							>
 								{r.label}
 							</button>
 						))}
+
+						{/* Меню редких периодов: Квартал, Год, Всё время */}
+						<div className="relative inline-flex items-center" ref={dateMoreRef}>
+							<button
+								type="button"
+								className={`analytics-segmented-btn inline-flex items-center gap-1 ${
+									DATE_RANGES.slice(3).some((r) => r.value === dateRange)
+										? "analytics-segmented-btn--active"
+										: ""
+								}`}
+								onClick={() => setIsDateMoreOpen((prev) => !prev)}
+								aria-expanded={isDateMoreOpen}
+								title="Выбрать расширенный период (Квартал, Год, Всё время)"
+							>
+								<span>
+									{DATE_RANGES.slice(3).find((r) => r.value === dateRange)?.label || "Период..."}
+								</span>
+								<ChevronDown
+									size={11}
+									className={`transition-transform duration-150 ${isDateMoreOpen ? "rotate-180" : ""}`}
+								/>
+							</button>
+
+							{isDateMoreOpen && (
+								<div
+									className="analytics-dropdown-menu absolute right-0 top-full mt-1 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl min-w-[130px] text-xs animate-in fade-in zoom-in-95 duration-100"
+									role="menu"
+								>
+									{DATE_RANGES.slice(3).map((r) => (
+										<button
+											key={r.value}
+											type="button"
+											className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center justify-between cursor-pointer ${
+												dateRange === r.value
+													? "bg-[var(--teal-surface,#ccfbf1)] text-[var(--teal-dark,#0f766e)] font-semibold"
+													: "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+											}`}
+											role="menuitem"
+											onClick={() => {
+												setDateRange(r.value);
+												setIsDateMoreOpen(false);
+											}}
+										>
+											<span>{r.label}</span>
+											{dateRange === r.value && (
+												<Check size={13} className="text-[var(--teal)]" />
+											)}
+										</button>
+									))}
+								</div>
+							)}
+						</div>
 					</div>
 				</div>
 			</header>
 
-			{/* Навигация по подразделам аналитики (Компактные 32-36px вкладки) */}
+			{/* Навигация по подразделам аналитики (Компактные 32-36px вкладки с меню «...») */}
 			<div
 				className="analytics-section-tabs"
 				role="tablist"
@@ -304,12 +411,15 @@ export function AnalyticsDashboardView() {
 					type="button"
 					role="tab"
 					aria-selected={analyticsSection === "executive"}
-					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all ${
+					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all border ${
 						analyticsSection === "executive"
-							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
-							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
+							? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-sm"
+							: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 					}`}
-					onClick={() => setAnalyticsSection("executive")}
+					onClick={() => {
+						setAnalyticsSection("executive");
+						setIsSectionMoreOpen(false);
+					}}
 				>
 					Рабочий стол Директора
 				</button>
@@ -317,12 +427,15 @@ export function AnalyticsDashboardView() {
 					type="button"
 					role="tab"
 					aria-selected={analyticsSection === "operational"}
-					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all ${
+					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all border ${
 						analyticsSection === "operational"
-							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
-							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
+							? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-sm"
+							: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 					}`}
-					onClick={() => setAnalyticsSection("operational")}
+					onClick={() => {
+						setAnalyticsSection("operational");
+						setIsSectionMoreOpen(false);
+					}}
 				>
 					Операционные графики
 				</button>
@@ -330,64 +443,136 @@ export function AnalyticsDashboardView() {
 					type="button"
 					role="tab"
 					aria-selected={analyticsSection === "curators"}
-					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all ${
+					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all border ${
 						analyticsSection === "curators"
-							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
-							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
+							? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-sm"
+							: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 					}`}
-					onClick={() => setAnalyticsSection("curators")}
+					onClick={() => {
+						setAnalyticsSection("curators");
+						setIsSectionMoreOpen(false);
+					}}
 				>
 					Кураторы пациентов
 				</button>
-				<button
-					type="button"
-					role="tab"
-					aria-selected={analyticsSection === "lost_patients"}
-					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all ${
-						analyticsSection === "lost_patients"
-							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
-							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
-					}`}
-					onClick={() => setAnalyticsSection("lost_patients")}
-				>
-					Возврат пациентов
-				</button>
-				<button
-					type="button"
-					role="tab"
-					aria-selected={analyticsSection === "freed_slots"}
-					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all ${
-						analyticsSection === "freed_slots"
-							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
-							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
-					}`}
-					onClick={() => setAnalyticsSection("freed_slots")}
-				>
-					Освободившиеся окна
-				</button>
-				<button
-					type="button"
-					role="tab"
-					aria-selected={analyticsSection === "marketing"}
-					className={`inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold transition-all ${
-						analyticsSection === "marketing"
-							? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
-							: "bg-[var(--paper)] text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink,#0f172a)]"
-					}`}
-					onClick={() => setAnalyticsSection("marketing")}
-				>
-					Сквозной маркетинг и ROMI
-				</button>
-				<button
-					type="button"
-					onClick={() => setIsMarketingRoiOpen(true)}
-					className="inline-flex h-[34px] min-h-[34px] items-center justify-center rounded-md px-3 text-xs sm:text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition-all cursor-pointer ml-auto"
-					data-testid="btn-open-marketing-roi-modal"
-					title="Открыть сквозную аналитику ROI маркетинговых кампаний"
-				>
-					<TrendingUp className="w-3.5 h-3.5 mr-1.5" />
-					<span>ROI маркетинговых кампаний</span>
-				</button>
+
+				{/* Контекстное меню «...» для специализированных разделов */}
+				<div className="relative inline-flex items-center" ref={sectionMoreRef}>
+					<button
+						type="button"
+						role="tab"
+						aria-selected={
+							analyticsSection === "lost_patients" ||
+							analyticsSection === "freed_slots" ||
+							analyticsSection === "marketing"
+						}
+						aria-expanded={isSectionMoreOpen}
+						className={`inline-flex h-[34px] min-h-[34px] items-center justify-center gap-1.5 rounded-md px-3 text-xs sm:text-sm font-semibold transition-all cursor-pointer border ${
+							analyticsSection === "lost_patients" ||
+							analyticsSection === "freed_slots" ||
+							analyticsSection === "marketing"
+								? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-sm"
+								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
+						}`}
+						onClick={() => setIsSectionMoreOpen((prev) => !prev)}
+						title="Дополнительные разделы аналитики (Возврат, Освободившиеся окна, Маркетинг, ROI)"
+					>
+						<span>
+							{analyticsSection === "lost_patients"
+								? "Ещё: Возврат пациентов"
+								: analyticsSection === "freed_slots"
+									? "Ещё: Освободившиеся окна"
+									: analyticsSection === "marketing"
+										? "Ещё: Сквозной маркетинг"
+										: "Ещё разделы"}
+						</span>
+						<ChevronDown
+							size={13}
+							className={`transition-transform duration-150 ${isSectionMoreOpen ? "rotate-180" : ""}`}
+						/>
+					</button>
+
+					{isSectionMoreOpen && (
+						<div
+							className="analytics-dropdown-menu absolute left-0 sm:right-0 sm:left-auto top-full mt-1 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-2xl min-w-[220px] text-xs animate-in fade-in zoom-in-95 duration-100"
+							role="menu"
+						>
+							<button
+								type="button"
+								className={`w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between cursor-pointer ${
+									analyticsSection === "lost_patients"
+										? "bg-[var(--teal-surface,#ccfbf1)] text-[var(--teal-dark,#0f766e)] font-semibold"
+										: "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+								}`}
+								role="menuitem"
+								onClick={() => {
+									setAnalyticsSection("lost_patients");
+									setIsSectionMoreOpen(false);
+								}}
+							>
+								<span>Возврат пациентов</span>
+								{analyticsSection === "lost_patients" && (
+									<Check size={14} className="text-[var(--teal)]" />
+								)}
+							</button>
+
+							<button
+								type="button"
+								className={`w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between cursor-pointer ${
+									analyticsSection === "freed_slots"
+										? "bg-[var(--teal-surface,#ccfbf1)] text-[var(--teal-dark,#0f766e)] font-semibold"
+										: "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+								}`}
+								role="menuitem"
+								onClick={() => {
+									setAnalyticsSection("freed_slots");
+									setIsSectionMoreOpen(false);
+								}}
+							>
+								<span>Освободившиеся окна</span>
+								{analyticsSection === "freed_slots" && (
+									<Check size={14} className="text-[var(--teal)]" />
+								)}
+							</button>
+
+							<button
+								type="button"
+								className={`w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between cursor-pointer ${
+									analyticsSection === "marketing"
+										? "bg-[var(--teal-surface,#ccfbf1)] text-[var(--teal-dark,#0f766e)] font-semibold"
+										: "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+								}`}
+								role="menuitem"
+								onClick={() => {
+									setAnalyticsSection("marketing");
+									setIsSectionMoreOpen(false);
+								}}
+							>
+								<span>Сквозной маркетинг и ROMI</span>
+								{analyticsSection === "marketing" && (
+									<Check size={14} className="text-[var(--teal)]" />
+								)}
+							</button>
+
+							<div className="my-1 border-t border-[var(--line)]" />
+
+							<button
+								type="button"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors flex items-center gap-2 cursor-pointer"
+								role="menuitem"
+								onClick={() => {
+									setIsMarketingRoiOpen(true);
+									setIsSectionMoreOpen(false);
+								}}
+								data-testid="btn-open-marketing-roi-modal"
+								title="Открыть сквозную аналитику ROI маркетинговых кампаний"
+							>
+								<TrendingUp size={14} className="text-emerald-600 dark:text-emerald-400" />
+								<span>ROI маркетинговых кампаний</span>
+							</button>
+						</div>
+					)}
+				</div>
 			</div>
 
 			{analyticsSection === "executive" && (
@@ -941,10 +1126,14 @@ export function AnalyticsDashboardView() {
 			{/* Clearance spacer for floating softphone and dev HUD triggers */}
 			<div className="h-24 w-full" aria-hidden="true" />
 
-			<MarketingRoiModal
-				isOpen={isMarketingRoiOpen}
-				onClose={() => setIsMarketingRoiOpen(false)}
-			/>
+			{isMarketingRoiOpen && (
+				<Suspense fallback={null}>
+					<MarketingRoiModal
+						isOpen={isMarketingRoiOpen}
+						onClose={() => setIsMarketingRoiOpen(false)}
+					/>
+				</Suspense>
+			)}
 		</section>
 	);
 }
@@ -983,7 +1172,7 @@ function DoctorProfitabilityTable({
 	);
 
 	return (
-		<div className="analytics-table-wrapper pb-24 pr-16">
+		<div className="analytics-table-wrapper pb-6 pr-2">
 			<table className="analytics-leaderboard-table">
 				<thead>
 					<tr>

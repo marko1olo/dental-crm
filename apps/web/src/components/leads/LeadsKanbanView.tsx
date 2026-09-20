@@ -18,16 +18,24 @@ import {
 	UserPlus,
 	X,
 } from "lucide-react";
-import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { dateInputValuePlusDays } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWebsocket } from "../../hooks/useWebsocket";
 import { type Lead, useLeadsStore } from "../../store/leadsStore";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
-import { LeadsFunnelAnalyticsModal } from "./LeadsFunnelAnalyticsModal";
-import { CrmLeakDetectorModal } from "../crm/CrmLeakDetectorModal";
+
+const LeadsFunnelAnalyticsModal = lazy(() =>
+	import("./LeadsFunnelAnalyticsModal").then((module) => ({
+		default: module.LeadsFunnelAnalyticsModal,
+	})),
+);
+const CrmLeakDetectorModal = lazy(() =>
+	import("../crm/CrmLeakDetectorModal").then((module) => ({
+		default: module.CrmLeakDetectorModal,
+	})),
+);
 
 /*
  * Врач и кресло берутся из настроек клиники, а не из отдельного справочника:
@@ -1800,17 +1808,25 @@ export function LeadsKanbanView() {
 			)}
 
 			{/* ANALYTICS FUNNEL MODAL */}
-			<LeadsFunnelAnalyticsModal
-				isOpen={isAnalyticsOpen}
-				onClose={() => setIsAnalyticsOpen(false)}
-				leads={leads}
-			/>
+			{isAnalyticsOpen && (
+				<Suspense fallback={null}>
+					<LeadsFunnelAnalyticsModal
+						isOpen={isAnalyticsOpen}
+						onClose={() => setIsAnalyticsOpen(false)}
+						leads={leads}
+					/>
+				</Suspense>
+			)}
 
 			{/* CRM LEAK DETECTOR MODAL (210 DAYS) */}
-			<CrmLeakDetectorModal
-				isOpen={isLeakDetectorOpen}
-				onClose={() => setIsLeakDetectorOpen(false)}
-			/>
+			{isLeakDetectorOpen && (
+				<Suspense fallback={null}>
+					<CrmLeakDetectorModal
+						isOpen={isLeakDetectorOpen}
+						onClose={() => setIsLeakDetectorOpen(false)}
+					/>
+				</Suspense>
+			)}
 		</div>
 	);
 }

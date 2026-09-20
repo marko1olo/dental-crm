@@ -4,7 +4,11 @@ import { ChevronDown, ChevronUp, Mic as LucideMic } from "lucide-react";
 import { countLabel } from "./AppHelpers";
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
-import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
+const VisiographAnalyzer = React.lazy(() =>
+	import("./components/imaging/VisiographAnalyzer").then((module) => ({
+		default: module.VisiographAnalyzer,
+	})),
+);
 import { PatientAvatar } from "./components/PatientAvatar";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
@@ -2364,13 +2368,15 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</div>
 				</div>
 
-				<VisiographAnalyzer
-					onInsertToProtocol={(protocolText) => {
-						if (typeof appendToTranscript === "function") {
-							appendToTranscript(`\n\n${protocolText}`);
-						}
-					}}
-				/>
+				<React.Suspense fallback={null}>
+					<VisiographAnalyzer
+						onInsertToProtocol={(protocolText) => {
+							if (typeof appendToTranscript === "function") {
+								appendToTranscript(`\n\n${protocolText}`);
+							}
+						}}
+					/>
+				</React.Suspense>
 
 				<section className="tooth-map" aria-label="Зубная карта">
 					{/*

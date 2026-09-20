@@ -31,7 +31,11 @@ import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { lazy, startTransition, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
-import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
+const VisiographAnalyzer = lazy(() =>
+	import("./components/imaging/VisiographAnalyzer").then((module) => ({
+		default: module.VisiographAnalyzer,
+	})),
+);
 import { OdontogramModule } from "./components/odontogram/OdontogramModule";
 import { PatientAvatar } from "./components/PatientAvatar";
 import {
@@ -822,7 +826,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						onClick={toggleLostPatients}
 						title="Показать пациентов без будущих приемов, открытых задач и записей в листе ожидания"
 					>
-						<span className="whitespace-nowrap">
+						<span className="whitespace-nowrap truncate">
 							{isLoadingLost
 								? "Загрузка..."
 								: showLostPatientsOnly
@@ -838,14 +842,14 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						data-testid="open-create-patient-modal-btn"
 					>
 						<Plus size={15} aria-hidden="true" className="shrink-0" />
-						<span className="whitespace-nowrap">Создать нового</span>
+						<span className="whitespace-nowrap truncate">Создать нового</span>
 					</button>
 				</div>
 			</header>
 
 			{/* Main Patient Grid (Master-Detail) positioned directly below header */}
 			<div
-				className={`patients-main-grid mt-4 max-md:mt-2 max-md:px-2 max-md:pb-6 max-md:flex-1 ${mobileActiveView === "card" ? "mobile-view-card" : "mobile-view-list"}`}
+				className={`patients-main-grid max-md:px-2 max-md:pb-6 max-md:flex-1 ${mobileActiveView === "card" ? "mobile-view-card" : "mobile-view-list"}`}
 			>
 				{/* Left Column: Patient List */}
 				<div className="patient-list max-md:gap-2 max-md:flex-1 max-md:h-full">
@@ -878,7 +882,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								data-patient-id={patient.id}
 								style={{
 									contentVisibility: "auto",
-									containIntrinsicSize: "1px 40px",
+									containIntrinsicSize: "1px 48px",
 									contain: "content",
 								}}
 								tabIndex={0}
@@ -1344,7 +1348,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 						{selectedPatient && (
 							<div
-								className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap w-full pt-0.5 pb-0.5 select-none relative"
+								className="flex items-center gap-1.5 flex-nowrap overflow-x-auto no-scrollbar scrollbar-none w-full pt-0.5 pb-0.5 select-none relative"
 								data-testid="patient-quick-actions-toolbar"
 							>
 								{/* Primary CTA 1 (Above Fold): Сохранить данные */}
@@ -2031,7 +2035,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						</div>
 					) : null}
 
-					<VisiographAnalyzer />
+					<Suspense fallback={null}>
+						<VisiographAnalyzer />
+					</Suspense>
 
 					{/* Administrative / Passport Documents Collapsible */}
 					<details

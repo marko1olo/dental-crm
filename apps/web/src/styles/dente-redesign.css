@@ -49,6 +49,7 @@
 	--focus-ring: rgba(13, 148, 136, 0.5);
 	--mobile-nav-height: 68px;
 	--bottom-nav-height: 68px;
+	--sidebar-width: 252px;
 	--transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 	--transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 	--transition-spring: 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -904,7 +905,7 @@ select:focus {
 
 /* ---------- 5. САЙДБАР ---------- */
 .sidebar {
-	width: 252px;
+	width: var(--sidebar-width, 252px);
 	flex-shrink: 0;
 	display: flex;
 	flex-direction: column;
@@ -914,7 +915,8 @@ select:focus {
 	overflow: hidden;
 	background: var(--side-bg);
 	border-right: 1px solid var(--line);
-	padding: 16px 14px;
+	padding: 16px 12px;
+	box-sizing: border-box;
 	transition:
 		width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
 		padding 0.25s;
@@ -999,11 +1001,15 @@ html.dark .sidebar .nav-item.active,
 .nav-item {
 	display: flex;
 	align-items: center;
-	gap: 11px;
-	padding: 9px 10px;
+	gap: 10px;
+	padding: 8px 10px;
 	border-radius: 10px;
 	color: var(--ink-2);
 	font-weight: 500;
+	min-width: 0;
+	max-width: 100%;
+	width: 100%;
+	box-sizing: border-box;
 	transition:
 		background 0.15s,
 		color 0.15s;
@@ -1031,9 +1037,15 @@ html.dark .sidebar .nav-item.active,
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
+	overflow: hidden;
+	flex: 1 1 auto;
 }
 .nav-label {
 	font-size: 13.5px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	min-width: 0;
 }
 .nav-copy small {
 	font-size: 10.5px;
@@ -1043,6 +1055,31 @@ html.dark .sidebar .nav-item.active,
 	overflow: hidden;
 	text-overflow: ellipsis;
 	transition: color 0.15s ease;
+	min-width: 0;
+}
+@media (max-width: 1280px) {
+	:root {
+		--sidebar-width: 190px;
+	}
+	.sidebar {
+		width: var(--sidebar-width, 190px);
+		padding: 12px 8px;
+	}
+	.sidebar nav {
+		gap: 2px;
+	}
+	.nav-item {
+		padding: 6px 8px;
+		gap: 8px;
+		min-width: 0;
+	}
+	.nav-label {
+		font-size: 13px;
+	}
+	.sidebar .nav-copy small,
+	.nav-copy small {
+		display: none !important;
+	}
 }
 
 [data-theme="dark"] .sidebar .nav-copy small,
@@ -1076,7 +1113,7 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 /* Компактная клиническая плотность на экранах высотой <= 960px */
 @media (max-height: 960px) {
 	.sidebar {
-		padding: 10px 10px 8px;
+		padding: 10px 8px 8px;
 	}
 	.brand-mark {
 		padding: 2px 6px 8px;
@@ -1085,15 +1122,13 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 		gap: 2px;
 	}
 	.nav-item {
-		padding: 5px 10px;
+		padding: 5px 8px;
 		gap: 8px;
 		font-size: 13px;
+		min-width: 0;
 	}
 	.nav-label {
 		font-size: 13px;
-	}
-	.nav-copy small {
-		font-size: 10px;
 	}
 	.sidebar-footer {
 		padding-top: 8px;
@@ -1181,6 +1216,9 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 }
 
 /* сворачивание: data-collapsed="true" на контейнере приложения */
+[data-collapsed="true"] {
+	--sidebar-width: 76px;
+}
 [data-collapsed="true"] .sidebar {
 	width: 76px;
 	padding: 16px 12px;
@@ -1226,6 +1264,42 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 	position: sticky;
 	top: 0;
 	z-index: 25;
+}
+
+@media (max-height: 768px) {
+	.topbar {
+		min-height: 44px;
+		height: 44px;
+		max-height: 44px;
+		padding: 0 12px;
+		gap: 8px;
+	}
+	.topbar h1 {
+		font-size: 13px;
+	}
+	.workspace,
+	.dnt-content {
+		padding: 10px 14px 20px;
+		gap: 10px;
+	}
+}
+
+@media (max-height: 650px) {
+	.topbar {
+		min-height: 38px !important;
+		height: 38px !important;
+		max-height: 38px !important;
+		padding: 0 10px !important;
+		gap: 6px !important;
+	}
+	.topbar h1 {
+		font-size: 12px !important;
+	}
+	.workspace,
+	.dnt-content {
+		padding: 6px 10px 16px !important;
+		gap: 6px !important;
+	}
 }
 .topbar-context {
 	display: flex;
@@ -1816,6 +1890,9 @@ button[data-tooth-state="missing"] {
 	}
 }
 @media (max-width: 1140px) {
+	:root {
+		--sidebar-width: 76px;
+	}
 	.sidebar {
 		width: 76px;
 		padding: 16px 12px;
@@ -1838,6 +1915,9 @@ button[data-tooth-state="missing"] {
 	}
 }
 @media (max-width: 840px) {
+	:root {
+		--sidebar-width: 0px;
+	}
 	.sidebar {
 		display: none;
 	}
@@ -2038,13 +2118,13 @@ button[data-tooth-state="missing"] {
 }
 
 /* ---------- 15. ГЛОБАЛЬНАЯ НЕЙТРАЛИЗАЦИЯ ЖЕСТКИХ TAILWIND КЛАССОВ ---------- */
-:is([data-theme="dark"], [data-theme="night"], .dark) :is([class*="bg-white"], .bg-white):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], html.dark) :is([class*="bg-white"], .bg-white):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
 	background-color: var(--paper);
 	color: var(--ink);
 	border-color: var(--line);
 }
 
-:is([data-theme="dark"], [data-theme="night"], .dark) :is([class*="bg-slate-50"], .bg-slate-50, [class*="bg-slate-100"], .bg-slate-100):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], html.dark) :is([class*="bg-slate-50"], .bg-slate-50, [class*="bg-slate-100"], .bg-slate-100):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
 	background-color: var(--paper-soft);
 	color: var(--ink);
 	border-color: var(--line);
@@ -2059,15 +2139,15 @@ button[data-tooth-state="missing"] {
 	border-color: var(--line);
 }
 
-:is([data-theme="dark"], [data-theme="night"], .dark) :is([class*="text-slate-900"], [class*="text-slate-800"], [class*="text-slate-700"]):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], html.dark) :is([class*="text-slate-900"], [class*="text-slate-800"], [class*="text-slate-700"]):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
 	color: var(--ink);
 }
 
-:is([data-theme="dark"], [data-theme="night"], .dark) :is([class*="text-slate-500"], [class*="text-slate-400"]):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], html.dark) :is([class*="text-slate-500"], [class*="text-slate-400"]):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
 	color: var(--muted);
 }
 
-:is([data-theme="dark"], [data-theme="night"], .dark) :is([class*="border-slate-200"], [class*="border-slate-100"], [class*="border-slate-300"]):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], html.dark) :is([class*="border-slate-200"], [class*="border-slate-100"], [class*="border-slate-300"]):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *):not(.fiscal-receipt-view *):not(#printable-lab-order-sheet *):not(.doc-container *) {
 	border-color: var(--line);
 }
 
@@ -2341,8 +2421,7 @@ select {
 	border-radius: 10px;
 }
 
-details.schedule-secret-collapsible,
-details {
+details.schedule-secret-collapsible {
 	border: 1px solid var(--line);
 	border-radius: 12px;
 	background: var(--paper-soft);
@@ -2350,8 +2429,27 @@ details {
 	color: var(--ink);
 }
 
+details.workspace-role-switcher,
+details.recent-patients-header-dropdown {
+	padding: 0 !important;
+	border: none !important;
+	background: transparent !important;
+	margin: 0 !important;
+}
+
+details.workspace-role-switcher summary,
+details.recent-patients-header-dropdown summary {
+	padding: 0 !important;
+	list-style: none !important;
+}
+
+details.workspace-role-switcher summary::-webkit-details-marker,
+details.recent-patients-header-dropdown summary::-webkit-details-marker {
+	display: none !important;
+}
+
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
-details summary {
+details.schedule-secret-collapsible summary {
 	cursor: pointer;
 	font-weight: 600;
 	color: var(--ink);
@@ -2359,7 +2457,7 @@ details summary {
 }
 
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
-details summary:hover {
+details.schedule-secret-collapsible summary:hover {
 	color: var(--teal-dark);
 }
 
