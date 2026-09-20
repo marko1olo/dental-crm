@@ -1924,14 +1924,14 @@ export function VisitEmkTab() {
 				onApplyAnesthesia={handleApplyVoiceAnesthesia}
 				onApplyProcedures={handleApplyVoiceProcedures}
 				activeSelectedTooth={activeSelectedTooth}
-				className="my-0.5 [&>div:first-child]:min-h-[26px] sm:[&>div:first-child]:min-h-[28px] sm:[&>div:first-child]:h-7 [&>div:first-child]:py-0.5 [&_button]:min-h-[22px] [&_button]:h-6"
+				className="my-0.5"
 			/>
 
-			{/* Единый компактный тулбар ЭМК: Ряд 1 (Вкладки протокола ЭМК + Запись/Статус) + Ряд 2 (1-Клик SOAP) */}
-			<div className="emk-unified-toolbar flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 lg:gap-3 my-1 py-1 lg:py-0 lg:h-9 lg:min-h-[36px] lg:max-h-[36px] lg:overflow-hidden border-b border-[var(--line)] min-w-0 max-w-full">
-				{/* РЯД 1 (На десктопе - слева): Вкладки 6 секций ЭМК */}
+			{/* Единый компактный тулбар ЭМК: Ряд 1 (Вкладки протокола ЭМК) + Ряд 2 (1-Клик SOAP + Запись/Статус) с поддержкой переноса и горизонтального скролла */}
+			<div className="emk-unified-toolbar flex flex-col gap-1.5 my-1 py-1 border-b border-[var(--line)] w-full min-w-0 max-w-full">
+				{/* РЯД 1: Вкладки секций ЭМК */}
 				<div
-					className="emk-tabs-container flex items-center gap-2 min-w-0 shrink-0 flex-nowrap overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden m-0 py-0.5 pr-4 lg:pr-0 border-b-0 touch-pan-x"
+					className="emk-tabs-container w-full flex items-center gap-1.5 min-w-0 flex-nowrap overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden m-0 py-0.5 border-b-0 touch-pan-x"
 					role="tablist"
 					aria-label="Вкладки протокола приема"
 				>
@@ -1945,7 +1945,7 @@ export function VisitEmkTab() {
 								type="button"
 								role="tab"
 								aria-selected={activeEmkTab === tab.id}
-								className={`emk-tab-button min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2.5 sm:px-3 py-0.5 text-xs font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 shrink-0 flex-shrink-0 whitespace-nowrap touch-manipulation ${
+								className={`emk-tab-button min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 sm:px-2.5 py-0.5 text-xs font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center gap-1 shrink-0 flex-shrink-0 whitespace-nowrap touch-manipulation ${
 									activeEmkTab === tab.id
 										? "active bg-[var(--teal-fill,var(--teal))] text-white border-[var(--teal-fill,var(--teal))] shadow-2xs"
 										: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)]"
@@ -1959,11 +1959,16 @@ export function VisitEmkTab() {
 					})}
 				</div>
 
-				{/* РЯД 2 (На десктопе - справа): 1-Клик Экспресс-Бар SOAP + Запись/Статус */}
-				<div className="relative flex-1 min-w-0 flex items-center overflow-hidden">
+				{/* РЯД 2: Экспресс-бар SOAP пресетов + Запись/Статус */}
+				<div className="relative w-full min-w-0 flex items-center overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 					<div
-						className="emk-tier1-quick-soap-bar flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none pr-3 lg:pr-0 shrink-0 flex-nowrap min-w-0 py-1 lg:py-0 justify-start touch-pan-x w-full"
+						className="emk-tier1-quick-soap-bar w-full flex items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pr-2 min-w-0 py-0.5 justify-start touch-pan-x flex-wrap sm:flex-nowrap"
 						data-testid="emk-tier1-quick-soap-bar"
+						onWheel={(e) => {
+							if (e.deltaY !== 0) {
+								e.currentTarget.scrollLeft += e.deltaY;
+							}
+						}}
 					>
 						<span className="text-[10px] font-bold text-[var(--muted)] shrink-0 uppercase tracking-wider inline-flex items-center gap-1 pr-0.5">
 							<Sparkles className="w-3 h-3 text-[var(--teal,var(--brand-primary))]" />{" "}
@@ -1973,13 +1978,12 @@ export function VisitEmkTab() {
 							type="button"
 							data-testid="btn-quick-soap-norm"
 							onClick={handleApplyPhysiologicalNorm}
-							className="shrink-0 flex-shrink-0 min-h-[28px] h-7 px-2.5 py-0 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs min-w-max"
+							className="shrink-0 flex-shrink-0 min-h-[28px] h-7 px-2 sm:px-2.5 py-0 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs min-w-max"
 							title="Физиологическая норма: соматически здоров, жалоб нет, слизистая бледно-розовая, патологий не выявлено"
 						>
 							<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
 							<span className="whitespace-nowrap shrink-0 min-w-max">
-								<span className="sm:hidden">Норма</span>
-								<span className="hidden sm:inline">Норма (Здоров)</span>
+								<span>Норма</span>
 							</span>
 						</button>
 						<button
@@ -1993,11 +1997,14 @@ export function VisitEmkTab() {
 										"clean_replace",
 									);
 							}}
-							className="shrink-0 flex-shrink-0 min-h-[28px] h-7 px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs min-w-max"
+							className="shrink-0 flex-shrink-0 min-h-[28px] h-7 px-2 sm:px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs min-w-max"
 							title="Профгигиена K05.0: комплексная чистка УЗ + Air-Flow + Clinpro"
 						>
 							<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
-							<span className="whitespace-nowrap shrink-0 min-w-max">Профгигиена</span>
+							<span className="whitespace-nowrap shrink-0 min-w-max">
+								<span className="sm:hidden">Гигиена</span>
+								<span className="hidden sm:inline">Профгигиена</span>
+							</span>
 						</button>
 						<button
 							type="button"
@@ -2010,7 +2017,7 @@ export function VisitEmkTab() {
 										"clean_replace",
 									);
 							}}
-							className="shrink-0 flex-shrink-0 min-h-[28px] h-7 px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs min-w-max"
+							className="shrink-0 flex-shrink-0 min-h-[28px] h-7 px-2 sm:px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs min-w-max"
 							title="Кариес дентина K02.1: автозаполнение нормы + жалобы + статус + протокол 804н"
 						>
 							<FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
@@ -2027,7 +2034,7 @@ export function VisitEmkTab() {
 										"clean_replace",
 									);
 							}}
-							className="shrink-0 flex-shrink-0 min-h-[28px] h-7 px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs min-w-max"
+							className="shrink-0 flex-shrink-0 min-h-[28px] h-7 px-2 sm:px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs min-w-max"
 							title="Острый пульпит K04.0: автозаполнение нормы + жалобы + статус + протокол 804н"
 						>
 							<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -2044,11 +2051,11 @@ export function VisitEmkTab() {
 										"clean_replace",
 									);
 							}}
-							className="shrink-0 flex-shrink-0 min-h-[28px] h-7 px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs min-w-max"
+							className="shrink-0 flex-shrink-0 min-h-[28px] h-7 px-2 sm:px-2.5 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow-2xs min-w-max"
 							title="Хронический периодонтит K04.5: автозаполнение нормы + жалобы + статус + протокол 804н"
 						>
 							<Activity className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-							<span className="whitespace-nowrap shrink-0 min-w-max">Периодонтит</span>
+							<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">Периодонтит</span>
 						</button>
 						<button
 							type="button"
@@ -2537,12 +2544,12 @@ export function VisitEmkTab() {
 											type="button"
 											onClick={() => handleChipClick(chip)}
 											title={chip}
-											className="quick-chip visit-quick-chip h-auto min-h-[28px] sm:min-h-[30px] max-w-full px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation shadow-2xs inline-flex items-center gap-1.5 shrink-0 min-w-0"
+											className="quick-chip visit-quick-chip h-auto min-h-[28px] sm:min-h-[30px] max-w-full px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation shadow-2xs inline-flex items-center gap-1.5 shrink-0 min-w-fit"
 										>
 											<span className="text-[var(--teal,var(--brand-primary))] font-extrabold shrink-0">
 												+
 											</span>
-											<span className="truncate max-w-[260px] sm:max-w-[420px] md:max-w-none">{chip}</span>
+											<span className="whitespace-nowrap shrink-0 min-w-fit">{chip}</span>
 										</button>
 									))}
 								</div>

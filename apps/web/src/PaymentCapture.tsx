@@ -951,13 +951,23 @@ export function PaymentCapture({
 			);
 			return;
 		}
-		setIsSplit5050Mode(true);
-		setIsSplitModalOpen(true);
-		showToast(
-			"Открыто окно комбинированной оплаты (50% Наличные + 50% Карта)",
-			"info",
-			3000,
-		);
+
+		if (effectiveTotal > 0) {
+			const half = Math.round(effectiveTotal / 2);
+			onAmountChange(String(half));
+			onMethodChange("cash");
+			showToast(
+				`Комбинированная оплата 50/50: 1-я часть (${money(half)}, Наличные). 2-я часть (${money(effectiveTotal - half)}, Карта) принимается следом.`,
+				"info",
+			);
+		} else {
+			setIsSplit5050Mode(true);
+			setIsSplitModalOpen(true);
+			showToast(
+				"Открыто окно комбинированной оплаты (50% Наличные + 50% Карта)",
+				"info",
+			);
+		}
 	};
 
 	const applyThreeWaySplitPreset = () => {
@@ -976,7 +986,6 @@ export function PaymentCapture({
 		showToast(
 			"Открыто окно комбинированной оплаты (Нал + Карта + Баланс)",
 			"info",
-			3000,
 		);
 	};
 
@@ -996,7 +1005,6 @@ export function PaymentCapture({
 		showToast(
 			"Открыто окно комбинированной оплаты (Баланс + Карта)",
 			"info",
-			3000,
 		);
 	};
 
@@ -1723,8 +1731,8 @@ export function PaymentCapture({
 			{/* Панель оформления чека и кнопок оплаты (Мандат 8e / 8c / 8p) */}
 			<div
 				id="payment-checkout-bar"
-				className="payment-checkout-bar col-span-full max-sm:sticky max-sm:bottom-[calc(72px+env(safe-area-inset-bottom,0px))] max-sm:z-[35] max-sm:bg-[var(--paper)] max-sm:px-3 max-sm:py-2 max-sm:border-t max-sm:border-[var(--line)] max-sm:shadow-lg max-sm:flex max-sm:flex-row max-sm:flex-wrap max-sm:items-center max-sm:justify-between max-sm:gap-2 max-sm:box-border sm:flex sm:flex-row sm:items-center sm:justify-between sm:gap-4 max-w-full min-w-0"
-				style={{ gridColumn: "1 / -1" }}
+				className="payment-checkout-bar col-span-full max-sm:fixed max-sm:bottom-[calc(var(--bottom-nav-height,64px)+env(safe-area-inset-bottom,0px))] max-sm:left-0 max-sm:right-0 max-sm:z-40 max-sm:bg-[var(--paper-strong,var(--paper))] max-sm:px-3 max-sm:py-2.5 max-sm:border-t max-sm:border-[var(--line)] max-sm:shadow-2xl max-sm:flex max-sm:flex-row max-sm:items-center max-sm:justify-between max-sm:gap-2 max-sm:box-border sm:flex sm:flex-row sm:items-center sm:justify-between sm:gap-4 max-w-full min-w-0"
+				style={{ gridColumn: "1 / -1", bottom: "calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px))" }}
 				data-testid="payment-checkout-bar"
 			>
 				{/* Итого к списанию / оплате по 54-ФЗ */}
@@ -1777,6 +1785,20 @@ export function PaymentCapture({
 						<span className="hidden sm:inline">
 							Оплата картой (Сбербанк POS / QR)
 						</span>
+					</button>
+					<button
+						className="secondary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-semibold text-xs max-sm:!hidden flex items-center gap-1.5"
+						type="button"
+						onClick={handleOpenSplitModal}
+						aria-describedby={
+							!paymentReadyToSubmit ? paymentMissingId : undefined
+						}
+						disabled={isSaving}
+						title={isSaving ? "Операция выполняется..." : "Комбинированная оплата: Нал + Карта + Баланс (Сплит)"}
+						data-testid="payment-split-modal-button"
+					>
+						<Coins aria-hidden="true" size={15} className="shrink-0 text-indigo-600 dark:text-indigo-400" />{" "}
+						<span className="hidden sm:inline">Комбо (Сплит)</span>
 					</button>
 					<div className="relative shrink-0">
 						<button
@@ -1856,6 +1878,8 @@ export function PaymentCapture({
 					</div>
 				</div>
 			</div>
+			{/* Мобильная распорка под фиксированную нижнюю планку оплаты */}
+			<div className="hidden max-sm:block h-20 col-span-full" aria-hidden="true" />
 			{patientId && (
 				<SberPosTerminalModal
 					isOpen={isSberPosModalOpen}

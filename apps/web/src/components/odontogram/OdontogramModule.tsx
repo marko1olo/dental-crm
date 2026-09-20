@@ -1201,42 +1201,43 @@ export const OdontogramModule = React.memo(({
 				{/* ── КРИТИЧЕСКИЙ АЛЛЕРГО- И СОМАТИЧЕСКИЙ АЛЕРТ БЕЗОПАСНОСТИ (TIER 1) ── */}
 				{(Boolean(allergyText) || (rawSomaticAlerts && rawSomaticAlerts.length > 0) || rawRiskLevel === "high" || isCardiacOrDiabetes) && (
 					<div
-						className="min-h-[32px] sm:h-[32px] py-1 px-3 rounded-xl bg-rose-500/15 dark:bg-rose-950/40 border border-rose-500/40 dark:border-rose-500/50 text-rose-950 dark:text-rose-100 flex items-center justify-between gap-2 shadow-2xs animate-in fade-in duration-200 text-xs font-bold"
+						className="min-h-[32px] py-1 px-2.5 sm:px-3 rounded-xl bg-rose-500/15 dark:bg-rose-950/40 border border-rose-500/40 dark:border-rose-500/50 text-rose-950 dark:text-rose-100 flex flex-wrap sm:flex-nowrap items-center justify-between gap-1.5 sm:gap-2 shadow-2xs animate-in fade-in duration-200 text-xs font-bold"
 						role="alert"
 						aria-live="assertive"
 						data-testid="odontogram-critical-somatic-alert"
 					>
-						<div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+						<div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
 							<div className="w-5 h-5 rounded-md bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-2xs animate-pulse">
 								<AlertTriangle className="w-3.5 h-3.5" />
 							</div>
 							<span className="text-xs font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 flex items-center gap-1 shrink-0">
 								<ShieldAlert className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
-								<span>АЛЛЕРГИИ И РИСКИ:</span>
+								<span className="hidden sm:inline">АЛЛЕРГИИ И РИСКИ:</span>
+								<span className="sm:hidden">РИСКИ:</span>
 							</span>
 							{rawRiskLevel === "high" && (
 								<span className="px-1.5 py-0.5 rounded bg-rose-600 text-white text-[10px] font-black tracking-wide shrink-0">
 									ASA III/IV
 								</span>
 							)}
-							<div className="flex items-center gap-1.5 min-w-0 overflow-hidden text-xs font-bold text-rose-900 dark:text-rose-100">
+							<div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 min-w-0 text-xs font-bold text-rose-900 dark:text-rose-100">
 								{allergyText && (
 									<span
-										className="px-2 py-0.5 rounded-md bg-rose-600 text-white font-mono font-black text-xs inline-flex items-center gap-1 shadow-2xs shrink-0 max-w-[300px] truncate"
+										className="px-2 py-0.5 rounded-md bg-rose-600 text-white font-mono font-black text-xs inline-flex items-center gap-1 shadow-2xs shrink-0 max-w-full sm:max-w-[300px] whitespace-normal break-words"
 										data-testid="badge-critical-allergy-tier1"
 										title={allergyText}
 									>
 										<AlertTriangle className="w-3 h-3 shrink-0" aria-hidden="true" />
-										<span className="truncate">{allergyText}</span>
+										<span className="whitespace-normal break-words">{allergyText}</span>
 									</span>
 								)}
 								{rawSomaticAlerts && rawSomaticAlerts.map((alert, idx) => (
-									<span key={idx} className="px-1.5 py-0.5 rounded-md bg-rose-500/20 dark:bg-rose-900/40 text-rose-900 dark:text-rose-200 font-semibold text-xs border border-rose-500/30 shrink-0 truncate max-w-[200px]" title={alert}>
+									<span key={idx} className="px-1.5 py-0.5 rounded-md bg-rose-500/20 dark:bg-rose-900/40 text-rose-900 dark:text-rose-200 font-semibold text-xs border border-rose-500/30 shrink-0 whitespace-normal break-words" title={alert}>
 										{alert}
 									</span>
 								))}
 								{isCardiacOrDiabetes && !allergyText && (!rawSomaticAlerts || rawSomaticAlerts.length === 0) && (
-									<span className="truncate text-xs text-rose-900 dark:text-rose-100">
+									<span className="text-xs text-rose-900 dark:text-rose-100 whitespace-normal break-words">
 										Кардио- / эндокринный мониторинг (вазоконстриктор 1:200 000).
 									</span>
 								)}
@@ -1251,25 +1252,28 @@ export const OdontogramModule = React.memo(({
 				)}
 
 				{/* ── ШАПКА ОДОНТОГРАММЫ: ДЕЙСТВИЯ + КОМПАКТНЫЙ ФИНАНСОВЫЙ БЕЙДЖ + АВТОСОХРАНЕНИЕ (TIER 1) ── */}
-				<div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2 p-1.5 sm:p-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-900/60 border border-[var(--line,#e2e8f0)] dark:border-zinc-800 shadow-2xs">
-					<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+				<div className="flex flex-row items-center justify-between gap-1.5 sm:gap-2 p-1 sm:p-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-zinc-900/60 border border-[var(--line,#e2e8f0)] dark:border-zinc-800 shadow-2xs overflow-x-auto no-scrollbar flex-nowrap">
+					<div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap overflow-x-auto no-scrollbar py-0.5 shrink-0">
 						{/* 1-клик перенос клинического статуса зубной формулы в Дневник 043/у */}
 						<button
 							type="button"
 							onClick={handleSyncAllToDiary}
-							className="min-h-[32px] h-[32px] px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
+							className="min-h-[32px] h-[32px] px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs whitespace-nowrap"
 							title="Перенести клинический статус зубной формулы в Дневник 043/у в 1 клик"
 							data-testid="btn-hotpath-sync-all-to-diary"
 						>
 							<FileText size={15} className="shrink-0" />
-							<span>В дневник 043/у</span>
+							<span>
+								<span className="sm:hidden">043/у</span>
+								<span className="hidden sm:inline">В дневник 043/у</span>
+							</span>
 						</button>
 
-						{/* Кнопка 1-клик печати графической схемы зубов на A4 */}
+						{/* Кнопка 1-клик печати графической схемы зубов на A4 (скрыта на мобильных для экономии высоты) */}
 						<button
 							type="button"
 							onClick={() => window.print()}
-							className="min-h-[32px] h-[32px] px-3 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft)] dark:bg-zinc-800 text-[var(--ink)] dark:text-zinc-100 hover:bg-[var(--paper-strong)] dark:hover:bg-zinc-750 border border-[var(--line)] dark:border-zinc-700 transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-[0.98]"
+							className="hidden sm:inline-flex min-h-[32px] h-[32px] px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft)] dark:bg-zinc-800 text-[var(--ink)] dark:text-zinc-100 hover:bg-[var(--paper-strong)] dark:hover:bg-zinc-750 border border-[var(--line)] dark:border-zinc-700 transition-all items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-[0.98] whitespace-nowrap"
 							title="Распечатать графическую одонтограмму со всеми патологиями на лист A4 для вклейки в амбулаторную карту"
 							data-testid="print-odontogram-a4-btn"
 						>
@@ -1279,13 +1283,15 @@ export const OdontogramModule = React.memo(({
 
 						{/* Компактный финансовый бейдж приема (Tier 1, 32-34px, 1-Click FastCheckout Modal) */}
 						<div
-							className="flex items-center gap-1.5 px-2.5 min-h-[32px] h-[32px] rounded-lg bg-teal-500/10 dark:bg-teal-950/40 border border-teal-500/30 text-teal-900 dark:text-teal-200 text-xs font-bold shrink-0 shadow-2xs"
+							className="flex items-center gap-1.5 px-2.5 min-h-[32px] h-[32px] rounded-lg bg-teal-500/10 dark:bg-teal-950/40 border border-teal-500/30 text-teal-900 dark:text-teal-200 text-xs font-bold shrink-0 shadow-2xs whitespace-nowrap"
+							style={{ minHeight: "32px", height: "32px", boxSizing: "border-box" }}
 							data-testid="odontogram-compact-bill-badge"
 						>
 							<Coins className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-							<span>
-								Итого к оплате:{" "}
-								<strong className="font-mono font-black text-xs sm:text-sm text-teal-800 dark:text-teal-200">
+							<span className="flex items-center gap-1 shrink-0 whitespace-nowrap">
+								<span className="hidden sm:inline">Итого к оплате:</span>
+								<span className="sm:hidden">Итого:</span>
+								<strong className="font-mono font-black text-xs sm:text-sm text-teal-800 dark:text-teal-200 shrink-0 whitespace-nowrap">
 									{liveGrossTotalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 								</strong>
 							</span>
@@ -1295,7 +1301,8 @@ export const OdontogramModule = React.memo(({
 									setFastCheckoutMethod("sbp_qr");
 									setIsFastCheckoutOpen(true);
 								}}
-								className="ml-1 min-h-[24px] h-[24px] px-2 rounded-md bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold text-xs flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+								className="ml-1 px-2 rounded-md bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold text-xs flex items-center gap-1 transition-all cursor-pointer shadow-2xs shrink-0"
+								style={{ minHeight: "24px", height: "24px", maxHeight: "24px", lineHeight: "24px", padding: "0 8px", boxSizing: "border-box" }}
 								title="Открыть быструю кассу приема (54-ФЗ)"
 								data-testid="btn-open-fast-checkout"
 							>
@@ -1306,7 +1313,8 @@ export const OdontogramModule = React.memo(({
 
 					{/* Понятный бейдж автосохранения на диск */}
 					<div
-						className="flex items-center gap-1.5 px-2.5 min-h-[32px] h-[32px] rounded-lg bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 text-xs font-bold shrink-0 shadow-2xs"
+						className="hidden md:flex items-center gap-1.5 px-2.5 min-h-[32px] h-[32px] rounded-lg bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 text-xs font-bold shrink-0 shadow-2xs whitespace-nowrap"
+						style={{ minHeight: "32px", height: "32px", boxSizing: "border-box" }}
 						title="Все отметки и диагнозы непрерывно сохраняются в локальное хранилище и базу данных клиники"
 					>
 						<Check size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -1315,7 +1323,7 @@ export const OdontogramModule = React.memo(({
 				</div>
 
 				{/* Народная и анатомическая расшифровка выбранного зуба простым русским языком */}
-				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-1.5 min-h-[34px] rounded-xl bg-indigo-500/10 dark:bg-indigo-950/30 border border-indigo-500/20 text-indigo-950 dark:text-indigo-200 text-xs sm:text-sm font-bold transition-all">
+				<div className={`${selectedTeeth.length === 0 ? "hidden sm:flex" : "flex"} flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-1.5 min-h-[32px] rounded-xl bg-indigo-500/10 dark:bg-indigo-950/30 border border-indigo-500/20 text-indigo-950 dark:text-indigo-200 text-xs sm:text-sm font-bold transition-all`}>
 					<div className="flex items-center gap-2 min-w-0">
 						<Info className="w-4 h-4 text-indigo-500 shrink-0" />
 						<span className="font-black text-indigo-600 dark:text-indigo-400 shrink-0">Зуб:</span>
@@ -1324,7 +1332,7 @@ export const OdontogramModule = React.memo(({
 								? getToothFolkAndAnatomicalNameRu(selectedTeeth[0]!)
 								: selectedTeeth.length > 1
 									? `Выбрана группа из ${selectedTeeth.length} зубов: ${selectedTeeth.join(", ")}`
-									: "Нажмите на зуб или наведите курсор для отображения полного анатомического и народного названия (например: «16: Верхняя правая шестерка»)"}
+									: "Выберите зуб для разметки (11–48 / 51–85)"}
 						</span>
 					</div>
 					{selectedTeeth.length > 0 && (

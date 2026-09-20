@@ -245,9 +245,9 @@ describe('auditTrailEngine — 5. Filtering and Search', () => {
 		assert.ok(viewOnly.length > 0);
 		assert.ok(viewOnly.every((e) => e.eventType === 'view_patient_card'));
 
-		const searchVolkova = filterAuditTrail(chain, { searchQuery: 'Волкова' });
-		assert.ok(searchVolkova.length > 0);
-		assert.ok(searchVolkova.every((e) => e.actor.fullName.includes('Волкова')));
+		const searchKalashnikov = filterAuditTrail(chain, { searchQuery: 'Калашников' });
+		assert.ok(searchKalashnikov.length > 0);
+		assert.ok(searchKalashnikov.every((e) => e.actor.fullName.includes('Калашников')));
 	});
 });
 
@@ -269,7 +269,7 @@ describe('auditTrailEngine — 6. Regulatory Exports (Roskomnadzor, FSTEC, 152-F
 
 		assert.ok(csv.startsWith('﻿'));
 		assert.match(csv, /"№";"Таймштамп \(ISO\)";"Событие"/);
-		assert.match(csv, /Волкова Елена Сергеевна/);
+		assert.match(csv, /Калашников Дмитрий Михайлович/);
 	});
 
 	it('generates formal 152-FZ Audit Act text and HTML', () => {

@@ -25,99 +25,6 @@ import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 
-export const DEFAULT_PSO_DEMO_RECORDS: PsoCleaningLog[] = [
-	{
-		id: "00000000-0000-4000-8000-000000000366",
-		organizationId: "00000000-0000-0000-0000-000000000001",
-		instrumentName: "Терапевтический смотровой инструментарий (зеркала, зонды, пинцеты)",
-		testType: "both",
-		batchItemCount: 120,
-		testedSampleCount: 4,
-		isAzopyramNegative: true,
-		isPhenolphthaleinNegative: true,
-		isBatchApproved: true,
-		detergentBrand: "Биолот 0.5% + Аламинол 1%",
-		rejectionReason: null,
-		operatorId: null,
-		operatorName: "Медсестра ЦСО",
-		notes: "СанПиН 3.3686-21 п. 3584. 1% от партии проверен. Окрашивания нет, кровь и щелочь отсутствуют. [ЭЦП: Медсестра ЦСО]",
-		timestamp: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
-		createdAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
-	},
-	{
-		id: "00000000-0000-4000-8000-000000000367",
-		organizationId: "00000000-0000-0000-0000-000000000001",
-		instrumentName: "Хирургические экстракционные щипцы и элеваторы",
-		testType: "both",
-		batchItemCount: 45,
-		testedSampleCount: 3,
-		isAzopyramNegative: true,
-		isPhenolphthaleinNegative: true,
-		isBatchApproved: true,
-		detergentBrand: "Оптимакс Про 1.5%",
-		rejectionReason: null,
-		operatorId: null,
-		operatorName: "Медсестра ЦСО",
-		notes: "Замковые соединения и щечки чистые. Азопирам отрицательный. [ЭЦП: Медсестра ЦСО]",
-		timestamp: new Date(Date.now() - 6 * 3600 * 1000).toISOString(),
-		createdAt: new Date(Date.now() - 6 * 3600 * 1000).toISOString(),
-	},
-	{
-		id: "00000000-0000-4000-8000-000000000368",
-		organizationId: "00000000-0000-0000-0000-000000000001",
-		instrumentName: "Эндодонтические файлы Ni-Ti и каналонаполнители",
-		testType: "both",
-		batchItemCount: 60,
-		testedSampleCount: 3,
-		isAzopyramNegative: true,
-		isPhenolphthaleinNegative: true,
-		isBatchApproved: true,
-		detergentBrand: "Биолот 0.5%",
-		rejectionReason: null,
-		operatorId: null,
-		operatorName: "Медсестра ЦСО",
-		notes: "Ультразвуковая ванна 15 мин. Витки файлов чистые, проба отрицательная. [ЭЦП: Медсестра ЦСО]",
-		timestamp: new Date(Date.now() - 9 * 3600 * 1000).toISOString(),
-		createdAt: new Date(Date.now() - 9 * 3600 * 1000).toISOString(),
-	},
-	{
-		id: "00000000-0000-4000-8000-000000000369",
-		organizationId: "00000000-0000-0000-0000-000000000001",
-		instrumentName: "Стоматологические боры и твердосплавные фрезы",
-		testType: "both",
-		batchItemCount: 150,
-		testedSampleCount: 5,
-		isAzopyramNegative: true,
-		isPhenolphthaleinNegative: true,
-		isBatchApproved: true,
-		detergentBrand: "Дезискраб 2%",
-		rejectionReason: null,
-		operatorId: null,
-		operatorName: "Старшая медсестра",
-		notes: "Алмазные грани без биологических остатков. Проба фенолфталеином отрицательна.",
-		timestamp: new Date(Date.now() - 25 * 3600 * 1000).toISOString(),
-		createdAt: new Date(Date.now() - 25 * 3600 * 1000).toISOString(),
-	},
-	{
-		id: "00000000-0000-4000-8000-000000000370",
-		organizationId: "00000000-0000-0000-0000-000000000001",
-		instrumentName: "Пародонтологические кюреты Грейси и скейлеры",
-		testType: "both",
-		batchItemCount: 35,
-		testedSampleCount: 3,
-		isAzopyramNegative: true,
-		isPhenolphthaleinNegative: true,
-		isBatchApproved: true,
-		detergentBrand: "Биолот 0.5% + Аламинол 1%",
-		rejectionReason: null,
-		operatorId: null,
-		operatorName: "Медсестра ЦСО",
-		notes: "Качество ПСО 100% соответствует СанПиН 3.3686-21. Допущено к автоклавированию.",
-		timestamp: new Date(Date.now() - 30 * 3600 * 1000).toISOString(),
-		createdAt: new Date(Date.now() - 30 * 3600 * 1000).toISOString(),
-	},
-];
-
 export function PsoRegisterTab() {
 	const appLogic = useOptionalAppLogicContext();
 	const [logs, setLogs] = useState<PsoCleaningLog[]>([]);
@@ -309,7 +216,7 @@ export function PsoRegisterTab() {
 	}, [logs, searchQuery, testFilter]);
 
 	const handleGenerateMonthlyForm366 = () => {
-		const recordsToPrint: PsoJournalRecord[] = (logs.length > 0 ? logs : DEFAULT_PSO_DEMO_RECORDS).map((l, idx) => ({
+		const recordsToPrint: PsoJournalRecord[] = logs.map((l, idx) => ({
 			id: l.id || `pso-${idx}`,
 			timestamp: l.timestamp || l.createdAt || new Date().toISOString(),
 			instrumentName: l.instrumentName,

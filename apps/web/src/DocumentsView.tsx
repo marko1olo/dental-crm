@@ -1647,13 +1647,14 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 						);
 					}}
 					data-testid="btn-documents-print-blank-contract"
-					title="Распечатать чистый бланк договора со строками _______ для ручного заполнения пациентом до приёма (без 403-ошибок)"
+					title="Распечатать чистый бланк договора для ручного заполнения пациентом до приёма (без 403-ошибок)"
 				>
 					<div className="flex items-center gap-2 min-w-0">
 						<Printer size={16} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
 						<span className="font-extrabold text-xs text-[var(--ink)] flex items-center gap-1.5 truncate">
 							<FileText size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-							Печать договора со строками _______
+							<span className="sm:hidden">Бланк договора (ручной)</span>
+							<span className="hidden sm:inline">Пустой бланк договора (под ручное заполнение)</span>
 						</span>
 					</div>
 					<span className="document-intake-quick-badge !text-xs !py-0.5 shrink-0">

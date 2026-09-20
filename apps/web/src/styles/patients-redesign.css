@@ -3,8 +3,8 @@
 .patients-panel {
 	display: flex;
 	flex-direction: column;
-	gap: 1.25rem;
-	padding: 1.25rem;
+	gap: 8px;
+	padding: 8px 16px;
 	background: var(--bg);
 	min-height: 100vh;
 	color: var(--ink);
@@ -621,6 +621,41 @@
 }
 
 /* High Contrast & Dark Theme Invariants (WCAG AAA >= 7:1) */
+[data-theme="dark"] .patients-header,
+[data-theme="night"] .patients-header,
+[data-theme="contrast"] .patients-header,
+[data-theme="cyber_xray"] .patients-header {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, rgba(255, 255, 255, 0.15));
+}
+
+[data-theme="dark"] .patients-search-box input,
+[data-theme="night"] .patients-search-box input,
+[data-theme="contrast"] .patients-search-box input,
+[data-theme="cyber_xray"] .patients-search-box input {
+	background: var(--paper-soft, #1e293b);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, rgba(255, 255, 255, 0.18));
+}
+
+[data-theme="dark"] .patients-search-shortcut-hint,
+[data-theme="night"] .patients-search-shortcut-hint,
+[data-theme="contrast"] .patients-search-shortcut-hint,
+[data-theme="cyber_xray"] .patients-search-shortcut-hint {
+	background: var(--paper-soft, #1e293b);
+	color: var(--ink-muted, #cbd5e1);
+	border-color: var(--line, rgba(255, 255, 255, 0.2));
+}
+
+[data-theme="dark"] .patients-header-actions .secondary-button,
+[data-theme="night"] .patients-header-actions .secondary-button,
+[data-theme="contrast"] .patients-header-actions .secondary-button,
+[data-theme="cyber_xray"] .patients-header-actions .secondary-button {
+	background: var(--paper-soft, #1e293b);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, rgba(255, 255, 255, 0.2));
+}
+
 [data-theme="dark"] .patient-row,
 [data-theme="night"] .patient-row,
 [data-theme="contrast"] .patient-row,
@@ -1223,9 +1258,11 @@
 	#payment-capture #payment-checkout-bar,
 	#payment-checkout-bar,
 	.payment-checkout-bar {
-		position: sticky !important;
-		bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
-		z-index: 35 !important;
+		position: fixed !important;
+		bottom: calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px)) !important;
+		left: 0 !important;
+		right: 0 !important;
+		z-index: 45 !important;
 		background: var(--paper) !important;
 		padding: 6px 12px calc(6px + env(safe-area-inset-bottom, 0px)) 12px !important;
 		margin: 0 !important;

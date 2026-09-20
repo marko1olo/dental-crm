@@ -3015,7 +3015,9 @@ section.imaging-panel {
 	color: var(--ink);
 	font-size: 18px;
 	line-height: 1.15;
-	overflow-wrap: anywhere;
+	overflow-wrap: break-word;
+	word-break: normal;
+	hyphens: manual;
 }
 
 .imaging-kind-filter {
@@ -7141,13 +7143,14 @@ section.imaging-panel {
 }
 
 .settings-tabs button {
-	background: #fbfefd;
+	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 8px;
-	color: var(--muted);
-	font-weight: 900;
-	min-height: 44px;
-	padding: 8px 14px;
+	color: var(--ink-muted, var(--muted));
+	font-weight: 600;
+	font-size: 13px;
+	min-height: 32px;
+	padding: 6px 14px;
 }
 
 .settings-tabs button.active {
@@ -10093,6 +10096,9 @@ section.imaging-panel {
 	gap: 12px;
 	min-height: 72px;
 	padding: 12px;
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 72px;
+	contain: paint layout;
 }
 
 .appointment-row {
@@ -13133,6 +13139,9 @@ body.dark-mode .payment-methods button.active {
 	grid-template-columns: auto minmax(0, 1fr) auto;
 	min-height: 66px;
 	padding: 10px;
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 66px;
+	contain: paint layout;
 }
 
 .finance-row svg {
@@ -14384,7 +14393,7 @@ html.dark .communication-side .panel-heading h3,
 	#payment-checkout-bar,
 	.payment-checkout-bar {
 		position: fixed !important;
-		bottom: 56px !important;
+		bottom: calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px)) !important;
 		left: 0 !important;
 		right: 0 !important;
 		background: var(--paper) !important;
@@ -14907,27 +14916,43 @@ html.dark .communication-side .panel-heading h3,
 
 	.imaging-patient-strip {
 		display: flex !important;
-		flex-direction: row !important;
+		flex-direction: column !important;
+		width: 100% !important;
 		gap: 6px !important;
 		margin-bottom: 8px !important;
 	}
 
 	.imaging-patient-strip article {
-		flex: 1 1 0 !important;
-		padding: 6px 8px !important;
+		width: 100% !important;
+		padding: 8px 10px !important;
 		gap: 2px !important;
 		min-width: 0 !important;
 	}
 
+	.imaging-patient-strip article:first-child {
+		width: 100% !important;
+	}
+
 	.imaging-patient-strip strong {
-		font-size: 13px !important;
-		line-height: 1.2 !important;
+		font-size: 14px !important;
+		line-height: 1.25 !important;
+		word-break: normal !important;
+		overflow-wrap: break-word !important;
+		hyphens: manual !important;
+	}
+
+	.imaging-patient-strip article:first-child strong {
+		font-size: 14px !important;
+		white-space: normal !important;
+		word-break: normal !important;
+		overflow-wrap: break-word !important;
+		hyphens: manual !important;
 	}
 
 	.imaging-patient-strip span,
 	.imaging-patient-strip small {
-		font-size: 10px !important;
-		line-height: 1.1 !important;
+		font-size: 11px !important;
+		line-height: 1.2 !important;
 	}
 
 	.imaging-upload-status > div:first-child {
@@ -15698,14 +15723,15 @@ textarea:focus {
 .settings-tabs button {
 	text-align: left;
 	justify-content: flex-start;
-	padding: 12px 16px;
+	padding: 6px 14px;
 	border: none;
 	background: transparent;
-	border-radius: 10px;
+	border-radius: 8px;
 	transition: all 0.2s ease;
 	font-weight: 500;
+	font-size: 13px;
 	color: var(--ink);
-	min-height: 44px;
+	min-height: 32px;
 }
 .settings-tabs button:hover {
 	background: rgba(13, 148, 136, 0.08);
@@ -15927,10 +15953,14 @@ textarea:focus {
 	font-weight: 800;
 	text-transform: uppercase;
 	letter-spacing: 0.08em;
-	color: var(--muted);
+	color: var(--ink-muted, var(--muted));
 	margin-bottom: 6px;
-	padding-left: 16px;
-	opacity: 0.8;
+	padding-left: 14px;
+}
+
+[data-theme="dark"] .settings-tabs-group-header,
+[data-theme="night"] .settings-tabs-group-header {
+	color: var(--ink-2, #94a3b8);
 }
 
 /* VISIT VIEW READABILITY ENHANCEMENTS */
@@ -16182,12 +16212,11 @@ textarea:focus {
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
-		color: var(--muted);
+		color: var(--ink-muted, var(--muted));
 		margin-bottom: 0;
 		padding-left: 0;
 		width: auto;
 		white-space: nowrap;
-		opacity: 0.7;
 		margin-right: 4px;
 		flex-shrink: 0;
 	}

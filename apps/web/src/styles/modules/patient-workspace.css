@@ -367,8 +367,13 @@
 /* ── ЭМК Вкладки (EMK Tabs) ─────────────────────────────────────── */
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .emk-unified-toolbar {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
 	border-bottom: 1px solid var(--line);
 	padding: 4px 0;
+	width: 100%;
+	min-width: 0;
 }
 
 .emk-tabs-container {
@@ -377,11 +382,12 @@
 	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: none;
-	gap: 8px;
+	gap: 6px;
 	margin: 0;
 	padding: 2px 0;
 	border-bottom: none;
 	min-width: 0;
+	width: 100%;
 	flex-shrink: 0;
 }
 
@@ -397,18 +403,20 @@
 .emk-tier1-quick-soap-bar {
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 	flex-wrap: nowrap;
 	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: none;
 	min-width: 0;
+	width: 100%;
 	padding: 2px 0;
 }
 
 .emk-tier1-quick-soap-bar button {
 	flex-shrink: 0 !important;
 	white-space: nowrap !important;
+	min-width: max-content !important;
 }
 
 .emk-tier1-quick-soap-bar::-webkit-scrollbar {
@@ -480,19 +488,31 @@
 	}
 }
 
-/* Ультракомпактная плашка голосовой диктовки (DEF-VIS-02) */
+/* Ультракомпактная плашка голосовой диктовки (DEF-VIS-02, Mandates 8d, 8p) */
 .emk-voice-pilot-hud {
 	margin: 2px 0 !important;
+	border-radius: 8px !important;
+}
+
+.emk-voice-pilot-hud.emk-voice-pilot-collapsed {
+	border: none !important;
+	background: transparent !important;
+	padding: 0 !important;
+}
+
+.emk-voice-pilot-hud:not(.has-content):not(.emk-voice-pilot-collapsed) {
+	height: 30px !important;
+	max-height: 30px !important;
 }
 
 .emk-voice-pilot-hud > div:first-child {
-	min-height: 26px !important;
-	padding: 2px 8px !important;
+	min-height: 28px !important;
+	padding: 0 8px !important;
 }
 
 .emk-voice-pilot-hud button {
 	min-height: 22px !important;
-	height: 22px !important;
+	height: 24px !important;
 	padding: 1px 8px !important;
 	font-size: 11px !important;
 }

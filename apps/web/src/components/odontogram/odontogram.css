@@ -188,13 +188,25 @@
 
 .odontogram-toolbar {
 	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+	padding: 4px 0;
+	border-bottom: 1px solid var(--odontogram-border-subtle);
+}
+
+.odontogram-toolbar-row {
+	display: flex;
 	flex-direction: row;
 	align-items: center;
-	gap: 8px;
+	justify-content: space-between;
+	gap: 6px;
 	width: 100%;
 	max-width: 100%;
 	height: 36px;
-	min-height: 34px;
+	min-height: 30px;
 	max-height: 36px;
 	box-sizing: border-box;
 	overflow-x: auto;
@@ -204,16 +216,22 @@
 	scrollbar-width: none;
 	touch-action: pan-x;
 	overscroll-behavior-x: contain;
-	padding: 4px 0;
-	border-bottom: 1px solid var(--odontogram-border-subtle);
 }
 
+.odontogram-toolbar-row::-webkit-scrollbar,
 .odontogram-toolbar::-webkit-scrollbar {
 	display: none;
 }
 
+.odontogram-toolbar-row > *,
 .odontogram-toolbar > * {
 	flex-shrink: 0;
+}
+
+.odontogram-toolbar-row button,
+.odontogram-toolbar button {
+	flex-shrink: 0;
+	white-space: nowrap;
 }
 
 .odontogram-chart-area {
@@ -413,10 +431,14 @@
 }
 
 @media (max-width: 640px) {
+	.tooth-chart-legend-row {
+		display: none !important;
+	}
 	.tooth-chart-arch-container {
 		padding: 6px 2px;
 		max-width: 100%;
 		overflow-x: auto;
+		min-height: 180px;
 	}
 	.tooth-chart-arch-wrapper {
 		max-width: 100%;
@@ -2404,6 +2426,25 @@
 	background: #475569;
 	border-color: #334155;
 	color: #f87171;
+}
+
+@media (max-width: 639px) {
+	[data-testid="print-odontogram-a4-btn"] {
+		display: none !important;
+	}
+	[data-testid="odontogram-compact-bill-badge"] {
+		flex-shrink: 0 !important;
+		white-space: nowrap !important;
+		max-width: none !important;
+	}
+	[data-testid="odontogram-compact-bill-badge"] * {
+		white-space: nowrap !important;
+	}
+	.quadrant-view-wrapper {
+		width: 100% !important;
+		min-width: 0 !important;
+		max-width: 100vw !important;
+	}
 }
 
 @media (max-width: 390px) {

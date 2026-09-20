@@ -3334,13 +3334,13 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 			{/* 1-Click Express Formula Actions (Mandate 8e: Санирован / Интактный, Адентия 8-ок) */}
 			{!hideExpressActions && (
 				<div
-					className="odontogram-express-bar mb-2 select-none flex items-center gap-1.5 flex-nowrap overflow-x-auto scrollbar-none min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:max-h-[36px] sm:h-[36px] py-0.5"
+					className="odontogram-express-bar mb-1.5 sm:mb-2 select-none flex items-center gap-1.5 flex-nowrap overflow-x-auto no-scrollbar min-h-[32px] sm:min-h-[34px] sm:max-h-[36px] sm:h-[36px] py-0.5"
 					data-testid="tooth-chart-express-actions"
 				>
 					<button
 						type="button"
 						onClick={handleMarkIntactDentition}
-						className="min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						className="min-h-[32px] h-8 px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 						title="1-клик Санирован / Интактный зубной ряд: вся формула отмечается здоровой без предупреждений и модалок"
 						data-testid="mark-intact-dentition-btn tooth-chart-mark-intact-btn"
 					>
@@ -3351,7 +3351,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 					<button
 						type="button"
 						onClick={handleMarkProHygieneDone}
-						className="min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						className="min-h-[32px] h-8 px-2.5 py-1 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 						title="1-клик Профгигиена выполнена: снятие зубных отложений УЗ + Air-Flow + полировка (A16.07.051) + протокол 043/у"
 						data-testid="tooth-chart-mark-pro-hygiene-btn"
 					>
@@ -3362,7 +3362,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 					<button
 						type="button"
 						onClick={handleApplyFastCariesK021}
-						className="min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-blue-500/15 hover:bg-blue-500/25 text-blue-800 dark:text-blue-200 border border-blue-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						className="min-h-[32px] h-8 px-2.5 py-1 rounded-lg text-xs font-black bg-blue-500/15 hover:bg-blue-500/25 text-blue-800 dark:text-blue-200 border border-blue-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 						title="1-клик Быстрая пломба/кариес K02.1 для выбранного зуба: протокол 043/у + световая пломба (A16.07.002.001)"
 						data-testid="tooth-chart-apply-fast-caries-btn"
 					>
@@ -3374,7 +3374,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 						<button
 							type="button"
 							onClick={handleMarkWisdomTeethMissing}
-							className="min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+							className="min-h-[32px] h-8 px-2.5 py-1 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 							title="1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
 							data-testid="mark-wisdom-missing-btn tooth-chart-mark-wisdom-missing-btn"
 						>
@@ -3387,7 +3387,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 						<button
 							type="button"
 							onClick={handleMarkMolarsMissing}
-							className="min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+							className="min-h-[32px] h-8 px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 							title="1-клик Вторичная адентия моляров: зубы 16, 26, 36, 46 моментально помечаются удаленными"
 							data-testid="mark-molars-missing-btn"
 						>
@@ -3399,7 +3399,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 					<button
 						type="button"
 						onClick={handleMarkFrontIntact}
-						className="min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						className="min-h-[32px] h-8 px-2.5 py-1 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 						title="1-клик Интактный фронт: зубы 13–23, 33–43 моментально помечаются здоровыми"
 						data-testid="mark-front-intact-btn"
 					>
@@ -3410,13 +3410,14 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 			)}
 
 			{/* Responsive Mobile & Desktop Quadrant Adapter Bar (Compact Space-Efficient) */}
+			{/* Responsive Mobile & Desktop Quadrant Adapter Bar (Compact Space-Efficient, Mandate 8d, 8e) */}
 			{!hideQuadrantSwitcher && (
-				<div className="odontogram-quadrant-bar mb-2 select-none" data-testid="odontogram-quadrant-bar">
-					<div className="flex items-center gap-2 sm:gap-1.5 flex-wrap sm:flex-nowrap w-full min-h-[44px] sm:min-h-[32px] sm:h-[34px] sm:max-h-[36px]">
+				<div className="odontogram-quadrant-bar mb-1 select-none min-h-[28px] h-7 sm:h-7.5 py-0" data-testid="odontogram-quadrant-bar">
+					<div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap overflow-x-auto no-scrollbar py-0 w-full h-full">
 						<button
 							type="button"
 							onClick={() => handleSelectQuadrant("all")}
-							className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-3.5 sm:px-3 py-1.5 sm:py-1 rounded-xl sm:rounded-lg text-xs font-black border transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[26px] h-6 sm:h-6.5 px-2 sm:px-3 py-0 rounded-lg text-[11px] sm:text-xs font-black border transition-all cursor-pointer select-none shrink-0 flex items-center justify-center whitespace-nowrap ${
 								currentQuadrant === "all"
 									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] font-black border-[var(--teal-dark,var(--teal))] shadow-xs"
 									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:bg-[var(--odontogram-surface-hover)]"
@@ -3424,18 +3425,19 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 							title="Показать полную зубную формулу"
 							data-testid="quadrant-btn-all"
 						>
-							Все зубы ({isMixedEffective ? "24" : isPediatricEffective ? "20" : "32"})
+							<span className="sm:hidden">Все ({isMixedEffective ? "24" : isPediatricEffective ? "20" : "32"})</span>
+							<span className="hidden sm:inline">Все зубы ({isMixedEffective ? "24" : isPediatricEffective ? "20" : "32"})</span>
 						</button>
 
-						<div className="h-5 w-px bg-[var(--odontogram-border)] mx-0.5 hidden sm:block" />
+						<div className="h-4 w-px bg-[var(--odontogram-border)] mx-0.5 shrink-0" />
 
-						{/* Quadrant buttons in a sleek inline strip (1 tight desktop row 32-34px, >= 48px on mobile) */}
-						<div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-1.5 flex-1 min-w-0">
+						{/* Quadrant buttons in a sleek horizontal scrollable strip */}
+						<div className="flex items-center gap-1 sm:gap-1.5 flex-nowrap shrink-0">
 							{/* Upper Right Quadrant: Q1 18–11 (or Q5 55–51) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q5" : "Q1")}
-								className={`quadrant-btn min-h-[48px] sm:min-h-[32px] sm:h-[32px] px-4 sm:px-2.5 py-2.5 sm:py-1 rounded-xl sm:rounded-lg text-xs sm:text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[26px] h-6 sm:h-6.5 px-2 sm:px-2.5 py-0 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-between gap-1 sm:gap-1.5 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 									currentQuadrant === (isPediatricEffective ? "Q5" : "Q1")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -3444,14 +3446,14 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 								data-testid={isPediatricEffective ? "quadrant-btn-Q5" : "quadrant-btn-Q1"}
 							>
 								<span className="font-extrabold whitespace-nowrap">{isPediatricEffective ? "Q5 55–51" : "Q1 18–11"}</span>
-								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·П</span>
+								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·П</span>
 							</button>
 
 							{/* Upper Left Quadrant: Q2 21–28 (or Q6 61–65) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q6" : "Q2")}
-								className={`quadrant-btn min-h-[48px] sm:min-h-[32px] sm:h-[32px] px-4 sm:px-2.5 py-2.5 sm:py-1 rounded-xl sm:rounded-lg text-xs sm:text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[26px] h-6 sm:h-6.5 px-2 sm:px-2.5 py-0 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-between gap-1 sm:gap-1.5 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 									currentQuadrant === (isPediatricEffective ? "Q6" : "Q2")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -3460,14 +3462,14 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 								data-testid={isPediatricEffective ? "quadrant-btn-Q6" : "quadrant-btn-Q2"}
 							>
 								<span className="font-extrabold whitespace-nowrap">{isPediatricEffective ? "Q6 61–65" : "Q2 21–28"}</span>
-								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·Л</span>
+								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·Л</span>
 							</button>
 
 							{/* Lower Right Quadrant: Q4 48–41 (or Q8 85–81) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q8" : "Q4")}
-								className={`quadrant-btn min-h-[48px] sm:min-h-[32px] sm:h-[32px] px-4 sm:px-2.5 py-2.5 sm:py-1 rounded-xl sm:rounded-lg text-xs sm:text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[26px] h-6 sm:h-6.5 px-2 sm:px-2.5 py-0 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-between gap-1 sm:gap-1.5 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 									currentQuadrant === (isPediatricEffective ? "Q8" : "Q4")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -3476,14 +3478,14 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 								data-testid={isPediatricEffective ? "quadrant-btn-Q8" : "quadrant-btn-Q4"}
 							>
 								<span className="font-extrabold whitespace-nowrap">{isPediatricEffective ? "Q8 85–81" : "Q4 48–41"}</span>
-								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·П</span>
+								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·П</span>
 							</button>
 
 							{/* Lower Left Quadrant: Q3 31–38 (or Q7 71–75) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q7" : "Q3")}
-								className={`quadrant-btn min-h-[48px] sm:min-h-[32px] sm:h-[32px] px-4 sm:px-2.5 py-2.5 sm:py-1 rounded-xl sm:rounded-lg text-xs sm:text-xs font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[26px] h-6 sm:h-6.5 px-2 sm:px-2.5 py-0 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-between gap-1 sm:gap-1.5 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 									currentQuadrant === (isPediatricEffective ? "Q7" : "Q3")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -3492,49 +3494,9 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 								data-testid={isPediatricEffective ? "quadrant-btn-Q7" : "quadrant-btn-Q3"}
 							>
 								<span className="font-extrabold whitespace-nowrap">{isPediatricEffective ? "Q7 71–75" : "Q3 31–38"}</span>
-								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·Л</span>
+								<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·Л</span>
 							</button>
 						</div>
-					</div>
-				</div>
-			)}
-
-			{!hideLegend && (
-				<div className="tooth-chart-legend-row">
-					<div className="tooth-chart-legend">
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shadow-sm" /> Кариес
-						</span>
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] shadow-sm" /> {isPediatricEffective ? "Пульпотомия / Пульпит" : "Пульпит"}
-						</span>
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" /> Периодонтит
-						</span>
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] shadow-sm" /> {isPediatricEffective ? "Пломба (СИЦ / Композит)" : "Пломба"}
-						</span>
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-[#10b981] shadow-sm" /> {isPediatricEffective ? "Коронка NuSmile / 3M" : "Коронка"}
-						</span>
-						{!isPediatricEffective && (
-							<span className="tooth-chart-legend-item">
-								<span className="w-2.5 h-2.5 rounded-full bg-[#6366f1] shadow-sm" /> Имплант
-							</span>
-						)}
-						{!isPediatricEffective && (
-							<span className="tooth-chart-legend-item">
-								<span className="w-2.5 h-2.5 rounded-full bg-indigo-400 border border-indigo-500" /> План
-							</span>
-						)}
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-[#64748b]" /> {isPediatricEffective ? "Смена (Выпал)" : "Отсутствует"}
-						</span>
-						{(isPediatricEffective || isMixedEffective) && (
-							<span className="tooth-chart-legend-item" title="Физиологическая резорбция корней молочных зубов">
-								<span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm" /> Резорбция (25–100%)
-							</span>
-						)}
 					</div>
 				</div>
 			)}
@@ -3551,27 +3513,36 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 							position: "relative",
 						}}
 					>
-						<div className="flex items-center justify-between w-full max-w-lg px-3 py-2 rounded-xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] mb-2">
+						<div className="flex items-center justify-between w-full max-w-lg px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] mb-2 gap-1.5">
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(getAdjacentQuadrant(currentQuadrant, "prev", pediatricMode))}
-								className="min-h-[44px] sm:min-h-[32px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
+								className="min-h-[36px] sm:min-h-[32px] min-w-[36px] sm:min-w-[44px] px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center justify-center gap-1 cursor-pointer transition-colors shrink-0 shadow-2xs"
 								title="Предыдущий квадрант"
 								data-testid="quadrant-prev-btn"
 							>
-								← Пред.
+								<span>←</span>
+								<span className="hidden sm:inline"> Пред.</span>
 							</button>
-							<span className="text-xs sm:text-sm font-black text-[var(--odontogram-ink)] text-center px-2">
-								{getQuadrantTitle(currentQuadrant, pediatricMode)}
-							</span>
+							<div className="flex flex-col items-center justify-center min-w-0 flex-1 px-1 text-center">
+								<span className="text-xs sm:text-sm font-black text-[var(--odontogram-ink)] leading-tight text-center">
+									<span className="sm:hidden">
+										{isQuadrantTop(currentQuadrant) ? "В/Ч" : "Н/Ч"} ({currentQuadrant}) • {currentQuadrant === "Q1" ? "18–11" : currentQuadrant === "Q2" ? "21–28" : currentQuadrant === "Q3" ? "31–38" : currentQuadrant === "Q4" ? "48–41" : currentQuadrant === "Q5" ? "55–51" : currentQuadrant === "Q6" ? "61–65" : currentQuadrant === "Q7" ? "71–75" : "85–81"}
+									</span>
+									<span className="hidden sm:inline">
+										{getQuadrantTitle(currentQuadrant, pediatricMode)}
+									</span>
+								</span>
+							</div>
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(getAdjacentQuadrant(currentQuadrant, "next", pediatricMode))}
-								className="min-h-[44px] sm:min-h-[32px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
+								className="min-h-[36px] sm:min-h-[32px] min-w-[36px] sm:min-w-[44px] px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center justify-center gap-1 cursor-pointer transition-colors shrink-0 shadow-2xs"
 								title="Следующий квадрант"
 								data-testid="quadrant-next-btn"
 							>
-								След. →
+								<span className="hidden sm:inline">След. </span>
+								<span>→</span>
 							</button>
 						</div>
 
@@ -3802,6 +3773,47 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 					</div>
 				)}
 			</div>
+
+			{/* Color Legend (compactly below teeth, matching AnatomicalSvgOdontogram) */}
+			{!hideLegend && (
+				<div className="tooth-chart-legend-row my-2 hidden sm:block">
+					<div className="tooth-chart-legend">
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shadow-sm" /> Кариес
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] shadow-sm" /> {isPediatricEffective ? "Пульпотомия / Пульпит" : "Пульпит"}
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" /> Периодонтит
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] shadow-sm" /> {isPediatricEffective ? "Пломба (СИЦ / Композит)" : "Пломба"}
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-[#10b981] shadow-sm" /> {isPediatricEffective ? "Коронка NuSmile / 3M" : "Коронка"}
+						</span>
+						{!isPediatricEffective && (
+							<span className="tooth-chart-legend-item">
+								<span className="w-2.5 h-2.5 rounded-full bg-[#6366f1] shadow-sm" /> Имплант
+							</span>
+						)}
+						{!isPediatricEffective && (
+							<span className="tooth-chart-legend-item">
+								<span className="w-2.5 h-2.5 rounded-full bg-indigo-400 border border-indigo-500" /> План
+							</span>
+						)}
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-[#64748b]" /> {isPediatricEffective ? "Смена (Выпал)" : "Отсутствует"}
+						</span>
+						{(isPediatricEffective || isMixedEffective) && (
+							<span className="tooth-chart-legend-item" title="Физиологическая резорбция корней молочных зубов">
+								<span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm" /> Резорбция (25–100%)
+							</span>
+						)}
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }, areToothChartPropsEqual);

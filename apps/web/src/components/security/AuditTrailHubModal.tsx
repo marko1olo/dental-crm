@@ -38,7 +38,6 @@ import {
 	exportAuditTrailToCsv,
 	generate152FzAuditActText,
 	generate152FzAuditActHtml,
-	getInitialAuditTrailDemoData,
 } from './auditTrailEngine';
 import './auditTrail.css';
 
@@ -56,9 +55,7 @@ export function AuditTrailHubModal({
 	initialEntries,
 }: AuditTrailHubModalProps): React.JSX.Element | null {
 	const [entries, setEntries] = useState<readonly AuditTrailEntry[]>(() => {
-		return initialEntries && initialEntries.length > 0
-			? initialEntries
-			: getInitialAuditTrailDemoData();
+		return initialEntries ?? [];
 	});
 
 	const [searchQuery, setSearchQuery] = useState<string>('');

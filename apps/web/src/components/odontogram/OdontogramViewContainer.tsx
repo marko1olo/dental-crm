@@ -655,15 +655,17 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			data-testid="odontogram-view-container"
 			data-view-mode={activeMode}
 		>
-			{/* Unified Clinical Toolbar - Responsive 1-Click Track */}
+			{/* Unified Clinical Toolbar - 2-Level Compact Console (Mandate 8d, 8e) */}
 			{!hideModeSwitcher && (
 				<div
-					className="odontogram-toolbar flex items-center justify-between gap-1.5 py-1 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full select-none flex-wrap min-h-[36px] h-auto"
+					className="odontogram-toolbar flex flex-col gap-1 sm:gap-1.5 py-1 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full select-none"
 					role="toolbar"
 					aria-label="Панель управления зубной формулой"
 				>
-					{/* Left Group: Modes, Dentition, Stamp, Actions */}
-					<div className="flex items-center gap-1.5 flex-wrap">
+					{/* Row 1 (Top Level): Modes + Dentition + Total Sanitation (Left) | Actions (Смета, План, Голос, Ещё) (Right) */}
+					<div className="odontogram-toolbar-row flex items-center justify-between gap-1.5 sm:gap-2 w-full flex-nowrap overflow-x-auto scrollbar-none min-h-[32px] sm:min-h-[34px] h-[32px] sm:h-[34px]">
+						{/* Left Group: Modes, Dentition, 1-click Санирован */}
+						<div className="flex items-center gap-1 sm:gap-1.5 flex-nowrap shrink-0">
 						{/* Segmented View Mode Radios: 3D / 6-гран. / ГОСТ */}
 						<div
 							className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 h-8"
@@ -768,415 +770,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 							</button>
 						)}
 
-						{/* 1-Click Quick State Triggers (Direct action for selected teeth or 1-click stamp) */}
-						{onQuickStateChange && (
-							<div
-								className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 h-8 gap-0.5"
-								role="group"
-								aria-label="Быстрые статусы патологий"
-							>
-								<button
-									type="button"
-									onClick={() => handleQuickTriggerState("Healthy")}
-									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
-										activeStampTool === "Healthy"
-											? "bg-emerald-600 text-white font-black shadow-xs"
-											: "text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15"
-									}`}
-									title="Норма / Здоров: применить к выделенным зубам или включить штамп нормы"
-									data-testid="quick-trigger-healthy-btn"
-								>
-									<span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-									<span className="whitespace-nowrap shrink-0">Норма</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => handleQuickTriggerState("Caries")}
-									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
-										activeStampTool === "Caries"
-											? "bg-amber-600 text-white font-black shadow-xs"
-											: "text-amber-700 dark:text-amber-400 hover:bg-amber-500/15"
-									}`}
-									title="Кариес (К): применить к выделенным зубам или включить штамп кариеса"
-									data-testid="quick-trigger-caries-btn"
-								>
-									<span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-									<span className="whitespace-nowrap shrink-0">Кариес</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => handleQuickTriggerState("Pulpitis")}
-									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
-										activeStampTool === "Pulpitis"
-											? "bg-red-600 text-white font-black shadow-xs"
-											: "text-red-700 dark:text-red-400 hover:bg-red-500/15"
-									}`}
-									title="Пульпит (Ф): анатомический красный #ef4444, применить к выделенным зубам или включить штамп"
-									data-testid="quick-trigger-pulpitis-btn"
-								>
-									<span className="w-2 h-2 rounded-full bg-[#ef4444] shrink-0" />
-									<span className="whitespace-nowrap shrink-0">Пульпит</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => handleQuickTriggerState("Filled")}
-									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
-										activeStampTool === "Filled"
-											? "bg-sky-600 text-white font-black shadow-xs"
-											: "text-sky-700 dark:text-sky-400 hover:bg-sky-500/15"
-									}`}
-									title="Пломба (П): применить к выделенным зубам или включить штамп пломбы"
-									data-testid="quick-trigger-filling-btn"
-								>
-									<span className="w-2 h-2 rounded-full bg-sky-500 shrink-0" />
-									<span className="whitespace-nowrap shrink-0">Пломба</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => handleQuickTriggerState("Missing")}
-									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
-										activeStampTool === "Missing"
-											? "bg-zinc-700 text-white font-black shadow-xs"
-											: "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-500/15"
-									}`}
-									title="Удален (X): применить к выделенным зубам или включить штамп отсутствия"
-									data-testid="quick-trigger-extracted-btn"
-								>
-									<span className="w-2 h-2 rounded-full bg-zinc-500 shrink-0" />
-									<span className="whitespace-nowrap shrink-0">Удален</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => handleQuickTriggerState("Implant")}
-									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
-										activeStampTool === "Implant"
-											? "bg-slate-700 text-white font-black shadow-xs"
-											: "text-slate-700 dark:text-slate-300 hover:bg-slate-500/15"
-									}`}
-									title="Имплант (И): титановый сланец #64748b, применить к выделенным зубам или включить штамп импланта"
-									data-testid="quick-trigger-implant-btn"
-								>
-									<span className="w-2 h-2 rounded-full bg-[#64748b] shrink-0" />
-									<span className="whitespace-nowrap shrink-0">Имплант</span>
-								</button>
-							</div>
-						)}
-
-						{/* Compact Stamp Selector: Dropdown Popover */}
-						<div className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 h-8">
-							<details className="relative">
-								<summary
-									className={`list-none h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none flex items-center gap-1.5 shrink-0 ${
-										activeStampTool
-											? "bg-indigo-600 text-white font-black shadow-xs"
-											: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-paper,#ffffff)]/60"
-									}`}
-									title="Штамп патологий: клик по зубам для быстрого проставления диагноза"
-								>
-									<Paintbrush size={13} className={activeStampTool ? "animate-pulse" : "shrink-0"} />
-									<span>
-										{activeStampTool
-											? (STAMP_ITEMS.find((s) => s.state === activeStampTool)?.short ?? activeStampTool)
-											: "Штамп"}
-									</span>
-									<ChevronDown size={11} className="shrink-0 opacity-70" />
-								</summary>
-								<div className="absolute left-0 top-full mt-1.5 z-40 w-48 p-1.5 rounded-xl shadow-xl bg-[var(--paper,#ffffff)] dark:bg-zinc-900 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 flex flex-col gap-1">
-									<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-2 py-0.5 select-none">
-										Выбрать штамп:
-									</div>
-									{STAMP_ITEMS.map((item) => {
-										const isSelected = activeStampTool === item.state;
-										return (
-											<button
-												key={item.state}
-												type="button"
-												onClick={(e) => {
-													const details = e.currentTarget.closest("details");
-													if (details) details.open = false;
-													setActiveStampTool((prev) => (prev === item.state ? null : item.state));
-												}}
-												className={`w-full h-7 px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-between text-left ${
-													isSelected
-														? `${item.activeClass} font-black shadow-xs`
-														: `${item.badgeClass} border`
-												}`}
-												title={`Штамп: ${item.label}`}
-												data-testid={item.testId}
-											>
-												<span>{item.label}</span>
-												{isSelected && <Check size={12} className="shrink-0" />}
-											</button>
-										);
-									})}
-								</div>
-							</details>
-							{activeStampTool && (
-								<button
-									type="button"
-									onClick={() => setActiveStampTool(null)}
-									className="h-7 px-1.5 ml-0.5 rounded-md text-xs font-bold bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-all cursor-pointer shrink-0 border border-[var(--odontogram-border-subtle,#e2e8f0)] flex items-center gap-1"
-									title="Сбросить режим штампа (Esc)"
-									data-testid="stamp-reset-btn"
-								>
-									<X size={12} />
-									<span className="hidden sm:inline text-[10px]">Сброс</span>
-								</button>
-							)}
-						</div>
-
-						{/* Quick Actions Dropdown: Sanitation, Wisdom, Quadrants, Jaws */}
-						<details className="relative shrink-0">
-							<summary
-								className="list-none h-8 px-2.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] hover:text-indigo-600 text-[var(--odontogram-ink-muted,#64748b)] text-xs font-bold flex items-center gap-1.5 cursor-pointer select-none transition-all shrink-0"
-								title="Быстрые действия: санация, без 8-ок, квадранты, челюсти"
-								data-testid="odontogram-quick-actions-menu"
-							>
-								<Layers size={14} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
-								<span>Действия</span>
-								<ChevronDown size={11} className="shrink-0 opacity-70" />
-							</summary>
-							<div className="absolute left-0 top-full mt-1.5 z-40 w-72 p-2 rounded-xl shadow-xl bg-[var(--paper,#ffffff)] dark:bg-zinc-900 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 flex flex-col gap-2">
-								{/* 1-Click Total Sanitation & Wisdom Absence Action Triggers */}
-								{onQuickStateChange && (
-									<div>
-										<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-1 mb-1 select-none">
-											Пакетные операции (1 клик)
-										</div>
-										<div className="flex items-center gap-1.5">
-											<button
-												type="button"
-												onClick={(e) => {
-													const details = e.currentTarget.closest("details");
-													if (details) details.open = false;
-													handleMarkIntactDentition();
-												}}
-												className="flex-1 h-7 px-2 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-98"
-												title="1-клик Санирован / Интактный зубной ряд: все 32 зуба моментально помечаются здоровыми"
-												data-testid="mark-intact-dentition-dropdown-btn mark-intact-dentition-btn"
-											>
-												<Zap size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-												<span>Санирован</span>
-											</button>
-
-											{!pediatricMode && (
-												<button
-													type="button"
-													onClick={(e) => {
-														const details = e.currentTarget.closest("details");
-														if (details) details.open = false;
-														handleMarkWisdomTeethMissing();
-													}}
-													className="flex-1 h-7 px-2 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-98"
-													title="1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
-													data-testid="mark-wisdom-missing-btn"
-												>
-													<Zap size={13} className="text-zinc-500 shrink-0" />
-													<span>Без 8-ок</span>
-												</button>
-											)}
-										</div>
-									</div>
-								)}
-
-								{/* 1-Click Batch Quadrant & Front Selection Buttons */}
-								<div>
-									<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-1 mb-1 select-none">
-										Выбор квадрантов и фронта
-									</div>
-									<div className="flex items-center gap-1">
-										{isPediatricEffective ? (
-											<>
-												<button
-													type="button"
-													onClick={(e) => {
-														const details = e.currentTarget.closest("details");
-														if (details) details.open = false;
-														handleBatchSelectGroup(PEDIATRIC_Q5);
-													}}
-													className="flex-1 h-7 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center"
-													title="Выделить Q5 (55–51, В/Ч Правый)"
-													data-testid="batch-select-q5-btn"
-												>
-													Q5
-												</button>
-												<button
-													type="button"
-													onClick={(e) => {
-														const details = e.currentTarget.closest("details");
-														if (details) details.open = false;
-														handleBatchSelectGroup(PEDIATRIC_Q6);
-													}}
-													className="flex-1 h-7 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center"
-													title="Выделить Q6 (61–65, В/Ч Левый)"
-													data-testid="batch-select-q6-btn"
-												>
-													Q6
-												</button>
-												<button
-													type="button"
-													onClick={(e) => {
-														const details = e.currentTarget.closest("details");
-														if (details) details.open = false;
-														handleBatchSelectGroup(PEDIATRIC_Q7);
-													}}
-													className="flex-1 h-7 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center"
-													title="Выделить Q7 (71–75, Н/Ч Левый)"
-													data-testid="batch-select-q7-btn"
-												>
-													Q7
-												</button>
-												<button
-													type="button"
-													onClick={(e) => {
-														const details = e.currentTarget.closest("details");
-														if (details) details.open = false;
-														handleBatchSelectGroup(PEDIATRIC_Q8);
-													}}
-													className="flex-1 h-7 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center"
-													title="Выделить Q8 (85–81, Н/Ч Правый)"
-													data-testid="batch-select-q8-btn"
-												>
-													Q8
-												</button>
-												<button
-													type="button"
-													onClick={(e) => {
-														const details = e.currentTarget.closest("details");
-														if (details) details.open = false;
-														handleBatchSelectGroup(PEDIATRIC_FRONT);
-													}}
-													className="flex-1 h-7 rounded text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 border border-amber-500/30 transition-all cursor-pointer select-none text-center"
-													title="Выделить детскую фронтальную группу (53–63, 83–73)"
-													data-testid="batch-select-front-btn"
-												>
-													Фронт
-												</button>
-											</>
-										) : (
-											<>
-												<button
-													type="button"
-													onClick={(e) => {
-														const details = e.currentTarget.closest("details");
-														if (details) details.open = false;
-														handleBatchSelectGroup(ADULT_Q1);
-													}}
-													className="flex-1 h-7 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center"
-													title="Выделить Q1 (18–11, В/Ч Правый)"
-													data-testid="batch-select-q1-btn"
-												>
-													Q1
-												</button>
-												<button
-													type="button"
-													onClick={(e) => {
-														const details = e.currentTarget.closest("details");
-														if (details) details.open = false;
-														handleBatchSelectGroup(ADULT_Q2);
-													}}
-													className="flex-1 h-7 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center"
-													title="Выделить Q2 (21–28, В/Ч Левый)"
-													data-testid="batch-select-q2-btn"
-												>
-													Q2
-												</button>
-												<button
-													type="button"
-													onClick={(e) => {
-														const details = e.currentTarget.closest("details");
-														if (details) details.open = false;
-														handleBatchSelectGroup(ADULT_Q3);
-													}}
-													className="flex-1 h-7 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center"
-													title="Выделить Q3 (31–38, Н/Ч Левый)"
-													data-testid="batch-select-q3-btn"
-												>
-													Q3
-												</button>
-												<button
-													type="button"
-													onClick={(e) => {
-														const details = e.currentTarget.closest("details");
-														if (details) details.open = false;
-														handleBatchSelectGroup(ADULT_Q4);
-													}}
-													className="flex-1 h-7 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center"
-													title="Выделить Q4 (48–41, Н/Ч Правый)"
-													data-testid="batch-select-q4-btn"
-												>
-													Q4
-												</button>
-												<button
-													type="button"
-													onClick={(e) => {
-														const details = e.currentTarget.closest("details");
-														if (details) details.open = false;
-														handleBatchSelectGroup(ADULT_FRONT);
-													}}
-													className="flex-1 h-7 rounded text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 border border-amber-500/30 transition-all cursor-pointer select-none text-center"
-													title="Выделить фронтальную группу (13–23, 43–33)"
-													data-testid="batch-select-front-btn"
-												>
-													Фронт
-												</button>
-											</>
-										)}
-									</div>
-								</div>
-
-								{/* 3 Jaw / Occlusion 1-Click Buttons (JU, JL, C) */}
-								<div>
-									<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-1 mb-1 select-none">
-										Челюсти и прикус
-									</div>
-									<div className="flex items-center gap-1.5">
-										<button
-											type="button"
-											onClick={(e) => {
-												const details = e.currentTarget.closest("details");
-												if (details) details.open = false;
-												setActiveJawModalTarget("JU");
-											}}
-											className="flex-1 h-7 rounded-lg text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 transition-all cursor-pointer select-none text-center"
-											title="Верхняя челюсть (JU / Maxilla): адентия, атрофия, синус-лифтинг"
-											data-testid="view-toolbar-jaw-ju-btn"
-										>
-											В/Ч
-										</button>
-										<button
-											type="button"
-											onClick={(e) => {
-												const details = e.currentTarget.closest("details");
-												if (details) details.open = false;
-												setActiveJawModalTarget("JL");
-											}}
-											className="flex-1 h-7 rounded-lg text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 transition-all cursor-pointer select-none text-center"
-											title="Нижняя челюсть (JL / Mandibula): адентия, атрофия, экзостозы"
-											data-testid="view-toolbar-jaw-jl-btn"
-										>
-											Н/Ч
-										</button>
-										<button
-											type="button"
-											onClick={(e) => {
-												const details = e.currentTarget.closest("details");
-												if (details) details.open = false;
-												setActiveJawModalTarget("C");
-											}}
-											className="flex-1 h-7 rounded-lg text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 transition-all cursor-pointer select-none text-center"
-											title="Прикус / Окклюзия (C): ортогнатический, дистальный, мезиальный, глубокий"
-											data-testid="view-toolbar-jaw-c-btn"
-										>
-											Прикус
-										</button>
-									</div>
-								</div>
-							</div>
-						</details>
 					</div>
-
-					<div className="h-6 w-[1px] bg-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 mx-0.5 hidden sm:block" />
 
 					{/* Right Group: Core Loop Actions (Estimator, Voice) + Compact "Ещё..." Dropdown */}
 					<div className="flex items-center gap-1 shrink-0 flex-nowrap">
@@ -1201,17 +795,17 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 							<span>Смета</span>
 						</button>
 
-						{/* 1-Click Treatment Plan from Pathologies */}
+						{/* 1-Click Treatment Plan from Pathologies (hidden on mobile, available in More menu) */}
 						<button
 							type="button"
 							onClick={() => setIsPlanWizardOpen(true)}
-							className="h-8 flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-black whitespace-nowrap border border-indigo-500/40 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 transition-all shrink-0 cursor-pointer shadow-xs active:scale-95"
+							className="hidden sm:flex h-8 items-center gap-1.5 px-2.5 rounded-lg text-xs font-black whitespace-nowrap border border-indigo-500/40 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 transition-all shrink-0 cursor-pointer shadow-xs active:scale-95"
 							title="Сформировать черновой план лечения по номенклатуре 804н на основе всех выявленных патологий зубной формулы"
 							data-testid="create-plan-from-pathologies-btn"
 						>
 							<FileText size={14} className="text-indigo-600 dark:text-indigo-400" />
-							<span className="hidden xl:inline">План из патологий</span>
-							<span className="xl:hidden">План</span>
+							<span className="hidden 2xl:inline">План из патологий</span>
+							<span className="2xl:hidden">План</span>
 						</button>
 
 						{/* Voice Dictation Trigger */}
@@ -1542,6 +1136,417 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 								</div>
 							)}
 						</div>
+					</div>
+					</div>
+
+					{/* Row 2 (Bottom Level): Quick State Triggers (Норма, Кариес, Пульпит, Пломба, Удален, Имплант) + Штамп + Действия */}
+					<div className="odontogram-toolbar-row flex items-center justify-start gap-1 sm:gap-1.5 w-full flex-nowrap overflow-x-auto scrollbar-none min-h-[30px] sm:min-h-[32px] h-[30px] sm:h-[32px]">
+						{/* 1-Click Quick State Triggers (Direct action for selected teeth or 1-click stamp) */}
+						{onQuickStateChange && (
+							<div
+								className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 h-7 sm:h-7.5 gap-0.5"
+								role="group"
+								aria-label="Быстрые статусы патологий"
+							>
+								<button
+									type="button"
+									onClick={() => handleQuickTriggerState("Healthy")}
+									className={`h-6 sm:h-6.5 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+										activeStampTool === "Healthy"
+											? "bg-emerald-600 text-white font-black shadow-xs"
+											: "text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15"
+									}`}
+									title="Норма / Здоров: применить к выделенным зубам или включить штамп нормы"
+									data-testid="quick-trigger-healthy-btn"
+								>
+									<span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+									<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">Норма</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => handleQuickTriggerState("Caries")}
+									className={`h-6 sm:h-6.5 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+										activeStampTool === "Caries"
+											? "bg-amber-600 text-white font-black shadow-xs"
+											: "text-amber-700 dark:text-amber-400 hover:bg-amber-500/15"
+									}`}
+									title="Кариес (К): применить к выделенным зубам или включить штамп кариеса"
+									data-testid="quick-trigger-caries-btn"
+								>
+									<span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+									<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">Кариес</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => handleQuickTriggerState("Pulpitis")}
+									className={`h-6 sm:h-6.5 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+										activeStampTool === "Pulpitis"
+											? "bg-red-600 text-white font-black shadow-xs"
+											: "text-red-700 dark:text-red-400 hover:bg-red-500/15"
+									}`}
+									title="Пульпит (Ф): анатомический красный #ef4444, применить к выделенным зубам или включить штамп"
+									data-testid="quick-trigger-pulpitis-btn"
+								>
+									<span className="w-2 h-2 rounded-full bg-[#ef4444] shrink-0" />
+									<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">Пульпит</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => handleQuickTriggerState("Filled")}
+									className={`h-6 sm:h-6.5 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+										activeStampTool === "Filled"
+											? "bg-sky-600 text-white font-black shadow-xs"
+											: "text-sky-700 dark:text-sky-400 hover:bg-sky-500/15"
+									}`}
+									title="Пломба (П): применить к выделенным зубам или включить штамп пломбы"
+									data-testid="quick-trigger-filling-btn"
+								>
+									<span className="w-2 h-2 rounded-full bg-sky-500 shrink-0" />
+									<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">Пломба</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => handleQuickTriggerState("Missing")}
+									className={`h-6 sm:h-6.5 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+										activeStampTool === "Missing"
+											? "bg-zinc-700 text-white font-black shadow-xs"
+											: "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-500/15"
+									}`}
+									title="Удален (X): применить к выделенным зубам или включить штамп отсутствия"
+									data-testid="quick-trigger-extracted-btn"
+								>
+									<span className="w-2 h-2 rounded-full bg-zinc-500 shrink-0" />
+									<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">Удален</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => handleQuickTriggerState("Implant")}
+									className={`h-6 sm:h-6.5 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+										activeStampTool === "Implant"
+											? "bg-slate-700 text-white font-black shadow-xs"
+											: "text-slate-700 dark:text-slate-300 hover:bg-slate-500/15"
+									}`}
+									title="Имплант (И): титановый сланец #64748b, применить к выделенным зубам или включить штамп импланта"
+									data-testid="quick-trigger-implant-btn"
+								>
+									<span className="w-2 h-2 rounded-full bg-[#64748b] shrink-0" />
+									<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">Имплант</span>
+								</button>
+							</div>
+						)}
+
+						{/* Compact Stamp Selector: Dropdown Popover */}
+						<div className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 h-7 sm:h-7.5">
+							<details className="relative">
+								<summary
+									className={`list-none h-6 sm:h-6.5 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none flex items-center gap-1.5 shrink-0 ${
+										activeStampTool
+											? "bg-indigo-600 text-white font-black shadow-xs"
+											: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-paper,#ffffff)]/60"
+									}`}
+									title="Штамп патологий: клик по зубам для быстрого проставления диагноза"
+								>
+									<Paintbrush size={13} className={activeStampTool ? "animate-pulse" : "shrink-0"} />
+									<span>
+										{activeStampTool
+											? (STAMP_ITEMS.find((s) => s.state === activeStampTool)?.short ?? activeStampTool)
+											: "Штамп"}
+									</span>
+									<ChevronDown size={11} className="shrink-0 opacity-70" />
+								</summary>
+								<div className="absolute left-0 top-full mt-1.5 z-40 w-48 p-1.5 rounded-xl shadow-xl bg-[var(--paper,#ffffff)] dark:bg-zinc-900 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 flex flex-col gap-1">
+									<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-2 py-0.5 select-none">
+										Выбрать штамп:
+									</div>
+									{STAMP_ITEMS.map((item) => {
+										const isSelected = activeStampTool === item.state;
+										return (
+											<button
+												key={item.state}
+												type="button"
+												onClick={(e) => {
+													const details = e.currentTarget.closest("details");
+													if (details) details.open = false;
+													setActiveStampTool((prev) => (prev === item.state ? null : item.state));
+												}}
+												className={`w-full h-7 px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-between text-left ${
+													isSelected
+														? `${item.activeClass} font-black shadow-xs`
+														: `${item.badgeClass} border`
+												}`}
+												title={`Штамп: ${item.label}`}
+												data-testid={item.testId}
+											>
+												<span>{item.label}</span>
+												{isSelected && <Check size={12} className="shrink-0" />}
+											</button>
+										);
+									})}
+								</div>
+							</details>
+							{activeStampTool && (
+								<button
+									type="button"
+									onClick={() => setActiveStampTool(null)}
+									className="h-6 sm:h-6.5 px-1.5 ml-0.5 rounded-md text-xs font-bold bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-all cursor-pointer shrink-0 border border-[var(--odontogram-border-subtle,#e2e8f0)] flex items-center gap-1"
+									title="Сбросить режим штампа (Esc)"
+									data-testid="stamp-reset-btn"
+								>
+									<X size={12} />
+									<span className="hidden sm:inline text-[10px]">Сброс</span>
+								</button>
+							)}
+						</div>
+
+						{/* Quick Actions Dropdown: Sanitation, Wisdom, Quadrants, Jaws */}
+						<details className="relative shrink-0">
+							<summary
+								className="list-none h-7 sm:h-7.5 px-2.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] hover:text-indigo-600 text-[var(--odontogram-ink-muted,#64748b)] text-xs font-bold flex items-center gap-1.5 cursor-pointer select-none transition-all shrink-0"
+								title="Быстрые действия: санация, без 8-ок, квадранты, челюсти"
+								data-testid="odontogram-quick-actions-menu"
+							>
+								<Layers size={14} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
+								<span>Действия</span>
+								<ChevronDown size={11} className="shrink-0 opacity-70" />
+							</summary>
+							<div className="absolute left-0 top-full mt-1.5 z-40 w-72 p-2 rounded-xl shadow-xl bg-[var(--paper,#ffffff)] dark:bg-zinc-900 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 flex flex-col gap-2">
+								{/* 1-Click Total Sanitation & Wisdom Absence Action Triggers */}
+								{onQuickStateChange && (
+									<div>
+										<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-1 mb-1 select-none">
+											Пакетные операции (1 клик)
+										</div>
+										<div className="flex items-center gap-1.5">
+											<button
+												type="button"
+												onClick={(e) => {
+													const details = e.currentTarget.closest("details");
+													if (details) details.open = false;
+													handleMarkIntactDentition();
+												}}
+												className="flex-1 h-7 px-2 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-98"
+												title="1-клик Санирован / Интактный зубной ряд: все 32 зуба моментально помечаются здоровыми"
+												data-testid="mark-intact-dentition-dropdown-btn mark-intact-dentition-btn"
+											>
+												<Zap size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+												<span>Санирован</span>
+											</button>
+
+											{!pediatricMode && (
+												<button
+													type="button"
+													onClick={(e) => {
+														const details = e.currentTarget.closest("details");
+														if (details) details.open = false;
+														handleMarkWisdomTeethMissing();
+													}}
+													className="flex-1 h-7 px-2 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1 active:scale-98"
+													title="1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
+													data-testid="mark-wisdom-missing-btn"
+												>
+													<Zap size={13} className="text-zinc-500 shrink-0" />
+													<span>Без 8-ок</span>
+												</button>
+											)}
+										</div>
+									</div>
+								)}
+
+								{/* 1-Click Batch Quadrant & Front Selection Buttons */}
+								<div>
+									<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-1 mb-1 select-none">
+										Выбор квадрантов и фронта
+									</div>
+									<div className="flex items-center gap-1">
+										{isPediatricEffective ? (
+											<>
+												<button
+													type="button"
+													onClick={(e) => {
+														const details = e.currentTarget.closest("details");
+														if (details) details.open = false;
+														handleBatchSelectGroup(PEDIATRIC_Q5);
+													}}
+													className="flex-1 h-7 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center"
+													title="Выделить Q5 (55–51, В/Ч Правый)"
+													data-testid="batch-select-q5-btn"
+												>
+													Q5
+												</button>
+												<button
+													type="button"
+													onClick={(e) => {
+														const details = e.currentTarget.closest("details");
+														if (details) details.open = false;
+														handleBatchSelectGroup(PEDIATRIC_Q6);
+													}}
+													className="flex-1 h-7 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center"
+													title="Выделить Q6 (61–65, В/Ч Левый)"
+													data-testid="batch-select-q6-btn"
+												>
+													Q6
+												</button>
+												<button
+													type="button"
+													onClick={(e) => {
+														const details = e.currentTarget.closest("details");
+														if (details) details.open = false;
+														handleBatchSelectGroup(PEDIATRIC_Q7);
+													}}
+													className="flex-1 h-7 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center"
+													title="Выделить Q7 (71–75, Н/Ч Левый)"
+													data-testid="batch-select-q7-btn"
+												>
+													Q7
+												</button>
+												<button
+													type="button"
+													onClick={(e) => {
+														const details = e.currentTarget.closest("details");
+														if (details) details.open = false;
+														handleBatchSelectGroup(PEDIATRIC_Q8);
+													}}
+													className="flex-1 h-7 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center"
+													title="Выделить Q8 (85–81, Н/Ч Правый)"
+													data-testid="batch-select-q8-btn"
+												>
+													Q8
+												</button>
+												<button
+													type="button"
+													onClick={(e) => {
+														const details = e.currentTarget.closest("details");
+														if (details) details.open = false;
+														handleBatchSelectGroup(PEDIATRIC_FRONT);
+													}}
+													className="flex-1 h-7 rounded text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 border border-amber-500/30 transition-all cursor-pointer select-none text-center"
+													title="Выделить детскую фронтальную группу (53–63, 83–73)"
+													data-testid="batch-select-front-btn"
+												>
+													Фронт
+												</button>
+											</>
+										) : (
+											<>
+												<button
+													type="button"
+													onClick={(e) => {
+														const details = e.currentTarget.closest("details");
+														if (details) details.open = false;
+														handleBatchSelectGroup(ADULT_Q1);
+													}}
+													className="flex-1 h-7 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center"
+													title="Выделить Q1 (18–11, В/Ч Правый)"
+													data-testid="batch-select-q1-btn"
+												>
+													Q1
+												</button>
+												<button
+													type="button"
+													onClick={(e) => {
+														const details = e.currentTarget.closest("details");
+														if (details) details.open = false;
+														handleBatchSelectGroup(ADULT_Q2);
+													}}
+													className="flex-1 h-7 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center"
+													title="Выделить Q2 (21–28, В/Ч Левый)"
+													data-testid="batch-select-q2-btn"
+												>
+													Q2
+												</button>
+												<button
+													type="button"
+													onClick={(e) => {
+														const details = e.currentTarget.closest("details");
+														if (details) details.open = false;
+														handleBatchSelectGroup(ADULT_Q3);
+													}}
+													className="flex-1 h-7 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center"
+													title="Выделить Q3 (31–38, Н/Ч Левый)"
+													data-testid="batch-select-q3-btn"
+												>
+													Q3
+												</button>
+												<button
+													type="button"
+													onClick={(e) => {
+														const details = e.currentTarget.closest("details");
+														if (details) details.open = false;
+														handleBatchSelectGroup(ADULT_Q4);
+													}}
+													className="flex-1 h-7 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] border border-[var(--odontogram-border-subtle,#e2e8f0)] transition-all cursor-pointer select-none text-center"
+													title="Выделить Q4 (48–41, Н/Ч Правый)"
+													data-testid="batch-select-q4-btn"
+												>
+													Q4
+												</button>
+												<button
+													type="button"
+													onClick={(e) => {
+														const details = e.currentTarget.closest("details");
+														if (details) details.open = false;
+														handleBatchSelectGroup(ADULT_FRONT);
+													}}
+													className="flex-1 h-7 rounded text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 border border-amber-500/30 transition-all cursor-pointer select-none text-center"
+													title="Выделить фронтальную группу (13–23, 43–33)"
+													data-testid="batch-select-front-btn"
+												>
+													Фронт
+												</button>
+											</>
+										)}
+									</div>
+								</div>
+
+								{/* 3 Jaw / Occlusion 1-Click Buttons (JU, JL, C) */}
+								<div>
+									<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-1 mb-1 select-none">
+										Челюсти и прикус
+									</div>
+									<div className="flex items-center gap-1.5">
+										<button
+											type="button"
+											onClick={(e) => {
+												const details = e.currentTarget.closest("details");
+												if (details) details.open = false;
+												setActiveJawModalTarget("JU");
+											}}
+											className="flex-1 h-7 rounded-lg text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 transition-all cursor-pointer select-none text-center"
+											title="Верхняя челюсть (JU / Maxilla): адентия, атрофия, синус-лифтинг"
+											data-testid="view-toolbar-jaw-ju-btn"
+										>
+											В/Ч
+										</button>
+										<button
+											type="button"
+											onClick={(e) => {
+												const details = e.currentTarget.closest("details");
+												if (details) details.open = false;
+												setActiveJawModalTarget("JL");
+											}}
+											className="flex-1 h-7 rounded-lg text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 transition-all cursor-pointer select-none text-center"
+											title="Нижняя челюсть (JL / Mandibula): адентия, атрофия, экзостозы"
+											data-testid="view-toolbar-jaw-jl-btn"
+										>
+											Н/Ч
+										</button>
+										<button
+											type="button"
+											onClick={(e) => {
+												const details = e.currentTarget.closest("details");
+												if (details) details.open = false;
+												setActiveJawModalTarget("C");
+											}}
+											className="flex-1 h-7 rounded-lg text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 transition-all cursor-pointer select-none text-center"
+											title="Прикус / Окклюзия (C): ортогнатический, дистальный, мезиальный, глубокий"
+											data-testid="view-toolbar-jaw-c-btn"
+										>
+											Прикус
+										</button>
+									</div>
+								</div>
+							</div>
+						</details>
 					</div>
 				</div>
 			)}
