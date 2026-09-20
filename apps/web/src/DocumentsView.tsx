@@ -36,6 +36,7 @@ import { isoDateLabel } from "./AppHelpers";
 import { AnamnesisField } from "./components/documents/AnamnesisField";
 import { DocumentUkepSignButton } from "./components/documents/DocumentUkepSignButton";
 import { appendChipToText } from "./components/documents/documentChipText";
+import { sliceDomList } from "./utils/domVirtualizationHelper";
 import "./components/documents/documentNavigation.css";
 import {
 	DocumentNavTabs,
@@ -1535,6 +1536,23 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		documentLabels,
 		dashboard?.patients,
 	]);
+
+	// Progressive DOM virtualization for low-spec laptops (Mandates 8c, 8n)
+	const [displayLimit, setDisplayLimit] = useState(40);
+
+	useEffect(() => {
+		setDisplayLimit(40);
+	}, [
+		activeCategoryTab,
+		registryStatusFilter,
+		registryEdsFilter,
+		registryKindFilter,
+		registrySearchQuery,
+	]);
+
+	const documentsSlice = useMemo(() => {
+		return sliceDomList(filteredActiveDocuments ?? [], displayLimit, 0);
+	}, [filteredActiveDocuments, displayLimit]);
 
 	const handleOpenLatestDocument = () => {
 		executeOpenLatestDocumentAutonomy({
@@ -5845,7 +5863,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 			/>
 
 			<div className="document-list">
-				{(filteredActiveDocuments ?? []).map((document) => {
+				{documentsSlice.visibleItems.map((document) => {
 					const documentActionLabel = documentActionLabels?.[document.kind] ?? "Документ";
 					const documentKindLabel = documentLabels?.[document.kind] ?? document.kind;
 					const docSourceStatus =
@@ -6237,6 +6255,42 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 						</article>
 					);
 				})}
+				{documentsSlice.hasMore && (
+					<div
+						style={{
+							padding: "16px",
+							textAlign: "center",
+							background: "var(--paper-strong, #f8fafc)",
+							borderRadius: "8px",
+							margin: "8px 0",
+						}}
+					>
+						<button
+							type="button"
+							className="btn-documents-show-more"
+							data-testid="btn-documents-show-more"
+							onClick={() => setDisplayLimit((prev) => prev + 40)}
+							style={{
+								background: "var(--paper, #ffffff)",
+								border: "1px solid var(--border, #cbd5e1)",
+								color: "var(--ink, #0f172a)",
+								padding: "8px 18px",
+								borderRadius: "8px",
+								fontSize: "13px",
+								fontWeight: 600,
+								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "6px",
+							}}
+							title="Загрузить следующие документы"
+						>
+							<span>
+								Показать ещё 40 документов (осталось {documentsSlice.remainingCount})
+							</span>
+						</button>
+					</div>
+				)}
 				{(filteredActiveDocuments ?? []).length === 0 ? (
 					(typedActiveDocuments ?? []).length === 0 ? (
 						<EmptyState

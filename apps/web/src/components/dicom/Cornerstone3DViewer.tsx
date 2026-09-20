@@ -17,9 +17,13 @@ import {
 	X,
 	ZoomIn,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
-import { DicomArchiveUploader } from "./DicomArchiveUploader";
+const DicomArchiveUploader = lazy(() =>
+	import("./DicomArchiveUploader").then((m) => ({
+		default: m.DicomArchiveUploader,
+	})),
+);
 import {
 	calculateCaliperRidgeDimensions,
 	type AlveolarRidgeCaliperMeasurement,
@@ -50,10 +54,12 @@ import {
 	type WorldPoint3,
 	worldTriple,
 } from "./ctPlanningPersistence";
-import {
-	PanoramicRendererWindow,
-	type PanoramicVolumeInput,
-} from "../dicom/PanoramicRendererWindow";
+import type { PanoramicVolumeInput } from "../dicom/PanoramicRendererWindow";
+const PanoramicRendererWindow = lazy(() =>
+	import("../dicom/PanoramicRendererWindow").then((m) => ({
+		default: m.PanoramicRendererWindow,
+	})),
+);
 import {
 	captureHighDpiCanvas,
 	createSnapshotThumbnail,
@@ -1451,9 +1457,11 @@ export function Cornerstone3DViewer({
 							padding: "24px",
 						}}
 					>
-						<DicomArchiveUploader
-							onImagesLoaded={(ids) => setLocalImageIds(ids)}
-						/>
+						<Suspense fallback={null}>
+							<DicomArchiveUploader
+								onImagesLoaded={(ids) => setLocalImageIds(ids)}
+							/>
+						</Suspense>
 					</div>
 				</div>
 			</div>
@@ -2503,20 +2511,22 @@ export function Cornerstone3DViewer({
 			)}
 
 			{showPanorex && volumeId && (
-				<PanoramicRendererWindow
-					volume={panorexVolume}
-					splinePoints={splinePoints}
-					onClose={() => {
-						setShowPanorex(false);
-						setPanorexVolume(null);
-						setSplinePoints([]);
-						setArchSummary(null);
-					}}
-					thickness={panorexThickness}
-					blendMode={blendMode}
-					patientId={patientId}
-					authHeaders={authHeaders}
-				/>
+				<Suspense fallback={null}>
+					<PanoramicRendererWindow
+						volume={panorexVolume}
+						splinePoints={splinePoints}
+						onClose={() => {
+							setShowPanorex(false);
+							setPanorexVolume(null);
+							setSplinePoints([]);
+							setArchSummary(null);
+						}}
+						thickness={panorexThickness}
+						blendMode={blendMode}
+						patientId={patientId}
+						authHeaders={authHeaders}
+					/>
+				</Suspense>
 			)}
 
 			{/* 4-QUADRANT 3D MPR VIEWPORT GRID */}

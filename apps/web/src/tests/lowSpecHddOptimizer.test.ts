@@ -41,6 +41,7 @@ import {
 	MemoryLruCache,
 	setForcedLowSpecMode,
 } from "../utils/lowSpecHddOptimizer";
+import { sliceDomList } from "../utils/domVirtualizationHelper";
 
 describe("lowSpecHddOptimizer — Детекция слабых устройств и адаптивные тайминги", () => {
 	it("управляет принудительным переключением Low-Spec режима", () => {
@@ -827,3 +828,62 @@ describe("GridAppointmentCard — Memoization & Content-Visibility Performance (
 		assert.ok(hoveredHtml.includes("hover-status-confirmed-test-appt-1"), "Hover HUD должен содержать быстрые кнопки статуса");
 	});
 });
+
+describe("lowSpecHddOptimizer — Виртуализация реестра документов и материалов склада", () => {
+	it("разбивает большой реестр документов (250 записей) на порции по 40 элементов", () => {
+		const mockDocuments = Array.from({ length: 250 }, (_, i) => ({
+			id: `doc-${i + 1}`,
+			title: `Документ №${i + 1}`,
+			kind: "treatment_act",
+			status: i % 2 === 0 ? "issued" : "draft",
+		}));
+
+		// Начальное состояние: первые 40 элементов
+		const slice1 = sliceDomList(mockDocuments, 40, 0);
+		assert.strictEqual(slice1.visibleItems.length, 40);
+		assert.strictEqual(slice1.totalCount, 250);
+		assert.strictEqual(slice1.remainingCount, 210);
+		assert.strictEqual(slice1.hasMore, true);
+		assert.strictEqual(slice1.visibleItems[0].id, "doc-1");
+		assert.strictEqual(slice1.visibleItems[39].id, "doc-40");
+
+		// Вторая порция: клик "Показать ещё 40" -> лимит 80
+		const slice2 = sliceDomList(mockDocuments, 80, 0);
+		assert.strictEqual(slice2.visibleItems.length, 80);
+		assert.strictEqual(slice2.remainingCount, 170);
+		assert.strictEqual(slice2.hasMore, true);
+
+		// Полная загрузка всех документов
+		const sliceAll = sliceDomList(mockDocuments, 250, 0);
+		assert.strictEqual(sliceAll.visibleItems.length, 250);
+		assert.strictEqual(sliceAll.remainingCount, 0);
+		assert.strictEqual(sliceAll.hasMore, false);
+	});
+
+	it("виртуализирует номенклатуру склада (120 позиций) без утечки памяти DOM", () => {
+		const mockWarehouse = Array.from({ length: 120 }, (_, i) => ({
+			id: `item-${i + 1}`,
+			name: `Материал ${i + 1}`,
+			stockQuantity: i * 5,
+			criticalThreshold: 10,
+		}));
+
+		const initialSlice = sliceDomList(mockWarehouse, 40, 0);
+		assert.strictEqual(initialSlice.visibleItems.length, 40);
+		assert.strictEqual(initialSlice.remainingCount, 80);
+		assert.strictEqual(initialSlice.hasMore, true);
+
+		// Увеличение на 40
+		const expandedSlice = sliceDomList(mockWarehouse, 80, 0);
+		assert.strictEqual(expandedSlice.visibleItems.length, 80);
+		assert.strictEqual(expandedSlice.remainingCount, 40);
+		assert.strictEqual(expandedSlice.hasMore, true);
+
+		// Финальное раскрытие
+		const fullSlice = sliceDomList(mockWarehouse, 120, 0);
+		assert.strictEqual(fullSlice.visibleItems.length, 120);
+		assert.strictEqual(fullSlice.remainingCount, 0);
+		assert.strictEqual(fullSlice.hasMore, false);
+	});
+});
+

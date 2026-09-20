@@ -24,6 +24,7 @@ import {
 import React, { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import { money } from "../AppHelpers";
 import { showToast } from "./GlobalToast";
+import { sliceDomList } from "../utils/domVirtualizationHelper";
 import { InventoryConfirmDialog } from "./inventory/InventoryConfirmDialog";
 import { useInventoryLogic } from "./inventory/useInventoryLogic";
 import { WarehousePackageWriteOffBar } from "./inventory/WarehousePackageWriteOffBar";
@@ -41,6 +42,11 @@ const WarehouseTransferModal = lazy(() =>
 const ClinicalWriteoffModal = lazy(() =>
 	import("./inventory/writeoff/ClinicalWriteoffModal").then((module) => ({
 		default: module.ClinicalWriteoffModal,
+	})),
+);
+const ProcedureMaterialDeductionModal = lazy(() =>
+	import("./inventory/ProcedureMaterialDeductionModal").then((module) => ({
+		default: module.ProcedureMaterialDeductionModal,
 	})),
 );
 const WarehouseInventoryAuditModal = lazy(() =>
@@ -217,6 +223,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 		getHeaders,
 	} = inventory;
 	const [isClinicalWriteoffOpen, setIsClinicalWriteoffOpen] = useState(false);
+	const [isProcedureDeductionOpen, setIsProcedureDeductionOpen] = useState(false);
 	const [isWarehouseTransferOpen, setIsWarehouseTransferOpen] = useState(false);
 	const [isInventoryAuditOpen, setIsInventoryAuditOpen] = useState(false);
 	const [isMdlpDisposalOpen, setIsMdlpDisposalOpen] = useState(false);
@@ -228,6 +235,17 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 	const opsMenuRef = React.useRef<HTMLDivElement>(null);
 	const [activeMenuRowId, setActiveMenuRowId] = useState<string | null>(null);
 	const rowMenuRef = React.useRef<HTMLDivElement>(null);
+
+	// DOM Virtualization & Chunking for low-spec laptops & HDDs (Mandates 8c, 8n)
+	const [displayLimit, setDisplayLimit] = useState(40);
+
+	React.useEffect(() => {
+		setDisplayLimit(40);
+	}, [searchQuery, activeSubTab]);
+
+	const inventorySlice = useMemo(() => {
+		return sliceDomList(filteredItems ?? [], displayLimit, 0);
+	}, [filteredItems, displayLimit]);
 
 	React.useEffect(() => {
 		const handleOutside = (e: MouseEvent) => {
@@ -352,7 +370,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 		>
 			{/* 1-LINE COMPACT TOOLBAR (Mandates 8d, 8e, 8p, Apple HIG standard) */}
 			<div
-				className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 py-1 bg-[var(--paper,#ffffff)] border-b border-[var(--line,#e2e8f0)] flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 shrink-0"
+				className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 py-1 bg-[var(--paper,#ffffff)] border-b border-[var(--line,#e2e8f0)] flex flex-nowrap overflow-x-auto no-scrollbar scrollbar-none items-center justify-between gap-2 shrink-0"
 				role="toolbar"
 				aria-label="Панель склада материалов"
 			>
@@ -422,7 +440,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 				</div>
 
 				{/* Right: Search, Quick Packages Toggle, Carpule Disposal, Ops Menu, Add Item */}
-				<div className="flex items-center gap-1.5 shrink-0 flex-wrap sm:flex-nowrap">
+				<div className="flex items-center gap-1.5 shrink-0 flex-nowrap">
 					{/* Compact Search Input */}
 					<div
 						className="relative flex items-center shrink-0"
@@ -652,6 +670,36 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 										>
 											<PackageCheck size={16} className="text-teal-600 shrink-0" />
 											<span>Списание по наряду (804н)</span>
+										</button>
+
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="procedure-deduction-trigger"
+											onClick={() => {
+												setIsProcedureDeductionOpen(true);
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+											}}
+											title="Списание расходных материалов по технологическим картам процедур (BOM-спецификации)"
+											role="menuitem"
+										>
+											<PackageCheck size={16} className="text-teal-600 shrink-0" />
+											<span>Списание по техкартам (BOM)</span>
 										</button>
 
 										<button
@@ -1408,7 +1456,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 										</td>
 									</tr>
 								) : (
-									filteredItems?.map((item) => {
+									inventorySlice.visibleItems.map((item) => {
 										const isLowStock =
 											item.stockQuantity <= item.criticalThreshold;
 										/*
@@ -1900,6 +1948,34 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 											</tr>
 										);
 									})
+								)}
+								{inventorySlice.hasMore && (
+									<tr>
+										<td colSpan={7} style={{ textAlign: "center", padding: "16px" }}>
+											<button
+												type="button"
+												className="btn-inventory-show-more"
+												onClick={() => setDisplayLimit((prev) => prev + 40)}
+												style={{
+													background: "var(--paper-strong)",
+													border: "1px solid var(--border)",
+													color: "var(--ink)",
+													padding: "8px 18px",
+													borderRadius: "8px",
+													fontSize: "13px",
+													fontWeight: 600,
+													cursor: "pointer",
+													display: "inline-flex",
+													alignItems: "center",
+													gap: "6px",
+													margin: "0 auto",
+												}}
+												title="Подгрузить следующие материалы склада"
+											>
+												<span>Показать ещё 40 материалов (осталось {inventorySlice.remainingCount})</span>
+											</button>
+										</td>
+									</tr>
 								)}
 							</tbody>
 						</table>
@@ -2485,6 +2561,20 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 								setIsClinicalWriteoffOpen(false);
 								fetchItems();
 							}
+						}}
+					/>
+				</Suspense>
+			)}
+
+			{isProcedureDeductionOpen && (
+				<Suspense fallback={null}>
+					<ProcedureMaterialDeductionModal
+						isOpen={isProcedureDeductionOpen}
+						onClose={() => setIsProcedureDeductionOpen(false)}
+						warehouseItems={items}
+						onConfirmDeduction={async () => {
+							setIsProcedureDeductionOpen(false);
+							fetchItems();
 						}}
 					/>
 				</Suspense>

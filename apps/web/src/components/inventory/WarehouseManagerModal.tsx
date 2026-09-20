@@ -26,8 +26,9 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast.js";
+import { sliceDomList } from "../../utils/domVirtualizationHelper";
 import type { InventoryItem } from "./useInventoryLogic.js";
 
 export interface WarehouseWriteoffItem {
@@ -221,6 +222,17 @@ export function WarehouseManagerModal({
 			return matchesSearch && matchesCategory;
 		});
 	}, [itemsWithCategory, searchQuery, categoryFilter]);
+
+	// DOM Virtualization & Chunking (Mandates 8c, 8n)
+	const [displayLimit, setDisplayLimit] = useState(40);
+
+	useEffect(() => {
+		setDisplayLimit(40);
+	}, [searchQuery, categoryFilter]);
+
+	const itemsSlice = useMemo(() => {
+		return sliceDomList(filteredItems, displayLimit, 0);
+	}, [filteredItems, displayLimit]);
 
 	// Выбранные к списанию строки
 	const activeWriteoffLines = useMemo((): WarehouseWriteoffItem[] => {
@@ -499,14 +511,22 @@ export function WarehouseManagerModal({
 									</tr>
 								</thead>
 								<tbody className="divide-y divide-[var(--border,#f1f5f9)]">
-									{filteredItems.map((item) => {
+									{itemsSlice.visibleItems.map((item) => {
 										const writeQty = writeoffQuantities[item.id] || 0;
 										const isZeroStock = item.stockQuantity <= 0;
 										const isLowStock = !isZeroStock && item.stockQuantity <= item.criticalThreshold;
 										const isOverdrafted = isZeroStock || writeQty > item.stockQuantity;
 
 										return (
-											<tr key={item.id} className="hover:bg-[var(--paper-strong,#f8fafc)] transition-colors">
+											<tr
+												key={item.id}
+												className="hover:bg-[var(--paper-strong,#f8fafc)] transition-colors"
+												style={{
+													contain: "content",
+													contentVisibility: "auto",
+													containIntrinsicSize: "1px 48px",
+												}}
+											>
 												<td className="py-2.5 px-3 min-w-0 max-w-xs">
 													<div className="font-semibold truncate" title={item.name}>{item.name}</div>
 													<div className="text-[11px] text-[var(--muted,#94a3b8)] font-mono truncate">
@@ -581,6 +601,20 @@ export function WarehouseManagerModal({
 											</tr>
 										);
 									})}
+									{itemsSlice.hasMore && (
+										<tr>
+											<td colSpan={6} className="py-3 text-center bg-[var(--paper-strong,#f8fafc)]">
+												<button
+													type="button"
+													className="h-8 px-4 text-xs font-semibold rounded-lg bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-strong,#f1f5f9)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+													onClick={() => setDisplayLimit((prev) => prev + 40)}
+													data-testid="btn-warehouse-show-more"
+												>
+													Показать ещё 40 материалов (осталось {itemsSlice.remainingCount})
+												</button>
+											</td>
+										</tr>
+									)}
 								</tbody>
 							</table>
 						</div>
