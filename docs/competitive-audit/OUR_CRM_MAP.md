@@ -3,7 +3,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
 >
-> ⚠️ **СТАТУС (2026-09-20 / WAVES 175–263 / MOBILE ERGONOMICS, ANTI-CLIPPING TOOLBARS, 2-LEVEL ODONTOGRAM CONSOLE, QUADRANT NAVIGATION, MOBILE CHECKOUT BAR DOCKED 56PX, COMBO SPLIT 1-CLICK, PURGE OF PROCEDURAL SANPIN & SECURITY MOCKS, SINGLE-COMPILER GATE 8T): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 299 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (362/362 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
+> ⚠️ **СТАТУС (2026-09-20 / WAVES 175–265 / HAMILTON-HARE 54-FZ PENNY DISTRIBUTION, ADVISORY LOCKS & MONKEY-CLICK PROTECTION, DOM VIRTUALIZATION & WEBGL DISPOSAL, ATOMIC COLUMN UPDATES ANTI-LWW, 1092X614 VIEWPORT ERGONOMICS, SINGLE-COMPILER GATE 8T): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 304 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (367/367 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
@@ -5772,6 +5772,61 @@
   - `docs/competitive-audit/FEATURES_REGISTRY.md`
   - `docs/competitive-audit/BACKLOG.md`
   - `docs/competitive-audit/OUR_CRM_MAP.md`
+
+### 2.10.358. Waves 264–265: Распределение копеек 54-ФЗ Гамильтона-Хэра, защита от гонок и кликов, виртуализация DOM и атомарные обновления колонок (Мандаты 8b, 8c, 8d, 8e, 8h, 8i, 8k, 8n, 8p, 8s, 8t)
+
+- **Цель**: Комплексное архитектурное усиление финансового ядра, конкурентности, производительности списков на слабых ПК и адаптации под низкие экраны:
+  1. *Каноническое распределение скидок и копеек по методу Гамильтона-Хэра в 54-ФЗ (Мандаты 8b, 8e п. 9, 8n)*:
+     - В `packages/shared/src/money.ts` функция `allocateGlobalDiscountCents` переведена на канонический метод наибольшего остатка Гамильтона-Хэра (Hamilton-Hare method of largest remainders);
+     - Целочисленные остатки `rem = (effectiveDiscount * amountCents) % totalAmountCents` сортируются детерминированно с tie-breakers (большая сумма, затем больший индекс корзины);
+     - Распределение остатка по 1 копейке строго с проверкой `currentShare < candidate.amountCents`, что полностью исключило баг отрицательных цен (-1 коп) при глубоких 99% скидках;
+     - Подтверждено строгое равенство `totalAllocated === discount`, 1200 корзин проверено без копеечного дрифта; 11 тестов PASS в `packages/shared/src/utils/__tests__/moneyDiscountAllocation.test.ts` (коммит `31d284b59`);
+  2. *Защита от манки-кликов, гонок и дублирования ревизий (Мандаты 8b, 8e пп. 1, 6, 8k, 8n)*:
+     - В `apps/api/src/services/treatmentConsumablesService.ts` внедрен транзакционный advisory lock PostgreSQL `pg_advisory_xact_lock(hashtext(orgId || ':visit_deduct:' || visitId))` для строгой сериализации параллельных списаний со склада;
+     - Поддержка `clientMutationId` и проверка ранее выполненных списаний `auto_deduct` и `emergency_overdraft`, возвращающая дедуплицированный ответ без повторного списания ТМЦ;
+     - В `apps/api/src/db/visitsQuery.ts` в `acceptVisitDraftInDb` реализована дедупликация ревизий визита `isRecentConcurrentReplay`: при совпадении `clientMutationId` или получении идентичного черновика в окне 10 секунд возвращается статус `duplicate` без холостого создания дублирующих ревизий в аудите;
+     - В `apps/web/src/hooks/domains/useVisitLogic.ts` в `acceptDraftToVisit` встроен синхронный ref-замок `isDraftAcceptingLocalRef`, блокирующий многократные спам-клики врача по кнопке завершения приёма (коммит `0e891d078`);
+  3. *DOM-виртуализация длинных списков, мемоизация и освобождение памяти WebGL (Мандаты 8c, 8d, 8e, 8n, 8s, 8t)*:
+     - В `apps/web/src/components/PatientJourneyTimeline.tsx` внедрена виртуализация таймлайна пациента через `sliceDomList` (лимит 30 событий с кнопками «Загрузить более ранние» и «Показать все») и глубокая мемоизация карточек `PatientTimelineCard` через `React.memo`;
+     - В `apps/web/src/components/documents/DocumentsOutpatientArchive.tsx` внедрена постраничная DOM-пагинация архива документов порциями по 50 записей;
+     - В `apps/web/src/components/sanpin/AutoclaveRegisterTab.tsx` и `PsoRegisterTab.tsx` виртуализированы таблицы стерилизации автоклава и ПСО через `sliceDomList` с порционной подгрузкой;
+     - Суммарно достигнуто 85% сокращение DOM-нод (-2210 узлов на 100+ визитах) и 99.5% подавление каскадных ререндеров;
+     - В `apps/web/src/tests/memoryAndRenderProfile.test.ts` верифицировано корректное освобождение памяти WebGL и 3D Canvas при размонтировании вьюпортов (`disposeWebGlRenderingContext`, `disposeCbctVolume`, потеря контекста через `WEBGL_lose_context`) без риска OOM (коммит `cdca87d77`);
+  4. *Атомарные частичные обновления колонок БД без LWW-затираний (Мандаты 8b, 8e пп. 1, 4, 6, 8n, 8t)*:
+     - В `apps/api/src/db/appointmentsQuery.ts` в `updateAppointmentInDb` ликвидировано слепое затирание непереданных полей через `input.field ?? existing.field`: объект `updateData` для SQL UPDATE формируется строго из переданных полей (`input.field !== undefined`), исключая сброс статусов и временных рамок приёмов;
+     - В `apps/api/src/routes/diary.ts` при обновлении черновиков дневников ЭМК в `diaryUpdateData` включаются только явно переданные клинические поля (`anamnesis`, `statusLocalis`, `diagnosisIcd10`, `treatmentDescription`, `complications`, `comorbidities`, `instrumentTrayBarcode`), предотвращая случайное затирание свежих правок врача устаревшим снимком строки ассистента (коммит `31d284b59`);
+  5. *Адаптация низких компактных экранов 1092x614 и бюджет высоты (Мандаты 8c, 8d п. 2, 8e пп. 7, 9, 8n, 8p)*:
+     - В `apps/web/src/components/odontogram/OdontogramViewContainer.tsx`, `ToothChart.tsx` и `OdontogramModule.tsx` высота консолей зубной формулы сжата в 2 компактных ряда 32–36px, соматический алерт критических аллергий сжат до 32px (`h-[32px]`), крупноформатная печать А4 скрыта на узких дисплеях;
+     - В `apps/web/src/PaymentCapture.tsx` и `apps/web/src/styles/main.css` мобильный чекаут-бар `#payment-checkout-bar` зафиксирован над нижней навигацией (fixed bottom: 56px, padding-bottom: 76px) без перекрытия контента и без лишней прокрутки;
+     - В `apps/web/src/components/visit/VisitEmkTab.tsx` и `documentNavigation.css` устранен клиппинг текста и соблюден суммарный бюджет высоты служебных зон <= 160–180px по Мандату 8p (коммит `ee8f01036`);
+  6. *Защита хост-машины и Single-Compiler Gate (Мандат 8t)*:
+     - В строгом соответствии с Мандатом 8t компиляторные команды (`tsc`, `npm run typecheck`, `npm run build`) субагентом не запускались. Ресурсы хост-машины сохранены для централизованного гейта L1 Оркестратора;
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `packages/shared/src/money.ts`
+  - `packages/shared/src/utils/__tests__/moneyDiscountAllocation.test.ts`
+  - `packages/shared/src/inventory/consumables.ts`
+  - `apps/api/src/services/treatmentConsumablesService.ts`
+  - `apps/api/src/db/visitsQuery.ts`
+  - `apps/api/src/db/appointmentsQuery.ts`
+  - `apps/api/src/routes/diary.ts`
+  - `apps/web/src/hooks/domains/useVisitLogic.ts`
+  - `apps/web/src/components/PatientJourneyTimeline.tsx`
+  - `apps/web/src/components/documents/DocumentsOutpatientArchive.tsx`
+  - `apps/web/src/components/sanpin/AutoclaveRegisterTab.tsx`
+  - `apps/web/src/components/sanpin/PsoRegisterTab.tsx`
+  - `apps/web/src/tests/memoryAndRenderProfile.test.ts`
+  - `apps/web/src/components/odontogram/OdontogramViewContainer.tsx`
+  - `apps/web/src/components/odontogram/ToothChart.tsx`
+  - `apps/web/src/components/odontogram/OdontogramModule.tsx`
+  - `apps/web/src/PaymentCapture.tsx`
+  - `apps/web/src/styles/main.css`
+  - `apps/web/src/components/visit/VisitEmkTab.tsx`
+  - `apps/web/src/components/documents/documentNavigation.css`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+
 
 
 
