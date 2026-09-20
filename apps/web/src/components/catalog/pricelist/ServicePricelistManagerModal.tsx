@@ -34,6 +34,7 @@ import {
 	X,
 } from 'lucide-react';
 import './servicePricelist.css';
+import { sliceDomList } from '../../../utils/domVirtualizationHelper';
 import {
 	applyBatchPriceMarkup,
 	calculateServiceProfitability,
@@ -288,6 +289,19 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 			includeArchived: false,
 		});
 	}, [items, searchTerm, selectedCategory, selectedSpecialty]);
+
+	// DOM Virtualization & Chunking (Mandate 8c, 8n - Wave 252 Low-Spec Protection)
+	const [displayLimit, setDisplayLimit] = useState(40);
+
+	// Сброс лимита видимости при смене фильтров и поиска
+	useEffect(() => {
+		setDisplayLimit(40);
+	}, [searchTerm, selectedCategory, selectedSpecialty, activeTier]);
+
+	// Виртуализация списка услуг порциями по 40 элементов (снижение DOM узлов с 7500+ до ~300)
+	const pricelistSlice = useMemo(() => {
+		return sliceDomList(filteredItems, displayLimit, 0);
+	}, [filteredItems, displayLimit]);
 
 	// Category Item Counts
 	const categoryCounts = useMemo(() => {
@@ -768,7 +782,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 								</tr>
 							</thead>
 							<tbody>
-								{filteredItems.map((item) => {
+								{pricelistSlice.visibleItems.map((item) => {
 									const prof = calculateServiceProfitability(item, activeTier);
 									const currentPrice = calculateTierPrice(
 										item.basePriceRub,
@@ -782,6 +796,9 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 											key={item.id}
 											style={{
 												background: isSelected ? 'rgba(59, 130, 246, 0.05)' : undefined,
+												contain: 'content',
+												contentVisibility: 'auto',
+												containIntrinsicSize: '1px 52px',
 											}}
 										>
 											<td>
@@ -846,6 +863,22 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 									);
 								})}
 
+								{pricelistSlice.hasMore && (
+									<tr>
+										<td colSpan={7} style={{ textAlign: 'center', padding: '0.75rem' }}>
+											<button
+												type="button"
+												className="pricelist-btn btn-pricelist-show-more"
+												onClick={() => setDisplayLimit((prev) => prev + 40)}
+												style={{ margin: '0 auto', fontSize: '0.8125rem', height: '32px' }}
+												title="Подгрузить следующие позиции прейскуранта"
+											>
+												<span>Показать ещё 40 услуг (осталось {pricelistSlice.remainingCount})</span>
+											</button>
+										</td>
+									</tr>
+								)}
+
 								{filteredItems.length === 0 && (
 									<tr>
 										<td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: 'var(--muted)' }}>
@@ -867,7 +900,8 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 					</div>
 
 					<div>
-						Отображено {filteredItems.length} из {items.length} позиций
+						Отображено {pricelistSlice.visibleItems.length} из {filteredItems.length} позиций
+						{filteredItems.length !== items.length && ` (всего в каталоге: ${items.length})`}
 						{selectedItemIds.size > 0 && ` · Выбрано ${selectedItemIds.size}`}
 					</div>
 				</footer>

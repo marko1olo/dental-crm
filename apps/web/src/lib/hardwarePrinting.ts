@@ -225,7 +225,7 @@ export async function printThermalReceipt(
 		}
 
 		// 1B. Direct ESC/POS printing over LAN (socket 9100) or OS queue without Windows print dialog
-		if (options.protocol === "escpos" || options.rawEscPos || options.kktHost) {
+		if (options.protocol === "escpos" || options.rawEscPos || options.kktHost || options.connection === "lan" || options.connection === "usb") {
 			try {
 				const res: DesktopEscPosPrintResult = await printDesktopEscPosReceipt({
 					host: options.kktHost || "127.0.0.1",
@@ -280,7 +280,21 @@ export async function printThermalReceipt(
 		}
 	}
 
-	// 3. Web Browser / PWA fallback with popup blocker resilience
+	// 3. Web / PWA: Direct WebUSB ESC/POS printing attempt if USB connection is explicitly requested
+	if (options.connection === "usb" && typeof navigator !== "undefined" && "usb" in navigator) {
+		try {
+			const escPosBuffer = hardwarePrinter.buildEscPosFiscalReceipt(payload);
+			const usbResult = await printWebUsbEscPosReceipt(escPosBuffer);
+			if (usbResult.success) {
+				return { success: true, method: "desktop_silent" };
+			}
+			console.warn("[HardwarePrinting] WebUSB print attempt failed, falling back to browser print dialog:", usbResult.error);
+		} catch (usbErr) {
+			console.warn("[HardwarePrinting] WebUSB print error, falling back to browser print dialog:", usbErr);
+		}
+	}
+
+	// 4. Web Browser / PWA fallback: system print dialog (window.print() / hidden iframe) with popup blocker resilience
 	try {
 		const html = hardwarePrinter.generatePrintableReceiptHtml(payload);
 		const res: HardwarePrintResult = await hardwarePrinter.printHtmlWithPopupFallback(html, {
@@ -295,6 +309,63 @@ export async function printThermalReceipt(
 	} catch (err) {
 		const message = err instanceof Error ? err.message : "Ошибка печати чека";
 		return { success: false, method: "browser_dialog", error: message };
+	}
+}
+
+/**
+ * Direct ESC/POS printing via WebUSB (Chromium / Edge / Opera).
+ * Connects directly to USB receipt printers (USB Class 0x07) without drivers or Windows dialogs.
+ */
+export async function printWebUsbEscPosReceipt(
+	rawBytes: Uint8Array,
+): Promise<{ success: boolean; error?: string }> {
+	if (typeof navigator === "undefined" || !("usb" in navigator)) {
+		return { success: false, error: "WebUSB API недоступен в данном браузере" };
+	}
+
+	try {
+		const usb = (navigator as unknown as {
+			usb: {
+				requestDevice: (options: { filters: Array<{ classCode?: number }> }) => Promise<{
+					open: () => Promise<void>;
+					selectConfiguration: (config: number) => Promise<void>;
+					claimInterface: (iface: number) => Promise<void>;
+					configuration?: {
+						interfaces: Array<{
+							alternate: {
+								endpoints: Array<{
+									direction: "in" | "out";
+									endpointNumber: number;
+								}>;
+							};
+						}>;
+					};
+					transferOut: (endpoint: number, data: BufferSource) => Promise<unknown>;
+					close: () => Promise<void>;
+				}>;
+			};
+		}).usb;
+
+		// Class 7 is standard USB Printer Class
+		const device = await usb.requestDevice({ filters: [{ classCode: 7 }] });
+		await device.open();
+		await device.selectConfiguration(1);
+		await device.claimInterface(0);
+
+		// Find OUT endpoint
+		let outEndpoint = 1;
+		const endpoints = device.configuration?.interfaces?.[0]?.alternate?.endpoints;
+		if (endpoints) {
+			const out = endpoints.find((ep) => ep.direction === "out");
+			if (out) outEndpoint = out.endpointNumber;
+		}
+
+		await device.transferOut(outEndpoint, rawBytes);
+		await device.close();
+		return { success: true };
+	} catch (err: unknown) {
+		const message = err instanceof Error ? err.message : "Ошибка WebUSB печати";
+		return { success: false, error: message };
 	}
 }
 

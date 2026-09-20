@@ -51,6 +51,7 @@ import {
 	createNetworkMonitor,
 	formatHumanStatusText,
 } from "../utils/networkConnectivity";
+import { registerDoctorHotkeys } from "../utils/deviceDetection.js";
 import {
 	saveOfflineDraft,
 	loadOfflineDraft,
@@ -633,6 +634,13 @@ class WebUnifiedStorageEngine implements UnifiedStorageEngineContract {
 
 const unifiedStorageInstance = new WebUnifiedStorageEngine();
 
+/**
+ * Triggers an immediate drain of pending offline mutations across all platforms.
+ */
+export async function syncOfflineMutations() {
+	return unifiedStorageInstance.syncPendingMutations();
+}
+
 // ============================================================================
 // WEB PLATFORM WEBSOCKET & PWA AUTO-SYNC ENGINES
 // ============================================================================
@@ -1164,9 +1172,12 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 	 */
 	registerDoctorHotkeys(
 		handlers: Parameters<typeof registerDoctorHotkeys>[0],
-		target?: Window | Document | HTMLElement,
+		optionsOrTarget?: { target?: Window | HTMLElement | EventTarget; enabled?: boolean } | Window | HTMLElement,
 	): () => void {
-		return registerDoctorHotkeys(handlers, target);
+		const opts = optionsOrTarget && "addEventListener" in (optionsOrTarget as object)
+			? { target: optionsOrTarget as Window | HTMLElement }
+			: (optionsOrTarget as { target?: Window | HTMLElement | EventTarget; enabled?: boolean } | undefined);
+		return registerDoctorHotkeys(handlers, opts);
 	}
 }
 

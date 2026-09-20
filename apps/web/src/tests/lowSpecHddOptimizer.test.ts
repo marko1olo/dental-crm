@@ -500,8 +500,8 @@ describe("ScheduleGrid — O(1) Doctor Slot Appointments Map (Zero GC & No .filt
 				endsAt: "2026-09-20T09:30:00.000Z",
 				status: "planned",
 				reason: "Консультация",
-				createdAt: "2026-09-20T08:00:00.000Z",
-				updatedAt: "2026-09-20T08:00:00.000Z",
+				organizationId: "org-1",
+				comment: "",
 			},
 			{
 				id: "appt-2",
@@ -512,8 +512,8 @@ describe("ScheduleGrid — O(1) Doctor Slot Appointments Map (Zero GC & No .filt
 				endsAt: "2026-09-20T11:00:00.000Z",
 				status: "planned",
 				reason: "Лечение кариеса",
-				createdAt: "2026-09-20T08:00:00.000Z",
-				updatedAt: "2026-09-20T08:00:00.000Z",
+				organizationId: "org-1",
+				comment: "",
 			},
 			{
 				id: "appt-3",
@@ -524,8 +524,8 @@ describe("ScheduleGrid — O(1) Doctor Slot Appointments Map (Zero GC & No .filt
 				endsAt: "2026-09-20T09:30:00.000Z",
 				status: "planned",
 				reason: "Профгигиена",
-				createdAt: "2026-09-20T08:00:00.000Z",
-				updatedAt: "2026-09-20T08:00:00.000Z",
+				organizationId: "org-1",
+				comment: "",
 			},
 		];
 
@@ -624,4 +624,65 @@ describe("lowSpecHddOptimizer — Statutory Catalog Caching (804n, ICD-10, 043/u
 		assert.strictEqual(tmpl2.length, seedResult.templatesCount);
 	});
 });
+
+describe("VisitSoapEditor — Template Drawer DOM Chunking & Memory Guard (Mandates 8c, 8n)", () => {
+	it("ограничивает начальную выборку из 448 шаблонов 30 карточками в DOM и рендерит кнопку 'Показать ещё'", async () => {
+		const React = await import("react");
+		const { renderToString } = await import("react-dom/server");
+		const { VisitSoapEditor } = await import("../components/visit/VisitSoapEditor");
+
+		const html = renderToString(
+			React.createElement(VisitSoapEditor, {
+				isTemplatesOpen: true,
+			}),
+		);
+
+		// Проверяем, что отрисовано ровно 30 карточек (кнопка 'Заполнить (1 клик)')
+		const matches = html.match(/Заполнить \(1 клик\)/g) || [];
+		assert.strictEqual(
+			matches.length,
+			30,
+			`Ожидалось ровно 30 шаблонов в начальном DOM, получено ${matches.length}`,
+		);
+
+		// Проверяем кнопку раскрытия следующей порции
+		assert.ok(
+			html.includes('data-testid="btn-soap-templates-show-more"'),
+			"Должна присутствовать кнопка 'Показать ещё' шаблонов",
+		);
+		assert.ok(
+			html.includes("Показать ещё 30 шаблонов (показано 30 из 448)"),
+			"Кнопка должна содержать точный счетчик: 'Показать ещё 30 шаблонов (показано 30 из 448)'",
+		);
+	});
+});
+
+describe("ServicePricelistManagerModal — DOM Chunking & Memory Guard (Mandates 8c, 8n)", () => {
+	it("ограничивает начальную выборку прейскуранта 40 позициями в DOM и рендерит кнопку 'Показать ещё'", async () => {
+		const React = await import("react");
+		const { renderToString } = await import("react-dom/server");
+		const { ServicePricelistManagerModal } = await import(
+			"../components/catalog/pricelist/ServicePricelistManagerModal"
+		);
+
+		const html = renderToString(
+			React.createElement(ServicePricelistManagerModal, {
+				isOpen: true,
+				onClose: () => {},
+			}),
+		);
+
+		// Проверяем кнопку раскрытия следующей порции
+		assert.ok(
+			html.includes("btn-pricelist-show-more"),
+			"Должна присутствовать кнопка 'Показать ещё' услуг",
+		);
+		assert.ok(
+			html.includes("Показать ещё 40 услуг"),
+			"Кнопка должна содержать текст: 'Показать ещё 40 услуг'",
+		);
+	});
+});
+
+
 

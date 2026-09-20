@@ -252,14 +252,24 @@ export async function dispatchEscPosReceiptPrint(
 		}
 	}
 
-	if (typeof window !== "undefined" && (params.html || params.text)) {
+	if (typeof window !== "undefined" && (params.html || params.text || params.rawEscPosBase64)) {
 		try {
 			let printWindow: Window | null = null;
 			try {
 				printWindow = window.open("", "_blank");
 			} catch {}
 
-			const content = params.html || `<pre style="font-family:monospace;font-size:11px;padding:3mm;">${params.text}</pre>`;
+			let receiptText = params.text;
+			if (!receiptText && params.rawEscPosBase64) {
+				try {
+					if (typeof atob === "function") {
+						const raw = atob(params.rawEscPosBase64);
+						receiptText = raw.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "").trim();
+					}
+				} catch {}
+			}
+
+			const content = params.html || `<pre style="font-family:monospace;font-size:11px;padding:3mm;">${receiptText || "Чек"}</pre>`;
 			const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Печать чека</title><style>@media print { body { margin: 0; padding: 2px; } }</style></head><body>${content}</body></html>`;
 
 			if (printWindow && !printWindow.closed) {

@@ -46,6 +46,10 @@ export interface UseDesktopShortcutsOptions {
 	onF11ToggleKiosk?: () => void;
 	/** Callback for F12: Quick print Form 043/u diary */
 	onF12PrintDiary?: () => void;
+	/** Callback for Ctrl+F / Cmd+F: Global clinic search (patient / record search) */
+	onCtrlFSearch?: () => void;
+	/** Callback for Alt+1..Alt+5: Quick tab / view navigation (Desktop operatory) */
+	onSwitchTab?: (tabIndex: number) => void;
 	/**
 	 * When true, allows intercepting F5 for schedule refresh without page reload.
 	 * When false or in web browser, standard F5 and Ctrl+F5 browser reload is preserved.
@@ -119,7 +123,7 @@ export function isTypingInInputElement(target: EventTarget | null): boolean {
  * Helper to dispatch decoupled custom events for shortcuts across components.
  */
 export function dispatchDesktopShortcut(
-	shortcut: "f1" | "f2" | "f3" | "f4" | "f5" | "f6" | "f7" | "f8" | "f9" | "f10" | "f11" | "f12" | "escape" | "save" | "print",
+	shortcut: "f1" | "f2" | "f3" | "f4" | "f5" | "f6" | "f7" | "f8" | "f9" | "f10" | "f11" | "f12" | "escape" | "save" | "print" | "ctrl_f" | "tab_1" | "tab_2" | "tab_3" | "tab_4" | "tab_5",
 ): void {
 	if (typeof window === "undefined" || !window.dispatchEvent) return;
 	try {
@@ -314,6 +318,35 @@ export function useDesktopShortcuts(options: UseDesktopShortcutsOptions = {}): v
 					e.stopPropagation();
 					void optionsRef.current.onSave();
 					dispatchDesktopShortcut("save");
+					return;
+				}
+			}
+
+			// 4B. Ctrl+F / Cmd+F: Global clinic search (patient / record search)
+			// Note: Cyrillic keyboard layout maps "f" to "а" (KeyF)
+			if (isCtrlOrMeta && (key === "f" || key === "а" || code === "KeyF") && !e.altKey && !e.shiftKey) {
+				if (optionsRef.current.onCtrlFSearch || optionsRef.current.onSearchPatient) {
+					e.preventDefault();
+					e.stopPropagation();
+					if (optionsRef.current.onCtrlFSearch) {
+						optionsRef.current.onCtrlFSearch();
+					} else if (optionsRef.current.onSearchPatient) {
+						optionsRef.current.onSearchPatient();
+					}
+					dispatchDesktopShortcut("ctrl_f");
+					return;
+				}
+			}
+
+			// 4C. Alt+1..Alt+5: Quick View Switching (Desktop Operatory Hotkeys)
+			if (e.altKey && !isCtrlOrMeta && !e.shiftKey && optionsRef.current.onSwitchTab) {
+				const num = parseInt(e.key, 10);
+				if (!isNaN(num) && num >= 1 && num <= 5) {
+					e.preventDefault();
+					e.stopPropagation();
+					optionsRef.current.onSwitchTab(num);
+					const tabShortcut = `tab_${num}` as "tab_1" | "tab_2" | "tab_3" | "tab_4" | "tab_5";
+					dispatchDesktopShortcut(tabShortcut);
 					return;
 				}
 			}
