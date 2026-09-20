@@ -51,6 +51,7 @@ import {
 	createNetworkMonitor,
 	formatHumanStatusText,
 } from "../utils/networkConnectivity";
+import { logger } from "../utils/logger";
 import { registerDoctorHotkeys } from "../utils/deviceDetection.js";
 import {
 	saveOfflineDraft,
@@ -612,7 +613,9 @@ class WebUnifiedStorageEngine implements UnifiedStorageEngineContract {
 			percentUsed = est.percentUsed;
 			freeFormatted = est.freeFormatted;
 			isQuotaWarning = est.isWarning;
-		} catch {}
+		} catch (err: unknown) {
+			logger.warn("[OmniPlatformAdapter] Failed to get storage estimate", err);
+		}
 
 		return {
 			engine: isIdb ? "indexeddb" : "localstorage",
@@ -699,13 +702,16 @@ export function createOmniWebSocket(
 			socket.onclose = null;
 			try {
 				socket.close();
-			} catch {}
+			} catch (err: unknown) {
+				logger.warn("[OmniPlatformAdapter] Error closing WebSocket on connect", err);
+			}
 			socket = null;
 		}
 
 		try {
 			socket = new WebSocket(url);
-		} catch {
+		} catch (err: unknown) {
+			logger.warn("[OmniPlatformAdapter] Failed to construct WebSocket:", err);
 			scheduleReconnect();
 			return;
 		}
@@ -725,7 +731,9 @@ export function createOmniWebSocket(
 							payload: { clinicToken, staffToken },
 						}),
 					);
-				} catch {}
+				} catch (err: unknown) {
+					logger.warn("[OmniPlatformAdapter] Error sending AUTH frame over WebSocket", err);
+				}
 			}
 
 			// Start ping keepalive
@@ -819,7 +827,9 @@ export function createOmniWebSocket(
 			if (socket) {
 				try {
 					socket.close();
-				} catch {}
+				} catch (err: unknown) {
+					logger.warn("[OmniPlatformAdapter] Error closing WebSocket on disconnect", err);
+				}
 				socket = null;
 			}
 			connected = false;
@@ -1054,7 +1064,9 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 							printerName: fallbackRes.printerName || fallbackRes.printerUsed || "OS Thermal Spooler",
 						};
 					}
-				} catch {}
+				} catch (err: unknown) {
+					logger.warn("[OmniPlatformAdapter] Fallback printRawViaSilentExecutable failed", err);
+				}
 			}
 
 			const { dispatchEscPosReceiptPrint } = await import("../native/hardwareDispatcher.js");
