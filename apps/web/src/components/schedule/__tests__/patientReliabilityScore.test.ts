@@ -25,6 +25,7 @@ function createMockPatient(overrides?: Partial<Patient>): Patient {
 		createdAt: "2026-01-01T00:00:00.000Z",
 		updatedAt: "2026-01-01T00:00:00.000Z",
 		...overrides,
+		gender: overrides?.gender ?? null,
 	};
 }
 
