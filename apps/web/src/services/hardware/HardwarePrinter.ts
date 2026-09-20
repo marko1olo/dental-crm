@@ -358,27 +358,37 @@ export class HardwarePrinter {
 			}
 		}
 
-		// 2. Desktop (Electron) -> Direct TCP LAN Socket to KKT
+		// 2. Desktop (Electron) -> Direct TCP LAN Socket to KKT with instant OS/dialog fallback
 		if (isDesktopApp()) {
 			try {
 				const kktResult: FiscalReceiptPrintResult = await KktLanPrinterService.printReceipt(payload);
-				return {
-					success: kktResult.success,
-					status: kktResult.status === "printed" ? "printed" : "queued",
-					interfaceUsed: "lan_tcp",
-					printedAt: kktResult.printedAt || nowIso,
-					fiscalSign: kktResult.fiscalSign,
-					fiscalDocNum: kktResult.fiscalDocNum,
-					error: kktResult.error,
-				};
+				if (kktResult.success) {
+					return {
+						success: true,
+						status: "printed",
+						interfaceUsed: "lan_tcp",
+						printedAt: kktResult.printedAt || nowIso,
+						fiscalSign: kktResult.fiscalSign,
+						fiscalDocNum: kktResult.fiscalDocNum,
+					};
+				}
 			} catch (err: unknown) {
-				const msg = err instanceof Error ? err.message : "Ошибка печати ККТ по локальной сети";
+				console.warn("[HardwarePrinter] Desktop KKT LAN socket failed, falling back to OS spooler/dialog:", err);
+			}
+
+			// Instant Fallback on Desktop: standard OS thermal print / browser print dialog (Mandate 8e)
+			try {
+				const printableHtml = this.generatePrintableReceiptHtml(payload);
+				return await this.printHtmlWithPopupFallback(printableHtml, {
+					downloadFilename: `receipt_${Date.now()}.html`,
+				});
+			} catch {
 				return {
 					success: false,
 					status: "failed",
-					interfaceUsed: "lan_tcp",
+					interfaceUsed: "browser_dialog",
 					printedAt: nowIso,
-					error: msg,
+					error: "Ошибка вывода чека на системную печать",
 				};
 			}
 		}

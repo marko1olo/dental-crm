@@ -44,6 +44,7 @@ import {
 import { DocumentQuickRoleScenarios } from "./components/documents/DocumentQuickRoleScenarios";
 import { printPrimaryIntakePackage } from "./components/documents/primaryIntakePackagePrintEngine";
 import { printBlankMedicalContract } from "./components/patients/blankContractPrint";
+import { printA4Document } from "./lib/hardwarePrinting";
 import {
 	DocumentRegistryFilterBar,
 	type DocumentStatusFilter,
@@ -713,6 +714,32 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		);
 	}, [activePatient, activeDoctor, clinicProfileDraft]);
 
+	const handleDirectPrintDocumentA4 = useCallback(
+		async (documentId: string, docTitle?: string) => {
+			try {
+				const response = await fetch(`/api/documents/${encodeURIComponent(documentId)}/html`, {
+					cache: "no-store",
+					headers: { "X-Requested-With": "DenteCRM" },
+				});
+				if (response.ok) {
+					const html = await response.text();
+					const printResult = await printA4Document(html, {
+						title: docTitle || "Печать документа DENTE",
+					});
+					if (printResult.success) {
+						showToast("Документ отправлен на печать A4", "success", 3000);
+						return;
+					}
+				}
+			} catch (err) {
+				console.warn("[DocumentsView] Direct A4 print error, falling back to PDF download:", err);
+			}
+			// Seamless fallback to PDF download/print dialog (Mandate 8e)
+			void downloadIssuedDocumentPdf(documentId);
+		},
+		[downloadIssuedDocumentPdf],
+	);
+
 	const [activeCategoryTab, setActiveCategoryTab] =
 		useState<DocumentCategoryTab>("all");
 	const [registrySearchQuery, setRegistrySearchQuery] = useState("");
@@ -1169,47 +1196,47 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 			? "подтвердите проверку медицинских и налоговых последствий"
 			: null,
 	].filter((step): step is string => Boolean(step));
-	const typedActiveDocuments = activeDocuments as GeneratedDocument[];
+	const typedActiveDocuments = (activeDocuments ?? []) as GeneratedDocument[];
 	const typedActiveIssuedPaidContracts =
-		activeIssuedPaidContracts as GeneratedDocument[];
+		(activeIssuedPaidContracts ?? []) as GeneratedDocument[];
 	const typedEligiblePaymentReceiptPayments =
-		eligiblePaymentReceiptPayments as Payment[];
+		(eligiblePaymentReceiptPayments ?? []) as Payment[];
 	const typedEligibleRefundCorrectionPayments =
-		eligibleRefundCorrectionPayments as Payment[];
-	const typedEligibleTaxPayments = eligibleTaxPayments as Payment[];
+		(eligibleRefundCorrectionPayments ?? []) as Payment[];
+	const typedEligibleTaxPayments = (eligibleTaxPayments ?? []) as Payment[];
 	const typedIssuedMedicalCopyRequestDocuments =
-		issuedMedicalCopyRequestDocuments as MedicalCopyRequestSourceDocument[];
+		(issuedMedicalCopyRequestDocuments ?? []) as MedicalCopyRequestSourceDocument[];
 	const typedPatientIntakePregnancyStatusOptions =
-		patientIntakePregnancyStatusOptions as Array<
+		(patientIntakePregnancyStatusOptions ?? []) as Array<
 			DocumentSelectOption<PatientIntakePregnancyStatus>
 		>;
-	const typedPhotoVideoMaterialOptions = photoVideoMaterialOptions as Array<
+	const typedPhotoVideoMaterialOptions = (photoVideoMaterialOptions ?? []) as Array<
 		DocumentSelectOption<PhotoVideoConsentMaterial>
 	>;
-	const typedPostVisitCareTopicOptions = postVisitCareTopicOptions as Array<
+	const typedPostVisitCareTopicOptions = (postVisitCareTopicOptions ?? []) as Array<
 		DocumentSelectOption<PostVisitCareTopic>
 	>;
 	const typedProcedureSpecificConsentProcedureOptions =
-		procedureSpecificConsentProcedureOptions as Array<
+		(procedureSpecificConsentProcedureOptions ?? []) as Array<
 			DocumentSelectOption<ProcedureSpecificConsentProcedure>
 		>;
 	const typedTaxApplicationDeliveryChannelOptions =
-		taxApplicationDeliveryChannelOptions as Array<
+		(taxApplicationDeliveryChannelOptions ?? []) as Array<
 			DocumentSelectOption<TaxDeductionApplicationDeliveryChannel>
 		>;
-	const typedTaxApplicationFormOptions = taxApplicationFormOptions as Array<
+	const typedTaxApplicationFormOptions = (taxApplicationFormOptions ?? []) as Array<
 		DocumentSelectOption<TaxDeductionApplicationFormKind>
 	>;
 	const typedTaxApplicationRelationshipOptions =
-		taxApplicationRelationshipOptions as Array<
+		(taxApplicationRelationshipOptions ?? []) as Array<
 			DocumentSelectOption<TaxDeductionApplicationRelationship>
 		>;
 	const typedTaxDocumentPayerOptions =
-		taxDocumentPayerOptions as TaxDocumentPayerOption[];
-	const typedXrayPregnancyStatusOptions = xrayPregnancyStatusOptions as Array<
+		(taxDocumentPayerOptions ?? []) as TaxDocumentPayerOption[];
+	const typedXrayPregnancyStatusOptions = (xrayPregnancyStatusOptions ?? []) as Array<
 		DocumentSelectOption<XrayCbctReferralPregnancyStatus>
 	>;
-	const typedXrayStudyTypeOptions = xrayStudyTypeOptions as Array<
+	const typedXrayStudyTypeOptions = (xrayStudyTypeOptions ?? []) as Array<
 		DocumentSelectOption<XrayCbctReferralStudyType>
 	>;
 	const typedSelectedDocumentMetadata =
@@ -1279,9 +1306,9 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 
 	function documentRowLifecycleGuidance(document: GeneratedDocument): string {
 		const sourceLabel =
-			documentSourceStatusLabels[
-				documentKindMetadata[document.kind].sourceStatus
-			];
+			documentSourceStatusLabels?.[
+				documentKindMetadata?.[document.kind]?.sourceStatus ?? "manual_only"
+			] ?? "Ручной ввод";
 		const _hasIssuedArchive = Boolean(
 			document.issuedSnapshotSha256 && document.issuedSnapshotCreatedAt,
 		);
@@ -1401,7 +1428,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		}
 		return Array.from(kindsSet).map((k) => ({
 			kind: k,
-			label: documentLabels[k] || k,
+			label: documentLabels?.[k] || k,
 		}));
 	}, [typedActiveDocuments, documentLabels]);
 
@@ -1459,11 +1486,15 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		if (query) {
 			result = result.filter((d) => {
 				const titleMatch = d.title?.toLowerCase().includes(query);
-				const labelMatch = (documentLabels[d.kind] || "")
+				const labelMatch = (documentLabels?.[d.kind] || "")
 					.toLowerCase()
 					.includes(query);
-				const kindMatch = d.kind.toLowerCase().includes(query);
-				const patName = patientName(dashboard?.patients, d.patientId).toLowerCase();
+				const kindMatch = (d.kind || "").toLowerCase().includes(query);
+				const patName = (
+					typeof patientName === "function"
+						? patientName(dashboard?.patients, d.patientId) || ""
+						: ""
+				).toLowerCase();
 				const patMatch = patName.includes(query);
 				const staffMatch = (d.signatureAttestation?.staffFullName || "")
 					.toLowerCase()
@@ -1579,7 +1610,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 					</span>
 					{activePatient?.birthDate && (
 						<span className="document-patient-badge">
-							Д/Р: {formatShortDate(activePatient.birthDate)}
+							Д/Р: {typeof formatShortDate === "function" ? formatShortDate(activePatient.birthDate) : String(activePatient.birthDate)}
 						</span>
 					)}
 					{activePatient?.phone && (
@@ -1735,7 +1766,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 								<optgroup key={group.title} label={group.title}>
 									{(group?.kinds ?? []).map((kind) => (
 										<option key={kind} value={kind}>
-											{documentLabels[kind]}
+											{documentLabels?.[kind] ?? kind}
 										</option>
 									))}
 								</optgroup>
@@ -1904,20 +1935,20 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 					<div className="document-source-card-heading">
 						<span
 							className={
-								documentSourceStatusClassNames[
-									typedSelectedDocumentMetadata.sourceStatus
-								]
+								documentSourceStatusClassNames?.[
+									typedSelectedDocumentMetadata?.sourceStatus ?? "manual_only"
+								] ?? "pill-gray"
 							}
 						>
 							{
-								documentSourceStatusLabels[
-									typedSelectedDocumentMetadata.sourceStatus
-								]
+								documentSourceStatusLabels?.[
+									typedSelectedDocumentMetadata?.sourceStatus ?? "manual_only"
+								] ?? "Ручной ввод"
 							}
 						</span>
-						<strong>{typedSelectedDocumentMetadata.sourceAuthority}</strong>
+						<strong>{typedSelectedDocumentMetadata?.sourceAuthority ?? ""}</strong>
 					</div>
-					<p>{typedSelectedDocumentMetadata.sourceNote}</p>
+					<p>{typedSelectedDocumentMetadata?.sourceNote ?? ""}</p>
 					<small>
 						{typedSelectedDocumentMetadata.sourceReference} · форма сверена с
 						источником{" "}
@@ -1975,16 +2006,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 									чеков и претензий пациента.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
-								}}
-							>
+							<details className="document-manual-override">
 								<summary
 									style={{
 										cursor: "pointer",
@@ -2243,16 +2265,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 									исключениями и правилами изменения цены.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
-								}}
-							>
+							<details className="document-manual-override">
 								<summary
 									style={{
 										cursor: "pointer",
@@ -2559,11 +2572,11 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 							documentPatientPhone={documentPatient?.phone}
 							documentPatientEmail={documentPatient?.email}
 							clinicBankDetails={
-								dashboard?.clinicSettings.profile.bankDetails
+								dashboard?.clinicSettings?.profile?.bankDetails ?? ""
 							}
 							totalRubFormatted={money(paymentInvoiceTotalRubValue())}
 							serviceLinesCount={
-								plannedServiceLinesForFinancialPayload().length
+								(plannedServiceLinesForFinancialPayload() ?? []).length
 							}
 						/>
 					) : null}
@@ -2577,16 +2590,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 									фискальные чеки без скрытого захвата лишних оплат.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
-								}}
-							>
+							<details className="document-manual-override">
 								<summary
 									style={{
 										cursor: "pointer",
@@ -2880,16 +2884,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 									без подмены банковского кредита.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
-								}}
-							>
+							<details className="document-manual-override">
 								<summary
 									style={{
 										cursor: "pointer",
@@ -3161,16 +3156,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 									сметы, альтернативы, риски и подтверждения пациента.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
-								}}
-							>
+							<details className="document-manual-override">
 								<summary
 									style={{
 										cursor: "pointer",
@@ -3422,16 +3408,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 									Telegram-бота клиники.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
-								}}
-							>
+							<details className="document-manual-override">
 								<summary
 									style={{
 										cursor: "pointer",
@@ -3698,16 +3675,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 								<h3>Назначение препаратов</h3>
 								<p>Один понятный блок назначения без догадок в документе.</p>
 							</div>
-							<details
-								className="document-manual-override"
-								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
-								}}
-							>
+							<details className="document-manual-override">
 								<summary
 									style={{
 										cursor: "pointer",
@@ -3797,16 +3765,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 								<h3>Заявка в лабораторию</h3>
 								<p>Работа, зона, материал, цвет, источник данных и срок.</p>
 							</div>
-							<details
-								className="document-manual-override"
-								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
-								}}
-							>
+							<details className="document-manual-override">
 								<summary
 									style={{
 										cursor: "pointer",
@@ -3905,16 +3864,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 									ограничения до рентгена или КЛКТ.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
-								}}
-							>
+							<details className="document-manual-override">
 								<summary
 									style={{
 										cursor: "pointer",
@@ -4179,16 +4129,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 									выдачи без пустых полей.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
-								}}
-							>
+							<details className="document-manual-override">
 								<summary
 									style={{
 										cursor: "pointer",
@@ -4391,16 +4332,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 									снимков и стоимости.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
-								}}
-							>
+							<details className="document-manual-override">
 								<summary
 									style={{
 										cursor: "pointer",
@@ -4539,16 +4471,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 									представителя.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
-								}}
-							>
+							<details className="document-manual-override">
 								<summary
 									style={{
 										cursor: "pointer",
@@ -4743,16 +4666,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 									Сумма, действие, чек, получатель и решение ответственного.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								style={{
-									background: "var(--surface-100)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid var(--line)",
-									marginTop: "16px",
-								}}
-							>
+							<details className="document-manual-override">
 								<summary
 									style={{
 										cursor: "pointer",
@@ -4981,7 +4895,8 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 								<h3>{group.title}</h3>
 								<div>
 									{(group?.kinds ?? []).map((kind) => {
-										const metadata = documentKindMetadata[kind];
+										const metadata = documentKindMetadata?.[kind];
+										const sourceStatus = metadata?.sourceStatus ?? "manual_only";
 										return (
 											<button
 												className="secondary-button document-factory-kind-button"
@@ -5000,19 +4915,19 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 											>
 												<FileText aria-hidden="true" />
 												<span className="document-factory-kind-button-text">
-													<span>{documentLabels[kind]}</span>
+													<span>{documentLabels?.[kind] ?? kind}</span>
 													<small
 														className={
-															documentSourceStatusClassNames[
-																metadata.sourceStatus
-															]
+															documentSourceStatusClassNames?.[
+																sourceStatus
+															] ?? "pill-gray"
 														}
 													>
 														{documentCreateSavingKind === kind
 															? "Создаю"
-															: documentSourceStatusLabels[
-																	metadata.sourceStatus
-																]}
+															: documentSourceStatusLabels?.[
+																	sourceStatus
+																] ?? "Ручной ввод"}
 													</small>
 												</span>
 											</button>
@@ -5032,20 +4947,22 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				>
 					<div>
 						<span>Финальная проверка</span>
-						<strong>{documentLabels[documentIssueConfirmation.kind]}</strong>
+						<strong>{documentLabels?.[documentIssueConfirmation.kind] ?? documentIssueConfirmation.kind}</strong>
 						<p>
 							Пациент:{" "}
-							{patientName(
-								dashboard.patients,
-								documentIssueConfirmation.patientId,
-							)}
+							{typeof patientName === "function"
+								? patientName(
+										dashboard?.patients,
+										documentIssueConfirmation.patientId,
+									)
+								: "Пациент"}
 							{documentIssueConfirmation.taxYear
 								? ` · год ${documentIssueConfirmation.taxYear}`
 								: ""}
 							{documentIssueConfirmation.taxPayerInn
 								? ` · ИНН ${documentIssueConfirmation.taxPayerInn}`
 								: ""}{" "}
-							· {money(documentIssueConfirmation.totalAmountRub)}
+							· {typeof money === "function" ? money(documentIssueConfirmation.totalAmountRub) : String(documentIssueConfirmation.totalAmountRub)}
 						</p>
 					</div>
 					<div
@@ -5341,17 +5258,19 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				>
 					<div>
 						<span>Аннулирование без удаления архива</span>
-						<strong>{documentLabels[documentVoidConfirmation.kind]}</strong>
+						<strong>{documentLabels?.[documentVoidConfirmation.kind] ?? documentVoidConfirmation.kind}</strong>
 						<p>
 							Пациент:{" "}
-							{patientName(
-								dashboard.patients,
-								documentVoidConfirmation.patientId,
-							)}
+							{typeof patientName === "function"
+								? patientName(
+										dashboard?.patients,
+										documentVoidConfirmation.patientId,
+									)
+								: "Пациент"}
 							{documentVoidConfirmation.taxYear
 								? ` · год ${documentVoidConfirmation.taxYear}`
 								: ""}{" "}
-							· {documentStatusLabels[documentVoidConfirmation.status]}
+							· {documentStatusLabels?.[documentVoidConfirmation.status] ?? documentVoidConfirmation.status}
 						</p>
 					</div>
 					<div
@@ -5455,8 +5374,8 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 									)
 									?.map((document) => (
 										<option key={document.id} value={document.id}>
-											{documentLabels[document.kind]} ·{" "}
-											{documentStatusLabels[document.status]}
+											{documentLabels?.[document.kind] ?? document.kind} ·{" "}
+											{documentStatusLabels?.[document.status] ?? document.status}
 										</option>
 									))}
 							</select>
@@ -5598,11 +5517,11 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 					<div className="document-audit-facts-heading">
 						<div>
 							<span>Паспорт выдачи</span>
-							<strong>{documentLabels[documentAuditFacts.kind]}</strong>
+							<strong>{documentLabels?.[documentAuditFacts.kind] ?? documentAuditFacts.kind}</strong>
 							<p>
-								{documentStatusLabels[documentAuditFacts.status]} ·{" "}
+								{documentStatusLabels?.[documentAuditFacts.status] ?? documentAuditFacts.status} ·{" "}
 								{documentAuditFacts.issuedAt
-									? formatShortDate(documentAuditFacts.issuedAt)
+									? (typeof formatShortDate === "function" ? formatShortDate(documentAuditFacts.issuedAt) : String(documentAuditFacts.issuedAt))
 									: "не выдан"}{" "}
 								·{" "}
 								{documentAuditFacts.immutableSnapshotReady
@@ -5612,15 +5531,15 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 						</div>
 						<span
 							className={
-								documentSourceStatusClassNames[
+								documentSourceStatusClassNames?.[
 									documentAuditFacts.sourceStatus as DocumentSourceStatus
-								]
+								] ?? "pill-gray"
 							}
 						>
 							{
-								documentSourceStatusLabels[
+								documentSourceStatusLabels?.[
 									documentAuditFacts.sourceStatus as DocumentSourceStatus
-								]
+								] ?? "Ручной ввод"
 							}
 						</span>
 					</div>
@@ -5927,8 +5846,10 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 
 			<div className="document-list">
 				{(filteredActiveDocuments ?? []).map((document) => {
-					const documentActionLabel = documentActionLabels[document.kind];
-					const documentKindLabel = documentLabels[document.kind];
+					const documentActionLabel = documentActionLabels?.[document.kind] ?? "Документ";
+					const documentKindLabel = documentLabels?.[document.kind] ?? document.kind;
+					const docSourceStatus =
+						documentKindMetadata?.[document.kind]?.sourceStatus ?? "manual_only";
 					const documentTaxYearContext = document.taxYear
 						? `, ${document.taxYear}`
 						: "";
@@ -5950,25 +5871,21 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 							<div>
 								<h3>{documentActionLabel}</h3>
 								<p>
-									{documentKindLabel} · {documentStatusLabels[document.status]}
+									{documentKindLabel} · {documentStatusLabels?.[document.status] ?? document.status}
 									<span
 										className={
-											documentSourceStatusClassNames[
-												documentKindMetadata[document.kind].sourceStatus
-											]
+											documentSourceStatusClassNames?.[docSourceStatus] ?? "pill-gray"
 										}
 									>
 										{
-											documentSourceStatusLabels[
-												documentKindMetadata[document.kind].sourceStatus
-											]
+											documentSourceStatusLabels?.[docSourceStatus] ?? "Ручной ввод"
 										}
 									</span>
 									{document.taxYear ? ` · ${document.taxYear}` : ""}
 									{document.issuedAt
-										? ` ${formatShortDate(document.issuedAt)}`
+										? ` ${typeof formatShortDate === "function" ? formatShortDate(document.issuedAt) : String(document.issuedAt)}`
 										: ""}{" "}
-									· {money(document.totalAmountRub)}
+									· {typeof money === "function" ? money(document.totalAmountRub) : String(document.totalAmountRub)}
 								</p>
 								<small
 									className="document-row-guidance"
@@ -6157,6 +6074,35 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 													<span>Печать PDF (Черновик)</span>
 												</button>
 											) : null}
+
+											<button
+												className="doc-dropdown-item"
+												type="button"
+												onClick={() => {
+													setOpenDocActionMenuId(null);
+													void handleDirectPrintDocumentA4(document.id, document.title);
+												}}
+												aria-label={`Прямая печать (A4): ${documentActionContext}`}
+												title={`Печать документа через системный принтер A4 (без диалогов сохранения): ${documentActionContext}`}
+												style={{
+													display: "flex",
+													alignItems: "center",
+													gap: "8px",
+													width: "100%",
+													padding: "6px 10px",
+													fontSize: "12.5px",
+													fontWeight: 500,
+													border: "none",
+													background: "transparent",
+													color: "var(--ink, #0f172a)",
+													borderRadius: "4px",
+													cursor: "pointer",
+													textAlign: "left",
+												}}
+											>
+												<Printer size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+												<span>Прямая печать (A4)</span>
+											</button>
 
 											{document.kind === "tax_deduction_certificate" && document.status === "issued" ? (
 												<>

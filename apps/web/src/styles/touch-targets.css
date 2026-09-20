@@ -564,5 +564,82 @@
 	font-size: 13px;
 }
 
+@media (pointer: fine) {
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .primary-button,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .secondary-button,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .text-button,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .icon-button,
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .primary-button,
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .secondary-button,
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .text-button,
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .icon-button,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .primary-button,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .secondary-button,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .text-button,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .icon-button {
+		min-height: 32px !important;
+		height: 32px;
+		font-size: 13px;
+	}
+
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-primary-action,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-save-action,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-print-action,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-pay-action,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .clinical-action-btn,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .primary-action-btn,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .action-button-lg,
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-primary-action,
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-save-action,
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-print-action,
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-pay-action,
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .clinical-action-btn,
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .primary-action-btn,
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .action-button-lg,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .btn-primary-action,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .btn-save-action,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .btn-print-action,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .btn-pay-action,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .clinical-action-btn,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .primary-action-btn,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .action-button-lg {
+		min-height: 34px !important;
+		height: 34px;
+		font-size: 13px;
+		padding: 4px 12px;
+	}
+
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .quick-chip--sm,
+	[data-pointer="fine"]:not([data-pointer="coarse"]) .quick-chip--sm {
+		min-height: 24px !important;
+		height: 24px;
+	}
+
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .doc-link,
+	[data-pointer="fine"]:not([data-pointer="coarse"]) .doc-link {
+		min-height: 32px !important;
+	}
+
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .appointment-edit-button,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .appointment-repeat-button,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .appointment-buffer-button,
+	[data-pointer="fine"]:not([data-pointer="coarse"]) .appointment-edit-button,
+	[data-pointer="fine"]:not([data-pointer="coarse"]) .appointment-repeat-button,
+	[data-pointer="fine"]:not([data-pointer="coarse"]) .appointment-buffer-button {
+		min-height: 28px !important;
+	}
+
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) select,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .select-phase,
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) select,
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .select-phase,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) select,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .select-phase {
+		min-height: 32px !important;
+		height: 32px;
+		font-size: 13px;
+	}
+}
+
 
 

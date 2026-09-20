@@ -64,6 +64,7 @@ import { Order804nFiscalReceiptPrint } from "./Order804nFiscalReceiptPrint";
 import { OneCExportButton } from "./OneCExportButton";
 import { numberToWordsRu } from "./invoiceEngine";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter";
+import { printThermalReceipt } from "../../lib/hardwarePrinting";
 import type { FiscalReceiptPrintPayload } from "../../services/hardware/hardwareTypes";
 import {
 	distributeLoyaltyDiscountAcrossItems,
@@ -1043,7 +1044,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			};
 
 			try {
-				void hardwarePrinter.printFiscalReceipt(printPayload);
+				void printThermalReceipt(printPayload);
 			} catch (printErr) {
 				console.warn("[FiscalReceipt54FzModal] Thermal printer print deferred:", printErr);
 			}
@@ -1097,8 +1098,8 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 				prepaidRub: depositAmount + certificateAmount,
 			};
 
-			const printRes = await hardwarePrinter.printFiscalReceipt(printPayload);
-			if (printRes && (printRes.status === "failed" || !printRes.success)) {
+			const printRes = await printThermalReceipt(printPayload);
+			if (printRes && !printRes.success) {
 				showToast(`Ошибка фискализации на ККТ: ${printRes.error || "Устройство недоступно"}`, "error");
 			} else {
 				showToast("Чек повторно отправлен на фискализацию в ККТ (баланс пациента не затронут)!", "success", 5000);
@@ -1120,7 +1121,11 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	const handleManualCardTerminalConfirm = async () => {
 		setIsSubmittingManualCard(true);
 		try {
-			const clientMutationId = `manual-pos:${patientId || "anon"}:${Date.now()}-${Math.random().toString(36).slice(2)}`;
+			const randomSuffix =
+				typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+					? crypto.randomUUID()
+					: `${Date.now()}`;
+			const clientMutationId = `manual-pos:${patientId || "anon"}:${Date.now()}-${randomSuffix}`;
 			const headers = denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
 				"Idempotency-Key": clientMutationId,

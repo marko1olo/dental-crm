@@ -441,7 +441,33 @@ class WebUnifiedStorageEngine implements UnifiedStorageEngineContract {
 				},
 			);
 			return true;
-		} catch {
+		} catch (err: unknown) {
+			const isQuota =
+				(err as Error)?.name === "QuotaExceededError" ||
+				(err as { code?: number })?.code === 22 ||
+				String(err).toLowerCase().includes("quota");
+			if (isQuota) {
+				try {
+					const { purgeSyncedDraftsAndOldCache } = await import("../services/offline/offlineStorage.js");
+					await purgeSyncedDraftsAndOldCache();
+					await saveOfflineDraft(
+						draft.key,
+						"DIARY_043_DRAFT",
+						draft.visitId || draft.patientId || draft.key,
+						{
+							...(draft.visitId ? { visitId: draft.visitId } : {}),
+							...(draft.patientId ? { patientId: draft.patientId } : {}),
+							...(draft.doctorId ? { doctorId: draft.doctorId } : {}),
+							payload: draft.payloadJson,
+							version: draft.version,
+							updatedAt: draft.updatedAt,
+						},
+					);
+					return true;
+				} catch {
+					return false;
+				}
+			}
 			return false;
 		}
 	}
@@ -483,13 +509,38 @@ class WebUnifiedStorageEngine implements UnifiedStorageEngineContract {
 	async enqueueMutation(
 		mutation: Omit<OfflineMutationQueueRecord, "id" | "createdAt" | "synced" | "retryAttempts">,
 	): Promise<OfflineMutationQueueRecord> {
-		const res = await enqueueOfflineMutation({
-			entityType: mutation.entityType as any,
-			entityId: mutation.entityId,
-			action: mutation.action,
-			payload: { json: mutation.payloadJson },
-			organizationId: mutation.organizationId,
-		});
+		let res: any;
+		try {
+			res = await enqueueOfflineMutation({
+				entityType: mutation.entityType as any,
+				entityId: mutation.entityId,
+				action: mutation.action,
+				payload: { json: mutation.payloadJson },
+				organizationId: mutation.organizationId,
+			});
+		} catch (err: unknown) {
+			const isQuota =
+				(err as Error)?.name === "QuotaExceededError" ||
+				(err as { code?: number })?.code === 22 ||
+				String(err).toLowerCase().includes("quota");
+			if (isQuota) {
+				try {
+					const { purgeSyncedDraftsAndOldCache } = await import("../services/offline/offlineStorage.js");
+					await purgeSyncedDraftsAndOldCache();
+					res = await enqueueOfflineMutation({
+						entityType: mutation.entityType as any,
+						entityId: mutation.entityId,
+						action: mutation.action,
+						payload: { json: mutation.payloadJson },
+						organizationId: mutation.organizationId,
+					});
+				} catch {
+					throw err;
+				}
+			} else {
+				throw err;
+			}
+		}
 
 		return {
 			id: res.mutationId,
@@ -534,13 +585,43 @@ class WebUnifiedStorageEngine implements UnifiedStorageEngineContract {
 		}
 	}
 
-	async getStorageStatus(): Promise<{ engine: "indexeddb" | "sqlite" | "localstorage"; isAvailable: boolean; pendingCount: number }> {
+	async getStorageStatus(): Promise<{
+		engine: "indexeddb" | "sqlite" | "localstorage";
+		isAvailable: boolean;
+		pendingCount: number;
+		quotaBytes?: number;
+		usageBytes?: number;
+		percentUsed?: number;
+		freeFormatted?: string;
+		isQuotaWarning?: boolean;
+	}> {
 		const isIdb = isIndexedDbAvailable();
 		const pending = await this.getPendingMutations();
+		let quotaBytes: number | undefined;
+		let usageBytes: number | undefined;
+		let percentUsed: number | undefined;
+		let freeFormatted: string | undefined;
+		let isQuotaWarning: boolean | undefined;
+
+		try {
+			const { getStorageEstimate } = await import("../services/offline/offlineStorage.js");
+			const est = await getStorageEstimate();
+			quotaBytes = est.quotaBytes;
+			usageBytes = est.usageBytes;
+			percentUsed = est.percentUsed;
+			freeFormatted = est.freeFormatted;
+			isQuotaWarning = est.isWarning;
+		} catch {}
+
 		return {
 			engine: isIdb ? "indexeddb" : "localstorage",
 			isAvailable: true,
 			pendingCount: pending.length,
+			...(quotaBytes !== undefined ? { quotaBytes } : {}),
+			...(usageBytes !== undefined ? { usageBytes } : {}),
+			...(percentUsed !== undefined ? { percentUsed } : {}),
+			...(freeFormatted ? { freeFormatted } : {}),
+			...(isQuotaWarning !== undefined ? { isQuotaWarning } : {}),
 		};
 	}
 
@@ -771,7 +852,19 @@ export function startOfflineQueueAutoSync(intervalMs = 30_000): () => void {
 		void attemptSync();
 	};
 
+	const handleVisibilityChange = () => {
+		if (typeof document !== "undefined" && document.visibilityState === "visible") {
+			void attemptSync();
+		}
+	};
+
 	window.addEventListener("online", handleOnline);
+	if (typeof document !== "undefined") {
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+	}
+
+	// Immediate initial drain attempt on startup
+	void attemptSync();
 
 	if (intervalMs > 0) {
 		timer = setInterval(attemptSync, intervalMs);
@@ -779,6 +872,9 @@ export function startOfflineQueueAutoSync(intervalMs = 30_000): () => void {
 
 	return () => {
 		window.removeEventListener("online", handleOnline);
+		if (typeof document !== "undefined") {
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+		}
 		if (timer) clearInterval(timer);
 	};
 }
@@ -918,23 +1014,39 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 						widthMm: job.paperWidthMm ?? 80,
 						copies: job.copies ?? 1,
 					});
-					const printerUsed = (res as any).printerName || (res as any).printerUsed || job.kktConnection?.host || "ESC/POS 9100";
-					return {
-						success: res.success,
-						methodUsed: "desktop_silent",
-						printedAt: res.printedAt || now,
-						...(printerUsed ? { printerName: printerUsed } : {}),
-						...(res.error ? { error: res.error } : {}),
-					};
-				} catch (err: unknown) {
-					const message = err instanceof Error ? err.message : "Ошибка сокетной печати ESC/POS";
-					return {
-						success: false,
-						methodUsed: "desktop_silent",
-						printedAt: now,
-						error: message,
-					};
+					if (res.success) {
+						const printerUsed = (res as any).printerName || (res as any).printerUsed || job.kktConnection?.host || "ESC/POS 9100";
+						return {
+							success: true,
+							methodUsed: "desktop_silent",
+							printedAt: res.printedAt || now,
+							...(printerUsed ? { printerName: printerUsed } : {}),
+						};
+					}
+				} catch {
+					// Fall through to OS thermal spooler fallback
 				}
+
+				// Instant Fallback on Desktop EXE: standard OS thermal spooler queue (Mandate 8e)
+				try {
+					const { printDesktopThermalLabel } = await import("../native/desktopBridge.js");
+					const html = job.html || `<pre style="font-family:monospace;font-size:12px;white-space:pre-wrap;margin:0;padding:8px;">${job.rawText || ""}</pre>`;
+					const fallbackRes = await printDesktopThermalLabel({
+						html,
+						printerName: job.printerName,
+						widthMm: job.paperWidthMm ?? 80,
+						silent: job.silent !== false,
+						copies: job.copies ?? 1,
+					});
+					if (fallbackRes.success) {
+						return {
+							success: true,
+							methodUsed: "desktop_silent",
+							printedAt: fallbackRes.printedAt || now,
+							printerName: fallbackRes.printerName || fallbackRes.printerUsed || "OS Thermal Spooler",
+						};
+					}
+				} catch {}
 			}
 
 			const { dispatchEscPosReceiptPrint } = await import("../native/hardwareDispatcher.js");

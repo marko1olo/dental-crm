@@ -421,12 +421,27 @@ export async function printDirectEscPosSocket(
 			if (res.success) {
 				return { success: true, method: "desktop_silent" };
 			}
-			if (res.error) {
-				return { success: false, method: "desktop_silent", error: res.error };
+			// If TCP 9100 fails, proceed to instant OS thermal printer spooler fallback
+		} catch {
+			// Fall through to OS thermal spooler fallback
+		}
+
+		// Instant Fallback on Desktop EXE: standard OS thermal spooler queue without blocking (Mandate 8e)
+		try {
+			const { printDesktopThermalLabel } = await import("../native/desktopBridge.js");
+			const html = `<pre style="font-family:monospace;font-size:12px;white-space:pre-wrap;margin:0;padding:8px;">${textOrRawPayload}</pre>`;
+			const fallbackRes = await printDesktopThermalLabel({
+				html,
+				printerName: options.printerName,
+				widthMm,
+				silent: options.silent !== false,
+				copies: options.copies ?? 1,
+			});
+			if (fallbackRes.success) {
+				return { success: true, method: "desktop_silent" };
 			}
-		} catch (err) {
-			const message = err instanceof Error ? err.message : "Ошибка сокетной печати ESC/POS";
-			return { success: false, method: "desktop_silent", error: message };
+		} catch {
+			// Fall through to mobile/web print
 		}
 	}
 
