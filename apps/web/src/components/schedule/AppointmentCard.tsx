@@ -203,9 +203,9 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 	const appointmentPatientName =
 		isTechnicalBreakAppointment(appointment) && !appointment?.patientId
 			? appointment?.reason || "Служебный перерыв"
-			: typeof patientName === "function"
-			? patientName(dashboard?.patients ?? [], appointment?.patientId ?? null)
-			: "";
+			: (typeof patientName === "function"
+				? patientName(dashboard?.patients ?? [], appointment?.patientId ?? null)
+				: "") || "Пациент";
 
 	const collision = useMemo(() => {
 		if (!appointmentEditing || !appointmentDraft) {
@@ -313,6 +313,26 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 		appointment?.status,
 		dashboard?.appointments,
 	]);
+
+	const activePatients = useMemo(() => {
+		return (dashboard?.patients ?? []).filter((p) => p.status === "active");
+	}, [dashboard?.patients]);
+
+	const activeDoctors = useMemo(() => {
+		return (dashboard?.clinicSettings?.staff ?? []).filter(
+			(m) => m.active && (m.role === "doctor" || m.role === "owner"),
+		);
+	}, [dashboard?.clinicSettings?.staff]);
+
+	const activeAssistants = useMemo(() => {
+		return (dashboard?.clinicSettings?.staff ?? []).filter(
+			(m) => m.active && m.role === "assistant",
+		);
+	}, [dashboard?.clinicSettings?.staff]);
+
+	const activeChairs = useMemo(() => {
+		return (dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active);
+	}, [dashboard?.clinicSettings?.chairs]);
 
 	const [isQuickStatusUpdating, setIsQuickStatusUpdating] = useState(false);
 	const [optimisticStatus, setOptimisticStatus] = useState<Appointment["status"] | null>(null);
@@ -965,7 +985,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 							appointmentChair={appointmentChair}
 							displayStatus={displayStatus}
 							formatTime={formatTime}
-							clinicSettings={dashboard.clinicSettings}
+							clinicSettings={dashboard?.clinicSettings}
 							onQuickStatusChange={handleQuickStatusChange}
 							onClose={handleCardMouseLeave}
 							onMouseEnter={() => {
@@ -1686,7 +1706,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 										Пациент
 									</span>
 									{useManualSelects ||
-									(dashboard.patients ?? []).length > 20 ? (
+									(dashboard?.patients ?? []).length > 20 ? (
 										<select
 											value={String(appointmentDraft.patientId ?? "")}
 											onChange={(e) =>
@@ -1697,7 +1717,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 												)
 											}
 											disabled={
-												appointment.id === dashboard.activeVisit?.appointmentId
+												appointment.id === dashboard?.activeVisit?.appointmentId
 											}
 											className="w-full p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none truncate"
 											aria-describedby={
@@ -1707,39 +1727,35 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 											}
 										>
 											<option value="">-- Выберите пациента --</option>
-											{(dashboard.patients ?? [])
-												.filter((p) => p.status === "active")
-												.map((p) => (
-													<option key={p.id} value={p.id}>
-														{p.fullName}
-													</option>
-												))}
+											{activePatients.map((p) => (
+												<option key={p.id} value={p.id}>
+													{p.fullName}
+												</option>
+											))}
 										</select>
 									) : (
 										<div className="flex flex-wrap gap-1.5 min-w-0">
-											{(dashboard.patients ?? [])
-												.filter((patient) => patient.status === "active")
-												.map((patient) => (
-													<button
-														key={patient.id}
-														type="button"
-														className={`quick-chip max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center ${appointmentDraft.patientId === patient.id ? "active" : ""}`}
-														title={patient.fullName}
-														onClick={() =>
-															updateAppointmentScheduleDraft(
-																appointment.id,
-																"patientId",
-																patient.id,
-															)
-														}
-														disabled={
-															appointment.id ===
-															dashboard.activeVisit?.appointmentId
-														}
-													>
-														<span className="truncate">{patient.fullName}</span>
-													</button>
-												))}
+											{activePatients.map((patient) => (
+												<button
+													key={patient.id}
+													type="button"
+													className={`quick-chip max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center ${appointmentDraft.patientId === patient.id ? "active" : ""}`}
+													title={patient.fullName}
+													onClick={() =>
+														updateAppointmentScheduleDraft(
+															appointment.id,
+															"patientId",
+															patient.id,
+														)
+													}
+													disabled={
+														appointment.id ===
+														dashboard?.activeVisit?.appointmentId
+													}
+												>
+													<span className="truncate">{patient.fullName}</span>
+												</button>
+											))}
 										</div>
 									)}
 								</div>
@@ -1758,18 +1774,23 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 													"doctorUserId",
 													newDocId,
 												);
-												if (newDocId) {
-													const doc = (dashboard.clinicSettings?.staff ?? []).find(
-														(m) => m.id === newDocId,
+												const doc = (
+													dashboard?.clinicSettings?.staff ?? []
+												).find((m) => m.id === newDocId);
+												if (doc?.specialties?.length) {
+													const matchingChair = (
+														dashboard?.clinicSettings?.chairs ?? []
+													).find(
+														(c) =>
+															c.active &&
+															c.specialization &&
+															doc.specialties.includes(c.specialization),
 													);
-													if (doc?.specialties?.length) {
-														const matchingChair = (dashboard.clinicSettings?.chairs ?? []).find(
-															(c) =>
-																c.active &&
-																c.specialization &&
-																doc.specialties.includes(c.specialization),
-														);
-														if (matchingChair && matchingChair.id !== appointmentDraft.chairId) {
+													if (matchingChair) {
+														if (
+															matchingChair.id !==
+															appointmentDraft.chairId
+														) {
 															updateAppointmentScheduleDraft(
 																appointment.id,
 																"chairId",
@@ -1782,96 +1803,76 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 											className="w-full min-h-[44px] p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none truncate"
 										>
 											<option value="">-- Выберите врача --</option>
-											{(dashboard.clinicSettings?.staff ?? [])
-												.filter(
-													(m) =>
-														m.active &&
-														(m.role === "doctor" || m.role === "owner"),
-												)
-												.map((m) => (
-													<option key={m.id} value={m.id}>
-														{m.fullName}
-													</option>
-												))}
+											{activeDoctors.map((m) => (
+												<option key={m.id} value={m.id}>
+													{m.fullName}
+												</option>
+											))}
 										</select>
 									) : (
 										<div className="flex flex-wrap gap-1.5 min-w-0">
-											{(dashboard.clinicSettings?.staff ?? [])
-												.filter(
-													(member) =>
-														member.active &&
-														(member.role === "doctor" ||
-															member.role === "owner"),
-												)
-												.map((member) => (
-													<button
-														key={member.id}
-														type="button"
-														className={`quick-chip max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center ${appointmentDraft.doctorUserId === member.id ? "active" : ""}`}
-														title={member.fullName}
-														onClick={() => {
-															updateAppointmentScheduleDraft(
-																appointment.id,
-																"doctorUserId",
-																member.id,
+											{activeDoctors.map((member) => (
+												<button
+													key={member.id}
+													type="button"
+													className={`quick-chip max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center ${appointmentDraft.doctorUserId === member.id ? "active" : ""}`}
+													title={member.fullName}
+													onClick={() => {
+														updateAppointmentScheduleDraft(
+															appointment.id,
+															"doctorUserId",
+															member.id,
+														);
+														if (member.specialties?.length) {
+															const matchingChair = (dashboard?.clinicSettings?.chairs ?? []).find(
+																(c) =>
+																	c.active &&
+																	c.specialization &&
+																	member.specialties.includes(c.specialization),
 															);
-															if (member.specialties?.length) {
-																const matchingChair = (dashboard.clinicSettings?.chairs ?? []).find(
-																	(c) =>
-																		c.active &&
-																		c.specialization &&
-																		member.specialties.includes(c.specialization),
+															if (matchingChair && matchingChair.id !== appointmentDraft.chairId) {
+																updateAppointmentScheduleDraft(
+																	appointment.id,
+																	"chairId",
+																	matchingChair.id,
 																);
-																if (matchingChair && matchingChair.id !== appointmentDraft.chairId) {
-																	updateAppointmentScheduleDraft(
-																		appointment.id,
-																		"chairId",
-																		matchingChair.id,
-																	);
-																}
 															}
-														}}
-													>
-														<span className="truncate">{member.fullName}</span>
-													</button>
-												))}
+														}
+													}}
+												>
+													<span className="truncate">{member.fullName}</span>
+												</button>
+											))}
 										</div>
 									)}
 								</div>
 
 								{dashboard?.clinicSettings?.profile?.mode !== "one_chair" &&
-									(dashboard.clinicSettings?.staff ?? []).some(
-										(m) => m.active && m.role === "assistant",
-									) && (
+									activeAssistants.length > 0 && (
 									<div className="min-w-0">
 										<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
 											Ассистент
 										</span>
 										<div className="flex flex-wrap gap-1.5 min-w-0">
-											{(dashboard.clinicSettings?.staff ?? [])
-												.filter(
-													(member) =>
-														member.active && member.role === "assistant",
-												)
-												.map((member) => (
-													<button
-														key={member.id}
-														type="button"
-														className={`quick-chip max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center ${appointmentDraft.assistantUserId === member.id ? "active" : ""}`}
-														title={member.fullName}
-														onClick={() =>
-															updateAppointmentScheduleDraft(
-																appointment.id,
-																"assistantUserId",
-																appointmentDraft.assistantUserId === member.id
-																	? ""
-																	: member.id,
-															)
-														}
-													>
-														<span className="truncate">{member.fullName}</span>
-													</button>
-												))}
+											{activeAssistants.map((member) => (
+												<button
+													key={member.id}
+													type="button"
+													className={`quick-chip max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center ${appointmentDraft.assistantUserId === member.id ? "active" : ""}`}
+													title={member.fullName}
+													onClick={() =>
+														updateAppointmentScheduleDraft(
+															appointment.id,
+															"assistantUserId",
+															appointmentDraft.assistantUserId === member.id
+																? ""
+																: member.id,
+														)
+													}
+												>
+													<span className="truncate">{member.fullName}</span>
+												</button>
+											))}
 										</div>
 									</div>
 								)}
@@ -1881,9 +1882,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 										Кресло
 									</span>
 									<div className="flex flex-wrap gap-1.5 min-w-0">
-										{(dashboard.clinicSettings?.chairs ?? [])
-											.filter((chair) => chair.active)
-											.map((chair) => (
+										{activeChairs.map((chair) => (
 												<button
 													key={chair.id}
 													type="button"
@@ -2253,9 +2252,9 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 													doctorName: appointmentDoctor?.fullName,
 													doctorSpecialty: appointmentDoctor?.role,
 													appointmentStartsAt: appointment.startsAt,
-													clinicName: dashboard.clinicSettings?.profile?.clinicName,
-													clinicAddress: dashboard.clinicSettings?.profile?.address,
-													clinicPhone: dashboard.clinicSettings?.profile?.phone,
+													clinicName: dashboard?.clinicSettings?.profile?.clinicName,
+													clinicAddress: dashboard?.clinicSettings?.profile?.address,
+													clinicPhone: dashboard?.clinicSettings?.profile?.phone,
 													treatmentReason: appointment.reason,
 												});
 												openWhatsAppChat(appointmentPatient.phone!, text);
@@ -2273,9 +2272,9 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 													doctorName: appointmentDoctor?.fullName,
 													doctorSpecialty: appointmentDoctor?.role,
 													appointmentStartsAt: appointment.startsAt,
-													clinicName: dashboard.clinicSettings?.profile?.clinicName,
-													clinicAddress: dashboard.clinicSettings?.profile?.address,
-													clinicPhone: dashboard.clinicSettings?.profile?.phone,
+													clinicName: dashboard?.clinicSettings?.profile?.clinicName,
+													clinicAddress: dashboard?.clinicSettings?.profile?.address,
+													clinicPhone: dashboard?.clinicSettings?.profile?.phone,
 													treatmentReason: appointment.reason,
 												});
 												if (typeof navigator !== "undefined" && navigator.clipboard) {
