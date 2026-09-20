@@ -1040,9 +1040,35 @@ export function createUsbHidScannerDetector(options: UsbHidScannerOptions = {}) 
 	const handleKeyDown = (event: KeyboardEvent) => {
 		if (!active) return;
 		const result = processKey(event.key, Date.now());
-		if (result && preventDefault && typeof event.preventDefault === "function") {
-			event.preventDefault();
-			event.stopPropagation();
+		if (result) {
+			if (preventDefault && typeof event.preventDefault === "function") {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+
+			// Clean up focused input if scanner typed into it
+			if (typeof document !== "undefined" && document.activeElement) {
+				const activeEl = document.activeElement as any;
+				const isInput =
+					(typeof HTMLInputElement !== "undefined" && activeEl instanceof HTMLInputElement) ||
+					(typeof HTMLTextAreaElement !== "undefined" && activeEl instanceof HTMLTextAreaElement) ||
+					Boolean(
+						activeEl &&
+							typeof activeEl.value === "string" &&
+							typeof activeEl.tagName === "string" &&
+							["INPUT", "TEXTAREA"].includes(activeEl.tagName),
+					);
+				if (isInput) {
+					try {
+						if (activeEl.value && activeEl.value.includes(result.rawCode)) {
+							activeEl.value = activeEl.value.replace(result.rawCode, "").trim();
+							if (typeof activeEl.dispatchEvent === "function" && typeof Event !== "undefined") {
+								activeEl.dispatchEvent(new Event("input", { bubbles: true }));
+							}
+						}
+					} catch {}
+				}
+			}
 		}
 	};
 

@@ -1240,4 +1240,9 @@ export {
 	registerDoctorHotkeys,
 } from "../utils/deviceDetection.js";
 
+export {
+	isWebUsbSupported,
+	printWebUsbEscPosReceipt,
+} from "./hardwarePrinting.js";
+
 

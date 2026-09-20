@@ -227,11 +227,31 @@ export async function printThermalReceipt(
 		// 1B. Direct ESC/POS printing over LAN (socket 9100) or OS queue without Windows print dialog
 		if (options.protocol === "escpos" || options.rawEscPos || options.kktHost || options.connection === "lan" || options.connection === "usb") {
 			try {
+				let base64Payload = options.rawEscPos
+					? typeof btoa === "function"
+						? btoa(options.rawEscPos)
+						: undefined
+					: undefined;
+
+				if (!base64Payload) {
+					try {
+						const escPosBytes = hardwarePrinter.buildEscPosFiscalReceipt(payload);
+						base64Payload =
+							typeof Buffer !== "undefined"
+								? Buffer.from(escPosBytes).toString("base64")
+								: typeof btoa === "function"
+									? btoa(String.fromCharCode(...escPosBytes))
+									: undefined;
+					} catch (buildErr) {
+						console.warn("[HardwarePrinting] Failed to build ESC/POS payload:", buildErr);
+					}
+				}
+
 				const res: DesktopEscPosPrintResult = await printDesktopEscPosReceipt({
 					host: options.kktHost || "127.0.0.1",
 					port: options.kktPort || 9100,
 					printerName: options.printerName,
-					rawEscPosBase64: options.rawEscPos ? (typeof btoa === "function" ? btoa(options.rawEscPos) : undefined) : undefined,
+					rawEscPosBase64: base64Payload,
 					text: options.rawEscPos,
 					silent: options.silent !== false,
 					widthMm: paperWidth,
@@ -281,7 +301,7 @@ export async function printThermalReceipt(
 	}
 
 	// 3. Web / PWA: Direct WebUSB ESC/POS printing attempt if USB connection is explicitly requested
-	if (options.connection === "usb" && typeof navigator !== "undefined" && "usb" in navigator) {
+	if (options.connection === "usb" && isWebUsbSupported()) {
 		try {
 			const escPosBuffer = hardwarePrinter.buildEscPosFiscalReceipt(payload);
 			const usbResult = await printWebUsbEscPosReceipt(escPosBuffer);
@@ -313,13 +333,24 @@ export async function printThermalReceipt(
 }
 
 /**
+ * Checks whether WebUSB API is supported by the current browser environment (Chromium / Edge / Opera).
+ */
+export function isWebUsbSupported(): boolean {
+	return (
+		typeof navigator !== "undefined" &&
+		"usb" in navigator &&
+		Boolean((navigator as any).usb?.requestDevice)
+	);
+}
+
+/**
  * Direct ESC/POS printing via WebUSB (Chromium / Edge / Opera).
  * Connects directly to USB receipt printers (USB Class 0x07) without drivers or Windows dialogs.
  */
 export async function printWebUsbEscPosReceipt(
 	rawBytes: Uint8Array,
 ): Promise<{ success: boolean; error?: string }> {
-	if (typeof navigator === "undefined" || !("usb" in navigator)) {
+	if (!isWebUsbSupported()) {
 		return { success: false, error: "WebUSB API недоступен в данном браузере" };
 	}
 
@@ -328,16 +359,23 @@ export async function printWebUsbEscPosReceipt(
 			usb: {
 				requestDevice: (options: { filters: Array<{ classCode?: number }> }) => Promise<{
 					open: () => Promise<void>;
-					selectConfiguration: (config: number) => Promise<void>;
+					selectConfiguration?: (config: number) => Promise<void>;
 					claimInterface: (iface: number) => Promise<void>;
 					configuration?: {
 						interfaces: Array<{
-							alternate: {
-								endpoints: Array<{
+							interfaceNumber?: number;
+							alternate?: {
+								endpoints?: Array<{
 									direction: "in" | "out";
 									endpointNumber: number;
 								}>;
 							};
+							alternates?: Array<{
+								endpoints?: Array<{
+									direction: "in" | "out";
+									endpointNumber: number;
+								}>;
+							}>;
 						}>;
 					};
 					transferOut: (endpoint: number, data: BufferSource) => Promise<unknown>;
@@ -349,19 +387,30 @@ export async function printWebUsbEscPosReceipt(
 		// Class 7 is standard USB Printer Class
 		const device = await usb.requestDevice({ filters: [{ classCode: 7 }] });
 		await device.open();
-		await device.selectConfiguration(1);
-		await device.claimInterface(0);
-
-		// Find OUT endpoint
-		let outEndpoint = 1;
-		const endpoints = device.configuration?.interfaces?.[0]?.alternate?.endpoints;
-		if (endpoints) {
-			const out = endpoints.find((ep) => ep.direction === "out");
-			if (out) outEndpoint = out.endpointNumber;
+		if (!device.configuration && typeof device.selectConfiguration === "function") {
+			await device.selectConfiguration(1);
 		}
 
-		await device.transferOut(outEndpoint, rawBytes);
-		await device.close();
+		// Find the interface and alternate containing an OUT bulk endpoint
+		let ifaceNumber = 0;
+		let outEndpoint = 1;
+		const ifaces = device.configuration?.interfaces || [];
+
+		for (const iface of ifaces) {
+			const activeAlt = iface.alternate || iface.alternates?.[0];
+			const outEp = activeAlt?.endpoints?.find((ep) => ep.direction === "out");
+			if (outEp) {
+				ifaceNumber = iface.interfaceNumber ?? 0;
+				outEndpoint = outEp.endpointNumber;
+				break;
+			}
+		}
+
+		await device.claimInterface(ifaceNumber);
+		await device.transferOut(outEndpoint, rawBytes as unknown as BufferSource);
+		try {
+			await device.close();
+		} catch {}
 		return { success: true };
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : "Ошибка WebUSB печати";

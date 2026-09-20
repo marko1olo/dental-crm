@@ -553,20 +553,26 @@ describe("Multi-Platform Hardware Bridge & IPC Suite", () => {
 		const testPayload = {
 			orderId: "ORD-TEST-OFFLINE-001",
 			patientName: "Иванов Иван",
+			operationType: "income" as const,
+			cashierFullName: "Иванова А. С.",
+			cashierName: "Иванова А. С.",
 			items: [
 				{
 					name: "Консультация стоматолога",
-					price: 1500,
+					priceRub: 2500,
+					price: 2500,
 					quantity: 1,
-					amount: 1500,
+					amountRub: 2500,
+					amount: 2500,
+					vatRate: "vat_none" as const,
 					vatType: "none" as const,
 					paymentMethod: "full_payment" as const,
 					paymentSubject: "service" as const,
 				},
 			],
-			totalAmount: 1500,
-			cashierName: "Сидорова А.А.",
-			cashAmount: 1500,
+			totalRub: 2500,
+			totalAmount: 2500,
+			cashAmount: 2500,
 			electronicAmount: 0,
 		};
 
@@ -587,7 +593,7 @@ describe("Multi-Platform Hardware Bridge & IPC Suite", () => {
 		const reloaded = FiscalReceiptQueueManager.getPendingItems();
 		assert.equal(reloaded.length, 1);
 		assert.equal(reloaded[0]?.id, item.id);
-		assert.equal(reloaded[0]?.payload.totalAmount, 1500);
+		assert.equal((reloaded[0]?.payload as any).totalAmount ?? reloaded[0]?.payload.totalRub, 2500);
 
 		// Clear queue completely removes storage
 		FiscalReceiptQueueManager.clearQueue();
