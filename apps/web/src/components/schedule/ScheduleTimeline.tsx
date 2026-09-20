@@ -91,13 +91,16 @@ interface TimelineDayGroupProps {
 	editingAppointmentId: string | null;
 	appointmentDraftFromAppointment: (appointment: Appointment) => any;
 	appointmentDraftMissingSteps: (draft: any) => string[];
-	activeVisitLockedAppointmentStatuses: Set<string>;
+	activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
 	visibleScheduleSuggestions: ScheduleSuggestion[];
 	appointmentReadinessById: Map<string, AppointmentReadiness>;
 	appointmentLabels: Record<Appointment["status"], string>;
-	openScheduleSuggestion: (suggestion: ScheduleSuggestion) => void;
+	openScheduleSuggestion: (section: string) => void;
 	formatTime: (time: string) => string;
-	patientName: (patients: any, patientId: string) => string;
+	patientName: (
+		patients: Dashboard["patients"],
+		patientId: string | null,
+	) => string;
 	openAppointmentEditor: (appointment: Appointment) => void;
 	repeatAppointment: (appointment: Appointment) => void;
 	copyAppointmentToBuffer?: ((appointment: Appointment) => void) | undefined;
@@ -591,7 +594,7 @@ function ScheduleTimelineInner(props: ScheduleTimelineProps) {
 				<div className="py-3 px-4 text-xs max-w-sm mx-auto text-center text-[var(--muted)] bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] mt-4 shadow-sm">
 					<p className="font-medium mb-3 text-[var(--ink)]">
 						{(dashboard.appointments ?? []).length === 0
-							? "Записей пока нет"
+							? "Записей пока нет ни одной"
 							: activeScheduleFilterCount > 0
 								? scheduleDateFilter.trim()
 									? "На этот день записей нет"

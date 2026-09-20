@@ -704,5 +704,126 @@ describe("ServicePricelistManagerModal — DOM Chunking & Memory Guard (Mandates
 	});
 });
 
+describe("GridAppointmentCard — Memoization & Content-Visibility Performance (Mandates 8c, 8n)", () => {
+	it("рендерит карточку приема со стилем contentVisibility auto и containment", async () => {
+		const React = await import("react");
+		const { renderToString } = await import("react-dom/server");
+		const { GridAppointmentCard } = await import("../components/schedule/GridAppointmentCard");
 
+		const mockAppointment = {
+			id: "test-appt-1",
+			patientId: "pat-1",
+			doctorUserId: "doc-1",
+			chairId: "chair-1",
+			startsAt: "2026-09-20T10:00:00.000Z",
+			endsAt: "2026-09-20T10:30:00.000Z",
+			status: "confirmed" as const,
+			reason: "Лечение кариеса",
+		};
 
+		const mockDashboard = {
+			patients: [{ id: "pat-1", fullName: "Сидоров Алексей Петрович", balanceRub: 1500 }],
+			clinicSettings: { staff: [{ id: "doc-1", fullName: "Д-р Смирнов А. В." }] },
+		};
+
+		// 1. Unhovered card: should NOT render heavy hover preview DOM
+		const unhoveredHtml = renderToString(
+			React.createElement(GridAppointmentCard, {
+				appointment: mockAppointment,
+				chair: { id: "chair-1", name: "Кабинет 1" },
+				effectiveChairs: [{ id: "chair-1", name: "Кабинет 1" }],
+				doctors: [{ id: "doc-1", fullName: "Д-р Смирнов А. В." }],
+				patientLookupMap: new Map([["pat-1", mockDashboard.patients[0]]]),
+				staffLookupMap: new Map([["doc-1", mockDashboard.clinicSettings.staff[0]]]),
+				collisionMap: new Map(),
+				patientNameFn: () => "Сидоров Алексей Петрович",
+				dashboard: mockDashboard as any,
+				timezone: "Europe/Moscow",
+				toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+				appointmentLabels: {
+					planned: "Запланирован",
+					confirmed: "Подтвержден",
+					arrived: "Пришел",
+					in_treatment: "В кресле",
+					completed: "Завершен",
+					cancelled: "Отменен",
+					no_show: "Не явился",
+				},
+				isHovered: false,
+				isStatusPickerOpen: false,
+				isMenuOpen: false,
+				isNearBottom: false,
+				isNearRightEdge: false,
+				onAppointmentClick: () => {},
+				onSelectMobileAppt: () => {},
+				onQuickStatusChange: () => {},
+				onAdjustDuration: () => {},
+				onShiftLateness: () => {},
+				onReassignChair: () => {},
+				onReassignDoctor: () => {},
+				onFreeSlotToWaitlist: () => {},
+				onMouseEnter: () => {},
+				onMouseLeave: () => {},
+				onKeepHovered: () => {},
+				onToggleStatusPicker: () => {},
+				onToggleMenu: () => {},
+				onCloseStatusPicker: () => {},
+				onCloseMenu: () => {},
+			}),
+		);
+
+		assert.ok(unhoveredHtml.includes("content-visibility:auto"), "Карточка должна содержать CSS-свойство content-visibility:auto");
+		assert.ok(unhoveredHtml.includes("contain-intrinsic-size:1px 52px"), "Карточка должна содержать contain-intrinsic-size для предотвращения сдвига макета");
+		assert.ok(unhoveredHtml.includes("Сидоров Алексей П."), "ФИО должно быть отформатировано по стандарту Apple HIG");
+		assert.ok(!unhoveredHtml.includes("schedule-grid-patient-hover-preview"), "Ненаведенная карточка не должна плодить DOM превью");
+
+		// 2. Hovered card: renders Hover HUD
+		const hoveredHtml = renderToString(
+			React.createElement(GridAppointmentCard, {
+				appointment: mockAppointment,
+				chair: { id: "chair-1", name: "Кабинет 1" },
+				effectiveChairs: [{ id: "chair-1", name: "Кабинет 1" }],
+				doctors: [{ id: "doc-1", fullName: "Д-р Смирнов А. В." }],
+				patientLookupMap: new Map([["pat-1", mockDashboard.patients[0]]]),
+				staffLookupMap: new Map([["doc-1", mockDashboard.clinicSettings.staff[0]]]),
+				collisionMap: new Map(),
+				patientNameFn: () => "Сидоров Алексей Петрович",
+				dashboard: mockDashboard as any,
+				timezone: "Europe/Moscow",
+				toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+				appointmentLabels: {
+					planned: "Запланирован",
+					confirmed: "Подтвержден",
+					arrived: "Пришел",
+					in_treatment: "В кресле",
+					completed: "Завершен",
+					cancelled: "Отменен",
+					no_show: "Не явился",
+				},
+				isHovered: true,
+				isStatusPickerOpen: false,
+				isMenuOpen: false,
+				isNearBottom: false,
+				isNearRightEdge: false,
+				onAppointmentClick: () => {},
+				onSelectMobileAppt: () => {},
+				onQuickStatusChange: () => {},
+				onAdjustDuration: () => {},
+				onShiftLateness: () => {},
+				onReassignChair: () => {},
+				onReassignDoctor: () => {},
+				onFreeSlotToWaitlist: () => {},
+				onMouseEnter: () => {},
+				onMouseLeave: () => {},
+				onKeepHovered: () => {},
+				onToggleStatusPicker: () => {},
+				onToggleMenu: () => {},
+				onCloseStatusPicker: () => {},
+				onCloseMenu: () => {},
+			}),
+		);
+
+		assert.ok(hoveredHtml.includes("schedule-grid-patient-hover-preview"), "Наведенная карточка должна отображать Hover HUD");
+		assert.ok(hoveredHtml.includes("hover-status-confirmed-test-appt-1"), "Hover HUD должен содержать быстрые кнопки статуса");
+	});
+});
