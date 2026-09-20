@@ -253,7 +253,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 					<Sparkles size={14} className="text-amber-500" />
 					<span>Главные экспресс-сценарии приема:</span>
 				</div>
-				<div className="flex overflow-x-auto whitespace-nowrap scrollbar-thin scrollbar-thumb-[var(--line)] py-1 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+				<div className="flex overflow-x-auto no-scrollbar whitespace-nowrap flex-nowrap scrollbar-none py-1 sm:grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2">
 					{topExpressPresets.map((preset) => {
 						const isNorm = preset.id === "norm_healthy";
 						const isHygiene = preset.id === "hygiene_complex";
@@ -286,12 +286,24 @@ export const ClinicalQuickPresetsBar: React.FC<
 										? `${preset.shortBadge.replace(/\s*\d{2}/, "")} ${currentTooth}`
 										: preset.shortBadge;
 
+						const subtext = isNorm
+							? "Осмотр: Здоров, норма 043/у"
+							: isHygiene
+								? "Осмотр, Air-Flow, фторирование"
+								: isCaries
+									? "Кариес → Пломба + 804н"
+									: isPulpitis
+										? "Анестезия + Экстирпация + Ca(OH)2"
+										: isPerio
+											? "УЗ + AirFlow + Хлоргексидин"
+											: "Удаление + Гемостаз + Шов";
+
 						return (
 							<button
 								key={`top-${preset.id}`}
 								type="button"
 								onClick={() => handlePresetClick(preset)}
-								className={`clinical-protocol-card min-h-[50px] sm:min-h-[42px] min-w-[150px] sm:min-w-0 shrink-0 px-3 sm:px-2.5 py-2 sm:py-1.5 rounded-xl text-xs sm:text-sm font-extrabold border transition-all flex flex-col items-start justify-center gap-0.5 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left ${bgGradient}`}
+								className={`clinical-protocol-card min-h-[50px] sm:min-h-[42px] min-w-[155px] sm:min-w-0 shrink-0 flex-shrink-0 px-3 sm:px-2.5 py-2 sm:py-1.5 rounded-xl text-xs sm:text-sm font-extrabold border transition-all flex flex-col items-start justify-center gap-0.5 cursor-pointer shadow-xs active:scale-98 touch-manipulation text-left select-none whitespace-nowrap ${bgGradient}`}
 								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
 								data-testid={`express-preset-${preset.id}`}
 							>
@@ -339,18 +351,11 @@ export const ClinicalQuickPresetsBar: React.FC<
 										{preset.icd10}
 									</span>
 								</div>
-								<span className="text-[11px] font-medium text-[var(--muted)] whitespace-nowrap overflow-hidden text-ellipsis w-full">
-									{isNorm
-										? "Осмотр: Здоров, норма 043/у"
-										: isHygiene
-											? "Осмотр, Air-Flow, фторирование"
-											: isCaries
-												? "Кариес → Пломба + 804н"
-												: isPulpitis
-													? "Анестезия + Экстирпация + Ca(OH)2"
-													: isPerio
-														? "УЗ + AirFlow + Хлоргексидин"
-														: "Удаление + Гемостаз + Шов"}
+								<span
+									className="text-[11px] font-medium text-[var(--muted)] whitespace-nowrap overflow-hidden text-ellipsis w-full"
+									title={subtext}
+								>
+									{subtext}
 								</span>
 							</button>
 						);
@@ -409,7 +414,10 @@ export const ClinicalQuickPresetsBar: React.FC<
 										{preset.icd10}
 									</span>
 								</div>
-								<span className="text-[11px] font-medium text-[var(--muted)] whitespace-nowrap overflow-hidden text-ellipsis w-full">
+								<span
+									className="text-[11px] font-medium text-[var(--muted)] whitespace-nowrap overflow-hidden text-ellipsis w-full"
+									title={subtitle}
+								>
 									{subtitle}
 								</span>
 							</button>
@@ -467,7 +475,10 @@ export const ClinicalQuickPresetsBar: React.FC<
 										{preset.icd10}
 									</span>
 								</div>
-								<span className="text-[11px] font-medium text-[var(--muted)] whitespace-nowrap overflow-hidden text-ellipsis w-full">
+								<span
+									className="text-[11px] font-medium text-[var(--muted)] whitespace-nowrap overflow-hidden text-ellipsis w-full"
+									title={subtitle}
+								>
 									{subtitle}
 								</span>
 							</button>

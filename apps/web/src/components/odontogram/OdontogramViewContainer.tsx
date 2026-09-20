@@ -678,7 +678,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			{/* Unified Clinical Toolbar - 1-Level Compact Console (Mandate 8d, 8e, 8p: strictly 36px) */}
 			{!hideModeSwitcher && (
 				<div
-					className="odontogram-toolbar flex items-center justify-between gap-1.5 px-2 py-0.5 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full select-none flex-nowrap overflow-x-auto scrollbar-none min-h-[34px] h-[34px]"
+					className="odontogram-toolbar flex items-center justify-between gap-1.5 px-2 pr-4 py-0.5 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full select-none flex-nowrap overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x min-h-[34px] h-[34px]"
 					role="toolbar"
 					aria-label="Панель управления зубной формулой"
 				>

@@ -812,7 +812,7 @@ export function WorkspaceTopbar({
 	return (
 		<header className="topbar min-h-[44px] sm:h-11 sm:max-h-11 pl-3 sm:pl-4 flex items-center justify-between overflow-visible">
 			<div className="topbar-context min-w-0 flex-1 flex items-center flex-nowrap overflow-visible gap-2 sm:gap-3">
-				<div className="topbar-clinic shrink-0 min-w-[120px] sm:max-w-[280px] max-w-[200px] pl-1 sm:pl-0 flex flex-col justify-center leading-tight">
+				<div className="topbar-clinic shrink-0 min-w-[120px] sm:max-w-[280px] max-w-[200px] pl-3 sm:pl-0 flex flex-col justify-center leading-tight">
 					<p className="eyebrow truncate leading-none text-[10px] m-0 mb-0.5">
 						{formattedDate.replace(" г.", "").replace(",", " ·")}
 					</p>

@@ -2552,9 +2552,9 @@ export function VisitEmkTab() {
 								className="min-h-[130px] sm:min-h-[110px] rounded-b-lg rounded-t-none p-3 border border-t-0 border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-400 resize-y w-full outline-none focus:border-[var(--teal,var(--brand-primary))] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]/25 font-sans text-sm leading-relaxed"
 							/>
 
-							{/* Быстрые чипы под textarea с flex-wrap: чипы переносятся и не срезаются краем карточки */}
+							{/* Быстрые чипы под textarea: 1 строка с горизонтальным скроллом (Мандат 8p, DEF-2) */}
 							{chips.length > 0 && (
-								<div className="flex flex-wrap items-center gap-1.5 py-1 min-w-0 max-w-full my-0.5">
+								<div className="flex flex-nowrap items-center gap-1.5 py-1 min-w-0 max-w-full my-0.5 overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x">
 									{chips.map((chip) => (
 										<button
 											key={chip}

@@ -4,7 +4,7 @@
  * ВОЗМОЖНОСТИ:
  * 1. Apple HIG Segmented Control для мобильных устройств (<= 640px / sm:hidden):
  *    - Заменяет 2500px вертикальный скролл-туннель на элегантный нативный Segmented Control:
- *      [ Эконом (сумма ₽) | ★ Оптимум (сумма ₽) | Премиум (сумма ₽) ]
+ *      [ Эконом (сумма ₽) | Оптимум (сумма ₽) | Премиум (сумма ₽) ]
  *    - Мгновенное и плавное переключение тарифа на одном компактном экране с нулевым паразитным скроллом (CLS = 0).
  * 2. Роскошная трехколоночная сетка для десктопа (>= 640px / hidden sm:grid sm:grid-cols-3):
  *    - Полноценное side-by-side сравнение клинических этапов, материалов, сроков и гарантий.
@@ -541,7 +541,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
-							Скидка 5%
+							Скидка 5% (100%)
 						</button>
 					</div>
 
@@ -672,10 +672,10 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 				{tiers.map((tier) => renderTierCard(tier, false))}
 			</div>
 
-			{/* Bottom Block: Clinical Treatment Roadmap (Anti-Matryoshka Seamless Flat 4-Column Grid) */}
+			{/* Bottom Block: Clinical Treatment Roadmap (Anti-Matryoshka Seamless Flat 4-Column Grid, DEF-5) */}
 			{activeTier && activeTier.stages && activeTier.stages.length > 0 && (
-				<section className="rounded-2xl border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-xs overflow-hidden">
-					<div className="flex items-center justify-between gap-3 flex-wrap p-3.5 sm:p-4 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,var(--border,#cbd5e1))]">
+				<section className="text-[var(--ink,#0f172a)] space-y-2 mt-4">
+					<div className="flex items-center justify-between gap-3 flex-wrap px-1 py-1">
 						<h4 className="text-xs sm:text-sm font-extrabold text-[var(--ink,#0f172a)] flex items-center gap-2 m-0">
 							<Clock size={16} className="text-[var(--teal,var(--brand-primary))]" />
 							<span>
@@ -687,7 +687,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						</span>
 					</div>
 
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-strong,var(--paper,#ffffff))]">
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--line,var(--border,#cbd5e1))] rounded-2xl border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-strong,var(--paper,#ffffff))] overflow-hidden shadow-xs">
 						{activeTier.stages.map((stg) => (
 							<div key={stg.stageNumber} className="p-3 sm:p-3.5 space-y-2 min-w-0">
 								<div className="flex items-center justify-between gap-2 min-w-0">

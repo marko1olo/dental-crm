@@ -290,15 +290,15 @@
 	border-radius: 3px;
 }
 
-/* Interactive Timeline Roadmap */
+/* Interactive Timeline Roadmap - Anti-Matryoshka Flat Layout (DEF-5) */
 .plan-roadmap-section {
-	background: var(--plan-surface);
-	border: 1px solid var(--plan-border);
-	border-radius: var(--plan-radius-md);
-	padding: 16px;
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	padding: 4px 0;
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
+	gap: 10px;
 }
 
 .plan-roadmap-title {

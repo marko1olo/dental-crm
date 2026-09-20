@@ -32,8 +32,7 @@ import {
 	Sparkles,
 	X,
 } from "lucide-react";
-import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { useMemoryLeakGuard } from "../../hooks/useMemoryLeakGuard.js";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
@@ -42,7 +41,9 @@ import {
 	DEFAULT_DOM_PAGE_SIZE,
 	sliceDomList,
 } from "../../utils/domVirtualizationHelper.js";
-import { PaymentModal } from "../finance/PaymentModal.js";
+const PaymentModal = lazy(() =>
+	import("../finance/PaymentModal.js").then((m) => ({ default: m.PaymentModal })),
+);
 import { showToast } from "../GlobalToast.js";
 import {
 	safeLocalStorageGetJson,
@@ -92,7 +93,9 @@ export function loadStoredInvoices(): BillingInvoice[] {
 	if (typeof window === "undefined") {
 		return [];
 	}
-	return safeLocalStorageGetJson<BillingInvoice[]>(INVOICES_STORAGE_KEY, []);
+	const stored = safeLocalStorageGetJson<BillingInvoice[]>(INVOICES_STORAGE_KEY, []);
+	if (!Array.isArray(stored)) return [];
+	return stored.filter((item): item is BillingInvoice => Boolean(item && typeof item === "object"));
 }
 
 export function saveStoredInvoices(invoices: BillingInvoice[]): void {
@@ -353,7 +356,9 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 
 	// Filtered list
 	const filteredInvoices = useMemo(() => {
-		return invoices.filter((inv) => {
+		const safeList = Array.isArray(invoices) ? invoices : [];
+		return safeList.filter((inv) => {
+			if (!inv) return false;
 			if (
 				filterTab === "pending" &&
 				(inv.status === "paid" || inv.status === "warranty_100")
@@ -365,8 +370,8 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 
 			if (searchQuery.trim()) {
 				const q = searchQuery.toLowerCase().trim();
-				const matchName = inv.patientName.toLowerCase().includes(q);
-				const matchNum = inv.number.toLowerCase().includes(q);
+				const matchName = (inv.patientName || "").toLowerCase().includes(q);
+				const matchNum = (inv.number || "").toLowerCase().includes(q);
 				const matchPhone = (inv.patientPhone || "").toLowerCase().includes(q);
 				if (!matchName && !matchNum && !matchPhone) return false;
 			}
@@ -663,7 +668,7 @@ th { background: #f8fafc; font-weight: 700; }
 						>
 							<span>Все</span>
 							<span className="text-[10px] opacity-70">
-								({invoices.length})
+								({(Array.isArray(invoices) ? invoices : []).length})
 							</span>
 						</button>
 						<button
@@ -680,11 +685,12 @@ th { background: #f8fafc; font-weight: 700; }
 							<span className="text-[10px] opacity-70">
 								(
 								{
-									invoices.filter(
+									(Array.isArray(invoices) ? invoices : []).filter(
 										(i) =>
-											i.status === "issued" ||
-											i.status === "draft" ||
-											i.status === "partially_paid",
+											i &&
+											(i.status === "issued" ||
+												i.status === "draft" ||
+												i.status === "partially_paid"),
 									).length
 								}
 								)
@@ -702,7 +708,7 @@ th { background: #f8fafc; font-weight: 700; }
 						>
 							<span>Оплачено</span>
 							<span className="text-[10px] opacity-70">
-								({invoices.filter((i) => i.status === "paid").length})
+								({(Array.isArray(invoices) ? invoices : []).filter((i) => i && i.status === "paid").length})
 							</span>
 						</button>
 						<button
@@ -717,7 +723,7 @@ th { background: #f8fafc; font-weight: 700; }
 						>
 							<span>Гарантия 100%</span>
 							<span className="text-[10px] opacity-70">
-								({invoices.filter((i) => i.status === "warranty_100").length})
+								({(Array.isArray(invoices) ? invoices : []).filter((i) => i && i.status === "warranty_100").length})
 							</span>
 						</button>
 					</div>
@@ -878,7 +884,7 @@ th { background: #f8fafc; font-weight: 700; }
 													</strong>
 												</span>
 												<span>•</span>
-												<span>Услуг: {inv.items.length}</span>
+												<span>Услуг: {(inv.items || []).length}</span>
 												{inv.paymentMethod && (
 													<>
 														<span>•</span>
@@ -902,7 +908,7 @@ th { background: #f8fafc; font-weight: 700; }
 										<div className="font-mono text-base sm:text-lg font-black text-[var(--ink,#0f172a)]">
 											{isWarranty
 												? "0 ₽"
-												: `${inv.totalAmountRub.toLocaleString("ru-RU")} ₽`}
+												: `${(inv.totalAmountRub ?? 0).toLocaleString("ru-RU")} ₽`}
 										</div>
 										<div className="text-[11px] text-[var(--muted,#64748b)]">
 											{isPaid
@@ -1103,57 +1109,59 @@ th { background: #f8fafc; font-weight: 700; }
 
 			{/* Payment Modal (Modal Depth strictly 1) */}
 			{activePaymentInvoice && (
-				<PaymentModal
-					isOpen={true}
-					onClose={() => setActivePaymentInvoice(null)}
-					amountKopecks={rubToKopecks(
-						activePaymentInvoice.totalAmountRub ??
-						(activePaymentInvoice as unknown as { amountRub?: number }).amountRub ??
-						(activePaymentInvoice as unknown as { total?: number }).total ??
-						(activePaymentInvoice as unknown as { amount?: number }).amount ??
-						0
-					)}
-					amountRub={
-						activePaymentInvoice.totalAmountRub ??
-						(activePaymentInvoice as unknown as { amountRub?: number }).amountRub ??
-						(activePaymentInvoice as unknown as { total?: number }).total ??
-						(activePaymentInvoice as unknown as { amount?: number }).amount ??
-						0
-					}
-					patientId={activePaymentInvoice.patientId}
-					patientName={activePaymentInvoice.patientName}
-					patientPhone={activePaymentInvoice.patientPhone}
-					doctorName={activePaymentInvoice.doctorName}
-					clinicLegalName={clinicLegalName}
-					invoiceId={activePaymentInvoice.id}
-					onSuccess={(res) => {
-						setInvoices((prev) => {
-							const updated = prev.map((item) =>
-								item.id === activePaymentInvoice.id
-									? {
-											...item,
-											status: (res.method === "warranty_discount_100"
-												? "warranty_100"
-												: "paid") as BillingInvoice["status"],
-											paidAmountRub:
-												res.method === "warranty_discount_100"
-													? 0
-													: item.totalAmountRub,
-											paidAt: new Date().toISOString(),
-											paymentMethod: res.method,
-										}
-									: item,
+				<Suspense fallback={null}>
+					<PaymentModal
+						isOpen={true}
+						onClose={() => setActivePaymentInvoice(null)}
+						amountKopecks={rubToKopecks(
+							activePaymentInvoice.totalAmountRub ??
+							(activePaymentInvoice as unknown as { amountRub?: number }).amountRub ??
+							(activePaymentInvoice as unknown as { total?: number }).total ??
+							(activePaymentInvoice as unknown as { amount?: number }).amount ??
+							0
+						)}
+						amountRub={
+							activePaymentInvoice.totalAmountRub ??
+							(activePaymentInvoice as unknown as { amountRub?: number }).amountRub ??
+							(activePaymentInvoice as unknown as { total?: number }).total ??
+							(activePaymentInvoice as unknown as { amount?: number }).amount ??
+							0
+						}
+						patientId={activePaymentInvoice.patientId}
+						patientName={activePaymentInvoice.patientName}
+						patientPhone={activePaymentInvoice.patientPhone}
+						doctorName={activePaymentInvoice.doctorName}
+						clinicLegalName={clinicLegalName}
+						invoiceId={activePaymentInvoice.id}
+						onSuccess={(res) => {
+							setInvoices((prev) => {
+								const updated = prev.map((item) =>
+									item.id === activePaymentInvoice.id
+										? {
+												...item,
+												status: (res.method === "warranty_discount_100"
+													? "warranty_100"
+													: "paid") as BillingInvoice["status"],
+												paidAmountRub:
+													res.method === "warranty_discount_100"
+														? 0
+														: item.totalAmountRub,
+												paidAt: new Date().toISOString(),
+												paymentMethod: res.method,
+											}
+										: item,
+								);
+								saveStoredInvoices(updated);
+								return updated;
+							});
+							setActivePaymentInvoice(null);
+							showToast(
+								`Счет ${activePaymentInvoice.number} успешно закрыт`,
+								"success",
 							);
-							saveStoredInvoices(updated);
-							return updated;
-						});
-						setActivePaymentInvoice(null);
-						showToast(
-							`Счет ${activePaymentInvoice.number} успешно закрыт`,
-							"success",
-						);
-					}}
-				/>
+						}}
+					/>
+				</Suspense>
 			)}
 
 			{/* Quick Create Invoice Modal (Modal Depth strictly 1) */}

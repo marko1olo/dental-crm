@@ -22,7 +22,7 @@ import {
 	X,
 } from "lucide-react";
 import type React from "react";
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { PremiumDocumentPrintSheet } from "../documents/PremiumDocumentPrintSheet";
 import { showToast } from "../GlobalToast";
@@ -461,6 +461,29 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		scheduleDebouncedSave();
 	};
 
+	const filteredIcd = useMemo(() => {
+		const normalizeRu = (str: string) =>
+			(str ?? "").toLowerCase().replace(/ё/g, "е").trim();
+		const searchNormalized = normalizeRu(icdSearch ?? "");
+		const searchTokens = searchNormalized.split(/\s+/).filter(Boolean);
+
+		return (ICD10_DICTIONARY ?? [])
+			.filter((i) => {
+				if (!i) return false;
+				if (searchTokens.length === 0) return true;
+				const codeNorm = normalizeRu(i.code);
+				const labelNorm = normalizeRu(i.label);
+				const groupNorm = normalizeRu(i.group);
+				return searchTokens.every(
+					(token) =>
+						codeNorm.includes(token) ||
+						labelNorm.includes(token) ||
+						groupNorm.includes(token),
+				);
+			})
+			.slice(0, 12);
+	}, [icdSearch]);
+
 	const commitIcdInput = () => {
 		ensureRevisingIfLocked();
 		const typed = (icdSearch ?? "").trim();
@@ -472,27 +495,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		const candidate = exact ?? filteredIcd?.[0];
 		if (candidate?.code) handleIcdSelect(candidate.code);
 	};
-
-	const normalizeRu = (str: string) =>
-		(str ?? "").toLowerCase().replace(/ё/g, "е").trim();
-	const searchNormalized = normalizeRu(icdSearch ?? "");
-	const searchTokens = searchNormalized.split(/\s+/).filter(Boolean);
-
-	const filteredIcd = (ICD10_DICTIONARY ?? [])
-		.filter((i) => {
-			if (!i) return false;
-			if (searchTokens.length === 0) return true;
-			const codeNorm = normalizeRu(i.code);
-			const labelNorm = normalizeRu(i.label);
-			const groupNorm = normalizeRu(i.group);
-			return searchTokens.every(
-				(token) =>
-					codeNorm.includes(token) ||
-					labelNorm.includes(token) ||
-					groupNorm.includes(token),
-			);
-		})
-		.slice(0, 12);
 
 	const handleAutoResize = (
 		e:
@@ -737,21 +739,23 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						<div className="vde-043__meta">
 							{isSaving ? (
 								<span
-									className="vde-043__meta-item text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1"
+									className="vde-043__meta-item text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1 shrink-0 min-w-max whitespace-nowrap"
 									title="Идет сохранение на сервер..."
 								>
 									<span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0 inline-block" />
-									Сохранение...
+									<span className="hidden sm:inline">Сохранение...</span>
+									<span className="sm:hidden">...</span>
 								</span>
 							) : localDraftSavedAt || lastSavedAt ? (
 								<span
-									className="vde-043__meta-item text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1"
+									className="vde-043__meta-item text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 shrink-0 min-w-max whitespace-nowrap"
 									title="Автосохранение черновика при каждом вводе в IndexedDB и LocalStorage"
 								>
 									<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 inline-block" />
-									СОХРАНЕНО
+									<span className="hidden 2xl:inline">СОХРАНЕНО</span>
+									<span className="2xl:hidden">OK</span>
 									{localDraftSavedAt && (
-										<span className="font-normal text-[var(--muted)] ml-0.5">
+										<span className="font-normal text-[var(--muted)] ml-0.5 hidden 2xl:inline">
 											{localDraftSavedAt.toLocaleTimeString("ru-RU", {
 												hour: "2-digit",
 												minute: "2-digit",
@@ -1056,7 +1060,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							<button
 								type="button"
 								onClick={handleInsertPediatricStatus}
-								className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-800 dark:text-purple-300 border border-purple-500/30 text-xs sm:text-sm font-bold transition-all shrink-0 shadow-xs touch-manipulation hover:border-purple-500 min-w-0 break-words cursor-pointer"
+								className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[42px] sm:min-h-[44px] rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-800 dark:text-purple-300 border border-purple-500/30 text-xs sm:text-sm font-bold transition-all shrink-0 flex-shrink-0 shadow-xs touch-manipulation hover:border-purple-500 min-w-max whitespace-nowrap cursor-pointer"
 								title="Вставить протокол сменного прикуса, физиологической резорбции корней и Кариограммы Bratthall"
 								data-testid="insert-pediatric-cariogram-btn"
 							>
@@ -1064,21 +1068,21 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									ДЕТИ
 								</span>
 								<Sparkles className="w-4 h-4 text-purple-600 shrink-0" />
-								<span className="min-w-0 break-words">Сменный прикус (резорбция + кариограмма)</span>
+								<span className="whitespace-nowrap shrink-0">Сменный прикус (резорбция + кариограмма)</span>
 							</button>
 							{CLINICAL_FAST_PRESETS.map((preset) => (
 								<button
 									key={preset.id}
 									type="button"
 									onClick={() => applyClinicalPreset(preset.id)}
-									className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-xs sm:text-sm font-bold text-[var(--ink)] hover:border-[var(--teal)] transition-all shrink-0 shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
+									className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[42px] sm:min-h-[44px] rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-xs sm:text-sm font-bold text-[var(--ink)] hover:border-[var(--teal)] transition-all shrink-0 flex-shrink-0 shadow-xs touch-manipulation min-w-max whitespace-nowrap cursor-pointer"
 									title={preset.description}
 									data-testid={`preset-btn-${preset.id}`}
 								>
 									<span className="font-mono text-xs px-1.5 py-0.5 rounded-md bg-[var(--teal-surface)] text-[var(--teal-dark)] font-black shrink-0">
 										{preset.badge}
 									</span>
-									<span className="min-w-0 break-words">{preset.label}</span>
+									<span className="whitespace-nowrap shrink-0">{preset.label}</span>
 								</button>
 							))}
 						</div>

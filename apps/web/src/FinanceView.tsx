@@ -22,11 +22,7 @@ const ManagerialPnlDashboardModal = lazy(() =>
 		default: m.ManagerialPnlDashboardModal,
 	})),
 );
-const InvoicesView = lazy(() =>
-	import("./components/billing/InvoicesView.js").then((m) => ({
-		default: m.InvoicesView,
-	})),
-);
+import { InvoicesView } from "./components/billing/InvoicesView.js";
 import {
 	FinancePlanningOverview,
 	ServiceCatalogStrip,
@@ -391,11 +387,11 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 
 	const cashInDrawerRub = Math.max(
 		0,
-		Math.round((cashDayTotals.cashRub + manualCashDeltaRub) * 100) / 100,
+		Math.round(((cashDayTotals?.cashRub ?? 0) + manualCashDeltaRub) * 100) / 100,
 	);
-	const cardSumRub = cashDayTotals.cardRub;
-	const sbpSumRub = cashDayTotals.sbpRub;
-	const advanceOffsetRub = cashDayTotals.advanceRub;
+	const cardSumRub = cashDayTotals?.cardRub ?? 0;
+	const sbpSumRub = cashDayTotals?.sbpRub ?? 0;
+	const advanceOffsetRub = cashDayTotals?.advanceRub ?? 0;
 
 	const handleOpenShift = useCallback(async () => {
 		if (propsOnOpenShift) {
