@@ -300,8 +300,36 @@ const TARGET_SCREENS = [
 	{
 		prefix: "03_patient_billing_modal",
 		name: "03. Patient Billing Modal (Completed Works Act & Implant Care Titanium Badge)",
-		url: `${APP_BASE}/?standalone=clinical-modals-studio&modal=patient_billing#clinical-modals-studio?modal=patient_billing`,
+		url: `${APP_BASE}/#visit`,
 		setup: async (page) => {
+			await page.waitForSelector(".app-shell", { state: "visible", timeout: 20000 });
+			// Ensure EMK tab
+			await page.evaluate(() => {
+				const tabs = Array.from(
+					document.querySelectorAll('.visit-sub-nav-tabs button[role="tab"], button[role="tab"]'),
+				);
+				const emk = tabs.find(
+					(b) =>
+						b.textContent &&
+						(b.textContent.includes("043/у") || b.textContent.includes("ЭМК")),
+				);
+				if (emk) emk.click();
+			}).catch(() => {});
+			await page.waitForTimeout(600);
+			// Open PatientBillingModal via real button in patient visit card
+			const trigger = page.locator('[data-testid="btn-print-estimate-receipt"]').first();
+			if ((await trigger.count()) > 0) {
+				await trigger.click({ force: true });
+			} else {
+				await page.evaluate(() => {
+					const btn = document.querySelector('[data-testid="btn-print-estimate-receipt"]');
+					if (btn) btn.click();
+				});
+			}
+			await page.waitForSelector(
+				'[data-testid="patient-billing-modal"], .patient-billing-modal, [role="dialog"]',
+				{ state: "visible", timeout: 8000 },
+			).catch(() => {});
 			await page.waitForTimeout(800);
 		},
 		all4States: true,
