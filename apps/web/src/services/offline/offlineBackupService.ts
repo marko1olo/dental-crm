@@ -48,11 +48,13 @@ import {
 	deletePatientClinicalCache,
 	getCachedIcd10Dictionary,
 	getCachedPriceList804n,
+	getLocalStorageMutations,
 	getPatientClinicalCache,
 	listCachedActiveSchedules,
 	listCachedPatientCards,
 	listOfflineDrafts,
 	listPatientClinicalCache,
+	saveLocalStorageMutations,
 	saveOfflineDraft,
 	savePatientClinicalCache,
 	withIdbTransactionRetry,
@@ -434,8 +436,20 @@ export async function importOfflineClinicBackup(
 				});
 			});
 		} catch (err) {
-			logger.warn("[OfflineBackup] Could not write mutations to IDB during import", err);
-			errors.push("Сбой восстановления очереди мутаций");
+			logger.warn("[OfflineBackup] Could not write mutations to IDB during import, falling back to localStorage", err);
+			try {
+				const current = getLocalStorageMutations();
+				const currentMap = new Map(current.map((m) => [m.mutationId, m]));
+				for (const mutation of (payload.mutations as OfflineMutation[]) || []) {
+					currentMap.set(mutation.mutationId, mutation);
+					restoredMutations++;
+				}
+				saveLocalStorageMutations(Array.from(currentMap.values()));
+				logger.info(`[OfflineBackup] Successfully restored ${payload.mutations.length} mutations to localStorage fallback`);
+			} catch (fallbackErr) {
+				logger.error("[OfflineBackup] LocalStorage mutation restore fallback failed", fallbackErr);
+				errors.push("Сбой восстановления очереди мутаций");
+			}
 		}
 	}
 
@@ -699,11 +713,13 @@ export function getLocalVaultSnapshotContent(snapshotId: string): string | null 
 	try {
 		const idbKey = `vault_snap_${snapshotId}`;
 		let contentFromCache: string | null = null;
-		void getPatientClinicalCache<{ meta: LocalVaultSnapshotMeta; content: string }>(idbKey).then((cached) => {
-			if (cached?.content) {
-				contentFromCache = cached.content;
-			}
-		});
+		void getPatientClinicalCache<{ meta: LocalVaultSnapshotMeta; content: string }>(idbKey)
+			.then((cached) => {
+				if (cached?.content) {
+					contentFromCache = cached.content;
+				}
+			})
+			.catch(() => {});
 		if (contentFromCache) return contentFromCache;
 	} catch {
 		// ignore

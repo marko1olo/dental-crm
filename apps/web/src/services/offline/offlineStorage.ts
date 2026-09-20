@@ -486,7 +486,7 @@ function removeFromLocalStorageSafe(key: string): void {
 	}
 }
 
-function getLocalStorageMutations(): OfflineMutation[] {
+export function getLocalStorageMutations(): OfflineMutation[] {
 	const raw = getFromLocalStorageSafe(LOCAL_STORAGE_MUTATIONS_KEY);
 	if (!raw) return [];
 	try {
@@ -498,7 +498,7 @@ function getLocalStorageMutations(): OfflineMutation[] {
 	}
 }
 
-function saveLocalStorageMutations(mutations: OfflineMutation[]): void {
+export function saveLocalStorageMutations(mutations: OfflineMutation[]): void {
 	saveToLocalStorageSafe(LOCAL_STORAGE_MUTATIONS_KEY, JSON.stringify(mutations));
 }
 

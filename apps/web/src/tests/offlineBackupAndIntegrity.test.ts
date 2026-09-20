@@ -35,6 +35,7 @@ import {
 	getCachedOdontogramState,
 	getCachedPatientCard,
 	getCachedPriceList804n,
+	getLocalStorageMutations,
 	getLocalVaultSnapshotContent,
 	getPendingOfflineMutations,
 	importOfflineClinicBackup,
@@ -43,6 +44,7 @@ import {
 	listCachedPatientCards,
 	listLocalVaultSnapshots,
 	listOfflineDrafts,
+	MUTATIONS_STORE_NAME,
 	resetOfflineDbConnection,
 	saveOfflineDraft,
 	startAutoBackupSchedule,
@@ -596,4 +598,71 @@ describe("AUTOMATED OFFLINE ENCRYPTED BACKUP VAULT & INTEGRITY SUITE", () => {
 		assert.strictEqual(report1.storesStats.mutationsCount, 1);
 		assert.strictEqual(report1.storesStats.patientsCount, 1);
 	});
+
+	test("5.2. importOfflineClinicBackup falls back to localStorage when IndexedDB transaction fails during mutation restore", async () => {
+		const orgId = "org-fallback-test";
+		const payload = {
+			mutations: [
+				{
+					mutationId: "mut-fallback-1",
+					entityType: "DIARY_043_DRAFT" as const,
+					entityId: "visit-fb-1",
+					action: "update" as const,
+					payload: { note: "Fallback test diary" },
+					timestamp: new Date().toISOString(),
+					timestampMs: Date.now(),
+					organizationId: orgId,
+					status: "pending" as const,
+					retryCount: 0,
+				},
+			],
+			drafts: [],
+			clinicalCache: [],
+			schedules: [],
+			patients: [],
+			odontograms: [],
+			pricelists: [],
+			icd10: [],
+		};
+
+		const backupString = createEncryptedDenteBackup(payload, {
+			organizationId: orgId,
+			passphrase: "fallback-passphrase",
+			encryptionAlgorithm: "AES-GCM-256",
+		});
+
+		// Trigger an initial open to initialize DB
+		await enqueueOfflineMutation({
+			entityType: "DIARY_043_DRAFT",
+			entityId: "visit-init",
+			payload: { text: "Init" },
+			organizationId: orgId,
+		});
+
+		const db = mockDbHolder.getDb();
+		assert.ok(db, "Mock database must be initialized");
+		const origTx = db.transaction.bind(db);
+		db.transaction = (storeNames: string | string[], mode: "readonly" | "readwrite") => {
+			const names = Array.isArray(storeNames) ? storeNames : [storeNames];
+			if (names.includes(MUTATIONS_STORE_NAME)) {
+				throw new Error("IDB transaction failed intentionally for fallback test");
+			}
+			return origTx(storeNames, mode);
+		};
+
+		const restoreResult = await importOfflineClinicBackup(backupString, {
+			passphrase: "fallback-passphrase",
+		});
+
+		assert.strictEqual(restoreResult.success, true);
+		assert.strictEqual(restoreResult.restoredCount.mutations, 1);
+
+		// Verify mutation was restored to localStorage fallback
+		const lsMutations = getLocalStorageMutations();
+		assert.ok(
+			lsMutations.some((m) => m.mutationId === "mut-fallback-1"),
+			"Mutation must be saved in localStorage fallback when IDB fails",
+		);
+	});
 });
+
