@@ -661,6 +661,7 @@ describe("Feature 234 (Wave 50): QuickBookingDrawer Autonomy & 1-Click Messenger
 					birthDate: body?.birthDate || null,
 					email: null,
 					notes: null,
+					gender: null,
 					administrativeProfile: null,
 					balanceRub: 0,
 					createdAt: new Date().toISOString(),

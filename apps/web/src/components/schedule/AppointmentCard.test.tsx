@@ -16,6 +16,7 @@ describe("AppointmentCard Suite", () => {
 		birthDate: "1988-03-12",
 		status: "active",
 		balanceRub: -4500, // Задолженность 4500 руб
+		gender: null,
 		administrativeProfile: null,
 		createdAt: "2026-01-01T00:00:00.000Z",
 		updatedAt: "2026-01-01T00:00:00.000Z",
@@ -31,6 +32,7 @@ describe("AppointmentCard Suite", () => {
 		birthDate: "1992-07-24",
 		status: "active",
 		balanceRub: 12000, // Аванс 12000 руб
+		gender: null,
 		administrativeProfile: null,
 		createdAt: "2026-01-01T00:00:00.000Z",
 		updatedAt: "2026-01-01T00:00:00.000Z",
@@ -46,6 +48,7 @@ describe("AppointmentCard Suite", () => {
 		birthDate: "1995-11-05",
 		status: "active",
 		balanceRub: 0,
+		gender: null,
 		administrativeProfile: null,
 		createdAt: "2026-01-01T00:00:00.000Z",
 		updatedAt: "2026-01-01T00:00:00.000Z",
