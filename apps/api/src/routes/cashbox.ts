@@ -12,7 +12,7 @@ import {
 	rubToKopecks,
 	rublesToKopecks,
 } from "@dental/shared";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
@@ -103,19 +103,27 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 			const shifts: (typeof cashBoxShifts.$inferSelect)[] = [];
 			const now = new Date();
 
+			const boxIds = boxes.map((b) => b.id);
+			const existingOpenShifts =
+				boxIds.length > 0
+					? await tx
+							.select()
+							.from(cashBoxShifts)
+							.where(
+								and(
+									eq(cashBoxShifts.organizationId, orgId),
+									eq(cashBoxShifts.status, "open"),
+									inArray(cashBoxShifts.cashBoxId, boxIds),
+								),
+							)
+					: [];
+			const openShiftsByBoxId = new Map(
+				existingOpenShifts.map((s) => [s.cashBoxId, s]),
+			);
+
 			for (const box of boxes) {
 				// Проверяем, нет ли уже открытой смены
-				const [existingOpenShift] = await tx
-					.select()
-					.from(cashBoxShifts)
-					.where(
-						and(
-							eq(cashBoxShifts.organizationId, orgId),
-							eq(cashBoxShifts.cashBoxId, box.id),
-							eq(cashBoxShifts.status, "open"),
-						),
-					)
-					.limit(1);
+				const existingOpenShift = openShiftsByBoxId.get(box.id);
 
 				if (!existingOpenShift) {
 					// Вычисляем следующий номер смены
@@ -208,13 +216,18 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 			const closed: (typeof cashBoxShifts.$inferSelect)[] = [];
 			const now = new Date();
 
-			for (const shift of openShifts) {
-				const [box] = await tx
-					.select()
-					.from(cashBoxes)
-					.where(eq(cashBoxes.id, shift.cashBoxId))
-					.limit(1);
+			const boxIds = [...new Set(openShifts.map((s) => s.cashBoxId))];
+			const boxes =
+				boxIds.length > 0
+					? await tx
+							.select()
+							.from(cashBoxes)
+							.where(inArray(cashBoxes.id, boxIds))
+					: [];
+			const boxMap = new Map(boxes.map((b) => [b.id, b]));
 
+			for (const shift of openShifts) {
+				const box = boxMap.get(shift.cashBoxId);
 				const finalBalance = box?.balanceRub ?? 0;
 				const zNumber = parsed.success && parsed.data.zReportNumber
 					? `${parsed.data.zReportNumber}-${shift.shiftNumber}`
@@ -596,5 +609,4 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 	});
 }
 
-export { registerCashboxRoutes as registerCashboxV2Routes };
 export default registerCashboxRoutes;

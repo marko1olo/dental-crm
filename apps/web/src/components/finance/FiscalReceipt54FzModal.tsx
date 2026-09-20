@@ -113,6 +113,8 @@ export interface FiscalReceipt54FzModalProps {
 	readonly clinicName?: string | undefined;
 	readonly clinicInn?: string | undefined;
 	readonly initialTab?: FiscalModalTab | undefined;
+	readonly initialOperationType?: "income" | "income_return" | undefined;
+	readonly clinicLicense?: string | undefined;
 	readonly onClose: () => void;
 	readonly onReceiptFiscalized?: ((receiptNumber: string) => void) | undefined;
 	readonly totalDueRub?: number | undefined;
@@ -228,7 +230,9 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	cashierFullName = "Кассир-администратор",
 	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	clinicInn: _clinicInn,
-	initialTab = "payment",
+	clinicLicense: _clinicLicense,
+	initialTab,
+	initialOperationType,
 	onClose,
 	onReceiptFiscalized,
 	totalDueRub: propTotalDueRub,
@@ -290,7 +294,9 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		return [];
 	}, [propItems, fallbackAmount]);
 
-	const [activeTab, setActiveTab] = useState<FiscalModalTab>(initialTab || "payment");
+	const effectiveInitialTab: FiscalModalTab =
+		initialTab || (initialOperationType === "income_return" ? "refund" : "payment");
+	const [activeTab, setActiveTab] = useState<FiscalModalTab>(effectiveInitialTab);
 	const [actNumber, setActNumber] = useState<string>(
 		`АКТ-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
 	);
@@ -1392,7 +1398,9 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			try {
 				window.focus();
 				window.print();
-			} catch (e) {}
+			} catch (e) {
+				console.warn("[tovarniy check template] window.print error:", e);
+			}
 		};
 	</script>
 </body>
@@ -1404,7 +1412,8 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 				downloadFilename: `tovarniy_check_${docNum}.html`,
 			});
 			showToast("Товарный чек отправлен на печать (без фискализации)", "success", 3000);
-		} catch {
+		} catch (printErr: unknown) {
+			console.warn("[FiscalReceipt54FzModal] Print tovarniy check failed:", printErr);
 			showToast("Ошибка отправки товарного чека на печать", "error");
 		}
 	};

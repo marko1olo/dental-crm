@@ -55,7 +55,7 @@ import {
 } from "../portal/patientCabinet/patientCareInstructionsEngine";
 import { generateQrCodeSvg } from "../portal/patientCabinet/patientCabinetEngine";
 import { OneCExportButton } from "./OneCExportButton";
-import { Fiscal54FzReceiptModal } from "./fiscal/Fiscal54FzReceiptModal";
+import { FiscalReceipt54FzModal as Fiscal54FzReceiptModal } from "./FiscalReceipt54FzModal";
 import { RefundServiceModal } from "./refunds/RefundServiceModal";
 import { TaxDeductionCertificateModal } from "./TaxDeductionCertificateModal";
 import type { TaxDeductionPaymentItem } from "@dental/shared";

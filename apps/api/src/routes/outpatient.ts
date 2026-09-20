@@ -760,5 +760,4 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 	);
 }
 
-export { registerOutpatientRoutes as registerOutpatientV2Routes };
 export default registerOutpatientRoutes;
