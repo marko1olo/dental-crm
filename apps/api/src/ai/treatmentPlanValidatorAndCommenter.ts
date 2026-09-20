@@ -278,8 +278,8 @@ export function calculateDeterministicFinancialArgumentation(
 	}
 
 	const code01Eligible = Math.min(code01AmountRub, 150000);
-	const code01RefundRub = Math.round(code01Eligible * 0.13);
-	const code02RefundRub = Math.round(code02AmountRub * 0.13);
+	const code01RefundRub = Math.round((code01Eligible * 13) / 100);
+	const code02RefundRub = Math.round((code02AmountRub * 13) / 100);
 	const totalRefundRub = code01RefundRub + code02RefundRub;
 	const netPriceWithRefundRub = Math.max(0, totalRub - totalRefundRub);
 
@@ -302,8 +302,8 @@ export function calculateDeterministicFinancialArgumentation(
 	}
 
 	// Поэтапная оплата (30% аванс / 40% хирургия / 30% финал)
-	const stage1AdvanceRub = Math.round(totalRub * 0.30);
-	const stage2SurgicalRub = Math.round(totalRub * 0.40);
+	const stage1AdvanceRub = Math.round((totalRub * 30) / 100);
+	const stage2SurgicalRub = Math.round((totalRub * 40) / 100);
 	const stage3FinalRub = Math.max(0, totalRub - stage1AdvanceRub - stage2SurgicalRub);
 
 	const stagedExplanation = `Оплата разбивается на 3 комфортных этапа: 30% (${stage1AdvanceRub.toLocaleString("ru-RU")} ₽) при старте лечения, 40% (${stage2SurgicalRub.toLocaleString("ru-RU")} ₽) на хирургическом этапе и остаток 30% (${stage3FinalRub.toLocaleString("ru-RU")} ₽) при финальной фиксации постоянных конструкций.`;

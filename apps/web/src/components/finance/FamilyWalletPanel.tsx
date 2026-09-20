@@ -418,7 +418,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	 */
 	const payBlockReason = amountInvalid
 		? "Впишите сумму цифрами, копейки после запятой: 1500,50"
-		: amount > 0 && Math.round(amount * 100) !== amount * 100
+		: amount > 0 && Math.abs(Math.round(amount * 100) - amount * 100) > 1e-4
 			? "Сумма списания может содержать не более 2 знаков после запятой (копейки)."
 			: amount > balanceVal && amount > 0
 				? `На семейном счету только ${money(balanceVal)}. Спишите не больше этой суммы, остальное примите обычной оплатой или пополните счёт.`
@@ -429,7 +429,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	 */
 	const topupBlockReason = topupInvalid
 		? "Впишите сумму цифрами, копейки после запятой: 1500,50"
-		: topupAmount > 0 && Math.round(topupAmount * 100) !== topupAmount * 100
+		: topupAmount > 0 && Math.abs(Math.round(topupAmount * 100) - topupAmount * 100) > 1e-4
 			? "Сумма пополнения может содержать не более 2 знаков после запятой (копейки)."
 			: null;
 
@@ -439,7 +439,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			showToast("Введите сумму", "error");
 			return;
 		}
-		if (Math.round(amount * 100) !== amount * 100) {
+		if (Math.abs(Math.round(amount * 100) - amount * 100) > 1e-4) {
 			showToast("Сумма списания может содержать не более 2 знаков после запятой", "error");
 			return;
 		}
@@ -512,7 +512,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 
 	const handleTopup = async () => {
 		if (!family || isToppingUp) return;
-		if (topupAmount <= 0 || Math.round(topupAmount * 100) !== topupAmount * 100) {
+		if (topupAmount <= 0 || Math.abs(Math.round(topupAmount * 100) - topupAmount * 100) > 1e-4) {
 			showToast("Введите корректную сумму пополнения", "error");
 			return;
 		}

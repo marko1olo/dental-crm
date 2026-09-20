@@ -355,6 +355,23 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 
 	const totalNetRub = discountResult.totalNetRub;
 
+	// Рассрочка без скрытых копеечных перекосов (0% переплат, сумма этапов строго равна totalNetRub)
+	const installmentSchedule = useMemo(() => {
+		const totalNetKop = Math.round(totalNetRub * 100);
+		const stage1Kop = Math.round((totalNetKop * 30) / 100);
+		const remainingKop = Math.max(0, totalNetKop - stage1Kop);
+		const stage2Kop = Math.floor(remainingKop / 3);
+		const stage3Kop = Math.floor(remainingKop / 3);
+		const stage4Kop = remainingKop - stage2Kop - stage3Kop;
+
+		return {
+			stage1Rub: stage1Kop / 100,
+			stage2Rub: stage2Kop / 100,
+			stage3Rub: stage3Kop / 100,
+			stage4Rub: stage4Kop / 100,
+		};
+	}, [totalNetRub]);
+
 	// Calculate exact cash change in kopecks
 	const cashChangeResult = useMemo(() => {
 		const requiredCash = totalNetRub;
@@ -1315,32 +1332,32 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 												График платежей (0% переплат):
 											</span>
 											<span className="font-mono text-emerald-700 dark:text-emerald-300">
-												Первый взнос: {Math.round(totalNetRub * 0.3).toLocaleString("ru-RU")} ₽ (30%)
+												Первый взнос: {installmentSchedule.stage1Rub.toLocaleString("ru-RU")} ₽ (30%)
 											</span>
 										</div>
 										<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
 											<div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 space-y-0.5">
 												<div className="font-bold text-[var(--ink)]">1-й взнос (Сегодня)</div>
 												<div className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">
-													{Math.round(totalNetRub * 0.3).toLocaleString("ru-RU")} ₽
+													{installmentSchedule.stage1Rub.toLocaleString("ru-RU")} ₽
 												</div>
 											</div>
 											<div className="p-2 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-0.5">
 												<div className="font-bold text-[var(--muted)]">2-й этап (30 дн.)</div>
 												<div className="font-mono text-[var(--ink)] font-bold">
-													{Math.round(totalNetRub * 0.2333).toLocaleString("ru-RU")} ₽
+													{installmentSchedule.stage2Rub.toLocaleString("ru-RU")} ₽
 												</div>
 											</div>
 											<div className="p-2 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-0.5">
 												<div className="font-bold text-[var(--muted)]">3-й этап (60 дн.)</div>
 												<div className="font-mono text-[var(--ink)] font-bold">
-													{Math.round(totalNetRub * 0.2333).toLocaleString("ru-RU")} ₽
+													{installmentSchedule.stage3Rub.toLocaleString("ru-RU")} ₽
 												</div>
 											</div>
 											<div className="p-2 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-0.5">
 												<div className="font-bold text-[var(--muted)]">4-й этап (90 дн.)</div>
 												<div className="font-mono text-[var(--ink)] font-bold">
-													{Math.round(totalNetRub * 0.2334).toLocaleString("ru-RU")} ₽
+													{installmentSchedule.stage4Rub.toLocaleString("ru-RU")} ₽
 												</div>
 											</div>
 										</div>

@@ -1206,15 +1206,15 @@ export function distributeLoyaltyDiscountAcrossItems<T extends {
 			targetLoyaltyDiscountKopecks = nonWarrantyGrossKopecks - roundedKopecks;
 		}
 	} else if (params.preset === "discount_3") {
-		targetLoyaltyDiscountKopecks = Math.round(nonWarrantyGrossKopecks * 0.03);
+		targetLoyaltyDiscountKopecks = Math.round((nonWarrantyGrossKopecks * 3) / 100);
 	} else if (params.preset === "discount_5") {
-		targetLoyaltyDiscountKopecks = Math.round(nonWarrantyGrossKopecks * 0.05);
+		targetLoyaltyDiscountKopecks = Math.round((nonWarrantyGrossKopecks * 5) / 100);
 	} else if (params.preset === "discount_10" || params.preset === "pensioner_10") {
-		targetLoyaltyDiscountKopecks = Math.round(nonWarrantyGrossKopecks * 0.10);
+		targetLoyaltyDiscountKopecks = Math.round((nonWarrantyGrossKopecks * 10) / 100);
 	} else if (params.preset === "family_5") {
-		targetLoyaltyDiscountKopecks = Math.round(nonWarrantyGrossKopecks * 0.05);
+		targetLoyaltyDiscountKopecks = Math.round((nonWarrantyGrossKopecks * 5) / 100);
 	} else if (params.preset === "employee_20") {
-		targetLoyaltyDiscountKopecks = Math.round(nonWarrantyGrossKopecks * 0.20);
+		targetLoyaltyDiscountKopecks = Math.round((nonWarrantyGrossKopecks * 20) / 100);
 	} else if (params.preset === "manual_percent") {
 		const pct = Math.max(0, Math.min(100, params.customPercent ?? 0));
 		targetLoyaltyDiscountKopecks = Math.round((nonWarrantyGrossKopecks * pct) / 100);

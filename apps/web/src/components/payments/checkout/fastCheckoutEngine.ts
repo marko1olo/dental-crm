@@ -110,7 +110,7 @@ export function calculateStageAdvanceAmount(
 
 	switch (mode) {
 		case "advance_30": {
-			const requiredAmountKop = Math.round(sanitizedStageKop * 0.30);
+			const requiredAmountKop = Math.round((sanitizedStageKop * 30) / 100);
 			return {
 				mode: "advance_30",
 				totalStageAmountKop: sanitizedStageKop,
@@ -126,7 +126,7 @@ export function calculateStageAdvanceAmount(
 			};
 		}
 		case "advance_50": {
-			const requiredAmountKop = Math.round(sanitizedStageKop * 0.50);
+			const requiredAmountKop = Math.round((sanitizedStageKop * 50) / 100);
 			return {
 				mode: "advance_50",
 				totalStageAmountKop: sanitizedStageKop,
@@ -480,11 +480,11 @@ export function calculateFastCheckoutDiscount(params: {
 			discountKop = gross - roundedKop;
 		}
 	} else if (params.preset === "discount_3") {
-		discountKop = Math.round(gross * 0.03);
+		discountKop = Math.round((gross * 3) / 100);
 	} else if (params.preset === "discount_5") {
-		discountKop = Math.round(gross * 0.05);
+		discountKop = Math.round((gross * 5) / 100);
 	} else if (params.preset === "discount_10") {
-		discountKop = Math.round(gross * 0.10);
+		discountKop = Math.round((gross * 10) / 100);
 	} else if (params.preset === "warranty_100" || params.preset === "colleague_100") {
 		discountKop = gross;
 	} else if (params.preset === "manual_percent") {

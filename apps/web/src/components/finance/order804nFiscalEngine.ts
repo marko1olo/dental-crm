@@ -323,14 +323,19 @@ export function calculateTaxDeductionBreakdown(
 	const code01UsedFromLimitRub = code01EligibleRub;
 	const code01RemainingLimitRub = Math.max(0, remainingLimit - code01EligibleRub);
 
-	const code01Refund13Rub = kopecksToRubles(Math.round(parseKopecks(code01EligibleRub) * 0.13));
-	const code02Refund13Rub = kopecksToRubles(Math.round(parseKopecks(code02Rub) * 0.13));
-	const code01Refund15Rub = kopecksToRubles(Math.round(parseKopecks(code01EligibleRub) * 0.15));
-	const code02Refund15Rub = kopecksToRubles(Math.round(parseKopecks(code02Rub) * 0.15));
+	const code01Refund13Kopecks = Math.round((parseKopecks(code01EligibleRub) * 13) / 100);
+	const code02Refund13Kopecks = Math.round((parseKopecks(code02Rub) * 13) / 100);
+	const code01Refund15Kopecks = Math.round((parseKopecks(code01EligibleRub) * 15) / 100);
+	const code02Refund15Kopecks = Math.round((parseKopecks(code02Rub) * 15) / 100);
+
+	const code01Refund13Rub = kopecksToRubles(code01Refund13Kopecks);
+	const code02Refund13Rub = kopecksToRubles(code02Refund13Kopecks);
+	const code01Refund15Rub = kopecksToRubles(code01Refund15Kopecks);
+	const code02Refund15Rub = kopecksToRubles(code02Refund15Kopecks);
 
 	// Код 02 (дорогостоящее) не ограничен лимитом 150к
-	const refund13EstimateRub = code01Refund13Rub + code02Refund13Rub;
-	const refund15EstimateRub = code01Refund15Rub + code02Refund15Rub;
+	const refund13EstimateRub = kopecksToRubles(code01Refund13Kopecks + code02Refund13Kopecks);
+	const refund15EstimateRub = kopecksToRubles(code01Refund15Kopecks + code02Refund15Kopecks);
 
 	return {
 		code01Kopecks,

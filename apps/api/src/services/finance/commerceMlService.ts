@@ -588,6 +588,11 @@ export class CommerceMlService {
 		writeoffDoc.sha256Hash = computeCommerceMlSha256(writeoffDoc);
 
 		// 6. Doctor Payroll (Accounts 70, 68.01, 69.01)
+		const chiefDoctorGrossEarnedKopecks = Math.round((totalRevenueKop * 25) / 100);
+		const chiefDoctorNdflKopecks = Math.round((chiefDoctorGrossEarnedKopecks * 13) / 100);
+		const chiefDoctorSocialInsuranceKopecks = Math.round((chiefDoctorGrossEarnedKopecks * 30) / 100);
+		const chiefDoctorNetPayoutKopecks = Math.max(0, chiefDoctorGrossEarnedKopecks - chiefDoctorNdflKopecks);
+
 		const payrollEmployees: OneCPayrollEmployeeItem[] = [
 			{
 				id: "emp-001",
@@ -597,12 +602,10 @@ export class CommerceMlService {
 				specialtyRu: "Терапевтическая стоматология",
 				calculationTypeTitleRu: "Сдельная оплата труда (25% от выручки)",
 				grossRevenueGeneratedKopecks: totalRevenueKop,
-				grossEarnedKopecks: Math.round(totalRevenueKop * 0.25),
-				ndfl13Kopecks: Math.round(totalRevenueKop * 0.25 * 0.13),
-				socialInsuranceTaxesKopecks: Math.round(totalRevenueKop * 0.25 * 0.3),
-				netPayoutKopecks:
-					Math.round(totalRevenueKop * 0.25) -
-					Math.round(totalRevenueKop * 0.25 * 0.13),
+				grossEarnedKopecks: chiefDoctorGrossEarnedKopecks,
+				ndfl13Kopecks: chiefDoctorNdflKopecks,
+				socialInsuranceTaxesKopecks: chiefDoctorSocialInsuranceKopecks,
+				netPayoutKopecks: chiefDoctorNetPayoutKopecks,
 				debitAccount: chartOfAccounts.accountProductionCost,
 				creditAccountPayroll: chartOfAccounts.accountPayroll,
 				creditAccountNdfl: chartOfAccounts.accountNdfl,
