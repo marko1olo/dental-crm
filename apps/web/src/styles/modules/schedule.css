@@ -388,17 +388,26 @@
 }
 .schedule-my-chair-chip,
 .schedule-auto-call-chip,
-.schedule-doctor-chip {
+.schedule-doctor-chip,
+.schedule-add-chair-chip-btn {
+	flex: 0 0 auto !important;
 	flex-shrink: 0 !important;
-	min-width: max-content !important;
+	min-width: fit-content !important;
 	max-width: none !important;
 	white-space: nowrap !important;
+	overflow: visible !important;
+	text-overflow: clip !important;
 }
 .schedule-my-chair-chip *,
 .schedule-auto-call-chip *,
-.schedule-doctor-chip * {
+.schedule-doctor-chip *,
+.schedule-add-chair-chip-btn * {
 	white-space: nowrap !important;
+	flex: 0 0 auto !important;
 	flex-shrink: 0 !important;
+	min-width: fit-content !important;
+	overflow: visible !important;
+	text-overflow: clip !important;
 }
 .schedule-panel {
 	padding: 0 !important;
@@ -750,6 +759,43 @@ body.dark-mode .schedule-secret-collapsible .schedule-admin-unlock {
 	border: 2px solid #ffffff;
 	color: #ffffff;
 	box-shadow: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   THEME SAKURA: HIGH CONTRAST SCHEDULE EMPTY SLOTS (WCAG AAA >= 7:1)
+   ═══════════════════════════════════════════════════════════════════ */
+[data-theme="sakura"] button[data-testid^="btn-slot-"],
+[data-theme="sakura"] [data-testid^="btn-slot-"],
+[data-theme="sakura"] .schedule-empty-slot-btn {
+	color: #9d174d !important;
+	border-color: #f472b6 !important;
+}
+
+[data-theme="sakura"] button[data-testid^="btn-slot-"] span,
+[data-theme="sakura"] [data-testid^="btn-slot-"] span,
+[data-theme="sakura"] .schedule-empty-slot-btn span {
+	color: #9d174d !important;
+	font-weight: 700 !important;
+}
+
+[data-theme="sakura"] button[data-testid^="btn-slot-"] svg,
+[data-theme="sakura"] [data-testid^="btn-slot-"] svg,
+[data-theme="sakura"] .schedule-empty-slot-btn svg {
+	color: #9d174d !important;
+	opacity: 0.95 !important;
+}
+
+[data-theme="sakura"] button[data-testid^="btn-slot-"]:hover,
+[data-theme="sakura"] [data-testid^="btn-slot-"]:hover,
+[data-theme="sakura"] .schedule-empty-slot-btn:hover {
+	color: #70072e !important;
+	background-color: #fce7f3 !important;
+	border-color: #db2777 !important;
+}
+
+[data-theme="sakura"] button[data-testid^="btn-slot-"]:hover span,
+[data-theme="sakura"] [data-testid^="btn-slot-"]:hover span {
+	color: #70072e !important;
 }
 
 

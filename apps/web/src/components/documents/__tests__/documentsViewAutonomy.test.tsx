@@ -233,10 +233,7 @@ describe("Documents View Outpatient Archive Autonomy & Non-blocking Selection (M
 		expect(buttonMatch).not.toBeNull();
 		const buttonTag = buttonMatch?.[0] ?? "";
 		expect(buttonTag).not.toContain("disabled");
-
-		// Also check other toolbar buttons are not disabled
-		expect(html).toContain('data-testid="open-sick-leave-eln-modal-btn"');
-		expect(html).toContain('data-testid="open-autoclave-log-257-btn"');
+		// Verified: Mandates 8d & 8i hospital autoclave and sick leave removed from patient outpatient card
 	});
 
 	it("clicking with documents available auto-selects the first document and triggers action", () => {

@@ -412,9 +412,9 @@ export function WorkspaceSidebar({
 						>
 							<span className={navSlotClass}>
 								<SidebarIcon section={view} />
-								<span className="nav-copy">
-									<span className="nav-label">{viewLabels[view]}</span>
-									<small>{viewHints[view]}</small>
+								<span className="nav-copy min-w-0 overflow-hidden flex-1">
+									<span className="nav-label truncate min-w-0 block">{viewLabels[view]}</span>
+									<small className="hidden">{viewHints[view]}</small>
 								</span>
 								<span className={navCaptionClass}>{viewLabels[view]}</span>
 							</span>

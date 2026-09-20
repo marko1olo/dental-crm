@@ -2359,18 +2359,18 @@ export function VisitEmkTab() {
 					return (
 						<div
 							key={field.key}
-							className="emk-field-container flex flex-col gap-3 p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs transition-all min-w-0"
+							className="emk-field-container flex flex-col gap-2 p-2.5 sm:p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs transition-all min-w-0"
 							style={{
 								contentVisibility: "auto",
 								containIntrinsicSize: "1px 220px",
 							}}
 						>
 							<div className="flex items-center justify-between gap-2 w-full flex-wrap">
-								<div className="flex items-center gap-2.5 min-w-0">
+								<div className="flex items-center gap-2 min-w-0">
 									<span
-										className={`w-3 h-3 rounded-full shrink-0 ${meta.dotColor}`}
+										className={`w-2.5 h-2.5 rounded-full shrink-0 ${meta.dotColor}`}
 									/>
-									<strong className="text-base sm:text-lg font-extrabold text-[var(--ink)] tracking-tight">
+									<strong className="text-sm sm:text-base font-bold text-[var(--ink)] tracking-tight">
 										{field.label}
 									</strong>
 									{meta.badge ? (

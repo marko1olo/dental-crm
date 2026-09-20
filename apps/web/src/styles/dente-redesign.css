@@ -1069,14 +1069,7 @@ html.dark .sidebar .nav-item.active,
 	display: block;
 }
 .nav-copy small {
-	font-size: 10.5px;
-	font-weight: 500;
-	color: var(--muted, #64748b);
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	transition: color 0.15s ease;
-	min-width: 0;
+	display: none !important;
 }
 @media (max-width: 1280px) {
 	:root {

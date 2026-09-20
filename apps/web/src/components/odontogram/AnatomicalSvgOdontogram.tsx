@@ -67,6 +67,18 @@ function scaleCssPx(value: string, factor: number): string {
 	return `${parsed * factor}px`;
 }
 
+function isLowSpecFilterDisabled(): boolean {
+	if (typeof document === "undefined") return false;
+	const root = document.documentElement;
+	return (
+		root.getAttribute("data-hardware-tier") === "low" ||
+		root.getAttribute("data-low-spec") === "true" ||
+		root.getAttribute("data-perf") === "low" ||
+		root.classList.contains("low-spec-mode") ||
+		root.classList.contains("low-spec-perf")
+	);
+}
+
 const getAnatomicalToothColors = (
 	state: ToothState,
 	material?: RestorativeMaterialKey,
@@ -359,6 +371,15 @@ const AnatomicalToothSVG = React.memo(({
 	const scaledWidth = scaleCssPx(`${Math.round(geom.standardWidthPx * 1.3)}px`, scale);
 	const scaledHeight = scaleCssPx(`${Math.round(geom.standardHeightPx * 1.3)}px`, scale);
 
+	// Mandate 8c: Root canals in incisors/canines (11–43, 51–83) must run continuously to the root apex
+	const toothPos = number % 10;
+	const isIncisorOrCanine = toothPos >= 1 && toothPos <= 3;
+	const isToothPresent = state !== "Missing" && state !== "Extracted";
+	const shouldRenderCanalsAndPulp =
+		state === "Pulpitis" ||
+		showPulpAndCanals ||
+		(isIncisorOrCanine && isToothPresent);
+
 	const isRightSide =
 		(number >= 21 && number <= 28) ||
 		(number >= 31 && number <= 38) ||
@@ -586,7 +607,11 @@ const AnatomicalToothSVG = React.memo(({
 				{showPeriapicalHalos &&
 					isPeriodontitis &&
 					geom.apexHalos?.map((pt, idx) => (
-						<g key={`halo-${idx}`} className="periapical-halo-group" filter="url(#periapical-feather-blur)">
+						<g
+							key={`halo-${idx}`}
+							className="periapical-halo-group"
+							filter={isLowSpecFilterDisabled() ? undefined : "url(#periapical-feather-blur)"}
+						>
 							<circle cx={pt.x} cy={pt.y} r={lesionRadius} fill="url(#periapical-lesion-gradient)" />
 							<circle cx={pt.x} cy={pt.y} r={Math.round(lesionRadius * 0.5)} fill="#ea580c" opacity="0.75" />
 							<circle cx={pt.x} cy={pt.y} r={Math.max(2, Math.round(lesionRadius * 0.2))} fill="#fef08a" opacity="0.9" />
@@ -987,8 +1012,8 @@ const AnatomicalToothSVG = React.memo(({
 					</g>
 				)}
 
-				{/* Pulp Chamber & Root Canals for Pulpitis / Diagnostics */}
-				{resorptionGeom.showCanals && effectiveCanals.length > 0 && (state === "Pulpitis" || showPulpAndCanals) && (
+				{/* Pulp Chamber & Root Canals for Incisors/Canines (Mandate 8c) / Pulpitis / Diagnostics */}
+				{resorptionGeom.showCanals && effectiveCanals.length > 0 && shouldRenderCanalsAndPulp && (
 					<g className="anatomical-canals-layer">
 						{effectiveCanals.map((c) => (
 							<g key={c.id}>
@@ -1015,7 +1040,7 @@ const AnatomicalToothSVG = React.memo(({
 				)}
 
 				{/* Anatomical Pulp Cavity (Chamber + Coronal Horns) */}
-				{geom.pulpChamberPath && (state === "Pulpitis" || showPulpAndCanals) && (
+				{geom.pulpChamberPath && shouldRenderCanalsAndPulp && (
 					<path
 						d={geom.pulpChamberPath}
 						fill={state === "Pulpitis" ? "url(#dente-pulpitis-grad)" : "url(#dente-pulp-vital-grad)"}
@@ -1034,7 +1059,7 @@ const AnatomicalToothSVG = React.memo(({
 					>
 						{/* Fiber Glass Post */}
 						{hasPost && postType === "fiber" ? (
-							<g filter="url(#dente-glow-indigo)">
+							<g filter={isLowSpecFilterDisabled() ? undefined : "url(#dente-glow-indigo)"}>
 								{effectiveCanals.map((c) => (
 									<g key={c.id}>
 										<path
@@ -1058,7 +1083,7 @@ const AnatomicalToothSVG = React.memo(({
 							</g>
 						) : hasPost && (postType === "cast_core" || postType === "titanium") ? (
 							/* Cast Core Metal Post */
-							<g filter="url(#dente-metallic-specular)">
+							<g filter={isLowSpecFilterDisabled() ? undefined : "url(#dente-metallic-specular)"}>
 								{effectiveCanals.map((c) => (
 									<path
 										key={c.id}

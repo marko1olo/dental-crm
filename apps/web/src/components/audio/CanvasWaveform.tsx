@@ -246,6 +246,10 @@ export function CanvasWaveform({
 				themeObserver.disconnect();
 				themeObserver = null;
 			}
+			if (canvas) {
+				canvas.width = 0;
+				canvas.height = 0;
+			}
 		};
 	}, [streamManager, analyserNode, isRecording, isSpeaking, mode, height, barCount]);
 

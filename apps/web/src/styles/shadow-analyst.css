@@ -5,27 +5,39 @@
 
 .sa-toast {
 	position: fixed;
-	top: 4.5rem;
-	right: 1.5rem;
-	bottom: auto;
+	bottom: 1rem;
+	right: 1rem;
+	top: auto;
 	left: auto;
 	z-index: 99999;
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
 	padding: 0.65rem 1rem;
-	border-radius: 8px;
+	border-radius: 12px;
 	font-size: 0.875rem;
 	font-weight: 500;
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-	animation: sa-slide-down 0.25s ease-out;
+	animation: sa-slide-up 0.25s ease-out;
 	max-width: 380px;
+	pointer-events: auto;
+}
+
+@keyframes sa-slide-up {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 @media (max-width: 840px) {
 	.sa-toast {
-		top: 4.25rem;
-		bottom: auto;
+		bottom: 1rem;
+		top: auto;
 		left: 12px;
 		right: 12px;
 		max-width: calc(100vw - 24px);
@@ -34,8 +46,8 @@
 
 @media (max-width: 640px) {
 	.sa-toast {
-		top: calc(env(safe-area-inset-top, 0px) + 12px) !important;
-		bottom: auto !important;
+		bottom: calc(env(safe-area-inset-bottom, 0px) + 12px) !important;
+		top: auto !important;
 		left: 1rem !important;
 		right: 1rem !important;
 		max-width: calc(100vw - 2rem) !important;
@@ -57,6 +69,17 @@ body:has(.cbct-viewport-container-axial) .sa-toast {
 	transform: translateX(-50%) !important;
 	max-width: 440px !important;
 	z-index: 99999 !important;
+}
+
+@keyframes sa-slide-up {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 @keyframes sa-slide-down {

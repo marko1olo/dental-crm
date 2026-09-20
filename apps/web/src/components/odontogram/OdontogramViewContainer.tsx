@@ -65,7 +65,7 @@ export const ODONTOGRAM_VIEW_MODES: readonly OdontogramViewOption[] = [
 	{
 		mode: "anatomical_svg",
 		label: "3D Анатомический",
-		shortLabel: "3D Анатомический",
+		shortLabel: "Анатомический",
 		icon: <Sparkles size={14} className="text-indigo-500 shrink-0" />,
 		tooltip: "Векторная анатомическая визуализация коронок, корней и каналов",
 		badge: "3D",
@@ -678,7 +678,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			{/* Unified Clinical Toolbar - 1-Level Compact Console (Mandate 8d, 8e, 8p: strictly 36px) */}
 			{!hideModeSwitcher && (
 				<div
-					className="odontogram-toolbar flex items-center justify-between gap-1.5 py-0.5 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full select-none flex-nowrap overflow-x-auto scrollbar-none min-h-[34px] h-[34px]"
+					className="odontogram-toolbar flex items-center justify-between gap-1.5 px-2 py-0.5 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full select-none flex-nowrap overflow-x-auto scrollbar-none min-h-[34px] h-[34px]"
 					role="toolbar"
 					aria-label="Панель управления зубной формулой"
 				>
@@ -891,12 +891,12 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 							<button
 								type="button"
 								onClick={handleMarkIntactDentition}
-								className="h-8 px-2 sm:px-2.5 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center gap-1 sm:gap-1.5 shrink-0 active:scale-98"
+								className="h-8 px-2 sm:px-2.5 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center gap-1 sm:gap-1.5 shrink-0 active:scale-98 whitespace-nowrap"
 								title="1-клик Санирован: вся зубная формула отмечается интактной"
 								data-testid="mark-intact-dentition-btn"
 							>
 								<Zap size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-								<span>Санирован</span>
+								<span className="whitespace-nowrap shrink-0">Санирован</span>
 							</button>
 						)}
 					</div>

@@ -151,15 +151,15 @@ export function DocumentQuickRoleScenarios({
 				<div className="document-scenario-card-header">
 					<div className="document-scenario-icon-title">
 						<span className="document-scenario-icon"><ShieldPlus className="w-5 h-5 text-emerald-600" /></span>
-						<span>СанПиН и Экспертиза</span>
+						<span>СанПиН и Радиационный контроль</span>
 					</div>
-					<span className="document-scenario-badge">4 бланка</span>
+					<span className="document-scenario-badge">3 бланка</span>
 				</div>
 				<p className="document-scenario-desc">
-					Направление 057/у-04 + Больничный ЭЛН 1089н + Дозы 2.6.1 + Автоклав 257/у
+					Направление на КЛКТ/ОПТГ + Лист учета дозовых нагрузок (СанПиН 2.6.1) + Выписка 027/у
 				</p>
 				<div className="document-scenario-footer">
-					<span>СанПиН, ЭЛН и Экспертиза</span>
+					<span>СанПиН и радиационный контроль</span>
 					<ArrowRight size={14} aria-hidden="true" />
 				</div>
 			</button>

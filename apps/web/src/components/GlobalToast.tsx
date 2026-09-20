@@ -49,10 +49,10 @@ export function GlobalToast() {
 
 	if (!toast) return null;
 
-	// Re-use sa-toast styles from ShadowAnalyst or define minimal inline/fallback
+	// Re-use sa-toast styles from ShadowAnalyst with full theme tokens support
 	return (
 		<div
-			className={`sa-toast sa-toast--${toast.type} fixed top-16 right-6 max-sm:top-[calc(env(safe-area-inset-top,0px)+12px)] max-sm:bottom-auto max-sm:left-4 max-sm:right-4 z-[99999] flex items-center gap-2 px-4 py-3 max-w-[420px] max-sm:max-w-[calc(100vw-2rem)] rounded-lg shadow-2xl transition-all select-none border font-medium text-xs sm:text-sm bg-neutral-900 text-slate-100 dark:bg-neutral-900 dark:text-slate-100 ${toast.type === "error" ? "border-rose-500/60 dark:border-rose-500/50" : toast.type === "warning" ? "border-amber-500/60 dark:border-amber-500/50" : "border-neutral-700 dark:border-neutral-700"}`}
+			className={`sa-toast sa-toast--${toast.type} fixed sm:bottom-4 sm:right-4 sm:top-auto max-sm:bottom-[calc(env(safe-area-inset-bottom,0px)+12px)] max-sm:top-auto max-sm:left-4 max-sm:right-4 z-[99999] flex items-center gap-2 px-4 py-3 max-w-[420px] max-sm:max-w-[calc(100vw-2rem)] rounded-xl shadow-2xl transition-all select-none border font-medium text-xs sm:text-sm bg-neutral-900 text-slate-100 dark:bg-neutral-900 dark:text-slate-100 pointer-events-auto ${toast.type === "error" ? "border-rose-500/60 dark:border-rose-500/50" : toast.type === "warning" ? "border-amber-500/60 dark:border-amber-500/50" : "border-neutral-700 dark:border-neutral-700"}`}
 			data-testid="global-toast"
 			style={{
 				zIndex: 99999,
@@ -62,8 +62,12 @@ export function GlobalToast() {
 				padding: "12px 16px",
 				backgroundColor: "#171717",
 				color: "#f8fafc",
-				borderRadius: "8px",
+				borderRadius: "12px",
 				boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
+				pointerEvents: "auto",
+				bottom: "16px",
+				right: "16px",
+				top: "auto",
 				border:
 					toast.type === "error"
 						? "1px solid rgba(244,63,94,0.6)"
@@ -76,7 +80,7 @@ export function GlobalToast() {
 			{toast.type === "warning" && <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />}
 			{toast.type === "success" && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
 			{toast.type === "info" && <Info className="w-4 h-4 text-cyan-400 shrink-0" />}
-			<span className="font-medium text-slate-100 dark:text-slate-100" style={{ color: "#f8fafc" }}>
+			<span className="font-medium text-[var(--ink)]" style={{ color: "var(--ink, #f8fafc)" }}>
 				{toast.text}
 			</span>
 			<button
@@ -85,7 +89,7 @@ export function GlobalToast() {
 				style={{
 					background: "transparent",
 					border: "none",
-					color: "#f8fafc",
+					color: "var(--muted, #94a3b8)",
 					cursor: "pointer",
 					marginLeft: "auto",
 					display: "flex",
@@ -95,7 +99,7 @@ export function GlobalToast() {
 				}}
 				aria-label="Закрыть"
 			>
-				<X size={16} className="text-neutral-300 hover:text-white transition-colors" />
+				<X size={16} className="text-[var(--muted)] hover:text-[var(--ink)] transition-colors" />
 			</button>
 		</div>
 	);

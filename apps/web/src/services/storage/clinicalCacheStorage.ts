@@ -16,6 +16,8 @@ import {
 	CLINICAL_CACHE_STORE_NAME,
 	formatBytesHuman,
 	type StorageEstimateInfo,
+	queueBatchedStorePut,
+	yieldToMainThread,
 } from "../offline/offlineStorage";
 import type {
 	CachedEntityKind,
@@ -24,6 +26,8 @@ import type {
 
 export const LOCAL_STORAGE_CACHE_PREFIX = "dente_cached_entity_v1:";
 
+// L1 Fast RAM Cache (0 ms, zero 5400 RPM HDD seek time)
+const inMemoryEntityCacheMap = new Map<string, ClinicalCachedEntity<unknown>>();
 
 function buildCacheKey(entityKind: string, entityId: string): string {
 	return `${entityKind}:${entityId}`;
@@ -79,7 +83,7 @@ function removeLocalStorageCachedEntity(cacheKey: string): void {
 }
 
 /**
- * Caches a clinical entity in IndexedDB (with LocalStorage mirror)
+ * Caches a clinical entity in IndexedDB (with LocalStorage mirror and write coalescing)
  */
 export async function cacheClinicalRecord<T = unknown>(
 	entityKind: CachedEntityKind | string,
@@ -101,39 +105,33 @@ export async function cacheClinicalRecord<T = unknown>(
 		version,
 	};
 
-	try {
-		const db = await openOfflineOutboxDb();
-		// If store doesn't exist yet in older schema, fallback to localStorage
-		if (db.objectStoreNames.contains(CLINICAL_CACHE_STORE_NAME)) {
-			await new Promise<void>((resolve, reject) => {
-				const tx = db.transaction(CLINICAL_CACHE_STORE_NAME, "readwrite");
-				const store = tx.objectStore(CLINICAL_CACHE_STORE_NAME);
-				const request = store.put(record);
-				request.onsuccess = () => resolve();
-				request.onerror = () =>
-					reject(request.error ?? new Error("Failed to cache entity in IDB"));
-			});
-		}
-		saveLocalStorageCachedEntity(record);
-		return record;
-	} catch (err) {
-		logger.warn(
-			`[ClinicalCacheStorage] IDB cache save failed for ${cacheKey}, using localStorage`,
-			err,
-		);
-		saveLocalStorageCachedEntity(record);
-		return record;
-	}
+	// 1. L1 RAM Hit (0 ms, zero HDD seek)
+	inMemoryEntityCacheMap.set(cacheKey, record as ClinicalCachedEntity<unknown>);
+
+	// 2. Coalesced batched write to IndexedDB / localStorage (prevents disk thrashing)
+	queueBatchedStorePut({
+		storeName: CLINICAL_CACHE_STORE_NAME,
+		key: cacheKey,
+		record,
+		localStorageKey: `${LOCAL_STORAGE_CACHE_PREFIX}${record.cacheKey}`,
+		serializedValue: JSON.stringify(record),
+	});
+
+	return record;
 }
 
 /**
- * Loads a cached clinical entity
+ * Loads a cached clinical entity (L1 RAM -> IndexedDB -> LocalStorage)
  */
 export async function getCachedClinicalRecord<T = unknown>(
 	entityKind: CachedEntityKind | string,
 	entityId: string,
 ): Promise<ClinicalCachedEntity<T> | null> {
 	const cacheKey = buildCacheKey(entityKind, entityId);
+
+	// 1. Fast L1 RAM Hit (0 ms)
+	const memHit = inMemoryEntityCacheMap.get(cacheKey) as ClinicalCachedEntity<T> | undefined;
+	if (memHit) return memHit;
 
 	try {
 		const db = await openOfflineOutboxDb();
@@ -149,15 +147,26 @@ export async function getCachedClinicalRecord<T = unknown>(
 						reject(request.error ?? new Error("Failed to get cached entity from IDB"));
 				},
 			);
-			if (result) return result;
+			if (result) {
+				inMemoryEntityCacheMap.set(cacheKey, result as ClinicalCachedEntity<unknown>);
+				return result;
+			}
 		}
-		return getLocalStorageCachedEntity<T>(cacheKey);
+		const localRecord = getLocalStorageCachedEntity<T>(cacheKey);
+		if (localRecord) {
+			inMemoryEntityCacheMap.set(cacheKey, localRecord as ClinicalCachedEntity<unknown>);
+		}
+		return localRecord;
 	} catch (err) {
 		logger.debug(
 			`[ClinicalCacheStorage] IDB get cache failed for ${cacheKey}, checking localStorage`,
 			err,
 		);
-		return getLocalStorageCachedEntity<T>(cacheKey);
+		const localRecord = getLocalStorageCachedEntity<T>(cacheKey);
+		if (localRecord) {
+			inMemoryEntityCacheMap.set(cacheKey, localRecord as ClinicalCachedEntity<unknown>);
+		}
+		return localRecord;
 	}
 }
 
@@ -247,6 +256,7 @@ export async function deleteCachedClinicalRecord(
 	entityId: string,
 ): Promise<void> {
 	const cacheKey = buildCacheKey(entityKind, entityId);
+	inMemoryEntityCacheMap.delete(cacheKey);
 	removeLocalStorageCachedEntity(cacheKey);
 
 	try {
@@ -356,12 +366,16 @@ export async function getStorageEstimate(): Promise<StorageEstimateInfo> {
 			const estimate = await navigator.storage.estimate();
 			usageBytes = estimate.usage || 0;
 			quotaBytes = estimate.quota || 0;
-		} catch {}
+		} catch (err: unknown) {
+			logger.warn("[ClinicalCacheStorage] Failed to estimate storage quota", err);
+		}
 
 		if (typeof navigator.storage.persisted === "function") {
 			try {
 				isPersistent = await navigator.storage.persisted();
-			} catch {}
+			} catch (err: unknown) {
+				logger.warn("[ClinicalCacheStorage] Failed to check storage persistence", err);
+			}
 		}
 	}
 

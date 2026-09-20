@@ -108,6 +108,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 	const [isOfflineBatchModalOpen, setIsOfflineBatchModalOpen] = useState<boolean>(false);
 	const [queuedItems, setQueuedItems] = useState<QueuedFiscalReceiptItem[]>([]);
 	const [isReportsMenuOpen, setIsReportsMenuOpen] = useState<boolean>(false);
+	const [isBottomActionsMenuOpen, setIsBottomActionsMenuOpen] = useState<boolean>(false);
 
 	// StomX Cash Flow State (Wave 118: 54-FZ Tag 1054 cash in/out presets)
 	const [isCashFlowModalOpen, setIsCashFlowModalOpen] = useState<boolean>(initialCashFlowModalOpen);
@@ -1025,13 +1026,13 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 				</div>
 			</div>
 
-			{/* Быстрые фискальные действия и отчеты ККТ */}
-			<div className="cash-shift-actions flex-wrap">
+			{/* Быстрые фискальные действия и отчеты ККТ (Мандат 8d п. 3: не более 1-2 кнопок прямого действия) */}
+			<div className="cash-shift-actions flex-wrap items-center">
 				<button
 					type="button"
 					onClick={handleOpenCashInModal}
 					data-testid="btn-open-cash-in-modal"
-					className="min-h-[48px] px-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+					className="min-h-[44px] px-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
 					title="Внесение наличных (разменная монета, прочий приход)"
 				>
 					<PlusCircle size={16} className="text-emerald-600" />
@@ -1042,55 +1043,101 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					type="button"
 					onClick={handleOpenCashOutModal}
 					data-testid="btn-open-cash-out-modal"
-					className="min-h-[48px] px-4 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 dark:text-rose-300 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+					className="min-h-[44px] px-4 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 dark:text-rose-300 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
 					title="Изъятие наличных (инкассация, хоз. расходы, возврат)"
 				>
 					<MinusCircle size={16} className="text-rose-600" />
 					<span>Изъятие / Инкассация</span>
 				</button>
 
-				<button
-					type="button"
-					onClick={() => setIsOfflineBatchModalOpen(true)}
-					className="min-h-[48px] px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
-					title="Очередь фискализации и сверка с эквайрингом"
-					data-testid="btn-open-offline-fiscal-queue"
-				>
-					<Layers size={16} />
-					<span>Очередь чеков и сверка {pendingOfflineCount > 0 ? `(${pendingOfflineCount})` : ""}</span>
-				</button>
+				{/* Вторичные действия и отчеты ККТ (Меню ... по Мандату 8d п. 3) */}
+				<div className="relative inline-block">
+					<button
+						type="button"
+						onClick={() => setIsBottomActionsMenuOpen((prev) => !prev)}
+						data-testid="btn-shift-bottom-actions-menu"
+						className="min-h-[44px] px-3.5 rounded-xl border border-[var(--line,rgba(255,255,255,0.1))] bg-[var(--paper-soft,#f8fafc)] text-xs font-bold flex items-center gap-1.5 hover:bg-[var(--glass-hover)] transition-all cursor-pointer text-[var(--ink)]"
+						title="Дополнительные отчеты и фискальные действия (X-отчет, Ведомость А4, 1С, Очередь чеков)"
+					>
+						<MoreHorizontal size={16} />
+						<span>Отчеты и действия</span>
+					</button>
 
-				<button
-					type="button"
-					onClick={handleXReport}
-					disabled={isProcessing}
-					className="cash-shift-actions-btn-primary min-h-[48px] text-xs sm:text-sm font-bold cursor-pointer"
-					title="Распечатать промежуточный X-отчет без гашения"
-					data-testid="btn-print-x-report"
-				>
-					<Printer size={16} />
-					<span>Печать X-отчета (без гашения)</span>
-				</button>
+					<div
+						className={`absolute left-0 sm:left-auto sm:right-0 bottom-full mb-2 z-30 min-w-[230px] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-xl p-1.5 flex flex-col gap-1 ${
+							isBottomActionsMenuOpen ? "block" : "hidden"
+						}`}
+					>
+						<button
+							type="button"
+							onClick={() => {
+								setIsBottomActionsMenuOpen(false);
+								handleXReport();
+							}}
+							disabled={isProcessing}
+							className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2.5 cursor-pointer text-neutral-800 dark:text-neutral-200 transition-colors"
+							title="Распечатать промежуточный X-отчет без гашения"
+							data-testid="btn-print-x-report"
+						>
+							<Printer size={15} className="shrink-0 text-neutral-500" />
+							<span>Печать X-отчета (без гашения)</span>
+						</button>
 
-				<button
-					type="button"
-					onClick={handlePrintAccountingStatement}
-					className="min-h-[48px] px-3.5 rounded-xl border border-[var(--line,rgba(255,255,255,0.1))] bg-[var(--paper-soft,#f8fafc)] text-xs font-bold flex items-center gap-1.5 hover:bg-[var(--glass-hover)] transition-all cursor-pointer"
-					title="Печать сводной бухгалтерской ведомости А4"
-				>
-					<FileText size={16} className="text-teal-600" />
-					<span>Ведомость А4</span>
-				</button>
+						<button
+							type="button"
+							onClick={() => {
+								setIsBottomActionsMenuOpen(false);
+								handlePrintAccountingStatement();
+							}}
+							className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2.5 cursor-pointer text-neutral-800 dark:text-neutral-200 transition-colors"
+							title="Печать сводной бухгалтерской ведомости А4"
+							data-testid="btn-print-accounting-statement"
+						>
+							<FileText size={15} className="shrink-0 text-teal-600" />
+							<span>Ведомость А4</span>
+						</button>
 
-				<button
-					type="button"
-					onClick={handleExport1cCsv}
-					className="min-h-[48px] px-3.5 rounded-xl border border-[var(--line,rgba(255,255,255,0.1))] bg-[var(--paper-soft,#f8fafc)] text-xs font-bold flex items-center gap-1.5 hover:bg-[var(--glass-hover)] transition-all cursor-pointer"
-					title="Выгрузить данные смены в CSV (UTF-8 BOM) для 1С:Бухгалтерии"
-				>
-					<FileSpreadsheet size={16} className="text-blue-600" />
-					<span>Экспорт в 1С</span>
-				</button>
+						<button
+							type="button"
+							onClick={() => {
+								setIsBottomActionsMenuOpen(false);
+								handleExport1cCsv();
+							}}
+							className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2.5 cursor-pointer text-neutral-800 dark:text-neutral-200 transition-colors"
+							title="Выгрузить данные смены в CSV (UTF-8 BOM) для 1С:Бухгалтерии"
+							data-testid="btn-export-1c-csv"
+						>
+							<FileSpreadsheet size={15} className="shrink-0 text-blue-600" />
+							<span>Экспорт в 1С</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => {
+								setIsBottomActionsMenuOpen(false);
+								setIsOfflineBatchModalOpen(true);
+							}}
+							className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2.5 cursor-pointer text-neutral-800 dark:text-neutral-200 transition-colors"
+							title="Очередь фискализации и сверка с эквайрингом"
+							data-testid="btn-open-offline-fiscal-queue"
+						>
+							<Layers size={15} className="shrink-0 text-amber-600" />
+							<span>Очередь чеков и сверка {pendingOfflineCount > 0 ? `(${pendingOfflineCount})` : ""}</span>
+						</button>
+					</div>
+				</div>
+
+				{pendingOfflineCount > 0 && (
+					<button
+						type="button"
+						onClick={() => setIsOfflineBatchModalOpen(true)}
+						className="min-h-[44px] px-3 rounded-xl border border-amber-500/40 bg-amber-500/15 text-amber-800 dark:text-amber-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer animate-pulse hover:bg-amber-500/25 transition-all"
+						title="Внимание: в офлайн-очереди есть неотправленные чеки"
+					>
+						<Layers size={14} />
+						<span>Очередь: {pendingOfflineCount}</span>
+					</button>
+				)}
 			</div>
 
 			{/* Модальное окно закрытия смены Z-отчетом */}

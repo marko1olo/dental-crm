@@ -447,11 +447,24 @@
 /* --- 14. Одонтограмма и Документы: Защита от обрезания кнопок тулбара и вкладок категорий (Мандаты 8c, 8d, 8p) --- */
 .odontogram-toolbar {
 	display: flex !important;
-	flex-direction: column !important;
-	gap: 4px !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	gap: 6px !important;
 	width: 100% !important;
 	max-width: 100% !important;
+	height: 36px !important;
+	min-height: 30px !important;
+	max-height: 36px !important;
 	box-sizing: border-box !important;
+	padding: 2px 8px !important;
+	overflow-x: auto !important;
+	overflow-y: hidden !important;
+	flex-wrap: nowrap !important;
+	scrollbar-width: none !important;
+	-webkit-overflow-scrolling: touch !important;
+	touch-action: pan-x !important;
+	overscroll-behavior-x: contain !important;
 }
 
 .odontogram-toolbar-row {

@@ -1585,22 +1585,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				<h2>Документы и Реестр</h2>
 				<div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
 					<button
-						type="button"
-						className="secondary-button hidden sm:inline-flex min-h-[44px] sm:min-h-[36px]"
-						onClick={() => setIsSickLeaveElnOpen(true)}
-						data-testid="open-sick-leave-eln-modal-btn"
-					>
-						Больничный лист (ЭЛН 1089н)
-					</button>
-					<button
-						type="button"
-						className="secondary-button hidden sm:inline-flex min-h-[44px] sm:min-h-[36px]"
-						onClick={() => setIsAutoclaveLogOpen(true)}
-						data-testid="open-autoclave-log-257-btn"
-					>
-						Журнал автоклава (Форма № 257/у)
-					</button>
-					<button
 						className="text-button min-h-[44px] sm:min-h-[36px]"
 						type="button"
 						disabled={false}
