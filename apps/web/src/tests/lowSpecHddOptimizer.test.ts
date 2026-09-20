@@ -711,7 +711,7 @@ describe("GridAppointmentCard — Memoization & Content-Visibility Performance (
 		const { renderToString } = await import("react-dom/server");
 		const { GridAppointmentCard } = await import("../components/schedule/GridAppointmentCard");
 
-		const mockAppointment = {
+		const mockAppointment: Appointment = {
 			id: "test-appt-1",
 			patientId: "pat-1",
 			doctorUserId: "doc-1",
@@ -721,7 +721,7 @@ describe("GridAppointmentCard — Memoization & Content-Visibility Performance (
 			status: "confirmed" as const,
 			reason: "Лечение кариеса",
 			organizationId: "org-1",
-			comment: "",
+			comment: null,
 		};
 
 		const mockDashboard = {
@@ -846,8 +846,8 @@ describe("lowSpecHddOptimizer — Виртуализация реестра до
 		assert.strictEqual(slice1.totalCount, 250);
 		assert.strictEqual(slice1.remainingCount, 210);
 		assert.strictEqual(slice1.hasMore, true);
-		assert.strictEqual(slice1.visibleItems[0]?.id, "doc-1");
-		assert.strictEqual(slice1.visibleItems[39]?.id, "doc-40");
+		assert.strictEqual(slice1.visibleItems[0]!.id, "doc-1");
+		assert.strictEqual(slice1.visibleItems[39]!.id, "doc-40");
 
 		// Вторая порция: клик "Показать ещё 40" -> лимит 80
 		const slice2 = sliceDomList(mockDocuments, 80, 0);

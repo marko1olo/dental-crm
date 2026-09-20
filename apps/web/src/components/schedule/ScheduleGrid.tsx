@@ -3392,6 +3392,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														staffLookupMap={staffLookupMap}
 														collisionMap={collisionMap}
 														patientNameFn={patientName}
+														getPatientName={patientName}
 														dashboard={dashboard}
 														timezone={timezone}
 														toDateTimeLocalValue={toDateTimeLocalValue}

@@ -89,7 +89,8 @@ export interface GridAppointmentCardProps {
 	patientLookupMap: Map<string, any>;
 	staffLookupMap: Map<string, any>;
 	collisionMap: Map<string, any>;
-	patientNameFn: (patients: any, id?: string | null) => string;
+	patientNameFn?: (patients: any, patientId?: string | null) => string;
+	getPatientName?: (patients: any, patientId?: string | null) => string;
 	dashboard: Dashboard;
 	timezone?: string | null;
 	toDateTimeLocalValue: (iso: string, timezone?: string | null) => string;
@@ -148,6 +149,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 		staffLookupMap,
 		collisionMap,
 		patientNameFn,
+		getPatientName,
 		dashboard,
 		timezone,
 		toDateTimeLocalValue,
@@ -174,7 +176,8 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 		onCloseMenu,
 	} = props;
 
-	const pName = patientNameFn(dashboard.patients, a.patientId);
+	const resolveNameFn = getPatientName || patientNameFn || ((_patients: any, _id?: string | null) => "Пациент");
+	const pName = resolveNameFn(dashboard.patients, a.patientId ?? null);
 	const aStart = toDateTimeLocalValue(a.startsAt, timezone).slice(11, 16);
 	const aEnd = toDateTimeLocalValue(a.endsAt, timezone).slice(11, 16);
 
