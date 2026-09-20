@@ -1066,14 +1066,7 @@ export function App() {
 					}
 				})
 				.catch((err) => {
-					logger.error("[Dente] auth check error:", err);
-					showToast(
-						actionFailureToast(
-							"Не удалось загрузить профиль пользователя",
-							(err as { status?: number })?.status ?? null,
-						),
-						"error",
-					);
+					logger.warn("[Dente] Background auth profile check failed:", err);
 				});
 		}
 	}, [clinicAuthed, dashboard, activeStaffUser]); // Stable dependencies with single-trigger guards

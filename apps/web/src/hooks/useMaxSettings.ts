@@ -382,14 +382,7 @@ export function useMaxSettings() {
 			logger.error("[состояние MAX] не прочитано, ответ", res.status);
 			setStatusUnknown(true);
 		} catch (err) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(err as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			logger.error("[состояние MAX] запрос не дошёл до сервера", err);
+			logger.warn("[состояние MAX] запрос не дошёл до сервера:", err);
 			setStatusUnknown(true);
 		}
 	}, []);

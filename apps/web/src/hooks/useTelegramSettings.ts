@@ -21,6 +21,7 @@ import {
 } from "../AppHelpers.js";
 import { showToast } from "../components/GlobalToast";
 import { actionFailureToast } from "../lib/panelStateText";
+import { logger } from "../utils/logger.js";
 import { useAppStore } from "../store/appStore.js";
 import { useSettingsStore } from "../store/settingsStore.js";
 import {
@@ -352,13 +353,17 @@ export function useTelegramSettings(options: {
 				telegramMapsUrlDraft,
 			);
 		} catch (urlError) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(urlError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
+			if (!options.silent) {
+				showToast(
+					actionFailureToast(
+						"Ошибка выполнения операции",
+						(urlError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+			} else {
+				logger.warn("[TelegramSettings] Background URL validation failed:", urlError);
+			}
 			const message =
 				operatorReadableErrorDetailFromUnknown(urlError) ??
 				"Проверьте Telegram-настройки перед сохранением.";
@@ -438,13 +443,17 @@ export function useTelegramSettings(options: {
 			setError(null);
 			return true;
 		} catch (telegramError) {
-			showToast(
-				actionFailureToast(
-					"Настройки Telegram не сохранены",
-					(telegramError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
+			if (!options.silent) {
+				showToast(
+					actionFailureToast(
+						"Настройки Telegram не сохранены",
+						(telegramError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+			} else {
+				logger.warn("[TelegramSettings] Background autosave failed:", telegramError);
+			}
 			const message = operatorWorkflowFailureMessage(
 				"Настройки Telegram не сохранены",
 				telegramError,
@@ -565,13 +574,20 @@ export function useTelegramSettings(options: {
 			setTelegramLinkCodes(nextLinkCodeLedger.linkCodes);
 			setTelegramChatLinks(nextChatLinkLedger.chatLinks);
 		} catch (telegramError) {
-			showToast(
-				actionFailureToast(
-					"Панель управления Telegram недоступна",
-					(telegramError as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
+			if (!options.silent) {
+				showToast(
+					actionFailureToast(
+						"Панель управления Telegram недоступна",
+						(telegramError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+			} else {
+				logger.warn(
+					"[TelegramSettings] Background control plane load failed:",
+					telegramError,
+				);
+			}
 			if (!options.silent) {
 				setError(
 					operatorWorkflowFailureMessage(

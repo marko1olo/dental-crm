@@ -393,14 +393,7 @@ export function useWhatsappSettings() {
 			logger.error("[состояние WhatsApp] не прочитано, ответ", res.status);
 			setStatusUnknown(true);
 		} catch (err) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(err as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			logger.error("[состояние WhatsApp] запрос не дошёл до сервера", err);
+			logger.warn("[состояние WhatsApp] запрос не дошёл до сервера:", err);
 			setStatusUnknown(true);
 		}
 	}, []);

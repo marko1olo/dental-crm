@@ -1579,7 +1579,7 @@ export const smartImportModeLabels: Record<
 > = {
 	auto: {
 		title: "Авто",
-		detail: "Сам разделит пациентов, снимки и мусор.",
+		detail: "Автоматически классифицирует пациентов, снимки и сопутствующие данные.",
 	},
 	mixed: {
 		title: "Смешанный экспорт",
@@ -1794,15 +1794,16 @@ export const toothStateByCode: Record<
 	"48": "missing",
 };
 
-export function patientName(patients: Patient[], patientId: string | null) {
+export function patientName(patients: Patient[] | undefined | null, patientId: string | null) {
 	if (!patientId) return "Новый пациент";
+	if (!Array.isArray(patients)) return "Пациент";
 	return (
 		patients.find((patient) => patient.id === patientId)?.fullName ?? "Пациент"
 	);
 }
 
-export function findPatient(patients: Patient[], patientId: string | null) {
-	if (!patientId) return null;
+export function findPatient(patients: Patient[] | undefined | null, patientId: string | null) {
+	if (!patientId || !Array.isArray(patients)) return null;
 	return patients.find((patient) => patient.id === patientId) ?? null;
 }
 
