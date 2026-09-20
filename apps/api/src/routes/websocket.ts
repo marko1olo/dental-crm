@@ -114,7 +114,13 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 			// соединение через прокси. Отвечаем PONG — хук useWebsocket его
 			// уже умеет отфильтровывать.
 			if (text === "PING") {
-				if (socket.readyState === 1) socket.send("PONG");
+				if (socket.readyState === 1) {
+					try {
+						socket.send("PONG");
+					} catch (err) {
+						app.log.warn({ err }, "Failed to send PONG frame");
+					}
+				}
 				return;
 			}
 
@@ -155,12 +161,18 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 
 			// Подтверждение нужно клиенту, чтобы отличать «сокет открыт» от
 			// «сокет открыт и подписан»: до AUTH_OK обновления не придут.
-			socket.send(
-				JSON.stringify({
-					type: "AUTH_OK",
-					payload: { organizationId: identity.organizationId },
-				}),
-			);
+			if (socket.readyState === 1) {
+				try {
+					socket.send(
+						JSON.stringify({
+							type: "AUTH_OK",
+							payload: { organizationId: identity.organizationId },
+						}),
+					);
+				} catch (err) {
+					request.log.warn({ err }, "Failed to send AUTH_OK frame");
+				}
+			}
 			request.log.debug(
 				{ organizationId: identity.organizationId, patientId },
 				"websocket client subscribed",

@@ -142,6 +142,10 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		if (isOpen && initialPaymentMethod) {
 			setActiveMethod(initialPaymentMethod);
 		}
+		if (!isOpen) {
+			inFlightRef.current = false;
+			setIsPrinting(false);
+		}
 	}, [isOpen, initialPaymentMethod]);
 	const [isTier2Open, setIsTier2Open] = useState<boolean>(false);
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
@@ -797,7 +801,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		try {
 			const rawUuid = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
 				? crypto.randomUUID()
-				: `idemp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+				: `idemp-${Date.now()}-${Date.now().toString(36)}`;
 
 			const compositeIdempotencyKey = createFiscalCompositeIdempotencyKey(
 				rawUuid,
@@ -1436,7 +1440,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								}`}
 							>
 								<span>Аванс 30%</span>
-								<span className="text-xs font-mono opacity-80">{Math.round(baseStageAmountKop * 0.3 / 100).toLocaleString("ru-RU")} ₽</span>
+								<span className="text-xs font-mono opacity-80">{Math.round((baseStageAmountKop * 30) / 10000).toLocaleString("ru-RU")} ₽</span>
 							</button>
 							<button
 								type="button"
@@ -1448,7 +1452,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								}`}
 							>
 								<span>Аванс 50%</span>
-								<span className="text-xs font-mono opacity-80">{Math.round(baseStageAmountKop * 0.5 / 100).toLocaleString("ru-RU")} ₽</span>
+								<span className="text-xs font-mono opacity-80">{Math.round((baseStageAmountKop * 50) / 10000).toLocaleString("ru-RU")} ₽</span>
 							</button>
 							<button
 								type="button"

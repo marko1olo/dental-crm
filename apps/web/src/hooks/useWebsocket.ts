@@ -44,6 +44,7 @@ export function useWebsocket(url: string) {
 	const connect = useCallback(() => {
 		if (!url) return;
 		if (typeof WebSocket === "undefined") return;
+		if (closedByUs.current) return;
 		if (ws.current?.readyState === WebSocket.OPEN) return;
 		if (ws.current?.readyState === WebSocket.CONNECTING) return;
 
@@ -55,7 +56,9 @@ export function useWebsocket(url: string) {
 			ws.current.onclose = null;
 			try {
 				ws.current.close();
-			} catch {}
+			} catch (err: unknown) {
+				console.warn("[useWebsocket] Error closing previous socket:", err);
+			}
 			ws.current = null;
 		}
 
@@ -63,6 +66,7 @@ export function useWebsocket(url: string) {
 		ws.current = socket;
 
 		socket.onopen = () => {
+			if (closedByUs.current) return;
 			attempts.current = 0;
 			setIsConnected(true);
 			// Браузерный WebSocket не умеет ставить заголовки, а токен в
@@ -81,6 +85,7 @@ export function useWebsocket(url: string) {
 		};
 
 		socket.onmessage = (event) => {
+			if (closedByUs.current) return;
 			if (event.data === "PONG") return;
 			try {
 				const data: WebSocketMessage = JSON.parse(event.data);
@@ -93,19 +98,29 @@ export function useWebsocket(url: string) {
 		};
 
 		socket.onclose = () => {
-			setIsConnected(false);
 			if (closedByUs.current) return;
+			setIsConnected(false);
+			attempts.current += 1;
 			if (reconnectTimeout.current) {
 				clearTimeout(reconnectTimeout.current);
 				reconnectTimeout.current = null;
+			}
+			// При скрытой вкладке (document.hidden) не крутим быстрый цикл реконнекта на слабом CPU
+			if (typeof document !== "undefined" && document.hidden) {
+				return;
 			}
 			const delay = Math.min(
 				RECONNECT_BASE_MS * 2 ** attempts.current,
 				RECONNECT_MAX_MS,
 			);
-			attempts.current += 1;
-			// Случайный джиттер ±20% для исключения thundering herd при одновременном реконнекте вкладок
-			const jitter = delay * 0.2 * (Math.random() - 0.5);
+			// Джиттер ±20% для исключения thundering herd при одновременном реконнекте вкладок (без Math.random)
+			let randomFraction = 0.5;
+			if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+				const buf = new Uint32Array(1);
+				crypto.getRandomValues(buf);
+				randomFraction = buf[0]! / 0xffffffff;
+			}
+			const jitter = delay * 0.2 * (randomFraction - 0.5);
 			const effectiveDelay = Math.max(RECONNECT_BASE_MS, Math.round(delay + jitter));
 			reconnectTimeout.current = setTimeout(connect, effectiveDelay);
 		};
@@ -120,14 +135,36 @@ export function useWebsocket(url: string) {
 		connect();
 
 		const pingInterval = setInterval(() => {
+			// Дропаем пинг при скрытой фоновой вкладке для экономии CPU старых ноутбуков
+			if (typeof document !== "undefined" && document.hidden) {
+				return;
+			}
 			if (ws.current?.readyState === WebSocket.OPEN) {
 				ws.current.send("PING");
 			}
 		}, 30000);
 
+		const handleVisibilityChange = () => {
+			if (typeof document === "undefined" || document.hidden) return;
+			// При возвращении во вкладку немедленно проверяем статус сокета
+			if (ws.current?.readyState === WebSocket.OPEN) {
+				ws.current.send("PING");
+			} else if (!ws.current || ws.current.readyState === WebSocket.CLOSED) {
+				attempts.current = 0;
+				connect();
+			}
+		};
+
+		if (typeof document !== "undefined") {
+			document.addEventListener("visibilitychange", handleVisibilityChange);
+		}
+
 		return () => {
 			closedByUs.current = true;
 			clearInterval(pingInterval);
+			if (typeof document !== "undefined") {
+				document.removeEventListener("visibilitychange", handleVisibilityChange);
+			}
 			if (reconnectTimeout.current) {
 				clearTimeout(reconnectTimeout.current);
 				reconnectTimeout.current = null;
@@ -139,7 +176,9 @@ export function useWebsocket(url: string) {
 				ws.current.onclose = null; // Prevent reconnect on intentional unmount
 				try {
 					ws.current.close();
-				} catch {}
+				} catch (err: unknown) {
+					console.warn("[useWebsocket] Error closing socket on unmount:", err);
+				}
 				ws.current = null;
 			}
 		};

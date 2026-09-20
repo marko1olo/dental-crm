@@ -40,6 +40,7 @@ import {
 	listDesktopPrinters,
 	listDesktopSerialPorts,
 	listDesktopTwainDevices,
+	printDesktopA4DocumentSilent,
 	printDesktopAtol10FiscalReceipt,
 	printDesktopEscPosReceipt,
 	printDesktopFiscalReceiptTcp,
@@ -48,6 +49,7 @@ import {
 	switchDesktopLocalDatabaseMode,
 	type DesktopNativeApi,
 } from "../native/index.js";
+import { printA4Document } from "../lib/hardwarePrinting.js";
 import {
 	AtolKkt10Emulator,
 	ShtrihMKktEmulator,
@@ -598,5 +600,62 @@ describe("Multi-Platform Hardware Bridge & IPC Suite", () => {
 		// Clear queue completely removes storage
 		FiscalReceiptQueueManager.clearQueue();
 		assert.equal(FiscalReceiptQueueManager.getPendingItems().length, 0);
+	});
+
+	it("13. Silent A4 document printing on Desktop EXE bypasses Windows OS print dialogs", async () => {
+		let nativePrintCalled = false;
+		let nativePrintParams:
+			| {
+					htmlContent?: string;
+					pdfBase64?: string;
+					printerName?: string;
+					title?: string;
+					silent?: boolean;
+					copies?: number;
+			  }
+			| undefined;
+
+		(globalThis as unknown as { window: unknown }).window = {
+			denteDesktopNative: {
+				isDesktop: true,
+				platform: "win32",
+				version: "0.1.0",
+				printDocumentSilent: async (params: {
+					htmlContent?: string;
+					pdfBase64?: string;
+					printerName?: string;
+					title?: string;
+					silent?: boolean;
+					copies?: number;
+				}) => {
+					nativePrintCalled = true;
+					nativePrintParams = params;
+					return { success: true };
+				},
+			},
+		};
+
+		// 1. Test direct printDesktopA4DocumentSilent
+		const directRes = await printDesktopA4DocumentSilent({
+			htmlContent: "<div>План лечения №102</div>",
+			title: "План лечения",
+			printerName: "Canon i-SENSYS LBP223dw",
+		});
+		assert.equal(directRes.success, true);
+		assert.equal(directRes.method, "desktop_silent");
+		assert.equal(nativePrintCalled, true);
+		assert.equal(nativePrintParams?.silent, true);
+		assert.equal(nativePrintParams?.printerName, "Canon i-SENSYS LBP223dw");
+
+		// 2. Test universal printA4Document in Desktop EXE
+		nativePrintCalled = false;
+		nativePrintParams = undefined;
+		const universalRes = await printA4Document("<div>Акт выполненных работ</div>", {
+			title: "Акт №44",
+		});
+		assert.equal(universalRes.success, true);
+		assert.equal(universalRes.method, "desktop_silent");
+		assert.equal(nativePrintCalled, true);
+		assert.equal(nativePrintParams?.silent, true);
 	});
 });

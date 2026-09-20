@@ -332,7 +332,9 @@ export async function setPlanDiscountMode(
 		} else if (discountMode === "plan_fixed") {
 			// Режим 2: Задать на план — рассчитываем процент от цены услуги
 			if (discountPercent > 0) {
-				itemDiscountRub = Math.round(unitPriceRub * (discountPercent / 100) * 100) / 100;
+				const unitPriceKop = Math.round(unitPriceRub * 100);
+				const itemDiscountKop = Math.round((unitPriceKop * discountPercent) / 100);
+				itemDiscountRub = itemDiscountKop / 100;
 			} else {
 				itemDiscountRub = Number(item.discount || 0);
 			}

@@ -157,13 +157,21 @@ export const wsBroker = {
 		const isClinical = isClinicalWsEvent(message);
 		let sanitizedData: string | null = null;
 		for (const client of clients) {
-			if (
-				client.organizationId === organizationId &&
-				client.ws.readyState === 1
-			) {
-				// Клиническим сотрудникам отдаем полное сообщение
+			if (client.ws.readyState !== 1) {
+				if (client.ws.readyState === 2 || client.ws.readyState === 3) {
+					clients.delete(client);
+				}
+				continue;
+			}
+			if (client.organizationId === organizationId) {
 				if (client.isClinical) {
-					client.ws.send(rawData);
+					try {
+						client.ws.send(rawData, (err) => {
+							if (err) clients.delete(client);
+						});
+					} catch {
+						clients.delete(client);
+					}
 				} else {
 					// 152-ФЗ / 323-ФЗ ст. 13: События с клиническими данными (одонтограмма, диагнозы МКБ,
 					// протоколы приемов) фильтруются и не отправляются на сокеты неклинических ролей!
@@ -173,7 +181,13 @@ export const wsBroker = {
 					if (!sanitizedData) {
 						sanitizedData = JSON.stringify(stripDiagnosisPayload(message));
 					}
-					client.ws.send(sanitizedData);
+					try {
+						client.ws.send(sanitizedData, (err) => {
+							if (err) clients.delete(client);
+						});
+					} catch {
+						clients.delete(client);
+					}
 				}
 			}
 		}
@@ -188,13 +202,24 @@ export const wsBroker = {
 		let sanitizedData: string | null = null;
 
 		for (const client of clients) {
+			if (client.ws.readyState !== 1) {
+				if (client.ws.readyState === 2 || client.ws.readyState === 3) {
+					clients.delete(client);
+				}
+				continue;
+			}
 			if (
 				client.organizationId === organizationId &&
-				client.patientId === patientId &&
-				client.ws.readyState === 1
+				client.patientId === patientId
 			) {
 				if (client.isClinical) {
-					client.ws.send(rawData);
+					try {
+						client.ws.send(rawData, (err) => {
+							if (err) clients.delete(client);
+						});
+					} catch {
+						clients.delete(client);
+					}
 				} else {
 					// 152-ФЗ / 323-ФЗ: Сырые клинические события персонала не передаются на сокеты пациентов
 					if (isClinical) {
@@ -203,7 +228,13 @@ export const wsBroker = {
 					if (!sanitizedData) {
 						sanitizedData = JSON.stringify(stripDiagnosisPayload(message));
 					}
-					client.ws.send(sanitizedData);
+					try {
+						client.ws.send(sanitizedData, (err) => {
+							if (err) clients.delete(client);
+						});
+					} catch {
+						clients.delete(client);
+					}
 				}
 			}
 		}

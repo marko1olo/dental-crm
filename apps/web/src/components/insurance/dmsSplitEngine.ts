@@ -212,7 +212,9 @@ export function calculateDmsCoPaymentSplit(
 	for (const item of lineItems) {
 		const qty = Math.max(1, item.quantity);
 		const discount = Math.min(100, Math.max(0, item.discountPercent ?? 0));
-		const rawLineTotalKopecks = Math.round(item.unitPriceKopecks * qty * (1 - discount / 100));
+		const grossLineKopecks = item.unitPriceKopecks * qty;
+		const discountKopecks = Math.round((grossLineKopecks * discount) / 100);
+		const rawLineTotalKopecks = Math.max(0, grossLineKopecks - discountKopecks);
 
 		// 1. Проверка на исключения программы полиса ДМС
 		let isExcluded = false;
@@ -301,7 +303,7 @@ export function calculateDmsCoPaymentSplit(
 		let franchiseDeductionKopecks = 0;
 		if (policy) {
 			if (policy.franchiseType === "percent" && policy.franchisePercent) {
-				franchiseDeductionKopecks = Math.round(rawLineTotalKopecks * (policy.franchisePercent / 100));
+				franchiseDeductionKopecks = Math.round((rawLineTotalKopecks * policy.franchisePercent) / 100);
 			} else if (policy.franchiseType === "fixed" && policy.franchiseFixedKopecks) {
 				franchiseDeductionKopecks = Math.min(rawLineTotalKopecks, policy.franchiseFixedKopecks);
 			}

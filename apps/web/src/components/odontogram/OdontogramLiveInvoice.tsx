@@ -754,9 +754,10 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 		if (isDiscountCustom) {
 			return Math.min(grossTotalPrice, customDiscountRub);
 		}
-		return discountPercent > 0
-			? Math.round((grossTotalPrice * discountPercent) / 100)
-			: 0;
+		if (discountPercent <= 0) return 0;
+		const grossKop = Math.round(grossTotalPrice * 100);
+		const discKop = Math.round((grossKop * discountPercent) / 100);
+		return discKop / 100;
 	}, [grossTotalPrice, discountPercent, isDiscountCustom, customDiscountRub]);
 
 	// Net total after discount

@@ -1243,6 +1243,8 @@ export {
 export {
 	isWebUsbSupported,
 	printWebUsbEscPosReceipt,
+	printDesktopA4DocumentSilent,
+	printDesktopDocumentSilent,
 } from "./hardwarePrinting.js";
 
 

@@ -788,7 +788,10 @@ export async function printDesktopDocumentSilent(
 	const api = getDesktopNativeApi();
 	if (api?.printDocumentSilent) {
 		try {
-			const res = await api.printDocumentSilent(options);
+			const res = await api.printDocumentSilent({
+				...options,
+				silent: options.silent !== false,
+			});
 			return {
 				success: res.success,
 				method: "desktop_silent",
@@ -878,6 +881,23 @@ ${options.htmlContent || ""}
 		method: "browser_dialog",
 		error: "Печать недоступна вне браузера/десктопа",
 	};
+}
+
+/**
+ * Direct silent printing of A4 medical documents (Form 043/у, treatment plans, acts)
+ * without displaying Windows print dialogs in Desktop mode.
+ */
+export async function printDesktopA4DocumentSilent(params: {
+	htmlContent?: string;
+	pdfBase64?: string;
+	printerName?: string;
+	title?: string;
+	copies?: number;
+}): Promise<DesktopDocumentPrintResult> {
+	return await printDesktopDocumentSilent({
+		...params,
+		silent: true,
+	});
 }
 
 /**

@@ -11,6 +11,7 @@
 
 import {
 	isDesktopApp,
+	printDesktopA4DocumentSilent,
 	printDesktopAtol10FiscalReceipt,
 	printDesktopDocumentSilent,
 	printDesktopEscPosReceipt,
@@ -108,12 +109,12 @@ export async function printA4Document(
 				: contentElementOrHtml.outerHTML;
 
 		// 1. Silent native spooler print if running in Desktop or silent requested
-		if (isDesktopApp() || options.silent) {
+		if (isDesktopExecutable() || isDesktopApp() || options.silent) {
 			const silentRes = await printDesktopDocumentSilent({
 				htmlContent,
 				title: options.title,
 				printerName: options.printerName,
-				silent: options.silent,
+				silent: options.silent !== false,
 			});
 			if (silentRes.success) {
 				options.onAfterPrint?.();
@@ -630,3 +631,6 @@ export async function printDirectEscPosSocket(
 		return { success: false, method: "browser_dialog", error: message };
 	}
 }
+
+export { printDesktopA4DocumentSilent, printDesktopDocumentSilent } from "../native/desktopBridge";
+
