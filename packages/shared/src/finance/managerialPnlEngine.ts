@@ -52,10 +52,12 @@ export interface StatutoryExpenseRow {
 	costNature: "direct_cogs" | "opex" | "taxes";
 }
 
+export type CashBoxKind = "main" | "extra" | "cashless" | "dms" | "account" | "expenses";
+
 export interface CashBoxRevenueItem {
 	boxId: string;
 	boxName: string;
-	boxType: "main" | "extra" | "cashless" | "dms" | "account" | "expenses";
+	boxType: CashBoxKind;
 	revenueRub: number;
 	sharePct: number;
 	paymentsCount: number;
@@ -102,7 +104,7 @@ export interface CalculateManagerialPnlInput {
 	payments: Array<{
 		amountRub: number;
 		department?: ClinicalSpecialtyDepartment | string;
-		cashBoxType?: "main" | "extra" | "cashless" | "dms" | "account" | "expenses";
+		cashBoxType?: CashBoxKind;
 		cashBoxId?: string;
 		cashBoxName?: string;
 	}>;
@@ -130,7 +132,7 @@ export function calculateManagerialPnl(input: CalculateManagerialPnlInput): Mana
 	};
 
 	// Агрегация по кассам
-	const boxSums: Record<string, { name: string; type: any; sum: number; count: number }> = {};
+	const boxSums: Record<string, { name: string; type: CashBoxKind; sum: number; count: number }> = {};
 
 	let grossRevenueRub = 0;
 
@@ -149,8 +151,9 @@ export function calculateManagerialPnl(input: CalculateManagerialPnlInput): Mana
 		// Касса
 		const bId = p.cashBoxId || p.cashBoxType || "cashless";
 		const bName = p.cashBoxName || (p.cashBoxType === "main" ? "Основная касса (наличные)" : "Безналичный эквайринг");
+		const bType: CashBoxKind = p.cashBoxType || "cashless";
 		if (!boxSums[bId]) {
-			boxSums[bId] = { name: bName, type: p.cashBoxType || "cashless", sum: 0, count: 0 };
+			boxSums[bId] = { name: bName, type: bType, sum: 0, count: 0 };
 		}
 		boxSums[bId].sum += amt;
 		boxSums[bId].count += 1;

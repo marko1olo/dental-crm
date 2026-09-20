@@ -317,14 +317,36 @@ export function formatLabOrderPrescriptionA4(
 	].join("\n");
 }
 
+export interface FormZtl1OrderInput {
+	id?: string | null | undefined;
+	patientId?: string | null | undefined;
+	patientFullName?: string | null | undefined;
+	patientName?: string | null | undefined;
+	labName?: string | null | undefined;
+	labId?: string | null | undefined;
+	labContactId?: string | null | undefined;
+	workType?: string | null | undefined;
+	toothNumbers?: readonly (string | number)[] | null | undefined;
+	toothReference?: string | null | undefined;
+	antagonistInfo?: string | null | undefined;
+	sentDate?: string | null | undefined;
+	expectedDate?: string | null | undefined;
+	receivedDate?: string | null | undefined;
+	labCostKopecks?: number | null | undefined;
+	priceRub?: number | null | undefined;
+	notes?: string | null | undefined;
+	doctorFullName?: string | null | undefined;
+}
+
 export const formatLabOrderFormZtl1A4Protocol = (
-	order: any,
+	order: FormZtl1OrderInput | null | undefined,
 	clinicName?: string,
 ): string => {
 	if (!order) return "";
-	const safeWorkType: any = ["crown", "bridge", "denture", "implant", "veneer", "orthodontic", "repair", "other"].includes(order.workType)
-		? order.workType
-		: "other";
+	const safeWorkType: LabWorkType =
+		order.workType && (labWorkTypeSchema.options as readonly string[]).includes(order.workType)
+			? (order.workType as LabWorkType)
+			: "other";
 	return formatLabOrderPrescriptionA4(
 		{
 			id: typeof order.id === "string" && order.id.length === 36 ? order.id : undefined,

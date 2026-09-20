@@ -3249,7 +3249,14 @@ async function inflateZipEntryPrefix(
 				return;
 			}
 			inflater.end();
-		})();
+		})().catch((err: unknown) => {
+			if (!settled) {
+				finish({
+					buffer: null,
+					warning: `zip_entry_read_failed:${entry.name}:${err instanceof Error ? err.message : String(err)}`,
+				});
+			}
+		});
 	});
 }
 

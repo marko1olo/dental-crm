@@ -421,31 +421,39 @@ export function synthesizeDiariesFromOdontogram(
 	return diaries;
 }
 
+export type Form043uComplianceInput =
+	| Partial<FullForm043uPayload>
+	| Partial<SoapVisitDiary>
+	| Partial<VisitDiaryEntry043>
+	| Record<string, unknown>;
+
 /**
  * Семантический и законодательный валидатор формы № 043/у по Приказу Минздрава № 834н
  */
 export function validateForm043uCompliance(
-	input: any,
+	input: Form043uComplianceInput | null | undefined,
 ): Statutory043ComplianceReport {
 	const issues: Statutory043Issue[] = [];
 	const missingBlocks: string[] = [];
 
+	const raw = (input && typeof input === "object" ? input : {}) as Record<string, any>;
+
 	// Проверяем, передан ли дневник или полная карта 043/у
 	const isExplicitCard = Boolean(
 		input &&
-		(input.formNumber === "043/у" ||
-			input.passport !== undefined ||
-			(input.dentalStatus !== undefined && Array.isArray(input.dentalStatus?.odontogramTeeth))),
+		(raw.formNumber === "043/у" ||
+			raw.passport !== undefined ||
+			(raw.dentalStatus !== undefined && Array.isArray(raw.dentalStatus?.odontogramTeeth))),
 	);
 	const isSingleDiary = Boolean(
 		input &&
 		!isExplicitCard &&
-		(typeof input.procedureProtocol === "string" ||
-			typeof input.assessmentIcd10Code === "string" ||
-			typeof input.assessmentDiagnosisText === "string"),
+		(typeof raw.procedureProtocol === "string" ||
+			typeof raw.assessmentIcd10Code === "string" ||
+			typeof raw.assessmentDiagnosisText === "string"),
 	);
-	const fullCard = isExplicitCard ? input : null;
-	const singleDiary = isSingleDiary ? input : (!isExplicitCard && !Array.isArray(input?.visitDiaries) ? input : null);
+	const fullCard = isExplicitCard ? raw : null;
+	const singleDiary = isSingleDiary ? raw : (!isExplicitCard && !Array.isArray(raw.visitDiaries) ? raw : null);
 
 	let icd10Valid = true;
 	let fdiToothValid = true;
@@ -552,10 +560,10 @@ export function validateForm043uCompliance(
 	const rawDiaries =
 		fullCard?.visitDiaries ??
 		fullCard?.soapDiaries ??
-		(Array.isArray(input?.visitDiaries)
-			? input.visitDiaries
-			: Array.isArray(input?.soapDiaries)
-				? input.soapDiaries
+		(Array.isArray(raw.visitDiaries)
+			? raw.visitDiaries
+			: Array.isArray(raw.soapDiaries)
+				? raw.soapDiaries
 				: Array.isArray(input)
 					? input
 					: singleDiary

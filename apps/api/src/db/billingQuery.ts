@@ -6,7 +6,7 @@ import {
 	type Payment,
 	sumKopecks,
 } from "@dental/shared";
-import { and, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { chargeLineKopecks, toKopecks } from "../money/patientDebt.js";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
@@ -190,6 +190,49 @@ export async function createPaymentInDb(
 	}
 
 	return await db.transaction(async (tx) => {
+		// ACID pg_advisory_xact_lock на clientMutationId для защиты от состояния гонки
+		if (input.clientMutationId) {
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext(${organizationId} || ':payment_mutation:' || ${input.clientMutationId}))`,
+			);
+			const [alreadyCreated] = await tx
+				.select()
+				.from(schema.payments)
+				.where(
+					and(
+						eq(schema.payments.organizationId, organizationId),
+						eq(schema.payments.clientMutationId, input.clientMutationId),
+					),
+				)
+				.limit(1);
+			if (alreadyCreated) {
+				return {
+					id: alreadyCreated.id,
+					organizationId: alreadyCreated.organizationId,
+					patientId: alreadyCreated.patientId,
+					visitId: alreadyCreated.visitId,
+					documentId: alreadyCreated.documentId,
+					amountRub: alreadyCreated.amountRub,
+					method: alreadyCreated.method,
+					clientMutationId: alreadyCreated.clientMutationId,
+					fiscalReceiptNumber: alreadyCreated.fiscalReceiptNumber,
+					fiscalReceiptIssuedAt: alreadyCreated.fiscalReceiptIssuedAt,
+					fiscalReceiptUrl: alreadyCreated.fiscalReceiptUrl,
+					fiscalReceipt: alreadyCreated.fiscalReceipt,
+					payerFullName: alreadyCreated.payerFullName,
+					payerInn: alreadyCreated.payerInn,
+					payerBirthDate: alreadyCreated.payerBirthDate,
+					payerIdentityDocument: alreadyCreated.payerIdentityDocument,
+					payerRelationship: alreadyCreated.payerRelationship,
+					taxDeductionCode: narrowTaxDeductionCode(alreadyCreated.taxDeductionCode),
+					note: alreadyCreated.note,
+					createdAt: alreadyCreated.createdAt.toISOString(),
+					paidAt: alreadyCreated.paidAt.toISOString(),
+					status: alreadyCreated.status,
+				};
+			}
+		}
+
 		// Pessimistic lock on the target patient to prevent concurrent balance race conditions
 		const [lockedPatient] = await tx
 			.select({
@@ -563,7 +606,7 @@ export async function createPaymentInDb(
 							allocationStatus: "unallocated",
 						});
 
-						console.log(
+						console.info(
 							`[Billing Overpayment]: Пациент внес ${formatKopecksToRubles(incomingPaymentKopecks)} ₽ при остатке по визиту ${formatKopecksToRubles(remainingVisitKopecks)} ₽. Излишек ${overpaymentRub} ₽ автоматически зачислен на авансовый депозит.`,
 						);
 					} else {

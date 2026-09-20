@@ -16,18 +16,25 @@ export interface ToothStateData {
 	plannedAction?: string | undefined;
 }
 
+export interface ClinicalToothRowInput {
+	toothOrArea: string;
+	status?: string | undefined;
+	surfaces?: string[] | undefined;
+	diagnosisOrFinding?: string | undefined;
+	plannedAction?: string | undefined;
+}
+
+export interface DentalFormulaRecordInput {
+	teeth?: Array<Record<string, unknown>> | undefined;
+	[key: string]: unknown;
+}
+
 export interface GraphicalDentalFormulaOptions {
 	clinicalToothRows?:
-		| Array<{
-				toothOrArea: string;
-				status?: string | undefined;
-				surfaces?: string[] | undefined;
-				diagnosisOrFinding?: string | undefined;
-				plannedAction?: string | undefined;
-		  }>
-		| readonly any[]
+		| Array<ClinicalToothRowInput>
+		| readonly Record<string, unknown>[]
 		| undefined;
-	dentalFormula?: any | undefined;
+	dentalFormula?: DentalFormulaRecordInput | Record<string, unknown> | undefined;
 	toothStateMap?: Record<string | number, ToothStateData> | undefined;
 	title?: string | undefined;
 	showDeciduous?: boolean | undefined;
@@ -283,27 +290,30 @@ function buildConsolidatedTeethMap(options: GraphicalDentalFormulaOptions): Map<
 		const df = options.dentalFormula;
 		if (Array.isArray(df.teeth)) {
 			for (const t of df.teeth) {
-				const n = Number(t.toothNumber);
-				if (n) {
-					map.set(n, {
-						toothNumber: n,
-						status: t.status || t.condition || "sound",
-						statusCode: t.statusCode || t.code || "H",
-						diagnosisText: t.diagnosis || t.diagnosisText,
-						mobilityGrade: t.mobilityGrade || t.mobility,
-					});
+				if (t && typeof t === "object") {
+					const tObj = t as Record<string, unknown>;
+					const n = Number(tObj.toothNumber);
+					if (n) {
+						map.set(n, {
+							toothNumber: n,
+							status: typeof tObj.status === "string" ? tObj.status : (typeof tObj.condition === "string" ? tObj.condition : "sound"),
+							statusCode: typeof tObj.statusCode === "string" ? tObj.statusCode : (typeof tObj.code === "string" ? tObj.code : "H"),
+							diagnosisText: typeof tObj.diagnosis === "string" ? tObj.diagnosis : (typeof tObj.diagnosisText === "string" ? tObj.diagnosisText : undefined),
+							mobilityGrade: typeof tObj.mobilityGrade === "string" ? tObj.mobilityGrade : (typeof tObj.mobility === "string" ? tObj.mobility : undefined),
+						});
+					}
 				}
 			}
 		} else if (typeof df === "object") {
 			for (const [key, val] of Object.entries(df)) {
 				const n = Number(key);
 				if (n && typeof val === "object" && val !== null) {
-					const tVal = val as any;
+					const tVal = val as Record<string, unknown>;
 					map.set(n, {
 						toothNumber: n,
-						status: tVal.status || tVal.condition || "sound",
-						statusCode: tVal.statusCode || tVal.code || "H",
-						diagnosisText: tVal.diagnosisText || tVal.diagnosis,
+						status: typeof tVal.status === "string" ? tVal.status : (typeof tVal.condition === "string" ? tVal.condition : "sound"),
+						statusCode: typeof tVal.statusCode === "string" ? tVal.statusCode : (typeof tVal.code === "string" ? tVal.code : "H"),
+						diagnosisText: typeof tVal.diagnosisText === "string" ? tVal.diagnosisText : (typeof tVal.diagnosis === "string" ? tVal.diagnosis : undefined),
 					});
 				}
 			}
@@ -312,18 +322,21 @@ function buildConsolidatedTeethMap(options: GraphicalDentalFormulaOptions): Map<
 
 	// 3. Из clinicalToothRows
 	if (Array.isArray(options.clinicalToothRows)) {
-		for (const row of options.clinicalToothRows) {
-			const n = Number(row.toothOrArea);
-			if (n) {
-				const existing = map.get(n);
-				map.set(n, {
-					toothNumber: n,
-					status: row.status || existing?.status || "sound",
-					statusCode: existing?.statusCode,
-					surfaces: Array.isArray(row.surfaces) ? row.surfaces : existing?.surfaces,
-					diagnosisText: row.diagnosisOrFinding || existing?.diagnosisText,
-					plannedAction: row.plannedAction || existing?.plannedAction,
-				});
+		for (const rawRow of options.clinicalToothRows) {
+			if (rawRow && typeof rawRow === "object") {
+				const row = rawRow as ClinicalToothRowInput;
+				const n = Number(row.toothOrArea);
+				if (n) {
+					const existing = map.get(n);
+					map.set(n, {
+						toothNumber: n,
+						status: row.status || existing?.status || "sound",
+						statusCode: existing?.statusCode,
+						surfaces: Array.isArray(row.surfaces) ? row.surfaces : existing?.surfaces,
+						diagnosisText: row.diagnosisOrFinding || existing?.diagnosisText,
+						plannedAction: row.plannedAction || existing?.plannedAction,
+					});
+				}
 			}
 		}
 	}

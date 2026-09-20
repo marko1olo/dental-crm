@@ -296,7 +296,7 @@ async function runCascade(
 			}
 
 			try {
-				console.log(
+				console.info(
 					`[visionAnalyzer] Pass slot=${slotIdx} provider=${slot.provider} model=${slot.model} key=${candidate.fingerprint}`,
 				);
 				const text = await callVisionModel(
@@ -425,7 +425,7 @@ export async function analyzeImagingStudy(
 			.jpeg({ quality: 85 })
 			.toBuffer();
 		processedBase64 = `data:image/jpeg;base64,${enhancedBuffer.toString("base64")}`;
-		console.log(
+		console.info(
 			"[visionAnalyzer] Image successfully enhanced via sharp (CLAHE + Sharpen)",
 		);
 	} catch (err) {
