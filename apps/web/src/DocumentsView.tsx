@@ -1415,17 +1415,19 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		const allDocs = typedActiveDocuments ?? [];
 		return {
 			all: allDocs.length,
-			intake: allDocs.filter((d) => intakeKinds.has(d.kind)).length,
-			clinical: allDocs.filter((d) => clinicalKinds.has(d.kind)).length,
-			finance_tax: allDocs.filter((d) => financeTaxKinds.has(d.kind)).length,
-			certificates_sanpin: allDocs.filter((d) => certificatesSanpinKinds.has(d.kind)).length,
+			intake: allDocs.filter((d) => Boolean(d?.kind && intakeKinds?.has(d.kind))).length,
+			clinical: allDocs.filter((d) => Boolean(d?.kind && clinicalKinds?.has(d.kind))).length,
+			finance_tax: allDocs.filter((d) => Boolean(d?.kind && financeTaxKinds?.has(d.kind))).length,
+			certificates_sanpin: allDocs.filter((d) => Boolean(d?.kind && certificatesSanpinKinds?.has(d.kind))).length,
 		};
 	}, [typedActiveDocuments, intakeKinds, clinicalKinds, financeTaxKinds, certificatesSanpinKinds]);
 
 	const availableRegistryKinds = useMemo(() => {
 		const kindsSet = new Set<DocumentKind>();
 		for (const doc of typedActiveDocuments ?? []) {
-			kindsSet.add(doc.kind);
+			if (doc?.kind) {
+				kindsSet.add(doc.kind);
+			}
 		}
 		return Array.from(kindsSet).map((k) => ({
 			kind: k,
@@ -1434,11 +1436,11 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 	}, [typedActiveDocuments, documentLabels]);
 
 	const patientIssuedDocsCount = useMemo(
-		() => (typedActiveDocuments ?? []).filter((d) => d.status === "issued").length,
+		() => (typedActiveDocuments ?? []).filter((d) => d?.status === "issued").length,
 		[typedActiveDocuments],
 	);
 	const patientDraftDocsCount = useMemo(
-		() => (typedActiveDocuments ?? []).filter((d) => d.status === "draft").length,
+		() => (typedActiveDocuments ?? []).filter((d) => d?.status === "draft").length,
 		[typedActiveDocuments],
 	);
 
@@ -1447,18 +1449,18 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 
 		// Tab Category Filter
 		if (activeCategoryTab === "intake") {
-			result = result.filter((d) => intakeKinds.has(d.kind));
+			result = result.filter((d) => Boolean(d?.kind && intakeKinds?.has(d.kind)));
 		} else if (activeCategoryTab === "clinical") {
-			result = result.filter((d) => clinicalKinds.has(d.kind));
+			result = result.filter((d) => Boolean(d?.kind && clinicalKinds?.has(d.kind)));
 		} else if (activeCategoryTab === "finance_tax") {
-			result = result.filter((d) => financeTaxKinds.has(d.kind));
+			result = result.filter((d) => Boolean(d?.kind && financeTaxKinds?.has(d.kind)));
 		} else if (activeCategoryTab === "certificates_sanpin") {
-			result = result.filter((d) => certificatesSanpinKinds.has(d.kind));
+			result = result.filter((d) => Boolean(d?.kind && certificatesSanpinKinds?.has(d.kind)));
 		}
 
 		// Status Filter
 		if (registryStatusFilter !== "all") {
-			result = result.filter((d) => d.status === registryStatusFilter);
+			result = result.filter((d) => d?.status === registryStatusFilter);
 		}
 
 		// EDS / ЭЦП Filter

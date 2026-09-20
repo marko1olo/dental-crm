@@ -1737,7 +1737,7 @@ export function PaymentCapture({
 			{/* Панель оформления чека и кнопок оплаты (Мандат 8e / 8c / 8p: фиксирована внизу экрана) */}
 			<div
 				id="payment-checkout-bar"
-				className="payment-checkout-bar col-span-full fixed bottom-0 right-0 z-50 bg-[var(--paper-strong,var(--paper))] dark:bg-[var(--paper-strong)] border-t border-[var(--line)] shadow-2xl px-3 py-2 sm:py-2.5 flex flex-row items-center justify-between gap-2 sm:gap-3 max-w-full min-w-0 box-border"
+				className="payment-checkout-bar col-span-full sticky bottom-0 z-30 fixed sm:fixed bottom-0 right-0 z-50 bg-[var(--paper-strong,var(--paper))] dark:bg-[var(--paper-strong)] border-t border-[var(--line)] shadow-2xl px-3 py-2 sm:py-2.5 flex flex-row items-center justify-between gap-2 sm:gap-3 max-w-full min-w-0 box-border"
 				style={{
 					position: "fixed",
 					bottom: 0,

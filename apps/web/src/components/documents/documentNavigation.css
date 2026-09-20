@@ -710,8 +710,8 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 6px;
-	padding: 6px 10px;
+	gap: 5px;
+	padding: 5px 8px;
 	font-size: 12px;
 	font-weight: 600;
 	border-radius: 6px 6px 0 0;
@@ -726,7 +726,7 @@
 	max-width: none !important;
 	transition: all var(--transition-fast);
 	position: relative;
-	min-height: 34px;
+	min-height: 32px;
 	font-family: inherit;
 	user-select: none;
 }
@@ -762,10 +762,10 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	min-width: 20px;
-	height: 20px;
-	padding: 0 6px;
-	font-size: 12px;
+	min-width: 18px;
+	height: 18px;
+	padding: 0 4px;
+	font-size: 11px;
 	font-weight: 700;
 	border-radius: 999px;
 	background: var(--paper-soft);
@@ -773,13 +773,33 @@
 	border: 1px solid var(--line);
 	line-height: 1;
 	flex-shrink: 0;
-	margin-left: 4px;
+	margin-left: 3px;
 }
 
 .document-nav-tab-btn.active .document-nav-tab-badge {
 	background: var(--teal);
 	color: var(--on-teal);
 	border-color: var(--teal);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   АНТИ-МАТРЁШКА (МАНДАТЫ 8c, 8d): РАСПРЯМЛЕНИЕ ФОРМЫ ДО 1-УРОВНЕВОЙ СТРУКТУРЫ
+   ───────────────────────────────────────────────────────────────────────────── */
+.documents-panel .document-payload-card {
+	background: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+	padding: 4px 0 !important;
+}
+
+.documents-panel .document-manual-override {
+	background: transparent !important;
+	border: none !important;
+	border-top: 1px solid var(--line) !important;
+	border-radius: 0 !important;
+	padding: 8px 0 !important;
+	margin-top: 12px !important;
+	box-shadow: none !important;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────

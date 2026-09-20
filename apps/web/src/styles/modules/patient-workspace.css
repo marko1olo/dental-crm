@@ -368,12 +368,19 @@
 /* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .emk-unified-toolbar {
 	display: flex;
-	flex-direction: column;
-	gap: 6px;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: nowrap;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	gap: 4px;
 	border-bottom: 1px solid var(--line);
-	padding: 4px 0;
+	padding: 2px 0;
 	width: 100%;
 	min-width: 0;
+	min-height: 30px;
 }
 
 .emk-tabs-container {
@@ -382,9 +389,9 @@
 	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: none;
-	gap: 6px;
+	gap: 4px;
 	margin: 0;
-	padding: 2px 0;
+	padding: 1px 0;
 	border-bottom: none;
 	min-width: 0;
 	width: 100%;
@@ -421,6 +428,15 @@
 
 .emk-tier1-quick-soap-bar::-webkit-scrollbar {
 	display: none;
+}
+
+.visit-note-status-badge {
+	flex-shrink: 0 !important;
+	white-space: nowrap !important;
+	min-width: max-content !important;
+	font-size: 11px !important;
+	padding: 2px 8px !important;
+	line-height: 1.3 !important;
 }
 
 /* Компактный тулбар форматирования текста ЭМК (DEF-VIS-05) */
@@ -674,6 +690,77 @@
 	.visit-note-panel,
 	.visit-fields {
 		padding-bottom: 7.5rem !important; /* 120px safe area above mobile navigation */
+	}
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SHORT LAPTOP VIEWPORT OPTIMIZATIONS (<= 768px height, 1280x720)
+   Mandates 8c, 8d, 8p: Total header above SOAP fields <= 160-180px
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-height: 780px) {
+	/* Hide redundant specialty focus bar on short screens */
+	.specialty-focus-bar {
+		display: none !important;
+	}
+
+	/* Collapse voice pilot bar into toolbar button when inactive */
+	.emk-voice-pilot-collapsed {
+		display: none !important;
+	}
+
+	/* Compact monolithic visit header */
+	.visit-monolithic-header {
+		padding: 2px 8px !important;
+		min-height: 30px !important;
+	}
+
+	/* Unified toolbar: strictly 1 compact row 28-32px */
+	.emk-unified-toolbar {
+		gap: 2px !important;
+		padding: 1px 0 !important;
+		margin: 1px 0 !important;
+		flex-direction: row !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto !important;
+		min-height: 28px !important;
+	}
+
+	.emk-tabs-container {
+		padding: 0 !important;
+		gap: 3px !important;
+		width: auto !important;
+		flex: 0 1 auto !important;
+	}
+
+	.emk-tab-button {
+		min-height: 24px !important;
+		height: 24px !important;
+		padding: 0 6px !important;
+		font-size: 11px !important;
+	}
+
+	.emk-tab-mic-btn {
+		min-height: 24px !important;
+		height: 24px !important;
+		padding: 0 6px !important;
+		font-size: 11px !important;
+	}
+
+	.emk-tier1-quick-soap-bar {
+		padding: 0 !important;
+		gap: 3px !important;
+	}
+
+	.emk-tier1-quick-soap-bar button {
+		min-height: 24px !important;
+		height: 24px !important;
+		padding: 0 6px !important;
+		font-size: 11px !important;
+	}
+
+	.visit-note-status-badge {
+		padding: 1px 6px !important;
+		font-size: 10px !important;
 	}
 }
 

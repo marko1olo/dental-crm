@@ -2113,14 +2113,14 @@ export function VisitEmkTab() {
 						{draft || isVisitNoteDirty ? (
 							<>
 								<span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-								<span className="hidden 2xl:inline">есть правки</span>
-								<span className="2xl:hidden">правки</span>
+								<span className="hidden sm:inline">есть правки</span>
+								<span className="sm:hidden">правки</span>
 							</>
 						) : (
 							<>
 								<Check size={11} className="text-emerald-500 shrink-0" />
-								<span className="hidden 2xl:inline">сохранено</span>
-								<span className="2xl:hidden">OK</span>
+								<span className="hidden sm:inline">сохранено</span>
+								<span className="sm:hidden">OK</span>
 							</>
 						)}
 					</span>
