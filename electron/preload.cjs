@@ -108,4 +108,8 @@ contextBridge.exposeInMainWorld("denteDesktopNative", {
 			ipcRenderer.removeListener("dente:update-available", handler);
 		};
 	},
+
+	printDocumentSilent: async (params) => {
+		return await ipcRenderer.invoke("dente:print-document-silent", params);
+	},
 });

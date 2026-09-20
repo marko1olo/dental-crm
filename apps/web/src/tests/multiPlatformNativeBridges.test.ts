@@ -17,6 +17,7 @@ import {
 	listDesktopTwainDevices,
 	printDesktopFiscalReceiptTcp,
 	printDesktopDocumentSilent,
+	printDesktopA4DocumentSilent,
 	setupDesktopExitProtection,
 	registerDesktopHotkeys,
 	initDesktopHotkeys,
@@ -842,6 +843,16 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 		assert.equal(res.method, "desktop_silent");
 		assert.equal(nativePrintCalled, true);
 		assert.equal(nativePrintOptions?.printerName, "HP LaserJet Pro P1102");
+
+		// 1b. Direct printDesktopA4DocumentSilent call
+		const a4SilentRes = await printDesktopA4DocumentSilent({
+			htmlContent: "<h1>План лечения стоматологический</h1>",
+			printerName: "Epson L3150",
+		});
+		assert.equal(a4SilentRes.success, true);
+		assert.equal(a4SilentRes.method, "desktop_silent");
+		assert.equal(nativePrintOptions?.silent, true);
+		assert.equal(nativePrintOptions?.printerName, "Epson L3150");
 
 		// 2. High-level printA4Document with silent: true in Desktop mode
 		const a4Res = await printA4Document("<h1>Договор на оказание медицинских услуг</h1>", {
