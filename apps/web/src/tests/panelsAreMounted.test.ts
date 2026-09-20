@@ -1329,4 +1329,55 @@ test("несмонтированного PrescriptionsWidget и мертвого
 	}
 });
 
+test("устаревших фасадов-дубликатов представлений (AnalyticsView, PaymentsView, WarehouseView, LaboratoryView) в дереве больше нет", () => {
+	/*
+	 * Mandates 8s, 8i: Ликвидация устаревших фасадов-дубликатов в пользу канонических SSOT:
+	 * 1. AnalyticsView.tsx -> канонический SSOT: pages/AnalyticsDashboardView.tsx
+	 * 2. LaboratoryView.tsx -> канонический SSOT: pages/LabOrdersPage.tsx
+	 * 3. PaymentsView.tsx -> канонический SSOT: components/billing/InvoicesView.tsx
+	 * 4. WarehouseView.tsx -> канонический SSOT: components/InventoryView.tsx
+	 * 5. components/warehouse/index.ts -> канонический SSOT: components/InventoryView.tsx
+	 * 6. components/settings/migrationHelpers.ts -> канонический SSOT: components/settings/SettingsImportsTab.tsx
+	 * 7. utils/formatting.ts -> канонический SSOT: lib/stringUtils.ts и utils/dateTimeUtils.ts
+	 */
+	for (const removed of [
+		"AnalyticsView.tsx",
+		"LaboratoryView.tsx",
+		"PaymentsView.tsx",
+		"WarehouseView.tsx",
+		"components/warehouse/index.ts",
+		"components/settings/migrationHelpers.ts",
+		"utils/formatting.ts",
+	]) {
+		assert.equal(
+			existsSync(path.join(webSrcRoot, removed)),
+			false,
+			`${removed} вернулся в дерево. Модуль ликвидирован per Mandate 8s; используйте канонический SSOT.`,
+		);
+	}
+
+	// Канонические SSOT обязаны присутствовать в дереве
+	assert.equal(
+		existsSync(path.join(webSrcRoot, "pages/AnalyticsDashboardView.tsx")),
+		true,
+		"Канонический SSOT pages/AnalyticsDashboardView.tsx отсутствует в дереве",
+	);
+	assert.equal(
+		existsSync(path.join(webSrcRoot, "pages/LabOrdersPage.tsx")),
+		true,
+		"Канонический SSOT pages/LabOrdersPage.tsx отсутствует в дереве",
+	);
+	assert.equal(
+		existsSync(path.join(webSrcRoot, "components/billing/InvoicesView.tsx")),
+		true,
+		"Канонический SSOT components/billing/InvoicesView.tsx отсутствует в дереве",
+	);
+	assert.equal(
+		existsSync(path.join(webSrcRoot, "components/InventoryView.tsx")),
+		true,
+		"Канонический SSOT components/InventoryView.tsx отсутствует в дереве",
+	);
+});
+
+
 
