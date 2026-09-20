@@ -539,10 +539,12 @@
 	}
 }
 
-@media (max-width: 768px) {
+@media (max-width: 840px) {
 	#payment-checkout-bar,
 	.payment-checkout-bar {
 		left: 0 !important;
+		bottom: calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px)) !important;
+		z-index: 45 !important;
 	}
 }
 
