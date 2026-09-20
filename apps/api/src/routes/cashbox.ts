@@ -308,6 +308,7 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 					.select()
 					.from(cashBoxes)
 					.where(and(eq(cashBoxes.id, cashBoxId), eq(cashBoxes.organizationId, orgId)))
+					.for("update")
 					.limit(1);
 				targetBox = box;
 			} else {
@@ -315,6 +316,7 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 					.select()
 					.from(cashBoxes)
 					.where(and(eq(cashBoxes.organizationId, orgId), eq(cashBoxes.type, "main")))
+					.for("update")
 					.limit(1);
 				targetBox = box;
 			}
@@ -337,6 +339,7 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 						eq(cashBoxShifts.status, "open"),
 					),
 				)
+				.for("update")
 				.limit(1);
 
 			// Обновляем баланс кассы
@@ -434,6 +437,7 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 					.select()
 					.from(cashBoxes)
 					.where(and(eq(cashBoxes.id, cashBoxId), eq(cashBoxes.organizationId, orgId)))
+					.for("update")
 					.limit(1);
 				targetBox = box;
 			} else {
@@ -441,6 +445,7 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 					.select()
 					.from(cashBoxes)
 					.where(and(eq(cashBoxes.organizationId, orgId), eq(cashBoxes.type, "main")))
+					.for("update")
 					.limit(1);
 				targetBox = box;
 			}
@@ -470,6 +475,7 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 						eq(cashBoxShifts.status, "open"),
 					),
 				)
+				.for("update")
 				.limit(1);
 
 			const [updatedBox] = await tx

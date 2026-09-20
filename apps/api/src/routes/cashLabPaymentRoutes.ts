@@ -60,6 +60,7 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 				.select()
 				.from(labOrders)
 				.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
+				.for("update")
 				.limit(1);
 
 			if (!order) {
@@ -79,6 +80,7 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 					.select()
 					.from(cashBoxes)
 					.where(and(eq(cashBoxes.id, payData.cashBoxId), eq(cashBoxes.organizationId, orgId)))
+					.for("update")
 					.limit(1);
 				targetBox = b;
 			} else {
@@ -87,6 +89,7 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 					.select()
 					.from(cashBoxes)
 					.where(and(eq(cashBoxes.organizationId, orgId), eq(cashBoxes.type, "account")))
+					.for("update")
 					.limit(1);
 				targetBox = b;
 			}
@@ -96,6 +99,7 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 					.select()
 					.from(cashBoxes)
 					.where(eq(cashBoxes.organizationId, orgId))
+					.for("update")
 					.limit(1);
 				targetBox = fallbackBox;
 			}

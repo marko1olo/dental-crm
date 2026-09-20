@@ -16,6 +16,7 @@ import {
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { randomInt } from "node:crypto";
 import { z } from "zod";
 import {
 	requireResolvedOrganizationId,
@@ -94,7 +95,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			}
 
 			const now = new Date();
-			const contractNumber = `РАСС-${now.getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+			const contractNumber = `РАСС-${now.getFullYear()}-${randomInt(100000, 1000000)}`;
 
 			// Создаем договор
 			const [contract] = await tx
@@ -175,6 +176,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 				.select()
 				.from(installmentTranches)
 				.where(and(eq(installmentTranches.id, id), eq(installmentTranches.organizationId, orgId)))
+				.for("update")
 				.limit(1);
 
 			if (!tranche) {
@@ -189,6 +191,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 				.select()
 				.from(installmentContracts)
 				.where(and(eq(installmentContracts.id, tranche.contractId), eq(installmentContracts.organizationId, orgId)))
+				.for("update")
 				.limit(1);
 
 			if (!contract) {
@@ -204,6 +207,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 					.select()
 					.from(cashBoxes)
 					.where(and(eq(cashBoxes.id, payData.cashBoxId), eq(cashBoxes.organizationId, orgId)))
+					.for("update")
 					.limit(1);
 				targetBox = b;
 			} else {
@@ -211,6 +215,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 					.select()
 					.from(cashBoxes)
 					.where(and(eq(cashBoxes.organizationId, orgId), eq(cashBoxes.type, "cashless")))
+					.for("update")
 					.limit(1);
 				targetBox = b;
 			}
@@ -220,6 +225,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 					.select()
 					.from(cashBoxes)
 					.where(eq(cashBoxes.organizationId, orgId))
+					.for("update")
 					.limit(1);
 				targetBox = fallback;
 			}

@@ -15,6 +15,7 @@ import {
 } from "../accessGuard.js";
 import {
 	BillingOverpaymentError,
+	Decree659Error,
 	createPaymentInDb,
 	findPaymentByClientMutationIdInDb,
 	getDocumentForBilling,
@@ -718,17 +719,22 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 			const payment = await createPaymentInDb(orgId, paymentInput);
 			return reply.code(201).send(paymentSchema.parse(payment));
 		} catch (error) {
+			if (error instanceof Decree659Error) {
+				return reply.code(error.statusCode).send({
+					error: error.code,
+					message: error.message,
+				});
+			}
 			if (
 				error &&
 				typeof error === "object" &&
-				("statusCode" in error || "code" in error) &&
-				((error as any).code === "Decree659OmsForbiddenError" ||
-					(error as any).code === "Decree659TaxDeductionForbiddenError" ||
-					(error as any).code === "UpsellConsentShieldViolationError")
+				"code" in error &&
+				(error as { code: unknown }).code === "UpsellConsentShieldViolationError"
 			) {
-				return reply.code((error as any).statusCode || 422).send({
-					error: (error as any).code,
-					message: (error as any).message,
+				const err = error as { statusCode?: number; code: string; message: string };
+				return reply.code(err.statusCode || 422).send({
+					error: err.code,
+					message: err.message,
 				});
 			}
 			if (error instanceof BillingOverpaymentError) {
@@ -788,12 +794,12 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 
 	app.post("/api/billing/payments", handleCreatePayment);
 	app.post("/api/finance/payments", handleCreatePayment);
-	app.post<{ Params: { id: string } }>(
+	app.post<{ Params: { id: string }; Body: Record<string, unknown> }>(
 		"/api/billing/invoices/:id/payments",
 		async (request, reply) => {
 			const invoiceId = request.params?.id;
-			const body = (request.body as Record<string, unknown>) || {};
-			(request as any).body = {
+			const body = request.body || {};
+			request.body = {
 				...body,
 				documentId: body.documentId || invoiceId,
 			};
@@ -1111,7 +1117,8 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 		let printedCount = 0;
 		let failedCount = 0;
 
-		for (const item of pendingItems) {
+		if (pendingItems.length > 0) {
+			const pendingIds = pendingItems.map((item) => item.id);
 			if (isKktOffline) {
 				await db
 					.update(fiscalReceiptQueue)
@@ -1123,11 +1130,11 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 					})
 					.where(
 						and(
-							eq(fiscalReceiptQueue.id, item.id),
+							inArray(fiscalReceiptQueue.id, pendingIds),
 							eq(fiscalReceiptQueue.organizationId, orgId),
 						),
 					);
-				failedCount++;
+				failedCount = pendingItems.length;
 			} else {
 				await db
 					.update(fiscalReceiptQueue)
@@ -1139,11 +1146,11 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 					})
 					.where(
 						and(
-							eq(fiscalReceiptQueue.id, item.id),
+							inArray(fiscalReceiptQueue.id, pendingIds),
 							eq(fiscalReceiptQueue.organizationId, orgId),
 						),
 					);
-				printedCount++;
+				printedCount = pendingItems.length;
 			}
 		}
 

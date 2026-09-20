@@ -112,7 +112,7 @@ const generateInvoiceFromPlanSchema = z.object({
 	).min(1),
 	adminOverridePin: z.string().optional(),
 	adminOverrideReason: z.string().optional(),
-	allowUnplannedServices: z.boolean().optional().default(true),
+	allowUnplannedServices: z.boolean().optional().default(false),
 	notes: z.string().optional(),
 });
 
@@ -290,6 +290,23 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 						)
 				: [];
 
+		// Проверяем наличие оформленного и выданного Дополнительного соглашения один раз (устранение N+1)
+		const [addendumDoc] = await db
+			.select({
+				id: generatedDocuments.id,
+				totalAmountRub: generatedDocuments.totalAmountRub,
+			})
+			.from(generatedDocuments)
+			.where(
+				and(
+					eq(generatedDocuments.organizationId, orgId),
+					eq(generatedDocuments.patientId, data.patientId),
+					eq(generatedDocuments.kind, "treatment_plan_acceptance"),
+					eq(generatedDocuments.status, "issued"),
+				),
+			)
+			.limit(1);
+
 		for (const item of data.items) {
 			const itemServiceId = item.serviceId || item.analogueServiceId;
 			const isApproved = planItems.some((pi) => {
@@ -305,24 +322,7 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			});
 
 			if (!isApproved) {
-				// Проверяем наличие оформленного и выданного Дополнительного соглашения
-				const [addendumDoc] = await db
-					.select({
-						id: generatedDocuments.id,
-						totalAmountRub: generatedDocuments.totalAmountRub,
-					})
-					.from(generatedDocuments)
-					.where(
-						and(
-							eq(generatedDocuments.organizationId, orgId),
-							eq(generatedDocuments.patientId, data.patientId),
-							eq(generatedDocuments.kind, "treatment_plan_acceptance"),
-							eq(generatedDocuments.status, "issued"),
-						),
-					)
-					.limit(1);
-
-				if (!addendumDoc && data.allowUnplannedServices === false) {
+				if (!addendumDoc && !data.allowUnplannedServices) {
 					return reply.code(422).send({
 						error: "UpsellConsentShieldViolationError",
 						message: `Блокировка по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Защита от навязывания услуг): услуга «${item.nameRu}» не входит в утвержденный план лечения пациента. Формирование наряда/счета заблокировано до подписания Дополнительного соглашения.`,
@@ -430,24 +430,7 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 				});
 
 				if (!isApprovedInPlan) {
-					// Проверяем наличие оформленного и выданного Дополнительного соглашения
-					const [addendumDoc] = await db
-						.select({
-							id: generatedDocuments.id,
-							totalAmountRub: generatedDocuments.totalAmountRub,
-						})
-						.from(generatedDocuments)
-						.where(
-							and(
-								eq(generatedDocuments.organizationId, orgId),
-								eq(generatedDocuments.patientId, data.patientId),
-								eq(generatedDocuments.kind, "treatment_plan_acceptance"),
-								eq(generatedDocuments.status, "issued"),
-							),
-						)
-						.limit(1);
-
-					if (!addendumDoc && data.allowUnplannedServices === false) {
+					if (!addendumDoc && !data.allowUnplannedServices) {
 						return reply.code(422).send({
 							error: "UpsellConsentShieldViolationError",
 							message: `Блокировка по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Защита от навязывания услуг): услуга/материал «${item.nameRu}» не входит в утвержденный план лечения пациента. Формирование наряда/счета заблокировано до подписания Дополнительного соглашения.`,
@@ -685,7 +668,8 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			(validationReport.totalClinicAbsorptionKopecks / 100).toFixed(2),
 		);
 
-		// Запись в базу (treatment_items)
+		// Запись в базу (patient_invoices + treatment_items в единой транзакции)
+		const invoiceId = randomUUID();
 		const createdItemIds: string[] = [];
 		await withTenantCtx(orgId, async (tx) => {
 			if (data.planId) {
@@ -702,14 +686,23 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 					.limit(1);
 			}
 
-			for (const it of validationReport.items) {
-				const matchingCatalog = catalogRows.find(
-					(c) => c.code === it.code804n || c.id === it.suggested804nAnalogue?.serviceId,
-				);
+			// Атомарное сохранение счёта в patient_invoices
+			await tx.insert(patientInvoices).values({
+				id: invoiceId,
+				organizationId: orgId,
+				patientId: data.patientId,
+				totalRub: String(totalNetRub),
+				totalAmountRub: totalNetRub,
+				status: "draft",
+				issuedAt: new Date(),
+			});
 
-				const [inserted] = await tx
-					.insert(treatmentItems)
-					.values({
+			if (validationReport.items.length > 0) {
+				const itemsToInsert = validationReport.items.map((it) => {
+					const matchingCatalog = catalogRows.find(
+						(c) => c.code === it.code804n || c.id === it.suggested804nAnalogue?.serviceId,
+					);
+					return {
 						organizationId: orgId,
 						patientId: data.patientId,
 						serviceId: matchingCatalog?.id ?? null,
@@ -719,17 +712,22 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 						unitPriceRub: Number((it.effectiveUnitPriceKopecks / 100).toFixed(2)),
 						priceRub: Number((it.effectiveLineNetKopecks / 100).toFixed(2)),
 						discountRub: Number((it.effectiveDiscountKopecks / 100).toFixed(2)),
-						status: "proposed",
+						status: "proposed" as const,
 						plannedDoctorUserId: data.doctorUserId ?? null,
 						notes: `Наряд ${invoiceNumber}. Политика: ${it.selectedResolution}${
 							it.clinicAbsorptionKopecks > 0
 								? ` (Абсорбция клиники: ${(it.clinicAbsorptionKopecks / 100).toFixed(2)} ₽)`
 								: ""
 						}`,
-					})
+					};
+				});
+
+				const insertedRows = await tx
+					.insert(treatmentItems)
+					.values(itemsToInsert)
 					.returning({ id: treatmentItems.id });
 
-				if (inserted) {
+				for (const inserted of insertedRows) {
 					createdItemIds.push(inserted.id);
 				}
 			}
@@ -737,7 +735,7 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 
 		return reply.code(201).send({
 			success: true,
-			invoiceId: randomUUID(),
+			invoiceId,
 			invoiceNumber,
 			documentType: data.documentType,
 			patientId: data.patientId,

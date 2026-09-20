@@ -64,6 +64,17 @@ export class BillingOverpaymentError extends Error {
 	}
 }
 
+export class Decree659Error extends Error {
+	readonly statusCode = 422;
+	readonly code: string;
+
+	constructor(code: string, message: string) {
+		super(message);
+		this.name = code;
+		this.code = code;
+	}
+}
+
 export async function getDefaultOrganizationId(): Promise<string | null> {
 	const [org] = await db.select().from(schema.organizations).limit(1);
 	return org?.id || null;
@@ -280,26 +291,18 @@ export async function createPaymentInDb(
 
 		if (isInsuranceMethod || isOmsNote) {
 			if (isAnonPatient || !hasValidOmsIdentity) {
-				const error = new Error(
+				throw new Decree659Error(
+					"Decree659OmsForbiddenError",
 					"Отказ по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Федерального закона № 326-ФЗ: оплата по программе ОМС для анонимных карт (UUID_ANON) или при отсутствии полного пакета документов (паспорт РФ, СНИЛС и 16-значный полис ОМС) категорически запрещена. Допустимы только прямые коммерческие расчеты (касса 54-ФЗ / безнал).",
 				);
-				// biome-ignore lint/suspicious/noExplicitAny: error mapping
-				(error as any).statusCode = 422;
-				// biome-ignore lint/suspicious/noExplicitAny: error mapping
-				(error as any).code = "Decree659OmsForbiddenError";
-				throw error;
 			}
 		}
 
 		if (isAnonPatient && input.taxDeductionCode) {
-			const error = new Error(
+			throw new Decree659Error(
+				"Decree659TaxDeductionForbiddenError",
 				"Отказ по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 219 НК РФ: оформление социального налогового вычета по НДФЛ (код вычета 01/02) для анонимных карт (UUID_ANON / isAnonymous) категорически запрещено.",
 			);
-			// biome-ignore lint/suspicious/noExplicitAny: error mapping
-			(error as any).statusCode = 422;
-			// biome-ignore lint/suspicious/noExplicitAny: error mapping
-			(error as any).code = "Decree659TaxDeductionForbiddenError";
-			throw error;
 		}
 
 		// 1b. Price Spoofing & Upsell Consent Shield Defense
