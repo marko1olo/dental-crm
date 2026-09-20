@@ -2046,3 +2046,32 @@ export async function captureAndAttachPatientPhoto(params: {
 		};
 	}
 }
+
+/**
+ * Регистрация слушателей перехода мобильного приложения в фоновый режим / скрытия экрана
+ * для гарантированного сброса черновиков и мутаций у кресла врача (Mandate 8e).
+ */
+export function setupMobileLifecycleProtection(onBackgroundCallback?: () => void): () => void {
+	if (typeof window === "undefined") return () => {};
+
+	const handleBackground = () => {
+		try {
+			onBackgroundCallback?.();
+		} catch (err) {
+			// Silent in background
+		}
+	};
+
+	window.addEventListener("pagehide", handleBackground);
+	if (typeof document !== "undefined") {
+		document.addEventListener("visibilitychange", () => {
+			if (document.visibilityState === "hidden") {
+				handleBackground();
+			}
+		});
+	}
+
+	return () => {
+		window.removeEventListener("pagehide", handleBackground);
+	};
+}

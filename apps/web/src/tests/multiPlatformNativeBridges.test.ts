@@ -16,6 +16,8 @@ import {
 	listDesktopSerialPorts,
 	listDesktopTwainDevices,
 	printDesktopFiscalReceiptTcp,
+	printDesktopDocumentSilent,
+	setupDesktopExitProtection,
 	registerDesktopHotkeys,
 	initDesktopHotkeys,
 	subscribeDesktopUpdates,
@@ -41,6 +43,7 @@ import {
 	isMobileApp,
 	parseGs1DataMatrix,
 	scanDataMatrixWithCamera,
+	setupMobileLifecycleProtection,
 	triggerHaptic,
 	type MobileNativeApi,
 } from "../native/mobileBridge";
@@ -57,7 +60,11 @@ import {
 	loadCashReceiptDraft,
 	saveAppointmentDraft,
 	loadAppointmentDraft,
+	emergencyFlushAllOfflineData,
+	clinicalDraftAutosaver,
+	offlineSyncService,
 } from "../services/offline";
+import { printA4Document } from "../lib/hardwarePrinting";
 
 test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 	await t.test("Default environment detects web_pwa when no native wrappers present", () => {
@@ -773,5 +780,110 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 		assert.ok(mutAppt.mutationId);
 		assert.equal(mutAppt.entityType, "APPOINTMENT_BOOKING_DRAFT");
 		assert.equal(mutAppt.status, "pending");
+	});
+
+	await t.test("Emergency Teardown Data Flush (beforeunload / pagehide / visibilitychange)", async () => {
+		// 1. Schedule debounced Form 043/u autosave
+		void clinicalDraftAutosaver.scheduleAutosave(
+			"dente_form043_draft_teardown-pat-1",
+			"DIARY_043_DRAFT",
+			"teardown-pat-1",
+			{ complaints: "Острая боль при накусывании зуба 2.4", diagnosis: "K04.0" },
+			undefined,
+			5000,
+		);
+
+		assert.equal(clinicalDraftAutosaver.getPendingCount() >= 1, true);
+
+		// 2. Trigger synchronous emergency flush (simulating window beforeunload)
+		const flushRes = emergencyFlushAllOfflineData();
+		assert.equal(flushRes.draftsSaved >= 1, true);
+		assert.equal(clinicalDraftAutosaver.getPendingCount(), 0);
+
+		// 3. Verify data was persisted to storage and is immediately loadable
+		const loadedDraft = await loadForm043Draft("teardown-pat-1");
+		assert.ok(loadedDraft);
+		assert.equal((loadedDraft.data as any).diagnosis, "K04.0");
+	});
+
+	await t.test("Desktop & PWA Native Spooler Document Printing (Zero Tab Popups)", async () => {
+		const originalWindowDesc = Object.getOwnPropertyDescriptor(globalThis, "window");
+
+		let nativePrintCalled = false;
+		let nativePrintOptions: any = null;
+
+		// Simulated Desktop Environment with printDocumentSilent
+		Object.defineProperty(globalThis, "window", {
+			value: {
+				denteDesktopNative: {
+					isDesktop: true,
+					printDocumentSilent: async (opts: any) => {
+						nativePrintCalled = true;
+						nativePrintOptions = opts;
+						return { success: true };
+					},
+				},
+				addEventListener: () => {},
+				removeEventListener: () => {},
+			},
+			configurable: true,
+			writable: true,
+		});
+
+		// 1. Direct printDesktopDocumentSilent call
+		const res = await printDesktopDocumentSilent({
+			htmlContent: "<h1>Форма 043/у — Карта стоматологического пациента</h1>",
+			title: "Форма 043/у",
+			printerName: "HP LaserJet Pro P1102",
+			silent: true,
+		});
+
+		assert.equal(res.success, true);
+		assert.equal(res.method, "desktop_silent");
+		assert.equal(nativePrintCalled, true);
+		assert.equal(nativePrintOptions?.printerName, "HP LaserJet Pro P1102");
+
+		// 2. High-level printA4Document with silent: true in Desktop mode
+		const a4Res = await printA4Document("<h1>Договор на оказание медицинских услуг</h1>", {
+			title: "Договор 2026/01",
+			silent: true,
+			printerName: "Canon LBP6000",
+		});
+
+		assert.equal(a4Res.success, true);
+		assert.equal(a4Res.method, "desktop_silent");
+
+		// 3. Desktop and Mobile Exit / Lifecycle Protection hooks
+		let desktopExitHookFired = false;
+		const unregisterDesktopExit = setupDesktopExitProtection(() => {
+			desktopExitHookFired = true;
+		});
+		assert.equal(typeof unregisterDesktopExit, "function");
+		unregisterDesktopExit();
+
+		let mobileBackgroundHookFired = false;
+		const unregisterMobileBg = setupMobileLifecycleProtection(() => {
+			mobileBackgroundHookFired = true;
+		});
+		assert.equal(typeof unregisterMobileBg, "function");
+		unregisterMobileBg();
+
+		// Restore globals
+		if (originalWindowDesc) {
+			Object.defineProperty(globalThis, "window", originalWindowDesc);
+		} else {
+			delete (globalThis as any).window;
+		}
+	});
+
+	await t.test("Outbox Sync Heartbeat & Network Reconnection Resilience", async () => {
+		// 1. Test heartbeat timer start and stop without errors
+		offlineSyncService.startAutoSyncHeartbeat(5000);
+		offlineSyncService.stopAutoSyncHeartbeat();
+
+		// 2. Test lifecycle listener registration and cleanup
+		const cleanup = offlineSyncService.initBrowserLifecycleListeners();
+		assert.equal(typeof cleanup, "function");
+		cleanup();
 	});
 });

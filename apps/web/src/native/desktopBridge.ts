@@ -220,6 +220,14 @@ export interface DesktopNativeApi {
 	checkForUpdates?: () => Promise<DesktopUpdateInfo>;
 	installUpdate?: () => Promise<DesktopUpdateInstallResult>;
 	onUpdateAvailable?: (callback: (info: DesktopUpdateInfo) => void) => () => void;
+	printDocumentSilent?: (params: {
+		htmlContent?: string | undefined;
+		pdfBase64?: string | undefined;
+		printerName?: string | undefined;
+		title?: string | undefined;
+		silent?: boolean | undefined;
+		copies?: number | undefined;
+	}) => Promise<{ success: boolean; error?: string }>;
 }
 
 declare global {
@@ -751,6 +759,148 @@ export async function switchDesktopLocalDatabaseMode(mode: string) {
 		success: true,
 		activeMode: mode,
 		message: `Режим локальной базы данных переключен на ${mode}`,
+	};
+}
+
+export interface DesktopDocumentPrintOptions {
+	htmlContent?: string | undefined;
+	pdfBase64?: string | undefined;
+	printerName?: string | undefined;
+	title?: string | undefined;
+	silent?: boolean | undefined;
+	copies?: number | undefined;
+}
+
+export interface DesktopDocumentPrintResult {
+	success: boolean;
+	method: "desktop_silent" | "iframe_silent" | "browser_dialog";
+	printerName?: string | undefined;
+	error?: string | undefined;
+}
+
+/**
+ * Нативная печать документов и актов через системный спулер Windows/macOS/Linux в Desktop (.exe/Tauri)
+ * или через скрытый iframe в PWA без открытия лишних вкладок браузера (Mandate 8e).
+ */
+export async function printDesktopDocumentSilent(
+	options: DesktopDocumentPrintOptions,
+): Promise<DesktopDocumentPrintResult> {
+	const api = getDesktopNativeApi();
+	if (api?.printDocumentSilent) {
+		try {
+			const res = await api.printDocumentSilent(options);
+			return {
+				success: res.success,
+				method: "desktop_silent",
+				printerName: options.printerName,
+				error: res.error,
+			};
+		} catch (err: unknown) {
+			logger.warn("[desktopBridge] printDocumentSilent native failed, falling back to iframe:", err);
+		}
+	}
+
+	// Fallback for PWA / Web: hidden in-page iframe print (zero new browser tabs)
+	if (typeof window !== "undefined" && typeof document !== "undefined") {
+		return new Promise<DesktopDocumentPrintResult>((resolve) => {
+			try {
+				let iframe = document.getElementById("dente-silent-spooler-iframe") as HTMLIFrameElement | null;
+				if (!iframe) {
+					iframe = document.createElement("iframe");
+					iframe.id = "dente-silent-spooler-iframe";
+					iframe.style.position = "fixed";
+					iframe.style.right = "0";
+					iframe.style.bottom = "0";
+					iframe.style.width = "0";
+					iframe.style.height = "0";
+					iframe.style.border = "0";
+					iframe.style.visibility = "hidden";
+					document.body.appendChild(iframe);
+				}
+
+				const doc = iframe.contentDocument || iframe.contentWindow?.document;
+				if (!doc) {
+					resolve({
+						success: false,
+						method: "browser_dialog",
+						error: "Не удалось получить доступ к документу спулера печати",
+					});
+					return;
+				}
+
+				doc.open();
+				doc.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>${options.title || "Документ DENTE"}</title>
+<style>
+@page { margin: 10mm; size: A4 portrait; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #000; margin: 0; }
+@media print {
+	body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+${options.htmlContent || ""}
+</body>
+</html>`);
+				doc.close();
+
+				const triggerPrint = () => {
+					try {
+						iframe?.contentWindow?.focus();
+						iframe?.contentWindow?.print();
+						resolve({ success: true, method: "iframe_silent" });
+					} catch (printErr) {
+						resolve({
+							success: false,
+							method: "iframe_silent",
+							error: printErr instanceof Error ? printErr.message : "Ошибка вывода на печать во фрейме",
+						});
+					}
+				};
+
+				setTimeout(triggerPrint, 50);
+			} catch (err) {
+				resolve({
+					success: false,
+					method: "browser_dialog",
+					error: err instanceof Error ? err.message : "Ошибка создания спулера печати",
+				});
+			}
+		});
+	}
+
+	return {
+		success: false,
+		method: "browser_dialog",
+		error: "Печать недоступна вне браузера/десктопа",
+	};
+}
+
+/**
+ * Регистрация слушателей закрытия окна или приложения
+ * для гарантированного сброса несохраненных данных (черновиков и мутаций).
+ */
+export function setupDesktopExitProtection(onExitCallback?: () => void): () => void {
+	if (typeof window === "undefined") return () => {};
+
+	const handleExit = () => {
+		try {
+			onExitCallback?.();
+		} catch (err) {
+			logger.warn("[desktopBridge] Error during exit callback:", err);
+		}
+	};
+
+	window.addEventListener("beforeunload", handleExit);
+	window.addEventListener("pagehide", handleExit);
+
+	return () => {
+		window.removeEventListener("beforeunload", handleExit);
+		window.removeEventListener("pagehide", handleExit);
 	};
 }
 

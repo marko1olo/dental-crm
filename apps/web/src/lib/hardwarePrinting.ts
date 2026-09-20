@@ -10,7 +10,9 @@
  */
 
 import {
+	isDesktopApp,
 	printDesktopAtol10FiscalReceipt,
+	printDesktopDocumentSilent,
 	printDesktopEscPosReceipt,
 	printDesktopFiscalReceiptTcp,
 	printDesktopShtrihMFiscalReceipt,
@@ -33,10 +35,12 @@ import {
 import { isDesktopExecutable, isAndroidNativeApp } from "./omniPlatformAdapter";
 
 export interface A4PrintOptions {
-	title?: string;
-	onBeforePrint?: () => void;
-	onAfterPrint?: () => void;
-	cleanupDelayMs?: number;
+	title?: string | undefined;
+	onBeforePrint?: (() => void) | undefined;
+	onAfterPrint?: (() => void) | undefined;
+	cleanupDelayMs?: number | undefined;
+	silent?: boolean | undefined;
+	printerName?: string | undefined;
 }
 
 export interface UniversalThermalReceiptOptions {
@@ -87,14 +91,40 @@ export async function printA4Document(
 	contentElementOrHtml: HTMLElement | string,
 	options: A4PrintOptions = {},
 ): Promise<UniversalPrintResult> {
-	if (typeof window === "undefined" || typeof document === "undefined") {
+	if (typeof window === "undefined") {
+		return { success: false, method: "browser_dialog", error: "Печать недоступна вне браузера" };
+	}
+
+	if (typeof document === "undefined" && !isDesktopApp() && typeof contentElementOrHtml !== "string") {
 		return { success: false, method: "browser_dialog", error: "Печать недоступна вне браузера" };
 	}
 
 	try {
 		options.onBeforePrint?.();
 
-		// If HTML string is passed, create a temporary isolated print layer
+		const htmlContent =
+			typeof contentElementOrHtml === "string"
+				? contentElementOrHtml
+				: contentElementOrHtml.outerHTML;
+
+		// 1. Silent native spooler print if running in Desktop or silent requested
+		if (isDesktopApp() || options.silent) {
+			const silentRes = await printDesktopDocumentSilent({
+				htmlContent,
+				title: options.title,
+				printerName: options.printerName,
+				silent: options.silent,
+			});
+			if (silentRes.success) {
+				options.onAfterPrint?.();
+				return {
+					success: true,
+					method: silentRes.method === "desktop_silent" ? "desktop_silent" : "iframe_silent",
+				};
+			}
+		}
+
+		// 2. Standard isolated in-page print layer (zero new window tabs)
 		if (typeof contentElementOrHtml === "string") {
 			const existingLayer = document.getElementById("dente-dynamic-print-layer");
 			if (existingLayer) {

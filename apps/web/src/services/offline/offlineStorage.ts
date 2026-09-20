@@ -581,7 +581,9 @@ export async function enqueueOfflineMutation<T = unknown>(
 			);
 			return duplicate as OfflineMutation<T>;
 		}
-	} catch {}
+	} catch (err: unknown) {
+		logger.warn("[OfflineStorage] Failed to check for duplicate pending mutations:", err);
+	}
 
 	try {
 		await withIdbTransactionRetry(async (db) => {
@@ -1367,6 +1369,41 @@ export class ClinicalDraftAutosaveManager {
 	}
 
 	/**
+	 * Синхронный мгновенный сброс (Flush) всех отложенных черновиков в localStorage и in-memory buffer.
+	 * Критически важен для beforeunload и pagehide, когда асинхронные микротаски могут быть прерваны браузером.
+	 */
+	public flushAllSync(): number {
+		const entries = Array.from(this.pendingEntries.values());
+		this.pendingEntries.clear();
+
+		let savedCount = 0;
+		for (const entry of entries) {
+			if (entry.timer) {
+				clearTimeout(entry.timer);
+			}
+			try {
+				const now = new Date();
+				const draft: OfflineDraft<unknown> = {
+					draftKey: entry.draftKey,
+					entityType: entry.entityType,
+					entityId: entry.entityId,
+					data: entry.data,
+					updatedAt: now.toISOString(),
+					updatedAtMs: now.getTime(),
+					organizationId: entry.organizationId,
+					version: 1,
+				};
+				inMemoryDraftsMap.set(entry.draftKey, draft);
+				saveLocalStorageDraft(draft);
+				savedCount++;
+			} catch (err) {
+				logger.error(`[AutosaveManager] Sync flush error for ${entry.draftKey}`, err);
+			}
+		}
+		return savedCount;
+	}
+
+	/**
 	 * Мгновенный сброс конкретного черновика
 	 */
 	public async flushKey<T = unknown>(draftKey: string): Promise<OfflineDraft<T> | null> {
@@ -1377,6 +1414,22 @@ export class ClinicalDraftAutosaveManager {
 		if (entry.timer) {
 			clearTimeout(entry.timer);
 		}
+
+		// Синхронный fallback в localStorage
+		const now = new Date();
+		const draft: OfflineDraft<T> = {
+			draftKey: entry.draftKey,
+			entityType: entry.entityType,
+			entityId: entry.entityId,
+			data: entry.data as T,
+			updatedAt: now.toISOString(),
+			updatedAtMs: now.getTime(),
+			organizationId: entry.organizationId,
+			version: 1,
+		};
+		inMemoryDraftsMap.set(entry.draftKey, draft as OfflineDraft<unknown>);
+		saveLocalStorageDraft(draft);
+
 		return saveOfflineDraft<T>(
 			entry.draftKey,
 			entry.entityType,
@@ -1410,13 +1463,18 @@ export class ClinicalDraftAutosaveManager {
 	private initUnloadListener(): void {
 		if (typeof window === "undefined") return;
 		const flush = () => {
+			emergencyFlushAllOfflineData();
 			void this.flushAll();
 		};
 		window.addEventListener("beforeunload", flush);
 		window.addEventListener("pagehide", flush);
+		if ("onfreeze" in window) {
+			window.addEventListener("freeze", flush);
+		}
 		if (typeof document !== "undefined") {
 			document.addEventListener("visibilitychange", () => {
 				if (document.visibilityState === "hidden") {
+					emergencyFlushAllOfflineData();
 					void this.flushAll();
 				}
 			});
@@ -1425,6 +1483,56 @@ export class ClinicalDraftAutosaveManager {
 }
 
 export const clinicalDraftAutosaver = ClinicalDraftAutosaveManager.getInstance();
+
+/**
+ * Глобальный аварийный сброс всех данных при выгрузке/закрытии окна
+ * (beforeunload, pagehide, visibilitychange, freeze, native exit).
+ * Синхронно сохраняет все отложенные черновики и мутации из памяти в localStorage.
+ */
+export function emergencyFlushAllOfflineData(): { draftsSaved: number; mutationsSaved: number } {
+	let draftsSaved = 0;
+	let mutationsSaved = 0;
+
+	try {
+		// 1. Сброс черновиков автосохранения
+		draftsSaved = clinicalDraftAutosaver.flushAllSync();
+
+		// 2. Сброс in-memory мутаций в localStorage
+		if (inMemoryMutationsMap.size > 0) {
+			const existingList = getLocalStorageMutations();
+			const existingIds = new Set(existingList.map((m) => m.mutationId));
+			let added = false;
+			for (const mutation of inMemoryMutationsMap.values()) {
+				if (!existingIds.has(mutation.mutationId)) {
+					existingList.push(mutation);
+					existingIds.add(mutation.mutationId);
+					added = true;
+					mutationsSaved++;
+				}
+			}
+			if (added) {
+				saveLocalStorageMutations(existingList);
+			}
+		}
+
+		// 3. Отправка аварийного события для локальных форм
+		if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+			try {
+				window.dispatchEvent(
+					new CustomEvent("dente:emergency-flush", {
+						detail: { draftsSaved, mutationsSaved, timestamp: Date.now() },
+					}),
+				);
+			} catch {
+				// Event dispatching during teardown may be restricted
+			}
+		}
+	} catch (err) {
+		logger.error("[OfflineStorage] Emergency flush failure:", err);
+	}
+
+	return { draftsSaved, mutationsSaved };
+}
 
 /**
  * Хелпер автосохранения дневника Form 043/u с 3-секундным дебаунсом
@@ -1737,7 +1845,8 @@ export async function listPatientClinicalCache<T = unknown>(
 					reject(req.error ?? new Error("Failed to list clinical cache from IDB"));
 			});
 		});
-	} catch {
+	} catch (err: unknown) {
+		logger.warn("[OfflineStorage] Failed to list clinical cache from IDB, falling back to memory:", err);
 		const memRecords = Array.from(inMemoryClinicalCacheMap.values()) as Array<PatientClinicalCacheRecord<T>>;
 		all = memRecords;
 	}
@@ -1844,7 +1953,9 @@ export async function getCachedActiveSchedule(
 				req.onerror = () => reject(req.error);
 			});
 		});
-	} catch {}
+	} catch (err: unknown) {
+		logger.warn("[OfflineStorage] Failed to read cached schedule from IDB:", err);
+	}
 
 	if (idbResult) {
 		inMemorySchedulesMap.set(scheduleKey, idbResult);
@@ -1860,7 +1971,9 @@ export async function getCachedActiveSchedule(
 				inMemorySchedulesMap.set(scheduleKey, record);
 				return record;
 			}
-		} catch {}
+		} catch (err: unknown) {
+			logger.warn("[OfflineStorage] Failed to parse schedule from local storage:", err);
+		}
 	}
 
 	return null;
@@ -1917,7 +2030,9 @@ export async function clearCachedActiveSchedules(
 				req.onerror = () => reject(req.error);
 			});
 		});
-	} catch {}
+	} catch (err: unknown) {
+		logger.warn("[OfflineStorage] Failed to clear schedules store in IDB:", err);
+	}
 	return deletedCount;
 }
 
@@ -1993,7 +2108,9 @@ export async function getCachedPatientCard(
 				req.onerror = () => reject(req.error);
 			});
 		});
-	} catch {}
+	} catch (err: unknown) {
+		logger.warn(`[OfflineStorage] Failed to read cached patient card from IDB for ${patientId}:`, err);
+	}
 
 	if (idbResult) {
 		if (!organizationId || !idbResult.organizationId || idbResult.organizationId === organizationId) {
@@ -2012,7 +2129,9 @@ export async function getCachedPatientCard(
 					return parsed;
 				}
 			}
-		} catch {}
+		} catch (err: unknown) {
+			logger.warn(`[OfflineStorage] Failed to parse cached patient card from local storage for ${patientId}:`, err);
+		}
 	}
 
 	return null;
@@ -2061,7 +2180,9 @@ export async function deleteCachedPatientCard(patientId: string): Promise<void> 
 				req.onerror = () => reject(req.error);
 			});
 		});
-	} catch {}
+	} catch (err: unknown) {
+		logger.warn(`[OfflineStorage] Failed to delete patient card from IDB for ${patientId}:`, err);
+	}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2272,7 +2393,9 @@ export async function getCachedPriceList804n(
 				req.onerror = () => reject(req.error);
 			});
 		});
-	} catch {}
+	} catch (err: unknown) {
+		logger.warn(`[OfflineStorage] Failed to read cached pricelist from IDB for ${catalogKey}:`, err);
+	}
 
 	if (idbResult) {
 		inMemoryPriceListsMap.set(catalogKey, idbResult);
@@ -2287,7 +2410,9 @@ export async function getCachedPriceList804n(
 				inMemoryPriceListsMap.set(catalogKey, parsed);
 				return parsed;
 			}
-		} catch {}
+		} catch (err: unknown) {
+			logger.warn(`[OfflineStorage] Failed to parse cached pricelist from local storage for ${catalogKey}:`, err);
+		}
 	}
 
 	return null;

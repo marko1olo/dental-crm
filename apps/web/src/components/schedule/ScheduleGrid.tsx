@@ -182,7 +182,7 @@ export interface ScheduleGridProps {
 		| undefined;
 	patientName: (
 		patients: Dashboard["patients"],
-		patientId: string | null,
+		patientId?: string | null,
 	) => string;
 	formatTime: (iso: string) => string;
 	toDateTimeLocalValue: (iso: string, timezone?: string | null) => string;
@@ -3391,8 +3391,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														patientLookupMap={patientLookupMap}
 														staffLookupMap={staffLookupMap}
 														collisionMap={collisionMap}
-														patientNameFn={patientName}
-														getPatientName={patientName}
+														patientNameFn={(pts, id) => patientName(pts, id ?? null)}
+														getPatientName={(pts, id) => patientName(pts, id ?? null)}
 														dashboard={dashboard}
 														timezone={timezone}
 														toDateTimeLocalValue={toDateTimeLocalValue}

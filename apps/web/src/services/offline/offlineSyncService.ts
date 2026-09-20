@@ -143,6 +143,7 @@ export class OfflineSyncService {
 	private listeners = new Set<SyncEventListener>();
 	private isLifecycleListening = false;
 	private cleanupLifecycleListeners: (() => void) | null = null;
+	private autoDrainIntervalId: ReturnType<typeof setInterval> | null = null;
 
 	constructor() {
 		this.initBrowserLifecycleListeners();
@@ -156,7 +157,42 @@ export class OfflineSyncService {
 	}
 
 	/**
-	 * Инициализация слушателей жизненного цикла браузера (visibilitychange, focus, online)
+	 * Запуск периодического фонового мониторинга очереди мутаций (Heartbeat)
+	 * для гарантированного дренажа при восстановлении связи без ожидания клика пользователя.
+	 */
+	public startAutoSyncHeartbeat(intervalMs = 15000): void {
+		if (typeof window === "undefined" || this.autoDrainIntervalId) return;
+		this.autoDrainIntervalId = setInterval(() => {
+			if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+			if (this.isDraining) return;
+			void (async () => {
+				try {
+					const pending = await getPendingOfflineMutations();
+					if (pending.length > 0 && !this.isDraining) {
+						logger.info(
+							`[OfflineSyncService] Heartbeat auto-draining ${pending.length} pending mutations`,
+						);
+						await this.drainOutbox();
+					}
+				} catch {
+					// Silent in periodic heartbeat
+				}
+			})();
+		}, intervalMs);
+	}
+
+	/**
+	 * Остановка периодического фонового мониторинга очереди
+	 */
+	public stopAutoSyncHeartbeat(): void {
+		if (this.autoDrainIntervalId) {
+			clearInterval(this.autoDrainIntervalId);
+			this.autoDrainIntervalId = null;
+		}
+	}
+
+	/**
+	 * Инициализация слушателей жизненного цикла браузера (visibilitychange, focus, online, network-online)
 	 * для автоматического мгновенного возобновления синхронизации при возврате во вкладку.
 	 */
 	public initBrowserLifecycleListeners(): () => void {
@@ -217,22 +253,27 @@ export class OfflineSyncService {
 			triggerAutoDrain();
 		};
 
-		if (typeof document !== "undefined") {
+		if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
 			document.addEventListener("visibilitychange", onVisibilityChange);
 		}
-		if (typeof window !== "undefined") {
+		if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
 			window.addEventListener("focus", onFocus);
 			window.addEventListener("online", onOnline);
+			window.addEventListener("dente:network-online", triggerAutoDrain);
 		}
+
+		this.startAutoSyncHeartbeat();
 
 		this.cleanupLifecycleListeners = () => {
 			this.isLifecycleListening = false;
-			if (typeof document !== "undefined") {
+			this.stopAutoSyncHeartbeat();
+			if (typeof document !== "undefined" && typeof document.removeEventListener === "function") {
 				document.removeEventListener("visibilitychange", onVisibilityChange);
 			}
-			if (typeof window !== "undefined") {
+			if (typeof window !== "undefined" && typeof window.removeEventListener === "function") {
 				window.removeEventListener("focus", onFocus);
 				window.removeEventListener("online", onOnline);
+				window.removeEventListener("dente:network-online", triggerAutoDrain);
 			}
 		};
 
@@ -390,6 +431,16 @@ export class OfflineSyncService {
 
 			// Очищаем успешно синхронизированные мутации
 			await clearSyncedOfflineMutations();
+
+			// Также дренируем офлайн-записи пациентов из PWA Subway Mode
+			try {
+				await flushOfflinePatientBookings();
+			} catch (pwaErr) {
+				logger.warn(
+					"[OfflineSyncService] Flush PWA patient bookings during drainOutbox failed",
+					pwaErr,
+				);
+			}
 
 			this.emit("complete", totalResult);
 			return totalResult;
