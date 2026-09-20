@@ -20,6 +20,7 @@ import { db } from "../db/client.js";
 import { getDashboardFromDb } from "../db/dashboardQuery.js";
 import {
 	appointments,
+	chairs,
 	patients,
 	scheduleClipboardItems,
 	urgentScheduleRequests,
@@ -736,7 +737,73 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 		if (!context) return reply;
 		const orgId = context.organizationId;
 
-		const input = parseSchedulePayload(createAppointmentSchema, request.body);
+		const rawBody =
+			request.body && typeof request.body === "object"
+				? { ...(request.body as Record<string, unknown>) }
+				: null;
+
+		if (rawBody) {
+			// Мандат 8e п. 8, Мандат 8n: ассистент назначается опционально, соло-врачу не навязывается выбор ассистента
+			if (
+				rawBody.assistantUserId === "" ||
+				rawBody.assistantUserId === "default-assistant" ||
+				(typeof rawBody.assistantUserId === "string" && !rawBody.assistantUserId.trim())
+			) {
+				rawBody.assistantUserId = null;
+			}
+
+			// Мандат 8n: суверенитет соло-врача и клиники 1-3 кресла. Авто-резолв дефолтного кресла
+			if (
+				!rawBody.chairId ||
+				rawBody.chairId === "default-chair" ||
+				(typeof rawBody.chairId === "string" && !rawBody.chairId.trim())
+			) {
+				const [firstActiveChair] = await db
+					.select({ id: chairs.id })
+					.from(chairs)
+					.where(
+						and(
+							eq(chairs.organizationId, orgId),
+							eq(chairs.isActive, true),
+						),
+					)
+					.limit(1);
+				if (firstActiveChair) {
+					rawBody.chairId = firstActiveChair.id;
+				} else {
+					const [anyChair] = await db
+						.select({ id: chairs.id })
+						.from(chairs)
+						.where(eq(chairs.organizationId, orgId))
+						.limit(1);
+					if (anyChair) {
+						rawBody.chairId = anyChair.id;
+					}
+				}
+			}
+
+			// Авто-подстановка врача по умолчанию для соло-кабинета при передаче маркера
+			if (
+				rawBody.doctorUserId === "default-doctor" ||
+				(typeof rawBody.doctorUserId === "string" && !rawBody.doctorUserId.trim())
+			) {
+				const [firstDoc] = await db
+					.select({ id: users.id })
+					.from(users)
+					.where(
+						and(
+							eq(users.organizationId, orgId),
+							eq(users.isActive, true),
+						),
+					)
+					.limit(1);
+				if (firstDoc) {
+					rawBody.doctorUserId = firstDoc.id;
+				}
+			}
+		}
+
+		const input = parseSchedulePayload(createAppointmentSchema, rawBody ?? request.body);
 		if (!input) {
 			return reply.code(400).send({
 				code: "AppointmentValidationError",
@@ -838,7 +905,40 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 				message: appointmentMissingRouteMessage,
 			});
 		}
-		const input = parseSchedulePayload(updateAppointmentSchema, request.body);
+		const rawBody =
+			request.body && typeof request.body === "object"
+				? { ...(request.body as Record<string, unknown>) }
+				: null;
+
+		if (rawBody) {
+			if (
+				rawBody.assistantUserId === "" ||
+				rawBody.assistantUserId === "default-assistant" ||
+				(typeof rawBody.assistantUserId === "string" && !rawBody.assistantUserId.trim())
+			) {
+				rawBody.assistantUserId = null;
+			}
+			if (
+				rawBody.chairId === "default-chair" ||
+				(typeof rawBody.chairId === "string" && !rawBody.chairId.trim())
+			) {
+				const [firstActiveChair] = await db
+					.select({ id: chairs.id })
+					.from(chairs)
+					.where(
+						and(
+							eq(chairs.organizationId, orgId),
+							eq(chairs.isActive, true),
+						),
+					)
+					.limit(1);
+				if (firstActiveChair) {
+					rawBody.chairId = firstActiveChair.id;
+				}
+			}
+		}
+
+		const input = parseSchedulePayload(updateAppointmentSchema, rawBody ?? request.body);
 		if (!input) {
 			return reply.code(400).send({
 				code: "AppointmentValidationError",
@@ -1212,10 +1312,26 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 				typeof body.doctorUserId === "string" && body.doctorUserId.trim()
 					? body.doctorUserId.trim()
 					: original.doctorUserId;
-			const chairId =
+			let chairId =
 				typeof body.chairId === "string" && body.chairId.trim()
 					? body.chairId.trim()
 					: original.chairId;
+
+			if ((!chairId || chairId === "default-chair") && orgId) {
+				const [firstActiveChair] = await db
+					.select({ id: chairs.id })
+					.from(chairs)
+					.where(
+						and(
+							eq(chairs.organizationId, orgId),
+							eq(chairs.isActive, true),
+						),
+					)
+					.limit(1);
+				if (firstActiveChair) {
+					chairId = firstActiveChair.id;
+				}
+			}
 
 			if (!original.patientId || !doctorUserId || !chairId) {
 				return reply.code(409).send({
@@ -1367,7 +1483,9 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 		if (!fs.existsSync(dataDir)) {
 			try {
 				fs.mkdirSync(dataDir, { recursive: true });
-			} catch {}
+			} catch (err: unknown) {
+				app.log.warn({ err }, "[scheduleRoutes] Failed to create .data directory for doctor shifts");
+			}
 		}
 		return path.join(dataDir, "doctor-shifts.json");
 	};

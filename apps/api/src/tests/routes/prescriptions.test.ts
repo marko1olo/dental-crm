@@ -9,6 +9,7 @@ import {
 	renderPrescriptionUniversalHtml,
 	verifyPrescriptionStatutoryValidity,
 } from "@dental/shared";
+import { FORBIDDEN_NARCOTIC_INN_PATTERNS } from "../../routes/prescriptions.js";
 
 describe("API Prescriptions Routes & Statutory Validity (Order 1094n)", () => {
 	it("1. Exposes full reference catalog: forms, routes, categories and validity periods", () => {
@@ -169,5 +170,61 @@ describe("API Prescriptions Routes & Statutory Validity (Order 1094n)", () => {
 		assert.ok(html.includes("ООО «Денте Стоматология»"));
 		assert.ok(html.includes("ДОКУМЕНТ ПОДПИСАН УСИЛЕННОЙ КВАЛИФИЦИРОВАННОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (УКЭП)"));
 		assert.ok(html.includes("7700B891A40098F2104"));
+	});
+
+	it("7. Mandate 8i & 8s: Enforces outpatient dental bounded context by detecting and rejecting Schedule II/III narcotics", () => {
+		const narcoticSamples = [
+			"Rp.: Sol. Morphini hydrochloridi 1%",
+			"Rp.: Tab. Promedoli 25 mg",
+			"Rp.: Trimeperidini 20 mg",
+			"Rp.: Fentanyli 50 mcg/h",
+			"Rp.: Tab. Buprenorphini 0.2 mg",
+			"Rp.: Omnoponi 10 mg",
+			"Морфин",
+			"Промедол",
+		];
+
+		for (const narcotic of narcoticSamples) {
+			const isDetected = FORBIDDEN_NARCOTIC_INN_PATTERNS.some((p) => p.test(narcotic));
+			assert.equal(
+				isDetected,
+				true,
+				`Ожидалось обнаружение наркотического вещества: ${narcotic}`,
+			);
+		}
+
+		// Dental non-narcotic NSAIDs and antibiotics MUST NOT be blocked
+		const dentalAllowedDrugs = [
+			"Rp.: Nimesulidi 100 mg",
+			"Rp.: Tab. Ketorolaci 10 mg",
+			"Rp.: Sol. Dexketoprofeni 50 mg",
+			"Rp.: Amoxicillini + Clavulanati 875/125 mg",
+			"Rp.: Tab. Ciprofloxacini 500 mg",
+			"Rp.: Sol. Chlorhexidini 0.05%",
+		];
+
+		for (const drug of dentalAllowedDrugs) {
+			const isBlocked = FORBIDDEN_NARCOTIC_INN_PATTERNS.some((p) => p.test(drug));
+			assert.equal(
+				isBlocked,
+				false,
+				`Стоматологический препарат не должен блокироваться: ${drug}`,
+			);
+		}
+	});
+
+	it("8. Mandate 8e item 4: Outpatient dental prescriptions require only treating doctor authority (no consiliums/commissions)", () => {
+		// Treating dentist prescribes independently Form 107-1/u or 148-1/u-88 without inpatient consilium gates
+		const standardPrescription = verifyPrescriptionStatutoryValidity({
+			formType: "107-1u",
+			prescriptionDate: "2026-08-23",
+			validityDays: "60",
+			items: [
+				{ latinName: "Rp.: Nimesulidi 100 mg", tradeName: "Нимесил" },
+			],
+		}, "2026-08-23");
+
+		assert.equal(standardPrescription.isValid, true);
+		assert.equal(standardPrescription.errors.length, 0);
 	});
 });

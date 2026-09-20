@@ -37,6 +37,30 @@ import { getRequestIdentity } from "../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 
+/**
+ * Реестр запрещенных к выписке в амбулаторной стоматологии наркотических средств (ПКУ Списки II и III).
+ * В частной амбулаторной стоматологии наркотические анальгетики не выписываются (Мандат 8i, 8s).
+ * Применяются ненаркотические анальгетики (НПВП: Нимесил/Нимесулид, Кеторолак/Кетанов, Декскетопрофен/Дексалгин).
+ */
+export const FORBIDDEN_NARCOTIC_INN_PATTERNS = [
+	/morphin/i,
+	/морфин/i,
+	/trimeperidin/i,
+	/тримеперидин/i,
+	/promedol/i,
+	/промедол/i,
+	/fentanyl/i,
+	/фентанил/i,
+	/buprenorphin/i,
+	/бупренорфин/i,
+	/methadon/i,
+	/метадон/i,
+	/oxycodon/i,
+	/оксикодон/i,
+	/omnopon/i,
+	/омнопон/i,
+];
+
 /** Schema for creating a prescription through the statutory API */
 const createPrescriptionBodySchema = z.object({
 	patientId: z.string().uuid(),
@@ -90,6 +114,24 @@ const createPrescriptionBodySchema = z.object({
 		.max(3),
 	ukepSignature: prescriptionDoctorUkepSchema.optional().nullable(),
 }).superRefine((data, ctx) => {
+	// Мандат 8i / 8s: Запрет выписки наркотических анальгетиков Списка II/III в частной амбулаторной стоматологии
+	for (let i = 0; i < data.items.length; i++) {
+		const item = data.items[i];
+		const isNarcotic = FORBIDDEN_NARCOTIC_INN_PATTERNS.some(
+			(pattern) =>
+				pattern.test(item.innLatin) ||
+				Boolean(item.tradeName && pattern.test(item.tradeName)),
+		);
+		if (isNarcotic) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["items", i, "innLatin"],
+				message:
+					"В частной амбулаторной стоматологии выписка наркотических средств Списка II/III запрещена (Мандат 8i). Назначьте стоматологические ненаркотические анальгетики (НПВП: Нимесил, Кетанов, Дексалгин).",
+			});
+		}
+	}
+
 	if (data.formType === "form_148_1_u_04_l") {
 		if (!data.patientSnils || !isValidSnils(data.patientSnils)) {
 			ctx.addIssue({
@@ -144,7 +186,10 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const body = request.body as any;
+		const body = request.body as
+			| Parameters<typeof verifyPrescriptionStatutoryValidity>[0]
+			| null
+			| undefined;
 		if (!body || typeof body !== "object") {
 			return reply.code(400).send({
 				error: "ValidationError",
@@ -153,6 +198,23 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 		}
 
 		const result = verifyPrescriptionStatutoryValidity(body);
+		const narcoticErrors: string[] = [];
+		if (Array.isArray(body.items)) {
+			for (const item of body.items) {
+				const itemObj = item as { latinName?: string; tradeName?: string } | null;
+				const name = itemObj?.latinName || itemObj?.tradeName || "";
+				if (name && FORBIDDEN_NARCOTIC_INN_PATTERNS.some((p) => p.test(name))) {
+					narcoticErrors.push(
+						`Препарат «${name}» относится к наркотическим средствам Списка II/III. В амбулаторной стоматологии применяются ненаркотические анальгетики (НПВП: Нимесил, Кетанов, Дексалгин) (Мандат 8i).`,
+					);
+				}
+			}
+		}
+		if (narcoticErrors.length > 0) {
+			result.isValid = false;
+			result.errors.push(...narcoticErrors);
+		}
+
 		return reply.send({
 			success: true,
 			validation: result,
@@ -167,7 +229,10 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const body = request.body as any;
+		const body = request.body as
+			| Parameters<typeof renderPrescriptionUniversalHtml>[0]
+			| null
+			| undefined;
 		if (!body || typeof body !== "object") {
 			return reply.code(400).send({
 				error: "ValidationError",
