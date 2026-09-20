@@ -21,7 +21,7 @@ const TEST_HEADERS = {
 	"x-organization-id": TEST_ORG_ID,
 };
 
-describe("Outpatient v2 & Clinical Core Integration Tests", () => {
+describe("Outpatient & Clinical Core Integration Tests", () => {
 	let app: import("fastify").FastifyInstance;
 	const originalEnv = process.env;
 
