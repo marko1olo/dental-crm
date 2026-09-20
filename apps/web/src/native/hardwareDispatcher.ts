@@ -155,22 +155,62 @@ export async function dispatchThermalLabelPrint(
 	const platform = detectRuntimePlatform();
 
 	if (platform === "desktop_win") {
-		return await printDesktopThermalLabel(params);
+		try {
+			const res = await printDesktopThermalLabel(params);
+			if (res.success) {
+				return res;
+			}
+			console.warn("[HardwareDispatcher] Desktop thermal label spooler failed, falling back to OS print dialog:", res.error);
+		} catch (e) {
+			console.warn("[HardwareDispatcher] Desktop thermal label spooler exception, falling back to OS print dialog:", e);
+		}
 	}
 
-	// Browser / Mobile fallback: open print window
+	// Browser / Mobile fallback: open print window or trigger hidden iframe print
 	if (typeof window !== "undefined" && params.html) {
 		try {
-			const printWindow = window.open("", "_blank");
-			if (printWindow) {
-				printWindow.document.write(params.html);
+			let printWindow: Window | null = null;
+			try {
+				printWindow = window.open("", "_blank");
+			} catch {}
+
+			const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Печать этикетки</title><style>@media print { body { margin: 0; padding: 2px; } }</style></head><body>${params.html}</body></html>`;
+
+			if (printWindow && !printWindow.closed) {
+				printWindow.document.write(fullHtml);
 				printWindow.document.close();
 				printWindow.focus();
 				setTimeout(() => {
 					try {
-						printWindow.print();
+						printWindow?.print();
 					} catch {}
 				}, 250);
+				return {
+					success: true,
+					printedAt: new Date().toISOString(),
+					silent: false,
+				};
+			}
+
+			// Fallback: hidden iframe print if popups are blocked
+			if (typeof document !== "undefined") {
+				const iframe = document.createElement("iframe");
+				iframe.style.position = "fixed";
+				iframe.style.right = "0";
+				iframe.style.bottom = "0";
+				iframe.style.width = "0";
+				iframe.style.height = "0";
+				iframe.style.border = "0";
+				document.body.appendChild(iframe);
+				iframe.contentDocument?.write(fullHtml);
+				iframe.contentDocument?.close();
+				iframe.contentWindow?.focus();
+				iframe.contentWindow?.print();
+				setTimeout(() => {
+					if (document.body.contains(iframe)) {
+						document.body.removeChild(iframe);
+					}
+				}, 60000);
 				return {
 					success: true,
 					printedAt: new Date().toISOString(),
@@ -191,8 +231,9 @@ export async function dispatchThermalLabelPrint(
 
 /**
  * Universal ESC/POS Thermal Receipt Dispatcher.
- * In Desktop mode: sends raw socket packet (port 9100) or silent OS print.
- * In Web/Mobile mode: formats print preview.
+ * In Desktop mode: sends raw socket packet (port 9100) with instant transparent fallback
+ * to OS print queue or browser window.print() if TCP port is unreachable.
+ * In Web/Mobile mode: formats print preview or triggers browser print dialog.
  */
 export async function dispatchEscPosReceiptPrint(
 	params: DesktopEscPosPrintParams,
@@ -200,22 +241,62 @@ export async function dispatchEscPosReceiptPrint(
 	const platform = detectRuntimePlatform();
 
 	if (platform === "desktop_win") {
-		return await printDesktopEscPosReceipt(params);
+		try {
+			const res = await printDesktopEscPosReceipt(params);
+			if (res.success) {
+				return res;
+			}
+			console.warn("[HardwareDispatcher] Desktop direct socket ESC/POS failed, falling back to OS print dialog:", res.error);
+		} catch (e) {
+			console.warn("[HardwareDispatcher] Desktop direct socket ESC/POS exception, falling back to OS print dialog:", e);
+		}
 	}
 
 	if (typeof window !== "undefined" && (params.html || params.text)) {
 		try {
-			const printWindow = window.open("", "_blank");
-			if (printWindow) {
-				const content = params.html || `<pre style="font-family:monospace;font-size:11px;padding:3mm;">${params.text}</pre>`;
-				printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>${content}</body></html>`);
+			let printWindow: Window | null = null;
+			try {
+				printWindow = window.open("", "_blank");
+			} catch {}
+
+			const content = params.html || `<pre style="font-family:monospace;font-size:11px;padding:3mm;">${params.text}</pre>`;
+			const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Печать чека</title><style>@media print { body { margin: 0; padding: 2px; } }</style></head><body>${content}</body></html>`;
+
+			if (printWindow && !printWindow.closed) {
+				printWindow.document.write(fullHtml);
 				printWindow.document.close();
 				printWindow.focus();
 				setTimeout(() => {
 					try {
-						printWindow.print();
+						printWindow?.print();
 					} catch {}
 				}, 250);
+				return {
+					success: true,
+					printedAt: new Date().toISOString(),
+					silent: false,
+				};
+			}
+
+			// Fallback: hidden iframe print if popups are blocked
+			if (typeof document !== "undefined") {
+				const iframe = document.createElement("iframe");
+				iframe.style.position = "fixed";
+				iframe.style.right = "0";
+				iframe.style.bottom = "0";
+				iframe.style.width = "0";
+				iframe.style.height = "0";
+				iframe.style.border = "0";
+				document.body.appendChild(iframe);
+				iframe.contentDocument?.write(fullHtml);
+				iframe.contentDocument?.close();
+				iframe.contentWindow?.focus();
+				iframe.contentWindow?.print();
+				setTimeout(() => {
+					if (document.body.contains(iframe)) {
+						document.body.removeChild(iframe);
+					}
+				}, 60000);
 				return {
 					success: true,
 					printedAt: new Date().toISOString(),

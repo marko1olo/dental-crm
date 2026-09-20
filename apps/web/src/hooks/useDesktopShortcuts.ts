@@ -32,12 +32,38 @@ export interface UseDesktopShortcutsOptions {
 	onF4Odontogram?: () => void;
 	/** Callback for F5: Refresh clinical schedule data without reloading entire browser tab */
 	onRefreshSchedule?: () => void;
+	/** Callback for F6: Clinical rules / warnings panel */
+	onF6ClinicalRules?: () => void;
+	/** Callback for F7: Visiograph / X-Ray image capture */
+	onF7Visiograph?: () => void;
+	/** Callback for F8: Treatment plan / stages overview */
+	onF8TreatmentPlan?: () => void;
 	/** Callback for F9: Fast fiscal payment tender (54-FZ) */
 	onF9Checkout?: () => void;
+	/** Callback for F10: Outpatient documents / Form 043/u */
+	onF10Documents?: () => void;
 	/** Callback for F11: Kiosk / Fullscreen operatory mode */
 	onF11ToggleKiosk?: () => void;
 	/** Callback for F12: Quick print Form 043/u diary */
 	onF12PrintDiary?: () => void;
+	/**
+	 * When true, allows intercepting F5 for schedule refresh without page reload.
+	 * When false or in web browser, standard F5 and Ctrl+F5 browser reload is preserved.
+	 * (default: false in web browser, true in Desktop EXE)
+	 */
+	interceptBrowserF5?: boolean;
+	/**
+	 * When true, allows intercepting F11 for app kiosk mode.
+	 * When false, preserves native browser/OS fullscreen toggle.
+	 * (default: false in web browser, true in Desktop EXE)
+	 */
+	interceptBrowserF11?: boolean;
+	/**
+	 * When true, allows overriding F12 for custom action (e.g. print diary).
+	 * By default false, ensuring Developer Tools console (F12) is NEVER blocked without explicit intention.
+	 * (default: false)
+	 */
+	interceptBrowserF12?: boolean;
 	/** Whether shortcuts are active (default: true) */
 	enabled?: boolean;
 	/**
@@ -47,6 +73,25 @@ export interface UseDesktopShortcutsOptions {
 	 * (default: true)
 	 */
 	ignoreInputsForSingleKeys?: boolean;
+}
+
+/**
+ * Safely detects desktop execution environment (Electron, Tauri, or Native Desktop bridge).
+ */
+function isDesktopEnv(): boolean {
+	if (typeof window === "undefined") return false;
+	const win = window as unknown as {
+		denteDesktopNative?: { isDesktop?: boolean };
+		electron?: unknown;
+		process?: { versions?: { electron?: string } };
+		__TAURI__?: unknown;
+	};
+	return Boolean(
+		win.denteDesktopNative?.isDesktop ||
+		win.electron !== undefined ||
+		win.process?.versions?.electron !== undefined ||
+		win.__TAURI__ !== undefined,
+	);
 }
 
 /**
@@ -74,7 +119,7 @@ export function isTypingInInputElement(target: EventTarget | null): boolean {
  * Helper to dispatch decoupled custom events for shortcuts across components.
  */
 export function dispatchDesktopShortcut(
-	shortcut: "f1" | "f2" | "f3" | "f4" | "f5" | "f9" | "f11" | "f12" | "escape" | "save" | "print",
+	shortcut: "f1" | "f2" | "f3" | "f4" | "f5" | "f6" | "f7" | "f8" | "f9" | "f10" | "f11" | "f12" | "escape" | "save" | "print",
 ): void {
 	if (typeof window === "undefined" || !window.dispatchEvent) return;
 	try {
@@ -160,11 +205,51 @@ export function useDesktopShortcuts(options: UseDesktopShortcutsOptions = {}): v
 
 			// 3. F5: Refresh clinical schedule without destroying dirty form drafts
 			if (e.key === "F5" || code === "F5") {
+				// NEVER intercept if user holds Ctrl, Shift, Alt, or Meta (preserves Ctrl+F5 / Shift+F5 hard reload)
+				if (e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) {
+					return;
+				}
+				const shouldIntercept = optionsRef.current.interceptBrowserF5 ?? isDesktopEnv();
 				if (optionsRef.current.onRefreshSchedule) {
-					e.preventDefault();
-					e.stopPropagation();
+					if (shouldIntercept) {
+						e.preventDefault();
+						e.stopPropagation();
+					}
 					optionsRef.current.onRefreshSchedule();
 					dispatchDesktopShortcut("f5");
+					if (shouldIntercept) return;
+				}
+			}
+
+			// 3A-1. F6: Clinical rules / warnings panel
+			if (e.key === "F6" || code === "F6") {
+				if (optionsRef.current.onF6ClinicalRules) {
+					e.preventDefault();
+					e.stopPropagation();
+					optionsRef.current.onF6ClinicalRules();
+					dispatchDesktopShortcut("f6");
+					return;
+				}
+			}
+
+			// 3A-2. F7: Visiograph / X-Ray image capture
+			if (e.key === "F7" || code === "F7") {
+				if (optionsRef.current.onF7Visiograph) {
+					e.preventDefault();
+					e.stopPropagation();
+					optionsRef.current.onF7Visiograph();
+					dispatchDesktopShortcut("f7");
+					return;
+				}
+			}
+
+			// 3A-3. F8: Treatment plan / stages overview
+			if (e.key === "F8" || code === "F8") {
+				if (optionsRef.current.onF8TreatmentPlan) {
+					e.preventDefault();
+					e.stopPropagation();
+					optionsRef.current.onF8TreatmentPlan();
+					dispatchDesktopShortcut("f8");
 					return;
 				}
 			}
@@ -180,19 +265,38 @@ export function useDesktopShortcuts(options: UseDesktopShortcutsOptions = {}): v
 				}
 			}
 
-			// 3C. F11: Kiosk / Fullscreen operatory mode
-			if (e.key === "F11" || code === "F11") {
-				if (optionsRef.current.onF11ToggleKiosk) {
+			// 3B-2. F10: Outpatient documents / Form 043/u
+			if (e.key === "F10" || code === "F10") {
+				if (optionsRef.current.onF10Documents) {
 					e.preventDefault();
 					e.stopPropagation();
-					optionsRef.current.onF11ToggleKiosk();
-					dispatchDesktopShortcut("f11");
+					optionsRef.current.onF10Documents();
+					dispatchDesktopShortcut("f10");
 					return;
 				}
 			}
 
-			// 3D. F12: Quick print Form 043/u diary
+			// 3C. F11: Kiosk / Fullscreen operatory mode
+			if (e.key === "F11" || code === "F11") {
+				// In web browser, preserve standard F11 OS/browser fullscreen toggle unless explicitly overridden
+				const shouldIntercept = optionsRef.current.interceptBrowserF11 ?? isDesktopEnv();
+				if (optionsRef.current.onF11ToggleKiosk) {
+					if (shouldIntercept) {
+						e.preventDefault();
+						e.stopPropagation();
+					}
+					optionsRef.current.onF11ToggleKiosk();
+					dispatchDesktopShortcut("f11");
+					if (shouldIntercept) return;
+				}
+			}
+
+			// 3D. F12: Developer Tools console (F12) preserved by default!
 			if (e.key === "F12" || code === "F12") {
+				// NEVER hijack F12 (DevTools console) unless explicitly enabled with interceptBrowserF12: true
+				if (!optionsRef.current.interceptBrowserF12) {
+					return;
+				}
 				if (optionsRef.current.onF12PrintDiary) {
 					e.preventDefault();
 					e.stopPropagation();

@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import {
 	getOmniPlatformInfo,
+	startOfflineQueueAutoSync,
 	syncPlatformDomAttributes,
 	type OmniPlatformInfo,
 } from "../lib/omniPlatformAdapter";
@@ -18,6 +19,14 @@ export function useOmniPlatform(): OmniPlatformInfo {
 		syncPlatformDomAttributes(initial);
 		return initial;
 	});
+
+	// Automatic offline queue auto-sync across all 4 platforms (online / visibilitychange / timer)
+	useEffect(() => {
+		const stopSync = startOfflineQueueAutoSync();
+		return () => {
+			stopSync();
+		};
+	}, []);
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
