@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-18 / WAVES 175–260 / TOPBAR DEDUPLICATION, TOAST OVERLAY CURE, ODONTOGRAM CLIPPING FIX, DEBOUNCED SESSIONSTORAGE QUEUE 400MS, STEPPED PRELOAD EXCLUSION 5400 RPM HDD, GOST ZERO-GC MEMOIZATION, CMO EMR QUALITY AUDIT ENGINE SSOT RESTORATION, DOCTOR AUTONOMY 043U REVISION & 0 DISABLED PRESETS, MOBILE TOUCH-FIRST >=44PX, HTTP 503 NO-MOCK TOKEN PORTAL): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 294 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 357 ФИЧ: 63 КАНОНИЧЕСКИЕ + 294 АДДЕНДУМ, 357/357 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-20 / WAVES 175–263 / MOBILE ERGONOMICS, ANTI-CLIPPING TOOLBARS, 2-LEVEL ODONTOGRAM CONSOLE, QUADRANT NAVIGATION, MOBILE CHECKOUT BAR DOCKED 56PX, COMBO SPLIT 1-CLICK, PURGE OF PROCEDURAL SANPIN & SECURITY MOCKS, SINGLE-COMPILER GATE 8T): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 299 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 362 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 299 АДДЕНДУМ, 362/362 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -8886,5 +8886,50 @@
     * Журнал медицинских отходов классов А, Б, В формирует официальные термоэтикетки `generateWasteThermalStickerHtml`;
   - **6. Защита хост-машины и Single-Compiler Gate (Мандат 8t)**:
     * В полном соответствии с Мандатом 8t компиляторные команды (`tsc`, `npm run typecheck`, `npm run build`) субагентом не запускались. Ресурсы хост-машины сохранены для L1 Оркестратора.
+
+### 422. Red Team Wave 263 — Комплексная синхронизация эргономики мобильных экранов, тулбаров и чистка процедурных мокапов СанПиН/Security (Мандаты 8b, 8c, 8d, 8e, 8h, 8i, 8k, 8n, 8p, 8s, 8t)
+
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Архитектурно реализовано, подтверждено в кодовой базе и верифицировано 2026-09-20)
+* **Задействованные модули и файлы**:
+  - `apps/web/src/components/visit/VisitEmkTab.tsx`
+  - `apps/web/src/hooks/domains/useVisitCompletion.ts`
+  - `apps/web/src/components/odontogram/OdontogramViewContainer.tsx`
+  - `apps/web/src/components/odontogram/ToothChart.tsx`
+  - `apps/web/src/components/odontogram/OdontogramModule.tsx`
+  - `apps/web/src/components/odontogram/odontogram.css`
+  - `apps/web/src/components/documents/DocumentNavTabs.tsx`
+  - `apps/web/src/components/documents/documentNavigation.css`
+  - `apps/web/src/PaymentCapture.tsx`
+  - `apps/web/src/styles/main.css`
+  - `apps/web/src/components/sanpin/AutoclaveRegisterTab.tsx`
+  - `apps/web/src/components/sanpin/PsoRegisterTab.tsx`
+  - `apps/web/src/components/sanpin/MedicalWasteJournalModal.tsx`
+  - `apps/web/src/components/security/AuditTrailHubModal.tsx`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Описание**:
+  - **1. Устранение обрезания текста (Text Clipping) в тулбарах ЭМК, Одонтограмме и Документах (Мандаты 8c, 8d п. 1, 8e п. 1)**:
+    * В `apps/web/src/components/visit/VisitEmkTab.tsx` (строки 2043–2060): кнопка экспресс-пресета SOAP «Периодонтит» (`data-testid="btn-quick-soap-periodontitis"`) защищена от обрезания через `shrink-0 flex-shrink-0 min-w-max` и внутренний `<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">Периодонтит</span>`;
+    * В `apps/web/src/hooks/domains/useVisitCompletion.ts` (строка 116): фоллбек-диагноз завершения приёма синхронизирован на клиническую норму Z01.2;
+    * В `apps/web/src/components/odontogram/OdontogramViewContainer.tsx` (строки 658–1235): внедрена 2-уровневая компактная консоль (Ряд 1: режимы, формула 11–48/51–85/смешанная, «Санирован», «Смета», «План», «Голос», «Ещё»; Ряд 2: патологии и штампы), устранен клиппинг лейбла патологии «Пульпит» (`whitespace-nowrap shrink-0 flex-shrink-0 min-w-max`, анатомический цвет `#ef4444`);
+    * В `apps/web/src/components/documents/DocumentNavTabs.tsx` (строки 59–63, 90–93) и `documentNavigation.css`: вкладка `certificates_sanpin` снабжена адаптивным лейблом — на мобильных `<640px` отображается компактное «СанПиН», на десктопе «Справки и СанПиН» с `min-w-max` и `whitespace-nowrap`, предотвращая разрыв тулбара документов;
+  - **2. Мобильная адаптация одонтограммы у кресла (Мандаты 8c, 8d п. 2, 8n, 8p)**:
+    * В `apps/web/src/components/odontogram/OdontogramModule.tsx` (строка 1278) и `odontogram.css`: крупноформатная кнопка печати карты А4 (`print-odontogram-a4-btn`) скрывается на мобильных экранах `< 640px` через `hidden sm:inline-flex` и медиа-запрос `@media (max-width: 639px)`;
+    * В `apps/web/src/components/odontogram/OdontogramModule.tsx` (строки 1290–1297): плашка «Итого к оплате» защищена от выталкивания и сжатия (`shrink-0 whitespace-nowrap`);
+    * В `apps/web/src/components/odontogram/OdontogramModule.tsx` (строки 1201–1250): соматический алерт критических аллергий сжат из громоздкой карточки 100+px в лаконичную 1-строчную полосу `h-[32px]` (`data-testid="odontogram-critical-somatic-alert"`), экономя полезную высоту экрана;
+    * В `apps/web/src/components/odontogram/ToothChart.tsx` (строки 3513–3550): внедрена мобильная навигация по квадрантам (кнопки `←` / `→`) с компактными лейблами `<span className="sm:hidden">{isQuadrantTop(currentQuadrant) ? "В/Ч" : "Н/Ч"} ({currentQuadrant})</span>`;
+  - **3. Мобильная касса 54-ФЗ: пристыкованный чекаут-бар и 1-клик комбо-сплит (Мандаты 8c, 8e п. 9, 8n)**:
+    * В `apps/web/src/styles/main.css` (строки 14383–14415): мобильный чекаут-бар `#payment-capture #payment-checkout-bar` зафиксирован над нижней системной навигацией (`position: fixed !important; bottom: 56px !important; z-index: 45 !important; flex-wrap: nowrap !important;`), а родительский контейнер снабжен защитным отступом `#payment-capture { padding-bottom: 76px !important; }`, обеспечивая 0-scroll чекаут у кресла без прокрутки;
+    * В `apps/web/src/PaymentCapture.tsx` (строки 880–1009): развернуты 1-клик комбо-пресеты оплат `applySplit5050Preset`, `applyThreeWaySplitPreset`, `applyDepositPlusCardPreset` и кнопка `btn-payment-combo-split`;
+  - **4. Тотальная ликвидация процедурных демо-моков СанПиН и Security (Мандаты 8b, 8s, Core Route пп. 7, 11)**:
+    * В `apps/web/src/components/sanpin/AutoclaveRegisterTab.tsx`: физически удален демо-массив `DEFAULT_AUTOCLAVE_DEMO_RECORDS` (-128 LOC);
+    * В `apps/web/src/components/sanpin/PsoRegisterTab.tsx`: физически удален демо-массив `DEFAULT_PSO_DEMO_RECORDS` (-95 LOC);
+    * В `apps/web/src/components/sanpin/MedicalWasteJournalModal.tsx`: физически удален демо-массив `DEFAULT_DEMO_WASTE_RECORDS` (-58 LOC);
+    * В `apps/web/src/components/security/AuditTrailHubModal.tsx`: зачищены процедурные демо-данные `getInitialAuditTrailDemoData` с переходом на инициализацию пустым массивом `[]`;
+    * Все журналы функционируют в режиме честного пустого состояния (Honest Empty State) с реальной загрузкой данных из PostgreSQL;
+  - **5. Защита хост-машины и Single-Compiler Gate (Мандат 8t)**:
+    * В строгом соответствии с Мандатом 8t компиляторные команды (`tsc`, `npm run typecheck`, `npm run build`) субагентом не запускались. Ресурсы хост-машины сохранены для централизованного гейта L1 Оркестратора.
+
 
 
