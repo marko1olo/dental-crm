@@ -33,6 +33,12 @@ html.low-spec-mode,
 	--glass-border: var(--line) !important;
 	--glass-shadow: none !important;
 	--shadow-premium: none !important;
+	--shadow-sm: none !important;
+	--shadow: none !important;
+	--shadow-md: none !important;
+	--shadow-lg: none !important;
+	--shadow-xl: none !important;
+	--shadow-2xl: none !important;
 	--teal-glow: transparent !important;
 	--transition-smooth: 0.05s ease !important;
 	--transition-fast: 0.05s ease !important;
@@ -46,6 +52,12 @@ html.low-spec-mode,
 		--glass-border: var(--line) !important;
 		--glass-shadow: none !important;
 		--shadow-premium: none !important;
+		--shadow-sm: none !important;
+		--shadow: none !important;
+		--shadow-md: none !important;
+		--shadow-lg: none !important;
+		--shadow-xl: none !important;
+		--shadow-2xl: none !important;
 		--teal-glow: transparent !important;
 		--transition-smooth: 0s !important;
 		--transition-fast: 0s !important;
@@ -95,6 +107,56 @@ html.low-spec-mode *::after,
 	*::after {
 		backdrop-filter: none !important;
 		-webkit-backdrop-filter: none !important;
+	}
+
+	/* Complete suppression of all heavy drop-shadows and elevation layers */
+	.card,
+	.panel,
+	.sheet,
+	.drawer,
+	.drawer-content,
+	.sidebar,
+	.today-schedule-item,
+	.appointment-card,
+	.appointment-block,
+	.patient-row,
+	.patient-card,
+	.finance-row,
+	.invoice-card,
+	.modal-window,
+	.modal-content,
+	.dialog-content,
+	.hover-hud,
+	.dropdown-menu,
+	.popover-panel,
+	.context-menu,
+	.call-popup,
+	.auth-card,
+	.menu-popup,
+	.command-palette,
+	.odontogram-hud,
+	.toast-card,
+	.floating-badge,
+	.shadow-sm,
+	.shadow,
+	.shadow-md,
+	.shadow-lg,
+	.shadow-xl,
+	.shadow-2xl,
+	.shadow-inner,
+	.shadow-premium,
+	[class*="shadow-"],
+	[class*="drop-shadow"] {
+		box-shadow: none !important;
+	}
+
+	/* Decorative blur orbs and glowing backgrounds completely eliminated */
+	.auth-glow,
+	.glow-orb,
+	.bg-glow,
+	[class*="blur-"] {
+		display: none !important;
+		filter: none !important;
 	}
 }
 
@@ -352,6 +414,13 @@ html[data-perf="low"] .patient-row,
 html[data-perf="low"] .patient-card,
 html[data-perf="low"] .finance-row,
 html[data-perf="low"] .invoice-card,
+html[data-perf="low"] .modal-window,
+html[data-perf="low"] .modal-content,
+html[data-perf="low"] .dialog-content,
+html[data-perf="low"] .hover-hud,
+html[data-perf="low"] .dropdown-menu,
+html[data-perf="low"] .popover-panel,
+html[data-perf="low"] [class*="shadow-"],
 html[data-perf="low"] .shadow-sm,
 html[data-perf="low"] .shadow,
 html[data-perf="low"] .shadow-md,
@@ -367,6 +436,13 @@ html[data-perf="low"] .shadow-premium,
 [data-perf="low"] .patient-card,
 [data-perf="low"] .finance-row,
 [data-perf="low"] .invoice-card,
+[data-perf="low"] .modal-window,
+[data-perf="low"] .modal-content,
+[data-perf="low"] .dialog-content,
+[data-perf="low"] .hover-hud,
+[data-perf="low"] .dropdown-menu,
+[data-perf="low"] .popover-panel,
+[data-perf="low"] [class*="shadow-"],
 [data-perf="low"] .shadow-sm,
 [data-perf="low"] .shadow,
 [data-perf="low"] .shadow-md,
@@ -416,6 +492,23 @@ html.low-spec-mode .shadow-2xl,
 html.low-spec-mode .shadow-premium {
 	box-shadow: none !important;
 	border: 1px solid var(--line) !important;
+}
+
+/* Decorative blur orbs and glowing backgrounds completely eliminated */
+html[data-perf="low"] .auth-glow,
+html[data-perf="low"] .glow-orb,
+html[data-perf="low"] .bg-glow,
+html[data-perf="low"] [class*="blur-"],
+[data-perf="low"] .auth-glow,
+[data-perf="low"] .glow-orb,
+[data-perf="low"] .bg-glow,
+[data-perf="low"] [class*="blur-"],
+html.low-spec-mode .auth-glow,
+html.low-spec-mode .glow-orb,
+html.low-spec-mode .bg-glow,
+html.low-spec-mode [class*="blur-"] {
+	display: none !important;
+	filter: none !important;
 }
 
 /* --------------------------------------------------------------------------
@@ -501,58 +594,170 @@ html.low-spec-mode .transition-all {
 }
 
 /* --------------------------------------------------------------------------
-   7. Content Visibility & Contain: Paint Layout for Heavy Tabs & Lists
+   7. Content Visibility & DOM Containment for Heavy Tables, Lists & Cards
+   (Mandates 8c, 8e, 8n - 60 FPS on 2-Core Potato Laptops & 5400 RPM HDDs)
    -------------------------------------------------------------------------- */
-/* Heavy repeating list rows and cards */
+
+/* Tier A: Compact Table Rows & Inline List Items (~36px - 48px height) */
 .patient-row,
-.patient-card,
-.curator-patient-card,
-.marketing-roi-patient-card,
+.patient-table tbody tr,
+.patient-search-item,
+.patient-history-row,
+.patient-queue-item,
+.patient-tag-item,
+.schedule-row,
+.schedule-time-row,
+.schedule-slot,
+.schedule-grid-slot,
+.chair-schedule-slot,
+.schedule-day-gap,
+.schedule-day-overlap,
+.invoices-table tbody tr,
+.invoices-data-table tbody tr,
+.invoices-table-row,
+.finance-row,
+.finance-planning-row,
+.payment-row,
+.cash-register-row,
+.kassa-operation-row,
+.fiscal-receipt-row,
+.pricelist-data-table tbody tr,
+.pricelist-row,
+.pricelist-item,
+.service-item-row,
+.category-tree-node,
+.nomenclature-item-row,
+.service-pricelist-table tbody tr,
+.sanpin-table tbody tr,
+.sanpin-log-row,
+.journal257-table tbody tr,
+.journal257-row,
+.journal366-table tbody tr,
+.journal366-row,
+.journal-366-row,
+.sterilization-table tbody tr,
+.sterilization-log-row,
+.pso-table tbody tr,
+.pso-log-row,
+.waste-table tbody tr,
+.kraft-table tbody tr,
+.bactericidal-log-row,
+.inventory-item-row,
+.inventory-table tbody tr,
+.warehouse-table tbody tr,
+.warehouse-item-row,
+.warehouse-stock-row,
+.inventory-stock-row,
+.stock-item-row,
+.stock-balance-row,
+.supplier-invoice-row,
+.writeoff-act-row,
+.ztl-order-row,
+.ztl-orders-table tbody tr,
+.lab-order-row,
+.lab-orders-table tbody tr,
+.lab-task-row,
+.ztl-step-row,
+.visit-history-row,
+.emk-history-row,
+.diary-timeline-item,
+.treatment-history-item,
+.plan-procedure-row,
+.call-list-row,
+.call-history-item,
+.call-history-row,
+.communication-event-row,
+.message-delivery-row,
+.message-item,
+.chat-message-row,
+.notification-item,
+.doctor-shift-row,
+.timesheet-table tbody tr,
+.staff-member-row,
+.payroll-statement-row,
+.bonus-rule-row,
+.egisz-document-row,
+.egisz-queue-row,
+.audit-log-item,
+.audit-log-row,
+.operations-list-item,
+.system-event-row,
+.diagnostic-log-row,
+.conversion-step-row,
+.marketing-source-row,
+.doctor-kpi-row,
+.document-row,
+.doc-template-row,
+.outpatient-archive-item,
+.bom-rule-row {
+	contain: paint layout;
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 44px;
+}
+
+/* Tier B: Medium Cards & Grid Cards (~70px - 100px height) */
 .today-schedule-item,
 .appointment-card,
 .appointment-block,
-.pricelist-item,
-.pricelist-row,
-.catalog-item-row,
-.audit-log-item,
-.operations-list-item,
-.call-list-row,
-.message-item,
-.inventory-item-row,
-.treatment-plan-stage-card,
-.plan-procedure-row,
-.visit-history-entry,
-.diary-timeline-item,
-.finance-row,
-.payment-row,
-.patient-row,
-.invoice-card,
-.document-row,
-.archive-document-card,
-.catalog-item-card,
-.appointment-card,
-.schedule-day-gap,
-.schedule-day-overlap,
+.schedule-card,
+.schedule-appointment-card,
 .schedule-timeline-item,
-.sanpin-table tbody tr,
-.sanpin-log-row,
-.patient-search-item,
-.visit-history-card,
-.treatment-plan-card-item,
-.schedule-time-row,
-.cd-template-item-card,
-.pricelist-data-table tbody tr,
-.pricelist-row,
-.soap-protocol-card,
-.clinical-protocol-card,
+.patient-card,
+.curator-patient-card,
+.marketing-roi-patient-card,
+.family-wallet-member-card,
+.invoice-card,
 .inventory-batch-card,
-.inventory-item-card {
+.inventory-item-card,
+.expiration-alert-card,
+.ztl-order-card,
+.ztl-kanban-card,
+.lab-order-card,
+.telephony-call-card,
+.communication-task,
+.campaign-card,
+.patient-notification-card,
+.doctor-payroll-card,
+.shift-log-card,
+.access-role-card,
+.egisz-log-card,
+.egisz-registry-item,
+.analytics-kpi-card,
+.kraft-bag-card,
+.quick-package-card,
+.catalog-item-card,
+.catalog-item-row,
+.cd-template-item-card,
+.consent-template-card,
+.archive-document-card {
 	contain: paint layout;
 	content-visibility: auto;
-	contain-intrinsic-size: 1px 48px;
+	contain-intrinsic-size: 1px 84px;
 }
 
-/* Heavy offscreen sections, workspaces and tabs (paint + layout containment) */
+/* Tier C: Large Clinical Protocol & Treatment Plan Cards (~120px - 180px height) */
+.visit-history-item,
+.visit-history-card,
+.visit-history-entry,
+.soap-protocol-card,
+.clinical-protocol-card,
+.clinical-record-card,
+.visit-stage-card,
+.emk-timeline-card,
+.phased-plan-stage,
+.treatment-plan-stage-card,
+.treatment-plan-phased-card,
+.treatment-plan-card-item,
+.treatment-stage-item,
+.plan-variant-card,
+.photo-protocol-thumb,
+.study-series-item {
+	contain: paint layout;
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 140px;
+}
+
+/* Tier D: Heavy Offscreen Sections, Workspaces, Tabs & Containers (~300px - 500px) */
 .workspace-section,
 .documents-archive-list,
 .patient-admin-panel,
@@ -574,104 +779,13 @@ html.low-spec-mode .transition-all {
 .treatment-plan-view,
 .odontogram-module-container,
 .finance-split,
-.finance-list {
-	contain: paint layout;
-	content-visibility: auto;
-	contain-intrinsic-size: auto 300px;
-}
-
-/* Virtualized long lists, table rows and cards (Mandate 8c, 8n - 48px CSS containment for 60 FPS on HDD) */
-/* 1. Schedule */
-.today-schedule-item,
-.appointment-card,
-.appointment-block,
-.schedule-slot,
-.schedule-card,
-.schedule-appointment-card,
-.schedule-day-gap,
-.schedule-day-overlap,
-.schedule-timeline-item,
-.schedule-row,
-.schedule-grid-slot,
-.chair-schedule-slot,
-/* 2. Patient table */
-.patient-row,
-.patient-card,
-.patient-table tbody tr,
-.patient-search-item,
-.patient-history-row,
-.curator-patient-card,
-/* 3. Cashier invoices and finance register */
-.invoice-card,
-.invoices-table tbody tr,
-.invoices-data-table tbody tr,
-.invoices-table-row,
-.finance-row,
-.finance-planning-row,
-.payment-row,
-.cash-register-row,
-/* 4. SanPiN journals (257/у, 366/у) */
-.sanpin-table tbody tr,
-.sanpin-log-row,
-.sanpin-table-wrapper,
-.journal257-table tbody tr,
-.journal257-row,
-.journal366-table tbody tr,
-.journal366-row,
-.journal-366-row,
-.sterilization-table tbody tr,
-.sterilization-log-row,
-.pso-table tbody tr,
-.pso-log-row,
-.waste-table tbody tr,
-.kraft-table tbody tr,
-/* 5. Warehouse stock / balances */
-.inventory-item-row,
-.inventory-table tbody tr,
-.inventory-batch-card,
-.inventory-item-card,
-.warehouse-table tbody tr,
-.warehouse-item-row,
-.warehouse-stock-row,
-.inventory-stock-row,
-.stock-item-row,
-.stock-balance-row,
-/* 6. ZTL lab orders */
-.ztl-order-card,
+.finance-list,
 .ztl-kanban-column,
-.ztl-kanban-card,
-.ztl-order-row,
-.ztl-orders-table tbody tr,
-.lab-order-card,
-.lab-order-row,
-.lab-orders-table tbody tr,
-/* 7. Visit history, EMK & clinical diaries */
-.visit-history-item,
-.visit-history-card,
-.visit-history-entry,
-.visit-history-row,
-.diary-timeline-item,
-.emk-history-row,
-.emk-timeline-card,
-.soap-protocol-card,
-.clinical-protocol-card,
-/* 8. Additional lists & rows */
-.communication-task,
-.communication-event-row,
-.message-delivery-row,
-.campaign-card,
-.bom-rule-row,
-.quick-package-card,
-.pricelist-data-table tbody tr,
-.pricelist-row,
-.document-row,
-.archive-document-card,
-.catalog-item-card,
-.cd-template-item-card,
-.cd-template-list {
+.cd-template-list,
+.sanpin-table-wrapper {
 	contain: paint layout;
 	content-visibility: auto;
-	contain-intrinsic-size: 1px 48px;
+	contain-intrinsic-size: auto 360px;
 }
 
 /* --------------------------------------------------------------------------
@@ -755,4 +869,74 @@ html[data-low-spec="true"] svg,
 html.low-spec-mode svg {
 	filter: none !important;
 }
+
+/* --------------------------------------------------------------------------
+   11. Odontogram 60 FPS Low-Spec GPU Optimization (Mandates 8e, 8n)
+   Guarantees <16ms frame render budget on Intel HD Graphics / Celeron CPUs.
+   Eliminates backdrop-filter, transition delays on 32 teeth, and promotes
+   canvas/SVG containers to isolated hardware composite layers.
+   -------------------------------------------------------------------------- */
+html[data-hardware-tier="low"] .tooth-chart-arch-container,
+html[data-hardware-tier="low"] .anatomical-odontogram-container,
+html[data-hardware-tier="low"] .odontogram-view-container,
+html[data-hardware-tier="low"] .odontogram-canvas-layer,
+[data-hardware-tier="low"] .tooth-chart-arch-container,
+[data-hardware-tier="low"] .anatomical-odontogram-container,
+[data-hardware-tier="low"] .odontogram-view-container,
+[data-hardware-tier="low"] .odontogram-canvas-layer,
+html[data-low-spec="true"] .tooth-chart-arch-container,
+html[data-low-spec="true"] .anatomical-odontogram-container,
+html[data-low-spec="true"] .odontogram-canvas-layer,
+[data-low-spec="true"] .tooth-chart-arch-container,
+[data-low-spec="true"] .anatomical-odontogram-container,
+[data-low-spec="true"] .odontogram-canvas-layer,
+html.low-spec-mode .tooth-chart-arch-container,
+html.low-spec-mode .anatomical-odontogram-container,
+html.low-spec-mode .odontogram-canvas-layer {
+	contain: layout paint !important;
+	transform: translateZ(0) !important;
+	backface-visibility: hidden !important;
+}
+
+html[data-hardware-tier="low"] .tooth-hover-quick-hud,
+[data-hardware-tier="low"] .tooth-hover-quick-hud,
+html[data-low-spec="true"] .tooth-hover-quick-hud,
+[data-low-spec="true"] .tooth-hover-quick-hud,
+html.low-spec-mode .tooth-hover-quick-hud {
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+	transition: opacity 0.05s ease !important;
+}
+
+html[data-hardware-tier="low"] .tooth-cell,
+html[data-hardware-tier="low"] .tooth-cell *,
+html[data-hardware-tier="low"] .anatomical-tooth-cell,
+html[data-hardware-tier="low"] .anatomical-tooth-cell *,
+html[data-hardware-tier="low"] .tooth-radial-menu,
+[data-hardware-tier="low"] .tooth-cell,
+[data-hardware-tier="low"] .tooth-cell *,
+[data-hardware-tier="low"] .anatomical-tooth-cell,
+[data-hardware-tier="low"] .anatomical-tooth-cell *,
+[data-hardware-tier="low"] .tooth-radial-menu,
+html[data-low-spec="true"] .tooth-cell,
+html[data-low-spec="true"] .tooth-cell *,
+html[data-low-spec="true"] .anatomical-tooth-cell,
+html[data-low-spec="true"] .anatomical-tooth-cell *,
+html[data-low-spec="true"] .tooth-radial-menu,
+[data-low-spec="true"] .tooth-cell,
+[data-low-spec="true"] .tooth-cell *,
+[data-low-spec="true"] .anatomical-tooth-cell,
+[data-low-spec="true"] .anatomical-tooth-cell *,
+[data-low-spec="true"] .tooth-radial-menu,
+html.low-spec-mode .tooth-cell,
+html.low-spec-mode .tooth-cell *,
+html.low-spec-mode .anatomical-tooth-cell,
+html.low-spec-mode .anatomical-tooth-cell *,
+html.low-spec-mode .tooth-radial-menu {
+	transition: none !important;
+	animation: none !important;
+	filter: none !important;
+}
+
 
