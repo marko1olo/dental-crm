@@ -180,9 +180,13 @@ export interface ScheduleGridProps {
 	onQuickStatusChange?:
 		| ((appointmentId: string, status: Appointment["status"]) => void)
 		| undefined;
-	patientName: (
+	patientName?: (
 		patients: Dashboard["patients"],
-		patientId?: string | null,
+		patientId: string | null,
+	) => string;
+	getPatientName?: (
+		patients: Dashboard["patients"],
+		patientId: string | null,
 	) => string;
 	formatTime: (iso: string) => string;
 	toDateTimeLocalValue: (iso: string, timezone?: string | null) => string;
@@ -365,7 +369,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		onSlotClick,
 		onAppointmentClick,
 		onQuickStatusChange,
-		patientName,
+		patientName: propPatientName,
+		getPatientName: propGetPatientName,
 		formatTime,
 		toDateTimeLocalValue = (iso: string) => (iso ? iso.slice(0, 16) : ""),
 		appointmentLabels,
@@ -376,6 +381,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		hideToolbar = false,
 		hideInlineAddChair = false,
 	} = props;
+
+	const patientName = propPatientName || propGetPatientName || ((_patients: any, _id: string | null) => "Пациент");
 
 	const [hoveredApptId, setHoveredApptId] = useState<string | null>(null);
 	const [activeMenuApptId, setActiveMenuApptId] = useState<string | null>(null);
@@ -3391,8 +3398,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														patientLookupMap={patientLookupMap}
 														staffLookupMap={staffLookupMap}
 														collisionMap={collisionMap}
-														patientNameFn={(pts, id) => patientName(pts, id ?? null)}
-														getPatientName={(pts, id) => patientName(pts, id ?? null)}
+														patientNameFn={(pts, id) => patientName(pts, id)}
+														getPatientName={(pts, id) => patientName(pts, id)}
 														dashboard={dashboard}
 														timezone={timezone}
 														toDateTimeLocalValue={toDateTimeLocalValue}
