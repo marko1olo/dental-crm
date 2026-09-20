@@ -8830,3 +8830,61 @@
   - **Защита хост-машины и Single-Compiler Gate (Мандат 8t)**:
     * В полном соответствии с Мандатом 8t компиляторные команды (`tsc`, `npm run typecheck`, `npm run build`) не запускались воркером; проверка проведена через точечный тест `node --test` (48/48 PASS) и скрипт валидации кодировок `check:encoding` (0 ошибок).
 
+### 421. Red Team Wave 262 — Комплексная синхронизация реестра фич и клинической эргономики: автономия кассы 54-ФЗ соло-врача, печать договора без 403, мобильная одонтограмма, норма ЭМК 043/у и чистые журналы СанПиН (Мандаты 8b, 8c, 8d, 8e, 8h, 8i, 8k, 8n, 8p, 8s, 8t)
+
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Архитектурно реализовано, подтверждено в кодовой базе и верифицировано 2026-09-20)
+* **Задействованные модули и файлы**:
+  - `apps/web/src/PaymentCapture.tsx`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `apps/web/src/DocumentsView.tsx`
+  - `apps/web/src/components/documents/PaidContractRequiredFieldsPanel.tsx`
+  - `apps/web/src/components/odontogram/OdontogramViewContainer.tsx`
+  - `apps/web/src/components/odontogram/ToothChart.tsx`
+  - `apps/web/src/components/odontogram/OdontogramModule.tsx`
+  - `apps/web/src/components/odontogram/odontogram.css`
+  - `apps/web/src/components/visit/VisitEmkTab.tsx`
+  - `apps/web/src/components/visit/VisitSoapEditor.tsx`
+  - `apps/web/src/hooks/domains/useVisitDiaryLogic.ts`
+  - `apps/web/src/components/sanpin/SanpinRegisters.tsx`
+  - `apps/web/src/components/sanpin/PsoRegisterTab.tsx`
+  - `apps/web/src/components/sanpin/AutoclaveRegisterTab.tsx`
+  - `apps/web/src/components/sanpin/MedicalWasteRegisterTab.tsx`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Описание**:
+  - **1. Автономия кассы 54-ФЗ соло-врача без требования ИНН, комбинированная оплата и свободные скидки до 100% (Мандаты 8e пп. 7, 9, 8n)**:
+    * В `apps/web/src/PaymentCapture.tsx` (строки 820–822, 857) валидатор `payerInnInvalid` активируется строго при наличии введенного значения `trimmedPayerInn`; для физических лиц требование ИНН полностью снято, что исключает блокировку чеков 54-ФЗ при оплате физлицами наличными или картой;
+    * В функции `applyDoctorDiscount` (строки 880–941) врачу предоставлена полная свобода назначения скидок у кресла без мастер-паролей администратора:
+      - `warranty_100`: 100% скидка на гарантийные переделки (сумма к оплате 0 ₽, формируется регламентный акт);
+      - `colleague_100`: 100% скидка для сотрудников и коллег клиники (0 ₽ к оплате);
+      - Быстрые процентные пресеты скидки 50%, 20%, 10%;
+    * В функциях комбинированной оплаты (строки 943–1009):
+      - `applySplit5050Preset`: моментальное разбиение суммы 50% Наличные + 50% Карта с автобалансировкой нечетной копейки;
+      - `applyThreeWaySplitPreset`: 3-way сплит Наличные + Карта + Аванс/баланс;
+      - `applyDepositPlusCardPreset`: 1-кликовое списание доступного остатка аванса пациента и направление остатка на оплату картой;
+  - **2. Печать чистого бланка договора со строками «_______» для ручного заполнения без 403-ошибок (Мандаты 8c, 8e п. 8, 8n)**:
+    * В `apps/web/src/components/documents/PaidContractRequiredFieldsPanel.tsx` (строки 100–135) реализована кнопка `data-testid="btn-missing-fields-print-blank-contract"`: регистратор имеет право распечатать чистый типовой договор `printBlankMedicalContract(patient, { doctorName })` с прочерками для ручного заполнения паспортных данных при первичном обращении на стойке;
+    * В `apps/web/src/DocumentsView.tsx` (строки 1626–1655) размещена кнопка `data-testid="btn-documents-print-blank-contract"`: формирование договора происходит локально без блокировок, 403-ошибок или запретов со стороны бэкенда при неполных реквизитах карты;
+  - **3. Компактная одонтограмма с доминантной дугой и скрытием печати А4 на мобильных <=639px (Мандаты 8c, 8d п. 2, 8n, 8p)**:
+    * В `apps/web/src/components/odontogram/odontogram.css` (строки 2431–2434) медиа-правилом `@media (max-width: 639px) { [data-testid="print-odontogram-a4-btn"] { display: none !important; } }` принудительно скрыта крупная кнопка печати карты А4;
+    * В `apps/web/src/components/odontogram/OdontogramModule.tsx` (строка 1278) кнопка печати снабжена классом `hidden sm:inline-flex`;
+    * В `apps/web/src/components/odontogram/ToothChart.tsx` (строки 3412–3450) и `OdontogramViewContainer.tsx` зубная дуга занимает доминантное пространство холста (FDI 11..48, молочные 51..85, переключатель квадрантов, 1-клик статус «Интактный»), не создавая горизонтального скролла на мобильных;
+  - **4. Автозаполнение нормы дневника 043/у в 1 клик и быстрые регламентные пресеты SOAP (Мандаты 8c, 8d, 8e пп. 1, 3, 6, 8k, 8n)**:
+    * В `apps/web/src/components/visit/VisitEmkTab.tsx` (строки 1965–2076) развернута доминантная панель `data-testid="emk-tier1-quick-soap-bar"`:
+      - `data-testid="btn-quick-soap-norm"`: 1-клик вызов `handleApplyPhysiologicalNorm` (норма Z01.2 «Соматически здоров / Норма»);
+      - `data-testid="btn-quick-soap-hygiene"`: K05.0 Профгигиена;
+      - `data-testid="btn-quick-soap-caries"`: K02.1 Кариес;
+      - `data-testid="btn-quick-soap-pulpitis"`: K04.0 Пульпит;
+      - `data-testid="btn-quick-soap-periodontitis"`: K04.5 Периодонтит;
+      - `data-testid="btn-quick-soap-extraction"`: K04.8 Простое удаление;
+    * В `useVisitDiaryLogic.ts` обеспечен 300мс debounced autosave с гарантированным сбросом очереди при `visibilitychange` и смене вкладки;
+  - **5. Очистка журналов стерилизации СанПиН от процедурных демо-моков (Мандаты 8b, 8e п. 10, 8i, 8k, 8s)**:
+    * В `apps/web/src/components/sanpin/SanpinRegisters.tsx`, `PsoRegisterTab.tsx` (строки 49–75, 115–185), `AutoclaveRegisterTab.tsx` (строки 41–48) и `MedicalWasteRegisterTab.tsx` (строки 39–64) полностью устранены процедурные синтетические диорамы;
+    * Журнал предстерилизационной очистки (Форма № 366/у) подключен к реальному API `/api/registers/pso` и печатает регламентный бланк через `generatePsoJournalPrintHtml`;
+    * Журнал работы стерилизаторов автоклава (Форма № 257/у) формирует печатную форму `generateForm257PrintHtml` и термоэтикетки пакетов `generateThermalStickerHtml`;
+    * Журнал медицинских отходов классов А, Б, В формирует официальные термоэтикетки `generateWasteThermalStickerHtml`;
+  - **6. Защита хост-машины и Single-Compiler Gate (Мандат 8t)**:
+    * В полном соответствии с Мандатом 8t компиляторные команды (`tsc`, `npm run typecheck`, `npm run build`) субагентом не запускались. Ресурсы хост-машины сохранены для L1 Оркестратора.
+
+

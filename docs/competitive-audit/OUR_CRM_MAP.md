@@ -5690,3 +5690,43 @@
   - `docs/competitive-audit/BACKLOG.md`
   - `docs/competitive-audit/OUR_CRM_MAP.md`
 
+### 2.10.356. Wave 262: Комплексная синхронизация реестра фич и клинической эргономики: автономия кассы 54-ФЗ соло-врача, печать чистого договора без 403, адаптивная одонтограмма, норма ЭМК 043/у и журналы СанПиН 3.3686-21 (Мандаты 8b, 8c, 8d, 8e, 8h, 8i, 8k, 8n, 8p, 8s, 8t)
+
+- **Цель**: Комплексная синхронизация реестра фич и кодовой базы с подтверждением 100% паритета по 5 ключевым направлениям клинической эргономики и автономии соло-врача:
+  1. *Автономия кассы 54-ФЗ для соло-врача и свобода скидок (Мандаты 8e пп. 7, 9, 8n)*:
+     - В `PaymentCapture.tsx` (строки 820–822, 857) валидация ИНН плательщика `payerInnInvalid` исключена для физлиц (ИНН полностью опционален);
+     - В функции `applyDoctorDiscount` (строки 880–941) врачу открыты автономные скидки до 100%: `warranty_100` (100% гарантийная переделка 0 ₽ без запроса мастер-пароля администратора), `colleague_100` (скидка сотрудникам 100% 0 ₽) и процентные пресеты 50%, 20%, 10%;
+     - В функциях сплит-оплаты (строки 943–1009) реализованы 1-кликовые комбинации: `applySplit5050Preset` (50/50 Нал + Карта), `applyThreeWaySplitPreset` (Нал + Карта + Аванс), `applyDepositPlusCardPreset` (Аванс + Карта);
+  2. *Печать чистого бланка договора с прочерками без 403-ошибок (Мандаты 8c, 8e п. 8, 8n)*:
+     - В `DocumentsView.tsx` (строки 1626–1655, кнопка `data-testid="btn-documents-print-blank-contract"`) и `PaidContractRequiredFieldsPanel.tsx` (строки 100–135, кнопка `data-testid="btn-missing-fields-print-blank-contract"`) обеспечена регламентная печать чистого типового договора `printBlankMedicalContract(patient, { doctorName })` со строками «_______» для ручного заполнения паспортных данных при первичном обращении на стойке без блокировок бэкенда;
+  3. *Компактная одонтограмма с доминантной дугой и скрытием печати А4 на мобильных <=639px (Мандаты 8c, 8d п. 2, 8n, 8p)*:
+     - В `ToothChart.tsx` (строки 3412–3450) и `OdontogramViewContainer.tsx` зубная формула занимает доминантное пространство холста у кресла (FDI 11..48, молочный прикус 51..85, квадранты, 1-клик «Интактный»);
+     - В `OdontogramModule.tsx` (строка 1278, `data-testid="print-odontogram-a4-btn"`) кнопка печати карты А4 скрывается на экранах $\le 639\text{px}$ через `hidden sm:inline-flex` и `@media (max-width: 639px)` в `odontogram.css` (строки 2431–2434);
+  4. *Автозаполнение физиологической нормы 043/у в 1 клик и быстрые регламентные SOAP-пресеты (Мандаты 8c, 8d, 8e пп. 1, 3, 6, 8k, 8n)*:
+     - В `VisitEmkTab.tsx` (строки 1965–2076) экспресс-бар `data-testid="emk-tier1-quick-soap-bar"` обеспечивает 1-клик протоколирование: `btn-quick-soap-norm` (Z01.2 норма «Соматически здоров»), `btn-quick-soap-hygiene` (K05.0 Профгигиена), `btn-quick-soap-caries` (K02.1 Кариес), `btn-quick-soap-pulpitis` (K04.0 Пульпит), `btn-quick-soap-periodontitis` (K04.5 Периодонтит), `btn-quick-soap-extraction` (K04.8 Удаление) с 300мс debounced autosave;
+  5. *Очистка журналов СанПиН от синтетических процедурных демо-моков (Мандаты 8b, 8e п. 10, 8i, 8k, 8s)*:
+     - В `SanpinRegisters.tsx`, `PsoRegisterTab.tsx` (строки 49–75, 115–185), `AutoclaveRegisterTab.tsx` (строки 41–48) и `MedicalWasteRegisterTab.tsx` (строки 39–64) журналы контроля ПСО (форма № 366/у), автоклавирования (форма № 257/у) и медотходов классов А/Б/В подключены к реальным API и формируют официальные печатные бланки и термоэтикетки со штрихкодами без процедурных диорам;
+  6. *Защита хост-машины и Single-Compiler Gate (Мандат 8t)*:
+     - Все проверки выполнены без запуска тяжелых компиляторов хост-машины воркером;
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/PaymentCapture.tsx`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `apps/web/src/DocumentsView.tsx`
+  - `apps/web/src/components/documents/PaidContractRequiredFieldsPanel.tsx`
+  - `apps/web/src/components/odontogram/OdontogramViewContainer.tsx`
+  - `apps/web/src/components/odontogram/ToothChart.tsx`
+  - `apps/web/src/components/odontogram/OdontogramModule.tsx`
+  - `apps/web/src/components/odontogram/odontogram.css`
+  - `apps/web/src/components/visit/VisitEmkTab.tsx`
+  - `apps/web/src/components/visit/VisitSoapEditor.tsx`
+  - `apps/web/src/hooks/domains/useVisitDiaryLogic.ts`
+  - `apps/web/src/components/sanpin/SanpinRegisters.tsx`
+  - `apps/web/src/components/sanpin/PsoRegisterTab.tsx`
+  - `apps/web/src/components/sanpin/AutoclaveRegisterTab.tsx`
+  - `apps/web/src/components/sanpin/MedicalWasteRegisterTab.tsx`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+
+
