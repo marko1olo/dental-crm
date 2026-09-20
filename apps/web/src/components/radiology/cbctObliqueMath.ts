@@ -1099,7 +1099,8 @@ export function drawObliqueCrosshairWithRotationHandles(
 		ctx.textBaseline = "top";
 
 		const badgeX = widthPx - 10;
-		const badgeY = 10;
+		// Positioned with mt-1 (14px) vertical clearance from top angle division markers & ruler ticks
+		const badgeY = 14;
 
 		ctx.fillStyle = invertColors ? "rgba(255, 255, 255, 0.95)" : "rgba(15, 23, 42, 0.92)";
 		ctx.strokeStyle = invertColors ? "rgba(2, 132, 199, 0.8)" : "rgba(6, 182, 212, 0.6)";

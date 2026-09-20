@@ -5049,8 +5049,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					</button>
 				</div>
 
-				{/* Right: Primary Clinical Actions (В ЭМК, Панель), More Options Menu (...), Window Controls */}
-				<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 sticky right-0 z-20 bg-zinc-950 pl-1.5 shadow-[-6px_0_12px_rgba(9,9,11,0.9)]">
+				{/* Right: Primary Clinical Actions (В ЭМК, Панель), More Options Menu (...), Window Controls with pr-2 clearance */}
+				<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 sticky right-0 z-20 bg-zinc-950 pl-1.5 pr-2 sm:pr-2.5 shadow-[-6px_0_12px_rgba(9,9,11,0.9)]">
 					{/* Primary Action 1: Clinical EMR Snapshot Export Button */}
 					<button
 						type="button"
@@ -5231,7 +5231,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					</div>
 
 					{/* Window Control Actions: Maximize & Close */}
-					<div className="flex items-center gap-1 pl-1 sm:pl-1.5 border-l border-zinc-800 shrink-0">
+					<div className="flex items-center gap-1 pl-1 sm:pl-1.5 pr-0.5 border-l border-zinc-800 shrink-0">
 						{/* Modal Maximize / Fullscreen Button */}
 						<button
 							type="button"

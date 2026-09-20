@@ -669,7 +669,7 @@ export function PanoramicRendererWindow({
 			style={{ background: "var(--paper, #09090b)" }}
 		>
 			{/* CLINICAL HEADER */}
-			<div className="mpr-toolbar bg-neutral-900 border-b border-neutral-800 px-3 py-1.5 flex flex-nowrap justify-between items-center cursor-move handle gap-2 overflow-x-auto no-scrollbar min-h-[36px]">
+			<div className="mpr-toolbar bg-neutral-900 border-b border-neutral-800 px-3 pr-2 sm:pr-3 py-1.5 flex flex-nowrap justify-between items-center cursor-move handle gap-2 overflow-x-auto no-scrollbar min-h-[36px]">
 				<div className="flex items-center gap-2 shrink-0 min-w-0">
 					<div className="flex items-center gap-1.5 min-w-0">
 						<Activity className="w-4 h-4 text-[var(--teal)] shrink-0" />
@@ -685,7 +685,7 @@ export function PanoramicRendererWindow({
 				</div>
 
 				{/* ACTIONS */}
-				<div className="flex items-center gap-1.5 shrink-0">
+				<div className="flex items-center gap-1.5 shrink-0 pr-2">
 					<button
 						type="button"
 						onClick={handleAutoDetectArch}

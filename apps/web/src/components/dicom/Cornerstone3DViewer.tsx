@@ -1518,7 +1518,7 @@ export function Cornerstone3DViewer({
 					alignItems: "center",
 					justifyContent: "space-between",
 					gap: "8px",
-					padding: "0 10px",
+					padding: "0 12px 0 10px",
 					backgroundColor: "var(--paper-strong, #121214)",
 					borderBottom: "1px solid var(--line-strong, rgba(255,255,255,0.12))",
 					zIndex: 20,

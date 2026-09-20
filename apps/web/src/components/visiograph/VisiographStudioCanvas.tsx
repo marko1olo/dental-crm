@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { disposeWebGlRenderingContext } from "@dental/shared";
 import {
 	CLINICAL_VISIOGRAPH_FILTERS,
 	type ClinicalVisiographFilterPreset,
@@ -604,13 +605,49 @@ export function VisiographStudioCanvas({
 		setHoverPos(null);
 	};
 
-	// Clean up pending animation frame on unmount
+	// Clean up pending animation frame and heavy canvas/image backing stores on unmount
 	useEffect(() => {
 		return () => {
 			if (hoverRafIdRef.current !== null && typeof cancelAnimationFrame !== "undefined") {
 				cancelAnimationFrame(hoverRafIdRef.current);
 				hoverRafIdRef.current = null;
 			}
+			if (canvasRef.current) {
+				try {
+					const webglContext =
+						canvasRef.current.getContext("webgl") ||
+						canvasRef.current.getContext("experimental-webgl");
+					if (webglContext) {
+						disposeWebGlRenderingContext(webglContext);
+					}
+				} catch {
+					// Canvas may have already been unmounted or context lost
+				}
+				canvasRef.current.width = 0;
+				canvasRef.current.height = 0;
+			}
+			if (processedCanvasRef.current) {
+				try {
+					const offscreenGl =
+						processedCanvasRef.current.getContext("webgl") ||
+						processedCanvasRef.current.getContext("experimental-webgl");
+					if (offscreenGl) {
+						disposeWebGlRenderingContext(offscreenGl);
+					}
+				} catch {
+					// Offscreen context may not exist or already disposed
+				}
+				processedCanvasRef.current.width = 0;
+				processedCanvasRef.current.height = 0;
+				processedCanvasRef.current = null;
+			}
+			if (imageRef.current) {
+				imageRef.current.onload = null;
+				imageRef.current.src = "";
+				imageRef.current = null;
+			}
+			lastProcessedImageRef.current = null;
+			lastProcessedParamsRef.current = null;
 		};
 	}, []);
 

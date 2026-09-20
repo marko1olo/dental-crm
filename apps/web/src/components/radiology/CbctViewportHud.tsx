@@ -238,8 +238,8 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 				)}
 			</div>
 
-			{/* 2. TOP-RIGHT CORNER: OBLIQUE ANGLE BADGE & VIEWPORT MAXIMIZE BUTTON (Fixed top-1.5 right-1.5 placement) */}
-			<div className="absolute top-1.5 right-1.5 pointer-events-auto flex items-center gap-1 z-30">
+			{/* 2. TOP-RIGHT CORNER: OBLIQUE ANGLE BADGE & VIEWPORT MAXIMIZE BUTTON (Fixed top-1.5 right-1.5 placement with mt-1 clearance) */}
+			<div className="absolute top-1.5 right-1.5 mt-1 pointer-events-auto flex items-center gap-1 z-30">
 				{obliqueAngleDeg !== undefined && Math.abs(obliqueAngleDeg) > 0.05 && (
 					<button
 						type="button"
