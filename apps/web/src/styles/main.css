@@ -1060,7 +1060,7 @@ html.dark .boot-state .boot-subtitle,
 			var(--nav);
 		color: #f8efe1;
 		display: flex;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
 		flex-direction: column;
 		gap: 28px;
 		padding: 22px 14px;
@@ -1096,18 +1096,27 @@ html.dark .boot-state .boot-subtitle,
 		min-height: 44px;
 		padding: 10px;
 		text-decoration: none;
+		min-width: 0;
+		max-width: 100%;
+		overflow: hidden;
 	}
 
 	.nav-label {
 		display: block;
 		font-weight: 900;
 		min-width: 0;
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.nav-copy {
 		display: grid;
 		gap: 2px;
 		min-width: 0;
+		max-width: 100%;
+		overflow: hidden;
 	}
 
 	.nav-copy small {
@@ -1118,6 +1127,8 @@ html.dark .boot-state .boot-subtitle,
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+		min-width: 0;
+		max-width: 100%;
 	}
 
 	.nav-item.active,
@@ -11300,10 +11311,12 @@ html.dark .emk-tab-button.active,
 	border-radius: 999px;
 	color: #744d18;
 	flex: 0 0 auto;
-	font-size: 12px;
-	font-weight: 950;
-	padding: 6px 9px;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 3px 8px;
 	text-transform: uppercase;
+	white-space: nowrap;
+	min-width: max-content;
 }
 
 .visit-note-head > span.ready,

@@ -909,6 +909,8 @@ select:focus {
 	flex-shrink: 0;
 	display: flex;
 	flex-direction: column;
+	flex-wrap: nowrap;
+	align-items: stretch;
 	min-height: 100vh;
 	height: 100vh;
 	max-height: 100vh;
@@ -970,6 +972,10 @@ html.dark .sidebar .nav-item.active,
 	gap: 10px;
 	padding: 4px 8px 16px;
 	color: var(--ink);
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+	flex-shrink: 0;
 }
 .brand-mark svg {
 	width: 32px;
@@ -997,6 +1003,9 @@ html.dark .sidebar .nav-item.active,
 	scrollbar-width: thin;
 	min-height: 0;
 	flex: 1 1 auto;
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
 }
 .nav-item {
 	display: flex;
@@ -1009,10 +1018,18 @@ html.dark .sidebar .nav-item.active,
 	min-width: 0;
 	max-width: 100%;
 	width: 100%;
+	overflow: hidden;
 	box-sizing: border-box;
 	transition:
 		background 0.15s,
 		color 0.15s;
+}
+.nav-item > span {
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	overflow: hidden;
+	box-sizing: border-box;
 }
 .nav-item:hover {
 	background: var(--teal-surface);
@@ -1037,8 +1054,10 @@ html.dark .sidebar .nav-item.active,
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
+	max-width: 100%;
 	overflow: hidden;
-	flex: 1 1 auto;
+	flex: 1 1 0%;
+	box-sizing: border-box;
 }
 .nav-label {
 	font-size: 13.5px;
@@ -1046,6 +1065,8 @@ html.dark .sidebar .nav-item.active,
 	overflow: hidden;
 	text-overflow: ellipsis;
 	min-width: 0;
+	max-width: 100%;
+	display: block;
 }
 .nav-copy small {
 	font-size: 10.5px;
@@ -1064,6 +1085,9 @@ html.dark .sidebar .nav-item.active,
 	.sidebar {
 		width: var(--sidebar-width, 190px);
 		padding: 12px 8px;
+		flex-direction: column !important;
+		flex-wrap: nowrap !important;
+		align-items: stretch !important;
 	}
 	.sidebar nav {
 		gap: 2px;
