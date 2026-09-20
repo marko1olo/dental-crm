@@ -367,7 +367,12 @@ export function usePatientIntakeLogic({
 			visitNoteForm.treatmentPlan.trim() ||
 			recordExtractTreatmentProvidedValue() ||
 			"";
-		const sexRaw = ((documentPatient as any)?.sex ?? (documentPatient as any)?.administrativeProfile?.gender ?? (patientProfile as { sex?: string } | null | undefined)?.sex ?? "")
+		const sexRaw = (
+			(documentPatient as any)?.gender ??
+			(documentPatient?.administrativeProfile as any)?.gender ??
+			(patientProfile as { sex?: string } | null | undefined)?.sex ??
+			""
+		)
 			.toString()
 			.toLowerCase();
 		const sex =

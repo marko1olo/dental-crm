@@ -12568,6 +12568,11 @@ html.dark .payment-capture h3,
 .payment-checkout-bar {
 	grid-column: 1 / -1;
 	width: 100%;
+	position: fixed !important;
+	bottom: 0 !important;
+	left: var(--sidebar-width, 252px) !important;
+	right: 0 !important;
+	z-index: 50 !important;
 }
 
 .payment-capture-safeguard {

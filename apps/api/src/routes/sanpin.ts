@@ -18,6 +18,12 @@ import {
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+
+declare module "fastify" {
+	interface FastifyRequest {
+		user?: { id: string; role?: string; organizationId?: string; [key: string]: unknown };
+	}
+}
 import {
 	requireClinicalMutationContext,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -1296,7 +1302,7 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 					durationMinutes,
 					operatingMode: "pre_op_preparation",
 					cumulativeHoursAfterSession: String(newTotalHours),
-					operatorId: (req.user as any)?.id ?? null,
+					operatorId: req.user?.id ?? null,
 					notes: notesText,
 				});
 
@@ -1397,7 +1403,7 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 					durationMinutes: shiftHours * 60,
 					operatingMode: "continuous_presence",
 					cumulativeHoursAfterSession: String(intermediateHours),
-					operatorId: (req.user as any)?.id ?? null,
+					operatorId: req.user?.id ?? null,
 					notes: `⚡ Рабочая смена (${shiftHours} ч): непрерывное обеззараживание воздуха рециркулятором в присутствии персонала и пациентов по СанПиН 3.3686-21`,
 				});
 
@@ -1414,7 +1420,7 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 					durationMinutes: finalDisinfectionMinutes,
 					operatingMode: "post_cleaning",
 					cumulativeHoursAfterSession: String(newTotalHours),
-					operatorId: (req.user as any)?.id ?? null,
+					operatorId: req.user?.id ?? null,
 					notes: "⚡ Закрыть вечернюю смену (финальная дезинфекция): заключительное обеззараживание помещений перед закрытием клиники по СанПиН 3.3686-21",
 				});
 
@@ -1610,7 +1616,7 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 					exposureTimeMinutes: 60,
 					uvIrradiationMinutes: 60,
 					ventilationMinutes: 15,
-					operatorId: (req.user as any)?.id ?? null,
+					operatorId: req.user?.id ?? null,
 					status: isPastOrToday ? "completed" : "scheduled",
 					notes: "График генеральных уборок (СанПиН 3.3686-21, интервал 7 дней)",
 				});
@@ -1758,7 +1764,7 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 					volumeLiters: "30.00",
 					disinfectionMethod: "chemical_soaking",
 					disinfectantUsed: "Бриллиант Классик 2% (экспозиция 60 мин)",
-					responsibleStaffId: (req.user as any)?.id ?? null,
+					responsibleStaffId: req.user?.id ?? null,
 					notes: "1-клик фиксация отходов смены (СанПиН 2.1.3684-21: брутто 2.55 кг, тара 0.05 кг, нетто 2.50 кг)",
 				},
 				{
@@ -1773,7 +1779,7 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 					volumeLiters: "2.00",
 					disinfectionMethod: "steam_autoclave",
 					disinfectantUsed: "Аппаратное автоклавирование 134°C (5 мин, 2.15 бар)",
-					responsibleStaffId: (req.user as any)?.id ?? null,
+					responsibleStaffId: req.user?.id ?? null,
 					notes: "1-клик фиксация острых отходов смены в желтом непрокалываемом контейнере (СанПиН 2.1.3684-21: брутто 0.95 кг, тара 0.15 кг, нетто 0.80 кг)",
 				},
 			])
@@ -2111,136 +2117,159 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 					},
 				];
 
-		const insertedPso = await db
-			.insert(preSterilizationCleaningLogs)
-			.values(
-				psoBatches.map((p: any) => ({
-					organizationId,
-					testType: "both",
-					batchItemCount: Number(p.batchItemCount) || 100,
-					testedSampleCount: Number(p.testedSampleCount) || 3,
-					isAzopyramNegative: true,
-					isPhenolphthaleinNegative: true,
-					isBatchApproved: true,
-					detergentBrand: p.detergentBrand || "Биолот 0.5%",
-					operatorId: req.user?.id || null,
-					notes: p.notes || "⚡ 1-Клик автопилот смены: норма СанПиН 3.3686-21",
-				})),
-			)
-			.returning();
+		const form257 = Array.isArray(body.sterilizationRecords) && body.sterilizationRecords.length > 0
+			? body.sterilizationRecords
+			: Array.isArray(body.form257) && body.form257.length > 0
+				? body.form257
+				: [
+						{
+							sterilizerBrandModel: "Автоклав Euronda E9 Next (Класс B)",
+							sterilizerId: "АК-01",
+							cycleNumber: 1,
+							itemsDescription: "Стоматологический инструментарий смены",
+							packagingType: "kraft_bag",
+							temperatureCelsius: "134",
+							pressureBar: "2.15",
+							durationMin: 5,
+						},
+						{
+							sterilizerBrandModel: "Автоклав Euronda E9 Next (Класс B)",
+							sterilizerId: "АК-01",
+							cycleNumber: 2,
+							itemsDescription: "Хирургические наконечники и турбины",
+							packagingType: "kraft_bag",
+							temperatureCelsius: "134",
+							pressureBar: "2.15",
+							durationMin: 5,
+						},
+					];
 
-		// 2. Стерилизация (Форма № 257/у)
-		const form257 = Array.isArray(body.form257Records) && body.form257Records.length > 0
-			? body.form257Records
-			: [
-					{
-						cycleNumber: 1,
-						itemsDescription: "Терапевтические наборы и смотровые лотки (крафт-пакеты)",
-						temperatureCelsius: "134",
-						pressureBar: "2.15",
-						durationMin: 5,
-					},
-					{
-						cycleNumber: 2,
-						itemsDescription: "Хирургический и эндодонтический инструментарий (крафт-пакеты)",
-						temperatureCelsius: "134",
-						pressureBar: "2.15",
-						durationMin: 5,
-					},
-				];
+		const { insertedPso, insertedSteril } = await db.transaction(async (tx) => {
+			const psoRows = await tx
+				.insert(preSterilizationCleaningLogs)
+				.values(
+					psoBatches.map((p: any) => ({
+						organizationId,
+						testType: "both",
+						batchItemCount: Number(p.batchItemCount) || 100,
+						testedSampleCount: Number(p.testedSampleCount) || 3,
+						isAzopyramNegative: true,
+						isPhenolphthaleinNegative: true,
+						isBatchApproved: true,
+						detergentBrand: p.detergentBrand || "Биолот 0.5%",
+						operatorId: req.user?.id || null,
+						notes: p.notes || "⚡ 1-Клик автопилот смены: норма СанПиН 3.3686-21",
+					})),
+				)
+				.returning();
 
-		const insertedSteril = await db
-			.insert(sterilizationLogs)
-			.values(
-				form257.map((f: any, idx: number) => ({
-					organizationId,
-					deviceName: f.sterilizerBrandModel || "Автоклав Euronda E9 Next (Класс B)",
-					autoclaveId: f.sterilizerId || "АК-01",
-					cycleNumber: Number(f.cycleNumber) || (idx + 1),
-					itemsDescription: f.itemsDescriptionRu || f.itemsDescription || "Стоматологический инструментарий смены",
-					packagingType: f.packagingType || "kraft_bag",
-					temperatureCelsius: String(f.actualTemperatureCelsius || f.temperatureCelsius || "134"),
-					pressureBar: String(f.actualPressureBar || f.pressureBar || "2.15"),
-					durationMin: Number(f.actualExposureMinutes || f.durationMin) || 5,
-					indicatorType: "chemical_class_5",
-					passedIndicator: true,
-					status: "passed" as const,
-					barcode: `DNT-STER-${todayStr.replace(/-/g, "")}-${idx + 1}-${crypto.randomBytes(2).toString("hex").toUpperCase()}`,
-					operatorId: req.user?.id || null,
-				})),
-			)
-			.returning();
+			// 2. Стерилизация (Форма № 257/у)
+			const sterilRows = await tx
+				.insert(sterilizationLogs)
+				.values(
+					form257.map((f: any, idx: number) => ({
+						organizationId,
+						deviceName: f.sterilizerBrandModel || "Автоклав Euronda E9 Next (Класс B)",
+						autoclaveId: f.sterilizerId || "АК-01",
+						cycleNumber: Number(f.cycleNumber) || (idx + 1),
+						itemsDescription: f.itemsDescriptionRu || f.itemsDescription || "Стоматологический инструментарий смены",
+						packagingType: f.packagingType || "kraft_bag",
+						temperatureCelsius: String(f.actualTemperatureCelsius || f.temperatureCelsius || "134"),
+						pressureBar: String(f.actualPressureBar || f.pressureBar || "2.15"),
+						durationMin: Number(f.actualExposureMinutes || f.durationMin) || 5,
+						indicatorType: "chemical_class_5",
+						passedIndicator: true,
+						status: "passed" as const,
+						barcode: `DNT-STER-${todayStr.replace(/-/g, "")}-${idx + 1}-${crypto.randomBytes(2).toString("hex").toUpperCase()}`,
+						operatorId: req.user?.id || null,
+					})),
+				)
+				.returning();
 
-		// 3. Бактерицидные установки / Дезар
-		const activeEquips = await db
-			.select()
-			.from(bactericidalEquipments)
-			.where(
-				and(
-					eq(bactericidalEquipments.organizationId, organizationId),
-					eq(bactericidalEquipments.isCommissioned, true),
-				),
-			);
-
-		for (const bactEquip of activeEquips) {
-			const currentHours = Number(bactEquip.totalOperatingHours || 0);
-			const nextHours = (currentHours + 0.5).toFixed(2);
-			const sessStart = new Date();
-			sessStart.setHours(8, 0, 0, 0);
-			const sessEnd = new Date();
-			sessEnd.setHours(8, 30, 0, 0);
-
-			await db.insert(bactericidalIrradiatorLogs).values({
-				organizationId,
-				equipmentId: bactEquip.id,
-				date: todayStr,
-				sessionStartTime: sessStart,
-				sessionEndTime: sessEnd,
-				durationMinutes: 30,
-				operatingMode: "continuous_presence",
-				cumulativeHoursAfterSession: nextHours,
-				operatorId: req.user?.id || null,
-				notes: "⚡ 1-Клик автопилот смены: предсменная дезинфекция воздуха",
-			});
-
-			await db
-				.update(bactericidalEquipments)
-				.set({
-					totalOperatingHours: nextHours,
-					updatedAt: new Date(),
-				})
+			// 3. Бактерицидные установки / Дезар
+			const activeEquips = await tx
+				.select()
+				.from(bactericidalEquipments)
 				.where(
 					and(
-						eq(bactericidalEquipments.id, bactEquip.id),
 						eq(bactericidalEquipments.organizationId, organizationId),
+						eq(bactericidalEquipments.isCommissioned, true),
 					),
 				);
-		}
 
-		// 4. Замеры температуры и влажности (холодильники и комнаты)
-		const tempEquips = await db
-			.select()
-			.from(temperatureHumidityEquipments)
-			.where(eq(temperatureHumidityEquipments.organizationId, organizationId));
+			if (activeEquips.length > 0) {
+				const sessStart = new Date();
+				sessStart.setHours(8, 0, 0, 0);
+				const sessEnd = new Date();
+				sessEnd.setHours(8, 30, 0, 0);
 
-		for (const te of tempEquips) {
-			const isFridge = te.equipmentType.includes("refrigerator");
-			const temp = isFridge ? "4.2" : "21.5";
-			const humidity = isFridge ? null : "48";
+				const bactLogsToInsert = activeEquips.map((bactEquip) => {
+					const currentHours = Number(bactEquip.totalOperatingHours || 0);
+					const nextHours = (currentHours + 0.5).toFixed(2);
+					return {
+						organizationId,
+						equipmentId: bactEquip.id,
+						date: todayStr,
+						sessionStartTime: sessStart,
+						sessionEndTime: sessEnd,
+						durationMinutes: 30,
+						operatingMode: "continuous_presence" as const,
+						cumulativeHoursAfterSession: nextHours,
+						operatorId: req.user?.id || null,
+						notes: "⚡ 1-Клик автопилот смены: предсменная дезинфекция воздуха",
+					};
+				});
 
-			await db.insert(temperatureHumidityLogs).values({
-				organizationId,
-				equipmentId: te.id,
-				measurementDate: todayStr,
-				measurementPeriod: "morning",
-				temperatureCelsius: temp,
-				relativeHumidityPercent: humidity,
-				isWithinNorm: true,
-				deviationReason: null,
-				operatorId: req.user?.id || null,
-				notes: "⚡ 1-Клик автопилот смены: норма СанПиН 3.3686-21",
-			});
-		}
+				await tx.insert(bactericidalIrradiatorLogs).values(bactLogsToInsert);
+
+				for (const bactEquip of activeEquips) {
+					const currentHours = Number(bactEquip.totalOperatingHours || 0);
+					const nextHours = (currentHours + 0.5).toFixed(2);
+					await tx
+						.update(bactericidalEquipments)
+						.set({
+							totalOperatingHours: nextHours,
+							updatedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(bactericidalEquipments.id, bactEquip.id),
+								eq(bactericidalEquipments.organizationId, organizationId),
+							),
+						);
+				}
+			}
+
+			// 4. Замеры температуры и влажности (холодильники и комнаты)
+			const tempEquips = await tx
+				.select()
+				.from(temperatureHumidityEquipments)
+				.where(eq(temperatureHumidityEquipments.organizationId, organizationId));
+
+			if (tempEquips.length > 0) {
+				const tempLogsToInsert = tempEquips.map((te) => {
+					const isFridge = te.equipmentType.includes("refrigerator");
+					const temp = isFridge ? "4.2" : "21.5";
+					const humidity = isFridge ? null : "48";
+					return {
+						organizationId,
+						equipmentId: te.id,
+						measurementDate: todayStr,
+						measurementPeriod: "morning" as const,
+						temperatureCelsius: temp,
+						relativeHumidityPercent: humidity,
+						isWithinNorm: true,
+						deviationReason: null,
+						operatorId: req.user?.id || null,
+						notes: "⚡ 1-Клик автопилот смены: норма СанПиН 3.3686-21",
+					};
+				});
+
+				await tx.insert(temperatureHumidityLogs).values(tempLogsToInsert);
+			}
+
+			return { insertedPso: psoRows, insertedSteril: sterilRows };
+		});
 
 		wsBroker.broadcastToOrganization(organizationId, {
 			type: "SANPIN_SHIFT_AUTOPILOT_COMPLETED",
@@ -2323,14 +2352,12 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 		}
 
 		const createdLogs: any[] = [];
-		for (const tEquip of equips) {
-			const isFridge = tEquip.equipmentType.includes("refrigerator");
-			const temp = isFridge ? 4.2 : 21.5;
-			const humidity = isFridge ? null : 48;
-
-			const [log] = await db
-				.insert(temperatureHumidityLogs)
-				.values({
+		if (equips.length > 0) {
+			const logsToInsert = equips.map((tEquip) => {
+				const isFridge = tEquip.equipmentType.includes("refrigerator");
+				const temp = isFridge ? 4.2 : 21.5;
+				const humidity = isFridge ? null : 48;
+				return {
 					organizationId,
 					equipmentId: tEquip.id,
 					measurementDate,
@@ -2341,12 +2368,15 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 					deviationReason: null,
 					operatorId: req.user?.id || null,
 					notes: `⚡ 1-Клик норма смены (${measurementPeriod === "morning" ? "утро" : "вечер"}): СанПиН 3.3686-21, Приказы № 706н / 646н`,
-				})
+				};
+			});
+
+			const inserted = await db
+				.insert(temperatureHumidityLogs)
+				.values(logsToInsert)
 				.returning();
 
-			if (log) {
-				createdLogs.push(log);
-			}
+			createdLogs.push(...inserted);
 		}
 
 		wsBroker.broadcastToOrganization(organizationId, {

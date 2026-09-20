@@ -1,17 +1,20 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
 	Activity,
+	AlertTriangle,
 	Check,
 	ChevronDown,
 	Coins,
 	Eye,
 	EyeOff,
 	FileText,
+	FlaskConical,
 	Layers,
 	Mic,
 	MicOff,
 	MoreHorizontal,
 	Paintbrush,
+	Printer,
 	Sparkles,
 	Stethoscope,
 	Trash2,
@@ -38,6 +41,7 @@ import {
 } from "./ToothChart";
 import { ClassicGostOdontogram } from "./ClassicGostOdontogram";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
+import { triggerHaptic } from "../../native/mobileBridge";
 import { ToothRadialMenu } from "./ToothRadialMenu";
 import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
 import { ToothContextDrawer } from "../diagnostics/ToothContextDrawer";
@@ -119,6 +123,11 @@ export interface OdontogramViewContainerProps {
 	onMarkIntactDentition?: (() => void) | undefined;
 	onMarkWisdomTeethMissing?: (() => void) | undefined;
 	patientId?: string | undefined;
+	onSyncAllToDiary?: (() => void) | undefined;
+	liveGrossTotalRub?: number | undefined;
+	onOpenFastCheckout?: (() => void) | undefined;
+	allergyText?: string | undefined;
+	onOneClickLabOrder?: ((teeth: number[]) => void) | undefined;
 }
 
 const STAMP_ITEMS: Array<{
@@ -245,6 +254,8 @@ export function areOdontogramViewContainerPropsEqual(
 	if (prev.isMultiSelectMode !== next.isMultiSelectMode) return false;
 	if (prev.patientId !== next.patientId) return false;
 	if (prev.className !== next.className) return false;
+	if (prev.liveGrossTotalRub !== next.liveGrossTotalRub) return false;
+	if (prev.allergyText !== next.allergyText) return false;
 
 	// Compare selectedTeeth array
 	if (prev.selectedTeeth !== next.selectedTeeth) {
@@ -315,6 +326,11 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 	onMarkIntactDentition,
 	onMarkWisdomTeethMissing,
 	patientId,
+	onSyncAllToDiary,
+	liveGrossTotalRub,
+	onOpenFastCheckout,
+	allergyText,
+	onOneClickLabOrder,
 }) => {
 	// 1. Read mode from zustand app store or initialViewMode or localStorage preferences
 	const storeMode = useAppStore((state) => state.odontogramViewMode);
@@ -471,12 +487,16 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 								toJSON: () => ({}),
 							} as DOMRect);
 
+			triggerHaptic("selection");
+
 			if (activeStampTool) {
+				triggerHaptic("success");
 				onQuickStateChange?.([num], activeStampTool);
 				return;
 			}
 
 			if (isFastExtractMode) {
+				triggerHaptic("success");
 				onQuickStateChange?.([num], "Missing");
 				return;
 			}
@@ -612,7 +632,8 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			useSurfaces,
 			hideHeader,
 			hideLegend,
-			hideQuadrantSwitcher,
+			hideQuadrantSwitcher: true,
+			hideExpressActions: true,
 			activeQuadrant: controlledQuadrant,
 			onQuadrantChange,
 			activeStamp: activeStampTool,
@@ -637,7 +658,6 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			useSurfaces,
 			hideHeader,
 			hideLegend,
-			hideQuadrantSwitcher,
 			controlledQuadrant,
 			onQuadrantChange,
 			activeStampTool,
@@ -655,17 +675,15 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			data-testid="odontogram-view-container"
 			data-view-mode={activeMode}
 		>
-			{/* Unified Clinical Toolbar - 2-Level Compact Console (Mandate 8d, 8e) */}
+			{/* Unified Clinical Toolbar - 1-Level Compact Console (Mandate 8d, 8e, 8p: strictly 36px) */}
 			{!hideModeSwitcher && (
 				<div
-					className="odontogram-toolbar flex flex-col gap-1 sm:gap-1.5 py-1 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full select-none"
+					className="odontogram-toolbar flex items-center justify-between gap-1.5 py-0.5 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full select-none flex-nowrap overflow-x-auto scrollbar-none min-h-[34px] h-[34px]"
 					role="toolbar"
 					aria-label="Панель управления зубной формулой"
 				>
-					{/* Row 1 (Top Level): Modes + Dentition + Total Sanitation (Left) | Actions (Смета, План, Голос, Ещё) (Right) */}
-					<div className="odontogram-toolbar-row flex items-center justify-between gap-1.5 sm:gap-2 w-full flex-nowrap overflow-x-auto scrollbar-none min-h-[32px] sm:min-h-[34px] h-[32px] sm:h-[34px]">
-						{/* Left Group: Modes, Dentition, 1-click Санирован */}
-						<div className="flex items-center gap-1 sm:gap-1.5 flex-nowrap shrink-0">
+					{/* Левая группа: Режимы схемы (3D / 6-гран / ГОСТ) + Палитра статусов (Норма, Кариес, Пульпит, Пломба, Удален) + Прикус + Санирован */}
+					<div className="flex items-center gap-1 sm:gap-1.5 flex-nowrap shrink-0">
 						{/* Segmented View Mode Radios: 3D / 6-гран. / ГОСТ */}
 						<div
 							className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 h-8"
@@ -707,451 +725,19 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 							})}
 						</div>
 
-						{/* Segmented Dentition Formula 1-Click Toggle: 11-48 / 51-85 / Сменный */}
-						{onDentitionModeChange && (
-							<div
-								className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 h-8"
-								role="group"
-								aria-label="Тип прикуса"
-							>
-								<button
-									type="button"
-									onClick={() => onDentitionModeChange("adult")}
-									className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
-										(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) === "adult"
-											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs"
-											: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)]"
-									}`}
-									title="Постоянный прикус взрослых (11–48, 32 зуба)"
-									data-testid="toolbar-dentition-adult"
-								>
-									11–48
-								</button>
-								<button
-									type="button"
-									onClick={() => onDentitionModeChange("pediatric")}
-									className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
-										(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) === "pediatric"
-											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs"
-											: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)]"
-									}`}
-									title="Детский молочный прикус (51–85, 20 зубов)"
-									data-testid="toolbar-dentition-pediatric"
-								>
-									51–85
-								</button>
-								<button
-									type="button"
-									onClick={() => onDentitionModeChange("mixed")}
-									className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
-										(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) === "mixed"
-											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs"
-											: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)]"
-									}`}
-									title="Сменный прикус: 20 молочных + 4 первых постоянных моляра (24 зуба)"
-									data-testid="toolbar-dentition-mixed"
-								>
-									Сменный
-								</button>
-							</div>
-						)}
+						<div className="w-px h-5 bg-[var(--odontogram-border-subtle,#e2e8f0)] dark:bg-zinc-800 shrink-0" />
 
-						{/* 1-Click Total Sanitation / Express Physiological Norm (Mandates 8e item 3 & 8k) */}
-						{onQuickStateChange && (
-							<button
-								type="button"
-								onClick={handleMarkIntactDentition}
-								className="h-8 px-2 sm:px-2.5 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center gap-1 sm:gap-1.5 shrink-0 active:scale-98"
-								title="1-клик Санирован: вся зубная формула отмечается интактной (здоровой) без ручного прокликивания 32 зубов"
-								data-testid="mark-intact-dentition-btn"
-							>
-								<Zap size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-								<span>Санирован</span>
-							</button>
-						)}
-
-					</div>
-
-					{/* Right Group: Core Loop Actions (Estimator, Voice) + Compact "Ещё..." Dropdown */}
-					<div className="flex items-center gap-1 shrink-0 flex-nowrap">
-						{/* Live Invoice Toggle */}
-						<button
-							type="button"
-							onClick={() => {
-								if (onToggleEstimator) {
-									onToggleEstimator();
-								} else {
-									setIsLiveInvoiceOpen((prev) => !prev);
-								}
-							}}
-							className={`h-8 flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer ${
-								(isEstimatorOpen ?? isLiveInvoiceOpen)
-									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] border-[var(--teal-dark,var(--teal))] shadow-sm font-black"
-									: "bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal)] border-[var(--teal)]/30 hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))]"
-							}`}
-							title="Открыть живой калькулятор сметы лечения"
-						>
-							<Coins size={14} />
-							<span>Смета</span>
-						</button>
-
-						{/* 1-Click Treatment Plan from Pathologies (hidden on mobile, available in More menu) */}
-						<button
-							type="button"
-							onClick={() => setIsPlanWizardOpen(true)}
-							className="hidden sm:flex h-8 items-center gap-1.5 px-2.5 rounded-lg text-xs font-black whitespace-nowrap border border-indigo-500/40 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 transition-all shrink-0 cursor-pointer shadow-xs active:scale-95"
-							title="Сформировать черновой план лечения по номенклатуре 804н на основе всех выявленных патологий зубной формулы"
-							data-testid="create-plan-from-pathologies-btn"
-						>
-							<FileText size={14} className="text-indigo-600 dark:text-indigo-400" />
-							<span className="hidden 2xl:inline">План из патологий</span>
-							<span className="2xl:hidden">План</span>
-						</button>
-
-						{/* Voice Dictation Trigger */}
-						<button
-							type="button"
-							onClick={() => {
-								if (onOpenVoiceDictation) {
-									onOpenVoiceDictation();
-								} else {
-									globalDentalVoiceEngine.toggle();
-								}
-							}}
-							className={`h-8 flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black whitespace-nowrap shadow-xs shrink-0 cursor-pointer transition-all active:scale-95 ${
-								isVoiceListening
-									? "bg-rose-600 hover:bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/30"
-									: "bg-indigo-600 hover:bg-indigo-500 text-white"
-							}`}
-							title={isVoiceListening ? "Остановить диктовку" : "Голосовая диктовка зубной формулы («16 кариес, 24 пломба, 36 отсутствует»)"}
-							aria-pressed={isVoiceListening}
-						>
-							{isVoiceListening ? <MicOff size={14} /> : <Mic size={14} />}
-							<span>{isVoiceListening ? "Слушаю..." : "Голос"}</span>
-						</button>
-
-						{/* "Ещё..." Dropdown Menu for Secondary Tools & Modules */}
-						<div className="relative shrink-0" ref={moreMenuRef}>
-							<button
-								type="button"
-								onClick={() => setIsMoreMenuOpen((prev) => !prev)}
-								className={`h-8 flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer ${
-									isMoreMenuOpen || activeStampTool === "Crown" || activeStampTool === "Missing" || isFastExtractMode || isMultiSelectMode || isPerioOpen || isOrthoCephOpen
-										? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-400/40 shadow-xs font-black"
-										: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] hover:text-indigo-600 dark:hover:text-indigo-400"
-								}`}
-								title="Дополнительные инструменты, штампы и модули анализа"
-								data-testid="btn-odontogram-more-menu"
-								aria-expanded={isMoreMenuOpen}
-								aria-haspopup="true"
-							>
-								<MoreHorizontal size={14} className="shrink-0" />
-								<span>Ещё</span>
-								<ChevronDown size={12} className={`shrink-0 transition-transform ${isMoreMenuOpen ? "rotate-180" : ""}`} />
-								{(activeStampTool === "Crown" || activeStampTool === "Missing" || isFastExtractMode || isMultiSelectMode) && (
-									<span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shrink-0" />
-								)}
-							</button>
-
-							{isMoreMenuOpen && (
-								<div
-									className="absolute right-0 top-full mt-1.5 z-50 w-72 p-2 rounded-xl shadow-xl bg-[var(--paper,#ffffff)] dark:bg-zinc-900 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 flex flex-col gap-2 max-h-[80vh] overflow-y-auto"
-									role="menu"
-									aria-label="Дополнительные инструменты"
-								>
-									{/* Subgroup: Batch Presets (1-Click) */}
-									<div>
-										<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-2 py-1 select-none">
-											Пакетные операции (1 клик)
-										</div>
-										<div className="flex flex-col gap-1">
-											<button
-												type="button"
-												onClick={() => {
-													handleMarkIntactDentition();
-													setIsMoreMenuOpen(false);
-												}}
-												className="min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/20 border border-emerald-500/30"
-												title="Санация: отметить всю зубную формулу здоровой в 1 клик"
-												data-testid="btn-odontogram-all-healthy"
-											>
-												<Check size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-												<span>Санация: все здоровы (1 клик)</span>
-											</button>
-											<button
-												type="button"
-												onClick={() => {
-													handleMarkWisdomTeethMissing();
-													setIsMoreMenuOpen(false);
-												}}
-												className="min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-rose-500/10 text-rose-800 dark:text-rose-200 hover:bg-rose-500/20 border border-rose-500/30"
-												title="Адентия 8-ок: отметить зубы 18, 28, 38, 48 отсутствующими"
-												data-testid="btn-odontogram-wisdom-missing"
-											>
-												<Trash2 size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
-												<span>Адентия 8-ок (18, 28, 38, 48)</span>
-											</button>
-
-											<button
-												type="button"
-												onClick={() => {
-													setIsPlanWizardOpen(true);
-													setIsMoreMenuOpen(false);
-												}}
-												className="min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/20 border border-indigo-500/30"
-												title="Сформировать черновой план лечения по МКБ-10 и номенклатуре 804н на основе всех патологий"
-												data-testid="more-menu-plan-from-pathologies"
-											>
-												<FileText size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
-												<span>План лечения из патологий (804н)</span>
-											</button>
-
-											<button
-												type="button"
-												onClick={() => {
-													const targetTooth = selectedTeeth && selectedTeeth.length > 0 ? selectedTeeth[0]! : (isPediatricEffective ? 55 : 16);
-													setCardModalTooth(targetTooth);
-													setIsMoreMenuOpen(false);
-												}}
-												className="min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-blue-500/10 text-blue-800 dark:text-blue-200 hover:bg-blue-500/20 border border-blue-500/30"
-												title="Открыть подробную карточку зуба с поверхностями и протоколами"
-												data-testid="more-menu-tooth-card"
-											>
-												<Stethoscope size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
-												<span>Детальная карточка зуба</span>
-											</button>
-										</div>
-									</div>
-
-									<div className="h-[1px] bg-[var(--odontogram-border-subtle,#e2e8f0)] dark:bg-zinc-800" />
-
-									{/* Subgroup: Additional Stamps */}
-									<div>
-										<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-2 py-1 select-none">
-											Дополнительные штампы
-										</div>
-										<div className="grid grid-cols-2 gap-1">
-											<button
-												type="button"
-												onClick={() => {
-													setActiveStampTool((prev) => (prev === "Crown" ? null : "Crown"));
-													setIsMoreMenuOpen(false);
-												}}
-												className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center justify-between ${
-													activeStampTool === "Crown"
-														? "bg-[var(--brand-500,#3b82f6)] text-white font-black shadow-xs ring-2 ring-[var(--brand-500,#3b82f6)]/60"
-														: "bg-[var(--brand-500,#3b82f6)]/10 text-[var(--brand-500,#3b82f6)] hover:bg-[var(--brand-500,#3b82f6)]/20 border border-[var(--brand-500,#3b82f6)]/30"
-												}`}
-												title="Штамп: Коронка (Клик по зубу без меню)"
-												data-testid="stamp-crown-btn"
-											>
-												<span>Коронка (Ц)</span>
-												{activeStampTool === "Crown" && <Check size={12} className="shrink-0" />}
-											</button>
-											<button
-												type="button"
-												onClick={() => {
-													setActiveStampTool((prev) => (prev === "Missing" ? null : "Missing"));
-													setIsMoreMenuOpen(false);
-												}}
-												className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center justify-between ${
-													activeStampTool === "Missing"
-														? "bg-rose-700 text-white font-black shadow-xs ring-2 ring-rose-500"
-														: "bg-rose-500/10 text-rose-800 dark:text-rose-200 hover:bg-rose-500/20 border border-rose-500/20"
-												}`}
-												title="Штамп: Удален (Клик по зубу без меню)"
-												data-testid="stamp-missing-btn"
-											>
-												<span>Удален (0)</span>
-												{activeStampTool === "Missing" && <Check size={12} className="shrink-0" />}
-											</button>
-										</div>
-									</div>
-
-									<div className="h-[1px] bg-[var(--odontogram-border-subtle,#e2e8f0)] dark:bg-zinc-800" />
-
-									{/* Subgroup: Clinical Modules */}
-									<div>
-										<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-2 py-1 select-none">
-											Клинические модули
-										</div>
-										<div className="flex flex-col gap-1">
-											{/* Pediatric Mixed Dentition Modal */}
-											{onOpenPediatricModal && (
-												<button
-													type="button"
-													onClick={() => {
-														onOpenPediatricModal();
-														setIsMoreMenuOpen(false);
-													}}
-													className="min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none text-left"
-													title="Сменный прикус: сроки прорезывания, стадии резорбции корней и Кариограмма Браттхолла"
-												>
-													<Sparkles size={14} className="text-amber-500 shrink-0" />
-													<span>Сменный прикус</span>
-												</button>
-											)}
-
-											{/* Periodontal Charting Module */}
-											<button
-												type="button"
-												onClick={() => {
-													if (onTogglePerio) onTogglePerio();
-													setIsMoreMenuOpen(false);
-												}}
-												className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left ${
-													isPerioOpen
-														? "bg-[var(--teal-soft,rgba(13,148,136,0.2))] text-[var(--teal)] border-[var(--teal)]/50 shadow-xs font-black"
-														: "bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal)] border-[var(--teal)]/30 hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))]"
-												}`}
-												title="Пародонтологическая карта: 6 точек зондирования Florida Probe, индексы OHI-S / PLI / SBI, скрининг CPITN"
-												data-testid="btn-open-perio-chart"
-											>
-												<Activity size={14} className="text-[var(--teal)] shrink-0" />
-												<span>Пародонтограмма</span>
-											</button>
-
-											{/* Orthodontic Cephalometry TRG Module */}
-											<button
-												type="button"
-												onClick={() => {
-													setIsOrthoCephOpen((prev) => !prev);
-													setIsMoreMenuOpen(false);
-												}}
-												className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left ${
-													isOrthoCephOpen
-														? "bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/50 shadow-xs font-black"
-														: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30 hover:bg-purple-500/20"
-												}`}
-												title="Цефалометрия ТРГ: анализ Штайнера, Твида, Wits-число и углы SNA/SNB/ANB"
-												data-testid="btn-open-ortho-ceph"
-											>
-												<Sparkles size={14} className="text-purple-500 shrink-0" />
-												<span>Цефалометрия ТРГ</span>
-											</button>
-
-											{/* Diagnocat AI Report */}
-											{onLoadDiagnocat && (
-												<button
-													type="button"
-													onClick={() => {
-														onLoadDiagnocat();
-														setIsMoreMenuOpen(false);
-													}}
-													disabled={diagnocatLoading}
-													className="min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold bg-[var(--brand-500,#3b82f6)]/10 text-[var(--brand-500,#3b82f6)] border border-[var(--brand-500,#3b82f6)]/30 hover:bg-[var(--brand-500,#3b82f6)]/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none text-left"
-													title="Загрузить отчёт Diagnocat AI"
-												>
-													<Stethoscope size={14} className="text-[var(--brand-500,#3b82f6)] shrink-0" />
-													<span>{diagnocatLoading ? "Загрузка..." : "Diagnocat AI"}</span>
-												</button>
-											)}
-										</div>
-									</div>
-
-									<div className="h-[1px] bg-[var(--odontogram-border-subtle,#e2e8f0)] dark:bg-zinc-800" />
-
-									{/* Subgroup: Display & Modes */}
-									<div>
-										<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-2 py-1 select-none">
-											Отображение и режимы
-										</div>
-										<div className="flex flex-col gap-1">
-											{/* Shift Multi-Select Checkbox */}
-											{onToggleMultiSelect && (
-												<label
-													className={`flex items-center justify-between min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] text-xs font-bold cursor-pointer select-none px-2.5 py-1 rounded-lg border transition-colors ${
-														isMultiSelectMode
-															? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 font-black"
-															: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)]"
-													}`}
-												>
-													<span>Групповое выделение (Shift)</span>
-													<input
-														type="checkbox"
-														checked={isMultiSelectMode ?? false}
-														onChange={(e) => onToggleMultiSelect(e.target.checked)}
-														className="accent-indigo-500 rounded cursor-pointer shrink-0 ml-2"
-													/>
-												</label>
-											)}
-
-											{/* Wisdom Teeth Toggle */}
-											<button
-												type="button"
-												onClick={() => setShowWisdomTeeth((prev) => !prev)}
-												className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] flex items-center justify-between px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
-													showWisdomTeeth
-														? "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-400/40 shadow-xs font-black"
-														: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] opacity-80"
-												}`}
-												title="Показать или скрыть зубы мудрости (18, 28, 38, 48)"
-											>
-												<span className="flex items-center gap-2">
-													{showWisdomTeeth ? <Eye size={14} /> : <EyeOff size={14} />}
-													<span>Зубы мудрости (8-ки)</span>
-												</span>
-												<span className="text-[10px] font-mono opacity-60">{showWisdomTeeth ? "ВКЛ" : "ВЫКЛ"}</span>
-											</button>
-
-											{/* Pulp & Root Canals X-Ray Toggle */}
-											{activeMode === "anatomical_svg" && (
-												<button
-													type="button"
-													onClick={() => setShowPulpAndCanals((prev) => !prev)}
-													className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] flex items-center justify-between px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
-														showPulpAndCanals
-															? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-400/40 shadow-xs font-black"
-															: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] opacity-80"
-													}`}
-													title="Рентген-прозрачность эмали для просмотра корневых каналов и пульпы"
-												>
-													<span className="flex items-center gap-2">
-														<Activity size={14} />
-														<span>Каналы и пульпа</span>
-													</span>
-													<span className="text-[10px] font-mono opacity-60">{showPulpAndCanals ? "ВКЛ" : "ВЫКЛ"}</span>
-												</button>
-											)}
-
-											{/* Fast Extraction Mode */}
-											<button
-												type="button"
-												onClick={() => setIsFastExtractMode((prev) => !prev)}
-												className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[32px] sm:h-[32px] flex items-center justify-between px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
-													isFastExtractMode
-														? "bg-rose-600 text-white border-rose-700 shadow-md animate-pulse font-black"
-														: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] hover:text-rose-600 dark:hover:text-rose-400"
-												}`}
-												title="Режим быстрого удаления зубов в 1 клик"
-											>
-												<span className="flex items-center gap-2">
-													<Trash2 size={14} />
-													<span>Быстрое удаление зубов</span>
-												</span>
-												<span className="text-[10px] font-mono opacity-60">{isFastExtractMode ? "ВКЛ" : "ВЫКЛ"}</span>
-											</button>
-										</div>
-									</div>
-								</div>
-							)}
-						</div>
-					</div>
-					</div>
-
-					{/* Row 2 (Bottom Level): Quick State Triggers (Норма, Кариес, Пульпит, Пломба, Удален, Имплант) + Штамп + Действия */}
-					<div className="odontogram-toolbar-row flex items-center justify-start gap-1 sm:gap-1.5 w-full flex-nowrap overflow-x-auto scrollbar-none min-h-[30px] sm:min-h-[32px] h-[30px] sm:h-[32px]">
-						{/* 1-Click Quick State Triggers (Direct action for selected teeth or 1-click stamp) */}
+						{/* 1-Click Quick State Triggers (Палитра статусов в едином тулбаре 36px) */}
 						{onQuickStateChange && (
 							<div
-								className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 h-7 sm:h-7.5 gap-0.5"
+								className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 h-8 gap-0.5"
 								role="group"
 								aria-label="Быстрые статусы патологий"
 							>
 								<button
 									type="button"
 									onClick={() => handleQuickTriggerState("Healthy")}
-									className={`h-6 sm:h-6.5 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
 										activeStampTool === "Healthy"
 											? "bg-emerald-600 text-white font-black shadow-xs"
 											: "text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15"
@@ -1165,7 +751,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 								<button
 									type="button"
 									onClick={() => handleQuickTriggerState("Caries")}
-									className={`h-6 sm:h-6.5 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
 										activeStampTool === "Caries"
 											? "bg-amber-600 text-white font-black shadow-xs"
 											: "text-amber-700 dark:text-amber-400 hover:bg-amber-500/15"
@@ -1179,7 +765,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 								<button
 									type="button"
 									onClick={() => handleQuickTriggerState("Pulpitis")}
-									className={`h-6 sm:h-6.5 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
 										activeStampTool === "Pulpitis"
 											? "bg-red-600 text-white font-black shadow-xs"
 											: "text-red-700 dark:text-red-400 hover:bg-red-500/15"
@@ -1193,7 +779,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 								<button
 									type="button"
 									onClick={() => handleQuickTriggerState("Filled")}
-									className={`h-6 sm:h-6.5 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
 										activeStampTool === "Filled"
 											? "bg-sky-600 text-white font-black shadow-xs"
 											: "text-sky-700 dark:text-sky-400 hover:bg-sky-500/15"
@@ -1207,7 +793,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 								<button
 									type="button"
 									onClick={() => handleQuickTriggerState("Missing")}
-									className={`h-6 sm:h-6.5 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
 										activeStampTool === "Missing"
 											? "bg-zinc-700 text-white font-black shadow-xs"
 											: "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-500/15"
@@ -1218,99 +804,234 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 									<span className="w-2 h-2 rounded-full bg-zinc-500 shrink-0" />
 									<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">Удален</span>
 								</button>
-								<button
-									type="button"
-									onClick={() => handleQuickTriggerState("Implant")}
-									className={`h-6 sm:h-6.5 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
-										activeStampTool === "Implant"
-											? "bg-slate-700 text-white font-black shadow-xs"
-											: "text-slate-700 dark:text-slate-300 hover:bg-slate-500/15"
-									}`}
-									title="Имплант (И): титановый сланец #64748b, применить к выделенным зубам или включить штамп импланта"
-									data-testid="quick-trigger-implant-btn"
-								>
-									<span className="w-2 h-2 rounded-full bg-[#64748b] shrink-0" />
-									<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">Имплант</span>
-								</button>
 							</div>
 						)}
 
-						{/* Compact Stamp Selector: Dropdown Popover */}
-						<div className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 h-7 sm:h-7.5">
-							<details className="relative">
+						{/* Segmented Dentition Formula 1-Click Toggle: 11-48 / 51-85 / Сменный */}
+						{onDentitionModeChange && (
+							<details className="relative shrink-0 flex-shrink-0">
 								<summary
-									className={`list-none h-6 sm:h-6.5 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none flex items-center gap-1.5 shrink-0 ${
-										activeStampTool
-											? "bg-indigo-600 text-white font-black shadow-xs"
-											: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-paper,#ffffff)]/60"
-									}`}
-									title="Штамп патологий: клик по зубам для быстрого проставления диагноза"
+									className="list-none inline-flex items-center gap-1 h-8 px-2 sm:px-2.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] text-xs font-bold text-[var(--odontogram-ink,#0f172a)] cursor-pointer select-none transition-all hover:bg-[var(--odontogram-paper,#ffffff)] shrink-0"
+									title="Переключение прикуса (11–48 постоянный, 51–85 молочный, сменный)"
 								>
-									<Paintbrush size={13} className={activeStampTool ? "animate-pulse" : "shrink-0"} />
-									<span>
-										{activeStampTool
-											? (STAMP_ITEMS.find((s) => s.state === activeStampTool)?.short ?? activeStampTool)
-											: "Штамп"}
+									<span className="whitespace-nowrap">
+										{(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) === "pediatric"
+											? "51–85"
+											: (dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) === "mixed"
+												? "Сменный"
+												: "11–48"}
 									</span>
-									<ChevronDown size={11} className="shrink-0 opacity-70" />
+									<ChevronDown size={11} className="opacity-70 shrink-0" />
 								</summary>
-								<div className="absolute left-0 top-full mt-1.5 z-40 w-48 p-1.5 rounded-xl shadow-xl bg-[var(--paper,#ffffff)] dark:bg-zinc-900 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 flex flex-col gap-1">
-									<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-2 py-0.5 select-none">
-										Выбрать штамп:
-									</div>
-									{STAMP_ITEMS.map((item) => {
-										const isSelected = activeStampTool === item.state;
-										return (
-											<button
-												key={item.state}
-												type="button"
-												onClick={(e) => {
-													const details = e.currentTarget.closest("details");
-													if (details) details.open = false;
-													setActiveStampTool((prev) => (prev === item.state ? null : item.state));
-												}}
-												className={`w-full h-7 px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-between text-left ${
-													isSelected
-														? `${item.activeClass} font-black shadow-xs`
-														: `${item.badgeClass} border`
-												}`}
-												title={`Штамп: ${item.label}`}
-												data-testid={item.testId}
-											>
-												<span>{item.label}</span>
-												{isSelected && <Check size={12} className="shrink-0" />}
-											</button>
-										);
-									})}
+								<div
+									className="absolute left-0 top-full mt-1 z-40 p-1.5 rounded-xl shadow-xl bg-[var(--paper,#ffffff)] dark:bg-zinc-900 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 flex flex-col gap-1 min-w-[140px]"
+									role="group"
+									aria-label="Тип прикуса"
+								>
+									<button
+										type="button"
+										onClick={(e) => {
+											const d = e.currentTarget.closest("details");
+											if (d) d.open = false;
+											onDentitionModeChange("adult");
+										}}
+										className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-between text-left ${
+											(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) === "adult"
+												? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs"
+												: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface-hover,#f1f5f9)]"
+										}`}
+										title="Постоянный прикус взрослых (11–48, 32 зуба)"
+										data-testid="toolbar-dentition-adult"
+									>
+										<span>11–48 (Взрослый)</span>
+										{(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) === "adult" && <Check size={12} className="shrink-0" />}
+									</button>
+									<button
+										type="button"
+										onClick={(e) => {
+											const d = e.currentTarget.closest("details");
+											if (d) d.open = false;
+											onDentitionModeChange("pediatric");
+										}}
+										className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-between text-left ${
+											(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) === "pediatric"
+												? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs"
+												: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface-hover,#f1f5f9)]"
+										}`}
+										title="Детский молочный прикус (51–85, 20 зубов)"
+										data-testid="toolbar-dentition-pediatric"
+									>
+										<span>51–85 (Детский)</span>
+										{(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) === "pediatric" && <Check size={12} className="shrink-0" />}
+									</button>
+									<button
+										type="button"
+										onClick={(e) => {
+											const d = e.currentTarget.closest("details");
+											if (d) d.open = false;
+											onDentitionModeChange("mixed");
+										}}
+										className={`h-7 px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none flex items-center justify-between text-left ${
+											(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) === "mixed"
+												? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs"
+												: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface-hover,#f1f5f9)]"
+										}`}
+										title="Сменный прикус: 20 молочных + 4 первых постоянных моляра (24 зуба)"
+										data-testid="toolbar-dentition-mixed"
+									>
+										<span>Сменный прикус</span>
+										{(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) === "mixed" && <Check size={12} className="shrink-0" />}
+									</button>
 								</div>
 							</details>
-							{activeStampTool && (
-								<button
-									type="button"
-									onClick={() => setActiveStampTool(null)}
-									className="h-6 sm:h-6.5 px-1.5 ml-0.5 rounded-md text-xs font-bold bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-all cursor-pointer shrink-0 border border-[var(--odontogram-border-subtle,#e2e8f0)] flex items-center gap-1"
-									title="Сбросить режим штампа (Esc)"
-									data-testid="stamp-reset-btn"
-								>
-									<X size={12} />
-									<span className="hidden sm:inline text-[10px]">Сброс</span>
-								</button>
-							)}
-						</div>
+						)}
 
-						{/* Quick Actions Dropdown: Sanitation, Wisdom, Quadrants, Jaws */}
+						{/* 1-Click Total Sanitation */}
+						{onQuickStateChange && (
+							<button
+								type="button"
+								onClick={handleMarkIntactDentition}
+								className="h-8 px-2 sm:px-2.5 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center gap-1 sm:gap-1.5 shrink-0 active:scale-98"
+								title="1-клик Санирован: вся зубная формула отмечается интактной"
+								data-testid="mark-intact-dentition-btn"
+							>
+								<Zap size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+								<span>Санирован</span>
+							</button>
+						)}
+					</div>
+
+					{/* Правая группа: 043/у + Касса/Смета + Аллергии + ЗТЛ + Смета + План + Пульт + Действия + Ещё */}
+					<div className="flex items-center gap-1 shrink-0 flex-nowrap min-w-0 ml-auto">
+						{/* 1-клик перенос клинического статуса зубной формулы в Дневник 043/у */}
+						{onSyncAllToDiary && (
+							<button
+								type="button"
+								onClick={onSyncAllToDiary}
+								className="h-7 px-2 rounded-md text-xs font-bold bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white transition-all flex items-center justify-center gap-1 cursor-pointer shrink-0 shadow-xs whitespace-nowrap"
+								title="Перенести клинический статус зубной формулы в Дневник 043/у в 1 клик"
+								data-testid="btn-hotpath-sync-all-to-diary"
+							>
+								<FileText size={12} className="shrink-0" />
+								<span>043/у</span>
+							</button>
+						)}
+
+						{/* Компактный финансовый бейдж приема (Tier 1, 1-Click FastCheckout Modal) */}
+						{liveGrossTotalRub !== undefined && (
+							<div
+								className="flex items-center gap-1 px-1.5 h-7 rounded-md bg-teal-500/10 dark:bg-teal-950/40 border border-teal-500/30 text-teal-900 dark:text-teal-200 text-xs font-bold shrink-0 shadow-2xs whitespace-nowrap"
+								data-testid="odontogram-compact-bill-badge"
+							>
+								<Coins className="w-3 h-3 text-teal-600 dark:text-teal-400 shrink-0" />
+								<strong className="font-mono font-black text-xs text-teal-800 dark:text-teal-200 shrink-0 whitespace-nowrap">
+									{liveGrossTotalRub.toLocaleString("ru-RU", { minimumFractionDigits: 0 })} ₽
+								</strong>
+								{onOpenFastCheckout && (
+									<button
+										type="button"
+										onClick={onOpenFastCheckout}
+										className="ml-0.5 px-1.5 h-5 rounded bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold text-[10px] flex items-center gap-0.5 transition-all cursor-pointer shadow-2xs shrink-0"
+										title="Открыть быструю кассу приема (54-ФЗ)"
+										data-testid="btn-open-fast-checkout"
+									>
+										<span>Оплатить</span>
+									</button>
+								)}
+							</div>
+						)}
+
+						{/* Критический аллерго-бейдж безопасности */}
+						{allergyText && (
+							<span
+								className="h-7 px-1.5 rounded-md bg-rose-600 text-white font-mono font-black text-xs inline-flex items-center gap-1 shrink-0 whitespace-nowrap"
+								data-testid="badge-critical-allergy-tier1"
+								title={allergyText}
+							>
+								<AlertTriangle size={12} className="shrink-0" />
+								<span className="truncate max-w-[100px]">{allergyText}</span>
+							</span>
+						)}
+
+						{/* Наряд в ЗТЛ при выделенных зубах */}
+						{selectedTeeth && selectedTeeth.length > 0 && onOneClickLabOrder && (
+							<button
+								type="button"
+								onClick={() => onOneClickLabOrder(selectedTeeth)}
+								className="h-7 px-2 rounded-md text-xs font-black text-amber-900 dark:text-amber-100 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 flex items-center gap-1 cursor-pointer shrink-0 transition-all active:scale-95 shadow-2xs whitespace-nowrap"
+								title="Оформить наряд в зуботехническую лабораторию для выбранных зубов в 1 клик"
+								data-testid="selected-teeth-lab-order-btn"
+							>
+								<FlaskConical size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
+								<span>ЗТЛ ({selectedTeeth.length})</span>
+							</button>
+						)}
+
+						<button
+							type="button"
+							onClick={() => {
+								if (onToggleEstimator) {
+									onToggleEstimator();
+								} else {
+									setIsLiveInvoiceOpen((prev) => !prev);
+								}
+							}}
+							className={`h-7 flex items-center gap-1 px-2 rounded-md text-xs font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer ${
+								(isEstimatorOpen ?? isLiveInvoiceOpen)
+									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] border-[var(--teal-dark,var(--teal))] shadow-sm font-black"
+									: "bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal)] border-[var(--teal)]/30 hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))]"
+							}`}
+							title="Открыть живой калькулятор сметы лечения"
+						>
+							<Coins size={12} />
+							<span className="hidden sm:inline">Смета</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setIsPlanWizardOpen(true)}
+							className="hidden sm:flex h-7 items-center gap-1 px-2 rounded-md text-xs font-black whitespace-nowrap border border-indigo-500/40 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 transition-all shrink-0 cursor-pointer shadow-xs active:scale-95"
+							title="Сформировать черновой план лечения по номенклатуре 804н"
+							data-testid="create-plan-from-pathologies-btn"
+						>
+							<FileText size={12} className="text-indigo-600 dark:text-indigo-400" />
+							<span className="hidden 2xl:inline">План из патологий</span>
+							<span className="2xl:hidden">План</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => {
+								if (onOpenVoiceDictation) {
+									onOpenVoiceDictation();
+								} else {
+									globalDentalVoiceEngine.toggle();
+								}
+							}}
+							className={`h-7 flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-black whitespace-nowrap shadow-xs shrink-0 flex-shrink-0 min-w-max cursor-pointer transition-all active:scale-95 ${
+								isVoiceListening
+									? "bg-rose-600 hover:bg-rose-500 text-white animate-pulse ring-2 ring-rose-500/30"
+									: "bg-indigo-600 hover:bg-indigo-500 text-white"
+							}`}
+							title={isVoiceListening ? "Остановить диктовку" : "Голосовая диктовка зубной формулы"}
+							aria-pressed={isVoiceListening}
+						>
+							{isVoiceListening ? <MicOff size={12} className="shrink-0" /> : <Mic size={12} className="shrink-0" />}
+							<span className="shrink-0 flex-shrink-0 min-w-max">{isVoiceListening ? "Слушаю..." : "Пульт"}</span>
+						</button>
+
+						{/* Quick Actions Dropdown (Действия: без 8-ок, квадранты, челюсти) */}
 						<details className="relative shrink-0">
 							<summary
-								className="list-none h-7 sm:h-7.5 px-2.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] hover:text-indigo-600 text-[var(--odontogram-ink-muted,#64748b)] text-xs font-bold flex items-center gap-1.5 cursor-pointer select-none transition-all shrink-0"
+								className="list-none h-7 px-2 sm:px-2.5 rounded-md bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] hover:text-indigo-600 text-[var(--odontogram-ink-muted,#64748b)] text-xs font-bold flex items-center gap-1 cursor-pointer select-none transition-all shrink-0"
 								title="Быстрые действия: санация, без 8-ок, квадранты, челюсти"
 								data-testid="odontogram-quick-actions-menu"
 							>
-								<Layers size={14} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
-								<span>Действия</span>
+								<Layers size={13} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
+								<span className="hidden sm:inline">Действия</span>
 								<ChevronDown size={11} className="shrink-0 opacity-70" />
 							</summary>
-							<div className="absolute left-0 top-full mt-1.5 z-40 w-72 p-2 rounded-xl shadow-xl bg-[var(--paper,#ffffff)] dark:bg-zinc-900 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 flex flex-col gap-2">
-								{/* 1-Click Total Sanitation & Wisdom Absence Action Triggers */}
+							<div className="absolute right-0 top-full mt-1.5 z-40 w-72 p-2 rounded-xl shadow-xl bg-[var(--paper,#ffffff)] dark:bg-zinc-900 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 flex flex-col gap-2">
 								{onQuickStateChange && (
 									<div>
 										<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-1 mb-1 select-none">
@@ -1352,7 +1073,6 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 									</div>
 								)}
 
-								{/* 1-Click Batch Quadrant & Front Selection Buttons */}
 								<div>
 									<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-1 mb-1 select-none">
 										Выбор квадрантов и фронта
@@ -1498,7 +1218,6 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 									</div>
 								</div>
 
-								{/* 3 Jaw / Occlusion 1-Click Buttons (JU, JL, C) */}
 								<div>
 									<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-1 mb-1 select-none">
 										Челюсти и прикус
@@ -1547,6 +1266,327 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 								</div>
 							</div>
 						</details>
+
+						{/* "Ещё..." Dropdown Menu for Secondary Tools & Modules */}
+						<div className="relative shrink-0" ref={moreMenuRef}>
+							<button
+								type="button"
+								onClick={() => setIsMoreMenuOpen((prev) => !prev)}
+								className={`h-7 flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer ${
+									isMoreMenuOpen || activeStampTool === "Crown" || activeStampTool === "Missing" || isFastExtractMode || isMultiSelectMode || isPerioOpen || isOrthoCephOpen
+										? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-400/40 shadow-xs font-black"
+										: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] hover:text-indigo-600 dark:hover:text-indigo-400"
+								}`}
+								title="Дополнительные инструменты, штампы и модули анализа"
+								data-testid="btn-odontogram-more-menu"
+								aria-expanded={isMoreMenuOpen}
+								aria-haspopup="true"
+							>
+								<MoreHorizontal size={13} className="shrink-0" />
+								<span>Ещё</span>
+								<ChevronDown size={12} className={`shrink-0 transition-transform ${isMoreMenuOpen ? "rotate-180" : ""}`} />
+								{(activeStampTool === "Crown" || activeStampTool === "Missing" || isFastExtractMode || isMultiSelectMode) && (
+									<span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shrink-0" />
+								)}
+							</button>
+
+							{isMoreMenuOpen && (
+								<div
+									className="absolute right-0 top-full mt-1.5 z-50 w-72 p-2 rounded-xl shadow-xl bg-[var(--paper,#ffffff)] dark:bg-zinc-900 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 flex flex-col gap-2 max-h-[80vh] overflow-y-auto"
+									role="menu"
+									aria-label="Дополнительные инструменты"
+								>
+									{/* Subgroup: Batch Presets (1-Click) */}
+									<div>
+										<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-2 py-1 select-none">
+											Пакетные операции (1 клик)
+										</div>
+										<div className="flex flex-col gap-1">
+											<button
+												type="button"
+												onClick={() => {
+													handleMarkIntactDentition();
+													setIsMoreMenuOpen(false);
+												}}
+												className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/20 border border-emerald-500/30"
+												title="Санация: отметить всю зубную формулу здоровой в 1 клик"
+												data-testid="btn-odontogram-all-healthy"
+											>
+												<Check size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+												<span>Санация: все здоровы (1 клик)</span>
+											</button>
+											<button
+												type="button"
+												onClick={() => {
+													handleMarkWisdomTeethMissing();
+													setIsMoreMenuOpen(false);
+												}}
+												className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-rose-500/10 text-rose-800 dark:text-rose-200 hover:bg-rose-500/20 border border-rose-500/30"
+												title="Адентия 8-ок: отметить зубы 18, 28, 38, 48 отсутствующими"
+												data-testid="btn-odontogram-wisdom-missing"
+											>
+												<Trash2 size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
+												<span>Адентия 8-ок (18, 28, 38, 48)</span>
+											</button>
+
+											<button
+												type="button"
+												onClick={() => {
+													setIsPlanWizardOpen(true);
+													setIsMoreMenuOpen(false);
+												}}
+												className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/20 border border-indigo-500/30"
+												title="Сформировать черновой план лечения по МКБ-10 и номенклатуре 804н на основе всех патологий"
+												data-testid="more-menu-plan-from-pathologies"
+											>
+												<FileText size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+												<span>План лечения из патологий (804н)</span>
+											</button>
+
+											<button
+												type="button"
+												onClick={() => {
+													const targetTooth = selectedTeeth && selectedTeeth.length > 0 ? selectedTeeth[0]! : (isPediatricEffective ? 55 : 16);
+													setCardModalTooth(targetTooth);
+													setIsMoreMenuOpen(false);
+												}}
+												className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-blue-500/10 text-blue-800 dark:text-blue-200 hover:bg-blue-500/20 border border-blue-500/30"
+												title="Открыть подробную карточку зуба с поверхностями и протоколами"
+												data-testid="more-menu-tooth-card"
+											>
+												<Stethoscope size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+												<span>Детальная карточка зуба</span>
+											</button>
+										</div>
+									</div>
+
+									<div className="h-[1px] bg-[var(--odontogram-border-subtle,#e2e8f0)] dark:bg-zinc-800" />
+
+									{/* Subgroup: Additional Stamps */}
+									<div>
+										<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-2 py-1 select-none">
+											Дополнительные штампы
+										</div>
+										<div className="grid grid-cols-2 gap-1">
+											<button
+												type="button"
+												onClick={() => {
+													setActiveStampTool((prev) => (prev === "Crown" ? null : "Crown"));
+													setIsMoreMenuOpen(false);
+												}}
+												className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center justify-between ${
+													activeStampTool === "Crown"
+														? "bg-[var(--brand-500,#3b82f6)] text-white font-black shadow-xs ring-2 ring-[var(--brand-500,#3b82f6)]/60"
+														: "bg-[var(--brand-500,#3b82f6)]/10 text-[var(--brand-500,#3b82f6)] hover:bg-[var(--brand-500,#3b82f6)]/20 border border-[var(--brand-500,#3b82f6)]/30"
+												}`}
+												title="Штамп: Коронка (Клик по зубу без меню)"
+												data-testid="stamp-crown-btn"
+											>
+												<span>Коронка (Ц)</span>
+												{activeStampTool === "Crown" && <Check size={12} className="shrink-0" />}
+											</button>
+											<button
+												type="button"
+												onClick={() => {
+													setActiveStampTool((prev) => (prev === "Missing" ? null : "Missing"));
+													setIsMoreMenuOpen(false);
+												}}
+												className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center justify-between ${
+													activeStampTool === "Missing"
+														? "bg-rose-700 text-white font-black shadow-xs ring-2 ring-rose-500"
+														: "bg-rose-500/10 text-rose-800 dark:text-rose-200 hover:bg-rose-500/20 border border-rose-500/20"
+												}`}
+												title="Штамп: Удален (Клик по зубу без меню)"
+												data-testid="stamp-missing-btn"
+											>
+												<span>Удален (0)</span>
+												{activeStampTool === "Missing" && <Check size={12} className="shrink-0" />}
+											</button>
+										</div>
+									</div>
+
+									<div className="h-[1px] bg-[var(--odontogram-border-subtle,#e2e8f0)] dark:bg-zinc-800" />
+
+									{/* Subgroup: Clinical Modules */}
+									<div>
+										<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-2 py-1 select-none">
+											Клинические модули
+										</div>
+										<div className="flex flex-col gap-1">
+											{/* Pediatric Mixed Dentition Modal */}
+											{onOpenPediatricModal && (
+												<button
+													type="button"
+													onClick={() => {
+														onOpenPediatricModal();
+														setIsMoreMenuOpen(false);
+													}}
+													className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none text-left"
+													title="Сменный прикус: сроки прорезывания, стадии резорбции корней и Кариограмма Браттхолла"
+												>
+													<Sparkles size={14} className="text-amber-500 shrink-0" />
+													<span>Сменный прикус</span>
+												</button>
+											)}
+
+											{/* Periodontal Charting Module */}
+											<button
+												type="button"
+												onClick={() => {
+													if (onTogglePerio) onTogglePerio();
+													setIsMoreMenuOpen(false);
+												}}
+												className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left ${
+													isPerioOpen
+														? "bg-[var(--teal-soft,rgba(13,148,136,0.2))] text-[var(--teal)] border-[var(--teal)]/50 shadow-xs font-black"
+														: "bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal)] border-[var(--teal)]/30 hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))]"
+												}`}
+												title="Пародонтологическая карта: 6 точек зондирования Florida Probe, индексы OHI-S / PLI / SBI, скрининг CPITN"
+												data-testid="btn-open-perio-chart"
+											>
+												<Activity size={14} className="text-[var(--teal)] shrink-0" />
+												<span>Пародонтограмма</span>
+											</button>
+
+											{/* Orthodontic Cephalometry TRG Module */}
+											<button
+												type="button"
+												onClick={() => {
+													setIsOrthoCephOpen((prev) => !prev);
+													setIsMoreMenuOpen(false);
+												}}
+												className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shrink-0 cursor-pointer select-none text-left ${
+													isOrthoCephOpen
+														? "bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/50 shadow-xs font-black"
+														: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30 hover:bg-purple-500/20"
+												}`}
+												title="Цефалометрия ТРГ: анализ Штайнера, Твида, Wits-число и углы SNA/SNB/ANB"
+												data-testid="btn-open-ortho-ceph"
+											>
+												<Sparkles size={14} className="text-purple-500 shrink-0" />
+												<span>Цефалометрия ТРГ</span>
+											</button>
+
+											{/* Diagnocat AI Report */}
+											{onLoadDiagnocat && (
+												<button
+													type="button"
+													onClick={() => {
+														onLoadDiagnocat();
+														setIsMoreMenuOpen(false);
+													}}
+													disabled={diagnocatLoading}
+													className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold bg-[var(--brand-500,#3b82f6)]/10 text-[var(--brand-500,#3b82f6)] border border-[var(--brand-500,#3b82f6)]/30 hover:bg-[var(--brand-500,#3b82f6)]/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none text-left"
+													title="Загрузить отчёт Diagnocat AI"
+												>
+													<Stethoscope size={14} className="text-[var(--brand-500,#3b82f6)] shrink-0" />
+													<span>{diagnocatLoading ? "Загрузка..." : "Diagnocat AI"}</span>
+												</button>
+											)}
+											{/* Print Odontogram A4 */}
+											<button
+												type="button"
+												onClick={() => {
+													setIsMoreMenuOpen(false);
+													window.print();
+												}}
+												className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] flex items-center gap-2 px-2.5 py-1 text-xs font-bold bg-zinc-500/10 text-zinc-700 dark:text-zinc-300 border border-zinc-500/20 hover:bg-zinc-500/20 rounded-lg transition-colors shrink-0 cursor-pointer select-none text-left"
+												title="Распечатать графическую одонтограмму со всеми патологиями на лист A4 для вклейки в амбулаторную карту"
+												data-testid="print-odontogram-a4-btn"
+											>
+												<Printer size={14} className="text-zinc-500 shrink-0" />
+												<span>Печать зубной формулы (А4)</span>
+											</button>
+										</div>
+									</div>
+
+									<div className="h-[1px] bg-[var(--odontogram-border-subtle,#e2e8f0)] dark:bg-zinc-800" />
+
+									{/* Subgroup: Display & Modes */}
+									<div>
+										<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-2 py-1 select-none">
+											Отображение и режимы
+										</div>
+										<div className="flex flex-col gap-1">
+											{/* Shift Multi-Select Checkbox */}
+											{onToggleMultiSelect && (
+												<label
+													className={`flex items-center justify-between min-h-[44px] sm:min-h-[32px] sm:h-[32px] text-xs font-bold cursor-pointer select-none px-2.5 py-1 rounded-lg border transition-colors ${
+														isMultiSelectMode
+															? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 font-black"
+															: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)]"
+													}`}
+												>
+													<span>Групповое выделение (Shift)</span>
+													<input
+														type="checkbox"
+														checked={isMultiSelectMode ?? false}
+														onChange={(e) => onToggleMultiSelect(e.target.checked)}
+														className="accent-indigo-500 rounded cursor-pointer shrink-0 ml-2"
+													/>
+												</label>
+											)}
+
+											{/* Wisdom Teeth Toggle */}
+											<button
+												type="button"
+												onClick={() => setShowWisdomTeeth((prev) => !prev)}
+												className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] flex items-center justify-between px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+													showWisdomTeeth
+														? "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-400/40 shadow-xs font-black"
+														: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] opacity-80"
+												}`}
+												title="Показать или скрыть зубы мудрости (18, 28, 38, 48)"
+											>
+												<span className="flex items-center gap-2">
+													{showWisdomTeeth ? <Eye size={14} /> : <EyeOff size={14} />}
+													<span>Зубы мудрости (8-ки)</span>
+												</span>
+												<span className="text-[10px] font-mono opacity-60">{showWisdomTeeth ? "ВКЛ" : "ВЫКЛ"}</span>
+											</button>
+
+											{/* Pulp & Root Canals X-Ray Toggle */}
+											{activeMode === "anatomical_svg" && (
+												<button
+													type="button"
+													onClick={() => setShowPulpAndCanals((prev) => !prev)}
+													className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] flex items-center justify-between px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+														showPulpAndCanals
+															? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-400/40 shadow-xs font-black"
+															: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] opacity-80"
+													}`}
+													title="Рентген-прозрачность эмали для просмотра корневых каналов и пульпы"
+												>
+													<span className="flex items-center gap-2">
+														<Activity size={14} />
+														<span>Каналы и пульпа</span>
+													</span>
+													<span className="text-[10px] font-mono opacity-60">{showPulpAndCanals ? "ВКЛ" : "ВЫКЛ"}</span>
+												</button>
+											)}
+
+											{/* Fast Extraction Mode */}
+											<button
+												type="button"
+												onClick={() => setIsFastExtractMode((prev) => !prev)}
+												className={`min-h-[44px] sm:min-h-[32px] sm:h-[32px] flex items-center justify-between px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+													isFastExtractMode
+														? "bg-rose-600 text-white border-rose-700 shadow-md animate-pulse font-black"
+														: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] border-[var(--odontogram-border-subtle,#e2e8f0)] hover:text-rose-600 dark:hover:text-rose-400"
+												}`}
+												title="Режим быстрого удаления зубов в 1 клик"
+											>
+												<span className="flex items-center gap-2">
+													<Trash2 size={14} />
+													<span>Быстрое удаление зубов</span>
+												</span>
+												<span className="text-[10px] font-mono opacity-60">{isFastExtractMode ? "ВКЛ" : "ВЫКЛ"}</span>
+											</button>
+										</div>
+									</div>
+								</div>
+							)}
+						</div>
 					</div>
 				</div>
 			)}

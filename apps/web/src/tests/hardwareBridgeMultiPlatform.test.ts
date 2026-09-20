@@ -656,6 +656,6 @@ describe("Multi-Platform Hardware Bridge & IPC Suite", () => {
 		assert.equal(universalRes.success, true);
 		assert.equal(universalRes.method, "desktop_silent");
 		assert.equal(nativePrintCalled, true);
-		assert.equal(nativePrintParams?.silent, true);
+		assert.equal((nativePrintParams as any)?.silent, true);
 	});
 });

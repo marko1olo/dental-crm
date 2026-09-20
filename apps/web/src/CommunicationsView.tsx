@@ -14,8 +14,18 @@ import {
 	Send,
 } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
-import { WhatsAppChatPanel } from "./components/chat/WhatsAppChatPanel";
 import { CampaignPanel } from "./components/communications/CampaignPanel";
+
+const WhatsAppChatPanel = lazy(() =>
+	import("./components/chat/WhatsAppChatPanel").then((module) => ({
+		default: module.WhatsAppChatPanel,
+	})),
+);
+const PatientNotificationCenter = lazy(() =>
+	import("./components/notifications/PatientNotificationCenter").then((module) => ({
+		default: module.PatientNotificationCenter,
+	})),
+);
 
 const PatientRecallsHubModal = lazy(() =>
 	import("./components/recalls/PatientRecallsHubModal").then((module) => ({
@@ -35,13 +45,13 @@ import {
 import { MessageDeliveryConsole } from "./components/communications/MessageDeliveryConsole";
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
-import { PatientNotificationCenter } from "./components/notifications/PatientNotificationCenter";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { hasCapability } from "./lib/clinicCapabilities";
 import { denteAdminSecretRequestHeaders } from "./lib/denteRequestHeaders";
 import { countLabel } from "./lib/russianPlural";
 import { useSettingsStore } from "./store/settingsStore";
+import { sliceDomList } from "./utils/domVirtualizationHelper";
 
 type CommunicationTask = Dashboard["communicationTasks"][number];
 type CommunicationTemplate = Dashboard["communicationTemplates"][number];
@@ -565,8 +575,13 @@ export function CommunicationsView(
 	const [activeSection, setActiveSection] = useState<
 		"tasks" | "chat" | "notifications"
 	>("tasks");
+	const [tasksLimit, setTasksLimit] = useState(30);
+	const [journalLimit, setJournalLimit] = useState(40);
 	const [isRecallsHubOpen, setIsRecallsHubOpen] = useState(false);
 	const [isOmnichannelHubOpen, setIsOmnichannelHubOpen] = useState(false);
+
+	const tasksSlice = sliceDomList(sortedCommunicationTasks ?? [], tasksLimit, 0);
+	const journalSlice = sliceDomList(journal.entries ?? [], journalLimit, 0);
 
 	const communicationSummaryHasNumbers = Boolean(
 		(dashboard?.communicationSummary?.openTasks ?? 0) ||
@@ -663,13 +678,17 @@ export function CommunicationsView(
 
 			{activeSection === "chat" && (
 				<div className="h-[750px] mb-5">
-					<WhatsAppChatPanel />
+					<Suspense fallback={null}>
+						<WhatsAppChatPanel />
+					</Suspense>
 				</div>
 			)}
 
 			{activeSection === "notifications" && (
 				<div className="h-[750px] mb-5">
-					<PatientNotificationCenter />
+					<Suspense fallback={null}>
+						<PatientNotificationCenter />
+					</Suspense>
 				</div>
 			)}
 
@@ -870,31 +889,45 @@ export function CommunicationsView(
 							className="communication-task-list"
 							aria-label="Очередь связи"
 						>
-							{(sortedCommunicationTasks ?? []).length ? (
-								(sortedCommunicationTasks ?? [])?.map((task) => (
-									<CommunicationTaskCard
-										communicationChannelLabels={communicationChannelLabels}
-										communicationDocumentTaskActionLabels={
-											communicationDocumentTaskActionLabels
-										}
-										communicationIntentLabels={communicationIntentLabels}
-										communicationPriorityLabels={communicationPriorityLabels}
-										communicationSavingTaskId={communicationSavingTaskId}
-										communicationStatusLabels={communicationStatusLabels}
-										completionNoteDescriptionId={communicationNoteDescriptionId}
-										completeCommunicationTask={completeCommunicationTask}
-										documentKinds={documentKindsForCommunicationTask(task)}
-										documentLabels={documentLabels}
-										formatDateTime={formatDateTime}
-										key={task.id}
-										openCommunicationTaskDocumentWorkflow={
-											openCommunicationTaskDocumentWorkflow
-										}
-										staffRoleLabels={staffRoleLabels}
-										task={task}
-										appointments={dashboard.appointments}
-									/>
-								))
+							{(tasksSlice.visibleItems ?? []).length ? (
+								<>
+									{(tasksSlice.visibleItems ?? []).map((task: any) => (
+										<CommunicationTaskCard
+											communicationChannelLabels={communicationChannelLabels}
+											communicationDocumentTaskActionLabels={
+												communicationDocumentTaskActionLabels
+											}
+											communicationIntentLabels={communicationIntentLabels}
+											communicationPriorityLabels={communicationPriorityLabels}
+											communicationSavingTaskId={communicationSavingTaskId}
+											communicationStatusLabels={communicationStatusLabels}
+											completionNoteDescriptionId={communicationNoteDescriptionId}
+											completeCommunicationTask={completeCommunicationTask}
+											documentKinds={documentKindsForCommunicationTask(task)}
+											documentLabels={documentLabels}
+											formatDateTime={formatDateTime}
+											key={task.id}
+											openCommunicationTaskDocumentWorkflow={
+												openCommunicationTaskDocumentWorkflow
+											}
+											staffRoleLabels={staffRoleLabels}
+											task={task}
+											appointments={dashboard.appointments}
+										/>
+									))}
+									{tasksSlice.hasMore && (
+										<div className="flex justify-center p-3">
+											<button
+												type="button"
+												data-testid="btn-communications-tasks-show-more"
+												onClick={() => setTasksLimit((prev) => prev + 30)}
+												className="min-h-[44px] sm:min-h-[34px] px-4 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] cursor-pointer transition-all shadow-xs"
+											>
+												Показать ещё 30 задач (показано {tasksSlice.visibleItems.length} из {tasksSlice.totalCount})
+											</button>
+										</div>
+									)}
+								</>
 							) : (
 								<EmptyState
 									title="Очередь связи пуста"
@@ -985,7 +1018,7 @@ export function CommunicationsView(
 									/>
 								) : (
 									<div className="template-list">
-										{journal.entries?.map((event) => (
+										{journalSlice.visibleItems?.map((event) => (
 											<CommunicationEventRow
 												communicationChannelLabels={communicationChannelLabels}
 												communicationStatusLabels={communicationStatusLabels}
@@ -994,6 +1027,18 @@ export function CommunicationsView(
 												key={event.id}
 											/>
 										))}
+										{journalSlice.hasMore && (
+											<div className="flex justify-center p-2">
+												<button
+													type="button"
+													data-testid="btn-communications-journal-show-more"
+													onClick={() => setJournalLimit((prev) => prev + 40)}
+													className="min-h-[44px] sm:min-h-[32px] px-3 py-1 rounded-md border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[11px] font-semibold text-[var(--ink)] cursor-pointer transition-all"
+												>
+													Показать ещё 40 записей
+												</button>
+											</div>
+										)}
 									</div>
 								)}
 							</section>

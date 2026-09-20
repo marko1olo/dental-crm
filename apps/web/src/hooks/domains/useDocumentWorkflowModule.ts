@@ -1882,25 +1882,17 @@ export function useDocumentWorkflowModule({
 				),
 		).length;
 		let insuranceCoverageKopecks = 0;
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const patientAny = documentPatient as any;
-		if (
-			patientAny?.insuranceContractId ||
-			patientAny?.administrativeProfile?.insuranceContractId
-		) {
-			const contractId =
-				patientAny.insuranceContractId ||
-				patientAny.administrativeProfile?.insuranceContractId;
+		const contractId =
+			(documentPatient?.administrativeProfile as any)?.insuranceContractId;
+		if (contractId) {
 			const contract = dashboard?.insuranceContracts?.find(
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				(c: any) => c.id === contractId,
+				(c) => c.id === contractId,
 			);
 			if (contract?.isActive) {
 				let accumulatedKopecks = 0;
 				for (const item of activePlanItems) {
 					const service = dashboard.serviceCatalog?.find(
-						// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-						(s: any) => s.id === item.serviceId,
+						(s) => s.id === item.serviceId,
 					);
 					const category = service?.category || "other";
 					let pct = 0;
@@ -3190,7 +3182,7 @@ export function useDocumentWorkflowModule({
 			"";
 		const sexRaw = (
 			(documentPatient as any)?.gender ??
-			(documentPatient as any)?.administrativeProfile?.gender ??
+			(documentPatient?.administrativeProfile as any)?.gender ??
 			(patientProfile as { sex?: string } | null | undefined)?.sex ??
 			""
 		)
@@ -3744,10 +3736,7 @@ export function useDocumentWorkflowModule({
 
 	const _inn = clinicProfileDraft?.inn?.trim() || "";
 	const _insuranceContractId =
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		(documentPatient as any)?.insuranceContractId ||
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		(documentPatient as any)?.administrativeProfile?.insuranceContractId ||
+		(documentPatient?.administrativeProfile as any)?.insuranceContractId ||
 		"";
 
 	function applyQuickDocumentPackage(packageId: DocumentPackageId) {

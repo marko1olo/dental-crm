@@ -358,7 +358,7 @@ export const formatLabOrderFormZtl1A4Protocol = (
 			toothReference: Array.isArray(order.toothNumbers) ? order.toothNumbers.join(", ") : (order.toothReference || undefined),
 			antagonistInfo: order.antagonistInfo || undefined,
 			impressionType: "digital_scan",
-			sentDate: order.sentDate || new Date().toISOString().split("T")[0],
+			sentDate: order.sentDate || new Date().toISOString().slice(0, 10),
 			expectedDate: order.expectedDate || undefined,
 			receivedDate: order.receivedDate || undefined,
 			status: "sent",

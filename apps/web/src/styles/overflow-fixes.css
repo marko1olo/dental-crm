@@ -88,6 +88,7 @@
 
 .tooth-chart-arch-container {
 	max-width: 100%;
+	contain: none !important;
 }
 
 /* --- 6. Гарантия строго 0px горизонтального скролла на мобильных (R1) --- */
@@ -488,7 +489,7 @@
 .document-nav-tabs {
 	display: flex !important;
 	align-items: center !important;
-	gap: 4px !important;
+	gap: 3px !important;
 	width: 100% !important;
 	max-width: 100% !important;
 	min-width: 0 !important;
@@ -509,8 +510,8 @@
 	display: inline-flex !important;
 	align-items: center !important;
 	justify-content: center !important;
-	gap: 6px !important;
-	padding: 6px 10px !important;
+	gap: 5px !important;
+	padding: 5px 8px !important;
 	font-size: 12px !important;
 	white-space: nowrap !important;
 	flex-shrink: 0 !important;
@@ -523,6 +524,89 @@
 	flex-shrink: 0 !important;
 	min-width: max-content !important;
 }
+
+.document-nav-tab-badge {
+	min-width: 18px !important;
+	height: 18px !important;
+	padding: 0 4px !important;
+	font-size: 11px !important;
+	margin-left: 3px !important;
+}
+
+/* ============================================================
+   Региональная адаптация под малую высоту экрана (1092x614, 720p, 768p)
+   Мандаты 8e (Автономия врача), 8p (Слон в комнате), 8n (Соло-врач)
+   ============================================================ */
+/* 1. Всегда видимая кнопка оплаты (Касса 54-ФЗ) на ноутбуках и десктопе без скролла (Мандаты 8c, 8e, 8n, 8p) */
+#payment-checkout-bar,
+.payment-checkout-bar {
+	position: fixed !important;
+	bottom: 0 !important;
+	left: var(--sidebar-width, 252px) !important;
+	right: 0 !important;
+	z-index: 50 !important;
+	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15) !important;
+	background: var(--paper-strong, var(--paper, #ffffff)) !important;
+}
+
+@media (max-width: 1024px) {
+	#payment-checkout-bar,
+	.payment-checkout-bar {
+		left: var(--sidebar-width, 190px) !important;
+	}
+}
+
+@media (max-width: 768px) {
+	#payment-checkout-bar,
+	.payment-checkout-bar {
+		left: 0 !important;
+	}
+}
+
+@media (max-height: 780px) {
+	/* 2. Компактная зубная формула без среза нижнего зубного ряда (31-48) */
+	.tooth-chart-arch-container {
+		padding: 4px 2px !important;
+		min-height: 180px !important;
+		contain: none !important;
+	}
+	.odontogram-toolbar {
+		padding-top: 2px !important;
+		padding-bottom: 2px !important;
+		gap: 2px !important;
+	}
+	.odontogram-toolbar-row {
+		min-height: 28px !important;
+		height: 28px !important;
+	}
+	.tooth-chart-arch-wrapper:not(.quadrant-view-wrapper) {
+		transform: scale(0.85);
+		transform-origin: top center;
+		margin-bottom: -35px !important;
+	}
+	/* 3. Компактный дневник визита 043/у */
+	.visit-sub-nav-tabs button {
+		min-height: 32px !important;
+		height: 32px !important;
+		padding-top: 2px !important;
+		padding-bottom: 2px !important;
+	}
+}
+
+@media (max-height: 650px) {
+	/* 2b. Сверхкомпактная зубная формула для экранов 1092x614 без скролла */
+	.tooth-chart-arch-container {
+		padding: 2px 2px !important;
+		min-height: 150px !important;
+		contain: none !important;
+	}
+	.tooth-chart-arch-wrapper:not(.quadrant-view-wrapper) {
+		transform: scale(0.75) !important;
+		transform-origin: top center !important;
+		margin-bottom: -55px !important;
+	}
+}
+
 
 
 
