@@ -35,6 +35,7 @@ import {
 	ZoomOut,
 } from "lucide-react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazyWithRetry } from "./lib/lazyWithRetry";
 import { AppLoadingState, AppUnlockState } from "./AppBootState";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { AuthHub } from "./components/auth/AuthHub";
@@ -59,10 +60,14 @@ import {
 import { A2hsPromptModal } from "./pwa/A2hsPromptModal";
 import { usePerspectiveStore } from "./store/perspectiveStore";
 import { useAppLogic } from "./useAppLogic";
+import { useOmniPlatform } from "./hooks/useOmniPlatform";
+import { useDesktopShortcuts } from "./hooks/useDesktopShortcuts";
+import { toggleDesktopKioskMode } from "./native/desktopBridge";
 import { logger } from "./utils/logger";
 import { WorkspaceContinuityStrip } from "./workspaceContinuityStrip";
 import {
 	preloadWorkspaceView,
+	scheduleClinicalHotModulesWarmup,
 	scheduleIdleWorkspacePreload,
 } from "./workspacePreload";
 import { WorkspaceRouteErrorBoundary } from "./workspaceRouteErrorBoundary";
@@ -72,12 +77,12 @@ import {
 	WorkspaceTopbar,
 } from "./workspaceShell";
 
-const TreatmentPlanModule = lazy(() =>
+const TreatmentPlanModule = lazyWithRetry(() =>
 	import("./components/treatment-plans/TreatmentPlanModule").then((module) => ({
 		default: module.TreatmentPlanModule,
 	})),
 );
-const OrthodonticPerspectiveView = lazy(() =>
+const OrthodonticPerspectiveView = lazyWithRetry(() =>
 	import("./components/perspectives/OrthodonticPerspectiveView").then(
 		(module) => ({
 			default: module.OrthodonticPerspectiveView,
@@ -85,46 +90,46 @@ const OrthodonticPerspectiveView = lazy(() =>
 	),
 );
 
-const ImagingView = lazy(() =>
+const ImagingView = lazyWithRetry(() =>
 	import("./ImagingView").then((module) => ({ default: module.ImagingView })),
 );
-const VisitView = lazy(() =>
+const VisitView = lazyWithRetry(() =>
 	import("./VisitView").then((module) => ({ default: module.VisitView })),
 );
-const FinanceView = lazy(() =>
+const FinanceView = lazyWithRetry(() =>
 	import("./FinanceView").then((module) => ({ default: module.FinanceView })),
 );
-const CommunicationsView = lazy(() =>
+const CommunicationsView = lazyWithRetry(() =>
 	import("./CommunicationsView").then((module) => ({
 		default: module.CommunicationsView,
 	})),
 );
-const DocumentsView = lazy(() =>
+const DocumentsView = lazyWithRetry(() =>
 	import("./DocumentsView").then((module) => ({
 		default: module.DocumentsView,
 	})),
 );
-const SettingsView = lazy(() =>
+const SettingsView = lazyWithRetry(() =>
 	import("./SettingsView").then((module) => ({ default: module.SettingsView })),
 );
-const ScheduleView = lazy(() =>
+const ScheduleView = lazyWithRetry(() =>
 	import("./ScheduleView").then((module) => ({ default: module.ScheduleView })),
 );
-const PatientsView = lazy(() =>
+const PatientsView = lazyWithRetry(() =>
 	import("./PatientsView").then((module) => ({ default: module.PatientsView })),
 );
-const ShiftView = lazy(() =>
+const ShiftView = lazyWithRetry(() =>
 	import("./ShiftView").then((module) => ({ default: module.ShiftView })),
 );
-const PatientCockpit = lazy(() =>
+const PatientCockpit = lazyWithRetry(() =>
 	import("./ShiftView").then((module) => ({ default: module.PatientCockpit })),
 );
-const MarketingView = lazy(() =>
+const MarketingView = lazyWithRetry(() =>
 	import("./MarketingView").then((module) => ({
 		default: module.MarketingView,
 	})),
 );
-const AnalyticsDashboardView = lazy(() =>
+const AnalyticsDashboardView = lazyWithRetry(() =>
 	import("./pages/AnalyticsDashboardView").then((module) => ({
 		default: module.AnalyticsDashboardView,
 	})),
@@ -139,15 +144,15 @@ const AnalyticsDashboardView = lazy(() =>
  * AppRouter.tsx удалён вместе с двумя лежавшими в нём пустышками (зарплаты и
  * омниканальный инбокс — их адреса на сервере отвечают 404).
  */
-const InventoryView = lazy(() =>
+const InventoryView = lazyWithRetry(() =>
 	import("./components/InventoryView").then((module) => ({
 		default: module.InventoryView,
 	})),
 );
-const ScannerView = lazy(() =>
+const ScannerView = lazyWithRetry(() =>
 	import("./ScannerView").then((module) => ({ default: module.ScannerView })),
 );
-const LeadsKanbanView = lazy(() =>
+const LeadsKanbanView = lazyWithRetry(() =>
 	import("./components/leads/LeadsKanbanView").then((module) => ({
 		default: module.LeadsKanbanView,
 	})),
@@ -166,17 +171,17 @@ const LeadsKanbanView = lazy(() =>
  * несинхронных набора отметок «обзвонил». Оставлен более поздний монтаж,
  * согласованный с соседними панелями смены.
  */
-const ManagerReportsPanel = lazy(() =>
+const ManagerReportsPanel = lazyWithRetry(() =>
 	import("./components/reports/ManagerReportsPanel").then((module) => ({
 		default: module.ManagerReportsPanel,
 	})),
 );
-const OnboardingWizardModal = lazy(() =>
+const OnboardingWizardModal = lazyWithRetry(() =>
 	import("./components/onboarding/OnboardingWizardModal").then((module) => ({
 		default: module.OnboardingWizardModal,
 	})),
 );
-const DoctorMobileShiftModal = lazy(() =>
+const DoctorMobileShiftModal = lazyWithRetry(() =>
 	import("./components/doctor-portal/DoctorMobileShiftModal").then(
 		(module) => ({
 			default: module.DoctorMobileShiftModal,
@@ -204,6 +209,47 @@ export function App() {
 		});
 	};
 	const perspective = usePerspectiveStore((s) => s.perspective);
+	useOmniPlatform();
+
+	useDesktopShortcuts({
+		onF1Help: () => {
+			window.dispatchEvent(new CustomEvent("dente:shortcut:f1"));
+			window.dispatchEvent(new CustomEvent("dente:open-804n-hints"));
+		},
+		onSearchPatient: () => {
+			window.dispatchEvent(new CustomEvent("dente:open-omnibar"));
+		},
+		onNewAppointment: () => {
+			window.dispatchEvent(new CustomEvent("dente:new-appointment"));
+		},
+		onF4Odontogram: () => {
+			window.dispatchEvent(new CustomEvent("dente:shortcut:f4"));
+			window.dispatchEvent(new CustomEvent("dente:open-odontogram"));
+		},
+		onRefreshSchedule: () => {
+			window.dispatchEvent(new CustomEvent("dente:shortcut:f5"));
+			window.dispatchEvent(new CustomEvent("dente:refresh-schedule"));
+		},
+		onF9Checkout: () => {
+			window.dispatchEvent(new CustomEvent("dente:shortcut:f9"));
+			window.dispatchEvent(new CustomEvent("dente:open-checkout"));
+		},
+		onF11ToggleKiosk: () => {
+			void toggleDesktopKioskMode();
+		},
+		onF12PrintDiary: () => {
+			window.dispatchEvent(new CustomEvent("dente:shortcut:f12"));
+			window.dispatchEvent(new CustomEvent("dente:print-043-diary"));
+		},
+		onSave: () => {
+			window.dispatchEvent(new CustomEvent("dente:shortcut:save"));
+			window.dispatchEvent(new CustomEvent("dente:autosave-visit"));
+		},
+		onEscape: () => {
+			window.dispatchEvent(new CustomEvent("dente:close-modals"));
+		},
+	});
+
 	useEffect(() => {
 		const onKeyDown = (e: KeyboardEvent) => {
 			if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
@@ -917,6 +963,7 @@ export function App() {
 		setScheduleDateFilter,
 	} = appLogicValue;
 	useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
+	useEffect(() => scheduleClinicalHotModulesWarmup(), []);
 
 	// Direct hash routes support: /#sanpin -> scanner, /#cmo -> analytics, /#lab -> inventory, /#telephony -> communications
 	useEffect(() => {

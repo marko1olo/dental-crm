@@ -23,6 +23,7 @@ import React, {
 } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { sliceDomList } from "../../utils/domVirtualizationHelper";
 import { money } from "../../utils/financeUtils";
 import { showToast } from "../GlobalToast";
 import type { DmsGuaranteeLetter } from "../insurance/insuranceMath";
@@ -56,6 +57,7 @@ export interface PatientWorkspaceViewProps {
 	patientId: string;
 	patientName?: string | null;
 	dashboard?: Dashboard | null;
+	initialTab?: "timeline" | "plans" | "visits";
 	onOpenVisit?: (visitId: string) => void;
 	onOpenPlan?: (planId: string) => void;
 }
@@ -216,6 +218,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 			patientId,
 			patientName,
 			dashboard: propDashboard,
+			initialTab = "timeline",
 			onOpenVisit,
 			onOpenPlan,
 		}) => {
@@ -223,7 +226,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 			const dashboard = propDashboard ?? appLogic?.dashboard;
 			const [activeTab, setActiveTab] = useState<
 				"timeline" | "plans" | "visits"
-			>("timeline");
+			>(initialTab);
 
 			useEffect(() => {
 				let isMounted = true;
@@ -272,6 +275,25 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 					(item) => item.patientId === patientId,
 				);
 			}, [dashboard?.treatmentPlanItems, patientId]);
+
+			// Low-Spec Celeron / 4GB RAM Optimization: Bound DOM render for 100+ visits and plan items (Mandates 8c, 8e, 8n)
+			const DEFAULT_WORKSPACE_PAGE_SIZE = 30;
+			const [visibleVisitsLimit, setVisibleVisitsLimit] = useState<number>(DEFAULT_WORKSPACE_PAGE_SIZE);
+			const [visiblePlansLimit, setVisiblePlansLimit] = useState<number>(DEFAULT_WORKSPACE_PAGE_SIZE);
+
+			// Deterministic reset when switching patient context
+			useEffect(() => {
+				setVisibleVisitsLimit(DEFAULT_WORKSPACE_PAGE_SIZE);
+				setVisiblePlansLimit(DEFAULT_WORKSPACE_PAGE_SIZE);
+			}, [patientId]);
+
+			const visitsSlice = useMemo(() => {
+				return sliceDomList(patientAppointments, visibleVisitsLimit, 0);
+			}, [patientAppointments, visibleVisitsLimit]);
+
+			const plansSlice = useMemo(() => {
+				return sliceDomList(patientPlanItems, visiblePlansLimit, 0);
+			}, [patientPlanItems, visiblePlansLimit]);
 
 			const patientAddendums = useMemo(() => {
 				return (dashboard?.documents ?? []).filter(
@@ -722,15 +744,31 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 									Планы лечения для пациента пока не составлены.
 								</div>
 							) : (
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-									{patientPlanItems.map((item) => (
-										<TreatmentPlanCardItem
-											key={item.id}
-											item={item}
-											onOpenPlan={handleOpenPlanCallback}
-										/>
-									))}
-								</div>
+								<>
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+										{plansSlice.visibleItems.map((item) => (
+											<TreatmentPlanCardItem
+												key={item.id}
+												item={item}
+												onOpenPlan={handleOpenPlanCallback}
+											/>
+										))}
+									</div>
+									{plansSlice.hasMore && (
+										<div className="flex justify-center pt-1">
+											<button
+												type="button"
+												onClick={() =>
+													setVisiblePlansLimit((prev) => prev + DEFAULT_WORKSPACE_PAGE_SIZE)
+												}
+												className="secondary-button min-h-[34px] h-8 px-4 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5 active:scale-95"
+												data-testid="btn-patient-plans-show-more"
+											>
+												{`Показать ещё ${Math.min(DEFAULT_WORKSPACE_PAGE_SIZE, plansSlice.remainingCount)} поз. (показано ${plansSlice.displayedCount} из ${plansSlice.totalCount})`}
+											</button>
+										</div>
+									)}
+								</>
 							)}
 						</div>
 					)}
@@ -747,20 +785,36 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 									История приёмов пациента пуста.
 								</div>
 							) : (
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-									{patientAppointments.map((appt) => (
-										<VisitHistoryCardItem
-											key={appt.id}
-											appointment={appt}
-											doctorFullName={
-												appt.doctorUserId
-													? (staffMap.get(appt.doctorUserId) ?? null)
-													: null
-											}
-											onOpenVisit={handleOpenVisitCallback}
-										/>
-									))}
-								</div>
+								<>
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+										{visitsSlice.visibleItems.map((appt) => (
+											<VisitHistoryCardItem
+												key={appt.id}
+												appointment={appt}
+												doctorFullName={
+													appt.doctorUserId
+														? (staffMap.get(appt.doctorUserId) ?? null)
+														: null
+												}
+												onOpenVisit={handleOpenVisitCallback}
+											/>
+										))}
+									</div>
+									{visitsSlice.hasMore && (
+										<div className="flex justify-center pt-1">
+											<button
+												type="button"
+												onClick={() =>
+													setVisibleVisitsLimit((prev) => prev + DEFAULT_WORKSPACE_PAGE_SIZE)
+												}
+												className="secondary-button min-h-[34px] h-8 px-4 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5 active:scale-95"
+												data-testid="btn-patient-visits-show-more"
+											>
+												{`Показать ещё ${Math.min(DEFAULT_WORKSPACE_PAGE_SIZE, visitsSlice.remainingCount)} визитов (показано ${visitsSlice.displayedCount} из ${visitsSlice.totalCount})`}
+											</button>
+										</div>
+									)}
+								</>
 							)}
 						</div>
 					)}

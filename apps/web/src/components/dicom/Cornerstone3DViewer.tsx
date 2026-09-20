@@ -247,6 +247,9 @@ const VIEWPORT_IDS = {
 	coronal: "CORONAL",
 } as const;
 
+import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper";
+export { teardownViewportCanvases };
+
 export function Cornerstone3DViewer({
 	imageIds,
 	patientId = null,
@@ -322,6 +325,19 @@ export function Cornerstone3DViewer({
 	const restoredMarkupRef = useRef<CtPlanningMarkup | null>(restoredMarkup);
 	restoredMarkupRef.current = restoredMarkup;
 	const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	// Low-Spec GC Invariant (Mandate 8c & Low-RAM Celeron/iGPU): Ensure timer clearing and canvas backing store purge on unmount
+	useEffect(() => {
+		return () => {
+			if (saveTimerRef.current !== null) {
+				clearTimeout(saveTimerRef.current);
+				saveTimerRef.current = null;
+			}
+			teardownViewportCanvases(axialRef.current);
+			teardownViewportCanvases(sagittalRef.current);
+			teardownViewportCanvases(coronalRef.current);
+		};
+	}, []);
 
 	useEffect(() => {
 		async function init() {
@@ -431,6 +447,7 @@ export function Cornerstone3DViewer({
 				imageIds: effectiveImageIds,
 			});
 
+			if (cancelled) return;
 			volume.load();
 
 			const firstImageId = effectiveImageIds[0];
@@ -450,6 +467,7 @@ export function Cornerstone3DViewer({
 				[{ volumeId: vId }],
 				[viewportIds.axial, viewportIds.sagittal, viewportIds.coronal],
 			);
+			if (cancelled) return;
 
 			const toolGroupId = "mpr-tool-group";
 			let toolGroup =
@@ -535,8 +553,16 @@ export function Cornerstone3DViewer({
 
 		return () => {
 			cancelled = true;
-			cornerstone.getRenderingEngine("my-engine")?.destroy();
-			cornerstoneTools.ToolGroupManager.destroyToolGroup("mpr-tool-group");
+			try {
+				cornerstone.getRenderingEngine("my-engine")?.destroy();
+			} catch {
+				// Ignore
+			}
+			try {
+				cornerstoneTools.ToolGroupManager.destroyToolGroup("mpr-tool-group");
+			} catch {
+				// Ignore
+			}
 			try {
 				cornerstoneTools.annotation.state.removeAllAnnotations();
 			} catch {
@@ -547,6 +573,11 @@ export function Cornerstone3DViewer({
 			} catch {
 				// Ignore
 			}
+			// Low-Spec GC Invariant (Mandate 8c & Low-RAM Celeron/iGPU):
+			// Zero WebGL contexts and canvas backing stores inside axial, sagittal, coronal viewport containers
+			teardownViewportCanvases(axialRef.current);
+			teardownViewportCanvases(sagittalRef.current);
+			teardownViewportCanvases(coronalRef.current);
 			setPanorexVolume(null);
 			setSplinePoints([]);
 		};
