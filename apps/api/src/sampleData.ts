@@ -356,6 +356,7 @@ export const patients: Patient[] = [
 		status: "active",
 		fullName: "Иванова Марина Сергеевна",
 		birthDate: "1988-04-21",
+		gender: "female",
 		phone: "+7 927 111-22-33",
 		email: null,
 		notes: "Боится анестезии, предпочитает утренние приемы.",
@@ -372,6 +373,7 @@ export const patients: Patient[] = [
 		status: "active",
 		fullName: "Петров Алексей Николаевич",
 		birthDate: "1979-11-03",
+		gender: "male",
 		phone: "+7 927 555-19-40",
 		email: "petrov@example.com",
 		notes: "Нужны документы для налогового вычета.",
@@ -388,6 +390,7 @@ export const patients: Patient[] = [
 		status: "active",
 		fullName: "Садыкова Эльмира Рустамовна",
 		birthDate: null,
+		gender: "female",
 		phone: "+7 927 900-77-10",
 		email: null,
 		notes: null,
@@ -5490,6 +5493,7 @@ function normalizePatientAdministrativeProfiles(): void {
 export function createPatient(input: {
 	fullName: string;
 	birthDate?: string | null | undefined;
+	gender?: "male" | "female" | "other" | null | undefined;
 	phone?: string | null | undefined;
 	email?: string | null | undefined;
 	notes?: string | null | undefined;
@@ -5515,6 +5519,7 @@ export function createPatient(input: {
 		status: "active",
 		fullName,
 		birthDate,
+		gender: input.gender ?? null,
 		phone: nullableTrimmed(input.phone),
 		email: nullableTrimmed(input.email),
 		notes: nullableTrimmed(input.notes),

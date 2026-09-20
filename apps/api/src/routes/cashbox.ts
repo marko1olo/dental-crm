@@ -81,7 +81,10 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 			openedAt: z.string().optional(),
 		});
 		const parsed = bodySchema.safeParse(request.body || {});
-		let effectiveUserId = parsed.success && parsed.data.openedByUserId ? parsed.data.openedByUserId : currentUserId;
+		let effectiveUserId: string | null =
+			parsed.success && parsed.data.openedByUserId
+				? parsed.data.openedByUserId
+				: currentUserId;
 
 		// Mandate 8e & 8n: Solo Doctor Autonomy — auto-resolve to primary user of the clinic if no user UUID passed
 		if (!effectiveUserId) {
@@ -92,7 +95,7 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 					.where(eq(users.organizationId, orgId))
 					.limit(1);
 			});
-			effectiveUserId = firstUser?.id;
+			effectiveUserId = firstUser?.id ?? null;
 		}
 
 		if (!effectiveUserId) {
@@ -216,7 +219,10 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 			closedAt: z.string().optional(),
 		});
 		const parsed = bodySchema.safeParse(request.body || {});
-		let effectiveUserId = parsed.success && parsed.data.closedByUserId ? parsed.data.closedByUserId : currentUserId;
+		let effectiveUserId: string | null =
+			parsed.success && parsed.data.closedByUserId
+				? parsed.data.closedByUserId
+				: currentUserId;
 
 		if (!effectiveUserId) {
 			const [firstUser] = await withTenantCtx(orgId, async (tx) => {
@@ -226,7 +232,7 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 					.where(eq(users.organizationId, orgId))
 					.limit(1);
 			});
-			effectiveUserId = firstUser?.id;
+			effectiveUserId = firstUser?.id ?? null;
 		}
 
 		const closedShifts = await withTenantCtx(orgId, async (tx) => {

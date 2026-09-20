@@ -115,6 +115,7 @@ export const inMemoryPatients: Patient[] = [
 		status: "active",
 		fullName: "Иванова Марина Сергеевна",
 		birthDate: "1988-04-21",
+		gender: "female",
 		phone: "+7 927 111-22-33",
 		email: null,
 		notes: "",

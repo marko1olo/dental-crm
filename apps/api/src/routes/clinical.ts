@@ -976,8 +976,8 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			"../services/clinical/statutoryCatalogs.js"
 		);
 		const items = getStatutory804nCatalog({
-			q: query?.q,
-			category: query?.category,
+			...(query?.q ? { q: query.q } : {}),
+			...(query?.category ? { category: query.category } : {}),
 		});
 		return reply.status(200).send(items);
 	};
@@ -991,8 +991,8 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			"../services/clinical/statutoryCatalogs.js"
 		);
 		const items = getStatutoryIcd10Catalog({
-			q: query?.q,
-			group: query?.group,
+			...(query?.q ? { q: query.q } : {}),
+			...(query?.group ? { group: query.group } : {}),
 		});
 		return reply.status(200).send(items);
 	});
@@ -1003,8 +1003,8 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			"../services/clinical/statutoryCatalogs.js"
 		);
 		const items = getStatutoryEmrTemplates({
-			q: query?.q,
-			category: query?.category,
+			...(query?.q ? { q: query.q } : {}),
+			...(query?.category ? { category: query.category } : {}),
 		});
 		return reply.status(200).send(items);
 	});

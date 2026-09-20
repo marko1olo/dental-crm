@@ -116,6 +116,8 @@ export function normalizePatientAdministrativeProfile(
 		decree659Compliance:
 			(input?.decree659Compliance as Record<string, unknown> | null | undefined) ??
 			null,
+		gender: input?.gender ?? null,
+		insuranceContractId: nullableTrimmed(input?.insuranceContractId),
 	};
 
 	const hasValue = Object.values(profile).some((value) =>
