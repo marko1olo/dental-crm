@@ -626,7 +626,7 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 		};
 
 		const unregister = registerDesktopHotkeys(handlers, {
-			target: mockTarget as any,
+			target: mockTarget as unknown as EventTarget,
 			preventF5Reload: true,
 		});
 
@@ -698,7 +698,7 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 			onF8TreatmentPlan: () => { treatmentPlanOpened = true; },
 			onF10Documents: () => { documentsOpened = true; },
 			onF12PrintDiary: () => { diaryPrinted = true; },
-		}, { target: mockTarget });
+		}, { target: mockTarget as unknown as EventTarget });
 
 		const f6Res = emitKey({ key: "F6", code: "F6" });
 		assert.equal(f6Res.defaultPrevented, true);
