@@ -1095,7 +1095,7 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 			unwatchLocalDicomFolder: async () => ({ success: true }),
 			printFiscalReceiptSerial: async (params) => {
 				serialPrintedPort = params.port;
-				return { success: true, fiscalDocNumber: 12345 };
+				return { success: true, fiscalDocNum: "12345" };
 			},
 			sendSerialCommand: async (params) => {
 				serialSentData = params.dataHex;
@@ -1116,10 +1116,10 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 			const res = await printDesktopFiscalReceiptSerial({
 				port: "COM3",
 				payload: {
-					operation: "sale",
-					items: [{ name: "Лечение кариеса", priceKopecks: 350000, quantity: 1, department: 1, paymentMethod: "full_payment" }],
-					payments: [{ type: "cash", amountKopecks: 350000 }],
-					taxationSystem: "usn_income",
+					cashierName: "Иванов И. И.",
+					items: [{ name: "Лечение кариеса", priceRub: 3500, quantity: 1 }],
+					totalRub: 3500,
+					paymentType: "cash",
 				},
 			});
 			assert.equal(res.success, true);

@@ -1624,7 +1624,7 @@ export function schedulePrescriptionAutosave<T = unknown>(
 	const key = `${PRESCRIPTION_DRAFT_KEY_PREFIX}${id}`;
 	return clinicalDraftAutosaver.scheduleAutosave<T>(
 		key,
-		"PRESCRIPTION_107_1U",
+		"PRESCRIPTION_107_DRAFT",
 		id,
 		data,
 		organizationId,
@@ -1644,7 +1644,7 @@ export function scheduleAppointmentAutosave<T = unknown>(
 	const key = `${APPOINTMENT_DRAFT_KEY_PREFIX}${appointmentId}`;
 	return clinicalDraftAutosaver.scheduleAutosave<T>(
 		key,
-		"APPOINTMENT_RECORD",
+		"APPOINTMENT_BOOKING_DRAFT",
 		appointmentId,
 		data,
 		organizationId,

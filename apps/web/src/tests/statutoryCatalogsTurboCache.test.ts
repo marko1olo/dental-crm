@@ -82,11 +82,13 @@ test("Statutory Catalogs Turbo Cache & L1 RAM Zero-Seek Latency Suite", async (t
 		const syncHit = getCached804nSync<typeof sample804n[0]>();
 		assert.ok(syncHit, "Must synchronize with getCached804nSync synchronously");
 		assert.strictEqual(syncHit.length, 2);
+		assert.ok(syncHit[0]);
 		assert.strictEqual(syncHit[0].code, "A16.07.002.001");
 
 		// 3. Instant 0ms synchronous search
 		const searchResults = searchCached804nSync("обработка");
 		assert.strictEqual(searchResults.length, 1);
+		assert.ok(searchResults[0]);
 		assert.strictEqual(searchResults[0].code, "A16.07.030.001");
 
 		const searchByCode = searchCached804nSync("A16.07.002");
@@ -110,10 +112,12 @@ test("Statutory Catalogs Turbo Cache & L1 RAM Zero-Seek Latency Suite", async (t
 		// Synchronous search
 		const foundPulpit = searchCachedIcd10Sync("Пульпит");
 		assert.strictEqual(foundPulpit.length, 1);
+		assert.ok(foundPulpit[0]);
 		assert.strictEqual(foundPulpit[0].code, "K04.0");
 
 		const foundByCode = searchCachedIcd10Sync("K02");
 		assert.strictEqual(foundByCode.length, 1);
+		assert.ok(foundByCode[0]);
 		assert.strictEqual(foundByCode[0].code, "K02.1");
 	});
 
@@ -128,6 +132,7 @@ test("Statutory Catalogs Turbo Cache & L1 RAM Zero-Seek Latency Suite", async (t
 		const syncTemplates = getCachedTemplatesSync<typeof sampleTemplates[0]>();
 		assert.ok(syncTemplates);
 		assert.strictEqual(syncTemplates.length, 2);
+		assert.ok(syncTemplates[0]);
 		assert.strictEqual(syncTemplates[0].id, "tmpl-caries-1");
 
 		// Stats must show all cached in RAM
@@ -147,6 +152,7 @@ test("Statutory Catalogs Turbo Cache & L1 RAM Zero-Seek Latency Suite", async (t
 		const readBack = await readCatalogFromPersistentStorage<typeof sampleCatalog>("/api/clinical/804n");
 		assert.ok(readBack, "readCatalogFromPersistentStorage must find records stored in clinicalCacheStorage");
 		assert.strictEqual(readBack.data.length, 1);
+		assert.ok(readBack.data[0]);
 		assert.strictEqual(readBack.data[0].code, "A16.07.001");
 	});
 
