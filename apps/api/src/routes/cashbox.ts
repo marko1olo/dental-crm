@@ -88,6 +88,11 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 		}
 
 		const openedShifts = await withTenantCtx(orgId, async (tx) => {
+			// Блокируем параллельные гонки открытия смен (защита от манки-кликинга)
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':cash_box_shifts_lock'))`,
+			);
+
 			await ensureOrganizationCashBoxes(tx, orgId);
 
 			const boxes = await tx
@@ -185,6 +190,11 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 		const effectiveUserId = parsed.success && parsed.data.closedByUserId ? parsed.data.closedByUserId : currentUserId;
 
 		const closedShifts = await withTenantCtx(orgId, async (tx) => {
+			// Блокируем параллельные гонки закрытия смен (защита от манки-кликинга)
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':cash_box_shifts_lock'))`,
+			);
+
 			const openShifts = await tx
 				.select()
 				.from(cashBoxShifts)
