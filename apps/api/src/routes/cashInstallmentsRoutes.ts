@@ -43,7 +43,8 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			reply,
 			"create installment contract",
 		);
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const bodySchema = z.object({
 			patientId: z.string().uuid(),
@@ -160,7 +161,8 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			reply,
 			"pay installment tranche",
 		);
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const { id } = request.params;
 
@@ -345,7 +347,8 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 	 */
 	app.get("/api/installments", async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "installments list");
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const querySchema = z.object({
 			patientId: z.string().uuid().optional(),
@@ -386,7 +389,8 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 	 */
 	app.get("/api/installments/:id", async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "installment contract read");
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const { id } = request.params;
 

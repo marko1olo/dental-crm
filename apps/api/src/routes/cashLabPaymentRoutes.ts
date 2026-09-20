@@ -42,7 +42,8 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 			reply,
 			"lab order pay from cashbox",
 		);
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const { id } = request.params;
 
@@ -196,7 +197,8 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 			reply,
 			"lab order mark installed",
 		);
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const { id } = request.params;
 

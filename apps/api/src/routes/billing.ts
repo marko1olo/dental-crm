@@ -442,7 +442,8 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 	 */
 	app.get("/api/billing/payouts", async (request, reply) => {
 		const access = await requirePayoutAccess(request, reply);
-		if (!access) return;
+		if (reply.sent) return reply;
+		if (!access) return reply;
 
 		const parsedQuery = payoutQuerySchema.safeParse(request.query);
 		if (!parsedQuery.success) {
@@ -551,15 +552,19 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 				reply,
 				"billing payment create",
 			))
-		)
-			return;
+		) {
+			if (reply.sent) return reply;
+			return reply;
+		}
 		// Секрет клиники — это барьер периметра, он одинаков для чтения и записи.
 		// Здесь проверяется право роли: проводить оплату могут владелец, админ,
 		// управляющий, администратор и врач у кресла (Мандаты 8e и 8n: автономия соло-врача).
 		// Ассистент к кассе не допущен. Мягкий режим — если сотрудник не опознан,
 		// поведение прежнее (см. security/permissions.ts).
-		if (!enforcePermissionWhenStaffKnown(request, reply, "finance.write"))
-			return;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "finance.write")) {
+			if (reply.sent) return reply;
+			return reply;
+		}
 		const parsedInput = createPaymentSchema.safeParse(request.body);
 		if (!parsedInput.success) {
 			return reply.code(400).send({
@@ -576,7 +581,8 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 			reply,
 			"billing payment create",
 		);
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 		const rawInput: CreatePaymentInput = parsedInput.data;
 		const headerIdempotencyKey =
 			(request.headers["idempotency-key"] as string | undefined) ||
@@ -819,17 +825,22 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 				reply,
 				"billing partial refund create",
 			))
-		)
-			return;
-		if (!enforcePermissionWhenStaffKnown(request, reply, "finance.write"))
-			return;
+		) {
+			if (reply.sent) return reply;
+			return reply;
+		}
+		if (!enforcePermissionWhenStaffKnown(request, reply, "finance.write")) {
+			if (reply.sent) return reply;
+			return reply;
+		}
 
 		const orgId = await requireResolvedOrganizationId(
 			request,
 			reply,
 			"billing partial refund create",
 		);
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const partialRefundBodySchema = z.object({
 			invoiceId: z.string().uuid(),
@@ -910,14 +921,17 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 				reply,
 				"billing fiscal queue read",
 			))
-		)
-			return;
+		) {
+			if (reply.sent) return reply;
+			return reply;
+		}
 		const orgId = await requireResolvedOrganizationId(
 			request,
 			reply,
 			"billing fiscal queue read",
 		);
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const querySchema = z.object({
 			status: z
@@ -970,17 +984,22 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 				reply,
 				"billing fiscal queue retry",
 			))
-		)
-			return;
-		if (!enforcePermissionWhenStaffKnown(request, reply, "finance.write"))
-			return;
+		) {
+			if (reply.sent) return reply;
+			return reply;
+		}
+		if (!enforcePermissionWhenStaffKnown(request, reply, "finance.write")) {
+			if (reply.sent) return reply;
+			return reply;
+		}
 
 		const orgId = await requireResolvedOrganizationId(
 			request,
 			reply,
 			"billing fiscal queue retry",
 		);
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const paramsSchema = z.object({
 			id: z.string().uuid(),
@@ -1085,17 +1104,22 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 				reply,
 				"billing fiscal queue retry-all",
 			))
-		)
-			return;
-		if (!enforcePermissionWhenStaffKnown(request, reply, "finance.write"))
-			return;
+		) {
+			if (reply.sent) return reply;
+			return reply;
+		}
+		if (!enforcePermissionWhenStaffKnown(request, reply, "finance.write")) {
+			if (reply.sent) return reply;
+			return reply;
+		}
 
 		const orgId = await requireResolvedOrganizationId(
 			request,
 			reply,
 			"billing fiscal queue retry-all",
 		);
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const pendingItems = await db
 			.select()

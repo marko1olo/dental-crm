@@ -42,7 +42,8 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 	 */
 	app.get("/api/cash/cash-box", async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "cash boxes read");
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const result = await withTenantCtx(orgId, async (tx) => {
 			// Гарантируем, что 6 кассовых счетов инициализированы
@@ -70,7 +71,8 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 			reply,
 			"cash boxes open shift",
 		);
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const identity = getRequestIdentity(request);
 		const currentUserId = identity.userId;
@@ -206,7 +208,8 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 			reply,
 			"cash boxes close shift",
 		);
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const identity = getRequestIdentity(request);
 		const currentUserId = identity.userId;
@@ -320,7 +323,8 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 			reply,
 			"cash introduction",
 		);
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const bodySchema = z.object({
 			cashBoxId: z.string().uuid().optional(),
@@ -454,7 +458,8 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 			reply,
 			"cash withdrawal",
 		);
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const bodySchema = z.object({
 			cashBoxId: z.string().uuid().optional(),
@@ -596,7 +601,8 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 	 */
 	const handleXReport = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "x-report read");
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const queryOrBody = (request.method === "POST" ? request.body : request.query) || {};
 		const schema = z.object({
@@ -680,7 +686,8 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 	 */
 	const handleGetExpenseReasons = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "expense reasons read");
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const reasons = await withTenantCtx(orgId, async (tx) => {
 			await ensureOrganizationExpenseReasons(tx, orgId);
@@ -711,7 +718,8 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 	 */
 	app.get("/api/cash/operation-list", async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "cash operations read");
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
 
 		const querySchema = z.object({
 			cashBoxId: z.string().uuid().optional(),

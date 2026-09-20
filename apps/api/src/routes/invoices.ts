@@ -21,7 +21,9 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
 	requireClinicalMutationAccess,
+	requireClinicalMutationContext,
 	requireClinicalReadAccess,
+	requireClinicalReadContext,
 	requireResolvedOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
@@ -119,10 +121,10 @@ const generateInvoiceFromPlanSchema = z.object({
 export async function registerInvoiceRoutes(app: FastifyInstance) {
 	// POST /api/invoices/validate-plan — Pre-billing validation of prices and obsolete services
 	app.post("/api/invoices/validate-plan", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!(await requireClinicalReadAccess(request, reply, "invoices validate plan"))) return;
-
-		const orgId = await requireResolvedOrganizationId(request, reply, "invoices validate plan");
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		const context = await requireClinicalReadContext(request, reply, "invoices validate plan");
+		if (!context) return reply;
+		const orgId = context.organizationId;
 
 		const parsed = validatePlanBodySchema.safeParse(request.body);
 		if (!parsed.success) {
@@ -196,10 +198,10 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 
 	// POST /api/invoices/generate-from-plan — Atomic generation of work order / invoice from plan
 	app.post("/api/invoices/generate-from-plan", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!(await requireClinicalMutationAccess(request, reply, "generate invoice from plan"))) return;
-
-		const orgId = await requireResolvedOrganizationId(request, reply, "generate invoice from plan");
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		const context = await requireClinicalMutationContext(request, reply, "generate invoice from plan");
+		if (!context) return reply;
+		const orgId = context.organizationId;
 
 		const parsed = generateInvoiceFromPlanSchema.safeParse(request.body);
 		if (!parsed.success) {
@@ -752,10 +754,10 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 
 	// GET /api/invoices — List invoices / work orders
 	app.get("/api/invoices", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!(await requireClinicalReadAccess(request, reply, "invoices list"))) return;
-
-		const orgId = await requireResolvedOrganizationId(request, reply, "invoices list");
-		if (!orgId) return;
+		if (reply.sent) return reply;
+		const context = await requireClinicalReadContext(request, reply, "invoices list");
+		if (!context) return reply;
+		const orgId = context.organizationId;
 
 		const querySchema = z.object({
 			patientId: z.string().uuid().optional(),
@@ -791,15 +793,10 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 	app.get(
 		"/api/invoices/:id",
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			if (!(await requireClinicalReadAccess(request, reply, "get invoice")))
-				return;
-
-			const orgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"get invoice",
-			);
-			if (!orgId) return;
+			if (reply.sent) return reply;
+			const context = await requireClinicalReadContext(request, reply, "get invoice");
+			if (!context) return reply;
+			const orgId = context.organizationId;
 
 			const { id } = request.params as { id: string };
 			if (!id) {
