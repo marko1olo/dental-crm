@@ -423,10 +423,31 @@
 	min-height: 28px;
 }
 @media (max-width: 640px) {
+	.schedule-filter-strip {
+		justify-content: flex-start !important;
+		gap: 8px !important;
+		padding: 0 8px !important;
+	}
 	.schedule-date-picker-group {
+		flex: 1 1 auto !important;
+		min-width: 0 !important;
 		border-right: none !important;
 		padding-right: 0 !important;
 		margin-right: 0 !important;
+		display: flex !important;
+		align-items: center !important;
+		gap: 4px !important;
+	}
+	.schedule-filter-strip input[type="date"],
+	.schedule-filter-strip input.schedule-date-input {
+		flex: 1 1 auto !important;
+		width: 100% !important;
+		min-width: 0 !important;
+		max-width: none !important;
+	}
+	.schedule-filter-strip > div:last-child {
+		margin-left: auto !important;
+		flex-shrink: 0 !important;
 	}
 }
 .schedule-date-picker-group .secondary-button {
@@ -658,15 +679,32 @@
 
 @media (max-width: 390px) {
 	.schedule-filter-strip {
-		overflow-x: auto;
+		overflow-x: hidden;
 		flex-direction: row;
 		align-items: center;
-		gap: 4px;
-		padding: 0 4px;
+		justify-content: flex-start !important;
+		gap: 6px !important;
+		padding: 0 6px !important;
 	}
 	.schedule-date-picker-group {
-		padding-right: 4px;
-		margin-right: 2px;
+		flex: 1 1 auto !important;
+		min-width: 0 !important;
+		padding-right: 0 !important;
+		margin-right: 0 !important;
+		border-right: none !important;
+		gap: 3px !important;
+	}
+	.schedule-filter-strip input[type="date"],
+	.schedule-filter-strip input.schedule-date-input {
+		flex: 1 1 auto !important;
+		width: 100% !important;
+		min-width: 0 !important;
+		font-size: 11px !important;
+		padding: 2px 4px !important;
+	}
+	.schedule-filter-strip > div:last-child {
+		margin-left: auto !important;
+		flex-shrink: 0 !important;
 	}
 	.appointment-card-header {
 		flex-direction: row;
