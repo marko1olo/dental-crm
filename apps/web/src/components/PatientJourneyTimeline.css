@@ -77,6 +77,8 @@
 .timeline-item {
 	display: flex;
 	gap: 20px;
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 80px;
 }
 
 .timeline-marker {

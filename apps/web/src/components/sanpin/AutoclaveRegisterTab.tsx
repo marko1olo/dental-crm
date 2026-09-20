@@ -27,6 +27,11 @@ import {
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import {
+	DEFAULT_DOM_CHUNK_STEP,
+	DEFAULT_DOM_PAGE_SIZE,
+	sliceDomList,
+} from "../../utils/domVirtualizationHelper";
 import { SanpinCycleModal } from "./SanpinCycleModal";
 import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
 import { SeniorNurseKraftUnsealModal } from "./kraft/SeniorNurseKraftUnsealModal";
@@ -213,6 +218,17 @@ export function AutoclaveRegisterTab() {
 			return matchSearch && matchDevice;
 		});
 	}, [logs, searchQuery, deviceFilter]);
+
+	const [displayLimit, setDisplayLimit] = useState(DEFAULT_DOM_PAGE_SIZE);
+
+	useEffect(() => {
+		setDisplayLimit(DEFAULT_DOM_PAGE_SIZE);
+	}, [searchQuery, deviceFilter]);
+
+	// DOM Virtualization slice for 100+ sterilization records
+	const logsSlice = useMemo(() => {
+		return sliceDomList(filteredLogs, displayLimit, 0);
+	}, [filteredLogs, displayLimit]);
 
 	const handleStampVerification = (logId: string) => {
 		setStampedRows((prev) => ({
@@ -839,7 +855,7 @@ export function AutoclaveRegisterTab() {
 								</td>
 							</tr>
 						) : (
-							filteredLogs.map((log) => {
+							logsSlice.visibleItems.map((log) => {
 								const isStamped = stampedRows[log.id] || Boolean(log.notes?.includes("ЭЦП"));
 								return (
 									<tr
@@ -1145,6 +1161,37 @@ export function AutoclaveRegisterTab() {
 					</tbody>
 				</table>
 				</div>
+
+				{logsSlice.hasMore && (
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "8px",
+							padding: "12px 0",
+						}}
+					>
+						<button
+							type="button"
+							data-testid="autoclave-load-more-btn"
+							onClick={() => setDisplayLimit((prev) => prev + DEFAULT_DOM_CHUNK_STEP)}
+							className="sanpin-btn sanpin-btn-secondary"
+							style={{ minHeight: "36px", padding: "0.35rem 1rem", fontSize: "0.8rem", fontWeight: 600 }}
+						>
+							Показать ещё 50 циклов (осталось {logsSlice.remainingCount} из {logsSlice.totalCount})
+						</button>
+						<button
+							type="button"
+							data-testid="autoclave-load-all-btn"
+							onClick={() => setDisplayLimit(logsSlice.totalCount)}
+							className="sanpin-btn"
+							style={{ minHeight: "36px", padding: "0.35rem 0.75rem", fontSize: "0.75rem", color: "var(--muted)" }}
+						>
+							Все ({logsSlice.totalCount})
+						</button>
+					</div>
+				)}
 			</div>
 
 			{/* SanPiN Sterilization Cycle Modal */}

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
 	Activity,
 	AlertTriangle,
@@ -14,6 +14,7 @@ import {
 import "./PatientJourneyTimeline.css";
 import type { Dashboard } from "@dental/shared";
 import { money } from "../AppHelpers";
+import { sliceDomList } from "../utils/domVirtualizationHelper";
 
 function highlightMatch(text: string, query: string): React.ReactNode {
 	if (!query.trim() || !text) return text;
@@ -121,6 +122,104 @@ export interface JourneyEvent {
 	status?: string;
 	actionUrl?: string;
 }
+
+export const renderEventIcon = (type: string) => {
+	switch (type) {
+		case "medical_alert":
+			return <AlertTriangle size={15} className="text-amber-500" />;
+		case "appointment":
+			return <Calendar size={15} className="text-blue-500" />;
+		case "transaction":
+			return <DollarSign size={15} className="text-emerald-500" />;
+		case "inventory_depletion":
+			return <Package size={15} className="text-purple-500" />;
+		case "lab_order":
+			return <Layers size={15} className="text-teal-500" />;
+		default:
+			return <CircleDot size={15} className="text-slate-400" />;
+	}
+};
+
+interface PatientTimelineCardProps {
+	evt: JourneyEvent;
+	isFirst: boolean;
+	isLast: boolean;
+	searchQuery: string;
+}
+
+export const PatientTimelineCard = React.memo<PatientTimelineCardProps>(({
+	evt,
+	isFirst,
+	isLast,
+	searchQuery,
+}) => {
+	const isHighlight = isFirst || isLast;
+
+	return (
+		<div
+			className={`timeline-item ${evt.type} ${isHighlight ? "highlight-item" : ""}`}
+			style={{
+				contentVisibility: "auto",
+				containIntrinsicSize: "1px 80px",
+			}}
+		>
+			<div className="timeline-marker">
+				<div className={`marker-icon ${isHighlight ? "marker-icon-large" : ""}`}>
+					{renderEventIcon(evt.type)}
+				</div>
+				{!isLast && <div className="marker-line" />}
+			</div>
+
+			<div className="timeline-content">
+				<div className="content-header">
+					<span className="timestamp text-xs font-mono">
+						{(() => {
+							if (!evt.timestamp) return "";
+							const d = new Date(evt.timestamp);
+							return !Number.isNaN(d.getTime())
+								? d.toLocaleString("ru-RU", {
+										day: "2-digit",
+										month: "2-digit",
+										year: "numeric",
+										hour: "2-digit",
+										minute: "2-digit",
+									})
+								: "";
+						})()}
+					</span>
+					{evt.status && (
+						<span
+							className={`status-badge ${(evt.status ?? "").toLowerCase().replace(" ", "-")}`}
+						>
+							{highlightMatch(evt.status, searchQuery)}
+						</span>
+					)}
+				</div>
+				<h4 className={isHighlight ? "text-lg font-bold" : "text-base"}>
+					{highlightMatch(toFriendlyRussianProcedure(evt.title), searchQuery)}
+				</h4>
+				<p className="text-sm text-[var(--ink)] leading-relaxed">
+					{highlightMatch(toFriendlyRussianProcedure(evt.description), searchQuery)}
+				</p>
+				{evt.amount ? (
+					<div className="amount-highlight">+{money(evt.amount)}</div>
+				) : null}
+				{evt.actionUrl && (
+					<button
+						type="button"
+						className="timeline-action-btn min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold"
+						onClick={() => {
+							window.location.hash = evt.actionUrl ?? "";
+						}}
+					>
+						Подробнее &rarr;
+					</button>
+				)}
+			</div>
+		</div>
+	);
+});
+PatientTimelineCard.displayName = "PatientTimelineCard";
 
 export interface PatientJourneyTimelineProps {
 	patientId: string;
@@ -249,6 +348,12 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 			"Оплата",
 		];
 
+		const [displayLimit, setDisplayLimit] = useState(30);
+
+		useEffect(() => {
+			setDisplayLimit(30);
+		}, [patientId, searchQuery]);
+
 		const filteredEvents = useMemo(() => {
 			if (!searchQuery.trim()) return events;
 			const q = searchQuery.trim().toLowerCase();
@@ -260,22 +365,9 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 			});
 		}, [events, searchQuery]);
 
-		const renderEventIcon = (type: string) => {
-			switch (type) {
-				case "medical_alert":
-					return <AlertTriangle size={15} className="text-amber-500" />;
-				case "appointment":
-					return <Calendar size={15} className="text-blue-500" />;
-				case "transaction":
-					return <DollarSign size={15} className="text-emerald-500" />;
-				case "inventory_depletion":
-					return <Package size={15} className="text-purple-500" />;
-				case "lab_order":
-					return <Layers size={15} className="text-teal-500" />;
-				default:
-					return <CircleDot size={15} className="text-slate-400" />;
-			}
-		};
+		const eventsSlice = useMemo(() => {
+			return sliceDomList(filteredEvents, displayLimit, 0);
+		}, [filteredEvents, displayLimit]);
 
 		return (
 			<div className="patient-journey-timeline space-y-4">
@@ -396,78 +488,42 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 				) : null}
 
 				<div className="timeline-track">
-					{filteredEvents.map((evt, index) => {
-						// Эффект Края (Serial Position Effect): выделяем первый и последний элементы
+					{eventsSlice.visibleItems.map((evt, index) => {
 						const isFirst = index === 0;
-						const isLast = index === filteredEvents.length - 1;
-						const isHighlight = isFirst || isLast;
+						const isLast = index === eventsSlice.visibleItems.length - 1;
 
 						return (
-							<div
+							<PatientTimelineCard
 								key={evt.id}
-								className={`timeline-item ${evt.type} ${isHighlight ? "highlight-item" : ""}`}
-							>
-								<div className="timeline-marker">
-									<div
-										className={`marker-icon ${isHighlight ? "marker-icon-large" : ""}`}
-									>
-										{renderEventIcon(evt.type)}
-									</div>
-									{index !== filteredEvents.length - 1 && (
-										<div className="marker-line" />
-									)}
-								</div>
-
-								<div className="timeline-content">
-									<div className="content-header">
-										<span className="timestamp text-xs font-mono">
-											{(() => {
-												if (!evt.timestamp) return "";
-												const d = new Date(evt.timestamp);
-												return !Number.isNaN(d.getTime())
-													? d.toLocaleString("ru-RU", {
-															day: "2-digit",
-															month: "2-digit",
-															year: "numeric",
-															hour: "2-digit",
-															minute: "2-digit",
-														})
-													: "";
-											})()}
-										</span>
-										{evt.status && (
-											<span
-												className={`status-badge ${(evt.status ?? "").toLowerCase().replace(" ", "-")}`}
-											>
-												{highlightMatch(evt.status, searchQuery)}
-											</span>
-										)}
-									</div>
-									<h4 className={isHighlight ? "text-lg font-bold" : "text-base"}>
-										{highlightMatch(toFriendlyRussianProcedure(evt.title), searchQuery)}
-									</h4>
-									<p className="text-sm text-[var(--ink)] leading-relaxed">
-										{highlightMatch(toFriendlyRussianProcedure(evt.description), searchQuery)}
-									</p>
-									{evt.amount ? (
-										<div className="amount-highlight">+{money(evt.amount)}</div>
-									) : null}
-									{evt.actionUrl && (
-										<button
-											type="button"
-											className="timeline-action-btn min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold"
-											onClick={() => {
-												window.location.hash = evt.actionUrl ?? "";
-											}}
-										>
-											Подробнее &rarr;
-										</button>
-									)}
-								</div>
-							</div>
+								evt={evt}
+								isFirst={isFirst}
+								isLast={isLast}
+								searchQuery={searchQuery}
+							/>
 						);
 					})}
 				</div>
+
+				{eventsSlice.hasMore && (
+					<div className="flex items-center justify-center gap-2 pt-3">
+						<button
+							type="button"
+							data-testid="timeline-load-more-btn"
+							onClick={() => setDisplayLimit((prev) => prev + 30)}
+							className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
+						>
+							<span>Загрузить более ранние события ({eventsSlice.remainingCount} из {eventsSlice.totalCount})</span>
+						</button>
+						<button
+							type="button"
+							data-testid="timeline-load-all-btn"
+							onClick={() => setDisplayLimit(eventsSlice.totalCount)}
+							className="min-h-[44px] px-3 py-2 text-xs font-semibold rounded-xl border border-transparent text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+						>
+							<span>Показать все</span>
+						</button>
+					</div>
+				)}
 			</div>
 		);
 	});

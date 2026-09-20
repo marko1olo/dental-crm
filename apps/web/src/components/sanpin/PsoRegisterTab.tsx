@@ -24,6 +24,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
+import {
+	DEFAULT_DOM_CHUNK_STEP,
+	DEFAULT_DOM_PAGE_SIZE,
+	sliceDomList,
+} from "../../utils/domVirtualizationHelper";
 
 export function PsoRegisterTab() {
 	const appLogic = useOptionalAppLogicContext();
@@ -214,6 +219,17 @@ export function PsoRegisterTab() {
 			return matchSearch && matchTest;
 		});
 	}, [logs, searchQuery, testFilter]);
+
+	const [displayLimit, setDisplayLimit] = useState(DEFAULT_DOM_PAGE_SIZE);
+
+	useEffect(() => {
+		setDisplayLimit(DEFAULT_DOM_PAGE_SIZE);
+	}, [searchQuery, testFilter]);
+
+	// DOM Virtualization slice for 100+ PSO sample records
+	const logsSlice = useMemo(() => {
+		return sliceDomList(filteredLogs, displayLimit, 0);
+	}, [filteredLogs, displayLimit]);
 
 	const handleGenerateMonthlyForm366 = () => {
 		const recordsToPrint: PsoJournalRecord[] = logs.map((l, idx) => ({
@@ -436,7 +452,7 @@ export function PsoRegisterTab() {
 								</td>
 							</tr>
 						) : (
-							filteredLogs.map((log) => {
+							logsSlice.visibleItems.map((log) => {
 								const isStamped = stampedRows[log.id] || Boolean(log.notes?.includes("ЭЦП"));
 								return (
 									<tr
@@ -542,6 +558,37 @@ export function PsoRegisterTab() {
 					</tbody>
 				</table>
 				</div>
+
+				{logsSlice.hasMore && (
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "8px",
+							padding: "12px 0",
+						}}
+					>
+						<button
+							type="button"
+							data-testid="pso-load-more-btn"
+							onClick={() => setDisplayLimit((prev) => prev + DEFAULT_DOM_CHUNK_STEP)}
+							className="sanpin-btn sanpin-btn-secondary"
+							style={{ minHeight: "36px", padding: "0.35rem 1rem", fontSize: "0.8rem", fontWeight: 600 }}
+						>
+							Показать ещё 50 проб (осталось {logsSlice.remainingCount} из {logsSlice.totalCount})
+						</button>
+						<button
+							type="button"
+							data-testid="pso-load-all-btn"
+							onClick={() => setDisplayLimit(logsSlice.totalCount)}
+							className="sanpin-btn"
+							style={{ minHeight: "36px", padding: "0.35rem 0.75rem", fontSize: "0.75rem", color: "var(--muted)" }}
+						>
+							Все ({logsSlice.totalCount})
+						</button>
+					</div>
+				)}
 			</div>
 
 			{/* Modal for new PSO entry */}
