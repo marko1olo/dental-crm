@@ -143,74 +143,103 @@ export async function upsertVisitDraftAutosaveInDb(
 	organizationId: string,
 	input: VisitDraftAutosaveRequest,
 ): Promise<VisitDraftAutosave> {
-	const [visit] = await db
-		.select()
-		.from(schema.visits)
-		.where(
-			and(
-				eq(schema.visits.id, input.visitId),
-				eq(schema.visits.organizationId, organizationId),
+	return await db.transaction(async (tx) => {
+		const [visit] = await tx
+			.select()
+			.from(schema.visits)
+			.where(
+				and(
+					eq(schema.visits.id, input.visitId),
+					eq(schema.visits.organizationId, organizationId),
+				),
+			)
+			.for("update")
+			.limit(1);
+		if (!visit) throw new Error("Визит не найден");
+		if (visit.status === "voided")
+			throw new Error("Прием уже закрыт или аннулирован");
+
+		const existingDraftAutosave = (visit.draftAutosave as any) || {};
+
+		// Защита от гонки: если визит уже подписан и фоновое автосохранение пришло
+		// с устаревшей до-подписанной ревизией (input.baseRevision < visit.revision),
+		// мы не должны перезаписывать и откатывать черновик подписанного приема.
+		const isStaleAutosaveOnSigned =
+			visit.status === "signed" &&
+			input.baseRevision !== null &&
+			input.baseRevision !== undefined &&
+			input.baseRevision < visit.revision;
+
+		const serverDraft: VisitDraftAutosave & {
+			lastAcceptedMutationId?: string | null;
+			lastAcceptedAt?: string | null;
+		} = {
+			visitId: input.visitId,
+			patientId: input.patientId,
+			selectedSpecialty: input.selectedSpecialty,
+			transcript: isStaleAutosaveOnSigned ? visit.transcript || "" : input.transcript,
+			draft: isStaleAutosaveOnSigned
+				? (existingDraftAutosave.draft || input.draft)
+				: input.draft,
+			baseRevision: isStaleAutosaveOnSigned ? visit.revision : (input.baseRevision ?? null),
+			clientDraftId: input.clientDraftId?.trim() || null,
+			clientSavedAt: input.clientSavedAt ?? null,
+			serverSavedAt: new Date().toISOString(),
+			transcriptHash: hashTranscript(
+				[
+					input.transcript,
+					input.draft.complaint,
+					input.draft.anamnesis,
+					input.draft.objectiveStatus,
+					input.draft.diagnosis,
+					input.draft.treatmentPlan,
+				]
+					.filter(Boolean)
+					.join("|"),
 			),
-		)
-		.limit(1);
-	if (!visit) throw new Error("Визит не найден");
-	if (visit.status === "voided")
-		throw new Error("Прием уже закрыт или аннулирован");
+			...(existingDraftAutosave.lastAcceptedMutationId
+				? { lastAcceptedMutationId: existingDraftAutosave.lastAcceptedMutationId }
+				: {}),
+			...(existingDraftAutosave.lastAcceptedAt
+				? { lastAcceptedAt: existingDraftAutosave.lastAcceptedAt }
+				: {}),
+		};
 
-	const serverDraft: VisitDraftAutosave = {
-		visitId: input.visitId,
-		patientId: input.patientId,
-		selectedSpecialty: input.selectedSpecialty,
-		transcript: input.transcript,
-		draft: input.draft,
-		baseRevision: input.baseRevision ?? null,
-		clientDraftId: input.clientDraftId?.trim() || null,
-		clientSavedAt: input.clientSavedAt ?? null,
-		serverSavedAt: new Date().toISOString(),
-		transcriptHash: hashTranscript(
-			[
-				input.transcript,
-				input.draft.complaint,
-				input.draft.anamnesis,
-				input.draft.objectiveStatus,
-				input.draft.diagnosis,
-				input.draft.treatmentPlan,
-			]
-				.filter(Boolean)
-				.join("|"),
-		),
-	};
+		if (isStaleAutosaveOnSigned) {
+			return serverDraft;
+		}
 
-	/*
-	 * БЫЛО: `.where(eq(schema.visits.id, input.visitId))` без organizationId и без
-	 * проверки RETURNING. SELECT выше уже фильтрует по клинике, но между SELECT и
-	 * UPDATE строка теоретически может сменить владельца/исчезнуть; важнее —
-	 * UPDATE без org нарушает тот же инвариант, что ужесточили у patients
-	 * (PUT чужой клиники по одному uuid). А без RETURNING autosave отвечал 200 с
-	 * «сохранённым» черновиком, хотя в базе 0 строк изменилось: врач диктовал
-	 * дальше, а после перезагрузки дневник был пуст.
-	 * СТАЛО: organizationId в WHERE + пустой RETURNING → throw (маршрут честный).
-	 */
-	const [saved] = await db
-		.update(schema.visits)
-		.set({
-			draftAutosave: serverDraft,
-			transcript: input.transcript,
-			updatedAt: new Date(),
-		})
-		.where(
-			and(
-				eq(schema.visits.organizationId, organizationId),
-				eq(schema.visits.id, input.visitId),
-			),
-		)
-		.returning({ id: schema.visits.id });
+		/*
+		 * БЫЛО: `.where(eq(schema.visits.id, input.visitId))` без organizationId и без
+		 * проверки RETURNING. SELECT выше уже фильтрует по клинике, но между SELECT и
+		 * UPDATE строка теоретически может сменить владельца/исчезнуть; важнее —
+		 * UPDATE без org нарушает тот же инвариант, что ужесточили у patients
+		 * (PUT чужой клиники по одному uuid). А без RETURNING autosave отвечал 200 с
+		 * «сохранённым» черновиком, хотя в базе 0 строк изменилось: врач диктовал
+		 * дальше, а после перезагрузки дневник был пуст.
+		 * СТАЛО: organizationId в WHERE + пустой RETURNING → throw (маршрут честный).
+		 */
+		const [saved] = await tx
+			.update(schema.visits)
+			.set({
+				draftAutosave: serverDraft,
+				transcript: input.transcript,
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(schema.visits.organizationId, organizationId),
+					eq(schema.visits.id, input.visitId),
+				),
+			)
+			.returning({ id: schema.visits.id });
 
-	if (!saved) {
-		throw new Error("Визит не найден");
-	}
+		if (!saved) {
+			throw new Error("Визит не найден");
+		}
 
-	return serverDraft;
+		return serverDraft;
+	});
 }
 
 /**

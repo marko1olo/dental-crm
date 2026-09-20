@@ -567,6 +567,7 @@ export const treatmentConsumablesRoutes: FastifyPluginAsync = async (
 			visitId?: string | null;
 			userId?: string | null;
 			transactionType?: "auto_deduct" | "manual_writeoff";
+			clientMutationId?: string | null;
 		};
 	}>("/:organizationId/deduct/tooth-treatment", async (request, reply) => {
 		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
@@ -591,12 +592,19 @@ export const treatmentConsumablesRoutes: FastifyPluginAsync = async (
 			});
 		}
 
+		const clientMutationId =
+			(request.headers["idempotency-key"] as string) ||
+			(request.headers["x-client-mutation-id"] as string) ||
+			parsedBody.data.clientMutationId ||
+			null;
+
 		try {
 			const result = await db.transaction(async (tx) => {
 				return TreatmentConsumablesService.deductForToothTreatment(tx, {
 					organizationId,
 					treatmentItemId: parsedBody.data.treatmentItemId,
 					serviceId: parsedBody.data.serviceId,
+					clientMutationId,
 					...(parsedBody.data.toothNumber !== undefined ? { toothNumber: parsedBody.data.toothNumber } : {}),
 					...(parsedBody.data.quantity !== undefined ? { quantity: parsedBody.data.quantity } : {}),
 					...(parsedBody.data.visitId !== undefined ? { visitId: parsedBody.data.visitId } : {}),

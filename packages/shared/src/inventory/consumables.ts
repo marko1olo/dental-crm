@@ -218,6 +218,7 @@ export const toothTreatmentStockDeductionRequestSchema = z.object({
 		.optional(),
 	allowOverdraft: z.boolean().default(true).optional(),
 	allowSoftOverdraft: z.boolean().default(true).optional(),
+	clientMutationId: z.string().nullable().optional(),
 });
 
 export type ToothTreatmentStockDeductionRequest = z.infer<

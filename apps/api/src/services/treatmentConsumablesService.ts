@@ -1080,6 +1080,7 @@ export class TreatmentConsumablesService {
 			quantity?: number | undefined;
 			userId?: string | null | undefined;
 			transactionType?: "auto_deduct" | "manual_writeoff" | undefined;
+			clientMutationId?: string | null | undefined;
 		},
 	): Promise<StockDeductionResult> {
 		const {
@@ -1091,7 +1092,89 @@ export class TreatmentConsumablesService {
 			quantity = 1,
 			userId = null,
 			transactionType = "auto_deduct",
+			clientMutationId = null,
 		} = params;
+
+		// 0. Acquire transactional advisory lock per (organization, treatmentItem) to serialize concurrent requests
+		await tx.execute(
+			sql`SELECT pg_advisory_xact_lock(hashtext(${organizationId} || ':tooth_deduct:' || ${treatmentItemId}))`,
+		);
+
+		// Check for idempotent replay by clientMutationId or existing auto_deduct
+		if (clientMutationId) {
+			const existingMutationTx = await tx
+				.select()
+				.from(inventoryTransactions)
+				.where(
+					and(
+						eq(inventoryTransactions.organizationId, organizationId),
+						like(inventoryTransactions.notes, `%[mutation:${clientMutationId}]%`),
+					),
+				);
+
+			if (existingMutationTx.length > 0) {
+				return {
+					completedTreatmentItems: 0,
+					deductions: existingMutationTx.map((txRow) => ({
+						inventoryItemId: txRow.itemId ?? txRow.inventoryItemId ?? "unknown",
+						inventoryItemName: "Ранее списанный материал",
+						quantityChanged: String(txRow.quantityChanged ?? txRow.qty ?? "0"),
+						unitCostRub: txRow.unitCostRub,
+						lotNumber: null,
+						remainingStock: 0,
+					})),
+					warnings: [
+						{
+							type: "low_stock",
+							itemId: existingMutationTx[0]?.itemId ?? "idempotent",
+							itemName: "Списание расходников",
+							message: `Повторный запрос списания материалов по позиции лечения (ключ ${clientMutationId}). Операция дедуплицирована.`,
+							currentStock: 0,
+							criticalThreshold: 0,
+						},
+					],
+					isOverdraft: false,
+				};
+			}
+		}
+
+		if (transactionType === "auto_deduct") {
+			const existingItemTx = await tx
+				.select()
+				.from(inventoryTransactions)
+				.where(
+					and(
+						eq(inventoryTransactions.organizationId, organizationId),
+						like(inventoryTransactions.notes, `%[treatmentItemId:${treatmentItemId}]%`),
+						inArray(inventoryTransactions.transactionType, ["auto_deduct", "emergency_overdraft"]),
+					),
+				);
+
+			if (existingItemTx.length > 0) {
+				return {
+					completedTreatmentItems: 0,
+					deductions: existingItemTx.map((txRow) => ({
+						inventoryItemId: txRow.itemId ?? txRow.inventoryItemId ?? "unknown",
+						inventoryItemName: "Ранее списанный материал",
+						quantityChanged: String(txRow.quantityChanged ?? txRow.qty ?? "0"),
+						unitCostRub: txRow.unitCostRub,
+						lotNumber: null,
+						remainingStock: 0,
+					})),
+					warnings: [
+						{
+							type: "low_stock",
+							itemId: existingItemTx[0]?.itemId ?? "idempotent",
+							itemName: "Списание расходников",
+							message: `Материалы по позиции лечения ${treatmentItemId} уже были автоматически списаны ранее. Повторное списание предотвращено (защита от дублирования).`,
+							currentStock: 0,
+							criticalThreshold: 0,
+						},
+					],
+					isOverdraft: false,
+				};
+			}
+		}
 
 		// 1. Fetch rules for service
 		const rules = await tx
@@ -1205,6 +1288,13 @@ export class TreatmentConsumablesService {
 				);
 
 			const isOverdraft = newStock < 0;
+			const noteMarkers = [
+				`[treatmentItemId:${treatmentItemId}]`,
+				clientMutationId ? `[mutation:${clientMutationId}]` : null,
+			]
+				.filter(Boolean)
+				.join(" ");
+
 			transactionsToInsert.push({
 				organizationId,
 				visitId: visitId || null,
@@ -1217,8 +1307,8 @@ export class TreatmentConsumablesService {
 				isOverdraft,
 				userId,
 				notes: isOverdraft
-					? `Списано под операцию, требуется оприходование (мягкий овердрафт склада по позиции лечения ${treatmentItemId}${toothNumber ? ` зуб ${toothNumber}` : ""}): дефицит ${Math.abs(newStock)} ${inv.unit ?? "ед."}`
-					: `Списание по позиции лечения ${treatmentItemId}${toothNumber ? ` (зуб ${toothNumber})` : ""}`,
+					? `Списано под операцию, требуется оприходование (мягкий овердрафт склада по позиции лечения ${treatmentItemId}${toothNumber ? ` зуб ${toothNumber}` : ""}): дефицит ${Math.abs(newStock)} ${inv.unit ?? "ед."} ${noteMarkers}`
+					: `Списание по позиции лечения ${treatmentItemId}${toothNumber ? ` (зуб ${toothNumber})` : ""} ${noteMarkers}`,
 			});
 
 			deductions.push({
