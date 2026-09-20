@@ -51,6 +51,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 	const glRef = useRef<WebGLRenderingContext | null>(null);
 	const rawImageRef = useRef<HTMLImageElement | null>(null);
 	const filteredCanvasRef = useRef<HTMLCanvasElement | null>(null);
+	const canvasRectRef = useRef<DOMRect | null>(null);
 
 	// Desktop mouse drag tracking refs
 	const isMouseDownRef = useRef<boolean>(false);
@@ -68,6 +69,43 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 	const touchStartPanRef = useRef<Point2D>({ x: 0, y: 0 });
 	const touchStartWwWlRef = useRef<{ ww: number; wl: number }>({ ww: 2000, wl: 500 });
 	const touchCountRef = useRef<number>(0);
+
+	// Low-Spec Laptop Optimization: Coalesce mouse/touch drag viewport updates via requestAnimationFrame
+	// Prevents 125-1000Hz mouse drag events from saturating Celeron/i3 CPUs with redundant React re-renders
+	const pendingViewportUpdateRef = useRef<Partial<DicomViewportState> | null>(null);
+	const rafIdRef = useRef<number | null>(null);
+
+	const scheduleViewportUpdate = useCallback(
+		(update: Partial<DicomViewportState>) => {
+			pendingViewportUpdateRef.current = {
+				...(pendingViewportUpdateRef.current || {}),
+				...update,
+			};
+			if (rafIdRef.current === null) {
+				rafIdRef.current = requestAnimationFrame(() => {
+					rafIdRef.current = null;
+					if (pendingViewportUpdateRef.current) {
+						const next = pendingViewportUpdateRef.current;
+						pendingViewportUpdateRef.current = null;
+						onViewportChange(next);
+					}
+				});
+			}
+		},
+		[onViewportChange],
+	);
+
+	const flushViewportUpdate = useCallback(() => {
+		if (rafIdRef.current !== null) {
+			cancelAnimationFrame(rafIdRef.current);
+			rafIdRef.current = null;
+		}
+		if (pendingViewportUpdateRef.current) {
+			const next = pendingViewportUpdateRef.current;
+			pendingViewportUpdateRef.current = null;
+			onViewportChange(next);
+		}
+	}, [onViewportChange]);
 
 	// In-progress ruler drafting
 	const [draftRulerStart, setDraftRulerStart] = useState<Point2D | null>(null);
@@ -223,7 +261,9 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		if (!imageSrc.startsWith("data:") && !imageSrc.startsWith("blob:")) {
 			img.crossOrigin = "anonymous";
 		}
+		let isCancelled = false;
 		const onLoaded = () => {
+			if (isCancelled) return;
 			rawImageRef.current = img;
 			updateFilteredBuffer();
 			renderScene();
@@ -234,6 +274,10 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		} else {
 			img.onload = onLoaded;
 		}
+		return () => {
+			isCancelled = true;
+			img.onload = null;
+		};
 	}, [imageSrc, updateFilteredBuffer, renderScene]);
 
 	// Rebuild filtered buffer when filters change
@@ -249,6 +293,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		if (!containerRef.current) return;
 		let rafId: number | null = null;
 		const observer = new ResizeObserver(() => {
+			canvasRectRef.current = null;
 			if (rafId) cancelAnimationFrame(rafId);
 			rafId = requestAnimationFrame(() => {
 				renderScene();
@@ -261,13 +306,36 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		};
 	}, [renderScene]);
 
-	// Cleanup WebGL on unmount to prevent GPU leaks
+	// Cleanup WebGL and Canvas buffers on unmount to prevent GPU/VRAM leaks (Mandate 8c & Low-Spec HDD/iGPU)
 	useEffect(() => {
 		return () => {
+			if (rafIdRef.current !== null) {
+				cancelAnimationFrame(rafIdRef.current);
+				rafIdRef.current = null;
+			}
 			if (glRef.current) {
 				disposeWebGlRenderingContext(glRef.current);
 				glRef.current = null;
 			}
+			if (canvasRef.current) {
+				const ctx = canvasRef.current.getContext("2d");
+				if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+				canvasRef.current.width = 0;
+				canvasRef.current.height = 0;
+			}
+			if (filteredCanvasRef.current) {
+				const offCtx = filteredCanvasRef.current.getContext("2d");
+				if (offCtx) offCtx.clearRect(0, 0, filteredCanvasRef.current.width, filteredCanvasRef.current.height);
+				filteredCanvasRef.current.width = 0;
+				filteredCanvasRef.current.height = 0;
+				filteredCanvasRef.current = null;
+			}
+			if (rawImageRef.current) {
+				rawImageRef.current.onload = null;
+				rawImageRef.current.src = "";
+				rawImageRef.current = null;
+			}
+			canvasRectRef.current = null;
 		};
 	}, []);
 
@@ -307,7 +375,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 			}
 
 			if (mouseDragModeRef.current === "pan") {
-				onViewportChange({
+				scheduleViewportUpdate({
 					panX: mouseDragStartPanRef.current.x + dx,
 					panY: mouseDragStartPanRef.current.y + dy,
 				});
@@ -319,7 +387,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 					mouseDragStartWwWlRef.current.wl,
 					2.5,
 				);
-				onViewportChange({
+				scheduleViewportUpdate({
 					windowWidth: nextWwWl.windowWidth,
 					windowCenter: nextWwWl.windowCenter,
 				});
@@ -327,30 +395,40 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 			return;
 		}
 
-		// Ruler / Tracer live cursor updating
-		if (viewportState.activeTool === "ruler" && draftRulerStart) {
-			const rect = canvasRef.current?.getBoundingClientRect();
-			if (!rect) return;
-			const currentX = (e.clientX - rect.left - (rect.width / 2 + viewportState.panX)) / viewportState.zoom + (rawImageRef.current?.width || 0) / 2;
-			const currentY = (e.clientY - rect.top - (rect.height / 2 + viewportState.panY)) / viewportState.zoom + (rawImageRef.current?.height || 0) / 2;
-			setDraftRulerCurrent({ x: currentX, y: currentY });
-		} else if (viewportState.activeTool === "root_canal_tracer" && draftCanalPoints.length > 0) {
-			const rect = canvasRef.current?.getBoundingClientRect();
-			if (!rect) return;
+		// Ruler / Tracer live cursor updating (cached rect prevents layout thrashing)
+		const isRulerActive = viewportState.activeTool === "ruler" && draftRulerStart;
+		const isTracerActive = viewportState.activeTool === "root_canal_tracer" && draftCanalPoints.length > 0;
+		if (isRulerActive || isTracerActive) {
+			const canvas = canvasRef.current;
+			if (!canvas) return;
+			const rect = canvasRectRef.current || (canvasRectRef.current = canvas.getBoundingClientRect());
 			const currentX = (e.clientX - rect.left - (rect.width / 2 + viewportState.panX)) / viewportState.zoom + (rawImageRef.current?.width || 0) / 2;
 			const currentY = (e.clientY - rect.top - (rect.height / 2 + viewportState.panY)) / viewportState.zoom + (rawImageRef.current?.height || 0) / 2;
 			setDraftRulerCurrent({ x: currentX, y: currentY });
 		}
 	};
 
+	const handleMouseEnter = () => {
+		if (canvasRef.current) {
+			canvasRectRef.current = canvasRef.current.getBoundingClientRect();
+		}
+	};
+
+	const handleMouseLeave = () => {
+		canvasRectRef.current = null;
+		handleMouseUp();
+	};
+
 	const handleMouseUp = () => {
 		isMouseDownRef.current = false;
 		mouseDragModeRef.current = null;
+		flushViewportUpdate();
 	};
 
 	// Mouse Wheel Zoom
 	const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
 		e.preventDefault();
+		canvasRectRef.current = null;
 		const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
 		const nextZoom = Number(Math.max(0.2, Math.min(16.0, viewportState.zoom * zoomFactor)).toFixed(3));
 		onViewportChange({ zoom: nextZoom });
@@ -384,11 +462,11 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 					touchStartWwWlRef.current.wl,
 					2.5,
 				);
-				onViewportChange({ windowWidth: nextWwWl.windowWidth, windowCenter: nextWwWl.windowCenter });
+				scheduleViewportUpdate({ windowWidth: nextWwWl.windowWidth, windowCenter: nextWwWl.windowCenter });
 			} else {
 				// 1-Finger Pan
 				const newPan = calculate1FingerPan(touchStartPosRef.current, { x: t.clientX, y: t.clientY }, touchStartPanRef.current);
-				onViewportChange({ panX: newPan.x, panY: newPan.y });
+				scheduleViewportUpdate({ panX: newPan.x, panY: newPan.y });
 			}
 		} else if (e.touches.length === 2 && e.touches[0] && e.touches[1]) {
 			// Pinch-to-zoom
@@ -396,6 +474,11 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 			const newZoom = calculatePinchZoom(touchStartDistanceRef.current, currentDist, touchStartZoomRef.current);
 			onViewportChange({ zoom: newZoom });
 		}
+	};
+
+	const handleTouchEnd = () => {
+		touchCountRef.current = 0;
+		flushViewportUpdate();
 	};
 
 	// Mouse click handler for Ruler and Root Canal Tracer tools
@@ -474,6 +557,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 	return (
 		<div
 			ref={containerRef}
+			className="dicom-viewport-container"
 			style={{
 				width: "100%",
 				height: "100%",
@@ -485,9 +569,11 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 			}}
 			onTouchStart={handleTouchStart}
 			onTouchMove={handleTouchMove}
+			onTouchEnd={handleTouchEnd}
 		>
 			<canvas
 				ref={canvasRef}
+				className="dicom-canvas-layer"
 				data-testid="dicom-viewport-canvas"
 				style={{
 					width: "100%",
@@ -498,7 +584,8 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 				onMouseDown={handleMouseDown}
 				onMouseMove={handleMouseMove}
 				onMouseUp={handleMouseUp}
-				onMouseLeave={handleMouseUp}
+				onMouseEnter={handleMouseEnter}
+				onMouseLeave={handleMouseLeave}
 				onClick={handleCanvasClick}
 				onDoubleClick={handleCanvasDoubleClick}
 				onWheel={handleWheel}

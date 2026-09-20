@@ -1240,75 +1240,71 @@ ClassicGostToothCell.displayName = "ClassicGostToothCell";
 				</div>
 			</div>
 
-			{/* On-Screen Touch Keypad for Fast Status & Navigation Entry on Tablets & Mobile */}
-			<div className="gost-touch-keypad w-full flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-2.5 sm:p-3 bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] rounded-xl">
-				<div className="flex items-center gap-2">
-					<span className="text-xs font-bold text-[var(--odontogram-ink-muted)]">
-						{selectedTeeth.length > 0
-							? `Выбрано: ${selectedTeeth.length === 1 ? `Зуб ${selectedTeeth[0]}` : `${selectedTeeth.length} зубов`}`
-							: "Экранный ввод (выберите зуб или примените):"}
-					</span>
-				</div>
+			{/* On-Screen Touch Keypad for Fast Status & Navigation Entry on Tablets & Mobile (rendered strictly when tooth is selected, saving 36px height) */}
+			{selectedTeeth.length > 0 && (
+				<div className="gost-touch-keypad w-full flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-2.5 sm:p-3 bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] rounded-xl animate-in fade-in duration-150">
+					<div className="flex items-center gap-2">
+						<span className="text-xs font-bold text-[var(--odontogram-ink-muted)]">
+							{`Выбрано: ${selectedTeeth.length === 1 ? `Зуб ${selectedTeeth[0]}` : `${selectedTeeth.length} зубов`}`}
+						</span>
+					</div>
 
-				<div className="flex flex-wrap items-center gap-1.5">
-					{Object.entries(GOST_TOOTH_STATES).map(([stateKey, meta]) => (
-						<button
-							key={stateKey}
-							type="button"
-							data-testid={`gost-keypad-btn-${stateKey}`}
-							onClick={() => {
-								if (onQuickStateChange) {
-									const targets =
-										selectedTeeth.length > 0
-											? selectedTeeth
-											: [topList[0] ?? (pediatricMode ? 55 : 18)];
-									onQuickStateChange(targets, stateKey as ToothState);
-								}
-							}}
-							disabled={false}
-							title={`Установить: ${meta.nameRu} (${meta.abbr})`}
-							className={`gost-keypad-btn ${meta.badgeBg} ${meta.badgeText} ${meta.badgeBorder} hover:shadow-sm`}
-						>
-							<span className="font-black text-sm">{meta.abbr}</span>
-							<span className="hidden md:inline text-xs font-medium">{meta.nameRu}</span>
-						</button>
-					))}
+					<div className="flex flex-wrap items-center gap-1.5">
+						{Object.entries(GOST_TOOTH_STATES).map(([stateKey, meta]) => (
+							<button
+								key={stateKey}
+								type="button"
+								data-testid={`gost-keypad-btn-${stateKey}`}
+								onClick={() => {
+									if (onQuickStateChange) {
+										onQuickStateChange(selectedTeeth, stateKey as ToothState);
+									}
+								}}
+								disabled={false}
+								title={`Установить: ${meta.nameRu} (${meta.abbr})`}
+								className={`gost-keypad-btn ${meta.badgeBg} ${meta.badgeText} ${meta.badgeBorder} hover:shadow-sm cursor-pointer`}
+							>
+								<span className="font-black text-sm">{meta.abbr}</span>
+								<span className="hidden md:inline text-xs font-medium">{meta.nameRu}</span>
+							</button>
+						))}
 
-					{/* Fast Navigation Buttons on Touchscreens */}
-					<div className="flex items-center gap-1 ml-auto">
-						<button
-							type="button"
-							data-testid="gost-keypad-nav-prev"
-							onClick={() => {
-								const firstSelected = selectedTeeth[0] ?? (topList[0] || 18);
-								const prevTooth = getNextFocusedTooth(firstSelected, "left", pediatricMode);
-								const el = document.querySelector<HTMLButtonElement>(`[data-tooth-id="${prevTooth}"]`);
-								el?.focus();
-								el?.click();
-							}}
-							title="Предыдущий зуб (влево)"
-							className="gost-keypad-btn px-2 text-xs flex items-center justify-center"
-						>
-							<ChevronLeft size={13} aria-hidden="true" />
-						</button>
-						<button
-							type="button"
-							data-testid="gost-keypad-nav-next"
-							onClick={() => {
-								const firstSelected = selectedTeeth[0] ?? (topList[0] || 18);
-								const nextTooth = getNextFocusedTooth(firstSelected, "right", pediatricMode);
-								const el = document.querySelector<HTMLButtonElement>(`[data-tooth-id="${nextTooth}"]`);
-								el?.focus();
-								el?.click();
-							}}
-							title="Следующий зуб (вправо)"
-							className="gost-keypad-btn px-2 text-xs flex items-center justify-center"
-						>
-							<ChevronRight size={13} aria-hidden="true" />
-						</button>
+						{/* Fast Navigation Buttons on Touchscreens */}
+						<div className="flex items-center gap-1 ml-auto">
+							<button
+								type="button"
+								data-testid="gost-keypad-nav-prev"
+								onClick={() => {
+									const firstSelected = selectedTeeth[0] ?? (topList[0] || 18);
+									const prevTooth = getNextFocusedTooth(firstSelected, "left", pediatricMode);
+									const el = document.querySelector<HTMLButtonElement>(`[data-tooth-id="${prevTooth}"]`);
+									el?.focus();
+									el?.click();
+								}}
+								title="Предыдущий зуб (влево)"
+								className="gost-keypad-btn px-2 text-xs flex items-center justify-center cursor-pointer"
+							>
+								<ChevronLeft size={13} aria-hidden="true" />
+							</button>
+							<button
+								type="button"
+								data-testid="gost-keypad-nav-next"
+								onClick={() => {
+									const firstSelected = selectedTeeth[0] ?? (topList[0] || 18);
+									const nextTooth = getNextFocusedTooth(firstSelected, "right", pediatricMode);
+									const el = document.querySelector<HTMLButtonElement>(`[data-tooth-id="${nextTooth}"]`);
+									el?.focus();
+									el?.click();
+								}}
+								title="Следующий зуб (вправо)"
+								className="gost-keypad-btn px-2 text-xs flex items-center justify-center cursor-pointer"
+							>
+								<ChevronRight size={13} aria-hidden="true" />
+							</button>
+						</div>
 					</div>
 				</div>
-			</div>
+			)}
 
 			{!hideLegend && (
 				<div className="flex flex-wrap items-center justify-center gap-2 pt-2 border-t border-[var(--odontogram-border-subtle)] text-xs font-semibold">

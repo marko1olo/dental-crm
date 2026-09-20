@@ -21,6 +21,7 @@ import {
 	PRICELIST_CACHE_STORE_NAME,
 	SCHEDULES_CACHE_STORE_NAME,
 	type StorageEstimateInfo,
+	flushBatchedStoreWrites,
 	getStorageEstimate,
 	isIndexedDbAvailable,
 	openOfflineOutboxDb,
@@ -72,6 +73,9 @@ export async function verifyLocalCacheIntegrity(options?: {
 	autoRepair?: boolean | undefined;
 	organizationId?: string | undefined;
 }): Promise<OfflineCacheIntegrityReport> {
+	// Сброс отложенных пакетных записей перед аудитом целостности
+	await flushBatchedStoreWrites();
+
 	const autoRepair = options?.autoRepair ?? true;
 	const issues: IntegrityIssue[] = [];
 	let totalChecked = 0;

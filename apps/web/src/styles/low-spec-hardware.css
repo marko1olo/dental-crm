@@ -939,4 +939,113 @@ html.low-spec-mode .tooth-radial-menu {
 	filter: none !important;
 }
 
+/* --------------------------------------------------------------------------
+   12. SVG Heavy Filters Suppression & Hardware Layer Isolation for Teeth (Mandate 8c, 8n)
+   Suppresses GPU-draining SVG filter primitives (drop-shadow, feGaussianBlur,
+   feSpecularLighting, fePointLight) that choke integrated Intel HD/Celeron GPUs.
+   Promotes individual tooth groups and halos to hardware composite layers.
+   -------------------------------------------------------------------------- */
+html[data-hardware-tier="low"] .tooth-svg-wrapper,
+html[data-hardware-tier="low"] .tooth-group-standard,
+html[data-hardware-tier="low"] .periapical-halo-group,
+html[data-hardware-tier="low"] .anatomical-odontogram-root,
+[data-hardware-tier="low"] .tooth-svg-wrapper,
+[data-hardware-tier="low"] .tooth-group-standard,
+[data-hardware-tier="low"] .periapical-halo-group,
+[data-hardware-tier="low"] .anatomical-odontogram-root,
+html[data-low-spec="true"] .tooth-svg-wrapper,
+html[data-low-spec="true"] .tooth-group-standard,
+html[data-low-spec="true"] .periapical-halo-group,
+html[data-low-spec="true"] .anatomical-odontogram-root,
+[data-low-spec="true"] .tooth-svg-wrapper,
+[data-low-spec="true"] .tooth-group-standard,
+[data-low-spec="true"] .periapical-halo-group,
+[data-low-spec="true"] .anatomical-odontogram-root,
+html.low-spec-mode .tooth-svg-wrapper,
+html.low-spec-mode .tooth-group-standard,
+html.low-spec-mode .periapical-halo-group,
+html.low-spec-mode .anatomical-odontogram-root,
+.low-spec-mode .tooth-svg-wrapper,
+.low-spec-mode .tooth-group-standard,
+.low-spec-mode .periapical-halo-group,
+.low-spec-mode .anatomical-odontogram-root {
+	contain: layout paint !important;
+	will-change: transform !important;
+	transform: translateZ(0) !important;
+}
+
+html[data-hardware-tier="low"] filter,
+html[data-hardware-tier="low"] feGaussianBlur,
+html[data-hardware-tier="low"] feSpecularLighting,
+html[data-hardware-tier="low"] fePointLight,
+html[data-hardware-tier="low"] feDropShadow,
+html[data-hardware-tier="low"] [filter],
+[data-hardware-tier="low"] filter,
+[data-hardware-tier="low"] feGaussianBlur,
+[data-hardware-tier="low"] feSpecularLighting,
+[data-hardware-tier="low"] fePointLight,
+[data-hardware-tier="low"] feDropShadow,
+[data-hardware-tier="low"] [filter],
+html[data-low-spec="true"] filter,
+html[data-low-spec="true"] feGaussianBlur,
+html[data-low-spec="true"] feSpecularLighting,
+html[data-low-spec="true"] fePointLight,
+html[data-low-spec="true"] feDropShadow,
+html[data-low-spec="true"] [filter],
+[data-low-spec="true"] filter,
+[data-low-spec="true"] feGaussianBlur,
+[data-low-spec="true"] feSpecularLighting,
+[data-low-spec="true"] fePointLight,
+[data-low-spec="true"] feDropShadow,
+[data-low-spec="true"] [filter],
+html.low-spec-mode filter,
+html.low-spec-mode feGaussianBlur,
+html.low-spec-mode feSpecularLighting,
+html.low-spec-mode fePointLight,
+html.low-spec-mode feDropShadow,
+html.low-spec-mode [filter],
+.low-spec-mode filter,
+.low-spec-mode feGaussianBlur,
+.low-spec-mode feSpecularLighting,
+.low-spec-mode fePointLight,
+.low-spec-mode feDropShadow,
+.low-spec-mode [filter] {
+	display: none !important;
+	filter: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   13. DICOM, Panoramic & SVG Treatment Chart Compositor Layer Isolation (Mandates 8c, 8n)
+   Promotes heavy medical imaging viewports, canvas overlays, and SVG treatment tracks
+   to isolated compositor layers on low-tier hardware, preventing whole-page repaints.
+   -------------------------------------------------------------------------- */
+html[data-hardware-tier="low"] .dicom-viewport-container,
+html[data-hardware-tier="low"] .dicom-canvas-layer,
+html[data-hardware-tier="low"] .panoramic-canvas-overlay,
+html[data-hardware-tier="low"] .treatment-plan-svg-track,
+[data-hardware-tier="low"] .dicom-viewport-container,
+[data-hardware-tier="low"] .dicom-canvas-layer,
+[data-hardware-tier="low"] .panoramic-canvas-overlay,
+[data-hardware-tier="low"] .treatment-plan-svg-track,
+html[data-low-spec="true"] .dicom-viewport-container,
+html[data-low-spec="true"] .dicom-canvas-layer,
+html[data-low-spec="true"] .panoramic-canvas-overlay,
+html[data-low-spec="true"] .treatment-plan-svg-track,
+[data-low-spec="true"] .dicom-viewport-container,
+[data-low-spec="true"] .dicom-canvas-layer,
+[data-low-spec="true"] .panoramic-canvas-overlay,
+[data-low-spec="true"] .treatment-plan-svg-track,
+html.low-spec-mode .dicom-viewport-container,
+html.low-spec-mode .dicom-canvas-layer,
+html.low-spec-mode .panoramic-canvas-overlay,
+html.low-spec-mode .treatment-plan-svg-track,
+.low-spec-mode .dicom-viewport-container,
+.low-spec-mode .dicom-canvas-layer,
+.low-spec-mode .panoramic-canvas-overlay,
+.low-spec-mode .treatment-plan-svg-track {
+	contain: layout paint !important;
+	transform: translateZ(0) !important;
+	backface-visibility: hidden !important;
+}
+
 

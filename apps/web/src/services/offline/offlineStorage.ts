@@ -1516,6 +1516,9 @@ export function emergencyFlushAllOfflineData(): { draftsSaved: number; mutations
 			}
 		}
 
+		// 2b. Сброс отложенных пакетов кэша (Low-Spec HDD 5400 RPM write buffer)
+		flushBatchedStoreWritesSyncToLocalStorage();
+
 		// 3. Отправка аварийного события для локальных форм
 		if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
 			try {
@@ -1732,6 +1735,144 @@ function removeLocalStorageClinicalCache(cacheKey: string): void {
 }
 
 /**
+ * Low-Spec HDD (5400 RPM) & Celeron Optimization:
+ * Batched write buffer for IndexedDB & LocalStorage (Mandates 8c, 8n).
+ * Instead of spinning a separate readwrite IDB transaction on every single cache update
+ * (which causes fsync / FlushFileBuffers and stalls 5400 RPM HDD spindles),
+ * updates are instantly stored in L1 in-memory Map (0ms seek time) and queued
+ * to be written in a single consolidated readwrite transaction per store on idle / 100ms debounce.
+ */
+interface PendingStoreWrite {
+	storeName: string;
+	key: IDBValidKey;
+	record: unknown;
+	localStorageKey?: string;
+	serializedValue?: string;
+}
+
+const pendingBatchedStoreWrites = new Map<string, Map<IDBValidKey, PendingStoreWrite>>();
+let batchedStoreFlushTimer: ReturnType<typeof setTimeout> | number | null = null;
+let isFlushingBatchedStores = false;
+
+export function queueBatchedStorePut(params: {
+	storeName: string;
+	key: IDBValidKey;
+	record: unknown;
+	localStorageKey?: string;
+	serializedValue?: string;
+}): void {
+	let storeMap = pendingBatchedStoreWrites.get(params.storeName);
+	if (!storeMap) {
+		storeMap = new Map();
+		pendingBatchedStoreWrites.set(params.storeName, storeMap);
+	}
+	storeMap.set(params.key, params);
+
+	if (batchedStoreFlushTimer === null) {
+		if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+			batchedStoreFlushTimer = window.requestIdleCallback(() => {
+				batchedStoreFlushTimer = null;
+				void flushBatchedStoreWrites();
+			}, { timeout: 120 });
+		} else {
+			batchedStoreFlushTimer = setTimeout(() => {
+				batchedStoreFlushTimer = null;
+				void flushBatchedStoreWrites();
+			}, 80);
+		}
+	}
+}
+
+export async function flushBatchedStoreWrites(): Promise<void> {
+	if (batchedStoreFlushTimer !== null) {
+		if (typeof window !== "undefined" && "cancelIdleCallback" in window && typeof batchedStoreFlushTimer === "number") {
+			try {
+				window.cancelIdleCallback(batchedStoreFlushTimer);
+			} catch {
+				clearTimeout(batchedStoreFlushTimer as unknown as ReturnType<typeof setTimeout>);
+			}
+		} else {
+			clearTimeout(batchedStoreFlushTimer as unknown as ReturnType<typeof setTimeout>);
+		}
+		batchedStoreFlushTimer = null;
+	}
+	if (isFlushingBatchedStores || pendingBatchedStoreWrites.size === 0) return;
+	isFlushingBatchedStores = true;
+
+	const snapshot = new Map(pendingBatchedStoreWrites);
+	pendingBatchedStoreWrites.clear();
+
+	try {
+		if (isIndexedDbAvailable()) {
+			const db = await openOfflineOutboxDb();
+			for (const [storeName, itemsMap] of snapshot.entries()) {
+				if (!db.objectStoreNames.contains(storeName) || itemsMap.size === 0) continue;
+				try {
+					await withIdbTransactionRetry(async (activeDb) => {
+						return new Promise<void>((resolve, reject) => {
+							const tx = activeDb.transaction(storeName, "readwrite");
+							const store = tx.objectStore(storeName);
+							for (const item of itemsMap.values()) {
+								store.put(item.record);
+							}
+							tx.oncomplete = () => resolve();
+							tx.onerror = () => reject(tx.error);
+							tx.onabort = () => reject(tx.error ?? new Error("Transaction aborted"));
+						});
+					});
+				} catch (err) {
+					logger.warn(`[OfflineStorage] Batched store write failed for ${storeName}, falling back to localStorage`, err);
+					for (const item of itemsMap.values()) {
+						if (item.localStorageKey && item.serializedValue) {
+							saveToLocalStorageSafe(item.localStorageKey, item.serializedValue);
+						}
+					}
+				}
+				// Cooperative yielding on low-spec CPUs between object store batches
+				await yieldToMainThread();
+			}
+		} else {
+			// IndexedDB not available, write directly to localStorage
+			for (const itemsMap of snapshot.values()) {
+				for (const item of itemsMap.values()) {
+					if (item.localStorageKey && item.serializedValue) {
+						saveToLocalStorageSafe(item.localStorageKey, item.serializedValue);
+					}
+				}
+			}
+		}
+	} catch (err) {
+		logger.warn("[OfflineStorage] Error in flushBatchedStoreWrites:", err);
+	} finally {
+		isFlushingBatchedStores = false;
+	}
+}
+
+export function flushBatchedStoreWritesSyncToLocalStorage(): void {
+	if (pendingBatchedStoreWrites.size === 0) return;
+	for (const itemsMap of pendingBatchedStoreWrites.values()) {
+		for (const item of itemsMap.values()) {
+			if (item.localStorageKey && item.serializedValue) {
+				saveToLocalStorageSafe(item.localStorageKey, item.serializedValue);
+			}
+		}
+	}
+	pendingBatchedStoreWrites.clear();
+}
+
+/**
+ * Yield to main thread to prevent UI micro-stutters and main thread blocking on Celeron CPUs.
+ */
+export function yieldToMainThread(): Promise<void> {
+	if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+		return new Promise((resolve) => {
+			window.requestIdleCallback(() => resolve(), { timeout: 16 });
+		});
+	}
+	return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/**
  * Сохранение снапшота данных пациента (карточка 043/у, визиты, одонтограмма, план лечения) в быстрый IndexedDB кэш
  */
 export async function savePatientClinicalCache<T = unknown>(
@@ -1752,23 +1893,18 @@ export async function savePatientClinicalCache<T = unknown>(
 		organizationId,
 	};
 
+	// 1. L1 Instant 0ms RAM cache hit
 	inMemoryClinicalCacheMap.set(cacheKey, record as PatientClinicalCacheRecord<unknown>);
 
-	try {
-		await withIdbTransactionRetry(async (db) => {
-			return new Promise<void>((resolve, reject) => {
-				const tx = db.transaction(CLINICAL_CACHE_STORE_NAME, "readwrite");
-				const store = tx.objectStore(CLINICAL_CACHE_STORE_NAME);
-				const req = store.put(record);
-				req.onsuccess = () => resolve();
-				req.onerror = () =>
-					reject(req.error ?? new Error("Failed to save clinical cache to IDB"));
-			});
-		});
-	} catch (err) {
-		logger.warn(`[OfflineStorage] Failed to put clinical cache in IDB for ${cacheKey}`, err);
-		saveLocalStorageClinicalCache(record);
-	}
+	// 2. Queue for coalesced batched write to IndexedDB / localStorage (Low-Spec HDD Saver)
+	queueBatchedStorePut({
+		storeName: CLINICAL_CACHE_STORE_NAME,
+		key: cacheKey,
+		record,
+		localStorageKey: `${LOCAL_STORAGE_CLINICAL_CACHE_PREFIX}${record.cacheKey}`,
+		serializedValue: JSON.stringify(record),
+	});
+
 	return record;
 }
 
@@ -1908,21 +2044,13 @@ export async function cacheActiveSchedule(params: {
 
 	inMemorySchedulesMap.set(scheduleKey, record);
 
-	try {
-		await withIdbTransactionRetry(async (db) => {
-			if (!db.objectStoreNames.contains(SCHEDULES_CACHE_STORE_NAME)) return;
-			return new Promise<void>((resolve, reject) => {
-				const tx = db.transaction(SCHEDULES_CACHE_STORE_NAME, "readwrite");
-				const store = tx.objectStore(SCHEDULES_CACHE_STORE_NAME);
-				const req = store.put(record);
-				req.onsuccess = () => resolve();
-				req.onerror = () => reject(req.error);
-			});
-		});
-	} catch (err) {
-		logger.warn(`[OfflineStorage] Failed to put schedule in IDB for ${scheduleKey}`, err);
-		saveToLocalStorageSafe(`${LOCAL_STORAGE_SCHEDULES_PREFIX}${scheduleKey}`, JSON.stringify(record));
-	}
+	queueBatchedStorePut({
+		storeName: SCHEDULES_CACHE_STORE_NAME,
+		key: scheduleKey,
+		record,
+		localStorageKey: `${LOCAL_STORAGE_SCHEDULES_PREFIX}${scheduleKey}`,
+		serializedValue: JSON.stringify(record),
+	});
 
 	return record;
 }
@@ -2066,21 +2194,13 @@ export async function cachePatientCard(
 
 	inMemoryPatientsMap.set(card.patientId, record);
 
-	try {
-		await withIdbTransactionRetry(async (db) => {
-			if (!db.objectStoreNames.contains(PATIENTS_CACHE_STORE_NAME)) return;
-			return new Promise<void>((resolve, reject) => {
-				const tx = db.transaction(PATIENTS_CACHE_STORE_NAME, "readwrite");
-				const store = tx.objectStore(PATIENTS_CACHE_STORE_NAME);
-				const req = store.put(record);
-				req.onsuccess = () => resolve();
-				req.onerror = () => reject(req.error);
-			});
-		});
-	} catch (err) {
-		logger.warn(`[OfflineStorage] Failed to put patient card in IDB for ${card.patientId}`, err);
-		saveToLocalStorageSafe(`${LOCAL_STORAGE_PATIENTS_PREFIX}${card.patientId}`, JSON.stringify(record));
-	}
+	queueBatchedStorePut({
+		storeName: PATIENTS_CACHE_STORE_NAME,
+		key: card.patientId,
+		record,
+		localStorageKey: `${LOCAL_STORAGE_PATIENTS_PREFIX}${card.patientId}`,
+		serializedValue: JSON.stringify(record),
+	});
 
 	return record;
 }
@@ -2211,21 +2331,13 @@ export async function cacheOdontogramState(params: {
 
 	inMemoryOdontogramsMap.set(params.patientId, record);
 
-	try {
-		await withIdbTransactionRetry(async (db) => {
-			if (!db.objectStoreNames.contains(ODONTOGRAM_CACHE_STORE_NAME)) return;
-			return new Promise<void>((resolve, reject) => {
-				const tx = db.transaction(ODONTOGRAM_CACHE_STORE_NAME, "readwrite");
-				const store = tx.objectStore(ODONTOGRAM_CACHE_STORE_NAME);
-				const req = store.put(record);
-				req.onsuccess = () => resolve();
-				req.onerror = () => reject(req.error);
-			});
-		});
-	} catch (err) {
-		logger.warn(`[OfflineStorage] Failed to put odontogram in IDB for ${params.patientId}`, err);
-		saveToLocalStorageSafe(`${LOCAL_STORAGE_ODONTOGRAM_PREFIX}${params.patientId}`, JSON.stringify(record));
-	}
+	queueBatchedStorePut({
+		storeName: ODONTOGRAM_CACHE_STORE_NAME,
+		key: params.patientId,
+		record,
+		localStorageKey: `${LOCAL_STORAGE_ODONTOGRAM_PREFIX}${params.patientId}`,
+		serializedValue: JSON.stringify(record),
+	});
 
 	return record;
 }
@@ -2353,21 +2465,13 @@ export async function cachePriceList804n(
 
 	inMemoryPriceListsMap.set(catalogKey, record);
 
-	try {
-		await withIdbTransactionRetry(async (db) => {
-			if (!db.objectStoreNames.contains(PRICELIST_CACHE_STORE_NAME)) return;
-			return new Promise<void>((resolve, reject) => {
-				const tx = db.transaction(PRICELIST_CACHE_STORE_NAME, "readwrite");
-				const store = tx.objectStore(PRICELIST_CACHE_STORE_NAME);
-				const req = store.put(record);
-				req.onsuccess = () => resolve();
-				req.onerror = () => reject(req.error);
-			});
-		});
-	} catch (err) {
-		logger.warn(`[OfflineStorage] Failed to put pricelist in IDB for ${catalogKey}`, err);
-		saveToLocalStorageSafe(`${LOCAL_STORAGE_PRICELIST_PREFIX}${catalogKey}`, JSON.stringify(record));
-	}
+	queueBatchedStorePut({
+		storeName: PRICELIST_CACHE_STORE_NAME,
+		key: catalogKey,
+		record,
+		localStorageKey: `${LOCAL_STORAGE_PRICELIST_PREFIX}${catalogKey}`,
+		serializedValue: JSON.stringify(record),
+	});
 
 	return record;
 }
@@ -2459,21 +2563,13 @@ export async function cacheIcd10Dictionary(
 
 	inMemoryIcd10Map.set(dictionaryKey, record);
 
-	try {
-		await withIdbTransactionRetry(async (db) => {
-			if (!db.objectStoreNames.contains(ICD10_CACHE_STORE_NAME)) return;
-			return new Promise<void>((resolve, reject) => {
-				const tx = db.transaction(ICD10_CACHE_STORE_NAME, "readwrite");
-				const store = tx.objectStore(ICD10_CACHE_STORE_NAME);
-				const req = store.put(record);
-				req.onsuccess = () => resolve();
-				req.onerror = () => reject(req.error);
-			});
-		});
-	} catch (err) {
-		logger.warn(`[OfflineStorage] Failed to put icd10 dictionary in IDB`, err);
-		saveToLocalStorageSafe(`${LOCAL_STORAGE_ICD10_PREFIX}${dictionaryKey}`, JSON.stringify(record));
-	}
+	queueBatchedStorePut({
+		storeName: ICD10_CACHE_STORE_NAME,
+		key: dictionaryKey,
+		record,
+		localStorageKey: `${LOCAL_STORAGE_ICD10_PREFIX}${dictionaryKey}`,
+		serializedValue: JSON.stringify(record),
+	});
 
 	return record;
 }
@@ -2720,15 +2816,18 @@ export function prewarmOfflineCachesToRam(): Promise<void> {
 						req.onsuccess = () => resolve((req.result as OfflineDraft<unknown>[]) || []);
 						req.onerror = () => reject(req.error);
 					});
+					let draftCount = 0;
 					for (const draft of drafts) {
 						if (draft && draft.draftKey && !inMemoryDraftsMap.has(draft.draftKey)) {
 							inMemoryDraftsMap.set(draft.draftKey, draft);
 						}
+						if (++draftCount % 40 === 0) await yieldToMainThread();
 					}
 				} catch (err) {
 					logger.warn("[OfflineStorage] Prewarm drafts warning:", err);
 				}
 			}
+			await yieldToMainThread();
 
 			// 2. Pre-warm active schedules
 			if (db.objectStoreNames.contains(SCHEDULES_CACHE_STORE_NAME)) {
@@ -2740,15 +2839,18 @@ export function prewarmOfflineCachesToRam(): Promise<void> {
 						req.onsuccess = () => resolve((req.result as CachedActiveSchedule[]) || []);
 						req.onerror = () => reject(req.error);
 					});
+					let schedCount = 0;
 					for (const sched of schedules) {
 						if (sched && sched.scheduleKey && !inMemorySchedulesMap.has(sched.scheduleKey)) {
 							inMemorySchedulesMap.set(sched.scheduleKey, sched);
 						}
+						if (++schedCount % 40 === 0) await yieldToMainThread();
 					}
 				} catch (err) {
 					logger.warn("[OfflineStorage] Prewarm schedules warning:", err);
 				}
 			}
+			await yieldToMainThread();
 
 			// 3. Pre-warm price lists
 			if (db.objectStoreNames.contains(PRICELIST_CACHE_STORE_NAME)) {
@@ -2760,15 +2862,18 @@ export function prewarmOfflineCachesToRam(): Promise<void> {
 						req.onsuccess = () => resolve((req.result as CachedPriceList804n[]) || []);
 						req.onerror = () => reject(req.error);
 					});
+					let plCount = 0;
 					for (const pl of priceLists) {
 						if (pl && pl.catalogKey && !inMemoryPriceListsMap.has(pl.catalogKey)) {
 							inMemoryPriceListsMap.set(pl.catalogKey, pl);
 						}
+						if (++plCount % 40 === 0) await yieldToMainThread();
 					}
 				} catch (err) {
 					logger.warn("[OfflineStorage] Prewarm price lists warning:", err);
 				}
 			}
+			await yieldToMainThread();
 
 			// 4. Pre-warm ICD-10 dictionary
 			if (db.objectStoreNames.contains(ICD10_CACHE_STORE_NAME)) {
@@ -2780,15 +2885,18 @@ export function prewarmOfflineCachesToRam(): Promise<void> {
 						req.onsuccess = () => resolve((req.result as CachedIcd10Dictionary[]) || []);
 						req.onerror = () => reject(req.error);
 					});
+					let icdCount = 0;
 					for (const dict of icd10List) {
 						if (dict && dict.dictionaryKey && !inMemoryIcd10Map.has(dict.dictionaryKey)) {
 							inMemoryIcd10Map.set(dict.dictionaryKey, dict);
 						}
+						if (++icdCount % 40 === 0) await yieldToMainThread();
 					}
 				} catch (err) {
 					logger.warn("[OfflineStorage] Prewarm ICD-10 warning:", err);
 				}
 			}
+			await yieldToMainThread();
 
 			// 5. Pre-warm patients cache
 			if (db.objectStoreNames.contains(PATIENTS_CACHE_STORE_NAME)) {
@@ -2800,15 +2908,18 @@ export function prewarmOfflineCachesToRam(): Promise<void> {
 						req.onsuccess = () => resolve((req.result as CachedPatientCard[]) || []);
 						req.onerror = () => reject(req.error);
 					});
+					let ptCount = 0;
 					for (const pt of patients) {
 						if (pt && pt.patientId && !inMemoryPatientsMap.has(pt.patientId)) {
 							inMemoryPatientsMap.set(pt.patientId, pt);
 						}
+						if (++ptCount % 40 === 0) await yieldToMainThread();
 					}
 				} catch (err) {
 					logger.warn("[OfflineStorage] Prewarm patients warning:", err);
 				}
 			}
+			await yieldToMainThread();
 
 			// 6. Pre-warm odontograms cache
 			if (db.objectStoreNames.contains(ODONTOGRAM_CACHE_STORE_NAME)) {
@@ -2820,15 +2931,18 @@ export function prewarmOfflineCachesToRam(): Promise<void> {
 						req.onsuccess = () => resolve((req.result as CachedOdontogram[]) || []);
 						req.onerror = () => reject(req.error);
 					});
+					let odCount = 0;
 					for (const od of odontograms) {
 						if (od && od.patientId && !inMemoryOdontogramsMap.has(od.patientId)) {
 							inMemoryOdontogramsMap.set(od.patientId, od);
 						}
+						if (++odCount % 40 === 0) await yieldToMainThread();
 					}
 				} catch (err) {
 					logger.warn("[OfflineStorage] Prewarm odontograms warning:", err);
 				}
 			}
+			await yieldToMainThread();
 
 			isPrewarmComplete = true;
 			logger.info("[OfflineStorage] 0-seek L1 RAM pre-warming completed successfully.");

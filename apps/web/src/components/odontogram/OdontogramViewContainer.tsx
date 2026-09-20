@@ -1008,16 +1008,17 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 									globalDentalVoiceEngine.toggle();
 								}
 							}}
-							className={`h-7 flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-black whitespace-nowrap shadow-xs shrink-0 flex-shrink-0 min-w-max cursor-pointer transition-all active:scale-95 ${
+							className={`h-7 flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-md text-xs font-black whitespace-nowrap shadow-xs shrink-0 flex-shrink-0 min-w-max cursor-pointer transition-all active:scale-95 ${
 								isVoiceListening
 									? "bg-rose-600 hover:bg-rose-500 text-white animate-pulse ring-2 ring-rose-500/30"
 									: "bg-indigo-600 hover:bg-indigo-500 text-white"
 							}`}
-							title={isVoiceListening ? "Остановить диктовку" : "Голосовая диктовка зубной формулы"}
+							title={isVoiceListening ? "Остановить диктовку" : "Пульт голосовой диктовки зубной формулы"}
 							aria-pressed={isVoiceListening}
+							data-testid="odontogram-voice-dictation-btn"
 						>
 							{isVoiceListening ? <MicOff size={12} className="shrink-0" /> : <Mic size={12} className="shrink-0" />}
-							<span className="shrink-0 flex-shrink-0 min-w-max">{isVoiceListening ? "Слушаю..." : "Пульт"}</span>
+							<span className="hidden xl:inline shrink-0">{isVoiceListening ? "Слушаю..." : "Пульт"}</span>
 						</button>
 
 						{/* Quick Actions Dropdown (Действия: без 8-ок, квадранты, челюсти) */}
@@ -1341,6 +1342,24 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 											>
 												<FileText size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
 												<span>План лечения из патологий (804н)</span>
+											</button>
+
+											<button
+												type="button"
+												onClick={() => {
+													if (onOpenVoiceDictation) {
+														onOpenVoiceDictation();
+													} else {
+														globalDentalVoiceEngine.toggle();
+													}
+													setIsMoreMenuOpen(false);
+												}}
+												className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/20 border border-indigo-500/30"
+												title="Голосовая диктовка зубной формулы"
+												data-testid="more-menu-voice-dictation"
+											>
+												<Mic size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+												<span>{isVoiceListening ? "Остановить диктовку" : "Голосовой пульт (диктовка)"}</span>
 											</button>
 
 											<button

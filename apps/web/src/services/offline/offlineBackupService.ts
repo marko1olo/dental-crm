@@ -48,6 +48,7 @@ import {
 	deletePatientClinicalCache,
 	getCachedIcd10Dictionary,
 	getCachedPriceList804n,
+	flushBatchedStoreWrites,
 	getLocalStorageMutations,
 	getPatientClinicalCache,
 	listCachedActiveSchedules,
@@ -247,6 +248,9 @@ export async function exportOfflineClinicBackup(
 	const orgId = options?.organizationId;
 	const passphrase = options?.passphrase || DEFAULT_DENTE_BACKUP_PASSPHRASE;
 	const encryptionAlgorithm = options?.encryptionAlgorithm || "AES-GCM-256";
+
+	// 0. Сброс отложенных пакетных записей перед экспортом
+	await flushBatchedStoreWrites();
 
 	// 1. Сбор всех мутаций из IndexedDB
 	let mutations: OfflineMutation[] = [];
@@ -557,6 +561,9 @@ export async function importOfflineClinicBackup(
 			errors.push("Ошибка восстановления справочника МКБ-10");
 		}
 	}
+
+	// 9. Гарантированный сброс всех пакетных записей, сформированных при импорте
+	await flushBatchedStoreWrites();
 
 	return {
 		success: errors.length === 0,

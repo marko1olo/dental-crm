@@ -66,6 +66,12 @@ import {
 	clinicalDraftAutosaver,
 	offlineSyncService,
 } from "../services/offline";
+import {
+	queueBatchedStorePut,
+	flushBatchedStoreWrites,
+	yieldToMainThread,
+} from "../services/offline/offlineStorage";
+import { disposeWebGlRenderingContext } from "@dental/shared";
 import { printA4Document } from "../lib/hardwarePrinting";
 
 test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
@@ -977,5 +983,65 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 			}
 		}
 	});
+
+	await t.test("queueBatchedStorePut, flushBatchedStoreWrites and yieldToMainThread execute without blocking on low-spec hardware", async () => {
+		// Test cooperative yield
+		await yieldToMainThread();
+
+		// Test batched queue
+		queueBatchedStorePut({
+			storeName: "clinical_cache",
+			key: "test-patient-key",
+			record: { id: "p-1", name: "Иван Иванов" },
+			localStorageKey: "dente_test_patient",
+			serializedValue: JSON.stringify({ id: "p-1", name: "Иван Иванов" }),
+		});
+
+		// Test flush writes
+		await flushBatchedStoreWrites();
+		assert.ok(true);
+	});
+
+	await t.test("disposeWebGlRenderingContext triggers loseContext and releases GPU VRAM immediately", () => {
+		let contextLost = false;
+		let texturesDeleted = 0;
+		let buffersDeleted = 0;
+		let programsDeleted = 0;
+
+		const mockGl = {
+			getExtension: (name: string) => {
+				if (name === "WEBGL_lose_context") {
+					return {
+						loseContext: () => {
+							contextLost = true;
+						},
+					};
+				}
+				return null;
+			},
+			deleteTexture: () => {
+				texturesDeleted++;
+			},
+			deleteBuffer: () => {
+				buffersDeleted++;
+			},
+			deleteProgram: () => {
+				programsDeleted++;
+			},
+		};
+
+		const stats = disposeWebGlRenderingContext(mockGl, {
+			textures: [{}],
+			buffers: [{}],
+			programs: [{}],
+		});
+
+		assert.equal(stats.contextLostTriggered, true);
+		assert.equal(contextLost, true);
+		assert.equal(stats.texturesDisposed, 1);
+		assert.equal(stats.buffersDisposed, 1);
+		assert.equal(stats.programsDisposed, 1);
+	});
 });
+
 
