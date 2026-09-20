@@ -641,5 +641,39 @@
 	}
 }
 
+/* ============================================================
+   CHAIRSIDE TABLET & GLOVE ERGONOMICS (Mandates 8c, 8e, 8n)
+   Enforces >= 44-48px hit zones on coarse pointers / tablets
+   for medical staff wearing latex/nitrile gloves near the dental chair,
+   without degrading dense 28-36px desktop mouse ergonomics.
+   ============================================================ */
+[data-pointer="coarse"] .soap-preset-chip,
+[data-pointer="coarse"] .clinical-soap-preset,
+[data-pointer="coarse"] .tooth-radial-btn,
+[data-pointer="coarse"] .perio-pocket-btn,
+[data-pointer="coarse"] .anesthesia-dose-btn,
+[data-pointer="coarse"] .sanpin-action-btn,
+[data-pointer="coarse"] .treatment-stage-chip,
+[data-pointer="coarse"] .photo-protocol-trigger,
+[data-pointer="coarse"] .photo-capture-btn,
+[data-pointer="coarse"] .chairside-checklist-item,
+[data-pointer="coarse"] .chairside-action-btn,
+[data-platform="android"] .soap-preset-chip,
+[data-platform="android"] .clinical-soap-preset,
+[data-platform="android"] .tooth-radial-btn,
+[data-platform="android"] .perio-pocket-btn,
+[data-platform="android"] .anesthesia-dose-btn,
+[data-platform="android"] .sanpin-action-btn,
+[data-platform="android"] .treatment-stage-chip,
+[data-platform="android"] .photo-protocol-trigger,
+[data-platform="android"] .photo-capture-btn,
+[data-platform="android"] .chairside-checklist-item,
+[data-platform="android"] .chairside-action-btn {
+	min-height: 44px !important;
+	min-width: 44px !important;
+	touch-action: manipulation;
+}
+
+
 
 
