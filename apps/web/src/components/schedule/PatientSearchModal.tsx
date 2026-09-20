@@ -163,6 +163,7 @@ export function PatientSearchModal({
 			fullName: trimmedName,
 			phone: trimmedPhone,
 			birthDate: null,
+			gender: null,
 			email: null,
 			notes: null,
 			administrativeProfile: null,

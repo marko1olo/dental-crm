@@ -27,6 +27,8 @@ const mockPatients: Patient[] = [
 		email: "ivanov@example.com",
 		notes: "Аллергия на лидокаин",
 		administrativeProfile: {
+			gender: null,
+			insuranceContractId: null,
 			identityDocument: "4509 123456",
 			taxpayerInn: "771234567890",
 			registrationAddress: "г. Москва, ул. Ленина, д. 1",
@@ -69,6 +71,8 @@ const mockPatients: Patient[] = [
 		email: "smirnova@example.com",
 		notes: "Предпочитает лечение с коффердамом",
 		administrativeProfile: {
+			gender: null,
+			insuranceContractId: null,
 			identityDocument: null,
 			taxpayerInn: null,
 			registrationAddress: null,

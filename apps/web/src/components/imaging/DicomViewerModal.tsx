@@ -28,7 +28,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState, Suspense } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
 import { actionFailureToast } from "../../lib/panelStateText.js";
 import { usePatientStore } from "../../store/patientStore.js";
@@ -36,7 +36,12 @@ import { useVisitStore } from "../../store/visitStore.js";
 import { logger } from "../../utils/logger.js";
 import { showToast } from "../GlobalToast.js";
 import { TOOTH_STATE_LABELS, type ToothState } from "../odontogram/ToothChart.js";
-import { DicomViewport } from "./DicomViewport.js";
+
+const DicomViewport = React.lazy(() =>
+	import("./DicomViewport.js").then((m) => ({
+		default: m.DicomViewport,
+	}))
+);
 import {
 	CLINICAL_IMAGING_COLORS,
 	DENTAL_RADIOGRAPHY_PRESETS,
@@ -596,7 +601,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						title="Панорамирование (перемещение снимка мышью/пальцем)"
 					>
 						<Hand size={13} />
-						<span>Панорама</span>
+						<span className="hidden md:inline">Панорама</span>
 					</button>
 
 					{/* Calibrated Ruler */}
@@ -622,7 +627,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						title="Калиброванная линейка (субпиксельное измерение расстояния в мм)"
 					>
 						<Ruler size={13} />
-						<span>Линейка</span>
+						<span className="hidden md:inline">Линейка</span>
 					</button>
 
 					{/* Endo Apex Tracer (Anatomical Red - Mandate 8c & 8d) */}
@@ -648,7 +653,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						title="Эндо-линейка (Apex / WL): измерение рабочей длины канала в мм (клик по точкам вдоль кривой корня, двойной клик для фиксации)"
 					>
 						<Activity size={13} color={viewportState.activeTool === "root_canal_tracer" ? "#fca5a5" : "#ef4444"} />
-						<span>Эндо-апекс</span>
+						<span className="hidden lg:inline">Эндо-апекс</span>
 					</button>
 
 					{/* Window/Level (W/L) Tool */}
@@ -674,7 +679,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						title="Окно W/L: перетаскивание мышью регулирует ширину окна (контраст) и центр окна (яркость)"
 					>
 						<Sliders size={13} />
-						<span>Окно W/L</span>
+						<span className="hidden lg:inline">Окно W/L</span>
 					</button>
 
 					{/* 1-Click Norma Button (Mandate 8e) */}
@@ -732,7 +737,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							title="Стандартные рентгенологические протоколы (043/у) — вставка в 1 клик"
 						>
 							<FileText size={13} color="#2dd4bf" />
-							<span>Протоколы</span>
+							<span className="hidden sm:inline">Протоколы</span>
 							<ChevronDown
 								size={12}
 								style={{
@@ -1288,13 +1293,21 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 			) : (
 				<div style={{ flex: 1, position: "relative", display: "flex", overflow: "hidden" }}>
 					<div style={{ flex: 1, position: "relative", height: "100%" }}>
-						<DicomViewport
-							imageSrc={currentImageSrc}
-							viewportState={viewportState}
-							onViewportChange={handleViewportChange}
-							measurements={measurements}
-							onAddMeasurement={handleAddMeasurement}
-						/>
+						<Suspense
+							fallback={
+								<div className="flex items-center justify-center w-full h-full text-xs text-slate-400">
+									Загрузка просмотрщика...
+								</div>
+							}
+						>
+							<DicomViewport
+								imageSrc={currentImageSrc}
+								viewportState={viewportState}
+								onViewportChange={handleViewportChange}
+								measurements={measurements}
+								onAddMeasurement={handleAddMeasurement}
+							/>
+						</Suspense>
 					</div>
 
 					{/* AI Findings Drawer (Warm Context Side-sheet) */}

@@ -57,6 +57,8 @@ export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeP
 		isAnonymous: false,
 		anonymousCode: null,
 		decree659Compliance: null,
+		gender: "",
+		insuranceContractId: "",
 	};
 }
 

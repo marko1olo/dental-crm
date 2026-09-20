@@ -159,6 +159,8 @@ describe("Wave 65 (Feature 254): Blank Contract 1-Click Print & Non-blocking Pat
 			isAnonymous: false,
 			anonymousCode: null,
 			decree659Compliance: null,
+			gender: "",
+			insuranceContractId: "",
 		};
 
 		const payload = buildPatientAdministrativeProfilePayload(baseDraft);
@@ -215,6 +217,8 @@ describe("Wave 65 (Feature 254): Blank Contract 1-Click Print & Non-blocking Pat
 			isAnonymous: false,
 			anonymousCode: null,
 			decree659Compliance: null,
+			gender: "",
+			insuranceContractId: "",
 		};
 
 		const payload = buildPatientAdministrativeProfilePayload(partialRepDraft);

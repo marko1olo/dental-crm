@@ -250,6 +250,8 @@ export function patientAdministrativeProfileDraftFromPatient(
 		isAnonymous: profile?.isAnonymous === true,
 		anonymousCode: typeof profile?.anonymousCode === "string" ? profile.anonymousCode : null,
 		decree659Compliance: (profile?.decree659Compliance as Record<string, unknown> | null | undefined) ?? null,
+		gender: safeProfileString(profile?.gender),
+		insuranceContractId: safeProfileString(profile?.insuranceContractId),
 	};
 }
 
@@ -351,6 +353,19 @@ export function buildPatientAdministrativeProfilePayload(
 			draft.loyaltyTier === "standard"
 				? draft.loyaltyTier
 				: "standard",
+		gender:
+			draft.gender === "male" ||
+			draft.gender === "female" ||
+			draft.gender === "other"
+				? draft.gender
+				: null,
+		insuranceContractId: (() => {
+			const raw = nullablePatientDraftValue(draft.insuranceContractId);
+			return raw &&
+				/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw)
+				? raw
+				: null;
+		})(),
 	};
 }
 

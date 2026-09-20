@@ -2,9 +2,10 @@
  * TreatmentPlanModule.tsx — главный модуль управления планами лечения и финансовой оценки DENTE CRM.
  */
 
-import React, { useMemo, useState, useRef, useEffect } from "react";
+import React, { useMemo, useState, useRef, useEffect, lazy, Suspense } from "react";
 import {
 	Bot,
+	Check,
 	ChevronDown,
 	Clock,
 	Coins,
@@ -49,30 +50,80 @@ import {
 	type CopilotCommandType,
 } from "../../services/ai/treatmentPlanCopilot";
 import { TreatmentPlan3TierComparison } from "./TreatmentPlan3TierComparison";
-import { TreatmentPlanContractPrint } from "./TreatmentPlanContractPrint";
-import { TreatmentPlanCompletedActPrint } from "./TreatmentPlanCompletedActPrint";
-import { TreatmentPlanSignatureModal } from "./TreatmentPlanSignatureModal";
+import { TreatmentPlanPhased4StageView } from "./TreatmentPlanPhased4StageView";
+
+const TreatmentPlanContractPrint = lazy(() =>
+	import("./TreatmentPlanContractPrint").then((module) => ({
+		default: module.TreatmentPlanContractPrint,
+	})),
+);
+const TreatmentPlanCompletedActPrint = lazy(() =>
+	import("./TreatmentPlanCompletedActPrint").then((module) => ({
+		default: module.TreatmentPlanCompletedActPrint,
+	})),
+);
+const TreatmentPlanSignatureModal = lazy(() =>
+	import("./TreatmentPlanSignatureModal").then((module) => ({
+		default: module.TreatmentPlanSignatureModal,
+	})),
+);
 import { TreatmentPlanStageCard } from "./TreatmentPlanStageCard";
-import { TreatmentPlanComparatorModal } from "./comparator/TreatmentPlanComparatorModal";
-import { StagePaymentPlanModal } from "./stagePayment/StagePaymentPlanModal";
-import { TreatmentPlanPriceValidatorModal } from "./validation/TreatmentPlanPriceValidatorModal";
-import { TreatmentPlanPresenterModal } from "./TreatmentPlanPresenterModal";
+const TreatmentPlanComparatorModal = lazy(() =>
+	import("./comparator/TreatmentPlanComparatorModal").then((module) => ({
+		default: module.TreatmentPlanComparatorModal,
+	})),
+);
+const StagePaymentPlanModal = lazy(() =>
+	import("./stagePayment/StagePaymentPlanModal").then((module) => ({
+		default: module.StagePaymentPlanModal,
+	})),
+);
+const TreatmentPlanPriceValidatorModal = lazy(() =>
+	import("./validation/TreatmentPlanPriceValidatorModal").then((module) => ({
+		default: module.TreatmentPlanPriceValidatorModal,
+	})),
+);
+const TreatmentPlanPresenterModal = lazy(() =>
+	import("./TreatmentPlanPresenterModal").then((module) => ({
+		default: module.TreatmentPlanPresenterModal,
+	})),
+);
 import { ClinicalBundlesPanel } from "./ClinicalBundlesPanel";
 import {
 	applyClinicalBundleToStages,
 	getClinicalBundleById,
 	type ClinicalBundleId,
 } from "./treatmentPlanBundlesEngine";
-import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
-import { InvoiceGenerationModal } from "../finance/InvoiceGenerationModal";
-import { LabWorkOrderModal } from "../lab/orders/LabWorkOrderModal";
+const FiscalReceipt54FzModal = lazy(() =>
+	import("../finance/FiscalReceipt54FzModal").then((module) => ({
+		default: module.FiscalReceipt54FzModal,
+	})),
+);
+const InvoiceGenerationModal = lazy(() =>
+	import("../finance/InvoiceGenerationModal").then((module) => ({
+		default: module.InvoiceGenerationModal,
+	})),
+);
+const LabWorkOrderModal = lazy(() =>
+	import("../lab/orders/LabWorkOrderModal").then((module) => ({
+		default: module.LabWorkOrderModal,
+	})),
+);
 import {
 	ONE_CLICK_LAB_DEFAULTS,
 	addWorkingDays,
 	calculateMaterialTotalCostKopecks,
 } from "../lab/labMath";
-import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
-import { CuratorPlanAssignmentModal } from "./CuratorPlanAssignmentModal";
+const BankInstallmentQrModal = lazy(() =>
+	import("../payments/BankInstallmentQrModal").then((module) => ({
+		default: module.BankInstallmentQrModal,
+	})),
+);
+const CuratorPlanAssignmentModal = lazy(() =>
+	import("./CuratorPlanAssignmentModal").then((module) => ({
+		default: module.CuratorPlanAssignmentModal,
+	})),
+);
 import type {
 	CashierInvoiceExportData,
 	DigitalSignatureAgreementData,
@@ -92,6 +143,8 @@ export interface TreatmentPlanModuleProps {
 	readonly className?: string;
 	readonly planCreatedAtIso?: string;
 	readonly initialOptionsMenuOpen?: boolean;
+	readonly initialStatus?: "draft" | "agreed" | "in_progress" | "completed";
+	readonly onStatusChange?: (status: "draft" | "agreed" | "in_progress" | "completed") => void;
 }
 
 export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
@@ -103,6 +156,8 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	className = "",
 	planCreatedAtIso,
 	initialOptionsMenuOpen = false,
+	initialStatus,
+	onStatusChange,
 }) => {
 	const { dashboard, auth } = useAppLogicContext();
 
@@ -112,10 +167,27 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		if (Number.isNaN(createdTime)) return 0;
 		return Math.max(0, Math.floor((Date.now() - createdTime) / (1000 * 60 * 60 * 24)));
 	}, [planCreatedAtIso]);
-	const [activeViewTab, setActiveViewTab] = useState<"3tier" | "stages">("3tier");
+	const [activeViewTab, setActiveViewTab] = useState<"3tier" | "stages" | "phased4">("3tier");
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>("optimum");
 	const [discountPercent, setDiscountPercent] = useState<number>(0);
 	const [bonusPointsToUseRub, setBonusPointsToUseRub] = useState<number>(0);
+
+	// Treatment Plan 1-Click Status Transitions (Mandates 8e, 8c — Doctor Autonomy & Zero Barriers)
+	const [planStatus, setPlanStatus] = useState<"draft" | "agreed" | "in_progress" | "completed">(
+		initialStatus || "agreed",
+	);
+
+	const handleStatusTransition = (newStatus: "draft" | "agreed" | "in_progress" | "completed") => {
+		setPlanStatus(newStatus);
+		onStatusChange?.(newStatus);
+		const statusLabels: Record<"draft" | "agreed" | "in_progress" | "completed", string> = {
+			draft: "Черновик",
+			agreed: "Согласован",
+			in_progress: "В работе",
+			completed: "Завершен",
+		};
+		showToast(`Статус плана лечения: «${statusLabels[newStatus]}»`, "success", 3000);
+	};
 
 	// Modals State
 	const [isSignModalOpen, setIsSignModalOpen] = useState<boolean>(false);
@@ -568,6 +640,14 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				}),
 				body: JSON.stringify({
 					name: `${currentTier.title} (${new Date().toLocaleDateString("ru-RU")})`,
+					status:
+						planStatus === "agreed"
+							? "Approved"
+							: planStatus === "in_progress"
+								? "Active"
+								: planStatus === "completed"
+									? "Completed"
+									: "Draft",
 					patientSignature: signedAgreement?.signatureBase64 || null,
 					items: itemsForApi,
 				}),
@@ -665,6 +745,69 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 									Смета составлена &gt;30 дней назад (актуальна / продлена)
 								</span>
 							)}
+
+							{/* 1-Click Status Transitions (Mandates 8e, 8c — Doctor Autonomy & Zero Barriers) */}
+							<div
+								className="inline-flex items-center p-0.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] shadow-2xs text-xs shrink-0"
+								role="group"
+								aria-label="Статус плана лечения"
+								data-testid="treatment-plan-status-control"
+							>
+								<button
+									type="button"
+									onClick={() => handleStatusTransition("draft")}
+									data-testid="tp-status-btn-draft"
+									className={`min-h-[26px] h-[26px] px-2.5 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+										planStatus === "draft"
+											? "bg-slate-300 dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs"
+											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									}`}
+									title="Черновик плана лечения"
+								>
+									Черновик
+								</button>
+								<button
+									type="button"
+									onClick={() => handleStatusTransition("agreed")}
+									data-testid="tp-status-btn-agreed"
+									className={`min-h-[26px] h-[26px] px-2.5 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+										planStatus === "agreed"
+											? "bg-emerald-600 text-white shadow-2xs"
+											: "text-emerald-700 dark:text-emerald-400 hover:text-emerald-800"
+									}`}
+									title="План согласован с пациентом (1 клик)"
+								>
+									<Check size={12} />
+									<span>Согласован</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => handleStatusTransition("in_progress")}
+									data-testid="tp-status-btn-in-progress"
+									className={`min-h-[26px] h-[26px] px-2.5 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+										planStatus === "in_progress"
+											? "bg-teal-600 text-white shadow-2xs"
+											: "text-teal-700 dark:text-teal-400 hover:text-teal-800"
+									}`}
+									title="План переведен в работу (1 клик)"
+								>
+									<Zap size={12} />
+									<span>В работе</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => handleStatusTransition("completed")}
+									data-testid="tp-status-btn-completed"
+									className={`min-h-[26px] h-[26px] px-2.5 py-0 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+										planStatus === "completed"
+											? "bg-blue-600 text-white shadow-2xs"
+											: "text-blue-700 dark:text-blue-400 hover:text-blue-800"
+									}`}
+									title="Лечение по плану завершено"
+								>
+									Завершен
+								</button>
+							</div>
 						</div>
 						<p
 							className="text-xs text-[var(--muted,#64748b)] truncate"
@@ -702,13 +845,24 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						>
 							Поэтапный (I, II, III)
 						</button>
-						
+						<button
+							type="button"
+							onClick={() => setActiveViewTab("phased4")}
+							data-testid="tp-tab-phased4"
+							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
+								activeViewTab === "phased4"
+									? "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-xs"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							}`}
+						>
+							4 Фазы
+						</button>
 					</div>
 
 					{/* Secondary 1: Digital Signature Indicator / Button */}
 					{signedAgreement ? (
 						<div
-							className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold min-h-[44px] sm:min-h-[32px] sm:h-8 touch-manipulation"
+							className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold min-h-[44px] sm:min-h-[38px] sm:h-8 touch-manipulation"
 							data-testid="tp-signed-badge"
 						>
 							<ShieldCheck size={16} />
@@ -718,7 +872,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsSignModalOpen(true)}
-							className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors touch-manipulation shadow-xs"
+							className="min-h-[44px] sm:min-h-[38px] sm:h-8 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors touch-manipulation shadow-xs"
 							title="Открыть окно цифровой подписи согласия"
 							data-testid="tp-sign-btn"
 						>
@@ -731,7 +885,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					<button
 						type="button"
 						onClick={handleExportCashier}
-						className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 shadow-xs cursor-pointer transition-colors touch-manipulation"
+						className="min-h-[44px] sm:min-h-[38px] sm:h-8 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 shadow-xs cursor-pointer transition-colors touch-manipulation"
 						title="Мгновенно отправить счет кассиру в 1 клик (StomX / DentalPRO Parity)"
 						data-testid="tp-quick-cashier-btn"
 					>
@@ -744,7 +898,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
-							className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs transition-colors touch-manipulation"
+							className="min-h-[44px] sm:min-h-[38px] sm:h-8 px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs transition-colors touch-manipulation"
 							title="Дополнительные студии, валидация и печать"
 							aria-label="Опции плана лечения"
 							aria-expanded={isOptionsMenuOpen}
@@ -1172,6 +1326,27 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						setIsContractPrintOpen(true);
 					}}
 				/>
+			) : activeViewTab === "phased4" ? (
+				<TreatmentPlanPhased4StageView
+					stages={stages}
+					patientName={patientName}
+					planAgeDays={planAgeDays}
+					planCreatedAtIso={planCreatedAtIso}
+					onOpenStagePayment={() => {
+						if (stages.length > 0) {
+							setSelectedInstallmentStage(stages[0]!);
+						}
+						setIsFiscalModalOpen(true);
+					}}
+					onOpenInstallment={() => {
+						if (stages.length > 0) {
+							setSelectedInstallmentStage(stages[0]!);
+							setIsInstallmentModalOpen(true);
+						}
+					}}
+					onApproveAndSign={() => setIsSignModalOpen(true)}
+					onPrintContract={() => setIsContractPrintOpen(true)}
+				/>
 			) : stages.length === 0 ? (
 				<div className="p-8 rounded-2xl border border-dashed border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] text-center text-xs text-[var(--muted,#64748b)] space-y-3">
 					<Layers className="w-10 h-10 mx-auto text-[var(--muted,#64748b)] opacity-40" />
@@ -1232,323 +1407,347 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 
 			{/* 3-Tier Multi-Variant Presentation Studio Modal */}
 			{isComparatorModalOpen && (
-				<TreatmentPlanComparatorModal
-					isOpen={isComparatorModalOpen}
-					onClose={() => setIsComparatorModalOpen(false)}
-					patientName={patientName}
-					doctorName={auth?.currentUser?.name || "Лечащий врач"}
-					clinicName={dashboard?.clinicSettings?.profile?.brandName || "Стоматологическая клиника DENTE"}
-					planAgeDays={planAgeDays}
-					planCreatedAtIso={planCreatedAtIso}
-					onPlanSelected={(tierCode) => {
-						const mappedTierId =
-							tierCode === "economy_basic"
-								? "economy"
-								: tierCode === "standard_recommended"
-									? "standard"
-									: "optimum";
-						setSelectedTierId(mappedTierId);
-						setIsComparatorModalOpen(false);
-						showToast(`Выбран вариант лечения «${tierCode}»`, "success");
-					}}
-					onApproveAndSign={(tierCode) => {
-						const mappedTierId =
-							tierCode === "economy_basic"
-								? "economy"
-								: tierCode === "standard_recommended"
-									? "standard"
-									: "optimum";
-						setSelectedTierId(mappedTierId);
-						setIsComparatorModalOpen(false);
-						setIsSignModalOpen(true);
-					}}
-					onOpenInstallment={() => {
-						if (stages.length > 0) {
-							setSelectedInstallmentStage(stages[0]!);
-							setIsInstallmentModalOpen(true);
-						}
-					}}
-					onPrintContract={() => {
-						setIsContractPrintOpen(true);
-					}}
-				/>
+				<Suspense fallback={null}>
+					<TreatmentPlanComparatorModal
+						isOpen={isComparatorModalOpen}
+						onClose={() => setIsComparatorModalOpen(false)}
+						patientName={patientName}
+						doctorName={auth?.currentUser?.name || "Лечащий врач"}
+						clinicName={dashboard?.clinicSettings?.profile?.brandName || "Стоматологическая клиника DENTE"}
+						planAgeDays={planAgeDays}
+						planCreatedAtIso={planCreatedAtIso}
+						onPlanSelected={(tierCode) => {
+							const mappedTierId =
+								tierCode === "economy_basic"
+									? "economy"
+									: tierCode === "standard_recommended"
+										? "standard"
+										: "optimum";
+							setSelectedTierId(mappedTierId);
+							setIsComparatorModalOpen(false);
+							showToast(`Выбран вариант лечения «${tierCode}»`, "success");
+						}}
+						onApproveAndSign={(tierCode) => {
+							const mappedTierId =
+								tierCode === "economy_basic"
+									? "economy"
+									: tierCode === "standard_recommended"
+										? "standard"
+										: "optimum";
+							setSelectedTierId(mappedTierId);
+							setIsComparatorModalOpen(false);
+							setIsSignModalOpen(true);
+						}}
+						onOpenInstallment={() => {
+							if (stages.length > 0) {
+								setSelectedInstallmentStage(stages[0]!);
+								setIsInstallmentModalOpen(true);
+							}
+						}}
+						onPrintContract={() => {
+							setIsContractPrintOpen(true);
+						}}
+					/>
+				</Suspense>
 			)}
 
 			{/* Stage Payment & Escrow Studio Modal */}
 			{isStagePaymentModalOpen && (
-				<StagePaymentPlanModal
-					isOpen={isStagePaymentModalOpen}
-					onClose={() => setIsStagePaymentModalOpen(false)}
-					patientName={patientName}
-					patientId={patientId}
-					planTitle={currentTier.title}
-					clinicName={dashboard?.clinicSettings?.profile?.brandName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
-					doctorFullName={auth?.currentUser?.name || "Лечащий врач"}
-				/>
+				<Suspense fallback={null}>
+					<StagePaymentPlanModal
+						isOpen={isStagePaymentModalOpen}
+						onClose={() => setIsStagePaymentModalOpen(false)}
+						patientName={patientName}
+						patientId={patientId}
+						planTitle={currentTier.title}
+						clinicName={dashboard?.clinicSettings?.profile?.brandName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
+						doctorFullName={auth?.currentUser?.name || "Лечащий врач"}
+					/>
+				</Suspense>
 			)}
 
 			{/* Price & Star Protocols Validator Modal */}
 			{isPriceValidatorModalOpen && (
-				<TreatmentPlanPriceValidatorModal
-					isOpen={isPriceValidatorModalOpen}
-					onClose={() => setIsPriceValidatorModalOpen(false)}
-					planPayload={validationPayload}
-					stages={stages}
-					catalogPricelist={(catalog as any) || []}
-					onExportWorkOrder={(order) => {
-						showToast(
-							`Наряд-заказ №${order.orderNumber} на сумму ${order.totalPayableRub.toLocaleString("ru-RU")} ₽ выписан!`,
-							"success",
-							5000,
-						);
-					}}
-					onExportCompletedAct={(act) => {
-						showToast(
-							`Акт выполненных работ №${act.orderNumber} на сумму ${act.totalPayableRub.toLocaleString("ru-RU")} ₽ сформирован!`,
-							"success",
-							5000,
-						);
-					}}
-				/>
+				<Suspense fallback={null}>
+					<TreatmentPlanPriceValidatorModal
+						isOpen={isPriceValidatorModalOpen}
+						onClose={() => setIsPriceValidatorModalOpen(false)}
+						planPayload={validationPayload}
+						stages={stages}
+						catalogPricelist={(catalog as any) || []}
+						onExportWorkOrder={(order) => {
+							showToast(
+								`Наряд-заказ №${order.orderNumber} на сумму ${order.totalPayableRub.toLocaleString("ru-RU")} ₽ выписан!`,
+								"success",
+								5000,
+							);
+						}}
+						onExportCompletedAct={(act) => {
+							showToast(
+								`Акт выполненных работ №${act.orderNumber} на сумму ${act.totalPayableRub.toLocaleString("ru-RU")} ₽ сформирован!`,
+								"success",
+								5000,
+							);
+						}}
+					/>
+				</Suspense>
 			)}
 
 			{/* Digital Signature Modal */}
 			{isSignModalOpen && (
-				<TreatmentPlanSignatureModal
-					isOpen={isSignModalOpen}
-					tier={currentTier}
-					patientName={patientName}
-					patientId={patientId}
-					doctorFullName={auth?.currentUser?.name || "Лечащий врач стоматолог"}
-					clinicName={dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ"}
-					onClose={() => setIsSignModalOpen(false)}
-					onSignedSuccess={(agreement) => {
-						setSignedAgreement(agreement);
-						setIsSignModalOpen(false);
-						showToast(
-							`План «${currentTier.title}» успешно подписан пациентом ${patientName}!`,
-							"success",
-							5000,
-						);
-					}}
-				/>
+				<Suspense fallback={null}>
+					<TreatmentPlanSignatureModal
+						isOpen={isSignModalOpen}
+						tier={currentTier}
+						patientName={patientName}
+						patientId={patientId}
+						doctorFullName={auth?.currentUser?.name || "Лечащий врач стоматолог"}
+						clinicName={dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ"}
+						onClose={() => setIsSignModalOpen(false)}
+						onSignedSuccess={(agreement) => {
+							setSignedAgreement(agreement);
+							setIsSignModalOpen(false);
+							showToast(
+								`План «${currentTier.title}» успешно подписан пациентом ${patientName}!`,
+								"success",
+								5000,
+							);
+						}}
+					/>
+				</Suspense>
 			)}
 
 			{/* Contract and Plan Specification Printable Modal */}
 			{isContractPrintOpen && (
-				<TreatmentPlanContractPrint
-					isOpen={isContractPrintOpen}
-					tier={currentTier}
-					stages={stages}
-					patientName={patientName}
-					patientId={patientId}
-					patientPhone={patientPhone}
-					patientBirthDate={patientBirthDate}
-					doctorFullName={auth?.currentUser?.name || "Лечащий врач стоматолог"}
-					clinicName={dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ"}
-					signedAgreement={signedAgreement}
-					discountPercent={discountPercent}
-					bonusPointsDeductedRub={loyaltyDeduction.appliedBonusRub}
-					planAgeDays={planAgeDays}
-					onClose={() => setIsContractPrintOpen(false)}
-				/>
+				<Suspense fallback={null}>
+					<TreatmentPlanContractPrint
+						isOpen={isContractPrintOpen}
+						tier={currentTier}
+						stages={stages}
+						patientName={patientName}
+						patientId={patientId}
+						patientPhone={patientPhone}
+						patientBirthDate={patientBirthDate}
+						doctorFullName={auth?.currentUser?.name || "Лечащий врач стоматолог"}
+						clinicName={dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ"}
+						signedAgreement={signedAgreement}
+						discountPercent={discountPercent}
+						bonusPointsDeductedRub={loyaltyDeduction.appliedBonusRub}
+						planAgeDays={planAgeDays}
+						onClose={() => setIsContractPrintOpen(false)}
+					/>
+				</Suspense>
 			)}
 
 			{/* Completed Works Act and Material Write-off Modal */}
 			{isActPrintOpen && completedActData && (
-				<TreatmentPlanCompletedActPrint
-					isOpen={isActPrintOpen}
-					actData={completedActData}
-					onClose={() => {
-						setIsActPrintOpen(false);
-						setSelectedActStage(null);
-					}}
-					onConfirmExecuteWriteOff={handleConfirmExecuteWriteOff}
-					isExecuting={isExecutingWriteOff}
-				/>
+				<Suspense fallback={null}>
+					<TreatmentPlanCompletedActPrint
+						isOpen={isActPrintOpen}
+						actData={completedActData}
+						onClose={() => {
+							setIsActPrintOpen(false);
+							setSelectedActStage(null);
+						}}
+						onConfirmExecuteWriteOff={handleConfirmExecuteWriteOff}
+						isExecuting={isExecutingWriteOff}
+					/>
+				</Suspense>
 			)}
 
 			{/* 54-FZ Fiscal Receipt & Split Payment Modal */}
 			{isFiscalModalOpen && (
-				<FiscalReceipt54FzModal
-					isOpen={isFiscalModalOpen}
-					items={currentTier.stages.flatMap((s) => s.items)}
-					patientId={patientId}
-					patientName={patientName}
-					patientPhone={dashboard?.activePatient?.phone || ""}
-					patientDepositRub={Math.round((dashboard?.activePatient?.balanceKopecks || 0) / 100)}
-					cashierFullName={auth?.currentUser?.name || "Кассир-администратор"}
-					clinicName={dashboard?.clinicSettings?.profile?.brandName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
-					onClose={() => setIsFiscalModalOpen(false)}
-					onReceiptFiscalized={(receiptNum) => {
-						showToast(`Чек №${receiptNum} сохранен в истории оплат`, "success");
-					}}
-				/>
+				<Suspense fallback={null}>
+					<FiscalReceipt54FzModal
+						isOpen={isFiscalModalOpen}
+						items={currentTier.stages.flatMap((s) => s.items)}
+						patientId={patientId}
+						patientName={patientName}
+						patientPhone={dashboard?.activePatient?.phone || ""}
+						patientDepositRub={Math.round((dashboard?.activePatient?.balanceKopecks || 0) / 100)}
+						cashierFullName={auth?.currentUser?.name || "Кассир-администратор"}
+						clinicName={dashboard?.clinicSettings?.profile?.brandName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
+						onClose={() => setIsFiscalModalOpen(false)}
+						onReceiptFiscalized={(receiptNum) => {
+							showToast(`Чек №${receiptNum} сохранен в истории оплат`, "success");
+						}}
+					/>
+				</Suspense>
 			)}
 
 			{/* Statutory Lab Work Order & Tracking Studio Modal */}
 			{isLabOrderModalOpen && (
-				<LabWorkOrderModal
-					isOpen={isLabOrderModalOpen}
-					onClose={() => setIsLabOrderModalOpen(false)}
-					patientId={patientId}
-					patientName={patientName}
-					patientChartNumber={
-						patient?.chartNumber || patient?.cardNumber || `К-${patientId.slice(0, 5)}`
-					}
-					doctorId={auth?.currentUser?.id || `doc-${Date.now()}`}
-					doctorName={auth?.currentUser?.name || "Лечащий врач"}
-					initialTeeth={
-						selectedLabTeeth && selectedLabTeeth.length > 0 ? selectedLabTeeth : orthopedicTeeth
-					}
-					initialOrder={
-						selectedActStage
-							? ({
-									id: `LAB-${patientId.slice(0, 4)}-${Date.now().toString().slice(-4)}`,
-									orderNumber: `НРД-${patientId.slice(0, 4)}-${Date.now().toString().slice(-4)}`,
-									patientId,
-									patientName,
-									doctorId: auth?.currentUser?.id || `doc-${Date.now()}`,
-									doctorName: auth?.currentUser?.name || "Лечащий врач",
-									selectedTeeth:
-										selectedLabTeeth && selectedLabTeeth.length > 0
-											? selectedLabTeeth
-											: orthopedicTeeth,
-									prostheticTypeId: "crown_zirconia_monolithic",
-									materialId: "zirconia_katana_ml",
-									shadeSystem: "classical",
-									shadeCode: "A2",
-									stumpShadeCode: "ND2",
-									currentStage: "in_progress",
-									completedStages: ["order_placed"],
-									patientPriceRub: selectedActStage.totalRub,
-									costPriceRub: Math.round(selectedActStage.totalRub * 0.4),
-									createdAt: new Date().toISOString(),
-									updatedAt: new Date().toISOString(),
-									stagesLog: [],
-									clinicNotes: `Оформлено по этапу №${selectedActStage.stageNumber} плана «${currentTier.title}». Зафиксированная стоимость: ${selectedActStage.totalRub.toLocaleString("ru-RU")} ₽.`,
-								} as any)
-							: null
-					}
-					onSaveOrder={(order) => {
-						showToast(
-							`Наряд-заказ №${order.orderNumber} в зуботехническую лабораторию на сумму ${order.financials.patientPriceTotalRub.toLocaleString("ru-RU")} ₽ успешно сохранен!`,
-							"success",
-							5000,
-						);
-					}}
-				/>
+				<Suspense fallback={null}>
+					<LabWorkOrderModal
+						isOpen={isLabOrderModalOpen}
+						onClose={() => setIsLabOrderModalOpen(false)}
+						patientId={patientId}
+						patientName={patientName}
+						patientChartNumber={
+							patient?.chartNumber || patient?.cardNumber || `К-${patientId.slice(0, 5)}`
+						}
+						doctorId={auth?.currentUser?.id || `doc-${Date.now()}`}
+						doctorName={auth?.currentUser?.name || "Лечащий врач"}
+						initialTeeth={
+							selectedLabTeeth && selectedLabTeeth.length > 0 ? selectedLabTeeth : orthopedicTeeth
+						}
+						initialOrder={
+							selectedActStage
+								? ({
+										id: `LAB-${patientId.slice(0, 4)}-${Date.now().toString().slice(-4)}`,
+										orderNumber: `НРД-${patientId.slice(0, 4)}-${Date.now().toString().slice(-4)}`,
+										patientId,
+										patientName,
+										doctorId: auth?.currentUser?.id || `doc-${Date.now()}`,
+										doctorName: auth?.currentUser?.name || "Лечащий врач",
+										selectedTeeth:
+											selectedLabTeeth && selectedLabTeeth.length > 0
+												? selectedLabTeeth
+												: orthopedicTeeth,
+										prostheticTypeId: "crown_zirconia_monolithic",
+										materialId: "zirconia_katana_ml",
+										shadeSystem: "classical",
+										shadeCode: "A2",
+										stumpShadeCode: "ND2",
+										currentStage: "in_progress",
+										completedStages: ["order_placed"],
+										patientPriceRub: selectedActStage.totalRub,
+										costPriceRub: Math.round(selectedActStage.totalRub * 0.4),
+										createdAt: new Date().toISOString(),
+										updatedAt: new Date().toISOString(),
+										stagesLog: [],
+										clinicNotes: `Оформлено по этапу №${selectedActStage.stageNumber} плана «${currentTier.title}». Зафиксированная стоимость: ${selectedActStage.totalRub.toLocaleString("ru-RU")} ₽.`,
+									} as any)
+								: null
+						}
+						onSaveOrder={(order) => {
+							showToast(
+								`Наряд-заказ №${order.orderNumber} в зуботехническую лабораторию на сумму ${order.financials.patientPriceTotalRub.toLocaleString("ru-RU")} ₽ успешно сохранен!`,
+								"success",
+								5000,
+							);
+						}}
+					/>
+				</Suspense>
 			)}
 
 			{/* Fast Invoice & Work Order Generation Modal (Feature #41 PriceGuard) */}
 			{isInvoiceModalOpen && (
-				<InvoiceGenerationModal
-					isOpen={isInvoiceModalOpen}
-					onClose={() => setIsInvoiceModalOpen(false)}
-					patientId={patientId}
-					patientName={patientName}
-					patientPhone={patientPhone}
-					patientBalanceRub={patientBalanceRub}
-					planId={`PLAN-${patientId.slice(0, 6).toUpperCase()}`}
-					planNumber={`ПЛАН-№${patientId.slice(0, 4)}`}
-					planTitle={currentTier.title}
-					planCreatedAtIso={new Date().toISOString()}
-					approvedAtIso={signedAgreement ? new Date().toISOString() : undefined}
-					isSignedWithPatient={Boolean(signedAgreement)}
-					doctorFullName={auth?.currentUser?.name || "Лечащий врач"}
-					doctorUserId={auth?.currentUser?.id || undefined}
-					planItems={stages.flatMap((s) => s.items)}
-					onInvoiceCreated={(inv) => {
-						const allItems = stages.flatMap((s) => s.items);
-						const grossTotalRub = allItems.reduce(
-							(acc, it) => acc + it.unitPriceRub * it.quantity,
-							0,
-						);
-						const discountRub = allItems.reduce((acc, it) => acc + it.discountRub, 0);
-						const netTotalRub = inv.totalNetRub ?? loyaltyDeduction.netPayableRub;
+				<Suspense fallback={null}>
+					<InvoiceGenerationModal
+						isOpen={isInvoiceModalOpen}
+						onClose={() => setIsInvoiceModalOpen(false)}
+						patientId={patientId}
+						patientName={patientName}
+						patientPhone={patientPhone}
+						patientBalanceRub={patientBalanceRub}
+						planId={`PLAN-${patientId.slice(0, 6).toUpperCase()}`}
+						planNumber={`ПЛАН-№${patientId.slice(0, 4)}`}
+						planTitle={currentTier.title}
+						planCreatedAtIso={new Date().toISOString()}
+						approvedAtIso={signedAgreement ? new Date().toISOString() : undefined}
+						isSignedWithPatient={Boolean(signedAgreement)}
+						doctorFullName={auth?.currentUser?.name || "Лечащий врач"}
+						doctorUserId={auth?.currentUser?.id || undefined}
+						planItems={stages.flatMap((s) => s.items)}
+						onInvoiceCreated={(inv) => {
+							const allItems = stages.flatMap((s) => s.items);
+							const grossTotalRub = allItems.reduce(
+								(acc, it) => acc + it.unitPriceRub * it.quantity,
+								0,
+							);
+							const discountRub = allItems.reduce((acc, it) => acc + it.discountRub, 0);
+							const netTotalRub = inv.totalNetRub ?? loyaltyDeduction.netPayableRub;
 
-						const exportData: CashierInvoiceExportData = {
-							patientId,
-							patientName,
-							invoiceId: inv.invoiceId,
-							invoiceNumber: inv.invoiceNumber,
-							items: allItems,
-							grossTotalRub,
-							discountRub,
-							netTotalRub,
-							netTotalKopecks: Math.round(netTotalRub * 100),
-							notes: `Выписан счет №${inv.invoiceNumber || ""} по плану «${currentTier.title}»`,
-							createdAtIso: new Date().toISOString(),
-						};
+							const exportData: CashierInvoiceExportData = {
+								patientId,
+								patientName,
+								invoiceId: inv.invoiceId,
+								invoiceNumber: inv.invoiceNumber,
+								items: allItems,
+								grossTotalRub,
+								discountRub,
+								netTotalRub,
+								netTotalKopecks: Math.round(netTotalRub * 100),
+								notes: `Выписан счет №${inv.invoiceNumber || ""} по плану «${currentTier.title}»`,
+								createdAtIso: new Date().toISOString(),
+							};
 
-						if (onExportToCashier) {
-							onExportToCashier(exportData);
-						}
+							if (onExportToCashier) {
+								onExportToCashier(exportData);
+							}
 
-						showToast(`Документ ${inv.invoiceNumber} успешно сформирован и передан в кассу!`, "success", 4000);
-					}}
-				/>
+							showToast(`Документ ${inv.invoiceNumber} успешно сформирован и передан в кассу!`, "success", 4000);
+						}}
+					/>
+				</Suspense>
 			)}
 
 
 			{/* Bank Installment QR Financing Modal */}
 			{isInstallmentModalOpen && selectedInstallmentStage && (
-				<BankInstallmentQrModal
-					isOpen={isInstallmentModalOpen}
-					onClose={() => {
-						setIsInstallmentModalOpen(false);
-						setSelectedInstallmentStage(null);
-					}}
-					stageTitle={`Этап №${selectedInstallmentStage.stageNumber}: ${selectedInstallmentStage.title}`}
-					stageNumber={selectedInstallmentStage.stageNumber}
-					stageAmountKopecks={selectedInstallmentStage.totalKopecks}
-					patientId={patientId}
-					patientName={patientName}
-					patientPhone={patientPhone}
-					clinicName={dashboard?.clinicSettings?.profile?.brandName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
-					clinicInn={dashboard?.clinicSettings?.requisites?.inn || ""}
-					planId={`PLAN-${patientId.slice(0, 6).toUpperCase()}`}
-					onInstallmentApproved={(approval) => {
-						showToast(
-							`Рассрочка на сумму ${selectedInstallmentStage.totalRub.toLocaleString("ru-RU")} ₽ одобрена банком!`,
-							"success",
-							5000,
-						);
-					}}
-				/>
+				<Suspense fallback={null}>
+					<BankInstallmentQrModal
+						isOpen={isInstallmentModalOpen}
+						onClose={() => {
+							setIsInstallmentModalOpen(false);
+							setSelectedInstallmentStage(null);
+						}}
+						stageTitle={`Этап №${selectedInstallmentStage.stageNumber}: ${selectedInstallmentStage.title}`}
+						stageNumber={selectedInstallmentStage.stageNumber}
+						stageAmountKopecks={selectedInstallmentStage.totalKopecks}
+						patientId={patientId}
+						patientName={patientName}
+						patientPhone={patientPhone}
+						clinicName={dashboard?.clinicSettings?.profile?.brandName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
+						clinicInn={dashboard?.clinicSettings?.requisites?.inn || ""}
+						planId={`PLAN-${patientId.slice(0, 6).toUpperCase()}`}
+						onInstallmentApproved={(approval) => {
+							showToast(
+								`Рассрочка на сумму ${selectedInstallmentStage.totalRub.toLocaleString("ru-RU")} ₽ одобрена банком!`,
+								"success",
+								5000,
+							);
+						}}
+					/>
+				</Suspense>
 			)}
 
 			{/* AI Audit & 3-Tier Chairside Presenter Modal */}
 			{isPresenterModalOpen && (
-				<TreatmentPlanPresenterModal
-					isOpen={isPresenterModalOpen}
-					onClose={() => setIsPresenterModalOpen(false)}
-					patientId={patientId}
-					patientName={patientName}
-					patientPhone={dashboard?.activePatient?.phone || ""}
-					doctorFullName={auth?.currentUser?.name || "Лечащий врач"}
-					teeth={teethData}
-					onSelectPlan={(plan) => {
-						showToast(`Выбран план: ${plan.title} (${plan.totalRub.toLocaleString("ru-RU")} ₽)`, "success");
-					}}
-				/>
+				<Suspense fallback={null}>
+					<TreatmentPlanPresenterModal
+						isOpen={isPresenterModalOpen}
+						onClose={() => setIsPresenterModalOpen(false)}
+						patientId={patientId}
+						patientName={patientName}
+						patientPhone={dashboard?.activePatient?.phone || ""}
+						doctorFullName={auth?.currentUser?.name || "Лечащий врач"}
+						teeth={teethData}
+						onSelectPlan={(plan) => {
+							showToast(`Выбран план: ${plan.title} (${plan.totalRub.toLocaleString("ru-RU")} ₽)`, "success");
+						}}
+					/>
+				</Suspense>
 			)}
 
 			{/* Curator Plan Assignment Modal */}
 			{isCuratorModalOpen && (
-				<CuratorPlanAssignmentModal
-					isOpen={isCuratorModalOpen}
-					onClose={() => setIsCuratorModalOpen(false)}
-					patientId={patientId}
-					patientName={patientName}
-					treatmentPlanId={`PLAN-${patientId.slice(0, 6).toUpperCase()}`}
-					treatmentPlanTitle={`${currentTier.title} (${grandTotalRub.toLocaleString("ru-RU")} ₽)`}
-					currentCuratorId={patient?.administrativeProfile?.curatorId || undefined}
-					currentStage={patient?.administrativeProfile?.curatorFunnelStage || "consultation"}
-					onAssigned={(assigned) => {
-						showToast(`Куратор ${assigned.curatorFullName} успешно закреплен!`, "success");
-					}}
-				/>
+				<Suspense fallback={null}>
+					<CuratorPlanAssignmentModal
+						isOpen={isCuratorModalOpen}
+						onClose={() => setIsCuratorModalOpen(false)}
+						patientId={patientId}
+						patientName={patientName}
+						treatmentPlanId={`PLAN-${patientId.slice(0, 6).toUpperCase()}`}
+						treatmentPlanTitle={`${currentTier.title} (${grandTotalRub.toLocaleString("ru-RU")} ₽)`}
+						currentCuratorId={patient?.administrativeProfile?.curatorId || undefined}
+						currentStage={patient?.administrativeProfile?.curatorFunnelStage || "consultation"}
+						onAssigned={(assigned) => {
+							showToast(`Куратор ${assigned.curatorFullName} успешно закреплен!`, "success");
+						}}
+					/>
+				</Suspense>
 			)}
 		</div>
 	);
