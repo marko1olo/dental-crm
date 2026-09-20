@@ -844,7 +844,6 @@ export async function saveOfflineDraft<T = unknown>(
 					reject(request.error ?? new Error("Failed to save draft to IDB"));
 			});
 		});
-		saveLocalStorageDraft(draft);
 		return draft;
 	} catch (err) {
 		logger.warn(
@@ -1533,7 +1532,6 @@ export async function savePatientClinicalCache<T = unknown>(
 	};
 
 	inMemoryClinicalCacheMap.set(cacheKey, record as PatientClinicalCacheRecord<unknown>);
-	saveLocalStorageClinicalCache(record);
 
 	try {
 		await withIdbTransactionRetry(async (db) => {
@@ -1548,6 +1546,7 @@ export async function savePatientClinicalCache<T = unknown>(
 		});
 	} catch (err) {
 		logger.warn(`[OfflineStorage] Failed to put clinical cache in IDB for ${cacheKey}`, err);
+		saveLocalStorageClinicalCache(record);
 	}
 	return record;
 }
@@ -1558,6 +1557,12 @@ export async function savePatientClinicalCache<T = unknown>(
 export async function getPatientClinicalCache<T = unknown>(
 	cacheKey: string,
 ): Promise<T | null> {
+	// 1. L1 In-Memory fast RAM hit (0 ms, zero 5400 RPM HDD disk seek)
+	const memRecord = inMemoryClinicalCacheMap.get(cacheKey) as PatientClinicalCacheRecord<T> | undefined;
+	if (memRecord?.data !== undefined && memRecord?.data !== null) {
+		return memRecord.data;
+	}
+
 	let idbResult: T | null = null;
 	try {
 		idbResult = await withIdbTransactionRetry(async (db) => {
@@ -1578,16 +1583,24 @@ export async function getPatientClinicalCache<T = unknown>(
 	}
 
 	if (idbResult !== null && idbResult !== undefined) {
+		inMemoryClinicalCacheMap.set(cacheKey, {
+			cacheKey,
+			entityKind: "clinical",
+			entityId: cacheKey,
+			data: idbResult,
+			cachedAtMs: Date.now(),
+			cachedAtIso: new Date().toISOString(),
+		} as PatientClinicalCacheRecord<unknown>);
 		return idbResult;
 	}
 
 	const localRecord = getLocalStorageClinicalCache<T>(cacheKey);
 	if (localRecord?.data !== undefined && localRecord?.data !== null) {
+		inMemoryClinicalCacheMap.set(cacheKey, localRecord as PatientClinicalCacheRecord<unknown>);
 		return localRecord.data;
 	}
 
-	const memRecord = inMemoryClinicalCacheMap.get(cacheKey) as PatientClinicalCacheRecord<T> | undefined;
-	return memRecord?.data ?? null;
+	return null;
 }
 
 /**
@@ -1672,7 +1685,6 @@ export async function cacheActiveSchedule(params: {
 	};
 
 	inMemorySchedulesMap.set(scheduleKey, record);
-	saveToLocalStorageSafe(`${LOCAL_STORAGE_SCHEDULES_PREFIX}${scheduleKey}`, JSON.stringify(record));
 
 	try {
 		await withIdbTransactionRetry(async (db) => {
@@ -1687,6 +1699,7 @@ export async function cacheActiveSchedule(params: {
 		});
 	} catch (err) {
 		logger.warn(`[OfflineStorage] Failed to put schedule in IDB for ${scheduleKey}`, err);
+		saveToLocalStorageSafe(`${LOCAL_STORAGE_SCHEDULES_PREFIX}${scheduleKey}`, JSON.stringify(record));
 	}
 
 	return record;
@@ -1698,6 +1711,14 @@ export async function getCachedActiveSchedule(
 ): Promise<CachedActiveSchedule | null> {
 	const orgKey = organizationId || "default";
 	const scheduleKey = `schedule_${orgKey}_${date}`;
+
+	// 1. Fast L1 In-Memory RAM hit (0 ms, zero 5400 RPM HDD seek)
+	const mem = inMemorySchedulesMap.get(scheduleKey);
+	if (mem) {
+		if (!organizationId || !mem.organizationId || mem.organizationId === organizationId) {
+			return mem;
+		}
+	}
 
 	let idbResult: CachedActiveSchedule | null = null;
 	try {
@@ -1713,17 +1734,24 @@ export async function getCachedActiveSchedule(
 		});
 	} catch {}
 
-	if (idbResult) return idbResult;
+	if (idbResult) {
+		inMemorySchedulesMap.set(scheduleKey, idbResult);
+		return idbResult;
+	}
 
 	const rawLocal = getFromLocalStorageSafe(`${LOCAL_STORAGE_SCHEDULES_PREFIX}${scheduleKey}`);
 	if (rawLocal) {
 		try {
 			const parsed = JSON.parse(rawLocal);
-			if (parsed && typeof parsed === "object") return parsed as CachedActiveSchedule;
+			if (parsed && typeof parsed === "object") {
+				const record = parsed as CachedActiveSchedule;
+				inMemorySchedulesMap.set(scheduleKey, record);
+				return record;
+			}
 		} catch {}
 	}
 
-	return inMemorySchedulesMap.get(scheduleKey) ?? null;
+	return null;
 }
 
 export async function listCachedActiveSchedules(
@@ -1809,7 +1837,6 @@ export async function cachePatientCard(
 	};
 
 	inMemoryPatientsMap.set(card.patientId, record);
-	saveToLocalStorageSafe(`${LOCAL_STORAGE_PATIENTS_PREFIX}${card.patientId}`, JSON.stringify(record));
 
 	try {
 		await withIdbTransactionRetry(async (db) => {
@@ -1824,6 +1851,7 @@ export async function cachePatientCard(
 		});
 	} catch (err) {
 		logger.warn(`[OfflineStorage] Failed to put patient card in IDB for ${card.patientId}`, err);
+		saveToLocalStorageSafe(`${LOCAL_STORAGE_PATIENTS_PREFIX}${card.patientId}`, JSON.stringify(record));
 	}
 
 	return record;
@@ -1833,6 +1861,14 @@ export async function getCachedPatientCard(
 	patientId: string,
 	organizationId?: string | undefined,
 ): Promise<CachedPatientCard | null> {
+	// 1. Fast L1 In-Memory RAM hit (0 ms, zero 5400 RPM HDD seek)
+	const mem = inMemoryPatientsMap.get(patientId);
+	if (mem) {
+		if (!organizationId || !mem.organizationId || mem.organizationId === organizationId) {
+			return mem;
+		}
+	}
+
 	let idbResult: CachedPatientCard | null = null;
 	try {
 		idbResult = await withIdbTransactionRetry(async (db) => {
@@ -1849,6 +1885,7 @@ export async function getCachedPatientCard(
 
 	if (idbResult) {
 		if (!organizationId || !idbResult.organizationId || idbResult.organizationId === organizationId) {
+			inMemoryPatientsMap.set(patientId, idbResult);
 			return idbResult;
 		}
 	}
@@ -1859,17 +1896,11 @@ export async function getCachedPatientCard(
 			const parsed = JSON.parse(rawLocal) as CachedPatientCard;
 			if (parsed && typeof parsed === "object") {
 				if (!organizationId || !parsed.organizationId || parsed.organizationId === organizationId) {
+					inMemoryPatientsMap.set(patientId, parsed);
 					return parsed;
 				}
 			}
 		} catch {}
-	}
-
-	const mem = inMemoryPatientsMap.get(patientId);
-	if (mem) {
-		if (!organizationId || !mem.organizationId || mem.organizationId === organizationId) {
-			return mem;
-		}
 	}
 
 	return null;
@@ -1945,7 +1976,6 @@ export async function cacheOdontogramState(params: {
 	};
 
 	inMemoryOdontogramsMap.set(params.patientId, record);
-	saveToLocalStorageSafe(`${LOCAL_STORAGE_ODONTOGRAM_PREFIX}${params.patientId}`, JSON.stringify(record));
 
 	try {
 		await withIdbTransactionRetry(async (db) => {
@@ -1960,6 +1990,7 @@ export async function cacheOdontogramState(params: {
 		});
 	} catch (err) {
 		logger.warn(`[OfflineStorage] Failed to put odontogram in IDB for ${params.patientId}`, err);
+		saveToLocalStorageSafe(`${LOCAL_STORAGE_ODONTOGRAM_PREFIX}${params.patientId}`, JSON.stringify(record));
 	}
 
 	return record;
@@ -1969,6 +2000,14 @@ export async function getCachedOdontogramState(
 	patientId: string,
 	organizationId?: string | undefined,
 ): Promise<CachedOdontogram | null> {
+	// 1. Fast L1 In-Memory RAM hit (0 ms, zero 5400 RPM HDD seek)
+	const mem = inMemoryOdontogramsMap.get(patientId);
+	if (mem) {
+		if (!organizationId || !mem.organizationId || mem.organizationId === organizationId) {
+			return mem;
+		}
+	}
+
 	let idbResult: CachedOdontogram | null = null;
 	try {
 		idbResult = await withIdbTransactionRetry(async (db) => {
@@ -1985,6 +2024,7 @@ export async function getCachedOdontogramState(
 
 	if (idbResult) {
 		if (!organizationId || !idbResult.organizationId || idbResult.organizationId === organizationId) {
+			inMemoryOdontogramsMap.set(patientId, idbResult);
 			return idbResult;
 		}
 	}
@@ -1995,17 +2035,11 @@ export async function getCachedOdontogramState(
 			const parsed = JSON.parse(rawLocal) as CachedOdontogram;
 			if (parsed && typeof parsed === "object") {
 				if (!organizationId || !parsed.organizationId || parsed.organizationId === organizationId) {
+					inMemoryOdontogramsMap.set(patientId, parsed);
 					return parsed;
 				}
 			}
 		} catch {}
-	}
-
-	const mem = inMemoryOdontogramsMap.get(patientId);
-	if (mem) {
-		if (!organizationId || !mem.organizationId || mem.organizationId === organizationId) {
-			return mem;
-		}
 	}
 
 	return null;
@@ -2084,7 +2118,6 @@ export async function cachePriceList804n(
 	};
 
 	inMemoryPriceListsMap.set(catalogKey, record);
-	saveToLocalStorageSafe(`${LOCAL_STORAGE_PRICELIST_PREFIX}${catalogKey}`, JSON.stringify(record));
 
 	try {
 		await withIdbTransactionRetry(async (db) => {
@@ -2099,6 +2132,7 @@ export async function cachePriceList804n(
 		});
 	} catch (err) {
 		logger.warn(`[OfflineStorage] Failed to put pricelist in IDB for ${catalogKey}`, err);
+		saveToLocalStorageSafe(`${LOCAL_STORAGE_PRICELIST_PREFIX}${catalogKey}`, JSON.stringify(record));
 	}
 
 	return record;
@@ -2109,6 +2143,10 @@ export async function getCachedPriceList804n(
 ): Promise<CachedPriceList804n | null> {
 	const orgKey = organizationId || "default";
 	const catalogKey = `pricelist_804n_${orgKey}`;
+
+	// 1. Fast L1 In-Memory RAM hit (0 ms, zero 5400 RPM HDD seek)
+	const mem = inMemoryPriceListsMap.get(catalogKey);
+	if (mem) return mem;
 
 	let idbResult: CachedPriceList804n | null = null;
 	try {
@@ -2124,17 +2162,23 @@ export async function getCachedPriceList804n(
 		});
 	} catch {}
 
-	if (idbResult) return idbResult;
+	if (idbResult) {
+		inMemoryPriceListsMap.set(catalogKey, idbResult);
+		return idbResult;
+	}
 
 	const rawLocal = getFromLocalStorageSafe(`${LOCAL_STORAGE_PRICELIST_PREFIX}${catalogKey}`);
 	if (rawLocal) {
 		try {
 			const parsed = JSON.parse(rawLocal) as CachedPriceList804n;
-			if (parsed && typeof parsed === "object") return parsed;
+			if (parsed && typeof parsed === "object") {
+				inMemoryPriceListsMap.set(catalogKey, parsed);
+				return parsed;
+			}
 		} catch {}
 	}
 
-	return inMemoryPriceListsMap.get(catalogKey) ?? null;
+	return null;
 }
 
 export async function searchCachedPriceList804n(
@@ -2176,7 +2220,6 @@ export async function cacheIcd10Dictionary(
 	};
 
 	inMemoryIcd10Map.set(dictionaryKey, record);
-	saveToLocalStorageSafe(`${LOCAL_STORAGE_ICD10_PREFIX}${dictionaryKey}`, JSON.stringify(record));
 
 	try {
 		await withIdbTransactionRetry(async (db) => {
@@ -2191,6 +2234,7 @@ export async function cacheIcd10Dictionary(
 		});
 	} catch (err) {
 		logger.warn(`[OfflineStorage] Failed to put icd10 dictionary in IDB`, err);
+		saveToLocalStorageSafe(`${LOCAL_STORAGE_ICD10_PREFIX}${dictionaryKey}`, JSON.stringify(record));
 	}
 
 	return record;
@@ -2199,6 +2243,10 @@ export async function cacheIcd10Dictionary(
 export async function getCachedIcd10Dictionary(
 	dictionaryKey = DEFAULT_ICD10_DICTIONARY_ID,
 ): Promise<CachedIcd10Dictionary | null> {
+	// 1. Fast L1 In-Memory RAM hit (0 ms, zero 5400 RPM HDD seek)
+	const mem = inMemoryIcd10Map.get(dictionaryKey);
+	if (mem) return mem;
+
 	let idbResult: CachedIcd10Dictionary | null = null;
 	try {
 		idbResult = await withIdbTransactionRetry(async (db) => {
@@ -2213,17 +2261,23 @@ export async function getCachedIcd10Dictionary(
 		});
 	} catch {}
 
-	if (idbResult) return idbResult;
+	if (idbResult) {
+		inMemoryIcd10Map.set(dictionaryKey, idbResult);
+		return idbResult;
+	}
 
 	const rawLocal = getFromLocalStorageSafe(`${LOCAL_STORAGE_ICD10_PREFIX}${dictionaryKey}`);
 	if (rawLocal) {
 		try {
 			const parsed = JSON.parse(rawLocal) as CachedIcd10Dictionary;
-			if (parsed && typeof parsed === "object") return parsed;
+			if (parsed && typeof parsed === "object") {
+				inMemoryIcd10Map.set(dictionaryKey, parsed);
+				return parsed;
+			}
 		} catch {}
 	}
 
-	return inMemoryIcd10Map.get(dictionaryKey) ?? null;
+	return null;
 }
 
 export async function searchCachedIcd10Dictionary(
@@ -2309,6 +2363,164 @@ export async function enqueueServiceAdditionMutation(
 		organizationId: input.organizationId,
 		authorUserId: input.authorUserId,
 	});
+}
+
+/**
+ * 0-Seek RAM Pre-warming for slow laptop HDDs (5400 RPM / low-spec PCs).
+ * Asynchronously loads pending drafts, active schedules, price lists, and dictionaries
+ * into L1 in-memory Maps during browser idle. Once pre-warmed, subsequent queries
+ * execute in 0ms without disk I/O or IndexedDB transaction overhead.
+ */
+let isPrewarmComplete = false;
+let prewarmPromise: Promise<void> | null = null;
+
+export function prewarmOfflineCachesToRam(): Promise<void> {
+	if (isPrewarmComplete) {
+		return Promise.resolve();
+	}
+	if (prewarmPromise) {
+		return prewarmPromise;
+	}
+
+	prewarmPromise = (async () => {
+		try {
+			if (!isIndexedDbAvailable()) return;
+			const db = await openOfflineOutboxDb();
+
+			// 1. Pre-warm drafts
+			if (db.objectStoreNames.contains(DRAFTS_STORE_NAME)) {
+				try {
+					const tx = db.transaction(DRAFTS_STORE_NAME, "readonly");
+					const store = tx.objectStore(DRAFTS_STORE_NAME);
+					const req = store.getAll();
+					const drafts = await new Promise<OfflineDraft<unknown>[]>((resolve, reject) => {
+						req.onsuccess = () => resolve((req.result as OfflineDraft<unknown>[]) || []);
+						req.onerror = () => reject(req.error);
+					});
+					for (const draft of drafts) {
+						if (draft && draft.draftKey && !inMemoryDraftsMap.has(draft.draftKey)) {
+							inMemoryDraftsMap.set(draft.draftKey, draft);
+						}
+					}
+				} catch (err) {
+					logger.warn("[OfflineStorage] Prewarm drafts warning:", err);
+				}
+			}
+
+			// 2. Pre-warm active schedules
+			if (db.objectStoreNames.contains(SCHEDULES_CACHE_STORE_NAME)) {
+				try {
+					const tx = db.transaction(SCHEDULES_CACHE_STORE_NAME, "readonly");
+					const store = tx.objectStore(SCHEDULES_CACHE_STORE_NAME);
+					const req = store.getAll();
+					const schedules = await new Promise<CachedActiveSchedule[]>((resolve, reject) => {
+						req.onsuccess = () => resolve((req.result as CachedActiveSchedule[]) || []);
+						req.onerror = () => reject(req.error);
+					});
+					for (const sched of schedules) {
+						if (sched && sched.scheduleKey && !inMemorySchedulesMap.has(sched.scheduleKey)) {
+							inMemorySchedulesMap.set(sched.scheduleKey, sched);
+						}
+					}
+				} catch (err) {
+					logger.warn("[OfflineStorage] Prewarm schedules warning:", err);
+				}
+			}
+
+			// 3. Pre-warm price lists
+			if (db.objectStoreNames.contains(PRICELIST_CACHE_STORE_NAME)) {
+				try {
+					const tx = db.transaction(PRICELIST_CACHE_STORE_NAME, "readonly");
+					const store = tx.objectStore(PRICELIST_CACHE_STORE_NAME);
+					const req = store.getAll();
+					const priceLists = await new Promise<CachedPriceList804n[]>((resolve, reject) => {
+						req.onsuccess = () => resolve((req.result as CachedPriceList804n[]) || []);
+						req.onerror = () => reject(req.error);
+					});
+					for (const pl of priceLists) {
+						if (pl && pl.catalogKey && !inMemoryPriceListsMap.has(pl.catalogKey)) {
+							inMemoryPriceListsMap.set(pl.catalogKey, pl);
+						}
+					}
+				} catch (err) {
+					logger.warn("[OfflineStorage] Prewarm price lists warning:", err);
+				}
+			}
+
+			// 4. Pre-warm ICD-10 dictionary
+			if (db.objectStoreNames.contains(ICD10_CACHE_STORE_NAME)) {
+				try {
+					const tx = db.transaction(ICD10_CACHE_STORE_NAME, "readonly");
+					const store = tx.objectStore(ICD10_CACHE_STORE_NAME);
+					const req = store.getAll();
+					const icd10List = await new Promise<CachedIcd10Dictionary[]>((resolve, reject) => {
+						req.onsuccess = () => resolve((req.result as CachedIcd10Dictionary[]) || []);
+						req.onerror = () => reject(req.error);
+					});
+					for (const dict of icd10List) {
+						if (dict && dict.dictionaryKey && !inMemoryIcd10Map.has(dict.dictionaryKey)) {
+							inMemoryIcd10Map.set(dict.dictionaryKey, dict);
+						}
+					}
+				} catch (err) {
+					logger.warn("[OfflineStorage] Prewarm ICD-10 warning:", err);
+				}
+			}
+
+			// 5. Pre-warm patients cache
+			if (db.objectStoreNames.contains(PATIENTS_CACHE_STORE_NAME)) {
+				try {
+					const tx = db.transaction(PATIENTS_CACHE_STORE_NAME, "readonly");
+					const store = tx.objectStore(PATIENTS_CACHE_STORE_NAME);
+					const req = store.getAll();
+					const patients = await new Promise<CachedPatientCard[]>((resolve, reject) => {
+						req.onsuccess = () => resolve((req.result as CachedPatientCard[]) || []);
+						req.onerror = () => reject(req.error);
+					});
+					for (const pt of patients) {
+						if (pt && pt.patientId && !inMemoryPatientsMap.has(pt.patientId)) {
+							inMemoryPatientsMap.set(pt.patientId, pt);
+						}
+					}
+				} catch (err) {
+					logger.warn("[OfflineStorage] Prewarm patients warning:", err);
+				}
+			}
+
+			// 6. Pre-warm odontograms cache
+			if (db.objectStoreNames.contains(ODONTOGRAM_CACHE_STORE_NAME)) {
+				try {
+					const tx = db.transaction(ODONTOGRAM_CACHE_STORE_NAME, "readonly");
+					const store = tx.objectStore(ODONTOGRAM_CACHE_STORE_NAME);
+					const req = store.getAll();
+					const odontograms = await new Promise<CachedOdontogram[]>((resolve, reject) => {
+						req.onsuccess = () => resolve((req.result as CachedOdontogram[]) || []);
+						req.onerror = () => reject(req.error);
+					});
+					for (const od of odontograms) {
+						if (od && od.patientId && !inMemoryOdontogramsMap.has(od.patientId)) {
+							inMemoryOdontogramsMap.set(od.patientId, od);
+						}
+					}
+				} catch (err) {
+					logger.warn("[OfflineStorage] Prewarm odontograms warning:", err);
+				}
+			}
+
+			isPrewarmComplete = true;
+			logger.info("[OfflineStorage] 0-seek L1 RAM pre-warming completed successfully.");
+		} catch (err) {
+			logger.warn("[OfflineStorage] Prewarm general error:", err);
+		} finally {
+			prewarmPromise = null;
+		}
+	})();
+
+	return prewarmPromise;
+}
+
+export function isOfflineCachePrewarmed(): boolean {
+	return isPrewarmComplete;
 }
 
 

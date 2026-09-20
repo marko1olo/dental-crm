@@ -54,6 +54,10 @@ import {
 	TwainSensorEmulator,
 	UsbComScannerEmulator,
 } from "../services/hardware/hardwareEmulators.js";
+import {
+	FiscalReceiptQueueManager,
+	isHardwareScanBurst,
+} from "../services/hardware/index.js";
 
 describe("Multi-Platform Hardware Bridge & IPC Suite", () => {
 	const originalWindow = globalThis.window;
@@ -514,5 +518,79 @@ describe("Multi-Platform Hardware Bridge & IPC Suite", () => {
 			{ key: "0", timestamp: 1350 },
 		];
 		assert.equal(isUsbHidScanBurst(humanKeystrokes, 35, 3), false);
+	});
+
+	it("11. USB HID 2D Scanner jitter tolerance on slow CPUs (5400 RPM / GC pauses)", () => {
+		// A 10-char DataMatrix burst with one 85ms hiccup due to CPU pause, but average speed is ~22ms/char
+		const burstWithJitter = [
+			{ key: "0", timestamp: 1000 },
+			{ key: "1", timestamp: 1015 },
+			{ key: "0", timestamp: 1030 },
+			{ key: "4", timestamp: 1045 },
+			{ key: "6", timestamp: 1130 }, // 85ms gap due to CPU spike
+			{ key: "7", timestamp: 1145 },
+			{ key: "8", timestamp: 1160 },
+			{ key: "9", timestamp: 1175 },
+			{ key: "1", timestamp: 1190 },
+			{ key: "2", timestamp: 1205 },
+		];
+		// Total duration: 205ms for 10 keys (avg ~22.7ms), charCount >= 8, gap <= 140ms
+		assert.equal(isUsbHidScanBurst(burstWithJitter), true);
+		assert.equal(isHardwareScanBurst(burstWithJitter), true);
+
+		// Slow human typing 10 characters at 250ms interval (avg 250ms)
+		const slowTyping = Array.from({ length: 10 }, (_, i) => ({
+			key: String(i),
+			timestamp: 1000 + i * 250,
+		}));
+		assert.equal(isUsbHidScanBurst(slowTyping), false);
+		assert.equal(isHardwareScanBurst(slowTyping), false);
+	});
+
+	it("12. FiscalReceiptQueueManager offline storage persistence and reload", () => {
+		FiscalReceiptQueueManager.clearQueue();
+
+		const testPayload = {
+			orderId: "ORD-TEST-OFFLINE-001",
+			patientName: "Иванов Иван",
+			items: [
+				{
+					name: "Консультация стоматолога",
+					price: 1500,
+					quantity: 1,
+					amount: 1500,
+					vatType: "none" as const,
+					paymentMethod: "full_payment" as const,
+					paymentSubject: "service" as const,
+				},
+			],
+			totalAmount: 1500,
+			cashierName: "Сидорова А.А.",
+			cashAmount: 1500,
+			electronicAmount: 0,
+		};
+
+		const item = FiscalReceiptQueueManager.enqueueReceipt(testPayload, "kkt_lan_timeout");
+		assert.ok(item.id);
+		assert.equal(item.status, "hardware_offline");
+
+		// Verify stored in memory
+		assert.equal(FiscalReceiptQueueManager.getPendingItems().length, 1);
+
+		// Clear only in-memory queue to simulate tab close / page refresh
+		// @ts-expect-error accessing private property for test verification
+		FiscalReceiptQueueManager.inMemoryQueue.clear();
+		assert.equal(FiscalReceiptQueueManager.getPendingItems().length, 0);
+
+		// Rehydrate from persistent storage
+		FiscalReceiptQueueManager.loadFromStorage();
+		const reloaded = FiscalReceiptQueueManager.getPendingItems();
+		assert.equal(reloaded.length, 1);
+		assert.equal(reloaded[0]?.id, item.id);
+		assert.equal(reloaded[0]?.payload.totalAmount, 1500);
+
+		// Clear queue completely removes storage
+		FiscalReceiptQueueManager.clearQueue();
+		assert.equal(FiscalReceiptQueueManager.getPendingItems().length, 0);
 	});
 });

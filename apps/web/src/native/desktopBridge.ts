@@ -840,7 +840,7 @@ export interface UsbHidScanEvent {
 }
 
 export interface UsbHidScannerOptions {
-	/** Max milliseconds between consecutive keystrokes to be considered a hardware scanner burst (default 35ms) */
+	/** Max milliseconds between consecutive keystrokes to be considered a hardware scanner burst (default 65ms) */
 	maxInterKeyDelayMs?: number;
 	/** Minimum barcode character length (default 3) */
 	minBarcodeLength?: number;
@@ -852,22 +852,36 @@ export interface UsbHidScannerOptions {
 
 /**
  * Validates whether a stream of recorded keystrokes represents a high-speed hardware scanner burst.
+ * Incorporates adaptive scheduling jitter tolerance (up to 140ms) for low-spec clinic workstations.
  */
 export function isUsbHidScanBurst(
 	keystrokes: Array<{ key: string; timestamp: number }>,
-	maxInterKeyDelayMs = 35,
+	maxInterKeyDelayMs = 65,
 	minBarcodeLength = 3,
 ): boolean {
 	if (!keystrokes || keystrokes.length < minBarcodeLength) {
 		return false;
 	}
 
+	const charCount = keystrokes.length;
+	const first = keystrokes[0];
+	const last = keystrokes[charCount - 1];
+	const totalDuration = first && last ? last.timestamp - first.timestamp : 0;
+	const avgDelta = charCount > 1 ? totalDuration / (charCount - 1) : 0;
+
+	// On slow CPUs (5400 RPM HDD, GC pauses, Celeron/Atom dental clinics),
+	// physical USB HID 2D scanners can suffer event loop hiccups between characters.
+	// If average burst speed is rapid (<= 55ms/char) and barcode is substantial (>= 8 chars),
+	// allow temporary OS/scheduler jitter up to 140ms for individual inter-key gaps.
+	const allowJitter = charCount >= 8 && avgDelta <= 55;
+	const maxGapLimit = allowJitter ? Math.max(140, maxInterKeyDelayMs) : maxInterKeyDelayMs;
+
 	for (let i = 1; i < keystrokes.length; i++) {
 		const curr = keystrokes[i];
 		const prev = keystrokes[i - 1];
 		if (!curr || !prev) continue;
 		const delta = curr.timestamp - prev.timestamp;
-		if (delta > maxInterKeyDelayMs) {
+		if (delta > maxGapLimit) {
 			return false;
 		}
 	}
@@ -880,7 +894,7 @@ export function isUsbHidScanBurst(
  * Intercepts rapid keyboard emulation bursts (< 30-35ms) without requiring active input focus.
  */
 export function createUsbHidScannerDetector(options: UsbHidScannerOptions = {}) {
-	const maxInterKeyDelayMs = options.maxInterKeyDelayMs ?? 35;
+	const maxInterKeyDelayMs = options.maxInterKeyDelayMs ?? 65;
 	const minBarcodeLength = options.minBarcodeLength ?? 3;
 	const preventDefault = options.preventDefault ?? true;
 
@@ -920,9 +934,17 @@ export function createUsbHidScannerDetector(options: UsbHidScannerOptions = {}) 
 		if (key.length === 1) {
 			if (buffer.length > 0) {
 				const last = buffer[buffer.length - 1];
-				if (last && timestamp - last.timestamp > maxInterKeyDelayMs) {
-					// Typing too slow -> reset buffer to current key (human typing)
-					buffer = [];
+				if (last) {
+					const delta = timestamp - last.timestamp;
+					// If we already accumulated a partial burst (>= 6 chars), allow up to 140ms for slow CPU scheduling hiccups
+					const gapLimit =
+						buffer.length >= 6
+							? Math.max(140, maxInterKeyDelayMs)
+							: maxInterKeyDelayMs;
+					if (delta > gapLimit) {
+						// Typing too slow -> reset buffer to current key (human typing)
+						buffer = [];
+					}
 				}
 			}
 			buffer.push({ key, timestamp });

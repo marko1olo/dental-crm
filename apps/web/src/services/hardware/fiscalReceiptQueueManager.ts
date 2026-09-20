@@ -10,6 +10,11 @@
  */
 
 import { generateUuidV7 } from "@dental/shared";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageRemoveItem,
+	safeLocalStorageSetItem,
+} from "../../lib/safeLocalStorage.js";
 import type {
 	FiscalReceiptPrintPayload,
 	FiscalReceiptPrintResult,
@@ -24,12 +29,48 @@ type ReceiptPrintedListener = (receipt: QueuedFiscalReceiptItem, result: FiscalR
 export class FiscalReceiptQueueManager {
 	public static readonly MAX_QUEUE_CAPACITY = 2000;
 	public static readonly MAX_RETRY_LIMIT = 10;
+	public static readonly STORAGE_KEY = "dente_queued_fiscal_receipts_v1";
 	private static inMemoryQueue = new Map<string, QueuedFiscalReceiptItem>();
 	private static queueListeners = new Set<QueueEventListener>();
 	private static printedListeners = new Set<ReceiptPrintedListener>();
 	private static autoRetryTimer: NodeJS.Timeout | null = null;
 	private static isAutoRetrying = false;
 	private static evictedPrintedCount = 0;
+
+	/**
+	 * Loads pending receipts from persistent offline storage into memory.
+	 */
+	public static loadFromStorage(): void {
+		try {
+			const raw = safeLocalStorageGetItem(this.STORAGE_KEY);
+			if (raw) {
+				const parsed = JSON.parse(raw) as QueuedFiscalReceiptItem[];
+				if (Array.isArray(parsed)) {
+					for (const item of parsed) {
+						if (item && item.id && !this.inMemoryQueue.has(item.id)) {
+							this.inMemoryQueue.set(item.id, item);
+						}
+					}
+				}
+			}
+		} catch (err) {
+			console.warn("[FiscalReceiptQueueManager] Storage load error:", err);
+		}
+	}
+
+	/**
+	 * Persists unprinted and offline receipts to offline storage.
+	 */
+	public static saveToStorage(): void {
+		try {
+			const itemsToSave = Array.from(this.inMemoryQueue.values())
+				.filter((i) => i.status === "pending_print" || i.status === "hardware_offline" || i.status === "failed")
+				.slice(-200);
+			safeLocalStorageSetItem(this.STORAGE_KEY, JSON.stringify(itemsToSave), true);
+		} catch (err) {
+			console.warn("[FiscalReceiptQueueManager] Storage save error:", err);
+		}
+	}
 
 	/**
 	 * Subscribes to queue changes.
@@ -169,6 +210,7 @@ export class FiscalReceiptQueueManager {
 
 		this.inMemoryQueue.set(id, item);
 		this.notifyListeners();
+		this.saveToStorage();
 		return item;
 	}
 
@@ -200,6 +242,7 @@ export class FiscalReceiptQueueManager {
 			};
 			this.inMemoryQueue.set(id, failedItem);
 			this.notifyListeners();
+			this.saveToStorage();
 			return {
 				success: false,
 				status: "hardware_offline",
@@ -220,6 +263,7 @@ export class FiscalReceiptQueueManager {
 			};
 			this.inMemoryQueue.set(id, updatedItem);
 			this.notifyListeners();
+			this.saveToStorage();
 
 			for (const listener of this.printedListeners) {
 				try {
@@ -242,6 +286,7 @@ export class FiscalReceiptQueueManager {
 		};
 		this.inMemoryQueue.set(id, updatedItem);
 		this.notifyListeners();
+		this.saveToStorage();
 		return printResult;
 	}
 
@@ -273,6 +318,7 @@ export class FiscalReceiptQueueManager {
 				this.inMemoryQueue.set(item.id, updated);
 			}
 			this.notifyListeners();
+			this.saveToStorage();
 			return {
 				totalProcessed: pending.length,
 				printedCount: 0,
@@ -335,5 +381,9 @@ export class FiscalReceiptQueueManager {
 		this.inMemoryQueue.clear();
 		this.queueListeners.clear();
 		this.printedListeners.clear();
+		safeLocalStorageRemoveItem(this.STORAGE_KEY);
 	}
 }
+
+// Auto-hydrate pending offline fiscal receipts from persistent storage on module load
+FiscalReceiptQueueManager.loadFromStorage();

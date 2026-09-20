@@ -79,7 +79,7 @@ export interface UsbBarcodeScanEvent {
 }
 
 export interface UsbBarcodeScannerConfig {
-	/** Max milliseconds between consecutive keystrokes to be considered hardware scanner burst (default: 35ms) */
+	/** Max milliseconds between consecutive keystrokes to be considered hardware scanner burst (default: 65ms) */
 	readonly maxInterKeyDelayMs: number;
 	/** Minimum barcode character length (default: 3) */
 	readonly minBarcodeLength: number;
@@ -94,7 +94,7 @@ export interface UsbBarcodeScannerConfig {
 }
 
 export const DEFAULT_SCANNER_CONFIG: UsbBarcodeScannerConfig = {
-	maxInterKeyDelayMs: 35,
+	maxInterKeyDelayMs: 65,
 	minBarcodeLength: 3,
 	preventDefaultOnScan: true,
 	protectActiveInput: true,
@@ -342,21 +342,35 @@ export function parseUniversalBarcode(rawCode: string): UniversalBarcodeData {
 
 /**
  * Checks if a sequence of keystrokes matches a hardware scanner burst (< threshold ms).
+ * Incorporates adaptive scheduling jitter resilience (up to 140ms) for slow clinic PCs / GC pauses.
  */
 export function isHardwareScanBurst(
 	keystrokes: Array<{ key: string; timestamp: number }>,
-	maxInterKeyDelayMs = 35,
+	maxInterKeyDelayMs = 65,
 	minBarcodeLength = 3,
 ): boolean {
 	if (!keystrokes || keystrokes.length < minBarcodeLength) {
 		return false;
 	}
 
+	const charCount = keystrokes.length;
+	const first = keystrokes[0];
+	const last = keystrokes[charCount - 1];
+	const totalDuration = first && last ? last.timestamp - first.timestamp : 0;
+	const avgDelta = charCount > 1 ? totalDuration / (charCount - 1) : 0;
+
+	// On slow CPUs (5400 RPM HDD, GC pauses, Celeron/Atom dental clinics),
+	// physical USB HID 2D scanners can suffer event loop hiccups between characters.
+	// If average burst speed is rapid (<= 55ms/char) and barcode is substantial (>= 8 chars),
+	// allow temporary OS/scheduler jitter up to 140ms for individual inter-key gaps.
+	const allowJitter = charCount >= 8 && avgDelta <= 55;
+	const maxGapLimit = allowJitter ? Math.max(140, maxInterKeyDelayMs) : maxInterKeyDelayMs;
+
 	for (let i = 1; i < keystrokes.length; i++) {
 		const curr = keystrokes[i];
 		const prev = keystrokes[i - 1];
 		if (!curr || !prev) continue;
-		if (curr.timestamp - prev.timestamp > maxInterKeyDelayMs) {
+		if (curr.timestamp - prev.timestamp > maxGapLimit) {
 			return false;
 		}
 	}
@@ -478,9 +492,17 @@ export class UsbBarcodeScanner {
 		if (key.length === 1) {
 			if (this.buffer.length > 0) {
 				const last = this.buffer[this.buffer.length - 1];
-				if (last && timestamp - last.timestamp > this.config.maxInterKeyDelayMs) {
-					// Typing too slow (human) -> reset buffer to start fresh from current key
-					this.buffer = [];
+				if (last) {
+					const delta = timestamp - last.timestamp;
+					// If we already accumulated a partial burst (>= 6 chars), allow up to 140ms for slow CPU scheduling hiccups
+					const gapLimit =
+						this.buffer.length >= 6
+							? Math.max(140, this.config.maxInterKeyDelayMs)
+							: this.config.maxInterKeyDelayMs;
+					if (delta > gapLimit) {
+						// Typing too slow (human) -> reset buffer to start fresh from current key
+						this.buffer = [];
+					}
 				}
 			}
 			this.buffer.push({ key, timestamp });
