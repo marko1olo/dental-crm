@@ -25,6 +25,7 @@ import {
 	cashBoxShifts,
 	cashExpenseReasons,
 	cashOperations,
+	users,
 } from "../db/schema.js";
 import { registerCashInstallmentsRoutes } from "./cashInstallmentsRoutes.js";
 import { registerCashLabPaymentRoutes } from "./cashLabPaymentRoutes.js";
@@ -60,10 +61,10 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 	});
 
 	/**
-	 * 2. POST /api/cash/cash-box-all-open
+	 * 2. POST /api/cash/cash-box-all-open & POST /api/fiscal/shift/open
 	 * Групповое утреннее открытие смен по всем кассовым счетам клиники.
 	 */
-	app.post("/api/cash/cash-box-all-open", async (request: FastifyRequest, reply: FastifyReply) => {
+	const handleOpenCashShift = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -76,9 +77,23 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 
 		const bodySchema = z.object({
 			openedByUserId: z.string().uuid().optional(),
+			cashierFullName: z.string().trim().optional(),
+			openedAt: z.string().optional(),
 		});
 		const parsed = bodySchema.safeParse(request.body || {});
-		const effectiveUserId = parsed.success && parsed.data.openedByUserId ? parsed.data.openedByUserId : currentUserId;
+		let effectiveUserId = parsed.success && parsed.data.openedByUserId ? parsed.data.openedByUserId : currentUserId;
+
+		// Mandate 8e & 8n: Solo Doctor Autonomy — auto-resolve to primary user of the clinic if no user UUID passed
+		if (!effectiveUserId) {
+			const [firstUser] = await withTenantCtx(orgId, async (tx) => {
+				return await tx
+					.select({ id: users.id })
+					.from(users)
+					.where(eq(users.organizationId, orgId))
+					.limit(1);
+			});
+			effectiveUserId = firstUser?.id;
+		}
 
 		if (!effectiveUserId) {
 			return reply.code(400).send({
@@ -173,13 +188,16 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 			openedShiftsCount: openedShifts.length,
 			shifts: openedShifts,
 		});
-	});
+	};
+
+	app.post("/api/cash/cash-box-all-open", handleOpenCashShift);
+	app.post("/api/fiscal/shift/open", handleOpenCashShift);
 
 	/**
-	 * 3. POST /api/cash/cash-box-all-closing
+	 * 3. POST /api/cash/cash-box-all-closing & POST /api/fiscal/shift/close
 	 * Закрытие всех смен со снятием Z-отчета (54-ФЗ).
 	 */
-	app.post("/api/cash/cash-box-all-closing", async (request: FastifyRequest, reply: FastifyReply) => {
+	const handleCloseCashShift = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -192,10 +210,24 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 
 		const bodySchema = z.object({
 			closedByUserId: z.string().uuid().optional(),
+			cashierFullName: z.string().trim().optional(),
 			zReportNumber: z.string().trim().optional(),
+			shiftNumber: z.number().int().optional(),
+			closedAt: z.string().optional(),
 		});
 		const parsed = bodySchema.safeParse(request.body || {});
-		const effectiveUserId = parsed.success && parsed.data.closedByUserId ? parsed.data.closedByUserId : currentUserId;
+		let effectiveUserId = parsed.success && parsed.data.closedByUserId ? parsed.data.closedByUserId : currentUserId;
+
+		if (!effectiveUserId) {
+			const [firstUser] = await withTenantCtx(orgId, async (tx) => {
+				return await tx
+					.select({ id: users.id })
+					.from(users)
+					.where(eq(users.organizationId, orgId))
+					.limit(1);
+			});
+			effectiveUserId = firstUser?.id;
+		}
 
 		const closedShifts = await withTenantCtx(orgId, async (tx) => {
 			// Блокируем параллельные гонки закрытия смен (защита от манки-кликинга)
@@ -267,13 +299,16 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 			closedShiftsCount: closedShifts.length,
 			shifts: closedShifts,
 		});
-	});
+	};
+
+	app.post("/api/cash/cash-box-all-closing", handleCloseCashShift);
+	app.post("/api/fiscal/shift/close", handleCloseCashShift);
 
 	/**
-	 * 4. POST /api/cash/cash-introduction
+	 * 4. POST /api/cash/cash-introduction & POST /api/fiscal/cash-in
 	 * Служебное внесение наличных/разменной монеты в кассу.
 	 */
-	app.post("/api/cash/cash-introduction", async (request: FastifyRequest, reply: FastifyReply) => {
+	const handleCashIntroduction = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -286,6 +321,8 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 			amountRub: positiveMoneyRubSchema,
 			reasonText: z.string().trim().max(500).optional().default("Служебное внесение разменного фонда"),
 			operatorId: z.string().uuid().optional(),
+			cashierFullName: z.string().trim().optional(),
+			typeAlias: z.string().trim().optional(),
 		});
 
 		const parsed = bodySchema.safeParse(request.body);
@@ -396,13 +433,16 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 			operation: result.operation,
 			cashBox: result.cashBox,
 		});
-	});
+	};
+
+	app.post("/api/cash/cash-introduction", handleCashIntroduction);
+	app.post("/api/fiscal/cash-in", handleCashIntroduction);
 
 	/**
-	 * 5. POST /api/cash/cash-withdrawal
+	 * 5. POST /api/cash/cash-withdrawal & POST /api/fiscal/cash-out
 	 * Служебное изъятие / инкассация наличных из кассы.
 	 */
-	app.post("/api/cash/cash-withdrawal", async (request: FastifyRequest, reply: FastifyReply) => {
+	const handleCashWithdrawal = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -415,6 +455,9 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 			amountRub: positiveMoneyRubSchema,
 			reasonText: z.string().trim().max(500).optional().default("Инкассация наличных средств в банк"),
 			operatorId: z.string().uuid().optional(),
+			recipientFio: z.string().trim().optional(),
+			cashierFullName: z.string().trim().optional(),
+			typeAlias: z.string().trim().optional(),
 		});
 
 		const parsed = bodySchema.safeParse(request.body);
@@ -536,7 +579,94 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 			operation: result.operation,
 			cashBox: result.cashBox,
 		});
-	});
+	};
+
+	app.post("/api/cash/cash-withdrawal", handleCashWithdrawal);
+	app.post("/api/fiscal/cash-out", handleCashWithdrawal);
+
+	/**
+	 * 5b. POST & GET /api/fiscal/x-report & /api/cash/x-report
+	 * Промежуточный срез смены без гашения (Х-отчет 54-ФЗ).
+	 */
+	const handleXReport = async (request: FastifyRequest, reply: FastifyReply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply, "x-report read");
+		if (!orgId) return;
+
+		const queryOrBody = (request.method === "POST" ? request.body : request.query) || {};
+		const schema = z.object({
+			cashierFullName: z.string().trim().optional(),
+			shiftNumber: z.coerce.number().int().optional(),
+		});
+		const parsed = schema.safeParse(queryOrBody);
+		const cashierFullName =
+			parsed.success && parsed.data.cashierFullName
+				? parsed.data.cashierFullName
+				: "Кассир / Администратор";
+
+		const reportData = await withTenantCtx(orgId, async (tx) => {
+			await ensureOrganizationCashBoxes(tx, orgId);
+
+			const boxes = await tx
+				.select()
+				.from(cashBoxes)
+				.where(eq(cashBoxes.organizationId, orgId))
+				.orderBy(cashBoxes.displayOrder);
+
+			const openShifts = await tx
+				.select()
+				.from(cashBoxShifts)
+				.where(
+					and(
+						eq(cashBoxShifts.organizationId, orgId),
+						eq(cashBoxShifts.status, "open"),
+					),
+				);
+
+			let totalCashRub = 0;
+			let totalIncomeRub = 0;
+			let totalExpenseRub = 0;
+
+			for (const b of boxes) {
+				if (b.type === "main") {
+					totalCashRub += b.balanceRub;
+				}
+			}
+
+			for (const s of openShifts) {
+				totalIncomeRub += s.incomeTotalRub;
+				totalExpenseRub += s.expenseTotalRub;
+			}
+
+			const currentShiftNumber =
+				parsed.success && parsed.data.shiftNumber
+					? parsed.data.shiftNumber
+					: (openShifts[0]?.shiftNumber ?? 1);
+
+			const now = new Date();
+
+			return {
+				success: true,
+				reportType: "x_report",
+				shiftNumber: currentShiftNumber,
+				status: openShifts.length > 0 ? "open" : "closed",
+				openedAt: openShifts[0]?.openedAt ?? now,
+				printedAt: now.toISOString(),
+				cashierFullName,
+				totalCashInDrawerRub: totalCashRub,
+				totalIncomeRub,
+				totalExpenseRub,
+				openShiftsCount: openShifts.length,
+				boxesCount: boxes.length,
+			};
+		});
+
+		return reply.send(reportData);
+	};
+
+	app.post("/api/cash/x-report", handleXReport);
+	app.get("/api/cash/x-report", handleXReport);
+	app.post("/api/fiscal/x-report", handleXReport);
+	app.get("/api/fiscal/x-report", handleXReport);
 
 	/**
 	 * 6. GET /api/cash/expense-reasons & GET /api/cash/expense-reason

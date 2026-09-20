@@ -972,4 +972,44 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	 * приёмам в «Обзвоне и подтверждениях» — второй, пустой источник ответа на
 	 * тот же вопрос был хуже, чем его отсутствие.
 	 */
+
+	// STATUTORY CLINICAL CATALOGS (Order 804n, ICD-10, 1-Click EMR Protocols)
+	const handleGet804nCatalog = async (request: FastifyRequest, reply: FastifyReply) => {
+		const query = request.query as { q?: string; category?: string } | undefined;
+		const { getStatutory804nCatalog } = await import(
+			"../services/clinical/statutoryCatalogs.js"
+		);
+		const items = getStatutory804nCatalog({
+			q: query?.q,
+			category: query?.category,
+		});
+		return reply.status(200).send(items);
+	};
+
+	app.get("/api/clinical/804n", handleGet804nCatalog);
+	app.get("/api/clinical/nomenclature", handleGet804nCatalog);
+
+	app.get("/api/clinical/icd10", async (request: FastifyRequest, reply: FastifyReply) => {
+		const query = request.query as { q?: string; group?: string } | undefined;
+		const { getStatutoryIcd10Catalog } = await import(
+			"../services/clinical/statutoryCatalogs.js"
+		);
+		const items = getStatutoryIcd10Catalog({
+			q: query?.q,
+			group: query?.group,
+		});
+		return reply.status(200).send(items);
+	});
+
+	app.get("/api/emr/templates", async (request: FastifyRequest, reply: FastifyReply) => {
+		const query = request.query as { q?: string; category?: string } | undefined;
+		const { getStatutoryEmrTemplates } = await import(
+			"../services/clinical/statutoryCatalogs.js"
+		);
+		const items = getStatutoryEmrTemplates({
+			q: query?.q,
+			category: query?.category,
+		});
+		return reply.status(200).send(items);
+	});
 }
