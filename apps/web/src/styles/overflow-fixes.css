@@ -400,47 +400,17 @@
 	display: none !important;
 }
 
-/* --- 12. Ликвидация обрезания ФИО пациента в imaging-patient-strip на экранах <640px --- */
+/* --- 12. Компактный контекст снимков в 1 строку на экранах <640px (соблюдение экранного бюджета 300px) --- */
 @media (max-width: 640px) {
 	.imaging-patient-strip {
+		display: none !important;
+	}
+
+	.imaging-patient-strip-mobile {
 		display: flex !important;
-		flex-direction: column !important;
 		width: 100% !important;
-		gap: 6px !important;
-		margin-bottom: 8px !important;
-	}
-
-	.imaging-patient-strip article {
-		width: 100% !important;
-		padding: 8px 10px !important;
-		gap: 2px !important;
-		min-width: 0 !important;
-	}
-
-	.imaging-patient-strip article:first-child {
-		width: 100% !important;
-	}
-
-	.imaging-patient-strip strong {
-		font-size: 14px !important;
-		line-height: 1.25 !important;
-		word-break: break-word !important;
-		overflow-wrap: break-word !important;
-		hyphens: auto !important;
-	}
-
-	.imaging-patient-strip article:first-child strong {
-		font-size: 14px !important;
-		white-space: normal !important;
-		word-break: break-word !important;
-		overflow-wrap: break-word !important;
-		hyphens: auto !important;
-	}
-
-	.imaging-patient-strip span,
-	.imaging-patient-strip small {
-		font-size: 11px !important;
-		line-height: 1.2 !important;
+		min-height: 28px !important;
+		margin-bottom: 6px !important;
 	}
 }
 

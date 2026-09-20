@@ -869,7 +869,29 @@ export function ImagingView(props: ImagingViewProps) {
 				</div>
 			</div>
 
-			<section className="imaging-patient-strip flex flex-col sm:grid gap-1.5 sm:gap-2.5" aria-label="Контекст снимков">
+			{/* Компактный мобильный контекст (<640px) в 1 строку для соблюдения экранного бюджета 300px */}
+			<section
+				className="imaging-patient-strip-mobile flex sm:hidden items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs min-w-0"
+				aria-label="Контекст снимков (мобильный)"
+			>
+				<div className="flex items-center gap-1.5 min-w-0 flex-1">
+					<span className="text-[var(--muted)] shrink-0 font-medium text-[11px]">Пациент:</span>
+					<strong className="truncate font-semibold text-[var(--ink)] text-xs">
+						{activePatient?.fullName ?? "Пациент не выбран"}
+					</strong>
+				</div>
+				<div className="flex items-center gap-2 shrink-0 text-[11px] text-[var(--muted)]">
+					<span>
+						<strong className="text-[var(--ink)] font-semibold">{activeImagingStudies?.length ?? 0}</strong> сн.
+					</span>
+					<span className="px-1.5 py-0.5 rounded bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] font-medium text-[10px]">
+						{selectedImagingViewerPlan?.label ?? "просмотр"}
+					</span>
+				</div>
+			</section>
+
+			{/* Десктопная сетка контекста (>=640px) */}
+			<section className="imaging-patient-strip hidden sm:grid gap-1.5 sm:gap-2.5" aria-label="Контекст снимков">
 				<article className="min-w-0 w-full">
 					<span>Пациент</span>
 					<strong className="break-words [word-break:normal] [overflow-wrap:break-word] min-w-0 font-bold">

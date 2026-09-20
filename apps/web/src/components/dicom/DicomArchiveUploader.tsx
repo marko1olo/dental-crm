@@ -2,7 +2,7 @@ import cornerstoneDICOMImageLoader from "@cornerstonejs/dicom-image-loader";
 import * as fflate from "fflate";
 import { Archive, Folder } from "lucide-react";
 import type React from "react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
@@ -73,6 +73,18 @@ export function DicomArchiveUploader({
 
 	const folderInputRef = useRef<HTMLInputElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const isMountedRef = useRef<boolean>(true);
+	const batchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	useEffect(() => {
+		return () => {
+			isMountedRef.current = false;
+			if (batchTimerRef.current) {
+				clearTimeout(batchTimerRef.current);
+				batchTimerRef.current = null;
+			}
+		};
+	}, []);
 
 	const processFile = useCallback(
 		async (file: File): Promise<string | null> => {
@@ -142,6 +154,12 @@ export function DicomArchiveUploader({
 					let currentIndex = 0;
 
 					const processNextBatch = () => {
+						if (!isMountedRef.current) {
+							batchTimerRef.current = null;
+							resolve([]);
+							return;
+						}
+
 						const batchEnd = Math.min(
 							currentIndex + BATCH_PROCESSING_CHUNK_SIZE,
 							totalFiles,
@@ -163,14 +181,19 @@ export function DicomArchiveUploader({
 
 						currentIndex = batchEnd;
 						const pct = Math.round((currentIndex / totalFiles) * 100);
-						setProgressPercent(pct);
-						setStatus(`Обработка срезов КЛКТ: ${currentIndex}/${totalFiles} (${imageIds.length} DICOM)...`);
+						if (isMountedRef.current) {
+							setProgressPercent(pct);
+							setStatus(`Обработка срезов КЛКТ: ${currentIndex}/${totalFiles} (${imageIds.length} DICOM)...`);
+						}
 
 						if (currentIndex < totalFiles) {
 							// Yield to event loop to keep UI responsive
-							setTimeout(processNextBatch, 0);
+							batchTimerRef.current = setTimeout(processNextBatch, 0);
 						} else {
-							setProgressPercent(null);
+							batchTimerRef.current = null;
+							if (isMountedRef.current) {
+								setProgressPercent(null);
+							}
 							resolve(imageIds);
 						}
 					};
@@ -261,6 +284,7 @@ export function DicomArchiveUploader({
 					}
 				}
 
+				if (!isMountedRef.current) return;
 				if (validImageIds.length > 0) {
 					setStatus(`Успешно загружено объектов DICOM: ${validImageIds.length}`);
 					onImagesLoaded(validImageIds);
@@ -268,6 +292,7 @@ export function DicomArchiveUploader({
 					setStatus("Подходящие файлы DICOM (.dcm) или срезы КЛКТ не найдены.");
 				}
 			} catch (error) {
+				if (!isMountedRef.current) return;
 				showToast(
 					actionFailureToast(
 						"Ошибка обработки архива DICOM",
@@ -280,8 +305,10 @@ export function DicomArchiveUploader({
 					"Не удалось прочитать файлы: архив повреждён, зашифрован или не содержит DICOM. Попробуйте распаковать вручную.",
 				);
 			} finally {
-				setLoading(false);
-				setProgressPercent(null);
+				if (isMountedRef.current) {
+					setLoading(false);
+					setProgressPercent(null);
+				}
 			}
 		},
 		[loading, onImagesLoaded, processFile, processZip],
@@ -330,7 +357,7 @@ export function DicomArchiveUploader({
 			}}
 			onDragLeave={() => setIsDragging(false)}
 			onDrop={onDrop}
-			className={`w-full h-full flex-1 flex flex-col items-center justify-center p-6 sm:p-10 border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-teal-500/60 dark:hover:border-teal-500/60 rounded-xl transition-all dicom-dropzone ${
+			className={`w-full h-full flex-1 flex flex-col items-center justify-center p-3 sm:p-8 border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-teal-500/60 dark:hover:border-teal-500/60 rounded-xl transition-all dicom-dropzone ${
 				isDragging ? "dicom-dropzone--dragging" : ""
 			} ${className ?? ""}`}
 			style={{
@@ -373,17 +400,18 @@ export function DicomArchiveUploader({
 				}}
 			/>
 
-			<div className="flex flex-col items-center gap-2 mb-2">
-				<div className="w-12 h-12 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-1 shrink-0">
-					<Archive size={24} />
+			<div className="flex flex-col items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+				<div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-0.5 sm:mb-1 shrink-0">
+					<Archive className="w-4 h-4 sm:w-6 sm:h-6" />
 				</div>
 				<div
 					style={{
 						color: "var(--ink)",
 						fontWeight: 700,
-						fontSize: "15px",
+						fontSize: "13px",
 						textAlign: "center",
 					}}
+					className="sm:text-[15px]"
 				>
 					{status}
 				</div>
@@ -403,13 +431,13 @@ export function DicomArchiveUploader({
 				</div>
 			)}
 
-			<div className="flex flex-wrap items-center justify-center gap-3 mt-3">
+			<div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mt-1.5 sm:mt-3">
 				<button
 					type="button"
 					onClick={() => {
 						if (!loading) fileInputRef.current?.click();
 					}}
-					className="px-3.5 py-1.5 text-xs font-semibold rounded-lg shadow-sm border transition-colors flex items-center gap-2 cursor-pointer"
+					className="px-2.5 py-1.5 sm:px-3.5 text-xs font-semibold rounded-lg shadow-sm border transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer"
 					style={{
 						background: "var(--surface-50, #f8fafc)",
 						borderColor: "var(--line, #cbd5e1)",
@@ -425,7 +453,7 @@ export function DicomArchiveUploader({
 					onClick={() => {
 						if (!loading) folderInputRef.current?.click();
 					}}
-					className="px-3.5 py-1.5 text-xs font-semibold rounded-lg shadow-sm border transition-colors flex items-center gap-2 cursor-pointer"
+					className="px-2.5 py-1.5 sm:px-3.5 text-xs font-semibold rounded-lg shadow-sm border transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer"
 					style={{
 						background: "var(--surface-50, #f8fafc)",
 						borderColor: "var(--line, #cbd5e1)",
@@ -441,10 +469,11 @@ export function DicomArchiveUploader({
 			<div
 				style={{
 					color: "var(--muted, #64748b)",
-					fontSize: "11px",
-					marginTop: "10px",
+					fontSize: "10px",
+					marginTop: "6px",
 					textAlign: "center",
 				}}
+				className="hidden sm:block"
 			>
 				Локальная обработка в браузере. Конфиденциальные данные исследования не
 				передаются на сторонние серверы.

@@ -420,6 +420,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const handleSelectPatient = (patientId: string) => {
 		setSelectedPatientId(patientId);
 		setMobileActiveView("card");
+		if (typeof window !== "undefined") {
+			window.scrollTo({ top: 0, behavior: "instant" });
+		}
 	};
 
 	const {
@@ -453,6 +456,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const handleSearchChange = useCallback(
 		(val: string) => {
 			setLocalQuery(val);
+			setMobileActiveView("list");
 			if (searchDebounceTimerRef.current !== null) {
 				window.clearTimeout(searchDebounceTimerRef.current);
 			}
@@ -472,6 +476,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			searchDebounceTimerRef.current = null;
 		}
 		setLocalQuery("");
+		setMobileActiveView("list");
 		startTransition(() => {
 			setQuery("");
 		});
@@ -880,12 +885,14 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								className={`patient-row ${insight && riskDistinguishes ? `risk-${insight.riskLevel}` : ""} ${patientIsSelected ? "selected" : ""}`}
 								key={patient.id}
 								data-patient-id={patient.id}
+								data-testid={`patient-row-${patient.id}`}
 								style={{
 									contentVisibility: "auto",
 									containIntrinsicSize: "1px 48px",
 									contain: "content",
 								}}
 								tabIndex={0}
+								role="button"
 								aria-label={`Карточка пациента: ${patient.fullName}`}
 								onClick={() => handleSelectPatient(patient.id)}
 								onKeyDown={(e) => {

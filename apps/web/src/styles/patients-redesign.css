@@ -319,8 +319,21 @@
 		display: none !important;
 	}
 
+	.patients-main-grid.mobile-view-list .patient-list {
+		display: flex !important;
+		flex-direction: column !important;
+		max-height: none !important;
+		height: auto !important;
+	}
+
 	.patients-main-grid.mobile-view-card .patient-list {
 		display: none !important;
+	}
+
+	.patients-main-grid.mobile-view-card .patient-admin-panel {
+		display: block !important;
+		width: 100% !important;
+		min-height: auto !important;
 	}
 
 	.patient-mobile-back-header {
