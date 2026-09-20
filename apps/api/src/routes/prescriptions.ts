@@ -117,6 +117,7 @@ const createPrescriptionBodySchema = z.object({
 	// Мандат 8i / 8s: Запрет выписки наркотических анальгетиков Списка II/III в частной амбулаторной стоматологии
 	for (let i = 0; i < data.items.length; i++) {
 		const item = data.items[i];
+		if (!item) continue;
 		const isNarcotic = FORBIDDEN_NARCOTIC_INN_PATTERNS.some(
 			(pattern) =>
 				pattern.test(item.innLatin) ||
@@ -197,7 +198,7 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const result = verifyPrescriptionStatutoryValidity(body);
+		let result = verifyPrescriptionStatutoryValidity(body);
 		const narcoticErrors: string[] = [];
 		if (Array.isArray(body.items)) {
 			for (const item of body.items) {
@@ -211,8 +212,11 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 			}
 		}
 		if (narcoticErrors.length > 0) {
-			result.isValid = false;
-			result.errors.push(...narcoticErrors);
+			result = {
+				...result,
+				isValid: false,
+				errors: [...result.errors, ...narcoticErrors],
+			};
 		}
 
 		return reply.send({
