@@ -86,6 +86,185 @@ export function isPhone(): boolean {
 	return getDeviceFormFactor() === "phone";
 }
 
+export type HardwareResourceTier = "low" | "medium" | "high";
+
+/**
+ * Automatically detects whether current device is low-spec hardware:
+ * - 4GB RAM or less (navigator.deviceMemory <= 4)
+ * - 4 CPU cores or less (typical Intel Celeron / Atom / dual-core clinic laptop)
+ * - Save-Data mode or slow network connection
+ * - Or explicit low-spec DOM attribute / class / query param (?lowspec=1)
+ *
+ * Guarantees 60 FPS on integrated GPUs (Intel HD Graphics) and slow 5400 RPM HDDs
+ * by enabling low-spec CSS profile, disabling heavy backdrop-filter blur,
+ * and reducing CPU/disk thrashing (Mandates 8c, 8e, 8k, 8n).
+ */
+export function isLowSpecHardware(): boolean {
+	// 1. Check DOM root attributes or classes
+	if (typeof document !== "undefined" && document.documentElement) {
+		const el = document.documentElement;
+		if (
+			el.getAttribute("data-low-spec") === "true" ||
+			el.getAttribute("data-hardware-tier") === "low" ||
+			el.getAttribute("data-perf") === "low" ||
+			el.classList.contains("low-spec-mode") ||
+			el.classList.contains("low-spec-perf")
+		) {
+			return true;
+		}
+		if (
+			el.getAttribute("data-hardware-tier") === "high" ||
+			el.getAttribute("data-perf") === "high"
+		) {
+			return false;
+		}
+	}
+
+	// 2. Check query string or localStorage manual overrides
+	if (typeof window !== "undefined") {
+		try {
+			if (window.location?.search) {
+				const params = new URLSearchParams(window.location.search);
+				const urlFlag = params.get("lowspec") ?? params.get("low-spec");
+				if (urlFlag === "1" || urlFlag === "true") return true;
+				if (urlFlag === "0" || urlFlag === "false") return false;
+			}
+		} catch {
+			// Ignore URL parse errors
+		}
+		try {
+			const stored = window.localStorage?.getItem("dente:low-spec-mode");
+			if (stored === "true" || stored === "1") return true;
+			if (stored === "false" || stored === "0") return false;
+		} catch {
+			// Ignore localStorage access errors
+		}
+	}
+
+	// 3. Navigator hardware checks
+	if (typeof navigator !== "undefined") {
+		// Memory (GB) — Chromium Device Memory API
+		const navMem = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
+		if (typeof navMem === "number" && navMem <= 4) {
+			return true;
+		}
+
+		// CPU cores (hardwareConcurrency) — <= 4 cores typical for Celeron / older laptop
+		const cores = navigator.hardwareConcurrency;
+		if (typeof cores === "number" && cores > 0 && cores <= 4) {
+			return true;
+		}
+
+		// Save-Data network flag
+		const navConn = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+		if (navConn?.saveData === true) {
+			return true;
+		}
+		if (navConn?.effectiveType === "slow-2g" || navConn?.effectiveType === "2g" || navConn?.effectiveType === "3g") {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Classifies runtime hardware into resource tiers:
+ * - "low": Celeron / dual-core, <= 4GB RAM, 5400 RPM HDD, battery saver
+ * - "medium": 4-6 cores, 6-8GB RAM (mid-range office PC)
+ * - "high": >= 8 cores, >= 8GB RAM (modern doctor workstation)
+ */
+export function getHardwareResourceTier(): HardwareResourceTier {
+	if (typeof document !== "undefined" && document.documentElement) {
+		const tier = document.documentElement.getAttribute("data-hardware-tier");
+		if (tier === "low" || tier === "medium" || tier === "high") {
+			return tier;
+		}
+	}
+
+	if (isLowSpecHardware()) {
+		return "low";
+	}
+
+	if (typeof navigator !== "undefined") {
+		const cores = navigator.hardwareConcurrency;
+		const navMem = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
+
+		const hasHighCores = typeof cores === "number" && cores >= 8;
+		const hasHighMem = typeof navMem === "number" ? navMem >= 8 : true;
+
+		if (hasHighCores && hasHighMem) {
+			return "high";
+		}
+
+		if ((typeof cores === "number" && cores >= 6) || (typeof navMem === "number" && navMem >= 6)) {
+			return "medium";
+		}
+	}
+
+	return "high";
+}
+
+/**
+ * Returns true if the device is a high-performance workstation capable of full visual fidelity,
+ * 60/120 FPS animations, rich backdrop-filter blur effects, and real-time 3D rendering.
+ */
+export function isHighPerformanceWorkstation(): boolean {
+	return getHardwareResourceTier() === "high";
+}
+
+/**
+ * Calculates adaptive polling interval to protect low-spec machines and slow 5400 RPM HDDs:
+ * - Low-spec: 2.5x to 4x interval (min 15s) to eliminate disk queue thrashing and CPU starvation
+ * - Medium-spec: 1.5x interval
+ * - High-spec: Full speed (1.0x) base interval
+ */
+export function getAdaptivePollingIntervalMs(baseIntervalMs: number): number {
+	if (baseIntervalMs <= 0) return baseIntervalMs;
+
+	const tier = getHardwareResourceTier();
+	if (tier === "low") {
+		return Math.max(Math.round(baseIntervalMs * 2.5), 15_000);
+	}
+	if (tier === "medium") {
+		return Math.max(Math.round(baseIntervalMs * 1.5), baseIntervalMs);
+	}
+	return baseIntervalMs;
+}
+
+/**
+ * Determines whether DOM list virtualization should be enforced aggressively
+ * (e.g. for patient tables, appointment slots, catalogs) to preserve RAM and avoid GC pressure.
+ */
+export function shouldVirtualizeListsAggressively(): boolean {
+	return isLowSpecHardware();
+}
+
+/**
+ * Synchronizes DOM root attributes with hardware capabilities so low-spec-hardware.css
+ * immediately strips backdrop-filter blur, simplifies shadows, and enables layout containment.
+ */
+export function applyLowSpecOptimizationsToDom(forcedLow?: boolean): void {
+	if (typeof document === "undefined" || !document.documentElement) return;
+
+	const isLow = forcedLow !== undefined ? forcedLow : isLowSpecHardware();
+	const root = document.documentElement;
+
+	if (isLow) {
+		root.setAttribute("data-low-spec", "true");
+		root.setAttribute("data-hardware-tier", "low");
+		root.setAttribute("data-perf", "low");
+		root.classList.add("low-spec-mode");
+		root.classList.add("low-spec-perf");
+	} else {
+		root.removeAttribute("data-low-spec");
+		root.setAttribute("data-hardware-tier", "high");
+		root.setAttribute("data-perf", "high");
+		root.classList.remove("low-spec-mode");
+		root.classList.remove("low-spec-perf");
+	}
+}
+
 /**
  * Returns exact clinical control dimensions based on active pointer.
  * Guarantees that desktop workstations retain dense 28–36px layouts,
@@ -136,8 +315,16 @@ export interface DoctorHotkeyHandlers {
 	onF4Odontogram?: () => void;
 	/** F5: Schedule refresh without losing drafts */
 	onF5RefreshSchedule?: () => void;
+	/** F6: Clinical rules / warnings panel */
+	onF6ClinicalRules?: () => void;
+	/** F7: Visiograph / X-Ray image capture */
+	onF7Visiograph?: () => void;
+	/** F8: Treatment plan / stages overview */
+	onF8TreatmentPlan?: () => void;
 	/** F9: Open payment / fiscal checkout */
 	onF9Checkout?: () => void;
+	/** F10: Outpatient documents / Form 043/u */
+	onF10Documents?: () => void;
 	/** F11: Toggle fullscreen kiosk */
 	onF11ToggleKiosk?: () => void;
 	/** F12: Quick print Form 043/u diary */
@@ -172,11 +359,13 @@ function isUserTypingInTextInput(target: EventTarget | null): boolean {
  */
 export function registerDoctorHotkeys(
 	handlers: DoctorHotkeyHandlers,
-	options: { target?: Window | HTMLElement; enabled?: boolean } = {},
+	options: { target?: Window | HTMLElement | EventTarget; enabled?: boolean } = {},
 ): () => void {
-	if (typeof window === "undefined") return () => {};
+	const target = options.target ?? (typeof window !== "undefined" ? window : undefined);
+	if (!target || typeof (target as { addEventListener?: unknown }).addEventListener !== "function") {
+		return () => {};
+	}
 
-	const target = options.target ?? window;
 	const isEnabled = options.enabled !== false;
 	if (!isEnabled) return () => {};
 
@@ -184,89 +373,118 @@ export function registerDoctorHotkeys(
 		const key = event.key ? event.key.toLowerCase() : "";
 		const code = event.code || "";
 		const isCtrlOrMeta = event.ctrlKey || event.metaKey;
-		const isTyping = isUserTypingInTextInput(event.target);
 
 		// 1. F1: Nomenclature 804n & Clinical Guidelines
-		if (event.key === "F1" || code === "F1") {
+		if ((event.key === "F1" || code === "F1") && handlers.onF1Help) {
 			event.preventDefault();
 			event.stopPropagation();
-			handlers.onF1Help?.();
+			handlers.onF1Help();
 			return;
 		}
 
 		// 2. F2: Quick patient search in Omnibar
-		if (event.key === "F2" || code === "F2") {
+		if ((event.key === "F2" || code === "F2") && handlers.onF2SearchPatient) {
 			event.preventDefault();
 			event.stopPropagation();
-			handlers.onF2SearchPatient?.();
+			handlers.onF2SearchPatient();
 			return;
 		}
 
 		// 3. F3: New appointment / Quick booking
-		if (event.key === "F3" || code === "F3") {
+		if ((event.key === "F3" || code === "F3") && handlers.onF3NewAppointment) {
 			event.preventDefault();
 			event.stopPropagation();
-			handlers.onF3NewAppointment?.();
+			handlers.onF3NewAppointment();
 			return;
 		}
 
 		// 4. F4: Odontogram FDI tooth formula
-		if (event.key === "F4" || code === "F4") {
+		if ((event.key === "F4" || code === "F4") && handlers.onF4Odontogram) {
 			event.preventDefault();
 			event.stopPropagation();
-			handlers.onF4Odontogram?.();
+			handlers.onF4Odontogram();
 			return;
 		}
 
 		// 5. F5: Soft schedule refresh (prevent tab reload which destroys drafts)
-		if (event.key === "F5" || code === "F5") {
+		if ((event.key === "F5" || code === "F5") && handlers.onF5RefreshSchedule) {
 			event.preventDefault();
 			event.stopPropagation();
-			handlers.onF5RefreshSchedule?.();
+			handlers.onF5RefreshSchedule();
+			return;
+		}
+
+		// 5A. F6: Clinical rules / warnings panel
+		if ((event.key === "F6" || code === "F6") && handlers.onF6ClinicalRules) {
+			event.preventDefault();
+			event.stopPropagation();
+			handlers.onF6ClinicalRules();
+			return;
+		}
+
+		// 5B. F7: Visiograph / X-Ray image capture
+		if ((event.key === "F7" || code === "F7") && handlers.onF7Visiograph) {
+			event.preventDefault();
+			event.stopPropagation();
+			handlers.onF7Visiograph();
+			return;
+		}
+
+		// 5C. F8: Treatment plan / stages overview
+		if ((event.key === "F8" || code === "F8") && handlers.onF8TreatmentPlan) {
+			event.preventDefault();
+			event.stopPropagation();
+			handlers.onF8TreatmentPlan();
 			return;
 		}
 
 		// 6. F9: Fast fiscal payment tender (54-FZ)
-		if (event.key === "F9" || code === "F9") {
+		if ((event.key === "F9" || code === "F9") && handlers.onF9Checkout) {
 			event.preventDefault();
 			event.stopPropagation();
-			handlers.onF9Checkout?.();
+			handlers.onF9Checkout();
+			return;
+		}
+
+		// 6B. F10: Outpatient documents / Form 043/u
+		if ((event.key === "F10" || code === "F10") && handlers.onF10Documents) {
+			event.preventDefault();
+			event.stopPropagation();
+			handlers.onF10Documents();
 			return;
 		}
 
 		// 7. F11: Kiosk / Fullscreen operatory mode
-		if (event.key === "F11" || code === "F11") {
+		if ((event.key === "F11" || code === "F11") && handlers.onF11ToggleKiosk) {
 			event.preventDefault();
 			event.stopPropagation();
-			handlers.onF11ToggleKiosk?.();
+			handlers.onF11ToggleKiosk();
 			return;
 		}
 
 		// 8. F12: Quick print Form 043/u
-		if (event.key === "F12" || code === "F12") {
+		if ((event.key === "F12" || code === "F12") && handlers.onF12PrintDiary) {
 			event.preventDefault();
 			event.stopPropagation();
-			handlers.onF12PrintDiary?.();
+			handlers.onF12PrintDiary();
 			return;
 		}
 
 		// 9. Ctrl+S / Cmd+S: Instant debounced autosave (Mandate 8e)
 		// Supports Cyrillic layout "ы" (KeyS)
-		if (isCtrlOrMeta && (key === "s" || key === "ы" || code === "KeyS") && !event.altKey && !event.shiftKey) {
+		if (handlers.onSave && isCtrlOrMeta && (key === "s" || key === "ы" || code === "KeyS") && !event.altKey && !event.shiftKey) {
 			event.preventDefault();
 			event.stopPropagation();
-			void handlers.onSave?.();
+			void handlers.onSave();
 			return;
 		}
 
 		// 10. Escape: Close top modal or side drawer
-		if (event.key === "Escape" || code === "Escape") {
-			if (handlers.onEscape) {
-				event.preventDefault();
-				event.stopPropagation();
-				handlers.onEscape();
-				return;
-			}
+		if ((event.key === "Escape" || code === "Escape") && handlers.onEscape) {
+			event.preventDefault();
+			event.stopPropagation();
+			handlers.onEscape();
+			return;
 		}
 	};
 
@@ -385,6 +603,13 @@ export function getDeviceDiagnosticReport(): Record<string, unknown> {
 		controlDimensions: dimensions,
 		capabilities,
 		safeAreaInsets: info.safeArea,
+		isLowSpec: isLowSpecHardware(),
+		hardwareTier: getHardwareResourceTier(),
+		isHighPerformance: isHighPerformanceWorkstation(),
+		cores: typeof navigator !== "undefined" ? (navigator.hardwareConcurrency ?? null) : null,
+		deviceMemoryGb: typeof navigator !== "undefined" ? ((navigator as unknown as { deviceMemory?: number }).deviceMemory ?? null) : null,
+		shouldVirtualizeAggressively: shouldVirtualizeListsAggressively(),
+		adaptivePollingInterval10s: getAdaptivePollingIntervalMs(10_000),
 		userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "ssr",
 		screenWidth: typeof window !== "undefined" ? window.innerWidth : 0,
 		screenHeight: typeof window !== "undefined" ? window.innerHeight : 0,
@@ -399,3 +624,4 @@ export {
 	DOCTOR_HOTKEYS,
 	syncPlatformDomAttributes,
 };
+

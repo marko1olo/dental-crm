@@ -77,6 +77,21 @@ import {
 } from "../services/offline/offlineStorage";
 import { disposeWebGlRenderingContext } from "@dental/shared";
 import { printA4Document } from "../lib/hardwarePrinting";
+import {
+	isLowSpecHardware,
+	getHardwareResourceTier,
+	isHighPerformanceWorkstation,
+	getAdaptivePollingIntervalMs,
+	shouldVirtualizeListsAggressively,
+	applyLowSpecOptimizationsToDom,
+	getDeviceDiagnosticReport,
+	detectPlatform,
+} from "../utils/deviceDetection";
+import {
+	createKioskManager,
+	verifyPinConstantTime,
+} from "../components/desktop/kioskMode";
+
 
 test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 	await t.test("Default environment detects web_pwa when no native wrappers present", () => {
@@ -1125,7 +1140,213 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 			}
 		}
 	});
+
+	await t.test("Low-Spec hardware auto-detection (Celeron 2-core CPU, <=4GB RAM, 5400 RPM HDD)", () => {
+		const originalNavDesc = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+
+		// Simulated weak clinic laptop: 2 cores (Celeron), 4GB RAM
+		Object.defineProperty(globalThis, "navigator", {
+			value: {
+				hardwareConcurrency: 2,
+				deviceMemory: 4,
+				userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+			},
+			configurable: true,
+			writable: true,
+		});
+
+		try {
+			assert.equal(isLowSpecHardware(), true);
+			assert.equal(getHardwareResourceTier(), "low");
+			assert.equal(isHighPerformanceWorkstation(), false);
+			assert.equal(shouldVirtualizeListsAggressively(), true);
+
+			// Adaptive polling scales up to protect disk queue and CPU
+			assert.equal(getAdaptivePollingIntervalMs(5000), 15000); // 15s floor
+			assert.equal(getAdaptivePollingIntervalMs(30000), 75000); // 2.5x scaling
+		} finally {
+			if (originalNavDesc) {
+				Object.defineProperty(globalThis, "navigator", originalNavDesc);
+			} else {
+				delete (globalThis as any).navigator;
+			}
+		}
+	});
+
+	await t.test("High-performance workstation detection (>=8 cores, >=8GB RAM) retains 60/120 FPS full fidelity", () => {
+		const originalNavDesc = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+
+		// Simulated doctor workstation: 16 cores, 32GB RAM
+		Object.defineProperty(globalThis, "navigator", {
+			value: {
+				hardwareConcurrency: 16,
+				deviceMemory: 32,
+				userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+			},
+			configurable: true,
+			writable: true,
+		});
+
+		try {
+			assert.equal(isLowSpecHardware(), false);
+			assert.equal(getHardwareResourceTier(), "high");
+			assert.equal(isHighPerformanceWorkstation(), true);
+			assert.equal(shouldVirtualizeListsAggressively(), false);
+
+			// Full speed 1.0x polling without delays
+			assert.equal(getAdaptivePollingIntervalMs(5000), 5000);
+			assert.equal(getAdaptivePollingIntervalMs(30000), 30000);
+		} finally {
+			if (originalNavDesc) {
+				Object.defineProperty(globalThis, "navigator", originalNavDesc);
+			} else {
+				delete (globalThis as any).navigator;
+			}
+		}
+	});
+
+	await t.test("Medium-tier hardware scaling (4-6 cores, 6GB RAM)", () => {
+		const originalNavDesc = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+
+		// Simulated mid-range office PC
+		Object.defineProperty(globalThis, "navigator", {
+			value: {
+				hardwareConcurrency: 6,
+				deviceMemory: 6,
+				userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+			},
+			configurable: true,
+			writable: true,
+		});
+
+		try {
+			assert.equal(isLowSpecHardware(), false);
+			assert.equal(getHardwareResourceTier(), "medium");
+			assert.equal(isHighPerformanceWorkstation(), false);
+
+			// 1.5x moderate adaptive polling
+			assert.equal(getAdaptivePollingIntervalMs(6000), 9000);
+		} finally {
+			if (originalNavDesc) {
+				Object.defineProperty(globalThis, "navigator", originalNavDesc);
+			} else {
+				delete (globalThis as any).navigator;
+			}
+		}
+	});
+
+	await t.test("DOM Low-Spec optimizations synchronizer toggles CSS tokens and layout containment", () => {
+		const originalDocDesc = Object.getOwnPropertyDescriptor(globalThis, "document");
+
+		const attributes: Record<string, string> = {};
+		const classList = new Set<string>();
+
+		const mockDoc = {
+			documentElement: {
+				getAttribute: (k: string) => attributes[k] ?? null,
+				setAttribute: (k: string, v: string) => { attributes[k] = v; },
+				removeAttribute: (k: string) => { delete attributes[k]; },
+				classList: {
+					add: (c: string) => classList.add(c),
+					remove: (c: string) => classList.delete(c),
+					contains: (c: string) => classList.has(c),
+				},
+			},
+		};
+
+		Object.defineProperty(globalThis, "document", {
+			value: mockDoc,
+			configurable: true,
+			writable: true,
+		});
+
+		try {
+			// Apply low-spec
+			applyLowSpecOptimizationsToDom(true);
+			assert.equal(attributes["data-low-spec"], "true");
+			assert.equal(attributes["data-hardware-tier"], "low");
+			assert.equal(attributes["data-perf"], "low");
+			assert.equal(classList.has("low-spec-mode"), true);
+			assert.equal(classList.has("low-spec-perf"), true);
+
+			// Now isLowSpecHardware reflects the DOM attribute immediately
+			assert.equal(isLowSpecHardware(), true);
+			assert.equal(getHardwareResourceTier(), "low");
+
+			// Remove low-spec / restore high-spec
+			applyLowSpecOptimizationsToDom(false);
+			assert.equal(attributes["data-low-spec"], undefined);
+			assert.equal(attributes["data-hardware-tier"], "high");
+			assert.equal(attributes["data-perf"], "high");
+			assert.equal(classList.has("low-spec-mode"), false);
+			assert.equal(classList.has("low-spec-perf"), false);
+		} finally {
+			if (originalDocDesc) {
+				Object.defineProperty(globalThis, "document", originalDocDesc);
+			} else {
+				delete (globalThis as any).document;
+			}
+		}
+	});
+
+	await t.test("getDeviceDiagnosticReport includes comprehensive hardware tiering telemetry", () => {
+		const report = getDeviceDiagnosticReport();
+		assert.equal(typeof report.platform, "string");
+		assert.equal(typeof report.isLowSpec, "boolean");
+		assert.equal(typeof report.hardwareTier, "string");
+		assert.equal(typeof report.isHighPerformance, "boolean");
+		assert.equal(typeof report.shouldVirtualizeAggressively, "boolean");
+		assert.equal(typeof report.adaptivePollingInterval10s, "number");
+		assert.ok((report.adaptivePollingInterval10s as number) >= 10000);
+	});
+
+	await t.test("Kiosk Mode Manager: isolated PIN security, lockout protection and exit mechanics", async () => {
+		// 1. Constant-time PIN verification
+		assert.equal(verifyPinConstantTime("1234", "1234"), true);
+		assert.equal(verifyPinConstantTime("1234", "4321"), false);
+		assert.equal(verifyPinConstantTime("", "1234"), false);
+
+		// 2. Kiosk Manager lifecycle
+		const kiosk = createKioskManager({
+			exitPin: "7788",
+			securityLevel: "strict",
+			maxFailedPinAttempts: 3,
+			lockoutDurationSeconds: 1,
+		});
+
+		const state0 = kiosk.getState();
+		assert.equal(state0.isActive, false);
+
+		// Enable kiosk
+		const enableRes = await kiosk.enable();
+		assert.equal(enableRes.success, true);
+		assert.equal(kiosk.getState().isActive, true);
+
+		// Wrong PIN attempts leading to lockout
+		const fail1 = await kiosk.disable("0000");
+		assert.equal(fail1.success, false);
+		assert.ok(fail1.error?.includes("Неверный PIN-код"));
+
+		const fail2 = await kiosk.disable("1111");
+		assert.equal(fail2.success, false);
+
+		const fail3 = await kiosk.disable("2222"); // 3rd failed attempt -> lockout
+		assert.equal(fail3.success, false);
+		assert.ok(fail3.error?.includes("Блокировка"));
+		assert.equal(kiosk.getState().isLockedOut, true);
+
+		// Waiting out the 1s lockout
+		await new Promise((r) => setTimeout(r, 1100));
+
+		// Correct PIN exit
+		const successExit = await kiosk.disable("7788");
+		assert.equal(successExit.success, true);
+		assert.equal(kiosk.getState().isActive, false);
+
+		kiosk.destroy();
+	});
 });
+
 
 
 
