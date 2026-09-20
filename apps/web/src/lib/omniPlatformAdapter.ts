@@ -97,16 +97,24 @@ export interface OmniPlatformInfo {
 		standardMinHeightPx: number;
 		/** Dense secondary chip / tab min height */
 		denseMinHeightPx: number;
+		/** Minimum touch target hit size (>= 44px on coarse, primary >= 48px) */
+		touchTargetMinPx: number;
+		/** Recommended primary typography font size */
+		fontSizePx: number;
 	};
 	/** Hardware capabilities matrix */
 	capabilities: {
 		canSilentPrintThermal: boolean;
+		canDirectFiscalKktTcp: boolean;
+		canDirectEscPosSocket: boolean;
+		canHardwareHotkeys: boolean;
 		canPrintA4: boolean;
 		canDirectTwainVisiograph: boolean;
 		canCameraScanBarcode: boolean;
 		canUsbHidScanner: boolean;
 		canNativeBiometrics: boolean;
 		canOfflineStorage: boolean;
+		hasPwaOfflineCache: boolean;
 	};
 }
 
@@ -164,7 +172,7 @@ export function isStandalonePwa(): boolean {
 	}
 
 	// 3. Android WebAPK launch intent referrer
-	if (typeof document !== "undefined" && document.referrer.startsWith("android-app://")) {
+	if (typeof document !== "undefined" && typeof document.referrer === "string" && document.referrer.startsWith("android-app://")) {
 		return true;
 	}
 
@@ -190,6 +198,83 @@ export function isAndroidNativeApp(): boolean {
 	}
 
 	return false;
+}
+
+/**
+ * Checks whether Service Worker is supported in the current browser runtime.
+ */
+export function isServiceWorkerSupported(): boolean {
+	return typeof navigator !== "undefined" && "serviceWorker" in navigator;
+}
+
+/**
+ * Checks if a Service Worker is currently registered and active for offline caching.
+ */
+export async function isServiceWorkerActive(): Promise<boolean> {
+	if (!isServiceWorkerSupported()) return false;
+	try {
+		const reg = await navigator.serviceWorker.getRegistration();
+		return Boolean(reg?.active);
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Registers PWA service worker for offline cache survivability.
+ */
+export async function registerPwaServiceWorker(swUrl = "/sw.js"): Promise<boolean> {
+	if (!isServiceWorkerSupported()) return false;
+	try {
+		const reg = await navigator.serviceWorker.register(swUrl, { scope: "/" });
+		return Boolean(reg);
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Triggers a check for an updated Service Worker in PWA mode.
+ * Returns true if an update is waiting to activate.
+ */
+export async function checkForPwaUpdate(): Promise<boolean> {
+	if (!isServiceWorkerSupported()) return false;
+	try {
+		const reg = await navigator.serviceWorker.getRegistration();
+		if (!reg) return false;
+		await reg.update();
+		return Boolean(reg.waiting);
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Caches essential static assets into CacheStorage for offline PWA operation.
+ */
+export async function cacheOfflineAssets(urls: string[] = ["/", "/index.html"]): Promise<boolean> {
+	if (typeof window === "undefined" || !("caches" in window)) return false;
+	try {
+		const cache = await caches.open("dente-pwa-static-v1");
+		await cache.addAll(urls);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Clears all ServiceWorker and PWA caches on application reset or version migration.
+ */
+export async function clearPwaCaches(): Promise<boolean> {
+	if (typeof window === "undefined" || !("caches" in window)) return false;
+	try {
+		const keys = await caches.keys();
+		await Promise.all(keys.map((k) => caches.delete(k)));
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 /**
@@ -251,21 +336,29 @@ export function getOmniPlatformInfo(): OmniPlatformInfo {
 				primaryActionMinHeightPx: isPhone ? 52 : 48,
 				standardMinHeightPx: 44,
 				denseMinHeightPx: 36,
+				touchTargetMinPx: 44,
+				fontSizePx: isPhone ? 15 : 14,
 			}
 		: {
 				primaryActionMinHeightPx: 36,
 				standardMinHeightPx: 32,
 				denseMinHeightPx: 28,
+				touchTargetMinPx: 28,
+				fontSizePx: 13,
 			};
 
 	const capabilities = {
 		canSilentPrintThermal: isDesktop,
+		canDirectFiscalKktTcp: isDesktop,
+		canDirectEscPosSocket: isDesktop,
+		canHardwareHotkeys: isDesktop,
 		canPrintA4: true,
 		canDirectTwainVisiograph: isDesktop,
 		canCameraScanBarcode: isAndroid || (typeof navigator !== "undefined" && Boolean(navigator.mediaDevices)),
 		canUsbHidScanner: isDesktop || isWeb || isPwa,
 		canNativeBiometrics: isAndroid,
 		canOfflineStorage: typeof window !== "undefined" && (Boolean(window.indexedDB) || Boolean(window.localStorage)),
+		hasPwaOfflineCache: typeof navigator !== "undefined" && "serviceWorker" in navigator,
 	};
 
 	return {
@@ -317,6 +410,14 @@ export function syncPlatformDomAttributes(info?: OmniPlatformInfo): void {
 		root.classList.add("pointer-fine");
 		root.classList.remove("pointer-coarse");
 	}
+
+	// Synchronize Safe Area Insets as CSS custom properties for notch and home bar
+	if (root.style && typeof root.style.setProperty === "function") {
+		root.style.setProperty("--sat", `${platformInfo.safeArea.top}px`);
+		root.style.setProperty("--sab", `${platformInfo.safeArea.bottom}px`);
+		root.style.setProperty("--sal", `${platformInfo.safeArea.left}px`);
+		root.style.setProperty("--sar", `${platformInfo.safeArea.right}px`);
+	}
 }
 
 // ============================================================================
@@ -326,14 +427,19 @@ export function syncPlatformDomAttributes(info?: OmniPlatformInfo): void {
 class WebUnifiedStorageEngine implements UnifiedStorageEngineContract {
 	async saveDraft(draft: OfflineDraftRecord): Promise<boolean> {
 		try {
-			await saveOfflineDraft(draft.key, {
-				visitId: draft.visitId,
-				patientId: draft.patientId,
-				doctorId: draft.doctorId,
-				payload: draft.payloadJson,
-				version: draft.version,
-				updatedAt: draft.updatedAt,
-			});
+			await saveOfflineDraft(
+				draft.key,
+				"DIARY_043_DRAFT",
+				draft.visitId || draft.patientId || draft.key,
+				{
+					...(draft.visitId ? { visitId: draft.visitId } : {}),
+					...(draft.patientId ? { patientId: draft.patientId } : {}),
+					...(draft.doctorId ? { doctorId: draft.doctorId } : {}),
+					payload: draft.payloadJson,
+					version: draft.version,
+					updatedAt: draft.updatedAt,
+				},
+			);
 			return true;
 		} catch {
 			return false;
@@ -386,16 +492,16 @@ class WebUnifiedStorageEngine implements UnifiedStorageEngineContract {
 		});
 
 		return {
-			id: res.id,
-			organizationId: res.organizationId,
+			id: res.mutationId,
+			organizationId: res.organizationId || mutation.organizationId,
 			entityType: res.entityType,
 			entityId: res.entityId,
 			action: res.action as "create" | "update" | "delete",
 			payloadJson: JSON.stringify(res.payload),
-			createdAt: res.createdAt,
+			createdAt: res.timestamp,
 			synced: res.status === "synced",
 			retryAttempts: res.retryCount ?? 0,
-			lastError: res.lastError,
+			...(res.lastError ? { lastError: res.lastError } : {}),
 		};
 	}
 
@@ -403,16 +509,16 @@ class WebUnifiedStorageEngine implements UnifiedStorageEngineContract {
 		try {
 			const pending = await getPendingOfflineMutations();
 			return pending.map((m) => ({
-				id: m.id,
-				organizationId: m.organizationId,
+				id: m.mutationId,
+				organizationId: m.organizationId || "",
 				entityType: m.entityType,
 				entityId: m.entityId,
 				action: m.action as "create" | "update" | "delete",
 				payloadJson: JSON.stringify(m.payload),
-				createdAt: m.createdAt,
+				createdAt: m.timestamp,
 				synced: m.status === "synced",
 				retryAttempts: m.retryCount ?? 0,
-				lastError: m.lastError,
+				...(m.lastError ? { lastError: m.lastError } : {}),
 			}));
 		} catch {
 			return [];
@@ -437,9 +543,245 @@ class WebUnifiedStorageEngine implements UnifiedStorageEngineContract {
 			pendingCount: pending.length,
 		};
 	}
+
+	async syncPendingMutations() {
+		const { offlineSyncService } = await import("../services/offline/offlineSyncService.js");
+		return offlineSyncService.drainOutbox();
+	}
 }
 
 const unifiedStorageInstance = new WebUnifiedStorageEngine();
+
+// ============================================================================
+// WEB PLATFORM WEBSOCKET & PWA AUTO-SYNC ENGINES
+// ============================================================================
+
+export interface OmniWebSocketOptions {
+	/** Initial reconnect delay in milliseconds (default 1000) */
+	readonly reconnectBaseMs?: number;
+	/** Maximum reconnect delay in milliseconds (default 30000) */
+	readonly reconnectMaxMs?: number;
+	/** Heartbeat ping interval in milliseconds (default 25000) */
+	readonly pingIntervalMs?: number;
+	/** Callback when connection opens */
+	readonly onOpen?: () => void;
+	/** Callback when message arrives */
+	readonly onMessage?: (data: unknown) => void;
+	/** Callback on error */
+	readonly onError?: (err: Event) => void;
+	/** Callback on close */
+	readonly onClose?: () => void;
+}
+
+export interface OmniWebSocketClient {
+	readonly isConnected: boolean;
+	readonly send: (data: unknown) => boolean;
+	readonly close: () => void;
+	readonly reconnect: () => void;
+}
+
+/**
+ * Creates a resilient WebSocket connection with exponential backoff and jitter (Web Browser & PWA).
+ * Automatically handles first-frame token authentication, PING/PONG keepalive, and network online recovery.
+ */
+export function createOmniWebSocket(
+	url: string,
+	options: OmniWebSocketOptions = {},
+): OmniWebSocketClient {
+	const baseMs = options.reconnectBaseMs ?? 1000;
+	const maxMs = options.reconnectMaxMs ?? 30000;
+	const pingInterval = options.pingIntervalMs ?? 25000;
+
+	let socket: WebSocket | null = null;
+	let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+	let pingTimer: ReturnType<typeof setInterval> | null = null;
+	let attempts = 0;
+	let explicitlyClosed = false;
+	let connected = false;
+
+	const connect = () => {
+		if (typeof window === "undefined" || typeof WebSocket === "undefined") return;
+		if (explicitlyClosed || !url) return;
+
+		if (socket) {
+			socket.onopen = null;
+			socket.onmessage = null;
+			socket.onerror = null;
+			socket.onclose = null;
+			try {
+				socket.close();
+			} catch {}
+			socket = null;
+		}
+
+		try {
+			socket = new WebSocket(url);
+		} catch {
+			scheduleReconnect();
+			return;
+		}
+
+		socket.onopen = () => {
+			attempts = 0;
+			connected = true;
+
+			// Send authentication frame if tokens exist
+			const clinicToken = typeof localStorage !== "undefined" ? localStorage.getItem("dente_clinic_token") : null;
+			const staffToken = typeof localStorage !== "undefined" ? localStorage.getItem("dente_staff_token") : null;
+			if (clinicToken || staffToken) {
+				try {
+					socket?.send(
+						JSON.stringify({
+							type: "AUTH",
+							payload: { clinicToken, staffToken },
+						}),
+					);
+				} catch {}
+			}
+
+			// Start ping keepalive
+			if (pingInterval > 0) {
+				pingTimer = setInterval(() => {
+					if (socket?.readyState === WebSocket.OPEN) {
+						socket.send("PING");
+					}
+				}, pingInterval);
+			}
+
+			options.onOpen?.();
+		};
+
+		socket.onmessage = (event) => {
+			if (event.data === "PONG") return;
+			try {
+				const parsed = JSON.parse(event.data);
+				if (parsed?.type === "AUTH_OK") return;
+				options.onMessage?.(parsed);
+			} catch {
+				options.onMessage?.(event.data);
+			}
+		};
+
+		socket.onerror = (e) => {
+			options.onError?.(e);
+		};
+
+		socket.onclose = () => {
+			connected = false;
+			if (pingTimer) {
+				clearInterval(pingTimer);
+				pingTimer = null;
+			}
+			options.onClose?.();
+			if (!explicitlyClosed) {
+				scheduleReconnect();
+			}
+		};
+	};
+
+	const scheduleReconnect = () => {
+		if (explicitlyClosed) return;
+		if (reconnectTimer) clearTimeout(reconnectTimer);
+
+		// Full Jitter Exponential Backoff
+		const exponential = Math.min(maxMs, baseMs * Math.pow(2, attempts));
+		const factor = 0.5 + (Date.now() % 1000) / 2000;
+		const delay = Math.max(100, Math.round(exponential * factor));
+		attempts++;
+
+		reconnectTimer = setTimeout(() => {
+			connect();
+		}, delay);
+	};
+
+	// Immediate reconnect when browser signals network online
+	const handleOnline = () => {
+		if (!connected && !explicitlyClosed) {
+			attempts = 0;
+			connect();
+		}
+	};
+
+	if (typeof window !== "undefined") {
+		window.addEventListener("online", handleOnline);
+	}
+
+	connect();
+
+	return {
+		get isConnected() {
+			return connected && socket?.readyState === WebSocket.OPEN;
+		},
+		send(data: unknown): boolean {
+			if (socket && socket.readyState === WebSocket.OPEN) {
+				const payload = typeof data === "string" ? data : JSON.stringify(data);
+				socket.send(payload);
+				return true;
+			}
+			return false;
+		},
+		close() {
+			explicitlyClosed = true;
+			if (reconnectTimer) clearTimeout(reconnectTimer);
+			if (pingTimer) clearInterval(pingTimer);
+			if (typeof window !== "undefined") {
+				window.removeEventListener("online", handleOnline);
+			}
+			if (socket) {
+				try {
+					socket.close();
+				} catch {}
+				socket = null;
+			}
+			connected = false;
+		},
+		reconnect() {
+			explicitlyClosed = false;
+			attempts = 0;
+			connect();
+		},
+	};
+}
+
+/**
+ * Starts automatic offline mutation queue auto-sync on network reconnection (PWA & Web Browser).
+ * Drains pending offline drafts and mutations when transitioning to online or LAN mode.
+ */
+export function startOfflineQueueAutoSync(intervalMs = 30_000): () => void {
+	if (typeof window === "undefined") return () => {};
+
+	let timer: ReturnType<typeof setInterval> | null = null;
+
+	const attemptSync = async () => {
+		try {
+			const { determineNetworkConnectivity } = await import("../utils/networkConnectivity.js");
+			const net = await determineNetworkConnectivity();
+			if (net.isOnline || net.isLan) {
+				const { offlineSyncService } = await import("../services/offline/offlineSyncService.js");
+				if (!offlineSyncService.isDrainActive()) {
+					await offlineSyncService.drainOutbox();
+				}
+			}
+		} catch {
+			// Silent suppression during background sync attempts
+		}
+	};
+
+	const handleOnline = () => {
+		void attemptSync();
+	};
+
+	window.addEventListener("online", handleOnline);
+
+	if (intervalMs > 0) {
+		timer = setInterval(attemptSync, intervalMs);
+	}
+
+	return () => {
+		window.removeEventListener("online", handleOnline);
+		if (timer) clearInterval(timer);
+	};
+}
 
 // ============================================================================
 // UNIFIED OMNI-PLATFORM RUNTIME ADAPTER SINGLETON
@@ -493,12 +835,14 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 		// 1. A4 Document: standard print layer
 		if (job.type === "a4_document") {
 			const { printA4Document } = await import("./hardwarePrinting.js");
-			const res = await printA4Document(job.html || job.rawText || "", { title: job.title });
+			const res = await printA4Document(job.html || job.rawText || "", {
+				...(job.title ? { title: job.title } : {}),
+			});
 			return {
 				success: res.success,
 				methodUsed: res.method === "desktop_silent" ? "desktop_silent" : "browser_print",
 				printedAt: now,
-				error: res.error,
+				...(res.error ? { error: res.error } : {}),
 			};
 		}
 
@@ -510,17 +854,17 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 					const res = await printDesktopFiscalReceiptTcp({
 						host: job.kktConnection.host,
 						port: job.kktConnection.port,
-						protocol: job.kktConnection.protocol,
+						protocol: (job.kktConnection.protocol === "shtrih" ? "shtrih" : "atol") as "atol" | "shtrih",
 						payload: JSON.parse(job.kktConnection.payloadJson),
 					});
 					return {
 						success: res.success,
 						methodUsed: "desktop_silent",
 						printedAt: res.printedAt || now,
-						fiscalSign: res.fiscalSign,
-						fiscalDocNum: res.fiscalDocNum,
-						kktSerialNumber: res.kktSerialNumber,
-						error: res.error,
+						...(res.fiscalSign ? { fiscalSign: res.fiscalSign } : {}),
+						...(res.fiscalDocNum ? { fiscalDocNum: res.fiscalDocNum } : {}),
+						...(res.kktSerialNumber ? { kktSerialNumber: res.kktSerialNumber } : {}),
+						...(res.error ? { error: res.error } : {}),
 					};
 				} catch (err: unknown) {
 					const message = err instanceof Error ? err.message : "Ошибка TCP печати ККТ";
@@ -542,40 +886,74 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 			};
 			const res = await printThermalReceipt(dummyFiscalPayload, {
 				paperWidthMm: job.paperWidthMm ?? 58,
-				silent: job.silent,
-				printerName: job.printerName,
-				rawEscPos: job.rawText,
-				copies: job.copies,
+				...(job.silent !== undefined ? { silent: job.silent } : {}),
+				...(job.printerName ? { printerName: job.printerName } : {}),
+				...(job.rawText ? { rawEscPos: job.rawText } : {}),
+				...(job.copies !== undefined ? { copies: job.copies } : {}),
 			});
 			return {
 				success: res.success,
 				methodUsed: res.method === "desktop_silent" ? "desktop_silent" : "browser_print",
 				printedAt: now,
-				fiscalSign: res.fiscalSign,
-				fiscalDocNum: res.fiscalDocNum,
-				kktSerialNumber: res.kktSerialNumber,
-				error: res.error,
+				...(res.fiscalSign ? { fiscalSign: res.fiscalSign } : {}),
+				...(res.fiscalDocNum ? { fiscalDocNum: res.fiscalDocNum } : {}),
+				...(res.kktSerialNumber ? { kktSerialNumber: res.kktSerialNumber } : {}),
+				...(res.error ? { error: res.error } : {}),
 			};
 		}
 
 		// 3. Thermal Receipt ESC/POS (Non-fiscal orders / lab stubs)
 		if (job.type === "thermal_receipt_escpos") {
+			// Direct TCP/IP socket connection on Desktop EXE (no Windows print dialog)
+			if (isDesktopExecutable()) {
+				const { printDesktopEscPosReceipt } = await import("../native/desktopBridge.js");
+				try {
+					const res = await printDesktopEscPosReceipt({
+						host: job.kktConnection?.host || "127.0.0.1",
+						port: job.kktConnection?.port || 9100,
+						...(job.printerName ? { printerName: job.printerName } : {}),
+						...(job.rawBase64 ? { rawEscPosBase64: job.rawBase64 } : {}),
+						...(job.rawText ? { text: job.rawText } : {}),
+						silent: job.silent !== false,
+						widthMm: job.paperWidthMm ?? 80,
+						copies: job.copies ?? 1,
+					});
+					const printerUsed = (res as any).printerName || (res as any).printerUsed || job.kktConnection?.host || "ESC/POS 9100";
+					return {
+						success: res.success,
+						methodUsed: "desktop_silent",
+						printedAt: res.printedAt || now,
+						...(printerUsed ? { printerName: printerUsed } : {}),
+						...(res.error ? { error: res.error } : {}),
+					};
+				} catch (err: unknown) {
+					const message = err instanceof Error ? err.message : "Ошибка сокетной печати ESC/POS";
+					return {
+						success: false,
+						methodUsed: "desktop_silent",
+						printedAt: now,
+						error: message,
+					};
+				}
+			}
+
 			const { dispatchEscPosReceiptPrint } = await import("../native/hardwareDispatcher.js");
 			const res = await dispatchEscPosReceiptPrint({
-				rawEscPosBase64: job.rawBase64,
-				text: job.rawText,
-				html: job.html,
-				printerName: job.printerName,
+				...(job.rawBase64 ? { rawEscPosBase64: job.rawBase64 } : {}),
+				...(job.rawText ? { text: job.rawText } : {}),
+				...(job.html ? { html: job.html } : {}),
+				...(job.printerName ? { printerName: job.printerName } : {}),
 				silent: job.silent !== false,
 				widthMm: job.paperWidthMm ?? 80,
 				copies: job.copies ?? 1,
 			});
+			const printerUsed = res.printerName || res.printerUsed;
 			return {
 				success: res.success,
 				methodUsed: isDesktopExecutable() ? "desktop_silent" : "browser_print",
 				printedAt: res.printedAt || now,
-				printerName: res.printerName || res.printerUsed,
-				error: res.error,
+				...(printerUsed ? { printerName: printerUsed } : {}),
+				...(res.error ? { error: res.error } : {}),
 			};
 		}
 
@@ -583,19 +961,20 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 		if (job.type === "sterilization_label_sanpin") {
 			const { dispatchThermalLabelPrint } = await import("../native/hardwareDispatcher.js");
 			const res = await dispatchThermalLabelPrint({
-				html: job.html,
-				text: job.rawText,
-				printerName: job.printerName,
+				...(job.html ? { html: job.html } : {}),
+				...(job.rawText ? { text: job.rawText } : {}),
+				...(job.printerName ? { printerName: job.printerName } : {}),
 				silent: job.silent !== false,
 				widthMm: job.paperWidthMm ?? 58,
 				copies: job.copies ?? 1,
 			});
+			const printerUsed = res.printerName || res.printerUsed;
 			return {
 				success: res.success,
 				methodUsed: isDesktopExecutable() ? "desktop_silent" : "browser_print",
 				printedAt: res.printedAt || now,
-				printerName: res.printerName || res.printerUsed,
-				error: res.error,
+				...(printerUsed ? { printerName: printerUsed } : {}),
+				...(res.error ? { error: res.error } : {}),
 			};
 		}
 
@@ -639,8 +1018,43 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 	}
 
 	async captureChairsidePhoto(options?: ChairsidePhotoOptions): Promise<ChairsidePhotoResult> {
+		if (isAndroidNativeApp()) {
+			const { captureMobileCameraPhoto } = await import("../native/mobileBridge.js");
+			return captureMobileCameraPhoto(options);
+		}
 		const { captureChairsidePhoto } = await import("../utils/deviceDetection.js");
 		return captureChairsidePhoto(options);
+	}
+
+	/**
+	 * Registers PWA ServiceWorker for offline cache survivability.
+	 */
+	async registerServiceWorker(swUrl = "/sw.js"): Promise<boolean> {
+		return registerPwaServiceWorker(swUrl);
+	}
+
+	/**
+	 * Checks for pending PWA ServiceWorker update.
+	 */
+	async checkForPwaUpdate(): Promise<boolean> {
+		return checkForPwaUpdate();
+	}
+
+	/**
+	 * Starts offline mutation queue auto-sync on network recovery (PWA & Web Browser).
+	 */
+	startOfflineAutoSync(intervalMs = 30_000): () => void {
+		return startOfflineQueueAutoSync(intervalMs);
+	}
+
+	/**
+	 * Registers doctor keyboard hotkeys (F1–F12, Ctrl+S, Esc) with layout normalization.
+	 */
+	registerDoctorHotkeys(
+		handlers: Parameters<typeof registerDoctorHotkeys>[0],
+		target?: Window | Document | HTMLElement,
+	): () => void {
+		return registerDoctorHotkeys(handlers, target);
 	}
 }
 
@@ -653,3 +1067,42 @@ export {
 	PHONE_TOUCH_ERGONOMICS,
 	DOCTOR_HOTKEYS,
 };
+
+export {
+	useSafeSwipe,
+	useQuadrantSwipe,
+	useVisitTabSwipe,
+	useToothSwipe,
+	getNextQuadrantBySwipe,
+	getNextVisitTabBySwipe,
+	getNextToothBySwipe,
+	getOpposingTooth,
+	ADULT_UPPER_ARCH,
+	ADULT_LOWER_ARCH,
+	PEDIATRIC_UPPER_ARCH,
+	PEDIATRIC_LOWER_ARCH,
+	type UseSafeSwipeOptions,
+	type UseQuadrantSwipeOptions,
+	type UseVisitTabSwipeOptions,
+	type UseToothSwipeOptions,
+	type OdontogramQuadrantId,
+	type VisitSubViewTab,
+} from "../hooks/useSafeSwipe.js";
+
+export {
+	registerSafeSwipeGesture,
+	triggerHaptic,
+	type SafeSwipeOptions,
+} from "../native/mobileBridge.js";
+
+export {
+	isTypingInInputElement,
+	dispatchDesktopShortcut,
+	useDesktopShortcuts,
+} from "../hooks/useDesktopShortcuts.js";
+
+export {
+	registerDoctorHotkeys,
+} from "../utils/deviceDetection.js";
+
+

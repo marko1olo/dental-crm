@@ -96,6 +96,10 @@ export interface MobileNativeApi {
 	printThermalBinary?: (bytes: number[]) => Promise<{ success: boolean; error?: string | undefined }>;
 	acquireWakeLock?: () => Promise<{ success: boolean }>;
 	releaseWakeLock?: () => Promise<{ success: boolean }>;
+	capturePhoto?: (options?: {
+		quality?: number;
+		facingMode?: "environment" | "user";
+	}) => Promise<{ success: boolean; dataUrl?: string; error?: string }>;
 }
 
 export interface CapacitorPushNotificationSchema {
@@ -162,6 +166,24 @@ declare global {
 						characteristic: string;
 						value: string; // base64 or hex
 					}) => Promise<void>;
+				};
+				Camera?: {
+					getPhoto?: (options: {
+						quality?: number;
+						allowEditing?: boolean;
+						resultType?: "uri" | "base64" | "dataUrl";
+						source?: "prompt" | "camera" | "photos";
+						direction?: "rear" | "front";
+						width?: number;
+						height?: number;
+					}) => Promise<{
+						dataUrl?: string;
+						base64String?: string;
+						format?: string;
+						webPath?: string;
+					}>;
+					checkPermissions?: () => Promise<{ camera: "granted" | "denied" | "prompt" }>;
+					requestPermissions?: () => Promise<{ camera: "granted" | "denied" | "prompt" }>;
 				};
 			};
 		} | undefined;
@@ -333,6 +355,115 @@ export async function scanDataMatrixWithCamera(): Promise<MobileScanResult> {
 		success: false,
 		error: "Аппаратный сканер камеры доступен в приложении DENTE для Android (.apk). В браузере введите код вручную или используйте 2D-сканер.",
 	};
+}
+
+export interface MobileCameraPhotoOptions {
+	/** Image resolution / quality preset */
+	readonly resolution?: "standard" | "high" | "macro" | undefined;
+	/** Camera sensor facing direction */
+	readonly facingMode?: "environment" | "user" | undefined;
+	/** Prefer native camera activity over web MediaDevices */
+	readonly preferNativeCamera?: boolean | undefined;
+	/** Tooth code according to FDI (11..48) */
+	readonly toothCode?: string | undefined;
+	/** Clinical photo protocol category */
+	readonly viewCategory?:
+		| "portrait"
+		| "occlusion"
+		| "upper_arch"
+		| "lower_arch"
+		| "intraoral_macro"
+		| "xray_film_scan"
+		| undefined;
+}
+
+export interface MobileCameraPhotoResult {
+	readonly success: boolean;
+	readonly dataUrl?: string | undefined;
+	readonly mimeType?: string | undefined;
+	readonly widthPx?: number | undefined;
+	readonly heightPx?: number | undefined;
+	readonly capturedAt: string;
+	readonly toothCode?: string | undefined;
+	readonly viewCategory?: string | undefined;
+	readonly error?: string | undefined;
+}
+
+/**
+ * Captures chairside dental clinical photo directly into the patient card.
+ * Routes through native Android APK Capacitor Camera plugin if available,
+ * custom mobile bridge, or falls back to WebRTC MediaDevices video capture.
+ */
+export async function captureMobileCameraPhoto(
+	options: MobileCameraPhotoOptions = {},
+): Promise<MobileCameraPhotoResult> {
+	const now = new Date().toISOString();
+
+	// 1. Check Capacitor Camera Plugin (Android APK / Tablet at chairside)
+	if (isNativePlatform()) {
+		const cameraPlugin = window.Capacitor?.Plugins?.Camera;
+		if (cameraPlugin?.getPhoto) {
+			try {
+				const photo = await cameraPlugin.getPhoto({
+					quality: options.resolution === "macro" ? 95 : options.resolution === "high" ? 90 : 85,
+					allowEditing: false,
+					resultType: "dataUrl",
+					source: "camera",
+					direction: options.facingMode === "user" ? "front" : "rear",
+				});
+
+				const dataUrl = photo.dataUrl || (photo.base64String ? `data:image/${photo.format || "jpeg"};base64,${photo.base64String}` : undefined);
+				if (dataUrl) {
+					triggerHaptic("success");
+					return {
+						success: true,
+						dataUrl,
+						mimeType: photo.format ? `image/${photo.format}` : "image/jpeg",
+						capturedAt: now,
+						toothCode: options.toothCode,
+						viewCategory: options.viewCategory,
+					};
+				}
+			} catch (err: unknown) {
+				const errMsg = err instanceof Error ? err.message : String(err);
+				if (errMsg.toLowerCase().includes("cancel")) {
+					return {
+						success: false,
+						capturedAt: now,
+						error: "Съемка фото отменена пользователем",
+					};
+				}
+			}
+		}
+
+		// 2. Custom native bridge method if present
+		const nativeApi = getMobileNativeApi();
+		if (nativeApi?.capturePhoto) {
+			try {
+				const res = await nativeApi.capturePhoto({
+					quality: options.resolution === "macro" ? 95 : 90,
+					facingMode: options.facingMode ?? "environment",
+				});
+				if (res.success && res.dataUrl) {
+					triggerHaptic("success");
+					return {
+						success: true,
+						dataUrl: res.dataUrl,
+						mimeType: "image/jpeg",
+						capturedAt: now,
+						toothCode: options.toothCode,
+						viewCategory: options.viewCategory,
+					};
+				}
+			} catch {
+				// Fall through
+			}
+		}
+	}
+
+	// 3. Fallback: browser / PWA HTML5 MediaDevices camera capture
+	const { captureChairsidePhoto } = await import("../utils/deviceDetection.js");
+	return captureChairsidePhoto(options);
 }
 
 /**
@@ -910,7 +1041,17 @@ export function getSafeAreaInsets(): { top: number; bottom: number; left: number
 		return { top: 0, bottom: 0, left: 0, right: 0 };
 	}
 
-	const style = getComputedStyle(document.documentElement);
+	const getStyleFn = typeof getComputedStyle === "function"
+		? getComputedStyle
+		: typeof window.getComputedStyle === "function"
+			? window.getComputedStyle
+			: null;
+
+	if (!getStyleFn) {
+		return { top: 0, bottom: 0, left: 0, right: 0 };
+	}
+
+	const style = getStyleFn(document.documentElement);
 	const parseInset = (prop: string) => {
 		const val = style.getPropertyValue(prop);
 		return val ? Number.parseInt(val, 10) || 0 : 0;
@@ -1614,5 +1755,196 @@ export function playClinicalAudioFeedback(
 		return false;
 	} catch {
 		return false;
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dental Arch Tooth Swipe Navigation (Android APK & Chairside Touch Tablets)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const DENTAL_ARCH_ADULT_UPPER: readonly number[] = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
+export const DENTAL_ARCH_ADULT_LOWER: readonly number[] = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
+export const DENTAL_ARCH_PEDIATRIC_UPPER: readonly number[] = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
+export const DENTAL_ARCH_PEDIATRIC_LOWER: readonly number[] = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
+
+/**
+ * Returns opposing jaw tooth according to dental anatomy (e.g. 16 <-> 46, 21 <-> 31).
+ */
+export function getOpposingToothCode(toothNumber: number): number {
+	const quadrant = Math.floor(toothNumber / 10);
+	const position = toothNumber % 10;
+	if (quadrant === 1) return 40 + position; // 1x -> 4x
+	if (quadrant === 4) return 10 + position; // 4x -> 1x
+	if (quadrant === 2) return 30 + position; // 2x -> 3x
+	if (quadrant === 3) return 20 + position; // 3x -> 2x
+	if (quadrant === 5) return 80 + position; // 5x -> 8x
+	if (quadrant === 8) return 50 + position; // 8x -> 5x
+	if (quadrant === 6) return 70 + position; // 6x -> 7x
+	if (quadrant === 7) return 60 + position; // 7x -> 6x
+	return toothNumber;
+}
+
+/**
+ * Resolves adjacent dental tooth upon directional swipe.
+ * - Swipe Left: advances along dental arch towards opposite quadrant
+ * - Swipe Right: returns along dental arch towards molar end
+ * - Swipe Up / Down: flips between upper and lower jaw of opposing tooth (16 <-> 46)
+ */
+export function resolveNextToothBySwipe(
+	currentTooth: number,
+	direction: "left" | "right" | "up" | "down",
+	pediatricMode = false,
+): number {
+	if (direction === "up" || direction === "down") {
+		return getOpposingToothCode(currentTooth);
+	}
+
+	const isPediatric = pediatricMode || (currentTooth >= 51 && currentTooth <= 85);
+	const upperArch = isPediatric ? DENTAL_ARCH_PEDIATRIC_UPPER : DENTAL_ARCH_ADULT_UPPER;
+	const lowerArch = isPediatric ? DENTAL_ARCH_PEDIATRIC_LOWER : DENTAL_ARCH_ADULT_LOWER;
+
+	const arch = upperArch.includes(currentTooth) ? upperArch : lowerArch.includes(currentTooth) ? lowerArch : upperArch;
+	const idx = arch.indexOf(currentTooth);
+	if (idx === -1) return arch[0] ?? currentTooth;
+
+	if (direction === "left") {
+		return arch[Math.min(idx + 1, arch.length - 1)] ?? currentTooth;
+	}
+	if (direction === "right") {
+		return arch[Math.max(idx - 1, 0)] ?? currentTooth;
+	}
+
+	return currentTooth;
+}
+
+/**
+ * Attaches a tooth swipe gesture handler to a container (e.g. tablet chairside odontogram).
+ * Enables doctors to swipe left/right along the dental arch, or up/down between opposing upper/lower teeth.
+ */
+export function registerToothSwipeGesture(
+	element: HTMLElement | Window | Document,
+	activeTooth: number,
+	onToothChange: (nextTooth: number) => void,
+	options: {
+		pediatricMode?: boolean;
+		minDistancePx?: number;
+		maxAngleDeg?: number;
+		hapticFeedback?: boolean;
+	} = {},
+): () => void {
+	const {
+		pediatricMode = false,
+		minDistancePx = 44,
+		maxAngleDeg = 35,
+		hapticFeedback = true,
+	} = options;
+
+	return registerSafeSwipeGesture(element, {
+		minDistancePx,
+		maxAngleDeg,
+		onSwipeLeft: () => {
+			const next = resolveNextToothBySwipe(activeTooth, "left", pediatricMode);
+			if (next !== activeTooth) {
+				if (hapticFeedback) triggerHaptic("selection");
+				onToothChange(next);
+			}
+		},
+		onSwipeRight: () => {
+			const next = resolveNextToothBySwipe(activeTooth, "right", pediatricMode);
+			if (next !== activeTooth) {
+				if (hapticFeedback) triggerHaptic("selection");
+				onToothChange(next);
+			}
+		},
+		onSwipeDown: () => {
+			const next = resolveNextToothBySwipe(activeTooth, "down", pediatricMode);
+			if (next !== activeTooth) {
+				if (hapticFeedback) triggerHaptic("selection");
+				onToothChange(next);
+			}
+		},
+		onSwipeUp: () => {
+			const next = resolveNextToothBySwipe(activeTooth, "up", pediatricMode);
+			if (next !== activeTooth) {
+				if (hapticFeedback) triggerHaptic("selection");
+				onToothChange(next);
+			}
+		},
+	});
+}
+
+/**
+ * Captures chairside dental photograph directly into the patient card attachments.
+ * On Android APK: uses Capacitor Camera plugin with native camera UI.
+ * Saves result directly into offline drafts / patient attachments.
+ */
+export async function captureAndAttachPatientPhoto(params: {
+	patientId: string;
+	toothCode?: string;
+	viewCategory?:
+		| "portrait"
+		| "occlusion"
+		| "upper_arch"
+		| "lower_arch"
+		| "intraoral_macro"
+		| "xray_film_scan";
+	resolution?: "standard" | "high" | "macro";
+}): Promise<{
+	success: boolean;
+	dataUrl?: string;
+	toothCode?: string;
+	viewCategory?: string;
+	capturedAt: string;
+	error?: string;
+}> {
+	const now = new Date().toISOString();
+	try {
+		const photoRes = await captureMobileCameraPhoto({
+			resolution: params.resolution ?? "macro",
+			toothCode: params.toothCode,
+			viewCategory: params.viewCategory ?? "intraoral_macro",
+		});
+
+		if (!photoRes.success || !photoRes.dataUrl) {
+			return {
+				success: false,
+				capturedAt: now,
+				error: photoRes.error || "Не удалось захватить снимок с камеры",
+			};
+		}
+
+		// Save draft in unified offline storage for zero data loss (Mandate 8e)
+		try {
+			const { saveOfflineDraft } = await import("../services/offline/index.js");
+			await saveOfflineDraft(
+				`photo_attachment_${params.patientId}_${Date.now()}`,
+				"DIARY_043_DRAFT",
+				params.patientId,
+				{
+					patientId: params.patientId,
+					toothCode: params.toothCode,
+					viewCategory: params.viewCategory ?? "intraoral_macro",
+					dataUrl: photoRes.dataUrl,
+					capturedAt: now,
+				},
+			);
+		} catch {
+			// Storage failure does not discard captured photo in memory
+		}
+
+		return {
+			success: true,
+			dataUrl: photoRes.dataUrl,
+			toothCode: params.toothCode,
+			viewCategory: params.viewCategory ?? "intraoral_macro",
+			capturedAt: now,
+		};
+	} catch (err) {
+		const message = err instanceof Error ? err.message : "Ошибка захвата фото пациента";
+		return {
+			success: false,
+			capturedAt: now,
+			error: message,
+		};
 	}
 }

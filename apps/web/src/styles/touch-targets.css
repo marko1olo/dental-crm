@@ -442,3 +442,127 @@
 		padding: 1px 0 !important;
 	}
 }
+
+/* ============================================================
+   OMNI-PLATFORM EXPLICIT POINTER OVERRIDES (data-pointer="coarse" | "fine")
+   Гарантирует безупречное соблюдение стандартов эргономики:
+   1. data-pointer="coarse" / data-platform="android" (планшеты, сенсорные моноблоки у кресла):
+      - Минимальный размер интерактивных элементов >= 44x44px;
+      - Главные действия (Сохранить, Оплатить, Печать, Сканировать) >= 48–52px;
+      - Зубные мишени зубной формулы >= 48px для точного попадания пальцем в перчатке;
+   2. data-pointer="fine" / data-platform="desktop" (десктоп с мышью, разрешение 1440x900+):
+      - Плотная профессиональная сетка 28–36px (Мандаты 8c, 8n).
+   ============================================================ */
+
+[data-pointer="coarse"] .primary-button,
+[data-pointer="coarse"] .secondary-button,
+[data-pointer="coarse"] .text-button,
+[data-pointer="coarse"] .icon-button,
+[data-platform="android"] .primary-button,
+[data-platform="android"] .secondary-button,
+[data-platform="android"] .text-button,
+[data-platform="android"] .icon-button {
+	min-height: 44px !important;
+	min-width: 44px !important;
+}
+
+[data-pointer="coarse"] .btn-primary-action,
+[data-pointer="coarse"] .btn-save-action,
+[data-pointer="coarse"] .btn-print-action,
+[data-pointer="coarse"] .btn-pay-action,
+[data-pointer="coarse"] .btn-scan-action,
+[data-pointer="coarse"] .btn-remind-action,
+[data-pointer="coarse"] .clinical-action-btn,
+[data-pointer="coarse"] .primary-action-btn,
+[data-pointer="coarse"] .btn-sign,
+[data-pointer="coarse"] .btn-save,
+[data-pointer="coarse"] .btn-confirm,
+[data-pointer="coarse"] .action-button-lg,
+[data-platform="android"] .btn-primary-action,
+[data-platform="android"] .btn-save-action,
+[data-platform="android"] .btn-print-action,
+[data-platform="android"] .btn-pay-action,
+[data-platform="android"] .btn-scan-action,
+[data-platform="android"] .btn-remind-action,
+[data-platform="android"] .clinical-action-btn,
+[data-platform="android"] .primary-action-btn,
+[data-platform="android"] .btn-sign,
+[data-platform="android"] .btn-save,
+[data-platform="android"] .btn-confirm,
+[data-platform="android"] .action-button-lg {
+	min-height: 48px !important;
+	min-width: 48px !important;
+	font-size: 14px !important;
+	font-weight: 700 !important;
+	padding: 10px 18px !important;
+}
+
+[data-pointer="coarse"] .tooth-svg-wrapper,
+[data-platform="android"] .tooth-svg-wrapper {
+	min-height: 48px !important;
+	min-width: 32px !important;
+	touch-action: manipulation;
+}
+
+[data-pointer="coarse"] select,
+[data-pointer="coarse"] .select-phase,
+[data-pointer="coarse"] input[type="date"],
+[data-pointer="coarse"] input[type="time"],
+[data-platform="android"] select,
+[data-platform="android"] .select-phase,
+[data-platform="android"] input[type="date"],
+[data-platform="android"] input[type="time"] {
+	min-height: 44px !important;
+}
+
+/* ============================================================
+   МАНДАТ 8c, 8n: СТРОГАЯ ЗАЩИТА ПЛОТНОЙ ДЕСКТОПНОЙ СЕТКИ (28–36px)
+   На десктопе с мышью (pointer: fine, desktop_exe, web_browser)
+   кнопки и тулбары сохраняют плотную клиническую эргономику панели пилота.
+   ============================================================ */
+
+[data-pointer="fine"]:not([data-pointer="coarse"]) .desktop-dense-action,
+[data-pointer="fine"]:not([data-pointer="coarse"]) .btn-dense-clinical,
+[data-pointer="fine"]:not([data-pointer="coarse"]) .desktop-toolbar-btn,
+[data-platform="desktop"]:not([data-pointer="coarse"]) .desktop-toolbar-btn {
+	min-height: 32px;
+	height: 32px;
+	font-size: 13px;
+}
+
+[data-pointer="fine"]:not([data-pointer="coarse"]) .quick-chip--sm {
+	min-height: 24px;
+	height: 24px;
+}
+
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-primary-action,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-save-action,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-print-action,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-pay-action,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .clinical-action-btn,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .primary-action-btn,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .action-button-lg {
+	min-height: 34px;
+	height: 34px;
+	font-size: 13px;
+	padding: 4px 12px;
+}
+
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .primary-button,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .secondary-button,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .text-button,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .icon-button {
+	min-height: 32px;
+	height: 32px;
+	font-size: 13px;
+}
+
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) select,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .select-phase {
+	min-height: 32px;
+	height: 32px;
+	font-size: 13px;
+}
+
+
+
