@@ -75,6 +75,52 @@ async function provisionLiveSession() {
 
   let patientId = null;
 
+  // 0. Ensure default clinic and chair exist in PostgreSQL for this new organization
+  let seededChairId = null;
+  try {
+    const { Pool } = require("pg");
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL || "postgres://dental@127.0.0.1:5432/dental_crm",
+    });
+    const client = await pool.connect();
+    try {
+      let clinicRes = await client.query(
+        "SELECT id FROM clinics WHERE organization_id = $1 LIMIT 1",
+        [initData.organizationId]
+      );
+      let clinicId;
+      if (clinicRes.rows.length === 0) {
+        const insertClinic = await client.query(
+          "INSERT INTO clinics (organization_id, name, timezone) VALUES ($1, $2, $3) RETURNING id",
+          [initData.organizationId, "Главное отделение", "Europe/Samara"]
+        );
+        clinicId = insertClinic.rows[0].id;
+      } else {
+        clinicId = clinicRes.rows[0].id;
+      }
+
+      let chairRes = await client.query(
+        "SELECT id FROM chairs WHERE organization_id = $1 LIMIT 1",
+        [initData.organizationId]
+      );
+      if (chairRes.rows.length === 0) {
+        const insertChair = await client.query(
+          "INSERT INTO chairs (organization_id, clinic_id, name, is_active) VALUES ($1, $2, $3, true) RETURNING id",
+          [initData.organizationId, clinicId, "Кресло 1 (Основное)"]
+        );
+        seededChairId = insertChair.rows[0].id;
+      } else {
+        seededChairId = chairRes.rows[0].id;
+      }
+      console.log(`[Provisioning] Ensured clinic (${clinicId}) and chair (${seededChairId}) in DB`);
+    } finally {
+      client.release();
+      await pool.end();
+    }
+  } catch (errDb) {
+    console.log("[Provisioning] DB chair seed note:", errDb.message);
+  }
+
   // Seed primary patient
   try {
     const pRes = await fetch(`${API_BASE}/api/patients`, {
@@ -93,7 +139,7 @@ async function provisionLiveSession() {
       patientId = pData.patient?.id || pData.id || null;
       console.log(`[Provisioning] Seeded patient: ${patientId}`);
 
-      // Seed appointments on Monday 2026-09-21 (with confirmed & planned cards)
+      // Seed appointments on Monday 2026-09-21 (09:00 - 10:00 and 10:30 - 11:30 local time)
       try {
         const scheduleDateStr = "2026-09-21";
         const apptRes = await fetch(`${API_BASE}/api/appointments`, {
@@ -103,18 +149,18 @@ async function provisionLiveSession() {
             patientId,
             doctorUserId: initData.ownerUserId,
             doctorId: initData.ownerUserId,
-            chairId: "default-chair",
-            startsAt: `${scheduleDateStr}T10:00:00.000Z`,
-            startTime: `${scheduleDateStr}T10:00:00.000Z`,
-            endsAt: `${scheduleDateStr}T11:00:00.000Z`,
-            endTime: `${scheduleDateStr}T11:00:00.000Z`,
-            status: "confirmed",
+            chairId: seededChairId || "default-chair",
+            startsAt: `${scheduleDateStr}T05:00:00.000Z`,
+            startTime: `${scheduleDateStr}T05:00:00.000Z`,
+            endsAt: `${scheduleDateStr}T06:00:00.000Z`,
+            endTime: `${scheduleDateStr}T06:00:00.000Z`,
+            status: "in_treatment",
             reason: "Лечение глубокого кариеса 36 зуба",
             notes: "Лечение глубокого кариеса 36 зуба",
           }),
         });
         if (apptRes.ok) {
-          console.log(`[Provisioning] Seeded appointment on ${scheduleDateStr} (10:00 - 11:00)`);
+          console.log(`[Provisioning] Seeded appointment on ${scheduleDateStr} (09:00 - 10:00)`);
         } else {
           console.log(`[Provisioning] Appointment seeding response status: ${apptRes.status}`);
         }
@@ -125,12 +171,12 @@ async function provisionLiveSession() {
             patientId,
             doctorUserId: initData.ownerUserId,
             doctorId: initData.ownerUserId,
-            chairId: "default-chair",
-            startsAt: `${scheduleDateStr}T11:30:00.000Z`,
-            startTime: `${scheduleDateStr}T11:30:00.000Z`,
-            endsAt: `${scheduleDateStr}T12:30:00.000Z`,
-            endTime: `${scheduleDateStr}T12:30:00.000Z`,
-            status: "planned",
+            chairId: seededChairId || "default-chair",
+            startsAt: `${scheduleDateStr}T06:30:00.000Z`,
+            startTime: `${scheduleDateStr}T06:30:00.000Z`,
+            endsAt: `${scheduleDateStr}T07:30:00.000Z`,
+            endTime: `${scheduleDateStr}T07:30:00.000Z`,
+            status: "confirmed",
             reason: "Консультация ортопеда, коронка 46",
             notes: "Консультация ортопеда, коронка 46",
           }),
@@ -519,17 +565,12 @@ async function runMultiThemeProofmaker() {
 
     const ensureScheduleDateAndCards = async (p) => {
       await p.evaluate(() => {
-        // Reset filter chips to "Все записи" if present to avoid doctor/chair filtering hiding cards
-        const chips = Array.from(document.querySelectorAll('.schedule-filter-chips button, .quick-chip, button'));
-        const allChip = chips.find((b) => b.textContent && b.textContent.includes('Все записи'));
-        if (allChip) {
-          allChip.click();
-        }
         const dateInput = document.querySelector('input.schedule-date-input, input[aria-label="Фильтр расписания по дате"], input[type="date"]');
         if (dateInput && dateInput.value !== "2026-09-21") {
-          dateInput.value = "2026-09-21";
-          dateInput.dispatchEvent(new Event("input", { bubbles: true }));
-          dateInput.dispatchEvent(new Event("change", { bubbles: true }));
+          const nextBtn = document.querySelector('button.schedule-day-step-next, button[aria-label="Показать следующий день"]');
+          if (nextBtn) {
+            nextBtn.click();
+          }
         }
       }).catch(() => {});
       await p.waitForSelector('.appointment-card, [data-testid="appointment-card"], .schedule-appointment-card, .schedule-card, .schedule-cell-event', { state: "visible", timeout: 8000 }).catch(() => {});
