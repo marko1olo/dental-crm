@@ -28,7 +28,7 @@ import {
 	categorizeInventoryExpiry,
 	isDeductibleQuantity,
 } from "@dental/shared";
-import { and, eq, ilike, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { and, eq, ilike, inArray, isNull, like, ne, or, sql } from "drizzle-orm";
 import type { db } from "../db/client.js";
 import type { TenantDb } from "../db/rls.js";
 import {
@@ -645,6 +645,7 @@ export class TreatmentConsumablesService {
 			visitId: string;
 			userId?: string | null | undefined;
 			transactionType?: "auto_deduct" | "manual_writeoff" | undefined;
+			clientMutationId?: string | null | undefined;
 			services?: Array<{ serviceId: string; quantity?: number | undefined }> | undefined;
 			items?: Array<{ inventoryItemId: string; quantity: number; reason?: string | null | undefined }> | undefined;
 			carpulesCount?: number | undefined;
@@ -658,7 +659,90 @@ export class TreatmentConsumablesService {
 			visitId,
 			userId = null,
 			transactionType = "auto_deduct",
+			clientMutationId = null,
 		} = params;
+
+		// 0. Acquire transactional advisory lock per (organization, visit) to serialize concurrent requests
+		await tx.execute(
+			sql`SELECT pg_advisory_xact_lock(hashtext(${organizationId} || ':visit_deduct:' || ${visitId}))`,
+		);
+
+		// Check for idempotent replay by clientMutationId or existing auto_deduct
+		if (clientMutationId) {
+			const existingMutationTx = await tx
+				.select()
+				.from(inventoryTransactions)
+				.where(
+					and(
+						eq(inventoryTransactions.organizationId, organizationId),
+						eq(inventoryTransactions.visitId, visitId),
+						like(inventoryTransactions.notes, `%[mutation:${clientMutationId}]%`),
+					),
+				);
+
+			if (existingMutationTx.length > 0) {
+				return {
+					completedTreatmentItems: 0,
+					deductions: existingMutationTx.map((txRow) => ({
+						inventoryItemId: txRow.itemId ?? txRow.inventoryItemId ?? "unknown",
+						inventoryItemName: "Ранее списанный материал",
+						quantityChanged: String(txRow.quantityChanged ?? txRow.qty ?? "0"),
+						unitCostRub: txRow.unitCostRub,
+						lotNumber: null,
+						remainingStock: 0,
+					})),
+					warnings: [
+						{
+							type: "low_stock",
+							itemId: existingMutationTx[0]?.itemId ?? "idempotent",
+							itemName: "Списание расходников",
+							message: `Повторный запрос списания материалов (ключ ${clientMutationId}). Операция дедуплицирована.`,
+							currentStock: 0,
+							criticalThreshold: 0,
+						},
+					],
+					isOverdraft: false,
+				};
+			}
+		}
+
+		if (transactionType === "auto_deduct") {
+			const existingAutoDeductTx = await tx
+				.select()
+				.from(inventoryTransactions)
+				.where(
+					and(
+						eq(inventoryTransactions.organizationId, organizationId),
+						eq(inventoryTransactions.visitId, visitId),
+						inArray(inventoryTransactions.transactionType, ["auto_deduct", "emergency_overdraft"]),
+					),
+				);
+
+			if (existingAutoDeductTx.length > 0) {
+				return {
+					completedTreatmentItems: 0,
+					deductions: existingAutoDeductTx.map((txRow) => ({
+						inventoryItemId: txRow.itemId ?? txRow.inventoryItemId ?? "unknown",
+						inventoryItemName: "Ранее списанный материал",
+						quantityChanged: String(txRow.quantityChanged ?? txRow.qty ?? "0"),
+						unitCostRub: txRow.unitCostRub,
+						lotNumber: null,
+						remainingStock: 0,
+					})),
+					warnings: [
+						{
+							type: "low_stock",
+							itemId: existingAutoDeductTx[0]?.itemId ?? "idempotent",
+							itemName: "Списание расходников",
+							message: `Расходники по визиту ${visitId} уже были автоматически списаны ранее. Повторное списание предотвращено (защита от дублирования).`,
+							currentStock: 0,
+							criticalThreshold: 0,
+						},
+					],
+					isOverdraft: false,
+				};
+			}
+		}
 
 		// 1. Fetch target treatment items for visit (uncompleted first, with fallback to completed if no tx exist)
 		let targetItems = await tx
@@ -953,9 +1037,11 @@ export class TreatmentConsumablesService {
 				transactionType: isOverdraft ? "emergency_overdraft" : transactionType,
 				isOverdraft,
 				userId,
-				notes: isOverdraft
-					? `Списано под операцию, требуется оприходование (мягкий минусовой овердрафт партии, накладная ещё не внесена по приёму ${visitId}): дефицит ${Math.abs(newStock)} ${inv.unit ?? "ед."}${params.paperJournalAcknowledged ? " (бумажный журнал учтён, старшая медсестра опциональна)" : ""}`
-					: `Автосписание по приёму ${visitId}${params.paperJournalAcknowledged ? " (бумажный журнал учтён, старшая медсестра опциональна)" : ""}`,
+				notes:
+					(isOverdraft
+						? `Списано под операцию, требуется оприходование (мягкий минусовой овердрафт партии, накладная ещё не внесена по приёму ${visitId}): дефицит ${Math.abs(newStock)} ${inv.unit ?? "ед."}${params.paperJournalAcknowledged ? " (бумажный журнал учтён, старшая медсестра опциональна)" : ""}`
+						: `Автосписание по приёму ${visitId}${params.paperJournalAcknowledged ? " (бумажный журнал учтён, старшая медсестра опциональна)" : ""}`) +
+					(clientMutationId ? ` [mutation:${clientMutationId}]` : ""),
 			});
 
 			deductions.push({

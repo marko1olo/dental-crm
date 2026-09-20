@@ -176,6 +176,7 @@ export const visitStockDeductionRequestSchema = z.object({
 		.enum(["auto_deduct", "manual_writeoff"])
 		.default("auto_deduct")
 		.optional(),
+	clientMutationId: z.string().nullable().optional(),
 	services: z
 		.array(
 			z.object({

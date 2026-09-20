@@ -501,6 +501,10 @@ export const treatmentConsumablesRoutes: FastifyPluginAsync = async (
 				return TreatmentConsumablesService.deductForVisit(tx, {
 					organizationId,
 					visitId: parsedBody.data.visitId,
+					clientMutationId:
+						parsedBody.data.clientMutationId ??
+						(request.headers["idempotency-key"] as string | undefined) ??
+						null,
 					...(parsedBody.data.userId !== undefined ? { userId: parsedBody.data.userId } : { userId: (request.user as any)?.id ?? null }),
 					...(parsedBody.data.transactionType !== undefined ? { transactionType: parsedBody.data.transactionType } : {}),
 					...(parsedBody.data.services !== undefined ? { services: parsedBody.data.services } : {}),

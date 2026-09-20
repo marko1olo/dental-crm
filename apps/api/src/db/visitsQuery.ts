@@ -303,6 +303,64 @@ export async function acceptVisitDraftInDb(
 		const newRevision = previousRevision + 1;
 		const savedAt = new Date();
 		const isAmendingSigned = visit.status === "signed";
+		const existingDraftAutosave =
+			(visit.draftAutosave as Record<string, unknown> | null) ?? {};
+		const lastAcceptedMutationId =
+			typeof existingDraftAutosave.lastAcceptedMutationId === "string"
+				? existingDraftAutosave.lastAcceptedMutationId
+				: null;
+
+		// Защита от манки-кликинга: если приём уже подписан и пришёл тот же mutationId
+		// или идентичный черновик в течение 10 секунд — возвращаем подписанную запись без раздувания ревизий
+		const isIdenticalDraft =
+			visit.complaint === input.draft.complaint &&
+			visit.anamnesis === input.draft.anamnesis &&
+			visit.objectiveStatus === input.draft.objectiveStatus &&
+			visit.diagnosis === input.draft.diagnosis &&
+			visit.treatmentPlan === input.draft.treatmentPlan;
+
+		const isDuplicateMutation = Boolean(
+			input.clientMutationId &&
+				lastAcceptedMutationId === input.clientMutationId,
+		);
+
+		const isRecentConcurrentReplay =
+			isAmendingSigned &&
+			(isDuplicateMutation ||
+				(isIdenticalDraft &&
+					Date.now() - new Date(visit.updatedAt).getTime() < 10000));
+
+		if (isRecentConcurrentReplay) {
+			const signedVisit = projectVisitRow(visit);
+			const saveReceipt: VisitSaveReceipt = {
+				visitId: signedVisit.id,
+				clientMutationId: input.clientMutationId?.trim() || null,
+				status: "duplicate",
+				serverRevision: signedVisit.revision,
+				savedAt: signedVisit.updatedAt,
+				warning:
+					"Повторный запрос: карта приёма уже подписана (дубликат предотвращён).",
+			};
+
+			const { state: clinicState } =
+				await hydrateDomainStateFromDb(organizationId);
+
+			const visitCloseChecklist = buildVisitCloseChecklist(
+				visitCloseChecklistFactsFor(signedVisit, clinicState),
+			);
+
+			return {
+				visit: signedVisit,
+				visitCloseChecklist,
+				saveReceipt,
+			};
+		}
+
+		const updatedDraftAutosave = {
+			...existingDraftAutosave,
+			lastAcceptedMutationId: input.clientMutationId?.trim() || null,
+			lastAcceptedAt: savedAt.toISOString(),
+		};
 
 		/*
 		 * БЫЛО: UPDATE только по visitId. SELECT уже с org, но запись подписи —
@@ -325,6 +383,7 @@ export async function acceptVisitDraftInDb(
 						? `${input.doctorSummary} (Исправленному верить: ред. ${newRevision})`
 						: `Исправленному верить: ред. ${newRevision} от ${savedAt.toLocaleString("ru-RU")}`
 					: input.doctorSummary,
+				draftAutosave: updatedDraftAutosave,
 				signedAt: visit.signedAt ?? savedAt,
 				updatedAt: savedAt,
 			})

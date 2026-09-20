@@ -13980,6 +13980,7 @@ export * from "./types/pricing.js";
 export * from "./staff/index.js";
 export * from "./utils/money.js";
 export * from "./anesthesia/index.js";
+export * from "./inventory/consumables.js";
 
 
 

@@ -163,6 +163,8 @@ export function useVisitLogic({
 		visitDraftUserEditedRef,
 	} = visitStore;
 
+	const isDraftAcceptingLocalRef = useRef(false);
+
 	const {
 		isOnline,
 		speechGatewayHealthReport,
@@ -1486,10 +1488,14 @@ export function useVisitLogic({
 	]);
 
 	const acceptDraftToVisit = useCallback(async () => {
+		if (isDraftAcceptingLocalRef.current || isDraftAccepting) {
+			return;
+		}
 		if (!dashboard?.activeVisit?.id) {
 			setError("Откройте или создайте прием перед сохранением ЭМК.");
 			return;
 		}
+		isDraftAcceptingLocalRef.current = true;
 		setIsDraftAccepting(true);
 		const formToSave = hasVisitNoteFormText
 			? visitNoteForm
@@ -1572,6 +1578,7 @@ export function useVisitLogic({
 				`${operatorWorkflowFailureMessage("Серверное сохранение недоступно", acceptError)} Прием сохранен локально и поставлен в очередь.`,
 			);
 		} finally {
+			isDraftAcceptingLocalRef.current = false;
 			setIsDraftAccepting(false);
 		}
 	}, [
@@ -1583,6 +1590,7 @@ export function useVisitLogic({
 		transcript,
 		submitAcceptedVisitDraft,
 		setIsDraftAccepting,
+		isDraftAccepting,
 		dashboard?.activeVisit,
 		setError,
 		visitNoteForm,
