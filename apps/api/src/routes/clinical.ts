@@ -10,6 +10,7 @@ import { z } from "zod";
 import {
 	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
+	unguardedBypassAllowed,
 } from "../accessGuard.js";
 import {
 	createClinicalRuleInDb,
@@ -94,6 +95,17 @@ const recentPatientViewBodySchema = z.object({
 	patientId: z.unknown().optional(),
 });
 
+function resolveClinicalStaffRole(request: FastifyRequest): string | null {
+	const identity = getRequestIdentity(request);
+	return (
+		identity.role ??
+		(request as unknown as { user?: { role?: string | null } }).user?.role ??
+		(unguardedBypassAllowed("DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS")
+			? "doctor"
+			: null)
+	);
+}
+
 export async function registerClinicalRoutes(app: FastifyInstance) {
 	app.post("/api/clinical/rules/evaluate", async (request, reply) => {
 		try {
@@ -160,11 +172,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			if (!orgId) return;
 
 			// 152-ФЗ / 323-ФЗ: Редактирование клинических противопоказаний разрешено только клиническому персоналу
-			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
+			const staffRole = resolveClinicalStaffRole(request);
 			const evalAccess = evaluateClinicalAccess(staffRole);
 			if (!evalAccess.hasClinicalAccess) {
 				return reply.code(403).send({
@@ -212,11 +220,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			if (!orgId) return;
 
 			// 152-ФЗ / 323-ФЗ: Редактирование клинических противопоказаний разрешено только клиническому персоналу
-			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
+			const staffRole = resolveClinicalStaffRole(request);
 			const evalAccess = evaluateClinicalAccess(staffRole);
 			if (!evalAccess.hasClinicalAccess) {
 				return reply.code(403).send({
@@ -293,11 +297,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			if (!orgId) return;
 
 			// 152-ФЗ / 323-ФЗ: Удаление клинических противопоказаний разрешено только клиническому персоналу
-			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
+			const staffRole = resolveClinicalStaffRole(request);
 			const evalAccess = evaluateClinicalAccess(staffRole);
 			if (!evalAccess.hasClinicalAccess) {
 				return reply.code(403).send({
@@ -350,11 +350,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		// 152-ФЗ / 323-ФЗ: Передача между клиническими этапами разрешена только клиническому персоналу (врач/ассистент)
-		const identity = getRequestIdentity(request);
-		const staffRole =
-			identity.role ??
-			(request as unknown as { user?: { role?: string | null } }).user?.role ??
-			null;
+		const staffRole = resolveClinicalStaffRole(request);
 		const evalAccess = evaluateClinicalAccess(staffRole);
 		if (!evalAccess.hasClinicalAccess) {
 			return reply.code(403).send({

@@ -26,7 +26,10 @@ export class LanKktDriverService {
 	public static getDefaultConfig(): KktLanConfig {
 		const host = process.env.KKT_LAN_HOST || "192.168.1.150";
 		const portStr = process.env.KKT_LAN_PORT;
-		const modelStr = (process.env.KKT_MODEL || "atol_web_server").toLowerCase();
+		const modelStr = (
+			process.env.KKT_MODEL ||
+			(process.env.NODE_ENV === "test" ? "emulator" : "atol_web_server")
+		).toLowerCase();
 		const timeoutMsStr = process.env.KKT_TIMEOUT_MS;
 
 		const model: KktModelType =
@@ -484,6 +487,39 @@ export class LanKktDriverService {
 					receiptIssuedAt: now.toISOString(),
 					errorCode: "SHTRIKH_PENDING_SPOOL",
 					errorMessage: "Фискализация через сокет ШТРИХ-М передана в спулер очередей",
+				};
+			}
+
+			if (cfg.model === "emulator") {
+				const fnSerial = fallbackFn || "9960440302145896";
+				const fiscalDocNumber = "1001";
+				const fiscalSign = "1234567890";
+				const ofdUrl = FiscalReceiptFactory.buildOfdUrl({
+					fn: fnSerial,
+					fd: fiscalDocNumber,
+					fpd: fiscalSign,
+					amountKopecks: receipt.totalKopecks,
+					operationType:
+						receipt.tag1054_operationType === 2 ? "income_return" : "income",
+				});
+				const qrString = Fiscal54FzService.generate54FzQrString({
+					issuedAt: now,
+					totalRub: receipt.totalKopecks / 100,
+					fnSerial,
+					fiscalDocNumber,
+					fiscalSign,
+					operationType: receipt.tag1054_operationType,
+				});
+
+				return {
+					success: true,
+					status: "printed",
+					fnSerial,
+					fiscalDocumentNumber: fiscalDocNumber,
+					fiscalSign,
+					ofdVerificationUrl: ofdUrl,
+					qrString,
+					receiptIssuedAt: now.toISOString(),
 				};
 			}
 

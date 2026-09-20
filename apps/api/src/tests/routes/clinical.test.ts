@@ -118,6 +118,7 @@ describe("clinical routes integration", () => {
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/clinical/rules",
+			headers: ORG_HEADERS,
 			payload: {},
 		});
 
@@ -209,6 +210,7 @@ describe("clinical routes integration", () => {
 		const response = await app.inject({
 			method: "PATCH",
 			url: "/api/clinical/rules/rule1",
+			headers: ORG_HEADERS,
 			payload: { action: "invalid" },
 		});
 

@@ -28,6 +28,7 @@ describe("54-FZ FFD 1.2 Fiscal Routes Suite (/api/fiscal/*)", () => {
 
 	before(async () => {
 		process.env.NODE_ENV = "test";
+		process.env.KKT_MODEL = "emulator";
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
 		process.env.AUTH_TOKEN_SECRET =
@@ -89,6 +90,7 @@ describe("54-FZ FFD 1.2 Fiscal Routes Suite (/api/fiscal/*)", () => {
 	});
 
 	after(async () => {
+		delete process.env.KKT_MODEL;
 		if (databaseAvailable) {
 			try {
 				await purgeFixtureOrganizations([ORG_ID]);
