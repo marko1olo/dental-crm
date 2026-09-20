@@ -93,7 +93,10 @@ const TreatmentPlanCardItem: React.FC<{
 	}, [item.status]);
 
 	return (
-		<div className="p-3 rounded-lg flex flex-col gap-1.5 bg-[var(--paper-soft)] border border-[var(--line)] transition-colors shadow-xs">
+		<div
+			className="treatment-plan-card-item p-3 rounded-lg flex flex-col gap-1.5 bg-[var(--paper-soft)] border border-[var(--line)] transition-colors shadow-xs"
+			style={{ contain: "content", contentVisibility: "auto", containIntrinsicSize: "auto 96px" }}
+		>
 			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-1.5 min-w-0">
 					<Stethoscope className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
@@ -175,7 +178,10 @@ const VisitHistoryCardItem: React.FC<{
 	}, [appointment.status]);
 
 	return (
-		<div className="visit-history-card p-3 rounded-lg flex flex-col gap-1.5 bg-[var(--paper-soft)] border border-[var(--line)] transition-colors shadow-xs">
+		<div
+			className="visit-history-card p-3 rounded-lg flex flex-col gap-1.5 bg-[var(--paper-soft)] border border-[var(--line)] transition-colors shadow-xs"
+			style={{ contain: "content", contentVisibility: "auto", containIntrinsicSize: "auto 110px" }}
+		>
 			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink)]">
 					<Calendar className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
@@ -261,22 +267,23 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 
 			const patientAppointments = useMemo(() => {
 				const list = (dashboard?.appointments ?? []).filter(
-					(a) => a.patientId === patientId,
+					(a) => a?.patientId === patientId,
 				);
 				return list.sort(
 					(a, b) =>
-						new Date(b.startsAt ?? 0).getTime() -
-						new Date(a.startsAt ?? 0).getTime(),
+						new Date(b?.startsAt ?? 0).getTime() -
+						new Date(a?.startsAt ?? 0).getTime(),
 				);
 			}, [dashboard?.appointments, patientId]);
 
 			const patientPlanItems = useMemo(() => {
 				return (dashboard?.treatmentPlanItems ?? []).filter(
-					(item) => item.patientId === patientId,
+					(item) => item?.patientId === patientId,
 				);
 			}, [dashboard?.treatmentPlanItems, patientId]);
 
-			// Low-Spec Celeron / 4GB RAM Optimization: Bound DOM render for 100+ visits and plan items (Mandates 8c, 8e, 8n)
+			// Low-Spec Celeron / 4GB RAM Optimization: Bound DOM render to keep total nodes strictly <= 400
+			// 30 items * ~10 DOM nodes = 300 nodes + ~80 container nodes = 380 DOM nodes total per active tab
 			const DEFAULT_WORKSPACE_PAGE_SIZE = 30;
 			const [visibleVisitsLimit, setVisibleVisitsLimit] = useState<number>(DEFAULT_WORKSPACE_PAGE_SIZE);
 			const [visiblePlansLimit, setVisiblePlansLimit] = useState<number>(DEFAULT_WORKSPACE_PAGE_SIZE);
@@ -288,19 +295,19 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 			}, [patientId]);
 
 			const visitsSlice = useMemo(() => {
-				return sliceDomList(patientAppointments, visibleVisitsLimit, 0);
+				return sliceDomList(patientAppointments ?? [], visibleVisitsLimit, 0);
 			}, [patientAppointments, visibleVisitsLimit]);
 
 			const plansSlice = useMemo(() => {
-				return sliceDomList(patientPlanItems, visiblePlansLimit, 0);
+				return sliceDomList(patientPlanItems ?? [], visiblePlansLimit, 0);
 			}, [patientPlanItems, visiblePlansLimit]);
 
 			const patientAddendums = useMemo(() => {
 				return (dashboard?.documents ?? []).filter(
 					(doc) =>
-						doc.patientId === patientId &&
-						doc.kind === "treatment_plan_acceptance" &&
-						doc.status === "issued",
+						doc?.patientId === patientId &&
+						doc?.kind === "treatment_plan_acceptance" &&
+						doc?.status === "issued",
 				);
 			}, [dashboard?.documents, patientId]);
 
@@ -410,7 +417,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 								{patientName || "Карточка пациента"}
 							</span>
 							<span className="text-xs font-mono font-bold text-[var(--muted)] bg-[var(--paper-soft)] px-2 py-0.5 rounded-md border border-[var(--line)] shrink-0">
-								{patientId ? `043/у-${patientId.slice(0, 8)}` : "—"}
+								{patientId ? `043/у-${String(patientId || "").slice(0, 8)}` : "—"}
 							</span>
 						</div>
 
@@ -745,8 +752,8 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 								</div>
 							) : (
 								<>
-									<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-										{plansSlice.visibleItems.map((item) => (
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5" style={{ contain: "content" }}>
+										{(plansSlice?.visibleItems ?? []).map((item: any) => (
 											<TreatmentPlanCardItem
 												key={item.id}
 												item={item}
@@ -786,13 +793,13 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 								</div>
 							) : (
 								<>
-									<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-										{visitsSlice.visibleItems.map((appt) => (
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5" style={{ contain: "content" }}>
+										{(visitsSlice?.visibleItems ?? []).map((appt: any) => (
 											<VisitHistoryCardItem
 												key={appt.id}
 												appointment={appt}
 												doctorFullName={
-													appt.doctorUserId
+													appt?.doctorUserId
 														? (staffMap.get(appt.doctorUserId) ?? null)
 														: null
 												}
@@ -852,7 +859,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 								onClose={() => setIsLoyaltyModalOpen(false)}
 								patientId={patientId}
 								patientName={patientName || undefined}
-								medicalCardNumber={`043/у-${patientId.slice(0, 8)}`}
+								medicalCardNumber={patientId ? `043/у-${String(patientId || "").slice(0, 8)}` : "043/у"}
 							/>
 						</React.Suspense>
 					)}

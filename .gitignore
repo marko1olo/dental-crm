@@ -11,7 +11,8 @@ dist/
 coverage/
 .turbo/
 .vite/
-storage/
+/storage/
+!apps/web/src/services/storage/
 .data/
 apps/api/.data/
 .logs/

@@ -133,3 +133,11 @@
 		min-width: 44px;
 	}
 }
+
+/* Schedule Grid Low-Spec and High-End Hardware Acceleration (Mandate 8c) */
+.schedule-time-row {
+	contain: content;
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 60px;
+}
+

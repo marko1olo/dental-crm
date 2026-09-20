@@ -20,6 +20,11 @@ html[data-hardware-tier="low"],
 :root[data-low-spec="true"],
 html[data-low-spec="true"],
 [data-low-spec="true"],
+:root[data-perf="low"],
+html[data-perf="low"],
+[data-perf="low"],
+html.low-spec-perf,
+.low-spec-perf,
 html.low-spec-mode,
 .low-spec-mode {
 	--glass-blur: none !important;
@@ -59,12 +64,24 @@ html[data-hardware-tier="low"] *::after,
 html[data-low-spec="true"] *,
 html[data-low-spec="true"] *::before,
 html[data-low-spec="true"] *::after,
-html.low-spec-mode *,
-html.low-spec-mode *::before,
-html.low-spec-mode *::after,
 [data-low-spec="true"] *,
 [data-low-spec="true"] *::before,
 [data-low-spec="true"] *::after,
+html[data-perf="low"] *,
+html[data-perf="low"] *::before,
+html[data-perf="low"] *::after,
+[data-perf="low"] *,
+[data-perf="low"] *::before,
+[data-perf="low"] *::after,
+html.low-spec-perf *,
+html.low-spec-perf *::before,
+html.low-spec-perf *::after,
+.low-spec-perf *,
+.low-spec-perf *::before,
+.low-spec-perf *::after,
+html.low-spec-mode *,
+html.low-spec-mode *::before,
+html.low-spec-mode *::after,
 .low-spec-mode *,
 .low-spec-mode *::before,
 .low-spec-mode *::after {
@@ -175,6 +192,67 @@ html.low-spec-mode [class*="backdrop"] {
 	background-color: rgba(2, 6, 23, 0.75) !important;
 }
 
+/* Clean semi-transparent solid backgrounds replacing GPU-choking backdrop-filter: blur() */
+html[data-hardware-tier="low"] [class*="backdrop-blur"],
+html[data-low-spec="true"] [class*="backdrop-blur"],
+html[data-perf="low"] [class*="backdrop-blur"],
+[data-perf="low"] [class*="backdrop-blur"],
+html.low-spec-perf [class*="backdrop-blur"],
+.low-spec-perf [class*="backdrop-blur"],
+html.low-spec-mode [class*="backdrop-blur"],
+[data-hardware-tier="low"] [class*="backdrop-blur"],
+[data-low-spec="true"] [class*="backdrop-blur"],
+.low-spec-mode [class*="backdrop-blur"],
+html[data-hardware-tier="low"] .glass-panel,
+html[data-hardware-tier="low"] .glass-card,
+html[data-hardware-tier="low"] .card-glass,
+html[data-low-spec="true"] .glass-panel,
+html[data-low-spec="true"] .glass-card,
+html[data-low-spec="true"] .card-glass,
+html[data-perf="low"] .glass-panel,
+html[data-perf="low"] .glass-card,
+html[data-perf="low"] .card-glass,
+html.low-spec-perf .glass-panel,
+html.low-spec-perf .glass-card,
+html.low-spec-perf .card-glass,
+html.low-spec-mode .glass-panel,
+html.low-spec-mode .glass-card,
+html.low-spec-mode .card-glass {
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+	background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+html[data-theme="dark"][data-hardware-tier="low"] [class*="backdrop-blur"],
+html[data-theme="dark"][data-low-spec="true"] [class*="backdrop-blur"],
+html[data-theme="dark"][data-perf="low"] [class*="backdrop-blur"],
+[data-theme="dark"] [data-perf="low"] [class*="backdrop-blur"],
+html[data-theme="dark"].low-spec-perf [class*="backdrop-blur"],
+[data-theme="dark"] .low-spec-perf [class*="backdrop-blur"],
+html[data-theme="dark"].low-spec-mode [class*="backdrop-blur"],
+[data-theme="dark"] [data-hardware-tier="low"] [class*="backdrop-blur"],
+[data-theme="dark"] [data-low-spec="true"] [class*="backdrop-blur"],
+[data-theme="dark"] .low-spec-mode [class*="backdrop-blur"],
+html[data-theme="dark"][data-hardware-tier="low"] .glass-panel,
+html[data-theme="dark"][data-hardware-tier="low"] .glass-card,
+html[data-theme="dark"][data-hardware-tier="low"] .card-glass,
+html[data-theme="dark"][data-low-spec="true"] .glass-panel,
+html[data-theme="dark"][data-low-spec="true"] .glass-card,
+html[data-theme="dark"][data-low-spec="true"] .card-glass,
+html[data-theme="dark"][data-perf="low"] .glass-panel,
+html[data-theme="dark"][data-perf="low"] .glass-card,
+html[data-theme="dark"][data-perf="low"] .card-glass,
+html[data-theme="dark"].low-spec-perf .glass-panel,
+html[data-theme="dark"].low-spec-perf .glass-card,
+html[data-theme="dark"].low-spec-perf .card-glass,
+html[data-theme="dark"].low-spec-mode .glass-panel,
+html[data-theme="dark"].low-spec-mode .glass-card,
+html[data-theme="dark"].low-spec-mode .card-glass {
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+	background-color: rgba(15, 23, 42, 0.95) !important;
+}
+
 /* Header, topbar, toolbar solid background */
 html[data-hardware-tier="low"] .app-header,
 html[data-hardware-tier="low"] .topbar,
@@ -266,6 +344,66 @@ html[data-low-spec="true"] .shadow-lg,
 html[data-low-spec="true"] .shadow-xl,
 html[data-low-spec="true"] .shadow-2xl,
 html[data-low-spec="true"] .shadow-premium,
+html[data-perf="low"] .card,
+html[data-perf="low"] .panel,
+html[data-perf="low"] .today-schedule-item,
+html[data-perf="low"] .appointment-card,
+html[data-perf="low"] .patient-row,
+html[data-perf="low"] .patient-card,
+html[data-perf="low"] .finance-row,
+html[data-perf="low"] .invoice-card,
+html[data-perf="low"] .shadow-sm,
+html[data-perf="low"] .shadow,
+html[data-perf="low"] .shadow-md,
+html[data-perf="low"] .shadow-lg,
+html[data-perf="low"] .shadow-xl,
+html[data-perf="low"] .shadow-2xl,
+html[data-perf="low"] .shadow-premium,
+[data-perf="low"] .card,
+[data-perf="low"] .panel,
+[data-perf="low"] .today-schedule-item,
+[data-perf="low"] .appointment-card,
+[data-perf="low"] .patient-row,
+[data-perf="low"] .patient-card,
+[data-perf="low"] .finance-row,
+[data-perf="low"] .invoice-card,
+[data-perf="low"] .shadow-sm,
+[data-perf="low"] .shadow,
+[data-perf="low"] .shadow-md,
+[data-perf="low"] .shadow-lg,
+[data-perf="low"] .shadow-xl,
+[data-perf="low"] .shadow-2xl,
+[data-perf="low"] .shadow-premium,
+html.low-spec-perf .card,
+html.low-spec-perf .panel,
+html.low-spec-perf .today-schedule-item,
+html.low-spec-perf .appointment-card,
+html.low-spec-perf .patient-row,
+html.low-spec-perf .patient-card,
+html.low-spec-perf .finance-row,
+html.low-spec-perf .invoice-card,
+html.low-spec-perf .shadow-sm,
+html.low-spec-perf .shadow,
+html.low-spec-perf .shadow-md,
+html.low-spec-perf .shadow-lg,
+html.low-spec-perf .shadow-xl,
+html.low-spec-perf .shadow-2xl,
+html.low-spec-perf .shadow-premium,
+.low-spec-perf .card,
+.low-spec-perf .panel,
+.low-spec-perf .today-schedule-item,
+.low-spec-perf .appointment-card,
+.low-spec-perf .patient-row,
+.low-spec-perf .patient-card,
+.low-spec-perf .finance-row,
+.low-spec-perf .invoice-card,
+.low-spec-perf .shadow-sm,
+.low-spec-perf .shadow,
+.low-spec-perf .shadow-md,
+.low-spec-perf .shadow-lg,
+.low-spec-perf .shadow-xl,
+.low-spec-perf .shadow-2xl,
+.low-spec-perf .shadow-premium,
 html.low-spec-mode .card,
 html.low-spec-mode .panel,
 html.low-spec-mode .today-schedule-item,
@@ -386,8 +524,12 @@ html.low-spec-mode .transition-all {
 .visit-history-entry,
 .diary-timeline-item,
 .finance-row,
+.payment-row,
 .patient-row,
 .invoice-card,
+.document-row,
+.archive-document-card,
+.catalog-item-card,
 .appointment-card,
 .schedule-day-gap,
 .schedule-day-overlap,
@@ -396,6 +538,8 @@ html.low-spec-mode .transition-all {
 .sanpin-log-row,
 .patient-search-item,
 .visit-history-card,
+.treatment-plan-card-item,
+.schedule-time-row,
 .cd-template-item-card,
 .pricelist-data-table tbody tr,
 .pricelist-row,
@@ -520,6 +664,9 @@ html.low-spec-mode .transition-all {
 .quick-package-card,
 .pricelist-data-table tbody tr,
 .pricelist-row,
+.document-row,
+.archive-document-card,
+.catalog-item-card,
 .cd-template-item-card,
 .cd-template-list {
 	contain: paint layout;
@@ -529,6 +676,7 @@ html.low-spec-mode .transition-all {
 
 /* --------------------------------------------------------------------------
    8. Conservative will-change Policy (Anti-GPU VRAM / RAM Thrashing on 4GB PCs)
+   Strictly applied only during active animation, automatically released on completion
    -------------------------------------------------------------------------- */
 html[data-hardware-tier="low"] *,
 html[data-low-spec="true"] *,
@@ -536,14 +684,75 @@ html.low-spec-mode *,
 [data-hardware-tier="low"] *,
 [data-low-spec="true"] *,
 .low-spec-mode * {
-	/* Disallow arbitrary GPU layer creation on low-spec hardware */
+	/* Disallow arbitrary persistent GPU layer creation on low-spec hardware */
 	will-change: auto !important;
 }
 
-/* Allow will-change ONLY point-wise on active interactive overlay surfaces */
-html[data-hardware-tier="low"] .drawer-open,
-html[data-hardware-tier="low"] .modal-active,
-html[data-low-spec="true"] .drawer-open,
-html[data-low-spec="true"] .modal-active {
-	will-change: transform, opacity !important;
+/* will-change: transform strictly on actively animating elements */
+html[data-hardware-tier="low"] .is-animating,
+html[data-hardware-tier="low"] .drawer-animating,
+html[data-hardware-tier="low"] .modal-animating,
+html[data-hardware-tier="low"] [data-animating="true"],
+html[data-low-spec="true"] .is-animating,
+html[data-low-spec="true"] .drawer-animating,
+html[data-low-spec="true"] .modal-animating,
+html[data-low-spec="true"] [data-animating="true"],
+html.low-spec-mode .is-animating,
+html.low-spec-mode .drawer-animating,
+html.low-spec-mode .modal-animating,
+html.low-spec-mode [data-animating="true"] {
+	will-change: transform !important;
 }
+
+/* When drawer or modal reaches resting open/closed state, immediately release compositor layers */
+html[data-hardware-tier="low"] .drawer-open:not(.drawer-animating):not(.is-animating),
+html[data-hardware-tier="low"] .modal-active:not(.modal-animating):not(.is-animating),
+html[data-low-spec="true"] .drawer-open:not(.drawer-animating):not(.is-animating),
+html[data-low-spec="true"] .modal-active:not(.modal-animating):not(.is-animating),
+html.low-spec-mode .drawer-open:not(.drawer-animating):not(.is-animating),
+html.low-spec-mode .modal-active:not(.modal-animating):not(.is-animating) {
+	will-change: auto !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. Hardware Compositor Acceleration (Anti-Jank 60 FPS on Celeron & Intel HD)
+   -------------------------------------------------------------------------- */
+/* Force GPU compositor layer creation on scrollable viewports and heavy clinical charts */
+.schedule-grid,
+.schedule-viewport,
+.schedule-table-container,
+.patient-table-container,
+.invoices-table-container,
+.service-pricelist-table-container,
+.odontogram-module-container,
+.odontogram-canvas-host,
+.tooth-chart-wrapper,
+.tab-content,
+.modal-content,
+.drawer-content,
+.visits-history-feed,
+.sanpin-table-wrapper {
+	transform: translateZ(0);
+	backface-visibility: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   10. Text & Image Rendering Speed Optimization on Low-Spec Hardware
+   -------------------------------------------------------------------------- */
+html[data-hardware-tier="low"],
+html[data-low-spec="true"],
+html.low-spec-mode {
+	text-rendering: optimizeSpeed;
+	image-rendering: -webkit-optimize-contrast;
+}
+
+/* Eliminate expensive CSS filter drops and shadows on low-tier */
+html[data-hardware-tier="low"] img,
+html[data-low-spec="true"] img,
+html.low-spec-mode img,
+html[data-hardware-tier="low"] svg,
+html[data-low-spec="true"] svg,
+html.low-spec-mode svg {
+	filter: none !important;
+}
+

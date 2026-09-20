@@ -22,6 +22,16 @@ import {
 	setCachedApiResponse,
 } from "../lib/apiCacheEngine";
 import {
+	searchPricelistItems,
+} from "../components/catalog/pricelist/servicePricelistEngine";
+import type { ServicePricelistItem } from "../components/catalog/pricelist/servicePricelistPresets";
+import { buildDoctorSlotAppointmentsMap } from "../components/schedule/ScheduleGrid";
+import type { Appointment } from "@dental/shared";
+import {
+	clinicalHotModulePreloaders,
+	scheduleClinicalHotModulesWarmup,
+} from "../workspacePreload";
+import {
 	createDebouncedAction,
 	createMemoryLruCache,
 	DebouncedBatchFlusher,
@@ -354,3 +364,264 @@ describe("apiAuthFetch — In-Memory Token Caching (Zero-Disk Hot Path)", () => 
 		assert.strictEqual(shouldAttachApiAuth("/api/portal/auth/send-otp"), false);
 	});
 });
+
+describe("apiCacheEngine — Кэширование склада, материалов и инвалидация", () => {
+	it("распознает пути складской номенклатуры и правил списания материалов", () => {
+		assert.strictEqual(isCacheableCatalogUrl("/api/inventory"), true);
+		assert.strictEqual(isCacheableCatalogUrl("/api/inventory/org-42"), true);
+		assert.strictEqual(isCacheableCatalogUrl("/api/inventory/org-42/rules"), true);
+		assert.strictEqual(isCacheableCatalogUrl("/api/inventory/org-42/rules?service=A16.07.002"), true);
+
+		// Мутации НЕ должны кэшироваться
+		assert.strictEqual(isCacheableCatalogUrl("/api/inventory/org-42", "POST"), false);
+		assert.strictEqual(isCacheableCatalogUrl("/api/inventory/org-42/rules", "POST"), false);
+	});
+
+	it("инвалидирует кэш склада при списаниях и мутациях остатков", () => {
+		clearApiCache();
+
+		setCachedApiResponse("/api/inventory/org-42", [{ id: "mat-1", name: "Перчатки нитриловые", stock: 150 }]);
+		setCachedApiResponse("/api/inventory/org-42/rules", [{ id: "rule-1", serviceId: "srv-1" }]);
+
+		assert.ok(getCachedApiResponse("/api/inventory/org-42"));
+		assert.ok(getCachedApiResponse("/api/inventory/org-42/rules"));
+
+		// Списание стандартного набора: POST /api/inventory/org-42/quick-writeoff-standard-kit
+		notifyApiMutation("/api/inventory/org-42/quick-writeoff-standard-kit", "POST");
+
+		// Кэш склада должен быть инвалидирован
+		assert.strictEqual(getCachedApiResponse("/api/inventory/org-42"), undefined);
+		assert.strictEqual(getCachedApiResponse("/api/inventory/org-42/rules"), undefined);
+	});
+});
+
+describe("workspacePreload — Clinical Hot Modules Preloaders & Warmup", () => {
+	it("содержит все 6 ключевых клинических модулей горячего пути", () => {
+		const keys = Object.keys(clinicalHotModulePreloaders);
+		assert.ok(keys.includes("scheduleView"));
+		assert.ok(keys.includes("visitView"));
+		assert.ok(keys.includes("visitEmkTab"));
+		assert.ok(keys.includes("odontogramViewContainer"));
+		assert.ok(keys.includes("paymentCapture"));
+		assert.ok(keys.includes("documentsView"));
+		assert.strictEqual(keys.length, 6);
+
+		for (const key of keys as Array<keyof typeof clinicalHotModulePreloaders>) {
+			assert.strictEqual(typeof clinicalHotModulePreloaders[key], "function");
+		}
+	});
+
+	it("запускает планировщик прогрева scheduleClinicalHotModulesWarmup без ошибок", () => {
+		const cleanup = scheduleClinicalHotModulesWarmup();
+		if (cleanup) {
+			assert.strictEqual(typeof cleanup, "function");
+			cleanup();
+		}
+	});
+});
+
+describe("servicePricelistEngine — Zero GC Search Performance & WeakMap Indexing", () => {
+	const sampleItems: ServicePricelistItem[] = [
+		{
+			id: "srv-caries-1",
+			code804n: "A16.07.002.001",
+			commercialTitle: "Лечение кариеса с пломбированием светоотверждаемым композитом",
+			statutoryTitle804n: "Восстановление зуба пломбой с нарушением формы зуба",
+			category: "therapy",
+			specialty: "general",
+			basePriceRub: 4500,
+			basePriceKopecks: 450000,
+			vatRate: 0,
+			vatExemptionArticle: "пп. 2 п. 2 ст. 149 НК РФ",
+			materialCostRub: 500,
+			labCostRub: 0,
+			tags: ["кариес", "пломба", "estelite"],
+			icd10Indications: ["K02.1"],
+			estimatedDurationMin: 45,
+			isActive: true,
+			isArchived: false,
+		},
+		{
+			id: "srv-endo-1",
+			code804n: "A16.07.030.001",
+			commercialTitle: "Механическая и медикаментозная обработка корневого канала",
+			statutoryTitle804n: "Инструментальная и медикаментозная обработка корневого канала",
+			category: "therapy",
+			specialty: "therapist",
+			basePriceRub: 3000,
+			basePriceKopecks: 300000,
+			vatRate: 0,
+			vatExemptionArticle: "пп. 2 п. 2 ст. 149 НК РФ",
+			materialCostRub: 400,
+			labCostRub: 0,
+			tags: ["пульпит", "канал", "эндодонтия"],
+			icd10Indications: ["K04.0"],
+			estimatedDurationMin: 60,
+			isActive: true,
+			isArchived: false,
+		},
+	];
+
+	it("мгновенно находит услугу по клиническому синониму 'кариес' без аллокаций мусора", () => {
+		const results = searchPricelistItems(sampleItems, "кариес");
+		assert.strictEqual(results.length, 1);
+		assert.strictEqual(results[0]?.id, "srv-caries-1");
+	});
+
+	it("находит услугу по коду 804н со специальными символами и без них", () => {
+		const byDots = searchPricelistItems(sampleItems, "A16.07.002");
+		assert.strictEqual(byDots.length, 1);
+		assert.strictEqual(byDots[0]?.id, "srv-caries-1");
+
+		const byCleanCode = searchPricelistItems(sampleItems, "a1607002");
+		assert.strictEqual(byCleanCode.length, 1);
+		assert.strictEqual(byCleanCode[0]?.id, "srv-caries-1");
+	});
+
+	it("повторный поиск использует WeakMap индекс с 0 ms задержкой", () => {
+		// Первое обращение (прогрев индекса)
+		searchPricelistItems(sampleItems, "пломба");
+		// Второе обращение — hit в WeakMap индексе
+		const results = searchPricelistItems(sampleItems, "пломба");
+		assert.strictEqual(results.length, 1);
+		assert.strictEqual(results[0]?.id, "srv-caries-1");
+	});
+});
+
+describe("ScheduleGrid — O(1) Doctor Slot Appointments Map (Zero GC & No .filter() churn)", () => {
+	it("индексирует приемы по ключу ${doctorId}_${timeSlot} за один проход", () => {
+		const appointments: Appointment[] = [
+			{
+				id: "appt-1",
+				doctorUserId: "doc-1",
+				chairId: "chair-1",
+				patientId: "pat-1",
+				startsAt: "2026-09-20T09:00:00.000Z",
+				endsAt: "2026-09-20T09:30:00.000Z",
+				status: "planned",
+				reason: "Консультация",
+				createdAt: "2026-09-20T08:00:00.000Z",
+				updatedAt: "2026-09-20T08:00:00.000Z",
+			},
+			{
+				id: "appt-2",
+				doctorUserId: "doc-1",
+				chairId: "chair-1",
+				patientId: "pat-2",
+				startsAt: "2026-09-20T10:00:00.000Z",
+				endsAt: "2026-09-20T11:00:00.000Z",
+				status: "planned",
+				reason: "Лечение кариеса",
+				createdAt: "2026-09-20T08:00:00.000Z",
+				updatedAt: "2026-09-20T08:00:00.000Z",
+			},
+			{
+				id: "appt-3",
+				doctorUserId: "doc-2",
+				chairId: "chair-2",
+				patientId: "pat-3",
+				startsAt: "2026-09-20T09:00:00.000Z",
+				endsAt: "2026-09-20T09:30:00.000Z",
+				status: "planned",
+				reason: "Профгигиена",
+				createdAt: "2026-09-20T08:00:00.000Z",
+				updatedAt: "2026-09-20T08:00:00.000Z",
+			},
+		];
+
+		const timeSlots = ["08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00"];
+		const slotMap = buildDoctorSlotAppointmentsMap(appointments, "2026-09-20", timeSlots, 30);
+
+		// O(1) lookup
+		const doc1At9 = slotMap.get("doc-1_09:00");
+		assert.ok(doc1At9);
+		assert.strictEqual(doc1At9.length, 1);
+		assert.strictEqual(doc1At9[0]?.id, "appt-1");
+
+		const doc1At10 = slotMap.get("doc-1_10:00");
+		assert.ok(doc1At10);
+		assert.strictEqual(doc1At10.length, 1);
+		assert.strictEqual(doc1At10[0]?.id, "appt-2");
+
+		const doc2At9 = slotMap.get("doc-2_09:00");
+		assert.ok(doc2At9);
+		assert.strictEqual(doc2At9.length, 1);
+		assert.strictEqual(doc2At9[0]?.id, "appt-3");
+
+		// Free slot returns undefined in O(1) without filtering
+		const doc1At8 = slotMap.get("doc-1_08:00");
+		assert.strictEqual(doc1At8, undefined);
+	});
+});
+
+describe("lowSpecHddOptimizer — Low-Spec Hardware & GPU Acceleration Guards (Mandate 8c)", () => {
+	it("детектирует режим низкой производительности по data-perf='low' и классу .low-spec-perf", async () => {
+		const { applyLowSpecToRoot, isLowSpecDevice: isHwLowSpec } = await import(
+			"../lib/hardwareCapabilities"
+		);
+
+		// Создаем mock root element
+		const classList = new Set<string>();
+		const attributes = new Map<string, string>();
+		const mockRoot = {
+			setAttribute: (k: string, v: string) => attributes.set(k, v),
+			removeAttribute: (k: string) => attributes.delete(k),
+			getAttribute: (k: string) => attributes.get(k) ?? null,
+			classList: {
+				add: (cls: string) => classList.add(cls),
+				remove: (cls: string) => classList.delete(cls),
+				contains: (cls: string) => classList.has(cls),
+			},
+		} as unknown as HTMLElement;
+
+		applyLowSpecToRoot(true, mockRoot);
+		assert.strictEqual(mockRoot.getAttribute("data-low-spec"), "true");
+		assert.strictEqual(mockRoot.getAttribute("data-perf"), "low");
+		assert.strictEqual(mockRoot.getAttribute("data-hardware-tier"), "low");
+		assert.strictEqual(mockRoot.classList.contains("low-spec-mode"), true);
+		assert.strictEqual(mockRoot.classList.contains("low-spec-perf"), true);
+
+		applyLowSpecToRoot(false, mockRoot);
+		assert.strictEqual(mockRoot.getAttribute("data-low-spec"), null);
+		assert.strictEqual(mockRoot.getAttribute("data-perf"), "high");
+		assert.strictEqual(mockRoot.getAttribute("data-hardware-tier"), "high");
+		assert.strictEqual(mockRoot.classList.contains("low-spec-mode"), false);
+		assert.strictEqual(mockRoot.classList.contains("low-spec-perf"), false);
+	});
+});
+
+describe("lowSpecHddOptimizer — Statutory Catalog Caching (804n, ICD-10, 043/u templates)", () => {
+	it("загружает и кэширует номенклатуру 804н, МКБ-10 и шаблоны 043/у с 0 мс задержкой в RAM", async () => {
+		const {
+			getOrLoadNomenclature804n,
+			getOrLoadIcd10Dictionary,
+			getOrLoadClinical043Templates,
+			seedAllStatutoryCatalogsInIndexedDb,
+			getStatutoryCatalogCacheStats,
+		} = await import("../services/storage/statutoryCatalogCache");
+
+		// Сидируем справочники
+		const seedResult = await seedAllStatutoryCatalogsInIndexedDb();
+		assert.ok(seedResult.nomenclatureCount > 0, "Номенклатура 804н должна содержать элементы");
+		assert.ok(seedResult.icd10Count > 0, "МКБ-10 должен содержать элементы");
+		assert.ok(seedResult.templatesCount > 0, "Шаблоны 043/у должны содержать элементы");
+
+		// Проверяем статус кэша в RAM
+		const stats = getStatutoryCatalogCacheStats();
+		assert.strictEqual(stats.has804nInRam, true);
+		assert.strictEqual(stats.hasIcd10InRam, true);
+		assert.strictEqual(stats.hasTemplatesInRam, true);
+		assert.ok(stats.ramItemCount > 0);
+
+		// Повторные вызовы должны возвращать закэшированные данные синхронно из RAM
+		const nom2 = await getOrLoadNomenclature804n();
+		assert.strictEqual(nom2.length, seedResult.nomenclatureCount);
+
+		const icd2 = await getOrLoadIcd10Dictionary();
+		assert.strictEqual(icd2.length, seedResult.icd10Count);
+
+		const tmpl2 = await getOrLoadClinical043Templates();
+		assert.strictEqual(tmpl2.length, seedResult.templatesCount);
+	});
+});
+

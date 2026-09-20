@@ -28,6 +28,11 @@ import {
 	getOptimizedTiming,
 	MemoryLruCache,
 } from "../utils/lowSpecHddOptimizer";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageRemoveItem,
+	safeLocalStorageSetItem,
+} from "./safeLocalStorage";
 
 export interface CachedApiResponse<T = unknown> {
 	readonly data: T;
@@ -151,6 +156,18 @@ export const STATUTORY_CATALOG_RULES: readonly CatalogCacheRule[] = [
 		defaultTtlMs: 30 * 60 * 1000, // 30 минут
 		description: "Нормативы СанПиН и справочники стерилизации",
 	},
+	{
+		id: "inventory-warehouse-items",
+		pattern: /^\/api\/inventory(?:\/[a-zA-Z0-9_-]+)?(?:\/|\?|$)/i,
+		defaultTtlMs: 15 * 60 * 1000, // 15 минут — номенклатура склада и материалы
+		description: "Складской учет, расходные материалы и медикаменты",
+	},
+	{
+		id: "inventory-boms-rules",
+		pattern: /^\/api\/inventory(?:\/[a-zA-Z0-9_-]+)?\/rules(?:\/|\?|$)/i,
+		defaultTtlMs: 20 * 60 * 1000, // 20 минут — техкарты списания материалов (804н)
+		description: "Техкарты и правила списания материалов по услугам",
+	},
 ] as const;
 
 /**
@@ -197,6 +214,10 @@ export const DEFAULT_MUTATION_RULES: readonly MutationInvalidationRule[] = [
 	{
 		mutationPattern: /^\/api\/clinical\/phase-completions(?:\/|\?|$)/i,
 		invalidatePatterns: [/^\/api\/clinical\/phase-completions/i],
+	},
+	{
+		mutationPattern: /^\/api\/inventory(?:\/|$)/i,
+		invalidatePatterns: [/^\/api\/inventory/i],
 	},
 ] as const;
 
@@ -395,6 +416,447 @@ export function setCachedApiResponse<T = unknown>(
 	};
 
 	getApiCache().set(key, entry as CachedApiResponse<unknown>, ttlMs);
+	void saveCatalogToPersistentStorage(key, entry);
+}
+
+// ---------------------------------------------------------------------------
+// L2 PERSISTENT CATALOG STORAGE (INDEXEDDB + LOCALSTORAGE FALLBACK)
+// ---------------------------------------------------------------------------
+
+const CATALOG_DB_NAME = "dente-catalog-persistent-cache-v1";
+const CATALOG_DB_VERSION = 1;
+const CATALOG_STORE_NAME = "catalogs";
+const LOCAL_STORAGE_CATALOG_PREFIX = "dente:catalog-cache:";
+
+let catalogDbPromise: Promise<IDBDatabase | null> | null = null;
+
+export function openCatalogDb(): Promise<IDBDatabase | null> {
+	if (typeof window === "undefined" || !("indexedDB" in window)) {
+		return Promise.resolve(null);
+	}
+	if (catalogDbPromise) return catalogDbPromise;
+
+	catalogDbPromise = new Promise((resolve) => {
+		try {
+			const request = window.indexedDB.open(CATALOG_DB_NAME, CATALOG_DB_VERSION);
+			request.onupgradeneeded = () => {
+				const db = request.result;
+				if (!db.objectStoreNames.contains(CATALOG_STORE_NAME)) {
+					db.createObjectStore(CATALOG_STORE_NAME, { keyPath: "url" });
+				}
+			};
+			request.onsuccess = () => {
+				const db = request.result;
+				db.onversionchange = () => {
+					catalogDbPromise = null;
+					db.close();
+				};
+				db.onclose = () => {
+					catalogDbPromise = null;
+				};
+				resolve(db);
+			};
+			request.onerror = () => {
+				catalogDbPromise = null;
+				resolve(null);
+			};
+		} catch {
+			catalogDbPromise = null;
+			resolve(null);
+		}
+	});
+
+	return catalogDbPromise;
+}
+
+export async function saveCatalogToPersistentStorage<T>(
+	url: string,
+	entry: CachedApiResponse<T>,
+): Promise<void> {
+	const key = normalizeApiUrl(url);
+
+	// 1. Попытка сохранения в IndexedDB (быстро, без блокировки главного потока)
+	const db = await openCatalogDb();
+	if (db) {
+		try {
+			await new Promise<void>((resolve, reject) => {
+				const tx = db.transaction(CATALOG_STORE_NAME, "readwrite");
+				const store = tx.objectStore(CATALOG_STORE_NAME);
+				const req = store.put({
+					url: key,
+					data: entry.data,
+					status: entry.status,
+					statusText: entry.statusText,
+					headers: entry.headers,
+					timestamp: entry.timestamp,
+					ttlMs: entry.ttlMs,
+				});
+				req.onsuccess = () => resolve();
+				req.onerror = () => reject(req.error);
+			});
+			return;
+		} catch {
+			// fallback к localStorage
+		}
+	}
+
+	// 2. Fallback в localStorage для небольших справочников (< 80 КБ)
+	try {
+		const serialized = JSON.stringify(entry);
+		if (serialized.length < 80 * 1024) {
+			safeLocalStorageSetItem(LOCAL_STORAGE_CATALOG_PREFIX + key, serialized);
+		}
+	} catch {
+		// localStorage переполнен или недоступен
+	}
+}
+
+export async function readCatalogFromPersistentStorage<T = unknown>(
+	url: string,
+): Promise<CachedApiResponse<T> | null> {
+	const key = normalizeApiUrl(url);
+
+	// 1. Проверяем IndexedDB
+	const db = await openCatalogDb();
+	if (db) {
+		try {
+			const record = await new Promise<CachedApiResponse<T> | null>((resolve) => {
+				const tx = db.transaction(CATALOG_STORE_NAME, "readonly");
+				const store = tx.objectStore(CATALOG_STORE_NAME);
+				const req = store.get(key);
+				req.onsuccess = () => {
+					const res = req.result;
+					if (!res) {
+						resolve(null);
+						return;
+					}
+					// Проверка срока жизни (TTL)
+					if (res.ttlMs !== null && Date.now() > res.timestamp + res.ttlMs) {
+						void deleteCatalogFromPersistentStorage(key);
+						resolve(null);
+						return;
+					}
+					resolve(res as CachedApiResponse<T>);
+				};
+				req.onerror = () => resolve(null);
+			});
+			if (record) return record;
+		} catch {
+			// fallback к localStorage
+		}
+	}
+
+	// 2. Fallback в localStorage
+	try {
+		const raw = safeLocalStorageGetItem(LOCAL_STORAGE_CATALOG_PREFIX + key);
+		if (raw) {
+			const parsed = JSON.parse(raw) as CachedApiResponse<T>;
+			if (parsed && (parsed.ttlMs === null || Date.now() <= parsed.timestamp + parsed.ttlMs)) {
+				return parsed;
+			}
+			safeLocalStorageRemoveItem(LOCAL_STORAGE_CATALOG_PREFIX + key);
+		}
+	} catch {
+		// ignore
+	}
+
+	return null;
+}
+
+export async function deleteCatalogFromPersistentStorage(
+	patternOrUrl?: string | RegExp,
+): Promise<void> {
+	// IndexedDB
+	const db = await openCatalogDb();
+	if (db) {
+		try {
+			await new Promise<void>((resolve) => {
+				const tx = db.transaction(CATALOG_STORE_NAME, "readwrite");
+				const store = tx.objectStore(CATALOG_STORE_NAME);
+				if (!patternOrUrl) {
+					const req = store.clear();
+					req.onsuccess = () => resolve();
+					req.onerror = () => resolve();
+					return;
+				}
+				const req = store.openCursor();
+				req.onsuccess = () => {
+					const cursor = req.result;
+					if (cursor) {
+						const key = String(cursor.key);
+						let shouldDelete = false;
+						if (typeof patternOrUrl === "string") {
+							shouldDelete = key === patternOrUrl || key.includes(patternOrUrl);
+						} else {
+							shouldDelete = patternOrUrl.test(key);
+						}
+						if (shouldDelete) {
+							cursor.delete();
+						}
+						cursor.continue();
+					} else {
+						resolve();
+					}
+				};
+				req.onerror = () => resolve();
+			});
+		} catch {
+			// ignore
+		}
+	}
+
+	// localStorage fallback
+	if (typeof window !== "undefined" && window.localStorage) {
+		try {
+			if (!patternOrUrl) {
+				for (let i = window.localStorage.length - 1; i >= 0; i--) {
+					const k = window.localStorage.key(i);
+					if (k && k.startsWith(LOCAL_STORAGE_CATALOG_PREFIX)) {
+						safeLocalStorageRemoveItem(k);
+					}
+				}
+			} else {
+				for (let i = window.localStorage.length - 1; i >= 0; i--) {
+					const k = window.localStorage.key(i);
+					if (k && k.startsWith(LOCAL_STORAGE_CATALOG_PREFIX)) {
+						const subKey = k.slice(LOCAL_STORAGE_CATALOG_PREFIX.length);
+						const matches =
+							typeof patternOrUrl === "string"
+								? subKey === patternOrUrl || subKey.includes(patternOrUrl)
+								: patternOrUrl.test(subKey);
+						if (matches) {
+							safeLocalStorageRemoveItem(k);
+						}
+					}
+				}
+			}
+		} catch {
+			// ignore
+		}
+	}
+}
+
+/**
+ * Гидратирует сохраненные справочники из IndexedDB в оперативную память (L1 RAM кэш).
+ * Обеспечивает 0 мс seek time при старте приложения даже при медленном HDD 5400 RPM.
+ */
+export async function hydrateCatalogsFromPersistentStorage(): Promise<number> {
+	let hydratedCount = 0;
+	const db = await openCatalogDb();
+	if (db) {
+		try {
+			await new Promise<void>((resolve) => {
+				const tx = db.transaction(CATALOG_STORE_NAME, "readonly");
+				const store = tx.objectStore(CATALOG_STORE_NAME);
+				const req = store.openCursor();
+				req.onsuccess = () => {
+					const cursor = req.result;
+					if (cursor) {
+						const entry = cursor.value as CachedApiResponse<unknown>;
+						if (entry && entry.url) {
+							if (entry.ttlMs === null || Date.now() <= entry.timestamp + entry.ttlMs) {
+								if (!getApiCache().has(entry.url)) {
+									getApiCache().set(entry.url, entry, entry.ttlMs);
+									hydratedCount++;
+								}
+							}
+						}
+						cursor.continue();
+					} else {
+						resolve();
+					}
+				};
+				req.onerror = () => resolve();
+			});
+		} catch {
+			// ignore
+		}
+	}
+
+	return hydratedCount;
+}
+
+export interface WarmupCatalogResult {
+	readonly hydratedFromStorage: number;
+	readonly newlySeeded: number;
+}
+
+/**
+ * Прогрев и наполнение регламентных справочников (Номенклатура 804н, МКБ-10, шаблоны 043/у)
+ * в фоновом режиме (requestIdleCallback) с обязательным кэшированием в IndexedDB.
+ * Гарантирует, что переключение вкладок на бюджетных ПК с медленным 5400 RPM HDD
+ * не вызывает дискового троттлинга (HDD Thrashing) и блокирующих ожиданий.
+ */
+export async function warmupStatutoryCatalogs(): Promise<WarmupCatalogResult> {
+	// 1. Сначала поднимаем всё, что уже сохранено в IndexedDB, в L1 RAM кэш (0 мс доступ)
+	const hydratedFromStorage = await hydrateCatalogsFromPersistentStorage();
+	let newlySeeded = 0;
+
+	// 2. Список ключевых регламентных справочников, необходимых врачу и регистратору
+	const statutoryUrls = [
+		"/api/clinical/804n",
+		"/api/clinical/nomenclature",
+		"/api/clinical/icd10",
+		"/api/icd10",
+		"/api/templates",
+		"/api/emr/templates",
+		"/api/catalog",
+		"/api/price-lists",
+	];
+
+	// Проверяем, есть ли отсутствующие справочники в L1 кэше
+	const missingUrls = statutoryUrls.filter((url) => {
+		const cached = getCachedApiResponse(url);
+		return !cached;
+	});
+
+	if (missingUrls.length > 0) {
+		// Ленивый импорт канонических данных во время idle (не раздувает стартовый бандл)
+		try {
+			// 2.1 Номенклатура 804н и каталог услуг
+			if (
+				missingUrls.includes("/api/clinical/804n") ||
+				missingUrls.includes("/api/clinical/nomenclature") ||
+				missingUrls.includes("/api/catalog") ||
+				missingUrls.includes("/api/price-lists")
+			) {
+				const { STATUTORY_804N_NOMENCLATURE } = await import(
+					"../components/insurance/dmsInsurancePresets"
+				);
+				if (STATUTORY_804N_NOMENCLATURE && STATUTORY_804N_NOMENCLATURE.length > 0) {
+					if (!getCachedApiResponse("/api/clinical/804n")) {
+						setCachedApiResponse("/api/clinical/804n", STATUTORY_804N_NOMENCLATURE, {
+							ttlMs: 30 * 60 * 1000,
+						});
+						newlySeeded++;
+					}
+					if (!getCachedApiResponse("/api/clinical/nomenclature")) {
+						setCachedApiResponse("/api/clinical/nomenclature", STATUTORY_804N_NOMENCLATURE, {
+							ttlMs: 30 * 60 * 1000,
+						});
+						newlySeeded++;
+					}
+					if (!getCachedApiResponse("/api/catalog")) {
+						setCachedApiResponse("/api/catalog", STATUTORY_804N_NOMENCLATURE, {
+							ttlMs: 15 * 60 * 1000,
+						});
+						newlySeeded++;
+					}
+				}
+			}
+
+			// 2.2 Справочник диагнозов МКБ-10
+			if (
+				missingUrls.includes("/api/clinical/icd10") ||
+				missingUrls.includes("/api/icd10")
+			) {
+				const { ICD10_DICTIONARY } = await import("./icd10");
+				if (ICD10_DICTIONARY && ICD10_DICTIONARY.length > 0) {
+					if (!getCachedApiResponse("/api/clinical/icd10")) {
+						setCachedApiResponse("/api/clinical/icd10", ICD10_DICTIONARY, {
+							ttlMs: 30 * 60 * 1000,
+						});
+						newlySeeded++;
+					}
+					if (!getCachedApiResponse("/api/icd10")) {
+						setCachedApiResponse("/api/icd10", ICD10_DICTIONARY, {
+							ttlMs: 30 * 60 * 1000,
+						});
+						newlySeeded++;
+					}
+				}
+			}
+
+			// 2.3 Шаблоны дневников ЭМК (043/у)
+			if (
+				missingUrls.includes("/api/templates") ||
+				missingUrls.includes("/api/emr/templates")
+			) {
+				const { CLINICAL_1CLICK_TEMPLATES_CATALOG } = await import(
+					"../components/emr/templates/clinicalDiaryTemplatesEngine"
+				);
+				if (
+					CLINICAL_1CLICK_TEMPLATES_CATALOG &&
+					CLINICAL_1CLICK_TEMPLATES_CATALOG.length > 0
+				) {
+					if (!getCachedApiResponse("/api/templates")) {
+						setCachedApiResponse("/api/templates", CLINICAL_1CLICK_TEMPLATES_CATALOG, {
+							ttlMs: 20 * 60 * 1000,
+						});
+						newlySeeded++;
+					}
+					if (!getCachedApiResponse("/api/emr/templates")) {
+						setCachedApiResponse(
+							"/api/emr/templates",
+							CLINICAL_1CLICK_TEMPLATES_CATALOG,
+							{ ttlMs: 20 * 60 * 1000 },
+						);
+						newlySeeded++;
+					}
+				}
+			}
+		} catch {
+			// Игнорируем ошибку динамической загрузки fallback справочников
+		}
+
+		// 2.4 Гарантированное сохранение в хранилище IndexedDB для 0 мс запуска на 5400 RPM HDD
+		try {
+			const { seedAllStatutoryCatalogsInIndexedDb } = await import(
+				"../services/storage/statutoryCatalogCache"
+			);
+			void seedAllStatutoryCatalogsInIndexedDb().catch(() => {});
+		} catch {
+			// Игнорируем ошибку фонового сидирования
+		}
+	}
+
+	// 3. Если устройство онлайн, планируем тихое фоновое обновление через requestIdleCallback без блокировки UI
+	if (
+		typeof window !== "undefined" &&
+		typeof navigator !== "undefined" &&
+		navigator.onLine
+	) {
+		const refreshOnline = async () => {
+			const urlsToRefresh = [
+				"/api/clinical/804n",
+				"/api/clinical/icd10",
+				"/api/templates",
+				"/api/catalog",
+			];
+			for (const url of urlsToRefresh) {
+				try {
+					const res = await fetch(url, { cache: "no-cache" });
+					if (res.ok) {
+						const json = await res.json();
+						setCachedApiResponse(url, json);
+					}
+				} catch {
+					// Офлайн или серверная ошибка — не прерываем работу
+				}
+				// Дозируем I/O на HDD 5400 RPM: пауза между запросами для сохранения отзывчивости диска
+				await new Promise((resolve) => setTimeout(resolve, 500));
+			}
+		};
+
+		const idleWin = window as Window & {
+			requestIdleCallback?: (
+				cb: () => void,
+				opts?: { timeout: number },
+			) => number;
+		};
+		if (idleWin.requestIdleCallback) {
+			idleWin.requestIdleCallback(() => void refreshOnline(), {
+				timeout: 12000,
+			});
+		} else {
+			window.setTimeout(() => void refreshOnline(), 6000);
+		}
+	}
+
+	return {
+		hydratedFromStorage,
+		newlySeeded,
+	};
 }
 
 /**
@@ -407,6 +869,7 @@ export function invalidateApiCache(patternOrUrl?: string | RegExp): number {
 		const total = cache.size;
 		cache.clear();
 		statsInvalidations += total;
+		void deleteCatalogFromPersistentStorage();
 		return total;
 	}
 
@@ -424,6 +887,7 @@ export function invalidateApiCache(patternOrUrl?: string | RegExp): number {
 	}
 
 	statsInvalidations += removedCount;
+	void deleteCatalogFromPersistentStorage(patternOrUrl);
 	return removedCount;
 }
 

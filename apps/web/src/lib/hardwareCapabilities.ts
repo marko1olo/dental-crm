@@ -11,6 +11,7 @@
  * on long lists, guaranteeing stable 60 FPS on integrated GPUs.
  */
 
+import { useEffect, useState } from "react";
 import {
 	safeLocalStorageGetItem,
 	safeLocalStorageRemoveItem,
@@ -240,11 +241,15 @@ export function applyLowSpecToRoot(isLowSpec: boolean, root?: HTMLElement | null
 	if (isLowSpec) {
 		el.setAttribute("data-low-spec", "true");
 		el.setAttribute("data-hardware-tier", "low");
+		el.setAttribute("data-perf", "low");
 		el.classList.add("low-spec-mode");
+		el.classList.add("low-spec-perf");
 	} else {
 		el.removeAttribute("data-low-spec");
 		el.setAttribute("data-hardware-tier", "high");
+		el.setAttribute("data-perf", "high");
 		el.classList.remove("low-spec-mode");
+		el.classList.remove("low-spec-perf");
 	}
 }
 
@@ -255,10 +260,52 @@ export function isLowSpecDevice(): boolean {
 	if (typeof document !== "undefined") {
 		return (
 			document.documentElement.getAttribute("data-low-spec") === "true" ||
-			document.documentElement.getAttribute("data-hardware-tier") === "low"
+			document.documentElement.getAttribute("data-hardware-tier") === "low" ||
+			document.documentElement.getAttribute("data-perf") === "low" ||
+			document.documentElement.classList.contains("low-spec-mode") ||
+			document.documentElement.classList.contains("low-spec-perf")
 		);
 	}
 	return detectHardwareCapabilities().isLowSpec;
+}
+
+/**
+ * React hook returning whether the client is currently running on low-spec hardware
+ * (Celeron / 2-core CPU, <= 4GB RAM, 5400 RPM HDD, or battery saver active).
+ */
+export function useLowSpecHardware(): boolean {
+	const [isLow, setIsLow] = useState(() => isLowSpecDevice());
+	useEffect(() => {
+		const unsubscribe = subscribeToHardwareChanges((caps) => {
+			setIsLow(caps.isLowSpec);
+		});
+		return unsubscribe;
+	}, []);
+	return isLow;
+}
+
+/**
+ * Applies will-change: transform strictly during active animation and removes it
+ * immediately upon transitionend / animationend to prevent GPU layer memory leaks.
+ */
+export function attachTemporaryWillChange(
+	element: HTMLElement | null,
+	property: "transform" | "opacity" | "transform, opacity" = "transform",
+): () => void {
+	if (!element) return () => {};
+	element.style.willChange = property;
+	const cleanup = () => {
+		element.style.willChange = "auto";
+		element.removeEventListener("transitionend", cleanup);
+		element.removeEventListener("animationend", cleanup);
+	};
+	element.addEventListener("transitionend", cleanup, { once: true });
+	element.addEventListener("animationend", cleanup, { once: true });
+	const timer = setTimeout(cleanup, 600);
+	return () => {
+		clearTimeout(timer);
+		cleanup();
+	};
 }
 
 type HardwareListener = (caps: HardwareCapabilities) => void;

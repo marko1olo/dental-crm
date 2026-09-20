@@ -66,6 +66,19 @@ export function isLowSpecDevice(): boolean {
 		return forcedLowSpecMode;
 	}
 
+	if (typeof document !== "undefined") {
+		const root = document.documentElement;
+		if (
+			root.getAttribute("data-low-spec") === "true" ||
+			root.getAttribute("data-hardware-tier") === "low" ||
+			root.getAttribute("data-perf") === "low" ||
+			root.classList.contains("low-spec-mode") ||
+			root.classList.contains("low-spec-perf")
+		) {
+			return true;
+		}
+	}
+
 	if (typeof navigator === "undefined") {
 		return false;
 	}
