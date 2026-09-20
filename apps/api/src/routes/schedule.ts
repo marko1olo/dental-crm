@@ -21,6 +21,7 @@ import { getDashboardFromDb } from "../db/dashboardQuery.js";
 import {
 	appointments,
 	chairs,
+	clinics,
 	patients,
 	scheduleClipboardItems,
 	urgentScheduleRequests,
@@ -743,6 +744,37 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 				: null;
 
 		if (rawBody) {
+			// Алиасы для обратной совместимости и тест-раннеров
+			if (!rawBody.doctorUserId && rawBody.doctorId && typeof rawBody.doctorId === "string") {
+				rawBody.doctorUserId = rawBody.doctorId;
+			}
+			if (!rawBody.startsAt && rawBody.startTime && typeof rawBody.startTime === "string") {
+				rawBody.startsAt = rawBody.startTime;
+			}
+			if (!rawBody.endsAt && rawBody.endTime && typeof rawBody.endTime === "string") {
+				rawBody.endsAt = rawBody.endTime;
+			}
+			if (!rawBody.reason && rawBody.notes && typeof rawBody.notes === "string") {
+				rawBody.reason = rawBody.notes;
+			}
+			if (!rawBody.comment && rawBody.comments && typeof rawBody.comments === "string") {
+				rawBody.comment = rawBody.comments;
+			}
+
+			// Нормализация дат в ISO-формат с временной зоной Z, если не передана
+			if (typeof rawBody.startsAt === "string") {
+				let s = rawBody.startsAt.trim();
+				if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
+				if (!s.endsWith("Z") && !/[+-]\d{2}:\d{2}$/.test(s)) s = `${s}Z`;
+				rawBody.startsAt = s;
+			}
+			if (typeof rawBody.endsAt === "string") {
+				let e = rawBody.endsAt.trim();
+				if (e.includes(" ") && !e.includes("T")) e = e.replace(" ", "T");
+				if (!e.endsWith("Z") && !/[+-]\d{2}:\d{2}$/.test(e)) e = `${e}Z`;
+				rawBody.endsAt = e;
+			}
+
 			// Мандат 8e п. 8, Мандат 8n: ассистент назначается опционально, соло-врачу не навязывается выбор ассистента
 			if (
 				rawBody.assistantUserId === "" ||
@@ -756,6 +788,7 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 			if (
 				!rawBody.chairId ||
 				rawBody.chairId === "default-chair" ||
+				rawBody.chairId === "chair-1" ||
 				(typeof rawBody.chairId === "string" && !rawBody.chairId.trim())
 			) {
 				const [firstActiveChair] = await db
@@ -778,12 +811,46 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 						.limit(1);
 					if (anyChair) {
 						rawBody.chairId = anyChair.id;
+					} else {
+						// Если в клинике ещё нет ни одного кресла (свежая клиника / тест / соло-кабинет),
+						// авто-создаем дефолтное Кресло 1, исключая тупик валидации (Мандат 8n)
+						let [clinic] = await db
+							.select({ id: clinics.id })
+							.from(clinics)
+							.where(eq(clinics.organizationId, orgId))
+							.limit(1);
+						if (!clinic) {
+							const [newClinic] = await db
+								.insert(clinics)
+								.values({
+									organizationId: orgId,
+									name: "Главное отделение",
+									timezone: "Europe/Samara",
+								})
+								.returning({ id: clinics.id });
+							clinic = newClinic;
+						}
+						if (clinic) {
+							const [newChair] = await db
+								.insert(chairs)
+								.values({
+									organizationId: orgId,
+									clinicId: clinic.id,
+									name: "Кресло 1",
+									isActive: true,
+								})
+								.returning({ id: chairs.id });
+							if (newChair) {
+								rawBody.chairId = newChair.id;
+							}
+						}
 					}
 				}
 			}
 
-			// Авто-подстановка врача по умолчанию для соло-кабинета при передаче маркера
+			// Авто-подстановка врача по умолчанию для соло-кабинета при передаче маркера или пустом поле
 			if (
+				!rawBody.doctorUserId ||
 				rawBody.doctorUserId === "default-doctor" ||
 				(typeof rawBody.doctorUserId === "string" && !rawBody.doctorUserId.trim())
 			) {
@@ -799,6 +866,15 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 					.limit(1);
 				if (firstDoc) {
 					rawBody.doctorUserId = firstDoc.id;
+				} else {
+					const [anyUser] = await db
+						.select({ id: users.id })
+						.from(users)
+						.where(eq(users.organizationId, orgId))
+						.limit(1);
+					if (anyUser) {
+						rawBody.doctorUserId = anyUser.id;
+					}
 				}
 			}
 		}

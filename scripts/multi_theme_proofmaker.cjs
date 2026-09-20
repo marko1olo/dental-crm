@@ -101,27 +101,37 @@ async function provisionLiveSession() {
           headers,
           body: JSON.stringify({
             patientId,
+            doctorUserId: initData.ownerUserId,
             doctorId: initData.ownerUserId,
-            chairId: "chair-1",
-            startTime: `${scheduleDateStr}T10:00:00Z`,
-            endTime: `${scheduleDateStr}T11:00:00Z`,
+            chairId: "default-chair",
+            startsAt: `${scheduleDateStr}T10:00:00.000Z`,
+            startTime: `${scheduleDateStr}T10:00:00.000Z`,
+            endsAt: `${scheduleDateStr}T11:00:00.000Z`,
+            endTime: `${scheduleDateStr}T11:00:00.000Z`,
             status: "confirmed",
+            reason: "Лечение глубокого кариеса 36 зуба",
             notes: "Лечение глубокого кариеса 36 зуба",
           }),
         });
         if (apptRes.ok) {
           console.log(`[Provisioning] Seeded appointment on ${scheduleDateStr} (10:00 - 11:00)`);
+        } else {
+          console.log(`[Provisioning] Appointment seeding response status: ${apptRes.status}`);
         }
         await fetch(`${API_BASE}/api/appointments`, {
           method: "POST",
           headers,
           body: JSON.stringify({
             patientId,
+            doctorUserId: initData.ownerUserId,
             doctorId: initData.ownerUserId,
-            chairId: "chair-1",
-            startTime: `${scheduleDateStr}T11:30:00Z`,
-            endTime: `${scheduleDateStr}T12:30:00Z`,
+            chairId: "default-chair",
+            startsAt: `${scheduleDateStr}T11:30:00.000Z`,
+            startTime: `${scheduleDateStr}T11:30:00.000Z`,
+            endsAt: `${scheduleDateStr}T12:30:00.000Z`,
+            endTime: `${scheduleDateStr}T12:30:00.000Z`,
             status: "planned",
+            reason: "Консультация ортопеда, коронка 46",
             notes: "Консультация ортопеда, коронка 46",
           }),
         }).catch(() => {});
@@ -507,6 +517,12 @@ async function runMultiThemeProofmaker() {
 
     const ensureScheduleDateAndCards = async (p) => {
       await p.evaluate(() => {
+        // Reset filter chips to "Все записи" if present to avoid doctor/chair filtering hiding cards
+        const chips = Array.from(document.querySelectorAll('.schedule-filter-chips button, .quick-chip, button'));
+        const allChip = chips.find((b) => b.textContent && b.textContent.includes('Все записи'));
+        if (allChip) {
+          allChip.click();
+        }
         const dateInput = document.querySelector('input.schedule-date-input, input[aria-label="Фильтр расписания по дате"], input[type="date"]');
         if (dateInput && dateInput.value !== "2026-09-21") {
           dateInput.value = "2026-09-21";
