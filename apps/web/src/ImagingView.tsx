@@ -137,7 +137,11 @@ const PanoramicRendererWindow = lazyWithRetry(() =>
 		default: m.PanoramicRendererWindow,
 	})),
 );
-import { DicomArchiveUploader } from "./components/dicom/DicomArchiveUploader";
+const DicomArchiveUploader = lazyWithRetry(() =>
+	import("./components/dicom/DicomArchiveUploader").then((m) => ({
+		default: m.DicomArchiveUploader,
+	})),
+);
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
 import { ShadowAnalystImageSlider } from "./components/imaging/ShadowAnalystImageSlider";
@@ -1040,7 +1044,9 @@ export function ImagingView(props: ImagingViewProps) {
                             просмотрщиком ветвью выше.
                           */
 									<div className="w-full h-full flex flex-col gap-4 p-4">
-										<DicomArchiveUploader onImagesLoaded={setLocalImageIds} />
+										<Suspense fallback={null}>
+											<DicomArchiveUploader onImagesLoaded={setLocalImageIds} />
+										</Suspense>
 										<div className="imaging-cbct-hint">
 											<strong>Срезы КЛКТ открываются с диска</strong>
 											<p>
@@ -1668,7 +1674,9 @@ export function ImagingView(props: ImagingViewProps) {
 						</>
 					) : (
 						<div className="w-full h-full flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-[420px]">
-							<DicomArchiveUploader onImagesLoaded={setLocalImageIds} className="w-full h-full min-h-[380px]" />
+							<Suspense fallback={null}>
+								<DicomArchiveUploader onImagesLoaded={setLocalImageIds} className="w-full h-full min-h-[380px]" />
+							</Suspense>
 						</div>
 					)}
 				</article>
@@ -1940,7 +1948,9 @@ export function ImagingView(props: ImagingViewProps) {
 								<p className="text-xs text-slate-600 dark:text-slate-300 mb-3 leading-relaxed">
 									Инструменты мультипланарной реконструкции (MPR) активируются при наличии срезов в памяти. Выберите папку с исследованием или ZIP-архив срезов:
 								</p>
-								<DicomArchiveUploader onImagesLoaded={setLocalImageIds} className="w-full" />
+								<Suspense fallback={null}>
+									<DicomArchiveUploader onImagesLoaded={setLocalImageIds} className="w-full" />
+								</Suspense>
 							</div>
 						)}
 						<div className="clinical-mpr-grid">
