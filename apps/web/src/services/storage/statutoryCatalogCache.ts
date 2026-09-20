@@ -189,3 +189,74 @@ export function getStatutoryCatalogCacheStats(): StatutoryCatalogCacheStats {
 			(ramTemplatesCache?.length ?? 0),
 	};
 }
+
+/**
+ * Synchronous RAM L1 getter for 804n nomenclature.
+ * Returns items immediately (0 ms) if already loaded into memory.
+ */
+export function getCached804nSync<T = unknown>(): T[] | null {
+	return (ram804nCache as T[]) || null;
+}
+
+/**
+ * Synchronous RAM L1 getter for ICD-10 dictionary.
+ * Returns items immediately (0 ms) if already loaded into memory.
+ */
+export function getCachedIcd10Sync<T = unknown>(): T[] | null {
+	return (ramIcd10Cache as T[]) || null;
+}
+
+/**
+ * Synchronous RAM L1 getter for EMR 043/u templates.
+ * Returns items immediately (0 ms) if already loaded into memory.
+ */
+export function getCachedTemplatesSync<T = unknown>(): T[] | null {
+	return (ramTemplatesCache as T[]) || null;
+}
+
+/**
+ * Instant 0 ms synchronous search across in-memory 804n nomenclature.
+ */
+export function searchCached804nSync<T extends { code?: string; name?: string; serviceName?: string } = any>(
+	query: string,
+	limit = 50,
+): T[] {
+	if (!ram804nCache || ram804nCache.length === 0) return [];
+	const q = query.trim().toLowerCase();
+	if (!q) return (ram804nCache as T[]).slice(0, limit);
+
+	const results: T[] = [];
+	for (const item of ram804nCache as T[]) {
+		const code = (item.code || "").toLowerCase();
+		const name = (item.name || item.serviceName || "").toLowerCase();
+		if (code.includes(q) || name.includes(q)) {
+			results.push(item);
+			if (results.length >= limit) break;
+		}
+	}
+	return results;
+}
+
+/**
+ * Instant 0 ms synchronous search across in-memory ICD-10 catalog.
+ */
+export function searchCachedIcd10Sync<T extends { code?: string; name?: string; description?: string } = any>(
+	query: string,
+	limit = 50,
+): T[] {
+	if (!ramIcd10Cache || ramIcd10Cache.length === 0) return [];
+	const q = query.trim().toLowerCase();
+	if (!q) return (ramIcd10Cache as T[]).slice(0, limit);
+
+	const results: T[] = [];
+	for (const item of ramIcd10Cache as T[]) {
+		const code = (item.code || "").toLowerCase();
+		const name = (item.name || item.description || "").toLowerCase();
+		if (code.includes(q) || name.includes(q)) {
+			results.push(item);
+			if (results.length >= limit) break;
+		}
+	}
+	return results;
+}
+

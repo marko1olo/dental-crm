@@ -622,6 +622,26 @@ describe("lowSpecHddOptimizer — Statutory Catalog Caching (804n, ICD-10, 043/u
 
 		const tmpl2 = await getOrLoadClinical043Templates();
 		assert.strictEqual(tmpl2.length, seedResult.templatesCount);
+
+		// Проверяем мгновенный синхронный RAM поиск (0 мс)
+		const {
+			getCached804nSync,
+			getCachedIcd10Sync,
+			getCachedTemplatesSync,
+			searchCached804nSync,
+			searchCachedIcd10Sync,
+		} = await import("../services/storage/statutoryCatalogCache");
+
+		assert.strictEqual(getCached804nSync()?.length, seedResult.nomenclatureCount);
+		assert.strictEqual(getCachedIcd10Sync()?.length, seedResult.icd10Count);
+		assert.strictEqual(getCachedTemplatesSync()?.length, seedResult.templatesCount);
+
+		const search804n = searchCached804nSync("кариес", 10);
+		assert.ok(Array.isArray(search804n));
+
+		const searchIcd10 = searchCachedIcd10Sync("K02", 10);
+		assert.ok(Array.isArray(searchIcd10));
+		assert.ok(searchIcd10.length > 0);
 	});
 });
 

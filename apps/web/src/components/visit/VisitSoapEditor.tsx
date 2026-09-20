@@ -33,6 +33,8 @@ import {
 	safeLocalStorageGetItem,
 	safeLocalStorageSetItem,
 } from "../../lib/safeLocalStorage";
+import { sliceDomList } from "../../utils/domVirtualizationHelper";
+import { getOptimizedTiming } from "../../utils/lowSpecHddOptimizer";
 
 export interface VisitSoapNoteValues {
 	complaint?: string;
@@ -86,23 +88,27 @@ const SPECIALTY_BADGE_COLORS: Record<OutpatientSpecialty, string> = {
 		"bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
 };
 
+const resolvedProtocolsCache = new Map<number, OutpatientProtocolTemplate>();
+
 /**
- * Преобразует шаблон StomX из каталога 448 шаблонов в полноценный клинический протокол Формы 043/у (SOAP)
+ * Преобразует шаблон StomX из каталога 448 шаблонов в полноценный клинический протокол Формы 043/у (SOAP).
+ * Результат кэшируется в RAM для 0 ms разрешения при поиске на слабых CPU/HDD.
  */
 export function resolveProtocolFromTemplate(
 	tpl: StomxOutpatientTemplateMetadata,
 ): OutpatientProtocolTemplate {
+	const cached = resolvedProtocolsCache.get(tpl.id);
+	if (cached) {
+		return cached;
+	}
+
 	const exact = STOMX_KEY_CLINICAL_PROTOCOLS.find(
 		(p) =>
 			p.stomxId === tpl.id ||
 			p.id === String(tpl.id) ||
 			p.name.toLowerCase() === tpl.name.toLowerCase(),
 	);
-	if (exact) {
-		return exact;
-	}
-
-	return {
+	const resolved: OutpatientProtocolTemplate = exact || {
 		id: `stomx_${tpl.id}`,
 		stomxId: tpl.id,
 		specialty: tpl.specialty,
@@ -120,6 +126,9 @@ export function resolveProtocolFromTemplate(
 		defaultTooth: 16,
 		tags: [tpl.categoryName, tpl.mkbCode, tpl.specialty],
 	};
+
+	resolvedProtocolsCache.set(tpl.id, resolved);
+	return resolved;
 }
 
 /**
@@ -178,6 +187,13 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 	const [copied, setCopied] = useState<boolean>(false);
 	const [previewProtocol, setPreviewProtocol] =
 		useState<OutpatientProtocolTemplate | null>(null);
+	const [templatesLimit, setTemplatesLimit] = useState<number>(30);
+
+	// Low-Spec memory guard: сброс лимита видимых шаблонов при смене фильтра/поиска
+	useEffect(() => {
+		setTemplatesLimit(30);
+	}, [searchQuery, activeSpecialty]);
+
 	const [isCorrectionMode, setIsCorrectionMode] = useState<boolean>(false);
 	const [isSoapMoreOpen, setIsSoapMoreOpen] = useState<boolean>(false);
 	const soapMoreRef = useRef<HTMLDivElement>(null);
@@ -255,9 +271,11 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		}
 	}, [initialValues]);
 
-	// Дебаунс автосохранения (300ms debounced autosave per Mandate 8e & safeLocalStorage low-spec HDD)
+	// Дебаунс автосохранения (адаптивно: 800ms на ПК / 1800ms на слабом Celeron/HDD 5400 RPM)
 	useEffect(() => {
 		if (saveStatus !== "saving") return;
+		const timing = getOptimizedTiming();
+		const debounceMs = timing.autosaveDebounceMs || 400;
 		const timer = setTimeout(() => {
 			onChange?.(values);
 			onSave?.(values);
@@ -265,7 +283,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 				safeLocalStorageSetItem(soapStorageKey, JSON.stringify(values));
 			} catch {}
 			setSaveStatus("saved");
-		}, 300);
+		}, debounceMs);
 
 		return () => clearTimeout(timer);
 	}, [values, saveStatus, onChange, onSave, soapStorageKey]);
@@ -353,6 +371,11 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		const matchingTemplates = searchAll448Templates(searchQuery, specFilter);
 		return matchingTemplates.map(resolveProtocolFromTemplate);
 	}, [searchQuery, activeSpecialty]);
+
+	// Чанкинг и виртуализация шаблонов (Мандаты 8c, 8n: DOM budget <= 30-50 узлов)
+	const templatesSlice = useMemo(() => {
+		return sliceDomList(filteredProtocols, templatesLimit, 0);
+	}, [filteredProtocols, templatesLimit]);
 
 	// Применение протокола StomX
 	const handleApplyProtocol = useCallback(
@@ -535,8 +558,8 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			className={`flex flex-col bg-[var(--paper,white)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-xl overflow-hidden shadow-xs ${className}`}
 		>
 			{/* ── ТУЛБАР 1 СТРОКА (ХИК / HIG: 32-36px кнопки) ── */}
-			<div className="flex items-center justify-between gap-2 px-3 py-2 bg-[var(--paper-soft)] border-b border-[var(--line)] flex-wrap min-h-[36px]">
-				<div className="flex items-center gap-2">
+			<div className="flex items-center justify-between gap-2 px-3 py-2 bg-[var(--paper-soft)] border-b border-[var(--line)] overflow-x-auto scrollbar-none flex-nowrap min-h-[36px]">
+				<div className="flex items-center gap-2 shrink-0">
 					<div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider text-[var(--muted)]">
 						<FileText className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 						<span>Форма 043/у • SOAP</span>
@@ -626,10 +649,12 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						onClick={handleApplyNorm}
 						data-testid="btn-soap-physio-norm"
 						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 transition-colors"
-						title="Заполнить физиологической нормой (здоров / жалоб нет)"
+						title="Соматически здоров / норма (1-клик): зафиксировать физиологическую норму в карте 043/у"
+						aria-label="Соматически здоров / Норма (1-клик)"
 					>
 						<Check className="w-3.5 h-3.5" />
-						<span className="hidden sm:inline">Норма</span>
+						<span className="hidden md:inline">Соматически здоров / Норма</span>
+						<span className="md:hidden">Норма</span>
 					</button>
 
 					{/* Переключение режима отображения */}
@@ -722,20 +747,25 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						)}
 					</div>
 
-					{/* Индикатор сохранения (Мандат 8e: Debounced Autosave «СОХРАНЕНО» / «Сохранение...») */}
+					{/* Индикатор сохранения (Мандат 8e: Debounced Autosave «СОХРАНЕНО» / «OK») */}
 					<span
 						data-testid="soap-autosave-status"
-						className="text-[11px] font-semibold min-w-[90px] text-right inline-flex items-center justify-end gap-1"
+						className="text-[11px] font-semibold shrink-0 min-w-max text-right inline-flex items-center justify-end gap-1 whitespace-nowrap"
 					>
 						{saveStatus === "saving" ? (
-							<span className="text-amber-600 dark:text-amber-400 inline-flex items-center gap-1 animate-pulse">
+							<span className="text-amber-600 dark:text-amber-400 inline-flex items-center gap-1 animate-pulse shrink-0 whitespace-nowrap">
 								<span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping inline-block shrink-0" />
-								<span>Сохранение...</span>
+								<span className="hidden sm:inline">Сохранение...</span>
+								<span className="sm:hidden">...</span>
 							</span>
 						) : saveStatus === "saved" ? (
-							<span className="text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 font-bold">
+							<span
+								className="text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 font-bold shrink-0 whitespace-nowrap"
+								title="Сохранено"
+							>
 								<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 inline" aria-hidden="true" />
-								<span>СОХРАНЕНО</span>
+								<span className="hidden 2xl:inline">СОХРАНЕНО</span>
+								<span className="2xl:hidden">OK</span>
 							</span>
 						) : (
 							""
@@ -805,12 +835,16 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						/>
 					</div>
 
-					{/* Сетка шаблонов */}
-					<div className="max-h-[50dvh] sm:max-h-60 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pr-1">
-						{filteredProtocols.map((protocol) => (
+					{/* Сетка шаблонов (виртуализирована чанками по 30 шт. для 4GB RAM и слабых CPU) */}
+					<div
+						className="max-h-[50dvh] sm:max-h-60 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pr-1"
+						style={{ contain: "content" }}
+					>
+						{(templatesSlice?.visibleItems ?? []).map((protocol) => (
 							<div
 								key={protocol.id}
 								className="p-2 bg-[var(--paper)] border border-[var(--line)] rounded-lg flex flex-col justify-between hover:border-[var(--teal,var(--brand-primary))] transition-colors shadow-2xs"
+								style={{ contain: "content", contentVisibility: "auto", containIntrinsicSize: "auto 84px" }}
 							>
 								<div>
 									<div className="flex items-center justify-between gap-1 mb-1">
@@ -858,6 +892,18 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								</div>
 							</div>
 						))}
+						{templatesSlice.hasMore && (
+							<div className="col-span-full flex justify-center py-2">
+								<button
+									type="button"
+									onClick={() => setTemplatesLimit((prev) => prev + 30)}
+									className="secondary-button min-h-[34px] h-8 px-4 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5 active:scale-95"
+									data-testid="btn-soap-templates-show-more"
+								>
+									{`Показать ещё ${Math.min(30, templatesSlice.remainingCount)} шаблонов (показано ${templatesSlice.displayedCount} из ${templatesSlice.totalCount})`}
+								</button>
+							</div>
+						)}
 					</div>
 				</div>
 			)}

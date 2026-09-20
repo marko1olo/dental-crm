@@ -38,6 +38,7 @@ import {
 	getNextFocusedTooth,
 	getToothStateFromHotkey,
 } from "./ClassicGostOdontogram";
+import { useIsTouchScreen } from "./useIsTouchScreen";
 import {
 	GlobalTreatmentsStrip,
 	type GlobalTreatmentItem,
@@ -76,7 +77,7 @@ const getAnatomicalToothColors = (
 				fill: "url(#dente-enamel-healthy)",
 				crownFill: "url(#dente-enamel-healthy)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "var(--tooth-root-stroke, #64748b)",
+				stroke: "var(--tooth-enamel-stroke, var(--tooth-root-stroke, #94a3b8))",
 				opacity: "1",
 				badgeColor: "#10b981",
 				badgeBg: "rgba(16, 185, 129, 0.12)",
@@ -239,7 +240,7 @@ const getAnatomicalToothColors = (
 				fill: "transparent",
 				crownFill: "none",
 				rootFill: "none",
-				stroke: "var(--tooth-root-stroke, #64748b)",
+				stroke: "var(--tooth-root-stroke, #94a3b8)",
 				opacity: "0.12",
 				isMissing: true,
 				badgeColor: "#64748b",
@@ -273,7 +274,7 @@ const getAnatomicalToothColors = (
 				fill: "url(#dente-enamel-healthy)",
 				crownFill: "url(#dente-enamel-healthy)",
 				rootFill: "url(#dente-root-dentin)",
-				stroke: "var(--tooth-root-stroke, #94a3b8)",
+				stroke: "var(--tooth-enamel-stroke, var(--tooth-root-stroke, #94a3b8))",
 				opacity: "1",
 				badgeColor: "#10b981",
 				badgeBg: "rgba(16, 185, 129, 0.12)",
@@ -608,7 +609,9 @@ const AnatomicalToothSVG = React.memo(({
 										? "#8b5cf6"
 										: state === "Root"
 											? "#dc2626"
-											: "var(--tooth-root-stroke, #64748b)"
+											: state === "Healthy"
+												? "var(--tooth-enamel-stroke, var(--tooth-root-stroke, #94a3b8))"
+												: colors.stroke
 							}
 							strokeWidth={colors.isMissing ? "1.4" : "1.8"}
 							strokeDasharray={
@@ -1001,7 +1004,7 @@ const AnatomicalToothSVG = React.memo(({
 								<path
 									d={c.path}
 									fill="none"
-									stroke={state === "Pulpitis" ? "#fecaca" : "#fff1f2"}
+									stroke={state === "Pulpitis" ? "#fecaca" : "#fca5a5"}
 									strokeWidth="1.0"
 									strokeLinecap="round"
 									opacity="0.85"
@@ -1016,7 +1019,7 @@ const AnatomicalToothSVG = React.memo(({
 					<path
 						d={geom.pulpChamberPath}
 						fill={state === "Pulpitis" ? "url(#dente-pulpitis-grad)" : "url(#dente-pulp-vital-grad)"}
-						stroke={state === "Pulpitis" ? "#991b1b" : "#e11d48"}
+						stroke={state === "Pulpitis" ? "#991b1b" : "#ef4444"}
 						strokeWidth="1.2"
 						opacity={state === "Pulpitis" ? "0.95" : "0.85"}
 						className="anatomical-pulp-chamber"
@@ -1389,28 +1392,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 	const effectiveResorption = rootResorptionStage ?? rootResorption ?? 0;
 	const colors = getAnatomicalToothColors(state, material);
 
-	const [isTouchScreen, setIsTouchScreen] = useState<boolean>(() => {
-		if (typeof window !== "undefined") {
-			return (
-				window.innerWidth <= 768 ||
-				"ontouchstart" in window ||
-				(typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints) && navigator.maxTouchPoints > 0)
-			);
-		}
-		return false;
-	});
-
-	useEffect(() => {
-		const checkTouch = () => {
-			setIsTouchScreen(
-				window.innerWidth <= 768 ||
-				"ontouchstart" in window ||
-				(typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints) && navigator.maxTouchPoints > 0)
-			);
-		};
-		window.addEventListener("resize", checkTouch);
-		return () => window.removeEventListener("resize", checkTouch);
-	}, []);
+	const isTouchScreen = useIsTouchScreen();
 
 	const renderNumberBadge = () => {
 		const isLeftMolar = (number >= 16 && number <= 18) || (number >= 46 && number <= 48) || (number >= 54 && number <= 55) || (number >= 84 && number <= 85);
@@ -2122,10 +2104,15 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 
 			if (baseNaturalWidth <= 0) return;
 
-			const minScale = isQuadrantView ? 0.95 : 0.65;
+			const windowHeight = typeof window !== "undefined" ? window.innerHeight : 900;
+			const isShortHeight = windowHeight <= 768;
+			const heightScaleFactor = isShortHeight ? Math.max(0.68, Math.min(1.0, (windowHeight - 340) / 280)) : 1.0;
+
+			const minScale = isQuadrantView ? (isShortHeight ? 0.8 : 0.95) : (isShortHeight ? 0.52 : 0.65);
+			const widthScale = (available / baseNaturalWidth) * (isQuadrantView ? 1.15 : 0.96);
 			const targetScale = Math.min(
 				1.8,
-				Math.max(minScale, (available / baseNaturalWidth) * (isQuadrantView ? 1.15 : 0.96)),
+				Math.max(minScale, widthScale * heightScaleFactor),
 			);
 
 			if (Math.abs(appliedArchScaleRef.current - targetScale) < 0.005) return;
@@ -2275,11 +2262,11 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 			{/* Responsive Mobile & Desktop Quadrant Adapter Bar (Compact Space-Efficient) */}
 			{!hideQuadrantSwitcher && (
 				<div className="odontogram-quadrant-bar mb-2 select-none" data-testid="odontogram-quadrant-bar">
-					<div className="flex items-center gap-2 flex-wrap w-full">
+					<div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap overflow-x-auto no-scrollbar py-0.5 w-full">
 						<button
 							type="button"
 							onClick={() => handleSelectQuadrant("all")}
-							className={`min-h-[44px] sm:min-h-[32px] px-3.5 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer select-none shrink-0 ${
+							className={`min-h-[32px] h-8 px-2.5 sm:px-3.5 py-1 rounded-xl text-xs font-black border transition-all cursor-pointer select-none shrink-0 flex items-center justify-center whitespace-nowrap ${
 								currentQuadrant === "all"
 									? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] font-black border-[var(--teal-dark,var(--teal))] shadow-xs"
 									: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink-muted)] hover:text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:bg-[var(--odontogram-surface-hover)]"
@@ -2287,18 +2274,18 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 							title="Показать полную зубную формулу (все зубы)"
 							data-testid="quadrant-btn-all"
 						>
-							Все зубы ({isMixedEffective ? "24" : isPediatricEffective ? "20" : showWisdomTeeth ? "32" : "28"})
+							Все ({isMixedEffective ? "24" : isPediatricEffective ? "20" : showWisdomTeeth ? "32" : "28"})
 						</button>
 
-						<div className="h-5 w-px bg-[var(--odontogram-border)] mx-0.5 hidden sm:block" />
+						<div className="h-4 w-px bg-[var(--odontogram-border)] mx-0.5 shrink-0" />
 
-						{/* Quadrant buttons in a sleek inline strip (>= 48px touch targets on mobile with safe gap-3) */}
-						<div className="grid grid-cols-2 sm:flex sm:flex-row gap-3 flex-1 min-w-0">
+						{/* Quadrant buttons in a sleek horizontal scrollable strip */}
+						<div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap shrink-0">
 							{/* Upper Right Quadrant: Q1 18–11 (or Q5 55–51) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q5" : "Q1")}
-								className={`quadrant-btn min-h-[48px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[32px] h-8 px-2.5 sm:px-3 py-1 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-1.5 sm:gap-2 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 									currentQuadrant === (isPediatricEffective ? "Q5" : "Q1")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -2307,14 +2294,14 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 								data-testid={isPediatricEffective ? "quadrant-btn-Q5" : "quadrant-btn-Q1"}
 							>
 								<span className="font-extrabold whitespace-nowrap">{isPediatricEffective ? "Q5 55–51" : "Q1 18–11"}</span>
-								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·П</span>
+								<span className="text-[10px] px-1 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·П</span>
 							</button>
 
 							{/* Upper Left Quadrant: Q2 21–28 (or Q6 61–65) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q6" : "Q2")}
-								className={`quadrant-btn min-h-[48px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[32px] h-8 px-2.5 sm:px-3 py-1 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-1.5 sm:gap-2 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 									currentQuadrant === (isPediatricEffective ? "Q6" : "Q2")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -2323,14 +2310,14 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 								data-testid={isPediatricEffective ? "quadrant-btn-Q6" : "quadrant-btn-Q2"}
 							>
 								<span className="font-extrabold whitespace-nowrap">{isPediatricEffective ? "Q6 61–65" : "Q2 21–28"}</span>
-								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·Л</span>
+								<span className="text-[10px] px-1 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·Л</span>
 							</button>
 
 							{/* Lower Right Quadrant: Q4 48–41 (or Q8 85–81) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q8" : "Q4")}
-								className={`quadrant-btn min-h-[48px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[32px] h-8 px-2.5 sm:px-3 py-1 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-1.5 sm:gap-2 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 									currentQuadrant === (isPediatricEffective ? "Q8" : "Q4")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -2339,14 +2326,14 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 								data-testid={isPediatricEffective ? "quadrant-btn-Q8" : "quadrant-btn-Q4"}
 							>
 								<span className="font-extrabold whitespace-nowrap">{isPediatricEffective ? "Q8 85–81" : "Q4 48–41"}</span>
-								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·П</span>
+								<span className="text-[10px] px-1 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·П</span>
 							</button>
 
 							{/* Lower Left Quadrant: Q3 31–38 (or Q7 71–75) */}
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q7" : "Q3")}
-								className={`quadrant-btn min-h-[48px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
+								className={`quadrant-btn min-h-[32px] h-8 px-2.5 sm:px-3 py-1 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-1.5 sm:gap-2 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 									currentQuadrant === (isPediatricEffective ? "Q7" : "Q3")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -2355,98 +2342,12 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 								data-testid={isPediatricEffective ? "quadrant-btn-Q7" : "quadrant-btn-Q3"}
 							>
 								<span className="font-extrabold whitespace-nowrap">{isPediatricEffective ? "Q7 71–75" : "Q3 31–38"}</span>
-								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·Л</span>
+								<span className="text-[10px] px-1 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·Л</span>
 							</button>
 						</div>
 					</div>
 				</div>
 			)}
-
-			{!hideLegend && (
-				<div className="tooth-chart-legend-row">
-					<div className="tooth-chart-legend">
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shadow-sm" /> Кариес
-						</span>
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] shadow-sm" /> Пульпит
-						</span>
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" /> Периодонтит
-						</span>
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] shadow-sm" /> Пломба
-						</span>
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-[#10b981] shadow-sm" /> Коронка
-						</span>
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-[#64748b] shadow-sm" /> Имплант
-						</span>
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-slate-400 border border-slate-500" /> План
-						</span>
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-[#64748b] shadow-sm" /> Отсутствует
-						</span>
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm" /> Ретинирован
-						</span>
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-rose-700 shadow-sm" /> Корень
-						</span>
-						<span className="tooth-chart-legend-item">
-							<span className="w-2.5 h-2.5 rounded-full bg-blue-600 shadow-sm" /> Мостовидный протез
-						</span>
-					</div>
-				</div>
-			)}
-
-			{/* Detected Bridge Spans Indicator Banner */}
-			{allBridgeSpans.length > 0 && (
-				<div
-					className="odontogram-bridge-spans-banner flex flex-wrap items-center gap-2 px-3 py-1.5 mb-2 rounded-xl bg-blue-500/10 dark:bg-blue-950/40 border border-blue-500/30 text-xs text-blue-900 dark:text-blue-200"
-					data-testid="bridge-spans-banner"
-				>
-					<Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-					<span className="font-bold">Мостовидные протезы ({allBridgeSpans.length}):</span>
-					{allBridgeSpans.map((span) => (
-						<span
-							key={span.id}
-							className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-blue-500/20 text-blue-800 dark:text-blue-300 font-mono text-[11px] font-bold"
-						>
-							<span>{span.startTooth} (опора)</span>
-							<span className="text-blue-500 font-normal">━━</span>
-							<span className="text-blue-600 dark:text-blue-400 font-black">
-								{span.pontics.join(", ")} (тело)
-							</span>
-							<span className="text-blue-500 font-normal">━━</span>
-							<span>{span.endTooth} (опора)</span>
-							<span className="text-[10px] text-blue-600/70 dark:text-blue-400/70 uppercase font-sans">
-								• {span.material}
-							</span>
-						</span>
-					))}
-				</div>
-			)}
-
-			<div className="mb-2">
-				<GlobalTreatmentsStrip
-					treatments={currentGlobals}
-					onArchHover={setHoveredArch}
-					onQuickAdd={(item) => {
-						const newItem: GlobalTreatmentItem = {
-							...item,
-							id: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-								? `gt-${crypto.randomUUID()}`
-								: `gt-${Date.now()}-${currentGlobals.length + 1}`,
-						};
-						const next = [...currentGlobals, newItem];
-						setInternalGlobals(next);
-						onGlobalTreatmentsChange?.(next);
-					}}
-				/>
-			</div>
 
 			<div className="tooth-chart-arch-container" ref={archContainerRef}>
 				{isQuadrantView ? (
@@ -2460,27 +2361,36 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 							position: "relative",
 						}}
 					>
-						<div className="flex items-center justify-between w-full max-w-lg px-3 py-2 rounded-xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] mb-2">
+						<div className="flex items-center justify-between w-full max-w-lg px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] mb-2 gap-1.5">
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(getAdjacentQuadrant(currentQuadrant, "prev", isPediatricEffective))}
-								className="min-h-[44px] sm:min-h-[32px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
+								className="min-h-[36px] sm:min-h-[32px] min-w-[36px] sm:min-w-[44px] px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center justify-center gap-1 cursor-pointer transition-colors shrink-0 shadow-2xs"
 								title="Предыдущий квадрант"
 								data-testid="quadrant-prev-btn"
 							>
-								← Пред.
+								<span>←</span>
+								<span className="hidden sm:inline"> Пред.</span>
 							</button>
-							<span className="text-xs sm:text-sm font-black text-[var(--odontogram-ink)] text-center px-2">
-								{getQuadrantTitle(currentQuadrant, isPediatricEffective)}
-							</span>
+							<div className="flex flex-col items-center justify-center min-w-0 flex-1 px-1 text-center">
+								<span className="text-xs sm:text-sm font-black text-[var(--odontogram-ink)] leading-tight text-center">
+									<span className="sm:hidden">
+										{isQuadrantTop(currentQuadrant) ? "В/Ч" : "Н/Ч"} ({currentQuadrant}) • {currentQuadrant === "Q1" ? "18–11" : currentQuadrant === "Q2" ? "21–28" : currentQuadrant === "Q3" ? "31–38" : currentQuadrant === "Q4" ? "48–41" : currentQuadrant === "Q5" ? "55–51" : currentQuadrant === "Q6" ? "61–65" : currentQuadrant === "Q7" ? "71–75" : "85–81"}
+									</span>
+									<span className="hidden sm:inline">
+										{getQuadrantTitle(currentQuadrant, isPediatricEffective)}
+									</span>
+								</span>
+							</div>
 							<button
 								type="button"
 								onClick={() => handleSelectQuadrant(getAdjacentQuadrant(currentQuadrant, "next", isPediatricEffective))}
-								className="min-h-[44px] sm:min-h-[32px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
+								className="min-h-[36px] sm:min-h-[32px] min-w-[36px] sm:min-w-[44px] px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center justify-center gap-1 cursor-pointer transition-colors shrink-0 shadow-2xs"
 								title="Следующий квадрант"
 								data-testid="quadrant-next-btn"
 							>
-								След. →
+								<span className="hidden sm:inline">След. </span>
+								<span>→</span>
 							</button>
 						</div>
 
@@ -2672,6 +2582,94 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 					</div>
 				)}
 			</div>
+
+			{/* Detected Bridge Spans Indicator Banner (below teeth) */}
+			{allBridgeSpans.length > 0 && (
+				<div
+					className="odontogram-bridge-spans-banner flex flex-wrap items-center gap-2 px-3 py-1.5 my-2 rounded-xl bg-blue-500/10 dark:bg-blue-950/40 border border-blue-500/30 text-xs text-blue-900 dark:text-blue-200"
+					data-testid="bridge-spans-banner"
+				>
+					<Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+					<span className="font-bold">Мостовидные протезы ({allBridgeSpans.length}):</span>
+					{allBridgeSpans.map((span) => (
+						<span
+							key={span.id}
+							className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-blue-500/20 text-blue-800 dark:text-blue-300 font-mono text-[11px] font-bold"
+						>
+							<span>{span.startTooth} (опора)</span>
+							<span className="text-blue-500 font-normal">━━</span>
+							<span className="text-blue-600 dark:text-blue-400 font-black">
+								{span.pontics.join(", ")} (тело)
+							</span>
+							<span className="text-blue-500 font-normal">━━</span>
+							<span>{span.endTooth} (опора)</span>
+							<span className="text-[10px] text-blue-600/70 dark:text-blue-400/70 uppercase font-sans">
+								• {span.material}
+							</span>
+						</span>
+					))}
+				</div>
+			)}
+
+			{/* Global Treatments Strip (below teeth) */}
+			<div className="my-2">
+				<GlobalTreatmentsStrip
+					treatments={currentGlobals}
+					onArchHover={setHoveredArch}
+					onQuickAdd={(item) => {
+						const newItem: GlobalTreatmentItem = {
+							...item,
+							id: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+								? `gt-${crypto.randomUUID()}`
+								: `gt-${Date.now()}-${currentGlobals.length + 1}`,
+						};
+						const next = [...currentGlobals, newItem];
+						setInternalGlobals(next);
+						onGlobalTreatmentsChange?.(next);
+					}}
+				/>
+			</div>
+
+			{/* Color Legend (below teeth) */}
+			{!hideLegend && (
+				<div className="tooth-chart-legend-row my-2 hidden sm:block">
+					<div className="tooth-chart-legend">
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shadow-sm" /> Кариес
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] shadow-sm" /> Пульпит
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" /> Периодонтит
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] shadow-sm" /> Пломба
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-[#10b981] shadow-sm" /> Коронка
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-[#64748b] shadow-sm" /> Имплант
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-slate-400 border border-slate-500" /> План
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-[#64748b] shadow-sm" /> Отсутствует
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm" /> Ретинирован
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-rose-700 shadow-sm" /> Корень
+						</span>
+						<span className="tooth-chart-legend-item">
+							<span className="w-2.5 h-2.5 rounded-full bg-blue-600 shadow-sm" /> Мостовидный протез
+						</span>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }, areAnatomicalSvgOdontogramPropsEqual);

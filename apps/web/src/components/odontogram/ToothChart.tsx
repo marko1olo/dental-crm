@@ -12,6 +12,7 @@ import {
 	type ResorptionVisualProps,
 	type DentitionMode,
 } from "./pediatricDentitionEngine";
+import { useIsTouchScreen } from "./useIsTouchScreen";
 
 export { getNextFocusedTooth, getToothStateFromHotkey };
 export type { DentitionMode };
@@ -1019,7 +1020,7 @@ export const DenteToothSvgDefs: React.FC = () => (
 
 			{/* Natural Living Pulp Gradient (Vital Vascular Soft Tissue - Anatomical Red #ef4444) */}
 			<linearGradient id="dente-pulp-vital-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-				<stop offset="0%" stopColor="#fda4af" stopOpacity="0.95" />
+				<stop offset="0%" stopColor="#fca5a5" stopOpacity="0.95" />
 				<stop offset="30%" stopColor="#ef4444" stopOpacity="0.95" />
 				<stop offset="70%" stopColor="#dc2626" stopOpacity="0.92" />
 				<stop offset="100%" stopColor="#b91c1c" stopOpacity="0.9" />
@@ -1266,28 +1267,7 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 	const cfg = getToothConfig(number);
 	const colors = getToothColors(state, material);
 
-	const [isTouchScreen, setIsTouchScreen] = useState<boolean>(() => {
-		if (typeof window !== "undefined") {
-			return (
-				window.innerWidth <= 768 ||
-				"ontouchstart" in window ||
-				(typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints) && navigator.maxTouchPoints > 0)
-			);
-		}
-		return false;
-	});
-
-	useEffect(() => {
-		const checkTouch = () => {
-			setIsTouchScreen(
-				window.innerWidth <= 768 ||
-				"ontouchstart" in window ||
-				(typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints) && navigator.maxTouchPoints > 0)
-			);
-		};
-		window.addEventListener("resize", checkTouch);
-		return () => window.removeEventListener("resize", checkTouch);
-	}, []);
+	const isTouchScreen = useIsTouchScreen();
 
 	const scaledWidth = scaleCssPx(cfg.width, scale);
 	const scaledHeight = scaleCssPx(cfg.height, scale);
@@ -1579,7 +1559,7 @@ const ToothSVG: React.FC<ToothSvgProps> = memo(({
 					<path
 						d={geom.core}
 						fill={state === "Pulpitis" ? "url(#dente-pulpitis-grad)" : "url(#dente-pulp-vital-grad)"}
-						stroke={state === "Pulpitis" ? "#991b1b" : "#e11d48"}
+						stroke={state === "Pulpitis" ? "#991b1b" : "#ef4444"}
 						strokeWidth="1.2"
 						opacity={state === "Pulpitis" ? "0.95" : "0.85"}
 					/>
