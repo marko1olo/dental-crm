@@ -457,12 +457,18 @@
 	display: none !important;
 }
 
+.odontogram-toolbar > *,
+.odontogram-toolbar button,
 .odontogram-toolbar-row > *,
 .odontogram-toolbar-row button {
 	flex-shrink: 0 !important;
 	white-space: nowrap !important;
+	min-width: max-content !important;
 }
 
+.odontogram-toolbar button[data-testid="quick-trigger-extracted-btn"],
+.odontogram-toolbar button[data-testid="quick-trigger-pulpitis-btn"],
+.odontogram-toolbar-row button[data-testid="quick-trigger-extracted-btn"],
 .odontogram-toolbar-row button[data-testid="quick-trigger-pulpitis-btn"] {
 	flex-shrink: 0 !important;
 	white-space: nowrap !important;

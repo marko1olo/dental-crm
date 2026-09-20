@@ -912,10 +912,11 @@
 .quick-chip {
 	padding: 5px 10px;
 	min-height: 28px;
-	max-width: 180px;
-	text-overflow: ellipsis;
-	overflow: hidden;
+	max-width: none;
+	text-overflow: clip;
+	overflow: visible;
 	white-space: nowrap;
+	flex-shrink: 0;
 	font-size: 12px;
 	font-weight: 600;
 	border-radius: 999px;

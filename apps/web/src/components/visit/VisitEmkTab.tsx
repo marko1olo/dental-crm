@@ -1928,11 +1928,11 @@ export function VisitEmkTab() {
 				onApplyAnesthesia={handleApplyVoiceAnesthesia}
 				onApplyProcedures={handleApplyVoiceProcedures}
 				activeSelectedTooth={activeSelectedTooth}
-				className="my-0.5"
+				className="my-0"
 			/>
 
-			{/* ── ЕДИНЫЙ ТУЛБАР ЭМК 043/у (СТРОГО 1 СТРОКА 32–36px, МАНДАТЫ 8c, 8d, 8p) ── */}
-			<div className="emk-unified-toolbar flex items-center justify-between gap-1.5 my-0.5 py-0.5 border-b border-[var(--line)] w-full min-w-0 max-w-full overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-nowrap min-h-[32px] sm:min-h-[36px]">
+			{/* ── ЕДИНЫЙ ТУЛБАР ЭМК 043/у (СТРОГО 1 СТРОКА 30–32px, МАНДАТЫ 8c, 8d, 8p) ── */}
+			<div className="emk-unified-toolbar flex items-center justify-between gap-1.5 my-0 py-0.5 border-b border-[var(--line)] w-full min-w-0 max-w-full overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-nowrap min-h-[30px] sm:min-h-[32px]">
 				{/* ЛЕВАЯ ЧАСТЬ: Вкладки секций ЭМК (Все поля, Жалобы, Анамнез...) */}
 				<div
 					className="emk-tabs-container flex items-center gap-1 min-w-0 flex-nowrap shrink-0"
@@ -2552,7 +2552,7 @@ export function VisitEmkTab() {
 								className="min-h-[130px] sm:min-h-[110px] rounded-b-lg rounded-t-none p-3 border border-t-0 border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-400 resize-y w-full outline-none focus:border-[var(--teal,var(--brand-primary))] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]/25 font-sans text-sm leading-relaxed"
 							/>
 
-							{/* Быстрые чипы под textarea: 1 строка с горизонтальным скроллом (Мандат 8p, DEF-2) */}
+							{/* Быстрые чипы под textarea: 1 строка с горизонтальным скроллом (Мандат 8p, DEF-2, DEF-3) */}
 							{chips.length > 0 && (
 								<div className="flex flex-nowrap items-center gap-1.5 py-1 min-w-0 max-w-full my-0.5 overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x">
 									{chips.map((chip) => (
@@ -2561,12 +2561,12 @@ export function VisitEmkTab() {
 											type="button"
 											onClick={() => handleChipClick(chip)}
 											title={chip}
-											className="quick-chip visit-quick-chip h-auto min-h-[28px] sm:min-h-[30px] max-w-full px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation shadow-2xs inline-flex items-center gap-1.5 shrink-0 min-w-fit"
+											className="quick-chip visit-quick-chip h-auto min-h-[28px] sm:min-h-[30px] max-w-none px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation shadow-2xs inline-flex items-center gap-1.5 shrink-0 flex-shrink-0 min-w-max whitespace-nowrap"
 										>
 											<span className="text-[var(--teal,var(--brand-primary))] font-extrabold shrink-0">
 												+
 											</span>
-											<span className="whitespace-nowrap shrink-0 min-w-fit">{chip}</span>
+											<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">{chip}</span>
 										</button>
 									))}
 								</div>

@@ -383,10 +383,12 @@ async function runMultiThemeProofmaker() {
 
         await page.waitForTimeout(300);
 
-        // Dismiss and remove any stray floating toast before taking screenshot
+        // Dismiss and hide any stray floating toast before taking screenshot without breaking React DOM reconciliation
         await page.evaluate(() => {
           document.querySelectorAll('.sa-toast, [data-testid="global-toast"], .toast-container, .alert-toast, .error-toast, [data-testid="toast"]').forEach(el => {
-            el.remove();
+            el.style.display = "none";
+            el.style.opacity = "0";
+            el.style.pointerEvents = "none";
           });
         }).catch(() => {});
         await page.waitForTimeout(150);

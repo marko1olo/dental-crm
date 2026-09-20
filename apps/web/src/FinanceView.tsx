@@ -17,11 +17,6 @@ import { FamilyWalletPanel } from "./components/finance/FamilyWalletPanel";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { FinanceLedger } from "./FinanceLedger";
 
-const ManagerialPnlDashboardModal = lazy(() =>
-	import("./components/finance/pnl/ManagerialPnlDashboardModal").then((m) => ({
-		default: m.ManagerialPnlDashboardModal,
-	})),
-);
 import { InvoicesView } from "./components/billing/InvoicesView.js";
 import {
 	FinancePlanningOverview,
@@ -30,6 +25,12 @@ import {
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { PaymentCapture } from "./PaymentCapture";
 import { rubAmountForInput } from "./components/payments/cashDeskAmounts.js";
+
+const ManagerialPnlDashboardModal = lazy(() =>
+	import("./components/finance/pnl/ManagerialPnlDashboardModal").then((m) => ({
+		default: m.ManagerialPnlDashboardModal,
+	})),
+);
 
 type ClinicalRuleEvaluation = Dashboard["clinicalRuleEvaluations"][number];
 type Payment = Dashboard["payments"][number];

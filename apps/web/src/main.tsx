@@ -53,6 +53,25 @@ import "./styles/onboarding-wizard.css";
 
 initHardwareCapabilities();
 
+// Защита от сбоев реконсиляции DOM (NotFoundError: Failed to execute 'removeChild' on 'Node')
+// Предотвращает фатальное падение React при манипуляциях с DOM вне виртуального дерева.
+if (typeof Node !== "undefined" && Node.prototype) {
+	const originalRemoveChild = Node.prototype.removeChild;
+	Node.prototype.removeChild = function <T extends Node>(child: T): T {
+		if (child.parentNode !== this) {
+			return child;
+		}
+		return originalRemoveChild.call(this, child) as T;
+	};
+	const originalInsertBefore = Node.prototype.insertBefore;
+	Node.prototype.insertBefore = function <T extends Node>(newNode: T, referenceNode: Node | null): T {
+		if (referenceNode && referenceNode.parentNode !== this) {
+			return newNode;
+		}
+		return originalInsertBefore.call(this, newNode, referenceNode) as T;
+	};
+}
+
 /**
  * РАЗВИЛКА ПУБЛИЧНОГО КОНТУРА. Решается ДО подстановки токенов и до рендера.
  *

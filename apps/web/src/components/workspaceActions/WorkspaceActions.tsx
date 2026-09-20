@@ -350,7 +350,13 @@ export function WorkspaceActionsMount(): React.ReactElement {
 		setNavSlot(ensureNavSlot());
 		return () => {
 			setNavSlot(null);
-			navSlotDom?.remove();
+			if (typeof queueMicrotask === "function") {
+				queueMicrotask(() => {
+					if (navSlotDom && !navSlotDom.hasChildNodes() && navSlotDom.parentElement) {
+						navSlotDom.remove();
+					}
+				});
+			}
 		};
 	}, [placement]);
 
@@ -368,18 +374,13 @@ export function WorkspaceActionsMount(): React.ReactElement {
 /**
  * Возвращает элемент слота для портала жильца. Хост создаётся при первом
  * обращении и живёт до конца сессии страницы: он не подписан ни на что, поэтому
- * ни утечь, ни пережить свои подписки не может — все подписки живут в точке
- * монтажа и снимаются её уборкой.
+ * его размонтирование не нужно.
  */
 export function useWorkspaceActionSlot(
 	slot: WorkspaceActionSlotId,
 ): HTMLElement | null {
-	const [target, setTarget] = useState<HTMLElement | null>(null);
-	useEffect(() => {
-		setTarget(ensureHost().slots.get(slot) ?? null);
-		return () => setTarget(null);
-	}, [slot]);
-	return target;
+	const dom = ensureHost();
+	return dom.slots.get(slot) ?? null;
 }
 
 export interface WorkspaceActionsSlotProps {
@@ -397,13 +398,9 @@ export function WorkspaceActionsSlot({
 }: WorkspaceActionsSlotProps): React.ReactElement | null {
 	const target = useWorkspaceActionSlot(slot);
 
-	useEffect(() => {
-		return () => {
-			if (target) {
-				target.replaceChildren();
-			}
-		};
-	}, [target]);
+	// Примечание: target.replaceChildren() в cleanup намеренно удалён:
+	// createPortal() сам корректно размонтирует своих детей из DOM.
+	// Ручная очистка вызывала NotFoundError: Failed to execute 'removeChild' on 'Node'.
 
 	if (!target) return null;
 	return createPortal(children, target);
