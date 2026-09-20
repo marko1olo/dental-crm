@@ -10,10 +10,14 @@ import {
 	getDesktopWindowState,
 	installDesktopUpdate,
 	isDesktopApp,
+	isPwaApp,
+	isWebApp,
 	isUsbHidScanBurst,
 	listDesktopSerialPorts,
 	listDesktopTwainDevices,
 	printDesktopFiscalReceiptTcp,
+	registerDesktopHotkeys,
+	initDesktopHotkeys,
 	subscribeDesktopUpdates,
 	subscribeUsbHidScanner,
 	toggleDesktopFullScreen,
@@ -40,6 +44,20 @@ import {
 	triggerHaptic,
 	type MobileNativeApi,
 } from "../native/mobileBridge";
+import {
+	enqueueCard043Mutation,
+	enqueuePrescriptionMutation,
+	enqueueCashReceiptMutation,
+	enqueueAppointmentMutation,
+	saveForm043Draft,
+	loadForm043Draft,
+	savePrescriptionDraft,
+	loadPrescriptionDraft,
+	saveCashReceiptDraft,
+	loadCashReceiptDraft,
+	saveAppointmentDraft,
+	loadAppointmentDraft,
+} from "../services/offline";
 
 test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 	await t.test("Default environment detects web_pwa when no native wrappers present", () => {
@@ -503,5 +521,257 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 		assert.ok(invalidMicroButton.issues.some((i) => i.includes("48px")));
 		assert.ok(invalidMicroButton.issues.some((i) => i.includes("14px")));
 		assert.ok(invalidMicroButton.issues.some((i) => i.includes("Запрет на изолированные иконки")));
+	});
+
+	await t.test("Multi-Target Environment Detection Facade (isDesktopApp, isMobileApp, isPwaApp, isWebApp)", () => {
+		const originalWindowDesc = Object.getOwnPropertyDescriptor(globalThis, "window");
+
+		// 1. Clean default / browser environment
+		assert.equal(isDesktopApp(), false);
+		assert.equal(isMobileApp(), false);
+		assert.equal(isPwaApp(), false);
+		assert.equal(isWebApp(), true);
+
+		// 2. Simulated Desktop (Electron / Tauri / denteDesktopNative)
+		Object.defineProperty(globalThis, "window", {
+			value: {
+				denteDesktopNative: { isDesktop: true },
+			},
+			configurable: true,
+			writable: true,
+		});
+		assert.equal(isDesktopApp(), true);
+		assert.equal(isMobileApp(), false);
+		assert.equal(isPwaApp(), false);
+		assert.equal(isWebApp(), false);
+
+		// 3. Simulated Mobile Android (Capacitor / denteMobileNative)
+		Object.defineProperty(globalThis, "window", {
+			value: {
+				denteMobileNative: { isMobileApp: true },
+			},
+			configurable: true,
+			writable: true,
+		});
+		assert.equal(isDesktopApp(), false);
+		assert.equal(isMobileApp(), true);
+		assert.equal(isPwaApp(), false);
+		assert.equal(isWebApp(), false);
+
+		// 4. Simulated PWA Standalone (display-mode: standalone)
+		Object.defineProperty(globalThis, "window", {
+			value: {
+				matchMedia: (query: string) => ({
+					matches: query.includes("display-mode: standalone"),
+				}),
+			},
+			configurable: true,
+			writable: true,
+		});
+		assert.equal(isDesktopApp(), false);
+		assert.equal(isMobileApp(), false);
+		assert.equal(isPwaApp(), true);
+		assert.equal(isWebApp(), false);
+
+		// Restore globals
+		if (originalWindowDesc) {
+			Object.defineProperty(globalThis, "window", originalWindowDesc);
+		} else {
+			delete (globalThis as any).window;
+		}
+	});
+
+	await t.test("Desktop Hotkeys: F5 reload protection, Ctrl+S quick save, Ctrl+P print", async () => {
+		let f5Refreshed = false;
+		let cardSaved = false;
+		let printed = false;
+		let modalClosed = false;
+
+		const handlers = {
+			onF5Refresh: () => {
+				f5Refreshed = true;
+			},
+			onSave: async () => {
+				cardSaved = true;
+			},
+			onPrint: async () => {
+				printed = true;
+			},
+			onEscape: () => {
+				modalClosed = true;
+			},
+		};
+
+		// Mock EventTarget
+		const listeners: Record<string, ((e: any) => void)[]> = {};
+		const mockTarget = {
+			addEventListener: (type: string, fn: (e: any) => void) => {
+				if (!listeners[type]) listeners[type] = [];
+				listeners[type]!.push(fn);
+			},
+			removeEventListener: (type: string, fn: (e: any) => void) => {
+				if (listeners[type]) {
+					listeners[type] = listeners[type]!.filter((l) => l !== fn);
+				}
+			},
+		};
+
+		const unregister = registerDesktopHotkeys(handlers, {
+			target: mockTarget as any,
+			preventF5Reload: true,
+		});
+
+		const emitKey = (options: {
+			key: string;
+			code?: string;
+			ctrlKey?: boolean;
+			metaKey?: boolean;
+			altKey?: boolean;
+			shiftKey?: boolean;
+		}) => {
+			let defaultPrevented = false;
+			let stopped = false;
+			const event = {
+				...options,
+				preventDefault: () => {
+					defaultPrevented = true;
+				},
+				stopPropagation: () => {
+					stopped = true;
+				},
+			};
+			for (const fn of listeners["keydown"] || []) {
+				fn(event);
+			}
+			return { defaultPrevented, stopped };
+		};
+
+		// Test 1: F5 must prevent default reload and call onF5Refresh
+		const f5Res = emitKey({ key: "F5", code: "F5" });
+		assert.equal(f5Res.defaultPrevented, true);
+		assert.equal(f5Refreshed, true);
+
+		// Test 2: Ctrl+S must prevent default browser save and call onSave
+		const saveRes = emitKey({ key: "s", code: "KeyS", ctrlKey: true });
+		assert.equal(saveRes.defaultPrevented, true);
+		assert.equal(cardSaved, true);
+
+		// Test 3: Ctrl+Ы (Cyrillic layout) must also trigger save
+		cardSaved = false;
+		const saveRuRes = emitKey({ key: "ы", code: "KeyS", ctrlKey: true });
+		assert.equal(saveRuRes.defaultPrevented, true);
+		assert.equal(cardSaved, true);
+
+		// Test 4: Ctrl+P must prevent default print and call onPrint
+		const printRes = emitKey({ key: "p", code: "KeyP", ctrlKey: true });
+		assert.equal(printRes.defaultPrevented, true);
+		assert.equal(printed, true);
+
+		// Test 5: Escape must close modal
+		const escRes = emitKey({ key: "Escape", code: "Escape" });
+		assert.equal(escRes.defaultPrevented, true);
+		assert.equal(modalClosed, true);
+
+		// Cleanup
+		unregister();
+		assert.equal(listeners["keydown"]?.length ?? 0, 0);
+	});
+
+	await t.test("Offline-First Clinical Operations: Form 043/u, Prescriptions 107-1/у, 54-FZ Cashier, and Appointments without blocking screen", async () => {
+		// 1. Form 043/u Diary Draft & Mutation
+		const draft043 = await saveForm043Draft("pat-offline-1", {
+			complaints: "Острая боль зуба 1.6 при накусывании",
+			diagnosisIcd10: "K04.0",
+		});
+		assert.ok(draft043.draftKey.includes("pat-offline-1"));
+		assert.equal(draft043.entityType, "DIARY_043_DRAFT");
+
+		const loaded043 = await loadForm043Draft("pat-offline-1");
+		assert.ok(loaded043);
+		assert.equal((loaded043.data as any).diagnosisIcd10, "K04.0");
+
+		const mut043 = await enqueueCard043Mutation({
+			patientId: "pat-offline-1",
+			diaryData: { diagnosisIcd10: "K04.0", status: "completed" },
+		});
+		assert.ok(mut043.mutationId);
+		assert.equal(mut043.entityType, "DIARY_043_DRAFT");
+		assert.equal(mut043.status, "pending");
+
+		// 2. Prescription (107-1/у) Draft & Mutation
+		const presDraft = await savePrescriptionDraft("rx-offline-1", {
+			medications: [{ name: "Амоксиклав 875/125мг", frequency: "2 раза в день", durationDays: 5 }],
+		});
+		assert.ok(presDraft.draftKey.includes("rx-offline-1"));
+
+		const loadedPres = await loadPrescriptionDraft("rx-offline-1");
+		assert.ok(loadedPres);
+
+		const mutPres = await enqueuePrescriptionMutation({
+			patientId: "pat-offline-1",
+			prescriptionNumber: "rx-offline-1",
+			formType: "107-1/у",
+			medications: [{ name: "Амоксиклав 875/125мг", frequency: "2 раза в день", durationDays: 5 }],
+			diagnosisIcd10: "K04.0",
+		});
+		assert.ok(mutPres.mutationId);
+		assert.equal(mutPres.entityType, "PRESCRIPTION_107_DRAFT");
+		assert.equal(mutPres.status, "pending");
+
+		// 3. Cash Receipt (54-FZ) Draft & Mutation with kopeck exactness
+		const receiptDraft = await saveCashReceiptDraft("rcpt-offline-1", {
+			totalRub: 4500,
+			totalKopecks: 450000,
+			paymentType: "card",
+		});
+		assert.ok(receiptDraft.draftKey.includes("rcpt-offline-1"));
+
+		const loadedReceipt = await loadCashReceiptDraft("rcpt-offline-1");
+		assert.ok(loadedReceipt);
+		assert.equal((loadedReceipt.data as any).totalKopecks, 450000);
+
+		const mutReceipt = await enqueueCashReceiptMutation({
+			patientId: "pat-offline-1",
+			invoiceId: "rcpt-offline-1",
+			totalRub: 4500,
+			totalKopecks: 450000,
+			paymentType: "card",
+			items: [
+				{
+					name: "Лечение периодонтита 1.6",
+					priceRub: 4500,
+					priceKopecks: 450000,
+					quantity: 1,
+					code804n: "A16.07.008",
+				},
+			],
+			isFiscalized: false,
+		});
+		assert.ok(mutReceipt.mutationId);
+		assert.equal(mutReceipt.entityType, "CASH_RECEIPT_DRAFT");
+		assert.equal(mutReceipt.status, "pending");
+
+		// 4. Appointment Booking Draft & Mutation
+		const apptDraft = await saveAppointmentDraft("appt-offline-1", {
+			patientId: "pat-offline-1",
+			date: "2026-09-21",
+			startTime: "10:00",
+		});
+		assert.ok(apptDraft.draftKey.includes("appt-offline-1"));
+
+		const loadedAppt = await loadAppointmentDraft("appt-offline-1");
+		assert.ok(loadedAppt);
+
+		const mutAppt = await enqueueAppointmentMutation({
+			patientId: "pat-offline-1",
+			date: "2026-09-21",
+			startTime: "10:00",
+			endTime: "10:45",
+			durationMinutes: 45,
+			serviceTitle: "Повторный осмотр",
+		});
+		assert.ok(mutAppt.mutationId);
+		assert.equal(mutAppt.entityType, "APPOINTMENT_BOOKING_DRAFT");
+		assert.equal(mutAppt.status, "pending");
 	});
 });

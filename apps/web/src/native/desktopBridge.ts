@@ -10,6 +10,7 @@
 import {
 	CLINICAL_TOUCH_TARGETS,
 	isClinicalAudioMuted,
+	isMobileApp,
 	parseGs1DataMatrix,
 	playClinicalAudioFeedback,
 	setClinicalAudioMuted,
@@ -228,7 +229,90 @@ declare global {
 }
 
 export function isDesktopApp(): boolean {
-	return typeof window !== "undefined" && Boolean(window.denteDesktopNative?.isDesktop);
+	if (typeof window === "undefined") return false;
+
+	// 1. Direct DENTE Desktop native bridge
+	if (Boolean(window.denteDesktopNative?.isDesktop)) return true;
+
+	// 2. Electron window object or process
+	const win = window as unknown as {
+		electron?: unknown;
+		process?: { type?: string; versions?: { electron?: string } };
+	};
+	if (win.electron !== undefined || win.process?.versions?.electron !== undefined) {
+		return true;
+	}
+
+	// 3. Tauri window object
+	const tauriWin = window as unknown as {
+		__TAURI__?: unknown;
+		__TAURI_INTERNALS__?: unknown;
+	};
+	if (tauriWin.__TAURI__ !== undefined || tauriWin.__TAURI_INTERNALS__ !== undefined) {
+		return true;
+	}
+
+	// 4. User Agent heuristics
+	if (typeof navigator !== "undefined" && navigator.userAgent) {
+		if (/Electron|Tauri|DenteDesktop/i.test(navigator.userAgent)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+export { isMobileApp };
+
+/**
+ * Detects whether the app is running in a Progressive Web App (PWA) environment
+ * (e.g. standalone window, installed home screen app, or Subway offline mode).
+ */
+export function isPwaApp(): boolean {
+	if (typeof window === "undefined") return false;
+
+	// 1. Explicit PWA flag
+	if ((window as unknown as { __DENTE_PWA__?: boolean }).__DENTE_PWA__ === true) {
+		return true;
+	}
+
+	// 2. CSS display-mode standalone, minimal-ui, or window-controls-overlay
+	try {
+		if (
+			window.matchMedia &&
+			(window.matchMedia("(display-mode: standalone)").matches ||
+				window.matchMedia("(display-mode: minimal-ui)").matches ||
+				window.matchMedia("(display-mode: window-controls-overlay)").matches)
+		) {
+			return true;
+		}
+	} catch {
+		// Ignore matchMedia errors in non-browser / test environments
+	}
+
+	// 3. iOS Safari standalone home-screen mode
+	const nav = typeof navigator !== "undefined" ? (navigator as unknown as { standalone?: boolean }) : undefined;
+	if (nav?.standalone === true) {
+		return true;
+	}
+
+	// 4. Android WebAPK launch intent referrer
+	if (
+		typeof document !== "undefined" &&
+		typeof document.referrer === "string" &&
+		document.referrer.startsWith("android-app://")
+	) {
+		return true;
+	}
+
+	return false;
+}
+
+/**
+ * Detects whether the app is running in a standard web browser tab.
+ */
+export function isWebApp(): boolean {
+	return !isDesktopApp() && !isMobileApp() && !isPwaApp();
 }
 
 export function getDesktopNativeApi(): DesktopNativeApi | null {
@@ -1063,6 +1147,185 @@ export function subscribeDesktopUpdates(
 		return api.onUpdateAvailable(callback);
 	}
 	return () => {};
+}
+
+export interface DesktopHotkeyHandlers {
+	/** Callback on F5 (prevents destructive browser reload, triggers soft schedule refresh / sync) */
+	onF5Refresh?: () => void;
+	/** Callback on Ctrl+S / Cmd+S / Ctrl+Ы (prevents Save HTML, triggers clinical card / draft save) */
+	onSave?: () => Promise<void> | void;
+	/** Callback on Ctrl+P / Cmd+P / Ctrl+З (prevents browser print dialog, triggers Form 043/u / receipt print) */
+	onPrint?: () => Promise<void> | void;
+	/** Callback on Escape (dismisses active modal / drawer) */
+	onEscape?: () => void;
+	/** Callback on F11 (toggles kiosk / fullscreen mode) */
+	onToggleFullScreen?: () => void;
+	/** Callback on F1 (clinical guidelines & nomenclature 804n) */
+	onF1Help?: () => void;
+	/** Callback on F2 (quick patient search) */
+	onF2SearchPatient?: () => void;
+	/** Callback on F3 (new appointment booking) */
+	onF3NewAppointment?: () => void;
+	/** Callback on F4 (odontogram tooth formula) */
+	onF4Odontogram?: () => void;
+	/** Callback on F9 (cashier checkout 54-FZ) */
+	onF9Checkout?: () => void;
+}
+
+export interface DesktopHotkeyOptions {
+	target?: Window | HTMLElement | Document | EventTarget;
+	enabled?: boolean;
+	/** Whether to intercept and prevent destructive F5 page reload (default: true) */
+	preventF5Reload?: boolean;
+}
+
+let activeDesktopHotkeyCleanup: (() => void) | null = null;
+
+/**
+ * Registers global desktop keyboard shortcuts with clinical input protection:
+ * - F5: prevents page reload that destroys doctor notes, executes soft refresh callback or dispatches "dente:soft-refresh".
+ * - Ctrl+S / Cmd+S (KeyS / "s" / "ы"): prevents "Save HTML", triggers quick card save or dispatches "dente:save-card".
+ * - Ctrl+P / Cmd+P (KeyP / "p" / "з"): prevents browser print, triggers Form 043/u / receipt print or dispatches "dente:print-active-document".
+ * - Esc: closes top modal or drawer.
+ * - F11: toggles desktop kiosk / fullscreen mode.
+ */
+export function registerDesktopHotkeys(
+	handlers: DesktopHotkeyHandlers = {},
+	options: DesktopHotkeyOptions = {},
+): () => void {
+	const target = options.target ?? (typeof window !== "undefined" ? window : undefined);
+	if (!target || typeof (target as { addEventListener?: unknown }).addEventListener !== "function") {
+		return () => {};
+	}
+
+	const isEnabled = options.enabled !== false;
+	if (!isEnabled) return () => {};
+
+	const preventF5 = options.preventF5Reload !== false;
+
+	const handleKeyDown = (event: KeyboardEvent) => {
+		const key = event.key ? event.key.toLowerCase() : "";
+		const code = event.code || "";
+		const isCtrlOrMeta = event.ctrlKey || event.metaKey;
+
+		// 1. F5: Prevent accidental destructive reload during clinical data entry
+		if (event.key === "F5" || code === "F5") {
+			if (preventF5) {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+			if (handlers.onF5Refresh) {
+				handlers.onF5Refresh();
+			} else if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:soft-refresh", { bubbles: true }));
+			}
+			return;
+		}
+
+		// 2. Ctrl+S / Cmd+S / Ctrl+Ы: Quick save of Form 043/u & clinical card (Mandate 8e)
+		if (isCtrlOrMeta && (key === "s" || key === "ы" || code === "KeyS") && !event.altKey && !event.shiftKey) {
+			event.preventDefault();
+			event.stopPropagation();
+			triggerHaptic("selection");
+			if (handlers.onSave) {
+				void handlers.onSave();
+			} else if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:save-card", { bubbles: true }));
+			}
+			return;
+		}
+
+		// 3. Ctrl+P / Cmd+P / Ctrl+З: Print Form 043/u / official medical document / receipt
+		if (isCtrlOrMeta && (key === "p" || key === "з" || code === "KeyP") && !event.altKey && !event.shiftKey) {
+			event.preventDefault();
+			event.stopPropagation();
+			triggerHaptic("selection");
+			if (handlers.onPrint) {
+				void handlers.onPrint();
+			} else if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:print-active-document", { bubbles: true }));
+			}
+			return;
+		}
+
+		// 4. Escape: Close topmost modal or side drawer
+		if ((event.key === "Escape" || code === "Escape") && handlers.onEscape) {
+			event.preventDefault();
+			event.stopPropagation();
+			handlers.onEscape();
+			return;
+		}
+
+		// 5. F11: Kiosk / Fullscreen toggle
+		if (event.key === "F11" || code === "F11") {
+			if (handlers.onToggleFullScreen) {
+				event.preventDefault();
+				event.stopPropagation();
+				handlers.onToggleFullScreen();
+			} else {
+				event.preventDefault();
+				event.stopPropagation();
+				void toggleDesktopFullScreen();
+			}
+			return;
+		}
+
+		// 6. Secondary F-keys (F1, F2, F3, F4, F9)
+		if ((event.key === "F1" || code === "F1") && handlers.onF1Help) {
+			event.preventDefault();
+			event.stopPropagation();
+			handlers.onF1Help();
+			return;
+		}
+		if ((event.key === "F2" || code === "F2") && handlers.onF2SearchPatient) {
+			event.preventDefault();
+			event.stopPropagation();
+			handlers.onF2SearchPatient();
+			return;
+		}
+		if ((event.key === "F3" || code === "F3") && handlers.onF3NewAppointment) {
+			event.preventDefault();
+			event.stopPropagation();
+			handlers.onF3NewAppointment();
+			return;
+		}
+		if ((event.key === "F4" || code === "F4") && handlers.onF4Odontogram) {
+			event.preventDefault();
+			event.stopPropagation();
+			handlers.onF4Odontogram();
+			return;
+		}
+		if ((event.key === "F9" || code === "F9") && handlers.onF9Checkout) {
+			event.preventDefault();
+			event.stopPropagation();
+			handlers.onF9Checkout();
+			return;
+		}
+	};
+
+	(target as { addEventListener: (type: string, listener: EventListener, options?: boolean) => void })
+		.addEventListener("keydown", handleKeyDown as EventListener, true);
+
+	return () => {
+		(target as { removeEventListener: (type: string, listener: EventListener, options?: boolean) => void })
+			.removeEventListener("keydown", handleKeyDown as EventListener, true);
+	};
+}
+
+/**
+ * Initializes global desktop hotkeys listener (F5 reload protection, Ctrl+S, Ctrl+P).
+ * Safe to call repeatedly; cleans up existing listener before re-registering.
+ */
+export function initDesktopHotkeys(
+	handlers: DesktopHotkeyHandlers = {},
+	options: DesktopHotkeyOptions = {},
+): () => void {
+	if (activeDesktopHotkeyCleanup) {
+		activeDesktopHotkeyCleanup();
+		activeDesktopHotkeyCleanup = null;
+	}
+	activeDesktopHotkeyCleanup = registerDesktopHotkeys(handlers, options);
+	return activeDesktopHotkeyCleanup;
 }
 
 export {

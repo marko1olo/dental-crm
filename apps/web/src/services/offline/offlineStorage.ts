@@ -28,6 +28,7 @@ import {
 	safeLocalStorageSetItem,
 } from "../../lib/safeLocalStorage";
 import type {
+	AppointmentMutationInput,
 	CachedActiveSchedule,
 	CachedIcd10Dictionary,
 	CachedOdontogram,
@@ -35,6 +36,7 @@ import type {
 	CachedPatientCard,
 	CachedPriceList804n,
 	Card043MutationInput,
+	CashReceiptMutationInput,
 	EnqueueMutationInput,
 	Icd10DictionaryItem,
 	MutationEntityType,
@@ -43,6 +45,7 @@ import type {
 	OfflineDraft,
 	OfflineMutation,
 	OfflineQueueMetrics,
+	PrescriptionMutationInput,
 	PriceList804nItem,
 	ServiceAdditionMutationInput,
 } from "./types";
@@ -224,7 +227,9 @@ export function openOfflineOutboxDb(): Promise<IDBDatabase> {
 				} else if (tx) {
 					try {
 						schedulesStore = tx.objectStore(SCHEDULES_CACHE_STORE_NAME);
-					} catch {}
+					} catch (err: unknown) {
+						logger.warn("[OfflineStorage] Failed to access schedulesStore in tx upgrade:", err);
+					}
 				}
 				if (schedulesStore) {
 					safeCreateIndex(schedulesStore, "date", "date");
@@ -241,7 +246,9 @@ export function openOfflineOutboxDb(): Promise<IDBDatabase> {
 				} else if (tx) {
 					try {
 						patientsStore = tx.objectStore(PATIENTS_CACHE_STORE_NAME);
-					} catch {}
+					} catch (err: unknown) {
+						logger.warn("[OfflineStorage] Failed to access patientsStore in tx upgrade:", err);
+					}
 				}
 				if (patientsStore) {
 					safeCreateIndex(patientsStore, "organizationId", "organizationId");
@@ -257,7 +264,9 @@ export function openOfflineOutboxDb(): Promise<IDBDatabase> {
 				} else if (tx) {
 					try {
 						odontogramStore = tx.objectStore(ODONTOGRAM_CACHE_STORE_NAME);
-					} catch {}
+					} catch (err: unknown) {
+						logger.warn("[OfflineStorage] Failed to access odontogramStore in tx upgrade:", err);
+					}
 				}
 				if (odontogramStore) {
 					safeCreateIndex(odontogramStore, "organizationId", "organizationId");
@@ -273,7 +282,9 @@ export function openOfflineOutboxDb(): Promise<IDBDatabase> {
 				} else if (tx) {
 					try {
 						priceStore = tx.objectStore(PRICELIST_CACHE_STORE_NAME);
-					} catch {}
+					} catch (err: unknown) {
+						logger.warn("[OfflineStorage] Failed to access priceStore in tx upgrade:", err);
+					}
 				}
 				if (priceStore) {
 					safeCreateIndex(priceStore, "organizationId", "organizationId");
@@ -289,7 +300,9 @@ export function openOfflineOutboxDb(): Promise<IDBDatabase> {
 				} else if (tx) {
 					try {
 						icd10Store = tx.objectStore(ICD10_CACHE_STORE_NAME);
-					} catch {}
+					} catch (err: unknown) {
+						logger.warn("[OfflineStorage] Failed to access icd10Store in tx upgrade:", err);
+					}
 				}
 				if (icd10Store) {
 					safeCreateIndex(icd10Store, "cachedAtMs", "cachedAtMs");
@@ -398,7 +411,9 @@ function cleanupChunkedLocalStorage(key: string): void {
 			}
 			safeLocalStorageRemoveItem(`${CHUNK_MANIFEST_PREFIX}${key}`);
 		}
-	} catch {}
+	} catch (err: unknown) {
+		logger.warn(`[OfflineStorage] Failed to cleanup chunked local storage for key ${key}:`, err);
+	}
 }
 
 function saveToLocalStorageSafe(key: string, valueStr: string): boolean {
@@ -465,7 +480,9 @@ function removeFromLocalStorageSafe(key: string): void {
 	try {
 		safeLocalStorageRemoveItem(key);
 		cleanupChunkedLocalStorage(key);
-	} catch {}
+	} catch (err: unknown) {
+		logger.warn(`[OfflineStorage] LocalStorage removeItem failed for ${key}:`, err);
+	}
 }
 
 function getLocalStorageMutations(): OfflineMutation[] {
@@ -1147,6 +1164,101 @@ export async function deleteOdontogramDraft(patientId: string): Promise<void> {
 	const key = `${ODONTOGRAM_DRAFT_KEY_PREFIX}${patientId}`;
 	return deleteOfflineDraft(key);
 }
+
+export const PRESCRIPTION_DRAFT_KEY_PREFIX = "dente_prescription_draft_";
+export const CASH_RECEIPT_DRAFT_KEY_PREFIX = "dente_receipt_draft_";
+export const APPOINTMENT_DRAFT_KEY_PREFIX = "dente_appointment_draft_";
+
+/**
+ * Сохранение черновика рецепта / назначения (107-1/у)
+ */
+export async function savePrescriptionDraft<T = unknown>(
+	id: string,
+	data: T,
+	organizationId?: string | undefined,
+): Promise<OfflineDraft<T>> {
+	const key = `${PRESCRIPTION_DRAFT_KEY_PREFIX}${id}`;
+	return saveOfflineDraft<T>(key, "PRESCRIPTION_107_DRAFT", id, data, organizationId);
+}
+
+/**
+ * Загрузка черновика рецепта / назначения (107-1/у)
+ */
+export async function loadPrescriptionDraft<T = unknown>(
+	id: string,
+): Promise<OfflineDraft<T> | null> {
+	const key = `${PRESCRIPTION_DRAFT_KEY_PREFIX}${id}`;
+	return loadOfflineDraft<T>(key);
+}
+
+/**
+ * Удаление черновика рецепта / назначения
+ */
+export async function deletePrescriptionDraft(id: string): Promise<void> {
+	const key = `${PRESCRIPTION_DRAFT_KEY_PREFIX}${id}`;
+	return deleteOfflineDraft(key);
+}
+
+/**
+ * Сохранение черновика фискального чека / оплаты (54-ФЗ)
+ */
+export async function saveCashReceiptDraft<T = unknown>(
+	id: string,
+	data: T,
+	organizationId?: string | undefined,
+): Promise<OfflineDraft<T>> {
+	const key = `${CASH_RECEIPT_DRAFT_KEY_PREFIX}${id}`;
+	return saveOfflineDraft<T>(key, "CASH_RECEIPT_DRAFT", id, data, organizationId);
+}
+
+/**
+ * Загрузка черновика фискального чека / оплаты
+ */
+export async function loadCashReceiptDraft<T = unknown>(
+	id: string,
+): Promise<OfflineDraft<T> | null> {
+	const key = `${CASH_RECEIPT_DRAFT_KEY_PREFIX}${id}`;
+	return loadOfflineDraft<T>(key);
+}
+
+/**
+ * Удаление черновика фискального чека / оплаты
+ */
+export async function deleteCashReceiptDraft(id: string): Promise<void> {
+	const key = `${CASH_RECEIPT_DRAFT_KEY_PREFIX}${id}`;
+	return deleteOfflineDraft(key);
+}
+
+/**
+ * Сохранение черновика записи на прием в расписании
+ */
+export async function saveAppointmentDraft<T = unknown>(
+	id: string,
+	data: T,
+	organizationId?: string | undefined,
+): Promise<OfflineDraft<T>> {
+	const key = `${APPOINTMENT_DRAFT_KEY_PREFIX}${id}`;
+	return saveOfflineDraft<T>(key, "APPOINTMENT_BOOKING_DRAFT", id, data, organizationId);
+}
+
+/**
+ * Загрузка черновика записи на прием
+ */
+export async function loadAppointmentDraft<T = unknown>(
+	id: string,
+): Promise<OfflineDraft<T> | null> {
+	const key = `${APPOINTMENT_DRAFT_KEY_PREFIX}${id}`;
+	return loadOfflineDraft<T>(key);
+}
+
+/**
+ * Удаление черновика записи на прием
+ */
+export async function deleteAppointmentDraft(id: string): Promise<void> {
+	const key = `${APPOINTMENT_DRAFT_KEY_PREFIX}${id}`;
+	return deleteOfflineDraft(key);
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3-Second Clinical Draft Autosave Debounce Engine & Crash Resilience
@@ -2358,6 +2470,91 @@ export async function enqueueServiceAdditionMutation(
 	return enqueueOfflineMutation<Record<string, unknown>>({
 		entityType: "TREATMENT_PLAN_DRAFT",
 		entityId: input.visitId || input.patientId,
+		action: input.action || "create",
+		payload,
+		organizationId: input.organizationId,
+		authorUserId: input.authorUserId,
+	});
+}
+
+/**
+ * Очередь назначений и рецептов врача (Форма 107-1/у) при обрыве интернета
+ */
+export async function enqueuePrescriptionMutation(
+	input: PrescriptionMutationInput,
+): Promise<OfflineMutation<Record<string, unknown>>> {
+	const payload: Record<string, unknown> = {
+		patientId: input.patientId,
+		visitId: input.visitId,
+		prescriptionNumber: input.prescriptionNumber,
+		formType: input.formType || "107-1/у",
+		medications: input.medications,
+		diagnosisIcd10: input.diagnosisIcd10,
+		notes: input.notes,
+	};
+
+	return enqueueOfflineMutation<Record<string, unknown>>({
+		entityType: "PRESCRIPTION_107_DRAFT",
+		entityId: input.prescriptionNumber || input.visitId || input.patientId,
+		action: input.action || "create",
+		payload,
+		organizationId: input.organizationId,
+		authorUserId: input.authorUserId,
+	});
+}
+
+/**
+ * Очередь фискальных чеков и платежей (54-ФЗ) при работе кассы офлайн
+ */
+export async function enqueueCashReceiptMutation(
+	input: CashReceiptMutationInput,
+): Promise<OfflineMutation<Record<string, unknown>>> {
+	const payload: Record<string, unknown> = {
+		patientId: input.patientId,
+		visitId: input.visitId,
+		invoiceId: input.invoiceId,
+		cashierName: input.cashierName,
+		totalRub: input.totalRub,
+		totalKopecks: input.totalKopecks,
+		paymentType: input.paymentType,
+		items: input.items,
+		patientPhoneOrEmail: input.patientPhoneOrEmail,
+		isFiscalized: input.isFiscalized ?? false,
+		fiscalSign: input.fiscalSign,
+	};
+
+	return enqueueOfflineMutation<Record<string, unknown>>({
+		entityType: "CASH_RECEIPT_DRAFT",
+		entityId: input.invoiceId || input.visitId || input.patientId,
+		action: input.action || "create",
+		payload,
+		organizationId: input.organizationId,
+		authorUserId: input.authorUserId,
+	});
+}
+
+/**
+ * Очередь записей на прием в расписание при обрыве связи у регистратуры / врача
+ */
+export async function enqueueAppointmentMutation(
+	input: AppointmentMutationInput,
+): Promise<OfflineMutation<Record<string, unknown>>> {
+	const payload: Record<string, unknown> = {
+		patientId: input.patientId,
+		doctorId: input.doctorId,
+		chairId: input.chairId,
+		date: input.date,
+		startTime: input.startTime,
+		endTime: input.endTime,
+		durationMinutes: input.durationMinutes,
+		serviceTitle: input.serviceTitle,
+		status: input.status || "scheduled",
+		notes: input.notes,
+	};
+
+	return enqueueOfflineMutation<Record<string, unknown>>({
+		entityType: "APPOINTMENT_BOOKING_DRAFT",
+		entityId: `${input.patientId}_${input.date}_${input.startTime}`,
 		action: input.action || "create",
 		payload,
 		organizationId: input.organizationId,

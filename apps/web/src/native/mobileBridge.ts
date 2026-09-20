@@ -202,7 +202,76 @@ export function isNativePlatform(): boolean {
 }
 
 export function isMobileApp(): boolean {
-	return isNativePlatform();
+	if (typeof window === "undefined") return false;
+	if (isNativePlatform()) return true;
+
+	// Android WebView or Capacitor user agent inspection
+	if (typeof navigator !== "undefined" && navigator.userAgent) {
+		const ua = navigator.userAgent;
+		if (/Android/i.test(ua) && (/wv|Version\/.*Chrome/i.test(ua) || /Capacitor/i.test(ua))) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Returns true if the app is running in desktop Windows (.exe) via Electron or Tauri.
+ */
+export function isDesktopApp(): boolean {
+	if (typeof window === "undefined") return false;
+	const win = window as unknown as {
+		denteDesktopNative?: { isDesktop?: boolean };
+		electron?: unknown;
+		process?: { type?: string; versions?: { electron?: string } };
+		__TAURI__?: unknown;
+		__TAURI_INTERNALS__?: unknown;
+	};
+	if (Boolean(win.denteDesktopNative?.isDesktop)) return true;
+	if (win.electron !== undefined || win.process?.versions?.electron !== undefined) return true;
+	if (win.__TAURI__ !== undefined || win.__TAURI_INTERNALS__ !== undefined) return true;
+	if (typeof navigator !== "undefined" && navigator.userAgent) {
+		if (/Electron|Tauri|DenteDesktop/i.test(navigator.userAgent)) return true;
+	}
+	return false;
+}
+
+/**
+ * Returns true if the app is running as an installed Progressive Web App (PWA).
+ */
+export function isPwaApp(): boolean {
+	if (typeof window === "undefined") return false;
+	if ((window as unknown as { __DENTE_PWA__?: boolean }).__DENTE_PWA__ === true) return true;
+	try {
+		if (
+			window.matchMedia &&
+			(window.matchMedia("(display-mode: standalone)").matches ||
+				window.matchMedia("(display-mode: minimal-ui)").matches ||
+				window.matchMedia("(display-mode: window-controls-overlay)").matches)
+		) {
+			return true;
+		}
+	} catch {
+		// Ignore matchMedia errors in non-browser / test environments
+	}
+	const nav = typeof navigator !== "undefined" ? (navigator as unknown as { standalone?: boolean }) : undefined;
+	if (nav?.standalone === true) return true;
+	if (
+		typeof document !== "undefined" &&
+		typeof document.referrer === "string" &&
+		document.referrer.startsWith("android-app://")
+	) {
+		return true;
+	}
+	return false;
+}
+
+/**
+ * Returns true if the app is running in a standard web browser tab.
+ */
+export function isWebApp(): boolean {
+	return !isDesktopApp() && !isMobileApp() && !isPwaApp();
 }
 
 /**
@@ -455,7 +524,8 @@ export async function captureMobileCameraPhoto(
 						viewCategory: options.viewCategory,
 					};
 				}
-			} catch {
+			} catch (err: unknown) {
+				console.warn("[mobileBridge] native takeIntraoralPhoto failed, falling back:", err);
 				// Fall through
 			}
 		}
@@ -463,7 +533,12 @@ export async function captureMobileCameraPhoto(
 
 	// 3. Fallback: browser / PWA HTML5 MediaDevices camera capture
 	const { captureChairsidePhoto } = await import("../utils/deviceDetection.js");
-	return captureChairsidePhoto(options);
+	return captureChairsidePhoto({
+		...(options.toothCode ? { toothCode: options.toothCode } : {}),
+		...(options.viewCategory ? { viewCategory: options.viewCategory } : {}),
+		...(options.facingMode ? { facingMode: options.facingMode } : {}),
+		...(options.resolution ? { resolution: options.resolution } : {}),
+	});
 }
 
 /**
@@ -586,7 +661,8 @@ export function triggerHaptic(type: HapticFeedbackType = "light"): void {
 		try {
 			api.hapticFeedback(type);
 			return;
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[mobileBridge] native hapticFeedback failed, falling back:", err);
 			// Fall through to Web Vibration API
 		}
 	}
@@ -617,7 +693,8 @@ export function triggerHaptic(type: HapticFeedbackType = "light"): void {
 				default:
 					navigator.vibrate(20);
 			}
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[mobileBridge] navigator.vibrate failed:", err);
 			// Ignore vibration restrictions on web
 		}
 	}
@@ -710,7 +787,8 @@ export async function requestPushNotificationPermission(): Promise<{
 	try {
 		const permission = await Notification.requestPermission();
 		return { granted: permission === "granted", status: permission };
-	} catch {
+	} catch (err: unknown) {
+		console.warn("[mobileBridge] Notification.requestPermission failed:", err);
 		return { granted: false, status: "denied" };
 	}
 }
@@ -794,7 +872,9 @@ export function triggerBackgroundWakeUp(payload: MobilePushNotificationPayload):
 			bubbles: true,
 		});
 		window.dispatchEvent(customEv);
-	} catch {}
+	} catch (err: unknown) {
+		console.warn("[mobileBridge] dispatchEvent dente:fcm-wake-up failed:", err);
+	}
 }
 
 /**
@@ -903,7 +983,9 @@ export async function setAppBadgeCount(count: number): Promise<void> {
 		try {
 			await badgePlugin.set({ count: Math.max(0, count) });
 			return;
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[mobileBridge] native badge set failed:", err);
+		}
 	}
 
 	// 2. Modern Web App Badging API (navigator.setAppBadge)
@@ -914,7 +996,9 @@ export async function setAppBadgeCount(count: number): Promise<void> {
 			} else {
 				await (navigator as any).clearAppBadge();
 			}
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[mobileBridge] navigator setAppBadge/clearAppBadge failed:", err);
+		}
 	}
 }
 
@@ -944,7 +1028,9 @@ export async function acquireScreenWakeLock(): Promise<boolean> {
 		try {
 			const res = await nativeApi.acquireWakeLock();
 			return res.success;
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[mobileBridge] native acquireWakeLock failed:", err);
+		}
 	}
 
 	// 2. HTML5 Screen Wake Lock API (iPadOS Safari 16.4+ / Chrome Android)
@@ -957,7 +1043,8 @@ export async function acquireScreenWakeLock(): Promise<boolean> {
 				});
 			}
 			return true;
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[mobileBridge] navigator wakeLock.request failed:", err);
 			return false;
 		}
 	}
@@ -976,7 +1063,9 @@ export async function releaseScreenWakeLock(): Promise<boolean> {
 		try {
 			const res = await nativeApi.releaseWakeLock();
 			return res.success;
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[mobileBridge] native releaseWakeLock failed:", err);
+		}
 	}
 
 	if (activeWakeLockSentinel) {
@@ -984,7 +1073,8 @@ export async function releaseScreenWakeLock(): Promise<boolean> {
 			await activeWakeLockSentinel.release();
 			activeWakeLockSentinel = null;
 			return true;
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[mobileBridge] activeWakeLockSentinel.release failed:", err);
 			return false;
 		}
 	}
@@ -1271,7 +1361,8 @@ export function parseDenteDeepLink(rawUrl: string): DenteDeepLinkPayload | null 
 			protocol = u.protocol.replace(":", "") as "https" | "http";
 			actionPath = u.pathname.replace(/^\//, "");
 			queryString = u.search.replace(/^\?/, "");
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[mobileBridge] parseDenteDeepLink URL constructor failed:", err);
 			return null;
 		}
 	} else {
@@ -1390,7 +1481,8 @@ export async function shareClinicalDocumentMobile(params: {
 				triggerHaptic("success");
 				return { success: true, sharedVia: "capacitor", urlOrPayload: params.url };
 			}
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[mobileBridge] native shareFile failed, falling back to Web Share API:", err);
 			// Fall through to Web Share API
 		}
 	}
@@ -1440,7 +1532,8 @@ export async function shareClinicalDocumentMobile(params: {
 			await navigator.clipboard.writeText(`${shareTitle}\n\n${textContent}\n${shareUrl}`);
 			triggerHaptic("light");
 			return { success: true, sharedVia: "clipboard", urlOrPayload: shareUrl };
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[mobileBridge] clipboard.writeText failed:", err);
 			// Ignore clipboard failure
 		}
 	}
@@ -1635,12 +1728,15 @@ function getOrCreateAudioContext(): AudioContext | null {
 	if (!audioContextInstance || audioContextInstance.state === "closed") {
 		try {
 			audioContextInstance = new AudioContextClass();
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[mobileBridge] AudioContext instantiation failed:", err);
 			return null;
 		}
 	}
 	if (audioContextInstance.state === "suspended") {
-		audioContextInstance.resume().catch(() => {});
+		audioContextInstance.resume().catch((err: unknown) => {
+			console.warn("[mobileBridge] audioContextInstance.resume failed:", err);
+		});
 	}
 	return audioContextInstance;
 }
@@ -1753,7 +1849,8 @@ export function playClinicalAudioFeedback(
 		}
 
 		return false;
-	} catch {
+	} catch (err: unknown) {
+		console.warn("[mobileBridge] playClinicalAudioFeedback synthesis failed:", err);
 		return false;
 	}
 }
@@ -1928,14 +2025,15 @@ export async function captureAndAttachPatientPhoto(params: {
 					capturedAt: now,
 				},
 			);
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[mobileBridge] saveOfflineRecord photo attachment failed:", err);
 			// Storage failure does not discard captured photo in memory
 		}
 
 		return {
 			success: true,
 			dataUrl: photoRes.dataUrl,
-			toothCode: params.toothCode,
+			...(params.toothCode ? { toothCode: params.toothCode } : {}),
 			viewCategory: params.viewCategory ?? "intraoral_macro",
 			capturedAt: now,
 		};

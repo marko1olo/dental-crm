@@ -265,3 +265,63 @@ export interface ServiceAdditionMutationInput {
 	organizationId?: string | undefined;
 	authorUserId?: string | undefined;
 }
+
+export interface PrescriptionMutationInput {
+	patientId: string;
+	visitId?: string | undefined;
+	prescriptionNumber?: string | undefined;
+	formType?: "107-1/у" | "148-1/у" | "standard" | undefined;
+	medications: Array<{
+		name: string;
+		dosage?: string | undefined;
+		frequency?: string | undefined;
+		durationDays?: number | undefined;
+		instructions?: string | undefined;
+	}>;
+	diagnosisIcd10?: string | undefined;
+	notes?: string | undefined;
+	action?: MutationAction | undefined;
+	organizationId?: string | undefined;
+	authorUserId?: string | undefined;
+}
+
+export interface CashReceiptMutationInput {
+	patientId: string;
+	visitId?: string | undefined;
+	invoiceId?: string | undefined;
+	cashierName?: string | undefined;
+	totalRub: number;
+	totalKopecks: number;
+	paymentType: "cash" | "card" | "sbp" | "deposit" | "mixed";
+	items: Array<{
+		name: string;
+		priceRub: number;
+		priceKopecks: number;
+		quantity: number;
+		code804n?: string | undefined;
+		vatPercent?: number | undefined;
+	}>;
+	patientPhoneOrEmail?: string | undefined;
+	isFiscalized?: boolean | undefined;
+	fiscalSign?: string | undefined;
+	action?: MutationAction | undefined;
+	organizationId?: string | undefined;
+	authorUserId?: string | undefined;
+}
+
+export interface AppointmentMutationInput {
+	patientId: string;
+	doctorId?: string | undefined;
+	chairId?: string | undefined;
+	date: string; // YYYY-MM-DD
+	startTime: string; // HH:mm
+	endTime: string; // HH:mm
+	durationMinutes: number;
+	serviceTitle?: string | undefined;
+	status?: "scheduled" | "confirmed" | "completed" | "cancelled" | undefined;
+	notes?: string | undefined;
+	action?: MutationAction | undefined;
+	organizationId?: string | undefined;
+	authorUserId?: string | undefined;
+}
+
