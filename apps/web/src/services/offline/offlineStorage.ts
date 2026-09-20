@@ -23,6 +23,7 @@ import {
 } from "@dental/shared";
 import { logger } from "../../utils/logger";
 import {
+	parseJsonNonBlocking,
 	safeLocalStorageGetItem,
 	safeLocalStorageRemoveItem,
 	safeLocalStorageSetItem,
@@ -1965,7 +1966,7 @@ export async function getCachedActiveSchedule(
 	const rawLocal = getFromLocalStorageSafe(`${LOCAL_STORAGE_SCHEDULES_PREFIX}${scheduleKey}`);
 	if (rawLocal) {
 		try {
-			const parsed = JSON.parse(rawLocal);
+			const parsed = await parseJsonNonBlocking(rawLocal);
 			if (parsed && typeof parsed === "object") {
 				const record = parsed as CachedActiveSchedule;
 				inMemorySchedulesMap.set(scheduleKey, record);
@@ -2122,7 +2123,7 @@ export async function getCachedPatientCard(
 	const rawLocal = getFromLocalStorageSafe(`${LOCAL_STORAGE_PATIENTS_PREFIX}${patientId}`);
 	if (rawLocal) {
 		try {
-			const parsed = JSON.parse(rawLocal) as CachedPatientCard;
+			const parsed = (await parseJsonNonBlocking<CachedPatientCard>(rawLocal)) as CachedPatientCard;
 			if (parsed && typeof parsed === "object") {
 				if (!organizationId || !parsed.organizationId || parsed.organizationId === organizationId) {
 					inMemoryPatientsMap.set(patientId, parsed);
@@ -2265,7 +2266,7 @@ export async function getCachedOdontogramState(
 	const rawLocal = getFromLocalStorageSafe(`${LOCAL_STORAGE_ODONTOGRAM_PREFIX}${patientId}`);
 	if (rawLocal) {
 		try {
-			const parsed = JSON.parse(rawLocal) as CachedOdontogram;
+			const parsed = (await parseJsonNonBlocking<CachedOdontogram>(rawLocal)) as CachedOdontogram;
 			if (parsed && typeof parsed === "object") {
 				if (!organizationId || !parsed.organizationId || parsed.organizationId === organizationId) {
 					inMemoryOdontogramsMap.set(patientId, parsed);
@@ -2405,7 +2406,7 @@ export async function getCachedPriceList804n(
 	const rawLocal = getFromLocalStorageSafe(`${LOCAL_STORAGE_PRICELIST_PREFIX}${catalogKey}`);
 	if (rawLocal) {
 		try {
-			const parsed = JSON.parse(rawLocal) as CachedPriceList804n;
+			const parsed = (await parseJsonNonBlocking<CachedPriceList804n>(rawLocal)) as CachedPriceList804n;
 			if (parsed && typeof parsed === "object") {
 				inMemoryPriceListsMap.set(catalogKey, parsed);
 				return parsed;
@@ -2506,7 +2507,7 @@ export async function getCachedIcd10Dictionary(
 	const rawLocal = getFromLocalStorageSafe(`${LOCAL_STORAGE_ICD10_PREFIX}${dictionaryKey}`);
 	if (rawLocal) {
 		try {
-			const parsed = JSON.parse(rawLocal) as CachedIcd10Dictionary;
+			const parsed = (await parseJsonNonBlocking<CachedIcd10Dictionary>(rawLocal)) as CachedIcd10Dictionary;
 			if (parsed && typeof parsed === "object") {
 				inMemoryIcd10Map.set(dictionaryKey, parsed);
 				return parsed;
