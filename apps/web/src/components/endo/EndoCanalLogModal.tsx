@@ -63,7 +63,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";

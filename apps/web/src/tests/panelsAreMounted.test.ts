@@ -1348,6 +1348,14 @@ test("устаревших фасадов-дубликатов представ�
 		"components/warehouse/index.ts",
 		"components/settings/migrationHelpers.ts",
 		"utils/formatting.ts",
+		"components/finance/fiscal/index.ts",
+		"components/patients/transfer/index.ts",
+		"components/payroll/index.ts",
+		"components/surgery/index.ts",
+		"components/treatment-plans/qr/index.ts",
+		"components/visit/endo/index.ts",
+		"components/visit/surgery/index.ts",
+		"components/visit/therapy/index.ts",
 	]) {
 		assert.equal(
 			existsSync(path.join(webSrcRoot, removed)),
