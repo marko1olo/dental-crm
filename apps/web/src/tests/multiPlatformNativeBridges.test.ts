@@ -43,6 +43,7 @@ import {
 	getMobileNativeApi,
 	isMobileApp,
 	parseGs1DataMatrix,
+	printMobileThermalBinary,
 	scanDataMatrixWithCamera,
 	setupMobileLifecycleProtection,
 	triggerHaptic,
@@ -680,8 +681,46 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 		assert.equal(escRes.defaultPrevented, true);
 		assert.equal(modalClosed, true);
 
-		// Cleanup
+		// Cleanup initial listener
 		unregister();
+		assert.equal(listeners["keydown"]?.length ?? 0, 0);
+
+		// Test 6: Complete F1-F12 Doctor Shortcuts (F6, F7, F8, F10, F12)
+		let rulesOpened = false;
+		let visiographOpened = false;
+		let treatmentPlanOpened = false;
+		let documentsOpened = false;
+		let diaryPrinted = false;
+
+		const unregisterFKeys = registerDesktopHotkeys({
+			onF6ClinicalRules: () => { rulesOpened = true; },
+			onF7Visiograph: () => { visiographOpened = true; },
+			onF8TreatmentPlan: () => { treatmentPlanOpened = true; },
+			onF10Documents: () => { documentsOpened = true; },
+			onF12PrintDiary: () => { diaryPrinted = true; },
+		}, { target: mockTarget });
+
+		const f6Res = emitKey({ key: "F6", code: "F6" });
+		assert.equal(f6Res.defaultPrevented, true);
+		assert.equal(rulesOpened, true);
+
+		const f7Res = emitKey({ key: "F7", code: "F7" });
+		assert.equal(f7Res.defaultPrevented, true);
+		assert.equal(visiographOpened, true);
+
+		const f8Res = emitKey({ key: "F8", code: "F8" });
+		assert.equal(f8Res.defaultPrevented, true);
+		assert.equal(treatmentPlanOpened, true);
+
+		const f10Res = emitKey({ key: "F10", code: "F10" });
+		assert.equal(f10Res.defaultPrevented, true);
+		assert.equal(documentsOpened, true);
+
+		const f12Res = emitKey({ key: "F12", code: "F12" });
+		assert.equal(f12Res.defaultPrevented, true);
+		assert.equal(diaryPrinted, true);
+
+		unregisterFKeys();
 		assert.equal(listeners["keydown"]?.length ?? 0, 0);
 	});
 
@@ -897,4 +936,46 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 		assert.equal(typeof cleanup, "function");
 		cleanup();
 	});
+
+	await t.test("printMobileThermalBinary executes ESC/POS printing on Android Native and BLE", async () => {
+		const originalWindowDesc = Object.getOwnPropertyDescriptor(globalThis, "window");
+		let printedBytes: number[] = [];
+
+		const mockAndroidNative: MobileNativeApi = {
+			isMobileApp: true,
+			platform: "android",
+			appVersion: "1.0.0",
+			scanBarcode: async () => ({ success: true }),
+			authenticateBiometric: async () => ({ success: true, authenticated: true }),
+			hapticFeedback: () => {},
+			shareFile: async () => ({ success: true }),
+			printThermalBinary: async (bytes) => {
+				printedBytes = bytes;
+				return { success: true };
+			},
+		};
+
+		Object.defineProperty(globalThis, "window", {
+			value: {
+				denteMobileNative: mockAndroidNative,
+				location: { hostname: "localhost" },
+			},
+			configurable: true,
+			writable: true,
+		});
+
+		try {
+			const res = await printMobileThermalBinary([0x1b, 0x40, 0x0a]);
+			assert.equal(res.success, true);
+			assert.equal(res.method, "mobile_native");
+			assert.deepEqual(printedBytes, [0x1b, 0x40, 0x0a]);
+		} finally {
+			if (originalWindowDesc) {
+				Object.defineProperty(globalThis, "window", originalWindowDesc);
+			} else {
+				delete (globalThis as any).window;
+			}
+		}
+	});
 });
+

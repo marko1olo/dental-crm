@@ -435,10 +435,16 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				identity.role === "assistant" ||
 				identity.role === "nurse" ||
 				identity.role === "senior_nurse" ||
+				identity.role === "owner" ||
+				identity.role === "admin" ||
+				identity.role === "chief_doctor" ||
 				request.user?.role === "doctor" ||
 				request.user?.role === "assistant" ||
 				request.user?.role === "nurse" ||
-				request.user?.role === "senior_nurse";
+				request.user?.role === "senior_nurse" ||
+				request.user?.role === "owner" ||
+				request.user?.role === "admin" ||
+				request.user?.role === "chief_doctor";
 			const isClinicalCategory =
 				item.category === "anesthesia" ||
 				item.category === "anesthetic" ||

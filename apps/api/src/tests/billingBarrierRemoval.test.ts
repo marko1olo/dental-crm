@@ -181,4 +181,48 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 		assert.equal(payment.amountRub, 800);
 		assert.equal(payment.status, "paid");
 	});
+
+	it("54-FZ & Mandate 8e item 9: Physical persons can pay without INN via cash, card, and sbp (0 mandatory INN)", async () => {
+		const [org] = await db
+			.insert(organizations)
+			.values({
+				name: `Касса Без ИНН-${Date.now()}`,
+			})
+			.returning();
+		assert(org);
+
+		const [patient] = await db
+			.insert(patients)
+			.values({
+				organizationId: org.id,
+				fullName: "Иванов Иван Иванович (Физлицо)",
+			})
+			.returning();
+		assert(patient);
+
+		// Payment without INN (null, undefined, or empty string) is processed cleanly
+		const cashPayment = await createPaymentInDb(org.id, {
+			patientId: patient.id,
+			amountRub: 1500,
+			method: "cash",
+			payerFullName: "Иванов Иван Иванович",
+			payerInn: null, // Zero mandatory INN under 54-FZ for individuals
+		});
+
+		assert.equal(cashPayment.amountRub, 1500);
+		assert.equal(cashPayment.status, "paid");
+		assert.equal(cashPayment.payerInn, null);
+
+		const cardPayment = await createPaymentInDb(org.id, {
+			patientId: patient.id,
+			amountRub: 2500,
+			method: "card",
+			payerFullName: "Иванов Иван Иванович",
+			payerInn: undefined, // Zero mandatory INN
+		});
+
+		assert.equal(cardPayment.amountRub, 2500);
+		assert.equal(cardPayment.status, "paid");
+		assert.equal(cardPayment.payerInn, null);
+	});
 });

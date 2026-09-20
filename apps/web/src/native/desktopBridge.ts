@@ -1364,8 +1364,18 @@ export interface DesktopHotkeyHandlers {
 	onF3NewAppointment?: () => void;
 	/** Callback on F4 (odontogram tooth formula) */
 	onF4Odontogram?: () => void;
+	/** Callback on F6 (clinical rules & warnings) */
+	onF6ClinicalRules?: () => void;
+	/** Callback on F7 (visiograph / X-ray image capture) */
+	onF7Visiograph?: () => void;
+	/** Callback on F8 (treatment plan & stages overview) */
+	onF8TreatmentPlan?: () => void;
 	/** Callback on F9 (cashier checkout 54-FZ) */
 	onF9Checkout?: () => void;
+	/** Callback on F10 (outpatient documents / Form 043/u) */
+	onF10Documents?: () => void;
+	/** Callback on F12 (quick print active diary Form 043/u) */
+	onF12PrintDiary?: () => void;
 }
 
 export interface DesktopHotkeyOptions {
@@ -1466,35 +1476,105 @@ export function registerDesktopHotkeys(
 			return;
 		}
 
-		// 6. Secondary F-keys (F1, F2, F3, F4, F9)
-		if ((event.key === "F1" || code === "F1") && handlers.onF1Help) {
+		// 6. Complete F1-F12 Doctor Hotkeys Suite (Mandates 8c, 8e, 8n)
+		if (event.key === "F1" || code === "F1") {
 			event.preventDefault();
 			event.stopPropagation();
-			handlers.onF1Help();
+			if (handlers.onF1Help) {
+				handlers.onF1Help();
+			} else if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:open-help", { bubbles: true }));
+			}
 			return;
 		}
-		if ((event.key === "F2" || code === "F2") && handlers.onF2SearchPatient) {
+		if (event.key === "F2" || code === "F2") {
 			event.preventDefault();
 			event.stopPropagation();
-			handlers.onF2SearchPatient();
+			if (handlers.onF2SearchPatient) {
+				handlers.onF2SearchPatient();
+			} else if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:search-patient", { bubbles: true }));
+			}
 			return;
 		}
-		if ((event.key === "F3" || code === "F3") && handlers.onF3NewAppointment) {
+		if (event.key === "F3" || code === "F3") {
 			event.preventDefault();
 			event.stopPropagation();
-			handlers.onF3NewAppointment();
+			if (handlers.onF3NewAppointment) {
+				handlers.onF3NewAppointment();
+			} else if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:new-appointment", { bubbles: true }));
+			}
 			return;
 		}
-		if ((event.key === "F4" || code === "F4") && handlers.onF4Odontogram) {
+		if (event.key === "F4" || code === "F4") {
 			event.preventDefault();
 			event.stopPropagation();
-			handlers.onF4Odontogram();
+			if (handlers.onF4Odontogram) {
+				handlers.onF4Odontogram();
+			} else if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:open-odontogram", { bubbles: true }));
+			}
 			return;
 		}
-		if ((event.key === "F9" || code === "F9") && handlers.onF9Checkout) {
+		if (event.key === "F6" || code === "F6") {
 			event.preventDefault();
 			event.stopPropagation();
-			handlers.onF9Checkout();
+			if (handlers.onF6ClinicalRules) {
+				handlers.onF6ClinicalRules();
+			} else if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:clinical-rules", { bubbles: true }));
+			}
+			return;
+		}
+		if (event.key === "F7" || code === "F7") {
+			event.preventDefault();
+			event.stopPropagation();
+			if (handlers.onF7Visiograph) {
+				handlers.onF7Visiograph();
+			} else if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:open-visiograph", { bubbles: true }));
+			}
+			return;
+		}
+		if (event.key === "F8" || code === "F8") {
+			event.preventDefault();
+			event.stopPropagation();
+			if (handlers.onF8TreatmentPlan) {
+				handlers.onF8TreatmentPlan();
+			} else if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:open-treatment-plan", { bubbles: true }));
+			}
+			return;
+		}
+		if (event.key === "F9" || code === "F9") {
+			event.preventDefault();
+			event.stopPropagation();
+			if (handlers.onF9Checkout) {
+				handlers.onF9Checkout();
+			} else if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:open-checkout", { bubbles: true }));
+			}
+			return;
+		}
+		if (event.key === "F10" || code === "F10") {
+			event.preventDefault();
+			event.stopPropagation();
+			if (handlers.onF10Documents) {
+				handlers.onF10Documents();
+			} else if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:open-documents", { bubbles: true }));
+			}
+			return;
+		}
+		if (event.key === "F12" || code === "F12") {
+			event.preventDefault();
+			event.stopPropagation();
+			if (handlers.onF12PrintDiary) {
+				handlers.onF12PrintDiary();
+			} else if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:print-active-diary", { bubbles: true }));
+			}
 			return;
 		}
 	};

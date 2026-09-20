@@ -33,7 +33,7 @@ import {
 	hardwarePrinter,
 	type BrowserPrintOptions,
 } from "../services/hardware/HardwarePrinter";
-import { isDesktopExecutable, isAndroidNativeApp } from "./omniPlatformAdapter";
+import { isDesktopExecutable, isAndroidNativeApp, printMobileThermalBinary } from "./omniPlatformAdapter";
 
 export interface A4PrintOptions {
 	title?: string | undefined;
@@ -322,6 +322,13 @@ export async function printThermalReceipt(
 	// 2. Android APK / Mobile Bridge
 	if (isAndroidNativeApp()) {
 		try {
+			if (options.rawEscPos) {
+				const bytes = new TextEncoder().encode(options.rawEscPos);
+				const mobileRes = await printMobileThermalBinary(bytes);
+				if (mobileRes.success) {
+					return { success: true, method: "mobile_native" };
+				}
+			}
 			const res = await hardwarePrinter.printFiscalReceipt(payload);
 			if (res.success) {
 				return { success: true, method: "mobile_native" };
@@ -599,6 +606,13 @@ export async function printDirectEscPosSocket(
 	// 2. Android APK Native Bridge
 	if (isAndroidNativeApp()) {
 		try {
+			const bytes = options.isBase64
+				? Uint8Array.from(atob(textOrRawPayload), (c) => c.charCodeAt(0))
+				: new TextEncoder().encode(textOrRawPayload);
+			const mobileRes = await printMobileThermalBinary(bytes);
+			if (mobileRes.success) {
+				return { success: true, method: "mobile_native" };
+			}
 			const { dispatchEscPosReceiptPrint } = await import("../native/hardwareDispatcher.js");
 			const res = await dispatchEscPosReceiptPrint({
 				text: textOrRawPayload,

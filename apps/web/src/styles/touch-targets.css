@@ -674,6 +674,20 @@
 	touch-action: manipulation;
 }
 
-
-
-
+/* Primary chairside execution actions: >= 48px for gloved doctor/assistant (Mandates 8c, 8e, 8n) */
+[data-pointer="coarse"] .btn-primary-chairside,
+[data-pointer="coarse"] .btn-finish-visit,
+[data-pointer="coarse"] .btn-save-diary,
+[data-pointer="coarse"] .btn-tender-payment,
+[data-pointer="coarse"] .btn-add-service-fast,
+[data-platform="android"] .btn-primary-chairside,
+[data-platform="android"] .btn-finish-visit,
+[data-platform="android"] .btn-save-diary,
+[data-platform="android"] .btn-tender-payment,
+[data-platform="android"] .btn-add-service-fast {
+	min-height: 48px !important;
+	min-width: 48px !important;
+	font-size: 14px !important;
+	font-weight: 600;
+	touch-action: manipulation;
+}

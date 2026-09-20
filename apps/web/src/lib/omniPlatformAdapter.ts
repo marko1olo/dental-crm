@@ -951,6 +951,9 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 			const { printA4Document } = await import("./hardwarePrinting.js");
 			const res = await printA4Document(job.html || job.rawText || "", {
 				...(job.title ? { title: job.title } : {}),
+				...(job.silent !== undefined ? { silent: job.silent } : {}),
+				...(job.printerName ? { printerName: job.printerName } : {}),
+				...(job.copies !== undefined ? { copies: job.copies } : {}),
 			});
 			return {
 				success: res.success,
@@ -1227,6 +1230,7 @@ export {
 export {
 	registerSafeSwipeGesture,
 	triggerHaptic,
+	printMobileThermalBinary,
 	type SafeSwipeOptions,
 } from "../native/mobileBridge.js";
 
