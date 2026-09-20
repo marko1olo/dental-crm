@@ -20,6 +20,7 @@ import type {
 	PanoramicWorkerResponse,
 	Point2D,
 } from "../../utils/math/mprMath";
+import { isLowSpecHardware } from "../../utils/deviceDetection.js";
 import { showToast } from "../GlobalToast";
 import {
 	captureHighDpiCanvas,
@@ -333,6 +334,7 @@ export function PanoramicRendererWindow({
 			const drawY = Math.round((height - drawH) / 2);
 
 			ctx.imageSmoothingEnabled = true;
+			ctx.imageSmoothingQuality = isLowSpecHardware() ? "low" : "high";
 			ctx.drawImage(offscreen, drawX, drawY, drawW, drawH);
 		} else {
 			ctx.fillStyle = "#09090b";
@@ -434,6 +436,12 @@ export function PanoramicRendererWindow({
 			setLoading(false);
 		};
 
+		const isLowSpec = isLowSpecHardware();
+		const effectiveZStepWorld =
+			zStepWorld !== undefined
+				? (isLowSpec ? Math.max(zStepWorld, 1.0) : zStepWorld)
+				: (isLowSpec ? 1.0 : 0.5);
+
 		const req: PanoramicWorkerRequest = {
 			scalarData: volume.scalarData,
 			dimensions: volume.dimensions,
@@ -443,7 +451,7 @@ export function PanoramicRendererWindow({
 			splinePoints: effectiveControlPoints,
 			zStartWorld: zStart,
 			zEndWorld: zEnd,
-			zStepWorld,
+			zStepWorld: effectiveZStepWorld,
 			thickness: sliceThicknessMm,
 			blendMode,
 		};

@@ -30,6 +30,7 @@ import {
 	type DicomViewportState,
 	type Point2D,
 } from "./rvgViewerEngine.js";
+import { isLowSpecHardware } from "../../utils/deviceDetection.js";
 
 export interface DicomViewportProps {
 	readonly imageSrc: string;
@@ -124,14 +125,30 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 			offscreen = document.createElement("canvas");
 			filteredCanvasRef.current = offscreen;
 		}
-		offscreen.width = img.width;
-		offscreen.height = img.height;
+
+		// Low-Spec Laptop Optimization (Mandates 8c, 8e, 8k, 8n)
+		// On tier "low" (Intel HD Graphics, Celeron/i3, 4GB RAM), downscale intermediate buffer
+		// to max 1024px to save 80% RAM and avoid GC pressure
+		// On tier "high", maintain 100% native resolution
+		const isLowSpec = isLowSpecHardware();
+		let targetWidth = img.width;
+		let targetHeight = img.height;
+		if (isLowSpec && (targetWidth > 1024 || targetHeight > 1024)) {
+			const scale = 1024 / Math.max(targetWidth, targetHeight);
+			targetWidth = Math.max(1, Math.round(targetWidth * scale));
+			targetHeight = Math.max(1, Math.round(targetHeight * scale));
+		}
+
+		offscreen.width = targetWidth;
+		offscreen.height = targetHeight;
 		const offCtx = offscreen.getContext("2d");
 		if (!offCtx) return;
 
-		offCtx.drawImage(img, 0, 0);
+		offCtx.imageSmoothingEnabled = true;
+		offCtx.imageSmoothingQuality = isLowSpec ? "low" : "high";
+		offCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
 		try {
-			const imgData = offCtx.getImageData(0, 0, img.width, img.height);
+			const imgData = offCtx.getImageData(0, 0, targetWidth, targetHeight);
 			const lut = buildDicomTonalLUT({
 				windowWidth: viewportState.windowWidth,
 				windowCenter: viewportState.windowCenter,
@@ -145,12 +162,17 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 				imgData.data[i + 2] = lut[imgData.data[i + 2]!]!;
 			}
 
-			if (viewportState.sharpen > 0 && img.width <= 1200) {
-				const sharpened = apply2DConvolutionFilter(imgData.data, img.width, img.height, SHARPEN_KERNEL_3X3);
-				imgData.data.set(sharpened);
-			} else if (viewportState.emboss && img.width <= 1200) {
-				const embossed = apply2DConvolutionFilter(imgData.data, img.width, img.height, EMBOSS_SHADOW_KERNEL_3X3, 128);
-				imgData.data.set(embossed);
+			// Bypass expensive 2D CPU convolution filters (sharpen/emboss) on low-spec hardware
+			// A 3x3 matrix convolution on 1-4M pixels on a dual-core Celeron blocks the UI thread for 150-300ms
+			// High-performance workstations retain full convolution filtering
+			if (!isLowSpec) {
+				if (viewportState.sharpen > 0 && targetWidth <= 1200) {
+					const sharpened = apply2DConvolutionFilter(imgData.data, targetWidth, targetHeight, SHARPEN_KERNEL_3X3);
+					imgData.data.set(sharpened);
+				} else if (viewportState.emboss && targetWidth <= 1200) {
+					const embossed = apply2DConvolutionFilter(imgData.data, targetWidth, targetHeight, EMBOSS_SHADOW_KERNEL_3X3, 128);
+					imgData.data.set(embossed);
+				}
 			}
 
 			offCtx.putImageData(imgData, 0, 0);
@@ -188,10 +210,16 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		ctx.scale(viewportState.zoom, viewportState.zoom);
 		ctx.translate(-img.width / 2, -img.height / 2);
 
+		// Dynamic adaptive canvas smoothing quality (Mandates 8c, 8e, 8k, 8n)
+		// On tier "low" (low-spec laptop / Intel HD Graphics), "low" prevents GPU pipeline stalls during pan/zoom
+		// On tier "high" (modern workstation), "high" bicubic smoothing maintains pristine clinical contrast
+		ctx.imageSmoothingEnabled = true;
+		ctx.imageSmoothingQuality = isLowSpecHardware() ? "low" : "high";
+
 		// Fast blit from pre-rendered filtered buffer
 		const filteredCanvas = filteredCanvasRef.current;
 		if (filteredCanvas) {
-			ctx.drawImage(filteredCanvas, 0, 0);
+			ctx.drawImage(filteredCanvas, 0, 0, img.width, img.height);
 		} else {
 			ctx.drawImage(img, 0, 0);
 		}

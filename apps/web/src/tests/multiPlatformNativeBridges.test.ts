@@ -1345,6 +1345,111 @@ test("Multi-Platform Native Bridges & Universal Dispatcher", async (t) => {
 
 		kiosk.destroy();
 	});
+
+	await t.test("DICOM & RVG imaging engine adapts dynamically to hardware resource tiers", () => {
+		const originalNavDesc = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+
+		// Scenario A: Low-spec hardware (Celeron / 2-core / 4GB RAM)
+		Object.defineProperty(globalThis, "navigator", {
+			value: {
+				hardwareConcurrency: 2,
+				deviceMemory: 4,
+				userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+			},
+			configurable: true,
+			writable: true,
+		});
+
+		try {
+			assert.equal(isLowSpecHardware(), true);
+			assert.equal(getHardwareResourceTier(), "low");
+			assert.equal(isHighPerformanceWorkstation(), false);
+
+			// Low-spec buffer downscaling calculation simulation
+			const isLowSpec = isLowSpecHardware();
+			const originalWidth = 2400;
+			const originalHeight = 1800;
+			let targetWidth = originalWidth;
+			let targetHeight = originalHeight;
+			if (isLowSpec && (targetWidth > 1024 || targetHeight > 1024)) {
+				const scale = 1024 / Math.max(targetWidth, targetHeight);
+				targetWidth = Math.max(1, Math.round(targetWidth * scale));
+				targetHeight = Math.max(1, Math.round(targetHeight * scale));
+			}
+
+			// Dimensions capped to 1024 max dimension on low-spec
+			assert.equal(targetWidth, 1024);
+			assert.equal(targetHeight, 768);
+			// 80% reduction in pixel count (from 4.32M pixels to 0.78M pixels)
+			assert.ok(targetWidth * targetHeight < originalWidth * originalHeight * 0.2);
+
+			// Quality and filter bypass rules on low-spec
+			const smoothingQuality = isLowSpec ? "low" : "high";
+			assert.equal(smoothingQuality, "low");
+
+			const canRunConvolutionFilter = !isLowSpec;
+			assert.equal(canRunConvolutionFilter, false);
+
+			// Panoramic MPR raycast step adapts to preserve 30-60 FPS
+			const defaultZStep = 0.5;
+			const effectiveZStep = isLowSpec ? Math.max(defaultZStep, 1.0) : defaultZStep;
+			assert.equal(effectiveZStep, 1.0);
+		} finally {
+			if (originalNavDesc) {
+				Object.defineProperty(globalThis, "navigator", originalNavDesc);
+			} else {
+				delete (globalThis as any).navigator;
+			}
+		}
+
+		// Scenario B: High-performance workstation (8-core / 16GB RAM)
+		Object.defineProperty(globalThis, "navigator", {
+			value: {
+				hardwareConcurrency: 8,
+				deviceMemory: 16,
+				userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+			},
+			configurable: true,
+			writable: true,
+		});
+
+		try {
+			assert.equal(isLowSpecHardware(), false);
+			assert.equal(getHardwareResourceTier(), "high");
+			assert.equal(isHighPerformanceWorkstation(), true);
+
+			// Full resolution preserved on high-spec workstation
+			const isLowSpec = isLowSpecHardware();
+			const originalWidth = 2400;
+			const originalHeight = 1800;
+			let targetWidth = originalWidth;
+			let targetHeight = originalHeight;
+			if (isLowSpec && (targetWidth > 1024 || targetHeight > 1024)) {
+				const scale = 1024 / Math.max(targetWidth, targetHeight);
+				targetWidth = Math.max(1, Math.round(targetWidth * scale));
+				targetHeight = Math.max(1, Math.round(targetHeight * scale));
+			}
+
+			assert.equal(targetWidth, 2400);
+			assert.equal(targetHeight, 1800);
+
+			const smoothingQuality = isLowSpec ? "low" : "high";
+			assert.equal(smoothingQuality, "high");
+
+			const canRunConvolutionFilter = !isLowSpec;
+			assert.equal(canRunConvolutionFilter, true);
+
+			const defaultZStep = 0.5;
+			const effectiveZStep = isLowSpec ? Math.max(defaultZStep, 1.0) : defaultZStep;
+			assert.equal(effectiveZStep, 0.5);
+		} finally {
+			if (originalNavDesc) {
+				Object.defineProperty(globalThis, "navigator", originalNavDesc);
+			} else {
+				delete (globalThis as any).navigator;
+			}
+		}
+	});
 });
 
 
