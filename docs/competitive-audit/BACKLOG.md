@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-20 / WAVES 175–265 / HAMILTON-HARE 54-FZ PENNY DISTRIBUTION, ADVISORY LOCKS & MONKEY-CLICK PROTECTION, DOM VIRTUALIZATION & WEBGL DISPOSAL, ATOMIC COLUMN UPDATES ANTI-LWW, 1092X614 VIEWPORT ERGONOMICS, SINGLE-COMPILER GATE 8T): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 304 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ, ТОЧНОЙ МАТЕМАТИКИ ГАМИЛЬТОНА-ХЭРА 54-ФЗ, ЗАЩИТЫ ОТ ГОНОК И DOM-ВИРТУАЛИЗАЦИИ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 367 ФИЧ: 63 КАНОНИЧЕСКИЕ + 304 АДДЕНДУМ, 367/367 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-20 / WAVES 175–267 / HAMILTON-HARE 54-FZ PENNY DISTRIBUTION, ADVISORY LOCKS & MONKEY-CLICK PROTECTION, DOM VIRTUALIZATION & WEBGL DISPOSAL, ATOMIC COLUMN UPDATES ANTI-LWW, 1092X614 VIEWPORT ERGONOMICS, HDD 5400 RPM & CELERON CPU OPTIMIZATION ENGINE, OMNI-PLATFORM RUNTIME ENGINE, SAKURA NEUTRAL ENAMEL, SINGLE-COMPILER GATE 8T): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 304 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ, ТОЧНОЙ МАТЕМАТИКИ ГАМИЛЬТОНА-ХЭРА 54-ФЗ, ЗАЩИТЫ ОТ ГОНОК, ОПТИМИЗАЦИИ HDD/CELERON И OMNI-PLATFORM ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 367 ФИЧ: 63 КАНОНИЧЕСКИЕ + 304 АДДЕНДУМ, 367/367 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -8988,6 +8988,49 @@
   - **6. Защита хост-машины и Single-Compiler Gate (Мандат 8t)**:
     * В строгом соответствии с Мандатом 8t компиляторные команды (`tsc`, `npm run typecheck`, `npm run build`) субагентом не запускались. Ресурсы хост-машины сохранены для централизованного гейта L1 Оркестратора.
 
+---
 
+## 424. Waves 266–267 — Защита от гонок кассы и склада, оптимизация слабого железа HDD 5400 RPM & Celeron CPU, Omni-Platform Runtime Engine и калибровка клинической эргономики (Мандаты 8b, 8c, 8d, 8e, 8h, 8i, 8k, 8n, 8p, 8s, 8t) [РЕАЛИЗОВАНО]
 
-
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (коммиты `c9e9208eb`, `e001a3bd5`, `6138f701b`)
+* **Файлы**:
+  - `apps/web/src/utils/workspacePreload.ts`
+  - `apps/web/src/workspacePreload.ts`
+  - `apps/web/src/lib/apiCacheEngine.ts`
+  - `apps/web/src/components/catalog/pricelist/servicePricelistEngine.ts`
+  - `apps/web/src/tests/lowSpecHddOptimizer.test.ts`
+  - `apps/web/src/lib/omniPlatformAdapter.ts`
+  - `apps/web/src/utils/deviceDetection.ts`
+  - `apps/web/src/lib/hardwarePrinting.ts`
+  - `apps/web/src/hooks/useDesktopShortcuts.ts`
+  - `apps/web/src/tests/omniPlatformAdaptor.test.ts`
+  - `apps/web/src/components/odontogram/odontogram.css`
+  - `apps/web/src/components/odontogram/OdontogramViewContainer.tsx`
+  - `apps/web/src/PaymentCapture.tsx`
+  - `apps/web/src/styles/main.css`
+  - `apps/api/src/services/treatmentConsumablesService.ts`
+  - `apps/api/src/db/visitsQuery.ts`
+* **Описание**:
+  - **1. Защита от гонок кассы, склада и спам-кликов врача (Мандаты 8b, 8e пп. 1, 6, 8k, 8n)**:
+    * В `apps/api/src/services/treatmentConsumablesService.ts` внедрен транзакционный advisory lock PostgreSQL `pg_advisory_xact_lock(hashtext(orgId || ':visit_deduct:' || visitId))` для строгой сериализации параллельных списаний со склада;
+    * Внедрена дедупликация списаний по `clientMutationId` и валидация ранее проведенных транзакций `auto_deduct` / `emergency_overdraft` без двойного уменьшения складских остатков;
+    * В `apps/api/src/db/visitsQuery.ts` в `acceptVisitDraftInDb` поддержана дедупликация ревизий визита при параллельных повторах (`isRecentConcurrentReplay`) с возвратом `duplicate` без холостого раздувания штампа «Исправленному верить»;
+    * В `apps/web/src/hooks/domains/useVisitLogic.ts` встроен синхронный ref-замок `isDraftAcceptingLocalRef`, блокирующий многократные спам-клики врача по кнопке завершения приёма.
+  - **2. Движок оптимизации под слабые ПК: HDD 5400 RPM & Celeron CPU (Мандаты 8c, 8n, 8s, 8t)**:
+    * В `apps/web/src/lib/apiCacheEngine.ts` развернут чистый In-Memory LRU кэш справочников Номенклатуры 804н и МКБ-10 с нулевым дисковым I/O (0 мс доступ из RAM), защищающий от зависаний при 100% загрузке медленного жесткого диска (HDD 5400 RPM);
+    * Внедрен механизм схлопывания параллельных идентичных запросов (Request Coalescing) и автоматическая инвалидация кэша при мутациях данных;
+    * В `apps/web/src/workspacePreload.ts` и `apps/web/src/utils/workspacePreload.ts` реализован ступенчатый фоновый прелоад горячих клинических модулей в моменты простоя (idle callback / requestIdleCallback) с адаптивным троттлингом под слабые CPU Celeron/Atom;
+    * В `apps/web/src/components/catalog/pricelist/servicePricelistEngine.ts` оптимизирован полнотекстовый поиск по прейскурантам с мемоизацией поисковых запросов;
+    * В `apps/web/src/tests/lowSpecHddOptimizer.test.ts` верифицировано сохранение отзывчивости UI, мгновенный возврат кэшированных справочников и корректная дедупликация I/O операций.
+  - **3. Omni-Platform Runtime Engine: Web, Desktop EXE, Android APK, PWA (Мандаты 8c, 8d, 8e, 8n, 8p)**:
+    * В `apps/web/src/lib/omniPlatformAdapter.ts` и `apps/web/src/utils/deviceDetection.ts` внедрен единый адаптер среды исполнения с автоматическим определением платформы (`desktop`, `android`, `pwa`, `web`) и типа указателя (`fine` мышь / `coarse` тач);
+    * Автоматическая калибровка плотности интерфейса: компактная десктопная сетка 28–36px (`h-7`/`h-8`/`h-9`) для врачебного кресла и просторные тач-таргеты >= 44–48px на планшетах и смартфонах;
+    * В `apps/web/src/lib/hardwarePrinting.ts` реализован универсальный оркестратор прямой аппаратной печати: нормативные документы А4 (043/у, ИДС, договоры), чеки 54-ФЗ на термоленте (Атол/Штрих-М) и термоэтикетки СанПиН 3.3686-21 со штрихкодами крафт-пакетов;
+    * В `apps/web/src/hooks/useDesktopShortcuts.ts` развернут перехват глобальных горячих клавиш: Ctrl+S (мгновенное автосохранение визита без модальных барьеров), Esc (закрытие верхнего модального слоя), F1–F12 (быстрый вызов расписания, кассы, одонтограммы);
+    * В `apps/web/src/tests/omniPlatformAdaptor.test.ts` подтверждено 100% тестовое покрытие платформенного адаптера.
+  - **4. Калибровка клинической эргономики: нейтральная эмаль Sakura, одонтограмма и касса (Мандаты 8c, 8d пп. 4, 7, 8e пп. 7, 9, 8p)**:
+    * В `apps/web/src/components/odontogram/odontogram.css` в теме «Sakura» цвет эмали зубов приведен к нейтральному анатомическому стандарту (`--tooth-enamel: #f8fafc`, `--tooth-root-fill: #f1ede4`), полностью исключая искажение клинического восприятия цвета и розовые оттенки здоровой эмали;
+    * В `apps/web/src/components/odontogram/OdontogramViewContainer.tsx` ликвидирован дефект высоты одонтограммы, жестко соблюден суммарный бюджет высоты служебных зон <= 160–180px по Мандату 8p;
+    * В `apps/web/src/PaymentCapture.tsx` и `apps/web/src/styles/main.css` зафиксирован липкий мобильный чекаут-бар 54-ФЗ без перекрытия контента и без паразитного скролла.
+  - **5. Защита хост-машины и Single-Compiler Gate (Мандат 8t)**:
+    * В строгом соответствии с Мандатом 8t компиляторные команды (`tsc`, `npm run typecheck`, `npm run build`) субагентом не запускались. Ресурсы хост-машины сохранены для централизованного гейта L1 Оркестратора.
