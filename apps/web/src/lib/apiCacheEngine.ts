@@ -29,6 +29,7 @@ import {
 	MemoryLruCache,
 } from "../utils/lowSpecHddOptimizer";
 import {
+	parseJsonNonBlocking,
 	safeLocalStorageGetItem,
 	safeLocalStorageRemoveItem,
 	safeLocalStorageSetItem,
@@ -98,13 +99,13 @@ export const STATUTORY_CATALOG_RULES: readonly CatalogCacheRule[] = [
 	},
 	{
 		id: "icd10-diagnosis",
-		pattern: /^\/api\/(?:clinical\/)?(?:icd10|icd-10|mkb10|mkb-10|classifiers)(?:\/|\?|$)/i,
+		pattern: /^\/api\/(?:catalogs?\/|clinical\/)?(?:icd10|icd-10|mkb|mkb10|mkb-10|classifiers)(?:\/|\?|$)/i,
 		defaultTtlMs: 30 * 60 * 1000, // 30 минут — справочник МКБ-10
 		description: "Справочник диагнозов МКБ-10",
 	},
 	{
 		id: "clinical-somatic-templates",
-		pattern: /^\/api\/(?:templates|document-templates|emr\/templates|somatic(?:-status|-templates)?)(?:\/|\?|$)/i,
+		pattern: /^\/api\/(?:templates|document-templates|documents\/templates|outpatient\/templates|emr\/templates|somatic(?:-status|-templates)?)(?:\/|\?|$)/i,
 		defaultTtlMs: 20 * 60 * 1000, // 20 минут — клинические протоколы, шаблоны 043/у и соматические статусы
 		description: "Клинические протоколы, шаблоны 043/у, соматические статусы и ИДС",
 	},
@@ -168,6 +169,24 @@ export const STATUTORY_CATALOG_RULES: readonly CatalogCacheRule[] = [
 		defaultTtlMs: 20 * 60 * 1000, // 20 минут — техкарты списания материалов (804н)
 		description: "Техкарты и правила списания материалов по услугам",
 	},
+	{
+		id: "dental-lab-catalogs",
+		pattern: /^\/api\/lab(?:\/[a-zA-Z0-9_-]+)?(?:\/|\?|$)/i,
+		defaultTtlMs: 20 * 60 * 1000, // 20 минут — каталоги зуботехнических лабораторий и наряды ЗТЛ
+		description: "Каталоги зуботехнических лабораторий, этапы и прайслисты ЗТЛ",
+	},
+	{
+		id: "insurance-dms-catalogs",
+		pattern: /^\/api\/insurance(?:\/[a-zA-Z0-9_-]+)?(?:\/|\?|$)/i,
+		defaultTtlMs: 30 * 60 * 1000, // 30 минут — страховые компании ДМС и гарантийные тарифы
+		description: "Справочники страховых компаний ДМС, программы и гарантийные лимиты",
+	},
+	{
+		id: "marketing-channels-sources",
+		pattern: /^\/api\/marketing(?:\/[a-zA-Z0-9_-]+)?(?:\/|\?|$)/i,
+		defaultTtlMs: 15 * 60 * 1000, // 15 минут — каналы привлечения и рекламные источники
+		description: "Маркетинговые каналы, рекламные источники и метрики привлечения",
+	},
 ] as const;
 
 /**
@@ -218,6 +237,18 @@ export const DEFAULT_MUTATION_RULES: readonly MutationInvalidationRule[] = [
 	{
 		mutationPattern: /^\/api\/inventory(?:\/|$)/i,
 		invalidatePatterns: [/^\/api\/inventory/i],
+	},
+	{
+		mutationPattern: /^\/api\/lab(?:\/|$)/i,
+		invalidatePatterns: [/^\/api\/lab/i],
+	},
+	{
+		mutationPattern: /^\/api\/insurance(?:\/|$)/i,
+		invalidatePatterns: [/^\/api\/insurance/i],
+	},
+	{
+		mutationPattern: /^\/api\/marketing(?:\/|$)/i,
+		invalidatePatterns: [/^\/api\/marketing/i],
 	},
 ] as const;
 
@@ -417,6 +448,44 @@ export function setCachedApiResponse<T = unknown>(
 
 	getApiCache().set(key, entry as CachedApiResponse<unknown>, ttlMs);
 	void saveCatalogToPersistentStorage(key, entry);
+
+	// Synchronize dedicated RAM L1 pointers and persistent mirror for statutory reference catalogs
+	if (Array.isArray(data) && data.length > 0) {
+		if (key === "/api/clinical/804n" || key === "/api/clinical/nomenclature") {
+			void import("../services/storage/statutoryCatalogCache")
+				.then((m) => {
+					m.setStatutoryCatalogInRam("804n", data as unknown[]);
+				})
+				.catch(() => {});
+			void import("../services/storage/clinicalCacheStorage")
+				.then((m) => {
+					void m.cacheStatutoryCatalog("catalog_804n", data).catch(() => {});
+				})
+				.catch(() => {});
+		} else if (key === "/api/clinical/icd10" || key === "/api/icd10") {
+			void import("../services/storage/statutoryCatalogCache")
+				.then((m) => {
+					m.setStatutoryCatalogInRam("icd10", data as unknown[]);
+				})
+				.catch(() => {});
+			void import("../services/storage/clinicalCacheStorage")
+				.then((m) => {
+					void m.cacheStatutoryCatalog("catalog_icd10", data).catch(() => {});
+				})
+				.catch(() => {});
+		} else if (key === "/api/emr/templates" || key === "/api/templates") {
+			void import("../services/storage/statutoryCatalogCache")
+				.then((m) => {
+					m.setStatutoryCatalogInRam("templates", data as unknown[]);
+				})
+				.catch(() => {});
+			void import("../services/storage/clinicalCacheStorage")
+				.then((m) => {
+					void m.cacheStatutoryCatalog("catalog_templates", data).catch(() => {});
+				})
+				.catch(() => {});
+		}
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -469,45 +538,77 @@ export function openCatalogDb(): Promise<IDBDatabase | null> {
 	return catalogDbPromise;
 }
 
-export async function saveCatalogToPersistentStorage<T>(
-	url: string,
-	entry: CachedApiResponse<T>,
-): Promise<void> {
-	const key = normalizeApiUrl(url);
+// Low-Spec 5400 RPM HDD Batch Write Buffer for Persistent Catalogs
+const pendingCatalogBatch = new Map<string, CachedApiResponse<unknown>>();
+let catalogBatchFlushTimer: ReturnType<typeof setTimeout> | null = null;
+let isFlushingCatalogBatch = false;
 
-	// 1. Попытка сохранения в IndexedDB (быстро, без блокировки главного потока)
+export async function flushPendingCatalogWrites(): Promise<void> {
+	if (catalogBatchFlushTimer) {
+		clearTimeout(catalogBatchFlushTimer);
+		catalogBatchFlushTimer = null;
+	}
+	if (isFlushingCatalogBatch || pendingCatalogBatch.size === 0) return;
+	isFlushingCatalogBatch = true;
+
+	const snapshot = new Map(pendingCatalogBatch);
+	pendingCatalogBatch.clear();
+
 	const db = await openCatalogDb();
 	if (db) {
 		try {
 			await new Promise<void>((resolve, reject) => {
 				const tx = db.transaction(CATALOG_STORE_NAME, "readwrite");
 				const store = tx.objectStore(CATALOG_STORE_NAME);
-				const req = store.put({
-					url: key,
-					data: entry.data,
-					status: entry.status,
-					statusText: entry.statusText,
-					headers: entry.headers,
-					timestamp: entry.timestamp,
-					ttlMs: entry.ttlMs,
-				});
-				req.onsuccess = () => resolve();
-				req.onerror = () => reject(req.error);
+				for (const [key, entry] of snapshot.entries()) {
+					store.put({
+						url: key,
+						data: entry.data,
+						status: entry.status,
+						statusText: entry.statusText,
+						headers: entry.headers,
+						timestamp: entry.timestamp,
+						ttlMs: entry.ttlMs,
+					});
+				}
+				tx.oncomplete = () => resolve();
+				tx.onerror = () => reject(tx.error);
+				tx.onabort = () => reject(tx.error ?? new Error("Catalog transaction aborted"));
 			});
+			isFlushingCatalogBatch = false;
 			return;
 		} catch {
-			// fallback к localStorage
+			// fallback to localStorage
 		}
 	}
 
-	// 2. Fallback в localStorage для небольших справочников (< 80 КБ)
-	try {
-		const serialized = JSON.stringify(entry);
-		if (serialized.length < 80 * 1024) {
-			safeLocalStorageSetItem(LOCAL_STORAGE_CATALOG_PREFIX + key, serialized);
+	// Fallback to localStorage
+	for (const [key, entry] of snapshot.entries()) {
+		try {
+			const serialized = JSON.stringify(entry);
+			if (serialized.length < 80 * 1024) {
+				safeLocalStorageSetItem(LOCAL_STORAGE_CATALOG_PREFIX + key, serialized);
+			}
+		} catch {
+			// ignore
 		}
-	} catch {
-		// localStorage переполнен или недоступен
+	}
+	isFlushingCatalogBatch = false;
+}
+
+export async function saveCatalogToPersistentStorage<T>(
+	url: string,
+	entry: CachedApiResponse<T>,
+): Promise<void> {
+	const key = normalizeApiUrl(url);
+	pendingCatalogBatch.set(key, entry as CachedApiResponse<unknown>);
+
+	if (!catalogBatchFlushTimer) {
+		if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+			window.requestIdleCallback(() => void flushPendingCatalogWrites(), { timeout: 100 });
+		} else {
+			catalogBatchFlushTimer = setTimeout(() => void flushPendingCatalogWrites(), 60);
+		}
 	}
 }
 
@@ -515,6 +616,14 @@ export async function readCatalogFromPersistentStorage<T = unknown>(
 	url: string,
 ): Promise<CachedApiResponse<T> | null> {
 	const key = normalizeApiUrl(url);
+
+	// 0. Check pending in-memory batch write buffer first (0 ms, zero disk I/O)
+	const pending = pendingCatalogBatch.get(key) as CachedApiResponse<T> | undefined;
+	if (pending) {
+		if (pending.ttlMs === null || Date.now() <= pending.timestamp + pending.ttlMs) {
+			return pending;
+		}
+	}
 
 	// 1. Проверяем IndexedDB
 	const db = await openCatalogDb();
@@ -550,11 +659,66 @@ export async function readCatalogFromPersistentStorage<T = unknown>(
 	try {
 		const raw = safeLocalStorageGetItem(LOCAL_STORAGE_CATALOG_PREFIX + key);
 		if (raw) {
-			const parsed = JSON.parse(raw) as CachedApiResponse<T>;
+			const parsed = (await parseJsonNonBlocking<CachedApiResponse<T>>(raw)) as CachedApiResponse<T>;
 			if (parsed && (parsed.ttlMs === null || Date.now() <= parsed.timestamp + parsed.ttlMs)) {
 				return parsed;
 			}
 			safeLocalStorageRemoveItem(LOCAL_STORAGE_CATALOG_PREFIX + key);
+		}
+	} catch {
+		// ignore
+	}
+
+	// 3. Fallback к clinicalCacheStorage (catalog_804n, catalog_icd10, catalog_templates)
+	try {
+		if (key === "/api/clinical/804n" || key === "/api/clinical/nomenclature") {
+			const { getCachedStatutoryCatalog } = await import("../services/storage/clinicalCacheStorage");
+			const idbData = await getCachedStatutoryCatalog<T>("catalog_804n");
+			if (idbData && Array.isArray(idbData) && idbData.length > 0) {
+				const entry: CachedApiResponse<T> = {
+					data: idbData,
+					status: 200,
+					statusText: "OK",
+					headers: { "content-type": "application/json; charset=utf-8" },
+					url: key,
+					timestamp: Date.now(),
+					ttlMs: 24 * 60 * 60 * 1000,
+				};
+				void saveCatalogToPersistentStorage(key, entry);
+				return entry;
+			}
+		} else if (key === "/api/clinical/icd10" || key === "/api/icd10") {
+			const { getCachedStatutoryCatalog } = await import("../services/storage/clinicalCacheStorage");
+			const idbData = await getCachedStatutoryCatalog<T>("catalog_icd10");
+			if (idbData && Array.isArray(idbData) && idbData.length > 0) {
+				const entry: CachedApiResponse<T> = {
+					data: idbData,
+					status: 200,
+					statusText: "OK",
+					headers: { "content-type": "application/json; charset=utf-8" },
+					url: key,
+					timestamp: Date.now(),
+					ttlMs: 24 * 60 * 60 * 1000,
+				};
+				void saveCatalogToPersistentStorage(key, entry);
+				return entry;
+			}
+		} else if (key === "/api/emr/templates" || key === "/api/templates") {
+			const { getCachedStatutoryCatalog } = await import("../services/storage/clinicalCacheStorage");
+			const idbData = await getCachedStatutoryCatalog<T>("catalog_templates");
+			if (idbData && Array.isArray(idbData) && idbData.length > 0) {
+				const entry: CachedApiResponse<T> = {
+					data: idbData,
+					status: 200,
+					statusText: "OK",
+					headers: { "content-type": "application/json; charset=utf-8" },
+					url: key,
+					timestamp: Date.now(),
+					ttlMs: 24 * 60 * 60 * 1000,
+				};
+				void saveCatalogToPersistentStorage(key, entry);
+				return entry;
+			}
 		}
 	} catch {
 		// ignore
@@ -566,6 +730,23 @@ export async function readCatalogFromPersistentStorage<T = unknown>(
 export async function deleteCatalogFromPersistentStorage(
 	patternOrUrl?: string | RegExp,
 ): Promise<void> {
+	// Clear from in-memory batch write buffer
+	if (!patternOrUrl) {
+		pendingCatalogBatch.clear();
+	} else if (typeof patternOrUrl === "string") {
+		for (const key of pendingCatalogBatch.keys()) {
+			if (key === patternOrUrl || key.includes(patternOrUrl)) {
+				pendingCatalogBatch.delete(key);
+			}
+		}
+	} else {
+		for (const key of pendingCatalogBatch.keys()) {
+			if (patternOrUrl.test(key)) {
+				pendingCatalogBatch.delete(key);
+			}
+		}
+	}
+
 	// IndexedDB
 	const db = await openCatalogDb();
 	if (db) {
@@ -645,29 +826,36 @@ export async function hydrateCatalogsFromPersistentStorage(): Promise<number> {
 	const db = await openCatalogDb();
 	if (db) {
 		try {
-			await new Promise<void>((resolve) => {
+			const entries = await new Promise<CachedApiResponse<unknown>[]>((resolve) => {
 				const tx = db.transaction(CATALOG_STORE_NAME, "readonly");
 				const store = tx.objectStore(CATALOG_STORE_NAME);
-				const req = store.openCursor();
-				req.onsuccess = () => {
-					const cursor = req.result;
-					if (cursor) {
-						const entry = cursor.value as CachedApiResponse<unknown>;
-						if (entry && entry.url) {
-							if (entry.ttlMs === null || Date.now() <= entry.timestamp + entry.ttlMs) {
-								if (!getApiCache().has(entry.url)) {
-									getApiCache().set(entry.url, entry, entry.ttlMs);
-									hydratedCount++;
-								}
-							}
-						}
-						cursor.continue();
-					} else {
-						resolve();
-					}
-				};
-				req.onerror = () => resolve();
+				const req = store.getAll();
+				req.onsuccess = () => resolve(Array.isArray(req.result) ? (req.result as CachedApiResponse<unknown>[]) : []);
+				req.onerror = () => resolve([]);
 			});
+
+			const now = Date.now();
+			let count = 0;
+			for (const entry of entries) {
+				if (entry && entry.url) {
+					if (entry.ttlMs === null || now <= entry.timestamp + entry.ttlMs) {
+						if (!getApiCache().has(entry.url)) {
+							getApiCache().set(entry.url, entry, entry.ttlMs);
+							hydratedCount++;
+						}
+					}
+				}
+				if (++count % 25 === 0) {
+					// Yield to main thread on Celeron CPU to prevent UI micro-stutters
+					await new Promise((resolve) => {
+						if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+							window.requestIdleCallback(() => resolve(undefined), { timeout: 16 });
+						} else {
+							setTimeout(resolve, 0);
+						}
+					});
+				}
+			}
 		} catch {
 			// ignore
 		}

@@ -15,6 +15,7 @@ import {
 import {
 	setCachedApiResponse,
 	getCachedApiResponse,
+	readCatalogFromPersistentStorage,
 } from "../../lib/apiCacheEngine";
 
 // In-memory RAM L1 cache for sub-millisecond synchronous returns
@@ -39,19 +40,36 @@ export async function getOrLoadNomenclature804n<T = unknown>(): Promise<T[]> {
 	}
 
 	// Try apiCacheEngine RAM
-	const apiCached = getCachedApiResponse<T[]>("/api/clinical/804n");
+	const apiCached =
+		getCachedApiResponse<T[]>("/api/clinical/804n") ||
+		getCachedApiResponse<T[]>("/api/clinical/nomenclature");
 	if (apiCached?.data && Array.isArray(apiCached.data) && apiCached.data.length > 0) {
 		ram804nCache = apiCached.data;
 		return apiCached.data;
 	}
 
-	// Try IndexedDB storage
+	// Try IndexedDB storage (clinicalCacheStorage)
 	try {
 		const idbCached = await getCachedStatutoryCatalog<T[]>("catalog_804n");
 		if (idbCached && Array.isArray(idbCached) && idbCached.length > 0) {
 			ram804nCache = idbCached;
 			setCachedApiResponse("/api/clinical/804n", idbCached, { ttlMs: 24 * 60 * 60 * 1000 });
 			return idbCached;
+		}
+	} catch {
+		// Fallback to next storage layer
+	}
+
+	// Try persistent storage (apiCacheEngine)
+	try {
+		const persistentApi =
+			(await readCatalogFromPersistentStorage<T[]>("/api/clinical/804n")) ||
+			(await readCatalogFromPersistentStorage<T[]>("/api/clinical/nomenclature"));
+		if (persistentApi?.data && Array.isArray(persistentApi.data) && persistentApi.data.length > 0) {
+			ram804nCache = persistentApi.data;
+			setCachedApiResponse("/api/clinical/804n", persistentApi.data, { ttlMs: 24 * 60 * 60 * 1000 });
+			void cacheStatutoryCatalog("catalog_804n", persistentApi.data).catch(() => {});
+			return persistentApi.data;
 		}
 	} catch {
 		// Fallback to static presets on storage failure
@@ -77,7 +95,9 @@ export async function getOrLoadIcd10Dictionary<T = unknown>(): Promise<T[]> {
 		return ramIcd10Cache as T[];
 	}
 
-	const apiCached = getCachedApiResponse<T[]>("/api/clinical/icd10");
+	const apiCached =
+		getCachedApiResponse<T[]>("/api/clinical/icd10") ||
+		getCachedApiResponse<T[]>("/api/icd10");
 	if (apiCached?.data && Array.isArray(apiCached.data) && apiCached.data.length > 0) {
 		ramIcd10Cache = apiCached.data;
 		return apiCached.data;
@@ -89,6 +109,20 @@ export async function getOrLoadIcd10Dictionary<T = unknown>(): Promise<T[]> {
 			ramIcd10Cache = idbCached;
 			setCachedApiResponse("/api/clinical/icd10", idbCached, { ttlMs: 24 * 60 * 60 * 1000 });
 			return idbCached;
+		}
+	} catch {
+		// Fallback to next storage layer
+	}
+
+	try {
+		const persistentApi =
+			(await readCatalogFromPersistentStorage<T[]>("/api/clinical/icd10")) ||
+			(await readCatalogFromPersistentStorage<T[]>("/api/icd10"));
+		if (persistentApi?.data && Array.isArray(persistentApi.data) && persistentApi.data.length > 0) {
+			ramIcd10Cache = persistentApi.data;
+			setCachedApiResponse("/api/clinical/icd10", persistentApi.data, { ttlMs: 24 * 60 * 60 * 1000 });
+			void cacheStatutoryCatalog("catalog_icd10", persistentApi.data).catch(() => {});
+			return persistentApi.data;
 		}
 	} catch {
 		// Fallback to static presets on storage failure
@@ -111,7 +145,9 @@ export async function getOrLoadClinical043Templates<T = unknown>(): Promise<T[]>
 		return ramTemplatesCache as T[];
 	}
 
-	const apiCached = getCachedApiResponse<T[]>("/api/emr/templates");
+	const apiCached =
+		getCachedApiResponse<T[]>("/api/emr/templates") ||
+		getCachedApiResponse<T[]>("/api/templates");
 	if (apiCached?.data && Array.isArray(apiCached.data) && apiCached.data.length > 0) {
 		ramTemplatesCache = apiCached.data;
 		return apiCached.data;
@@ -123,6 +159,20 @@ export async function getOrLoadClinical043Templates<T = unknown>(): Promise<T[]>
 			ramTemplatesCache = idbCached;
 			setCachedApiResponse("/api/emr/templates", idbCached, { ttlMs: 24 * 60 * 60 * 1000 });
 			return idbCached;
+		}
+	} catch {
+		// Fallback to next storage layer
+	}
+
+	try {
+		const persistentApi =
+			(await readCatalogFromPersistentStorage<T[]>("/api/emr/templates")) ||
+			(await readCatalogFromPersistentStorage<T[]>("/api/templates"));
+		if (persistentApi?.data && Array.isArray(persistentApi.data) && persistentApi.data.length > 0) {
+			ramTemplatesCache = persistentApi.data;
+			setCachedApiResponse("/api/emr/templates", persistentApi.data, { ttlMs: 24 * 60 * 60 * 1000 });
+			void cacheStatutoryCatalog("catalog_templates", persistentApi.data).catch(() => {});
+			return persistentApi.data;
 		}
 	} catch {
 		// Fallback to static presets on storage failure
@@ -176,9 +226,29 @@ export async function clearStatutoryCatalogsCache(): Promise<void> {
 }
 
 /**
+ * Sets or updates the in-memory RAM L1 cache for a statutory catalog synchronously.
+ */
+export function setStatutoryCatalogInRam(
+	catalogKind: "804n" | "icd10" | "templates",
+	data: unknown[],
+): void {
+	if (catalogKind === "804n") {
+		ram804nCache = data;
+	} else if (catalogKind === "icd10") {
+		ramIcd10Cache = data;
+	} else if (catalogKind === "templates") {
+		ramTemplatesCache = data;
+	}
+}
+
+/**
  * Returns current RAM cache status for statutory catalogs.
  */
 export function getStatutoryCatalogCacheStats(): StatutoryCatalogCacheStats {
+	if (!ram804nCache) getCached804nSync();
+	if (!ramIcd10Cache) getCachedIcd10Sync();
+	if (!ramTemplatesCache) getCachedTemplatesSync();
+
 	return {
 		has804nInRam: Boolean(ram804nCache && ram804nCache.length > 0),
 		hasIcd10InRam: Boolean(ramIcd10Cache && ramIcd10Cache.length > 0),
@@ -195,7 +265,17 @@ export function getStatutoryCatalogCacheStats(): StatutoryCatalogCacheStats {
  * Returns items immediately (0 ms) if already loaded into memory.
  */
 export function getCached804nSync<T = unknown>(): T[] | null {
-	return (ram804nCache as T[]) || null;
+	if (ram804nCache && ram804nCache.length > 0) {
+		return ram804nCache as T[];
+	}
+	const apiCached =
+		getCachedApiResponse<T[]>("/api/clinical/804n") ||
+		getCachedApiResponse<T[]>("/api/clinical/nomenclature");
+	if (apiCached?.data && Array.isArray(apiCached.data) && apiCached.data.length > 0) {
+		ram804nCache = apiCached.data;
+		return apiCached.data;
+	}
+	return null;
 }
 
 /**
@@ -203,7 +283,17 @@ export function getCached804nSync<T = unknown>(): T[] | null {
  * Returns items immediately (0 ms) if already loaded into memory.
  */
 export function getCachedIcd10Sync<T = unknown>(): T[] | null {
-	return (ramIcd10Cache as T[]) || null;
+	if (ramIcd10Cache && ramIcd10Cache.length > 0) {
+		return ramIcd10Cache as T[];
+	}
+	const apiCached =
+		getCachedApiResponse<T[]>("/api/clinical/icd10") ||
+		getCachedApiResponse<T[]>("/api/icd10");
+	if (apiCached?.data && Array.isArray(apiCached.data) && apiCached.data.length > 0) {
+		ramIcd10Cache = apiCached.data;
+		return apiCached.data;
+	}
+	return null;
 }
 
 /**
@@ -211,7 +301,17 @@ export function getCachedIcd10Sync<T = unknown>(): T[] | null {
  * Returns items immediately (0 ms) if already loaded into memory.
  */
 export function getCachedTemplatesSync<T = unknown>(): T[] | null {
-	return (ramTemplatesCache as T[]) || null;
+	if (ramTemplatesCache && ramTemplatesCache.length > 0) {
+		return ramTemplatesCache as T[];
+	}
+	const apiCached =
+		getCachedApiResponse<T[]>("/api/emr/templates") ||
+		getCachedApiResponse<T[]>("/api/templates");
+	if (apiCached?.data && Array.isArray(apiCached.data) && apiCached.data.length > 0) {
+		ramTemplatesCache = apiCached.data;
+		return apiCached.data;
+	}
+	return null;
 }
 
 /**
@@ -221,12 +321,13 @@ export function searchCached804nSync<T extends { code?: string; name?: string; s
 	query: string,
 	limit = 50,
 ): T[] {
-	if (!ram804nCache || ram804nCache.length === 0) return [];
+	const items = getCached804nSync<T>();
+	if (!items || items.length === 0) return [];
 	const q = query.trim().toLowerCase();
-	if (!q) return (ram804nCache as T[]).slice(0, limit);
+	if (!q) return items.slice(0, limit);
 
 	const results: T[] = [];
-	for (const item of ram804nCache as T[]) {
+	for (const item of items) {
 		const code = (item.code || "").toLowerCase();
 		const name = (item.name || item.serviceName || "").toLowerCase();
 		if (code.includes(q) || name.includes(q)) {
@@ -244,12 +345,13 @@ export function searchCachedIcd10Sync<T extends { code?: string; name?: string; 
 	query: string,
 	limit = 50,
 ): T[] {
-	if (!ramIcd10Cache || ramIcd10Cache.length === 0) return [];
+	const items = getCachedIcd10Sync<T>();
+	if (!items || items.length === 0) return [];
 	const q = query.trim().toLowerCase();
-	if (!q) return (ramIcd10Cache as T[]).slice(0, limit);
+	if (!q) return items.slice(0, limit);
 
 	const results: T[] = [];
-	for (const item of ramIcd10Cache as T[]) {
+	for (const item of items) {
 		const code = (item.code || "").toLowerCase();
 		const name = (item.name || item.description || "").toLowerCase();
 		if (code.includes(q) || name.includes(q)) {
