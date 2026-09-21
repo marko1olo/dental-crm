@@ -68,13 +68,32 @@ export class HardwareScanner {
 			window.addEventListener("NATIVE_BARCODE_SCANNED", (event: Event) => {
 				const customEv = event as CustomEvent<{ barcode: string; format?: string }>;
 				if (customEv.detail?.barcode) {
-					this.handleScannedCode(customEv.detail.barcode, customEv.detail.format as BarcodeFormat);
+					this.handleScannedCode(customEv.detail.barcode, customEv.detail.format as BarcodeFormat, "camera_mlkit_native");
+				}
+			});
+			window.addEventListener("dente:usb-barcode-scanned", (event: Event) => {
+				const customEv = event as CustomEvent<{ code?: string; rawCode?: string; format?: string }>;
+				const code = customEv.detail?.rawCode || customEv.detail?.code;
+				if (code) {
+					this.handleScannedCode(code, customEv.detail?.format as BarcodeFormat, "usb_hid_keyboard");
+				}
+			});
+			window.addEventListener("dente:barcode-scanned", (event: Event) => {
+				const customEv = event as CustomEvent<{ code?: string; rawCode?: string; format?: string; source?: string }>;
+				const code = customEv.detail?.rawCode || customEv.detail?.code;
+				if (code) {
+					const source = customEv.detail?.source === "usb_hid_scanner" ? "usb_hid_keyboard" : "camera_mlkit_native";
+					this.handleScannedCode(code, customEv.detail?.format as BarcodeFormat, source);
 				}
 			});
 		}
 	}
 
-	public handleScannedCode(rawCode: string, format?: BarcodeFormat): void {
+	public handleScannedCode(
+		rawCode: string,
+		format?: BarcodeFormat,
+		source: "camera_webrtc" | "camera_mlkit_native" | "usb_hid_keyboard" | "manual_input" = "camera_mlkit_native",
+	): void {
 		const clean = rawCode.trim();
 		if (!clean) return;
 		const now = Date.now();
@@ -92,7 +111,7 @@ export class HardwareScanner {
 			rawCode: clean,
 			format: format ?? "unknown",
 			timestamp: now,
-			source: "camera_mlkit_native",
+			source,
 			durationMs: 0,
 		});
 	}

@@ -112,4 +112,28 @@ contextBridge.exposeInMainWorld("denteDesktopNative", {
 	printDocumentSilent: async (params) => {
 		return await ipcRenderer.invoke("dente:print-document-silent", params);
 	},
+
+	onDesktopSoftRefresh: (callback) => {
+		const handler = () => callback();
+		ipcRenderer.on("dente:desktop-soft-refresh", handler);
+		return () => {
+			ipcRenderer.removeListener("dente:desktop-soft-refresh", handler);
+		};
+	},
+
+	onDesktopPrintRequest: (callback) => {
+		const handler = () => callback();
+		ipcRenderer.on("dente:desktop-print-request", handler);
+		return () => {
+			ipcRenderer.removeListener("dente:desktop-print-request", handler);
+		};
+	},
+
+	onDesktopSaveRequest: (callback) => {
+		const handler = () => callback();
+		ipcRenderer.on("dente:desktop-save-request", handler);
+		return () => {
+			ipcRenderer.removeListener("dente:desktop-save-request", handler);
+		};
+	},
 });

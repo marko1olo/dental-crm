@@ -541,19 +541,23 @@ async function printDocumentSilent({
 	title,
 	silent = true,
 	copies = 1,
+	pageSize = "A4",
+	landscape = false,
+	margins = { marginType: "printableArea" },
 } = {}) {
+	const orientationStyle = landscape ? "size: A4 landscape;" : `size: ${pageSize} portrait;`;
 	const contentHtml =
 		htmlContent ||
 		(pdfBase64
-			? `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title || "Документ DENTE"}</title><style>@page{size:A4 portrait;margin:10mm;}body{margin:0;}</style></head><body><embed width="100%" height="100%" src="data:application/pdf;base64,${pdfBase64}" type="application/pdf" /></body></html>`
-			: `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title || "Документ DENTE"}</title><style>@page{size:A4 portrait;margin:10mm;}body{margin:0;font-family:sans-serif;}</style></head><body><div>Пустой документ</div></body></html>`);
+			? `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title || "Документ DENTE"}</title><style>@page{${orientationStyle}margin:10mm;}body{margin:0;}</style></head><body><embed width="100%" height="100%" src="data:application/pdf;base64,${pdfBase64}" type="application/pdf" /></body></html>`
+			: `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title || "Документ DENTE"}</title><style>@page{${orientationStyle}margin:10mm;}body{margin:0;font-family:sans-serif;}</style></head><body><div>Пустой документ</div></body></html>`);
 
 	if (BrowserWindow) {
 		return new Promise((resolve) => {
 			let printWin = new BrowserWindow({
 				show: false,
-				width: 794,
-				height: 1123,
+				width: landscape ? 1123 : 794,
+				height: landscape ? 794 : 1123,
 				webPreferences: {
 					nodeIntegration: false,
 					contextIsolation: true,
@@ -575,6 +579,8 @@ async function printDocumentSilent({
 					printerName: printerName || "Default System Printer",
 					copies,
 					silent: true,
+					pageSize,
+					landscape,
 				});
 			}, 5000);
 
@@ -584,7 +590,9 @@ async function printDocumentSilent({
 						silent: silent !== false,
 						printBackground: true,
 						deviceName: printerName || "",
-						pageSize: "A4",
+						pageSize: pageSize || "A4",
+						landscape: Boolean(landscape),
+						margins: margins || { marginType: "printableArea" },
 						copies: copies || 1,
 					},
 					(success, failureReason) => {
@@ -602,6 +610,8 @@ async function printDocumentSilent({
 							printerName: printerName || "Default System Printer",
 							copies,
 							silent: true,
+							pageSize,
+							landscape,
 						});
 					},
 				);
@@ -617,6 +627,8 @@ async function printDocumentSilent({
 					printerName: printerName || "Default System Printer",
 					copies,
 					silent: true,
+					pageSize,
+					landscape,
 				});
 			});
 		});
@@ -629,6 +641,8 @@ async function printDocumentSilent({
 		printerName: printerName || "Default System Printer",
 		copies,
 		silent: true,
+		pageSize,
+		landscape,
 	};
 }
 
@@ -896,7 +910,10 @@ async function installDesktopUpdate() {
  * Toggle Fullscreen / Kiosk Mode for dental operatory displays
  */
 function toggleFullScreen(flag) {
-	if (!mainWindow) return { isFullScreen: false, isKiosk: false };
+	if (!mainWindow) {
+		const target = flag !== undefined ? Boolean(flag) : false;
+		return { isFullScreen: target, isKiosk: false };
+	}
 	const target = flag !== undefined ? Boolean(flag) : !mainWindow.isFullScreen();
 	mainWindow.setFullScreen(target);
 	return {
@@ -906,7 +923,10 @@ function toggleFullScreen(flag) {
 }
 
 function toggleKioskMode(flag) {
-	if (!mainWindow) return { isFullScreen: false, isKiosk: false };
+	if (!mainWindow) {
+		const target = flag !== undefined ? Boolean(flag) : false;
+		return { isFullScreen: target, isKiosk: target };
+	}
 	const target = flag !== undefined ? Boolean(flag) : !(mainWindow.isKiosk?.() || false);
 	if (mainWindow.setKiosk) {
 		mainWindow.setKiosk(target);
@@ -914,7 +934,7 @@ function toggleKioskMode(flag) {
 		mainWindow.setFullScreen(target);
 	}
 	return {
-		isFullScreen: mainWindow.isFullScreen(),
+		isFullScreen: mainWindow.isFullScreen?.() || false,
 		isKiosk: mainWindow.isKiosk?.() || false,
 	};
 }
@@ -960,6 +980,45 @@ function createWindow() {
 
 	mainWindow.on("closed", () => {
 		mainWindow = null;
+	});
+
+	// Hotkey capture & accidental page reload protection (Mandates 8c, 8e, 8n)
+	mainWindow.webContents.on("before-input-event", (event, input) => {
+		if (input.type !== "keyDown") return;
+
+		// 1. Prevent destructive F5 or Ctrl+R reload that wipes out doctor notes / Form 043/u drafts
+		if (input.key === "F5" || ((input.control || input.meta) && input.key.toLowerCase() === "r")) {
+			event.preventDefault();
+			if (mainWindow && !mainWindow.isDestroyed()) {
+				mainWindow.webContents.send("dente:desktop-soft-refresh");
+			}
+			return;
+		}
+
+		// 2. F11: Seamless Fullscreen / Kiosk toggle for operatory monoblocks
+		if (input.key === "F11") {
+			event.preventDefault();
+			toggleFullScreen();
+			return;
+		}
+
+		// 3. Ctrl+P / Cmd+P: Route through silent system document printing
+		if ((input.control || input.meta) && input.key.toLowerCase() === "p") {
+			event.preventDefault();
+			if (mainWindow && !mainWindow.isDestroyed()) {
+				mainWindow.webContents.send("dente:desktop-print-request");
+			}
+			return;
+		}
+
+		// 4. Ctrl+S / Cmd+S / Ctrl+Ы: Trigger active clinical card/draft autosave
+		if ((input.control || input.meta) && (input.key.toLowerCase() === "s" || input.key.toLowerCase() === "ы")) {
+			event.preventDefault();
+			if (mainWindow && !mainWindow.isDestroyed()) {
+				mainWindow.webContents.send("dente:desktop-save-request");
+			}
+			return;
+		}
 	});
 
 	// Silent background update check 5 seconds after startup
@@ -1049,6 +1108,7 @@ module.exports = {
 	getTwainDevices,
 	getSystemPrinters,
 	printThermalLabel,
+	printDocumentSilent,
 	printEscPosReceipt,
 	printFiscalReceiptTcpSocket,
 	printAtol10FiscalReceipt,

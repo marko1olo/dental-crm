@@ -17,6 +17,9 @@ import {
 	switchLocalDatabaseMode,
 	printAtol10FiscalReceipt,
 	printShtrihMFiscalReceipt,
+	printDocumentSilent,
+	getWindowState,
+	toggleFullScreen,
 } from "../main.cjs";
 
 test("Desktop Standalone Windows Runtime Harness", async (t) => {
@@ -190,5 +193,39 @@ test("Desktop Standalone Windows Runtime Harness", async (t) => {
 		// Empty/unmatched filename
 		const plain = parseDicomFilenameMetadata("scan_without_tooth_marker.dcm");
 		assert.equal(plain.toothCode, undefined);
+	});
+
+	await t.test("Direct silent medical document printing (Form 043/u, Act, Consents) with pageSize and landscape", async () => {
+		const resultA4 = await printDocumentSilent({
+			htmlContent: "<html><body><h1>МЕДИЦИНСКАЯ КАРТА 043/у</h1><p>Пациент: Иванов И. И.</p></body></html>",
+			silent: true,
+			title: "Форма 043/у - Иванов",
+			pageSize: "A4",
+			copies: 1,
+		});
+		assert.equal(resultA4.success, true);
+		assert.equal(resultA4.silent, true);
+		assert.equal(resultA4.pageSize, "A4");
+		assert.equal(resultA4.landscape, false);
+
+		const resultA5Landscape = await printDocumentSilent({
+			htmlContent: "<html><body><h2>СПРАВКА ДЛЯ НАЛОГОВОЙ (КНД 1151156)</h2></body></html>",
+			silent: true,
+			pageSize: "A5",
+			landscape: true,
+			margins: { marginType: "custom", top: 10, bottom: 10, left: 15, right: 15 },
+		});
+		assert.equal(resultA5Landscape.success, true);
+		assert.equal(resultA5Landscape.pageSize, "A5");
+		assert.equal(resultA5Landscape.landscape, true);
+	});
+
+	await t.test("Window state query and fullscreen toggle in headless/test harness", async () => {
+		const state = await getWindowState();
+		assert.equal(typeof state.isFullScreen, "boolean");
+		assert.equal(typeof state.isKiosk, "boolean");
+
+		const toggled = await toggleFullScreen(true);
+		assert.equal(toggled.isFullScreen, true);
 	});
 });

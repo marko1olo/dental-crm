@@ -41,8 +41,17 @@ export function isForbiddenRuntimeResponse(url: URL): boolean {
 
 export function isCacheableShellAsset(url: URL): boolean {
 	if (SHELL_ASSETS.includes(url.pathname)) return true;
-	// Cache static bundles, styles, icons, fonts, odontogram SVG schemas, auth art, shaders, wasm, and workers
-	return /^\/(?:assets|auth-art|fonts|icons|workers|wasm|odontogram|images|static)\/[-A-Za-z0-9_./]+(?:\.js|\.mjs|\.css|\.svg|\.png|\.webp|\.avif|\.woff2?|\.ttf|\.otf|\.wasm|\.json|\.webmanifest|\.ico)$/.test(
+	if (isForbiddenRuntimeResponse(url)) return false;
+	// 1. Explicit static directories (bundles, styles, icons, fonts, odontogram SVG schemas, auth art, shaders, wasm, workers, media, locales)
+	if (
+		/^\/(?:assets|auth-art|fonts|icons|workers|wasm|odontogram|images|static|media|locales)\/[-A-Za-z0-9_./]+(?:\.js|\.mjs|\.css|\.svg|\.png|\.webp|\.avif|\.woff2?|\.ttf|\.otf|\.wasm|\.json|\.webmanifest|\.ico|\.map)$/i.test(
+			url.pathname,
+		)
+	) {
+		return true;
+	}
+	// 2. Any local origin request with static asset extensions (excluding forbidden API/DICOM/documents)
+	return /\.(?:js|mjs|css|svg|png|jpg|jpeg|webp|avif|woff2?|ttf|otf|wasm|json|webmanifest|ico|map)$/i.test(
 		url.pathname,
 	);
 }

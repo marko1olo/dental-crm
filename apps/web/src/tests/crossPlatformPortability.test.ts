@@ -61,6 +61,8 @@ import {
 	printDesktopFiscalReceiptTcp,
 	printDesktopSanpinThermalLabel,
 	printDesktopThermalLabel,
+	printDesktopDocumentSilent,
+	registerDesktopHotkeys,
 	toggleDesktopFullScreen,
 	toggleDesktopKioskMode,
 	validateClinicalActionButtonErgonomics,
@@ -614,8 +616,10 @@ test("Cross-Platform Portability & Hardware Integration Suite", async (t) => {
 		assert.equal(CLINICAL_TOUCH_TARGETS.MIN_TOUCH_SIZE_PX, 44);
 		assert.equal(CLINICAL_TOUCH_TARGETS.PRIMARY_ACTION_MIN_HEIGHT_PX, 48);
 		assert.equal(CLINICAL_TOUCH_TARGETS.MOBILE_ACTION_MIN_HEIGHT_PX, 52);
+		assert.equal(CLINICAL_TOUCH_TARGETS.DESKTOP_DENSE_ACTION_MIN_HEIGHT_PX, 28);
+		assert.equal(CLINICAL_TOUCH_TARGETS.DESKTOP_DENSE_ACTION_MAX_HEIGHT_PX, 36);
 
-		// Valid primary action button
+		// Valid primary action button on touch
 		const validErgo = validateClinicalActionButtonErgonomics({
 			heightPx: 48,
 			fontSizePx: 14,
@@ -624,7 +628,7 @@ test("Cross-Platform Portability & Hardware Integration Suite", async (t) => {
 		assert.equal(validErgo.isValid, true);
 		assert.equal(validErgo.issues.length, 0);
 
-		// Invalid action button (too small, no label)
+		// Invalid action button on touch (too small, no label)
 		const invalidErgo = validateClinicalActionButtonErgonomics({
 			heightPx: 36,
 			fontSizePx: 11,
@@ -632,5 +636,143 @@ test("Cross-Platform Portability & Hardware Integration Suite", async (t) => {
 		});
 		assert.equal(invalidErgo.isValid, false);
 		assert.ok(invalidErgo.issues.length >= 2);
+
+		// Desktop Dense Mouse Grid (Mandate 8c: 28-36px button height, 12px font)
+		const desktopDenseValid = validateClinicalActionButtonErgonomics({
+			heightPx: 32,
+			fontSizePx: 13,
+			hasVisibleRussianLabel: true,
+			pointerType: "fine",
+		});
+		assert.equal(desktopDenseValid.isValid, true);
+		assert.equal(desktopDenseValid.issues.length, 0);
+
+		// Sub-minimal button even on desktop (<28px)
+		const desktopSubMinimal = validateClinicalActionButtonErgonomics({
+			heightPx: 22,
+			fontSizePx: 10,
+			hasVisibleRussianLabel: true,
+			pointerType: "fine",
+		});
+		assert.equal(desktopSubMinimal.isValid, false);
+		assert.ok(desktopSubMinimal.issues.length >= 2);
+	});
+
+	await t.test("14. Desktop Silent Document Printing (Form 043/u, Act, Consents)", async () => {
+		const originalWindowDesc = Object.getOwnPropertyDescriptor(globalThis, "window");
+
+		let lastPrintParams: any = null;
+		const mockDesktopApi: Partial<DesktopNativeApi> = {
+			isDesktop: true,
+			platform: "win32",
+			version: "0.1.0",
+			printDocumentSilent: async (params) => {
+				lastPrintParams = params;
+				return { success: true };
+			},
+		};
+
+		Object.defineProperty(globalThis, "window", {
+			value: {
+				denteDesktopNative: mockDesktopApi as DesktopNativeApi,
+				dispatchEvent: () => true,
+				addEventListener: () => {},
+				removeEventListener: () => {},
+			},
+			configurable: true,
+			writable: true,
+		});
+
+		try {
+			const res = await printDesktopDocumentSilent({
+				htmlContent: "<html><body><h1>Форма 043/у</h1></body></html>",
+				title: "Медицинская карта 043/у",
+				pageSize: "A4",
+				landscape: false,
+				silent: true,
+				copies: 1,
+			});
+
+			assert.equal(res.success, true);
+			assert.equal(res.method, "desktop_silent");
+			assert.equal(res.pageSize, "A4");
+			assert.equal(res.landscape, false);
+			assert.ok(lastPrintParams);
+			assert.equal(lastPrintParams.pageSize, "A4");
+			assert.equal(lastPrintParams.silent, true);
+		} finally {
+			if (originalWindowDesc) {
+				Object.defineProperty(globalThis, "window", originalWindowDesc);
+			} else {
+				delete (globalThis as any).window;
+			}
+		}
+	});
+
+	await t.test("15. Visiograph Acquisition Auto-Discovery & USB Scanner Event Propagation", async () => {
+		const originalWindowDesc = Object.getOwnPropertyDescriptor(globalThis, "window");
+
+		let capturedSensorId: string | null = null;
+		const dispatchedEvents: string[] = [];
+
+		const mockDesktopApi: Partial<DesktopNativeApi> = {
+			isDesktop: true,
+			platform: "win32",
+			version: "0.1.0",
+			listTwainDevices: async () => [
+				{ id: "sensor-vatech-01", name: "Vatech EzSensor Classic", type: "sensor", connected: true },
+				{ id: "cam-intraoral-01", name: "Carestream RVG Cam", type: "camera", connected: false },
+			],
+			acquireTwainImage: async (deviceId) => {
+				capturedSensorId = deviceId;
+				return { success: true, dataBase64: "data:image/jpeg;base64,mockxraydata" };
+			},
+		};
+
+		Object.defineProperty(globalThis, "window", {
+			value: {
+				denteDesktopNative: mockDesktopApi as DesktopNativeApi,
+				dispatchEvent: (event: any) => {
+					if (event && event.type) dispatchedEvents.push(event.type);
+					return true;
+				},
+				addEventListener: () => {},
+				removeEventListener: () => {},
+			},
+			configurable: true,
+			writable: true,
+		});
+
+		try {
+			// Without passing explicit deviceId, dispatcher auto-selects connected sensor
+			const vRes = await dispatchVisiographAcquisition();
+			assert.equal(vRes.success, true);
+			assert.equal(capturedSensorId, "sensor-vatech-01");
+			assert.ok(vRes.dataUri?.startsWith("data:image/jpeg"));
+
+			// Test USB HID scanner detector event propagation
+			const detector = createUsbHidScannerDetector({ minBarcodeLength: 3, maxInterKeyDelayMs: 50 });
+			detector.start();
+
+			const now = Date.now();
+			detector.processKey("D", now);
+			detector.processKey("E", now + 10);
+			detector.processKey("N", now + 20);
+			detector.processKey("T", now + 30);
+			const scanResult = detector.processKey("Enter", now + 40);
+
+			assert.ok(scanResult);
+			assert.equal(scanResult.rawCode, "DENT");
+			assert.ok(dispatchedEvents.includes("dente:usb-barcode-scanned"));
+			assert.ok(dispatchedEvents.includes("dente:barcode-scanned"));
+
+			detector.stop();
+		} finally {
+			if (originalWindowDesc) {
+				Object.defineProperty(globalThis, "window", originalWindowDesc);
+			} else {
+				delete (globalThis as any).window;
+			}
+		}
 	});
 });

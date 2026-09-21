@@ -240,7 +240,19 @@ export interface DesktopNativeApi {
 		title?: string | undefined;
 		silent?: boolean | undefined;
 		copies?: number | undefined;
+		pageSize?: "A4" | "A5" | "Letter" | "Legal" | string | undefined;
+		landscape?: boolean | undefined;
+		margins?: {
+			marginType?: "default" | "none" | "printableArea" | "custom";
+			top?: number;
+			bottom?: number;
+			left?: number;
+			right?: number;
+		} | undefined;
 	}) => Promise<{ success: boolean; error?: string }>;
+	onDesktopSoftRefresh?: (callback: () => void) => () => void;
+	onDesktopPrintRequest?: (callback: () => void) => () => void;
+	onDesktopSaveRequest?: (callback: () => void) => () => void;
 }
 
 declare global {
@@ -844,12 +856,23 @@ export interface DesktopDocumentPrintOptions {
 	title?: string | undefined;
 	silent?: boolean | undefined;
 	copies?: number | undefined;
+	pageSize?: "A4" | "A5" | "Letter" | "Legal" | string | undefined;
+	landscape?: boolean | undefined;
+	margins?: {
+		marginType?: "default" | "none" | "printableArea" | "custom";
+		top?: number;
+		bottom?: number;
+		left?: number;
+		right?: number;
+	} | undefined;
 }
 
 export interface DesktopDocumentPrintResult {
 	success: boolean;
 	method: "desktop_silent" | "iframe_silent" | "browser_dialog";
 	printerName?: string | undefined;
+	pageSize?: string | undefined;
+	landscape?: boolean | undefined;
 	error?: string | undefined;
 }
 
@@ -871,6 +894,8 @@ export async function printDesktopDocumentSilent(
 				success: res.success,
 				method: "desktop_silent",
 				printerName: options.printerName,
+				pageSize: options.pageSize,
+				landscape: options.landscape,
 				error: res.error,
 			};
 		} catch (err: unknown) {
@@ -1256,6 +1281,38 @@ export function createUsbHidScannerDetector(options: UsbHidScannerOptions = {}) 
 
 				triggerHaptic("success");
 				options.onScan?.(scanEvent);
+
+				if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+					try {
+						window.dispatchEvent(
+							new CustomEvent("dente:usb-barcode-scanned", {
+								detail: {
+									code: rawCode,
+									rawCode,
+									format: parsedGs1.isGs1 ? "gs1_datamatrix" : "code128",
+									parsedGs1,
+									timestamp,
+									durationMs,
+									source: "usb_hid_scanner",
+								},
+							}),
+						);
+						window.dispatchEvent(
+							new CustomEvent("dente:barcode-scanned", {
+								detail: {
+									code: rawCode,
+									rawCode,
+									format: parsedGs1.isGs1 ? "gs1_datamatrix" : "code128",
+									parsedGs1,
+									source: "usb_hid_scanner",
+								},
+							}),
+						);
+					} catch {
+						// Ignore event dispatch failure in non-browser envs
+					}
+				}
+
 				buffer = [];
 				return scanEvent;
 			}
@@ -1488,6 +1545,81 @@ export function registerDesktopHotkeys(
 
 	const preventF5 = options.preventF5Reload !== false;
 
+	const nativeApi = getDesktopNativeApi();
+	const unsubs: Array<() => void> = [];
+
+	if (nativeApi?.onDesktopSoftRefresh) {
+		unsubs.push(
+			nativeApi.onDesktopSoftRefresh(() => {
+				if (handlers.onF5Refresh) {
+					handlers.onF5Refresh();
+				} else if (typeof window !== "undefined") {
+					window.dispatchEvent(new CustomEvent("dente:soft-refresh", { bubbles: true }));
+				}
+			}),
+		);
+	}
+	if (nativeApi?.onDesktopPrintRequest) {
+		unsubs.push(
+			nativeApi.onDesktopPrintRequest(() => {
+				triggerHaptic("selection");
+				if (handlers.onPrint) {
+					void handlers.onPrint();
+				} else if (typeof window !== "undefined") {
+					window.dispatchEvent(new CustomEvent("dente:print-active-document", { bubbles: true }));
+				}
+			}),
+		);
+	}
+	if (nativeApi?.onDesktopSaveRequest) {
+		unsubs.push(
+			nativeApi.onDesktopSaveRequest(() => {
+				triggerHaptic("selection");
+				if (handlers.onSave) {
+					void handlers.onSave();
+				} else if (typeof window !== "undefined") {
+					window.dispatchEvent(new CustomEvent("dente:save-card", { bubbles: true }));
+				}
+			}),
+		);
+	}
+
+	if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+		const onSoftRefreshEvent = () => {
+			if (handlers.onF5Refresh) {
+				handlers.onF5Refresh();
+			} else {
+				window.dispatchEvent(new CustomEvent("dente:soft-refresh", { bubbles: true }));
+			}
+		};
+		const onPrintRequestEvent = () => {
+			triggerHaptic("selection");
+			if (handlers.onPrint) {
+				void handlers.onPrint();
+			} else {
+				window.dispatchEvent(new CustomEvent("dente:print-active-document", { bubbles: true }));
+			}
+		};
+		const onSaveRequestEvent = () => {
+			triggerHaptic("selection");
+			if (handlers.onSave) {
+				void handlers.onSave();
+			} else {
+				window.dispatchEvent(new CustomEvent("dente:save-card", { bubbles: true }));
+			}
+		};
+
+		window.addEventListener("dente:desktop-soft-refresh", onSoftRefreshEvent);
+		window.addEventListener("dente:desktop-print-request", onPrintRequestEvent);
+		window.addEventListener("dente:desktop-save-request", onSaveRequestEvent);
+
+		unsubs.push(() => {
+			window.removeEventListener("dente:desktop-soft-refresh", onSoftRefreshEvent);
+			window.removeEventListener("dente:desktop-print-request", onPrintRequestEvent);
+			window.removeEventListener("dente:desktop-save-request", onSaveRequestEvent);
+		});
+	}
+
 	const handleKeyDown = (event: KeyboardEvent) => {
 		const key = event.key ? event.key.toLowerCase() : "";
 		const code = event.code || "";
@@ -1662,6 +1794,11 @@ export function registerDesktopHotkeys(
 		.addEventListener("keydown", handleKeyDown as EventListener, true);
 
 	return () => {
+		for (const unsub of unsubs) {
+			try {
+				unsub();
+			} catch {}
+		}
 		(target as { removeEventListener: (type: string, listener: EventListener, options?: boolean) => void })
 			.removeEventListener("keydown", handleKeyDown as EventListener, true);
 	};

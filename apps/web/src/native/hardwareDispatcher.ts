@@ -14,6 +14,7 @@ import {
 	getDesktopNativeApi,
 	isDesktopApp,
 	listDesktopPrinters,
+	listDesktopTwainDevices,
 	printDesktopEscPosReceipt,
 	printDesktopFiscalReceiptTcp,
 	printDesktopThermalLabel,
@@ -108,8 +109,26 @@ export async function dispatchUniversalScan(): Promise<UniversalScannerResult> {
 export async function dispatchVisiographAcquisition(deviceId?: string): Promise<TwainAcquisitionResult> {
 	const platform = detectRuntimePlatform();
 
-	if (platform === "desktop_win" && deviceId) {
-		return acquireDesktopVisiographImage(deviceId);
+	if (platform === "desktop_win") {
+		let targetDeviceId = deviceId;
+		if (!targetDeviceId) {
+			try {
+				const devices = await listDesktopTwainDevices();
+				const connectedSensor =
+					devices.find((d) => d.connected && (d.type === "sensor" || d.type === "scanner")) ??
+					devices.find((d) => d.connected) ??
+					devices[0];
+				if (connectedSensor) {
+					targetDeviceId = connectedSensor.id;
+				}
+			} catch (err: unknown) {
+				logger.warn("[hardwareDispatcher] auto-detection of TWAIN sensor failed:", err);
+			}
+		}
+
+		if (targetDeviceId) {
+			return acquireDesktopVisiographImage(targetDeviceId);
+		}
 	}
 
 	return {
