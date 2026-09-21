@@ -29,9 +29,12 @@ import {
 	isValidOrder804nCode,
 	kopecksToRubles,
 	parseRawCsvText,
+	parseUnstructuredPriceText,
+	proposalToPricelistItem,
 	roundPrice,
 	rublesToKopecks,
 	searchPricelistItems,
+	sortPricelistItems,
 	UTF8_BOM,
 } from '../components/catalog/pricelist/servicePricelistEngine';
 
@@ -474,5 +477,98 @@ describe('Statutory Order 804n Service Catalog & Pricelist Matrix Suite', () => 
 		});
 	});
 
+	describe('11. Unstructured Price Text Smart Parser & Column Sorting (Mandates 8e, 8k)', () => {
+		it('parses messy legacy price lines with various price formats and auto-maps 804n codes', () => {
+			const rawLegacyText = `
+Прейскурант стоматологии 2024 г.
+A16.07.002.001 Наложение пломбы светового отверждения 4 500 руб.
+Лечение глубокого кариеса - 3500
+1.1. Сложное удаление ретинированного зуба мудрости 5 200 ₽
+Установка имплантата Straumann SLA	38000
+Коронка из диоксида циркония (Prettau) 18000 руб
+Анестезия инфильтрационная Убистезин 700 р
+Компьютерная томография КЛКТ двух челюстей - 3 500
+Профессиональная гигиена полости рта (AirFlow + УЗ) 4800
+			`.trim();
+
+			const parsed = parseUnstructuredPriceText(rawLegacyText);
+			assert.equal(parsed.length, 8);
+
+			// Check first line with explicit code
+			assert.equal(parsed[0].detectedCode804n, 'A16.07.002.001');
+			assert.equal(parsed[0].priceRub, 4500);
+			assert.equal(parsed[0].suggestedCategory, 'therapy');
+			assert.equal(parsed[0].confidence, 'exact_code');
+
+			// Check line with heuristic keyword match (кариес)
+			assert.equal(parsed[1].detectedCode804n, 'A16.07.002');
+			assert.equal(parsed[1].priceRub, 3500);
+			assert.equal(parsed[1].suggestedCategory, 'therapy');
+			assert.equal(parsed[1].confidence, 'keyword_match');
+
+			// Check surgery / wisdom tooth
+			assert.equal(parsed[2].detectedCode804n, 'A16.07.001');
+			assert.equal(parsed[2].priceRub, 5200);
+			assert.equal(parsed[2].suggestedCategory, 'surgery');
+
+			// Check implant
+			assert.equal(parsed[3].detectedCode804n, 'A16.07.054');
+			assert.equal(parsed[3].priceRub, 38000);
+			assert.equal(parsed[3].suggestedCategory, 'surgery');
+
+			// Check crown / orthopedics
+			assert.equal(parsed[4].detectedCode804n, 'A16.07.004');
+			assert.equal(parsed[4].priceRub, 18000);
+			assert.equal(parsed[4].suggestedCategory, 'orthopedics');
+
+			// Check anesthesia
+			assert.equal(parsed[5].detectedCode804n, 'A11.07.012');
+			assert.equal(parsed[5].priceRub, 700);
+			assert.equal(parsed[5].suggestedCategory, 'anesthesia');
+
+			// Check radiology (КЛКТ)
+			assert.equal(parsed[6].detectedCode804n, 'A06.07.003');
+			assert.equal(parsed[6].priceRub, 3500);
+			assert.equal(parsed[6].suggestedCategory, 'radiology');
+
+			// Check hygiene
+			assert.equal(parsed[7].detectedCode804n, 'A16.07.051');
+			assert.equal(parsed[7].priceRub, 4800);
+			assert.equal(parsed[7].suggestedCategory, 'hygiene');
+		});
+
+		it('converts parsed proposals to valid ServicePricelistItem objects', () => {
+			const proposals = parseUnstructuredPriceText('Лечение кариеса 3500');
+			assert.equal(proposals.length, 1);
+			const item = proposalToPricelistItem(proposals[0]);
+			assert.ok(item.id.startsWith('srv-imp-'));
+			assert.equal(item.basePriceRub, 3500);
+			assert.equal(item.basePriceKopecks, 350000);
+			assert.equal(item.category, 'therapy');
+			assert.equal(item.isActive, true);
+		});
+
+		it('sorts catalog items by price, title, code and margin ascending/descending', () => {
+			const sample = STATUTORY_ORDER_804N_PRESETS.slice(0, 10);
+
+			const sortedByPriceAsc = sortPricelistItems(sample, 'price', 'asc');
+			for (let i = 1; i < sortedByPriceAsc.length; i++) {
+				assert.ok(sortedByPriceAsc[i].basePriceRub >= sortedByPriceAsc[i - 1].basePriceRub);
+			}
+
+			const sortedByPriceDesc = sortPricelistItems(sample, 'price', 'desc');
+			for (let i = 1; i < sortedByPriceDesc.length; i++) {
+				assert.ok(sortedByPriceDesc[i].basePriceRub <= sortedByPriceDesc[i - 1].basePriceRub);
+			}
+
+			const sortedByTitle = sortPricelistItems(sample, 'title', 'asc');
+			assert.ok(sortedByTitle.length === sample.length);
+
+			const sortedByCode = sortPricelistItems(sample, 'code', 'asc');
+			assert.ok(sortedByCode.length === sample.length);
+		});
+	});
+
 });
+
 

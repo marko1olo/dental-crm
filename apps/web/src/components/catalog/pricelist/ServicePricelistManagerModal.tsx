@@ -44,9 +44,15 @@ import {
 	generatePrintablePricelistHtml,
 	importPricelistFromCsv,
 	isValidOrder804nCode,
+	parseUnstructuredPriceText,
+	proposalToPricelistItem,
 	rublesToKopecks,
 	searchPricelistItems,
+	sortPricelistItems,
+	type ParsedPriceProposal,
 	type PriceRoundingMode,
+	type PricelistSortDirection,
+	type PricelistSortField,
 } from './servicePricelistEngine';
 import {
 	CATEGORY_LABELS,
@@ -114,6 +120,19 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 	// Secondary Action Menu Row ID
 	const [openMenuRowId, setOpenMenuRowId] = useState<string | null>(null);
 	const [isBatchBarOpen, setIsBatchBarOpen] = useState(false);
+
+	// Sorting State (Mandate 8c)
+	const [sortField, setSortField] = useState<PricelistSortField>('code');
+	const [sortDirection, setSortDirection] = useState<PricelistSortDirection>('asc');
+
+	// Inline Price Quick Edit State
+	const [editingPriceCellId, setEditingPriceCellId] = useState<string | null>(null);
+	const [editingPriceBuffer, setEditingPriceBuffer] = useState<string>('');
+
+	// Import Modal Mode: 'smart_text' | 'csv'
+	const [importMode, setImportMode] = useState<'smart_text' | 'csv'>('smart_text');
+	const [smartTextInput, setSmartTextInput] = useState('');
+	const [parsedProposals, setParsedProposals] = useState<readonly ParsedPriceProposal[]>([]);
 
 	// CSV Import Modal State
 	const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -279,23 +298,91 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 		showToast('Услуга удалена из прейскуранта');
 	};
 
-	// Filtered Catalog
+	// Filtered & Sorted Catalog (Mandate 8c)
 	const filteredItems = useMemo(() => {
-		return searchPricelistItems(items, {
+		const searchResults = searchPricelistItems(items, {
 			searchTerm,
 			category: selectedCategory,
 			specialty: selectedSpecialty,
 			includeArchived: false,
 		});
-	}, [items, searchTerm, selectedCategory, selectedSpecialty]);
+		return sortPricelistItems(searchResults, sortField, sortDirection, activeTier);
+	}, [items, searchTerm, selectedCategory, selectedSpecialty, sortField, sortDirection, activeTier]);
+
+	const handleToggleSort = (field: PricelistSortField) => {
+		if (sortField === field) {
+			setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+		} else {
+			setSortField(field);
+			setSortDirection('asc');
+		}
+	};
+
+	// Quick 1-click delta price modifier (+100 ₽, +500 ₽, -500 ₽)
+	const handleModifyPriceDelta = (itemId: string, deltaRub: number) => {
+		setItems((prev) =>
+			prev.map((item) => {
+				if (item.id !== itemId) return item;
+				const current = calculateTierPrice(item.basePriceRub, activeTier, item.tierPrices?.[activeTier]);
+				const nextPrice = Math.max(0, current + deltaRub);
+				if (activeTier === 'standard') {
+					return {
+						...item,
+						basePriceRub: nextPrice,
+						basePriceKopecks: rublesToKopecks(nextPrice),
+					};
+				}
+				return {
+					...item,
+					tierPrices: {
+						...(item.tierPrices || {}),
+						[activeTier]: nextPrice,
+					},
+				};
+			}),
+		);
+		showToast(`Цена обновлена (${deltaRub > 0 ? `+${deltaRub}` : deltaRub} ₽)`);
+	};
+
+	// Commit inline text input on blur or Enter
+	const handleCommitInlinePrice = (itemId: string, rawInput: string) => {
+		const cleanDigits = rawInput.replace(/\s+/g, '').replace(/[^\d]/g, '');
+		const parsed = parseInt(cleanDigits, 10);
+		if (!Number.isNaN(parsed) && parsed >= 0) {
+			handleInlinePriceChange(itemId, parsed);
+			showToast(`Цена обновлена: ${formatRubles(parsed)}`);
+		}
+		setEditingPriceCellId(null);
+	};
+
+	// Smart Unstructured Text Parser Handlers
+	const handleParseSmartText = (text: string) => {
+		setSmartTextInput(text);
+		if (!text.trim()) {
+			setParsedProposals([]);
+			return;
+		}
+		const proposals = parseUnstructuredPriceText(text);
+		setParsedProposals(proposals);
+	};
+
+	const handleApplySmartProposals = () => {
+		if (parsedProposals.length === 0) return;
+		const newItems = parsedProposals.map(proposalToPricelistItem);
+		setItems((prev) => [...newItems, ...prev]);
+		showToast(`Успешно добавлено ${newItems.length} позиций из умного парсера`);
+		setIsImportModalOpen(false);
+		setSmartTextInput('');
+		setParsedProposals([]);
+	};
 
 	// DOM Virtualization & Chunking (Mandate 8c, 8n - Wave 252 Low-Spec Protection)
 	const [displayLimit, setDisplayLimit] = useState(40);
 
-	// Сброс лимита видимости при смене фильтров и поиска
+	// Сброс лимита видимости при смене фильтров, сортировки и поиска
 	useEffect(() => {
 		setDisplayLimit(40);
-	}, [searchTerm, selectedCategory, selectedSpecialty, activeTier]);
+	}, [searchTerm, selectedCategory, selectedSpecialty, activeTier, sortField, sortDirection]);
 
 	// Виртуализация списка услуг порциями по 40 элементов (снижение DOM узлов с 7500+ до ~300)
 	const pricelistSlice = useMemo(() => {
@@ -770,14 +857,38 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 											}}
 										/>
 									</th>
-									<th style={{ width: '120px' }}>Код 804н</th>
-									<th>Наименование медицинской услуги</th>
-									<th style={{ width: '140px' }}>Специальность</th>
-									<th style={{ width: '140px', textAlign: 'right' }}>
-										Цена ({activeTier === 'standard' ? 'Руб.' : activeTier.toUpperCase()})
+									<th style={{ width: '120px', cursor: 'pointer' }} onClick={() => handleToggleSort('code')}>
+										<div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+											<span>Код 804н</span>
+											<ArrowUpDown size={12} style={{ opacity: sortField === 'code' ? 1 : 0.35 }} />
+										</div>
 									</th>
-									<th style={{ width: '110px', textAlign: 'center' }}>Маржа %</th>
-									<th style={{ width: '100px', textAlign: 'center' }}>Длительность</th>
+									<th style={{ cursor: 'pointer' }} onClick={() => handleToggleSort('title')}>
+										<div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+											<span>Наименование медицинской услуги</span>
+											<ArrowUpDown size={12} style={{ opacity: sortField === 'title' ? 1 : 0.35 }} />
+										</div>
+									</th>
+									<th style={{ width: '130px' }}>Специальность</th>
+									<th style={{ width: '210px', textAlign: 'right', cursor: 'pointer' }} onClick={() => handleToggleSort('price')}>
+										<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+											<span>Цена ({activeTier === 'standard' ? 'Руб.' : activeTier.toUpperCase()})</span>
+											<ArrowUpDown size={12} style={{ opacity: sortField === 'price' ? 1 : 0.35 }} />
+										</div>
+									</th>
+									<th style={{ width: '90px', textAlign: 'center', cursor: 'pointer' }} onClick={() => handleToggleSort('margin')}>
+										<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+											<span>Маржа %</span>
+											<ArrowUpDown size={12} style={{ opacity: sortField === 'margin' ? 1 : 0.35 }} />
+										</div>
+									</th>
+									<th style={{ width: '90px', textAlign: 'center', cursor: 'pointer' }} onClick={() => handleToggleSort('duration')}>
+										<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+											<span>Время</span>
+											<ArrowUpDown size={12} style={{ opacity: sortField === 'duration' ? 1 : 0.35 }} />
+										</div>
+									</th>
+									<th style={{ width: '90px', textAlign: 'center' }}>Действия</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -817,7 +928,14 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 											</td>
 											<td>
 												<div className="service-title-cell">
-													<div className="service-commercial-name">{item.commercialTitle}</div>
+													<div
+														className="service-commercial-name"
+														style={{ cursor: 'pointer' }}
+														onClick={() => openEditModal(item)}
+														title="Кликните для редактирования карточки услуги"
+													>
+														{item.commercialTitle}
+													</div>
 													<div className="service-statutory-name">{item.statutoryTitle804n}</div>
 													{item.icd10Indications.length > 0 && (
 														<div className="service-meta-tags">
@@ -835,19 +953,74 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 													{SPECIALTY_LABELS[item.specialty] ?? item.specialty}
 												</span>
 											</td>
-											<td style={{ textAlign: 'right' }}>
-												<div className="price-edit-container" style={{ justifyContent: 'flex-end' }}>
-													<input
-														type="number"
-														className="price-input-quick"
-														value={currentPrice}
-														onChange={(e) =>
-															handleInlinePriceChange(item.id, parseFloat(e.target.value))
-														}
-														step={100}
-														min={0}
-													/>
-													<span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>₽</span>
+											<td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+												<div className="price-edit-container" style={{ justifyContent: 'flex-end', gap: '4px' }}>
+													{editingPriceCellId === item.id ? (
+														<div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+															<input
+																type="text"
+																inputMode="numeric"
+																className="price-input-quick"
+																style={{ width: '85px', fontWeight: 600, textAlign: 'right', height: '28px', padding: '0 4px' }}
+																autoFocus
+																value={editingPriceBuffer}
+																onChange={(e) => setEditingPriceBuffer(e.target.value.replace(/[^\d]/g, ''))}
+																onKeyDown={(e) => {
+																	if (e.key === 'Enter') {
+																		handleCommitInlinePrice(item.id, editingPriceBuffer);
+																	} else if (e.key === 'Escape') {
+																		setEditingPriceCellId(null);
+																	}
+																}}
+																onBlur={() => handleCommitInlinePrice(item.id, editingPriceBuffer)}
+															/>
+															<span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>₽</span>
+														</div>
+													) : (
+														<button
+															type="button"
+															onClick={() => {
+																setEditingPriceCellId(item.id);
+																setEditingPriceBuffer(String(currentPrice));
+															}}
+															title="Кликните для ввода цены с клавиатуры"
+															style={{
+																background: 'transparent',
+																border: '1px solid transparent',
+																borderRadius: '4px',
+																padding: '2px 4px',
+																cursor: 'pointer',
+																fontWeight: 600,
+																fontSize: '0.8125rem',
+																color: 'var(--ink)',
+																display: 'inline-flex',
+																alignItems: 'center',
+																gap: '3px',
+															}}
+														>
+															<span>{formatRubles(currentPrice)}</span>
+															<Edit3 size={11} style={{ opacity: 0.4 }} />
+														</button>
+													)}
+
+													<button
+														type="button"
+														className="batch-quick-btn"
+														style={{ padding: '0 4px', fontSize: '0.6875rem', height: '22px', minWidth: '32px' }}
+														onClick={() => handleModifyPriceDelta(item.id, 500)}
+														title="Прибавить 500 ₽"
+													>
+														+500
+													</button>
+													<button
+														type="button"
+														className="batch-quick-btn"
+														style={{ padding: '0 4px', fontSize: '0.6875rem', height: '22px', minWidth: '32px' }}
+														onClick={() => handleModifyPriceDelta(item.id, -500)}
+														title="Вычесть 500 ₽"
+													>
+														-500
+													</button>
 												</div>
 											</td>
 											<td style={{ textAlign: 'center' }}>
@@ -858,13 +1031,44 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 											<td style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--muted)' }}>
 												{item.estimatedDurationMin} мин
 											</td>
+											<td style={{ textAlign: 'center', width: '90px', whiteSpace: 'nowrap' }}>
+												<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+													<button
+														type="button"
+														className="pricelist-btn pricelist-btn-icon"
+														style={{ width: '26px', height: '26px', padding: 0 }}
+														onClick={() => openEditModal(item)}
+														title="Редактировать карточку услуги"
+													>
+														<Edit3 size={13} />
+													</button>
+													<button
+														type="button"
+														className="pricelist-btn pricelist-btn-icon"
+														style={{ width: '26px', height: '26px', padding: 0 }}
+														onClick={() => handleDuplicateItem(item)}
+														title="Создать копию услуги"
+													>
+														<Copy size={13} />
+													</button>
+													<button
+														type="button"
+														className="pricelist-btn pricelist-btn-icon"
+														style={{ width: '26px', height: '26px', padding: 0, color: 'var(--alert-fg, #ef4444)' }}
+														onClick={() => handleDeleteItem(item.id)}
+														title="Удалить услугу"
+													>
+														<Trash2 size={13} />
+													</button>
+												</div>
+											</td>
 										</tr>
 									);
 								})}
 
 								{pricelistSlice.hasMore && (
 									<tr>
-										<td colSpan={7} style={{ textAlign: 'center', padding: '0.75rem' }}>
+										<td colSpan={8} style={{ textAlign: 'center', padding: '0.75rem' }}>
 											<button
 												type="button"
 												className="pricelist-btn btn-pricelist-show-more"
@@ -880,7 +1084,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 
 								{filteredItems.length === 0 && (
 									<tr>
-										<td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: 'var(--muted)' }}>
+										<td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: 'var(--muted)' }}>
 											<AlertCircle size={32} style={{ margin: '0 auto 0.5rem', opacity: 0.5 }} />
 											<div>Позиции по запросу не найдены</div>
 										</td>
@@ -906,82 +1110,192 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 				</footer>
 			</div>
 
-			{/* CSV Import Modal */}
+			{/* Multi-Format Import Modal (Smart Text & CSV) */}
 			{isImportModalOpen && (
 				<div className="csv-import-modal" role="dialog" aria-modal="true">
-					<div className="csv-import-container">
+					<div className="csv-import-container" style={{ maxWidth: '780px', width: '95%' }}>
 						<header className="pricelist-modal-header">
-							<div className="pricelist-header-title">Импорт прейскуранта из CSV / Excel</div>
+							<div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+								<div className="pricelist-header-title">Импорт прейскуранта</div>
+								{/* Segmented Mode Selector */}
+								<div className="pricelist-tier-segmented" style={{ padding: '2px' }}>
+									<button
+										type="button"
+										className={`tier-segment-btn ${importMode === 'smart_text' ? 'active' : ''}`}
+										style={{ minHeight: '28px', padding: '0.2rem 0.6rem', fontSize: '0.75rem', gap: '0.375rem' }}
+										onClick={() => setImportMode('smart_text')}
+									>
+										<Sparkles size={13} />
+										<span>Умный текст (Word / PDF / Скан)</span>
+									</button>
+									<button
+										type="button"
+										className={`tier-segment-btn ${importMode === 'csv' ? 'active' : ''}`}
+										style={{ minHeight: '28px', padding: '0.2rem 0.6rem', fontSize: '0.75rem', gap: '0.375rem' }}
+										onClick={() => setImportMode('csv')}
+									>
+										<FileSpreadsheet size={13} />
+										<span>CSV / Excel</span>
+									</button>
+								</div>
+							</div>
 							<button
 								type="button"
 								className="pricelist-btn pricelist-btn-icon"
 								onClick={() => setIsImportModalOpen(false)}
+								aria-label="Закрыть"
 							>
 								<X size={18} />
 							</button>
 						</header>
 
 						<div className="csv-import-body">
-							<label className="csv-dropzone">
-								<FileSpreadsheet size={36} style={{ color: 'var(--brand-500)' }} />
-								<div style={{ fontWeight: 600 }}>Выберите или перетащите CSV-файл прейскуранта</div>
-								<div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-									Поддерживается разделитель точка с запятой (;) или запятая (,), кодировка UTF-8
-								</div>
-								<input
-									type="file"
-									accept=".csv,.txt"
-									style={{ display: 'none' }}
-									onChange={handleFileUpload}
-								/>
-							</label>
+							{importMode === 'smart_text' ? (
+								<div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+									<div style={{ fontSize: '0.8125rem', color: 'var(--muted)' }}>
+										Вставьте скопированный текст из старого прейскуранта клиники, выгрузки Word или распознанного PDF.
+										Алгоритм автоматически выделит цены, очистит наименования и сопоставит услуги с Номенклатурой Минздрава РФ 804н.
+									</div>
 
-							<div>
-								<div style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.375rem' }}>
-									Или вставьте текст таблицы CSV:
-								</div>
-								<textarea
-									className="pricelist-search-input"
-									style={{ height: '140px', fontFamily: 'monospace', fontSize: '0.75rem', padding: '0.5rem' }}
-									placeholder="Код 804н;Коммерческое наименование;Категория;Цена standard..."
-									value={csvInputText}
-									onChange={(e) => setCsvInputText(e.target.value)}
-								/>
-							</div>
+									<textarea
+										className="pricelist-search-input"
+										style={{ height: '120px', fontFamily: 'monospace', fontSize: '0.75rem', padding: '0.5rem', lineHeight: '1.4' }}
+										placeholder={`Пример строк для вставки:\nA16.07.002.001 Наложение световой пломбы 4 500 руб\nЛечение глубокого кариеса - 3500\nУдаление зуба мудрости сложное 5 200 ₽\nУстановка имплантата Straumann SLA 38000\nКоронка из диоксида циркония 18000 руб\nАнестезия Убистезин 700 р`}
+										value={smartTextInput}
+										onChange={(e) => handleParseSmartText(e.target.value)}
+									/>
 
-							{importErrors.length > 0 && (
-								<div
-									style={{
-										padding: '0.75rem',
-										borderRadius: '6px',
-										background: 'rgba(239, 68, 68, 0.1)',
-										color: 'var(--bad)',
-										fontSize: '0.75rem',
-									}}
-								>
-									<div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>Ошибки при разборе CSV:</div>
-									{importErrors.slice(0, 5).map((err, idx) => (
-										<div key={idx}>• {err}</div>
-									))}
+									{parsedProposals.length > 0 && (
+										<div>
+											<div style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.375rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+												<CheckCircle2 size={15} style={{ color: 'var(--ok-fg, #10b981)' }} />
+												<span>Распознано позиций: {parsedProposals.length}</span>
+											</div>
+											<div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--line)', borderRadius: '6px' }}>
+												<table className="pricelist-data-table" style={{ fontSize: '0.75rem' }}>
+													<thead>
+														<tr>
+															<th style={{ width: '100px' }}>Код 804н</th>
+															<th>Наименование</th>
+															<th style={{ width: '100px' }}>Категория</th>
+															<th style={{ width: '90px', textAlign: 'right' }}>Цена</th>
+															<th style={{ width: '100px', textAlign: 'center' }}>Совпадение</th>
+														</tr>
+													</thead>
+													<tbody>
+														{parsedProposals.map((prop, idx) => (
+															<tr key={idx}>
+																<td>
+																	<span className="pricelist-code-pill">{prop.detectedCode804n}</span>
+																</td>
+																<td>{prop.commercialTitle}</td>
+																<td style={{ color: 'var(--muted)' }}>
+																	{CATEGORY_LABELS[prop.suggestedCategory] ?? prop.suggestedCategory}
+																</td>
+																<td style={{ textAlign: 'right', fontWeight: 600 }}>
+																	{formatRubles(prop.priceRub)}
+																</td>
+																<td style={{ textAlign: 'center' }}>
+																	<span
+																		style={{
+																			fontSize: '0.6875rem',
+																			padding: '1px 6px',
+																			borderRadius: '4px',
+																			background:
+																				prop.confidence === 'exact_code'
+																					? 'rgba(16, 185, 129, 0.15)'
+																					: prop.confidence === 'keyword_match'
+																						? 'rgba(59, 130, 246, 0.15)'
+																						: 'rgba(100, 116, 139, 0.15)',
+																			color:
+																				prop.confidence === 'exact_code'
+																					? 'var(--ok-fg, #10b981)'
+																					: prop.confidence === 'keyword_match'
+																						? 'var(--brand-500, #3b82f6)'
+																						: 'var(--muted)',
+																		}}
+																	>
+																		{prop.confidence === 'exact_code'
+																			? 'Код 804н'
+																			: prop.confidence === 'keyword_match'
+																				? 'Синоним'
+																				: 'Базовый'}
+																	</span>
+																</td>
+															</tr>
+														))}
+													</tbody>
+												</table>
+											</div>
+										</div>
+									)}
 								</div>
-							)}
+							) : (
+								<div>
+									<label className="csv-dropzone">
+										<FileSpreadsheet size={36} style={{ color: 'var(--brand-500)' }} />
+										<div style={{ fontWeight: 600 }}>Выберите или перетащите CSV-файл прейскуранта</div>
+										<div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+											Поддерживается разделитель точка с запятой (;) или запятая (,), кодировка UTF-8
+										</div>
+										<input
+											type="file"
+											accept=".csv,.txt"
+											style={{ display: 'none' }}
+											onChange={handleFileUpload}
+										/>
+									</label>
 
-							{importSuccessCount !== null && (
-								<div
-									style={{
-										padding: '0.75rem',
-										borderRadius: '6px',
-										background: 'rgba(16, 185, 129, 0.1)',
-										color: 'var(--ok-fg)',
-										fontSize: '0.8125rem',
-										fontWeight: 600,
-										display: 'flex',
-										alignItems: 'center',
-										gap: '0.5rem',
-									}}
-								>
-									<CheckCircle2 size={16} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-									<span>Успешно распознано {importSuccessCount} услуг</span>
+									<div style={{ marginTop: '0.75rem' }}>
+										<div style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.375rem' }}>
+											Или вставьте текст таблицы CSV:
+										</div>
+										<textarea
+											className="pricelist-search-input"
+											style={{ height: '120px', fontFamily: 'monospace', fontSize: '0.75rem', padding: '0.5rem' }}
+											placeholder="Код 804н;Коммерческое наименование;Категория;Цена standard..."
+											value={csvInputText}
+											onChange={(e) => setCsvInputText(e.target.value)}
+										/>
+									</div>
+
+									{importErrors.length > 0 && (
+										<div
+											style={{
+												marginTop: '0.5rem',
+												padding: '0.75rem',
+												borderRadius: '6px',
+												background: 'rgba(239, 68, 68, 0.1)',
+												color: 'var(--bad)',
+												fontSize: '0.75rem',
+											}}
+										>
+											<div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>Ошибки при разборе CSV:</div>
+											{importErrors.slice(0, 5).map((err, idx) => (
+												<div key={idx}>• {err}</div>
+											))}
+										</div>
+									)}
+
+									{importSuccessCount !== null && (
+										<div
+											style={{
+												marginTop: '0.5rem',
+												padding: '0.75rem',
+												borderRadius: '6px',
+												background: 'rgba(16, 185, 129, 0.1)',
+												color: 'var(--ok-fg)',
+												fontSize: '0.8125rem',
+												fontWeight: 600,
+												display: 'flex',
+												alignItems: 'center',
+												gap: '0.5rem',
+											}}
+										>
+											<CheckCircle2 size={16} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+											<span>Успешно распознано {importSuccessCount} услуг</span>
+										</div>
+									)}
 								</div>
 							)}
 						</div>
@@ -1002,13 +1316,24 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 							>
 								Отмена
 							</button>
-							<button
-								type="button"
-								className="pricelist-btn pricelist-btn-primary"
-								onClick={handleImportCsv}
-							>
-								Загрузить в прейскурант
-							</button>
+							{importMode === 'smart_text' ? (
+								<button
+									type="button"
+									className="pricelist-btn pricelist-btn-primary"
+									disabled={parsedProposals.length === 0}
+									onClick={handleApplySmartProposals}
+								>
+									Загрузить в прейскурант ({parsedProposals.length})
+								</button>
+							) : (
+								<button
+									type="button"
+									className="pricelist-btn pricelist-btn-primary"
+									onClick={handleImportCsv}
+								>
+									Загрузить CSV в прейскурант
+								</button>
+							)}
 						</footer>
 					</div>
 				</div>

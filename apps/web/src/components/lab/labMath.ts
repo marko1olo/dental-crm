@@ -1197,14 +1197,19 @@ const CODE128_PATTERNS = [
  */
 export function generateBarcodeSvg(data: string): string {
 	const rawText = (data || "").trim() || "ZTL-ORDER";
-	// Code 128 Set B encodes standard ASCII 32..126
-	const safeData = rawText.replace(/[^\x20-\x7E]/g, "-").slice(0, 24) || "ZTL-ORDER";
+	// Transliterate common Russian lab prefixes so Code 128 bars are cleanly scannable in standard ASCII
+	const barData = rawText
+		.replace(/ЗТЛ/gi, "ZTL")
+		.replace(/ЛО/gi, "LO")
+		.replace(/НАРЯД/gi, "NARYAD")
+		.replace(/[^\x20-\x7E]/g, "-")
+		.slice(0, 24) || "ZTL-ORDER";
 
 	const symbols: number[] = [];
 	let checksum = 104; // Start Code B (symbol index 104)
 
-	for (let i = 0; i < safeData.length; i++) {
-		const code = safeData.charCodeAt(i);
+	for (let i = 0; i < barData.length; i++) {
+		const code = barData.charCodeAt(i);
 		const sym = code >= 32 && code <= 126 ? code - 32 : 0;
 		symbols.push(sym);
 		checksum += (i + 1) * sym;
@@ -1229,7 +1234,7 @@ export function generateBarcodeSvg(data: string): string {
 		}
 	}
 	const totalWidth = Math.max(x + 10, 160);
-	return `<svg viewBox="0 0 ${totalWidth} 50" xmlns="http://www.w3.org/2000/svg" class="w-full h-12">${bars}<text x="${totalWidth / 2}" y="47" font-size="7" font-family="monospace" text-anchor="middle" fill="currentColor">${safeData}</text></svg>`;
+	return `<svg viewBox="0 0 ${totalWidth} 50" xmlns="http://www.w3.org/2000/svg" class="w-full h-12">${bars}<text x="${totalWidth / 2}" y="47" font-size="7" font-family="monospace" text-anchor="middle" fill="currentColor">${rawText}</text></svg>`;
 }
 
 /**

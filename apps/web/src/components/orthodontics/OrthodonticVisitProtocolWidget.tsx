@@ -97,6 +97,7 @@ export interface OrthodonticService804n {
 	priceRub: number;
 	stageKind: "stage_ortho";
 	toothNumber?: number | undefined;
+	arch?: TargetArch | undefined;
 }
 
 export const ORTHO_804N_ACTIONS_MAP: Record<string, Array<Omit<OrthodonticService804n, "stageKind">>> = {
@@ -187,6 +188,7 @@ export interface CalculateOrthoServicesParams {
 	activeAttachmentPreset?: string | null | undefined;
 	selectedTooth?: number | null | undefined;
 	isAttachmentsOnly?: boolean | undefined;
+	targetArch?: TargetArch | undefined;
 }
 
 export function calculateOrthodonticServices804n(
@@ -218,23 +220,55 @@ export function calculateOrthodonticServices804n(
 		const mapped = ORTHO_804N_ACTIONS_MAP[actionId];
 		if (mapped) {
 			for (const item of mapped) {
-				rawServices.push({
-					...item,
-					stageKind: "stage_ortho",
-					toothNumber:
-						actionId === "rebracket" && params.selectedTooth
-							? params.selectedTooth
-							: undefined,
-				});
+				if (actionId === "wire_change" && item.code === "A16.07.048.002") {
+					if (params.targetArch === "both") {
+						rawServices.push({
+							...item,
+							nameRu: "Смена ортодонтической дуги (ВЧ)",
+							stageKind: "stage_ortho",
+							arch: "upper",
+						});
+						rawServices.push({
+							...item,
+							nameRu: "Смена ортодонтической дуги (НЧ)",
+							stageKind: "stage_ortho",
+							arch: "lower",
+						});
+					} else if (params.targetArch === "upper" || params.targetArch === "lower") {
+						const label = params.targetArch === "upper" ? " (ВЧ)" : " (НЧ)";
+						rawServices.push({
+							...item,
+							nameRu: `${item.nameRu}${label}`,
+							stageKind: "stage_ortho",
+							arch: params.targetArch,
+						});
+					} else {
+						rawServices.push({
+							...item,
+							stageKind: "stage_ortho",
+						});
+					}
+				} else {
+					rawServices.push({
+						...item,
+						stageKind: "stage_ortho",
+						toothNumber:
+							actionId === "rebracket" && params.selectedTooth
+								? params.selectedTooth
+								: undefined,
+					});
+				}
 			}
 		}
 	}
 
-	// Deduplicate by code so patient is not double-billed for identical 804n code in same visit
+	// Deduplicate by composite key (code + arch + toothNumber) so identical services aren't duplicated,
+	// but separate jaw treatments (e.g. upper and lower archwire changes) are preserved with exact kopeck pricing
 	const servicesMap = new Map<string, OrthodonticService804n>();
 	for (const s of rawServices) {
-		if (!servicesMap.has(s.code)) {
-			servicesMap.set(s.code, s);
+		const key = `${s.code}_${s.arch || ""}_${s.toothNumber || ""}`;
+		if (!servicesMap.has(key)) {
+			servicesMap.set(key, s);
 		}
 	}
 
@@ -589,8 +623,9 @@ export function OrthodonticVisitProtocolWidget({
 			bracketSystem,
 			activeAttachmentPreset,
 			selectedTooth,
+			targetArch,
 		});
-	}, [selectedActions, bracketSystem, activeAttachmentPreset, selectedTooth]);
+	}, [selectedActions, bracketSystem, activeAttachmentPreset, selectedTooth, targetArch]);
 
 	// 1-Click explicit add to invoice/estimate
 	const handleAddServicesToInvoice = useCallback(() => {

@@ -5,7 +5,7 @@
  * 1. 1-клик генерация персонализированных текстов («Уважаемый Иван Иванович, напоминаем о приёме завтра...»)
  * 2. Умная маршрутизация канала: Бесплатный Telegram -> WhatsApp -> Каскадный fallback на SMS
  * 3. Фильтр «Тихий час» (ФЗ-152 и ФЗ-38 «О рекламе»): блокировка ночных отправок 21:00 – 08:00
- * 4. 1-клик интерактивные ссылки подтверждения визита («👍 Подтверждаю», «❌ Прошу перенести»)
+ * 4. 1-клик интерактивные ссылки подтверждения визита («[Подтвердить]», «[Перенести]»)
  * 5. CITO экстренный приоритет при острой боли в обход ночной блокировки
  * 6. Пакетная рассылка с формированием буфера для администратора
  */
@@ -208,8 +208,8 @@ describe("TOMORROW REMINDERS DISPATCHER & MULTI-CHANNEL WATERFALL SUITE", () => 
 		assert.strictEqual(rem1.preferredChannel, "telegram");
 		assert.strictEqual(rem1.hasAllergyWarning, true);
 		assert.ok(rem1.allergyWarningText?.includes("пенициллин"));
-		assert.ok(rem1.reminderText.includes("👍 Подтвердить: https://clinic.dente.ru/api/public/appointment/appt-1/confirm"));
-		assert.ok(rem1.reminderText.includes("❌ Перенести: https://clinic.dente.ru/api/public/appointment/appt-1/reschedule"));
+		assert.ok(rem1.reminderText.includes("[Подтвердить]: https://clinic.dente.ru/api/public/appointment/appt-1/confirm"));
+		assert.ok(rem1.reminderText.includes("[Перенести]: https://clinic.dente.ru/api/public/appointment/appt-1/reschedule"));
 
 		// Check Patient 2 (Surgery prep instruction)
 		const rem2 = summary.reminders[1]!;

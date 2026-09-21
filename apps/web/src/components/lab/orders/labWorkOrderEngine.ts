@@ -18,6 +18,7 @@ import {
 	LAB_TECHNOLOGICAL_STAGE_ORDER
 } from './labWorkOrderPresets';
 import { generateQrMatrix, generateQrCodeSvg as sharedGenerateQrCodeSvg } from '@dental/shared';
+import { generateBarcodeSvg as canonicalCode128BarcodeSvg } from '../labMath';
 
 // ---------------------------------------------------------------------------
 // 1. Interfaces & Data Contracts
@@ -251,50 +252,10 @@ export function generateLabOrderNumber(sequenceNum = 1, date = new Date()): stri
 }
 
 /**
- * Generates clean, crisp Code128-style barcode SVG for optical scanners.
+ * Generates clean, authentic Code 128 (ISO/IEC 15417) barcode SVG for optical scanners.
  */
-export function generateBarcodeSvg(data: string, width = 240, height = 50): string {
-	const sanitized = data.replace(/[^A-Za-z0-9\-\/]/g, '').toUpperCase();
-	let hash = 0;
-	for (let i = 0; i < sanitized.length; i++) {
-		hash = ((hash << 5) - hash) + sanitized.charCodeAt(i);
-		hash |= 0;
-	}
-
-	const bars: number[] = [];
-	// Start pattern
-	bars.push(2, 1, 1, 2, 3, 2);
-
-	for (let i = 0; i < sanitized.length; i++) {
-		const code = sanitized.charCodeAt(i);
-		const b1 = (code % 3) + 1;
-		const b2 = ((code >> 2) % 3) + 1;
-		const b3 = ((code >> 4) % 3) + 1;
-		bars.push(b1, b2, b3, 1);
-	}
-
-	// Stop pattern
-	bars.push(2, 3, 3, 1, 1, 1, 2);
-
-	let currentX = 10;
-	let rects = '';
-	const barHeight = height - 16;
-
-	for (let i = 0; i < bars.length; i++) {
-		const barWidth = (bars[i] ?? 1) * 1.5;
-		if (i % 2 === 0) {
-			rects += `<rect x="${currentX}" y="4" width="${barWidth}" height="${barHeight}" fill="#0f172a" />`;
-		}
-		currentX += barWidth;
-	}
-
-	const svgWidth = Math.max(width, currentX + 10);
-
-	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${height}" width="${svgWidth}" height="${height}">
-		<rect width="100%" height="100%" fill="#ffffff" />
-		${rects}
-		<text x="${svgWidth / 2}" y="${height - 2}" font-family="monospace, monospace" font-size="10" font-weight="700" text-anchor="middle" fill="#0f172a">${data}</text>
-	</svg>`;
+export function generateBarcodeSvg(data: string, _width = 240, _height = 50): string {
+	return canonicalCode128BarcodeSvg(data);
 }
 
 /**

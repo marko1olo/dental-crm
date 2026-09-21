@@ -1772,10 +1772,16 @@ export async function purgeSyncedDraftsAndOldCache(): Promise<{
 				const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 				const allCacheReq = cacheStore.getAll();
 				allCacheReq.onsuccess = () => {
-					const entries = (allCacheReq.result || []) as Array<{ key: string; cachedAt?: number }>;
+					const entries = (allCacheReq.result || []) as Array<
+						Partial<PatientClinicalCacheRecord> & { key?: string; cachedAt?: number }
+					>;
 					for (const entry of entries) {
-						if (entry.cachedAt && entry.cachedAt < sevenDaysAgo) {
-							cacheStore.delete(entry.key);
+						const key = entry.cacheKey ?? entry.key;
+						const cachedTime = entry.cachedAtMs ?? entry.cachedAt;
+						if (key && cachedTime && cachedTime < sevenDaysAgo) {
+							cacheStore.delete(key);
+							removeLocalStorageClinicalCache(key);
+							inMemoryClinicalCacheMap.delete(key);
 							purgedCache++;
 						}
 					}

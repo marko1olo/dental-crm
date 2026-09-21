@@ -300,6 +300,41 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 			assert.equal(correction?.stageKind, "stage_ortho");
 		});
 
+		it("bills 2 archwires (5000 rub) + activation when changing wires on both jaws (targetArch: 'both')", () => {
+			const services = calculateOrthodonticServices804n({
+				selectedActions: ["wire_change"],
+				targetArch: "both",
+			});
+			assert.equal(services.length, 3, "Must produce 2 archwires (upper & lower) + 1 activation");
+
+			const upperWire = services.find((s) => s.code === "A16.07.048.002" && s.arch === "upper");
+			assert.ok(upperWire, "Upper archwire must be billed");
+			assert.equal(upperWire?.nameRu, "Смена ортодонтической дуги (ВЧ)");
+			assert.equal(upperWire?.priceRub, 2500);
+
+			const lowerWire = services.find((s) => s.code === "A16.07.048.002" && s.arch === "lower");
+			assert.ok(lowerWire, "Lower archwire must be billed");
+			assert.equal(lowerWire?.nameRu, "Смена ортодонтической дуги (НЧ)");
+			assert.equal(lowerWire?.priceRub, 2500);
+
+			const total = services.reduce((acc, s) => acc + s.priceRub, 0);
+			assert.equal(total, 6500, "Total must be 2500 + 2500 + 1500 = 6500 rub");
+		});
+
+		it("bills 1 archwire with correct label when targetArch is 'upper'", () => {
+			const services = calculateOrthodonticServices804n({
+				selectedActions: ["wire_change"],
+				targetArch: "upper",
+			});
+			assert.equal(services.length, 2);
+
+			const upperWire = services.find((s) => s.code === "A16.07.048.002");
+			assert.ok(upperWire);
+			assert.equal(upperWire?.nameRu, "Смена ортодонтической дуги (ВЧ)");
+			assert.equal(upperWire?.priceRub, 2500);
+			assert.equal(upperWire?.arch, "upper");
+		});
+
 		it("maps ligature_change to A16.07.048 (1500 rub)", () => {
 			const services = calculateOrthodonticServices804n({
 				selectedActions: ["ligature_change"],

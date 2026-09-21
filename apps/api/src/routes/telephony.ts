@@ -80,6 +80,8 @@ export const telephonyWebhookPayloadSchema = z.object({
 	talk_time: z.union([z.number(), z.string()]).optional(),
 	timestamp: z.union([z.number(), z.string()]).optional(),
 	call_start: z.union([z.number(), z.string()]).optional(),
+	call_end: z.union([z.number(), z.string()]).optional(),
+	call_duration: z.union([z.number(), z.string()]).optional(),
 	api_key: z.string().optional(),
 	vpbx_api_key: z.string().optional(),
 	sign: z.string().optional(),
@@ -539,7 +541,25 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 			return reply;
 		}
 
-		const rawTs = data.timestamp || data.call_start;
+		// Replay protection: check event delivery timestamp.
+		// For post-call CDRs, data.call_start reflects when the call started minutes ago;
+		// use data.timestamp, data.call_end, or call_start + duration to avoid rejecting legitimate calls >5 min.
+		let rawTs = data.timestamp || data.call_end;
+		if (rawTs == null && data.call_start != null) {
+			const startNum =
+				typeof data.call_start === "number"
+					? data.call_start
+					: Number.parseInt(String(data.call_start), 10);
+			const durationSec = Number(
+				data.duration || data.billsec || data.call_duration || 0,
+			);
+			rawTs =
+				!Number.isNaN(startNum) && startNum > 0
+					? startNum > 1e11
+						? startNum + durationSec * 1000
+						: startNum + durationSec
+					: data.call_start;
+		}
 		if (rawTs != null) {
 			const numTs =
 				typeof rawTs === "number" ? rawTs : Number.parseInt(String(rawTs), 10);

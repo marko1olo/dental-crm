@@ -487,6 +487,7 @@ describe("Бланки договора и ИДС с 0 ₽ и без врача 
 		fullName: "Иванов Иван Иванович",
 		phone: "+79991112233",
 		birthDate: "1990-01-01",
+		gender: "male",
 		status: "active",
 		notes: null,
 		email: null,

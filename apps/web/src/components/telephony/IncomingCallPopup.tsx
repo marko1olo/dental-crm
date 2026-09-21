@@ -875,8 +875,8 @@ export function IncomingCallPopup() {
 				reason,
 				comment: `Запись по входящему звонку (${formattedPhone})`,
 			});
-			if (activeCall) {
-				acceptCall();
+			if (activeCall && activeCall.status === "ringing") {
+				answerCall();
 			}
 			showToast(
 				`Создана запись: ${resolvedPatient.fullName} (${reason})`,
@@ -895,8 +895,8 @@ export function IncomingCallPopup() {
 				reason,
 				comment: `Новый пациент с телефона ${formattedPhone}`,
 			});
-			if (activeCall) {
-				acceptCall();
+			if (activeCall && activeCall.status === "ringing") {
+				answerCall();
 			}
 			showToast(`Новая запись: ${formattedPhone} (${reason})`, "info");
 		}

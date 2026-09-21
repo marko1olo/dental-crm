@@ -38,6 +38,7 @@ import {
 	LAB_TECHNOLOGICAL_STAGE_ORDER,
 } from "./orders/labWorkOrderPresets";
 import { generateQrMatrix, generateQrCodeSvg as sharedGenerateQrCodeSvg } from "@dental/shared";
+import { generateBarcodeSvg as canonicalCode128BarcodeSvg } from "./labMath";
 
 export type { ImplantPlatformType, AbutmentCategoryType, FixationType, LabTechnologicalStageId };
 export {
@@ -1067,40 +1068,10 @@ export function generateOdontogramSvg(selectedTeeth: readonly number[] = []): st
 }
 
 /**
- * Векторный штрихкод Code128 для оптических сканеров.
+ * Векторный штрихкод Code 128 (ISO/IEC 15417) для оптических сканеров.
  */
-export function generateBarcodeSvg(data: string, width = 220, height = 48): string {
-	const sanitized = data.replace(/[^A-Za-z0-9\-\/]/g, "").toUpperCase();
-	const bars: number[] = [2, 1, 1, 2, 3, 2];
-
-	for (let i = 0; i < sanitized.length; i++) {
-		const code = sanitized.charCodeAt(i);
-		const b1 = (code % 3) + 1;
-		const b2 = ((code >> 2) % 3) + 1;
-		const b3 = ((code >> 4) % 3) + 1;
-		bars.push(b1, b2, b3, 1);
-	}
-	bars.push(2, 3, 3, 1, 1, 1, 2);
-
-	let currentX = 8;
-	let rects = "";
-	const barHeight = height - 16;
-
-	for (let i = 0; i < bars.length; i++) {
-		const barWidth = (bars[i] ?? 1) * 1.4;
-		if (i % 2 === 0) {
-			rects += `<rect x="${currentX}" y="4" width="${barWidth}" height="${barHeight}" fill="#0f172a" />`;
-		}
-		currentX += barWidth;
-	}
-
-	const svgWidth = Math.max(width, currentX + 8);
-
-	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${height}" width="${svgWidth}" height="${height}">
-		<rect width="100%" height="100%" fill="#ffffff" />
-		${rects}
-		<text x="${svgWidth / 2}" y="${height - 2}" font-family="monospace, monospace" font-size="10" font-weight="700" text-anchor="middle" fill="#0f172a">${data}</text>
-	</svg>`;
+export function generateBarcodeSvg(data: string, _width = 220, _height = 48): string {
+	return canonicalCode128BarcodeSvg(data);
 }
 
 /**

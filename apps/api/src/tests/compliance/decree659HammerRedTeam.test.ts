@@ -146,6 +146,8 @@ describe("Prosecutor 3 Red-Team: Hammer Inquisition Wave 2 (Decree 659 & Upsell 
 					curatorCommissionPercent: null,
 					curatorNotes: null,
 					curatorNextContactDate: null,
+					gender: "male",
+					insuranceContractId: null,
 				},
 			});
 
