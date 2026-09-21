@@ -22,6 +22,12 @@ import {
 	setCachedApiResponse,
 } from "../lib/apiCacheEngine";
 import {
+	getCached804nSync,
+	getCachedIcd10Sync,
+	getCachedTemplatesSync,
+	setStatutoryCatalogInRam,
+} from "../services/storage/statutoryCatalogCache";
+import {
 	searchPricelistItems,
 } from "../components/catalog/pricelist/servicePricelistEngine";
 import type { ServicePricelistItem } from "../components/catalog/pricelist/servicePricelistPresets";
@@ -393,6 +399,62 @@ describe("apiCacheEngine — Кэширование склада, материа
 		// Кэш склада должен быть инвалидирован
 		assert.strictEqual(getCachedApiResponse("/api/inventory/org-42"), undefined);
 		assert.strictEqual(getCachedApiResponse("/api/inventory/org-42/rules"), undefined);
+	});
+});
+
+describe("apiCacheEngine & statutoryCatalogCache — Фармакология и синхронизация L1 RAM каталогов (0 мс)", () => {
+	it("распознает и кэширует все эндпоинты фармакологии и лекарств", () => {
+		assert.strictEqual(isCacheableCatalogUrl("/api/pharmacology"), true);
+		assert.strictEqual(isCacheableCatalogUrl("/api/pharmacology/references"), true);
+		assert.strictEqual(isCacheableCatalogUrl("/api/pharmacology/interactions-matrix"), true);
+		assert.strictEqual(isCacheableCatalogUrl("/api/pharmacology/medications"), true);
+		assert.strictEqual(isCacheableCatalogUrl("/api/pharmacology/catalog"), true);
+		assert.strictEqual(isCacheableCatalogUrl("/api/pharmacology/drugs"), true);
+
+		// Мутации не должны кэшироваться
+		assert.strictEqual(isCacheableCatalogUrl("/api/pharmacology/medications", "POST"), false);
+		assert.strictEqual(isCacheableCatalogUrl("/api/pharmacology/update", "PUT"), false);
+	});
+
+	it("инвалидирует кэш фармакологии при мутациях", () => {
+		clearApiCache();
+
+		setCachedApiResponse("/api/pharmacology/references", [{ id: "med-1", name: "Амоксиклав" }]);
+		setCachedApiResponse("/api/pharmacology/medications", [{ id: "med-2", name: "Ультракаин Д-С" }]);
+
+		assert.ok(getCachedApiResponse("/api/pharmacology/references"));
+		assert.ok(getCachedApiResponse("/api/pharmacology/medications"));
+
+		notifyApiMutation("/api/pharmacology/medications", "POST");
+
+		assert.strictEqual(getCachedApiResponse("/api/pharmacology/references"), undefined);
+		assert.strictEqual(getCachedApiResponse("/api/pharmacology/medications"), undefined);
+	});
+
+	it("синхронизирует регламентные справочники в оперативную память (L1 RAM) для мгновенного доступа (0 мс)", () => {
+		const mock804n = [{ code: "A16.07.002", name: "Восстановление зуба пломбой" }];
+		const mockIcd10 = [{ code: "K02.1", description: "Кариес дентина" }];
+		const mockTemplates = [{ id: "t1", title: "Кариес дентина (терапия)" }];
+
+		setStatutoryCatalogInRam("804n", mock804n);
+		setStatutoryCatalogInRam("icd10", mockIcd10);
+		setStatutoryCatalogInRam("templates", mockTemplates);
+
+		const cached804n = getCached804nSync();
+		const cachedIcd10 = getCachedIcd10Sync();
+		const cachedTemplates = getCachedTemplatesSync();
+
+		assert.ok(cached804n);
+		assert.strictEqual(cached804n.length, 1);
+		assert.strictEqual((cached804n[0] as any).code, "A16.07.002");
+
+		assert.ok(cachedIcd10);
+		assert.strictEqual(cachedIcd10.length, 1);
+		assert.strictEqual((cachedIcd10[0] as any).code, "K02.1");
+
+		assert.ok(cachedTemplates);
+		assert.strictEqual(cachedTemplates.length, 1);
+		assert.strictEqual((cachedTemplates[0] as any).title, "Кариес дентина (терапия)");
 	});
 });
 

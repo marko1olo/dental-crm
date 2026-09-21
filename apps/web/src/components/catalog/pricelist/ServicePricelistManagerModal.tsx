@@ -33,7 +33,6 @@ import {
 	Upload,
 	X,
 } from 'lucide-react';
-import './servicePricelist.css';
 import { sliceDomList } from '../../../utils/domVirtualizationHelper';
 import {
 	applyBatchPriceMarkup,

@@ -63,7 +63,6 @@ import {
 	safeLocalStorageGetJson,
 	safeLocalStorageSetJson,
 } from "../../lib/safeLocalStorage";
-import "./chairSchedule.css";
 
 export interface ChairScheduleViewProps {
 	dashboard: Dashboard;

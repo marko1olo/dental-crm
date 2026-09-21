@@ -963,9 +963,39 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 			};
 		}
 
-		// 2. Fiscal Receipt: direct TCP on Desktop EXE, or thermal service on Web/Mobile
+		// 2. Fiscal Receipt: direct TCP or Serial COM on Desktop EXE, or thermal service on Web/Mobile
 		if (job.type === "fiscal_receipt") {
 			if (isDesktopExecutable() && job.kktConnection) {
+				const isSerial =
+					Boolean((job.kktConnection as any).serialPort) ||
+					/^COM\d+/i.test(job.kktConnection.host || "") ||
+					/^\/dev\/tty/i.test(job.kktConnection.host || "");
+
+				if (isSerial) {
+					const { printDesktopFiscalReceiptSerial } = await import("../native/desktopBridge.js");
+					try {
+						const port = (job.kktConnection as any).serialPort || job.kktConnection.host;
+						const res = await printDesktopFiscalReceiptSerial({
+							port,
+							baudRate: job.kktConnection.port || 115200,
+							protocol: (job.kktConnection.protocol === "shtrih" ? "shtrih" : "atol") as "atol" | "shtrih",
+							payload: JSON.parse(job.kktConnection.payloadJson),
+						});
+						return {
+							success: res.success,
+							methodUsed: "desktop_silent",
+							printedAt: res.printedAt || now,
+							...(res.fiscalSign ? { fiscalSign: res.fiscalSign } : {}),
+							...(res.fiscalDocNum ? { fiscalDocNum: res.fiscalDocNum } : {}),
+							...(res.kktSerialNumber ? { kktSerialNumber: res.kktSerialNumber } : {}),
+							...(res.error ? { error: res.error } : {}),
+						};
+					} catch (err: unknown) {
+						const message = err instanceof Error ? err.message : "Ошибка COM-печати ККТ";
+						return { success: false, methodUsed: "desktop_silent", printedAt: now, error: message };
+					}
+				}
+
 				const { printDesktopFiscalReceiptTcp } = await import("../native/desktopBridge.js");
 				try {
 					const res = await printDesktopFiscalReceiptTcp({
@@ -1193,6 +1223,33 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 			? { target: optionsOrTarget as Window | HTMLElement }
 			: (optionsOrTarget as { target?: Window | HTMLElement | EventTarget; enabled?: boolean } | undefined);
 		return registerDoctorHotkeys(handlers, opts);
+	}
+
+	/**
+	 * Activates clinical kiosk mode (fullscreen, wake-lock, exit PIN protection).
+	 */
+	async enableKioskMode(config?: Parameters<typeof import("../components/desktop/kioskMode.js").enableKioskMode>[0]): Promise<boolean> {
+		const { enableKioskMode } = await import("../components/desktop/kioskMode.js");
+		const res = await enableKioskMode(config);
+		return res.success;
+	}
+
+	/**
+	 * Deactivates clinical kiosk mode with PIN verification.
+	 */
+	async disableKioskMode(pin?: string): Promise<{ success: boolean; error?: string }> {
+		const { disableKioskMode } = await import("../components/desktop/kioskMode.js");
+		return disableKioskMode(pin);
+	}
+
+	/**
+	 * Checks if clinical kiosk mode is currently active.
+	 */
+	isKioskModeActive(): boolean {
+		if (typeof window !== "undefined" && (window as any).__DENTE_KIOSK_ACTIVE__ !== undefined) {
+			return Boolean((window as any).__DENTE_KIOSK_ACTIVE__);
+		}
+		return false;
 	}
 }
 

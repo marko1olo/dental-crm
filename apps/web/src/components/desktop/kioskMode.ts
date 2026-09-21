@@ -244,6 +244,10 @@ export class KioskManager {
 			lockoutUntilMs: null,
 		});
 
+		if (typeof window !== "undefined") {
+			(window as unknown as { __DENTE_KIOSK_ACTIVE__?: boolean }).__DENTE_KIOSK_ACTIVE__ = true;
+		}
+
 		triggerHaptic("success");
 
 		return {
@@ -309,12 +313,16 @@ export class KioskManager {
 		// 1. Exit Fullscreen
 		try {
 			await toggleDesktopKioskMode(false);
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[KioskMode] Failed to toggle desktop kiosk mode off:", err);
+		}
 
 		if (typeof document !== "undefined" && document.exitFullscreen && document.fullscreenElement) {
 			try {
 				await document.exitFullscreen();
-			} catch {}
+			} catch (err: unknown) {
+				console.warn("[KioskMode] Failed to exit DOM fullscreen:", err);
+			}
 		}
 
 		// 2. Release WakeLock
@@ -333,6 +341,10 @@ export class KioskManager {
 			isLockedOut: false,
 			lockoutUntilMs: null,
 		});
+
+		if (typeof window !== "undefined") {
+			(window as unknown as { __DENTE_KIOSK_ACTIVE__?: boolean }).__DENTE_KIOSK_ACTIVE__ = false;
+		}
 
 		triggerHaptic("light");
 
@@ -358,6 +370,9 @@ export class KioskManager {
 	}
 
 	public destroy(): void {
+		if (typeof window !== "undefined") {
+			(window as unknown as { __DENTE_KIOSK_ACTIVE__?: boolean }).__DENTE_KIOSK_ACTIVE__ = false;
+		}
 		this.detachEventListeners();
 		this.clearInactivityTimer();
 		this.releaseWakeLock();
@@ -458,7 +473,7 @@ export class KioskManager {
 				}
 			}
 		};
-		if (typeof document !== "undefined") {
+		if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
 			document.addEventListener("fullscreenchange", this.boundFullscreenChangeHandler);
 		}
 
@@ -484,7 +499,7 @@ export class KioskManager {
 				this.updateState({ hasWakeLock: ok });
 			}
 		};
-		if (typeof document !== "undefined") {
+		if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
 			document.addEventListener("visibilitychange", this.boundVisibilityChangeHandler);
 		}
 	}
@@ -500,7 +515,7 @@ export class KioskManager {
 			window.removeEventListener("contextmenu", this.boundContextMenuHandler, true);
 			this.boundContextMenuHandler = null;
 		}
-		if (this.boundFullscreenChangeHandler && typeof document !== "undefined") {
+		if (this.boundFullscreenChangeHandler && typeof document !== "undefined" && typeof document.removeEventListener === "function") {
 			document.removeEventListener("fullscreenchange", this.boundFullscreenChangeHandler);
 			this.boundFullscreenChangeHandler = null;
 		}
@@ -513,7 +528,7 @@ export class KioskManager {
 			window.removeEventListener("keydown", this.boundActivityHandler);
 			this.boundActivityHandler = null;
 		}
-		if (this.boundVisibilityChangeHandler && typeof document !== "undefined") {
+		if (this.boundVisibilityChangeHandler && typeof document !== "undefined" && typeof document.removeEventListener === "function") {
 			document.removeEventListener("visibilitychange", this.boundVisibilityChangeHandler);
 			this.boundVisibilityChangeHandler = null;
 		}
@@ -600,6 +615,9 @@ export function disableKioskMode(exitPin?: string): Promise<{
 }
 
 export function isKioskModeActive(): boolean {
+	if (typeof window !== "undefined" && (window as unknown as { __DENTE_KIOSK_ACTIVE__?: boolean }).__DENTE_KIOSK_ACTIVE__ !== undefined) {
+		return Boolean((window as unknown as { __DENTE_KIOSK_ACTIVE__?: boolean }).__DENTE_KIOSK_ACTIVE__);
+	}
 	return getGlobalKioskManager().getState().isActive;
 }
 

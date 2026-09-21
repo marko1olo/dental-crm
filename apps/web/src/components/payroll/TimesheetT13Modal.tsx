@@ -26,7 +26,6 @@ import {
 	type EmployeeTimesheetResult,
 } from "@dental/shared";
 import { useAppStore } from "../../store/appStore";
-import "./timesheetT13.css";
 
 export interface TimesheetT13ModalProps {
 	readonly isOpen: boolean;

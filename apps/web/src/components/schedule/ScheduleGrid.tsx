@@ -74,7 +74,6 @@ import {
 	safeLocalStorageGetJson,
 	safeLocalStorageSetJson,
 } from "../../lib/safeLocalStorage";
-import "./chairSchedule.css";
 
 export interface ChairDoctorSubShift {
 	doctorId: string;

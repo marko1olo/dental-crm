@@ -147,9 +147,9 @@ export const STATUTORY_CATALOG_RULES: readonly CatalogCacheRule[] = [
 	},
 	{
 		id: "pharmacology-references",
-		pattern: /^\/api\/pharmacology\/(?:references|interactions-matrix)(?:\/|\?|$)/i,
+		pattern: /^\/api\/pharmacology(?:\/(?:references|interactions-matrix|medications|catalog|drugs))?(?:\/|\?|$)/i,
 		defaultTtlMs: 30 * 60 * 1000, // 30 минут
-		description: "Справочники фармакологии и матрица совместимости препаратов",
+		description: "Справочники фармакологии, лекарственных препаратов и матрица совместимости",
 	},
 	{
 		id: "sanpin-references",
@@ -249,6 +249,10 @@ export const DEFAULT_MUTATION_RULES: readonly MutationInvalidationRule[] = [
 	{
 		mutationPattern: /^\/api\/marketing(?:\/|$)/i,
 		invalidatePatterns: [/^\/api\/marketing/i],
+	},
+	{
+		mutationPattern: /^\/api\/pharmacology(?:\/|$)/i,
+		invalidatePatterns: [/^\/api\/pharmacology/i],
 	},
 ] as const;
 
@@ -843,6 +847,31 @@ export async function hydrateCatalogsFromPersistentStorage(): Promise<number> {
 							getApiCache().set(entry.url, entry, entry.ttlMs);
 							hydratedCount++;
 						}
+						// Synchronize L1 RAM statutory catalog cache for instant 0 ms access
+						if (Array.isArray(entry.data) && entry.data.length > 0) {
+							if (entry.url === "/api/clinical/804n" || entry.url === "/api/clinical/nomenclature") {
+								try {
+									const { setStatutoryCatalogInRam } = await import("../services/storage/statutoryCatalogCache");
+									setStatutoryCatalogInRam("804n", entry.data as unknown[]);
+								} catch {
+									// ignore
+								}
+							} else if (entry.url === "/api/clinical/icd10" || entry.url === "/api/icd10") {
+								try {
+									const { setStatutoryCatalogInRam } = await import("../services/storage/statutoryCatalogCache");
+									setStatutoryCatalogInRam("icd10", entry.data as unknown[]);
+								} catch {
+									// ignore
+								}
+							} else if (entry.url === "/api/templates" || entry.url === "/api/emr/templates") {
+								try {
+									const { setStatutoryCatalogInRam } = await import("../services/storage/statutoryCatalogCache");
+									setStatutoryCatalogInRam("templates", entry.data as unknown[]);
+								} catch {
+									// ignore
+								}
+							}
+						}
 					}
 				}
 				if (++count % 25 === 0) {
@@ -890,6 +919,8 @@ export async function warmupStatutoryCatalogs(): Promise<WarmupCatalogResult> {
 		"/api/emr/templates",
 		"/api/catalog",
 		"/api/price-lists",
+		"/api/pharmacology/references",
+		"/api/pharmacology/medications",
 	];
 
 	// Проверяем, есть ли отсутствующие справочники в L1 кэше

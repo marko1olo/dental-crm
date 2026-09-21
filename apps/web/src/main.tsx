@@ -45,6 +45,14 @@ import "./styles/contrast-fixes.css";
 // Рабочие панели: обзвон, отправка сообщений, рассылки, отчёты. Всё на
 // переменных темы — без зашитых цветов, ломающихся в тёмной и ночной.
 import "./styles/dente-operations.css";
+// Табель учета рабочего времени Т-13
+import "./components/payroll/timesheetT13.css";
+// График смен врачей и ростер кабинетов
+import "./components/schedule/roster/doctorShiftRoster.css";
+// Расписание по креслам и кабинетам
+import "./components/schedule/chairSchedule.css";
+// Прейскурант и каталог услуг
+import "./components/catalog/pricelist/servicePricelist.css";
 // Оптимизация под слабые ПК (<=4GB RAM, <=4 ядра, медленный HDD): отключение размытия и тяжелых теней
 import "./styles/low-spec-hardware.css";
 // Последним: мастер первого запуска правит фон/цвета слоёв выше, где те

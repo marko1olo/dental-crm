@@ -47,7 +47,6 @@ import {
 	type DateRangeShiftPreset,
 	type DateRangeShiftBindingParams,
 } from "./doctorWeeklyScheduleGenerator";
-import "./doctorShiftRoster.css";
 
 export { DoctorRosterToolbar } from "./DoctorRosterToolbar";
 export { DoctorRosterMatrix } from "./DoctorRosterMatrix";

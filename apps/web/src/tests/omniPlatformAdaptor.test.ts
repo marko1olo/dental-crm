@@ -18,6 +18,11 @@ import {
 	TABLET_TOUCH_ERGONOMICS,
 	PHONE_TOUCH_ERGONOMICS,
 	DOCTOR_HOTKEYS,
+	isServiceWorkerSupported,
+	isServiceWorkerActive,
+	registerPwaServiceWorker,
+	getNextQuadrantBySwipe,
+	getNextVisitTabBySwipe,
 } from "../lib/omniPlatformAdapter";
 import {
 	determineNetworkConnectivity,
@@ -574,4 +579,282 @@ test("Omni-Platform Adaptor & Multi-Environment Invariants Suite", async (t) => 
 		unregister();
 		assert.equal(listeners.keydown, undefined, "Listener must be removed after unregister");
 	});
+
+	await t.test("14. Web / PWA: Service Worker detection and offline cache registration", async () => {
+		// Without serviceWorker in navigator
+		setMockNavigator({});
+		assert.equal(isServiceWorkerSupported(), false);
+		assert.equal(await isServiceWorkerActive(), false);
+		assert.equal(await registerPwaServiceWorker(), false);
+
+		// With serviceWorker in navigator
+		let registeredUrl = "";
+		let registeredScope = "";
+		const mockRegistration = { active: true };
+		setMockNavigator({
+			serviceWorker: {
+				getRegistration: async () => mockRegistration,
+				register: async (url: string, opts: { scope: string }) => {
+					registeredUrl = url;
+					registeredScope = opts.scope;
+					return mockRegistration;
+				},
+			},
+		});
+
+		assert.equal(isServiceWorkerSupported(), true);
+		assert.equal(await isServiceWorkerActive(), true);
+		const regSuccess = await registerPwaServiceWorker("/custom-sw.js");
+		assert.equal(regSuccess, true);
+		assert.equal(registeredUrl, "/custom-sw.js");
+		assert.equal(registeredScope, "/");
+	});
+
+	await t.test("15. Desktop EXE: Direct TCP socket ESC/POS printing (bypasses Windows print dialog)", async () => {
+		setMockWindow({
+			electron: {},
+			matchMedia: () => ({ matches: false }),
+			denteDesktopNative: {
+				isDesktop: true,
+				printEscPosReceipt: async (params: any) => ({
+					success: true,
+					printerUsed: params.host ? `tcp://${params.host}:${params.port}` : "POS-58",
+				}),
+			},
+		});
+		setMockNavigator({ userAgent: "Chrome/128.0 Electron/31.0.0" });
+
+		assert.equal(isDesktopExecutable(), true);
+
+		// Print direct ESC/POS job with kktConnection TCP host/port
+		const res = await omniPlatform.printDirect({
+			type: "thermal_receipt_escpos",
+			title: "Лабораторный наряд ЗТЛ",
+			rawText: "\x1B@\x1Ba\x01НАРЯД ЗТЛ-1\n",
+			kktConnection: {
+				host: "192.168.1.150",
+				port: 9100,
+				protocol: "escpos",
+				payloadJson: "{}",
+			},
+			silent: true,
+		});
+
+		assert.equal(res.success, true);
+		assert.equal(res.methodUsed, "desktop_silent");
+		assert.equal(res.printerName, "tcp://192.168.1.150:9100");
+	});
+
+	await t.test("16. Mobile/Tablet: Safe Area Insets and CSS custom properties synchronization", () => {
+		const rootStyles: Record<string, string> = {};
+		const rootAttributes: Record<string, string> = {};
+
+		setMockDocument({
+			documentElement: {
+				setAttribute: (key: string, val: string) => {
+					rootAttributes[key] = val;
+				},
+				classList: {
+					add: () => {},
+					remove: () => {},
+				},
+				style: {
+					setProperty: (key: string, val: string) => {
+						rootStyles[key] = val;
+					},
+				},
+			},
+		});
+
+		// Mock mobile tablet with notch (--sat = 44px, --sab = 34px)
+		setMockWindow({
+			innerWidth: 820,
+			matchMedia: (query: string) => ({
+				matches: query === "(pointer: coarse)",
+			}),
+			getComputedStyle: () => ({
+				getPropertyValue: (prop: string) => {
+					if (prop === "--sat") return "44px";
+					if (prop === "--sab") return "34px";
+					if (prop === "--sal") return "0px";
+					if (prop === "--sar") return "0px";
+					return "";
+				},
+			}),
+		});
+		setMockNavigator({ maxTouchPoints: 5, userAgent: "Android 14; Tablet" });
+
+		syncPlatformDomAttributes();
+
+		assert.equal(rootStyles["--sat"], "44px");
+		assert.equal(rootStyles["--sab"], "34px");
+		assert.equal(rootStyles["--sal"], "0px");
+		assert.equal(rootStyles["--sar"], "0px");
+		assert.equal(rootAttributes["data-pointer"], "coarse");
+		assert.equal(rootAttributes["data-form-factor"], "tablet");
+
+		const info = getOmniPlatformInfo();
+		assert.equal(info.safeArea.top, 44);
+		assert.equal(info.safeArea.bottom, 34);
+		assert.equal(info.controlHeights.primaryActionMinHeightPx, 48);
+		assert.equal(info.controlHeights.touchTargetMinPx, 44);
+	});
+
+	await t.test("17. Mobile/Tablet: Touch swipe gesture navigation (Mandates 8c, 8e)", () => {
+		// Quadrant navigation: Q1 -> Q2 -> Q3 -> Q4
+		assert.equal(getNextQuadrantBySwipe("Q1", "left"), "Q2");
+		assert.equal(getNextQuadrantBySwipe("Q2", "left"), "Q3");
+		assert.equal(getNextQuadrantBySwipe("Q3", "left"), "Q4");
+		assert.equal(getNextQuadrantBySwipe("Q4", "left"), "Q1");
+
+		// Quadrant navigation reverse: Q2 -> Q1
+		assert.equal(getNextQuadrantBySwipe("Q2", "right"), "Q1");
+
+		// Quadrant vertical toggle (upper jaw <-> lower jaw)
+		assert.equal(getNextQuadrantBySwipe("Q1", "down"), "Q4");
+		assert.equal(getNextQuadrantBySwipe("Q4", "up"), "Q1");
+		assert.equal(getNextQuadrantBySwipe("Q2", "down"), "Q3");
+
+		// Pediatric quadrants: Q5 -> Q6 -> Q7 -> Q8
+		assert.equal(getNextQuadrantBySwipe("Q5", "left", true), "Q6");
+		assert.equal(getNextQuadrantBySwipe("Q8", "left", true), "Q5");
+
+		// Visit tabs swipe: odontogram -> emk -> anamnesis -> diagnostics -> consents
+		assert.equal(getNextVisitTabBySwipe("odontogram", "left"), "emk");
+		assert.equal(getNextVisitTabBySwipe("emk", "left"), "anamnesis");
+		assert.equal(getNextVisitTabBySwipe("emk", "right"), "odontogram");
+		assert.equal(getNextVisitTabBySwipe("consents", "left"), "consents"); // Boundary clamp
+		assert.equal(getNextVisitTabBySwipe("odontogram", "right"), "odontogram"); // Boundary clamp
+	});
+
+	await t.test("18. Desktop EXE: Direct COM/USB serial port fiscal receipt printing (Mandates 8c, 8e)", async () => {
+		let printedSerialPort: string | null = null;
+		let printedBaudRate: number | null = null;
+		let printedProtocol: string | null = null;
+
+		setMockWindow({
+			electron: {},
+			matchMedia: () => ({ matches: false }),
+			denteDesktopNative: {
+				isDesktop: true,
+				printFiscalReceiptSerial: async (params: any) => {
+					printedSerialPort = params.port;
+					printedBaudRate = params.baudRate;
+					printedProtocol = params.protocol;
+					return {
+						success: true,
+						fiscalSign: "9876543210",
+						fiscalDocNum: "1234",
+						kktSerialNumber: "00106700000012",
+						printedAt: new Date().toISOString(),
+					};
+				},
+			},
+		});
+		setMockNavigator({ userAgent: "Chrome/128.0 Electron/31.0.0" });
+
+		assert.equal(isDesktopExecutable(), true);
+
+		// Direct COM3 fiscal receipt print job
+		const res = await omniPlatform.printDirect({
+			type: "fiscal_receipt",
+			title: "Чек ККТ АТОЛ 30Ф",
+			kktConnection: {
+				host: "COM3",
+				port: 115200,
+				protocol: "atol",
+				payloadJson: JSON.stringify({
+					cashierName: "Иванова А.С.",
+					items: [{ name: "Прием врача-стоматолога", priceRub: 1500, quantity: 1 }],
+					totalRub: 1500,
+					paymentType: "card",
+				}),
+			},
+			silent: true,
+		});
+
+		assert.equal(res.success, true);
+		assert.equal(res.methodUsed, "desktop_silent");
+		assert.equal(res.fiscalSign, "9876543210");
+		assert.equal(res.fiscalDocNum, "1234");
+		assert.equal(res.kktSerialNumber, "00106700000012");
+		assert.equal(printedSerialPort, "COM3");
+		assert.equal(printedBaudRate, 115200);
+		assert.equal(printedProtocol, "atol");
+	});
+
+	await t.test("19. Kiosk Mode: Fullscreen, WakeLock, and PIN exit protection via omniPlatformAdapter (Mandates 8c, 8e)", async () => {
+		let wakeLockRequested = false;
+		let wakeLockReleased = false;
+
+		setMockDocument({
+			documentElement: {
+				requestFullscreen: async () => {},
+			},
+			fullscreenElement: null,
+			exitFullscreen: async () => {},
+			addEventListener: () => {},
+			removeEventListener: () => {},
+		});
+
+		setMockWindow({
+			addEventListener: () => {},
+			removeEventListener: () => {},
+		});
+
+		setMockNavigator({
+			wakeLock: {
+				request: async (type: string) => {
+					if (type === "screen") wakeLockRequested = true;
+					return {
+						release: async () => {
+							wakeLockReleased = true;
+						},
+					};
+				},
+			},
+		});
+
+		// Enable kiosk mode via omniPlatformAdapter
+		const enableRes = await omniPlatformAdapter.enableKioskMode({
+			profile: "reception_self_checkin",
+			exitPin: "4321",
+			enableWakeLock: true,
+		});
+
+		assert.equal(enableRes, true);
+		assert.equal(omniPlatformAdapter.isKioskModeActive(), true);
+		assert.equal(wakeLockRequested, true);
+
+		// Attempt disable with wrong PIN
+		const wrongPinRes = await omniPlatformAdapter.disableKioskMode("0000");
+		assert.equal(wrongPinRes.success, false);
+		assert.equal(omniPlatformAdapter.isKioskModeActive(), true);
+
+		// Disable with correct PIN
+		const correctPinRes = await omniPlatformAdapter.disableKioskMode("4321");
+		assert.equal(correctPinRes.success, true);
+		assert.equal(omniPlatformAdapter.isKioskModeActive(), false);
+		assert.equal(wakeLockReleased, true);
+	});
+
+	await t.test("20. Code Splitting & Memory Protection: Verify Cornerstone3D / heavy modules not loaded on Hot Path", async () => {
+		// Verify Cornerstone3DViewer is dynamically imported with lazy loading in ImagingView
+		const fs = await import("node:fs");
+		const imagingViewSource = fs.readFileSync("C:/Clinic_MVP/dental-crm/apps/web/src/ImagingView.tsx", "utf-8");
+		assert.ok(
+			imagingViewSource.includes("Cornerstone3DViewer") &&
+				imagingViewSource.includes("lazyWithRetry"),
+			"Cornerstone3DViewer must be lazy loaded via lazyWithRetry to prevent loading on Schedule/Patients views",
+		);
+
+		// Verify App.tsx lazy-loads ImagingView
+		const appSource = fs.readFileSync("C:/Clinic_MVP/dental-crm/apps/web/src/App.tsx", "utf-8");
+		assert.ok(
+			appSource.includes("lazyWithRetry(() => import(\"./ImagingView\"))") ||
+				appSource.includes("import(\"./ImagingView\")"),
+			"ImagingView must be lazy loaded to isolate heavy DICOM/3D modules from Hot Path",
+		);
+	});
 });
+
