@@ -31,7 +31,6 @@ import {
 	PEDIATRIC_BOTTOM_TEETH,
 } from "../ToothChart";
 import { TreatmentPlanWizard } from "../TreatmentPlanWizard";
-import { ToothCardModal } from "../ToothCardModal";
 import { calculateLiveInvoiceItems } from "../OdontogramLiveInvoice";
 
 describe("PARITY-01: 1-Click Adult / Pediatric Dentition Switch (FDI 11..48 <-> 51..85)", () => {
@@ -231,11 +230,11 @@ describe("PARITY-04: Auto-Treatment Plan Wizard from Pathologies (804n Nomenclat
 		assert.strictEqual((savedUpdates as Partial<ToothData>).furcationGrade, 0, "Furcation must be reset to 0");
 		assert.deepStrictEqual((savedUpdates as Partial<ToothData>).surfaces, [], "Surfaces must be empty array");
 
-		// Also verify source code of ToothCardModal does not contain `if (mobility > 0)` or `if (boneLoss > 0)`
-		const modalSource = fs.readFileSync(path.resolve(__dirname, "../ToothCardModal.tsx"), "utf-8");
-		assert.strictEqual(modalSource.includes("if (mobility > 0)"), false, "Must not guard mobility with > 0");
-		assert.strictEqual(modalSource.includes("if (boneLoss > 0)"), false, "Must not guard boneLoss with > 0");
-		assert.strictEqual(modalSource.includes("if (furcation > 0)"), false, "Must not guard furcation with > 0");
+		// Also verify source code of ToothContextDrawer does not contain `if (mobility > 0)` or `if (boneLoss > 0)`
+		const drawerSource = fs.readFileSync(path.resolve(__dirname, "../../diagnostics/ToothContextDrawer.tsx"), "utf-8");
+		assert.strictEqual(drawerSource.includes("if (mobility > 0)"), false, "Must not guard mobility with > 0");
+		assert.strictEqual(drawerSource.includes("if (boneLoss > 0)"), false, "Must not guard boneLoss with > 0");
+		assert.strictEqual(drawerSource.includes("if (furcation > 0)"), false, "Must not guard furcation with > 0");
 	});
 
 	it("applies 100% doctor discount correctly for warranty / corporate rework (Mandate 8e)", () => {
@@ -316,12 +315,12 @@ describe("PARITY-05: Ergonomic & CSS Invariants (Mandate 8d, 8e)", () => {
 		);
 	});
 
-	it("guarantees 0 cartoon emojis and dingbats in TreatmentPlanWizard and ToothCardModal", () => {
+	it("guarantees 0 cartoon emojis and dingbats in TreatmentPlanWizard and Odontogram components", () => {
 		const files = [
 			"TreatmentPlanWizard.tsx",
-			"ToothCardModal.tsx",
 			"ToothChart.tsx",
 			"OdontogramViewContainer.tsx",
+			"ToothRadialMenu.tsx",
 		];
 
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;

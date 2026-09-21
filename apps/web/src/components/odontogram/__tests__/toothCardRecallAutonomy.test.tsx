@@ -29,9 +29,9 @@ import { fileURLToPath } from "node:url";
 import { renderToString } from "react-dom/server";
 
 import {
-	ToothCardModal,
+	ToothContextDrawer as ToothCardModal,
 	getSuggestedRecallForToothState,
-} from "../ToothCardModal";
+} from "../../diagnostics/ToothContextDrawer";
 import type { ToothData } from "../ToothChart";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -569,14 +569,14 @@ describe("WAVE 107: 1-Click Treatment Recall Scheduling from ToothCardModal", ()
 	});
 
 	describe("4. 7 Deadly Sins & Mandate 8d Compliance", () => {
-		it("guarantees 0 cartoon emojis in ToothCardModal.tsx (Mandate 8d & Apple HIG)", () => {
-			const modalPath = path.resolve(__dirname, "../ToothCardModal.tsx");
+		it("guarantees 0 cartoon emojis in ToothContextDrawer.tsx (Mandate 8d & Apple HIG)", () => {
+			const modalPath = path.resolve(__dirname, "../../diagnostics/ToothContextDrawer.tsx");
 			const content = fs.readFileSync(modalPath, "utf-8");
 			const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 			assert.strictEqual(
 				emojiRegex.test(content),
 				false,
-				"ToothCardModal.tsx must contain 0 cartoon emojis",
+				"ToothContextDrawer.tsx must contain 0 cartoon emojis",
 			);
 		});
 	});

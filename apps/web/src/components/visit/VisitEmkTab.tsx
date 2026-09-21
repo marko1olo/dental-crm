@@ -107,6 +107,7 @@ import {
 	type ClinicalServiceBundle,
 	CompletedServicesChecklist,
 } from "./CompletedServicesChecklist";
+import { VisitServiceBillingWidget } from "./VisitServiceBillingWidget";
 import {
 	CLINICAL_SOAP_PRESETS,
 	type ClinicalSoapPreset,
@@ -118,6 +119,7 @@ import {
 } from "./clinicalVisitWorkflow";
 import { EgiszMultipleDiagnosesWidget } from "./EgiszMultipleDiagnosesWidget";
 import { EmkVoicePilot } from "./EmkVoicePilot";
+import { ChairsideCopilotHUD } from "../copilot/ChairsideCopilotHUD";
 import { globalDentalVoiceEngine } from "../../services/voice";
 import { PatientMemoPrintModal } from "./PatientMemoPrintModal";
 import { PrescriptionModal } from "./PrescriptionModal";
@@ -401,6 +403,18 @@ export function VisitEmkTab() {
 		React.useState<string>("ultracain_ds_forte");
 	const [selectedCarpulesCount, setSelectedCarpulesCount] =
 		React.useState<number>(1.0);
+	const [isChairsideHudOpen, setIsChairsideHudOpen] =
+		React.useState<boolean>(false);
+
+	React.useEffect(() => {
+		const handleToggleHud = () => {
+			setIsChairsideHudOpen((prev) => !prev);
+		};
+		window.addEventListener("dente:toggle-chairside-hud", handleToggleHud);
+		return () => {
+			window.removeEventListener("dente:toggle-chairside-hud", handleToggleHud);
+		};
+	}, []);
 
 	const patientAge = React.useMemo(() => {
 		return calculateAge(activePatient?.birthDate);
@@ -1942,6 +1956,29 @@ export function VisitEmkTab() {
 				className="my-0"
 			/>
 
+			{/* Кресельный HUD автономного ИИ-Копилота (DEF-COPILOT-01) */}
+			{isChairsideHudOpen && (
+				<ChairsideCopilotHUD
+					initialOpen={true}
+					initialDocked={false}
+					activeTooth={activeSelectedTooth}
+					patientName={activePatient?.fullName}
+					patientAllergies={(activePatient as any)?.allergies}
+					onApplyToothState={handleApplyVoiceToothState}
+					onApplySoapNotes={handleApplyVoiceSoapNotes}
+					onApplyServices={(services) => {
+						services.forEach((s) => {
+							handleAddServiceToPlan({
+								title: s.title,
+								basePriceRub: s.priceRub,
+								code804n: s.code804n,
+							});
+						});
+					}}
+					onClose={() => setIsChairsideHudOpen(false)}
+				/>
+			)}
+
 			{/* ── ЕДИНЫЙ ТУЛБАР ЭМК 043/у (СТРОГО 1 СТРОКА 30–32px, МАНДАТЫ 8c, 8d, 8p) ── */}
 			<div className="emk-unified-toolbar flex items-center justify-between gap-1.5 my-0 py-0.5 border-b border-[var(--line)] w-full min-w-0 max-w-full overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-nowrap min-h-[30px] sm:min-h-[32px]">
 				{/* ЛЕВАЯ ЧАСТЬ: Вкладки секций ЭМК (Все поля, Жалобы, Анамнез...) */}
@@ -2099,6 +2136,23 @@ export function VisitEmkTab() {
 						<Sparkles className="w-3.5 h-3.5 shrink-0" />
 						<span>СтАР / 804н</span>
 						<ChevronDown size={11} className={`shrink-0 transition-transform ${isStarProtocolsOpen ? "rotate-180" : ""}`} />
+					</button>
+
+					{/* Кнопка открытия кресельного ИИ-Копилота */}
+					<button
+						type="button"
+						data-testid="btn-toggle-chairside-hud"
+						onClick={() => setIsChairsideHudOpen((open) => !open)}
+						className={`shrink-0 flex-shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max ${
+							isChairsideHudOpen
+								? "bg-[var(--teal-dark)] text-white border-[var(--teal-dark)]"
+								: "border-[var(--teal)]/40 bg-[var(--teal-soft)] text-[var(--teal-dark)] hover:bg-[var(--teal)] hover:text-white"
+						}`}
+						title="ИИ-Копилот у кресла (Ctrl+Shift+C)"
+						aria-label="ИИ-Копилот у кресла"
+					>
+						<Sparkles className="w-3.5 h-3.5 shrink-0" />
+						<span className="whitespace-nowrap shrink-0 min-w-max">Копилот</span>
 					</button>
 				</div>
 
@@ -3165,6 +3219,16 @@ export function VisitEmkTab() {
 					);
 				})}
 				<CompletedServicesChecklist />
+				<div className="mt-3">
+					<VisitServiceBillingWidget
+						patientId={activePatient?.id}
+						patientName={activePatient?.fullName}
+						patientPhone={activePatient?.phone}
+						patientDepositRub={activePatient?.balanceRub}
+						doctorName={dashboard?.activeDoctor?.fullName || "Врач-стоматолог"}
+						clinicLegalName={dashboard?.clinicProfile?.legalName || dashboard?.clinicProfile?.clinicName}
+					/>
+				</div>
 			</div>
 
 			{draft?.quality ? (
