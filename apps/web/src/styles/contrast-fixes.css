@@ -302,3 +302,117 @@ html.dark .document-package-item-sub {
 	font-weight: 900 !important;
 }
 
+/* --- 11. Режим высокой доступности и версия для слабовидящих (ГОСТ Р 52872-2019 / WCAG AAA 7:1) ---
+ * Класс .a11y-contrast и [data-theme="contrast"]:
+ * Четкие границы, контраст 7:1 (черным по белому), четкие рамки инпутов и кнопок,
+ * отключение паразитных размытий/теней, поддержка масштабирования шрифта data-a11y-font.
+ */
+:root.a11y-contrast,
+html.a11y-contrast,
+:root[data-theme="contrast"],
+[data-theme="contrast"] {
+	--ink: #000000 !important;
+	--ink-2: #000000 !important;
+	--paper: #ffffff !important;
+	--paper-strong: #ffffff !important;
+	--paper-soft: #f4f4f5 !important;
+	--surface: #ffffff !important;
+	--surface-muted: #e4e4e7 !important;
+	--line: #000000 !important;
+	--line-strong: #000000 !important;
+	--muted: #18181b !important;
+	--focus-ring: #000000 !important;
+	--shadow-premium: none !important;
+	--glass-panel: #ffffff !important;
+	--glass-border: #000000 !important;
+}
+
+/* Чёткие рамки полей ввода, селектов и текстовых областей */
+:is(.a11y-contrast, [data-theme="contrast"]) input:not([type="checkbox"]):not([type="radio"]),
+:is(.a11y-contrast, [data-theme="contrast"]) select,
+:is(.a11y-contrast, [data-theme="contrast"]) textarea {
+	border: 2px solid #000000 !important;
+	background: #ffffff !important;
+	color: #000000 !important;
+	box-shadow: none !important;
+}
+
+:is(.a11y-contrast, [data-theme="contrast"]) input:focus,
+:is(.a11y-contrast, [data-theme="contrast"]) select:focus,
+:is(.a11y-contrast, [data-theme="contrast"]) textarea:focus {
+	outline: 3px solid #000000 !important;
+	outline-offset: 2px !important;
+}
+
+/* Чёткие рамки кнопок */
+:is(.a11y-contrast, [data-theme="contrast"]) button:not([class*="dnt-pill-segment"]) {
+	border-color: #000000 !important;
+}
+
+:is(.a11y-contrast, [data-theme="contrast"]) .primary-button,
+:is(.a11y-contrast, [data-theme="contrast"]) .dnt-cc-btn--primary {
+	background: #000000 !important;
+	color: #ffffff !important;
+	border: 2px solid #000000 !important;
+	font-weight: 700 !important;
+}
+
+:is(.a11y-contrast, [data-theme="contrast"]) .primary-button:hover,
+:is(.a11y-contrast, [data-theme="contrast"]) .dnt-cc-btn--primary:hover {
+	background: #27272a !important;
+	color: #ffffff !important;
+}
+
+:is(.a11y-contrast, [data-theme="contrast"]) .secondary-button,
+:is(.a11y-contrast, [data-theme="contrast"]) .dnt-cc-btn--secondary {
+	background: #ffffff !important;
+	color: #000000 !important;
+	border: 2px solid #000000 !important;
+	font-weight: 700 !important;
+}
+
+:is(.a11y-contrast, [data-theme="contrast"]) .secondary-button:hover,
+:is(.a11y-contrast, [data-theme="contrast"]) .dnt-cc-btn--secondary:hover {
+	background: #f4f4f5 !important;
+	color: #000000 !important;
+}
+
+/* Контрастные границы карточек и панелей */
+:is(.a11y-contrast, [data-theme="contrast"]) .card,
+:is(.a11y-contrast, [data-theme="contrast"]) .panel,
+:is(.a11y-contrast, [data-theme="contrast"]) .dnt-clinic-control-pill {
+	border: 2px solid #000000 !important;
+	box-shadow: none !important;
+}
+
+/* Масштабирование шрифта для слабовидящих (ГОСТ Р 52872-2019 / WCAG AAA) */
+html[data-a11y-font="normal"] {
+	font-size: 100%;
+}
+
+html[data-a11y-font="large"] {
+	font-size: 115% !important;
+}
+
+html[data-a11y-font="x-large"] {
+	font-size: 130% !important;
+}
+
+html[data-a11y-font="large"] body {
+	font-size: 15px;
+	line-height: 1.6;
+}
+
+html[data-a11y-font="x-large"] body {
+	font-size: 17px;
+	line-height: 1.7;
+}
+
+html[data-a11y-font="large"] :is(button, input, select, textarea) {
+	font-size: 14px !important;
+}
+
+html[data-a11y-font="x-large"] :is(button, input, select, textarea) {
+	font-size: 16px !important;
+}
+

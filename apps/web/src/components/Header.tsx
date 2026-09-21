@@ -1,5 +1,3 @@
-import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	Activity,
 	ChevronDown,
@@ -7,6 +5,7 @@ import {
 	CreditCard,
 	Database,
 	FileText,
+	Glasses,
 	Headphones,
 	Lock,
 	Moon,
@@ -22,6 +21,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useOptionalAppLogicContext } from "../contexts/AppLogicContext";
 import { useAppStore } from "../store/appStore";
 import { useSettingsStore } from "../store/settingsStore";
@@ -34,6 +34,66 @@ export interface ClinicControlPillProps {
 	className?: string;
 	onLockSession?: (() => void) | undefined;
 	onOpenShiftModal?: (() => void) | undefined;
+}
+
+export interface AccessibilityModeButtonProps {
+	className?: string;
+	compact?: boolean;
+	isAccessibilityMode?: boolean;
+	onToggle?: () => void;
+}
+
+/**
+ * Кнопка быстрого перехода на версию для людей с ограниченными возможностями
+ * (ГОСТ Р 52872-2019 / WCAG AAA).
+ */
+export function AccessibilityModeButton({
+	className = "",
+	compact = false,
+	isAccessibilityMode: isAccessibilityModeProp,
+	onToggle,
+}: AccessibilityModeButtonProps) {
+	const storeThemeMode = useThemeStore((s) => s.themeMode);
+	const storeA11y = useThemeStore((s) => s.isAccessibilityMode);
+	const storeToggle = useThemeStore((s) => s.toggleAccessibilityMode);
+
+	const isAccessibilityMode =
+		isAccessibilityModeProp !== undefined
+			? isAccessibilityModeProp
+			: typeof window === "undefined"
+				? useThemeStore.getState().isAccessibilityMode ||
+					useThemeStore.getState().themeMode === "contrast"
+				: storeA11y || storeThemeMode === "contrast";
+
+	const handleToggle = onToggle || storeToggle;
+
+	return (
+		<button
+			type="button"
+			onClick={handleToggle}
+			className={`dnt-a11y-toggle-btn ${
+				isAccessibilityMode ? "dnt-a11y-toggle-btn--active" : ""
+			} ${className}`}
+			aria-pressed={isAccessibilityMode}
+			aria-label={
+				isAccessibilityMode
+					? "Вернуться на стандартную версию оформления"
+					: "Перейти на версию для людей с ограниченными возможностями (ГОСТ Р 52872-2019 / WCAG AAA)"
+			}
+			title={
+				isAccessibilityMode
+					? "Стандартная версия оформления"
+					: "Версия для людей с ограниченными возможностями (высокий контраст 7:1, ГОСТ Р 52872-2019)"
+			}
+		>
+			<Glasses size={14} className="shrink-0" />
+			{!compact && (
+				<span className="hidden sm:inline">
+					{isAccessibilityMode ? "Обычная версия" : "Для слабовидящих"}
+				</span>
+			)}
+		</button>
+	);
 }
 
 /**
@@ -66,9 +126,15 @@ export function ClinicControlPill({
 	const isMuted = useTelephonyStore((s) => s.isMuted);
 	const toggleMute = useTelephonyStore((s) => s.toggleMute);
 
-	const clinicMode = useSettingsStore((s) => s.clinicMode);
+	const _clinicMode = useSettingsStore((s) => s.clinicMode);
 	const themeMode = useThemeStore((s) => s.themeMode);
 	const setThemeMode = useThemeStore((s) => s.setThemeMode);
+	const isAccessibilityMode = useThemeStore((s) => s.isAccessibilityMode);
+	const toggleAccessibilityMode = useThemeStore(
+		(s) => s.toggleAccessibilityMode,
+	);
+	const a11yFontSize = useThemeStore((s) => s.a11yFontSize);
+	const setA11yFontSize = useThemeStore((s) => s.setA11yFontSize);
 	const setCurrentView = useAppStore((s) => s.setCurrentView);
 
 	const ctx = useOptionalAppLogicContext();
@@ -84,7 +150,10 @@ export function ClinicControlPill({
 		};
 		const handleOffline = () => {
 			setIsOnline(false);
-			showToast("Внимание: режим офлайн. Все данные сохраняются локально", "warning");
+			showToast(
+				"Внимание: режим офлайн. Все данные сохраняются локально",
+				"warning",
+			);
 		};
 
 		window.addEventListener("online", handleOnline);
@@ -100,7 +169,10 @@ export function ClinicControlPill({
 		if (!isOpen) return;
 
 		const handleClickOutside = (e: MouseEvent) => {
-			if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+			if (
+				wrapperRef.current &&
+				!wrapperRef.current.contains(e.target as Node)
+			) {
 				setIsOpen(false);
 			}
 		};
@@ -119,12 +191,43 @@ export function ClinicControlPill({
 		};
 	}, [isOpen]);
 
-	// Live tick for shift duration
+	// Live tick for shift duration (skips background ticks when tab is hidden on low-spec PCs)
 	useEffect(() => {
+		let lastTick = Date.now();
 		const interval = setInterval(() => {
-			setShiftDurationSeconds((prev) => prev + 1);
+			if (typeof document !== "undefined" && document.hidden) return;
+			const now = Date.now();
+			const elapsedSec = Math.round((now - lastTick) / 1000);
+			if (elapsedSec >= 1) {
+				setShiftDurationSeconds((prev) => prev + elapsedSec);
+				lastTick = now;
+			}
 		}, 1000);
-		return () => clearInterval(interval);
+
+		const handleVisibilityChange = () => {
+			if (typeof document !== "undefined" && !document.hidden) {
+				const now = Date.now();
+				const elapsedSec = Math.round((now - lastTick) / 1000);
+				if (elapsedSec >= 1) {
+					setShiftDurationSeconds((prev) => prev + elapsedSec);
+					lastTick = now;
+				}
+			}
+		};
+
+		if (typeof document !== "undefined") {
+			document.addEventListener("visibilitychange", handleVisibilityChange);
+		}
+
+		return () => {
+			clearInterval(interval);
+			if (typeof document !== "undefined") {
+				document.removeEventListener(
+					"visibilitychange",
+					handleVisibilityChange,
+				);
+			}
+		};
 	}, []);
 
 	const formattedShiftTime = useMemo(() => {
@@ -151,7 +254,10 @@ export function ClinicControlPill({
 			setSyncLatencyMs(latency);
 			setLastSyncTime(new Date());
 			if (res.ok) {
-				showToast(`Синхронизация с PostgreSQL 18.4 выполнена (${latency} мс)`, "success");
+				showToast(
+					`Синхронизация с PostgreSQL 18.4 выполнена (${latency} мс)`,
+					"success",
+				);
 			} else {
 				showToast(`Синхронизация: сервер вернул статус ${res.status}`, "info");
 			}
@@ -179,6 +285,8 @@ export function ClinicControlPill({
 			className={`dnt-clinic-control-wrapper ${className}`}
 			data-testid="clinic-control-center-wrapper"
 		>
+			<AccessibilityModeButton />
+
 			{/* Unified Capsule Button [ Смена | АТС | Синхро ] */}
 			<button
 				type="button"
@@ -214,7 +322,9 @@ export function ClinicControlPill({
 											: "dnt-pill-dot--pause"
 								}`}
 							/>
-							<span className="hidden 2xl:inline text-[10px] opacity-90">{agentStateLabel}</span>
+							<span className="hidden 2xl:inline text-[10px] opacity-90">
+								{agentStateLabel}
+							</span>
 						</>
 					)}
 				</span>
@@ -229,7 +339,9 @@ export function ClinicControlPill({
 					<ShieldCheck size={12} className="text-emerald-500 shrink-0" />
 					<span className="hidden 2xl:inline">54-ФЗ</span>
 					<span className="dnt-pill-dot dnt-pill-dot--online" />
-					<span className="font-mono text-[10px] opacity-90 hidden 2xl:inline">{formattedShiftTime}</span>
+					<span className="font-mono text-[10px] opacity-90 hidden 2xl:inline">
+						{formattedShiftTime}
+					</span>
 				</span>
 
 				<span className="dnt-pill-divider hidden sm:block" />
@@ -243,12 +355,16 @@ export function ClinicControlPill({
 						size={12}
 						className={`${isSyncing ? "animate-spin text-amber-400" : isOnline ? "text-emerald-500" : "text-rose-500"}`}
 					/>
-					<span className="hidden 2xl:inline">{isOnline ? "БД" : "Офлайн"}</span>
+					<span className="hidden 2xl:inline">
+						{isOnline ? "БД" : "Офлайн"}
+					</span>
 					<span
 						className={`dnt-pill-dot ${isOnline ? "dnt-pill-dot--online" : "dnt-pill-dot--offline"}`}
 					/>
 					{isOnline && (
-						<span className="font-mono text-[10px] opacity-80 hidden 2xl:inline">{syncLatencyMs}ms</span>
+						<span className="font-mono text-[10px] opacity-80 hidden 2xl:inline">
+							{syncLatencyMs}ms
+						</span>
 					)}
 				</span>
 
@@ -260,9 +376,8 @@ export function ClinicControlPill({
 
 			{/* macOS HIG Control Center Popover */}
 			{isOpen && (
-				<div
+				<section
 					className="dnt-control-center-popover"
-					role="region"
 					aria-label="Центр управления клиникой"
 				>
 					{/* Popover Header */}
@@ -276,7 +391,8 @@ export function ClinicControlPill({
 									Пульт Клиники
 								</h3>
 								<p className="text-[10px] text-[var(--muted,#475569)] truncate">
-									{dashboard?.clinicName || "Клиника DENTE"} · {dashboard?.role ? String(dashboard.role) : "Администратор"}
+									{dashboard?.clinicName || "Клиника DENTE"} ·{" "}
+									{dashboard?.role ? String(dashboard.role) : "Администратор"}
 								</p>
 							</div>
 						</div>
@@ -304,11 +420,17 @@ export function ClinicControlPill({
 
 						<div className="grid grid-cols-2 gap-2 text-xs mb-3">
 							<div className="p-2 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))]">
-								<span className="text-[10px] text-[var(--muted,#475569)] block">Смена №</span>
-								<strong className="text-[var(--ink,#0f172a)] font-mono text-sm">№ 14</strong>
+								<span className="text-[10px] text-[var(--muted,#475569)] block">
+									Смена №
+								</span>
+								<strong className="text-[var(--ink,#0f172a)] font-mono text-sm">
+									№ 14
+								</strong>
 							</div>
 							<div className="p-2 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))]">
-								<span className="text-[10px] text-[var(--muted,#475569)] block">ККТ 54-ФЗ / ОФД</span>
+								<span className="text-[10px] text-[var(--muted,#475569)] block">
+									ККТ 54-ФЗ / ОФД
+								</span>
 								<strong className="text-emerald-600 dark:text-emerald-400 font-semibold text-xs flex items-center gap-1">
 									<ShieldCheck size={12} /> ККТ АТОЛ Онлайн (ФФД 1.2)
 								</strong>
@@ -320,7 +442,10 @@ export function ClinicControlPill({
 								type="button"
 								onClick={() => {
 									setIsOpen(false);
-									showToast("Сформирован промежуточный X-отчет (без гашения)", "info");
+									showToast(
+										"Сформирован промежуточный X-отчет (без гашения)",
+										"info",
+									);
 									setCurrentView("shift");
 								}}
 								className="dnt-cc-btn dnt-cc-btn--secondary flex-1 min-h-[44px]"
@@ -365,9 +490,24 @@ export function ClinicControlPill({
 						<div className="grid grid-cols-3 gap-1.5 mb-2.5">
 							{(
 								[
-									{ id: "online", label: "Онлайн", color: "text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 border-emerald-300 dark:border-emerald-800" },
-									{ id: "dnd", label: "Занят", color: "text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 border-rose-300 dark:border-rose-800" },
-									{ id: "pause", label: "Пауза", color: "text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/80 border-amber-300 dark:border-amber-800" },
+									{
+										id: "online",
+										label: "Онлайн",
+										color:
+											"text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 border-emerald-300 dark:border-emerald-800",
+									},
+									{
+										id: "dnd",
+										label: "Занят",
+										color:
+											"text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 border-rose-300 dark:border-rose-800",
+									},
+									{
+										id: "pause",
+										label: "Пауза",
+										color:
+											"text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/80 border-amber-300 dark:border-amber-800",
+									},
 								] as const
 							).map((st) => (
 								<button
@@ -425,7 +565,10 @@ export function ClinicControlPill({
 								type="button"
 								onClick={() => {
 									setIsOpen(false);
-									showToast("Телефония Mango PBX активна и готова к приему вызовов", "info");
+									showToast(
+										"Телефония Mango PBX активна и готова к приему вызовов",
+										"info",
+									);
 								}}
 								className="dnt-cc-btn dnt-cc-btn--secondary !min-h-[44px] text-xs"
 								title="Телефония: Mango PBX подключена"
@@ -459,15 +602,21 @@ export function ClinicControlPill({
 						<div className="text-[11px] text-[var(--muted,#475569)] space-y-1 mb-2.5">
 							<div className="flex items-center justify-between">
 								<span>PostgreSQL 18.4 (127.0.0.1:5432):</span>
-								<strong className="text-[var(--ink,#0f172a)] font-mono">Подключено</strong>
+								<strong className="text-[var(--ink,#0f172a)] font-mono">
+									Подключено
+								</strong>
 							</div>
 							<div className="flex items-center justify-between">
 								<span>IndexedDB Offline Outbox:</span>
-								<strong className="text-emerald-600 dark:text-emerald-400">0 в очереди</strong>
+								<strong className="text-emerald-600 dark:text-emerald-400">
+									0 в очереди
+								</strong>
 							</div>
 							<div className="flex items-center justify-between">
 								<span>Последняя синхронизация:</span>
-								<strong className="text-[var(--ink,#0f172a)] font-mono">{formattedLastSync}</strong>
+								<strong className="text-[var(--ink,#0f172a)] font-mono">
+									{formattedLastSync}
+								</strong>
 							</div>
 						</div>
 
@@ -477,18 +626,92 @@ export function ClinicControlPill({
 							disabled={isSyncing}
 							className="dnt-cc-btn dnt-cc-btn--primary w-full min-h-[44px]"
 						>
-							<RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
-							<span>{isSyncing ? "Синхронизация..." : "Синхронизировать сейчас"}</span>
+							<RefreshCw
+								size={14}
+								className={isSyncing ? "animate-spin" : ""}
+							/>
+							<span>
+								{isSyncing ? "Синхронизация..." : "Синхронизировать сейчас"}
+							</span>
 						</button>
 					</div>
 
-					{/* SECTION 4: Quick Workspace Utilities */}
-					<div className="flex items-center justify-between pt-2 text-xs">
-						<div className="flex items-center gap-1">
+					{/* SECTION 4: Quick Workspace Utilities & Accessibility */}
+					<div className="dnt-cc-section">
+						<div className="dnt-cc-section-header">
+							<span className="dnt-cc-section-title">
+								<Glasses size={13} className="text-[var(--teal)]" />
+								<span>Доступность и масштаб</span>
+							</span>
+							<fieldset
+								className="flex items-center gap-1 bg-[var(--paper-soft,#f1f5f9)] p-0.5 rounded-lg border border-[var(--line,#cbd5e1)] m-0"
+								aria-label="Размер шрифта"
+							>
+								<button
+									type="button"
+									onClick={() => setA11yFontSize("normal")}
+									className={`min-h-[32px] min-w-[32px] px-2 py-0.5 rounded text-xs font-bold transition-all cursor-pointer ${
+										a11yFontSize === "normal"
+											? "bg-[var(--paper-strong,#ffffff)] text-[var(--ink,#0f172a)] shadow-xs border border-[var(--line,#cbd5e1)]"
+											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									}`}
+									title="Стандартный шрифт (100%)"
+									aria-pressed={a11yFontSize === "normal"}
+								>
+									A
+								</button>
+								<button
+									type="button"
+									onClick={() => setA11yFontSize("large")}
+									className={`min-h-[32px] min-w-[32px] px-2 py-0.5 rounded text-xs font-bold transition-all cursor-pointer ${
+										a11yFontSize === "large"
+											? "bg-[var(--paper-strong,#ffffff)] text-[var(--ink,#0f172a)] shadow-xs border border-[var(--line,#cbd5e1)]"
+											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									}`}
+									title="Увеличенный шрифт (115%)"
+									aria-pressed={a11yFontSize === "large"}
+								>
+									A+
+								</button>
+								<button
+									type="button"
+									onClick={() => setA11yFontSize("x-large")}
+									className={`min-h-[32px] min-w-[32px] px-2 py-0.5 rounded text-xs font-bold transition-all cursor-pointer ${
+										a11yFontSize === "x-large"
+											? "bg-[var(--paper-strong,#ffffff)] text-[var(--ink,#0f172a)] shadow-xs border border-[var(--line,#cbd5e1)]"
+											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									}`}
+									title="Крупный шрифт (130%)"
+									aria-pressed={a11yFontSize === "x-large"}
+								>
+									A++
+								</button>
+							</fieldset>
+						</div>
+
+						<div className="flex items-center justify-between gap-2 pt-2 text-xs">
 							<button
 								type="button"
-								onClick={() => setThemeMode(themeMode === "dark" ? "light" : "dark")}
-								className="dnt-cc-btn dnt-cc-btn--secondary !min-h-[44px] !px-3"
+								onClick={toggleAccessibilityMode}
+								className={`dnt-cc-btn flex-1 !min-h-[44px] ${
+									isAccessibilityMode
+										? "dnt-cc-btn--primary"
+										: "dnt-cc-btn--secondary"
+								}`}
+								title="Режим высокой контрастности (ГОСТ Р 52872-2019 / WCAG AAA)"
+							>
+								<Glasses size={14} />
+								<span>
+									{isAccessibilityMode ? "Обычная версия" : "Для слабовидящих"}
+								</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() =>
+									setThemeMode(themeMode === "dark" ? "light" : "dark")
+								}
+								className="dnt-cc-btn dnt-cc-btn--secondary flex-1 !min-h-[44px]"
 								title="Сменить тему оформления"
 							>
 								{themeMode === "dark" ? <Sun size={14} /> : <Moon size={14} />}
@@ -497,21 +720,23 @@ export function ClinicControlPill({
 						</div>
 
 						{onLockSession && (
-							<button
-								type="button"
-								onClick={() => {
-									setIsOpen(false);
-									onLockSession();
-								}}
-								className="dnt-cc-btn dnt-cc-btn--secondary !min-h-[44px] !px-3 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-								title="Заблокировать рабочее место"
-							>
-								<Lock size={14} />
-								<span>Заблокировать</span>
-							</button>
+							<div className="pt-2">
+								<button
+									type="button"
+									onClick={() => {
+										setIsOpen(false);
+										onLockSession();
+									}}
+									className="dnt-cc-btn dnt-cc-btn--secondary w-full !min-h-[44px] text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+									title="Заблокировать рабочее место"
+								>
+									<Lock size={14} />
+									<span>Заблокировать сессию</span>
+								</button>
+							</div>
 						)}
 					</div>
-				</div>
+				</section>
 			)}
 		</div>
 	);

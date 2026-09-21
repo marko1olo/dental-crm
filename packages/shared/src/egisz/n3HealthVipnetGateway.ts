@@ -581,7 +581,17 @@ export class N3EventLogClient {
 				errorMessage?: string;
 			};
 
-			const item = json.items?.[0] ?? json;
+			type EventLogRawItem = {
+				idDocumentMis?: string;
+				status?: string;
+				remdNumber?: string;
+				remdRegistrationNumber?: string;
+				registeredDate?: string;
+				registeredAt?: string;
+				error?: string;
+				errorMessage?: string;
+			};
+			const item: EventLogRawItem = (json.items?.[0] ?? json) as EventLogRawItem;
 			const rawStatus = (item.status || "UNKNOWN").toUpperCase();
 
 			let status: EventLogDocumentStatusRecord["status"] = "UNKNOWN";

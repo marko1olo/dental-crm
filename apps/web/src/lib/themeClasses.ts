@@ -38,6 +38,8 @@ export type ThemeMode =
 	| "warm_sand"
 	| "auto";
 
+export type A11yFontSize = "normal" | "large" | "x-large";
+
 /** Что именно выставляется на корневом элементе. */
 export type ResolvedTheme = {
 	/** Значение data-theme: единственный источник истины для палитры. */
@@ -61,14 +63,29 @@ export type ResolvedTheme = {
 	readonly lightClass: boolean;
 	/** Для системных элементов управления: полос прокрутки, полей ввода. */
 	readonly colorScheme: "light" | "dark";
+	/** Флаг режима доступности (ГОСТ Р 52872-2019 / WCAG AAA). */
+	readonly isAccessibilityMode: boolean;
+	/** Масштабирование шрифта для слабовидящих. */
+	readonly a11yFontSize: A11yFontSize;
 };
 
 export function resolveTheme(
 	themeMode: ThemeMode,
 	prefersDark: boolean,
+	options?: {
+		isAccessibilityMode?: boolean;
+		a11yFontSize?: A11yFontSize;
+	},
 ): ResolvedTheme {
+	const isA11y =
+		Boolean(options?.isAccessibilityMode) || themeMode === "contrast";
+	const effectiveThemeMode = isA11y ? "contrast" : themeMode;
 	const theme =
-		themeMode === "auto" ? (prefersDark ? "dark" : "light") : themeMode;
+		effectiveThemeMode === "auto"
+			? prefersDark
+				? "dark"
+				: "light"
+			: effectiveThemeMode;
 	const isDark =
 		theme === "dark" ||
 		theme === "night" ||
@@ -82,6 +99,8 @@ export function resolveTheme(
 		// Тёмные темы: системные полосы прокрутки и поля ввода
 		// должны быть тёмными, иначе браузер рисует их светлыми поверх тёмного.
 		colorScheme: isDark ? "dark" : "light",
+		isAccessibilityMode: isA11y,
+		a11yFontSize: options?.a11yFontSize ?? "normal",
 	};
 }
 
@@ -94,4 +113,12 @@ export function applyThemeToRoot(
 	root.classList.toggle("dark", resolved.darkClass);
 	root.classList.toggle("light", resolved.lightClass);
 	root.style.colorScheme = resolved.colorScheme;
+
+	const isA11y = resolved.theme === "contrast" || resolved.isAccessibilityMode;
+	root.classList.toggle("a11y-contrast", isA11y);
+	if (resolved.a11yFontSize) {
+		root.dataset.a11yFont = resolved.a11yFontSize;
+	} else {
+		delete root.dataset.a11yFont;
+	}
 }
