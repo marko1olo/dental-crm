@@ -80,7 +80,7 @@ export function GlobalToast() {
 			{toast.type === "warning" && <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />}
 			{toast.type === "success" && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
 			{toast.type === "info" && <Info className="w-4 h-4 text-cyan-400 shrink-0" />}
-			<span className="font-medium text-[var(--ink)]" style={{ color: "var(--ink, #f8fafc)" }}>
+			<span className="font-medium text-slate-100" style={{ color: "#f8fafc" }}>
 				{toast.text}
 			</span>
 			<button

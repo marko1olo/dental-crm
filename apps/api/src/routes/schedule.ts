@@ -485,6 +485,7 @@ function sendAppointmentRejection(
 	reply: FastifyReply,
 	rejection: AppointmentRejectionResponse,
 ) {
+	if (reply.sent) return reply;
 	const payload: Record<string, unknown> = {
 		code: rejection.code,
 		reason: rejection.reason,

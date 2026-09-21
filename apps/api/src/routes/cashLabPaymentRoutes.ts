@@ -68,6 +68,10 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 				return { kind: "order_not_found" as const };
 			}
 
+			if (order.paidFromCashOperationId) {
+				return { kind: "already_paid" as const };
+			}
+
 			const amountToPay = payData.amountRub ?? order.priceRub ?? 0;
 			if (amountToPay <= 0) {
 				return { kind: "invalid_amount" as const };
@@ -164,6 +168,12 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 			return reply.code(404).send({
 				error: "LabOrderNotFound",
 				message: "Заказ-наряд ЗТЛ не найден.",
+			});
+		}
+		if (result.kind === "already_paid") {
+			return reply.code(409).send({
+				error: "LabOrderAlreadyPaid",
+				message: "Заказ-наряд ЗТЛ уже был оплачен ранее.",
 			});
 		}
 		if (result.kind === "invalid_amount") {

@@ -1107,11 +1107,15 @@ export async function toggleDesktopFullScreen(flag?: boolean): Promise<DesktopWi
 	if (typeof document !== "undefined") {
 		try {
 			if (!document.fullscreenElement) {
-				await document.documentElement.requestFullscreen();
-				return { isFullScreen: true, isKiosk: false, isMaximized: true };
+				if (typeof document.documentElement?.requestFullscreen === "function") {
+					await document.documentElement.requestFullscreen();
+					return { isFullScreen: true, isKiosk: false, isMaximized: true };
+				}
 			} else {
-				await document.exitFullscreen();
-				return { isFullScreen: false, isKiosk: false, isMaximized: false };
+				if (typeof document.exitFullscreen === "function") {
+					await document.exitFullscreen();
+					return { isFullScreen: false, isKiosk: false, isMaximized: false };
+				}
 			}
 		} catch (err: unknown) {
 			logger.warn("[desktopBridge] document fullscreen request/exit failed:", err);

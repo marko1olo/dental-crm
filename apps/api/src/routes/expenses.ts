@@ -215,6 +215,7 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 				.select()
 				.from(cashBoxes)
 				.where(and(eq(cashBoxes.organizationId, organizationId), eq(cashBoxes.type, targetType)))
+				.for("update")
 				.limit(1);
 
 			if (!targetBox) {
@@ -222,6 +223,7 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 					.select()
 					.from(cashBoxes)
 					.where(eq(cashBoxes.organizationId, organizationId))
+					.for("update")
 					.limit(1);
 				targetBox = fallback;
 			}
