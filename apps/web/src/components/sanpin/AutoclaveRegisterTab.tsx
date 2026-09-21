@@ -181,7 +181,7 @@ export function AutoclaveRegisterTab() {
 			if (res.ok) {
 				const data = await res.json();
 				showToast(
-					data.message || "⚡ Нормативный цикл стерилизации смены зафиксирован в 1 клик!",
+					data.message || "Нормативный цикл стерилизации смены зафиксирован в 1 клик!",
 					"success",
 				);
 				await fetchLogs();
@@ -376,7 +376,7 @@ export function AutoclaveRegisterTab() {
 			</html>
 		`);
 		printWin.document.close();
-		showToast(`⚡ Сформирована пачка из ${count} термоэтикеток (срок: 30 суток по СанПиН 3.3686-21)`, "success");
+		showToast(`Сформирована пачка из ${count} термоэтикеток (срок: 30 суток по СанПиН 3.3686-21)`, "success");
 	};
 
 	const openKraftForLog = (log: SterilizationLogRecord) => {
@@ -490,7 +490,7 @@ export function AutoclaveRegisterTab() {
 
 			{/* Compact 1-Click Autoclave Shift Cycle Strip (<= 38px) */}
 			<div
-				className="flex items-center justify-between gap-3 px-3 py-1.5 my-1.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] min-w-0 overflow-x-auto"
+				className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 px-3 py-2 my-1.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] min-w-0"
 			>
 				<div className="flex items-center gap-2 min-w-0 shrink">
 					<span className="px-1.5 py-0.5 rounded bg-[var(--primary,#0284c7)] text-white text-[10px] font-bold uppercase tracking-wider shrink-0 whitespace-nowrap">
@@ -501,17 +501,18 @@ export function AutoclaveRegisterTab() {
 					</span>
 				</div>
 
-				<div className="flex items-center gap-2 shrink-0 flex-nowrap">
+				<div className="flex items-center gap-2 w-full sm:w-auto shrink-0 flex-nowrap">
 					<button
 						type="button"
 						onClick={handleQuickShiftBatch}
 						disabled={isLoggingBatch}
-						className="sanpin-btn touch-manipulation h-8 px-3 text-xs font-bold rounded-md bg-[var(--primary,#0284c7)] text-white hover:bg-sky-600 inline-flex items-center gap-1.5 cursor-pointer border-0 shadow-sm shrink-0 whitespace-nowrap"
+						className="sanpin-btn touch-manipulation h-8 px-3 text-xs font-bold rounded-md bg-[var(--primary,#0284c7)] text-white hover:bg-sky-600 inline-flex items-center justify-center gap-1.5 cursor-pointer border-0 shadow-sm w-full sm:w-auto shrink-0 whitespace-nowrap"
 						data-testid="banner-autoclave-quick-shift-btn"
 						title="Запустить типовой цикл автоклава (134°C, 2.1 бар, 5 мин) и внести в Форму 257/у"
 					>
 						<Sparkles size={14} className="shrink-0" />
-						<span className="shrink-0 whitespace-nowrap">Запустить типовой цикл (134°C, 2.1 бар, 5 мин)</span>
+						<span className="shrink-0 whitespace-nowrap hidden sm:inline">Запустить типовой цикл (134°C, 2.1 бар, 5 мин)</span>
+						<span className="shrink-0 whitespace-nowrap sm:hidden">Запустить типовой цикл</span>
 					</button>
 				</div>
 			</div>

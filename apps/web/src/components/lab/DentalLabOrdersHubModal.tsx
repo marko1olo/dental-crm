@@ -1733,8 +1733,8 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 												>
 													<div style={{ fontWeight: 700, display: "flex", justifyContent: "space-between" }}>
 														<span>№{sDef.stepNumber}</span>
-														<span style={{ fontSize: "9.5px", color: isDone ? "var(--teal, #059669)" : isCurrent ? "var(--teal, #0d9488)" : "var(--muted, #94a3b8)" }}>
-															{isDone ? "✓" : isCurrent ? "В РАБОТЕ" : "ОЖИДАНИЕ"}
+														<span style={{ fontSize: "9.5px", display: "inline-flex", alignItems: "center", gap: "2px", color: isDone ? "var(--teal, #059669)" : isCurrent ? "var(--teal, #0d9488)" : "var(--muted, #94a3b8)" }}>
+															{isDone ? <CheckCircle2 size={10} className="text-emerald-600 dark:text-emerald-400" /> : isCurrent ? "В РАБОТЕ" : "ОЖИДАНИЕ"}
 														</span>
 													</div>
 													<div style={{ marginTop: "2px", fontWeight: isCurrent ? 700 : 500 }} className="truncate">

@@ -975,9 +975,13 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 										color: 'var(--ok-fg)',
 										fontSize: '0.8125rem',
 										fontWeight: 600,
+										display: 'flex',
+										alignItems: 'center',
+										gap: '0.5rem',
 									}}
 								>
-									✓ Успешно распознано {importSuccessCount} услуг
+									<CheckCircle2 size={16} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+									<span>Успешно распознано {importSuccessCount} услуг</span>
 								</div>
 							)}
 						</div>

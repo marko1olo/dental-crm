@@ -136,7 +136,7 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 		try {
 			const headers = auth.denteClinicalMutationHeaders();
 			await createLeakTask(lead.id, headers);
-			showToast(`✓ Задача перезвонить создана: ${lead.patientFullName}`, "success");
+			showToast(`Задача перезвонить создана: ${lead.patientFullName}`, "success");
 			await loadData();
 		} catch (err: any) {
 			showToast(`Ошибка: ${err.message}`, "error");

@@ -1361,7 +1361,10 @@ export function App() {
 									disabled={resetting}
 								>
 									<span className="wizard-mode-icon" aria-hidden="true">
-										✨
+										<Sparkles
+											className="w-5 h-5 text-[var(--teal)]"
+											aria-hidden="true"
+										/>
 									</span>
 									<strong className="wizard-mode-title">
 										Настроить клинику сейчас

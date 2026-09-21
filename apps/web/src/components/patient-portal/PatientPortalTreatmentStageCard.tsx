@@ -329,11 +329,11 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 				</div>
 
 				<div style={{ display: "flex", flexWrap: "wrap", gap: "10px", fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)" }}>
-					<span>✓ Аппликационный гель (0% боли от укола)</span>
-					<span>✓ Анестезия Septanest (0 ₽ • включено)</span>
-					<span>✓ Снимки визиографа RVG (0 ₽ • включено)</span>
-					<span>✓ Изоляция коффердамом (0 ₽ • включено)</span>
-					<span>✓ Шлифовка и полировка (0 ₽ • включено)</span>
+					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} className="text-emerald-500 shrink-0" /> Аппликационный гель (0% боли от укола)</span>
+					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} className="text-emerald-500 shrink-0" /> Анестезия Septanest (0 ₽ • включено)</span>
+					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} className="text-emerald-500 shrink-0" /> Снимки визиографа RVG (0 ₽ • включено)</span>
+					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} className="text-emerald-500 shrink-0" /> Изоляция коффердамом (0 ₽ • включено)</span>
+					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} className="text-emerald-500 shrink-0" /> Шлифовка и полировка (0 ₽ • включено)</span>
 				</div>
 			</div>
 

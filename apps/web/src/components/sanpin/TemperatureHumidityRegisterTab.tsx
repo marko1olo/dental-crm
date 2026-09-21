@@ -178,7 +178,7 @@ export function TemperatureHumidityRegisterTab() {
 			const createdList = await provisionCanonicalTemperatureEquipments();
 			if (createdList.length > 0) {
 				if (showSuccessToast) {
-					showToast("⚡ Типовое оснащение (Холодильник Pozis + Кабинет ВИТ-2) успешно подключено!", "success");
+					showToast("Типовое оснащение (Холодильник Pozis + Кабинет ВИТ-2) успешно подключено!", "success");
 				}
 				await fetchAll();
 				setLogEquipId(createdList[0].id);
@@ -234,7 +234,7 @@ export function TemperatureHumidityRegisterTab() {
 			if (res.ok) {
 				const data = await res.json();
 				showToast(
-					`⚡ Норма температуры и влажности (${period === "morning" ? "утро" : "вечер"}) зафиксирована для всех ${data.count ?? (currentEquips.length || 2)} объектов!`,
+					`Норма температуры и влажности (${period === "morning" ? "утро" : "вечер"}) зафиксирована для всех ${data.count ?? (currentEquips.length || 2)} объектов!`,
 					"success",
 				);
 				await fetchAll();
