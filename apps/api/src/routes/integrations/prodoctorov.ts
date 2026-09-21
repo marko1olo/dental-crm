@@ -847,16 +847,22 @@ ${offersXml}
 				}
 			}
 
-			// 2. Поиск или создание пациента
+			// 2. Поиск или создание пациента (с нормализацией номера до 10 цифр)
 			let patientId: string | null = null;
 			if (patientPhone) {
+				const digits = patientPhone.replace(/\D/g, "");
+				const suffix = digits.length >= 10 ? digits.slice(-10) : null;
+				const phoneCondition = suffix
+					? sql`right(regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g'), 10) = ${suffix}`
+					: eq(patients.phone, patientPhone);
+
 				const [foundPatient] = await tx
 					.select({ id: patients.id })
 					.from(patients)
 					.where(
 						and(
 							eq(patients.organizationId, organizationId),
-							eq(patients.phone, patientPhone),
+							phoneCondition,
 						),
 					)
 					.limit(1);

@@ -38,7 +38,7 @@
  *    сообщений. Возврат значения отложил бы подтверждение до конца разбора.
  */
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
@@ -601,6 +601,45 @@ export async function registerWhatsappRoutes(
 							const textBody =
 								typeof textObj?.body === "string" ? textObj.body : null;
 
+							let resolvedBody = textBody;
+							const msgType = typeof m.type === "string" ? m.type : null;
+							if (!resolvedBody && msgType) {
+								if (msgType === "image") {
+									const img = m.image as Record<string, unknown> | undefined;
+									const caption =
+										typeof img?.caption === "string" && img.caption.trim()
+											? ` (${img.caption.trim()})`
+											: "";
+									resolvedBody = `[Фото]${caption}`;
+								} else if (msgType === "document") {
+									const doc = m.document as Record<string, unknown> | undefined;
+									const filename =
+										typeof doc?.filename === "string" && doc.filename.trim()
+											? ` ${doc.filename.trim()}`
+											: "";
+									const caption =
+										typeof doc?.caption === "string" && doc.caption.trim()
+											? ` (${doc.caption.trim()})`
+											: "";
+									resolvedBody = `[Документ${filename}]${caption}`;
+								} else if (msgType === "audio" || msgType === "voice") {
+									resolvedBody = "[Голосовое сообщение / Аудио]";
+								} else if (msgType === "video") {
+									const vid = m.video as Record<string, unknown> | undefined;
+									const caption =
+										typeof vid?.caption === "string" && vid.caption.trim()
+											? ` (${vid.caption.trim()})`
+											: "";
+									resolvedBody = `[Видео]${caption}`;
+								} else if (msgType === "sticker") {
+									resolvedBody = "[Стикер]";
+								} else if (msgType === "location") {
+									resolvedBody = "[Геолокация]";
+								} else if (msgType === "contacts") {
+									resolvedBody = "[Контактная карточка]";
+								}
+							}
+
 							const rawTs =
 								typeof m.timestamp === "number"
 									? m.timestamp
@@ -657,7 +696,7 @@ export async function registerWhatsappRoutes(
 								channel: "whatsapp" as const,
 								externalId: msgId,
 								externalChatId: fromId,
-								messageText: textBody,
+								messageText: resolvedBody,
 								eventKind: "message" as const,
 								rawPayload: m as Record<string, unknown>,
 							});
@@ -761,6 +800,32 @@ export async function registerWhatsappRoutes(
 				error: "PatientPhoneMissing",
 				message:
 					"У пациента не указан корректный номер телефона — отправить сообщение в WhatsApp некуда.",
+			};
+		}
+
+		// Защита от дублей: если идентичное сообщение этому пациенту уже уходило за последние 60 секунд
+		const sixtySecondsAgo = new Date(Date.now() - 60_000);
+		const [recentDuplicate] = await db
+			.select({ id: communicationEvents.id })
+			.from(communicationEvents)
+			.where(
+				and(
+					eq(communicationEvents.organizationId, orgId),
+					eq(communicationEvents.patientId, patientId),
+					eq(communicationEvents.channel, "whatsapp"),
+					eq(communicationEvents.direction, "outbound"),
+					eq(communicationEvents.message, message),
+					gt(communicationEvents.createdAt, sixtySecondsAgo),
+				),
+			)
+			.limit(1);
+
+		if (recentDuplicate) {
+			reply.code(409);
+			return {
+				error: "DuplicateMessage",
+				message:
+					"Идентичное сообщение этому пациенту уже было отправлено менее минуты назад.",
 			};
 		}
 

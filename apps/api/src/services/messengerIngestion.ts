@@ -360,11 +360,17 @@ async function processSingleEvent(
 		ambiguous: number;
 	},
 ): Promise<void> {
-	const messageText = event.messageText?.trim();
+	let messageText = event.messageText?.trim();
 	if (!messageText) {
-		// Статусы доставки и служебные события текста не несут.
-		await markAsProcessed(event.id);
-		return;
+		if (event.eventKind === "message") {
+			const payload = event.rawPayload as Record<string, unknown> | null;
+			const type = typeof payload?.type === "string" ? payload.type : "вложение";
+			messageText = `[Входящее медиавложение: ${type}]`;
+		} else {
+			// Статусы доставки и служебные события текста не несут.
+			await markAsProcessed(event.id);
+			return;
+		}
 	}
 
 	const organizationId = event.organizationId;
@@ -478,7 +484,7 @@ async function processSingleEvent(
 						status: "needs_call",
 						priority: "urgent",
 						dueAt: new Date(Date.now() + 60 * 1000),
-						title: `🚨 Экстренное сообщение ${channel.toUpperCase()}: ${triageResult.triageResult.clinicalSummary}`,
+						title: `[Экстренно] Сообщение ${channel.toUpperCase()}: ${triageResult.triageResult.clinicalSummary}`,
 						body: messageText,
 						workflowCode: "OMNICHANNEL_EMERGENCY_TRIAGE",
 					});
@@ -511,22 +517,57 @@ async function processSingleEvent(
 	}
 	if (clinic?.name) noteParts.push(`Клиника: ${clinic.name}`);
 
-	const [lead] = await db
-		.insert(crmLeads)
-		.values({
-			organizationId,
-			name: `Входящее сообщение · ${channel}`,
-			phone:
-				channel === "whatsapp" || channel === "sms"
-					? externalChatId || null
-					: null,
-			source: `inbound_${channel}`,
-			status: "new",
-			notes: noteParts.join("\n"),
-		})
-		.returning({ id: crmLeads.id });
+	const leadPhone =
+		channel === "whatsapp" || channel === "sms"
+			? externalChatId || null
+			: null;
 
-	if (lead) report.leadsCreated += 1;
+	let leadId: string | null = null;
+
+	// Защита от дублей лидов: если незнакомый пациент пишет несколько сообщений подряд,
+	// дополняем существующий открытый лид вместо создания лавины дубликатов.
+	if (leadPhone) {
+		const [existingLead] = await db
+			.select({ id: crmLeads.id, notes: crmLeads.notes })
+			.from(crmLeads)
+			.where(
+				and(
+					eq(crmLeads.organizationId, organizationId),
+					eq(crmLeads.phone, leadPhone),
+				),
+			)
+			.limit(1);
+
+		if (existingLead) {
+			leadId = existingLead.id;
+			const updatedNotes = existingLead.notes
+				? `${existingLead.notes}\n---\n[Доп. сообщение ${channel}]: ${messageText.slice(0, 400)}`
+				: noteParts.join("\n");
+			await db
+				.update(crmLeads)
+				.set({ notes: updatedNotes })
+				.where(eq(crmLeads.id, existingLead.id));
+		}
+	}
+
+	if (!leadId) {
+		const [lead] = await db
+			.insert(crmLeads)
+			.values({
+				organizationId,
+				name: `Входящее сообщение · ${channel}`,
+				phone: leadPhone,
+				source: `inbound_${channel}`,
+				status: "new",
+				notes: noteParts.join("\n"),
+			})
+			.returning({ id: crmLeads.id });
+
+		if (lead) {
+			leadId = lead.id;
+			report.leadsCreated += 1;
+		}
+	}
 
 	// Semantic triage for unknown lead
 	try {
@@ -549,7 +590,7 @@ async function processSingleEvent(
 		payload: {
 			channel,
 			patientId: null,
-			leadId: lead?.id ?? null,
+			leadId,
 			text: messageText,
 			ambiguousMatch,
 		},

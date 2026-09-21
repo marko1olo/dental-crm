@@ -210,6 +210,9 @@ describe("TOMORROW REMINDERS DISPATCHER & MULTI-CHANNEL WATERFALL SUITE", () => 
 		assert.ok(rem1.allergyWarningText?.includes("пенициллин"));
 		assert.ok(rem1.reminderText.includes("[Подтвердить]: https://clinic.dente.ru/api/public/appointment/appt-1/confirm"));
 		assert.ok(rem1.reminderText.includes("[Перенести]: https://clinic.dente.ru/api/public/appointment/appt-1/reschedule"));
+		assert.ok(!rem1.reminderText.includes("👍"), "Reminder text must not contain cartoon 👍 emoji");
+		assert.ok(!rem1.reminderText.includes("❌"), "Reminder text must not contain cartoon ❌ emoji");
+		assert.ok(!rem1.reminderText.includes("⚠️"), "Reminder text must not contain ⚠️ emoji");
 
 		// Check Patient 2 (Surgery prep instruction)
 		const rem2 = summary.reminders[1]!;

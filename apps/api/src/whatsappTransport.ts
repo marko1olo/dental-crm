@@ -20,6 +20,7 @@
  * Документация: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages
  */
 
+import { createHmac } from "node:crypto";
 import { MessageTemplateEngine } from "./services/communications/MessageTemplateEngine.js";
 
 const GRAPH_API_VERSION = "v21.0";
@@ -53,6 +54,7 @@ export type WhatsappTransportResult =
 export interface WhatsappCredentials {
 	phoneNumberId: string;
 	accessToken: string;
+	appSecret?: string | null;
 }
 
 export interface SendWhatsappTextInput extends WhatsappCredentials {
@@ -80,11 +82,13 @@ function classifyWhatsappError(
 export function readWhatsappCredentials(config: {
 	phoneNumberId?: string | null;
 	accessToken?: string | null;
+	appSecret?: string | null;
 }): WhatsappCredentials | null {
 	const phoneNumberId = config.phoneNumberId?.trim();
 	const accessToken = config.accessToken?.trim();
+	const appSecret = config.appSecret?.trim() || null;
 	if (!phoneNumberId || !accessToken) return null;
-	return { phoneNumberId, accessToken };
+	return { phoneNumberId, accessToken, appSecret };
 }
 
 /** «+7 (916) 123-45-67» → «79161234567». Cloud API принимает только цифры. */
@@ -119,8 +123,22 @@ export async function sendWhatsappTextMessage(
 	const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
 	try {
+		const appSecret =
+			input.appSecret?.trim() ||
+			process.env.WHATSAPP_APP_SECRET?.trim() ||
+			process.env.META_APP_SECRET?.trim() ||
+			null;
+
+		let url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${encodeURIComponent(input.phoneNumberId)}/messages`;
+		if (appSecret) {
+			const proof = createHmac("sha256", appSecret)
+				.update(input.accessToken)
+				.digest("hex");
+			url += `?appsecret_proof=${encodeURIComponent(proof)}`;
+		}
+
 		const response = await fetch(
-			`https://graph.facebook.com/${GRAPH_API_VERSION}/${encodeURIComponent(input.phoneNumberId)}/messages`,
+			url,
 			{
 				method: "POST",
 				headers: {

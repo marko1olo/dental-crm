@@ -35,8 +35,14 @@ import {
 	namedDevelopmentModeActive,
 	unguardedBypassAllowed,
 } from "../accessGuard.js";
+import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../db/rls.js";
-import { communicationTasks, denteTelegramBotConfigs } from "../db/schema.js";
+import {
+	communicationTasks,
+	denteTelegramBotConfigs,
+	messengerInboundEvents,
+} from "../db/schema.js";
+import { processInboundEvents } from "../services/messengerIngestion.js";
 import type {
 	BuildDenteTelegramChatLinkListOptions,
 	BuildDenteTelegramLinkCodeListOptions,
@@ -3726,6 +3732,55 @@ async function handleWebhook(
 			action,
 			warnings,
 		});
+
+		// Омни-канальная интеграция: сохраняем входящее сообщение пациента в messenger_inbound_events
+		if (
+			runtime.organizationId &&
+			(messageText || updateKind === "photo" || updateKind === "document" || updateKind === "voice") &&
+			!appointmentCallbackResult.handled &&
+			!command
+		) {
+			try {
+				await withTenantCtx(runtime.organizationId, async (tx) => {
+					const msgId = `tg_${update.update_id}`;
+					const existing = await tx
+						.select({ id: messengerInboundEvents.id })
+						.from(messengerInboundEvents)
+						.where(
+							and(
+								eq(messengerInboundEvents.organizationId, runtime.organizationId),
+								eq(messengerInboundEvents.externalId, msgId),
+							),
+						)
+						.limit(1);
+
+					if (existing.length === 0) {
+						let textPayload = messageText ?? null;
+						if (!textPayload) {
+							if (updateKind === "photo") textPayload = "[Фото]";
+							else if (updateKind === "document") textPayload = "[Документ]";
+							else if (updateKind === "voice") textPayload = "[Голосовое сообщение]";
+						}
+
+						await tx.insert(messengerInboundEvents).values({
+							organizationId: runtime.organizationId,
+							channel: "telegram" as const,
+							externalId: msgId,
+							externalChatId: chatId,
+							messageText: textPayload,
+							eventKind: "message" as const,
+							rawPayload: update as Record<string, unknown>,
+						});
+					}
+				});
+
+				void processInboundEvents().catch((err) =>
+					request.log.warn({ err }, "Telegram messenger ingestion trigger failed"),
+				);
+			} catch (ingestErr) {
+				request.log.warn({ ingestErr }, "Failed to record Telegram inbound event to messengerInboundEvents");
+			}
+		}
 
 		return denteTelegramWebhookResponseSchema.parse(
 			readableTelegramPayload({

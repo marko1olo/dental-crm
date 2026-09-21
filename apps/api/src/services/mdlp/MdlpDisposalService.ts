@@ -335,130 +335,135 @@ export class MdlpDisposalService {
 
 		const updatedItems: Record<string, unknown>[] = [];
 
-		// Persist each item in PostgreSQL and deduct from FEFO warehouse stock
-		for (const it of disposalItems) {
-			try {
-				const warehouseId = input.warehouseId ?? null;
-				let inventoryItemId: string | null = null;
-				let batchId: string | null = null;
-				let inventoryTransactionId: string | null = null;
+		// Persist each item in PostgreSQL and deduct from FEFO warehouse stock within an atomic transaction
+		try {
+			await db.transaction(async (tx) => {
+				for (const it of disposalItems) {
+					const warehouseId = input.warehouseId ?? null;
+					let inventoryItemId: string | null = null;
+					let batchId: string | null = null;
+					let inventoryTransactionId: string | null = null;
 
-				// Синхронное списание 1 единицы препарата со склада по FEFO при наличии в номенклатуре
-				try {
-					const [inv] = await db
+					// Синхронное списание 1 единицы препарата со склада по FEFO при наличии в номенклатуре
+					try {
+						const [inv] = await tx
+							.select()
+							.from(inventoryItems)
+							.where(
+								and(
+									eq(inventoryItems.organizationId, orgId),
+									or(
+										eq(inventoryItems.barcode, it.gtin),
+										eq(inventoryItems.barcode, it.sgtin),
+										...(it.tradeName ? [ilike(inventoryItems.name, `%${it.tradeName}%`)] : []),
+										...(it.inn ? [ilike(inventoryItems.name, `%${it.inn}%`)] : []),
+									),
+								),
+							)
+							.limit(1);
+
+						if (inv) {
+							inventoryItemId = inv.id;
+							const fefoRes = await fefoStockService.deductFefo(tx, {
+								organizationId: orgId,
+								inventoryItemId: inv.id,
+								requiredQty: 1,
+								warehouseId: warehouseId ?? undefined,
+								visitId: input.visitId ?? undefined,
+								userId: input.doctorId ?? undefined,
+								allowOverdraft: true,
+								transactionType: "write_off_mdlp",
+								notes: `Выбытие МДЛП Схема 10560 (${it.sgtin})`,
+							});
+
+							if (fefoRes.batchesUsed.length > 0) {
+								batchId = fefoRes.batchesUsed[0]!.batchId;
+							}
+						}
+					} catch (stockErr) {
+						console.warn(
+							`[MdlpDisposalService] Предупреждение синхронизации склада для ${it.sgtin}:`,
+							stockErr,
+						);
+					}
+
+					const [existing] = await tx
 						.select()
-						.from(inventoryItems)
+						.from(mdlpItems)
 						.where(
 							and(
-								eq(inventoryItems.organizationId, orgId),
-								or(
-									eq(inventoryItems.barcode, it.gtin),
-									eq(inventoryItems.barcode, it.sgtin),
-									...(it.tradeName ? [ilike(inventoryItems.name, `%${it.tradeName}%`)] : []),
-									...(it.inn ? [ilike(inventoryItems.name, `%${it.inn}%`)] : []),
-								),
+								eq(mdlpItems.organizationId, orgId),
+								eq(mdlpItems.sgtin, it.sgtin),
 							),
 						)
 						.limit(1);
 
-					if (inv) {
-						inventoryItemId = inv.id;
-						const fefoRes = await fefoStockService.deductFefo(db, {
-							organizationId: orgId,
-							inventoryItemId: inv.id,
-							requiredQty: 1,
-							warehouseId: warehouseId ?? undefined,
-							visitId: input.visitId ?? undefined,
-							userId: input.doctorId ?? undefined,
-							allowOverdraft: true,
-							transactionType: "write_off_mdlp",
-							notes: `Выбытие МДЛП Схема 10560 (${it.sgtin})`,
-						});
-
-						if (fefoRes.batchesUsed.length > 0) {
-							batchId = fefoRes.batchesUsed[0]!.batchId;
-						}
+					if (existing) {
+						const [res] = await tx
+							.update(mdlpItems)
+							.set({
+								status: "disposed",
+								disposedAt: now,
+								disposalReason: input.reason ?? "Оказание медицинской помощи (Схема 10560)",
+								disposalType: "13",
+								patientId: input.patientId ?? existing.patientId,
+								visitId: input.visitId ?? existing.visitId,
+								doctorId: input.doctorId ?? existing.doctorId,
+								warehouseId: warehouseId ?? existing.warehouseId,
+								inventoryItemId: inventoryItemId ?? existing.inventoryItemId,
+								batchId: batchId ?? existing.batchId,
+								inventoryTransactionId: inventoryTransactionId ?? existing.inventoryTransactionId,
+								costRub: it.costRub ? String(it.costRub) : existing.costRub,
+								crptReceiptNumber,
+								schema10560Xml: schemaDoc.xmlContent,
+								schema10560Json: schemaDoc.jsonContent,
+								updatedAt: now,
+							})
+							.where(eq(mdlpItems.id, existing.id))
+							.returning();
+						if (res) updatedItems.push(res as Record<string, unknown>);
+					} else {
+						const [res] = await tx
+							.insert(mdlpItems)
+							.values({
+								organizationId: orgId,
+								sgtin: it.sgtin,
+								gtin: it.gtin,
+								serialNumber: it.serialNumber,
+								rawBarcode: it.sgtin,
+								tradeName: it.tradeName ?? "Медицинский препарат (МДЛП)",
+								inn: it.inn ?? null,
+								series: it.series ?? null,
+								expirationDate: it.expirationDate ?? null,
+								status: "disposed",
+								disposedAt: now,
+								disposalReason: input.reason ?? "Оказание медицинской помощи (Схема 10560)",
+								disposalType: "13",
+								patientId: input.patientId ?? null,
+								visitId: input.visitId ?? null,
+								doctorId: input.doctorId ?? null,
+								warehouseId,
+								inventoryItemId,
+								batchId,
+								inventoryTransactionId,
+								costRub: it.costRub ? String(it.costRub) : null,
+								crptReceiptNumber,
+								schema10560Xml: schemaDoc.xmlContent,
+								schema10560Json: schemaDoc.jsonContent,
+							})
+							.returning();
+						if (res) updatedItems.push(res as Record<string, unknown>);
 					}
-				} catch (stockErr) {
-					console.warn(
-						`[MdlpDisposalService] Предупреждение синхронизации склада для ${it.sgtin}:`,
-						stockErr,
-					);
 				}
-
-				const [existing] = await db
-					.select()
-					.from(mdlpItems)
-					.where(
-						and(
-							eq(mdlpItems.organizationId, orgId),
-							eq(mdlpItems.sgtin, it.sgtin),
-						),
-					)
-					.limit(1);
-
-				if (existing) {
-					const [res] = await db
-						.update(mdlpItems)
-						.set({
-							status: "disposed",
-							disposedAt: now,
-							disposalReason: input.reason ?? "Оказание медицинской помощи (Схема 10560)",
-							disposalType: "13",
-							patientId: input.patientId ?? existing.patientId,
-							visitId: input.visitId ?? existing.visitId,
-							doctorId: input.doctorId ?? existing.doctorId,
-							warehouseId: warehouseId ?? existing.warehouseId,
-							inventoryItemId: inventoryItemId ?? existing.inventoryItemId,
-							batchId: batchId ?? existing.batchId,
-							inventoryTransactionId: inventoryTransactionId ?? existing.inventoryTransactionId,
-							costRub: it.costRub ? String(it.costRub) : existing.costRub,
-							crptReceiptNumber,
-							schema10560Xml: schemaDoc.xmlContent,
-							schema10560Json: schemaDoc.jsonContent,
-							updatedAt: now,
-						})
-						.where(eq(mdlpItems.id, existing.id))
-						.returning();
-					if (res) updatedItems.push(res as Record<string, unknown>);
-				} else {
-					const [res] = await db
-						.insert(mdlpItems)
-						.values({
-							organizationId: orgId,
-							sgtin: it.sgtin,
-							gtin: it.gtin,
-							serialNumber: it.serialNumber,
-							rawBarcode: it.sgtin,
-							tradeName: it.tradeName ?? "Медицинский препарат (МДЛП)",
-							inn: it.inn ?? null,
-							series: it.series ?? null,
-							expirationDate: it.expirationDate ?? null,
-							status: "disposed",
-							disposedAt: now,
-							disposalReason: input.reason ?? "Оказание медицинской помощи (Схема 10560)",
-							disposalType: "13",
-							patientId: input.patientId ?? null,
-							visitId: input.visitId ?? null,
-							doctorId: input.doctorId ?? null,
-							warehouseId,
-							inventoryItemId,
-							batchId,
-							inventoryTransactionId,
-							costRub: it.costRub ? String(it.costRub) : null,
-							crptReceiptNumber,
-							schema10560Xml: schemaDoc.xmlContent,
-							schema10560Json: schemaDoc.jsonContent,
-						})
-						.returning();
-					if (res) updatedItems.push(res as Record<string, unknown>);
-				}
-			} catch (_dbErr) {
-				if (process.env.NODE_ENV === "production") {
-					throw new Error(
-						`[MDLP 10560 CRITICAL] Сбой записи списания медикамента в PostgreSQL: ${_dbErr instanceof Error ? _dbErr.message : String(_dbErr)}. В продакшене запрещен in-memory fallback.`,
-					);
-				}
+			});
+		} catch (_dbErr) {
+			if (process.env.NODE_ENV === "production") {
+				throw new Error(
+					`[MDLP 10560 CRITICAL] Сбой записи списания медикаментов в PostgreSQL: ${_dbErr instanceof Error ? _dbErr.message : String(_dbErr)}. В продакшене запрещен in-memory fallback.`,
+				);
+			}
+			updatedItems.length = 0;
+			for (const it of disposalItems) {
 				let item = fallbackLedger.get(it.sgtin);
 				if (!item) {
 					item = {

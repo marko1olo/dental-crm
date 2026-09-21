@@ -183,10 +183,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 		initialMode === "acceptance_701" ? "УПД-2026-0891" : "АКТ-531-0042",
 	);
 	const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
-	const [scannedItems, setScannedItems] = useState<readonly ChestnyZnakScannedItem[]>(() => [
-		createChestnyZnakScannedItem(SAMPLE_BARCODES[0]!.code, { costRub: SAMPLE_BARCODES[0]!.cost }),
-		createChestnyZnakScannedItem(SAMPLE_BARCODES[1]!.code, { costRub: SAMPLE_BARCODES[1]!.cost }),
-	]);
+	const [scannedItems, setScannedItems] = useState<readonly ChestnyZnakScannedItem[]>([]);
 	const [generatedXml, setGeneratedXml] = useState<string | null>(null);
 	const [xmlDocType, setXmlDocType] = useState<"701" | "531" | null>(null);
 	const [isCopied, setIsCopied] = useState(false);

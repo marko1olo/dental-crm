@@ -15,8 +15,8 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { describe, it } from "vitest";
 import { fileURLToPath } from "node:url";
+import { describe, it } from "node:test";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

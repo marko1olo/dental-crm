@@ -17,6 +17,7 @@
  * заголовки). Сравнение — постоянного времени.
  */
 
+import { createHmac } from "node:crypto";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { namedDevelopmentModeActive } from "../accessGuard.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
@@ -127,6 +128,37 @@ export function verifyWebhookSecret(
 
 	for (const candidate of candidates) {
 		if (timingSafeSecretEqual(candidate, expected)) return true;
+
+		// Поддержка HMAC-SHA256 подписи вебхука от агрегаторов (ПроДокторов, МедФлекс, Meta)
+		const rawCandidate = candidate.startsWith("sha256=")
+			? candidate.slice(7)
+			: candidate.startsWith("sha1=")
+				? candidate.slice(5)
+				: candidate;
+
+		if (/^[0-9a-fA-F]{64}$/.test(rawCandidate) && request.body) {
+			try {
+				const bodyString =
+					typeof request.body === "string"
+						? request.body
+						: Buffer.isBuffer(request.body)
+							? request.body.toString("utf8")
+							: JSON.stringify(request.body);
+				const computedHmac = createHmac("sha256", expected)
+					.update(bodyString)
+					.digest("hex");
+				if (
+					timingSafeSecretEqual(
+						rawCandidate.toLowerCase(),
+						computedHmac.toLowerCase(),
+					)
+				) {
+					return true;
+				}
+			} catch {
+				// В случае ошибки вычисления HMAC продолжаем проверку других кандидатов
+			}
+		}
 	}
 
 	request.log.warn(

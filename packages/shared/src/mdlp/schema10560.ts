@@ -56,6 +56,30 @@ export function validateMdlpSchema10560Params(
 }
 
 /**
+ * Normalizes document date to CRPT MDLP required format DD.MM.YYYY.
+ */
+export function formatMdlpDocDate(dateStr: string): string {
+	if (!dateStr) return "";
+	const trimmed = dateStr.trim();
+	if (/^\d{2}\.\d{2}\.\d{4}$/.test(trimmed)) {
+		return trimmed;
+	}
+	const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+	if (isoMatch) {
+		const [, y, m, d] = isoMatch;
+		return `${d}.${m}.${y}`;
+	}
+	const parsed = new Date(trimmed);
+	if (!Number.isNaN(parsed.getTime())) {
+		const dd = String(parsed.getDate()).padStart(2, "0");
+		const mm = String(parsed.getMonth() + 1).padStart(2, "0");
+		const yyyy = String(parsed.getFullYear());
+		return `${dd}.${mm}.${yyyy}`;
+	}
+	return trimmed;
+}
+
+/**
  * Generates an official MDLP Schema 10560 Document
  * "Регистрация в ИС МДЛП сведений о выводе из оборота лекарственных препаратов для оказания медицинской помощи"
  * (Схема 10560, withdrawal_type = 13 или 6).
@@ -90,13 +114,15 @@ export function generateMdlpSchema10560Payload(
 		})
 		.join("\n");
 
+	const formattedDocDate = formatMdlpDocDate(params.docDate);
+
 	const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
 <documents version="${schemaVersion}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <withdrawal action_id="10560">
     <subject_id>${escapeXml(params.subjectId)}</subject_id>
     <operation_date>${escapeXml(opDate)}</operation_date>
     <doc_num>${escapeXml(params.docNum)}</doc_num>
-    <doc_date>${escapeXml(params.docDate)}</doc_date>
+    <doc_date>${escapeXml(formattedDocDate)}</doc_date>
     <withdrawal_type>${withdrawalType}</withdrawal_type>
     <order_details>
 ${sgtinTags}
@@ -160,7 +186,12 @@ export function parseMdlpSchema10560Xml(xml: string): MdlpDisposalParams {
 	const subjectId = subjectMatch ? subjectMatch[1]!.trim() : "";
 	const operationDate = opDateMatch ? opDateMatch[1]!.trim() : new Date().toISOString();
 	const docNum = docNumMatch ? docNumMatch[1]!.trim() : "";
-	const docDate = docDateMatch ? docDateMatch[1]!.trim() : "";
+	let docDate = docDateMatch ? docDateMatch[1]!.trim() : "";
+	const ruDateMatch = docDate.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+	if (ruDateMatch) {
+		const [, d, m, y] = ruDateMatch;
+		docDate = `${y}-${m}-${d}`;
+	}
 	const withdrawalType = withdrawalTypeMatch ? Number.parseInt(withdrawalTypeMatch[1]!.trim(), 10) : 13;
 
 	const items: MdlpDisposalItem[] = [];

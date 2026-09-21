@@ -283,7 +283,7 @@ export function parseMdlpDataMatrix(
 			if (normalized.startsWith("92", cursor)) {
 				cursor += 2;
 				let end = normalized.indexOf(GS1_GROUP_SEPARATOR, cursor);
-				if (end === -1) {
+				if (end === -1 || end > cursor + 44) {
 					end = Math.min(cursor + 44, len);
 				}
 				parsedAIs["92"] = normalized.slice(cursor, end);
@@ -318,10 +318,10 @@ export function parseMdlpDataMatrix(
 		}
 	}
 
-	// Mode 3: Plain concatenated 85-char Fixed Layout Fallback
+	// Mode 3: Plain concatenated 83-char Fixed Layout Fallback
 	if (!parsedAIs["01"] || !parsedAIs["21"]) {
 		const cleanFixed = normalized.replace(new RegExp(GS1_GROUP_SEPARATOR, "g"), "");
-		if (cleanFixed.length >= 85 && cleanFixed.startsWith("01")) {
+		if (cleanFixed.length >= 83 && cleanFixed.startsWith("01")) {
 			const candidateGtin = cleanFixed.slice(2, 16);
 			if (/^\d{14}$/.test(candidateGtin) && cleanFixed.slice(16, 18) === "21") {
 				parsedAIs["01"] = candidateGtin;
