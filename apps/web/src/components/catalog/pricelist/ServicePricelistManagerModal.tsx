@@ -35,6 +35,10 @@ import {
 } from 'lucide-react';
 import { sliceDomList } from '../../../utils/domVirtualizationHelper';
 import {
+	PriceListMappingDiffView,
+	type IngestedMappingItem,
+} from '../../pricing/PriceListMappingDiffView';
+import {
 	applyBatchPriceMarkup,
 	calculateServiceProfitability,
 	calculateTierPrice,
@@ -133,6 +137,8 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 	const [importMode, setImportMode] = useState<'smart_text' | 'csv'>('smart_text');
 	const [smartTextInput, setSmartTextInput] = useState('');
 	const [parsedProposals, setParsedProposals] = useState<readonly ParsedPriceProposal[]>([]);
+	const [ingestedMappingItems, setIngestedMappingItems] = useState<readonly IngestedMappingItem[]>([]);
+	const [isIngestingApi, setIsIngestingApi] = useState(false);
 
 	// CSV Import Modal State
 	const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -355,11 +361,139 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 		setEditingPriceCellId(null);
 	};
 
+	// Ingestion Handler for 804n Mapping Diff
+	const handleIngestPriceList = async (contentToParse: string, sourceType: 'text' | 'csv' = 'text') => {
+		const text = contentToParse.trim();
+		if (!text) {
+			setIngestedMappingItems([]);
+			setParsedProposals([]);
+			return;
+		}
+
+		setIsIngestingApi(true);
+		try {
+			const res = await fetch('/api/pricelist/ingest', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					rawContent: text,
+					sourceType,
+				}),
+			});
+
+			if (res.ok) {
+				const data = await res.json();
+				if (data.success && Array.isArray(data.proposals) && data.proposals.length > 0) {
+					setIngestedMappingItems(data.proposals);
+					setIsIngestingApi(false);
+					return;
+				}
+			}
+		} catch {
+			// Fallback to local heuristic engine below
+		}
+
+		// Fallback to local heuristic engine
+		const localProposals = parseUnstructuredPriceText(text);
+		setParsedProposals(localProposals);
+		const mapped = localProposals.map((p, idx): IngestedMappingItem => {
+			const existingMatch = items.find(
+				(it) =>
+					it.code804n === p.detectedCode804n ||
+					it.commercialTitle.toLowerCase() === p.commercialTitle.toLowerCase(),
+			);
+			return {
+				id: `local-ingest-${idx}-${Date.now()}`,
+				sourceLineNumber: idx + 1,
+				rawLine: p.commercialTitle + (p.priceRub ? ` ${p.priceRub} руб` : ''),
+				cleanedTitle: p.commercialTitle,
+				code804n: p.detectedCode804n,
+				statutoryTitle804n: p.statutoryTitle804n,
+				category: p.suggestedCategory,
+				specialty: p.suggestedSpecialty,
+				priceRub: p.priceRub,
+				priceKopecks: rublesToKopecks(p.priceRub),
+				confidence:
+					p.confidence === 'exact_code'
+						? 0.98
+						: p.confidence === 'keyword_match'
+							? 0.85
+							: 0.65,
+				confidenceKind:
+					p.confidence === 'exact_code'
+						? 'exact_code'
+						: p.confidence === 'keyword_match'
+							? 'high_keyword'
+							: 'low_keyword',
+				matchedExistingServiceId: existingMatch?.id ?? null,
+				matchedExistingTitle: existingMatch?.commercialTitle ?? null,
+				matchedExistingPriceRub: existingMatch?.basePriceRub ?? null,
+				suggestedAction: existingMatch
+					? existingMatch.basePriceRub === p.priceRub
+						? 'identical'
+						: 'update_existing'
+					: 'create_new',
+				isApproved: true,
+			};
+		});
+		setIngestedMappingItems(mapped);
+		setIsIngestingApi(false);
+	};
+
+	const handleApplyIngestedMapping = (approved: readonly IngestedMappingItem[]) => {
+		if (approved.length === 0) return;
+
+		setItems((prev) => {
+			const existingMap = new Map(prev.map((i) => [i.id, i]));
+			const addedList: ServicePricelistItem[] = [];
+
+			for (const item of approved) {
+				if (item.matchedExistingServiceId && existingMap.has(item.matchedExistingServiceId)) {
+					const cur = existingMap.get(item.matchedExistingServiceId)!;
+					existingMap.set(item.matchedExistingServiceId, {
+						...cur,
+						code804n: item.code804n || cur.code804n,
+						commercialTitle: item.cleanedTitle || cur.commercialTitle,
+						basePriceRub: item.priceRub,
+						basePriceKopecks: item.priceKopecks || rublesToKopecks(item.priceRub),
+					});
+				} else {
+					const newItem: ServicePricelistItem = {
+						id: `srv-ingested-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+						code804n: item.code804n || 'A16.07.000',
+						commercialTitle: item.cleanedTitle,
+						statutoryTitle804n: item.statutoryTitle804n || item.cleanedTitle,
+						category: (item.category as Order804nCategory) || 'therapy',
+						specialty: (item.specialty as DoctorSpecialty) || 'therapist',
+						basePriceRub: item.priceRub,
+						basePriceKopecks: item.priceKopecks || rublesToKopecks(item.priceRub),
+						estimatedDurationMin: 30,
+						icd10Indications: [],
+						vatRate: 0,
+						vatExemptionArticle: 'пп. 2 п. 2 ст. 149 НК РФ',
+						isActive: true,
+						isArchived: false,
+						tags: ['импорт_804н'],
+					};
+					addedList.push(newItem);
+				}
+			}
+
+			return [...addedList, ...Array.from(existingMap.values())];
+		});
+
+		showToast(`Успешно добавлено / обновлено ${approved.length} позиций по стандарту 804н`);
+		setIsImportModalOpen(false);
+		setIngestedMappingItems([]);
+		setSmartTextInput('');
+	};
+
 	// Smart Unstructured Text Parser Handlers
 	const handleParseSmartText = (text: string) => {
 		setSmartTextInput(text);
 		if (!text.trim()) {
 			setParsedProposals([]);
+			setIngestedMappingItems([]);
 			return;
 		}
 		const proposals = parseUnstructuredPriceText(text);
@@ -374,6 +508,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 		setIsImportModalOpen(false);
 		setSmartTextInput('');
 		setParsedProposals([]);
+		setIngestedMappingItems([]);
 	};
 
 	// DOM Virtualization & Chunking (Mandate 8c, 8n - Wave 252 Low-Spec Protection)
@@ -511,6 +646,8 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 			const text = evt.target?.result as string;
 			if (text) {
 				setCsvInputText(text);
+				setSmartTextInput(text);
+				handleIngestPriceList(text, file.name.endsWith('.csv') ? 'csv' : 'text');
 			}
 		};
 		reader.readAsText(file, 'utf-8');
@@ -611,7 +748,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 							type="button"
 							className="pricelist-btn"
 							onClick={() => setIsImportModalOpen(true)}
-							title="Импорт прейскуранта из CSV / Excel"
+							title="Импорт прейскуранта из CSV / Excel / Текста"
 						>
 							<Upload size={16} />
 							<span>Импорт</span>
@@ -641,11 +778,14 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 				<div
 					className="pricelist-toolbar"
 					style={{
-						padding: '0.5rem 1.25rem',
+						padding: '0.25rem 1rem',
 						gap: '0.5rem',
 						display: 'flex',
 						alignItems: 'center',
-						minHeight: '44px',
+						minHeight: '36px',
+						height: '36px',
+						flexWrap: 'nowrap',
+						overflowX: 'auto',
 					}}
 				>
 					{/* Search */}
@@ -1110,231 +1250,229 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 				</footer>
 			</div>
 
-			{/* Multi-Format Import Modal (Smart Text & CSV) */}
+			{/* Multi-Format Import Modal (Smart Text & CSV with 804n Mapping Diff View) */}
 			{isImportModalOpen && (
 				<div className="csv-import-modal" role="dialog" aria-modal="true">
-					<div className="csv-import-container" style={{ maxWidth: '780px', width: '95%' }}>
+					<div
+						className="csv-import-container"
+						style={{
+							maxWidth: ingestedMappingItems.length > 0 ? '1180px' : '780px',
+							width: '95%',
+							height: ingestedMappingItems.length > 0 ? '88vh' : 'auto',
+							display: 'flex',
+							flexDirection: 'column',
+							transition: 'max-width 0.2s ease',
+						}}
+					>
 						<header className="pricelist-modal-header">
 							<div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
 								<div className="pricelist-header-title">Импорт прейскуранта</div>
 								{/* Segmented Mode Selector */}
-								<div className="pricelist-tier-segmented" style={{ padding: '2px' }}>
-									<button
-										type="button"
-										className={`tier-segment-btn ${importMode === 'smart_text' ? 'active' : ''}`}
-										style={{ minHeight: '28px', padding: '0.2rem 0.6rem', fontSize: '0.75rem', gap: '0.375rem' }}
-										onClick={() => setImportMode('smart_text')}
-									>
-										<Sparkles size={13} />
-										<span>Умный текст (Word / PDF / Скан)</span>
-									</button>
-									<button
-										type="button"
-										className={`tier-segment-btn ${importMode === 'csv' ? 'active' : ''}`}
-										style={{ minHeight: '28px', padding: '0.2rem 0.6rem', fontSize: '0.75rem', gap: '0.375rem' }}
-										onClick={() => setImportMode('csv')}
-									>
-										<FileSpreadsheet size={13} />
-										<span>CSV / Excel</span>
-									</button>
-								</div>
+								{ingestedMappingItems.length === 0 && (
+									<div className="pricelist-tier-segmented" style={{ padding: '2px' }}>
+										<button
+											type="button"
+											className={`tier-segment-btn ${importMode === 'smart_text' ? 'active' : ''}`}
+											style={{ minHeight: '28px', padding: '0.2rem 0.6rem', fontSize: '0.75rem', gap: '0.375rem' }}
+											onClick={() => setImportMode('smart_text')}
+										>
+											<Sparkles size={13} />
+											<span>Умный текст (Word / PDF / Скан)</span>
+										</button>
+										<button
+											type="button"
+											className={`tier-segment-btn ${importMode === 'csv' ? 'active' : ''}`}
+											style={{ minHeight: '28px', padding: '0.2rem 0.6rem', fontSize: '0.75rem', gap: '0.375rem' }}
+											onClick={() => setImportMode('csv')}
+										>
+											<FileSpreadsheet size={13} />
+											<span>CSV / Excel</span>
+										</button>
+									</div>
+								)}
+								{ingestedMappingItems.length > 0 && (
+									<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+										<span className="pricelist-statutory-badge">
+											<ShieldCheck size={13} />
+											<span>Сопоставление с Номенклатурой 804н</span>
+										</span>
+										<button
+											type="button"
+											className="pricelist-btn"
+											style={{ height: '28px', fontSize: '0.75rem', padding: '0 0.5rem' }}
+											onClick={() => setIngestedMappingItems([])}
+											title="Вернуться к редактированию исходного текста"
+										>
+											<span>Назад к тексту</span>
+										</button>
+									</div>
+								)}
 							</div>
 							<button
 								type="button"
 								className="pricelist-btn pricelist-btn-icon"
-								onClick={() => setIsImportModalOpen(false)}
+								onClick={() => {
+									setIsImportModalOpen(false);
+									setIngestedMappingItems([]);
+								}}
 								aria-label="Закрыть"
 							>
 								<X size={18} />
 							</button>
 						</header>
 
-						<div className="csv-import-body">
-							{importMode === 'smart_text' ? (
-								<div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-									<div style={{ fontSize: '0.8125rem', color: 'var(--muted)' }}>
-										Вставьте скопированный текст из старого прейскуранта клиники, выгрузки Word или распознанного PDF.
-										Алгоритм автоматически выделит цены, очистит наименования и сопоставит услуги с Номенклатурой Минздрава РФ 804н.
-									</div>
+						{ingestedMappingItems.length > 0 ? (
+							<div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+								<PriceListMappingDiffView
+									items={ingestedMappingItems}
+									onItemsChange={setIngestedMappingItems}
+									onAcceptAll={() => {
+										setIngestedMappingItems((prev) => prev.map((i) => ({ ...i, isApproved: true })));
+									}}
+									onApply={handleApplyIngestedMapping}
+									onCancel={() => setIngestedMappingItems([])}
+									existingCatalog={items.map((it) => ({
+										id: it.id,
+										code: it.code804n,
+										title: it.commercialTitle,
+										basePriceRub: it.basePriceRub,
+									}))}
+									isLoading={isIngestingApi}
+								/>
+							</div>
+						) : (
+							<>
+								<div className="csv-import-body">
+									{importMode === 'smart_text' ? (
+										<div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+											<div style={{ fontSize: '0.8125rem', color: 'var(--muted)' }}>
+												Вставьте скопированный текст из старого прейскуранта клиники, выгрузки Word или распознанного PDF.
+												Алгоритм автоматически выделит цены, очистит наименования и сопоставит услуги с Номенклатурой Минздрава РФ 804н.
+											</div>
 
-									<textarea
-										className="pricelist-search-input"
-										style={{ height: '120px', fontFamily: 'monospace', fontSize: '0.75rem', padding: '0.5rem', lineHeight: '1.4' }}
-										placeholder={`Пример строк для вставки:\nA16.07.002.001 Наложение световой пломбы 4 500 руб\nЛечение глубокого кариеса - 3500\nУдаление зуба мудрости сложное 5 200 ₽\nУстановка имплантата Straumann SLA 38000\nКоронка из диоксида циркония 18000 руб\nАнестезия Убистезин 700 р`}
-										value={smartTextInput}
-										onChange={(e) => handleParseSmartText(e.target.value)}
-									/>
+											<textarea
+												className="pricelist-search-input"
+												style={{ height: '140px', fontFamily: 'monospace', fontSize: '0.75rem', padding: '0.5rem', lineHeight: '1.4' }}
+												placeholder={`Пример строк для вставки:\nA16.07.002.001 Наложение световой пломбы 4 500 руб\nЛечение глубокого кариеса - 3500\nУдаление зуба мудрости сложное 5 200 ₽\nУстановка имплантата Straumann SLA 38000\nКоронка из диоксида циркония 18000 руб\nАнестезия Убистезин 700 р`}
+												value={smartTextInput}
+												onChange={(e) => {
+													setSmartTextInput(e.target.value);
+													handleParseSmartText(e.target.value);
+												}}
+											/>
 
-									{parsedProposals.length > 0 && (
+											<label className="csv-dropzone" style={{ padding: '0.75rem', marginTop: '0.25rem' }}>
+												<FileSpreadsheet size={24} style={{ color: 'var(--brand-500)' }} />
+												<div style={{ fontSize: '0.75rem', fontWeight: 600 }}>Загрузить файл прейскуранта (TXT, CSV, PDF выгрузка)</div>
+												<input
+													type="file"
+													accept=".txt,.csv,.doc,.docx"
+													style={{ display: 'none' }}
+													onChange={handleFileUpload}
+												/>
+											</label>
+										</div>
+									) : (
 										<div>
-											<div style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.375rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-												<CheckCircle2 size={15} style={{ color: 'var(--ok-fg, #10b981)' }} />
-												<span>Распознано позиций: {parsedProposals.length}</span>
+											<label className="csv-dropzone">
+												<FileSpreadsheet size={36} style={{ color: 'var(--brand-500)' }} />
+												<div style={{ fontWeight: 600 }}>Выберите или перетащите CSV-файл прейскуранта</div>
+												<div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+													Поддерживается разделитель точка с запятой (;) или запятая (,), кодировка UTF-8
+												</div>
+												<input
+													type="file"
+													accept=".csv,.txt"
+													style={{ display: 'none' }}
+													onChange={handleFileUpload}
+												/>
+											</label>
+
+											<div style={{ marginTop: '0.75rem' }}>
+												<div style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.375rem' }}>
+													Или вставьте текст таблицы CSV:
+												</div>
+												<textarea
+													className="pricelist-search-input"
+													style={{ height: '120px', fontFamily: 'monospace', fontSize: '0.75rem', padding: '0.5rem' }}
+													placeholder="Код 804н;Коммерческое наименование;Категория;Цена standard..."
+													value={csvInputText}
+													onChange={(e) => setCsvInputText(e.target.value)}
+												/>
 											</div>
-											<div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--line)', borderRadius: '6px' }}>
-												<table className="pricelist-data-table" style={{ fontSize: '0.75rem' }}>
-													<thead>
-														<tr>
-															<th style={{ width: '100px' }}>Код 804н</th>
-															<th>Наименование</th>
-															<th style={{ width: '100px' }}>Категория</th>
-															<th style={{ width: '90px', textAlign: 'right' }}>Цена</th>
-															<th style={{ width: '100px', textAlign: 'center' }}>Совпадение</th>
-														</tr>
-													</thead>
-													<tbody>
-														{parsedProposals.map((prop, idx) => (
-															<tr key={idx}>
-																<td>
-																	<span className="pricelist-code-pill">{prop.detectedCode804n}</span>
-																</td>
-																<td>{prop.commercialTitle}</td>
-																<td style={{ color: 'var(--muted)' }}>
-																	{CATEGORY_LABELS[prop.suggestedCategory] ?? prop.suggestedCategory}
-																</td>
-																<td style={{ textAlign: 'right', fontWeight: 600 }}>
-																	{formatRubles(prop.priceRub)}
-																</td>
-																<td style={{ textAlign: 'center' }}>
-																	<span
-																		style={{
-																			fontSize: '0.6875rem',
-																			padding: '1px 6px',
-																			borderRadius: '4px',
-																			background:
-																				prop.confidence === 'exact_code'
-																					? 'rgba(16, 185, 129, 0.15)'
-																					: prop.confidence === 'keyword_match'
-																						? 'rgba(59, 130, 246, 0.15)'
-																						: 'rgba(100, 116, 139, 0.15)',
-																			color:
-																				prop.confidence === 'exact_code'
-																					? 'var(--ok-fg, #10b981)'
-																					: prop.confidence === 'keyword_match'
-																						? 'var(--brand-500, #3b82f6)'
-																						: 'var(--muted)',
-																		}}
-																	>
-																		{prop.confidence === 'exact_code'
-																			? 'Код 804н'
-																			: prop.confidence === 'keyword_match'
-																				? 'Синоним'
-																				: 'Базовый'}
-																	</span>
-																</td>
-															</tr>
-														))}
-													</tbody>
-												</table>
-											</div>
+
+											{importErrors.length > 0 && (
+												<div
+													style={{
+														marginTop: '0.5rem',
+														padding: '0.75rem',
+														borderRadius: '6px',
+														background: 'rgba(239, 68, 68, 0.1)',
+														color: 'var(--bad)',
+														fontSize: '0.75rem',
+													}}
+												>
+													<div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>Ошибки при разборе CSV:</div>
+													{importErrors.slice(0, 5).map((err, idx) => (
+														<div key={idx}>• {err}</div>
+													))}
+												</div>
+											)}
 										</div>
 									)}
 								</div>
-							) : (
-								<div>
-									<label className="csv-dropzone">
-										<FileSpreadsheet size={36} style={{ color: 'var(--brand-500)' }} />
-										<div style={{ fontWeight: 600 }}>Выберите или перетащите CSV-файл прейскуранта</div>
-										<div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-											Поддерживается разделитель точка с запятой (;) или запятая (,), кодировка UTF-8
-										</div>
-										<input
-											type="file"
-											accept=".csv,.txt"
-											style={{ display: 'none' }}
-											onChange={handleFileUpload}
-										/>
-									</label>
 
-									<div style={{ marginTop: '0.75rem' }}>
-										<div style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.375rem' }}>
-											Или вставьте текст таблицы CSV:
-										</div>
-										<textarea
-											className="pricelist-search-input"
-											style={{ height: '120px', fontFamily: 'monospace', fontSize: '0.75rem', padding: '0.5rem' }}
-											placeholder="Код 804н;Коммерческое наименование;Категория;Цена standard..."
-											value={csvInputText}
-											onChange={(e) => setCsvInputText(e.target.value)}
-										/>
-									</div>
-
-									{importErrors.length > 0 && (
-										<div
-											style={{
-												marginTop: '0.5rem',
-												padding: '0.75rem',
-												borderRadius: '6px',
-												background: 'rgba(239, 68, 68, 0.1)',
-												color: 'var(--bad)',
-												fontSize: '0.75rem',
-											}}
+								<footer
+									style={{
+										padding: '0.75rem 1.25rem',
+										borderTop: '1px solid var(--line)',
+										display: 'flex',
+										justifyContent: 'flex-end',
+										gap: '0.5rem',
+									}}
+								>
+									<button
+										type="button"
+										className="pricelist-btn"
+										onClick={() => setIsImportModalOpen(false)}
+									>
+										Отмена
+									</button>
+									{importMode === 'smart_text' ? (
+										<button
+											type="button"
+											className="pricelist-btn pricelist-btn-primary"
+											disabled={!smartTextInput.trim() || isIngestingApi}
+											onClick={() => handleIngestPriceList(smartTextInput, 'text')}
+											title="Запустить распознавание и сопоставление с классификатором 804н"
 										>
-											<div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>Ошибки при разборе CSV:</div>
-											{importErrors.slice(0, 5).map((err, idx) => (
-												<div key={idx}>• {err}</div>
-											))}
+											<Sparkles size={14} />
+											<span>{isIngestingApi ? 'Распознавание...' : 'Распознать и сопоставить (804н)'}</span>
+										</button>
+									) : (
+										<div style={{ display: 'flex', gap: '0.5rem' }}>
+											<button
+												type="button"
+												className="pricelist-btn"
+												disabled={!csvInputText.trim() || isIngestingApi}
+												onClick={() => handleIngestPriceList(csvInputText, 'csv')}
+												title="Сопоставить строки CSV с Номенклатурой 804н в двухоконном виде"
+											>
+												<ShieldCheck size={14} />
+												<span>Сопоставить с 804н</span>
+											</button>
+											<button
+												type="button"
+												className="pricelist-btn pricelist-btn-primary"
+												onClick={handleImportCsv}
+											>
+												Загрузить CSV напрямую
+											</button>
 										</div>
 									)}
-
-									{importSuccessCount !== null && (
-										<div
-											style={{
-												marginTop: '0.5rem',
-												padding: '0.75rem',
-												borderRadius: '6px',
-												background: 'rgba(16, 185, 129, 0.1)',
-												color: 'var(--ok-fg)',
-												fontSize: '0.8125rem',
-												fontWeight: 600,
-												display: 'flex',
-												alignItems: 'center',
-												gap: '0.5rem',
-											}}
-										>
-											<CheckCircle2 size={16} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-											<span>Успешно распознано {importSuccessCount} услуг</span>
-										</div>
-									)}
-								</div>
-							)}
-						</div>
-
-						<footer
-							style={{
-								padding: '0.75rem 1.25rem',
-								borderTop: '1px solid var(--line)',
-								display: 'flex',
-								justifyContent: 'flex-end',
-								gap: '0.5rem',
-							}}
-						>
-							<button
-								type="button"
-								className="pricelist-btn"
-								onClick={() => setIsImportModalOpen(false)}
-							>
-								Отмена
-							</button>
-							{importMode === 'smart_text' ? (
-								<button
-									type="button"
-									className="pricelist-btn pricelist-btn-primary"
-									disabled={parsedProposals.length === 0}
-									onClick={handleApplySmartProposals}
-								>
-									Загрузить в прейскурант ({parsedProposals.length})
-								</button>
-							) : (
-								<button
-									type="button"
-									className="pricelist-btn pricelist-btn-primary"
-									onClick={handleImportCsv}
-								>
-									Загрузить CSV в прейскурант
-								</button>
-							)}
-						</footer>
+								</footer>
+							</>
+						)}
 					</div>
 				</div>
 			)}

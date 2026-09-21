@@ -235,6 +235,9 @@ export async function getDefaultOrganizationId(): Promise<string | null> {
 export async function getServiceCatalogForOrganization(
 	organizationId: string,
 ): Promise<ServiceCatalogItem[]> {
+	if (useInMemory()) {
+		return [];
+	}
 	const rows = await db
 		.select()
 		.from(schema.serviceCatalogItems)

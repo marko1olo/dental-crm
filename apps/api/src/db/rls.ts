@@ -105,6 +105,10 @@ export async function withTenantCtx<T>(
 	organizationId: string,
 	callback: (tx: TenantDb) => Promise<T>,
 ): Promise<T> {
+	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
+		// biome-ignore lint/suspicious/noExplicitAny: in-memory mock bypass
+		return callback({} as any);
+	}
 	const existingTx = transactionStorage.getStore();
 	if (existingTx) {
 		// Re-assert the tenant on the existing transaction rather than opening a
@@ -189,6 +193,10 @@ export async function withTenantCtx<T>(
 export async function withSuperuserBypass<T>(
 	callback: (tx: TenantDb) => Promise<T>,
 ): Promise<T> {
+	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
+		// biome-ignore lint/suspicious/noExplicitAny: in-memory mock bypass
+		return callback({} as any);
+	}
 	const existingTx = transactionStorage.getStore();
 	if (existingTx) {
 		// A bypass scope is already open on this transaction; it owns the flag and
