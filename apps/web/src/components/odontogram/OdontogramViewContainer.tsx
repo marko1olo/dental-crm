@@ -63,11 +63,6 @@ const TreatmentPlanWizard = React.lazy(() =>
 		default: m.TreatmentPlanWizard,
 	})),
 );
-const ToothCardModal = React.lazy(() =>
-	import("./ToothCardModal").then((m) => ({
-		default: m.ToothCardModal,
-	})),
-);
 
 export interface OdontogramViewOption {
 	mode: OdontogramViewMode;
@@ -387,7 +382,6 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 	const [isFastExtractMode, setIsFastExtractMode] = useState<boolean>(false);
 	const [activeStampTool, setActiveStampTool] = useState<ToothState | null>(null);
 	const [contextDrawerTooth, setContextDrawerTooth] = useState<number | null>(null);
-	const [cardModalTooth, setCardModalTooth] = useState<number | null>(null);
 	const [endoDrawerTooth, setEndoDrawerTooth] = useState<number | null>(null);
 	const [isPlanWizardOpen, setIsPlanWizardOpen] = useState<boolean>(false);
 	const [isVoiceListening, setIsVoiceListening] = useState<boolean>(false);
@@ -1682,7 +1676,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 					onSelectState={handleRadialSelectState}
 					onAddToInvoice={() => setIsLiveInvoiceOpen(true)}
 					onOpenTherapy={() => {
-						setCardModalTooth(radialMenuData.toothNumber);
+						setContextDrawerTooth(radialMenuData.toothNumber);
 						setRadialMenuData(null);
 					}}
 					onClose={() => setRadialMenuData(null)}
@@ -1705,25 +1699,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 				</React.Suspense>
 			)}
 
-			{/* Detailed Tooth Card Modal */}
-			{cardModalTooth !== null && (
-				<React.Suspense fallback={null}>
-					<ToothCardModal
-						isOpen={cardModalTooth !== null}
-						toothNumber={cardModalTooth}
-						toothData={teethData?.find((t) => t.toothNumber === cardModalTooth)}
-						onClose={() => setCardModalTooth(null)}
-						onUpdateTooth={(toothNum, updates) => {
-							if (updates.state) {
-								onQuickStateChange?.([toothNum], updates.state, updates.surfaces);
-								showToast(`Зуб ${toothNum}: состояние «${updates.state}» сохранено`, "success");
-							}
-						}}
-					/>
-				</React.Suspense>
-			)}
-
-			{/* Tier 2 Context Drawer for Selected Tooth */}
+			{/* Tier 2 Context Drawer for Selected Tooth (Canonical Master Component - Mandate 8s) */}
 			{contextDrawerTooth !== null && (
 				<ToothContextDrawer
 					isOpen={contextDrawerTooth !== null}
@@ -1733,6 +1709,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 					onUpdateTooth={(num, updates) => {
 						if (updates.state) {
 							onQuickStateChange?.([num], updates.state, updates.surfaces);
+							showToast(`Зуб ${num}: состояние «${updates.state}» сохранено`, "success");
 						}
 					}}
 				/>

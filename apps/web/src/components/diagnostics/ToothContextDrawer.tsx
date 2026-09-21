@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
+	BellPlus,
 	ChevronDown,
 	ChevronUp,
 	Heart,
@@ -12,7 +13,7 @@ import {
 	Wallet,
 	X,
 } from "lucide-react";
-import type { ToothData } from "../odontogram/ToothChart";
+import type { ToothData, ToothState } from "../odontogram/ToothChart";
 import { getToothAnatomicalNameRu, getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { ToothSurfacesAndEndoMatrix } from "./ToothSurfacesAndEndoMatrix";
 import { ToothSanpinKraftBinding } from "./ToothSanpinKraftBinding";
@@ -22,7 +23,36 @@ import { ToothPediatricContext } from "./ToothPediatricContext";
 import { calculateAnesthesiaSafety, type AnesthesiaCalculationResult } from "../anesthesia/anesthesiaEngine";
 import type { KraftPackageRecord } from "../sanpin/kraft/kraftPackageEngine";
 import { showToast } from "../GlobalToast";
+import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
 import "./ToothContextDrawer.css";
+
+export interface SuggestedRecall {
+	readonly cycle: string;
+	readonly months: number;
+	readonly label: string;
+}
+
+export function getSuggestedRecallForToothState(state: ToothState): SuggestedRecall {
+	switch (state) {
+		case "Healthy":
+			return { cycle: "standard_prophylaxis", months: 6, label: "Профгигиена 6 мес." };
+		case "Caries":
+		case "Filled":
+			return { cycle: "caries_high_risk", months: 6, label: "Контроль пломбы 6 мес." };
+		case "Pulpitis":
+		case "Periodontitis":
+			return { cycle: "periodontal_maintenance", months: 3, label: "Контроль пародонта / рентген 3 мес." };
+		case "Crown":
+			return { cycle: "prosthetic_check", months: 6, label: "Окклюзия / коронка 6 мес." };
+		case "Implant":
+		case "Planned_Implant":
+			return { cycle: "implant_monitoring", months: 3, label: "Остеоинтеграция 3 мес." };
+		case "Missing":
+			return { cycle: "standard_prophylaxis", months: 6, label: "Профосмотр 6 мес." };
+		default:
+			return { cycle: "standard_prophylaxis", months: 6, label: "Профосмотр 6 мес." };
+	}
+}
 
 export interface ToothContextDrawerProps {
 	readonly isOpen: boolean;
@@ -47,7 +77,11 @@ export interface ToothContextDrawerProps {
 	readonly onOpenFullRadiology?: ((toothNumber: number) => void) | undefined;
 	readonly onOpenFamilyBilling?: (() => void) | undefined;
 	readonly onOpenParentMemo?: (() => void) | undefined;
+	readonly onOpenHistory?: ((toothNumber: number) => void) | undefined;
+	readonly onOpenEndo?: ((toothNumber: number) => void) | undefined;
+	readonly onSetRecall?: ((toothNumber: number, cycleType: string, monthsOffset: number) => void) | undefined;
 	readonly initialSection?: WarmAccordionSection | undefined;
+	readonly className?: string | undefined;
 }
 
 export type WarmAccordionSection =
@@ -129,9 +163,52 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 	onOpenFullRadiology,
 	onOpenFamilyBilling,
 	onOpenParentMemo,
+	onOpenHistory,
+	onOpenEndo,
+	onSetRecall,
 	initialSection,
+	className = "",
 }) => {
 	const isPediatricTooth = (toothNumber >= 51 && toothNumber <= 85) || (patient?.ageYears !== undefined && patient.ageYears < 14);
+
+	const [currentState, setCurrentState] = useState<ToothState>(toothData?.state ?? "Healthy");
+
+	useEffect(() => {
+		if (toothData?.state) {
+			setCurrentState(toothData.state);
+		}
+	}, [toothData?.state]);
+
+	const suggestedRecall = useMemo(() => {
+		return getSuggestedRecallForToothState(currentState);
+	}, [currentState]);
+
+	const handleTriggerRecall = () => {
+		if (onSetRecall) {
+			onSetRecall(toothNumber, suggestedRecall.cycle, suggestedRecall.months);
+		} else if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-open-recall-modal", {
+					detail: {
+						toothNumber,
+						cycleType: suggestedRecall.cycle,
+						monthsOffset: suggestedRecall.months,
+					},
+				}),
+			);
+		}
+		showToast(
+			`Назначен вызов по зубу #${toothNumber}: ${suggestedRecall.label}`,
+			"success",
+			3000,
+		);
+		SoundFeedbackService.getInstance().playActionSuccess();
+	};
+
+	const handleQuickStateSelect = (newState: ToothState) => {
+		setCurrentState(newState);
+		onUpdateTooth?.(toothNumber, { state: newState });
+	};
 
 	// Default open section (or initialSection if specified)
 	const [activeSection, setActiveSection] = useState<WarmAccordionSection>(initialSection ?? "surfaces_endo");
@@ -170,13 +247,14 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 	};
 
 	return (
-		<div className="dente-tooth-drawer-backdrop" onClick={onClose}>
+		<div className={`dente-tooth-drawer-backdrop ${className}`.trim()} onClick={onClose}>
 			<aside
 				className="dente-tooth-drawer-container"
 				onClick={(e) => e.stopPropagation()}
 				role="dialog"
 				aria-label={`Контекстные инструменты зуба #${toothNumber}`}
 				data-testid="tooth-context-drawer"
+				data-modal-alias="tooth-card-modal"
 			>
 				{/* Top Drawer Header */}
 				<header className="dente-tooth-drawer-header">
@@ -188,25 +266,69 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 						<div className="dente-tooth-title-block min-w-0">
 							<div className="dente-tooth-title-row min-w-0">
 								<h2 className="dente-tooth-title truncate min-w-0" title={anatomicalName}>{anatomicalName}</h2>
-								<span className={`dente-tooth-state-pill shrink-0 state-${(toothData?.state ?? "Healthy").toLowerCase()}`}>
-									{toothData?.state ?? "Healthy"}
+								<span className={`dente-tooth-state-pill shrink-0 state-${currentState.toLowerCase()}`}>
+									{currentState}
 								</span>
 							</div>
 							<p className="dente-tooth-folk-name truncate min-w-0" title={folkAndAnatomical}>{folkAndAnatomical}</p>
 						</div>
 					</div>
 
-					<button
-						type="button"
-						onClick={onClose}
-						className="dente-drawer-close-btn"
-						title="Закрыть (Esc)"
-						aria-label="Закрыть контекстную шторку зуба"
-						data-testid="tooth-drawer-close-btn"
-					>
-						<X size={20} />
-					</button>
+					<div className="dente-drawer-header-actions">
+						<button
+							type="button"
+							onClick={handleTriggerRecall}
+							className="dente-recall-quick-btn"
+							data-testid="tooth-card-set-recall-btn"
+							title={`Назначить вызов: ${suggestedRecall.label}`}
+						>
+							<BellPlus size={14} className="shrink-0" />
+							<span>Вызов ({suggestedRecall.label})</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={onClose}
+							className="dente-drawer-close-btn"
+							title="Закрыть (Esc)"
+							aria-label="Закрыть контекстную шторку зуба"
+							data-testid="tooth-drawer-close-btn"
+						>
+							<X size={20} />
+						</button>
+					</div>
 				</header>
+
+				{/* 1-Click State Selector Strip (Mandates 8e, 8k) */}
+				<div className="dente-drawer-state-strip" role="group" aria-label="Клинический статус зуба">
+					{(
+						[
+							{ state: "Healthy", label: "Здоров (0)" },
+							{ state: "Caries", label: "Кариес (C)" },
+							{ state: "Filled", label: "Пломба (F)" },
+							{ state: "Pulpitis", label: "Пульпит (P)" },
+							{ state: "Periodontitis", label: "Периодонтит (Pt)" },
+							{ state: "Crown", label: "Коронка (Cr)" },
+							{ state: "Implant", label: "Имплант (Imp)" },
+							{ state: "Planned_Implant", label: "Имплант (план)" },
+							{ state: "Missing", label: "Отсутствует (X)" },
+						] as const
+					).map((opt) => {
+						const isSelected = currentState === opt.state;
+						return (
+							<button
+								key={opt.state}
+								type="button"
+								onClick={() => handleQuickStateSelect(opt.state as ToothState)}
+								className={`dente-state-quick-chip ${isSelected ? "active" : ""}`}
+								data-testid={`tooth-card-state-${opt.state}`}
+								title={opt.label}
+							>
+								<span>{opt.label}</span>
+							</button>
+						);
+					})}
+				</div>
 
 				{/* Quick Context Summary Nav Strip */}
 				<nav className="dente-drawer-quick-tabs" aria-label="Разделы клинического контекста">
