@@ -64,6 +64,7 @@ import { registerInsuranceRoutes } from "./routes/insurance.js";
 import { registerInvoiceRoutes } from "./routes/invoices.js";
 import { registerDiagnocatRoutes } from "./routes/integrations/diagnocat.js";
 import { registerFlexbeRoutes } from "./routes/integrations/flexbe.js";
+import { registerProdoctorovRoutes } from "./routes/integrations/prodoctorov.js";
 import { inventoryRoutes } from "./routes/inventory.js";
 import { warehouseRoutes } from "./routes/warehouse.js";
 import { registerLabRoutes } from "./routes/lab.js";
@@ -749,6 +750,7 @@ export async function createDenteApiApp(
 	await registerAuditRoutes(app);
 	await workspaceProfileRoutes(app);
 	await registerFlexbeRoutes(app);
+	await registerProdoctorovRoutes(app);
 
 	// Вторая партия ранее незарегистрированных модулей.
 	//
@@ -901,8 +903,16 @@ export async function createDenteApiApp(
 	 * пул event loop не пинит.
 	 */
 
+	// Прогрев регламентных справочников (804н, фармакология, МКБ-10, 043/у)
+	// Мгновенный локальный снапшот: 0 мс задержки, гарантированная работа в офлайне (Мандат 8n / 8k)
+	const { warmupStatutoryCatalogs } = await import(
+		"./services/catalogs/warmupStatutoryCatalogs.js"
+	);
+	warmupStatutoryCatalogs({ logger: app.log });
+
 	return app;
 }
+
 
 export async function startDenteApiServer() {
 	await setupProxyAndTunnels().catch((err) => {

@@ -1,6 +1,7 @@
-import { and, eq, gte, lte, ne, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
+	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../accessGuard.js";
@@ -13,6 +14,7 @@ import {
 	diagnocatReports,
 	patients,
 	payments,
+	rebookingConversionRules,
 	serviceCatalogItems,
 	treatmentItems,
 	treatmentPlanItemsNew,
@@ -69,6 +71,74 @@ export const RU_MONTHS = [
 	"Ноя",
 	"Дек",
 ];
+
+/**
+ * Извлекает метку времени создания (Unix epoch ms) из UUIDv7.
+ * В UUIDv7 первые 48 бит (12 hex-символов) содержат миллисекунды от Unix Epoch.
+ */
+export function extractCreatedAtFromUuidV7(id: string | null | undefined): Date | null {
+	if (!id || typeof id !== "string") return null;
+	const clean = id.replace(/-/g, "");
+	if (clean.length < 13) return null;
+	// Проверяем версию UUID (13-й hex-символ должен быть '7')
+	if (clean[12] !== "7") return null;
+
+	const hexTime = clean.slice(0, 12);
+	const ms = parseInt(hexTime, 16);
+	if (isNaN(ms) || ms < 1577836800000 || ms > 2524608000000) {
+		return null;
+	}
+	return new Date(ms);
+}
+
+/**
+ * Алгоритм 15-минутного окна конверсии повторной записи (Врач vs Администратор):
+ * \Delta t = \text{created\_at} - \text{completed\_at}.
+ * Если повторная запись создана в течение 15 минут после завершения визита (\Delta t \le 15 мин),
+ * конверсия атрибутируется Врачу (запись создана у кресла).
+ * Если \Delta t > 15 мин или визит не предшествовал записи, конверсия атрибутируется Администратору/Ресепшену.
+ */
+export function calculateRebookingDeltaMinutes(
+	createdAt: Date | string,
+	completedAt: Date | string,
+): {
+	deltaMinutes: number;
+	creditedRole: "doctor" | "administrator";
+	attributionReason: "chairside_rebooking_under_15m" | "frontdesk_rebooking_over_15m";
+} {
+	const created = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
+	const completed = typeof completedAt === "string" ? new Date(completedAt) : completedAt;
+	const diffMs = created.getTime() - completed.getTime();
+	const deltaMinutes = Math.floor(diffMs / 60000);
+
+	if (deltaMinutes <= 15) {
+		return {
+			deltaMinutes: Math.max(0, deltaMinutes),
+			creditedRole: "doctor",
+			attributionReason: "chairside_rebooking_under_15m",
+		};
+	}
+
+	return {
+		deltaMinutes,
+		creditedRole: "administrator",
+		attributionReason: "frontdesk_rebooking_over_15m",
+	};
+}
+
+export function formatDoctorSpecialty(specialties: unknown): string {
+	if (!specialties) return "Стоматолог общей практики";
+	if (Array.isArray(specialties)) {
+		const str = specialties
+			.filter((s) => typeof s === "string" && s.trim())
+			.join(", ");
+		return str || "Стоматолог общей практики";
+	}
+	if (typeof specialties === "string" && specialties.trim()) {
+		return specialties.trim();
+	}
+	return "Стоматолог общей практики";
+}
 
 export async function registerAnalyticsRoutes(app: FastifyInstance) {
 	app.get("/api/analytics/dashboard", async (request, reply) => {
@@ -1431,6 +1501,565 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				success: false,
 				error: "ExecutiveDashboardUnavailable",
 				message: "Не удалось сформировать дашборд генерального директора. Повторите позже.",
+			});
+		}
+	});
+
+	/**
+	 * ====================================================================
+	 *  ФИЧА #54 / #61 — АЛГОРИТМ 15-МИНУТНОГО ОКНА КОНВЕРСИИ ПОВТОРНОЙ ЗАПИСИ
+	 *  (Врач vs Администратор, Мандаты 8e, 8n & 8j)
+	 * ====================================================================
+	 */
+	app.get("/api/analytics/rebooking-conversion", async (request, reply) => {
+		const readAllowed = await requireClinicalReadAccess(
+			request,
+			reply,
+			"rebooking conversion analytics",
+		);
+		if (!readAllowed) return;
+
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"rebooking conversion analytics",
+		);
+		if (!orgId) return;
+
+		try {
+			const {
+				range = "month",
+				startDate: qStartDate,
+				endDate: qEndDate,
+				period_start: qPeriodStart,
+				period_end: qPeriodEnd,
+				doctorId: qDoctorId,
+				doctor_id: qDoctorIdSnake,
+				specialty: qSpecialty,
+			} = request.query as {
+				range?: string;
+				startDate?: string;
+				endDate?: string;
+				period_start?: string;
+				period_end?: string;
+				doctorId?: string;
+				doctor_id?: string;
+				specialty?: string;
+			};
+
+			const targetDoctorId = qDoctorId || qDoctorIdSnake || undefined;
+			const targetSpecialty = qSpecialty?.trim() || undefined;
+
+			const now = new Date();
+			let startDate: Date | undefined;
+			let endDate: Date | undefined;
+
+			if (qStartDate || qPeriodStart) {
+				startDate = new Date((qStartDate || qPeriodStart)!);
+			}
+			if (qEndDate || qPeriodEnd) {
+				endDate = new Date((qEndDate || qPeriodEnd)!);
+			}
+
+			if (!startDate) {
+				if (range === "today") {
+					startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+					endDate = endDate || new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+				} else if (range === "week") {
+					const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
+					startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek, 0, 0, 0, 0);
+				} else if (range === "month" || range === "last_month") {
+					startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+				} else if (range === "quarter" || range === "last_3_months") {
+					const quarterMonth = Math.floor(now.getMonth() / 3) * 3;
+					startDate = new Date(now.getFullYear(), quarterMonth, 1, 0, 0, 0, 0);
+				} else if (range === "year" || range === "this_year") {
+					startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+				}
+			}
+			if (!endDate) {
+				endDate = now;
+			}
+
+			// 1. Загружаем уже зафиксированные правила из таблицы rebooking_conversion_rules
+			const storedRules = await db
+				.select()
+				.from(rebookingConversionRules)
+				.where(
+					and(
+						eq(rebookingConversionRules.organizationId, orgId),
+						startDate ? gte(rebookingConversionRules.createdAt, startDate) : undefined,
+						endDate ? lte(rebookingConversionRules.createdAt, endDate) : undefined,
+					),
+				);
+
+			// 2. Загружаем завершённые визиты клиники за указанный период
+			const completedVisits = await db
+				.select({
+					visitId: visits.id,
+					patientId: visits.patientId,
+					patientName: patients.fullName,
+					appointmentId: visits.appointmentId,
+					signedAt: visits.signedAt,
+					updatedAt: visits.updatedAt,
+					createdAt: visits.createdAt,
+					doctorUserId: appointments.doctorUserId,
+					doctorName: users.fullName,
+					doctorRole: users.role,
+					doctorSpecialties: users.specialties,
+					appointmentStartsAt: appointments.startsAt,
+					appointmentEndsAt: appointments.endsAt,
+				})
+				.from(visits)
+				.innerJoin(patients, eq(visits.patientId, patients.id))
+				.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
+				.leftJoin(users, eq(appointments.doctorUserId, users.id))
+				.where(
+					and(
+						eq(visits.organizationId, orgId),
+						or(
+							eq(visits.status, "completed"),
+							sql`${visits.signedAt} is not null`,
+						),
+						startDate
+							? gte(sql`coalesce(${visits.signedAt}, ${visits.updatedAt}, ${visits.createdAt})`, startDate)
+							: undefined,
+						endDate
+							? lte(sql`coalesce(${visits.signedAt}, ${visits.updatedAt}, ${visits.createdAt})`, endDate)
+							: undefined,
+						targetDoctorId ? eq(appointments.doctorUserId, targetDoctorId) : undefined,
+					),
+				);
+
+			// 3. Загружаем все последующие приёмы пациентов для расчёта дельты \Delta t
+			const patientIds = Array.from(
+				new Set(completedVisits.map((v) => v.patientId).filter(Boolean)),
+			);
+
+			const appointmentsPool =
+				patientIds.length > 0
+					? await db
+							.select({
+								id: appointments.id,
+								patientId: appointments.patientId,
+								doctorUserId: appointments.doctorUserId,
+								startsAt: appointments.startsAt,
+								endsAt: appointments.endsAt,
+								status: appointments.status,
+								doctorName: users.fullName,
+								doctorSpecialties: users.specialties,
+							})
+							.from(appointments)
+							.leftJoin(users, eq(appointments.doctorUserId, users.id))
+							.where(
+								and(
+									eq(appointments.organizationId, orgId),
+									inArray(appointments.patientId, patientIds),
+									ne(appointments.status, "cancelled"),
+								),
+							)
+					: [];
+
+			// 4. Анализируем завершённые визиты и вычисляем конверсию по окну 15 минут
+			interface RebookingEvent {
+				id: string;
+				patientName: string;
+				rebookedBy: string;
+				timeDeltaMinutes: number;
+				creditedRole: "doctor" | "administrator";
+				appointmentDate: string;
+				createdAt: Date;
+				attributionReason: string;
+				doctorId?: string | null;
+				doctorName?: string | null;
+				specialty?: string;
+			}
+
+			const computedEvents: RebookingEvent[] = [];
+			const processedApptIds = new Set<string>();
+
+			for (const visit of completedVisits) {
+				const completedAt =
+					visit.signedAt ?? visit.updatedAt ?? visit.appointmentEndsAt ?? visit.createdAt;
+
+				// Ищем приёмы того же пациента, созданные/начинающиеся после или во время визита
+				const patientAppts = appointmentsPool.filter(
+					(a) =>
+						a.patientId === visit.patientId &&
+						a.id !== visit.appointmentId &&
+						!processedApptIds.has(a.id),
+				);
+
+				// Находим ближайший последующий приём
+				let candidateAppt: (typeof appointmentsPool)[0] | null = null;
+				let minDeltaMs = Number.POSITIVE_INFINITY;
+
+				for (const appt of patientAppts) {
+					const apptCreatedAt =
+						extractCreatedAtFromUuidV7(appt.id) ?? appt.startsAt;
+					const deltaMs = apptCreatedAt.getTime() - completedAt.getTime();
+
+					// Запись у кресла может быть сделана прямо во время приёма (deltaMs <= 0)
+					// либо в течение последующего времени
+					if (deltaMs >= -1800000 && deltaMs < minDeltaMs) {
+						minDeltaMs = deltaMs;
+						candidateAppt = appt;
+					}
+				}
+
+				if (candidateAppt) {
+					processedApptIds.add(candidateAppt.id);
+					const apptCreatedAt =
+						extractCreatedAtFromUuidV7(candidateAppt.id) ?? candidateAppt.startsAt;
+					const { deltaMinutes, creditedRole, attributionReason } =
+						calculateRebookingDeltaMinutes(apptCreatedAt, completedAt);
+
+					const doctorName = visit.doctorName || candidateAppt.doctorName || "Врач у кресла";
+					const rebookedBy =
+						creditedRole === "doctor" ? doctorName : "Администратор / Ресепшен";
+
+					computedEvents.push({
+						id: candidateAppt.id,
+						patientName: visit.patientName || "Пациент",
+						rebookedBy,
+						timeDeltaMinutes: deltaMinutes,
+						creditedRole,
+						appointmentDate: candidateAppt.startsAt.toISOString().slice(0, 10),
+						createdAt: apptCreatedAt,
+						attributionReason,
+						doctorId: visit.doctorUserId ?? candidateAppt.doctorUserId ?? null,
+						doctorName,
+						specialty: formatDoctorSpecialty(visit.doctorSpecialties ?? candidateAppt.doctorSpecialties),
+					});
+				}
+			}
+
+			// 5. Синхронизируем вычисленные события в таблицу rebooking_conversion_rules (наполнение реальными данными)
+			const existingKeys = new Set(
+				storedRules.map(
+					(r) => `${r.patientName}__${r.appointmentDate}__${r.creditedRole}`,
+				),
+			);
+			const rulesToInsert: Array<typeof rebookingConversionRules.$inferInsert> = [];
+
+			for (const ev of computedEvents) {
+				const key = `${ev.patientName}__${ev.appointmentDate}__${ev.creditedRole}`;
+				if (!existingKeys.has(key)) {
+					existingKeys.add(key);
+					rulesToInsert.push({
+						organizationId: orgId,
+						patientName: ev.patientName,
+						rebookedBy: ev.rebookedBy,
+						timeDeltaMinutes: ev.timeDeltaMinutes,
+						creditedRole: ev.creditedRole,
+						appointmentDate: ev.appointmentDate,
+						createdAt: ev.createdAt,
+					});
+				}
+			}
+
+			if (rulesToInsert.length > 0) {
+				try {
+					await db.insert(rebookingConversionRules).values(rulesToInsert);
+				} catch (err) {
+					request.log.warn({ err }, "Не удалось зафиксировать кэш rebooking_conversion_rules");
+				}
+			}
+
+			// 6. Объединяем сохранённые и вычисленные записи
+			const allRecordsMap = new Map<string, RebookingEvent>();
+
+			for (const rule of storedRules) {
+				const key = `${rule.patientName}__${rule.appointmentDate}__${rule.creditedRole}`;
+				allRecordsMap.set(key, {
+					id: rule.id,
+					patientName: rule.patientName,
+					rebookedBy: rule.rebookedBy,
+					timeDeltaMinutes: rule.timeDeltaMinutes,
+					creditedRole: rule.creditedRole === "doctor" ? "doctor" : "administrator",
+					appointmentDate: rule.appointmentDate,
+					createdAt: rule.createdAt,
+					attributionReason:
+						rule.creditedRole === "doctor"
+							? "chairside_rebooking_under_15m"
+							: "frontdesk_rebooking_over_15m",
+					doctorName: rule.creditedRole === "doctor" ? rule.rebookedBy : undefined,
+				});
+			}
+
+			for (const ev of computedEvents) {
+				const key = `${ev.patientName}__${ev.appointmentDate}__${ev.creditedRole}`;
+				if (!allRecordsMap.has(key)) {
+					allRecordsMap.set(key, ev);
+				}
+			}
+
+			const allRecords = Array.from(allRecordsMap.values());
+
+			// 7. Агрегируем метрики по сотрудникам (Врачи vs Администраторы)
+			const totalCompletedVisits = completedVisits.length;
+			let doctorRebookingsCount = 0;
+			let adminRebookingsCount = 0;
+
+			// Статистика по врачам
+			const doctorsMap = new Map<
+				string,
+				{
+					staffId: string | null;
+					staffName: string;
+					role: string;
+					specialty: string;
+					completedVisitsCount: number;
+					doctorRebookingsCount: number;
+					adminRebookingsCount: number;
+				}
+			>();
+
+			// Инициализируем врачей из завершённых визитов
+			for (const visit of completedVisits) {
+				const docId = visit.doctorUserId || "unassigned";
+				const docName = visit.doctorName || "Врач без назначения";
+				const specialty = formatDoctorSpecialty(visit.doctorSpecialties);
+
+				if (!doctorsMap.has(docId)) {
+					doctorsMap.set(docId, {
+						staffId: visit.doctorUserId,
+						staffName: docName,
+						role: "doctor",
+						specialty,
+						completedVisitsCount: 0,
+						doctorRebookingsCount: 0,
+						adminRebookingsCount: 0,
+					});
+				}
+				const docStat = doctorsMap.get(docId)!;
+				docStat.completedVisitsCount++;
+			}
+
+			// Распределяем повторные записи
+			for (const rec of allRecords) {
+				if (rec.creditedRole === "doctor") {
+					doctorRebookingsCount++;
+					const docId = rec.doctorId || "unassigned";
+					if (doctorsMap.has(docId)) {
+						doctorsMap.get(docId)!.doctorRebookingsCount++;
+					} else {
+						doctorsMap.set(docId, {
+							staffId: rec.doctorId ?? null,
+							staffName: rec.rebookedBy || rec.doctorName || "Врач у кресла",
+							role: "doctor",
+							specialty: rec.specialty || "Стоматолог общей практики",
+							completedVisitsCount: 0,
+							doctorRebookingsCount: 1,
+							adminRebookingsCount: 0,
+						});
+					}
+				} else {
+					adminRebookingsCount++;
+					const docId = rec.doctorId || "unassigned";
+					if (doctorsMap.has(docId)) {
+						doctorsMap.get(docId)!.adminRebookingsCount++;
+					}
+				}
+			}
+
+			const totalRebookings = doctorRebookingsCount + adminRebookingsCount;
+
+			const doctorConversionRate =
+				totalCompletedVisits > 0
+					? Math.round((doctorRebookingsCount / totalCompletedVisits) * 1000) / 10
+					: 0;
+
+			const adminConversionRate =
+				totalCompletedVisits > 0
+					? Math.round((adminRebookingsCount / totalCompletedVisits) * 1000) / 10
+					: 0;
+
+			const overallConversionRate =
+				totalCompletedVisits > 0
+					? Math.round((totalRebookings / totalCompletedVisits) * 1000) / 10
+					: 0;
+
+			// Формируем список по сотрудникам
+			const byStaff = Array.from(doctorsMap.values())
+				.filter((d) => !targetSpecialty || d.specialty.toLowerCase().includes(targetSpecialty.toLowerCase()))
+				.map((d) => {
+					const convRate =
+						d.completedVisitsCount > 0
+							? Math.round((d.doctorRebookingsCount / d.completedVisitsCount) * 1000) / 10
+							: 0;
+					return {
+						staffId: d.staffId,
+						staffName: d.staffName,
+						role: "doctor" as const,
+						specialty: d.specialty,
+						completedVisitsCount: d.completedVisitsCount,
+						doctorRebookingsCount: d.doctorRebookingsCount,
+						adminRebookingsCount: d.adminRebookingsCount,
+						rebookingCount: d.doctorRebookingsCount + d.adminRebookingsCount,
+						conversionRate: convRate,
+						chairsideRetentionRate: convRate,
+						retentionKpiStatus: convRate >= 70 ? ("target_met" as const) : ("needs_improvement" as const),
+						targetKpiPercent: 70,
+					};
+				});
+
+			// Добавляем администраторов отдельной строкой
+			byStaff.push({
+				staffId: null,
+				staffName: "Администратор / Ресепшен",
+				role: "administrator" as const,
+				specialty: "Регистратура / Колл-центр",
+				completedVisitsCount: 0,
+				doctorRebookingsCount: 0,
+				adminRebookingsCount: adminRebookingsCount,
+				rebookingCount: adminRebookingsCount,
+				conversionRate: adminConversionRate,
+				chairsideRetentionRate: 0,
+				retentionKpiStatus: "target_met" as const,
+				targetKpiPercent: 70,
+			});
+
+			return {
+				success: true,
+				data: {
+					summary: {
+						totalCompletedVisits,
+						totalVisits: totalCompletedVisits,
+						totalRebookings,
+						doctorRebookingsCount,
+						chairsideRebookingsCount: doctorRebookingsCount,
+						adminRebookingsCount,
+						frontdeskRebookingsCount: adminRebookingsCount,
+						doctorConversionRate,
+						adminConversionRate,
+						overallConversionRate,
+						chairsideRetentionRate: doctorConversionRate,
+						thresholdMinutes: 15,
+						isEmpty: totalCompletedVisits === 0 && totalRebookings === 0,
+					},
+					byStaff,
+					byDoctors: byStaff.filter((s) => s.role === "doctor"),
+					records: allRecords.map((r) => ({
+						id: r.id,
+						patientName: r.patientName,
+						rebookedBy: r.rebookedBy,
+						timeDeltaMinutes: r.timeDeltaMinutes,
+						creditedRole: r.creditedRole,
+						appointmentDate: r.appointmentDate,
+						createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
+						attributionReason: r.attributionReason,
+					})),
+					period: {
+						startDate: startDate?.toISOString() ?? null,
+						endDate: endDate?.toISOString() ?? null,
+						range,
+					},
+				},
+			};
+		} catch (e) {
+			request.log.error({ err: e }, "Не удалось рассчитать конверсию повторной записи");
+			return reply.code(500).send({
+				success: false,
+				error: "RebookingConversionCalculationFailed",
+				message: "Не удалось рассчитать конверсию повторной записи. Повторите позже.",
+			});
+		}
+	});
+
+	/**
+	 * POST /api/analytics/rebooking-conversion
+	 * Явная фиксация правила конверсии повторной записи в БД.
+	 */
+	app.post("/api/analytics/rebooking-conversion", async (request, reply) => {
+		const mutationAllowed = await requireClinicalMutationAccess(
+			request,
+			reply,
+			"rebooking conversion record",
+		);
+		if (!mutationAllowed) return;
+
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"rebooking conversion record",
+		);
+		if (!orgId) return;
+
+		try {
+			const body = request.body as {
+				patientName?: string;
+				rebookedBy?: string;
+				timeDeltaMinutes?: number;
+				createdAt?: string;
+				completedAt?: string;
+				creditedRole?: "doctor" | "administrator";
+				appointmentDate?: string;
+			};
+
+			if (!body || typeof body !== "object") {
+				return reply.code(400).send({
+					success: false,
+					error: "InvalidRequestBody",
+					message: "Требуется тело запроса с данными о повторной записи.",
+				});
+			}
+
+			const patientName = body.patientName?.trim() || "Пациент";
+			const rebookedBy = body.rebookedBy?.trim() || "Сотрудник";
+			const appointmentDate =
+				body.appointmentDate?.trim() || new Date().toISOString().slice(0, 10);
+
+			let timeDeltaMinutes = body.timeDeltaMinutes;
+			let creditedRole = body.creditedRole;
+
+			if (typeof timeDeltaMinutes !== "number") {
+				if (body.createdAt && body.completedAt) {
+					const deltaCalc = calculateRebookingDeltaMinutes(
+						body.createdAt,
+						body.completedAt,
+					);
+					timeDeltaMinutes = deltaCalc.deltaMinutes;
+					if (!creditedRole) creditedRole = deltaCalc.creditedRole;
+				} else {
+					timeDeltaMinutes = 0;
+				}
+			}
+
+			if (!creditedRole) {
+				creditedRole = timeDeltaMinutes <= 15 ? "doctor" : "administrator";
+			}
+
+			const [inserted] = await db
+				.insert(rebookingConversionRules)
+				.values({
+					organizationId: orgId,
+					patientName,
+					rebookedBy,
+					timeDeltaMinutes,
+					creditedRole,
+					appointmentDate,
+				})
+				.returning();
+
+			return reply.code(201).send({
+				success: true,
+				data: inserted,
+				attribution: {
+					timeDeltaMinutes,
+					creditedRole,
+					attributionReason:
+						creditedRole === "doctor"
+							? "chairside_rebooking_under_15m"
+							: "frontdesk_rebooking_over_15m",
+				},
+			});
+		} catch (e) {
+			request.log.error({ err: e }, "Не удалось сохранить правило повторной записи");
+			return reply.code(500).send({
+				success: false,
+				error: "RebookingConversionSaveFailed",
+				message: "Не удалось сохранить правило повторной записи.",
 			});
 		}
 	});
