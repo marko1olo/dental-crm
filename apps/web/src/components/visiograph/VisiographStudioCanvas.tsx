@@ -615,6 +615,7 @@ export function VisiographStudioCanvas({
 			if (canvasRef.current) {
 				try {
 					const webglContext =
+						canvasRef.current.getContext("webgl2") ||
 						canvasRef.current.getContext("webgl") ||
 						canvasRef.current.getContext("experimental-webgl");
 					if (webglContext) {
@@ -629,6 +630,7 @@ export function VisiographStudioCanvas({
 			if (processedCanvasRef.current) {
 				try {
 					const offscreenGl =
+						processedCanvasRef.current.getContext("webgl2") ||
 						processedCanvasRef.current.getContext("webgl") ||
 						processedCanvasRef.current.getContext("experimental-webgl");
 					if (offscreenGl) {

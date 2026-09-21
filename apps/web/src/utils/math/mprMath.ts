@@ -496,6 +496,15 @@ export function toTransferableScalarData(
 	if (src instanceof Uint16Array) {
 		return src.slice();
 	}
+	if (src instanceof Float32Array) {
+		return src.slice();
+	}
+	if (src instanceof Int16Array) {
+		return new Float32Array(src);
+	}
+	if (ArrayBuffer.isView(src)) {
+		return new Float32Array(src as unknown as ArrayLike<number>);
+	}
 	const out = new Float32Array(src.length);
 	for (let i = 0; i < src.length; i++) out[i] = src[i] ?? 0;
 	return out;
@@ -636,37 +645,39 @@ export function worldToIndex(
 	origin: vec3,
 	direction: mat4,
 	spacing: vec3,
+	out?: vec3,
 ): vec3 {
-	// 1. Translate relative to origin
-	const translated = vec3.create();
-	vec3.subtract(translated, worldPos, origin);
+	const tx = worldPos[0] - origin[0];
+	const ty = worldPos[1] - origin[1];
+	const tz = worldPos[2] - origin[2];
 
-	// 2. Inverse rotation (transpose of orthogonal direction matrix)
-	// Assuming direction is a 3x3 rotation matrix embedded in mat4 or just 3 direction vectors
-	// We'll use a simplified dot product projection here for standard DICOM matrices
-	const dirX = vec3.fromValues(direction[0], direction[1], direction[2]);
-	const dirY = vec3.fromValues(direction[4], direction[5], direction[6]);
-	const dirZ = vec3.fromValues(direction[8], direction[9], direction[10]);
+	const dirX0 = direction[0] ?? 1;
+	const dirX1 = direction[1] ?? 0;
+	const dirX2 = direction[2] ?? 0;
 
-	const rotated = vec3.fromValues(
-		vec3.dot(translated, dirX),
-		vec3.dot(translated, dirY),
-		vec3.dot(translated, dirZ),
-	);
+	const dirY0 = direction[4] ?? 0;
+	const dirY1 = direction[5] ?? 1;
+	const dirY2 = direction[6] ?? 0;
 
-	// 3. Scale by spacing
-	const index = vec3.fromValues(
-		rotated[0] / spacing[0],
-		rotated[1] / spacing[1],
-		rotated[2] / spacing[2],
-	);
+	const dirZ0 = direction[8] ?? 0;
+	const dirZ1 = direction[9] ?? 0;
+	const dirZ2 = direction[10] ?? 1;
 
-	return index;
+	const invSx = 1 / spacing[0];
+	const invSy = 1 / spacing[1];
+	const invSz = 1 / spacing[2];
+
+	const target = out ?? vec3.create();
+	target[0] = (tx * dirX0 + ty * dirX1 + tz * dirX2) * invSx;
+	target[1] = (tx * dirY0 + ty * dirY1 + tz * dirY2) * invSy;
+	target[2] = (tx * dirZ0 + ty * dirZ1 + tz * dirZ2) * invSz;
+	return target;
 }
 
 /**
  * Extracts a panoramic 2D array of pixels from the volume based on a spline.
  * Supports "Thick Slab" (Focal Trough) rendering via MIP or Average intensity projections.
+ * Optimized for low-spec CPUs (Celeron/i3): Zero Float32Array allocations inside the raycast loop.
  */
 export function generatePanoramicImage(
 	scalarData: Float32Array | Uint16Array,
@@ -690,49 +701,76 @@ export function generatePanoramicImage(
 	const thicknessSteps = Math.max(1, Math.floor(thickness / 0.5));
 	const stepSizeNormal = thickness > 0 ? thickness / thicknessSteps : 0;
 
+	// Precomputed spatial transformation constants (Zero-allocation register math)
+	const invSx = 1 / spacing[0];
+	const invSy = 1 / spacing[1];
+	const invSz = 1 / spacing[2];
+
+	const dirX0 = direction[0] ?? 1;
+	const dirX1 = direction[1] ?? 0;
+	const dirX2 = direction[2] ?? 0;
+
+	const dirY0 = direction[4] ?? 0;
+	const dirY1 = direction[5] ?? 1;
+	const dirY2 = direction[6] ?? 0;
+
+	const dirZ0 = direction[8] ?? 0;
+	const dirZ1 = direction[9] ?? 0;
+	const dirZ2 = direction[10] ?? 1;
+
+	const ox = origin[0] ?? 0;
+	const oy = origin[1] ?? 0;
+	const oz = origin[2] ?? 0;
+
+	const zSign = Math.sign(zEndWorld - zStartWorld);
+
 	for (let y = 0; y < height; y++) {
-		const currentZ =
-			zStartWorld + y * zStepWorld * Math.sign(zEndWorld - zStartWorld);
+		const currentZ = zStartWorld + y * zStepWorld * zSign;
+		const tz = currentZ - oz;
 
 		for (let x = 0; x < width; x++) {
-			// biome-ignore lint/style/noNonNullAssertion: automated suppression
 			const point = splinePoints[x]!;
 
 			if (thickness === 0) {
-				// Single Ray
-				const worldPos = vec3.fromValues(point.x, point.y, currentZ);
-				const indexPos = worldToIndex(worldPos, origin, direction, spacing);
-				const value = trilinearInterpolate(
+				// Single Ray - pure register calculation without Float32Array allocations
+				const tx = point.x - ox;
+				const ty = point.y - oy;
+
+				const ix = (tx * dirX0 + ty * dirX1 + tz * dirX2) * invSx;
+				const iy = (tx * dirY0 + ty * dirY1 + tz * dirY2) * invSy;
+				const iz = (tx * dirZ0 + ty * dirZ1 + tz * dirZ2) * invSz;
+
+				pixels[y * width + x] = trilinearInterpolate(
 					scalarData,
 					dimensions,
-					indexPos[0],
-					indexPos[1],
-					indexPos[2],
+					ix,
+					iy,
+					iz,
 				);
-				pixels[y * width + x] = value;
 			} else {
 				// Thick Slab Raycasting along the normal
-				// biome-ignore lint/style/noNonNullAssertion: automated suppression
 				const normal = normals[x]!;
 				let accumulator = blendMode === "mip" ? -Infinity : 0;
-
-				// Sample from -thickness/2 to +thickness/2
 				const halfThickness = thickness / 2;
 
 				for (let s = 0; s <= thicknessSteps; s++) {
 					const offset = -halfThickness + s * stepSizeNormal;
-
 					const sampleX = point.x + normal.x * offset;
 					const sampleY = point.y + normal.y * offset;
 
-					const worldPos = vec3.fromValues(sampleX, sampleY, currentZ);
-					const indexPos = worldToIndex(worldPos, origin, direction, spacing);
+					const tx = sampleX - ox;
+					const ty = sampleY - oy;
+
+					const ix = (tx * dirX0 + ty * dirX1 + tz * dirX2) * invSx;
+					const iy = (tx * dirY0 + ty * dirY1 + tz * dirY2) * invSy;
+					const iz = (tx * dirZ0 + ty * dirZ1 + tz * dirZ2) * invSz;
+
 					const value = trilinearInterpolate(
 						scalarData,
 						dimensions,
-						indexPos[0],
-						indexPos[1],
-						indexPos[2],
+						ix,
+						iy,
+						iz,
 					);
 
 					if (blendMode === "mip") {
@@ -810,7 +848,7 @@ export function classifyBoneDensity(hu: number): "D1" | "D2" | "D3" | "D4" {
  * Virtual Probe: Calculates average HU inside a cylindrical area (Implant).
  */
 export function calculateImplantBoneDensity(
-	scalarData: Float32Array | Uint16Array | Uint8Array,
+	scalarData: Float32Array | Uint16Array | Uint8Array | Int16Array | ArrayLike<number>,
 	dimensions: [number, number, number],
 	origin: vec3,
 	direction: mat4,
@@ -850,18 +888,25 @@ export function calculateImplantBoneDensity(
 	vec3.cross(ortho2, implantDir, ortho1);
 	vec3.normalize(ortho2, ortho2);
 
+	// Preallocated scratch vectors for zero-allocation sampling in V8 heap
+	const centerWorld = vec3.create();
+	const tempDir = vec3.create();
+	const offset = vec3.create();
+	const o1 = vec3.create();
+	const o2 = vec3.create();
+	const sampleWorld = vec3.create();
+	const idx = vec3.create();
+
 	for (let l = 0; l <= length; l += stepSize) {
-		const centerWorld = vec3.create();
-		const tempDir = vec3.create();
 		vec3.scale(tempDir, implantDir, l);
 		vec3.add(centerWorld, implantStartWorld, tempDir);
 
 		// Sample disk
 		for (let r = 0; r <= radius; r += stepSize) {
 			if (r === 0) {
-				const idx = worldToIndex(centerWorld, origin, direction, spacing);
+				worldToIndex(centerWorld, origin, direction, spacing, idx);
 				const val = trilinearInterpolate(
-					scalarData,
+					scalarData as Float32Array,
 					dimensions,
 					idx[0],
 					idx[1],
@@ -876,19 +921,15 @@ export function calculateImplantBoneDensity(
 			for (let i = 0; i < numAngles; i++) {
 				const theta = (i / numAngles) * 2 * Math.PI;
 
-				const offset = vec3.create();
-				const o1 = vec3.create();
-				const o2 = vec3.create();
 				vec3.scale(o1, ortho1, r * Math.cos(theta));
 				vec3.scale(o2, ortho2, r * Math.sin(theta));
 				vec3.add(offset, o1, o2);
 
-				const sampleWorld = vec3.create();
 				vec3.add(sampleWorld, centerWorld, offset);
 
-				const idx = worldToIndex(sampleWorld, origin, direction, spacing);
+				worldToIndex(sampleWorld, origin, direction, spacing, idx);
 				const val = trilinearInterpolate(
-					scalarData,
+					scalarData as Float32Array,
 					dimensions,
 					idx[0],
 					idx[1],

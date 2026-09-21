@@ -69,6 +69,7 @@ import {
 	calculateAngleFromShiftDrag,
 	hitTestCrosshairCenter,
 	resetPlaneObliqueAngle,
+	getVolumeCenterMm,
 	getTissueNameFromHU,
 	mapCanvasPointerToWorldMmWithTransform,
 	getCanvasPointerPos,
@@ -101,6 +102,7 @@ import {
 } from "./dentalCurveEngine";
 import { autoDetectDentalArch, findOcclusalZPlane } from "./cbctAutoArchEngine";
 import { CbctViewportHud } from "./CbctViewportHud";
+import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper";
 import { BoneQualityPanel } from "../dicom/BoneQualityPanel";
 import {
 	STANDARD_IMPLANT_CATALOG,
@@ -185,6 +187,8 @@ export function formatNerveNodesPlural(count: number): string {
 	return `${count} узлов`;
 }
 
+export const ROTATE_CURSOR = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2322d3ee' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8'/%3E%3Cpolyline points='21 3 21 8 16 8'/%3E%3C/svg%3E") 12 12, crosshair`;
+
 export interface CbctMprImplantStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -252,11 +256,15 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const [isShiftRotating, setIsShiftRotating] = useState<{ plane: MprPlane; centerPx: { x: number; y: number }; startPointerPx: { x: number; y: number }; initialAngleDeg: number } | null>(null);
 	const [mobileActiveTab, setMobileActiveTab] = useState<"axial" | "coronal" | "sagittal" | "panoramic" | "planner">("axial");
 
+	const currentVoxel = useMemo(() => {
+		if (!volume) return { x: 0, y: 0, z: 0 };
+		return worldMmToVoxel(crosshairMm, volume);
+	}, [volume, crosshairMm]);
+
 	const sampledVoxelHU = useMemo(() => {
 		if (!volume) return 0;
-		const vox = worldMmToVoxel(crosshairMm, volume);
-		return sampleVoxelHU(vox.x, vox.y, vox.z, volume);
-	}, [volume, crosshairMm]);
+		return sampleVoxelHU(currentVoxel.x, currentVoxel.y, currentVoxel.z, volume);
+	}, [volume, currentVoxel]);
 
 	// ─── DENTAL ARCH & PANORAMA STATE ─────────────────────────────────────────
 	const [jawType, setJawType] = useState<"mandible" | "maxilla">("mandible");
@@ -495,8 +503,34 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				disposeCbctVolume(volumeRef.current);
 				volumeRef.current = null;
 			}
+			const offscreens = [
+				axialOffscreenRef.current,
+				coronalOffscreenRef.current,
+				sagittalOffscreenRef.current,
+				panoOffscreenRef.current,
+				crossSectionOffscreenRef.current,
+			];
+			for (const off of offscreens) {
+				if (off) {
+					off.width = 0;
+					off.height = 0;
+				}
+			}
+			axialOffscreenRef.current = null;
+			coronalOffscreenRef.current = null;
+			sagittalOffscreenRef.current = null;
+			panoOffscreenRef.current = null;
+			crossSectionOffscreenRef.current = null;
+			teardownViewportCanvases(modalContainerRef.current);
 		};
 	}, []);
+
+	// Low-Spec GC Invariant: Teardown backing stores when modal closes
+	useEffect(() => {
+		if (!isOpen && modalContainerRef.current) {
+			teardownViewportCanvases(modalContainerRef.current);
+		}
+	}, [isOpen]);
 
 	// Modal Fullscreen State & Handler
 	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -631,8 +665,23 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			...prev,
 			[activeViewport]: DEFAULT_VIEWPORT_TRANSFORM,
 		}));
-		setCrosshairMm({ x: 0, y: 0, z: 0 });
 	}, [activeViewport]);
+
+	const handleFullResetViewport = useCallback((viewport: CbctViewportType) => {
+		if (viewport === "axial" || viewport === "coronal" || viewport === "sagittal") {
+			setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, viewport));
+		}
+		setTransforms((prev) => ({
+			...prev,
+			[viewport]: DEFAULT_VIEWPORT_TRANSFORM,
+		}));
+		if (volume) {
+			setCrosshairMm(getVolumeCenterMm(volume));
+		} else {
+			setCrosshairMm({ x: 0, y: 0, z: 0 });
+		}
+		showToast("Вид сброшен: угол 0.0°, масштаб 1.0x, перекрестие по центру", "info");
+	}, [volume]);
 
 	const handleResetAll = useCallback(() => {
 		setTransforms({
@@ -717,6 +766,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		onToggleMaximize: handleToggleMaximizeActive,
 		onTogglePanel: handleTogglePanel,
 		onToggleMode: handleToggleStudioMode,
+		onSelectTool: setActiveTool,
 		onSelectPreset: handleSelectPresetShortcut,
 	});
 
@@ -3039,6 +3089,16 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	}, [crossSections, archCurve, crosshairMm.z]);
 
 	const handlePanoMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+		if (e.button === 2 || activeTool === "window_level") {
+			e.preventDefault();
+			setIsDraggingWL({
+				startX: e.clientX,
+				startY: e.clientY,
+				startWW: windowWidth,
+				startWL: windowLevel,
+			});
+			return;
+		}
 		if (crossSections.length === 0 || !panoCanvasRef.current) return;
 		setIsDraggingPano(true);
 		const canvas = panoCanvasRef.current;
@@ -3069,7 +3129,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		);
 		setActiveCrossSectionIdx(syncRes.crossSectionIdx);
 		setCrosshairMm(syncRes.worldMm);
-	}, [crossSections, archCurve, crosshairMm, transforms.panoramic, panoramicData?.toothMarkersOnPano, handleSelectTooth]);
+	}, [crossSections, archCurve, crosshairMm, transforms.panoramic, panoramicData?.toothMarkersOnPano, handleSelectTooth, activeTool, windowWidth, windowLevel]);
 
 	const handlePanoMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (!isDraggingPano || crossSections.length === 0 || !panoCanvasRef.current) return;
@@ -3113,6 +3173,16 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 	// ─── INTERACTIVE CROSS-SECTION IMPLANT DRAG & DROP ────────────────────────
 	const handleCrossSectionMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+		if (e.button === 2 || activeTool === "window_level") {
+			e.preventDefault();
+			setIsDraggingWL({
+				startX: e.clientX,
+				startY: e.clientY,
+				startWW: windowWidth,
+				startWL: windowLevel,
+			});
+			return;
+		}
 		if (studioMode !== "implant" || !activeCrossSection || !crossSectionCanvasRef.current) return;
 		const canvas = crossSectionCanvasRef.current;
 		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
@@ -3182,7 +3252,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				startAng: implantAngulationDeg,
 			});
 		}
-	}, [studioMode, activeCrossSection, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg, currentImplantSpec]);
+	}, [studioMode, activeCrossSection, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg, currentImplantSpec, activeTool, windowWidth, windowLevel]);
 
 	const handleCrossSectionMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (!activeCrossSection || !crossSectionCanvasRef.current) return;
@@ -3253,6 +3323,19 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	// ─── INTERACTIVE CROSSHAIR DRAGGING & WHEEL NAVIGATION ────────────────────
 	const handleCanvasMouseDown = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (!volume) return;
+
+		// Right-Click (e.button === 2) or W/L Tool -> Window / Level Dragging regardless of active tool
+		if (e.button === 2 || activeTool === "window_level") {
+			e.preventDefault();
+			setIsDraggingWL({
+				startX: e.clientX,
+				startY: e.clientY,
+				startWW: windowWidth,
+				startWL: windowLevel,
+			});
+			return;
+		}
+
 		const canvas = e.currentTarget;
 		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
 		const pointerPx = { x, y };
@@ -3347,17 +3430,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				centerPx,
 				startPointerPx: pointerPx,
 				initialAngleDeg: rotDeg,
-			});
-			return;
-		}
-
-		// 1b. Window/Level Tool Drag
-		if (activeTool === "window_level") {
-			setIsDraggingWL({
-				startX: e.clientX,
-				startY: e.clientY,
-				startWW: windowWidth,
-				startWL: windowLevel,
 			});
 			return;
 		}
@@ -3552,16 +3624,17 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			? obliqueAngles.coronalTiltDeg
 			: obliqueAngles.sagittalTiltDeg;
 
-		const handles = getRotationHandles(plane, canvas.width, canvas.height, centerPx, 65, rotDeg);
-		const hitHandle = hitTestRotationHandle(pointerPx, handles, 14);
+		const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+		const centerScreen = slicePxToScreenPx(centerPx, currentTransform);
+		const handles = getRotationHandles(plane, canvas.width, canvas.height, centerScreen, 65, rotDeg);
+		const hitHandle = hitTestRotationHandle(pointerPx, handles, 24);
 		if (hitHandle) {
-			setActiveRotationHandle({ plane, handle: hitHandle.position, centerPx });
+			setActiveRotationHandle({ plane, handle: hitHandle.position, centerPx: centerScreen });
 			return;
 		}
 
 		// 3. Normal Crosshair Translation Drag (Instant update + rAF coalesced tracking)
 		setIsDraggingCrosshair(plane);
-		const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
 		const newWorldMm = calculateCrosshairDragWorldMm(
 			pointerPx,
 			{ width: canvas.width, height: canvas.height },
@@ -3818,8 +3891,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				? obliqueAngles.coronalTiltDeg
 				: obliqueAngles.sagittalTiltDeg;
 
-			const handles = getRotationHandles(plane, canvas.width, canvas.height, centerPx, 65, rotDeg);
-			const hitHandle = hitTestRotationHandle(pointerPx, handles, 14);
+			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const centerScreen = slicePxToScreenPx(centerPx, currentTransform);
+			const handles = getRotationHandles(plane, canvas.width, canvas.height, centerScreen, 65, rotDeg);
+			const hitHandle = hitTestRotationHandle(pointerPx, handles, 24);
 			if (hitHandle) {
 				setHoveredHandle({ plane, handle: hitHandle.position });
 			} else if (hoveredHandle?.plane === plane) {
@@ -3931,7 +4006,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 	// ─── WINDOW-LEVEL DRAG TRACKING (ZERO-STALL SMOOTH PAN/CROSSHAIR/ROTATION) ─────────
 	useEffect(() => {
-		if (!isDraggingCrosshair && !isDraggingPano && !activeRotationHandle && !isShiftRotating && isDraggingArchAnchor === null) return;
+		if (!isDraggingCrosshair && !isDraggingPano && !activeRotationHandle && !isShiftRotating && isDraggingArchAnchor === null && !isDraggingWL) return;
 
 		const handleGlobalMouseMove = (e: MouseEvent) => {
 			if (isDraggingArchAnchor !== null && axialCanvasRef.current && volume) {
@@ -4075,11 +4150,16 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						rafPanoIdRef.current = null;
 					});
 				}
+			} else if (isDraggingWL) {
+				const dx = e.clientX - isDraggingWL.startX;
+				const dy = e.clientY - isDraggingWL.startY;
+				setWindowWidth(Math.max(100, Math.min(10000, Math.round(isDraggingWL.startWW + dx * 8))));
+				setWindowLevel(Math.max(-1000, Math.min(4000, Math.round(isDraggingWL.startWL - dy * 4))));
 			}
 		};
 
 		const handleGlobalMouseUp = () => {
-			if (isDraggingArchAnchor !== null || isDraggingCrosshair || activeRotationHandle || isShiftRotating) {
+			if (isDraggingArchAnchor !== null || isDraggingCrosshair || activeRotationHandle || isShiftRotating || isDraggingWL) {
 				handleCanvasMouseUp();
 			}
 			if (isDraggingPano) {
@@ -4099,6 +4179,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		isDraggingArchAnchor,
 		activeRotationHandle,
 		isShiftRotating,
+		isDraggingWL,
 		volume,
 		crosshairMm,
 		obliqueAngles,
@@ -4178,23 +4259,48 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const getCanvasCursor = useCallback((plane: MprPlane) => {
 		if (draggingMeasurementHandle) return "grabbing";
 		if (hoveredMeasurementHandle?.plane === plane) return "grab";
-		if (isShiftRotating?.plane === plane || activeRotationHandle?.plane === plane) return "grabbing";
-		if (hoveredHandle?.plane === plane) return "grab";
+		if (isShiftRotating?.plane === plane || activeRotationHandle?.plane === plane) return ROTATE_CURSOR;
+		if (hoveredHandle?.plane === plane) return ROTATE_CURSOR;
 		if (activeTool === "pan") return "grab";
 		if (activeTool === "zoom") return "zoom-in";
 		if (activeTool === "window_level") return "col-resize";
-		if (activeTool === "rotate") return "crosshair";
+		if (activeTool === "rotate") return ROTATE_CURSOR;
 		if (activeTool === "ruler") return "crosshair";
 		if (activeTool === "angle") return "crosshair";
 		if (activeTool === "probe") return "help";
 		return "crosshair";
 	}, [isShiftRotating, activeRotationHandle, hoveredHandle, activeTool, draggingMeasurementHandle, hoveredMeasurementHandle]);
 
-	// Mouse Wheel -> Cursor-anchored Zoom (0.5x - 5.0x) or Shift+Wheel for Slices
+	// Mouse Wheel -> Default Slices scrolling (Z, Y, X, crossSection), Ctrl+Wheel (or zoom tool) -> Cursor-anchored Zoom (0.5x - 5.0x)
 	const handleCanvasWheel = useCallback((viewport: CbctViewportType, e: React.WheelEvent<HTMLCanvasElement>) => {
 		e.preventDefault();
-		if (e.shiftKey && volume) {
-			const delta = e.deltaY > 0 ? -1 : 1;
+
+		const isZoom = e.ctrlKey || e.metaKey || activeTool === "zoom";
+
+		if (isZoom) {
+			// Cursor-anchored smooth zoom (0.5x - 5.0x)
+			const canvas = e.currentTarget;
+			const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
+			const cursorPx = { x, y };
+
+			setTransforms((prev) => ({
+				...prev,
+				[viewport]: applyCursorZoom(prev[viewport] ?? DEFAULT_VIEWPORT_TRANSFORM, cursorPx, e.deltaY, 0.5, 5.0),
+			}));
+			return;
+		}
+
+		// Default wheel behavior without Ctrl: scroll slices along viewport axis
+		const delta = e.deltaY > 0 ? -1 : 1;
+
+		if (viewport === "cross_section") {
+			if (crossSections.length > 0) {
+				setActiveCrossSectionIdx((prev) => Math.max(0, Math.min(crossSections.length - 1, prev + delta)));
+			}
+			return;
+		}
+
+		if (volume) {
 			setCrosshairMm((prev) => {
 				const vox = worldMmToVoxel(prev, volume);
 				if (viewport === "axial" || viewport === "panoramic") {
@@ -4209,25 +4315,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					const newX = Math.max(0, Math.min(volume.dimensions.width - 1, vox.x + delta));
 					return voxelToWorldMm({ x: newX, y: vox.y, z: vox.z }, volume);
 				}
-				if (viewport === "cross_section") {
-					setActiveCrossSectionIdx((prev) => Math.max(0, Math.min(crossSections.length - 1, prev + delta)));
-					return prev;
-				}
 				return prev;
 			});
-			return;
 		}
-
-		// Cursor-anchored smooth zoom
-		const canvas = e.currentTarget;
-		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
-		const cursorPx = { x, y };
-
-		setTransforms((prev) => ({
-			...prev,
-			[viewport]: applyCursorZoom(prev[viewport] ?? DEFAULT_VIEWPORT_TRANSFORM, cursorPx, e.deltaY, 0.5, 5.0),
-		}));
-	}, [volume, crossSections.length]);
+	}, [volume, crossSections.length, activeTool]);
 
 	// ─── 1-CLICK CLINICAL EXPORT TO FORM 043/U & EMR SNAPSHOT ──────────────────
 	const handleExportToEmr = useCallback(async () => {
@@ -4710,17 +4801,23 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onMouseMove={(e) => handleCanvasMouseMove("axial", e)}
 					onMouseUp={handleCanvasMouseUp}
 					onWheel={(e) => handleCanvasWheel("axial", e)}
+					onContextMenu={(e) => e.preventDefault()}
 					style={{ cursor: getCanvasCursor("axial") }}
 					className="absolute inset-0 w-full h-full object-contain z-10"
 				/>
 				<CbctViewportHud
 					viewportType="axial"
 					coordinateMm={{ z: crosshairMm.z }}
+					sliceIndex={volume ? currentVoxel.z : undefined}
+					totalSlices={volume?.dimensions.depth}
 					slabMode={slabMode}
 					slabThicknessMm={slabThicknessMm}
 					pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
 					obliqueAngleDeg={obliqueAngles.axialAngleDeg}
 					onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "axial"))}
+					onResetView={() => handleFullResetViewport("axial")}
+					isRotating={activeRotationHandle?.plane === "axial" || isShiftRotating?.plane === "axial"}
+					isHandleHovered={hoveredHandle?.plane === "axial"}
 					isMaximized={maximizedViewport === "axial"}
 					onToggleMaximize={() => handleToggleMaximize("axial")}
 					zoomFactor={transforms.axial?.zoom}
@@ -4756,17 +4853,23 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onMouseMove={(e) => handleCanvasMouseMove("coronal", e)}
 					onMouseUp={handleCanvasMouseUp}
 					onWheel={(e) => handleCanvasWheel("coronal", e)}
+					onContextMenu={(e) => e.preventDefault()}
 					style={{ cursor: getCanvasCursor("coronal") }}
 					className="absolute inset-0 w-full h-full object-contain z-10"
 				/>
 				<CbctViewportHud
 					viewportType="coronal"
 					coordinateMm={{ y: crosshairMm.y }}
+					sliceIndex={volume ? currentVoxel.y : undefined}
+					totalSlices={volume?.dimensions.height}
 					slabMode={slabMode}
 					slabThicknessMm={slabThicknessMm}
 					pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
 					obliqueAngleDeg={obliqueAngles.coronalTiltDeg}
 					onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "coronal"))}
+					onResetView={() => handleFullResetViewport("coronal")}
+					isRotating={activeRotationHandle?.plane === "coronal" || isShiftRotating?.plane === "coronal"}
+					isHandleHovered={hoveredHandle?.plane === "coronal"}
 					isMaximized={maximizedViewport === "coronal"}
 					onToggleMaximize={() => handleToggleMaximize("coronal")}
 					zoomFactor={transforms.coronal?.zoom}
@@ -4802,17 +4905,23 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onMouseMove={(e) => handleCanvasMouseMove("sagittal", e)}
 					onMouseUp={handleCanvasMouseUp}
 					onWheel={(e) => handleCanvasWheel("sagittal", e)}
+					onContextMenu={(e) => e.preventDefault()}
 					style={{ cursor: getCanvasCursor("sagittal") }}
 					className="absolute inset-0 w-full h-full object-contain z-10"
 				/>
 				<CbctViewportHud
 					viewportType="sagittal"
 					coordinateMm={{ x: crosshairMm.x }}
+					sliceIndex={volume ? currentVoxel.x : undefined}
+					totalSlices={volume?.dimensions.width}
 					slabMode={slabMode}
 					slabThicknessMm={slabThicknessMm}
 					pixelSpacingMm={volume?.spacingMm.y ?? 0.4}
 					obliqueAngleDeg={obliqueAngles.sagittalTiltDeg}
 					onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "sagittal"))}
+					onResetView={() => handleFullResetViewport("sagittal")}
+					isRotating={activeRotationHandle?.plane === "sagittal" || isShiftRotating?.plane === "sagittal"}
+					isHandleHovered={hoveredHandle?.plane === "sagittal"}
 					isMaximized={maximizedViewport === "sagittal"}
 					onToggleMaximize={() => handleToggleMaximize("sagittal")}
 					zoomFactor={transforms.sagittal?.zoom}
@@ -4853,15 +4962,19 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onMouseUp={handlePanoMouseUp}
 					onMouseLeave={handlePanoMouseUp}
 					onWheel={(e) => handleCanvasWheel("panoramic", e)}
+					onContextMenu={(e) => e.preventDefault()}
 					className="absolute inset-0 w-full h-full object-contain cursor-pointer z-10"
 					data-testid="cbct-panorama-canvas"
 				/>
 				<CbctViewportHud
 					viewportType="panoramic"
 					coordinateMm={{ z: crosshairMm.z }}
+					sliceIndex={volume ? currentVoxel.z : undefined}
+					totalSlices={volume?.dimensions.depth}
 					slabMode={slabMode}
 					slabThicknessMm={slabThicknessMm}
 					pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
+					onResetView={() => handleFullResetViewport("panoramic")}
 					isMaximized={maximizedViewport === "panoramic"}
 					onToggleMaximize={() => handleToggleMaximize("panoramic")}
 					zoomFactor={transforms.panoramic?.zoom}
@@ -4902,6 +5015,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					onMouseUp={handleCrossSectionMouseUp}
 					onMouseLeave={handleCrossSectionMouseUp}
 					onWheel={(e) => handleCanvasWheel("cross_section", e)}
+					onContextMenu={(e) => e.preventDefault()}
 					className={`absolute inset-0 w-full h-full object-contain z-10 ${
 						dragImplantPart ? "cursor-grabbing" : hoveredImplantPart ? "cursor-grab" : "cursor-default"
 					}`}
@@ -4913,6 +5027,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					sliceIndex={activeCrossSectionIdx}
 					totalSlices={crossSections.length}
 					pixelSpacingMm={activeCrossSection?.pixelSpacingMm ?? 0.25}
+					onResetView={() => handleFullResetViewport("cross_section")}
 					isMaximized={true}
 					onToggleMaximize={() => handleToggleMaximize("cross_section")}
 					zoomFactor={transforms.cross_section?.zoom}
@@ -5551,6 +5666,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							onMouseMove={handleCrossSectionMouseMove}
 							onMouseUp={handleCrossSectionMouseUp}
 							onMouseLeave={handleCrossSectionMouseUp}
+							onContextMenu={(e) => e.preventDefault()}
 							className={`absolute inset-0 w-full h-full object-contain z-10 ${
 								dragImplantPart ? "cursor-grabbing" : hoveredImplantPart ? "cursor-grab" : "cursor-default"
 							}`}
@@ -5562,6 +5678,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							sliceIndex={activeCrossSectionIdx}
 							totalSlices={crossSections.length}
 							pixelSpacingMm={activeCrossSection?.pixelSpacingMm ?? 0.25}
+							onResetView={() => handleFullResetViewport("cross_section")}
 							isMaximized={maximizedViewport === "cross_section"}
 							onToggleMaximize={() => handleToggleMaximize("cross_section")}
 							windowWidth={windowWidth}

@@ -29,8 +29,8 @@ import {
 	type CalibratedRulerMeasurement,
 	type DicomViewportState,
 	type Point2D,
-} from "./rvgViewerEngine.js";
 import { isLowSpecHardware } from "../../utils/deviceDetection.js";
+import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper";
 
 export interface DicomViewportProps {
 	readonly imageSrc: string;
@@ -347,6 +347,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 			} else if (canvasRef.current) {
 				try {
 					const webglContext =
+						canvasRef.current.getContext("webgl2") ||
 						canvasRef.current.getContext("webgl") ||
 						canvasRef.current.getContext("experimental-webgl");
 					if (webglContext) {
@@ -374,6 +375,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 				rawImageRef.current.src = "";
 				rawImageRef.current = null;
 			}
+			teardownViewportCanvases(containerRef.current);
 			canvasRectRef.current = null;
 		};
 	}, []);

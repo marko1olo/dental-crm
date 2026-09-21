@@ -83,6 +83,11 @@ export function DicomArchiveUploader({
 				clearTimeout(batchTimerRef.current);
 				batchTimerRef.current = null;
 			}
+			try {
+				cornerstoneDICOMImageLoader.wadouri.fileManager.purge();
+			} catch {
+				// Ignore
+			}
 		};
 	}, []);
 
@@ -133,10 +138,12 @@ export function DicomArchiveUploader({
 
 			setStatus(`Распаковка архива ${zipFile.name}...`);
 			setProgressPercent(0);
-			const buffer = new Uint8Array(await zipFile.arrayBuffer());
+			let archiveBuffer: Uint8Array | null = new Uint8Array(await zipFile.arrayBuffer());
 
 			return new Promise<string[]>((resolve, reject) => {
-				fflate.unzip(buffer, (err, unzipped) => {
+				fflate.unzip(archiveBuffer!, (err, unzipped) => {
+					// Immediately release compressed archive buffer from V8 heap
+					archiveBuffer = null;
 					if (err) {
 						reject(err);
 						return;
@@ -156,6 +163,9 @@ export function DicomArchiveUploader({
 					const processNextBatch = () => {
 						if (!isMountedRef.current) {
 							batchTimerRef.current = null;
+							for (const k of Object.keys(unzipped)) {
+								delete unzipped[k];
+							}
 							resolve([]);
 							return;
 						}
@@ -177,6 +187,8 @@ export function DicomArchiveUploader({
 									cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
 								imageIds.push(imageId);
 							}
+							// Zero-leak GC: immediately free this slice's uncompressed Uint8Array buffer
+							delete unzipped[filename];
 						}
 
 						currentIndex = batchEnd;

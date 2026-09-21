@@ -254,6 +254,7 @@ const VIEWPORT_IDS = {
 } as const;
 
 import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper";
+import { isLowSpecHardware } from "../../utils/deviceDetection.js";
 export { teardownViewportCanvases };
 
 export function Cornerstone3DViewer({
@@ -351,9 +352,10 @@ export function Cornerstone3DViewer({
 				await cornerstone.init();
 				await cornerstoneTools.init();
 
+				const isLowSpec = isLowSpecHardware();
 				cornerstoneDICOMImageLoader.init({
 					maxWebWorkers: navigator.hardwareConcurrency
-						? Math.min(navigator.hardwareConcurrency, 7)
+						? (isLowSpec ? Math.min(navigator.hardwareConcurrency, 2) : Math.min(navigator.hardwareConcurrency, 7))
 						: 1,
 				});
 
@@ -377,7 +379,16 @@ export function Cornerstone3DViewer({
 		}
 
 		return () => {
-			cornerstone.cache.purgeCache();
+			try {
+				cornerstone.cache.purgeCache();
+			} catch {
+				// Ignore
+			}
+			try {
+				cornerstoneDICOMImageLoader.wadouri.fileManager.purge();
+			} catch {
+				// Ignore
+			}
 		};
 	}, [isInitialized]);
 
@@ -403,6 +414,11 @@ export function Cornerstone3DViewer({
 
 			try {
 				cornerstone.cache.purgeCache();
+			} catch {
+				// Ignore
+			}
+			try {
+				cornerstoneDICOMImageLoader.wadouri.fileManager.purge();
 			} catch {
 				// Ignore
 			}
@@ -576,6 +592,11 @@ export function Cornerstone3DViewer({
 			}
 			try {
 				cornerstone.cache.purgeCache();
+			} catch {
+				// Ignore
+			}
+			try {
+				cornerstoneDICOMImageLoader.wadouri.fileManager.purge();
 			} catch {
 				// Ignore
 			}
@@ -1184,7 +1205,7 @@ export function Cornerstone3DViewer({
 		}
 
 		const computed = calculateImplantBoneDensity(
-			toTransferableScalarData(voxels.scalarData),
+			voxels.scalarData as Float32Array,
 			volume.dimensions,
 			vec3.fromValues(volume.origin[0], volume.origin[1], volume.origin[2]),
 			mat3ToMat4Direction(volume.direction),

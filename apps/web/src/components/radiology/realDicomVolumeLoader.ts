@@ -46,7 +46,7 @@ export interface ParsedDicomSliceHeader {
 
 export interface DicomSliceEntry {
   header: ParsedDicomSliceHeader;
-  buffer: ArrayBuffer;
+  buffer: ArrayBuffer | null;
   fileName: string;
 }
 
@@ -360,34 +360,34 @@ export async function buildVolumeFromDicomBuffers(
 
   for (let z = 0; z < depth; z++) {
     const entry = sliceEntries[z]!;
+    if (!entry.buffer) continue;
     const offset = entry.header.pixelDataByteOffset;
     const isSigned = entry.header.pixelRepresentation === 1;
     const slope = entry.header.rescaleSlope;
     const intercept = entry.header.rescaleIntercept;
     const baseIdx = z * sliceVoxelCount;
 
-    // Safely copy slice buffer to ensure alignment
-    const sliceArrayBuf = entry.buffer.slice(offset, offset + sliceVoxelCount * 2);
-
-    if (isSigned) {
-      const rawSlice = new Int16Array(sliceArrayBuf);
-      for (let i = 0; i < sliceVoxelCount; i++) {
-        // Clamp to prevent Int16 integer overflow on dense metal/enamel
-        const hu = Math.max(-32768, Math.min(32767, Math.round((rawSlice[i] ?? 0) * slope + intercept)));
-        voxelData[baseIdx + i] = hu;
-        if (hu < minVoxelHU) minVoxelHU = hu;
-        if (hu > maxVoxelHU) maxVoxelHU = hu;
-      }
+    let rawSlice: Int16Array | Uint16Array;
+    if (offset % 2 === 0 && entry.buffer.byteLength >= offset + sliceVoxelCount * 2) {
+      // Zero-copy direct TypedArray view over existing buffer (avoids 100s of MBs of allocation)
+      rawSlice = isSigned
+        ? new Int16Array(entry.buffer, offset, sliceVoxelCount)
+        : new Uint16Array(entry.buffer, offset, sliceVoxelCount);
     } else {
-      const rawSlice = new Uint16Array(sliceArrayBuf);
-      for (let i = 0; i < sliceVoxelCount; i++) {
-        // Clamp to prevent Int16 integer overflow on dense metal/enamel
-        const hu = Math.max(-32768, Math.min(32767, Math.round((rawSlice[i] ?? 0) * slope + intercept)));
-        voxelData[baseIdx + i] = hu;
-        if (hu < minVoxelHU) minVoxelHU = hu;
-        if (hu > maxVoxelHU) maxVoxelHU = hu;
-      }
+      const sliceArrayBuf = entry.buffer.slice(offset, offset + sliceVoxelCount * 2);
+      rawSlice = isSigned ? new Int16Array(sliceArrayBuf) : new Uint16Array(sliceArrayBuf);
     }
+
+    for (let i = 0; i < sliceVoxelCount; i++) {
+      // Clamp to prevent Int16 integer overflow on dense metal/enamel
+      const hu = Math.max(-32768, Math.min(32767, Math.round((rawSlice[i] ?? 0) * slope + intercept)));
+      voxelData[baseIdx + i] = hu;
+      if (hu < minVoxelHU) minVoxelHU = hu;
+      if (hu > maxVoxelHU) maxVoxelHU = hu;
+    }
+
+    // Zero-leak GC: immediately free this slice's raw ArrayBuffer from V8 heap
+    entry.buffer = null;
 
     if (z % 20 === 0 || z === depth - 1) {
       const pct = 45 + Math.round((z / depth) * 50);
@@ -452,6 +452,7 @@ export async function buildVolumeFromDicomZip(
   for (const key of fileKeys) {
     const u8 = unzipped[key]!;
     items.push({ buffer: u8.buffer, fileName: key });
+    delete unzipped[key];
   }
   return buildVolumeFromDicomBuffers(items, onProgress);
 }

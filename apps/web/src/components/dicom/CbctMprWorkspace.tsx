@@ -1,6 +1,9 @@
 import type React from "react";
-import { useEffect } from "react";
-import { Cornerstone3DViewer } from "./Cornerstone3DViewer";
+import { lazy, Suspense, useEffect } from "react";
+
+const Cornerstone3DViewer = lazy(() =>
+	import("./Cornerstone3DViewer").then((m) => ({ default: m.Cornerstone3DViewer })),
+);
 
 export interface CbctMprWorkspaceProps {
 	readonly isOpen: boolean;
@@ -27,15 +30,9 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 	if (!isOpen) return null;
 	return (
 		<div className="cbct-mpr-workspace-modal fixed inset-0 z-50 flex items-center justify-center bg-black/90">
-			<Cornerstone3DViewer
-				imageIds={[]}
-				patientId={patientId}
-				patientName={patientName}
-				studyDate={studyDate}
-				voxelSpacing={voxelSpacing}
-				authHeaders={authHeaders}
-				onClose={onClose}
-			/>
+			<Suspense fallback={<div className="p-8 text-xs text-cyan-400">Загрузка 3D-просмотрщика КТ...</div>}>
+				<Cornerstone3DViewer imageIds={[]} patientId={patientId} patientName={patientName} studyDate={studyDate} voxelSpacing={voxelSpacing} authHeaders={authHeaders} onClose={onClose} />
+			</Suspense>
 		</div>
 	);
 };
