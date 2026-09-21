@@ -45,9 +45,35 @@ export const dailySummaryTotals037uSchema = z.object({
 });
 export type DailySummaryTotals037u = z.infer<typeof dailySummaryTotals037uSchema>;
 
+export interface DailyPatientRecord037uInput {
+	patientCategory?: "adult" | "child_under_14" | "adolescent_15_17" | string;
+	isChildUnder18?: boolean;
+	isPrimaryVisit?: boolean;
+	visitPurpose?: string;
+	isRuralResident?: boolean;
+	isSanated?: boolean;
+	isSanatedInVisit?: boolean;
+	fillingsCompositeCount?: number;
+	fillingsCementCount?: number;
+	fillingsCount?: number;
+	extractionsSimpleCount?: number;
+	extractionsComplicatedCount?: number;
+	extractionsCount?: number;
+	totalUetForVisit?: number;
+	uetEarned?: {
+		therapeuticUet?: number;
+		surgicalUet?: number;
+		orthopedicUet?: number;
+		orthodonticUet?: number;
+		childrenUet?: number;
+		totalUet?: number;
+	};
+	[key: string]: unknown;
+}
+
 /** Калькулятор сводных показателей дня для формы 037/у */
 export function calculateDaily037uTotals(
-	records: readonly any[],
+	records: readonly DailyPatientRecord037uInput[],
 	standardShiftQuota = 21.0,
 ): DailySummaryTotals037u & {
 	totalPatientsSeen: number;
@@ -85,7 +111,7 @@ export function calculateDaily037uTotals(
 	let childrenUet = 0;
 
 	for (const r of records) {
-		const isChild = Boolean((r as any).isChildUnder18) || r.patientCategory === "child_under_14";
+		const isChild = Boolean(r.isChildUnder18) || r.patientCategory === "child_under_14";
 		const isAdol = r.patientCategory === "adolescent_15_17";
 		if (isChild) children += 1;
 		else if (isAdol) adolescents += 1;
@@ -93,7 +119,7 @@ export function calculateDaily037uTotals(
 
 		if (r.isRuralResident) ruralCount += 1;
 
-		const isPrim = Boolean((r as any).isPrimaryVisit) || r.visitPurpose === "preventive";
+		const isPrim = Boolean(r.isPrimaryVisit) || r.visitPurpose === "preventive";
 		if (isPrim) primary += 1;
 		else repeat += 1;
 

@@ -516,55 +516,55 @@ export function generatePrimaryIntakePackageHtml(
           <tr>
             <td style="text-align: center;">1</td>
             <td><strong>Аллергические реакции:</strong> антибиотики, йод, латекс, анестетики, пищевые/бытовые факторы</td>
-            <td class="check-cell">${escapeHtml(questionnaireAnswers?.allergies) || (intakeNormApplied ? "[✓] НЕТ (Отрицает)" : "[ ] Да  [✓] Нет")}</td>
+            <td class="check-cell">${escapeHtml(questionnaireAnswers?.allergies) || (intakeNormApplied ? "НЕТ (Отрицает)" : "[ ] Да  [ ] Нет")}</td>
             <td>${intakeNormApplied && !questionnaireAnswers?.allergies ? "Аллергоанамнез спокоен" : ""}</td>
           </tr>
           <tr>
             <td style="text-align: center;">2</td>
             <td><strong>Непереносимость местной анестезии:</strong> обмороки, судороги, коллапс при уколах (ультракаин, лидокаин)</td>
-            <td class="check-cell">${intakeNormApplied ? "[✓] НЕТ (Отрицает)" : "[ ] Да  [✓] Нет  [ ] Не знает"}</td>
+            <td class="check-cell">${intakeNormApplied ? "НЕТ (Отрицает)" : "[ ] Да  [ ] Нет  [ ] Не знает"}</td>
             <td>Ранее лечился без осложнений</td>
           </tr>
           <tr>
             <td style="text-align: center;">3</td>
             <td><strong>Сердечно-сосудистые заболевания:</strong> гипертония, стенокардия, инфаркт, кардиостимулятор</td>
-            <td class="check-cell">${escapeHtml(questionnaireAnswers?.cardioEndocrine) || (intakeNormApplied ? "[✓] НЕТ (Отрицает)" : "[ ] Да  [✓] Нет")}</td>
+            <td class="check-cell">${escapeHtml(questionnaireAnswers?.cardioEndocrine) || (intakeNormApplied ? "НЕТ (Отрицает)" : "[ ] Да  [ ] Нет")}</td>
             <td>${intakeNormApplied ? "Соматически здоров" : ""}</td>
           </tr>
           <tr>
             <td style="text-align: center;">4</td>
             <td><strong>Свертываемость крови и препараты:</strong> кровоточивость, приём аспирина, варфарина, ксарелто, эликвиса</td>
-            <td class="check-cell">${escapeHtml(questionnaireAnswers?.anticoagulants) || (intakeNormApplied ? "[✓] НЕ ПРИНИМАЕТ" : "[ ] Да  [✓] Нет")}</td>
+            <td class="check-cell">${escapeHtml(questionnaireAnswers?.anticoagulants) || (intakeNormApplied ? "НЕ ПРИНИМАЕТ" : "[ ] Да  [ ] Нет")}</td>
             <td>Гемостаз в норме</td>
           </tr>
           <tr>
             <td style="text-align: center;">5</td>
             <td><strong>Сахарный диабет и эндокринные нарушения:</strong> патологии щитовидной железы, инсулинотерапия</td>
-            <td class="check-cell">${intakeNormApplied ? "[✓] НЕТ (Отрицает)" : "[ ] Да  [✓] Нет"}</td>
+            <td class="check-cell">${intakeNormApplied ? "НЕТ (Отрицает)" : "[ ] Да  [ ] Нет"}</td>
             <td>Норма</td>
           </tr>
           <tr>
             <td style="text-align: center;">6</td>
             <td><strong>Инфекционные риски:</strong> перенесенный гепатит (B, C), ВИЧ-инфекция, туберкулез</td>
-            <td class="check-cell">${escapeHtml(questionnaireAnswers?.infections) || (intakeNormApplied ? "[✓] НЕТ (Отрицает)" : "[ ] Да  [✓] Нет")}</td>
+            <td class="check-cell">${escapeHtml(questionnaireAnswers?.infections) || (intakeNormApplied ? "НЕТ (Отрицает)" : "[ ] Да  [ ] Нет")}</td>
             <td>${intakeNormApplied ? "Инфекции отрицает" : ""}</td>
           </tr>
           <tr>
             <td style="text-align: center;">7</td>
             <td><strong>Хронические соматические заболевания:</strong> бронхиальная астма, язва ЖКТ, эпилепсия, почки</td>
-            <td class="check-cell">${escapeHtml(questionnaireAnswers?.chronic) || (intakeNormApplied ? "[✓] НЕТ (Отрицает)" : "[ ] Да  [✓] Нет")}</td>
+            <td class="check-cell">${escapeHtml(questionnaireAnswers?.chronic) || (intakeNormApplied ? "НЕТ (Отрицает)" : "[ ] Да  [ ] Нет")}</td>
             <td>Без особенностей</td>
           </tr>
           <tr>
             <td style="text-align: center;">8</td>
             <td><strong>Постоянно принимаемые лекарства:</strong> гормональные, седативные, гипотензивные средства</td>
-            <td class="check-cell">${escapeHtml(questionnaireAnswers?.medications) || (intakeNormApplied ? "[✓] НЕ ПРИНИМАЕТ" : "[ ] Да  [✓] Нет")}</td>
+            <td class="check-cell">${escapeHtml(questionnaireAnswers?.medications) || (intakeNormApplied ? "НЕ ПРИНИМАЕТ" : "[ ] Да  [ ] Нет")}</td>
             <td>Не принимает</td>
           </tr>
           <tr>
             <td style="text-align: center;">9</td>
             <td><strong>Беременность / грудное вскармливание (для женщин):</strong> срок в неделях, лактация</td>
-            <td class="check-cell">${escapeHtml(questionnaireAnswers?.pregnancy) || (intakeNormApplied ? "[✓] Не применимо / Нет" : "[ ] Да  [✓] Нет")}</td>
+            <td class="check-cell">${escapeHtml(questionnaireAnswers?.pregnancy) || (intakeNormApplied ? "Не применимо / Нет" : "[ ] Да  [ ] Нет")}</td>
             <td>Не применимо</td>
           </tr>
           <tr>

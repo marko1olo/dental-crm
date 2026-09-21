@@ -48,8 +48,8 @@ export function SanpinRegistryPackageModal({
 
 	if (!isOpen) return null;
 
-	const radiationDocs = existingDocuments.filter(
-		(d) => d.kind === "radiation_dose_sheet",
+	const radiationDocs = (existingDocuments ?? []).filter(
+		(d) => d?.kind === "radiation_dose_sheet",
 	);
 	const hasRadiationDoc = radiationDocs.length > 0;
 

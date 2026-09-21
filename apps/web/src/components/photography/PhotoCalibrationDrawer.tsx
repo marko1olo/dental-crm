@@ -104,6 +104,15 @@ export const PhotoCalibrationDrawer: React.FC<PhotoCalibrationDrawerProps> = ({
 			}
 		};
 		img.src = record.imageUrl;
+
+		return () => {
+			img.onload = null;
+			img.src = "";
+			if (canvas) {
+				canvas.width = 0;
+				canvas.height = 0;
+			}
+		};
 	}, [record, activeGridOverlay]);
 
 	const shadesList: VitaShade[] = selectedSystem === 'classical' ? VITA_CLASSICAL_SHADES : VITA_3D_MASTER_SHADES;

@@ -281,7 +281,9 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			onSave?.(values);
 			try {
 				safeLocalStorageSetItem(soapStorageKey, JSON.stringify(values));
-			} catch {}
+			} catch (err: unknown) {
+				console.warn("[VisitSoapEditor] Failed to cache soap note values:", err);
+			}
 			setSaveStatus("saved");
 		}, debounceMs);
 
@@ -296,7 +298,9 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 				onSave?.(values);
 				try {
 					safeLocalStorageSetItem(soapStorageKey, JSON.stringify(values));
-				} catch {}
+				} catch (err: unknown) {
+					console.warn("[VisitSoapEditor] Failed to cache soap note values on unmount:", err);
+				}
 			}
 		};
 	}, [saveStatus, values, onChange, onSave, soapStorageKey]);
@@ -328,7 +332,9 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			setSaveStatus("saved");
 			try {
 				safeLocalStorageSetItem(soapStorageKey, JSON.stringify(next));
-			} catch {}
+			} catch (err: unknown) {
+				console.warn("[VisitSoapEditor] Failed to cache corrected soap note values:", err);
+			}
 			onSave?.(next);
 			onChange?.(next);
 			return next;
@@ -449,7 +455,9 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 				setSaveStatus("saved");
 				try {
 					safeLocalStorageSetItem(soapStorageKey, JSON.stringify(nextValues));
-				} catch {}
+				} catch (err: unknown) {
+					console.warn("[VisitSoapEditor] Failed to cache template soap note values:", err);
+				}
 				onSave?.(nextValues);
 				onChange?.(nextValues);
 
@@ -476,7 +484,9 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					setSaveStatus("saved");
 					try {
 						safeLocalStorageSetItem(soapStorageKey, JSON.stringify(next));
-					} catch {}
+					} catch (err: unknown) {
+						console.warn("[VisitSoapEditor] Failed to cache merged template soap note values:", err);
+					}
 					onSave?.(next);
 					onChange?.(next);
 					return next;
@@ -520,7 +530,9 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		setSaveStatus("saved");
 		try {
 			safeLocalStorageSetItem(soapStorageKey, JSON.stringify(normValues));
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[VisitSoapEditor] Failed to cache norm soap note values:", err);
+		}
 		onSave?.(normValues);
 		onChange?.(normValues);
 	}, [selectedTooth, isLocked, isCorrectionMode, onSave, onChange, soapStorageKey]);
@@ -604,7 +616,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 				</div>
 
 				{/* Правый блок кнопок прямого действия */}
-				<div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
+				<div className="flex items-center gap-1.5 shrink-0 flex-nowrap">
 					{/* Индикатор закрытого визита и кнопка ревизии («Исправленному верить», Мандат 8e) */}
 					{isLocked && (
 						!isCorrectionMode ? (

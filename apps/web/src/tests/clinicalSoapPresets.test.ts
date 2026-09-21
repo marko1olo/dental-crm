@@ -252,10 +252,11 @@ describe("clinicalSoapPresets — Практичный клинический с
 		assert.equal(restoration.warrantyMonths, 24);
 	});
 
-	// ── ТЕСТ 17: ТОП-5 экспресс-сценариев TOP_EXPRESS_PRESET_IDS ──
-	it("17. TOP_EXPRESS_PRESET_IDS содержит 5 эталонных экспресс-сценариев", () => {
-		assert.equal(TOP_EXPRESS_PRESET_IDS.length, 5);
+	// ── ТЕСТ 17: ТОП-6 экспресс-сценариев TOP_EXPRESS_PRESET_IDS ──
+	it("17. TOP_EXPRESS_PRESET_IDS содержит 6 эталонных экспресс-сценариев", () => {
+		assert.equal(TOP_EXPRESS_PRESET_IDS.length, 6);
 		assert.deepEqual(TOP_EXPRESS_PRESET_IDS, [
+			"norm_healthy",
 			"hygiene_complex",
 			"caries_medium",
 			"pulpitis_acute",
@@ -316,5 +317,18 @@ describe("clinicalSoapPresets — Практичный клинический с
 		assert.ok(perio.treatmentDescription.includes("ультразвук") || perio.treatmentDescription.includes("УЗ"));
 		assert.ok(perio.treatmentDescription.includes("Metapex") || perio.treatmentDescription.includes("Calcept"));
 		assert.ok(perio.materialsToDeduct?.some((m) => m.name.includes("Metapex") || m.name.includes("Calcept")));
+	});
+
+	// ── ТЕСТ 22: Специализированные 1-клик нормы для хирургии и ортопедии (Мандаты 8e, 8n) ──
+	it("22. Каталог содержит профильные 1-клик нормы для хирургии (Z09.0) и ортопедии (Z46.3)", () => {
+		const surgNorm = getPresetById("surgery_norm_checkup");
+		assert.ok(surgNorm, "Пресет surgery_norm_checkup должен существовать");
+		assert.equal(surgNorm.category, "surgery");
+		assert.equal(surgNorm.icd10, "Z09.0");
+
+		const orthoNorm = getPresetById("orthopedics_norm_checkup");
+		assert.ok(orthoNorm, "Пресет orthopedics_norm_checkup должен существовать");
+		assert.equal(orthoNorm.category, "orthopedics");
+		assert.equal(orthoNorm.icd10, "Z46.3");
 	});
 });

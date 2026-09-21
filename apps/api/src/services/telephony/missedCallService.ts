@@ -8,6 +8,7 @@
  * 4. Proactive Alert generation for Copilot SSE stream and WebSocket broadcast for reception desk.
  */
 
+import { randomUUID } from "node:crypto";
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
@@ -175,7 +176,7 @@ export class MissedCallService {
 		});
 
 		// 5. Copilot SSE Proactive Alert Broadcast
-		const alertCardId = `alert_missed_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+		const alertCardId = `alert_missed_${Date.now()}_${randomUUID().slice(0, 8)}`;
 		defaultCopilotStreamManager.broadcastProactiveAlert(organizationId, {
 			id: alertCardId,
 			urgency: "CRITICAL",

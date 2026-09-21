@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import {
 	fetchWithProviderTimeout,
 	getProviderKeyCandidates,
@@ -32,8 +33,13 @@ export async function analyzeVisiographImage(
 		const candidates = getProviderKeyCandidates(provider as any);
 		if (!candidates.length) continue;
 
-		// Shuffle candidates for load balancing
-		candidates.sort(() => Math.random() - 0.5);
+		// Cryptographically secure Fisher-Yates shuffle for provider key load balancing
+		for (let i = candidates.length - 1; i > 0; i--) {
+			const j = randomInt(0, i + 1);
+			const temp = candidates[i]!;
+			candidates[i] = candidates[j]!;
+			candidates[j] = temp;
+		}
 
 		for (const candidate of candidates) {
 			try {

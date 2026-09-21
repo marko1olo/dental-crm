@@ -8,6 +8,7 @@
  *    records emergency_overdraft transaction, and returns 200 OK with soft overdraft warning.
  */
 
+import { randomInt } from "node:crypto";
 import { and, eq, ilike, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { z } from "zod";
@@ -64,7 +65,7 @@ export const warehouseRoutes: FastifyPluginAsync = async (
 		const data = parsed.data;
 		const now = new Date();
 		const dateIso = now.toISOString().slice(0, 10);
-		const actNumber = `АКТ-КП-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}-${Math.floor(Math.random() * 900 + 100)}`;
+		const actNumber = `АКТ-КП-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}-${randomInt(100, 1000)}`;
 
 		const result = await db.transaction(async (tx) => {
 			// Находим позицию анестетика на складе (по ID, имени или категории)

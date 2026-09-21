@@ -10,6 +10,7 @@
  * - Atomic sync of fiscal document numbers, fiscal signs, and OFD URLs to `payments`
  */
 
+import { randomInt } from "node:crypto";
 import type { FiscalReceiptDetails } from "@dental/shared";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
@@ -28,10 +29,9 @@ export class FiscalQueueRetryWorker {
 	 * retry 0 -> ~1000ms
 	 * retry 1 -> ~2000ms
 	 * retry 2 -> ~4000ms
-	 * retry 3 -> ~8000ms
-	 * capped at maxBackoffMs (default 60000ms).
+	 * max -> 60000ms
 	 */
-	public static calculateExponentialBackoff(
+	public static calculateNextAttemptDelayMs(
 		retryCount: number,
 		initialBackoffMs = 1000,
 		maxBackoffMs = 60000,
@@ -40,7 +40,7 @@ export class FiscalQueueRetryWorker {
 		const exp = Math.min(Math.max(0, retryCount), 10);
 		const rawBackoff = Math.min(maxBackoffMs, initialBackoffMs * Math.pow(2, exp));
 		if (!jitter) return Math.round(rawBackoff);
-		const factor = 0.5 + Math.random() * 0.5;
+		const factor = 0.5 + randomInt(0, 1000) / 2000;
 		return Math.max(100, Math.round(rawBackoff * factor));
 	}
 

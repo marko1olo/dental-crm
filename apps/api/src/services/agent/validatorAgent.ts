@@ -561,7 +561,9 @@ export class ClinicalValidatorAgent {
 						}
 					}
 				}
-			} catch {}
+			} catch (ddiErr: unknown) {
+				console.warn("[ValidatorAgent] auditClinicalDrugSafety evaluation failed:", ddiErr);
+			}
 		}
 
 		const isValid = highestSeverity !== "critical";

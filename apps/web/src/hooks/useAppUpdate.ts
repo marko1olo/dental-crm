@@ -236,6 +236,7 @@ export function useAppUpdate(
 		sha256: string;
 		data: ArrayBuffer;
 	} | null>(null);
+	const isMountedRef = useRef<boolean>(true);
 
 	// Таймер стабилизации после старта
 	useEffect(() => {
@@ -250,6 +251,7 @@ export function useAppUpdate(
 	 * Проверка наличия новой версии на сервере.
 	 */
 	const checkForUpdates = useCallback(async (): Promise<MobileOtaVersionResponse | null> => {
+		if (!isMountedRef.current) return null;
 		setIsChecking(true);
 		setError(null);
 
@@ -280,6 +282,7 @@ export function useAppUpdate(
 				);
 			}
 
+			if (!isMountedRef.current) return null;
 			const manifest = parseResult.data;
 			setLatestVersion(manifest.version);
 			setReleaseNotes(manifest.releaseNotes);
@@ -320,6 +323,7 @@ export function useAppUpdate(
 
 			return manifest;
 		} catch (err) {
+			if (!isMountedRef.current) return null;
 			const message =
 				err instanceof Error
 					? err.message
@@ -328,7 +332,9 @@ export function useAppUpdate(
 			setError(message);
 			return null;
 		} finally {
-			setIsChecking(false);
+			if (isMountedRef.current) {
+				setIsChecking(false);
+			}
 		}
 	}, [
 		apiBaseUrl,
@@ -383,6 +389,7 @@ export function useAppUpdate(
 				);
 			}
 
+			if (!isMountedRef.current) return false;
 			downloadedBundleRef.current = {
 				version: manifest.version,
 				sha256: actualSha256,
@@ -407,6 +414,7 @@ export function useAppUpdate(
 
 			return true;
 		} catch (err) {
+			if (!isMountedRef.current) return false;
 			const message =
 				err instanceof Error
 					? err.message
@@ -416,7 +424,9 @@ export function useAppUpdate(
 			setIsDownloaded(false);
 			return false;
 		} finally {
-			setIsDownloading(false);
+			if (isMountedRef.current) {
+				setIsDownloading(false);
+			}
 		}
 	};
 
@@ -494,6 +504,9 @@ export function useAppUpdate(
 		void checkForUpdates();
 
 		const intervalTimer = setInterval(() => {
+			if (typeof document !== "undefined" && document.hidden) {
+				return; // Пропускаем проверку OTA при фоновой вкладке (сберегаем ресурсы медленного CPU)
+			}
 			void checkForUpdates();
 		}, pollIntervalMs);
 
@@ -517,6 +530,7 @@ export function useAppUpdate(
 		}
 
 		return () => {
+			isMountedRef.current = false;
 			clearInterval(intervalTimer);
 			if (typeof window !== "undefined") {
 				window.removeEventListener("online", handleOnline);

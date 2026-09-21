@@ -5,6 +5,7 @@
  * patient phone resolution, delivery receipt tracking, and inbound message ingestion.
  */
 
+import { randomUUID } from "node:crypto";
 import { and, eq, lte, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
@@ -230,7 +231,7 @@ export class NotificationGateway {
 			bodyText = rendered.bodyText;
 		}
 
-		const generatedDedupeKey = dedupeKey || `outbox_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+		const generatedDedupeKey = dedupeKey || `outbox_${Date.now()}_${randomUUID().slice(0, 8)}`;
 
 		const [inserted] = await db
 			.insert(communicationOutbox)

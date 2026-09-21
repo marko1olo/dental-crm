@@ -1329,7 +1329,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 										<td
 											colSpan={7}
 											style={{
-												padding: 48,
+												padding: "32px 16px",
 												textAlign: "center",
 												color: "var(--muted)",
 											}}
@@ -1418,12 +1418,13 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 														maxWidth: 480,
 														margin: "0 auto",
 													}}
+													className="w-full max-w-full px-2 sm:px-4 text-center break-words flex flex-col items-center gap-3 mx-auto"
 												>
 													<Package size={40} style={{ color: "var(--teal, #0d9488)" }} />
-													<span style={{ color: "var(--ink)", fontWeight: 700, fontSize: 16 }}>
+													<span style={{ color: "var(--ink)", fontWeight: 700, fontSize: 16 }} className="w-full break-words text-center">
 														На складе пока нет материалов и партий
 													</span>
-													<span style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1.5 }}>
+													<span style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1.5 }} className="w-full break-words text-center">
 														Оформите первую приходную накладную для оприходования медикаментов, анестетиков, пломбировочных материалов и расходников.
 													</span>
 													<button

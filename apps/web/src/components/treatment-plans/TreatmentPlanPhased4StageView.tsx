@@ -37,16 +37,16 @@ export interface PhasedStageItem {
 
 export interface TreatmentPlanPhased4StageViewProps {
   stages: readonly TreatmentPlanStage[];
-  planTierTitle?: string;
-  patientName?: string;
-  planAgeDays?: number;
-  planCreatedAtIso?: string;
-  onExecuteStage?: (category: TreatmentPlanStageCategory) => void;
-  onOpenStagePayment?: () => void;
-  onOpenInstallment?: () => void;
-  onApproveAndSign?: () => void;
-  onPrintContract?: () => void;
-  className?: string;
+  planTierTitle?: string | undefined;
+  patientName?: string | undefined;
+  planAgeDays?: number | undefined;
+  planCreatedAtIso?: string | undefined;
+  onExecuteStage?: ((category: TreatmentPlanStageCategory) => void) | undefined;
+  onOpenStagePayment?: (() => void) | undefined;
+  onOpenInstallment?: (() => void) | undefined;
+  onApproveAndSign?: (() => void) | undefined;
+  onPrintContract?: (() => void) | undefined;
+  className?: string | undefined;
 }
 
 const CATEGORY_ORDER: readonly TreatmentPlanStageCategory[] = [

@@ -392,7 +392,9 @@ export class CopilotActionManager {
 							),
 						);
 				});
-			} catch {}
+			} catch (err: unknown) {
+				console.warn("[CopilotService] Failed to reject pending action in DB:", err);
+			}
 		}
 
 		if (!action) {
@@ -551,7 +553,9 @@ export function createDefaultLlmProvider(): LLMProvider {
 											let parsedArgs: Record<string, unknown> = {};
 											try {
 												parsedArgs = JSON.parse(tc.args || "{}");
-											} catch {}
+											} catch (parseErr: unknown) {
+												console.warn("[CopilotService] Failed to parse tool call args JSON:", parseErr);
+											}
 											yield {
 												type: "tool_use",
 												id: tc.id || `call_${Date.now()}`,
@@ -592,7 +596,9 @@ export function createDefaultLlmProvider(): LLMProvider {
 												let parsedArgs: Record<string, unknown> = {};
 												try {
 													parsedArgs = JSON.parse(tc.args || "{}");
-												} catch {}
+												} catch (parseErr: unknown) {
+													console.warn("[CopilotService] Failed to parse tool call args JSON on finish:", parseErr);
+												}
 												yield {
 													type: "tool_use",
 													id: tc.id || `call_${Date.now()}`,
@@ -607,14 +613,17 @@ export function createDefaultLlmProvider(): LLMProvider {
 											};
 											return;
 										}
-									} catch {}
+									} catch (chunkErr: unknown) {
+										console.warn("[CopilotService] Error parsing SSE chunk:", chunkErr);
+									}
 								}
 								idx = buffer.indexOf("\n\n");
 							}
 						}
 						return;
 					}
-				} catch {
+				} catch (streamErr: unknown) {
+					console.warn("[CopilotService] SSE stream reading failed, falling back to heuristic:", streamErr);
 					// Fall through to heuristic fallback
 				}
 			}

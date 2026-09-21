@@ -158,17 +158,10 @@ export function useVoiceAssistant(
 				try {
 					parsed = rawBody.trim() ? JSON.parse(rawBody) : null;
 				} catch (parseError) {
-					showToast(
-						actionFailureToast(
-							"Ошибка выполнения операции",
-							(parseError as { status?: number })?.status ?? null,
-						),
-						"error",
-					);
-					logger.error("[speech status] тело ответа не разобрано", parseError);
+					logger.warn("[speech status] тело ответа не разобрано", parseError);
 				}
 				if (!looksLikeSpeechGatewayStatus(parsed)) {
-					logger.error(
+					logger.warn(
 						"[speech status] ответ не похож на состояние шлюза, в стор не пишем",
 					);
 					if (alive) gatewayStatusUnknownRef.current = true;
@@ -178,14 +171,7 @@ export function useVoiceAssistant(
 				gatewayStatusUnknownRef.current = false;
 				setSpeechGatewayStatus(parsed);
 			} catch (err) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				logger.error("[speech status] запрос не выполнен", err);
+				logger.warn("[speech status] фоновый запрос статуса шлюза не выполнен", err);
 				if (alive) gatewayStatusUnknownRef.current = true;
 			}
 		};

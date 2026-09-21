@@ -1818,7 +1818,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				role="tab"
 				tabIndex={tabSelected ? 0 : -1}
 				type="button"
-				style={{ minHeight: "44px", padding: "10px 16px", boxSizing: "border-box" }}
+				style={{ minHeight: "32px", padding: "6px 14px", boxSizing: "border-box" }}
 			>
 				{tab.title}
 			</button>
@@ -1903,7 +1903,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 						className="secondary-button"
 						type="button"
 						onClick={reopenOnboarding}
-						style={{ minHeight: "44px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+						style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
 					>
 						<ClipboardCheck aria-hidden="true" /> Мастер первого запуска
 					</button>
@@ -2016,7 +2016,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 											: undefined
 									}
 									disabled={!adminSecretReady}
-									style={{ minHeight: "44px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+									style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
 								>
 									<ShieldCheck aria-hidden="true" /> Разблокировать
 								</button>
@@ -2025,7 +2025,6 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 									type="button"
 									onClick={lockTelegramAdminSession}
 									disabled={!telegramAdminSecretSession}
-									style={{ minHeight: "44px" }}
 								>
 									Забыть секрет
 								</button>

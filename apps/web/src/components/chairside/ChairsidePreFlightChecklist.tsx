@@ -170,7 +170,7 @@ export const ChairsidePreFlightChecklist: React.FC<ChairsidePreFlightChecklistPr
 		return () => {
 			if (interval) clearInterval(interval);
 		};
-	}, [isTimerRunning, timerSecondsLeft]);
+	}, [isTimerRunning]);
 
 	const handleStartDisinfectionTimer = useCallback((seconds = 30) => {
 		setTimerSecondsLeft(seconds);

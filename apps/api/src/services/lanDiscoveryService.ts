@@ -74,7 +74,7 @@ export function getLanServerDiscoveryMetadata(): LanDiscoveryMetadata {
  */
 export function startLanDiscoveryService(options: {
 	port?: number;
-	logger?: { info: (...args: unknown[]) => void; error: (...args: unknown[]) => void };
+	logger?: { info: (...args: unknown[]) => void; error: (...args: unknown[]) => void; warn?: (...args: unknown[]) => void };
 } = {}): { stop: () => void } {
 	const udpPort = options.port || Number.parseInt(process.env.DENTE_DISCOVERY_UDP_PORT || "4101", 10);
 	const log = options.logger;
@@ -125,14 +125,18 @@ export function startLanDiscoveryService(options: {
 			}
 			try {
 				socket.addMembership("239.255.255.250");
-			} catch {}
+			} catch (err: unknown) {
+				if (log?.warn) log.warn(`[LanDiscoveryService] Multicast addMembership failed (non-critical): ${err instanceof Error ? err.message : String(err)}`);
+			}
 		});
 
 		return {
 			stop: () => {
 				try {
 					socket.close();
-				} catch {}
+				} catch (err: unknown) {
+					if (log?.warn) log.warn(`[LanDiscoveryService] Error closing discovery socket: ${err instanceof Error ? err.message : String(err)}`);
+				}
 				if (activeUdpSocket === socket) activeUdpSocket = null;
 			},
 		};
@@ -150,7 +154,9 @@ export function stopLanDiscoveryService(): void {
 	if (activeUdpSocket) {
 		try {
 			activeUdpSocket.close();
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[LanDiscoveryService] Error closing active UDP socket:", err);
+		}
 		activeUdpSocket = null;
 	}
 }

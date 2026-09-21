@@ -35,7 +35,16 @@ export function VisitMainTabs({
 		if (!containerRef.current) return;
 		const activeTab = containerRef.current.querySelector<HTMLElement>('button[aria-selected="true"]');
 		if (activeTab) {
-			activeTab.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+			const container = containerRef.current;
+			const tabLeft = activeTab.offsetLeft;
+			const tabRight = tabLeft + activeTab.offsetWidth;
+			const scrollLeft = container.scrollLeft;
+			const clientWidth = container.clientWidth;
+			if (tabLeft < scrollLeft) {
+				container.scrollTo({ left: tabLeft - 12, behavior: "smooth" });
+			} else if (tabRight > scrollLeft + clientWidth) {
+				container.scrollTo({ left: tabRight - clientWidth + 12, behavior: "smooth" });
+			}
 		}
 	}, [visitSubViewTab]);
 

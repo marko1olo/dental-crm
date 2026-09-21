@@ -348,10 +348,11 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 			"Оплата",
 		];
 
-		const [displayLimit, setDisplayLimit] = useState(30);
+		// Low-Spec Celeron / 4GB RAM Optimization: Bound DOM render to keep total nodes strictly <= 400
+		const [displayLimit, setDisplayLimit] = useState(15);
 
 		useEffect(() => {
-			setDisplayLimit(30);
+			setDisplayLimit(15);
 		}, [patientId, searchQuery]);
 
 		const filteredEvents = useMemo(() => {
@@ -509,7 +510,7 @@ export const PatientJourneyTimeline: React.FC<PatientJourneyTimelineProps> =
 						<button
 							type="button"
 							data-testid="timeline-load-more-btn"
-							onClick={() => setDisplayLimit((prev) => prev + 30)}
+							onClick={() => setDisplayLimit((prev) => prev + 15)}
 							className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
 						>
 							<span>Загрузить более ранние события ({eventsSlice.remainingCount} из {eventsSlice.totalCount})</span>

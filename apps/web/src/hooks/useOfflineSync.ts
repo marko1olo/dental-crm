@@ -75,10 +75,18 @@ export function useOfflineSync(options: UseOfflineSyncOptions = {}) {
 
 	const prevOnlineRef = useRef(isOnline);
 	const isSyncing = isStoreSyncing || isServiceSyncing;
+	const isMountedRef = useRef(true);
+
+	useEffect(() => {
+		return () => {
+			isMountedRef.current = false;
+		};
+	}, []);
 
 	// 1. Подписка на события OfflineSyncService
 	useEffect(() => {
 		const unsubscribe = offlineSyncService.subscribe((event) => {
+			if (!isMountedRef.current) return;
 			if (event.type === "conflict") {
 				const conflict = event.data as SyncConflictEvent;
 				setRecentConflicts((prev) => [conflict, ...prev].slice(0, 50));
@@ -107,8 +115,29 @@ export function useOfflineSync(options: UseOfflineSyncOptions = {}) {
 	useEffect(() => {
 		void refresh();
 		if (autoRefreshIntervalMs > 0) {
-			const timer = setInterval(() => void refresh(), autoRefreshIntervalMs);
-			return () => clearInterval(timer);
+			const timer = setInterval(() => {
+				if (typeof document !== "undefined" && document.hidden) {
+					return; // Пропускаем опрос дисковой очереди на 5400 RPM HDD при скрытой вкладке
+				}
+				void refresh();
+			}, autoRefreshIntervalMs);
+
+			const onVisibilityChange = () => {
+				if (typeof document !== "undefined" && !document.hidden) {
+					void refresh();
+				}
+			};
+
+			if (typeof document !== "undefined") {
+				document.addEventListener("visibilitychange", onVisibilityChange);
+			}
+
+			return () => {
+				clearInterval(timer);
+				if (typeof document !== "undefined") {
+					document.removeEventListener("visibilitychange", onVisibilityChange);
+				}
+			};
 		}
 	}, [refresh, autoRefreshIntervalMs]);
 
@@ -147,7 +176,9 @@ export function useOfflineSync(options: UseOfflineSyncOptions = {}) {
 				await refresh();
 				return result;
 			} finally {
-				setIsServiceSyncing(false);
+				if (isMountedRef.current) {
+					setIsServiceSyncing(false);
+				}
 			}
 		},
 		[

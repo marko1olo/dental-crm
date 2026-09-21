@@ -20,6 +20,7 @@ import {
 	DENTAL_AUDIO_WORKLET_PROCESSOR_NAME,
 	registerDentalAudioWorklet,
 } from "./AudioWorkletProcessor";
+import { logger } from "../../utils/logger";
 
 export interface DentalNoiseFilterOptions {
 	enableHighpass?: boolean | undefined; // Default true: 120 Hz
@@ -555,7 +556,9 @@ export class AudioStreamManager {
 			try {
 				this.workletNode.port.onmessage = null;
 				this.workletNode.disconnect();
-			} catch {}
+			} catch (err: unknown) {
+				logger.warn("[AudioStreamManager] workletNode disconnect error:", err);
+			}
 			this.workletNode = null;
 		}
 
@@ -563,56 +566,72 @@ export class AudioStreamManager {
 			try {
 				this.scriptProcessorNode.onaudioprocess = null;
 				this.scriptProcessorNode.disconnect();
-			} catch {}
+			} catch (err: unknown) {
+				logger.warn("[AudioStreamManager] scriptProcessorNode disconnect error:", err);
+			}
 			this.scriptProcessorNode = null;
 		}
 
 		if (this.muteGainNode) {
 			try {
 				this.muteGainNode.disconnect();
-			} catch {}
+			} catch (err: unknown) {
+				logger.warn("[AudioStreamManager] muteGainNode disconnect error:", err);
+			}
 			this.muteGainNode = null;
 		}
 
 		if (this.highpassFilter) {
 			try {
 				this.highpassFilter.disconnect();
-			} catch {}
+			} catch (err: unknown) {
+				logger.warn("[AudioStreamManager] highpassFilter disconnect error:", err);
+			}
 			this.highpassFilter = null;
 		}
 
 		if (this.lowpassFilter) {
 			try {
 				this.lowpassFilter.disconnect();
-			} catch {}
+			} catch (err: unknown) {
+				logger.warn("[AudioStreamManager] lowpassFilter disconnect error:", err);
+			}
 			this.lowpassFilter = null;
 		}
 
 		if (this.notchFilter) {
 			try {
 				this.notchFilter.disconnect();
-			} catch {}
+			} catch (err: unknown) {
+				logger.warn("[AudioStreamManager] notchFilter disconnect error:", err);
+			}
 			this.notchFilter = null;
 		}
 
 		if (this.gainNode) {
 			try {
 				this.gainNode.disconnect();
-			} catch {}
+			} catch (err: unknown) {
+				logger.warn("[AudioStreamManager] gainNode disconnect error:", err);
+			}
 			this.gainNode = null;
 		}
 
 		if (this.analyserNode) {
 			try {
 				this.analyserNode.disconnect();
-			} catch {}
+			} catch (err: unknown) {
+				logger.warn("[AudioStreamManager] analyserNode disconnect error:", err);
+			}
 			this.analyserNode = null;
 		}
 
 		if (this.sourceNode) {
 			try {
 				this.sourceNode.disconnect();
-			} catch {}
+			} catch (err: unknown) {
+				logger.warn("[AudioStreamManager] sourceNode disconnect error:", err);
+			}
 			this.sourceNode = null;
 		}
 
@@ -620,7 +639,9 @@ export class AudioStreamManager {
 			this.mediaStream.getTracks().forEach((t) => {
 				try {
 					t.stop();
-				} catch {}
+				} catch (err: unknown) {
+					logger.warn("[AudioStreamManager] mediaStream track stop error:", err);
+				}
 			});
 			this.mediaStream = null;
 		}
@@ -631,8 +652,12 @@ export class AudioStreamManager {
 
 		if (this.audioContext && this.audioContext.state !== "closed") {
 			try {
-				void this.audioContext.close().catch(() => {});
-			} catch {}
+				void this.audioContext.close().catch((err: unknown) => {
+					logger.warn("[AudioStreamManager] audioContext close async error:", err);
+				});
+			} catch (err: unknown) {
+				logger.warn("[AudioStreamManager] audioContext close error:", err);
+			}
 			this.audioContext = null;
 		}
 	}

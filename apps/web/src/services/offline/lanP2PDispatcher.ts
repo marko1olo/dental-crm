@@ -183,7 +183,9 @@ export class LanP2PDispatcher {
 				this.webSocket.onclose = null;
 				this.webSocket.onerror = null;
 				this.webSocket.close();
-			} catch {}
+			} catch (err: unknown) {
+				logger.warn("[LanP2PDispatcher] Error closing WebSocket on disconnect", err);
+			}
 			this.webSocket = null;
 		}
 		this.isWsConnecting = false;
@@ -415,11 +417,13 @@ export class LanP2PDispatcher {
 							method: "POST",
 							headers: { "Content-Type": "application/json" },
 							body: JSON.stringify(message),
-						}).catch(() => {
-							// Non-blocking fire-and-forget peer relay
+						}).catch((err: unknown) => {
+							logger.warn("[LanP2PDispatcher] Peer relay fetch failed", err);
 						});
 						broadcastSuccessful = true;
-					} catch {}
+					} catch (err: unknown) {
+						logger.warn("[LanP2PDispatcher] Error initiating peer relay", err);
+					}
 				}
 			}
 		}
@@ -601,7 +605,9 @@ export class LanP2PDispatcher {
 		if (this.broadcastChannel) {
 			try {
 				this.broadcastChannel.close();
-			} catch {}
+			} catch (err: unknown) {
+				logger.warn("[LanP2PDispatcher] Error closing BroadcastChannel", err);
+			}
 			this.broadcastChannel = null;
 		}
 		this.chairStatusListeners.clear();

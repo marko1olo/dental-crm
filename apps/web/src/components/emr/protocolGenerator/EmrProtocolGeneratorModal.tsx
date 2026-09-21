@@ -229,10 +229,13 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 		// Копирование в буфер обмена
 		const handleCopyToClipboard = useCallback(() => {
 			if (typeof navigator !== "undefined" && navigator.clipboard) {
-				navigator.clipboard.writeText(formattedSoapText).then(() => {
-					setIsCopied(true);
-					setTimeout(() => setIsCopied(false), 2500);
-				});
+				navigator.clipboard
+					.writeText(formattedSoapText)
+					.then(() => {
+						setIsCopied(true);
+						setTimeout(() => setIsCopied(false), 2500);
+					})
+					.catch(() => {});
 			}
 		}, [formattedSoapText]);
 

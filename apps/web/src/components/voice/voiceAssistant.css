@@ -505,6 +505,7 @@
 	box-shadow: 0 0 0 2px var(--teal-soft);
 }
 
+.dnt-voice-btn-apply,
 .dnt-voice-btn-simulate {
 	min-height: 44px;
 	padding: 10px 18px;
@@ -521,6 +522,7 @@
 	white-space: nowrap;
 }
 
+.dnt-voice-btn-apply:hover,
 .dnt-voice-btn-simulate:hover {
 	background: var(--teal-dark);
 }

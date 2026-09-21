@@ -325,16 +325,21 @@
 /* --- 9. Защита длинных русских строк и переносы чипов (Мандат 8d, грех №1) --- */
 .quick-chip,
 .visit-quick-chip {
-	max-width: 100% !important;
-	min-width: 0 !important;
+	max-width: none !important;
+	min-width: max-content !important;
 	box-sizing: border-box !important;
+	white-space: nowrap !important;
+	flex-shrink: 0 !important;
 }
 
 .quick-chip span,
-.visit-quick-chip span {
-	min-width: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
+.visit-quick-chip span,
+.visit-note-panel .quick-chip span {
+	min-width: max-content !important;
+	overflow: visible !important;
+	text-overflow: clip !important;
+	white-space: nowrap !important;
+	flex-shrink: 0 !important;
 }
 
 .visit-completion-banner,

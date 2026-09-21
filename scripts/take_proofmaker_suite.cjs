@@ -163,7 +163,14 @@ async function provisionLiveSession() {
         });
         if (apptRes.ok) {
           const apptData = await apptRes.json();
-          appointmentId = apptData.appointment?.id || apptData.id || null;
+          appointmentId =
+            apptData.appointment?.id ||
+            apptData.id ||
+            apptData.appointmentId ||
+            (Array.isArray(apptData.appointments)
+              ? apptData.appointments.find((a) => a.patientId === patientId)?.id
+              : null) ||
+            null;
           console.log(`[Provisioning] Seeded in_treatment appointment on ${scheduleDateStr}: ${appointmentId}`);
         } else {
           console.log(`[Provisioning] Appointment seeding response status: ${apptRes.status}`);
@@ -191,7 +198,7 @@ async function provisionLiveSession() {
 
       // 3. Seed payment record (12,500 RUB)
       try {
-        await fetch(`${API_BASE}/api/payments`, {
+        await fetch(`${API_BASE}/api/billing/payments`, {
           method: "POST",
           headers,
           body: JSON.stringify({
@@ -216,7 +223,7 @@ async function provisionLiveSession() {
           headers,
           body: JSON.stringify({
             patientId,
-            kind: "rvg",
+            kind: "periapical",
             title: "Прицельный снимок зуба 36 (периапикальный)",
             toothCode: "36",
             region: "36 нижний левый моляр",

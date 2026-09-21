@@ -614,7 +614,7 @@ export function getSurfaceShading(
 		default:
 			return {
 				fill: "url(#dente-enamel-healthy)",
-				stroke: "var(--tooth-root-stroke, #64748b)",
+				stroke: "var(--tooth-enamel-stroke, var(--tooth-root-stroke, #94a3b8))",
 				opacity: 1,
 				strokeWidth: 1.0,
 			};

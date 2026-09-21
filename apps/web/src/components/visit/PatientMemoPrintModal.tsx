@@ -56,7 +56,11 @@ export function PatientMemoPrintModal({
 	const [isCopied, setIsCopied] = useState<boolean>(false);
 
 	const activeMemo = useMemo(() => {
-		return getPostOpPatientMemo(selectedMemoId);
+		return (
+			getPostOpPatientMemo(selectedMemoId) ||
+			getPostOpPatientMemo("surgery_extraction") ||
+			POST_OP_PATIENT_MEMOS[0]
+		);
 	}, [selectedMemoId]);
 
 	const memoRenderOptions = useMemo(() => {
@@ -265,7 +269,7 @@ export function PatientMemoPrintModal({
 								Обязательные правила и рекомендации:
 							</div>
 							<div className="space-y-1.5">
-								{activeMemo.keyRules.map((rule, idx) => (
+								{(activeMemo?.keyRules ?? []).map((rule, idx) => (
 									<div
 										key={idx}
 										className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-xs text-slate-900 leading-relaxed flex items-start gap-2"
@@ -285,7 +289,7 @@ export function PatientMemoPrintModal({
 								<span>Срочно связаться с клиникой ({clinicPhone}) при:</span>
 							</div>
 							<ul className="m-0 pl-4 text-xs text-rose-900 space-y-1 font-medium">
-								{activeMemo.urgentTriggers.map((t, idx) => (
+								{(activeMemo?.urgentTriggers ?? []).map((t, idx) => (
 									<li key={idx}>• {t}</li>
 								))}
 							</ul>

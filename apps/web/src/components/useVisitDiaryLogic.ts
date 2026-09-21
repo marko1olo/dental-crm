@@ -1354,6 +1354,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		// для подписанного дневника не подходит — только POST …/revise.
 		if (isLocked || isRevising) return;
 		autosaveRef.current = setInterval(() => {
+			if (typeof document !== "undefined" && document.hidden) return;
 			void doSaveRef.current?.(true);
 		}, 30000);
 		return () => {

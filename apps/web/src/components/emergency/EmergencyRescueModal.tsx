@@ -145,7 +145,7 @@ export function EmergencyRescueModal({
 	// Adrenaline Timer countdown effect
 	useEffect(() => {
 		let intervalId: NodeJS.Timeout | null = null;
-		if (isAdrenalineTimerRunning && adrenalineTimerSeconds > 0) {
+		if (isAdrenalineTimerRunning) {
 			intervalId = setInterval(() => {
 				setAdrenalineTimerSeconds((prev) => {
 					if (prev <= 1) {
@@ -160,7 +160,7 @@ export function EmergencyRescueModal({
 		return () => {
 			if (intervalId) clearInterval(intervalId);
 		};
-	}, [isAdrenalineTimerRunning, adrenalineTimerSeconds]);
+	}, [isAdrenalineTimerRunning]);
 
 	// Toggle Step completion
 	const handleToggleStep = (stepId: string) => {

@@ -755,4 +755,45 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 			};
 		}
 	});
+
+	// Атомарное завершение наряда приёма: списание материалов со склада и фиксация статуса визита
+	app.post("/api/visits/:visitId/complete-work-order", async (request, reply) => {
+		const context = await requireClinicalMutationContext(
+			request,
+			reply,
+			"visit work order complete",
+		);
+		if (!context) return;
+
+		const { visitId } = request.params as { visitId: string };
+		const body = (request.body as { status?: "completed" | "in_progress" } | undefined) ?? {};
+
+		try {
+			const identity = getRequestIdentity(request);
+			const result = await VisitWorkOrderService.completeVisitWorkOrder({
+				organizationId: context.organizationId,
+				visitId,
+				actorUserId: identity.userId ?? null,
+				status: body.status ?? "completed",
+			});
+			return result;
+		} catch (error) {
+			if (error instanceof VisitWorkOrderError) {
+				reply.code(error.statusCode);
+				return {
+					error: error.code,
+					message: error.message,
+				};
+			}
+			request.log.error(
+				error,
+				"Непредвиденная ошибка завершения наряда приёма и списания материалов",
+			);
+			reply.code(500);
+			return {
+				error: "InternalServerError",
+				message: "Не удалось завершить наряд приёма и списать материалы.",
+			};
+		}
+	});
 }

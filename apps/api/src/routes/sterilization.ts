@@ -11,7 +11,7 @@ import {
 	type SterilizationIndicatorType,
 	type SterilizationPackagingType,
 } from "@dental/shared";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
@@ -385,20 +385,21 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 			if (firstPart) barcodeCandidates.push(firstPart);
 		}
 
-		// Проверяем статус последнего цикла стерилизации для данного штрихкода в организации
+		// Проверяем статус последнего цикла стерилизации для данных штрихкодов в организации (1 батч-запрос)
+		const foundLogs = await db
+			.select()
+			.from(sterilizationLogs)
+			.where(
+				and(
+					eq(sterilizationLogs.organizationId, organizationId),
+					inArray(sterilizationLogs.barcode, barcodeCandidates),
+				),
+			)
+			.orderBy(desc(sterilizationLogs.timestamp));
+
 		let log: typeof sterilizationLogs.$inferSelect | undefined;
 		for (const candidate of barcodeCandidates) {
-			const [found] = await db
-				.select()
-				.from(sterilizationLogs)
-				.where(
-					and(
-						eq(sterilizationLogs.organizationId, organizationId),
-						eq(sterilizationLogs.barcode, candidate),
-					),
-				)
-				.orderBy(desc(sterilizationLogs.timestamp))
-				.limit(1);
+			const found = foundLogs.find((l) => l.barcode === candidate);
 			if (found) {
 				log = found;
 				break;

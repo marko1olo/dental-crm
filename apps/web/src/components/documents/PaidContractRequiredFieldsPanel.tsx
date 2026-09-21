@@ -47,7 +47,9 @@ export function PaidContractRequiredFieldsPanel({
 	patient,
 	doctorName,
 }: PaidContractRequiredFieldsPanelProps) {
-	const { requiredCount, missing } = review;
+	if (!review) return null;
+	const requiredCount = review.requiredCount ?? 0;
+	const missing = review.missing ?? [];
 
 	if (missing.length === 0) {
 		return (

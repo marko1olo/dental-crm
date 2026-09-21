@@ -58,7 +58,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 	const [protocolText, setProtocolText] = useState<string>(DENTAL_IMPLANTATION_NORM_TEXT);
 	const [isSterileGloveMode, setIsSterileGloveMode] = useState<boolean>(true);
 	const [isImplantModalOpen, setIsImplantModalOpen] = useState<boolean>(false);
-	const [simulateOverdraft, setSimulateOverdraft] = useState<boolean>(false);
+	const [hasWarehouseDelay, setHasWarehouseDelay] = useState<boolean>(false);
 
 	// 1-Клик параметры имплантации
 	const [implantBrand, setImplantBrand] = useState<string>("Dentium");
@@ -110,7 +110,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 
 	const overdraftStatus = evaluateWarehouseOverdraft(
 		currentNorm.requiredMaterials,
-		simulateOverdraft,
+		hasWarehouseDelay,
 	);
 
 	const handleNormClick = (norm: SurgicalOperationNorm) => {
@@ -326,7 +326,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 					</div>
 					<button
 						type="button"
-						onClick={() => setSimulateOverdraft(false)}
+						onClick={() => setHasWarehouseDelay(false)}
 						className="px-3 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
 					>
 						Ознакомлен

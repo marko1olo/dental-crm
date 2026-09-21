@@ -59,6 +59,8 @@ export class SyncEngine {
 	};
 	private listeners = new Set<SyncEngineEventListener>();
 	private autoSyncTimer: ReturnType<typeof setInterval> | null = null;
+	private boundAutoTrigger: (() => void) | null = null;
+	private boundVisibilityHandler: (() => void) | null = null;
 	private lastSyncTimestampIso: string | null = null;
 	private lastSyncError: string | null = null;
 
@@ -130,7 +132,7 @@ export class SyncEngine {
 	private initAutoSync(): void {
 		if (typeof window === "undefined") return;
 
-		const handleAutoTrigger = () => {
+		this.boundAutoTrigger = () => {
 			if (typeof navigator !== "undefined" && navigator.onLine === false) return;
 			if (this.isRunning) return;
 			void this.syncBidirectional().catch((err) => {
@@ -138,18 +140,19 @@ export class SyncEngine {
 			});
 		};
 
-		window.addEventListener("online", handleAutoTrigger);
-		window.addEventListener("focus", handleAutoTrigger);
+		window.addEventListener("online", this.boundAutoTrigger);
+		window.addEventListener("focus", this.boundAutoTrigger);
 		if (typeof document !== "undefined") {
-			document.addEventListener("visibilitychange", () => {
+			this.boundVisibilityHandler = () => {
 				if (document.visibilityState === "visible") {
-					handleAutoTrigger();
+					this.boundAutoTrigger?.();
 				}
-			});
+			};
+			document.addEventListener("visibilitychange", this.boundVisibilityHandler);
 		}
 
 		if (this.options.autoSyncIntervalMs && this.options.autoSyncIntervalMs > 0) {
-			this.autoSyncTimer = setInterval(handleAutoTrigger, this.options.autoSyncIntervalMs);
+			this.autoSyncTimer = setInterval(this.boundAutoTrigger, this.options.autoSyncIntervalMs);
 		}
 	}
 
@@ -158,6 +161,15 @@ export class SyncEngine {
 			clearInterval(this.autoSyncTimer);
 			this.autoSyncTimer = null;
 		}
+		if (typeof window !== "undefined" && this.boundAutoTrigger) {
+			window.removeEventListener("online", this.boundAutoTrigger);
+			window.removeEventListener("focus", this.boundAutoTrigger);
+		}
+		if (typeof document !== "undefined" && this.boundVisibilityHandler) {
+			document.removeEventListener("visibilitychange", this.boundVisibilityHandler);
+			this.boundVisibilityHandler = null;
+		}
+		this.boundAutoTrigger = null;
 		this.listeners.clear();
 	}
 

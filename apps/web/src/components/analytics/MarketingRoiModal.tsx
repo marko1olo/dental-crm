@@ -167,6 +167,7 @@ export const MarketingRoiModal: React.FC<MarketingRoiModalProps> = ({
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);
+		URL.revokeObjectURL(url);
 		showToast("Отчет по сквозной аналитике и ROMI выгружен в CSV", "success");
 	};
 

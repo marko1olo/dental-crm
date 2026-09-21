@@ -387,10 +387,13 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 		// Копирование текста в буфер
 		const handleCopyText = useCallback(() => {
 			const text = generate043PlainText(formData);
-			navigator.clipboard.writeText(text).then(() => {
-				setCopiedToast(true);
-				setTimeout(() => setCopiedToast(false), 2500);
-			});
+			navigator.clipboard
+				.writeText(text)
+				.then(() => {
+					setCopiedToast(true);
+					setTimeout(() => setCopiedToast(false), 2500);
+				})
+				.catch(() => {});
 		}, [formData]);
 
 		const moreMenuRef = useRef<HTMLDivElement>(null);

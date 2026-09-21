@@ -2,13 +2,23 @@ import { lazy, Suspense, useEffect } from "react";
 import { Stethoscope } from "lucide-react";
 import { BootErrorBoundary } from "./bootErrorBoundary";
 import { GlobalToast } from "./components/GlobalToast";
-import { DiagnosticDrawer } from "./components/diagnostics/DiagnosticDrawer";
-import { CopilotGlobalHost } from "./components/copilot/CopilotGlobalHost";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 
 const DentalWorkspace = lazy(() =>
 	import("./App").then((module) => ({ default: module.App })),
+);
+
+const DiagnosticDrawer = lazy(() =>
+	import("./components/diagnostics/DiagnosticDrawer").then((module) => ({
+		default: module.DiagnosticDrawer,
+	})),
+);
+
+const CopilotGlobalHost = lazy(() =>
+	import("./components/copilot/CopilotGlobalHost").then((module) => ({
+		default: module.CopilotGlobalHost,
+	})),
 );
 
 function ThemeController() {
@@ -49,8 +59,10 @@ export function AppShell() {
 				<DentalWorkspace />
 			</Suspense>
 			<GlobalToast />
-			<DiagnosticDrawer showTriggerButton={false} />
-			<CopilotGlobalHost />
+			<Suspense fallback={null}>
+				<DiagnosticDrawer showTriggerButton={false} />
+				<CopilotGlobalHost />
+			</Suspense>
 		</BootErrorBoundary>
 	);
 }

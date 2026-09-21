@@ -9,6 +9,7 @@
  * 5. In-memory buffer with write-through sync for zero-latency lookups & resilient test runner execution.
  */
 
+import { randomUUID } from "node:crypto";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
 import { aiTokenTelemetry } from "../../db/schema/aiTelemetry.js";
@@ -264,10 +265,7 @@ export class TelemetryAuditor {
 			completionTokens,
 		);
 
-		const id =
-			typeof crypto !== "undefined" && crypto.randomUUID
-				? crypto.randomUUID()
-				: `telemetry_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+		const id = randomUUID();
 
 		const record: TelemetryRecord = {
 			id,

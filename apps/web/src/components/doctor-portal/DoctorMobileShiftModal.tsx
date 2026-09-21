@@ -129,12 +129,11 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 	// SMS Countdown timer
 	useEffect(() => {
 		if (!signingSession) return;
-		if (smsCountdown <= 0) return;
 		const timer = setInterval(() => {
 			setSmsCountdown((prev) => Math.max(0, prev - 1));
 		}, 1000);
 		return () => clearInterval(timer);
-	}, [signingSession, smsCountdown]);
+	}, [signingSession]);
 
 	if (!isOpen) return null;
 

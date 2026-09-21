@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-20 / WAVES 175–267 / HAMILTON-HARE 54-FZ PENNY DISTRIBUTION, ADVISORY LOCKS & MONKEY-CLICK PROTECTION, DOM VIRTUALIZATION & WEBGL DISPOSAL, ATOMIC COLUMN UPDATES ANTI-LWW, 1092X614 VIEWPORT ERGONOMICS, HDD 5400 RPM & CELERON CPU OPTIMIZATION ENGINE, OMNI-PLATFORM RUNTIME ENGINE, SAKURA NEUTRAL ENAMEL, SINGLE-COMPILER GATE 8T): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 304 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА, КЛКТ, ТОЧНОЙ МАТЕМАТИКИ ГАМИЛЬТОНА-ХЭРА 54-ФЗ, ЗАЩИТЫ ОТ ГОНОК, ОПТИМИЗАЦИИ HDD/CELERON И OMNI-PLATFORM ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 367 ФИЧ: 63 КАНОНИЧЕСКИЕ + 304 АДДЕНДУМ, 367/367 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-21 / ФАКТИЧЕСКИЙ АУДИТ ПАРИТЕТА И СИНХРОНИЗАЦИЯ ДОЛГА): 61/63 КАНОНИЧЕСКИХ ФИЧ И 304 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ РЕАЛИЗОВАНЫ (365/367 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО]). 2 КАНОНИЧЕСКИЕ ФИЧИ ЗАФИКСИРОВАНЫ В ЧЕСТНОМ СТАТУСЕ [НЕТ] / [DEBT] (ФИЧА 17: ВЫГРУЗКА ПРЕЙСКУРАНТА И ОНЛАЙН-ЗАПИСЬ ПРОДОКТОРОВ / МЕДФЛЕКС, ФИЧА 54: 15-МИНУТНАЯ КОНВЕРСИЯ ПОВТОРНОЙ ЗАПИСИ ВРАЧ VS АДМИНИСТРАТОР).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -192,6 +192,147 @@
   - Сервис бэкенда: `apps/api/src/services/documents/ndflTaxService.ts`
   - Маршруты API: `apps/api/src/routes/documents/ndflCalculator.ts`, `apps/api/src/routes/documents/taxXml.ts`
   - Фронтенд: `apps/web/src/components/documents/NdflCalculatorModal.tsx`, `apps/web/src/components/tax/TaxDeductionModal.tsx`
+
+---
+
+## 📌 ЧАСТЬ I-B. АРХИТЕКТУРНЫЕ СПЕЦИФИКАЦИИ ДОЛГОВЫХ КАНОНИЧЕСКИХ ФИЧ (DEBT BACKLOG: ФИЧИ 17 И 54, СТАТУС ИНТЕГРАЦИЙ ДМС)
+
+### 17. `интеграции::продокторов_выгрузка_прейскуранта_и_запись` [НЕТ] / [DEBT] -> MUST-HAVE
+- **Бизнес-задача & Проблема**:
+  В современных российских стоматологиях ключевым внешним источником первичных пациентов являются медицинские агрегаторы: **ПроДокторов** (крупнейший портал отзывов и врачей в РФ) и платформа **МедФлекс (MedFlex)**, объединяющая ПроДокторов, СберЗдоровье и другие витрины записи.
+  Отсутствие автоматической выгрузки прейскуранта и двусторонней синхронизации слотов расписания приводит к:
+  1. Двойному ручному вводу расписания администратором на портале агрегатора и в CRM.
+  2. Риску овербукинга (пациент бронирует время на ПроДокторов, которое уже занято в клинике у кресла).
+  3. Рассинхронизации цен: изменение прейскуранта в клинике не попадает на ПроДокторов, что нарушает Закон о защите прав потребителей.
+- **Архитектурный план реализации**:
+  1. **Схема БД PostgreSQL 18 (`apps/api/src/db/schema/integrations.ts` или `system.ts`)**:
+     - Таблица `medflex_integrations`:
+       * `id: uuid` (PK, default uuidv7());
+       * `organization_id: uuid` (FK к organizations);
+       * `clinic_external_id: text` (ID клиники в МедФлекс);
+       * `api_key: text` (зашифрованный токен авторизации);
+       * `webhook_secret: text` (HMAC-SHA256 секрет для валидации входящих событий);
+       * `is_active: boolean` (default true);
+       * `auto_confirm_bookings: boolean` (автоматическое подтверждение или ручная модерация регистратором);
+       * `default_chair_id: uuid` (дефолтное кресло для соло-врача по Мандату 8n);
+       * `created_at, updated_at: timestamp`.
+     - Таблица `medflex_doctor_mappings`:
+       * `id: uuid` (PK);
+       * `organization_id: uuid`;
+       * `staff_id: uuid` (FK к staff);
+       * `external_doctor_id: text` (ID врача на ПроДокторов/МедФлекс);
+       * `is_sync_enabled: boolean` (default true).
+     - Таблица `medflex_webhook_logs`:
+       * `id: uuid` (PK);
+       * `organization_id: uuid`;
+       * `event_type: text` (`booking_created`, `booking_cancelled`, `booking_rescheduled`);
+       * `delivery_id: text` (для дедупликации и идемпотентности);
+       * `payload: jsonb`;
+       * `status: text` (`processed`, `error`, `ignored`);
+       * `error_message: text`;
+       * `created_at: timestamp`.
+  2. **Бэкенд Fastify (`apps/api/src/routes/integrations/medflex.ts` или `apps/api/src/routes/sync/prodoctorov.ts`)**:
+     - `GET /api/integrations/medflex/pricelist.xml` (или JSON):
+       * Формирование актуального фида медицинских услуг клиники: код Номенклатуры 804н, наименование, цена в рублях/копейках, признак активности.
+       * Фильтрация только разрешенных к публичной публикации категорий (терапия, ортопедия, хирургия, гигиена).
+     - `GET /api/integrations/medflex/slots`:
+       * Генерация доступных слотов для записи по врачам на горизонт 14–30 дней.
+       * Учет: графика смен (`doctor_shifts`), уже занятых визитов (`appointments`), технологических перерывов (`schedule_time_reservations`), времени на дезинфекцию кабинета по СанПиН (10–15 мин).
+     - `POST /api/integrations/medflex/webhook/booking`:
+       * Валидация подписи `X-Medflex-Signature: sha256=...` с использованием `webhook_secret`.
+       * Идемпотентность: проверка `delivery_id` в `medflex_webhook_logs` (повторные вебхуки возвращают 200 OK без дублирования записи).
+       * Защита от гонок: транзакция с `pg_advisory_xact_lock` на интервал времени врача/кресла.
+       * Поиск существующего пациента по номеру телефона (E.164) либо автоматическое создание карточки первичного пациента (`patients.status = 'active'`).
+       * Создание записи в `appointments`: метка `channel = 'medflex_prodoctorov'`, `confirmation_status = 'pending_confirmation'` или `'confirmed'`.
+       * Генерация уведомления администратору в веб-клиенте через WebSocket (`websocketBroker.ts`).
+  3. **Фронтенд React 19 (`apps/web/src/components/settings/integrations/MedflexSettingsTab.tsx`)**:
+     - Вкладка «МедФлекс / ПроДокторов» в настройках интеграций:
+       * Статус подключения (зеленый индикатор / ошибка связи).
+       * Поля ввода API Token и Webhook Secret.
+       * Таблица сопоставления врачей клиники с профилями ПроДокторов.
+       * URL для вставки в личный кабинет МедФлекс: `https://api.clinic.ru/api/integrations/medflex/webhook/booking`.
+       * Лог последних 20 входящих событий онлайн-записи с индикацией созданного пациента и визита.
+  4. **Инварианты Мандатов 8e и 8n**:
+     - Для соло-врача (1 кресло): автоматическая привязка слотов к единственному врачу и креслу без необходимости ручной настройки маппинга.
+     - Отсутствие обязательного ассистента при создании записи.
+
+---
+
+### 54. `кадры::справедливое_распределение_конверсии_повторной_записи` [НЕТ] / [DEBT] -> MUST-HAVE
+- **Бизнес-задача & Проблема**:
+  В стоматологических клиниках распространен системный конфликт между врачами и администраторами за KPI повторной записи (Rebooking Conversion):
+  1. Если пациент перезаписывается на следующий этап лечения непосредственно в кабинете у врача (или в первые 15 минут после приема при выходе на ресепшен) — это прямая заслуга **Врача**, качественно донесшего ценность плана лечения.
+  2. Если пациент ушел без записи, а администратор перезвонил ему через день/неделю (или пациент позвонил сам через несколько дней) — конверсия должна начисляться **Администратору**.
+  3. В текущей кодовой базе в `apps/api/src/routes/analytics.ts` и `apps/api/src/db/schema/schedule.ts` расчет дельты времени между закрытием визита и созданием повторной записи отсутствует.
+- **Архитектурный план реализации**:
+  1. **Схема данных PostgreSQL 18 (`apps/api/src/db/schema/schedule.ts`)**:
+     - Добавление полей атрибуции в `appointments`:
+       * `rebooking_source_visit_id: uuid` (ссылка на визит, по итогам которого оформлена повторная запись);
+       * `rebooking_delta_minutes: integer` (разница во времени в минутах);
+       * `attributed_role: varchar(32)` ('doctor' | 'administrator' | 'patient_online' | 'system_recall');
+       * `attributed_user_id: uuid` (FK к staff — конкретный сотрудник, которому засчитана конверсия);
+       * `attribution_reason: text` ('chairside_rebooking_under_15m', 'frontdesk_call_over_15m', 'online_patient_booking').
+  2. **Бэкенд Fastify (`apps/api/src/routes/analytics.ts` и `schedule.ts`)**:
+     - **При создании записи (`POST /api/schedule/appointments`)**:
+       * Поиск последнего завершенного визита данного пациента (`visits.status = 'completed'`) за последние 24 часа.
+       * Расчет дельты:
+         $$\Delta t = \text{Appointment}.\text{created\_at} - \text{LastVisit}.\text{completed\_at}$$
+         $$\Delta t_{\text{min}} = \text{Math.floor}(\Delta t / 60000)$$
+       * Если визит еще открыт (запись прямо из кресла) либо $\Delta t_{\text{min}} \le 15$:
+         - `attributed_role = 'doctor'`;
+         - `attributed_user_id = LastVisit.doctor_id`;
+         - `attribution_reason = 'chairside_rebooking_under_15m'`.
+       * Если $\Delta t_{\text{min}} > 15$ или предыдущий визит завершен более 24 часов назад:
+         - `attributed_role = 'administrator'`;
+         - `attributed_user_id = currentUser.id` (администратор, создавший запись);
+         - `attribution_reason = 'frontdesk_rebooking_over_15m'`.
+     - **Эндпоинт аналитики `GET /api/analytics/rebooking-conversion`**:
+       * Параметры: `period_start`, `period_end`, `doctor_id`, `specialty`.
+       * Метрики:
+         - Общее число завершенных визитов ($N_{\text{visits}}$);
+         - Число визитов с повторной записью $\le 15$ мин ($N_{\text{doc}}$) и конверсия врача ($N_{\text{doc}} / N_{\text{visits}} \times 100\%$);
+         - Число визитов с повторной записью $> 15$ мин ($N_{\text{admin}}$) и вклад администраторов;
+         - Детализация по врачам: ФИО, специальность, процент удержания пациентов у кресла (Chairside Retention Rate).
+  3. **Фронтенд React 19 (`apps/web/src/components/analytics/RebookingConversionPanel.tsx` и `DoctorShiftCockpitModal.tsx`)**:
+     - Виджет в рабочем столе директора (`DirectorExecutiveDashboard.tsx`) и кабинете врача:
+       * График распределения конверсий: «Врач у кресла ( $\le 15$ мин)» vs «Ресепшен / Обзвон ( $> 15$ мин)».
+       * Таблица врачей с KPI удержания и индикатором выполнения норматива клиники ($\ge 70\%$).
+       * Прозрачный лог для разрешения споров: пациент, дата/время закрытия визита, время создания записи, точная дельта в минутах, ответственный сотрудник.
+  4. **Инварианты Мандатов 8e и 8n**:
+     - Для соло-врача на аренде кресла: весь функционал работает прозрачно в фоновом режиме, 100% конверсий автоматически засчитываются соло-врачу без необходимости нажимать лишние кнопки.
+
+---
+
+### 🏥 Статус подсистемы ДМС (Добровольное медицинское страхование) в кодовой базе
+- **Результаты инструментального аудита (Мандат 8f — Ноль выдумок)**:
+  1. **Файловая структура**:
+     - Директории `apps/api/src/routes/dms/` и `apps/web/src/components/dms/` **физически отсутствуют**.
+     - Каноническая кодовая база модуля ДМС размещена в:
+       * `packages/shared/src/insurance/`:
+         - `dmsRegistryExport.ts` (665 строк): ядро генерации XML-реестра (`urn:dente:dms:registry:v1.0`), RFC 4180 CSV с UTF-8 BOM и бланка счета-реестра А4;
+         - `dmsFranchiseEngine.ts`: калькуляция франшиз и покрытий;
+         - `dmsGuaranteeLetters.ts`: валидация и схемы гарантийных писем;
+       * `apps/web/src/components/insurance/`:
+         - `DmsRegistryExportModal.tsx`: модальное окно фильтрации, экспорта в CSV/Excel и печати акта сдачи-приемки;
+         - `DmsGuaranteeLetterModal.tsx`: ведение гарантийных писем и прикреплений пациентов;
+         - `dmsClaimRegistryExport.ts`: пресеты договоров топ-6 страховых компаний (СОГАЗ, Ингосстрах, АльфаСтрахование, РЕСО-Гарантия, ВСК, Согласие) и генераторы XML/CSV/A4;
+         - `insuranceMath.ts`: копеечно-точный расчет разделения счетов (`dmsCoveredRub + patientPaidRub === lineTotalRub`);
+         - `dmsSplitEngine.ts`: сплит счетов между ДМС и пациентом;
+       * `apps/api/src/routes/insurance.ts` (1291 строка):
+         - `GET/POST/PUT/DELETE /api/insurance/contracts` (договоры со страховыми);
+         - `GET/POST/PUT/DELETE /api/insurance/guarantee-letters` (гарантийные письма);
+         - `POST /api/insurance/calculate-coverage` (расчет покрытия);
+         - `POST /api/insurance/split-invoice` (разделение счета с учетом лимитов);
+         - `POST /api/insurance/guarantee-letters/:letterId/usage` (списание средств по письму).
+  2. **Статус экспорта реестров для страховых компаний (СОГАЗ, Ингосстрах, АльфаСтрахование)**:
+     - **[РЕАЛИЗОВАНО]**:
+       * Экспорт реестра оказанных услуг в стандартный **XML ДМС РФ** (`generateDmsRegistryXml`);
+       * Экспорт реестра в **CSV с UTF-8 BOM** для прямого импорта в 1С:Медицина, АРМ Страховщика и Microsoft Excel (`generateDmsRegistryCsv`);
+       * Генерация официального **Счета-реестра и двустороннего Акта сдачи-приемки А4** (Landscape) с суммами прописью, копеечно-точной математикой и подписями Главврача и Главбуха (`generateDmsRegistryA4Html`, `generateBilateralAcceptanceActHtml`);
+       * Предустановленные шаблоны и реквизиты топ-6 страховых компаний РФ (`DEFAULT_STATUTORY_INSURANCE_CONTRACTS`, `RUSSIAN_DMS_INSURERS`).
+     - **[НЕТ] / [DEBT]**:
+       * Серверный эндпоинт пакетной выгрузки реестра из БД (`GET /api/insurance/registry/export`): в настоящий момент сборка данных реестра выполняется на клиенте;
+       * Прямой сетевой шлюз (B2B API webhooks) для отправки счетов напрямую в API СОГАЗ, Ингосстрах, АльфаСтрахование. На рынке РФ передача счетов подавляющим большинством стоматологических клиник осуществляется через защищенные файлы XML/Excel, загружаемые в личные B2B-кабинеты страховщиков.
 
 ---
 
@@ -3361,18 +3502,23 @@
 
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 204 дополнительных системных аддендум-фич клинической автономии (Wave 15..93, фичи 64..267) имеют статус **`[РЕАЛИЗОВАНО]`**:
+В соответствии с каноническим реестром [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md):
+- **61 из 63 канонических фич** (96.8%) и все 204 дополнительных системных аддендум-фич клинической автономии (Wave 15..93, фичи 64..267) имеют статус **`[РЕАЛИЗОВАНО]`** (всего 265 из 267 фич паритета);
+- **2 канонические фичи** имеют честный статус **`[НЕТ] / [DEBT]`**:
+  * **Фича 17**: `интеграции::продокторов_выгрузка_прейскуранта_и_запись` (выгрузка прайс-листа YML/XML, трансляция свободных слотов расписания, входящий вебхук бронирования ПроДокторов / МедФлекс);
+  * **Фича 54**: `кадры::справедливое_распределение_конверсии_повторной_записи` (15-минутный порог конверсии: Врач при $\Delta t \le 15$ мин vs Администратор при $\Delta t > 15$ мин);
+  * Архитектурные спецификации, схемы PostgreSQL 18, маршруты Fastify и UI-контракты для обеих долговых фич зафиксированы в **ЧАСТИ I-B** настоящего документа.
 - 209 таблиц PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
-- Полная аппаратная интеграция (эквайринг Сбера, фискальные регистраторы 54-ФЗ, 3D DICOM MPR WebWorker, ЕГИСЗ CDA R3 с УКЭП, экспорт 1С CommerceML);
+- Полная аппаратная интеграция (эквайринг Сбера, фискальные регистраторы 54-ФЗ, 3D DICOM MPR WebWorker, ЕГИСЗ CDA R3 с УКЭП, экспорт 1С CommerceML, выгрузка реестров счетов ДМС в XML/CSV/A4);
 - Строгий аудит Мандатов 8e и 8n: абсолютный приоритет соло-врача и клиники 1–3 кресла, отсутствие тупиков и палок в колёса.
 
 ---
 
 ## 🎯 ЧАСТЬ IV. СТРАТЕГИЧЕСКИЙ БЭКЛОГ ДАЛЬНЕЙШИХ ШАГОВ (FUTURE HORIZONS)
 
-Поскольку 100% канонических требований конкурентов (IDENT, DentalPRO, iStom) закрыты, дальнейшее развитие DENTE Dental CRM направлено на опережение рынка и технологическое лидерство:
+Поскольку 96.8% канонических требований конкурентов (61/63 IDENT, DentalPRO, iStom) закрыты, а 2 долговые фичи специфицированы в ЧАСТИ I-B, дальнейшее развитие DENTE Dental CRM направлено на опережение рынка и технологическое лидерство:
 
 1. **Мобильное PWA-приложение для смартфона врача (Doctor Mobile Companion)**:
    - Легковесный хот-пас для смартфона (390px): просмотр расписания смены, быстрый статус визита («В кресле», «Завершен»), голосовая надиктовка дневника 043/у у кресла без мыши и клавиатуры.

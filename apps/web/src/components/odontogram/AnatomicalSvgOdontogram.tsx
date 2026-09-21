@@ -374,7 +374,7 @@ const AnatomicalToothSVG = React.memo(({
 	// Mandate 8c: Root canals in incisors/canines (11–43, 51–83) must run continuously to the root apex
 	const toothPos = number % 10;
 	const isIncisorOrCanine = toothPos >= 1 && toothPos <= 3;
-	const isToothPresent = state !== "Missing" && state !== "Extracted";
+	const isToothPresent = (state as string) !== "Missing" && (state as string) !== "Extracted";
 	const shouldRenderCanalsAndPulp =
 		state === "Pulpitis" ||
 		showPulpAndCanals ||

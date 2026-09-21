@@ -3440,6 +3440,8 @@ const patientAdministrativeProfileBaseSchema = z.object({
 	isAnonymous: z.boolean().nullable().optional(),
 	anonymousCode: z.string().trim().max(80).nullable().optional(),
 	decree659Compliance: z.record(z.unknown()).nullable().optional(),
+	gender: z.enum(["male", "female", "other"]).nullable().optional().default(null),
+	insuranceContractId: z.string().uuid().nullable().optional().default(null),
 });
 
 export const patientAdministrativeProfileSchema =
@@ -3467,6 +3469,7 @@ export const patientSchema = z.object({
 	status: patientStatusSchema,
 	fullName: z.string().min(1),
 	birthDate: z.string().nullable(),
+	gender: z.enum(["male", "female", "other"]).nullable().optional().default(null),
 	phone: z.string().nullable(),
 	email: z.string().email().nullable(),
 	notes: z.string().nullable(),

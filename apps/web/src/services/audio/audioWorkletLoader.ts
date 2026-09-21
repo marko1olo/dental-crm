@@ -63,7 +63,9 @@ export function revokeResamplingAudioWorkletBlobUrl(): void {
 	if (cachedWorkletBlobUrl && typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
 		try {
 			URL.revokeObjectURL(cachedWorkletBlobUrl);
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[audioWorkletLoader] Failed to revoke blob URL:", err);
+		}
 		cachedWorkletBlobUrl = null;
 	}
 }
@@ -200,19 +202,27 @@ export async function createResamplingAudioCapturePipeline(config: {
 		vadEngine.dispose();
 		try {
 			sourceNode.disconnect();
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[audioWorkletLoader] sourceNode disconnect error:", err);
+		}
 		try {
 			workletNode.disconnect();
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[audioWorkletLoader] workletNode disconnect error:", err);
+		}
 		stream.getTracks().forEach((track) => {
 			try {
 				track.stop();
-			} catch {}
+			} catch (err: unknown) {
+				console.warn("[audioWorkletLoader] media track stop error:", err);
+			}
 		});
 		if (!config.audioContext && audioCtx.state !== "closed") {
 			try {
 				audioCtx.close();
-			} catch {}
+			} catch (err: unknown) {
+				console.warn("[audioWorkletLoader] audioContext close error:", err);
+			}
 		}
 	};
 

@@ -1295,7 +1295,7 @@ export function verifyPrescriptionStatutoryValidity(
 
 	// Нормализация типа формы
 	let form: PrescriptionFormType = "107-1u";
-	if (prescription.formNumber === "148-1/у-88" || prescription.formType === "148-1u-88" || prescription.formType === ("148-1u" as any)) {
+	if (prescription.formNumber === "148-1/у-88" || prescription.formType === "148-1u-88" || prescription.formType === "148-1u") {
 		form = "148-1u-88";
 	}
 

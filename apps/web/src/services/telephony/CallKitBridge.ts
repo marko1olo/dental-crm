@@ -198,7 +198,9 @@ export class CallKitBridge {
 		// Sync with Telephony Store
 		try {
 			useTelephonyStore.getState().acceptCall();
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[CallKitBridge] useTelephonyStore.acceptCall failed:", err);
+		}
 
 		// Connect audio capture & speech dictation stream if enabled
 		if (this.config.autoConnectAudioOnAnswer) {
@@ -229,18 +231,24 @@ export class CallKitBridge {
 		if (this.audioClient) {
 			try {
 				this.audioClient.stop();
-			} catch {}
+			} catch (err: unknown) {
+				console.warn("[CallKitBridge] audioClient.stop failed:", err);
+			}
 			this.audioClient = null;
 		}
 
 		try {
 			useTelephonyStore.getState().rejectCall();
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[CallKitBridge] useTelephonyStore.rejectCall failed:", err);
+		}
 
 		if (typeof window !== "undefined" && window.RNCallKeep) {
 			try {
 				window.RNCallKeep.endCall(callId);
-			} catch {}
+			} catch (err: unknown) {
+				console.warn("[CallKitBridge] RNCallKeep.endCall failed:", err);
+			}
 		}
 
 		if (this.activeCallId === callId) {
@@ -261,7 +269,9 @@ export class CallKitBridge {
 			if (currentMuted !== isMuted) {
 				useTelephonyStore.getState().toggleMute();
 			}
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[CallKitBridge] useTelephonyStore.toggleMute failed:", err);
+		}
 
 		if (this.listeners.onMuteToggled) {
 			this.listeners.onMuteToggled(callId, isMuted);
@@ -278,7 +288,9 @@ export class CallKitBridge {
 			} else {
 				useTelephonyStore.getState().unholdCall();
 			}
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[CallKitBridge] useTelephonyStore hold/unhold failed:", err);
+		}
 
 		if (this.listeners.onHoldToggled) {
 			this.listeners.onHoldToggled(callId, isHeld);

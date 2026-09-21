@@ -1266,9 +1266,9 @@ export function redactedDicomDownloadWarnings(warnings: string[]): string[] {
 export function redactedDicomViewerToolStateBundleForDownload(
 	bundle: DicomViewerToolStateBundleResponse,
 ): DicomViewerToolStateBundleResponse {
-	const clone = JSON.parse(
-		JSON.stringify(bundle),
-	) as DicomViewerToolStateBundleResponse;
+	const clone = (typeof structuredClone === "function"
+		? structuredClone(bundle)
+		: JSON.parse(JSON.stringify(bundle))) as DicomViewerToolStateBundleResponse;
 	clone.seriesRef.firstFilePath = redactedLocalDicomDownloadPath(
 		clone.seriesRef.firstFilePath,
 	);
@@ -1295,9 +1295,9 @@ export function redactedDicomViewerToolStateBundleForDownload(
 export function redactedDicomWorkbenchManifestForDownload(
 	manifest: DicomViewerWorkbenchManifestResponse,
 ): DicomViewerWorkbenchManifestResponse {
-	const clone = JSON.parse(
-		JSON.stringify(manifest),
-	) as DicomViewerWorkbenchManifestResponse;
+	const clone = (typeof structuredClone === "function"
+		? structuredClone(manifest)
+		: JSON.parse(JSON.stringify(manifest))) as DicomViewerWorkbenchManifestResponse;
 	clone.toolStateBundle = redactedDicomViewerToolStateBundleForDownload(
 		clone.toolStateBundle,
 	);

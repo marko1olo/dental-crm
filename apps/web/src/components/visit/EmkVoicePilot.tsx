@@ -9,6 +9,8 @@ import {
 	Activity,
 	Check,
 	CheckCheck,
+	ChevronDown,
+	ChevronUp,
 	ClipboardList,
 	Coins,
 	FileText,
@@ -63,7 +65,7 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 	const [finalTranscript, setFinalTranscript] = useState("");
 	const [intent, setIntent] = useState<DentalVoiceIntent | null>(null);
 	const [isApplied, setIsApplied] = useState(false);
-	const [isExpanded, setIsExpanded] = useState(true);
+	const [isExpanded, setIsExpanded] = useState(false);
 
 	useEffect(() => {
 		const unsub = globalDentalVoiceEngine.addListener({
@@ -177,23 +179,65 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 
 	const vuHeight = isListening ? Math.min(100, Math.max(15, (volume / 128) * 100)) : 10;
 
+	// Свернутое состояние: сверхкомпактный 28-32px бар по Мандатам 8d, 8p
+	if (!isExpanded && !isListening && !transcript) {
+		return (
+			<div
+				className={`emk-voice-pilot-hud emk-voice-pilot-collapsed flex items-center justify-between h-7 sm:h-8 px-2 my-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] select-none shrink-0 ${className}`.trim()}
+				data-testid="emk-voice-pilot-hud"
+			>
+				<div className="flex items-center gap-1.5 min-w-0">
+					<button
+						type="button"
+						onClick={handleToggleMic}
+						className="h-6 px-2 rounded-md bg-[var(--teal,#0d9488)] hover:opacity-90 text-white text-xs font-bold inline-flex items-center gap-1 cursor-pointer transition-all active:scale-95 shrink-0"
+						title="Начать диктовку (Ctrl+Space)"
+						aria-label="Начать диктовку"
+					>
+						<Mic size={12} />
+						<span className="hidden sm:inline">Диктовка</span>
+					</button>
+					<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1 shrink-0">
+						<Sparkles size={12} className="text-[var(--teal,#0d9488)]" />
+						AI-Пилот
+					</span>
+					<span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] hidden md:inline shrink-0">
+						Готов к диктовке
+					</span>
+				</div>
+				<button
+					type="button"
+					onClick={() => setIsExpanded(true)}
+					className="h-6 px-2 rounded border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-all inline-flex items-center gap-1 shrink-0"
+					title="Развернуть подсказки и пульт AI-Пилота"
+					aria-label="Развернуть пульт AI-Пилота"
+				>
+					<span>Пульт</span>
+					<ChevronDown size={12} />
+				</button>
+			</div>
+		);
+	}
+
 	return (
 		<div
-			className={`emk-voice-pilot-hud rounded-xl border transition-all select-none shadow-xs overflow-hidden ${
+			className={`emk-voice-pilot-hud rounded-lg border transition-all select-none overflow-hidden ${
+				transcript || isListening ? "shadow-xs" : "h-7 sm:h-8 max-h-[32px] my-0.5"
+			} ${
 				isListening
 					? "bg-rose-500/10 border-rose-500/40 dark:bg-rose-950/20"
-					: "bg-[var(--paper,#ffffff)] dark:bg-zinc-900 border-[var(--border,#e2e8f0)] dark:border-zinc-800"
+					: "bg-[var(--paper-soft,var(--paper,#ffffff))] dark:bg-zinc-900 border-[var(--line,var(--border,#e2e8f0))] dark:border-zinc-800"
 			} ${className}`.trim()}
 			data-testid="emk-voice-pilot-hud"
 		>
-			{/* Header Bar — Сверхкомпактный 28-30px тулбар по Мандату 8p */}
-			<div className={`flex items-center justify-between px-2 py-0.5 gap-2 min-h-[28px] sm:min-h-[30px] ${transcript ? "border-b border-[var(--border-subtle,#e2e8f0)] dark:border-zinc-800 pb-1" : ""}`}>
-				<div className="flex items-center gap-2 min-w-0">
+			{/* Header Bar — Сверхкомпактный 28-32px бар по Мандату 8p */}
+			<div className={`flex items-center justify-between px-2 gap-2 ${transcript || isListening ? "min-h-[28px] sm:min-h-[30px] py-0.5" : "h-7 sm:h-8 min-h-[28px] sm:min-h-[32px] max-h-[32px]"} ${transcript ? "border-b border-[var(--border-subtle,#e2e8f0)] dark:border-zinc-800 pb-1" : ""}`}>
+				<div className="flex items-center gap-1.5 min-w-0">
 					{/* Компактная кнопка микрофона */}
 					<button
 						type="button"
 						onClick={handleToggleMic}
-						className={`min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2.5 rounded-lg flex items-center justify-center font-bold text-xs gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 touch-manipulation shrink-0 ${
+						className={`h-6 sm:h-6.5 px-2 rounded-md flex items-center justify-center font-bold text-xs gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 touch-manipulation shrink-0 ${
 							isListening
 								? "bg-rose-600 hover:bg-rose-500 text-white animate-pulse ring-2 ring-rose-500/40"
 								: "bg-[var(--teal,#0d9488)] hover:opacity-90 text-white"
@@ -202,20 +246,20 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 						aria-label={isListening ? "Остановить диктовку" : "Начать диктовку"}
 						aria-pressed={isListening}
 					>
-						{isListening ? <MicOff size={15} /> : <Mic size={15} />}
-						<span className="hidden sm:inline">{isListening ? "Стоп" : "Диктовка"}</span>
+						{isListening ? <MicOff size={13} /> : <Mic size={13} />}
+						<span className="hidden sm:inline text-xs">{isListening ? "Стоп" : "Диктовка"}</span>
 					</button>
 
 					<div className="flex items-center gap-1.5 min-w-0">
 						<span className="text-xs font-black text-[var(--ink,#0f172a)] dark:text-zinc-100 flex items-center gap-1 shrink-0">
-							<Sparkles size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
+							<Sparkles size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
 							AI-Пилот
 						</span>
 						<span
-							className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0 ${
+							className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold uppercase tracking-wider shrink-0 ${
 								isListening
 									? "bg-rose-500 text-white animate-pulse"
-									: "bg-[var(--surface-hover,#f1f5f9)] dark:bg-zinc-800 text-[var(--muted,#64748b)]"
+									: "bg-[var(--paper,#ffffff)] dark:bg-zinc-800 text-[var(--muted,#64748b)] border border-[var(--line)]"
 							}`}
 						>
 							{isListening ? (
@@ -233,7 +277,7 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 					</div>
 				</div>
 
-				<div className="flex items-center gap-1.5 shrink-0">
+				<div className="flex items-center gap-1 shrink-0">
 					{/* Live VU meter indicator */}
 					<div className="hidden md:flex items-center gap-1 h-5 px-1.5 rounded bg-[var(--surface-hover,#f1f5f9)] dark:bg-zinc-800 border border-[var(--border-subtle,#e2e8f0)] dark:border-zinc-700">
 						<Volume2 size={12} className={isListening ? "text-rose-500 animate-pulse" : "text-zinc-400"} />
@@ -244,6 +288,19 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 							/>
 						</div>
 					</div>
+
+					{/* Кнопка быстрого сворачивания в компактную кнопку (Мандаты 8d, 8p) */}
+					{!transcript && !isListening && (
+						<button
+							type="button"
+							onClick={() => setIsExpanded(false)}
+							className="h-6 w-6 p-0 text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] rounded flex items-center justify-center cursor-pointer transition-colors"
+							title="Свернуть в компактную кнопку"
+							aria-label="Свернуть AI-Пилот в кнопку"
+						>
+							<ChevronUp size={13} />
+						</button>
+					)}
 
 					{transcript && (
 						<button

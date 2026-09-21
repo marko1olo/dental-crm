@@ -299,14 +299,18 @@ function lazyNamedTarget(
 	return { source, exported };
 }
 
-/** `lazy(() => import("./X"))` и `React.lazy(...)`: сам факт такого ребра — рендер. */
+/** `lazy(() => import("./X"))` и `React.lazy(...)` / `lazyWithRetry(...)`: сам факт такого ребра — рендер. */
 function isLazyCall(call: Node): boolean {
 	const callee = call.callee as Node | undefined;
 	if (!callee) return false;
-	if (callee.type === "Identifier") return callee.name === "lazy";
+	if (callee.type === "Identifier")
+		return callee.name === "lazy" || callee.name === "lazyWithRetry";
 	if (callee.type === "MemberExpression") {
 		const property = callee.property as Node | undefined;
-		return property?.type === "Identifier" && property.name === "lazy";
+		return (
+			property?.type === "Identifier" &&
+			(property.name === "lazy" || property.name === "lazyWithRetry")
+		);
 	}
 	return false;
 }

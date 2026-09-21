@@ -202,28 +202,36 @@ export function parseCopilotUiContextHeader(
 	if (toothFormulaMatch?.[1]) {
 		try {
 			toothFormula = JSON.parse(toothFormulaMatch[1].replace(/\\'/g, "'"));
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[CopilotContextSync] Failed to parse toothFormula context header:", err);
+		}
 	}
 
 	let diagnosesByTooth: Record<string, string> | undefined = undefined;
 	if (diagnosesMatch?.[1]) {
 		try {
 			diagnosesByTooth = JSON.parse(diagnosesMatch[1].replace(/\\'/g, "'"));
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[CopilotContextSync] Failed to parse diagnoses context header:", err);
+		}
 	}
 
 	let clinical043Context: Clinical043Snapshot | undefined = undefined;
 	if (form043Match?.[1]) {
 		try {
 			clinical043Context = JSON.parse(form043Match[1].replace(/\\'/g, "'"));
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[CopilotContextSync] Failed to parse form043 context header:", err);
+		}
 	}
 
 	let allergies: string[] | undefined = undefined;
 	if (allergiesMatch?.[1]) {
 		try {
 			allergies = JSON.parse(allergiesMatch[1].replace(/\\'/g, "'"));
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[CopilotContextSync] Failed to parse allergies context header:", err);
+		}
 	}
 
 	const cleanText = fullText.slice(rawHeader.length).trimStart();

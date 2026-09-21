@@ -39,7 +39,11 @@ export const CallPlayer: React.FC<{
 		return () => {
 			try {
 				audio.pause();
-			} catch {}
+				audio.removeAttribute("src");
+				audio.load();
+			} catch (err: unknown) {
+				logger.warn("Audio pause on unmount failed:", err);
+			}
 			audio.removeEventListener("timeupdate", updateProgress);
 			audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
 			audio.removeEventListener("ended", handleEnded);

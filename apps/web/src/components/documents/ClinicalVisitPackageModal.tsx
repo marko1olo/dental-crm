@@ -88,7 +88,7 @@ export function ClinicalVisitPackageModal({
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
 	const documentsByKind = new Map<DocumentKind, GeneratedDocument[]>();
-	for (const doc of existingDocuments) {
+	for (const doc of existingDocuments ?? []) {
 		const list = documentsByKind.get(doc.kind) ?? [];
 		list.push(doc);
 		documentsByKind.set(doc.kind, list);

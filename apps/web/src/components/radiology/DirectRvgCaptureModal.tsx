@@ -334,17 +334,6 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 		}
 	};
 
-	// Load source image into memory and paint canvas with filters
-	useEffect(() => {
-		const img = new Image();
-		img.crossOrigin = "anonymous";
-		img.src = capturedImage;
-		img.onload = () => {
-			imageSourceRef.current = img;
-			applyCanvasFilters();
-		};
-	}, [capturedImage]);
-
 	const applyCanvasFilters = useCallback(() => {
 		const canvas = canvasRef.current;
 		const img = imageSourceRef.current;
@@ -358,6 +347,27 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 	}, []);
+
+	// Load source image into memory and paint canvas with filters
+	useEffect(() => {
+		const img = new Image();
+		img.crossOrigin = "anonymous";
+		img.src = capturedImage;
+		img.onload = () => {
+			imageSourceRef.current = img;
+			applyCanvasFilters();
+		};
+
+		return () => {
+			img.onload = null;
+			img.src = "";
+			imageSourceRef.current = null;
+			if (canvasRef.current) {
+				canvasRef.current.width = 0;
+				canvasRef.current.height = 0;
+			}
+		};
+	}, [capturedImage, applyCanvasFilters]);
 
 	// Reset transformation
 	const handleResetTransform = () => {

@@ -847,7 +847,9 @@ export function extractTimestampFromUuidV7(id?: string | null): Date | null {
 				return new Date(ms);
 			}
 		}
-	} catch {}
+	} catch (uuidErr: unknown) {
+		console.warn("[patientHistoryMemory] Failed to extract timestamp from UUIDv7:", uuidErr);
+	}
 	return null;
 }
 

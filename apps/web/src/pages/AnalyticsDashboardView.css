@@ -36,17 +36,26 @@
 .analytics-section-tabs {
 	display: flex;
 	align-items: center;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
+	overflow-x: auto;
+	scrollbar-width: none;
 	gap: 6px;
 	padding-bottom: 6px;
 	margin-bottom: 8px;
 	border-bottom: 1px solid var(--line);
+	-webkit-overflow-scrolling: touch;
+}
+
+.analytics-section-tabs::-webkit-scrollbar {
+	display: none;
 }
 
 .analytics-section-tabs button {
 	height: 34px;
 	min-height: 34px;
 	box-sizing: border-box;
+	white-space: nowrap;
+	flex-shrink: 0;
 }
 
 .analytics-header-title-group {
@@ -130,7 +139,7 @@
 [data-theme="dark"] .analytics-segmented-btn--active,
 [data-theme="night"] .analytics-segmented-btn--active {
 	background: var(--teal);
-	color: var(--paper);
+	color: var(--on-teal, #ffffff) !important;
 }
 
 .analytics-segmented-btn--active:hover {
@@ -141,7 +150,7 @@
 [data-theme="dark"] .analytics-segmented-btn--active:hover,
 [data-theme="night"] .analytics-segmented-btn--active:hover {
 	background: var(--teal);
-	color: var(--paper);
+	color: var(--on-teal, #ffffff) !important;
 }
 
 /* ─── KPI Density Grid ─────────────────────────────────────── */
@@ -276,7 +285,7 @@
 	border-radius: 6px;
 	font-size: 0.75rem;
 	font-weight: 500;
-	color: var(--muted);
+	color: var(--ink-2, var(--ink));
 	background: var(--paper-soft);
 	border: 1px solid var(--line);
 	cursor: pointer;
@@ -288,6 +297,27 @@
 	color: var(--ink);
 	border-color: var(--teal);
 	background: var(--paper);
+}
+
+[data-theme="dark"] .glass-action-btn,
+[data-theme="night"] .glass-action-btn {
+	color: var(--ink);
+	background: var(--paper-soft);
+	border-color: var(--line-strong, var(--line));
+}
+
+.analytics-dropdown-menu {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .analytics-dropdown-menu,
+[data-theme="night"] .analytics-dropdown-menu {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line-strong, #334155);
+	box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6);
 }
 
 .analytics-chart-container,
@@ -325,12 +355,17 @@
 }
 
 .analytics-leaderboard-table th {
-	color: var(--muted);
-	font-weight: 600;
+	color: var(--ink-muted, var(--muted));
+	font-weight: 700;
 	font-size: 0.75rem;
 	text-transform: uppercase;
 	letter-spacing: 0.03em;
 	background: var(--paper-soft);
+}
+
+[data-theme="dark"] .analytics-leaderboard-table th,
+[data-theme="night"] .analytics-leaderboard-table th {
+	color: var(--ink-2, #e2e8f0);
 }
 
 .analytics-leaderboard-table td {

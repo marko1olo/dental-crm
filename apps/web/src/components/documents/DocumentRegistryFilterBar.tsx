@@ -40,8 +40,9 @@ export function DocumentRegistryFilterBar({
 	onSelectCategoryTab,
 	categoryCounts,
 }: DocumentRegistryFilterBarProps): React.JSX.Element {
+	const safeQuery = searchQuery ?? "";
 	const hasActiveFilters =
-		searchQuery.trim().length > 0 ||
+		safeQuery.trim().length > 0 ||
 		statusFilter !== "all" ||
 		edsFilter !== "all" ||
 		kindFilter !== "all" ||
@@ -60,11 +61,11 @@ export function DocumentRegistryFilterBar({
 						type="text"
 						className="document-search-input"
 						placeholder="Быстрый поиск (ФИО, № карты, врач, статус ЭЦП, чек, ИНН)..."
-						value={searchQuery}
+						value={safeQuery}
 						onChange={(e) => onSearchChange(e.target.value)}
 						aria-label="Поиск по документам"
 					/>
-					{searchQuery.length > 0 && (
+					{safeQuery.length > 0 && (
 						<button
 							type="button"
 							className="document-search-clear-btn"

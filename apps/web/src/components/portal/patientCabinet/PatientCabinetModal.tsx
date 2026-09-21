@@ -349,10 +349,16 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	useEffect(() => {
 		if (otpCountdown <= 0) return;
 		const timer = setInterval(() => {
-			setOtpCountdown((prev) => Math.max(0, prev - 1));
+			setOtpCountdown((prev) => {
+				if (prev <= 1) {
+					clearInterval(timer);
+					return 0;
+				}
+				return prev - 1;
+			});
 		}, 1000);
 		return () => clearInterval(timer);
-	}, [otpCountdown]);
+	}, [otpCountdown > 0]);
 
 	// Esc для закрытия
 	useEffect(() => {

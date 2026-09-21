@@ -288,7 +288,7 @@
 /* Patients Main Grid (Master-Detail) */
 .patients-main-grid {
 	display: grid;
-	grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+	grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
 	gap: 1.25rem;
 	align-items: start;
 	width: 100%;
@@ -297,7 +297,7 @@
 
 @media (min-width: 1440px) {
 	.patients-main-grid {
-		grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
+		grid-template-columns: minmax(340px, 420px) minmax(0, 1fr);
 	}
 }
 

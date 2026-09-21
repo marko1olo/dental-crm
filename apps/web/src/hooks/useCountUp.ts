@@ -2,30 +2,25 @@ import { useEffect, useRef, useState } from "react";
 
 export function useCountUp(endValue: number, duration: number = 1000) {
 	const [value, setValue] = useState(endValue);
-	const startValueRef = useRef(endValue);
-	const startTimeRef = useRef<number | null>(null);
+	const currentValueRef = useRef(endValue);
+	currentValueRef.current = value;
 
 	useEffect(() => {
-		if (endValue === startValueRef.current) return;
+		if (endValue === currentValueRef.current) return;
 
-		startValueRef.current = value;
-		startTimeRef.current = null;
-
-		let animationFrameId: number;
+		const startVal = currentValueRef.current;
+		let startTime: number | null = null;
+		let animationFrameId: number | null = null;
 
 		const step = (timestamp: number) => {
-			if (!startTimeRef.current) startTimeRef.current = timestamp;
-			const progress = Math.min(
-				(timestamp - startTimeRef.current) / duration,
-				1,
-			);
+			if (startTime === null) startTime = timestamp;
+			const progress = Math.min((timestamp - startTime) / duration, 1);
 
 			// easeOutExpo
 			const easeOut = progress === 1 ? 1 : 1 - 2 ** (-10 * progress);
+			const nextValue = startVal + (endValue - startVal) * easeOut;
 
-			setValue(
-				startValueRef.current + (endValue - startValueRef.current) * easeOut,
-			);
+			setValue(nextValue);
 
 			if (progress < 1) {
 				animationFrameId = requestAnimationFrame(step);
@@ -36,8 +31,12 @@ export function useCountUp(endValue: number, duration: number = 1000) {
 
 		animationFrameId = requestAnimationFrame(step);
 
-		return () => cancelAnimationFrame(animationFrameId);
-	}, [endValue, duration, value]);
+		return () => {
+			if (animationFrameId !== null) {
+				cancelAnimationFrame(animationFrameId);
+			}
+		};
+	}, [endValue, duration]);
 
 	return value;
 }

@@ -216,7 +216,17 @@ export function safeLocalStorageSetItem(key: string, value: string, immediate = 
 	if (diskFlushTimer === null) {
 		diskFlushTimer = setTimeout(() => {
 			diskFlushTimer = null;
-			flushPendingStorageWrites();
+			if (
+				typeof window !== "undefined" &&
+				typeof (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback === "function"
+			) {
+				(window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback(
+					() => flushPendingStorageWrites(),
+					{ timeout: 1000 },
+				);
+			} else {
+				flushPendingStorageWrites();
+			}
 		}, DISK_FLUSH_DEBOUNCE_MS);
 	}
 	return true;
@@ -307,7 +317,17 @@ export function safeSessionStorageSetItem(key: string, value: string, immediate 
 	if (sessionDiskFlushTimer === null) {
 		sessionDiskFlushTimer = setTimeout(() => {
 			sessionDiskFlushTimer = null;
-			flushPendingSessionStorageWrites();
+			if (
+				typeof window !== "undefined" &&
+				typeof (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback === "function"
+			) {
+				(window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback(
+					() => flushPendingSessionStorageWrites(),
+					{ timeout: 1000 },
+				);
+			} else {
+				flushPendingSessionStorageWrites();
+			}
 		}, DISK_FLUSH_DEBOUNCE_MS);
 	}
 	return true;
@@ -350,5 +370,44 @@ export function safeLocalStorageSetJson(
 		return safeLocalStorageSetItem(key, JSON.stringify(value), immediate);
 	} catch {
 		return false;
+	}
+}
+
+/**
+ * Асинхронный неблокирующий парсинг больших JSON-строк (>32KB).
+ * Для объемных сериализованных структур (каталоги 804н, история приемов, дампы)
+ * задействует нативный поток декодирования браузера через Response.prototype.json(),
+ * предотвращая просадку FPS и блокировку главного потока на 2-ядерных CPU картофельных ноутбуков.
+ */
+export async function parseJsonNonBlocking<T = unknown>(raw: string): Promise<T> {
+	if (!raw) return null as T;
+	// Для компактных строк синхронный JSON.parse быстрее, так как не имеет оверхеда Stream/Promise
+	if (raw.length < 32768) {
+		return JSON.parse(raw) as T;
+	}
+	if (typeof Response !== "undefined") {
+		try {
+			return (await new Response(raw).json()) as T;
+		} catch {
+			return JSON.parse(raw) as T;
+		}
+	}
+	return JSON.parse(raw) as T;
+}
+
+/**
+ * Асинхронное чтение JSON из safeLocalStorage с фоновым парсингом больших объемов.
+ */
+export async function safeLocalStorageGetJsonAsync<T>(
+	key: string,
+	defaultValue: T,
+): Promise<T> {
+	const raw = safeLocalStorageGetItem(key);
+	if (!raw) return defaultValue;
+	try {
+		const parsed = await parseJsonNonBlocking<T>(raw);
+		return parsed ?? defaultValue;
+	} catch {
+		return defaultValue;
 	}
 }

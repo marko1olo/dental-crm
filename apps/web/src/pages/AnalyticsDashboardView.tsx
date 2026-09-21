@@ -755,12 +755,12 @@ export function AnalyticsDashboardView() {
 											</button>
 										</div>
 									</div>
-									<div className="analytics-chart-container">
+									<div className="analytics-chart-container pb-16 sm:pb-4 mb-4 sm:mb-0">
 										{(data?.cohortLtvJson ?? []).length > 0 ? (
 											<ResponsiveContainer width="100%" height="100%">
 												<AreaChart
 													data={data?.cohortLtvJson as CohortChartRow[]}
-													margin={{ top: 10, right: 15, left: 0, bottom: 0 }}
+													margin={{ top: 10, right: 15, left: 0, bottom: 15 }}
 												>
 													<defs>
 														<linearGradient

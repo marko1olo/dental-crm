@@ -909,8 +909,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									>
 										{patient.fullName}
 									</h3>
-									<p className="truncate">
-										{patient.phone ?? "Телефон не указан"}
+									<p className="text-xs text-[var(--muted)] font-mono select-all truncate">
+										{patient.phone ? formatPhoneNumber(patient.phone) : "Телефон не указан"}
 									</p>
 									{patient.notes ? (
 										<p

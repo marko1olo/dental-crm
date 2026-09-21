@@ -237,6 +237,8 @@ html.dark .document-operator-requisites-missing strong {
 
 [data-theme="dark"] .document-package-patient-card,
 [data-theme="night"] .document-package-patient-card,
+[data-theme="ocean"] .document-package-patient-card,
+[data-theme="cyber_xray"] .document-package-patient-card,
 [data-theme="oled"] .document-package-patient-card,
 html.dark .document-package-patient-card {
 	background: var(--paper-soft, #1e293b);
@@ -245,6 +247,8 @@ html.dark .document-package-patient-card {
 
 [data-theme="dark"] .document-package-item-card,
 [data-theme="night"] .document-package-item-card,
+[data-theme="ocean"] .document-package-item-card,
+[data-theme="cyber_xray"] .document-package-item-card,
 [data-theme="oled"] .document-package-item-card,
 html.dark .document-package-item-card {
 	background: var(--paper-strong, #0f172a);
@@ -253,6 +257,8 @@ html.dark .document-package-item-card {
 
 [data-theme="dark"] .document-package-item-title,
 [data-theme="night"] .document-package-item-title,
+[data-theme="ocean"] .document-package-item-title,
+[data-theme="cyber_xray"] .document-package-item-title,
 [data-theme="oled"] .document-package-item-title,
 html.dark .document-package-item-title {
 	color: var(--ink, #f8fafc);
@@ -260,9 +266,17 @@ html.dark .document-package-item-title {
 
 [data-theme="dark"] .document-package-item-sub,
 [data-theme="night"] .document-package-item-sub,
+[data-theme="ocean"] .document-package-item-sub,
+[data-theme="cyber_xray"] .document-package-item-sub,
 [data-theme="oled"] .document-package-item-sub,
 html.dark .document-package-item-sub {
 	color: var(--muted, #94a3b8);
+}
+
+/* --- Контрастность плейсхолдеров в Cyber X-Ray и темных темах (WCAG AA >= 4.5:1) --- */
+:is([data-theme="cyber_xray"], [data-theme="dark"], [data-theme="night"], [data-theme="ocean"]) textarea::placeholder,
+:is([data-theme="cyber_xray"], [data-theme="dark"], [data-theme="night"], [data-theme="ocean"]) input::placeholder {
+	color: #94a3b8 !important; /* slate-400: идеальный контраст >= 4.5:1 на темных фонах #081026 / #030712 */
 }
 
 /* --- 10. Автоматическая контрастность текста на бирюзовых заливках (WCAG AAA) ---
@@ -270,10 +284,10 @@ html.dark .document-package-item-sub {
  * класс .text-white даёт нечитаемый белый текст на ярком бирюзовом/циановом фоне.
  * Использование var(--on-teal) гарантирует идеальный контраст >= 7:1 во всех 10 темах.
  */
-:is([data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="emerald"], [data-theme="contrast"], html.dark)
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], [data-theme="contrast"], html.dark)
 	:is([class*="bg-[var(--teal"], [class*="bg-teal-"], .primary-button, .quick-chip.active):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *)
 	:is(.text-white, [class*="text-white"]),
-:is([data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="emerald"], [data-theme="contrast"], html.dark)
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], [data-theme="contrast"], html.dark)
 	:is([class*="bg-[var(--teal"].text-white, [class*="bg-teal-"].text-white, .primary-button.text-white):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *) {
 	color: var(--on-teal) !important;
 }

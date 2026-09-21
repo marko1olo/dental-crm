@@ -51,8 +51,10 @@ export interface StomxVariableContext {
 		email?: string | null;
 		address?: string | null;
 		registrationAddress?: string | null;
+		passport?: string | null;
 		passportSeries?: string | null;
 		passportNumber?: string | null;
+		passportSeriesNumber?: string | null;
 		passportIssuedBy?: string | null;
 		passportIssuedDate?: string | null;
 		passportDepartmentCode?: string | null;
@@ -492,14 +494,14 @@ export function resolveStomxVariableToken(
 			return pt?.age ? String(pt.age) : fallback;
 		case "Пациент.Паспорт":
 			return (
-				(pt as any)?.passportSeriesNumber?.trim() ||
-				(pt as any)?.passport?.trim() ||
+				pt?.passportSeriesNumber?.trim() ||
+				pt?.passport?.trim() ||
 				(pt?.passportSeries && pt?.passportNumber ? `${pt.passportSeries} ${pt.passportNumber}` : "") ||
 				pt?.passportSeries?.trim() ||
 				fallback
 			);
 		case "Пациент.ПаспортСерия":
-			return pt?.passportSeries?.trim() || (pt as any)?.passportSeriesNumber?.trim() || fallback;
+			return pt?.passportSeries?.trim() || pt?.passportSeriesNumber?.trim() || fallback;
 		case "Пациент.ПаспортНомер":
 			return pt?.passportNumber?.trim() || fallback;
 		case "Пациент.ПаспортКемВыдан":
@@ -509,7 +511,7 @@ export function resolveStomxVariableToken(
 		case "Пациент.ПаспортКодПодразделения":
 			return pt?.passportDepartmentCode?.trim() || fallback;
 		case "Пациент.ПаспортДанные": {
-			const direct = (pt as any)?.passportSeriesNumber?.trim() || (pt as any)?.passport?.trim();
+			const direct = pt?.passportSeriesNumber?.trim() || pt?.passport?.trim();
 			if (direct) return direct;
 			if (pt?.passportSeries && pt?.passportNumber) {
 				const issued = pt.passportIssuedBy ? `, выдан ${pt.passportIssuedBy}` : "";

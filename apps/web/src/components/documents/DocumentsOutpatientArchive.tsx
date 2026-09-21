@@ -1,5 +1,4 @@
-import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, memo } from "react";
 import {
 	CheckCircle2,
 	Clock,
@@ -32,7 +31,7 @@ interface OutpatientDocumentCardProps {
 	onDownloadHtml?: (() => void) | undefined;
 }
 
-const OutpatientDocumentCard = React.memo<OutpatientDocumentCardProps>(({
+const OutpatientDocumentCard = memo<OutpatientDocumentCardProps>(({
 	doc,
 	isDropdownOpen,
 	onToggleDropdown,

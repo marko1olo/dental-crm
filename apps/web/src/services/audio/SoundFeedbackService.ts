@@ -192,7 +192,9 @@ export class SoundFeedbackService {
 		if (typeof window !== "undefined" && typeof navigator !== "undefined" && "vibrate" in navigator) {
 			try {
 				navigator.vibrate(pattern);
-			} catch {}
+			} catch (err: unknown) {
+				console.warn("[SoundFeedbackService] navigator.vibrate failed:", err);
+			}
 		}
 	}
 
@@ -593,8 +595,12 @@ export class SoundFeedbackService {
 		}
 		if (this.audioContext) {
 			try {
-				this.audioContext.close().catch(() => {});
-			} catch {}
+				this.audioContext.close().catch((err: unknown) => {
+					console.warn("[SoundFeedbackService] AudioContext close async rejection:", err);
+				});
+			} catch (err: unknown) {
+				console.warn("[SoundFeedbackService] AudioContext close failed:", err);
+			}
 			this.audioContext = null;
 		}
 	}

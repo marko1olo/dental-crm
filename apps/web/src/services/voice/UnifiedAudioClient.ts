@@ -128,6 +128,7 @@ export class UnifiedAudioClient {
 	private isReconnecting = false;
 	private reconnectAttempts = 0;
 	private reconnectTimer: NodeJS.Timeout | null = null;
+	private wsConnectTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
 	constructor(options: UnifiedAudioClientOptions = {}) {
 		this.options = {
@@ -439,7 +440,12 @@ export class UnifiedAudioClient {
 				const ws = new WebSocket(wsUrl);
 				this.ws = ws;
 
-				const timeoutTimer = setTimeout(() => {
+				if (this.wsConnectTimeoutTimer) {
+					clearTimeout(this.wsConnectTimeoutTimer);
+					this.wsConnectTimeoutTimer = null;
+				}
+				this.wsConnectTimeoutTimer = setTimeout(() => {
+					this.wsConnectTimeoutTimer = null;
 					if (ws.readyState !== WebSocket.OPEN) {
 						ws.close();
 						resolve(false);
@@ -447,7 +453,10 @@ export class UnifiedAudioClient {
 				}, 4000);
 
 				ws.onopen = () => {
-					clearTimeout(timeoutTimer);
+					if (this.wsConnectTimeoutTimer) {
+						clearTimeout(this.wsConnectTimeoutTimer);
+						this.wsConnectTimeoutTimer = null;
+					}
 					// Отправка конфигурации сессии
 					ws.send(
 						JSON.stringify({
@@ -507,7 +516,10 @@ export class UnifiedAudioClient {
 				};
 
 				ws.onerror = (err) => {
-					clearTimeout(timeoutTimer);
+					if (this.wsConnectTimeoutTimer) {
+						clearTimeout(this.wsConnectTimeoutTimer);
+						this.wsConnectTimeoutTimer = null;
+					}
 					console.warn("Gemini Live WebSocket error:", err);
 					if (
 						this.state === "listening" &&
@@ -520,6 +532,10 @@ export class UnifiedAudioClient {
 				};
 
 				ws.onclose = (event) => {
+					if (this.wsConnectTimeoutTimer) {
+						clearTimeout(this.wsConnectTimeoutTimer);
+						this.wsConnectTimeoutTimer = null;
+					}
 					if (
 						this.state === "listening" &&
 						this.currentMode === "gemini_live" &&
@@ -586,7 +602,9 @@ export class UnifiedAudioClient {
 				this.ws.onerror = null;
 				this.ws.onclose = null;
 				this.ws.close();
-			} catch {}
+			} catch (err: unknown) {
+				console.warn("[UnifiedAudioClient] Error closing broken WebSocket during reconnect:", err);
+			}
 			this.ws = null;
 		}
 
@@ -688,7 +706,9 @@ export class UnifiedAudioClient {
 				if (this.state === "listening" && this.currentMode === "browser_speech") {
 					try {
 						recognition.start();
-					} catch {}
+					} catch (err: unknown) {
+						console.warn("[UnifiedAudioClient] Error restarting SpeechRecognition onend:", err);
+					}
 				}
 			};
 
@@ -866,6 +886,9 @@ export class UnifiedAudioClient {
 					})
 					.then((rec) => {
 						this.emitOfflineRecordSaved(rec);
+					})
+					.catch((queueErr) => {
+						console.warn("Failed to save transcription segment to offline queue:", queueErr);
 					});
 			} catch (queueErr) {
 				console.warn("Failed to save transcription segment to offline queue:", queueErr);
@@ -912,6 +935,10 @@ export class UnifiedAudioClient {
 			clearTimeout(this.reconnectTimer);
 			this.reconnectTimer = null;
 		}
+		if (this.wsConnectTimeoutTimer) {
+			clearTimeout(this.wsConnectTimeoutTimer);
+			this.wsConnectTimeoutTimer = null;
+		}
 		this.isReconnecting = false;
 		this.reconnectAttempts = 0;
 
@@ -925,7 +952,9 @@ export class UnifiedAudioClient {
 					this.ws.send(JSON.stringify({ type: "session_close" }));
 				}
 				this.ws.close();
-			} catch {}
+			} catch (err: unknown) {
+				console.warn("[UnifiedAudioClient] Error closing WebSocket on stop:", err);
+			}
 			this.ws = null;
 		}
 
@@ -935,7 +964,9 @@ export class UnifiedAudioClient {
 				this.browserRecognition.onerror = null;
 				this.browserRecognition.onend = null;
 				this.browserRecognition.stop();
-			} catch {}
+			} catch (err: unknown) {
+				console.warn("[UnifiedAudioClient] Error stopping SpeechRecognition on stop:", err);
+			}
 			this.browserRecognition = null;
 		}
 	}

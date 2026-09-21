@@ -1,4 +1,5 @@
 import { Buffer } from "node:buffer";
+import { randomUUID } from "node:crypto";
 import WebSocket, { type ClientOptions } from "ws";
 import {
 	getWsProxyAgent,
@@ -63,7 +64,7 @@ export class GeminiLiveTranslateSession {
 			...options,
 		};
 		this.model = options.model || getGeminiLiveTranslateModel();
-		this.sessionId = `live-translate-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+		this.sessionId = `live-translate-${Date.now()}-${randomUUID().slice(0, 8)}`;
 	}
 
 	getState(): GeminiLiveTranslateSessionState {

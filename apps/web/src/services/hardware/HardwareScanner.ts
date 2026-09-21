@@ -115,7 +115,9 @@ export class HardwareScanner {
 						if (Array.isArray(available) && available.length > 0) {
 							supportedFormats = supportedFormats.filter((f) => available.includes(f));
 						}
-					} catch {}
+					} catch (formatErr: unknown) {
+						console.warn("[HardwareScanner] BarcodeDetector.getSupportedFormats failed:", formatErr);
+					}
 				}
 				this.barcodeDetectorInstance = new window.BarcodeDetector({
 					formats: supportedFormats.length > 0 ? supportedFormats : ["qr_code", "data_matrix", "code_128"],
@@ -294,14 +296,18 @@ export class HardwareScanner {
 				for (const track of stream.getTracks()) {
 					try {
 						track.stop();
-					} catch {}
+					} catch (trackErr: unknown) {
+						console.warn("[HardwareScanner] track.stop error:", trackErr);
+					}
 				}
 			}
 			this.activeMediaStream = null;
 			if (videoElement) {
 				try {
 					videoElement.srcObject = null;
-				} catch {}
+				} catch (elemErr: unknown) {
+					console.warn("[HardwareScanner] videoElement.srcObject clear error:", elemErr);
+				}
 			}
 			const code = this.classifyCameraErrorCode(playErr);
 			const errorMsg = this.classifyCameraError(playErr);
@@ -326,7 +332,9 @@ export class HardwareScanner {
 			for (const track of this.activeMediaStream.getTracks()) {
 				try {
 					track.stop();
-				} catch {}
+				} catch (trackErr: unknown) {
+					console.warn("[HardwareScanner] activeMediaStream track.stop error:", trackErr);
+				}
 			}
 			this.activeMediaStream = null;
 		}
@@ -334,7 +342,9 @@ export class HardwareScanner {
 		if (this.activeVideoElement) {
 			try {
 				this.activeVideoElement.srcObject = null;
-			} catch {}
+			} catch (elemErr: unknown) {
+				console.warn("[HardwareScanner] activeVideoElement.srcObject clear error:", elemErr);
+			}
 			this.activeVideoElement = null;
 		}
 

@@ -309,6 +309,51 @@ export default defineConfig({
 						normalizedId.includes("/node_modules/hammerjs")
 					)
 						return "cornerstone-vendor";
+					// Cornerstone3DViewer: тяжелый 3D WebGL просмотрщик КТ-снимков
+					if (
+						normalizedId.endsWith(
+							"/apps/web/src/components/dicom/Cornerstone3DViewer.tsx",
+						)
+					)
+						return "cornerstone-3d-viewer";
+					// PanoramicRendererWindow: тяжелая панорамная реконструкция зубной дуги
+					if (
+						normalizedId.endsWith(
+							"/apps/web/src/components/dicom/PanoramicRendererWindow.tsx",
+						)
+					)
+						return "panoramic-renderer";
+					// CbctMprWorkspace: фасад MPR рабочего пространства
+					if (
+						normalizedId.endsWith(
+							"/apps/web/src/components/dicom/CbctMprWorkspace.tsx",
+						)
+					)
+						return "cbct-mpr-workspace";
+					// DicomArchiveUploader: асинхронный загрузчик и парсер архивов срезов DICOM
+					if (
+						normalizedId.endsWith(
+							"/apps/web/src/components/dicom/DicomArchiveUploader.tsx",
+						)
+					)
+						return "dicom-archive-uploader";
+					// DicomViewport: специализированный 2D/WebGL просмотрщик RVG/DICOM
+					if (
+						normalizedId.endsWith(
+							"/apps/web/src/components/imaging/DicomViewport.tsx",
+						)
+					)
+						return "dicom-viewport";
+					// rvgViewerEngine: калибровка, фильтры и математика измерений визиографа
+					if (
+						normalizedId.endsWith(
+							"/apps/web/src/components/imaging/rvgViewerEngine.ts",
+						)
+					)
+						return "rvg-viewer-engine";
+					// dicom-utils: утилиты костной плотности и FDI-маппинга
+					if (normalizedId.includes("/apps/web/src/utils/dicom/"))
+						return "dicom-utils";
 					if (normalizedId.includes("/apps/web/src/components/dicom/"))
 						return "dicom-components";
 					if (normalizedId.includes("/apps/web/src/components/imaging/"))
@@ -377,7 +422,10 @@ export default defineConfig({
 						return "react-vendor";
 					// lucide-react: векторные иконки интерфейса. Выделены в отдельный чанк,
 					// чтобы критический клинический путь (расписание, визит, карточка) стартовал < 1.5 сек.
-					if (normalizedId.includes("/node_modules/lucide-react"))
+					if (
+						normalizedId.includes("/node_modules/lucide-react") ||
+						normalizedId.includes("/node_modules/lucide")
+					)
 						return "lucide-vendor";
 					if (normalizedId.includes("/node_modules/framer-motion"))
 						return "motion-vendor";
@@ -390,9 +438,18 @@ export default defineConfig({
 						normalizedId.includes("/node_modules/three/") ||
 						normalizedId.includes("/node_modules/three") ||
 						normalizedId.includes("/node_modules/@types/three") ||
-						normalizedId.includes("/node_modules/three-stdlib")
+						normalizedId.includes("/node_modules/three-stdlib") ||
+						normalizedId.includes("/node_modules/@react-three/")
 					)
 						return "three-vendor";
+					// Библиотеки PDF, Canvas и графического экспорта документов (сохранение RAM для 2-ядерных CPU)
+					if (
+						normalizedId.includes("/node_modules/jspdf") ||
+						normalizedId.includes("/node_modules/pdfjs-dist") ||
+						normalizedId.includes("/node_modules/html2canvas") ||
+						normalizedId.includes("/node_modules/canvas")
+					)
+						return "pdf-canvas-vendor";
 					// date-fns и dayjs: календарная математика слотов расписания.
 					if (
 						normalizedId.includes("/node_modules/date-fns") ||
@@ -416,8 +473,7 @@ export default defineConfig({
 					// Изоляция аналитических панелей и графиков от основного бандла приёма врача
 					if (
 						normalizedId.includes("/apps/web/src/components/analytics/") ||
-						normalizedId.includes("/apps/web/src/pages/AnalyticsDashboardView") ||
-						normalizedId.endsWith("/apps/web/src/AnalyticsView.tsx")
+						normalizedId.includes("/apps/web/src/pages/AnalyticsDashboardView")
 					)
 						return "analytics-components";
 					// Изоляция телефонии и софтфона от основного бандла рабочего места
@@ -439,6 +495,17 @@ export default defineConfig({
 						return "onboarding-components";
 					if (normalizedId.includes("/apps/web/src/components/doctor-portal/"))
 						return "doctor-portal";
+					if (normalizedId.includes("/apps/web/src/components/egisz/"))
+						return "egisz-components";
+					if (
+						normalizedId.includes("/apps/web/src/components/marketing/") ||
+						normalizedId.endsWith("/apps/web/src/MarketingView.tsx")
+					)
+						return "marketing-components";
+					if (normalizedId.includes("/apps/web/src/components/copilot/"))
+						return "copilot-components";
+					if (normalizedId.includes("/apps/web/src/components/diagnostics/"))
+						return "diagnostics-components";
 					if (
 						normalizedId.includes("/packages/shared") ||
 						normalizedId.includes("/node_modules/@dental/shared/")

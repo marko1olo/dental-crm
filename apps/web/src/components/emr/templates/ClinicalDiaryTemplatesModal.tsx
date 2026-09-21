@@ -252,10 +252,13 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 		const handleCopy = useCallback(() => {
 			const textToCopy = editedSoapText || synthesized.unifiedSoapText;
 			if (typeof navigator !== "undefined" && navigator.clipboard) {
-				navigator.clipboard.writeText(textToCopy).then(() => {
-					setIsCopied(true);
-					setTimeout(() => setIsCopied(false), 2000);
-				});
+				navigator.clipboard
+					.writeText(textToCopy)
+					.then(() => {
+						setIsCopied(true);
+						setTimeout(() => setIsCopied(false), 2000);
+					})
+					.catch(() => {});
 			}
 		}, [editedSoapText, synthesized.unifiedSoapText]);
 

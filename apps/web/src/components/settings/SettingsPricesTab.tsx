@@ -500,7 +500,7 @@ export function SettingsPricesTab() {
 						</div>
 
 						{/* 1-Click Fast Statutory 804n Code Chips */}
-						<div className="flex items-center gap-1.5 overflow-x-auto py-2 flex-nowrap scrollbar-thin">
+						<div className="w-full flex items-center gap-1.5 overflow-x-auto py-2 flex-nowrap scrollbar-thin">
 							<span className="text-xs font-bold text-[var(--muted)] shrink-0">
 								Номенклатура 804н (1-клик):
 							</span>

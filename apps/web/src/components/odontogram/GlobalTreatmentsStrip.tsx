@@ -61,8 +61,8 @@ export const GlobalTreatmentsStrip: React.FC<GlobalTreatmentsStripProps> = ({
 	onQuickAdd,
 	readOnly = false,
 }) => {
-	const globals = treatments.filter(
-		(t) => t.scope === "global_mouth" || t.scope === "global_arch",
+	const globals = (treatments ?? []).filter(
+		(t) => t?.scope === "global_mouth" || t?.scope === "global_arch",
 	);
 
 	const handleMouseEnter = (tr: GlobalTreatmentItem) => {
@@ -101,7 +101,7 @@ export const GlobalTreatmentsStrip: React.FC<GlobalTreatmentsStripProps> = ({
 				</span>
 			) : (
 				globals.map((tr) => {
-					const isHigh = highlightedIds.includes(tr.id);
+					const isHigh = (Array.isArray(highlightedIds) ? highlightedIds : []).includes(tr.id);
 					const isPlanned = tr.status === "planned";
 					return (
 						<button

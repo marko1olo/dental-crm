@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import {
 	ALL_DEFAULT_TEMPLATES_BY_ALIAS,
 	ALL_DOCUMENT_TEMPLATE_VARIABLES,
@@ -608,7 +609,7 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 				appointment: appointmentContextData,
 				currentDate: new Date(),
 				document: {
-					number: `БЛ-${Math.floor(1000 + Math.random() * 9000)}`,
+					number: `БЛ-${randomInt(1000, 10000)}`,
 					createdAt: new Date(),
 				},
 				...(body.overrides as Partial<TemplateExecutionContext>),

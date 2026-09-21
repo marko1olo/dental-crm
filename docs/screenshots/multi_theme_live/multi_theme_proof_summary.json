@@ -1,0 +1,776 @@
+{
+  "total": 75,
+  "uniqueHashes": true,
+  "allAbove40k": true,
+  "viewports": [
+    "Desktop 1440x900",
+    "Compact Laptop 1280x720",
+    "Mobile 390x844"
+  ],
+  "themes": [
+    "Light",
+    "Dark",
+    "Sakura",
+    "Cyber X-Ray",
+    "Ocean"
+  ],
+  "screens": [
+    "Расписание",
+    "ЭМК 043/у",
+    "Одонтограмма",
+    "Касса 54-ФЗ",
+    "Документы"
+  ],
+  "files": [
+    {
+      "fileName": "01_schedule_desktop_light.png",
+      "view": "Расписание",
+      "viewport": "Desktop 1440x900",
+      "theme": "Light",
+      "sizeBytes": 289512,
+      "sizeKb": "282.7",
+      "md5": "73c0c14a6120aaaacebe6414c1d25cc5",
+      "passSize": true
+    },
+    {
+      "fileName": "02_schedule_desktop_dark.png",
+      "view": "Расписание",
+      "viewport": "Desktop 1440x900",
+      "theme": "Dark",
+      "sizeBytes": 291836,
+      "sizeKb": "285.0",
+      "md5": "8c205d27b2eb351cec920fede4ca6348",
+      "passSize": true
+    },
+    {
+      "fileName": "03_schedule_desktop_sakura.png",
+      "view": "Расписание",
+      "viewport": "Desktop 1440x900",
+      "theme": "Sakura",
+      "sizeBytes": 317952,
+      "sizeKb": "310.5",
+      "md5": "8f9f057f1991d1ced2283e649b9d3d0e",
+      "passSize": true
+    },
+    {
+      "fileName": "04_schedule_desktop_cyber_xray.png",
+      "view": "Расписание",
+      "viewport": "Desktop 1440x900",
+      "theme": "Cyber X-Ray",
+      "sizeBytes": 300353,
+      "sizeKb": "293.3",
+      "md5": "e37f18e6f8d4495e95664de1da100703",
+      "passSize": true
+    },
+    {
+      "fileName": "05_schedule_desktop_ocean.png",
+      "view": "Расписание",
+      "viewport": "Desktop 1440x900",
+      "theme": "Ocean",
+      "sizeBytes": 297174,
+      "sizeKb": "290.2",
+      "md5": "5e845f4c2978ef05334c3f8102dbdbc2",
+      "passSize": true
+    },
+    {
+      "fileName": "06_emk043_desktop_light.png",
+      "view": "ЭМК 043/у",
+      "viewport": "Desktop 1440x900",
+      "theme": "Light",
+      "sizeBytes": 313809,
+      "sizeKb": "306.5",
+      "md5": "507d6f29636d9ce3e315c64b67654d48",
+      "passSize": true
+    },
+    {
+      "fileName": "07_emk043_desktop_dark.png",
+      "view": "ЭМК 043/у",
+      "viewport": "Desktop 1440x900",
+      "theme": "Dark",
+      "sizeBytes": 314503,
+      "sizeKb": "307.1",
+      "md5": "32c761084c87106026014e88c38ea0fe",
+      "passSize": true
+    },
+    {
+      "fileName": "08_emk043_desktop_sakura.png",
+      "view": "ЭМК 043/у",
+      "viewport": "Desktop 1440x900",
+      "theme": "Sakura",
+      "sizeBytes": 319523,
+      "sizeKb": "312.0",
+      "md5": "78b64e8f053a95a0323f4929311e0af8",
+      "passSize": true
+    },
+    {
+      "fileName": "09_emk043_desktop_cyber_xray.png",
+      "view": "ЭМК 043/у",
+      "viewport": "Desktop 1440x900",
+      "theme": "Cyber X-Ray",
+      "sizeBytes": 313262,
+      "sizeKb": "305.9",
+      "md5": "5222caeb2e301291edc5aabe7beefe2b",
+      "passSize": true
+    },
+    {
+      "fileName": "10_emk043_desktop_ocean.png",
+      "view": "ЭМК 043/у",
+      "viewport": "Desktop 1440x900",
+      "theme": "Ocean",
+      "sizeBytes": 319001,
+      "sizeKb": "311.5",
+      "md5": "5f3cb5521d4c5a66a8997e86ef16222b",
+      "passSize": true
+    },
+    {
+      "fileName": "11_odontogram_desktop_light.png",
+      "view": "Одонтограмма",
+      "viewport": "Desktop 1440x900",
+      "theme": "Light",
+      "sizeBytes": 657540,
+      "sizeKb": "642.1",
+      "md5": "6f140d17ebec20c3913e7a57348609b7",
+      "passSize": true
+    },
+    {
+      "fileName": "12_odontogram_desktop_dark.png",
+      "view": "Одонтограмма",
+      "viewport": "Desktop 1440x900",
+      "theme": "Dark",
+      "sizeBytes": 655531,
+      "sizeKb": "640.2",
+      "md5": "b4d57d29fb5d46ec2daeab955aa05f80",
+      "passSize": true
+    },
+    {
+      "fileName": "13_odontogram_desktop_sakura.png",
+      "view": "Одонтограмма",
+      "viewport": "Desktop 1440x900",
+      "theme": "Sakura",
+      "sizeBytes": 653846,
+      "sizeKb": "638.5",
+      "md5": "ed889626777ebd5550fc9584d3bcba27",
+      "passSize": true
+    },
+    {
+      "fileName": "14_odontogram_desktop_cyber_xray.png",
+      "view": "Одонтограмма",
+      "viewport": "Desktop 1440x900",
+      "theme": "Cyber X-Ray",
+      "sizeBytes": 659953,
+      "sizeKb": "644.5",
+      "md5": "abbcf265b6597a399f231be22e67f365",
+      "passSize": true
+    },
+    {
+      "fileName": "15_odontogram_desktop_ocean.png",
+      "view": "Одонтограмма",
+      "viewport": "Desktop 1440x900",
+      "theme": "Ocean",
+      "sizeBytes": 660358,
+      "sizeKb": "644.9",
+      "md5": "ac127437e5b556307219fd2c29b0b250",
+      "passSize": true
+    },
+    {
+      "fileName": "16_finance_desktop_light.png",
+      "view": "Касса 54-ФЗ",
+      "viewport": "Desktop 1440x900",
+      "theme": "Light",
+      "sizeBytes": 310291,
+      "sizeKb": "303.0",
+      "md5": "316cbbc1146b880e185c80f3d0790663",
+      "passSize": true
+    },
+    {
+      "fileName": "17_finance_desktop_dark.png",
+      "view": "Касса 54-ФЗ",
+      "viewport": "Desktop 1440x900",
+      "theme": "Dark",
+      "sizeBytes": 306014,
+      "sizeKb": "298.8",
+      "md5": "7737ccda31e9ab0a731df7ab3e900ef0",
+      "passSize": true
+    },
+    {
+      "fileName": "18_finance_desktop_sakura.png",
+      "view": "Касса 54-ФЗ",
+      "viewport": "Desktop 1440x900",
+      "theme": "Sakura",
+      "sizeBytes": 316823,
+      "sizeKb": "309.4",
+      "md5": "d5f4e912e289ad3766c15859845c0578",
+      "passSize": true
+    },
+    {
+      "fileName": "19_finance_desktop_cyber_xray.png",
+      "view": "Касса 54-ФЗ",
+      "viewport": "Desktop 1440x900",
+      "theme": "Cyber X-Ray",
+      "sizeBytes": 305886,
+      "sizeKb": "298.7",
+      "md5": "dcabfa5ce26e7e3f221ca1cbf09e3c8f",
+      "passSize": true
+    },
+    {
+      "fileName": "20_finance_desktop_ocean.png",
+      "view": "Касса 54-ФЗ",
+      "viewport": "Desktop 1440x900",
+      "theme": "Ocean",
+      "sizeBytes": 310893,
+      "sizeKb": "303.6",
+      "md5": "3595797286185fbe67102d0d8e6b3230",
+      "passSize": true
+    },
+    {
+      "fileName": "21_documents_desktop_light.png",
+      "view": "Документы",
+      "viewport": "Desktop 1440x900",
+      "theme": "Light",
+      "sizeBytes": 354046,
+      "sizeKb": "345.7",
+      "md5": "66cdc08108d9b7a849bb138130263065",
+      "passSize": true
+    },
+    {
+      "fileName": "22_documents_desktop_dark.png",
+      "view": "Документы",
+      "viewport": "Desktop 1440x900",
+      "theme": "Dark",
+      "sizeBytes": 353585,
+      "sizeKb": "345.3",
+      "md5": "ad63c772da22ff7a6e0e60fdc7c5ee5e",
+      "passSize": true
+    },
+    {
+      "fileName": "23_documents_desktop_sakura.png",
+      "view": "Документы",
+      "viewport": "Desktop 1440x900",
+      "theme": "Sakura",
+      "sizeBytes": 358690,
+      "sizeKb": "350.3",
+      "md5": "ca8e56d344e890541586adef9c28b9a2",
+      "passSize": true
+    },
+    {
+      "fileName": "24_documents_desktop_cyber_xray.png",
+      "view": "Документы",
+      "viewport": "Desktop 1440x900",
+      "theme": "Cyber X-Ray",
+      "sizeBytes": 350685,
+      "sizeKb": "342.5",
+      "md5": "50dd1ca7e8ce00d6ddc3192b9010eb35",
+      "passSize": true
+    },
+    {
+      "fileName": "25_documents_desktop_ocean.png",
+      "view": "Документы",
+      "viewport": "Desktop 1440x900",
+      "theme": "Ocean",
+      "sizeBytes": 357867,
+      "sizeKb": "349.5",
+      "md5": "31f3391fdb840a738990379b1c258603",
+      "passSize": true
+    },
+    {
+      "fileName": "26_schedule_laptop_light.png",
+      "view": "Расписание",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Light",
+      "sizeBytes": 244056,
+      "sizeKb": "238.3",
+      "md5": "a915b7b434f72893fc0dac1b0c4e88a0",
+      "passSize": true
+    },
+    {
+      "fileName": "27_schedule_laptop_dark.png",
+      "view": "Расписание",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Dark",
+      "sizeBytes": 247545,
+      "sizeKb": "241.7",
+      "md5": "beca310b30f279b121a0491816337e5b",
+      "passSize": true
+    },
+    {
+      "fileName": "28_schedule_laptop_sakura.png",
+      "view": "Расписание",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Sakura",
+      "sizeBytes": 263965,
+      "sizeKb": "257.8",
+      "md5": "b22cfb250a1a67cec9d29ea337787339",
+      "passSize": true
+    },
+    {
+      "fileName": "29_schedule_laptop_cyber_xray.png",
+      "view": "Расписание",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Cyber X-Ray",
+      "sizeBytes": 252694,
+      "sizeKb": "246.8",
+      "md5": "7094cbee1c9153255d63b933f8edfc8c",
+      "passSize": true
+    },
+    {
+      "fileName": "30_schedule_laptop_ocean.png",
+      "view": "Расписание",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Ocean",
+      "sizeBytes": 252071,
+      "sizeKb": "246.2",
+      "md5": "a5db98e2a17eb1ec6d46ed0ae04cf4f7",
+      "passSize": true
+    },
+    {
+      "fileName": "31_emk043_laptop_light.png",
+      "view": "ЭМК 043/у",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Light",
+      "sizeBytes": 263726,
+      "sizeKb": "257.5",
+      "md5": "64d9b08341d4332e8f22f54d686250c2",
+      "passSize": true
+    },
+    {
+      "fileName": "32_emk043_laptop_dark.png",
+      "view": "ЭМК 043/у",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Dark",
+      "sizeBytes": 266096,
+      "sizeKb": "259.9",
+      "md5": "61ccb126aecaaadb3717a93a9cf3c96f",
+      "passSize": true
+    },
+    {
+      "fileName": "33_emk043_laptop_sakura.png",
+      "view": "ЭМК 043/у",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Sakura",
+      "sizeBytes": 270643,
+      "sizeKb": "264.3",
+      "md5": "5fbf407053c7052e8cb0493b9fe3f5cb",
+      "passSize": true
+    },
+    {
+      "fileName": "34_emk043_laptop_cyber_xray.png",
+      "view": "ЭМК 043/у",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Cyber X-Ray",
+      "sizeBytes": 264707,
+      "sizeKb": "258.5",
+      "md5": "546945b816514c693af84971717caaaf",
+      "passSize": true
+    },
+    {
+      "fileName": "35_emk043_laptop_ocean.png",
+      "view": "ЭМК 043/у",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Ocean",
+      "sizeBytes": 270364,
+      "sizeKb": "264.0",
+      "md5": "2952b9192d5afb17f2f79eae2a70d8b1",
+      "passSize": true
+    },
+    {
+      "fileName": "36_odontogram_laptop_light.png",
+      "view": "Одонтограмма",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Light",
+      "sizeBytes": 411214,
+      "sizeKb": "401.6",
+      "md5": "0da5e9b2caa972a6e0c9cfeb2d1dbcb9",
+      "passSize": true
+    },
+    {
+      "fileName": "37_odontogram_laptop_dark.png",
+      "view": "Одонтограмма",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Dark",
+      "sizeBytes": 426349,
+      "sizeKb": "416.4",
+      "md5": "d3661230e514f71b68fa0c6cbbc16d48",
+      "passSize": true
+    },
+    {
+      "fileName": "38_odontogram_laptop_sakura.png",
+      "view": "Одонтограмма",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Sakura",
+      "sizeBytes": 432235,
+      "sizeKb": "422.1",
+      "md5": "fca319bcd3f61fcd3412792367ec7001",
+      "passSize": true
+    },
+    {
+      "fileName": "39_odontogram_laptop_cyber_xray.png",
+      "view": "Одонтограмма",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Cyber X-Ray",
+      "sizeBytes": 431223,
+      "sizeKb": "421.1",
+      "md5": "20acb1b8bdbb811bfa6d4df6e8fb5471",
+      "passSize": true
+    },
+    {
+      "fileName": "40_odontogram_laptop_ocean.png",
+      "view": "Одонтограмма",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Ocean",
+      "sizeBytes": 432995,
+      "sizeKb": "422.8",
+      "md5": "f37347b90576d667747a5ce23b8f53c4",
+      "passSize": true
+    },
+    {
+      "fileName": "41_finance_laptop_light.png",
+      "view": "Касса 54-ФЗ",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Light",
+      "sizeBytes": 255979,
+      "sizeKb": "250.0",
+      "md5": "1704d04bb7f2dda7973ec8f3e18b5d87",
+      "passSize": true
+    },
+    {
+      "fileName": "42_finance_laptop_dark.png",
+      "view": "Касса 54-ФЗ",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Dark",
+      "sizeBytes": 254591,
+      "sizeKb": "248.6",
+      "md5": "286f2c4fa62b4c140507f83f2193f9b0",
+      "passSize": true
+    },
+    {
+      "fileName": "43_finance_laptop_sakura.png",
+      "view": "Касса 54-ФЗ",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Sakura",
+      "sizeBytes": 264306,
+      "sizeKb": "258.1",
+      "md5": "f40859607d53e0383de17f38c78653da",
+      "passSize": true
+    },
+    {
+      "fileName": "44_finance_laptop_cyber_xray.png",
+      "view": "Касса 54-ФЗ",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Cyber X-Ray",
+      "sizeBytes": 254206,
+      "sizeKb": "248.2",
+      "md5": "f73f2b583d919753b8a9e85296bade18",
+      "passSize": true
+    },
+    {
+      "fileName": "45_finance_laptop_ocean.png",
+      "view": "Касса 54-ФЗ",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Ocean",
+      "sizeBytes": 259338,
+      "sizeKb": "253.3",
+      "md5": "81f65afba61f6a20aad9154c98ac9cd8",
+      "passSize": true
+    },
+    {
+      "fileName": "46_documents_laptop_light.png",
+      "view": "Документы",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Light",
+      "sizeBytes": 295201,
+      "sizeKb": "288.3",
+      "md5": "35977b1c8173667f357decc6afc25b34",
+      "passSize": true
+    },
+    {
+      "fileName": "47_documents_laptop_dark.png",
+      "view": "Документы",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Dark",
+      "sizeBytes": 295108,
+      "sizeKb": "288.2",
+      "md5": "f89eb7057919d6003447a2ec6626377e",
+      "passSize": true
+    },
+    {
+      "fileName": "48_documents_laptop_sakura.png",
+      "view": "Документы",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Sakura",
+      "sizeBytes": 300021,
+      "sizeKb": "293.0",
+      "md5": "9b8c8aef7d681d50244cb1503dc3d746",
+      "passSize": true
+    },
+    {
+      "fileName": "49_documents_laptop_cyber_xray.png",
+      "view": "Документы",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Cyber X-Ray",
+      "sizeBytes": 294003,
+      "sizeKb": "287.1",
+      "md5": "7af2dffca9902d45b3cd214473c57878",
+      "passSize": true
+    },
+    {
+      "fileName": "50_documents_laptop_ocean.png",
+      "view": "Документы",
+      "viewport": "Compact Laptop 1280x720",
+      "theme": "Ocean",
+      "sizeBytes": 297341,
+      "sizeKb": "290.4",
+      "md5": "943fefed63752c335383dc1b05dce0bf",
+      "passSize": true
+    },
+    {
+      "fileName": "51_schedule_mobile_light.png",
+      "view": "Расписание",
+      "viewport": "Mobile 390x844",
+      "theme": "Light",
+      "sizeBytes": 92727,
+      "sizeKb": "90.6",
+      "md5": "80e76153627dc6538b1d2af26c270f3a",
+      "passSize": true
+    },
+    {
+      "fileName": "52_schedule_mobile_dark.png",
+      "view": "Расписание",
+      "viewport": "Mobile 390x844",
+      "theme": "Dark",
+      "sizeBytes": 98141,
+      "sizeKb": "95.8",
+      "md5": "f562701d0f691b619bd322faf10ec302",
+      "passSize": true
+    },
+    {
+      "fileName": "53_schedule_mobile_sakura.png",
+      "view": "Расписание",
+      "viewport": "Mobile 390x844",
+      "theme": "Sakura",
+      "sizeBytes": 93068,
+      "sizeKb": "90.9",
+      "md5": "0e6c5cd6db9972963f0e9643d6f63a7a",
+      "passSize": true
+    },
+    {
+      "fileName": "54_schedule_mobile_cyber_xray.png",
+      "view": "Расписание",
+      "viewport": "Mobile 390x844",
+      "theme": "Cyber X-Ray",
+      "sizeBytes": 93728,
+      "sizeKb": "91.5",
+      "md5": "737bb16bd01066c1afd2ea6fb32d6b0f",
+      "passSize": true
+    },
+    {
+      "fileName": "55_schedule_mobile_ocean.png",
+      "view": "Расписание",
+      "viewport": "Mobile 390x844",
+      "theme": "Ocean",
+      "sizeBytes": 98981,
+      "sizeKb": "96.7",
+      "md5": "7ddd91391bc2ffd236d6d9c829642713",
+      "passSize": true
+    },
+    {
+      "fileName": "56_emk043_mobile_light.png",
+      "view": "ЭМК 043/у",
+      "viewport": "Mobile 390x844",
+      "theme": "Light",
+      "sizeBytes": 187893,
+      "sizeKb": "183.5",
+      "md5": "c09853bc32f41b51eb9ea9f89c99f136",
+      "passSize": true
+    },
+    {
+      "fileName": "57_emk043_mobile_dark.png",
+      "view": "ЭМК 043/у",
+      "viewport": "Mobile 390x844",
+      "theme": "Dark",
+      "sizeBytes": 191018,
+      "sizeKb": "186.5",
+      "md5": "f456620c750ed65cf52b355320c58ed6",
+      "passSize": true
+    },
+    {
+      "fileName": "58_emk043_mobile_sakura.png",
+      "view": "ЭМК 043/у",
+      "viewport": "Mobile 390x844",
+      "theme": "Sakura",
+      "sizeBytes": 189312,
+      "sizeKb": "184.9",
+      "md5": "8fd9e7f8345a12d06c3dc612898cffc0",
+      "passSize": true
+    },
+    {
+      "fileName": "59_emk043_mobile_cyber_xray.png",
+      "view": "ЭМК 043/у",
+      "viewport": "Mobile 390x844",
+      "theme": "Cyber X-Ray",
+      "sizeBytes": 189137,
+      "sizeKb": "184.7",
+      "md5": "a7aba2f5becd11f3765565a675e53cae",
+      "passSize": true
+    },
+    {
+      "fileName": "60_emk043_mobile_ocean.png",
+      "view": "ЭМК 043/у",
+      "viewport": "Mobile 390x844",
+      "theme": "Ocean",
+      "sizeBytes": 192663,
+      "sizeKb": "188.1",
+      "md5": "96a46ec018823e013bec5db939b5dc26",
+      "passSize": true
+    },
+    {
+      "fileName": "61_odontogram_mobile_light.png",
+      "view": "Одонтограмма",
+      "viewport": "Mobile 390x844",
+      "theme": "Light",
+      "sizeBytes": 334147,
+      "sizeKb": "326.3",
+      "md5": "6ea0d2a4f391d26c9ccacd16c1a8c2c5",
+      "passSize": true
+    },
+    {
+      "fileName": "62_odontogram_mobile_dark.png",
+      "view": "Одонтограмма",
+      "viewport": "Mobile 390x844",
+      "theme": "Dark",
+      "sizeBytes": 335828,
+      "sizeKb": "328.0",
+      "md5": "0c9ae6b49adfc4491eda337c57629b05",
+      "passSize": true
+    },
+    {
+      "fileName": "63_odontogram_mobile_sakura.png",
+      "view": "Одонтограмма",
+      "viewport": "Mobile 390x844",
+      "theme": "Sakura",
+      "sizeBytes": 333606,
+      "sizeKb": "325.8",
+      "md5": "e577b4dc355d5269ccef82a88b4d5159",
+      "passSize": true
+    },
+    {
+      "fileName": "64_odontogram_mobile_cyber_xray.png",
+      "view": "Одонтограмма",
+      "viewport": "Mobile 390x844",
+      "theme": "Cyber X-Ray",
+      "sizeBytes": 342539,
+      "sizeKb": "334.5",
+      "md5": "305eb34dd1c02f1e24f60baac6324569",
+      "passSize": true
+    },
+    {
+      "fileName": "65_odontogram_mobile_ocean.png",
+      "view": "Одонтограмма",
+      "viewport": "Mobile 390x844",
+      "theme": "Ocean",
+      "sizeBytes": 338329,
+      "sizeKb": "330.4",
+      "md5": "1e6de09b533954418311423c5767a7d1",
+      "passSize": true
+    },
+    {
+      "fileName": "66_finance_mobile_light.png",
+      "view": "Касса 54-ФЗ",
+      "viewport": "Mobile 390x844",
+      "theme": "Light",
+      "sizeBytes": 236539,
+      "sizeKb": "231.0",
+      "md5": "f52301b95e673d24fd936db5e3a158e7",
+      "passSize": true
+    },
+    {
+      "fileName": "67_finance_mobile_dark.png",
+      "view": "Касса 54-ФЗ",
+      "viewport": "Mobile 390x844",
+      "theme": "Dark",
+      "sizeBytes": 235181,
+      "sizeKb": "229.7",
+      "md5": "f883ad5d2eebfcfc4653aec56f091206",
+      "passSize": true
+    },
+    {
+      "fileName": "68_finance_mobile_sakura.png",
+      "view": "Касса 54-ФЗ",
+      "viewport": "Mobile 390x844",
+      "theme": "Sakura",
+      "sizeBytes": 239366,
+      "sizeKb": "233.8",
+      "md5": "2bc90139845c82dfea85e8e2449a0288",
+      "passSize": true
+    },
+    {
+      "fileName": "69_finance_mobile_cyber_xray.png",
+      "view": "Касса 54-ФЗ",
+      "viewport": "Mobile 390x844",
+      "theme": "Cyber X-Ray",
+      "sizeBytes": 234064,
+      "sizeKb": "228.6",
+      "md5": "7de4361cbab5d5fd9f37b66e274fbe04",
+      "passSize": true
+    },
+    {
+      "fileName": "70_finance_mobile_ocean.png",
+      "view": "Касса 54-ФЗ",
+      "viewport": "Mobile 390x844",
+      "theme": "Ocean",
+      "sizeBytes": 238913,
+      "sizeKb": "233.3",
+      "md5": "39e94857fef8be701c5b9038e8bd15b1",
+      "passSize": true
+    },
+    {
+      "fileName": "71_documents_mobile_light.png",
+      "view": "Документы",
+      "viewport": "Mobile 390x844",
+      "theme": "Light",
+      "sizeBytes": 228468,
+      "sizeKb": "223.1",
+      "md5": "91fd88461f6950433a6b13de2a9d4748",
+      "passSize": true
+    },
+    {
+      "fileName": "72_documents_mobile_dark.png",
+      "view": "Документы",
+      "viewport": "Mobile 390x844",
+      "theme": "Dark",
+      "sizeBytes": 231235,
+      "sizeKb": "225.8",
+      "md5": "418876dfb7b471f81506e0d591fb32f3",
+      "passSize": true
+    },
+    {
+      "fileName": "73_documents_mobile_sakura.png",
+      "view": "Документы",
+      "viewport": "Mobile 390x844",
+      "theme": "Sakura",
+      "sizeBytes": 228279,
+      "sizeKb": "222.9",
+      "md5": "85aa65a37dfae5a2e14904786daa1bef",
+      "passSize": true
+    },
+    {
+      "fileName": "74_documents_mobile_cyber_xray.png",
+      "view": "Документы",
+      "viewport": "Mobile 390x844",
+      "theme": "Cyber X-Ray",
+      "sizeBytes": 229655,
+      "sizeKb": "224.3",
+      "md5": "bad40de7854a7b40725508525163bbd3",
+      "passSize": true
+    },
+    {
+      "fileName": "75_documents_mobile_ocean.png",
+      "view": "Документы",
+      "viewport": "Mobile 390x844",
+      "theme": "Ocean",
+      "sizeBytes": 233859,
+      "sizeKb": "228.4",
+      "md5": "4498b89914d9c92c4f54e976d24833c0",
+      "passSize": true
+    }
+  ]
+}

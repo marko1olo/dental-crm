@@ -35,6 +35,7 @@ import {
 	isCacheableCatalogUrl,
 	normalizeApiUrl,
 	notifyApiMutation,
+	readCatalogFromPersistentStorage,
 	setCachedApiResponse,
 } from "./apiCacheEngine";
 import {
@@ -241,6 +242,19 @@ export function installApiAuthFetch(): void {
 			const cached = getCachedApiResponse(rawUrl);
 			if (cached) {
 				return createResponseFromCachedEntry(cached);
+			}
+
+			// Если в оперативной памяти промах (например, после открытия вкладки),
+			// проверяем persistent IndexedDB кэш (0 мс сетевых затрат)
+			const persistent = await readCatalogFromPersistentStorage(rawUrl);
+			if (persistent) {
+				setCachedApiResponse(rawUrl, persistent.data, {
+					status: persistent.status,
+					statusText: persistent.statusText,
+					headers: persistent.headers,
+					ttlMs: persistent.ttlMs,
+				});
+				return createResponseFromCachedEntry(persistent);
 			}
 
 			// Защита от Cache Stampede: если такой же справочник уже загружается — ждем его

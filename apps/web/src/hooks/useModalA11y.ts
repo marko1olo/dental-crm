@@ -36,8 +36,11 @@ export function trapTabKey(
 	const focusable = Array.from(
 		container.querySelectorAll<HTMLElement>(FOCUSABLE_ELEMENTS_SELECTOR),
 	).filter((el) => {
-		// Исключаем невидимые элементы если offsetParent === null (в DOM среде)
-		if (typeof el.offsetParent !== "undefined" && el.offsetParent === null && el.offsetWidth === 0) {
+		// Исключаем невидимые элементы без Layout Thrashing (без чтения el.offsetWidth в цикле)
+		if (typeof (el as unknown as { checkVisibility?: (opts?: { checkOpacity?: boolean; checkVisibilityCSS?: boolean }) => boolean }).checkVisibility === "function") {
+			return (el as unknown as { checkVisibility: (opts?: { checkOpacity?: boolean; checkVisibilityCSS?: boolean }) => boolean }).checkVisibility({ checkOpacity: false, checkVisibilityCSS: true });
+		}
+		if (typeof el.offsetParent !== "undefined" && el.offsetParent === null && el.style.position !== "fixed") {
 			return false;
 		}
 		return true;

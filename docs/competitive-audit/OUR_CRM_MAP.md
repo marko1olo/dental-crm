@@ -3,7 +3,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
 >
-> ⚠️ **СТАТУС (2026-09-20 / WAVES 175–267 / HAMILTON-HARE 54-FZ PENNY DISTRIBUTION, ADVISORY LOCKS & MONKEY-CLICK PROTECTION, DOM VIRTUALIZATION & WEBGL DISPOSAL, ATOMIC COLUMN UPDATES ANTI-LWW, 1092X614 VIEWPORT ERGONOMICS, HDD 5400 RPM & CELERON CPU OPTIMIZATION ENGINE, OMNI-PLATFORM RUNTIME ENGINE, SAKURA NEUTRAL ENAMEL, SINGLE-COMPILER GATE 8T): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 304 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (367/367 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
+> ⚠️ **СТАТУС (2026-09-21 / WAVES 175–267 / HAMILTON-HARE 54-FZ PENNY DISTRIBUTION, ADVISORY LOCKS & MONKEY-CLICK PROTECTION, DOM VIRTUALIZATION & WEBGL DISPOSAL, ATOMIC COLUMN UPDATES ANTI-LWW, 1092X614 VIEWPORT ERGONOMICS, HDD 5400 RPM & CELERON CPU OPTIMIZATION ENGINE, OMNI-PLATFORM RUNTIME ENGINE, SAKURA NEUTRAL ENAMEL, SINGLE-COMPILER GATE 8T): 61 ИЗ 63 КАНОНИЧЕСКИХ ФИЧ (96.8%) И 304 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (365/367 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО]). 2 КАНОНИЧЕСКИЕ ФИЧИ В СТАТУСЕ [НЕТ] / [DEBT]: ФИЧА 17 (ПРОДОКТОРОВ: ПРЕЙСКУРАНТ, СЛОТЫ И ВЕБХУК) И ФИЧА 54 (15-МИНУТНАЯ АТРИБУЦИЯ ПОВТОРНОЙ ЗАПИСИ: ВРАЧ VS АДМИНИСТРАТОР). СПЕЦИФИКАЦИИ В BACKLOG.MD ЧАСТЬ I-B.**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
@@ -316,12 +316,13 @@
   - **Суверенитет кассы 54-ФЗ соло-врача и 1-клик сплит 50/50 (Мандаты 8b, 8c, 8d, 8e п. 9, 8n, 8p, 8s / Волна 240)**: В `PaymentCapture.tsx`, `PaymentModal.tsx` и `FastCheckoutModal.tsx` подтвержден полный суверенитет кассовых операций: нулевое требование ИНН с физлиц (по 54-ФЗ ИНН нужен только юрлицам и ИП), мгновенный 1-клик сплит 50% Нал + 50% Карта с авто-выравниванием копеек без float-дрифта, комбинированная оплата (нал + карта + аванс/бонусы/семейный депозит), 0 заблокированных disabled кнопок без причины, свободные 100% скидки врача на гарантийные переделки (0 ₽) без мастер-паролей, тач-таргеты $\ge 44\text{px}$ и полная токенизация Dark Mode без слепящих белых пятен.
   - **Автономия скидок врача до 100% и 30-дневная свобода планов лечения (Мандаты 8b, 8c, 8d пп. 2, 3, 7, 8e п. 7, 8n, 8p / Волна 241)**: В `TreatmentPlanModule.tsx`, `TreatmentPlanStageCard.tsx`, `TreatmentPlanPresenterModal.tsx`, `TreatmentPlan3TierComparison.tsx`, `planPricing.ts` и `billingQuery.ts` обеспечена 100% автономия врача в предоставлении скидок (до 100% на гарантийные переделки и персонал с выпуском нулевого акта 804н без мастер-паролей); 30-дневный срок давности сметы является мягким информационным предупреждением и никогда не блокирует создание нарядов ЗТЛ или расчеты; карточки этапов приведены к Закону Миллера ($\le 2$ кнопок прямого действия) со скрытием вторичных функций в меню «...»; шапка плана лечения сжата до $<166\text{px}$ с аккордеонами `<details>`; строгий запрет мультяшных эмодзи в печатных сметах.
 
-  - **Разделение счетов ДМС, реестр гарантийных писем и сооплата пациента (Мандаты 8b, 8c, 8d пп. 1, 4, 7, 8e п. 9, 8k, 8n, 8p, 8s / Волна 248)**: В `DmsGuaranteeLetterModal.tsx`, `DmsRegistryExportModal.tsx`, `dmsSplitEngine.ts`, `dmsInsuranceEngine.ts`, `insuranceCatalogs.ts`, `FastCheckoutModal.tsx`, `FiscalReceipt54FzModal.tsx` и `PaymentCapture.tsx`:
+  - **Разделение счетов ДМС, реестр гарантийных писем, сооплата пациента и экспорт реестров счетов (Мандаты 8b, 8c, 8d пп. 1, 4, 7, 8e п. 9, 8k, 8n, 8p, 8s / Волна 248)**: В `DmsGuaranteeLetterModal.tsx`, `DmsRegistryExportModal.tsx`, `dmsSplitEngine.ts`, `dmsInsuranceEngine.ts`, `insuranceCatalogs.ts`, `FastCheckoutModal.tsx`, `FiscalReceipt54FzModal.tsx`, `PaymentCapture.tsx`, `apps/api/src/routes/insurance.ts`, `packages/shared/src/insurance/dmsRegistryExport.ts`:
+    - **Статус ДМС**: Файловый экспорт реестров счетов и гарантийных писем — `[РЕАЛИЗОВАНО]`; прямой B2B API вебхук со страховщиками — `[DEBT]` (в РФ страховщики не предоставляют открытых REST API для клиник, обмен идет пакетными XML/CSV через ЛК страховщика);
     - Математическое ядро расчета сооплаты `dmsSplitEngine.ts`: строгое копеечно-точное разделение стоимости стоматологических услуг между страховой компанией (ДМС) и пациентом с инвариантом сохранения баланса без IEEE-754 артефактов (`insuranceCoveredKopecks + patientOutOfPocketKopecks === totalBillKopecks`);
-    - Электронный реестр гарантийных писем страховых компаний (`DmsGuaranteeLetterModal.tsx`) с фиксацией лимитов, франшиз, согласованных кодов номенклатуры Приказа 804н и номеров зубов FDI;
+    - Электронный реестр гарантийных писем страховых компаний (`DmsGuaranteeLetterModal.tsx`, `apps/api/src/routes/insurance.ts`) с фиксацией лимитов, франшиз, согласованных кодов номенклатуры Приказа 804н и номеров зубов FDI;
     - Автоматическое выявление превышений лимитов страховой компании и отнесение дельты на сооплату пациента (Co-payment / Out-of-pocket);
     - Интеграция с кассой 54-ФЗ: сооплата пациента вносится через 1-клик пресеты («Без сдачи», карта, наличные, семейный депозит) без требования ИНН с физлиц по Мандату 8e п. 9;
-    - 1-клик экспорт сводного реестра оказанных услуг ДМС в форматах Excel / XML для страховых организаций (`DmsRegistryExportModal.tsx`);
+    - 1-клик экспорт сводного реестра оказанных услуг ДМС для страховых организаций (`DmsRegistryExportModal.tsx`, `packages/shared/src/insurance/dmsRegistryExport.ts`): XML (`urn:dente:dms:registry:v1.0`), RFC 4180 CSV с UTF-8 BOM, печатный реестр-счет А4 с суммой прописью; готовые пресеты для СОГАЗ, Ингосстрах, АльфаСтрахование, РЕСО-Гарантия, ВСК, Согласие;
     - Полная токенизация Dark/Light Mode по WCAG AAA, 0 сырых эмодзи, глубина модалок строго 1 (Закон Анти-Матрёшки).
 
 ### 2.8. Склад, Стерилизация и Лабораторный портал
@@ -381,6 +382,14 @@
 ### 2.9. Умная миграция данных с конкурентов (Smart Imports)
 - **Бэкенд**: `apps/api/src/routes/smartImports.ts`, `imports.ts`, `ingestion.ts`.
 - **Возможности**: Автоматический импорт баз данных из IDENT, DentalPRO, Инфоклиника и 1С:Стоматология.
+
+### 2.9.1. Долговые интеграции и кадровые правила (Debt Backlog: Фичи 17 и 54)
+- **Фича 17: `интеграции::продокторов_выгрузка_прейскуранта_и_запись` [НЕТ] / [DEBT]**:
+  - *Текущий статус в кодовой базе*: Реализован собственный публичный виджет онлайн-записи (`PublicOnlineBookingWidget.tsx`, `apps/api/src/routes/onlineBooking.ts`) и шлюзы мессенджеров/телефонии. Интеграция с агрегаторами ПроДокторов / МедФлекс (выгрузка XML/YML прейскуранта, трансляция свободных слотов расписания через `GET /api/integrations/prodoctorov/slots`, входящий вебхук моментального бронирования `POST /api/integrations/prodoctorov/webhook`) находится в бэклоге `[DEBT]`;
+  - *Архитектурное решение*: Полная спецификация схемы PostgreSQL 18 (`prodoctorov_mappings`, `prodoctorov_sync_log`), Fastify-маршрутов и UI-интеграции зафиксирована в `BACKLOG.md` (Часть I-B).
+- **Фича 54: `кадры::справедливое_распределение_конверсии_повторной_записи` [НЕТ] / [DEBT]**:
+  - *Текущий статус в кодовой базе*: Общие конверсии сквозной воронки и выручка сотрудников рассчитываются в `apps/api/src/routes/analytics.ts` и `ExecutiveFunnelMetrics.tsx`. Специфическое кадровое правило справедливой атрибуции конверсии повторной записи по 15-минутному окну ($\Delta t = \text{created\_at} - \text{completed\_at} \le 15$ мин -> Врач, $\Delta t > 15$ мин -> Администратор) находится в бэклоге `[DEBT]`;
+  - *Архитектурное решение*: Полная спецификация схемы PostgreSQL 18 (`rebooking_attribution_settings`), Fastify-маршрутов и UI-интеграции зафиксирована в `BACKLOG.md` (Часть I-B).
 
 ### 2.10. Сто восемнадцать киллер-фич снижения трения, ликвидации симуляторов и автономии врача (Мандаты 8e, 8k, 8n, Фичи 64..181)
 

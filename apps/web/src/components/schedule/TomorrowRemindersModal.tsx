@@ -148,26 +148,26 @@ export function TomorrowRemindersModal({
 	}, []);
 
 	const handleMarkAllSent = useCallback(() => {
-		const allIds = new Set(summary.reminders.map((r) => r.appointmentId));
+		const allIds = new Set((summary?.reminders ?? []).map((r) => r.appointmentId));
 		setSentAppointmentIds(allIds);
-		showToast(`Все ${summary.totalAppointmentsCount} напоминаний отмечены отправленными`, "success");
-	}, [summary.reminders, summary.totalAppointmentsCount]);
+		showToast(`Все ${summary?.totalAppointmentsCount ?? 0} напоминаний отмечены отправленными`, "success");
+	}, [summary?.reminders, summary?.totalAppointmentsCount]);
 
 	const handleBatchDispatch = useCallback(async () => {
-		if (summary.reminders.length === 0) {
+		if ((summary?.reminders ?? []).length === 0) {
 			showToast("Нет записей для рассылки", "info");
 			return;
 		}
 
 		setIsDispatching(true);
 		try {
-			const res = await dispatchBatchReminders(summary.reminders, {
+			const res = await dispatchBatchReminders(summary?.reminders ?? [], {
 				allowQuietHoursOverride,
 				onProgress: (current, total) => setDispatchProgress({ current, total }),
 			});
 
 			const newSent = new Set(sentAppointmentIds);
-			for (const r of res.results) {
+			for (const r of (res?.results ?? [])) {
 				if (r.status === "dispatched") {
 					newSent.add(r.appointmentId);
 				}

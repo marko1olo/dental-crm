@@ -2,6 +2,7 @@
  * copilot.ts — Fastify API routes for DENTE Clinical AI Copilot.
  */
 
+import { randomUUID } from "node:crypto";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { z } from "zod";
@@ -1447,7 +1448,7 @@ export const copilotRoutes: FastifyPluginAsync = async (
 		const userId = identity.userId ?? undefined;
 		const query = (request.query as Record<string, string>) || {};
 		const sessionId = query.sessionId || undefined;
-		const subscriberId = `sub_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+		const subscriberId = `sub_${Date.now()}_${randomUUID().slice(0, 8)}`;
 
 		// Setup SSE Headers
 		reply.raw.setHeader("Content-Type", "text/event-stream; charset=utf-8");

@@ -15,6 +15,7 @@
  *    PostgreSQL persistence into `communication_tasks` and `communication_events`.
  */
 
+import { randomUUID } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client.js";
@@ -748,7 +749,7 @@ export class WhatsAppHitLQueue {
 		urgency?: TriageUrgency | undefined;
 		messageTimestamp?: string | undefined;
 	}): WhatsAppApprovalCardData {
-		const approvalId = `hitl_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+		const approvalId = `hitl_${Date.now()}_${randomUUID().slice(0, 8)}`;
 		const msgTime = options.messageTimestamp
 			? new Date(options.messageTimestamp).getTime()
 			: Date.now();

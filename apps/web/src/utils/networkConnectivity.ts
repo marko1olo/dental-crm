@@ -243,8 +243,18 @@ export async function determineNetworkConnectivity(
 ): Promise<NetworkState> {
 	const nowIso = new Date().toISOString();
 
-	// 1. Быстрая проверка браузерного флага offline
-	if (typeof navigator !== "undefined" && navigator.onLine === false) {
+	const currentHost =
+		typeof window !== "undefined" && window.location
+			? window.location.hostname
+			: "localhost";
+
+	const isLan = isLocalOrLanHostname(currentHost);
+
+	// 1. Быстрая проверка браузерного флага offline.
+	// Внимание (Мандат 8n): если хост локальный или узел LAN клиники (localhost, 192.168.x.x, 10.x.x.x),
+	// браузер может сообщать navigator.onLine === false при отключении внешнего провайдера (WAN),
+	// но сервер в локальной сети клиники полностью доступен. Поэтому для LAN пробуем пинг перед объявлением офлайна!
+	if (typeof navigator !== "undefined" && navigator.onLine === false && !isLan) {
 		return {
 			mode: "offline",
 			label: NETWORK_STATE_LABELS.offline,
@@ -272,12 +282,6 @@ export async function determineNetworkConnectivity(
 	}
 
 	// 3. Классификация LAN vs Cloud
-	const currentHost =
-		typeof window !== "undefined" && window.location
-			? window.location.hostname
-			: "localhost";
-
-	const isLan = isLocalOrLanHostname(currentHost);
 	const mode: ConnectivityMode = isLan ? "lan_online" : "cloud_online";
 
 	return {
@@ -352,7 +356,12 @@ export function createNetworkMonitor(
 
 	// Периодический пинг
 	if (intervalMs > 0) {
-		timerId = setInterval(() => void runCheck(), intervalMs);
+		timerId = setInterval(() => {
+			if (typeof document !== "undefined" && document.hidden) {
+				return; // Пропускаем проверку сети при скрытой вкладке (сберегаем CPU и батарею)
+			}
+			void runCheck();
+		}, intervalMs);
 		if (typeof (timerId as any)?.unref === "function") {
 			(timerId as any).unref();
 		}

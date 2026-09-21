@@ -4,6 +4,7 @@
  * and strict multi-tenant isolation.
  */
 
+import { randomUUID } from "node:crypto";
 import { STATUTORY_EMR_PROTOCOL_CATALOG } from "@dental/shared";
 
 export type KnowledgeCategory =
@@ -707,7 +708,7 @@ export class KnowledgeStore {
 
 	public upsertItem(input: KnowledgeItemInput): KnowledgeItem {
 		const map = this.ensureOrg(input.organizationId);
-		const id = input.id || `item_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+		const id = input.id || `item_${Date.now()}_${randomUUID().slice(0, 8)}`;
 		const textForEmbedding = `${input.code804n || ""} ${input.icd10Code || ""} ${input.title} ${input.content}`;
 		const embedding =
 			input.embedding && input.embedding.length === VECTOR_DIMENSION

@@ -219,19 +219,20 @@ export const toothStateByCode: Record<
 	"48": "missing",
 };
 
-export function patientName(patients: Patient[], patientId: string | null) {
+export function patientName(patients: Patient[] | undefined | null, patientId: string | null) {
 	if (!patientId) return "Новый пациент";
+	if (!Array.isArray(patients)) return "Пациент";
 	return (
-		patients.find((patient) => patient.id === patientId)?.fullName ?? "Пациент"
+		patients.find((patient) => patient?.id === patientId)?.fullName ?? "Пациент"
 	);
 }
 
-export function findPatient(patients: Patient[], patientId: string | null) {
-	if (!patientId) return null;
-	const direct = patients.find((patient) => patient.id === patientId);
+export function findPatient(patients: Patient[] | undefined | null, patientId: string | null) {
+	if (!patientId || !Array.isArray(patients)) return null;
+	const direct = patients.find((patient) => patient?.id === patientId);
 	if (!direct) return null;
 	if (direct.mergedIntoPatientId) {
-		const target = patients.find((p) => p.id === direct.mergedIntoPatientId);
+		const target = patients.find((p) => p?.id === direct.mergedIntoPatientId);
 		if (target) return target;
 	}
 	return direct;

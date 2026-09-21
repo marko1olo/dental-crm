@@ -182,15 +182,15 @@ export function VoiceDictationAssistantModal({
 		}
 	};
 
-	// Резервный текстовый ввод клинической фразы
-	const handleSimulateText = (textToSimulate: string) => {
-		const trimmed = textToSimulate.trim();
-		const targetText = trimmed || "Зуб 16 кариес дентина, зуб 21 норма, зуб 36 пульпит";
+	// Резервный текстовый ввод клинической фразы (Zero-Mock: только реальный введенный текст)
+	const handleApplyManualText = (textToApply: string) => {
+		const trimmed = textToApply.trim();
 		if (!trimmed) {
-			showToast("Подставлен пример клинической надиктовки", "info");
+			showToast("Введите текст клинической команды для распознавания", "warning");
+			return;
 		}
-		setTranscript(targetText);
-		const parsed = parseClinicalVoiceSpeech(targetText);
+		setTranscript(trimmed);
+		const parsed = parseClinicalVoiceSpeech(trimmed);
 		setParseResult(parsed);
 		setManualInput("");
 	};
@@ -599,7 +599,7 @@ export function VoiceDictationAssistantModal({
 								<button
 									key={example}
 									type="button"
-									onClick={() => handleSimulateText(example)}
+									onClick={() => handleApplyManualText(example)}
 									className="dnt-voice-cheatsheet-pill"
 								>
 									{example}
@@ -612,7 +612,7 @@ export function VoiceDictationAssistantModal({
 						className="dnt-voice-fallback-bar"
 						onSubmit={(e) => {
 							e.preventDefault();
-							handleSimulateText(manualInput);
+							handleApplyManualText(manualInput);
 						}}
 					>
 						<input
@@ -625,7 +625,7 @@ export function VoiceDictationAssistantModal({
 						<button
 							type="submit"
 							disabled={false}
-							className="dnt-voice-btn-simulate"
+							className="dnt-voice-btn-apply"
 						>
 							<Send size={16} />
 							<span>Распознать</span>

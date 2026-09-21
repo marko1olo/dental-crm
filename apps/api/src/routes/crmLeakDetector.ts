@@ -210,6 +210,40 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 			let createdCount = 0;
 			let updatedCount = 0;
 
+			// Предварительная пакетная загрузка врачей и существующих лидов (устранение N+1)
+			const doctorIds = [
+				...new Set(
+					candidatePatients
+						.map((r) => r.lastDoctorId)
+						.filter(Boolean) as string[],
+				),
+			];
+			const doctors =
+				doctorIds.length > 0
+					? await tx
+							.select({ id: users.id, name: users.fullName, specialties: users.specialties })
+							.from(users)
+							.where(inArray(users.id, doctorIds))
+					: [];
+			const doctorMap = new Map(doctors.map((d) => [d.id, d]));
+
+			const patientIds = candidatePatients.map((r) => r.patientId);
+			const existingLeads =
+				patientIds.length > 0
+					? await tx
+							.select()
+							.from(crmLeakDetectorLeads)
+							.where(
+								and(
+									eq(crmLeakDetectorLeads.organizationId, orgId),
+									inArray(crmLeakDetectorLeads.patientId, patientIds),
+								),
+							)
+					: [];
+			const existingLeadsMap = new Map(
+				existingLeads.map((l) => [l.patientId, l]),
+			);
+
 			for (const row of candidatePatients) {
 				const lastVisit = row.lastPastVisit ? new Date(row.lastPastVisit) : null;
 				if (!lastVisit) continue; // Пациенты без завершенных приемов не считаются оттоком от лечения
@@ -221,11 +255,7 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 				let doctorName: string | null = null;
 				let doctorSpecialty: string | null = null;
 				if (row.lastDoctorId) {
-					const [doc] = await tx
-						.select({ name: users.fullName, specialties: users.specialties })
-						.from(users)
-						.where(eq(users.id, row.lastDoctorId))
-						.limit(1);
+					const doc = doctorMap.get(row.lastDoctorId);
 					doctorName = doc?.name || null;
 					if (doc?.specialties) {
 						const specs = Array.isArray(doc.specialties) ? doc.specialties : [String(doc.specialties)];
@@ -251,11 +281,7 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 				);
 
 				// Проверяем, есть ли уже лид
-				const [existing] = await tx
-					.select()
-					.from(crmLeakDetectorLeads)
-					.where(and(eq(crmLeakDetectorLeads.organizationId, orgId), eq(crmLeakDetectorLeads.patientId, row.patientId)))
-					.limit(1);
+				const existing = existingLeadsMap.get(row.patientId);
 
 				if (existing) {
 					// Не сбрасываем статус, если уже в работе или сконвертирован

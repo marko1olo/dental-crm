@@ -799,3 +799,45 @@ html.light .nav-item.active .nav-copy small,
 		var(--glass-shadow),
 		0 12px 30px rgba(0, 0, 0, 0.15);
 }
+
+/* Global Toast Integration (10 Themes & WCAG AAA Harmony, Mandates 8d, 8p) */
+.sa-toast {
+	background: var(--paper-strong, #18181b) !important;
+	color: var(--ink, #f8fafc) !important;
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.12)) !important;
+	box-shadow: var(--shadow-3, 0 12px 32px rgba(0, 0, 0, 0.35)) !important;
+	border-radius: 12px !important;
+}
+
+.sa-toast span {
+	color: var(--ink, #f8fafc) !important;
+}
+
+.sa-toast button {
+	color: var(--muted, #94a3b8) !important;
+}
+
+.sa-toast button:hover {
+	color: var(--ink, #f8fafc) !important;
+}
+
+.sa-toast--success {
+	background: var(--paper-strong, #18181b) !important;
+	border-color: var(--ok-fg, #10b981) !important;
+}
+
+.sa-toast--error {
+	background: var(--paper-strong, #18181b) !important;
+	border-color: var(--bad-fg, #ef4444) !important;
+}
+
+.sa-toast--warning {
+	background: var(--paper-strong, #18181b) !important;
+	border-color: var(--warning-fg, #f59e0b) !important;
+}
+
+.sa-toast--info {
+	background: var(--paper-strong, #18181b) !important;
+	border-color: var(--teal, #14b8a6) !important;
+}
+

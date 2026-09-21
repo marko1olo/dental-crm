@@ -56,7 +56,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 	userRole,
 	isOpen: externalIsOpen,
 	onClose: externalOnClose,
-	showTriggerButton = true,
+	showTriggerButton = false,
 }) => {
 	const [internalIsOpen, setInternalIsOpen] = useState(false);
 	const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;

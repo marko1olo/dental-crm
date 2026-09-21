@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-09-02T17:01:54.096Z",
+  "savedAt": "2026-09-20T14:41:50.118Z",
   "health": {
     "cloudflare_whisper:89d9d83a5665": {
       "cooldownUntil": 0,
@@ -15,28 +15,10 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 658,
-      "lastUsedAt": 1788368514095,
+      "successes": 659,
+      "lastUsedAt": 1789915310118,
       "lastStatusCode": null,
       "lastError": null
-    },
-    "google_speech:3e0ef4ad3f5a": {
-      "cooldownUntil": 1786270380618,
-      "failures": 13,
-      "consecutiveFailures": 13,
-      "successes": 0,
-      "lastUsedAt": 1786270350618,
-      "lastStatusCode": null,
-      "lastError": "fetch failed"
-    },
-    "google_speech:401c79dc50d5": {
-      "cooldownUntil": 1786270380542,
-      "failures": 13,
-      "consecutiveFailures": 13,
-      "successes": 0,
-      "lastUsedAt": 1786270350542,
-      "lastStatusCode": null,
-      "lastError": "fetch failed"
     },
     "google_speech:45dd3fb17bd3": {
       "cooldownUntil": 0,
@@ -46,24 +28,6 @@
       "lastUsedAt": 1788291694870,
       "lastStatusCode": null,
       "lastError": "Gemini Live WS closed abnormally (code: 1008, reason: Policy violation or key invalid)"
-    },
-    "google_speech:5cdeb7e487c0": {
-      "cooldownUntil": 1786270380590,
-      "failures": 14,
-      "consecutiveFailures": 14,
-      "successes": 302,
-      "lastUsedAt": 1786270350590,
-      "lastStatusCode": null,
-      "lastError": "fetch failed"
-    },
-    "google_speech:5e36d93cca7c": {
-      "cooldownUntil": 1786270380588,
-      "failures": 14,
-      "consecutiveFailures": 14,
-      "successes": 276,
-      "lastUsedAt": 1786270350588,
-      "lastStatusCode": null,
-      "lastError": "fetch failed"
     },
     "google_speech:62d44fb06c9a": {
       "cooldownUntil": 0,
@@ -110,33 +74,6 @@
       "lastStatusCode": null,
       "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
     },
-    "google_speech:c5b553420348": {
-      "cooldownUntil": 1786270380569,
-      "failures": 13,
-      "consecutiveFailures": 13,
-      "successes": 0,
-      "lastUsedAt": 1786270350569,
-      "lastStatusCode": null,
-      "lastError": "fetch failed"
-    },
-    "google_speech:c637bdf62cb7": {
-      "cooldownUntil": 1786270380592,
-      "failures": 13,
-      "consecutiveFailures": 13,
-      "successes": 0,
-      "lastUsedAt": 1786270350592,
-      "lastStatusCode": null,
-      "lastError": "fetch failed"
-    },
-    "google_speech:c78fec9a5b53": {
-      "cooldownUntil": 1786270380571,
-      "failures": 14,
-      "consecutiveFailures": 14,
-      "successes": 281,
-      "lastUsedAt": 1786270350571,
-      "lastStatusCode": null,
-      "lastError": "fetch failed"
-    },
     "google_speech:ce349ef84ee9": {
       "cooldownUntil": 0,
       "failures": 0,
@@ -161,24 +98,6 @@
       "consecutiveFailures": 0,
       "successes": 28,
       "lastUsedAt": 1788291695108,
-      "lastStatusCode": null,
-      "lastError": null
-    },
-    "groq_whisper:2584c81a1b00": {
-      "cooldownUntil": 0,
-      "failures": 2,
-      "consecutiveFailures": 2,
-      "successes": 1,
-      "lastUsedAt": 1786010733180,
-      "lastStatusCode": null,
-      "lastError": "[meta-llama/llama-4-scout-17b-16e-instruct] API Error 503: stand: provider refused"
-    },
-    "groq_whisper:31af829f8541": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
-      "successes": 2,
-      "lastUsedAt": 1786010939747,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -217,15 +136,6 @@
       "lastUsedAt": 1788291228096,
       "lastStatusCode": 500,
       "lastError": "Internal server error"
-    },
-    "groq_whisper:af75a6a49164": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
-      "successes": 3,
-      "lastUsedAt": 1786010993853,
-      "lastStatusCode": null,
-      "lastError": null
     },
     "groq_whisper:e1fc3fd8f14e": {
       "cooldownUntil": 1788291708110,

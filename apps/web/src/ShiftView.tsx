@@ -385,7 +385,8 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 		try {
 			const saved = safeLocalStorageGetItem("dente_doctor_shift_active");
 			return saved !== null ? saved === "true" : true;
-		} catch {
+		} catch (err: unknown) {
+			console.warn("[ShiftView] Error reading dente_doctor_shift_active:", err);
 			return true;
 		}
 	});
@@ -396,7 +397,9 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 		setIsShiftOpen(next);
 		try {
 			safeLocalStorageSetItem("dente_doctor_shift_active", String(next));
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[ShiftView] Error saving dente_doctor_shift_active:", err);
+		}
 	};
 
 	return (

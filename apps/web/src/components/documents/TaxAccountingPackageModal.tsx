@@ -85,7 +85,7 @@ export function TaxAccountingPackageModal({
 	if (!isOpen) return null;
 
 	const documentsByKind = new Map<DocumentKind, GeneratedDocument[]>();
-	for (const doc of existingDocuments) {
+	for (const doc of existingDocuments ?? []) {
 		const list = documentsByKind.get(doc.kind) ?? [];
 		list.push(doc);
 		documentsByKind.set(doc.kind, list);
@@ -156,7 +156,7 @@ export function TaxAccountingPackageModal({
 							</select>
 						</label>
 
-						{payerOptions.length > 0 ? (
+						{(payerOptions ?? []).length > 0 ? (
 							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", fontWeight: 600 }}>
 								Плательщик (ИНН / Пациент)
 								<select

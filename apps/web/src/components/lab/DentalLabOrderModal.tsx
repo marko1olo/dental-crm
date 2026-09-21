@@ -742,7 +742,9 @@ export function DentalLabOrderModal({
 				if (!Number.isNaN(parsed.getTime())) {
 					return parsed.toLocaleDateString("ru-RU");
 				}
-			} catch {}
+			} catch (err: unknown) {
+				console.warn("[DentalLabOrderModal] Failed to format date:", dStr, err);
+			}
 			return dStr;
 		};
 

@@ -25,9 +25,10 @@ import { showToast } from "../GlobalToast";
  */
 
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { countLabel } from "../../lib/russianPlural";
+import { sliceDomList } from "../../utils/domVirtualizationHelper";
 
 type RecallBand = "due" | "overdue" | "probably_lost" | "never_arrived";
 
@@ -110,6 +111,7 @@ export const RecallListPanel: React.FC = () => {
 	 * в этом списке только мешают.
 	 */
 	const [activeBand, setActiveBand] = useState<RecallBand | null>(null);
+	const [displayLimit, setDisplayLimit] = useState<number>(40);
 
 	const load = useCallback(async () => {
 		setError(null);
@@ -222,6 +224,16 @@ export const RecallListPanel: React.FC = () => {
 		setCalled((previous) => new Set(previous).add(patientId));
 	}
 
+	const filteredCandidates = useMemo(() => {
+		return (report?.candidates ?? []).filter(
+			(candidate) => activeBand === null || candidate.band === activeBand,
+		);
+	}, [report?.candidates, activeBand]);
+
+	const candidateSlice = useMemo(() => {
+		return sliceDomList(filteredCandidates, displayLimit, 0);
+	}, [filteredCandidates, displayLimit]);
+
 	return (
 		<section className="panel ops-panel" data-testid="recall-list-panel">
 			<div className="panel-heading">
@@ -283,11 +295,12 @@ export const RecallListPanel: React.FC = () => {
 												activeBand === band ? "ops-metric--selected" : ""
 											}`}
 											aria-pressed={activeBand === band}
-											onClick={() =>
+											onClick={() => {
 												setActiveBand((previous) =>
 													previous === band ? null : band,
-												)
-											}
+												);
+												setDisplayLimit(40);
+											}}
 										>
 											<span className="ops-metric__value">
 												{report.byBand?.[band] ?? 0}
@@ -306,7 +319,10 @@ export const RecallListPanel: React.FC = () => {
 								<button
 									className="link-button"
 									type="button"
-									onClick={() => setActiveBand(null)}
+									onClick={() => {
+										setActiveBand(null);
+										setDisplayLimit(40);
+									}}
 								>
 									Показать всех
 								</button>
@@ -327,20 +343,16 @@ export const RecallListPanel: React.FC = () => {
 									</tr>
 								</thead>
 								<tbody>
-									{(report.candidates ?? [])
-										.filter(
-											(candidate) =>
-												activeBand === null || candidate.band === activeBand,
-										)
-										.map((candidate) => {
-											const busy = busyPatient === candidate.patientId;
-											const wasCalled = called.has(candidate.patientId);
+									{candidateSlice.visibleItems.map((candidate) => {
+										const busy = busyPatient === candidate.patientId;
+										const wasCalled = called.has(candidate.patientId);
 
-											return (
-												<tr
-													className={wasCalled ? "ops-row--done" : ""}
-													key={candidate.patientId}
-												>
+										return (
+											<tr
+												className={wasCalled ? "ops-row--done" : ""}
+												key={candidate.patientId}
+												style={{ contentVisibility: "auto", containIntrinsicSize: "1px 52px" }}
+											>
 													<td className="ops-strong" data-label="Пациент">
 														{candidate.fullName}
 														<span className="ops-note">
@@ -428,6 +440,19 @@ export const RecallListPanel: React.FC = () => {
 								</tbody>
 							</table>
 						</div>
+
+						{candidateSlice.hasMore && (
+							<div className="flex justify-center my-3">
+								<button
+									type="button"
+									data-testid="btn-recall-show-more"
+									className="secondary-button text-xs py-1.5 px-3 min-h-[36px]"
+									onClick={() => setDisplayLimit((previous) => previous + 40)}
+								>
+									Показать ещё ({Math.min(40, candidateSlice.remainingCount)} из {candidateSlice.remainingCount})
+								</button>
+							</div>
+						)}
 
 						<p className="ops-hint">{report.note}</p>
 					</>

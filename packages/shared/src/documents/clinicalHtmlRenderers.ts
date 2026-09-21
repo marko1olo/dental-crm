@@ -469,7 +469,7 @@ export const CLINICAL_DOCUMENT_PRINT_STYLES = `
 `;
 
 /** Вспомогательный рендерер зубной формулы FDI (18-28 и 48-38) */
-function renderFdiToothFormulaTable(dentalFormula?: any): string {
+function renderFdiToothFormulaTable(dentalFormula?: Record<string, unknown> | null): string {
 	const adultUpperRight = [18, 17, 16, 15, 14, 13, 12, 11];
 	const adultUpperLeft = [21, 22, 23, 24, 25, 26, 27, 28];
 	const adultLowerRight = [48, 47, 46, 45, 44, 43, 42, 41];
@@ -478,23 +478,26 @@ function renderFdiToothFormulaTable(dentalFormula?: any): string {
 	const teethMap = new Map<number, { status: string; mobility: string }>();
 	if (dentalFormula) {
 		if (Array.isArray(dentalFormula.teeth)) {
-			for (const t of dentalFormula.teeth) {
-				const num = Number(t.toothNumber);
-				if (num) {
-					teethMap.set(num, {
-						status: t.statusCode || t.condition || "H",
-						mobility: t.mobilityGrade || "—",
-					});
+			for (const rawT of dentalFormula.teeth) {
+				if (rawT && typeof rawT === "object") {
+					const t = rawT as Record<string, unknown>;
+					const num = Number(t.toothNumber);
+					if (num) {
+						teethMap.set(num, {
+							status: String(t.statusCode || t.condition || "H"),
+							mobility: String(t.mobilityGrade || "—"),
+						});
+					}
 				}
 			}
-		} else if (typeof dentalFormula === "object") {
+		} else if (typeof dentalFormula === "object" && dentalFormula !== null) {
 			for (const [key, val] of Object.entries(dentalFormula)) {
 				const num = Number(key);
 				if (num && typeof val === "object" && val !== null) {
-					const tVal = val as any;
+					const tVal = val as Record<string, unknown>;
 					teethMap.set(num, {
-						status: tVal.condition || tVal.statusCode || "H",
-						mobility: tVal.mobility || tVal.mobilityGrade || "—",
+						status: String(tVal.condition || tVal.statusCode || "H"),
+						mobility: String(tVal.mobility || tVal.mobilityGrade || "—"),
 					});
 				}
 			}

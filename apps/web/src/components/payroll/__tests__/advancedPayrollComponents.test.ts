@@ -22,16 +22,17 @@ import {
 	type TimesheetDayRecord,
 	type EmployeeTimesheetInput,
 } from "@dental/shared";
-import * as PayrollExports from "../index.js";
+import { TimesheetT13Modal } from "../TimesheetT13Modal.js";
+import { DoctorPayrollModal } from "../../finance/payroll/DoctorPayrollModal.js";
 
 describe("Wave 14: Advanced Doctor Payroll & Form T-13 Timesheet", () => {
-	it("1.1 Re-exports all required payroll modals and engines from index.ts", () => {
-		assert.ok(PayrollExports.DoctorPayrollModal, "DoctorPayrollModal must be exported");
-		assert.ok(PayrollExports.TimesheetT13Modal, "TimesheetT13Modal must be exported");
-		assert.ok(PayrollExports.calculateDoctorStaffPayroll, "calculateDoctorStaffPayroll must be exported");
-		assert.ok(PayrollExports.calculateAssistantStaffPayroll, "calculateAssistantStaffPayroll must be exported");
-		assert.ok(PayrollExports.calculateConsolidatedStaffPayroll, "calculateConsolidatedStaffPayroll must be exported");
-		assert.ok(PayrollExports.generate1CZup31Xml, "generate1CZup31Xml must be exported");
+	it("1.1 Re-exports all required payroll modals and engines from canonical modules", () => {
+		assert.ok(DoctorPayrollModal, "DoctorPayrollModal must be exported");
+		assert.ok(TimesheetT13Modal, "TimesheetT13Modal must be exported");
+		assert.ok(calculateDoctorStaffPayroll, "calculateDoctorStaffPayroll must be exported");
+		assert.ok(calculateAssistantStaffPayroll, "calculateAssistantStaffPayroll must be exported");
+		assert.ok(calculateConsolidatedStaffPayroll, "calculateConsolidatedStaffPayroll must be exported");
+		assert.ok(generate1CZup31Xml, "generate1CZup31Xml must be exported");
 	});
 
 	it("1.2 Computes doctor piecework with automatic lab/material deduction and clinical directions", () => {
