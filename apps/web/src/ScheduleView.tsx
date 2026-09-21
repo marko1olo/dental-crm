@@ -2050,7 +2050,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 									только к расписанию.
 								</span>
 								<button
-									className="secondary-button shrink-0 min-h-[44px] px-3.5"
+									className="secondary-button shrink-0 h-8 px-3.5"
 									type="button"
 									onClick={() => {
 										if (!adminSecretReady) {

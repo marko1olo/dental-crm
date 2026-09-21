@@ -34,6 +34,7 @@ import {
 } from "./staffMutationRequest";
 import { ServicePricelistManagerModal } from "../catalog/pricelist/ServicePricelistManagerModal";
 import type { ServicePricelistItem } from "../catalog/pricelist/servicePricelistPresets";
+import { sliceDomList } from "../../utils/domVirtualizationHelper";
 
 // biome-ignore lint/correctness/noUnusedVariables: automated suppression
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -482,7 +483,7 @@ export function SettingsPricesTab() {
 								}}
 							>
 								<ShieldCheck size={16} style={{ color: "var(--teal)" }} />
-								<span>Справочник услуг и прайс-лист (Приказ Минздрава № 804н / ДМС / VIP)</span>
+								<span>Прейскурант 804н</span>
 							</button>
 							<button
 								type="button"
@@ -500,7 +501,7 @@ export function SettingsPricesTab() {
 						</div>
 
 						{/* 1-Click Fast Statutory 804n Code Chips */}
-						<div className="w-full flex items-center gap-1.5 overflow-x-auto py-2 flex-nowrap scrollbar-thin">
+						<div className="w-full flex items-center gap-1.5 overflow-x-auto py-1.5 flex-nowrap scrollbar-thin">
 							<span className="text-xs font-bold text-[var(--muted)] shrink-0">
 								Номенклатура 804н (1-клик):
 							</span>
@@ -518,7 +519,7 @@ export function SettingsPricesTab() {
 									key={chip.code}
 									type="button"
 									onClick={() => setSearchQuery(chip.code)}
-									className={`px-3 py-2 min-h-[44px] rounded-lg text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap border inline-flex items-center justify-center ${
+									className={`px-2.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap border inline-flex items-center justify-center ${
 										searchQuery === chip.code
 											? "bg-indigo-600 text-white border-indigo-700 shadow-2xs"
 											: "bg-[var(--paper)] border-[var(--line)] text-indigo-700 dark:text-indigo-300 hover:border-indigo-400"
@@ -534,8 +535,9 @@ export function SettingsPricesTab() {
 					<div className="catalog-groups">
 						{Object.entries(groupedCatalog).map(([category, items]) => {
 							const currentLimit = categoryLimits[category] ?? 30;
-							const visibleItems = items.slice(0, currentLimit);
-							const hasMore = items.length > currentLimit;
+							const listSlice = sliceDomList(items, currentLimit, 0);
+							const visibleItems = listSlice.visibleItems;
+							const hasMore = listSlice.hasMore;
 
 							return (
 							<div key={category} className="catalog-group">

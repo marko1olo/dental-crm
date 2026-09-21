@@ -77,7 +77,7 @@ export const ODONTOGRAM_VIEW_MODES: readonly OdontogramViewOption[] = [
 	{
 		mode: "anatomical_svg",
 		label: "3D Анатомический",
-		shortLabel: "Анатомический",
+		shortLabel: "Анатомия",
 		icon: <Sparkles size={14} className="text-indigo-500 shrink-0" />,
 		tooltip: "Векторная анатомическая визуализация коронок, корней и каналов",
 		badge: "3D",

@@ -1443,13 +1443,13 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 													? "Акт сдачи-приемки выполненных работ (804н)"
 													: activeTab === "oneC"
 														? "1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 и 54-ФЗ"
-														: "Кассовый чек 54-ФЗ • Фискализация 54-ФЗ & Прием платежей"}
+														: "Кассовый чек 54-ФЗ • Оплата визита"}
 								</h3>
 								<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-bold shrink-0">
 									ФФД 1.2
 								</span>
 							</div>
-							<p className="text-xs text-[var(--muted,#64748b)] truncate mt-0.5">
+							<p className="text-xs text-[var(--muted,#64748b)] break-words mt-0.5">
 								Пациент:{" "}
 								<strong className="text-[var(--ink,#0f172a)] font-semibold">
 									{patientName}
@@ -1628,43 +1628,6 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 							{/* Left Column: Split Payment Builders */}
 							<div className="lg:col-span-7 space-y-4">
-								{/* 1-Click Fast Documentation Action Bar for Front Desk */}
-								<div className="p-3.5 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex flex-wrap items-center justify-between gap-2.5">
-									<div className="flex items-center gap-2 text-xs font-bold text-teal-900 dark:text-teal-100">
-										<FileCheck size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-										<span>1-Click Документы при закрытии визита:</span>
-									</div>
-									<div className="flex items-center gap-2 flex-wrap">
-										<button
-											type="button"
-											onClick={() => setActiveTab("act")}
-											className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
-											title="1-Клик: Сформировать и распечатать Акт выполненных работ"
-										>
-											<FileText size={14} />
-											<span>Акт выполненных работ (804н)</span>
-										</button>
-										<button
-											type="button"
-											onClick={() => setActiveTab("oneC")}
-											className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
-											title="1-Клик: Экспорт в 1С:Предприятие 8.3 (CommerceML 2.09 XML)"
-										>
-											<FileCode2 size={14} />
-											<span>1С:Экспорт (XML)</span>
-										</button>
-										<button
-											type="button"
-											onClick={() => setActiveTab("certificate")}
-											className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-indigo-500/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/15 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
-											title="1-Клик: Сформировать и распечатать Справку для налоговой КНД 1151156"
-										>
-											<FileCheck size={14} />
-											<span>Справка КНД 1151156</span>
-										</button>
-									</div>
-								</div>
-
 								{/* StomX Cash Flow (ДДС) & Cash Box Selector */}
 								<div className="p-3.5 rounded-2xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] space-y-2.5" data-testid="stomx-cash-flow-payment-bar">
 									<div className="flex items-center justify-between flex-wrap gap-2">
@@ -1734,11 +1697,11 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												Позиций: {activeItems.length}
 											</span>
 										</div>
-										<div className="flex flex-wrap gap-2">
+										<div className="flex flex-wrap gap-1.5">
 											<button
 												type="button"
 												onClick={() => handleSelectStage("all")}
-												className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+												className={`h-8 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center ${
 													selectedStageKind === "all"
 														? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-xs"
 														: "bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:border-teal-400"
@@ -1755,7 +1718,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 														key={st}
 														type="button"
 														onClick={() => handleSelectStage(st)}
-														className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+														className={`h-8 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center ${
 															selectedStageKind === st
 																? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-xs"
 																: "bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:border-teal-400"

@@ -86,17 +86,17 @@ export const GlobalTreatmentsStrip: React.FC<GlobalTreatmentsStripProps> = ({
 
 	return (
 		<div
-			className="global-treatments-strip flex flex-wrap items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 text-xs text-slate-700 dark:text-slate-300 transition-colors"
+			className="global-treatments-strip flex flex-wrap items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink,#0f172a)] transition-colors"
 			role="region"
 			aria-label="Общие процедуры на всю дугу и полость рта"
 		>
-			<div className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-slate-500 dark:text-slate-400 uppercase select-none mr-1">
+			<div className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-[var(--muted,#64748b)] uppercase select-none mr-1">
 				<Sparkles className="w-3.5 h-3.5 text-amber-500" />
 				<span>Общие процедуры:</span>
 			</div>
 
 			{globals.length === 0 ? (
-				<span className="text-slate-400 dark:text-slate-500 italic text-[11px]">
+				<span className="text-[var(--muted,#64748b)] italic text-[11px]">
 					Нет общих назначений
 				</span>
 			) : (
@@ -115,7 +115,7 @@ export const GlobalTreatmentsStrip: React.FC<GlobalTreatmentsStripProps> = ({
 									? "border-blue-500 bg-blue-50 text-blue-800 dark:bg-blue-950/60 dark:text-blue-200 ring-2 ring-blue-400/40 shadow-sm"
 									: isPlanned
 										? "border-amber-300 dark:border-amber-700/60 bg-amber-50/70 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 hover:border-blue-400 hover:bg-blue-50/50"
-										: "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600 shadow-2xs"
+										: "border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] hover:border-blue-400 shadow-2xs"
 							}`}
 							style={
 								isPlanned
@@ -129,7 +129,7 @@ export const GlobalTreatmentsStrip: React.FC<GlobalTreatmentsStripProps> = ({
 							{getIcon(tr)}
 							<span>{tr.title}</span>
 							{tr.arch && (
-								<span className="text-[10px] uppercase tracking-wider px-1 py-0.2 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+								<span className="text-[10px] uppercase tracking-wider px-1 py-0.2 rounded bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] border border-[var(--border,#e2e8f0)]">
 									{tr.arch === "upper" ? "в/ч" : "н/ч"}
 								</span>
 							)}
@@ -146,7 +146,7 @@ export const GlobalTreatmentsStrip: React.FC<GlobalTreatmentsStripProps> = ({
 					<button
 						type="button"
 						onClick={() => onQuickAdd(DEFAULT_GLOBAL_PRESETS[0]!)}
-						className="inline-flex items-center gap-1 px-2 py-0.8 text-[11px] font-medium rounded border border-dashed border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+						className="inline-flex items-center gap-1 px-2 py-0.8 text-[11px] font-medium rounded border border-dashed border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:border-emerald-500 hover:text-emerald-600 transition-colors"
 						title="Добавить профгигиену Air-Flow на всю полость рта"
 					>
 						<Plus className="w-3 h-3" />
@@ -155,7 +155,7 @@ export const GlobalTreatmentsStrip: React.FC<GlobalTreatmentsStripProps> = ({
 					<button
 						type="button"
 						onClick={() => onQuickAdd(DEFAULT_GLOBAL_PRESETS[1]!)}
-						className="inline-flex items-center gap-1 px-2 py-0.8 text-[11px] font-medium rounded border border-dashed border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-400 transition-colors"
+						className="inline-flex items-center gap-1 px-2 py-0.8 text-[11px] font-medium rounded border border-dashed border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:border-sky-500 hover:text-sky-600 transition-colors"
 						title="Добавить элайнеры на верхнюю челюсть"
 					>
 						<Plus className="w-3 h-3" />
@@ -164,7 +164,7 @@ export const GlobalTreatmentsStrip: React.FC<GlobalTreatmentsStripProps> = ({
 					<button
 						type="button"
 						onClick={() => onQuickAdd(DEFAULT_GLOBAL_PRESETS[2]!)}
-						className="inline-flex items-center gap-1 px-2 py-0.8 text-[11px] font-medium rounded border border-dashed border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-400 transition-colors"
+						className="inline-flex items-center gap-1 px-2 py-0.8 text-[11px] font-medium rounded border border-dashed border-[var(--border,#cbd5e1)] text-[var(--muted,#64748b)] hover:border-sky-500 hover:text-sky-600 transition-colors"
 						title="Добавить элайнеры на нижнюю челюсть"
 					>
 						<Plus className="w-3 h-3" />
