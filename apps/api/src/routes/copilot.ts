@@ -14,6 +14,7 @@ import { PERMISSIONS } from "../security/permissions.js";
 import {
 	AgentOrchestrator,
 	buildCompactedSystemPrompt,
+	buildDenteAgentSystemPrompt,
 	defaultCopilotActionManager,
 	defaultCopilotSessionStore,
 	defaultCopilotStreamManager,
@@ -21,6 +22,7 @@ import {
 	defaultSessionStore,
 	defaultToolRegistry,
 	defaultWhatsAppBridge,
+	defaultChairsideSentinel,
 	formatSseEvent,
 	type AgentContext,
 	type DoctorScreenContext,
@@ -208,10 +210,20 @@ const proactiveAlertsQuerySchema = z.object({
 	liveScan: z.enum(["true", "false"]).optional(),
 });
 
-const DENTE_COPILOT_SYSTEM_PROMPT = `Вы — высококвалифицированный клинический AI-ассистент DENTE для стоматологов и администраторов клиник.
-Ваша цель — ускорять работу врача, безошибочно вести медицинские карты 043/у по клиническим протоколам Стоматологической Ассоциации России (СтАР), находить данные пациентов, проверять свободные окна и контролировать планы лечения.
-Отвечайте на чистом русском языке, четко, структурированно, без воды.
-Используйте инструменты из реестра для поиска и изменения данных. При выполнении действий, требующих подтверждения, дождитесь решения врача.`;
+const chairsideSentinelAnalyzeBodySchema = z.object({
+	patientId: z.string().min(1, "patientId обязателен"),
+	toothNumber: z.union([z.number(), z.string()]).optional(),
+	complaints: z.string().optional(),
+	diagnoses: z.array(z.string()).optional(),
+	allergies: z.array(z.string()).optional(),
+	somaticHistory: z.array(z.string()).optional(),
+	activeServices: z.array(z.string()).optional(),
+	mode: z.enum(["autonomous", "supervised"]).optional(),
+	organizationId: z.string().optional(),
+});
+
+
+const DENTE_COPILOT_SYSTEM_PROMPT = buildDenteAgentSystemPrompt();
 
 export const copilotRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
@@ -1879,5 +1891,28 @@ export const copilotRoutes: FastifyPluginAsync = async (
 			return reply.send({ ok: true, data: aggregate });
 		},
 	);
+
+	// POST /api/v1/copilot/sentinel/analyze — Autonomous Proactive Chairside Sentinel Engine
+	server.post(
+		"/api/v1/copilot/sentinel/analyze",
+		async (request, reply) => {
+			const parsedBody = chairsideSentinelAnalyzeBodySchema.safeParse(
+				request.body ?? {},
+			);
+			if (!parsedBody.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный контекст визита: patientId обязателен",
+					details: parsedBody.error.errors,
+				});
+			}
+
+			const result = await defaultChairsideSentinel.analyzeVisitContext(
+				parsedBody.data,
+			);
+			return reply.send({ ok: true, data: result });
+		},
+	);
 };
+
 
