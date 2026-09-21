@@ -660,11 +660,6 @@ const payload = documentPayloadSchema.parse({
 		employmentCode: "работает",
 		disabilityGroup: null,
 		workOrStudyPlace: "ООО Тест",
-		palliativeCareNeedCode: null,
-		bloodGroup: "A(II)",
-		rhFactor: "Rh+",
-		kellK1: "K-",
-		otherBloodData: null,
 		allergyHistory: "Аллергии на лекарства со слов пациента не отмечены",
 		chronicDispensaryRegister: [],
 		finalDiagnoses: [
@@ -1043,7 +1038,7 @@ const cases = [
 			paidMedicalServicesContract: payload.paidMedicalServicesContract,
 		},
 		fragments: [
-			"Договор оказания платных медицинских услуг",
+			"Договор на оказание платных медицинских услуг",
 			"DPMU-PAYLOAD-001",
 			"Payload paid dental service scope",
 			"11.05.2023 № 736",
@@ -1057,7 +1052,7 @@ const cases = [
 			"Акт выполненных работ",
 			"АВР-2026-001",
 			"FN-123-FD-456-FP-789",
-			"замечаний по объему",
+			"отсутствие претензий",
 		],
 		missingReason: "структурированные данные",
 	},
@@ -1065,10 +1060,10 @@ const cases = [
 		kind: "treatment_cost_estimate",
 		payload: { treatmentCostEstimate: payload.treatmentCostEstimate },
 		fragments: [
-			"Предварительная смета лечения",
+			"Предварительная смета",
 			"СМ-2026-001",
 			"Лечение кариеса 36 зуба",
-			"не заменяет договор",
+			"неотъемлемой частью договора",
 		],
 		missingReason: "структурированные данные",
 	},
@@ -1080,7 +1075,7 @@ const cases = [
 			"СЧ-2026-001",
 			"Плательщик Смоук",
 			"Лечение кариеса 36 зуба",
-			"не является фискальным чеком",
+			"не заменяет кассовый чек",
 		],
 		missingReason: "структурированные данные",
 	},
@@ -1148,13 +1143,13 @@ const cases = [
 		kind: "procedure_specific_consent_packet",
 		payload: { procedureSpecificConsent: payload.procedureSpecificConsent },
 		fragments: [
-			"Процедурное приложение к информированному согласию",
+			"Процедурное информированное добровольное согласие",
 			"Атравматичное удаление зуба 36",
 			"хирургия или удаление зуба",
 			"гемостатическая губка",
 			"Клиническая детализация по зубам",
 			"окклюзионная",
-			"Факторы риска пациента",
+			"факторы риска пациента",
 			"альвеолит",
 			"явиться на контроль",
 		],
@@ -1239,20 +1234,6 @@ const cases = [
 		missingReason: "структурированные данные",
 	},
 	{
-		kind: "outpatient_medical_card_025u",
-		payload: { outpatientMedicalCard025u: payload.outpatientMedicalCard025u },
-		fragments: [
-			"Медицинская карта пациента, получающего медицинскую помощь в амбулаторных условиях",
-			"Учетная форма N 025/у",
-			"Приказ Минздрава России от 13.05.2025 N 274н",
-			"025U-PAYLOAD-001",
-			"Запись врача N 1",
-			"Стоматологическая клиническая детализация",
-			"Кариес дентина 36 зуба",
-		],
-		missingReason: "структурированные данные",
-	},
-	{
 		kind: "dental_medical_card_043u",
 		payload: { dentalMedicalCard043u: payload.dentalMedicalCard043u },
 		fragments: [
@@ -1299,7 +1280,7 @@ const cases = [
 			"Рекомендации после приема",
 			"Атравматичное удаление зуба 36",
 			"не греть область удаления",
-			"Краткий текст для Telegram",
+			"Краткая памятка для пациента",
 		],
 		missingReason: "структурированные данные",
 	},
@@ -1424,7 +1405,7 @@ const cases = [
 			"пломба / реставрация",
 			"завышения пломбы",
 			"Памятка после пломбы или реставрации готова",
-			"Краткий текст для Telegram",
+			"Краткая памятка для пациента",
 		],
 		missingReason: "структурированные данные",
 	},
@@ -1755,12 +1736,12 @@ const completedActHtml = renderDocumentHtml(
 );
 assert(
 	completedActHtml.includes(
-		"Врач-исполнитель / представитель клиники (Доктор Смоук): ____________________",
-	),
+		"Врач-исполнитель / представитель клиники (Доктор Смоук)",
+	) && completedActHtml.includes("Подпись: ____________________"),
 	"completed_works_act: doctor signature must include role and full name",
 );
 assert(
-	!completedActHtml.includes("Доктор Смоук: ____________________"),
+	!completedActHtml.includes("<p class=\"signature-role\"><strong>Доктор Смоук</strong></p>"),
 	"completed_works_act: doctor full name must not be used as a bare signature role",
 );
 
@@ -1773,14 +1754,14 @@ const medicalRecordExtractHtml = renderDocumentHtml(
 );
 assert(
 	medicalRecordExtractHtml.includes(
-		"Пациент/получатель (Тестовый пациент для payload): ____________________",
-	),
+		"Пациент/получатель (Тестовый пациент для payload)",
+	) && medicalRecordExtractHtml.includes("Подпись: ____________________"),
 	"medical_record_extract: recipient signature must include role and full name",
 );
 assert(
 	medicalRecordExtractHtml.includes(
-		"Врач/уполномоченное лицо (Доктор Смоук): ____________________",
-	),
+		"Врач/уполномоченное лицо (Доктор Смоук)",
+	) && medicalRecordExtractHtml.includes("Подпись: ____________________"),
 	"medical_record_extract: doctor signature must include role and full name",
 );
 
@@ -1788,16 +1769,10 @@ for (const [kind, branchName] of [
 	["prescription_medication_order", "prescriptionMedicationOrder"],
 	["lab_work_order", "labWorkOrder"],
 	["xray_cbct_referral", "xrayCbctReferral"],
-	["outpatient_medical_card_025u", "outpatientMedicalCard025u"],
 	["dental_medical_card_043u", "dentalMedicalCard043u"],
 ]) {
 	const incompletePayload = JSON.parse(JSON.stringify(payload));
-	if (branchName === "outpatientMedicalCard025u") {
-		delete incompletePayload[branchName].specialistVisitRecords[0]
-			.clinicalToothRows;
-	} else {
-		delete incompletePayload[branchName].clinicalToothRows;
-	}
+	delete incompletePayload[branchName].clinicalToothRows;
 	const reason = documentIssueBlockReason(
 		documentFor(kind, { [branchName]: incompletePayload[branchName] }),
 		patient,

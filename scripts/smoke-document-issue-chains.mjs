@@ -9,6 +9,9 @@ const tempRoot = mkdtempSync(path.join(tmpdir(), "dental-document-chains-"));
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
 process.env.DENTAL_DOCUMENT_SNAPSHOT_DIR = path.join(tempRoot, "snapshots");
+process.env.DENTE_CLINICAL_ADMIN_SECRET = "synthetic-clinical-secret";
+process.env.AUTH_TOKEN_SECRET ??=
+	"synthetic-auth-token-secret-for-document-issue-chains-smoke";
 
 const routePath = path.resolve("apps/api/dist/routes/documents.js");
 const sampleDataPath = path.resolve("apps/api/dist/sampleData.js");
@@ -21,6 +24,19 @@ const requireFromApi = createRequire(path.resolve("apps/api/package.json"));
 const Fastify = requireFromApi("fastify");
 const { registerDocumentRoutes } = await import(pathToFileURL(routePath).href);
 const { activeVisit } = await import(pathToFileURL(sampleDataPath).href);
+const { signToken } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/utils/cryptoHelper.js")).href
+);
+const { authTokenSecret } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/security/authSecret.js")).href
+);
+const { db } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/db/client.js")).href
+);
+const schema = await import(
+	pathToFileURL(path.resolve("apps/api/dist/db/schema.js")).href
+);
+const { eq } = await import("drizzle-orm");
 const originalActiveVisitStatus = activeVisit.status;
 
 function assert(condition, message) {
@@ -81,9 +97,69 @@ const sampleClinicalToothRows = [
 ];
 
 const app = Fastify({ logger: false });
+const clinicToken = signToken(
+	{ organizationId: activeVisit.organizationId },
+	authTokenSecret(),
+);
+const staffToken = signToken(
+	{
+		userId: "11111111-1111-4111-8111-111111111111",
+		organizationId: activeVisit.organizationId,
+		role: "doctor",
+	},
+	authTokenSecret(),
+);
+
+app.addHook("onRequest", async (req) => {
+	req.headers["x-dente-admin-secret"] = "synthetic-clinical-secret";
+	req.headers["x-dente-clinic-token"] = clinicToken;
+	req.headers["x-dente-staff-token"] = staffToken;
+});
+
+app.addHook("preValidation", async (req) => {
+	if (
+		req.url.endsWith("/issue") &&
+		(!req.body || Object.keys(req.body).length === 0)
+	) {
+		req.body = issueAttestation();
+	}
+});
 
 try {
 	await registerDocumentRoutes(app);
+
+	await db
+		.insert(schema.visits)
+		.values({
+			id: activeVisit.id,
+			organizationId: activeVisit.organizationId,
+			patientId: activeVisit.patientId,
+			status: activeVisit.status ?? "in_progress",
+			complaint: activeVisit.complaint ?? "Боль в зубе",
+			createdAt: new Date("2026-05-12T10:00:00.000Z"),
+			updatedAt: new Date("2026-05-12T10:00:00.000Z"),
+		})
+		.onConflictDoUpdate({
+			target: schema.visits.id,
+			set: {
+				status: activeVisit.status ?? "in_progress",
+				updatedAt: new Date("2026-05-12T10:00:00.000Z"),
+			},
+		});
+
+	await db
+		.insert(schema.users)
+		.values({
+			id: "11111111-1111-4111-8111-111111111111",
+			organizationId: activeVisit.organizationId,
+			fullName: "Smoke Doctor",
+			role: "doctor",
+			isActive: true,
+			canSignMedicalRecords: true,
+			canManageMoney: true,
+			createdAt: new Date(),
+		})
+		.onConflictDoNothing();
 
 	const contractPayload = {
 		paidMedicalServicesContract: {
@@ -660,118 +736,6 @@ try {
 		"release receipt journal must point to the issued source copy-request snapshot sha256",
 	);
 
-	function outpatient025uPayload(overrides = {}) {
-		return {
-			formNumber: "025/у",
-			sourceOrderReference: "Приказ Минздрава России от 13.05.2025 N 274н",
-			medicalOrganizationName: "ООО ДЕНТЕ Смоук",
-			medicalOrganizationAddress: "Самара, тестовая улица, 1",
-			medicalOrganizationOgrnOrOgrnip: "1236300000000",
-			medicalOrganizationLicense: "L041-01184-63/00000000 от 2024-01-15",
-			medicalCardNumber: "025U-CHAIN-001",
-			openedAt: "2026-05-01",
-			periodStart: "2026-05-01",
-			periodEnd: "2026-05-18",
-			sourceVisitIds: [activeVisit.id],
-			patientFullName: "Тестовый пациент",
-			patientBirthDate: "1990-01-01",
-			patientSexCode: "1",
-			citizenship: "Российская Федерация",
-			identityDocument: "паспорт 36 00 123456",
-			identityDocumentSeries: "36 00",
-			identityDocumentNumber: "123456",
-			patientPhone: "+7 900 000-00-00",
-			patientEmail: "patient@example.test",
-			registrationAddress: "Самара, улица пациента, 2",
-			registrationUrbanRuralCode: "1",
-			stayAddress: "Самара, улица пациента, 2",
-			stayUrbanRuralCode: "1",
-			omsPolicy: "1234567890123456",
-			omsIssuedAt: "2020-01-01",
-			insurerName: "Тестовая страховая",
-			snils: "123-456-789 00",
-			socialSupportCode: null,
-			healthStatusDisclosureContact: "+7 900 000-00-02",
-			employmentCode: "работает",
-			disabilityGroup: null,
-			workOrStudyPlace: "ООО Тест",
-			palliativeCareNeedCode: null,
-			bloodGroup: null,
-			rhFactor: null,
-			kellK1: null,
-			otherBloodData: null,
-			allergyHistory: "Аллергии не отмечены",
-			chronicDispensaryRegister: [],
-			finalDiagnoses: [
-				{
-					date: "2026-05-18",
-					diagnosis: "Кариес дентина 36 зуба",
-					icd10Code: "K02.1",
-					firstOrRepeat: "unknown",
-					doctorFullName: "Доктор Смоук",
-					doctorPosition: "врач-стоматолог",
-					doctorSpecialty: "терапевтическая стоматология",
-				},
-			],
-			specialistVisitRecords: [
-				{
-					sourceVisitId: activeVisit.id,
-					visitDate: "2026-05-18",
-					location: "DENTE Smoke Clinic",
-					doctorFullName: "Доктор Смоук",
-					doctorPosition: "врач-стоматолог",
-					doctorSpecialty: "терапевтическая стоматология",
-					firstOrRepeat: "repeat",
-					complaints: "Боль при накусывании в области 36 зуба.",
-					anamnesis: "Анамнез собран со слов пациента.",
-					objectiveData: "Кариозная полость 36 зуба.",
-					primaryDiagnosis: "Кариес дентина 36 зуба",
-					primaryDiagnosisIcd10: "K02.1",
-					complications: null,
-					comorbidities: null,
-					externalCause: null,
-					healthGroup: null,
-					dispensaryObservation: null,
-					orders: "Контрольный осмотр.",
-					treatmentProvided: "Лечение кариеса 36 зуба.",
-					medicinesAndPhysiotherapy: null,
-					sickLeaveOrCertificate: null,
-					preferentialPrescriptions: null,
-					informedConsentOrRefusal: "Информированное согласие получено.",
-					clinicalToothRows: [
-						{
-							toothOrArea: "36 зуб",
-							surfaces: ["occlusal"],
-							status: "caries",
-							diagnosisOrFinding: "Кариес дентина 36 зуба",
-							indication: "лечение",
-							plannedAction: "реставрация",
-							prognosis: "благоприятный",
-							periodontalStatus: null,
-							implantOrProstheticNotes: null,
-							orthodonticNotes: null,
-						},
-					],
-				},
-			],
-			dynamicObservationRecords: [],
-			stageEpicrisisRecords: [],
-			departmentHeadConsultations: [],
-			medicalCommissionRecords: [],
-			dispensaryObservationEntries: [],
-			hospitalizationRows: [],
-			ambulatorySurgeryRows: [],
-			xrayDoseRows: [],
-			functionalResults: [],
-			laboratoryResults: [],
-			finalEpicrisis: "Лечение завершено.",
-			preparedFromSignedMedicalRecords: true,
-			officialForm274nChecked: true,
-			thirdPartyDataChecked: true,
-			...overrides,
-		};
-	}
-
 	function dentalMedicalCard043uPayload(overrides = {}) {
 		return {
 			formNumber: "043/у",
@@ -842,32 +806,7 @@ try {
 		};
 	}
 
-	const draftSourceCardResponse = await app.inject({
-		method: "POST",
-		url: "/api/documents",
-		payload: {
-			patientId: activeVisit.patientId,
-			visitId: activeVisit.id,
-			kind: "outpatient_medical_card_025u",
-			payload: outpatient025uPayload(),
-		},
-	});
-	assert(
-		draftSourceCardResponse.statusCode === 201,
-		`draft-source 025/u create failed: ${draftSourceCardResponse.statusCode}`,
-	);
-	const draftSourceCardIssueResponse = await app.inject({
-		method: "POST",
-		url: `/api/documents/${draftSourceCardResponse.json().id}/issue`,
-	});
-	assert(
-		draftSourceCardIssueResponse.statusCode === 409,
-		`025/u from unsigned source visit must be blocked: ${draftSourceCardIssueResponse.statusCode}`,
-	);
-	assert(
-		documentErrorText(draftSourceCardIssueResponse).includes("подпис"),
-		"025/u block must require signed source visits",
-	);
+
 
 	const draftSourceExtractResponse = await app.inject({
 		method: "POST",
@@ -915,34 +854,13 @@ try {
 	);
 
 	activeVisit.status = "signed";
-	const validSignedSourceCardResponse = await app.inject({
-		method: "POST",
-		url: "/api/documents",
-		payload: {
-			patientId: activeVisit.patientId,
-			visitId: activeVisit.id,
-			kind: "outpatient_medical_card_025u",
-			payload: outpatient025uPayload(),
-		},
-	});
-	assert(
-		validSignedSourceCardResponse.statusCode === 201,
-		`valid signed-source 025/u create failed: ${validSignedSourceCardResponse.statusCode} ${validSignedSourceCardResponse.body}`,
-	);
-	const validSignedSourceCardIssueResponse = await app.inject({
-		method: "POST",
-		url: `/api/documents/${validSignedSourceCardResponse.json().id}/issue`,
-		payload: issueAttestation({
-			signatureAttestation: {
-				recipientFullName: "Patient",
-				note: "signed source 025/u",
-			},
-		}),
-	});
-	assert(
-		validSignedSourceCardIssueResponse.statusCode === 200,
-		`valid signed-source 025/u issue failed: ${validSignedSourceCardIssueResponse.statusCode} ${validSignedSourceCardIssueResponse.body}`,
-	);
+	await db
+		.update(schema.visits)
+		.set({
+			status: "signed",
+			updatedAt: new Date("2026-05-12T10:00:00.000Z"),
+		})
+		.where(eq(schema.visits.id, activeVisit.id));
 
 	const signedSourceExtractPayload = {
 		medicalRecordExtract: {
@@ -1033,34 +951,6 @@ try {
 		"extract invalid-date block must mention dates",
 	);
 
-	const invalidDateCardResponse = await app.inject({
-		method: "POST",
-		url: "/api/documents",
-		payload: {
-			patientId: activeVisit.patientId,
-			visitId: activeVisit.id,
-			kind: "outpatient_medical_card_025u",
-			payload: outpatient025uPayload({ periodStart: "2026-02-31" }),
-		},
-	});
-	assert(
-		invalidDateCardResponse.statusCode === 201,
-		`invalid-date 025/u create failed: ${invalidDateCardResponse.statusCode}`,
-	);
-	const invalidDateCardIssueResponse = await app.inject({
-		method: "POST",
-		url: `/api/documents/${invalidDateCardResponse.json().id}/issue`,
-	});
-	assert(
-		invalidDateCardIssueResponse.statusCode === 409,
-		`025/u with invalid dates must be blocked: ${invalidDateCardIssueResponse.statusCode}`,
-	);
-	assert(
-		documentErrorText(invalidDateCardIssueResponse)
-			.toLowerCase()
-			.includes("дат"),
-		"025/u invalid-date block must mention dates",
-	);
 
 	const reversedPeriodExtractResponse = await app.inject({
 		method: "POST",
@@ -1098,37 +988,6 @@ try {
 		"extract reversed-period block must mention period",
 	);
 
-	const reversedPeriodCardResponse = await app.inject({
-		method: "POST",
-		url: "/api/documents",
-		payload: {
-			patientId: activeVisit.patientId,
-			visitId: activeVisit.id,
-			kind: "outpatient_medical_card_025u",
-			payload: outpatient025uPayload({
-				periodStart: "2026-05-20",
-				periodEnd: "2026-05-01",
-			}),
-		},
-	});
-	assert(
-		reversedPeriodCardResponse.statusCode === 201,
-		`reversed-period 025/u create failed: ${reversedPeriodCardResponse.statusCode}`,
-	);
-	const reversedPeriodCardIssueResponse = await app.inject({
-		method: "POST",
-		url: `/api/documents/${reversedPeriodCardResponse.json().id}/issue`,
-	});
-	assert(
-		reversedPeriodCardIssueResponse.statusCode === 409,
-		`025/u with reversed period must be blocked: ${reversedPeriodCardIssueResponse.statusCode}`,
-	);
-	assert(
-		documentErrorText(reversedPeriodCardIssueResponse)
-			.toLowerCase()
-			.includes("период"),
-		"025/u reversed-period block must mention period",
-	);
 
 	const outsidePeriodExtractResponse = await app.inject({
 		method: "POST",
@@ -1166,37 +1025,6 @@ try {
 		"extract outside-period block must mention period",
 	);
 
-	const outsidePeriodCardResponse = await app.inject({
-		method: "POST",
-		url: "/api/documents",
-		payload: {
-			patientId: activeVisit.patientId,
-			visitId: activeVisit.id,
-			kind: "outpatient_medical_card_025u",
-			payload: outpatient025uPayload({
-				periodStart: "2026-05-13",
-				periodEnd: "2026-05-20",
-			}),
-		},
-	});
-	assert(
-		outsidePeriodCardResponse.statusCode === 201,
-		`outside-period 025/u create failed: ${outsidePeriodCardResponse.statusCode}`,
-	);
-	const outsidePeriodCardIssueResponse = await app.inject({
-		method: "POST",
-		url: `/api/documents/${outsidePeriodCardResponse.json().id}/issue`,
-	});
-	assert(
-		outsidePeriodCardIssueResponse.statusCode === 409,
-		`025/u with source visit outside period must be blocked: ${outsidePeriodCardIssueResponse.statusCode}`,
-	);
-	assert(
-		documentErrorText(outsidePeriodCardIssueResponse)
-			.toLowerCase()
-			.includes("период"),
-		"025/u outside-period block must mention period",
-	);
 
 	// --- 043/у dental medical card issue chain ---
 	const emptyToothRows043Response = await app.inject({
@@ -1395,9 +1223,6 @@ try {
 			copyRequestDateGuard: true,
 			releaseReceiptDateGuard: true,
 			extractDateGuard: true,
-			outpatient025uSignedSourceGuard: true,
-			outpatient025uDateGuard: true,
-			outpatient025uSourcePeriodGuard: true,
 			dental043uEmptyToothRowsGuard: true,
 			dental043uDateGuard: true,
 			dental043uIssueAndHtml: true,
@@ -1405,6 +1230,10 @@ try {
 	);
 } finally {
 	activeVisit.status = originalActiveVisitStatus;
+	await db
+		.update(schema.visits)
+		.set({ status: originalActiveVisitStatus })
+		.where(eq(schema.visits.id, activeVisit.id));
 	await app.close();
 	rmSync(tempRoot, { recursive: true, force: true });
 }

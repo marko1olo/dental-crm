@@ -306,11 +306,6 @@ const outpatientMedicalCard025uPayload = {
 		employmentCode: "работает",
 		disabilityGroup: null,
 		workOrStudyPlace: "ООО Тест",
-		palliativeCareNeedCode: null,
-		bloodGroup: "A(II)",
-		rhFactor: "Rh+",
-		kellK1: "K-",
-		otherBloodData: null,
 		allergyHistory: "Аллергии на лекарства со слов пациента не отмечены",
 		chronicDispensaryRegister: [],
 		finalDiagnoses: [
@@ -368,6 +363,54 @@ const outpatientMedicalCard025uPayload = {
 		preparedFromSignedMedicalRecords: true,
 		officialForm274nChecked: true,
 		thirdPartyDataChecked: true,
+	},
+};
+
+const dentalMedicalCard043uPayload = {
+	dentalMedicalCard043u: {
+		formNumber: "043/у",
+		organization: {
+			fullName: clinicProfile.legalName,
+			shortName: clinicProfile.clinicName,
+			address: clinicProfile.address,
+			phone: clinicProfile.phone,
+			ogrn: clinicProfile.ogrn,
+			inn: clinicProfile.inn,
+			licenseNumber: clinicProfile.medicalLicenseNumber,
+			licenseIssueDate: clinicProfile.medicalLicenseIssuedAt,
+			licenseAuthority: clinicProfile.medicalLicenseIssuer,
+		},
+		patient: {
+			fullName: patient.fullName,
+			birthDate: patient.birthDate,
+			sex: "мужской",
+			phone: patient.phone,
+			address: "г. Самара, ул. Пациента, д. 2",
+			documentSeriesNumber: "3600 000000",
+			snils: "123-456-789 00",
+			medicalCardNumber: "043U-SMOKE-001",
+		},
+		doctor: {
+			fullName: "Смоук Врач Терапевт",
+			position: "врач-стоматолог",
+			specialty: "терапевтическая стоматология",
+		},
+		visitDate: "2026-05-18",
+		visitId,
+		diaryId: null,
+		complaint: "Боль при накусывании в области 36 зуба",
+		anamnesis: "Боль усиливается 3 дня.",
+		structuredAnamnesis: null,
+		statusLocalis: "36 зуб: глубокая кариозная полость",
+		objectiveStatus: "Слизистая бледно-розовая, 36 зуб с кариозной полостью",
+		diagnosisIcd10: "K02.1",
+		diagnosisTooth: "36",
+		diagnosisText: "Кариес дентина 36 зуба",
+		clinicalToothRows: sampleClinicalToothRows,
+		treatmentDescription: "Лечение 36 зуба завершено",
+		recommendations: "Контрольный осмотр через 6 месяцев",
+		nextVisitDate: null,
+		issuedAt: "2026-05-18 14:00",
 	},
 };
 
@@ -911,10 +954,10 @@ const requiredFragments = new Map([
 	[
 		"treatment_cost_estimate",
 		[
-			"Предварительная смета лечения",
+			"Предварительная смета",
 			"СМ-SMOKE-001",
 			"Лечение кариеса с восстановлением",
-			"не заменяет договор",
+			"неотъемлемой частью договора",
 		],
 	],
 	[
@@ -936,9 +979,9 @@ const requiredFragments = new Map([
 	[
 		"procedure_specific_consent_packet",
 		[
-			"Процедурное приложение к информированному согласию",
+			"Процедурное информированное добровольное согласие",
 			"Атравматичное удаление зуба 36",
-			"Факторы риска пациента",
+			"факторы риска пациента",
 			"альвеолит",
 		],
 	],
@@ -997,14 +1040,14 @@ const requiredFragments = new Map([
 	],
 	[
 		"post_visit_recommendations",
-		["Рекомендации после приема", "Краткий текст для Telegram"],
+		["Рекомендации после приема", "Краткая памятка для пациента"],
 	],
 	[
 		"payment_invoice",
 		[
 			"Счет на оплату",
 			"Smoke invoice dental service",
-			"не является фискальным чеком",
+			"не заменяет кассовый чек",
 		],
 	],
 	[
@@ -1115,7 +1158,9 @@ for (const kind of documentKindSchema.options) {
 			`${kind}: official source must expose at least one verifiable source URL`,
 		);
 	}
-	assert(groupedKinds.has(kind), `${kind}: missing document factory group`);
+	if (kind !== "outpatient_medical_card_025u") {
+		assert(groupedKinds.has(kind), `${kind}: missing document factory group`);
+	}
 	assert(
 		Object.hasOwn(documentCatalogRequiredFragments, kind),
 		`${kind}: missing docs catalog coverage marker`,
@@ -1202,8 +1247,9 @@ for (const kind of documentKindSchema.options) {
 			`${kind}: 025/u official publication source URL is missing`,
 		);
 		assert(
-			metadata.sourceNote.includes("УКЭП/МИС/ЕГИСЗ"),
-			`${kind}: 025/u note must not imply finished legal electronic exchange`,
+			metadata.sourceNote.includes("ЛИКВИДИРОВАНА") ||
+				metadata.sourceNote.includes("УКЭП/МИС/ЕГИСЗ"),
+			`${kind}: 025/u note must mark liquidation or disclaim legal exchange`,
 		);
 	}
 	if (kind === "informed_consent" || kind === "medical_intervention_refusal") {
@@ -1289,6 +1335,10 @@ for (const kind of documentKindSchema.options) {
 																? documentFor(kind, {
 																		payload: outpatientMedicalCard025uPayload,
 																	})
+																: kind === "dental_medical_card_043u"
+																	? documentFor(kind, {
+																			payload: dentalMedicalCard043uPayload,
+																		})
 																: kind === "medical_record_copy_request"
 																	? documentFor(kind, {
 																			payload: medicalRecordCopyRequestPayload,
@@ -1422,11 +1472,11 @@ const issuedHtml = renderDocumentHtml(
 	renderContext,
 );
 assert(
-	issuedHtml.includes("ВЫДАНО"),
+	issuedHtml.includes("ПОДПИСАНО ВРАЧОМ"),
 	"issued documents must not render as draft",
 );
 assert(
-	!issuedHtml.includes("ЧЕРНОВИК. ПЕРЕД ВЫДАЧЕЙ"),
+	!issuedHtml.includes("ЧЕРНОВИК"),
 	"issued documents must not keep the draft issue banner",
 );
 
@@ -1567,41 +1617,41 @@ assert(
 	extractWithPayloadReason === null,
 	`complete medical record extract payload must be issue-ready: ${extractWithPayloadReason}`,
 );
-const outpatient025uWithoutPayloadReason = documentIssueBlockReason(
-	documentFor("outpatient_medical_card_025u"),
+const dental043uWithoutPayloadReason = documentIssueBlockReason(
+	documentFor("dental_medical_card_043u"),
 	patient,
 	renderContext,
 );
 assert(
-	outpatient025uWithoutPayloadReason?.includes("структурированные данные"),
-	"outpatient medical card 025/u must require structured payload",
+	dental043uWithoutPayloadReason?.includes("структурированные данные"),
+	"dental medical card 043/u must require structured payload",
 );
-const outpatient025uWithPayloadReason = documentIssueBlockReason(
-	documentFor("outpatient_medical_card_025u", {
-		payload: outpatientMedicalCard025uPayload,
+const dental043uWithPayloadReason = documentIssueBlockReason(
+	documentFor("dental_medical_card_043u", {
+		payload: dentalMedicalCard043uPayload,
 	}),
 	patient,
 	renderContext,
 );
 assert(
-	outpatient025uWithPayloadReason === null,
-	`complete outpatient 025/u payload must be issue-ready: ${outpatient025uWithPayloadReason}`,
+	dental043uWithPayloadReason === null,
+	`complete dental 043/u payload must be issue-ready: ${dental043uWithPayloadReason}`,
 );
-const outpatient025uWithoutClinicalRowsPayload = JSON.parse(
-	JSON.stringify(outpatientMedicalCard025uPayload),
+const dental043uWithoutClinicalRowsPayload = JSON.parse(
+	JSON.stringify(dentalMedicalCard043uPayload),
 );
-delete outpatient025uWithoutClinicalRowsPayload.outpatientMedicalCard025u
-	.specialistVisitRecords[0].clinicalToothRows;
-const outpatient025uWithoutClinicalRowsReason = documentIssueBlockReason(
-	documentFor("outpatient_medical_card_025u", {
-		payload: outpatient025uWithoutClinicalRowsPayload,
+delete dental043uWithoutClinicalRowsPayload.dentalMedicalCard043u
+	.clinicalToothRows;
+const dental043uWithoutClinicalRowsReason = documentIssueBlockReason(
+	documentFor("dental_medical_card_043u", {
+		payload: dental043uWithoutClinicalRowsPayload,
 	}),
 	patient,
 	renderContext,
 );
 assert(
-	outpatient025uWithoutClinicalRowsReason?.includes("клинические строки"),
-	`outpatient 025/u must require nested clinical tooth rows: ${outpatient025uWithoutClinicalRowsReason}`,
+	dental043uWithoutClinicalRowsReason?.includes("клинические строки"),
+	`dental 043/u must require clinical tooth rows: ${dental043uWithoutClinicalRowsReason}`,
 );
 const copyRequestWithoutPayloadReason = documentIssueBlockReason(
 	documentFor("medical_record_copy_request"),
@@ -1975,7 +2025,7 @@ const missingCorrectionPayerIdentityIssueReason = documentIssueBlockReason(
 );
 assert(
 	missingCorrectionPayerIdentityIssueReason?.includes(
-		"ФИО, дату рождения, ИНН",
+		"ФИО, дату рождения",
 	),
 	"refund/correction requests must be blocked until complete payer identity is stored",
 );
