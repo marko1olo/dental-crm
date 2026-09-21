@@ -391,22 +391,13 @@ export function extractObliqueMprSlice(
 			break;
 	}
 
-	const volCenterX = origin.x + (dim.width * sp.x) / 2.0;
-	const volCenterY = origin.y + (dim.height * sp.y) / 2.0;
-	const volCenterZ = origin.z + (dim.depth * sp.z) / 2.0;
-
-	let sliceCenterMm: Point3D;
-	switch (plane) {
-		case "axial":
-			sliceCenterMm = { x: volCenterX, y: volCenterY, z: crosshairMm.z };
-			break;
-		case "coronal":
-			sliceCenterMm = { x: volCenterX, y: crosshairMm.y, z: volCenterZ };
-			break;
-		case "sagittal":
-			sliceCenterMm = { x: crosshairMm.x, y: volCenterY, z: volCenterZ };
-			break;
-	}
+	// Anchor oblique rotation pivot directly to crosshairMm (patient anatomy / target tooth)
+	// so rotating axes does not cause the anatomical structure under investigation to drift off screen.
+	const sliceCenterMm: Point3D = {
+		x: crosshairMm.x,
+		y: crosshairMm.y,
+		z: crosshairMm.z,
+	};
 
 	const basis = computeObliquePlaneBasis(plane, crosshairMm, angles);
 	const totalPixels = widthPx * heightPx;
@@ -823,11 +814,12 @@ export function getRotationHandles(
 
 /**
  * Hit tests pointer coordinates against rotation handles.
+ * Default hitTolerancePx = 20 ensures a total capture radius >= 24px (h.radiusPx 6px + 20px = 26px).
  */
 export function hitTestRotationHandle(
 	pointerPx: { readonly x: number; readonly y: number },
 	handles: readonly RotationHandleInfo[],
-	hitTolerancePx = 10,
+	hitTolerancePx = 20,
 ): RotationHandleInfo | null {
 	for (const h of handles) {
 		const dist = Math.hypot(pointerPx.x - h.canvasX, pointerPx.y - h.canvasY);
@@ -836,6 +828,19 @@ export function hitTestRotationHandle(
 		}
 	}
 	return null;
+}
+
+/**
+ * Normalizes an angle in degrees strictly into the range [-180.0, 180.0].
+ * Prevents negative zero (-0.0) artifacts and wraps multiple full 360° revolutions.
+ */
+export function normalizeAngleDeg(deg: number): number {
+	if (!Number.isFinite(deg)) return 0;
+	let normalized = deg % 360;
+	if (normalized > 180) normalized -= 360;
+	else if (normalized < -180) normalized += 360;
+	const rounded = Number(normalized.toFixed(1));
+	return Object.is(rounded, -0) ? 0 : rounded;
 }
 
 /**
@@ -865,11 +870,8 @@ export function calculateAngleFromHandleDrag(
 			break;
 	}
 
-	let deg = radToDeg(angleRad);
-	while (deg > 180) deg -= 360;
-	while (deg < -180) deg += 360;
-
-	return Number(deg.toFixed(1));
+	const deg = radToDeg(angleRad);
+	return normalizeAngleDeg(deg);
 }
 
 /**
@@ -887,18 +889,14 @@ export function calculateAngleFromShiftDrag(
 	const dy1 = currentPointerPx.y - centerPx.y;
 
 	if (Math.hypot(dx0, dy0) < 1e-3 || Math.hypot(dx1, dy1) < 1e-3) {
-		return initialAngleDeg;
+		return normalizeAngleDeg(initialAngleDeg);
 	}
 
 	const angle0 = Math.atan2(dy0, dx0);
 	const angle1 = Math.atan2(dy1, dx1);
-	let deltaDeg = radToDeg(angle1 - angle0);
+	const deltaDeg = radToDeg(angle1 - angle0);
 
-	let newDeg = initialAngleDeg + deltaDeg;
-	while (newDeg > 180) newDeg -= 360;
-	while (newDeg < -180) newDeg += 360;
-
-	return Number(newDeg.toFixed(1));
+	return normalizeAngleDeg(initialAngleDeg + deltaDeg);
 }
 
 /**
@@ -1061,10 +1059,21 @@ export function drawObliqueCrosshairWithRotationHandles(
 			const isActive = activeHandle === h.position;
 			const isHovered = hoveredHandle === h.position;
 			const color = h.position.startsWith("u") ? axisColor1 : axisColor2;
+			const knobRadius = isActive ? 7.0 : isHovered ? 6.0 : 4.5;
 
 			ctx.save();
+			// Dual-contrast halo for WCAG AAA visibility on both pure white (cortical bone, implants +3071 HU)
+			// and pure black (air -1000 HU, background) areas of the CT slice.
+			// Pass 1: Dark outer halo contour to separate knob from bright structures.
 			ctx.beginPath();
-			ctx.arc(h.canvasX, h.canvasY, isActive ? 7.0 : isHovered ? 6.0 : 4.5, 0, Math.PI * 2);
+			ctx.arc(h.canvasX, h.canvasY, knobRadius, 0, Math.PI * 2);
+			ctx.strokeStyle = "rgba(9, 9, 11, 0.95)";
+			ctx.lineWidth = 3.2;
+			ctx.stroke();
+
+			// Pass 2: High-contrast inner border
+			ctx.beginPath();
+			ctx.arc(h.canvasX, h.canvasY, knobRadius, 0, Math.PI * 2);
 
 			if (isActive) {
 				ctx.fillStyle = "#ffffff";
@@ -1076,55 +1085,27 @@ export function drawObliqueCrosshairWithRotationHandles(
 				ctx.shadowBlur = 6;
 			} else {
 				ctx.fillStyle = color;
-				if (invertColors) {
-					ctx.shadowColor = "rgba(0, 0, 0, 0.95)";
-					ctx.shadowBlur = 4;
-				}
+				ctx.shadowColor = invertColors ? "rgba(0, 0, 0, 0.95)" : "rgba(0, 0, 0, 0.85)";
+				ctx.shadowBlur = 4;
 			}
 
 			ctx.fill();
-			ctx.strokeStyle = invertColors ? "rgba(0, 0, 0, 0.95)" : "#ffffff";
-			ctx.lineWidth = 1.5;
+			ctx.strokeStyle = invertColors ? "rgba(9, 9, 11, 0.95)" : "#ffffff";
+			ctx.lineWidth = 1.4;
 			ctx.stroke();
 			ctx.restore();
 		}
 	}
 
-	// 5. Real-time Rotation Angle HUD Badge (e.g. "Поворот: +15.0°" or "Наклон: -5.0°")
-	// Positioned in the safe top-right HUD corner to avoid occluding central anatomical structures (nasal septum, palate, incisors)
-	if (showAngleBadge && Math.abs(safeRotationDeg) > 0.1) {
-		const badgeText = getObliqueRotationLabel(plane, safeRotationDeg);
-		ctx.font = "bold 10px monospace";
-		ctx.textAlign = "right";
-		ctx.textBaseline = "top";
-
-		const badgeX = widthPx - 10;
-		// Positioned with mt-1 (14px) vertical clearance from top angle division markers & ruler ticks
-		const badgeY = 14;
-
-		ctx.fillStyle = invertColors ? "rgba(255, 255, 255, 0.95)" : "rgba(15, 23, 42, 0.92)";
-		ctx.strokeStyle = invertColors ? "rgba(2, 132, 199, 0.8)" : "rgba(6, 182, 212, 0.6)";
-		ctx.lineWidth = 1.0;
-
-		const textW = ctx.measureText(badgeText).width;
-		ctx.beginPath();
-		if (typeof ctx.roundRect === "function") {
-			ctx.roundRect(badgeX - textW - 8, badgeY, textW + 16, 20, 4);
-		} else {
-			ctx.rect(badgeX - textW - 8, badgeY, textW + 16, 20);
-		}
-		ctx.fill();
-		ctx.stroke();
-
-		ctx.fillStyle = invertColors ? "#0284c7" : "#38bdf8";
-		ctx.fillText(badgeText, badgeX - 4, badgeY + 4);
-	}
+	// 5. Rotation Angle HUD Badge: Delegated strictly to the interactive HTML HUD button in CbctViewportHud.tsx (DEF-04).
+	// Canvas text rendering is omitted to eliminate text ghosting and overlapping duplicate badges.
 
 	ctx.restore();
 }
 
 /**
- * Maps pointer coordinates from a transformed canvas (with zoom & pan) to 3D physical world millimeters.
+ * Maps pointer coordinates from a transformed canvas (with zoom & pan) to 3D physical world millimeters,
+ * taking into account the oblique plane orientation angles and rotated orthonormal basis vectors (u, v).
  */
 export function mapCanvasPointerToWorldMmWithTransform(
 	pointerPx: { readonly x: number; readonly y: number },
@@ -1135,7 +1116,7 @@ export function mapCanvasPointerToWorldMmWithTransform(
 	transform: ViewportTransform,
 	volume: CbctVoxelVolume,
 ): Point3D {
-	if (!volume || volume.isDisposed || !volume.physicalSizeMm) {
+	if (!volume || volume.isDisposed || !volume.physicalSizeMm || !volume.dimensions || !volume.spacingMm) {
 		return crosshairMm ?? { x: 0, y: 0, z: 0 };
 	}
 
@@ -1146,34 +1127,164 @@ export function mapCanvasPointerToWorldMmWithTransform(
 	const cWidth = canvasSize?.width > 0 ? canvasSize.width : 100;
 	const cHeight = canvasSize?.height > 0 ? canvasSize.height : 100;
 
+	// Invert viewport pan & zoom to get coordinates in slice pixel space
 	const untransformedPxX = (pointerPx.x - panX) / zoom;
 	const untransformedPxY = (pointerPx.y - panY) / zoom;
 
-	const normX = untransformedPxX / cWidth;
-	const normY = untransformedPxY / cHeight;
-
-	const halfX = volume.physicalSizeMm.x / 2.0;
-	const halfY = volume.physicalSizeMm.y / 2.0;
-	const halfZ = volume.physicalSizeMm.z / 2.0;
-
-	let newX = crosshairMm.x;
-	let newY = crosshairMm.y;
-	let newZ = crosshairMm.z;
+	// Physical millimeter spacing per canvas pixel for each MPR plane
+	const sp = volume.spacingMm;
+	let pixelSpacingX = sp.x;
+	let pixelSpacingY = sp.y;
 
 	switch (plane) {
 		case "axial":
-			newX = (normX - 0.5) * 2.0 * halfX;
-			newY = (normY - 0.5) * 2.0 * halfY;
+			pixelSpacingX = sp.x;
+			pixelSpacingY = sp.y;
 			break;
 		case "coronal":
-			newX = (normX - 0.5) * 2.0 * halfX;
-			newZ = (0.5 - normY) * 2.0 * halfZ;
+			pixelSpacingX = sp.x;
+			pixelSpacingY = sp.z;
 			break;
 		case "sagittal":
-			newY = (normX - 0.5) * 2.0 * halfY;
-			newZ = (0.5 - normY) * 2.0 * halfZ;
+			pixelSpacingX = sp.y;
+			pixelSpacingY = sp.z;
 			break;
 	}
 
-	return clampCoordinateToVolume({ x: newX, y: newY, z: newZ }, volume);
+	// Offset from slice center in pixels
+	const offsetColPx = untransformedPxX - cWidth / 2.0;
+	const offsetRowPx = untransformedPxY - cHeight / 2.0;
+
+	// Offset in physical millimeters along slice U and V axes
+	const offsetMmU = offsetColPx * pixelSpacingX;
+	const offsetMmV = offsetRowPx * pixelSpacingY;
+
+	// Compute rotated orthonormal basis vectors for the oblique plane
+	const basis = computeObliquePlaneBasis(plane, crosshairMm, angles ?? DEFAULT_OBLIQUE_ROTATION);
+
+	// Map 2D slice offset to 3D physical world space using basis vectors u and v
+	const worldX = crosshairMm.x + offsetMmU * basis.u.x + offsetMmV * basis.v.x;
+	const worldY = crosshairMm.y + offsetMmU * basis.u.y + offsetMmV * basis.v.y;
+	const worldZ = crosshairMm.z + offsetMmU * basis.u.z + offsetMmV * basis.v.z;
+
+	return clampCoordinateToVolume({ x: worldX, y: worldY, z: worldZ }, volume);
+}
+
+// ─── 8. MOUSE WHEEL SLICE NAVIGATION & FULL VIEWPORT RESET MATH ──────────────
+
+export type CbctWheelAction = "slice_scroll" | "zoom";
+
+export interface WheelActionOptions {
+	readonly deltaY: number;
+	readonly ctrlKey?: boolean;
+	readonly metaKey?: boolean;
+	readonly shiftKey?: boolean;
+}
+
+/**
+ * Determines whether a mouse wheel event triggers slice scrolling or cursor zoom.
+ * Default (no Ctrl): Slice scrolling through volume slices.
+ * With Ctrl (or Meta/Cmd on Mac): Cursor-anchored Zoom.
+ */
+export function determineWheelAction(options: WheelActionOptions): CbctWheelAction {
+	if (options.ctrlKey || options.metaKey) {
+		return "zoom";
+	}
+	return "slice_scroll";
+}
+
+/**
+ * Calculates slice index displacement from mouse wheel deltaY.
+ * Standard PACS convention: Wheel Down (deltaY > 0) scrolls forward/down (+1),
+ * Wheel Up (deltaY < 0) scrolls backward/up (-1).
+ */
+export function calculateWheelSliceDelta(deltaY: number, step = 1): number {
+	if (!Number.isFinite(deltaY) || deltaY === 0) return 0;
+	const safeStep = Number.isFinite(step) && step > 0 ? step : 1;
+	return deltaY > 0 ? safeStep : -safeStep;
+}
+
+/**
+ * Computes updated slice index after mouse wheel scroll, clamped to [0, maxSliceIndex].
+ */
+export function calculateSliceIndexFromWheel(
+	currentSliceIndex: number,
+	maxSliceIndex: number,
+	deltaY: number,
+	step = 1,
+): number {
+	const safeCurrent = Number.isFinite(currentSliceIndex) ? currentSliceIndex : 0;
+	const safeMax = Number.isFinite(maxSliceIndex) && maxSliceIndex >= 0 ? maxSliceIndex : 0;
+	const delta = calculateWheelSliceDelta(deltaY, step);
+	return Math.max(0, Math.min(safeMax, Math.round(safeCurrent + delta)));
+}
+
+/**
+ * Updates crosshair world position when scrolling slices along a plane's normal axis.
+ * - Axial: scrolls along Z axis (inferior/superior)
+ * - Coronal: scrolls along Y axis (anterior/posterior)
+ * - Sagittal: scrolls along X axis (left/right)
+ */
+export function calculateCrosshairSliceScroll(
+	currentCrosshairMm: Point3D,
+	plane: MprPlane,
+	deltaY: number,
+	volume: CbctVoxelVolume,
+	stepVoxels = 1,
+): Point3D {
+	if (!volume || volume.isDisposed || !volume.spacingMm) {
+		return currentCrosshairMm;
+	}
+
+	const delta = calculateWheelSliceDelta(deltaY, stepVoxels);
+	if (delta === 0) return currentCrosshairMm;
+
+	const newMm: Point3D = { ...currentCrosshairMm };
+
+	switch (plane) {
+		case "axial":
+			newMm.z += delta * volume.spacingMm.z;
+			break;
+		case "coronal":
+			newMm.y += delta * volume.spacingMm.y;
+			break;
+		case "sagittal":
+			newMm.x += delta * volume.spacingMm.x;
+			break;
+	}
+
+	return clampCoordinateToVolume(newMm, volume);
+}
+
+/**
+ * Calculates physical world coordinate for the exact geometric center of the CBCT volume.
+ */
+export function getVolumeCenterMm(volume: CbctVoxelVolume): Point3D {
+	if (!volume || !volume.dimensions || !volume.spacingMm || !volume.originMm) {
+		return { x: 0, y: 0, z: 0 };
+	}
+	const { dimensions: dim, spacingMm: sp, originMm: origin } = volume;
+	return {
+		x: Number((origin.x + (dim.width * sp.x) / 2.0).toFixed(2)),
+		y: Number((origin.y + (dim.height * sp.y) / 2.0).toFixed(2)),
+		z: Number((origin.z + (dim.depth * sp.z) / 2.0).toFixed(2)),
+	};
+}
+
+export interface FullViewResetState {
+	readonly angles: ObliqueRotationAngles;
+	readonly transform: ViewportTransform;
+	readonly crosshairMm: Point3D;
+}
+
+/**
+ * Performs a complete clinical reset of orientation angles (0.0°), viewport transform (1.0x, pan 0,0),
+ * and centers the 3D crosshair to the volume geometric center.
+ */
+export function resetFullViewAndOrientation(volume?: CbctVoxelVolume): FullViewResetState {
+	return {
+		angles: resetObliqueRotationAngles(),
+		transform: resetViewportTransform(),
+		crosshairMm: volume ? getVolumeCenterMm(volume) : { x: 0, y: 0, z: 0 },
+	};
 }

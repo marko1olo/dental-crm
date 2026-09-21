@@ -2,15 +2,25 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	CBCT_HOUNSFIELD_PRESETS,
+	createEmptyCbctVolume,
+	type CbctViewportType,
+	type Point3D,
+} from "../cbctMprMath";
+import {
 	DEFAULT_OBLIQUE_ROTATION,
 	DEFAULT_VIEWPORT_TRANSFORM,
 	resetObliqueRotationAngles,
 	hitTestCrosshairCenter,
-	type CbctViewportType,
-	type Point3D,
 	type ObliqueRotationAngles,
 	type ViewportTransform,
-} from "../cbctMprMath";
+	determineWheelAction,
+	calculateWheelSliceDelta,
+	calculateSliceIndexFromWheel,
+	calculateCrosshairSliceScroll,
+	getVolumeCenterMm,
+	resetFullViewAndOrientation,
+	applyCursorZoom,
+} from "../cbctObliqueMath";
 
 describe("Wave 27 — CBCT Reset View & Double-Click Navigation Suite (Domain 3)", () => {
 	describe("1. [↺ Сброс вида] (cbct-btn-reset-view) Invariants", () => {
@@ -149,6 +159,140 @@ describe("Wave 27 — CBCT Reset View & Double-Click Navigation Suite (Domain 3)
 				!hitTestCrosshairCenter(backgroundClickPx, centerPx, 18),
 				"Double click on canvas body must NOT hit crosshair, triggering viewport maximize instead",
 			);
+		});
+	});
+
+	describe("3. Mouse Wheel Slice Scrolling (Default without Shift) & Zoom on Ctrl+Wheel", () => {
+		const testVolume = createEmptyCbctVolume(80, 80, 60, 0.5, 400);
+
+		it("scrolls slices by default when mouse wheel is moved without modifier keys", () => {
+			// Wheel down without modifiers -> action is slice_scroll
+			const actionDown = determineWheelAction({ deltaY: 100 });
+			assert.equal(actionDown, "slice_scroll", "Default wheel down must trigger slice scrolling");
+
+			// Wheel up without modifiers -> action is slice_scroll
+			const actionUp = determineWheelAction({ deltaY: -100 });
+			assert.equal(actionUp, "slice_scroll", "Default wheel up must trigger slice scrolling");
+
+			// Wheel with Shift (legacy alternative) also triggers slice_scroll
+			const actionShift = determineWheelAction({ deltaY: 100, shiftKey: true });
+			assert.equal(actionShift, "slice_scroll", "Wheel with Shift must trigger slice scrolling");
+		});
+
+		it("triggers cursor-anchored zoom when Ctrl or Meta (Command) key is held during wheel scroll", () => {
+			// Ctrl + Wheel Down -> action is zoom (zoom out)
+			const actionCtrl = determineWheelAction({ deltaY: 100, ctrlKey: true });
+			assert.equal(actionCtrl, "zoom", "Ctrl + Wheel must trigger zoom action");
+
+			// Meta (Command on Mac) + Wheel Up -> action is zoom (zoom in)
+			const actionMeta = determineWheelAction({ deltaY: -100, metaKey: true });
+			assert.equal(actionMeta, "zoom", "Meta + Wheel must trigger zoom action");
+
+			// Verify applyCursorZoom behavior with Ctrl+Wheel
+			const initialTransform: ViewportTransform = { zoom: 1.0, panX: 0, panY: 0 };
+			const cursorPx = { x: 128, y: 128 };
+
+			// Zoom in with deltaY < 0
+			const zoomIn = applyCursorZoom(initialTransform, cursorPx, -200);
+			assert.ok(zoomIn.zoom > 1.0, "Negative wheel delta with Ctrl must zoom in");
+
+			// Zoom out with deltaY > 0
+			const zoomOut = applyCursorZoom(initialTransform, cursorPx, 200);
+			assert.ok(zoomOut.zoom < 1.0, "Positive wheel delta with Ctrl must zoom out");
+		});
+
+		it("steps and clamps slice indices correctly during continuous wheel scrolling", () => {
+			const maxSlice = 59;
+
+			// Step forward from 20 -> 21
+			const nextSlice = calculateSliceIndexFromWheel(20, maxSlice, 100);
+			assert.equal(nextSlice, 21);
+
+			// Step backward from 20 -> 19
+			const prevSlice = calculateSliceIndexFromWheel(20, maxSlice, -100);
+			assert.equal(prevSlice, 19);
+
+			// Clamp at top boundary (59 -> 59, no out of bounds)
+			const clampTop = calculateSliceIndexFromWheel(59, maxSlice, 100);
+			assert.equal(clampTop, 59);
+
+			// Clamp at bottom boundary (0 -> 0, no negative index)
+			const clampBottom = calculateSliceIndexFromWheel(0, maxSlice, -100);
+			assert.equal(clampBottom, 0);
+		});
+
+		it("updates 3D crosshair position along the active plane normal during slice scrolling", () => {
+			const startPos: Point3D = { x: 0, y: 0, z: 0 };
+
+			// Axial plane scroll moves along Z axis
+			const scrolledAxial = calculateCrosshairSliceScroll(startPos, "axial", 100, testVolume);
+			assert.equal(scrolledAxial.z, 0.5, "Axial slice scroll must advance along Z axis by spacingMm.z");
+			assert.equal(scrolledAxial.x, 0);
+			assert.equal(scrolledAxial.y, 0);
+
+			// Coronal plane scroll moves along Y axis
+			const scrolledCoronal = calculateCrosshairSliceScroll(startPos, "coronal", 100, testVolume);
+			assert.equal(scrolledCoronal.y, 0.5, "Coronal slice scroll must advance along Y axis by spacingMm.y");
+			assert.equal(scrolledCoronal.x, 0);
+			assert.equal(scrolledCoronal.z, 0);
+
+			// Sagittal plane scroll moves along X axis
+			const scrolledSagittal = calculateCrosshairSliceScroll(startPos, "sagittal", 100, testVolume);
+			assert.equal(scrolledSagittal.x, 0.5, "Sagittal slice scroll must advance along X axis by spacingMm.x");
+			assert.equal(scrolledSagittal.y, 0);
+			assert.equal(scrolledSagittal.z, 0);
+		});
+	});
+
+	describe("4. Complete Clinical Reset of Orientation, Zoom, and Volume Centering", () => {
+		const testVolume = createEmptyCbctVolume(100, 100, 80, 0.4, 400);
+
+		it("resets orientation angles to strictly 0.0° across all 3 planes", () => {
+			const resetState = resetFullViewAndOrientation(testVolume);
+			assert.equal(resetState.angles.axialAngleDeg, 0.0);
+			assert.equal(resetState.angles.coronalTiltDeg, 0.0);
+			assert.equal(resetState.angles.sagittalTiltDeg, 0.0);
+		});
+
+		it("resets viewport zoom to 1.0x (100%) and pan offsets to (0, 0)", () => {
+			const resetState = resetFullViewAndOrientation(testVolume);
+			assert.equal(resetState.transform.zoom, 1.0);
+			assert.equal(resetState.transform.panX, 0);
+			assert.equal(resetState.transform.panY, 0);
+		});
+
+		it("centers 3D crosshair strictly to the volume physical geometric center", () => {
+			const expectedCenter = getVolumeCenterMm(testVolume);
+			const resetState = resetFullViewAndOrientation(testVolume);
+
+			assert.deepEqual(resetState.crosshairMm, expectedCenter, "Crosshair must be centered to physical volume center");
+			// testVolume has symmetric origin: physW=40, origin.x=-20 -> center = 0.0
+			assert.equal(resetState.crosshairMm.x, 0.0);
+			assert.equal(resetState.crosshairMm.y, 0.0);
+			assert.equal(resetState.crosshairMm.z, 0.0);
+		});
+
+		it("restores pristine default state from arbitrary skewed clinical state", () => {
+			// Simulating doctor after heavy rotation and pan:
+			// axial 35°, coronal -18°, sagittal 12°, zoom 3.8x, pan (120, -80), crosshair at corner
+			const skewedState = {
+				angles: { axialAngleDeg: 35.0, coronalTiltDeg: -18.0, sagittalTiltDeg: 12.0 },
+				transform: { zoom: 3.8, panX: 120, panY: -80 },
+				crosshairMm: { x: 18.0, y: -19.0, z: 15.0 },
+			};
+
+			// Full Reset action
+			const restoredState = resetFullViewAndOrientation(testVolume);
+
+			// Assertions
+			assert.notDeepEqual(restoredState.angles, skewedState.angles);
+			assert.deepEqual(restoredState.angles, { axialAngleDeg: 0, coronalTiltDeg: 0, sagittalTiltDeg: 0 });
+
+			assert.notDeepEqual(restoredState.transform, skewedState.transform);
+			assert.deepEqual(restoredState.transform, { zoom: 1.0, panX: 0, panY: 0 });
+
+			assert.notDeepEqual(restoredState.crosshairMm, skewedState.crosshairMm);
+			assert.deepEqual(restoredState.crosshairMm, { x: 0.0, y: 0.0, z: 0.0 });
 		});
 	});
 });

@@ -5,6 +5,8 @@ import {
 	DEFAULT_VIEWPORT_TRANSFORM,
 	type ObliqueRotationAngles,
 	type ViewportTransform,
+	type FullViewResetState,
+	type CbctWheelAction,
 	applyCursorZoom,
 	applyPanDrag,
 	applyWindowLevelDrag,
@@ -24,6 +26,7 @@ import {
 	getRotationHandles,
 	hitTestRotationHandle,
 	mapCanvasPointerToWorldMmWithTransform,
+	normalizeAngleDeg,
 	normalizeVector3D,
 	radToDeg,
 	resetViewportTransform,
@@ -31,6 +34,12 @@ import {
 	sampleVoxelHU,
 	sampleVoxelHUTrilinear,
 	sampleVoxelTrilinearHU,
+	determineWheelAction,
+	calculateWheelSliceDelta,
+	calculateSliceIndexFromWheel,
+	calculateCrosshairSliceScroll,
+	getVolumeCenterMm,
+	resetFullViewAndOrientation,
 } from "../cbctObliqueMath";
 
 describe("CBCT Oblique MPR Rotation, Sub-Voxel Trilinear & Interactive Navigation Suite", () => {
@@ -350,16 +359,26 @@ describe("CBCT Oblique MPR Rotation, Sub-Voxel Trilinear & Interactive Navigatio
 			assert.equal(handles[3]!.canvasY, 40);
 		});
 
-		it("detects hit when cursor is near a handle", () => {
+		it("detects hit when cursor is near a handle with default 20px tolerance (capture radius >= 24px)", () => {
 			const handles = getRotationHandles("axial", 200, 200, { x: 100, y: 100 }, 60, 0);
-			const hit = hitTestRotationHandle({ x: 162, y: 101 }, handles, 10);
-			assert.ok(hit !== null);
-			assert.equal(hit?.position, "u_pos");
+			// Handle u_pos is at (160, 100), radius 6px -> capture radius is 6 + 20 = 26px
+			// At distance 24px: (184, 100) -> must hit
+			const hit24 = hitTestRotationHandle({ x: 184, y: 100 }, handles);
+			assert.ok(hit24 !== null, "Pointer at 24px distance must be captured by handle");
+			assert.equal(hit24?.position, "u_pos");
+
+			// At distance 26px: (186, 100) -> boundary hit
+			const hit26 = hitTestRotationHandle({ x: 186, y: 100 }, handles);
+			assert.ok(hit26 !== null, "Pointer at boundary (26px) must be captured");
+
+			// At distance 28px: (188, 100) -> outside capture radius
+			const miss28 = hitTestRotationHandle({ x: 188, y: 100 }, handles);
+			assert.equal(miss28, null, "Pointer beyond capture radius must return null");
 		});
 
 		it("returns null when cursor is far from all handles", () => {
 			const handles = getRotationHandles("axial", 200, 200, { x: 100, y: 100 }, 60, 0);
-			const hit = hitTestRotationHandle({ x: 100, y: 100 }, handles, 10); // at center
+			const hit = hitTestRotationHandle({ x: 100, y: 100 }, handles); // at center
 			assert.equal(hit, null);
 		});
 
@@ -392,6 +411,28 @@ describe("CBCT Oblique MPR Rotation, Sub-Voxel Trilinear & Interactive Navigatio
 			assert.equal(typeof worldMm.x, "number");
 			assert.equal(typeof worldMm.y, "number");
 			assert.equal(typeof worldMm.z, "number");
+		});
+
+		it("maps pointer correctly taking into account 3D oblique rotation angles", () => {
+			const transform: ViewportTransform = { zoom: 1.0, panX: 0, panY: 0 };
+			const center = { x: 0, y: 0, z: 0 };
+			// 90 degree axial rotation: screen X maps to physical Y
+			const angles: ObliqueRotationAngles = { axialAngleDeg: 90, coronalTiltDeg: 0, sagittalTiltDeg: 0 };
+			// Canvas is 200x200, center is (100, 100). Click at (120, 100) -> offsetCol = +20px
+			// pixelSpacingX = 0.5 mm/px -> offsetMm = +10mm along basis.u = (0, 1, 0)
+			const mapped = mapCanvasPointerToWorldMmWithTransform(
+				{ x: 120, y: 100 },
+				{ width: 200, height: 200 },
+				"axial",
+				center,
+				angles,
+				transform,
+				testVolume,
+			);
+
+			assert.equal(mapped.x, 0);
+			assert.equal(mapped.y, 10);
+			assert.equal(mapped.z, 0);
 		});
 	});
 
@@ -426,7 +467,7 @@ describe("CBCT Oblique MPR Rotation, Sub-Voxel Trilinear & Interactive Navigatio
 			};
 		};
 
-		it("renders rotated crosshair lines and rotation handles onto canvas context without throwing", () => {
+		it("renders rotated crosshair lines and rotation handles with dual-contrast halo onto canvas without throwing", () => {
 			const mockCtx = createMockCtx();
 			assert.doesNotThrow(() => {
 				drawObliqueCrosshairWithRotationHandles(mockCtx as unknown as CanvasRenderingContext2D, {
@@ -445,8 +486,10 @@ describe("CBCT Oblique MPR Rotation, Sub-Voxel Trilinear & Interactive Navigatio
 			const fillTextCalls = mockCtx.calls.filter((c) => c.method === "fillText");
 
 			assert.ok(strokeCalls.length > 0, "Should stroke crosshair lines and handles");
-			assert.ok(arcCalls.length >= 4, "Should draw at least 4 rotation handle knobs");
-			assert.equal(fillTextCalls.length, 1, "Should render rotation degree badge text");
+			// 4 handles * 2 arc passes (outer dark contour + inner border) = at least 8 arc calls
+			assert.ok(arcCalls.length >= 8, "Should draw dual-contrast halo (outer dark contour + inner border) for 4 rotation handle knobs");
+			// DEF-04: Canvas text badge omitted to prevent duplicate ghosting over CbctViewportHud HTML button
+			assert.equal(fillTextCalls.length, 0, "Rotation badge text is cleanly delegated to CbctViewportHud HTML component to avoid canvas duplicate ghosting (DEF-04)");
 		});
 	});
 
@@ -591,6 +634,137 @@ describe("CBCT Oblique MPR Rotation, Sub-Voxel Trilinear & Interactive Navigatio
 			assert.equal(getObliqueRotationLabel("sagittal", 8.4), "Наклон: +8.4°");
 			assert.equal(getObliqueRotationLabel("axial", 0.0), "Поворот: 0.0°");
 			assert.equal(getObliqueRotationLabel("coronal", 0.0), "Наклон: 0.0°");
+		});
+	});
+
+	describe("13. Strict Rotation Angle Normalization [-180°, 180°] & Negative Zero Elimination", () => {
+		it("normalizes angles within [-180, 180] unchanged", () => {
+			assert.equal(normalizeAngleDeg(0), 0.0);
+			assert.equal(normalizeAngleDeg(45.5), 45.5);
+			assert.equal(normalizeAngleDeg(-90.2), -90.2);
+			assert.equal(normalizeAngleDeg(180), 180.0);
+			assert.equal(normalizeAngleDeg(-180), -180.0);
+		});
+
+		it("wraps angles beyond +180° into [-180°, 180°]", () => {
+			assert.equal(normalizeAngleDeg(185), -175.0);
+			assert.equal(normalizeAngleDeg(270), -90.0);
+			assert.equal(normalizeAngleDeg(360), 0.0);
+			assert.equal(normalizeAngleDeg(540), 180.0);
+			assert.equal(normalizeAngleDeg(720), 0.0);
+		});
+
+		it("wraps angles beyond -180° into [-180°, 180°]", () => {
+			assert.equal(normalizeAngleDeg(-190), 170.0);
+			assert.equal(normalizeAngleDeg(-270), 90.0);
+			assert.equal(normalizeAngleDeg(-360), 0.0);
+			assert.equal(normalizeAngleDeg(-540), -180.0);
+		});
+
+		it("eliminates negative zero (-0.0) artifacts", () => {
+			assert.equal(Object.is(normalizeAngleDeg(-0), 0), true);
+			assert.equal(Object.is(normalizeAngleDeg(-0.0001), 0), true);
+		});
+
+		it("safely handles non-finite values (NaN, Infinity)", () => {
+			assert.equal(normalizeAngleDeg(Number.NaN), 0.0);
+			assert.equal(normalizeAngleDeg(Number.POSITIVE_INFINITY), 0.0);
+			assert.equal(normalizeAngleDeg(Number.NEGATIVE_INFINITY), 0.0);
+		});
+	});
+
+	describe("14. Mouse Wheel Slice Navigation (Default) & Ctrl+Wheel Zoom Math", () => {
+		it("determines slice_scroll as default wheel action when no modifier keys are pressed", () => {
+			assert.equal(determineWheelAction({ deltaY: 100 }), "slice_scroll");
+			assert.equal(determineWheelAction({ deltaY: -100 }), "slice_scroll");
+			assert.equal(determineWheelAction({ deltaY: 100, shiftKey: false }), "slice_scroll");
+		});
+
+		it("determines zoom action when Ctrl or Meta (Command on Mac) is pressed with wheel", () => {
+			assert.equal(determineWheelAction({ deltaY: 100, ctrlKey: true }), "zoom");
+			assert.equal(determineWheelAction({ deltaY: -100, ctrlKey: true }), "zoom");
+			assert.equal(determineWheelAction({ deltaY: 100, metaKey: true }), "zoom");
+		});
+
+		it("calculates wheel slice delta (+1 for wheel down, -1 for wheel up)", () => {
+			assert.equal(calculateWheelSliceDelta(100), 1);
+			assert.equal(calculateWheelSliceDelta(-100), -1);
+			assert.equal(calculateWheelSliceDelta(0), 0);
+			assert.equal(calculateWheelSliceDelta(50, 3), 3);
+			assert.equal(calculateWheelSliceDelta(-50, 3), -3);
+		});
+
+		it("computes updated slice index clamped to [0, maxSliceIndex]", () => {
+			// Normal scrolling within volume depth
+			assert.equal(calculateSliceIndexFromWheel(10, 59, 100), 11);
+			assert.equal(calculateSliceIndexFromWheel(10, 59, -100), 9);
+
+			// Clamping at maximum slice index boundary
+			assert.equal(calculateSliceIndexFromWheel(59, 59, 100), 59);
+
+			// Clamping at minimum slice index boundary (0)
+			assert.equal(calculateSliceIndexFromWheel(0, 59, -100), 0);
+		});
+
+		it("calculates crosshair physical displacement when scrolling along plane normal", () => {
+			const initialCrosshair = { x: 0, y: 0, z: 0 };
+
+			// Axial plane scrolls along Z axis (spacing Z = 0.5 mm)
+			const scrollAxialDown = calculateCrosshairSliceScroll(initialCrosshair, "axial", 100, testVolume);
+			assert.equal(scrollAxialDown.x, 0);
+			assert.equal(scrollAxialDown.y, 0);
+			assert.equal(scrollAxialDown.z, 0.5);
+
+			const scrollAxialUp = calculateCrosshairSliceScroll(initialCrosshair, "axial", -100, testVolume);
+			assert.equal(scrollAxialUp.z, -0.5);
+
+			// Coronal plane scrolls along Y axis (spacing Y = 0.5 mm)
+			const scrollCoronal = calculateCrosshairSliceScroll(initialCrosshair, "coronal", 100, testVolume);
+			assert.equal(scrollCoronal.x, 0);
+			assert.equal(scrollCoronal.y, 0.5);
+			assert.equal(scrollCoronal.z, 0);
+
+			// Sagittal plane scrolls along X axis (spacing X = 0.5 mm)
+			const scrollSagittal = calculateCrosshairSliceScroll(initialCrosshair, "sagittal", 100, testVolume);
+			assert.equal(scrollSagittal.x, 0.5);
+			assert.equal(scrollSagittal.y, 0);
+			assert.equal(scrollSagittal.z, 0);
+		});
+	});
+
+	describe("15. Full Viewport & Oblique Orientation Reset Math", () => {
+		it("calculates exact geometric center of volume in physical mm", () => {
+			const center = getVolumeCenterMm(testVolume);
+			// testVolume: dimensions 80x80x60, spacing 0.5, origin -20, -20, -15
+			// physW = 40, halfW = 20 -> center = -20 + 20 = 0.0
+			assert.equal(center.x, 0.0);
+			assert.equal(center.y, 0.0);
+			assert.equal(center.z, 0.0);
+		});
+
+		it("performs complete clinical reset of orientation angles, zoom, pan, and crosshair", () => {
+			const reset = resetFullViewAndOrientation(testVolume);
+
+			// 1. Angles reset to 0.0°
+			assert.deepEqual(reset.angles, {
+				axialAngleDeg: 0.0,
+				coronalTiltDeg: 0.0,
+				sagittalTiltDeg: 0.0,
+			});
+
+			// 2. Transform reset to 1.0x (100%) zoom and (0,0) pan
+			assert.deepEqual(reset.transform, {
+				zoom: 1.0,
+				panX: 0,
+				panY: 0,
+			});
+
+			// 3. Crosshair reset to volume center
+			assert.deepEqual(reset.crosshairMm, {
+				x: 0.0,
+				y: 0.0,
+				z: 0.0,
+			});
 		});
 	});
 });
