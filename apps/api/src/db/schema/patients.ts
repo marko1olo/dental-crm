@@ -64,6 +64,13 @@ export const patients = pgTable(
 				table.organizationId,
 				table.createdAt,
 			),
+			idxPatientsOrgPhone: index("idx_patients_org_phone").on(
+				table.organizationId,
+				table.phone,
+			),
+			idxPatientsFamilyGroup: index("idx_patients_family_group_id").on(
+				table.familyGroupId,
+			),
 		};
 	},
 );
@@ -312,6 +319,10 @@ export const patientTaskTickets = pgTable(
 		organizationIdIdx: index("patient_task_tickets_organizationId_idx").on(
 			t.organizationId,
 		),
+		patientIdIdx: index("patient_task_tickets_patient_id_idx").on(t.patientId),
+		assignedToIdIdx: index("patient_task_tickets_assigned_to_id_idx").on(
+			t.assignedToId,
+		),
 	}),
 );
 
@@ -351,6 +362,8 @@ export const patientReclamations = pgTable(
 		organizationIdIdx: index("patient_reclamations_organizationId_idx").on(
 			t.organizationId,
 		),
+		patientIdIdx: index("patient_reclamations_patient_id_idx").on(t.patientId),
+		doctorIdIdx: index("patient_reclamations_doctor_id_idx").on(t.doctorId),
 	}),
 );
 

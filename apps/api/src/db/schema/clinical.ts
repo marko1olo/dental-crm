@@ -308,6 +308,12 @@ export const clinicalTasks = pgTable(
 			t.organizationId,
 		),
 		patientIdIdx: index("clinical_tasks_patientId_idx").on(t.patientId),
+		assignedDoctorIdIdx: index("clinical_tasks_assigned_doctor_id_idx").on(
+			t.assignedDoctorId,
+		),
+		treatmentPlanIdIdx: index("clinical_tasks_treatment_plan_id_idx").on(
+			t.treatmentPlanId,
+		),
 	}),
 );
 
@@ -427,6 +433,18 @@ export const generatedDocuments = pgTable(
 				foreignColumns: [visits.id, visits.patientId, visits.organizationId],
 				name: "generated_documents_visit_patient_organization_fk",
 			}),
+			organizationIdIdx: index("generated_documents_organization_id_idx").on(
+				table.organizationId,
+			),
+			patientIdIdx: index("generated_documents_patient_id_idx").on(
+				table.patientId,
+			),
+			visitIdIdx: index("generated_documents_visit_id_idx").on(
+				table.visitId,
+			),
+			idxOrgPatientCreated: index(
+				"idx_generated_documents_org_patient_created",
+			).on(table.organizationId, table.patientId, table.createdAt),
 			issuedByUserIdIdx: index("generated_documents_issued_by_idx").on(
 				table.issuedByUserId,
 			),
@@ -700,6 +718,8 @@ export const labOrders = pgTable(
 			t.organizationId,
 		),
 		patientIdIdx: index("lab_orders_patientId_idx").on(t.patientId),
+		doctorIdIdx: index("lab_orders_doctor_id_idx").on(t.doctorId),
+		statusIdx: index("lab_orders_status_idx").on(t.organizationId, t.status),
 	}),
 );
 
@@ -799,6 +819,7 @@ export const treatmentPlans = pgTable(
 			t.organizationId,
 		),
 		patientIdIdx: index("treatment_plans_patientId_idx").on(t.patientId),
+		doctorIdIdx: index("treatment_plans_doctor_id_idx").on(t.doctorId),
 		planGroupIdIdx: index("treatment_plans_plan_group_id_idx").on(
 			t.planGroupId,
 		),
@@ -926,6 +947,7 @@ export const treatmentPlanItemsNew = pgTable(
 		organizationIdIdx: index("treatment_plan_items_new_organizationId_idx").on(
 			t.organizationId,
 		),
+		planIdIdx: index("treatment_plan_items_new_plan_id_idx").on(t.planId),
 	}),
 );
 
@@ -1007,6 +1029,8 @@ export const visitDiaries = pgTable(
 		organizationIdIdx: index("visit_diaries_organizationId_idx").on(
 			t.organizationId,
 		),
+		visitIdIdx: index("visit_diaries_visit_id_idx").on(t.visitId),
+		patientIdIdx: index("visit_diaries_patient_id_idx").on(t.patientId),
 	}),
 );
 
@@ -1060,6 +1084,7 @@ export const visitDiaryRevisions = pgTable(
 		organizationIdIdx: index("visit_diary_revisions_organizationId_idx").on(
 			t.organizationId,
 		),
+		diaryIdIdx: index("visit_diary_revisions_diary_id_idx").on(t.diaryId),
 	}),
 );
 
@@ -1083,6 +1108,12 @@ export const visitExaminationPhotoLinks = pgTable(
 		organizationIdIdx: index(
 			"visit_examination_photo_links_organizationId_idx",
 		).on(t.organizationId),
+		visitIdIdx: index(
+			"visit_examination_photo_links_visit_id_idx",
+		).on(t.visitId),
+		patientIdIdx: index(
+			"visit_examination_photo_links_patient_id_idx",
+		).on(t.patientId),
 	}),
 );
 

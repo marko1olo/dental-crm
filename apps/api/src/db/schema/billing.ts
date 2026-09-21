@@ -374,6 +374,8 @@ export const doctorCommissions = pgTable(
 		organizationIdIdx: index("doctor_commissions_organizationId_idx").on(
 			t.organizationId,
 		),
+		doctorIdIdx: index("doctor_commissions_doctor_id_idx").on(t.doctorId),
+		userIdIdx: index("doctor_commissions_user_id_idx").on(t.userId),
 	}),
 );
 
@@ -399,6 +401,9 @@ export const sberbankTransactions = pgTable(
 	(t) => ({
 		organizationIdIdx: index("sberbank_transactions_organizationId_idx").on(
 			t.organizationId,
+		),
+		patientIdIdx: index("sberbank_transactions_patient_id_idx").on(
+			t.patientId,
 		),
 	}),
 );
@@ -449,6 +454,7 @@ export const ndflTaxCalculators = pgTable(
 		organizationIdIdx: index("ndfl_tax_calculators_organizationId_idx").on(
 			t.organizationId,
 		),
+		patientIdIdx: index("ndfl_tax_calculators_patient_id_idx").on(t.patientId),
 	}),
 );
 
@@ -461,48 +467,72 @@ export const ndflTaxCalculators = pgTable(
  * отдаёт numeric строкой: складывать такие значения через Number() нельзя,
  * потеряются копейки.
  */
-export const cashLedger = pgTable("cash_ledger", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	invoiceId: uuid("invoice_id").notNull(),
-	paymentMethod: ledgerPaymentMethod("payment_method").notNull(),
-	amountRub: numeric("amount_rub", { precision: 12, scale: 2 }).notNull(),
-	operatorId: uuid("operator_id"),
-	timestamp: timestamp("timestamp", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-});
-
-export const cashShifts = pgTable("cash_shifts", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	openedByUserId: uuid("opened_by_user_id")
-		.notNull()
-		.references(() => users.id),
-	openedAt: timestamp("opened_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	closedAt: timestamp("closed_at", { withTimezone: true }),
-	startingBalance: numeric("starting_balance", { precision: 12, scale: 2 })
-		.notNull()
-		.default("0"),
-	expectedClosingBalance: numeric("expected_closing_balance", {
-		precision: 12,
-		scale: 2,
+export const cashLedger = pgTable(
+	"cash_ledger",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		invoiceId: uuid("invoice_id").notNull(),
+		paymentMethod: ledgerPaymentMethod("payment_method").notNull(),
+		amountRub: numeric("amount_rub", { precision: 12, scale: 2 }).notNull(),
+		operatorId: uuid("operator_id"),
+		timestamp: timestamp("timestamp", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => ({
+		invoiceIdIdx: index("cash_ledger_invoice_id_idx").on(table.invoiceId),
+		timestampIdx: index("cash_ledger_timestamp_idx").on(table.timestamp),
 	}),
-	actualClosingBalance: numeric("actual_closing_balance", {
-		precision: 12,
-		scale: 2,
-	}),
-	status: text("status").notNull().default("open"), // open, closing, closed, discrepancy_flagged
-	discrepancyReason: text("discrepancy_reason"),
-});
+);
 
-export const shiftDiscrepancyReports = pgTable("shift_discrepancy_reports", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	shiftId: uuid("shift_id").notNull().references(() => cashShifts.id),
-	discrepancyAmount: numeric("discrepancy_amount", { precision: 12, scale: 2 }).notNull(),
-	reason: text("reason"),
-	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const cashShifts = pgTable(
+	"cash_shifts",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		openedByUserId: uuid("opened_by_user_id")
+			.notNull()
+			.references(() => users.id),
+		openedAt: timestamp("opened_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		closedAt: timestamp("closed_at", { withTimezone: true }),
+		startingBalance: numeric("starting_balance", { precision: 12, scale: 2 })
+			.notNull()
+			.default("0"),
+		expectedClosingBalance: numeric("expected_closing_balance", {
+			precision: 12,
+			scale: 2,
+		}),
+		actualClosingBalance: numeric("actual_closing_balance", {
+			precision: 12,
+			scale: 2,
+		}),
+		status: text("status").notNull().default("open"), // open, closing, closed, discrepancy_flagged
+		discrepancyReason: text("discrepancy_reason"),
+	},
+	(table) => ({
+		organizationIdIdx: index("cash_shifts_organization_id_idx").on(
+			table.organizationId,
+		),
+		statusIdx: index("cash_shifts_status_idx").on(table.status),
+	}),
+);
+
+export const shiftDiscrepancyReports = pgTable(
+	"shift_discrepancy_reports",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		shiftId: uuid("shift_id").notNull().references(() => cashShifts.id),
+		discrepancyAmount: numeric("discrepancy_amount", { precision: 12, scale: 2 }).notNull(),
+		reason: text("reason"),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+	},
+	(table) => ({
+		shiftIdIdx: index("shift_discrepancy_reports_shift_id_idx").on(
+			table.shiftId,
+		),
+	}),
+);

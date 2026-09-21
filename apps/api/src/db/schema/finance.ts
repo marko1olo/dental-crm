@@ -109,6 +109,7 @@ export const cashBoxShifts = pgTable(
 		organizationIdIdx: index("cash_box_shifts_organization_id_idx").on(t.organizationId),
 		cashBoxIdIdx: index("cash_box_shifts_cash_box_id_idx").on(t.cashBoxId),
 		statusIdx: index("cash_box_shifts_status_idx").on(t.status),
+		openedAtIdx: index("cash_box_shifts_opened_at_idx").on(t.organizationId, t.openedAt),
 	}),
 );
 
@@ -231,6 +232,7 @@ export const installmentContracts = pgTable(
 		orgIdx: index("installment_contracts_org_idx").on(t.organizationId),
 		patientIdx: index("installment_contracts_patient_idx").on(t.patientId),
 		statusIdx: index("installment_contracts_status_idx").on(t.status),
+		treatmentPlanIdx: index("installment_contracts_treatment_plan_idx").on(t.treatmentPlanId),
 	}),
 );
 
