@@ -639,6 +639,63 @@
 		height: 32px;
 		font-size: 13px;
 	}
+
+	/* --- Плотные поля ввода на десктопе с мышью: 28-36px (Мандаты 8c, 8e) --- */
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) input[type="text"],
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) input[type="search"],
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) input[type="number"],
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) input[type="tel"],
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) input[type="email"],
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) input[type="date"],
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) input[type="time"],
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) input[type="text"],
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) input[type="search"],
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) input[type="number"],
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) input[type="tel"],
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) input[type="email"],
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) input[type="date"],
+	[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) input[type="time"],
+	[data-platform="desktop"]:not([data-pointer="coarse"]) input[type="text"],
+	[data-platform="desktop"]:not([data-pointer="coarse"]) input[type="search"],
+	[data-platform="desktop"]:not([data-pointer="coarse"]) input[type="number"],
+	[data-platform="desktop"]:not([data-pointer="coarse"]) input[type="tel"],
+	[data-platform="desktop"]:not([data-pointer="coarse"]) input[type="email"],
+	[data-platform="desktop"]:not([data-pointer="coarse"]) input[type="date"],
+	[data-platform="desktop"]:not([data-pointer="coarse"]) input[type="time"] {
+		min-height: 28px !important;
+		max-height: 36px !important;
+		height: 32px;
+		font-size: 13px;
+	}
+
+	/* --- 1-строчный тулбар без переполнения (Мандаты 8c, 8p; бюджет <= 36px, zero button landfill) --- */
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .toolbar,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .panel-toolbar,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .clinical-toolbar,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .schedule-toolbar,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .filter-bar,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .odontogram-toolbar,
+	[data-pointer="fine"]:not([data-pointer="coarse"]) .toolbar,
+	[data-pointer="fine"]:not([data-pointer="coarse"]) .panel-toolbar,
+	[data-pointer="fine"]:not([data-pointer="coarse"]) .clinical-toolbar,
+	[data-pointer="fine"]:not([data-pointer="coarse"]) .schedule-toolbar,
+	[data-pointer="fine"]:not([data-pointer="coarse"]) .filter-bar,
+	[data-pointer="fine"]:not([data-pointer="coarse"]) .odontogram-toolbar,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .toolbar,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .panel-toolbar,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .clinical-toolbar,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .schedule-toolbar,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .filter-bar,
+	[data-platform="desktop"]:not([data-pointer="coarse"]) .odontogram-toolbar {
+		display: flex !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto;
+		min-height: 32px;
+		max-height: 38px;
+		height: 36px;
+		align-items: center;
+		gap: 6px;
+	}
 }
 
 /* ============================================================
@@ -647,6 +704,37 @@
    for medical staff wearing latex/nitrile gloves near the dental chair,
    without degrading dense 28-36px desktop mouse ergonomics.
    ============================================================ */
+@media (pointer: coarse) {
+	.soap-preset-chip,
+	.clinical-soap-preset,
+	.tooth-radial-btn,
+	.perio-pocket-btn,
+	.anesthesia-dose-btn,
+	.sanpin-action-btn,
+	.treatment-stage-chip,
+	.photo-protocol-trigger,
+	.photo-capture-btn,
+	.chairside-checklist-item,
+	.chairside-action-btn {
+		min-height: 44px !important;
+		min-width: 44px !important;
+		touch-action: manipulation;
+	}
+
+	/* Primary chairside execution actions: >= 48px for gloved doctor/assistant (Mandates 8c, 8e, 8n) */
+	.btn-primary-chairside,
+	.btn-finish-visit,
+	.btn-save-diary,
+	.btn-tender-payment,
+	.btn-add-service-fast {
+		min-height: 48px !important;
+		min-width: 48px !important;
+		font-size: 14px !important;
+		font-weight: 600;
+		touch-action: manipulation;
+	}
+}
+
 [data-pointer="coarse"] .soap-preset-chip,
 [data-pointer="coarse"] .clinical-soap-preset,
 [data-pointer="coarse"] .tooth-radial-btn,

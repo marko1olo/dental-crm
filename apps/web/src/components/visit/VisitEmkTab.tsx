@@ -67,6 +67,7 @@ import { countLabel } from "../../lib/russianPlural";
 import { useVisitStore } from "../../store/visitStore";
 import { logger } from "../../utils/logger";
 import { specialtyLabels } from "../../workspaceUiLabels";
+import { sliceDomList } from "../../utils/domVirtualizationHelper";
 import {
 	InformedConsentModal,
 	type SignedConsentPayload,
@@ -1411,6 +1412,15 @@ export function VisitEmkTab() {
 			);
 		});
 	}, [allPriceServices, priceSearchQuery, selectedPriceCategory]);
+
+	const [priceServicesLimit, setPriceServicesLimit] = React.useState(40);
+	React.useEffect(() => {
+		setPriceServicesLimit(40);
+	}, [priceSearchQuery, selectedPriceCategory]);
+
+	const paginatedPriceServices = React.useMemo(() => {
+		return sliceDomList(filteredPriceServices, priceServicesLimit, 0);
+	}, [filteredPriceServices, priceServicesLimit]);
 
 	const handleAddServiceToPlan = React.useCallback(
 		(service: { title: string; basePriceRub: number; code804n?: string }) => {
@@ -4180,46 +4190,64 @@ export function VisitEmkTab() {
 									Услуг по запросу «{priceSearchQuery}» не найдено
 								</div>
 							) : (
-								filteredPriceServices.map((srv) => (
-									<div
-										key={srv.id}
-										className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:border-indigo-500/50 transition-all flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap"
-									>
-										<div className="space-y-1 min-w-0 flex-1">
-											<div className="text-sm font-bold text-[var(--ink)] leading-snug break-words">
-												{srv.title}
-											</div>
-											<div className="flex items-center gap-2 text-xs text-[var(--muted)] flex-wrap">
-												{srv.code804n && (
-													<span className="px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-mono font-bold">
-														804н: {srv.code804n}
+								<>
+									{paginatedPriceServices.visibleItems.map((srv) => (
+										<div
+											key={srv.id}
+											className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:border-indigo-500/50 transition-all flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap"
+											style={{
+												contentVisibility: "auto",
+												containIntrinsicSize: "1px 64px",
+												contain: "content",
+											}}
+										>
+											<div className="space-y-1 min-w-0 flex-1">
+												<div className="text-sm font-bold text-[var(--ink)] leading-snug break-words">
+													{srv.title}
+												</div>
+												<div className="flex items-center gap-2 text-xs text-[var(--muted)] flex-wrap">
+													{srv.code804n && (
+														<span className="px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-mono font-bold">
+															804н: {srv.code804n}
+														</span>
+													)}
+													<span className="px-2 py-0.5 rounded-md bg-[var(--paper)] border border-[var(--line)] font-semibold">
+														{srv.category}
 													</span>
-												)}
-												<span className="px-2 py-0.5 rounded-md bg-[var(--paper)] border border-[var(--line)] font-semibold">
-													{srv.category}
+												</div>
+											</div>
+
+											<div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
+												<span className="text-sm sm:text-base font-mono font-black text-[var(--ok-fg)]">
+													{srv.basePriceRub.toLocaleString("ru-RU")} ₽
 												</span>
+												<button
+													type="button"
+													onClick={() => {
+														handleAddServiceToPlan(srv);
+														setIsPriceSearchModalOpen(false);
+													}}
+													className="min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 touch-manipulation"
+													data-testid={`btn-select-price-service-${srv.id}`}
+												>
+													<PlusCircle size={14} />
+													<span>Добавить</span>
+												</button>
 											</div>
 										</div>
-
-										<div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
-											<span className="text-sm sm:text-base font-mono font-black text-[var(--ok-fg)]">
-												{srv.basePriceRub.toLocaleString("ru-RU")} ₽
-											</span>
+									))}
+									{paginatedPriceServices.hasMore && (
+										<div className="pt-2 text-center">
 											<button
 												type="button"
-												onClick={() => {
-													handleAddServiceToPlan(srv);
-													setIsPriceSearchModalOpen(false);
-												}}
-												className="min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 touch-manipulation"
-												data-testid={`btn-select-price-service-${srv.id}`}
+												onClick={() => setPriceServicesLimit((prev) => prev + 40)}
+												className="min-h-[36px] px-4 py-1.5 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 											>
-												<PlusCircle size={14} />
-												<span>Добавить</span>
+												Показать ещё 40 услуг (осталось {paginatedPriceServices.remainingCount})
 											</button>
 										</div>
-									</div>
-								))
+									)}
+								</>
 							)}
 						</div>
 

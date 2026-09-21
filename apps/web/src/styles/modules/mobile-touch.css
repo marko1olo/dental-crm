@@ -75,6 +75,17 @@ summary,
 		padding-left: calc(env(safe-area-inset-left, 0px) + 8px);
 		padding-right: calc(env(safe-area-inset-right, 0px) + 8px);
 	}
+
+	body.platform-standalone,
+	body[data-standalone="true"],
+	body[data-platform="android"],
+	body[data-platform="ios"],
+	.app-shell-standalone {
+		padding-top: max(0px, env(safe-area-inset-top, 0px));
+		padding-bottom: max(0px, env(safe-area-inset-bottom, 0px));
+		padding-left: max(0px, env(safe-area-inset-left, 0px));
+		padding-right: max(0px, env(safe-area-inset-right, 0px));
+	}
 }
 
 /* ── 3. Touch Targets (Coarse Pointers / Mobile & Tablet Screens <= 820px) ── */

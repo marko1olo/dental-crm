@@ -30,6 +30,8 @@ let inMemoryStaffToken: string | null = null;
 let inMemoryClinicToken: string | null = null;
 let tokenStorageListenerAttached = false;
 
+const MAX_IN_MEMORY_CACHE_ITEMS = 500;
+
 /** In-memory кэш для 0 мс чтения без дискового ввода-вывода */
 const inMemoryStorageCache = new Map<string, string | null>();
 
@@ -47,6 +49,97 @@ const pendingSessionDiskWrites = new Map<string, string>();
 let sessionDiskFlushTimer: ReturnType<typeof setTimeout> | null = null;
 let isFlushingSessionDisk = false;
 
+export function isQuotaExceededError(err: unknown): boolean {
+	if (!err || typeof err !== "object") return false;
+	const e = err as { name?: string; code?: number; message?: string };
+	return Boolean(
+		e.name === "QuotaExceededError" ||
+		e.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+		e.code === 22 ||
+		e.code === 1014 ||
+		(typeof e.message === "string" && e.message.toLowerCase().includes("quota"))
+	);
+}
+
+/**
+ * Автономная очистка временных / кэшированных ключей LocalStorage
+ * для освобождения места под критические данные (токены, черновики визитов 043/у)
+ */
+export function evictDisposableLocalStorageKeys(): number {
+	if (typeof window === "undefined" || !window.localStorage) return 0;
+	let evictedCount = 0;
+	try {
+		const keysToEvict: string[] = [];
+		const storage = window.localStorage;
+		for (let i = 0; i < storage.length; i++) {
+			const key = storage.key(i);
+			if (!key) continue;
+			// Очистка кэша сущностей и старых снимков, не являющихся критическими токенами или черновиками
+			if (
+				key.startsWith("dente_cached_entity_v1:") ||
+				key.startsWith("dente_clinical_cache_v1:") ||
+				key.startsWith("__chunk_manifest__") ||
+				key.includes("__chk_") ||
+				key.includes("probe_") ||
+				key.startsWith("__probe")
+			) {
+				keysToEvict.push(key);
+			}
+		}
+
+		for (const k of keysToEvict) {
+			try {
+				storage.removeItem(k);
+				inMemoryStorageCache.delete(k);
+				evictedCount++;
+			} catch {
+				// ignore
+			}
+		}
+
+		// Если всё ещё нужно место, освобождаем тяжелый слепок Vault
+		// (метаданные и снапшоты гарантированно дублируются в IndexedDB)
+		if (storage.getItem("dente_vault_snapshots_v1")) {
+			try {
+				storage.removeItem("dente_vault_snapshots_v1");
+				inMemoryStorageCache.delete("dente_vault_snapshots_v1");
+				evictedCount++;
+			} catch {
+				// ignore
+			}
+		}
+	} catch {
+		// ignore
+	}
+	return evictedCount;
+}
+
+function putInMemoryStorageCache(key: string, value: string | null): void {
+	if (inMemoryStorageCache.size >= MAX_IN_MEMORY_CACHE_ITEMS && !inMemoryStorageCache.has(key)) {
+		const iter = inMemoryStorageCache.keys();
+		for (let i = 0; i < 20; i++) {
+			const k = iter.next().value;
+			if (!k) break;
+			if (!isImmediateDiskKey(k)) {
+				inMemoryStorageCache.delete(k);
+			}
+		}
+	}
+	inMemoryStorageCache.set(key, value);
+}
+
+function putInMemorySessionStorageCache(key: string, value: string | null): void {
+	if (inMemorySessionStorageCache.size >= MAX_IN_MEMORY_CACHE_ITEMS && !inMemorySessionStorageCache.has(key)) {
+		const iter = inMemorySessionStorageCache.keys();
+		for (let i = 0; i < 20; i++) {
+			const k = iter.next().value;
+			if (!k) break;
+			inMemorySessionStorageCache.delete(k);
+		}
+	}
+	inMemorySessionStorageCache.set(key, value);
+}
+
 function isImmediateDiskKey(key: string): boolean {
 	if (
 		typeof process !== "undefined" &&
@@ -60,7 +153,10 @@ function isImmediateDiskKey(key: string): boolean {
 		key === PATIENT_TOKEN_KEY ||
 		key.endsWith("_token") ||
 		key.startsWith("__") ||
-		key.includes("probe")
+		key.includes("probe") ||
+		key.includes("visit-draft") ||
+		key.includes("diary_draft") ||
+		key.includes("form043")
 	);
 }
 
@@ -91,7 +187,7 @@ export function flushPendingSessionStorageWrites(): void {
 }
 
 /**
- * Принудительно сбрасывает все накопленные в очереди записи на диск.
+ * Принудительно сбрасывает все накопленные в очереди записи на диск с защитой от QuotaExceededError.
  */
 export function flushPendingStorageWrites(): void {
 	if (diskFlushTimer !== null) {
@@ -104,11 +200,22 @@ export function flushPendingStorageWrites(): void {
 	}
 	isFlushingDisk = true;
 	try {
-		for (const [key, value] of pendingDiskWrites.entries()) {
+		let hasEvicted = false;
+		for (const [key, value] of Array.from(pendingDiskWrites.entries())) {
 			try {
 				window.localStorage.setItem(key, value);
-			} catch {
-				// Защита от QuotaExceededError или запрета хранения в Safari Private
+				pendingDiskWrites.delete(key);
+			} catch (err) {
+				if (isQuotaExceededError(err) && !hasEvicted) {
+					hasEvicted = true;
+					evictDisposableLocalStorageKeys();
+					try {
+						window.localStorage.setItem(key, value);
+						pendingDiskWrites.delete(key);
+					} catch {
+						// Item too large even after eviction
+					}
+				}
 			}
 		}
 		pendingDiskWrites.clear();
@@ -155,11 +262,21 @@ function ensureTokenStorageListener(): void {
 		}
 	});
 
-	// Гарантия сохранности данных при закрытии вкладки / перезагрузке
+	// Гарантия сохранности данных при закрытии вкладки, смене вкладки и звонках телефонии (Мандат 8e)
 	window.addEventListener("beforeunload", () => {
 		flushPendingStorageWrites();
 	});
 	window.addEventListener("pagehide", () => {
+		flushPendingStorageWrites();
+	});
+	if (typeof document !== "undefined" && document.addEventListener) {
+		document.addEventListener("visibilitychange", () => {
+			if (document.visibilityState === "hidden") {
+				flushPendingStorageWrites();
+			}
+		});
+	}
+	window.addEventListener("dente-telephony-incoming-call", () => {
 		flushPendingStorageWrites();
 	});
 }
@@ -179,7 +296,7 @@ export function safeLocalStorageGetItem(key: string): string | null {
 	try {
 		ensureTokenStorageListener();
 		const val = window.localStorage.getItem(key);
-		inMemoryStorageCache.set(key, val);
+		putInMemoryStorageCache(key, val);
 		return val;
 	} catch {
 		return null;
@@ -203,19 +320,28 @@ export function safeLocalStorageSetItem(key: string, value: string, immediate = 
 	}
 
 	// Мгновенное обновление памяти: последующие чтения сразу видят новое значение
-	inMemoryStorageCache.set(key, value);
+	putInMemoryStorageCache(key, value);
 
 	if (typeof window === "undefined") return false;
 
 	ensureTokenStorageListener();
 
-	// Критические ключи или явный флаг immediate пишутся синхронно
+	// Критические ключи или явный флаг immediate пишутся синхронно с защитой от QuotaExceeded
 	if (immediate || isImmediateDiskKey(key)) {
 		pendingDiskWrites.delete(key);
 		try {
 			window.localStorage.setItem(key, value);
 			return true;
-		} catch {
+		} catch (err) {
+			if (isQuotaExceededError(err)) {
+				evictDisposableLocalStorageKeys();
+				try {
+					window.localStorage.setItem(key, value);
+					return true;
+				} catch {
+					return false;
+				}
+			}
 			return false;
 		}
 	}
@@ -308,7 +434,7 @@ export function safeSessionStorageGetItem(key: string): string | null {
 	if (typeof window === "undefined") return null;
 	try {
 		const val = window.sessionStorage.getItem(key);
-		inMemorySessionStorageCache.set(key, val);
+		putInMemorySessionStorageCache(key, val);
 		return val;
 	} catch {
 		return null;
@@ -325,7 +451,7 @@ export function safeSessionStorageSetItem(key: string, value: string, immediate 
 		}
 	}
 
-	inMemorySessionStorageCache.set(key, value);
+	putInMemorySessionStorageCache(key, value);
 	if (typeof window === "undefined") return false;
 	if (immediate) {
 		pendingSessionDiskWrites.delete(key);

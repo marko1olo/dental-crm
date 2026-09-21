@@ -38,11 +38,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { lazyWithRetry } from "./lib/lazyWithRetry";
 import { AppLoadingState, AppUnlockState } from "./AppBootState";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
-import { AuthHub } from "./components/auth/AuthHub";
-import { StaffPinPad } from "./components/auth/StaffPinPad";
 import { showToast } from "./components/GlobalToast";
-import { Omnibar } from "./components/Omnibar";
-import { VoiceAssistantUI } from "./components/VoiceAssistantUI";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
 import { useNetworkConnectivity } from "./hooks/useNetworkConnectivity";
 import { useOfflineMutationQueue } from "./hooks/useOfflineMutationQueue";
@@ -57,7 +53,6 @@ import {
 	safeLocalStorageRemoveItem,
 	safeLocalStorageSetItem,
 } from "./lib/safeLocalStorage";
-import { A2hsPromptModal } from "./pwa/A2hsPromptModal";
 import { usePerspectiveStore } from "./store/perspectiveStore";
 import { useAppLogic } from "./useAppLogic";
 import { useOmniPlatform } from "./hooks/useOmniPlatform";
@@ -187,6 +182,31 @@ const DoctorMobileShiftModal = lazyWithRetry(() =>
 			default: module.DoctorMobileShiftModal,
 		}),
 	),
+);
+const AuthHub = lazyWithRetry(() =>
+	import("./components/auth/AuthHub").then((module) => ({
+		default: module.AuthHub,
+	})),
+);
+const StaffPinPad = lazyWithRetry(() =>
+	import("./components/auth/StaffPinPad").then((module) => ({
+		default: module.StaffPinPad,
+	})),
+);
+const Omnibar = lazyWithRetry(() =>
+	import("./components/Omnibar").then((module) => ({
+		default: module.Omnibar,
+	})),
+);
+const VoiceAssistantUI = lazyWithRetry(() =>
+	import("./components/VoiceAssistantUI").then((module) => ({
+		default: module.VoiceAssistantUI,
+	})),
+);
+const A2hsPromptModal = lazyWithRetry(() =>
+	import("./pwa/A2hsPromptModal").then((module) => ({
+		default: module.A2hsPromptModal,
+	})),
 );
 function _speechGatewayCanUpload(status: SpeechGatewayStatus | null): boolean {
 	return Boolean(
@@ -1134,16 +1154,18 @@ export function App() {
 	// Show clinic login gate if not authed
 	if (!clinicAuthed) {
 		return (
-			<AuthHub
-				onSuccess={(_cp, up) => {
-					setClinicAuthed(true);
-					if (up) {
-						setStaffAuthed(true);
-						setActiveStaffUser(up);
-					}
-					void loadDashboard();
-				}}
-			/>
+			<Suspense fallback={<AppLoadingState message="Загрузка авторизации" />}>
+				<AuthHub
+					onSuccess={(_cp, up) => {
+						setClinicAuthed(true);
+						if (up) {
+							setStaffAuthed(true);
+							setActiveStaffUser(up);
+						}
+						void loadDashboard();
+					}}
+				/>
+			</Suspense>
 		);
 	}
 	// Show staff PIN pad if clinic authed but no staff session (or after lock)
@@ -1170,26 +1192,28 @@ export function App() {
 		 */
 
 		return (
-			<StaffPinPad
-				staffMembers={dashboard ? dashboard.clinicSettings?.staff : undefined}
-				staffListLoading={!dashboard && !error && !accessUnlockRequired}
-				/*
-				 * Код ответа берётся из того, что о неудаче известно здесь, и не
-				 * выдумывается: отказ по доступу — 401; сводка пришла, а списка в ней нет
-				 * — 200 («ответ сервера непонятен»); до сервера не дошли — null.
-				 */
-				staffListStatus={accessUnlockRequired ? 401 : dashboard ? 200 : null}
-				onUnlockSuccess={(user) => {
-					setActiveStaffUser(user);
-					setStaffAuthed(true);
-					setShowStaffPinPad(false);
-				}}
-				onClinicLogout={handleClinicLogout}
-				onRetryStaffList={() => {
-					setError(null);
-					void loadDashboard();
-				}}
-			/>
+			<Suspense fallback={<AppLoadingState message="Загрузка авторизации" />}>
+				<StaffPinPad
+					staffMembers={dashboard ? dashboard.clinicSettings?.staff : undefined}
+					staffListLoading={!dashboard && !error && !accessUnlockRequired}
+					/*
+					 * Код ответа берётся из того, что о неудаче известно здесь, и не
+					 * выдумывается: отказ по доступу — 401; сводка пришла, а списка в ней нет
+					 * — 200 («ответ сервера непонятен»); до сервера не дошли — null.
+					 */
+					staffListStatus={accessUnlockRequired ? 401 : dashboard ? 200 : null}
+					onUnlockSuccess={(user) => {
+						setActiveStaffUser(user);
+						setStaffAuthed(true);
+						setShowStaffPinPad(false);
+					}}
+					onClinicLogout={handleClinicLogout}
+					onRetryStaffList={() => {
+						setError(null);
+						void loadDashboard();
+					}}
+				/>
+			</Suspense>
 		);
 	}
 	/*
@@ -3473,20 +3497,26 @@ export function App() {
 							</Suspense>
 						</WorkspaceRouteErrorBoundary>
 					) : null}
-					<VoiceAssistantUI
-						onNavigate={(view) => {
-							setCurrentView(view);
-							window.location.hash = view;
-						}}
-						onSearchQuery={(q) => {
-							setQuery(q);
-						}}
-						onDateChange={(date) => {
-							setScheduleDateFilter(date);
-						}}
-					/>
-					<Omnibar />
-					<A2hsPromptModal />
+					<Suspense fallback={null}>
+						<VoiceAssistantUI
+							onNavigate={(view) => {
+								setCurrentView(view);
+								window.location.hash = view;
+							}}
+							onSearchQuery={(q) => {
+								setQuery(q);
+							}}
+							onDateChange={(date) => {
+								setScheduleDateFilter(date);
+							}}
+						/>
+					</Suspense>
+					<Suspense fallback={null}>
+						<Omnibar />
+					</Suspense>
+					<Suspense fallback={null}>
+						<A2hsPromptModal />
+					</Suspense>
 				</section>
 				<nav className="dnt-bottom-nav" aria-label="Мобильная навигация">
 					{(["shift", "schedule", "patients", "visit"] as const).map((view) => (

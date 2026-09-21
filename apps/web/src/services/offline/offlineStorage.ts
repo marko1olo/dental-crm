@@ -393,6 +393,20 @@ export async function withIdbTransactionRetry<R>(
 // LocalStorage & In-Memory Resilient Fallback Buffers (Quota Exhaustion Safety Net)
 // ─────────────────────────────────────────────────────────────────────────────
 
+const MAX_IN_MEMORY_MAP_ENTRIES = 500;
+
+function setBoundedInMemoryMap<K, V>(map: Map<K, V>, key: K, value: V): void {
+	if (map.size >= MAX_IN_MEMORY_MAP_ENTRIES && !map.has(key)) {
+		const iter = map.keys();
+		for (let i = 0; i < 25; i++) {
+			const k = iter.next().value;
+			if (!k) break;
+			map.delete(k);
+		}
+	}
+	map.set(key, value);
+}
+
 const inMemoryDraftsMap = new Map<string, OfflineDraft<unknown>>();
 const inMemoryMutationsMap = new Map<string, OfflineMutation<unknown>>();
 
@@ -561,7 +575,7 @@ export async function enqueueOfflineMutation<T = unknown>(
 	};
 
 	// Always record in in-memory outbox buffer for zero-loss guarantee
-	inMemoryMutationsMap.set(mutationId, mutation as OfflineMutation<unknown>);
+	setBoundedInMemoryMap(inMemoryMutationsMap, mutationId, mutation as OfflineMutation<unknown>);
 
 	// Deduplication Guard: if an identical pending mutation exists with matching payloadHash, return it
 	try {
@@ -614,6 +628,68 @@ export async function enqueueOfflineMutation<T = unknown>(
 }
 
 /**
+ * Восстановление зависших мутаций со статусом "syncing"
+ * (если вкладка упала, была закрыта или потеряла питание во время отправки).
+ * Сбрасывает статус в "pending", гарантируя 0% потерю мутаций (Мандат 8e / 8n).
+ */
+export async function recoverStaleSyncingMutations(staleTimeoutMs = 60000): Promise<number> {
+	let recoveredCount = 0;
+	const now = Date.now();
+
+	// 1. In-memory buffer recovery
+	for (const m of inMemoryMutationsMap.values()) {
+		if (m.status === "syncing" && (now - (m.timestampMs || 0) > staleTimeoutMs)) {
+			m.status = "pending";
+			recoveredCount++;
+		}
+	}
+
+	// 2. IndexedDB recovery
+	try {
+		await withIdbTransactionRetry(async (db) => {
+			return new Promise<void>((resolve, reject) => {
+				const tx = db.transaction(MUTATIONS_STORE_NAME, "readwrite");
+				const store = tx.objectStore(MUTATIONS_STORE_NAME);
+				const req = store.getAll();
+				req.onsuccess = () => {
+					const all = (req.result as OfflineMutation[]) || [];
+					for (const mut of all) {
+						if (mut.status === "syncing") {
+							const age = now - (mut.timestampMs || 0);
+							if (age > staleTimeoutMs) {
+								mut.status = "pending";
+								store.put(mut);
+								recoveredCount++;
+							}
+						}
+					}
+					resolve();
+				};
+				req.onerror = () => reject(req.error);
+			});
+		});
+	} catch (err) {
+		const list = getLocalStorageMutations();
+		let changed = false;
+		for (const m of list) {
+			if (m.status === "syncing" && (now - (m.timestampMs || 0) > staleTimeoutMs)) {
+				m.status = "pending";
+				recoveredCount++;
+				changed = true;
+			}
+		}
+		if (changed) {
+			saveLocalStorageMutations(list);
+		}
+	}
+
+	if (recoveredCount > 0) {
+		logger.info(`[OfflineStorage] Recovered ${recoveredCount} stale "syncing" mutations back to "pending"`);
+	}
+	return recoveredCount;
+}
+
+/**
  * Получение неотправленных (pending / failed) мутаций из очереди
  */
 export async function getPendingOfflineMutations(filter?: {
@@ -621,6 +697,9 @@ export async function getPendingOfflineMutations(filter?: {
 	organizationId?: string | undefined;
 }): Promise<OfflineMutation[]> {
 	try {
+		// Авто-восстановление зависших "syncing" мутаций перед выборкой
+		await recoverStaleSyncingMutations(60000);
+
 		const mutations = await withIdbTransactionRetry(async (db) => {
 			return new Promise<OfflineMutation[]>((resolve, reject) => {
 				const tx = db.transaction(MUTATIONS_STORE_NAME, "readonly");
@@ -850,8 +929,8 @@ export async function saveOfflineDraft<T = unknown>(
 		version: 1,
 	};
 
-	// Always record in in-memory safety buffer
-	inMemoryDraftsMap.set(draftKey, draft as OfflineDraft<unknown>);
+	// Always record in in-memory safety buffer with bounded memory cap
+	setBoundedInMemoryMap(inMemoryDraftsMap, draftKey, draft as OfflineDraft<unknown>);
 
 	try {
 		await withIdbTransactionRetry(async (db) => {
@@ -864,6 +943,9 @@ export async function saveOfflineDraft<T = unknown>(
 					reject(request.error ?? new Error("Failed to save draft to IDB"));
 			});
 		});
+		// Dual-storage resilience: mirror to LocalStorage immediately so synchronous lookups
+		// and emergency recovery before IDB initialization are 100% guaranteed
+		saveLocalStorageDraft(draft);
 		return draft;
 	} catch (err) {
 		logger.warn(
@@ -1345,7 +1427,7 @@ export class ClinicalDraftAutosaveManager {
 				organizationId,
 				version: 1,
 			};
-			inMemoryDraftsMap.set(draftKey, inMemDraft as OfflineDraft<unknown>);
+			setBoundedInMemoryMap(inMemoryDraftsMap, draftKey, inMemDraft as OfflineDraft<unknown>);
 
 			const entry: AutosaveEntry<T> = {
 				draftKey,
@@ -1430,7 +1512,7 @@ export class ClinicalDraftAutosaveManager {
 					organizationId: entry.organizationId,
 					version: 1,
 				};
-				inMemoryDraftsMap.set(entry.draftKey, draft);
+				setBoundedInMemoryMap(inMemoryDraftsMap, entry.draftKey, draft);
 				saveLocalStorageDraft(draft);
 				savedCount++;
 			} catch (err) {
@@ -1464,7 +1546,7 @@ export class ClinicalDraftAutosaveManager {
 			organizationId: entry.organizationId,
 			version: 1,
 		};
-		inMemoryDraftsMap.set(entry.draftKey, draft as OfflineDraft<unknown>);
+		setBoundedInMemoryMap(inMemoryDraftsMap, entry.draftKey, draft as OfflineDraft<unknown>);
 		saveLocalStorageDraft(draft);
 
 		return saveOfflineDraft<T>(
@@ -1996,7 +2078,7 @@ export async function savePatientClinicalCache<T = unknown>(
 	};
 
 	// 1. L1 Instant 0ms RAM cache hit
-	inMemoryClinicalCacheMap.set(cacheKey, record as PatientClinicalCacheRecord<unknown>);
+	setBoundedInMemoryMap(inMemoryClinicalCacheMap, cacheKey, record as PatientClinicalCacheRecord<unknown>);
 
 	// 2. Queue for coalesced batched write to IndexedDB / localStorage (Low-Spec HDD Saver)
 	queueBatchedStorePut({
@@ -2042,7 +2124,7 @@ export async function getPatientClinicalCache<T = unknown>(
 	}
 
 	if (idbResult !== null && idbResult !== undefined) {
-		inMemoryClinicalCacheMap.set(cacheKey, {
+		setBoundedInMemoryMap(inMemoryClinicalCacheMap, cacheKey, {
 			cacheKey,
 			entityKind: "clinical",
 			entityId: cacheKey,
@@ -2055,7 +2137,7 @@ export async function getPatientClinicalCache<T = unknown>(
 
 	const localRecord = getLocalStorageClinicalCache<T>(cacheKey);
 	if (localRecord?.data !== undefined && localRecord?.data !== null) {
-		inMemoryClinicalCacheMap.set(cacheKey, localRecord as PatientClinicalCacheRecord<unknown>);
+		setBoundedInMemoryMap(inMemoryClinicalCacheMap, cacheKey, localRecord as PatientClinicalCacheRecord<unknown>);
 		return localRecord.data;
 	}
 
@@ -2921,7 +3003,7 @@ export function prewarmOfflineCachesToRam(): Promise<void> {
 					let draftCount = 0;
 					for (const draft of drafts) {
 						if (draft && draft.draftKey && !inMemoryDraftsMap.has(draft.draftKey)) {
-							inMemoryDraftsMap.set(draft.draftKey, draft);
+							setBoundedInMemoryMap(inMemoryDraftsMap, draft.draftKey, draft);
 						}
 						if (++draftCount % 40 === 0) await yieldToMainThread();
 					}

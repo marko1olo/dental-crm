@@ -292,7 +292,8 @@ export default defineConfig({
 					// чтобы инспекция снимков и чтение метаданных не тянули многомегабайтный рантайм на медленном 5400 RPM HDD.
 					if (
 						normalizedId.includes("/node_modules/dicom-parser") ||
-						normalizedId.includes("/node_modules/dcmjs")
+						normalizedId.includes("/node_modules/dcmjs") ||
+						normalizedId.includes("/node_modules/dicomweb-client")
 					)
 						return "dicom-parser-vendor";
 					// @kitware/vtk.js: тяжелейший научный WebGL-конвейер визуализации объемных КТ/МПР данных.
@@ -305,10 +306,18 @@ export default defineConfig({
 					// Cornerstone3D и математические библиотеки матриц gl-matrix / hammerjs
 					if (
 						normalizedId.includes("/node_modules/@cornerstonejs/") ||
+						normalizedId.includes("/node_modules/cornerstone") ||
 						normalizedId.includes("/node_modules/gl-matrix") ||
 						normalizedId.includes("/node_modules/hammerjs")
 					)
 						return "cornerstone-vendor";
+					// Three.js и WebGL 3D-библиотеки визуализации моделей
+					if (
+						normalizedId.includes("/node_modules/three/") ||
+						normalizedId.includes("/node_modules/@types/three/") ||
+						normalizedId.includes("/node_modules/@react-three/")
+					)
+						return "three-vendor";
 					// Cornerstone3DViewer: тяжелый 3D WebGL просмотрщик КТ-снимков
 					if (
 						normalizedId.endsWith(
@@ -467,7 +476,11 @@ export default defineConfig({
 					// Recharts и связанные библиотеки графиков для аналитики
 					if (
 						normalizedId.includes("/node_modules/recharts") ||
-						normalizedId.includes("/node_modules/victory-vendor")
+						normalizedId.includes("/node_modules/victory-vendor") ||
+						normalizedId.includes("/node_modules/chart.js") ||
+						normalizedId.includes("/node_modules/chartjs") ||
+						normalizedId.includes("/node_modules/echarts") ||
+						normalizedId.includes("/node_modules/apexcharts")
 					)
 						return "charts-vendor";
 					// Изоляция аналитических панелей и графиков от основного бандла приёма врача
@@ -507,6 +520,13 @@ export default defineConfig({
 						return "schedule-components";
 					if (normalizedId.includes("/apps/web/src/components/onboarding/"))
 						return "onboarding-components";
+					if (
+						normalizedId.includes("/apps/web/src/components/auth/AuthHub") ||
+						normalizedId.includes("/apps/web/src/components/auth/StaffPinPad")
+					)
+						return "auth-hub";
+					if (normalizedId.includes("/apps/web/src/pwa/A2hsPromptModal"))
+						return "a2hs-modal";
 					if (normalizedId.includes("/apps/web/src/components/doctor-portal/"))
 						return "doctor-portal";
 					if (normalizedId.includes("/apps/web/src/components/egisz/"))

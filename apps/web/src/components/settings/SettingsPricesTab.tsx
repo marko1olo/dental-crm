@@ -534,7 +534,7 @@ export function SettingsPricesTab() {
 
 					<div className="catalog-groups">
 						{Object.entries(groupedCatalog).map(([category, items]) => {
-							const currentLimit = categoryLimits[category] ?? 30;
+							const currentLimit = categoryLimits[category] ?? 40;
 							const listSlice = sliceDomList(items, currentLimit, 0);
 							const visibleItems = listSlice.visibleItems;
 							const hasMore = listSlice.hasMore;
@@ -547,7 +547,15 @@ export function SettingsPricesTab() {
 								</h4>
 								<div className="catalog-items-grid">
 									{visibleItems.map((item) => (
-										<div className="catalog-item-card" key={item.id}>
+										<div
+											className="catalog-item-card"
+											key={item.id}
+											style={{
+												contentVisibility: "auto",
+												containIntrinsicSize: "1px 80px",
+												contain: "content",
+											}}
+										>
 											<div className="catalog-item-info">
 												<div className="catalog-item-code">
 													{item.code || "Без кода"}
@@ -652,11 +660,11 @@ export function SettingsPricesTab() {
 												onClick={() =>
 													setCategoryLimits((prev) => ({
 														...prev,
-														[category]: (prev[category] ?? 30) + 30,
+														[category]: (prev[category] ?? 40) + 40,
 													}))
 												}
 											>
-												Загрузить ещё 30
+												Загрузить ещё 40
 											</button>
 											<button
 												type="button"
