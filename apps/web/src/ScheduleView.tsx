@@ -484,14 +484,18 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 										"dente_doctor_shifts",
 										JSON.stringify(data.shifts),
 									);
-								} catch {}
+								} catch (storageErr: unknown) {
+									console.warn("[ScheduleView] Error saving dente_doctor_shifts to storage:", storageErr);
+								}
 								return data.shifts;
 							}
 							return prev;
 						});
 					}
 				}
-			} catch {}
+			} catch (fetchErr: unknown) {
+				console.warn("[ScheduleView] hydratePersistedShifts fetch error:", fetchErr);
+			}
 		}
 		hydratePersistedShifts();
 		return () => {
@@ -997,13 +1001,14 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
 	const todayScheduleDate = useCallback(
 		() =>
-			toDateTimeLocalValue
+			dashboard?.todayIso ||
+			(toDateTimeLocalValue
 				? toDateTimeLocalValue(
 						new Date().toISOString(),
 						dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow",
 					).slice(0, 10)
-				: new Date().toISOString().slice(0, 10),
-		[toDateTimeLocalValue, dashboard?.clinicSettings?.profile?.timezone],
+				: new Date().toISOString().slice(0, 10)),
+		[dashboard?.todayIso, toDateTimeLocalValue, dashboard?.clinicSettings?.profile?.timezone],
 	);
 
 	const clinicToday = todayScheduleDate();
@@ -1026,7 +1031,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 						`dente_chair_doctor_assignments_${currentDateKey}`,
 						JSON.stringify(dateMap),
 					);
-				} catch {}
+				} catch (storageErr: unknown) {
+					console.warn("[ScheduleView] Error persisting doctor shifts to storage:", storageErr);
+				}
 				try {
 					if (typeof fetch !== "undefined") {
 						const headers: Record<string, string> = {
@@ -1039,9 +1046,13 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 							method: "POST",
 							headers,
 							body: JSON.stringify({ shifts: nextShifts }),
-						}).catch(() => {});
+						}).catch((syncErr: unknown) => {
+							console.warn("[ScheduleView] Async shift sync failed:", syncErr);
+						});
 					}
-				} catch {}
+				} catch (networkErr: unknown) {
+					console.warn("[ScheduleView] Error initiating shift sync fetch:", networkErr);
+				}
 			};
 
 			if (!assignment || !assignment.doctorId) {
@@ -1700,22 +1711,15 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		if (!wrapper) return;
 
 		const isVisible = (element: HTMLElement) => {
+			// Нативная проверка видимости без Layout Thrashing и цикла по предкам (C++ движок браузера)
+			if (typeof (element as unknown as { checkVisibility?: (opts?: { checkOpacity?: boolean; checkVisibilityCSS?: boolean }) => boolean }).checkVisibility === "function") {
+				return (element as unknown as { checkVisibility: (opts?: { checkOpacity?: boolean; checkVisibilityCSS?: boolean }) => boolean }).checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
+			}
+			if (element.offsetParent === null && element.style.position !== "fixed") return false;
 			const rect = element.getBoundingClientRect();
 			if (rect.width < 1 || rect.height < 1) return false;
-			// opacity предка НЕ наследуется в вычисленный стиль потомка: у
-			// ребёнка внутри opacity: 0 собственная opacity остаётся 1. Поэтому
-			// цепочку предков приходится проходить вручную.
-			for (
-				let node: HTMLElement | null = element;
-				node;
-				node = node.parentElement
-			) {
-				const style = window.getComputedStyle(node);
-				if (style.display === "none" || style.visibility === "hidden")
-					return false;
-				if (Number.parseFloat(style.opacity) === 0) return false;
-			}
-			return true;
+			const style = window.getComputedStyle(element);
+			return style.display !== "none" && style.visibility !== "hidden" && Number.parseFloat(style.opacity) > 0;
 		};
 
 		// Форма со всеми полями главнее строки умного бронирования: человека сюда
@@ -1920,6 +1924,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		>
 			{/* STRICTLY 1 MONOLITHIC 44px TOOLBAR ROW */}
 			<ScheduleFilterStrip
+				todayIso={clinicToday}
 				scheduleDateFilter={scheduleDateFilter}
 				setScheduleDateFilter={setScheduleDateFilter}
 				stepScheduleDay={stepScheduleDay}

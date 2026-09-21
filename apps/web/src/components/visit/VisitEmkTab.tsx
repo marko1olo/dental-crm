@@ -30,6 +30,7 @@ import {
 	QrCode,
 	Receipt,
 	ScanLine,
+	Scissors,
 	Search,
 	ShieldAlert,
 	ShieldCheck,
@@ -2056,6 +2057,9 @@ export function VisitEmkTab() {
 						type="button"
 						data-testid="btn-quick-soap-extraction"
 						onClick={() => {
+							const surgeryPreset = CLINICAL_SOAP_PRESETS.find(
+								(p) => p.id === "surgery_extraction_simple",
+							);
 							if (surgeryPreset)
 								handleApplyClinicalSoapPreset(
 									surgeryPreset,
@@ -2066,7 +2070,7 @@ export function VisitEmkTab() {
 						className="shrink-0 flex-shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-800 dark:text-purple-300 hover:bg-purple-500/20 transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
 						title="Простое удаление зуба K04.8: анестезия + удаление щипцами/элеватором + гемостаз"
 					>
-						<Bone className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+						<Scissors className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
 						<span className="whitespace-nowrap shrink-0 min-w-max">Удаление</span>
 					</button>
 
@@ -2552,9 +2556,9 @@ export function VisitEmkTab() {
 								className="min-h-[130px] sm:min-h-[110px] rounded-b-lg rounded-t-none p-3 border border-t-0 border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-400 resize-y w-full outline-none focus:border-[var(--teal,var(--brand-primary))] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]/25 font-sans text-sm leading-relaxed"
 							/>
 
-							{/* Быстрые чипы под textarea: 1 строка с горизонтальным скроллом (Мандат 8p, DEF-2, DEF-3) */}
+							{/* Быстрые чипы под textarea: адаптивный flex-wrap без обрезания текста (Мандат 8p, DEF-2, DEF-3) */}
 							{chips.length > 0 && (
-								<div className="flex flex-nowrap items-center gap-1.5 py-1 min-w-0 max-w-full my-0.5 overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x">
+								<div className="flex flex-wrap items-center gap-1.5 py-1 min-w-0 max-w-full my-0.5">
 									{chips.map((chip) => (
 										<button
 											key={chip}

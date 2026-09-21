@@ -1183,7 +1183,7 @@ export function PaymentCapture({
 
 	return (
 		<div
-			className="payment-capture bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-2 sm:p-3 mb-4 pb-24 sm:pb-24 max-md:pb-36"
+			className="payment-capture bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-2 sm:p-3 mb-4 pb-28 sm:pb-24 max-md:pb-44"
 			id="payment-capture"
 		>
 			{feedback ? (
@@ -1737,12 +1737,11 @@ export function PaymentCapture({
 			{/* Панель оформления чека и кнопок оплаты (Мандат 8e / 8c / 8p: фиксирована внизу экрана) */}
 			<div
 				id="payment-checkout-bar"
-				className="payment-checkout-bar col-span-full sticky bottom-0 z-30 fixed sm:fixed bottom-0 right-0 z-50 bg-[var(--paper-strong,var(--paper))] dark:bg-[var(--paper-strong)] border-t border-[var(--line)] shadow-2xl px-3 py-2 sm:py-2.5 flex flex-row items-center justify-between gap-2 sm:gap-3 max-w-full min-w-0 box-border"
+				className="payment-checkout-bar col-span-full fixed bottom-0 right-0 z-50 bg-[var(--paper-strong,var(--paper))] dark:bg-[var(--paper-strong)] border-t border-[var(--line)] shadow-2xl px-3 py-2 sm:py-2.5 flex flex-row items-center justify-between gap-2 sm:gap-3 max-w-full min-w-0 box-border left-0 md:left-[var(--sidebar-width,252px)] pb-safe"
 				style={{
 					position: "fixed",
 					bottom: 0,
 					right: 0,
-					left: "var(--sidebar-width, 252px)",
 					zIndex: 50,
 				}}
 				data-testid="payment-checkout-bar"

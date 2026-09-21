@@ -678,7 +678,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			{/* Unified Clinical Toolbar - 1-Level Compact Console (Mandate 8d, 8e, 8p: strictly 36px) */}
 			{!hideModeSwitcher && (
 				<div
-					className="odontogram-toolbar flex items-center justify-between gap-1.5 px-2 pr-4 py-0.5 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full select-none flex-nowrap overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x min-h-[34px] h-[34px]"
+					className="odontogram-toolbar flex items-center justify-between gap-1.5 px-2 pr-6 py-0.5 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full select-none flex-nowrap overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x min-h-[34px] h-[34px]"
 					role="toolbar"
 					aria-label="Панель управления зубной формулой"
 				>
@@ -708,7 +708,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 										}`}
 									>
 										{option.icon}
-										<span className="truncate">{option.shortLabel}</span>
+										<span className="truncate max-w-[100px] sm:max-w-none">{option.shortLabel}</span>
 										{option.badge && (
 											<span
 												className={`text-[9px] px-1 py-0.2 rounded font-black tracking-tight ${
@@ -796,12 +796,12 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 									className={`h-7 px-1.5 sm:px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
 										activeStampTool === "Missing"
 											? "bg-zinc-700 text-white font-black shadow-xs"
-											: "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-500/15"
+											: "text-zinc-700 dark:text-zinc-200 hover:bg-zinc-500/20"
 									}`}
 									title="Удален (X): применить к выделенным зубам или включить штамп отсутствия"
 									data-testid="quick-trigger-extracted-btn"
 								>
-									<span className="w-2 h-2 rounded-full bg-zinc-500 shrink-0" />
+									<span className="w-2 h-2 rounded-full bg-zinc-500 dark:bg-zinc-300 shrink-0" />
 									<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">Удален</span>
 								</button>
 							</div>

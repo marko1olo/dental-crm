@@ -122,6 +122,20 @@
 	z-index: 9990;
 }
 
+@media (max-width: 768px) {
+	.dnt-telephony-floating-widget,
+	.telephony-floating-softphone {
+		bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
+		right: 12px;
+	}
+
+	.dnt-telephony-island-expanded {
+		width: calc(100vw - 24px);
+		max-width: 100vw;
+		border-radius: 16px;
+	}
+}
+
 /* Compact Dynamic Island Pill */
 .dnt-telephony-island-pill {
 	display: flex;

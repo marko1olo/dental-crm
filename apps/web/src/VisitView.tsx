@@ -3957,7 +3957,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								{/* ── RIGHT: Treatment ── */}
 								<div className="_ccm-panel">
 									<h4 className="_ccm-h" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-										<Wrench className="w-4 h-4 text-[var(--teal)] shrink-0" />
+										<DefaultSparkles className="w-4 h-4 text-[var(--teal)] shrink-0" />
 										<span>Лечение (Зуб {code})</span>
 									</h4>
 

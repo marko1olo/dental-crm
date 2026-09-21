@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
+	Activity,
 	AlertTriangle,
 	Coins,
 	Crown,
@@ -17,6 +18,7 @@ import { getToothStateFromHotkey } from "./ClassicGostOdontogram";
 import { type ToothState, TOOTH_STATE_LABELS } from "./ToothChart";
 import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { isPrimaryTooth } from "@dental/shared";
+import { triggerHaptic } from "../../native/mobileBridge";
 
 export interface RadialMenuItem {
 	id: string;
@@ -134,6 +136,16 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 		});
 	};
 
+	const handleSelectStateWithHaptic = (
+		state: ToothState,
+		surfs?: readonly string[],
+		subType?: string,
+	) => {
+		triggerHaptic("success");
+		onSelectState(state, surfs, subType);
+		onClose();
+	};
+
 	const isPrimary = isPrimaryTooth(toothNumber);
 
 	const items: RadialMenuItem[] = isPrimary
@@ -173,7 +185,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Пломба (F)",
 					shortLabel: "Пломба (F)",
 					state: "Filled",
-					icon: <Wrench size={16} className="text-blue-200" />,
+					icon: <Sparkles size={16} className="text-blue-200" />,
 					color: "from-blue-600 to-blue-800",
 					bgGradient: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
 					hotkey: "П",
@@ -255,7 +267,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Пломба (F)",
 					shortLabel: "Пломба (F)",
 					state: "Filled",
-					icon: <Wrench size={16} className="text-blue-200" />,
+					icon: <Sparkles size={16} className="text-blue-200" />,
 					color: "from-blue-600 to-blue-800",
 					bgGradient: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
 					hotkey: "П",
@@ -312,16 +324,14 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 			const parsedState = getToothStateFromHotkey(e.key);
 			if (parsedState) {
 				e.preventDefault();
-				onSelectState(parsedState, surfaces);
-				onClose();
+				handleSelectStateWithHaptic(parsedState, surfaces);
 				return;
 			}
 			const keyUpper = e.key.toUpperCase();
 			const matched = items.find((it) => it.hotkey === keyUpper);
 			if (matched && matched.state) {
 				e.preventDefault();
-				onSelectState(matched.state, surfaces);
-				onClose();
+				handleSelectStateWithHaptic(matched.state, surfaces);
 			}
 		};
 
@@ -422,8 +432,12 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									key={item.id}
 									type="button"
 									onClick={() => {
-										if (item.state) onSelectState(item.state, selectedSurfaces.length > 0 ? selectedSurfaces : surfaces);
-										onClose();
+										if (item.state) {
+											handleSelectStateWithHaptic(
+												item.state,
+												selectedSurfaces.length > 0 ? selectedSurfaces : surfaces,
+											);
+										}
 									}}
 									style={{ background: item.bgGradient }}
 									className={`radial-item-btn min-h-[52px] min-w-[48px] px-4 py-3 rounded-2xl font-bold text-white flex items-center justify-between gap-2.5 shadow-sm transition-all active:scale-95 cursor-pointer touch-manipulation border border-white/25 ${
@@ -800,7 +814,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									}}
 									className="flex-1 min-h-[48px] min-w-[48px] py-3 px-3 rounded-xl text-sm font-black text-rose-600 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 flex items-center justify-center gap-2 transition-colors cursor-pointer"
 								>
-									<Wrench size={18} />
+									<Activity size={18} />
 									<span className="whitespace-nowrap">Журнал каналов</span>
 								</button>
 							)}
@@ -822,7 +836,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											}}
 											className="w-full min-h-[44px] px-3 py-2 rounded-lg hover:bg-rose-500/15 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer text-left"
 										>
-											<Wrench size={16} className="shrink-0" />
+											<Activity size={16} className="shrink-0" />
 											<span>Журнал каналов (Эндо)</span>
 										</button>
 									</div>
@@ -1302,7 +1316,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									}}
 									className="min-h-[36px] text-xs font-black text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
 								>
-									<Wrench size={14} />
+									<Activity size={14} />
 									<span>Журнал каналов</span>
 								</button>
 							)}
@@ -1323,7 +1337,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											}}
 											className="w-full min-h-[32px] px-2.5 py-1 rounded-lg hover:bg-rose-500/15 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer text-left border-0 bg-transparent"
 										>
-											<Wrench size={14} className="shrink-0" />
+											<Activity size={14} className="shrink-0" />
 											<span>Журнал каналов</span>
 										</button>
 									</div>

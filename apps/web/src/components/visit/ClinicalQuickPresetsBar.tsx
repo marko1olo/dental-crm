@@ -8,6 +8,7 @@ import {
 	Flame,
 	HeartPulse,
 	PlusCircle,
+	Scissors,
 	Search,
 	ShieldCheck,
 	Sparkles,
@@ -253,7 +254,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 					<Sparkles size={14} className="text-amber-500" />
 					<span>Главные экспресс-сценарии приема:</span>
 				</div>
-				<div className="flex overflow-x-auto no-scrollbar whitespace-nowrap flex-nowrap scrollbar-none py-1 gap-2 touch-pan-x">
+				<div className="flex overflow-x-auto no-scrollbar whitespace-nowrap flex-nowrap scrollbar-none py-1 pr-6 gap-2 touch-pan-x">
 					{topExpressPresets.map((preset) => {
 						const isNorm = preset.id === "norm_healthy";
 						const isHygiene = preset.id === "hygiene_complex";
@@ -340,7 +341,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 											/>
 										)}
 										{isSurgery && (
-											<Bone
+											<Scissors
 												size={15}
 												className="text-purple-600 dark:text-purple-400 shrink-0"
 											/>
@@ -415,7 +416,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 									</span>
 								</div>
 								<span
-									className="text-[11px] font-medium text-[var(--muted)] whitespace-nowrap overflow-hidden text-ellipsis w-full"
+									className="text-[11px] font-medium text-[var(--muted)] line-clamp-2 leading-tight w-full"
 									title={subtitle}
 								>
 									{subtitle}
@@ -465,7 +466,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 							>
 								<div className="flex items-center justify-between w-full gap-1.5">
 									<div className="flex items-center gap-1.5 min-w-0">
-										<Bone
+										<Scissors
 											size={15}
 											className="text-rose-600 dark:text-rose-400 shrink-0"
 										/>

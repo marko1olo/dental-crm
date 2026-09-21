@@ -39,6 +39,7 @@ export const DEFAULT_CLINIC_CHAIRS: readonly ScheduleChair[] = [
 ];
 
 export interface ScheduleFilterStripProps {
+	todayIso?: string;
 	scheduleDateFilter: string;
 	setScheduleDateFilter: (date: string) => void;
 	stepScheduleDay: (delta: number) => void;
@@ -111,6 +112,7 @@ export function formatChairSpecialtyLabel(rawSpec?: string | null): string | nul
  * - Right: [⋮ Опции] dropdown menu (holding all 15 secondary modes) + STRICTLY 1 Primary "+ Запись" button.
  */
 export function ScheduleFilterStrip({
+	todayIso: propsTodayIso,
 	scheduleDateFilter,
 	setScheduleDateFilter,
 	stepScheduleDay,
@@ -160,7 +162,7 @@ export function ScheduleFilterStrip({
 }: ScheduleFilterStripProps): ReactElement {
 	const activeChairs = chairs.filter((chair) => chair?.active);
 	const displayChairs: readonly ScheduleChair[] = activeChairs.length > 0 ? activeChairs : DEFAULT_CLINIC_CHAIRS;
-	const todayIso = new Date().toISOString().slice(0, 10);
+	const todayIso = propsTodayIso || new Date().toISOString().slice(0, 10);
 	const tomorrowIso = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
 	const currentDateIso = scheduleDateFilter || todayIso;
 

@@ -10,8 +10,10 @@
 	--odontogram-ink: var(--ink);
 	--odontogram-ink-muted: var(--muted);
 	--odontogram-ink-subtle: var(--muted);
+	--tooth-enamel: #f8fafc;
+	--tooth-enamel-stroke: #94a3b8;
 	--tooth-root-fill: var(--paper-soft);
-	--tooth-root-stroke: var(--muted);
+	--tooth-root-stroke: var(--tooth-enamel-stroke, #94a3b8);
 	--tooth-crown-fill: var(--paper-strong);
 	--tooth-badge-bg: var(--paper);
 	--tooth-badge-border: var(--line);
@@ -113,12 +115,32 @@
 	--odontogram-ink: #4c0519;
 	--odontogram-ink-muted: #9f1239;
 	--odontogram-ink-subtle: #be185d;
-	--tooth-root-fill: #ffe4e6;
-	--tooth-root-stroke: #f472b6;
-	--tooth-crown-fill: #ffffff;
+	--tooth-enamel: #f8fafc;
+	--tooth-enamel-stroke: #94a3b8;
+	--tooth-root-fill: #f1ede4;
+	--tooth-root-stroke: #94a3b8;
+	--tooth-crown-fill: #f8fafc;
 	--tooth-badge-bg: #fff1f2;
-	--tooth-badge-border: #fbcfe8;
 }
+
+[data-theme="sakura"] .tooth-crown-path,
+[data-theme="sakura"] .tooth-crown-base-enamel,
+[data-theme="sakura"] .tooth-enamel-layer,
+[data-theme="sakura"] .tooth-root-path,
+[data-theme="sakura"] .tooth-root-base,
+[data-theme="sakura"] path.anatomical-root-path,
+[data-theme="sakura"] path.anatomical-crown-path {
+	stroke: #94a3b8 !important;
+}
+
+[data-theme="sakura"] .anatomical-pulp-chamber,
+[data-theme="sakura"] .anatomical-canals-layer path,
+[data-theme="sakura"] path.anatomical-pulp-path,
+[data-theme="sakura"] .pulp-fill {
+	stroke: #ef4444 !important;
+	fill: #ef4444 !important;
+}
+
 
 [data-theme="warm_sand"] {
 	--odontogram-paper: #ffffff;
@@ -519,6 +541,65 @@
 	.midline-notch {
 		width: 1px !important;
 		height: 18px !important;
+	}
+}
+
+/* Compact layout for screens with height <= 768px (1092x614, 1280x720, 1366x768) - Mandate 8p */
+@media (max-height: 768px) {
+	.odontogram-toolbar {
+		padding: 2px 0 !important;
+		gap: 2px !important;
+	}
+	.odontogram-toolbar-row {
+		height: 30px !important;
+		min-height: 28px !important;
+		max-height: 30px !important;
+		gap: 4px !important;
+	}
+	.odontogram-toolbar-row button,
+	.odontogram-toolbar-row .h-8 {
+		height: 28px !important;
+		min-height: 28px !important;
+		padding-top: 2px !important;
+		padding-bottom: 2px !important;
+		font-size: 11px !important;
+	}
+	.tooth-chart-arch-container {
+		padding: 4px 4px 14px 4px !important;
+		min-height: 170px !important;
+		max-height: calc(100vh - 250px) !important;
+		overflow-y: auto !important;
+	}
+	.teeth-row {
+		min-height: 85px !important;
+		gap: 2px !important;
+	}
+	.teeth-row.top-row {
+		align-items: flex-end !important;
+	}
+	.teeth-row.bottom-row {
+		align-items: flex-start !important;
+		padding-bottom: 6px !important;
+	}
+	.tooth-chart-legend-row {
+		display: none !important;
+	}
+	.tooth-svg-wrapper {
+		min-height: 38px !important;
+		padding: 1px !important;
+	}
+	.tooth-svg-wrapper svg {
+		max-height: 48px !important;
+		width: auto !important;
+	}
+	.tooth-number-badge {
+		padding: 1px 4px !important;
+		font-size: 10px !important;
+		min-width: 20px !important;
+	}
+	.teeth-divider {
+		height: 6px !important;
+		margin: 1px 0 !important;
 	}
 }
 
@@ -2592,4 +2673,98 @@
 	transform: scale(0.95);
 }
 
+/* ── WCAG AAA High-Contrast & Theme Overrides for Odontogram (Mandates 8c, 8d) ── */
+[data-theme="dark"] button[data-testid="quick-trigger-extracted-btn"],
+[data-theme="cyber-xray"] button[data-testid="quick-trigger-extracted-btn"],
+[data-theme="ocean"] button[data-testid="quick-trigger-extracted-btn"] {
+	color: #e2e8f0 !important;
+	border-color: rgba(226, 232, 240, 0.35) !important;
+}
 
+[data-theme="dark"] .odontogram-toolbar,
+[data-theme="cyber-xray"] .odontogram-toolbar,
+[data-theme="ocean"] .odontogram-toolbar {
+	border-bottom-color: rgba(226, 232, 240, 0.2) !important;
+}
+
+/* ── Responsive & Mobile Ergonomics for Odontogram Toolbar & Canvas (Mandates 8c, 8d, 8p) ── */
+@media (max-width: 768px) {
+	.odontogram-toolbar {
+		padding: 2px 0;
+		gap: 2px;
+	}
+
+	.odontogram-toolbar-row {
+		height: 34px;
+		min-height: 32px;
+		max-height: 34px;
+		gap: 4px;
+		padding: 0 4px;
+		overflow-x: auto;
+		touch-action: pan-x;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.odontogram-toolbar-row button {
+		min-height: 30px;
+		height: 30px;
+		padding: 0 6px;
+		font-size: 11px;
+	}
+
+	.tooth-chart-arch-container {
+		min-height: 240px;
+		padding: 4px;
+	}
+
+	.tooth-chart-arch-wrapper {
+		width: 100%;
+		max-width: 100%;
+		overflow-x: auto;
+		touch-action: pan-x;
+	}
+
+	.tooth-chart-arch-svg {
+		max-width: 100%;
+		height: auto;
+	}
+}
+
+@media (max-width: 480px) {
+	.odontogram-toolbar {
+		padding: 2px 0;
+	}
+
+	.odontogram-toolbar-row {
+		height: 32px;
+		min-height: 30px;
+		max-height: 32px;
+		gap: 3px;
+		padding: 0 2px;
+	}
+
+	.odontogram-toolbar-row button {
+		min-height: 28px;
+		height: 28px;
+		padding: 0 5px;
+		font-size: 10px;
+	}
+
+	.tooth-chart-arch-container {
+		min-height: 200px;
+		padding: 2px;
+	}
+
+	.tooth-chart-arch-wrapper {
+		width: 100%;
+		overflow-x: auto;
+		touch-action: pan-x;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.tooth-chart-arch-svg {
+		min-width: 340px;
+		width: 100%;
+		height: auto;
+	}
+}
