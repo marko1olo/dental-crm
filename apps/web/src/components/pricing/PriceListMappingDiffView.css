@@ -157,10 +157,56 @@
 /* Dual Pane Split Grid */
 .pricelist-diff-panes {
 	display: grid;
-	grid-template-columns: 1fr 1.35fr;
+	grid-template-columns: 1fr 1.55fr;
 	flex: 1;
 	min-height: 0;
 	overflow: hidden;
+}
+
+/* Batch Strip */
+.pricelist-diff-batch-strip {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.375rem 1rem;
+	background: var(--paper-strong, #f1f5f9);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	flex-wrap: wrap;
+	font-size: 0.75rem;
+}
+
+.pricelist-diff-batch-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 24px;
+	padding: 0 0.5rem;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	border-radius: 4px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.pricelist-diff-batch-btn:hover {
+	border-color: var(--brand-500, #3b82f6);
+	color: var(--brand-500, #3b82f6);
+	background: var(--paper-soft, #f8fafc);
+}
+
+.pricelist-diff-batch-btn.warranty {
+	color: var(--ok-fg, #10b981);
+	border-color: rgba(16, 185, 129, 0.4);
+	background: rgba(16, 185, 129, 0.08);
+}
+
+.pricelist-diff-batch-btn.warranty:hover {
+	background: rgba(16, 185, 129, 0.2);
+	border-color: var(--ok-fg, #10b981);
 }
 
 .pricelist-diff-pane {
@@ -357,13 +403,108 @@
 	text-overflow: ellipsis;
 }
 
-.pricelist-diff-mapped-price {
-	font-size: 0.875rem;
+/* Synchronized Hover State */
+.pricelist-diff-raw-row.is-hovered,
+.pricelist-diff-mapped-row.is-hovered {
+	border-color: var(--brand-500, #3b82f6);
+	background: rgba(59, 130, 246, 0.05);
+}
+
+/* Price Column with Inline Modifiers (±100, ±500, 0 ₽) */
+.pricelist-diff-price-col {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 0.25rem;
+	flex-shrink: 0;
+	min-width: 135px;
+}
+
+.pricelist-diff-price-btn {
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 4px;
+	padding: 1px 4px;
+	cursor: pointer;
+	font-size: 0.8125rem;
 	font-weight: 700;
 	color: var(--ink, #0f172a);
+	display: inline-flex;
+	align-items: center;
+	transition: all 0.15s ease;
 	white-space: nowrap;
+}
+
+.pricelist-diff-price-btn:hover {
+	border-color: var(--line, #e2e8f0);
+	background: var(--paper-soft, #f1f5f9);
+}
+
+.pricelist-diff-inline-input-box {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.pricelist-diff-price-input {
+	width: 75px;
+	height: 24px;
+	padding: 0 4px;
+	font-size: 0.75rem;
+	font-weight: 700;
 	text-align: right;
-	min-width: 80px;
+	border: 1px solid var(--brand-500, #3b82f6);
+	border-radius: 4px;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	outline: none;
+}
+
+.pricelist-diff-price-modifiers {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.pricelist-diff-delta-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 20px;
+	padding: 0 3px;
+	font-size: 0.625rem;
+	font-weight: 600;
+	border-radius: 3px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.12s ease;
+	min-width: 24px;
+	white-space: nowrap;
+}
+
+.pricelist-diff-delta-btn:hover {
+	background: var(--paper-strong, #f8fafc);
+	border-color: var(--brand-500, #3b82f6);
+	color: var(--brand-500, #3b82f6);
+}
+
+.pricelist-diff-delta-btn.warranty {
+	color: var(--ok-fg, #10b981);
+	border-color: rgba(16, 185, 129, 0.3);
+	background: rgba(16, 185, 129, 0.06);
+}
+
+.pricelist-diff-delta-btn.warranty.active {
+	background: rgba(16, 185, 129, 0.2);
+	border-color: var(--ok-fg, #10b981);
+	color: var(--ok-fg, #10b981);
+}
+
+.pricelist-diff-delta-btn.warranty:hover {
+	background: rgba(16, 185, 129, 0.25);
+	border-color: var(--ok-fg, #10b981);
 }
 
 /* 1-Click Row Actions */
@@ -517,6 +658,68 @@
 	background: #0f172a;
 	border-color: var(--line, #334155);
 	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .pricelist-diff-batch-strip,
+[data-theme="night"] .pricelist-diff-batch-strip,
+[data-theme="cyber_xray"] .pricelist-diff-batch-strip,
+[data-theme="contrast"] .pricelist-diff-batch-strip {
+	background: #090d16;
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .pricelist-diff-batch-btn,
+[data-theme="night"] .pricelist-diff-batch-btn,
+[data-theme="cyber_xray"] .pricelist-diff-batch-btn,
+[data-theme="contrast"] .pricelist-diff-batch-btn {
+	background: #1e293b;
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .pricelist-diff-price-btn,
+[data-theme="night"] .pricelist-diff-price-btn,
+[data-theme="cyber_xray"] .pricelist-diff-price-btn,
+[data-theme="contrast"] .pricelist-diff-price-btn {
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .pricelist-diff-price-input,
+[data-theme="night"] .pricelist-diff-price-input,
+[data-theme="cyber_xray"] .pricelist-diff-price-input,
+[data-theme="contrast"] .pricelist-diff-price-input {
+	background: #0f172a;
+	color: var(--ink, #f8fafc);
+	border-color: var(--brand-500, #3b82f6);
+}
+
+[data-theme="dark"] .pricelist-diff-delta-btn,
+[data-theme="night"] .pricelist-diff-delta-btn,
+[data-theme="cyber_xray"] .pricelist-diff-delta-btn,
+[data-theme="contrast"] .pricelist-diff-delta-btn {
+	background: #1e293b;
+	border-color: var(--line, #334155);
+	color: var(--ink-muted, #94a3b8);
+}
+
+[data-theme="dark"] .pricelist-diff-delta-btn:hover,
+[data-theme="night"] .pricelist-diff-delta-btn:hover,
+[data-theme="cyber_xray"] .pricelist-diff-delta-btn:hover,
+[data-theme="contrast"] .pricelist-diff-delta-btn:hover {
+	background: #334155;
+	color: #ffffff;
+}
+
+[data-theme="dark"] .pricelist-diff-raw-row.is-hovered,
+[data-theme="night"] .pricelist-diff-raw-row.is-hovered,
+[data-theme="cyber_xray"] .pricelist-diff-raw-row.is-hovered,
+[data-theme="contrast"] .pricelist-diff-raw-row.is-hovered,
+[data-theme="dark"] .pricelist-diff-mapped-row.is-hovered,
+[data-theme="night"] .pricelist-diff-mapped-row.is-hovered,
+[data-theme="cyber_xray"] .pricelist-diff-mapped-row.is-hovered,
+[data-theme="contrast"] .pricelist-diff-mapped-row.is-hovered {
+	background: rgba(59, 130, 246, 0.12);
+	border-color: var(--brand-500, #3b82f6);
 }
 
 @media (max-width: 900px) {

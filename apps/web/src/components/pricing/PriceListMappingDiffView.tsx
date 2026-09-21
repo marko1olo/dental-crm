@@ -89,8 +89,131 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 	const [filterTab, setFilterTab] = useState<'all' | 'new' | 'update' | 'attention'>('all');
 	const [searchTerm, setSearchTerm] = useState('');
 	const [activeLinkRowId, setActiveLinkRowId] = useState<string | null>(null);
+	const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
+	const [editingRowPriceId, setEditingRowPriceId] = useState<string | null>(null);
+	const [editingRowPriceBuffer, setEditingRowPriceBuffer] = useState<string>('');
 
 	const searchInputId = useId();
+	const leftBodyRef = React.useRef<HTMLDivElement>(null);
+	const rightBodyRef = React.useRef<HTMLDivElement>(null);
+	const isSyncingScrollRef = React.useRef(false);
+
+	// Synchronized Scrolling between Raw Document and 804n Mapping Panes
+	const handleLeftScroll = () => {
+		if (isSyncingScrollRef.current) return;
+		isSyncingScrollRef.current = true;
+		if (leftBodyRef.current && rightBodyRef.current) {
+			rightBodyRef.current.scrollTop = leftBodyRef.current.scrollTop;
+		}
+		requestAnimationFrame(() => {
+			isSyncingScrollRef.current = false;
+		});
+	};
+
+	const handleRightScroll = () => {
+		if (isSyncingScrollRef.current) return;
+		isSyncingScrollRef.current = true;
+		if (leftBodyRef.current && rightBodyRef.current) {
+			leftBodyRef.current.scrollTop = rightBodyRef.current.scrollTop;
+		}
+		requestAnimationFrame(() => {
+			isSyncingScrollRef.current = false;
+		});
+	};
+
+	// Inline Price Modifiers (±100 ₽, ±500 ₽, 0 ₽ Гарантия)
+	const handleModifyRowDelta = (rowId: string, deltaRub: number) => {
+		if (!onItemsChange) return;
+		const updated = items.map((it) => {
+			if (it.id !== rowId) return it;
+			const nextPrice = Math.max(0, it.priceRub + deltaRub);
+			return {
+				...it,
+				priceRub: nextPrice,
+				priceKopecks: Math.round(nextPrice * 100),
+			};
+		});
+		onItemsChange(updated);
+	};
+
+	const handleSetRowZeroPrice = (rowId: string) => {
+		if (!onItemsChange) return;
+		const updated = items.map((it) => {
+			if (it.id !== rowId) return it;
+			return {
+				...it,
+				priceRub: 0,
+				priceKopecks: 0,
+			};
+		});
+		onItemsChange(updated);
+	};
+
+	const handleCommitRowPrice = (rowId: string, rawVal: string) => {
+		if (!onItemsChange) {
+			setEditingRowPriceId(null);
+			return;
+		}
+		const cleanDigits = rawVal.replace(/\s+/g, '').replace(/[^\d]/g, '');
+		const parsed = parseInt(cleanDigits, 10);
+		if (!Number.isNaN(parsed) && parsed >= 0) {
+			const updated = items.map((it) => {
+				if (it.id !== rowId) return it;
+				return {
+					...it,
+					priceRub: parsed,
+					priceKopecks: Math.round(parsed * 100),
+				};
+			});
+			onItemsChange(updated);
+		}
+		setEditingRowPriceId(null);
+	};
+
+	// Batch Markup & Rounding (+5%, +10%, +15%, -10%, round to 100/500, 0 ₽)
+	const handleBatchMarkup = (percent: number) => {
+		if (!onItemsChange) return;
+		const hasApproved = items.some((i) => i.isApproved);
+		const updated = items.map((it) => {
+			if (hasApproved && !it.isApproved) return it;
+			const nextPrice = Math.max(0, Math.round(it.priceRub * (1 + percent / 100)));
+			return {
+				...it,
+				priceRub: nextPrice,
+				priceKopecks: Math.round(nextPrice * 100),
+			};
+		});
+		onItemsChange(updated);
+	};
+
+	const handleBatchRounding = (roundTo: number = 100) => {
+		if (!onItemsChange) return;
+		const hasApproved = items.some((i) => i.isApproved);
+		const updated = items.map((it) => {
+			if (hasApproved && !it.isApproved) return it;
+			const nextPrice = Math.max(0, Math.round(it.priceRub / roundTo) * roundTo);
+			return {
+				...it,
+				priceRub: nextPrice,
+				priceKopecks: Math.round(nextPrice * 100),
+			};
+		});
+		onItemsChange(updated);
+	};
+
+	const handleBatchSetZero = () => {
+		if (!onItemsChange) return;
+		const hasApproved = items.some((i) => i.isApproved);
+		const updated = items.map((it) => {
+			if (hasApproved && !it.isApproved) return it;
+			return {
+				...it,
+				priceRub: 0,
+				priceKopecks: 0,
+			};
+		});
+		onItemsChange(updated);
+	};
 
 	// Stats Calculation
 	const stats = useMemo(() => {
@@ -362,9 +485,76 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 				</div>
 			</div>
 
+			{/* Batch Operations Strip (Indexation +5%, +10%, +15%, -10%, Rounding, 0 ₽ Warranty) */}
+			<div className="pricelist-diff-batch-strip">
+				<div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontWeight: 600, color: 'var(--ink)' }}>
+					<Sparkles size={13} style={{ color: 'var(--brand-500)' }} />
+					<span>Пакетная индексация:</span>
+				</div>
+				<div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap' }}>
+					<button
+						type="button"
+						className="pricelist-diff-batch-btn"
+						onClick={() => handleBatchMarkup(5)}
+						title="Прибавить 5% к ценам выбранных услуг"
+					>
+						+5%
+					</button>
+					<button
+						type="button"
+						className="pricelist-diff-batch-btn"
+						onClick={() => handleBatchMarkup(10)}
+						title="Прибавить 10% к ценам выбранных услуг"
+					>
+						+10%
+					</button>
+					<button
+						type="button"
+						className="pricelist-diff-batch-btn"
+						onClick={() => handleBatchMarkup(15)}
+						title="Прибавить 15% к ценам выбранных услуг"
+					>
+						+15%
+					</button>
+					<button
+						type="button"
+						className="pricelist-diff-batch-btn"
+						onClick={() => handleBatchMarkup(-10)}
+						title="Скидка 10% на выбранные услуги"
+					>
+						-10%
+					</button>
+					<button
+						type="button"
+						className="pricelist-diff-batch-btn warranty"
+						onClick={handleBatchSetZero}
+						title="Мандат 8e: установить 0 ₽ (Гарантия) для выбранных услуг"
+					>
+						0 ₽ (Гарантия)
+					</button>
+					<span style={{ color: 'var(--line)', margin: '0 0.125rem' }}>|</span>
+					<button
+						type="button"
+						className="pricelist-diff-batch-btn"
+						onClick={() => handleBatchRounding(100)}
+						title="Округлить цены до 100 ₽"
+					>
+						До 100 ₽
+					</button>
+					<button
+						type="button"
+						className="pricelist-diff-batch-btn"
+						onClick={() => handleBatchRounding(500)}
+						title="Округлить цены до 500 ₽"
+					>
+						До 500 ₽
+					</button>
+				</div>
+			</div>
+
 			{/* Dual-Pane View: Left = Raw Old Document, Right = 804n Mapping */}
 			<div className="pricelist-diff-panes">
-				{/* Left Pane: Original Unstructured Document */}
+				{/* Left Pane: Original Unstructured Document with Synchronized Scroll */}
 				<section className="pricelist-diff-pane left-pane" aria-label="Исходный документ">
 					<header className="pricelist-diff-pane-header">
 						<div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -374,9 +564,18 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 						<span style={{ fontSize: '0.6875rem' }}>{filteredItems.length} строк</span>
 					</header>
 
-					<div className="pricelist-diff-pane-body">
+					<div
+						ref={leftBodyRef}
+						onScroll={handleLeftScroll}
+						className="pricelist-diff-pane-body"
+					>
 						{filteredItems.map((item) => (
-							<div key={`raw-${item.id}`} className="pricelist-diff-raw-row">
+							<div
+								key={`raw-${item.id}`}
+								className={`pricelist-diff-raw-row ${hoveredRowId === item.id ? 'is-hovered' : ''}`}
+								onMouseEnter={() => setHoveredRowId(item.id)}
+								onMouseLeave={() => setHoveredRowId(null)}
+							>
 								<span className="pricelist-diff-line-number">#{item.sourceLineNumber}</span>
 								<div className="pricelist-diff-raw-text">
 									{item.rawLine}
@@ -392,7 +591,7 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 					</div>
 				</section>
 
-				{/* Right Pane: Statutory Nomenclature Mapping & Actions */}
+				{/* Right Pane: Statutory Nomenclature Mapping & Actions with Synchronized Scroll */}
 				<section className="pricelist-diff-pane right-pane" aria-label="Сопоставление с номенклатурой 804н">
 					<header className="pricelist-diff-pane-header">
 						<div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -404,14 +603,20 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 						</span>
 					</header>
 
-					<div className="pricelist-diff-pane-body">
+					<div
+						ref={rightBodyRef}
+						onScroll={handleRightScroll}
+						className="pricelist-diff-pane-body"
+					>
 						{filteredItems.map((item) => {
 							const isLinkingThisRow = activeLinkRowId === item.id;
 
 							return (
 								<div
 									key={`mapped-${item.id}`}
-									className={`pricelist-diff-mapped-row ${item.isApproved ? '' : 'unapproved'}`}
+									className={`pricelist-diff-mapped-row ${item.isApproved ? '' : 'unapproved'} ${hoveredRowId === item.id ? 'is-hovered' : ''}`}
+									onMouseEnter={() => setHoveredRowId(item.id)}
+									onMouseLeave={() => setHoveredRowId(null)}
 								>
 									{/* Main Item Metadata */}
 									<div className="pricelist-diff-mapped-main">
@@ -432,25 +637,31 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 										</div>
 
 										{/* Inline Service Linker Drawer (if active) */}
-										{isLinkingThisRow && existingCatalog.length > 0 && (
+										{isLinkingThisRow && (
 											<div style={{ marginTop: '0.375rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-												<select
-													className="pricelist-search-input"
-													style={{ height: '28px', fontSize: '0.75rem', padding: '0 0.5rem', width: 'auto', flex: 1 }}
-													defaultValue={item.matchedExistingServiceId ?? ''}
-													onChange={(e) => {
-														if (e.target.value) {
-															handleSetLinkExisting(item.id, e.target.value);
-														}
-													}}
-												>
-													<option value="">Выберите существующую услугу клиники...</option>
-													{existingCatalog.map((catItem) => (
-														<option key={catItem.id} value={catItem.id}>
-															{catItem.code ? `[${catItem.code}] ` : ''}{catItem.title} ({formatPrice(catItem.basePriceRub ?? 0)})
-														</option>
-													))}
-												</select>
+												{existingCatalog.length > 0 ? (
+													<select
+														className="pricelist-search-input"
+														style={{ height: '28px', fontSize: '0.75rem', padding: '0 0.5rem', width: 'auto', flex: 1 }}
+														defaultValue={item.matchedExistingServiceId ?? ''}
+														onChange={(e) => {
+															if (e.target.value) {
+																handleSetLinkExisting(item.id, e.target.value);
+															}
+														}}
+													>
+														<option value="">Выберите существующую услугу клиники...</option>
+														{existingCatalog.map((catItem) => (
+															<option key={catItem.id} value={catItem.id}>
+																{catItem.code ? `[${catItem.code}] ` : ''}{catItem.title} ({formatPrice(catItem.basePriceRub ?? 0)})
+															</option>
+														))}
+													</select>
+												) : (
+													<div style={{ fontSize: '0.75rem', color: 'var(--muted)', flex: 1 }}>
+														В каталоге клиники пока нет сохранённых услуг. Будет создана как новая.
+													</div>
+												)}
 												<button
 													type="button"
 													className="pricelist-diff-icon-btn"
@@ -463,9 +674,82 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 										)}
 									</div>
 
-									{/* Price in Rubles */}
-									<div className="pricelist-diff-mapped-price">
-										{formatPrice(item.priceRub)}
+									{/* Price Column with Inline Modifiers (±100 ₽, ±500 ₽, 0 ₽ Гарантия) */}
+									<div className="pricelist-diff-price-col">
+										{editingRowPriceId === item.id ? (
+											<div className="pricelist-diff-inline-input-box">
+												<input
+													type="text"
+													inputMode="numeric"
+													className="pricelist-diff-price-input"
+													autoFocus
+													value={editingRowPriceBuffer}
+													onChange={(e) => setEditingRowPriceBuffer(e.target.value.replace(/[^\d]/g, ''))}
+													onKeyDown={(e) => {
+														if (e.key === 'Enter') handleCommitRowPrice(item.id, editingRowPriceBuffer);
+														else if (e.key === 'Escape') setEditingRowPriceId(null);
+													}}
+													onBlur={() => handleCommitRowPrice(item.id, editingRowPriceBuffer)}
+												/>
+												<span style={{ fontSize: '0.6875rem', color: 'var(--muted)' }}>₽</span>
+											</div>
+										) : (
+											<button
+												type="button"
+												className="pricelist-diff-price-btn"
+												onClick={() => {
+													setEditingRowPriceId(item.id);
+													setEditingRowPriceBuffer(String(item.priceRub));
+												}}
+												title="Кликните для изменения цены вручную"
+											>
+												<span>{formatPrice(item.priceRub)}</span>
+											</button>
+										)}
+
+										{/* Inline Modifiers: -500, -100, +100, +500, 0 ₽ */}
+										<div className="pricelist-diff-price-modifiers">
+											<button
+												type="button"
+												className="pricelist-diff-delta-btn"
+												onClick={() => handleModifyRowDelta(item.id, -500)}
+												title="Вычесть 500 ₽"
+											>
+												-500
+											</button>
+											<button
+												type="button"
+												className="pricelist-diff-delta-btn"
+												onClick={() => handleModifyRowDelta(item.id, -100)}
+												title="Вычесть 100 ₽"
+											>
+												-100
+											</button>
+											<button
+												type="button"
+												className="pricelist-diff-delta-btn"
+												onClick={() => handleModifyRowDelta(item.id, 100)}
+												title="Прибавить 100 ₽"
+											>
+												+100
+											</button>
+											<button
+												type="button"
+												className="pricelist-diff-delta-btn"
+												onClick={() => handleModifyRowDelta(item.id, 500)}
+												title="Прибавить 500 ₽"
+											>
+												+500
+											</button>
+											<button
+												type="button"
+												className={`pricelist-diff-delta-btn warranty ${item.priceRub === 0 ? 'active' : ''}`}
+												onClick={() => handleSetRowZeroPrice(item.id)}
+												title="Установить 0 ₽ (Гарантия / Бесплатно по Мандату 8e)"
+											>
+												0 ₽
+											</button>
+										</div>
 									</div>
 
 									{/* 1-Click Row Actions */}
@@ -516,7 +800,7 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 				</section>
 			</div>
 
-			{/* Footer: Apply or Cancel */}
+			{/* Footer: Apply or Cancel — Mandate 8e: Zero Disabled Buttons */}
 			<footer
 				style={{
 					display: 'flex',
@@ -546,15 +830,24 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 					<button
 						type="button"
 						className="pricelist-diff-btn pricelist-diff-btn-primary"
-						disabled={isLoading || items.filter((i) => i.isApproved).length === 0}
 						onClick={() => {
+							if (isLoading) return;
 							const approved = items.filter((i) => i.isApproved);
+							if (approved.length === 0) {
+								if (items.length > 0) {
+									const allApproved = items.map((it) => ({ ...it, isApproved: true }));
+									if (onItemsChange) onItemsChange(allApproved);
+									if (onApply) onApply(allApproved);
+								}
+								return;
+							}
 							if (onApply) onApply(approved);
 						}}
+						title="Загрузить все утверждённые услуги в каталог клиники"
 					>
 						<Check size={14} />
 						<span>
-							{isLoading ? 'Загрузка...' : `Загрузить в прейскурант (${items.filter((i) => i.isApproved).length})`}
+							{isLoading ? 'Загрузка...' : `Загрузить в прейскурант (${items.filter((i) => i.isApproved).length || items.length})`}
 						</span>
 					</button>
 				</div>

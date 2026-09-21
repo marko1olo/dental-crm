@@ -1010,7 +1010,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 										</div>
 									</th>
 									<th style={{ width: '130px' }}>Специальность</th>
-									<th style={{ width: '210px', textAlign: 'right', cursor: 'pointer' }} onClick={() => handleToggleSort('price')}>
+									<th style={{ width: '310px', textAlign: 'right', cursor: 'pointer' }} onClick={() => handleToggleSort('price')}>
 										<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
 											<span>Цена ({activeTier === 'standard' ? 'Руб.' : activeTier.toUpperCase()})</span>
 											<ArrowUpDown size={12} style={{ opacity: sortField === 'price' ? 1 : 0.35 }} />
@@ -1094,7 +1094,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 												</span>
 											</td>
 											<td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-												<div className="price-edit-container" style={{ justifyContent: 'flex-end', gap: '4px' }}>
+												<div className="price-edit-container" style={{ justifyContent: 'flex-end', gap: '3px' }}>
 													{editingPriceCellId === item.id ? (
 														<div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
 															<input
@@ -1143,10 +1143,38 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 														</button>
 													)}
 
+													{/* Inline Modifiers: -500, -100, +100, +500, 0 ₽ (Гарантия) */}
 													<button
 														type="button"
 														className="batch-quick-btn"
-														style={{ padding: '0 4px', fontSize: '0.6875rem', height: '22px', minWidth: '32px' }}
+														style={{ padding: '0 3px', fontSize: '0.6875rem', height: '22px', minWidth: '28px' }}
+														onClick={() => handleModifyPriceDelta(item.id, -500)}
+														title="Вычесть 500 ₽"
+													>
+														-500
+													</button>
+													<button
+														type="button"
+														className="batch-quick-btn"
+														style={{ padding: '0 3px', fontSize: '0.6875rem', height: '22px', minWidth: '28px' }}
+														onClick={() => handleModifyPriceDelta(item.id, -100)}
+														title="Вычесть 100 ₽"
+													>
+														-100
+													</button>
+													<button
+														type="button"
+														className="batch-quick-btn"
+														style={{ padding: '0 3px', fontSize: '0.6875rem', height: '22px', minWidth: '28px' }}
+														onClick={() => handleModifyPriceDelta(item.id, 100)}
+														title="Прибавить 100 ₽"
+													>
+														+100
+													</button>
+													<button
+														type="button"
+														className="batch-quick-btn"
+														style={{ padding: '0 3px', fontSize: '0.6875rem', height: '22px', minWidth: '28px' }}
 														onClick={() => handleModifyPriceDelta(item.id, 500)}
 														title="Прибавить 500 ₽"
 													>
@@ -1154,12 +1182,20 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 													</button>
 													<button
 														type="button"
-														className="batch-quick-btn"
-														style={{ padding: '0 4px', fontSize: '0.6875rem', height: '22px', minWidth: '32px' }}
-														onClick={() => handleModifyPriceDelta(item.id, -500)}
-														title="Вычесть 500 ₽"
+														className={`batch-quick-btn ${currentPrice === 0 ? 'active' : ''}`}
+														style={{
+															padding: '0 4px',
+															fontSize: '0.6875rem',
+															height: '22px',
+															minWidth: '26px',
+															color: currentPrice === 0 ? 'var(--ok-fg, #10b981)' : undefined,
+															borderColor: currentPrice === 0 ? 'rgba(16, 185, 129, 0.4)' : undefined,
+															background: currentPrice === 0 ? 'rgba(16, 185, 129, 0.12)' : undefined,
+														}}
+														onClick={() => handleSetZeroWarrantyPrice(item.id)}
+														title="Установить 0 ₽ (Гарантийная переделка / бесплатная услуга по Мандату 8e)"
 													>
-														-500
+														0 ₽
 													</button>
 												</div>
 											</td>
@@ -1442,8 +1478,14 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 										<button
 											type="button"
 											className="pricelist-btn pricelist-btn-primary"
-											disabled={!smartTextInput.trim() || isIngestingApi}
-											onClick={() => handleIngestPriceList(smartTextInput, 'text')}
+											onClick={() => {
+												if (!smartTextInput.trim()) {
+													showToast('Вставьте текст со старыми ценами или выберите файл');
+													return;
+												}
+												if (isIngestingApi) return;
+												handleIngestPriceList(smartTextInput, 'text');
+											}}
 											title="Запустить распознавание и сопоставление с классификатором 804н"
 										>
 											<Sparkles size={14} />
@@ -1454,8 +1496,14 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 											<button
 												type="button"
 												className="pricelist-btn"
-												disabled={!csvInputText.trim() || isIngestingApi}
-												onClick={() => handleIngestPriceList(csvInputText, 'csv')}
+												onClick={() => {
+													if (!csvInputText.trim()) {
+														showToast('Вставьте текст таблицы CSV или выберите файл');
+														return;
+													}
+													if (isIngestingApi) return;
+													handleIngestPriceList(csvInputText, 'csv');
+												}}
 												title="Сопоставить строки CSV с Номенклатурой 804н в двухоконном виде"
 											>
 												<ShieldCheck size={14} />

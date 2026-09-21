@@ -51,9 +51,15 @@ export function kopecksToRubles(kopecks: number): number {
 export function formatRubles(rubles: number): string {
 	if (!Number.isFinite(rubles)) return `0${RU_NBSP}₽`;
 	const isNegative = rubles < 0;
-	const abs = Math.abs(Math.round(rubles));
-	const formatted = String(abs).replace(/\B(?=(\d{3})+(?!\d))/g, RU_NBSP);
-	return `${isNegative ? '−' : ''}${formatted}${RU_NBSP}₽`;
+	const kopecksTotal = Math.round(Math.abs(rubles) * KOPECKS_PER_RUBLE);
+	const whole = Math.floor(kopecksTotal / KOPECKS_PER_RUBLE);
+	const fraction = kopecksTotal % KOPECKS_PER_RUBLE;
+	const formattedWhole = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, RU_NBSP);
+	if (fraction !== 0) {
+		const fractionStr = String(fraction).padStart(2, '0');
+		return `${isNegative ? '−' : ''}${formattedWhole},${fractionStr}${RU_NBSP}₽`;
+	}
+	return `${isNegative ? '−' : ''}${formattedWhole}${RU_NBSP}₽`;
 }
 
 /**
@@ -79,13 +85,13 @@ export function calculateTierPrice(
 	customTierPrice?: number,
 ): number {
 	if (customTierPrice !== undefined && Number.isFinite(customTierPrice) && customTierPrice >= 0) {
-		return Math.round(customTierPrice);
+		return Math.round(customTierPrice * 100) / 100;
 	}
 	if (!Number.isFinite(basePriceRub) || basePriceRub <= 0) return 0;
 
 	switch (tier) {
 		case 'standard':
-			return Math.round(basePriceRub);
+			return Math.round(basePriceRub * 100) / 100;
 		case 'vip':
 			// VIP default is +20% rounded to nearest 50 rubles
 			return roundPrice(basePriceRub * 1.2, 'round_50');
@@ -96,7 +102,7 @@ export function calculateTierPrice(
 			// Promo discount is -10% of standard price
 			return roundPrice(basePriceRub * 0.9, 'round_50');
 		default:
-			return Math.round(basePriceRub);
+			return Math.round(basePriceRub * 100) / 100;
 	}
 }
 
