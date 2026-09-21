@@ -1393,38 +1393,43 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				return reply.code(404).send({ error: "PatientNotFound" });
 			}
 
-			const body = request.body as {
-				groupName: string;
-				doctorId?: string | null;
-				variants: Array<{
-					name: string;
-					alternativeTier?: string;
-					isInitiallyApproved?: boolean;
-					items: Array<{
-						toothNumber?: number | null;
-						priceId: string;
-						name?: string | null;
-						quantity: number;
-						price: number;
-						discount?: number;
-						phase?: number;
-						isAuto?: boolean;
-					}>;
-				}>;
-			};
+			const alternativePlanGroupSchema = z.object({
+				groupName: z.string().trim().min(1, "Название группы планов лечения обязательно"),
+				doctorId: z.string().uuid().optional().nullable(),
+				variants: z
+					.array(
+						z.object({
+							name: z.string().trim().min(1, "Название варианта обязательно"),
+							alternativeTier: z.string().optional(),
+							isInitiallyApproved: z.boolean().optional(),
+							items: z.array(
+								z.object({
+									toothNumber: z.number().int().optional().nullable(),
+									priceId: z.string().min(1, "priceId обязателен"),
+									name: z.string().optional().nullable(),
+									quantity: z.number().positive("Количество должно быть больше нуля"),
+									price: z.number().nonnegative("Цена не может быть отрицательной"),
+									discount: z.number().nonnegative("Скидка не может быть отрицательной").optional(),
+									phase: z.number().optional(),
+									isAuto: z.boolean().optional(),
+								}),
+							),
+						}),
+					)
+					.min(2, "Необходимо указать минимум 2 альтернативных варианта плана лечения (ст. 20 323-ФЗ)"),
+			});
 
-			if (
-				!body ||
-				!body.groupName ||
-				!Array.isArray(body.variants) ||
-				body.variants.length < 2
-			) {
+			const parsedBody = alternativePlanGroupSchema.safeParse(request.body);
+			if (!parsedBody.success) {
 				return reply.code(400).send({
 					error: "AlternativePlanGroupValidationError",
 					message:
 						"Необходимо указать название группы и минимум 2 альтернативных варианта плана лечения (ст. 20 323-ФЗ).",
+					details: parsedBody.error.issues,
 				});
 			}
+
+			const body = parsedBody.data;
 
 			try {
 				const result = await withTenantCtx(organizationId, async (tx) => {
@@ -1541,13 +1546,28 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				return reply.code(404).send({ error: "PatientNotFound" });
 			}
 
-			const body =
-				(request.body as {
-					// biome-ignore lint/suspicious/noExplicitAny: policyKind enum
-					policyKind?: any;
-					customValidityDays?: number;
-					notes?: string;
-				}) || {};
+			const priceFreezeBodySchema = z.object({
+				policyKind: z
+					.enum([
+						"standard_30_days",
+						"extended_60_days",
+						"fixed_until_date",
+						"statutory_decree_659",
+					])
+					.optional(),
+				customValidityDays: z.number().int().positive().optional(),
+				notes: z.string().trim().max(1000).optional(),
+			});
+
+			const parsedBody = priceFreezeBodySchema.safeParse(request.body || {});
+			if (!parsedBody.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры закрепления цен.",
+					details: parsedBody.error.issues,
+				});
+			}
+			const body = parsedBody.data;
 
 			try {
 				const result = await db.transaction(async (tx) => {
@@ -1681,22 +1701,22 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				return reply.code(404).send({ error: "PatientNotFound" });
 			}
 
-			const body = request.body as {
-				discountMode: "none" | "plan_fixed" | "on_selection";
-				planDiscountPercent?: number;
-				planDiscountRub?: number;
-			};
+			const discountModeBodySchema = z.object({
+				discountMode: z.enum(["none", "plan_fixed", "on_selection"]),
+				planDiscountPercent: z.number().min(0).max(100).optional(),
+				planDiscountRub: nonNegativeMoneyRubSchema.optional(),
+			});
 
-			if (
-				!body ||
-				!["none", "plan_fixed", "on_selection"].includes(body.discountMode)
-			) {
+			const parsedBody = discountModeBodySchema.safeParse(request.body);
+			if (!parsedBody.success) {
 				return reply.code(400).send({
 					error: "InvalidDiscountMode",
 					message:
 						"Недопустимый режим скидок. Разрешены: 'none' (скидки не действуют), 'plan_fixed' (задать на план), 'on_selection' (при выборе в наряд).",
+					details: parsedBody.error.issues,
 				});
 			}
+			const body = parsedBody.data;
 
 			try {
 				const result = await db.transaction(async (tx) => {

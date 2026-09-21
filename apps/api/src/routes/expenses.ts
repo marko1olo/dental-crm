@@ -228,18 +228,20 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 				targetBox = fallback;
 			}
 
-			const balanceBefore = targetBox?.balanceRub ?? 0;
+			if (!targetBox) {
+				return { kind: "no_cash_box" as const };
+			}
+
+			const balanceBefore = targetBox.balanceRub ?? 0;
 			const balanceAfter = kopecksToRub(rubToKopecks(balanceBefore) - rubToKopecks(amountRub));
 
-			if (targetBox) {
-				await tx
-					.update(cashBoxes)
-					.set({
-						balanceRub: balanceAfter,
-						updatedAt: new Date(),
-					})
-					.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, organizationId)));
-			}
+			await tx
+				.update(cashBoxes)
+				.set({
+					balanceRub: balanceAfter,
+					updatedAt: new Date(),
+				})
+				.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, organizationId)));
 
 			const metadata: ExpenseMetadata = {
 				category: data.category,
@@ -256,7 +258,7 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 				.insert(cashOperations)
 				.values({
 					organizationId,
-					cashBoxId: targetBox!.id,
+					cashBoxId: targetBox.id,
 					operationType: "expense",
 					amountRub,
 					balanceBeforeRub: balanceBefore,
@@ -272,6 +274,14 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 
 			return rowToExpenseRecord(operation!);
 		});
+
+		if ("kind" in newRecord && newRecord.kind === "no_cash_box") {
+			reply.status(400);
+			return {
+				error: "NoCashBox",
+				message: "Кассовые счета организации не найдены для списания расхода.",
+			};
+		}
 
 		reply.status(201);
 		return { success: true, data: newRecord };

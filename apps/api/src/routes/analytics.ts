@@ -1,5 +1,6 @@
 import { and, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import {
 	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
@@ -1967,6 +1968,16 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 		}
 	});
 
+	const rebookingConversionBodySchema = z.object({
+		patientName: z.string().optional(),
+		rebookedBy: z.string().optional(),
+		timeDeltaMinutes: z.number().optional(),
+		createdAt: z.string().optional(),
+		completedAt: z.string().optional(),
+		creditedRole: z.enum(["doctor", "administrator"]).optional(),
+		appointmentDate: z.string().optional(),
+	});
+
 	/**
 	 * POST /api/analytics/rebooking-conversion
 	 * Явная фиксация правила конверсии повторной записи в БД.
@@ -1987,23 +1998,17 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		try {
-			const body = request.body as {
-				patientName?: string;
-				rebookedBy?: string;
-				timeDeltaMinutes?: number;
-				createdAt?: string;
-				completedAt?: string;
-				creditedRole?: "doctor" | "administrator";
-				appointmentDate?: string;
-			};
-
-			if (!body || typeof body !== "object") {
+			const parseRes = rebookingConversionBodySchema.safeParse(request.body);
+			if (!parseRes.success) {
 				return reply.code(400).send({
 					success: false,
 					error: "InvalidRequestBody",
-					message: "Требуется тело запроса с данными о повторной записи.",
+					message: "Некорректное тело запроса с данными о повторной записи.",
+					details: parseRes.error.flatten(),
 				});
 			}
+
+			const body = parseRes.data;
 
 			const patientName = body.patientName?.trim() || "Пациент";
 			const rebookedBy = body.rebookedBy?.trim() || "Сотрудник";

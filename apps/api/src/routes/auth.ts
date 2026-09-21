@@ -1380,8 +1380,15 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 					);
 				}
 				user = lookup.row ?? null;
-			} catch (e) {
-				console.warn("[AUTH_USER_DB_WARN]", e);
+			} catch (dbErr) {
+				console.error("[AUTH_USER_DB_ERROR]", dbErr);
+				if (!isDemoUserLogin) {
+					return reply.code(500).send({
+						error: "AuthUnavailable",
+						message:
+							"Вход временно недоступен: нет связи с базой данных. Повторите попытку позже.",
+					});
+				}
 			}
 
 			// БЫЛО: жёстко зашитые doctor@clinic.com / admin@clinic.ru пускали в систему

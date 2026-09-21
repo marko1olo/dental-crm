@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { kopecksToNumericString } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import {
 	namedDevelopmentModeActive,
 	requireResolvedOrganizationId as requireOrganizationContext,
@@ -10,6 +11,7 @@ import { db } from "../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
 	generatedDocuments,
+	patients,
 	payments,
 	sberbankTransactions,
 	visits,
@@ -147,6 +149,19 @@ export function verifySberbankChecksum(
 	return false;
 }
 
+const sberbankPayBodySchema = z.object({
+	patientId: z.string().uuid("Идентификатор пациента должен быть корректным UUID"),
+	amount: z.number().int().positive("Сумма должна быть положительным целым числом копеек"),
+	visitId: z.string().uuid().optional().nullable(),
+	documentId: z.string().uuid().optional().nullable(),
+	invoiceId: z.string().uuid().optional().nullable(),
+});
+
+const sberbankCancelReconcileBodySchema = z.object({
+	orderId: z.string().trim().min(1, "Идентификатор заказа обязателен"),
+	forceReverse: z.boolean().optional(),
+});
+
 export async function registerSberbankRoutes(app: FastifyInstance) {
 	app.post(
 		"/api/sberbank/pay",
@@ -172,13 +187,30 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 			const organizationId = await requireOrganizationContext(request, reply);
 			if (!organizationId) return;
 
-			const { patientId, amount, visitId, documentId, invoiceId } = request.body as {
-				patientId: string;
-				amount: number;
-				visitId?: string;
-				documentId?: string;
-				invoiceId?: string;
-			};
+			const parsed = sberbankPayBodySchema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры платежа.",
+					details: parsed.error.issues,
+				});
+			}
+
+			const { patientId, amount, visitId, documentId, invoiceId } = parsed.data;
+
+			// Проверяем принадлежность пациента к организации клиники
+			const [patient] = await db
+				.select({ id: patients.id })
+				.from(patients)
+				.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
+				.limit(1);
+
+			if (!patient) {
+				return reply.status(404).send({
+					error: "PatientNotFound",
+					message: "Пациент не найден в вашей клинике.",
+				});
+			}
 
 			let client: SberbankClient;
 			try {
@@ -207,15 +239,17 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 					});
 				}
 
-				await db.insert(sberbankTransactions).values({
-					organizationId,
-					patientId,
-					visitId: visitId || null,
-					documentId: documentId || null,
-					invoiceId: invoiceId || null,
-					orderId: res.orderId,
-					amount,
-					status: "pending",
+				await withTenantCtx(organizationId, async (tx) => {
+					await tx.insert(sberbankTransactions).values({
+						organizationId,
+						patientId,
+						visitId: visitId || null,
+						documentId: documentId || null,
+						invoiceId: invoiceId || null,
+						orderId: res.orderId,
+						amount,
+						status: "pending",
+					});
 				});
 
 				return { success: true, orderId: res.orderId, formUrl: res.formUrl };
@@ -244,7 +278,17 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 		async (request, reply) => {
 			const perm = await requirePermission(request, reply, "finance.write");
 			if (!perm) return;
-			const { orderId } = request.params as { orderId: string };
+			const paramsParsed = z
+				.object({ orderId: z.string().trim().min(1, "orderId обязателен") })
+				.safeParse(request.params);
+			if (!paramsParsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректный идентификатор заказа.",
+					details: paramsParsed.error.issues,
+				});
+			}
+			const { orderId } = paramsParsed.data;
 			const orgId = await requireOrganizationContext(request, reply);
 			if (!orgId) return;
 
@@ -414,10 +458,16 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 			const orgId = await requireOrganizationContext(request, reply);
 			if (!orgId) return;
 
-			const { orderId, forceReverse } = request.body as {
-				orderId: string;
-				forceReverse?: boolean;
-			};
+			const parsed = sberbankCancelReconcileBodySchema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры для отмены/сверки заказа.",
+					details: parsed.error.issues,
+				});
+			}
+
+			const { orderId, forceReverse } = parsed.data;
 
 			let client: SberbankClient;
 			try {

@@ -45,7 +45,17 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 		if (reply.sent) return reply;
 		if (!orgId) return reply;
 
-		const { id } = request.params;
+		const paramsParsed = z
+			.object({ id: z.string().uuid("Идентификатор наряда ЗТЛ должен быть корректным UUID") })
+			.safeParse(request.params);
+		if (!paramsParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор наряда ЗТЛ.",
+				details: paramsParsed.error.issues,
+			});
+		}
+		const { id } = paramsParsed.data;
 
 		const bodySchema = z.object({
 			cashBoxId: z.string().uuid().optional(),
@@ -210,7 +220,17 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 		if (reply.sent) return reply;
 		if (!orgId) return reply;
 
-		const { id } = request.params;
+		const paramsParsed = z
+			.object({ id: z.string().uuid("Идентификатор наряда ЗТЛ должен быть корректным UUID") })
+			.safeParse(request.params);
+		if (!paramsParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор наряда ЗТЛ.",
+				details: paramsParsed.error.issues,
+			});
+		}
+		const { id } = paramsParsed.data;
 
 		const bodySchema = z.object({
 			clinicalNotes: z.string().trim().max(1000).optional(),
@@ -224,6 +244,7 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 				.select()
 				.from(labOrders)
 				.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
+				.for("update")
 				.limit(1);
 
 			if (!order) {

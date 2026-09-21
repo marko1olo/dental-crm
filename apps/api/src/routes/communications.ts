@@ -460,10 +460,32 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const { message, channel } = request.body as { message?: string; channel?: string };
-		if (!message || typeof message !== "string" || !message.trim()) {
-			return reply.code(400).send({ error: "ValidationError", message: "Текст сообщения не может быть пустым." });
+		const sendMessageSchema = z.object({
+			message: z.string().trim().min(1, "Текст сообщения не может быть пустым."),
+			channel: z
+				.enum([
+					"phone",
+					"sms",
+					"whatsapp",
+					"telegram",
+					"email",
+					"in_person",
+					"vk",
+					"max",
+				])
+				.default("telegram"),
+		});
+
+		const bodyParsed = sendMessageSchema.safeParse(request.body);
+		if (!bodyParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: bodyParsed.error.issues[0]?.message || "Некорректные параметры сообщения.",
+				details: bodyParsed.error.issues,
+			});
 		}
+
+		const { message, channel: resolvedChannel } = bodyParsed.data;
 
 		const secrecy = MessageTemplateEngine.detectMedicalSecrecyLeaks(message);
 		if (secrecy.hasLeak) {
@@ -473,27 +495,6 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 				detectedTerms: secrecy.detectedTerms,
 			});
 		}
-
-		const VALID_CHANNELS = [
-			"phone",
-			"sms",
-			"whatsapp",
-			"telegram",
-			"email",
-			"in_person",
-			"vk",
-			"max",
-		] as const;
-		type CommunicationChannelType = (typeof VALID_CHANNELS)[number];
-
-		if (channel && !VALID_CHANNELS.includes(channel as CommunicationChannelType)) {
-			return reply.code(400).send({
-				error: "InvalidCommunicationChannel",
-				message: `Недопустимый канал связи «${channel}». Допустимые каналы: ${VALID_CHANNELS.join(", ")}.`,
-			});
-		}
-
-		const resolvedChannel: CommunicationChannelType = (channel as CommunicationChannelType) || "telegram";
 
 		const inserted = await db.insert(communicationEvents).values({
 			organizationId: orgId,

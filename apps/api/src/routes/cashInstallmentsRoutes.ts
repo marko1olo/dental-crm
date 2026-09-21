@@ -164,7 +164,17 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 		if (reply.sent) return reply;
 		if (!orgId) return reply;
 
-		const { id } = request.params;
+		const paramsParsed = z
+			.object({ id: z.string().uuid("Идентификатор транша должен быть корректным UUID") })
+			.safeParse(request.params);
+		if (!paramsParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор транша рассрочки.",
+				details: paramsParsed.error.issues,
+			});
+		}
+		const { id } = paramsParsed.data;
 
 		const bodySchema = z.object({
 			cashBoxId: z.string().uuid().optional(),
@@ -392,7 +402,17 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 		if (reply.sent) return reply;
 		if (!orgId) return reply;
 
-		const { id } = request.params;
+		const paramsParsed = z
+			.object({ id: z.string().uuid("Идентификатор договора рассрочки должен быть корректным UUID") })
+			.safeParse(request.params);
+		if (!paramsParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор договора рассрочки.",
+				details: paramsParsed.error.issues,
+			});
+		}
+		const { id } = paramsParsed.data;
 
 		const result = await withTenantCtx(orgId, async (tx) => {
 			const [contract] = await tx
