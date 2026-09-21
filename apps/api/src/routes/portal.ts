@@ -352,9 +352,29 @@ async function isIssuanceThrottled(
 export const portalRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
 ) => {
-	// 1. Send OTP
+	// 1. Send OTP (защищен составным лимитером по связке IP + phone_number)
 	server.post<{ Body: { phone?: unknown } }>(
 		"/auth/send-otp",
+		{
+			config: {
+				rateLimit: {
+					max: 5,
+					timeWindow: "1 minute",
+					hook: "preHandler",
+					keyGenerator: (req: FastifyRequest) => {
+						const ip = req.ip ?? "unknown";
+						const body = req.body as { phone?: unknown } | undefined;
+						const rawPhone =
+							typeof body?.phone === "string"
+								? body.phone.trim().replace(/\D/g, "")
+								: "";
+						const phoneSuffix =
+							rawPhone.length >= 10 ? rawPhone.slice(-10) : (rawPhone || "no-phone");
+						return `portal-otp|${ip}|${phoneSuffix}`;
+					},
+				},
+			},
+		},
 		async (request, reply) => {
 			const policy = readPortalOtpPolicy();
 			const rawPhone =

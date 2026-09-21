@@ -78,7 +78,8 @@ async function applyCashBoxFiscalReceipt(
 	const allBoxes = await tx
 		.select()
 		.from(cashBoxes)
-		.where(eq(cashBoxes.organizationId, orgId));
+		.where(eq(cashBoxes.organizationId, orgId))
+		.for("update");
 
 	if (!allBoxes || allBoxes.length === 0) return;
 
@@ -111,7 +112,7 @@ async function applyCashBoxFiscalReceipt(
 		await tx
 			.update(cashBoxes)
 			.set({
-				balanceRub: balanceAfter,
+				balanceRub: sql`round((${cashBoxes.balanceRub} + ${amountRub})::numeric, 2)`,
 				updatedAt: new Date(),
 			})
 			.where(and(eq(cashBoxes.id, chosenBox.id), eq(cashBoxes.organizationId, orgId)));
@@ -126,14 +127,14 @@ async function applyCashBoxFiscalReceipt(
 					eq(cashBoxShifts.status, "open"),
 				),
 			)
+			.for("update")
 			.limit(1);
 
 		if (activeShift && amountRub > 0) {
-			const updatedIncome = Math.round(((Number(activeShift.incomeTotalRub) || 0) + amountRub) * 100) / 100;
 			await tx
 				.update(cashBoxShifts)
 				.set({
-					incomeTotalRub: updatedIncome,
+					incomeTotalRub: sql`round((${cashBoxShifts.incomeTotalRub} + ${amountRub})::numeric, 2)`,
 					updatedAt: new Date(),
 				})
 				.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
@@ -176,7 +177,7 @@ async function applyCashBoxFiscalReceipt(
 		await tx
 			.update(cashBoxes)
 			.set({
-				balanceRub: balanceAfter,
+				balanceRub: sql`round((${cashBoxes.balanceRub} + ${amountRub})::numeric, 2)`,
 				updatedAt: new Date(),
 			})
 			.where(and(eq(cashBoxes.id, mainBox.id), eq(cashBoxes.organizationId, orgId)));
@@ -191,14 +192,14 @@ async function applyCashBoxFiscalReceipt(
 					eq(cashBoxShifts.status, "open"),
 				),
 			)
+			.for("update")
 			.limit(1);
 
 		if (activeShift && amountRub > 0) {
-			const updatedIncome = Math.round(((Number(activeShift.incomeTotalRub) || 0) + amountRub) * 100) / 100;
 			await tx
 				.update(cashBoxShifts)
 				.set({
-					incomeTotalRub: updatedIncome,
+					incomeTotalRub: sql`round((${cashBoxShifts.incomeTotalRub} + ${amountRub})::numeric, 2)`,
 					updatedAt: new Date(),
 				})
 				.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
@@ -232,7 +233,7 @@ async function applyCashBoxFiscalReceipt(
 		await tx
 			.update(cashBoxes)
 			.set({
-				balanceRub: balanceAfter,
+				balanceRub: sql`round((${cashBoxes.balanceRub} + ${amountRub})::numeric, 2)`,
 				updatedAt: new Date(),
 			})
 			.where(and(eq(cashBoxes.id, cashlessBox.id), eq(cashBoxes.organizationId, orgId)));
@@ -247,14 +248,14 @@ async function applyCashBoxFiscalReceipt(
 					eq(cashBoxShifts.status, "open"),
 				),
 			)
+			.for("update")
 			.limit(1);
 
 		if (activeShift && amountRub > 0) {
-			const updatedIncome = Math.round(((Number(activeShift.incomeTotalRub) || 0) + amountRub) * 100) / 100;
 			await tx
 				.update(cashBoxShifts)
 				.set({
-					incomeTotalRub: updatedIncome,
+					incomeTotalRub: sql`round((${cashBoxShifts.incomeTotalRub} + ${amountRub})::numeric, 2)`,
 					updatedAt: new Date(),
 				})
 				.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
@@ -303,7 +304,8 @@ async function applyCashBoxFiscalRefund(
 	const allBoxes = await tx
 		.select()
 		.from(cashBoxes)
-		.where(eq(cashBoxes.organizationId, orgId));
+		.where(eq(cashBoxes.organizationId, orgId))
+		.for("update");
 
 	if (!allBoxes || allBoxes.length === 0) return;
 
@@ -334,7 +336,7 @@ async function applyCashBoxFiscalRefund(
 		await tx
 			.update(cashBoxes)
 			.set({
-				balanceRub: balanceAfter,
+				balanceRub: sql`round((${cashBoxes.balanceRub} - ${amountRub})::numeric, 2)`,
 				updatedAt: new Date(),
 			})
 			.where(and(eq(cashBoxes.id, mainBox.id), eq(cashBoxes.organizationId, orgId)));
@@ -349,14 +351,14 @@ async function applyCashBoxFiscalRefund(
 					eq(cashBoxShifts.status, "open"),
 				),
 			)
+			.for("update")
 			.limit(1);
 
 		if (activeShift && amountRub > 0) {
-			const updatedExpense = Math.round(((Number(activeShift.expenseTotalRub) || 0) + amountRub) * 100) / 100;
 			await tx
 				.update(cashBoxShifts)
 				.set({
-					expenseTotalRub: updatedExpense,
+					expenseTotalRub: sql`round((${cashBoxShifts.expenseTotalRub} + ${amountRub})::numeric, 2)`,
 					updatedAt: new Date(),
 				})
 				.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
@@ -391,7 +393,7 @@ async function applyCashBoxFiscalRefund(
 		await tx
 			.update(cashBoxes)
 			.set({
-				balanceRub: balanceAfter,
+				balanceRub: sql`round((${cashBoxes.balanceRub} - ${amountRub})::numeric, 2)`,
 				updatedAt: new Date(),
 			})
 			.where(and(eq(cashBoxes.id, cashlessBox.id), eq(cashBoxes.organizationId, orgId)));
@@ -406,14 +408,14 @@ async function applyCashBoxFiscalRefund(
 					eq(cashBoxShifts.status, "open"),
 				),
 			)
+			.for("update")
 			.limit(1);
 
 		if (activeShift && amountRub > 0) {
-			const updatedExpense = Math.round(((Number(activeShift.expenseTotalRub) || 0) + amountRub) * 100) / 100;
 			await tx
 				.update(cashBoxShifts)
 				.set({
-					expenseTotalRub: updatedExpense,
+					expenseTotalRub: sql`round((${cashBoxShifts.expenseTotalRub} + ${amountRub})::numeric, 2)`,
 					updatedAt: new Date(),
 				})
 				.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));

@@ -309,4 +309,64 @@ export async function registerPharmacologyRoutes(app: FastifyInstance) {
 			prescriptions,
 		});
 	});
+
+	/**
+	 * 4. GET /api/pharmacology/references
+	 * Statutory pharmacology references: drug classes, DDI matrix, allergen cross-reactivity, cardio limits
+	 * 0 ms offline access from embedded snapshot (Mandate 8n / 8k)
+	 */
+	app.get("/api/pharmacology/references", async (_request, reply) => {
+		const { getPharmacologyReferencesSnapshot } = await import(
+			"../services/catalogs/warmupStatutoryCatalogs.js"
+		);
+		const references = getPharmacologyReferencesSnapshot();
+		return reply.send(references);
+	});
+
+	/**
+	 * 5. GET /api/pharmacology/medications
+	 * Statutory dental medications and anesthetics catalog
+	 * 0 ms offline access from embedded snapshot
+	 */
+	app.get("/api/pharmacology/medications", async (request, reply) => {
+		const query = request.query as { q?: string; category?: string } | undefined;
+		const { getPharmacologyMedicationsSnapshot } = await import(
+			"../services/catalogs/warmupStatutoryCatalogs.js"
+		);
+		const medications = getPharmacologyMedicationsSnapshot({
+			...(query?.q ? { q: query.q } : {}),
+			...(query?.category ? { category: query.category } : {}),
+		});
+		return reply.send(medications);
+	});
+
+	/**
+	 * 6. GET /api/pharmacology/catalog
+	 * Full pharmacology catalog (medications + references + warmup status)
+	 */
+	app.get("/api/pharmacology/catalog", async (_request, reply) => {
+		const {
+			getPharmacologyMedicationsSnapshot,
+			getPharmacologyReferencesSnapshot,
+			getWarmupCatalogsStatus,
+		} = await import("../services/catalogs/warmupStatutoryCatalogs.js");
+		return reply.send({
+			success: true,
+			medications: getPharmacologyMedicationsSnapshot(),
+			references: getPharmacologyReferencesSnapshot(),
+			status: getWarmupCatalogsStatus(),
+		});
+	});
+
+	/**
+	 * 7. GET /api/pharmacology/warmup-status
+	 * Returns current statutory catalogs warmup status and metrics
+	 */
+	app.get("/api/pharmacology/warmup-status", async (_request, reply) => {
+		const { getWarmupCatalogsStatus } = await import(
+			"../services/catalogs/warmupStatutoryCatalogs.js"
+		);
+		return reply.send(getWarmupCatalogsStatus());
+	});
 }
+

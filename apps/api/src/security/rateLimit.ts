@@ -4,6 +4,8 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 export interface RateLimitRule {
 	max: number;
 	timeWindow: number | string;
+	hook?: "onRequest" | "preParsing" | "preValidation" | "preHandler";
+	keyGenerator?: (request: FastifyRequest) => string | Promise<string>;
 }
 
 const DEFAULT_RULES: Array<{ test: RegExp; rule: RateLimitRule }> = [
@@ -22,6 +24,23 @@ const DEFAULT_RULES: Array<{ test: RegExp; rule: RateLimitRule }> = [
 	{
 		test: /^\/api\/auth\/(clinic\/set-password|staff\/set-pin)$/,
 		rule: { max: 10, timeWindow: "1 minute" },
+	},
+	{
+		test: /^\/api\/portal\/auth\/send-otp$/,
+		rule: {
+			max: 5,
+			timeWindow: "1 minute",
+			hook: "preHandler",
+			keyGenerator: (req) => {
+				const ip = req.ip ?? "unknown";
+				const body = req.body as { phone?: unknown } | undefined;
+				const rawPhone =
+					typeof body?.phone === "string" ? body.phone.trim().replace(/\D/g, "") : "";
+				const phoneSuffix =
+					rawPhone.length >= 10 ? rawPhone.slice(-10) : (rawPhone || "no-phone");
+				return `portal-otp|${ip}|${phoneSuffix}`;
+			},
+		},
 	},
 	{ test: /^\/api\/public\//, rule: { max: 30, timeWindow: "1 minute" } },
 	{ test: /^\/api\/portal\//, rule: { max: 30, timeWindow: "1 minute" } },
@@ -48,6 +67,11 @@ function resolveRule(request: FastifyRequest): RateLimitRule | null {
 }
 
 function clientKey(request: FastifyRequest): string {
+	const rule = resolveRule(request);
+	if (rule?.keyGenerator) {
+		const customKey = rule.keyGenerator(request);
+		if (typeof customKey === "string") return customKey;
+	}
 	const routeId =
 		(request as unknown as { routeOptions?: { url?: string } }).routeOptions
 			?.url ?? request.url;

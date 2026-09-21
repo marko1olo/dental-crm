@@ -22,6 +22,10 @@ import {
 	visits,
 } from "../../db/schema.js";
 import { rublesFromKopecks } from "../../money/patientDebt.js";
+import {
+	deductMaterialsForVisit,
+	type StockDeductionRecord,
+} from "../inventory/materialDeduction.js";
 
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -52,6 +56,23 @@ export interface ApplyPlanItemsInput {
 	readonly planId: string;
 	readonly itemIds: readonly string[];
 	readonly actorUserId?: string | null | undefined;
+	readonly autoDeductMaterials?: boolean | undefined;
+	readonly targetVisitStatus?: "completed" | "in_progress" | undefined;
+}
+
+export interface CompleteVisitWorkOrderInput {
+	readonly organizationId: string;
+	readonly visitId: string;
+	readonly actorUserId?: string | null | undefined;
+	readonly status?: "completed" | "in_progress" | undefined;
+}
+
+export interface CompleteVisitWorkOrderResult {
+	readonly visitId: string;
+	readonly previousStatus: string;
+	readonly status: string;
+	readonly completedTreatmentItemsCount: number;
+	readonly deductions: readonly StockDeductionRecord[];
 }
 
 export interface AppliedVisitWorkOrderItem {
@@ -83,6 +104,7 @@ export interface ApplyPlanItemsResult {
 	};
 	readonly totalAddedRub: number;
 	readonly totalAddedKopecks: number;
+	readonly deductions?: readonly StockDeductionRecord[];
 }
 
 function splitStoredPriceId(value: string | null): {
@@ -141,7 +163,7 @@ export class VisitWorkOrderService {
 		}
 
 		return await db.transaction(async (tx) => {
-			// 1. Проверка существования и доступности визита
+			// 1. Проверка существования и доступности визита с блокировкой FOR UPDATE
 			const [visit] = await tx
 				.select({
 					id: visits.id,
@@ -156,7 +178,8 @@ export class VisitWorkOrderService {
 						eq(visits.organizationId, organizationId),
 					),
 				)
-				.limit(1);
+				.limit(1)
+				.for("update");
 
 			if (!visit) {
 				throw new VisitWorkOrderError("VISIT_NOT_FOUND", "Приём не найден.", 404);
@@ -293,6 +316,19 @@ export class VisitWorkOrderService {
 			const appliedItems: AppliedVisitWorkOrderItem[] = [];
 			let totalAddedKopecks = 0;
 
+			type PendingInsert = {
+				item: typeof planItems[0];
+				lineTotalKopecks: number;
+				unitPriceRub: number;
+				discountRub: number;
+				priceRub: number;
+				order804nCode: string | null;
+				quantity: number;
+				insertValues: typeof treatmentItems.$inferInsert;
+			};
+
+			const pendingInserts: PendingInsert[] = [];
+
 			for (const item of planItems) {
 				const existing = existingByPlanItemId.get(item.id.toLowerCase());
 				if (existing) {
@@ -334,9 +370,15 @@ export class VisitWorkOrderService {
 
 				const noteTag = `[plan_item:${item.id}] [plan_id:${plan.id}] [804n:${order804nCode ?? "NONE"}] План: ${plan.name}`;
 
-				const [inserted] = await tx
-					.insert(treatmentItems)
-					.values({
+				pendingInserts.push({
+					item,
+					lineTotalKopecks,
+					unitPriceRub,
+					discountRub,
+					priceRub,
+					order804nCode,
+					quantity,
+					insertValues: {
 						organizationId,
 						patientId: visit.patientId,
 						visitId: visit.id,
@@ -355,25 +397,36 @@ export class VisitWorkOrderService {
 						notes: noteTag,
 						isSynced: false,
 						version: 1,
-					})
+					},
+				});
+			}
+
+			if (pendingInserts.length > 0) {
+				const insertedRows = await tx
+					.insert(treatmentItems)
+					.values(pendingInserts.map((p) => p.insertValues))
 					.returning();
 
-				if (inserted) {
-					totalAddedKopecks += lineTotalKopecks;
-					appliedItems.push({
-						id: inserted.id,
-						planItemId: item.id,
-						serviceId: inserted.serviceId,
-						title: inserted.title,
-						toothCode: inserted.toothCode,
-						quantity,
-						unitPriceRub,
-						discountRub,
-						priceRub,
-						order804nCode,
-						status: inserted.status,
-						isAlreadyApplied: false,
-					});
+				for (let i = 0; i < insertedRows.length; i++) {
+					const inserted = insertedRows[i];
+					const meta = pendingInserts[i];
+					if (inserted && meta) {
+						totalAddedKopecks += meta.lineTotalKopecks;
+						appliedItems.push({
+							id: inserted.id,
+							planItemId: meta.item.id,
+							serviceId: inserted.serviceId,
+							title: inserted.title,
+							toothCode: inserted.toothCode,
+							quantity: meta.quantity,
+							unitPriceRub: meta.unitPriceRub,
+							discountRub: meta.discountRub,
+							priceRub: meta.priceRub,
+							order804nCode: meta.order804nCode,
+							status: inserted.status,
+							isAlreadyApplied: false,
+						});
+					}
 				}
 			}
 
@@ -444,6 +497,32 @@ export class VisitWorkOrderService {
 				});
 			}
 
+			let deductions: readonly StockDeductionRecord[] = [];
+			if (params.autoDeductMaterials) {
+				const deductionResult = await deductMaterialsForVisit(tx, {
+					organizationId,
+					visitId: visit.id,
+					userId: actorUserId ?? null,
+					transactionType: "auto_deduct",
+				});
+				deductions = deductionResult.deductions;
+			}
+
+			if (params.targetVisitStatus) {
+				await tx
+					.update(visits)
+					.set({
+						status: params.targetVisitStatus,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(visits.id, visit.id),
+							eq(visits.organizationId, organizationId),
+						),
+					);
+			}
+
 			return {
 				visitId: visit.id,
 				planId: plan.id,
@@ -458,6 +537,109 @@ export class VisitWorkOrderService {
 				},
 				totalAddedRub: rublesFromKopecks(totalAddedKopecks),
 				totalAddedKopecks,
+				...(deductions.length > 0 ? { deductions } : {}),
+			};
+		});
+	}
+
+	/**
+	 * Атомарное завершение наряда приёма: списание материалов со склада и фиксация статуса визита.
+	 * Обернуто в единую транзакцию db.transaction(...), исключая частичные записи при сбоях.
+	 */
+	static async completeVisitWorkOrder(
+		params: CompleteVisitWorkOrderInput,
+	): Promise<CompleteVisitWorkOrderResult> {
+		const { organizationId, visitId, actorUserId, status = "completed" } = params;
+
+		if (!UUID_REGEX.test(visitId)) {
+			throw new VisitWorkOrderError(
+				"VALIDATION_ERROR",
+				"Некорректный идентификатор приёма (visitId).",
+				400,
+			);
+		}
+
+		return await db.transaction(async (tx) => {
+			// 1. Проверка существования и доступности приёма с блокировкой FOR UPDATE
+			const [visit] = await tx
+				.select({
+					id: visits.id,
+					organizationId: visits.organizationId,
+					patientId: visits.patientId,
+					status: visits.status,
+				})
+				.from(visits)
+				.where(
+					and(
+						eq(visits.id, visitId),
+						eq(visits.organizationId, organizationId),
+					),
+				)
+				.limit(1)
+				.for("update");
+
+			if (!visit) {
+				throw new VisitWorkOrderError(
+					"VISIT_NOT_FOUND",
+					"Приём не найден.",
+					404,
+				);
+			}
+
+			if (visit.status === "signed" || visit.status === "voided") {
+				throw new VisitWorkOrderError(
+					"VISIT_CLOSED",
+					"Нельзя списать материалы и завершить уже подписанный или аннулированный приём.",
+					409,
+				);
+			}
+
+			// 2. Атомарное списание расходных материалов со склада клиники
+			const deductionResult = await deductMaterialsForVisit(tx, {
+				organizationId,
+				visitId: visit.id,
+				userId: actorUserId ?? null,
+				transactionType: "auto_deduct",
+			});
+
+			// 3. Атомарная фиксация статуса визита
+			const now = new Date();
+			await tx
+				.update(visits)
+				.set({
+					status,
+					updatedAt: now,
+				})
+				.where(
+					and(
+						eq(visits.id, visit.id),
+						eq(visits.organizationId, organizationId),
+					),
+				);
+
+			// 4. Юридический след в клиническом журнале аудита
+			await tx.insert(clinicalAuditLogs).values({
+				organizationId,
+				patientId: visit.patientId,
+				actorUserId: actorUserId ?? null,
+				action: "COMPLETE_VISIT_WORK_ORDER",
+				resourceType: "visits",
+				resourceId: visit.id,
+				meta: {
+					previousStatus: visit.status,
+					newStatus: status,
+					completedTreatmentItemsCount: deductionResult.completedTreatmentItems,
+					deductionsCount: deductionResult.deductions.length,
+					deductions: deductionResult.deductions,
+				},
+			});
+
+			return {
+				visitId: visit.id,
+				previousStatus: visit.status,
+				status,
+				completedTreatmentItemsCount: deductionResult.completedTreatmentItems,
+				deductions: deductionResult.deductions,
 			};
 		});
 	}

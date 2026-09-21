@@ -92,7 +92,9 @@ function getStorage(): Storage | null {
 		if (typeof globalThis !== "undefined" && (globalThis as unknown as { localStorage?: Storage }).localStorage) {
 			return (globalThis as unknown as { localStorage: Storage }).localStorage;
 		}
-	} catch {}
+	} catch (err: unknown) {
+		logger.warn("[LanDiscovery] Failed to access storage:", err);
+	}
 	return null;
 }
 
@@ -144,7 +146,9 @@ export function getLanDiscoveryCandidates(additional: string[] = []): string[] {
 		try {
 			const parsed = new URL(cached);
 			candidates.add(parsed.origin);
-		} catch {}
+		} catch (err: unknown) {
+			logger.warn("[LanDiscovery] Failed to parse cached LAN server URL:", err);
+		}
 	}
 
 	// 3. Current host if already in LAN subnet
@@ -176,7 +180,9 @@ export function getLanDiscoveryCandidates(additional: string[] = []): string[] {
 			try {
 				const parsed = new URL(url.startsWith("http") ? url : `http://${url}`);
 				candidates.add(parsed.origin);
-			} catch {}
+			} catch (err: unknown) {
+				logger.warn("[LanDiscovery] Failed to parse additional candidate URL:", err);
+			}
 		}
 	}
 
@@ -276,9 +282,77 @@ export async function probeCandidateServer(
 	}
 }
 
+export function getPriorityLanDiscoveryCandidates(additional: string[] = []): string[] {
+	const priority = new Set<string>();
+
+	// 1. Previously discovered in memory
+	if (cachedDiscoveredServer?.baseUrl) {
+		priority.add(cachedDiscoveredServer.baseUrl);
+	}
+
+	// 2. Previously cached in localStorage
+	const cached = safeLocalStorageGetItem(STORAGE_KEY_LAN_SERVER);
+	if (cached) {
+		try {
+			priority.add(new URL(cached).origin);
+		} catch {
+			// ignore invalid URL
+		}
+	}
+
+	// 3. User/caller specified candidates
+	for (const url of additional) {
+		if (url) {
+			try {
+				const parsed = new URL(url.startsWith("http") ? url : `http://${url}`);
+				priority.add(parsed.origin);
+			} catch {
+				// ignore invalid URL
+			}
+		}
+	}
+
+	// 4. Standard local server endpoints on port 4100 and 3000
+	priority.add("http://127.0.0.1:4100");
+	priority.add("http://localhost:4100");
+	priority.add("http://dente-server.local:4100");
+	priority.add("http://clinic.local:4100");
+
+	// 5. Current hostname if in LAN
+	if (typeof window !== "undefined" && window.location) {
+		const currentHost = window.location.hostname;
+		if (isLocalOrLanHostname(currentHost) && currentHost !== "localhost" && currentHost !== "127.0.0.1") {
+			priority.add(`http://${currentHost}:4100`);
+		}
+	}
+
+	return Array.from(priority);
+}
+
+function persistDiscoveredServer(bestServer: DiscoveredLanServer): void {
+	cachedDiscoveredServer = bestServer;
+	// Zero Disk Thrashing on 5400 RPM HDD: only write if URL actually changed
+	const currentStored = safeLocalStorageGetItem(STORAGE_KEY_LAN_SERVER);
+	if (currentStored !== bestServer.baseUrl) {
+		try {
+			safeLocalStorageSetItem(STORAGE_KEY_LAN_SERVER, bestServer.baseUrl, true);
+			const storage = getStorage();
+			if (storage) {
+				storage.setItem(STORAGE_KEY_LAN_SERVER, bestServer.baseUrl);
+			}
+		} catch (err: unknown) {
+			logger.warn("[LanDiscovery] Failed to persist best server to storage:", err);
+		}
+	}
+	logger.info(
+		`[LanDiscovery] Found active Clinic LAN Server at ${bestServer.baseUrl} (${bestServer.latencyMs}ms)`,
+	);
+}
+
 /**
  * Discovers the active local clinic server across all candidate endpoints.
- * Executes non-blocking parallel probes across all candidate IP/mDNS endpoints.
+ * Executes non-blocking 2-tier probing: fast priority candidates first (Tier 1),
+ * falling back to batched subnet scans (Tier 2) only if needed to protect HDD 5400 & CPU.
  */
 export async function discoverLocalClinicServer(
 	options: LanDiscoveryOptions = {},
@@ -287,15 +361,19 @@ export async function discoverLocalClinicServer(
 		return cachedDiscoveredServer;
 	}
 
-	const candidates = getLanDiscoveryCandidates(options.additionalCandidates);
 	const timeoutMs = options.timeoutMs || DEFAULT_LAN_PROBE_TIMEOUT_MS;
 
-	const probePromises = candidates.map((candidate) => probeCandidateServer(candidate, timeoutMs));
-	const results = await Promise.allSettled(probePromises);
+	// 1. Tier 1 (Fast Priority Probes): Check cached, loopback, mDNS, and caller candidates first.
+	// On 5400 RPM HDD / low-spec CPUs, this avoids flooding the network with ~200 parallel requests.
+	const priorityCandidates = getPriorityLanDiscoveryCandidates(options.additionalCandidates);
+	const priorityPromises = priorityCandidates.map((candidate) =>
+		probeCandidateServer(candidate, timeoutMs),
+	);
+	const priorityResults = await Promise.allSettled(priorityPromises);
 
 	let bestServer: DiscoveredLanServer | null = null;
 
-	for (const res of results) {
+	for (const res of priorityResults) {
 		if (res.status === "fulfilled" && res.value) {
 			if (!bestServer || res.value.latencyMs < bestServer.latencyMs) {
 				bestServer = res.value;
@@ -303,16 +381,35 @@ export async function discoverLocalClinicServer(
 		}
 	}
 
+	// If priority candidate responded with a healthy server, adopt it immediately!
 	if (bestServer) {
-		cachedDiscoveredServer = bestServer;
-		try {
-			safeLocalStorageSetItem(STORAGE_KEY_LAN_SERVER, bestServer.baseUrl, true);
-			const storage = getStorage();
-			if (storage) {
-				storage.setItem(STORAGE_KEY_LAN_SERVER, bestServer.baseUrl);
+		persistDiscoveredServer(bestServer);
+		return bestServer;
+	}
+
+	// 2. Tier 2 (Subnet Fallback Probes): Only execute if Tier 1 found nothing.
+	// Probed in controlled batches of 16 to avoid socket exhaustion and CPU spikes.
+	const allCandidates = getLanDiscoveryCandidates(options.additionalCandidates);
+	const remainingCandidates = allCandidates.filter((c) => !priorityCandidates.includes(c));
+
+	const BATCH_SIZE = 16;
+	for (let i = 0; i < remainingCandidates.length; i += BATCH_SIZE) {
+		const batch = remainingCandidates.slice(i, i + BATCH_SIZE);
+		const batchResults = await Promise.allSettled(
+			batch.map((candidate) => probeCandidateServer(candidate, timeoutMs)),
+		);
+		for (const res of batchResults) {
+			if (res.status === "fulfilled" && res.value) {
+				if (!bestServer || res.value.latencyMs < bestServer.latencyMs) {
+					bestServer = res.value;
+				}
 			}
-		} catch {}
-		logger.info(`[LanDiscovery] Found active Clinic LAN Server at ${bestServer.baseUrl} (${bestServer.latencyMs}ms)`);
+		}
+		if (bestServer) break; // Early exit on first healthy discovered server
+	}
+
+	if (bestServer) {
+		persistDiscoveredServer(bestServer);
 	}
 
 	return bestServer;
@@ -329,16 +426,27 @@ export function getActiveApiBaseUrl(): string {
  * Sets active API base URL (e.g. switching between Cloud and Local LAN Server).
  */
 export function setActiveApiBaseUrl(url: string): void {
+	const hasChanged = activeApiBaseUrl !== url;
 	activeApiBaseUrl = url;
-	try {
-		safeLocalStorageSetItem(STORAGE_KEY_ACTIVE_BASE_URL, url, true);
-	} catch {}
+	if (hasChanged) {
+		const currentStored = safeLocalStorageGetItem(STORAGE_KEY_ACTIVE_BASE_URL);
+		if (currentStored !== url) {
+			try {
+				safeLocalStorageSetItem(STORAGE_KEY_ACTIVE_BASE_URL, url, true);
+			} catch (err: unknown) {
+				logger.warn("[LanDiscovery] Failed to persist active API base URL:", err);
+			}
+		}
+	}
 	if (typeof window !== "undefined") {
 		try {
 			window.dispatchEvent(new CustomEvent("dente:api-base-url-changed", { detail: { url } }));
-		} catch {}
+		} catch (err: unknown) {
+			logger.warn("[LanDiscovery] Failed to dispatch api-base-url-changed event:", err);
+		}
 	}
 }
+
 
 /**
  * Returns true if the client is currently routed to the local fallback clinic server.
@@ -498,6 +606,10 @@ export class LanDiscoveryHeartbeatManager {
 		if (wasHidden && !hidden && this.isRunning) {
 			// При возвращении врача на вкладку сразу запускаем опрос без ожидания таймера
 			this.scheduleNextTick(0);
+		} else if (!wasHidden && hidden && this.isCloudReachable && this.timerId) {
+			// При уходе во вкладку фонового режима полностью гасим таймер, если облако доступно
+			clearTimeout(this.timerId);
+			this.timerId = null;
 		}
 	}
 
@@ -671,7 +783,7 @@ export class LanDiscoveryHeartbeatManager {
 			} catch (err) {
 				logger.debug("[LanDiscovery] Heartbeat tick failed", err);
 			} finally {
-				if (this.isRunning) {
+				if (this.isRunning && !(this.isDocumentHidden && this.isCloudReachable)) {
 					this.scheduleNextTick(this.currentIntervalMs);
 				}
 			}
