@@ -100,9 +100,12 @@ export function validate54FzBuyerInn(
 	readonly errorMessage?: string | undefined;
 	readonly errorRu?: string | undefined;
 } {
+	const clean = (buyerInn ?? "").trim().replace(/\D/g, "");
 	const mappedLegalType: PayerLegalType =
 		payerType === "legal_entity"
-			? "legal_entity"
+			? clean.length === 12
+				? "individual_entrepreneur"
+				: "legal_entity"
 			: payerType === "individual_entrepreneur"
 				? "individual_entrepreneur"
 				: "physical_person";
