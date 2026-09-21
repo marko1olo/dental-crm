@@ -32,4 +32,6 @@ export * from "./validatorAgent.js";
 export * from "./semanticRouter.js";
 export * from "./prompts/index.js";
 export * from "./chairsideSentinelEngine.js";
+export * from "./denteAgentTools.js";
+export * from "./autonomousDenteAgent.js";
 

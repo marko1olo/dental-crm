@@ -23,6 +23,7 @@ import {
 	defaultToolRegistry,
 	defaultWhatsAppBridge,
 	defaultChairsideSentinel,
+	defaultAutonomousDenteAgent,
 	formatSseEvent,
 	type AgentContext,
 	type DoctorScreenContext,
@@ -218,6 +219,40 @@ const chairsideSentinelAnalyzeBodySchema = z.object({
 	allergies: z.array(z.string()).optional(),
 	somaticHistory: z.array(z.string()).optional(),
 	activeServices: z.array(z.string()).optional(),
+	mode: z.enum(["autonomous", "supervised"]).optional(),
+	organizationId: z.string().optional(),
+});
+
+const autonomousAgentExecuteBodySchema = z.object({
+	patientId: z.string().min(1, "patientId обязателен"),
+	prompt: z.string().optional(),
+	toothNumber: z.union([z.number(), z.string()]).optional(),
+	complaints: z.string().optional(),
+	diagnoses: z.array(z.string()).optional(),
+	allergies: z.array(z.string()).optional(),
+	somaticHistory: z.array(z.string()).optional(),
+	activeServices: z.array(z.string()).optional(),
+	discountPercent: z.number().min(0).max(100).optional(),
+	labOrderRequest: z
+		.object({
+			workType: z.string(),
+			material: z.string(),
+			vitaShade: z.string(),
+			dueDate: z.string(),
+			notes: z.string().optional(),
+			priceRub: z.number().optional(),
+		})
+		.optional(),
+	appointmentRequest: z
+		.object({
+			startsAt: z.string(),
+			durationMinutes: z.number().optional(),
+			reason: z.string(),
+			doctorUserId: z.string().optional(),
+			chairId: z.string().optional(),
+			comment: z.string().optional(),
+		})
+		.optional(),
 	mode: z.enum(["autonomous", "supervised"]).optional(),
 	organizationId: z.string().optional(),
 });
@@ -1910,6 +1945,32 @@ export const copilotRoutes: FastifyPluginAsync = async (
 			const result = await defaultChairsideSentinel.analyzeVisitContext(
 				parsedBody.data,
 			);
+			return reply.send({ ok: true, data: result });
+		},
+	);
+
+	// POST /api/v1/copilot/agent/execute — Autonomous Antigravity ReAct Clinical AI Engine
+	server.post(
+		"/api/v1/copilot/agent/execute",
+		async (request, reply) => {
+			const parsedBody = autonomousAgentExecuteBodySchema.safeParse(
+				request.body ?? {},
+			);
+			if (!parsedBody.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный запрос к автономному агенту: patientId обязателен",
+					details: parsedBody.error.errors,
+				});
+			}
+
+			const identity = getRequestIdentity(request);
+			const userId = identity.userId ?? undefined;
+
+			const result = await defaultAutonomousDenteAgent.execute({
+				...parsedBody.data,
+				userId: parsedBody.data.organizationId ? undefined : userId,
+			});
 			return reply.send({ ok: true, data: result });
 		},
 	);
