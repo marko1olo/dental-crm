@@ -135,7 +135,9 @@ summary,
 
 	/* Odontogram FDI Tooth Buttons on Tablet / Mobile */
 	.odontogram-tooth-btn,
-	.tooth-cell {
+	.tooth-cell,
+	.tooth-svg-wrapper,
+	[data-tooth-id] {
 		min-width: 44px;
 		min-height: 44px;
 		touch-action: manipulation;
@@ -172,8 +174,24 @@ summary,
 
 	.panel-container,
 	.patient-workspace-view,
-	.schedule-container {
+	.schedule-container,
+	.visit-panel,
+	.visit-odontogram-tab,
+	.vde-043 {
 		padding: 8px 6px;
+		max-width: 100vw !important;
+		overflow-x: hidden !important;
+		box-sizing: border-box !important;
+	}
+
+	/* Zero horizontal scroll in all visit subtabs */
+	.visit-monolithic-header,
+	.visit-emk-tab,
+	.visit-anamnesis-tab,
+	.visit-diagnostics-tab {
+		max-width: 100% !important;
+		overflow-x: hidden !important;
+		box-sizing: border-box !important;
 	}
 
 	.table-responsive,

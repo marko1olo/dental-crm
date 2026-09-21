@@ -704,7 +704,7 @@
    for medical staff wearing latex/nitrile gloves near the dental chair,
    without degrading dense 28-36px desktop mouse ergonomics.
    ============================================================ */
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 820px) {
 	.soap-preset-chip,
 	.clinical-soap-preset,
 	.tooth-radial-btn,
@@ -715,7 +715,11 @@
 	.photo-protocol-trigger,
 	.photo-capture-btn,
 	.chairside-checklist-item,
-	.chairside-action-btn {
+	.chairside-action-btn,
+	.odontogram-tooth-btn,
+	.tooth-cell,
+	.tooth-svg-wrapper,
+	[data-tooth-id] {
 		min-height: 44px !important;
 		min-width: 44px !important;
 		touch-action: manipulation;
@@ -724,8 +728,18 @@
 	/* Primary chairside execution actions: >= 48px for gloved doctor/assistant (Mandates 8c, 8e, 8n) */
 	.btn-primary-chairside,
 	.btn-finish-visit,
+	[data-testid="btn-complete-visit-header"],
+	[data-testid="appointment-action-complete-btn"],
 	.btn-save-diary,
+	.vde-043__btn--primary,
+	[data-testid="btn-somatic-norm-one-click"],
+	[data-testid="diary-1click-norm-btn"],
 	.btn-tender-payment,
+	[data-testid="execute-fast-checkout-btn"],
+	[data-testid="btn-cash-submit-footer"],
+	[data-testid="btn-split-submit-footer"],
+	[data-testid="btn-deposit-submit-footer"],
+	[data-testid="btn-manual-terminal-confirm-footer"],
 	.btn-add-service-fast {
 		min-height: 48px !important;
 		min-width: 48px !important;
@@ -746,6 +760,10 @@
 [data-pointer="coarse"] .photo-capture-btn,
 [data-pointer="coarse"] .chairside-checklist-item,
 [data-pointer="coarse"] .chairside-action-btn,
+[data-pointer="coarse"] .odontogram-tooth-btn,
+[data-pointer="coarse"] .tooth-cell,
+[data-pointer="coarse"] .tooth-svg-wrapper,
+[data-pointer="coarse"] [data-tooth-id],
 [data-platform="android"] .soap-preset-chip,
 [data-platform="android"] .clinical-soap-preset,
 [data-platform="android"] .tooth-radial-btn,
@@ -756,7 +774,11 @@
 [data-platform="android"] .photo-protocol-trigger,
 [data-platform="android"] .photo-capture-btn,
 [data-platform="android"] .chairside-checklist-item,
-[data-platform="android"] .chairside-action-btn {
+[data-platform="android"] .chairside-action-btn,
+[data-platform="android"] .odontogram-tooth-btn,
+[data-platform="android"] .tooth-cell,
+[data-platform="android"] .tooth-svg-wrapper,
+[data-platform="android"] [data-tooth-id] {
 	min-height: 44px !important;
 	min-width: 44px !important;
 	touch-action: manipulation;
@@ -765,13 +787,33 @@
 /* Primary chairside execution actions: >= 48px for gloved doctor/assistant (Mandates 8c, 8e, 8n) */
 [data-pointer="coarse"] .btn-primary-chairside,
 [data-pointer="coarse"] .btn-finish-visit,
+[data-pointer="coarse"] [data-testid="btn-complete-visit-header"],
+[data-pointer="coarse"] [data-testid="appointment-action-complete-btn"],
 [data-pointer="coarse"] .btn-save-diary,
+[data-pointer="coarse"] .vde-043__btn--primary,
+[data-pointer="coarse"] [data-testid="btn-somatic-norm-one-click"],
+[data-pointer="coarse"] [data-testid="diary-1click-norm-btn"],
 [data-pointer="coarse"] .btn-tender-payment,
+[data-pointer="coarse"] [data-testid="execute-fast-checkout-btn"],
+[data-pointer="coarse"] [data-testid="btn-cash-submit-footer"],
+[data-pointer="coarse"] [data-testid="btn-split-submit-footer"],
+[data-pointer="coarse"] [data-testid="btn-deposit-submit-footer"],
+[data-pointer="coarse"] [data-testid="btn-manual-terminal-confirm-footer"],
 [data-pointer="coarse"] .btn-add-service-fast,
 [data-platform="android"] .btn-primary-chairside,
 [data-platform="android"] .btn-finish-visit,
+[data-platform="android"] [data-testid="btn-complete-visit-header"],
+[data-platform="android"] [data-testid="appointment-action-complete-btn"],
 [data-platform="android"] .btn-save-diary,
+[data-platform="android"] .vde-043__btn--primary,
+[data-platform="android"] [data-testid="btn-somatic-norm-one-click"],
+[data-platform="android"] [data-testid="diary-1click-norm-btn"],
 [data-platform="android"] .btn-tender-payment,
+[data-platform="android"] [data-testid="execute-fast-checkout-btn"],
+[data-platform="android"] [data-testid="btn-cash-submit-footer"],
+[data-platform="android"] [data-testid="btn-split-submit-footer"],
+[data-platform="android"] [data-testid="btn-deposit-submit-footer"],
+[data-platform="android"] [data-testid="btn-manual-terminal-confirm-footer"],
 [data-platform="android"] .btn-add-service-fast {
 	min-height: 48px !important;
 	min-width: 48px !important;
