@@ -4290,8 +4290,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			return;
 		}
 
-		// Default wheel behavior without Ctrl: scroll slices along viewport axis
-		const delta = e.deltaY > 0 ? -1 : 1;
+		// Default wheel behavior without Ctrl: scroll slices along viewport axis (Shift = 5x speed)
+		const step = e.shiftKey ? 5 : 1;
+		const delta = (e.deltaY > 0 ? -1 : 1) * step;
 
 		if (viewport === "cross_section") {
 			if (crossSections.length > 0) {
