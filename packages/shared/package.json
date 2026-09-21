@@ -41,6 +41,11 @@
 			"import": "./dist/dicom/index.js",
 			"default": "./dist/dicom/index.js"
 		},
+		"./egisz": {
+			"types": "./dist/egisz/index.d.ts",
+			"import": "./dist/egisz/index.js",
+			"default": "./dist/egisz/index.js"
+		},
 		"./radiology": {
 			"types": "./dist/radiology/index.d.ts",
 			"import": "./dist/radiology/index.js",

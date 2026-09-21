@@ -18,6 +18,7 @@ import {
 import { EgiszOutboxDispatcher } from "../services/egisz/EgiszOutboxDispatcher.js";
 import { OiisGatewayClient } from "../services/egisz/OiisGatewayClient.js";
 import { isValidSnils, normalizeSnils } from "../utils/snils.js";
+import { registerN3HealthRoutes } from "./egisz/n3HealthRoutes.js";
 
 /**
  * POST /api/clinical/egisz/validate-doctor-snils: было bare cast
@@ -109,6 +110,8 @@ function componentStatus(...required: (string | null)[]): ComponentStatus {
 }
 
 export default async function registerEgiszRoutes(app: FastifyInstance) {
+	await registerN3HealthRoutes(app);
+
 	/**
 	 * Состояние интеграции. Выводится из конфигурации, а не из литералов.
 	 * `configured: false` означает, что отправка в ЕГИСЗ физически невозможна.
