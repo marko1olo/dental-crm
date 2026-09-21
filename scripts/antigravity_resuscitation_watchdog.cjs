@@ -87,8 +87,12 @@ function probe() {
   }
 
   if (restartAffected.length > 0) {
-    console.log("\n[ACTION REQUIRED] Detected subagents affected by language server restart.");
-    console.log("Run Mandate 8l Transcript Relay: node scripts/antigravity_transcript_relay.cjs --subagent <ID>");
+    console.log("\n[ACTION REQUIRED] Detected subagents affected by language server restart:");
+    for (const r of restartAffected) {
+      console.log(`  • ID: ${r.conversationId}`);
+      console.log(`    Steps: ${r.totalSteps} | Last Step Type: ${r.lastType} | Last Modified: ${r.lastModified.toISOString()}`);
+      console.log(`    Handover: node scripts/antigravity_transcript_relay.cjs ${r.conversationId}`);
+    }
   } else {
     console.log("\n[HEALTHY] No orphaned subagents currently requiring resuscitation.");
   }

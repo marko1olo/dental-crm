@@ -79,21 +79,24 @@ function getLiveLsRuntimeInfo() {
     }
 
     if (!csrfToken || !hostBridgeUrl) {
-      const spawnMatch = /Spawning:.*--csrf_token\s+([a-f0-9-]+).*--host_bridge_url=([^\s]+)/.exec(line);
+      const spawnMatch = /Spawning:.*--csrf_token\s+([a-f0-9-]+).*--host_bridge_url=([^\s]+).*--host_bridge_token=([^\s]+)/.exec(line);
       if (spawnMatch) {
         csrfToken = spawnMatch[1];
         hostBridgeUrl = spawnMatch[2];
+        hostBridgeToken = spawnMatch[3];
       }
     }
 
     if (!appVersion) {
-      const verMatch = /Starting app \(v([^)]+)\)/.exec(line);
+      const verMatch = /--override_ide_version\s+([^\s]+)/.exec(line) ||
+                       /Found version\s+([^\s]+)/.exec(line) ||
+                       /Starting app \(v([^)]+)\)/.exec(line);
       if (verMatch) {
         appVersion = verMatch[1];
       }
     }
 
-    if (port && csrfToken) {
+    if (port && csrfToken && appVersion) {
       break;
     }
   }
@@ -102,6 +105,7 @@ function getLiveLsRuntimeInfo() {
     port,
     csrfToken,
     hostBridgeUrl,
+    hostBridgeToken,
     appVersion,
     isAvailable: Boolean(port && csrfToken),
   };
@@ -158,6 +162,7 @@ if (args.includes("--inspect")) {
   console.log(`  Language Server Port: ${info.port || "UNKNOWN"}`);
   console.log(`  CSRF Token: ${info.csrfToken ? info.csrfToken.slice(0, 8) + "..." : "UNKNOWN"}`);
   console.log(`  Host Bridge URL: ${info.hostBridgeUrl || "UNKNOWN"}`);
+  console.log(`  Host Bridge Token: ${info.hostBridgeToken ? info.hostBridgeToken.slice(0, 8) + "..." : "UNKNOWN"}`);
   console.log(`  Antigravity Version: ${info.appVersion || "UNKNOWN"}`);
   console.log(`  Status: ${info.isAvailable ? "LIVE & OPERATIONAL" : "OFFLINE / RESTARTING"}`);
 }
