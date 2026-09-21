@@ -270,6 +270,7 @@ let statsCoalesced = 0;
 let statsInvalidations = 0;
 
 let ttlPruneInterval: ReturnType<typeof setInterval> | null = null;
+let ttlPruneVisibilityCleanup: (() => void) | null = null;
 
 /**
  * Запускает периодическую фоновую очистку просроченных записей по TTL.
@@ -278,6 +279,9 @@ export function startApiCacheTtlPruning(): void {
 	if (ttlPruneInterval || typeof setInterval === "undefined") return;
 	const timing = getOptimizedTiming();
 	ttlPruneInterval = setInterval(() => {
+		if (typeof document !== "undefined" && document.hidden) {
+			return; // Пропускаем очистку кэша в скрытой вкладке для снижения паразитного I/O и нагрузки на CPU (HDD 5400 RPM)
+		}
 		if (apiCacheInstance) {
 			const pruned = apiCacheInstance.pruneExpired();
 			if (pruned > 0) {
@@ -301,6 +305,21 @@ export function startApiCacheTtlPruning(): void {
 		};
 		window.addEventListener("beforeunload", cleanup, { once: true });
 	}
+
+	if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+		const onVisibilityChange = () => {
+			if (!document.hidden && apiCacheInstance) {
+				const pruned = apiCacheInstance.pruneExpired();
+				if (pruned > 0) {
+					statsInvalidations += pruned;
+				}
+			}
+		};
+		document.addEventListener("visibilitychange", onVisibilityChange);
+		ttlPruneVisibilityCleanup = () => {
+			document.removeEventListener("visibilitychange", onVisibilityChange);
+		};
+	}
 }
 
 /**
@@ -310,6 +329,10 @@ export function stopApiCacheTtlPruning(): void {
 	if (ttlPruneInterval) {
 		clearInterval(ttlPruneInterval);
 		ttlPruneInterval = null;
+	}
+	if (ttlPruneVisibilityCleanup) {
+		ttlPruneVisibilityCleanup();
+		ttlPruneVisibilityCleanup = null;
 	}
 }
 

@@ -215,6 +215,8 @@ describe("RED-TEAM HAMMER: 152-FZ / 323-ФЗ Aggressive Attack Suite", { concurr
 						registrationAddress: "г. Москва, Красная площадь, д. 1",
 						residentialAddress: "г. Москва, Красная площадь, д. 1",
 						insurancePolicyNumber: "9999888877776666",
+						gender: "male",
+						insuranceContractId: null,
 						legalRepresentativeFullName: null,
 						legalRepresentativeRelationship: null,
 						legalRepresentativeIdentityDocument: null,

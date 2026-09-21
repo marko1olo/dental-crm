@@ -91,7 +91,7 @@ export interface PeriodontogramChartProps {
 	readonly initialProbeKeyboardEnabled?: boolean | undefined;
 }
 
-export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
+export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.memo(({
 	patientId: _patientId,
 	patientName: _patientName,
 	organizationId: _organizationId,
@@ -2889,7 +2889,8 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 			)}
 		</div>
 	);
-};
+});
+PeriodontogramChart.displayName = "PeriodontogramChart";
 
 // ═════════════════════════════════════════════════════════════════════════════
 // SUBCOMPONENT: PERIO TOOTH CARD (ANATOMICAL COLUMN WITH 6 SITES)
@@ -3229,7 +3230,7 @@ interface PerioToothVisualProps {
 	readonly lingualPd: number;
 }
 
-const PerioToothVisual: React.FC<PerioToothVisualProps> = ({
+const PerioToothVisual: React.FC<PerioToothVisualProps> = React.memo(({
 	toothNumber,
 	isUpper,
 	isMissing,
@@ -3410,4 +3411,5 @@ const PerioToothVisual: React.FC<PerioToothVisualProps> = ({
 			/>
 		</svg>
 	);
-};
+});
+PerioToothVisual.displayName = "PerioToothVisual";

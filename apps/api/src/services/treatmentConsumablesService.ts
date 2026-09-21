@@ -1731,6 +1731,8 @@ export class TreatmentConsumablesService {
 		},
 	): Promise<{
 		success: boolean;
+		isOverdraft?: boolean;
+		warning?: string | undefined;
 		deductedItems: Array<{
 			itemId: string;
 			itemName: string;
@@ -1859,6 +1861,8 @@ export class TreatmentConsumablesService {
 
 		return {
 			success: true,
+			isOverdraft,
+			...(isOverdraft ? { warning: "soft_overdraft" } : {}),
 			deductedItems: [
 				{
 					itemId: matched.id,
@@ -1891,6 +1895,8 @@ export class TreatmentConsumablesService {
 		},
 	): Promise<{
 		success: boolean;
+		isOverdraft?: boolean;
+		warning?: string | undefined;
 		deductedItems: Array<{
 			itemId: string;
 			itemName: string;
@@ -2079,8 +2085,11 @@ export class TreatmentConsumablesService {
 			await tx.insert(inventoryTransactions).values(txRows);
 		}
 
+		const anyOverdraft = deductedItems.some((i) => i.isOverdraft);
 		return {
 			success: true,
+			isOverdraft: anyOverdraft,
+			...(anyOverdraft ? { warning: "soft_overdraft" } : {}),
 			deductedItems,
 			warnings,
 			message: `Стандартный расход смены «${bundleNameRu}» успешно списан (${deductedItems.length} позиций без комиссии).`,

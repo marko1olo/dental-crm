@@ -239,6 +239,7 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 					});
 				}
 
+				const sberbankOrderId = res.orderId;
 				await withTenantCtx(organizationId, async (tx) => {
 					await tx.insert(sberbankTransactions).values({
 						organizationId,
@@ -246,7 +247,7 @@ export async function registerSberbankRoutes(app: FastifyInstance) {
 						visitId: visitId || null,
 						documentId: documentId || null,
 						invoiceId: invoiceId || null,
-						orderId: res.orderId,
+						orderId: sberbankOrderId,
 						amount,
 						status: "pending",
 					});

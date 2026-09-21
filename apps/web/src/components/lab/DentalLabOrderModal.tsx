@@ -780,12 +780,12 @@ export function DentalLabOrderModal({
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/80 backdrop-blur-sm overflow-y-auto"
+			className="fixed inset-0 z-[70] flex items-center justify-center p-2 sm:p-4 max-sm:p-1 bg-slate-900/80 backdrop-blur-sm overflow-y-auto"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="dental-lab-modal-title"
 		>
-			<div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+			<div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] max-sm:max-h-[96vh]">
 				
 				{/* ─── MODAL HEADER ──────────────────────────────────────────────── */}
 				<div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 gap-2">
@@ -815,7 +815,7 @@ export function DentalLabOrderModal({
 						<button
 							type="button"
 							onClick={handleApplyOneClickDefaults}
-							className="min-h-[36px] sm:min-h-[34px] sm:h-[34px] inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-0 text-xs font-bold rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 transition-colors shadow-xs shrink-0"
+							className="min-h-[44px] sm:min-h-8 sm:h-8 inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-0 text-xs font-bold rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 transition-colors shadow-xs shrink-0"
 							title="1-клик пресет: Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней"
 							data-testid="lab-order-apply-defaults-btn"
 						>
@@ -825,7 +825,7 @@ export function DentalLabOrderModal({
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="min-h-[36px] sm:min-h-[34px] sm:h-[34px] inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-0 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shadow-sm shrink-0"
+							className="min-h-[44px] sm:min-h-8 sm:h-8 inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-0 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shadow-sm shrink-0"
 							title="Печать наряда (ГОСТ)"
 						>
 							<Printer className="w-4 h-4" />
@@ -835,7 +835,7 @@ export function DentalLabOrderModal({
 							type="button"
 							onClick={onClose}
 							data-testid="lab-order-modal-close-btn"
-							className="min-h-[36px] min-w-[36px] sm:min-h-[34px] sm:min-w-[34px] sm:h-[34px] sm:w-[34px] rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
+							className="min-h-[44px] min-w-[44px] sm:min-h-8 sm:min-w-8 sm:h-8 sm:w-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
 							aria-label="Закрыть модальное окно"
 						>
 							<X className="w-5 h-5 sm:w-5 sm:h-5" />
@@ -1192,7 +1192,7 @@ export function DentalLabOrderModal({
 							type="button"
 							onClick={handleCopyMessengerSummary}
 							data-testid="lab-order-copy-messenger-btn"
-							className="min-h-[44px] px-3.5 sm:px-4 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+							className="min-h-[44px] sm:min-h-9 sm:h-9 px-3.5 sm:px-4 py-2 sm:py-0 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
 							title="Скопировать выжимку наряда для отправки курьеру или зубному технику в WhatsApp/Telegram"
 						>
 							<Copy className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
@@ -1203,7 +1203,7 @@ export function DentalLabOrderModal({
 							type="button"
 							onClick={handlePrint}
 							data-testid="lab-order-footer-print-btn"
-							className="min-h-[44px] px-3.5 sm:px-4 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+							className="min-h-[44px] sm:min-h-9 sm:h-9 px-3.5 sm:px-4 py-2 sm:py-0 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
 							title="Распечатать наряд-заказ ГОСТ (А4)"
 						>
 							<Printer className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
@@ -1214,7 +1214,7 @@ export function DentalLabOrderModal({
 							type="button"
 							onClick={onClose}
 							disabled={isSubmitting}
-							className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer select-none"
+							className="min-h-[44px] sm:min-h-9 sm:h-9 px-4 py-2 sm:py-0 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer select-none inline-flex items-center justify-center"
 						>
 							Отмена
 						</button>
@@ -1222,7 +1222,7 @@ export function DentalLabOrderModal({
 							type="button"
 							onClick={() => handleSaveOrder()}
 							disabled={isSubmitting}
-							className="min-h-[44px] px-4 sm:px-5 py-2.5 text-xs font-bold rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white shadow-md shadow-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all inline-flex items-center gap-2 cursor-pointer select-none"
+							className="min-h-[44px] sm:min-h-9 sm:h-9 px-4 sm:px-5 py-2.5 sm:py-0 text-xs font-bold rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white shadow-md shadow-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all inline-flex items-center justify-center gap-2 cursor-pointer select-none"
 							data-testid="submit-lab-order-btn"
 						>
 							{isSubmitting ? (

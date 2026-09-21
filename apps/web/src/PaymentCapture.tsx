@@ -395,8 +395,7 @@ function TaxPayerDetails({
 								<button
 									key={rel}
 									type="button"
-									className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold"
-									style={{ minHeight: "44px" }}
+									className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-3.5 text-xs sm:text-sm font-semibold"
 									onClick={() => onPayerRelationshipChange(rel)}
 								>
 									{rel}
@@ -411,9 +410,8 @@ function TaxPayerDetails({
 						aria-label="Код медицинской услуги для налогового вычета"
 					>
 						<button
-							className={`quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold ${taxDeductionCode === "" ? "active" : ""}`}
+							className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-3.5 text-xs sm:text-sm font-semibold ${taxDeductionCode === "" ? "active" : ""}`}
 							type="button"
-							style={{ minHeight: "44px" }}
 							aria-pressed={taxDeductionCode === ""}
 							onClick={() => onTaxDeductionCodeChange("")}
 						>
@@ -421,10 +419,9 @@ function TaxPayerDetails({
 						</button>
 						{(["1", "2"] as const).map((code) => (
 							<button
-								className={`quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold ${taxDeductionCode === code ? "active" : ""}`}
+								className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-3.5 text-xs sm:text-sm font-semibold ${taxDeductionCode === code ? "active" : ""}`}
 								key={code}
 								type="button"
-								style={{ minHeight: "44px" }}
 								aria-pressed={taxDeductionCode === code}
 								onClick={() => onTaxDeductionCodeChange(code)}
 							>
@@ -434,9 +431,8 @@ function TaxPayerDetails({
 					</div>
 					<div className="payment-tax-defaults">
 						<button
-							className="secondary-button min-h-[44px]"
+							className="secondary-button min-h-[44px] sm:min-h-8 sm:h-8"
 							type="button"
-							style={{ minHeight: "44px" }}
 							onClick={applyPatientTaxDefaults}
 							disabled={false}
 							aria-describedby={
@@ -511,14 +507,7 @@ function InstallmentCalculator({
           без банка, — так и написано. */}
 			<summary>Рассрочка от клиники, без банка</summary>
 			<div
-				className="smart-details-content"
-				style={{
-					padding: "16px",
-					background: "var(--paper-soft)",
-					border: "1px solid var(--line)",
-					borderRadius: "8px",
-					marginTop: "8px",
-				}}
+				className="smart-details-content p-3 sm:p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] mt-2"
 			>
 				<div
 					style={{
@@ -563,8 +552,7 @@ function InstallmentCalculator({
 								<button
 									key={m}
 									type="button"
-									className={`quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold ${months === m ? "active" : ""}`}
-									style={{ minHeight: "44px" }}
+									className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-3.5 text-xs sm:text-sm font-semibold ${months === m ? "active" : ""}`}
 									onClick={() => setMonths(m)}
 								>
 									{m} мес
@@ -609,8 +597,7 @@ function InstallmentCalculator({
 								<button
 									key={p}
 									type="button"
-									className={`quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold ${downPaymentPercent === p ? "active" : ""}`}
-									style={{ minHeight: "44px" }}
+									className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-3.5 text-xs sm:text-sm font-semibold ${downPaymentPercent === p ? "active" : ""}`}
 									onClick={() => setDownPaymentPercent(p)}
 								>
 									{p}%
@@ -620,16 +607,7 @@ function InstallmentCalculator({
 					</div>
 				</div>
 
-				<div
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						background: "var(--paper)",
-						padding: "16px",
-						borderRadius: "8px",
-						border: "1px solid var(--line)",
-					}}
-				>
+				<div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-3 border-t border-[var(--line)]">
 					<div>
 						<div style={{ fontSize: "12px", color: "var(--muted)" }}>
 							Сумма лечения
@@ -1734,6 +1712,13 @@ export function PaymentCapture({
 				возвратом или коррекцией, не повторной записью.
 			</p>
 
+			{/* Буфер прокрутки для мобильных устройств, чтобы фиксированная нижняя панель не перекрывала кнопки оплат */}
+			<div
+				className="payment-capture-bottom-spacer block sm:hidden w-full"
+				style={{ height: "72px", minHeight: "72px" }}
+				aria-hidden="true"
+			/>
+
 			{/* Панель оформления чека и кнопок оплаты (Мандат 8e / 8c / 8p: фиксирована внизу экрана) */}
 			<div
 				id="payment-checkout-bar"
@@ -1748,13 +1733,14 @@ export function PaymentCapture({
 			>
 				{/* Итого к списанию / оплате по 54-ФЗ */}
 				<div
-					className="payment-total-due-banner flex items-center justify-between gap-2 sm:gap-3 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] select-none mb-0 max-sm:bg-transparent max-sm:border-none max-sm:p-0 shrink-0 min-w-0 sm:min-w-[200px]"
+					className="payment-total-due-banner flex items-center justify-between gap-1.5 sm:gap-3 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] select-none mb-0 max-sm:bg-transparent max-sm:border-none max-sm:p-0 shrink-0 min-w-0 sm:min-w-[200px]"
 					data-testid="payment-total-due-banner"
 				>
-					<span className="text-xs sm:text-xs font-bold text-[var(--muted)] max-sm:text-xs max-sm:leading-none whitespace-nowrap pr-1 sm:pr-2">
-						Итого к списанию:
+					<span className="text-xs sm:text-xs font-bold text-[var(--muted)] max-sm:text-xs max-sm:leading-none whitespace-nowrap pr-1 sm:pr-2 shrink-0">
+						<span className="hidden sm:inline">Итого к списанию:</span>
+						<span className="sm:hidden">Итого:</span>
 					</span>
-					<span className="text-base sm:text-base font-black font-mono text-[var(--ink)] max-sm:text-base max-sm:leading-tight whitespace-nowrap text-right flex-1 min-w-0">
+					<span className="text-sm sm:text-base font-black font-mono text-[var(--ink)] max-sm:text-sm max-sm:leading-tight whitespace-nowrap text-right flex-1 min-w-0">
 						{amount && normalizeRubAmountInput(amount) !== null
 							? `${(normalizeRubAmountInput(amount) ?? 0).toLocaleString("ru-RU")} ₽`
 							: remainingDebt && remainingDebt > 0
@@ -1764,10 +1750,10 @@ export function PaymentCapture({
 				</div>
 
 				<div
-					className="payment-actions flex items-center gap-2 max-sm:flex-1 max-sm:flex max-sm:flex-row max-sm:items-center max-sm:justify-end max-sm:gap-1.5 flex-1 min-w-0"
+					className="payment-actions flex items-center gap-1.5 sm:gap-2 max-sm:flex-1 max-sm:flex max-sm:flex-row max-sm:items-center max-sm:justify-end flex-1 min-w-0"
 				>
 					<button
-						className="primary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 sm:flex-initial font-bold text-xs sm:text-sm min-w-0 px-2.5 sm:px-3.5 whitespace-nowrap shrink-0 flex-shrink-0"
+						className="primary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 sm:flex-initial font-bold text-xs sm:text-sm min-w-0 px-2.5 sm:px-3.5 whitespace-nowrap"
 						type="button"
 						onClick={handlePrimarySubmit}
 						aria-busy={isSaving || undefined}
@@ -1779,7 +1765,7 @@ export function PaymentCapture({
 						data-testid="payment-submit-button"
 					>
 						<CreditCard aria-hidden="true" size={16} className="shrink-0" />{" "}
-						<span className="shrink-0 whitespace-nowrap">
+						<span className="truncate">
 							{isSaving
 								? "Записываю..."
 								: isZeroAmount
@@ -1818,9 +1804,9 @@ export function PaymentCapture({
 						<Coins aria-hidden="true" size={15} className="shrink-0 text-indigo-600 dark:text-indigo-400" />{" "}
 						<span className="hidden sm:inline truncate whitespace-nowrap">Комбо (Сплит)</span>
 					</button>
-					<div className="relative shrink-0">
+					<div className="relative shrink-0 flex-shrink-0">
 						<button
-							className="secondary-button min-h-[44px] min-w-[44px] sm:min-h-9 sm:h-9 sm:min-w-9 sm:w-9 p-0 flex items-center justify-center rounded-lg"
+							className="secondary-button min-h-[44px] min-w-[44px] sm:min-h-9 sm:h-9 sm:min-w-9 sm:w-9 p-0 flex items-center justify-center rounded-lg shrink-0 flex-shrink-0"
 							type="button"
 							onClick={() => setIsMoreActionsOpen((prev) => !prev)}
 							aria-expanded={isMoreActionsOpen}

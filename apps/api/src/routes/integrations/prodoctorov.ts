@@ -475,11 +475,29 @@ ${offersXml}
 				);
 
 			// 6. Генерация слотов
-			const doctorsWithSlots = [];
+			const doctorsWithSlots: Array<{
+				doctorId: string;
+				doctorName: string;
+				specialties: string[];
+				availableSlotsCount: number;
+				slots: Array<{
+					startsAt: string;
+					endsAt: string;
+					durationMinutes: number;
+					chairId: string | null;
+					chairName: string | null;
+				}>;
+			}> = [];
 			let totalAvailableSlots = 0;
 
 			for (const doctor of activeDoctors) {
-				const doctorSlots = [];
+				const doctorSlots: Array<{
+					startsAt: string;
+					endsAt: string;
+					durationMinutes: number;
+					chairId: string | null;
+					chairName: string | null;
+				}> = [];
 				const curDate = new Date(startDateObj);
 				curDate.setUTCHours(0, 0, 0, 0);
 
@@ -601,7 +619,9 @@ ${offersXml}
 				doctorsWithSlots.push({
 					doctorId: doctor.id,
 					doctorName: doctor.fullName,
-					specialties: doctor.specialties || [],
+					specialties: Array.isArray(doctor.specialties)
+						? (doctor.specialties as string[])
+						: [],
 					availableSlotsCount: doctorSlots.length,
 					slots: doctorSlots,
 				});
@@ -858,6 +878,9 @@ ${offersXml}
 						notes: "Первичный пациент из агрегатора ПроДокторов / МедФлекс",
 					})
 					.returning({ id: patients.id });
+				if (!newPatient) {
+					throw new Error("Не удалось создать запись пациента в базе данных");
+				}
 				patientId = newPatient.id;
 			}
 
@@ -994,6 +1017,10 @@ ${offersXml}
 					comment: fullComment,
 				})
 				.returning();
+
+			if (!createdAppointment) {
+				throw new Error("Не удалось создать запись на приём в базе данных");
+			}
 
 			// 8. Фиксация в аудит-логе внешних интеграций
 			await tx.insert(externalScheduleActionLogs).values({

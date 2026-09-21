@@ -1289,7 +1289,7 @@ export function createUsbHidScannerDetector(options: UsbHidScannerOptions = {}) 
 								detail: {
 									code: rawCode,
 									rawCode,
-									format: parsedGs1.isGs1 ? "gs1_datamatrix" : "code128",
+									format: parsedGs1.isValidMdlp || Boolean(parsedGs1.gtin) ? "gs1_datamatrix" : "code128",
 									parsedGs1,
 									timestamp,
 									durationMs,
@@ -1302,7 +1302,7 @@ export function createUsbHidScannerDetector(options: UsbHidScannerOptions = {}) 
 								detail: {
 									code: rawCode,
 									rawCode,
-									format: parsedGs1.isGs1 ? "gs1_datamatrix" : "code128",
+									format: parsedGs1.isValidMdlp || Boolean(parsedGs1.gtin) ? "gs1_datamatrix" : "code128",
 									parsedGs1,
 									source: "usb_hid_scanner",
 								},

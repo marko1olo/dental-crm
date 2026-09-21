@@ -757,7 +757,7 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 	});
 
 	// Атомарное завершение наряда приёма: списание материалов со склада и фиксация статуса визита
-	app.post("/api/visits/:visitId/complete-work-order", async (request, reply) => {
+	const completeWorkOrderHandler = async (request: any, reply: any) => {
 		const context = await requireClinicalMutationContext(
 			request,
 			reply,
@@ -766,7 +766,10 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 		if (!context) return;
 
 		const { visitId } = request.params as { visitId: string };
-		const body = (request.body as { status?: "completed" | "in_progress" } | undefined) ?? {};
+		const body =
+			(request.body as
+				| { status?: "signed" | "draft" | "voided" | "completed" | "in_progress" }
+				| undefined) ?? {};
 
 		try {
 			const identity = getRequestIdentity(request);
@@ -774,7 +777,7 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 				organizationId: context.organizationId,
 				visitId,
 				actorUserId: identity.userId ?? null,
-				status: body.status ?? "completed",
+				status: body.status ?? "signed",
 			});
 			return result;
 		} catch (error) {
@@ -795,5 +798,8 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 				message: "Не удалось завершить наряд приёма и списать материалы.",
 			};
 		}
-	});
+	};
+
+	app.post("/api/visits/:visitId/complete-work-order", completeWorkOrderHandler);
+	app.post("/api/visits/:visitId/work-order/complete", completeWorkOrderHandler);
 }

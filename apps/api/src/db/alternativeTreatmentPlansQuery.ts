@@ -31,22 +31,22 @@ import { sumKopecks } from "@dental/shared";
 import { issuePriceFreezeToken } from "./priceFreezeTokensQuery.js";
 
 export interface AlternativePlanItemInput {
-	toothNumber?: number | null;
+	toothNumber?: number | null | undefined;
 	priceId: string;
-	name?: string | null;
+	name?: string | null | undefined;
 	quantity: number;
 	price: number;
-	discount?: number;
-	phase?: number;
-	isAuto?: boolean;
+	discount?: number | undefined;
+	phase?: number | undefined;
+	isAuto?: boolean | undefined;
 }
 
 export interface AlternativePlanVariantInput {
 	name: string;
-	alternativeTier?: string; // "optimum" | "economy" | "premium" | "compromise"
+	alternativeTier?: string | undefined; // "optimum" | "economy" | "premium" | "compromise"
 	items: AlternativePlanItemInput[];
-	isInitiallyApproved?: boolean;
-	notes?: string;
+	isInitiallyApproved?: boolean | undefined;
+	notes?: string | undefined;
 }
 
 export interface CreateAlternativePlanGroupInput {

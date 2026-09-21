@@ -378,6 +378,7 @@ export class VoiceOfflineQueue {
 		if (this.autoSyncTimer || this.isDisposed) return;
 		if (this.options.autoSyncIntervalMs > 0) {
 			this.autoSyncTimer = setInterval(() => {
+				if (typeof document !== "undefined" && document.hidden) return;
 				void this.processQueue();
 			}, this.options.autoSyncIntervalMs);
 			if (this.autoSyncTimer && typeof this.autoSyncTimer.unref === "function") {

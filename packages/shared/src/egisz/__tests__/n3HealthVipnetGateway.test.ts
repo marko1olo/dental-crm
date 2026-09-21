@@ -423,7 +423,8 @@ describe("N3.Health ViPNet EGISZ Integration Gateway", () => {
 
 		const mockFetch: typeof fetch = async (input, init) => {
 			capturedUrl = String(input);
-			capturedSoapAction = (init?.headers as Record<string, string>)["SOAPAction"];
+			capturedSoapAction =
+				(init?.headers as Record<string, string>)["SOAPAction"] ?? "";
 			return new Response(
 				`<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
           <s:Body>

@@ -141,6 +141,8 @@ describe("Prosecutor 3: Decree 659 & Treatment Plans Statutory Audit Suite", { c
 					residentialAddress: null,
 					insurancePolicyNumber: null,
 					snils: null,
+					gender: null,
+					insuranceContractId: null,
 					legalRepresentativeFullName: null,
 					legalRepresentativeRelationship: null,
 					legalRepresentativeIdentityDocument: null,
@@ -179,6 +181,8 @@ describe("Prosecutor 3: Decree 659 & Treatment Plans Statutory Audit Suite", { c
 					residentialAddress: "г. Москва, ул. Профсоюзная, д. 12, кв. 45",
 					insurancePolicyNumber: "1234567890123456", // ЕНП ОМС
 					snils: "123-456-789 01",
+					gender: "female",
+					insuranceContractId: null,
 					legalRepresentativeFullName: null,
 					legalRepresentativeRelationship: null,
 					legalRepresentativeIdentityDocument: null,

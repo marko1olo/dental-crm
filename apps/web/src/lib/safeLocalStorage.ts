@@ -193,6 +193,15 @@ export function safeLocalStorageSetItem(key: string, value: string, immediate = 
 		inMemoryClinicToken = value.trim();
 	}
 
+	// 1. Проверка на идентичность: исключаем паразитный дисковый I/O на HDD 5400 RPM, если значение не изменилось
+	const currentCached = inMemoryStorageCache.get(key);
+	const hasPending = pendingDiskWrites.has(key);
+	if (inMemoryStorageCache.has(key) && currentCached === value) {
+		if (!hasPending || pendingDiskWrites.get(key) === value) {
+			return true;
+		}
+	}
+
 	// Мгновенное обновление памяти: последующие чтения сразу видят новое значение
 	inMemoryStorageCache.set(key, value);
 
@@ -239,10 +248,15 @@ export function safeLocalStorageRemoveItem(key: string): boolean {
 		inMemoryClinicToken = "";
 	}
 
+	const alreadyNull = inMemoryStorageCache.has(key) && inMemoryStorageCache.get(key) === null;
+	const hadPending = pendingDiskWrites.has(key);
 	inMemoryStorageCache.set(key, null);
 	pendingDiskWrites.delete(key);
 
 	if (typeof window === "undefined") return false;
+	if (alreadyNull && !hadPending) {
+		return true;
+	}
 	try {
 		ensureTokenStorageListener();
 		window.localStorage.removeItem(key);
@@ -302,6 +316,15 @@ export function safeSessionStorageGetItem(key: string): string | null {
 }
 
 export function safeSessionStorageSetItem(key: string, value: string, immediate = false): boolean {
+	// 1. Проверка на идентичность: исключаем паразитный дисковый I/O на медленных накопителях
+	const currentCached = inMemorySessionStorageCache.get(key);
+	const hasPending = pendingSessionDiskWrites.has(key);
+	if (inMemorySessionStorageCache.has(key) && currentCached === value) {
+		if (!hasPending || pendingSessionDiskWrites.get(key) === value) {
+			return true;
+		}
+	}
+
 	inMemorySessionStorageCache.set(key, value);
 	if (typeof window === "undefined") return false;
 	if (immediate) {
@@ -334,9 +357,14 @@ export function safeSessionStorageSetItem(key: string, value: string, immediate 
 }
 
 export function safeSessionStorageRemoveItem(key: string): boolean {
+	const alreadyNull = inMemorySessionStorageCache.has(key) && inMemorySessionStorageCache.get(key) === null;
+	const hadPending = pendingSessionDiskWrites.has(key);
 	inMemorySessionStorageCache.set(key, null);
 	pendingSessionDiskWrites.delete(key);
 	if (typeof window === "undefined") return false;
+	if (alreadyNull && !hadPending) {
+		return true;
+	}
 	try {
 		window.sessionStorage.removeItem(key);
 		return true;

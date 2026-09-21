@@ -43,7 +43,7 @@ import {
 	type N3HealthVipnetConfig,
 	type PixFindPatientsCriteria,
 	type PixPatientPayload,
-} from "../../../../../packages/shared/src/egisz/index.js";
+} from "@dental/shared";
 
 // ─── 1. Zod схемы запросов ──────────────────────────────────────────────────
 

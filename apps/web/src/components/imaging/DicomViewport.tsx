@@ -29,6 +29,7 @@ import {
 	type CalibratedRulerMeasurement,
 	type DicomViewportState,
 	type Point2D,
+} from "./rvgViewerEngine.js";
 import { isLowSpecHardware } from "../../utils/deviceDetection.js";
 import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper";
 

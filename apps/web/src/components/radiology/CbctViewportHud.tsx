@@ -37,6 +37,9 @@ export interface CbctViewportHudProps {
 	readonly onToggleMaximize?: (() => void) | undefined;
 	readonly obliqueAngleDeg?: number | undefined;
 	readonly onResetAngle?: (() => void) | undefined;
+	readonly onResetView?: (() => void) | undefined;
+	readonly isRotating?: boolean | undefined;
+	readonly isHandleHovered?: boolean | undefined;
 	readonly zoomFactor?: number | undefined;
 	readonly windowWidth?: number | undefined;
 	readonly windowLevel?: number | undefined;
@@ -155,6 +158,9 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 	onToggleMaximize,
 	obliqueAngleDeg,
 	onResetAngle,
+	onResetView,
+	isRotating = false,
+	isHandleHovered = false,
 	zoomFactor,
 	windowWidth,
 	windowLevel,
@@ -238,22 +244,45 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 				)}
 			</div>
 
-			{/* 2. TOP-RIGHT CORNER: OBLIQUE ANGLE BADGE & VIEWPORT MAXIMIZE BUTTON (Fixed top-1.5 right-1.5 placement with mt-1 clearance) */}
+			{/* 2. TOP-RIGHT CORNER: OBLIQUE ANGLE BADGE, FULL RESET BUTTON & VIEWPORT MAXIMIZE BUTTON (Fixed top-1.5 right-1.5 placement with mt-1 clearance) */}
 			<div className="absolute top-1.5 right-1.5 mt-1 pointer-events-auto flex items-center gap-1 z-30">
-				{obliqueAngleDeg !== undefined && Math.abs(obliqueAngleDeg) > 0.05 && (
+				{obliqueAngleDeg !== undefined && (Math.abs(obliqueAngleDeg) > 0.05 || isHandleHovered || isRotating) && (
 					<button
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
 							onResetAngle?.();
 						}}
-						className="h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2 py-0.5 rounded-md bg-[var(--paper-strong,#0f172a)]/95 hover:bg-[var(--paper-soft,#1e293b)] backdrop-blur-sm text-xs font-mono font-bold border border-[var(--teal,rgba(6,182,212,0.5))]/50 hover:border-cyan-400 text-[var(--teal,#22d3ee)] hover:text-cyan-200 shadow-md flex items-center gap-1 cursor-pointer transition-all"
-						title={`Угол наклона: ${obliqueAngleDeg > 0 ? "+" : ""}${obliqueAngleDeg.toFixed(1)}° (Нажмите для сброса в 0.0°)`}
+						className={`h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2 py-0.5 rounded-md bg-[var(--paper-strong,#0f172a)]/95 hover:bg-[var(--paper-soft,#1e293b)] backdrop-blur-sm text-xs font-mono font-bold border ${
+							isRotating
+								? "border-cyan-400 text-cyan-200 ring-1 ring-cyan-400/50 animate-pulse"
+								: isHandleHovered
+									? "border-cyan-400 text-[var(--teal,#22d3ee)] shadow-cyan-950/40"
+									: "border-[var(--teal,rgba(6,182,212,0.5))]/50 hover:border-cyan-400 text-[var(--teal,#22d3ee)] hover:text-cyan-200"
+						} shadow-md flex items-center gap-1 cursor-pointer transition-all`}
+						title={`Угол поворота: ${obliqueAngleDeg > 0 ? "+" : ""}${obliqueAngleDeg.toFixed(1)}° (Нажмите для сброса в 0.0°)`}
 						data-testid={`cbct-reset-angle-badge-${viewportType}`}
 					>
 						<span>∡ {obliqueAngleDeg > 0 ? "+" : ""}{obliqueAngleDeg.toFixed(1)}°</span>
 						<RotateCcw size={10} className="inline text-slate-400 hover:text-white shrink-0 ml-0.5" />
 						<span className="text-[10px] text-slate-400 hover:text-white font-bold">0°</span>
+					</button>
+				)}
+
+				{onResetView && (
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							onResetView();
+						}}
+						className="h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-1.5 py-0.5 rounded-md bg-[var(--paper-strong,#0f172a)]/92 backdrop-blur-sm hover:bg-[var(--paper-soft,#1e293b)] text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
+						title="Сброс вида: поворот 0.0°, масштаб 1.0x, перекрестие по центру"
+						data-testid={`cbct-reset-view-${viewportType}-btn`}
+						aria-label="Сброс вида"
+					>
+						<RotateCcw size={11} className="text-slate-400 hover:text-white" />
+						<span className="text-[10px] font-mono font-bold">Сброс</span>
 					</button>
 				)}
 

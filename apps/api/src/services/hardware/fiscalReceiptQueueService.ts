@@ -44,6 +44,20 @@ export class FiscalQueueRetryWorker {
 		return Math.max(100, Math.round(rawBackoff * factor));
 	}
 
+	public static calculateExponentialBackoff(
+		retryCount: number,
+		initialBackoffMs = 1000,
+		maxBackoffMs = 60000,
+		jitter = true,
+	): number {
+		return this.calculateNextAttemptDelayMs(
+			retryCount,
+			initialBackoffMs,
+			maxBackoffMs,
+			jitter,
+		);
+	}
+
 	/**
 	 * Retries a single queued fiscal receipt item with statutory 54-FZ validation.
 	 */

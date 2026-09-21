@@ -5579,20 +5579,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				{/* ─── RIGHT SIDEBAR: DIAGNOSTIC INSPECTOR & IMPLANT PLANNER (COLS 9..12) ─── */}
 				{(isSidebarOpen || mobileActiveTab === "planner") && (
 					<aside className={`lg:col-span-4 ${isSidebarOpen ? "" : "lg:hidden"} ${mobileActiveTab === "planner" ? "flex-1 flex flex-col min-h-0 w-full min-w-0 h-full" : "hidden lg:flex lg:flex-col"} bg-zinc-950 rounded-md border border-zinc-800 min-h-0 min-w-0 w-full overflow-y-auto p-3 flex flex-col gap-3`}>
-						{!volume ? (
-							<div
-								className="flex-1 flex flex-col items-center justify-center p-6 text-center text-zinc-500 select-none"
-								data-testid="cbct-sidebar-empty-state"
-							>
-								<Box className="w-8 h-8 mb-2 text-zinc-700" />
-								<div className="text-xs font-semibold text-zinc-400">Данные срезов недоступны</div>
-								<div className="text-[11px] text-zinc-600 mt-1">
-									Загрузите исследование КЛКТ для построения кросс-секций и имплантологического планирования
-								</div>
-							</div>
-						) : (
-							<>
-								{/* Active Cross-Section Carousel Header */}
+						{/* Active Cross-Section Carousel Header */}
 								<div className="flex items-center justify-between pb-2 border-b border-zinc-800">
 									<div className="flex items-center gap-2">
 										<span className="text-xs font-bold text-cyan-400">
@@ -5651,47 +5638,62 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						onDoubleClick={() => handleToggleMaximize("cross_section")}
 						className="relative h-56 bg-black rounded-md overflow-hidden border border-yellow-500/40 flex items-center justify-center shrink-0 w-full"
 					>
-						<canvas
-							ref={crossSectionBaseCanvasRef}
-							className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
-						/>
-						<canvas
-							ref={crossSectionOverlayCanvasRef}
-							onDoubleClick={(e) => {
-								e.preventDefault();
-								e.stopPropagation();
-								handleToggleMaximize("cross_section");
-							}}
-							onMouseDown={handleCrossSectionMouseDown}
-							onMouseMove={handleCrossSectionMouseMove}
-							onMouseUp={handleCrossSectionMouseUp}
-							onMouseLeave={handleCrossSectionMouseUp}
-							onContextMenu={(e) => e.preventDefault()}
-							className={`absolute inset-0 w-full h-full object-contain z-10 ${
-								dragImplantPart ? "cursor-grabbing" : hoveredImplantPart ? "cursor-grab" : "cursor-default"
-							}`}
-							data-testid="cbct-cross-section-sidebar-canvas"
-						/>
-						<CbctViewportHud
-							viewportType="cross_section"
-							toothFdi={activeCrossSection?.nearestToothFdi}
-							sliceIndex={activeCrossSectionIdx}
-							totalSlices={crossSections.length}
-							pixelSpacingMm={activeCrossSection?.pixelSpacingMm ?? 0.25}
-							onResetView={() => handleFullResetViewport("cross_section")}
-							isMaximized={maximizedViewport === "cross_section"}
-							onToggleMaximize={() => handleToggleMaximize("cross_section")}
-							windowWidth={windowWidth}
-							windowLevel={windowLevel}
-						>
-							{renderViewportOverlays("cross_section")}
-						</CbctViewportHud>
+						{!volume ? (
+							<div
+								className="flex-1 flex flex-col items-center justify-center p-6 text-center text-zinc-500 select-none"
+								data-testid="cbct-sidebar-empty-state"
+							>
+								<Box className="w-8 h-8 mb-2 text-zinc-700" />
+								<div className="text-xs font-semibold text-zinc-400">Данные срезов недоступны</div>
+								<div className="text-[11px] text-zinc-600 mt-1">
+									Загрузите исследование КЛКТ для построения кросс-секций и имплантологического планирования
+								</div>
+							</div>
+						) : (
+							<>
+								<canvas
+									ref={crossSectionBaseCanvasRef}
+									className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
+								/>
+								<canvas
+									ref={crossSectionOverlayCanvasRef}
+									onDoubleClick={(e) => {
+										e.preventDefault();
+										e.stopPropagation();
+										handleToggleMaximize("cross_section");
+									}}
+									onMouseDown={handleCrossSectionMouseDown}
+									onMouseMove={handleCrossSectionMouseMove}
+									onMouseUp={handleCrossSectionMouseUp}
+									onMouseLeave={handleCrossSectionMouseUp}
+									onContextMenu={(e) => e.preventDefault()}
+									className={`absolute inset-0 w-full h-full object-contain z-10 ${
+										dragImplantPart ? "cursor-grabbing" : hoveredImplantPart ? "cursor-grab" : "cursor-default"
+									}`}
+									data-testid="cbct-cross-section-sidebar-canvas"
+								/>
+								<CbctViewportHud
+									viewportType="cross_section"
+									toothFdi={activeCrossSection?.nearestToothFdi}
+									sliceIndex={activeCrossSectionIdx}
+									totalSlices={crossSections.length}
+									pixelSpacingMm={activeCrossSection?.pixelSpacingMm ?? 0.25}
+									onResetView={() => handleFullResetViewport("cross_section")}
+									isMaximized={maximizedViewport === "cross_section"}
+									onToggleMaximize={() => handleToggleMaximize("cross_section")}
+									windowWidth={windowWidth}
+									windowLevel={windowLevel}
+								>
+									{renderViewportOverlays("cross_section")}
+								</CbctViewportHud>
 
-						{/* Quick Ridge Measurements Badge (compact matte HUD) */}
-						<div className="absolute top-1.5 right-10 px-2 py-0.5 rounded bg-zinc-950/90 backdrop-blur-sm text-[10px] text-zinc-400 border border-zinc-800 font-mono shadow-xs flex items-center gap-2">
-							<span>H: <strong className="text-cyan-400">{activeCrossSection?.corticalCrestHeightMm != null ? `${activeCrossSection.corticalCrestHeightMm.toFixed(1)} мм` : "—"}</strong></span>
-							<span>W: <strong className="text-cyan-400">{activeCrossSection?.alveolarRidgeWidthMm != null ? `${activeCrossSection.alveolarRidgeWidthMm.toFixed(1)} мм` : "—"}</strong></span>
-						</div>
+								{/* Quick Ridge Measurements Badge (compact matte HUD) */}
+								<div className="absolute top-1.5 right-10 px-2 py-0.5 rounded bg-zinc-950/90 backdrop-blur-sm text-[10px] text-zinc-400 border border-zinc-800 font-mono shadow-xs flex items-center gap-2">
+									<span>H: <strong className="text-cyan-400">{activeCrossSection?.corticalCrestHeightMm != null ? `${activeCrossSection.corticalCrestHeightMm.toFixed(1)} мм` : "—"}</strong></span>
+									<span>W: <strong className="text-cyan-400">{activeCrossSection?.alveolarRidgeWidthMm != null ? `${activeCrossSection.alveolarRidgeWidthMm.toFixed(1)} мм` : "—"}</strong></span>
+								</div>
+							</>
+						)}
 					</div>
 
 					{/* ─── CONDITIONAL SIDEBAR CONTENT: DIAGNOSTIC / ENDO / TMJ vs IMPLANT ───────── */}
@@ -5922,8 +5924,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 												showToast("Удален последний узел нерва", "info");
 											}
 										}}
-										className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-rose-300 hover:text-rose-200 border border-rose-500/30 hover:border-rose-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
+										className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none text-rose-300 hover:text-rose-200 border border-rose-500/30 hover:border-rose-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
 										data-testid="cbct-delete-nerve-node-btn"
+										disabled={selectedNerveNodeIdx === null}
 										title="Удалить выбранный или последний узел (Backspace)"
 									>
 										<Trash2 className="w-3.5 h-3.5 mr-1 text-rose-400" />
@@ -5941,8 +5944,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 											setSelectedNerveNodeIdx(null);
 											showToast("Трасса канала IAN сброшена", "info");
 										}}
-										className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
+										className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
 										data-testid="cbct-reset-nerve-trace-btn"
+										disabled={nervePoints.length === 0}
 										title="Очистить все точки канала нерва"
 									>
 										<RotateCcw className="w-3.5 h-3.5 mr-1 text-amber-400" />
@@ -6163,8 +6167,6 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							</div>
 						</div>
 					)}
-							</>
-						)}
 				</aside>
 			)}
 				</div>

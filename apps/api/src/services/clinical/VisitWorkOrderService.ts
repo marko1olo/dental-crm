@@ -57,14 +57,14 @@ export interface ApplyPlanItemsInput {
 	readonly itemIds: readonly string[];
 	readonly actorUserId?: string | null | undefined;
 	readonly autoDeductMaterials?: boolean | undefined;
-	readonly targetVisitStatus?: "completed" | "in_progress" | undefined;
+	readonly targetVisitStatus?: "signed" | "draft" | "voided" | "completed" | "in_progress" | undefined;
 }
 
 export interface CompleteVisitWorkOrderInput {
 	readonly organizationId: string;
 	readonly visitId: string;
 	readonly actorUserId?: string | null | undefined;
-	readonly status?: "completed" | "in_progress" | undefined;
+	readonly status?: "signed" | "draft" | "voided" | "completed" | "in_progress" | undefined;
 }
 
 export interface CompleteVisitWorkOrderResult {
@@ -73,6 +73,8 @@ export interface CompleteVisitWorkOrderResult {
 	readonly status: string;
 	readonly completedTreatmentItemsCount: number;
 	readonly deductions: readonly StockDeductionRecord[];
+	readonly isOverdraft?: boolean | undefined;
+	readonly warning?: string | undefined;
 }
 
 export interface AppliedVisitWorkOrderItem {
@@ -105,6 +107,8 @@ export interface ApplyPlanItemsResult {
 	readonly totalAddedRub: number;
 	readonly totalAddedKopecks: number;
 	readonly deductions?: readonly StockDeductionRecord[];
+	readonly isOverdraft?: boolean;
+	readonly warning?: string;
 }
 
 function splitStoredPriceId(value: string | null): {
@@ -498,6 +502,7 @@ export class VisitWorkOrderService {
 			}
 
 			let deductions: readonly StockDeductionRecord[] = [];
+			let hasOverdraft = false;
 			if (params.autoDeductMaterials) {
 				const deductionResult = await deductMaterialsForVisit(tx, {
 					organizationId,
@@ -506,13 +511,20 @@ export class VisitWorkOrderService {
 					transactionType: "auto_deduct",
 				});
 				deductions = deductionResult.deductions;
+				hasOverdraft = Boolean(deductionResult.hasOverdraft);
 			}
 
 			if (params.targetVisitStatus) {
+				const finalStatus =
+					params.targetVisitStatus === "completed"
+						? "signed"
+						: params.targetVisitStatus === "in_progress"
+							? "draft"
+							: params.targetVisitStatus;
 				await tx
 					.update(visits)
 					.set({
-						status: params.targetVisitStatus,
+						status: finalStatus,
 						updatedAt: new Date(),
 					})
 					.where(
@@ -538,6 +550,7 @@ export class VisitWorkOrderService {
 				totalAddedRub: rublesFromKopecks(totalAddedKopecks),
 				totalAddedKopecks,
 				...(deductions.length > 0 ? { deductions } : {}),
+				...(hasOverdraft ? { isOverdraft: true, warning: "soft_overdraft" } : {}),
 			};
 		});
 	}
@@ -549,7 +562,7 @@ export class VisitWorkOrderService {
 	static async completeVisitWorkOrder(
 		params: CompleteVisitWorkOrderInput,
 	): Promise<CompleteVisitWorkOrderResult> {
-		const { organizationId, visitId, actorUserId, status = "completed" } = params;
+		const { organizationId, visitId, actorUserId, status = "signed" } = params;
 
 		if (!UUID_REGEX.test(visitId)) {
 			throw new VisitWorkOrderError(
@@ -604,10 +617,16 @@ export class VisitWorkOrderService {
 
 			// 3. Атомарная фиксация статуса визита
 			const now = new Date();
+			const finalStatus =
+				status === "completed"
+					? "signed"
+					: status === "in_progress"
+						? "draft"
+						: status;
 			await tx
 				.update(visits)
 				.set({
-					status,
+					status: finalStatus,
 					updatedAt: now,
 				})
 				.where(
@@ -627,19 +646,22 @@ export class VisitWorkOrderService {
 				resourceId: visit.id,
 				meta: {
 					previousStatus: visit.status,
-					newStatus: status,
+					newStatus: finalStatus,
 					completedTreatmentItemsCount: deductionResult.completedTreatmentItems,
 					deductionsCount: deductionResult.deductions.length,
 					deductions: deductionResult.deductions,
 				},
 			});
 
+			const hasOverdraft = Boolean(deductionResult.hasOverdraft);
 			return {
 				visitId: visit.id,
 				previousStatus: visit.status,
-				status,
+				status: finalStatus,
 				completedTreatmentItemsCount: deductionResult.completedTreatmentItems,
 				deductions: deductionResult.deductions,
+				isOverdraft: hasOverdraft,
+				...(hasOverdraft ? { warning: "soft_overdraft" } : {}),
 			};
 		});
 	}

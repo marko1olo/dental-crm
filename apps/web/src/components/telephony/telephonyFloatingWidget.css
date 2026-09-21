@@ -2,24 +2,39 @@
    Telephony & Incoming Call Dynamic Island & Multi-Theme Styles
    ============================================================ */
 
-/* Top Dynamic Island / Call Banner Container (Top-Right / Fitts's Law) */
+/* Top Dynamic Island / Call Banner Container (Centered Dynamic Island / Non-occluding) */
 .dnt-telephony-island-container,
 .telephony-floating-widget,
 .dnt-incoming-call-badge-container {
 	position: fixed;
 	top: 12px;
-	right: 16px;
-	left: auto;
-	transform: none;
+	left: 50%;
+	right: auto;
+	transform: translateX(-50%);
 	z-index: 9990;
 	display: flex;
 	flex-direction: column;
-	align-items: flex-end;
+	align-items: center;
 	pointer-events: none;
 	font-family: inherit;
 	transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 	width: auto;
 	max-width: calc(100vw - 24px);
+}
+
+/* Modal coexistence: when a modal is open, ensure telephony is centered and accessible without occluding modal close buttons */
+body:has([role="dialog"]) .dnt-telephony-island-container,
+body:has([role="dialog"]) .telephony-floating-widget,
+body:has([role="dialog"]) .dnt-incoming-call-badge-container,
+body:has([aria-modal="true"]) .dnt-telephony-island-container,
+body:has([aria-modal="true"]) .telephony-floating-widget,
+body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
+	top: 12px;
+	left: 50%;
+	right: auto;
+	transform: translateX(-50%);
+	z-index: 9995;
+	align-items: center;
 }
 
 .dnt-telephony-island-container > *,

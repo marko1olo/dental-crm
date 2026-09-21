@@ -3297,8 +3297,8 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 		[activeStamp, onQuickStateChange, onToothClick],
 	);
 
-	const topSplit = splitArchAtMidline(topTeethList);
-	const bottomSplit = splitArchAtMidline(bottomTeethList);
+	const topSplit = useMemo(() => splitArchAtMidline(topTeethList), [topTeethList]);
+	const bottomSplit = useMemo(() => splitArchAtMidline(bottomTeethList), [bottomTeethList]);
 
 	const isQuadrantView = currentQuadrant !== "all";
 	const activeQuadrantTeeth = isQuadrantView

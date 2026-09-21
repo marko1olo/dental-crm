@@ -36,12 +36,15 @@ describe("N3.Health ViPNet EGISZ Fastify Routes", () => {
 		if (opts.withClinic !== false) {
 			headers[CLINIC_TOKEN_HEADER] = clinicToken;
 		}
-		const response = await app.inject({
+		const injectOpts: any = {
 			method,
 			url,
 			headers,
-			payload: opts.body !== undefined ? opts.body : undefined,
-		});
+		};
+		if (opts.body !== undefined) {
+			injectOpts.payload = opts.body;
+		}
+		const response = await app.inject(injectOpts);
 
 		let json: any = null;
 		try {

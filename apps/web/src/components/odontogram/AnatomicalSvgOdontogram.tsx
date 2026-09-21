@@ -2223,8 +2223,8 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 		[onToothClick],
 	);
 
-	const topSplit = splitArchAtMidline(topTeethList);
-	const bottomSplit = splitArchAtMidline(bottomTeethList);
+	const topSplit = React.useMemo(() => splitArchAtMidline(topTeethList), [topTeethList]);
+	const bottomSplit = React.useMemo(() => splitArchAtMidline(bottomTeethList), [bottomTeethList]);
 
 	const upperBridgeSpans = React.useMemo(
 		() => detectBridgeSpans(topTeethList, teethData ?? []),
@@ -2248,9 +2248,10 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 		const toothItem = teethDataMap.get(num);
 		const isPonticByRole = toothItem?.bridgeRole === "pontic";
 		if (!span) {
+			const rawBridgeMaterial = isPonticByRole ? (toothItem?.material ?? "zirconia") : undefined;
 			return {
 				isPontic: isPonticByRole,
-				bridgeMaterial: isPonticByRole ? (toothItem?.material ?? "zirconia") : undefined,
+				...(rawBridgeMaterial ? { bridgeMaterial: rawBridgeMaterial } : {}),
 				hasLeftBridgeConnector: false,
 				hasRightBridgeConnector: false,
 			};
@@ -2266,13 +2267,30 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 			prevNum !== undefined && span.teeth.includes(prevNum);
 		const hasRightBridgeConnector =
 			nextNum !== undefined && span.teeth.includes(nextNum);
+		const rawBridgeMaterial = span.material;
 		return {
 			isPontic,
-			bridgeMaterial: span.material,
+			...(rawBridgeMaterial ? { bridgeMaterial: rawBridgeMaterial } : {}),
 			hasLeftBridgeConnector,
 			hasRightBridgeConnector,
 		};
 	};
+
+	const bridgePropsMap = React.useMemo(() => {
+		const map = new Map<number, {
+			isPontic: boolean;
+			bridgeMaterial?: RestorativeMaterialKey;
+			hasLeftBridgeConnector: boolean;
+			hasRightBridgeConnector: boolean;
+		}>();
+		for (const num of topTeethList) {
+			map.set(num, getToothBridgeProps(num, topTeethList, upperBridgeSpans));
+		}
+		for (const num of bottomTeethList) {
+			map.set(num, getToothBridgeProps(num, bottomTeethList, lowerBridgeSpans));
+		}
+		return map;
+	}, [topTeethList, bottomTeethList, upperBridgeSpans, lowerBridgeSpans, teethDataMap]);
 
 	const isQuadrantView = currentQuadrant !== "all";
 	const activeQuadrantTeeth = isQuadrantView
@@ -2381,7 +2399,8 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 						className="tooth-chart-arch-wrapper quadrant-view-wrapper"
 						data-testid="quadrant-focused-view"
 						style={{
-							minWidth: "max-content",
+							width: "100%",
+							maxWidth: "100%",
 							margin: "0 auto",
 							position: "relative",
 						}}
@@ -2430,7 +2449,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 										toothNumber: num,
 										state: "Healthy",
 									};
-									const bridgeProps = getToothBridgeProps(
+									const bridgeProps = bridgePropsMap.get(num) ?? getToothBridgeProps(
 										num,
 										isTopQuadrant ? topTeethList : bottomTeethList,
 										isTopQuadrant ? upperBridgeSpans : lowerBridgeSpans,
@@ -2476,7 +2495,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 										toothNumber: num,
 										state: "Healthy",
 									};
-									const bridgeProps = getToothBridgeProps(num, topTeethList, upperBridgeSpans);
+									const bridgeProps = bridgePropsMap.get(num) ?? getToothBridgeProps(num, topTeethList, upperBridgeSpans);
 									return (
 										<ToothWrapper
 											key={num}
@@ -2509,7 +2528,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 										toothNumber: num,
 										state: "Healthy",
 									};
-									const bridgeProps = getToothBridgeProps(num, topTeethList, upperBridgeSpans);
+									const bridgeProps = bridgePropsMap.get(num) ?? getToothBridgeProps(num, topTeethList, upperBridgeSpans);
 									return (
 										<ToothWrapper
 											key={num}
@@ -2548,7 +2567,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 										toothNumber: num,
 										state: "Healthy",
 									};
-									const bridgeProps = getToothBridgeProps(num, bottomTeethList, lowerBridgeSpans);
+									const bridgeProps = bridgePropsMap.get(num) ?? getToothBridgeProps(num, bottomTeethList, lowerBridgeSpans);
 									return (
 										<ToothWrapper
 											key={num}
@@ -2581,7 +2600,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 										toothNumber: num,
 										state: "Healthy",
 									};
-									const bridgeProps = getToothBridgeProps(num, bottomTeethList, lowerBridgeSpans);
+									const bridgeProps = bridgePropsMap.get(num) ?? getToothBridgeProps(num, bottomTeethList, lowerBridgeSpans);
 									return (
 										<ToothWrapper
 											key={num}

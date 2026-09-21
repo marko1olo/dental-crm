@@ -161,6 +161,7 @@ const TimelineDayGroup = React.memo(function TimelineDayGroup({
 					alignItems: "baseline",
 					gap: "8px",
 					margin: "18px 0 10px",
+					paddingTop: "4px",
 					paddingBottom: "6px",
 					borderBottom: "1px solid var(--line)",
 				}}
@@ -168,6 +169,9 @@ const TimelineDayGroup = React.memo(function TimelineDayGroup({
 				<strong
 					style={{
 						fontSize: "15px",
+						lineHeight: "1.4",
+						paddingTop: "2px",
+						display: "inline-block",
 						color: "var(--ink)",
 						textTransform: "capitalize",
 					}}
@@ -536,7 +540,7 @@ function ScheduleTimelineInner(props: ScheduleTimelineProps) {
 	return (
 		<div
 			ref={timelineContainerRef}
-			className="schedule-timeline timeline focus:outline-none pb-36 sm:pb-20 pr-2 sm:pr-0"
+			className="schedule-timeline timeline focus:outline-none pt-2 sm:pt-1 pb-36 sm:pb-20 pr-2 sm:pr-0"
 			style={{ scrollPaddingBottom: "144px" }}
 			data-testid="schedule-timeline-container"
 			tabIndex={-1}

@@ -3162,11 +3162,12 @@ section.imaging-panel {
 	border-left-color: var(--amber);
 }
 
-.imaging-viewer-plan > div:first-child {
-	align-items: start;
-	display: grid;
-	gap: 4px;
-	grid-template-columns: minmax(120px, auto) minmax(0, 1fr);
+.imaging-viewer-plan > div:first-child,
+.imaging-viewer-plan .viewer-plan-header {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 12px;
 }
 
 .imaging-viewer-plan strong {
@@ -15017,7 +15018,8 @@ html.dark .communication-side .panel-heading h3,
 	}
 
 	.imaging-viewer-meta {
-		background: #0b2426;
+		background: var(--paper-soft, #1e293b);
+		color: var(--ink, #f8fafc);
 		padding: 12px;
 		position: static;
 	}
@@ -15026,9 +15028,20 @@ html.dark .communication-side .panel-heading h3,
 		grid-template-columns: minmax(0, 1fr);
 	}
 
-	.imaging-viewer-tools,
+	.imaging-viewer-tools {
+		display: flex;
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		grid-template-columns: none;
+	}
+
 	.viewer-slider-grid {
+		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 8px;
+		width: 100%;
+		position: static;
 	}
 
 	.imaging-compare-head {
@@ -16786,8 +16799,7 @@ html.dark .clinic-profile-form-grid textarea,
 .role-queue-grid,
 .schedule-command-grid,
 .schedule-shift-summary-grid,
-.seo-keys-grid,
-.viewer-slider-grid {
+.seo-keys-grid {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 1rem;
@@ -16830,8 +16842,7 @@ html.dark .clinic-profile-form-grid textarea,
 .role-queue-grid > *,
 .schedule-command-grid > *,
 .schedule-shift-summary-grid > *,
-.seo-keys-grid > *,
-.viewer-slider-grid > * {
+.seo-keys-grid > * {
 	flex: 1 1 200px;
 	min-width: 0;
 }

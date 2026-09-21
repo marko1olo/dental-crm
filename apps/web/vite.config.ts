@@ -476,6 +476,20 @@ export default defineConfig({
 						normalizedId.includes("/apps/web/src/pages/AnalyticsDashboardView")
 					)
 						return "analytics-components";
+					// Изоляция тяжелой рентгенодиагностики и КЛКТ-студии (снижение нагрузки на I/O HDD 5400 RPM)
+					if (
+						normalizedId.endsWith(
+							"/apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx",
+						)
+					)
+						return "cbct-implant-studio";
+					if (normalizedId.includes("/apps/web/src/components/radiology/"))
+						return "radiology-components";
+					// Изоляция пародонтограммы (3400+ строк) и эндодонтических протоколов
+					if (normalizedId.includes("/apps/web/src/components/perio/"))
+						return "perio-components";
+					if (normalizedId.includes("/apps/web/src/components/endo/"))
+						return "endo-components";
 					// Изоляция телефонии и софтфона от основного бандла рабочего места
 					if (normalizedId.includes("/apps/web/src/components/telephony/"))
 						return "telephony-components";

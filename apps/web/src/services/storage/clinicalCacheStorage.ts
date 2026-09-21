@@ -58,10 +58,11 @@ function saveLocalStorageCachedEntity<T>(
 ): void {
 	if (typeof window === "undefined" || !window.localStorage) return;
 	try {
-		window.localStorage.setItem(
-			`${LOCAL_STORAGE_CACHE_PREFIX}${entity.cacheKey}`,
-			JSON.stringify(entity),
-		);
+		const storageKey = `${LOCAL_STORAGE_CACHE_PREFIX}${entity.cacheKey}`;
+		const serialized = JSON.stringify(entity);
+		const existing = window.localStorage.getItem(storageKey);
+		if (existing === serialized) return;
+		window.localStorage.setItem(storageKey, serialized);
 	} catch (err) {
 		logger.error(
 			`[ClinicalCacheStorage] Error saving localStorage cache ${entity.cacheKey}`,

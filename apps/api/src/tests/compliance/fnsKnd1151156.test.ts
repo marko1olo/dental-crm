@@ -216,6 +216,7 @@ describe("FNS 13% NDFL Tax Exporter (КНД 1151156 Format 5.01 / Приказ �
 			email: null,
 			administrativeProfile: null,
 			balanceRub: 0,
+			gender: "male",
 			createdAt: "2026-01-01T00:00:00.000Z",
 			updatedAt: "2026-01-01T00:00:00.000Z",
 		};

@@ -254,7 +254,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 					<Sparkles size={14} className="text-amber-500" />
 					<span>Главные экспресс-сценарии приема:</span>
 				</div>
-				<div className="flex overflow-x-auto no-scrollbar whitespace-nowrap flex-nowrap scrollbar-none py-1 pr-6 gap-2 touch-pan-x">
+				<div className="flex overflow-x-auto no-scrollbar whitespace-nowrap flex-nowrap scrollbar-none px-2 py-1 pr-6 gap-2 touch-pan-x">
 					{topExpressPresets.map((preset) => {
 						const isNorm = preset.id === "norm_healthy";
 						const isHygiene = preset.id === "hygiene_complex";

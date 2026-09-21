@@ -287,25 +287,56 @@
 }
 
 [data-theme="contrast"] .dnt-clinic-control-pill,
-[data-theme="contrast"] .dnt-control-center-popover {
+.a11y-contrast .dnt-clinic-control-pill {
+	background: #ffffff;
+	border: 2px solid #000000;
+	color: #000000;
+}
+
+[data-theme="contrast"] .dnt-control-center-popover,
+.a11y-contrast .dnt-control-center-popover {
+	background: #ffffff;
+	border: 2px solid #000000;
+	color: #000000;
+	box-shadow: 0 10px 35px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="contrast"] .dnt-cc-section,
+.a11y-contrast .dnt-cc-section {
+	background: #ffffff;
+	border: 1.5px solid #000000;
+}
+
+[data-theme="contrast"] .dnt-cc-btn--secondary,
+.a11y-contrast .dnt-cc-btn--secondary {
+	background: #ffffff;
+	color: #000000;
+	border: 1.5px solid #000000;
+}
+
+[data-theme="contrast"] .dnt-cc-btn--secondary:hover,
+.a11y-contrast .dnt-cc-btn--secondary:hover {
+	background: #f4f4f5;
+	color: #000000;
+}
+
+[data-theme="contrast"] .dnt-cc-btn--primary,
+.a11y-contrast .dnt-cc-btn--primary {
 	background: #000000;
-	border: 2px solid #ffffff;
+	color: #ffffff;
+	border: 1.5px solid #000000;
+}
+
+[data-theme="contrast"] .dnt-cc-btn--primary:hover,
+.a11y-contrast .dnt-cc-btn--primary:hover {
+	background: #27272a;
 	color: #ffffff;
 }
 
-[data-theme="contrast"] .dnt-cc-section {
-	background: #000000;
-	border: 1px solid #ffffff;
-}
-
-[data-theme="contrast"] .dnt-cc-btn--secondary {
-	background: #000000;
-	color: #ffffff;
-	border: 1px solid #ffffff;
-}
-
-[data-theme="contrast"] .dnt-cc-section-title {
-	color: #ffffff;
+[data-theme="contrast"] .dnt-cc-section-title,
+.a11y-contrast .dnt-cc-section-title {
+	color: #000000;
+	font-weight: 800;
 }
 
 /* Accessibility Mode Toggle Button (ГОСТ Р 52872-2019 / WCAG AAA) */
@@ -356,14 +387,28 @@
 
 [data-theme="contrast"] .dnt-a11y-toggle-btn,
 .a11y-contrast .dnt-a11y-toggle-btn {
-	border: 2px solid #ffffff;
-	color: #ffffff;
-	background: #000000;
+	border: 2px solid #000000;
+	color: #000000;
+	background: #ffffff;
+}
+
+[data-theme="contrast"] .dnt-a11y-toggle-btn:hover,
+.a11y-contrast .dnt-a11y-toggle-btn:hover {
+	background: #f4f4f5;
+	border-color: #000000;
+	color: #000000;
 }
 
 [data-theme="contrast"] .dnt-a11y-toggle-btn--active,
 .a11y-contrast .dnt-a11y-toggle-btn--active {
-	background: #ffffff;
-	color: #000000;
-	border: 2px solid #ffffff;
+	background: #000000;
+	color: #ffffff;
+	border: 2px solid #000000;
+}
+
+[data-theme="contrast"] .dnt-a11y-toggle-btn--active:hover,
+.a11y-contrast .dnt-a11y-toggle-btn--active:hover {
+	background: #27272a;
+	color: #ffffff;
+	border-color: #000000;
 }

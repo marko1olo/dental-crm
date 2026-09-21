@@ -579,12 +579,32 @@ export function IncomingCallPopup() {
 		}
 
 		const startTime = activeCall.callStartedAt ?? Date.now();
-		const interval = setInterval(() => {
+		const updateElapsed = () => {
 			const seconds = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
 			setElapsedSeconds(seconds);
+		};
+		updateElapsed();
+		const interval = setInterval(() => {
+			if (typeof document !== "undefined" && document.hidden) return;
+			updateElapsed();
 		}, 1000);
 
-		return () => clearInterval(interval);
+		const handleVisibilityChange = () => {
+			if (typeof document !== "undefined" && !document.hidden) {
+				updateElapsed();
+			}
+		};
+
+		if (typeof document !== "undefined") {
+			document.addEventListener("visibilitychange", handleVisibilityChange);
+		}
+
+		return () => {
+			clearInterval(interval);
+			if (typeof document !== "undefined") {
+				document.removeEventListener("visibilitychange", handleVisibilityChange);
+			}
+		};
 	}, [activeCall]);
 
 	// Auto-dismiss call after 45 seconds if unhandled and still ringing
@@ -971,10 +991,10 @@ export function IncomingCallPopup() {
 
 	return createPortal(
 		<>
-			{/* Top-Right Ambient Incoming Call Badge / Capsule (Non-blocking, Fitts's Law) */}
+			{/* Top-Mounted Ambient Incoming Call Dynamic Island Capsule (Non-blocking, Non-occluding) */}
 			{activeCall && (
 				<div
-					className="dnt-incoming-call-badge-container fixed top-3 right-4 sm:top-3 sm:right-5 z-[9990] flex flex-col items-end pointer-events-none"
+					className="dnt-incoming-call-badge-container fixed top-3 left-1/2 -translate-x-1/2 z-[9990] flex flex-col items-center pointer-events-none"
 					style={{ zIndex: 9990 }}
 					data-testid="incoming-call-badge-container"
 				>

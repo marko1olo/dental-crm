@@ -903,6 +903,9 @@ export function useAppLogic(): any {
 	const localImagingRecoveryHydratedOrganizationIdRef = useRef<string | null>(
 		null,
 	);
+	const localDicomWorkbenchHydratedOrganizationIdRef = useRef<string | null>(
+		null,
+	);
 	/*
 	 * Последняя карточка, о которой уже отправлена отметка просмотра.
 	 *
@@ -3151,10 +3154,18 @@ export function useAppLogic(): any {
 	}, [setBrowserDirectoryPickerAvailable]);
 
 	useEffect(() => {
+		const organizationId = activeOrganizationId?.trim() ?? "";
+		if (
+			!organizationId ||
+			localDicomWorkbenchHydratedOrganizationIdRef.current === organizationId
+		) {
+			return;
+		}
+		localDicomWorkbenchHydratedOrganizationIdRef.current = organizationId;
 		let cancelled = false;
 		const restore = async () => {
 			const recovered =
-				await loadLocalDicomWorkbenchDraft(activeOrganizationId);
+				await loadLocalDicomWorkbenchDraft(organizationId);
 			if (cancelled) return;
 			if (recovered) {
 				applyDicomWorkbenchManifest(recovered.manifest);
@@ -3169,7 +3180,6 @@ export function useAppLogic(): any {
 		return () => {
 			cancelled = true;
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
 		activeOrganizationId,
 		setDicomWorkbenchLocalSavedAt,

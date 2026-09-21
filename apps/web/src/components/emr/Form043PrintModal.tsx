@@ -396,6 +396,72 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 				.catch(() => {});
 		}, [formData]);
 
+		// Мандат 8e: Заполнение незаполненных полей анамнеза и статуса физиологической нормой в 1 клик
+		const handleApplyNorm043 = useCallback(() => {
+			setFormData((prev) => {
+				const updated: MedicalCardForm043uData = {
+					...prev,
+					anamnesis: {
+						...prev.anamnesis,
+						chiefComplaint: prev.anamnesis?.chiefComplaint?.trim()
+							? prev.anamnesis.chiefComplaint
+							: "Плановый профилактический осмотр, санация полости рта.",
+						historyOfPresentIllness: prev.anamnesis?.historyOfPresentIllness?.trim()
+							? prev.anamnesis.historyOfPresentIllness
+							: "Обратился для планового профилактического осмотра и оценки гигиенического состояния полости рта.",
+						medicalHistoryVitae: prev.anamnesis?.medicalHistoryVitae?.trim()
+							? prev.anamnesis.medicalHistoryVitae
+							: "Рос и развивался соответственно возрасту. Туберкулез, гепатиты, ВИЧ, сифилис отрицает. Наследственный анамнез не отягощен.",
+						allergologicalHistory: prev.anamnesis?.allergologicalHistory?.trim()
+							? prev.anamnesis.allergologicalHistory
+							: "Аллергологический анамнез не отягощен. Непереносимости местных анестетиков артикаинового ряда и лекарственных средств не отмечает.",
+						concomitantSomaticDiseases: prev.anamnesis?.concomitantSomaticDiseases?.trim()
+							? prev.anamnesis.concomitantSomaticDiseases
+							: "Соматически здоров. Хронические заболевания сердечно-сосудистой, эндокринной и дыхательной систем отрицает.",
+						currentSystemicMedications: prev.anamnesis?.currentSystemicMedications?.trim()
+							? prev.anamnesis.currentSystemicMedications
+							: "Постоянный прием лекарственных препаратов отрицает.",
+						pastDentalInterventions: prev.anamnesis?.pastDentalInterventions?.trim()
+							? prev.anamnesis.pastDentalInterventions
+							: "Ранее проводившиеся стоматологические вмешательства и местную анестезию переносил удовлетворительно.",
+						occupationalHazardsAndHabits: prev.anamnesis?.occupationalHazardsAndHabits?.trim()
+							? prev.anamnesis.occupationalHazardsAndHabits
+							: "Вредных производственных факторов и вредных привычек не отмечает.",
+					},
+					dentalStatus: {
+						...prev.dentalStatus,
+						biteType: prev.dentalStatus?.biteType || "orthognathic",
+						biteDescription:
+							prev.dentalStatus?.biteDescription ||
+							"Прикус ортогнатический, смыкание моляров и клыков по I классу Энгля, резцовое перекрытие в пределах 1/3 высоты коронки.",
+						oralMucosaStatus: {
+							color: prev.dentalStatus?.oralMucosaStatus?.color || "pale_pink_normal",
+							moisture: prev.dentalStatus?.oralMucosaStatus?.moisture || "normal",
+							pathologicalElements: prev.dentalStatus?.oralMucosaStatus?.pathologicalElements ?? null,
+							gingivalPapillae: prev.dentalStatus?.oralMucosaStatus?.gingivalPapillae || "normal_pointed",
+							bleedingPBI: prev.dentalStatus?.oralMucosaStatus?.bleedingPBI || "grade_0",
+							tongueStatus:
+								prev.dentalStatus?.oralMucosaStatus?.tongueStatus ||
+								"Язык чистый, влажный, сосочковый слой выражен умеренно, налета нет.",
+							regionalLymphNodes:
+								prev.dentalStatus?.oralMucosaStatus?.regionalLymphNodes ||
+								"Подчелюстные, шейные, подбородочные лимфатические узлы не пальпируются, безболезненные.",
+							tmjFunction:
+								prev.dentalStatus?.oralMucosaStatus?.tmjFunction ||
+								"Открывание рта свободное, в полном объеме, движений девиации и крепитации/щелчков в суставах нет.",
+						},
+					},
+				};
+				onSave?.(updated);
+				return updated;
+			});
+		}, [onSave]);
+
+		// Ручное сохранение карты (Мандат 8e)
+		const handleSaveForm = useCallback(() => {
+			onSave?.(formData);
+		}, [onSave, formData]);
+
 		const moreMenuRef = useRef<HTMLDivElement>(null);
 		useEffect(() => {
 			if (!isMoreMenuOpen) return;
@@ -590,6 +656,34 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 								</div>
 							)}
 
+							{/* Кнопка нормы в 1 клик (Мандат 8e: 0 disabled) */}
+							<button
+								type="button"
+								className="emr043-btn emr043-btn-secondary"
+								onClick={handleApplyNorm043}
+								disabled={false}
+								data-testid="btn-form043-apply-norm"
+								title="Заполнить незаполненные поля анамнеза и статуса физиологической нормой (Мандат 8e)"
+							>
+								<Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+								<span>Норма (1 клик)</span>
+							</button>
+
+							{/* Кнопка сохранения карты при наличии onSave (Мандат 8e: 0 disabled) */}
+							{onSave && (
+								<button
+									type="button"
+									className="emr043-btn emr043-btn-secondary"
+									onClick={handleSaveForm}
+									disabled={false}
+									data-testid="btn-form043-save-card"
+									title="Сохранить изменения медицинской карты"
+								>
+									<Check className="w-4 h-4 text-emerald-600 shrink-0" />
+									<span>Сохранить</span>
+								</button>
+							)}
+
 							{/* Кнопка печати (Мандат 8e: печать в любой момент, 0 disabled) */}
 							<button
 								type="button"
@@ -623,6 +717,34 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 										<button
 											type="button"
 											className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors cursor-pointer"
+											onClick={() => {
+												handleApplyNorm043();
+												setIsMoreMenuOpen(false);
+											}}
+											data-testid="btn-043-more-apply-norm"
+											title="Заполнить незаполненные поля анамнеза и статуса нормой (Мандат 8e)"
+										>
+											<Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+											<span>Физиологическая норма (1 клик)</span>
+										</button>
+										{onSave && (
+											<button
+												type="button"
+												className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors cursor-pointer"
+												onClick={() => {
+													handleSaveForm();
+													setIsMoreMenuOpen(false);
+												}}
+												data-testid="btn-043-more-save"
+												title="Сохранить медицинскую карту 043/у"
+											>
+												<Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+												<span>Сохранить карту</span>
+											</button>
+										)}
+										<button
+											type="button"
+											className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors cursor-pointer border-t border-slate-100 dark:border-slate-800"
 											onClick={() => {
 												handleExportXml();
 												setIsMoreMenuOpen(false);
@@ -756,9 +878,30 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 							/>
 						</div>
 						{validation.missingFields.length > 0 && (
-							<span style={{ fontSize: "11px", color: "var(--muted, #64748b)" }}>
-								Не заполнено: {validation.missingFields.map((m) => m.label).join(", ")}
-							</span>
+							<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+								<span style={{ fontSize: "11px", color: "var(--muted, #64748b)" }}>
+									Не заполнено: {validation.missingFields.map((m) => m.label).join(", ")}
+								</span>
+								<button
+									type="button"
+									onClick={handleApplyNorm043}
+									disabled={false}
+									data-testid="btn-043-completeness-norm"
+									style={{
+										fontSize: "11px",
+										color: "var(--teal, #0d9488)",
+										background: "transparent",
+										border: "none",
+										textDecoration: "underline",
+										cursor: "pointer",
+										fontWeight: 600,
+										padding: 0,
+									}}
+									title="Заполнить незаполненные показатели нормой в 1 клик (Мандат 8e)"
+								>
+									Заполнить нормой (1 клик)
+								</button>
+							</div>
 						)}
 					</div>
 
@@ -856,10 +999,24 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						{activeTab === "anamnesis" && (
 							<div>
 								<div className="emr043-section-card">
-									<h3 className="emr043-section-card-title">
-										<HeartPulse className="w-4 h-4 text-sky-600" />
-										2. Анамнез жизни и заболевания (Anamnesis vitae et morbi)
-									</h3>
+									<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "8px" }}>
+										<h3 className="emr043-section-card-title" style={{ margin: 0 }}>
+											<HeartPulse className="w-4 h-4 text-sky-600" />
+											2. Анамнез жизни и заболевания (Anamnesis vitae et morbi)
+										</h3>
+										<button
+											type="button"
+											onClick={handleApplyNorm043}
+											disabled={false}
+											data-testid="btn-043-anamnesis-norm"
+											className="emr043-btn emr043-btn-secondary"
+											style={{ fontSize: "11px", padding: "4px 8px", height: "28px" }}
+											title="Заполнить незаполненные графы анамнеза нормой (Мандат 8e)"
+										>
+											<Sparkles className="w-3.5 h-3.5 text-amber-500" />
+											<span>Норма анамнеза</span>
+										</button>
+									</div>
 									<div className="emr043-grid-2">
 										<div style={{ gridColumn: "1 / -1" }}>
 											<div className="emr043-field-label">Жалобы при обращении:</div>
@@ -898,10 +1055,24 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						{activeTab === "odontogram" && (
 							<div>
 								<div className="emr043-section-card">
-									<h3 className="emr043-section-card-title">
-										<Activity className="w-4 h-4 text-sky-600" />
-										3. Стоматологический статус, зубная формула FDI и клинические индексы
-									</h3>
+									<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "8px" }}>
+										<h3 className="emr043-section-card-title" style={{ margin: 0 }}>
+											<Activity className="w-4 h-4 text-sky-600" />
+											3. Стоматологический статус, зубная формула FDI и клинические индексы
+										</h3>
+										<button
+											type="button"
+											onClick={handleApplyNorm043}
+											disabled={false}
+											data-testid="btn-043-status-norm"
+											className="emr043-btn emr043-btn-secondary"
+											style={{ fontSize: "11px", padding: "4px 8px", height: "28px" }}
+											title="Зафиксировать физиологическую норму СОПР и прикуса (Мандат 8e)"
+										>
+											<Sparkles className="w-3.5 h-3.5 text-amber-500" />
+											<span>Норма статуса</span>
+										</button>
+									</div>
 
 									<div style={{ fontWeight: 700, fontSize: "13px", marginBottom: "8px" }}>
 										Зубная формула постоянного прикуса (FDI 11–48):

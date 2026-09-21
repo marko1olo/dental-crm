@@ -164,6 +164,7 @@ export class OfflineSyncService {
 		if (typeof window === "undefined" || this.autoDrainIntervalId) return;
 		this.autoDrainIntervalId = setInterval(() => {
 			if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+			if (typeof document !== "undefined" && document.hidden) return;
 			if (this.isDraining) return;
 			void (async () => {
 				try {

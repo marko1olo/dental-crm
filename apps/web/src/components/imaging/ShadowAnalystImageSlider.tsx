@@ -38,7 +38,12 @@ export function ShadowAnalystImageSlider({
 	});
 	const [sliderPos, setSliderPos] = useState(50);
 	const [isDragging, setIsDragging] = useState(false);
+	const [imageLoadError, setImageLoadError] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		setImageLoadError(false);
+	}, [resolvedImageUrl]);
 
 	const calcPos = useCallback((clientX: number) => {
 		if (!containerRef.current) return;
@@ -86,7 +91,7 @@ export function ShadowAnalystImageSlider({
 		"--sa-viewer-transform": (viewerStyle?.transform as string) ?? "none",
 	} as CSSProperties;
 
-	if (!resolvedImageUrl || !resolvedImageUrl.trim()) {
+	if (!resolvedImageUrl || !resolvedImageUrl.trim() || imageLoadError) {
 		return (
 			<div
 				className="sa-image-container flex flex-col items-center justify-center p-8 text-center rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] min-h-[260px] w-full"
@@ -95,10 +100,14 @@ export function ShadowAnalystImageSlider({
 			>
 				<UploadCloud size={40} className="mb-2 text-[var(--teal,var(--brand-primary))] opacity-75" />
 				<strong className="text-sm font-bold text-[var(--ink)] mb-1">
-					Снимок не выбран или ожидает загрузки
+					{imageLoadError
+						? "Снимок недоступен или повреждён"
+						: "Снимок не выбран или ожидает загрузки"}
 				</strong>
 				<p className="text-xs text-[var(--muted)] max-w-sm m-0">
-					Выберите файл DICOM/Рентген из списка слева или перетащите снимок в рабочую область
+					{imageLoadError
+						? "Не удалось отобразить графический файл. Выберите другой снимок из списка или загрузите новый."
+						: "Выберите файл DICOM/Рентген из списка слева или перетащите снимок в рабочую область"}
 				</p>
 			</div>
 		);
@@ -117,6 +126,7 @@ export function ShadowAnalystImageSlider({
 					loading="lazy"
 					decoding="async"
 					className="sa-img-original"
+					onError={() => setImageLoadError(true)}
 				/>
 			</div>
 		);
@@ -155,6 +165,7 @@ export function ShadowAnalystImageSlider({
 				loading="lazy"
 				decoding="async"
 				className="sa-img-original"
+				onError={() => setImageLoadError(true)}
 			/>
 
 			{/* Обработанный снимок — обрезан по положению разделителя */}
@@ -168,6 +179,7 @@ export function ShadowAnalystImageSlider({
 					loading="lazy"
 					decoding="async"
 					className="sa-img-enhanced"
+					onError={() => setImageLoadError(true)}
 				/>
 			</div>
 

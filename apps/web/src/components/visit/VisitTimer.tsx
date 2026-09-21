@@ -30,6 +30,7 @@ export function VisitTimer({ createdAt }: { createdAt?: string | null }) {
 		}
 
 		const updateTimer = () => {
+			if (typeof document !== "undefined" && document.hidden) return;
 			const now = Date.now();
 			const diffMs = Math.max(0, now - start);
 			if (!Number.isFinite(diffMs) || Number.isNaN(diffMs)) {
@@ -50,9 +51,23 @@ export function VisitTimer({ createdAt }: { createdAt?: string | null }) {
 			}
 		};
 
+		const handleVisibilityChange = () => {
+			if (typeof document !== "undefined" && !document.hidden) {
+				updateTimer();
+			}
+		};
+
 		updateTimer();
 		const interval = setInterval(updateTimer, 1000);
-		return () => clearInterval(interval);
+		if (typeof document !== "undefined") {
+			document.addEventListener("visibilitychange", handleVisibilityChange);
+		}
+		return () => {
+			clearInterval(interval);
+			if (typeof document !== "undefined") {
+				document.removeEventListener("visibilitychange", handleVisibilityChange);
+			}
+		};
 	}, [createdAt]);
 
 	if (!createdAt || !elapsed) return null;

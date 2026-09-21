@@ -46,11 +46,28 @@ import { ToothRadialMenu } from "./ToothRadialMenu";
 import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
 import { ToothContextDrawer } from "../diagnostics/ToothContextDrawer";
 import { EndoCanalMeasurementDrawer } from "./EndoCanalMeasurementDrawer";
-import { CephalometricAnalysisModal } from "../radiology/CephalometricAnalysisModal";
-import { JawOcclusionModal } from "./JawOcclusionModal";
-import { TreatmentPlanWizard } from "./TreatmentPlanWizard";
-import { ToothCardModal } from "./ToothCardModal";
 import { showToast } from "../GlobalToast";
+
+const CephalometricAnalysisModal = React.lazy(() =>
+	import("../radiology/CephalometricAnalysisModal").then((m) => ({
+		default: m.CephalometricAnalysisModal,
+	})),
+);
+const JawOcclusionModal = React.lazy(() =>
+	import("./JawOcclusionModal").then((m) => ({
+		default: m.JawOcclusionModal,
+	})),
+);
+const TreatmentPlanWizard = React.lazy(() =>
+	import("./TreatmentPlanWizard").then((m) => ({
+		default: m.TreatmentPlanWizard,
+	})),
+);
+const ToothCardModal = React.lazy(() =>
+	import("./ToothCardModal").then((m) => ({
+		default: m.ToothCardModal,
+	})),
+);
 
 export interface OdontogramViewOption {
 	mode: OdontogramViewMode;
@@ -708,10 +725,11 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 										}`}
 									>
 										{option.icon}
-										<span className="truncate max-w-[100px] sm:max-w-none">{option.shortLabel}</span>
+										<span className="hidden sm:inline truncate max-w-[100px] sm:max-w-none">{option.shortLabel}</span>
+										<span className="sm:hidden font-black text-[10px]">{option.badge}</span>
 										{option.badge && (
 											<span
-												className={`text-[9px] px-1 py-0.2 rounded font-black tracking-tight ${
+												className={`hidden sm:inline text-[9px] px-1 py-0.2 rounded font-black tracking-tight ${
 													isActive
 														? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/25 font-mono"
 														: "bg-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink-muted,#64748b)]"
@@ -1672,31 +1690,37 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			)}
 
 			{/* 1-Click Treatment Plan Wizard (StomX/IDENT Parity) */}
-			<TreatmentPlanWizard
-				isOpen={isPlanWizardOpen}
-				onClose={() => setIsPlanWizardOpen(false)}
-				teethData={teethData}
-				patientId={patientId}
-				patientName={patientId ? `Пациент #${patientId}` : undefined}
-				onPlanCreated={(planId, totalRub) => {
-					showToast(`План лечения #${planId} сформирован (${totalRub} ₽)`, "success");
-				}}
-			/>
+			{isPlanWizardOpen && (
+				<React.Suspense fallback={null}>
+					<TreatmentPlanWizard
+						isOpen={isPlanWizardOpen}
+						onClose={() => setIsPlanWizardOpen(false)}
+						teethData={teethData}
+						patientId={patientId}
+						patientName={patientId ? `Пациент #${patientId}` : undefined}
+						onPlanCreated={(planId, totalRub) => {
+							showToast(`План лечения #${planId} сформирован (${totalRub} ₽)`, "success");
+						}}
+					/>
+				</React.Suspense>
+			)}
 
 			{/* Detailed Tooth Card Modal */}
 			{cardModalTooth !== null && (
-				<ToothCardModal
-					isOpen={cardModalTooth !== null}
-					toothNumber={cardModalTooth}
-					toothData={teethData?.find((t) => t.toothNumber === cardModalTooth)}
-					onClose={() => setCardModalTooth(null)}
-					onUpdateTooth={(toothNum, updates) => {
-						if (updates.state) {
-							onQuickStateChange?.([toothNum], updates.state, updates.surfaces);
-							showToast(`Зуб ${toothNum}: состояние «${updates.state}» сохранено`, "success");
-						}
-					}}
-				/>
+				<React.Suspense fallback={null}>
+					<ToothCardModal
+						isOpen={cardModalTooth !== null}
+						toothNumber={cardModalTooth}
+						toothData={teethData?.find((t) => t.toothNumber === cardModalTooth)}
+						onClose={() => setCardModalTooth(null)}
+						onUpdateTooth={(toothNum, updates) => {
+							if (updates.state) {
+								onQuickStateChange?.([toothNum], updates.state, updates.surfaces);
+								showToast(`Зуб ${toothNum}: состояние «${updates.state}» сохранено`, "success");
+							}
+						}}
+					/>
+				</React.Suspense>
 			)}
 
 			{/* Tier 2 Context Drawer for Selected Tooth */}
@@ -1726,20 +1750,26 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 			)}
 
 			{/* Tier 3 Orthodontic Cephalometry TRG Tracker Modal */}
-			<CephalometricAnalysisModal
-				isOpen={isOrthoCephOpen}
-				onClose={() => setIsOrthoCephOpen(false)}
-				patientId={patientId}
-				patientName={patientId ? `Пациент #${patientId}` : undefined}
-			/>
+			{isOrthoCephOpen && (
+				<React.Suspense fallback={null}>
+					<CephalometricAnalysisModal
+						isOpen={isOrthoCephOpen}
+						onClose={() => setIsOrthoCephOpen(false)}
+						patientId={patientId}
+						patientName={patientId ? `Пациент #${patientId}` : undefined}
+					/>
+				</React.Suspense>
+			)}
 
 			{/* Tier 2 Jaw & Centric Occlusion Clinical Modal (JU, JL, C) */}
 			{activeJawModalTarget !== null && (
-				<JawOcclusionModal
-					isOpen={activeJawModalTarget !== null}
-					initialTarget={activeJawModalTarget}
-					onClose={() => setActiveJawModalTarget(null)}
-				/>
+				<React.Suspense fallback={null}>
+					<JawOcclusionModal
+						isOpen={activeJawModalTarget !== null}
+						initialTarget={activeJawModalTarget}
+						onClose={() => setActiveJawModalTarget(null)}
+					/>
+				</React.Suspense>
 			)}
 		</div>
 	);

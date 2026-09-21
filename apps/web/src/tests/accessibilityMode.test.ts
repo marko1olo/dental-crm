@@ -23,7 +23,7 @@
  */
 
 import assert from "node:assert/strict";
-import { beforeEach, describe, it } from "vitest";
+import { beforeEach, describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {

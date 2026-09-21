@@ -1409,7 +1409,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								title="Печать Формы 043/у в любой момент (если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
 							>
 								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
-								<span className="hidden 2xl:inline">Печать 043/у</span>
+								<span className="hidden lg:inline">Печать 043/у</span>
 							</button>
 
 							{/* Экстренная помощь / Аптечка анти-шок (Мандаты 8c, 8e) */}
@@ -1421,7 +1421,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								title="Экстренная помощь / Аптечка анти-шок (анафилаксия, коллапс, гипертонический криз)"
 							>
 								<AlertOctagon className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
-								<span className="hidden 2xl:inline">Аптечка</span>
+								<span className="hidden xl:inline">Аптечка</span>
 							</button>
 
 							{/* Статус приема (клинический статус визита): не конфликтует со статусом сохранения ЭМК */}

@@ -112,9 +112,7 @@ export const useThemeStore = create<ThemeState>((set, get) => {
 					isAccessibilityMode: false,
 				});
 			} else {
-				if (currentMode !== "contrast") {
-					safeLocalStorageSetItem(THEME_PREV_STORAGE_KEY, currentMode);
-				}
+				safeLocalStorageSetItem(THEME_PREV_STORAGE_KEY, currentMode);
 				safeLocalStorageSetItem(THEME_STORAGE_KEY, "contrast");
 				safeLocalStorageSetItem(A11Y_MODE_STORAGE_KEY, "true");
 				set({

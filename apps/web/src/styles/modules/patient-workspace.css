@@ -483,9 +483,15 @@
 	align-items: center;
 	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
-	scrollbar-width: none;
-	touch-action: pan-x;
 	padding-right: 8px;
+}
+
+.emk-formatting-toolbar button,
+.emk-formatting-toolbar-actions button {
+	min-height: 24px !important;
+	max-height: 26px !important;
+	height: 24px !important;
+	box-sizing: border-box !important;
 }
 
 .emk-formatting-toolbar-actions::-webkit-scrollbar {

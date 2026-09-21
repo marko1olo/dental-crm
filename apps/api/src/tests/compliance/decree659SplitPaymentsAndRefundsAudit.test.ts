@@ -126,6 +126,8 @@ describe("Prosecutor 3: Split Payments & 54-FZ Refund Invariants (Decree 659 Aud
 					residentialAddress: "г. Москва, ул. Тверская, д. 5",
 					insurancePolicyNumber: "1234567890123456",
 					snils: "123-456-789 99",
+					gender: "male",
+					insuranceContractId: null,
 					legalRepresentativeFullName: null,
 					legalRepresentativeRelationship: null,
 					legalRepresentativeIdentityDocument: null,

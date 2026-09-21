@@ -271,14 +271,26 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		}
 	}, [initialValues]);
 
-	// Дебаунс автосохранения (адаптивно: 800ms на ПК / 1800ms на слабом Celeron/HDD 5400 RPM)
+	// Рефы для актуальных значений при размонтировании и смене вкладок (защита от потери черновика)
+	const valuesRef = useRef(values);
+	valuesRef.current = values;
+	const saveStatusRef = useRef(saveStatus);
+	saveStatusRef.current = saveStatus;
+	const onChangeRef = useRef(onChange);
+	onChangeRef.current = onChange;
+	const onSaveRef = useRef(onSave);
+	onSaveRef.current = onSave;
+	const soapStorageKeyRef = useRef(soapStorageKey);
+	soapStorageKeyRef.current = soapStorageKey;
+
+	// Дебаунс автосохранения (адаптивно: 400-800ms на ПК / 1800ms на слабом Celeron/HDD 5400 RPM)
 	useEffect(() => {
 		if (saveStatus !== "saving") return;
 		const timing = getOptimizedTiming();
 		const debounceMs = timing.autosaveDebounceMs || 400;
 		const timer = setTimeout(() => {
-			onChange?.(values);
-			onSave?.(values);
+			onChangeRef.current?.(values);
+			onSaveRef.current?.(values);
 			try {
 				safeLocalStorageSetItem(soapStorageKey, JSON.stringify(values));
 			} catch (err: unknown) {
@@ -288,22 +300,44 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		}, debounceMs);
 
 		return () => clearTimeout(timer);
-	}, [values, saveStatus, onChange, onSave, soapStorageKey]);
+	}, [values, saveStatus, soapStorageKey]);
 
-	// Немедленный сброс несохраненного черновика при размонтировании (защита при смене вкладок)
+	// Немедленный сброс несохраненного черновика строго при размонтировании или скрытии страницы (Мандат 8e)
 	useEffect(() => {
-		return () => {
-			if (saveStatus === "saving") {
-				onChange?.(values);
-				onSave?.(values);
+		const flushDraft = () => {
+			if (saveStatusRef.current === "saving") {
+				onChangeRef.current?.(valuesRef.current);
+				onSaveRef.current?.(valuesRef.current);
 				try {
-					safeLocalStorageSetItem(soapStorageKey, JSON.stringify(values));
+					safeLocalStorageSetItem(
+						soapStorageKeyRef.current,
+						JSON.stringify(valuesRef.current),
+					);
 				} catch (err: unknown) {
-					console.warn("[VisitSoapEditor] Failed to cache soap note values on unmount:", err);
+					console.warn(
+						"[VisitSoapEditor] Failed to cache soap note values on flush:",
+						err,
+					);
 				}
+				setSaveStatus("saved");
 			}
 		};
-	}, [saveStatus, values, onChange, onSave, soapStorageKey]);
+
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === "hidden") {
+				flushDraft();
+			}
+		};
+
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+		window.addEventListener("beforeunload", flushDraft);
+
+		return () => {
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+			window.removeEventListener("beforeunload", flushDraft);
+			flushDraft();
+		};
+	}, []);
 
 	// Мандат 8e: Автономия врача и версионный аудит («Исправленному верить»)
 	const handleEnableCorrection = useCallback(() => {
@@ -537,6 +571,18 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		onChange?.(normValues);
 	}, [selectedTooth, isLocked, isCorrectionMode, onSave, onChange, soapStorageKey]);
 
+	// Ручное сохранение дневника в 1 клик (Мандат 8e: никогда не disabled)
+	const handleExplicitSave = useCallback(() => {
+		onChangeRef.current?.(values);
+		onSaveRef.current?.(values);
+		try {
+			safeLocalStorageSetItem(soapStorageKey, JSON.stringify(values));
+		} catch (err: unknown) {
+			console.warn("[VisitSoapEditor] Failed to cache soap note values on save:", err);
+		}
+		setSaveStatus("saved");
+	}, [soapStorageKey, values]);
+
 	// Копирование целостной записи 043/у в буфер
 	const handleCopyFullText = useCallback(() => {
 		const fullText = [
@@ -703,6 +749,20 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						)}
 					</button>
 
+					{/* Кнопка ручного сохранения (Мандат 8e: никогда не disabled!) */}
+					<button
+						type="button"
+						onClick={handleExplicitSave}
+						disabled={false}
+						data-testid="btn-soap-save"
+						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-[var(--teal-soft,rgba(13,148,136,0.1))] hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))] text-[var(--teal)] border border-[var(--teal-surface,var(--teal))] transition-colors"
+						title="Сохранить дневник 043/у сейчас"
+						aria-label="Сохранить дневник"
+					>
+						<Check className="w-3.5 h-3.5 text-[var(--teal)]" />
+						<span className="hidden xl:inline">Сохранить</span>
+					</button>
+
 					{/* Дополнительные действия «...» (Мандаты 8d, 8e, 8p: 1 строка тулбара 32–36px) */}
 					<div className="relative inline-block" ref={soapMoreRef}>
 						<button
@@ -721,6 +781,18 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								data-testid="soap-more-dropdown"
 								className="absolute right-0 top-full mt-1 z-50 min-w-[200px] p-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg flex flex-col gap-1 text-xs"
 							>
+								<button
+									type="button"
+									onClick={() => {
+										setIsSoapMoreOpen(false);
+										handleExplicitSave();
+									}}
+									data-testid="btn-soap-more-save"
+									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+								>
+									<Check className="w-4 h-4 text-[var(--teal)] shrink-0" />
+									<span>Сохранить дневник</span>
+								</button>
 								<button
 									type="button"
 									onClick={() => {

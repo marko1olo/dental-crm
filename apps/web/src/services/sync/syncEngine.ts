@@ -152,7 +152,10 @@ export class SyncEngine {
 		}
 
 		if (this.options.autoSyncIntervalMs && this.options.autoSyncIntervalMs > 0) {
-			this.autoSyncTimer = setInterval(this.boundAutoTrigger, this.options.autoSyncIntervalMs);
+			this.autoSyncTimer = setInterval(() => {
+				if (typeof document !== "undefined" && document.hidden) return;
+				this.boundAutoTrigger?.();
+			}, this.options.autoSyncIntervalMs);
 		}
 	}
 

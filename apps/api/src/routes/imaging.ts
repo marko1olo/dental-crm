@@ -9304,7 +9304,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 		// клиники Б получал 404 на собственное исследование, а в худшем случае —
 		// доступ к снимкам клиники А. Организация берётся из проверенного токена.
 		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
+		if (!orgId) return reply;
 		if (
 			!(await requireClinicalMutationAccess(
 				request,
@@ -9312,7 +9312,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 				"imaging study create",
 			))
 		)
-			return;
+			return reply;
 		const parsed = parseImagingPayload(
 			createImagingStudySchema,
 			request.body,
@@ -9475,14 +9475,14 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 
 	app.get("/api/imaging/studies/:id/preview.svg", async (request, reply) => {
 		if (!(await requireClinicalReadAccess(request, reply, "imaging preview")))
-			return;
+			return reply;
 		const { id } = request.params as { id: string };
 		// БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
 		// а не клиника, приславшая запрос. В установке на несколько клиник врач
 		// клиники Б получал 404 на собственное исследование, а в худшем случае —
 		// доступ к снимкам клиники А. Организация берётся из проверенного токена.
 		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
+		if (!orgId) return reply;
 		const study = await getImagingStudyById(orgId, id);
 		if (!study) {
 			return sendImagingStudyNotFound(reply);

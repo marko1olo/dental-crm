@@ -17,11 +17,16 @@ export interface StockDeductionRecord {
 	inventoryItemId: string;
 	inventoryItemName: string;
 	quantityChanged: string;
+	isOverdraft?: boolean;
+	deficitQty?: number;
 }
 
 export interface MaterialDeductionResult {
 	completedTreatmentItems: number;
 	deductions: StockDeductionRecord[];
+	hasOverdraft?: boolean | undefined;
+	isOverdraft?: boolean | undefined;
+	warning?: string | undefined;
 }
 
 export class InsufficientStockError extends Error {
@@ -180,6 +185,7 @@ export async function deductMaterialsForVisit(
 	);
 
 	const deductions: StockDeductionRecord[] = [];
+	let hasOverdraft = false;
 
 	for (const itemId of sortedItemIds) {
 		const requiredQty = requiredByItem.get(itemId);
@@ -199,16 +205,25 @@ export async function deductMaterialsForVisit(
 			notes: `Списание по визиту ${visitId}`,
 		});
 
+		if (fefoRes.isOverdraft) {
+			hasOverdraft = true;
+		}
+
 		deductions.push({
 			inventoryItemId: inv.id,
 			inventoryItemName: inv.name,
 			quantityChanged: String(-fefoRes.deductedQty),
+			isOverdraft: fefoRes.isOverdraft,
+			deficitQty: fefoRes.deficitQty,
 		});
 	}
 
 	return {
 		completedTreatmentItems: uncompletedItems.length,
 		deductions,
+		hasOverdraft,
+		isOverdraft: hasOverdraft,
+		...(hasOverdraft ? { warning: "soft_overdraft" } : {}),
 	};
 }
 

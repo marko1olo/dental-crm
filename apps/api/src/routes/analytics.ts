@@ -1619,7 +1619,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					and(
 						eq(visits.organizationId, orgId),
 						or(
-							eq(visits.status, "completed"),
+							eq(visits.status, "signed"),
 							sql`${visits.signedAt} is not null`,
 						),
 						startDate
@@ -1671,9 +1671,9 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				appointmentDate: string;
 				createdAt: Date;
 				attributionReason: string;
-				doctorId?: string | null;
-				doctorName?: string | null;
-				specialty?: string;
+				doctorId?: string | null | undefined;
+				doctorName?: string | null | undefined;
+				specialty?: string | undefined;
 			}
 
 			const computedEvents: RebookingEvent[] = [];
@@ -1784,7 +1784,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 						rule.creditedRole === "doctor"
 							? "chairside_rebooking_under_15m"
 							: "frontdesk_rebooking_over_15m",
-					doctorName: rule.creditedRole === "doctor" ? rule.rebookedBy : undefined,
+					doctorName: rule.creditedRole === "doctor" ? rule.rebookedBy : null,
 				});
 			}
 
@@ -1892,7 +1892,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					return {
 						staffId: d.staffId,
 						staffName: d.staffName,
-						role: "doctor" as const,
+						role: "doctor" as "doctor" | "administrator",
 						specialty: d.specialty,
 						completedVisitsCount: d.completedVisitsCount,
 						doctorRebookingsCount: d.doctorRebookingsCount,

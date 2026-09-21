@@ -737,8 +737,10 @@ export function createOmniWebSocket(
 			}
 
 			// Start ping keepalive
+			// Start ping keepalive
 			if (pingInterval > 0) {
 				pingTimer = setInterval(() => {
+					if (typeof document !== "undefined" && document.hidden) return;
 					if (socket?.readyState === WebSocket.OPEN) {
 						socket.send("PING");
 					}
@@ -778,6 +780,8 @@ export function createOmniWebSocket(
 
 	const scheduleReconnect = () => {
 		if (explicitlyClosed) return;
+		// Skip reconnect polling while document is hidden to conserve CPU on low-spec laptops
+		if (typeof document !== "undefined" && document.hidden) return;
 		if (reconnectTimer) clearTimeout(reconnectTimer);
 
 		// Full Jitter Exponential Backoff
@@ -799,8 +803,22 @@ export function createOmniWebSocket(
 		}
 	};
 
+	// Reconnect or keepalive ping when user switches back to this tab
+	const handleVisibilityChange = () => {
+		if (typeof document === "undefined" || document.hidden) return;
+		if (socket?.readyState === WebSocket.OPEN) {
+			socket.send("PING");
+		} else if (!connected && !explicitlyClosed) {
+			attempts = 0;
+			connect();
+		}
+	};
+
 	if (typeof window !== "undefined") {
 		window.addEventListener("online", handleOnline);
+		if (typeof document !== "undefined") {
+			document.addEventListener("visibilitychange", handleVisibilityChange);
+		}
 	}
 
 	connect();
@@ -823,6 +841,9 @@ export function createOmniWebSocket(
 			if (pingTimer) clearInterval(pingTimer);
 			if (typeof window !== "undefined") {
 				window.removeEventListener("online", handleOnline);
+				if (typeof document !== "undefined") {
+					document.removeEventListener("visibilitychange", handleVisibilityChange);
+				}
 			}
 			if (socket) {
 				try {
@@ -885,7 +906,10 @@ export function startOfflineQueueAutoSync(intervalMs = 30_000): () => void {
 	void attemptSync();
 
 	if (intervalMs > 0) {
-		timer = setInterval(attemptSync, intervalMs);
+		timer = setInterval(() => {
+			if (typeof document !== "undefined" && document.hidden) return;
+			void attemptSync();
+		}, intervalMs);
 	}
 
 	return () => {

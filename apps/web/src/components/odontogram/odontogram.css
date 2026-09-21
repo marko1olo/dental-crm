@@ -502,26 +502,33 @@
 	/* Focused Quadrant View on Mobile: DOMINANT TOUCH TARGETS (>= 48x48px) */
 	.quadrant-view-wrapper {
 		width: 100%;
+		max-width: 100%;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
 	}
 	.quadrant-view-wrapper .teeth-row {
 		display: flex !important;
-		justify-content: center !important;
+		justify-content: flex-start !important;
 		gap: 2px !important;
-		width: 100% !important;
+		width: max-content !important;
+		min-width: 100% !important;
+		padding: 0 4px !important;
 	}
 	.quadrant-view-wrapper .tooth-quadrant-group {
 		display: flex !important;
-		justify-content: center !important;
+		justify-content: flex-start !important;
 		gap: 2px !important;
 		flex-wrap: nowrap !important;
+		margin: 0 auto !important;
 	}
 	.quadrant-view-wrapper .tooth-svg-wrapper {
-		min-width: 44px !important;
-		min-height: 48px !important;
-		padding: 2px !important;
+		min-width: 38px !important;
+		width: 38px !important;
+		min-height: 46px !important;
+		padding: 1px !important;
 	}
 	.quadrant-view-wrapper .tooth-number-badge {
 		min-width: 22px !important;
@@ -1915,10 +1922,13 @@
 @media (max-width: 640px) {
 	.focused-quadrant-group {
 		gap: 2px;
+		justify-content: flex-start;
+		margin: 0 auto;
 	}
 	.focused-quadrant-group .tooth-svg-wrapper {
-		min-width: 44px;
-		min-height: 48px;
+		min-width: 38px;
+		width: 38px;
+		min-height: 46px;
 	}
 }
 

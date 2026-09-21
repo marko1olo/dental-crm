@@ -1438,7 +1438,23 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 						patientId,
 						doctorId: body.doctorId ?? null,
 						groupName: body.groupName,
-						variants: body.variants,
+						variants: body.variants.map((v) => ({
+							name: v.name,
+							items: v.items.map((item) => ({
+								toothNumber: item.toothNumber ?? null,
+								priceId: item.priceId,
+								name: item.name ?? null,
+								quantity: item.quantity,
+								price: item.price,
+								...(item.discount !== undefined ? { discount: item.discount } : {}),
+								...(item.phase !== undefined ? { phase: item.phase } : {}),
+								...(item.isAuto !== undefined ? { isAuto: item.isAuto } : {}),
+							})),
+							...(v.alternativeTier ? { alternativeTier: v.alternativeTier } : {}),
+							...(v.isInitiallyApproved !== undefined
+								? { isInitiallyApproved: v.isInitiallyApproved }
+								: {}),
+						})),
 						actorUserId: identity.userId ?? null,
 					});
 				});
@@ -1550,9 +1566,10 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				policyKind: z
 					.enum([
 						"standard_30_days",
-						"extended_60_days",
-						"fixed_until_date",
-						"statutory_decree_659",
+						"surgery_implant_90_days",
+						"ortho_vip_180_days",
+						"strict_fixed_contract",
+						"market_floating",
 					])
 					.optional(),
 				customValidityDays: z.number().int().positive().optional(),

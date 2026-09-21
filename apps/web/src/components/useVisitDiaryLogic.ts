@@ -750,8 +750,11 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		// 400ms debounced save on modification (anti-HDD thrashing on 5400 RPM drives)
 		const debounceTimer = setTimeout(flushLocalDraft, 400);
 
-		// Periodic 5-second resilient interval for background sync
-		const intervalTimer = setInterval(flushLocalDraft, 5000);
+		// Periodic 5-second resilient interval for background sync (paused when tab hidden)
+		const intervalTimer = setInterval(() => {
+			if (typeof document !== "undefined" && document.hidden) return;
+			flushLocalDraft();
+		}, 5000);
 
 		return () => {
 			clearTimeout(debounceTimer);

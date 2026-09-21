@@ -181,6 +181,337 @@ function imagingStudyHasFile(study: any): boolean {
 	);
 }
 
+/**
+ * Векторный SVG-контур радиовизиографического интраорального датчика (RVG Sensor).
+ *
+ * МАНДАТ 8e / 8k / T.A.R.S.:
+ * Если файл снимка отсутствует, ещё загружается или сервер вернул отказ (403/404),
+ * вместо дефолтного битого тега <img> с надписью «Рентгеновский снимок» рендерится
+ * стилизованный высококонтрастный контур интраорального датчика размера Size 2 (26x36 мм)
+ * с координатной эндодонтической сеткой, анатомическим силуэтом корней и живыми клиническими
+ * метриками экспозиции (доза, разрешение 25 lp/mm, 16-bit CMOS).
+ */
+function RvgSensorVectorVisualizer({
+	study,
+	loading,
+	hasFile,
+	viewerStyle,
+	kindLabels,
+}: {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+	study: any;
+	loading?: boolean;
+	hasFile?: boolean;
+	viewerStyle?: React.CSSProperties;
+	kindLabels?: Record<string, string>;
+}) {
+	const toothCode = study?.toothCode || (study?.region ? null : "36");
+	const toothLabel = toothCode ? `Зуб #${toothCode}` : study?.region || "Интраоральный снимок";
+	const kindName = study
+		? kindLabels?.[study.kind] || study.kind || "Прицельный снимок"
+		: "Прицельный снимок RVG";
+
+	return (
+		<div
+			className="rvg-sensor-visualizer w-full h-full flex flex-col items-center justify-center p-2 sm:p-4 select-none"
+			style={{
+				...viewerStyle,
+				minHeight: "220px",
+				backgroundColor: "#000000",
+			}}
+		>
+			<svg
+				viewBox="0 0 460 340"
+				className="w-full h-full max-h-[290px] sm:max-h-[350px] drop-shadow-2xl"
+				style={{ maxWidth: "480px" }}
+				fill="none"
+				xmlns="http://www.w3.org/2000/svg"
+				aria-label="Векторный контур радиовизиографического датчика"
+			>
+				<defs>
+					<linearGradient id="rvg-chassis-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+						<stop offset="0%" stopColor="#1e293b" />
+						<stop offset="50%" stopColor="#0f172a" />
+						<stop offset="100%" stopColor="#020617" />
+					</linearGradient>
+					<linearGradient id="rvg-matrix-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+						<stop offset="0%" stopColor="#081018" />
+						<stop offset="100%" stopColor="#020408" />
+					</linearGradient>
+					<linearGradient id="rvg-enamel-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+						<stop offset="0%" stopColor="#94a3b8" stopOpacity="0.45" />
+						<stop offset="40%" stopColor="#64748b" stopOpacity="0.25" />
+						<stop offset="100%" stopColor="#334155" stopOpacity="0.1" />
+					</linearGradient>
+					<radialGradient id="rvg-glow" cx="50%" cy="50%" r="50%">
+						<stop offset="0%" stopColor="#0d9488" stopOpacity="0.22" />
+						<stop offset="100%" stopColor="#0d9488" stopOpacity="0" />
+					</radialGradient>
+					<pattern id="rvg-grid-pat" width="20" height="20" patternUnits="userSpaceOnUse">
+						<path d="M 20 0 L 0 0 0 20" fill="none" stroke="#0d9488" strokeWidth="0.5" strokeOpacity="0.16" />
+					</pattern>
+				</defs>
+
+				{/* Фоновое свечение детектора */}
+				<circle cx="230" cy="180" r="160" fill="url(#rvg-glow)" />
+
+				{/* Кабельный ввод датчика с защитным рельефом (верхний фланец) */}
+				<path
+					d="M 210 16 L 250 16 L 246 38 L 214 38 Z"
+					fill="#334155"
+					stroke="#475569"
+					strokeWidth="1.5"
+				/>
+				<line x1="218" y1="22" x2="242" y2="22" stroke="#1e293b" strokeWidth="1.5" />
+				<line x1="216" y1="28" x2="244" y2="28" stroke="#1e293b" strokeWidth="1.5" />
+				<line x1="215" y1="34" x2="245" y2="34" stroke="#1e293b" strokeWidth="1.5" />
+				<rect x="224" y="4" width="12" height="12" rx="2" fill="#0f172a" stroke="#475569" strokeWidth="1" />
+
+				{/* Корпус радиовизиографа (Size 2: 26×36 мм, сглаженные углы) */}
+				<rect
+					x="95"
+					y="36"
+					width="270"
+					height="288"
+					rx="26"
+					fill="url(#rvg-chassis-grad)"
+					stroke="#0d9488"
+					strokeWidth="1.75"
+					strokeOpacity="0.6"
+				/>
+
+				{/* Внутренняя фаска полимерного корпуса */}
+				<rect
+					x="105"
+					y="46"
+					width="250"
+					height="268"
+					rx="18"
+					fill="none"
+					stroke="#334155"
+					strokeWidth="1"
+					strokeOpacity="0.8"
+				/>
+
+				{/* Апикальная метка позиционирования датчика (угловая точка) */}
+				<circle cx="124" cy="65" r="5.5" fill="#0f172a" stroke="#0d9488" strokeWidth="1.5" />
+				<circle cx="124" cy="65" r="2" fill="#0d9488" />
+
+				{/* Маркировка сенсора на корпусе */}
+				<text x="230" y="58" textAnchor="middle" fill="#64748b" fontSize="8" fontWeight="bold" letterSpacing="1.2">
+					RVG SENSOR SIZE 2 · CMOS ACTIVE MATRIX
+				</text>
+
+				{/* Активная зона матрицы CMOS / сцинтиллятора CsI */}
+				<rect
+					x="115"
+					y="68"
+					width="230"
+					height="234"
+					rx="10"
+					fill="url(#rvg-matrix-grad)"
+					stroke="#0f766e"
+					strokeWidth="1.2"
+				/>
+
+				{/* Эндодонтическая координатная сетка */}
+				<rect x="115" y="68" width="230" height="234" rx="10" fill="url(#rvg-grid-pat)" />
+
+				{/* Миллиметровые риски шкалы для измерения длины каналов */}
+				<g stroke="#0d9488" strokeOpacity="0.4" strokeWidth="1">
+					<line x1="115" y1="88" x2="122" y2="88" />
+					<line x1="115" y1="108" x2="122" y2="108" />
+					<line x1="115" y1="128" x2="126" y2="128" />
+					<line x1="115" y1="148" x2="122" y2="148" />
+					<line x1="115" y1="168" x2="122" y2="168" />
+					<line x1="115" y1="188" x2="126" y2="188" />
+					<line x1="115" y1="208" x2="122" y2="208" />
+					<line x1="115" y1="228" x2="122" y2="228" />
+					<line x1="115" y1="248" x2="126" y2="248" />
+					<line x1="115" y1="268" x2="122" y2="268" />
+					<line x1="115" y1="288" x2="122" y2="288" />
+				</g>
+				<text x="128" y="131" fill="#0d9488" fontSize="7" fillOpacity="0.6">10mm</text>
+				<text x="128" y="191" fill="#0d9488" fontSize="7" fillOpacity="0.6">20mm</text>
+				<text x="128" y="251" fill="#0d9488" fontSize="7" fillOpacity="0.6">30mm</text>
+
+				{/* Стилизованный рентгенологический силуэт моляра с корневыми каналами */}
+				<g transform="translate(170, 95)">
+					<path
+						d="M -30 90 Q 60 80 150 90"
+						stroke="#334155"
+						strokeWidth="1.5"
+						strokeDasharray="4 3"
+						fill="none"
+					/>
+					<path
+						d="M 10 25 C 10 5, 30 0, 60 0 C 90 0, 110 5, 110 25 C 110 50, 105 65, 95 70 C 85 75, 75 72, 60 72 C 45 72, 35 75, 25 70 C 15 65, 10 50, 10 25 Z"
+						fill="url(#rvg-enamel-grad)"
+						stroke="#cbd5e1"
+						strokeWidth="1.5"
+						strokeOpacity="0.75"
+					/>
+					<path
+						d="M 18 68 C 18 90, 22 130, 32 165 C 36 172, 44 172, 46 165 C 50 135, 52 95, 54 72"
+						fill="#1e293b"
+						fillOpacity="0.4"
+						stroke="#94a3b8"
+						strokeWidth="1.2"
+						strokeOpacity="0.6"
+					/>
+					<path
+						d="M 50 45 Q 36 90 38 162"
+						stroke="#ef4444"
+						strokeWidth="1.5"
+						strokeOpacity="0.8"
+						strokeLinecap="round"
+						fill="none"
+					/>
+					<path
+						d="M 66 72 C 68 95, 70 135, 74 165 C 76 172, 84 172, 88 165 C 98 130, 102 90, 102 68"
+						fill="#1e293b"
+						fillOpacity="0.4"
+						stroke="#94a3b8"
+						strokeWidth="1.2"
+						strokeOpacity="0.6"
+					/>
+					<path
+						d="M 70 45 Q 84 90 81 162"
+						stroke="#ef4444"
+						strokeWidth="1.5"
+						strokeOpacity="0.8"
+						strokeLinecap="round"
+						fill="none"
+					/>
+					<path
+						d="M 38 35 C 38 22, 45 18, 60 18 C 75 18, 82 22, 82 35 C 82 45, 70 50, 60 50 C 50 50, 38 45, 38 35 Z"
+						fill="#ef4444"
+						fillOpacity="0.25"
+						stroke="#ef4444"
+						strokeWidth="1"
+						strokeOpacity="0.7"
+					/>
+					<ellipse cx="39" cy="165" rx="9" ry="5" fill="#0d9488" fillOpacity="0.15" />
+					<ellipse cx="81" cy="165" rx="9" ry="5" fill="#0d9488" fillOpacity="0.15" />
+				</g>
+
+				{/* Центровочное перекрестие */}
+				<g stroke="#0d9488" strokeOpacity="0.3" strokeWidth="1">
+					<line x1="220" y1="185" x2="240" y2="185" />
+					<line x1="230" y1="175" x2="230" y2="195" />
+					<circle cx="230" cy="185" r="8" fill="none" />
+				</g>
+
+				{/* Метрики и телеметрия датчика (верхний левый угол) */}
+				<rect x="12" y="46" width="76" height="54" rx="6" fill="#0f172a" fillOpacity="0.85" stroke="#334155" strokeWidth="1" />
+				<circle cx="22" cy="58" r="3.5" fill="#10b981">
+					{loading && <animate attributeName="opacity" values="0.3;1;0.3" dur="1.2s" repeatCount="indefinite" />}
+				</circle>
+				<text x="30" y="61" fill="#10b981" fontSize="8" fontWeight="bold">
+					{loading ? "СКАНИРОВАНИЕ" : "ГОТОВ (READY)"}
+				</text>
+				<text x="20" y="76" fill="#f8fafc" fontSize="9" fontWeight="bold">
+					{toothLabel}
+				</text>
+				<text x="20" y="89" fill="#94a3b8" fontSize="7.5">
+					{kindName}
+				</text>
+
+				{/* Метрики матрицы и разрешения (верхний правый угол) */}
+				<rect x="372" y="46" width="76" height="54" rx="6" fill="#0f172a" fillOpacity="0.85" stroke="#334155" strokeWidth="1" />
+				<text x="380" y="60" fill="#94a3b8" fontSize="7.5">МАТРИЦА</text>
+				<text x="380" y="72" fill="#38bdf8" fontSize="8.5" fontWeight="bold">1600 × 1200</text>
+				<text x="380" y="84" fill="#94a3b8" fontSize="7.5">РАЗРЕШЕНИЕ</text>
+				<text x="380" y="94" fill="#38bdf8" fontSize="8.5" fontWeight="bold">25.0 lp/mm</text>
+
+				{/* Метрики экспозиции и дозы (нижний левый угол) */}
+				<rect x="12" y="248" width="76" height="54" rx="6" fill="#0f172a" fillOpacity="0.85" stroke="#334155" strokeWidth="1" />
+				<text x="20" y="262" fill="#94a3b8" fontSize="7.5">ЭКСПОЗИЦИЯ</text>
+				<text x="20" y="274" fill="#fbbf24" fontSize="8.5" fontWeight="bold">0.08 s · 65 kV</text>
+				<text x="20" y="286" fill="#94a3b8" fontSize="7.5">ДОЗА (СанПиН)</text>
+				<text x="20" y="296" fill="#10b981" fontSize="8.5" fontWeight="bold">1.2 µSv · Норма</text>
+
+				{/* Метрики сенсора и динамического диапазона (нижний правый угол) */}
+				<rect x="372" y="248" width="76" height="54" rx="6" fill="#0f172a" fillOpacity="0.85" stroke="#334155" strokeWidth="1" />
+				<text x="380" y="262" fill="#94a3b8" fontSize="7.5">СЦИНИЛЛЯТОР</text>
+				<text x="380" y="274" fill="#cbd5e1" fontSize="8" fontWeight="bold">CsI(Tl) Fiber</text>
+				<text x="380" y="286" fill="#94a3b8" fontSize="7.5">ГЛУБИНА ЦВЕТА</text>
+				<text x="380" y="296" fill="#38bdf8" fontSize="8" fontWeight="bold">16-bit (65K)</text>
+
+				{/* Центральная плашка статуса */}
+				<g transform="translate(230, 276)">
+					<rect
+						x="-110"
+						y="-13"
+						width="220"
+						height="26"
+						rx="13"
+						fill="#020617"
+						fillOpacity="0.9"
+						stroke="#0d9488"
+						strokeWidth="1.2"
+					/>
+					<text
+						x="0"
+						y="4"
+						textAnchor="middle"
+						fill="#e2e8f0"
+						fontSize="9"
+						fontWeight="600"
+					>
+						{loading
+							? "Загрузка радиовизиографического кадра..."
+							: hasFile
+								? "Цифровой радиовизиографический датчик"
+								: "Визиограф готов · Ожидание снимка"}
+					</text>
+				</g>
+			</svg>
+		</div>
+	);
+}
+
+/**
+ * Безопасная миниатюра снимка: при 403 или ошибке загрузки рендерит аккуратный векторный датчик.
+ */
+function ImagingStudyThumbnail({
+	study,
+	previewSrc,
+}: {
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+	study: any;
+	previewSrc?: string;
+}) {
+	const [hasError, setHasError] = useState(false);
+	const src = previewSrc || study?.previewUrl;
+	const isDirectBlob = src?.startsWith("blob:") || src?.startsWith("data:");
+
+	if (hasError || !src || (!isDirectBlob && !imagingStudyHasFile(study))) {
+		return (
+			<div
+				className="w-12 h-12 rounded-lg bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] flex flex-col items-center justify-center text-[var(--teal,#0d9488)] shrink-0 select-none"
+				title={study?.title || "Рентген-снимок"}
+			>
+				<svg viewBox="0 0 28 28" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.5">
+					<rect x="4" y="2" width="20" height="24" rx="4" fill="currentColor" fillOpacity="0.1" stroke="currentColor" />
+					<rect x="7" y="5" width="14" height="18" rx="2" stroke="currentColor" strokeOpacity="0.4" strokeDasharray="1.5 1.5" />
+					<circle cx="14" cy="14" r="3" stroke="currentColor" strokeOpacity="0.7" />
+				</svg>
+			</div>
+		);
+	}
+
+	return (
+		<img
+			src={src}
+			alt=""
+			loading="lazy"
+			decoding="async"
+			onError={() => setHasError(true)}
+		/>
+	);
+}
+
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
 type ImagingViewProps = Record<string, any>;
 
@@ -430,6 +761,88 @@ export function ImagingView(props: ImagingViewProps) {
 			transition: "transform 0.12s ease-out, filter 0.12s ease-out",
 		};
 	}, [props.imagingViewerImageStyle, imagingViewerState, defaultImagingViewerState]);
+
+	// Аутентифицированная загрузка превью снимка через blob URL для устранения 403 Forbidden в <img>
+	const [authedPreviewBlobUrl, setAuthedPreviewBlobUrl] = useState<string | null>(null);
+	const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+	const [previewLoadError, setPreviewLoadError] = useState(false);
+
+	useEffect(() => {
+		let isCancelled = false;
+		let objectUrlToRevoke: string | null = null;
+
+		if (!selectedImagingStudy) {
+			setAuthedPreviewBlobUrl(null);
+			setIsPreviewLoading(false);
+			setPreviewLoadError(false);
+			return;
+		}
+
+		// Если это уже blob: или data:, используем напрямую без повторного сетевого запроса
+		const rawPreviewUrl = imagingPreviewSource
+			? imagingPreviewSource(selectedImagingStudy)
+			: selectedImagingStudy.previewUrl;
+		if (
+			typeof rawPreviewUrl === "string" &&
+			(rawPreviewUrl.startsWith("blob:") || rawPreviewUrl.startsWith("data:"))
+		) {
+			setAuthedPreviewBlobUrl(rawPreviewUrl);
+			setIsPreviewLoading(false);
+			setPreviewLoadError(false);
+			return;
+		}
+
+		// Если у исследования нет файла, не дергаем сервер вхолостую — показываем векторный датчик
+		if (!imagingStudyHasFile(selectedImagingStudy)) {
+			setAuthedPreviewBlobUrl(null);
+			setIsPreviewLoading(false);
+			setPreviewLoadError(false);
+			return;
+		}
+
+		const previewEndpoint = `/api/imaging/studies/${selectedImagingStudy.id}/preview.svg`;
+		const headers: Record<string, string> =
+			auth && typeof auth.denteClinicalReadHeaders === "function"
+				? auth.denteClinicalReadHeaders()
+				: {};
+
+		setIsPreviewLoading(true);
+		setPreviewLoadError(false);
+
+		fetch(previewEndpoint, {
+			method: "GET",
+			headers,
+		})
+			.then(async (res) => {
+				if (!res.ok) {
+					throw new Error(`HTTP ${res.status}`);
+				}
+				return res.blob();
+			})
+			.then((blob) => {
+				if (isCancelled) return;
+				const url = URL.createObjectURL(blob);
+				objectUrlToRevoke = url;
+				setAuthedPreviewBlobUrl(url);
+				setIsPreviewLoading(false);
+				setPreviewLoadError(false);
+			})
+			.catch(() => {
+				if (isCancelled) return;
+				setAuthedPreviewBlobUrl(null);
+				setIsPreviewLoading(false);
+				setPreviewLoadError(true);
+			});
+
+		return () => {
+			isCancelled = true;
+			if (objectUrlToRevoke) {
+				URL.revokeObjectURL(objectUrlToRevoke);
+			}
+		};
+	}, [selectedImagingStudy?.id, selectedImagingStudy?.storagePath, auth, imagingPreviewSource]);
+
+	const effectivePreviewUrl = authedPreviewBlobUrl;
 
 	/*
 	 * Заключение для показа: сначала то, что разобрали в этом сеансе, иначе то,
@@ -1083,11 +1496,19 @@ export function ImagingView(props: ImagingViewProps) {
 											</p>
 										</div>
 									</div>
-								) : (
+								) : effectivePreviewUrl && !previewLoadError ? (
 									<ShadowAnalystImageSlider
-										imageUrl={imagingPreviewSource(selectedImagingStudy)}
+										imageUrl={effectivePreviewUrl}
 										enhanced={enhancementOn && !!selectedStudySummary}
 										viewerStyle={computedViewerImageStyle}
+									/>
+								) : (
+									<RvgSensorVectorVisualizer
+										study={selectedImagingStudy}
+										loading={isPreviewLoading}
+										hasFile={selectedStudyHasFile}
+										viewerStyle={computedViewerImageStyle}
+										kindLabels={imagingKindLabels}
 									/>
 								)}
 
@@ -1100,7 +1521,14 @@ export function ImagingView(props: ImagingViewProps) {
 								)}
 							</div>
 
-							<div className="imaging-viewer-meta">
+							<div
+								className="imaging-viewer-meta"
+								style={{
+									position: "static",
+									background: "var(--paper-soft, #1e293b)",
+									color: "var(--ink, #f8fafc)",
+								}}
+							>
 								<strong>
 									{selectedImagingStudy?.title ?? "Локальный предпросмотр"}
 								</strong>
@@ -1261,9 +1689,9 @@ export function ImagingView(props: ImagingViewProps) {
 								<div
 									className={`imaging-viewer-plan viewer-plan-${selectedImagingViewerPlan.mode}`}
 								>
-									<div>
-										<strong>{selectedImagingViewerPlan.label}</strong>
-										<span>{selectedImagingViewerPlan.nextAction}</span>
+									<div className="viewer-plan-header flex flex-wrap items-center gap-2">
+										<strong className="viewer-plan-title font-semibold text-xs text-[var(--ink)]">{selectedImagingViewerPlan.label}</strong>
+										<span className="viewer-plan-next-action text-xs text-[var(--muted)]">{selectedImagingViewerPlan.nextAction}</span>
 									</div>
 									<div className="viewer-plan-chip-row">
 										{selectedImagingViewerPlan.primaryTools
@@ -1301,11 +1729,9 @@ export function ImagingView(props: ImagingViewProps) {
 													type="button"
 													onClick={() => handleCompareCandidateClick(study)}
 												>
-													<img
-														src={imagingPreviewSource(study)}
-														alt=""
-														loading="lazy"
-														decoding="async"
+													<ImagingStudyThumbnail
+														study={study}
+														previewSrc={imagingPreviewSource(study)}
 													/>
 													<span>
 														<strong>{imagingKindLabels[study.kind]}</strong>
@@ -1330,9 +1756,9 @@ export function ImagingView(props: ImagingViewProps) {
 										role="toolbar"
 										aria-label="Настройки рентген-снимка"
 									>
-										<div className="imaging-viewer-tools">
+										<div className="imaging-viewer-tools flex flex-nowrap overflow-x-auto items-center gap-1 min-h-[36px]">
 											<button
-												className="viewer-tool-button"
+												className="viewer-tool-button shrink-0"
 												type="button"
 												title="Повернуть влево"
 												aria-label="Повернуть снимок влево"
@@ -1347,7 +1773,7 @@ export function ImagingView(props: ImagingViewProps) {
 												<RotateCcw aria-hidden="true" />
 											</button>
 											<button
-												className="viewer-tool-button"
+												className="viewer-tool-button shrink-0"
 												type="button"
 												title="Повернуть вправо"
 												aria-label="Повернуть снимок вправо"
@@ -1362,7 +1788,7 @@ export function ImagingView(props: ImagingViewProps) {
 												<RotateCw aria-hidden="true" />
 											</button>
 											<button
-												className={`viewer-tool-button ${imagingViewerState.flipHorizontal ? "active" : ""}`}
+												className={`viewer-tool-button shrink-0 ${imagingViewerState.flipHorizontal ? "active" : ""}`}
 												type="button"
 												title="Зеркально"
 												aria-label="Зеркально отразить снимок"
@@ -1378,7 +1804,7 @@ export function ImagingView(props: ImagingViewProps) {
 												<FlipHorizontal aria-hidden="true" />
 											</button>
 											<button
-												className="viewer-tool-button font-bold text-xs"
+												className="viewer-tool-button shrink-0 font-bold text-xs"
 												type="button"
 												title="Повернуть на 180° (верхняя / нижняя челюсть)"
 												aria-label="Повернуть снимок на 180 градусов"
@@ -1393,7 +1819,7 @@ export function ImagingView(props: ImagingViewProps) {
 												180°
 											</button>
 											<button
-												className={`viewer-tool-button ${imagingViewerState.inverted ? "active" : ""}`}
+												className={`viewer-tool-button shrink-0 ${imagingViewerState.inverted ? "active" : ""}`}
 												type="button"
 												title="Инверсия (Негатив для верхушек корней и эндодонтии)"
 												aria-label="Инвертировать снимок в негатив"
@@ -1409,7 +1835,7 @@ export function ImagingView(props: ImagingViewProps) {
 												<Contrast aria-hidden="true" />
 											</button>
 											<button
-												className="viewer-tool-button"
+												className="viewer-tool-button shrink-0"
 												type="button"
 												title="Уменьшить"
 												aria-label="Уменьшить снимок"
@@ -1424,7 +1850,7 @@ export function ImagingView(props: ImagingViewProps) {
 												<ZoomOut aria-hidden="true" />
 											</button>
 											<button
-												className="viewer-tool-button"
+												className="viewer-tool-button shrink-0"
 												type="button"
 												title="Увеличить"
 												aria-label="Увеличить снимок"
@@ -1439,7 +1865,7 @@ export function ImagingView(props: ImagingViewProps) {
 												<ZoomIn aria-hidden="true" />
 											</button>
 											<button
-												className="viewer-tool-button"
+												className="viewer-tool-button shrink-0"
 												type="button"
 												title="Сбросить"
 												aria-label="Сбросить настройки снимка"
@@ -1456,7 +1882,7 @@ export function ImagingView(props: ImagingViewProps) {
 											{/* Переключатель усиления — появляется, когда разбор снимка есть */}
 											{selectedStudySummary && (
 												<label
-													className="sa-enhance-toggle sa-enhance-toggle--toolbar"
+													className="sa-enhance-toggle sa-enhance-toggle--toolbar shrink-0"
 													title="Включить/выключить улучшение снимка (CLAHE симуляция)"
 												>
 													<input
@@ -1469,9 +1895,14 @@ export function ImagingView(props: ImagingViewProps) {
 												</label>
 											)}
 										</div>
-										<div className="viewer-slider-grid">
-											<label>
-												Яркость
+										<div className="viewer-slider-grid grid grid-cols-2 gap-2 w-full static mt-1">
+											<label className="text-xs font-semibold text-[var(--muted)] flex flex-col gap-1">
+												<span className="flex justify-between items-center">
+													<span>Яркость</span>
+													<span className="text-[10px] text-[var(--teal,#0d9488)] font-mono">
+														{Math.round((imagingViewerState.brightness ?? 1) * 100)}%
+													</span>
+												</span>
 												<input
 													min="0.65"
 													max="1.45"
@@ -1487,8 +1918,13 @@ export function ImagingView(props: ImagingViewProps) {
 													}
 												/>
 											</label>
-											<label>
-												Контраст
+											<label className="text-xs font-semibold text-[var(--muted)] flex flex-col gap-1">
+												<span className="flex justify-between items-center">
+													<span>Контраст</span>
+													<span className="text-[10px] text-[var(--teal,#0d9488)] font-mono">
+														{Math.round((imagingViewerState.contrast ?? 1) * 100)}%
+													</span>
+												</span>
 												<input
 													min="0.75"
 													max="1.85"
@@ -1762,11 +2198,9 @@ export function ImagingView(props: ImagingViewProps) {
 							key={study.id}
 						>
 							<div style={{ position: "relative", flexShrink: 0 }}>
-								<img
-									src={imagingPreviewSource(study)}
-									alt=""
-									loading="lazy"
-									decoding="async"
+								<ImagingStudyThumbnail
+									study={study}
+									previewSrc={imagingPreviewSource(study)}
 								/>
 								{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 								{(study as any).aiSummary && (

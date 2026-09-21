@@ -776,6 +776,7 @@ export function startAutoBackupSchedule(options?: AutoBackupScheduleOptions): Au
 	};
 
 	autoBackupIntervalTimer = setInterval(async () => {
+		if (typeof document !== "undefined" && document.hidden) return;
 		try {
 			logger.info("[OfflineBackup] Executing scheduled automatic backup...");
 			const result = await exportOfflineClinicBackup({

@@ -158,11 +158,32 @@ export function TelephonyFloatingWidget({
 			return;
 		}
 		const startTime = activeCall.callStartedAt ?? Date.now();
-		const interval = setInterval(() => {
+		const updateElapsed = () => {
 			const seconds = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
 			setElapsedSeconds(seconds);
+		};
+		updateElapsed();
+		const interval = setInterval(() => {
+			if (typeof document !== "undefined" && document.hidden) return;
+			updateElapsed();
 		}, 1000);
-		return () => clearInterval(interval);
+
+		const handleVisibilityChange = () => {
+			if (typeof document !== "undefined" && !document.hidden) {
+				updateElapsed();
+			}
+		};
+
+		if (typeof document !== "undefined") {
+			document.addEventListener("visibilitychange", handleVisibilityChange);
+		}
+
+		return () => {
+			clearInterval(interval);
+			if (typeof document !== "undefined") {
+				document.removeEventListener("visibilitychange", handleVisibilityChange);
+			}
+		};
 	}, [activeCall]);
 
 	// Sync playback speed to audio element

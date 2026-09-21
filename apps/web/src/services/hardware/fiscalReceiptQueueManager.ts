@@ -345,13 +345,28 @@ export class FiscalReceiptQueueManager {
 		};
 	}
 
+	private static visibilityListener: (() => void) | null = null;
+
 	/**
 	 * Starts background auto-retry loop for offline receipts.
 	 */
 	public static startAutoRetryLoop(intervalMs = 15000): void {
 		if (this.isAutoRetrying) return;
 		this.isAutoRetrying = true;
+
+		if (typeof document !== "undefined" && !this.visibilityListener) {
+			this.visibilityListener = () => {
+				if (!document.hidden && this.getPendingItems().length > 0) {
+					void this.flushAllPending().catch((err) => {
+						console.error("[FiscalReceiptQueueManager] Visibility resume flush error:", err);
+					});
+				}
+			};
+			document.addEventListener("visibilitychange", this.visibilityListener);
+		}
+
 		this.autoRetryTimer = setInterval(async () => {
+			if (typeof document !== "undefined" && document.hidden) return;
 			const pending = this.getPendingItems();
 			if (pending.length > 0) {
 				try {
@@ -370,6 +385,10 @@ export class FiscalReceiptQueueManager {
 		if (this.autoRetryTimer) {
 			clearInterval(this.autoRetryTimer);
 			this.autoRetryTimer = null;
+		}
+		if (typeof document !== "undefined" && this.visibilityListener) {
+			document.removeEventListener("visibilitychange", this.visibilityListener);
+			this.visibilityListener = null;
 		}
 		this.isAutoRetrying = false;
 	}

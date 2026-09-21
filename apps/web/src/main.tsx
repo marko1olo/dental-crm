@@ -209,6 +209,7 @@ function watchDenteServiceWorkerUpdates(
 
 	window.setInterval(
 		() => {
+			if (typeof document !== "undefined" && document.hidden) return;
 			void registration.update().catch((err) => {
 				logger.warn("Обновление приложения недоступно (фоновая проверка)", err);
 			});

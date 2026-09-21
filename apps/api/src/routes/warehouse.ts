@@ -179,7 +179,8 @@ export const warehouseRoutes: FastifyPluginAsync = async (
 			isOverdraft: result.isOverdraft,
 			remainingStock: result.remainingStock,
 			deficitCount: result.deficitCount,
-			warning: result.isOverdraft
+			warning: result.isOverdraft ? "soft_overdraft" : undefined,
+			warningMessage: result.isOverdraft
 				? `Остаток 0: зафиксирован мягкий овердрафт (дефицит: ${result.deficitCount} карп., накладная поставщика ещё не внесена). Операция спасения зуба не заблокирована.`
 				: undefined,
 		});
@@ -288,7 +289,8 @@ export const warehouseRoutes: FastifyPluginAsync = async (
 			newStock: result.newStock,
 			isOverdraft: result.isOverdraft,
 			deficit: result.deficit,
-			warning: result.isOverdraft
+			warning: result.isOverdraft ? "soft_overdraft" : undefined,
+			warningMessage: result.isOverdraft
 				? `Остаток 0: зафиксирован мягкий овердрафт (дефицит: ${result.deficit} ${result.item.unit ?? "ед."}). Задержка оприходования накладной не блокирует проведение приема!`
 				: undefined,
 		});
