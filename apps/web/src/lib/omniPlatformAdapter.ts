@@ -1239,7 +1239,8 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 	 */
 	async disableKioskMode(pin?: string): Promise<{ success: boolean; error?: string }> {
 		const { disableKioskMode } = await import("../components/desktop/kioskMode.js");
-		return disableKioskMode(pin);
+		const res = await disableKioskMode(pin);
+		return res.error !== undefined ? { success: res.success, error: res.error } : { success: res.success };
 	}
 
 	/**
