@@ -343,4 +343,37 @@ describe("Wave 243 — Dental Lab & ZTL Orders Inquisitor Verification", () => {
 			);
 		}
 	});
+
+	it("4. Form ZTL-1 (ГОСТ Р 51087-97) 5-stage tracker and Mandate 8e/8s invariants", () => {
+		const currentFile = fileURLToPath(import.meta.url);
+		const labDir = path.resolve(path.dirname(currentFile), "..");
+		const blankPath = path.join(labDir, "DentalLabPrintBlank.tsx");
+		const content = fs.readFileSync(blankPath, "utf-8");
+
+		// 5-stage tracker container
+		assert.ok(
+			content.includes('data-testid="lab-blank-5stage-tracker"'),
+			"Форма ЗТЛ-1 должна содержать трекер 5 этапов (data-testid='lab-blank-5stage-tracker')"
+		);
+
+		// All 5 canonical stage testids
+		assert.ok(
+			content.includes("CANONICAL_5_CLINICAL_LAB_STATUSES") &&
+			content.includes("ztl-blank-stage-"),
+			"Форма ЗТЛ-1 должна отображать все 5 канонических этапов ЗТЛ"
+		);
+
+		// Mandate 8e item 7 unblocking clause
+		assert.ok(
+			content.includes("Срок плана лечения (>30 дн.) не блокирует наряды ЗТЛ") ||
+			content.includes("Срок плана лечения (&gt;30 дн.) не блокирует наряды ЗТЛ"),
+			"Форма ЗТЛ-1 должна содержать нормативную отметку о неблокируемости срока плана лечения"
+		);
+
+		// ГОСТ Р 51087-97
+		assert.ok(
+			content.includes("ГОСТ Р 51087-97"),
+			"Форма ЗТЛ-1 должна содержать ссылку на ГОСТ Р 51087-97"
+		);
+	});
 });

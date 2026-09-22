@@ -157,7 +157,7 @@ describe("SanPiN Microclimate & Bactericidal Zero-Setup Provisioning (Mandates 8
 
 			// Zero-setup banner text present
 			assert.ok(
-				tempContent.includes("⚡ Подключить типовое оснащение (Холодильник Pozis + Кабинет ВИТ-2)"),
+				tempContent.includes("Подключить типовое оснащение (Холодильник Pozis + Кабинет ВИТ-2)"),
 				"Temperature tab must contain canonical zero-setup button text",
 			);
 			assert.ok(
@@ -191,7 +191,7 @@ describe("SanPiN Microclimate & Bactericidal Zero-Setup Provisioning (Mandates 8
 
 			// Zero-setup banner text present
 			assert.ok(
-				bacContent.includes("⚡ Подключить типовой рециркулятор (Дезар-4, Кабинет №1)"),
+				bacContent.includes("Подключить типовой рециркулятор (Дезар-4, Кабинет №1)"),
 				"Bactericidal tab must contain canonical zero-setup button text",
 			);
 			assert.ok(

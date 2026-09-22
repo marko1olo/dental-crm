@@ -1171,6 +1171,9 @@ function DoctorProfitabilityTable({
 		completionRate: number | null;
 		services804nCount?: number;
 		labOrdersCount?: number;
+		labOrdersCostRub?: number;
+		doctorPayrollRub?: number;
+		clinicMarginRub?: number;
 	}[];
 }) {
 	const hasUnknownMetric = (rows ?? []).some(
@@ -1194,6 +1197,10 @@ function DoctorProfitabilityTable({
 					{(rows ?? []).map((doc) => {
 						const margin = formatMarginCell(doc?.margin);
 						const completion = formatCompletionRate(doc?.completionRate);
+						const marginTitle =
+							doc?.clinicMarginRub !== undefined && doc?.clinicMarginRub !== null
+								? `Маржа клиники: ${money(doc.clinicMarginRub)}${doc.doctorPayrollRub ? ` • Комиссия Т-51: ${money(doc.doctorPayrollRub)}` : ""}`
+								: margin.title;
 						return (
 							<tr key={doc?.name ?? "unknown"}>
 								<td className="font-medium whitespace-nowrap">{doc?.name ?? "—"}</td>
@@ -1201,7 +1208,7 @@ function DoctorProfitabilityTable({
 								<td className="whitespace-nowrap">{money(doc?.revenue ?? 0)}</td>
 								<td
 									className={`font-semibold whitespace-nowrap min-w-[110px] ${metricToneClass(margin.tone)}`}
-									title={margin.title}
+									title={marginTitle}
 								>
 									{margin.text}
 								</td>
@@ -1216,24 +1223,29 @@ function DoctorProfitabilityTable({
 								<td className="whitespace-nowrap font-medium text-center">
 									{doc?.services804nCount ?? 0}
 								</td>
-								<td className="whitespace-nowrap font-medium text-center">
+								<td
+									className="whitespace-nowrap font-medium text-center"
+									title={(doc?.labOrdersCostRub ?? 0) > 0 ? `Списания ЗТЛ: ${money(doc?.labOrdersCostRub ?? 0)}` : undefined}
+								>
 									{doc?.labOrdersCount ?? 0}
+									{(doc?.labOrdersCostRub ?? 0) > 0 && (
+										<span className="block text-[11px] text-[var(--muted)] font-normal">
+											{formatRub(doc?.labOrdersCostRub ?? 0)}
+										</span>
+									)}
 								</td>
 							</tr>
 						);
 					})}
 				</tbody>
 			</table>
-			{/*
-				Сноска о методе — по образцу отчётов руководителю
-				(components/reports/ManagerReportsPanel.tsx). Прочерк без объяснения
-				читается как сбой выгрузки.
-			*/}
-			{hasUnknownMetric && (
+			{hasUnknownMetric ? (
 				<p className="mt-2.5 text-xs leading-relaxed text-[var(--muted)]">
-					Прочерк — величина не рассчитывается, а не ноль. Прибыль по врачу
-					требует себестоимости материалов и процента врача; в системе они не
-					заданы. Выручка — только фактически полученные платежи.
+					Прочерк — величина не рассчитывается, а не ноль. Прибыль и комиссия рассчитываются по фактически полученной выручке за вычетом прямых списаний ЗТЛ и сдельной ставки врача (Форма Т-51). Выручка — только фактически полученные платежи.
+				</p>
+			) : (
+				<p className="mt-2.5 text-xs leading-relaxed text-[var(--muted)]">
+					Прибыль и комиссия рассчитываются по фактически полученной выручке за вычетом прямых списаний нарядов ЗТЛ и сдельной ставки врача (Форма Т-51). Выручка — только фактически полученные платежи 54-ФЗ.
 				</p>
 			)}
 		</div>

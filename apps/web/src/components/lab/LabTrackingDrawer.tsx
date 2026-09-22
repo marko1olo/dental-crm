@@ -18,6 +18,8 @@ import {
 	type LabOrderStageKey,
 	type LabTrackingDrawerProps,
 	LAB_ORDER_STAGES,
+	CANONICAL_5_CLINICAL_LAB_STATUSES,
+	mapTo5StageLabStatus,
 	calculateLabFinancialSplit,
 	generateBarcodeSvg,
 	formatGostOrderNumber,
@@ -225,7 +227,7 @@ export function LabTrackingDrawer({
 						</div>
 					</div>
 
-					{/* ─── 4 КЛИНИЧЕСКИХ СТАТУСА НАКАЗ-ЗАКАЗА ЗТЛ ─────────────────── */}
+					{/* ─── 5 КЛИНИЧЕСКИХ СТАТУСОВ НАКАЗ-ЗАКАЗА ЗТЛ (Мандаты 8e, 8s, 8k / ГОСТ Р 51087-97) ─────────────────── */}
 					<div className="space-y-3">
 						<div className="flex items-center justify-between">
 							<label className="text-sm font-bold text-[var(--ink)]">
@@ -234,6 +236,53 @@ export function LabTrackingDrawer({
 							<span className="text-xs text-[var(--muted)]">
 								{currentStageIndex >= 0 ? `Этап ${currentStageIndex + 1} из ${LAB_ORDER_STAGES.length}` : "Выберите статус"}
 							</span>
+						</div>
+
+						{/* 5-Stage Stepper Bar */}
+						<div
+							className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2"
+							data-testid="lab-drawer-5stage-stepper"
+						>
+							<div className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider flex justify-between">
+								<span>5 этапов клинического трекинга</span>
+								<span className="font-mono text-[10px]">ГОСТ Р 51087-97</span>
+							</div>
+							<div className="grid grid-cols-5 gap-1.5 text-center">
+								{CANONICAL_5_CLINICAL_LAB_STATUSES.map((item) => {
+									const mappedCurrent = mapTo5StageLabStatus(activeStage);
+									const isCurrent = mappedCurrent === item.id;
+									const currentStep = CANONICAL_5_CLINICAL_LAB_STATUSES.find((s) => s.id === mappedCurrent)?.step ?? 1;
+									const isPassed = currentStep >= item.step;
+
+									return (
+										<button
+											key={item.id}
+											type="button"
+											onClick={() => {
+												if (item.id === "sent") handleAdvanceStage("sent_to_lab");
+												else if (item.id === "in_progress") handleAdvanceStage("in_progress");
+												else if (item.id === "fitting") handleAdvanceStage("fitting_scheduled");
+												else if (item.id === "ready") handleAdvanceStage("delivered_completed");
+												else if (item.id === "completed") handleAdvanceStage("delivered_completed");
+											}}
+											className={`p-1.5 rounded-lg border text-center transition-all cursor-pointer min-h-[38px] ${
+												isCurrent
+													? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold shadow-xs ring-1 ring-[var(--teal)]"
+													: isPassed
+													? "bg-[var(--teal-surface)] border-[var(--teal-soft)] text-[var(--teal)] font-semibold"
+													: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
+											}`}
+											data-testid={`drawer-5stage-step-${item.id}`}
+											title={item.descRu}
+										>
+											<div className="text-[9px] uppercase font-bold tracking-wider">
+												Эт. {item.step}
+											</div>
+											<div className="text-[11px] font-bold truncate">{item.shortLabelRu}</div>
+										</button>
+									);
+								})}
+							</div>
 						</div>
 
 						<div className="space-y-2">

@@ -340,6 +340,29 @@ export function SeniorNurseKraftUnsealModal({
 			console.warn("Storage update skipped", storageErr);
 		}
 
+		// 5. Синхронизация с API бэкенда (POST /api/sterilization/unseal - Мандаты 8e, 8k, 8n)
+		try {
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+			fetch("/api/sterilization/unseal", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				},
+				body: JSON.stringify({
+					barcode: pkg.barcode128,
+					operatorName: "Медсестра ЦСО",
+					notes: emergencyNote ? emergencyNote.trim() : undefined,
+				}),
+			}).catch((err) => {
+				console.warn("Background sterilization unseal sync non-blocking error", err);
+			});
+		} catch (fetchErr) {
+			console.warn("Sterilization unseal fetch non-blocking error", fetchErr);
+		}
+
 		showToast(
 			`Инструменты стерильны. Крафт-пакет №${pkg.barcode128} вскрыт и зафиксирован в 043/у!`,
 			"success",

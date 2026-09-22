@@ -467,3 +467,91 @@ test("parseDashboardPayload: парсинг cardRevenue, services804nCount и la
 	assert.equal(doc.services804nCount, 28);
 	assert.equal(doc.labOrdersCount, 5);
 });
+
+test("computeLocalAnalyticsData: детализация 54-ФЗ (СБП, безнал B2B, ДМС) и списания ЗТЛ со сдельной ставкой Т-51", () => {
+	const data = computeLocalAnalyticsData({
+		patients: [{ id: "p-1" }],
+		appointments: [{ id: "a-1", doctorUserId: "doc-1", startsAt: new Date().toISOString(), status: "completed" }],
+		payments: [
+			{ id: "pay-1", amount: 10_000, method: "sbp", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
+			{ id: "pay-2", amount: 20_000, method: "bank_transfer", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
+			{ id: "pay-3", amount: 30_000, method: "insurance", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
+			{ id: "pay-4", amount: 40_000, method: "card", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
+		],
+		labOrders: [
+			{ id: "lab-1", doctorId: "doc-1", status: "completed", priceRub: 20_000 },
+			{ id: "lab-2", doctorId: "doc-1", status: "done", price: 5_000 },
+		],
+		staff: [{ id: "doc-1", name: "Ортопед Смирнов", role: "doctor" }],
+	});
+
+	assert.equal(data.kpis.totalRevenue, 100_000);
+	assert.equal(data.kpis.cardRevenue, 40_000);
+	assert.equal(data.kpis.cashlessRevenue, 60_000);
+	assert.equal(data.kpis.sbpRevenue, 10_000);
+	assert.equal(data.kpis.bankTransferRevenue, 20_000);
+	assert.equal(data.kpis.insuranceRevenue, 30_000);
+
+	assert.equal(data.doctorProfitabilityJson.length, 1);
+	const doc = data.doctorProfitabilityJson[0];
+	assert.ok(doc);
+	assert.equal(doc.revenue, 100_000);
+	assert.equal(doc.labOrdersCount, 2);
+	assert.equal(doc.labOrdersCostRub, 25_000);
+	// База для Т-51 = 100_000 - 25_000 = 75_000; комиссия 25% = 18_750
+	assert.equal(doc.doctorPayrollRub, 18_750);
+	// Маржа клиники = 100_000 - 25_000 - 18_750 = 56_250
+	assert.equal(doc.clinicMarginRub, 56_250);
+	// Маржинальность = round(56_250 / 100_000 * 100) = 56%
+	assert.equal(doc.margin, 56);
+});
+
+test("parseDashboardPayload: парсинг расширенных потоков 54-ФЗ и рентабельности врача с бэкенда", () => {
+	const body = JSON.stringify({
+		success: true,
+		data: {
+			kpis: {
+				totalRevenue: 200_000,
+				cashRevenue: 50_000,
+				cardRevenue: 70_000,
+				cashlessRevenue: 80_000,
+				sbpRevenue: 30_000,
+				bankTransferRevenue: 40_000,
+				insuranceRevenue: 10_000,
+				advanceRevenue: 0,
+			},
+			cohortLtvJson: [],
+			planFunnelJson: [],
+			chairUtilizationJson: [],
+			doctorProfitabilityJson: [
+				{
+					doctorId: "doc-2",
+					name: "Терапевт Васильев",
+					revenue: 200_000,
+					margin: 62,
+					labOrdersCount: 4,
+					labOrdersCostRub: 35_000,
+					doctorPayrollRub: 41_250,
+					clinicMarginRub: 123_750,
+				},
+			],
+			isEmpty: false,
+		},
+	});
+
+	const result = parseDashboardPayload(200, body);
+	assert.equal(result.ok, true);
+	if (!result.ok) return;
+
+	assert.equal(result.data.kpis.sbpRevenue, 30_000);
+	assert.equal(result.data.kpis.bankTransferRevenue, 40_000);
+	assert.equal(result.data.kpis.insuranceRevenue, 10_000);
+
+	const doc = result.data.doctorProfitabilityJson[0];
+	assert.ok(doc);
+	assert.equal(doc.margin, 62);
+	assert.equal(doc.labOrdersCostRub, 35_000);
+	assert.equal(doc.doctorPayrollRub, 41_250);
+	assert.equal(doc.clinicMarginRub, 123_750);
+});
+

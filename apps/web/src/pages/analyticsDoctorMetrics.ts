@@ -185,6 +185,9 @@ export interface AnalyticsKpis {
 	readonly cardRevenue?: number;
 	readonly cashlessRevenue?: number;
 	readonly advanceRevenue?: number;
+	readonly sbpRevenue?: number;
+	readonly bankTransferRevenue?: number;
+	readonly insuranceRevenue?: number;
 	readonly bonusRevenue?: number;
 	readonly averageCheck?: number;
 	readonly primaryPatientsCount?: number;
@@ -208,6 +211,9 @@ export interface DoctorProfitabilityRow {
 	readonly completionRate: number | null;
 	readonly services804nCount?: number;
 	readonly labOrdersCount?: number;
+	readonly labOrdersCostRub?: number;
+	readonly doctorPayrollRub?: number;
+	readonly clinicMarginRub?: number;
 }
 
 /**
@@ -385,6 +391,9 @@ function toDoctorRows(value: unknown): DoctorProfitabilityRow[] {
 				completionRate: nullableNumber(row.completionRate),
 				services804nCount: numberOr(row.services804nCount, 0),
 				labOrdersCount: numberOr(row.labOrdersCount, 0),
+				labOrdersCostRub: numberOr(row.labOrdersCostRub, 0),
+				doctorPayrollRub: numberOr(row.doctorPayrollRub, 0),
+				clinicMarginRub: nullableNumber(row.clinicMarginRub),
 			},
 		];
 	});
@@ -544,6 +553,9 @@ export function parseDashboardPayload(
 				cardRevenue: numberOr(kpisRow?.cardRevenue, 0),
 				cashlessRevenue: numberOr(kpisRow?.cashlessRevenue, 0),
 				advanceRevenue: numberOr(kpisRow?.advanceRevenue, 0),
+				sbpRevenue: numberOr(kpisRow?.sbpRevenue, 0),
+				bankTransferRevenue: numberOr(kpisRow?.bankTransferRevenue, 0),
+				insuranceRevenue: numberOr(kpisRow?.insuranceRevenue, 0),
 				bonusRevenue: numberOr(kpisRow?.bonusRevenue, 0),
 				averageCheck: numberOr(kpisRow?.averageCheck, 0),
 				primaryPatientsCount: numberOr(kpisRow?.primaryPatientsCount, 0),
@@ -670,6 +682,9 @@ export function computeLocalAnalyticsData(
 	let cardRevenue = 0;
 	let cashlessRevenue = 0;
 	let advanceRevenue = 0;
+	let sbpRevenue = 0;
+	let bankTransferRevenue = 0;
+	let insuranceRevenue = 0;
 	let bonusRevenue = 0;
 
 	for (const p of payments) {
@@ -693,6 +708,15 @@ export function computeLocalAnalyticsData(
 			method === "family_wallet"
 		) {
 			advanceRevenue += amt;
+		} else if (method === "online" || method === "sbp") {
+			cashlessRevenue += amt;
+			sbpRevenue += amt;
+		} else if (method === "bank_transfer") {
+			cashlessRevenue += amt;
+			bankTransferRevenue += amt;
+		} else if (method === "insurance") {
+			cashlessRevenue += amt;
+			insuranceRevenue += amt;
 		} else if (method === "bonus" || method === "points" || method === "loyalty") {
 			bonusRevenue += amt;
 		} else {
@@ -887,6 +911,7 @@ export function computeLocalAnalyticsData(
 	}
 
 	const doctorLabMap = new Map<string, number>();
+	const doctorLabCostMap = new Map<string, number>();
 	for (const lab of rawLabOrders) {
 		const dId = String(lab.doctorId || lab.doctorUserId || "");
 		const status = String(lab.status || "").toLowerCase();
@@ -899,6 +924,15 @@ export function computeLocalAnalyticsData(
 				status === "done")
 		) {
 			doctorLabMap.set(dId, (doctorLabMap.get(dId) || 0) + 1);
+			const price =
+				typeof lab.priceRub === "number" && Number.isFinite(lab.priceRub)
+					? lab.priceRub
+					: typeof lab.price === "number" && Number.isFinite(lab.price)
+						? lab.price
+						: 0;
+			if (price > 0) {
+				doctorLabCostMap.set(dId, (doctorLabCostMap.get(dId) || 0) + price);
+			}
 		}
 	}
 
@@ -921,6 +955,19 @@ export function computeLocalAnalyticsData(
 			const docRev = doctorRevenueMap.get(docId) || 0;
 			const services804nCount = doctorServicesMap.get(docId) || 0;
 			const labOrdersCount = doctorLabMap.get(docId) || 0;
+			const labOrdersCostRub = doctorLabCostMap.get(docId) || 0;
+			// Зарплатная комиссия врача Т-51: если по врачу есть списания ЗТЛ,
+			// расчетная база = max(0, выручка - ЗТЛ) * 25% (стандартная сдельная ставка Т-51)
+			const doctorPayrollRub = docRev > 0
+				? Math.round(Math.max(0, docRev - labOrdersCostRub) * 0.25)
+				: 0;
+			const clinicMarginRub = docRev > 0
+				? docRev - labOrdersCostRub - doctorPayrollRub
+				: 0;
+			const margin = docRev > 0
+				? Math.round((clinicMarginRub / docRev) * 100)
+				: null;
+
 			return {
 				doctorId: docId,
 				name: docName,
@@ -935,10 +982,13 @@ export function computeLocalAnalyticsData(
 				workedHours: docAppts.length * 1,
 				hourlyRevenueRub:
 					docAppts.length > 0 ? Math.round(docRev / docAppts.length) : 0,
-				margin: null,
+				margin,
 				completionRate,
 				services804nCount,
 				labOrdersCount,
+				labOrdersCostRub,
+				doctorPayrollRub,
+				clinicMarginRub,
 			};
 		},
 	);
@@ -987,6 +1037,9 @@ export function computeLocalAnalyticsData(
 			cardRevenue,
 			cashlessRevenue,
 			advanceRevenue,
+			sbpRevenue,
+			bankTransferRevenue,
+			insuranceRevenue,
 			bonusRevenue,
 			averageCheck,
 			primaryPatientsCount,

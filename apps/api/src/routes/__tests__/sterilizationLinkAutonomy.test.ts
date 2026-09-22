@@ -4,6 +4,7 @@ import {
 	applyEmergencySterilizationToDiaryTreatment,
 	buildAutoProvisionSterilizationLogValues,
 	buildEmergencySterilizationAdmissionNote,
+	buildUnsealKraftPackageResponse,
 	evaluateSterilizationLogForLinking,
 } from "../sterilization.js";
 
@@ -123,6 +124,28 @@ describe("Sterilization Tray Auto-Provision & Doctor Autonomy (Mandates 8e, 8n)"
 		const EMOJI_REGEX = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 		assert.equal(EMOJI_REGEX.test(note), false, "No emojis in medical records per Mandate 8d Item 7");
 		assert.ok(!note.includes("⚡"));
+	});
+
+	it("1-click nurse unseal without 3-person commission (Mandates 8e, 8k, 8n)", () => {
+		const now = new Date("2026-09-23T01:00:00.000Z");
+		const res = buildUnsealKraftPackageResponse({
+			barcode: "  KB-20260923-001  ",
+			operatorName: "Иванова М.И. (медсестра)",
+			now,
+		});
+
+		assert.equal(res.success, true);
+		assert.equal(res.barcode, "KB-20260923-001");
+		assert.equal(res.commissionRequired, false, "Must never require a 3-person commission");
+		assert.equal(res.operatorName, "Иванова М.И. (медсестра)");
+		assert.equal(res.status, "unsealed");
+		assert.equal(res.sanpinVerified, true);
+		assert.equal(res.unsealedAt, "2026-09-23T01:00:00.000Z");
+		assert.match(res.message, /без комиссии из 3 человек/);
+
+		// Zero emoji in unseal message
+		const EMOJI_REGEX = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+		assert.equal(EMOJI_REGEX.test(res.message), false);
 	});
 });
 

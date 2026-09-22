@@ -216,6 +216,32 @@ export function evaluateSterilizationLogForLinking(
 	};
 }
 
+/**
+ * Мандаты 8e, 8k, 8n: Формирует ответ на 1-клик списание/вскрытие крафт-пакета медсестрой без комиссии.
+ */
+export function buildUnsealKraftPackageResponse(params: {
+	barcode: string;
+	operatorName?: string | null;
+	operatorId?: string | null;
+	notes?: string | null;
+	now?: Date;
+}) {
+	const now = params.now ?? new Date();
+	const operator = params.operatorName || "Медсестра ЦСО";
+	return {
+		success: true,
+		barcode: params.barcode.trim(),
+		unsealedAt: now.toISOString(),
+		commissionRequired: false,
+		operatorName: operator,
+		operatorId: params.operatorId ?? null,
+		status: "unsealed" as const,
+		sanpinVerified: true,
+		message:
+			"Крафт-пакет успешно вскрыт и списан в 1 клик без комиссии из 3 человек (СанПиН 3.3686-21 / Мандаты 8e, 8k, 8n).",
+	};
+}
+
 export async function registerSterilizationRoutes(app: FastifyInstance) {
 	/**
 	 * GET /api/sterilization/logs
@@ -956,7 +982,6 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 		}
 		const data = parsed.data;
 		const now = new Date();
-		const operator = data.operatorName || "Медсестра ЦСО";
 
 		const existingLog = await db
 			.select()
@@ -978,17 +1003,15 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 				.where(eq(sterilizationLogs.id, existingLog[0].id));
 		}
 
-		return reply.send({
-			success: true,
-			barcode: data.barcode,
-			unsealedAt: now.toISOString(),
-			commissionRequired: false,
-			operatorName: operator,
-			operatorId: data.operatorId ?? null,
-			status: "unsealed",
-			sanpinVerified: true,
-			message: "Крафт-пакет успешно вскрыт и списан в 1 клик без комиссии из 3 человек (СанПиН 3.3686-21 / Мандаты 8e, 8k, 8n).",
-		});
+		return reply.send(
+			buildUnsealKraftPackageResponse({
+				barcode: data.barcode,
+				operatorName: data.operatorName,
+				operatorId: data.operatorId,
+				notes: data.notes,
+				now,
+			}),
+		);
 	});
 }
 

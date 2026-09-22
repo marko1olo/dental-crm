@@ -7,6 +7,8 @@ import {
 	generateQrCodeSvg,
 	type JawScope,
 	formatJawScopeLabel,
+	CANONICAL_5_CLINICAL_LAB_STATUSES,
+	mapTo5StageLabStatus,
 } from "./labMath";
 
 export interface DentalLabPrintBlankProps {
@@ -43,6 +45,8 @@ export interface DentalLabPrintBlankProps {
 	handlePrint: () => void;
 	isDraft?: boolean;
 	isSigned?: boolean;
+	currentStage?: string;
+	status?: string;
 }
 
 export function DentalLabPrintBlank({
@@ -79,7 +83,13 @@ export function DentalLabPrintBlank({
 	handlePrint,
 	isDraft = true,
 	isSigned = false,
+	currentStage,
+	status,
 }: DentalLabPrintBlankProps) {
+	const active5Stage = mapTo5StageLabStatus(currentStage || status || "sent");
+	const currentStep =
+		CANONICAL_5_CLINICAL_LAB_STATUSES.find((s) => s.id === active5Stage)?.step ?? 1;
+
 	const finalShade =
 		shadeSystem === "3d_master"
 			? shade3dMaster
@@ -215,6 +225,44 @@ export function DentalLabPrintBlank({
 							<strong>Клинические указания:</strong> {clinicalNotes}
 						</div>
 					)}
+				</div>
+
+				{/* 5-Stage Clinical Tracking Progression (ГОСТ Р 51087-97 / Мандаты 8e, 8s, 8k) */}
+				<div
+					className="p-3 bg-slate-50 border border-slate-300 rounded-lg text-xs space-y-2"
+					data-testid="lab-blank-5stage-tracker"
+				>
+					<div className="font-bold border-b border-slate-200 pb-1.5 uppercase tracking-wider text-[11px] text-slate-700 flex justify-between items-center">
+						<span>Маршрутный лист и клинические этапы ЗТЛ (ГОСТ Р 51087-97):</span>
+						<span className="font-mono text-[10px] text-slate-500 font-semibold">5 ЭТАПОВ ТРЕКИНГА</span>
+					</div>
+					<div className="grid grid-cols-5 gap-2 pt-1 text-center">
+						{CANONICAL_5_CLINICAL_LAB_STATUSES.map((item) => {
+							const isCurrent = active5Stage === item.id;
+							const isPassed = currentStep >= item.step;
+							return (
+								<div
+									key={item.id}
+									className={`p-2 rounded border text-center transition-all ${
+										isCurrent
+											? "bg-slate-900 text-white border-slate-900 font-bold shadow-xs ring-1 ring-slate-900"
+											: isPassed
+											? "bg-slate-100 text-slate-800 border-slate-300 font-semibold"
+											: "bg-white text-slate-400 border-slate-200"
+									}`}
+									data-testid={`ztl-blank-stage-${item.id}`}
+								>
+									<div className="text-[10px] uppercase font-bold tracking-wider">
+										Этап {item.step}
+									</div>
+									<div className="text-xs font-bold mt-0.5 truncate">{item.shortLabelRu}</div>
+									<div className="text-[10px] mt-0.5 opacity-80">
+										{isCurrent ? "● ТЕКУЩИЙ" : isPassed ? "✓ ПРОЙДЕН" : "○ ОЖИДАНИЕ"}
+									</div>
+								</div>
+							);
+						})}
+					</div>
 				</div>
 
 				{/* Disinfection & SanPiN Mark */}

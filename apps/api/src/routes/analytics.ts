@@ -13,6 +13,7 @@ import {
 	crmLeads,
 	diagnocatAiFindings,
 	diagnocatReports,
+	doctorPayrollStatements,
 	labOrders,
 	patients,
 	payments,
@@ -337,6 +338,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				.select({
 					doctorId: labOrders.doctorId,
 					labOrdersCount: sql<number>`count(*)::int`,
+					labOrdersCostRub: sql<number>`coalesce(sum(${labOrders.priceRub}), 0)`,
 				})
 				.from(labOrders)
 				.where(
@@ -349,6 +351,34 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			const docLabMap = new Map(
 				docLabRes.map((l) => [l.doctorId ?? "unassigned", Number(l.labOrdersCount || 0)]),
 			);
+			const docLabCostMap = new Map(
+				docLabRes.map((l) => [l.doctorId ?? "unassigned", Number(l.labOrdersCostRub || 0)]),
+			);
+
+			// 2c. Зарплатные ведомости Т-51 (начисленные сдельные комиссии врачей)
+			const docPayrollRes = await db
+				.select({
+					doctorId: doctorPayrollStatements.doctorId,
+					payrollRub: sql<number>`coalesce(sum(${doctorPayrollStatements.calculatedPieceworkRub}), 0)`,
+					labCostRub: sql<number>`coalesce(sum(${doctorPayrollStatements.labCostRub}), 0)`,
+					finalPayoutRub: sql<number>`coalesce(sum(${doctorPayrollStatements.finalPayoutRub}), 0)`,
+				})
+				.from(doctorPayrollStatements)
+				.where(
+					and(
+						eq(doctorPayrollStatements.organizationId, orgId),
+						startDate
+							? gte(
+									doctorPayrollStatements.period,
+									sql`to_char(${startDate}::date, 'YYYY-MM')`,
+								)
+							: sql`true`,
+					),
+				)
+				.groupBy(doctorPayrollStatements.doctorId);
+			const docPayrollMap = new Map(
+				docPayrollRes.map((p) => [p.doctorId, Number(p.payrollRub || 0)]),
+			);
 
 			const allDoctorIds = Array.from(
 				new Set([
@@ -356,6 +386,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					...docApptRes.map((r) => r.doctorId),
 					...docServicesRes.map((r) => r.doctorId),
 					...docLabRes.map((r) => r.doctorId),
+					...docPayrollRes.map((r) => r.doctorId),
 				]),
 			);
 
@@ -386,6 +417,20 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 							: null;
 					const services804nCount = docServicesMap.get(docId ?? "unassigned") || 0;
 					const labOrdersCount = docLabMap.get(docId ?? "unassigned") || 0;
+					const labOrdersCostRub = docLabCostMap.get(docId ?? "unassigned") || 0;
+					// Реальная зарплатная комиссия врача Т-51 из ведомостей или расчетная по стандартной ставке 25% (Net Revenue)
+					const recordedPayroll = docId ? (docPayrollMap.get(docId) || 0) : 0;
+					const doctorPayrollRub = recordedPayroll > 0
+						? recordedPayroll
+						: revenue > 0
+							? Math.round(Math.max(0, revenue - labOrdersCostRub) * 0.25)
+							: 0;
+					const clinicMarginRub = revenue > 0
+						? revenue - labOrdersCostRub - doctorPayrollRub
+						: 0;
+					const margin = revenue > 0
+						? Math.round((clinicMarginRub / revenue) * 100)
+						: null;
 
 					return {
 						doctorId: docId ?? null,
@@ -397,14 +442,13 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 						avgTicketRub,
 						workedHours,
 						hourlyRevenueRub,
-						// БЫЛО: margin = 35% от выручки и completionRate = 85 — константы,
-						// выдаваемые за расчёт. Пока в БД нет данных о себестоимости
-						// материалов и проценте врача, возвращаем null: интерфейс покажет
-						// прочерк вместо правдоподобного, но выдуманного числа.
-						margin: null as number | null,
+						margin,
 						completionRate,
 						services804nCount,
 						labOrdersCount,
+						labOrdersCostRub,
+						doctorPayrollRub,
+						clinicMarginRub,
 					};
 				})
 				.filter(
@@ -412,7 +456,8 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 						x.revenue > 0 ||
 						(x.appointmentsCount ?? 0) > 0 ||
 						(x.services804nCount ?? 0) > 0 ||
-						(x.labOrdersCount ?? 0) > 0,
+						(x.labOrdersCount ?? 0) > 0 ||
+						(x.doctorPayrollRub ?? 0) > 0,
 				)
 				.sort((a, b) => b.revenue - a.revenue);
 
@@ -589,6 +634,9 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					card: sql<number>`coalesce(sum(case when ${payments.method} = 'card' then ${payments.amountRub} else 0 end), 0)`,
 					cashless: sql<number>`coalesce(sum(case when ${payments.method} in ('bank_transfer', 'online') then ${payments.amountRub} else 0 end), 0)`,
 					advance: sql<number>`coalesce(sum(case when ${payments.method} in ('family_wallet', 'insurance', 'other') then ${payments.amountRub} else 0 end), 0)`,
+					sbp: sql<number>`coalesce(sum(case when ${payments.method} = 'online' then ${payments.amountRub} else 0 end), 0)`,
+					bankTransfer: sql<number>`coalesce(sum(case when ${payments.method} = 'bank_transfer' then ${payments.amountRub} else 0 end), 0)`,
+					insurance: sql<number>`coalesce(sum(case when ${payments.method} = 'insurance' then ${payments.amountRub} else 0 end), 0)`,
 				})
 				.from(payments)
 				// Только фактически полученные деньги (см. комментарий выше).
@@ -875,6 +923,9 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					cardRevenue: Number(revenueRow?.card ?? 0),
 					cashlessRevenue: Number(revenueRow?.cashless ?? 0),
 					advanceRevenue: Number(revenueRow?.advance ?? 0),
+					sbpRevenue: Number(revenueRow?.sbp ?? 0),
+					bankTransferRevenue: Number(revenueRow?.bankTransfer ?? 0),
+					insuranceRevenue: Number(revenueRow?.insurance ?? 0),
 					bonusRevenue: 0,
 					totalAppointments: Number(apptCountRow?.count ?? 0),
 					avgRevenuePerPatient: avgChk,
