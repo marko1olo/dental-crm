@@ -56,7 +56,7 @@ export function isFurcationEligibleTooth(toothNumber: number): boolean {
 export { isFurcationEligibleTooth as isPerioMultiRootedTooth };
 
 /**
- * Generates continuous anatomical probing sequence across the entire dentition (Florida Probe):
+ * Generates continuous anatomical probing sequence across the entire dentition (Форма 043/у):
  * 1. Upper Arch Buccal (18 DB -> 18 B -> 18 MB ... -> 28 DB)
  * 2. Upper Arch Palatal (28 DB -> ... -> 18 DL)
  * 3. Lower Arch Buccal (48 DB -> ... -> 38 DB)

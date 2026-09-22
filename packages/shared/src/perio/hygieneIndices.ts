@@ -369,7 +369,7 @@ export interface CombinedHygieneReport {
 }
 
 /**
- * Automatically derives hygiene & periodontal index scores from the full 32-tooth Florida Probe periodontogram.
+ * Automatically derives hygiene & periodontal index scores from the full 32-tooth periodontogram (Форма 043/у).
  */
 export function deriveHygieneFromPerioTeeth(
 	teeth: readonly PerioToothRecord[],

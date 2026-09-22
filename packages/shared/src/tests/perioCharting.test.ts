@@ -289,7 +289,7 @@ describe("Periodontal Charting & AAP/EFP 2018 Engine (packages/shared)", () => {
 		assert.ok(text.includes("ПРОТОКОЛ ПАРОДОНТОЛОГИЧЕСКОГО ОБСЛЕДОВАНИЯ"));
 		assert.ok(text.includes("Д-р Иванов А.С."));
 		assert.ok(text.includes("PSR/CPITN"));
-		assert.ok(text.includes("Florida Probe"));
+		assert.ok(text.includes("6-точечного зондирования (Форма 043/у)"));
 		assert.ok(text.includes("Оценка риска пародонтита"));
 		assert.ok(text.includes("SRP в области 1.6"));
 	});

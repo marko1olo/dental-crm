@@ -1379,7 +1379,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 							<span>
 								{isTier3ProbingExpanded
 									? "Скрыть детальные точки (Tier 3)"
-									: "Детальные 192 точки (Tier 3, по требованию)"}
+									: "6 точек на зуб (Tier 3, по требованию)"}
 							</span>
 							{isTier3ProbingExpanded ? (
 								<ChevronUp size={14} />
@@ -2239,11 +2239,11 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 							<div className="text-[11px] text-[var(--muted)] flex items-center gap-2 shrink-0 ml-auto pl-2">
 								<span className="truncate">
 									{archFilter === "all"
-										? "32 зуба (192 точки)"
+										? "32 зуба (6 точек на зуб)"
 										: archFilter === "upper"
-											? "Верхняя челюсть (96 точек)"
+											? "Верхняя челюсть (16 зубов)"
 											: archFilter === "lower"
-												? "Нижняя челюсть (96 точек)"
+												? "Нижняя челюсть (16 зубов)"
 												: `Секстант ${archFilter}`}
 								</span>
 							</div>
@@ -2396,7 +2396,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 						</div>
 						<div className="flex flex-col gap-0.5">
 							<span className="text-sm font-black text-[var(--ink)]">
-								Детальные 192 точки измерения (Tier 3, по требованию)
+								6 точек зондирования для Формы 043/у (Tier 3, по требованию)
 							</span>
 							<span className="text-xs text-[var(--muted)]">
 								Изолированы в Tier 3 для углублённого пародонтологического приёма. На обычном терапевтическом приёме используйте 1-клик кнопки экспресс-скрининга (Норма / Патология / Профгигиена) выше.
@@ -2410,7 +2410,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 						data-testid="expand-perio-chart-tier3-btn"
 					>
 						<Activity size={16} />
-						<span>Развернуть 192 точки (Tier 3)</span>
+						<span>Развернуть 6 точек зондирования (Tier 3)</span>
 					</button>
 				</div>
 			)}

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * 6 anatomical probing sites per tooth according to standard Florida Probe workflow:
+ * 6 anatomical probing sites per tooth according to standard 6-point probing workflow (Форма 043/у):
  * - MB: Mesio-Buccal (Медиально-вестибулярно / медиально-щечно)
  * - B: Mid-Buccal (По центру вестибулярно / щечно)
  * - DB: Disto-Buccal (Дистально-вестибулярно / дистально-щечно)
@@ -241,7 +241,7 @@ export const ALL_PERIO_TEETH = [
 ] as const;
 
 /**
- * Probing step in continuous Florida probe workflow.
+ * Probing step in continuous 6-point probing workflow (Форма 043/у).
  */
 export interface ProbingStep {
 	readonly toothNumber: number;
