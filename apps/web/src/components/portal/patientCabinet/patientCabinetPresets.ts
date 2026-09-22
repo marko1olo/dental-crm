@@ -132,7 +132,7 @@ export const PATIENT_CABINET_PRESET_ALEXEY: PatientPersonalCabinetData = {
 	appointments: [
 		{
 			id: "apt-8842-1",
-			dateIso: "2026-09-10",
+			dateIso: "2026-12-10",
 			timeRu: "14:30",
 			doctorId: "doc-smirnov",
 			doctorName: "Д-р Смирнов Андрей Васильевич",
@@ -154,7 +154,7 @@ export const PATIENT_CABINET_PRESET_ALEXEY: PatientPersonalCabinetData = {
 		},
 		{
 			id: "apt-8842-2",
-			dateIso: "2026-09-15",
+			dateIso: "2026-12-15",
 			timeRu: "11:00",
 			doctorId: "doc-kuznetsova",
 			doctorName: "Д-р Кузнецова Ольга Игоревна",
@@ -630,7 +630,7 @@ export const PATIENT_CABINET_PRESET_ELENA: PatientPersonalCabinetData = {
 	appointments: [
 		{
 			id: "apt-9201-1",
-			dateIso: "2026-08-27",
+			dateIso: "2026-12-27",
 			timeRu: "16:00",
 			doctorId: "doc-lebedeva",
 			doctorName: "Д-р Лебедева Елена Михайловна",
@@ -777,7 +777,7 @@ export const PATIENT_CABINET_PRESET_DMITRY: PatientPersonalCabinetData = {
 	appointments: [
 		{
 			id: "apt-9914-1",
-			dateIso: "2026-08-22",
+			dateIso: "2026-12-22",
 			timeRu: "18:30",
 			doctorId: "doc-kuznetsova",
 			doctorName: "Д-р Кузнецова Ольга Игоревна",

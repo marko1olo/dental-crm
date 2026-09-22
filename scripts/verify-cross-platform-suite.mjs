@@ -96,6 +96,11 @@ const steps = [
 		cmd: "node --import tsx --import ./testCssStub.mjs --test ../../packages/shared/src/tests/denteBackup.test.ts src/tests/offlineBackupAndIntegrity.test.ts",
 		cwd: path.join(projectRoot, "apps/web"),
 	},
+	{
+		name: "17. Omni-Platform Adaptor & Multi-Environment Invariants Suite",
+		cmd: "node --import tsx --import ./testCssStub.mjs --test src/tests/omniPlatformAdaptor.test.ts",
+		cwd: path.join(projectRoot, "apps/web"),
+	},
 ];
 
 let totalPassed = 0;

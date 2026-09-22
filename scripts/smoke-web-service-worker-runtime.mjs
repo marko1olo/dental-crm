@@ -184,7 +184,7 @@ await dispatchLifecycle("activate");
 
 assert(clientsClaimed, "activate must claim clients");
 assert(
-	stores.has("dental-crm-shell-v6"),
+	stores.has("dental-crm-shell-v7"),
 	"current shell cache must exist after install",
 );
 assert(
@@ -218,7 +218,7 @@ assert(
 	"same-origin JS shell asset must be cached",
 );
 
-const assetCache = stores.get("dental-crm-shell-v6");
+const assetCache = stores.get("dental-crm-shell-v7");
 await assetCache.put(
 	new Request("https://clinic.local/assets/workspace-stale.js"),
 	new Response("cached-stale", { status: 200 }),
@@ -251,7 +251,7 @@ assert(
 
 const replies = await dispatchMessage({ type: "DENTE_CLEAR_SHELL_CACHE" });
 assert(
-	stores.has("dental-crm-shell-v6"),
+	stores.has("dental-crm-shell-v7"),
 	"message protocol must retain the shell cache after stale chunk recovery",
 );
 assert(

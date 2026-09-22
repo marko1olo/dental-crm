@@ -423,21 +423,11 @@ export function syncPlatformDomAttributes(info?: OmniPlatformInfo): void {
 	}
 
 	// Synchronize Safe Area Insets as CSS custom properties for notch and home bar.
-	// Only override inline styles when positive insets exist or were previously set,
-	// preserving stylesheet env(safe-area-inset-*) fallbacks.
 	if (root.style && typeof root.style.setProperty === "function") {
-		if (platformInfo.safeArea.top > 0 || root.style.getPropertyValue("--sat")) {
-			root.style.setProperty("--sat", `${platformInfo.safeArea.top}px`);
-		}
-		if (platformInfo.safeArea.bottom > 0 || root.style.getPropertyValue("--sab")) {
-			root.style.setProperty("--sab", `${platformInfo.safeArea.bottom}px`);
-		}
-		if (platformInfo.safeArea.left > 0 || root.style.getPropertyValue("--sal")) {
-			root.style.setProperty("--sal", `${platformInfo.safeArea.left}px`);
-		}
-		if (platformInfo.safeArea.right > 0 || root.style.getPropertyValue("--sar")) {
-			root.style.setProperty("--sar", `${platformInfo.safeArea.right}px`);
-		}
+		root.style.setProperty("--sat", `${platformInfo.safeArea.top}px`);
+		root.style.setProperty("--sab", `${platformInfo.safeArea.bottom}px`);
+		root.style.setProperty("--sal", `${platformInfo.safeArea.left}px`);
+		root.style.setProperty("--sar", `${platformInfo.safeArea.right}px`);
 	}
 }
 

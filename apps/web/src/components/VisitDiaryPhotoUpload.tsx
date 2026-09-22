@@ -450,6 +450,130 @@ export function VisitDiaryPhotoUpload({
 		}
 	};
 
+	const handleCameraCapture = async () => {
+		if (!diaryId) {
+			showToast(
+				"Сначала сохраните черновик дневника — без id записи снимок прикрепить нельзя.",
+				"info",
+				10000,
+			);
+			return;
+		}
+		if (isLocked) {
+			showToast(
+				"Дневник уже подписан — новые фото к закрытой 043/у не прикрепляются.",
+				"info",
+				10000,
+			);
+			return;
+		}
+
+		setIsUploading(true);
+		try {
+			const { captureMobileCameraPhoto } = await import("../native/mobileBridge.js");
+			const result = await captureMobileCameraPhoto({
+				resolution: "high",
+				viewCategory: "occlusion",
+				facingMode: "environment",
+			});
+
+			if (!result.success || !result.dataUrl) {
+				if (result.error && !result.error.toLowerCase().includes("отмен")) {
+					showToast(`Не удалось сделать снимок: ${result.error}`, "error", 8000);
+				}
+				return;
+			}
+
+			// Преобразование снимка в WebP Blob для загрузки в 043/у
+			let blob: Blob;
+			try {
+				const resBlob = await fetch(result.dataUrl);
+				blob = await resBlob.blob();
+			} catch {
+				const arr = result.dataUrl.split(",");
+				const mime = arr[0]?.match(/:(.*?);/)?.[1] || "image/webp";
+				const bstr = atob(arr[1] || "");
+				let n = bstr.length;
+				const u8arr = new Uint8Array(n);
+				while (n--) {
+					u8arr[n] = bstr.charCodeAt(n);
+				}
+				blob = new Blob([u8arr], { type: mime });
+			}
+
+			const formData = new FormData();
+			formData.append("file", blob, "chairside_camera.webp");
+			formData.append("entityType", "diary");
+			formData.append("entityId", diaryId);
+
+			const clinicToken = readDenteClinicToken() || null;
+
+			const res = await fetch(`/api/files/visits/${visitId}/attachments`, {
+				method: "POST",
+				headers: {
+					...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
+				},
+				body: formData,
+			});
+
+			if (!res.ok) {
+				// Мандат 8e: Защита от потери данных (Autosave / Offline)
+				try {
+					const { saveOfflineDraft } = await import("../services/offline/index.js");
+					await saveOfflineDraft(
+						`photo_attachment_${diaryId}_${Date.now()}`,
+						"DIARY_043_DRAFT",
+						visitId,
+						{
+							diaryId,
+							visitId,
+							dataUrl: result.dataUrl,
+							capturedAt: result.capturedAt || new Date().toISOString(),
+						},
+					);
+					showToast("Снимок сохранен локально (офлайн-режим)", "info", 6000);
+				} catch {
+					showToast(
+						`Снимок не загружен: ${requestFailureCause(res.status)}. Проверьте сеть.`,
+						"error",
+						10000,
+					);
+				}
+				return;
+			}
+
+			const rawBody = await res.text();
+			let data: { file?: Attachment } | null = null;
+			try {
+				const parsed: unknown = rawBody.trim() ? JSON.parse(rawBody) : null;
+				if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+					data = parsed as { file?: Attachment };
+				}
+			} catch {
+				data = null;
+			}
+
+			const uploaded = data?.file;
+			if (
+				uploaded &&
+				typeof uploaded === "object" &&
+				typeof uploaded.id === "string" &&
+				uploaded.id
+			) {
+				setAttachments((prev) => [...prev, uploaded]);
+				setLoadState({ phase: "ready" });
+				showToast("Фото с камеры успешно прикреплено", "success");
+			} else {
+				reloadAttachments();
+			}
+		} catch (err) {
+			logger.error("[diary camera capture] error", err);
+			showToast(`Ошибка съемки камерой: ${requestFailureCause(null)}`, "error", 10000);
+		} finally {
+			setIsUploading(false);
+		}
+	};
+
 	return (
 		<div className="space-y-1.5 lg:col-span-2">
 			<div className="text-xs tracking-widest uppercase text-[var(--muted)] font-semibold flex items-center justify-between">
@@ -458,21 +582,33 @@ export function VisitDiaryPhotoUpload({
 					(Фотографии)
 				</span>
 				{!isLocked && diaryId && (
-					<label
-						htmlFor="visit-diary-photo-upload"
-						className="cursor-pointer text-xs min-h-[44px] flex items-center gap-1.5 bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] text-[var(--ink)]"
-					>
-						<Paperclip className="w-3.5 h-3.5" />
-						{isUploading ? "Сжатие..." : "Прикрепить фото"}
-						<input
-							id="visit-diary-photo-upload"
-							type="file"
-							accept="image/*,.heic,.heif,image/heic,image/heif"
-							className="hidden"
-							onChange={handlePhotoUpload}
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={handleCameraCapture}
 							disabled={isUploading || isLocked}
-						/>
-					</label>
+							className="cursor-pointer text-xs min-h-[44px] flex items-center gap-1.5 bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] text-[var(--ink)] disabled:opacity-50"
+							title="Сделать снимок камерой устройства (APK / планшет / веб-камера)"
+						>
+							<Camera className="w-3.5 h-3.5 text-[var(--accent)]" />
+							{isUploading ? "Сжатие..." : "Снимок камерой"}
+						</button>
+						<label
+							htmlFor="visit-diary-photo-upload"
+							className="cursor-pointer text-xs min-h-[44px] flex items-center gap-1.5 bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] text-[var(--ink)]"
+						>
+							<Paperclip className="w-3.5 h-3.5" />
+							{isUploading ? "Сжатие..." : "Прикрепить фото"}
+							<input
+								id="visit-diary-photo-upload"
+								type="file"
+								accept="image/*,.heic,.heif,image/heic,image/heif"
+								className="hidden"
+								onChange={handlePhotoUpload}
+								disabled={isUploading || isLocked}
+							/>
+						</label>
+					</div>
 				)}
 			</div>
 			{attachments.length > 0 ? (

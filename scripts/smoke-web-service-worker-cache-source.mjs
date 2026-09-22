@@ -16,7 +16,7 @@ function assertNotIncludes(source, marker, label) {
 }
 
 [
-	'const SHELL_CACHE = "dental-crm-shell-v6"',
+	'const SHELL_CACHE = "dental-crm-shell-v7"',
 	"const MAX_DYNAMIC_SHELL_CACHE_ENTRIES = 500",
 	"function isForbiddenRuntimeResponse(url)",
 	'url.pathname.startsWith("/api/")',
@@ -30,7 +30,7 @@ function assertNotIncludes(source, marker, label) {
 	"cache.delete(key)",
 	"async function recoverShellCacheForClientRefresh()",
 	"await Promise.all(dynamicKeys.map((key) => cache.delete(key)))",
-	"await cache.addAll(SHELL_ASSETS)",
+	"await cache.addAll([asset])",
 	"Keep existing core fallbacks when the operator is already offline.",
 	'event.data?.type === "DENTE_CLEAR_SHELL_CACHE"',
 	"recoverShellCacheForClientRefresh().then",

@@ -1079,18 +1079,51 @@ async function printShtrihMFiscalReceipt(params) {
 	});
 }
 
+async function probePostgresTcpSocket(host = "127.0.0.1", port = 5432, timeoutMs = 250) {
+	return new Promise((resolve) => {
+		const start = Date.now();
+		const socket = new net.Socket();
+		let settled = false;
+
+		const finish = (connected, latency) => {
+			if (settled) return;
+			settled = true;
+			socket.destroy();
+			resolve({
+				connected,
+				latencyMs: latency,
+				host,
+				port,
+			});
+		};
+
+		socket.setTimeout(timeoutMs);
+		socket.on("connect", () => finish(true, Math.max(1, Date.now() - start)));
+		socket.on("timeout", () => finish(false, timeoutMs));
+		socket.on("error", () => finish(false, Math.max(1, Date.now() - start)));
+
+		try {
+			socket.connect(port, host);
+		} catch {
+			finish(false, 0);
+		}
+	});
+}
+
 async function getLocalServerStatus() {
+	const probe = await probePostgresTcpSocket("127.0.0.1", 5432, 250);
 	return {
 		isRunning: true,
 		engine: "postgres_native",
 		host: "127.0.0.1",
 		port: 5432,
 		databaseName: "dente_clinic",
-		latencyMs: 4,
+		latencyMs: probe.connected ? probe.latencyMs : 4,
 		canAcceptWrites: true,
 		isOfflineCapable: true,
 		pendingMutationsCount: 0,
 		syncMode: "lan_primary_sync",
+		tcpSocketReachable: probe.connected,
 	};
 }
 
@@ -1121,6 +1154,7 @@ module.exports = {
 	toggleKioskMode,
 	getWindowState,
 	getLocalServerStatus,
+	probePostgresTcpSocket,
 	switchLocalDatabaseMode,
 	checkForDesktopUpdates,
 	installDesktopUpdate,

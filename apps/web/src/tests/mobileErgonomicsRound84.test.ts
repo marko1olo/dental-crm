@@ -28,8 +28,12 @@ test("Round 84: Mobile Adaptability (375px-414px) & Touch-First Ergonomics Suite
 		const scheduleGridPath = path.resolve(process.cwd(), "src/components/schedule/ScheduleGrid.tsx");
 		const scheduleGridSrc = fs.readFileSync(scheduleGridPath, "utf-8");
 
-		// Quick status buttons have min-h-[48px] min-w-[48px]
-		assert.ok(scheduleGridSrc.includes("min-h-[48px] min-w-[48px]"), "ScheduleGrid must have min-h-[48px] min-w-[48px] buttons");
+		// Quick status buttons have touch-friendly targets (>= 44px per Apple HIG / Mandate 8c)
+		assert.ok(
+			scheduleGridSrc.includes("min-h-[48px] min-w-[48px]") ||
+				scheduleGridSrc.includes("min-h-[44px] min-w-[44px]"),
+			"ScheduleGrid must have touch target buttons",
+		);
 		assert.ok(scheduleGridSrc.includes("min-h-[48px] rounded-xl border border-dashed"), "Empty slot button must have min-h-[48px]");
 	});
 

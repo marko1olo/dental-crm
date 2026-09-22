@@ -341,8 +341,12 @@ export function openOfflineOutboxDb(): Promise<IDBDatabase> {
 	return dbPromiseInstance;
 }
 
-export function resetOfflineDbConnection(): void {
+export function resetOfflineDbConnection(clearMemory = true): void {
 	dbPromiseInstance = null;
+	if (clearMemory) {
+		inMemoryMutationsMap.clear();
+		inMemoryDraftsMap.clear();
+	}
 }
 
 /**
@@ -359,10 +363,10 @@ export async function withIdbTransactionRetry<R>(
 		try {
 			const db = await openOfflineOutboxDb();
 			return await operation(db);
-		} catch (err: any) {
+		} catch (err: unknown) {
 			lastError = err;
 			const isTransient =
-				err &&
+				err instanceof Error &&
 				(err.name === "TransactionInactiveError" ||
 					err.name === "TimeoutError" ||
 					err.name === "AbortError" ||
@@ -376,9 +380,9 @@ export async function withIdbTransactionRetry<R>(
 
 			if (isTransient && attempt < maxAttempts) {
 				logger.warn(
-					`[OfflineStorage] IndexedDB transient error (${err.name || err.message}) on attempt ${attempt}/${maxAttempts}, retrying with exponential backoff...`,
+					`[OfflineStorage] IndexedDB transient error (${(err as Error).name || (err as Error).message}) on attempt ${attempt}/${maxAttempts}, retrying with exponential backoff...`,
 				);
-				resetOfflineDbConnection();
+				resetOfflineDbConnection(false);
 				await new Promise((resolve) =>
 					setTimeout(resolve, initialDelayMs * Math.pow(2, attempt - 1)),
 				);
@@ -586,6 +590,7 @@ export async function enqueueOfflineMutation<T = unknown>(
 		});
 		const duplicate = existingPending.find(
 			(m) =>
+				m.mutationId !== mutationId &&
 				m.entityId === input.entityId &&
 				m.action === (input.action || "update") &&
 				m.payloadHash === payloadHash &&

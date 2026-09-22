@@ -195,7 +195,7 @@ function messagePostSite(bodies, messageType) {
  * ------------------------------------------------------------------ */
 
 [
-	'const SHELL_CACHE = "dental-crm-shell-v4"',
+	'const SHELL_CACHE = "dental-crm-shell-v7"',
 	"function isForbiddenRuntimeResponse(url)",
 	'url.pathname.startsWith("/api/")',
 	"medical-documents",
