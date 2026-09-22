@@ -2787,7 +2787,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						) : activeMethod === "family_deposit" ? (
 							<button
 								type="button"
-								disabled={isSubmittingDeposit || (patientDepositRub === 0 && patientFamilyBalanceRub === 0)}
+								disabled={isSubmittingDeposit}
 								onClick={() => handleDepositOrPartialCombo(patientDepositRub >= totalDueRub ? "deposit" : "family")}
 								title={
 									isSubmittingDeposit

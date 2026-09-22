@@ -922,6 +922,11 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			return;
 		}
 
+		if (activeTab === "refund" && refundFiscalData.totalRub <= 0) {
+			showToast("Укажите сумму возврата больше 0 ₽", "warning");
+			return;
+		}
+
 		let activeSplit = splitInput;
 		if (overrideTender === "card") {
 			setCardAmount(totalSumRub);
@@ -2929,7 +2934,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 							<button
 								type="button"
 								onClick={() => handleExecuteFiscalization()}
-								disabled={refundFiscalData.totalRub <= 0 || isFiscalizing}
+								disabled={isFiscalizing}
 								title={
 									isFiscalizing
 										? "Идет фискализация возврата в ККТ..."
@@ -3840,7 +3845,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								<button
 									type="button"
 									onClick={() => handleExecuteFiscalization()}
-									disabled={refundFiscalData.totalRub <= 0 || isFiscalizing}
+									disabled={isFiscalizing}
 									title={
 										isFiscalizing
 											? "Идет фискализация возврата в ККТ..."

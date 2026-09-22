@@ -298,6 +298,10 @@ ${certs
 	};
 
 	const handleExecuteFiscalization = () => {
+		if (activeItems.length === 0) {
+			showToast("Выберите хотя бы одну позицию для формирования чека", "warning", 3500);
+			return;
+		}
 		setIsFiscalizing(true);
 		try {
 			onCheckoutComplete?.(billingResult);
@@ -897,7 +901,7 @@ ${certs
 						<button
 							type="button"
 							onClick={handleExecuteFiscalization}
-							disabled={isFiscalizing || activeItems.length === 0}
+							disabled={isFiscalizing}
 							title={
 								activeItems.length === 0
 									? "Выберите хотя бы одну позицию для формирования чека"
