@@ -542,13 +542,14 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 			assert.ok(html.includes("Напомнить о смене"));
 		});
 
-		it("renders 1-click torque and angulation calculation panel with 4 presets", () => {
+		it("renders 1-click torque and angulation calculation panel with 5 presets", () => {
 			const html = renderToString(
 				<OrthodonticVisitProtocolWidget isOpen={true} onClose={() => {}} />,
 			);
 			assert.ok(html.includes("data-testid=\"ortho-torque-angulation-panel\""));
-			assert.equal(TORQUE_PRESETS.length, 4);
+			assert.equal(TORQUE_PRESETS.length, 5);
 			assert.ok(html.includes("data-testid=\"torque-preset-mbt-btn\""));
+			assert.ok(html.includes("data-testid=\"torque-preset-damon_std-btn\""));
 			assert.ok(html.includes("data-testid=\"torque-preset-damon_high-btn\""));
 			assert.ok(html.includes("data-testid=\"torque-preset-damon_low-btn\""));
 			assert.ok(html.includes("data-testid=\"torque-preset-roth-btn\""));

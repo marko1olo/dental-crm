@@ -531,10 +531,15 @@ export function formatImplantComponentsSummary(manifest?: LabImplantComponentsMa
 // ---------------------------------------------------------------------------
 
 export type LabWorkflowStageId =
+	| 'draft'                // 0. Черновик наряда
+	| 'draft_order'          // Черновик (алиас)
 	| 'in_progress'          // 1. В работе
+	| 'sent_to_lab'          // Отправлен в лабораторию (алиас)
 	| 'fitting_scheduled'    // 2. Примерка назначена
 	| 'delivered_completed'  // 3. Сдано
+	| 'installed_completed'  // Зафиксировано/сдано (алиас)
 	| 'correction_remake'    // 4. Коррекция
+	| 'warranty_rework'      // Гарантийная переделка (алиас)
 	// Backward compatibility aliases
 	| 'impression_sent'
 	| 'cad_design'
@@ -554,6 +559,24 @@ export interface LabStageDefinition {
 }
 
 export const LAB_WORKFLOW_STAGES: Record<LabWorkflowStageId, LabStageDefinition> = {
+	draft: {
+		id: 'draft',
+		orderIndex: 0,
+		nameRu: '0. Черновик',
+		shortTitleRu: 'Черновик',
+		icon: 'file-text',
+		descriptionRu: 'Черновик наряда формируется врачом в кабинете.',
+		colorToken: 'var(--muted, #64748b)'
+	},
+	draft_order: {
+		id: 'draft',
+		orderIndex: 0,
+		nameRu: '0. Черновик',
+		shortTitleRu: 'Черновик',
+		icon: 'file-text',
+		descriptionRu: 'Черновик наряда формируется врачом в кабинете.',
+		colorToken: 'var(--muted, #64748b)'
+	},
 	in_progress: {
 		id: 'in_progress',
 		orderIndex: 1,
@@ -561,6 +584,15 @@ export const LAB_WORKFLOW_STAGES: Record<LabWorkflowStageId, LabStageDefinition>
 		shortTitleRu: 'В работе',
 		icon: 'settings',
 		descriptionRu: 'Заказ передан в лабораторию и находится в процессе моделирования и фрезерования.',
+		colorToken: 'var(--brand-500, #3b82f6)'
+	},
+	sent_to_lab: {
+		id: 'in_progress',
+		orderIndex: 1,
+		nameRu: '1. В работе',
+		shortTitleRu: 'В работе',
+		icon: 'settings',
+		descriptionRu: 'Заказ передан в лабораторию.',
 		colorToken: 'var(--brand-500, #3b82f6)'
 	},
 	fitting_scheduled: {
@@ -581,6 +613,15 @@ export const LAB_WORKFLOW_STAGES: Record<LabWorkflowStageId, LabStageDefinition>
 		descriptionRu: 'Ортопедическая конструкция окончательно зафиксирована в полости рта у пациента. Заказ выполнен.',
 		colorToken: 'var(--ok, #10b981)'
 	},
+	installed_completed: {
+		id: 'delivered_completed',
+		orderIndex: 3,
+		nameRu: '3. Сдано',
+		shortTitleRu: 'Сдано',
+		icon: 'check',
+		descriptionRu: 'Ортопедическая конструкция окончательно зафиксирована.',
+		colorToken: 'var(--ok, #10b981)'
+	},
 	correction_remake: {
 		id: 'correction_remake',
 		orderIndex: 4,
@@ -588,6 +629,15 @@ export const LAB_WORKFLOW_STAGES: Record<LabWorkflowStageId, LabStageDefinition>
 		shortTitleRu: 'Коррекция',
 		icon: 'rotate-ccw',
 		descriptionRu: 'Возврат в ЗТЛ на коррекцию окклюзии, цвета, аппроксимальных контактов или переделку.',
+		colorToken: 'var(--bad, #ef4444)'
+	},
+	warranty_rework: {
+		id: 'correction_remake',
+		orderIndex: 4,
+		nameRu: '4. Коррекция',
+		shortTitleRu: 'Коррекция',
+		icon: 'rotate-ccw',
+		descriptionRu: 'Гарантийный возврат на переделку/коррекцию.',
 		colorToken: 'var(--bad, #ef4444)'
 	},
 

@@ -21,6 +21,7 @@ import {
 } from './labWorkOrderPresets';
 import { generateQrMatrix, generateQrCodeSvg as sharedGenerateQrCodeSvg } from '@dental/shared';
 import { generateBarcodeSvg as canonicalCode128BarcodeSvg } from '../labMath';
+import { z } from 'zod';
 
 export {
 	type LabImplantComponentsManifest,
@@ -30,6 +31,26 @@ export {
 // ---------------------------------------------------------------------------
 // 1. Interfaces & Data Contracts
 // ---------------------------------------------------------------------------
+
+export const LabOrderStageSchema = z.enum([
+	'draft',
+	'draft_order',
+	'in_progress',
+	'sent_to_lab',
+	'fitting_scheduled',
+	'delivered_completed',
+	'installed_completed',
+	'correction_remake',
+	'warranty_rework',
+	'impression_sent',
+	'cad_design',
+	'milling_wax_up',
+	'try_in_fitting',
+	'delivered_to_clinic',
+	'installed_in_mouth',
+]);
+
+export type LabOrderStage = z.infer<typeof LabOrderStageSchema>;
 
 export interface LabWorkOrderFinancials {
 	patientPriceTotalRub: number;
@@ -99,10 +120,10 @@ export interface LabWorkOrder {
 	fixationType?: FixationType | undefined;
 	implantComponents?: LabImplantComponentsManifest | undefined;
 	// Clinical Workflow Status & 8 Technological Stages
-	currentStage: LabWorkflowStageId;
+	currentStage: LabOrderStage;
 	techStage?: LabTechnologicalStageId | undefined;
 	stageHistory: Array<{
-		stage: LabWorkflowStageId;
+		stage: LabOrderStage;
 		timestampIso: string;
 		authorName: string;
 		note?: string | undefined;
@@ -379,12 +400,12 @@ export function generateFdiOdontogramSvg(selectedTeeth: number[] = []): string {
 export function generatePrintableLabWorkOrderHtml(order: LabWorkOrder): string {
 	const preset = PROSTHETIC_TYPES[order.prostheticTypeId] || PROSTHETIC_TYPES.crown_zirconia_monolithic;
 	const material = LAB_MATERIALS[order.materialId] || { nameRu: order.materialId, manufacturerRu: '' };
-	const stage = LAB_WORKFLOW_STAGES[order.currentStage];
+	const stage = LAB_WORKFLOW_STAGES[order.currentStage] || LAB_WORKFLOW_STAGES.in_progress;
 	const teethFormatted = order.selectedTeeth.length > 0 ? order.selectedTeeth.sort((a, b) => a - b).join(', ') : 'Не указаны';
 	const barcodeSvg = generateBarcodeSvg(order.orderNumber, 240, 50);
 	const qrSvg = generateQrCodeSvg(`DENTE-LAB:${order.orderNumber}|PATIENT:${order.patientName}|TEETH:${teethFormatted}`, 90);
-	const isDraft = order.currentStage === 'draft' || (order.currentStage as string) === 'draft_order';
-	const stampText = isDraft ? 'ЧЕРНОВИК (В РАБОТЕ)' : 'ПОДПИСАНО ВРАЧОМ • В ПРОИЗВОДСТВЕ ЗТЛ';
+	const isDraft = order.currentStage === 'draft' || order.currentStage === 'draft_order' || order.currentStage === 'impression_sent';
+	const stampText = isDraft ? 'ЧЕРНОВИК (В РАБОТЕ) (МАНДАТ 8E)' : 'ПОДПИСАНО ВРАЧОМ (МАНДАТ 8E) • В ПРОИЗВОДСТВЕ ЗТЛ';
 	const stampColor = isDraft ? '#d97706' : '#059669';
 	const stampBg = isDraft ? '#fffbeb' : '#f0fdf4';
 	const odontogramSvg = generateFdiOdontogramSvg(order.selectedTeeth);
@@ -652,7 +673,7 @@ export function createLabWorkOrder(params: {
 	orderDate?: Date | string | undefined;
 	orderNumber?: string | undefined;
 	sequenceNumber?: number | undefined;
-	initialStage?: LabWorkflowStageId | undefined;
+	initialStage?: LabOrderStage | undefined;
 	techStage?: LabTechnologicalStageId | undefined;
 	isWarrantyRework?: boolean | undefined;
 	reworkReason?: string | undefined;
@@ -686,7 +707,7 @@ export function createLabWorkOrder(params: {
 	const orderNumber = params.orderNumber || generateLabOrderNumber(seq, orderDate);
 	const orderDateIso = formatDateToIsoDay(orderDate);
 	const id = `lab-ord-${Date.now()}-${params.patientId.replace(/[^a-zA-Z0-9]/g, "").slice(-4) || "0001"}`;
-	const initialStage: LabWorkflowStageId = params.initialStage || 'impression_sent';
+	const initialStage: LabOrderStage = params.initialStage || 'impression_sent';
 	const techStage: LabTechnologicalStageId = params.techStage || 'impression_scan';
 
 	return {
@@ -742,4 +763,59 @@ export function createLabWorkOrder(params: {
 		createdAtIso: new Date().toISOString(),
 		updatedAtIso: new Date().toISOString()
 	};
+}
+
+export interface CreateSoloDoctorLabWorkOrderParams {
+	patientId: string;
+	patientName: string;
+	patientChartNumber?: string | undefined;
+	doctorId: string;
+	doctorName: string;
+	clinicName?: string | undefined;
+	externalLabName?: string | undefined;
+	prostheticPreset: 'zirconia_crown' | 'veneer' | 'removable_prosthesis' | 'emax_press' | 'pmma_temporary' | 'implant_crown';
+	selectedTeeth?: number[] | undefined;
+	shadeCode?: string | undefined;
+	customWorkingDays?: number | undefined;
+	clinicalNotes?: string | undefined;
+	orderDate?: Date | string | undefined;
+	isDraft?: boolean | undefined;
+}
+
+/**
+ * 1-Click Solo Doctor Lab Work Order Factory (Mandates 8e, 8n)
+ * Allows a solo practitioner at chair rental or small clinic to create a full statutory ZTL work order:
+ * - Without mandatory in-house technician (external lab by default)
+ * - Without mandatory courier or chief doctor approvals
+ * - With clear working days turnaround calculation and statutory A4 (ЗТЛ-1) print readiness
+ */
+export function createSoloDoctorLabWorkOrder(params: CreateSoloDoctorLabWorkOrderParams): LabWorkOrder {
+	const presetMap: Record<CreateSoloDoctorLabWorkOrderParams['prostheticPreset'], ProstheticTypeId> = {
+		zirconia_crown: 'crown_zirconia_monolithic',
+		veneer: 'veneer_refractory',
+		removable_prosthesis: 'removable_clasp_prosthesis',
+		emax_press: 'crown_emax_press',
+		pmma_temporary: 'crown_pmma_temporary',
+		implant_crown: 'implant_screw_retained_crown',
+	};
+
+	const prostheticTypeId = presetMap[params.prostheticPreset] || 'crown_zirconia_monolithic';
+	const initialStage: LabOrderStage = params.isDraft ? 'draft' : 'in_progress';
+
+	return createLabWorkOrder({
+		patientId: params.patientId,
+		patientName: params.patientName,
+		patientChartNumber: params.patientChartNumber,
+		doctorId: params.doctorId,
+		doctorName: params.doctorName,
+		clinicName: params.clinicName || 'Стоматологический кабинет',
+		labName: params.externalLabName || 'Внешняя зуботехническая лаборатория',
+		selectedTeeth: params.selectedTeeth && params.selectedTeeth.length > 0 ? params.selectedTeeth : [11],
+		prostheticTypeId,
+		shadeCode: params.shadeCode || 'A2',
+		customWorkingDays: params.customWorkingDays,
+		clinicalNotes: params.clinicalNotes,
+		orderDate: params.orderDate,
+		initialStage,
+	});
 }
