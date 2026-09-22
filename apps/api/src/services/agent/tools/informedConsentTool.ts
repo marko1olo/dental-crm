@@ -223,7 +223,8 @@ export const generateInformedConsentIdsTool: ToolDefinition<
 			}
 		}
 
-		const spec = CONSENT_CATALOG[profile] ?? CONSENT_CATALOG.therapy;
+		const fallbackSpec = CONSENT_CATALOG.therapy as ConsentSpec;
+		const spec: ConsentSpec = CONSENT_CATALOG[profile] ?? fallbackSpec;
 		const toothStr = args.toothNumber ? `зуб FDI ${args.toothNumber}` : "полость рта";
 		const patientName = args.patientName || "Пациент";
 		const doctorName = args.doctorName || "Лечащий врач";

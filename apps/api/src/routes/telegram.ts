@@ -3736,6 +3736,7 @@ async function handleWebhook(
 		// Омни-канальная интеграция: сохраняем входящее сообщение пациента в messenger_inbound_events
 		if (
 			runtime.organizationId &&
+			chatId &&
 			(messageText || updateKind === "photo" || updateKind === "document" || updateKind === "voice") &&
 			!appointmentCallbackResult.handled &&
 			!command

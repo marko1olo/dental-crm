@@ -164,24 +164,25 @@ export const getPatientEmk043uTool: ToolDefinition<
 		}
 
 		// Fallback to rich default profile if not in DB
+		const adminProfile = patientRow?.administrativeProfile as Record<string, unknown> | null | undefined;
 		const resolvedPatient = {
 			id: args.patientId,
 			fullName: patientRow?.fullName || "Пациент DENTE",
 			birthDate: patientRow?.birthDate ? new Date(patientRow.birthDate).toISOString().slice(0, 10) : "1988-04-12",
-			gender: patientRow?.gender || "M",
+			gender: (adminProfile?.gender as string) || "M",
 			phone: patientRow?.phone || "+7 (999) 000-00-00",
 			card043Number: `043/у-${args.patientId.slice(0, 8).toUpperCase()}`,
 		};
 
 		// Parse allergies and somatic conditions
-		const rawAllergies = patientRow?.allergies;
+		const rawAllergies = (adminProfile?.allergies as unknown) ?? (patientRow?.notes ? [patientRow.notes] : []);
 		const allergies: string[] = Array.isArray(rawAllergies)
 			? rawAllergies.map(String)
 			: typeof rawAllergies === "string" && rawAllergies.trim()
 				? [rawAllergies.trim()]
 				: [];
 
-		const rawSomatic = patientRow?.medicalHistory;
+		const rawSomatic = (adminProfile?.medicalHistory as unknown) ?? (adminProfile?.somaticConditions as unknown) ?? [];
 		const somaticList: string[] = Array.isArray(rawSomatic)
 			? rawSomatic.map(String)
 			: typeof rawSomatic === "string" && rawSomatic.trim()
@@ -482,7 +483,7 @@ export const calculate804nEstimateTool: ToolDefinition<
 	parameters: calculate804nEstimateSchema,
 	permissions: ["billing.calculate"],
 	category: "read",
-	handler: async (_ctx: AgentContext, args: Calculate804nEstimateInput) => {
+	handler: async (_ctx: AgentContext, args: z.input<typeof calculate804nEstimateSchema>) => {
 		const parsedTooth = parseFdiTooth(args.toothNumber);
 		const canalCount = getCanalsForTooth(parsedTooth);
 

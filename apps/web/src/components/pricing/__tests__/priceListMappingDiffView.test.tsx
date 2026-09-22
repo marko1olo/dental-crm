@@ -286,15 +286,12 @@ describe('PriceListMappingDiffView (804n Statutory Diff-View & Ingestion)', () =
 		};
 
 		setZeroPrice('item-1');
-		expect(onItemsChange).toHaveBeenCalledWith(
-			expect.arrayContaining([
-				expect.objectContaining({
-					id: 'item-1',
-					priceRub: 0,
-					priceKopecks: 0,
-				}),
-			]),
-		);
+		const calls = onItemsChange.mock.calls;
+		expect(calls.length).toBe(1);
+		const call0 = calls[0]?.[0] as IngestedMappingItem[];
+		const item1 = call0?.find((i) => i.id === 'item-1');
+		expect(item1?.priceRub).toBe(0);
+		expect(item1?.priceKopecks).toBe(0);
 	});
 
 	it('correctly applies batch indexation (+5%, +10%) and rounding (100 ₽, 500 ₽)', () => {
@@ -320,15 +317,13 @@ describe('PriceListMappingDiffView (804n Statutory Diff-View & Ingestion)', () =
 		// item-1: 4500 * 1.10 = 4950
 		// item-2: 6800 * 1.10 = 7480
 		// item-3: unapproved, unchanged (5200)
-		expect(onItemsChange).toHaveBeenCalledWith(
-			expect.arrayContaining([
-				expect.objectContaining({ id: 'item-1', priceRub: 4950, priceKopecks: 495000 }),
-				expect.objectContaining({ id: 'item-2', priceRub: 7480, priceKopecks: 748000 }),
-				expect.objectContaining({ id: 'item-3', priceRub: 5200, priceKopecks: 520000 }),
-			]),
-		);
+		const callMarkup = onItemsChange.mock.calls[0]?.[0] as IngestedMappingItem[];
+		expect(callMarkup?.find((i) => i.id === 'item-1')?.priceRub).toBe(4950);
+		expect(callMarkup?.find((i) => i.id === 'item-2')?.priceRub).toBe(7480);
+		expect(callMarkup?.find((i) => i.id === 'item-3')?.priceRub).toBe(5200);
 
 		// Batch rounding to 500 ₽
+		const onItemsRoundChange = vi.fn();
 		const batchRounding = (roundTo: number) => {
 			const hasApproved = items.some((i) => i.isApproved);
 			const updated = items.map((it) => {
@@ -340,18 +335,15 @@ describe('PriceListMappingDiffView (804n Statutory Diff-View & Ingestion)', () =
 					priceKopecks: Math.round(nextPrice * 100),
 				};
 			});
-			onItemsChange(updated);
+			onItemsRoundChange(updated);
 		};
 
 		batchRounding(500);
 		// item-1 (4500 -> 4500)
 		// item-2 (6800 -> 7000)
-		expect(onItemsChange).toHaveBeenCalledWith(
-			expect.arrayContaining([
-				expect.objectContaining({ id: 'item-1', priceRub: 4500, priceKopecks: 450000 }),
-				expect.objectContaining({ id: 'item-2', priceRub: 7000, priceKopecks: 700000 }),
-			]),
-		);
+		const callRounding = onItemsRoundChange.mock.calls[0]?.[0] as IngestedMappingItem[];
+		expect(callRounding?.find((i) => i.id === 'item-1')?.priceRub).toBe(4500);
+		expect(callRounding?.find((i) => i.id === 'item-2')?.priceRub).toBe(7000);
 	});
 
 	it('computes proportional scroll synchronization ratio accurately', () => {

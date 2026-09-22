@@ -54,37 +54,37 @@ export interface LabOrderRequest {
 	material: string;
 	vitaShade: string;
 	dueDate: string;
-	notes?: string;
-	priceRub?: number;
+	notes?: string | undefined;
+	priceRub?: number | undefined;
 }
 
 export interface AppointmentRequest {
 	startsAt: string;
-	durationMinutes?: number;
+	durationMinutes?: number | undefined;
 	reason: string;
-	doctorUserId?: string;
-	chairId?: string;
-	comment?: string;
+	doctorUserId?: string | undefined;
+	chairId?: string | undefined;
+	comment?: string | undefined;
 }
 
 export interface AutonomousDenteAgentInput {
 	patientId: string;
-	prompt?: string;
-	toothNumber?: number | string;
-	complaints?: string;
-	diagnoses?: string[];
-	allergies?: string[];
-	somaticHistory?: string[];
-	activeServices?: string[];
-	discountPercent?: number;
-	patientWeightKg?: number;
-	anestheticType?: "articaine_1_100000" | "articaine_1_200000" | "mepivacaine_3_plain" | "auto";
-	plannedCarpules?: number;
-	labOrderRequest?: LabOrderRequest;
-	appointmentRequest?: AppointmentRequest;
-	mode?: "autonomous" | "supervised";
-	organizationId?: string;
-	userId?: string;
+	prompt?: string | undefined;
+	toothNumber?: number | string | undefined;
+	complaints?: string | undefined;
+	diagnoses?: string[] | undefined;
+	allergies?: string[] | undefined;
+	somaticHistory?: string[] | undefined;
+	activeServices?: string[] | undefined;
+	discountPercent?: number | undefined;
+	patientWeightKg?: number | undefined;
+	anestheticType?: "articaine_1_100000" | "articaine_1_200000" | "mepivacaine_3_plain" | "auto" | undefined;
+	plannedCarpules?: number | undefined;
+	labOrderRequest?: LabOrderRequest | undefined;
+	appointmentRequest?: AppointmentRequest | undefined;
+	mode?: "autonomous" | "supervised" | undefined;
+	organizationId?: string | undefined;
+	userId?: string | undefined;
 }
 
 export type ActionCardType =
@@ -130,13 +130,13 @@ export interface AutonomousDenteAgentResult {
 	verdict: string;
 	safetyAlerts: ChairsideSafetyAlert[];
 	steps: ReActStep[];
-	soapDiary?: ChairsideSoapDiary;
-	estimate804n?: Calculate804nEstimateResult;
-	labOrder?: CreateDentalLabOrderResult;
-	appointment?: BookChairsideAppointmentResult;
-	anestheticDosage?: CalculateAnestheticDosageResult;
-	informedConsent?: GenerateInformedConsentIdsResult;
-	warehouseSupplies?: CheckWarehouseSuppliesResult;
+	soapDiary?: ChairsideSoapDiary | undefined;
+	estimate804n?: Calculate804nEstimateResult | undefined;
+	labOrder?: CreateDentalLabOrderResult | undefined;
+	appointment?: BookChairsideAppointmentResult | undefined;
+	anestheticDosage?: CalculateAnestheticDosageResult | undefined;
+	informedConsent?: GenerateInformedConsentIdsResult | undefined;
+	warehouseSupplies?: CheckWarehouseSuppliesResult | undefined;
 	diagnostics: {
 		executionTimeMs: number;
 		toolsInvoked: string[];
@@ -340,13 +340,14 @@ export class AutonomousDenteAgent {
 		// ─── ITERATION 2: THOUGHT -> ACTION: update_tooth_status ─────────────
 		currentIteration = 2;
 		if (resolvedTooth && currentIteration <= this.maxIterations) {
-			const clinicalStatus = clinicalCategory === "endodontics"
-				? "пульпит"
-				: clinicalCategory === "therapy"
-					? "кариес"
-					: clinicalCategory === "surgery"
-						? "удален"
-						: "здоровый";
+			const clinicalStatus =
+				clinicalCategory === "pulpitis" || clinicalCategory === "periodontitis"
+					? "пульпит"
+					: clinicalCategory === "caries"
+						? "кариес"
+						: clinicalCategory === "surgery"
+							? "удален"
+							: "здоровый";
 
 			const thought2 = [
 				`[ИТЕРАЦИЯ 2/5: ЛОКАЛИЗАЦИЯ И ОБНОВЛЕНИЕ СТАТУСА ЗУБА FDI]`,

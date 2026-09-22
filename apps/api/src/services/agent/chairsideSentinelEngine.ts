@@ -20,21 +20,20 @@ import {
 	getAnatomicalRootCanalCount,
 	multiplyKopecks,
 	parseKopecks,
-	toRubles,
 } from "@dental/shared";
 
 // ─── TYPES & INTERFACES ─────────────────────────────────────────────────────
 
 export interface ChairsideVisitContextInput {
 	patientId: string;
-	toothNumber?: number | string;
-	complaints?: string;
-	diagnoses?: string[];
-	allergies?: string[];
-	somaticHistory?: string[];
-	activeServices?: string[];
-	mode?: "autonomous" | "supervised";
-	organizationId?: string;
+	toothNumber?: number | string | undefined;
+	complaints?: string | undefined;
+	diagnoses?: string[] | undefined;
+	allergies?: string[] | undefined;
+	somaticHistory?: string[] | undefined;
+	activeServices?: string[] | undefined;
+	mode?: "autonomous" | "supervised" | undefined;
+	organizationId?: string | undefined;
 }
 
 export type ChairsideAlertSeverity = "critical" | "warning" | "info";
@@ -145,11 +144,15 @@ export function parseFdiTooth(input?: number | string | null): number | null {
 	if (typeof input === "number") {
 		const str = input.toString();
 		if (str.includes(".")) {
-			const [q, p] = str.split(".");
-			const qNum = Number.parseInt(q, 10);
-			const pNum = Number.parseInt(p, 10);
-			if (!Number.isNaN(qNum) && !Number.isNaN(pNum)) {
-				return qNum * 10 + pNum;
+			const parts = str.split(".");
+			const q = parts[0];
+			const p = parts[1];
+			if (q !== undefined && p !== undefined) {
+				const qNum = Number.parseInt(q, 10);
+				const pNum = Number.parseInt(p, 10);
+				if (!Number.isNaN(qNum) && !Number.isNaN(pNum)) {
+					return qNum * 10 + pNum;
+				}
 			}
 		}
 		return Math.round(input);
@@ -160,11 +163,15 @@ export function parseFdiTooth(input?: number | string | null): number | null {
 	const match = clean.match(
 		/(?:зуб[аеы]?\s*)?([1-4][1-8]|[5-8][1-5]|[1-4]\.[1-8]|[5-8]\.[1-5])/i,
 	);
-	if (match) {
+	if (match && match[1]) {
 		const val = match[1];
 		if (val.includes(".")) {
-			const [q, p] = val.split(".");
-			return Number.parseInt(q, 10) * 10 + Number.parseInt(p, 10);
+			const parts = val.split(".");
+			const q = parts[0];
+			const p = parts[1];
+			if (q !== undefined && p !== undefined) {
+				return Number.parseInt(q, 10) * 10 + Number.parseInt(p, 10);
+			}
 		}
 		return Number.parseInt(val, 10);
 	}
@@ -661,7 +668,7 @@ export class ChairsideSentinelEngine {
 			| "surgery"
 			| "hygiene"
 			| "preventive";
-		complaints?: string;
+		complaints?: string | undefined;
 		somaticStatus: string;
 		allergiesStatus: string;
 	}): ChairsideSoapDiary {

@@ -52,9 +52,9 @@ export interface IngestedMappingItem {
 	priceKopecks: number;
 	confidence: number;
 	confidenceKind: MappingConfidenceKind;
-	matchedExistingServiceId?: string | null;
-	matchedExistingTitle?: string | null;
-	matchedExistingPriceRub?: number | null;
+	matchedExistingServiceId?: string | null | undefined;
+	matchedExistingTitle?: string | null | undefined;
+	matchedExistingPriceRub?: number | null | undefined;
 	suggestedAction: MappingSuggestedAction;
 	isApproved: boolean;
 }

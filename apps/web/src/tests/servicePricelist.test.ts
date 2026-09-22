@@ -495,52 +495,57 @@ A16.07.002.001 Наложение пломбы светового отвержд
 			assert.equal(parsed.length, 8);
 
 			// Check first line with explicit code
-			assert.equal(parsed[0].detectedCode804n, 'A16.07.002.001');
-			assert.equal(parsed[0].priceRub, 4500);
-			assert.equal(parsed[0].suggestedCategory, 'therapy');
-			assert.equal(parsed[0].confidence, 'exact_code');
+			const [p0, p1, p2, p3, p4, p5, p6, p7] = parsed;
+			assert.ok(p0 && p1 && p2 && p3 && p4 && p5 && p6 && p7);
+
+			assert.equal(p0.detectedCode804n, 'A16.07.002.001');
+			assert.equal(p0.priceRub, 4500);
+			assert.equal(p0.suggestedCategory, 'therapy');
+			assert.equal(p0.confidence, 'exact_code');
 
 			// Check line with heuristic keyword match (кариес)
-			assert.equal(parsed[1].detectedCode804n, 'A16.07.002');
-			assert.equal(parsed[1].priceRub, 3500);
-			assert.equal(parsed[1].suggestedCategory, 'therapy');
-			assert.equal(parsed[1].confidence, 'keyword_match');
+			assert.equal(p1.detectedCode804n, 'A16.07.002');
+			assert.equal(p1.priceRub, 3500);
+			assert.equal(p1.suggestedCategory, 'therapy');
+			assert.equal(p1.confidence, 'keyword_match');
 
 			// Check surgery / wisdom tooth
-			assert.equal(parsed[2].detectedCode804n, 'A16.07.001');
-			assert.equal(parsed[2].priceRub, 5200);
-			assert.equal(parsed[2].suggestedCategory, 'surgery');
+			assert.equal(p2.detectedCode804n, 'A16.07.001');
+			assert.equal(p2.priceRub, 5200);
+			assert.equal(p2.suggestedCategory, 'surgery');
 
 			// Check implant
-			assert.equal(parsed[3].detectedCode804n, 'A16.07.054');
-			assert.equal(parsed[3].priceRub, 38000);
-			assert.equal(parsed[3].suggestedCategory, 'surgery');
+			assert.equal(p3.detectedCode804n, 'A16.07.054');
+			assert.equal(p3.priceRub, 38000);
+			assert.equal(p3.suggestedCategory, 'surgery');
 
 			// Check crown / orthopedics
-			assert.equal(parsed[4].detectedCode804n, 'A16.07.004');
-			assert.equal(parsed[4].priceRub, 18000);
-			assert.equal(parsed[4].suggestedCategory, 'orthopedics');
+			assert.equal(p4.detectedCode804n, 'A16.07.004');
+			assert.equal(p4.priceRub, 18000);
+			assert.equal(p4.suggestedCategory, 'orthopedics');
 
 			// Check anesthesia
-			assert.equal(parsed[5].detectedCode804n, 'A11.07.012');
-			assert.equal(parsed[5].priceRub, 700);
-			assert.equal(parsed[5].suggestedCategory, 'anesthesia');
+			assert.equal(p5.detectedCode804n, 'A11.07.012');
+			assert.equal(p5.priceRub, 700);
+			assert.equal(p5.suggestedCategory, 'anesthesia');
 
 			// Check radiology (КЛКТ)
-			assert.equal(parsed[6].detectedCode804n, 'A06.07.003');
-			assert.equal(parsed[6].priceRub, 3500);
-			assert.equal(parsed[6].suggestedCategory, 'radiology');
+			assert.equal(p6.detectedCode804n, 'A06.07.003');
+			assert.equal(p6.priceRub, 3500);
+			assert.equal(p6.suggestedCategory, 'radiology');
 
 			// Check hygiene
-			assert.equal(parsed[7].detectedCode804n, 'A16.07.051');
-			assert.equal(parsed[7].priceRub, 4800);
-			assert.equal(parsed[7].suggestedCategory, 'hygiene');
+			assert.equal(p7.detectedCode804n, 'A16.07.051');
+			assert.equal(p7.priceRub, 4800);
+			assert.equal(p7.suggestedCategory, 'hygiene');
 		});
 
 		it('converts parsed proposals to valid ServicePricelistItem objects', () => {
 			const proposals = parseUnstructuredPriceText('Лечение кариеса 3500');
 			assert.equal(proposals.length, 1);
-			const item = proposalToPricelistItem(proposals[0]);
+			const firstProposal = proposals[0];
+			assert.ok(firstProposal);
+			const item = proposalToPricelistItem(firstProposal);
 			assert.ok(item.id.startsWith('srv-imp-'));
 			assert.equal(item.basePriceRub, 3500);
 			assert.equal(item.basePriceKopecks, 350000);
@@ -553,12 +558,16 @@ A16.07.002.001 Наложение пломбы светового отвержд
 
 			const sortedByPriceAsc = sortPricelistItems(sample, 'price', 'asc');
 			for (let i = 1; i < sortedByPriceAsc.length; i++) {
-				assert.ok(sortedByPriceAsc[i].basePriceRub >= sortedByPriceAsc[i - 1].basePriceRub);
+				const cur = sortedByPriceAsc[i]!;
+				const prev = sortedByPriceAsc[i - 1]!;
+				assert.ok(cur.basePriceRub >= prev.basePriceRub);
 			}
 
 			const sortedByPriceDesc = sortPricelistItems(sample, 'price', 'desc');
 			for (let i = 1; i < sortedByPriceDesc.length; i++) {
-				assert.ok(sortedByPriceDesc[i].basePriceRub <= sortedByPriceDesc[i - 1].basePriceRub);
+				const cur = sortedByPriceDesc[i]!;
+				const prev = sortedByPriceDesc[i - 1]!;
+				assert.ok(cur.basePriceRub <= prev.basePriceRub);
 			}
 
 			const sortedByTitle = sortPricelistItems(sample, 'title', 'asc');

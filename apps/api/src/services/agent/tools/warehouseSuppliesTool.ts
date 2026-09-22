@@ -66,7 +66,7 @@ export interface CheckWarehouseSuppliesResult {
 	readonly isSoftOverdraft: boolean;
 	readonly deficitCount: number;
 	readonly warning: string | null;
-	readonly warningMessage?: string;
+	readonly warningMessage?: string | undefined;
 	readonly doctorAutonomyBlocked: false;
 	readonly quickDisposalAvailable: true;
 	readonly sanpinCompliant: true;
