@@ -141,6 +141,17 @@ export function Omnibar() {
 				}
 			},
 		},
+		{
+			id: "action-chairside-hud",
+			title: "Кресельный HUD ИИ-копилота (В кресле)",
+			icon: <Sparkles className="text-[var(--teal)]" />,
+			category: "Быстрые действия",
+			action: () => {
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(new CustomEvent("dente:toggle-chairside-hud"));
+				}
+			},
+		},
 	];
 
 	const filteredCommands = (commands ?? []).filter(

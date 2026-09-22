@@ -1,0 +1,680 @@
+/**
+ * ChairsideCopilotHUD.css — Industrial Clinical Styling for Chairside AI Copilot HUD.
+ *
+ * Compliant with:
+ * - Mandate 8c: Universal 3-tier architecture, dense clinical ergonomics.
+ * - Mandate 8d: 7 Deadly Sins checklist (Sin 2: 1-line toolbar 32-36px, Sin 3: <=2 buttons/card,
+ *   Sin 4: WCAG AAA theme tokens, Sin 6: Anti-Matryoshka depth 1, Sin 7: 0 emojis).
+ * - Mandate 8e: Doctor autonomy, zero disabled buttons, 1-click apply-all.
+ * - Mandate 8n: Solo doctor & small clinic sovereignty.
+ *
+ * ZERO hardcoded hex colors. Strictly design system CSS variables.
+ */
+
+/* Container: Floating or Docked */
+.chairside-copilot-hud {
+  box-sizing: border-box;
+  font-family: inherit;
+  color: var(--ink);
+  pointer-events: auto;
+}
+
+.chairside-copilot-hud--floating {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 8900;
+  max-width: calc(100vw - 32px);
+}
+
+.chairside-copilot-hud--docked {
+  position: relative;
+  width: 100%;
+  margin: 6px 0 10px 0;
+}
+
+/* Minimized Pill State */
+.chairside-hud-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  background-color: var(--paper-strong);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  user-select: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.chairside-hud-pill:hover {
+  background-color: var(--paper-soft);
+  border-color: var(--teal);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+}
+
+.chairside-hud-pill-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: var(--teal-soft);
+  color: var(--teal-dark);
+}
+
+.chairside-hud-pill-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background-color: var(--ok-bg);
+  color: var(--ok-fg);
+  border: 1px solid var(--ok-fg);
+}
+
+.chairside-hud-pill-badge--busy {
+  background-color: var(--warn-bg);
+  color: var(--warn-fg);
+  border-color: var(--warn-fg);
+}
+
+/* Expanded Main Panel */
+.chairside-hud-panel {
+  width: 460px;
+  max-width: calc(100vw - 32px);
+  max-height: min(85vh, 720px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  background-color: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Header Toolbar (Sin 2: Strictly 1 row, 32-36px) */
+.chairside-hud-header {
+  min-height: 34px;
+  height: 34px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background-color: var(--paper-strong);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.chairside-hud-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.chairside-hud-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background-color: var(--teal-soft);
+  color: var(--teal-dark);
+  flex-shrink: 0;
+}
+
+.chairside-hud-title {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chairside-hud-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background-color: var(--teal-soft);
+  color: var(--teal-dark);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.chairside-hud-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.chairside-hud-btn-icon {
+  min-width: 28px;
+  min-height: 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.chairside-hud-btn-icon:hover {
+  color: var(--ink);
+  background-color: var(--paper-soft);
+  border-color: var(--line);
+}
+
+/* Scrollable Content Body */
+.chairside-hud-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+/* Collapsible Thought Stream */
+.chairside-hud-thought-stream {
+  border-radius: 8px;
+  background-color: var(--paper-strong);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.chairside-hud-thought-header {
+  width: 100%;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.chairside-hud-thought-header:hover {
+  background-color: var(--paper-soft);
+}
+
+.chairside-hud-thought-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.chairside-hud-thought-steps {
+  padding: 4px 10px 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--line);
+}
+
+.chairside-hud-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.chairside-hud-step-icon {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.chairside-hud-step-icon--running {
+  color: var(--teal-dark);
+  animation: chairside-spin 1s linear infinite;
+}
+
+.chairside-hud-step-icon--done {
+  color: var(--ok-fg);
+}
+
+.chairside-hud-step-icon--warning {
+  color: var(--warn-fg);
+}
+
+.chairside-hud-step-icon--pending {
+  color: var(--muted);
+}
+
+@keyframes chairside-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.chairside-hud-step-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.chairside-hud-step-title {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.chairside-hud-step-detail {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+/* Action Proposals Section */
+.chairside-hud-proposals {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chairside-hud-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 2px;
+}
+
+.chairside-hud-section-title {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
+/* Individual Action Cards (Sin 3 & 6: Flat monolithic card, max 1-2 buttons) */
+.chairside-hud-card {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background-color: var(--paper-strong);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.chairside-hud-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.chairside-hud-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.chairside-hud-card-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background-color: var(--teal-soft);
+  color: var(--teal-dark);
+  border: 1px solid var(--line);
+}
+
+.chairside-hud-card-badge--applied {
+  background-color: var(--ok-bg);
+  color: var(--ok-fg);
+  border-color: var(--ok-fg);
+}
+
+.chairside-hud-card-body {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.chairside-hud-service-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chairside-hud-service-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.chairside-hud-service-code {
+  font-weight: 700;
+  color: var(--muted);
+  font-family: monospace;
+}
+
+.chairside-hud-service-price {
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.chairside-hud-soap-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chairside-hud-soap-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chairside-hud-soap-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.chairside-hud-soap-val {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+/* Card Action Buttons (Sin 3: <= 2 buttons per card) */
+.chairside-hud-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.chairside-hud-btn-primary {
+  min-height: 30px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 6px;
+  background-color: var(--teal-dark);
+  color: var(--paper);
+  border: 1px solid var(--teal-dark);
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.chairside-hud-btn-primary:hover {
+  opacity: 0.9;
+}
+
+.chairside-hud-btn-secondary {
+  min-height: 30px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.chairside-hud-btn-secondary:hover {
+  color: var(--ink);
+  background-color: var(--paper-soft);
+  border-color: var(--ink);
+}
+
+/* Safety Alert Card (Sin 4 & 7: High WCAG contrast, Vector icons) */
+.chairside-hud-card--alert-warning {
+  background-color: var(--warn-bg);
+  border-color: var(--warn-fg);
+}
+
+.chairside-hud-card--alert-critical {
+  background-color: var(--bad-bg);
+  border-color: var(--bad-fg);
+}
+
+.chairside-hud-alert-text {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Quick Presets Bar */
+.chairside-hud-presets {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 0;
+  white-space: nowrap;
+}
+
+.chairside-hud-preset-chip {
+  min-height: 26px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background-color: var(--paper-strong);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.chairside-hud-preset-chip:hover {
+  color: var(--ink);
+  border-color: var(--teal);
+  background-color: var(--paper-soft);
+}
+
+/* Footer & 1-Click Action Bar */
+.chairside-hud-footer {
+  padding: 10px;
+  background-color: var(--paper-strong);
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.chairside-hud-apply-all-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chairside-hud-btn-apply-all {
+  flex: 1;
+  min-height: 36px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  background-color: var(--ok-fg);
+  color: var(--paper);
+  border: 1px solid var(--ok-fg);
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chairside-hud-btn-apply-all:hover {
+  opacity: 0.92;
+}
+
+.chairside-hud-btn-dismiss {
+  min-height: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.chairside-hud-btn-dismiss:hover {
+  color: var(--ink);
+  background-color: var(--paper-soft);
+}
+
+/* Text and Voice Input Row */
+.chairside-hud-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chairside-hud-input {
+  flex: 1;
+  min-height: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background-color: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 12px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.chairside-hud-input:focus {
+  border-color: var(--teal);
+}
+
+.chairside-hud-btn-mic {
+  min-width: 34px;
+  min-height: 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  background-color: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chairside-hud-btn-mic:hover {
+  color: var(--ink);
+  border-color: var(--teal);
+}
+
+.chairside-hud-btn-mic--active {
+  background-color: var(--bad-bg);
+  border-color: var(--bad-fg);
+  color: var(--bad-fg);
+  animation: chairside-pulse 1.5s infinite;
+}
+
+@keyframes chairside-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+.chairside-hud-btn-send {
+  min-width: 34px;
+  min-height: 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  background-color: var(--teal-dark);
+  border: 1px solid var(--teal-dark);
+  color: var(--paper);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chairside-hud-btn-send:hover {
+  opacity: 0.9;
+}
+
+.chairside-hud-autonomy-note {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}

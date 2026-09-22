@@ -24,3 +24,4 @@ export * from './CopilotDrawer';
 export * from './CopilotGlobalHost';
 export * from './CopilotContextSync';
 export * from './CopilotGenerativeCards';
+export * from './ChairsideCopilotHUD';
