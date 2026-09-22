@@ -63,6 +63,7 @@ export interface TorquePresetOption {
 
 export const TORQUE_PRESETS: TorquePresetOption[] = [
 	{ id: "mbt", label: "Стандарт MBT (+17° / -6°)", shortLabel: "MBT (+17°/-6°)", u1Torque: "+17°", l1Torque: "-6°", desc: "Универсальный стандарт прописи MBT" },
+	{ id: "damon_std", label: "Стандарт Damon (+12° / -1°)", shortLabel: "Damon Std (+12°/-1°)", u1Torque: "+12°", l1Torque: "-1°", desc: "Стандартный торк резцов Damon Q2 / Clear" },
 	{ id: "damon_high", label: "Высокий High (+17° / +7°)", shortLabel: "High (+17°/+7°)", u1Torque: "+17°", l1Torque: "+7°", desc: "Компенсация ретрузии и потери торка" },
 	{ id: "damon_low", label: "Низкий Low (+2° / -6°)", shortLabel: "Low (+2°/-6°)", u1Torque: "+2°", l1Torque: "-6°", desc: "Предотвращение протрузии при скученности" },
 	{ id: "roth", label: "Классический Roth (+12° / -1°)", shortLabel: "Roth (+12°/-1°)", u1Torque: "+12°", l1Torque: "-1°", desc: "Классическая пропись Рота" },
@@ -287,6 +288,10 @@ export interface OrthodonticVisitProtocolWidgetProps {
 	onSelectTooth?: (toothNumber: number) => void;
 	currentAligner?: number | undefined;
 	totalAligners?: number | undefined;
+	currentAlignerUpper?: number | undefined;
+	currentAlignerLower?: number | undefined;
+	totalAlignersUpper?: number | undefined;
+	totalAlignersLower?: number | undefined;
 	onIssueAlignerSet?: ((count: number, days: number) => void) | undefined;
 	onAddToInvoice?: ((services: OrthodonticService804n[]) => void) | undefined;
 }
@@ -412,6 +417,10 @@ export interface OrthodonticPatientMemoParams {
 	isAligners?: boolean | undefined;
 	currentAligner?: number | undefined;
 	totalAligners?: number | undefined;
+	currentAlignerUpper?: number | undefined;
+	currentAlignerLower?: number | undefined;
+	totalAlignersUpper?: number | undefined;
+	totalAlignersLower?: number | undefined;
 	notes?: string | undefined;
 }
 
@@ -445,9 +454,17 @@ export function formatOrthodonticPatientMemo(
 
 	let apparatusDetails = "";
 	if (isAligners) {
-		const cur = params.currentAligner || 1;
-		const total = params.totalAligners || "—";
-		apparatusDetails = `Текущий этап: Каппа №${cur} из ${total}\nРежим: ношение 22 часа/сутки, смена через 10-14 дней.\n`;
+		if (params.currentAlignerUpper && params.currentAlignerLower) {
+			const curU = params.currentAlignerUpper;
+			const totalU = params.totalAlignersUpper || params.totalAligners || "—";
+			const curL = params.currentAlignerLower;
+			const totalL = params.totalAlignersLower || params.totalAligners || "—";
+			apparatusDetails = `Текущий этап: ВЧ Каппа №${curU} из ${totalU}, НЧ Каппа №${curL} из ${totalL}\nРежим: ношение 22 часа/сутки, смена через 10-14 дней.\n`;
+		} else {
+			const cur = params.currentAligner || 1;
+			const total = params.totalAligners || "—";
+			apparatusDetails = `Текущий этап: Каппа №${cur} из ${total}\nРежим: ношение 22 часа/сутки, смена через 10-14 дней.\n`;
+		}
 	} else {
 		const arch =
 			params.targetArch === "upper"
@@ -491,7 +508,7 @@ ${apparatusDetails}${elasticsBlock}Памятка пациенту:
 export function OrthodonticVisitProtocolWidget({
 	isOpen,
 	onClose,
-	patientId,
+	patientId: _patientId,
 	patientName = "Пациент",
 	clinicName = "Стоматологическая клиника DENTE",
 	clinicPhone = "",
@@ -500,11 +517,13 @@ export function OrthodonticVisitProtocolWidget({
 	onSelectTooth,
 	currentAligner,
 	totalAligners,
+	currentAlignerUpper,
+	currentAlignerLower,
+	totalAlignersUpper,
+	totalAlignersLower,
 	onIssueAlignerSet,
 	onAddToInvoice,
 }: OrthodonticVisitProtocolWidgetProps) {
-	if (!isOpen) return null;
-
 	// State
 	const [bracketSlot, setBracketSlot] = useState<BracketSlot>("0.022");
 	const [bracketSystem, setBracketSystem] = useState<string>("damon_q2");
@@ -519,8 +538,8 @@ export function OrthodonticVisitProtocolWidget({
 		16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26,
 		46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36,
 	]);
-	const [powerChainSpan, setPowerChainSpan] = useState<string>("13-23");
-	const [powerChainType, setPowerChainType] = useState<string>("short");
+	const [powerChainSpan, _setPowerChainSpan] = useState<string>("13-23");
+	const [powerChainType, _setPowerChainType] = useState<string>("short");
 	const [notes, setNotes] = useState<string>("Пациент жалоб не предъявляет. Гигиена удовлетворительная.");
 
 	// 1-Click Autonomous Clinical Presets State
@@ -540,25 +559,100 @@ export function OrthodonticVisitProtocolWidget({
 	const [stageFilter, setStageFilter] = useState<OrthodonticStageFilter>("all");
 
 	// Torque & Angulation 1-Click Calculation State (Mandate 8k)
-	const [torquePreset, setTorquePreset] = useState<string>("mbt");
+	const [torquePreset, setTorquePreset] = useState<string>("damon_std");
 	const [angulationPreset, setAngulationPreset] = useState<string>("norm");
 
 	// Aligner Tray Tracker 1..N State (Mandates 8e, 8k, 8n)
+	const [isSplitArchAligners, setIsSplitArchAligners] = useState<boolean>(
+		Boolean(
+			(currentAlignerUpper !== undefined && currentAlignerLower !== undefined) ||
+				(totalAlignersUpper !== undefined && totalAlignersLower !== undefined),
+		),
+	);
 	const [alignerStep, setAlignerStep] = useState<number>(currentAligner || 1);
 	const [alignerTotal, setAlignerTotal] = useState<number>(totalAligners || 36);
+	const [alignerStepUpper, setAlignerStepUpper] = useState<number>(
+		currentAlignerUpper || currentAligner || 1,
+	);
+	const [alignerTotalUpper, setAlignerTotalUpper] = useState<number>(
+		totalAlignersUpper || totalAligners || 36,
+	);
+	const [alignerStepLower, setAlignerStepLower] = useState<number>(
+		currentAlignerLower || currentAligner || 1,
+	);
+	const [alignerTotalLower, setAlignerTotalLower] = useState<number>(
+		totalAlignersLower || totalAligners || 36,
+	);
 	const [alignerDaysPerStep, setAlignerDaysPerStep] = useState<number>(14);
 
 	useEffect(() => {
 		if (currentAligner !== undefined && currentAligner > 0) {
 			setAlignerStep(currentAligner);
+			if (!isSplitArchAligners) {
+				setAlignerStepUpper(currentAligner);
+				setAlignerStepLower(currentAligner);
+			}
 		}
-	}, [currentAligner]);
+	}, [currentAligner, isSplitArchAligners]);
 
 	useEffect(() => {
 		if (totalAligners !== undefined && totalAligners > 0) {
 			setAlignerTotal(totalAligners);
+			if (!isSplitArchAligners) {
+				setAlignerTotalUpper(totalAligners);
+				setAlignerTotalLower(totalAligners);
+			}
 		}
-	}, [totalAligners]);
+	}, [totalAligners, isSplitArchAligners]);
+
+	useEffect(() => {
+		if (currentAlignerUpper !== undefined && currentAlignerUpper > 0) {
+			setAlignerStepUpper(currentAlignerUpper);
+			setIsSplitArchAligners(true);
+		}
+	}, [currentAlignerUpper]);
+
+	useEffect(() => {
+		if (currentAlignerLower !== undefined && currentAlignerLower > 0) {
+			setAlignerStepLower(currentAlignerLower);
+			setIsSplitArchAligners(true);
+		}
+	}, [currentAlignerLower]);
+
+	useEffect(() => {
+		if (totalAlignersUpper !== undefined && totalAlignersUpper > 0) {
+			setAlignerTotalUpper(totalAlignersUpper);
+		}
+	}, [totalAlignersUpper]);
+
+	useEffect(() => {
+		if (totalAlignersLower !== undefined && totalAlignersLower > 0) {
+			setAlignerTotalLower(totalAlignersLower);
+		}
+	}, [totalAlignersLower]);
+
+	const handleSelectBracketSystem = useCallback(
+		(newSystem: string) => {
+			setBracketSystem(newSystem);
+			if (newSystem === "damon_q2" || newSystem === "damon_clear") {
+				setBracketSlot("0.022");
+				if (torquePreset !== "damon_high" && torquePreset !== "damon_low" && torquePreset !== "damon_std") {
+					setTorquePreset("damon_std");
+				}
+			} else if (newSystem === "mini_diamond") {
+				setTorquePreset("roth");
+			} else if (newSystem === "empower") {
+				setTorquePreset("mbt");
+				setBracketSlot("0.022");
+			} else if (newSystem === "aligners") {
+				setStageFilter("aligners");
+				if (!activeAttachmentPreset) {
+					setActiveAttachmentPreset("standard");
+				}
+			}
+		},
+		[torquePreset, activeAttachmentPreset],
+	);
 
 	const nextAlignerDateStr = useMemo(() => {
 		const d = new Date();
@@ -572,21 +666,36 @@ export function OrthodonticVisitProtocolWidget({
 	}, [alignerStep, alignerTotal]);
 
 	const handleSendAlignerReminder = useCallback(() => {
-		const nextStep = Math.min(alignerTotal, alignerStep + 1);
-		const reminderText = `Здравствуйте, ${patientName}! Напоминание из клиники «${clinicName}»: плановая смена элайнера на каппу №${nextStep} из ${alignerTotal} запланирована на ${nextAlignerDateStr}. Режим ношения: 22 часа в сутки, чистка прохладной водой, фиксация с чувисами. При любых вопросах звоните${clinicPhone ? `: ${clinicPhone}` : ""}. Ваш лечащий врач: ${doctorName}.`;
+		const nextStepStr = isSplitArchAligners
+			? `ВЧ №${Math.min(alignerTotalUpper, alignerStepUpper + 1)} / НЧ №${Math.min(alignerTotalLower, alignerStepLower + 1)}`
+			: `№${Math.min(alignerTotal, alignerStep + 1)} из ${alignerTotal}`;
+		const reminderText = `Здравствуйте, ${patientName}! Напоминание из клиники «${clinicName}»: плановая смена элайнера на каппу ${nextStepStr} запланирована на ${nextAlignerDateStr}. Режим ношения: 22 часа в сутки, чистка прохладной водой, фиксация с чувисами. При любых вопросах звоните${clinicPhone ? `: ${clinicPhone}` : ""}. Ваш лечащий врач: ${doctorName}.`;
 		try {
 			if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
 				navigator.clipboard.writeText(reminderText).catch(() => {});
 			}
 			showToast(
-				`Напоминание о смене на каппу №${nextStep} (${nextAlignerDateStr}) скопировано для мессенджера`,
+				`Напоминание о смене каппы (${nextAlignerDateStr}) скопировано для мессенджера`,
 				"success",
 				4000,
 			);
 		} catch {
 			showToast("Напоминание скопировано", "success");
 		}
-	}, [patientName, clinicName, alignerStep, alignerTotal, nextAlignerDateStr, clinicPhone, doctorName]);
+	}, [
+		patientName,
+		clinicName,
+		isSplitArchAligners,
+		alignerStep,
+		alignerTotal,
+		alignerStepUpper,
+		alignerTotalUpper,
+		alignerStepLower,
+		alignerTotalLower,
+		nextAlignerDateStr,
+		clinicPhone,
+		doctorName,
+	]);
 
 	// Debounced autosave (Mandate 8e: protection against data loss without modal prompts)
 	const isWidgetMountedRef = useRef(false);
@@ -976,7 +1085,9 @@ export function OrthodonticVisitProtocolWidget({
 
 		let alignerTrackerText = "";
 		if (bracketSystem === "aligners" || activeAttachmentPreset) {
-			alignerTrackerText = `• Трекер элайнеров: Каппа №${alignerStep} из ${alignerTotal} (${alignerProgressPercent}% курса завершено). Режим ношения: 22 ч/сутки. Следующая смена: ${nextAlignerDateStr} (каждые ${alignerDaysPerStep} дн.).`;
+			alignerTrackerText = isSplitArchAligners
+				? `• Трекер элайнеров: ВЧ Каппа №${alignerStepUpper} из ${alignerTotalUpper} (${alignerTotalUpper > 0 ? Math.round((alignerStepUpper / alignerTotalUpper) * 100) : 0}%), НЧ Каппа №${alignerStepLower} из ${alignerTotalLower} (${alignerTotalLower > 0 ? Math.round((alignerStepLower / alignerTotalLower) * 100) : 0}%). Режим ношения: 22 ч/сутки. Следующая смена: ${nextAlignerDateStr} (каждые ${alignerDaysPerStep} дн.).`
+				: `• Трекер элайнеров: Каппа №${alignerStep} из ${alignerTotal} (${alignerProgressPercent}% курса завершено). Режим ношения: 22 ч/сутки. Следующая смена: ${nextAlignerDateStr} (каждые ${alignerDaysPerStep} дн.).`;
 		}
 
 		let separationText = "";
@@ -1008,7 +1119,7 @@ ${torqueAngulationText ? `${torqueAngulationText}\n` : ""}• Фиксация �
 • Выполненные манипуляции: ${actionsListStr || (activeAttachmentPreset ? currentAttachmentObj?.shortLabel : "Активация аппаратуры")}.${powerChainText}
 ${currentAttachmentObj ? `• ${currentAttachmentObj.description}\n` : ""}${alignerSetIssued ? `• Сдан сет элайнеров на ${alignerSetIssued.days} дн. (смена капп каждые ${Math.round(alignerSetIssued.days / alignerSetIssued.count)} дней).\n` : ""}• ${elasticsText}
 • Антисептическая обработка полости рта (0.05% раствор хлоргексидина).
-• Коррекция дистальных концов дуг / проверка комфорта краёв капп и мягких тканей.
+• Коррекция элементов аппаратуры выполнена в полном объеме.
 
 4. РЕКОМЕНДАЦИИ И НАЗНАЧЕНИЯ:
 ${bracketSystem === "aligners" || activeAttachmentPreset
@@ -1026,6 +1137,9 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 • Исключить из рациона твердую, волокнистую и липкую пищу.
 • Следующий плановый приём: через 4–6 недель.`}`;
 	}, [
+		patientName,
+		notes,
+		angleClass,
 		bracketSlot,
 		bracketSystem,
 		archwireMaterial,
@@ -1038,17 +1152,19 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 		selectedTeeth,
 		powerChainSpan,
 		powerChainType,
-		notes,
-		patientName,
 		activePreset,
 		activeAttachmentPreset,
 		alignerSetIssued,
-		angleClass,
 		plateActivationTurns,
 		torquePreset,
 		angulationPreset,
+		isSplitArchAligners,
 		alignerStep,
 		alignerTotal,
+		alignerStepUpper,
+		alignerTotalUpper,
+		alignerStepLower,
+		alignerTotalLower,
 		alignerProgressPercent,
 		nextAlignerDateStr,
 		alignerDaysPerStep,
@@ -1072,8 +1188,8 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 						? `${prev.objectiveStatus}\n\n${generatedProtocol}`
 						: generatedProtocol,
 					treatmentPlan: prev.treatmentPlan
-						? `${prev.treatmentPlan}\n\n[Ортодонтия] ${activeAttachmentPreset ? `Элайнеры: Каппа №${alignerStep}/${alignerTotal} (${currentAttachmentObj?.shortLabel || "аттачменты"})` : bracketSystem === "removable_plate" ? `Пластинка с винтом (активация ${plateActivationTurns}/4 об.)` : `Дуга ${archwireMaterial} ${archwireSection}", торк ${torqueObj?.shortLabel || "MBT"}, ${elasticScheme !== "none" ? "эластики" : "активация"}`}`
-						: `Ортодонтическое лечение: ${activeAttachmentPreset ? `Элайнеры: Каппа №${alignerStep}/${alignerTotal} (${currentAttachmentObj?.shortLabel || "аттачменты"})` : bracketSystem === "removable_plate" ? `пластинка с расширяющим винтом (${plateActivationTurns}/4 об.)` : `дуга ${archwireMaterial} ${archwireSection}", торк ${torqueObj?.shortLabel || "MBT"}, ${elasticScheme !== "none" ? "межчелюстная тяга" : "плановая активация"}`}.`,
+						? `${prev.treatmentPlan}\n\n[Ортодонтия] ${activeAttachmentPreset ? `Элайнеры: ${isSplitArchAligners ? `ВЧ Каппа №${alignerStepUpper}/${alignerTotalUpper}, НЧ Каппа №${alignerStepLower}/${alignerTotalLower}` : `Каппа №${alignerStep}/${alignerTotal}`} (${currentAttachmentObj?.shortLabel || "аттачменты"})` : bracketSystem === "removable_plate" ? `Пластинка с винтом (активация ${plateActivationTurns}/4 об.)` : `Дуга ${archwireMaterial} ${archwireSection}", торк ${torqueObj?.shortLabel || "Damon Std"}, ${elasticScheme !== "none" ? "эластики" : "активация"}`}`
+						: `Ортодонтическое лечение: ${activeAttachmentPreset ? `Элайнеры: ${isSplitArchAligners ? `ВЧ Каппа №${alignerStepUpper}/${alignerTotalUpper}, НЧ Каппа №${alignerStepLower}/${alignerTotalLower}` : `Каппа №${alignerStep}/${alignerTotal}`} (${currentAttachmentObj?.shortLabel || "аттачменты"})` : bracketSystem === "removable_plate" ? `пластинка с расширяющим винтом (${plateActivationTurns}/4 об.)` : `дуга ${archwireMaterial} ${archwireSection}", торк ${torqueObj?.shortLabel || "Damon Std"}, ${elasticScheme !== "none" ? "межчелюстная тяга" : "плановая активация"}`}.`,
 				}));
 			}
 
@@ -1139,8 +1255,13 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 		angleClass,
 		selectedTooth,
 		torquePreset,
+		isSplitArchAligners,
 		alignerStep,
 		alignerTotal,
+		alignerStepUpper,
+		alignerTotalUpper,
+		alignerStepLower,
+		alignerTotalLower,
 		onAddToInvoice,
 		onClose,
 	]);
@@ -1151,7 +1272,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 			if (typeof window !== "undefined") {
 				const printWindow = window.open("", "_blank");
 				if (printWindow) {
-					printWindow.document.write(`<!DOCTYPE html><html><head><title>Ортодонтическая карта 043/у — ${patientName}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px;color:#0f172a;line-height:1.5;font-size:13px}h1{font-size:16px;margin:0 0 4px;text-transform:uppercase;font-weight:800}.meta{font-size:11px;color:#64748b;margin-bottom:16px;border-bottom:1px solid #cbd5e1;padding-bottom:8px}.stamp{display:inline-block;padding:4px 10px;border:2px solid #059669;color:#059669;font-weight:800;font-size:11px;text-transform:uppercase;border-radius:4px;margin-bottom:12px}pre{white-space:pre-wrap;font-family:inherit;font-size:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}.footer{margin-top:24px;font-size:11px;color:#64748b;border-top:1px solid #cbd5e1;padding-top:8px;display:flex;justify-content:space-between}@media print{body{padding:0}}</style></head><body><div class="stamp">ПОДПИСАНО ВРАЧОМ / ФОРМА 043/у</div><h1>Дневник ортодонтического приёма (Карта 043/у)</h1><div class="meta">Клиника: ${clinicName} · Пациент: ${patientName} · Врач: ${doctorName} · Дата: ${new Date().toLocaleDateString("ru-RU")}</div><pre>${generatedProtocol.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre><div class="footer"><span>Лечащий врач-ортодонт: ${doctorName} ____________</span><span>М.П.</span></div><script>window.onload=function(){window.print();};<\/script></body></html>`);
+					printWindow.document.write(`<!DOCTYPE html><html><head><title>Ортодонтическая карта 043/у — ${patientName}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px;color:#0f172a;line-height:1.5;font-size:13px}h1{font-size:16px;margin:0 0 4px;text-transform:uppercase;font-weight:800}.meta{font-size:11px;color:#64748b;margin-bottom:16px;border-bottom:1px solid #cbd5e1;padding-bottom:8px}.stamp{display:inline-block;padding:4px 10px;border:2px solid #059669;color:#059669;font-weight:800;font-size:11px;text-transform:uppercase;border-radius:4px;margin-bottom:12px}pre{white-space:pre-wrap;font-family:inherit;font-size:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}.footer{margin-top:24px;font-size:11px;color:#64748b;border-top:1px solid #cbd5e1;padding-top:8px;display:flex;justify-content:space-between}@media print{body{padding:0}}</style></head><body><div class="stamp">ПОДПИСАНО ВРАЧОМ / ФОРМА 043/у</div><h1>Дневник ортодонтического приёма (Карта 043/у)</h1><div class="meta">Клиника: ${clinicName} · Пациент: ${patientName} · Врач: ${doctorName} · Дата: ${new Date().toLocaleDateString("ru-RU")}</div><pre>${generatedProtocol.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre><div class="footer"><span>Лечащий врач-ортодонт: ${doctorName} ____________</span><span>М.П.</span></div><script>window.onload=function(){window.print();};</script></body></html>`);
 					printWindow.document.close();
 				} else if (typeof window.print === "function") {
 					window.print();
@@ -1191,8 +1312,12 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 			elasticSize,
 			elasticWear,
 			isAligners: bracketSystem === "aligners" || Boolean(activeAttachmentPreset),
-			currentAligner,
-			totalAligners,
+			currentAligner: isSplitArchAligners ? undefined : alignerStep,
+			totalAligners: isSplitArchAligners ? undefined : alignerTotal,
+			currentAlignerUpper: isSplitArchAligners ? alignerStepUpper : undefined,
+			totalAlignersUpper: isSplitArchAligners ? alignerTotalUpper : undefined,
+			currentAlignerLower: isSplitArchAligners ? alignerStepLower : undefined,
+			totalAlignersLower: isSplitArchAligners ? alignerTotalLower : undefined,
 			notes,
 		});
 
@@ -1223,10 +1348,81 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 		elasticSize,
 		elasticWear,
 		activeAttachmentPreset,
-		currentAligner,
-		totalAligners,
+		isSplitArchAligners,
+		alignerStep,
+		alignerTotal,
+		alignerStepUpper,
+		alignerTotalUpper,
+		alignerStepLower,
+		alignerTotalLower,
 		notes,
 	]);
+
+	// 1-Click Print Patient Memo A4 (Mandate 8e, 8k: clean typography, 0 emojis)
+	const handlePrintPatientMemo = useCallback(() => {
+		const text = formatOrthodonticPatientMemo({
+			clinicName,
+			clinicPhone,
+			doctorName,
+			patientName,
+			bracketSystem,
+			archwireMaterial,
+			archwireSection,
+			targetArch,
+			elasticScheme,
+			elasticSize,
+			elasticWear,
+			isAligners: bracketSystem === "aligners" || Boolean(activeAttachmentPreset),
+			currentAligner: isSplitArchAligners ? undefined : alignerStep,
+			totalAligners: isSplitArchAligners ? undefined : alignerTotal,
+			currentAlignerUpper: isSplitArchAligners ? alignerStepUpper : undefined,
+			totalAlignersUpper: isSplitArchAligners ? alignerTotalUpper : undefined,
+			currentAlignerLower: isSplitArchAligners ? alignerStepLower : undefined,
+			totalAlignersLower: isSplitArchAligners ? alignerTotalLower : undefined,
+			notes,
+		});
+
+		try {
+			if (typeof window !== "undefined") {
+				const printWindow = window.open("", "_blank");
+				if (printWindow) {
+					printWindow.document.write(`<!DOCTYPE html><html><head><title>Памятка пациенту — ${patientName}</title><style>@page{size:A4;margin:15mm}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px;color:#0f172a;line-height:1.6;font-size:13px}h1{font-size:16px;margin:0 0 6px;text-transform:uppercase;font-weight:800;color:#0f172a}.meta{font-size:11px;color:#64748b;margin-bottom:16px;border-bottom:1px solid #cbd5e1;padding-bottom:8px}.memo-box{white-space:pre-wrap;font-family:inherit;font-size:13px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;line-height:1.7}.footer{margin-top:28px;font-size:11px;color:#64748b;border-top:1px solid #cbd5e1;padding-top:10px;display:flex;justify-content:space-between}@media print{body{padding:0}.memo-box{background:#fff;border:none;padding:0}}</style></head><body><h1>Ортодонтические рекомендации пациенту</h1><div class="meta">Клиника: ${clinicName} · Пациент: ${patientName} · Врач: ${doctorName} · Дата: ${new Date().toLocaleDateString("ru-RU")}</div><div class="memo-box">${text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div><div class="footer"><span>Лечащий врач-ортодонт: ${doctorName} ____________</span><span>Тел.: ${clinicPhone || "—"}</span></div><script>window.onload=function(){window.print();};</script></body></html>`);
+					printWindow.document.close();
+				} else if (typeof window.print === "function") {
+					window.print();
+				}
+			}
+			showToast("Памятка пациенту отправлена на печать (A4)", "info");
+		} catch (err) {
+			console.warn("Print memo error:", err);
+			if (typeof window !== "undefined" && typeof window.print === "function") {
+				window.print();
+			}
+		}
+	}, [
+		clinicName,
+		clinicPhone,
+		doctorName,
+		patientName,
+		bracketSystem,
+		archwireMaterial,
+		archwireSection,
+		targetArch,
+		elasticScheme,
+		elasticSize,
+		elasticWear,
+		activeAttachmentPreset,
+		isSplitArchAligners,
+		alignerStep,
+		alignerTotal,
+		alignerStepUpper,
+		alignerTotalUpper,
+		alignerStepLower,
+		alignerTotalLower,
+		notes,
+	]);
+
+	if (!isOpen) return null;
 
 	return (
 		<div
@@ -1618,14 +1814,25 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 								<div className="flex items-center justify-between flex-wrap gap-1.5">
 									<span className="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
 										<Calendar size={14} className="text-indigo-600 dark:text-indigo-400" />
-										Трекер смены капп элайнеров (1..{alignerTotal})
+										Трекер смены капп элайнеров {isSplitArchAligners ? `(ВЧ 1..${alignerTotalUpper}, НЧ 1..${alignerTotalLower})` : `(1..${alignerTotal})`}
 									</span>
 									<div className="flex items-center gap-1.5">
+										<button
+											type="button"
+											onClick={() => setIsSplitArchAligners((prev) => !prev)}
+											data-testid="aligner-split-arch-toggle"
+											className="px-2 py-0.5 rounded-md text-[10px] font-bold border border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 cursor-pointer transition-all"
+											title="Переключить между единым сетом и раздельным учетом капп верхней/нижней челюстей"
+										>
+											{isSplitArchAligners ? "Раздельные челюсти (ВЧ / НЧ)" : "Единый сет"}
+										</button>
 										<span
 											className="px-2 py-0.5 rounded-md text-[11px] font-black bg-indigo-600 text-white shadow-xs"
 											data-testid="aligner-tray-badge"
 										>
-											Каппа №{alignerStep} из {alignerTotal}
+											{isSplitArchAligners
+												? `ВЧ №${alignerStepUpper} / НЧ №${alignerStepLower}`
+												: `Каппа №${alignerStep} из ${alignerTotal}`}
 										</span>
 										<span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300">
 											({alignerProgressPercent}%)
@@ -1643,45 +1850,147 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 								</div>
 
 								{/* Stepper, date, reminder (Miller's Law: 1-2 direct actions) */}
-								<div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
-									<div className="flex items-center gap-1 flex-wrap">
-										<button
-											type="button"
-											onClick={() => setAlignerStep((prev) => Math.max(1, prev - 1))}
-											data-testid="aligner-prev-tray-btn"
-											className="min-h-[36px] min-w-[36px] px-2 rounded-lg bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 font-black text-xs hover:bg-indigo-50 cursor-pointer flex items-center justify-center transition-all"
-											title="Предыдущая каппа (-1)"
-										>
-											-1
-										</button>
-										<span className="text-xs font-bold text-slate-700 dark:text-slate-200 px-1 min-w-[56px] text-center">
-											№ {alignerStep}
-										</span>
-										<button
-											type="button"
-											onClick={() => setAlignerStep((prev) => Math.min(alignerTotal, prev + 1))}
-											data-testid="aligner-next-tray-btn"
-											className="min-h-[36px] min-w-[36px] px-2 rounded-lg bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 font-black text-xs hover:bg-indigo-50 cursor-pointer flex items-center justify-center transition-all"
-											title="Следующая каппа (+1)"
-										>
-											+1
-										</button>
-										<span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 ml-1">
-											Смена: {nextAlignerDateStr} (+{alignerDaysPerStep} дн.)
-										</span>
-									</div>
+								{!isSplitArchAligners ? (
+									<div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
+										<div className="flex items-center gap-1 flex-wrap">
+											<button
+												type="button"
+												onClick={() => {
+													const next = Math.max(1, alignerStep - 1);
+													setAlignerStep(next);
+													setAlignerStepUpper(next);
+													setAlignerStepLower(next);
+												}}
+												data-testid="aligner-prev-tray-btn"
+												className="min-h-[36px] min-w-[36px] px-2 rounded-lg bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 font-black text-xs hover:bg-indigo-50 cursor-pointer flex items-center justify-center transition-all"
+												title="Предыдущая каппа (-1)"
+											>
+												-1
+											</button>
+											<span className="text-xs font-bold text-slate-700 dark:text-slate-200 px-1 min-w-[56px] text-center">
+												№ {alignerStep}
+											</span>
+											<button
+												type="button"
+												onClick={() => {
+													const next = Math.min(alignerTotal, alignerStep + 1);
+													setAlignerStep(next);
+													setAlignerStepUpper(next);
+													setAlignerStepLower(next);
+												}}
+												data-testid="aligner-next-tray-btn"
+												className="min-h-[36px] min-w-[36px] px-2 rounded-lg bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 font-black text-xs hover:bg-indigo-50 cursor-pointer flex items-center justify-center transition-all"
+												title="Следующая каппа (+1)"
+											>
+												+1
+											</button>
+											<button
+												type="button"
+												onClick={() => setAlignerDaysPerStep((prev) => (prev === 7 ? 10 : prev === 10 ? 14 : 7))}
+												data-testid="aligner-days-toggle-btn"
+												className="text-[11px] font-medium text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-300 ml-1 cursor-pointer underline decoration-dotted transition-colors"
+												title="Нажмите для переключения интервала смены: 7, 10 или 14 дней"
+											>
+												Смена: {nextAlignerDateStr} (+{alignerDaysPerStep} дн.)
+											</button>
+										</div>
 
-									<button
-										type="button"
-										onClick={handleSendAlignerReminder}
-										data-testid="aligner-send-reminder-btn"
-										className="min-h-[36px] px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs flex items-center gap-1 cursor-pointer transition-all active:scale-95"
-										title="Скопировать напоминание о смене каппы для отправки пациенту в WhatsApp/Telegram"
-									>
-										<Send size={13} />
-										<span>Напомнить о смене</span>
-									</button>
-								</div>
+										<button
+											type="button"
+											onClick={handleSendAlignerReminder}
+											data-testid="aligner-send-reminder-btn"
+											className="min-h-[36px] px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+											title="Скопировать напоминание о смене каппы для отправки пациенту в WhatsApp/Telegram"
+										>
+											<Send size={13} />
+											<span>Напомнить о смене</span>
+										</button>
+									</div>
+								) : (
+									<div className="flex flex-col gap-2 pt-0.5">
+										<div className="flex items-center justify-between gap-2 flex-wrap">
+											{/* Upper arch stepper */}
+											<div className="flex items-center gap-1.5 flex-wrap">
+												<span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 w-8 shrink-0">ВЧ:</span>
+												<button
+													type="button"
+													onClick={() => setAlignerStepUpper((prev) => Math.max(1, prev - 1))}
+													data-testid="aligner-upper-prev-tray-btn"
+													className="min-h-[32px] min-w-[32px] px-2 rounded-lg bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 font-black text-xs hover:bg-indigo-50 cursor-pointer flex items-center justify-center transition-all"
+													title="Предыдущая каппа ВЧ (-1)"
+												>
+													-1
+												</button>
+												<span
+													data-testid="aligner-upper-tray-badge"
+													className="text-xs font-bold text-slate-700 dark:text-slate-200 px-1 min-w-[48px] text-center"
+												>
+													№ {alignerStepUpper}/{alignerTotalUpper}
+												</span>
+												<button
+													type="button"
+													onClick={() => setAlignerStepUpper((prev) => Math.min(alignerTotalUpper, prev + 1))}
+													data-testid="aligner-upper-next-tray-btn"
+													className="min-h-[32px] min-w-[32px] px-2 rounded-lg bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 font-black text-xs hover:bg-indigo-50 cursor-pointer flex items-center justify-center transition-all"
+													title="Следующая каппа ВЧ (+1)"
+												>
+													+1
+												</button>
+											</div>
+
+											{/* Lower arch stepper */}
+											<div className="flex items-center gap-1.5 flex-wrap">
+												<span className="text-xs font-bold text-teal-900 dark:text-teal-200 w-8 shrink-0">НЧ:</span>
+												<button
+													type="button"
+													onClick={() => setAlignerStepLower((prev) => Math.max(1, prev - 1))}
+													data-testid="aligner-lower-prev-tray-btn"
+													className="min-h-[32px] min-w-[32px] px-2 rounded-lg bg-white dark:bg-slate-800 border border-teal-200 dark:border-teal-700 text-teal-700 dark:text-teal-300 font-black text-xs hover:bg-teal-50 cursor-pointer flex items-center justify-center transition-all"
+													title="Предыдущая каппа НЧ (-1)"
+												>
+													-1
+												</button>
+												<span
+													data-testid="aligner-lower-tray-badge"
+													className="text-xs font-bold text-slate-700 dark:text-slate-200 px-1 min-w-[48px] text-center"
+												>
+													№ {alignerStepLower}/{alignerTotalLower}
+												</span>
+												<button
+													type="button"
+													onClick={() => setAlignerStepLower((prev) => Math.min(alignerTotalLower, prev + 1))}
+													data-testid="aligner-lower-next-tray-btn"
+													className="min-h-[32px] min-w-[32px] px-2 rounded-lg bg-white dark:bg-slate-800 border border-teal-200 dark:border-teal-700 text-teal-700 dark:text-teal-300 font-black text-xs hover:bg-teal-50 cursor-pointer flex items-center justify-center transition-all"
+													title="Следующая каппа НЧ (+1)"
+												>
+													+1
+												</button>
+											</div>
+										</div>
+
+										<div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
+											<button
+												type="button"
+												onClick={() => setAlignerDaysPerStep((prev) => (prev === 7 ? 10 : prev === 10 ? 14 : 7))}
+												data-testid="aligner-days-toggle-split-btn"
+												className="text-[11px] font-medium text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-300 cursor-pointer underline decoration-dotted transition-colors"
+												title="Нажмите для переключения интервала смены: 7, 10 или 14 дней"
+											>
+												Смена: {nextAlignerDateStr} (+{alignerDaysPerStep} дн.)
+											</button>
+											<button
+												type="button"
+												onClick={handleSendAlignerReminder}
+												data-testid="aligner-send-reminder-btn"
+												className="min-h-[36px] px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+												title="Скопировать напоминание о смене каппы для отправки пациенту в WhatsApp/Telegram"
+											>
+												<Send size={13} />
+												<span>Напомнить о смене</span>
+											</button>
+										</div>
+									</div>
+								)}
 							</div>
 
 							{/* Quick Set Delivery & Append Button */}
@@ -1945,7 +2254,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 								<select
 									aria-label="Выбор брекет-системы"
 									value={bracketSystem}
-									onChange={(e) => setBracketSystem(e.target.value)}
+									onChange={(e) => handleSelectBracketSystem(e.target.value)}
 									className="w-full min-h-[44px] px-3 py-2 bg-[var(--paper,#ffffff)] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 outline-none focus:border-amber-500 cursor-pointer"
 								>
 									{BRACKET_SYSTEMS.map((s) => (
@@ -2206,10 +2515,11 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 
 							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 								<div>
-									<label className="block text-[11px] font-bold text-slate-500 mb-1">
+									<label htmlFor="elastic-scheme-select" className="block text-[11px] font-bold text-slate-500 mb-1">
 										Схема фиксации
 									</label>
 									<select
+										id="elastic-scheme-select"
 										aria-label="Схема эластиков"
 										value={elasticScheme}
 										onChange={(e) => setElasticScheme(e.target.value)}
@@ -2224,10 +2534,11 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 								</div>
 
 								<div>
-									<label className="block text-[11px] font-bold text-slate-500 mb-1">
+									<label htmlFor="elastic-size-select" className="block text-[11px] font-bold text-slate-500 mb-1">
 										Размер и сила (калибр)
 									</label>
 									<select
+										id="elastic-size-select"
 										aria-label="Размер эластиков"
 										disabled={false}
 										value={elasticSize}
@@ -2330,6 +2641,18 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 								<Copy size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 								<span className="hidden sm:inline">Скопировать для пациента</span>
 								<span className="sm:hidden">Памятка</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={handlePrintPatientMemo}
+								data-testid="ortho-print-patient-memo-btn"
+								className="min-h-[48px] px-3.5 py-2 rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-200 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
+								title="Распечатать памятку пациенту (A4)"
+							>
+								<Printer size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<span className="hidden sm:inline">Печать памятки (A4)</span>
+								<span className="sm:hidden">Печать A4</span>
 							</button>
 
 							<button

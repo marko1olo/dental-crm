@@ -1195,7 +1195,7 @@ const CODE128_PATTERNS = [
 /**
  * Generates an SVG vector barcode for the lab work order using canonical Code 128 (ISO/IEC 15417).
  */
-export function generateBarcodeSvg(data: string): string {
+export function generateBarcodeSvg(data: string, width = 240, height = 50): string {
 	const rawText = (data || "").trim() || "ZTL-ORDER";
 	// Transliterate common Russian lab prefixes so Code 128 bars are cleanly scannable in standard ASCII
 	const barData = rawText
@@ -1228,13 +1228,13 @@ export function generateBarcodeSvg(data: string): string {
 			const width = Number(pattern[p]);
 			const isBar = p % 2 === 0;
 			if (isBar) {
-				bars += `<rect x="${x}" y="5" width="${width}" height="${barHeight}" fill="currentColor"/>`;
+				bars += `<rect x="${x}" y="5" width="${width}" height="${barHeight}" fill="#0f172a"/>`;
 			}
 			x += width;
 		}
 	}
 	const totalWidth = Math.max(x + 10, 160);
-	return `<svg viewBox="0 0 ${totalWidth} 50" xmlns="http://www.w3.org/2000/svg" class="w-full h-12">${bars}<text x="${totalWidth / 2}" y="47" font-size="7" font-family="monospace" text-anchor="middle" fill="currentColor">${rawText}</text></svg>`;
+	return `<svg viewBox="0 0 ${totalWidth} 50" width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" class="w-full h-12" style="max-width: 100%; height: auto;"><rect width="100%" height="100%" fill="#ffffff"/>${bars}<text x="${totalWidth / 2}" y="47" font-size="7.5" font-weight="700" font-family="monospace" text-anchor="middle" fill="#0f172a">${rawText}</text></svg>`;
 }
 
 /**

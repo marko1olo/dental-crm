@@ -495,6 +495,38 @@ export const FIXATION_TYPES: FixationTypeOption[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// 3c. Implant Components Consignment & Tracking Manifest
+// ---------------------------------------------------------------------------
+
+export interface LabImplantComponentsManifest {
+	hasImplantComponents?: boolean | undefined;
+	implantSystemName?: string | undefined; // e.g. "Osstem TS III", "Dentium SuperLine", "Straumann BLX", "Nobel Conical"
+	transfersCount?: number | undefined; // Трансферы для слепков (открытая/закрытая ложка / скан-маркеры)
+	transfersType?: 'open_tray' | 'closed_tray' | 'scan_body' | string | undefined;
+	analogsCount?: number | undefined; // Лабораторные аналоги имплантатов / Multi-Unit
+	healingAbutmentsCount?: number | undefined; // Формирователи десны (ФДМ)
+	screwsCount?: number | undefined; // Фиксирующие / лабораторные клинические винты
+	extraComponentsNotes?: string | undefined; // Дополнительные компоненты (отвертки, позиционеры, титановые основания)
+}
+
+export function formatImplantComponentsSummary(manifest?: LabImplantComponentsManifest): string {
+	if (!manifest || (!manifest.hasImplantComponents && !manifest.transfersCount && !manifest.analogsCount && !manifest.healingAbutmentsCount && !manifest.screwsCount)) {
+		return 'Компоненты имплантационной системы не передавались';
+	}
+	const parts: string[] = [];
+	if (manifest.implantSystemName) parts.push(`Система: ${manifest.implantSystemName}`);
+	if (manifest.transfersCount) {
+		const typeLabel = manifest.transfersType === 'open_tray' ? 'открытая ложка' : manifest.transfersType === 'closed_tray' ? 'закрытая ложка' : manifest.transfersType === 'scan_body' ? 'скан-боди' : '';
+		parts.push(`Трансферы: ${manifest.transfersCount} шт.${typeLabel ? ` (${typeLabel})` : ''}`);
+	}
+	if (manifest.analogsCount) parts.push(`Аналоги: ${manifest.analogsCount} шт.`);
+	if (manifest.healingAbutmentsCount) parts.push(`ФДМ: ${manifest.healingAbutmentsCount} шт.`);
+	if (manifest.screwsCount) parts.push(`Винты: ${manifest.screwsCount} шт.`);
+	if (manifest.extraComponentsNotes) parts.push(`Доп: ${manifest.extraComponentsNotes}`);
+	return parts.join('; ');
+}
+
+// ---------------------------------------------------------------------------
 // 4. Canonical 4-Status Clinical Workflow & 8 Technological Lab Stages
 // ---------------------------------------------------------------------------
 

@@ -4,21 +4,28 @@
  */
 
 import {
-	ProstheticTypeId,
+	type ProstheticTypeId,
 	PROSTHETIC_TYPES,
 	LAB_MATERIALS,
 	LAB_WORKFLOW_STAGES,
-	LabWorkflowStageId,
-	ImplantPlatformType,
-	AbutmentCategoryType,
+	type LabWorkflowStageId,
+	type ImplantPlatformType,
+	type AbutmentCategoryType,
 	ABUTMENT_TYPE_OPTIONS,
-	FixationType,
-	LabTechnologicalStageId,
+	type FixationType,
+	type LabTechnologicalStageId,
 	LAB_TECHNOLOGICAL_STAGES,
-	LAB_TECHNOLOGICAL_STAGE_ORDER
+	LAB_TECHNOLOGICAL_STAGE_ORDER,
+	type LabImplantComponentsManifest,
+	formatImplantComponentsSummary,
 } from './labWorkOrderPresets';
 import { generateQrMatrix, generateQrCodeSvg as sharedGenerateQrCodeSvg } from '@dental/shared';
 import { generateBarcodeSvg as canonicalCode128BarcodeSvg } from '../labMath';
+
+export {
+	type LabImplantComponentsManifest,
+	formatImplantComponentsSummary,
+};
 
 // ---------------------------------------------------------------------------
 // 1. Interfaces & Data Contracts
@@ -35,6 +42,12 @@ export interface LabWorkOrderFinancials {
 	unitsCount: number;
 	pricePerUnitRub: number;
 	costPerUnitRub: number;
+	patientPriceTotalKopecks?: number | undefined;
+	labCostTotalKopecks?: number | undefined;
+	grossMarginKopecks?: number | undefined;
+	doctorWageKopecks?: number | undefined;
+	clinicNetProfitKopecks?: number | undefined;
+	isBalanced?: boolean | undefined;
 }
 
 export interface LabWorkOrderSchedule {
@@ -84,6 +97,7 @@ export interface LabWorkOrder {
 	implantPlatform?: ImplantPlatformType | undefined;
 	abutmentType?: AbutmentCategoryType | string | undefined;
 	fixationType?: FixationType | undefined;
+	implantComponents?: LabImplantComponentsManifest | undefined;
 	// Clinical Workflow Status & 8 Technological Stages
 	currentStage: LabWorkflowStageId;
 	techStage?: LabTechnologicalStageId | undefined;
@@ -107,12 +121,16 @@ export interface LabWorkOrder {
 	courier?: LabCourierDispatch | undefined;
 	clinicalNotes?: string | undefined;
 	technicianNotes?: string | undefined;
+	isWarrantyRework?: boolean | undefined;
+	reworkReason?: string | undefined;
+	originalOrderId?: string | undefined;
+	originalOrderNumber?: string | undefined;
 	createdAtIso: string;
 	updatedAtIso: string;
 }
 
 // ---------------------------------------------------------------------------
-// 2. Financial & Margin Accounting
+// 2. Financial & Margin Accounting (Kopeck-Exact & Zero Penny-Drift)
 // ---------------------------------------------------------------------------
 
 export function calculateLabFinancials(params: {
@@ -120,26 +138,40 @@ export function calculateLabFinancials(params: {
 	pricePerUnitRub: number;
 	costPerUnitRub: number;
 	doctorPercent?: number | undefined; // default 20%
+	isWarrantyRework?: boolean | undefined;
 }): LabWorkOrderFinancials {
 	const count = Math.max(1, Math.round(params.unitsCount || 1));
-	const unitPrice = Math.max(0, params.pricePerUnitRub || 0);
+	const isWarranty = Boolean(params.isWarrantyRework);
+	const unitPrice = isWarranty ? 0 : Math.max(0, params.pricePerUnitRub || 0);
 	const unitCost = Math.max(0, params.costPerUnitRub || 0);
 	const doctorPct = Math.max(0, Math.min(100, params.doctorPercent ?? 20));
 
-	const patientPriceTotalRub = Math.round(unitPrice * count * 100) / 100;
-	const labCostTotalRub = Math.round(unitCost * count * 100) / 100;
-	const grossMarginRub = Math.round((patientPriceTotalRub - labCostTotalRub) * 100) / 100;
+	const pricePerUnitKopecks = Math.round(unitPrice * 100);
+	const costPerUnitKopecks = Math.round(unitCost * 100);
 
-	const grossMarginPercent = patientPriceTotalRub > 0
-		? Number(((grossMarginRub / patientPriceTotalRub) * 100).toFixed(1))
+	const patientPriceTotalKopecks = pricePerUnitKopecks * count;
+	const labCostTotalKopecks = costPerUnitKopecks * count;
+	const grossMarginKopecks = Math.max(0, patientPriceTotalKopecks - labCostTotalKopecks);
+
+	// Doctor commission: calculated from gross margin in integer kopecks
+	const doctorWageKopecks = isWarranty
+		? 0
+		: grossMarginKopecks > 0
+		? Math.round((grossMarginKopecks * doctorPct) / 100)
 		: 0;
 
-	// Doctor commission in Russian clinics is typically calculated from the margin (Price - LabCost) or Total Price
-	const doctorCommissionRub = grossMarginRub > 0
-		? Math.round(((grossMarginRub * doctorPct) / 100) * 100) / 100
+	const clinicNetProfitKopecks = grossMarginKopecks - doctorWageKopecks;
+
+	const patientPriceTotalRub = patientPriceTotalKopecks / 100;
+	const labCostTotalRub = labCostTotalKopecks / 100;
+	const grossMarginRub = (patientPriceTotalKopecks - labCostTotalKopecks) / 100;
+
+	const grossMarginPercent = patientPriceTotalKopecks > 0
+		? Number(((grossMarginKopecks / patientPriceTotalKopecks) * 100).toFixed(1))
 		: 0;
 
-	const clinicNetProfitRub = Math.round((grossMarginRub - doctorCommissionRub) * 100) / 100;
+	const doctorCommissionRub = doctorWageKopecks / 100;
+	const clinicNetProfitRub = isWarranty ? -(labCostTotalKopecks / 100) : clinicNetProfitKopecks / 100;
 
 	return {
 		patientPriceTotalRub,
@@ -151,7 +183,13 @@ export function calculateLabFinancials(params: {
 		clinicNetProfitRub,
 		unitsCount: count,
 		pricePerUnitRub: unitPrice,
-		costPerUnitRub: unitCost
+		costPerUnitRub: unitCost,
+		patientPriceTotalKopecks,
+		labCostTotalKopecks,
+		grossMarginKopecks,
+		doctorWageKopecks,
+		clinicNetProfitKopecks,
+		isBalanced: isWarranty || doctorWageKopecks + clinicNetProfitKopecks === grossMarginKopecks,
 	};
 }
 
@@ -254,8 +292,8 @@ export function generateLabOrderNumber(sequenceNum = 1, date = new Date()): stri
 /**
  * Generates clean, authentic Code 128 (ISO/IEC 15417) barcode SVG for optical scanners.
  */
-export function generateBarcodeSvg(data: string, _width = 240, _height = 50): string {
-	return canonicalCode128BarcodeSvg(data);
+export function generateBarcodeSvg(data: string, width = 240, height = 50): string {
+	return canonicalCode128BarcodeSvg(data, width, height);
 }
 
 /**
@@ -335,7 +373,7 @@ export function generateFdiOdontogramSvg(selectedTeeth: number[] = []): string {
 }
 
 // ---------------------------------------------------------------------------
-// 6. Statutory Russian Dental Lab Order A4 Printable Form
+// 6. Statutory Russian Dental Lab Order A4 Printable Form (ГОСТ / СтАР / ЗТЛ-1)
 // ---------------------------------------------------------------------------
 
 export function generatePrintableLabWorkOrderHtml(order: LabWorkOrder): string {
@@ -345,11 +383,17 @@ export function generatePrintableLabWorkOrderHtml(order: LabWorkOrder): string {
 	const teethFormatted = order.selectedTeeth.length > 0 ? order.selectedTeeth.sort((a, b) => a - b).join(', ') : 'Не указаны';
 	const barcodeSvg = generateBarcodeSvg(order.orderNumber, 240, 50);
 	const qrSvg = generateQrCodeSvg(`DENTE-LAB:${order.orderNumber}|PATIENT:${order.patientName}|TEETH:${teethFormatted}`, 90);
-	const isSigned = order.currentStage === 'delivered_completed' || (order.currentStage as string) === 'completed' || (order.currentStage as string) === 'delivered';
-	const stampText = isSigned ? 'ПОДПИСАНО ВРАЧОМ' : 'ЧЕРНОВИК (В РАБОТЕ)';
-	const stampColor = isSigned ? '#059669' : '#d97706';
-	const stampBg = isSigned ? '#f0fdf4' : '#fffbeb';
+	const isDraft = order.currentStage === 'draft' || (order.currentStage as string) === 'draft_order';
+	const stampText = isDraft ? 'ЧЕРНОВИК (В РАБОТЕ)' : 'ПОДПИСАНО ВРАЧОМ • В ПРОИЗВОДСТВЕ ЗТЛ';
+	const stampColor = isDraft ? '#d97706' : '#059669';
+	const stampBg = isDraft ? '#fffbeb' : '#f0fdf4';
 	const odontogramSvg = generateFdiOdontogramSvg(order.selectedTeeth);
+	const hasImplantWork = Boolean(
+		order.implantComponents?.hasImplantComponents ||
+		order.prostheticTypeId === 'implant_screw_retained_crown' ||
+		order.implantPlatform ||
+		order.abutmentType
+	);
 
 	return `<!DOCTYPE html>
 <html lang="ru">
@@ -403,7 +447,7 @@ export function generatePrintableLabWorkOrderHtml(order: LabWorkOrder): string {
 	<table class="header-table">
 		<tr>
 			<td style="vertical-align: middle;">
-				<h1 class="title">Наряд-заказ № ${order.orderNumber}</h1>
+				<h1 class="title">Наряд-заказ № ${order.orderNumber} ${order.isWarrantyRework ? '<span style="color: #f43f5e; font-size: 12px; background: #ffe4e6; border: 1px solid #f43f5e; border-radius: 4px; padding: 2px 8px; vertical-align: middle; margin-left: 8px;">ГАРАНТИЙНАЯ ПЕРЕДЕЛКА (0 ₽)</span>' : ''}</h1>
 				<p class="subtitle">Зуботехническая лаборатория • Стоматологическая клиника «${order.clinicName || 'DENTE Clinic'}»</p>
 			</td>
 			<td style="text-align: right; vertical-align: middle;">
@@ -416,6 +460,18 @@ export function generatePrintableLabWorkOrderHtml(order: LabWorkOrder): string {
 		<span>ШТАМП: ${stampText}</span>
 		<span>ЭТАП: ${stage.nameRu}</span>
 	</div>
+
+	${order.isWarrantyRework ? `
+	<div style="background: #fff1f2; border: 1.5px solid #fecdd3; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px;">
+		<div style="color: #e11d48; font-weight: 800; font-size: 12px; text-transform: uppercase;">
+			БЕЗУСЛОВНАЯ ГАРАНТИЙНАЯ ПЕРЕДЕЛКА (0 ₽ ДЛЯ ПАЦИЕНТА — МАНДАТ 8e П. 7)
+		</div>
+		<div style="font-size: 11px; color: #9f1239; margin-top: 2px;">
+			Основание: ${order.reworkReason || 'Гарантийная рекламация: коррекция прилегания / окклюзии'}
+			${order.originalOrderNumber ? ` • Исходный наряд-заказ № ${order.originalOrderNumber}` : ''}
+		</div>
+	</div>
+	` : ''}
 
 	<div class="grid-2">
 		<div class="col">
@@ -432,7 +488,7 @@ export function generatePrintableLabWorkOrderHtml(order: LabWorkOrder): string {
 		</div>
 	</div>
 
-	<div class="section-title">1. Зубная формула и локализация протезирования (FDI)</div>
+	<div class="section-title">1. Зубная формула и локализация протезирования (FDI 11–48 / 51–85)</div>
 	<div class="teeth-grid">
 		${odontogramSvg}
 		<p style="margin: 4px 0; font-size: 12px; font-weight: 700;">Выбранные зубы: ${teethFormatted} (всего единиц: ${order.financials.unitsCount})</p>
@@ -458,7 +514,50 @@ export function generatePrintableLabWorkOrderHtml(order: LabWorkOrder): string {
 		${order.contactTightness ? `<div class="data-row"><span class="label">Апроксимальные контакты:</span> <span class="value">${order.contactTightness}</span></div>` : ''}
 	</div>
 
-	<div class="section-title">3. Маршрутный лист 8 технологических этапов ЗТЛ</div>
+	${hasImplantWork ? `
+	<div class="section-title">3. Опись и накладная компонентов имплантационной системы</div>
+	<div class="highlight-box" style="padding: 6px 8px;">
+		<table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+			<thead>
+				<tr style="border-bottom: 1px solid #cbd5e1; color: #475569; text-align: left;">
+					<th style="padding: 3px 4px;">Наименование компонента</th>
+					<th style="padding: 3px 4px; width: 100px; text-align: center;">Количество</th>
+					<th style="padding: 3px 4px; width: 150px;">Примечание</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr style="border-bottom: 1px solid #f1f5f9;">
+					<td style="padding: 3px 4px; font-weight: 600;">Трансферы слепочные (${order.implantComponents?.transfersType === 'open_tray' ? 'открытая ложка' : order.implantComponents?.transfersType === 'closed_tray' ? 'закрытая ложка' : 'скан-боди / маркеры'})</td>
+					<td style="padding: 3px 4px; text-align: center; font-weight: 700;">${order.implantComponents?.transfersCount ?? (order.prostheticTypeId === 'implant_screw_retained_crown' ? order.selectedTeeth.length : 0)} шт.</td>
+					<td style="padding: 3px 4px; color: #64748b;">Возврат в клинику</td>
+				</tr>
+				<tr style="border-bottom: 1px solid #f1f5f9;">
+					<td style="padding: 3px 4px; font-weight: 600;">Лабораторные аналоги имплантатов / Multi-Unit</td>
+					<td style="padding: 3px 4px; text-align: center; font-weight: 700;">${order.implantComponents?.analogsCount ?? (order.prostheticTypeId === 'implant_screw_retained_crown' ? order.selectedTeeth.length : 0)} шт.</td>
+					<td style="padding: 3px 4px; color: #64748b;">Возврат на модели</td>
+				</tr>
+				<tr style="border-bottom: 1px solid #f1f5f9;">
+					<td style="padding: 3px 4px; font-weight: 600;">Формирователи десны (ФДМ)</td>
+					<td style="padding: 3px 4px; text-align: center; font-weight: 700;">${order.implantComponents?.healingAbutmentsCount ?? 0} шт.</td>
+					<td style="padding: 3px 4px; color: #64748b;">В стерильной таре</td>
+				</tr>
+				<tr style="border-bottom: 1px solid #f1f5f9;">
+					<td style="padding: 3px 4px; font-weight: 600;">Винты клинические / лабораторные</td>
+					<td style="padding: 3px 4px; text-align: center; font-weight: 700;">${order.implantComponents?.screwsCount ?? (order.prostheticTypeId === 'implant_screw_retained_crown' ? order.selectedTeeth.length : 0)} шт.</td>
+					<td style="padding: 3px 4px; color: #64748b;">Усилие по паспорту системы</td>
+				</tr>
+				${order.implantComponents?.extraComponentsNotes ? `
+				<tr>
+					<td colspan="3" style="padding: 4px; font-size: 10.5px; color: #0d9488; font-weight: 600;">
+						Дополнительно: ${order.implantComponents.extraComponentsNotes}
+					</td>
+				</tr>` : ''}
+			</tbody>
+		</table>
+	</div>
+	` : ''}
+
+	<div class="section-title">${hasImplantWork ? '4' : '3'}. Маршрутный лист 8 технологических этапов ЗТЛ</div>
 	<div class="highlight-box" style="padding: 6px 8px;">
 		<table style="width: 100%; border-collapse: collapse; font-size: 11px;">
 			<thead>
@@ -488,16 +587,19 @@ export function generatePrintableLabWorkOrderHtml(order: LabWorkOrder): string {
 		</table>
 	</div>
 
-	<div class="section-title">4. Клинические указания и примечания врача</div>
+	<div class="section-title">${hasImplantWork ? '5' : '4'}. Клинические указания и примечания врача</div>
 	<div class="highlight-box" style="min-height: 45px;">
 		${order.clinicalNotes ? `<p style="margin: 0;">${order.clinicalNotes}</p>` : '<p style="margin: 0; color: #94a3b8; font-style: italic;">Особых указаний нет. Изготовление строго по анатомическим нормам и силиконовому ключу.</p>'}
 	</div>
 
-	<div class="section-title">5. Стоимость и взаиморасчеты (для бухгалтерии)</div>
+	<div class="section-title">${hasImplantWork ? '6' : '5'}. Стоимость и взаиморасчеты (для бухгалтерии)</div>
 	<div class="grid-2">
 		<div class="col">
-			<div class="data-row"><span class="label">Стоимость клиники:</span> <span class="value">${order.financials.patientPriceTotalRub.toLocaleString('ru-RU')} ₽</span></div>
+			<div class="data-row"><span class="label">Стоимость клиники:</span> <span class="value" ${order.isWarrantyRework ? 'style="color: #15803d; font-weight: 800;"' : ''}>${order.financials.patientPriceTotalRub.toLocaleString('ru-RU')} ₽ ${order.isWarrantyRework ? '(0 ₽ гарантия)' : ''}</span></div>
 			<div class="data-row"><span class="label">Себестоимость лаборатории:</span> <span class="value">${order.financials.labCostTotalRub.toLocaleString('ru-RU')} ₽</span></div>
+			<div class="data-row" style="margin-top: 6px; font-size: 11px; color: #64748b;">
+				Автономия врача (Мандат 8e п. 7): Истечение 30 дней плана лечения не блокирует наряды ЗТЛ и оплату.
+			</div>
 		</div>
 		<div class="col" style="text-align: right;">
 			${qrSvg}
@@ -541,6 +643,7 @@ export function createLabWorkOrder(params: {
 	implantPlatform?: ImplantPlatformType | undefined;
 	abutmentType?: AbutmentCategoryType | string | undefined;
 	fixationType?: FixationType | undefined;
+	implantComponents?: LabImplantComponentsManifest | undefined;
 	pricePerUnitRub?: number | undefined;
 	costPerUnitRub?: number | undefined;
 	doctorPercent?: number | undefined;
@@ -551,6 +654,10 @@ export function createLabWorkOrder(params: {
 	sequenceNumber?: number | undefined;
 	initialStage?: LabWorkflowStageId | undefined;
 	techStage?: LabTechnologicalStageId | undefined;
+	isWarrantyRework?: boolean | undefined;
+	reworkReason?: string | undefined;
+	originalOrderId?: string | undefined;
+	originalOrderNumber?: string | undefined;
 }): LabWorkOrder {
 	const orderDate = params.orderDate ? (typeof params.orderDate === 'string' ? new Date(params.orderDate) : params.orderDate) : new Date();
 	const preset = PROSTHETIC_TYPES[params.prostheticTypeId] || PROSTHETIC_TYPES.crown_zirconia_monolithic;
@@ -563,7 +670,8 @@ export function createLabWorkOrder(params: {
 		unitsCount: count,
 		pricePerUnitRub: unitPrice,
 		costPerUnitRub: unitCost,
-		doctorPercent: params.doctorPercent ?? 20
+		doctorPercent: params.doctorPercent ?? 20,
+		isWarrantyRework: params.isWarrantyRework
 	});
 
 	const schedule = calculateLabTurnaroundSchedule({
@@ -602,6 +710,7 @@ export function createLabWorkOrder(params: {
 		implantPlatform: params.implantPlatform,
 		abutmentType: params.abutmentType,
 		fixationType: params.fixationType,
+		implantComponents: params.implantComponents,
 		currentStage: initialStage,
 		techStage,
 		stageHistory: [
@@ -626,6 +735,10 @@ export function createLabWorkOrder(params: {
 		financials,
 		schedule,
 		clinicalNotes: params.clinicalNotes,
+		isWarrantyRework: params.isWarrantyRework,
+		reworkReason: params.reworkReason,
+		originalOrderId: params.originalOrderId,
+		originalOrderNumber: params.originalOrderNumber,
 		createdAtIso: new Date().toISOString(),
 		updatedAtIso: new Date().toISOString()
 	};

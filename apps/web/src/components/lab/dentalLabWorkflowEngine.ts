@@ -27,26 +27,29 @@
  */
 
 import {
-	ImplantPlatformType,
+	type ImplantPlatformType,
 	IMPLANT_PLATFORMS,
-	AbutmentCategoryType,
+	type AbutmentCategoryType,
 	ABUTMENT_TYPE_OPTIONS,
-	FixationType,
+	type FixationType,
 	FIXATION_TYPES,
-	LabTechnologicalStageId,
+	type LabTechnologicalStageId,
 	LAB_TECHNOLOGICAL_STAGES,
 	LAB_TECHNOLOGICAL_STAGE_ORDER,
+	type LabImplantComponentsManifest,
+	formatImplantComponentsSummary,
 } from "./orders/labWorkOrderPresets";
 import { generateQrMatrix, generateQrCodeSvg as sharedGenerateQrCodeSvg } from "@dental/shared";
 import { generateBarcodeSvg as canonicalCode128BarcodeSvg } from "./labMath";
 
-export type { ImplantPlatformType, AbutmentCategoryType, FixationType, LabTechnologicalStageId };
+export type { ImplantPlatformType, AbutmentCategoryType, FixationType, LabTechnologicalStageId, LabImplantComponentsManifest };
 export {
 	IMPLANT_PLATFORMS,
 	ABUTMENT_TYPE_OPTIONS,
 	FIXATION_TYPES,
 	LAB_TECHNOLOGICAL_STAGES,
 	LAB_TECHNOLOGICAL_STAGE_ORDER,
+	formatImplantComponentsSummary,
 };
 
 // ─── 1. ТИПЫ И КАТАЛОГ ОРТОПЕДИЧЕСКИХ КОНСТРУКЦИЙ ────────────────────────────
@@ -666,6 +669,7 @@ export interface DentalLabWorkflowOrder {
 	readonly implantPlatform?: ImplantPlatformType | undefined;
 	readonly abutmentType?: AbutmentCategoryType | string | undefined;
 	readonly fixationType?: FixationType | undefined;
+	readonly implantComponents?: LabImplantComponentsManifest | undefined;
 	readonly techStage?: LabTechnologicalStageId | undefined;
 	readonly techStageHistory?: ReadonlyArray<{
 		readonly stage: LabTechnologicalStageId;
@@ -723,6 +727,7 @@ export interface CreateDentalLabOrderParams {
 	readonly implantPlatform?: ImplantPlatformType | undefined;
 	readonly abutmentType?: AbutmentCategoryType | string | undefined;
 	readonly fixationType?: FixationType | undefined;
+	readonly implantComponents?: LabImplantComponentsManifest | undefined;
 	readonly techStage?: LabTechnologicalStageId | undefined;
 	readonly orderNumber?: string | undefined;
 	readonly sequenceNumber?: number | undefined;
@@ -836,6 +841,7 @@ export function createDentalLabOrder(params: CreateDentalLabOrderParams): Dental
 		implantPlatform: params.implantPlatform,
 		abutmentType: params.abutmentType,
 		fixationType: params.fixationType,
+		implantComponents: params.implantComponents,
 		currentStage: initialStage,
 		techStage,
 		stageHistory: [
@@ -1070,8 +1076,8 @@ export function generateOdontogramSvg(selectedTeeth: readonly number[] = []): st
 /**
  * Векторный штрихкод Code 128 (ISO/IEC 15417) для оптических сканеров.
  */
-export function generateBarcodeSvg(data: string, _width = 220, _height = 48): string {
-	return canonicalCode128BarcodeSvg(data);
+export function generateBarcodeSvg(data: string, width = 220, height = 48): string {
+	return canonicalCode128BarcodeSvg(data, width, height);
 }
 
 /**
@@ -1266,7 +1272,50 @@ export function generateDentalLabOrderA4PrintBlank(order: DentalLabWorkflowOrder
 		${order.contactTightness ? `<div class="data-row"><span class="label">Контакты:</span> <span class="value">${order.contactTightness}</span></div>` : ""}
 	</div>
 
-	<div class="section-title">3. Маршрутный лист 8 технологических этапов ЗТЛ</div>
+	${(order.implantComponents?.hasImplantComponents || order.workTypeId === "custom_abutment" || order.implantPlatform) ? `
+	<div class="section-title">3. Опись и накладная компонентов имплантационной системы</div>
+	<div class="box" style="padding: 4px 6px;">
+		<table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+			<thead>
+				<tr style="border-bottom: 1px solid #cbd5e1; color: #475569; text-align: left;">
+					<th style="padding: 2px 4px;">Наименование компонента</th>
+					<th style="padding: 2px 4px; width: 90px; text-align: center;">Количество</th>
+					<th style="padding: 2px 4px; width: 140px;">Примечание</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr style="border-bottom: 1px solid #f1f5f9;">
+					<td style="padding: 2px 4px; font-weight: 600;">Трансферы слепочные (${order.implantComponents?.transfersType === "open_tray" ? "открытая ложка" : order.implantComponents?.transfersType === "closed_tray" ? "закрытая ложка" : "скан-боди / маркеры"})</td>
+					<td style="padding: 2px 4px; text-align: center; font-weight: 700;">${order.implantComponents?.transfersCount ?? (order.workTypeId === "custom_abutment" ? order.selectedTeeth.length : 0)} шт.</td>
+					<td style="padding: 2px 4px; color: #64748b;">Возврат в клинику</td>
+				</tr>
+				<tr style="border-bottom: 1px solid #f1f5f9;">
+					<td style="padding: 2px 4px; font-weight: 600;">Лабораторные аналоги имплантатов / Multi-Unit</td>
+					<td style="padding: 2px 4px; text-align: center; font-weight: 700;">${order.implantComponents?.analogsCount ?? (order.workTypeId === "custom_abutment" ? order.selectedTeeth.length : 0)} шт.</td>
+					<td style="padding: 2px 4px; color: #64748b;">Возврат на модели</td>
+				</tr>
+				<tr style="border-bottom: 1px solid #f1f5f9;">
+					<td style="padding: 2px 4px; font-weight: 600;">Формирователи десны (ФДМ)</td>
+					<td style="padding: 2px 4px; text-align: center; font-weight: 700;">${order.implantComponents?.healingAbutmentsCount ?? 0} шт.</td>
+					<td style="padding: 2px 4px; color: #64748b;">В стерильной таре</td>
+				</tr>
+				<tr style="border-bottom: 1px solid #f1f5f9;">
+					<td style="padding: 2px 4px; font-weight: 600;">Винты клинические / лабораторные</td>
+					<td style="padding: 2px 4px; text-align: center; font-weight: 700;">${order.implantComponents?.screwsCount ?? (order.workTypeId === "custom_abutment" ? order.selectedTeeth.length : 0)} шт.</td>
+					<td style="padding: 2px 4px; color: #64748b;">Усилие по паспорту системы</td>
+				</tr>
+				${order.implantComponents?.extraComponentsNotes ? `
+				<tr>
+					<td colspan="3" style="padding: 3px 4px; font-size: 9.5px; color: #0d9488; font-weight: 600;">
+						Дополнительно: ${order.implantComponents.extraComponentsNotes}
+					</td>
+				</tr>` : ""}
+			</tbody>
+		</table>
+	</div>
+	` : ""}
+
+	<div class="section-title">${(order.implantComponents?.hasImplantComponents || order.workTypeId === "custom_abutment" || order.implantPlatform) ? "4" : "3"}. Маршрутный лист 8 технологических этапов ЗТЛ</div>
 	<div class="box" style="padding: 4px 6px;">
 		<table style="width: 100%; border-collapse: collapse; font-size: 10px;">
 			<thead>
@@ -1296,17 +1345,20 @@ export function generateDentalLabOrderA4PrintBlank(order: DentalLabWorkflowOrder
 		</table>
 	</div>
 
-	<div class="section-title">4. Клинические указания врачу и лаборатории</div>
+	<div class="section-title">${(order.implantComponents?.hasImplantComponents || order.workTypeId === "custom_abutment" || order.implantPlatform) ? "5" : "4"}. Клинические указания врачу и лаборатории</div>
 	<div class="box" style="min-height: 32px;">
 		${order.clinicalNotes ? `<p style="margin: 0; font-size: 11.5px;">${order.clinicalNotes}</p>` : '<p style="margin: 0; color: #94a3b8; font-style: italic; font-size: 11.5px;">Изготовление строго по анатомическим нормам и силиконовому ключу.</p>'}
 	</div>
 
-	<div class="section-title">5. Взаиморасчеты и финансовый контроль</div>
+	<div class="section-title">${(order.implantComponents?.hasImplantComponents || order.workTypeId === "custom_abutment" || order.implantPlatform) ? "6" : "5"}. Взаиморасчеты и финансовый контроль</div>
 	<div class="grid-2">
 		<div class="col">
 			<div class="data-row"><span class="label">Стоимость для пациента:</span> <span class="value" ${order.isWarrantyRework ? 'style="color: #15803d; font-weight: 800;"' : ''}>${order.financials.patientPriceTotalRub.toLocaleString("ru-RU")} ₽ ${order.isWarrantyRework ? '(0 ₽ гарантия)' : ''}</span></div>
 			<div class="data-row"><span class="label">Себестоимость ЗТЛ:</span> <span class="value">${order.financials.labCostTotalRub.toLocaleString("ru-RU")} ₽</span></div>
 			<div class="data-row"><span class="label">Маржа клиники:</span> <span class="value" style="color: #0d9488;">${order.financials.clinicGrossMarginRub.toLocaleString("ru-RU")} ₽ (${order.financials.grossMarginPercent}%)</span></div>
+			<div class="data-row" style="margin-top: 4px; font-size: 10.5px; color: #64748b;">
+				Автономия врача (Мандат 8e п. 7): Истечение 30 дней плана лечения не блокирует наряды ЗТЛ и оплату.
+			</div>
 		</div>
 		<div class="col" style="text-align: right;">
 			${qrSvg}

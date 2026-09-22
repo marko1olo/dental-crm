@@ -98,9 +98,9 @@ export function DentalLabShadeSelector({
 			{/* Primary Shade Palette Grid with Crisp Color Swatches */}
 			<div className="space-y-3">
 				<div className="flex items-center justify-between">
-					<label className="block text-sm font-bold text-slate-900 dark:text-slate-100">
+					<span className="block text-sm font-bold text-slate-900 dark:text-slate-100">
 						Основной оттенок реставрации (Шкала {shadeSystem === "3d_master" ? "VITA 3D-Master" : shadeSystem === "bleach" ? "Bleach" : "VITA Classical"})
-					</label>
+					</span>
 					<span className="text-xs text-slate-400 font-medium">
 						Клиническая шкала оттенков с образцами цвета
 					</span>
@@ -197,10 +197,11 @@ export function DentalLabShadeSelector({
 				<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 					{/* Cervical */}
 					<div className="space-y-1.5">
-						<label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+						<label htmlFor="shade-cervical-select" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
 							1. Пришеечная треть (Cervical)
 						</label>
 						<select
+							id="shade-cervical-select"
 							value={shadeCervical}
 							onChange={(e) => setShadeCervical(e.target.value)}
 							className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
@@ -212,16 +213,20 @@ export function DentalLabShadeSelector({
 							{VITA_3D_MASTER_SHADES.map((s) => (
 								<option key={s} value={s}>3D-Master {s}</option>
 							))}
+							{VITA_BLEACH_SHADES.map((s) => (
+								<option key={s} value={s}>Bleach {s}</option>
+							))}
 						</select>
 						<span className="text-xs text-slate-500 block">Более темный/насыщенный переход</span>
 					</div>
 
 					{/* Body */}
 					<div className="space-y-1.5">
-						<label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+						<label htmlFor="shade-body-select" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
 							2. Тело зуба (Body / Middle)
 						</label>
 						<select
+							id="shade-body-select"
 							value={shadeBody}
 							onChange={(e) => setShadeBody(e.target.value)}
 							className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
@@ -242,10 +247,11 @@ export function DentalLabShadeSelector({
 
 					{/* Incisal */}
 					<div className="space-y-1.5">
-						<label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+						<label htmlFor="shade-incisal-select" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
 							3. Режущий край (Incisal / Enamel)
 						</label>
 						<select
+							id="shade-incisal-select"
 							value={shadeIncisal}
 							onChange={(e) => setShadeIncisal(e.target.value)}
 							className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
@@ -269,9 +275,9 @@ export function DentalLabShadeSelector({
 			{/* Stump Shade (IPS Natural Die ND1–ND9) */}
 			<div className="space-y-3">
 				<div className="flex items-center justify-between flex-wrap gap-2">
-					<label className="block text-sm font-bold text-slate-900 dark:text-slate-100">
+					<span className="block text-sm font-bold text-slate-900 dark:text-slate-100">
 						Цвет культи препарированного зуба (IPS Natural Die Material ND1–ND9)
-					</label>
+					</span>
 					<span className="text-xs text-slate-500">
 						Критично для виниров и коронок E.max
 					</span>
@@ -308,9 +314,9 @@ export function DentalLabShadeSelector({
 			{/* Translucency & Special Characterizations */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 				<div className="space-y-2">
-					<label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+					<span className="block text-xs font-bold text-slate-700 dark:text-slate-300">
 						Степень прозрачности (Translucency)
-					</label>
+					</span>
 					<div className="grid grid-cols-5 gap-2">
 						{[
 							{ id: "UTML", label: "UTML", desc: "Ультра" },
@@ -337,9 +343,9 @@ export function DentalLabShadeSelector({
 				</div>
 
 				<div className="space-y-2">
-					<label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+					<span className="block text-xs font-bold text-slate-700 dark:text-slate-300">
 						Индивидуальные оптические эффекты
-					</label>
+					</span>
 					<div className="flex gap-4 items-center pt-2 flex-wrap">
 						<label className="min-h-[44px] inline-flex items-center gap-2.5 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300">
 							<input

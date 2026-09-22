@@ -218,7 +218,7 @@ export function DentalLabPrintBlank({
 
 				{/* Disinfection & SanPiN Mark */}
 				<div className="p-2.5 border border-dashed border-slate-300 rounded text-xs flex justify-between items-center text-slate-600">
-					<span>[СанПиН 3.3686-21] Оттиски / прикусные шаблоны дезинфицированы в дез. растворе</span>
+					<span>[СанПиН 3.3686-21] Оттиски дезинфицированы • [Мандат 8e п. 7] Срок плана лечения (&gt;30 дн.) не блокирует наряды ЗТЛ</span>
 					{totalLabPriceRub != null && totalLabPriceRub > 0 && (
 						<span className="font-bold">Стоимость наряда: {money(totalLabPriceRub)}</span>
 					)}
