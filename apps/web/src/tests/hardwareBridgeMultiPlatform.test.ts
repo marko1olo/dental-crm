@@ -28,6 +28,8 @@ import {
 import {
 	classifyTwainHardwareError,
 	detectRuntimePlatform,
+	detectUniversalRuntime,
+	dispatchChairsideCameraPhoto,
 	dispatchEscPosReceiptPrint,
 	dispatchFiscalReceiptPrint,
 	dispatchStaffBiometricAuth,
@@ -79,9 +81,10 @@ describe("Multi-Platform Hardware Bridge & IPC Suite", () => {
 		}
 	});
 
-	it("1. Detects runtime platforms accurately (Desktop EXE, Mobile Android, Web PWA)", () => {
-		// 1. Web PWA default
+	it("1. Detects runtime platforms accurately (Desktop EXE, Mobile Android, Web PWA, Standalone PWA)", () => {
+		// 1. Web browser default
 		assert.equal(detectRuntimePlatform(), "web_pwa");
+		assert.equal(detectUniversalRuntime(), "web_browser");
 
 		// 2. Desktop Windows (.EXE)
 		(globalThis as unknown as { window: unknown }).window = {
@@ -93,6 +96,7 @@ describe("Multi-Platform Hardware Bridge & IPC Suite", () => {
 		};
 		assert.equal(isDesktopApp(), true);
 		assert.equal(detectRuntimePlatform(), "desktop_win");
+		assert.equal(detectUniversalRuntime(), "desktop_exe");
 
 		// 3. Mobile Android (.APK)
 		(globalThis as unknown as { window: unknown }).window = {
@@ -102,6 +106,14 @@ describe("Multi-Platform Hardware Bridge & IPC Suite", () => {
 			},
 		};
 		assert.equal(detectRuntimePlatform(), "mobile_android");
+		assert.equal(detectUniversalRuntime(), "android_apk");
+
+		// 4. Standalone PWA Window
+		(globalThis as unknown as { window: unknown }).window = {
+			__DENTE_PWA__: true,
+			matchMedia: (q: string) => ({ matches: q.includes("standalone") }),
+		};
+		assert.equal(detectUniversalRuntime(), "pwa_standalone");
 	});
 
 	it("2. Validates ATOL Driver KKT 10 JSON formatting with 54-FZ FFD 1.2 tags and QR code generation", () => {

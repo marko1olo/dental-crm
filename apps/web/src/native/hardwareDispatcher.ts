@@ -17,6 +17,7 @@ import {
 	listDesktopTwainDevices,
 	printDesktopEscPosReceipt,
 	printDesktopFiscalReceiptTcp,
+	printDesktopFiscalReceiptSerial,
 	printDesktopThermalLabel,
 	watchDesktopDicomFolder,
 	unwatchDesktopDicomFolder,
@@ -58,6 +59,24 @@ export function detectRuntimePlatform(): RuntimePlatform {
 	if (isDesktopApp()) return "desktop_win";
 	if (isMobileApp()) return "mobile_android";
 	return "web_pwa";
+}
+
+export type UniversalRuntime = "web_browser" | "desktop_exe" | "android_apk" | "pwa_standalone";
+
+/**
+ * Accurately detects the 4 execution targets: Web, Desktop EXE, Android APK, and PWA Standalone.
+ */
+export function detectUniversalRuntime(): UniversalRuntime {
+	if (isDesktopApp()) return "desktop_exe";
+	if (isMobileApp()) return "android_apk";
+	if (typeof window !== "undefined") {
+		const win = window as unknown as { __DENTE_PWA__?: boolean; matchMedia?: (q: string) => { matches: boolean } };
+		if (win.__DENTE_PWA__ === true) return "pwa_standalone";
+		if (win.matchMedia?.("(display-mode: standalone)").matches || win.matchMedia?.("(display-mode: minimal-ui)").matches) {
+			return "pwa_standalone";
+		}
+	}
+	return "web_browser";
 }
 
 export interface UniversalScannerResult {
@@ -139,22 +158,91 @@ export async function dispatchVisiographAcquisition(deviceId?: string): Promise<
 	};
 }
 
-/**
- * Universal Fiscal Receipt Printing Dispatcher (54-ФЗ).
- */
-export async function dispatchFiscalReceiptPrint(params: {
+export interface DispatchFiscalReceiptParams {
 	kktHost?: string | undefined;
 	kktPort?: number | undefined;
+	kktSerialPort?: string | undefined;
+	baudRate?: number | undefined;
+	protocol?: "atol" | "shtrih" | undefined;
+	timeoutMs?: number | undefined;
 	payload: DesktopFiscalReceiptPayload;
-}): Promise<DesktopFiscalPrintResult> {
+	bufferOfflineOnFailure?: boolean | undefined;
+}
+
+/**
+ * Universal Fiscal Receipt Printing Dispatcher (54-ФЗ).
+ * In Desktop mode: routes to direct TCP socket or COM serial port hardware register.
+ * In Web / Mobile / PWA: gracefully buffers into FiscalReceiptQueueManager to prevent loss of payment records.
+ */
+export async function dispatchFiscalReceiptPrint(
+	params: DispatchFiscalReceiptParams,
+): Promise<DesktopFiscalPrintResult> {
 	const platform = detectRuntimePlatform();
 
-	if (platform === "desktop_win" && params.kktHost && params.kktPort) {
-		return printDesktopFiscalReceiptTcp({
-			host: params.kktHost,
-			port: params.kktPort,
-			payload: params.payload,
-		});
+	if (platform === "desktop_win") {
+		// 1. Direct COM / Serial Port execution (USB RS-232 / Prolific)
+		if (params.kktSerialPort) {
+			try {
+				const serialRes = await printDesktopFiscalReceiptSerial({
+					port: params.kktSerialPort,
+					baudRate: params.baudRate,
+					protocol: params.protocol,
+					timeoutMs: params.timeoutMs,
+					payload: params.payload,
+				});
+				if (serialRes.success) return serialRes;
+			} catch (err: unknown) {
+				logger.warn("[hardwareDispatcher] printDesktopFiscalReceiptSerial failed:", err);
+			}
+		}
+
+		// 2. Direct TCP / LAN socket execution (Ethernet / Wi-Fi KKT)
+		if (params.kktHost && params.kktPort) {
+			try {
+				const tcpRes = await printDesktopFiscalReceiptTcp({
+					host: params.kktHost,
+					port: params.kktPort,
+					protocol: params.protocol,
+					timeoutMs: params.timeoutMs,
+					payload: params.payload,
+				});
+				if (tcpRes.success) return tcpRes;
+			} catch (err: unknown) {
+				logger.warn("[hardwareDispatcher] printDesktopFiscalReceiptTcp failed:", err);
+			}
+		}
+	}
+
+	// 3. Fallback for Web / Mobile / PWA or offline KKT: buffer into FiscalReceiptQueueManager
+	if (params.bufferOfflineOnFailure !== false && params.payload) {
+		try {
+			const { FiscalReceiptQueueManager } = await import("../services/hardware/fiscalReceiptQueueManager.js");
+			FiscalReceiptQueueManager.enqueueReceipt({
+				orderId: `ORD-${Date.now()}`,
+				patientName: params.payload.patientEmailOrPhone || "Пациент",
+				operationType: "income",
+				cashierFullName: params.payload.cashierName,
+				cashierName: params.payload.cashierName,
+				items: params.payload.items.map((it) => ({
+					name: it.name,
+					priceRub: it.priceRub,
+					price: it.priceRub,
+					quantity: it.quantity,
+					amountRub: it.priceRub * it.quantity,
+					amount: it.priceRub * it.quantity,
+					vatRate: "vat_none",
+					vatType: "none",
+					paymentMethod: "full_payment",
+					paymentSubject: "service",
+				})),
+				totalRub: params.payload.totalRub,
+				totalAmount: params.payload.totalRub,
+				cashAmount: params.payload.paymentType === "cash" ? params.payload.totalRub : 0,
+				electronicAmount: params.payload.paymentType !== "cash" ? params.payload.totalRub : 0,
+			}, "kkt_lan_timeout");
+		} catch (queueErr: unknown) {
+			logger.warn("[hardwareDispatcher] Failed to buffer receipt to FiscalReceiptQueueManager:", queueErr);
+		}
 	}
 
 	// Web / Mobile network fallback: send to local clinic fiscal service
@@ -372,6 +460,25 @@ export async function dispatchStaffBiometricAuth(
 		authenticated: false,
 		error: "Биометрический вход поддерживается в мобильном приложении DENTE (.apk).",
 	};
+}
+
+/**
+ * Universal Chairside Camera Photo Protocol Dispatcher.
+ * Automatically delegates to Android APK native camera or web MediaDevices without crashing.
+ */
+export async function dispatchChairsideCameraPhoto(options?: {
+	toothCode?: string;
+	facingMode?: "environment" | "user";
+	viewCategory?: "portrait" | "occlusion" | "upper_arch" | "lower_arch" | "intraoral_macro" | "xray_film_scan";
+	resolution?: "standard" | "high" | "macro";
+}) {
+	const platform = detectRuntimePlatform();
+	if (platform === "mobile_android") {
+		const { takeChairsidePhoto } = await import("./mobileBridge.js");
+		return takeChairsidePhoto(options);
+	}
+	const { captureChairsidePhoto } = await import("../utils/deviceDetection.js");
+	return captureChairsidePhoto(options);
 }
 
 export {

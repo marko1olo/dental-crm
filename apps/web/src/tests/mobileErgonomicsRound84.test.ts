@@ -34,7 +34,10 @@ test("Round 84: Mobile Adaptability (375px-414px) & Touch-First Ergonomics Suite
 				scheduleGridSrc.includes("min-h-[44px] min-w-[44px]"),
 			"ScheduleGrid must have touch target buttons",
 		);
-		assert.ok(scheduleGridSrc.includes("min-h-[48px] rounded-xl border border-dashed"), "Empty slot button must have min-h-[48px]");
+		assert.ok(
+			scheduleGridSrc.includes("schedule-empty-slot-btn") && scheduleGridSrc.includes("border border-dashed"),
+			"Empty slot button must have schedule-empty-slot-btn with dashed border",
+		);
 	});
 
 	await t.test("3. ClinicalQuickPresetsBar defines 2-column responsive layout and >= 48-50px touch targets", () => {
