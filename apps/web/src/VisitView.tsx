@@ -1385,12 +1385,14 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</div>
 
 						<div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-							{/* Кнопка физиологической нормы 043/у (1-клик) */}
+							{/* Кнопка физиологической нормы 043/у (1-клик) — на вкладке ЭМК скрыта, так как в тулбаре ЭМК уже есть каноническая btn-quick-soap-norm (Мандат 8s) */}
 							<button
 								type="button"
 								onClick={handleApplySomaticNormQuick}
 								data-testid="btn-somatic-norm-one-click"
-								className="secondary-button h-7 min-h-[28px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
+								className={`secondary-button h-7 min-h-[28px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg ${
+									visitSubViewTab === "emk" ? "!hidden" : "flex"
+								}`}
 								title="Соматически здоров / норма (1-клик): зафиксировать норму во всех показателях и перенести в дневник 043/у"
 								aria-label="Соматически здоров / норма (1-клик)"
 							>
@@ -1469,7 +1471,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												handlePrintForm043uFast();
 											}}
 											data-testid="visit-more-action-print-043u"
-											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+											className="sm:hidden w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 											role="menuitem"
 										>
 											<Printer size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
@@ -1570,15 +1572,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</div>
 
 					{/* Строка 2 (высота ~30-34px): Компактные табы разделов визита (DEF-VIS-02, DEFECT-MOB-01) */}
-					<div className="relative min-h-[34px] sm:h-8 flex items-center bg-[var(--paper-soft,rgba(0,0,0,0.02))] min-w-0 max-w-full overflow-hidden">
+					<div className="relative min-h-[32px] sm:h-8 flex items-center bg-[var(--paper-soft,rgba(0,0,0,0.02))] min-w-0 max-w-full overflow-hidden">
 						<VisitMainTabs
 							visitSubViewTab={visitSubViewTab}
 							setVisitSubViewTab={setVisitSubViewTab}
-						/>
-						{/* Градиентный индикатор горизонтального скролла на мобильных (защита от резкого среза вкладок [Рентген]/[Согласия]) */}
-						<div
-							className="pointer-events-none absolute right-0 top-0 bottom-0 w-5 bg-gradient-to-l from-[var(--paper)] to-transparent sm:hidden z-10 opacity-70"
-							aria-hidden="true"
 						/>
 					</div>
 				</header>

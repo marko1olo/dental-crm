@@ -1539,7 +1539,7 @@ export function VisitEmkTab() {
 			handleAddServiceToPlan({
 				title: item.title,
 				basePriceRub: item.priceRub,
-				code804n: item.code804n,
+				...(item.code804n ? { code804n: item.code804n } : {}),
 			});
 			try {
 				window.dispatchEvent(
@@ -1810,12 +1810,12 @@ export function VisitEmkTab() {
 	);
 
 	const emkTabs = [
-		{ id: "all", label: "Все поля" },
-		{ id: "complaint", label: "Жалобы" },
-		{ id: "anamnesis", label: "Анамнез" },
-		{ id: "objectiveStatus", label: "Объективно" },
-		{ id: "diagnosis", label: "Диагноз" },
-		{ id: "treatmentPlan", label: "Лечение" },
+		{ id: "all", label: "Все поля", shortLabel: "Все" },
+		{ id: "complaint", label: "Жалобы", shortLabel: "Жалобы" },
+		{ id: "anamnesis", label: "Анамнез", shortLabel: "Анамнез" },
+		{ id: "objectiveStatus", label: "Объективно", shortLabel: "Статус" },
+		{ id: "diagnosis", label: "Диагноз", shortLabel: "Диагноз" },
+		{ id: "treatmentPlan", label: "Лечение", shortLabel: "План" },
 	];
 
 	const allFields = Array.isArray(visitNoteFieldDefinitions)
@@ -2059,8 +2059,8 @@ export function VisitEmkTab() {
 					initialOpen={true}
 					initialDocked={false}
 					activeTooth={activeSelectedTooth}
-					patientId={realVisitFieldId(activePatient?.id)}
-					visitId={realVisitFieldId((appLogic as any)?.activeVisitId || dashboard?.activeVisit?.id || (visitNoteForm as any)?.visitId)}
+					patientId={realVisitFieldId(activePatient?.id) ?? undefined}
+					visitId={realVisitFieldId((appLogic as any)?.activeVisitId || dashboard?.activeVisit?.id || (visitNoteForm as any)?.visitId) ?? undefined}
 					chairId={(dashboard as any)?.activeChairId || "chair-1"}
 					patientName={activePatient?.fullName}
 					patientAllergies={(activePatient as any)?.allergies}
@@ -2108,7 +2108,10 @@ export function VisitEmkTab() {
 								}`}
 								onClick={() => setActiveEmkTab(tab.id)}
 							>
-								<span className="whitespace-nowrap shrink-0 flex-shrink-0">{tab.label}</span>
+								<span className="whitespace-nowrap shrink-0 flex-shrink-0">
+									<span className="hidden sm:inline">{tab.label}</span>
+									<span className="sm:hidden">{tab.shortLabel || tab.label}</span>
+								</span>
 								{isFilled && <span className="emk-tab-dot shrink-0" title="Заполнено" />}
 							</button>
 						);
@@ -2186,7 +2189,10 @@ export function VisitEmkTab() {
 							aria-label="Дополнительные протоколы"
 						>
 							<Tag className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-							<span>Протоколы...</span>
+							<span className="whitespace-nowrap shrink-0">
+								<span className="hidden sm:inline">Протоколы...</span>
+								<span className="sm:hidden">СтАР...</span>
+							</span>
 							<ChevronDown size={11} className={`shrink-0 transition-transform ${isExtraSoapMenuOpen ? "rotate-180" : ""}`} />
 						</button>
 
@@ -2403,7 +2409,6 @@ export function VisitEmkTab() {
 							"Пломба (скол)",
 							"Коронка",
 							"Удален (подвижность)",
-							"Здоров (профосмотр)",
 							"Гигиена",
 							"Застревание пищи",
 							"Кровоточивость десен",
@@ -2752,16 +2757,16 @@ export function VisitEmkTab() {
 								className="min-h-[130px] sm:min-h-[110px] rounded-b-lg rounded-t-none p-3 border border-t-0 border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-400 resize-y w-full outline-none focus:border-[var(--teal,var(--brand-primary))] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]/25 font-sans text-sm leading-relaxed"
 							/>
 
-							{/* Быстрые чипы под textarea: адаптивный flex-wrap без обрезания текста (Мандат 8p, DEF-2, DEF-3) */}
+							{/* Быстрые чипы под textarea: строго 1 компактная горизонтальная строка без водопада (Мандаты 8c, 8e, 8p) */}
 							{chips.length > 0 && (
-								<div className="flex flex-wrap items-center gap-1.5 py-1 min-w-0 max-w-full my-0.5">
+								<div className="quick-chips-scroll-container flex items-center gap-1.5 py-1 min-w-0 max-w-full my-0.5 overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-nowrap shrink-0 touch-pan-x overscroll-x-contain">
 									{chips.map((chip) => (
 										<button
 											key={chip}
 											type="button"
 											onClick={() => handleChipClick(chip)}
 											title={chip}
-											className="quick-chip visit-quick-chip h-auto min-h-[28px] sm:min-h-[30px] max-w-none px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation shadow-2xs inline-flex items-center gap-1.5 shrink-0 flex-shrink-0 min-w-max whitespace-nowrap"
+											className="quick-chip visit-quick-chip h-auto min-h-[26px] sm:min-h-[28px] max-w-none px-2 sm:px-2.5 py-0.5 sm:py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation shadow-2xs inline-flex items-center gap-1.5 shrink-0 flex-shrink-0 min-w-max whitespace-nowrap"
 										>
 											<span className="text-[var(--teal,var(--brand-primary))] font-extrabold shrink-0">
 												+
