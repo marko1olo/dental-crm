@@ -51,15 +51,7 @@ export async function decodeVisiographPreview(
 	previewUrl: string,
 ): Promise<HTMLImageElement> {
 	if (typeof Image === "undefined") {
-		// Fallback for non-browser / mock environment
-		const mockImg = {
-			src: previewUrl,
-			width: 800,
-			height: 600,
-			naturalWidth: 800,
-			naturalHeight: 600,
-		} as unknown as HTMLImageElement;
-		return mockImg;
+		throw new Error("decodeVisiographPreview requires a browser DOM environment with Image constructor");
 	}
 
 	return new Promise((resolve, reject) => {
@@ -137,13 +129,7 @@ export function convert16BitToRgbaImageData(
 		return new ImageData(rgbaBytes, width, height);
 	}
 
-	// Mock ImageData for non-DOM / test environments
-	return {
-		data: rgbaBytes,
-		width,
-		height,
-		colorSpace: "srgb",
-	} as unknown as ImageData;
+	throw new Error("convert16BitToRgbaImageData requires a browser DOM environment with ImageData constructor");
 }
 
 /**

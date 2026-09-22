@@ -1350,8 +1350,11 @@ export function parseUnstructuredPriceText(rawText: string): readonly ParsedPric
  * Converts a parsed proposal into a complete ServicePricelistItem.
  */
 export function proposalToPricelistItem(proposal: ParsedPriceProposal): ServicePricelistItem {
+	const idSuffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+		? crypto.randomUUID().slice(0, 8)
+		: Date.now().toString(36);
 	return {
-		id: `srv-imp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: `srv-imp-${Date.now()}-${idSuffix}`,
 		code804n: proposal.detectedCode804n,
 		commercialTitle: proposal.commercialTitle,
 		statutoryTitle804n: proposal.statutoryTitle804n || proposal.commercialTitle,

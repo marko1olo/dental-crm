@@ -5,4 +5,5 @@ export * from "./VisiographMeasurementMath";
 export * from "./VisiographLegalWatermark";
 export * from "./VisiographDicomExporter";
 export * from "./VisiographStudioCanvas";
+export * from "./VisiographProgressiveLoader";
 export * from "../dicom/panoramicArch";

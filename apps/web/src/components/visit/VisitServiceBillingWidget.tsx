@@ -163,9 +163,11 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 			const detail = (e as CustomEvent)?.detail;
 			if (!detail) return;
 			const item = detail.item || detail;
-			if (!item.title && !item.name) return;
+			const idSuffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+				? crypto.randomUUID().slice(0, 8)
+				: Date.now().toString(36);
 			const newItem: VisitBillingServiceItem = {
-				id: `copilot-serv-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+				id: `copilot-serv-${Date.now()}-${idSuffix}`,
 				code804n: item.code804n || "A16.07.001",
 				title: item.title || item.name || "Услуга",
 				toothCode: item.toothNumber ? String(item.toothNumber) : item.toothCode,

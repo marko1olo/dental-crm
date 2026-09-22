@@ -53,6 +53,9 @@
 8. **Полное искоренение `Math.random()` и процедурных симуляторов (SSOT Zero-Mock Law, 18 файлов)**:
    - В рамках коммита `cf7699b84` произведена полная замена небезопасного и псевдослучайного `Math.random()` во всех 18 затронутых файлах (`useWebsocket.ts`, `branchTransferEngine.ts`, `DirectRvgCaptureModal.tsx`, `PublicOnlineBookingWidget.tsx`, `StagePaymentPlanModal.tsx` и др.) на криптографически стойкий `crypto.getRandomValues()`, SHA-256 хеши и детерминированные последовательности UUIDv7;
    - Внедрение честных пустых состояний (Zero-Mock Empty State) вместо процедурных муляжей в соответствии с Мандатом 8s.
+   - В рамках Wave 278 искоренены последние остаточные вхождения `Math.random()` в `ServicePricelistManagerModal.tsx`, `servicePricelistEngine.ts` и `VisitServiceBillingWidget.tsx` с заменой на `crypto.randomUUID()` (100% Zero-Math.random в продакшен-коде web/api);
+   - Искоренены процедурные симуляторы кнопок диктовки (`.dnt-voice-btn-simulate`) и фиктивные DOM-моки `mockImg`/`mockImageData` в загрузчике визиографа (`VisiographProgressiveLoader.ts`);
+   
 9. **Omni-Platform Runtime Engine: Web, Desktop EXE, Android APK, PWA (`omniPlatformAdapter.ts`, `useOmniPlatform.ts`, `hardwarePrinting.ts`, `useDesktopShortcuts.ts`)**:
    - Кроссплатформенная среда с динамической детекцией 4 платформ (`web`, `desktop`, `android`, `pwa`) и физического типа указателя (`pointer: fine` мышь vs `pointer: coarse` емкостный тач);
    - Автоматическая адаптация плотности: плотная десктопная клиническая сетка 28–36px (`h-7`/`h-8`/`h-9`) для врача у кресла и 44–48px тач-таргеты на мобильных устройствах;
