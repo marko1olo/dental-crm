@@ -502,54 +502,26 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     return thoughts.filter((t) => t.status === "done").length;
   }, [thoughts]);
 
-  // Load a preset with simulation
+  // Load clinical preset immediately without artificial simulation delays (Mandates 8e, 8k, 8s)
   const loadPreset = useCallback(
-    (index: number, simulateDelay = true) => {
+    (index: number) => {
       const preset = CLINICAL_PRESETS[index] ?? defaultPreset;
       setActivePresetIndex(index);
       setInputText(preset.prompt);
-
-      if (simulateDelay) {
-        setIsThinking(true);
-        setThoughts(
-          preset.thoughts.map((t, i) => ({
-            ...t,
-            status: i === 0 ? "running" : "pending",
-          }))
-        );
-
-        setTimeout(() => {
-          setThoughts(preset.thoughts);
-          setIsThinking(false);
-          setToothProposal({
-            toothNumber: preset.toothNumber,
-            state: preset.toothState,
-            stateLabel: preset.toothStateLabel,
-            surfaces: preset.surfaces,
-            applied: false,
-          });
-          setServicesProposal(preset.services.map((s) => ({ ...s, applied: false })));
-          setSoapProposal({ ...preset.soap, applied: false });
-          setAnestheticProposal(preset.anesthetic ? { ...preset.anesthetic, applied: false } : null);
-          setConsentProposal(preset.consent ? { ...preset.consent, applied: false } : null);
-          setSafetyAlert({ ...preset.safetyAlert, acknowledged: false });
-          showToast(`ИИ обработал запрос: ${preset.label}`, "info");
-        }, 350);
-      } else {
-        setThoughts(preset.thoughts);
-        setToothProposal({
-          toothNumber: preset.toothNumber,
-          state: preset.toothState,
-          stateLabel: preset.toothStateLabel,
-          surfaces: preset.surfaces,
-          applied: false,
-        });
-        setServicesProposal(preset.services.map((s) => ({ ...s, applied: false })));
-        setSoapProposal({ ...preset.soap, applied: false });
-        setAnestheticProposal(preset.anesthetic ? { ...preset.anesthetic, applied: false } : null);
-        setConsentProposal(preset.consent ? { ...preset.consent, applied: false } : null);
-        setSafetyAlert({ ...preset.safetyAlert, acknowledged: false });
-      }
+      setIsThinking(false);
+      setThoughts(preset.thoughts);
+      setToothProposal({
+        toothNumber: preset.toothNumber,
+        state: preset.toothState,
+        stateLabel: preset.toothStateLabel,
+        surfaces: preset.surfaces,
+        applied: false,
+      });
+      setServicesProposal(preset.services.map((s) => ({ ...s, applied: false })));
+      setSoapProposal({ ...preset.soap, applied: false });
+      setAnestheticProposal(preset.anesthetic ? { ...preset.anesthetic, applied: false } : null);
+      setConsentProposal(preset.consent ? { ...preset.consent, applied: false } : null);
+      setSafetyAlert({ ...preset.safetyAlert, acknowledged: false });
     },
     []
   );
@@ -768,11 +740,11 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
       } catch (err) {
         console.warn("[ChairsideCopilotHUD] API call failed, falling back to local clinical preset:", err);
         if (/пульпит|26|канал/i.test(text)) {
-          loadPreset(1, false);
+          loadPreset(1);
         } else if (/гигиен|чистк|налет|скейлинг/i.test(text)) {
-          loadPreset(2, false);
+          loadPreset(2);
         } else {
-          loadPreset(0, false);
+          loadPreset(0);
         }
         showToast("Автономный режим: сформированы предложения у кресла", "info");
       } finally {
@@ -1290,7 +1262,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
                 key={preset.id}
                 type="button"
                 className={`chairside-hud-preset-chip ${activePresetIndex === idx ? "chairside-hud-preset-chip--active" : ""}`}
-                onClick={() => loadPreset(idx, true)}
+                onClick={() => loadPreset(idx)}
                 data-testid={`btn-preset-${preset.id}`}
               >
                 <Zap size={11} className="text-[var(--teal)]" />
