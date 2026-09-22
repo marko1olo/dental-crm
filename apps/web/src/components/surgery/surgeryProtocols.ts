@@ -614,6 +614,64 @@ export function evaluateWarehouseOverdraft(
 	};
 }
 
+export interface SurgicalMaterialDeductionResult {
+	readonly success: boolean;
+	readonly isOverdraft: boolean;
+	readonly deductedItems: readonly {
+		readonly name: string;
+		readonly unit: string;
+		readonly quantity: number;
+		readonly isOverdraft: boolean;
+	}[];
+	readonly messageRu: string;
+}
+
+/**
+ * 1-клик списание хирургических материалов со склада с гарантированным мягким овердрафтом (Мандат 8e).
+ * Задержка оприходования накладной поставщика не блокирует врача и операцию.
+ */
+export function quickDeductSurgicalMaterials(params: {
+	materials: readonly { name: string; unit: string; quantity: number; isWarehouseCritical?: boolean }[];
+	hasWarehouseDelay?: boolean;
+	operationTitle?: string;
+}): SurgicalMaterialDeductionResult {
+	const isOverdraft = Boolean(params.hasWarehouseDelay);
+	const deductedItems = params.materials.map((m) => ({
+		name: m.name,
+		unit: m.unit,
+		quantity: m.quantity,
+		isOverdraft,
+	}));
+
+	const messageRu = isOverdraft
+		? `Списано ${params.materials.length} поз. под операцию «${params.operationTitle || "Хирургическое вмешательство"}» в мягкий овердрафт склада (Мандат 8e: без комиссии и блокировки врача).`
+		: `Материалы операции «${params.operationTitle || "Хирургическое вмешательство"}» (${params.materials.length} поз.) успешно списаны со склада в 1 клик.`;
+
+	try {
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-quick-writeoff-surgical-materials", {
+					detail: {
+						materials: deductedItems,
+						isOverdraft,
+						operationTitle: params.operationTitle,
+						timestamp: new Date().toISOString(),
+					},
+				}),
+			);
+		}
+	} catch {
+		// fallback
+	}
+
+	return {
+		success: true,
+		isOverdraft,
+		deductedItems,
+		messageRu,
+	};
+}
+
 /**
  * Генерация полного хирургического дневника для Формы 043/у.
  */

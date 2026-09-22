@@ -192,10 +192,11 @@ export async function registerClinicalImplantRoutes(app: FastifyInstance) {
 				readonly previousStock: number;
 				readonly newStock: number;
 				readonly unitCostRub: string | null;
+				readonly isOverdraft?: boolean;
 			} | null = null;
 
 			if (input.catalogItemId) {
-				const [invItem] = await tx
+				let [invItem] = await tx
 					.select()
 					.from(inventoryItems)
 					.where(
@@ -207,12 +208,29 @@ export async function registerClinicalImplantRoutes(app: FastifyInstance) {
 					.for("update")
 					.limit(1);
 
+				// Мягкий овердрафт склада (Мандаты 8e, 8n):
+				// Задержка оприходования накладной не должна блокировать операцию хирурга.
 				if (!invItem) {
-					throw new Error(`Товар с артикулом ${input.catalogItemId} не найден на складе организации.`);
+					const [created] = await tx
+						.insert(inventoryItems)
+						.values({
+							organizationId: orgId,
+							id: input.catalogItemId,
+							name: `Имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм`,
+							category: "Имплантология",
+							unit: "шт.",
+							stockQuantity: "0",
+							currentQty: "0",
+							criticalThreshold: "2",
+							unitCostRub: "0",
+						})
+						.returning();
+					invItem = created!;
 				}
 
 				const currentStock = Number(invItem.currentQty ?? invItem.stockQuantity ?? 0);
-				const newStock = currentStock - 1; // Честный математический учет остатка (без сокрытия дефицита через Math.max)
+				const newStock = Number((currentStock - 1).toFixed(4));
+				const isOverdraft = newStock < 0;
 				const unitCostRub = invItem.unitCostRub ?? invItem.pricePerUnit ?? null;
 
 				await tx
@@ -236,12 +254,15 @@ export async function registerClinicalImplantRoutes(app: FastifyInstance) {
 						itemId: invItem.id,
 						inventoryItemId: invItem.id,
 						visitId: input.visitId ?? null,
-						transactionType: "auto_deduct",
+						transactionType: isOverdraft ? "emergency_overdraft" : "auto_deduct",
+						isOverdraft,
 						qty: "-1.000",
 						quantityChanged: "-1.000",
 						unitCostRub,
 						userId: identity.userId ?? null,
-						notes: `Списание имплантата ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм для зуба FDI ${input.toothNumberFdi} (установка ${installation.id})`,
+						notes: isOverdraft
+							? `Списание в мягкий овердрафт: имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм для зуба FDI ${input.toothNumberFdi} (установка ${installation.id})`
+							: `Списание имплантата ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм для зуба FDI ${input.toothNumberFdi} (установка ${installation.id})`,
 					})
 					.returning({ id: inventoryTransactions.id });
 
@@ -252,6 +273,7 @@ export async function registerClinicalImplantRoutes(app: FastifyInstance) {
 					previousStock: currentStock,
 					newStock,
 					unitCostRub,
+					isOverdraft,
 				};
 			}
 

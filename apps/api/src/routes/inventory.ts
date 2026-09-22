@@ -1146,7 +1146,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 	// без созыва комиссий и с поддержкой мягкого овердрафта (Мандат 8e п. 10).
 	server.post<{
 		Params: { organizationId: string };
-		Body?: { visitType?: "therapy" | "surgery"; visitId?: string; notes?: string };
+		Body?: { visitType?: "therapy" | "surgery" | "implant" | "sinus_gbr"; visitId?: string; notes?: string };
 	}>("/:organizationId/quick-writeoff-visit-bundle", async (request, reply) => {
 		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
@@ -1229,6 +1229,24 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 					userId: effectiveUserId,
 					visitId: body.visitId ?? null,
 					notes: body.notes ?? `Списание хирургического пакета у кресла x${multiplier}`,
+				});
+			}
+			if (pkgId === "implant") {
+				return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
+					organizationId,
+					visitType: "implant",
+					userId: effectiveUserId,
+					visitId: body.visitId ?? null,
+					notes: body.notes ?? `Списание имплантологического пакета у кресла x${multiplier}`,
+				});
+			}
+			if (pkgId === "sinus_gbr" || pkgId === "implant_gbr") {
+				return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
+					organizationId,
+					visitType: "sinus_gbr",
+					userId: effectiveUserId,
+					visitId: body.visitId ?? null,
+					notes: body.notes ?? `Списание пакета костной пластики / синус-лифтинга у кресла x${multiplier}`,
 				});
 			}
 			return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {

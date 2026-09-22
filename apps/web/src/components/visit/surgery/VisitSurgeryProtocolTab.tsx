@@ -11,12 +11,14 @@ import {
 	Zap,
 	Printer,
 	FileCheck,
+	PackageMinus,
 } from "lucide-react";
 import { showToast } from "../../GlobalToast";
 import {
 	SURGICAL_OPERATION_NORMS,
 	DENTAL_IMPLANTATION_NORM_TEXT,
 	evaluateWarehouseOverdraft,
+	quickDeductSurgicalMaterials,
 	buildStandardImplantationProtocolText,
 	type SurgicalOperationNorm,
 	type StandardImplantationParams,
@@ -59,6 +61,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 	const [isSterileGloveMode, setIsSterileGloveMode] = useState<boolean>(true);
 	const [isImplantModalOpen, setIsImplantModalOpen] = useState<boolean>(false);
 	const [hasWarehouseDelay, setHasWarehouseDelay] = useState<boolean>(false);
+	const [isMaterialsDeducted, setIsMaterialsDeducted] = useState<boolean>(false);
 
 	// 1-Клик параметры имплантации
 	const [implantBrand, setImplantBrand] = useState<string>("Dentium");
@@ -248,6 +251,16 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 			},
 		});
 		showToast("Хирургический комплект ИДС отправлен на печать", "info");
+	};
+
+	const handleQuickDeductWarehouseMaterials = () => {
+		const result = quickDeductSurgicalMaterials({
+			materials: currentNorm.requiredMaterials,
+			hasWarehouseDelay,
+			operationTitle: currentNorm.title,
+		});
+		setIsMaterialsDeducted(true);
+		showToast(result.messageRu, result.isOverdraft ? "info" : "success");
 	};
 
 	const handleCopy = () => {
@@ -605,6 +618,22 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 					>
 						<Printer size={16} />
 						<span>Печать протокола</span>
+					</button>
+
+					{/* 1-Клик списание материалов со склада с мягким овердрафтом (Мандат 8e) */}
+					<button
+						type="button"
+						onClick={handleQuickDeductWarehouseMaterials}
+						className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer min-h-[48px] touch-manipulation ${
+							isMaterialsDeducted
+								? "border-[var(--teal,#0d9488)] bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)]"
+								: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)]"
+						}`}
+						data-testid="btn-tab-deduct-materials"
+						title="1-Клик списание материалов операции (имплантат, графт, мембрана, расходники) со склада с мягким овердрафтом (Мандат 8e)"
+					>
+						<PackageMinus size={16} />
+						<span>{isMaterialsDeducted ? "Материалы списаны" : "Списать со склада"}</span>
 					</button>
 
 					<button

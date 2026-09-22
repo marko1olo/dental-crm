@@ -239,7 +239,7 @@ export function AnesthesiaQuickBar({
 	const handleNurseQuickDisposal = (carpulesCount = 1.0) => {
 		if (disabled) return;
 		showQuickToast(
-			`Списана пустая карпула ${selectedDrugInfo.tradeNamesRu[0]} (${carpulesCount} шт.): отходы Класса Б / ПКУ зафиксированы медсестрой в 1 клик (без комиссии)`,
+			`Списана пустая карпула ${selectedDrugInfo.tradeNamesRu[0]} (${carpulesCount} шт.): отходы Класса Б зафиксированы медсестрой в 1 клик (без комиссии)`,
 			4000,
 		);
 		if (onDisposalCarpules) {
@@ -250,7 +250,7 @@ export function AnesthesiaQuickBar({
 	const handleNursePacketDisposal = () => {
 		if (disabled) return;
 		showQuickToast(
-			"Списана 1 карпула Артикаин 1:100 000 + игла 30G: пакет списан медсестрой в 1 клик (Класс Б / ПКУ, без комиссии из 3 человек, мягкий овердрафт)",
+			"Списана 1 карпула Артикаин 1:100 000 + игла 30G: пакет списан медсестрой в 1 клик (отходы Класса Б, без комиссии из 3 человек, мягкий овердрафт)",
 			4000,
 		);
 		if (onDisposalCarpules) {
@@ -351,7 +351,7 @@ export function AnesthesiaQuickBar({
 	const handleNurseSeptanestDisposal = () => {
 		if (disabled) return;
 		showQuickToast(
-			"Списана 1 карпула Септанест 1:100 000 (1.7 мл): отходы Класса Б / ПКУ списаны медсестрой в 1 клик без комиссии из 3 человек",
+			"Списана 1 карпула Септанест 1:100 000 (1.7 мл): отходы Класса Б списаны медсестрой в 1 клик без комиссии из 3 человек",
 			4000,
 		);
 		if (onDisposalCarpules) {
@@ -535,7 +535,7 @@ export function AnesthesiaQuickBar({
 						disabled={disabled}
 						onClick={() => handleNurseQuickDisposal(1.0)}
 						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-emerald-500/10 border border-emerald-500/40 hover:border-emerald-500 text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
-						title="Списать пустые карпулы анестетика медсестрой в 1 клик (СанПиН 3.3686-21, ПКУ без комиссии из 3 человек)"
+						title="Списать пустые карпулы анестетика медсестрой в 1 клик (СанПиН 3.3686-21 Класс Б, без комиссии из 3 человек)"
 						data-testid="nurse-quick-carpule-disposal"
 					>
 						<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />

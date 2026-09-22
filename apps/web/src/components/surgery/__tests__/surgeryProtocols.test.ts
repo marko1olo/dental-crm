@@ -18,6 +18,7 @@ import {
 	PERIOSTOTOMY_NORM_TEXT,
 	SURGICAL_OPERATION_NORMS,
 	evaluateWarehouseOverdraft,
+	quickDeductSurgicalMaterials,
 	buildSurgicalDiaryEntry,
 	EXTRACTION_804N_CODES,
 	SURGICAL_HEMOSTASIS_OPTIONS,
@@ -412,6 +413,12 @@ describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 			"паллиатив",
 			"стационар",
 			"брюшн",
+			"пку наркотик",
+			"наркотическ",
+			"комиссия согласования",
+			"палата реанимации",
+			"интенсивная терапия",
+			"консилиум начмед",
 		];
 
 		for (const norm of SURGICAL_OPERATION_NORMS) {
@@ -455,5 +462,35 @@ describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 		// Non-blocking warehouse status
 		const overdraft = evaluateWarehouseOverdraft(apico.requiredMaterials, true);
 		assert.equal(overdraft.canProceed, true, "Apicoectomy must never be blocked by warehouse delay");
+	});
+
+	it("13. Mandate 8e: quickDeductSurgicalMaterials provides 1-click write-off with soft overdraft guarantee", () => {
+		const materials = [
+			{ name: "Имплантат Osstem TS III", unit: "шт", quantity: 1, isWarehouseCritical: true },
+			{ name: "Шовный материал ПГА 4-0", unit: "шт", quantity: 1, isWarehouseCritical: false },
+		];
+
+		// Normal deduction
+		const normalResult = quickDeductSurgicalMaterials({
+			materials,
+			hasWarehouseDelay: false,
+			operationTitle: "Дентальная имплантация",
+		});
+		assert.equal(normalResult.success, true);
+		assert.equal(normalResult.isOverdraft, false);
+		assert.equal(normalResult.deductedItems.length, 2);
+		assert.ok(normalResult.messageRu.includes("успешно списаны"));
+
+		// Soft overdraft deduction (supplier invoice delayed)
+		const overdraftResult = quickDeductSurgicalMaterials({
+			materials,
+			hasWarehouseDelay: true,
+			operationTitle: "Дентальная имплантация",
+		});
+		assert.equal(overdraftResult.success, true);
+		assert.equal(overdraftResult.isOverdraft, true);
+		assert.equal(overdraftResult.deductedItems[0].isOverdraft, true);
+		assert.ok(overdraftResult.messageRu.includes("мягкий овердрафт"));
+		assert.ok(overdraftResult.messageRu.includes("без комиссии и блокировки врача"));
 	});
 });

@@ -74,7 +74,7 @@ export interface BrandMetadata {
 	readonly id: ImplantBrand;
 	readonly name: string;
 	readonly country: string;
-	readonly flagEmoji: string;
+	readonly countryCode: string;
 	readonly popularLines: readonly string[];
 	readonly defaultHexColor: string;
 }
@@ -84,7 +84,7 @@ export const IMPLANT_BRANDS_METADATA: Record<ImplantBrand, BrandMetadata> = {
 		id: "straumann",
 		name: "Straumann",
 		country: "Швейцария",
-		flagEmoji: "🇨🇭",
+		countryCode: "CH",
 		popularLines: ["Bone Level Tapered BLT", "BLX"],
 		defaultHexColor: "#0284c7",
 	},
@@ -92,7 +92,7 @@ export const IMPLANT_BRANDS_METADATA: Record<ImplantBrand, BrandMetadata> = {
 		id: "nobel_biocare",
 		name: "Nobel Biocare",
 		country: "Швейцария / Швеция",
-		flagEmoji: "🇨🇭",
+		countryCode: "CH/SE",
 		popularLines: ["NobelActive", "NobelReplace CC"],
 		defaultHexColor: "#e11d48",
 	},
@@ -100,7 +100,7 @@ export const IMPLANT_BRANDS_METADATA: Record<ImplantBrand, BrandMetadata> = {
 		id: "osstem",
 		name: "Osstem",
 		country: "Южная Корея",
-		flagEmoji: "🇰🇷",
+		countryCode: "KR",
 		popularLines: ["TS III SA", "TS III CA"],
 		defaultHexColor: "#16a34a",
 	},
@@ -108,7 +108,7 @@ export const IMPLANT_BRANDS_METADATA: Record<ImplantBrand, BrandMetadata> = {
 		id: "dentium",
 		name: "Dentium",
 		country: "Южная Корея",
-		flagEmoji: "🇰🇷",
+		countryCode: "KR",
 		popularLines: ["SuperLine", "SimpleLine II"],
 		defaultHexColor: "#f59e0b",
 	},
@@ -116,7 +116,7 @@ export const IMPLANT_BRANDS_METADATA: Record<ImplantBrand, BrandMetadata> = {
 		id: "astra_tech",
 		name: "Astra Tech",
 		country: "Швеция",
-		flagEmoji: "🇸🇪",
+		countryCode: "SE",
 		popularLines: ["OsseoSpeed EV"],
 		defaultHexColor: "#8b5cf6",
 	},
@@ -124,7 +124,7 @@ export const IMPLANT_BRANDS_METADATA: Record<ImplantBrand, BrandMetadata> = {
 		id: "mis",
 		name: "MIS Implants",
 		country: "Израиль",
-		flagEmoji: "🇮🇱",
+		countryCode: "IL",
 		popularLines: ["SEVEN", "V3", "C1"],
 		defaultHexColor: "#a855f7",
 	},

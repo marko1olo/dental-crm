@@ -887,7 +887,7 @@ export const treatmentConsumablesRoutes: FastifyPluginAsync = async (
 	server.post<{
 		Params: { organizationId: string };
 		Body?: {
-			visitType?: "therapy" | "surgery";
+			visitType?: "therapy" | "surgery" | "implant" | "sinus_gbr";
 			visitId?: string | null;
 			userId?: string | null;
 			notes?: string | null;

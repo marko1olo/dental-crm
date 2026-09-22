@@ -1715,7 +1715,7 @@ export class TreatmentConsumablesService {
 	}
 
 	/**
-	 * 1-клик списание пустых карпул анестетиков медсестрой (СанПиН 3.3686-21, ПКУ).
+	 * 1-клик списание пустых карпул анестетиков медсестрой (СанПиН 3.3686-21, отходы Класса Б, без ПКУ наркотиков).
 	 * Ликвидирует требование комиссии из 3 человек.
 	 * Реализует мягкий овердрафт склада без блокировки операций.
 	 */
@@ -2107,7 +2107,7 @@ export class TreatmentConsumablesService {
 		tx: DbExecutor,
 		params: {
 			organizationId: string;
-			visitType?: "therapy" | "surgery";
+			visitType?: "therapy" | "surgery" | "implant" | "sinus_gbr";
 			userId?: string | null;
 			visitId?: string | null;
 			notes?: string | null;
@@ -2128,7 +2128,7 @@ export class TreatmentConsumablesService {
 		const { organizationId, visitType = "therapy", userId, visitId, notes } = params;
 
 		const visitDefinitions: Record<
-			"therapy" | "surgery",
+			"therapy" | "surgery" | "implant" | "sinus_gbr",
 			Array<{
 				patterns: string[];
 				defaultName: string;
@@ -2153,10 +2153,31 @@ export class TreatmentConsumablesService {
 				{ patterns: ["шовн", "нить", "suture"], defaultName: "Шовный материал полигликолид 4-0 с иглой", category: "Шовный материал", unit: "шт.", qty: 1, defaultCost: "220.00" },
 				{ patterns: ["гемостат", "губк", "альвостаз", "sponge"], defaultName: "Губка гемостатическая коллагеновая", category: "Хирургический инструментарий", unit: "шт.", qty: 1, defaultCost: "85.00" },
 			],
+			implant: [
+				{ patterns: ["имплантат", "implant", "дентальный"], defaultName: "Дентальный имплантат титановый", category: "Имплантология", unit: "шт.", qty: 1, defaultCost: "14000.00" },
+				{ patterns: ["формировател", "винт-заглушк", "healing cap"], defaultName: "Формирователь десны / винт-заглушка", category: "Имплантология", unit: "шт.", qty: 1, defaultCost: "2500.00" },
+				{ patterns: ["пролен", "prolene", "шовн"], defaultName: "Шовный материал Prolene 4-0", category: "Шовный материал", unit: "шт.", qty: 1, defaultCost: "350.00" },
+				{ patterns: ["артикаин", "анестетик"], defaultName: "Артикаин 1:100 000 (карпула 1.7 мл)", category: "Анестетики", unit: "карп.", qty: 2, defaultCost: "120.00" },
+				{ patterns: ["физраствор", "0.9% nacl", "натрия хлорид"], defaultName: "Стерильный физиологический раствор 0.9% 500 мл", category: "Хирургический инструментарий", unit: "фл.", qty: 1, defaultCost: "90.00" },
+			],
+			sinus_gbr: [
+				{ patterns: ["костн", "графт", "био-осс", "bio-oss", "ксенографт"], defaultName: "Остеопластический материал ксенографт 0.5 г", category: "Костная пластика", unit: "шт.", qty: 1, defaultCost: "12500.00" },
+				{ patterns: ["мембран", "коллаген", "bio-gide", "membrane"], defaultName: "Мембрана коллагеновая барьерная 25x25 мм", category: "Костная пластика", unit: "шт.", qty: 1, defaultCost: "14500.00" },
+				{ patterns: ["пины", "пин титановый", "titanium pin"], defaultName: "Пины титановые для фиксации мембран", category: "Костная пластика", unit: "шт.", qty: 2, defaultCost: "1200.00" },
+				{ patterns: ["шовн", "пга", "vicryl"], defaultName: "Шовный материал ПГА 4-0 с иглой", category: "Шовный материал", unit: "шт.", qty: 1, defaultCost: "220.00" },
+				{ patterns: ["артикаин", "анестетик"], defaultName: "Артикаин 1:100 000 (карпула 1.7 мл)", category: "Анестетики", unit: "карп.", qty: 2, defaultCost: "120.00" },
+			],
 		};
 
 		const activeDefinitions = visitDefinitions[visitType] || visitDefinitions.therapy;
-		const visitNameRu = visitType === "surgery" ? "Хирургический прием" : "Терапевтический прием";
+		const visitNameRu =
+			visitType === "surgery"
+				? "Хирургический прием"
+				: visitType === "implant"
+					? "Дентальная имплантация"
+					: visitType === "sinus_gbr"
+						? "Синус-лифтинг и НКР"
+						: "Терапевтический прием";
 
 		const allOrgItems = await tx
 			.select()

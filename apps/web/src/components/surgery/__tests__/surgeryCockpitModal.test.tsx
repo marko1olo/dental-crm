@@ -94,5 +94,22 @@ describe("VisitSurgeryProtocolTab (Surgical Inline Protocol - Outpatient Mandate
 		assert.ok(panelHtml.includes("btn-tab-print-protocol"), "Panel must have print protocol button");
 		assert.ok(panelHtml.includes("btn-tab-print-ids"), "Panel must have print IDS package button");
 	});
+
+	it("renders 1-click warehouse write-off button with soft overdraft in VisitSurgeryProtocolTab (Mandate 8e)", () => {
+		const panelHtml = renderToString(
+			<VisitSurgeryProtocolTab
+				activeTooth={46}
+			/>,
+		);
+
+		assert.ok(
+			panelHtml.includes("btn-tab-deduct-materials"),
+			"Panel must have 1-click warehouse write-off button with soft overdraft",
+		);
+		assert.ok(
+			panelHtml.includes("Списать со склада"),
+			"Must display initial write-off button text",
+		);
+	});
 });
 
