@@ -7,7 +7,10 @@ import {
 import {
 	createStandardSterileTrayBarcode,
 	STANDARD_TRAY_OPTIONS,
+	SANPIN_AUTOCLAVE_STANDARD_132_20_PRESET,
+	createQuickStandard132Cycle,
 } from "../../sterilization/sterilizationPresets.js";
+import { CHEMICAL_INTEGRATORS_CATALOG } from "../kraft/chemicalIntegratorsCatalog.js";
 import { parseAndValidateKraftBarcode } from "@dental/shared";
 
 describe("SanPiN & Sterilization without Bureaucracy (Mandates 8e, 8k, 8n)", () => {
@@ -113,4 +116,30 @@ describe("SanPiN & Sterilization without Bureaucracy (Mandates 8e, 8k, 8n)", () 
 			assert.ok(!JSON.stringify(record).includes("комиссия"));
 		});
 	});
+
+	describe("6. SanPiN Autoclave Indicator InTest 132/20 & Standard 132°C Preset", () => {
+		it("registers Vinar InTest 132/20 class 5 chemical integrator for steam sterilization", () => {
+			const intetest132 = CHEMICAL_INTEGRATORS_CATALOG.find((ind) => ind.id === "vinar_intetest_5_132_20");
+			assert.ok(intetest132, "Индикаторы ИнТест 132/20 должны быть зарегистрированы");
+			assert.equal(intetest132.classType, "class_5");
+			assert.equal(intetest132.targetTemperatureCelsius, 132);
+			assert.equal(intetest132.targetExposureMinutes, 20);
+			assert.equal(intetest132.targetPressureBar, 2.0);
+			assert.ok(intetest132.sanpinNormClauseRu.includes("СанПиН 3.3686-21"));
+		});
+
+		it("provides standard 132°C / 2.0 bar / 20 min preset per SanPiN 3.3686-21 Table 3.12", () => {
+			assert.equal(SANPIN_AUTOCLAVE_STANDARD_132_20_PRESET.temperatureC, 132);
+			assert.equal(SANPIN_AUTOCLAVE_STANDARD_132_20_PRESET.pressureBar, 2.0);
+			assert.equal(SANPIN_AUTOCLAVE_STANDARD_132_20_PRESET.exposureMinutes, 20);
+			assert.ok(SANPIN_AUTOCLAVE_STANDARD_132_20_PRESET.indicatorPointsStatus.includes("ИнтеТЕСТ-В-132/20"));
+
+			const cycle = createQuickStandard132Cycle(1, "Смирнова А.В.");
+			assert.equal(cycle.cycleNumber, 1);
+			assert.equal(cycle.temperatureC, 132);
+			assert.equal(cycle.exposureMinutes, 20);
+			assert.equal(cycle.batchVerdict, "ГОДНА");
+		});
+	});
 });
+

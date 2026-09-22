@@ -13988,6 +13988,7 @@ export * from "./staff/index.js";
 export * from "./utils/money.js";
 export * from "./anesthesia/index.js";
 export * from "./inventory/consumables.js";
+export * from "./lab/index.js";
 
 
 

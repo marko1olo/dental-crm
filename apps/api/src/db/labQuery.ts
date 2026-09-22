@@ -45,11 +45,11 @@ export const LAB_ORDER_CLINIC_TRANSITIONS: Readonly<
 	Record<LabOrderStatus, readonly LabOrderStatus[]>
 > = {
 	draft: ["sent", "cancelled"],
-	sent: ["in_progress", "cancelled"],
-	in_progress: ["shipped", "refitting", "cancelled"],
-	shipped: ["received", "cancelled"],
+	sent: ["in_progress", "shipped", "received", "completed", "cancelled"],
+	in_progress: ["shipped", "received", "refitting", "completed", "cancelled"],
+	shipped: ["received", "refitting", "completed", "cancelled"],
 	received: ["completed", "refitting", "cancelled"],
-	refitting: ["in_progress", "shipped", "cancelled"],
+	refitting: ["in_progress", "shipped", "received", "completed", "cancelled"],
 	completed: ["refitting"],
 	cancelled: [],
 } as const;

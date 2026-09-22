@@ -125,6 +125,7 @@ export const SANPIN_PACKAGING_TYPES: readonly SanpinPackagingTypeDefinition[] = 
 
 export type SterilizationRegimeId =
 	| "steam_134_5min"
+	| "steam_132_20min"
 	| "steam_121_20min"
 	| "dry_heat_180_60min";
 
@@ -163,6 +164,23 @@ export const STERILIZATION_REGIMES: readonly SterilizationRegimeDefinition[] = [
 		recommendedIndicatorClasses: ["class_4", "class_5", "class_6"],
 		sanpinNormClauseRu: "СанПиН 3.3686-21 Таблица 3.12 (Паровой метод, режим 1)",
 		descriptionRu: "Стандартный режим паровой стерилизации под избыточным давлением. Подходит для всех металлических, стеклянных и термостойких полимерных инструментов.",
+	},
+	{
+		id: "steam_132_20min",
+		nameRu: "Паровой автоклав: 132°C / 20 минут / 2.0 бар (Основной режим СанПиН)",
+		shortLabelRu: "Автоклав 132°C (20 мин / 2.0 бар)",
+		methodType: "steam_autoclave",
+		targetTemperatureCelsius: 132,
+		minTemperatureCelsius: 132,
+		maxTemperatureCelsius: 135,
+		targetPressureBar: 2.0,
+		minPressureBar: 1.9,
+		maxPressureBar: 2.2,
+		targetExposureMinutes: 20,
+		minExposureMinutes: 20,
+		recommendedIndicatorClasses: ["class_4", "class_5", "class_6"],
+		sanpinNormClauseRu: "СанПиН 3.3686-21 Таблица 3.12 (Паровой метод, режим 1)",
+		descriptionRu: "Базовый нормативный режим паровой стерилизации под давлением 2.0 бар по СанПиН 3.3686-21 и МУ 287-113 с контролем индикаторами ИнТест 132/20.",
 	},
 	{
 		id: "steam_121_20min",

@@ -20,6 +20,10 @@ import {
 	calculateLabFinancialSplitKopecks,
 	calculateLabOrderFinancialsKopecks,
 	CANONICAL_5STAGE_LAB_PIPELINE,
+	canonical5LabStatusSchema,
+	CANONICAL_5_CLINICAL_LAB_STATUSES,
+	mapTo5StageLabStatus,
+	FORM_ZTL_1_METADATA,
 	generateProstheticWarrantyPassport,
 } from "./labOrders.js";
 
@@ -209,6 +213,55 @@ describe("Shared Dental Lab — 5-Stage Pipeline & Warranty Passport", () => {
 		assert.ok(passport.batchCode.startsWith("LOT-2026-"));
 		assert.ok(passport.gostStandard.includes("ГОСТ"));
 		assert.ok(passport.sanpinDisinfectionMark.includes("СанПиН 3.3686-21"));
+	});
+
+	test("CANONICAL_5_CLINICAL_LAB_STATUSES contains all 5 statutory clinical stages in order", () => {
+		assert.equal(CANONICAL_5_CLINICAL_LAB_STATUSES.length, 5);
+		const expectedIds = ["sent", "in_progress", "fitting", "ready", "completed"];
+		CANONICAL_5_CLINICAL_LAB_STATUSES.forEach((stage, idx) => {
+			assert.equal(stage.id, expectedIds[idx]);
+			assert.equal(stage.step, idx + 1);
+			assert.ok(stage.labelRu.length > 0);
+			assert.ok(stage.shortLabelRu.length > 0);
+			assert.ok(stage.descRu.length > 0);
+			assert.equal(canonical5LabStatusSchema.parse(stage.id), stage.id);
+		});
+	});
+
+	test("mapTo5StageLabStatus correctly maps raw workflow statuses to the 5 canonical stages", () => {
+		// 1. Sent
+		assert.equal(mapTo5StageLabStatus("draft"), "sent");
+		assert.equal(mapTo5StageLabStatus("sent"), "sent");
+		assert.equal(mapTo5StageLabStatus("sent_to_lab"), "sent");
+		assert.equal(mapTo5StageLabStatus("impression_sent"), "sent");
+
+		// 2. In progress
+		assert.equal(mapTo5StageLabStatus("in_progress"), "in_progress");
+		assert.equal(mapTo5StageLabStatus("cad_design"), "in_progress");
+		assert.equal(mapTo5StageLabStatus("milling_wax_up"), "in_progress");
+		assert.equal(mapTo5StageLabStatus("ceramic_layering"), "in_progress");
+
+		// 3. Fitting
+		assert.equal(mapTo5StageLabStatus("fitting"), "fitting");
+		assert.equal(mapTo5StageLabStatus("refitting"), "fitting");
+		assert.equal(mapTo5StageLabStatus("try_in_fitting"), "fitting");
+
+		// 4. Ready
+		assert.equal(mapTo5StageLabStatus("ready"), "ready");
+		assert.equal(mapTo5StageLabStatus("received"), "ready");
+		assert.equal(mapTo5StageLabStatus("shipped"), "ready");
+
+		// 5. Completed
+		assert.equal(mapTo5StageLabStatus("completed"), "completed");
+		assert.equal(mapTo5StageLabStatus("fitted"), "completed");
+	});
+
+	test("FORM_ZTL_1_METADATA defines statutory Form ZTL-1 and Mandate 8e invariants", () => {
+		assert.equal(FORM_ZTL_1_METADATA.code, "Форма № ЗТЛ-1");
+		assert.ok(FORM_ZTL_1_METADATA.titleRu.includes("Форма № ЗТЛ-1"));
+		assert.ok(FORM_ZTL_1_METADATA.mandate8eClauseRu.includes("30 дней"));
+		assert.ok(FORM_ZTL_1_METADATA.sanpinClauseRu.includes("СанПиН 3.3686-21"));
+		assert.ok(FORM_ZTL_1_METADATA.warrantyGostRu.includes("ГОСТ Р 51087-97"));
 	});
 });
 

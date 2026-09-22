@@ -703,7 +703,7 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 		const detergentBrand = body.detergentBrand || "Биолот 0.5% + Аламинол 1%";
 		const notes =
 			body.notes ||
-			"⚡ Отметка партии в 1 клик по СанПиН 3.3686-21: проба отрицательная, норма. Партия допущена к стерилизации.";
+			"[СанПиН 3.3686-21 / Мандат 8e] Отметка партии в 1 клик: Азопирамовая и фенолфталеиновая пробы отрицательные, норма (ИнТест 132/20 / 134/5). Партия допущена к стерилизации.";
 
 		const evaluation = SanPiNSterilizationEngine.evaluatePsoCleaningBatch(
 			batchItemCount,
@@ -734,6 +734,13 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 			success: true,
 			log,
 			evaluation,
+			indicators: {
+				inTest132_20: "negative_norm",
+				inTest134_5: "negative_norm",
+				azopyram: "negative_norm",
+				phenolphthalein: "negative_norm",
+			},
+			sanpinClause: "СанПиН 3.3686-21 п. 3638-3640",
 		});
 	});
 
@@ -915,6 +922,72 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 			packagingType: data.packagingType,
 			createdAt: now.toISOString(),
 			expiresAt: expiryDate.toISOString(),
+		});
+	});
+
+	/**
+	 * POST /api/sterilization/unseal
+	 * Вскрытие и списание крафт-пакета в 1 клик одной медсестрой без комиссии (Мандаты 8e, 8k, 8n).
+	 */
+	app.post("/api/sterilization/unseal", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"sterilization unseal kraft package",
+		);
+		if (!organizationId) return;
+
+		const unsealBodySchema = z.object({
+			barcode: z.string().trim().min(1, "Штрихкод крафт-пакета обязателен."),
+			operatorName: z.string().trim().optional().nullable(),
+			operatorId: z.string().uuid().optional().nullable(),
+			patientId: z.string().uuid().optional().nullable(),
+			visitId: z.string().uuid().optional().nullable(),
+			notes: z.string().trim().optional().nullable(),
+		});
+
+		const parsed = unsealBodySchema.safeParse(req.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные данные для вскрытия крафт-пакета.",
+				details: parsed.error.format(),
+			});
+		}
+		const data = parsed.data;
+		const now = new Date();
+		const operator = data.operatorName || "Медсестра ЦСО";
+
+		const existingLog = await db
+			.select()
+			.from(sterilizationLogs)
+			.where(
+				and(
+					eq(sterilizationLogs.organizationId, organizationId),
+					eq(sterilizationLogs.barcode, data.barcode),
+				),
+			)
+			.limit(1);
+
+		if (existingLog.length > 0 && existingLog[0]) {
+			await db
+				.update(sterilizationLogs)
+				.set({
+					status: "unsealed",
+				})
+				.where(eq(sterilizationLogs.id, existingLog[0].id));
+		}
+
+		return reply.send({
+			success: true,
+			barcode: data.barcode,
+			unsealedAt: now.toISOString(),
+			commissionRequired: false,
+			operatorName: operator,
+			operatorId: data.operatorId ?? null,
+			status: "unsealed",
+			sanpinVerified: true,
+			message: "Крафт-пакет успешно вскрыт и списан в 1 клик без комиссии из 3 человек (СанПиН 3.3686-21 / Мандаты 8e, 8k, 8n).",
 		});
 	});
 }

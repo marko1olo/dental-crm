@@ -127,6 +127,31 @@ export const SANPIN_AUTOCLAVE_UNIVERSAL_134_PRESET: Omit<AutoclaveCycleRecord, "
 	isQuickPreset: true,
 };
 
+export const SANPIN_AUTOCLAVE_STANDARD_132_20_PRESET: Omit<AutoclaveCycleRecord, "id" | "cycleNumber" | "timestamp"> = {
+	programName: "Стандартная 132°C / 2.0 бар / 20 мин (СанПиН 3.3686-21)",
+	autoclaveCode: "АК-01",
+	autoclaveModel: "MELAG Vacuklav 23 B+ / Euronda E9 Next / DGM (Class B)",
+	sterilizerType: "autoclave_class_b",
+	temperatureC: 132,
+	pressureBar: 2.0,
+	exposureMinutes: 20,
+	preVacuum: "3-кратное фракционированное предвакуумирование (EN 13060)",
+	indicatorPointsStatus: "Индикаторы 5 класса (ИнтеТЕСТ-В-132/20 Винар) во всех 5 точках камеры: Цвет эталона достигнут / Стерильно",
+	indicatorBrand: "Винар",
+	indicatorClass: 5,
+	indicatorVerdict: "Цвет эталона достигнут / Стерильно",
+	bowieDickResult: "passed",
+	bowieDickNote: "Тест Бови-Дика пройден: норма вакуума и проникновения пара",
+	loadDescription: "Базовые наборы инструментов, зеркала, пинцеты, зонды, хирургический инструментарий в крафт-пакетах",
+	packageType: "Самоклеящиеся крафт-пакеты 100x200 мм (до 50 суток хранения)",
+	kraftSize: "100x200",
+	shelfLifeDays: 50,
+	batchVerdict: "ГОДНА",
+	operatorName: "Смирнова А.В. (медсестра ЦСО)",
+	sanpinClause: "СанПиН 3.3686-21 Таблица 3.12 (Паровой метод, режим 1)",
+	isQuickPreset: true,
+};
+
 export const SANPIN_AUTOCLAVE_PRION_134_PRESET: Omit<AutoclaveCycleRecord, "id" | "cycleNumber" | "timestamp"> = {
 	programName: "Быстрая / Prion 134°C / 20 мин",
 	autoclaveCode: "АК-01",
@@ -498,6 +523,19 @@ export function createQuickUniversalCycle(
 		id: `cycle-univ-${Date.now()}-${cycleNumber}`,
 		cycleNumber,
 		...SANPIN_AUTOCLAVE_UNIVERSAL_134_PRESET,
+		operatorName,
+		timestamp: new Date().toISOString(),
+	};
+}
+
+export function createQuickStandard132Cycle(
+	cycleNumber: number,
+	operatorName = "Смирнова А.В. (медсестра ЦСО)"
+): AutoclaveCycleRecord {
+	return {
+		id: `cycle-std132-${Date.now()}-${cycleNumber}`,
+		cycleNumber,
+		...SANPIN_AUTOCLAVE_STANDARD_132_20_PRESET,
 		operatorName,
 		timestamp: new Date().toISOString(),
 	};

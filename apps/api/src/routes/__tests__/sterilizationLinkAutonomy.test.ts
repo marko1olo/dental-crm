@@ -117,4 +117,12 @@ describe("Sterilization Tray Auto-Provision & Doctor Autonomy (Mandates 8e, 8n)"
 		);
 		assert.equal(treatment3, treatment2);
 	});
+
+	it("zero-emoji invariant: notes in emergency and admission records have 100% zero emojis", () => {
+		const note = buildEmergencySterilizationAdmissionNote("TRAY-KB-2026");
+		const EMOJI_REGEX = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+		assert.equal(EMOJI_REGEX.test(note), false, "No emojis in medical records per Mandate 8d Item 7");
+		assert.ok(!note.includes("⚡"));
+	});
 });
+

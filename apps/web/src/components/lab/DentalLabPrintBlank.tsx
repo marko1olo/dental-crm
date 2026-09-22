@@ -103,7 +103,7 @@ export function DentalLabPrintBlank({
 			<div className="flex items-center justify-between flex-wrap gap-3">
 				<div>
 					<h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 m-0">
-						Бланк наряд-заказа ЗТЛ (ГОСТ / Медицинская документация СтАР)
+						Форма № ЗТЛ-1: Наряд-заказ в зуботехническую лабораторию (СтАР / ГОСТ)
 					</h3>
 					<p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
 						Официальный наряд-заказ с уникальным 2D-штрихкодом партии и ссылкой для трекинга техником.
@@ -122,13 +122,14 @@ export function DentalLabPrintBlank({
 			{/* Printable Paper Card conforming to GOST / StAR standards */}
 			<div
 				id="printable-lab-order-sheet"
+				data-testid="form-ztl-1-blank"
 				className="p-6 sm:p-8 bg-white text-slate-900 rounded-xl border border-slate-300 shadow-sm space-y-5 print:border-none print:shadow-none print:p-0"
 			>
 				{/* Blank Header */}
 				<div className="flex justify-between items-start border-b-2 border-slate-900 pb-3">
 					<div>
 						<h1 className="text-lg sm:text-xl font-black tracking-wide uppercase m-0">
-							Наряд-заказ в зуботехническую лабораторию № {gostOrderNumber}
+							Наряд-заказ в зуботехническую лабораторию (Форма № ЗТЛ-1) № {gostOrderNumber}
 						</h1>
 						<p className="text-xs text-slate-600 mt-0.5 m-0 font-medium">
 							Стоматологическая медицинская организация · Отделение ортопедии и цифрового зубопротезирования CAD/CAM
