@@ -303,6 +303,7 @@ describe("3D CBCT Multi-Planar Reconstruction (MPR) & Caliper Calculations", () 
 
 		assert.equal(markup.implants.length, 1);
 		const restored = markup.implants[0];
+		assert.ok(restored);
 		assert.equal(restored.systemId, "osstem-ts3");
 		assert.equal(restored.brandName, "Osstem");
 		assert.equal(restored.lineName, "TS III SA");

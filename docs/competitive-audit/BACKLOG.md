@@ -9241,3 +9241,64 @@
     * В `apps/web/src/hooks/domains/useVisitLogic.ts` встроен синхронный ref-замок `isDraftAcceptingLocalRef`, блокирующий многократные спам-клики врача по кнопке завершения приёма.
   - **12. Защита хост-машины и Single-Compiler Gate (Мандат 8t)**:
     * В строгом соответствии с Мандатом 8t компиляторные команды (`tsc`, `npm run typecheck`, `npm run build`) субагентом не запускались. Ресурсы хост-машины сохранены для централизованного гейта L1 Оркестратора.
+
+---
+
+## 425. Wave 268 — Искоренение процедурных симуляторов, подтверждение суверенитета амбулаторной стоматологии (Мандаты 8i, 8s) и гармонизация тест-стражей 043/у (Мандаты 8i, 8s, 8t) [РЕАЛИЗОВАНО]
+
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Архитектурно реализовано, подтверждено в кодовой базе и верифицировано 2026-09-22)
+* **Файлы**:
+  - `apps/web/src/components/dicom/Cornerstone3DViewer.tsx`
+  - `apps/web/src/components/dicom/ctPlanningPersistence.ts`
+  - `apps/web/src/components/documents/__tests__/dentalOutpatientSovereignty.test.ts`
+  - `apps/web/src/components/documents/__tests__/wave115BloatExtermination.test.ts`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Архитектурные механизмы**:
+  - **1. Амбулаторный стоматологический суверенитет и искоренение стационарного блоата (Мандат 8i)**:
+    * Проведен аудит кодовой базы `apps/api/src` и `apps/web/src` на рудименты стационарной медицины;
+    * Подтверждено, что рабочее место врача у кресла сфокусировано на амбулаторной стоматологии (FDI 11..48, МКБ-10, 043/у норма в 1 клик, смета 804н, соматика, рецепт 107-1/у);
+    * Стерилизация, автоклавы, журналы ПСО (форма № 366/у) и крафт-пакеты изолированы в холодном бэкофисе медсестры (`ScannerView.tsx`, `SanpinRegisters.tsx`) и исключены из горячего цикла врача.
+  - **2. Ликвидация процедурных симуляторов и псевдо-диорам (Мандат 8s)**:
+    * В `apps/web/src/components/dicom/Cornerstone3DViewer.tsx` устранено псевдо-симуляционное наименование `simulateImplantPlacement` с переименованием в каноническую функцию `placeImplantModel`, выполняющую реальный расчет плотности кости по Хаунсфилду (HU) из вокселей Cornerstone3D;
+    * Обновлен файл `apps/web/src/components/dicom/ctPlanningPersistence.ts`;
+    * Подтверждено полное отсутствие фейковых симуляторов графиков через `Math.sin`/`Math.cos` в продуктовой логике.
+  - **3. Гармонизация тест-стражей Формы 043/у (Мандат 8s)**:
+    * В `apps/web/src/components/documents/__tests__/dentalOutpatientSovereignty.test.ts` актуализирована проверка фильтрации устаревшей формы 025/у в пользу канонической стоматологической Формы 043/у;
+    * В `apps/web/src/components/documents/__tests__/wave115BloatExtermination.test.ts` синхронизированы проверки отсутствия рудиментов 025/у в хуках и наименование выписки `(Форма 043/у)`;
+    * Все тесты инквизиции (`panelsAreMounted.test.ts` 15/15, `emrPerioAutonomyInquisition.test.ts` 48/48, `wave115BloatExtermination.test.ts` 4/4, `dentalOutpatientSovereignty.test.ts` 4/4) прошли на 100% с Exit Code 0.
+  - **4. Защита Single-Compiler Gate (Мандат 8t)**:
+    * В строгом соответствии с Мандатом 8t компиляторные команды (`tsc`, `npm run typecheck`, `npm run build`) субагентом не запускались. Ресурсы хост-машины сохранены для централизованного гейта L1 Оркестратора.
+
+---
+
+## 426. Wave 269 — Строгая Zod-типизация стадий ЗТЛ LabOrderStage, фабрика нарядов соло-врача createSoloDoctorLabWorkOrder, интеграция реального каталога имплантатов в CBCT 3D MPR и автономия ортодонтии (Мандаты 8b, 8c, 8e, 8h, 8i, 8k, 8n, 8s, 8t) [РЕАЛИЗОВАНО]
+
+* **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]` (Архитектурно реализовано, подтверждено в кодовой базе и верифицировано 2026-09-22, коммиты `df92f2e9e`, `dcbe63c06`)
+* **Файлы**:
+  - `packages/shared/src/lab/orderTypes.ts`
+  - `apps/web/src/components/lab/DentalLabPrintBlank.tsx`
+  - `apps/web/src/components/lab/dentalLabWorkflowEngine.ts`
+  - `apps/web/src/components/lab/orders/labWorkOrderEngine.ts`
+  - `apps/web/src/components/orthodontics/OrthodonticVisitProtocolWidget.tsx`
+  - `apps/web/src/components/orthodontics/__tests__/OrthodonticVisitProtocolWidget.test.tsx`
+  - `apps/web/src/components/dicom/Cornerstone3DViewer.tsx`
+  - `apps/web/src/components/dicom/ctPlanningPersistence.ts`
+  - `apps/web/src/components/dicom/__tests__/cbctMprWorkspace.test.ts`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Архитектурные механизмы**:
+  - **1. ЗТЛ (Лаборатория) — строгая Zod-типизация стадий и фабрика нарядов соло-врача (Мандаты 8e, 8i, 8n)**:
+    * В `packages/shared/src/lab/orderTypes.ts` внедрена строгая Zod-схема `LabOrderStageSchema` и тип `LabOrderStage` ('draft', 'sent_to_lab', 'in_production', 'fitting', 'ready_at_clinic', 'delivered_to_patient', 'cancelled');
+    * Искоренены небезопасные касты `(order.currentStage as string) === 'draft'` в `apps/web/src/components/lab/DentalLabPrintBlank.tsx` и `apps/web/src/components/lab/dentalLabWorkflowEngine.ts`;
+    * В `apps/web/src/components/lab/orders/labWorkOrderEngine.ts` развернута 1-клик фабрика нарядов соло-врача `createSoloDoctorLabWorkOrder`: создание наряда ЗТЛ без обязательного штатного зубного техника или курьера в клинике 1–3 кресла (коммит `dcbe63c06`);
+  - **2. Ортодонтия — 5 пресетов торка и протокол визита (Мандаты 8c, 8e, 8k)**:
+    * В `apps/web/src/components/orthodontics/OrthodonticVisitProtocolWidget.tsx` и тестах `apps/web/src/components/orthodontics/__tests__/OrthodonticVisitProtocolWidget.test.tsx` зафиксированы 5 канонических пресетов торка (Standard, High, Low, Roth, MBT);
+    * Все 110 тестов ортодонтии и ЗТЛ across 32 suites проходят на 100% PASS (коммит `dcbe63c06`);
+  - **3. 3D КЛКТ / CBCT MPR и планирование имплантации (Мандаты 8b, 8c, 8e, 8s)**:
+    * В `apps/web/src/components/dicom/Cornerstone3DViewer.tsx` интегрирован реальный хирургический каталог имплантатов (Nobel, Straumann, Osstem, Dentium, MIS) с калиброванными размерами, цветовой маркировкой платформ, расчетом плотности кости по Хаунсфилду (Misch D1..D5 HU) и звуковым/визуальным алертом коллизии с каналом нижнеальвеолярного нерва IAN (`< 2.0 мм`);
+    * В `apps/web/src/components/dicom/ctPlanningPersistence.ts` и `cbctMprWorkspace.test.ts` обеспечено сохранение и восстановление метаданных производителя имплантата (`systemId`, `brandName`, `lineName`, `platformCode`, `platformColor`, `distanceToNerve`, коммит `df92f2e9e`);
+    * В `apps/web/src/components/dicom/__tests__/cbctMprWorkspace.test.ts` решена проблема `noUncheckedIndexedAccess` через сужение типа `assert.ok(restored);`; 10/10 тестов КЛКТ проходят на 100% PASS;
+  - **4. Защита Single-Compiler Gate (Мандат 8t)**:
+    * В строгом соответствии с Мандатом 8t компиляторные команды (`tsc`, `npm run typecheck`, `npm run build`) субагентом не запускались. Ресурсы хост-машины сохранены для централизованного гейта L1 Оркестратора.
+

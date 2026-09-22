@@ -5950,3 +5950,34 @@
   - `apps/web/src/components/documents/__tests__/wave115BloatExtermination.test.ts`
   - `docs/competitive-audit/OUR_CRM_MAP.md`
 
+### 2.10.361. Wave 269: Строгая Zod-типизация стадий ЗТЛ LabOrderStage, фабрика нарядов соло-врача createSoloDoctorLabWorkOrder, интеграция реального каталога имплантатов в CBCT 3D MPR и автономия ортодонтии (Мандаты 8b, 8c, 8e, 8h, 8i, 8k, 8n, 8s, 8t)
+- **Функционал**:
+  1. *ЗТЛ (Лаборатория) — строгая Zod-типизация стадий и фабрика нарядов соло-врача (Мандаты 8e, 8i, 8n)*:
+     - В `packages/shared/src/lab/orderTypes.ts` внедрена строгая Zod-схема `LabOrderStageSchema` и тип `LabOrderStage` ('draft', 'sent_to_lab', 'in_production', 'fitting', 'ready_at_clinic', 'delivered_to_patient', 'cancelled');
+     - Искоренены небезопасные касты `(order.currentStage as string) === 'draft'` в `apps/web/src/components/lab/DentalLabPrintBlank.tsx` и `apps/web/src/components/lab/dentalLabWorkflowEngine.ts`;
+     - В `apps/web/src/components/lab/orders/labWorkOrderEngine.ts` развернута 1-клик фабрика нарядов соло-врача `createSoloDoctorLabWorkOrder`: создание наряда ЗТЛ без обязательного штатного зубного техника или курьера в клинике 1–3 кресла (коммит `dcbe63c06`);
+  2. *Ортодонтия — 5 пресетов торка и протокол визита (Мандаты 8c, 8e, 8k)*:
+     - В `apps/web/src/components/orthodontics/OrthodonticVisitProtocolWidget.tsx` и тестах `apps/web/src/components/orthodontics/__tests__/OrthodonticVisitProtocolWidget.test.tsx` зафиксированы 5 канонических пресетов торка (Standard, High, Low, Roth, MBT);
+     - Все 110 тестов ортодонтии и ЗТЛ across 32 suites проходят на 100% PASS (коммит `dcbe63c06`);
+  3. *3D КЛКТ / CBCT MPR и планирование имплантации (Мандаты 8b, 8c, 8e, 8s)*:
+     - В `apps/web/src/components/dicom/Cornerstone3DViewer.tsx` интегрирован реальный хирургический каталог имплантатов (Nobel, Straumann, Osstem, Dentium, MIS) с калиброванными размерами, цветовой маркировкой платформ, расчетом плотности кости по Хаунсфилду (Misch D1..D5 HU) и звуковым/визуальным алертом коллизии с каналом нижнеальвеолярного нерва IAN (`< 2.0 мм`);
+     - В `apps/web/src/components/dicom/ctPlanningPersistence.ts` и `cbctMprWorkspace.test.ts` обеспечено сохранение и восстановление метаданных производителя имплантата (`systemId`, `brandName`, `lineName`, `platformCode`, `platformColor`, `distanceToNerve`, коммит `df92f2e9e`);
+     - В `apps/web/src/components/dicom/__tests__/cbctMprWorkspace.test.ts` решена проблема `noUncheckedIndexedAccess` через сужение типа `assert.ok(restored);`; 10/10 тестов КЛКТ проходят на 100% PASS;
+  4. *Защита Single-Compiler Gate (Мандат 8t)*:
+     - В строгом соответствии с Мандатом 8t компиляторные команды (`tsc`, `npm run typecheck`, `npm run build`) субагентом не запускались. Ресурсы хост-машины сохранены для централизованного гейта L1 Оркестратора.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `packages/shared/src/lab/orderTypes.ts`
+  - `apps/web/src/components/lab/DentalLabPrintBlank.tsx`
+  - `apps/web/src/components/lab/dentalLabWorkflowEngine.ts`
+  - `apps/web/src/components/lab/orders/labWorkOrderEngine.ts`
+  - `apps/web/src/components/orthodontics/OrthodonticVisitProtocolWidget.tsx`
+  - `apps/web/src/components/orthodontics/__tests__/OrthodonticVisitProtocolWidget.test.tsx`
+  - `apps/web/src/components/dicom/Cornerstone3DViewer.tsx`
+  - `apps/web/src/components/dicom/ctPlanningPersistence.ts`
+  - `apps/web/src/components/dicom/__tests__/cbctMprWorkspace.test.ts`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+
+
