@@ -1,6 +1,7 @@
 import {
 	Activity,
 	Bot,
+	Camera,
 	Check,
 	ClipboardList,
 	Contrast,
@@ -21,6 +22,8 @@ import {
 	ZoomOut,
 } from "lucide-react";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { readDenteClinicToken } from "./lib/safeLocalStorage";
+import { decodeHeicImage } from "./services/imaging/heicDecoder";
 import { logger } from "./utils/logger";
 
 const IMAGING_QUICK_CHIPS = [
@@ -197,6 +200,7 @@ function RvgSensorVectorVisualizer({
 	hasFile,
 	viewerStyle,
 	kindLabels,
+	onAttachFile,
 }: {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	study: any;
@@ -204,6 +208,7 @@ function RvgSensorVectorVisualizer({
 	hasFile?: boolean;
 	viewerStyle?: React.CSSProperties;
 	kindLabels?: Record<string, string>;
+	onAttachFile?: () => void;
 }) {
 	const toothCode = study?.toothCode || (study?.region ? null : "36");
 	const toothLabel = toothCode ? `Зуб #${toothCode}` : study?.region || "Интраоральный снимок";
@@ -213,260 +218,64 @@ function RvgSensorVectorVisualizer({
 
 	return (
 		<div
-			className="rvg-sensor-visualizer w-full h-full flex flex-col items-center justify-center p-2 sm:p-4 select-none"
+			className="rvg-sensor-visualizer rvg-clean-previewer w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 select-none"
 			style={{
 				...viewerStyle,
-				minHeight: "220px",
-				backgroundColor: "#000000",
+				minHeight: "240px",
+				backgroundColor: "var(--paper, #090d16)",
+				color: "var(--ink, #f8fafc)",
 			}}
 		>
-			<svg
-				viewBox="0 0 460 340"
-				className="w-full h-full max-h-[290px] sm:max-h-[350px] drop-shadow-2xl"
-				style={{ maxWidth: "480px" }}
-				fill="none"
-				xmlns="http://www.w3.org/2000/svg"
-				aria-label="Векторный контур радиовизиографического датчика"
+			<div
+				className="w-full max-w-md p-5 sm:p-6 rounded-xl border border-dashed flex flex-col items-center text-center gap-3 transition-colors shadow-xs"
+				style={{
+					borderColor: "var(--line, #334155)",
+					background: "var(--paper-strong, #0f172a)",
+				}}
 			>
-				<defs>
-					<linearGradient id="rvg-chassis-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-						<stop offset="0%" stopColor="#1e293b" />
-						<stop offset="50%" stopColor="#0f172a" />
-						<stop offset="100%" stopColor="#020617" />
-					</linearGradient>
-					<linearGradient id="rvg-matrix-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-						<stop offset="0%" stopColor="#081018" />
-						<stop offset="100%" stopColor="#020408" />
-					</linearGradient>
-					<linearGradient id="rvg-enamel-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-						<stop offset="0%" stopColor="#94a3b8" stopOpacity="0.45" />
-						<stop offset="40%" stopColor="#64748b" stopOpacity="0.25" />
-						<stop offset="100%" stopColor="#334155" stopOpacity="0.1" />
-					</linearGradient>
-					<radialGradient id="rvg-glow" cx="50%" cy="50%" r="50%">
-						<stop offset="0%" stopColor="#0d9488" stopOpacity="0.22" />
-						<stop offset="100%" stopColor="#0d9488" stopOpacity="0" />
-					</radialGradient>
-					<pattern id="rvg-grid-pat" width="20" height="20" patternUnits="userSpaceOnUse">
-						<path d="M 20 0 L 0 0 0 20" fill="none" stroke="#0d9488" strokeWidth="0.5" strokeOpacity="0.16" />
-					</pattern>
-				</defs>
+				<div className="w-12 h-12 rounded-xl flex items-center justify-center bg-teal-500/10 text-teal-500 border border-teal-500/20 shadow-inner">
+					<UploadCloud className="w-6 h-6" />
+				</div>
+				<div className="flex flex-col gap-1">
+					<div className="flex items-center justify-center gap-2">
+						<h3 className="text-sm font-bold text-[var(--ink,#f8fafc)]">{kindName}</h3>
+						{toothCode && (
+							<span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30">
+								{toothLabel}
+							</span>
+						)}
+					</div>
+					<p className="text-xs text-[var(--muted,#94a3b8)]">
+						{hasFile
+							? "Исследование готово к разбору"
+							: "Файл визиографа или DICOM еще не прикреплен к карточке"}
+					</p>
+				</div>
 
-				{/* Фоновое свечение детектора */}
-				<circle cx="230" cy="180" r="160" fill="url(#rvg-glow)" />
+				<div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-[11px] font-mono text-[var(--muted,#94a3b8)]">
+					<span className="px-2 py-0.5 rounded bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)]">
+						Разрешение: 25 lp/mm
+					</span>
+					<span className="px-2 py-0.5 rounded bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)]">
+						65 kV · 0.08 s
+					</span>
+					<span className="px-2 py-0.5 rounded bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)]">
+						1.2 µSv · СанПиН норма
+					</span>
+				</div>
 
-				{/* Кабельный ввод датчика с защитным рельефом (верхний фланец) */}
-				<path
-					d="M 210 16 L 250 16 L 246 38 L 214 38 Z"
-					fill="#334155"
-					stroke="#475569"
-					strokeWidth="1.5"
-				/>
-				<line x1="218" y1="22" x2="242" y2="22" stroke="#1e293b" strokeWidth="1.5" />
-				<line x1="216" y1="28" x2="244" y2="28" stroke="#1e293b" strokeWidth="1.5" />
-				<line x1="215" y1="34" x2="245" y2="34" stroke="#1e293b" strokeWidth="1.5" />
-				<rect x="224" y="4" width="12" height="12" rx="2" fill="#0f172a" stroke="#475569" strokeWidth="1" />
-
-				{/* Корпус радиовизиографа (Size 2: 26×36 мм, сглаженные углы) */}
-				<rect
-					x="95"
-					y="36"
-					width="270"
-					height="288"
-					rx="26"
-					fill="url(#rvg-chassis-grad)"
-					stroke="#0d9488"
-					strokeWidth="1.75"
-					strokeOpacity="0.6"
-				/>
-
-				{/* Внутренняя фаска полимерного корпуса */}
-				<rect
-					x="105"
-					y="46"
-					width="250"
-					height="268"
-					rx="18"
-					fill="none"
-					stroke="#334155"
-					strokeWidth="1"
-					strokeOpacity="0.8"
-				/>
-
-				{/* Апикальная метка позиционирования датчика (угловая точка) */}
-				<circle cx="124" cy="65" r="5.5" fill="#0f172a" stroke="#0d9488" strokeWidth="1.5" />
-				<circle cx="124" cy="65" r="2" fill="#0d9488" />
-
-				{/* Маркировка сенсора на корпусе */}
-				<text x="230" y="58" textAnchor="middle" fill="#64748b" fontSize="8" fontWeight="bold" letterSpacing="1.2">
-					RVG SENSOR SIZE 2 · CMOS ACTIVE MATRIX
-				</text>
-
-				{/* Активная зона матрицы CMOS / сцинтиллятора CsI */}
-				<rect
-					x="115"
-					y="68"
-					width="230"
-					height="234"
-					rx="10"
-					fill="url(#rvg-matrix-grad)"
-					stroke="#0f766e"
-					strokeWidth="1.2"
-				/>
-
-				{/* Эндодонтическая координатная сетка */}
-				<rect x="115" y="68" width="230" height="234" rx="10" fill="url(#rvg-grid-pat)" />
-
-				{/* Миллиметровые риски шкалы для измерения длины каналов */}
-				<g stroke="#0d9488" strokeOpacity="0.4" strokeWidth="1">
-					<line x1="115" y1="88" x2="122" y2="88" />
-					<line x1="115" y1="108" x2="122" y2="108" />
-					<line x1="115" y1="128" x2="126" y2="128" />
-					<line x1="115" y1="148" x2="122" y2="148" />
-					<line x1="115" y1="168" x2="122" y2="168" />
-					<line x1="115" y1="188" x2="126" y2="188" />
-					<line x1="115" y1="208" x2="122" y2="208" />
-					<line x1="115" y1="228" x2="122" y2="228" />
-					<line x1="115" y1="248" x2="126" y2="248" />
-					<line x1="115" y1="268" x2="122" y2="268" />
-					<line x1="115" y1="288" x2="122" y2="288" />
-				</g>
-				<text x="128" y="131" fill="#0d9488" fontSize="7" fillOpacity="0.6">10mm</text>
-				<text x="128" y="191" fill="#0d9488" fontSize="7" fillOpacity="0.6">20mm</text>
-				<text x="128" y="251" fill="#0d9488" fontSize="7" fillOpacity="0.6">30mm</text>
-
-				{/* Стилизованный рентгенологический силуэт моляра с корневыми каналами */}
-				<g transform="translate(170, 95)">
-					<path
-						d="M -30 90 Q 60 80 150 90"
-						stroke="#334155"
-						strokeWidth="1.5"
-						strokeDasharray="4 3"
-						fill="none"
-					/>
-					<path
-						d="M 10 25 C 10 5, 30 0, 60 0 C 90 0, 110 5, 110 25 C 110 50, 105 65, 95 70 C 85 75, 75 72, 60 72 C 45 72, 35 75, 25 70 C 15 65, 10 50, 10 25 Z"
-						fill="url(#rvg-enamel-grad)"
-						stroke="#cbd5e1"
-						strokeWidth="1.5"
-						strokeOpacity="0.75"
-					/>
-					<path
-						d="M 18 68 C 18 90, 22 130, 32 165 C 36 172, 44 172, 46 165 C 50 135, 52 95, 54 72"
-						fill="#1e293b"
-						fillOpacity="0.4"
-						stroke="#94a3b8"
-						strokeWidth="1.2"
-						strokeOpacity="0.6"
-					/>
-					<path
-						d="M 50 45 Q 36 90 38 162"
-						stroke="#ef4444"
-						strokeWidth="1.5"
-						strokeOpacity="0.8"
-						strokeLinecap="round"
-						fill="none"
-					/>
-					<path
-						d="M 66 72 C 68 95, 70 135, 74 165 C 76 172, 84 172, 88 165 C 98 130, 102 90, 102 68"
-						fill="#1e293b"
-						fillOpacity="0.4"
-						stroke="#94a3b8"
-						strokeWidth="1.2"
-						strokeOpacity="0.6"
-					/>
-					<path
-						d="M 70 45 Q 84 90 81 162"
-						stroke="#ef4444"
-						strokeWidth="1.5"
-						strokeOpacity="0.8"
-						strokeLinecap="round"
-						fill="none"
-					/>
-					<path
-						d="M 38 35 C 38 22, 45 18, 60 18 C 75 18, 82 22, 82 35 C 82 45, 70 50, 60 50 C 50 50, 38 45, 38 35 Z"
-						fill="#ef4444"
-						fillOpacity="0.25"
-						stroke="#ef4444"
-						strokeWidth="1"
-						strokeOpacity="0.7"
-					/>
-					<ellipse cx="39" cy="165" rx="9" ry="5" fill="#0d9488" fillOpacity="0.15" />
-					<ellipse cx="81" cy="165" rx="9" ry="5" fill="#0d9488" fillOpacity="0.15" />
-				</g>
-
-				{/* Центровочное перекрестие */}
-				<g stroke="#0d9488" strokeOpacity="0.3" strokeWidth="1">
-					<line x1="220" y1="185" x2="240" y2="185" />
-					<line x1="230" y1="175" x2="230" y2="195" />
-					<circle cx="230" cy="185" r="8" fill="none" />
-				</g>
-
-				{/* Метрики и телеметрия датчика (верхний левый угол) */}
-				<rect x="12" y="46" width="76" height="54" rx="6" fill="#0f172a" fillOpacity="0.85" stroke="#334155" strokeWidth="1" />
-				<circle cx="22" cy="58" r="3.5" fill="#10b981">
-					{loading && <animate attributeName="opacity" values="0.3;1;0.3" dur="1.2s" repeatCount="indefinite" />}
-				</circle>
-				<text x="30" y="61" fill="#10b981" fontSize="8" fontWeight="bold">
-					{loading ? "СКАНИРОВАНИЕ" : "ГОТОВ (READY)"}
-				</text>
-				<text x="20" y="76" fill="#f8fafc" fontSize="9" fontWeight="bold">
-					{toothLabel}
-				</text>
-				<text x="20" y="89" fill="#94a3b8" fontSize="7.5">
-					{kindName}
-				</text>
-
-				{/* Метрики матрицы и разрешения (верхний правый угол) */}
-				<rect x="372" y="46" width="76" height="54" rx="6" fill="#0f172a" fillOpacity="0.85" stroke="#334155" strokeWidth="1" />
-				<text x="380" y="60" fill="#94a3b8" fontSize="7.5">МАТРИЦА</text>
-				<text x="380" y="72" fill="#38bdf8" fontSize="8.5" fontWeight="bold">1600 × 1200</text>
-				<text x="380" y="84" fill="#94a3b8" fontSize="7.5">РАЗРЕШЕНИЕ</text>
-				<text x="380" y="94" fill="#38bdf8" fontSize="8.5" fontWeight="bold">25.0 lp/mm</text>
-
-				{/* Метрики экспозиции и дозы (нижний левый угол) */}
-				<rect x="12" y="248" width="76" height="54" rx="6" fill="#0f172a" fillOpacity="0.85" stroke="#334155" strokeWidth="1" />
-				<text x="20" y="262" fill="#94a3b8" fontSize="7.5">ЭКСПОЗИЦИЯ</text>
-				<text x="20" y="274" fill="#fbbf24" fontSize="8.5" fontWeight="bold">0.08 s · 65 kV</text>
-				<text x="20" y="286" fill="#94a3b8" fontSize="7.5">ДОЗА (СанПиН)</text>
-				<text x="20" y="296" fill="#10b981" fontSize="8.5" fontWeight="bold">1.2 µSv · Норма</text>
-
-				{/* Метрики сенсора и динамического диапазона (нижний правый угол) */}
-				<rect x="372" y="248" width="76" height="54" rx="6" fill="#0f172a" fillOpacity="0.85" stroke="#334155" strokeWidth="1" />
-				<text x="380" y="262" fill="#94a3b8" fontSize="7.5">СЦИНИЛЛЯТОР</text>
-				<text x="380" y="274" fill="#cbd5e1" fontSize="8" fontWeight="bold">CsI(Tl) Fiber</text>
-				<text x="380" y="286" fill="#94a3b8" fontSize="7.5">ГЛУБИНА ЦВЕТА</text>
-				<text x="380" y="296" fill="#38bdf8" fontSize="8" fontWeight="bold">16-bit (65K)</text>
-
-				{/* Центральная плашка статуса */}
-				<g transform="translate(230, 276)">
-					<rect
-						x="-110"
-						y="-13"
-						width="220"
-						height="26"
-						rx="13"
-						fill="#020617"
-						fillOpacity="0.9"
-						stroke="#0d9488"
-						strokeWidth="1.2"
-					/>
-					<text
-						x="0"
-						y="4"
-						textAnchor="middle"
-						fill="#e2e8f0"
-						fontSize="9"
-						fontWeight="600"
+				{onAttachFile && (
+					<button
+						type="button"
+						className="primary-button mt-1.5 text-xs py-1.5 px-4 inline-flex items-center gap-1.5 font-semibold cursor-pointer shadow-xs"
+						onClick={onAttachFile}
+						title="Прикрепить файл снимка к исследованию"
 					>
-						{loading
-							? "Загрузка радиовизиографического кадра..."
-							: hasFile
-								? "Цифровой радиовизиографический датчик"
-								: "Визиограф готов · Ожидание снимка"}
-					</text>
-				</g>
-			</svg>
+						<UploadCloud size={14} />
+						<span>Загрузить снимок</span>
+					</button>
+				)}
+			</div>
 		</div>
 	);
 }
@@ -650,6 +459,8 @@ export function ImagingView(props: ImagingViewProps) {
 	} = props;
 
 	const localFilesInputRef = useRef<HTMLInputElement | null>(null);
+	const cameraCaptureInputRef = useRef<HTMLInputElement | null>(null);
+	const [isCapturingCameraPhoto, setIsCapturingCameraPhoto] = useState(false);
 	const browserImagingFilesInputRef =
 		props.browserImagingFilesInputRef || localFilesInputRef;
 	const pickBrowserImagingFiles =
@@ -665,6 +476,176 @@ export function ImagingView(props: ImagingViewProps) {
 	const [isPanoramicWindowOpen, setIsPanoramicWindowOpen] = useState(false);
 	const [isMobileImagingMenuOpen, setIsMobileImagingMenuOpen] = useState(false);
 	const mobileImagingMenuRef = useRef<HTMLDivElement | null>(null);
+
+	const handleCameraPhotoCapture = async (
+		event: React.ChangeEvent<HTMLInputElement>,
+	) => {
+		const file = event.target.files?.[0];
+		if (!file) return;
+
+		if (!activePatient?.id) {
+			showToast(
+				"Выберите пациента перед добавлением снимка с камеры.",
+				"info",
+				6000,
+			);
+			event.target.value = "";
+			return;
+		}
+
+		setIsCapturingCameraPhoto(true);
+		let localObjectUrl: string | null = null;
+		try {
+			// 1. Сжатие в WebP
+			let compressedBlob: Blob | null = null;
+			try {
+				const decoded = await decodeHeicImage(file, {
+					targetFormat: "webp",
+					quality: 0.88,
+					maxDimension: 1920,
+					preserveColorProfile: true,
+					applyExifRotation: true,
+				});
+				const res = await fetch(decoded.dataUrl);
+				if (!res.ok) throw new Error("HEIC_DECODE_FETCH_FAILED");
+				compressedBlob = await res.blob();
+			} catch {
+				const img = new Image();
+				localObjectUrl = URL.createObjectURL(file);
+				await new Promise<void>((resolve, reject) => {
+					img.onload = () => resolve();
+					img.onerror = () => reject(new Error("FILE_NOT_IMAGE"));
+					img.src = localObjectUrl!;
+				});
+
+				const canvas = document.createElement("canvas");
+				let width = img.width;
+				let height = img.height;
+				const MAX_SIZE = 1920;
+				if (width > height && width > MAX_SIZE) {
+					height = Math.round((height * MAX_SIZE) / width);
+					width = MAX_SIZE;
+				} else if (height > MAX_SIZE) {
+					width = Math.round((width * MAX_SIZE) / height);
+					height = MAX_SIZE;
+				}
+				canvas.width = width;
+				canvas.height = height;
+				const ctx = canvas.getContext("2d");
+				if (ctx) {
+					ctx.drawImage(img, 0, 0, width, height);
+					compressedBlob = await new Promise<Blob | null>((resolve) =>
+						canvas.toBlob(resolve, "image/webp", 0.85),
+					);
+				}
+			}
+
+			const uploadBlob = compressedBlob || file;
+			const clinicToken = readDenteClinicToken() || null;
+
+			// 2. Отправка вложения к пациенту
+			const formData = new FormData();
+			formData.append("file", uploadBlob, "chairside_camera.webp");
+			formData.append("entityType", "patient");
+			formData.append("entityId", activePatient.id);
+
+			let storagePath: string | undefined;
+			try {
+				const uploadRes = await fetch(
+					`/api/files/patients/${encodeURIComponent(activePatient.id)}/attachments`,
+					{
+						method: "POST",
+						headers: {
+							...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
+						},
+						body: formData,
+					},
+				);
+
+				if (uploadRes.ok) {
+					const uploadData = (await uploadRes.json()) as {
+						attachment?: { storagePath?: string };
+						file?: { url?: string };
+					};
+					storagePath =
+						uploadData.attachment?.storagePath || uploadData.file?.url;
+				}
+			} catch {
+				// Офлайн-режим
+			}
+
+			if (!storagePath) {
+				// Мандат 8e: Офлайн-сохранение снимка при обрыве сети
+				try {
+					const { saveOfflineDraft } = await import("./services/offline/index.js");
+					const reader = new FileReader();
+					reader.onloadend = () => {
+						const base64data = reader.result as string;
+						if (base64data) {
+							void saveOfflineDraft(
+								`camera_study_${activePatient.id}_${Date.now()}`,
+								"IMAGING_STUDY_DRAFT",
+								activeAppointment?.id || activePatient.id,
+								{
+									patientId: activePatient.id,
+									visitId: activeAppointment?.id || null,
+									dataUrl: base64data,
+									capturedAt: new Date().toISOString(),
+								},
+							);
+						}
+					};
+					reader.readAsDataURL(uploadBlob);
+					showToast("Снимок сохранён локально (офлайн-режим)", "info", 6000);
+				} catch {
+					// non-fatal
+				}
+			}
+
+			// 3. Создание карточки исследования
+			const studyRes = await fetch("/api/imaging/studies", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
+				},
+				body: JSON.stringify({
+					patientId: activePatient.id,
+					visitId: activeAppointment?.id || undefined,
+					kind: "photo",
+					title: "Снимок с камеры (кресло)",
+					region: "полость рта / негатоскоп",
+					sourceKind: "camera_macro",
+					sourceName: "Камера устройства",
+					storagePath: storagePath || undefined,
+					capturedAt: new Date().toISOString(),
+				}),
+			});
+
+			if (studyRes.ok) {
+				const created = (await studyRes.json()) as { id?: string };
+				showToast("Снимок с камеры успешно добавлен в карту", "success", 5000);
+				if (created?.id && setSelectedImagingStudyId) {
+					setSelectedImagingStudyId(created.id);
+				}
+				if (setImagingKindFilter) {
+					setImagingKindFilter("photo");
+				}
+				if (appLogic?.loadDashboard) {
+					void appLogic.loadDashboard();
+				}
+			} else {
+				showToast("Снимок сохранён во вложениях пациента", "info", 6000);
+			}
+		} catch (err) {
+			logger.error("[imaging camera capture] error", err);
+			showToast("Ошибка при сохранении снимка с камеры", "error", 8000);
+		} finally {
+			if (localObjectUrl) URL.revokeObjectURL(localObjectUrl);
+			setIsCapturingCameraPhoto(false);
+			event.target.value = "";
+		}
+	};
 
 	useEffect(() => {
 		const handleOutside = (e: MouseEvent) => {
@@ -1089,6 +1070,26 @@ export function ImagingView(props: ImagingViewProps) {
 						<FileText aria-hidden="true" size={14} className="shrink-0" />{" "}
 						<span>Файлы</span>
 					</button>
+					<input
+						ref={cameraCaptureInputRef}
+						data-testid="imaging-camera-capture-input"
+						type="file"
+						accept="image/*"
+						capture="environment"
+						style={{ display: "none" }}
+						onChange={handleCameraPhotoCapture}
+					/>
+					<button
+						className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 sm:px-3 text-xs font-semibold shrink-0 whitespace-nowrap inline-flex items-center gap-1.5"
+						type="button"
+						data-testid="imaging-camera-capture-btn"
+						onClick={() => cameraCaptureInputRef.current?.click()}
+						disabled={isCapturingCameraPhoto || isBrowserImagingFolderPicking}
+						title="Сделать снимок с камеры смартфона/планшета (негатоскоп, фото полости рта)"
+					>
+						<Camera aria-hidden="true" size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />{" "}
+						<span>{isCapturingCameraPhoto ? "Загрузка..." : "Снимок с камеры"}</span>
+					</button>
 
 					{/* Desktop Secondary Actions (3D MPR & ОПТГ) — strictly 1 row (32-36px), hidden on mobile where they live in '...' menu */}
 					<button
@@ -1206,6 +1207,17 @@ export function ImagingView(props: ImagingViewProps) {
 								className="absolute right-0 top-full mt-1.5 w-52 p-2 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl z-50 flex flex-col gap-1 text-left animate-in fade-in zoom-in-95"
 								role="menu"
 							>
+								<button
+									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start font-medium border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
+									type="button"
+									onClick={() => {
+										setIsMobileImagingMenuOpen(false);
+										cameraCaptureInputRef.current?.click();
+									}}
+								>
+									<Camera size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+									<span>Снимок с камеры</span>
+								</button>
 								<button
 									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start font-medium border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
 									type="button"
@@ -1509,6 +1521,7 @@ export function ImagingView(props: ImagingViewProps) {
 										hasFile={selectedStudyHasFile}
 										viewerStyle={computedViewerImageStyle}
 										kindLabels={imagingKindLabels}
+										onAttachFile={pickBrowserImagingFiles}
 									/>
 								)}
 
@@ -1537,21 +1550,32 @@ export function ImagingView(props: ImagingViewProps) {
 										? `${imagingKindLabels[selectedImagingStudy.kind]} · ${selectedImagingStudy.toothCode || selectedImagingStudy.region || "Область не указана"}`
 										: "Локальные файлы DICOM (КТ)"}
 								</span>
-								{/*
-                          Карточка без файла: честно говорим, что разбирать нечего.
-                          Раньше здесь стояла активная кнопка разбора, сервер отвечал
-                          422, и врач видел отказ без причины.
-                        */}
+								{/* Карточка без файла: быстрый призыв к прикреплению снимка в 1 клик (Мандат 8e) */}
 								{selectedImagingStudy && !selectedStudyHasFile ? (
-									<p
+									<div
 										data-testid="imaging-study-file-missing"
-										style={{ color: "var(--warning-color)" }}
+										className="flex items-center justify-between gap-2 p-2.5 my-2 rounded-lg border border-dashed text-xs"
+										style={{
+											borderColor: "var(--line, #cbd5e1)",
+											background: "var(--paper, #f8fafc)",
+											color: "var(--ink, #0f172a)",
+										}}
 									>
-										Файл снимка не загружен — разобрать нечего. Карточка
-										добавлена вручную, изображения на сервере нет. Загрузите
-										снимок через импорт снимков: к уже созданной карточке файл
-										прикрепить пока нельзя.
-									</p>
+										<div className="flex items-center gap-1.5 min-w-0">
+											<UploadCloud size={16} className="text-teal-600 shrink-0" />
+											<span className="truncate">К карточке пока не прикреплен файл</span>
+										</div>
+										<button
+											type="button"
+											className="primary-button text-xs py-1 px-3 inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
+											onClick={() => pickBrowserImagingFiles()}
+											data-testid="imaging-attach-file-button"
+											title="Прикрепить файл снимка (DICOM, RVG, JPEG, PNG, TIFF) к карточке"
+										>
+											<UploadCloud size={14} />
+											<span>Прикрепить снимок</span>
+										</button>
+									</div>
 								) : null}
 								<button
 									type="button"
@@ -2380,7 +2404,7 @@ export function ImagingView(props: ImagingViewProps) {
 							selectedImplantPlan={ctPlanningImplantPlan}
 							onSelectImplant={selectCtPlanningImplant}
 							localAnnotations={imagingViewerAnnotations}
-							annotationRefs={Array.isArray(ctPlanningAnnotationRefs) ? ctPlanningAnnotationRefs : []}
+							annotationRefs={ctPlanningAnnotationRefs}
 							onCreateArtifact={createCtPlanningArtifact}
 							toolStateBundle={
 								dicomViewerWorkbenchManifest?.toolStateBundle ??

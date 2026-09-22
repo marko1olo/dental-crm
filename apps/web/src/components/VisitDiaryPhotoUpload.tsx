@@ -395,6 +395,33 @@ export function VisitDiaryPhotoUpload({
 				} catch {
 					/* тело не JSON — ниже status fallback */
 				}
+				// Мандат 8e: Защита от потери данных (Autosave / Offline)
+				if (compressedBlob) {
+					try {
+						const { saveOfflineDraft } = await import("../services/offline/index.js");
+						const reader = new FileReader();
+						reader.onloadend = () => {
+							const base64data = reader.result as string;
+							if (base64data) {
+								void saveOfflineDraft(
+									`photo_attachment_${diaryId}_${Date.now()}`,
+									"DIARY_043_DRAFT",
+									visitId,
+									{
+										diaryId,
+										visitId,
+										dataUrl: base64data,
+										capturedAt: new Date().toISOString(),
+									},
+								);
+							}
+						};
+						reader.readAsDataURL(compressedBlob);
+					} catch {
+						// non-fatal offline draft fallback
+					}
+				}
+
 				showToast(
 					serverMessage ??
 						`Снимок не загружен: ${requestFailureCause(res.status)}. Повторите загрузку; файл на экране не пропал из выбора — выберите его снова.`,
@@ -436,6 +463,33 @@ export function VisitDiaryPhotoUpload({
 				reloadAttachments();
 			}
 		} catch (err) {
+			// Мандат 8e: Защита от потери данных при полном обрыве сети
+			if (compressedBlob) {
+				try {
+					const { saveOfflineDraft } = await import("../services/offline/index.js");
+					const reader = new FileReader();
+					reader.onloadend = () => {
+						const base64data = reader.result as string;
+						if (base64data) {
+							void saveOfflineDraft(
+								`photo_attachment_${diaryId}_${Date.now()}`,
+								"DIARY_043_DRAFT",
+								visitId,
+								{
+									diaryId,
+									visitId,
+									dataUrl: base64data,
+									capturedAt: new Date().toISOString(),
+								},
+							);
+						}
+					};
+					reader.readAsDataURL(compressedBlob);
+					showToast("Снимок сохранен локально (офлайн-режим)", "info", 6000);
+				} catch {
+					// non-fatal
+				}
+			}
 			// Сеть / выключенный API — без err.message латиницей.
 			logger.error("[diary photo upload] запрос не выполнен", err);
 			showToast(
@@ -583,22 +637,34 @@ export function VisitDiaryPhotoUpload({
 				</span>
 				{!isLocked && diaryId && (
 					<div className="flex items-center gap-2">
-						<button
-							type="button"
-							onClick={handleCameraCapture}
-							disabled={isUploading || isLocked}
-							className="cursor-pointer text-xs min-h-[44px] flex items-center gap-1.5 bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] text-[var(--ink)] disabled:opacity-50"
-							title="Сделать снимок камерой устройства (APK / планшет / веб-камера)"
+						<label
+							htmlFor="visit-diary-camera-capture"
+							className={`cursor-pointer text-xs min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] text-[var(--ink)] ${
+								isUploading || isLocked ? "opacity-50 pointer-events-none" : ""
+							}`}
+							title="Сделать снимок камерой устройства (смартфон / планшет / веб-камера)"
 						>
 							<Camera className="w-3.5 h-3.5 text-[var(--accent)]" />
-							{isUploading ? "Сжатие..." : "Снимок камерой"}
-						</button>
+							<span>{isUploading ? "Сжатие..." : "Снимок с камеры"}</span>
+							<input
+								id="visit-diary-camera-capture"
+								type="file"
+								accept="image/*"
+								capture="environment"
+								className="hidden"
+								onChange={handlePhotoUpload}
+								disabled={isUploading || isLocked}
+							/>
+						</label>
 						<label
 							htmlFor="visit-diary-photo-upload"
-							className="cursor-pointer text-xs min-h-[44px] flex items-center gap-1.5 bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] text-[var(--ink)]"
+							className={`cursor-pointer text-xs min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] px-3 py-2 rounded-lg transition-colors border border-[var(--line-strong)] text-[var(--ink)] ${
+								isUploading || isLocked ? "opacity-50 pointer-events-none" : ""
+							}`}
+							title="Выбрать готовое фото из галереи или файлов"
 						>
 							<Paperclip className="w-3.5 h-3.5" />
-							{isUploading ? "Сжатие..." : "Прикрепить фото"}
+							<span>{isUploading ? "Сжатие..." : "Прикрепить фото"}</span>
 							<input
 								id="visit-diary-photo-upload"
 								type="file"
