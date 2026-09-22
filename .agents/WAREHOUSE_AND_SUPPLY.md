@@ -2,18 +2,22 @@
 
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
-> **Canonical Authority**: Mandates 8, 8c, 8e, 8n in [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md) and [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md).  
+> **Canonical Authority**: Mandates 8, 8c, 8e, 8n, 8v in [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md) and [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md).  
 > **Related Documents**: [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) • [BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md) • [TELEPHONY_AND_PORTAL.md](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md) • [CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md) • [DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md) • [API_ROUTES_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/API_ROUTES_DEEP_MAP.md) • [FRONTEND_COMPONENTS_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FRONTEND_COMPONENTS_DEEP_MAP.md).
 
 ---
 
-## 🎯 СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1: СОЛО-ВРАЧ И НЕБОЛЬШАЯ КЛИНИКА (1–3 КРЕСЛА, МАНДАТ 8n)
+## 🎯 СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1: СОЛО-ВРАЧ И НЕБОЛЬШАЯ КЛИНИКА (1–3 КРЕСЛА, МАНДАТЫ 8n, 8v)
 
 > 🎯 **ДО БОЛЬШИХ СЕТЕВЫХ КЛИНИК НАМ ЕЩЁ РАСТИ И РАСТИ!**
 > 
 > Наш главный пользователь — **соло-врач на аренде кресла (ИП, самозанятый)** и **небольшая частная клиника на 1–3 установки**.
-> 1. Списание материалов происходит пакетом в 1 клик («Стандартная анестезия», «Пломбирование зуба»), без накладных прихода, без актов списания из 3 членов комиссии и без блокировок приёма.
-> 2. Мягкий овердрафт склада (Zero Dead-Ends): задержка накладной никогда не блокирует проведение экстренной операции. Выдается мягкое предупреждение с отрицательным остатком партии.
+> 1. **90% пользователей частной стоматологии — это ВРАЧ и АДМИНИСТРАТОР** (Мандат 8v). Изредка бухгалтер или управляющий.
+> 2. **Полное искоренение «медсестринской шизы» (Мандат 8v):** Медсестры заняты делом у кресла и в ЦСО (обработка, мытье, автоклав, ассистирование). Они НЕ сидят за компьютером и НЕ тыкают CRM. Заставлять медсестру садиться за монитор, логиниться, кликать «вскрыть крафт-пакет», сканировать штрихкоды и вести пошаговые интерактивные симуляторы стерилизации — это шизофрения и академический блоат.
+> 3. **Списание материалов и отходов Класса Б в 1 клик:** Списание карпул анестетиков и отходов Класса Б — это быстрое действие в 1 клик врача (прямо из карточки визита/кокпита) или администратора при закрытии смены, без принудительной роли медсестры и без комиссий из 3 человек.
+> 4. **Инструменты стерильны по умолчанию (Норма СанПиН 3.3686-21):** Врач в дневнике 043/у не сканирует крафт-пакеты. Стерильность лотка гарантирована по умолчанию санитарными нормами клиники (дефолтный стерильный лоток по СанПиН).
+> 5. **Журналы СанПиН 3.3686-21 — фоновая отчетность в 1 клик:** Все регламентные журналы (форма 257/у автоклава, ПСО форма 366/у, азопирамовая проба, дезинфекция) формируются автоматически в 1 клик фоновым автопилотом для проверок Роспотребнадзора без интерактивной рутины.
+> 6. **Мягкий овердрафт склада (Zero Dead-Ends):** Задержка накладной никогда не блокирует проведение экстренной операции. Выдается мягкое предупреждение с отрицательным остатком партии.
 
 ---
 
@@ -39,17 +43,17 @@
   * `quantityChanged` — Дельта изменения (положительная при оприходовании, отрицательная при списании)
   * `transactionType` — Тип операции (`receipt`, `treatment_consumable`, `emergency_overdraft`, `disposal_sanpin`, `cso_sterilization`, `write_off`)
   * `isOverdraft` — Флаг списания при временном отсутствии накладной (мягкий овердрафт)
-  * `notes` — Аудит-комментарий с фиксацией СанПиН, ФИО медсестры/врача и номера акта
+  * `notes` — Аудит-комментарий с фиксацией СанПиН, ФИО врача/администратора и номера акта
 
 ---
 
-## 💉 2. Списание карпул медсестрой в 1 клик (СанПиН 3.3686-21)
+## 💉 2. Списание карпул и медотходов Класса Б в 1 клик Врачом или Администратором (СанПиН 3.3686-21, Мандаты 8e, 8v)
 
-> **Клинический инвариант (The Hammer Master Prompt Раздел VII п. 4 & СанПиН 3.3686-21 п. 3630)**:  
-> В частной стоматологии пустые карпулы и использованные иглы местной анестезии утилизируются как медицинские отходы класса Б. Медсестра кабинета списывает пустые карпулы **в 1 клик единолично БЕЗ комиссии из 3 человек**.
+> **Клинический инвариант (The Hammer Master Prompt Раздел VII п. 4, СанПиН 3.3686-21 п. 3630 & Мандат 8v)**:  
+> В частной стоматологии 90% пользователей — Врач и Администратор. Медсестры не сидят за компьютером. Пустые карпулы и использованные иглы местной анестезии утилизируются как медицинские отходы класса Б. Врач прямо из визита или Администратор на ресепшене списывает пустые карпулы **в 1 клик единолично БЕЗ комиссии из 3 человек** и без необходимости отдельного логина медсестры.
 
 ### 2.1. Алгоритм списания (`NurseCarpuleDisposalModal.tsx`):
-1. Медсестра открывает окно списания анестетиков (`apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx`).
+1. Врач или Администратор открывает окно списания анестетиков (`apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx` или через фоновую утилиту `executeSeniorNurseDisposalActInBackground`).
 2. Выбирает препарат из клинического справочника:
    * *Артикаин 4% с адреналином 1:100 000 (Ультракаин Д-С Форте, 1.7 мл)*
    * *Артикаин 4% с адреналином 1:200 000 (Ультракаин Д-С, 1.7 мл)*
@@ -59,8 +63,8 @@
 4. Нажимает кнопку **«Списать карпулы в 1 клик (СанПиН)»**:
    * Система автоматически формирует номер документа: `АКТ-КП-ГГГГММДД-ХХХ`.
    * Фиксирует класс опасности отходов: Класс Б (эпидемиологически опасные отходы).
-   * Отправляет запрос на `POST /api/warehouse/:organizationId/quick-carpule-disposal`.
-   * Печатает или копирует акт утилизации без необходимости созыва начмедов и комиссий.
+   * Отправляет запрос на `POST /api/warehouse/:organizationId/quick-carpule-disposal` (поддерживается `backgroundMode: true` без всплытия лишних модалок).
+   * Печатает или сохраняет акт утилизации без необходимости созыва начмедов и комиссий.
 
 ### 2.2. Backend маршрут (`apps/api/src/routes/warehouse/index.ts`):
 * Маршрут: `POST /api/warehouse/:organizationId/quick-carpule-disposal`
@@ -70,12 +74,21 @@
     drugId: "articaine_100k",
     drugName: "Артикаин 4% с адреналином 1:100 000",
     carpulesCount: 2,
-    nurseName: "Смирнова А. В. (медсестра)",
+    nurseName: "Дежурный администратор / Врач",
     doctorName: "Д-р Волкова Е. С.",
     allowOverdraft: true
   }
   ```
 * Ответ: статус `200 OK`, генерация акта `АКТ-КП-...`, отметка `singleSigner: true`, пункт «СанПиН 3.3686-21 п. 3630».
+
+### 2.3. Журналы СанПиН 3.3686-21 без интерактивной рутины (Мандат 8v):
+1. **Журналы автоклава (Форма № 257/у), ПСО (Форма № 366/у) и азопирамовой пробы:**
+   * Не требуют от медсестры или врача пошагового кликанья каждого цикла стерилизации;
+   * Формируются автоматически в 1 клик фоновым автопилотом (`/api/registers/autofill-shift`, `/api/sterilization/pso/quick-norm`) для проверок Роспотребнадзора со стандартным циклом Class B (134°C, 2.1 bar, 5 мин);
+   * Обеспечивают 100% юридическую чистоту и готовность регламентных бланков А4 и термоэтикеток без траты клинического времени.
+2. **Инструменты стерильны по умолчанию (Zero-Barcode Scan в 043/у):**
+   * Врач у кресла лечит людей, а не сканирует штрихкоды крафт-пакетов;
+   * В дневнике приема Формы 043/у стерильность инструментального набора гарантирована по умолчанию нормой СанПиН 3.3686-21 (дефолтный стерильный лоток терапевта/ортопеда/хирурга). Все интерактивные симуляторы вскрытия крафт-пакетов ликвидированы.
 
 ---
 
@@ -140,8 +153,10 @@
 
 | Назначение | Файл / Компонент | Маршрут API / Функция |
 | :--- | :--- | :--- |
-| **Списание карпул медсестрой** | [`NurseCarpuleDisposalModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx) | `POST /api/warehouse/:orgId/quick-carpule-disposal` |
+| **Списание карпул и медотходов Класса Б (Врач / Админ)** | [`NurseCarpuleDisposalModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx) | `POST /api/warehouse/:orgId/quick-carpule-disposal` (`executeSeniorNurseDisposalActInBackground`) |
 | **Складской API & Овердрафт** | [`warehouse/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/warehouse/index.ts) | `POST /api/warehouse/:orgId/soft-overdraft-deduct` |
 | **Списание по техкартам (BOM)** | [`treatmentConsumables.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/treatmentConsumables.ts) | `POST /api/treatment-consumables/:visitId/deduct` |
 | **Складской каталог и остатки** | [`inventory.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/inventory.ts) | `GET /api/inventory/items` |
+| **Журналы СанПиН 257/у и ПСО 366/у в 1 клик** | [`SanpinRegisters.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanpinRegisters.tsx) | `POST /api/registers/autofill-shift`, `POST /api/sterilization/pso/quick-norm` |
 | **Интеграция МДЛП Честный Знак** | [`mdlp.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/mdlp.ts) | `parseChestnyZnakDataMatrix()` |
+
