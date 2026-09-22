@@ -1010,7 +1010,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 										</div>
 									</th>
 									<th style={{ width: '130px' }}>Специальность</th>
-									<th style={{ width: '310px', textAlign: 'right', cursor: 'pointer' }} onClick={() => handleToggleSort('price')}>
+									<th style={{ width: '130px', textAlign: 'right', cursor: 'pointer' }} onClick={() => handleToggleSort('price')}>
 										<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
 											<span>Цена ({activeTier === 'standard' ? 'Руб.' : activeTier.toUpperCase()})</span>
 											<ArrowUpDown size={12} style={{ opacity: sortField === 'price' ? 1 : 0.35 }} />
@@ -1143,51 +1143,15 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 														</button>
 													)}
 
-													{/* Inline Modifiers: -500, -100, +100, +500, 0 ₽ (Гарантия) */}
-													<button
-														type="button"
-														className="batch-quick-btn"
-														style={{ padding: '0 3px', fontSize: '0.6875rem', height: '22px', minWidth: '28px' }}
-														onClick={() => handleModifyPriceDelta(item.id, -500)}
-														title="Вычесть 500 ₽"
-													>
-														-500
-													</button>
-													<button
-														type="button"
-														className="batch-quick-btn"
-														style={{ padding: '0 3px', fontSize: '0.6875rem', height: '22px', minWidth: '28px' }}
-														onClick={() => handleModifyPriceDelta(item.id, -100)}
-														title="Вычесть 100 ₽"
-													>
-														-100
-													</button>
-													<button
-														type="button"
-														className="batch-quick-btn"
-														style={{ padding: '0 3px', fontSize: '0.6875rem', height: '22px', minWidth: '28px' }}
-														onClick={() => handleModifyPriceDelta(item.id, 100)}
-														title="Прибавить 100 ₽"
-													>
-														+100
-													</button>
-													<button
-														type="button"
-														className="batch-quick-btn"
-														style={{ padding: '0 3px', fontSize: '0.6875rem', height: '22px', minWidth: '28px' }}
-														onClick={() => handleModifyPriceDelta(item.id, 500)}
-														title="Прибавить 500 ₽"
-													>
-														+500
-													</button>
+													{/* Clean 0 ₽ (Гарантия) 1-Click Toggle per Mandates 8c, 8e */}
 													<button
 														type="button"
 														className={`batch-quick-btn ${currentPrice === 0 ? 'active' : ''}`}
 														style={{
-															padding: '0 4px',
+															padding: '0 5px',
 															fontSize: '0.6875rem',
 															height: '22px',
-															minWidth: '26px',
+															minWidth: '28px',
 															color: currentPrice === 0 ? 'var(--ok-fg, #10b981)' : undefined,
 															borderColor: currentPrice === 0 ? 'rgba(16, 185, 129, 0.4)' : undefined,
 															background: currentPrice === 0 ? 'rgba(16, 185, 129, 0.12)' : undefined,

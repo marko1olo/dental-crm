@@ -813,7 +813,7 @@ button[data-testid^="btn-slot-"] span,
 [data-testid^="btn-slot-"] span,
 .schedule-empty-slot-btn span {
 	color: var(--ink-muted, #334155) !important;
-	font-weight: 700 !important;
+	font-weight: 600 !important;
 }
 
 button[data-testid^="btn-slot-"] svg,

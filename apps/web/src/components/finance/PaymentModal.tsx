@@ -1547,398 +1547,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
 				{/* Modal Body */}
 				<div className="p-4 overflow-y-auto flex-1 min-h-0 space-y-4">
-					{/* 1-Click Fast Presets & Doctor Discounts Bar (Mandates 8c, 8d, 8e п. 7, 8k, 8n: Frictionless checkout & doctor autonomy discounts) */}
-					<div
-						className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2.5 text-xs"
-						data-testid="payment-modal-presets-bar"
-					>
-						{/* Doctor Discounts Row */}
-						<div className="flex items-center justify-between gap-2 flex-wrap">
-							<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
-								<Percent size={14} className="text-amber-500 shrink-0" />
-								<span>Скидки врача:</span>
-								{discountRub > 0 && (
-									<span
-										className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
-										data-testid="badge-discount-active"
-									>
-										-{effectiveDiscountPercent}% ({discountRub.toLocaleString("ru-RU")} ₽)
-										{discountReason ? ` • ${discountReason}` : ""}
-									</span>
-								)}
-							</div>
-							<div className="flex items-center gap-1.5">
-								<label htmlFor="input-discount-custom-percent" className="text-[11px] font-medium text-[var(--muted,#64748b)]">
-									Своя скидка, %:
-								</label>
-								<div className="relative">
-									<input
-										id="input-discount-custom-percent"
-										type="number"
-										min={0}
-										max={100}
-										step="1"
-										value={discountPercent || ""}
-										onChange={(e) => handleCustomPercentChange(parseFloat(e.target.value) || 0)}
-										placeholder="0%"
-										data-testid="input-discount-custom-percent"
-										className="h-8 w-20 px-2 text-xs font-bold font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-amber-500"
-									/>
-									<span className="absolute right-2 top-2 text-[10px] text-[var(--muted,#64748b)] pointer-events-none">%</span>
-								</div>
-							</div>
-						</div>
-
-						{/* 1-Click Discount Preset Buttons */}
-						<div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap">
-							{DISCOUNT_PRESETS.map((p) => {
-								const isActive = effectiveDiscountPercent === p.percent && !isWarranty100;
-								const isZero = p.percent === 0;
-								const activeClass = isZero
-									? "bg-slate-700 text-white border-slate-700 shadow-2xs"
-									: "bg-amber-600 text-white border-amber-600 shadow-2xs";
-								const inactiveClass = isZero
-									? "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-slate-400 text-[var(--ink,#0f172a)]"
-									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]";
-								return (
-									<button
-										key={p.percent}
-										type="button"
-										onClick={() => applyDiscountPreset(p.percent, p.reason)}
-										className={`h-8 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
-											isActive ? activeClass : inactiveClass
-										}`}
-										data-testid={p.testId}
-										title={p.title}
-									>
-										{!isZero && (
-											<Percent
-												size={12}
-												className={isActive ? "text-white" : "text-amber-600"}
-											/>
-										)}
-										<span className="truncate">{p.label}</span>
-									</button>
-								);
-							})}
-
-							<button
-								type="button"
-								onClick={applyWarranty100Preset}
-								className={`h-8 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
-									isWarranty100
-										? "bg-amber-600 text-white border-amber-600 shadow-2xs"
-										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
-								}`}
-								data-testid="preset-warranty-100"
-								title="Гарантийная переделка 100% (0 ₽, без фискального чека ККТ)"
-							>
-								<ShieldCheck size={14} className={isWarranty100 ? "text-white" : "text-amber-600"} />
-								<span className="truncate">Гарантия 100% (0 ₽)</span>
-							</button>
-						</div>
-
-						{/* 1-Click Tender Presets Row */}
-						<div className="pt-2 border-t border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 flex-wrap">
-							<div className="flex items-center gap-1.5 font-bold text-[var(--muted,#64748b)]">
-								<Zap size={14} className="text-amber-500 shrink-0" />
-								<span>1-клик оплата:</span>
-							</div>
-						</div>
-						<div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap">
-							<button
-								type="button"
-								onClick={applyExactCashPreset}
-								className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
-									activeMethod === "cash" && cashChange.isExact
-										? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
-										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
-								}`}
-								data-testid="preset-exact-cash"
-							>
-								<Banknote size={14} className={activeMethod === "cash" && cashChange.isExact ? "text-white" : "text-emerald-600"} />
-								<span className="truncate">Без сдачи (Ровно: {totalDueRub.toLocaleString("ru-RU")} ₽)</span>
-							</button>
-							<button
-								type="button"
-								onClick={applySpendAllDepositBonusPreset}
-								className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
-									(activeMethod === "family_deposit" || (activeMethod === "split" && (splitDepositRub > 0 || splitBonusRub > 0)))
-										? "bg-purple-600 text-white border-purple-600 shadow-2xs"
-										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
-								}`}
-								data-testid="preset-spend-all-deposit-bonus"
-								title="Списать весь доступный аванс или бонусы"
-							>
-								<Wallet size={14} className={(activeMethod === "family_deposit" || (activeMethod === "split" && (splitDepositRub > 0 || splitBonusRub > 0))) ? "text-white" : "text-purple-600"} />
-								<span className="truncate">Списать аванс/бонусы</span>
-							</button>
-							<button
-								type="button"
-								onClick={apply5050CashCardPreset}
-								className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
-									activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0
-										? "bg-indigo-600 text-white border-indigo-600 shadow-2xs"
-										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-indigo-400 text-[var(--ink,#0f172a)]"
-								}`}
-								data-testid="preset-50-50-cash-card"
-								title="50% суммы наличными в кассу + 50% картой через терминал"
-							>
-								<Coins size={14} className={activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 ? "text-white" : "text-indigo-600"} />
-								<span className="truncate">50/50 Нал + Карта</span>
-							</button>
-							<button
-								type="button"
-								onClick={applyThreeWayCashCardAdvancePreset}
-								className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
-									activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 && splitDepositRub > 0
-										? "bg-teal-600 text-white border-teal-600 shadow-2xs"
-										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
-								}`}
-								data-testid="preset-three-way-split"
-								title="Комбинированная оплата в 1 клик: Нал + Карта + Аванс"
-							>
-								<Users size={14} className={activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 && splitDepositRub > 0 ? "text-white" : "text-teal-600"} />
-								<span className="truncate">Нал + Карта + Аванс</span>
-							</button>
-							<button
-								type="button"
-								onClick={applyFullCardPreset}
-								className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
-									activeMethod === "card_terminal"
-										? "bg-blue-600 text-white border-blue-600 shadow-2xs"
-										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-blue-400 text-[var(--ink,#0f172a)]"
-								}`}
-								data-testid="preset-full-card"
-							>
-								<CreditCard size={14} className={activeMethod === "card_terminal" ? "text-white" : "text-blue-600"} />
-								<span className="truncate">Картой 100% ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
-							</button>
-							{patientDepositRub > 0 && (
-								<button
-									type="button"
-									onClick={applyDepositPlusCardPreset}
-									className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
-										activeMethod === "split" && splitDepositRub > 0 && splitCardRub > 0
-											? "bg-purple-600 text-white border-purple-600 shadow-2xs"
-											: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
-									}`}
-									data-testid="preset-deposit-plus-card"
-								>
-									<Wallet size={14} className={activeMethod === "split" && splitDepositRub > 0 && splitCardRub > 0 ? "text-white" : "text-purple-600"} />
-									<span className="truncate">Весь аванс ({Math.min(totalDueRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + Карта</span>
-								</button>
-							)}
-							<button
-								type="button"
-								onClick={() => setActiveMethod("sbp_qr")}
-								className="h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-400 text-[var(--ink,#0f172a)] shrink-0"
-								data-testid="preset-sbp-qr"
-								title="Сформировать QR СБП для быстрой оплаты пациентом"
-							>
-								<QrCode size={14} className="text-teal-600" />
-								<span className="truncate">Оплата СБП по QR ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
-							</button>
-						</div>
-					</div>
-
-					{/* StomX 6 Cash Boxes & Cash Flow Category (ДДС) Selector (Mandates 8e, 8n) */}
-					<div
-						className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2.5 text-xs"
-						data-testid="payment-modal-stomx-bar"
-					>
-						{/* Cash Box Selection */}
-						<div className="flex flex-wrap items-center justify-between gap-2">
-							<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
-								<Building2 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-								<span>Касса клиники:</span>
-							</div>
-							<div className="flex flex-wrap items-center gap-1">
-								{STOMX_CASH_BOXES.slice(0, 3).map((box) => (
-									<button
-										key={box.type}
-										type="button"
-										onClick={() => setSelectedCashBoxType(box.type)}
-										className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-											selectedCashBoxType === box.type
-												? "bg-teal-600 text-white shadow-2xs"
-												: "bg-[var(--paper,#ffffff)] hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)]"
-										}`}
-										data-testid={`payment-box-${box.type}`}
-									>
-										{box.name}
-									</button>
-								))}
-								<select
-									value={selectedCashBoxType}
-									onChange={(e) => setSelectedCashBoxType(e.target.value as StomxCashBoxType)}
-									className="px-2 py-1 rounded-lg text-xs bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] font-medium cursor-pointer"
-									aria-label="Все кассы"
-									data-testid="select-payment-cashbox"
-								>
-									{STOMX_CASH_BOXES.map((b) => (
-										<option key={b.type} value={b.type}>
-											{b.name}
-										</option>
-									))}
-								</select>
-							</div>
-						</div>
-
-						{/* Cash Flow (ДДС) Receipt Category Selection */}
-						<div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--line,#e2e8f0)]">
-							<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
-								<Tag className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-								<span>Статья ДДС:</span>
-							</div>
-							<div className="flex flex-wrap items-center gap-1">
-								{STOMX_CASH_RECEIPT_CATEGORIES.slice(0, 3).map((cat) => (
-									<button
-										key={cat.alias}
-										type="button"
-										onClick={() => setSelectedReceiptAlias(cat.alias)}
-										className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-											selectedReceiptAlias === cat.alias
-												? "bg-indigo-600 text-white shadow-2xs"
-												: "bg-[var(--paper,#ffffff)] hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)]"
-										}`}
-										data-testid={`payment-cat-${cat.alias}`}
-									>
-										{cat.name}
-									</button>
-								))}
-								<select
-									value={selectedReceiptAlias}
-									onChange={(e) => setSelectedReceiptAlias(e.target.value as StomxReceiptTypeAlias)}
-									className="px-2 py-1 rounded-lg text-xs bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] font-medium cursor-pointer"
-									aria-label="Все статьи поступлений"
-									data-testid="select-payment-receipt-alias"
-								>
-									{STOMX_CASH_RECEIPT_CATEGORIES.map((cat) => (
-										<option key={cat.alias} value={cat.alias}>
-											{cat.name}
-										</option>
-									))}
-								</select>
-							</div>
-						</div>
-					</div>
-
-					{/* 54-FZ Buyer Details (Mandates 8e & 8n: Frictionless, optional for physical persons) */}
-					<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2.5" data-testid="payer-type-section">
-						<div className="flex items-center justify-between flex-wrap gap-2">
-							<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink,#0f172a)]">
-								<Building2 size={14} className="text-indigo-600" />
-								<span>Чек 54-ФЗ: Данные покупателя</span>
-							</div>
-							<div className="flex items-center gap-1 p-0.5 bg-[var(--paper,#ffffff)] rounded-lg border border-[var(--line,#e2e8f0)]">
-								<button
-									type="button"
-									onClick={() => {
-										setPayerType("physical");
-										setBuyerInnError(null);
-									}}
-									className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-										payerType === "physical"
-											? "bg-emerald-600 text-white shadow-2xs"
-											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-									}`}
-									data-testid="tab-payer-physical"
-								>
-									<User size={12} />
-									<span>Физлицо (Гражданин)</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => setPayerType("legal_entity")}
-									className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-										payerType === "legal_entity"
-											? "bg-indigo-600 text-white shadow-2xs"
-											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-									}`}
-									data-testid="tab-payer-legal"
-								>
-									<Building2 size={12} />
-									<span>Юрлицо / ИП</span>
-								</button>
-							</div>
-						</div>
-
-						{payerType === "physical" ? (
-							<div className="space-y-1">
-								<div className="flex items-center justify-between text-[11px] text-[var(--muted,#64748b)]">
-									<span className="flex items-center gap-1">
-										<FileText size={12} className="text-emerald-600" />
-										<span>ИНН пациента (необязательно, для справки НДФЛ 13%):</span>
-									</span>
-									<span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium" data-testid="inn-physical-not-required-badge">
-										По 54-ФЗ для физлиц не требуется
-									</span>
-								</div>
-								<div className="relative">
-									<input
-										type="text"
-										value={buyerInn}
-										onChange={(e) => handleInnChange(e.target.value)}
-										placeholder="Необязательно (12 цифр для налогового вычета)"
-										maxLength={12}
-										className="h-8.5 w-full px-3 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-emerald-500"
-										data-testid="input-buyer-inn-physical"
-									/>
-									{buyerInn && (
-										<span className="absolute right-2.5 top-2 text-[10px] font-mono text-[var(--muted,#64748b)]">
-											{buyerInn.length}/12
-										</span>
-									)}
-								</div>
-								{buyerInnError && (
-									<p className="text-[10px] text-amber-600 dark:text-amber-400 m-0 flex items-center gap-1">
-										<AlertCircle size={10} />
-										<span>{buyerInnError} (оплата не блокируется)</span>
-									</p>
-								)}
-							</div>
-						) : (
-							<div className="space-y-1">
-								<label className="text-[11px] font-bold text-[var(--ink,#0f172a)] flex items-center justify-between">
-									<span>ИНН юридического лица / ИП (10 или 12 цифр):</span>
-									<span className="text-[10px] text-indigo-600 font-bold">* Обязательно по 54-ФЗ</span>
-								</label>
-								<div className="relative">
-									<input
-										type="text"
-										value={buyerInn}
-										onChange={(e) => handleInnChange(e.target.value)}
-										placeholder="Введите 10 цифр (ООО) или 12 цифр (ИП)"
-										maxLength={12}
-										className={`h-8.5 w-full px-3 text-xs font-mono bg-[var(--paper,#ffffff)] border rounded-lg text-[var(--ink,#0f172a)] outline-none ${
-											buyerInnError
-												? "border-rose-500 focus:border-rose-600"
-												: "border-[var(--line,#e2e8f0)] focus:border-indigo-500"
-										}`}
-										data-testid="input-buyer-inn-legal"
-									/>
-									{buyerInn && (
-										<span className="absolute right-2.5 top-2 text-[10px] font-mono text-[var(--muted,#64748b)]">
-											{buyerInn.length} знаков
-										</span>
-									)}
-								</div>
-								{buyerInnError ? (
-									<p className="text-[10px] text-rose-600 dark:text-rose-400 m-0 flex items-center gap-1">
-										<AlertCircle size={10} />
-										<span>{buyerInnError}</span>
-									</p>
-								) : buyerInn.length === 10 || buyerInn.length === 12 ? (
-									<p className="text-[10px] text-emerald-600 dark:text-emerald-400 m-0 flex items-center gap-1">
-										<CheckCircle2 size={10} />
-										<span>ИНН валиден по формату 54-ФЗ для B2B расчетов</span>
-									</p>
-								) : null}
-							</div>
-						)}
-					</div>
-
 					{/* Acquiring & 54-FZ Emergency Collision Resolution Banner (Mandates 8e, 8n) */}
 					{interruptedPaymentState?.isInterrupted && (
 						<div
@@ -2725,6 +2333,398 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 							</div>
 						</div>
 					)}
+
+					{/* 1-Click Fast Presets & Doctor Discounts Bar (Mandates 8c, 8d, 8e п. 7, 8k, 8n: Frictionless checkout & doctor autonomy discounts) */}
+					<div
+						className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2 text-xs"
+						data-testid="payment-modal-presets-bar"
+					>
+						{/* Doctor Discounts Row */}
+						<div className="flex items-center justify-between gap-2 flex-wrap">
+							<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
+								<Percent size={14} className="text-amber-500 shrink-0" />
+								<span>Скидки врача:</span>
+								{discountRub > 0 && (
+									<span
+										className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
+										data-testid="badge-discount-active"
+									>
+										-{effectiveDiscountPercent}% ({discountRub.toLocaleString("ru-RU")} ₽)
+										{discountReason ? ` • ${discountReason}` : ""}
+									</span>
+								)}
+							</div>
+							<div className="flex items-center gap-1.5">
+								<label htmlFor="input-discount-custom-percent" className="text-[11px] font-medium text-[var(--muted,#64748b)]">
+									Своя скидка, %:
+								</label>
+								<div className="relative">
+									<input
+										id="input-discount-custom-percent"
+										type="number"
+										min={0}
+										max={100}
+										step="1"
+										value={discountPercent || ""}
+										onChange={(e) => handleCustomPercentChange(parseFloat(e.target.value) || 0)}
+										placeholder="0%"
+										data-testid="input-discount-custom-percent"
+										className="h-8 w-20 px-2 text-xs font-bold font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-amber-500"
+									/>
+									<span className="absolute right-2 top-2 text-[10px] text-[var(--muted,#64748b)] pointer-events-none">%</span>
+								</div>
+							</div>
+						</div>
+
+						{/* 1-Click Discount Preset Buttons */}
+						<div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap">
+							{DISCOUNT_PRESETS.map((p) => {
+								const isActive = effectiveDiscountPercent === p.percent && !isWarranty100;
+								const isZero = p.percent === 0;
+								const activeClass = isZero
+									? "bg-slate-700 text-white border-slate-700 shadow-2xs"
+									: "bg-amber-600 text-white border-amber-600 shadow-2xs";
+								const inactiveClass = isZero
+									? "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-slate-400 text-[var(--ink,#0f172a)]"
+									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]";
+								return (
+									<button
+										key={p.percent}
+										type="button"
+										onClick={() => applyDiscountPreset(p.percent, p.reason)}
+										className={`h-8 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+											isActive ? activeClass : inactiveClass
+										}`}
+										data-testid={p.testId}
+										title={p.title}
+									>
+										{!isZero && (
+											<Percent
+												size={12}
+												className={isActive ? "text-white" : "text-amber-600"}
+											/>
+										)}
+										<span className="truncate">{p.label}</span>
+									</button>
+								);
+							})}
+
+							<button
+								type="button"
+								onClick={applyWarranty100Preset}
+								className={`h-8 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+									isWarranty100
+										? "bg-amber-600 text-white border-amber-600 shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="preset-warranty-100"
+								title="Гарантийная переделка 100% (0 ₽, без фискального чека ККТ)"
+							>
+								<ShieldCheck size={14} className={isWarranty100 ? "text-white" : "text-amber-600"} />
+								<span className="truncate">Гарантия 100% (0 ₽)</span>
+							</button>
+						</div>
+
+						{/* 1-Click Tender Presets Row */}
+						<div className="pt-2 border-t border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 flex-wrap">
+							<div className="flex items-center gap-1.5 font-bold text-[var(--muted,#64748b)]">
+								<Zap size={14} className="text-amber-500 shrink-0" />
+								<span>1-клик оплата:</span>
+							</div>
+						</div>
+						<div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap">
+							<button
+								type="button"
+								onClick={applyExactCashPreset}
+								className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+									activeMethod === "cash" && cashChange.isExact
+										? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="preset-exact-cash"
+							>
+								<Banknote size={14} className={activeMethod === "cash" && cashChange.isExact ? "text-white" : "text-emerald-600"} />
+								<span className="truncate">Без сдачи (Ровно: {totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+							</button>
+							<button
+								type="button"
+								onClick={applySpendAllDepositBonusPreset}
+								className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+									(activeMethod === "family_deposit" || (activeMethod === "split" && (splitDepositRub > 0 || splitBonusRub > 0)))
+										? "bg-purple-600 text-white border-purple-600 shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="preset-spend-all-deposit-bonus"
+								title="Списать весь доступный аванс или бонусы"
+							>
+								<Wallet size={14} className={(activeMethod === "family_deposit" || (activeMethod === "split" && (splitDepositRub > 0 || splitBonusRub > 0))) ? "text-white" : "text-purple-600"} />
+								<span className="truncate">Списать аванс/бонусы</span>
+							</button>
+							<button
+								type="button"
+								onClick={apply5050CashCardPreset}
+								className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+									activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0
+										? "bg-indigo-600 text-white border-indigo-600 shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-indigo-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="preset-50-50-cash-card"
+								title="50% суммы наличными в кассу + 50% картой через терминал"
+							>
+								<Coins size={14} className={activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 ? "text-white" : "text-indigo-600"} />
+								<span className="truncate">50/50 Нал + Карта</span>
+							</button>
+							<button
+								type="button"
+								onClick={applyThreeWayCashCardAdvancePreset}
+								className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+									activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 && splitDepositRub > 0
+										? "bg-teal-600 text-white border-teal-600 shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="preset-three-way-split"
+								title="Комбинированная оплата в 1 клик: Нал + Карта + Аванс"
+							>
+								<Users size={14} className={activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 && splitDepositRub > 0 ? "text-white" : "text-teal-600"} />
+								<span className="truncate">Нал + Карта + Аванс</span>
+							</button>
+							<button
+								type="button"
+								onClick={applyFullCardPreset}
+								className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+									activeMethod === "card_terminal"
+										? "bg-blue-600 text-white border-blue-600 shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-blue-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="preset-full-card"
+							>
+								<CreditCard size={14} className={activeMethod === "card_terminal" ? "text-white" : "text-blue-600"} />
+								<span className="truncate">Картой 100% ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+							</button>
+							{patientDepositRub > 0 && (
+								<button
+									type="button"
+									onClick={applyDepositPlusCardPreset}
+									className={`h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+										activeMethod === "split" && splitDepositRub > 0 && splitCardRub > 0
+											? "bg-purple-600 text-white border-purple-600 shadow-2xs"
+											: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
+									}`}
+									data-testid="preset-deposit-plus-card"
+								>
+									<Wallet size={14} className={activeMethod === "split" && splitDepositRub > 0 && splitCardRub > 0 ? "text-white" : "text-purple-600"} />
+									<span className="truncate">Весь аванс ({Math.min(totalDueRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + Карта</span>
+								</button>
+							)}
+							<button
+								type="button"
+								onClick={() => setActiveMethod("sbp_qr")}
+								className="h-8 px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-400 text-[var(--ink,#0f172a)] shrink-0"
+								data-testid="preset-sbp-qr"
+								title="Сформировать QR СБП для быстрой оплаты пациентом"
+							>
+								<QrCode size={14} className="text-teal-600" />
+								<span className="truncate">Оплата СБП по QR ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+							</button>
+						</div>
+					</div>
+
+					{/* StomX 6 Cash Boxes & Cash Flow Category (ДДС) Selector (Mandates 8e, 8n) */}
+					<div
+						className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2 text-xs"
+						data-testid="payment-modal-stomx-bar"
+					>
+						{/* Cash Box Selection */}
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
+								<Building2 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+								<span>Касса клиники:</span>
+							</div>
+							<div className="flex flex-wrap items-center gap-1">
+								{STOMX_CASH_BOXES.slice(0, 3).map((box) => (
+									<button
+										key={box.type}
+										type="button"
+										onClick={() => setSelectedCashBoxType(box.type)}
+										className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+											selectedCashBoxType === box.type
+												? "bg-teal-600 text-white shadow-2xs"
+												: "bg-[var(--paper,#ffffff)] hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)]"
+										}`}
+										data-testid={`payment-box-${box.type}`}
+									>
+										{box.name}
+									</button>
+								))}
+								<select
+									value={selectedCashBoxType}
+									onChange={(e) => setSelectedCashBoxType(e.target.value as StomxCashBoxType)}
+									className="px-2 py-1 rounded-lg text-xs bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] font-medium cursor-pointer"
+									aria-label="Все кассы"
+									data-testid="select-payment-cashbox"
+								>
+									{STOMX_CASH_BOXES.map((b) => (
+										<option key={b.type} value={b.type}>
+											{b.name}
+										</option>
+									))}
+								</select>
+							</div>
+						</div>
+
+						{/* Cash Flow (ДДС) Receipt Category Selection */}
+						<div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--line,#e2e8f0)]">
+							<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
+								<Tag className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+								<span>Статья ДДС:</span>
+							</div>
+							<div className="flex flex-wrap items-center gap-1">
+								{STOMX_CASH_RECEIPT_CATEGORIES.slice(0, 3).map((cat) => (
+									<button
+										key={cat.alias}
+										type="button"
+										onClick={() => setSelectedReceiptAlias(cat.alias)}
+										className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+											selectedReceiptAlias === cat.alias
+												? "bg-indigo-600 text-white shadow-2xs"
+												: "bg-[var(--paper,#ffffff)] hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)]"
+										}`}
+										data-testid={`payment-cat-${cat.alias}`}
+									>
+										{cat.name}
+									</button>
+								))}
+								<select
+									value={selectedReceiptAlias}
+									onChange={(e) => setSelectedReceiptAlias(e.target.value as StomxReceiptTypeAlias)}
+									className="px-2 py-1 rounded-lg text-xs bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] font-medium cursor-pointer"
+									aria-label="Все статьи поступлений"
+									data-testid="select-payment-receipt-alias"
+								>
+									{STOMX_CASH_RECEIPT_CATEGORIES.map((cat) => (
+										<option key={cat.alias} value={cat.alias}>
+											{cat.name}
+										</option>
+									))}
+								</select>
+							</div>
+						</div>
+					</div>
+
+					{/* 54-FZ Buyer Details (Mandates 8e & 8n: Frictionless, optional for physical persons) */}
+					<div className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2 text-xs" data-testid="payer-type-section">
+						<div className="flex items-center justify-between flex-wrap gap-2">
+							<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink,#0f172a)]">
+								<Building2 size={14} className="text-indigo-600" />
+								<span>Чек 54-ФЗ: Данные покупателя</span>
+							</div>
+							<div className="flex items-center gap-1 p-0.5 bg-[var(--paper,#ffffff)] rounded-lg border border-[var(--line,#e2e8f0)]">
+								<button
+									type="button"
+									onClick={() => {
+										setPayerType("physical");
+										setBuyerInnError(null);
+									}}
+									className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+										payerType === "physical"
+											? "bg-emerald-600 text-white shadow-2xs"
+											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									}`}
+									data-testid="tab-payer-physical"
+								>
+									<User size={12} />
+									<span>Физлицо (Гражданин)</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => setPayerType("legal_entity")}
+									className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+										payerType === "legal_entity"
+											? "bg-indigo-600 text-white shadow-2xs"
+											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									}`}
+									data-testid="tab-payer-legal"
+								>
+									<Building2 size={12} />
+									<span>Юрлицо / ИП</span>
+								</button>
+							</div>
+						</div>
+
+						{payerType === "physical" ? (
+							<div className="space-y-1">
+								<div className="flex items-center justify-between text-[11px] text-[var(--muted,#64748b)]">
+									<span className="flex items-center gap-1">
+										<FileText size={12} className="text-emerald-600" />
+										<span>ИНН пациента (необязательно, для справки НДФЛ 13%):</span>
+									</span>
+									<span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium" data-testid="inn-physical-not-required-badge">
+										По 54-ФЗ для физлиц не требуется
+									</span>
+								</div>
+								<div className="relative">
+									<input
+										type="text"
+										value={buyerInn}
+										onChange={(e) => handleInnChange(e.target.value)}
+										placeholder="Необязательно (12 цифр для налогового вычета)"
+										maxLength={12}
+										className="h-8.5 w-full px-3 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-emerald-500"
+										data-testid="input-buyer-inn-physical"
+									/>
+									{buyerInn && (
+										<span className="absolute right-2.5 top-2 text-[10px] font-mono text-[var(--muted,#64748b)]">
+											{buyerInn.length}/12
+										</span>
+									)}
+								</div>
+								{buyerInnError && (
+									<p className="text-[10px] text-amber-600 dark:text-amber-400 m-0 flex items-center gap-1">
+										<AlertCircle size={10} />
+										<span>{buyerInnError} (оплата не блокируется)</span>
+									</p>
+								)}
+							</div>
+						) : (
+							<div className="space-y-1">
+								<label className="text-[11px] font-bold text-[var(--ink,#0f172a)] flex items-center justify-between">
+									<span>ИНН юридического лица / ИП (10 или 12 цифр):</span>
+									<span className="text-[10px] text-indigo-600 font-bold">* Обязательно по 54-ФЗ</span>
+								</label>
+								<div className="relative">
+									<input
+										type="text"
+										value={buyerInn}
+										onChange={(e) => handleInnChange(e.target.value)}
+										placeholder="Введите 10 цифр (ООО) или 12 цифр (ИП)"
+										maxLength={12}
+										className={`h-8.5 w-full px-3 text-xs font-mono bg-[var(--paper,#ffffff)] border rounded-lg text-[var(--ink,#0f172a)] outline-none ${
+											buyerInnError
+												? "border-rose-500 focus:border-rose-600"
+												: "border-[var(--line,#e2e8f0)] focus:border-indigo-500"
+										}`}
+										data-testid="input-buyer-inn-legal"
+									/>
+									{buyerInn && (
+										<span className="absolute right-2.5 top-2 text-[10px] font-mono text-[var(--muted,#64748b)]">
+											{buyerInn.length} знаков
+										</span>
+									)}
+								</div>
+								{buyerInnError ? (
+									<p className="text-[10px] text-rose-600 dark:text-rose-400 m-0 flex items-center gap-1">
+										<AlertCircle size={10} />
+										<span>{buyerInnError}</span>
+									</p>
+								) : buyerInn.length === 10 || buyerInn.length === 12 ? (
+									<p className="text-[10px] text-emerald-600 dark:text-emerald-400 m-0 flex items-center gap-1">
+										<CheckCircle2 size={10} />
+										<span>ИНН валиден по формату 54-ФЗ для B2B расчетов</span>
+									</p>
+								) : null}
+							</div>
+						)}
+					</div>
 				</div>
 
 				{/* Dedicated Fixed Footer (Mandates 8c, 8d, 8e: Fitts's Law, always visible total due & primary fiscalization trigger) */}

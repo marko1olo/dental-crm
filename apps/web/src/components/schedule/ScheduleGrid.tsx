@@ -3246,11 +3246,11 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 								gridTemplateColumns: `clamp(76px, 15vw, 90px) repeat(${effectiveChairs.length}, minmax(${effectiveChairs.length === 1 ? "200px" : "180px"}, 1fr))`,
 								contain: "content",
 								contentVisibility: "auto",
-								containIntrinsicSize: "1px 60px",
+								containIntrinsicSize: "1px 36px",
 							}}
 						>
 							{/* Time label */}
-							<div className="px-1.5 sm:px-3 py-3 text-center text-xs font-bold text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-center select-none sticky left-0 z-10 bg-[var(--paper)]">
+							<div className="px-1.5 sm:px-2 py-1 sm:py-1.5 text-center text-xs font-bold text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-center select-none sticky left-0 z-10 bg-[var(--paper)]">
 								{hour}
 							</div>
 
@@ -3270,7 +3270,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 									return (
 										<div
 											key={chair.id}
-											className="p-1.5 border-r border-[var(--line)] last:border-r-0 space-y-1.5 min-h-[56px] flex flex-col justify-center"
+											className="p-1 border-r border-[var(--line)] last:border-r-0 space-y-1 min-h-[34px] sm:min-h-[36px] flex flex-col justify-center"
 											data-chair-id={chair.id}
 											data-chair-palette={chairPalette.nameRu}
 										>
@@ -3378,7 +3378,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 								return (
 									<div
 										key={chair.id}
-										className="p-1 border-r border-[var(--line)] last:border-r-0 min-h-[56px] flex items-center justify-center"
+										className="p-0.5 sm:p-1 border-r border-[var(--line)] last:border-r-0 min-h-[34px] sm:min-h-[36px] flex items-center justify-center"
 										data-chair-id={chair.id}
 										data-chair-palette={chairPalette.nameRu}
 										onDragOver={(e) => {
@@ -3559,13 +3559,13 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																reason: "Острая боль (CITO Резерв)",
 															})
 														}
-														className="w-full h-full min-h-[48px] rounded-xl border border-dashed border-amber-400/80 dark:border-amber-600 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-amber-500 focus:outline-none shadow-xs whitespace-nowrap shrink-0"
+														className="w-full h-full min-h-[30px] sm:min-h-[32px] rounded-lg border border-dashed border-amber-400/80 dark:border-amber-600 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer focus:ring-2 focus:ring-amber-500 focus:outline-none shadow-xs whitespace-nowrap shrink-0"
 														title={`Экстренный резерв (CITO): ${hour} (${chair.name}). Буфер 30 мин для пациентов с острой болью`}
 														aria-label={`Экстренный резерв на ${hour}, кресло ${chair.name}. Буфер 30 минут по острой боли`}
 														data-testid="schedule-emergency-buffer-slot"
 													>
-														<Zap size={14} className="text-amber-600 dark:text-amber-400 animate-pulse shrink-0" />
-														<span className="text-xs whitespace-nowrap shrink-0">Резерв: Острая боль ({hour})</span>
+														<Zap size={13} className="text-amber-600 dark:text-amber-400 animate-pulse shrink-0" />
+														<span className="text-[11px] font-bold whitespace-nowrap shrink-0">Резерв ({hour})</span>
 													</button>
 												);
 											}
@@ -3590,16 +3590,13 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																durationMinutes: 30,
 															})
 														}
-														className="w-full h-full min-h-[48px] rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper-soft)]/40 hover:border-[var(--teal)]/40 hover:bg-[var(--teal-surface)]/50 text-[var(--muted)] hover:text-[var(--teal-dark)] text-xs flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none whitespace-nowrap shrink-0 opacity-75 hover:opacity-100"
+														className="w-full h-full min-h-[30px] sm:min-h-[32px] rounded-lg border border-dashed border-[var(--line)] bg-[var(--paper-soft)]/40 hover:border-[var(--teal)]/40 hover:bg-[var(--teal-surface)]/50 text-[var(--muted)] hover:text-[var(--teal-dark)] text-xs flex items-center justify-center gap-1 transition-all cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none whitespace-nowrap shrink-0 opacity-75 hover:opacity-100"
 														title={`Вне графика смены врача на ${hour} (${chair.name}). Нажмите для записи вне графика`}
 														aria-label={`Вне графика врача на ${hour}, кресло ${chair.name}`}
 														data-testid={`btn-slot-${chair.id}-${hour.replace(":", "")}`}
 													>
-														<div className="flex items-center gap-1">
-															<Clock size={12} className="opacity-50 shrink-0" />
-															<span className="text-[11px] font-medium text-[var(--muted)]">Вне смены</span>
-														</div>
-														<span className="text-[10px] text-[var(--muted)] opacity-70">{hour}</span>
+														<Clock size={11} className="opacity-50 shrink-0" />
+														<span className="text-[10px] text-[var(--muted)]">Вне смены ({hour})</span>
 													</button>
 												);
 											}
@@ -3617,13 +3614,13 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 															durationMinutes: 30,
 														})
 													}
-													className="schedule-empty-slot-btn w-full h-full min-h-[48px] rounded-xl border border-dashed border-[var(--line-strong,var(--line))] bg-[var(--paper)] dark:bg-[rgba(255,255,255,0.03)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--ink-muted,var(--ink))] dark:text-[var(--muted)] hover:text-[var(--teal-dark)] text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none whitespace-nowrap shrink-0"
+													className="schedule-empty-slot-btn group w-full h-full min-h-[30px] sm:min-h-[32px] py-0.5 px-2 rounded-lg border border-dashed border-[var(--line-strong,var(--line))] bg-[var(--paper)] dark:bg-[rgba(255,255,255,0.03)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--ink-muted,var(--ink))] dark:text-[var(--muted)] hover:text-[var(--teal-dark)] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none whitespace-nowrap shrink-0"
 													title={`Записать на ${hour} (${chair.name})`}
 													aria-label={`Свободно на ${hour}, кресло ${chair.name}. Нажмите для быстрой записи`}
 													data-testid={`btn-slot-${chair.id}-${hour.replace(":", "")}`}
 												>
-													<Plus size={14} className="text-[var(--teal)] opacity-95 group-hover:opacity-100 shrink-0" />
-													<span className="text-xs font-bold whitespace-nowrap shrink-0">Записать на {hour}</span>
+													<Plus size={13} className="text-[var(--teal)] opacity-70 group-hover:opacity-100 shrink-0" />
+													<span className="text-[11px] font-semibold whitespace-nowrap shrink-0 opacity-80 group-hover:opacity-100">Записать на {hour}</span>
 												</button>
 											);
 										})()}

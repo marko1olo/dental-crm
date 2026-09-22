@@ -2604,9 +2604,9 @@ export function VisitEmkTab() {
 									style={{ padding: "4px" }}
 								/>
 							</div>
-							{/* Компактный 32px тулбар форматирования текста медицинского протокола (DEF-VIS-05) */}
+							{/* Компактный 26px тулбар форматирования текста медицинского протокола (DEF-VIS-05, Mandates 8c, 8d, 8p) */}
 							<div
-								className="emk-formatting-toolbar flex items-center justify-between gap-1 h-8 px-1.5 sm:px-2 py-0.5 rounded-t-lg border border-b border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--muted)] min-w-0 max-w-full"
+								className="emk-formatting-toolbar flex items-center justify-between gap-1 h-6.5 sm:h-7 min-h-[26px] px-1.5 py-0 rounded-t-lg border border-b border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--muted)] min-w-0 max-w-full"
 								role="toolbar"
 								aria-label={`Форматирование текста: ${field.label}`}
 							>
@@ -2614,39 +2614,39 @@ export function VisitEmkTab() {
 									<button
 										type="button"
 										onClick={() => applyTextFormatting(field.key, "bold")}
-										className="h-6 w-6 sm:w-auto sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-black inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+										className="h-5 sm:h-5.5 px-1 sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-[11px] font-black inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
 										title="Полужирный (**текст**)"
 										aria-label="Полужирный"
 									>
-										<Bold size={12} className="stroke-[3]" />
+										<Bold size={11} className="stroke-[3]" />
 									</button>
 									<button
 										type="button"
 										onClick={() => applyTextFormatting(field.key, "italic")}
-										className="h-6 w-6 sm:w-auto sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-bold inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+										className="h-5 sm:h-5.5 px-1 sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-[11px] font-bold inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
 										title="Курсив (*текст*)"
 										aria-label="Курсив"
 									>
-										<Italic size={12} />
+										<Italic size={11} />
 									</button>
 									<button
 										type="button"
 										onClick={() => applyTextFormatting(field.key, "bullet")}
-										className="h-6 w-6 sm:w-auto sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-bold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+										className="h-5 sm:h-5.5 px-1 sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-[11px] font-bold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
 										title="Маркированный список (• )"
 										aria-label="Список"
 									>
-										<List size={12} />
+										<List size={11} />
 										<span className="hidden sm:inline text-[10px]">Список</span>
 									</button>
 									<button
 										type="button"
 										onClick={() => applyTextFormatting(field.key, "check")}
-										className="emk-desktop-only hidden sm:inline-flex h-6 w-6 sm:w-auto sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-bold items-center justify-center gap-1 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+										className="emk-desktop-only hidden sm:inline-flex h-5 sm:h-5.5 px-1 sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-[11px] font-bold items-center justify-center gap-1 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
 										title="Отметка выполнения"
 										aria-label="Выполнено"
 									>
-										<CheckSquare size={12} />
+										<CheckSquare size={11} />
 										<span className="hidden sm:inline text-[10px]">
 											Выполнено
 										</span>
@@ -2654,11 +2654,11 @@ export function VisitEmkTab() {
 									<button
 										type="button"
 										onClick={() => applyTextFormatting(field.key, "tooth")}
-										className="emk-desktop-only hidden sm:inline-flex h-6 px-1 sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-bold items-center justify-center gap-1 transition-colors cursor-pointer text-[var(--teal,var(--brand-primary))] shrink-0 whitespace-nowrap"
+										className="emk-desktop-only hidden sm:inline-flex h-5 sm:h-5.5 px-1 sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-[11px] font-bold items-center justify-center gap-1 transition-colors cursor-pointer text-[var(--teal,var(--brand-primary))] shrink-0 whitespace-nowrap"
 										title="Вставить ссылку на зуб"
 										aria-label="Зуб"
 									>
-										<Hash size={12} />
+										<Hash size={11} />
 										<span className="text-[10px] font-bold whitespace-nowrap">
 											<span className="hidden xs:inline">Зуб </span>
 											{activeSelectedTooth ? `#${activeSelectedTooth}` : ""}
@@ -2667,22 +2667,22 @@ export function VisitEmkTab() {
 									<button
 										type="button"
 										onClick={() => applyTextFormatting(field.key, "time")}
-										className="emk-desktop-only hidden sm:inline-flex h-6 w-6 sm:w-auto sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-medium items-center justify-center gap-1 transition-colors cursor-pointer shrink-0"
+										className="emk-desktop-only hidden sm:inline-flex h-5 sm:h-5.5 px-1 sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-[11px] font-medium items-center justify-center gap-1 transition-colors cursor-pointer shrink-0"
 										title="Вставить текущее время"
 										aria-label="Время"
 									>
-										<Clock size={12} />
+										<Clock size={11} />
 									</button>
 								</div>
 								<div className="flex items-center gap-0.5 sm:gap-1 shrink-0 pl-1.5 border-l border-[var(--line)] bg-[var(--paper-soft)] relative">
 									{/* Mobile Dropdown Menu for secondary formatting tools */}
 									<details className="emk-mobile-only group relative sm:hidden !p-0 !m-0 !border-0 !bg-transparent !shadow-none !rounded-none">
 										<summary
-											className="h-7 w-7 sm:h-8 sm:w-8 !min-h-0 !min-w-0 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] inline-flex items-center justify-center cursor-pointer list-none [&::-webkit-details-marker]:hidden transition-colors"
+											className="h-6 w-6 !min-h-0 !min-w-0 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] inline-flex items-center justify-center cursor-pointer list-none [&::-webkit-details-marker]:hidden transition-colors"
 											title="Дополнительные инструменты"
 											aria-label="Дополнительно"
 										>
-											<MoreHorizontal size={14} />
+											<MoreHorizontal size={13} />
 										</summary>
 										<div className="absolute right-0 top-full mt-1 z-50 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg p-1.5 flex flex-col gap-1 w-44">
 											<button
@@ -2727,20 +2727,20 @@ export function VisitEmkTab() {
 									<button
 										type="button"
 										onClick={() => applyTextFormatting(field.key, "copy")}
-										className="emk-desktop-only hidden sm:inline-flex h-6 w-6 sm:w-auto sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs items-center justify-center transition-colors cursor-pointer shrink-0"
+										className="emk-desktop-only hidden sm:inline-flex h-5 sm:h-5.5 px-1 sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-[11px] items-center justify-center transition-colors cursor-pointer shrink-0"
 										title="Копировать текст поля"
 										aria-label="Копировать"
 									>
-										<Copy size={12} />
+										<Copy size={11} />
 									</button>
 									<button
 										type="button"
 										onClick={() => applyTextFormatting(field.key, "clear")}
-										className="emk-desktop-only hidden sm:inline-flex h-6 w-6 sm:w-auto sm:px-1.5 rounded hover:bg-rose-500/15 hover:text-rose-600 text-xs items-center justify-center transition-colors cursor-pointer shrink-0"
+										className="emk-desktop-only hidden sm:inline-flex h-5 sm:h-5.5 px-1 sm:px-1.5 rounded hover:bg-rose-500/15 hover:text-rose-600 text-[11px] items-center justify-center transition-colors cursor-pointer shrink-0"
 										title="Очистить поле"
 										aria-label="Очистить"
 									>
-										<Eraser size={12} />
+										<Eraser size={11} />
 									</button>
 								</div>
 							</div>
