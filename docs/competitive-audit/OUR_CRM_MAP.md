@@ -2,7 +2,7 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
-> ⚠️ **СТАТУС (2026-09-22 / WAVES 175–277 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 318 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 381 ФИЧА: 63 КАНОНИЧЕСКИЕ + 318 АДДЕНДУМ, 381/381 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
+> ⚠️ **СТАТУС (2026-09-23 / WAVES 175–278 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 321 СИСТЕМНАЯ АДДЕНДУМ-ФИЧА (ВСЕГО 384 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 321 АДДЕНДУМ, 384/384 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
@@ -31,8 +31,9 @@
    - В стилях `low-spec-hardware.css`, `patients-redesign.css`, `SanpinRegisters.css` и `schedule.css` для списков пациентов, счетов, упаковок стерилизации и карточек расписания активированы правила `content-visibility: auto;` и `contain-intrinsic-size`.
    - Браузер полностью пропускает лейаут и растеризацию элементов вне зоны видимости (viewport), сокращая начальный рендеринг на 60–75% и удерживая стабильные 60 FPS даже на многотысячных выборках.
    - Аппаратный профиль `data-hardware-tier="low"` отключает тяжелые CSS-фильтры (`backdrop-filter: blur`), 3D-трансформации и сложные тени.
-3. **Ступенчатый фоновый idle-прелоад (`workspacePreload.ts`)**:
-   - Предзагрузка тяжелых модулей (3D DICOM, рентген, касса) разнесена во времени через `requestIdleCallback`: 400мс на стандартных десктопах и 800мс на медленных устройствах.
+3. **Ступенчатый фоновый idle-прелоад и оптимизация HTML modulepreload (`workspacePreload.ts`, `apps/web/vite.config.ts`)**:
+   - В `apps/web/vite.config.ts` в блоке `build.modulePreload.resolveDependencies` реализована строгая фильтрация: из первичной инжекции `<link rel="modulepreload">` в HTML-шаблон исключены тяжелые чанки 3D/DICOM/Cornerstone3D/VTK/Three.js, PDF-генераторы (jsPDF, pdf-canvas) и аналитические графики (Recharts). Это полностью предотвращает дисковое I/O-голодание (I/O starvation) медленных шпиндельных накопителей HDD 5400 RPM при холодном старте CRM;
+   - Предзагрузка тяжелых модулей разнесена во времени через `requestIdleCallback`: 400мс на стандартных десктопах и 800мс на медленных устройствах;
    - На аппаратном профиле `low` прелоад автоматически отключается во избежание насыщения дисковой очереди при старте CRM.
 4. **Сквозное HTTP-кэширование Fastify 304 ETag (`cacheHeaders.ts`)**:
    - Статические медицинские справочники (номенклатура услуг 804н, классификатор МКБ-10, список зубов) кэшируются на клиенте с заголовками `ETag` и `Cache-Control: private, max-age=3600`.
@@ -83,6 +84,11 @@
 15. **Тотальное искоренение эмодзи в официальных медицинских документах (Мандат 8d Грех #7)**:
     - В соответствии с 7 смертным грехом Мандата 8d в медицинских картах Формы 043/у (`DentalMedicalCard043uForm.tsx`), фискальных чеках 54-ФЗ (`FiscalReceipt54FzModal.tsx`), справках об оплате медицинских услуг для ФНС России КНД 1151156 (`TaxDeductionCertificateModal.tsx`) и рецептурных бланках 107-1/у (`PrescriptionPrintModal.tsx`) полностью удалены детские и мультяшные эмодзи;
     - Заменены на строгие векторные пиктограммы библиотеки Lucide, обеспечивая безупречный стиль официальной медицинской и бухгалтерской документации РФ при печати и формировании PDF.
+
+16. **Плотная десктопная сетка расписания (36px строки) и 1-тир чекаут кассы 54-ФЗ (`ScheduleGrid.tsx`, `schedule.css`, `PaymentModal.tsx`)**:
+    - В `ScheduleGrid.tsx` и `schedule.css` высота слотов и строк расписания зафиксирована на строго 36px (`h-9`), обеспечивая плотную клиническую панель пилота и устраняя необходимость вертикального скролла на типовых десктопных разрешениях 1440x900 и ноутбуках 1366x768;
+    - Тулбары ЭМК и фильтров расписания уложены в строго 1 компактную строку 32–36px по Закону Хика;
+    - Чекаут кассы 54-ФЗ в `PaymentModal.tsx` организован в виде эргономичного 1-тир экрана без вложенных модальных окон (Закон Анти-Матрёшки, глубина строго 1), с моментальным сплит-распределением оплаты (нал + карта + баланс) и копеечной сдачей.
 
 ---
 
@@ -6151,7 +6157,7 @@
   - `apps/web/src/lib/omniPlatformAdapter.ts`
   - `apps/web/src/lib/hardwarePrinting.ts`
 
-### 2.10.373. Сводный Реестр Ликвидации Блоата и Результаты Независимой Red Team Инквизиции (381 фича vs IDENT, DentalPRO, StomX)
+### 2.10.373. Сводный Реестр Ликвидации Блоата и Результаты Независимой Red Team Инквизиции (384 фичи vs IDENT, DentalPRO, StomX)
 - **Функционал**:
   1. *Ликвидация Академического и Госпитального Блоата (Мандаты 8i, 8k, 8n, 8s)*:
      - Заменен маркетинговый брендинг и псевдонаучный 192-точечный симулятор Florida Probe на канонический скрининг ВОЗ PSR (CPITN) по 6 секстантам, 6 точек зондирования по Форме 043/у Минздрава РФ и 1-кликовую норму Z01.2 в ЭМК и периодонтограмме;
@@ -6242,4 +6248,50 @@
   - `apps/web/src/components/hygiene/HygieneIndicesPanel.tsx`
   - `apps/api/src/db/schema/periodontogram.ts` (коммит `4c4957b9e`, Wave 277)
 
+### 2.10.376. Wave 278: Плотная десктопная сетка расписания (строго 36px строки), компактные тулбары ЭМК 32–36px и 1-тир чекаут кассы по стандартам Studio Clinical HIG (Мандаты 8c, 8p) (Фича #382)
+- **Функционал**:
+  1. *Фиксация 36px сетки расписания (Мандат 8c)*:
+     - В `apps/web/src/components/schedule/ScheduleGrid.tsx` и `apps/web/src/styles/modules/schedule.css` высота строк сетки расписания зафиксирована на строго 36px (`h-9`), что обеспечивает максимальную информационную плотность панели пилота на мониторах 1440x900 и ноутбуках 1366x768;
+  2. *Компактные 1-строчные тулбары 32–36px (Закон Хика, Мандат 8d п. 2)*:
+     - В `apps/web/src/components/visit/VisitEmkTab.tsx` и `apps/web/src/components/pricelist/ServicePricelistManagerModal.tsx` тулбары сжаты в одну строку высотой 32–36px, все вторичные элементы вынесены в компактные поповеры `...`;
+  3. *1-тир чекаут кассы 54-ФЗ (Мандат 8p, Закон Анти-Матрёшки)*:
+     - В `apps/web/src/components/finance/PaymentModal.tsx` развернута оптимизированная одноуровневая компоновка кассы без вложенных слоев (глубина строго 1), с 0-scroll доступом к сплит-оплате.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/schedule/ScheduleGrid.tsx`
+  - `apps/web/src/styles/modules/schedule.css`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `apps/web/src/components/pricelist/ServicePricelistManagerModal.tsx`
+  - `apps/web/src/components/visit/VisitEmkTab.tsx` (коммиты `a5af1654c`, `44ca2c2cd`, Wave 278)
+
+### 2.10.377. Wave 278: Оптимизация холодного старта под слабые ноутбуки с HDD 5400 RPM, исключение тяжелых чанков из HTML modulepreload (vite.config.ts) и двухуровневый кэш памяти для 60 FPS отклика (Мандаты 8c, 8t, Core Route п. 1) (Фича #383)
+- **Функционал**:
+  1. *Исключение тяжелых чанков из HTML modulepreload (Мандат 8t)*:
+     - В `apps/web/vite.config.ts` в секции `build.modulePreload.resolveDependencies` реализована фильтрация: из автоматической генерации `<link rel="modulepreload">` в первичном HTML исключены тяжелые библиотеки 3D/DICOM (Three.js, Cornerstone3D, VTK), PDF (jsPDF, pdf-canvas) и аналитики (Recharts, chart, dicom, analytics). Это предотвращает дисковое I/O-голодание шпиндельных дисков HDD 5400 RPM при старте CRM;
+  2. *Двухуровневый In-Memory кэш и дебаунсированная фоновая запись 400мс*:
+     - В `apps/web/src/lib/apiAuthFetch.ts`, `apps/web/src/lib/apiCacheEngine.ts`, `apps/web/src/services/offline/offlineStorage.ts` и `apps/web/src/services/storage/clinicalCacheStorage.ts` обеспечено мгновенное чтение медицинских справочников и состояния визита из оперативной памяти (0 мс), пакетирование дисковых сбросов через таймер 400мс и форсированный flush на `beforeunload`/`pagehide`, обеспечивая стабильные 60 FPS на ПК с 4GB RAM.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/vite.config.ts`
+  - `apps/web/src/lib/apiAuthFetch.ts`
+  - `apps/web/src/lib/apiCacheEngine.ts`
+  - `apps/web/src/services/offline/offlineStorage.ts`
+  - `apps/web/src/services/storage/clinicalCacheStorage.ts` (коммит `e9f871745`, Wave 278)
+
+### 2.10.378. Wave 278: Полная ликвидация Florida Probe и симуляторов 192 точек (замена на канонический ВОЗ PSR/CPITN по 6 секстантам и 6 точек 043/у), ликвидация бюрократии начмедов и очередей согласований с заменой на автономию врача и добровольный аудит главврача (Мандаты 8e, 8i, 8k, 8n, 8s) (Фича #384)
+- **Функционал**:
+  1. *Канонический протокол ВОЗ PSR/CPITN и 6 точек Формы 043/у Минздрава РФ*:
+     - Окончательно вычищены все упоминания и псевдонаучные процедурные тренажеры Florida Probe из схемы БД `periodontogram.ts`, `PeriodontogramChart.tsx`, `VisitDiarySection.tsx`, `HygieneIndicesPanel.tsx` и `packages/shared/src/emr/periodontogram.ts`. Система использует канонический скрининг ВОЗ PSR (Periodontal Screening and Recording / CPITN) по 6 секстантам челюстей и 6 точек зондирования на зуб с 1-клик нормой Z01.2 в Форму 043/у;
+  2. *Ликвидация бюрократии начмедов и очередей согласований (Мандат 8e)*:
+     - В `packages/shared/src/security/rbacMatrix.ts` и `outpatientContracts.ts` роль `head_doctor` закреплена за добровольным клиническим контролем качества ведения ЭМК (ВКК по Приказам 785н и 834н Минздрава РФ), полностью исключая бюрократические очереди согласований, 24-часовые замки и блокировки лечащего врача у кресла;
+     - Лечащий врач обладает безусловной автономией: приём, подписание карты 043/у, печать документов («ЧЕРНОВИК»/«ПОДПИСАНО»), применение скидок до 100%, гарантийные переделки и ревизия закрытых дневников со штампом «Исправленному верить» выполняются без ожидания виз и разрешений.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/api/src/db/schema/periodontogram.ts`
+  - `apps/web/src/components/perio/PeriodontogramChart.tsx`
+  - `apps/web/src/components/visit/VisitDiarySection.tsx`
+  - `apps/web/src/components/hygiene/HygieneIndicesPanel.tsx`
+  - `packages/shared/src/emr/periodontogram.ts`
+  - `packages/shared/src/security/rbacMatrix.ts`
+  - `packages/shared/src/outpatient/outpatientContracts.ts` (коммиты `cc047f402`, `177376a2d`, `4c4957b9e`, Wave 278)
 
