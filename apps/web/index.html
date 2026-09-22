@@ -12,6 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="DENTE" />
     <link rel="apple-touch-icon" href="/icon.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="dns-prefetch" href="/api" />
     <title>Dental CRM | Управление клиникой</title>
     <script>
       (function() {
@@ -28,12 +29,53 @@
               document.documentElement.classList.remove("dark");
             }
           }
-          var low = localStorage.getItem("dente_low_spec");
-          if (low === "true") {
+
+          // Low-spec & HDD 5400 RPM heuristic detection
+          var forcedLow = localStorage.getItem("dente:low-spec-mode") || localStorage.getItem("dente_low_spec");
+          var queryLow = window.location && window.location.search && (window.location.search.indexOf("lowspec=1") !== -1 || window.location.search.indexOf("low-spec=1") !== -1);
+          var hwConcurrency = typeof navigator !== "undefined" && navigator.hardwareConcurrency ? navigator.hardwareConcurrency : 8;
+          var devMemory = typeof navigator !== "undefined" && navigator.deviceMemory ? navigator.deviceMemory : 8;
+          var isSaveData = typeof navigator !== "undefined" && navigator.connection && navigator.connection.saveData === true;
+          var isLowSpec = forcedLow === "true" || queryLow || hwConcurrency <= 4 || devMemory <= 4 || isSaveData;
+          if (forcedLow === "false") {
+            isLowSpec = false;
+          }
+
+          if (isLowSpec) {
             document.documentElement.setAttribute("data-low-spec", "true");
             document.documentElement.setAttribute("data-hardware-tier", "low");
-            document.documentElement.classList.add("low-spec-mode");
+            document.documentElement.setAttribute("data-perf", "low");
+            document.documentElement.classList.add("low-spec-mode", "low-spec-perf");
+          } else {
+            document.documentElement.setAttribute("data-hardware-tier", "high");
+            document.documentElement.setAttribute("data-perf", "high");
           }
+
+          // 4-Runtime detection: desktop, android, pwa, web
+          var navUa = (typeof navigator !== "undefined" && navigator.userAgent) ? navigator.userAgent : "";
+          var isDesktop = !!(window.__DENTE_DESKTOP__ || window.electron || (window.process && window.process.versions && window.process.versions.electron) || window.__TAURI__ || (window.chrome && window.chrome.webview) || /Electron|Tauri|DenteDesktop|WebView2|DenteWin/i.test(navUa));
+          var isAndroid = !!(window.Capacitor || (/Android/i.test(navUa) && (/wv|Version\/.*Chrome/i.test(navUa) || /Capacitor/i.test(navUa))));
+          var isPwa = !!(window.__DENTE_PWA__ || (window.matchMedia && (window.matchMedia("(display-mode: standalone)").matches || window.matchMedia("(display-mode: minimal-ui)").matches)) || (navigator.standalone === true) || (document.referrer && document.referrer.indexOf("android-app://") === 0));
+
+          var platform = isDesktop ? "desktop" : (isAndroid ? "android" : (isPwa ? "pwa" : "web"));
+          document.documentElement.setAttribute("data-platform", platform);
+
+          // Pointer resolution (Mandate 8c: desktop fine density vs coarse touch)
+          var isFinePointer = window.matchMedia && window.matchMedia("(pointer: fine)").matches;
+          document.documentElement.setAttribute("data-pointer", isFinePointer ? "fine" : "coarse");
+
+          // Form factor
+          var screenW = window.innerWidth || (typeof screen !== "undefined" ? screen.width : 1024) || 1024;
+          var isTablet = (screenW >= 768 && screenW <= 1024) || /iPad/i.test(navUa);
+          var isPhone = !isTablet && (screenW < 768 || /Mobile|Android|iPhone|iPod/i.test(navUa));
+          var formFactor = isTablet ? "tablet" : (isPhone ? "phone" : "desktop");
+          document.documentElement.setAttribute("data-form-factor", formFactor);
+
+          // Safe area custom properties
+          document.documentElement.style.setProperty("--sat", "env(safe-area-inset-top, 0px)");
+          document.documentElement.style.setProperty("--sab", "env(safe-area-inset-bottom, 0px)");
+          document.documentElement.style.setProperty("--sal", "env(safe-area-inset-left, 0px)");
+          document.documentElement.style.setProperty("--sar", "env(safe-area-inset-right, 0px)");
         } catch (e) {}
       })();
     </script>

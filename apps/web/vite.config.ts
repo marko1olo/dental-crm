@@ -77,14 +77,16 @@ export default defineConfig({
 		assetsInlineLimit: 4096,
 		modulePreload: {
 			resolveDependencies(filename, deps) {
-				// Don't inject <link rel="modulepreload"> for heavy 3D, DICOM, charts, and PDF chunks on initial page load.
-				// These are loaded strictly on demand or background idle, preventing 5400 RPM HDD I/O starvation.
+				// Don't inject <link rel="modulepreload"> for heavy 3D, DICOM, charts, and secondary chunks on initial page load.
+				// These are loaded strictly on demand or background idle, preventing 5400 RPM HDD I/O starvation and memory thrashing.
 				return deps.filter((dep) => {
 					const lower = dep.toLowerCase();
 					if (lower.includes("three") || lower.includes("cornerstone") || lower.includes("vtk")) return false;
 					if (lower.includes("pdf-canvas") || lower.includes("jspdf") || lower.includes("chart")) return false;
 					if (lower.includes("dicom") || lower.includes("analytics")) return false;
 					if (lower.includes("d3") || lower.includes("panoramic") || lower.includes("cbct") || lower.includes("zip") || lower.includes("fflate")) return false;
+					if (lower.includes("radiology") || lower.includes("perio") || lower.includes("endo") || lower.includes("egisz") || lower.includes("marketing")) return false;
+					if (lower.includes("telephony") || lower.includes("dental-lab") || lower.includes("inventory") || lower.includes("onboarding") || lower.includes("sanpin")) return false;
 					return true;
 				});
 			},

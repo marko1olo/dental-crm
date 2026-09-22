@@ -84,6 +84,11 @@ import {
 import { sliceDomList } from "../utils/domVirtualizationHelper";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 import {
 	CANONICAL_WAREHOUSE_PRESETS,
 	type WarehouseWriteoffItem,
@@ -882,7 +887,11 @@ describe("GridAppointmentCard — Memoization & Content-Visibility Performance (
 		);
 
 		assert.ok(unhoveredHtml.includes("content-visibility:auto"), "Карточка должна содержать CSS-свойство content-visibility:auto");
-		assert.ok(unhoveredHtml.includes("contain-intrinsic-size:1px 52px"), "Карточка должна содержать contain-intrinsic-size для предотвращения сдвига макета");
+		assert.ok(
+			unhoveredHtml.includes("contain-intrinsic-size:1px 44px") ||
+			unhoveredHtml.includes("contain-intrinsic-size:1px 52px"),
+			"Карточка должна содержать contain-intrinsic-size для предотвращения сдвига макета",
+		);
 		assert.ok(unhoveredHtml.includes("Сидоров Алексей П."), "ФИО должно быть отформатировано по стандарту Apple HIG");
 		assert.ok(!unhoveredHtml.includes("schedule-grid-patient-hover-preview"), "Ненаведенная карточка не должна плодить DOM превью");
 

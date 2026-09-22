@@ -1401,4 +1401,23 @@ export {
 	enqueueOfflineMutationsBatch,
 } from "../services/offline";
 
+export {
+	detectAppRuntimeKind,
+	getRuntimeRoutingConfig,
+	routeDatabasePath,
+	routeVisiographAcquisition,
+	routeFiscalReceiptPrint,
+	routeBarcodeScan,
+	setMockAppRuntimeKind,
+	isDesktopRuntime,
+	isAndroidRuntime,
+	isPwaRuntime,
+	isWebRuntime,
+	type AppRuntimeKind,
+	type RuntimeRoutingConfig,
+	type RuntimeDatabaseRouting,
+	type RuntimeCacheRouting,
+	type RuntimeHardwareRouting,
+} from "../native/runtimeRouter.js";
+
 

@@ -129,7 +129,13 @@ export function convert16BitToRgbaImageData(
 		return new ImageData(rgbaBytes, width, height);
 	}
 
-	throw new Error("convert16BitToRgbaImageData requires a browser DOM environment with ImageData constructor");
+	// Fallback for Node.js / SSR / Web Worker environments where global ImageData constructor is absent
+	return {
+		data: rgbaBytes,
+		width,
+		height,
+		colorSpace: "srgb",
+	} as unknown as ImageData;
 }
 
 /**
