@@ -6,19 +6,40 @@ import {
 	Activity,
 	AlertTriangle,
 	Camera,
+	Check,
+	ChevronRight,
+	Crosshair,
 	Download,
 	FileText,
 	Loader2,
 	MoreHorizontal,
+	Plus,
 	Ruler,
 	Save,
 	ShieldAlert,
 	ShieldCheck,
+	Trash2,
 	X,
 	ZoomIn,
 } from "lucide-react";
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
+import {
+	type ImplantPlatformInfo,
+	type ImplantSystemSpec,
+	CANONICAL_IMPLANT_SYSTEMS,
+	DENTIUM_SYSTEM,
+	MIS_SYSTEM,
+	NOBEL_BIOCARE_SYSTEM,
+	OSSTEM_SYSTEM,
+	STRAUMANN_SYSTEM,
+	formatImplantSpecRu,
+	getAvailableDiameters,
+	getAvailableLengths,
+	getImplantSystem,
+	getPlatformForDiameter,
+} from "./implantCatalog";
 const DicomArchiveUploader = lazy(() =>
 	import("./DicomArchiveUploader").then((m) => ({
 		default: m.DicomArchiveUploader,
@@ -99,6 +120,11 @@ export interface ImplantData {
 		apicalHU?: number;
 	};
 	distanceToNerve?: number | null;
+	systemId?: string | undefined;
+	brandName?: string | undefined;
+	lineName?: string | undefined;
+	platformCode?: string | undefined;
+	platformColor?: string | undefined;
 }
 
 export interface Cornerstone3DViewerProps {
@@ -194,6 +220,11 @@ function storedImplantsOf(implants: readonly ImplantData[]): StoredImplant[] {
 			...(typeof implant.distanceToNerve === "number"
 				? { distanceToNerve: implant.distanceToNerve }
 				: {}),
+			...(implant.systemId ? { systemId: implant.systemId } : {}),
+			...(implant.brandName ? { brandName: implant.brandName } : {}),
+			...(implant.lineName ? { lineName: implant.lineName } : {}),
+			...(implant.platformCode ? { platformCode: implant.platformCode } : {}),
+			...(implant.platformColor ? { platformColor: implant.platformColor } : {}),
 		});
 	}
 	return out;
@@ -224,6 +255,11 @@ function implantDataOf(stored: readonly StoredImplant[]): ImplantData[] {
 				drillingAdvice: densityInfo.drillingRecommendation,
 			},
 			distanceToNerve: implant.distanceToNerve ?? null,
+			systemId: implant.systemId,
+			brandName: implant.brandName,
+			lineName: implant.lineName,
+			platformCode: implant.platformCode,
+			platformColor: implant.platformColor,
 		};
 	});
 }
@@ -243,8 +279,12 @@ export function implantProtocolLog(implant: ImplantData): string {
 			: "Нижнечелюстной нерв не размечен. Контроль дистанции безопасности невозможен.";
 
 	const densityInfo = classifyExtendedBoneDensity(implant.boneDensity.averageHU);
+	const brandTitle = implant.brandName
+		? `${implant.brandName} ${implant.lineName ?? ""}`.trim()
+		: "Дентальный имплантат";
+	const platformText = implant.platformCode ? ` (Платформа ${implant.platformCode})` : "";
 
-	return `В область зуба ${implant.fdiCode} запланирована установка имплантата ${implant.diameter.toFixed(1)}x${implant.length.toFixed(1)} мм. Плотность кости: ${densityInfo.label} (${Math.round(implant.boneDensity.averageHU)} HU). Протокол препарирования: ${densityInfo.drillingRecommendation}. ${nerveStatusText}`;
+	return `В область зуба ${implant.fdiCode} запланирована установка имплантата ${brandTitle} Ø${implant.diameter.toFixed(1)}x${implant.length.toFixed(1)} мм${platformText}. Плотность кости: ${densityInfo.label} (${Math.round(implant.boneDensity.averageHU)} HU). Протокол препарирования: ${densityInfo.drillingRecommendation}. ${nerveStatusText}`;
 }
 
 const VIEWPORT_IDS = {
@@ -291,6 +331,52 @@ export function Cornerstone3DViewer({
 	const [isExportingSnapshot, setIsExportingSnapshot] = useState(false);
 	const [activeCaliper, setActiveCaliper] = useState<AlveolarRidgeCaliperMeasurement | null>(null);
 	const [isNerveTracingActive, setIsNerveTracingActive] = useState(false);
+
+	// Implant System selection state (Dentium, Osstem, Straumann, Nobel Biocare, MIS)
+	const [selectedSystemId, setSelectedSystemId] = useState<string>("osstem-ts3");
+	const [selectedDiameter, setSelectedDiameter] = useState<number>(4.0);
+	const [selectedLength, setSelectedLength] = useState<number>(10.0);
+	const [selectedFdiCode, setSelectedFdiCode] = useState<string>("36");
+	const [showArchiveUploaderModal, setShowArchiveUploaderModal] = useState<boolean>(false);
+
+	const handleSelectSystem = useCallback((systemId: string) => {
+		const sys = getImplantSystem(systemId);
+		setSelectedSystemId(sys.id);
+		const availDiameters = sys.diameters;
+		const nextDiameter = availDiameters.includes(selectedDiameter)
+			? selectedDiameter
+			: (availDiameters[0] ?? 4.0);
+		setSelectedDiameter(nextDiameter);
+
+		const availLengths = getAvailableLengths(sys.id, nextDiameter);
+		const nextLength = availLengths.includes(selectedLength)
+			? selectedLength
+			: (availLengths[0] ?? 10.0);
+		setSelectedLength(nextLength);
+	}, [selectedDiameter, selectedLength]);
+
+	const handleSelectDiameter = useCallback((diameter: number) => {
+		setSelectedDiameter(diameter);
+		const availLengths = getAvailableLengths(selectedSystemId, diameter);
+		if (!availLengths.includes(selectedLength)) {
+			setSelectedLength(availLengths[0] ?? 10.0);
+		}
+	}, [selectedSystemId, selectedLength]);
+
+	const activeSystemSpec = useMemo(
+		() => getImplantSystem(selectedSystemId),
+		[selectedSystemId],
+	);
+
+	const activePlatform = useMemo(
+		() => getPlatformForDiameter(selectedSystemId, selectedDiameter),
+		[selectedSystemId, selectedDiameter],
+	);
+
+	const availableLengthsForDiameter = useMemo(
+		() => getAvailableLengths(selectedSystemId, selectedDiameter),
+		[selectedSystemId, selectedDiameter],
+	);
 
 	// Zero-Mock Fallback: Local DICOM Ingestion when imageIds is initially empty
 	const [localImageIds, setLocalImageIds] = useState<string[]>([]);
@@ -1132,6 +1218,37 @@ export function Cornerstone3DViewer({
 		}
 	};
 
+	const removeImplant = useCallback((id: string) => {
+		const nextImplants = implantsRef.current.filter((imp) => imp.id !== id);
+		setImplants(nextImplants);
+		implantsRef.current = nextImplants;
+		if (nextImplants.length > 0) {
+			setAiProtocolLog(implantProtocolLog(nextImplants[nextImplants.length - 1]!));
+		} else {
+			setAiProtocolLog("");
+		}
+		void saveMarkupNow();
+		showToast("Имплантат удален из плана", "info");
+	}, [saveMarkupNow]);
+
+	const focusOnImplant = useCallback((implant: ImplantData) => {
+		const renderingEngine = cornerstone.getRenderingEngine("my-engine");
+		if (!renderingEngine) return;
+		for (const vpId of [VIEWPORT_IDS.axial, VIEWPORT_IDS.sagittal, VIEWPORT_IDS.coronal]) {
+			const vp = renderingEngine.getViewport(vpId);
+			if (vp) {
+				const camera = vp.getCamera();
+				if (camera && camera.focalPoint) {
+					vp.setCamera({
+						focalPoint: [implant.startWorld[0], implant.startWorld[1], implant.startWorld[2]],
+					});
+					vp.render();
+				}
+			}
+		}
+		showToast(`Фокус срезов наведен на имплантат зуба №${implant.fdiCode}`, "info");
+	}, []);
+
 	const placeImplantModel = () => {
 		const activeVolumeId = volumeId ?? "my-volume";
 		let volume = activeVolumeId ? cornerstone.cache.getVolume(activeVolumeId) : undefined;
@@ -1190,7 +1307,10 @@ export function Cornerstone3DViewer({
 		const startY = focal[1];
 		const startZ = focal[2];
 		const implantStart = vec3.fromValues(startX, startY, startZ);
-		const implantEnd = vec3.fromValues(startX, startY, startZ - 10.0); // 10 мм длина
+		const implantEnd = vec3.fromValues(startX, startY, startZ - selectedLength);
+
+		const sysSpec = getImplantSystem(selectedSystemId);
+		const platform = getPlatformForDiameter(sysSpec.id, selectedDiameter);
 
 		let distToNerve: number | null = null;
 		const nervePoints = restoredMarkupRef.current?.nervePoints;
@@ -1212,13 +1332,13 @@ export function Cornerstone3DViewer({
 			vec3.fromValues(volume.spacing[0], volume.spacing[1], volume.spacing[2]),
 			implantStart,
 			implantEnd,
-			4.0,
+			selectedDiameter,
 		);
 		const avgHUVal = computed.averageHU;
 
 		const densityClassification = classifyExtendedBoneDensity(avgHUVal);
 
-		let fdiCode = "36";
+		let fdiCode = selectedFdiCode || "36";
 		const jawSpline = restoredMarkupRef.current?.splinePoints;
 		if (jawSpline && jawSpline.length >= 2) {
 			const computedFdi = mapCtCoordinatesToFdiNumber(
@@ -1227,6 +1347,7 @@ export function Cornerstone3DViewer({
 			);
 			if (computedFdi) {
 				fdiCode = String(computedFdi);
+				setSelectedFdiCode(fdiCode);
 			}
 		}
 
@@ -1238,8 +1359,8 @@ export function Cornerstone3DViewer({
 		const newImplant: ImplantData = {
 			id: implantId,
 			fdiCode,
-			diameter: 4.0,
-			length: 10.0,
+			diameter: selectedDiameter,
+			length: selectedLength,
 			startWorld: implantStart,
 			endWorld: implantEnd,
 			boneDensity: {
@@ -1248,6 +1369,11 @@ export function Cornerstone3DViewer({
 				drillingAdvice: densityClassification.drillingRecommendation,
 			},
 			distanceToNerve: distToNerve,
+			systemId: sysSpec.id,
+			brandName: sysSpec.brand,
+			lineName: sysSpec.line,
+			platformCode: platform.code,
+			platformColor: platform.hexColor,
 		};
 
 		const nextImplants = [...implants, newImplant];
@@ -1257,6 +1383,20 @@ export function Cornerstone3DViewer({
 
 		setAiProtocolLog(implantProtocolLog(newImplant));
 		void saveMarkupNow();
+
+		if (distToNerve !== null && distToNerve < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM) {
+			SoundFeedbackService.getInstance().playWarningAlert();
+			showToast(
+				`[ОПАСНОСТЬ] Имплантат зуба №${fdiCode} установлен в опасной близости от нерва (${distToNerve.toFixed(1)} мм < 2.0 мм)!`,
+				"error",
+			);
+		} else {
+			SoundFeedbackService.getInstance().playActionSuccess();
+			showToast(
+				`Имплантат ${sysSpec.brand} Ø${selectedDiameter}x${selectedLength}мм размещен в области зуба №${fdiCode}`,
+				"success",
+			);
+		}
 	};
 
 	/**
@@ -1380,6 +1520,12 @@ export function Cornerstone3DViewer({
 				: null;
 
 	const latestImplant = implants[implants.length - 1];
+	const collisionImplants = implants.filter(
+		(imp) =>
+			typeof imp.distanceToNerve === "number" &&
+			imp.distanceToNerve < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM,
+	);
+	const hasAnyNerveCollision = collisionImplants.length > 0;
 	const isNerveCollisionDanger =
 		latestImplant?.distanceToNerve != null &&
 		latestImplant.distanceToNerve < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM;
@@ -2114,6 +2260,33 @@ export function Cornerstone3DViewer({
 										border: "none",
 										textAlign: "left",
 										backgroundColor: "transparent",
+										color: "var(--brand-primary, #60a5fa)",
+										display: "flex",
+										alignItems: "center",
+										gap: "6px",
+									}}
+									onClick={() => {
+										setIsSecondaryMenuOpen(false);
+										setShowArchiveUploaderModal(true);
+									}}
+									title="Загрузить новый DICOM-архив (.zip) или папку со срезами томографа"
+								>
+									<Plus className="w-3.5 h-3.5" />
+									<span>Загрузить КЛКТ архив</span>
+								</button>
+
+								<button
+									type="button"
+									style={{
+										height: "30px",
+										padding: "0 10px",
+										borderRadius: "6px",
+										fontSize: "12px",
+										fontWeight: 500,
+										cursor: "pointer",
+										border: "none",
+										textAlign: "left",
+										backgroundColor: "transparent",
 										color: "var(--ink, #d4d4d8)",
 										display: "flex",
 										alignItems: "center",
@@ -2680,142 +2853,759 @@ export function Cornerstone3DViewer({
 
 				{/* 4TH QUADRANT: SURGICAL PLANNING PROTOCOL & NERVE COLLISION ALERT */}
 				<div
+					data-testid="surgical-planning-quadrant"
 					style={{
 						position: "relative",
 						backgroundColor: "var(--paper-strong, #171717)",
 						display: "flex",
 						flexDirection: "column",
-						alignItems: "center",
-						justifyContent: "center",
-						padding: "16px",
+						alignItems: "stretch",
+						justifyContent: "flex-start",
+						padding: "12px 14px",
 						overflowY: "auto",
+						gap: "10px",
 					}}
 				>
+					{/* QUADRANT HEADER */}
 					<div
 						style={{
-							color: "var(--muted, #a3a3a3)",
-							fontSize: "13px",
-							fontWeight: 600,
-							marginBottom: "10px",
-							letterSpacing: "0.02em",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "space-between",
+							gap: "8px",
+							borderBottom: "1px solid var(--line-strong, rgba(255,255,255,0.12))",
+							paddingBottom: "8px",
+							flexShrink: 0,
 						}}
 					>
-						Протокол хирургического планирования (Форма 043/у)
+						<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+							<Activity className="w-4 h-4 text-cyan-400 shrink-0" />
+							<span
+								style={{
+									color: "var(--ink, #fff)",
+									fontSize: "12px",
+									fontWeight: 700,
+									letterSpacing: "0.02em",
+								}}
+							>
+								Хирургический протокол (Форма 043/у)
+							</span>
+						</div>
+
+						{hasAnyNerveCollision ? (
+							<span
+								style={{
+									backgroundColor: "rgba(239,68,68,0.2)",
+									border: "1px solid #ef4444",
+									color: "var(--rose-300, #fca5a5)",
+									padding: "2px 8px",
+									borderRadius: "6px",
+									fontSize: "11px",
+									fontWeight: "bold",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "4px",
+								}}
+							>
+								<ShieldAlert className="w-3.5 h-3.5 text-red-400 animate-pulse" />
+								Коллизия &lt; 2.0 мм
+							</span>
+						) : (restoredMarkup?.nervePoints?.length ?? 0) >= 2 ? (
+							<span
+								style={{
+									backgroundColor: "rgba(16,185,129,0.2)",
+									border: "1px solid #10b981",
+									color: "var(--emerald-300, #6ee7b7)",
+									padding: "2px 8px",
+									borderRadius: "6px",
+									fontSize: "11px",
+									fontWeight: "bold",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "4px",
+								}}
+							>
+								<ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+								Коридор ≥ 2.0 мм
+							</span>
+						) : (
+							<span
+								style={{
+									backgroundColor: "rgba(245,158,11,0.15)",
+									border: "1px solid rgba(245,158,11,0.4)",
+									color: "var(--amber-300, #fcd34d)",
+									padding: "2px 8px",
+									borderRadius: "6px",
+									fontSize: "11px",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "4px",
+								}}
+							>
+								Нерв не размечен
+							</span>
+						)}
 					</div>
 
-					{(!aiProtocolLog || implants.length === 0) && (
+					{/* SECTION 1: IMPLANT SYSTEM & SIZING SELECTOR */}
+					<div
+						style={{
+							backgroundColor: "rgba(255,255,255,0.03)",
+							border: "1px solid var(--line-strong, rgba(255,255,255,0.1))",
+							borderRadius: "10px",
+							padding: "10px",
+							display: "flex",
+							flexDirection: "column",
+							gap: "8px",
+							flexShrink: 0,
+						}}
+					>
 						<div
 							style={{
-								padding: "16px",
-								textAlign: "center",
-								color: "var(--muted, #71717a)",
-								fontSize: "12px",
-								maxWidth: "320px",
-								lineHeight: 1.5,
-								backgroundColor: "rgba(255,255,255,0.03)",
-								borderRadius: "12px",
-								border: "1px dashed rgba(255,255,255,0.12)",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "space-between",
 							}}
 						>
-							<FileText className="w-6 h-6 mx-auto mb-2 text-neutral-500" />
-							Для формирования хирургического протокола установите контрольные точки нижнечелюстного канала («Нерв») или добавьте виртуальный имплантат («+ Имплантат»).
-						</div>
-					)}
+							<span
+								style={{
+									fontSize: "11px",
+									fontWeight: 600,
+									color: "var(--muted, #a1a1aa)",
+									textTransform: "uppercase",
+									letterSpacing: "0.05em",
+								}}
+							>
+								Каталог имплантатов
+							</span>
 
-					{aiProtocolLog && implants.length > 0 && (
+							{/* Platform Badge with canonical color dot */}
+							<div
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "5px",
+									backgroundColor: "rgba(0,0,0,0.4)",
+									padding: "2px 8px",
+									borderRadius: "6px",
+									fontSize: "11px",
+									border: "1px solid rgba(255,255,255,0.08)",
+								}}
+							>
+								<span
+									style={{
+										width: "8px",
+										height: "8px",
+										borderRadius: "50%",
+										backgroundColor: activePlatform.hexColor,
+										boxShadow: `0 0 6px ${activePlatform.hexColor}`,
+									}}
+								/>
+								<span style={{ fontWeight: 600, color: "var(--ink, #fff)" }}>
+									{activePlatform.code}
+								</span>
+								<span style={{ color: "var(--muted, #a1a1aa)", fontSize: "10px" }}>
+									({activePlatform.labelRu})
+								</span>
+							</div>
+						</div>
+
+						{/* System Selector Tabs */}
 						<div
 							style={{
-								width: "100%",
-								maxWidth: "420px",
-								padding: "14px",
-								borderRadius: "14px",
-								border: "1.5px solid",
-								backgroundColor: isNerveCollisionDanger
-									? "rgba(239,68,68,0.18)"
-									: "rgba(34,197,94,0.12)",
-								borderColor: isNerveCollisionDanger
-									? "rgba(239,68,68,0.7)"
-									: "rgba(34,197,94,0.5)",
-								color: isNerveCollisionDanger ? "#fecaca" : "#dcfce7",
+								display: "flex",
+								alignItems: "center",
+								gap: "4px",
+								overflowX: "auto",
+								paddingBottom: "2px",
+							}}
+						>
+							{CANONICAL_IMPLANT_SYSTEMS.slice(0, 5).map((sys) => (
+								<button
+									key={sys.id}
+									type="button"
+									onClick={() => handleSelectSystem(sys.id)}
+									style={{
+										height: "26px",
+										padding: "0 8px",
+										borderRadius: "5px",
+										fontSize: "11px",
+										fontWeight: selectedSystemId === sys.id ? 700 : 500,
+										cursor: "pointer",
+										border:
+											selectedSystemId === sys.id
+												? "1px solid var(--brand-primary, #2563eb)"
+												: "1px solid rgba(255,255,255,0.1)",
+										backgroundColor:
+											selectedSystemId === sys.id
+												? "var(--brand-primary, #2563eb)"
+												: "transparent",
+										color: selectedSystemId === sys.id ? "#fff" : "var(--muted, #a1a1aa)",
+										transition: "all 0.15s",
+										whiteSpace: "nowrap",
+										flexShrink: 0,
+									}}
+								>
+									{sys.brand}
+								</button>
+							))}
+						</div>
+
+						{/* Sub-line Info */}
+						<div
+							style={{
+								fontSize: "11px",
+								color: "var(--ink-muted, #d4d4d8)",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "space-between",
+							}}
+						>
+							<span>
+								<strong style={{ color: "var(--ink, #fff)" }}>{activeSystemSpec.brand}</strong>{" "}
+								{activeSystemSpec.line} ({activeSystemSpec.country})
+							</span>
+							<span style={{ fontSize: "10px", color: "var(--muted, #71717a)" }}>
+								Втулка: Ø{activeSystemSpec.sleeveDiameterMm}мм
+							</span>
+						</div>
+
+						{/* Diameters & Lengths Row */}
+						<div
+							style={{
+								display: "grid",
+								gridTemplateColumns: "1fr 1fr",
+								gap: "8px",
+							}}
+						>
+							{/* Diameters */}
+							<div>
+								<div
+									style={{
+										fontSize: "10px",
+										color: "var(--muted, #a1a1aa)",
+										marginBottom: "4px",
+										fontWeight: 600,
+									}}
+								>
+									ДИАМЕТР (Ø ММ)
+								</div>
+								<div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+									{activeSystemSpec.diameters.map((d) => (
+										<button
+											key={d}
+											type="button"
+											onClick={() => handleSelectDiameter(d)}
+											style={{
+												height: "24px",
+												padding: "0 6px",
+												borderRadius: "4px",
+												fontSize: "11px",
+												fontWeight: Math.abs(selectedDiameter - d) < 0.05 ? 700 : 500,
+												cursor: "pointer",
+												border:
+													Math.abs(selectedDiameter - d) < 0.05
+														? "1px solid var(--brand-primary, #2563eb)"
+														: "1px solid rgba(255,255,255,0.12)",
+												backgroundColor:
+													Math.abs(selectedDiameter - d) < 0.05
+														? "rgba(37,99,235,0.3)"
+														: "transparent",
+												color:
+													Math.abs(selectedDiameter - d) < 0.05
+														? "var(--brand-primary, #60a5fa)"
+														: "var(--ink, #d4d4d8)",
+											}}
+										>
+											{d.toFixed(1)}
+										</button>
+									))}
+								</div>
+							</div>
+
+							{/* Lengths */}
+							<div>
+								<div
+									style={{
+										fontSize: "10px",
+										color: "var(--muted, #a1a1aa)",
+										marginBottom: "4px",
+										fontWeight: 600,
+									}}
+								>
+									ДЛИНА (L ММ)
+								</div>
+								<div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+									{availableLengthsForDiameter.map((l) => (
+										<button
+											key={l}
+											type="button"
+											onClick={() => setSelectedLength(l)}
+											style={{
+												height: "24px",
+												padding: "0 6px",
+												borderRadius: "4px",
+												fontSize: "11px",
+												fontWeight: Math.abs(selectedLength - l) < 0.05 ? 700 : 500,
+												cursor: "pointer",
+												border:
+													Math.abs(selectedLength - l) < 0.05
+														? "1px solid var(--emerald-500, #10b981)"
+														: "1px solid rgba(255,255,255,0.12)",
+												backgroundColor:
+													Math.abs(selectedLength - l) < 0.05
+														? "rgba(16,185,129,0.25)"
+														: "transparent",
+												color:
+													Math.abs(selectedLength - l) < 0.05
+														? "var(--emerald-300, #6ee7b7)"
+														: "var(--ink, #d4d4d8)",
+											}}
+										>
+											{l.toFixed(1)}
+										</button>
+									))}
+								</div>
+							</div>
+						</div>
+
+						{/* Tooth FDI and Placement Button */}
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "space-between",
+								gap: "8px",
+								paddingTop: "4px",
+								borderTop: "1px solid rgba(255,255,255,0.06)",
+							}}
+						>
+							<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+								<span style={{ fontSize: "11px", color: "var(--muted, #a1a1aa)" }}>Зуб:</span>
+								<input
+									type="text"
+									value={selectedFdiCode}
+									onChange={(e) => setSelectedFdiCode(e.target.value.trim())}
+									style={{
+										width: "42px",
+										height: "26px",
+										textAlign: "center",
+										backgroundColor: "rgba(0,0,0,0.5)",
+										border: "1px solid rgba(255,255,255,0.2)",
+										borderRadius: "4px",
+										color: "#fff",
+										fontSize: "12px",
+										fontWeight: 600,
+									}}
+									title="FDI номер зуба (11–48)"
+								/>
+								<div style={{ display: "flex", gap: "2px" }}>
+									{["36", "46", "16", "26"].map((t) => (
+										<button
+											key={t}
+											type="button"
+											onClick={() => setSelectedFdiCode(t)}
+											style={{
+												height: "22px",
+												padding: "0 4px",
+												fontSize: "10px",
+												borderRadius: "3px",
+												border: "none",
+												backgroundColor: selectedFdiCode === t ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.05)",
+												color: "var(--muted, #a1a1aa)",
+												cursor: "pointer",
+											}}
+										>
+											#{t}
+										</button>
+									))}
+								</div>
+							</div>
+
+							<button
+								type="button"
+								onClick={placeImplantModel}
+								style={{
+									height: "28px",
+									padding: "0 10px",
+									borderRadius: "6px",
+									backgroundColor: "var(--brand-primary, #2563eb)",
+									color: "var(--ink, #fff)",
+									fontSize: "12px",
+									fontWeight: 600,
+									cursor: "pointer",
+									border: "none",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "5px",
+									whiteSpace: "nowrap",
+									transition: "all 0.15s",
+								}}
+								title="Разместить имплантат выбранного размера в фокусе среза"
+							>
+								<Plus className="w-3.5 h-3.5" />
+								<span>+ В срез</span>
+							</button>
+						</div>
+					</div>
+
+					{/* SECTION 2: PLACED IMPLANTS LIST */}
+					<div
+						style={{
+							display: "flex",
+							flexDirection: "column",
+							gap: "6px",
+							flexShrink: 0,
+						}}
+					>
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "space-between",
+								fontSize: "11px",
+								fontWeight: 600,
+								color: "var(--muted, #a1a1aa)",
+								textTransform: "uppercase",
+								letterSpacing: "0.05em",
+							}}
+						>
+							<span>Установленные имплантаты ({implants.length})</span>
+						</div>
+
+						{implants.length === 0 && (
+							<div
+								style={{
+									padding: "14px",
+									textAlign: "center",
+									color: "var(--muted, #71717a)",
+									fontSize: "12px",
+									lineHeight: 1.4,
+									backgroundColor: "rgba(255,255,255,0.02)",
+									borderRadius: "8px",
+									border: "1px dashed rgba(255,255,255,0.1)",
+								}}
+							>
+								<FileText className="w-5 h-5 mx-auto mb-1.5 text-neutral-500" />
+								Исследование без виртуальных имплантатов. Нажмите «+ В срез» для размещения модели по координатам фокуса.
+							</div>
+						)}
+
+						{implants.map((imp) => {
+							const isImpDanger =
+								imp.distanceToNerve != null &&
+								imp.distanceToNerve < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM;
+
+							return (
+								<div
+									key={imp.id}
+									style={{
+										padding: "8px 10px",
+										borderRadius: "8px",
+										backgroundColor: isImpDanger
+											? "rgba(239,68,68,0.12)"
+											: "rgba(255,255,255,0.04)",
+										border: `1px solid ${isImpDanger ? "rgba(239,68,68,0.5)" : "rgba(255,255,255,0.1)"}`,
+										display: "flex",
+										flexDirection: "column",
+										gap: "6px",
+									}}
+								>
+									{/* Top Info Line */}
+									<div
+										style={{
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "space-between",
+											gap: "6px",
+										}}
+									>
+										<div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+											<span
+												style={{
+													backgroundColor: "rgba(255,255,255,0.12)",
+													color: "#fff",
+													padding: "1px 6px",
+													borderRadius: "4px",
+													fontWeight: "bold",
+													fontSize: "11px",
+												}}
+											>
+												#{imp.fdiCode}
+											</span>
+											<span
+												style={{
+													fontSize: "12px",
+													fontWeight: 600,
+													color: "var(--ink, #fff)",
+													whiteSpace: "nowrap",
+													overflow: "hidden",
+													textOverflow: "ellipsis",
+												}}
+											>
+												{imp.brandName ?? "Имплантат"} {imp.lineName ?? ""}
+											</span>
+											<span
+												style={{
+													display: "inline-flex",
+													alignItems: "center",
+													gap: "3px",
+													fontSize: "10px",
+													color: "var(--muted, #a1a1aa)",
+												}}
+											>
+												<span
+													style={{
+														width: "6px",
+														height: "6px",
+														borderRadius: "50%",
+														backgroundColor: imp.platformColor ?? "#16a34a",
+													}}
+												/>
+												{imp.platformCode ?? `Ø${imp.diameter.toFixed(1)}`}
+											</span>
+										</div>
+
+										<div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+											<button
+												type="button"
+												onClick={() => focusOnImplant(imp)}
+												style={{
+													height: "22px",
+													padding: "0 6px",
+													borderRadius: "4px",
+													border: "none",
+													backgroundColor: "rgba(255,255,255,0.08)",
+													color: "var(--cyan-400, #22d3ee)",
+													fontSize: "10px",
+													fontWeight: 500,
+													cursor: "pointer",
+												}}
+												title="Навести перекрестье срезов на этот имплантат"
+											>
+												Фокус
+											</button>
+											<button
+												type="button"
+												onClick={() => removeImplant(imp.id)}
+												style={{
+													height: "22px",
+													width: "22px",
+													padding: 0,
+													borderRadius: "4px",
+													border: "none",
+													backgroundColor: "rgba(239,68,68,0.15)",
+													color: "var(--rose-300, #fca5a5)",
+													cursor: "pointer",
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+												}}
+												title="Удалить имплантат"
+												aria-label="Удалить имплантат"
+											>
+												<Trash2 className="w-3 h-3" />
+											</button>
+										</div>
+									</div>
+
+									{/* Bottom Telemetry Line */}
+									<div
+										style={{
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "space-between",
+											fontSize: "11px",
+											gap: "6px",
+										}}
+									>
+										<span style={{ color: "var(--ink-muted, #d4d4d8)" }}>
+											Ø{imp.diameter.toFixed(1)} × {imp.length.toFixed(1)} мм |{" "}
+											<span style={{ fontWeight: 600, color: "var(--cyan-400, #22d3ee)" }}>
+												{imp.boneDensity.classification} ({Math.round(imp.boneDensity.averageHU)} HU)
+											</span>
+										</span>
+
+										{/* Clearance Badge */}
+										{imp.distanceToNerve != null ? (
+											<span
+												style={{
+													fontSize: "10px",
+													fontWeight: "bold",
+													padding: "1px 6px",
+													borderRadius: "4px",
+													backgroundColor: isImpDanger
+														? "rgba(239,68,68,0.25)"
+														: "rgba(16,185,129,0.2)",
+													color: isImpDanger ? "#fca5a5" : "#6ee7b7",
+													border: `1px solid ${isImpDanger ? "#ef4444" : "rgba(16,185,129,0.4)"}`,
+													display: "inline-flex",
+													alignItems: "center",
+													gap: "3px",
+												}}
+											>
+												{isImpDanger && <AlertTriangle className="w-3 h-3 animate-pulse text-red-400" />}
+												Нерв: {imp.distanceToNerve.toFixed(1)} мм
+											</span>
+										) : (
+											<span style={{ fontSize: "10px", color: "var(--amber-400, #fbbf24)" }}>
+												Нерв не размечен
+											</span>
+										)}
+									</div>
+								</div>
+							);
+						})}
+					</div>
+
+					{/* SECTION 3: PROTOCOL & DRILLING RECOMMENDATIONS */}
+					{latestImplant && (
+						<div
+							style={{
+								backgroundColor: "rgba(255,255,255,0.03)",
+								border: "1px solid var(--line-strong, rgba(255,255,255,0.1))",
+								borderRadius: "10px",
+								padding: "10px",
+								display: "flex",
+								flexDirection: "column",
+								gap: "6px",
+								flexShrink: 0,
 							}}
 						>
 							<div
 								style={{
-									fontWeight: "bold",
-									marginBottom: "8px",
 									display: "flex",
 									alignItems: "center",
 									justifyContent: "space-between",
 								}}
 							>
-								<div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, flex: 1 }}>
-									<Activity className="w-4 h-4 text-teal-400 shrink-0" />
-									<span className="truncate min-w-0">Протокол имплантации (Зуб №{latestImplant?.fdiCode})</span>
-								</div>
 								<span
 									style={{
-										backgroundColor: isNerveCollisionDanger
-											? "var(--rose-600, #ef4444)"
-											: "var(--emerald-600, #10b981)",
-										color: "var(--ink, #fff)",
-										padding: "2px 8px",
-										borderRadius: "6px",
 										fontSize: "11px",
-										fontWeight: "bold",
+										fontWeight: 600,
+										color: "var(--muted, #a1a1aa)",
+										textTransform: "uppercase",
+										letterSpacing: "0.05em",
 									}}
 								>
-									{latestImplant?.boneDensity.classification}
+									Протокол сверления (Misch {latestImplant.boneDensity.classification})
 								</span>
+
+								<button
+									type="button"
+									onClick={handleExportSnapshotTo043}
+									disabled={isExportingSnapshot}
+									style={{
+										height: "24px",
+										padding: "0 8px",
+										borderRadius: "4px",
+										border: "none",
+										backgroundColor: "var(--emerald-600, #059669)",
+										color: "#fff",
+										fontSize: "11px",
+										fontWeight: 600,
+										cursor: isExportingSnapshot ? "wait" : "pointer",
+										display: "inline-flex",
+										alignItems: "center",
+										gap: "4px",
+									}}
+									title="Прикрепить снимок и протокол к карте пациента 043/у"
+								>
+									{isExportingSnapshot ? (
+										<Loader2 className="w-3 h-3 animate-spin" />
+									) : (
+										<Camera className="w-3 h-3" />
+									)}
+									<span>В карту 043/у</span>
+								</button>
 							</div>
 
-							<p style={{ fontSize: "12px", lineHeight: 1.5, margin: "6px 0" }}>
-								{aiProtocolLog}
-							</p>
+							<div
+								style={{
+									fontSize: "11px",
+									color: "var(--ink-muted, #e4e4e7)",
+									lineHeight: 1.4,
+									backgroundColor: "rgba(0,0,0,0.3)",
+									borderRadius: "6px",
+									padding: "6px 8px",
+									border: "1px solid rgba(255,255,255,0.06)",
+								}}
+							>
+								<strong style={{ color: "var(--cyan-400, #22d3ee)" }}>
+									{latestImplant.boneDensity.classification} ({Math.round(latestImplant.boneDensity.averageHU)} HU):{" "}
+								</strong>
+								{latestImplant.boneDensity.drillingAdvice}
+							</div>
 
-							{latestImplant?.boneDensity.drillingAdvice && (
-								<div
+							{aiProtocolLog && (
+								<p
 									style={{
-										marginTop: "8px",
-										padding: "8px 10px",
-										borderRadius: "8px",
-										backgroundColor: "rgba(0,0,0,0.35)",
-										border: "1px solid rgba(255,255,255,0.1)",
 										fontSize: "11px",
-										color: "var(--ink-muted, #e4e4e7)",
 										lineHeight: 1.4,
+										color: "var(--muted, #a1a1aa)",
+										margin: 0,
 									}}
 								>
-									<span style={{ fontWeight: "bold", color: "var(--brand-primary, #60a5fa)" }}>
-										Рекомендация по сверлению:{" "}
-									</span>
-									{latestImplant.boneDensity.drillingAdvice}
-								</div>
-							)}
-
-							{isNerveCollisionDanger && (
-								<div
-									style={{
-										marginTop: "10px",
-										padding: "8px 10px",
-										borderRadius: "8px",
-										backgroundColor: "rgba(239,68,68,0.3)",
-										border: "1px solid var(--rose-500, #ef4444)",
-										fontSize: "12px",
-										fontWeight: "bold",
-										color: "var(--rose-300, #fca5a5)",
-										display: "flex",
-										alignItems: "center",
-										gap: "6px",
-									}}
-								>
-									<AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
-									<span>КРИТИЧЕСКАЯ БЛИЗОСТЬ К НЕРВУ (&lt; 2.0 мм)!</span>
-								</div>
+									{aiProtocolLog}
+								</p>
 							)}
 						</div>
 					)}
 				</div>
 			</div>
+
+			{/* MODAL: LOCAL ARCHIVE / FOLDER INTAKE (MANUAL TRIGGER FROM MENU) */}
+			{showArchiveUploaderModal && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+					onClick={(e) => {
+						if (e.target === e.currentTarget) setShowArchiveUploaderModal(false);
+					}}
+				>
+					<div
+						style={{
+							backgroundColor: "var(--paper-strong, #18181b)",
+							border: "1px solid var(--line-strong, rgba(255,255,255,0.2))",
+							borderRadius: "16px",
+							padding: "24px",
+							maxWidth: "560px",
+							width: "100%",
+							position: "relative",
+						}}
+					>
+						<button
+							type="button"
+							style={{
+								position: "absolute",
+								top: "16px",
+								right: "16px",
+								backgroundColor: "transparent",
+								border: "none",
+								color: "var(--muted, #a1a1aa)",
+								cursor: "pointer",
+							}}
+							onClick={() => setShowArchiveUploaderModal(false)}
+							aria-label="Закрыть"
+						>
+							<X className="w-5 h-5" />
+						</button>
+						<h3 style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "8px" }}>
+							Загрузка КТ/КЛКТ исследования
+						</h3>
+						<p style={{ fontSize: "12px", color: "var(--muted, #a1a1aa)", marginBottom: "16px" }}>
+							Выберите папку со срезами томографии или ZIP-архив DICOM (.zip) для построения воксельного объема.
+						</p>
+						<Suspense fallback={null}>
+							<DicomArchiveUploader
+								onImagesLoaded={(ids) => {
+									setLocalImageIds(ids);
+									setShowArchiveUploaderModal(false);
+								}}
+							/>
+						</Suspense>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

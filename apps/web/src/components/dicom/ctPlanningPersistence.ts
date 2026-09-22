@@ -88,6 +88,11 @@ export interface StoredImplant {
 	endWorld: [number, number, number];
 	boneDensity: { averageHU: number; classification: string };
 	distanceToNerve?: number | null;
+	systemId?: string | undefined;
+	brandName?: string | undefined;
+	lineName?: string | undefined;
+	platformCode?: string | undefined;
+	platformColor?: string | undefined;
 }
 
 /**
@@ -289,6 +294,15 @@ function storedImplantOf(value: unknown): StoredImplant | null {
 					: "",
 		},
 		distanceToNerve: finiteNumber(raw.distanceToNerve) ?? null,
+		...(typeof raw.systemId === "string" ? { systemId: raw.systemId } : {}),
+		...(typeof raw.brandName === "string" ? { brandName: raw.brandName } : {}),
+		...(typeof raw.lineName === "string" ? { lineName: raw.lineName } : {}),
+		...(typeof raw.platformCode === "string"
+			? { platformCode: raw.platformCode }
+			: {}),
+		...(typeof raw.platformColor === "string"
+			? { platformColor: raw.platformColor }
+			: {}),
 	};
 }
 

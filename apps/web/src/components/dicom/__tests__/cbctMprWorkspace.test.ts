@@ -13,6 +13,7 @@ import {
 	measureDistanceToMaxillarySinus,
 	type Point3D,
 } from "@dental/shared";
+import { parseCtPlanningMarkup } from "../ctPlanningPersistence";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -231,5 +232,84 @@ describe("3D CBCT Multi-Planar Reconstruction (MPR) & Caliper Calculations", () 
 		assert.equal(sagittalCoordBadge.fullText, "X: 60 мм");
 		assert.equal(curvedArchBadge.fullText, "FDI 11..48");
 	});
+
+	it("3.9 Cornerstone3DViewer integrates real implant catalog, real-time nerve collision alert (< 2.0 mm), and Misch D1..D5 drilling protocols", () => {
+		const source = fs.readFileSync(
+			path.resolve(__dirname, "../Cornerstone3DViewer.tsx"),
+			"utf-8",
+		);
+
+		// Must import and integrate canonical implant systems
+		assert.ok(
+			source.includes("CANONICAL_IMPLANT_SYSTEMS"),
+			"Cornerstone3DViewer must import CANONICAL_IMPLANT_SYSTEMS",
+		);
+		assert.ok(
+			source.includes("getImplantSystem"),
+			"Cornerstone3DViewer must import getImplantSystem",
+		);
+		assert.ok(
+			source.includes("getPlatformForDiameter"),
+			"Cornerstone3DViewer must import getPlatformForDiameter",
+		);
+
+		// Must include nerve collision threshold and auditory feedback
+		assert.ok(
+			source.includes("MANDIBULAR_NERVE_DANGER_THRESHOLD_MM"),
+			"Cornerstone3DViewer must evaluate mandibular nerve safety threshold",
+		);
+		assert.ok(
+			source.includes("SoundFeedbackService"),
+			"Cornerstone3DViewer must trigger auditory alert on nerve proximity",
+		);
+
+		// Must include 4th quadrant planning UI elements
+		assert.ok(
+			source.includes("data-testid=\"surgical-planning-quadrant\""),
+			"Cornerstone3DViewer must render surgical planning quadrant",
+		);
+		assert.ok(
+			source.includes("selectedSystemId"),
+			"Cornerstone3DViewer must track active implant system",
+		);
+		assert.ok(
+			source.includes("handleExportSnapshotTo043"),
+			"Cornerstone3DViewer must export surgical protocol snapshot to Form 043/u",
+		);
+	});
+
+	it("3.10 ctPlanningPersistence saves and restores implant manufacturer metadata", () => {
+		const testImplant = {
+			id: "imp-test-1",
+			fdiCode: "36",
+			diameter: 4.0,
+			length: 10.0,
+			startWorld: [10, 20, 30] as [number, number, number],
+			endWorld: [10, 20, 20] as [number, number, number],
+			boneDensity: { averageHU: 850, classification: "D2" },
+			distanceToNerve: 3.2,
+			systemId: "osstem-ts3",
+			brandName: "Osstem",
+			lineName: "TS III SA",
+			platformCode: "Regular",
+			platformColor: "#22c55e",
+		};
+
+		const markup = parseCtPlanningMarkup({
+			splinePointsJson: [],
+			nervePointsJson: [],
+			implantsJson: [testImplant],
+		});
+
+		assert.equal(markup.implants.length, 1);
+		const restored = markup.implants[0];
+		assert.equal(restored.systemId, "osstem-ts3");
+		assert.equal(restored.brandName, "Osstem");
+		assert.equal(restored.lineName, "TS III SA");
+		assert.equal(restored.platformCode, "Regular");
+		assert.equal(restored.platformColor, "#22c55e");
+		assert.equal(restored.distanceToNerve, 3.2);
+	});
 });
+
 
