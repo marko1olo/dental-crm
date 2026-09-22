@@ -271,12 +271,20 @@ export function isDesktopApp(): boolean {
 	const win = window as unknown as {
 		electron?: unknown;
 		process?: { type?: string; versions?: { electron?: string } };
+		chrome?: { webview?: unknown };
+		__DENTE_DESKTOP__?: boolean;
+		__WEBVIEW2__?: boolean;
 	};
 	if (win.electron !== undefined || win.process?.versions?.electron !== undefined) {
 		return true;
 	}
 
-	// 3. Tauri window object
+	// 3. Microsoft Edge WebView2 embedded desktop runtime (.NET / C++ Windows host)
+	if (win.chrome?.webview !== undefined || win.__WEBVIEW2__ === true || win.__DENTE_DESKTOP__ === true) {
+		return true;
+	}
+
+	// 4. Tauri window object
 	const tauriWin = window as unknown as {
 		__TAURI__?: unknown;
 		__TAURI_INTERNALS__?: unknown;
@@ -285,9 +293,9 @@ export function isDesktopApp(): boolean {
 		return true;
 	}
 
-	// 4. User Agent heuristics
+	// 5. User Agent heuristics
 	if (typeof navigator !== "undefined" && navigator.userAgent) {
-		if (/Electron|Tauri|DenteDesktop/i.test(navigator.userAgent)) {
+		if (/Electron|Tauri|DenteDesktop|WebView2|DenteWin/i.test(navigator.userAgent)) {
 			return true;
 		}
 	}

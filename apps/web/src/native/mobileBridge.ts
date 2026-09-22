@@ -225,14 +225,20 @@ export function isDesktopApp(): boolean {
 		denteDesktopNative?: { isDesktop?: boolean };
 		electron?: unknown;
 		process?: { type?: string; versions?: { electron?: string } };
+		chrome?: { webview?: unknown };
 		__TAURI__?: unknown;
 		__TAURI_INTERNALS__?: unknown;
+		__DENTE_DESKTOP__?: boolean;
+		__WEBVIEW2__?: boolean;
 	};
 	if (Boolean(win.denteDesktopNative?.isDesktop)) return true;
 	if (win.electron !== undefined || win.process?.versions?.electron !== undefined) return true;
+	if (win.chrome?.webview !== undefined || win.__WEBVIEW2__ === true || win.__DENTE_DESKTOP__ === true) {
+		return true;
+	}
 	if (win.__TAURI__ !== undefined || win.__TAURI_INTERNALS__ !== undefined) return true;
 	if (typeof navigator !== "undefined" && navigator.userAgent) {
-		if (/Electron|Tauri|DenteDesktop/i.test(navigator.userAgent)) return true;
+		if (/Electron|Tauri|DenteDesktop|WebView2|DenteWin/i.test(navigator.userAgent)) return true;
 	}
 	return false;
 }
@@ -1182,7 +1188,37 @@ export function isMobileSmartphone(): boolean {
  * Returns safe-area insets in pixels from CSS environment variables or defaults
  */
 export function getSafeAreaInsets(): { top: number; bottom: number; left: number; right: number } {
-	if (typeof window === "undefined" || typeof document === "undefined") {
+	if (typeof window === "undefined") {
+		return { top: 0, bottom: 0, left: 0, right: 0 };
+	}
+
+	const win = window as unknown as {
+		denteMobileNative?: {
+			isMobileApp?: boolean;
+			getSafeAreaInsets?: () => { top: number; bottom: number; left: number; right: number };
+		};
+		denteSafeArea?: { top: number; bottom: number; left: number; right: number };
+	};
+
+	if (win.denteSafeArea && typeof win.denteSafeArea.top === "number") {
+		return {
+			top: win.denteSafeArea.top,
+			bottom: win.denteSafeArea.bottom || 0,
+			left: win.denteSafeArea.left || 0,
+			right: win.denteSafeArea.right || 0,
+		};
+	}
+
+	if (typeof win.denteMobileNative?.getSafeAreaInsets === "function") {
+		try {
+			const res = win.denteMobileNative.getSafeAreaInsets();
+			if (res && typeof res.top === "number") return res;
+		} catch {
+			// fallback
+		}
+	}
+
+	if (typeof document === "undefined") {
 		return { top: 0, bottom: 0, left: 0, right: 0 };
 	}
 

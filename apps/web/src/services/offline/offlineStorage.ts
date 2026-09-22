@@ -628,6 +628,122 @@ export async function enqueueOfflineMutation<T = unknown>(
 }
 
 /**
+ * Пакетное добавление мутаций в очередь единой транзакцией (Coalesced Batch I/O).
+ *
+ * ОПТИМИЗАЦИЯ ДЛЯ МЕДЛЕННЫХ HDD 5400 RPM И СЛАБЫХ НОУТБУКОВ (Мандаты 8c, 8e, 8n):
+ * Вместо создания N отдельных транзакций в IndexedDB (что вызывает N синхронных сбросов на диск
+ * и вешает шпиндель HDD на 300–500 мс при массовом обновлении зубной формулы или пакета услуг),
+ * все элементы регистрируются в L1 RAM (0 мс) и записываются в хранилище за 1 единую транзакцию.
+ */
+export async function enqueueOfflineMutationsBatch<T = unknown>(
+	inputs: EnqueueMutationInput<T>[],
+): Promise<OfflineMutation<T>[]> {
+	if (!inputs || inputs.length === 0) {
+		return [];
+	}
+
+	if (inputs.length === 1) {
+		const single = await enqueueOfflineMutation(inputs[0]!);
+		return [single];
+	}
+
+	const createdMutations: OfflineMutation<T>[] = [];
+	const mutationsToWrite: OfflineMutation<T>[] = [];
+
+	// 1. Быстрая L1 RAM регистрация всех мутаций (0 мс, гарантия нулевой потери данных)
+	for (const input of inputs) {
+		const timestamp = input.timestamp || getAdjustedNowIso();
+		const timestampMs = new Date(timestamp).getTime() || getAdjustedNowMs();
+		const mutationId = input.mutationId || generateMutationUuid();
+		const payloadHash = computePayloadHash(input.payload);
+		const idempotencyKey =
+			input.idempotencyKey ||
+			createCompositeIdempotencyKey(mutationId, input.payload);
+
+		const mutation: OfflineMutation<T> = {
+			mutationId,
+			idempotencyKey,
+			payloadHash,
+			entityType: input.entityType,
+			entityId: input.entityId,
+			action: input.action || "update",
+			payload: input.payload,
+			timestamp,
+			timestampMs,
+			organizationId: input.organizationId,
+			mutationVector: input.mutationVector,
+			authorUserId: input.authorUserId,
+			status: "pending",
+			retryCount: 0,
+		};
+
+		setBoundedInMemoryMap(inMemoryMutationsMap, mutationId, mutation as OfflineMutation<unknown>);
+		createdMutations.push(mutation);
+	}
+
+	// 2. Дедупликация пачки против уже существующих pending мутаций
+	try {
+		const existingPending = await getPendingOfflineMutations();
+		for (const m of createdMutations) {
+			const duplicate = existingPending.find(
+				(ex) =>
+					ex.entityId === m.entityId &&
+					ex.action === m.action &&
+					ex.payloadHash === m.payloadHash &&
+					ex.status === "pending" &&
+					ex.mutationId !== m.mutationId,
+			);
+			if (!duplicate) {
+				mutationsToWrite.push(m);
+			} else {
+				logger.info(
+					`[OfflineStorage] Deduplicated batch item for ${m.entityType}/${m.entityId} (hash: ${m.payloadHash.substring(0, 8)})`,
+				);
+			}
+		}
+	} catch (err: unknown) {
+		logger.warn("[OfflineStorage] Failed to check for duplicate pending batch mutations:", err);
+		mutationsToWrite.push(...createdMutations);
+	}
+
+	if (mutationsToWrite.length === 0) {
+		return createdMutations;
+	}
+
+	// 3. Единая пакетная запись в IndexedDB
+	try {
+		await withIdbTransactionRetry(async (db) => {
+			return new Promise<void>((resolve, reject) => {
+				const tx = db.transaction(MUTATIONS_STORE_NAME, "readwrite");
+				const store = tx.objectStore(MUTATIONS_STORE_NAME);
+				for (const mut of mutationsToWrite) {
+					store.put(mut);
+				}
+				tx.oncomplete = () => resolve();
+				tx.onerror = () =>
+					reject(tx.error ?? new Error("Failed to batch put mutations to IDB"));
+				tx.onabort = () =>
+					reject(tx.error ?? new Error("Transaction aborted while batch putting mutations"));
+			});
+		});
+		return createdMutations;
+	} catch (err) {
+		logger.warn(
+			"[OfflineStorage] IndexedDB batch enqueue failed, using chunked localStorage fallback",
+			err,
+		);
+		const list = getLocalStorageMutations();
+		const newIds = new Set(mutationsToWrite.map((m) => m.mutationId));
+		const withoutCurrent = list.filter((m) => !newIds.has(m.mutationId));
+		for (const mut of mutationsToWrite) {
+			withoutCurrent.push(mut as OfflineMutation<unknown>);
+		}
+		saveLocalStorageMutations(withoutCurrent);
+		return createdMutations;
+	}
+}
+
+/**
  * Восстановление зависших мутаций со статусом "syncing"
  * (если вкладка упала, была закрыта или потеряла питание во время отправки).
  * Сбрасывает статус в "pending", гарантируя 0% потерю мутаций (Мандат 8e / 8n).
@@ -733,7 +849,12 @@ export async function getPendingOfflineMutations(filter?: {
 			err,
 		);
 		const list = getLocalStorageMutations();
-		return list
+		const mapItems = Array.from(inMemoryMutationsMap.values());
+		const combined = list.length > 0
+			? [...list, ...mapItems.filter((mem) => !list.some((l) => l.mutationId === mem.mutationId))]
+			: mapItems;
+
+		return combined
 			.filter((m) => {
 				if (m.status !== "pending" && m.status !== "failed") return false;
 				if (filter?.entityType && m.entityType !== filter.entityType) return false;

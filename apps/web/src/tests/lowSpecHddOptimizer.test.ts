@@ -4,7 +4,18 @@
  */
 
 import assert from "node:assert";
-import { describe, it } from "node:test";
+import { afterEach, describe, it } from "node:test";
+import { isDesktopApp } from "../native/desktopBridge";
+import {
+	isDesktopExecutable,
+	isStandalonePwa,
+	detectOmniEnvironment,
+} from "../lib/omniPlatformAdapter";
+import { getSafeAreaInsets } from "../native/mobileBridge";
+import {
+	enqueueOfflineMutationsBatch,
+	getPendingOfflineMutations,
+} from "../services/offline";
 import {
 	clearCachedAuthTokens,
 	getCachedAuthTokens,
@@ -950,4 +961,131 @@ describe("lowSpecHddOptimizer — Виртуализация реестра до
 		assert.strictEqual(fullSlice.hasMore, false);
 	});
 });
+
+describe("lowSpecHddOptimizer — Платформенные адаптеры (Electron, WebView2, Capacitor, PWA)", () => {
+	const originalWindow = globalThis.window;
+
+	afterEach(() => {
+		if (originalWindow !== undefined) {
+			globalThis.window = originalWindow;
+		} else {
+			delete (globalThis as { window?: unknown }).window;
+		}
+	});
+
+	it("распознает Microsoft Edge WebView2 и __DENTE_DESKTOP__ флаги как Standalone Desktop (.EXE)", () => {
+		globalThis.window = {
+			chrome: { webview: {} },
+		} as unknown as Window & typeof globalThis;
+		assert.strictEqual(isDesktopApp(), true);
+		assert.strictEqual(isDesktopExecutable(), true);
+		assert.strictEqual(detectOmniEnvironment(), "desktop_exe");
+
+		globalThis.window = {
+			__DENTE_DESKTOP__: true,
+		} as unknown as Window & typeof globalThis;
+		assert.strictEqual(isDesktopApp(), true);
+		assert.strictEqual(isDesktopExecutable(), true);
+	});
+
+	it("распознает Capacitor / Android native bridge и считывает безопасные зоны (safe area insets)", () => {
+		globalThis.window = {
+			denteSafeArea: { top: 44, bottom: 34, left: 0, right: 0 },
+			Capacitor: { isNativePlatform: () => true },
+		} as unknown as Window & typeof globalThis;
+
+		const insets = getSafeAreaInsets();
+		assert.strictEqual(insets.top, 44);
+		assert.strictEqual(insets.bottom, 34);
+		assert.strictEqual(insets.left, 0);
+		assert.strictEqual(insets.right, 0);
+	});
+
+	it("распознает PWA режим при автономном отображении (display-mode: standalone)", () => {
+		globalThis.window = {
+			matchMedia: (query: string) => ({
+				matches: query.includes("display-mode: standalone"),
+				media: query,
+				onchange: null,
+				addListener: () => {},
+				removeListener: () => {},
+				addEventListener: () => {},
+				removeEventListener: () => {},
+				dispatchEvent: () => true,
+			}),
+		} as unknown as Window & typeof globalThis;
+
+		assert.strictEqual(isStandalonePwa(), true);
+		assert.strictEqual(detectOmniEnvironment(), "pwa_standalone");
+	});
+});
+
+describe("lowSpecHddOptimizer — Пакетная запись мутаций и экстренный сброс (Mandates 8e, 8n)", () => {
+	it("coalesced batch: enqueueOfflineMutationsBatch регистрирует пачку мутаций единым блоком", async () => {
+		const orgId = "org-lowspec-test-1";
+		const batchInputs = [
+			{
+				entityType: "visit_odontogram_patch" as const,
+				entityId: "tooth-16",
+				action: "update" as const,
+				payload: { toothNumber: 16, state: "caries", surfaces: ["O"] },
+				organizationId: orgId,
+			},
+			{
+				entityType: "visit_odontogram_patch" as const,
+				entityId: "tooth-17",
+				action: "update" as const,
+				payload: { toothNumber: 17, state: "sealant", surfaces: ["O"] },
+				organizationId: orgId,
+			},
+			{
+				entityType: "visit_odontogram_patch" as const,
+				entityId: "tooth-18",
+				action: "update" as const,
+				payload: { toothNumber: 18, state: "missing", surfaces: [] },
+				organizationId: orgId,
+			},
+		];
+
+		const created = await enqueueOfflineMutationsBatch(batchInputs);
+		assert.strictEqual(created.length, 3);
+		assert.ok(created[0]?.mutationId);
+		assert.ok(created[1]?.mutationId);
+		assert.ok(created[2]?.mutationId);
+		assert.strictEqual(created[0]?.status, "pending");
+		assert.strictEqual(created[1]?.status, "pending");
+		assert.strictEqual(created[2]?.status, "pending");
+
+		const pending = await getPendingOfflineMutations({ organizationId: orgId });
+		const tooth16 = pending.find((m) => m.entityId === "tooth-16");
+		assert.ok(tooth16, "Мутация tooth-16 должна находиться в pending очереди");
+	});
+
+	it("DebouncedBatchFlusher выполняет экстренный сброс при событии dente-telephony-incoming-call (Mandate 8e)", async () => {
+		let flushedItems: string[] = [];
+		const flusher = new DebouncedBatchFlusher<string>({
+			debounceMs: 5000,
+			onFlush: (items) => {
+				flushedItems = [...items];
+			},
+		});
+
+		flusher.add("draft-043-autosave-chunk");
+		assert.strictEqual(flushedItems.length, 0);
+
+		// Имитируем входящий звонок телефонии
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(new Event("dente-telephony-incoming-call"));
+		} else {
+			await flusher.flushNow();
+		}
+
+		await new Promise((r) => setTimeout(r, 10));
+		assert.strictEqual(flushedItems.length, 1);
+		assert.strictEqual(flushedItems[0], "draft-043-autosave-chunk");
+
+		flusher.destroy();
+	});
+});
+
 

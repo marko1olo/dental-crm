@@ -58,6 +58,7 @@ import {
 	loadOfflineDraft,
 	deleteOfflineDraft,
 	enqueueOfflineMutation,
+	enqueueOfflineMutationsBatch,
 	getPendingOfflineMutations,
 	updateOfflineMutationStatus,
 	isIndexedDbAvailable,
@@ -129,15 +130,23 @@ export function isDesktopExecutable(): boolean {
 	// 1. DENTE desktop native bridge injected
 	if (isDesktopApp()) return true;
 
-	// 2. Electron window object or user agent
+	// 2. Electron window object or process
 	const win = window as unknown as {
 		electron?: unknown;
 		process?: { type?: string; versions?: { electron?: string } };
+		chrome?: { webview?: unknown };
+		__DENTE_DESKTOP__?: boolean;
+		__WEBVIEW2__?: boolean;
 	};
 	if (win.electron !== undefined) return true;
 	if (win.process?.versions?.electron !== undefined) return true;
 
-	// 3. Tauri window object
+	// 3. Microsoft Edge WebView2 embedded desktop runtime (.NET / C++ Windows host)
+	if (win.chrome?.webview !== undefined || win.__WEBVIEW2__ === true || win.__DENTE_DESKTOP__ === true) {
+		return true;
+	}
+
+	// 4. Tauri window object
 	const tauriWin = window as unknown as {
 		__TAURI__?: unknown;
 		__TAURI_INTERNALS__?: unknown;
@@ -146,9 +155,9 @@ export function isDesktopExecutable(): boolean {
 		return true;
 	}
 
-	// 4. User Agent heuristics
+	// 5. User Agent heuristics
 	if (typeof navigator !== "undefined" && navigator.userAgent) {
-		if (/Electron|Tauri|DenteDesktop/i.test(navigator.userAgent)) {
+		if (/Electron|Tauri|DenteDesktop|WebView2|DenteWin/i.test(navigator.userAgent)) {
 			return true;
 		}
 	}
@@ -413,12 +422,22 @@ export function syncPlatformDomAttributes(info?: OmniPlatformInfo): void {
 		root.classList.remove("pointer-coarse");
 	}
 
-	// Synchronize Safe Area Insets as CSS custom properties for notch and home bar
+	// Synchronize Safe Area Insets as CSS custom properties for notch and home bar.
+	// Only override inline styles when positive insets exist or were previously set,
+	// preserving stylesheet env(safe-area-inset-*) fallbacks.
 	if (root.style && typeof root.style.setProperty === "function") {
-		root.style.setProperty("--sat", `${platformInfo.safeArea.top}px`);
-		root.style.setProperty("--sab", `${platformInfo.safeArea.bottom}px`);
-		root.style.setProperty("--sal", `${platformInfo.safeArea.left}px`);
-		root.style.setProperty("--sar", `${platformInfo.safeArea.right}px`);
+		if (platformInfo.safeArea.top > 0 || root.style.getPropertyValue("--sat")) {
+			root.style.setProperty("--sat", `${platformInfo.safeArea.top}px`);
+		}
+		if (platformInfo.safeArea.bottom > 0 || root.style.getPropertyValue("--sab")) {
+			root.style.setProperty("--sab", `${platformInfo.safeArea.bottom}px`);
+		}
+		if (platformInfo.safeArea.left > 0 || root.style.getPropertyValue("--sal")) {
+			root.style.setProperty("--sal", `${platformInfo.safeArea.left}px`);
+		}
+		if (platformInfo.safeArea.right > 0 || root.style.getPropertyValue("--sar")) {
+			root.style.setProperty("--sar", `${platformInfo.safeArea.right}px`);
+		}
 	}
 }
 
@@ -556,6 +575,61 @@ class WebUnifiedStorageEngine implements UnifiedStorageEngineContract {
 			retryAttempts: res.retryCount ?? 0,
 			...(res.lastError ? { lastError: res.lastError } : {}),
 		};
+	}
+
+	async enqueueMutationsBatch(
+		mutations: Array<Omit<OfflineMutationQueueRecord, "id" | "createdAt" | "synced" | "retryAttempts">>,
+	): Promise<OfflineMutationQueueRecord[]> {
+		if (!mutations || mutations.length === 0) return [];
+		let resList: any[];
+		try {
+			resList = await enqueueOfflineMutationsBatch(
+				mutations.map((m) => ({
+					entityType: m.entityType as any,
+					entityId: m.entityId,
+					action: m.action,
+					payload: { json: m.payloadJson },
+					organizationId: m.organizationId,
+				})),
+			);
+		} catch (err: unknown) {
+			const isQuota =
+				(err as Error)?.name === "QuotaExceededError" ||
+				(err as { code?: number })?.code === 22 ||
+				String(err).toLowerCase().includes("quota");
+			if (isQuota) {
+				try {
+					const { purgeSyncedDraftsAndOldCache } = await import("../services/offline/offlineStorage.js");
+					await purgeSyncedDraftsAndOldCache();
+					resList = await enqueueOfflineMutationsBatch(
+						mutations.map((m) => ({
+							entityType: m.entityType as any,
+							entityId: m.entityId,
+							action: m.action,
+							payload: { json: m.payloadJson },
+							organizationId: m.organizationId,
+						})),
+					);
+				} catch {
+					throw err;
+				}
+			} else {
+				throw err;
+			}
+		}
+
+		return resList.map((res, i) => ({
+			id: res.mutationId,
+			organizationId: res.organizationId || mutations[i]?.organizationId || "",
+			entityType: res.entityType,
+			entityId: res.entityId,
+			action: res.action as "create" | "update" | "delete",
+			payloadJson: JSON.stringify(res.payload),
+			createdAt: res.timestamp,
+			synced: res.status === "synced",
+			retryAttempts: res.retryCount ?? 0,
+			...(res.lastError ? { lastError: res.lastError } : {}),
+		}));
 	}
 
 	async getPendingMutations(): Promise<OfflineMutationQueueRecord[]> {
@@ -1332,5 +1406,9 @@ export {
 	printDesktopA4DocumentSilent,
 	printDesktopDocumentSilent,
 } from "./hardwarePrinting.js";
+
+export {
+	enqueueOfflineMutationsBatch,
+} from "../services/offline";
 
 

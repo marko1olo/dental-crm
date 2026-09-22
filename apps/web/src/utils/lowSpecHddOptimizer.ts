@@ -499,6 +499,8 @@ export class DebouncedBatchFlusher<T> {
 	private readonly onFlush: (items: T[]) => void | Promise<void>;
 	private isFlushing = false;
 	private unloadListener: (() => void) | null = null;
+	private visibilityListener: (() => void) | null = null;
+	private telephonyListener: (() => void) | null = null;
 
 	constructor(options: DebouncedBatchFlusherOptions<T>) {
 		const timing = getOptimizedTiming();
@@ -507,13 +509,27 @@ export class DebouncedBatchFlusher<T> {
 		this.maxBatchSize = options.maxBatchSize ?? 50;
 		this.onFlush = options.onFlush;
 
-		// Гарантия сохранности данных при закрытии вкладки или перезагрузке
+		// Гарантия сохранности данных при закрытии вкладки, перезагрузке,
+		// смене вкладки или входящем звонке телефонии (Мандат 8e / 8n)
 		if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
 			this.unloadListener = () => {
 				void this.flushNow();
 			};
+			this.visibilityListener = () => {
+				if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+					void this.flushNow();
+				}
+			};
+			this.telephonyListener = () => {
+				void this.flushNow();
+			};
+
 			window.addEventListener("beforeunload", this.unloadListener);
 			window.addEventListener("pagehide", this.unloadListener);
+			if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+				document.addEventListener("visibilitychange", this.visibilityListener);
+			}
+			window.addEventListener("dente-telephony-incoming-call", this.telephonyListener);
 		}
 	}
 
@@ -620,9 +636,20 @@ export class DebouncedBatchFlusher<T> {
 		this.debounceTimer = null;
 		this.maxWaitTimer = null;
 
-		if (typeof window !== "undefined" && typeof window.removeEventListener === "function" && this.unloadListener) {
-			window.removeEventListener("beforeunload", this.unloadListener);
-			window.removeEventListener("pagehide", this.unloadListener);
+		if (typeof window !== "undefined" && typeof window.removeEventListener === "function") {
+			if (this.unloadListener) {
+				window.removeEventListener("beforeunload", this.unloadListener);
+				window.removeEventListener("pagehide", this.unloadListener);
+				this.unloadListener = null;
+			}
+			if (this.visibilityListener && typeof document !== "undefined" && typeof document.removeEventListener === "function") {
+				document.removeEventListener("visibilitychange", this.visibilityListener);
+				this.visibilityListener = null;
+			}
+			if (this.telephonyListener) {
+				window.removeEventListener("dente-telephony-incoming-call", this.telephonyListener);
+				this.telephonyListener = null;
+			}
 		}
 		this.buffer = [];
 	}
