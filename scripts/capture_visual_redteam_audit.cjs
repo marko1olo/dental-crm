@@ -23,7 +23,7 @@ const crypto = require("node:crypto");
 const API_BASE = "http://127.0.0.1:4100";
 const WEB_BASE = "http://127.0.0.1:5173";
 const OUT_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/visual_redteam_audit");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/744011f8-78fd-4df5-8642-30ecccad028c/screenshots");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/6bb841e9-b059-4bbc-86ae-f6a04ed8ca59/screenshots");
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 fs.mkdirSync(BRAIN_DIR, { recursive: true });
@@ -212,6 +212,7 @@ async function runAuditCapture() {
             selectedPatientId: pid,
             onboardingDismissed: true,
             onboardingStep: "done",
+            scheduleDateFilter: "2026-09-22",
           })
         );
         localStorage.setItem(
@@ -255,8 +256,8 @@ async function runAuditCapture() {
     const targetFile = path.join(OUT_DIR, fileName);
     const brainFile = path.join(BRAIN_DIR, fileName);
 
-    await page.waitForSelector(".boot-state", { state: "detached", timeout: 30000 }).catch(() => {});
-    await page.waitForSelector(".app-shell", { state: "visible", timeout: 30000 }).catch(() => {});
+    await page.waitForSelector(".boot-state", { state: "detached", timeout: 35000 });
+    await page.waitForSelector(".app-shell", { state: "visible", timeout: 35000 });
     await page.waitForTimeout(1000);
     await page.screenshot({ path: targetFile, fullPage: false });
 
@@ -282,11 +283,11 @@ async function runAuditCapture() {
   }
 
   async function navigateHash(page, hash) {
-    try {
-      await page.evaluate((h) => { window.location.hash = h; }, hash);
-    } catch {
-      await page.goto(`${WEB_BASE}/#${hash}`, { waitUntil: "domcontentloaded", timeout: 30000 }).catch(() => {});
-    }
+    await page.evaluate((h) => {
+      window.location.hash = h;
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    }, hash);
+    await page.waitForTimeout(800);
   }
 
   const SAMPLE_804N_TEXT = `A16.07.002.001 Наложение световой пломбы Estelite 4 500 руб\nЛечение глубокого кариеса 3500 ₽\nУдаление зуба мудрости сложное 5 200 ₽\nУстановка имплантата Straumann SLA 38000 руб\nКоронка из диоксида циркония 18000 руб\nАнестезия Убистезин 700 р`;
@@ -376,37 +377,27 @@ async function runAuditCapture() {
 
       // -----------------------------------------------------------------------
       // Screen 1B: PriceListMappingDiffView (Дифф-вью 804н)
-      // -----------------------------------------------------------------------
-      const pricesSubTab = page.locator("#settings-subtab-price, button:has-text('Прайс')").first();
-      if (await pricesSubTab.isVisible().catch(() => false)) {
-        await pricesSubTab.click().catch(() => {});
-        await page.waitForTimeout(600);
-      }
       const openPricelistModalBtn = page.locator("[data-testid='open-service-pricelist-modal-btn']").first();
-      if (await openPricelistModalBtn.isVisible().catch(() => false)) {
-        await openPricelistModalBtn.click().catch(() => {});
-        await page.waitForTimeout(800);
-        await page.waitForSelector(".service-pricelist-modal", { state: "visible", timeout: 15000 }).catch(() => {});
+      await openPricelistModalBtn.waitFor({ state: "visible", timeout: 15000 });
+      await openPricelistModalBtn.click();
+      await page.waitForSelector(".service-pricelist-modal, .pricelist-modal-container", { state: "visible", timeout: 15000 });
+      await page.waitForTimeout(800);
 
-        const importBtn = page.locator(".service-pricelist-modal button.pricelist-btn:has-text('Импорт'), .service-pricelist-modal button:has-text('Импорт')").first();
-        if (await importBtn.isVisible().catch(() => false)) {
-          await importBtn.click().catch(() => {});
-          await page.waitForTimeout(800);
+      const importBtn = page.locator(".service-pricelist-modal button:has-text('Импорт'), .pricelist-modal-container button:has-text('Импорт'), button.pricelist-btn:has-text('Импорт')").first();
+      await importBtn.waitFor({ state: "visible", timeout: 10000 });
+      await importBtn.click();
+      await page.waitForTimeout(800);
 
-          const smartTextArea = page.locator(".service-pricelist-modal textarea.pricelist-search-input, textarea.pricelist-search-input").first();
-          if (await smartTextArea.isVisible().catch(() => false)) {
-            await smartTextArea.fill(SAMPLE_804N_TEXT);
-            await page.waitForTimeout(600);
+      const smartTextArea = page.locator(".csv-import-modal textarea, .service-pricelist-modal textarea, textarea.pricelist-search-input").first();
+      await smartTextArea.waitFor({ state: "visible", timeout: 10000 });
+      await smartTextArea.fill(SAMPLE_804N_TEXT);
+      await page.waitForTimeout(600);
 
-            const parseBtn = page.locator(".service-pricelist-modal button:has-text('Распознать и сопоставить')").first();
-            if (await parseBtn.isVisible().catch(() => false)) {
-              await parseBtn.click().catch(() => {});
-              await page.waitForTimeout(2000);
-            }
-          }
-        }
-      }
-      await page.waitForSelector("[data-testid='pricelist-diff-container'], .pricelist-diff-container", { state: "visible", timeout: 15000 }).catch(() => {});
+      const parseBtn = page.locator(".csv-import-modal button:has-text('Распознать и сопоставить'), button:has-text('Распознать и сопоставить')").first();
+      await parseBtn.waitFor({ state: "visible", timeout: 10000 });
+      await parseBtn.click();
+
+      await page.waitForSelector("[data-testid='pricelist-diff-container'], .pricelist-diff-container", { state: "visible", timeout: 20000 });
       await page.waitForTimeout(1000);
       await takeProof(
         page,
@@ -415,19 +406,23 @@ async function runAuditCapture() {
         `${suite.viewportName} ${theme}`
       );
 
-      // Close modal if open
-      const closePricelistModal = page.locator(".service-pricelist-modal button[aria-label='Закрыть'], [data-testid='btn-close-service-pricelist-modal'], button:has-text('Отмена')").first();
-      if (await closePricelistModal.isVisible().catch(() => false)) {
-        await closePricelistModal.click().catch(() => {});
-        await page.waitForTimeout(500);
-      }
+      // Close modal cleanly via keyboard Escape & DOM cleanup
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(400);
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(400);
+      await page.evaluate(() => {
+        document.querySelectorAll(".service-pricelist-modal, .csv-import-modal, .pricelist-modal-overlay").forEach(el => el.remove());
+      });
+      await page.waitForTimeout(400);
 
       // -----------------------------------------------------------------------
       // Screen 3A: FinanceView / Cashier ARM (54-ФЗ Касса)
       // -----------------------------------------------------------------------
       await navigateHash(page, "finance");
-      await page.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
-      await page.waitForSelector(".finance-panel:not([aria-busy='true']), .finance-monolithic-toolbar, #payment-checkout-bar", { state: "visible", timeout: 25000 });
+      await page.waitForSelector(".boot-state", { state: "detached", timeout: 30000 });
+      await page.waitForSelector(".app-shell", { state: "visible", timeout: 30000 });
+      await page.waitForSelector(".finance-panel:not([aria-busy='true']), .finance-monolithic-toolbar, #payment-checkout-bar", { state: "visible", timeout: 30000 });
       await page.waitForTimeout(1000);
       await configureTheme(page, theme);
 
@@ -482,7 +477,7 @@ async function runAuditCapture() {
                     document.querySelector('[data-testid="payment-split-modal-button"]');
         if (btn) btn.click();
       });
-      await page.waitForSelector('.payment-modal, .payment-modal-backdrop, #payment-modal-title', { state: "visible", timeout: 15000 });
+      await page.waitForSelector('.payment-modal, .payment-modal-backdrop, #payment-modal-title', { state: "visible", timeout: 20000 });
       await page.waitForTimeout(1000);
       await takeProof(
         page,
@@ -491,12 +486,13 @@ async function runAuditCapture() {
         `${suite.viewportName} ${theme}`
       );
 
-      // Close PaymentModal (scoped to dialog to avoid clicking toast close button)
-      const closePaymentModalBtn = page.locator("[role='dialog'] button[aria-label='Закрыть'], [data-testid='btn-close-payment-modal']").first();
-      if (await closePaymentModalBtn.isVisible().catch(() => false)) {
-        await closePaymentModalBtn.click().catch(() => {});
-        await page.waitForTimeout(500);
-      }
+      // Close PaymentModal cleanly via Escape and DOM cleanup
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(400);
+      await page.evaluate(() => {
+        document.querySelectorAll(".payment-modal, .payment-modal-backdrop").forEach(el => el.remove());
+      });
+      await page.waitForTimeout(400);
 
       await context.close();
     }

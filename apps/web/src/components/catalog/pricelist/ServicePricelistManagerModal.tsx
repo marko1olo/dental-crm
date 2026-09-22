@@ -699,7 +699,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 
 	const modalContent = (
 		<div className="pricelist-modal-overlay" role="dialog" aria-modal="true">
-			<div className="pricelist-modal-container">
+			<div className="pricelist-modal-container service-pricelist-modal">
 				{/* Header */}
 				<header className="pricelist-modal-header">
 					<div className="pricelist-header-left">
@@ -1272,9 +1272,11 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 							transition: 'max-width 0.2s ease',
 						}}
 					>
-						<header className="pricelist-modal-header">
-							<div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-								<div className="pricelist-header-title">Импорт прейскуранта</div>
+						<header className="pricelist-modal-header" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', gap: '0.5rem', flexWrap: 'nowrap' }}>
+							<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1, overflow: 'hidden' }}>
+								<div className="pricelist-header-title" style={{ fontSize: '1rem', whiteSpace: 'nowrap', flexShrink: 0 }}>
+									{ingestedMappingItems.length > 0 ? 'Сопоставление 804н' : 'Импорт прейскуранта'}
+								</div>
 								{/* Segmented Mode Selector */}
 								{ingestedMappingItems.length === 0 && (
 									<div className="pricelist-tier-segmented" style={{ padding: '2px' }}>
@@ -1299,19 +1301,19 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 									</div>
 								)}
 								{ingestedMappingItems.length > 0 && (
-									<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-										<span className="pricelist-statutory-badge">
+									<div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginLeft: 'auto', flexShrink: 0 }}>
+										<span className="pricelist-statutory-badge hide-on-mobile">
 											<ShieldCheck size={13} />
-											<span>Сопоставление с Номенклатурой 804н</span>
+											<span>Минздрав 804н</span>
 										</span>
 										<button
 											type="button"
 											className="pricelist-btn"
-											style={{ height: '28px', fontSize: '0.75rem', padding: '0 0.5rem' }}
+											style={{ height: '28px', fontSize: '0.75rem', padding: '0 0.5rem', whiteSpace: 'nowrap' }}
 											onClick={() => setIngestedMappingItems([])}
 											title="Вернуться к редактированию исходного текста"
 										>
-											<span>Назад к тексту</span>
+											<span>Назад</span>
 										</button>
 									</div>
 								)}
@@ -1319,6 +1321,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 							<button
 								type="button"
 								className="pricelist-btn pricelist-btn-icon"
+								style={{ flexShrink: 0, marginLeft: '0.25rem' }}
 								onClick={() => {
 									setIsImportModalOpen(false);
 									setIngestedMappingItems([]);

@@ -805,6 +805,12 @@
 		padding: 0.5rem 0.75rem !important;
 	}
 
+	.csv-import-modal .pricelist-modal-header {
+		flex-direction: row !important;
+		align-items: center !important;
+		justify-content: space-between !important;
+	}
+
 	.pricelist-header-left {
 		width: 100% !important;
 		justify-content: space-between !important;

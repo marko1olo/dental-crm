@@ -752,3 +752,76 @@
 		border-bottom: 1px solid var(--line);
 	}
 }
+
+@media (max-width: 768px) {
+	.hide-on-mobile {
+		display: none !important;
+	}
+
+	.pricelist-diff-panes {
+		grid-template-columns: 1fr;
+		grid-template-rows: 160px 1fr;
+	}
+
+	.pricelist-diff-pane.left-pane {
+		max-height: 160px;
+	}
+
+	.pricelist-diff-mapped-row {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.5rem;
+		min-height: auto;
+		padding: 0.5rem;
+	}
+
+	.pricelist-diff-price-col {
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+		width: 100%;
+		min-width: 0;
+		border-top: 1px dashed var(--line);
+		padding-top: 0.375rem;
+	}
+
+	.pricelist-diff-price-modifiers {
+		overflow-x: auto;
+		scrollbar-width: none;
+	}
+
+	.pricelist-diff-row-actions {
+		justify-content: flex-end;
+		width: 100%;
+		border-top: 1px dashed var(--line);
+		padding-top: 0.375rem;
+	}
+
+	.pricelist-diff-footer {
+		height: auto;
+		min-height: 48px;
+		max-height: none;
+		padding: 0.5rem 0.75rem;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.5rem;
+	}
+
+	.pricelist-diff-footer-summary {
+		font-size: 0.6875rem;
+		text-align: center;
+	}
+
+	.pricelist-diff-footer-actions {
+		display: flex;
+		justify-content: space-between;
+		width: 100%;
+		gap: 0.5rem;
+	}
+
+	.pricelist-diff-footer-actions .pricelist-diff-btn {
+		flex: 1;
+		justify-content: center;
+	}
+}
+
