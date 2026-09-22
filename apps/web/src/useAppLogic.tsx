@@ -202,6 +202,8 @@ import {
 	dicomViewerLaunchModeLabels,
 	dicomWebStatusLabels,
 	imagingKindLabels,
+	cbctWorkbenchProjections,
+	imagingKindOptions,
 	imagingSourceDetails,
 	imagingSourceLabels,
 	imagingViewerToolLabels,
@@ -221,6 +223,7 @@ import {
 	policyAuditEventLabels,
 	pricelistParserModeLabels,
 } from "./imagingUiLabels";
+import { mprProjectionCompassLabels, buildMprAxisGuidance } from "./mprControlMath";
 import { actionFailureToast } from "./lib/panelStateText";
 import { safeLocalStorageSetItem } from "./lib/safeLocalStorage";
 import { describeMprClinicalPresetProjectionFallback } from "./mprClinicalStatus";
@@ -1613,16 +1616,44 @@ export function useAppLogic(): any {
 		);
 	}
 
+	const activeImagingStudies = useMemo(() => {
+		if (!dashboard?.imagingStudies?.length) return [];
+		const patientId = documentPatient?.id ?? selectedPatientId;
+		if (!patientId) return dashboard.imagingStudies;
+		return (
+			dashboard.imagingStudies.filter(
+				(study) => study.patientId === patientId,
+			) ?? []
+		);
+	}, [dashboard?.imagingStudies, documentPatient?.id, selectedPatientId]);
+
+	const visibleImagingStudies = useMemo(() => {
+		if (imagingKindFilter === "all") return activeImagingStudies;
+		return activeImagingStudies.filter((study) => study.kind === imagingKindFilter);
+	}, [activeImagingStudies, imagingKindFilter]);
+	const mprProjectionCompass = useMemo(() => {
+		return mprProjectionCompassLabels(mprProjection);
+	}, [mprProjection]);
+
 	const dicomWorkbenchModule = useDicomWorkbenchModule({
 		auth,
 		currentView,
-		visibleImagingStudies: dashboard?.imagingStudies ?? [],
+		visibleImagingStudies,
 	});
 	const {
 		selectedImagingStudy,
 		applyDicomWorkbenchManifest,
 		loadDicomWorkbenchBundles,
 	} = dicomWorkbenchModule;
+
+	const mprAxisGuidance = useMemo(() => {
+		return buildMprAxisGuidance({
+			canOpenMpr: Boolean(selectedImagingStudy?.kind === "cbct"),
+			axisDeg: mprAxisDeg ?? 0,
+			slabMm: mprSlabMm ?? 1,
+			sliceFraction: 0.5,
+		});
+	}, [selectedImagingStudy?.kind, mprAxisDeg, mprSlabMm]);
 	const telegram = useTelegramModule({
 		settingsAdminSecretSession,
 		loadDashboard,
@@ -4983,7 +5014,7 @@ export function useAppLogic(): any {
 		previewImport,
 		commitImport,
 		activeCommunicationTasks: null,
-		activeImagingStudies: null,
+		activeImagingStudies,
 		activePayments,
 		activeTreatmentPlanItems,
 		addImagingViewerNoteAnnotation: null,
@@ -5006,7 +5037,7 @@ export function useAppLogic(): any {
 		cancelBrowserImagingFolderScan: false,
 		cancelBrowserMigrationScan: false,
 		cbctWorkbenchPlanes: null,
-		cbctWorkbenchProjections: null,
+		cbctWorkbenchProjections,
 		cbctWorkbenchTools: null,
 		chooseRecognitionPreset: null,
 		clearBrowserPickedImagingFolderPreview: null,
@@ -5024,7 +5055,7 @@ export function useAppLogic(): any {
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		handleMprKeyboardNavigation: async (..._args: any[]) => {},
 		imagingComparisonCandidates: [],
-		imagingKindOptions: [],
+		imagingKindOptions,
 		imagingViewerImageStyle: null,
 		inn: documentPatient?.administrativeProfile?.inn ?? "",
 		lastName: documentPatient?.fullName?.split(" ")[0] ?? "",
@@ -5037,7 +5068,7 @@ export function useAppLogic(): any {
 		mprActiveProjectionOrientation: null,
 		mprAxisAngleBadge: null,
 		mprAxisDirectionLabel: null,
-		mprAxisGuidance: null,
+		mprAxisGuidance,
 		mprAxisRangeValue: null,
 		mprAxisVisualizerLabel: null,
 		mprAxisVisualizerStyle: null,
@@ -5048,7 +5079,7 @@ export function useAppLogic(): any {
 		mprControlsReady: null,
 		mprNearestClinicalPreset: null,
 		mprOperatorSummaryCards: [],
-		mprProjectionCompass: null,
+		mprProjectionCompass,
 		mprSlabBadge: null,
 		mprSlabRangeValue: null,
 		mprSliceBadge: null,
@@ -5081,7 +5112,7 @@ export function useAppLogic(): any {
 		speechTranscriptionBusy: false,
 		startServerVoiceRecording: null,
 		stopServerVoiceRecording: null,
-		visibleImagingStudies: null,
+		visibleImagingStudies,
 		visibleVisitSpecialtyFocusOptions: [],
 		visitPrimaryAction: null,
 		visitSafetyCards: [],

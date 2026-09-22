@@ -40,6 +40,16 @@ export const imagingKindLabels: Record<ImagingStudyKind, string> = {
 	other: "Другое",
 };
 
+export const imagingKindOptions: ImagingStudyKind[] = [
+	"periapical",
+	"bitewing",
+	"opg",
+	"ceph",
+	"cbct",
+	"photo",
+	"other",
+];
+
 export const imagingSourceLabels: Record<ImagingSourceKind, string> = {
 	manual_upload: "Файл",
 	dicom_file: "КТ/серия",
@@ -253,6 +263,13 @@ export const mprProjectionLabels: Record<MprProjection, string> = {
 	panoramic: "Панорамный вид",
 	"3d_reconstruction": "3D Вид",
 };
+
+export const cbctWorkbenchProjections: MprProjection[] = [
+	"axial",
+	"coronal",
+	"sagittal",
+	"oblique",
+];
 
 export const mprSeriesRequiredProjectionLabel =
 	"Сначала выберите готовую серию";

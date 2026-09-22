@@ -2380,7 +2380,7 @@ export function ImagingView(props: ImagingViewProps) {
 							selectedImplantPlan={ctPlanningImplantPlan}
 							onSelectImplant={selectCtPlanningImplant}
 							localAnnotations={imagingViewerAnnotations}
-							annotationRefs={ctPlanningAnnotationRefs}
+							annotationRefs={Array.isArray(ctPlanningAnnotationRefs) ? ctPlanningAnnotationRefs : []}
 							onCreateArtifact={createCtPlanningArtifact}
 							toolStateBundle={
 								dicomViewerWorkbenchManifest?.toolStateBundle ??
@@ -2468,16 +2468,16 @@ export function ImagingView(props: ImagingViewProps) {
 								</span>
 								<div className="mpr-axis-board" aria-hidden="true">
 									<span className="mpr-axis-label mpr-axis-label-top">
-										{mprProjectionCompass.top}
+										{mprProjectionCompass?.top}
 									</span>
 									<span className="mpr-axis-label mpr-axis-label-right">
-										{mprProjectionCompass.right}
+										{mprProjectionCompass?.right}
 									</span>
 									<span className="mpr-axis-label mpr-axis-label-bottom">
-										{mprProjectionCompass.bottom}
+										{mprProjectionCompass?.bottom}
 									</span>
 									<span className="mpr-axis-label mpr-axis-label-left">
-										{mprProjectionCompass.left}
+										{mprProjectionCompass?.left}
 									</span>
 									<span className="mpr-axis-slab" />
 									<span className="mpr-axis-slice-marker" />
@@ -2495,7 +2495,7 @@ export function ImagingView(props: ImagingViewProps) {
 								<div className="mpr-axis-facts">
 									<strong>{mprActiveProjectionLabel}</strong>
 									<span>{mprActiveProjectionOrientation}</span>
-									<span>{mprProjectionCompass.summary}</span>
+									<span>{mprProjectionCompass?.summary}</span>
 									<span>{mprAxisDirectionLabel}</span>
 									<span>слой {mprSlabMm} мм</span>
 									<span>{mprSliceLabel}</span>
@@ -2503,9 +2503,9 @@ export function ImagingView(props: ImagingViewProps) {
 										className="mpr-axis-guidance"
 										data-testid="ct-mpr-axis-guidance"
 									>
-										<span>{mprAxisGuidance.tiltLabel}</span>
-										<span>{mprAxisGuidance.slabLabel}</span>
-										<span>{mprAxisGuidance.sliceLabel}</span>
+										<span>{mprAxisGuidance?.tiltLabel ?? ""}</span>
+										<span>{mprAxisGuidance?.slabLabel ?? ""}</span>
+										<span>{mprAxisGuidance?.sliceLabel ?? ""}</span>
 									</div>
 									<small
 										className="mpr-workbench-summary"
@@ -2520,20 +2520,20 @@ export function ImagingView(props: ImagingViewProps) {
 											: "сначала откройте готовую КЛКТ/КТ-серию"}
 									</small>
 									<div
-										className={`mpr-preset-fit ${mprNearestClinicalPreset.exact ? "exact" : ""}`}
+										className={`mpr-preset-fit ${mprNearestClinicalPreset?.exact ? "exact" : ""}`}
 										data-testid="ct-mpr-preset-fit"
 									>
-										<span>{mprNearestClinicalPreset.label}</span>
+										<span>{mprNearestClinicalPreset?.label ?? "пользовательский протокол"}</span>
 										<button
 											type="button"
 											onClick={applyNearestMprClinicalPreset}
 											disabled={
 												!mprControlsReady ||
-												!mprNearestClinicalPreset.deltas?.length ||
-												!mprNearestClinicalPreset.title
+												!mprNearestClinicalPreset?.deltas?.length ||
+												!mprNearestClinicalPreset?.title
 											}
-											aria-label={`Подогнать КТ-срезы под ближайший клинический протокол: ${mprNearestClinicalPreset.label}`}
-											title={`Подогнать под протокол: ${mprNearestClinicalPreset.label}`}
+											aria-label={`Подогнать КТ-срезы под ближайший клинический протокол: ${mprNearestClinicalPreset?.label ?? ""}`}
+											title={`Подогнать под протокол: ${mprNearestClinicalPreset?.label ?? ""}`}
 										>
 											Подогнать
 										</button>
@@ -2543,7 +2543,7 @@ export function ImagingView(props: ImagingViewProps) {
 							<div className="mpr-control-panel">
 								<div className="mpr-toggle-row">
 									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-									{cbctWorkbenchProjections.map((projection: any) => (
+									{(cbctWorkbenchProjections ?? []).map((projection: any) => (
 										<button
 											className={mprProjection === projection ? "active" : ""}
 											key={projection}
@@ -2577,7 +2577,7 @@ export function ImagingView(props: ImagingViewProps) {
 									aria-label="Точная правка угла КТ-срезов"
 								>
 									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-									{mprAxisNudgeDeg.map((delta: any) => (
+									{(mprAxisNudgeDeg ?? []).map((delta: any) => (
 										<button
 											key={delta}
 											type="button"
@@ -2596,7 +2596,7 @@ export function ImagingView(props: ImagingViewProps) {
 									aria-label="Быстрые углы КТ-срезов"
 								>
 									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-									{mprAxisPresetDeg.map((angle: any) => (
+									{(mprAxisPresetDeg ?? []).map((angle: any) => (
 										<button
 											className={mprAxisDeg === angle ? "active" : ""}
 											key={angle}
@@ -2631,7 +2631,7 @@ export function ImagingView(props: ImagingViewProps) {
 									aria-label="Точная правка толщины слоя КТ-срезов"
 								>
 									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-									{mprSlabNudgeMm.map((delta: any) => (
+									{(mprSlabNudgeMm ?? []).map((delta: any) => (
 										<button
 											key={delta}
 											type="button"
@@ -2650,7 +2650,7 @@ export function ImagingView(props: ImagingViewProps) {
 									aria-label="Быстрая толщина слоя КТ-срезов"
 								>
 									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-									{mprSlabPresetMm.map((slab: any) => (
+									{(mprSlabPresetMm ?? []).map((slab: any) => (
 										<button
 											className={mprSlabMm === slab ? "active" : ""}
 											key={slab}
@@ -2757,7 +2757,7 @@ export function ImagingView(props: ImagingViewProps) {
 									aria-label="Точная навигация по КТ-срезам"
 								>
 									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-									{mprSliceNudgeSteps.map((delta: any) => (
+									{(mprSliceNudgeSteps ?? []).map((delta: any) => (
 										<button
 											key={delta}
 											type="button"
@@ -2781,7 +2781,7 @@ export function ImagingView(props: ImagingViewProps) {
 									aria-label="Опорные КТ-срезы"
 								>
 									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-									{mprSlicePresetFractions.map((preset: any) => {
+									{(mprSlicePresetFractions ?? []).map((preset: any) => {
 										const targetIndex = mprSliceIndexFromFraction(
 											preset.fraction,
 											mprSliceMaxIndex,
@@ -2851,13 +2851,17 @@ export function ImagingView(props: ImagingViewProps) {
 											: null;
 										return (
 											<button
-												className={mprClinicalPresetButtonClass(preset)}
+												className={
+													typeof mprClinicalPresetButtonClass === "function"
+														? mprClinicalPresetButtonClass(preset)
+														: ""
+												}
 												key={preset.id}
 												type="button"
-												onClick={() => applyMprClinicalPreset(preset)}
+												onClick={() => applyMprClinicalPreset?.(preset)}
 												aria-current={
-													mprNearestClinicalPreset.exact &&
-													mprNearestClinicalPreset.title === preset.title
+													mprNearestClinicalPreset?.exact &&
+													mprNearestClinicalPreset?.title === preset.title
 														? "true"
 														: undefined
 												}

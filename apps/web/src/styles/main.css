@@ -3467,7 +3467,7 @@ section.imaging-panel {
 
 .imaging-row {
 	align-items: center;
-	background: #fbfefd;
+	background: var(--paper-strong, var(--paper, #fbfefd));
 	border: 1px solid var(--line);
 	border-radius: 8px;
 	color: var(--ink);

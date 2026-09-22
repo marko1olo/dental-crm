@@ -182,7 +182,7 @@ export function CtPlanningToolsPanel({
 				canPlan,
 				hasImplantPlan: planningSnapshot.hasImplantPlan,
 				annotations: [
-					...annotationRefs,
+					...(Array.isArray(annotationRefs) ? annotationRefs : Array.isArray((annotationRefs as any)?.current) ? (annotationRefs as any).current : []),
 					...(toolStateBundle?.annotations.map((annotation) => ({
 						id: annotation.sourceAnnotationId || annotation.id,
 						type: annotation.type,
