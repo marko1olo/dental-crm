@@ -196,6 +196,7 @@ export interface TelephonyStore {
 	connectCall: () => void;
 	acceptCall: () => void;
 	rejectCall: () => void;
+	endCall: (recordingUrl?: string | null) => void;
 	dismissCall: () => void;
 	recordCallOutcome: (outcome: CallOutcome, note?: string) => void;
 	logAcutePainCall: (phone: string, patientName?: string, reason?: string) => void;
@@ -264,17 +265,9 @@ export function fuzzyMatchPhone(
 		return true;
 	}
 
-	// 7-digit local number match if both numbers are at least 7 digits and equal
-	if (digitsA.length >= 7 && digitsB.length >= 7) {
-		const suffix7A = digitsA.slice(-7);
-		const suffix7B = digitsB.slice(-7);
-		if (suffix7A === suffix7B && digitsA.length <= 11 && digitsB.length <= 11) {
-			// If both have 10-11 digits, ensure the area codes don't contradict
-			if (natA.length === 10 && natB.length === 10) {
-				return natA === natB;
-			}
-			return true;
-		}
+	// 7-digit local number match only if both numbers are local 7-digit numbers
+	if (digitsA.length === 7 && digitsB.length === 7) {
+		return digitsA === digitsB;
 	}
 
 	return false;
@@ -967,7 +960,12 @@ export function generateAppointmentConfirmationMessage(params: {
  */
 export function generateWhatsAppConfirmationUrl(phone: string, text: string): string {
 	const clean = normalizePhoneDigits(phone);
-	const e164 = clean.startsWith("8") ? `7${clean.slice(1)}` : clean;
+	let e164 = clean;
+	if (clean.length === 10) {
+		e164 = `7${clean}`;
+	} else if (clean.length === 11 && clean.startsWith("8")) {
+		e164 = `7${clean.slice(1)}`;
+	}
 	return `https://wa.me/${e164}?text=${encodeURIComponent(text)}`;
 }
 
@@ -976,7 +974,12 @@ export function generateWhatsAppConfirmationUrl(phone: string, text: string): st
  */
 export function generateSmsConfirmationUrl(phone: string, text: string): string {
 	const clean = normalizePhoneDigits(phone);
-	const e164 = clean.startsWith("8") ? `+7${clean.slice(1)}` : `+${clean}`;
+	let e164 = `+${clean}`;
+	if (clean.length === 10) {
+		e164 = `+7${clean}`;
+	} else if (clean.length === 11 && clean.startsWith("8")) {
+		e164 = `+7${clean.slice(1)}`;
+	}
 	return `sms:${e164}?body=${encodeURIComponent(text)}`;
 }
 
@@ -985,7 +988,12 @@ export function generateSmsConfirmationUrl(phone: string, text: string): string 
  */
 export function generateTelegramConfirmationUrl(phone: string, text: string): string {
 	const clean = normalizePhoneDigits(phone);
-	const e164 = clean.startsWith("8") ? `+7${clean.slice(1)}` : `+${clean}`;
+	let e164 = `+${clean}`;
+	if (clean.length === 10) {
+		e164 = `+7${clean}`;
+	} else if (clean.length === 11 && clean.startsWith("8")) {
+		e164 = `+7${clean.slice(1)}`;
+	}
 	return `https://t.me/share/url?url=${encodeURIComponent(e164)}&text=${encodeURIComponent(text)}`;
 }
 
@@ -1002,7 +1010,10 @@ export function openWhatsAppChat(phone: string, text: string): void {
  * Formats duration in seconds to MM:SS string (or HH:MM:SS if >= 1 hour).
  */
 export function formatDurationTimer(totalSeconds: number): string {
-	const sec = Math.max(0, Math.floor(totalSeconds));
+	if (!Number.isFinite(totalSeconds) || Number.isNaN(totalSeconds) || totalSeconds < 0) {
+		return "00:00";
+	}
+	const sec = Math.floor(totalSeconds);
 	const hours = Math.floor(sec / 3600);
 	const minutes = Math.floor((sec % 3600) / 60);
 	const remainingSeconds = sec % 60;
@@ -1174,6 +1185,32 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 			activeCall: null,
 			callHistory: updatedHistory,
 			transferState: initialTransferState,
+		});
+	},
+
+	endCall: (recordingUrl?: string | null) => {
+		const { activeCall, callHistory } = get();
+		if (!activeCall) return;
+
+		const updatedHistory = callHistory.map((item, idx) => {
+			if (idx === 0 && item.phone === activeCall.phone) {
+				return {
+					...item,
+					status: "ended" as const,
+					actionTaken: item.actionTaken || ("accepted" as const),
+					recordingUrl: recordingUrl || item.recordingUrl || activeCall.recordingUrl,
+				};
+			}
+			return item;
+		});
+
+		set({
+			activeCall: {
+				...activeCall,
+				status: "ended" as const,
+				recordingUrl: recordingUrl || activeCall.recordingUrl,
+			},
+			callHistory: updatedHistory,
 		});
 	},
 

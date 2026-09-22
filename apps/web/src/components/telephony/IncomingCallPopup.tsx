@@ -149,7 +149,8 @@ export function CallAudioPlayer({
 			setCurrentTime(audioRef.current.currentTime);
 			if (
 				audioRef.current.duration &&
-				!Number.isNaN(audioRef.current.duration)
+				Number.isFinite(audioRef.current.duration) &&
+				audioRef.current.duration > 0
 			) {
 				setAudioDuration(audioRef.current.duration);
 			}
@@ -187,7 +188,7 @@ export function CallAudioPlayer({
 				audioRef.current
 					.play()
 					.then(() => setIsPlaying(true))
-					.catch(() => setIsPlaying(true));
+					.catch(() => setIsPlaying(false));
 			}
 		}
 	};
@@ -229,6 +230,7 @@ export function CallAudioPlayer({
 				ref={audioRef}
 				src={recordingUrl}
 				onTimeUpdate={handleTimeUpdate}
+				onLoadedMetadata={handleTimeUpdate}
 				onEnded={() => setIsPlaying(false)}
 				onError={(e) => {
 					console.warn("[IncomingCallPopup] Audio element error:", e);
@@ -481,6 +483,7 @@ export function IncomingCallPopup() {
 	const connectCall = useTelephonyStore((s) => s.connectCall);
 	const acceptCall = useTelephonyStore((s) => s.acceptCall);
 	const rejectCall = useTelephonyStore((s) => s.rejectCall);
+	const endCall = useTelephonyStore((s) => s.endCall);
 	const dismissCall = useTelephonyStore((s) => s.dismissCall);
 	const startCallTransfer = useTelephonyStore((s) => s.startCallTransfer);
 	const isMuted = useTelephonyStore((s) => s.isMuted);
@@ -612,7 +615,8 @@ export function IncomingCallPopup() {
 		if (
 			!activeCall ||
 			activeCall.status === "answered" ||
-			activeCall.status === "connected"
+			activeCall.status === "connected" ||
+			activeCall.status === "ended"
 		)
 			return;
 
@@ -729,8 +733,9 @@ export function IncomingCallPopup() {
 						: "IP-Телефония";
 
 	const isCallAnswered = activeCall
-		? activeCall.status === "answered" || activeCall.status === "connected"
+		? activeCall.status === "answered" || activeCall.status === "connected" || activeCall.status === "ended"
 		: true;
+	const isCallEnded = activeCall?.status === "ended";
 
 	// 1-Click WhatsApp Confirmation Trigger
 	const handleSendWhatsAppConfirmation = () => {
@@ -912,6 +917,13 @@ export function IncomingCallPopup() {
 		showToast(`Вызов ${formattedPhone} отклонён`, "info");
 	};
 
+	const handleEndCall = () => {
+		endCall();
+		setIsExpanded(true);
+		setShowOutcomePanel(true);
+		showToast(`Разговор завершён (${formattedPhone})`, "info");
+	};
+
 	// 1-Click Quick Patient Creation (Mandate 8e p. 8 & 8n: Solo doctor & Reception Autonomy without 20 secondary fields)
 	const handleQuickCreatePatient = async (customName?: string) => {
 		if (!currentCall?.phone) return;
@@ -1056,10 +1068,21 @@ export function IncomingCallPopup() {
 											<span>Сброс</span>
 										</button>
 									</>
+								) : isCallEnded ? (
+									<button
+										type="button"
+										onClick={dismissCall}
+										className="px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all inline-flex items-center gap-1 min-h-[44px] shadow-xs cursor-pointer active:scale-95"
+										title="Закрыть уведомление о завершённом звонке"
+										data-testid="capsule-close-ended-btn"
+									>
+										<Check size={13} />
+										<span>Закрыть</span>
+									</button>
 								) : (
 									<button
 										type="button"
-										onClick={handleReject}
+										onClick={handleEndCall}
 										className="px-3 py-1 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all inline-flex items-center gap-1 min-h-[44px] shadow-xs cursor-pointer active:scale-95"
 										title="Завершить разговор"
 										data-testid="capsule-hangup-call-btn"
@@ -1111,7 +1134,7 @@ export function IncomingCallPopup() {
 										/>
 									</span>
 									<span className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider truncate">
-										{isCallAnswered ? "Разговор" : "Входящий"}
+										{isCallEnded ? "Завершён" : isCallAnswered ? "Разговор" : "Входящий"}
 									</span>
 									<span
 										className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] shrink-0"
@@ -1141,7 +1164,7 @@ export function IncomingCallPopup() {
 										<span>{formatDurationTimer(elapsedSeconds)}</span>
 									</div>
 
-									{/* Strictly <= 2 Primary Direct Buttons in Header (Answer / Reject or Hangup) */}
+									{/* Strictly <= 2 Primary Direct Buttons in Header (Answer / Reject or Hangup / Close) */}
 									{!isCallAnswered ? (
 										<>
 											<button
@@ -1165,10 +1188,21 @@ export function IncomingCallPopup() {
 												<span>Сброс</span>
 											</button>
 										</>
+									) : isCallEnded ? (
+										<button
+											type="button"
+											onClick={dismissCall}
+											className="min-h-[32px] px-2.5 rounded-lg bg-[var(--paper-soft,#f1f5f9)] hover:bg-[var(--paper-subtle,#e2e8f0)] text-[var(--ink,#0f172a)] text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer"
+											title="Закрыть карточку завершённого звонка"
+											data-testid="badge-header-close-ended-btn"
+										>
+											<Check size={12} className="text-emerald-600" />
+											<span>Закрыть</span>
+										</button>
 									) : (
 										<button
 											type="button"
-											onClick={handleReject}
+											onClick={handleEndCall}
 											className="min-h-[32px] px-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer"
 											title="Завершить разговор"
 											data-testid="badge-header-hangup-btn"

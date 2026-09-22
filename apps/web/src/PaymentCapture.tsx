@@ -955,16 +955,6 @@ export function PaymentCapture({
 	};
 
 	const applyThreeWaySplitPreset = () => {
-		const effectiveTotal =
-			normalizeRubAmountInput(amount) ??
-			(remainingDebt && remainingDebt > 0 ? remainingDebt : 0);
-		if (!patientId && effectiveTotal <= 0) {
-			showToast(
-				"Выберите пациента или укажите сумму для комбинированной оплаты",
-				"warning",
-			);
-			return;
-		}
 		setIsSplit5050Mode(false);
 		setIsSplitModalOpen(true);
 		showToast(
@@ -974,16 +964,6 @@ export function PaymentCapture({
 	};
 
 	const applyDepositPlusCardPreset = () => {
-		const effectiveTotal =
-			normalizeRubAmountInput(amount) ??
-			(remainingDebt && remainingDebt > 0 ? remainingDebt : 0);
-		if (!patientId && effectiveTotal <= 0) {
-			showToast(
-				"Выберите пациента или укажите сумму для комбинированной оплаты",
-				"warning",
-			);
-			return;
-		}
 		setIsSplit5050Mode(false);
 		setIsSplitModalOpen(true);
 		showToast(
