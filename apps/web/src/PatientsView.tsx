@@ -75,6 +75,7 @@ import { useAppStore } from "./store/appStore";
 import { usePatientStore } from "./store/patientStore";
 import { useScheduleStore } from "./store/scheduleStore";
 import { formatPhoneNumber } from "./utils/inputSanitation";
+import { applySomaticNormToText } from "./utils/somaticNorm";
 
 type PatientInsight = Dashboard["patientInsights"][number];
 export type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
@@ -351,14 +352,7 @@ export function executePatientSomaticNormAutonomy({
 		);
 		return { executed: false, reason: "no_patient" as const };
 	}
-	const normSomatic =
-		"Соматически здоров. Аллергии отрицает. Физиологическая норма.";
-	const trimmed = (currentNotes ?? "").trim();
-	const newNotes = trimmed
-		? trimmed.includes("Соматически здоров")
-			? trimmed
-			: `${normSomatic}\n${trimmed}`
-		: normSomatic;
+	const newNotes = applySomaticNormToText(currentNotes);
 
 	if (typeof updatePatientCoreDraft === "function") {
 		updatePatientCoreDraft("notes", newNotes);

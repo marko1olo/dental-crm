@@ -417,7 +417,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 							: "Аллергологический анамнез не отягощен. Непереносимости местных анестетиков артикаинового ряда и лекарственных средств не отмечает.",
 						concomitantSomaticDiseases: prev.anamnesis?.concomitantSomaticDiseases?.trim()
 							? prev.anamnesis.concomitantSomaticDiseases
-							: "Соматически здоров. Хронические заболевания сердечно-сосудистой, эндокринной и дыхательной систем отрицает.",
+							: "Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания со слов отрицает. Физиологическая норма.",
 						currentSystemicMedications: prev.anamnesis?.currentSystemicMedications?.trim()
 							? prev.anamnesis.currentSystemicMedications
 							: "Постоянный прием лекарственных препаратов отрицает.",
