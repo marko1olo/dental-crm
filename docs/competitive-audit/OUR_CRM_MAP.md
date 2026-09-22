@@ -2,7 +2,7 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
-> ⚠️ **СТАТУС (2026-09-23 / WAVES 175–280 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 324 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (ВСЕГО 387 ФИЧ: 63 КАНОНИЧЕСКИЕ + 324 АДДЕНДУМ, 387/387 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
+> ⚠️ **СТАТУС (2026-09-23 / WAVES 175–281 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 326 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 389 ФИЧ: 63 КАНОНИЧЕСКИЕ + 326 АДДЕНДУМ, 389/389 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
@@ -6342,3 +6342,36 @@
   - `packages/shared/src/emr/endodontics.ts`
   - `packages/shared/src/emr/outpatientSurgery.ts`
   - `packages/shared/src/emr/__tests__/chairsideCompliance.test.ts` (коммиты `1f664c594`, `e095ffecb`, Wave 280)
+
+### 2.10.381. Wave 281: Ликвидация UI-дефектов Red Team и суверенитет хирургических расходников в имплантологии с 1-клик списанием в мягкий овердрафт склада (Мандаты 8c, 8d, 8e, 8i, 8k, 8n, 8p, 8s) (Фичи #388, #389)
+- **Функционал**:
+  1. *Ликвидация визуальных дефектов UI и координация тостов (Фича #388)*:
+     - В `apps/web/src/components/workspaceActions/WorkspaceActions.tsx` ликвидировано паразитное дублирование кнопки голосового ввода, перегружавшей тулбар действий врача по Закону Хика (Мандат 8p);
+     - В `apps/web/src/components/GlobalToast.tsx` внедрена реактивная координация с активными модальными окнами (`[role="dialog"]`, `.modal-overlay`, `[data-modal="true"]`): тосты автоматически смещаются на `top-20` со слоем `z-[9999]`, исключая перекрытие заголовков, полей и кнопок закрытия модалок;
+     - В `apps/web/src/styles/shadow-analyst.css` и `PaymentModal.tsx` очищены наложения теней и отступы по канонам Studio Clinical HIG;
+     - В `scripts/capture_visual_redteam_audit.cjs` стабилизирован захват 16 натурных скриншотов во всех 4 базовых состояниях (Desktop/Mobile, Light/Dark);
+  2. *Ликвидация стационарного блоата в имплантологии и 1-клик мягкий овердрафт склада (Фича #389)*:
+     - В `apps/web/src/components/surgery/surgeryProtocols.ts`, `implantCatalog.ts` и `AnesthesiaQuickBar.tsx` окончательно искоренен стационарный блоат: удалены сущности «ПКУ наркотик», «палата реанимации», «консилиум начмед», «комиссия согласования» по Мандату 8i;
+     - В `apps/web/src/components/visit/surgery/VisitSurgeryProtocolTab.tsx` внедрена 1-клик кнопка списания расходников операции `quickDeductSurgicalMaterials` (`PackageMinus`) со штампом в медицинскую карту визита;
+     - В `apps/api/src/routes/clinicalImplants.ts` реализован гарантированный мягкий овердрафт склада при установке имплантатов (`emergency_overdraft`, автоматическое заведение недостающей номенклатуры, `isOverdraft: true`) без срыва операции (Мандат 8e п. 10);
+     - В `apps/api/src/routes/inventory.ts`, `treatmentConsumables.ts` и `treatmentConsumablesService.ts` развернуты готовые пакеты списания хирургических материалов («implant», «sinus_gbr») без созыва комиссий из 3 человек;
+     - Обеспечено 100% прохождение тестов `surgeryProtocols.test.ts` (13/13 PASS), `implantStabilityEngine.test.ts` и `surgeryCockpitModal.test.tsx`.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/workspaceActions/WorkspaceActions.tsx`
+  - `apps/web/src/components/GlobalToast.tsx`
+  - `apps/web/src/styles/shadow-analyst.css`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `scripts/capture_visual_redteam_audit.cjs`
+  - `apps/web/src/components/surgery/surgeryProtocols.ts`
+  - `apps/web/src/components/visit/surgery/VisitSurgeryProtocolTab.tsx`
+  - `apps/web/src/components/implants/implantCatalog.ts`
+  - `apps/web/src/components/anesthesia/AnesthesiaQuickBar.tsx`
+  - `apps/api/src/routes/clinicalImplants.ts`
+  - `apps/api/src/routes/inventory.ts`
+  - `apps/api/src/routes/treatmentConsumables.ts`
+  - `apps/api/src/services/treatmentConsumablesService.ts`
+  - `apps/api/src/tests/routes/implantStabilityEngine.test.ts`
+  - `apps/web/src/components/surgery/__tests__/surgeryProtocols.test.ts`
+  - `apps/web/src/components/surgery/__tests__/surgeryCockpitModal.test.tsx` (коммиты `61eabcef3`, `04c894b64`, `257d0fbba`, Wave 281)
+

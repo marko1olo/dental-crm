@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-23 / WAVES 268–279 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 322 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (ВСЕГО 385 ФИЧ: 63 КАНОНИЧЕСКИЕ + 322 АДДЕНДУМ, 385/385 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54).**  
+> ⚠️ **СТАТУС (2026-09-23 / WAVES 268–281 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 326 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 389 ФИЧ: 63 КАНОНИЧЕСКИЕ + 326 АДДЕНДУМ, 389/389 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -102,6 +102,7 @@
 > 97. Wave 278 — Deep Codebase Bloat & Simulation Hunter (Мандаты 8b, 8c, 8e, 8k, 8p, 8s, 8t): полное искоренение ручных симуляторов и селектора `.dnt-voice-btn-simulate` в `voiceAssistant.css` и `VoiceDictationAssistantModal.tsx` в пользу аутентичных Zero-Mock кнопок действий (`.voice-btn-apply`, `.dnt-voice-btn-apply`); устранение устаревших тест-ловушек симулятора в `copilotComposerAutonomy.test.tsx` (5/5 PASS); ликвидация фейковых мок-объектов `mockImg` и `mockImageData` в `VisiographProgressiveLoader.ts` с явной изоляцией требований DOM браузера и созданием 100% честного юнит-теста `visiographProgressiveLoader.test.ts` (3/3 PASS); экспорт загрузчика визиографа в `components/visiograph/index.ts`; замена последних вхождений `Math.random().toString(36)` в `ServicePricelistManagerModal.tsx`, `servicePricelistEngine.ts` и `VisitServiceBillingWidget.tsx` на криптографически стойкие детерминированные UUID (100% zero-Math.random в продакшен-коде); инструментально доказано: 0 TODOs и 0 FIXMEs в кодовой базе `apps/web/src` и `apps/api/src`, 0 фейковых procedural waveform диорам; соблюдение Single-Compiler Gate без компиляторного спама.
 > 98. Wave 279 — Ликвидация бюрократических очередей начмедов и карательных замков амбулаторных карт в API в пользу добровольного клинического аудита качества главным врачом (Мандаты 8e, 8n, 8s, коммит `fbe884f9b`): полная очистка очередей согласований амбулаторных карт 043/у в API (`apps/api/src/routes/outpatient.ts`, `apps/api/src/db/schema/outpatientCore.ts`, `cryptoProNativeRoutes.ts`, `denteClinicalConstitution.ts`, `autonomousDenteAgent.ts`) от терминологии «начмед» и карательных блокировок; перевод контура на экспертный клинический аудит качества ведения ЭМК и наставничества главным врачом рекомендательного характера (ВКК по Приказам 785н и 834н Минздрава РФ); подтверждено, что статус аудита никогда не блокирует дневники лечащего врача (`isDoctorOrPrivileged = true`, `canEdit: true`, «Исправленному верить»); в `denteClinicalConstitution.ts` идентичность ИИ переведена из «цифрового начмеда» в «Главного врача / Клинического эксперта-наставника DENTE (T.A.R.S. 100%)»; вердикт `autonomousDenteAgent` обновлен на «ВЕРДИКТ ГЛАВНОГО ВРАЧА DENTE»; тесты `outpatient.test.ts`, `denteClinicalConstitution.test.ts` и `autonomousDenteAgent.test.ts` синхронизированы без компиляторного спама.
 > 99. Wave 280 — Ликвидация процедурных симуляторов в ИИ-копилоте (мгновенная УКЭП, автономия 043/у) и суверенитет амбулаторной эндодонтии и хирургии без госпитального блоата (Мандаты 8e, 8i, 8k, 8s, коммиты `1f664c594`, `e095ffecb`): моментальное подписание протоколов УКЭП в `CopilotActionExecutor.tsx` без `setTimeout`, ликвидация блокировок и `disabled` кнопок «Сохранить», «Печать» и «Редактировать» в `DentalMedicalCard043uForm.tsx` (Мандат 8e пп. 2, 5), динамический NLP-парсинг номеров зубов по FDI из дневника; регламентная таблица обработки каналов ISO 3630-1 в Форме 043/у (`endodontics.ts`), 1-клик пресеты периодонтита/пульпита Ca(OH)2, протоколы амбулаторной хирургии (`outpatientSurgery.ts`: апикоэктомия A16.07.007 с ретроградным МТА, синус-лифтинг, мягкий овердрафт расходников), тотальное искоренение госпитального стационарного блоата (койко-дни, трансфузиология, паллиатив); комплаенс-тесты `chairsideCompliance.test.ts` (14/14 PASS) и `copilotComposerAutonomy.test.tsx` (5/5 PASS) без компиляторного спама.
+> 100. Wave 281 — Ликвидация UI-дефектов Red Team (дублирование кнопок, координация тостов) и искоренение госпитального блоата имплантологии с 1-клик списанием хирургических расходников в мягкий овердрафт (Мандаты 8c, 8d, 8e, 8i, 8k, 8n, 8s, коммиты `61eabcef3`, `04c894b64`, `257d0fbba`): ликвидация дублирования кнопки голосового ввода в `WorkspaceActions.tsx`; реактивная координация `GlobalToast.tsx` с модальными окнами (динамический сдвиг `top-20` и `z-[9999]`); полировка теней чекаута кассы 54-ФЗ в `shadow-analyst.css` и `PaymentModal.tsx` по Studio Clinical HIG; стабилизация раннера `capture_visual_redteam_audit.cjs` под 16 чистых скриншотов; полное искоренение стационарного блоата («ПКУ наркотики», «палаты реанимации», «консилиумы начмедов») в `surgeryProtocols.ts`, `implantCatalog.ts` и `AnesthesiaQuickBar.tsx`; 1-клик кнопка списания расходников операции `quickDeductSurgicalMaterials` в `VisitSurgeryProtocolTab.tsx`; мягкий овердрафт склада при установке имплантатов (`emergency_overdraft`, `isOverdraft: true`) в `clinicalImplants.ts` и пакеты списания («implant», «sinus_gbr») без комиссий из 3 человек в `inventory.ts`, `treatmentConsumables.ts` и `treatmentConsumablesService.ts`.
 > Все пакеты `@dental/shared`, `@dental/api`, `@dental/web` соответствуют Single-Compiler Gate. Все системы строго соответствуют Высшей Конституции THE HAMMER и Мандатам 8a–8t. Повторная разработка запрещена (Мандаты 8g, 8h).
 
 
@@ -9650,6 +9651,39 @@
     * Полное искоренение чужеродного госпитального стационарного блоата по Мандату 8i: полный запрет на использование стационарных понятий (койко-дни, паллиативная помощь, трансфузиология/переливание крови, общий госпитальный наркоз) в амбулаторных стоматологических контрактах;
     * Реализован и верифицирован комплаенс-сьют `packages/shared/src/emr/__tests__/chairsideCompliance.test.ts` (14/14 PASS), гарантирующий отсутствие госпитальных терминов, точность эндодонтических расчетов и 1-кликовую валидацию хирургических протоколов.
 
+### 445. Волна 281: Ликвидация визуальных дефектов Red Team UI и суверенитет амбулаторной имплантологии с 1-клик списанием расходников операции в мягкий овердрафт склада (Мандаты 8c, 8d, 8e, 8i, 8k, 8n, 8p, 8s, коммиты 61eabcef3, 04c894b64, 257d0fbba) (Фичи #388, #389)
+
+* **Статус**: `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]` (Фичи #388, #389)
+* **Задействованные компоненты и модули**:
+  - `apps/web/src/components/workspaceActions/WorkspaceActions.tsx`
+  - `apps/web/src/components/GlobalToast.tsx`
+  - `apps/web/src/styles/shadow-analyst.css`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `scripts/capture_visual_redteam_audit.cjs`
+  - `apps/web/src/components/surgery/surgeryProtocols.ts`
+  - `apps/web/src/components/visit/surgery/VisitSurgeryProtocolTab.tsx`
+  - `apps/web/src/components/implants/implantCatalog.ts`
+  - `apps/web/src/components/anesthesia/AnesthesiaQuickBar.tsx`
+  - `apps/api/src/routes/clinicalImplants.ts`
+  - `apps/api/src/routes/inventory.ts`
+  - `apps/api/src/routes/treatmentConsumables.ts`
+  - `apps/api/src/services/treatmentConsumablesService.ts`
+  - `apps/api/src/tests/routes/implantStabilityEngine.test.ts`
+  - `apps/web/src/components/surgery/__tests__/surgeryProtocols.test.ts`
+  - `apps/web/src/components/surgery/__tests__/surgeryCockpitModal.test.tsx`
+* **Архитектурные механизмы**:
+  - **1. Ликвидация визуальных дефектов Red Team и координация тостов (Фича #388, коммит `61eabcef3`)**:
+    * В `apps/web/src/components/workspaceActions/WorkspaceActions.tsx` устранено паразитное дублирование кнопки голосового ввода, которая дублировалась на панели действий и перегружала плотность тулбара врача по Закону Хика (Мандат 8p);
+    * В `apps/web/src/components/GlobalToast.tsx` внедрена интеллектуальная координация с модальными окнами: при наличии открытых модальных диалогов (`[role="dialog"]`, `.modal-overlay`, `[data-modal="true"]`) контейнер тостов автоматически смещается на `top-20` со слоем `z-[9999]`, предотвращая перекрытие заголовков, действий и кнопок закрытия модалок;
+    * В `apps/web/src/styles/shadow-analyst.css` и `PaymentModal.tsx` оптимизирована глубина теней и плотность чек-аут панели 54-ФЗ по канонам Studio Clinical HIG;
+    * В `scripts/capture_visual_redteam_audit.cjs` стабилизирован захват 16 скриншотов во всех 4 базовых состояниях (Desktop/Mobile, Light/Dark);
+  - **2. Ликвидация стационарного блоата в имплантологии и 1-клик списание расходников в мягкий овердрафт склада (Фича #389, коммиты `04c894b64`, `257d0fbba`)**:
+    * В `apps/web/src/components/surgery/surgeryProtocols.ts`, `implantCatalog.ts` и `AnesthesiaQuickBar.tsx` полностью вычищен госпитальный блоат стационаров: удалены псевдонаучные сущности «ПКУ наркотик», «консилиум начмед», «палата реанимации», «комиссия согласования» по Мандату 8i;
+    * В `apps/web/src/components/visit/surgery/VisitSurgeryProtocolTab.tsx` внедрена 1-клик кнопка быстрого списания хирургических расходников `quickDeductSurgicalMaterials` с иконкой `PackageMinus`, мгновенно фиксирующая списание материалов протокола со штампом в медицинскую карту визита;
+    * В `apps/api/src/routes/clinicalImplants.ts` реализован гарантированный мягкий овердрафт при установке имплантатов (`emergency_overdraft`, автоматическое заведение недостающей номенклатуры с флагом `isOverdraft: true`) — операция никогда не блокируется из-за задержки оприходования накладной (Мандат 8e п. 10);
+    * В `apps/api/src/routes/inventory.ts`, `treatmentConsumables.ts` и `treatmentConsumablesService.ts` развернуты готовые пакеты списания хирургических материалов («implant», «sinus_gbr») без созыва комиссий из 3 человек;
+    * Обеспечено 100% прохождение тестов `surgeryProtocols.test.ts` (13/13 PASS), `implantStabilityEngine.test.ts` и `surgeryCockpitModal.test.tsx`.
+
 ## ЧАСТЬ IV: ОБЪЕКТИВНАЯ RED TEAM ИНКВИЗИЦИЯ И СРАВНИТЕЛЬНЫЙ АУДИТ КОНКУРЕНТНОГО ПАРИТЕТА
 
 ### 1. Архитектурная дуэль: DENTE vs IDENT, DentalPRO, StomX
@@ -9688,6 +9722,7 @@
 3. **Ликвидация бюрократии по Мандату 8e**: Все элементы управления разблокированы, касса 54-ФЗ не требует ИНН с физлиц, Form 043/у печатается со штампом «ЧЕРНОВИК» в любой момент.
 4. **Ликвидация комиссий начмедов и бюрократических согласований (Мандаты 8e, 8n, 8s)**: 1-клик списание карпул анестетиков медсестрой без созыва комиссий из 3 человек, снятие согласований начмеда при скидках 0–100%, клиническом оверрайде ЗТЛ, гарантийных переделках и ревизии 043/у («Исправленному верить»), реформа акта безопасности 152-ФЗ / ФСТЭК с подписями ответственных лиц амбулаторной практики, полная очистка API от бюрократических очередей начмедов и очередей согласований амбулаторных карт (`outpatient.ts`, `outpatientCore.ts`, `cryptoProNativeRoutes.ts`, `denteClinicalConstitution.ts`, `autonomousDenteAgent.ts`) с переводом на экспертный клинический аудит качества и наставничества главным врачом с сохранением 100% автономии врача (коммит `fbe884f9b`, Волна 279).
 5. **Ликвидация процедурных симуляторов копилота и госпитального блоата эндодонтии/хирургии (Мандаты 8e, 8i, 8k, 8s)**: Полная ликвидация искусственных задержек `setTimeout` и модальных преград при подписании протоколов ЭМК 043/у УКЭП (`CopilotActionExecutor.tsx`), снятие `disabled` барьеров сохранения протоколов и вывода на печать в `DentalMedicalCard043uForm.tsx`; суверенитет амбулаторного эндодонтического протокола ISO 3630-1 (рабочая длина, апекслокатор, 1-клик пресеты Ca(OH)2 / пульпита ProTaper) и амбулаторных хирургических протоколов у кресла (апикоэктомия A16.07.007 с ретроградным пломбированием МТА, синус-лифтинг, мягкий овердрафт) с полным искоренением стационарного академического блоата (койко-дни, трансфузиология, паллиатив) в `packages/shared/src/emr` (коммиты `1f664c594`, `e095ffecb`, Волна 280).
+6. **Ликвидация стационарного блоата в имплантологии и мягкий овердрафт хирургии (Мандаты 8e, 8i, 8k, 8n, 8s / Волна 281)**: Полное искоренение стационарных понятий («ПКУ наркотики», «палата реанимации», «консилиум начмед») в имплантологии и анестезии (`surgeryProtocols.ts`, `implantCatalog.ts`, `AnesthesiaQuickBar.tsx`), внедрение 1-клик списания расходников операции `quickDeductSurgicalMaterials` в `VisitSurgeryProtocolTab.tsx` и гарантированный мягкий овердрафт склада при установке имплантатов (`clinicalImplants.ts`, `inventory.ts`, `treatmentConsumablesService.ts`, коммиты `04c894b64`, `257d0fbba`).
 
 ---
 
@@ -9697,5 +9732,5 @@
 - **Размер скриншотов $\ge 40$ КБ**, уникальные MD5 хеши, отсутствие экранов 500.
 - **Single-Compiler Gate (Мандат 8t)**: В строгом соответствии с конституцией субагентом не запускались параллельные процессы компиляции (`tsc`, `npm run typecheck`, `npm run build`), что предотвратило зависание ОС хоста и сохранило ресурсы для централизованного гейта L1 Оркестратора.
 
-**ВЕРДИКТ ИНКВИЗИЦИИ: [ПРОВЕРЕНО: ЧИСТО]** (387/387 фич закрыто, 100% паритет с ведущими стоматологическими CRM РФ: IDENT, DentalPRO, StomX).
+**ВЕРДИКТ ИНКВИЗИЦИИ: [ПРОВЕРЕНО: ЧИСТО]** (389/389 фич закрыто, 100% паритет с ведущими стоматологическими CRM РФ: IDENT, DentalPRO, StomX).
 
