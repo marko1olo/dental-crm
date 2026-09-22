@@ -162,12 +162,9 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 			return;
 		}
 		setAuthError(null);
-		setIsSubmitting(true);
-		setTimeout(() => {
-			setIsSubmitting(false);
-			setIsOtpSent(true);
-			setOtpCode("4290"); // Developer/Test OTP fallback
-		}, 400);
+		setIsSubmitting(false);
+		setIsOtpSent(true);
+		setOtpCode("4290"); // Developer/Test OTP fallback
 	};
 
 	// OTP Verify
@@ -177,11 +174,8 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 			return;
 		}
 		setAuthError(null);
-		setIsSubmitting(true);
-		setTimeout(() => {
-			setIsSubmitting(false);
-			setStep("consents");
-		}, 300);
+		setIsSubmitting(false);
+		setStep("consents");
 	};
 
 	// Consent Signature Confirm (1-Click Simple Electronic Signature PEP 63-ФЗ)
@@ -258,16 +252,13 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		setIsNormApplied(true);
 
 		const evaluatedNorm = evaluateSomaticRisks(normData);
-		setIsSubmitting(true);
-		setTimeout(() => {
-			setIsSubmitting(false);
-			setStep("completed");
-			onCheckinSuccess?.({
-				patientId: "patient-selfcheckin-001",
-				signedConsents: consents.filter((c) => c.isSigned).map((c) => c.id),
-				somaticProfile: evaluatedNorm,
-			});
-		}, 300);
+		setIsSubmitting(false);
+		setStep("completed");
+		onCheckinSuccess?.({
+			patientId: "patient-selfcheckin-001",
+			signedConsents: consents.filter((c) => c.isSigned).map((c) => c.id),
+			somaticProfile: evaluatedNorm,
+		});
 	};
 
 	// Somatic Health Update & Submission
@@ -288,36 +279,30 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 	});
 
 	const handleCompleteCheckin = () => {
-		setIsSubmitting(true);
-		setTimeout(() => {
-			setIsSubmitting(false);
-			setStep("completed");
-			onCheckinSuccess?.({
-				patientId: "patient-selfcheckin-001",
-				signedConsents: consents.filter((c) => c.isSigned).map((c) => c.id),
-				somaticProfile: riskEvaluation,
-			});
-		}, 400);
+		setIsSubmitting(false);
+		setStep("completed");
+		onCheckinSuccess?.({
+			patientId: "patient-selfcheckin-001",
+			signedConsents: consents.filter((c) => c.isSigned).map((c) => c.id),
+			somaticProfile: riskEvaluation,
+		});
 	};
 
 	const handleOneTouchCheckin = () => {
-		setIsSubmitting(true);
 		setAuthError(null);
-		setTimeout(() => {
-			setIsSubmitting(false);
-			const signed = consents.map((c) => ({
-				...c,
-				isSigned: true,
-				signedAtIso: new Date().toISOString(),
-			}));
-			setConsents(signed);
-			setStep("completed");
-			onCheckinSuccess?.({
-				patientId: "patient-selfcheckin-001",
-				signedConsents: signed.map((c) => c.id),
-				somaticProfile: riskEvaluation,
-			});
-		}, 300);
+		setIsSubmitting(false);
+		const signed = consents.map((c) => ({
+			...c,
+			isSigned: true,
+			signedAtIso: new Date().toISOString(),
+		}));
+		setConsents(signed);
+		setStep("completed");
+		onCheckinSuccess?.({
+			patientId: "patient-selfcheckin-001",
+			signedConsents: signed.map((c) => c.id),
+			somaticProfile: riskEvaluation,
+		});
 	};
 
 	const currentConsent = consents[activeConsentIndex];

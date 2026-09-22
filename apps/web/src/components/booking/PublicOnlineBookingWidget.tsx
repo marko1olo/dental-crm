@@ -1633,18 +1633,32 @@ export const PublicOnlineBookingWidget: React.FC<
 							</div>
 						</div>
 
-						<footer className="dbw-actions-footer">
+						<footer className="dbw-actions-footer flex items-center justify-between gap-2 flex-wrap">
 							<div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
 								Шаг 1 из 4: {customBranches.length > 1 ? "Выбор филиала и услуги" : "Выбор услуги"}
 							</div>
-							<button
-								type="button"
-								className="dbw-btn-next"
-								onClick={() => handleStepChange(2)}
-							>
-								<span>Выбрать врача</span>
-								<CheckCircle2 size={18} />
-							</button>
+							<div className="flex items-center gap-2 flex-wrap">
+								<button
+									type="button"
+									className="px-3.5 py-2 rounded-xl border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal-surface)] text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5"
+									onClick={() => {
+										setSelectedDoctorId(null);
+										handleStepChange(3);
+									}}
+									data-testid="fast-track-date-time-btn"
+								>
+									<span>К дате и времени (любой врач)</span>
+									<Calendar size={14} />
+								</button>
+								<button
+									type="button"
+									className="dbw-btn-next"
+									onClick={() => handleStepChange(2)}
+								>
+									<span>Выбрать врача</span>
+									<CheckCircle2 size={18} />
+								</button>
+							</div>
 						</footer>
 					</section>
 				)}

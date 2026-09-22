@@ -98,6 +98,7 @@ export function TelephonyFloatingWidget({
 	const isHeld = useTelephonyStore((s) => s.isHeld);
 	const toggleHold = useTelephonyStore((s) => s.toggleHold);
 	const openCallDrawer = useTelephonyStore((s) => s.openCallDrawer);
+	const isWsConnected = useTelephonyStore((s) => s.isWsConnected);
 
 	const ctx = useOptionalAppLogicContext();
 	const dashboard = ctx?.dashboard;
@@ -1635,23 +1636,37 @@ export function TelephonyFloatingWidget({
 										</div>
 									</>
 								) : (
-									<div className="py-8 px-4 text-center space-y-3">
+									<div
+										className="py-8 px-4 text-center space-y-3"
+										data-testid="telephony-fallback-waiting-webhook"
+									>
 										<div className="w-14 h-14 rounded-2xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)] flex items-center justify-center mx-auto">
 											<Phone size={24} />
 										</div>
 										<div>
 											<h4 className="text-sm font-bold text-[var(--ink,#0f172a)]">
-												Нет активных входящих звонков
+												Ожидание вебхука АТС
 											</h4>
-											<p className="text-xs text-[var(--muted,#64748b)] mt-1">
-												Используйте вкладку «Набор номера» для совершения
-												исходящего вызова.
+											<p className="text-xs text-[var(--muted,#64748b)] mt-1 max-w-xs mx-auto">
+												Шлюз АТС (UIS / Mango / Zadarma / Asterisk) подключен и
+												ожидает входящих звонков. При поступлении вызова карточка
+												пациента и быстрая запись откроются автоматически.
 											</p>
+											<div className="mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] border border-[var(--line,#e2e8f0)] text-[11px] font-medium text-[var(--ink,#0f172a)]">
+												<span
+													className={`w-1.5 h-1.5 rounded-full ${isWsConnected ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`}
+												/>
+												<span>
+													{isWsConnected
+														? "Шлюз АТС: Онлайн (WebSocket)"
+														: "Шлюз АТС: Ожидание вебхука"}
+												</span>
+											</div>
 										</div>
 										<button
 											type="button"
 											onClick={() => setActiveTab("dialer")}
-											className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--teal)] hover:opacity-90 text-white text-xs font-bold transition-all inline-flex items-center gap-2"
+											className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--teal)] hover:opacity-90 text-white text-xs font-bold transition-all inline-flex items-center gap-2 cursor-pointer shadow-xs"
 										>
 											<PhoneOutgoing size={14} />
 											<span>Набрать номер</span>
