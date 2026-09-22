@@ -26,9 +26,12 @@ import {
 import {
 	bookChairsideAppointmentTool,
 	calculate804nEstimateTool,
+	calculateAnestheticDosageTool,
 	checkDrugInteractionsTool,
+	checkWarehouseSuppliesTool,
 	createDentalLabOrderTool,
 	draft043uSoapDiaryTool,
+	generateInformedConsentIdsTool,
 	getPatientEmk043uTool,
 	normalizeAnatomicalSurfaces,
 	updateToothStatusTool,
@@ -42,7 +45,14 @@ const mockCtx: AgentContext = {
 	sessionId: "test-sess-01",
 	mode: "autonomous",
 	role: "doctor",
-	permissions: ["clinical.read", "clinical.write", "billing.calculate", "schedule.write"],
+	permissions: [
+		"clinical.read",
+		"clinical.write",
+		"billing.calculate",
+		"schedule.write",
+		"warehouse.read",
+		"documents.generate",
+	],
 	tools: {} as any,
 	db: null as any,
 };
@@ -246,6 +256,119 @@ describe("DENTE Autonomous AI Engine & Extended Tools Suite", () => {
 			expect(diary.renderedText043).not.toMatch(/[\u{1F300}-\u{1F9FF}]/u);
 			expect(diary.renderedText043).toMatch(/ДНЕВНИК ПРИЁМА ВРАЧА-СТОМАТОЛОГА/i);
 		});
+
+		it("calculate_anesthetic_dosage: calculates safe carpules by body weight for Articaine 4% 1:100 000", async () => {
+			const res = await calculateAnestheticDosageTool.handler(mockCtx, {
+				patientWeightKg: 70,
+				anestheticType: "articaine_1_100000",
+				somaticConditions: [],
+			});
+
+			expect(res.success).toBe(true);
+			expect(res.drugName).toContain("Артикаин 4%");
+			expect(res.concentrationPercent).toBe(4);
+			expect(res.mgPerCarpule).toBe(68);
+			expect(res.patientWeightKg).toBe(70);
+			// 70 kg * 7.0 mg/kg = 490 mg max / 68 mg = 7 carpules
+			expect(res.maxCarpules).toBe(7);
+			expect(res.recommendedCarpules).toBe(1);
+			expect(res.epinephrineMcgPerCarpule).toBe(17);
+			expect(res.isCardiovascularRisk).toBe(false);
+			expect(res.safeToProceed).toBe(true);
+			expect(res.doctorAutonomyBlocked).toBe(false); // Mandate 8e
+		});
+
+		it("calculate_anesthetic_dosage: automatically selects Mepivacaine 3% without vasoconstrictor for cardiac patient", async () => {
+			const res = await calculateAnestheticDosageTool.handler(mockCtx, {
+				patientWeightKg: 70,
+				anestheticType: "auto",
+				somaticConditions: ["Артериальная гипертензия II ст", "Ишемическая болезнь сердца"],
+			});
+
+			expect(res.success).toBe(true);
+			expect(res.drugName).toMatch(/мепивакаин\s*3%/i);
+			expect(res.isCardiovascularRisk).toBe(true);
+			expect(res.vasoconstrictorRatio).toBeNull();
+			expect(res.epinephrineMcgPerCarpule).toBe(0);
+			// 70 kg * 4.4 mg/kg = 300 mg max / 51 mg = 5 carpules
+			expect(res.maxCarpules).toBe(5);
+			expect(res.safeToProceed).toBe(true);
+			expect(res.doctorAutonomyBlocked).toBe(false);
+		});
+
+		it("calculate_anesthetic_dosage: soft warning on overdose without blocking doctor autonomy", async () => {
+			const res = await calculateAnestheticDosageTool.handler(mockCtx, {
+				patientWeightKg: 60,
+				anestheticType: "articaine_1_100000",
+				plannedCarpules: 10, // Exceeds safe limit
+			});
+
+			expect(res.plannedCarpules).toBe(10);
+			expect(res.warning).toMatch(/превышает безопасный предел/i);
+			expect(res.safeToProceed).toBe(true); // Mandate 8e: soft warning, never disabled
+			expect(res.doctorAutonomyBlocked).toBe(false);
+		});
+
+		it("generate_informed_consent_ids: matches statutory IDS-03-ENDO for pulpitis with 804n codes", async () => {
+			const res = await generateInformedConsentIdsTool.handler(mockCtx, {
+				patientId: "pat-ids-001",
+				procedureType: "endodontics",
+				diagnosisCode: "K04.0",
+				toothNumber: 26,
+			});
+
+			expect(res.success).toBe(true);
+			expect(res.consentCode).toBe("IDS-03-ENDO");
+			expect(res.consentTitle).toMatch(/эндодонтическ/i);
+			expect(res.regulatoryBasis).toMatch(/323-ФЗ.*1051н/i);
+			expect(res.nomenclature804nCodes).toContain("A16.07.030");
+			expect(res.nomenclature804nCodes).toContain("A16.07.008.001");
+			expect(res.printReady).toBe(true);
+			expect(res.isDraftEditable).toBe(true);
+			expect(res.doctorAutonomyBlocked).toBe(false);
+
+			// Mandate 8d Sin 7 check: ZERO cartoon emojis in rendered legal text
+			expect(res.renderedLegalText).not.toMatch(/[\u{1F300}-\u{1F9FF}]/u);
+			expect(res.renderedLegalText).toMatch(/ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ/i);
+		});
+
+		it("generate_informed_consent_ids: matches statutory IDS-02-THERAPY for caries K02.1", async () => {
+			const res = await generateInformedConsentIdsTool.handler(mockCtx, {
+				patientId: "pat-ids-002",
+				procedureType: "therapy",
+				diagnosisCode: "K02.1",
+				toothNumber: 14,
+			});
+
+			expect(res.success).toBe(true);
+			expect(res.consentCode).toBe("IDS-02-THERAPY");
+			expect(res.nomenclature804nCodes).toContain("A16.07.002.001");
+			expect(res.printReady).toBe(true);
+		});
+
+		it("check_warehouse_supplies: validates supplies with Mandate 8e soft overdraft protection", async () => {
+			const inStockRes = await checkWarehouseSuppliesTool.handler(mockCtx, {
+				itemName: "Артикаин 4% (карпулы 1.7 мл)",
+				requestedQuantity: 2,
+			});
+
+			expect(inStockRes.success).toBe(true);
+			expect(inStockRes.doctorAutonomyBlocked).toBe(false); // Mandate 8e
+			expect(inStockRes.sanpinCompliant).toBe(true);
+			expect(inStockRes.criticalMaterials.length).toBeGreaterThan(0);
+
+			// Soft overdraft check on depleted supply (itemName with 'дефицит')
+			const overdraftRes = await checkWarehouseSuppliesTool.handler(mockCtx, {
+				itemName: "Артикаин 4% дефицит",
+				requestedQuantity: 2,
+			});
+
+			expect(overdraftRes.success).toBe(true);
+			expect(overdraftRes.isSoftOverdraft).toBe(true);
+			expect(overdraftRes.deficitCount).toBe(2);
+			expect(overdraftRes.warning).toMatch(/мягкий овердрафт.*не заблокирована/i);
+			expect(overdraftRes.doctorAutonomyBlocked).toBe(false); // Mandate 8e: zero blocks!
+		});
 	});
 
 	// ─── 2. AUTONOMOUS REACT ENGINE CYCLE ──────────────────────────────────────
@@ -285,16 +408,34 @@ describe("DENTE Autonomous AI Engine & Extended Tools Suite", () => {
 			expect(result.thought).toContain("[ИТЕРАЦИЯ 5/5");
 
 			// Actions cards check
-			expect(result.actions.length).toBeGreaterThanOrEqual(4);
+			expect(result.actions.length).toBeGreaterThanOrEqual(6);
 			const diaryCard = result.actions.find((a) => a.type === "apply_soap_diary");
 			const estCard = result.actions.find((a) => a.type === "apply_estimate_804n");
 			const labCard = result.actions.find((a) => a.type === "apply_lab_order");
 			const appCard = result.actions.find((a) => a.type === "apply_appointment");
+			const anesthCard = result.actions.find((a) => a.type === "apply_anesthetic_dosage");
+			const idsCard = result.actions.find((a) => a.type === "print_informed_consent");
+			const warehouseCard = result.actions.find((a) => a.type === "check_warehouse_supplies");
 
 			expect(diaryCard?.readyForOneClickApply).toBe(true);
 			expect(estCard?.doctorAutonomyGuaranteed).toBe(true);
 			expect(labCard?.readyForOneClickApply).toBe(true);
 			expect(appCard?.readyForOneClickApply).toBe(true);
+			expect(anesthCard?.readyForOneClickApply).toBe(true);
+			expect(idsCard?.readyForOneClickApply).toBe(true);
+			expect(warehouseCard?.doctorAutonomyGuaranteed).toBe(true);
+
+			// Extended Clinical AI tools results check
+			expect(result.anestheticDosage).toBeDefined();
+			expect(result.anestheticDosage?.safeToProceed).toBe(true);
+			expect(result.anestheticDosage?.drugName).toMatch(/мепивакаин|артикаин/i);
+
+			expect(result.informedConsent).toBeDefined();
+			expect(result.informedConsent?.consentCode).toBe("IDS-03-ENDO");
+			expect(result.informedConsent?.printReady).toBe(true);
+
+			expect(result.warehouseSupplies).toBeDefined();
+			expect(result.warehouseSupplies?.doctorAutonomyBlocked).toBe(false);
 
 			// Safety alerts check: penicillin & hypertension
 			const penAlert = result.safetyAlerts.find((a) => a.alertType === "drug_allergy_conflict");
@@ -308,8 +449,11 @@ describe("DENTE Autonomous AI Engine & Extended Tools Suite", () => {
 			expect(result.verdict).toMatch(/ВЕРДИКТ ЦИФРОВОГО НАЧМЕДА DENTE \(T\.A\.R\.S\. 100%\):/);
 			expect(result.verdict).toContain("2.6 (26)");
 			expect(result.verdict).toContain("K04.0");
+			expect(result.verdict).toMatch(/Анестезия:/);
 			expect(result.verdict).toMatch(/Смета по Приказу 804н:/);
 			expect(result.verdict).toMatch(/Форма 043\/у: SOAP-протокол подготовлен со статусом ЧЕРНОВИК/);
+			expect(result.verdict).toMatch(/ИДС: IDS-03-ENDO/);
+			expect(result.verdict).toMatch(/Склад:/);
 		});
 
 		it("parses natural language clinical prompt into structured actions", async () => {

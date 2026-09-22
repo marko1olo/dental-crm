@@ -41,6 +41,41 @@ import {
 import type { AgentContext } from "./context.js";
 import type { ToolRegistry } from "./tools/registry.js";
 import type { ToolDefinition } from "./tools/tool.js";
+import {
+	calculateAnestheticDosageTool,
+	calculateAnestheticDosageSchema,
+	type CalculateAnestheticDosageInput,
+	type CalculateAnestheticDosageResult,
+} from "./tools/anestheticDosageTool.js";
+import {
+	generateInformedConsentIdsTool,
+	generateInformedConsentIdsSchema,
+	type GenerateInformedConsentIdsInput,
+	type GenerateInformedConsentIdsResult,
+} from "./tools/informedConsentTool.js";
+import {
+	checkWarehouseSuppliesTool,
+	checkWarehouseSuppliesSchema,
+	type CheckWarehouseSuppliesInput,
+	type CheckWarehouseSuppliesResult,
+	type CriticalSupplyItem,
+} from "./tools/warehouseSuppliesTool.js";
+
+export {
+	calculateAnestheticDosageTool,
+	calculateAnestheticDosageSchema,
+	type CalculateAnestheticDosageInput,
+	type CalculateAnestheticDosageResult,
+	generateInformedConsentIdsTool,
+	generateInformedConsentIdsSchema,
+	type GenerateInformedConsentIdsInput,
+	type GenerateInformedConsentIdsResult,
+	checkWarehouseSuppliesTool,
+	checkWarehouseSuppliesSchema,
+	type CheckWarehouseSuppliesInput,
+	type CheckWarehouseSuppliesResult,
+	type CriticalSupplyItem,
+};
 
 // ============================================================================
 // 1. TOOL: get_patient_emk_043u
@@ -1072,6 +1107,9 @@ export const DENTE_AGENT_TOOLS = {
 	create_dental_lab_order: createDentalLabOrderTool,
 	book_chairside_appointment: bookChairsideAppointmentTool,
 	draft_043u_soap_diary: draft043uSoapDiaryTool,
+	calculate_anesthetic_dosage: calculateAnestheticDosageTool,
+	generate_informed_consent_ids: generateInformedConsentIdsTool,
+	check_warehouse_supplies: checkWarehouseSuppliesTool,
 };
 
 export function registerDenteAgentTools(

@@ -22,6 +22,9 @@ import {
 	createDentalLabOrderTool,
 	bookChairsideAppointmentTool,
 	draft043uSoapDiaryTool,
+	calculateAnestheticDosageTool,
+	generateInformedConsentIdsTool,
+	checkWarehouseSuppliesTool,
 	type Calculate804nEstimateResult,
 	type CheckDrugInteractionsResult,
 	type CreateDentalLabOrderResult,
@@ -29,6 +32,9 @@ import {
 	type Draft043uSoapDiaryResult,
 	type PatientEmk043uResult,
 	type UpdateToothStatusResult,
+	type CalculateAnestheticDosageResult,
+	type GenerateInformedConsentIdsResult,
+	type CheckWarehouseSuppliesResult,
 } from "./denteAgentTools.js";
 import {
 	formatFdiTooth,
@@ -71,6 +77,9 @@ export interface AutonomousDenteAgentInput {
 	somaticHistory?: string[];
 	activeServices?: string[];
 	discountPercent?: number;
+	patientWeightKg?: number;
+	anestheticType?: "articaine_1_100000" | "articaine_1_200000" | "mepivacaine_3_plain" | "auto";
+	plannedCarpules?: number;
 	labOrderRequest?: LabOrderRequest;
 	appointmentRequest?: AppointmentRequest;
 	mode?: "autonomous" | "supervised";
@@ -83,7 +92,10 @@ export type ActionCardType =
 	| "apply_estimate_804n"
 	| "apply_tooth_status"
 	| "apply_lab_order"
-	| "apply_appointment";
+	| "apply_appointment"
+	| "apply_anesthetic_dosage"
+	| "print_informed_consent"
+	| "check_warehouse_supplies";
 
 export interface ProactiveActionCard {
 	id: string;
@@ -122,6 +134,9 @@ export interface AutonomousDenteAgentResult {
 	estimate804n?: Calculate804nEstimateResult;
 	labOrder?: CreateDentalLabOrderResult;
 	appointment?: BookChairsideAppointmentResult;
+	anestheticDosage?: CalculateAnestheticDosageResult;
+	informedConsent?: GenerateInformedConsentIdsResult;
+	warehouseSupplies?: CheckWarehouseSuppliesResult;
 	diagnostics: {
 		executionTimeMs: number;
 		toolsInvoked: string[];
@@ -156,6 +171,7 @@ export class AutonomousDenteAgent {
 		let extractedAllergies = [...(input.allergies || [])];
 		let extractedSomatic = [...(input.somaticHistory || [])];
 		let resolvedDiscount = input.discountPercent ?? 0;
+		let resolvedWeight = input.patientWeightKg ?? 70;
 		let labReq = input.labOrderRequest;
 		let appReq = input.appointmentRequest;
 
@@ -187,6 +203,10 @@ export class AutonomousDenteAgent {
 				if (match && match[1]) {
 					resolvedDiscount = Number.parseInt(match[1], 10);
 				}
+			}
+			const weightMatch = p.match(/(?:вес[а-я]*\s*[:=]?\s*|пациент\s+)(\d{2,3})\s*кг/i) || p.match(/(\d{2,3})\s*кг/i);
+			if (weightMatch && weightMatch[1]) {
+				resolvedWeight = Number.parseInt(weightMatch[1], 10);
 			}
 			if (!appReq && /запис|при[её]м|повторн/i.test(p)) {
 				const dateMatch = p.match(/\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}Z?)?/);
@@ -233,7 +253,7 @@ export class AutonomousDenteAgent {
 			sessionId: `react_sess_${Date.now()}`,
 			mode: input.mode || "autonomous",
 			role: "doctor",
-			permissions: ["clinical.read", "clinical.write", "billing.calculate", "schedule.write"],
+			permissions: ["clinical.read", "clinical.write", "billing.calculate", "schedule.write", "warehouse.read", "documents.generate"],
 			tools: {} as any,
 			db,
 		};
@@ -245,6 +265,9 @@ export class AutonomousDenteAgent {
 		let diaryResult: Draft043uSoapDiaryResult | undefined;
 		let labOrderResult: CreateDentalLabOrderResult | undefined;
 		let appointmentResult: BookChairsideAppointmentResult | undefined;
+		let anestheticResult: CalculateAnestheticDosageResult | undefined;
+		let consentResult: GenerateInformedConsentIdsResult | undefined;
+		let warehouseResult: CheckWarehouseSuppliesResult | undefined;
 
 		const fullThoughtTraces: string[] = [];
 
@@ -291,6 +314,27 @@ export class AutonomousDenteAgent {
 				organizationId: orgId,
 			});
 			toolsInvoked.push("get_patient_emk_043u");
+
+			// Tool: calculate_anesthetic_dosage (Weight-based carpules calculation)
+			const anestheticObservation = await calculateAnestheticDosageTool.handler(ctx, {
+				patientWeightKg: resolvedWeight,
+				anestheticType: input.anestheticType ?? "auto",
+				somaticConditions: extractedSomatic,
+				plannedCarpules: input.plannedCarpules ?? 1,
+				procedureCategory: clinicalCategory,
+			});
+			anestheticResult = anestheticObservation;
+			toolsInvoked.push("calculate_anesthetic_dosage");
+
+			actions.push({
+				id: `card_anesth_${crypto.randomUUID().slice(0, 8)}`,
+				type: "apply_anesthetic_dosage",
+				title: `Анестезия: ${anestheticObservation.drugName} (${anestheticObservation.recommendedCarpules} карп.)`,
+				description: `Масса тела: ${anestheticObservation.patientWeightKg} кг. Макс: ${anestheticObservation.maxCarpules} карп. по 1.7 мл (${anestheticObservation.isCardiovascularRisk ? "кардио-протокол без адреналина / 0.04 мг" : "физиологическая норма"}). Списание в 1 клик.`,
+				payload: anestheticObservation as any,
+				readyForOneClickApply: true,
+				doctorAutonomyGuaranteed: true,
+			});
 		}
 
 		// ─── ITERATION 2: THOUGHT -> ACTION: update_tooth_status ─────────────
@@ -476,6 +520,49 @@ export class AutonomousDenteAgent {
 					doctorAutonomyGuaranteed: true,
 				});
 			}
+
+			// Tool: generate_informed_consent_ids (Order 1051n, Art 20 323-FZ)
+			const consentObservation = await generateInformedConsentIdsTool.handler(ctx, {
+				patientId: input.patientId,
+				procedureType: clinicalCategory as any,
+				diagnosisCode: primaryIcd10,
+				serviceCodes: estimateResult?.items.map((it) => it.code) ?? [],
+				toothNumber: resolvedTooth ?? undefined,
+				doctorName: "Лечащий врач",
+			});
+			consentResult = consentObservation;
+			toolsInvoked.push("generate_informed_consent_ids");
+
+			actions.push({
+				id: `card_ids_${crypto.randomUUID().slice(0, 8)}`,
+				type: "print_informed_consent",
+				title: `Печать ИДС: ${consentObservation.consentCode}`,
+				description: `${consentObservation.consentTitle}. Форма 043/у, ст. 20 323-ФЗ. Готово к печати в 1 клик.`,
+				payload: consentObservation as any,
+				readyForOneClickApply: true,
+				doctorAutonomyGuaranteed: true,
+			});
+
+			// Tool: check_warehouse_supplies (Soft overdraft Mandate 8e)
+			const warehouseObservation = await checkWarehouseSuppliesTool.handler(ctx, {
+				organizationId: orgId,
+				itemName: anestheticResult?.drugName || "Артикаин 4% (карпулы 1.7 мл)",
+				requestedQuantity: anestheticResult?.recommendedCarpules || 1,
+			});
+			warehouseResult = warehouseObservation;
+			toolsInvoked.push("check_warehouse_supplies");
+
+			actions.push({
+				id: `card_warehouse_${crypto.randomUUID().slice(0, 8)}`,
+				type: "check_warehouse_supplies",
+				title: `Склад: ${warehouseObservation.itemName}`,
+				description: warehouseObservation.isSoftOverdraft
+					? `Мягкий овердрафт: остаток ${warehouseObservation.currentStock} шт. (дефицит: ${warehouseObservation.deficitCount} шт., накладная не внесена). Приём не заблокирован.`
+					: `В наличии на складе: ${warehouseObservation.currentStock} шт. Списание готово.`,
+				payload: warehouseObservation as any,
+				readyForOneClickApply: true,
+				doctorAutonomyGuaranteed: true,
+			});
 		}
 
 		// ─── ITERATION 5: FINAL CLINICAL VERDICT (T.A.R.S. 100%) ─────────────
@@ -496,8 +583,11 @@ export class AutonomousDenteAgent {
 			`• Пациент: ${input.patientId} | Зуб: ${fdiToothFormatted}.`,
 			`• Клинический диагноз: ${primaryIcd10} ${diagnosisName}.`,
 			`• Фармакологическая безопасность: ${safetySummary}`,
+			anestheticResult ? `• Анестезия: ${anestheticResult.drugName} — ${anestheticResult.recommendedCarpules} карп. (макс. ${anestheticResult.maxCarpules} карп. на ${anestheticResult.patientWeightKg} кг).` : null,
 			`• Смета по Приказу 804н: ${totalDueStr}${resolvedDiscount > 0 ? ` (скидка врача ${resolvedDiscount}%)` : ""}.`,
 			`• Форма 043/у: SOAP-протокол подготовлен со статусом ЧЕРНОВИК (Мандат 8e: врач правит только патологию).`,
+			consentResult ? `• ИДС: ${consentResult.consentCode} (${consentResult.consentTitle}) — готово к печати.` : null,
+			warehouseResult ? `• Склад: ${warehouseResult.itemName} (${warehouseResult.isSoftOverdraft ? `мягкий овердрафт, дефицит ${warehouseResult.deficitCount} шт.` : `в наличии ${warehouseResult.currentStock} шт.`}) — приём не заблокирован.` : null,
 			labOrderResult ? `• Наряд ЗТЛ: ${labOrderResult.workType} (${labOrderResult.vitaShade}) — портал готов.` : null,
 			appointmentResult ? `• Повторный визит: ${appointmentResult.startsAt.slice(0, 16).replace("T", " ")} — без обязательного ассистента.` : null,
 			`• Готово к применению в 1 клик (${actions.length} действий).`,
@@ -529,6 +619,9 @@ export class AutonomousDenteAgent {
 			estimate804n: estimateResult,
 			labOrder: labOrderResult,
 			appointment: appointmentResult,
+			anestheticDosage: anestheticResult,
+			informedConsent: consentResult,
+			warehouseSupplies: warehouseResult,
 			diagnostics: {
 				executionTimeMs,
 				toolsInvoked,

@@ -12,6 +12,7 @@ import { registerClinicalTools } from "./clinicalTools.js";
 import { registerContextTools } from "./contextTools.js";
 import { registerRagTools } from "./ragTools.js";
 import { registerSanpinTools } from "./sanpinTools.js";
+import { registerDenteAgentTools } from "../denteAgentTools.js";
 import { toolToAnthropicSchema, toolToOpenAiSchema } from "./schemaSerializer.js";
 import type { ToolDefinition, ToolResult } from "./tool.js";
 
@@ -253,6 +254,7 @@ export function createDefaultToolRegistry(): ToolRegistry {
 	registerSanpinTools(registry, "sanpin");
 	registerRagTools(registry, "internal");
 	registerContextTools(registry, "ui_context");
+	registerDenteAgentTools(registry, "dente_agent");
 	return registry;
 }
 

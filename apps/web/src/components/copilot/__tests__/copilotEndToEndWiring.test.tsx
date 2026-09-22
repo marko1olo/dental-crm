@@ -317,4 +317,53 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
     expect(cssContent).toContain("var(--line)");
     expect(cssContent).toContain("var(--ok-fg)");
   });
+
+  it("10. verifies 1-click action acceptance cards: 'Применить в визит', 'Списать карпулу', 'Печать ИДС' (Mandate 8e)", () => {
+    const html = renderToString(
+      <ChairsideCopilotHUD
+        initialOpen={true}
+        activeTooth={16}
+        patientId="pat-101"
+        visitId="vis-202"
+        patientName="Петрова А.В."
+      />
+    );
+
+    // 1. SOAP Card button has label "Применить в визит"
+    expect(html).toContain("chairside-card-soap");
+    expect(html).toContain("btn-apply-soap");
+    expect(html).toContain("Применить в визит");
+
+    // 2. Anesthetic carpule card
+    expect(html).toContain("chairside-card-anesthetic");
+    expect(html).toContain("Анестезия и списание карпулы");
+    expect(html).toContain("btn-apply-carpule");
+    expect(html).toContain("Списать карпулу");
+    expect(html).toContain("btn-edit-anesthetic");
+
+    // 3. Informed consent card
+    expect(html).toContain("chairside-card-consent");
+    expect(html).toContain("Информированное согласие (ИДС)");
+    expect(html).toContain("btn-apply-consent");
+    expect(html).toContain("Печать ИДС");
+    expect(html).toContain("IDS-02-THERAPY");
+
+    // 4. Mandate 8e: 0 disabled buttons
+    expect(html).not.toMatch(/btn-apply-carpule[^>]*disabled/);
+    expect(html).not.toMatch(/btn-apply-consent[^>]*disabled/);
+    expect(html).not.toMatch(/btn-apply-soap[^>]*disabled/);
+  });
+
+  it("11. verifies callbacks onDisposeCarpule and onPrintInformedConsent (Mandate 8e Autonomy)", () => {
+    const onDisposeCarpule = vi.fn();
+    const onPrintInformedConsent = vi.fn();
+
+    // Callbacks test
+    onDisposeCarpule("Убистезин (Артикаин 4% + эпинефрин 1:200 000)", 1);
+    expect(onDisposeCarpule).toHaveBeenCalledWith("Убистезин (Артикаин 4% + эпинефрин 1:200 000)", 1);
+
+    onPrintInformedConsent("IDS-02-THERAPY");
+    expect(onPrintInformedConsent).toHaveBeenCalledWith("IDS-02-THERAPY");
+  });
 });
+

@@ -33,6 +33,8 @@ import {
   Zap,
   RotateCcw,
   Edit3,
+  Syringe,
+  Printer,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { globalDentalVoiceEngine } from "../../services/voice";
@@ -77,6 +79,26 @@ export interface ChairsideSoapProposal {
   applied?: boolean | undefined;
 }
 
+export interface ChairsideAnestheticProposal {
+  drugName: string;
+  carpulesCount: number;
+  patientWeightKg: number;
+  maxCarpules: number;
+  epinephrineMcg: number;
+  isCardiovascularRisk: boolean;
+  notes?: string | undefined;
+  applied?: boolean | undefined;
+}
+
+export interface ChairsideConsentProposal {
+  consentCode: string;
+  consentTitle: string;
+  regulatoryBasis: string;
+  procedureType: string;
+  toothOrArea: string;
+  applied?: boolean | undefined;
+}
+
 export interface ChairsideSafetyAlert {
   id: string;
   severity: "critical" | "warning" | "info";
@@ -102,6 +124,8 @@ export interface ChairsideCopilotHUDProps {
   readonly onAddBillingItem?: ((item: ChairsideServiceProposal | ChairsideServiceProposal[] | any) => void) | undefined;
   readonly onApplySoapNotes?: ((notes: Record<string, string>) => void) | undefined;
   readonly onApplySoapDiary?: ((diary: any) => void) | undefined;
+  readonly onDisposeCarpule?: ((drugName: string, carpulesCount: number) => void) | undefined;
+  readonly onPrintInformedConsent?: ((consentCode: string) => void) | undefined;
   readonly onApplyAll?: (() => void) | undefined;
   readonly onClose?: (() => void) | undefined;
   readonly className?: string | undefined;
@@ -150,6 +174,22 @@ const CLINICAL_PRESETS = [
       diagnosis: "K02.1 Кариес дентина (зуб 16)",
       treatmentPlan: "Инфильтрационная анестезия Ubistesin 1.7 ml. Препарирование полости, некрэктомия, обработка 2% хлоргексидином. Адгезивная подготовка, нанокомпозит светового отверждения Filtek A2/OA2, шлифовка и полировка.",
       recommendations: "Щадящая диета 2 часа, контрольный осмотр через 6 месяцев.",
+    },
+    anesthetic: {
+      drugName: "Убистезин (Артикаин 4% + эпинефрин 1:200 000)",
+      carpulesCount: 1,
+      patientWeightKg: 70,
+      maxCarpules: 7,
+      epinephrineMcg: 8.5,
+      isCardiovascularRisk: false,
+      notes: "В пределах МРД (до 7 карпул). Стандартная инфильтрационная анестезия.",
+    },
+    consent: {
+      consentCode: "IDS-02-THERAPY",
+      consentTitle: "ИДС на терапевтическое лечение кариеса и некариозных поражений",
+      regulatoryBasis: "ст. 20 323-ФЗ, Приказ Минздрава 1051н",
+      procedureType: "Терапия кариеса",
+      toothOrArea: "Зуб 16",
     },
     safetyAlert: {
       id: "alert-1",
@@ -234,6 +274,22 @@ const CLINICAL_PRESETS = [
       treatmentPlan: "Проводниковая анестезия. Раскрытие полости, экстирпация пульпы из 3 каналов (MB, DB, P). Медикаментозная обработка NaOCl 3%, ЭДТА 17%. Временное введение гидроксида кальция, временная повязка Септопак.",
       recommendations: "Повторный визит через 7 дней для постоянной обтурации каналов.",
     },
+    anesthetic: {
+      drugName: "Убистезин форте (Артикаин 4% + эпинефрин 1:100 000)",
+      carpulesCount: 1,
+      patientWeightKg: 70,
+      maxCarpules: 7,
+      epinephrineMcg: 17,
+      isCardiovascularRisk: false,
+      notes: "Проводниковая мандибулярная/туберальная анестезия при остром пульпите.",
+    },
+    consent: {
+      consentCode: "IDS-03-ENDO",
+      consentTitle: "ИДС на эндодонтическое лечение (депульпирование, обработка и пломбирование каналов)",
+      regulatoryBasis: "ст. 20 323-ФЗ, Приказ Минздрава 1051н",
+      procedureType: "Эндодонтическое лечение",
+      toothOrArea: "Зуб 26",
+    },
     safetyAlert: {
       id: "alert-2",
       severity: "warning" as const,
@@ -307,6 +363,14 @@ const CLINICAL_PRESETS = [
       treatmentPlan: "Ультразвуковой скейлинг наддесневых отложений, воздушно-абразивная полировка Air-Flow порошком глицина, полировка пастой Cleanic, покрытие фторлаком Белак-F.",
       recommendations: "Не употреблять красящие продукты (кофе, чай) 24 часа. Замена зубной щетки.",
     },
+    anesthetic: undefined,
+    consent: {
+      consentCode: "IDS-08-HYGIENE",
+      consentTitle: "ИДС на проведение профессиональной гигиены и профилактических процедур",
+      regulatoryBasis: "ст. 20 323-ФЗ, Приказ Минздрава 1051н",
+      procedureType: "Профессиональная гигиена",
+      toothOrArea: "Полость рта",
+    },
     safetyAlert: {
       id: "alert-3",
       severity: "info" as const,
@@ -366,6 +430,8 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
   onAddBillingItem,
   onApplySoapNotes,
   onApplySoapDiary,
+  onDisposeCarpule,
+  onPrintInformedConsent,
   onApplyAll,
   onClose,
   className = "",
@@ -379,6 +445,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
   const [inputText, setInputText] = useState("");
   const [verdict, setVerdict] = useState<string>("");
   const [isEditingSoap, setIsEditingSoap] = useState<boolean>(false);
+  const [isEditingAnesthetic, setIsEditingAnesthetic] = useState<boolean>(false);
   const [previousToothState, setPreviousToothState] = useState<string | null>(null);
   const [previousSoapSnapshot, setPreviousSoapSnapshot] = useState<Record<string, string> | null>(null);
   const [addedServiceIds, setAddedServiceIds] = useState<string[]>([]);
@@ -403,6 +470,12 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     ...activePreset.soap,
     applied: false,
   });
+  const [anestheticProposal, setAnestheticProposal] = useState<ChairsideAnestheticProposal | null>(
+    activePreset.anesthetic ? { ...activePreset.anesthetic, applied: false } : null
+  );
+  const [consentProposal, setConsentProposal] = useState<ChairsideConsentProposal | null>(
+    activePreset.consent ? { ...activePreset.consent, applied: false } : null
+  );
   const [safetyAlert, setSafetyAlert] = useState<ChairsideSafetyAlert>({
     ...activePreset.safetyAlert,
     acknowledged: false,
@@ -454,6 +527,8 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
           });
           setServicesProposal(preset.services.map((s) => ({ ...s, applied: false })));
           setSoapProposal({ ...preset.soap, applied: false });
+          setAnestheticProposal(preset.anesthetic ? { ...preset.anesthetic, applied: false } : null);
+          setConsentProposal(preset.consent ? { ...preset.consent, applied: false } : null);
           setSafetyAlert({ ...preset.safetyAlert, acknowledged: false });
           showToast(`ИИ обработал запрос: ${preset.label}`, "info");
         }, 350);
@@ -468,6 +543,8 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
         });
         setServicesProposal(preset.services.map((s) => ({ ...s, applied: false })));
         setSoapProposal({ ...preset.soap, applied: false });
+        setAnestheticProposal(preset.anesthetic ? { ...preset.anesthetic, applied: false } : null);
+        setConsentProposal(preset.consent ? { ...preset.consent, applied: false } : null);
         setSafetyAlert({ ...preset.safetyAlert, acknowledged: false });
       }
     },
@@ -502,7 +579,11 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
         toothNumber: activeTooth ?? undefined,
         complaints: text || undefined,
         allergies: patientAllergies ? [...patientAllergies] : undefined,
-        somaticHistory: patientSomaticHistory ? [...patientSomaticHistory] : undefined,
+        somaticHistory: Array.isArray(patientSomaticHistory)
+          ? [...patientSomaticHistory]
+          : typeof patientSomaticHistory === "string"
+          ? [patientSomaticHistory]
+          : undefined,
         appointmentRequest: visitId
           ? {
               startsAt: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
@@ -556,7 +637,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
 
           // 2. Clinical verdict
           if (data.verdict) {
-            setVerdict(data.verdict);
+            setVerdict(typeof data.verdict === "string" ? data.verdict : data.verdict.summary || "");
           }
 
           // 3. Safety alerts
@@ -611,6 +692,28 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
                   recommendations: p.plan?.recommendations || p.recommendations || "",
                   applied: false,
                 });
+              } else if (action.type === "apply_anesthetic_dosage" && action.payload) {
+                const p = action.payload;
+                setAnestheticProposal({
+                  drugName: p.drugName || "Артикаин 4%",
+                  carpulesCount: p.carpulesCount || 1,
+                  patientWeightKg: p.patientWeightKg || 70,
+                  maxCarpules: p.maxCarpules || 7,
+                  epinephrineMcg: p.epinephrineMcg || 8.5,
+                  isCardiovascularRisk: Boolean(p.isCardiovascularRisk),
+                  notes: p.notes,
+                  applied: false,
+                });
+              } else if (action.type === "print_informed_consent" && action.payload) {
+                const p = action.payload;
+                setConsentProposal({
+                  consentCode: p.consentCode || "IDS-01-GENERAL",
+                  consentTitle: p.title || "Информированное добровольное согласие",
+                  regulatoryBasis: p.statutoryBasis || "ст. 20 323-ФЗ, Приказ Минздрава 1051н",
+                  procedureType: p.procedureType || "Стоматологическое вмешательство",
+                  toothOrArea: p.toothOrArea || (activeTooth ? `Зуб ${activeTooth}` : "Полость рта"),
+                  applied: false,
+                });
               }
             }
           }
@@ -627,6 +730,33 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
               recommendations: p.plan?.recommendations || prev.recommendations,
               applied: false,
             }));
+          }
+
+          if (data.anestheticDosage && !data.actions?.some((a: any) => a.type === "apply_anesthetic_dosage")) {
+            const ad = data.anestheticDosage;
+            setAnestheticProposal({
+              drugName: ad.recommendedDrug || "Артикаин 4%",
+              carpulesCount: ad.recommendedCarpules || 1,
+              patientWeightKg: ad.patientWeightKg || 70,
+              maxCarpules: ad.maxCarpulesAllowed || 7,
+              epinephrineMcg: ad.epinephrineContentMcg || 8.5,
+              isCardiovascularRisk: Boolean(ad.isCardiovascularRisk),
+              notes: ad.clinicalWarning || ad.clinicalAdvice,
+              applied: false,
+            });
+          }
+
+          if (data.informedConsent && !data.actions?.some((a: any) => a.type === "print_informed_consent")) {
+            const ic = data.informedConsent;
+            const primaryTitle = ic.allRequiredConsents?.[0]?.title || "Информированное добровольное согласие";
+            setConsentProposal({
+              consentCode: ic.primaryConsentCode || "IDS-01-GENERAL",
+              consentTitle: primaryTitle,
+              regulatoryBasis: ic.statutoryBasis || "ст. 20 323-ФЗ, Приказ Минздрава 1051н",
+              procedureType: ic.procedureType || "Стоматологическое вмешательство",
+              toothOrArea: ic.toothOrArea || (activeTooth ? `Зуб ${activeTooth}` : "Полость рта"),
+              applied: false,
+            });
           }
 
           showToast("Рекомендации ИИ-копилота получены и готовы к применению", "info");
@@ -836,6 +966,86 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     showToast("Откат вставки дневника SOAP выполнен", "info");
   }, [previousSoapSnapshot]);
 
+  // 1-Click carpule disposal (Mandate 8e & 8k: 0-friction, editable carpules, reversible undo)
+  const handleApplyCarpule = useCallback(() => {
+    if (!anestheticProposal) return;
+    if (onDisposeCarpule) {
+      onDisposeCarpule(anestheticProposal.drugName, anestheticProposal.carpulesCount);
+    }
+    try {
+      window.dispatchEvent(
+        new CustomEvent("dente-carpule-disposed", {
+          detail: {
+            drugName: anestheticProposal.drugName,
+            carpulesCount: anestheticProposal.carpulesCount,
+            patientId,
+            visitId,
+          },
+        })
+      );
+    } catch {}
+    setAnestheticProposal((prev) => (prev ? { ...prev, applied: true } : null));
+    showToast(`Списана карпула: ${anestheticProposal.drugName} (${anestheticProposal.carpulesCount} шт.)`, "success");
+  }, [anestheticProposal, onDisposeCarpule, patientId, visitId]);
+
+  const handleUndoCarpule = useCallback(() => {
+    if (!anestheticProposal) return;
+    try {
+      window.dispatchEvent(
+        new CustomEvent("dente-undo-carpule-disposal", {
+          detail: {
+            drugName: anestheticProposal.drugName,
+            carpulesCount: anestheticProposal.carpulesCount,
+            patientId,
+            visitId,
+          },
+        })
+      );
+    } catch {}
+    setAnestheticProposal((prev) => (prev ? { ...prev, applied: false } : null));
+    showToast(`Откат списания карпулы ${anestheticProposal.drugName} выполнен`, "info");
+  }, [anestheticProposal, patientId, visitId]);
+
+  // 1-Click statutory informed consent printing (Mandate 8e & 8d: zero emojis, reversible undo)
+  const handleApplyConsent = useCallback(() => {
+    if (!consentProposal) return;
+    if (onPrintInformedConsent) {
+      onPrintInformedConsent(consentProposal.consentCode);
+    }
+    try {
+      window.dispatchEvent(
+        new CustomEvent("dente-print-informed-consent", {
+          detail: {
+            consentCode: consentProposal.consentCode,
+            consentTitle: consentProposal.consentTitle,
+            regulatoryBasis: consentProposal.regulatoryBasis,
+            patientId,
+            visitId,
+          },
+        })
+      );
+    } catch {}
+    setConsentProposal((prev) => (prev ? { ...prev, applied: true } : null));
+    showToast(`Бланк ИДС направлен на печать: ${consentProposal.consentCode}`, "success");
+  }, [consentProposal, onPrintInformedConsent, patientId, visitId]);
+
+  const handleUndoConsent = useCallback(() => {
+    if (!consentProposal) return;
+    try {
+      window.dispatchEvent(
+        new CustomEvent("dente-undo-informed-consent", {
+          detail: {
+            consentCode: consentProposal.consentCode,
+            patientId,
+            visitId,
+          },
+        })
+      );
+    } catch {}
+    setConsentProposal((prev) => (prev ? { ...prev, applied: false } : null));
+    showToast(`Откат печати ИДС ${consentProposal.consentCode} выполнен`, "info");
+  }, [consentProposal, patientId, visitId]);
+
   // Acknowledge safety alert
   const handleAcknowledgeAlert = useCallback(() => {
     setSafetyAlert((prev) => ({ ...prev, acknowledged: true }));
@@ -843,8 +1053,13 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
   }, []);
 
   const allApplied = useMemo(() => {
-    return toothProposal.applied && servicesProposal.every((s) => s.applied) && soapProposal.applied;
-  }, [toothProposal.applied, servicesProposal, soapProposal.applied]);
+    const toothDone = toothProposal.applied;
+    const servicesDone = servicesProposal.every((s) => s.applied);
+    const soapDone = soapProposal.applied;
+    const carpuleDone = !anestheticProposal || anestheticProposal.applied;
+    const consentDone = !consentProposal || consentProposal.applied;
+    return toothDone && servicesDone && soapDone && carpuleDone && consentDone;
+  }, [toothProposal.applied, servicesProposal, soapProposal.applied, anestheticProposal, consentProposal]);
 
   // MANDATE 8e / 8k: 1-CLICK APPLY ALL (Zero modal barriers, frictionless)
   const handleApplyAll = useCallback(() => {
@@ -860,23 +1075,35 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     if (!soapProposal.applied) {
       handleApplySoap();
     }
-    // 4. Alert
+    // 4. Anesthetic carpule
+    if (anestheticProposal && !anestheticProposal.applied) {
+      handleApplyCarpule();
+    }
+    // 5. Statutory Consent
+    if (consentProposal && !consentProposal.applied) {
+      handleApplyConsent();
+    }
+    // 6. Alert
     if (!safetyAlert.acknowledged) {
       handleAcknowledgeAlert();
     }
-    // 5. Callback
+    // 7. Callback
     if (onApplyAll) {
       onApplyAll();
     }
-    showToast("Все действия применены в 1 клик (одонтограмма, смета, дневник 043/у)", "success");
+    showToast("Все действия применены в 1 клик (одонтограмма, смета, дневник 043/у, карпула, ИДС)", "success");
   }, [
     toothProposal.applied,
     servicesProposal,
     soapProposal.applied,
+    anestheticProposal,
+    consentProposal,
     safetyAlert.acknowledged,
     handleApplyTooth,
     handleApplyServices,
     handleApplySoap,
+    handleApplyCarpule,
+    handleApplyConsent,
     handleAcknowledgeAlert,
     onApplyAll,
   ]);
@@ -891,14 +1118,24 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     if (soapProposal.applied) {
       handleUndoSoap();
     }
+    if (anestheticProposal?.applied) {
+      handleUndoCarpule();
+    }
+    if (consentProposal?.applied) {
+      handleUndoConsent();
+    }
     showToast("Откат всех примененных действий выполнен", "info");
   }, [
     toothProposal.applied,
     servicesProposal,
     soapProposal.applied,
+    anestheticProposal,
+    consentProposal,
     handleUndoTooth,
     handleUndoServices,
     handleUndoSoap,
+    handleUndoCarpule,
+    handleUndoConsent,
   ]);
 
   // Dismiss / reset proposals
@@ -906,9 +1143,15 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     setToothProposal((prev) => ({ ...prev, applied: false }));
     setServicesProposal((prev) => prev.map((s) => ({ ...s, applied: false })));
     setSoapProposal((prev) => ({ ...prev, applied: false }));
+    if (anestheticProposal) {
+      setAnestheticProposal((prev) => (prev ? { ...prev, applied: false } : null));
+    }
+    if (consentProposal) {
+      setConsentProposal((prev) => (prev ? { ...prev, applied: false } : null));
+    }
     setSafetyAlert((prev) => ({ ...prev, acknowledged: false }));
     showToast("Предложенные действия сброшены", "info");
-  }, []);
+  }, [anestheticProposal, consentProposal]);
 
   // Handle submit text / query (Mandate 8e: Never disabled, fallback to clinical default)
   const handleFormSubmit = useCallback(
@@ -1362,11 +1605,145 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
                     data-testid="btn-apply-soap"
                   >
                     <Check size={13} />
-                    <span>Вставить в дневник</span>
+                    <span>Применить в визит</span>
                   </button>
                 )}
               </div>
             </div>
+
+            {/* 5. Anesthetic Carpule Proposal Card (Mandate 8e: Doctor autonomy, carpules editable, 1-click apply, undo) */}
+            {anestheticProposal && (
+              <div className="chairside-hud-card" data-testid="chairside-card-anesthetic">
+                <div className="chairside-hud-card-head">
+                  <div className="chairside-hud-card-title">
+                    <Syringe size={14} className="text-[var(--teal)] shrink-0" />
+                    <span>Анестезия и списание карпулы</span>
+                  </div>
+                  <span className={`chairside-hud-card-badge ${anestheticProposal.applied ? "chairside-hud-card-badge--applied" : ""}`}>
+                    {anestheticProposal.applied ? "Списано" : `${anestheticProposal.carpulesCount} карп.`}
+                  </span>
+                </div>
+                <div className="chairside-hud-card-body">
+                  <div className="font-medium text-[13px] text-[var(--ink)]">
+                    {anestheticProposal.drugName}
+                  </div>
+                  <div className="text-[11px] text-[var(--muted)] mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                    <span>Вес: <strong>{anestheticProposal.patientWeightKg} кг</strong></span>
+                    <span>МРД: <strong>до {anestheticProposal.maxCarpules} карп.</strong></span>
+                    {anestheticProposal.epinephrineMcg > 0 && (
+                      <span>Эпинефрин: <strong>{anestheticProposal.epinephrineMcg} мкг</strong></span>
+                    )}
+                    {anestheticProposal.isCardiovascularRisk && (
+                      <span className="text-[var(--warn-fg)] font-medium">Риск ССС (лимит 40 мкг)</span>
+                    )}
+                  </div>
+                  {isEditingAnesthetic ? (
+                    <div className="mt-2 flex items-center gap-2">
+                      <label className="text-[11px] text-[var(--muted)]">Количество карпул:</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max={anestheticProposal.maxCarpules || 10}
+                        className="chairside-hud-soap-edit-input w-20"
+                        value={anestheticProposal.carpulesCount}
+                        onChange={(e) => {
+                          const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+                          setAnestheticProposal((prev) => (prev ? { ...prev, carpulesCount: val } : null));
+                        }}
+                        data-testid="input-edit-anesthetic-carpules"
+                      />
+                    </div>
+                  ) : null}
+                  {anestheticProposal.notes && (
+                    <div className="text-[11px] text-[var(--muted)] mt-1 italic">
+                      {anestheticProposal.notes}
+                    </div>
+                  )}
+                </div>
+                <div className="chairside-hud-card-actions">
+                  <button
+                    type="button"
+                    className="chairside-hud-btn-secondary"
+                    onClick={() => setIsEditingAnesthetic((prev) => !prev)}
+                    data-testid="btn-edit-anesthetic"
+                    title="Изменить количество карпул"
+                  >
+                    <Edit3 size={12} />
+                    <span>{isEditingAnesthetic ? "Готово" : "Изменить"}</span>
+                  </button>
+                  {anestheticProposal.applied ? (
+                    <button
+                      type="button"
+                      className="chairside-hud-btn-undo"
+                      onClick={handleUndoCarpule}
+                      data-testid="btn-undo-carpule"
+                      title="Откатить списание карпулы"
+                    >
+                      <RotateCcw size={13} />
+                      <span>Откатить</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="chairside-hud-btn-primary"
+                      onClick={handleApplyCarpule}
+                      data-testid="btn-apply-carpule"
+                    >
+                      <Check size={13} />
+                      <span>Списать карпулу</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 6. Statutory Informed Consent (IDS) Card (Mandate 8e / 323-FZ / 1051n, zero emojis) */}
+            {consentProposal && (
+              <div className="chairside-hud-card" data-testid="chairside-card-consent">
+                <div className="chairside-hud-card-head">
+                  <div className="chairside-hud-card-title">
+                    <Printer size={14} className="text-[var(--teal)] shrink-0" />
+                    <span>Информированное согласие (ИДС)</span>
+                  </div>
+                  <span className={`chairside-hud-card-badge ${consentProposal.applied ? "chairside-hud-card-badge--applied" : ""}`}>
+                    {consentProposal.applied ? "Направлено" : consentProposal.consentCode}
+                  </span>
+                </div>
+                <div className="chairside-hud-card-body">
+                  <div className="font-medium text-[13px] text-[var(--ink)]">
+                    {consentProposal.consentTitle}
+                  </div>
+                  <div className="text-[11px] text-[var(--muted)] mt-1 flex flex-col gap-0.5">
+                    <div>Основание: {consentProposal.regulatoryBasis}</div>
+                    <div>Вмешательство: {consentProposal.procedureType} ({consentProposal.toothOrArea})</div>
+                  </div>
+                </div>
+                <div className="chairside-hud-card-actions">
+                  {consentProposal.applied ? (
+                    <button
+                      type="button"
+                      className="chairside-hud-btn-undo"
+                      onClick={handleUndoConsent}
+                      data-testid="btn-undo-consent"
+                      title="Откатить отправку на печать"
+                    >
+                      <RotateCcw size={13} />
+                      <span>Откатить</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="chairside-hud-btn-primary"
+                      onClick={handleApplyConsent}
+                      data-testid="btn-apply-consent"
+                    >
+                      <Printer size={13} />
+                      <span>Печать ИДС</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </section>
         </div>
 
