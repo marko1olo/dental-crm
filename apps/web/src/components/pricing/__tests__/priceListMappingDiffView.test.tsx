@@ -234,39 +234,24 @@ describe('PriceListMappingDiffView (804n Statutory Diff-View & Ingestion)', () =
 
 		// +100 ₽ on item-1 (4500 -> 4600)
 		modifyDelta('item-1', 100);
-		expect(onItemsChange).toHaveBeenCalledWith(
-			expect.arrayContaining([
-				expect.objectContaining({
-					id: 'item-1',
-					priceRub: 4600,
-					priceKopecks: 460000,
-				}),
-			]),
-		);
+		const callDelta1 = onItemsChange.mock.calls[0]?.[0] as IngestedMappingItem[];
+		const deltaItem1 = callDelta1?.find((i) => i.id === 'item-1');
+		expect(deltaItem1?.priceRub).toBe(4600);
+		expect(deltaItem1?.priceKopecks).toBe(460000);
 
 		// -500 ₽ on item-2 (6800 -> 6300)
 		modifyDelta('item-2', -500);
-		expect(onItemsChange).toHaveBeenCalledWith(
-			expect.arrayContaining([
-				expect.objectContaining({
-					id: 'item-2',
-					priceRub: 6300,
-					priceKopecks: 630000,
-				}),
-			]),
-		);
+		const callDelta2 = onItemsChange.mock.calls[1]?.[0] as IngestedMappingItem[];
+		const deltaItem2 = callDelta2?.find((i) => i.id === 'item-2');
+		expect(deltaItem2?.priceRub).toBe(6300);
+		expect(deltaItem2?.priceKopecks).toBe(630000);
 
 		// Overdraft protection: -10000 ₽ does not go negative
 		modifyDelta('item-4', -10000);
-		expect(onItemsChange).toHaveBeenCalledWith(
-			expect.arrayContaining([
-				expect.objectContaining({
-					id: 'item-4',
-					priceRub: 0,
-					priceKopecks: 0,
-				}),
-			]),
-		);
+		const callDelta3 = onItemsChange.mock.calls[2]?.[0] as IngestedMappingItem[];
+		const deltaItem4 = callDelta3?.find((i) => i.id === 'item-4');
+		expect(deltaItem4?.priceRub).toBe(0);
+		expect(deltaItem4?.priceKopecks).toBe(0);
 	});
 
 	it('correctly executes Mandate 8e item 7 zero-ruble warranty logic', () => {
