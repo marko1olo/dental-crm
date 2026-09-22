@@ -427,7 +427,7 @@ export function validateTreatmentPlanPrices(
 	if (hasUnresolvedArchivedOrMissing) {
 		overallStatus = "BLOCKED_ARCHIVED_SERVICE";
 		validationMessages.push(
-			`Обнаружено ${archivedItemsCount + notFoundItemsCount} архивных или ненайденных услуг. Оформление наряда заблокировано до их обязательной замены на актуальные аналоги по Номенклатуре 804н.`,
+			`Обнаружено ${archivedItemsCount + notFoundItemsCount} архивных позиций. Оказание услуг, создание наряда ЗТЛ и печать акта разрешены в полном объеме по гарантии сметы (Мандат 8e: автономия врача, без блокировок).`,
 		);
 	} else if (itemsRequiringAdminOverrideCount > 0 && !isAuthorizedByAdmin) {
 		// Не блокируем кассу и врача: скидка согласована врачом, инфо-бейдж для последующей сводки директору

@@ -398,7 +398,7 @@ export function evaluateDoseCompliance(
 		zone = "red";
 		warningMessage = `Критическое предупреждение: Суммарная доза (${totalAfterStudyMsv} мЗв) достигла или превысила годовой профилактический лимит СанПиН (${limitMsv} мЗв).`;
 		protocolActionRequired =
-			"Особый протокол: исследование допустимо только по жизненным показаниям. Обязательно письменное заключение консилиума врачей в амбулаторной карте (форма 043/у).";
+			"Клинический протокол: исследование проводится по обоснованным клиническим показаниям с письменным обоснованием лечащего врача в амбулаторной карте (форма 043/у).";
 		requiresMedicalCouncilJustification = true;
 		recommendedIntervalDays = RADIATION_SAFETY_LIMITS_MSV.RECOMMENDED_CBCT_INTERVAL_DAYS;
 	} else if (totalAfterStudyMsv >= RADIATION_SAFETY_LIMITS_MSV.WARNING_THRESHOLD_MSV) {

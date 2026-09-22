@@ -1166,7 +1166,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 					<div className="min-w-0">
 						<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap min-w-0">
 							<h3 className="text-base font-bold text-[var(--ink)] truncate">
-								Интерактивная пародонтограмма (Florida Probe 6-Point)
+								Пародонтологический осмотр (Скрининг PSR / CPITN & Статус 043/у)
 							</h3>
 							<span
 								className={`px-2.5 py-0.5 rounded-full text-xs font-bold border truncate max-w-xs shrink-0 ${
@@ -1378,8 +1378,8 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 						>
 							<span>
 								{isTier3ProbingExpanded
-									? "Скрыть Florida Probe (Tier 3)"
-									: "Детальная Florida Probe 192 точки (Tier 3)"}
+									? "Скрыть детальные точки (Tier 3)"
+									: "Детальные 192 точки (Tier 3, по требованию)"}
 							</span>
 							{isTier3ProbingExpanded ? (
 								<ChevronUp size={14} />
@@ -2396,13 +2396,10 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 						</div>
 						<div className="flex flex-col gap-0.5">
 							<span className="text-sm font-black text-[var(--ink)]">
-								Детальная Florida Probe (192 точки измерения — по 6 на каждый
-								зуб)
+								Детальные 192 точки измерения (Tier 3, по требованию)
 							</span>
 							<span className="text-xs text-[var(--muted)]">
-								Изолирована в Tier 3 для углублённого пародонтологического
-								приёма. На обычном терапевтическом приёме используйте 1-клик
-								кнопки быстрой фиксации выше.
+								Изолированы в Tier 3 для углублённого пародонтологического приёма. На обычном терапевтическом приёме используйте 1-клик кнопки экспресс-скрининга (Норма / Патология / Профгигиена) выше.
 							</span>
 						</div>
 					</div>
