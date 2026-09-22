@@ -1645,7 +1645,7 @@ export function TelephonyFloatingWidget({
 										</div>
 										<div>
 											<h4 className="text-sm font-bold text-[var(--ink,#0f172a)]">
-												Ожидание вебхука АТС
+												Ожидание вебхука АТС UIS/Mango/Zadarma/Asterisk
 											</h4>
 											<p className="text-xs text-[var(--muted,#64748b)] mt-1 max-w-xs mx-auto">
 												Шлюз АТС (UIS / Mango / Zadarma / Asterisk) подключен и
@@ -1659,7 +1659,7 @@ export function TelephonyFloatingWidget({
 												<span>
 													{isWsConnected
 														? "Шлюз АТС: Онлайн (WebSocket)"
-														: "Шлюз АТС: Ожидание вебхука"}
+														: "Шлюз АТС: Ожидание вебхука (UIS / Mango / Zadarma / Asterisk)"}
 												</span>
 											</div>
 										</div>

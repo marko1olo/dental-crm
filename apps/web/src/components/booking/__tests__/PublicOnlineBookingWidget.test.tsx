@@ -758,3 +758,134 @@ describe("PublicOnlineBookingWidget Utility Functions", () => {
 		assert.equal(doctorOffSlots.length, 0, "Doctor has day off on Sunday");
 	});
 });
+
+describe("Rapid 3-Step Solo Doctor Online Booking Flow (Mandates 8e, 8k, 8n, 8s)", () => {
+	it("renders Step 1 in rapid flow: Date and Time slots picker directly without branch/category barrier", () => {
+		const html = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {
+				rapidFlow: true,
+				initialStep: 1,
+			}),
+		);
+
+		assert.ok(
+			html.includes("Выберите дату и время приёма"),
+			"Step 1 heading is Date & Time in rapid flow",
+		);
+		assert.ok(
+			html.includes("rapid-step1-heading"),
+			"Has rapid-step1-heading anchor",
+		);
+		assert.ok(
+			html.includes("Далее: Услуга и врач"),
+			"Has next button to Service and Doctor",
+		);
+		assert.ok(
+			html.includes("data-testid=\"rapid-nav-step-1\""),
+			"Renders 3-step navigation bar with rapid-nav-step-1",
+		);
+		assert.ok(
+			html.includes("data-testid=\"rapid-nav-step-3\""),
+			"Renders 3-step navigation bar with rapid-nav-step-3",
+		);
+		assert.equal(
+			html.includes("Шаг 1 из 4"),
+			false,
+			"Does NOT show 4-step progress indicator",
+		);
+	});
+
+	it("renders Step 2 in rapid flow: Service Category and Attending Solo Doctor selection", () => {
+		const soloDoctor = [DEFAULT_DOCTORS[0]!];
+		const html = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {
+				flowMode: "rapid_solo",
+				initialStep: 2,
+				customDoctors: soloDoctor,
+			}),
+		);
+
+		assert.ok(
+			html.includes("Выберите услугу и врача"),
+			"Step 2 heading is Service and Doctor in rapid flow",
+		);
+		assert.ok(
+			html.includes("Соло-доктор"),
+			"Highlights solo-doctor badge when 1 doctor is present",
+		);
+		assert.ok(
+			html.includes("Далее: Контакты"),
+			"Has next button to Contacts",
+		);
+		assert.ok(
+			html.includes("Назад: Время"),
+			"Has back button to Date & Time",
+		);
+	});
+
+	it("renders Step 3 in rapid flow: Patient Contacts and 1-Click Instant Booking Submission", () => {
+		const html = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {
+				flowMode: "rapid_solo",
+				initialStep: 3,
+				initialPatientName: "Алексей Соловьев",
+				initialPatientPhone: "+7 (917) 111-22-33",
+			}),
+		);
+
+		assert.ok(
+			html.includes("Ваши контактные данные"),
+			"Step 3 heading is Patient Contacts in rapid flow",
+		);
+		assert.ok(
+			html.includes("Параметры вашей записи к врачу:"),
+			"Shows booking recap box",
+		);
+		assert.ok(
+			html.includes("data-testid=\"step4-confirm-btn\""),
+			"Contains direct confirmation button",
+		);
+		assert.ok(
+			html.includes("Записаться на приём"),
+			"Renders direct appointment creation button",
+		);
+		assert.ok(
+			html.includes("Алексей Соловьев"),
+			"Renders prefilled patient name",
+		);
+	});
+
+	it("provides toggle between standard 4-step and rapid 3-step flow", () => {
+		const standardHtml = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {
+				flowMode: "standard",
+				initialStep: 1,
+			}),
+		);
+
+		assert.ok(
+			standardHtml.includes("data-testid=\"toggle-rapid-flow-btn\""),
+			"Standard Step 1 has toggle button to rapid flow",
+		);
+
+		const rapidHtml = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {
+				flowMode: "rapid_solo",
+				initialStep: 1,
+			}),
+		);
+
+		assert.ok(
+			rapidHtml.includes("data-testid=\"toggle-standard-flow-btn\""),
+			"Rapid Step 1 has toggle button to standard flow",
+		);
+	});
+
+	it("verifies apps/web/src/components/PublicOnlineBookingWidget.tsx facade exports match SSOT", async () => {
+		const rootFacade = await import("../../PublicOnlineBookingWidget.js");
+		assert.ok(rootFacade.PublicOnlineBookingWidget, "Root facade exports PublicOnlineBookingWidget");
+		assert.ok(rootFacade.default, "Root facade exports default component");
+		assert.equal(rootFacade.PublicOnlineBookingWidget, rootFacade.default, "Named and default match");
+	});
+});
+

@@ -4,6 +4,7 @@ import {
 	ArrowLeft,
 	Building2,
 	Calendar,
+	CalendarCheck,
 	CalendarPlus,
 	Check,
 	CheckCircle2,
@@ -26,6 +27,7 @@ import {
 	Stethoscope,
 	User,
 	UserCheck,
+	Zap,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
@@ -138,6 +140,10 @@ export interface PublicOnlineBookingWidgetProps {
 	readonly initialPatientPhone?: string | undefined;
 	/** Patient ID if already authenticated in patient portal */
 	readonly patientId?: string | undefined;
+	/** Enable 3-step rapid flow for solo doctor (Дата/время -> Услуга/Врач -> Имя/Телефон -> Подтверждение) */
+	readonly rapidFlow?: boolean | undefined;
+	/** Booking flow mode: standard (4-step) or rapid_solo (3-step) */
+	readonly flowMode?: "standard" | "rapid_solo" | undefined;
 }
 
 // ============================================================================
@@ -736,8 +742,26 @@ export const PublicOnlineBookingWidget: React.FC<
 	initialPatientName,
 	initialPatientPhone,
 	patientId,
+	rapidFlow = false,
+	flowMode,
 }) => {
 	const widgetInstanceId = useId();
+
+	// Rapid 3-Step Flow Mode (Mandates 8e & 8n Solo Doctor: Дата/время -> Услуга/Врач -> Имя/Телефон -> Подтверждение)
+	const [activeFlowMode, setActiveFlowMode] = useState<"standard" | "rapid_solo">(() => {
+		if (flowMode === "rapid_solo" || rapidFlow) return "rapid_solo";
+		return "standard";
+	});
+
+	useEffect(() => {
+		if (flowMode) {
+			setActiveFlowMode(flowMode);
+		} else if (rapidFlow) {
+			setActiveFlowMode("rapid_solo");
+		}
+	}, [flowMode, rapidFlow]);
+
+	const isRapidFlow = activeFlowMode === "rapid_solo";
 
 	// Detect Telegram Mini App Context
 	const isTelegramContext = useMemo(() => {
@@ -1463,68 +1487,218 @@ export const PublicOnlineBookingWidget: React.FC<
 			{/* Progress Indicator */}
 			{step < 5 && (
 				<nav className="dbw-progress-bar" aria-label="Этапы записи">
-					<button
-						type="button"
-						className={`dbw-step-item ${step === 1 ? "active" : step > 1 ? "completed" : ""}`}
-						onClick={() => handleStepChange(1)}
-						disabled={step < 1}
-					>
-						<span className="dbw-step-number">
-							{step > 1 ? <Check size={14} /> : "1"}
-						</span>
-						<span>Услуга</span>
-					</button>
+					{isRapidFlow ? (
+						<>
+							<button
+								type="button"
+								className={`dbw-step-item ${step === 1 ? "active" : step > 1 ? "completed" : ""}`}
+								onClick={() => handleStepChange(1)}
+								data-testid="rapid-nav-step-1"
+							>
+								<span className="dbw-step-number">
+									{step > 1 ? <Check size={14} /> : "1"}
+								</span>
+								<span>Дата и время</span>
+							</button>
 
-					<div className={`dbw-step-divider ${step > 1 ? "active" : ""}`} />
+							<div className={`dbw-step-divider ${step > 1 ? "active" : ""}`} />
 
-					<button
-						type="button"
-						className={`dbw-step-item ${step === 2 ? "active" : step > 2 ? "completed" : ""}`}
-						onClick={() => handleStepChange(2)}
-						disabled={step < 2}
-					>
-						<span className="dbw-step-number">
-							{step > 2 ? <Check size={14} /> : "2"}
-						</span>
-						<span>Врач</span>
-					</button>
+							<button
+								type="button"
+								className={`dbw-step-item ${step === 2 ? "active" : step > 2 ? "completed" : ""}`}
+								onClick={() => handleStepChange(2)}
+								disabled={step < 2}
+								data-testid="rapid-nav-step-2"
+							>
+								<span className="dbw-step-number">
+									{step > 2 ? <Check size={14} /> : "2"}
+								</span>
+								<span>Услуга и врач</span>
+							</button>
 
-					<div className={`dbw-step-divider ${step > 2 ? "active" : ""}`} />
+							<div className={`dbw-step-divider ${step > 2 ? "active" : ""}`} />
 
-					<button
-						type="button"
-						className={`dbw-step-item ${step === 3 ? "active" : step > 3 ? "completed" : ""}`}
-						onClick={() => handleStepChange(3)}
-						disabled={step < 3}
-					>
-						<span className="dbw-step-number">
-							{step > 3 ? <Check size={14} /> : "3"}
-						</span>
-						<span>Время</span>
-					</button>
+							<button
+								type="button"
+								className={`dbw-step-item ${step === 3 ? "active" : step > 3 ? "completed" : ""}`}
+								onClick={() => handleStepChange(3)}
+								disabled={step < 3}
+								data-testid="rapid-nav-step-3"
+							>
+								<span className="dbw-step-number">
+									{step > 3 ? <Check size={14} /> : "3"}
+								</span>
+								<span>Контакты</span>
+							</button>
+						</>
+					) : (
+						<>
+							<button
+								type="button"
+								className={`dbw-step-item ${step === 1 ? "active" : step > 1 ? "completed" : ""}`}
+								onClick={() => handleStepChange(1)}
+								disabled={step < 1}
+							>
+								<span className="dbw-step-number">
+									{step > 1 ? <Check size={14} /> : "1"}
+								</span>
+								<span>Услуга</span>
+							</button>
 
-					<div className={`dbw-step-divider ${step > 3 ? "active" : ""}`} />
+							<div className={`dbw-step-divider ${step > 1 ? "active" : ""}`} />
 
-					<button
-						type="button"
-						className={`dbw-step-item ${step === 4 ? "active" : step > 4 ? "completed" : ""}`}
-						onClick={() => handleStepChange(4)}
-						disabled={step < 4}
-					>
-						<span className="dbw-step-number">
-							{step > 4 ? <Check size={14} /> : "4"}
-						</span>
-						<span>Контакты</span>
-					</button>
+							<button
+								type="button"
+								className={`dbw-step-item ${step === 2 ? "active" : step > 2 ? "completed" : ""}`}
+								onClick={() => handleStepChange(2)}
+								disabled={step < 2}
+							>
+								<span className="dbw-step-number">
+									{step > 2 ? <Check size={14} /> : "2"}
+								</span>
+								<span>Врач</span>
+							</button>
+
+							<div className={`dbw-step-divider ${step > 2 ? "active" : ""}`} />
+
+							<button
+								type="button"
+								className={`dbw-step-item ${step === 3 ? "active" : step > 3 ? "completed" : ""}`}
+								onClick={() => handleStepChange(3)}
+								disabled={step < 3}
+							>
+								<span className="dbw-step-number">
+									{step > 3 ? <Check size={14} /> : "3"}
+								</span>
+								<span>Время</span>
+							</button>
+
+							<div className={`dbw-step-divider ${step > 2 ? "active" : ""}`} />
+
+							<button
+								type="button"
+								className={`dbw-step-item ${step === 4 ? "active" : step > 4 ? "completed" : ""}`}
+								onClick={() => handleStepChange(4)}
+								disabled={step < 4}
+							>
+								<span className="dbw-step-number">
+									{step > 4 ? <Check size={14} /> : "4"}
+								</span>
+								<span>Контакты</span>
+							</button>
+						</>
+					)}
 				</nav>
 			)}
 
 			{/* Main Widget Body */}
 			<div className="dbw-body">
 				{/* ================================================================ */}
-				{/* STEP 1: Branch & Service Category                                */}
+				{/* STEP 1: Rapid Flow (Дата/время) OR Standard Flow (Услуга/Филиал) */}
 				{/* ================================================================ */}
-				{step === 1 && (
+				{isRapidFlow && step === 1 && (
+					<section aria-labelledby="rapid-step1-heading">
+						<div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+							<div>
+								<h3 id="rapid-step1-heading" className="dbw-section-heading mb-1">
+									<Calendar size={20} /> Выберите дату и время приёма
+								</h3>
+								<p className="dbw-section-subheading mb-0">
+									Шаг 1 из 3: Быстрая запись к соло-врачу без очередей
+								</p>
+							</div>
+							<button
+								type="button"
+								className="text-xs text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 inline-flex items-center gap-1 cursor-pointer transition-colors"
+								onClick={() => {
+									setActiveFlowMode("standard");
+									setStep(1);
+									if (onStepChange) onStepChange(1);
+								}}
+								data-testid="toggle-standard-flow-btn"
+							>
+								<span>Стандартный режим (4 шага)</span>
+							</button>
+						</div>
+
+						{/* Interactive Slot & Date Picker */}
+						<BookingSlotPicker
+							selectedDate={selectedDate}
+							onSelectDate={(date) => {
+								setSelectedDate(date);
+								setSelectedSlot(null);
+								setSlotError(null);
+							}}
+							calendarMonth={calendarMonth}
+							onPrevMonth={handlePrevMonth}
+							onNextMonth={handleNextMonth}
+							calendarDays={calendarDays}
+							monthLabel={monthLabel}
+							slots={slots}
+							selectedSlot={selectedSlot}
+							onSelectSlot={(slot) => {
+								setSelectedSlot(slot);
+								setSlotError(null);
+							}}
+							slotsLoading={slotsLoading}
+						/>
+
+						{selectedSlot && (
+							<div className="mt-3 p-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs font-semibold text-teal-800 dark:text-teal-200 flex items-center justify-between gap-2 flex-wrap">
+								<div className="flex items-center gap-2">
+									<Clock size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+									<span>Выбрано время: {formatRussianDate(selectedDate)} в {selectedSlot.time}</span>
+								</div>
+								<span className="text-[11px] font-normal text-teal-700 dark:text-teal-300">
+									(Продолжительность: ~{selectedService?.durationMinutes || 30} мин)
+								</span>
+							</div>
+						)}
+
+						{slotError && (
+							<div
+								role="alert"
+								className="p-3.5 mt-3 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900 text-xs font-bold text-amber-700 dark:text-amber-300 flex items-center gap-2 min-w-0 break-words"
+								data-testid="rapid-slot-error-alert"
+							>
+								<AlertCircle size={18} /> {slotError}
+							</div>
+						)}
+
+						<footer className="dbw-actions-footer mt-4">
+							<div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+								Шаг 1 из 3: Дата и время
+							</div>
+							<button
+								type="button"
+								className="dbw-btn-next min-h-[44px]"
+								data-testid="rapid-step1-next-btn"
+								onClick={() => {
+									if (!selectedSlot) {
+										const firstSlot = availableSlots[0];
+										if (firstSlot) {
+											setSelectedSlot(firstSlot);
+											setSlotError(null);
+											handleStepChange(2);
+										} else {
+											const errMsg = "Выберите удобное время визита";
+											setSlotError(errMsg);
+											showToast?.(errMsg, "warning");
+										}
+									} else {
+										setSlotError(null);
+										handleStepChange(2);
+									}
+								}}
+							>
+								<span>Далее: Услуга и врач</span>
+								<CheckCircle2 size={18} />
+							</button>
+						</footer>
+					</section>
+				)}
+
+				{!isRapidFlow && step === 1 && (
 					<section aria-labelledby="step1-heading">
 						{/* Branch selection: only rendered if multiple branches exist (Mandate 8n: Solo doctor & small clinic friction killer) */}
 						{customBranches.length > 1 && (
@@ -1640,6 +1814,19 @@ export const PublicOnlineBookingWidget: React.FC<
 							<div className="flex items-center gap-2 flex-wrap">
 								<button
 									type="button"
+									className="px-3.5 py-2 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-all"
+									onClick={() => {
+										setActiveFlowMode("rapid_solo");
+										setStep(1);
+										if (onStepChange) onStepChange(1);
+									}}
+									data-testid="toggle-rapid-flow-btn"
+								>
+									<Zap size={14} className="text-amber-500" />
+									<span>Быстрая запись к соло-врачу (3 шага)</span>
+								</button>
+								<button
+									type="button"
 									className="px-3.5 py-2 rounded-xl border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal-surface)] text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5"
 									onClick={() => {
 										setSelectedDoctorId(null);
@@ -1664,9 +1851,142 @@ export const PublicOnlineBookingWidget: React.FC<
 				)}
 
 				{/* ================================================================ */}
-				{/* STEP 2: Attending Doctor Selection                               */}
+				{/* STEP 2: Rapid Flow (Услуга и врач) OR Standard Flow (Врач)       */}
 				{/* ================================================================ */}
-				{step === 2 && (
+				{isRapidFlow && step === 2 && (
+					<section aria-labelledby="rapid-step2-heading">
+						<h3 id="rapid-step2-heading" className="dbw-section-heading">
+							<Stethoscope size={20} /> Выберите услугу и врача
+						</h3>
+						<p className="dbw-section-subheading">
+							Шаг 2 из 3: Направление стоматологии и лечащий специалист
+						</p>
+
+						{/* Attending Doctor display: Solo Doctor or Doctor Choice */}
+						<div className="mb-4">
+							<div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+								{customDoctors.length <= 1 ? "Лечащий врач (соло-приём):" : "Выберите врача:"}
+							</div>
+
+							{customDoctors.length <= 1 ? (
+								<div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 flex-wrap">
+									<div className="flex items-center gap-3">
+										<div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300 font-bold text-sm flex items-center justify-center">
+											<UserCheck size={20} />
+										</div>
+										<div>
+											<div className="font-bold text-sm text-slate-900 dark:text-slate-100">
+												{selectedDoctor.fullName}
+											</div>
+											<div className="text-xs text-slate-500 dark:text-slate-400">
+												{selectedDoctor.specialty} • Опыт {selectedDoctor.experienceYears} лет
+											</div>
+										</div>
+									</div>
+									<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-200 border border-teal-300 dark:border-teal-800">
+										<Sparkles size={12} /> Соло-доктор
+									</span>
+								</div>
+							) : (
+								<div className="dbw-doctors-list">
+									<BookingAnyDoctorCard
+										isSelected={selectedDoctorId === null}
+										onSelect={() => setSelectedDoctorId(null)}
+									/>
+									{customDoctors.map((doc) => (
+										<BookingDoctorCard
+											key={doc.id}
+											doctor={doc}
+											isSelected={selectedDoctorId === doc.id}
+											onSelect={(d) => setSelectedDoctorId(d.id)}
+										/>
+									))}
+								</div>
+							)}
+						</div>
+
+						{/* Service Category selection */}
+						<div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+							Направление стоматологии:
+						</div>
+						<div className="dbw-categories-grid">
+							{customCategories.map((category) => (
+								<button
+									type="button"
+									key={category.id}
+									className={`dbw-category-btn ${selectedCategoryId === category.id ? "selected" : ""}`}
+									onClick={() => {
+										setSelectedCategoryId(category.id);
+										setSelectedServiceId(null);
+									}}
+								>
+									<div className="dbw-category-icon">
+										{resolveCategoryIcon(category.iconName)}
+									</div>
+									<div className="dbw-category-title min-w-0 break-words">
+										{category.title}
+									</div>
+									<div className="dbw-category-desc min-w-0 break-words">
+										{category.description}
+									</div>
+								</button>
+							))}
+						</div>
+
+						{/* Popular services for chosen category */}
+						<div className="mt-3">
+							<div className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-2">
+								Услуги направления «{selectedCategory.title}»:
+							</div>
+							<div className="dbw-services-list">
+								{selectedCategory.popularServices.map((service) => (
+									<button
+										type="button"
+										key={service.id}
+										className={`dbw-service-item ${selectedServiceId === service.id ? "selected" : ""}`}
+										onClick={() => setSelectedServiceId(service.id)}
+									>
+										<div className="dbw-service-info min-w-0">
+											<span className="dbw-service-title min-w-0 break-words">
+												{service.title}
+											</span>
+											<span className="dbw-service-duration">
+												<Clock size={14} /> {service.durationMinutes} мин
+											</span>
+										</div>
+										<div className="dbw-service-price min-w-0 break-words">
+											{service.priceFormatted}
+										</div>
+									</button>
+								))}
+							</div>
+						</div>
+
+						<footer className="dbw-actions-footer mt-4">
+							<button
+								type="button"
+								className="dbw-btn-back min-h-[44px]"
+								onClick={() => handleStepChange(1)}
+								data-testid="rapid-step2-back-btn"
+							>
+								<ArrowLeft size={18} />
+								<span>Назад: Время</span>
+							</button>
+
+							<button
+								type="button"
+								className="dbw-btn-next min-h-[44px]"
+								onClick={() => handleStepChange(3)}
+								data-testid="rapid-step2-next-btn"
+							>
+								<span>Далее: Контакты</span>
+								<CheckCircle2 size={18} />
+							</button>
+						</footer>
+					</section>
+				)}
+
+				{!isRapidFlow && step === 2 && (
 					<section aria-labelledby="step2-heading">
 						<div className="flex items-center justify-between mb-4 flex-wrap gap-2">
 							<div>
@@ -1722,9 +2042,165 @@ export const PublicOnlineBookingWidget: React.FC<
 				)}
 
 				{/* ================================================================ */}
-				{/* STEP 3: Date & Slot Picker (Using modular BookingSlotPicker)      */}
+				{/* STEP 3: Rapid Flow (Контакты & Запись) OR Standard Flow (Время)  */}
 				{/* ================================================================ */}
-				{step === 3 && (
+				{isRapidFlow && step === 3 && (
+					<section aria-labelledby="rapid-step3-heading">
+						<h3 id="rapid-step3-heading" className="dbw-section-heading">
+							<UserCheck size={20} /> Ваши контактные данные
+						</h3>
+						<p className="dbw-section-subheading">
+							Шаг 3 из 3: Укажите имя и телефон для мгновенной фиксации записи
+						</p>
+
+						{/* Booking recap */}
+						<div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 mb-4 space-y-2 text-xs">
+							<div className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-1.5">
+								<CalendarCheck size={16} className="text-teal-600 dark:text-teal-400" />
+								<span>Параметры вашей записи к врачу:</span>
+							</div>
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-600 dark:text-slate-300">
+								<div>
+									<span className="font-semibold text-slate-700 dark:text-slate-200">Дата и время: </span>
+									{formatRussianDate(selectedDate)} в {selectedSlot?.time || "10:00"}
+								</div>
+								<div>
+									<span className="font-semibold text-slate-700 dark:text-slate-200">Лечащий врач: </span>
+									{selectedDoctor.fullName}
+								</div>
+								<div>
+									<span className="font-semibold text-slate-700 dark:text-slate-200">Услуга: </span>
+									{selectedService?.title || selectedCategory.title}
+								</div>
+								<div>
+									<span className="font-semibold text-slate-700 dark:text-slate-200">Филиал: </span>
+									{selectedBranch.name}
+								</div>
+							</div>
+						</div>
+
+						<form onSubmit={handleFinalSubmit} noValidate className="space-y-4">
+							<div>
+								<label
+									htmlFor={`rapid-patient-name-${widgetInstanceId}`}
+									className="dbw-label"
+								>
+									Ваше имя и фамилия <span className="text-red-500">*</span>
+								</label>
+								<input
+									id={`rapid-patient-name-${widgetInstanceId}`}
+									type="text"
+									value={patientName}
+									onChange={(e) => {
+										setPatientName(e.target.value);
+										if (submitError) setSubmitError(null);
+									}}
+									placeholder="Иван Петров"
+									className="dbw-input"
+									data-testid="patient-name-input"
+									required
+								/>
+							</div>
+
+							<div>
+								<label
+									htmlFor={`rapid-patient-phone-${widgetInstanceId}`}
+									className="dbw-label"
+								>
+									Номер телефона <span className="text-red-500">*</span>
+								</label>
+								<input
+									id={`rapid-patient-phone-${widgetInstanceId}`}
+									type="tel"
+									value={patientPhone}
+									onChange={handlePhoneChange}
+									placeholder="+7 (999) 000-00-00"
+									className="dbw-input font-mono"
+									data-testid="patient-phone-input"
+									required
+								/>
+							</div>
+
+							<div>
+								<label
+									htmlFor={`rapid-patient-comment-${widgetInstanceId}`}
+									className="dbw-label"
+								>
+									Пожелание или жалоба (необязательно)
+								</label>
+								<textarea
+									id={`rapid-patient-comment-${widgetInstanceId}`}
+									value={patientComment}
+									onChange={(e) => setPatientComment(e.target.value)}
+									placeholder="Опишите симптомы (например: острая боль, консультация)"
+									rows={2}
+									className="dbw-textarea text-xs"
+								/>
+							</div>
+
+							{/* Privacy policy checkbox */}
+							<div className="flex items-start gap-2 pt-1">
+								<input
+									id={`rapid-privacy-${widgetInstanceId}`}
+									type="checkbox"
+									checked={hasAgreedToPrivacy}
+									onChange={(e) => setHasAgreedToPrivacy(e.target.checked)}
+									className="mt-1 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
+									data-testid="privacy-checkbox"
+								/>
+								<label
+									htmlFor={`rapid-privacy-${widgetInstanceId}`}
+									className="text-xs text-slate-500 dark:text-slate-400 leading-snug cursor-pointer"
+								>
+									Я даю согласие на обработку персональных данных в соответствии с 152-ФЗ
+								</label>
+							</div>
+
+							{submitError && (
+								<div
+									role="alert"
+									className="p-3.5 rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900 text-xs font-bold text-red-700 dark:text-red-300 flex items-center gap-2"
+									data-testid="submit-error-alert"
+								>
+									<AlertCircle size={18} /> {submitError}
+								</div>
+							)}
+
+							<footer className="dbw-actions-footer pt-2">
+								<button
+									type="button"
+									className="dbw-btn-back min-h-[44px]"
+									onClick={() => handleStepChange(2)}
+									data-testid="rapid-step3-back-btn"
+								>
+									<ArrowLeft size={18} />
+									<span>Назад: Услуга и врач</span>
+								</button>
+
+								<button
+									type="submit"
+									disabled={isSubmitting}
+									className="dbw-btn-confirm min-h-[44px]"
+									data-testid="step4-confirm-btn"
+								>
+									{isSubmitting ? (
+										<>
+											<Clock size={18} className="animate-spin" />
+											<span>Оформление записи...</span>
+										</>
+									) : (
+										<>
+											<CheckCircle2 size={18} />
+											<span>Записаться на приём</span>
+										</>
+									)}
+								</button>
+							</footer>
+						</form>
+					</section>
+				)}
+
+				{!isRapidFlow && step === 3 && (
 					<section aria-labelledby="step3-heading">
 						<h3 id="step3-heading" className="dbw-section-heading">
 							<Calendar size={20} /> Выберите дату и время приёма
@@ -1880,7 +2356,7 @@ export const PublicOnlineBookingWidget: React.FC<
 				{/* ================================================================ */}
 				{/* STEP 4: Patient Info Form & Direct Booking Confirmation          */}
 				{/* ================================================================ */}
-				{step === 4 && (
+				{!isRapidFlow && step === 4 && (
 					<form onSubmit={handleFinalSubmit} noValidate aria-labelledby="step4-heading">
 						<h3 id="step4-heading" className="dbw-section-heading">
 							<User size={20} /> Ваши контактные данные

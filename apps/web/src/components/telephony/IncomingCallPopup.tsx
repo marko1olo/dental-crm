@@ -735,7 +735,7 @@ export function IncomingCallPopup() {
 								<span>
 									{isConnected
 										? "Шлюз АТС: Онлайн (WebSocket)"
-										: "Шлюз АТС: Ожидание вебхука"}
+										: "Шлюз АТС: Ожидание вебхука (UIS / Mango / Zadarma / Asterisk)"}
 								</span>
 							</span>
 						</div>
@@ -758,7 +758,7 @@ export function IncomingCallPopup() {
 					</div>
 					<div className="space-y-1.5 max-w-xs">
 						<h3 className="text-base font-bold text-[var(--ink,#0f172a)]">
-							Ожидание вебхука АТС
+							Ожидание вебхука АТС UIS/Mango/Zadarma/Asterisk
 						</h3>
 						<p className="text-xs text-[var(--muted,#64748b)] leading-relaxed">
 							Шлюз телефонии (UIS / Mango / Zadarma / Asterisk) подключен и ожидает входящих звонков. При поступлении вызова карточка пациента и быстрая запись откроются автоматически.
