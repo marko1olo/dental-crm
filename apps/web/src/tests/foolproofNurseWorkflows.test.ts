@@ -2,7 +2,7 @@
  * ============================================================================
  * FOOLPROOF & SENIOR NURSE UX WORKFLOWS TEST SUITE ("БАБУШКА-PROOF")
  * Validates:
- * 1. Senior Nurse Kraft Unseal & Audio Feedback Engine (SanPiN 3.3686-21)
+ * 1. Statutory Kraft Package Expiry & SanPiN 3.3686-21 Sterility Math (Pure, zero audio bloat)
  * 2. Step-by-Step Patient Booking Wizard & Conflict Guards
  * 3. Simple Cash Desk ("Простая касса") Bill Stepper & Giant Change Calculator
  * 4. Dangerous Irreversible Actions Registry & Protection Barriers
@@ -23,10 +23,6 @@ import {
 	calculatePackageExpiration,
 	type KraftPackageRecord,
 } from "../components/sanpin/kraft/kraftPackageEngine";
-import {
-	playSterileSuccessTone,
-	playExpiredErrorTone,
-} from "../components/sanpin/kraft/seniorNurseKraftAudio";
 import { checkAppointmentResourceCollision } from "../utils/scheduleCollisionUtils";
 import {
 	calculateCashChangeKop,
@@ -36,19 +32,19 @@ import {
 } from "../components/payments/checkout/fastCheckoutEngine";
 
 const COMMON_DENTAL_SERVICES = [
-	{ id: "consult", titleRu: "Осмотр и консультация", durationMin: 30, icon: "🦷" },
-	{ id: "caries", titleRu: "Лечение кариеса (пломба)", durationMin: 45, icon: "🩺" },
-	{ id: "cito", titleRu: "Острая боль (CITO)", durationMin: 20, icon: "⚡" },
-	{ id: "hygiene", titleRu: "Профгигиена и чистка", durationMin: 60, icon: "✨" },
-	{ id: "surgery", titleRu: "Удаление зуба (хирургия)", durationMin: 45, icon: "💉" },
-	{ id: "prostho", titleRu: "Коронка / протезирование", durationMin: 60, icon: "👑" },
+	{ id: "consult", titleRu: "Осмотр и консультация", durationMin: 30, icon: "Stethoscope" },
+	{ id: "caries", titleRu: "Лечение кариеса (пломба)", durationMin: 45, icon: "Activity" },
+	{ id: "cito", titleRu: "Острая боль (CITO)", durationMin: 20, icon: "Zap" },
+	{ id: "hygiene", titleRu: "Профгигиена и чистка", durationMin: 60, icon: "Sparkles" },
+	{ id: "surgery", titleRu: "Удаление зуба (хирургия)", durationMin: 45, icon: "Syringe" },
+	{ id: "prostho", titleRu: "Коронка / протезирование", durationMin: 60, icon: "Crown" },
 ];
 
 describe("FOOLPROOF & SENIOR NURSE UX SIMPLIFIER («БАБУШКА-PROOF»)", () => {
 	// ========================================================================
-	// 1. KRAFT UNSEALING & AUDIO FEEDBACK (SanPiN 3.3686-21)
+	// 1. KRAFT STERILITY MATH & SANPIN 3.3686-21 (ZERO AUDIO BLOAT)
 	// ========================================================================
-	describe("1. Вскрытие крафт-пакетов автоклава и звуковая сигнализация", () => {
+	describe("1. Стерильность крафт-пакетов автоклава без симуляторов (СанПиН 3.3686-21)", () => {
 		it("Корректно определяет стерильный и валидный крафт-пакет", () => {
 			const today = new Date();
 			const packDate = today.toISOString().slice(0, 10);
@@ -68,12 +64,14 @@ describe("FOOLPROOF & SENIOR NURSE UX SIMPLIFIER («БАБУШКА-PROOF»)", ()
 			assert.ok(expResult.daysRemaining < 0);
 		});
 
-		it("Безопасно вызывает звуковые тоны Web Audio без сбоев в среде Node/Browser", () => {
-			// In Node environment without window.AudioContext, it should not throw
-			assert.doesNotThrow(() => {
-				playSterileSuccessTone();
-				playExpiredErrorTone();
-			});
+		it("Выполняет чистый расчет стерильности крафт-пакета без звуковых эффектов и симуляторов (Мандаты 8k, 8s)", () => {
+			const today = new Date();
+			const expResult = calculatePackageExpiration(today, "paper_plastic_pouch");
+
+			assert.equal(expResult.status, "sterile_valid");
+			assert.equal(expResult.daysLifespan, 180);
+			assert.equal(expResult.daysRemaining, 180);
+			assert.ok(expResult.expDateFormatted.length === 10);
 		});
 
 		it("Формирует нормативную запись в карту 043/у при вскрытии крафт-пакета", () => {

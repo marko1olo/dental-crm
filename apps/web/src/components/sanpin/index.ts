@@ -27,8 +27,6 @@ export * from "./kraft/kraftPackagePresets";
 export * from "./kraft/kraftPackageEngine";
 export * from "./kraft/chemicalIntegratorsCatalog";
 export * from "./kraft/KraftPackageBarcodeModal";
-export * from "./kraft/SeniorNurseKraftUnsealModal";
-export * from "./kraft/seniorNurseKraftAudio";
 export * from "./autoclave/index";
 export * from "./waste/index";
 export { SanpinRegisters as default } from "./SanpinRegisters";

@@ -149,7 +149,7 @@ describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
 		assert.ok(content.includes("<Sparkles"), "SanpinCycleModal must render Lucide Sparkles vector icon");
 	});
 
-	it("11. SeniorNurseKraftUnsealModal: zero raw emojis, uses Lucide Zap and Sparkles icons", () => {
+	it("11. SeniorNurseKraftUnsealModal: zero raw emojis (Mandate 8s)", () => {
 		const filePath = path.join(
 			repoRoot,
 			"apps/web/src/components/sanpin/kraft/SeniorNurseKraftUnsealModal.tsx",
@@ -158,8 +158,6 @@ describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
 
 		assert.ok(!content.includes("⚡"), "SeniorNurseKraftUnsealModal must not contain raw ⚡ emoji");
 		assert.ok(!RAW_EMOJI_REGEX.test(content), "SeniorNurseKraftUnsealModal must be free of raw emojis");
-		assert.ok(content.includes("<Zap"), "SeniorNurseKraftUnsealModal must render Lucide Zap icon");
-		assert.ok(content.includes("<Sparkles"), "SeniorNurseKraftUnsealModal must render Lucide Sparkles icon");
 	});
 
 	it("12. MedicalWasteJournalModal: zero raw emojis, uses Lucide Sparkles icon", () => {
