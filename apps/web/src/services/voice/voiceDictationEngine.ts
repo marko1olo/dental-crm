@@ -109,6 +109,10 @@ export class VoiceDictationEngine {
 		}
 	}
 
+	public async startListening(preferredMode?: UnifiedAudioMode): Promise<boolean> {
+		return this.start(preferredMode);
+	}
+
 	public stop(): void {
 		this.isListening = false;
 		if (this.parseDebounceTimer) {
@@ -125,6 +129,10 @@ export class VoiceDictationEngine {
 		}
 		this.emitListening(false);
 		this.emitVolume(0);
+	}
+
+	public stopListening(): void {
+		this.stop();
 	}
 
 	public toggle(): void {

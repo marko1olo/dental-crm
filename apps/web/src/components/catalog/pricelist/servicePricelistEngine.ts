@@ -1160,7 +1160,7 @@ export interface ParsedPriceProposal {
 	readonly rawLine: string;
 	readonly commercialTitle: string;
 	readonly detectedCode804n: string;
-	readonly statutoryTitle804n?: string;
+	readonly statutoryTitle804n?: string | undefined;
 	readonly suggestedCategory: Order804nCategory;
 	readonly suggestedSpecialty: DoctorSpecialty;
 	readonly priceRub: number;

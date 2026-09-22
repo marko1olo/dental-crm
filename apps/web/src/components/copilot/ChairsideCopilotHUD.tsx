@@ -414,6 +414,9 @@ const CLINICAL_PRESETS = [
   },
 ];
 
+export type ClinicalPreset = (typeof CLINICAL_PRESETS)[number];
+const defaultPreset: ClinicalPreset = CLINICAL_PRESETS[0]!;
+
 export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
   initialOpen = true,
   initialDocked = false,
@@ -452,7 +455,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
 
   // Current active preset (default: Caries 16)
   const [activePresetIndex, setActivePresetIndex] = useState(0);
-  const activePreset = CLINICAL_PRESETS[activePresetIndex] ?? CLINICAL_PRESETS[0];
+  const activePreset = CLINICAL_PRESETS[activePresetIndex] ?? defaultPreset;
 
   // Live state of proposals and thoughts
   const [thoughts, setThoughts] = useState<ChairsideThoughtStep[]>(activePreset.thoughts);
@@ -502,7 +505,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
   // Load a preset with simulation
   const loadPreset = useCallback(
     (index: number, simulateDelay = true) => {
-      const preset = CLINICAL_PRESETS[index] ?? CLINICAL_PRESETS[0];
+      const preset = CLINICAL_PRESETS[index] ?? defaultPreset;
       setActivePresetIndex(index);
       setInputText(preset.prompt);
 

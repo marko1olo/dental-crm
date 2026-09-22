@@ -44,7 +44,7 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
         chairId="chair-1"
         patientName="Сидоров А.П."
         patientAllergies={["Лидокаин", "Пенициллин"]}
-        patientSomaticHistory="Гипертоническая болезнь II ст."
+        patientSomaticHistory={["Гипертоническая болезнь II ст."]}
       />
     );
 
@@ -205,17 +205,13 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
     expect(data.data.verdict.approved).toBe(true);
     expect(data.data.safetyAlerts[0].title).toBe("Аллергический статус");
 
-    // Verify fetch arguments
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/copilot/agent/execute",
-      expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          "x-dente-clinic-token": "demo-clinic-token",
-          "x-dente-staff-token": "demo-staff-token",
-        }),
-      })
-    );
+    // Verify fetch arguments directly on mock.calls
+    expect(fetchMock).toHaveBeenCalled();
+    const [callUrl, callInit] = fetchMock.mock.calls[0] as [string, RequestInit & { headers: Record<string, string> }];
+    expect(callUrl).toBe("/api/v1/copilot/agent/execute");
+    expect(callInit.method).toBe("POST");
+    expect(callInit.headers["x-dente-clinic-token"]).toBe("demo-clinic-token");
+    expect(callInit.headers["x-dente-staff-token"]).toBe("demo-staff-token");
   });
 
   it("5. verifies 1-click dispatch callbacks (onApplySoapDiary, onAddBillingItem, onUpdateToothStatus)", () => {
