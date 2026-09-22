@@ -400,4 +400,60 @@ describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
 		assert.equal(emojiRegex.test(memo), false, "Post-op memo must strictly have zero emojis");
 	});
+
+	it("11. Mandate 8i Outpatient Domain Sovereignty: 100% free of hospital, laparotomy, transfusion, and general anesthesia bloat", () => {
+		const forbiddenHospitalKeywords = [
+			"лапаротом",
+			"полостн",
+			"трансфузи",
+			"койко-дн",
+			"интубаци",
+			"общий наркоз",
+			"паллиатив",
+			"стационар",
+			"брюшн",
+		];
+
+		for (const norm of SURGICAL_OPERATION_NORMS) {
+			const fullText = [
+				norm.title,
+				norm.standardProtocolTextRu,
+				norm.anesthesiaDefaultRu,
+				norm.postOpRecommendationsRu,
+				...(norm.order804nServices?.map((s) => s.nameRu) ?? []),
+			].join(" ").toLowerCase();
+
+			for (const badWord of forbiddenHospitalKeywords) {
+				assert.equal(
+					fullText.includes(badWord),
+					false,
+					`Norm ${norm.id} violates Mandate 8i by containing hospital bloat keyword "${badWord}"`,
+				);
+			}
+
+			// Must be valid outpatient chairside dental category
+			assert.ok(
+				["implant", "extraction", "perio_surgery", "sinus_gbr", "emergency"].includes(norm.category),
+				`Norm ${norm.id} must be in an outpatient dental surgical category`,
+			);
+		}
+	});
+
+	it("12. Apicoectomy / root apex resection (surgery_apicoectomy, A16.07.007) conforms to Form 043/u and Mandates 8e, 8i", () => {
+		const apico = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_apicoectomy");
+		assert.ok(apico, "surgery_apicoectomy must be registered in SURGICAL_OPERATION_NORMS");
+		assert.equal(apico.code804n, "A16.07.007");
+		assert.equal(apico.icd10, "K04.5");
+		assert.ok(apico.standardProtocolTextRu.includes("Резекция верхушки корня на 3 мм"));
+		assert.ok(apico.standardProtocolTextRu.includes("Ретроградное пломбирование МТА"));
+		assert.ok(apico.standardProtocolTextRu.includes("радиовизиография"));
+
+		// Materials: MTA material and suture PGA 5-0
+		const mta = apico.requiredMaterials.find((m) => m.name.includes("МТА"));
+		assert.ok(mta, "Must require MTA retrograde filling material");
+
+		// Non-blocking warehouse status
+		const overdraft = evaluateWarehouseOverdraft(apico.requiredMaterials, true);
+		assert.equal(overdraft.canProceed, true, "Apicoectomy must never be blocked by warehouse delay");
+	});
 });
