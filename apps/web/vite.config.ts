@@ -84,6 +84,7 @@ export default defineConfig({
 					if (lower.includes("three") || lower.includes("cornerstone") || lower.includes("vtk")) return false;
 					if (lower.includes("pdf-canvas") || lower.includes("jspdf") || lower.includes("chart")) return false;
 					if (lower.includes("dicom") || lower.includes("analytics")) return false;
+					if (lower.includes("d3") || lower.includes("panoramic") || lower.includes("cbct") || lower.includes("zip") || lower.includes("fflate")) return false;
 					return true;
 				});
 			},

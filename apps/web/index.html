@@ -13,6 +13,30 @@
     <link rel="apple-touch-icon" href="/icon.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>Dental CRM | Управление клиникой</title>
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem("dente_theme");
+          if (!t) {
+            t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          }
+          if (t) {
+            document.documentElement.setAttribute("data-theme", t);
+            if (t === "dark" || t === "night" || t === "ocean" || t === "emerald" || t === "cyber_xray") {
+              document.documentElement.classList.add("dark");
+            } else {
+              document.documentElement.classList.remove("dark");
+            }
+          }
+          var low = localStorage.getItem("dente_low_spec");
+          if (low === "true") {
+            document.documentElement.setAttribute("data-low-spec", "true");
+            document.documentElement.setAttribute("data-hardware-tier", "low");
+            document.documentElement.classList.add("low-spec-mode");
+          }
+        } catch (e) {}
+      })();
+    </script>
     <style>
       :root {
         --boot-bg: #fdfdfd;
