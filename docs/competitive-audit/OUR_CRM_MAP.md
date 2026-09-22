@@ -2,7 +2,7 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
-> ⚠️ **СТАТУС (2026-09-23 / WAVES 175–278 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 321 СИСТЕМНАЯ АДДЕНДУМ-ФИЧА (ВСЕГО 384 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 321 АДДЕНДУМ, 384/384 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
+> ⚠️ **СТАТУС (2026-09-23 / WAVES 175–279 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 322 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (ВСЕГО 385 ФИЧ: 63 КАНОНИЧЕСКИЕ + 322 АДДЕНДУМ, 385/385 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
@@ -205,7 +205,7 @@
   - **1-клик физиологическая норма пародонтограммы (192 точки), спокойная тепловая карта AAP/EFP и экспресс-скрининг PSR (Мандаты 8c, 8d, 8e п. 3, 8k, 8n, 8s / Волна 242)**: В `PeriodontogramChart.tsx`, `perioHeatmap.ts`, `perioMath.ts`, `perioIndicesEngine.ts` и `periodontalQuickScreening.test.ts` развернут канонический SSOT пародонтограммы с полной автономией врача; 1-клик кнопка установки физиологической нормы пародонта (`btn-express-perio-norm`): мгновенное заполнение всех 192 точек зондирования (32 зуба x 6 поверхностей DB, B, MB, DL, L, ML) глубиной 1–2 мм, рецессией 0 мм, отсутствием кровоточивости BOP=0 и подвижности Mobility=0; спокойная клиническая палитра тепловой карты AAP/EFP без кричащих кислотных цветов (норма $\le 3$ мм — спокойный изумруд `#10b981`, ранняя деструкция 4 мм — мягкий янтарь `#f59e0b`, умеренная 5–6 мм — сдержанный оранжевый `#f97316`, тяжелая $\ge 7$ мм — деликатная роза `#f43f5e`); экспресс-скрининг PSR/CPITN (коды 0..4) по секстантам с авто-заполнением статуса за 2 секунды без процедурного симулятора ручного ввода; расчет индексов ВОЗ (BOP, PI, Mean CAL); 1-строчный тулбар 32–36px по Закону Хика, печать карты формата А4 без эмодзи по Мандату 8d п. 7.
   - **Быстрые пресеты местной анестезии у кресла и 1-клик интеграция в Форму 043/у (Мандаты 8c, 8e пп. 3, 6, 8k, 8n, 8s / Волна 242)**: В `anesthesiaExpressPresets.ts` и `AnesthesiaQuickBar.tsx` реализована панель экспресс-выбора анестезии у кресла в 1 клик для снижения трения (инфильтрационная Артикаин 1:200 000 1.7 мл, мандибулярная по Вайсбрему Артикаин 1:100 000 1.7 мл, торусальная, интралигаментарная, кардио-протокол Скандонест/Мепивакаин 3% без вазоконстриктора); мгновенный автопересчет безопасной дозировки по массе тела пациента, предупреждения при превышении максимальной суточной дозы; мгновенная авто-вставка структурированного протокола анестезии в SOAP-дневник Формы 043/у без разрыва autosave; 1-клик копирование памятки пациенту для мессенджеров WhatsApp/Telegram; 1-строчный тулбар без эмодзи.
   - **Амбулаторная хирургия, 1-клик гемостаз, паспорт имплантации и чек-лист реанимации (Мандаты 8c, 8d, 8e пп. 1, 3, 5, 10, 8i, 8k, 8n, 8p, 8s / Волна 246)**: В `VisitSurgeryProtocolTab.tsx`, `surgeryProtocols.ts`, `SurgeryCockpitModal.tsx`, `ImplantPassportModal.tsx`, `ImplantPassportCard.tsx`, `EmergencyRescueModal.tsx` и `emergencyRescueEngine.ts`: канонические протоколы амбулаторной хирургии (простое, сложное и атипичное удаление, периостотомия, имплантация Dentium, Osstem, Straumann, MIS, Astra Tech); 1-клик кнопки гемостаза лунки (коллагеновая губка, Альвожиль, наложение швов Vicryl 4-0) с автодобавлением в дневник 043/у и смету; фиксация первичного торка (35–45 Н·см), стабильности ISQ (70–75) и типа формирователя десны (ФДМ vs Заглушка); мягкий технологический овердрафт склада расходников без блокировки операции; кресельный чек-лист неотложной помощи при анафилактическом шоке (адреналин 0.5 мг в/м каждые 5 мин) и LAST-интоксикации анестетиками (липидная реанимация 20%) с мгновенной печатью Акта передачи пациента бригаде СМП (112) по Приказу 786н/1144н и 1-клик копированием извещения родственникам в мессенджеры без эмодзи.
-
+  - **Ликвидация бюрократических очередей начмедов и карательных замков амбулаторных карт в API (Мандаты 8e, 8n, 8s / Волна 279, коммит `fbe884f9b`)**: В `apps/api/src/routes/outpatient.ts`, `apps/api/src/db/schema/outpatientCore.ts`, `cryptoProNativeRoutes.ts`, `denteClinicalConstitution.ts`, `autonomousDenteAgent.ts` и тестах `outpatient.test.ts` маршруты `/api/outpatient/verify` и `/api/outpatient/verify/:id/status` переведены из «согласования начмедом» в добровольную «экспертизу главного врача / клинический аудит качества ЭМК» рекомендательного характера (ВКК по Приказам 785н и 834н Минздрава РФ); подтверждено, что статус аудита никогда не блокирует дневники лечащего врача (`isDoctorOrPrivileged = true`, `canEdit: true`, «Исправленному верить»); в `denteClinicalConstitution.ts` идентичность ИИ обновлена на «Главный клинический ИИ-ординатор и клинический эксперт-наставник (главный врач) платформы DENTE», вердикт агента — «ВЕРДИКТ ГЛАВНОГО ВРАЧА DENTE (T.A.R.S. 100%)».
 
 ### 2.4. Ортодонтия, 3D DICOM / MPR КТ Просмотрщик & ИИ Диагностика
 - **Фронтенд**: `apps/web/src/ImagingView.tsx`, `OrthodonticStudioModal.tsx`, `OrthoPhotoProtocolModal.tsx`, `OrthodonticVisitProtocolWidget.tsx`, `CtPlanningToolbar.tsx`, `ctPlanning*.ts`, `ctPlanningPersistence.ts`, `panoramicMprMath.ts`, `panoramicArch.ts`, `BoneQualityPanel.tsx`, `mprMath.ts`, `mprWorker.ts`, `ImplantCrossSectionPlanner.tsx`, `CephalometricAnalysisModal.tsx`, `apps/web/src/components/dicom/dicomMeasurementMath.ts`, `apps/web/src/components/dicom/implantCatalog.ts`, `apps/web/src/components/dicom/sliceClippingMath.ts`, `apps/web/src/components/dicom/sliceIntersectionMath.ts`.
@@ -6297,4 +6297,26 @@
   - `packages/shared/src/emr/periodontogram.ts`
   - `packages/shared/src/security/rbacMatrix.ts`
   - `packages/shared/src/outpatient/outpatientContracts.ts` (коммиты `cc047f402`, `177376a2d`, `4c4957b9e`, Wave 278)
+
+### 2.10.379. Wave 279: Тотальная ликвидация бюрократических очередей начмедов в API в пользу добровольного клинического аудита качества главным врачом (Мандаты 8e, 8n, 8s) (Фича #385)
+- **Функционал**:
+  1. *Очистка очередей согласований ЭМК в API*:
+     - Маршруты `/api/outpatient/verify` и `/api/outpatient/verify/:id/status` в `apps/api/src/routes/outpatient.ts` переведены из «согласования начмедом» в добровольную «экспертизу главного врача / клинический аудит качества ведения ЭМК» (ВКК по Приказам 785н и 834н Минздрава РФ);
+     - Эндпоинты возвращают рекомендательный статус (`chiefDoctorAudit`, `notice: "Экспертиза главного врача носит рекомендательный характер аудита качества..."`), полностью исключающий карательные блокировки;
+  2. *Запрет на 24-часовые замки («Исправленному верить»)*:
+     - В `/api/outpatient/verify/visit/:visitId/lock-status` лечащий врач признан полноправным автором дневника (`isDoctorOrPrivileged = true`), дневник всегда доступен для редактирования (`isLocked: false`, `canEdit: true`), предотвращая искусственные замки;
+  3. *Клинический эксперт-наставник взамен «цифрового начмеда»*:
+     - В `apps/api/src/db/schema/outpatientCore.ts` таблица `outpatientVerification` снабжена комментариями об экспертном клиническом аудите главным врачом;
+     - В `apps/api/src/routes/cryptoProNativeRoutes.ts` права проверки ЭЦП закреплены за главным врачом;
+     - В `apps/api/src/services/agent/prompts/denteClinicalConstitution.ts` идентичность ИИ зафиксирована как «Главный клинический ИИ-ординатор и клинический эксперт-наставник (главный врач) платформы DENTE», а в `autonomousDenteAgent.ts` вердикт — «ВЕРДИКТ ГЛАВНОГО ВРАЧА DENTE (T.A.R.S. 100%)».
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/api/src/routes/outpatient.ts`
+  - `apps/api/src/db/schema/outpatientCore.ts`
+  - `apps/api/src/routes/cryptoProNativeRoutes.ts`
+  - `apps/api/src/services/agent/prompts/denteClinicalConstitution.ts`
+  - `apps/api/src/services/agent/autonomousDenteAgent.ts`
+  - `apps/api/src/tests/routes/outpatient.test.ts`
+  - `apps/api/src/tests/services/agent/denteClinicalConstitution.test.ts`
+  - `apps/api/src/tests/services/agent/autonomousDenteAgent.test.ts` (коммит `fbe884f9b`, Wave 279)
 
