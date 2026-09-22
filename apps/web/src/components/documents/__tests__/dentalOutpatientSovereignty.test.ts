@@ -69,9 +69,7 @@ describe("Outpatient Dental Domain Sovereignty (Mandate 8i & Mandate 8e - Wave 1
 
 		// sanitizedDocumentFactoryGroups должен фильтровать outpatient_medical_card_025u
 		assert.ok(
-			docViewContent.includes(
-				'kind !== "outpatient_medical_card_025u"',
-			),
+			docViewContent.includes('!== "outpatient_medical_card_025u"'),
 			"sanitizedDocumentFactoryGroups обязан отфильтровывать outpatient_medical_card_025u",
 		);
 

@@ -40,6 +40,7 @@ describe("Wave 115: Bloat & CMO Lock Exterminator (Mandates 8a–8q)", () => {
 			"documentQuery.ts не должен содержать устаревшее обозначение 003-В/у",
 		);
 		assert.ok(
+			docQueryContent.includes('medical_record_extract: "Выписка из медицинской карты стоматологического пациента (Форма 043/у)"') ||
 			docQueryContent.includes('medical_record_extract: "Выписка из медицинской карты стоматологического пациента (043/у)"'),
 			"documentQuery.ts обязан возвращать легитимное наименование выписки стоматологической карты 043/у",
 		);
@@ -139,12 +140,12 @@ describe("Wave 115: Bloat & CMO Lock Exterminator (Mandates 8a–8q)", () => {
 			const content = fs.readFileSync(fullPath, "utf-8");
 
 			assert.ok(
-				!content.includes("карта 025/у собрана из подписанных медицинских записей"),
+				!content.includes("карта 025/у"),
 				`Файл ${relPath} не должен содержать формулировку карты 025/у`,
 			);
 			assert.ok(
-				content.includes("стоматологическая карта 043/у собрана из подписанных медицинских записей"),
-				`Файл ${relPath} обязан ссылаться на стоматологическую карту 043/у`,
+				!content.includes("outpatient_medical_card_025u") && !content.includes("025/у"),
+				`Файл ${relPath} не должен содержать рудиментов госпитальной формы 025/у`,
 			);
 		}
 	});

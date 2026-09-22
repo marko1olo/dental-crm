@@ -1132,7 +1132,7 @@ export function Cornerstone3DViewer({
 		}
 	};
 
-	const simulateImplantPlacement = () => {
+	const placeImplantModel = () => {
 		const activeVolumeId = volumeId ?? "my-volume";
 		let volume = activeVolumeId ? cornerstone.cache.getVolume(activeVolumeId) : undefined;
 		if (!volume) {
@@ -1918,7 +1918,7 @@ export function Cornerstone3DViewer({
 									}}
 									onClick={() => {
 										setIsSecondaryMenuOpen(false);
-										simulateImplantPlacement();
+										placeImplantModel();
 									}}
 								>
 									<span>+ Имплантат</span>
