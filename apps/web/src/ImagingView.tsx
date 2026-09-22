@@ -1567,13 +1567,14 @@ export function ImagingView(props: ImagingViewProps) {
 										</div>
 										<button
 											type="button"
-											className="primary-button text-xs py-1 px-3 inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
+											className="primary-button font-medium text-xs py-1 px-3 inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
+											style={{ color: "#ffffff" }}
 											onClick={() => pickBrowserImagingFiles()}
 											data-testid="imaging-attach-file-button"
 											title="Прикрепить файл снимка (DICOM, RVG, JPEG, PNG, TIFF) к карточке"
 										>
-											<UploadCloud size={14} />
-											<span>Прикрепить снимок</span>
+											<UploadCloud size={14} style={{ color: "#ffffff" }} />
+											<span style={{ color: "#ffffff" }}>Прикрепить снимок</span>
 										</button>
 									</div>
 								) : null}

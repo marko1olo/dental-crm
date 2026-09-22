@@ -176,24 +176,36 @@ export function CtPlanningToolsPanel({
 			}),
 		[dentalModelWorkbenchManifest, localBridgeReadiness],
 	);
+	const safeAnnotationRefs = useMemo(() => {
+		if (Array.isArray(annotationRefs)) return annotationRefs;
+		if (Array.isArray((annotationRefs as any)?.current)) return (annotationRefs as any).current;
+		return [];
+	}, [annotationRefs]);
+
+	const safeToolAnnotations = useMemo(() => {
+		const rawAnnotations = toolStateBundle?.annotations;
+		if (!Array.isArray(rawAnnotations)) return [];
+		return rawAnnotations.map((annotation) => ({
+			id: annotation.sourceAnnotationId || annotation.id,
+			type: annotation.type,
+			label: annotation.label,
+			semanticRole: annotation.semanticRole ?? null,
+			note: annotation.note,
+			pointCount: Array.isArray(annotation.points) ? annotation.points.length : 0,
+		}));
+	}, [toolStateBundle]);
+
 	const artifactCommands = useMemo(
 		() =>
 			buildCtPlanningArtifactCommandStates({
 				canPlan,
 				hasImplantPlan: planningSnapshot.hasImplantPlan,
 				annotations: [
-					...(Array.isArray(annotationRefs) ? annotationRefs : Array.isArray((annotationRefs as any)?.current) ? (annotationRefs as any).current : []),
-					...(toolStateBundle?.annotations.map((annotation) => ({
-						id: annotation.sourceAnnotationId || annotation.id,
-						type: annotation.type,
-						label: annotation.label,
-						semanticRole: annotation.semanticRole ?? null,
-						note: annotation.note,
-						pointCount: annotation.points.length,
-					})) ?? []),
+					...safeAnnotationRefs,
+					...safeToolAnnotations,
 				],
 			}),
-		[annotationRefs, canPlan, planningSnapshot.hasImplantPlan, toolStateBundle],
+		[canPlan, planningSnapshot.hasImplantPlan, safeAnnotationRefs, safeToolAnnotations],
 	);
 	const activeActionArtifactStates = useMemo(() => {
 		if (!activeQuickAction) return [];

@@ -267,9 +267,17 @@ async function run() {
   }
 
   async function navigateHash(page, hash, expectedSelector) {
-    await page.evaluate((h) => {
-      window.location.hash = h;
-    }, hash);
+    await page.waitForLoadState("domcontentloaded").catch(() => {});
+    try {
+      await page.evaluate((h) => {
+        window.location.hash = h;
+      }, hash);
+    } catch {
+      await page.waitForTimeout(800);
+      await page.evaluate((h) => {
+        window.location.hash = h;
+      }, hash).catch(() => {});
+    }
     if (expectedSelector) {
       await page.waitForSelector(expectedSelector, { timeout: 15000 }).catch(() => {});
     }

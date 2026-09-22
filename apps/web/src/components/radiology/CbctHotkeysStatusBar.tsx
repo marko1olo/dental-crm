@@ -49,17 +49,15 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 
 	return (
 		<>
-			{/* Bottom compact status bar: strictly 1 line (28px / h-7), True Dark Mandate */}
+			{/* Bottom compact status bar: strictly 1 line (28px / h-7) */}
 			<footer
-				data-theme="dark"
-				className="h-7 px-2.5 bg-[#09090b] border-t border-zinc-800 flex items-center justify-between shrink-0 gap-2 overflow-hidden text-[10px] text-zinc-400 select-none w-full min-w-0 max-w-full leading-none"
-				style={{ color: "#a1a1aa", backgroundColor: "#09090b" }}
+				className="h-7 px-2.5 bg-[var(--paper-strong,#09090b)] border-t border-[var(--line,#27272a)] flex items-center justify-between shrink-0 gap-2 overflow-hidden text-[10px] text-[var(--muted,#a1a1aa)] select-none w-full min-w-0 max-w-full leading-none"
 				data-testid="cbct-hotkeys-status-bar"
 			>
 				{/* Left: Active Viewport Indicator Chip */}
 				<div className="flex items-center gap-1.5 shrink-0">
 					<div
-						className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 font-mono text-[10px] text-zinc-100 leading-none shrink-0"
+						className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--paper,#18181b)] border border-[var(--line,#27272a)] font-mono text-[10px] text-[var(--ink,#f4f4f5)] leading-none shrink-0"
 						title={`Активное окно: ${activeMeta.planeNameRu}. Нажмите Tab для смены.`}
 					>
 						<span

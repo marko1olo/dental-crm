@@ -5049,8 +5049,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby={`cbct-studio-title-${modalId}`}
-			data-theme="dark"
-			className="fixed inset-0 z-[100] flex flex-col bg-zinc-950 text-zinc-100 font-sans select-none overflow-hidden w-full max-w-full h-full min-w-0"
+			className="fixed inset-0 z-[100] flex flex-col bg-[var(--paper,#09090b)] text-[var(--ink,#f4f4f5)] font-sans select-none overflow-hidden w-full max-w-full h-full min-w-0"
 		>
 			{/* Real DICOM Ingestion Controls (Hidden file inputs for Left Tool Dock) */}
 			<input
@@ -5072,101 +5071,101 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				aria-hidden="true"
 			/>
 
-			{/* ─── HEADER BAR (TIER 1 CLEAN STATUS & WORKSPACE SWITCHER — TRUE DARK MANDATE) ─── */}
+			{/* ─── HEADER BAR (TIER 1 CLEAN STATUS & WORKSPACE SWITCHER) ─── */}
 			<header
-				data-theme="dark"
-				className="h-9 min-h-[36px] px-2 sm:px-3 py-0.5 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between shrink-0 gap-1.5 sm:gap-2 text-zinc-200 overflow-x-auto min-w-0 w-full max-w-full relative"
+				className="h-9 min-h-[36px] px-2 sm:px-3 py-0.5 bg-[var(--paper-strong,#09090b)] border-b border-[var(--line,#27272a)] flex items-center justify-between shrink-0 gap-1.5 sm:gap-2 text-[var(--ink,#f4f4f5)] min-w-0 w-full max-w-full relative"
 			>
 				{/* Left: 3D Cube Icon + Title + Quiet Study Status */}
-				<div className="flex items-center gap-1.5 sm:gap-2 min-w-0 max-w-[180px] sm:max-w-[260px] lg:max-w-[340px] shrink-0">
-					<div className="w-7 h-7 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
+				<div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink-0">
+					<div className="w-7 h-7 rounded bg-[var(--paper,#18181b)] border border-[var(--line,#27272a)] flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
 						<Box className="w-3.5 h-3.5" />
 					</div>
-					<div className="flex flex-col min-w-0 justify-center gap-0.5">
-						<div className="flex items-center gap-1.5">
+					<div className="flex flex-col min-w-0 justify-center">
+						<div className="flex items-center gap-1">
 							<h2
 								id={`cbct-studio-title-${modalId}`}
-								className="text-xs font-bold text-zinc-100 tracking-wide flex items-center gap-1.5 whitespace-nowrap leading-none"
+								className="text-xs font-bold text-[var(--ink,#f4f4f5)] tracking-wide flex items-center gap-1.5 whitespace-nowrap leading-none"
 							>
-								3D CBCT Studio
-								<span className="hidden lg:inline-block text-[9px] px-1 py-0.2 rounded bg-zinc-900 text-zinc-300 font-mono border border-zinc-800">
-									Romexis 6 / Ez3D-i
+								<span className="hidden sm:inline">3D CBCT Studio</span>
+								<span className="sm:hidden font-bold">CBCT</span>
+								<span className="hidden lg:inline-block text-[9px] px-1 py-0.2 rounded bg-[var(--paper-soft,#27272a)] text-[var(--muted,#a1a1aa)] font-mono border border-[var(--line,#3f3f46)]">
+									Romexis 6
 								</span>
 							</h2>
 						</div>
 						<p
-							className="text-[10px] text-zinc-400 truncate leading-none min-w-0"
+							className="text-[10px] text-[var(--muted,#a1a1aa)] truncate leading-none min-w-0 max-w-[110px] sm:max-w-[200px] lg:max-w-[320px]"
 							data-testid="cbct-patient-metadata-badge"
 							id="cbct-patient-metadata-badge"
 							title={`${patientDisplayName || resolvedPatientName} • ${loadedSliceCount > 0 ? `${loadedSliceCount} срезов` : "Исследование не загружено"} • ${volume ? `${volume.spacingMm.x.toFixed(1)} мм` : "—"}`}
 						>
-							{patientDisplayName || resolvedPatientName} • {loadedSliceCount > 0 ? `${loadedSliceCount} срезов` : "Исследование не загружено"} • {volume ? `${volume.spacingMm.x.toFixed(1)} мм` : "—"}
+							{patientDisplayName || resolvedPatientName}
 						</p>
 					</div>
 				</div>
 
 				{/* Center: 4 Clean Workspace Modes (Romexis Segmented Switcher) */}
-				<div className="flex items-center bg-zinc-950 p-0.5 rounded-lg border border-zinc-800 shrink-0 gap-0.5">
+				<div className="flex items-center bg-[var(--paper,#09090b)] p-0.5 rounded-lg border border-[var(--line,#27272a)] shrink-0 gap-0.5">
 					<button
 						type="button"
 						onClick={() => handleSelectStudioMode("diagnostic")}
-						className={`px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-colors ${
+						className={`px-2 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
 							studioMode === "diagnostic"
-								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
-								: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
+								? "bg-[var(--paper-strong,#18181b)] text-cyan-400 border border-cyan-500/60 shadow-xs"
+								: "bg-transparent text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-strong,#18181b)]"
 						}`}
 						data-testid="cbct-mode-diagnostic-btn"
 						title="Режим общей 3D диагностики (панель свернута)"
 					>
 						<Search className="w-3.5 h-3.5 text-cyan-400" />
-						<span>Диагностика</span>
+						<span className="hidden md:inline">Диагностика</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => handleSelectStudioMode("implant")}
-						className={`px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-colors ${
+						className={`px-2 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
 							studioMode === "implant"
-								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
-								: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
+								? "bg-[var(--paper-strong,#18181b)] text-cyan-400 border border-cyan-500/60 shadow-xs"
+								: "bg-transparent text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-strong,#18181b)]"
 						}`}
 						data-testid="cbct-mode-implant-btn"
 						title="Планирование имплантации и контроль нерва"
 					>
 						<CircleDot className="w-3.5 h-3.5 text-amber-400" />
-						<span>Имплантация</span>
+						<span className="hidden md:inline">Имплантация</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => handleSelectStudioMode("endo")}
-						className={`px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-colors ${
+						className={`px-1.5 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
 							studioMode === "endo"
-								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
-								: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
+								? "bg-[var(--paper-strong,#18181b)] text-cyan-400 border border-cyan-500/60 shadow-xs"
+								: "bg-transparent text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-strong,#18181b)]"
 						}`}
 						data-testid="cbct-mode-endo-btn"
 						title="Эндодонтия: корневые каналы и апексы"
 					>
 						<Activity className="w-3.5 h-3.5 text-cyan-400" />
-						<span>Эндо</span>
+						<span className="hidden md:inline">Эндо</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => handleSelectStudioMode("tmj")}
-						className={`px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-colors ${
+						className={`px-1.5 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
 							studioMode === "tmj"
-								? "bg-zinc-900 text-cyan-400 border border-cyan-500/60 shadow-xs"
-								: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900"
+								? "bg-[var(--paper-strong,#18181b)] text-cyan-400 border border-cyan-500/60 shadow-xs"
+								: "bg-transparent text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-strong,#18181b)]"
 						}`}
 						data-testid="cbct-mode-tmj-btn"
 						title="ВНЧС: суставные головки и ямки"
 					>
 						<Ruler className="w-3.5 h-3.5 text-cyan-400" />
-						<span>ВНЧС</span>
+						<span className="hidden md:inline">ВНЧС</span>
 					</button>
 				</div>
 
-				{/* Right: Primary Clinical Actions (В ЭМК, Панель), More Options Menu (...), Window Controls with pr-2 clearance */}
-				<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 sticky right-0 z-20 bg-zinc-950 pl-1.5 pr-2 sm:pr-2.5 shadow-[-6px_0_12px_rgba(9,9,11,0.9)]">
+				{/* Right: Primary Clinical Actions (В ЭМК, Панель), More Options Menu (...), Window Controls */}
+				<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 sticky right-0 z-20 bg-[var(--paper-strong,#09090b)] pl-1.5 pr-2 sm:pr-2.5 shadow-[-6px_0_12px_rgba(9,9,11,0.9)]">
 					{/* Primary Action 1: Clinical EMR Snapshot Export Button */}
 					<button
 						type="button"
@@ -5185,8 +5184,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						onClick={() => setIsSidebarOpen((prev) => !prev)}
 						className={`px-2 sm:px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-colors border shadow-xs ${
 							isSidebarOpen
-								? "bg-zinc-900 text-cyan-400 border-cyan-500/60"
-								: "bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:bg-zinc-900"
+								? "bg-[var(--paper,#18181b)] text-cyan-400 border-cyan-500/60"
+								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] border-[var(--line,#27272a)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper,#18181b)]"
 						}`}
 						title={isSidebarOpen ? "Скрыть боковую панель" : "Показать боковую панель"}
 						data-testid="cbct-toggle-sidebar-btn"
@@ -5203,8 +5202,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							onClick={() => setIsStudioMenuOpen((prev) => !prev)}
 							className={`px-1.5 sm:px-2 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 border transition-colors cursor-pointer ${
 								isStudioMenuOpen
-									? "bg-zinc-800 text-cyan-400 border-cyan-500/60"
-									: "bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-700 hover:border-zinc-600"
+									? "bg-[var(--paper,#18181b)] text-cyan-400 border-cyan-500/60"
+									: "bg-[var(--paper-strong,#09090b)] hover:bg-[var(--paper,#18181b)] text-[var(--ink,#e4e4e7)] border-[var(--line,#27272a)]"
 							}`}
 							data-testid="cbct-more-options-btn"
 							title="Дополнительные операции (Сброс, дуга, PDF, раскладка)"
@@ -5379,15 +5378,15 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			</header>
 
 			{/* ─── MOBILE VIEWPORT TABS (VISIBLE ONLY ON < LG SCREENS) ─────────── */}
-			<div className="lg:hidden flex items-center bg-zinc-950 border-b border-zinc-800 p-1.5 shrink-0 gap-1.5 overflow-x-auto min-w-0 w-full max-w-full">
+			<div className="lg:hidden flex items-center bg-[var(--paper-strong,#09090b)] border-b border-[var(--line,#27272a)] p-1.5 shrink-0 gap-1.5 overflow-x-auto min-w-0 w-full max-w-full">
 				<button
 					type="button"
 					onClick={() => setMobileActiveTab("axial")}
 					data-testid="cbct-mobile-tab-axial"
-					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
+					className={`px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[38px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "axial"
-							? "bg-zinc-900 text-cyan-400 border-cyan-500/60 shadow-xs"
-							: "bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100"
+							? "bg-[var(--paper,#18181b)] text-cyan-600 dark:text-cyan-400 border-cyan-500/70 shadow-xs"
+							: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] border-[var(--line,#27272a)] hover:text-[var(--ink,#fafafa)]"
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-cyan-400" />
@@ -5397,10 +5396,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					type="button"
 					onClick={() => setMobileActiveTab("coronal")}
 					data-testid="cbct-mobile-tab-coronal"
-					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
+					className={`px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[38px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "coronal"
-							? "bg-zinc-900 text-orange-400 border-orange-500/60 shadow-xs"
-							: "bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100"
+							? "bg-[var(--paper,#18181b)] text-orange-600 dark:text-orange-400 border-orange-500/70 shadow-xs"
+							: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] border-[var(--line,#27272a)] hover:text-[var(--ink,#fafafa)]"
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-orange-500" />
@@ -5410,10 +5409,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					type="button"
 					onClick={() => setMobileActiveTab("sagittal")}
 					data-testid="cbct-mobile-tab-sagittal"
-					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
+					className={`px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[38px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "sagittal"
-							? "bg-zinc-900 text-emerald-400 border-emerald-500/60 shadow-xs"
-							: "bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100"
+							? "bg-[var(--paper,#18181b)] text-emerald-600 dark:text-emerald-400 border-emerald-500/70 shadow-xs"
+							: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] border-[var(--line,#27272a)] hover:text-[var(--ink,#fafafa)]"
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
@@ -5423,10 +5422,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					type="button"
 					onClick={() => setMobileActiveTab("panoramic")}
 					data-testid="cbct-mobile-tab-panoramic"
-					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
+					className={`px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[38px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "panoramic"
-							? "bg-zinc-900 text-purple-400 border-purple-500/60 shadow-xs"
-							: "bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100"
+							? "bg-[var(--paper,#18181b)] text-purple-600 dark:text-purple-400 border-purple-500/70 shadow-xs"
+							: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] border-[var(--line,#27272a)] hover:text-[var(--ink,#fafafa)]"
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-purple-500" />
@@ -5439,10 +5438,10 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						setIsSidebarOpen(true);
 					}}
 					data-testid="cbct-mobile-tab-planner"
-					className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap min-h-[44px] shrink-0 transition-colors flex items-center gap-1.5 border ${
+					className={`px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap min-h-[38px] shrink-0 transition-colors flex items-center gap-1.5 border ${
 						mobileActiveTab === "planner"
-							? "bg-zinc-900 text-yellow-400 border-yellow-500/60 shadow-xs"
-							: "bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100"
+							? "bg-[var(--paper,#18181b)] text-amber-600 dark:text-amber-400 border-amber-500/70 shadow-xs"
+							: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] border-[var(--line,#27272a)] hover:text-[var(--ink,#fafafa)]"
 					}`}
 				>
 					<span className="w-2 h-2 rounded-full bg-yellow-400" />
@@ -5451,7 +5450,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			</div>
 
 			{/* ─── MAIN WORKSPACE ROW (LEFT TOOL DOCK + VIEWPORTS + SIDEBAR) ─── */}
-			<div className="flex-1 flex flex-row min-h-0 min-w-0 w-full max-w-full overflow-hidden relative">
+			<div className="flex-1 flex flex-col md:flex-row min-h-0 min-w-0 w-full max-w-full overflow-hidden relative">
 				<CbctLeftToolDock
 					activeTool={activeTool}
 					onSelectTool={handleSelectTool}
@@ -5474,12 +5473,12 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				/>
 
 				{/* ─── VIEWPORTS & SIDEBAR GRID (COLS 1..12) ───────────────────── */}
-				<div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-1 p-1 bg-zinc-950 min-h-0 min-w-0 w-full max-w-full overflow-hidden">
+				<div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-1 p-1 bg-[var(--paper,#09090b)] min-h-0 min-w-0 w-full max-w-full overflow-hidden">
 				{/* ─── VIEWPORTS DISPLAY (COLS 1..8 ON DESKTOP OR 1..12 WHEN SIDEBAR COLLAPSED) ─── */}
 				<div className={`${isSidebarOpen ? "lg:col-span-8" : "lg:col-span-12"} ${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0 min-w-0 w-full h-full transition-all relative`}>
 					{!volume ? (
 						<div
-							className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-zinc-950 border border-dashed border-zinc-800 rounded-lg m-1 select-none"
+							className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[var(--paper-strong,#0f172a)] border border-dashed border-[var(--line,#334155)] rounded-lg m-1 select-none"
 							data-testid="cbct-empty-volume-dropzone"
 							onDragOver={(e) => e.preventDefault()}
 							onDrop={(e) => {
@@ -5491,29 +5490,29 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						>
 							{dicomLoadingStatus ? (
 								<div className="flex flex-col items-center justify-center gap-3">
-									<div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-cyan-400 shadow-inner">
+									<div className="w-12 h-12 rounded-xl bg-[var(--paper,#18181b)] border border-[var(--line,#3f3f46)] flex items-center justify-center text-cyan-400 shadow-inner">
 										<RotateCcw className="w-6 h-6 animate-spin text-cyan-400" />
 									</div>
-									<h3 className="text-sm font-bold text-zinc-100 mb-1">
+									<h3 className="text-sm font-bold text-[var(--ink,#f4f4f5)] mb-1">
 										{dicomLoadingStatus}
 									</h3>
-									<div className="w-64 h-2 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700">
+									<div className="w-64 h-2 bg-[var(--paper,#18181b)] rounded-full overflow-hidden border border-[var(--line,#3f3f46)]">
 										<div
 											className="h-full bg-cyan-500 transition-all duration-200"
 											style={{ width: `${Math.max(5, Math.min(100, dicomProgress))}%` }}
 										/>
 									</div>
-									<span className="text-xs font-mono text-zinc-400">{dicomProgress}%</span>
+									<span className="text-xs font-mono text-[var(--muted,#a1a1aa)]">{dicomProgress}%</span>
 								</div>
 							) : (
 								<>
-									<div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-cyan-400 mb-3 shadow-inner">
+									<div className="w-12 h-12 rounded-xl bg-[var(--paper,#18181b)] border border-[var(--line,#3f3f46)] flex items-center justify-center text-cyan-400 mb-3 shadow-inner">
 										<Box className="w-6 h-6" />
 									</div>
-									<h3 className="text-sm font-bold text-zinc-100 mb-1">
+									<h3 className="text-sm font-bold text-[var(--ink,#f4f4f5)] mb-1">
 										Исследование КЛКТ не загружено
 									</h3>
-									<p className="text-xs text-zinc-400 max-w-md mb-4">
+									<p className="text-xs text-[var(--muted,#a1a1aa)] max-w-md mb-4">
 										Перетащите папку со срезами DICOM (.dcm) или архив .zip сюда, либо выберите файлы для построения мультипланарной реконструкции (MPR) и имплантологического планирования.
 									</p>
 									<div className="flex items-center gap-2">

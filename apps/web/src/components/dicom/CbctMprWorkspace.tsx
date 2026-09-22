@@ -1,5 +1,6 @@
 import type React from "react";
 import { lazy, Suspense, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 const Cornerstone3DViewer = lazy(() =>
 	import("./Cornerstone3DViewer").then((m) => ({ default: m.Cornerstone3DViewer })),
@@ -28,13 +29,14 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 	}, [isOpen, onClose]);
 
 	if (!isOpen) return null;
-	return (
+	const modalContent = (
 		<div className="cbct-mpr-workspace-modal fixed inset-0 z-50 flex items-center justify-center bg-black/90">
 			<Suspense fallback={<div className="p-8 text-xs text-cyan-400">Загрузка 3D-просмотрщика КТ...</div>}>
 				<Cornerstone3DViewer imageIds={[]} patientId={patientId} patientName={patientName} studyDate={studyDate} voxelSpacing={voxelSpacing} authHeaders={authHeaders} onClose={onClose} />
 			</Suspense>
 		</div>
 	);
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 };
 
 export default CbctMprWorkspace;

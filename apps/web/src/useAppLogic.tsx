@@ -5048,7 +5048,7 @@ export function useAppLogic(): any {
 		clinicalReadHeaders: auth.denteClinicalReadHeaders,
 		clinicName: dashboard?.clinicSettings?.profile?.clinicName ?? "",
 		createCtPlanningArtifact: null,
-		ctPlanningAnnotationRefs: { current: null },
+		ctPlanningAnnotationRefs: [],
 		dictationQuickPhrases: null,
 		emptyDictationVoiceActionLabel: null,
 		firstName: documentPatient?.fullName?.split(" ")[1] ?? "",

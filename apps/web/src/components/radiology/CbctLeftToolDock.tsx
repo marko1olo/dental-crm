@@ -209,7 +209,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 			role="toolbar"
 			aria-label="Панель инструментов Romexis"
 			data-testid="cbct-left-tool-dock"
-			className={`w-10 min-w-[40px] max-w-[40px] [@media(pointer:coarse)]:w-[48px] [@media(pointer:coarse)]:min-w-[48px] [@media(pointer:coarse)]:max-w-[48px] h-full bg-[var(--paper-strong,#09090b)] border-r border-[var(--line,#27272a)] flex flex-col items-center py-1.5 px-1 [@media(pointer:coarse)]:py-2 [@media(pointer:coarse)]:px-0.5 shrink-0 select-none z-30 relative overflow-visible ${className}`}
+			className={`w-full md:w-10 md:min-w-[40px] md:max-w-[40px] h-11 md:h-full bg-[var(--paper-strong,#09090b)] border-b md:border-b-0 md:border-r border-[var(--line,#27272a)] flex flex-row md:flex-col items-center py-1 md:py-1.5 px-2 md:px-1 shrink-0 select-none z-30 relative overflow-x-auto md:overflow-visible overflow-y-hidden md:overflow-y-visible gap-1.5 md:gap-0 ${className}`}
 		>
 			{/* Hidden file inputs as fallback triggers */}
 			<input
@@ -230,7 +230,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 			/>
 
 			{/* ─── GROUP 1: MOUSE / CURSOR MODES ───────────────────────────── */}
-			<div className="flex flex-col items-center gap-1.5 w-full shrink-0">
+			<div className="flex flex-row md:flex-col items-center gap-1.5 shrink-0">
 				{/* 1. Crosshair */}
 				<div className="relative group flex items-center justify-center">
 					<button
@@ -375,10 +375,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 			</div>
 
 			{/* ─── DIVIDER ─────────────────────────────────────────────────── */}
-			<div className="w-5 [@media(pointer:coarse)]:w-7 h-px bg-[var(--line,#27272a)] my-1.5 shrink-0" role="separator" />
+			<div className="h-5 md:h-px w-px md:w-5 bg-[var(--line,#27272a)] my-0 md:my-1.5 mx-1 md:mx-0 shrink-0" role="separator" />
 
 			{/* ─── GROUP 2: MEASUREMENTS & DENSITOMETRY ────────────────────── */}
-			<div className="flex flex-col items-center gap-1.5 w-full shrink-0">
+			<div className="flex flex-row md:flex-col items-center gap-1.5 shrink-0">
 				{/* 6. Ruler / Caliper */}
 				<div className="relative group flex items-center justify-center">
 					<button
@@ -570,10 +570,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 			</div>
 
 			{/* ─── DIVIDER ─────────────────────────────────────────────────── */}
-			<div className="w-5 [@media(pointer:coarse)]:w-7 h-px bg-[var(--line,#27272a)] my-1.5 shrink-0" role="separator" />
+			<div className="h-5 md:h-px w-px md:w-5 bg-[var(--line,#27272a)] my-0 md:my-1.5 mx-1 md:mx-0 shrink-0" role="separator" />
 
 			{/* ─── GROUP 3 & 4: SLAB THICKNESS / MIP & HU PRESETS ─────────── */}
-			<div className="flex flex-col items-center gap-1.5 w-full shrink-0">
+			<div className="flex flex-row md:flex-col items-center gap-1.5 shrink-0">
 				{/* 9. Slab Thickness & MIP Flyout */}
 				<div className="relative flex items-center justify-center">
 					<button
@@ -872,7 +872,13 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						</kbd>
 					</div>
 				</div>
+			</div>
 
+			{/* ─── DIVIDER ─────────────────────────────────────────────────── */}
+			<div className="h-5 md:h-px w-px md:w-5 bg-[var(--line,#27272a)] my-0 md:my-1.5 mx-1 md:mx-0 shrink-0" role="separator" />
+
+			{/* ─── GROUP 5: BOTTOM ACTIONS (RESET ALL + REAL DICOM INGESTION) ─ */}
+			<div className="mt-0 md:mt-auto flex flex-row md:flex-col items-center gap-1.5 shrink-0">
 				{/* 12. Reset All (Axes, Zoom, Pan) */}
 				<div className="relative group flex items-center justify-center">
 					<button

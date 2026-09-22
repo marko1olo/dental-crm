@@ -221,13 +221,14 @@ function annotationRole(
 export function buildCtPlanningArtifactCommandStates(input: {
 	canPlan: boolean;
 	hasImplantPlan: boolean;
-	annotations: CtPlanningArtifactAnnotationRef[];
+	annotations?: CtPlanningArtifactAnnotationRef[] | null;
 }): CtPlanningArtifactCommandState[] {
+	const safeAnnotations = Array.isArray(input?.annotations) ? input.annotations : [];
 	return ctPlanningArtifactCommands.map((command) => {
 		const matchingAnnotations: CtPlanningArtifactAnnotationRef[] = [];
 		const seenAnnotationIds = new Set<string>();
-		input.annotations.forEach((annotation, index) => {
-			if (annotation.type !== command.annotationType) return;
+		safeAnnotations.forEach((annotation, index) => {
+			if (!annotation || annotation.type !== command.annotationType) return;
 			if (
 				command.semanticRole &&
 				annotationRole(annotation) !== command.semanticRole
