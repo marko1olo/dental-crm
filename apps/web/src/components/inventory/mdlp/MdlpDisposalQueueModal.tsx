@@ -8,8 +8,10 @@ import {
 	calculateQueueStats,
 	cleanScannerBarcodeString,
 	createCarpuleQueueItem,
+	formatSeniorNurseDisposalActData,
 	generateAuthenticDentalBarcode,
 	generateMdlpSchema10560Payload,
+	generateSeniorNurseDisposalActHtml,
 	isGs1DataMatrixCandidate,
 	parseGs1DataMatrixWithPku,
 	processScannerInput,
@@ -39,7 +41,10 @@ import {
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../../GlobalToast.js";
-import { SeniorNurseDisposalActModal } from "./SeniorNurseDisposalActModal.js";
+import {
+	SeniorNurseDisposalActModal,
+	executeSeniorNurseDisposalActInBackground,
+} from "./SeniorNurseDisposalActModal.js";
 import "./mdlpInventory.css";
 
 export interface MdlpDisposalQueueModalProps {
@@ -307,6 +312,41 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 		);
 	}, [patientId, patientName, visitId, doctorId, doctorName, cabinetId]);
 
+	// Прямая 1-клик печать акта списания без модальных барьеров (Мандат 8e, 8k, 8s)
+	const handleDirectPrintAct = useCallback(() => {
+		if (items.length === 0) {
+			showToast(
+				"Очередь списания пуста. Нажмите кнопку 'Списать все пустые карпулы смены' для формирования акта",
+				"info",
+			);
+			return;
+		}
+
+		const actData = formatSeniorNurseDisposalActData({
+			actNumber: docNum.replace("СХ-10560", "СПИС"),
+			actDate: docDate,
+			organizationName,
+			approverRole: "doctor",
+			approverName: doctorName,
+			approvedByFullName: doctorName,
+			approvedByPositionRu: "Врач-стоматолог (дежурный)",
+			paperJournalAcknowledged: true,
+			isSingleSigner: true,
+			items,
+		});
+
+		const actHtml = generateSeniorNurseDisposalActHtml(actData);
+		const printWin = window.open("", "_blank");
+		if (printWin) {
+			printWin.document.write(actHtml);
+			printWin.document.close();
+			printWin.focus();
+			setTimeout(() => {
+				printWin.print();
+			}, 250);
+		}
+	}, [items, docNum, docDate, organizationName, doctorName]);
+
 	// Открытие модального окна акта списания
 	const handleOpenActModal = useCallback(() => {
 		if (items.length === 0) {
@@ -408,6 +448,19 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 			}
 
 			setSuccessDoc(schemaDoc);
+
+			// Автоматическое фоновое утверждение акта списания без лишних модальных окон (Мандат 8e, 8s)
+			try {
+				await executeSeniorNurseDisposalActInBackground({
+					items,
+					organizationName,
+					approverName: doctorName,
+					approverRole: "doctor",
+					notes: `Фоновое списание по Схеме 10560 (${docNum})`,
+				});
+			} catch (bgErr) {
+				console.warn("[MdlpDisposalQueueModal] Фоновое утверждение акта:", bgErr);
+			}
 
 			if (onConfirmDisposal) {
 				await onConfirmDisposal(schemaDoc, items);
@@ -526,9 +579,19 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 									type="button"
 									className="mdlp-btn mdlp-btn-primary min-h-[44px] text-xs px-3"
 									style={{ minHeight: "44px" }}
-									onClick={handleOpenActModal}
+									onClick={handleDirectPrintAct}
+									title="Прямая печать акта списания в 1 клик без лишних окон (Мандат 8e)"
 								>
-									<Printer size={14} /> Печать акта для старшей медсестры
+									<Printer size={14} /> Печать акта списания (1 клик)
+								</button>
+								<button
+									type="button"
+									className="mdlp-btn mdlp-btn-secondary min-h-[44px] text-xs px-3"
+									style={{ minHeight: "44px" }}
+									onClick={handleOpenActModal}
+									title="Печать акта для старшей медсестры / настройка реквизитов"
+								>
+									<FileText size={14} /> Печать акта для старшей медсестры
 								</button>
 							</div>
 						</div>

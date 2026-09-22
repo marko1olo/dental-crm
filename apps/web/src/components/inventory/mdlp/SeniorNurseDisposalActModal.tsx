@@ -15,7 +15,7 @@ import {
 	ShoppingCart,
 	X,
 } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../../GlobalToast.js";
 import {
@@ -25,6 +25,67 @@ import {
 	formatSupplierPurchaseOrderTextRu,
 } from "../inventoryMath.js";
 import "./mdlpInventory.css";
+
+export interface BackgroundDisposalActOptions {
+	readonly items: readonly MdlpCarpuleQueueItem[];
+	readonly organizationName?: string | undefined;
+	readonly organizationInn?: string | undefined;
+	readonly organizationAddress?: string | undefined;
+	readonly departmentName?: string | undefined;
+	readonly cabinetName?: string | undefined;
+	readonly approverName?: string | undefined;
+	readonly approverRole?: "doctor" | "senior_nurse" | "administrator" | "authorized_staff" | undefined;
+	readonly onApproveAct?: ((actData: SeniorNurseDisposalActData) => void | Promise<void>) | undefined;
+	readonly notes?: string | undefined;
+}
+
+/**
+ * Фоновое утверждение акта списания карпул и медикаментов без всплывающих окон и модальных барьеров.
+ * (Мандаты 8e п. 10, 8k, 8s, 8n: списание в 1 клик, старшая медсестра опциональна, без комиссии из 3 человек).
+ */
+export async function executeSeniorNurseDisposalActInBackground(
+	options: BackgroundDisposalActOptions,
+): Promise<SeniorNurseDisposalActData> {
+	const now = new Date();
+	const actNumber = `СПИС-${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}-${String((now.getTime() % 900) + 100)}`;
+	const actDate = now.toISOString().slice(0, 10);
+	const approverRole = options.approverRole ?? "doctor";
+	const approverName = options.approverName ?? "Врач-стоматолог";
+
+	const actData = formatSeniorNurseDisposalActData({
+		actNumber,
+		actDate,
+		organizationName: options.organizationName ?? 'ООО "ДЕНТЕ КЛИНИК"',
+		organizationInn: options.organizationInn ?? "",
+		organizationAddress: options.organizationAddress ?? "",
+		departmentName: options.departmentName ?? "Стоматологическое отделение",
+		cabinetName: options.cabinetName ?? "Кабинет №1 (Терапия / Хирургия)",
+		approverRole,
+		approverName,
+		approvedByFullName: approverName,
+		approvedByPositionRu:
+			approverRole === "doctor"
+				? "Врач-стоматолог (дежурный)"
+				: approverRole === "senior_nurse"
+					? "Дежурная медицинская сестра"
+					: "Уполномоченный сотрудник клиники",
+		paperJournalAcknowledged: true,
+		isSingleSigner: true,
+		notes: options.notes ?? "Фоновое списание пустых карпул по СанПиН 3.3686-21 (Мандат 8e, 8s)",
+		items: options.items,
+	});
+
+	if (options.onApproveAct) {
+		await options.onApproveAct(actData);
+	}
+
+	showToast(
+		`Акт списания карпул №${actNumber} утверждён в фоновом режиме (СанПиН 3.3686-21, без комиссии и старшей медсестры)`,
+		"info",
+	);
+
+	return actData;
+}
 
 export interface SeniorNurseDisposalActModalProps {
 	readonly isOpen: boolean;
@@ -41,6 +102,8 @@ export interface SeniorNurseDisposalActModalProps {
 	readonly onApproveAct?: ((actData: SeniorNurseDisposalActData) => void | Promise<void>) | undefined;
 	readonly initialApproverRole?: "doctor" | "senior_nurse" | "administrator" | "authorized_staff" | undefined;
 	readonly initialPaperJournalAcknowledged?: boolean | undefined;
+	readonly backgroundMode?: boolean | undefined;
+	readonly autoApproveOnMount?: boolean | undefined;
 }
 
 export const SeniorNurseDisposalActModal: React.FC<
@@ -60,6 +123,8 @@ export const SeniorNurseDisposalActModal: React.FC<
 	onApproveAct,
 	initialApproverRole = "doctor",
 	initialPaperJournalAcknowledged = true,
+	backgroundMode = false,
+	autoApproveOnMount = false,
 }) => {
 	const now = new Date();
 	const [actNumber, setActNumber] = useState<string>(
@@ -96,10 +161,18 @@ export const SeniorNurseDisposalActModal: React.FC<
 	const [copiedPo, setCopiedPo] = useState<boolean>(false);
 	const [showMoreActions, setShowMoreActions] = useState<boolean>(false);
 
+	useEffect(() => {
+		if (isOpen && (backgroundMode || autoApproveOnMount)) {
+			void handleApproveAct(true).then(() => {
+				onClose();
+			});
+		}
+	}, [isOpen, backgroundMode, autoApproveOnMount]);
+
 	const handleApproveAct = async (isPaperLog = paperJournalAcknowledged) => {
 		setIsApproved(true);
 		const message = isPaperLog
-			? `Акт списания №${actNumber} утверждён: бумажный журнал учтён, участие старшей медсестры опционально`
+			? `Акт списания №${actNumber} утверждён в фоновом режиме: бумажный журнал учтён, участие старшей медсестры опционально`
 			: `Акт списания №${actNumber} утверждён единолично (без комиссии из 3 человек)`;
 		showToast(message, "info");
 		if (onApproveAct) {
@@ -251,7 +324,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 		}
 	};
 
-	if (!isOpen) return null;
+	if (!isOpen || backgroundMode || autoApproveOnMount) return null;
 
 	if (showPoModal && generatedPurchaseOrder) {
 		const poContent = (
@@ -628,6 +701,17 @@ export const SeniorNurseDisposalActModal: React.FC<
 							onClick={onClose}
 						>
 							Закрыть
+						</button>
+						<button
+							type="button"
+							className="mdlp-btn mdlp-btn-secondary font-semibold"
+							onClick={async () => {
+								await handleApproveAct(true);
+								onClose();
+							}}
+							title="Утвердить списание в фоновом режиме (Мандат 8e, 8s: без комиссии и старшей медсестры)"
+						>
+							Фоновое списание (1 клик)
 						</button>
 					</div>
 

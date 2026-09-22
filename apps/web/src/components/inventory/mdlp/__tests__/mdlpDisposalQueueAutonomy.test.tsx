@@ -15,7 +15,10 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createCarpuleQueueItem } from "@dental/shared";
 import { MdlpDisposalQueueModal } from "../MdlpDisposalQueueModal.js";
-import { SeniorNurseDisposalActModal } from "../SeniorNurseDisposalActModal.js";
+import {
+	SeniorNurseDisposalActModal,
+	executeSeniorNurseDisposalActInBackground,
+} from "../SeniorNurseDisposalActModal.js";
 
 describe("MDLP Disposal Queue Staff & Doctor Autonomy (Mandates 8e, 8k, 8n, 8d)", () => {
 	it("1. createCarpuleQueueItem creates valid queue item with FEFO metadata", () => {
@@ -108,6 +111,46 @@ describe("MDLP Disposal Queue Staff & Doctor Autonomy (Mandates 8e, 8k, 8n, 8d)"
 			createElement(MdlpDisposalQueueModal, {
 				isOpen: false,
 				onClose: () => {},
+			})
+		);
+		assert.strictEqual(html, "");
+	});
+
+	it("6. executeSeniorNurseDisposalActInBackground approves act silently in background without commission", async () => {
+		let approvedData: any = null;
+		const actData = await executeSeniorNurseDisposalActInBackground({
+			items: [
+				{
+					id: "item-bg-1",
+					sgtin: "0460700836012421SN12345",
+					costRub: 420,
+					status: "disposed",
+				} as any,
+			],
+			organizationName: 'ООО "ДЕНТЕ КЛИНИК"',
+			approverName: "Д-р Кузнецов М.С.",
+			approverRole: "doctor",
+			onApproveAct: (data) => {
+				approvedData = data;
+			},
+		});
+
+		assert.ok(actData.actNumber.startsWith("СПИС-"));
+		assert.strictEqual(actData.commission.length, 1);
+		assert.ok(actData.commission[0]?.positionRu.includes("единолично"));
+		assert.strictEqual(actData.approverRole, undefined);
+		assert.strictEqual(actData.approvedByFullName, "Д-р Кузнецов М.С.");
+		assert.ok(approvedData);
+		assert.strictEqual(approvedData.actNumber, actData.actNumber);
+	});
+
+	it("7. SeniorNurseDisposalActModal with backgroundMode returns empty markup and avoids blocking UI", () => {
+		const html = renderToStaticMarkup(
+			createElement(SeniorNurseDisposalActModal, {
+				isOpen: true,
+				backgroundMode: true,
+				onClose: () => {},
+				items: [],
 			})
 		);
 		assert.strictEqual(html, "");

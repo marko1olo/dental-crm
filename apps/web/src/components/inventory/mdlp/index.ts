@@ -5,4 +5,7 @@ export {
 export {
 	SeniorNurseDisposalActModal,
 	type SeniorNurseDisposalActModalProps,
+	type BackgroundDisposalActOptions,
+	executeSeniorNurseDisposalActInBackground,
 } from "./SeniorNurseDisposalActModal.js";
+

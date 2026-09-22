@@ -456,10 +456,24 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				item.category === "hygiene" ||
 				item.category === "auxiliary" ||
 				item.category === "material" ||
+				item.category === "medication" ||
+				item.category === "dental" ||
+				item.category === "general" ||
+				item.category === "orthodontic" ||
+				item.category === "orthopedic" ||
+				item.category === "endodontic" ||
+				item.category === "disinfection" ||
 				item.category === "Расходные материалы" ||
 				item.category === "Анестетики" ||
+				item.category === "Медикаменты" ||
 				item.category === "Шовный материал" ||
-				item.category === "Перевязочные средства";
+				item.category === "Перевязочные средства" ||
+				item.category === "СИЗ" ||
+				item.category === "Дезинфекция" ||
+				item.category === "Пломбировочные материалы" ||
+				item.category === "Эндодонтия" ||
+				item.category === "Ортопедия" ||
+				item.category === "Хирургия";
 			const isClinicalOperation =
 				isClinicalRole ||
 				isClinicalCategory ||
@@ -472,7 +486,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				) ||
 				Boolean(
 					item.name &&
-						/(карпул|анесте|ультракаин|септодонт|септанест|септонест|скандонест|убистезин|артикаин|мепивакаин|лидокаин|бупивакаин|перчатк|маск|игла|валик|слюноотсос|коффердам|пломб|композит|шовн|скальпель|губк|паст|клин|матриц)/i.test(
+						/(карпул|анесте|ультракаин|септодонт|септанест|септонест|скандонест|убистезин|артикаин|мепивакаин|лидокаин|бупивакаин|перчатк|маск|игла|валик|слюноотсос|коффердам|пломб|композит|шовн|скальпель|губк|паст|клин|матриц|дезинфек|шприц|крафт|салфет|порошок|гель|цемент)/i.test(
 							item.name,
 						),
 				);
@@ -505,7 +519,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 					transactionType: isOverdraft ? "emergency_overdraft" : "manual_adjust",
 					isOverdraft,
 					notes: isOverdraft
-						? (parsedStock.data.reason || `Списано под операцию, требуется оприходование (мягкий минусовой овердрафт партии, накладная ещё не внесена: дефицит ${Math.abs(newStock)} ед.)`)
+						? (parsedStock.data.reason || `Списано под операцию/приём (мягкий минусовой овердрафт партии, накладная ещё не внесена: дефицит ${Math.abs(newStock)} ед., Мандат 8e)`)
 						: (parsedStock.data.reason || null),
 					userId: effectiveUserId,
 				});
@@ -535,7 +549,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			return {
 				...result.updated,
 				isOverdraft: true,
-				warning: `Остаток 0: зафиксирован мягкий овердрафт (дефицит: ${Math.abs(Number(result.updated.stockQuantity))} ед., накладная поставщика ещё в пути, списание под операцию проведено без блокировки).`,
+				warning: `Остаток 0: зафиксирован мягкий овердрафт (дефицит: ${Math.abs(Number(result.updated.stockQuantity))} ед., накладная поставщика ещё в пути, списание под операцию проведено без блокировки врача по Мандату 8e).`,
 			};
 		}
 		return result.updated;
