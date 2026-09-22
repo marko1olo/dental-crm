@@ -940,10 +940,10 @@ export function generate152FzAuditActText(
 		});
 	}
 
-	report += `\n4. ПОДПИСИ ЧЛЕНОВ КОМИССИИ:\n`;
+	report += `\n4. ПОДПИСИ ОТВЕТСТВЕННЫХ ЛИЦ:\n`;
 	report += `--------------------------------------------------------------------------------\n`;
+	report += `Руководитель клиники / ИП:                  _________ / ${clinicInfo.headDoctorFullName} /\n\n`;
 	report += `Ответственный за организацию обработки ПДн: _________ / ${clinicInfo.responsiblePersonFullName} /\n\n`;
-	report += `Главный врач (начмед):                      _________ / ${clinicInfo.headDoctorFullName} /\n\n`;
 	report += `Администратор информационной безопасности:  _________ / ${clinicInfo.securityAdminFullName} /\n\n`;
 	report += `================================================================================\n`;
 
@@ -1013,8 +1013,8 @@ export function generate152FzAuditActHtml(
 	}
 
   <div class="sign-grid">
+    <div class="sign-box">Руководитель клиники / ИП<br><strong>${clinicInfo.headDoctorFullName}</strong></div>
     <div class="sign-box">Ответственный за ПДн<br><strong>${clinicInfo.responsiblePersonFullName}</strong></div>
-    <div class="sign-box">Главный врач<br><strong>${clinicInfo.headDoctorFullName}</strong></div>
     <div class="sign-box">Администратор ИБ<br><strong>${clinicInfo.securityAdminFullName}</strong></div>
   </div>
 </body>
@@ -1042,14 +1042,14 @@ export function getInitialAuditTrailDemoData(): AuditTrailEntry[] {
 		eventType: 'login_attempt',
 		actor: {
 			userId: 'usr-doctor-cmo',
-			fullName: 'Главный врач (Начмед)',
+			fullName: 'Главный врач / Руководитель',
 			role: 'head_doctor',
 			ipAddress: '192.168.1.12',
 		},
 		entity: {
 			entityType: 'staff_user',
 			entityId: 'usr-doctor-cmo',
-			entityName: 'Главный врач (Начмед)',
+			entityName: 'Главный врач / Руководитель',
 		},
 		payload: {
 			actionDescriptionRu: 'Успешный вход в систему по личному PIN-коду (Кабинет № 1)',
@@ -1062,7 +1062,7 @@ export function getInitialAuditTrailDemoData(): AuditTrailEntry[] {
 		eventType: 'view_patient_card',
 		actor: {
 			userId: 'usr-doctor-cmo',
-			fullName: 'Главный врач (Начмед)',
+			fullName: 'Главный врач / Руководитель',
 			role: 'head_doctor',
 			ipAddress: '192.168.1.12',
 		},

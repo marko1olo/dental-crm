@@ -30,24 +30,68 @@ registerHooks({
 					export const test = nt.test;
 					export const beforeEach = nt.beforeEach;
 					export const afterEach = nt.afterEach;
-					export const expect = (val) => ({
-						toBe: (exp) => assert.strictEqual(val, exp),
-						toEqual: (exp) => assert.deepStrictEqual(val, exp),
-						toStrictEqual: (exp) => assert.deepStrictEqual(val, exp),
-						toContain: (sub) => assert.ok(val && val.includes(sub), "Expected to contain: " + sub),
-						toHaveLength: (len) => assert.strictEqual(val?.length, len),
-						toHaveBeenCalledWith: (arg) => {},
-					});
+					const makeExpect = (val, isNot = false) => {
+						const wrap = (fn) => (...args) => {
+							if (isNot) {
+								assert.throws(() => fn(...args));
+							} else {
+								fn(...args);
+							}
+						};
+						const res = {
+							toBe: wrap((exp) => assert.strictEqual(val, exp)),
+							toEqual: wrap((exp) => assert.deepStrictEqual(val, exp)),
+							toStrictEqual: wrap((exp) => assert.deepStrictEqual(val, exp)),
+							toContain: wrap((sub) => assert.ok(val && (Array.isArray(val) ? val.includes(sub) : String(val).includes(sub)), "Expected to contain: " + sub)),
+							toHaveLength: wrap((len) => assert.strictEqual(val?.length, len)),
+							toHaveBeenCalled: wrap(() => assert.ok(val?.mock?.calls?.length > 0, "Expected to have been called")),
+							toHaveBeenCalledTimes: wrap((n) => assert.strictEqual(val?.mock?.calls?.length, n)),
+							toHaveBeenCalledWith: wrap((...args) => {
+								assert.ok(val?.mock?.calls?.length > 0, "Expected to have been called with args");
+							}),
+							toMatch: wrap((regex) => assert.match(typeof val === "string" ? val : String(val), regex)),
+							toBeNull: wrap(() => assert.strictEqual(val, null)),
+							toBeDefined: wrap(() => assert.notStrictEqual(val, undefined)),
+							toBeUndefined: wrap(() => assert.strictEqual(val, undefined)),
+							toBeTruthy: wrap(() => assert.ok(val)),
+							toBeFalsy: wrap(() => assert.ok(!val)),
+							toBeGreaterThan: wrap((exp) => assert.ok(val > exp)),
+							toBeLessThan: wrap((exp) => assert.ok(val < exp)),
+						};
+						if (!isNot) {
+							res.not = makeExpect(val, true);
+						}
+						return res;
+					};
+					export const expect = (val) => makeExpect(val);
 					expect.objectContaining = (expected) => expected;
 					expect.arrayContaining = (expected) => expected;
-					export const vi = { fn: (impl) => {
-						const f = (...args) => {
-							f.mock.calls.push(args);
-							if (typeof impl === "function") return impl(...args);
-						};
-						f.mock = { calls: [] };
-						return f;
-					} };
+					export const vi = {
+						fn: (initialImpl) => {
+							let currentImpl = initialImpl;
+							const f = (...args) => {
+								f.mock.calls.push(args);
+								if (typeof currentImpl === "function") return currentImpl(...args);
+							};
+							f.mock = { calls: [] };
+							f.mockImplementation = (fn) => { currentImpl = fn; return f; };
+							f.mockReturnValue = (val) => { currentImpl = () => val; return f; };
+							f.mockResolvedValue = (val) => { currentImpl = () => Promise.resolve(val); return f; };
+							f.mockRejectedValue = (err) => { currentImpl = () => Promise.reject(err); return f; };
+							f.mockReset = () => { f.mock.calls = []; currentImpl = undefined; return f; };
+							f.mockClear = () => { f.mock.calls = []; return f; };
+							return f;
+						},
+						restoreAllMocks: () => {},
+						clearAllMocks: () => {},
+						resetAllMocks: () => {},
+						spyOn: (obj, method) => {
+							const orig = obj?.[method];
+							const mock = vi.fn(orig);
+							if (obj && method) obj[method] = mock;
+							return mock;
+						},
+					};
 				`),
 			};
 		}

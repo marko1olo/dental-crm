@@ -680,7 +680,7 @@ export function OrthopedicsChairsidePanel({
 								: "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
 						}`}
 						data-testid="doctor-clinical-override-toggle"
-						title="Клинический оверрайд врача при авансе < 50% без согласований начмеда"
+						title="Клинический оверрайд врача при авансе < 50% без задержек и согласований"
 					>
 						<ShieldCheck size={16} />
 						<span>

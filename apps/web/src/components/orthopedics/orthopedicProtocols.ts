@@ -11,7 +11,7 @@
  * - Внесение в дневник Формы 043/у в 1 клик через CustomEvent "dente-apply-soap-protocol" (immediate: true)
  * - Синхронизация с зубной формулой (Crown) через "dente-odontogram-update"
  * - Добавление услуг в Этап 3 плана лечения ("stage_3_orthopedics") через "dente-estimate-stage-add"
- * - Клинический оверрайд врача (Doctor Clinical Override) при авансе < 50% без согласований начмеда
+ * - Клинический оверрайд врача (Doctor Clinical Override) при авансе < 50% без задержек и согласований
  * - Ноль эмодзи в медицинских записях и нарядах ЗТЛ
  */
 
@@ -361,7 +361,7 @@ export function createDoctorClinicalOverride(options?: {
 		timestampIso: new Date().toISOString(),
 		mandate8e: true,
 		notice:
-			"Клинический оверрайд врача применён: наряд ЗТЛ отправлен в лабораторию без задержек и согласований начмеда.",
+			"Клинический оверрайд врача применён: наряд ЗТЛ отправлен в лабораторию без задержек и согласований.",
 	};
 }
 

@@ -1304,7 +1304,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
             <section className="chairside-hud-verdict" data-testid="chairside-hud-verdict">
               <div className="chairside-hud-verdict-title">
                 <Sparkles size={13} className="text-[var(--teal-dark)]" />
-                <span>Вердикт цифрового начмеда DENTE (T.A.R.S. 100%)</span>
+                <span>Клинический вердикт ассистента DENTE (T.A.R.S. 100%)</span>
               </div>
               <div className="chairside-hud-verdict-body">{verdict}</div>
             </section>

@@ -543,7 +543,7 @@ th { background: #f8fafc; font-weight: 700; padding: 10px 12px; border-bottom: 2
 				<div className="flex items-center justify-between flex-wrap gap-2 text-xs">
 					<div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-200">
 						<Percent size={14} className="text-amber-600 shrink-0" />
-						<span>Свобода скидок врача (Мандат 8e • Без паролей начмеда):</span>
+						<span>Свобода скидок врача (Мандат 8e • Без паролей и согласований):</span>
 					</div>
 					{globalDiscountPercent > 0 && (
 						<span

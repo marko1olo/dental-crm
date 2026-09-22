@@ -1396,7 +1396,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 									</div>
 									<div className="statutory-feat-pill">
 										<Check size={14} style={{ color: "var(--ok-fg)" }} />
-										<span>Свобода врача: <strong>Без мастер-паролей начмеда</strong></span>
+										<span>Свобода врача: <strong>Без мастер-паролей и согласований</strong></span>
 									</div>
 								</div>
 							</div>

@@ -885,10 +885,10 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 										setIsTier3PerioModalOpen(true);
 									}}
 									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
-									title="Открыть детальную пародонтограмму (6-точечное зондирование Florida Probe)"
+									title="Пародонтологическая карта (6 точек зондирования, скрининг PSR / CPITN)"
 								>
 									<BarChart2 className="w-4 h-4 text-teal-500 shrink-0" />
-									<span>Пародонтограмма (Florida Probe)</span>
+									<span>Пародонтограмма (6 точек)</span>
 								</button>
 								<button
 									type="button"
@@ -2165,7 +2165,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								<div className="flex items-center gap-2">
 									<BarChart2 className="w-5 h-5 text-teal-400" />
 									<h3 className="text-base font-bold text-[var(--ink,#f8fafc)]">
-										Специализированная пародонтограмма (6-точечное зондирование Florida Probe)
+										Пародонтологическая карта (6 точек зондирования & Статус 043/у)
 									</h3>
 								</div>
 								<button

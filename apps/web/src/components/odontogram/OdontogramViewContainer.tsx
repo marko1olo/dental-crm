@@ -1482,7 +1482,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 														? "bg-[var(--teal-soft,rgba(13,148,136,0.2))] text-[var(--teal)] border-[var(--teal)]/50 shadow-xs font-black"
 														: "bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal)] border-[var(--teal)]/30 hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))]"
 												}`}
-												title="Пародонтологическая карта: 6 точек зондирования Florida Probe, индексы OHI-S / PLI / SBI, скрининг CPITN"
+												title="Пародонтологическая карта: 6 точек зондирования, индексы OHI-S / PLI / SBI, скрининг CPITN"
 												data-testid="btn-open-perio-chart"
 											>
 												<Activity size={14} className="text-[var(--teal)] shrink-0" />

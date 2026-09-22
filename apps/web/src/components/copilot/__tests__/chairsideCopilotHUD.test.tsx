@@ -127,7 +127,7 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     expect(html).toContain("План лечения (P):");
     expect(html).toContain("K02.1 Кариес дентина (зуб 16)");
     expect(html).toContain("btn-apply-soap");
-    expect(html).toContain("Вставить в дневник");
+    expect(html).toContain("Применить в визит");
   });
 
   it("7. renders Safety Alert card with DDI / allergy status and acknowledge button", () => {

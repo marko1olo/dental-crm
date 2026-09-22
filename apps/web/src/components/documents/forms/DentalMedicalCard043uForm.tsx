@@ -659,7 +659,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 											handleBeginRevise();
 										}
 									}}
-									title="Внести исправление в закрытую карту 043/у («Исправленному верить») без согласований начмедов"
+									title="Внести исправление в закрытую карту 043/у («Исправленному верить») без задержек и согласований"
 									style={{ display: "inline-flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 								>
 									<FileEdit style={{ width: "16px", height: "16px" }} />

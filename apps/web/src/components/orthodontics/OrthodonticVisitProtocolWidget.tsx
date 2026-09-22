@@ -1733,7 +1733,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 											1-клик: Наряд ЗТЛ (Элайнеры / Каппа)
 										</div>
 										<div className="text-[10px] truncate text-slate-500 dark:text-slate-400">
-											(срок 5 раб. дней, без согласований начмеда)
+											(срок 5 раб. дней, без задержек и согласований)
 										</div>
 									</div>
 								</button>
