@@ -79,6 +79,16 @@ import {
 	shouldLoad16BitBuffer,
 } from "../components/visiograph/VisiographProgressiveLoader";
 import { sliceDomList } from "../utils/domVirtualizationHelper";
+import fs from "node:fs";
+import path from "node:path";
+import {
+	CANONICAL_WAREHOUSE_PRESETS,
+	type WarehouseWriteoffItem,
+} from "../components/inventory/WarehouseManagerModal";
+import {
+	CLINICAL_WRITEOFF_PACKAGES,
+	handleOneClickPackageWriteOff,
+} from "../components/inventory/warehousePackageWriteOffEngine";
 
 describe("lowSpecHddOptimizer — Детекция слабых устройств и адаптивные тайминги", () => {
 	it("управляет принудительным переключением Low-Spec режима", () => {
@@ -1484,6 +1494,75 @@ describe("lowSpecHddOptimizer — Предотвращение утечек па
 		cache.clear();
 		assert.strictEqual(cache.size, 0);
 		assert.strictEqual(cache.currentByteSize, 0);
+	});
+});
+
+describe("lowSpecHddOptimizer — Безопасность CSS селекторов и защита от затемнения/скрытия UI", () => {
+	it("low-spec-hardware.css не содержит опасных селекторов скрытия display: none для [filter] и [class*='blur-']", () => {
+		const cssPath = path.resolve(__dirname, "../styles/low-spec-hardware.css");
+		const cssContent = fs.readFileSync(cssPath, "utf8");
+
+		// 1. Проверяем, что элементы с [filter] не скрываются display: none
+		assert.strictEqual(
+			cssContent.includes("[filter] {\n\tdisplay: none"),
+			false,
+			"[filter] не должен иметь display: none !important"
+		);
+		assert.strictEqual(
+			cssContent.includes("[filter],\n.low-spec-mode [filter] {\n\tdisplay: none"),
+			false,
+			"[filter] не должен скрываться display: none"
+		);
+
+		// 2. Проверяем, что :not([class*='backdrop-blur'])[class*='blur-'] не содержит display: none
+		assert.strictEqual(
+			cssContent.includes(":not([class*=\"backdrop-blur\"])[class*=\"blur-\"]"),
+			false,
+			":not([class*='backdrop-blur'])[class*='blur-'] не должен присутствовать"
+		);
+
+		// 3. Проверяем, что широкий селектор [class*='backdrop'] не перекрывает backdrop-blur фоны темным фоном
+		assert.strictEqual(
+			cssContent.includes("[class*=\"backdrop\"],\n[data-hardware-tier=\"low\"]"),
+			false,
+			"Широкий селектор [class*='backdrop'] не должен перекрывать backdrop-blur фоны"
+		);
+
+		// 4. Проверяем наличие защитных селекторов filter: none !important
+		assert.ok(
+			cssContent.includes("[class*=\"blur-\"] {\n\t\tfilter: none !important;"),
+			"Должен быть селектор отключения filter для [class*='blur-'] без display: none"
+		);
+	});
+});
+
+describe("lowSpecHddOptimizer — Склад и автономия медсестры / врача (Мандаты 8e, 8n: мягкий овердрафт)", () => {
+	it("CANONICAL_WAREHOUSE_PRESETS содержит канонические пресеты для списания в 1 клик", () => {
+		const presetIds = CANONICAL_WAREHOUSE_PRESETS.map((p) => p.id);
+		assert.ok(presetIds.includes("anesthesia-17"), "Пресет анестезии должен присутствовать");
+		assert.ok(presetIds.includes("filling-standard"), "Пресет пломбирования должен присутствовать");
+		assert.ok(presetIds.includes("hygiene-prof"), "Пресет профгигиены должен присутствовать");
+	});
+
+	it("handleOneClickPackageWriteOff разрешает списание при остатке 0 с фиксацией мягкого овердрафта", async () => {
+		let toastMsg = "";
+		let toastType = "";
+		const result = await handleOneClickPackageWriteOff({
+			packageId: "anesthesia",
+			currentStockMap: {}, // Пустой склад: мягкий овердрафт
+			allowSoftOverdraft: true,
+			nurseName: "Медсестра Петрова",
+			doctorName: "Д-р Кузнецов",
+			onToast: (msg, type) => {
+				toastMsg = msg;
+				toastType = type;
+			},
+		});
+
+		assert.strictEqual(result.success, true, "Операция не должна блокироваться при нулевом остатке");
+		assert.strictEqual(result.isOverdraft, true, "Должен быть зафиксирован мягкий овердрафт");
+		assert.strictEqual(toastType, "warning");
+		assert.ok(toastMsg.toLowerCase().includes("мягкий овердрафт"));
 	});
 });
 

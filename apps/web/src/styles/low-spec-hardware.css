@@ -154,8 +154,12 @@ html.low-spec-mode *::after,
 	.auth-glow,
 	.glow-orb,
 	.bg-glow,
-	:not([class*="backdrop-blur"])[class*="blur-"] {
+	.ambient-glow,
+	.decorative-blur-orb {
 		display: none !important;
+	}
+
+	[class*="blur-"] {
 		filter: none !important;
 	}
 
@@ -238,22 +242,26 @@ html[data-hardware-tier="low"] .modal-backdrop,
 html[data-hardware-tier="low"] .dialog-backdrop,
 html[data-hardware-tier="low"] .imaging-modal-overlay,
 html[data-hardware-tier="low"] .inventory-confirm-backdrop,
-html[data-hardware-tier="low"] [class*="backdrop"],
+html[data-hardware-tier="low"] .modal-overlay,
+html[data-hardware-tier="low"] .sheet-backdrop,
 [data-hardware-tier="low"] .modal-backdrop,
 [data-hardware-tier="low"] .dialog-backdrop,
 [data-hardware-tier="low"] .imaging-modal-overlay,
 [data-hardware-tier="low"] .inventory-confirm-backdrop,
-[data-hardware-tier="low"] [class*="backdrop"],
+[data-hardware-tier="low"] .modal-overlay,
+[data-hardware-tier="low"] .sheet-backdrop,
 html[data-low-spec="true"] .modal-backdrop,
 html[data-low-spec="true"] .dialog-backdrop,
 html[data-low-spec="true"] .imaging-modal-overlay,
 html[data-low-spec="true"] .inventory-confirm-backdrop,
-html[data-low-spec="true"] [class*="backdrop"],
+html[data-low-spec="true"] .modal-overlay,
+html[data-low-spec="true"] .sheet-backdrop,
 html.low-spec-mode .modal-backdrop,
 html.low-spec-mode .dialog-backdrop,
 html.low-spec-mode .imaging-modal-overlay,
 html.low-spec-mode .inventory-confirm-backdrop,
-html.low-spec-mode [class*="backdrop"] {
+html.low-spec-mode .modal-overlay,
+html.low-spec-mode .sheet-backdrop {
 	backdrop-filter: none !important;
 	-webkit-backdrop-filter: none !important;
 	background-color: rgba(2, 6, 23, 0.75) !important;
@@ -503,16 +511,24 @@ html.low-spec-mode .shadow-premium {
 html[data-perf="low"] .auth-glow,
 html[data-perf="low"] .glow-orb,
 html[data-perf="low"] .bg-glow,
-html[data-perf="low"] :not([class*="backdrop-blur"])[class*="blur-"],
+html[data-perf="low"] .ambient-glow,
+html[data-perf="low"] .decorative-blur-orb,
 [data-perf="low"] .auth-glow,
 [data-perf="low"] .glow-orb,
 [data-perf="low"] .bg-glow,
-[data-perf="low"] :not([class*="backdrop-blur"])[class*="blur-"],
+[data-perf="low"] .ambient-glow,
+[data-perf="low"] .decorative-blur-orb,
 html.low-spec-mode .auth-glow,
 html.low-spec-mode .glow-orb,
 html.low-spec-mode .bg-glow,
-html.low-spec-mode :not([class*="backdrop-blur"])[class*="blur-"] {
+html.low-spec-mode .ambient-glow,
+html.low-spec-mode .decorative-blur-orb {
 	display: none !important;
+}
+
+html[data-perf="low"] [class*="blur-"],
+[data-perf="low"] [class*="blur-"],
+html.low-spec-mode [class*="blur-"] {
 	filter: none !important;
 }
 
@@ -593,6 +609,29 @@ html.low-spec-mode [class*="shimmer"],
 html.low-spec-mode [class*="skeleton"],
 html.low-spec-mode [class*="pulse"] {
 	animation: none !important;
+}
+
+/* Skeleton surfaces flattened to solid paper-soft background */
+html[data-hardware-tier="low"] .skeleton,
+html[data-hardware-tier="low"] .skeleton-wave,
+html[data-hardware-tier="low"] .ops-shimmer,
+html[data-hardware-tier="low"] .dntWave,
+html[data-hardware-tier="low"] [class*="skeleton"],
+[data-hardware-tier="low"] .skeleton,
+[data-hardware-tier="low"] .skeleton-wave,
+[data-hardware-tier="low"] .ops-shimmer,
+[data-hardware-tier="low"] .dntWave,
+[data-hardware-tier="low"] [class*="skeleton"],
+html[data-low-spec="true"] .skeleton,
+html[data-low-spec="true"] .skeleton-wave,
+html[data-low-spec="true"] .ops-shimmer,
+html[data-low-spec="true"] .dntWave,
+html[data-low-spec="true"] [class*="skeleton"],
+html.low-spec-mode .skeleton,
+html.low-spec-mode .skeleton-wave,
+html.low-spec-mode .ops-shimmer,
+html.low-spec-mode .dntWave,
+html.low-spec-mode [class*="skeleton"] {
 	background-image: none !important;
 	background-color: var(--paper-soft) !important;
 }
@@ -991,38 +1030,40 @@ html[data-hardware-tier="low"] feGaussianBlur,
 html[data-hardware-tier="low"] feSpecularLighting,
 html[data-hardware-tier="low"] fePointLight,
 html[data-hardware-tier="low"] feDropShadow,
-html[data-hardware-tier="low"] [filter],
 [data-hardware-tier="low"] filter,
 [data-hardware-tier="low"] feGaussianBlur,
 [data-hardware-tier="low"] feSpecularLighting,
 [data-hardware-tier="low"] fePointLight,
 [data-hardware-tier="low"] feDropShadow,
-[data-hardware-tier="low"] [filter],
 html[data-low-spec="true"] filter,
 html[data-low-spec="true"] feGaussianBlur,
 html[data-low-spec="true"] feSpecularLighting,
 html[data-low-spec="true"] fePointLight,
 html[data-low-spec="true"] feDropShadow,
-html[data-low-spec="true"] [filter],
 [data-low-spec="true"] filter,
 [data-low-spec="true"] feGaussianBlur,
 [data-low-spec="true"] feSpecularLighting,
 [data-low-spec="true"] fePointLight,
 [data-low-spec="true"] feDropShadow,
-[data-low-spec="true"] [filter],
 html.low-spec-mode filter,
 html.low-spec-mode feGaussianBlur,
 html.low-spec-mode feSpecularLighting,
 html.low-spec-mode fePointLight,
 html.low-spec-mode feDropShadow,
-html.low-spec-mode [filter],
 .low-spec-mode filter,
 .low-spec-mode feGaussianBlur,
 .low-spec-mode feSpecularLighting,
 .low-spec-mode fePointLight,
-.low-spec-mode feDropShadow,
-.low-spec-mode [filter] {
+.low-spec-mode feDropShadow {
 	display: none !important;
+}
+
+html[data-hardware-tier="low"] [filter],
+[data-hardware-tier="low"] [filter],
+html[data-low-spec="true"] [filter],
+[data-low-spec="true"] [filter],
+html.low-spec-mode [filter],
+.low-spec-mode [filter] {
 	filter: none !important;
 }
 
