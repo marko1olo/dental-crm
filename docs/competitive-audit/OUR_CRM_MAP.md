@@ -2,7 +2,7 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
-> ⚠️ **СТАТУС (2026-09-22 / WAVES 175–275 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 311 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 374 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 311 АДДЕНДУМ, 374/374 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
+> ⚠️ **СТАТУС (2026-09-22 / WAVES 175–276 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 316 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 379 ФИЧ: 63 КАНОНИЧЕСКИЕ + 316 АДДЕНДУМ, 379/379 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
@@ -6076,7 +6076,82 @@
   - `apps/web/src/components/visiograph/VisiographProgressiveLoader.ts`
   - `apps/web/src/components/VisitDiaryPhotoUpload.tsx`
 
-### 2.10.368. Сводный Реестр Ликвидации Блоата и Результаты Независимой Red Team Инквизиции (63 фичи vs IDENT, DentalPRO, StomX)
+### 2.10.368. Wave 276: Ликвидация перекрытия мобильного чекаута тостом GlobalToast, защитный паддинг pb-28 и устранение клиппинга сумм в PaymentModal (Мандаты 8c, 8d пп. 1, 2, 8e п. 9, 8p)
+- **Функционал**:
+  1. *Перенос GlobalToast в правый верхний угол (Мандат 8p)*:
+     - В `apps/web/src/components/GlobalToast.tsx` и `apps/web/src/styles/shadow-analyst.css` контейнер всплывающих уведомлений перемещен из bottom-center в правый верхний угол (`sm:top-16 sm:right-6 max-sm:top-4 max-sm:right-3`), устранив блокировку кликов по кнопкам оплаты и тендерам 54-ФЗ внизу экрана;
+  2. *Защитный отступ основного скролл-контейнера pb-28 (Мандаты 8c, 8d п. 2)*:
+     - В `apps/web/src/PaymentCapture.tsx` и `apps/web/src/styles/overflow-fixes.css` добавлен нижний отступ `pb-28` (`sm:pb-24`), исключающий наложение плавающего блока `#payment-checkout-bar` на нижние позиции услуг чека;
+  3. *Устранение клиппинга сумм в PaymentModal (Мандат 8d п. 1)*:
+     - В `apps/web/src/components/finance/PaymentModal.tsx` стили кнопок пресетов сплит-оплаты переведены в `whitespace-nowrap shrink-0`, ликвидируя срезку копеек и разрывы строк.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/GlobalToast.tsx`
+  - `apps/web/src/styles/shadow-analyst.css`
+  - `apps/web/src/PaymentCapture.tsx`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `apps/web/src/styles/overflow-fixes.css`
+
+### 2.10.369. Wave 276: Эргономика шапки настроек, ликвидация баннера первого запуска и меню действий «...» (Мандаты 8c, 8d пп. 2, 3, 8p, 8s)
+- **Функционал**:
+  1. *Очистка шапки настроек (Мандат 8p)*:
+     - В `apps/web/src/SettingsView.tsx` удален постоянный баннер «Мастер первого запуска», съедавший рабочую высоту первого экрана; шапка настроек сжата в лаконичный 1-строчный заголовок высотой $\le 160$px;
+  2. *Поповер-меню мастера запуска (Закон Миллера, Мандат 8d п. 3)*:
+     - Кнопка повторного запуска визарда вынесена в выпадающее меню действий (`data-testid="btn-reopen-onboarding-menuitem"`), сохраняя доступность без визуального мусора.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/SettingsView.tsx`
+  - `apps/web/src/components/settings/SettingsPricesTab.tsx`
+
+### 2.10.370. Wave 276: Ликвидация 1400px кислотной полосы в расписании, компактные врачебные селекты и контрастность WCAG AAA (Мандаты 8c, 8d пп. 2, 4, 8e п. 8, 8p)
+- **Функционал**:
+  1. *Ликвидация сплошной полосы над креслами (Мандат 8p)*:
+     - В `apps/web/src/components/schedule/ScheduleGrid.tsx` сплошная полоса-акцент заменена на деликатный 3px маркер кресла (`w-[3px] rounded-full`), устранив визуальную резкость интерфейса;
+  2. *Компактный селектор дежурного врача (Закон Хика, Мандат 8d п. 2)*:
+     - Селектор закрепления врача за креслом сжат до компактных габаритов с короткими лейблами смен («09–15», «15–21», «08–20»);
+  3. *Контрастность пустых слотов по WCAG AAA (Мандат 8d п. 4)*:
+     - В `apps/web/src/styles/modules/schedule.css` кнопки пустых слотов (`.schedule-empty-slot-btn`) получили контрастные контуры и фоны с коэффициентом $\ge 4.5:1$ во всех 10 темах оформления.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/schedule/ScheduleGrid.tsx`
+  - `apps/web/src/styles/modules/schedule.css`
+  - `apps/web/src/styles/overflow-fixes.css`
+
+### 2.10.371. Wave 276: Инлайн Voice Pilot в тулбаре ЭМК 043/у 32px, ликвидация дубля нормы и flex-wrap быстрых чипов SOAP (Мандаты 8c, 8d п. 1, 8e пп. 1, 3, 6, 8p, 8s)
+- **Функционал**:
+  1. *Инлайн Voice Pilot в едином тулбаре 30–32px (Мандаты 8c, 8p)*:
+     - В `apps/web/src/components/visit/VisitEmkTab.tsx` голосовой пилот `EmkVoicePilot` перенесен внутрь `.emk-unified-toolbar`, ликвидировав отдельную строку над вкладками и сэкономив 30px высоты экрана;
+  2. *Ликвидация дублирующей кнопки «Норма» (Мандат 8s)*:
+     - Исключена повторная кнопка нормы в подвале дневника, дублировавшая быстрый экспресс-бар SOAP;
+  3. *Защита чипов SOAP от срезки слов через flex-wrap (Мандат 8d п. 1)*:
+     - Контейнер быстрых чипов переведен на аккуратный `flex-wrap` с `gap-1.5` и `min-w-max`, исключив горизонтальное обрезание стоматологических терминов;
+  4. *Оптимизация полей ввода ЭМК (Мандат 8p)*:
+     - Высота текстовых полей сжата до `min-h-[68px] sm:min-h-[72px]`, блок плана лечения масштабирован на `col-span-full`.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/visit/VisitEmkTab.tsx`
+  - `apps/web/src/components/visit/EmkVoicePilot.tsx`
+  - `apps/web/src/VisitView.tsx`
+  - `apps/web/src/styles/modules/patient-workspace.css`
+  - `apps/web/src/styles/overflow-fixes.css`
+
+### 2.10.372. Wave 276: Прогрессивный лоадер визиографа под HDD 5400 RPM, офлайн-мутации IMAGING_STUDY_DRAFT и омни-платформенный рантайм (Мандаты 8b, 8c, 8e п. 11, 8n, 8s, 8t)
+- **Функционал**:
+  1. *Ступенчатый прогрессивный лоадер визиографа (Мандаты 8c, 8t)*:
+     - В `apps/web/src/components/visiograph/VisiographProgressiveLoader.ts` развернута двухфазная буферизация тяжелых 16-битных снимков визиографа (2048x1536): мгновенное превью за 0 мс и фоновое декодирование полного динамического диапазона без подвисания UI на медленных HDD 5400 RPM;
+  2. *Офлайн-черновики снимков IMAGING_STUDY_DRAFT (Мандаты 8b, 8e)*:
+     - При обрыве сетевого соединения снимки визиографа буферизуются в IndexedDB и автоматически отправляются на сервер при появлении сети;
+  3. *Омни-платформенная поддержка 4 рантаймов (Мандаты 8c, 8n)*:
+     - В `apps/web/src/lib/omniPlatformAdapter.ts` и `apps/web/src/lib/hardwarePrinting.ts` обеспечена бесшовная работа в Web, Desktop EXE, Android APK и PWA с адаптивной плотностью (28–36px десктоп / $\ge 44$px тач) и поддержкой локальной печати чеков 54-ФЗ и штрихкодов СанПиН.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/visiograph/VisiographProgressiveLoader.ts`
+  - `apps/web/src/services/offline/offlineSyncService.ts`
+  - `packages/shared/src/offline/types.ts`
+  - `apps/web/src/lib/omniPlatformAdapter.ts`
+  - `apps/web/src/lib/hardwarePrinting.ts`
+
+### 2.10.373. Сводный Реестр Ликвидации Блоата и Результаты Независимой Red Team Инквизиции (63 фичи vs IDENT, DentalPRO, StomX)
 - **Функционал**:
   1. *Ликвидация Академического Блоата (Мандаты 8i, 8k, 8s)*:
      - Заменен псевдонаучный 192-точечный симулятор Florida Probe на 1-кликовую норму Z01.2 в ЭМК и периодонтограмме;
