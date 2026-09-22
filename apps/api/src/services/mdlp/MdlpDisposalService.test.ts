@@ -3,7 +3,7 @@ import { describe, test } from "node:test";
 import { mdlpDisposalService, mdlpQueueService } from "./index.js";
 
 describe("MdlpDisposalService & MdlpQueueService Tests", () => {
-	const testOrgId = "org_test_mdlp_10560";
+	const testOrgId = "a0000000-0000-4000-8000-000000000001";
 
 	test("mdlpQueueService manages queue, detects duplicates and computes stats", () => {
 		mdlpQueueService.clearQueue(testOrgId);
@@ -87,5 +87,33 @@ describe("MdlpDisposalService & MdlpQueueService Tests", () => {
 		assert.strictEqual(actRes.actData.totalCostRub, 450);
 		assert(actRes.html.includes("СПИС-TEST-01"));
 		assert(actRes.html.includes("Сидорова С.С."));
+	});
+
+	test("mdlpDisposalService generates 1-click Disposal Act by doctor or admin without senior nurse requirement (Mandate 8e, 8n)", () => {
+		mdlpQueueService.clearQueue(testOrgId);
+		const raw =
+			"0103664798000016211A2B3C4D5E6F7\x1d17280531\x1d10LOT2026\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz1234";
+		mdlpQueueService.addToQueue(testOrgId, {
+			rawBarcode: raw,
+			costRub: 450,
+			patientName: "Алексеев А.А.",
+		});
+
+		const actRes = mdlpDisposalService.generateDisposalAct(testOrgId, {
+			actNumber: "СПИС-TEST-DOCTOR-01",
+			useQueue: true,
+			approverRole: "doctor",
+			dentistName: "Д-р Смирнов А.В.",
+			paperJournalAcknowledged: true,
+		});
+
+		assert.strictEqual(actRes.actData.actNumber, "СПИС-TEST-DOCTOR-01");
+		assert.strictEqual(actRes.actData.totalQuantityCarpules, 1);
+		assert.strictEqual(actRes.actData.totalCostRub, 450);
+		assert.strictEqual(actRes.actData.commission.length, 1);
+		assert(actRes.actData.commission[0]?.positionRu.includes("единолично"));
+		assert.strictEqual(actRes.actData.approvedByFullName, "Д-р Смирнов А.В.");
+		assert(actRes.html.includes("СПИС-TEST-DOCTOR-01"));
+		assert(actRes.html.includes("Д-р Смирнов А.В."));
 	});
 });

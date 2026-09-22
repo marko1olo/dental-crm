@@ -10,7 +10,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createCarpuleQueueItem } from "@dental/shared";
@@ -154,5 +154,31 @@ describe("MDLP Disposal Queue Staff & Doctor Autonomy (Mandates 8e, 8k, 8n, 8d)"
 			})
 		);
 		assert.strictEqual(html, "");
+	});
+
+	it("8. SeniorNurseDisposalActModal defaults to solo doctor / administrator approval without senior nurse requirement", () => {
+		const html = renderToStaticMarkup(
+			createElement(SeniorNurseDisposalActModal, {
+				isOpen: true,
+				onClose: () => {},
+				items: [
+					{
+						id: "disp-doc-1",
+						name: "Артикаин 4% 1.7 мл",
+						quantity: 2,
+						unitRu: "карп",
+						series: "ART-2026",
+					} as any,
+				],
+				organizationName: 'ООО "ДЕНТЕ КЛИНИК"',
+				initialApproverRole: "doctor",
+				initialDentistName: "Д-р Кузнецов М.С.",
+			})
+		);
+
+		assert.ok(html.includes("Акт списания медикаментов и анестетиков (1 клик)"));
+		assert.ok(html.includes("Д-р Кузнецов М.С."));
+		assert.ok(html.includes("Медсестра ЦСО не требуется"));
+		assert.ok(html.includes("Единоличное утверждение (без комиссии из 3 человек)"));
 	});
 });

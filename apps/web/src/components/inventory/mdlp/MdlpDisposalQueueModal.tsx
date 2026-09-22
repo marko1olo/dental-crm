@@ -533,7 +533,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 							<div className="text-xs text-muted mt-0.5 flex items-center gap-2 truncate">
 								<span>Вывод из оборота (код 13)</span> •{" "}
 								<span>Контроль сроков годности FEFO</span> •{" "}
-								<span>Акт старшей медсестры</span>
+								<span>Акт списания (1 клик)</span>
 							</div>
 						</div>
 					</div>
@@ -589,9 +589,9 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 									className="mdlp-btn mdlp-btn-secondary min-h-[44px] text-xs px-3"
 									style={{ minHeight: "44px" }}
 									onClick={handleOpenActModal}
-									title="Печать акта для старшей медсестры / настройка реквизитов"
+									title="Печать акта списания / настройка реквизитов (без медсестры ЦСО)"
 								>
-									<FileText size={14} /> Печать акта для старшей медсестры
+									<FileText size={14} /> Печать акта списания
 								</button>
 							</div>
 						</div>
@@ -778,7 +778,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 									СанПиН 3.3686-21: Пакетное списание пустых карпул смены (без поштучного сканирования)
 								</div>
 								<div style={{ fontSize: 12, color: "var(--muted)" }}>
-									Медсестре запрещено тратить время на сканирование десятков пустых стеклянных ампул руками. Списание типового набора смены в 1 клик единолично.
+									Врачу и администратору не нужно сканировать десятки ампул или ждать старшую медсестру. Списание типового набора смены в 1 клик единолично.
 								</div>
 							</div>
 						</div>

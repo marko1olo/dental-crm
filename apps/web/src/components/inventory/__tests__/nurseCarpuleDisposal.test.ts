@@ -13,7 +13,7 @@ import assert from "node:assert/strict";
 import {
 	COMMON_ANESTHETICS,
 	type AnestheticDrugOption,
-} from "../NurseCarpuleDisposalModal";
+} from "../carpuleDisposalConstants.ts";
 
 describe("NurseCarpuleDisposal — 1-Click Anesthetic Disposal & Soft Overdraft", () => {
 	it("содержит обязательные анестетики по стандартам стоматологии РФ", () => {
@@ -87,5 +87,25 @@ describe("NurseCarpuleDisposal — 1-Click Anesthetic Disposal & Soft Overdraft"
 		assert.equal(disposalPayload.carpulesCount, 2);
 		assert.equal(disposalPayload.isOverdraft, true);
 		assert.equal(disposalPayload.wasteClass, "Класс Б");
+	});
+
+	it("поддерживает списание врачом или администратором без участия старшей медсестры (Мандаты 8e, 8n)", () => {
+		const soloDoctorDisposal = {
+			drugId: "articaine_100k",
+			drugName: "Артикаин 4% с адреналином 1:100 000 (Ультракаин Д-С Форте)",
+			carpulesCount: 1,
+			volumeTotalMl: 1.7,
+			doctorName: "Д-р Кузнецов М.С.",
+			approverRole: "doctor",
+			actNumber: "АКТ-КП-202609-04-02",
+			actDate: "2026-09-04",
+			wasteClass: "Класс Б",
+			singleSigner: true,
+			seniorNurseRequired: false,
+		};
+
+		assert.equal(soloDoctorDisposal.singleSigner, true);
+		assert.equal(soloDoctorDisposal.seniorNurseRequired, false);
+		assert.equal(soloDoctorDisposal.approverRole, "doctor");
 	});
 });

@@ -140,10 +140,16 @@ export const SeniorNurseDisposalActModal: React.FC<
 	const [paperJournalAcknowledged, setPaperJournalAcknowledged] =
 		useState<boolean>(initialPaperJournalAcknowledged);
 	const [approverName, setApproverName] = useState<string>(() => {
-		if (initialApproverRole === "senior_nurse") {
-			return initialSeniorNurseName || "Старшая медсестра";
+		if (initialApproverRole === "doctor") {
+			return initialDentistName || "Врач-стоматолог";
 		}
-		return initialDentistName || initialSeniorNurseName || "Врач-стоматолог";
+		if (initialApproverRole === "administrator") {
+			return "Администратор клиники";
+		}
+		if (initialApproverRole === "authorized_staff") {
+			return "Уполномоченный сотрудник";
+		}
+		return initialSeniorNurseName || initialDentistName || "Врач-стоматолог";
 	});
 	const [seniorNurseName, setSeniorNurseName] = useState<string>(
 		initialSeniorNurseName,
@@ -467,7 +473,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 						<FileText size={24} className="text-[var(--teal,#0d9488)] shrink-0" />
 						<div className="min-w-0">
 							<div className="font-bold text-lg leading-tight truncate">
-								Акт списания медикаментов и анестетиков (Старшая медсестра)
+								Акт списания медикаментов и анестетиков (1 клик)
 							</div>
 							<div className="text-xs text-muted mt-0.5 truncate">
 								СанПиН 3.3686-21 • Честный ЗНАК (Схема 10560) •
@@ -519,7 +525,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 							<div>
 								<div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>
 									{paperJournalAcknowledged
-										? "Бумажный журнал учтён • Старшая медсестра опциональна"
+										? "Бумажный журнал учтён • Медсестра ЦСО не требуется"
 										: "СанПиН 3.3686-21: Контроль неснижаемого остатка медикаментов"}
 								</div>
 								<div style={{ fontSize: 12, color: "var(--muted)" }}>
