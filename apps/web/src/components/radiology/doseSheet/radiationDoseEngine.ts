@@ -100,8 +100,22 @@ export interface DoseComplianceResult {
 	isExceeded: boolean;
 	warningMessage: string;
 	protocolActionRequired: string;
+	/**
+	 * Обоснование лечащего врача в амбулаторной карте (форма 043/у) по клиническим показаниям.
+	 * Съемка не блокируется софтом (Мандат 8e).
+	 */
+	requiresDoctorClinicalJustification: boolean;
+	/**
+	 * @deprecated Мандаты 8e, 8i: в амбулаторной частной клинике нет больничных консилиумов и комиссий.
+	 * Всегда false, сохранено для обратной совместимости.
+	 */
 	requiresMedicalCouncilJustification: boolean;
 	recommendedIntervalDays: number;
+	/**
+	 * Мандат 8e: блокировка кнопки съемки аппарата категорически запрещена.
+	 * Врач всегда сохраняет автономность выполнения снимка при острой боли или эндодонтии.
+	 */
+	isCaptureBlocked: boolean;
 }
 
 /** Опции генерации печатного вкладыша Формы 043/у */
@@ -389,25 +403,27 @@ export function evaluateDoseCompliance(
 	let status: DoseComplianceResult["status"] = "safe";
 	let zone: RadiationSafetyZone = "green";
 	let warningMessage = "Лучевая нагрузка находится в оптимальных нормативных границах СанПиН 2.6.1.2523-09.";
-	let protocolActionRequired = "Стандартный протокол: применение СИЗ (воротник 0.35 мм Pb), запись в лист дозовых нагрузок.";
-	let requiresMedicalCouncilJustification = false;
+	let protocolActionRequired = "Стандартный протокол: применение СИЗ (воротник 0.35 мм Pb), запись в лист дозовых нагрузок формы 043/у.";
+	let requiresDoctorClinicalJustification = false;
 	let recommendedIntervalDays = 0;
+	// Мандат 8e: аппаратная съемка НИКОГДА не блокируется
+	const isCaptureBlocked = false;
 
 	if (totalAfterStudyMsv >= RADIATION_SAFETY_LIMITS_MSV.CRITICAL_EXCEEDED_THRESHOLD_MSV) {
 		status = "limit_exceeded";
 		zone = "red";
-		warningMessage = `Критическое предупреждение: Суммарная доза (${totalAfterStudyMsv} мЗв) достигла или превысила годовой профилактический лимит СанПиН (${limitMsv} мЗв).`;
+		warningMessage = `Клиническое предупреждение (СанПиН 2.6.1.1192-03): Суммарная доза (${totalAfterStudyMsv} мЗв) достигла или превысила профилактический лимит (${limitMsv} мЗв). Согласно Мандату 8e, блокировка аппарата ЗАПРЕЩЕНА: исследование выполняется по клиническим показаниям под личную ответственность лечащего врача с записью в карту 043/у.`;
 		protocolActionRequired =
-			"Клинический протокол: исследование проводится по обоснованным клиническим показаниям с письменным обоснованием лечащего врача в амбулаторной карте (форма 043/у).";
-		requiresMedicalCouncilJustification = true;
+			"Автономия врача (Мандат 8e): съемка не блокируется. Врач вносит клиническое обоснование в форму 043/у (по острой боли, контроль пломбирования каналов или хирургический контроль). Никаких стационарных комиссий и начмедов.";
+		requiresDoctorClinicalJustification = true;
 		recommendedIntervalDays = RADIATION_SAFETY_LIMITS_MSV.RECOMMENDED_CBCT_INTERVAL_DAYS;
 	} else if (totalAfterStudyMsv >= RADIATION_SAFETY_LIMITS_MSV.WARNING_THRESHOLD_MSV) {
 		status = "warning";
 		zone = "yellow";
 		warningMessage = `Предупреждение: Накопленная доза (${totalAfterStudyMsv} мЗв) составила ${percentOfLimit}% от годового лимита СанПиН.`;
 		protocolActionRequired =
-			"Протокол повышенного контроля: рекомендована оптимизация рентген-назначений и использование узкого поля облучения (коллимации).";
-		requiresMedicalCouncilJustification = false;
+			"Протокол повышенного контроля: рекомендована оптимизация рентген-назначений и использование узкого поля облучения (коллимации). Съемка не блокируется.";
+		requiresDoctorClinicalJustification = false;
 		recommendedIntervalDays = 30;
 	}
 
@@ -421,8 +437,10 @@ export function evaluateDoseCompliance(
 		isExceeded,
 		warningMessage,
 		protocolActionRequired,
-		requiresMedicalCouncilJustification,
+		requiresDoctorClinicalJustification,
+		requiresMedicalCouncilJustification: false, // Мандат 8e, 8i: исключены стационарные комиссии
 		recommendedIntervalDays,
+		isCaptureBlocked,
 	};
 }
 
@@ -832,7 +850,7 @@ export function generateDoseSheetHtml(
 
     <!-- SanPiN Regulatory Footer -->
     <div class="sanpin-footer">
-      * Примечание: В соответствии с п. 7.12–7.13 СанПиН 2.6.1.1192-03 и п. 5.4.1 СанПиН 2.6.1.2523-09 (НРБ-99/2009), годовой предел эффективной дозы при профилактических медицинских исследованиях составляет 1.0 мЗв. Превышение 1.0 мЗв/год переводит исследования в категорию специальных диагностических по строгим клиническим показаниям с обязательной фиксацией в протоколе приема.
+      * Примечание: В соответствии с п. 7.12–7.13 СанПиН 2.6.1.1192-03 и п. 5.4.1 СанПиН 2.6.1.2523-09 (НРБ-99/2009), годовой предел эффективной дозы при профилактических медицинских исследованиях составляет 1.0 мЗв. Превышение 1.0 мЗв/год переводит исследования в категорию специальных диагностических по строгим клиническим показаниям с обязательной фиксацией в карте 043/у (без блокировки съемки и без стационарных комиссий — Мандат 8e, 8i).
     </div>
   </div>
 </body>
@@ -915,7 +933,7 @@ export function exportDoseJournalToCsv(
 			rec.effectiveDoseMsv.toFixed(4),
 			rec.protectionEquipmentUsed ? rec.protectionEquipmentUsed.join("; ") : "",
 			rec.doctorName,
-			rec.isEmergencyJustified ? `Да (${rec.emergencyJustificationReason || "Консилиум"})` : "Нет",
+			rec.isEmergencyJustified ? `Да (${rec.emergencyJustificationReason || "По острой боли / Обоснование врача"})` : "Нет",
 			rec.notes || "",
 		];
 		lines.push(row.map(csvCell).join(delimiter));

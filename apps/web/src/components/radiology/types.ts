@@ -57,8 +57,8 @@ export const RADIOLOGY_MODALITIES: Record<RadiologyModality, RadiologyModalityIn
 		label: "ОПТГ (Ортопантомограмма / Панорамный снимок)",
 		shortLabel: "ОПТГ",
 		description: "Панорамный обзорный 2D-снимок зубных рядов, челюстей и височно-нижнечелюстных суставов",
-		typicalDoseMicrosv: 18.0,
-		typicalDoseMsv: 0.018,
+		typicalDoseMicrosv: 13.0,
+		typicalDoseMsv: 0.013,
 		iconName: "Scan",
 	},
 	intraoral_rvg: {

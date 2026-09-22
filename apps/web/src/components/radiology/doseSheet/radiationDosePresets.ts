@@ -122,7 +122,7 @@ export const RADIATION_ZONE_DEFINITIONS: Record<RadiationSafetyZone, RadiationZo
 		descriptionRu:
 			"Достигнут или превышен рекомендуемый годовой диагностический лимит (1.0 мЗв, СанПиН 2.6.1.1192-03 п. 7.12).",
 		recommendationRu:
-			"Все последующие рентгенологические исследования проводятся по обоснованным клиническим показаниям с письменным обоснованием лечащего врача в амбулаторной карте (форма 043/у).",
+			"Все последующие рентгенологические исследования проводятся по обоснованным клиническим показаниям с письменным обоснованием лечащего врача в амбулаторной карте (форма 043/у). Согласно Мандату 8e, блокировка съемки аппаратом и согласования с комиссиями/начмедами категорически запрещены.",
 		badgeClass: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30",
 		borderClass: "border-rose-500/30",
 		textClass: "text-rose-600 dark:text-rose-400",
@@ -186,10 +186,10 @@ export const STATUTORY_RADIATION_DOSE_PRESETS: readonly StatutoryDosePreset[] = 
 		nameRu: "Цифровая ортопантомография (ОПТГ / Панорамный снимок)",
 		shortNameRu: "ОПТГ (Панорама)",
 		categoryRu: "Панорамные",
-		typicalDoseMsv: 0.018, // 0.018 мЗв (18.0 мкЗв)
-		typicalDoseMicrosv: 18.0,
+		typicalDoseMsv: 0.013, // 0.013 мЗв (13.0 мкЗв) — СанПиН 2.6.1.1192-03 (10–15 мкЗв)
+		typicalDoseMicrosv: 13.0,
 		minDoseMsv: 0.010,
-		maxDoseMsv: 0.025,
+		maxDoseMsv: 0.015,
 		defaultKv: 70,
 		defaultMa: 10,
 		defaultExposureSec: 12.0,
@@ -204,9 +204,9 @@ export const STATUTORY_RADIATION_DOSE_PRESETS: readonly StatutoryDosePreset[] = 
 		nameRu: "Конусно-лучевая компьютерная томография (КЛКТ) сегмента 5х5 см",
 		shortNameRu: "3D КЛКТ сегмента 5х5",
 		categoryRu: "Томография (3D КЛКТ)",
-		typicalDoseMsv: 0.035, // 0.035 мЗв (35.0 мкЗв)
+		typicalDoseMsv: 0.035, // 0.035 мЗв (35.0 мкЗв) — СанПиН 2.6.1.1192-03 (30–60 мкЗв)
 		typicalDoseMicrosv: 35.0,
-		minDoseMsv: 0.025,
+		minDoseMsv: 0.030,
 		maxDoseMsv: 0.045,
 		defaultKv: 85,
 		defaultMa: 6,
@@ -215,17 +215,17 @@ export const STATUTORY_RADIATION_DOSE_PRESETS: readonly StatutoryDosePreset[] = 
 		fovDescriptionRu: "Сегмент 50х50 мм (зона 2–4 смежных зубов)",
 		protectionEquipmentRu: "Защитный жилет/фартук со свинцовым эквивалентом 0.35–0.5 мм Pb",
 		clinicalIndicationRu: "Одиночная имплантация, сложная эндодонтия моляров (MB2 каналы), резекция верхушки корня",
-		sanpinReferenceRu: "МУ 2.6.1.2944-11 Раздел 4",
+		sanpinReferenceRu: "МУ 2.6.1.2944-11 Раздел 4 / СанПиН 2.6.1.1192-03",
 	},
 	{
 		id: "cbct_full_jaws",
 		nameRu: "Конусно-лучевая компьютерная томография (КЛКТ) обеих челюстей 8х8 / 10х10 см",
 		shortNameRu: "3D КЛКТ челюстей 8х8 / 10х10",
 		categoryRu: "Томография (3D КЛКТ)",
-		typicalDoseMsv: 0.065, // 0.065 мЗв (65.0 мкЗв)
-		typicalDoseMicrosv: 65.0,
-		minDoseMsv: 0.040,
-		maxDoseMsv: 0.080,
+		typicalDoseMsv: 0.050, // 0.050 мЗв (50.0 мкЗв) — СанПиН 2.6.1.1192-03 (30–60 мкЗв)
+		typicalDoseMicrosv: 50.0,
+		minDoseMsv: 0.035,
+		maxDoseMsv: 0.060,
 		defaultKv: 90,
 		defaultMa: 7,
 		defaultExposureSec: 14.0,
@@ -233,7 +233,7 @@ export const STATUTORY_RADIATION_DOSE_PRESETS: readonly StatutoryDosePreset[] = 
 		fovDescriptionRu: "FOV 80х80 мм или 100х100 мм (зубные дуги обеих челюстей)",
 		protectionEquipmentRu: "Защитный жилет круговой защиты (0.5 мм Pb)",
 		clinicalIndicationRu: "Тотальная имплантация (All-on-4/All-on-6), костная пластика, синус-лифтинг, ретинированные зубы 18, 28, 38, 48",
-		sanpinReferenceRu: "МУ 2.6.1.2944-11 / СанПиН 2.6.1.2523-09",
+		sanpinReferenceRu: "МУ 2.6.1.2944-11 / СанПиН 2.6.1.1192-03",
 	},
 	{
 		id: "cbct_maxillofacial",

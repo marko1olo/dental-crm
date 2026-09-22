@@ -531,7 +531,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 	const handleAttachToEmr = useCallback(() => {
 		if (!activeItem) return;
 
-		const doseMicrosv = activeItem.detectedModality === "optg_panoramic" ? 18.0 : 3.0;
+		const doseMicrosv = activeItem.detectedModality === "optg_panoramic" ? 13.0 : 2.5;
 		const singleTooth = selectedTeeth.length === 1 && selectedTeeth[0] ? selectedTeeth[0] : null;
 		const singleToothName = singleTooth ? FDI_TOOTH_NAMES[singleTooth] ?? "" : "";
 		const anatomicalArea = singleTooth ? `Зуб ${singleTooth} (${singleToothName})` : `Зубы: ${selectedTeeth.join(", ")}`;
@@ -610,7 +610,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 
 	if (!isOpen) return null;
 
-	const doseInfo = formatRadiationDose(activeItem?.detectedModality === "optg_panoramic" ? 18.0 : 3.0);
+	const doseInfo = formatRadiationDose(activeItem?.detectedModality === "optg_panoramic" ? 13.0 : 2.5);
 
 	const modalContent = (
 		<div
