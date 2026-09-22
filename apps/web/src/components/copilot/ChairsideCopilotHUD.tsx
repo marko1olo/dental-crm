@@ -739,13 +739,37 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
         }
       } catch (err) {
         console.warn("[ChairsideCopilotHUD] API call failed, falling back to local clinical preset:", err);
-        if (/пульпит|26|канал/i.test(text)) {
-          loadPreset(1);
-        } else if (/гигиен|чистк|налет|скейлинг/i.test(text)) {
-          loadPreset(2);
-        } else {
-          loadPreset(0);
-        }
+        const presetIdx = /пульпит|26|канал/i.test(text) ? 1 : /гигиен|чистк|налет|скейлинг/i.test(text) ? 2 : 0;
+        const preset = CLINICAL_PRESETS[presetIdx] ?? defaultPreset;
+        setActivePresetIndex(presetIdx);
+        setThoughts(preset.thoughts);
+        const targetTooth = Number(text.match(/\b([1-4][1-8])\b/)?.[1]) || activeTooth || preset.toothNumber;
+        setToothProposal({
+          toothNumber: targetTooth,
+          state: preset.toothState,
+          stateLabel: preset.toothStateLabel,
+          surfaces: preset.surfaces,
+          applied: false,
+        });
+        setServicesProposal(
+          preset.services.map((s) => ({
+            ...s,
+            toothNumber: targetTooth,
+            applied: false,
+          }))
+        );
+        setSoapProposal({ ...preset.soap, applied: false });
+        setAnestheticProposal(preset.anesthetic ? { ...preset.anesthetic, applied: false } : null);
+        setConsentProposal(
+          preset.consent
+            ? {
+                ...preset.consent,
+                toothOrArea: `Зуб ${targetTooth}`,
+                applied: false,
+              }
+            : null
+        );
+        setSafetyAlert({ ...preset.safetyAlert, acknowledged: false });
         showToast("Автономный режим: сформированы предложения у кресла", "info");
       } finally {
         setIsThinking(false);
@@ -758,7 +782,6 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
       patientSomaticHistory,
       visitId,
       chairId,
-      loadPreset,
     ]
   );
 
@@ -1134,14 +1157,14 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
       if (e) e.preventDefault();
       const text = inputText.trim();
       if (!text) {
-        const defaultPrompt = "вылечили кариес 16 зуба, световая пломба, анестезия убистезин 1 карпула";
+        const defaultPrompt = `вылечили кариес ${activeTooth || 16} зуба, световая пломба, анестезия убистезин 1 карпула`;
         setInputText(defaultPrompt);
         executeCopilotAgent(defaultPrompt);
         return;
       }
       executeCopilotAgent(text);
     },
-    [inputText, executeCopilotAgent]
+    [inputText, activeTooth, executeCopilotAgent]
   );
 
   // Toggle voice dictation

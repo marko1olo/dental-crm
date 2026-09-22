@@ -628,12 +628,9 @@ export const Prescription107Card: React.FC<Prescription107CardProps> = ({
 
 	const handleSign = useCallback(() => {
 		if (isSigned) return;
-		setSigning(true);
-		setTimeout(() => {
-			setIsSigned(true);
-			setSigning(false);
-			onSignUkep?.(prescription);
-		}, 300);
+		setIsSigned(true);
+		setSigning(false);
+		onSignUkep?.(prescription);
 	}, [isSigned, onSignUkep, prescription]);
 
 	const series = prescription.series || "77-АА";
@@ -1427,12 +1424,11 @@ export const CopilotProtocol043ConfirmCard: React.FC<
 				</div>
 
 				<div className="flex items-center gap-2">
-					{!savedStatus && !isEditing && (
+					{!isEditing && (
 						<button
 							type="button"
 							className="copilot-043-edit-btn"
 							onClick={() => setIsEditing(true)}
-							disabled={disabled}
 							title="Редактировать запись 043/у"
 						>
 							<Edit3 size={13} />
@@ -1534,7 +1530,6 @@ export const CopilotProtocol043ConfirmCard: React.FC<
 							type="button"
 							className="copilot-043-save-btn"
 							onClick={handleSave}
-							disabled={disabled}
 						>
 							<Save size={15} />
 							<span>Сохранить в ЭМК визита (1 клик)</span>
@@ -1545,7 +1540,6 @@ export const CopilotProtocol043ConfirmCard: React.FC<
 						type="button"
 						className={`copilot-043-save-btn ${savedStatus ? "saved" : ""}`}
 						onClick={handleSave}
-						disabled={savedStatus || disabled}
 						title="Сохранить дневник 043/у в электронную медкарту визита"
 					>
 						{savedStatus ? (
