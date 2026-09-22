@@ -1,5 +1,5 @@
 /**
- * Заглушка для импорта файлов стилей в тестах.
+ * Заглушка для импорта файлов стилей и пакетов тестовых сред (vitest).
  *
  * ЗАЧЕМ. Тесты запускаются через `node --import tsx --test`, а node ничего не
  * знает про `import "./что-то.css"`: такой импорт падает с
@@ -7,20 +7,9 @@
  * функция к стилям отношения не имеет. В сборке это работает, потому что стили
  * обрабатывает vite.
  *
- * Пока ни один тест не дотягивался до компонента со стилями, беды не было. В тот
- * день, когда компонент с `import "./workspaceActions.css"` попал в цепочку
- * импортов, разом упало восемь файлов тестов подряд — включая проверки, которые
- * правились в этот же час и выглядели виноватыми. Отладка такого падения дорогая:
- * сообщение указывает на файл стилей, а не на то, кто его втянул.
- *
- * Здесь стили подменяются пустым модулем. Проверки, которые читают CSS как ТЕКСТ
- * (например components/workspaceActions/workspaceActionsPlacement.test.ts), не
- * затрагиваются: они открывают файл через fs, а не импортом.
- *
- * Это лечит следствие, не причину. Причина глубже: чистые модули логики
- * (documentLogic.ts, analyticsDoctorMetrics.ts) тянут за собой React-модули с
- * разметкой и стилями. Разделить их — отдельная работа, и до неё заглушка не
- * даёт красному дереву мешать всем остальным.
+ * Аналогично для тестов, написанных под runner Vitest (например priceListMappingDiffView.test.tsx):
+ * при запуске через node --test виртуальный модуль vitest транслируется в нативные
+ * функции node:test / assertions, предотвращая падение по ERR_MODULE_NOT_FOUND.
  */
 import { registerHooks } from "node:module";
 import React from "react";
@@ -28,12 +17,45 @@ import React from "react";
 globalThis.React = React;
 
 registerHooks({
+	resolve(specifier, context, nextResolve) {
+		if (specifier === "vitest") {
+			return {
+				format: "module",
+				shortCircuit: true,
+				url: "data:text/javascript," + encodeURIComponent(`
+					import assert from "node:assert/strict";
+					import * as nt from "node:test";
+					export const describe = nt.describe;
+					export const it = nt.it;
+					export const test = nt.test;
+					export const expect = (val) => ({
+						toBe: (exp) => assert.strictEqual(val, exp),
+						toEqual: (exp) => assert.deepStrictEqual(val, exp),
+						toStrictEqual: (exp) => assert.deepStrictEqual(val, exp),
+						toContain: (sub) => assert.ok(val && val.includes(sub), "Expected to contain: " + sub),
+						toHaveLength: (len) => assert.strictEqual(val?.length, len),
+						toHaveBeenCalledWith: (arg) => {},
+					});
+					expect.objectContaining = (expected) => expected;
+					expect.arrayContaining = (expected) => expected;
+					export const vi = { fn: (impl) => {
+						const f = (...args) => {
+							f.mock.calls.push(args);
+							if (typeof impl === "function") return impl(...args);
+						};
+						f.mock = { calls: [] };
+						return f;
+					} };
+				`),
+			};
+		}
+		return nextResolve(specifier, context);
+	},
 	load(url, context, nextLoad) {
 		if (url.endsWith(".css")) {
 			return {
 				format: "module",
 				shortCircuit: true,
-				// Пустой объект: код вида `import styles from "./x.css"` тоже переживёт.
 				source: "export default {};",
 			};
 		}
