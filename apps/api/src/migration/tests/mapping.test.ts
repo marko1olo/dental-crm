@@ -439,3 +439,116 @@ describe("обязательные поля", () => {
 		);
 	});
 });
+
+describe("выгрузки российских систем (IDENT, DentalPRO, Инфодент, 1С, StomX) и стандарты 804н / МКБ-10", () => {
+	test("StomX опознаётся по характерным колонкам выгрузки", () => {
+		const match = matchVendorProfile(
+			["client_id", "first_name", "last_name", "birth_date", "phone_number"],
+			"clients.xlsx",
+		);
+		assert.equal(match.profile?.code, "stomx");
+		assert.equal(match.profile?.title, "StomX");
+	});
+
+	test("StomX услуги с кодами Приказа 804н и ценами сопоставляются корректно", () => {
+		const result = resolve(
+			["service_id", "code804n", "title", "price"],
+			[
+				["101", "A16.07.002", "Восстановление зуба пломбой", "3500"],
+				["102", "B01.065.001", "Консультация стоматолога первичная", "1500"],
+			],
+			{ requestedVendorProfile: "stomx", requestedEntityKind: "service" },
+		);
+		assert.equal(result.entityKind, "service");
+		assert.equal(fieldFor(result, "service_id"), "service.externalId");
+		assert.equal(fieldFor(result, "code804n"), "service.code");
+		assert.equal(fieldFor(result, "title"), "service.name");
+		assert.equal(fieldFor(result, "price"), "service.priceRub");
+	});
+
+	test("StomX визиты с диагнозами МКБ-10 сопоставляются в visit.diagnosis", () => {
+		const result = resolve(
+			["visit_id", "client_id", "date", "complaints", "icd10", "treatment"],
+			[
+				[
+					"v1",
+					"c1",
+					"01.02.2024",
+					"Острая боль",
+					"K04.0",
+					"Эндодонтическое лечение",
+				],
+				["v2", "c2", "02.02.2024", "Скол пломбы", "K02.1", "Реставрация"],
+			],
+			{ requestedVendorProfile: "stomx", requestedEntityKind: "visit" },
+		);
+		assert.equal(result.entityKind, "visit");
+		assert.equal(fieldFor(result, "visit_id"), "visit.externalId");
+		assert.equal(fieldFor(result, "client_id"), "visit.patientRef");
+		assert.equal(fieldFor(result, "date"), "visit.date");
+		assert.equal(fieldFor(result, "complaints"), "visit.complaint");
+		assert.equal(fieldFor(result, "icd10"), "visit.diagnosis");
+		assert.equal(fieldFor(result, "treatment"), "visit.treatmentPlan");
+	});
+
+	test("российские номенклатурные колонки Приказа 804н сопоставляются с service.code", () => {
+		const identServices = resolve(
+			["Код", "Код по номенклатуре", "Наименование", "Цена"],
+			[
+				["1", "A16.07.051", "Профессиональная гигиена", "4500"],
+				["2", "A16.07.054", "Внутрикостная дентальная имплантация", "35000"],
+			],
+			{ requestedVendorProfile: "ident", requestedEntityKind: "service" },
+		);
+		assert.equal(
+			fieldFor(identServices, "Код по номенклатуре"),
+			"service.code",
+		);
+		assert.equal(fieldFor(identServices, "Наименование"), "service.name");
+		assert.equal(fieldFor(identServices, "Цена"), "service.priceRub");
+
+		const generic804 = resolve(
+			["Код 804н", "Услуга", "Стоимость"],
+			[["A16.07.008", "Пломбирование корневого канала", "5000"]],
+			{ requestedEntityKind: "service" },
+		);
+		assert.equal(fieldFor(generic804, "Код 804н"), "service.code");
+		assert.equal(fieldFor(generic804, "Услуга"), "service.name");
+		assert.equal(fieldFor(generic804, "Стоимость"), "service.priceRub");
+	});
+
+	test("диагнозы по МКБ-10 из российских выгрузок сопоставляются с visit.diagnosis", () => {
+		const dproVisits = resolve(
+			["Номер карты", "Дата приема", "Жалобы", "МКБ-10", "Лечение"],
+			[["123", "10.05.2024", "Ноющая боль", "K04.1", "Распломбировка"]],
+			{ requestedVendorProfile: "dentalpro", requestedEntityKind: "visit" },
+		);
+		assert.equal(fieldFor(dproVisits, "МКБ-10"), "visit.diagnosis");
+		assert.equal(fieldFor(dproVisits, "Жалобы"), "visit.complaint");
+
+		const genericMkb = resolve(
+			["Пациент", "Дата", "Диагноз по МКБ", "Лечение"],
+			[["Иванов Иван", "12.06.2024", "K05.3", "Кюретаж"]],
+			{ requestedEntityKind: "visit" },
+		);
+		assert.equal(fieldFor(genericMkb, "Диагноз по МКБ"), "visit.diagnosis");
+	});
+
+	test("определение сущности распознаёт Order 804n и МКБ-10 ключевые слова", () => {
+		assert.equal(
+			detectEntityKind(
+				["Код 804н", "Номенклатура", "Цена"],
+				"Прейскурант.xlsx",
+			).entityKind,
+			"service",
+		);
+		assert.equal(
+			detectEntityKind(
+				["Пациент", "МКБ-10", "Жалобы", "Дата"],
+				"Дневник.xlsx",
+			).entityKind,
+			"visit",
+		);
+	});
+});
+

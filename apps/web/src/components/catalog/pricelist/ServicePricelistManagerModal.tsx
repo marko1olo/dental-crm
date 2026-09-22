@@ -408,7 +408,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 				rawLine: p.commercialTitle + (p.priceRub ? ` ${p.priceRub} руб` : ''),
 				cleanedTitle: p.commercialTitle,
 				code804n: p.detectedCode804n,
-				statutoryTitle804n: p.statutoryTitle804n,
+				statutoryTitle804n: existingMatch?.statutoryTitle804n || p.statutoryTitle804n || p.commercialTitle,
 				category: p.suggestedCategory,
 				specialty: p.suggestedSpecialty,
 				priceRub: p.priceRub,

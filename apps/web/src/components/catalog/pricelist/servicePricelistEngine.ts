@@ -15,6 +15,7 @@ import {
 	CATEGORY_LABELS,
 	PRICE_TIER_LABELS,
 	SPECIALTY_LABELS,
+	STATUTORY_ORDER_804N_PRESETS,
 	STATUTORY_VAT_EXEMPTION_NOTE,
 	type DoctorSpecialty,
 	type Order804nCategory,
@@ -1159,6 +1160,7 @@ export interface ParsedPriceProposal {
 	readonly rawLine: string;
 	readonly commercialTitle: string;
 	readonly detectedCode804n: string;
+	readonly statutoryTitle804n?: string;
 	readonly suggestedCategory: Order804nCategory;
 	readonly suggestedSpecialty: DoctorSpecialty;
 	readonly priceRub: number;
@@ -1195,7 +1197,7 @@ export function parseUnstructuredPriceText(rawText: string): readonly ParsedPric
 
 		// 1. Detect statutory Order 804n code if present in line
 		const codeMatch = line.match(/\b([AB]\d{2}\.\d{2}\.\d{3}(?:\.\d{3})?|[AB]\d{2}\.\d{3}(?:\.\d{3})?)\b/i);
-		const detectedCode = codeMatch ? codeMatch[1].toUpperCase() : null;
+		const detectedCode = (codeMatch && codeMatch[1]) ? codeMatch[1].toUpperCase() : null;
 
 		// 2. Extract price from line
 		// Handles formats: "4 500 руб", "3500 р", "12500,00 ₽", " - 4500", "	4500"
@@ -1323,10 +1325,17 @@ export function parseUnstructuredPriceText(rawText: string): readonly ParsedPric
 			}
 		}
 
+		const matchedPreset = finalCode
+			? STATUTORY_ORDER_804N_PRESETS.find(
+					(p) => p.code804n.toUpperCase() === finalCode.toUpperCase(),
+				)
+			: undefined;
+
 		results.push({
 			rawLine: line,
 			commercialTitle: title,
 			detectedCode804n: finalCode,
+			statutoryTitle804n: matchedPreset?.statutoryTitle804n,
 			suggestedCategory: category,
 			suggestedSpecialty: specialty,
 			priceRub,
@@ -1345,7 +1354,7 @@ export function proposalToPricelistItem(proposal: ParsedPriceProposal): ServiceP
 		id: `srv-imp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
 		code804n: proposal.detectedCode804n,
 		commercialTitle: proposal.commercialTitle,
-		statutoryTitle804n: proposal.commercialTitle,
+		statutoryTitle804n: proposal.statutoryTitle804n || proposal.commercialTitle,
 		category: proposal.suggestedCategory,
 		specialty: proposal.suggestedSpecialty,
 		basePriceRub: proposal.priceRub,

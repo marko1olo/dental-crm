@@ -73,6 +73,8 @@ const VENDOR_PROFILES: VendorProfile[] = [
 			],
 			appointment: ["priem", "приемы", "raspisanie", "расписание", "visit"],
 			payment: ["oplata", "оплаты", "platezh", "платежи", "kassa", "касса"],
+			service: ["uslugi", "услуги", "price", "прайс", "nomenklatura", "номенклатура", "прейскурант"],
+			visit: ["priem", "приемы", "ambulatory", "амбулаторная", "карта", "дневник", "осмотр"],
 		},
 		rules: {
 			patient: [
@@ -249,6 +251,105 @@ const VENDOR_PROFILES: VendorProfile[] = [
 					targetField: "payment.note",
 				},
 			],
+			service: [
+				{
+					columns: ["id", "kod", "код", "артикул", "nomer", "номер"],
+					targetField: "service.externalId",
+				},
+				{
+					columns: [
+						"kodpoноменклатуре",
+						"кодпономенклатуре",
+						"код804н",
+						"кодминздрава",
+						"кодпоприказу",
+						"код804",
+						"номенклатура",
+						"кодпосправочнику",
+						"артикул",
+						"кодуслуги",
+						"код",
+						"code",
+						"shifr",
+						"шифр",
+					],
+					targetField: "service.code",
+				},
+				{
+					columns: [
+						"naimenovanie",
+						"наименование",
+						"название",
+						"услуга",
+						"name",
+						"title",
+						"usluga",
+					],
+					targetField: "service.name",
+				},
+				{
+					columns: [
+						"cena",
+						"цена",
+						"стоимость",
+						"price",
+						"amount",
+						"tarif",
+						"тариф",
+					],
+					targetField: "service.priceRub",
+				},
+			],
+			visit: [
+				{
+					columns: ["id", "kod", "код", "номерприема", "nomerpriema"],
+					targetField: "visit.externalId",
+				},
+				{
+					columns: ["idpat", "kodpacienta", "кодпациента", "пациент", "klient", "клиент"],
+					targetField: "visit.patientRef",
+				},
+				{
+					columns: ["data", "дата", "datapriema", "датаприема"],
+					targetField: "visit.date",
+				},
+				{
+					columns: ["zhaloby", "жалобы", "жалоба"],
+					targetField: "visit.complaint",
+				},
+				{
+					columns: ["anamnez", "анамнез"],
+					targetField: "visit.anamnesis",
+				},
+				{
+					columns: ["status", "статус", "объективно", "osmotr", "осмотр"],
+					targetField: "visit.objectiveStatus",
+				},
+				{
+					columns: [
+						"diagnoz",
+						"диагноз",
+						"диагнозпомкб",
+						"коддиагноза",
+						"диагнозкод",
+						"мкб",
+						"мкб10",
+						"icd",
+						"icd10",
+						"кодпоэкб",
+						"заключениедиагноз",
+					],
+					targetField: "visit.diagnosis",
+				},
+				{
+					columns: ["lechenie", "лечение", "планлечения", "planlecheniya"],
+					targetField: "visit.treatmentPlan",
+				},
+				{
+					columns: ["rekomendacii", "рекомендации", "заключение", "itog"],
+					targetField: "visit.doctorSummary",
+				},
+			],
 		},
 	},
 	{
@@ -259,6 +360,8 @@ const VENDOR_PROFILES: VendorProfile[] = [
 			patient: ["patients", "пациенты", "clients", "клиентская база"],
 			visit: ["visits", "приемы", "лечение"],
 			payment: ["payments", "платежи", "оплаты"],
+			service: ["services", "услуги", "pricelist", "прайс", "номенклатура"],
+			appointment: ["appointments", "записи", "расписание"],
 		},
 		rules: {
 			patient: [
@@ -310,6 +413,45 @@ const VENDOR_PROFILES: VendorProfile[] = [
 					targetField: "patient.status",
 				},
 			],
+			service: [
+				{
+					columns: ["id", "код", "кодуслуги", "артикул", "code"],
+					targetField: "service.externalId",
+				},
+				{
+					columns: [
+						"код804н",
+						"кодпономенклатуре",
+						"кодминздрава",
+						"кодпоприказу",
+						"код804",
+						"номенклатура",
+						"кодпосправочнику",
+						"артикул",
+						"кодуслуги",
+						"код",
+						"code",
+						"shifr",
+						"шифр",
+					],
+					targetField: "service.code",
+				},
+				{
+					columns: [
+						"название",
+						"наименование",
+						"наименованиеуслуги",
+						"услуга",
+						"name",
+						"title",
+					],
+					targetField: "service.name",
+				},
+				{
+					columns: ["цена", "стоимость", "прайс", "сумма", "price", "cost"],
+					targetField: "service.priceRub",
+				},
+			],
 			visit: [
 				{ columns: ["id", "номерприема"], targetField: "visit.externalId" },
 				{
@@ -323,7 +465,21 @@ const VENDOR_PROFILES: VendorProfile[] = [
 					columns: ["объективно", "осмотр", "статус"],
 					targetField: "visit.objectiveStatus",
 				},
-				{ columns: ["диагноз"], targetField: "visit.diagnosis" },
+				{
+					columns: [
+						"диагноз",
+						"диагнозпомкб",
+						"коддиагноза",
+						"диагнозкод",
+						"мкб",
+						"мкб10",
+						"icd",
+						"icd10",
+						"кодпоэкб",
+						"заключениедиагноз",
+					],
+					targetField: "visit.diagnosis",
+				},
 				{
 					columns: ["планлечения", "лечение"],
 					targetField: "visit.treatmentPlan",
@@ -331,6 +487,32 @@ const VENDOR_PROFILES: VendorProfile[] = [
 				{
 					columns: ["заключение", "рекомендации"],
 					targetField: "visit.doctorSummary",
+				},
+			],
+			payment: [
+				{
+					columns: ["id", "номер", "номерчека", "код"],
+					targetField: "payment.externalId",
+				},
+				{
+					columns: ["клиент", "пациент", "пациентid"],
+					targetField: "payment.patientRef",
+				},
+				{
+					columns: ["сумма", "оплачено", "стоимость", "amount"],
+					targetField: "payment.amountRub",
+				},
+				{
+					columns: ["дата", "датаоплаты", "date"],
+					targetField: "payment.paidAt",
+				},
+				{
+					columns: ["способоплаты", "видоплаты", "тип", "method"],
+					targetField: "payment.method",
+				},
+				{
+					columns: ["комментарий", "примечание", "note"],
+					targetField: "payment.note",
 				},
 			],
 		},
@@ -343,6 +525,7 @@ const VENDOR_PROFILES: VendorProfile[] = [
 			patient: ["pacient", "patient", "kart", "karta", "klient"],
 			visit: ["priem", "lechenie", "visit"],
 			payment: ["oplata", "kassa", "schet"],
+			service: ["usl", "uslugi", "price", "cen", "nomenkl"],
 		},
 		rules: {
 			patient: [
@@ -379,6 +562,60 @@ const VENDOR_PROFILES: VendorProfile[] = [
 				{ columns: ["adres", "adr"], targetField: "patient.address" },
 				{ columns: ["prim", "primech", "zamet"], targetField: "patient.notes" },
 			],
+			service: [
+				{
+					columns: ["kod", "id", "nom", "artikul"],
+					targetField: "service.externalId",
+				},
+				{
+					columns: [
+						"kod804",
+						"kod804n",
+						"код804н",
+						"кодпономенклатуре",
+						"nomenkl",
+						"номенклатура",
+						"shifr",
+						"шифр",
+						"kod",
+						"код",
+						"code",
+					],
+					targetField: "service.code",
+				},
+				{
+					columns: ["nazv", "nazvanie", "naim", "usluga", "name"],
+					targetField: "service.name",
+				},
+				{
+					columns: ["cena", "stoim", "summa", "price"],
+					targetField: "service.priceRub",
+				},
+			],
+			visit: [
+				{ columns: ["id", "kod", "nom", "npriem"], targetField: "visit.externalId" },
+				{ columns: ["nkart", "npac", "idpac", "kodpac"], targetField: "visit.patientRef" },
+				{ columns: ["data", "datpriem", "dat"], targetField: "visit.date" },
+				{ columns: ["zhalob", "zhaloby"], targetField: "visit.complaint" },
+				{ columns: ["anamn", "anamnez"], targetField: "visit.anamnesis" },
+				{ columns: ["status", "stat", "osmotr"], targetField: "visit.objectiveStatus" },
+				{
+					columns: [
+						"diagnoz",
+						"diag",
+						"mkb",
+						"mkb10",
+						"мкб",
+						"мкб10",
+						"koddiag",
+						"icd",
+						"icd10",
+					],
+					targetField: "visit.diagnosis",
+				},
+				{ columns: ["lech", "lechenie", "plan"], targetField: "visit.treatmentPlan" },
+				{ columns: ["rekom", "rekomend", "itog"], targetField: "visit.doctorSummary" },
+			],
 			payment: [
 				{ columns: ["kod", "id", "nom"], targetField: "payment.externalId" },
 				{
@@ -404,6 +641,8 @@ const VENDOR_PROFILES: VendorProfile[] = [
 		tableHints: {
 			patient: ["физическиелица", "пациенты", "справочникпациенты"],
 			payment: ["документыоплата", "чеки", "поступлениеденег"],
+			service: ["номенклатура", "услуги", "справочникноменклатура", "прайслист"],
+			visit: ["приемы", "медицинскиекарты", "осмотры", "документыприем"],
 		},
 		rules: {
 			patient: [
@@ -443,6 +682,106 @@ const VENDOR_PROFILES: VendorProfile[] = [
 					targetField: "patient.notes",
 				},
 			],
+			service: [
+				{
+					columns: [
+						"код",
+						"артикул",
+						"уникальныйидентификатор",
+						"guid",
+						"ссылка",
+					],
+					targetField: "service.externalId",
+				},
+				{
+					columns: [
+						"кодпономенклатуре",
+						"код804н",
+						"кодминздрава",
+						"кодпоприказу",
+						"код804",
+						"номенклатура",
+						"кодпосправочнику",
+						"артикул",
+						"кодуслуги",
+						"код",
+						"code",
+						"shifr",
+						"шифр",
+					],
+					targetField: "service.code",
+				},
+				{
+					columns: [
+						"наименование",
+						"услуга",
+						"номенклатураполное",
+						"наименованиеполное",
+						"name",
+					],
+					targetField: "service.name",
+				},
+				{
+					columns: [
+						"цена",
+						"стоимость",
+						"сумма",
+						"ценауслуги",
+						"ценабазовая",
+						"price",
+					],
+					targetField: "service.priceRub",
+				},
+			],
+			visit: [
+				{
+					columns: ["номер", "номердокумента", "код", "guid", "уникальныйидентификатор"],
+					targetField: "visit.externalId",
+				},
+				{
+					columns: ["пациент", "физическоелицо", "пациентссылка", "контрагент"],
+					targetField: "visit.patientRef",
+				},
+				{
+					columns: ["дата", "датаприема", "датадокумента"],
+					targetField: "visit.date",
+				},
+				{
+					columns: ["жалобы", "жалобыпациента"],
+					targetField: "visit.complaint",
+				},
+				{
+					columns: ["анамнез", "анамнезжизни", "анамнеззаболевания"],
+					targetField: "visit.anamnesis",
+				},
+				{
+					columns: ["объективно", "осмотр", "статус"],
+					targetField: "visit.objectiveStatus",
+				},
+				{
+					columns: [
+						"диагноз",
+						"диагнозпомкб",
+						"коддиагноза",
+						"диагнозкод",
+						"мкб",
+						"мкб10",
+						"icd",
+						"icd10",
+						"кодпоэкб",
+						"заключениедиагноз",
+					],
+					targetField: "visit.diagnosis",
+				},
+				{
+					columns: ["лечение", "оказанныеуслуги", "планлечения"],
+					targetField: "visit.treatmentPlan",
+				},
+				{
+					columns: ["рекомендации", "заключение", "врачебноезаключение"],
+					targetField: "visit.doctorSummary",
+				},
+			],
 			payment: [
 				{
 					columns: ["номер", "номердокумента"],
@@ -463,6 +802,286 @@ const VENDOR_PROFILES: VendorProfile[] = [
 				},
 				{
 					columns: ["комментарий", "назначениеплатежа"],
+					targetField: "payment.note",
+				},
+			],
+		},
+	},
+	{
+		code: "stomx",
+		title: "StomX",
+		note: "Российская облачная стоматологическая система; выгрузка через отчёты и экспорт в XLSX/CSV.",
+		tableHints: {
+			patient: ["clients", "patients", "пациенты", "клиенты"],
+			service: ["pricelist", "services", "услуги", "прайс", "номенклатура"],
+			appointment: ["appointments", "записи", "расписание", "визиты"],
+			visit: ["visits", "outpatient", "приемы", "дневник", "осмотры"],
+			payment: ["invoices", "payments", "оплаты", "чеки", "касса"],
+		},
+		rules: {
+			patient: [
+				{
+					columns: [
+						"id",
+						"client_id",
+						"patient_id",
+						"код",
+						"номеркарты",
+						"card_number",
+						"cardno",
+					],
+					targetField: "patient.externalId",
+				},
+				{
+					columns: ["fullname", "fio", "фио", "клиент", "пациент", "name"],
+					targetField: "patient.fullName",
+				},
+				{
+					columns: ["last_name", "фамилия", "surname", "lastname"],
+					targetField: "patient.lastName",
+				},
+				{
+					columns: ["first_name", "имя", "name", "firstname"],
+					targetField: "patient.firstName",
+				},
+				{
+					columns: ["patronymic", "middle_name", "отчество", "middlename"],
+					targetField: "patient.middleName",
+				},
+				{
+					columns: [
+						"birth_date",
+						"birthdate",
+						"датарождения",
+						"др",
+						"birthday",
+					],
+					targetField: "patient.birthDate",
+				},
+				{
+					columns: ["phone", "телефон", "мобильный", "phone_number", "тел"],
+					targetField: "patient.phone",
+				},
+				{
+					columns: [
+						"second_phone",
+						"второйтелефон",
+						"доптелефон",
+						"phone2",
+					],
+					targetField: "patient.secondaryPhone",
+				},
+				{
+					columns: ["email", "почта", "электроннаяпочта", "mail"],
+					targetField: "patient.email",
+				},
+				{
+					columns: ["gender", "пол", "sex"],
+					targetField: "patient.gender",
+				},
+				{
+					columns: ["address", "адрес", "адреспроживания"],
+					targetField: "patient.address",
+				},
+				{
+					columns: ["comment", "комментарий", "примечание", "notes", "note"],
+					targetField: "patient.notes",
+				},
+				{
+					columns: ["status", "статус", "state"],
+					targetField: "patient.status",
+				},
+			],
+			service: [
+				{
+					columns: ["id", "service_id", "код", "артикул", "code"],
+					targetField: "service.externalId",
+				},
+				{
+					columns: [
+						"code804n",
+						"order804n",
+						"код804н",
+						"кодпономенклатуре",
+						"номенклатура",
+						"кодминздрава",
+						"кодпоприказу",
+						"код804",
+						"кодпосправочнику",
+						"артикул",
+						"кодуслуги",
+						"код",
+						"code",
+						"shifr",
+						"шифр",
+					],
+					targetField: "service.code",
+				},
+				{
+					columns: [
+						"title",
+						"name",
+						"название",
+						"наименование",
+						"услуга",
+						"service_name",
+					],
+					targetField: "service.name",
+				},
+				{
+					columns: [
+						"price",
+						"cost",
+						"цена",
+						"стоимость",
+						"прайс",
+						"amount",
+						"base_price",
+					],
+					targetField: "service.priceRub",
+				},
+			],
+			appointment: [
+				{
+					columns: ["id", "appointment_id", "код", "номерзаписи"],
+					targetField: "appointment.externalId",
+				},
+				{
+					columns: ["client_id", "patient_id", "пациент", "клиент"],
+					targetField: "appointment.patientRef",
+				},
+				{
+					columns: ["doctor_id", "врач", "доктор", "provider_id"],
+					targetField: "appointment.doctorRef",
+				},
+				{
+					columns: [
+						"start_time",
+						"start_at",
+						"starts_at",
+						"времяначала",
+						"начало",
+						"datetime",
+					],
+					targetField: "appointment.startsAt",
+				},
+				{
+					columns: [
+						"end_time",
+						"end_at",
+						"ends_at",
+						"времяокончания",
+						"конец",
+					],
+					targetField: "appointment.endsAt",
+				},
+				{
+					columns: [
+						"duration",
+						"длительность",
+						"duration_minutes",
+						"минут",
+					],
+					targetField: "appointment.durationMinutes",
+				},
+				{
+					columns: ["status", "статус", "state"],
+					targetField: "appointment.status",
+				},
+				{
+					columns: ["reason", "повод", "причина", "услуга"],
+					targetField: "appointment.reason",
+				},
+				{
+					columns: ["comment", "комментарий", "примечание", "note"],
+					targetField: "appointment.comment",
+				},
+			],
+			visit: [
+				{
+					columns: ["id", "visit_id", "код", "номерприема"],
+					targetField: "visit.externalId",
+				},
+				{
+					columns: ["client_id", "patient_id", "пациент", "клиент"],
+					targetField: "visit.patientRef",
+				},
+				{
+					columns: ["date", "visit_date", "дата", "датаприема"],
+					targetField: "visit.date",
+				},
+				{
+					columns: ["complaints", "complaint", "жалобы", "жалоба"],
+					targetField: "visit.complaint",
+				},
+				{
+					columns: ["anamnesis", "анамнез"],
+					targetField: "visit.anamnesis",
+				},
+				{
+					columns: [
+						"status_localis",
+						"objective",
+						"объективно",
+						"статус",
+						"status",
+					],
+					targetField: "visit.objectiveStatus",
+				},
+				{
+					columns: [
+						"diagnosis",
+						"icd10",
+						"icd",
+						"мкб",
+						"мкб10",
+						"диагноз",
+						"диагнозпомкб",
+						"коддиагноза",
+						"диагнозкод",
+						"кодпоэкб",
+						"заключениедиагноз",
+					],
+					targetField: "visit.diagnosis",
+				},
+				{
+					columns: ["treatment", "лечение", "планлечения"],
+					targetField: "visit.treatmentPlan",
+				},
+				{
+					columns: ["recommendations", "рекомендации", "заключение"],
+					targetField: "visit.doctorSummary",
+				},
+			],
+			payment: [
+				{
+					columns: ["id", "invoice_id", "payment_id", "код", "номерчека"],
+					targetField: "payment.externalId",
+				},
+				{
+					columns: ["client_id", "patient_id", "пациент", "клиент"],
+					targetField: "payment.patientRef",
+				},
+				{
+					columns: ["total", "amount", "paid", "сумма", "оплачено", "стоимость"],
+					targetField: "payment.amountRub",
+				},
+				{
+					columns: ["date", "payment_date", "paid_at", "дата", "датаоплаты"],
+					targetField: "payment.paidAt",
+				},
+				{
+					columns: [
+						"payment_type",
+						"type",
+						"method",
+						"способоплаты",
+						"видоплаты",
+					],
+					targetField: "payment.method",
+				},
+				{
+					columns: ["comment", "note", "комментарий", "назначение"],
 					targetField: "payment.note",
 				},
 			],
@@ -815,7 +1434,21 @@ const GENERIC_RU_RULES: Partial<
 			targetField: "service.externalId",
 		},
 		{
-			columns: ["кодуслуги", "шифр", "code", "servicecode"],
+			columns: [
+				"кодуслуги",
+				"кодпономенклатуре",
+				"код804н",
+				"кодминздрава",
+				"кодпоприказу",
+				"код804",
+				"номенклатура",
+				"кодпосправочнику",
+				"артикул",
+				"код",
+				"шифр",
+				"code",
+				"servicecode",
+			],
 			targetField: "service.code",
 		},
 		{
@@ -983,7 +1616,20 @@ const GENERIC_RU_RULES: Partial<
 			targetField: "visit.objectiveStatus",
 		},
 		{
-			columns: ["диагноз", "заключениедиагноз", "diagnosis", "dx"],
+			columns: [
+				"диагноз",
+				"диагнозпомкб",
+				"коддиагноза",
+				"диагнозкод",
+				"мкб",
+				"мкб10",
+				"icd",
+				"icd10",
+				"кодпоэкб",
+				"заключениедиагноз",
+				"diagnosis",
+				"dx",
+			],
 			targetField: "visit.diagnosis",
 		},
 		{
@@ -1315,11 +1961,16 @@ export function detectEntityKind(
 				"диагноз",
 				"объективно",
 				"планлечения",
+				"мкб",
+				"мкб10",
+				"icd",
+				"icd10",
+				"коддиагноза",
 				"complaint",
 				"anamnesis",
 				"diagnosis",
 			],
-			tables: ["priem", "приемы", "visit", "visits", "лечение", "осмотр"],
+			tables: ["priem", "приемы", "visit", "visits", "лечение", "осмотр", "дневник"],
 			title: "приёмы",
 		},
 		{
@@ -1379,6 +2030,10 @@ export function detectEntityKind(
 				"прайс",
 				"кодуслуги",
 				"услуга",
+				"код804н",
+				"кодпономенклатуре",
+				"номенклатура",
+				"кодминздрава",
 				"price",
 				"fee",
 				"servicecode",
@@ -1387,6 +2042,8 @@ export function detectEntityKind(
 				"услуги",
 				"прайс",
 				"прайслист",
+				"прейскурант",
+				"номенклатура",
 				"service",
 				"services",
 				"pricelist",
