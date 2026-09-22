@@ -96,7 +96,7 @@ describe("роли, которые можно завести карточкой 
 describe("подпись должности сотрудника", () => {
 	test("известная роль подписана по-русски", () => {
 		assert.equal(staffRoleTitle("administrator"), "Администратор");
-		assert.equal(staffRoleTitle("head_doctor"), "Главный врач (начмед)");
+		assert.equal(staffRoleTitle("head_doctor"), "Главный врач");
 	});
 
 	test("роль вне схемы не оставляет место должности пустым", () => {

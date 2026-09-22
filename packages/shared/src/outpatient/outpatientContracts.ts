@@ -238,7 +238,7 @@ export type UpdatePatientToothDefectInput = z.infer<
 >;
 
 /**
- * Контур верификации карт начмедом (24-часовой замок)
+ * Контур верификации карт Главным врачом (рекомендательный клинический аудит без блокировки врача)
  */
 export const outpatientVerificationStatusSchema = z.enum([
 	"draft",
@@ -268,8 +268,9 @@ export type UpdateOutpatientVerificationStatusInput = z.infer<
 >;
 
 /**
- * 24-часовой замок проверки прав редактирования:
- * Если истек дедлайн (24 часа с момента приема/создания), редактирование врачом блокируется.
+ * Индикативная проверка ориентировочного 24-часового срока заполнения карты.
+ * Внимание (Мандат 8e): данный показатель носит исключительно аналитический характер
+ * для аудита Главным врачом и НИКОГДА не блокирует редактирование дневника лечащим врачом.
  */
 export function isOutpatientEditDeadlineExpired(
 	editableDeadline: Date | string,
@@ -282,7 +283,7 @@ export function isOutpatientEditDeadlineExpired(
 }
 
 /**
- * Вычисление 24-часового дедлайна
+ * Вычисление 24-часового ориентировочного срока заполнения карты (для рекомендательного контроля Главного врача, без блокировки)
  */
 export function calculateOutpatientEditableDeadline(
 	baseDate: Date = new Date(),
