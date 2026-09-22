@@ -1048,7 +1048,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 												background: isSelected ? 'rgba(59, 130, 246, 0.05)' : undefined,
 												contain: 'content',
 												contentVisibility: 'auto',
-												containIntrinsicSize: '1px 52px',
+												containIntrinsicSize: '1px 64px',
 											}}
 										>
 											<td>

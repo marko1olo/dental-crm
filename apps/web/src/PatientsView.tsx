@@ -528,8 +528,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	}, [filteredPatients, showLostPatientsOnly, lostPatientIds]);
 
 	const patientPagination = useDomListPagination(displayPatients, {
-		initialLimit: 50,
-		step: 50,
+		initialLimit: 40,
+		step: 40,
 	});
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: reset limit on filter change
@@ -888,7 +888,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								data-testid={`patient-row-${patient.id}`}
 								style={{
 									contentVisibility: "auto",
-									containIntrinsicSize: "1px 48px",
+									containIntrinsicSize: "1px 64px",
 									contain: "content",
 								}}
 								tabIndex={0}

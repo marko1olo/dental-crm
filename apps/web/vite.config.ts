@@ -314,7 +314,9 @@ export default defineConfig({
 					// Three.js и WebGL 3D-библиотеки визуализации моделей
 					if (
 						normalizedId.includes("/node_modules/three/") ||
-						normalizedId.includes("/node_modules/@types/three/") ||
+						normalizedId.includes("/node_modules/three") ||
+						normalizedId.includes("/node_modules/@types/three") ||
+						normalizedId.includes("/node_modules/three-stdlib") ||
 						normalizedId.includes("/node_modules/@react-three/")
 					)
 						return "three-vendor";
@@ -442,15 +444,6 @@ export default defineConfig({
 						return "query-vendor";
 					if (normalizedId.includes("/node_modules/zod"))
 						return "schema-vendor";
-					// three.js и 3D-математика: отдельный чанк для трехмерных моделей зубов и имплантатов.
-					if (
-						normalizedId.includes("/node_modules/three/") ||
-						normalizedId.includes("/node_modules/three") ||
-						normalizedId.includes("/node_modules/@types/three") ||
-						normalizedId.includes("/node_modules/three-stdlib") ||
-						normalizedId.includes("/node_modules/@react-three/")
-					)
-						return "three-vendor";
 					// Библиотеки PDF, Canvas и графического экспорта документов (сохранение RAM для 2-ядерных CPU)
 					if (
 						normalizedId.includes("/node_modules/jspdf") ||

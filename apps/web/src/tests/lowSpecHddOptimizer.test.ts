@@ -5,7 +5,11 @@
 
 import assert from "node:assert";
 import { afterEach, describe, it } from "node:test";
-import { isDesktopApp } from "../native/desktopBridge";
+import {
+	isDesktopApp,
+	printDesktopA4DocumentSilent,
+	printDesktopDocumentSilent,
+} from "../native/desktopBridge";
 import {
 	isDesktopExecutable,
 	isStandalonePwa,
@@ -960,6 +964,88 @@ describe("lowSpecHddOptimizer — Виртуализация реестра до
 		assert.strictEqual(fullSlice.remainingCount, 0);
 		assert.strictEqual(fullSlice.hasMore, false);
 	});
+
+	it("виртуализирует наряды ЗТЛ (DentalLabOrdersHubModal) канбан-колонками по 40 элементов с contain-intrinsic-size 1px 64px", () => {
+		const mockLabOrders = Array.from({ length: 95 }, (_, i) => ({
+			id: `order-ztl-${i + 1}`,
+			orderNumber: `ЗТЛ-${1000 + i + 1}`,
+			patientName: `Пациент ${i + 1}`,
+			doctorName: "Д-р Иванов А.С.",
+			currentStage: "sent_to_lab" as const,
+			financials: { patientPriceTotalRub: 24000, labCostTotalRub: 8000 },
+		}));
+
+		// Порция 1: первые 40 нарядов
+		const stage1 = sliceDomList(mockLabOrders, 40, 0);
+		assert.strictEqual(stage1.visibleItems.length, 40);
+		assert.strictEqual(stage1.totalCount, 95);
+		assert.strictEqual(stage1.remainingCount, 55);
+		assert.strictEqual(stage1.hasMore, true);
+		assert.strictEqual(stage1.visibleItems[0]!.orderNumber, "ЗТЛ-1001");
+		assert.strictEqual(stage1.visibleItems[39]!.orderNumber, "ЗТЛ-1040");
+
+		// Порция 2: клик "Показать ещё 40 нарядов" -> лимит 80
+		const stage2 = sliceDomList(mockLabOrders, 80, 0);
+		assert.strictEqual(stage2.visibleItems.length, 80);
+		assert.strictEqual(stage2.remainingCount, 15);
+		assert.strictEqual(stage2.hasMore, true);
+
+		// Порция 3: полное раскрытие
+		const stage3 = sliceDomList(mockLabOrders, 120, 0);
+		assert.strictEqual(stage3.visibleItems.length, 95);
+		assert.strictEqual(stage3.remainingCount, 0);
+		assert.strictEqual(stage3.hasMore, false);
+	});
+
+	it("виртуализирует реестр пациентов (PatientsView) порциями по 40 элементов (step: 40)", () => {
+		const mockPatients = Array.from({ length: 110 }, (_, i) => ({
+			id: `patient-${i + 1}`,
+			fullName: `Пациент ${i + 1}`,
+			phone: `+7900123${String(i).padStart(4, "0")}`,
+		}));
+
+		const page1 = sliceDomList(mockPatients, 40, 0);
+		assert.strictEqual(page1.visibleItems.length, 40);
+		assert.strictEqual(page1.totalCount, 110);
+		assert.strictEqual(page1.hasMore, true);
+		assert.strictEqual(page1.remainingCount, 70);
+
+		// Увеличение лимита на шаг 40
+		const page2 = sliceDomList(mockPatients, 80, 0);
+		assert.strictEqual(page2.visibleItems.length, 80);
+		assert.strictEqual(page2.remainingCount, 30);
+		assert.strictEqual(page2.hasMore, true);
+
+		// Завершающая порция
+		const page3 = sliceDomList(mockPatients, 120, 0);
+		assert.strictEqual(page3.visibleItems.length, 110);
+		assert.strictEqual(page3.remainingCount, 0);
+		assert.strictEqual(page3.hasMore, false);
+	});
+
+	it("виртуализирует прейскурант каталога услуг (ServicePricelistManagerModal) по 40 элементов", () => {
+		const mockServices = Array.from({ length: 85 }, (_, i) => ({
+			id: `srv-${i + 1}`,
+			code: `A16.07.${String(i + 1).padStart(3, "0")}`,
+			name: `Стоматологическая услуга ${i + 1}`,
+			priceRub: 3500 + i * 100,
+		}));
+
+		const firstChunk = sliceDomList(mockServices, 40, 0);
+		assert.strictEqual(firstChunk.visibleItems.length, 40);
+		assert.strictEqual(firstChunk.remainingCount, 45);
+		assert.strictEqual(firstChunk.hasMore, true);
+
+		const secondChunk = sliceDomList(mockServices, 80, 0);
+		assert.strictEqual(secondChunk.visibleItems.length, 80);
+		assert.strictEqual(secondChunk.remainingCount, 5);
+		assert.strictEqual(secondChunk.hasMore, true);
+
+		const finalChunk = sliceDomList(mockServices, 120, 0);
+		assert.strictEqual(finalChunk.visibleItems.length, 85);
+		assert.strictEqual(finalChunk.remainingCount, 0);
+		assert.strictEqual(finalChunk.hasMore, false);
+	});
 });
 
 describe("lowSpecHddOptimizer — Платформенные адаптеры (Electron, WebView2, Capacitor, PWA)", () => {
@@ -1017,6 +1103,31 @@ describe("lowSpecHddOptimizer — Платформенные адаптеры (E
 
 		assert.strictEqual(isStandalonePwa(), true);
 		assert.strictEqual(detectOmniEnvironment(), "pwa_standalone");
+	});
+
+	it("выполняет тихую печать документов А4 (printDesktopA4DocumentSilent) без вызова диалогов в Desktop", async () => {
+		let nativePrintCalled = false;
+		let receivedSilentParam: boolean | undefined;
+
+		globalThis.window = {
+			denteDesktopNative: {
+				printDocumentSilent: async (params: { silent?: boolean }) => {
+					nativePrintCalled = true;
+					receivedSilentParam = params.silent;
+					return { success: true };
+				},
+			},
+		} as unknown as Window & typeof globalThis;
+
+		const res = await printDesktopA4DocumentSilent({
+			htmlContent: "<p>Наряд ЗТЛ-1</p>",
+			title: "Наряд ЗТЛ №1024",
+		});
+
+		assert.strictEqual(nativePrintCalled, true);
+		assert.strictEqual(receivedSilentParam, true);
+		assert.strictEqual(res.success, true);
+		assert.strictEqual(res.method, "desktop_silent");
 	});
 });
 

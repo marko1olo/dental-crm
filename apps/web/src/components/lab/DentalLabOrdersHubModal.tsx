@@ -70,6 +70,7 @@ import {
 	FixationType,
 	LabTechnologicalStageId,
 } from "./orders/labWorkOrderPresets";
+import { sliceDomList } from "../../utils/domVirtualizationHelper";
 
 export interface DentalLabOrdersHubModalProps {
 	readonly isOpen: boolean;
@@ -133,6 +134,8 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	const [warrantyReworkOrder, setWarrantyReworkOrder] = useState<DentalLabWorkflowOrder | null>(null);
 	const [warrantyReason, setWarrantyReason] = useState<string>("Скол керамической облицовки");
 	const [activeCardMenuOrderId, setActiveCardMenuOrderId] = useState<string | null>(null);
+	// Прогрессивная DOM-подгрузка колонок канбана чанками по 40 элементов (Low-Spec HDD / Mandate 8n)
+	const [stageLimits, setStageLimits] = useState<Record<string, number>>({});
 
 	// Неблокирующие диалоги ввода (Мандат 8e / Anti-Blocking Prompt)
 	const [actionPrompt, setActionPrompt] = useState<{
@@ -788,6 +791,8 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 						{ALL_LAB_WORKFLOW_STATUSES.map((stageId) => {
 							const stageDef = LAB_WORKFLOW_STATUSES[stageId];
 							const stageOrders = ordersByStage[stageId] || [];
+							const stageLimit = stageLimits[stageId] ?? 40;
+							const stageSlice = sliceDomList(stageOrders, stageLimit, 0);
 
 							return (
 								<div key={stageId} className="ztl-kanban-column">
@@ -808,7 +813,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 									</div>
 
 									<div className="ztl-column-cards">
-										{stageOrders.map((order) => {
+										{stageSlice.visibleItems.map((order) => {
 											const hasDelay = order.isDelayedAlert || order.delayAlert.isDelayedAlert;
 											const preset = ORTHOPEDIC_WORK_TYPES[order.workTypeId] || ORTHOPEDIC_WORK_TYPES.crown_emax;
 
@@ -816,6 +821,11 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 												<article
 													key={order.id}
 													className={`ztl-order-card ${hasDelay ? "has-delay-alert" : ""}`}
+													style={{
+														contentVisibility: "auto",
+														containIntrinsicSize: "1px 64px",
+														contain: "content",
+													}}
 												>
 													<div className="ztl-card-top-row">
 														<span className="ztl-card-order-num">{order.orderNumber}</span>
@@ -1251,6 +1261,29 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 												</article>
 											);
 										})}
+										{stageSlice.hasMore && (
+											<div style={{ padding: "8px 4px", textAlign: "center" }}>
+												<button
+													type="button"
+													className="ztl-chip"
+													style={{
+														width: "100%",
+														justifyContent: "center",
+														padding: "6px 10px",
+														fontSize: "11px",
+														fontWeight: 600,
+													}}
+													onClick={() =>
+														setStageLimits((prev) => ({
+															...prev,
+															[stageId]: (prev[stageId] ?? 40) + 40,
+														}))
+													}
+												>
+													Показать ещё 40 нарядов (показано {stageSlice.displayedCount} из {stageSlice.totalCount})
+												</button>
+											</div>
+										)}
 										{stageOrders.length === 0 && (
 											<div style={{ textAlign: "center", padding: "24px 8px", color: "var(--muted, #94a3b8)", fontSize: "11px" }}>
 												Нет нарядов в этом статусе

@@ -519,7 +519,7 @@ export function SettingsPricesTab() {
 									key={chip.code}
 									type="button"
 									onClick={() => setSearchQuery(chip.code)}
-									className={`px-2.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap border inline-flex items-center justify-center ${
+									className={`shrink-0 px-2.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap border inline-flex items-center justify-center ${
 										searchQuery === chip.code
 											? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] border-[var(--teal)] shadow-2xs"
 											: "bg-[var(--paper)] border-[var(--line)] text-[var(--teal)] hover:border-[var(--teal)]/60"
@@ -552,7 +552,7 @@ export function SettingsPricesTab() {
 											key={item.id}
 											style={{
 												contentVisibility: "auto",
-												containIntrinsicSize: "1px 80px",
+												containIntrinsicSize: "1px 64px",
 												contain: "content",
 											}}
 										>
