@@ -1781,7 +1781,7 @@ export function KraftPackageBarcodeModal({
 				<div className="kraft-studio-footer">
 					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.8rem", color: "var(--muted)" }}>
 						<ShieldCheck size={16} color="var(--teal)" />
-						<span>ЦСО Медсестра: <strong>{operatorName}</strong> • ЭЦП штамп готов</span>
+						<span>Ответственный: <strong>{operatorName}</strong> • ЭЦП штамп готов</span>
 					</div>
 
 					<div style={{ display: "flex", gap: "0.75rem" }}>

@@ -1,8 +1,8 @@
 /**
  * ============================================================================
- * NURSE CARPULE DISPOSAL MODAL (САНПИН 3.3686-21 / МЕДСЕСТРА И СКЛАД)
- * 1-кликовое списание пустых карпул анестетиков и расходников медсестрой
- * единолично БЕЗ комиссии из 3 человек и с мягким овердрафтом склада.
+ * NURSE CARPULE DISPOSAL MODAL (САНПИН 3.3686-21 / ВРАЧ, АДМИНИСТРАТОР И МЕДСЕСТРА)
+ * 1-кликовое списание пустых карпул анестетиков и расходников врачом,
+ * администратором или медсестрой БЕЗ комиссии из 3 человек и с мягким овердрафтом.
  * ============================================================================
  */
 
@@ -59,7 +59,7 @@ export function NurseCarpuleDisposalModal({
 	isOpen,
 	onClose,
 	onDisposalConfirmed,
-	initialNurseName = "Дежурная медсестра",
+	initialNurseName = "Дежурный персонал / Врач",
 	initialDoctorName = "Лечащий врач",
 	currentStockAvailable = 0,
 	initialDate,
@@ -108,11 +108,11 @@ export function NurseCarpuleDisposalModal({
 <body>
   <div class="clinic-header">Стоматологическая клиника • Процедурный кабинет</div>
   <h1>АКТ СПИСАНИЯ И УТИЛИЗАЦИИ КАРПУЛ АНЕСТЕТИКОВ № ${actNumber}</h1>
-  <div class="sub">Регламент СанПиН 3.3686-21 (Медицинские отходы класса Б) • Единоличное утверждение медсестрой</div>
+  <div class="sub">Регламент СанПиН 3.3686-21 (Медицинские отходы класса Б) • Доступно врачу и администратору в 1 клик (без комиссии из 3 человек)</div>
 
   <div class="meta-grid">
     <div><strong>Дата списания:</strong> ${dateIso}</div>
-    <div><strong>Ответственная медсестра:</strong> ${nurseName}</div>
+    <div><strong>Ответственный сотрудник:</strong> ${nurseName}</div>
     <div><strong>Лечащий врач:</strong> ${doctorName}</div>
     <div><strong>Причина:</strong> ${disposalReason === "used_in_procedure" ? "Использовано при лечении" : disposalReason === "partial_dose" ? "Остаток карпулы после анестезии" : disposalReason === "broken_capsule" ? "Бой карпулы при зарядке" : "Истечение срока годности"}</div>
     <div><strong>Класс отходов:</strong> Класс Б (дезинфекция Аламинол 3%, 60 мин)</div>
@@ -141,7 +141,7 @@ export function NurseCarpuleDisposalModal({
   </table>
 
   <div class="signatures">
-    <div><strong>Списание произвела:</strong> ________________ / ${nurseName} (единолично по СанПиН 3.3686-21, без комиссии)</div>
+    <div><strong>Списание произвел(а):</strong> ________________ / ${nurseName} (по СанПиН 3.3686-21, без комиссии)</div>
     <div style="margin-top: 8px;"><strong>МОЛ отделения / врач:</strong> ________________ / ${doctorName}</div>
   </div>
 
@@ -175,7 +175,7 @@ export function NurseCarpuleDisposalModal({
 	};
 
 	const handleCopyActDetails = () => {
-		const text = `Акт списания карпул ${actNumber} от ${dateIso}\nПрепарат: ${selectedDrug.nameRu}\nКоличество: ${carpulesCount} шт. (${volumeTotalMl} мл)\nМедсестра: ${nurseName}\nВрач: ${doctorName}\nСанПиН 3.3686-21 (без комиссии)`;
+		const text = `Акт списания карпул ${actNumber} от ${dateIso}\nПрепарат: ${selectedDrug.nameRu}\nКоличество: ${carpulesCount} шт. (${volumeTotalMl} мл)\nОтветственный: ${nurseName}\nВрач: ${doctorName}\nСанПиН 3.3686-21 (без комиссии)`;
 		if (typeof navigator !== "undefined" && navigator.clipboard) {
 			navigator.clipboard.writeText(text);
 		}
@@ -203,8 +203,8 @@ export function NurseCarpuleDisposalModal({
 
 			setIsDisposed(true);
 			const msg = isOverdraft
-				? `Списание ${carpulesCount} пустых карпул выполнено единолично в 1 клик (Мягкий овердрафт: дефицит ${carpulesCount - currentStockAvailable} шт. зафиксирован, накладная ещё не оприходована).`
-				: `Списание ${carpulesCount} пустых карпул оформлено медсестрой единолично в 1 клик (СанПиН 3.3686-21, Акт ${actNumber}).`;
+				? `Списание ${carpulesCount} пустых карпул выполнено в 1 клик (Мягкий овердрафт: дефицит ${carpulesCount - currentStockAvailable} шт. зафиксирован, накладная ещё не оприходована).`
+				: `Списание ${carpulesCount} пустых карпул оформлено в 1 клик врачом / администратором (СанПиН 3.3686-21, Акт ${actNumber}).`;
 			showToast(msg, "success");
 			setTimeout(() => {
 				onClose();
@@ -238,9 +238,9 @@ export function NurseCarpuleDisposalModal({
 							</h2>
 							<p
 								className="text-xs text-[var(--muted,#64748b)] mt-0.5 truncate"
-								title="СанПиН 3.3686-21 • Единолично медсестрой (без комиссии из 3 человек)"
+								title="СанПиН 3.3686-21 • Врачом, администратором или медсестрой (без комиссии из 3 человек)"
 							>
-								СанПиН 3.3686-21 Единоличная утилизация (без комиссии из 3 человек)
+								СанПиН 3.3686-21 Быстрая утилизация врачом/админом (без комиссии из 3 человек)
 							</p>
 						</div>
 					</div>
@@ -274,12 +274,12 @@ export function NurseCarpuleDisposalModal({
 							<div className={`font-bold mb-0.5 truncate ${isOverdraft ? "text-amber-950 dark:text-amber-100" : "text-teal-950 dark:text-teal-100"}`}>
 								{isOverdraft
 									? "Мягкий овердрафт склада активен (СанПиН / Спасение зуба)"
-									: "Закон свободы медсестры (СанПиН 3.3686-21)"}
+									: "Быстрое списание расходников (СанПиН 3.3686-21)"}
 							</div>
 							<p className={`text-opacity-90 break-words ${isOverdraft ? "text-amber-900/90 dark:text-amber-200/90" : "text-teal-900/90 dark:text-teal-200/90"}`}>
 								{isOverdraft
 									? `Внимание: остаток отрицательный, требуется оприходование накладной. Задержка оприходования накладной поставщика не блокирует операцию! На складе числится ${currentStockAvailable} шт., списывается ${carpulesCount} шт.`
-									: "Списание использованных карпул и расходников проводится медсестрой в 1 клик. Никаких бюрократических согласований или создания комиссий из 3 человек!"}
+									: "Списание использованных карпул и медотходов класса Б доступно в 1 клик врачу или администратору. Никаких бюрократических согласований или комиссий из 3 человек!"}
 							</p>
 						</div>
 					</div>
@@ -498,7 +498,7 @@ export function NurseCarpuleDisposalModal({
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
 						<div>
 							<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] block mb-1">
-								Ответственная медсестра
+								Ответственный сотрудник (врач / администратор / медсестра)
 							</span>
 							<input
 								type="text"
@@ -546,11 +546,11 @@ export function NurseCarpuleDisposalModal({
 						</div>
 					</div>
 
-					{/* SINGLE SIGNER AFFIRMATION (САНПИН 3.3686-21 ЕДИНОЛИЧНО) */}
+					{/* SINGLE SIGNER AFFIRMATION (САНПИН 3.3686-21 БЕЗ КОМИССИИ) */}
 					<div className="flex items-center gap-2.5 p-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200/80 dark:border-teal-800/60 text-teal-900 dark:text-teal-200 text-xs">
 						<UserCheck size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<div className="leading-snug min-w-0">
-							<strong>Единоличная медсестра-утилизатор:</strong> по приказу клиники и СанПиН 3.3686-21 пустые карпулы списываются без созыва комиссии из 3 человек.
+							<strong>Списание в 1 клик (СанПиН 3.3686-21):</strong> пустые карпулы и медотходы класса Б списываются врачом или администратором без созыва комиссии из 3 человек и без ожидания отдельной медсестры.
 						</div>
 					</div>
 				</div>

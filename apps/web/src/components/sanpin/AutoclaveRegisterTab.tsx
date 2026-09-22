@@ -231,7 +231,7 @@ export function AutoclaveRegisterTab() {
 			...prev,
 			[logId]: true,
 		}));
-		showToast("Электронный штамп медсестры ЦСО успешно применен к записи", "success");
+		showToast("Электронный штамп ответственного успешно применен к записи", "success");
 	};
 
 	const handlePrintSinglePouch = (log: SterilizationLogRecord) => {
@@ -264,7 +264,7 @@ export function AutoclaveRegisterTab() {
 			autoclaveId: log.deviceName || "АК-01",
 			cycleNumber: log.cycleNumber || 1,
 			operatorId: log.operatorId || "NURSE-01",
-			operatorName: log.operatorName || "Медсестра ЦСО",
+			operatorName: log.operatorName || "Сотрудник клиники",
 			indicatorId: log.indicatorType === "class6_emulating" ? "vinar_inte_6" : log.indicatorType === "class5_integrating" ? "vinar_inte_5" : "vinar_steritest_4",
 			indicatorVerified: log.passedIndicator ?? true,
 			barcode128: barcodeVal,
@@ -335,7 +335,7 @@ export function AutoclaveRegisterTab() {
 				autoclaveId: log.deviceName || "АК-01",
 				cycleNumber: log.cycleNumber || 1,
 				operatorId: log.operatorId || "NURSE-01",
-				operatorName: log.operatorName || "Медсестра ЦСО",
+				operatorName: log.operatorName || "Сотрудник клиники",
 				indicatorId: log.indicatorType === "class6_emulating" ? "vinar_inte_6" : log.indicatorType === "class5_integrating" ? "vinar_inte_5" : "vinar_steritest_4",
 				indicatorVerified: log.passedIndicator ?? true,
 				barcode128: itemBarcode,
@@ -423,9 +423,9 @@ export function AutoclaveRegisterTab() {
 					packsCount: 18,
 					packagingType: "kraft_pouch_sealed",
 					chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
-					operatorStaffFullName: "Оператор ЦСО",
-					operatorStaffPosition: "Медсестра ЦСО",
-					headNurseSignatureFullName: "Главная медсестра",
+					operatorStaffFullName: "Сотрудник клиники",
+					operatorStaffPosition: "Сотрудник ЦСО / Врач",
+					headNurseSignatureFullName: "Ответственный по СанПиН",
 					isHeadNurseVerified: true,
 					notes: "Утренний цикл, тест Бови-Дика пройден перед сменой (Норма)",
 				}),
@@ -448,9 +448,9 @@ export function AutoclaveRegisterTab() {
 					packsCount: 12,
 					packagingType: "cassette_bipack",
 					chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
-					operatorStaffFullName: "Оператор ЦСО",
-					operatorStaffPosition: "Медсестра ЦСО",
-					headNurseSignatureFullName: "Главная медсестра",
+					operatorStaffFullName: "Сотрудник клиники",
+					operatorStaffPosition: "Сотрудник ЦСО / Врач",
+					headNurseSignatureFullName: "Ответственный по СанПиН",
 					isHeadNurseVerified: true,
 					notes: "Хирургический усиленный цикл, индикаторы 5 точек в норме",
 				}),
@@ -997,8 +997,8 @@ export function AutoclaveRegisterTab() {
 
 										<td style={{ width: "140px", minWidth: "135px" }} className="whitespace-nowrap shrink-0">
 											<div style={{ display: "flex", alignItems: "center", gap: "0.25rem", whiteSpace: "nowrap" }}>
-												<span style={{ fontSize: "0.775rem", fontWeight: 600, maxWidth: "70px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={log.operatorName || "Медсестра"}>
-													{log.operatorName ? log.operatorName.split(" ")[0] : "Медсестра"}
+												<span style={{ fontSize: "0.775rem", fontWeight: 600, maxWidth: "70px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={log.operatorName || "Сотрудник"}>
+													{log.operatorName ? log.operatorName.split(" ")[0] : "Сотрудник"}
 												</span>
 
 												{isStamped ? (
@@ -1011,7 +1011,7 @@ export function AutoclaveRegisterTab() {
 														onClick={() => handleStampVerification(log.id)}
 														className="sanpin-btn sanpin-btn-secondary"
 														style={{ minHeight: "24px", height: "24px", padding: "0.1rem 0.35rem", fontSize: "0.7rem", cursor: "pointer", flexShrink: 0 }}
-														title="Поставить штамп заверки медсестры"
+														title="Поставить штамп заверки ответственного"
 													>
 														<Award size={11} color="var(--brand-primary)" /> ЭЦП
 													</button>

@@ -47,7 +47,7 @@ export function PsoRegisterTab() {
 	const [formAzopyramNeg, setFormAzopyramNeg] = useState(true);
 	const [formPhenolNeg, setFormPhenolNeg] = useState(true);
 	const [formDetergent, setFormDetergent] = useState("Биолот 0.5% + Аламинол 1%");
-	const [formNurseName, setFormNurseName] = useState("Медсестра ЦСО");
+	const [formNurseName, setFormNurseName] = useState("Сотрудник клиники");
 	const [formNotes, setFormNotes] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 
@@ -200,7 +200,7 @@ export function PsoRegisterTab() {
 			...prev,
 			[logId]: true,
 		}));
-		showToast("Электронный штамп медсестры применен к пробе ПСО", "success");
+		showToast("Электронный штамп ответственного применен к пробе ПСО", "success");
 	};
 
 	const filteredLogs = useMemo(() => {
@@ -250,8 +250,8 @@ export function PsoRegisterTab() {
 				l.operatorName ||
 				(appLogic as any)?.activeDoctor?.fullName ||
 				(appLogic as any)?.activeDoctor?.name ||
-				"Медсестра ЦСО",
-			operatorStaffPosition: "Медсестра ЦСО",
+				"Сотрудник клиники",
+			operatorStaffPosition: "Сотрудник ЦСО / Врач",
 			electronicStampVerified: stampedRows[l.id] || true,
 			notes: l.notes || undefined,
 		}));
@@ -544,7 +544,7 @@ export function PsoRegisterTab() {
 														onClick={() => handleStampVerification(log.id)}
 														className="sanpin-btn sanpin-btn-secondary touch-manipulation shrink-0 whitespace-nowrap"
 														style={{ minHeight: "26px", height: "26px", minWidth: "70px", padding: "0.2rem 0.6rem", fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "0.3rem", cursor: "pointer" }}
-														title="Поставить штамп заверки медсестры"
+														title="Поставить штамп заверки ответственного"
 													>
 														<Award size={13} color="var(--brand-primary)" className="shrink-0" /> Заверить
 													</button>

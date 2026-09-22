@@ -124,9 +124,9 @@ export function AutoclaveJournal257Tab({
 					packsCount: 18,
 					packagingType: "kraft_pouch_sealed",
 					chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
-					operatorStaffFullName: clinicInfo.headNurse || "Медсестра ЦСО",
-					operatorStaffPosition: "Медсестра ЦСО",
-					headNurseSignatureFullName: clinicInfo.chiefDoctor || "Главная медсестра",
+					operatorStaffFullName: clinicInfo.headNurse || "Сотрудник клиники",
+					operatorStaffPosition: "Сотрудник ЦСО / Врач",
+					headNurseSignatureFullName: clinicInfo.chiefDoctor || "Ответственный по СанПиН",
 					isHeadNurseVerified: true,
 					notes: "Утренний цикл, тест Бови-Дика пройден перед сменой (Норма)",
 				}),
@@ -149,9 +149,9 @@ export function AutoclaveJournal257Tab({
 					packsCount: 12,
 					packagingType: "cassette_bipack",
 					chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
-					operatorStaffFullName: clinicInfo.headNurse || "Медсестра ЦСО",
-					operatorStaffPosition: "Медсестра ЦСО",
-					headNurseSignatureFullName: clinicInfo.chiefDoctor || "Главная медсестра",
+					operatorStaffFullName: clinicInfo.headNurse || "Сотрудник клиники",
+					operatorStaffPosition: "Сотрудник ЦСО / Врач",
+					headNurseSignatureFullName: clinicInfo.chiefDoctor || "Ответственный по СанПиН",
 					isHeadNurseVerified: true,
 					notes: "Хирургический усиленный цикл, индикаторы 5 точек в норме",
 				}),
@@ -214,7 +214,7 @@ export function AutoclaveJournal257Tab({
 					<div style={{ position: "relative", minWidth: "220px", flex: "1 1 220px" }}>
 						<input
 							type="text"
-							placeholder="Поиск по изделиям, ID, медсестре..."
+							placeholder="Поиск по изделиям, ID, сотруднику..."
 							className="autoclave-input"
 							style={{ paddingLeft: "2.25rem", width: "100%", minHeight: "40px" }}
 							value={searchQuery}
@@ -336,7 +336,7 @@ export function AutoclaveJournal257Tab({
 								<th>Режим (T°, P, время)</th>
 								<th>Хим. тест (5 точек)</th>
 								<th>Результат</th>
-								<th>Медсестра ЦСО</th>
+								<th>Сотрудник ЦСО</th>
 								<th>Контроль</th>
 								<th>Действия</th>
 							</tr>

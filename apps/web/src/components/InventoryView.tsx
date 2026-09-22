@@ -845,7 +845,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 												textAlign: "left",
 												width: "100%",
 											}}
-											title="1-клик списание пустой карпулы анестетика (Септанест/Убистезин) медсестрой без комиссии из 3 человек"
+											title="1-клик списание пустой карпулы анестетика (Септанест/Убистезин) врачом или администратором без комиссии из 3 человек"
 											role="menuitem"
 										>
 											<Syringe size={16} className="text-teal-600 shrink-0" />

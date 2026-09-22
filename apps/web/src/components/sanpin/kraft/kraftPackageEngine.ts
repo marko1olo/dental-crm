@@ -421,7 +421,7 @@ export function generateKraftBatchRecords(options: KraftBatchOptions): KraftPack
 			autoclaveId: options.autoclaveId,
 			cycleNumber: options.cycleNumber,
 			operatorId: options.operatorId || "NURSE-01",
-			operatorName: options.operatorName || "Медсестра ЦСО",
+			operatorName: options.operatorName || "Персонал клиники",
 			indicatorId: indicator.id,
 			indicatorVerified: options.indicatorVerified ?? true,
 			barcode128,
@@ -901,7 +901,7 @@ export function calculateKraftBatchStatistics(
  */
 export function createStandardTrayKraftPackageRecord(
 	toolSet: "therapy" | "surgery" | "endo" = "therapy",
-	operatorName = "Медсестра ЦСО"
+	operatorName = "Персонал клиники"
 ): KraftPackageRecord {
 	const now = new Date();
 	const packDate = now.toISOString().slice(0, 10);
@@ -949,12 +949,12 @@ export function createStandardTrayKraftPackageRecord(
 		status: "sterile_valid",
 		autoclaveId: "АК-01 (Melag 23B+)",
 		cycleNumber: 1,
-		operatorId: "NURSE-01",
+		operatorId: "STAFF-01",
 		operatorName,
 		indicatorId: "vinar_steritest_4",
 		indicatorVerified: true,
 		barcode128,
-		barcodeDataMatrixPayload: `${batchId}#1|АК-01|CYC1|${packDate}|${expDate}|NURSE-01|${cfg.code}`,
+		barcodeDataMatrixPayload: `${batchId}#1|АК-01|CYC1|${packDate}|${expDate}|STAFF-01|${cfg.code}`,
 		isBreached: false,
 		notes: "Стандартный смотровой лоток автоклавирования (СанПиН 3.3686-21)",
 		createdAt: now.toISOString(),
@@ -967,7 +967,7 @@ export function createStandardTrayKraftPackageRecord(
  */
 export function createDynamicKraftPackage(
 	rawInput: string,
-	operatorName = "Медсестра ЦСО"
+	operatorName = "Персонал клиники"
 ): KraftPackageRecord {
 	const now = new Date();
 	const packDate = now.toISOString().slice(0, 10);

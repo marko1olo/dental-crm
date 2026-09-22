@@ -47,7 +47,7 @@ export const EXPRESS_CYCLE_DEFAULTS = {
 		"Наконечники турбинные и угловые, смотровые лотки (зеркала, зонды, пинцеты), хирургический инструмент",
 	defaultPacksCount: 14,
 	packagingType: "kraft_pouch_sealed" as const,
-	defaultOperatorName: "Медсестра ЦСО",
+	defaultOperatorName: "Сотрудник клиники",
 	fallbackOperatorName: "Дежурный ассистент",
 	fallbackItemsDescription: "Смотровые лотки и наконечники (стандартный набор)",
 	fallbackPacksCount: 1,
@@ -130,8 +130,8 @@ export interface AutoclaveNewCycleTabProps {
 
 export function AutoclaveNewCycleTab({
 	onSaveRecord,
-	defaultOperatorName = "Медсестра ЦСО",
-	defaultHeadNurseName = "Главная медсестра",
+	defaultOperatorName = "Сотрудник клиники",
+	defaultHeadNurseName = "Ответственный по СанПиН",
 	latestCycleNumber = 1,
 }: AutoclaveNewCycleTabProps) {
 	const [selectedSterilizerId, setSelectedSterilizerId] = useState<string>(
@@ -593,7 +593,7 @@ export function AutoclaveNewCycleTab({
 			<div className="autoclave-form-grid">
 				<div className="autoclave-form-group">
 					<label className="autoclave-form-label" htmlFor="operator-name">
-						Медсестра ЦСО (проводившая стерилизацию)
+						Ответственный сотрудник (проводивший стерилизацию)
 					</label>
 					<input
 						id="operator-name"
@@ -601,13 +601,13 @@ export function AutoclaveNewCycleTab({
 						className="autoclave-input"
 						value={operatorFullName}
 						onChange={(e) => setOperatorFullName(e.target.value)}
-						placeholder="Дежурный ассистент"
+						placeholder="Врач / администратор / ассистент"
 					/>
 				</div>
 
 				<div className="autoclave-form-group">
 					<label className="autoclave-form-label" htmlFor="nurse-verify">
-						Контрольная заверка (Главная медсестра)
+						Контрольная заверка (Ответственный по СанПиН)
 					</label>
 					<div style={{ display: "flex", alignItems: "center", gap: "0.75rem", height: "44px" }}>
 						<input
@@ -618,7 +618,7 @@ export function AutoclaveNewCycleTab({
 							style={{ width: "20px", height: "20px", accentColor: "var(--teal, #0d9488)" }}
 						/>
 						<span style={{ fontSize: "0.8125rem", fontWeight: 600 }}>
-							{isHeadNurseVerified ? "Электронная подпись подтверждена" : "Без отметки гл. медсестры"}
+							{isHeadNurseVerified ? "Электронная подпись подтверждена" : "Без отметки ответственного"}
 						</span>
 					</div>
 				</div>

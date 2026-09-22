@@ -34,13 +34,13 @@ describe("Wave 117: Dev Leaks & Synthetic Staff Mocks Purification (Mandates 8a�
 
 		// Clean medical regulatory citations
 		assert.ok(
-			content.includes("СанПиН 3.3686-21 • Единолично медсестрой (без комиссии из 3 человек)"),
+			content.includes("СанПиН 3.3686-21 • Врачом, администратором или медсестрой (без комиссии из 3 человек)"),
 			"NurseCarpuleDisposalModal must use pure regulatory citation",
 		);
 
 		assert.ok(
-			content.includes("Единоличное утверждение медсестрой"),
-			"Assistant signature label must be clean without mandate references",
+			content.includes("СанПиН 3.3686-21 Быстрая утилизация врачом/админом (без комиссии из 3 человек)"),
+			"Disposal title must be clean without mandate references",
 		);
 	});
 

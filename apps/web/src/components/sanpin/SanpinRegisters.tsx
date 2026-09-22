@@ -769,8 +769,8 @@ function SanpinRegistersInner() {
 	const handleAutofillShift = async () => {
 		try {
 			setAutoFilling(true);
-			const operatorName = (appLogic as any)?.activeDoctor?.fullName || "Медсестра / Оператор ЦСО";
-			const headNurseName = (appLogic as any)?.clinic?.legalEntityName || "Главная медсестра";
+			const operatorName = (appLogic as any)?.activeDoctor?.fullName || "Ответственный сотрудник (врач/админ)";
+			const headNurseName = (appLogic as any)?.clinic?.legalEntityName || "Ответственный по СанПиН";
 			const bundle = generateSanpinShiftAutopilotBundle({
 				operatorFullName: operatorName,
 				headNurseFullName: headNurseName,
@@ -1418,7 +1418,7 @@ function SanpinRegistersInner() {
 									}}
 								>
 									<Award size={15} color="var(--teal)" />
-									<span>ЭЦП медсестры ЦСО</span>
+									<span>ЭЦП ответственного (заверка смены)</span>
 								</button>
 
 								{/* Маркировка */}
@@ -1718,7 +1718,7 @@ function SanpinRegistersInner() {
 						<div className="sanpin-modal-header" style={{ padding: "1.25rem" }}>
 							<h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.15rem" }}>
 								<Award size={22} color="var(--brand-primary, #2563eb)" />
-								Цифровая заверка журналов смены (ЭЦП Медсестры ЦСО)
+								Цифровая заверка журналов смены (ЭЦП / Ответственный сотрудник)
 							</h3>
 							<button
 								type="button"
@@ -1756,7 +1756,7 @@ function SanpinRegistersInner() {
 
 								<div className="sanpin-form-group">
 									<label className="sanpin-form-label" style={{ fontSize: "0.85rem", fontWeight: 600 }}>
-										ФИО медсестры ЦСО / Старшей медсестры (опционально)
+										ФИО ответственного сотрудника (врач / администратор / медсестра, опционально)
 									</label>
 									<input
 										type="text"
