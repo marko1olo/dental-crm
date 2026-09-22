@@ -15,4 +15,5 @@ export * from "./offlineBackupService";
 export * from "./offlineIntegrityService";
 
 export * from "./lanP2PDispatcher";
+export * from "./lowSpecHddOptimizer";
 

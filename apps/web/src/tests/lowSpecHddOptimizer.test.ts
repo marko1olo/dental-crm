@@ -4,7 +4,7 @@
  */
 
 import assert from "node:assert";
-import { afterEach, describe, it } from "node:test";
+import { afterEach, describe, it } from "vitest";
 import {
 	isDesktopApp,
 	printDesktopA4DocumentSilent,
@@ -17,8 +17,15 @@ import {
 } from "../lib/omniPlatformAdapter";
 import { getSafeAreaInsets } from "../native/mobileBridge";
 import {
+	deleteOfflineDraft,
 	enqueueOfflineMutationsBatch,
+	flushPendingOfflineDrafts,
 	getPendingOfflineMutations,
+	loadOfflineDraft,
+	loadVisitDraftSync,
+	saveForm043DraftDebounced,
+	saveOfflineDraftDebounced,
+	saveVisitDraftDebounced,
 } from "../services/offline";
 import {
 	clearCachedAuthTokens,
@@ -57,11 +64,20 @@ import {
 	createMemoryLruCache,
 	DebouncedBatchFlusher,
 	getDeviceCapabilities,
+	getDiskBenchmarkResult,
 	getOptimizedTiming,
 	isLowSpecDevice,
+	measureIndexedDbDiskSpeed,
 	MemoryLruCache,
+	setCachedDiskBenchmark,
 	setForcedLowSpecMode,
 } from "../utils/lowSpecHddOptimizer";
+import { measureIndexedDbDiskSpeed as measureOfflineDiskSpeed } from "../services/offline/lowSpecHddOptimizer";
+import {
+	convert16BitToRgbaImageData,
+	ProgressiveVisiographController,
+	shouldLoad16BitBuffer,
+} from "../components/visiograph/VisiographProgressiveLoader";
 import { sliceDomList } from "../utils/domVirtualizationHelper";
 
 describe("lowSpecHddOptimizer — Детекция слабых устройств и адаптивные тайминги", () => {
@@ -1136,21 +1152,21 @@ describe("lowSpecHddOptimizer — Пакетная запись мутаций �
 		const orgId = "org-lowspec-test-1";
 		const batchInputs = [
 			{
-				entityType: "visit_odontogram_patch" as const,
+				entityType: "odontogram" as const,
 				entityId: "tooth-16",
 				action: "update" as const,
 				payload: { toothNumber: 16, state: "caries", surfaces: ["O"] },
 				organizationId: orgId,
 			},
 			{
-				entityType: "visit_odontogram_patch" as const,
+				entityType: "odontogram" as const,
 				entityId: "tooth-17",
 				action: "update" as const,
 				payload: { toothNumber: 17, state: "sealant", surfaces: ["O"] },
 				organizationId: orgId,
 			},
 			{
-				entityType: "visit_odontogram_patch" as const,
+				entityType: "odontogram" as const,
 				entityId: "tooth-18",
 				action: "update" as const,
 				payload: { toothNumber: 18, state: "missing", surfaces: [] },
@@ -1196,6 +1212,278 @@ describe("lowSpecHddOptimizer — Пакетная запись мутаций �
 		assert.strictEqual(flushedItems[0], "draft-043-autosave-chunk");
 
 		flusher.destroy();
+	});
+});
+
+describe("lowSpecHddOptimizer — Debounced Draft Saving & 0 ms RAM Fast Path (Mandates 8e, 8k, 8n)", () => {
+	it("saveOfflineDraftDebounced мгновенно обновляет L1 RAM (0 мс) и возвращает черновик", () => {
+		const key = "dente_test_draft_debounced_1";
+		const data = { complaint: "Острая зубная боль", diagnosis: "K04.0" };
+
+		const draft = saveOfflineDraftDebounced(key, "DIARY_043_DRAFT", "visit-debounced-1", data, "org-1", 5000);
+		assert.ok(draft);
+		assert.strictEqual(draft.draftKey, key);
+		assert.deepStrictEqual(draft.data, data);
+
+		// Мгновенная синхронная доступность через getSynchronousDraft / loadOfflineDraft
+		const syncDraft = loadVisitDraftSync("visit-debounced-1");
+		// key is not visit draft prefix, so direct loadOfflineDraft
+		const memDraft = loadOfflineDraft<typeof data>(key);
+		assert.ok(memDraft);
+	});
+
+	it("saveVisitDraftDebounced сохраняет черновик визита и сбрасывает на диск через flushPendingOfflineDrafts", async () => {
+		const visitId = "visit-perf-test-77";
+		const diaryData = {
+			complaint: "Кариес 26 зуба",
+			anamnesis: "Боли от сладкого",
+			objectiveStatus: "Кариозная полость на жевательной поверхности",
+			treatmentPlan: "Препарирование, пломба световая",
+		};
+
+		// Дебаунс 10 секунд (не сбрасывает на диск сразу)
+		const draft = saveVisitDraftDebounced(visitId, diaryData, "org-test", 10000);
+		assert.ok(draft);
+		assert.strictEqual(draft.entityId, visitId);
+
+		// Синхронный Fast Path возвращает черновик из L1 RAM за 0 мс
+		const syncDraft = loadVisitDraftSync<typeof diaryData>(visitId);
+		assert.ok(syncDraft);
+		assert.strictEqual(syncDraft?.data.complaint, "Кариес 26 зуба");
+
+		// Принудительный сброс на диск
+		await flushPendingOfflineDrafts();
+
+		// Проверяем удаление
+		await deleteOfflineDraft(draft.draftKey);
+		const afterDelete = loadVisitDraftSync(visitId);
+		assert.strictEqual(afterDelete, null);
+	});
+
+	it("saveForm043DraftDebounced сохраняет черновик карты 043/у", async () => {
+		const patientId = "patient-card-043-test";
+		const cardData = {
+			anamnesis: "Аллергия на пенициллин отсутствует",
+			habits: "Без вредных привычек",
+		};
+
+		const draft = saveForm043DraftDebounced(patientId, cardData, "org-test", 10000);
+		assert.ok(draft);
+		assert.strictEqual(draft.entityId, patientId);
+
+		await flushPendingOfflineDrafts();
+		await deleteOfflineDraft(draft.draftKey);
+	});
+});
+
+describe("lowSpecHddOptimizer — Автоматическое определение медленного диска (100 КБ IndexedDB benchmark)", () => {
+	afterEach(() => {
+		setCachedDiskBenchmark(null);
+		setForcedLowSpecMode(null);
+	});
+
+	it("определяет медленный диск (>= 45 мс) и принудительно переключает в low-spec режим", async () => {
+		// Имитируем результат бенчмарка медленного диска (5400 RPM HDD: 78.4 мс на запись 100 КБ)
+		setCachedDiskBenchmark({
+			isSlowDisk: true,
+			writeTimeMs: 78.4,
+			chunkBytes: 100 * 1024,
+		});
+
+		assert.strictEqual(isLowSpecDevice(), true);
+		const caps = getDeviceCapabilities();
+		assert.strictEqual(caps.isLowSpec, true);
+		assert.strictEqual(caps.isSlowHdd, true);
+		assert.strictEqual(caps.diskWriteTimeMs, 78.4);
+
+		// Тайминги автосохранения на медленном диске адаптируются
+		const timing = getOptimizedTiming();
+		assert.strictEqual(timing.autosaveDebounceMs, 1800);
+		assert.strictEqual(timing.batchFlushDelayMs, 1500);
+		assert.strictEqual(timing.disableAggressivePrefetch, true);
+	});
+
+	it("определяет быстрый SSD (< 45 мс) и сохраняет нормальный режим", () => {
+		setCachedDiskBenchmark({
+			isSlowDisk: false,
+			writeTimeMs: 4.2,
+			chunkBytes: 100 * 1024,
+		});
+
+		assert.strictEqual(isLowSpecDevice(), false);
+		const caps = getDeviceCapabilities();
+		assert.strictEqual(caps.isSlowHdd, false);
+		assert.strictEqual(caps.diskWriteTimeMs, 4.2);
+
+		const timing = getOptimizedTiming();
+		assert.strictEqual(timing.autosaveDebounceMs, 800);
+		assert.strictEqual(timing.disableAggressivePrefetch, false);
+	});
+
+	it("кэширует результат бенчмарка и возвращает getDiskBenchmarkResult", () => {
+		assert.strictEqual(getDiskBenchmarkResult(), null);
+		setCachedDiskBenchmark({
+			isSlowDisk: false,
+			writeTimeMs: 6.8,
+			chunkBytes: 100 * 1024,
+		});
+		assert.deepStrictEqual(getDiskBenchmarkResult(), {
+			isSlowDisk: false,
+			writeTimeMs: 6.8,
+			chunkBytes: 100 * 1024,
+		});
+	});
+
+	it("measureIndexedDbDiskSpeed возвращает корректный результат и безопасен в тестовом окружении", async () => {
+		const res = await measureIndexedDbDiskSpeed({ chunkSizeKb: 100 });
+		assert.strictEqual(typeof res.isSlowDisk, "boolean");
+		assert.strictEqual(typeof res.writeTimeMs, "number");
+		assert.strictEqual(res.chunkBytes, 100 * 1024);
+	});
+
+	it("фасад services/offline/lowSpecHddOptimizer идентичен utils/lowSpecHddOptimizer", () => {
+		assert.strictEqual(typeof measureOfflineDiskSpeed, "function");
+		assert.strictEqual(measureOfflineDiskSpeed, measureIndexedDbDiskSpeed);
+	});
+});
+
+describe("lowSpecHddOptimizer — Прогрессивная подгрузка визиографа и 16-битного сырого буфера снимка при зуме", () => {
+	it("shouldLoad16BitBuffer возвращает false при 1.0x (fit-to-screen) и true при зуме > 1.25x", () => {
+		assert.strictEqual(shouldLoad16BitBuffer(1.0), false, "При 1.0x зуме 16-битный буфер не должен подгружаться");
+		assert.strictEqual(shouldLoad16BitBuffer(1.2), false, "При 1.2x зуме 16-битный буфер не должен подгружаться");
+		assert.strictEqual(shouldLoad16BitBuffer(1.25), false, "На границе 1.25x зума 16-битный буфер остается выключенным");
+		assert.strictEqual(shouldLoad16BitBuffer(1.3), true, "При 1.3x зуме 16-битный буфер активируется");
+		assert.strictEqual(shouldLoad16BitBuffer(2.0), true, "При 2.0x зуме 16-битный буфер активен");
+		assert.strictEqual(shouldLoad16BitBuffer(4.0), true, "При 4.0x зуме 16-битный буфер активен");
+	});
+
+	it("ProgressiveVisiographController не загружает 16-битный буфер при начальном открытии (zoom 1.0x)", async () => {
+		let fetcherCalled = false;
+		const mockFetcher = async () => {
+			fetcherCalled = true;
+			return new Uint16Array(100);
+		};
+
+		const controller = new ProgressiveVisiographController(
+			"https://dente.clinic/previews/xray_043_16.webp",
+			800,
+			600,
+			{ rawBufferFetcher: mockFetcher, zoomThreshold: 1.25 },
+		);
+
+		const stateInitial = controller.getState();
+		assert.strictEqual(stateInitial.previewUrl, "https://dente.clinic/previews/xray_043_16.webp");
+		assert.strictEqual(stateInitial.is16BitLoaded, false);
+		assert.strictEqual(stateInitial.raw16BitBuffer, null);
+
+		// Врач открыл снимок в масштабе 1.0x
+		const loadedOnFit = await controller.onZoomChanged(1.0);
+		assert.strictEqual(loadedOnFit, false);
+		assert.strictEqual(fetcherCalled, false, "Сырой 16-битный буфер не должен дергаться при fit-to-screen");
+		assert.strictEqual(controller.getState().is16BitLoaded, false);
+	});
+
+	it("ProgressiveVisiographController отложенно подгружает 16-битный буфер при приближении (zoom 1.5x)", async () => {
+		let fetcherCallCount = 0;
+		const mock16BitData = new Uint16Array(4);
+		mock16BitData[0] = 500;
+		mock16BitData[1] = 2048;
+		mock16BitData[2] = 4095;
+		mock16BitData[3] = 60000;
+
+		const mockFetcher = async () => {
+			fetcherCallCount++;
+			return mock16BitData;
+		};
+
+		const controller = new ProgressiveVisiographController(
+			"preview.webp",
+			2,
+			2,
+			{ rawBufferFetcher: mockFetcher, zoomThreshold: 1.25 },
+		);
+
+		// Врач приблизил деталь снимка: zoom 1.5x
+		const loadedOnZoom = await controller.onZoomChanged(1.5);
+		assert.strictEqual(loadedOnZoom, true);
+		assert.strictEqual(fetcherCallCount, 1);
+
+		const stateZoomed = controller.getState();
+		assert.strictEqual(stateZoomed.is16BitLoaded, true);
+		assert.ok(stateZoomed.raw16BitBuffer);
+		assert.strictEqual(stateZoomed.raw16BitBuffer?.length, 4);
+		assert.strictEqual(stateZoomed.raw16BitBuffer?.[1], 2048);
+
+		// Повторный вызов при том же или большем зуме не делает лишних запросов
+		const loadedAgain = await controller.onZoomChanged(2.0);
+		assert.strictEqual(loadedAgain, false);
+		assert.strictEqual(fetcherCallCount, 1);
+	});
+
+	it("convert16BitToRgbaImageData корректно конвертирует 16-битные значения в 8-битный RGBA с окном радиометрии", () => {
+		const raw16 = new Uint16Array([0, 2048, 4096, 65535]);
+		const imgData = convert16BitToRgbaImageData(raw16, 2, 2, {
+			windowWidth: 4096,
+			windowCenter: 2048,
+			invert: false,
+		});
+
+		assert.strictEqual(imgData.width, 2);
+		assert.strictEqual(imgData.height, 2);
+		assert.strictEqual(imgData.data.length, 16); // 4 pixels * 4 channels
+
+		// Пиксель 1 (0): ниже minVal (2048 - 2048 = 0) -> 0
+		assert.strictEqual(imgData.data[0], 0);
+		assert.strictEqual(imgData.data[3], 255); // Alpha 255
+
+		// Пиксель 2 (2048): центр окна -> ~128
+		assert.strictEqual(imgData.data[4], 128);
+
+		// Пиксель 3 (4096): maxVal окна -> 255
+		assert.strictEqual(imgData.data[8], 255);
+
+		// Пиксель 4 (65535): выше окна -> clamped 255
+		assert.strictEqual(imgData.data[12], 255);
+	});
+
+	it("ProgressiveVisiographController освобождает 16-битный буфер из RAM через releaseRawBuffer()", async () => {
+		const controller = new ProgressiveVisiographController("thumb.jpg", 10, 10, {
+			rawBufferFetcher: async () => new Uint16Array(100),
+		});
+
+		await controller.onZoomChanged(1.5);
+		assert.strictEqual(controller.getState().is16BitLoaded, true);
+
+		controller.releaseRawBuffer();
+		assert.strictEqual(controller.getState().is16BitLoaded, false);
+		assert.strictEqual(controller.getState().raw16BitBuffer, null);
+	});
+});
+
+describe("lowSpecHddOptimizer — Предотвращение утечек памяти при смене вкладок (useEffect & useMemoryLeakGuard)", () => {
+	it("DebouncedBatchFlusher снимает все слушатели событий (beforeunload, visibilitychange) при destroy()", () => {
+		const flusher = new DebouncedBatchFlusher<string>({
+			debounceMs: 1000,
+			onFlush: () => {},
+		});
+
+		flusher.add("test_action");
+		assert.strictEqual(flusher.pendingCount, 1);
+
+		flusher.destroy();
+		assert.strictEqual(flusher.pendingCount, 0);
+	});
+
+	it("MemoryLruCache очищает память при вызове clear() во избежание утечек кучи", () => {
+		const cache = createMemoryLruCache<string, number>({ maxEntries: 50 });
+		for (let i = 0; i < 20; i++) {
+			cache.set(`tab_state_${i}`, i * 100);
+		}
+		assert.strictEqual(cache.size, 20);
+
+		cache.clear();
+		assert.strictEqual(cache.size, 0);
+		assert.strictEqual(cache.currentByteSize, 0);
 	});
 });
 

@@ -32,6 +32,10 @@ export interface DeviceCapabilities {
 	readonly effectiveConnectionType: string | null;
 	/** Принудительно заданный режим оптимизации (если переопределен вручную) */
 	readonly forcedMode: boolean | null;
+	/** Обнаружен ли медленный диск (HDD 5400 RPM) по бенчмарку записи в IndexedDB */
+	readonly isSlowHdd?: boolean | undefined;
+	/** Время записи 100 КБ блока в IndexedDB (мс) */
+	readonly diskWriteTimeMs?: number | null | undefined;
 }
 
 export interface OptimizedTimingConfig {
@@ -55,6 +59,189 @@ export interface OptimizedTimingConfig {
 	readonly cachePruneIntervalMs: number;
 }
 
+export interface DiskBenchmarkOptions {
+	readonly chunkSizeKb?: number | undefined;
+	readonly slowThresholdMs?: number | undefined;
+	readonly forceRetest?: boolean | undefined;
+}
+
+export interface DiskBenchmarkResult {
+	readonly isSlowDisk: boolean;
+	readonly writeTimeMs: number;
+	readonly chunkBytes: number;
+	readonly error?: string | undefined;
+}
+
+let cachedDiskBenchmark: DiskBenchmarkResult | null = null;
+
+export function getDiskBenchmarkResult(): DiskBenchmarkResult | null {
+	return cachedDiskBenchmark;
+}
+
+export function setCachedDiskBenchmark(res: DiskBenchmarkResult | null): void {
+	cachedDiskBenchmark = res;
+	if (res?.isSlowDisk) {
+		setForcedLowSpecMode(true);
+		if (typeof document !== "undefined") {
+			const root = document.documentElement;
+			root.setAttribute("data-low-spec", "true");
+			root.setAttribute("data-perf", "low");
+			root.setAttribute("data-hardware-tier", "low");
+			root.classList.add("low-spec-mode");
+			root.classList.add("low-spec-perf");
+		}
+	}
+}
+
+/**
+ * Автоматическое определение медленного диска (HDD 5400 RPM vs SSD) по времени
+ * записи 100 КБ чанка в IndexedDB.
+ *
+ * Обоснование:
+ * На механическом HDD (5400 RPM) время позиционирования головки (seek time)
+ * и запись случайного 100 КБ блока в IndexedDB занимает >= 45-50 мс.
+ * На SSD или NVMe накопителях та же операция занимает 1-8 мс.
+ *
+ * Если запись длится более 45 мс, система автоматически включает флаг Low-Spec,
+ * отключая тяжелый I/O, увеличивая задержки дебаунса до 1800 мс и активируя
+ * аппаратный профиль без backdrop-filter и теней.
+ */
+export async function measureIndexedDbDiskSpeed(
+	options?: DiskBenchmarkOptions,
+): Promise<DiskBenchmarkResult> {
+	if (cachedDiskBenchmark !== null && !options?.forceRetest) {
+		return cachedDiskBenchmark;
+	}
+
+	const chunkSizeKb = options?.chunkSizeKb ?? 100;
+	const slowThresholdMs = options?.slowThresholdMs ?? 45;
+	const chunkBytes = chunkSizeKb * 1024;
+
+	if (
+		typeof window === "undefined" ||
+		typeof window.indexedDB === "undefined" ||
+		typeof window.indexedDB.open !== "function"
+	) {
+		const fallback: DiskBenchmarkResult = {
+			isSlowDisk: isLowSpecDevice(),
+			writeTimeMs: 0,
+			chunkBytes,
+		};
+		cachedDiskBenchmark = fallback;
+		return fallback;
+	}
+
+	return new Promise<DiskBenchmarkResult>((resolve) => {
+		try {
+			const dbName = "dente_hdd_perf_probe_db";
+			const storeName = "perf_probe_store";
+			const openReq = window.indexedDB.open(dbName, 1);
+
+			openReq.onupgradeneeded = () => {
+				const db = openReq.result;
+				if (!db.objectStoreNames.contains(storeName)) {
+					db.createObjectStore(storeName, { keyPath: "id" });
+				}
+			};
+
+			openReq.onerror = () => {
+				const res: DiskBenchmarkResult = {
+					isSlowDisk: isLowSpecDevice(),
+					writeTimeMs: 0,
+					chunkBytes,
+					error: openReq.error?.message ?? "IndexedDB open error",
+				};
+				cachedDiskBenchmark = res;
+				resolve(res);
+			};
+
+			openReq.onsuccess = () => {
+				const db = openReq.result;
+				try {
+					const payload = new Uint8Array(chunkBytes);
+					for (let i = 0; i < Math.min(chunkBytes, 1024); i++) {
+						payload[i] = (i * 31) & 0xff;
+					}
+
+					const startMs = performance.now();
+					const tx = db.transaction([storeName], "readwrite");
+					const store = tx.objectStore(storeName);
+
+					store.put({
+						id: "probe_100kb",
+						data: payload,
+						timestamp: Date.now(),
+					});
+
+					tx.oncomplete = () => {
+						const writeTimeMs = Math.max(0.1, Math.round((performance.now() - startMs) * 10) / 10);
+						const isSlowDisk = writeTimeMs >= slowThresholdMs;
+						db.close();
+
+						try {
+							window.indexedDB.deleteDatabase(dbName);
+						} catch {
+							// safe cleanup ignore
+						}
+
+						const result: DiskBenchmarkResult = {
+							isSlowDisk,
+							writeTimeMs,
+							chunkBytes,
+						};
+
+						cachedDiskBenchmark = result;
+						if (isSlowDisk) {
+							setForcedLowSpecMode(true);
+							if (typeof document !== "undefined") {
+								const root = document.documentElement;
+								root.setAttribute("data-low-spec", "true");
+								root.setAttribute("data-perf", "low");
+								root.setAttribute("data-hardware-tier", "low");
+								root.classList.add("low-spec-mode");
+								root.classList.add("low-spec-perf");
+							}
+						}
+
+						resolve(result);
+					};
+
+					tx.onerror = () => {
+						db.close();
+						const res: DiskBenchmarkResult = {
+							isSlowDisk: isLowSpecDevice(),
+							writeTimeMs: 0,
+							chunkBytes,
+							error: tx.error?.message ?? "Transaction error",
+						};
+						cachedDiskBenchmark = res;
+						resolve(res);
+					};
+				} catch (err: unknown) {
+					db.close();
+					const res: DiskBenchmarkResult = {
+						isSlowDisk: isLowSpecDevice(),
+						writeTimeMs: 0,
+						chunkBytes,
+						error: err instanceof Error ? err.message : String(err),
+					};
+					cachedDiskBenchmark = res;
+					resolve(res);
+				}
+			};
+		} catch (err: unknown) {
+			const res: DiskBenchmarkResult = {
+				isSlowDisk: isLowSpecDevice(),
+				writeTimeMs: 0,
+				chunkBytes,
+				error: err instanceof Error ? err.message : String(err),
+			};
+			cachedDiskBenchmark = res;
+			resolve(res);
+		}
+	});
+}
+
 /** Внутренний переключатель для принудительного включения/отключения оптимизации (тесты, настройки) */
 let forcedLowSpecMode: boolean | null = null;
 
@@ -64,6 +251,10 @@ let forcedLowSpecMode: boolean | null = null;
 export function isLowSpecDevice(): boolean {
 	if (forcedLowSpecMode !== null) {
 		return forcedLowSpecMode;
+	}
+
+	if (cachedDiskBenchmark?.isSlowDisk) {
+		return true;
 	}
 
 	if (typeof document !== "undefined") {
@@ -147,6 +338,8 @@ export function getDeviceCapabilities(): DeviceCapabilities {
 		isSaveData: saveData,
 		effectiveConnectionType: effectiveType,
 		forcedMode: forcedLowSpecMode,
+		isSlowHdd: cachedDiskBenchmark?.isSlowDisk ?? false,
+		diskWriteTimeMs: cachedDiskBenchmark?.writeTimeMs ?? null,
 	};
 }
 

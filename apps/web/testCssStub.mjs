@@ -28,6 +28,8 @@ registerHooks({
 					export const describe = nt.describe;
 					export const it = nt.it;
 					export const test = nt.test;
+					export const beforeEach = nt.beforeEach;
+					export const afterEach = nt.afterEach;
 					export const expect = (val) => ({
 						toBe: (exp) => assert.strictEqual(val, exp),
 						toEqual: (exp) => assert.deepStrictEqual(val, exp),
