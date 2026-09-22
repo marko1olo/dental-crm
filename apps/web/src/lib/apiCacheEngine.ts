@@ -1165,6 +1165,8 @@ export function notifyApiMutation(rawUrl: string, method: string): number {
 
 /**
  * Создает экземпляр Response на основе кэшированной записи.
+ * На слабых 2-ядерных CPU (Celeron/Atom) устраняет избыточный JSON.stringify + JSON.parse,
+ * разрешая .json() мгновенно за 0 мс без мусора для сборщика памяти (GC).
  */
 export function createResponseFromCachedEntry<T>(entry: CachedApiResponse<T>): Response {
 	const headers = new Headers(entry.headers);
@@ -1173,13 +1175,36 @@ export function createResponseFromCachedEntry<T>(entry: CachedApiResponse<T>): R
 		headers.set("content-type", "application/json; charset=utf-8");
 	}
 
-	const body = typeof entry.data === "string" ? entry.data : JSON.stringify(entry.data);
+	const isObjectData = typeof entry.data === "object" && entry.data !== null;
+	const body = isObjectData ? "" : String(entry.data ?? "");
 
-	return new Response(body, {
+	const res = new Response(body, {
 		status: entry.status,
 		statusText: entry.statusText,
 		headers,
 	});
+
+	if (isObjectData) {
+		const customJson = async () => entry.data;
+		res.json = customJson;
+		let cachedText: string | null = null;
+		const customText = async () => {
+			if (cachedText === null) {
+				cachedText = JSON.stringify(entry.data);
+			}
+			return cachedText;
+		};
+		res.text = customText;
+		const origClone = res.clone.bind(res);
+		res.clone = () => {
+			const cloned = origClone();
+			cloned.json = customJson;
+			cloned.text = customText;
+			return cloned;
+		};
+	}
+
+	return res;
 }
 
 /**

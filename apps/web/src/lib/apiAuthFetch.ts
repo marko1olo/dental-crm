@@ -206,6 +206,61 @@ export function shouldAttachApiAuth(rawUrl: string): boolean {
 
 // Пул параллельных запросов справочников в полете (дедупликация)
 const catalogInFlight = new Map<string, Promise<Response>>();
+const revalidatingCatalogUrls = new Set<string>();
+
+function scheduleBackgroundCatalogRevalidation(
+	rawUrl: string,
+	requestInput: RequestInfo | URL,
+	requestInit: RequestInit | undefined,
+	originalFetchFn: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
+): void {
+	const normalizedKey = normalizeApiUrl(rawUrl);
+	if (revalidatingCatalogUrls.has(normalizedKey)) return;
+	if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+
+	revalidatingCatalogUrls.add(normalizedKey);
+
+	const executeRevalidation = async () => {
+		try {
+			const response = await originalFetchFn(requestInput, requestInit);
+			if (response.ok) {
+				const contentType = response.headers.get("content-type") || "";
+				if (contentType.includes("application/json")) {
+					const json = await response.json();
+					setCachedApiResponse(normalizedKey, json, {
+						status: response.status,
+						statusText: response.statusText,
+						headers: headersToRecord(response.headers),
+					});
+				} else {
+					const text = await response.text();
+					setCachedApiResponse(normalizedKey, text, {
+						status: response.status,
+						statusText: response.statusText,
+						headers: headersToRecord(response.headers),
+					});
+				}
+				if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+					window.dispatchEvent(
+						new CustomEvent("dente:catalog-updated", {
+							detail: { url: normalizedKey },
+						}),
+					);
+				}
+			}
+		} catch {
+			// Background revalidation is non-blocking and silent
+		} finally {
+			revalidatingCatalogUrls.delete(normalizedKey);
+		}
+	};
+
+	if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+		window.requestIdleCallback(() => void executeRevalidation(), { timeout: 3000 });
+	} else {
+		setTimeout(() => void executeRevalidation(), 500);
+	}
+}
 
 export function installApiAuthFetch(): void {
 	if (typeof window === "undefined") return;
@@ -234,38 +289,6 @@ export function installApiAuthFetch(): void {
 		const clinicToken = readToken(CLINIC_TOKEN_STORAGE_KEY);
 		const staffToken = readToken(STAFF_TOKEN_STORAGE_KEY);
 
-		// Проверяем кэш для безопасных GET-запросов регламентных справочников
-		const cacheControl = init?.cache ?? (input instanceof Request ? input.cache : undefined);
-		const bypassCache = cacheControl === "no-store" || cacheControl === "no-cache";
-
-		if (method === "GET" && !bypassCache && isCacheableCatalogUrl(rawUrl, method)) {
-			const cached = getCachedApiResponse(rawUrl);
-			if (cached) {
-				return createResponseFromCachedEntry(cached);
-			}
-
-			// Если в оперативной памяти промах (например, после открытия вкладки),
-			// проверяем persistent IndexedDB кэш (0 мс сетевых затрат)
-			const persistent = await readCatalogFromPersistentStorage(rawUrl);
-			if (persistent) {
-				setCachedApiResponse(rawUrl, persistent.data, {
-					status: persistent.status,
-					statusText: persistent.statusText,
-					headers: persistent.headers,
-					ttlMs: persistent.ttlMs,
-				});
-				return createResponseFromCachedEntry(persistent);
-			}
-
-			// Защита от Cache Stampede: если такой же справочник уже загружается — ждем его
-			const normalizedKey = normalizeApiUrl(rawUrl);
-			const inFlight = catalogInFlight.get(normalizedKey);
-			if (inFlight) {
-				const sharedResponse = await inFlight;
-				return sharedResponse.clone();
-			}
-		}
-
 		// Формируем заголовки авторизации без лишней нагрузки на сборщик мусора
 		const headers = new Headers(
 			init?.headers ?? (input instanceof Request ? input.headers : undefined),
@@ -279,6 +302,46 @@ export function installApiAuthFetch(): void {
 
 		const requestInput = input instanceof Request && !init ? new Request(input, { headers }) : input;
 		const requestInit = input instanceof Request && !init ? undefined : { ...(init ?? {}), headers };
+
+		// Проверяем кэш для безопасных GET-запросов регламентных справочников
+		const cacheControl = init?.cache ?? (input instanceof Request ? input.cache : undefined);
+		const bypassCache = cacheControl === "no-store" || cacheControl === "no-cache";
+
+		if (method === "GET" && !bypassCache && isCacheableCatalogUrl(rawUrl, method)) {
+			const cached = getCachedApiResponse(rawUrl);
+			if (cached) {
+				// True Stale-While-Revalidate: return 0ms cached response immediately,
+				// and revalidate in background idle if older than 60s
+				if (Date.now() - cached.timestamp > 60_000) {
+					scheduleBackgroundCatalogRevalidation(rawUrl, requestInput, requestInit, originalFetch);
+				}
+				return createResponseFromCachedEntry(cached);
+			}
+
+			// Если в оперативной памяти промах (например, после открытия вкладки),
+			// проверяем persistent IndexedDB кэш (0 мс сетевых затрат)
+			const persistent = await readCatalogFromPersistentStorage(rawUrl);
+			if (persistent) {
+				setCachedApiResponse(rawUrl, persistent.data, {
+					status: persistent.status,
+					statusText: persistent.statusText,
+					headers: persistent.headers,
+					ttlMs: persistent.ttlMs,
+				});
+				if (Date.now() - persistent.timestamp > 60_000) {
+					scheduleBackgroundCatalogRevalidation(rawUrl, requestInput, requestInit, originalFetch);
+				}
+				return createResponseFromCachedEntry(persistent);
+			}
+
+			// Защита от Cache Stampede: если такой же справочник уже загружается — ждем его
+			const normalizedKey = normalizeApiUrl(rawUrl);
+			const inFlight = catalogInFlight.get(normalizedKey);
+			if (inFlight) {
+				const sharedResponse = await inFlight;
+				return sharedResponse.clone();
+			}
+		}
 
 		// Если это кэшируемый справочник — оборачиваем запрос для кэширования ответа в RAM
 		if (method === "GET" && !bypassCache && isCacheableCatalogUrl(rawUrl, method)) {

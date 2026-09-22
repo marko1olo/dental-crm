@@ -346,6 +346,19 @@ export function resetOfflineDbConnection(clearMemory = true): void {
 	if (clearMemory) {
 		inMemoryMutationsMap.clear();
 		inMemoryDraftsMap.clear();
+		pendingBatchedStoreWrites.clear();
+		if (batchedStoreFlushTimer !== null) {
+			if (typeof window !== "undefined" && "cancelIdleCallback" in window && typeof batchedStoreFlushTimer === "number") {
+				try {
+					window.cancelIdleCallback(batchedStoreFlushTimer);
+				} catch {
+					clearTimeout(batchedStoreFlushTimer as unknown as ReturnType<typeof setTimeout>);
+				}
+			} else {
+				clearTimeout(batchedStoreFlushTimer as unknown as ReturnType<typeof setTimeout>);
+			}
+			batchedStoreFlushTimer = null;
+		}
 	}
 }
 
@@ -2315,6 +2328,16 @@ export function queueBatchedStorePut(params: {
 				batchedStoreFlushTimer = null;
 				void flushBatchedStoreWrites();
 			}, fallbackTimeout);
+		}
+	}
+}
+
+export function cancelBatchedStorePut(storeName: string, key: IDBValidKey): void {
+	const storeMap = pendingBatchedStoreWrites.get(storeName);
+	if (storeMap) {
+		storeMap.delete(key);
+		if (storeMap.size === 0) {
+			pendingBatchedStoreWrites.delete(storeName);
 		}
 	}
 }

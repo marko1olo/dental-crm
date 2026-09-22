@@ -17,6 +17,7 @@ import {
 	formatBytesHuman,
 	type StorageEstimateInfo,
 	queueBatchedStorePut,
+	cancelBatchedStorePut,
 	yieldToMainThread,
 } from "../offline/offlineStorage";
 import type {
@@ -172,12 +173,27 @@ export async function getCachedClinicalRecord<T = unknown>(
 }
 
 /**
+ * Clears the in-memory L1 clinical entity cache (0 ms)
+ */
+export function clearInMemoryClinicalCache(): void {
+	inMemoryEntityCacheMap.clear();
+}
+
+/**
  * Lists all cached clinical records of a specific entity kind
+ * Merges L1 in-memory cache, IndexedDB, and localStorage to guarantee 0ms instant display.
  */
 export async function listCachedClinicalRecords<T = unknown>(
 	entityKind?: CachedEntityKind | string | undefined,
 	organizationId?: string | undefined,
 ): Promise<ClinicalCachedEntity<T>[]> {
+	const mapByKey = new Map<string, ClinicalCachedEntity<T>>();
+
+	// 1. First populate from L1 RAM cache (0 ms seek, includes freshly cached records before IDB flush)
+	for (const [key, memVal] of inMemoryEntityCacheMap.entries()) {
+		mapByKey.set(key, memVal as ClinicalCachedEntity<T>);
+	}
+
 	try {
 		const db = await openOfflineOutboxDb();
 		let list: ClinicalCachedEntity<T>[] = [];
@@ -198,55 +214,52 @@ export async function listCachedClinicalRecords<T = unknown>(
 			});
 		}
 
-		if (list.length === 0 && typeof window !== "undefined" && window.localStorage) {
-			for (let i = 0; i < window.localStorage.length; i++) {
-				const key = window.localStorage.key(i);
-				if (key?.startsWith(LOCAL_STORAGE_CACHE_PREFIX)) {
-					const cacheKey = key.slice(LOCAL_STORAGE_CACHE_PREFIX.length);
-					const cached = getLocalStorageCachedEntity<T>(cacheKey);
-					if (cached) list.push(cached);
-				}
+		for (const record of list) {
+			if (!mapByKey.has(record.cacheKey)) {
+				mapByKey.set(record.cacheKey, record);
 			}
 		}
 
-		return list
-			.filter((item) => {
-				if (entityKind && item.entityKind !== entityKind) return false;
-				if (
-					organizationId &&
-					item.organizationId &&
-					item.organizationId !== organizationId
-				)
-					return false;
-				return true;
-			})
-			.sort((a, b) => b.cachedAtMs - a.cachedAtMs);
-	} catch (err) {
-		logger.warn("[ClinicalCacheStorage] List cached entities failed, reading localStorage", err);
-		const list: ClinicalCachedEntity<T>[] = [];
 		if (typeof window !== "undefined" && window.localStorage) {
 			for (let i = 0; i < window.localStorage.length; i++) {
 				const key = window.localStorage.key(i);
 				if (key?.startsWith(LOCAL_STORAGE_CACHE_PREFIX)) {
 					const cacheKey = key.slice(LOCAL_STORAGE_CACHE_PREFIX.length);
-					const cached = getLocalStorageCachedEntity<T>(cacheKey);
-					if (cached) list.push(cached);
+					if (!mapByKey.has(cacheKey)) {
+						const cached = getLocalStorageCachedEntity<T>(cacheKey);
+						if (cached) mapByKey.set(cacheKey, cached);
+					}
 				}
 			}
 		}
-		return list
-			.filter((item) => {
-				if (entityKind && item.entityKind !== entityKind) return false;
-				if (
-					organizationId &&
-					item.organizationId &&
-					item.organizationId !== organizationId
-				)
-					return false;
-				return true;
-			})
-			.sort((a, b) => b.cachedAtMs - a.cachedAtMs);
+	} catch (err) {
+		logger.warn("[ClinicalCacheStorage] List cached entities failed, reading localStorage", err);
+		if (typeof window !== "undefined" && window.localStorage) {
+			for (let i = 0; i < window.localStorage.length; i++) {
+				const key = window.localStorage.key(i);
+				if (key?.startsWith(LOCAL_STORAGE_CACHE_PREFIX)) {
+					const cacheKey = key.slice(LOCAL_STORAGE_CACHE_PREFIX.length);
+					if (!mapByKey.has(cacheKey)) {
+						const cached = getLocalStorageCachedEntity<T>(cacheKey);
+						if (cached) mapByKey.set(cacheKey, cached);
+					}
+				}
+			}
+		}
 	}
+
+	return Array.from(mapByKey.values())
+		.filter((item) => {
+			if (entityKind && item.entityKind !== entityKind) return false;
+			if (
+				organizationId &&
+				item.organizationId &&
+				item.organizationId !== organizationId
+			)
+				return false;
+			return true;
+		})
+		.sort((a, b) => b.cachedAtMs - a.cachedAtMs);
 }
 
 /**
@@ -258,6 +271,7 @@ export async function deleteCachedClinicalRecord(
 ): Promise<void> {
 	const cacheKey = buildCacheKey(entityKind, entityId);
 	inMemoryEntityCacheMap.delete(cacheKey);
+	cancelBatchedStorePut(CLINICAL_CACHE_STORE_NAME, cacheKey);
 	removeLocalStorageCachedEntity(cacheKey);
 
 	try {
@@ -295,6 +309,7 @@ export async function clearClinicalCacheByKind(
  */
 export async function clearAllClinicalCache(): Promise<number> {
 	const list = await listCachedClinicalRecords();
+	inMemoryEntityCacheMap.clear();
 	for (const item of list) {
 		await deleteCachedClinicalRecord(item.entityKind, item.entityId);
 	}
