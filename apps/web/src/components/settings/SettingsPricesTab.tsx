@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import "./SettingsPricesTab.css";
 import type { ChangeEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { money } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
