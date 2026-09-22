@@ -429,7 +429,7 @@ async function runAuditCapture() {
       await configureTheme(page, theme);
 
       // Click quick chip "5000 наличными" to populate the payment form and demonstrate active cash calculations
-      const chip5000 = page.locator("button:has-text('5000 наличными')").first();
+      const chip5000 = page.locator("button:has-text('5000 наличными'), button:has-text('5000 нал'), button:has-text('5 000 ₽')").first();
       if (await chip5000.isVisible().catch(() => false)) {
         await chip5000.click().catch(() => {});
         await page.waitForTimeout(600);
@@ -462,25 +462,26 @@ async function runAuditCapture() {
       // -----------------------------------------------------------------------
       // Screen 3B: PaymentModal (54-ФЗ Сплит-оплата и скидки врача 0..100%)
       // -----------------------------------------------------------------------
-      const splitModalBtn = page.locator('[data-testid="btn-combo-split-three-way"], button:has-text("Нал + Карта + Баланс"), [data-testid="payment-split-modal-button"]').first();
-      await splitModalBtn.scrollIntoViewIfNeeded().catch(() => {});
-      if (await splitModalBtn.isVisible().catch(() => false)) {
-        await splitModalBtn.click().catch(() => {});
-        await page.waitForSelector('#payment-modal-title, [role="dialog"][aria-labelledby="payment-modal-title"]', { state: "visible", timeout: 15000 }).catch(() => {});
-        await page.waitForTimeout(1000);
-        await takeProof(
-          page,
-          `03B_payment_modal_54fz_${suite.viewportName}_${theme}.png`,
-          "PaymentModal (Касса 54-ФЗ сплит-оплата)",
-          `${suite.viewportName} ${theme}`
-        );
+      await page.evaluate(() => {
+        const btn = document.querySelector('[data-testid="btn-combo-split-three-way"]') ||
+                    document.querySelector('button[title*="Нал + Карта + Баланс"]') ||
+                    document.querySelector('[data-testid="payment-split-modal-button"]');
+        if (btn) btn.click();
+      });
+      await page.waitForSelector('.payment-modal-backdrop, .payment-modal, #payment-modal-title, [role="dialog"][aria-labelledby="payment-modal-title"]', { state: "visible", timeout: 15000 });
+      await page.waitForTimeout(1000);
+      await takeProof(
+        page,
+        `03B_payment_modal_54fz_${suite.viewportName}_${theme}.png`,
+        "PaymentModal (Касса 54-ФЗ сплит-оплата)",
+        `${suite.viewportName} ${theme}`
+      );
 
-        // Close PaymentModal (scoped to dialog to avoid clicking toast close button)
-        const closePaymentModalBtn = page.locator("[role='dialog'] button[aria-label='Закрыть'], [data-testid='btn-close-payment-modal']").first();
-        if (await closePaymentModalBtn.isVisible().catch(() => false)) {
-          await closePaymentModalBtn.click().catch(() => {});
-          await page.waitForTimeout(500);
-        }
+      // Close PaymentModal (scoped to dialog to avoid clicking toast close button)
+      const closePaymentModalBtn = page.locator("[role='dialog'] button[aria-label='Закрыть'], [data-testid='btn-close-payment-modal']").first();
+      if (await closePaymentModalBtn.isVisible().catch(() => false)) {
+        await closePaymentModalBtn.click().catch(() => {});
+        await page.waitForTimeout(500);
       }
 
       await context.close();

@@ -25,6 +25,27 @@ export function showToast(
 
 export function GlobalToast() {
 	const [toast, setToast] = useState<ToastEventDetail | null>(null);
+	const [isModalOpen, setIsModalOpen] = useState(false);
+
+	useEffect(() => {
+		const checkModal = () => {
+			const hasDialog =
+				typeof document !== "undefined" &&
+				!!document.querySelector(
+					'[role="dialog"], [aria-modal="true"], .payment-modal-backdrop, .payment-modal, .modal-backdrop',
+				);
+			setIsModalOpen(hasDialog);
+		};
+		checkModal();
+		const observer = new MutationObserver(checkModal);
+		observer.observe(document.body, {
+			childList: true,
+			subtree: true,
+			attributes: true,
+			attributeFilter: ["role", "aria-modal", "class"],
+		});
+		return () => observer.disconnect();
+	}, []);
 
 	useEffect(() => {
 		let timer: NodeJS.Timeout;
@@ -49,13 +70,15 @@ export function GlobalToast() {
 
 	if (!toast) return null;
 
+	const toastZIndex = isModalOpen ? 50 : 99999;
+
 	// Re-use sa-toast styles from ShadowAnalyst with full theme tokens support
 	return (
 		<div
-			className={`sa-toast sa-toast--${toast.type} fixed sm:bottom-6 sm:right-6 sm:top-auto max-sm:bottom-20 max-sm:top-auto max-sm:inset-x-4 z-[99999] flex items-center gap-2 px-4 py-3 max-w-[420px] max-sm:max-w-[calc(100vw-2rem)] rounded-xl shadow-2xl transition-all select-none border font-medium text-xs sm:text-sm bg-neutral-900 text-slate-100 dark:bg-neutral-900 dark:text-slate-100 pointer-events-auto ${toast.type === "error" ? "border-rose-500/60 dark:border-rose-500/50" : toast.type === "warning" ? "border-amber-500/60 dark:border-amber-500/50" : "border-neutral-700 dark:border-neutral-700"}`}
+			className={`sa-toast sa-toast--${toast.type} ${isModalOpen ? "sa-toast--modal-active" : ""} fixed sm:bottom-6 sm:right-6 sm:top-auto max-sm:bottom-20 max-sm:top-auto max-sm:inset-x-4 flex items-center gap-2 px-4 py-3 max-w-[420px] max-sm:max-w-[calc(100vw-2rem)] rounded-xl shadow-2xl transition-all select-none border font-medium text-xs sm:text-sm bg-neutral-900 text-slate-100 dark:bg-neutral-900 dark:text-slate-100 pointer-events-auto ${toast.type === "error" ? "border-rose-500/60 dark:border-rose-500/50" : toast.type === "warning" ? "border-amber-500/60 dark:border-amber-500/50" : "border-neutral-700 dark:border-neutral-700"}`}
 			data-testid="global-toast"
 			style={{
-				zIndex: 99999,
+				zIndex: toastZIndex,
 				display: "flex",
 				alignItems: "center",
 				gap: "8px",

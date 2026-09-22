@@ -71,6 +71,17 @@ body:has(.cbct-viewport-container-axial) .sa-toast {
 	z-index: 99999 !important;
 }
 
+/* Position toast safely when modals or dialogs are active to avoid header occlusion on mobile */
+body:has([role="dialog"]) .sa-toast,
+body:has([aria-modal="true"]) .sa-toast,
+body:has(.payment-modal-backdrop) .sa-toast,
+body:has(.payment-modal) .sa-toast,
+.sa-toast--modal-active {
+	top: auto !important;
+	bottom: 5rem !important;
+	z-index: 50 !important;
+}
+
 @keyframes sa-slide-up {
 	from {
 		opacity: 0;

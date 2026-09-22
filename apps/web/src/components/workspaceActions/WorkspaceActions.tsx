@@ -157,11 +157,20 @@ let navSlotDom: HTMLDivElement | null = null;
 function ensureNavSlot(): HTMLDivElement | null {
 	const nav = document.querySelector(WORKSPACE_ACTION_NAV_SELECTOR);
 	if (!nav) return null;
+	const existingSlots = nav.querySelectorAll(".dnt-actions-nav-slot");
+	existingSlots.forEach((el) => {
+		if (el !== navSlotDom) {
+			el.remove();
+		}
+	});
 	if (!navSlotDom) {
 		navSlotDom = document.createElement("div");
 		navSlotDom.className = "dnt-actions-nav-slot";
 	}
-	if (navSlotDom.parentElement !== nav) nav.append(navSlotDom);
+	if (navSlotDom.parentElement !== nav) {
+		nav.querySelectorAll(".dnt-actions-nav-slot").forEach((el) => el.remove());
+		nav.append(navSlotDom);
+	}
 	return navSlotDom;
 }
 
@@ -350,12 +359,12 @@ export function WorkspaceActionsMount(): React.ReactElement {
 		setNavSlot(ensureNavSlot());
 		return () => {
 			setNavSlot(null);
-			if (typeof queueMicrotask === "function") {
-				queueMicrotask(() => {
-					if (navSlotDom && !navSlotDom.hasChildNodes() && navSlotDom.parentElement) {
-						navSlotDom.remove();
-					}
-				});
+			if (navSlotDom && navSlotDom.parentElement) {
+				navSlotDom.remove();
+			}
+			const nav = document.querySelector(WORKSPACE_ACTION_NAV_SELECTOR);
+			if (nav) {
+				nav.querySelectorAll(".dnt-actions-nav-slot").forEach((el) => el.remove());
 			}
 		};
 	}, [placement]);
