@@ -15099,8 +15099,9 @@ html.dark .communication-side .panel-heading h3,
 	}
 
 	.settings-heading {
-		align-items: start;
-		flex-direction: column;
+		align-items: center;
+		flex-direction: row;
+		justify-content: space-between;
 	}
 
 	.workspace-role-switcher {
@@ -15144,7 +15145,13 @@ html.dark .communication-side .panel-heading h3,
 		max-width: 100%;
 	}
 
-	.settings-heading-actions,
+	.settings-heading-actions {
+		align-items: center;
+		flex-direction: row;
+		width: auto;
+		flex-shrink: 0;
+	}
+
 	.onboarding-actions,
 	.clinic-profile-actions {
 		align-items: stretch;
@@ -15152,7 +15159,6 @@ html.dark .communication-side .panel-heading h3,
 		width: 100%;
 	}
 
-	.settings-heading-actions > *,
 	.onboarding-actions > *,
 	.clinic-profile-actions > * {
 		width: 100%;

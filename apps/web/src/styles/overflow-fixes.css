@@ -571,13 +571,13 @@
 
 #payment-capture,
 .payment-capture {
-	padding-bottom: 7rem !important; /* pb-28 */
+	padding-bottom: 8.5rem !important; /* pb-34 */
 }
 
 @media (min-width: 640px) {
 	#payment-capture,
 	.payment-capture {
-		padding-bottom: 6rem !important; /* sm:pb-24 */
+		padding-bottom: 8.5rem !important; /* sm:pb-34 */
 	}
 }
 
@@ -587,6 +587,7 @@
 	bottom: 0 !important;
 	left: var(--sidebar-width, 252px) !important;
 	right: 0 !important;
+	width: auto !important;
 	z-index: 50 !important;
 	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15) !important;
 	background: var(--paper-strong, var(--paper, #ffffff)) !important;

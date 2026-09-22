@@ -2757,18 +2757,23 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								onClick={handleCashSubmit}
 								disabled={isSubmittingCash}
 								title={isSubmittingCash ? "Идет фиксация наличных в кассе..." : undefined}
-								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all min-w-0 truncate"
+								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 sm:px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer shadow-sm transition-all min-w-0 truncate"
 								data-testid="btn-cash-submit-footer"
 							>
 								<CheckCircle size={16} className="shrink-0" />
 								<span className="truncate">
-									{isSubmittingCash
-										? "Фиксация..."
-										: `Принять наличные (${
-												receivedCashRub > 0 && receivedCashRub < totalDueRub
-													? receivedCashRub.toLocaleString("ru-RU")
-													: totalDueRub.toLocaleString("ru-RU")
-											} ₽)`}
+									{isSubmittingCash ? (
+										"Фиксация..."
+									) : (
+										<>
+											<span className="sm:hidden">
+												Принять {receivedCashRub > 0 && receivedCashRub < totalDueRub ? receivedCashRub.toLocaleString("ru-RU") : totalDueRub.toLocaleString("ru-RU")} ₽
+											</span>
+											<span className="hidden sm:inline">
+												Принять наличные ({receivedCashRub > 0 && receivedCashRub < totalDueRub ? receivedCashRub.toLocaleString("ru-RU") : totalDueRub.toLocaleString("ru-RU")} ₽)
+											</span>
+										</>
+									)}
 								</span>
 							</button>
 						) : activeMethod === "split" ? (
@@ -2777,12 +2782,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								onClick={handleSplitSubmit}
 								disabled={isSubmittingSplit}
 								title={isSubmittingSplit ? "Идет фиксация комбинированной оплаты..." : undefined}
-								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all whitespace-nowrap shrink-0"
+								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 sm:px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer shadow-sm transition-all min-w-0 truncate shrink-0"
 								data-testid="btn-split-submit-footer"
 							>
 								<CheckCircle size={16} className="shrink-0" />
-								<span className="whitespace-nowrap">
-									{isSubmittingSplit ? "Фиксация..." : `Пробить сплит (${totalDueRub.toLocaleString("ru-RU")} ₽)`}
+								<span className="truncate">
+									{isSubmittingSplit ? (
+										"Фиксация..."
+									) : (
+										<>
+											<span className="sm:hidden">Сплит {totalDueRub.toLocaleString("ru-RU")} ₽</span>
+											<span className="hidden sm:inline">Пробить сплит ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+										</>
+									)}
 								</span>
 							</button>
 						) : activeMethod === "family_deposit" ? (
@@ -2797,16 +2809,24 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 											? "На лицевом и семейном счетах пациента нет средств (0 ₽)"
 											: undefined
 								}
-								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all disabled:opacity-50 min-w-0 truncate"
+								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 sm:px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer shadow-sm transition-all disabled:opacity-50 min-w-0 truncate"
 								data-testid="btn-deposit-submit-footer"
 							>
 								<Wallet size={16} className="shrink-0" />
 								<span className="truncate">
-									{isSubmittingDeposit
-										? "Списание..."
-										: patientDepositRub >= totalDueRub
-										? `Списать с депозита (${totalDueRub.toLocaleString("ru-RU")} ₽)`
-										: `Зачесть баланс (${Math.min(totalDueRub, patientDepositRub + patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽)`}
+									{isSubmittingDeposit ? (
+										"Списание..."
+									) : patientDepositRub >= totalDueRub ? (
+										<>
+											<span className="sm:hidden">Депозит {totalDueRub.toLocaleString("ru-RU")} ₽</span>
+											<span className="hidden sm:inline">Списать с депозита ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+										</>
+									) : (
+										<>
+											<span className="sm:hidden">Баланс {Math.min(totalDueRub, patientDepositRub + patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽</span>
+											<span className="hidden sm:inline">Зачесть баланс ({Math.min(totalDueRub, patientDepositRub + patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽)</span>
+										</>
+									)}
 								</span>
 							</button>
 						) : activeMethod === "card_terminal" || activeMethod === "sberpay_qr" || activeMethod === "biometry" ? (
@@ -2815,12 +2835,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								onClick={() => handleManualCardTerminalConfirm()}
 								disabled={isSubmittingManualCard}
 								title={isSubmittingManualCard ? "Идет фиксация в CRM..." : "Зафиксировать оплату в CRM, если терминал уже списал средства"}
-								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all min-w-0 truncate"
+								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 sm:px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer shadow-sm transition-all min-w-0 truncate"
 								data-testid="btn-manual-terminal-confirm-footer"
 							>
 								<CheckCircle size={16} className="shrink-0" />
 								<span className="truncate">
-									{isSubmittingManualCard ? "Фиксация..." : `Подтвердить оплату картой (${totalDueRub.toLocaleString("ru-RU")} ₽)`}
+									{isSubmittingManualCard ? (
+										"Фиксация..."
+									) : (
+										<>
+											<span className="sm:hidden">Карта {totalDueRub.toLocaleString("ru-RU")} ₽</span>
+											<span className="hidden sm:inline">Подтвердить оплату картой ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+										</>
+									)}
 								</span>
 							</button>
 						) : null}

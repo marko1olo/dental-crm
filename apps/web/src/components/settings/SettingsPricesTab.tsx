@@ -463,9 +463,9 @@ export function SettingsPricesTab() {
 			{activeTab === "catalog" && (
 				<section className="pricelist-section-card">
 					{/* STRICTLY 1 COMPACT MONOLITHIC 36px TOOLBAR ROW (Mandates 8c, 8d, 8p) */}
-					<div className="pricelist-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-3 flex-nowrap overflow-hidden shrink-0 select-none">
+					<div className="pricelist-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-3 flex-wrap sm:flex-nowrap overflow-visible sm:overflow-hidden shrink-0 select-none">
 						{/* Left: Search input */}
-						<div className="pricelist-search-wrapper flex items-center min-w-0 flex-1 max-w-xs relative">
+						<div className="pricelist-search-wrapper flex items-center min-w-0 w-full sm:w-auto flex-1 max-w-full sm:max-w-xs relative">
 							<Search size={14} className="absolute left-2.5 text-[var(--muted)] shrink-0 pointer-events-none" />
 							<input
 								type="text"
@@ -561,7 +561,7 @@ export function SettingsPricesTab() {
 						</div>
 
 						{/* Right: Actions */}
-						<div className="flex items-center gap-1.5 shrink-0">
+						<div className="flex items-center gap-1.5 shrink-0 ml-auto sm:ml-0">
 							<button
 								type="button"
 								className="secondary-button min-h-[32px] h-7 sm:h-8 px-2 sm:px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-all inline-flex items-center gap-1 cursor-pointer shrink-0"
