@@ -515,7 +515,7 @@ ${zReportData.clinicLegalName}
 								<button
 									type="button"
 									onClick={handleOpenZReport}
-									className="min-h-[44px] px-4 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-sm ml-auto whitespace-nowrap"
+									className="min-h-[44px] px-4 rounded-xl bg-[var(--ink,#0f172a)] hover:opacity-90 text-[var(--paper,#ffffff)] text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-sm ml-auto whitespace-nowrap"
 								>
 									<FileText size={16} />
 									<span>Сформировать Z-отчет 54-ФЗ</span>

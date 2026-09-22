@@ -954,7 +954,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 									: displayStatus === "arrived"
 										? "border-amber-500/50"
 										: displayStatus === "completed"
-											? "border-slate-400/30 opacity-95"
+											? "border-[var(--line)] opacity-95"
 											: "border-[var(--line)]"
 					} ${readiness ? `readiness-${readiness.state}` : ""}`}
 					style={{
@@ -1016,10 +1016,10 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 											: displayStatus === "arrived"
 												? "bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500"
 												: displayStatus === "completed"
-													? "bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-400/40"
+													? "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]"
 													: displayStatus === "cancelled" || displayStatus === "no_show"
 														? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40"
-														: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20"
+														: "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]"
 								}`}
 								data-testid={`appointment-status-badge-${appointment.id}`}
 							>
@@ -1036,7 +1036,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 													? "bg-amber-500"
 													: displayStatus === "cancelled" || displayStatus === "no_show"
 														? "bg-rose-500"
-														: "bg-slate-400"
+														: "bg-[var(--line-strong)]"
 										}`}
 										aria-hidden="true"
 									/>
@@ -1095,7 +1095,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 									</span>
 								) : (
 									<span
-										className="px-2 py-0.5 rounded-lg text-xs font-medium font-mono text-slate-600 dark:text-slate-400 bg-slate-500/10 dark:bg-slate-800/50 border border-slate-500/20 shrink-0 whitespace-nowrap"
+										className="px-2 py-0.5 rounded-lg text-xs font-medium font-mono text-[var(--muted)] bg-[var(--paper-soft)] border border-[var(--line)] shrink-0 whitespace-nowrap"
 										title="Баланс пациента: 0 ₽"
 									>
 										Баланс: 0 ₽
@@ -2187,7 +2187,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 							onClick={(e) => e.stopPropagation()}
 						>
 							{/* Top Grab Handle */}
-							<div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-2" />
+							<div className="w-12 h-1.5 bg-[var(--line-strong)] rounded-full mx-auto mb-2" />
 
 							{/* Header */}
 							<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-3">
@@ -2222,7 +2222,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 												? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40"
 												: patientBalance < 0
 													? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40"
-													: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20"
+													: "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]"
 										}`}
 									>
 										{patientBalance > 0
@@ -2381,7 +2381,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 											void handleQuickStatusChange("completed");
 											setIsMobileSheetOpen(false);
 										}}
-										className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-slate-500/15 border border-slate-500/40 text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2 cursor-pointer"
+										className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-2 cursor-pointer"
 									>
 										<CheckCircle2 size={14} />
 										<span>Завершен</span>

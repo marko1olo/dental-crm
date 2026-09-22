@@ -207,42 +207,42 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 
 	return (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="shift-close-zreport-modal-title"
 			data-testid="shift-close-zreport-modal"
 		>
-			<div className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] overflow-hidden text-slate-900 dark:text-slate-100">
+			<div className="bg-[var(--paper)] w-full max-w-4xl rounded-3xl shadow-2xl border border-[var(--line)] flex flex-col max-h-[92vh] overflow-hidden text-[var(--ink)]">
 				{/* Modal Header */}
-				<div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+				<div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)] bg-[var(--paper-soft)]">
 					<div className="flex items-center gap-3">
 						<div className="p-2.5 rounded-2xl bg-rose-600/10 text-rose-600 dark:text-rose-400">
 							<Lock className="w-6 h-6" />
 						</div>
 						<div>
-							<h2 id="shift-close-zreport-modal-title" className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 m-0">
+							<h2 id="shift-close-zreport-modal-title" className="text-lg font-bold text-[var(--ink)] flex items-center gap-2 m-0">
 								Закрытие кассовой смены №{reportSummary.shiftNumber}
-								<span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-500/20">
+								<span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-[var(--ok-bg,rgba(16,185,129,0.1))] text-[var(--ok-fg,#10b981)] border border-[var(--ok-fg,rgba(16,185,129,0.2))]">
 									Z-отчет 54-ФЗ
 								</span>
 							</h2>
-							<p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5">
-								Кассир: <strong className="text-slate-700 dark:text-slate-300">{cashierFullName}</strong> • ККТ: {kktRegNumber} • ОФД: {ofdName}
+							<p className="text-xs text-[var(--muted)] m-0 mt-0.5">
+								Кассир: <strong className="text-[var(--ink)]">{cashierFullName}</strong> • ККТ: {kktRegNumber} • ОФД: {ofdName}
 							</p>
 						</div>
 					</div>
 
 					<div className="flex items-center gap-2">
 						{/* Tabs Switcher */}
-						<div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl">
+						<div className="flex bg-[var(--paper-soft)] p-1 rounded-xl border border-[var(--line)]">
 							<button
 								type="button"
 								onClick={() => setActiveTab("reconciliation")}
 								className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 									activeTab === "reconciliation"
-										? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm"
-										: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+										? "bg-[var(--paper)] text-[var(--ink)] shadow-sm"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
 								Сверка итогов
@@ -252,8 +252,8 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 								onClick={() => setActiveTab("drawer")}
 								className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 									activeTab === "drawer"
-										? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm"
-										: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+										? "bg-[var(--paper)] text-[var(--ink)] shadow-sm"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
 								Денежный ящик
@@ -263,8 +263,8 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 								onClick={() => setActiveTab("tape")}
 								className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 									activeTab === "tape"
-										? "bg-teal-600 text-white shadow-sm"
-										: "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+										? "bg-[var(--teal)] text-white shadow-sm"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
 								Печать на ленте
@@ -283,7 +283,7 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] min-w-[44px] rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center cursor-pointer"
+							className="min-h-[44px] min-w-[44px] rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors flex items-center justify-center cursor-pointer"
 							aria-label="Закрыть модальное окно"
 						>
 							<X className="w-5 h-5" />
@@ -309,7 +309,7 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 									<div className="text-2xl font-black font-mono text-teal-700 dark:text-teal-300">
 										{reportSummary.netRevenueRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 									</div>
-									<div className="text-[11px] text-slate-500 dark:text-slate-400">
+									<div className="text-[11px] text-[var(--muted)]">
 										Приход ({reportSummary.incomeTotalRub.toLocaleString("ru-RU")} ₽) − Возврат ({reportSummary.incomeReturnTotalRub.toLocaleString("ru-RU")} ₽)
 									</div>
 								</div>
@@ -326,7 +326,7 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 									<div className="text-2xl font-black font-mono text-emerald-700 dark:text-emerald-300">
 										{reportSummary.cashInDrawerRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 									</div>
-									<div className="text-[11px] text-slate-500 dark:text-slate-400">
+									<div className="text-[11px] text-[var(--muted)]">
 										Приход: {reportSummary.incomeCashRub.toLocaleString("ru-RU")} ₽ · Возврат: {reportSummary.incomeReturnCashRub.toLocaleString("ru-RU")} ₽
 									</div>
 								</div>
@@ -343,7 +343,7 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 									<div className="text-2xl font-black font-mono text-blue-700 dark:text-blue-300">
 										{reportSummary.incomeElectronicRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 									</div>
-									<div className="text-[11px] text-slate-500 dark:text-slate-400">
+									<div className="text-[11px] text-[var(--muted)]">
 										Эквайринг терминала и QR-платежи НСПК
 									</div>
 								</div>
@@ -360,26 +360,26 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 									<div className="text-2xl font-black font-mono text-amber-700 dark:text-amber-300">
 										{reportSummary.incomeAdvanceOffsetRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 									</div>
-									<div className="text-[11px] text-slate-500 dark:text-slate-400">
+									<div className="text-[11px] text-[var(--muted)]">
 										Списано с депозитов и семейных счетов
 									</div>
 								</div>
 							</div>
 
 							{/* Detailed 54-FZ FFD 1.2 Breakdown Table */}
-							<div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-4">
-								<h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider m-0">
+							<div className="p-5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-4">
+								<h4 className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider m-0">
 									Сводная детализация по типам фискальных операций (ФФД 1.2)
 								</h4>
 
 								<div className="space-y-2 text-xs">
 									{/* Section 1: Income */}
-									<div className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2">
+									<div className="p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-2">
 										<div className="flex justify-between items-center font-bold text-emerald-700 dark:text-emerald-300 text-sm">
 											<span>1. ПРИХОД (Тег 1054 = 1)</span>
 											<span className="font-mono font-bold">Чеков: {reportSummary.incomeCount} · {reportSummary.incomeTotalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
 										</div>
-										<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 border-t border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+										<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 border-t border-[var(--line)] text-[var(--ink)]">
 											<div className="flex justify-between">
 												<span>• Наличными (Тег 1031):</span>
 												<strong className="font-mono">{reportSummary.incomeCashRub.toLocaleString("ru-RU")} ₽</strong>
@@ -396,12 +396,12 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 									</div>
 
 									{/* Section 2: Returns */}
-									<div className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2">
+									<div className="p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-2">
 										<div className="flex justify-between items-center font-bold text-rose-700 dark:text-rose-300 text-sm">
 											<span>2. ВОЗВРАТ ПРИХОДА (Тег 1054 = 2)</span>
 											<span className="font-mono font-bold">Чеков: {reportSummary.incomeReturnCount} · −{reportSummary.incomeReturnTotalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
 										</div>
-										<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 border-t border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+										<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 border-t border-[var(--line)] text-[var(--ink)]">
 											<div className="flex justify-between">
 												<span>• Наличными из кассы:</span>
 												<strong className="font-mono">−{reportSummary.incomeReturnCashRub.toLocaleString("ru-RU")} ₽</strong>
@@ -433,7 +433,7 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 										<h4 className="text-sm font-bold text-emerald-950 dark:text-emerald-100 m-0">
 											Расчетный остаток наличных в кассовом ящике
 										</h4>
-										<p className="text-xs text-slate-600 dark:text-slate-400 m-0">
+										<p className="text-xs text-[var(--muted)] m-0">
 											По данным фискальных операций 54-ФЗ за смену №{reportSummary.shiftNumber}
 										</p>
 									</div>
@@ -444,10 +444,10 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 							</div>
 
 							{/* Ввод фактической суммы наличных в ящике (Мандат 8k: без купюрного симулятора) */}
-							<div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-4">
+							<div className="p-5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-4">
 								<div className="flex items-center justify-between flex-wrap gap-3">
 									<div className="flex-1 min-w-[240px]">
-										<label htmlFor="drawer-actual-cash" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+										<label htmlFor="drawer-actual-cash" className="block text-xs font-bold text-[var(--muted)] uppercase tracking-wider mb-1">
 											Фактическая сумма наличных в ящике (₽):
 										</label>
 										<div className="flex items-center gap-2 flex-wrap">
@@ -458,7 +458,7 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 												value={countedCashInput}
 												onChange={(e) => setCountedCashInput(e.target.value)}
 												placeholder={reportSummary.cashInDrawerRub.toString()}
-												className="min-h-[44px] px-3.5 py-2 font-mono text-sm font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none w-56"
+												className="min-h-[44px] px-3.5 py-2 font-mono text-sm font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none w-56"
 												data-testid="input-drawer-actual-cash"
 											/>
 											<button
@@ -478,7 +478,7 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 								{/* Status Reconciliation Message */}
 								<div className="pt-1">
 									{differenceRub === null ? (
-										<div className="text-xs text-slate-500 flex items-center gap-1.5">
+										<div className="text-xs text-[var(--muted)] flex items-center gap-1.5">
 											<span>Введите сумму в денежном ящике или нажмите «Совпадает с кассой»</span>
 										</div>
 									) : differenceRub === 0 ? (
@@ -505,17 +505,17 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 					{activeTab === "tape" && (
 						<div className="space-y-4">
 							{/* Tape Width Controls & Actions */}
-							<div className="flex items-center justify-between flex-wrap gap-2.5 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
+							<div className="flex items-center justify-between flex-wrap gap-2.5 p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)]">
 								<div className="flex items-center gap-2">
-									<span className="text-xs font-bold text-slate-500">Ширина чековой ленты:</span>
-									<div className="flex bg-slate-200 dark:bg-slate-700 p-0.5 rounded-lg">
+									<span className="text-xs font-bold text-[var(--muted)]">Ширина чековой ленты:</span>
+									<div className="flex bg-[var(--paper)] border border-[var(--line)] p-0.5 rounded-lg">
 										<button
 											type="button"
 											onClick={() => setTapeWidth("58mm")}
 											className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
 												tapeWidth === "58mm"
-													? "bg-teal-600 text-white shadow-xs"
-													: "text-slate-600 dark:text-slate-300"
+													? "bg-[var(--teal)] text-white shadow-xs"
+													: "text-[var(--muted)] hover:text-[var(--ink)]"
 											}`}
 										>
 											58 мм (Узкая)
@@ -525,8 +525,8 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 											onClick={() => setTapeWidth("80mm")}
 											className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
 												tapeWidth === "80mm"
-													? "bg-teal-600 text-white shadow-xs"
-													: "text-slate-600 dark:text-slate-300"
+													? "bg-[var(--teal)] text-white shadow-xs"
+													: "text-[var(--muted)] hover:text-[var(--ink)]"
 											}`}
 										>
 											80 мм (Широкая)
@@ -538,7 +538,7 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 									<button
 										type="button"
 										onClick={handleCopyTapeText}
-										className="min-h-[44px] px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold flex items-center gap-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer"
+										className="min-h-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-bold flex items-center gap-1.5 hover:bg-[var(--paper-soft)] transition-all cursor-pointer"
 									>
 										{isCopied ? <CheckCheck size={16} className="text-emerald-600" /> : <Copy size={16} />}
 										<span>{isCopied ? "Скопировано!" : "Скопировать текст"}</span>
@@ -555,8 +555,8 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 							</div>
 
 							{/* Monospaced Receipt Tape Viewer */}
-							<div className="flex justify-center p-4 bg-slate-900 rounded-2xl overflow-x-auto">
-								<div className={`p-4 bg-white text-black font-mono text-[11px] leading-relaxed shadow-xl border border-slate-400 rounded-sm whitespace-pre ${tapeWidth === "80mm" ? "w-[380px]" : "w-[290px]"}`}>
+							<div className="flex justify-center p-4 bg-[var(--paper-soft)] rounded-2xl overflow-x-auto">
+								<div className={`p-4 bg-white text-black font-mono text-[11px] leading-relaxed shadow-xl border border-[var(--line)] rounded-sm whitespace-pre ${tapeWidth === "80mm" ? "w-[380px]" : "w-[290px]"}`}>
 									{receiptTapeText}
 								</div>
 							</div>
@@ -565,9 +565,9 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 				</div>
 
 				{/* Modal Footer */}
-				<div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2.5 bg-slate-50 dark:bg-slate-900/50">
-					<div className="flex items-center gap-2 text-xs text-slate-500">
-						<span>Выручка: <strong className="text-slate-800 dark:text-slate-200">{reportSummary.netRevenueRub.toLocaleString("ru-RU")} ₽</strong></span>
+				<div className="p-4 sm:p-5 border-t border-[var(--line)] flex items-center justify-between flex-wrap gap-2.5 bg-[var(--paper-soft)]">
+					<div className="flex items-center gap-2 text-xs text-[var(--muted)]">
+						<span>Выручка: <strong className="text-[var(--ink)]">{reportSummary.netRevenueRub.toLocaleString("ru-RU")} ₽</strong></span>
 						<span>•</span>
 						<span>В ящике: <strong className="text-emerald-700 dark:text-emerald-300">{reportSummary.cashInDrawerRub.toLocaleString("ru-RU")} ₽</strong></span>
 					</div>
@@ -576,7 +576,7 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] px-5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold cursor-pointer transition-all"
+							className="min-h-[44px] px-5 rounded-xl border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-bold cursor-pointer transition-all"
 						>
 							Отмена
 						</button>

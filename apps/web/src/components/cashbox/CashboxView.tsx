@@ -110,7 +110,7 @@ export function CashboxView({
 						</h2>
 					</div>
 					<div className="flex items-center gap-2">
-						<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
+						<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--ok-bg,rgba(16,185,129,0.1))] text-[var(--ok-fg,#10b981)] border border-[var(--ok-fg,rgba(16,185,129,0.2))]">
 							<ShieldCheck className="w-3.5 h-3.5" />
 							54-ФЗ: без барьеров для физлиц
 						</span>
@@ -128,7 +128,7 @@ export function CashboxView({
 							type="button"
 							className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
 								isWarranty
-									? "bg-amber-600 text-white font-semibold shadow-sm"
+									? "bg-[var(--warning-fg,#b45309)] text-white font-semibold shadow-sm"
 									: "bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-hover,#f1f5f9)]"
 							}`}
 							onClick={() => {
@@ -143,7 +143,7 @@ export function CashboxView({
 							type="button"
 							className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
 								isStaffColleague
-									? "bg-blue-600 text-white font-semibold shadow-sm"
+									? "bg-[var(--brand)] text-white font-semibold shadow-sm"
 									: "bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-hover,#f1f5f9)]"
 							}`}
 							onClick={() => {
@@ -176,7 +176,7 @@ export function CashboxView({
 						{(isWarranty || isStaffColleague || discountPercent > 0) && (
 							<button
 								type="button"
-								className="text-xs text-[var(--muted)] hover:text-red-500 underline ml-auto"
+								className="text-xs text-[var(--muted)] hover:text-[var(--danger)] underline ml-auto"
 								onClick={() => {
 									setIsWarranty(false);
 									setIsStaffColleague(false);
@@ -238,7 +238,7 @@ export function CashboxView({
 							className="w-full text-xs px-3 py-1.5 rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]"
 						/>
 						{innValidation.errorRu && (
-							<p className="text-[11px] text-amber-600 mt-1">{innValidation.errorRu}</p>
+							<p className="text-[11px] text-[var(--warning-fg)] mt-1">{innValidation.errorRu}</p>
 						)}
 					</div>
 				</div>
@@ -253,7 +253,7 @@ export function CashboxView({
 					</div>
 
 					{checkoutResult.isZeroDue ? (
-						<div className="p-2.5 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 font-medium text-center">
+						<div className="p-2.5 rounded bg-[var(--ok-bg,rgba(16,185,129,0.1))] border border-[var(--ok-fg,rgba(16,185,129,0.2))] text-xs text-[var(--ok-fg,#10b981)] font-medium text-center">
 							{checkoutResult.statusBannerText}
 						</div>
 					) : (
@@ -269,7 +269,7 @@ export function CashboxView({
 
 							<button
 								type="button"
-								className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded bg-emerald-600 text-white text-xs font-medium shadow-sm hover:opacity-95"
+								className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded bg-[var(--teal)] text-white text-xs font-medium shadow-sm hover:opacity-95"
 								onClick={() => handleAllocateAll("cash")}
 							>
 								<Banknote className="w-3.5 h-3.5" />
@@ -278,7 +278,7 @@ export function CashboxView({
 
 							<button
 								type="button"
-								className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded bg-indigo-600 text-white text-xs font-medium shadow-sm hover:opacity-95"
+								className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded bg-[var(--brand)] text-white text-xs font-medium shadow-sm hover:opacity-95"
 								onClick={() => handleAllocateAll("sbp")}
 							>
 								<QrCode className="w-3.5 h-3.5" />

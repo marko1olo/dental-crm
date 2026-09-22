@@ -659,8 +659,8 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					<div
 						className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
 							isShiftOpen
-								? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-								: "bg-rose-500/15 text-rose-600 dark:text-rose-400"
+								? "bg-[var(--ok-bg,rgba(16,185,129,0.15))] text-[var(--ok-fg,#10b981)]"
+								: "bg-[var(--danger-soft,rgba(239,68,68,0.15))] text-[var(--danger,#ef4444)]"
 						}`}
 						title={isShiftOpen ? "Смена открыта" : "Смена закрыта"}
 					>
@@ -674,8 +674,8 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					<span
 						className={`px-2 py-0.5 rounded-full text-[11px] font-bold shrink-0 ${
 							isShiftOpen
-								? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-								: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+								? "bg-[var(--ok-bg,rgba(16,185,129,0.1))] text-[var(--ok-fg,#10b981)] border border-[var(--ok-fg,rgba(16,185,129,0.2))]"
+								: "bg-[var(--danger-soft,rgba(239,68,68,0.1))] text-[var(--danger,#ef4444)] border border-[var(--danger,rgba(239,68,68,0.2))]"
 						}`}
 					>
 						{isShiftOpen ? "Открыта" : "Закрыта"}
@@ -695,7 +695,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsOfflineBatchModalOpen(true)}
-							className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1 shrink-0 cursor-pointer animate-pulse hover:bg-amber-500/25 transition-colors"
+							className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--warning-soft,rgba(245,158,11,0.15))] text-[var(--warning-fg,#b45309)] dark:text-[var(--warning,#fbbf24)] border border-[var(--warning,rgba(245,158,11,0.3))] flex items-center gap-1 shrink-0 cursor-pointer animate-pulse hover:opacity-90 transition-colors"
 							title="В офлайн-очереди есть чеки"
 						>
 							<Layers size={12} />
@@ -710,10 +710,10 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						type="button"
 						onClick={handleOpenCashInModal}
 						data-testid="btn-compact-cash-in"
-						className="secondary-button min-h-[44px] px-2.5 py-1 text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0 text-emerald-700 dark:text-emerald-300"
+						className="secondary-button min-h-[44px] px-2.5 py-1 text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0 text-[var(--ok-fg,#10b981)]"
 						title="Внесение наличных в кассу (размен / приход)"
 					>
-						<PlusCircle size={13} className="shrink-0 text-emerald-600" />
+						<PlusCircle size={13} className="shrink-0 text-[var(--ok-fg,#10b981)]" />
 						<span className="hidden sm:inline">Внесение</span>
 					</button>
 
@@ -721,10 +721,10 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						type="button"
 						onClick={handleOpenCashOutModal}
 						data-testid="btn-compact-cash-out"
-						className="secondary-button min-h-[44px] px-2.5 py-1 text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0 text-rose-700 dark:text-rose-300"
+						className="secondary-button min-h-[44px] px-2.5 py-1 text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0 text-[var(--danger,#ef4444)]"
 						title="Изъятие / инкассация наличных из кассы"
 					>
-						<MinusCircle size={13} className="shrink-0 text-rose-600" />
+						<MinusCircle size={13} className="shrink-0 text-[var(--danger,#ef4444)]" />
 						<span className="hidden sm:inline">Изъятие</span>
 					</button>
 
@@ -735,8 +735,8 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						data-testid="cash-shift-toggle-btn"
 						className={`min-h-[44px] px-2.5 py-1 text-xs font-bold rounded-lg flex items-center gap-1 shrink-0 cursor-pointer transition-all ${
 							isShiftOpen
-								? "bg-rose-600 hover:bg-rose-700 text-white"
-								: "bg-emerald-600 hover:bg-emerald-700 text-white"
+								? "bg-[var(--danger,#ef4444)] hover:opacity-90 text-white"
+								: "bg-[var(--ok,#10b981)] hover:opacity-90 text-white"
 						}`}
 						title={isShiftOpen ? "Сформировать Z-отчет и закрыть смену" : "Открыть кассовую смену"}
 					>
@@ -767,7 +767,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						</button>
 
 						<div
-							className={`absolute right-0 top-full mt-1 z-30 min-w-[170px] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-lg p-1 flex flex-col gap-0.5 ${
+							className={`absolute right-0 top-full mt-1 z-30 min-w-[170px] bg-[var(--paper)] border border-[var(--line)] rounded-lg shadow-lg p-1 flex flex-col gap-0.5 ${
 								isReportsMenuOpen ? "block" : "hidden"
 							}`}
 						>
@@ -779,10 +779,10 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 								}}
 								disabled={isProcessing}
 								data-testid="btn-print-x-report"
-								className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2 cursor-pointer text-neutral-800 dark:text-neutral-200"
+								className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[var(--ink)]"
 								title="Печать X-отчета (без гашения)"
 							>
-								<Printer size={13} className="shrink-0 text-neutral-500" />
+								<Printer size={13} className="shrink-0 text-[var(--muted)]" />
 								<span>X-отчет (промежуточный)</span>
 							</button>
 
@@ -793,10 +793,10 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 									handlePrintAccountingStatement();
 								}}
 								data-testid="btn-print-accounting-statement"
-								className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2 cursor-pointer text-neutral-800 dark:text-neutral-200"
+								className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[var(--ink)]"
 								title="Печать сводной бухгалтерской ведомости А4"
 							>
-								<FileText size={13} className="shrink-0 text-teal-600" />
+								<FileText size={13} className="shrink-0 text-[var(--teal)]" />
 								<span>Ведомость А4</span>
 							</button>
 
@@ -807,10 +807,10 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 									handleExport1cCsv();
 								}}
 								data-testid="btn-export-1c-csv"
-								className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2 cursor-pointer text-neutral-800 dark:text-neutral-200"
+								className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[var(--ink)]"
 								title="Выгрузить данные смены для 1С:Бухгалтерии"
 							>
-								<FileSpreadsheet size={13} className="shrink-0 text-blue-600" />
+								<FileSpreadsheet size={13} className="shrink-0 text-[var(--brand)]" />
 								<span>Экспорт в 1С (CSV)</span>
 							</button>
 						</div>
@@ -870,9 +870,9 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 						}`}
 					>
 						{isShiftOpen ? (
-							<Unlock className="text-emerald-500" size={24} />
+							<Unlock className="text-[var(--ok,#10b981)]" size={24} />
 						) : (
-							<Lock className="text-rose-500" size={24} />
+							<Lock className="text-[var(--danger,#ef4444)]" size={24} />
 						)}
 					</div>
 					<div>
@@ -883,14 +883,14 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 							<span
 								className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
 									isShiftOpen
-										? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-										: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+										? "bg-[var(--ok-bg,rgba(16,185,129,0.1))] text-[var(--ok-fg,#10b981)] border border-[var(--ok-fg,rgba(16,185,129,0.2))]"
+										: "bg-[var(--danger-soft,rgba(239,68,68,0.1))] text-[var(--danger,#ef4444)] border border-[var(--danger,rgba(239,68,68,0.2))]"
 								}`}
 							>
 								{isShiftOpen ? "Смена открыта" : "Смена закрыта"}
 							</span>
 							{pendingOfflineCount > 0 && (
-								<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 animate-pulse flex items-center gap-1">
+								<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--warning-soft,rgba(245,158,11,0.15))] text-[var(--warning-fg,#b45309)] dark:text-[var(--warning,#fbbf24)] border border-[var(--warning,rgba(245,158,11,0.3))] animate-pulse flex items-center gap-1">
 									<Layers size={12} />
 									Очередь: {pendingOfflineCount}
 								</span>
@@ -1032,10 +1032,10 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					type="button"
 					onClick={handleOpenCashInModal}
 					data-testid="btn-open-cash-in-modal"
-					className="min-h-[44px] px-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+					className="min-h-[44px] px-4 rounded-xl border border-[var(--ok-fg,rgba(16,185,129,0.3))] bg-[var(--ok-bg,rgba(16,185,129,0.1))] hover:opacity-90 text-[var(--ok-fg,#059669)] dark:text-[var(--ok-fg,#34d399)] text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
 					title="Внесение наличных (разменная монета, прочий приход)"
 				>
-					<PlusCircle size={16} className="text-emerald-600" />
+					<PlusCircle size={16} className="text-[var(--ok-fg,#10b981)]" />
 					<span>Внесение ДС</span>
 				</button>
 
@@ -1043,10 +1043,10 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					type="button"
 					onClick={handleOpenCashOutModal}
 					data-testid="btn-open-cash-out-modal"
-					className="min-h-[44px] px-4 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 dark:text-rose-300 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+					className="min-h-[44px] px-4 rounded-xl border border-[var(--danger,rgba(239,68,68,0.3))] bg-[var(--danger-soft,rgba(239,68,68,0.1))] hover:opacity-90 text-[var(--danger,#dc2626)] dark:text-[var(--danger,#f87171)] text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
 					title="Изъятие наличных (инкассация, хоз. расходы, возврат)"
 				>
-					<MinusCircle size={16} className="text-rose-600" />
+					<MinusCircle size={16} className="text-[var(--danger,#ef4444)]" />
 					<span>Изъятие / Инкассация</span>
 				</button>
 
@@ -1064,7 +1064,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					</button>
 
 					<div
-						className={`absolute left-0 sm:left-auto sm:right-0 bottom-full mb-2 z-30 min-w-[230px] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-xl p-1.5 flex flex-col gap-1 ${
+						className={`absolute left-0 sm:left-auto sm:right-0 bottom-full mb-2 z-30 min-w-[230px] bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl p-1.5 flex flex-col gap-1 ${
 							isBottomActionsMenuOpen ? "block" : "hidden"
 						}`}
 					>
@@ -1075,11 +1075,11 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 								handleXReport();
 							}}
 							disabled={isProcessing}
-							className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2.5 cursor-pointer text-neutral-800 dark:text-neutral-200 transition-colors"
+							className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2.5 cursor-pointer text-[var(--ink)] transition-colors"
 							title="Распечатать промежуточный X-отчет без гашения"
 							data-testid="btn-print-x-report"
 						>
-							<Printer size={15} className="shrink-0 text-neutral-500" />
+							<Printer size={15} className="shrink-0 text-[var(--muted)]" />
 							<span>Печать X-отчета (без гашения)</span>
 						</button>
 
@@ -1089,11 +1089,11 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 								setIsBottomActionsMenuOpen(false);
 								handlePrintAccountingStatement();
 							}}
-							className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2.5 cursor-pointer text-neutral-800 dark:text-neutral-200 transition-colors"
-							title="Печать сводной бухгалтерской ведомости А4"
 							data-testid="btn-print-accounting-statement"
+							className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2.5 cursor-pointer text-[var(--ink)] transition-colors"
+							title="Печать сводной бухгалтерской ведомости А4"
 						>
-							<FileText size={15} className="shrink-0 text-teal-600" />
+							<FileText size={15} className="shrink-0 text-[var(--teal)]" />
 							<span>Ведомость А4</span>
 						</button>
 
@@ -1103,11 +1103,11 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 								setIsBottomActionsMenuOpen(false);
 								handleExport1cCsv();
 							}}
-							className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2.5 cursor-pointer text-neutral-800 dark:text-neutral-200 transition-colors"
-							title="Выгрузить данные смены в CSV (UTF-8 BOM) для 1С:Бухгалтерии"
 							data-testid="btn-export-1c-csv"
+							className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2.5 cursor-pointer text-[var(--ink)] transition-colors"
+							title="Выгрузить данные смены в CSV (UTF-8 BOM) для 1С:Бухгалтерии"
 						>
-							<FileSpreadsheet size={15} className="shrink-0 text-blue-600" />
+							<FileSpreadsheet size={15} className="shrink-0 text-[var(--brand)]" />
 							<span>Экспорт в 1С</span>
 						</button>
 
@@ -1117,11 +1117,11 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 								setIsBottomActionsMenuOpen(false);
 								setIsOfflineBatchModalOpen(true);
 							}}
-							className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2.5 cursor-pointer text-neutral-800 dark:text-neutral-200 transition-colors"
+							className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2.5 cursor-pointer text-[var(--ink)] transition-colors"
 							title="Очередь фискализации и сверка с эквайрингом"
 							data-testid="btn-open-offline-fiscal-queue"
 						>
-							<Layers size={15} className="shrink-0 text-amber-600" />
+							<Layers size={15} className="shrink-0 text-[var(--warning-fg)]" />
 							<span>Очередь чеков и сверка {pendingOfflineCount > 0 ? `(${pendingOfflineCount})` : ""}</span>
 						</button>
 					</div>

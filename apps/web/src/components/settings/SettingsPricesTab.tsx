@@ -521,8 +521,8 @@ export function SettingsPricesTab() {
 									onClick={() => setSearchQuery(chip.code)}
 									className={`px-2.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap border inline-flex items-center justify-center ${
 										searchQuery === chip.code
-											? "bg-indigo-600 text-white border-indigo-700 shadow-2xs"
-											: "bg-[var(--paper)] border-[var(--line)] text-indigo-700 dark:text-indigo-300 hover:border-indigo-400"
+											? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] border-[var(--teal)] shadow-2xs"
+											: "bg-[var(--paper)] border-[var(--line)] text-[var(--teal)] hover:border-[var(--teal)]/60"
 									}`}
 									title={`Искать в прайс-листе по коду 804н ${chip.code}`}
 								>
