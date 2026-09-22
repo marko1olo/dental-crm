@@ -800,6 +800,72 @@ body.dark-mode .schedule-secret-collapsible .schedule-admin-unlock {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   GLOBAL HIGH CONTRAST SCHEDULE EMPTY SLOTS (WCAG AAA >= 7:1)
+   ═══════════════════════════════════════════════════════════════════ */
+button[data-testid^="btn-slot-"],
+[data-testid^="btn-slot-"],
+.schedule-empty-slot-btn {
+	color: var(--ink-muted, #334155) !important;
+	border-color: var(--line-strong, #94a3b8) !important;
+}
+
+button[data-testid^="btn-slot-"] span,
+[data-testid^="btn-slot-"] span,
+.schedule-empty-slot-btn span {
+	color: var(--ink-muted, #334155) !important;
+	font-weight: 700 !important;
+}
+
+button[data-testid^="btn-slot-"] svg,
+[data-testid^="btn-slot-"] svg,
+.schedule-empty-slot-btn svg {
+	color: var(--teal, #0d9488) !important;
+	opacity: 0.95 !important;
+}
+
+button[data-testid^="btn-slot-"]:hover,
+[data-testid^="btn-slot-"]:hover,
+.schedule-empty-slot-btn:hover {
+	color: var(--teal-dark, #0f766e) !important;
+	background-color: var(--teal-surface, rgba(13, 148, 136, 0.08)) !important;
+	border-color: var(--teal, #0d9488) !important;
+}
+
+button[data-testid^="btn-slot-"]:hover span,
+[data-testid^="btn-slot-"]:hover span,
+.schedule-empty-slot-btn:hover span {
+	color: var(--teal-dark, #0f766e) !important;
+}
+
+[data-theme="dark"] button[data-testid^="btn-slot-"],
+[data-theme="dark"] [data-testid^="btn-slot-"],
+[data-theme="dark"] .schedule-empty-slot-btn {
+	color: #cbd5e1 !important;
+	border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="dark"] button[data-testid^="btn-slot-"] span,
+[data-theme="dark"] [data-testid^="btn-slot-"] span,
+[data-theme="dark"] .schedule-empty-slot-btn span {
+	color: #cbd5e1 !important;
+	font-weight: 700 !important;
+}
+
+[data-theme="dark"] button[data-testid^="btn-slot-"]:hover,
+[data-theme="dark"] [data-testid^="btn-slot-"]:hover,
+[data-theme="dark"] .schedule-empty-slot-btn:hover {
+	color: #ffffff !important;
+	background-color: rgba(13, 148, 136, 0.22) !important;
+	border-color: var(--teal, #0d9488) !important;
+}
+
+[data-theme="dark"] button[data-testid^="btn-slot-"]:hover span,
+[data-theme="dark"] [data-testid^="btn-slot-"]:hover span,
+[data-theme="dark"] .schedule-empty-slot-btn:hover span {
+	color: #ffffff !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    THEME SAKURA: HIGH CONTRAST SCHEDULE EMPTY SLOTS (WCAG AAA >= 7:1)
    ═══════════════════════════════════════════════════════════════════ */
 [data-theme="sakura"] button[data-testid^="btn-slot-"],
@@ -835,5 +901,6 @@ body.dark-mode .schedule-secret-collapsible .schedule-admin-unlock {
 [data-theme="sakura"] [data-testid^="btn-slot-"]:hover span {
 	color: #70072e !important;
 }
+
 
 

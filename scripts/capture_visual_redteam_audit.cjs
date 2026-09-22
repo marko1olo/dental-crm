@@ -428,6 +428,23 @@ async function runAuditCapture() {
         await page.waitForTimeout(600);
       }
       await page.waitForTimeout(800);
+      const checkoutBarBox = await page.locator("#payment-checkout-bar").boundingBox().catch(() => null);
+      const checkoutBarVisible = await page.locator("#payment-checkout-bar").isVisible().catch(() => false);
+      const culprits = await page.evaluate(() => {
+        const el = document.querySelector("#payment-checkout-bar");
+        if (!el) return [];
+        let p = el.parentElement;
+        const res = [];
+        while (p && p !== document.documentElement) {
+          const s = window.getComputedStyle(p);
+          if (s.transform !== "none" || s.contain !== "none" || s.perspective !== "none" || s.filter !== "none" || s.backdropFilter !== "none") {
+            res.push({ tag: p.tagName, id: p.id, cls: (p.className || "").toString().slice(0, 40), transform: s.transform, contain: s.contain });
+          }
+          p = p.parentElement;
+        }
+        return res;
+      }).catch(() => []);
+      console.log(`[DIAGNOSTIC 3A ${suite.viewportName} ${theme}]: visible=${checkoutBarVisible}, box=${JSON.stringify(checkoutBarBox)}, culprits=${JSON.stringify(culprits)}`);
       await takeProof(
         page,
         `03A_finance_cashbox_${suite.viewportName}_${theme}.png`,

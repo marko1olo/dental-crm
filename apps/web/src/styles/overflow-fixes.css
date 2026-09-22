@@ -553,7 +553,22 @@
    Региональная адаптация под малую высоту экрана (1092x614, 720p, 768p)
    Мандаты 8e (Автономия врача), 8p (Слон в комнате), 8n (Соло-врач)
    ============================================================ */
-/* 1. Всегда видимая кнопка оплаты (Касса 54-ФЗ) на ноутбуках и десктопе без скролла (Мандаты 8c, 8e, 8n, 8p) */
+/* Ликвидация CSS Containing Block для position: fixed потомков (Касса 54-ФЗ, Мандаты 8c, 8e, 8p) */
+.finance-panel,
+#finance,
+#payment-capture,
+.payment-capture,
+.app-shell.dente-redesign .workspace > *,
+.workspace > #finance,
+.workspace > .finance-panel {
+	animation: none !important;
+	transform: none !important;
+	contain: none !important;
+	perspective: none !important;
+	filter: none !important;
+	backdrop-filter: none !important;
+}
+
 #payment-checkout-bar,
 .payment-checkout-bar {
 	position: fixed !important;
