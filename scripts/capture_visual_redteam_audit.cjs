@@ -23,7 +23,7 @@ const crypto = require("node:crypto");
 const API_BASE = "http://127.0.0.1:4100";
 const WEB_BASE = "http://127.0.0.1:5173";
 const OUT_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/visual_redteam_audit");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/c344f44e-4170-4c58-89d4-ae569a5c305d/screenshots");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/ddb49bbf-2251-4461-a748-75b4ca4b2b3a/screenshots");
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 fs.mkdirSync(BRAIN_DIR, { recursive: true });
@@ -374,30 +374,36 @@ async function runAuditCapture() {
       // -----------------------------------------------------------------------
       // Screen 1B: PriceListMappingDiffView (Дифф-вью 804н)
       // -----------------------------------------------------------------------
-      const openPricelistModalBtn = page.locator("[data-testid='open-service-pricelist-modal-btn'], button:has-text('804н'), button:has-text('Прейскурант 804н')").first();
+      const pricesSubTab = page.locator("#settings-subtab-price, button:has-text('Прайс')").first();
+      if (await pricesSubTab.isVisible().catch(() => false)) {
+        await pricesSubTab.click().catch(() => {});
+        await page.waitForTimeout(600);
+      }
+      const openPricelistModalBtn = page.locator("[data-testid='open-service-pricelist-modal-btn']").first();
       if (await openPricelistModalBtn.isVisible().catch(() => false)) {
         await openPricelistModalBtn.click().catch(() => {});
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(800);
+        await page.waitForSelector(".service-pricelist-modal", { state: "visible", timeout: 15000 }).catch(() => {});
 
-        const importBtn = page.locator("button[title*='Импорт'], button:has-text('Импорт')").first();
+        const importBtn = page.locator(".service-pricelist-modal button.pricelist-btn:has-text('Импорт'), .service-pricelist-modal button:has-text('Импорт')").first();
         if (await importBtn.isVisible().catch(() => false)) {
           await importBtn.click().catch(() => {});
           await page.waitForTimeout(800);
 
-          const smartTextArea = page.locator("textarea.pricelist-search-input").first();
+          const smartTextArea = page.locator(".service-pricelist-modal textarea.pricelist-search-input, textarea.pricelist-search-input").first();
           if (await smartTextArea.isVisible().catch(() => false)) {
             await smartTextArea.fill(SAMPLE_804N_TEXT);
             await page.waitForTimeout(600);
 
-            const parseBtn = page.locator("button:has-text('Распознать и сопоставить')").first();
+            const parseBtn = page.locator(".service-pricelist-modal button:has-text('Распознать и сопоставить')").first();
             if (await parseBtn.isVisible().catch(() => false)) {
               await parseBtn.click().catch(() => {});
-              await page.waitForTimeout(1500);
+              await page.waitForTimeout(2000);
             }
           }
         }
       }
-      await page.waitForSelector("[data-testid='pricelist-diff-container'], .pricelist-diff-container, .service-pricelist-modal", { timeout: 15000 }).catch(() => {});
+      await page.waitForSelector("[data-testid='pricelist-diff-container'], .pricelist-diff-container", { state: "visible", timeout: 15000 }).catch(() => {});
       await page.waitForTimeout(1000);
       await takeProof(
         page,
@@ -417,9 +423,10 @@ async function runAuditCapture() {
       // Screen 3A: FinanceView / Cashier ARM (54-ФЗ Касса)
       // -----------------------------------------------------------------------
       await navigateHash(page, "finance");
-      await page.waitForTimeout(1200);
+      await page.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
+      await page.waitForSelector(".finance-panel:not([aria-busy='true']), .finance-monolithic-toolbar, #payment-checkout-bar", { state: "visible", timeout: 25000 });
+      await page.waitForTimeout(1000);
       await configureTheme(page, theme);
-      await page.waitForSelector(".finance-panel, #finance, .finance-monolithic-toolbar", { timeout: 20000 });
 
       // Click quick chip "5000 наличными" to populate the payment form and demonstrate active cash calculations
       const chip5000 = page.locator("button:has-text('5000 наличными')").first();

@@ -1315,7 +1315,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		>
 			<div className="w-full max-w-xl sm:max-w-2xl md:max-w-3xl rounded-2xl bg-[var(--paper-strong,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] min-h-0">
 				{/* Modal Header */}
-				<div className="p-4 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)] shrink-0">
+				<div className="p-3 sm:px-4 sm:py-2.5 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)] shrink-0">
 					<div>
 						<h2 id="payment-modal-title" className="text-base sm:text-lg font-bold m-0 flex items-center gap-2 flex-wrap">
 							<ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400" />
@@ -1449,13 +1449,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						type="button"
 						onClick={() => setActiveMethod("card_terminal")}
 						data-testid="tab-payment-card-terminal"
-						className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+						className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "card_terminal"
 								? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
 						}`}
 					>
-						<CreditCard size={16} className="text-emerald-600 shrink-0" />
+						<CreditCard size={15} className="text-emerald-600 shrink-0" />
 						<span className="whitespace-nowrap shrink-0">POS Терминал Сбербанк</span>
 					</button>
 
@@ -1463,20 +1463,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						type="button"
 						onClick={() => setActiveMethod("sberpay_qr")}
 						data-testid="tab-payment-sberpay-qr"
-						className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+						className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "sberpay_qr"
 								? "border-teal-500 bg-teal-500/10 text-teal-700 dark:text-teal-300"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
 						}`}
 					>
-						<QrCode size={16} className="text-teal-600 shrink-0" />
+						<QrCode size={15} className="text-teal-600 shrink-0" />
 						<span className="whitespace-nowrap shrink-0">SberPay QR (СБП)</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setActiveMethod("sbp_qr")}
-						className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+						className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "sbp_qr"
 								? "border-teal-500 bg-teal-500/10 text-teal-700 dark:text-teal-300 ring-2 ring-teal-400"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-teal-400"
@@ -1484,7 +1484,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						data-testid="tab-payment-sbp-qr"
 						title="Оплата СБП по QR (НСПК / ГОСТ Р 56042-2014)"
 					>
-						<QrCode size={16} className="text-teal-600 shrink-0" />
+						<QrCode size={15} className="text-teal-600 shrink-0" />
 						<span className="whitespace-nowrap shrink-0">Оплата СБП по QR</span>
 					</button>
 
@@ -1492,13 +1492,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						type="button"
 						onClick={() => setActiveMethod("cash")}
 						data-testid="tab-payment-cash"
-						className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+						className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "cash"
 								? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
 						}`}
 					>
-						<Banknote size={16} className="text-emerald-600 shrink-0" />
+						<Banknote size={15} className="text-emerald-600 shrink-0" />
 						<span className="whitespace-nowrap shrink-0">Наличные</span>
 					</button>
 
@@ -1506,13 +1506,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						type="button"
 						onClick={() => setActiveMethod("family_deposit")}
 						data-testid="tab-payment-family-deposit"
-						className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+						className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "family_deposit"
 								? "border-pink-500 bg-pink-500/10 text-pink-700 dark:text-pink-300 ring-2 ring-pink-400"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
 						}`}
 					>
-						<Users size={16} className="text-pink-600 shrink-0" />
+						<Users size={15} className="text-pink-600 shrink-0" />
 						<span className="whitespace-nowrap shrink-0">Депозит / Семья</span>
 					</button>
 
@@ -1520,13 +1520,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						type="button"
 						onClick={() => setActiveMethod("split")}
 						data-testid="tab-payment-split"
-						className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+						className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
 							activeMethod === "split"
 								? "border-purple-500 bg-purple-500/10 text-purple-700 dark:text-purple-300 ring-2 ring-purple-400"
 								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
 						}`}
 					>
-						<Wallet size={16} className="text-purple-600 shrink-0" />
+						<Wallet size={15} className="text-purple-600 shrink-0" />
 						<span className="whitespace-nowrap shrink-0">Комбинированная (Сплит)</span>
 					</button>
 				</div>

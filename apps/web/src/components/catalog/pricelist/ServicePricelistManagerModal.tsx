@@ -458,8 +458,11 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 						basePriceKopecks: item.priceKopecks || rublesToKopecks(item.priceRub),
 					});
 				} else {
+					const idSuffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+						? crypto.randomUUID().slice(0, 8)
+						: Date.now().toString(36);
 					const newItem: ServicePricelistItem = {
-						id: `srv-ingested-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+						id: `srv-ingested-${Date.now()}-${idSuffix}`,
 						code804n: item.code804n || 'A16.07.000',
 						commercialTitle: item.cleanedTitle,
 						statutoryTitle804n: item.statutoryTitle804n || item.cleanedTitle,
@@ -718,7 +721,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 							className="pricelist-btn pricelist-btn-primary"
 							onClick={openAddModal}
 							title="Добавить новую услугу по Номенклатуре 804н"
-							style={{ minHeight: '36px', height: '36px', gap: '6px' }}
+							style={{ minHeight: '32px', height: '32px', gap: '5px' }}
 						>
 							<Plus size={16} />
 							<span>Добавить услугу</span>

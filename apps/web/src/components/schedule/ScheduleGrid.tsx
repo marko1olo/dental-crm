@@ -2854,8 +2854,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														<button
 															type="button"
 															onClick={() => openAssignModal(chair.id)}
-															className="w-full p-2 rounded-xl border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex flex-col gap-1.5 text-xs normal-case transition-colors cursor-pointer group shadow-2xs min-h-[44px]"
-															style={{ minHeight: "44px" }}
+															className="w-full p-1.5 sm:p-2 rounded-xl border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex flex-col gap-1 text-xs normal-case transition-colors cursor-pointer group shadow-2xs min-h-[38px] sm:min-h-[34px]"
 															title={`2 смены: ${mornSub?.doctorName || "Врач 1"} (${mornSub?.shiftHours || "08:00–14:00"}) и ${eveSub?.doctorName || "Врач 2"} (${eveSub?.shiftHours || "14:00–20:00"}). Нажмите для изменения`}
 															aria-label={`2 смены на кресле ${chair.name}: 08:00–14:00 ${mornSub?.doctorName || "Врач 1"}, 14:00–20:00 ${eveSub?.doctorName || "Врач 2"}`}
 															data-testid={`chair-doctor-badge-${chair.id}`}
@@ -2913,8 +2912,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																<button
 																	type="button"
 																	onClick={() => handleConfirmAssignDoctor(chair.id, mornSub.doctorId, "morning")}
-																	className="min-h-[44px] text-[11px] font-bold py-1 px-2 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer flex items-center justify-center gap-1 flex-1"
-																	style={{ minHeight: "44px" }}
+																	className="min-h-[36px] sm:min-h-[26px] sm:h-6.5 text-[10px] sm:text-[11px] font-bold py-0.5 sm:py-0 px-1.5 sm:px-2 rounded-md bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer flex items-center justify-center gap-1 flex-1"
 																	title="Переключить на утро только"
 																	data-testid={`chair-quick-morning-${chair.id}`}
 																>
@@ -2926,8 +2924,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																<button
 																	type="button"
 																	onClick={() => handleConfirmAssignDoctor(chair.id, eveSub.doctorId, "evening")}
-																	className="min-h-[44px] text-[11px] font-bold py-1 px-2 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer flex items-center justify-center gap-1 flex-1"
-																	style={{ minHeight: "44px" }}
+																	className="min-h-[36px] sm:min-h-[26px] sm:h-6.5 text-[10px] sm:text-[11px] font-bold py-0.5 sm:py-0 px-1.5 sm:px-2 rounded-md bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer flex items-center justify-center gap-1 flex-1"
 																	title="Переключить на вечер только"
 																	data-testid={`chair-quick-evening-${chair.id}`}
 																>
@@ -2939,8 +2936,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																<button
 																	type="button"
 																	onClick={() => handleConfirmAssignDoctor(chair.id, mornSub.doctorId, "full")}
-																	className="min-h-[44px] text-[11px] font-bold py-1 px-2 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer flex items-center justify-center gap-1 flex-1"
-																	style={{ minHeight: "44px" }}
+																	className="min-h-[36px] sm:min-h-[26px] sm:h-6.5 text-[10px] sm:text-[11px] font-bold py-0.5 sm:py-0 px-1.5 sm:px-2 rounded-md bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer flex items-center justify-center gap-1 flex-1"
 																	title="Переключить на весь день"
 																	data-testid={`chair-quick-full-${chair.id}`}
 																>
@@ -2963,8 +2959,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														<button
 															type="button"
 															onClick={() => openAssignModal(chair.id)}
-															className="min-h-[44px] w-full px-2.5 py-1.5 rounded-xl border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-between gap-1.5 text-xs font-semibold normal-case transition-colors cursor-pointer group shadow-2xs"
-															style={{ minHeight: "44px" }}
+															className="min-h-[36px] sm:min-h-[32px] sm:h-8 w-full px-2 py-1 rounded-xl border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-between gap-1.5 text-xs font-semibold normal-case transition-colors cursor-pointer group shadow-2xs"
 															title={`Врач на смене: ${assignment!.doctorName} (${assignment!.shiftHours}). Нажмите для смены`}
 															aria-label={`Врач ${assignment!.doctorName}, ${assignment!.shiftHours}. Нажмите для изменения`}
 															data-testid={`chair-doctor-badge-${chair.id}`}
@@ -3200,23 +3195,21 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 											<button
 												type="button"
 												onClick={() => openAssignModal(chair.id)}
-												className="min-h-[44px] w-full px-3 py-2 rounded-xl border-2 border-dashed border-[var(--teal,var(--brand-primary))]/40 bg-[var(--paper)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1.5 text-xs font-bold normal-case transition-all cursor-pointer shadow-2xs active:scale-98"
-												style={{ minHeight: "44px" }}
+												className="min-h-[36px] sm:min-h-[30px] sm:h-7.5 w-full px-2.5 py-1 rounded-lg border-2 border-dashed border-[var(--teal,var(--brand-primary))]/40 bg-[var(--paper)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1.5 text-xs font-bold normal-case transition-all cursor-pointer shadow-2xs active:scale-98"
 												title={`Назначить врача на кресло «${chair.name}»`}
 												aria-label={`Назначить врача на кресло ${chair.name}`}
 												data-testid={`btn-assign-doctor-${chair.id}`}
 											>
-												<Plus size={15} className="shrink-0 text-[var(--teal)]" />
+												<Plus size={14} className="shrink-0 text-[var(--teal)]" />
 												<span className="truncate font-bold">+ Назначить врача</span>
 											</button>
 											{suggestedDoctor && !isSoloDoctor && doctors.length > 1 && (
 												<button
 													type="button"
 													onClick={() => handleConfirmAssignDoctor(chair.id, suggestedDoctor.id, "full")}
-													className="min-h-[44px] py-1 px-2 rounded-lg border border-[var(--teal)]/20 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] text-xs font-bold truncate flex items-center justify-center gap-1 cursor-pointer transition-colors"
+													className="min-h-[32px] sm:min-h-[26px] sm:h-6.5 py-0.5 sm:py-0 px-2 rounded-md border border-[var(--teal)]/20 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] text-xs font-bold truncate flex items-center justify-center gap-1 cursor-pointer transition-colors"
 													title={`Быстро назначить ${suggestedDoctor.fullName} (1 клик)`}
 													data-testid={`btn-quick-assign-${chair.id}`}
-													style={{ minHeight: "44px" }}
 												>
 													<Zap size={11} className="text-[var(--teal)] shrink-0" />
 													<span className="truncate">{`1 клик: ${formatDoctorShortName(suggestedDoctor.fullName)}`}</span>

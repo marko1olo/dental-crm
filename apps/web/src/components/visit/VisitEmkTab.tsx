@@ -2688,38 +2688,38 @@ export function VisitEmkTab() {
 											<button
 												type="button"
 												onClick={(e) => { applyTextFormatting(field.key, "check"); (e.target as HTMLElement).closest("details")?.removeAttribute("open"); }}
-												className="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent w-full"
+												className="flex items-center gap-2 px-2.5 py-1 min-h-[32px] sm:min-h-[28px] sm:h-7 rounded-md hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent w-full text-xs"
 											>
-												<CheckSquare size={16} className="shrink-0" /> <span className="truncate text-sm">Выполнено</span>
+												<CheckSquare size={14} className="shrink-0" /> <span className="truncate text-xs">Выполнено</span>
 											</button>
 											<button
 												type="button"
 												onClick={(e) => { applyTextFormatting(field.key, "tooth"); (e.target as HTMLElement).closest("details")?.removeAttribute("open"); }}
-												className="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg hover:bg-[var(--paper-soft)] text-[var(--teal,var(--brand-primary))] text-left cursor-pointer border-none bg-transparent w-full"
+												className="flex items-center gap-2 px-2.5 py-1 min-h-[32px] sm:min-h-[28px] sm:h-7 rounded-md hover:bg-[var(--paper-soft)] text-[var(--teal,var(--brand-primary))] text-left cursor-pointer border-none bg-transparent w-full text-xs"
 											>
-												<Hash size={16} className="shrink-0" /> <span className="truncate text-sm">Зуб {activeSelectedTooth ? `#${activeSelectedTooth}` : ""}</span>
+												<Hash size={14} className="shrink-0" /> <span className="truncate text-xs">Зуб {activeSelectedTooth ? `#${activeSelectedTooth}` : ""}</span>
 											</button>
 											<button
 												type="button"
 												onClick={(e) => { applyTextFormatting(field.key, "time"); (e.target as HTMLElement).closest("details")?.removeAttribute("open"); }}
-												className="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent w-full"
+												className="flex items-center gap-2 px-2.5 py-1 min-h-[32px] sm:min-h-[28px] sm:h-7 rounded-md hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent w-full text-xs"
 											>
-												<Clock size={16} className="shrink-0" /> <span className="truncate text-sm">Время</span>
+												<Clock size={14} className="shrink-0" /> <span className="truncate text-xs">Время</span>
 											</button>
 											<div className="h-px bg-[var(--line)] my-0.5" />
 											<button
 												type="button"
 												onClick={(e) => { applyTextFormatting(field.key, "copy"); (e.target as HTMLElement).closest("details")?.removeAttribute("open"); }}
-												className="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent w-full"
+												className="flex items-center gap-2 px-2.5 py-1 min-h-[32px] sm:min-h-[28px] sm:h-7 rounded-md hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent w-full text-xs"
 											>
-												<Copy size={16} className="shrink-0" /> <span className="truncate text-sm">Копировать</span>
+												<Copy size={14} className="shrink-0" /> <span className="truncate text-xs">Копировать</span>
 											</button>
 											<button
 												type="button"
 												onClick={(e) => { applyTextFormatting(field.key, "clear"); (e.target as HTMLElement).closest("details")?.removeAttribute("open"); }}
-												className="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg hover:bg-rose-500/15 text-rose-600 text-left cursor-pointer border-none bg-transparent w-full"
+												className="flex items-center gap-2 px-2.5 py-1 min-h-[32px] sm:min-h-[28px] sm:h-7 rounded-md hover:bg-rose-500/15 text-rose-600 text-left cursor-pointer border-none bg-transparent w-full text-xs"
 											>
-												<Eraser size={16} className="shrink-0" /> <span className="truncate text-sm">Очистить</span>
+												<Eraser size={14} className="shrink-0" /> <span className="truncate text-xs">Очистить</span>
 											</button>
 										</div>
 									</details>

@@ -235,8 +235,8 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 				);
 				e.dataTransfer.effectAllowed = "move";
 			}}
-			style={{ contentVisibility: "auto", containIntrinsicSize: "1px 52px" }}
-			className={`w-full text-left p-2 rounded-xl border text-xs font-semibold shadow-xs flex flex-col justify-between gap-1.5 transition-all min-h-[52px] cursor-grab active:cursor-grabbing relative ${
+			style={{ contentVisibility: "auto", containIntrinsicSize: "1px 44px" }}
+			className={`w-full text-left p-1.5 sm:p-1.5 rounded-lg border text-xs font-semibold shadow-2xs flex flex-col justify-between gap-1 transition-all min-h-[44px] cursor-grab active:cursor-grabbing relative ${
 				collision
 					? "bg-amber-500/15 border-amber-500/40 text-amber-900 dark:text-amber-100 ring-1 ring-amber-500/50"
 					: isCito
@@ -600,7 +600,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 						onAppointmentClick(a);
 					}
 				}}
-				className="cursor-pointer flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-1.5 sm:gap-2 min-w-0"
+				className="cursor-pointer flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-1 sm:gap-1.5 min-w-0"
 				role="button"
 				tabIndex={0}
 				onKeyDown={(e) => {
