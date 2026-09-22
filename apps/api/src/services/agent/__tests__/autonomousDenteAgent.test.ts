@@ -17,7 +17,67 @@
  */
 
 import Fastify from "fastify";
-import { describe, expect, it } from "vitest";
+import assert from "node:assert";
+import { describe, it } from "node:test";
+
+function expect(actual: any) {
+	return {
+		toBe(expected: any) {
+			assert.strictEqual(actual, expected);
+		},
+		toBeDefined() {
+			assert.notStrictEqual(actual, undefined);
+		},
+		toBeNull() {
+			assert.strictEqual(actual, null);
+		},
+		toEqual(expected: any) {
+			assert.deepStrictEqual(actual, expected);
+		},
+		toBeGreaterThan(expected: number) {
+			assert.ok(actual > expected, `Expected ${actual} > ${expected}`);
+		},
+		toBeGreaterThanOrEqual(expected: number) {
+			assert.ok(actual >= expected, `Expected ${actual} >= ${expected}`);
+		},
+		toBeLessThanOrEqual(expected: number) {
+			assert.ok(actual <= expected, `Expected ${actual} <= ${expected}`);
+		},
+		toMatch(pattern: RegExp) {
+			assert.match(String(actual), pattern);
+		},
+		toContain(item: any) {
+			if (typeof actual === "string") {
+				assert.ok(actual.includes(item), `Expected string "${actual}" to contain "${item}"`);
+			} else if (Array.isArray(actual)) {
+				assert.ok(actual.includes(item), `Expected array to contain ${JSON.stringify(item)}`);
+			} else {
+				assert.ok(Boolean(actual && actual[item]), `Expected object to contain key ${item}`);
+			}
+		},
+		not: {
+			toMatch(pattern: RegExp) {
+				assert.doesNotMatch(String(actual), pattern);
+			},
+			toContain(item: any) {
+				if (typeof actual === "string") {
+					assert.ok(!actual.includes(item), `Expected string "${actual}" not to contain "${item}"`);
+				} else if (Array.isArray(actual)) {
+					assert.ok(!actual.includes(item), `Expected array not to contain ${JSON.stringify(item)}`);
+				}
+			},
+		},
+		rejects: {
+			async toThrow(pattern?: RegExp | string) {
+				await assert.rejects(
+					Promise.resolve(actual),
+					typeof pattern === "string" ? new RegExp(pattern) : pattern,
+				);
+			},
+		},
+	};
+}
+
 import { copilotRoutes } from "../../../routes/copilot.js";
 import {
 	AutonomousDenteAgent,
@@ -446,7 +506,7 @@ describe("DENTE Autonomous AI Engine & Extended Tools Suite", () => {
 			expect(cardioAlert).toBeDefined();
 
 			// T.A.R.S. 100% Verdict format check (zero fluff, fact-dense)
-			expect(result.verdict).toMatch(/ВЕРДИКТ ЦИФРОВОГО НАЧМЕДА DENTE \(T\.A\.R\.S\. 100%\):/);
+			expect(result.verdict).toMatch(/ВЕРДИКТ ГЛАВНОГО ВРАЧА DENTE \(T\.A\.R\.S\. 100%\):/);
 			expect(result.verdict).toContain("2.6 (26)");
 			expect(result.verdict).toContain("K04.0");
 			expect(result.verdict).toMatch(/Анестезия:/);

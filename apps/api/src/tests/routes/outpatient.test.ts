@@ -338,8 +338,8 @@ describe("Outpatient & Clinical Core Integration Tests", () => {
 		assert.strictEqual(bodyActive.defects[0].defectId, 3);
 	});
 
-	test("Контур контроля качества начмедом: очередь, 24-часовой дедлайн и модерация карты", async () => {
-		// 1. Проверка очереди верификации начмеда
+	test("Контур клинического аудита качества главным врачом: очередь, индикативный дедлайн и аудит карты", async () => {
+		// 1. Проверка очереди клинического аудита главным врачом
 		const resQueue = await app.inject({
 			method: "GET",
 			url: "/api/outpatient/verify?status=review",
@@ -352,7 +352,7 @@ describe("Outpatient & Clinical Core Integration Tests", () => {
 		assert.ok(item);
 		assert.strictEqual(item.isEditableDeadlineExpired, false);
 
-		// 2. Проверка статуса замка редактирования визита
+		// 2. Проверка статуса замка редактирования визита (Мандат 8e: врач всегда сохраняет право правок)
 		const resLock = await app.inject({
 			method: "GET",
 			url: `/api/outpatient/verify/visit/${testVisitId}/lock-status`,
@@ -363,7 +363,7 @@ describe("Outpatient & Clinical Core Integration Tests", () => {
 		assert.strictEqual(bodyLock.hasVerificationRecord, true);
 		assert.strictEqual(bodyLock.canEdit, true);
 
-		// 3. Возврат на доработку без причины — отклоняется с 400
+		// 3. Замечание по качеству без указания причины — отклоняется с 400
 		const resRejectEmpty = await app.inject({
 			method: "PUT",
 			url: `/api/outpatient/verify/${testVerificationId}/status`,
@@ -375,7 +375,7 @@ describe("Outpatient & Clinical Core Integration Tests", () => {
 		});
 		assert.strictEqual(resRejectEmpty.statusCode, 400);
 
-		// 4. Возврат на доработку с замечанием начмеда
+		// 4. Замечание главного врача по качеству ведения карты (рекомендательный характер)
 		const resReject = await app.inject({
 			method: "PUT",
 			url: `/api/outpatient/verify/${testVerificationId}/status`,
@@ -393,7 +393,7 @@ describe("Outpatient & Clinical Core Integration Tests", () => {
 			"Отсутствует рентген-контроль обтурации каналов и дозиметрия",
 		);
 
-		// 5. Утверждение карты начмедом
+		// 5. Успешное прохождение аудита качества главным врачом
 		const resApprove = await app.inject({
 			method: "PUT",
 			url: `/api/outpatient/verify/${testVerificationId}/status`,

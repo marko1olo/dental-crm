@@ -507,11 +507,11 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 	);
 
 	// =========================================================================
-	// 8. ОЧЕРЕДЬ АМБУЛАТОРНЫХ КАРТ НАЧМЕДА / КОНТРОЛЬ КАЧЕСТВА ЭМК
-	// Пояснение: Мандат 8e (п. 4) и Мандат 8n. Очередь верификации служит инструментом
-	// экспертного аудита качества и соблюдения стандартов 043/у, а НЕ карательным
-	// блокирующим механизмом. Нахождение карты на ревью или утверждение начмедом
-	// НЕ блокирует возможность лечащего врача вносить правки в дневник («Исправленному верить»).
+	// 8. ЭКСПЕРТИЗА ГЛАВНОГО ВРАЧА / КЛИНИЧЕСКИЙ АУДИТ КАЧЕСТВА ЭМК
+	// Пояснение: Мандат 8e (п. 4), Мандат 8n, Мандат 8s. Очередь экспертизы служит инструментом
+	// экспертного клинического аудита качества и наставничества главного врача по стандартам 043/у,
+	// а НЕ карательным бюрократическим механизмом. Нахождение карты на аудите или рекомендации главного врача
+	// НИКОГДА не блокируют возможность лечащего врача вносить правки в дневник («Исправленному верить»).
 	// =========================================================================
 	const getVerifyQueueQuerySchema = z.object({
 		status: outpatientVerificationStatusSchema.optional(),
@@ -529,7 +529,7 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 		if (!parsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "Некорректные параметры очереди начмеда",
+				message: "Некорректные параметры экспертного аудита качества ЭМК главного врача",
 				details: parsed.error.issues,
 			});
 		}
@@ -589,12 +589,14 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 			count: itemsWithLockStatus.length,
 			queue: itemsWithLockStatus,
 			advisoryNotice:
-				"Очередь верификации носит рекомендательно-экспертный характер (Мандат 8e). Дневники врачей не подлежат карательной блокировке.",
+				"Экспертный аудит качества главного врача носит рекомендательно-наставнический характер (Мандат 8e). Дневники врачей не подлежат карательной блокировке.",
 		});
 	});
 
 	// =========================================================================
-	// 9. СОГЛАСОВАНИЕ / ВОЗВРАТ НА ДОРАБОТКУ КАРТЫ НАЧМЕДОМ
+	// 9. КЛИНИЧЕСКИЙ АУДИТ КАЧЕСТВА / ЭКСПЕРТИЗА КАРТЫ ГЛАВНЫМ ВРАЧОМ
+	// В частной стоматологии нет согласований начмедом пломб или процедур (Мандат 8e п. 4).
+	// Экспертиза носит рекомендательный характер: аудит качества и наставнические замечания главного врача без блокировок.
 	// =========================================================================
 	const updateVerificationParamsSchema = z.object({
 		id: z.string().uuid(),
@@ -610,7 +612,7 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 			if (!paramsParsed.success) {
 				return reply.code(400).send({
 					error: "ValidationError",
-					message: "Некорректный ID записи верификации",
+					message: "Некорректный ID записи аудита качества",
 					details: paramsParsed.error.issues,
 				});
 			}
@@ -619,7 +621,7 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 			if (!bodyParsed.success) {
 				return reply.code(400).send({
 					error: "ValidationError",
-					message: "Некорректный статус верификации",
+					message: "Некорректный статус аудита качества",
 					details: bodyParsed.error.issues,
 				});
 			}
@@ -627,7 +629,7 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 			if (bodyParsed.data.status === "rejected" && !bodyParsed.data.rejectionReason?.trim()) {
 				return reply.code(400).send({
 					error: "RejectionReasonRequired",
-					message: "При возврате карты на доработку начмед обязан указать причину замечания",
+					message: "При внесении замечания по качеству карты главный врач обязан указать рекомендацию или причину замечания",
 				});
 			}
 
@@ -713,7 +715,7 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 				.limit(1);
 
 			const identity = getRequestIdentity(request);
-			const isDirectorOrCmo =
+			const isDirectorOrChiefDoctor =
 				identity.role === "owner" ||
 				identity.role === "admin" ||
 				identity.role === "cmo" ||
@@ -736,14 +738,14 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 			const isApproved = verif.status === "approved";
 			// Мандат 8e (п. 4): «Никаких запретов на черновики и согласований начмедов: В частной стоматологии нет начмедов и комиссий, утверждающих каждую пломбу. Врач свободно правит свои дневники в 1 клик с версионным аудитом (Исправленному верить). Запрещены 24-часовые замки намертво».
 			// Для лечащего врача (и роли doctor) блокировка ВСЕГДА отключена (isLocked: false, canEdit: true),
-			// исключив принудительную блокировку дневника по истечении 24 часов (editableDeadline) или после согласования.
+			// исключив принудительную блокировку дневника по истечении 24 часов (editableDeadline) или после прохождения клинического аудита.
 			const isAttendingDoctor =
 				Boolean(identity.userId && verif.doctorId && identity.userId === verif.doctorId) ||
 				identity.role === "doctor" ||
 				!identity.role; // Приоритет автономии врача при отсутствии строгой роли (Мандат 8e)
 
 			// Врач имеет право редактировать карту в любой момент: isLocked ВСЕГДА возвращает false (canEdit: true)
-			const isDoctorOrPrivileged = isAttendingDoctor || isDirectorOrCmo;
+			const isDoctorOrPrivileged = isAttendingDoctor || isDirectorOrChiefDoctor;
 			const isLocked = isDoctorOrPrivileged ? false : (isDeadlineExpired || isApproved);
 
 			return reply.send({

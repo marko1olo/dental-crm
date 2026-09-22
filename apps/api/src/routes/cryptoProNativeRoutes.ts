@@ -48,7 +48,7 @@ async function checkCryptoAccess(
 	areaName: string,
 ): Promise<boolean> {
 	const identity = getRequestIdentity(request);
-	// 1. Авторизованный сотрудник клиники (врач, начмед, управляющий, администратор)
+	// 1. Авторизованный сотрудник клиники (врач, главный врач, управляющий, администратор)
 	if (identity.organizationId && identity.userId) {
 		return true;
 	}

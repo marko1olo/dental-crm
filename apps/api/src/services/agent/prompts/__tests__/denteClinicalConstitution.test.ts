@@ -38,11 +38,14 @@ import {
 
 describe("DENTE Clinical Constitution & Agent Prompts Suite", () => {
 	describe("1. Clinical Identity & ReAct Instrumental Cycle", () => {
-		test("contains Chief Clinical AI Resident and Digital CMO identity", () => {
+		test("contains Chief Clinical AI Resident and Chief Doctor / Clinical Mentor identity", () => {
 			assert.ok(
 				DENTE_CLINICAL_IDENTITY.includes("ГЛАВНЫЙ КЛИНИЧЕСКИЙ ИИ-ОРДИНАТОР"),
 			);
-			assert.ok(DENTE_CLINICAL_IDENTITY.includes("ЦИФРОВОЙ НАЧМЕД"));
+			assert.ok(
+				DENTE_CLINICAL_IDENTITY.includes("ГЛАВНЫЙ ВРАЧ") ||
+				DENTE_CLINICAL_IDENTITY.includes("КЛИНИЧЕСКИЙ ЭКСПЕРТ-НАСТАВНИК"),
+			);
 			assert.ok(DENTE_CLINICAL_IDENTITY.includes("T.A.R.S. 100%"));
 			assert.ok(DENTE_CLINICAL_IDENTITY.includes("zero-sycophancy"));
 			assert.ok(DENTE_CLINICAL_IDENTITY.includes("Презумпция дефекта"));

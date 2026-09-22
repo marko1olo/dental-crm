@@ -580,7 +580,7 @@ export class AutonomousDenteAgent {
 
 		const totalDueStr = estimateResult?.formattedTotal || "0 ₽";
 		const verdict = [
-			`ВЕРДИКТ ЦИФРОВОГО НАЧМЕДА DENTE (T.A.R.S. 100%):`,
+			`ВЕРДИКТ ГЛАВНОГО ВРАЧА DENTE (T.A.R.S. 100%):`,
 			`• Пациент: ${input.patientId} | Зуб: ${fdiToothFormatted}.`,
 			`• Клинический диагноз: ${primaryIcd10} ${diagnosisName}.`,
 			`• Фармакологическая безопасность: ${safetySummary}`,

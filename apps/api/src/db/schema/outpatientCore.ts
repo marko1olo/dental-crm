@@ -139,7 +139,7 @@ export const outpatientTemplates = pgTable(
 );
 
 /**
- * 7. Верификация амбулаторных карт начмедом / контроль качества (рекомендательный аудит)
+ * 7. Клинический аудит качества амбулаторных карт / Экспертиза главного врача (рекомендательный аудит)
  * Мандат 8e (п. 4): В частной стоматологии нет начмедов и комиссий, утверждающих каждую пломбу.
  * Врач свободно правит свои дневники в 1 клик с версионным аудитом («Исправленному верить»).
  * Запрещены 24-часовые замки намертво. editableDeadline используется исключительно для аналитики и аудита.
@@ -160,7 +160,7 @@ export const outpatientVerifications = pgTable(
 		doctorId: uuid("doctor_id")
 			.notNull()
 			.references(() => users.id),
-		cmoUserId: uuid("cmo_user_id").references(() => users.id), // Начмед / Главный врач
+		cmoUserId: uuid("cmo_user_id").references(() => users.id), // Главный врач / Экспертный аудитор качества (Мандат 8e)
 		status: varchar("status", { length: 32 }).notNull().default("draft"), // "draft", "review", "approved", "rejected"
 		rejectionReason: text("rejection_reason"),
 		submittedAt: timestamp("submitted_at", { withTimezone: true }),
