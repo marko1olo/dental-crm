@@ -17,6 +17,7 @@ import {
 	Search,
 	ShieldCheck,
 	Sparkles,
+	Tag,
 	Trash2,
 	UploadCloud,
 	X,
@@ -141,11 +142,27 @@ export function SettingsPricesTab() {
 	const [isServicePricelistModalOpen, setIsServicePricelistModalOpen] =
 		useState(false);
 	const [categoryLimits, setCategoryLimits] = useState<Record<string, number>>({});
+	const [is804nCodesMenuOpen, setIs804nCodesMenuOpen] = useState(false);
+	const codes804nMenuRef = useRef<HTMLDivElement | null>(null);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: reset pagination when searching
 	useEffect(() => {
 		setCategoryLimits({});
 	}, [searchQuery]);
+
+	useEffect(() => {
+		if (!is804nCodesMenuOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (
+				codes804nMenuRef.current &&
+				!codes804nMenuRef.current.contains(e.target as Node)
+			) {
+				setIs804nCodesMenuOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [is804nCodesMenuOpen]);
 
 	const [editServiceId, setEditServiceId] = useState<string | null>(null);
 	const [editServiceForm, setEditServiceForm] = useState(NEW_SERVICE_TEMPLATE);
@@ -445,90 +462,130 @@ export function SettingsPricesTab() {
 
 			{activeTab === "catalog" && (
 				<section className="pricelist-section-card">
-					<div className="pricelist-section-header">
-						<div
-							className="pricelist-section-icon"
-							style={{
-								background: "rgba(59, 130, 246, 0.1)",
-								color: "var(--blue)",
-							}}
-						>
-							<ReceiptText size={24} />
+					{/* STRICTLY 1 COMPACT MONOLITHIC 36px TOOLBAR ROW (Mandates 8c, 8d, 8p) */}
+					<div className="pricelist-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-3 flex-nowrap overflow-hidden shrink-0 select-none">
+						{/* Left: Search input */}
+						<div className="pricelist-search-wrapper flex items-center min-w-0 flex-1 max-w-xs relative">
+							<Search size={14} className="absolute left-2.5 text-[var(--muted)] shrink-0 pointer-events-none" />
+							<input
+								type="text"
+								placeholder="Поиск по услугам или коду 804н..."
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
+								className="w-full min-h-[32px] h-7 sm:h-8 pl-8 pr-7 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--teal)] transition-all"
+							/>
+							{searchQuery && (
+								<button
+									type="button"
+									onClick={() => setSearchQuery("")}
+									className="absolute right-2 p-0.5 rounded text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+									title="Очистить поиск"
+									aria-label="Очистить поиск"
+								>
+									<X size={12} />
+								</button>
+							)}
 						</div>
-						<div className="pricelist-section-title">
-							<h3>Управление Прайс-листом</h3>
-							<p>Ручное добавление, удаление и редактирование услуг клиники</p>
-						</div>
-						<div className="pricelist-header-actions">
-							<div className="pricelist-search-wrapper">
-								<Search size={16} />
-								<input
-									type="text"
-									placeholder="Поиск по названию или коду..."
-									value={searchQuery}
-									onChange={(e) => setSearchQuery(e.target.value)}
-								/>
-							</div>
+
+						{/* Center: Statutory 804n Quick Codes Dropdown Menu (Hick's Law: 8 chips into 1 trigger) */}
+						<div className="relative inline-flex items-center shrink-0" ref={codes804nMenuRef}>
 							<button
 								type="button"
-								className="secondary-button"
+								onClick={() => setIs804nCodesMenuOpen((prev) => !prev)}
+								className={`min-h-[32px] h-7 sm:h-8 px-2 sm:px-2.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 ${
+									is804nCodesMenuOpen || (searchQuery && searchQuery.startsWith("A"))
+										? "bg-[var(--teal-soft)] text-[var(--teal-dark)] border-[var(--teal)] font-bold"
+										: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)]"
+								}`}
+								title="Выбрать типовую услугу по номенклатуре Минздрава 804н"
+								aria-expanded={is804nCodesMenuOpen}
+							>
+								<Tag size={13} className="text-[var(--teal)] shrink-0" />
+								<span className="hidden sm:inline">Номенклатура 804н</span>
+								<span className="sm:hidden">804н</span>
+								<ChevronDown size={11} className={`shrink-0 transition-transform ${is804nCodesMenuOpen ? "rotate-180" : ""}`} />
+							</button>
+
+							{is804nCodesMenuOpen && (
+								<div
+									className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 z-50 flex flex-col gap-1 p-2 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl min-w-[240px] max-w-[calc(100vw-32px)] animate-in fade-in zoom-in-95 duration-100 text-xs"
+									role="menu"
+								>
+									<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-b border-[var(--line)] mb-1">
+										Быстрый поиск по Приказу 804н
+									</div>
+									<div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+										{[
+											{ code: "A16.07.002", label: "A16.07.002 Кариес" },
+											{ code: "A16.07.008", label: "A16.07.008 Пульпит" },
+											{ code: "A11.07.012", label: "A11.07.012 Анестезия" },
+											{ code: "A06.07.003", label: "A06.07.003 Снимок" },
+											{ code: "A16.07.054", label: "A16.07.054 Имплантация" },
+											{ code: "A16.07.004", label: "A16.07.004 Коронка" },
+											{ code: "A16.07.001", label: "A16.07.001 Удаление" },
+											{ code: "A16.07.051", label: "A16.07.051 Гигиена" },
+										].map((chip) => (
+											<button
+												key={chip.code}
+												type="button"
+												onClick={() => {
+													setSearchQuery(chip.code);
+													setIs804nCodesMenuOpen(false);
+												}}
+												className={`w-full text-left px-2 py-1.5 rounded-lg text-xs font-mono font-medium transition-colors cursor-pointer flex items-center justify-between ${
+													searchQuery === chip.code
+														? "bg-[var(--teal)] text-white font-bold"
+														: "hover:bg-[var(--teal-soft)] text-[var(--ink)]"
+												}`}
+												role="menuitem"
+											>
+												<span>{chip.label}</span>
+											</button>
+										))}
+									</div>
+									{searchQuery && (
+										<button
+											type="button"
+											onClick={() => {
+												setSearchQuery("");
+												setIs804nCodesMenuOpen(false);
+											}}
+											className="w-full text-center px-2 py-1.5 mt-1 rounded-lg text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 cursor-pointer transition-colors border-t border-[var(--line)]"
+										>
+											Сбросить фильтр поиска
+										</button>
+									)}
+								</div>
+							)}
+						</div>
+
+						{/* Right: Actions */}
+						<div className="flex items-center gap-1.5 shrink-0">
+							<button
+								type="button"
+								className="secondary-button min-h-[32px] h-7 sm:h-8 px-2 sm:px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-all inline-flex items-center gap-1 cursor-pointer shrink-0"
 								onClick={() => setIsServicePricelistModalOpen(true)}
 								data-testid="open-service-pricelist-modal-btn"
 								title="Справочник услуг и прайс-лист (Приказ Минздрава № 804н / ДМС / VIP)"
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: "6px",
-									fontWeight: 600,
-								}}
 							>
-								<ShieldCheck size={16} style={{ color: "var(--teal)" }} />
-								<span>Прейскурант 804н</span>
+								<ShieldCheck size={14} className="text-[var(--teal)] shrink-0" />
+								<span className="hidden sm:inline">Прейскурант 804н</span>
+								<span className="sm:hidden">804н</span>
 							</button>
 							<button
 								type="button"
-								className="primary-button"
+								className="primary-button min-h-[32px] h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg text-xs font-bold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white shadow-xs inline-flex items-center gap-1 cursor-pointer shrink-0"
 								onClick={() => {
 									setEditServiceForm(NEW_SERVICE_TEMPLATE);
-									// Пустое поле, а не подставленный «0»: цену вводит человек.
 									setPriceRubInput("");
 									setPriceProblem(null);
 									setEditServiceId("new");
 								}}
 							>
-								<Plus size={18} /> Добавить услугу
+								<Plus size={15} className="shrink-0" />
+								<span className="hidden sm:inline">Добавить услугу</span>
+								<span className="sm:hidden">Услуга</span>
 							</button>
-						</div>
-
-						{/* 1-Click Fast Statutory 804n Code Chips */}
-						<div className="w-full flex items-center gap-1.5 overflow-x-auto py-1.5 flex-nowrap scrollbar-thin">
-							<span className="text-xs font-bold text-[var(--muted)] shrink-0">
-								Номенклатура 804н (1-клик):
-							</span>
-							{[
-								{ code: "A16.07.002", label: "A16.07.002 Кариес" },
-								{ code: "A16.07.008", label: "A16.07.008 Пульпит" },
-								{ code: "A11.07.012", label: "A11.07.012 Анестезия" },
-								{ code: "A06.07.003", label: "A06.07.003 Снимок" },
-								{ code: "A16.07.054", label: "A16.07.054 Имплантация" },
-								{ code: "A16.07.004", label: "A16.07.004 Коронка" },
-								{ code: "A16.07.001", label: "A16.07.001 Удаление" },
-								{ code: "A16.07.051", label: "A16.07.051 Гигиена" },
-							].map((chip) => (
-								<button
-									key={chip.code}
-									type="button"
-									onClick={() => setSearchQuery(chip.code)}
-									className={`shrink-0 px-2.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap border inline-flex items-center justify-center ${
-										searchQuery === chip.code
-											? "bg-[var(--teal)] text-[var(--on-teal,#ffffff)] border-[var(--teal)] shadow-2xs"
-											: "bg-[var(--paper)] border-[var(--line)] text-[var(--teal)] hover:border-[var(--teal)]/60"
-									}`}
-									title={`Искать в прайс-листе по коду 804н ${chip.code}`}
-								>
-									{chip.label}
-								</button>
-							))}
 						</div>
 					</div>
 

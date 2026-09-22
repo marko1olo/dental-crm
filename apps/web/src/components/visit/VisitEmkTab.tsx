@@ -316,6 +316,23 @@ export function VisitEmkTab() {
 		React.useState<boolean>(false);
 	const [isStarProtocolsOpen, setIsStarProtocolsOpen] =
 		React.useState<boolean>(false);
+	const [isExtraSoapMenuOpen, setIsExtraSoapMenuOpen] =
+		React.useState<boolean>(false);
+	const extraSoapMenuRef = React.useRef<HTMLDivElement | null>(null);
+
+	React.useEffect(() => {
+		if (!isExtraSoapMenuOpen) return;
+		const handleClickOutside = (event: MouseEvent) => {
+			if (
+				extraSoapMenuRef.current &&
+				!extraSoapMenuRef.current.contains(event.target as Node)
+			) {
+				setIsExtraSoapMenuOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isExtraSoapMenuOpen]);
 
 	const isSignedVisit = Boolean(dashboard?.activeVisit?.status === "signed");
 	const isLocked = isSignedVisit && !isRevisingVisitNote;
@@ -2153,77 +2170,105 @@ export function VisitEmkTab() {
 						<FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
 						<span className="whitespace-nowrap shrink-0 min-w-max">Кариес</span>
 					</button>
-					<button
-						type="button"
-						data-testid="btn-quick-soap-pulpitis"
-						onClick={() => {
-							if (pulpitisPreset)
-								handleApplyClinicalSoapPreset(
-									pulpitisPreset,
-									activeSelectedTooth,
-									"clean_replace",
-								);
-						}}
-						className="shrink-0 flex-shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
-						title="Острый пульпит K04.0: автозаполнение нормы + жалобы + статус + протокол 804н"
-					>
-						<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-						<span className="whitespace-nowrap shrink-0 min-w-max">Пульпит</span>
-					</button>
-					<button
-						type="button"
-						data-testid="btn-quick-soap-periodontitis"
-						onClick={() => {
-							if (periodontitisPreset)
-								handleApplyClinicalSoapPreset(
-									periodontitisPreset,
-									activeSelectedTooth,
-									"clean_replace",
-								);
-						}}
-						className="shrink-0 flex-shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
-						title="Хронический периодонтит K04.5: автозаполнение нормы + жалобы + статус + протокол 804н"
-					>
-						<Activity className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-						<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">Периодонтит</span>
-					</button>
-					<button
-						type="button"
-						data-testid="btn-quick-soap-extraction"
-						onClick={() => {
-							const surgeryPreset = CLINICAL_SOAP_PRESETS.find(
-								(p) => p.id === "surgery_extraction_simple",
-							);
-							if (surgeryPreset)
-								handleApplyClinicalSoapPreset(
-									surgeryPreset,
-									activeSelectedTooth,
-									"clean_replace",
-								);
-						}}
-						className="shrink-0 flex-shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-800 dark:text-purple-300 hover:bg-purple-500/20 transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
-						title="Простое удаление зуба K04.8: анестезия + удаление щипцами/элеватором + гемостаз"
-					>
-						<Scissors className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
-						<span className="whitespace-nowrap shrink-0 min-w-max">Удаление</span>
-					</button>
+					{/* Вторичные протоколы (Пульпит, Периодонтит, Удаление, СтАР) сгруппированы в выпадающее меню ... по Закону Хика (Мандаты 8c, 8d, 8p) */}
+					<div className="relative inline-flex items-center shrink-0" ref={extraSoapMenuRef}>
+						<button
+							type="button"
+							data-testid="btn-toggle-extra-soap-menu"
+							onClick={() => setIsExtraSoapMenuOpen((prev) => !prev)}
+							className={`shrink-0 flex-shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max ${
+								isExtraSoapMenuOpen || isStarProtocolsOpen
+									? "bg-[var(--teal-soft)] text-[var(--teal-dark)] border-[var(--teal)]"
+									: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)]"
+							}`}
+							title="Дополнительные протоколы: Пульпит, Периодонтит, Удаление, СтАР 804н"
+							aria-expanded={isExtraSoapMenuOpen}
+							aria-label="Дополнительные протоколы"
+						>
+							<Tag className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+							<span>Протоколы...</span>
+							<ChevronDown size={11} className={`shrink-0 transition-transform ${isExtraSoapMenuOpen ? "rotate-180" : ""}`} />
+						</button>
 
-					{/* Компактная кнопка СтАР / 804н в тулбаре вместо 40px полосы во всю ширину */}
-					<button
-						type="button"
-						onClick={() => setIsStarProtocolsOpen((v) => !v)}
-						className={`shrink-0 flex-shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max ${
-							isStarProtocolsOpen
-								? "bg-[var(--teal)] text-white border-[var(--teal)]"
-								: "border-[var(--teal)]/40 bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal)] hover:text-white"
-						}`}
-						title="Каталог клинических протоколов СтАР и номенклатуры 804н (1 клик)"
-						data-testid="btn-toggle-star-protocols-toolbar"
-					>
-						<Sparkles className="w-3.5 h-3.5 shrink-0" />
-						<span>СтАР / 804н</span>
-						<ChevronDown size={11} className={`shrink-0 transition-transform ${isStarProtocolsOpen ? "rotate-180" : ""}`} />
-					</button>
+						{isExtraSoapMenuOpen && (
+							<div
+								className="absolute left-0 top-full mt-1 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl min-w-[210px] animate-in fade-in zoom-in-95 duration-100 text-xs"
+								role="menu"
+							>
+								<button
+									type="button"
+									data-testid="btn-quick-soap-pulpitis"
+									onClick={() => {
+										if (pulpitisPreset)
+											handleApplyClinicalSoapPreset(
+												pulpitisPreset,
+												activeSelectedTooth,
+												"clean_replace",
+											);
+										setIsExtraSoapMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] flex items-center gap-2 cursor-pointer transition-colors"
+									role="menuitem"
+								>
+									<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+									<span>Пульпит (K04.0)</span>
+								</button>
+								<button
+									type="button"
+									data-testid="btn-quick-soap-periodontitis"
+									onClick={() => {
+										if (periodontitisPreset)
+											handleApplyClinicalSoapPreset(
+												periodontitisPreset,
+												activeSelectedTooth,
+												"clean_replace",
+											);
+										setIsExtraSoapMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] flex items-center gap-2 cursor-pointer transition-colors"
+									role="menuitem"
+								>
+									<Activity className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+									<span>Периодонтит (K04.5)</span>
+								</button>
+								<button
+									type="button"
+									data-testid="btn-quick-soap-extraction"
+									onClick={() => {
+										const surgeryPreset = CLINICAL_SOAP_PRESETS.find(
+											(p) => p.id === "surgery_extraction_simple",
+										);
+										if (surgeryPreset)
+											handleApplyClinicalSoapPreset(
+												surgeryPreset,
+												activeSelectedTooth,
+												"clean_replace",
+											);
+										setIsExtraSoapMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] flex items-center gap-2 cursor-pointer transition-colors"
+									role="menuitem"
+								>
+									<Scissors className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+									<span>Удаление (K04.8)</span>
+								</button>
+								<div className="h-px bg-[var(--line)] my-1" />
+								<button
+									type="button"
+									data-testid="btn-toggle-star-protocols-toolbar"
+									onClick={() => {
+										setIsStarProtocolsOpen((v) => !v);
+										setIsExtraSoapMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg font-semibold text-[var(--teal)] hover:bg-[var(--teal-soft)] flex items-center gap-2 cursor-pointer transition-colors"
+									role="menuitem"
+								>
+									<Sparkles className="w-3.5 h-3.5 shrink-0" />
+									<span>Каталог СтАР / 804н</span>
+								</button>
+							</div>
+						)}
+					</div>
 
 					{/* Кнопка открытия кресельного ИИ-Копилота */}
 					<button

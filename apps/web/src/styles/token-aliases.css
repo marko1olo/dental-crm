@@ -119,6 +119,7 @@
 	--ok: var(--ok-fg);
 	--success: var(--ok-fg);
 	--warning: var(--warn-fg);
+	--warning-fg: var(--warn-fg);
 	--danger-fg: var(--bad-fg);
 	--rose: var(--bad-fg);
 	--rose-muted: var(--bad-bg);

@@ -289,7 +289,7 @@ export function ClinicControlPill({
 			<button
 				type="button"
 				onClick={() => setIsOpen((prev) => !prev)}
-				className={`dnt-clinic-control-pill min-h-[44px] ${isOpen ? "dnt-clinic-control-pill--open" : ""}`}
+				className={`dnt-clinic-control-pill min-h-[44px] sm:min-h-[32px] sm:h-8 ${isOpen ? "dnt-clinic-control-pill--open" : ""}`}
 				aria-expanded={isOpen}
 				aria-label="Пульт управления клиникой (macOS Control Center)"
 				title="Открыть центр управления статусом клиники"
