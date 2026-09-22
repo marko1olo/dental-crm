@@ -1597,7 +1597,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 										<AlertTriangle size={14} className="shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
 										<div className="space-y-0.5 text-[11px]">
 											<span className="font-semibold block">
-												На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}.
+												На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись не блокируется.
 											</span>
 											<span className="text-[var(--muted)]">
 												(Мандат 8e: запись не блокируется, врач может принять в свободном кабинете)

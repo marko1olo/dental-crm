@@ -103,7 +103,7 @@ export function resolveChairDutyDoctor(
 		}
 	}
 
-	if (assignment) {
+	if (assignment && (assignment.doctorId || (assignment.subShifts && assignment.subShifts.length > 0))) {
 		let hourNum = NaN;
 		if (startsAtIsoOrLocal) {
 			if (startsAtIsoOrLocal.length >= 13) {
@@ -1342,7 +1342,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 				comment,
 				savedAt: new Date().toISOString(),
 			};
-			safeLocalStorageSetJson("dente_quick_booking_draft", draftData);
+			safeLocalStorageSetJson("dente_quick_booking_draft", draftData, true);
 			showToast("Черновик записи сохранен", "info");
 		} catch {}
 		onClose();
@@ -2636,7 +2636,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 								type="button"
 								onClick={handleCopyBookingConfirmation}
 								data-testid="quick-booking-copy-confirmation-btn"
-								className="min-h-[40px] px-3.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+								className="min-h-[44px] px-3.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
 								title="Скопировать детали записи для отправки пациенту в WhatsApp/Telegram"
 							>
 								<Copy size={14} className="text-[var(--teal)] shrink-0" />

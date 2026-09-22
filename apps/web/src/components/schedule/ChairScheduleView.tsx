@@ -912,6 +912,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 					safeLocalStorageSetJson(
 						`dente_chair_doctor_assignments_${targetDay}`,
 						todayAssignments,
+						true,
 					);
 					syncShiftsWithServer(targetDay, todayAssignments, chairs).catch(() => {});
 				}

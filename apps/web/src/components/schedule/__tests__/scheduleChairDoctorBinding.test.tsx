@@ -107,6 +107,7 @@ import {
 import { QuickBookingDrawer, resolveChairDutyDoctor } from "../QuickBookingDrawer";
 import { buildChairDoctorAssignmentsFromShifts } from "../../../ScheduleView";
 import { AppointmentModal } from "../AppointmentModal";
+import { clearInMemoryStorageCache } from "../../../lib/safeLocalStorage";
 
 interface MockDomNode {
 	nodeType: number;
@@ -598,6 +599,7 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 		if (typeof localStorage !== "undefined" && typeof localStorage.clear === "function") {
 			localStorage.clear();
 		}
+		clearInMemoryStorageCache();
 	});
 
 	it("exports standard shift presets conforming to Mandate 8k (Morning, Evening, Full Day)", () => {
@@ -1000,43 +1002,50 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 
 	it("8. QuickBookingDrawer displays duty doctor badge and non-blocking override note when doctor is changed (Mandates 8e, 8k)", async () => {
 		const container = document.createElement("div") as unknown as MockDomNode;
+		document.body.appendChild(container as unknown as HTMLElement);
 		const root: Root = createRoot(container as unknown as HTMLElement);
 
-		await act(async () => {
-			root.render(
-				React.createElement(QuickBookingDrawer, {
-					isOpen: true,
-					onClose: vi.fn(),
-					dashboard: multiChairDashboard,
-					initialSlot: {
-						dateKey: "2026-09-07",
-						startTime: "10:00",
-						chairId: "chair-1",
-						doctorUserId: "doc-1", // Ivanov duty doctor on chair-1
-					},
-				}),
-			);
-		});
+		try {
+			await act(async () => {
+				root.render(
+					React.createElement(QuickBookingDrawer, {
+						isOpen: true,
+						onClose: vi.fn(),
+						dashboard: multiChairDashboard,
+						initialSlot: {
+							dateKey: "2026-09-07",
+							startTime: "10:00",
+							chairId: "chair-1",
+							doctorUserId: "doc-1", // Ivanov duty doctor on chair-1
+						},
+					}),
+				);
+			});
 
-		// Duty doctor badge is displayed
-		const dutyBadge = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-badge");
-		expect(dutyBadge).not.toBeNull();
-		expect(dutyBadge?.textContent).toContain("Дежурный врач: Иванов И.И.");
+			// Duty doctor badge is displayed
+			const dutyBadge = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-badge");
+			expect(dutyBadge).not.toBeNull();
+			expect(dutyBadge?.textContent).toContain("Дежурный врач: Иванов И.И.");
 
-		// Initially doc-1 is selected, so no override note
-		let overrideNote = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-override-note");
-		expect(overrideNote).toBeNull();
+			// Initially doc-1 is selected, so no override note
+			let overrideNote = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-override-note");
+			expect(overrideNote).toBeNull();
 
-		// Change doctor to doc-2 (Petrov)
-		const docSelect = findNodeByTestId(document.body as unknown as MockDomNode, "select-booking-doctor");
-		expect(docSelect).not.toBeNull();
-		await changeNode(docSelect, "doc-2");
+			// Change doctor to doc-2 (Petrov)
+			const docSelect = findNodeByTestId(document.body as unknown as MockDomNode, "select-booking-doctor");
+			expect(docSelect).not.toBeNull();
+			await changeNode(docSelect, "doc-2");
 
-		// Override note must now be visible with informative non-blocking text
-		overrideNote = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-override-note");
-		expect(overrideNote).not.toBeNull();
-		expect(overrideNote?.textContent).toContain("На кресле «Кабинет 1 (Терапия)» дежурит Иванов И.И.");
-		expect(overrideNote?.textContent).toContain("Запись создается с подтверждением");
+			// Override note must now be visible with informative non-blocking text
+			overrideNote = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-override-note");
+			expect(overrideNote).not.toBeNull();
+			expect(overrideNote?.textContent).toContain("На кресле «Кабинет 1 (Терапия)» дежурит Иванов И.И.");
+			expect(overrideNote?.textContent).toContain("Запись создается с подтверждением");
+		} finally {
+			try {
+				document.body.removeChild(container as unknown as HTMLElement);
+			} catch {}
+		}
 	});
 
 	it("9. Intelligent default doctor suggestion matches chair specialization or index when shifts are not saved", () => {

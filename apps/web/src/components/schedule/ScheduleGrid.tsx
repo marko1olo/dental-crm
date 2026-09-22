@@ -1473,7 +1473,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					const existingKey = `dente_chair_doctor_assignments_${dayIso}`;
 					const parsed = safeLocalStorageGetJson<Record<string, any>>(existingKey, {});
 					parsed[chairId] = assignment;
-					safeLocalStorageSetJson(existingKey, parsed);
+					safeLocalStorageSetJson(existingKey, parsed, true);
 				}
 
 				const currentShifts = safeLocalStorageGetJson<any[]>("dente_doctor_shifts", []);
@@ -1567,7 +1567,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					const existingKey = `dente_chair_doctor_assignments_${dayIso}`;
 					const parsed = safeLocalStorageGetJson<Record<string, any>>(existingKey, {});
 					parsed[chairId] = assignment;
-					safeLocalStorageSetJson(existingKey, parsed);
+					safeLocalStorageSetJson(existingKey, parsed, true);
 				}
 
 				const mondayIso = getMondayOfWeekIso(dateKey);
@@ -2257,6 +2257,12 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 											tabIndex={-1}
 											aria-label={`Быстрый выбор врача для ${chair.name}`}
 											data-testid={`btn-chair-doctor-popover-${chair.id}`}
+											onClick={(e) => {
+												e.stopPropagation();
+												setActiveHeaderDoctorPopoverChairId(
+													activeHeaderDoctorPopoverChairId === chair.id ? null : chair.id,
+												);
+											}}
 										/>
 										{chairStat && chairStat.appointmentsCount > 0 && (
 											<span className="hidden 2xl:inline text-[9px] font-normal font-sans lowercase px-1.5 py-0.2 rounded-full bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20 shrink-0">
