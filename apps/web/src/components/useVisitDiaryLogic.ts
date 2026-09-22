@@ -28,7 +28,9 @@ import {
 	deleteOfflineDraft,
 	loadOfflineDraft,
 	saveOfflineDraft,
+	saveOfflineDraftDebounced,
 } from "../utils/offlineMutationQueue";
+import { getOptimizedTiming } from "../utils/lowSpecHddOptimizer";
 import { parseAndValidateKraftBarcode } from "@dental/shared";
 import { showToast } from "./GlobalToast";
 import {
@@ -361,6 +363,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 
 	const autosaveRef = useRef<ReturnType<typeof setInterval> | null>(null);
 	const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const lastSavedDiarySnapshotRef = useRef<string>("");
 	const doSaveRef = useRef<
 		(silent?: boolean) => Promise<{ id: string; hash: string | null } | null>
 	>(async () => null);
@@ -730,27 +733,37 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			const hasContent = Object.values(diary).some(
 				(v) => typeof v === "string" && v.trim().length > 0,
 			);
-			if (hasContent) {
-				const storageKey = isRevising ? `${localDiaryStorageKey}_revision` : localDiaryStorageKey;
-				try {
-					safeLocalStorageSetItem(storageKey, JSON.stringify(diary));
-				} catch {
-					// ignore localStorage quota errors
-				}
-				void saveOfflineDraft(
-					storageKey,
-					"DIARY_043_DRAFT",
-					visitId,
-					diary,
-				);
-				setLocalDraftSavedAt(new Date());
+			if (!hasContent) return;
+
+			const currentSnapshot = JSON.stringify(diary);
+			if (currentSnapshot === lastSavedDiarySnapshotRef.current) {
+				// Защита от троттлинга HDD 5400 RPM: не пишем на диск, если текст дневника не изменился
+				return;
 			}
+			lastSavedDiarySnapshotRef.current = currentSnapshot;
+
+			const storageKey = isRevising ? `${localDiaryStorageKey}_revision` : localDiaryStorageKey;
+			try {
+				safeLocalStorageSetItem(storageKey, currentSnapshot);
+			} catch {
+				// ignore localStorage quota errors
+			}
+			saveOfflineDraftDebounced(
+				storageKey,
+				"DIARY_043_DRAFT",
+				visitId,
+				diary,
+			);
+			setLocalDraftSavedAt(new Date());
 		};
 
-		// 400ms debounced save on modification (anti-HDD thrashing on 5400 RPM drives)
-		const debounceTimer = setTimeout(flushLocalDraft, 400);
+		const timing = getOptimizedTiming();
+		const debounceMs = timing.autosaveDebounceMs || 800;
 
-		// Periodic 5-second resilient interval for background sync (paused when tab hidden)
+		// Адаптивный дебаунс автосохранения (1800 мс на медленных HDD 5400 RPM, 800 мс на SSD)
+		const debounceTimer = setTimeout(flushLocalDraft, debounceMs);
+
+		// Периодический 5-секундный интервал для фоновой синхронизации (не дергает диск, если snapshot не менялся)
 		const intervalTimer = setInterval(() => {
 			if (typeof document !== "undefined" && document.hidden) return;
 			flushLocalDraft();
@@ -771,9 +784,11 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				(v) => typeof v === "string" && v.trim().length > 0,
 			);
 			if (!hasUnsavedContent) return;
+			const currentSnapshot = JSON.stringify(diary);
+			lastSavedDiarySnapshotRef.current = currentSnapshot;
 			const storageKey = isRevising ? `${localDiaryStorageKey}_revision` : localDiaryStorageKey;
 			try {
-				safeLocalStorageSetItem(storageKey, JSON.stringify(diary), true);
+				safeLocalStorageSetItem(storageKey, currentSnapshot, true);
 			} catch {
 				// ignore localStorage quota errors
 			}
@@ -782,6 +797,8 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				"DIARY_043_DRAFT",
 				visitId,
 				diary,
+				undefined,
+				{ immediate: true },
 			);
 			setLocalDraftSavedAt(new Date());
 			if (debounceTimerRef.current) {

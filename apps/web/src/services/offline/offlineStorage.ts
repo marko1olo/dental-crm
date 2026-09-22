@@ -28,6 +28,7 @@ import {
 	safeLocalStorageRemoveItem,
 	safeLocalStorageSetItem,
 } from "../../lib/safeLocalStorage";
+import { getOptimizedTiming } from "../../utils/lowSpecHddOptimizer";
 import type {
 	AppointmentMutationInput,
 	CachedActiveSchedule,
@@ -697,7 +698,7 @@ export async function enqueueOfflineMutationsBatch<T = unknown>(
 				mutationsToWrite.push(m);
 			} else {
 				logger.info(
-					`[OfflineStorage] Deduplicated batch item for ${m.entityType}/${m.entityId} (hash: ${m.payloadHash.substring(0, 8)})`,
+					`[OfflineStorage] Deduplicated batch item for ${m.entityType}/${m.entityId} (hash: ${m.payloadHash?.substring(0, 8) || "none"})`,
 				);
 			}
 		}
@@ -1027,6 +1028,159 @@ export async function clearSyncedOfflineMutations(): Promise<number> {
 // Drafts Storage Operations (Form 043/u, Odontogram, Prescriptions, etc.)
 // ─────────────────────────────────────────────────────────────────────────────
 
+export interface SaveOfflineDraftOptions {
+	/** Немедленная запись на диск (IndexedDB + LocalStorage). Если false — запись дебаунсится (HDD 5400 RPM защита) */
+	readonly immediate?: boolean | undefined;
+	/** Кастомная задержка дебаунса в миллисекундах */
+	readonly debounceMs?: number | undefined;
+}
+
+interface PendingDraftFlush {
+	draft: OfflineDraft<unknown>;
+	timer: ReturnType<typeof setTimeout>;
+}
+
+const pendingDraftFlushesMap = new Map<string, PendingDraftFlush>();
+
+/**
+ * Принудительный сброс на диск (IndexedDB + LocalStorage) всех накопленных черновиков.
+ */
+export async function flushPendingOfflineDrafts(): Promise<void> {
+	if (pendingDraftFlushesMap.size === 0) return;
+
+	const toFlush: OfflineDraft<unknown>[] = [];
+	for (const [key, entry] of pendingDraftFlushesMap.entries()) {
+		clearTimeout(entry.timer);
+		toFlush.push(entry.draft);
+	}
+	if (toFlush.length === 0) return;
+
+	if (!isIndexedDbAvailable()) {
+		for (const draft of toFlush) {
+			saveLocalStorageDraft(draft);
+		}
+		return;
+	}
+
+	try {
+		await withIdbTransactionRetry(async (db) => {
+			return new Promise<void>((resolve, reject) => {
+				const tx = db.transaction(DRAFTS_STORE_NAME, "readwrite");
+				const store = tx.objectStore(DRAFTS_STORE_NAME);
+				for (const draft of toFlush) {
+					store.put(draft);
+				}
+				tx.oncomplete = () => resolve();
+				tx.onerror = () =>
+					reject(tx.error ?? new Error("Failed to flush pending drafts to IDB"));
+				tx.onabort = () =>
+					reject(tx.error ?? new Error("Transaction aborted while flushing pending drafts"));
+			});
+		});
+		for (const draft of toFlush) {
+			saveLocalStorageDraft(draft);
+		}
+	} catch (err) {
+		logger.warn(
+			`[OfflineStorage] Failed to flush pending drafts to IDB, saving to LocalStorage fallback`,
+			err,
+		);
+		for (const draft of toFlush) {
+			saveLocalStorageDraft(draft);
+		}
+	}
+}
+
+// Регистрация глобальных слушателей экстренного сброса при закрытии вкладки или входящем звонке
+if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+	const emergencyDraftFlush = () => {
+		void flushPendingOfflineDrafts();
+	};
+
+	window.addEventListener("beforeunload", emergencyDraftFlush);
+	window.addEventListener("pagehide", emergencyDraftFlush);
+	if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+		document.addEventListener("visibilitychange", () => {
+			if (document.visibilityState === "hidden") {
+				emergencyDraftFlush();
+			}
+		});
+	}
+	window.addEventListener("dente-telephony-incoming-call", emergencyDraftFlush);
+}
+
+/**
+ * Сохранение черновика с дебаунсом дисковых операций (Anti-HDD Thrashing, Мандаты 8e, 8k, 8n).
+ *
+ * 1. L1 RAM (inMemoryDraftsMap) обновляется МГНОВЕННО (0 мс, 0 байт I/O).
+ * 2. Запись на диск (IndexedDB + LocalStorage) откладывается на время debounceMs
+ *    (по умолчанию адаптивно: 1800 мс на слабых ПК с 5400 RPM HDD, 800 мс на SSD).
+ * 3. При повторном вызове до истечения таймера предыдущий таймер сбрасывается.
+ * 4. При смене вкладки, закрытии окна или звонке телефонии данные мгновенно сбрасываются на диск.
+ */
+export function saveOfflineDraftDebounced<T = unknown>(
+	draftKey: string,
+	entityType: MutationEntityType,
+	entityId: string,
+	data: T,
+	organizationId?: string | undefined,
+	debounceMs?: number,
+): OfflineDraft<T> {
+	const now = new Date();
+	const draft: OfflineDraft<T> = {
+		draftKey,
+		entityType,
+		entityId,
+		data,
+		updatedAt: now.toISOString(),
+		updatedAtMs: now.getTime(),
+		organizationId,
+		version: 1,
+	};
+
+	// 1. Немедленная запись в L1 RAM (0 мс) — гарантия мгновенного доступа и защиты от потери
+	setBoundedInMemoryMap(inMemoryDraftsMap, draftKey, draft as OfflineDraft<unknown>);
+
+	// 2. Сброс предыдущего отложенного таймера для этого ключа
+	const existing = pendingDraftFlushesMap.get(draftKey);
+	if (existing) {
+		clearTimeout(existing.timer);
+	}
+
+	const timing = getOptimizedTiming();
+	const effectiveDelay = debounceMs ?? timing.autosaveDebounceMs;
+
+	const timer = setTimeout(async () => {
+		pendingDraftFlushesMap.delete(draftKey);
+		try {
+			await withIdbTransactionRetry(async (db) => {
+				return new Promise<void>((resolve, reject) => {
+					const tx = db.transaction(DRAFTS_STORE_NAME, "readwrite");
+					const store = tx.objectStore(DRAFTS_STORE_NAME);
+					const request = store.put(draft);
+					request.onsuccess = () => resolve();
+					request.onerror = () =>
+						reject(request.error ?? new Error("Failed to save debounced draft to IDB"));
+				});
+			});
+			saveLocalStorageDraft(draft);
+		} catch (err) {
+			logger.warn(
+				`[OfflineStorage] Debounced IDB save failed for ${draftKey}, falling back to localStorage`,
+				err,
+			);
+			saveLocalStorageDraft(draft);
+		}
+	}, effectiveDelay);
+
+	pendingDraftFlushesMap.set(draftKey, {
+		draft: draft as OfflineDraft<unknown>,
+		timer,
+	});
+
+	return draft;
+}
+
 /**
  * Сохранение черновика документа/дневника в IndexedDB
  * (с бесшовным переходом на chunked LocalStorage и in-memory buffer при QuotaExceededError)
@@ -1037,7 +1191,26 @@ export async function saveOfflineDraft<T = unknown>(
 	entityId: string,
 	data: T,
 	organizationId?: string | undefined,
+	options?: SaveOfflineDraftOptions,
 ): Promise<OfflineDraft<T>> {
+	if (options?.immediate === false) {
+		return saveOfflineDraftDebounced<T>(
+			draftKey,
+			entityType,
+			entityId,
+			data,
+			organizationId,
+			options?.debounceMs,
+		);
+	}
+
+	// Если был запланирован дебаунсированный сброс для этого ключа, отменяем его
+	const pending = pendingDraftFlushesMap.get(draftKey);
+	if (pending) {
+		clearTimeout(pending.timer);
+		pendingDraftFlushesMap.delete(draftKey);
+	}
+
 	const now = new Date();
 	const draft: OfflineDraft<T> = {
 		draftKey,
@@ -1142,8 +1315,14 @@ export async function loadOfflineDraft<T = unknown>(
  * Удаление сохранённого черновика
  */
 export async function deleteOfflineDraft(draftKey: string): Promise<void> {
+	const pending = pendingDraftFlushesMap.get(draftKey);
+	if (pending) {
+		clearTimeout(pending.timer);
+		pendingDraftFlushesMap.delete(draftKey);
+	}
 	inMemoryDraftsMap.delete(draftKey);
 	removeLocalStorageDraft(draftKey);
+	if (!isIndexedDbAvailable()) return;
 	try {
 		await withIdbTransactionRetry(async (db) => {
 			return new Promise<void>((resolve, reject) => {
@@ -1308,9 +1487,30 @@ export async function saveVisitDraft<T = unknown>(
 	visitId: string,
 	data: T,
 	organizationId?: string | undefined,
+	options?: SaveOfflineDraftOptions,
 ): Promise<OfflineDraft<T>> {
 	const key = `${VISIT_DRAFT_KEY_PREFIX}${visitId}`;
-	return saveOfflineDraft<T>(key, "DIARY_043_DRAFT", visitId, data, organizationId);
+	return saveOfflineDraft<T>(key, "DIARY_043_DRAFT", visitId, data, organizationId, options);
+}
+
+/**
+ * Сохранение черновика визита с дебаунсом дисковых операций (Мандаты 8e, 8n)
+ */
+export function saveVisitDraftDebounced<T = unknown>(
+	visitId: string,
+	data: T,
+	organizationId?: string | undefined,
+	debounceMs?: number,
+): OfflineDraft<T> {
+	const key = `${VISIT_DRAFT_KEY_PREFIX}${visitId}`;
+	return saveOfflineDraftDebounced<T>(
+		key,
+		"DIARY_043_DRAFT",
+		visitId,
+		data,
+		organizationId,
+		debounceMs,
+	);
 }
 
 /**
@@ -1338,9 +1538,30 @@ export async function saveForm043Draft<T = unknown>(
 	patientId: string,
 	data: T,
 	organizationId?: string | undefined,
+	options?: SaveOfflineDraftOptions,
 ): Promise<OfflineDraft<T>> {
 	const key = `${FORM_043_DRAFT_KEY_PREFIX}${patientId}`;
-	return saveOfflineDraft<T>(key, "DIARY_043_DRAFT", patientId, data, organizationId);
+	return saveOfflineDraft<T>(key, "DIARY_043_DRAFT", patientId, data, organizationId, options);
+}
+
+/**
+ * Сохранение черновика карты 043/у пациента с дебаунсом дисковых операций
+ */
+export function saveForm043DraftDebounced<T = unknown>(
+	patientId: string,
+	data: T,
+	organizationId?: string | undefined,
+	debounceMs?: number,
+): OfflineDraft<T> {
+	const key = `${FORM_043_DRAFT_KEY_PREFIX}${patientId}`;
+	return saveOfflineDraftDebounced<T>(
+		key,
+		"DIARY_043_DRAFT",
+		patientId,
+		data,
+		organizationId,
+		debounceMs,
+	);
 }
 
 /**

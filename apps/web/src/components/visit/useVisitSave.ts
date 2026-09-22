@@ -27,6 +27,7 @@ import { useVisitStore } from "../../store/visitStore";
 import { useAppStore } from "../../store/appStore";
 import { fetchWithHandling } from "../../utils/networkUtils";
 import { logger } from "../../utils/logger";
+import { getOptimizedTiming } from "../../utils/lowSpecHddOptimizer";
 
 export type SaveSyncState = "idle" | "saving" | "saved" | "queued" | "error";
 
@@ -53,6 +54,7 @@ export interface UseVisitSaveReturn {
 }
 
 export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
+	const defaultDebounceMs = getOptimizedTiming().autosaveDebounceMs || 800;
 	const {
 		visitId,
 		patientId,
@@ -60,7 +62,7 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 		visitNoteForm,
 		transcript = "",
 		isLocked = false,
-		debounceMs = 400,
+		debounceMs = defaultDebounceMs,
 		onSaveSuccess,
 		onSaveError,
 		silent = false,
