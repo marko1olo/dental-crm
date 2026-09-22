@@ -51,9 +51,7 @@ import { PsoRegisterTab } from "./PsoRegisterTab";
 import { TemperatureHumidityRegisterTab } from "./TemperatureHumidityRegisterTab";
 import { RetroactiveBatchTab } from "./RetroactiveBatchTab";
 import { RetroactiveSanpinBatchModal } from "./RetroactiveSanpinBatchModal";
-import { SanpinCycleModal } from "./SanpinCycleModal";
 import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
-import { SeniorNurseKraftUnsealModal } from "./kraft/SeniorNurseKraftUnsealModal";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
 import { SterilizerFleetManager } from "./SterilizerFleetManager";
 import {
@@ -668,11 +666,9 @@ function SanpinRegistersInner() {
 	const [showExpandedKpi, setShowExpandedKpi] = useState<boolean>(false);
 	const [summary, setSummary] = useState<any>(null);
 	const [loadingSummary, setLoadingSummary] = useState(true);
-	const [isCycleModalOpen, setIsCycleModalOpen] = useState(false);
 	const [isKraftModalOpen, setIsKraftModalOpen] = useState(false);
 	const [isJournal257ModalOpen, setIsJournal257ModalOpen] = useState(false);
 	const [isRetroactiveBatchModalOpen, setIsRetroactiveBatchModalOpen] = useState(false);
-	const [isSeniorNurseUnsealOpen, setIsSeniorNurseUnsealOpen] = useState(false);
 	const [isNurseSignModalOpen, setIsNurseSignModalOpen] = useState(false);
 	const [nurseSignName, setNurseSignName] = useState("Медсестра ЦСО");
 	const [nurseSignPin, setNurseSignPin] = useState("");
@@ -1203,29 +1199,6 @@ function SanpinRegistersInner() {
 						</span>
 					</button>
 
-					{/* Вскрыть крафт-пакет (1-клик фиксация нормы по тест-индикатору 5 класса) */}
-					<button
-						type="button"
-						onClick={() => setIsSeniorNurseUnsealOpen(true)}
-						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
-						style={{
-							minHeight: "34px",
-							height: "34px",
-							padding: "0.35rem 0.85rem",
-							fontSize: "0.8125rem",
-							fontWeight: 600,
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "0.35rem",
-							whiteSpace: "nowrap",
-						}}
-						data-testid="sanpin-scan-kraft-btn"
-						title="Вскрыть / Зафиксировать крафт-пакет: 1-клик фиксация «Стерилизация проведена / Тест-индикатор 5 класса (Норма)» без видеокамер"
-					>
-						<CheckCircle2 size={15} color="#0d9488" />
-						<span>Вскрыть крафт-пакет</span>
-					</button>
-
 					{/* Dropdown: [⋮ Опции СанПиН] — All secondary actions aggregated cleanly */}
 					<div ref={exportMenuRef} style={{ position: "relative", display: "inline-block", zIndex: 60 }}>
 						<button
@@ -1474,35 +1447,6 @@ function SanpinRegistersInner() {
 								>
 									<Award size={15} color="var(--teal)" />
 									<span>ЭЦП медсестры ЦСО</span>
-								</button>
-
-								{/* Вскрыть крафт-пакет */}
-								<button
-									type="button"
-									onClick={() => {
-										setIsExportMenuOpen(false);
-										setIsSeniorNurseUnsealOpen(true);
-									}}
-									className="sanpin-dropdown-item"
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "0.5rem",
-										padding: "0.5rem 0.75rem",
-										borderRadius: "6px",
-										background: "none",
-										border: "none",
-										width: "100%",
-										textAlign: "left",
-										fontSize: "0.825rem",
-										fontWeight: 600,
-										color: "var(--ink, #0f172a)",
-										cursor: "pointer",
-									}}
-									data-testid="open-senior-nurse-kraft-dropdown-btn"
-								>
-									<Scan size={15} color="var(--teal)" />
-									<span>Вскрыть крафт-пакет (1 клик / сканер)</span>
 								</button>
 
 								{/* Маркировка */}
@@ -1794,12 +1738,6 @@ function SanpinRegistersInner() {
 			{activeTab === "bac_lab" && <BacLabRegisterTab />}
 			{activeTab === "needle_disposal" && <NeedleDisposalRegisterTab />}
 
-			{/* SanPiN Sterilization Cycle Modal */}
-			<SanpinCycleModal
-				isOpen={isCycleModalOpen}
-				onClose={() => setIsCycleModalOpen(false)}
-				onSuccess={fetchSummary}
-			/>
 
 			{/* Electronic Nurse Signature Shift Stamp Modal */}
 			{isNurseSignModalOpen && (
@@ -1914,11 +1852,6 @@ function SanpinRegistersInner() {
 				onClose={() => setIsKraftModalOpen(false)}
 			/>
 
-			{/* Senior Nurse Kraft Package Unseal Modal (1-Click standard tray, acute pain clearance, 2D camera) */}
-			<SeniorNurseKraftUnsealModal
-				isOpen={isSeniorNurseUnsealOpen}
-				onClose={() => setIsSeniorNurseUnsealOpen(false)}
-			/>
 
 			{/* Form 257/u Studio Modal: 5 Chamber Points, BioControl, Analytics */}
 			<AutoclaveLog257Modal

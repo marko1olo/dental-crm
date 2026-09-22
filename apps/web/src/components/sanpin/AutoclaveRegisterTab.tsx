@@ -32,9 +32,7 @@ import {
 	DEFAULT_DOM_PAGE_SIZE,
 	sliceDomList,
 } from "../../utils/domVirtualizationHelper";
-import { SanpinCycleModal } from "./SanpinCycleModal";
 import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
-import { SeniorNurseKraftUnsealModal } from "./kraft/SeniorNurseKraftUnsealModal";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
 import { MedicalWasteJournalModal } from "./waste/MedicalWasteJournalModal";
 import {
@@ -57,9 +55,7 @@ export function AutoclaveRegisterTab() {
 	const [loading, setLoading] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [deviceFilter, setDeviceFilter] = useState<string>("all");
-	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isKraftModalOpen, setIsKraftModalOpen] = useState(false);
-	const [isSeniorNurseUnsealOpen, setIsSeniorNurseUnsealOpen] = useState(false);
 	const [isJournal257ModalOpen, setIsJournal257ModalOpen] = useState(false);
 	const [isWasteJournalOpen, setIsWasteJournalOpen] = useState(false);
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -615,10 +611,11 @@ export function AutoclaveRegisterTab() {
 							<Printer size={15} className="shrink-0" /> <span className="shrink-0 whitespace-nowrap">Печать наклеек (10 шт.)</span>
 						</button>
 
-						{/* Action: + Зафиксировать цикл */}
+						{/* Action: + Зафиксировать цикл (1-клик фоновая фиксация смены по СанПиН 3.3686-21 без симуляторов) */}
 						<button
 							type="button"
-							onClick={() => setIsModalOpen(true)}
+							onClick={handleQuickShiftBatch}
+							disabled={isLoggingBatch}
 							className="sanpin-btn sanpin-btn-secondary touch-manipulation shrink-0 whitespace-nowrap"
 							style={{
 								minHeight: "36px",
@@ -635,9 +632,12 @@ export function AutoclaveRegisterTab() {
 								borderRadius: "8px",
 							}}
 							data-testid="sanpin-autoclave-new-cycle-btn"
-							title="Зафиксировать новый цикл стерилизации"
+							title="1-клик фоновая фиксация нормативного цикла стерилизации смены (СанПиН 3.3686-21, Форма 257/у)"
 						>
-							<Plus size={15} className="shrink-0" /> <span className="shrink-0 whitespace-nowrap">Зафиксировать цикл</span>
+							<Plus size={15} className="shrink-0" />
+							<span className="shrink-0 whitespace-nowrap">
+								{isLoggingBatch ? "Фиксация..." : "Зафиксировать цикл"}
+							</span>
 						</button>
 
 						{/* Dropdown: [⋮ Дополнительно] */}
@@ -716,34 +716,6 @@ export function AutoclaveRegisterTab() {
 										<span>Печать Формы 257/у за месяц</span>
 									</button>
 
-									{/* Вскрыть крафт-пакет */}
-									<button
-										type="button"
-										onClick={() => {
-											setIsMoreMenuOpen(false);
-											setIsSeniorNurseUnsealOpen(true);
-										}}
-										className="sanpin-dropdown-item"
-										style={{
-											display: "flex",
-											alignItems: "center",
-											gap: "0.5rem",
-											padding: "0.5rem 0.75rem",
-											borderRadius: "6px",
-											background: "none",
-											border: "none",
-											width: "100%",
-											textAlign: "left",
-											fontSize: "0.825rem",
-											fontWeight: 600,
-											color: "var(--ink, #0f172a)",
-											cursor: "pointer",
-										}}
-										data-testid="open-senior-nurse-kraft-btn"
-									>
-										<Camera size={15} color="#2563eb" />
-										<span>Вскрыть крафт-пакет (сканер)</span>
-									</button>
 
 									{/* Форма 257/у Студия */}
 									<button
@@ -1195,14 +1167,6 @@ export function AutoclaveRegisterTab() {
 				)}
 			</div>
 
-			{/* SanPiN Sterilization Cycle Modal */}
-			<SanpinCycleModal
-				isOpen={isModalOpen}
-				onClose={() => setIsModalOpen(false)}
-				onSuccess={fetchLogs}
-				suggestedCycleNumber={nextCycleNumber}
-			/>
-
 			{/* Kraft Package Barcode & Thermal Label Studio Modal */}
 			<KraftPackageBarcodeModal
 				isOpen={isKraftModalOpen}
@@ -1210,12 +1174,6 @@ export function AutoclaveRegisterTab() {
 				initialAutoclaveId={kraftPrefill.autoclaveId}
 				initialCycleNumber={kraftPrefill.cycleNumber || nextCycleNumber}
 				initialOperatorName={kraftPrefill.operatorName}
-			/>
-
-			{/* Senior Nurse Kraft Unseal Modal ("Бабушка-Proof") */}
-			<SeniorNurseKraftUnsealModal
-				isOpen={isSeniorNurseUnsealOpen}
-				onClose={() => setIsSeniorNurseUnsealOpen(false)}
 			/>
 
 			{/* Form 257/u Studio Modal: 5 Chamber Points, BioControl, Analytics */}
