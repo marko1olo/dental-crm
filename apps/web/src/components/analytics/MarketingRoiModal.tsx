@@ -6,7 +6,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
 	TrendingUp,
 	BarChart3,
@@ -32,13 +32,12 @@ import {
 } from "lucide-react";
 import {
 	calculateMarketingChannelsPerformance,
-	DEFAULT_DENTAL_MARKETING_CHANNELS,
-	SAMPLE_PATIENT_ATTRIBUTIONS,
 	type AdvertisingChannelPerformanceInput,
 	type PatientAttributionRecord,
 	type FunnelStage,
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import "./marketingRoi.css";
 
 export interface MarketingRoiModalProps {
@@ -64,13 +63,83 @@ export const MarketingRoiModal: React.FC<MarketingRoiModalProps> = ({
 	const [categoryFilter, setCategoryFilter] = useState<string>("all");
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [copiedKey, setCopiedKey] = useState<string | null>(null);
+	const [fetchedChannels, setFetchedChannels] = useState<AdvertisingChannelPerformanceInput[]>([]);
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+
+	useEffect(() => {
+		if (customChannels || !isOpen) return;
+		let isCancelled = false;
+		setIsLoading(true);
+
+		async function loadLiveChannels() {
+			try {
+				const res = await fetch("/api/marketing/attribution", {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (!res.ok) return;
+				const data = await res.json();
+				if (isCancelled || !data) return;
+
+				const list: AdvertisingChannelPerformanceInput[] = [];
+				if (Array.isArray(data.selfBookingChannels)) {
+					for (const ch of data.selfBookingChannels) {
+						list.push({
+							id: ch.key,
+							channelKey: ch.key,
+							nameRu: ch.nameRu,
+							categoryRu: ch.categoryRu || "Самозапись",
+							adSpendKopecks: ch.spentKopecks || 0,
+							clicksCount: ch.viewsCount || 0,
+							callsCount: ch.slotSelectedCount || 0,
+							bookedAppointmentsCount: ch.bookingsCount || 0,
+							attendedVisitsCount: ch.attendedCount || 0,
+							paidPlansCount: ch.paidPatientsCount || 0,
+							revenueKopecks: ch.revenueKopecks || 0,
+						});
+					}
+				}
+				if (data.telephonyAdminFunnel) {
+					const t = data.telephonyAdminFunnel;
+					list.push({
+						id: "telephony",
+						channelKey: "telephony",
+						nameRu: "Телефония и коллтрекинг",
+						categoryRu: "Коллтрекинг",
+						adSpendKopecks: t.spentKopecks || 0,
+						clicksCount: 0,
+						callsCount: t.incomingCallsCount || 0,
+						bookedAppointmentsCount: t.bookedAppointmentsCount || 0,
+						attendedVisitsCount: t.attendedCount || 0,
+						paidPlansCount: t.paidPatientsCount || 0,
+						revenueKopecks: t.revenueKopecks || 0,
+						notes: `Входящих: ${t.incomingCallsCount}, принято: ${t.answeredCallsCount}`,
+					});
+				}
+				if (!isCancelled) {
+					setFetchedChannels(list);
+				}
+			} catch {
+				// Silently leave empty on network error
+			} finally {
+				if (!isCancelled) {
+					setIsLoading(false);
+				}
+			}
+		}
+
+		loadLiveChannels();
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [customChannels, isOpen]);
 
 	const channelsData = useMemo(() => {
-		return customChannels ?? DEFAULT_DENTAL_MARKETING_CHANNELS;
-	}, [customChannels]);
+		return customChannels ?? fetchedChannels;
+	}, [customChannels, fetchedChannels]);
 
 	const attributionsData = useMemo(() => {
-		return customAttributions ?? SAMPLE_PATIENT_ATTRIBUTIONS;
+		return customAttributions ?? [];
 	}, [customAttributions]);
 
 	// Performance calculations
@@ -349,86 +418,103 @@ export const MarketingRoiModal: React.FC<MarketingRoiModalProps> = ({
 					{/* TAB 1: 5-Stage Funnel */}
 					{activeTab === "funnel" && (
 						<div className="marketing-roi-funnel-container" data-testid="funnel-view">
-							<div className="flex items-center justify-between pb-2 border-b border-[var(--line,rgba(204,251,241,0.15))]">
-								<div>
-									<h3 className="text-sm font-bold text-[var(--ink,#f8fafc)] flex items-center gap-2">
-										<Sparkles className="w-4 h-4 text-teal-400" />
-										<span>Сквозная воронка привлечения пациентов (5 этапов)</span>
-									</h3>
-									<p className="text-xs text-[var(--muted,#94a3b8)]">
-										Отслеживание потерь на каждом этапе воронки от первичного клика до оплаты услуг по Номенклатуре 804н
-									</p>
+							{channelsData.length === 0 ? (
+								<div
+									className="text-center py-12 text-[var(--muted,#94a3b8)] bg-[var(--paper-soft,#0f172a)] rounded-xl border border-[var(--line,rgba(204,251,241,0.15))] p-6 my-2"
+									data-testid="funnel-empty-state"
+								>
+									<TrendingUp className="w-10 h-10 mx-auto mb-3 text-[var(--muted,#94a3b8)] opacity-40" />
+									<div className="text-sm font-bold text-[var(--ink,#f8fafc)]">
+										Нет данных сквозной воронки за период
+									</div>
+									<div className="text-xs mt-1">
+										Ожидание событий звонков из АТС или самозаписи пациентов через онлайн-виджет
+									</div>
 								</div>
-								<div className="text-xs font-mono text-[var(--teal,#14b8a6)] bg-[var(--paper-soft,#0f172a)] px-3 py-1 rounded-xl border border-[var(--line,rgba(204,251,241,0.15))]">
-									Итоговая конверсия: <b>{summary.conversionRates.overallConversionRate}%</b>
-								</div>
-							</div>
-
-							<div className="space-y-3">
-								{summary.funnelStages.map((stageItem, idx) => {
-									const fillPercent = Math.max(
-										8,
-										Math.min(100, stageItem.conversionFromFirst),
-									);
-									return (
-										<div
-											key={stageItem.stage}
-											className="marketing-roi-funnel-card"
-											data-testid={`funnel-stage-${stageItem.stage}`}
-										>
-											<div className="marketing-roi-funnel-header-row">
-												<div className="marketing-roi-funnel-title">
-													<span>{stageItem.stageLabelRu}</span>
-												</div>
-												<div className="marketing-roi-funnel-metrics">
-													<div className="text-right">
-														<span className="text-xs text-[var(--muted,#94a3b8)] mr-2">Количество:</span>
-														<span className="marketing-roi-funnel-count">
-															{stageItem.count.toLocaleString("ru-RU")}
-														</span>
-													</div>
-													<div className="text-right">
-														<span className="text-xs text-[var(--muted,#94a3b8)] mr-2">Конверсия этапа:</span>
-														<span className="text-xs font-bold font-mono text-emerald-400">
-															{stageItem.conversionFromPrevious}%
-														</span>
-													</div>
-													<div className="text-right">
-														<span className="text-xs text-[var(--muted,#94a3b8)] mr-2">Себестоимость:</span>
-														<span className="text-xs font-bold font-mono text-[var(--ink,#f8fafc)]">
-															{stageItem.unitCostFormatted}
-														</span>
-													</div>
-												</div>
-											</div>
-
-											{/* Visual Progress Bar */}
-											<div className="marketing-roi-funnel-bar-bg">
-												<div
-													className="marketing-roi-funnel-bar-fill"
-													style={{ width: `${fillPercent}%` }}
-												/>
-											</div>
-
-											<div className="marketing-roi-funnel-details">
-												<span>
-													Сквозная конверсия от первого касания: <b>{stageItem.conversionFromFirst}%</b>
-												</span>
-												{stageItem.dropOffCount > 0 && (
-													<span className="text-rose-400 font-semibold">
-														Потери этапа: -{stageItem.dropOffCount} пациентов ({stageItem.dropOffPercent}%)
-													</span>
-												)}
-												{stageItem.dropOffCount === 0 && (
-													<span className="text-emerald-400 font-semibold">
-														Финальный шаг: оплаченный результат
-													</span>
-												)}
-											</div>
+							) : (
+								<>
+									<div className="flex items-center justify-between pb-2 border-b border-[var(--line,rgba(204,251,241,0.15))]">
+										<div>
+											<h3 className="text-sm font-bold text-[var(--ink,#f8fafc)] flex items-center gap-2">
+												<Sparkles className="w-4 h-4 text-teal-400" />
+												<span>Сквозная воронка привлечения пациентов (5 этапов)</span>
+											</h3>
+											<p className="text-xs text-[var(--muted,#94a3b8)]">
+												Отслеживание потерь на каждом этапе воронки от первичного клика до оплаты услуг по Номенклатуре 804н
+											</p>
 										</div>
-									);
-								})}
-							</div>
+										<div className="text-xs font-mono text-[var(--teal,#14b8a6)] bg-[var(--paper-soft,#0f172a)] px-3 py-1 rounded-xl border border-[var(--line,rgba(204,251,241,0.15))]">
+											Итоговая конверсия: <b>{summary.conversionRates.overallConversionRate}%</b>
+										</div>
+									</div>
+
+									<div className="space-y-3">
+										{summary.funnelStages.map((stageItem, idx) => {
+											const fillPercent = Math.max(
+												8,
+												Math.min(100, stageItem.conversionFromFirst),
+											);
+											return (
+												<div
+													key={stageItem.stage}
+													className="marketing-roi-funnel-card"
+													data-testid={`funnel-stage-${stageItem.stage}`}
+												>
+													<div className="marketing-roi-funnel-header-row">
+														<div className="marketing-roi-funnel-title">
+															<span>{stageItem.stageLabelRu}</span>
+														</div>
+														<div className="marketing-roi-funnel-metrics">
+															<div className="text-right">
+																<span className="text-xs text-[var(--muted,#94a3b8)] mr-2">Количество:</span>
+																<span className="marketing-roi-funnel-count">
+																	{stageItem.count.toLocaleString("ru-RU")}
+																</span>
+															</div>
+															<div className="text-right">
+																<span className="text-xs text-[var(--muted,#94a3b8)] mr-2">Конверсия этапа:</span>
+																<span className="text-xs font-bold font-mono text-emerald-400">
+																	{stageItem.conversionFromPrevious}%
+																</span>
+															</div>
+															<div className="text-right">
+																<span className="text-xs text-[var(--muted,#94a3b8)] mr-2">Себестоимость:</span>
+																<span className="text-xs font-bold font-mono text-[var(--ink,#f8fafc)]">
+																	{stageItem.unitCostFormatted}
+																</span>
+															</div>
+														</div>
+													</div>
+
+													{/* Visual Progress Bar */}
+													<div className="marketing-roi-funnel-bar-bg">
+														<div
+															className="marketing-roi-funnel-bar-fill"
+															style={{ width: `${fillPercent}%` }}
+														/>
+													</div>
+
+													<div className="marketing-roi-funnel-details">
+														<span>
+															Сквозная конверсия от первого касания: <b>{stageItem.conversionFromFirst}%</b>
+														</span>
+														{stageItem.dropOffCount > 0 && (
+															<span className="text-rose-400 font-semibold">
+																Потери этапа: -{stageItem.dropOffCount} пациентов ({stageItem.dropOffPercent}%)
+															</span>
+														)}
+														{stageItem.dropOffCount === 0 && (
+															<span className="text-emerald-400 font-semibold">
+																Финальный шаг: оплаченный результат
+															</span>
+														)}
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								</>
+							)}
 						</div>
 					)}
 
@@ -488,14 +574,25 @@ export const MarketingRoiModal: React.FC<MarketingRoiModalProps> = ({
 										</tr>
 									</thead>
 									<tbody>
-										{filteredChannels.map((ch) => {
-											let statusClass = "status-profitable";
-											let statusLabel = "Окупается";
-											if (ch.romiStatus === "super_profitable") {
-												statusClass = "status-super-profitable";
-												statusLabel = "Супер-ROMI";
-											} else if (ch.romiStatus === "loss") {
-												statusClass = "status-loss";
+										{filteredChannels.length === 0 ? (
+											<tr>
+												<td
+													colSpan={10}
+													className="text-center py-10 text-[var(--muted,#94a3b8)] text-xs font-semibold"
+													data-testid="channels-empty-state"
+												>
+													Нет данных по рекламным каналам за выбранный период
+												</td>
+											</tr>
+										) : (
+											filteredChannels.map((ch) => {
+												let statusClass = "status-profitable";
+												let statusLabel = "Окупается";
+												if (ch.romiStatus === "super_profitable") {
+													statusClass = "status-super-profitable";
+													statusLabel = "Супер-ROMI";
+												} else if (ch.romiStatus === "loss") {
+													statusClass = "status-loss";
 												statusLabel = "Убыток";
 											} else if (ch.romiStatus === "organic") {
 												statusClass = "status-organic";
@@ -592,101 +689,116 @@ export const MarketingRoiModal: React.FC<MarketingRoiModalProps> = ({
 								</div>
 							</div>
 
-							<div className="marketing-roi-patient-cards">
-								{filteredAttributions.map((attr) => (
-									<div
-										key={attr.id}
-										className="marketing-roi-patient-card"
-										data-testid={`attribution-card-${attr.patientId}`}
-									>
-										<div className="marketing-roi-patient-top">
-											<div className="marketing-roi-patient-name">
-												<span>{attr.patientFullName}</span>
-												<span className="text-xs font-mono text-[var(--muted,#94a3b8)]">
-													{attr.phone}
-												</span>
-												<span className="marketing-roi-chip highlight">{attr.channelNameRu}</span>
-											</div>
-
-											<div className="flex items-center gap-2">
-												<span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/30 border border-emerald-800/40 px-2.5 py-1 rounded-lg">
-													Оплачено: {(attr.totalPaidKopecks / 100).toLocaleString("ru-RU")} ₽
-												</span>
-												<span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-900/40 text-teal-300 border border-teal-700/50">
-													{attr.currentStage === "paid_plan"
-														? "Оплачен план"
-														: attr.currentStage === "attended"
-															? "Был на приеме"
-															: "Записан"}
-												</span>
-											</div>
-										</div>
-
-										{/* UTM Parameters & External IDs Strip */}
-										<div className="flex flex-wrap items-center gap-1.5 text-xs">
-											{attr.utm.utm_source && (
-												<span
-													onClick={() =>
-														handleCopyUtm(attr.utm.utm_source, `${attr.id}-src`)
-													}
-													className="marketing-roi-chip cursor-pointer hover:border-teal-400"
-													title="Кликните для копирования"
-												>
-													utm_source: <b>{attr.utm.utm_source}</b>
-												</span>
-											)}
-											{attr.utm.utm_campaign && (
-												<span
-													onClick={() =>
-														handleCopyUtm(attr.utm.utm_campaign, `${attr.id}-cmp`)
-													}
-													className="marketing-roi-chip cursor-pointer hover:border-teal-400"
-													title="Кликните для копирования"
-												>
-													campaign: <b>{attr.utm.utm_campaign}</b>
-												</span>
-											)}
-											{attr.utm.utm_term && (
-												<span className="marketing-roi-chip">
-													term: <i>{attr.utm.utm_term}</i>
-												</span>
-											)}
-											{attr.externalIds.calltouchId && (
-												<span className="marketing-roi-chip highlight">
-													Calltouch ID: <b>{attr.externalIds.calltouchId}</b>
-												</span>
-											)}
-											{attr.externalIds.roistatId && (
-												<span className="marketing-roi-chip highlight">
-													Roistat ID: <b>{attr.externalIds.roistatId}</b>
-												</span>
-											)}
-											{attr.sipCallDurationSeconds && attr.sipCallDurationSeconds > 0 ? (
-												<span className="marketing-roi-chip inline-flex items-center gap-1">
-													<PhoneCall size={12} className="text-teal-400 shrink-0" />
-													<span>SIP Запись ({attr.sipCallDurationSeconds} сек, {attr.sipProvider})</span>
-												</span>
-											) : null}
-										</div>
-
-										{/* Doctor & Plan Information */}
-										<div className="flex items-center justify-between text-xs text-[var(--muted,#94a3b8)] pt-2 border-t border-[var(--line,rgba(204,251,241,0.08))] flex-wrap gap-2">
-											<div>
-												Врач: <b className="text-[var(--ink,#f8fafc)]">{attr.doctorName || "—"}</b>{" "}
-												({attr.specialtyRu || "Терапевт"}) · План:{" "}
-												<span className="text-teal-300 font-semibold">
-													{attr.treatmentPlanTitle || "Первичная консультация"}
-												</span>
-											</div>
-											{attr.notes && (
-												<div className="text-[11px] italic text-[var(--muted,#94a3b8)]">
-													«{attr.notes}»
-												</div>
-											)}
-										</div>
+							{filteredAttributions.length === 0 ? (
+								<div
+									className="text-center py-12 text-[var(--muted,#94a3b8)] bg-[var(--paper-soft,#0f172a)] rounded-xl border border-[var(--line,rgba(204,251,241,0.15))] p-6 my-2"
+									data-testid="attributions-empty-state"
+								>
+									<Globe className="w-10 h-10 mx-auto mb-3 text-[var(--muted,#94a3b8)] opacity-40" />
+									<div className="text-sm font-bold text-[var(--ink,#f8fafc)]">
+										Нет записей сквозной атрибуции пациентов
 									</div>
-								))}
-							</div>
+									<div className="text-xs mt-1">
+										Ожидание звонков с UTM-метками из SIP-телефонии или виджета самозаписи
+									</div>
+								</div>
+							) : (
+								<div className="marketing-roi-patient-cards">
+									{filteredAttributions.map((attr) => (
+										<div
+											key={attr.id}
+											className="marketing-roi-patient-card"
+											data-testid={`attribution-card-${attr.patientId}`}
+										>
+											<div className="marketing-roi-patient-top">
+												<div className="marketing-roi-patient-name">
+													<span>{attr.patientFullName}</span>
+													<span className="text-xs font-mono text-[var(--muted,#94a3b8)]">
+														{attr.phone}
+													</span>
+													<span className="marketing-roi-chip highlight">{attr.channelNameRu}</span>
+												</div>
+
+												<div className="flex items-center gap-2">
+													<span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/30 border border-emerald-800/40 px-2.5 py-1 rounded-lg">
+														Оплачено: {(attr.totalPaidKopecks / 100).toLocaleString("ru-RU")} ₽
+													</span>
+													<span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-900/40 text-teal-300 border border-teal-700/50">
+														{attr.currentStage === "paid_plan"
+															? "Оплачен план"
+															: attr.currentStage === "attended"
+																? "Был на приеме"
+																: "Записан"}
+													</span>
+												</div>
+											</div>
+
+											{/* UTM Parameters & External IDs Strip */}
+											<div className="flex flex-wrap items-center gap-1.5 text-xs">
+												{attr.utm.utm_source && (
+													<span
+														onClick={() =>
+															handleCopyUtm(attr.utm.utm_source, `${attr.id}-src`)
+														}
+														className="marketing-roi-chip cursor-pointer hover:border-teal-400"
+														title="Кликните для копирования"
+													>
+														utm_source: <b>{attr.utm.utm_source}</b>
+													</span>
+												)}
+												{attr.utm.utm_campaign && (
+													<span
+														onClick={() =>
+															handleCopyUtm(attr.utm.utm_campaign, `${attr.id}-cmp`)
+														}
+														className="marketing-roi-chip cursor-pointer hover:border-teal-400"
+														title="Кликните для копирования"
+													>
+														campaign: <b>{attr.utm.utm_campaign}</b>
+													</span>
+												)}
+												{attr.utm.utm_term && (
+													<span className="marketing-roi-chip">
+														term: <i>{attr.utm.utm_term}</i>
+													</span>
+												)}
+												{attr.externalIds.calltouchId && (
+													<span className="marketing-roi-chip highlight">
+														Calltouch ID: <b>{attr.externalIds.calltouchId}</b>
+													</span>
+												)}
+												{attr.externalIds.roistatId && (
+													<span className="marketing-roi-chip highlight">
+														Roistat ID: <b>{attr.externalIds.roistatId}</b>
+													</span>
+												)}
+												{attr.sipCallDurationSeconds && attr.sipCallDurationSeconds > 0 ? (
+													<span className="marketing-roi-chip inline-flex items-center gap-1">
+														<PhoneCall size={12} className="text-teal-400 shrink-0" />
+														<span>SIP Запись ({attr.sipCallDurationSeconds} сек, {attr.sipProvider})</span>
+													</span>
+												) : null}
+											</div>
+
+											{/* Doctor & Plan Information */}
+											<div className="flex items-center justify-between text-xs text-[var(--muted,#94a3b8)] pt-2 border-t border-[var(--line,rgba(204,251,241,0.08))] flex-wrap gap-2">
+												<div>
+													Врач: <b className="text-[var(--ink,#f8fafc)]">{attr.doctorName || "—"}</b>{" "}
+													({attr.specialtyRu || "Терапевт"}) · План:{" "}
+													<span className="text-teal-300 font-semibold">
+														{attr.treatmentPlanTitle || "Первичная консультация"}
+													</span>
+												</div>
+												{attr.notes && (
+													<div className="text-[11px] italic text-[var(--muted,#94a3b8)]">
+														«{attr.notes}»
+													</div>
+												)}
+											</div>
+										</div>
+									))}
+								</div>
+							)}
 						</div>
 					)}
 				</div>

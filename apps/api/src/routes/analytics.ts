@@ -9,6 +9,7 @@ import {
 import { db } from "../db/client.js";
 import {
 	appointments,
+	cashOperations,
 	chairs,
 	crmLeads,
 	diagnocatAiFindings,
@@ -46,7 +47,6 @@ import {
 	calculateDepartmentBreakdown,
 	calculateExecutiveFunnel,
 	calculateExecutiveKpisSummary,
-	DEFAULT_DENTAL_ADVERTISING_CHANNELS,
 } from "@dental/shared";
 import {
 	clinicTimeZone,
@@ -1367,22 +1367,26 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			const totalRevenueKopecks = Math.round(Number(paymentsSummary?.totalRevenueRub || 0) * 100);
 			const payingPatients = Number(paymentsSummary?.payingPatientsCount || 0);
 
-			// 6. Маркетинговые расходы (CAC & Unit Economics)
-			let marketingMultiplier = 1;
-			if (execPeriod === "day") marketingMultiplier = 1 / 30;
-			else if (execPeriod === "quarter") marketingMultiplier = 3;
-			else if (execPeriod === "year") marketingMultiplier = 12;
+			// 6. Маркетинговые расходы (CAC & Unit Economics) из реальных cash_operations (Мандат 8s, 8k: Zero Mocks)
+			const [marketingExpensesRow] = await db
+				.select({
+					totalSpendRub: sql<number>`coalesce(sum(${cashOperations.amountRub}), 0)`,
+				})
+				.from(cashOperations)
+				.where(
+					and(
+						eq(cashOperations.organizationId, orgId),
+						eq(cashOperations.operationType, "expense"),
+						gte(cashOperations.createdAt, startDate),
+						sql`(${cashOperations.reasonCode} = 6 or (${cashOperations.metadata}->>'category') = 'marketing')`,
+					),
+				);
 
-			const totalMonthlyMarketingSpendKopecks = DEFAULT_DENTAL_ADVERTISING_CHANNELS.reduce(
-				(sum, ch) => sum + ch.spentKopecks,
-				0,
-			);
-			const totalMarketingSpendKopecks = Math.round(totalMonthlyMarketingSpendKopecks * marketingMultiplier);
+			const totalMarketingSpendKopecks = Math.round(Number(marketingExpensesRow?.totalSpendRub || 0) * 100);
 
 			// 7. Сборка сырых этапов 8-этапной воронки первичных пациентов
 			const attendedCount = Number(apptSummary?.attendedCount || 0);
 			const bookingsCount = Number(apptSummary?.totalAppointments || 0);
-			const treatmentStartedCount = Math.max(payingPatients, plansApprovedCount > 0 ? Math.round(plansApprovedCount * 0.85) : 0);
 
 			const rawFunnelStages = [
 				{ stage: "lead" as ExecutiveFunnelStage, count: totalLeads },

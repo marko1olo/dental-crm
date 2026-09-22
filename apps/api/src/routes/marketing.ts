@@ -9,10 +9,11 @@
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
 	appointments,
+	cashOperations,
 	communicationEvents,
 	crmLeads,
 	organizations,
@@ -24,9 +25,6 @@ import {
 	requireClinicalMutationAccess,
 	requireResolvedOrganizationId,
 } from "../accessGuard.js";
-import {
-	DEFAULT_DENTAL_ADVERTISING_CHANNELS,
-} from "@dental/shared";
 
 const patientFieldRequirementsInputSchema = z.object({
 	requirePhone: z.boolean().default(true),
@@ -65,7 +63,7 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		try {
-			const [allLeads, allAppts, allPayments, allPatients, allCallEvents] = await Promise.all([
+			const [allLeads, allAppts, allPayments, allPatients, allCallEvents, allMarketingExpenses] = await Promise.all([
 				db.select().from(crmLeads).where(eq(crmLeads.organizationId, orgId)),
 				db.select().from(appointments).where(eq(appointments.organizationId, orgId)),
 				db.select().from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
@@ -85,6 +83,17 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 					and(
 						eq(communicationEvents.organizationId, orgId),
 						eq(communicationEvents.channel, "phone"),
+					),
+				),
+				db.select({
+					amountRub: cashOperations.amountRub,
+					metadata: cashOperations.metadata,
+					reasonCode: cashOperations.reasonCode,
+				}).from(cashOperations).where(
+					and(
+						eq(cashOperations.organizationId, orgId),
+						eq(cashOperations.operationType, "expense"),
+						sql`(${cashOperations.reasonCode} = 6 or (${cashOperations.metadata}->>'category') = 'marketing')`,
 					),
 				),
 			]);
@@ -134,17 +143,22 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 			];
 
 			const channelSpendMap: Record<string, number> = {
-				website_widget: 3500000,
-				yandex_maps: 4200000,
-				gis_2: 2400000,
-				prodoctorov: 3000000,
-				tg_bot: 1500000,
-				wa_bot: 1200000,
+				website_widget: 0,
+				yandex_maps: 0,
+				gis_2: 0,
+				prodoctorov: 0,
+				tg_bot: 0,
+				wa_bot: 0,
 				telephony: 0,
 			};
-			for (const ch of DEFAULT_DENTAL_ADVERTISING_CHANNELS) {
-				if (ch.channelKey in channelSpendMap) {
-					channelSpendMap[ch.channelKey] = ch.spentKopecks;
+			for (const row of allMarketingExpenses) {
+				const meta = row.metadata as { channelKey?: string } | null;
+				const spendKop = Math.round(Number(row.amountRub || 0) * 100);
+				const chKey = meta?.channelKey;
+				if (chKey && chKey in channelSpendMap) {
+					channelSpendMap[chKey] += spendKop;
+				} else {
+					channelSpendMap.telephony += spendKop;
 				}
 			}
 
@@ -241,12 +255,8 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 				0,
 			);
 
-			const incomingCallsCount = realCalls.length > 0
-				? realIncomingCalls.length
-				: Math.max(telephonyLeads.length, bookedAppointmentsCount);
-			const answeredCallsCount = realCalls.length > 0
-				? realAnsweredCalls.length
-				: bookedAppointmentsCount;
+			const incomingCallsCount = realIncomingCalls.length;
+			const answeredCallsCount = realAnsweredCalls.length;
 			const avgCallDurationSeconds = realAnsweredCalls.length > 0
 				? Math.round(realTotalDuration / realAnsweredCalls.length)
 				: 0;
@@ -318,9 +328,9 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 			]);
 
 			const onlineLeads = allLeads.filter((l) => detectChannelFromSource(l.source) !== "telephony");
-			const views = Math.max(onlineLeads.length * 4, 10);
-			const slotSelected = Math.max(onlineLeads.length, 5);
-			const booked = onlineLeads.filter((l) => l.status === "consult_booked").length || Math.min(slotSelected, allAppts.length);
+			const views = onlineLeads.length;
+			const slotSelected = onlineLeads.length;
+			const booked = onlineLeads.filter((l) => l.status === "consult_booked").length;
 			const attended = allAppts.filter((a) => a.status === "completed" || a.status === "arrived" || a.status === "in_treatment").length;
 			const paid = allPayments.length;
 			const totalRevenueKopecks = allPayments.reduce((acc, p) => acc + Math.round(Number(p.amountRub || 0) * 100), 0);

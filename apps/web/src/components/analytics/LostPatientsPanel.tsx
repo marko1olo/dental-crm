@@ -207,10 +207,10 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 		setCopiedText(false);
 		const offer = generatePersonalizedOffer({
 			patientName: patient.patientName,
-			clinicName: clinicName || "Стоматология Дент-Премиум",
+			clinicName: clinicName || undefined,
 			daysSinceLastVisit: patient.daysSinceLastVisit,
 			category: patient.lastTreatmentCategory || "sanitation",
-			doctorName: patient.lastDoctorName || "Смирнов А.П.",
+			doctorName: patient.lastDoctorName || undefined,
 		});
 		setActiveOffer(offer);
 	};
@@ -297,7 +297,21 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 				? Math.round((totalImplReturned12m / totalImplPatients) * 1000) / 10
 				: 0;
 
-		const estimatedRecallRevenueKopecks = totalRiskPatients * 450_000;
+		const totalRecallRevenue = (recallCohorts ?? []).reduce(
+			(s, c) => s + (c.recallRevenueKopecks || 0),
+			0,
+		);
+		const totalReturnedPatients = (recallCohorts ?? []).reduce(
+			(s, c) => s + Math.max(c.returned6m || 0, c.returned12m || 0),
+			0,
+		);
+		const avgRecallRevenuePerPatient =
+			totalReturnedPatients > 0
+				? Math.round(totalRecallRevenue / totalReturnedPatients)
+				: 0;
+
+		const estimatedRecallRevenueKopecks =
+			totalRiskPatients * avgRecallRevenuePerPatient;
 
 		return {
 			totalRiskPatients,

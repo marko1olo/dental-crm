@@ -1753,8 +1753,16 @@ export function TelephonyFloatingWidget({
 						{activeTab === "history" && (
 							<div className="space-y-2">
 								{callHistory.length === 0 ? (
-									<div className="py-8 text-center text-xs text-[var(--muted,#64748b)]">
-										История звонков пуста.
+									<div
+										className="py-8 text-center text-xs text-[var(--muted,#64748b)] space-y-1"
+										data-testid="telephony-history-empty"
+									>
+										<div className="font-semibold text-[var(--ink,#0f172a)]">
+											История звонков пуста
+										</div>
+										<div>
+											Ожидание вебхука АТС (UIS / Mango / Zadarma / Asterisk)
+										</div>
 									</div>
 								) : (
 									callHistory.slice(0, 15).map((item) => (
