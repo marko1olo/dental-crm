@@ -3,7 +3,7 @@
  * DENTE & SEPA PERIODONTOGRAM CLINICAL ENGINE & SCHEMAS
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Implements SEPA (Sociedad Española de Periodoncia) & Florida Probe standard
+ * Implements SEPA (Sociedad Española de Periodoncia) & WHO standard
  * 6-point clinical periodontal charting, snapshot models, and index computations.
  *
  * Probing sites per tooth (6 points):
@@ -164,7 +164,7 @@ export type PeriodontogramTimelineResponse = z.infer<typeof periodontogramTimeli
 export interface ComputationOptions {
 	/**
 	 * "theoretical": Denominator is 6 * present_teeth (SEPA standard, prevents incomplete probe inflation).
-	 * "probed": Denominator is actual filled/measured sites (Florida probe standard).
+	 * "probed": Denominator is actual filled/measured sites (6-point probing standard).
 	 */
 	mode?: "theoretical" | "probed";
 	deepPocketThresholdMm?: number;
@@ -535,7 +535,7 @@ export function generateSepaProtocol043Text(
 			"Профессиональная гигиена полости рта (ультразвуковое снятие отложений + Air-Flow), антисептическая обработка десен, противовоспалительные аппликации. Подбор индивидуальных средств гигиены.";
 	}
 
-	let text = `• Обследование пародонта (6-точечная пародонтограмма SEPA / Florida Probe):\n`;
+	let text = `• Обследование пародонта (6-точечная пародонтограмма ВОЗ / СтАР):\n`;
 	text += `  - Диагноз: ${diagnosis}\n`;
 	text += `  - МКБ-10: ${icd10}\n`;
 	text += `  - Индексы: BOP (кровоточивость) ${bop}%, PI (налет) ${pi}%, средняя потеря прикрепления (CAL) ${currentIndices.calMeanMm.toFixed(1)} мм, зубов с глубокими карманами (>= 5 мм): ${deepCount}.\n`;

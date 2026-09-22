@@ -12,6 +12,7 @@
  * функции node:test / assertions, предотвращая падение по ERR_MODULE_NOT_FOUND.
  */
 import { registerHooks } from "node:module";
+import "tsx";
 import React from "react";
 
 globalThis.React = React;

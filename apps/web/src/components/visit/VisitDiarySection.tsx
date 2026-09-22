@@ -2149,7 +2149,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 			)}
 
 			{/* ═══════════════════════════════════════════════════════════════════
-			    TIER 3 / DEEP WORKSPACE: SPECIALIZED PERIODONTOLOGY STUDIO (FLORIDA PROBE)
+			    TIER 3 / DEEP WORKSPACE: SPECIALIZED PERIODONTOLOGY STUDIO
 			    ═══════════════════════════════════════════════════════════════════ */}
 			{isTier3PerioModalOpen &&
 				typeof window !== "undefined" &&

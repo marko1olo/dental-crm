@@ -140,7 +140,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 	const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
 	const [copyStatus, setCopyStatus] = useState<boolean>(false);
 	const [insertStatus, setInsertStatus] = useState<boolean>(false);
-	// Florida Probe Tier 3 Isolation: detailed 192-point table is on-demand for periodontists
+	// Detailed 6-point probing table is on-demand for periodontists (Tier 3)
 	const [isTier3ProbingExpanded, setIsTier3ProbingExpanded] =
 		useState<boolean>(initialTier3Expanded);
 	// Hardware electronic probe / Numpad keyboard capture: OFF by default (Mandates 8e, 8k)
@@ -809,7 +809,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 		showToast("Зубной налет очищен (индекс гигиены 100%)", "success", 4000);
 	}, [readOnly]);
 
-	// 1-Click Fast Therapist Pathology Preset: Zero Florida Probe 192-point barrier
+	// 1-Click Fast Therapist Pathology Preset: Zero manual 192-point barrier
 	const handleApplyTherapistPreset = useCallback(
 		(presetId: string) => {
 			if (readOnly) return;
@@ -1315,7 +1315,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 							type="button"
 							onClick={() => setIsHelpOpen((prev) => !prev)}
 							className="h-9 w-9 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer min-h-[44px] min-w-[44px] shrink-0"
-							title="Справка по горячим клавишам Florida Probe"
+							title="Справка по горячим клавишам пародонтограммы"
 							aria-label="Справка по горячим клавишам"
 						>
 							<HelpCircle size={16} />
@@ -1903,7 +1903,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 					<div className="flex items-center justify-between font-bold text-teal-400 pb-1 border-b border-[var(--line)]/50">
 						<span className="flex items-center gap-1.5">
 							<Zap size={14} />
-							Быстрый ввод в стандарте Florida Probe:
+							Быстрый клавиатурный ввод зондирования:
 						</span>
 						<button
 							type="button"
@@ -1981,11 +1981,11 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 			)}
 
 			{/* ═══════════════════════════════════════════════════════════════════
-			    TIER 3: DETAILED FLORIDA PROBE (192 POINTS FOR PERIODONTISTS)
+			    TIER 3: DETAILED PERIODONTAL CHARTING (6 POINTS PER TOOTH)
 			    ═══════════════════════════════════════════════════════════════════ */}
 			{isTier3ProbingExpanded ? (
 				<div className="flex flex-col gap-4 animate-in fade-in duration-200">
-					{/* FAST NUMPAD & FLORIDA PROBE TOOLBAR (0-MODAL / GLOVE-FRIENDLY) */}
+					{/* FAST NUMPAD & PROBING TOOLBAR (0-MODAL / GLOVE-FRIENDLY) */}
 					<div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--paper-soft)] border border-teal-500/30 shadow-xs">
 						{/* Active Probe Site Info Badge */}
 						<div className="flex items-center gap-2 flex-wrap">
@@ -2013,7 +2013,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 											)
 										</>
 									) : (
-										"Florida Probe: Выберите точку или нажмите 1..9 для старта"
+										"Пародонтограмма: Выберите точку или нажмите 1..9 для старта"
 									)}
 								</span>
 							</div>
@@ -2169,7 +2169,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 					</div>
 
 					{/* ═══════════════════════════════════════════════════════════════════
-			    MAIN FLORIDA PROBE 6-POINT INTERACTIVE DENTITION GRIDS
+			    MAIN 6-POINT INTERACTIVE DENTITION GRIDS
 			    ═══════════════════════════════════════════════════════════════════ */}
 					<div className="flex flex-col gap-4 overflow-x-auto pb-2">
 						{/* Compact Jaw & Sextant Switcher (Mandates 8d, 8e, Hick's Law: Strictly 1 Row 32-36px) */}
@@ -2407,7 +2407,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 						type="button"
 						onClick={() => setIsTier3ProbingExpanded(true)}
 						className="min-h-[44px] px-4 py-2 rounded-xl bg-teal-600/20 hover:bg-teal-600/30 text-teal-300 border border-teal-500/40 text-xs font-black transition-all cursor-pointer shrink-0 active:scale-95 flex items-center justify-center gap-1.5"
-						data-testid="expand-florida-probe-tier3-btn"
+						data-testid="expand-perio-chart-tier3-btn"
 					>
 						<Activity size={16} />
 						<span>Развернуть 192 точки (Tier 3)</span>

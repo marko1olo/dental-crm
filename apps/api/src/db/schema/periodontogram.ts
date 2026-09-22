@@ -18,7 +18,7 @@ import { patients } from "./patients.js";
  * ADR 0013: PERIODONTOGRAM RELATIONAL SNAPSHOT MODEL
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Implements immutable dated snapshot model for periodontal exams (SEPA / Florida Probe).
+ * Implements immutable dated snapshot model for periodontal exams (SEPA / WHO).
  * Three relational tables:
  * 1. periodontogram_snapshots (one draft allowed per patient; frozen indices on close)
  * 2. periodontogram_teeth (32 FDI permanent teeth 11..48, mobility, furcations)

@@ -449,7 +449,7 @@ describe("Periodontal Express Screening & Doctor Autonomy (Mandates 8e, 8i, 8k, 
 			);
 		}
 
-		// 5. Проверяем дублирующий переключатель в Florida Probe (Tier 3), когда Tier 3 раскрыт
+		// 5. Проверяем дублирующий переключатель в Tier 3 (6-точечное зондирование), когда Tier 3 раскрыт
 		const htmlTier3 = renderToString(
 			React.createElement(PeriodontogramChart, {
 				patientId: "patient-test-perio-tier3",
@@ -459,7 +459,7 @@ describe("Periodontal Express Screening & Doctor Autonomy (Mandates 8e, 8i, 8k, 
 		);
 		assert.ok(
 			htmlTier3.includes('data-testid="perio-probe-keyboard-toggle-tier3"'),
-			"В раскрытой панели Tier 3 Florida Probe присутствует дублирующий переключатель клавиатуры",
+			"В раскрытой панели Tier 3 пародонтограммы присутствует дублирующий переключатель клавиатуры",
 		);
 
 		// 6. Проверяем отсутствие мультяшных эмодзи в разметке (Мандат 8d / 7 смертных грехов)
