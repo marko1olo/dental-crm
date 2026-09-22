@@ -2300,18 +2300,31 @@ export function queueBatchedStorePut(params: {
 	storeMap.set(params.key, params);
 
 	if (batchedStoreFlushTimer === null) {
+		const timing = getOptimizedTiming();
+		const delayMs = timing.batchFlushDelayMs;
+		const idleTimeout = Math.max(120, Math.min(2000, delayMs));
+
 		if (typeof window !== "undefined" && "requestIdleCallback" in window) {
 			batchedStoreFlushTimer = window.requestIdleCallback(() => {
 				batchedStoreFlushTimer = null;
 				void flushBatchedStoreWrites();
-			}, { timeout: 120 });
+			}, { timeout: idleTimeout });
 		} else {
+			const fallbackTimeout = Math.max(80, Math.round(delayMs / 2));
 			batchedStoreFlushTimer = setTimeout(() => {
 				batchedStoreFlushTimer = null;
 				void flushBatchedStoreWrites();
-			}, 80);
+			}, fallbackTimeout);
 		}
 	}
+}
+
+export function getPendingBatchedStoreWritesCount(): number {
+	let count = 0;
+	for (const map of pendingBatchedStoreWrites.values()) {
+		count += map.size;
+	}
+	return count;
 }
 
 export async function flushBatchedStoreWrites(): Promise<void> {

@@ -19,10 +19,13 @@ import { getSafeAreaInsets } from "../native/mobileBridge";
 import {
 	deleteOfflineDraft,
 	enqueueOfflineMutationsBatch,
+	flushBatchedStoreWrites,
 	flushPendingOfflineDrafts,
+	getPendingBatchedStoreWritesCount,
 	getPendingOfflineMutations,
 	loadOfflineDraft,
 	loadVisitDraftSync,
+	queueBatchedStorePut,
 	saveForm043DraftDebounced,
 	saveOfflineDraftDebounced,
 	saveVisitDraftDebounced,
@@ -1565,5 +1568,54 @@ describe("lowSpecHddOptimizer — Склад и автономия медсес�
 		assert.ok(toastMsg.toLowerCase().includes("мягкий овердрафт"));
 	});
 });
+
+describe("lowSpecHddOptimizer — Адаптивная очередь пакетной записи в IndexedDB (queueBatchedStorePut)", () => {
+	afterEach(async () => {
+		setForcedLowSpecMode(null);
+		await flushBatchedStoreWrites();
+	});
+
+	it("коалесцирует множественные записи одного ключа в очереди до сброса на диск", async () => {
+		await flushBatchedStoreWrites();
+		assert.strictEqual(getPendingBatchedStoreWritesCount(), 0);
+
+		// Ставим Low-Spec режим (медленный HDD 5400 RPM)
+		setForcedLowSpecMode(true);
+		const timing = getOptimizedTiming();
+		assert.strictEqual(timing.batchFlushDelayMs, 1500, "На HDD задержка сброса должна быть 1500 мс");
+
+		// Записываем несколько обновлений одного и того же ключа (имитация частого обновления одонтограммы/визита)
+		queueBatchedStorePut({
+			storeName: "clinical_cache",
+			key: "patient_card_123",
+			record: { tooth: 11, status: "caries", v: 1 },
+		});
+		queueBatchedStorePut({
+			storeName: "clinical_cache",
+			key: "patient_card_123",
+			record: { tooth: 11, status: "pulpitis", v: 2 },
+		});
+		queueBatchedStorePut({
+			storeName: "clinical_cache",
+			key: "patient_card_456",
+			record: { tooth: 21, status: "filling", v: 1 },
+		});
+
+		// В очереди 2 уникальных ключа, предотвращая спам диска 3 отдельными транзакциями
+		assert.strictEqual(getPendingBatchedStoreWritesCount(), 2, "Записи с одинаковым ключом должны перезаписываться в очереди");
+
+		// Принудительный сброс (Flush) освобождает очередь
+		await flushBatchedStoreWrites();
+		assert.strictEqual(getPendingBatchedStoreWritesCount(), 0, "После flushBatchedStoreWrites очередь должна быть пуста");
+	});
+
+	it("переключается на быстрые тайминги (500 мс) на SSD устройствах", () => {
+		setForcedLowSpecMode(false);
+		const timing = getOptimizedTiming();
+		assert.strictEqual(timing.batchFlushDelayMs, 500, "На SSD задержка сброса должна быть 500 мс");
+		assert.strictEqual(timing.autosaveDebounceMs, 800, "На SSD автосохранение должно быть 800 мс");
+	});
+});
+
 
 
