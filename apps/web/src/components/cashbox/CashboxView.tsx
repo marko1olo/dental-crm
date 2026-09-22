@@ -21,6 +21,7 @@ import {
 	UserCheck,
 } from "lucide-react";
 import { CashShiftWidget } from "../finance/CashShiftWidget.js";
+import { PaymentModal } from "../finance/PaymentModal.js";
 import {
 	validateBuyerInn54Fz,
 	process100PercentDiscountCheckout,
@@ -54,6 +55,7 @@ export function CashboxView({
 	const [discountPercent, setDiscountPercent] = useState<number>(0);
 	const [isWarranty, setIsWarranty] = useState<boolean>(false);
 	const [isStaffColleague, setIsStaffColleague] = useState<boolean>(false);
+	const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
 
 	// Tender Allocations
 	const [tenders, setTenders] = useState<MultiTenderStateRub>({
@@ -285,10 +287,35 @@ export function CashboxView({
 								<QrCode className="w-3.5 h-3.5" />
 								Всё по СБП
 							</button>
+
+							<button
+								type="button"
+								className="flex-1 min-w-[140px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+								onClick={() => setIsPaymentModalOpen(true)}
+								data-testid="btn-open-payment-modal"
+								title="Универсальное окно сплит-оплаты и терминала Сбербанка (54-ФЗ)"
+							>
+								<Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+								<span>Сплит / Терминал...</span>
+							</button>
 						</div>
 					)}
 				</div>
 			</div>
+
+			{isPaymentModalOpen && (
+				<PaymentModal
+					isOpen={isPaymentModalOpen}
+					amountRub={checkoutResult.totalNetRub}
+					cashierName={cashierName}
+					clinicLegalName={clinicName}
+					onClose={() => setIsPaymentModalOpen(false)}
+					onSuccess={(receipt) => {
+						setIsPaymentModalOpen(false);
+						onPaymentComplete?.(receipt);
+					}}
+				/>
+			)}
 		</div>
 	);
 }

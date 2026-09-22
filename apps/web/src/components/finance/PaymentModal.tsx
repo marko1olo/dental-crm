@@ -1436,6 +1436,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 							onClick={onClose}
 							className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-11 w-11 sm:h-8 sm:w-8 rounded-xl border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] transition-colors cursor-pointer"
 							aria-label="Закрыть"
+							data-testid="btn-close-payment-modal"
 						>
 							<X size={16} />
 						</button>

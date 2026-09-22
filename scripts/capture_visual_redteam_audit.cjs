@@ -23,7 +23,7 @@ const crypto = require("node:crypto");
 const API_BASE = "http://127.0.0.1:4100";
 const WEB_BASE = "http://127.0.0.1:5173";
 const OUT_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/visual_redteam_audit");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/8f572321-fb44-4a9c-a59e-decb7d9d4368/screenshots");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/c344f44e-4170-4c58-89d4-ae569a5c305d/screenshots");
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 fs.mkdirSync(BRAIN_DIR, { recursive: true });
@@ -439,9 +439,10 @@ async function runAuditCapture() {
       // Screen 3B: PaymentModal (54-ФЗ Сплит-оплата и скидки врача 0..100%)
       // -----------------------------------------------------------------------
       const splitModalBtn = page.locator('[data-testid="btn-combo-split-three-way"], button:has-text("Нал + Карта + Баланс"), [data-testid="payment-split-modal-button"]').first();
+      await splitModalBtn.scrollIntoViewIfNeeded().catch(() => {});
       if (await splitModalBtn.isVisible().catch(() => false)) {
         await splitModalBtn.click().catch(() => {});
-        await page.waitForSelector('#payment-modal-title, [role="dialog"][aria-labelledby="payment-modal-title"]', { timeout: 15000 }).catch(() => {});
+        await page.waitForSelector('#payment-modal-title, [role="dialog"][aria-labelledby="payment-modal-title"]', { state: "visible", timeout: 15000 }).catch(() => {});
         await page.waitForTimeout(1000);
         await takeProof(
           page,
