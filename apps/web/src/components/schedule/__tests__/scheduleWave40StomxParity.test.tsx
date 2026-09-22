@@ -221,9 +221,8 @@ describe("Wave 40 — StomX Parity Suite (Features 190, 191, 192)", () => {
 			);
 			assert.ok(html.includes('data-testid="chair-header-chair-1"'), "renders chair 1 header");
 			assert.ok(html.includes('data-testid="chair-accent-bar-chair-1"'), "renders chair 1 top accent bar");
-			assert.ok(html.includes('data-testid="chair-accent-bar-chair-2"'), "renders chair 2 top accent bar");
-			assert.ok(html.includes("border-top:3px solid #0d9488"), "renders chair 1 borderTop color");
-			assert.ok(html.includes("border-top:3px solid #2563eb"), "renders chair 2 borderTop color");
+			assert.ok(html.includes("background-color:#0d9488") || html.includes("background-color: #0d9488") || html.includes("rgb(13, 148, 136)"), "renders chair 1 accent bar color");
+			assert.ok(html.includes("background-color:#2563eb") || html.includes("background-color: #2563eb") || html.includes("rgb(37, 99, 235)"), "renders chair 2 accent bar color");
 		});
 
 		it("ChairScheduleView renders chair-schedule-palette-strip with top accent bars", () => {

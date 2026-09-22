@@ -179,41 +179,39 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 
 	const vuHeight = isListening ? Math.min(100, Math.max(15, (volume / 128) * 100)) : 10;
 
-	// Свернутое состояние: сверхкомпактный 28-32px бар по Мандатам 8d, 8p
+	// Свернутое состояние: компактный инлайн-виджет для единого тулбара (Мандаты 8c, 8d, 8p)
 	if (!isExpanded && !isListening && !transcript) {
 		return (
 			<div
-				className={`emk-voice-pilot-hud emk-voice-pilot-collapsed flex items-center justify-between h-7 sm:h-8 px-2 my-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] select-none shrink-0 ${className}`.trim()}
+				className={`emk-voice-pilot-hud emk-voice-pilot-collapsed inline-flex items-center gap-1.5 select-none shrink-0 ${className}`.trim()}
 				data-testid="emk-voice-pilot-hud"
 			>
-				<div className="flex items-center gap-1.5 min-w-0">
-					<button
-						type="button"
-						onClick={handleToggleMic}
-						className="h-6 px-2 rounded-md bg-[var(--teal,#0d9488)] hover:opacity-90 text-white text-xs font-bold inline-flex items-center gap-1 cursor-pointer transition-all active:scale-95 shrink-0"
-						title="Начать диктовку (Ctrl+Space)"
-						aria-label="Начать диктовку"
-					>
-						<Mic size={12} />
-						<span className="hidden sm:inline">Диктовка</span>
-					</button>
-					<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1 shrink-0">
-						<Sparkles size={12} className="text-[var(--teal,#0d9488)]" />
-						AI-Пилот
-					</span>
-					<span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] hidden md:inline shrink-0">
-						Готов к диктовке
-					</span>
-				</div>
+				<button
+					type="button"
+					onClick={handleToggleMic}
+					className="min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 text-white text-xs font-bold inline-flex items-center gap-1 cursor-pointer transition-all active:scale-95 shrink-0 shadow-2xs"
+					title="Начать диктовку (Ctrl+Space)"
+					aria-label="Начать диктовку"
+				>
+					<Mic size={12} />
+					<span className="hidden sm:inline">Диктовка</span>
+				</button>
+				<span className="text-xs font-bold text-[var(--ink)] hidden md:inline-flex items-center gap-1 shrink-0">
+					<Sparkles size={12} className="text-[var(--teal,#0d9488)]" />
+					<span className="hidden xl:inline">AI-Пилот</span>
+				</span>
+				<span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] hidden 2xl:inline shrink-0">
+					Готов
+				</span>
 				<button
 					type="button"
 					onClick={() => setIsExpanded(true)}
-					className="h-6 px-2 rounded border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-all inline-flex items-center gap-1 shrink-0"
+					className="min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-all inline-flex items-center gap-0.5 shrink-0"
 					title="Развернуть подсказки и пульт AI-Пилота"
 					aria-label="Развернуть пульт AI-Пилота"
 				>
-					<span>Пульт</span>
-					<ChevronDown size={12} />
+					<span className="hidden sm:inline text-[10px]">Пульт</span>
+					<ChevronDown size={11} />
 				</button>
 			</div>
 		);
@@ -221,146 +219,119 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 
 	return (
 		<div
-			className={`emk-voice-pilot-hud rounded-lg border transition-all select-none overflow-hidden ${
-				transcript || isListening ? "shadow-xs" : "h-7 sm:h-8 max-h-[32px] my-0.5"
-			} ${
-				isListening
-					? "bg-rose-500/10 border-rose-500/40 dark:bg-rose-950/20"
-					: "bg-[var(--paper-soft,var(--paper,#ffffff))] dark:bg-zinc-900 border-[var(--line,var(--border,#e2e8f0))] dark:border-zinc-800"
-			} ${className}`.trim()}
+			className={`emk-voice-pilot-hud relative inline-flex items-center gap-1.5 select-none shrink-0 ${className}`.trim()}
 			data-testid="emk-voice-pilot-hud"
 		>
-			{/* Header Bar — Сверхкомпактный 28-32px бар по Мандату 8p */}
-			<div className={`flex items-center justify-between px-2 gap-2 ${transcript || isListening ? "min-h-[28px] sm:min-h-[30px] py-0.5" : "h-7 sm:h-8 min-h-[28px] sm:min-h-[32px] max-h-[32px]"} ${transcript ? "border-b border-[var(--border-subtle,#e2e8f0)] dark:border-zinc-800 pb-1" : ""}`}>
-				<div className="flex items-center gap-1.5 min-w-0">
-					{/* Компактная кнопка микрофона */}
-					<button
-						type="button"
-						onClick={handleToggleMic}
-						className={`h-6 sm:h-6.5 px-2 rounded-md flex items-center justify-center font-bold text-xs gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 touch-manipulation shrink-0 ${
-							isListening
-								? "bg-rose-600 hover:bg-rose-500 text-white animate-pulse ring-2 ring-rose-500/40"
-								: "bg-[var(--teal,#0d9488)] hover:opacity-90 text-white"
-						}`}
-						title={isListening ? "Остановить диктовку (Ctrl+Space)" : "Начать диктовку (Ctrl+Space)"}
-						aria-label={isListening ? "Остановить диктовку" : "Начать диктовку"}
-						aria-pressed={isListening}
-					>
-						{isListening ? <MicOff size={13} /> : <Mic size={13} />}
-						<span className="hidden sm:inline text-xs">{isListening ? "Стоп" : "Диктовка"}</span>
-					</button>
+			<button
+				type="button"
+				onClick={handleToggleMic}
+				className={`min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 rounded-lg flex items-center justify-center font-bold text-xs gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 ${
+					isListening
+						? "bg-rose-600 hover:bg-rose-500 text-white animate-pulse ring-2 ring-rose-500/40"
+						: "bg-[var(--teal,#0d9488)] hover:opacity-90 text-white"
+				}`}
+				title={isListening ? "Остановить диктовку (Ctrl+Space)" : "Начать диктовку (Ctrl+Space)"}
+				aria-label={isListening ? "Остановить диктовку" : "Начать диктовку"}
+				aria-pressed={isListening}
+			>
+				{isListening ? <MicOff size={12} /> : <Mic size={12} />}
+				<span className="hidden sm:inline text-xs">{isListening ? "Стоп" : "Диктовка"}</span>
+			</button>
 
-					<div className="flex items-center gap-1.5 min-w-0">
-						<span className="text-xs font-black text-[var(--ink,#0f172a)] dark:text-zinc-100 flex items-center gap-1 shrink-0">
-							<Sparkles size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
-							AI-Пилот
+			<span className="text-xs font-bold text-[var(--ink)] hidden md:inline-flex items-center gap-1 shrink-0">
+				<Sparkles size={12} className="text-[var(--teal,#0d9488)]" />
+				<span className="hidden xl:inline">AI-Пилот</span>
+			</span>
+
+			<span
+				className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold uppercase tracking-wider shrink-0 ${
+					isListening
+						? "bg-rose-500 text-white animate-pulse"
+						: "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]"
+				}`}
+			>
+				{isListening ? "Слушаю..." : "Готов"}
+			</span>
+
+			{intent && (
+				<button
+					type="button"
+					onClick={handleApplyAll}
+					disabled={isApplied}
+					className={`min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shadow-xs shrink-0 ${
+						isApplied
+							? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+							: "bg-[var(--teal,#0d9488)] hover:opacity-90 text-white"
+					}`}
+				>
+					{isApplied ? <CheckCheck size={13} /> : <Zap size={13} />}
+					<span className="hidden sm:inline">{isApplied ? "Применено" : "В карту"}</span>
+				</button>
+			)}
+
+			<button
+				type="button"
+				onClick={() => setIsExpanded((v) => !v)}
+				className="min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-all inline-flex items-center gap-0.5 shrink-0"
+				title={isExpanded ? "Свернуть панель AI-Пилота" : "Развернуть панель AI-Пилота"}
+				aria-label="Переключить пульт AI-Пилота"
+			>
+				<span className="hidden sm:inline text-[10px]">Пульт</span>
+				<ChevronDown size={11} className={`transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+			</button>
+
+			{/* Выпадающая панель транскрипта и распознанных бейджей */}
+			{(isExpanded || transcript || isListening) && (
+				<div className="absolute left-0 top-full mt-1 z-50 flex flex-col gap-2 p-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-2xl min-w-[280px] sm:min-w-[380px] max-w-[500px] animate-in fade-in zoom-in-95 duration-100 text-xs">
+					<div className="flex items-center justify-between gap-1 pb-1 border-b border-[var(--line)]">
+						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1">
+							<Sparkles size={12} className="text-[var(--teal)]" />
+							<span>Пульт AI-Пилота</span>
 						</span>
-						<span
-							className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold uppercase tracking-wider shrink-0 ${
-								isListening
-									? "bg-rose-500 text-white animate-pulse"
-									: "bg-[var(--paper,#ffffff)] dark:bg-zinc-800 text-[var(--muted,#64748b)] border border-[var(--line)]"
-							}`}
-						>
-							{isListening ? (
-								"Слушаю..."
-							) : (
-								<>
-									<span className="hidden sm:inline">Готов к диктовке</span>
-									<span className="sm:hidden">Готов</span>
-								</>
+						<div className="flex items-center gap-1">
+							{transcript && (
+								<button
+									type="button"
+									onClick={handleClear}
+									className="p-1 rounded text-zinc-500 hover:text-rose-600 hover:bg-rose-500/10 cursor-pointer"
+									title="Очистить"
+								>
+									<Trash2 size={12} />
+								</button>
 							)}
-						</span>
-						<span className="text-[11px] text-[var(--muted,#64748b)] truncate hidden xl:inline">
-							{isListening ? "Диктуйте формулу и манипуляции" : "Дневник 043/у и формула голосом"}
-						</span>
-					</div>
-				</div>
-
-				<div className="flex items-center gap-1 shrink-0">
-					{/* Live VU meter indicator */}
-					<div className="hidden md:flex items-center gap-1 h-5 px-1.5 rounded bg-[var(--surface-hover,#f1f5f9)] dark:bg-zinc-800 border border-[var(--border-subtle,#e2e8f0)] dark:border-zinc-700">
-						<Volume2 size={12} className={isListening ? "text-rose-500 animate-pulse" : "text-zinc-400"} />
-						<div className="w-10 h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden flex items-center">
-							<div
-								className="h-full bg-rose-500 transition-all duration-75 rounded-full"
-								style={{ width: `${vuHeight}%` }}
-							/>
+							<button
+								type="button"
+								onClick={() => setIsExpanded(false)}
+								className="p-1 rounded text-zinc-500 hover:text-[var(--ink)] cursor-pointer"
+								title="Свернуть"
+							>
+								<X size={12} />
+							</button>
 						</div>
 					</div>
 
-					{/* Кнопка быстрого сворачивания в компактную кнопку (Мандаты 8d, 8p) */}
-					{!transcript && !isListening && (
-						<button
-							type="button"
-							onClick={() => setIsExpanded(false)}
-							className="h-6 w-6 p-0 text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] rounded flex items-center justify-center cursor-pointer transition-colors"
-							title="Свернуть в компактную кнопку"
-							aria-label="Свернуть AI-Пилот в кнопку"
-						>
-							<ChevronUp size={13} />
-						</button>
-					)}
-
-					{transcript && (
-						<button
-							type="button"
-							onClick={handleClear}
-							className="min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 w-7 p-1 rounded-lg text-zinc-500 hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer flex items-center justify-center"
-							title="Очистить распознанный текст"
-							aria-label="Очистить"
-						>
-							<Trash2 size={14} />
-						</button>
-					)}
-
-					{intent && (
-						<button
-							type="button"
-							onClick={handleApplyAll}
-							disabled={isApplied}
-							className={`min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2.5 py-0.5 rounded-lg text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation shadow-xs ${
-								isApplied
-									? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
-									: "bg-[var(--teal,#0d9488)] hover:opacity-90 text-white hover:scale-[1.02] active:scale-95"
-							}`}
-						>
-							{isApplied ? (
-								<>
-									<CheckCheck size={14} />
-									<span>Применено</span>
-								</>
-							) : (
-								<>
-									<Zap size={14} />
-									<span>Заполнить карту</span>
-								</>
-							)}
-						</button>
-					)}
-				</div>
-			</div>
-
-			{/* Parsed Live Intent Badges Bar */}
-			{transcript && (
-				<div className="p-3 bg-[var(--surface-hover,#f1f5f9)]/50 dark:bg-zinc-950/30 flex flex-col gap-2 border-t border-[var(--border-subtle,#e2e8f0)] dark:border-zinc-800">
 					{/* Live Raw Transcript */}
-					<div className="text-xs font-medium text-[var(--ink,#0f172a)] dark:text-zinc-200 bg-[var(--paper,#ffffff)] dark:bg-zinc-900 p-2.5 rounded-xl border border-[var(--border-subtle,#e2e8f0)] dark:border-zinc-800 flex flex-wrap items-center gap-1.5 leading-relaxed">
-						{finalTranscript && <span>«{finalTranscript}»</span>}
-						{interimText && (
-							<span className="text-blue-600 dark:text-blue-400 font-bold italic animate-pulse">
-								{finalTranscript ? `+ «${interimText}»` : `«${interimText}»`}
-							</span>
-						)}
-					</div>
+					{transcript ? (
+						<div className="text-xs font-medium text-[var(--ink)] bg-[var(--paper-soft)] p-2 rounded-lg border border-[var(--line)] flex flex-wrap items-center gap-1 leading-relaxed">
+							{finalTranscript && <span>«{finalTranscript}»</span>}
+							{interimText && (
+								<span className="text-blue-600 dark:text-blue-400 font-bold italic animate-pulse">
+									{finalTranscript ? `+ «${interimText}»` : `«${interimText}»`}
+								</span>
+							)}
+						</div>
+					) : (
+						<div className="text-[11px] text-[var(--muted)] py-1">
+							Говорите в микрофон: зубную формулу, МКБ-10, анестетики или манипуляции...
+						</div>
+					)}
 
 					{/* Structured Badges */}
 					{intent && (
-						<div className="flex flex-wrap items-center gap-1.5 text-xs">
-							{/* Quadrant switch badge */}
+						<div className="flex flex-wrap items-center gap-1 text-[11px]">
 							{intent.targetQuadrant && (
-								<span className="px-2.5 py-1 rounded-lg bg-blue-500/15 text-blue-800 dark:text-blue-200 border border-blue-500/30 font-bold flex items-center gap-1">
-									<LayoutGrid size={13} className="shrink-0" />
+								<span className="px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-800 dark:text-blue-200 border border-blue-500/30 font-bold flex items-center gap-1">
+									<LayoutGrid size={11} className="shrink-0" />
 									<span>
 										{intent.targetQuadrant === "all"
 											? "Все квадранты"
@@ -368,56 +339,46 @@ export const EmkVoicePilot: React.FC<EmkVoicePilotProps> = ({
 									</span>
 								</span>
 							)}
-
-							{/* Teeth updates */}
 							{intent.teethUpdates.map((t) => (
 								<span
 									key={`tooth-${t.toothNumber}`}
-									className="px-2.5 py-1 rounded-lg bg-indigo-500/15 text-indigo-800 dark:text-indigo-200 border border-indigo-500/30 font-bold flex items-center gap-1"
+									className="px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-800 dark:text-indigo-200 border border-indigo-500/30 font-bold flex items-center gap-1"
 								>
 									<span className="font-mono font-black">Зуб {t.toothNumber}:</span>
 									<span>{t.icd10Title} [{t.icd10Code}]</span>
 									{t.surfaces && (
-										<span className="font-mono text-[10px] bg-indigo-600 text-white px-1 rounded">
+										<span className="font-mono text-[9px] bg-indigo-600 text-white px-1 rounded">
 											{t.surfaces.join("")}
 										</span>
 									)}
 								</span>
 							))}
-
-							{/* Anesthesia */}
 							{intent.anesthesia && (
-								<span className="px-2.5 py-1 rounded-lg bg-teal-500/15 text-teal-800 dark:text-teal-200 border border-teal-500/30 font-bold flex items-center gap-1">
-									<Syringe size={13} className="shrink-0" />
+								<span className="px-2 py-0.5 rounded-md bg-teal-500/15 text-teal-800 dark:text-teal-200 border border-teal-500/30 font-bold flex items-center gap-1">
+									<Syringe size={11} className="shrink-0" />
 									<span>{intent.anesthesia.displayName}</span>
 								</span>
 							)}
-
-							{/* Manipulations */}
 							{intent.procedures804n.map((p, idx) => (
 								<span
 									key={`proc-${idx}`}
-									className="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30 font-bold flex items-center gap-1"
+									className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30 font-bold flex items-center gap-1"
 								>
-									<Sliders size={13} className="shrink-0" />
+									<Sliders size={11} className="shrink-0" />
 									<span>{p.name}</span>
 								</span>
 							))}
-
-							{/* Endo Canal Measurements */}
 							{intent.endoCanalMeasurements && intent.endoCanalMeasurements.length > 0 && (
-								<span className="px-2.5 py-1 rounded-lg bg-red-500/15 text-red-800 dark:text-red-200 border border-red-500/30 font-bold flex items-center gap-1">
-									<Sparkles size={13} className="shrink-0 text-red-500" />
+								<span className="px-2 py-0.5 rounded-md bg-red-500/15 text-red-800 dark:text-red-200 border border-red-500/30 font-bold flex items-center gap-1">
+									<Sparkles size={11} className="shrink-0 text-red-500" />
 									<span>
 										Эндо: {intent.endoCanalMeasurements.map((c) => `${c.canalName} ${c.workingLengthMm ? `${c.workingLengthMm}мм` : ""}`).join(", ")}
 									</span>
 								</span>
 							)}
-
-							{/* SOAP Summary */}
 							{intent.soapNotes.assessment && (
-								<span className="px-2.5 py-1 rounded-lg bg-purple-500/15 text-purple-800 dark:text-purple-200 border border-purple-500/30 font-bold flex items-center gap-1">
-									<ClipboardList size={13} className="shrink-0" />
+								<span className="px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-800 dark:text-purple-200 border border-purple-500/30 font-bold flex items-center gap-1">
+									<ClipboardList size={11} className="shrink-0" />
 									<span>{intent.soapNotes.assessment}</span>
 								</span>
 							)}

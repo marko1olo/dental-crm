@@ -512,7 +512,7 @@
 
 /* Ультракомпактная плашка голосовой диктовки (DEF-VIS-02, Mandates 8d, 8p) */
 .emk-voice-pilot-hud {
-	margin: 2px 0 !important;
+	margin: 0 !important;
 	border-radius: 8px !important;
 }
 
@@ -523,18 +523,18 @@
 }
 
 .emk-voice-pilot-hud:not(.has-content):not(.emk-voice-pilot-collapsed) {
-	height: 30px !important;
-	max-height: 30px !important;
+	height: auto !important;
+	max-height: none !important;
 }
 
 .emk-voice-pilot-hud > div:first-child {
-	min-height: 28px !important;
-	padding: 0 8px !important;
+	min-height: 26px !important;
+	padding: 0 4px !important;
 }
 
 .emk-voice-pilot-hud button {
-	min-height: 22px !important;
-	height: 24px !important;
+	min-height: 24px !important;
+	height: 26px !important;
 	padding: 1px 8px !important;
 	font-size: 11px !important;
 }
@@ -544,59 +544,52 @@
 	background: var(--paper-soft);
 	border: 1px solid var(--line);
 	color: var(--muted);
-	font-size: 12px;
+	padding: 0 10px;
+	height: 26px;
+	border-radius: 6px;
+	font-size: 11px;
 	font-weight: 700;
-	padding: 4px 10px;
-	min-height: 28px;
-	border-radius: 8px;
-	cursor: pointer;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 6px;
-	touch-action: manipulation;
 	transition: all 0.15s ease;
+	cursor: pointer;
 	white-space: nowrap;
-	flex-shrink: 0;
 }
 
 .emk-tab-button:hover {
-	background: var(--teal-soft);
-	color: var(--teal-dark);
-	border-color: var(--teal);
+	background: var(--paper-strong);
+	color: var(--ink);
+	border-color: var(--line-strong);
 }
 
-/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
 .emk-tab-button.active {
-	background: var(--teal-fill, var(--teal));
+	background: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
 	color: #ffffff;
-	border-color: var(--teal-fill, var(--teal));
-	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
+	box-shadow: 0 1px 2px rgba(13, 148, 136, 0.2);
 }
 
-/* Точка-индикатор заполненности поля */
 .emk-tab-dot {
-	width: 8px;
-	height: 8px;
-	background-color: #22c55e;
+	width: 5px;
+	height: 5px;
 	border-radius: 50%;
-	display: inline-block;
-	box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+	background: currentColor;
+	opacity: 0.8;
+	margin-left: 2px;
 }
 
-.emk-tab-button.active .emk-tab-dot {
-	background-color: #ffffff;
-	box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
-}
-
-/* Сверхкомпактная плашка специальности (DEF-VIS-02: схлопывание шапок) */
+/* Specialty Focus Bar (Детство / Хирургия / Ортодонтия) */
 .specialty-focus-bar {
-	min-height: 28px !important;
-	height: 28px !important;
-	padding: 2px 10px !important;
-	font-size: 11px !important;
-	margin-bottom: 2px !important;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
 }
+
+.specialty-focus-bar::-webkit-scrollbar {
+	display: none;
+}
+
 .specialty-focus-bar button {
 	min-height: 22px !important;
 	height: 22px !important;
@@ -604,12 +597,17 @@
 	font-size: 11px !important;
 }
 
-/* Комфортный размер textarea в дневнике 043/у — текст не сжимается до 2 узких строк */
+/* Комфортный размер textarea в дневнике 043/у — компактная высота в режиме сетки, чтобы карточка Лечение была видна на 1440x900 */
 .visit-fields textarea,
 .emk-field-container textarea {
-	min-height: 120px !important;
-	line-height: 1.5;
-	font-size: 14px;
+	min-height: 68px !important;
+	line-height: 1.45;
+	font-size: 13px;
+}
+
+.visit-fields textarea:focus,
+.emk-field-container textarea:focus {
+	min-height: 100px !important;
 }
 
 /* Увеличенный размер textarea в режиме одной вкладки */
@@ -617,12 +615,20 @@
 	grid-template-columns: 1fr;
 }
 
-.visit-fields.single-tab-mode textarea {
+.visit-fields.single-tab-mode textarea,
+.visit-fields.single-tab-mode .emk-field-container textarea {
 	min-height: 160px !important;
 	font-size: 14px;
 }
 
-/* Quick Chips в контексте визита / ЭМК — снятие обрезания и точек (DEF-VIS-04) */
+/* Quick Chips в контексте визита / ЭМК — аккуратный flex-wrap без обрезания букв слов (Мандаты 8c, 8d, 8e, 8p) */
+.quick-chips-scroll-container {
+	display: flex !important;
+	flex-wrap: wrap !important;
+	gap: 6px !important;
+	overflow-x: visible !important;
+}
+
 .visit-note-panel .quick-chip,
 .visit-quick-chip,
 .emk-tab-panel .quick-chip,

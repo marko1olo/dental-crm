@@ -2043,16 +2043,6 @@ export function VisitEmkTab() {
 				<VisitFlowProgress result={visitFlowResult} />
 			) : null}
 
-			{/* Умный голосовой AI-Пилот ЭМК (0 кликов на приёме) — сверхкомпактный 26-28px бар (DEF-VIS-02) */}
-			<EmkVoicePilot
-				onApplyToothState={handleApplyVoiceToothState}
-				onApplySoapNotes={handleApplyVoiceSoapNotes}
-				onApplyAnesthesia={handleApplyVoiceAnesthesia}
-				onApplyProcedures={handleApplyVoiceProcedures}
-				activeSelectedTooth={activeSelectedTooth}
-				className="my-0"
-			/>
-
 			{/* Кресельный HUD автономного ИИ-Копилота (DEF-COPILOT-01) */}
 			{isChairsideHudOpen && (
 				<ChairsideCopilotHUD
@@ -2085,6 +2075,18 @@ export function VisitEmkTab() {
 
 			{/* ── ЕДИНЫЙ ТУЛБАР ЭМК 043/у (СТРОГО 1 СТРОКА 30–32px, МАНДАТЫ 8c, 8d, 8p) ── */}
 			<div className="emk-unified-toolbar flex items-center justify-between gap-1.5 my-0 py-0.5 border-b border-[var(--line)] w-full min-w-0 max-w-full overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-nowrap min-h-[30px] sm:min-h-[32px]">
+				{/* 1. HUD ГОЛОСОВОЙ ДИКТОВКИ / AI-ПИЛОТ (инлайн в едином тулбаре 32-36px, Мандаты 8c, 8d, 8p) */}
+				<EmkVoicePilot
+					onApplyToothState={handleApplyVoiceToothState}
+					onApplySoapNotes={handleApplyVoiceSoapNotes}
+					onApplyAnesthesia={handleApplyVoiceAnesthesia}
+					onApplyProcedures={handleApplyVoiceProcedures}
+					activeSelectedTooth={activeSelectedTooth}
+					className="shrink-0"
+				/>
+
+				<div className="w-px h-4 bg-[var(--line)] shrink-0" />
+
 				{/* ЛЕВАЯ ЧАСТЬ: Вкладки секций ЭМК (Все поля, Жалобы, Анамнез...) */}
 				<div
 					className="emk-tabs-container flex items-center gap-1 min-w-0 flex-nowrap shrink-0"
@@ -2564,10 +2566,12 @@ export function VisitEmkTab() {
 					return (
 						<div
 							key={field.key}
-							className="emk-field-container flex flex-col gap-2 p-2.5 sm:p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs transition-all min-w-0"
+							className={`emk-field-container flex flex-col gap-1.5 p-2 sm:p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs transition-all min-w-0 ${
+								field.key === "treatmentPlan" ? "col-span-full md:col-span-2" : ""
+							}`}
 							style={{
 								contentVisibility: "auto",
-								containIntrinsicSize: "1px 220px",
+								containIntrinsicSize: "1px 160px",
 							}}
 						>
 							<div className="flex items-center justify-between gap-2 w-full flex-wrap">
@@ -2754,19 +2758,19 @@ export function VisitEmkTab() {
 								textareaRef={(el) => {
 									textareaRefs.current[field.key] = el;
 								}}
-								className="min-h-[130px] sm:min-h-[110px] rounded-b-lg rounded-t-none p-3 border border-t-0 border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-400 resize-y w-full outline-none focus:border-[var(--teal,var(--brand-primary))] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]/25 font-sans text-sm leading-relaxed"
+								className="min-h-[68px] sm:min-h-[72px] rounded-b-lg rounded-t-none p-2 sm:p-2.5 border border-t-0 border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-400 resize-y w-full outline-none focus:border-[var(--teal,var(--brand-primary))] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]/25 font-sans text-xs sm:text-sm leading-relaxed"
 							/>
 
-							{/* Быстрые чипы под textarea: строго 1 компактная горизонтальная строка без водопада (Мандаты 8c, 8e, 8p) */}
+							{/* Быстрые чипы под textarea: аккуратный flex-wrap gap-1.5 без срезания слов (Мандаты 8c, 8d, 8e, 8p) */}
 							{chips.length > 0 && (
-								<div className="quick-chips-scroll-container flex items-center gap-1.5 py-1 min-w-0 max-w-full my-0.5 overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-nowrap shrink-0 touch-pan-x overscroll-x-contain">
+								<div className="quick-chips-scroll-container flex flex-wrap items-center gap-1.5 py-0.5 min-w-0 max-w-full my-0.5">
 									{chips.map((chip) => (
 										<button
 											key={chip}
 											type="button"
 											onClick={() => handleChipClick(chip)}
 											title={chip}
-											className="quick-chip visit-quick-chip h-auto min-h-[26px] sm:min-h-[28px] max-w-none px-2 sm:px-2.5 py-0.5 sm:py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation shadow-2xs inline-flex items-center gap-1.5 shrink-0 flex-shrink-0 min-w-max whitespace-nowrap"
+											className="quick-chip visit-quick-chip h-auto min-h-[24px] sm:min-h-[26px] max-w-none px-2 sm:px-2.5 py-0.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation shadow-2xs inline-flex items-center gap-1 shrink-0 flex-shrink-0 min-w-max whitespace-nowrap"
 										>
 											<span className="text-[var(--teal,var(--brand-primary))] font-extrabold shrink-0">
 												+

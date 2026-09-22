@@ -2161,12 +2161,11 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 								<div
 									key={chair.id}
 									className="h-8 sm:h-9 px-1 sm:px-1.5 text-xs font-bold uppercase tracking-wider text-[var(--ink)] border-r border-[var(--line)] last:border-r-0 flex flex-row items-center justify-between gap-1 min-w-0 relative transition-colors select-none"
-									style={{ borderTop: `2px solid ${chairAccentColor}` }}
 									data-testid={`chair-header-${chair.id}`}
 									data-chair-palette={chairPalette.nameRu}
 								>
 									<div
-										className="w-1.5 h-3.5 rounded-full shrink-0"
+										className="w-[3px] h-3.5 rounded-full shrink-0"
 										style={{ backgroundColor: chairAccentColor }}
 										data-testid={`chair-accent-bar-${chair.id}`}
 									/>
@@ -2296,7 +2295,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													}
 												}}
 												onClick={(e) => e.stopPropagation()}
-												className="text-[10px] font-bold border border-[var(--line)] rounded px-1 py-0.5 bg-[var(--paper)] text-[var(--ink)] max-w-[100px] sm:max-w-[125px] truncate cursor-pointer h-5 sm:h-6"
+												className="text-[10px] font-bold border border-[var(--line)] rounded px-1 py-0.5 bg-[var(--paper)] text-[var(--ink)] truncate cursor-pointer h-5 sm:h-6"
 												title="Закрепление врача за креслом в 1 клик (выбор из списка)"
 												data-testid={`chair-duty-doctor-select-${chair.id}`}
 												aria-label={`Дежурный врач для ${chair.name}`}
