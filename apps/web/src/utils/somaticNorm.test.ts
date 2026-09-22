@@ -12,7 +12,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import {
 	CANONICAL_FORM043_SOMATIC_NORM,
 	CANONICAL_SOMATIC_HEALTHY_NORM_TEXT,
@@ -141,22 +141,26 @@ describe("somaticNorm.ts Unit Tests (Mandates 8e, 8i, 8k, 8s, 8d)", () => {
 				null,
 			);
 			assert.strictEqual(badges.length, 1);
-			assert.strictEqual(badges[0].id, "allergy");
-			assert.strictEqual(badges[0].testId, "visit-focus-allergy-alert");
-			assert.ok(badges[0].fullLabel.includes("Артикаин"));
-			assert.ok(badges[0].fullLabel.includes("Пенициллины"));
-			assert.strictEqual(badges[0].severity, "critical");
-			assert.strictEqual(hasCartoonEmojis(badges[0].title), false);
+			const allergyBadge = badges[0];
+			assert.ok(allergyBadge);
+			assert.strictEqual(allergyBadge.id, "allergy");
+			assert.strictEqual(allergyBadge.testId, "visit-focus-allergy-alert");
+			assert.ok(allergyBadge.fullLabel.includes("Артикаин"));
+			assert.ok(allergyBadge.fullLabel.includes("Пенициллины"));
+			assert.strictEqual(allergyBadge.severity, "critical");
+			assert.strictEqual(hasCartoonEmojis(allergyBadge.title), false);
 		});
 
 		it("extracts pacemaker badge with ultrasound ban warning", () => {
 			const badges = extractDentalContraindicationBadges({ hasPacemakerExs: true });
 			assert.strictEqual(badges.length, 1);
-			assert.strictEqual(badges[0].id, "pacemaker");
-			assert.strictEqual(badges[0].testId, "visit-focus-pacemaker-alert");
-			assert.strictEqual(badges[0].shortLabel, "ЭКС");
-			assert.ok(badges[0].fullLabel.includes("ЗАПРЕТ УЗ"));
-			assert.ok(badges[0].title.includes("запрет УЗ-скейлинга"));
+			const pacemakerBadge = badges[0];
+			assert.ok(pacemakerBadge);
+			assert.strictEqual(pacemakerBadge.id, "pacemaker");
+			assert.strictEqual(pacemakerBadge.testId, "visit-focus-pacemaker-alert");
+			assert.strictEqual(pacemakerBadge.shortLabel, "ЭКС");
+			assert.ok(pacemakerBadge.fullLabel.includes("ЗАПРЕТ УЗ"));
+			assert.ok(pacemakerBadge.title.includes("запрет УЗ-скейлинга"));
 		});
 
 		it("extracts anticoagulant badge with bleeding risk", () => {
@@ -165,10 +169,12 @@ describe("somaticNorm.ts Unit Tests (Mandates 8e, 8i, 8k, 8s, 8d)", () => {
 				anticoagulantName: "Ксарелто 20 мг",
 			});
 			assert.strictEqual(badges.length, 1);
-			assert.strictEqual(badges[0].id, "anticoagulant");
-			assert.strictEqual(badges[0].testId, "visit-focus-anticoagulant-alert");
-			assert.strictEqual(badges[0].shortLabel, "АК");
-			assert.ok(badges[0].fullLabel.includes("Ксарелто"));
+			const acBadge = badges[0];
+			assert.ok(acBadge);
+			assert.strictEqual(acBadge.id, "anticoagulant");
+			assert.strictEqual(acBadge.testId, "visit-focus-anticoagulant-alert");
+			assert.strictEqual(acBadge.shortLabel, "АК");
+			assert.ok(acBadge.fullLabel.includes("Ксарелто"));
 		});
 
 		it("extracts pregnancy badge with trimester indication", () => {
@@ -176,9 +182,11 @@ describe("somaticNorm.ts Unit Tests (Mandates 8e, 8i, 8k, 8s, 8d)", () => {
 				pregnancyTrimester: "trimester_2",
 			});
 			assert.strictEqual(badges.length, 1);
-			assert.strictEqual(badges[0].id, "pregnancy");
-			assert.strictEqual(badges[0].testId, "visit-focus-pregnancy-alert");
-			assert.ok(badges[0].fullLabel.includes("2 ТРИМ."));
+			const pregBadge = badges[0];
+			assert.ok(pregBadge);
+			assert.strictEqual(pregBadge.id, "pregnancy");
+			assert.strictEqual(pregBadge.testId, "visit-focus-pregnancy-alert");
+			assert.ok(pregBadge.fullLabel.includes("2 ТРИМ."));
 		});
 
 		it("extracts bisphosphonates badge with osteonecrosis warning", () => {
@@ -187,9 +195,11 @@ describe("somaticNorm.ts Unit Tests (Mandates 8e, 8i, 8k, 8s, 8d)", () => {
 				bisphosphonateName: "Акласта",
 			});
 			assert.strictEqual(badges.length, 1);
-			assert.strictEqual(badges[0].id, "bisphosphonates");
-			assert.strictEqual(badges[0].testId, "visit-focus-bisphosphonates-alert");
-			assert.ok(badges[0].title.includes("MRONJ/БОНЧ"));
+			const bisBadge = badges[0];
+			assert.ok(bisBadge);
+			assert.strictEqual(bisBadge.id, "bisphosphonates");
+			assert.strictEqual(bisBadge.testId, "visit-focus-bisphosphonates-alert");
+			assert.ok(bisBadge.title.includes("MRONJ/БОНЧ"));
 		});
 
 		it("extracts diabetes badge with hypoglycemia warning", () => {
@@ -198,9 +208,11 @@ describe("somaticNorm.ts Unit Tests (Mandates 8e, 8i, 8k, 8s, 8d)", () => {
 				diabetesType: "2 тип",
 			});
 			assert.strictEqual(badges.length, 1);
-			assert.strictEqual(badges[0].id, "diabetes");
-			assert.strictEqual(badges[0].testId, "visit-focus-diabetes-alert");
-			assert.ok(badges[0].fullLabel.includes("САХАРНЫЙ ДИАБЕТ"));
+			const diabBadge = badges[0];
+			assert.ok(diabBadge);
+			assert.strictEqual(diabBadge.id, "diabetes");
+			assert.strictEqual(diabBadge.testId, "visit-focus-diabetes-alert");
+			assert.ok(diabBadge.fullLabel.includes("САХАРНЫЙ ДИАБЕТ"));
 		});
 	});
 });

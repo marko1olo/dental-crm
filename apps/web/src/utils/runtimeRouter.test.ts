@@ -22,6 +22,7 @@ import {
 	isPwaRuntime,
 	isWebRuntime,
 	type AppRuntimeKind,
+	type DispatchFiscalReceiptParams,
 } from "./runtimeRouter.js";
 import { setForcedLowSpecMode } from "./lowSpecHddOptimizer.js";
 
@@ -149,15 +150,16 @@ describe("Universal 4-Runtime & Storage Engine Router Suite", () => {
 	});
 
 	it("9. routeFiscalReceiptPrint buffers receipt on non-desktop without blocking cashier (Mandate 8e)", async () => {
-		const testPayload = {
+		const testPayload: DispatchFiscalReceiptParams = {
 			payload: {
 				items: [
-					{ name: "Консультация стоматолога первичная", price: 1500, quantity: 1 },
-					{ name: "Прицельный снимок", price: 500, quantity: 1 },
+					{ name: "Консультация стоматолога первичная", priceRub: 1500, quantity: 1 },
+					{ name: "Прицельный снимок", priceRub: 500, quantity: 1 },
 				],
-				totalAmount: 2000,
+				totalRub: 2000,
 				cashierName: "Иванова А.А.",
-				clientPhone: "+79991234567",
+				paymentType: "cash",
+				patientEmailOrPhone: "+79991234567",
 			},
 		};
 

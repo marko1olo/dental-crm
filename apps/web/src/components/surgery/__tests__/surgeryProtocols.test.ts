@@ -489,7 +489,7 @@ describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 		});
 		assert.equal(overdraftResult.success, true);
 		assert.equal(overdraftResult.isOverdraft, true);
-		assert.equal(overdraftResult.deductedItems[0].isOverdraft, true);
+		assert.equal(overdraftResult.deductedItems[0]!.isOverdraft, true);
 		assert.ok(overdraftResult.messageRu.includes("мягкий овердрафт"));
 		assert.ok(overdraftResult.messageRu.includes("без комиссии и блокировки врача"));
 	});

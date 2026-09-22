@@ -2107,10 +2107,10 @@ export class TreatmentConsumablesService {
 		tx: DbExecutor,
 		params: {
 			organizationId: string;
-			visitType?: "therapy" | "surgery" | "implant" | "sinus_gbr";
-			userId?: string | null;
-			visitId?: string | null;
-			notes?: string | null;
+			visitType?: "therapy" | "surgery" | "implant" | "sinus_gbr" | undefined;
+			userId?: string | null | undefined;
+			visitId?: string | null | undefined;
+			notes?: string | null | undefined;
 		},
 	): Promise<{
 		success: boolean;

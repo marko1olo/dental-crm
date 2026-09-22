@@ -134,13 +134,12 @@ export async function enqueueOfflinePayment(
 				payload: {
 					items: input.items.map((it) => ({
 						name: it.name,
-						price: Math.round(it.priceKopecks / 100),
+						priceRub: Math.round(it.priceKopecks / 100),
 						quantity: it.quantity,
-						amount: Math.round((it.priceKopecks * it.quantity) / 100),
 					})),
-					totalAmount: totalRub,
-					cashierName: input.cashierName,
-					clientPhone: input.patientPhoneOrEmail,
+					totalRub,
+					cashierName: input.cashierName || "Кассир",
+					patientEmailOrPhone: input.patientPhoneOrEmail,
 					paymentType: input.paymentType === "cash" ? "cash" : "card",
 				},
 			});

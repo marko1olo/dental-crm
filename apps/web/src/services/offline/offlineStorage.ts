@@ -61,6 +61,8 @@ export {
 	isUuidV7,
 	resetGlobalClockSkew,
 	setGlobalClockSkew,
+	type OfflineDraft,
+	type OfflineMutation,
 };
 
 export const OFFLINE_DB_NAME = "dente-crm-offline-outbox";

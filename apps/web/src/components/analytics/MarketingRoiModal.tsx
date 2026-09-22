@@ -655,7 +655,7 @@ export const MarketingRoiModal: React.FC<MarketingRoiModalProps> = ({
 													</td>
 												</tr>
 											);
-										})}
+										}))}
 									</tbody>
 								</table>
 							</div>

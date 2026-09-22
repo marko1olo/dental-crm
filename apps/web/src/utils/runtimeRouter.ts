@@ -351,22 +351,18 @@ export async function routeFiscalReceiptPrint(
 		const queuedItem = FiscalReceiptQueueManager.enqueueReceipt({
 			items: params.payload.items.map((it) => ({
 				name: it.name,
-				price: it.price,
+				priceRub: it.priceRub,
+				amountRub: Math.round(it.priceRub * it.quantity),
 				quantity: it.quantity,
-				amount: it.amount ?? it.price * it.quantity,
-				vatRate: it.vatRate ?? "none",
-				department: it.department ?? 1,
+				vatRate: it.vatPercent ? "vat_20" : "vat_none",
 			})),
-			paymentType: params.payload.paymentType ?? "cash",
-			totalAmount: params.payload.totalAmount,
-			clientEmail: params.payload.clientEmail,
-			clientPhone: params.payload.clientPhone,
-			cashierName: params.payload.cashierName,
-			clinicTaxId: params.payload.clinicTaxId,
-			operationType: params.payload.operationType ?? "sell",
-			kktHost: params.kktHost,
-			kktPort: params.kktPort,
-			kktSerialPort: params.kktSerialPort,
+			cashierFullName: params.payload.cashierName,
+			totalRub: params.payload.totalRub,
+			customerContact: params.payload.patientEmailOrPhone,
+			operationType: "income",
+			cashRub: params.payload.paymentType === "cash" ? params.payload.totalRub : 0,
+			electronicRub: params.payload.paymentType === "card" || params.payload.paymentType === "sbp" ? params.payload.totalRub : 0,
+			prepaidRub: params.payload.paymentType === "deposit" ? params.payload.totalRub : 0,
 		}, `runtime_${runtime}_buffered`);
 
 		return {
@@ -413,3 +409,5 @@ export function isPwaRuntime(target?: AppRuntimeKind): boolean {
 export function isWebRuntime(target?: AppRuntimeKind): boolean {
 	return (target ?? detectAppRuntimeKind()) === "web_browser";
 }
+
+export type { DispatchFiscalReceiptParams };

@@ -809,7 +809,7 @@ export function AutoclaveRegisterTab() {
 										<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "center" }}>
 											<button
 												type="button"
-												onClick={() => setIsModalOpen(true)}
+												onClick={() => setIsJournal257ModalOpen(true)}
 												className="sanpin-btn sanpin-btn-primary"
 												style={{ minHeight: "38px", padding: "0.4rem 1rem", fontSize: "0.825rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 											>

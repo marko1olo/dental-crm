@@ -213,7 +213,7 @@ export interface DoctorProfitabilityRow {
 	readonly labOrdersCount?: number;
 	readonly labOrdersCostRub?: number;
 	readonly doctorPayrollRub?: number;
-	readonly clinicMarginRub?: number;
+	readonly clinicMarginRub?: number | null;
 }
 
 /**

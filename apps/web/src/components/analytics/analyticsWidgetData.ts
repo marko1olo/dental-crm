@@ -432,10 +432,10 @@ export interface PersonalizedOfferResult {
 
 export function generatePersonalizedOffer(params: {
 	patientName: string;
-	clinicName?: string;
+	clinicName?: string | undefined;
 	daysSinceLastVisit: number;
-	category?: CohortTreatmentCategory;
-	doctorName?: string;
+	category?: CohortTreatmentCategory | undefined;
+	doctorName?: string | undefined;
 }): PersonalizedOfferResult {
 	const rawName = (params.patientName || "").trim();
 	const nameParts = rawName.split(/\s+/).filter(Boolean);

@@ -25,10 +25,15 @@ import {
 import { showToast } from "../GlobalToast";
 import { handleOneClickPackageWriteOff } from "./warehousePackageWriteOffEngine";
 
-export {
+import {
 	type AnestheticDrugOption,
 	COMMON_ANESTHETICS,
 } from "./carpuleDisposalConstants.js";
+
+export {
+	type AnestheticDrugOption,
+	COMMON_ANESTHETICS,
+};
 
 export interface NurseCarpuleDisposalModalProps {
 	readonly isOpen: boolean;

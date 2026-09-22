@@ -145,7 +145,7 @@ describe("Unified Offline Subsystem Test Suite", () => {
 			cacheScheduleOffline("2026-09-23", [appointment]);
 			const cached = getCachedScheduleOffline("2026-09-23");
 			expect(cached).toHaveLength(1);
-			expect(cached?.[0].patientName).toBe("Смирнов А.В.");
+			expect(cached?.[0]?.patientName).toBe("Смирнов А.В.");
 		});
 
 		it("syncs appointment queue successfully with dispatcher", async () => {
@@ -210,17 +210,17 @@ describe("Unified Offline Subsystem Test Suite", () => {
 			// Search by name
 			const searchName = searchCachedPricelist("пломб");
 			expect(searchName).toHaveLength(1);
-			expect(searchName[0].id).toBe("srv_2");
+			expect(searchName[0]!.id).toBe("srv_2");
 
 			// Search by 804n code
 			const searchCode = searchCachedPricelist("B01.065");
 			expect(searchCode).toHaveLength(1);
-			expect(searchCode[0].id).toBe("srv_1");
+			expect(searchCode[0]!.id).toBe("srv_1");
 
 			// Search by category filter
 			const searchCategory = searchCachedPricelist("", { category: "Гигиена" });
 			expect(searchCategory).toHaveLength(1);
-			expect(searchCategory[0].internalCode).toBe("HYG-01");
+			expect(searchCategory[0]!.internalCode).toBe("HYG-01");
 		});
 
 		it("caches and searches statutory 804n nomenclature", () => {
@@ -233,7 +233,7 @@ describe("Unified Offline Subsystem Test Suite", () => {
 			cacheNomenclature804nOffline(nomItems);
 			const res = searchCachedNomenclature804n("корневого канала");
 			expect(res).toHaveLength(2);
-			expect(res[0].code).toBe("A16.07.004");
+			expect(res[0]!.code).toBe("A16.07.004");
 		});
 
 		it("detects freshness of pricelist cache", () => {

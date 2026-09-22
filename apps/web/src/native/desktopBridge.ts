@@ -57,6 +57,9 @@ export interface DesktopFiscalPrintResult {
 	kktSerialNumber?: string | undefined;
 	printedAt?: string | undefined;
 	error?: string | undefined;
+	bufferedOffline?: boolean | undefined;
+	queueItemId?: string | undefined;
+	userFriendlyMessageRu?: string | undefined;
 }
 
 export interface DesktopDicomFileEvent {
@@ -666,6 +669,7 @@ export async function printDesktopFiscalReceiptTcp(params: {
 	host: string;
 	port: number;
 	protocol?: "atol" | "shtrih" | undefined;
+	timeoutMs?: number | undefined;
 	payload: DesktopFiscalReceiptPayload;
 }): Promise<DesktopFiscalPrintResult> {
 	const api = getDesktopNativeApi();

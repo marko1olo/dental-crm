@@ -1879,7 +1879,9 @@ export const PublicOnlineBookingWidget: React.FC<
 												{selectedDoctor.fullName}
 											</div>
 											<div className="text-xs text-slate-500 dark:text-slate-400">
-												{selectedDoctor.specialty} • Опыт {selectedDoctor.experienceYears} лет
+												{(selectedDoctor.specialties && selectedDoctor.specialties.length > 0
+													? selectedDoctor.specialties.join(", ")
+													: "Врач-стоматолог")} • Опыт {selectedDoctor.experienceYears} лет
 											</div>
 										</div>
 									</div>

@@ -155,11 +155,8 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 				const meta = row.metadata as { channelKey?: string } | null;
 				const spendKop = Math.round(Number(row.amountRub || 0) * 100);
 				const chKey = meta?.channelKey;
-				if (chKey && chKey in channelSpendMap) {
-					channelSpendMap[chKey] += spendKop;
-				} else {
-					channelSpendMap.telephony += spendKop;
-				}
+				const targetKey = chKey && chKey in channelSpendMap ? chKey : "telephony";
+				channelSpendMap[targetKey] = (channelSpendMap[targetKey] ?? 0) + spendKop;
 			}
 
 			const selfBookingChannels = onlineChannelDefs.map((def) => {

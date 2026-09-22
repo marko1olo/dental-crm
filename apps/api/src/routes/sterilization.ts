@@ -221,9 +221,9 @@ export function evaluateSterilizationLogForLinking(
  */
 export function buildUnsealKraftPackageResponse(params: {
 	barcode: string;
-	operatorName?: string | null;
-	operatorId?: string | null;
-	notes?: string | null;
+	operatorName?: string | null | undefined;
+	operatorId?: string | null | undefined;
+	notes?: string | null | undefined;
 	now?: Date;
 }) {
 	const now = params.now ?? new Date();

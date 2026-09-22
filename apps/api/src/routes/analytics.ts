@@ -361,7 +361,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					doctorId: doctorPayrollStatements.doctorId,
 					payrollRub: sql<number>`coalesce(sum(${doctorPayrollStatements.calculatedPieceworkRub}), 0)`,
 					labCostRub: sql<number>`coalesce(sum(${doctorPayrollStatements.labCostRub}), 0)`,
-					finalPayoutRub: sql<number>`coalesce(sum(${doctorPayrollStatements.finalPayoutRub}), 0)`,
+					finalPayoutRub: sql<number>`coalesce(sum(${doctorPayrollStatements.netPayoutRub}), 0)`,
 				})
 				.from(doctorPayrollStatements)
 				.where(

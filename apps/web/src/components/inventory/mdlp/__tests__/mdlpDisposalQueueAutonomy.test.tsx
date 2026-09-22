@@ -138,7 +138,7 @@ describe("MDLP Disposal Queue Staff & Doctor Autonomy (Mandates 8e, 8k, 8n, 8d)"
 		assert.ok(actData.actNumber.startsWith("СПИС-"));
 		assert.strictEqual(actData.commission.length, 1);
 		assert.ok(actData.commission[0]?.positionRu.includes("единолично"));
-		assert.strictEqual(actData.approverRole, undefined);
+		assert.ok(actData.approvedByPositionRu);
 		assert.strictEqual(actData.approvedByFullName, "Д-р Кузнецов М.С.");
 		assert.ok(approvedData);
 		assert.strictEqual(approvedData.actNumber, actData.actNumber);

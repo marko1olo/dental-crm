@@ -13,7 +13,7 @@ import assert from "node:assert/strict";
 import {
 	COMMON_ANESTHETICS,
 	type AnestheticDrugOption,
-} from "../carpuleDisposalConstants.ts";
+} from "../carpuleDisposalConstants.js";
 
 describe("NurseCarpuleDisposal — 1-Click Anesthetic Disposal & Soft Overdraft", () => {
 	it("содержит обязательные анестетики по стандартам стоматологии РФ", () => {

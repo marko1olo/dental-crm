@@ -15,7 +15,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 
 import {
 	createDefaultPerioTeeth,
@@ -142,8 +142,10 @@ describe("🔴 RED TEAM ZERO-BLOAT & AUTONOMY INQUISITION (MANDATES 8d, 8e, 8i, 
 			// Мгновенный расчет PSR ВОЗ для 6 секстантов
 			const sextants = calculatePsrSextants(normTeeth);
 			for (const s of PSR_SEXTANTS) {
+				const sextantResult = sextants[s.name];
+				assert.ok(sextantResult, `Секстант ${s.name} обязан существовать`);
 				assert.equal(
-					sextants[s.name].code,
+					sextantResult.code,
 					0,
 					`Секстант ${s.name} обязан иметь Код 0 без ручного ввода 192 точек`,
 				);
@@ -232,8 +234,9 @@ describe("🔴 RED TEAM ZERO-BLOAT & AUTONOMY INQUISITION (MANDATES 8d, 8e, 8i, 
 			const lines = content.split("\n");
 
 			let emojiCount = 0;
-			for (let i = 0; i < lines.length; i++) {
-				if (CARTOON_EMOJI_REGEX.test(lines[i])) {
+			for (const line of lines) {
+				if (!line) continue;
+				if (CARTOON_EMOJI_REGEX.test(line)) {
 					emojiCount++;
 				}
 			}
@@ -251,10 +254,10 @@ describe("🔴 RED TEAM ZERO-BLOAT & AUTONOMY INQUISITION (MANDATES 8d, 8e, 8i, 
 				const lines = content.split("\n");
 
 				let emojiCount = 0;
-				for (let i = 0; i < lines.length; i++) {
-					// Игнорируем комментарии тестов если они есть
-					const line = lines[i];
-					if (line.trim().startsWith("//") || line.trim().startsWith("/*") || line.trim().startsWith("*")) continue;
+				for (const line of lines) {
+					if (!line) continue;
+					const trimmed = line.trim();
+					if (trimmed.startsWith("//") || trimmed.startsWith("/*") || trimmed.startsWith("*")) continue;
 					if (CARTOON_EMOJI_REGEX.test(line)) {
 						emojiCount++;
 					}
@@ -274,9 +277,10 @@ describe("🔴 RED TEAM ZERO-BLOAT & AUTONOMY INQUISITION (MANDATES 8d, 8e, 8i, 
 				const lines = content.split("\n");
 
 				let emojiCount = 0;
-				for (let i = 0; i < lines.length; i++) {
-					const line = lines[i];
-					if (line.trim().startsWith("//") || line.trim().startsWith("/*") || line.trim().startsWith("*")) continue;
+				for (const line of lines) {
+					if (!line) continue;
+					const trimmed = line.trim();
+					if (trimmed.startsWith("//") || trimmed.startsWith("/*") || trimmed.startsWith("*")) continue;
 					if (CARTOON_EMOJI_REGEX.test(line)) {
 						emojiCount++;
 					}

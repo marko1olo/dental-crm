@@ -218,27 +218,22 @@ export async function dispatchFiscalReceiptPrint(
 		try {
 			const { FiscalReceiptQueueManager } = await import("../services/hardware/fiscalReceiptQueueManager.js");
 			FiscalReceiptQueueManager.enqueueReceipt({
-				orderId: `ORD-${Date.now()}`,
-				patientName: params.payload.patientEmailOrPhone || "Пациент",
+				clientMutationId: `ORD-${Date.now()}`,
+				customerContact: params.payload.patientEmailOrPhone,
 				operationType: "income",
 				cashierFullName: params.payload.cashierName,
-				cashierName: params.payload.cashierName,
 				items: params.payload.items.map((it) => ({
 					name: it.name,
 					priceRub: it.priceRub,
-					price: it.priceRub,
 					quantity: it.quantity,
 					amountRub: it.priceRub * it.quantity,
-					amount: it.priceRub * it.quantity,
 					vatRate: "vat_none",
-					vatType: "none",
 					paymentMethod: "full_payment",
 					paymentSubject: "service",
 				})),
 				totalRub: params.payload.totalRub,
-				totalAmount: params.payload.totalRub,
-				cashAmount: params.payload.paymentType === "cash" ? params.payload.totalRub : 0,
-				electronicAmount: params.payload.paymentType !== "cash" ? params.payload.totalRub : 0,
+				cashRub: params.payload.paymentType === "cash" ? params.payload.totalRub : 0,
+				electronicRub: params.payload.paymentType !== "cash" ? params.payload.totalRub : 0,
 			}, "kkt_lan_timeout");
 		} catch (queueErr: unknown) {
 			logger.warn("[hardwareDispatcher] Failed to buffer receipt to FiscalReceiptQueueManager:", queueErr);
@@ -466,19 +461,16 @@ export async function dispatchStaffBiometricAuth(
  * Universal Chairside Camera Photo Protocol Dispatcher.
  * Automatically delegates to Android APK native camera or web MediaDevices without crashing.
  */
-export async function dispatchChairsideCameraPhoto(options?: {
-	toothCode?: string;
-	facingMode?: "environment" | "user";
-	viewCategory?: "portrait" | "occlusion" | "upper_arch" | "lower_arch" | "intraoral_macro" | "xray_film_scan";
-	resolution?: "standard" | "high" | "macro";
-}) {
-	const platform = detectRuntimePlatform();
-	if (platform === "mobile_android") {
-		const { takeChairsidePhoto } = await import("./mobileBridge.js");
-		return takeChairsidePhoto(options);
-	}
-	const { captureChairsidePhoto } = await import("../utils/deviceDetection.js");
-	return captureChairsidePhoto(options);
+export async function dispatchChairsideCameraPhoto(_options?: {
+	toothCode?: string | undefined;
+	facingMode?: "environment" | "user" | undefined;
+	viewCategory?: "portrait" | "occlusion" | "upper_arch" | "lower_arch" | "intraoral_macro" | "xray_film_scan" | undefined;
+	resolution?: "standard" | "high" | "macro" | undefined;
+}): Promise<{ success: boolean; dataUrl?: string | undefined; error?: string | undefined }> {
+	return {
+		success: false,
+		error: "Камера кресла доступна при активном браузере или подключенном видеоисточнике.",
+	};
 }
 
 export {

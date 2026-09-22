@@ -7,7 +7,6 @@ import {
 	RADIATION_ZONE_DEFINITIONS,
 } from "../doseSheet/radiationDosePresets";
 import {
-	calculateAnnualRadiationDose,
 	evaluateDoseCompliance,
 	formatRadiationDoseDisplay,
 	generateDoseSheetHtml,

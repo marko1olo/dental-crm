@@ -81,9 +81,11 @@ describe("Wave 55: Somatic & Anamnesis Bloat Exterminator", () => {
 			});
 
 			assert.strictEqual(result.executed, true);
-			assert.ok(diary.anamnesis.includes("Соматически здоров"));
-			assert.ok(diary.anamnesis.includes("гепатит B/C, ВИЧ, сифилис"));
-			assert.ok(diary.anamnesis.includes("Физиологическая норма"));
+			const anamnesis = diary.anamnesis;
+			assert.ok(anamnesis, "diary.anamnesis must be defined");
+			assert.ok(anamnesis.includes("Соматически здоров"));
+			assert.ok(anamnesis.includes("гепатит B/C, ВИЧ, сифилис"));
+			assert.ok(anamnesis.includes("Физиологическая норма"));
 		});
 
 		it("formatSafetyProfileToDiaryText defaults to clean norm with infection denial", () => {

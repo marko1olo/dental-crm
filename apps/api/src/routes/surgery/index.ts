@@ -228,7 +228,6 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 		});
 
 		return reply.send({
-			success: true,
 			bundleType: input.bundleType,
 			...writeoffResult,
 		});

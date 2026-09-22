@@ -1104,8 +1104,8 @@ export function DentalLabOrderModal({
 													if (item.id === "sent") setCurrentStage("sent_to_lab");
 													else if (item.id === "in_progress") setCurrentStage("in_progress");
 													else if (item.id === "fitting") setCurrentStage("fitting_scheduled");
-													else if (item.id === "ready") setCurrentStage("ready");
-													else if (item.id === "completed") setCurrentStage("delivered_completed");
+													else if (item.id === "ready") setCurrentStage("delivered_to_clinic");
+													else if (item.id === "completed") setCurrentStage("completed");
 												}}
 												className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer min-h-[44px] ${
 													isCurrent

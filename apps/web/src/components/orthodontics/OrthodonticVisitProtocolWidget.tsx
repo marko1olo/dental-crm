@@ -2402,7 +2402,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 											type="button"
 											onClick={() => {
 												setAnbClass(opt.id);
-												setAnbAngle(opt.anbDegrees);
+												setAnbAngle(opt.typicalDegrees);
 											}}
 											data-testid={`anb-class-${opt.id}-btn`}
 											className={`min-h-[44px] px-2 py-1.5 rounded-xl border text-center flex flex-col items-center justify-center transition-all cursor-pointer ${
@@ -2410,7 +2410,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 													? "bg-indigo-600 text-white border-indigo-700 font-black shadow-xs ring-1 ring-indigo-400"
 													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
 											}`}
-											title={opt.description}
+											title={opt.desc}
 										>
 											<span className="text-xs font-bold leading-tight">{opt.shortLabel}</span>
 											<span className={`text-[10px] truncate w-full ${isSelected ? "text-indigo-100" : "text-slate-400"}`}>

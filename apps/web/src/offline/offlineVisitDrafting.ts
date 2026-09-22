@@ -17,8 +17,8 @@ import {
 	loadOfflineDraft,
 	deleteOfflineDraft,
 	listOfflineDrafts,
-	type OfflineDraft,
 } from "../services/offline/offlineStorage.js";
+import type { OfflineDraft } from "../services/offline/types.js";
 import { isLowSpecDevice } from "../utils/lowSpecHddOptimizer.js";
 import { logger } from "../utils/logger.js";
 
