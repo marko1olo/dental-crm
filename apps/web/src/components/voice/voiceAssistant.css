@@ -395,6 +395,7 @@
 	flex-shrink: 0;
 }
 
+.voice-btn-apply,
 .dnt-voice-btn-apply {
 	min-height: 38px;
 	min-width: 38px;
@@ -412,10 +413,12 @@
 	transition: background 0.15s ease;
 }
 
+.voice-btn-apply:hover,
 .dnt-voice-btn-apply:hover {
 	opacity: 0.9;
 }
 
+.voice-btn-icon,
 .dnt-voice-btn-icon-only {
 	min-height: 38px;
 	min-width: 38px;
@@ -430,6 +433,7 @@
 	justify-content: center;
 }
 
+.voice-btn-icon:hover,
 .dnt-voice-btn-icon-only:hover {
 	background: var(--paper-soft);
 	color: var(--ink);
@@ -479,7 +483,7 @@
 	line-height: 1.4;
 }
 
-/* Fallback Manual Command Simulator */
+/* Резервный клинический ввод текста диктовки */
 .dnt-voice-fallback-bar {
 	display: flex;
 	gap: 8px;
@@ -505,8 +509,8 @@
 	box-shadow: 0 0 0 2px var(--teal-soft);
 }
 
-.dnt-voice-btn-apply,
-.dnt-voice-btn-simulate {
+.dnt-voice-fallback-bar .voice-btn-apply,
+.dnt-voice-fallback-bar .dnt-voice-btn-apply {
 	min-height: 44px;
 	padding: 10px 18px;
 	font-size: 14px;
@@ -522,8 +526,8 @@
 	white-space: nowrap;
 }
 
-.dnt-voice-btn-apply:hover,
-.dnt-voice-btn-simulate:hover {
+.dnt-voice-fallback-bar .voice-btn-apply:hover,
+.dnt-voice-fallback-bar .dnt-voice-btn-apply:hover {
 	background: var(--teal-dark);
 }
 
@@ -572,6 +576,7 @@
 	margin-left: auto;
 }
 
+.voice-btn-secondary,
 .dnt-voice-btn-secondary {
 	min-height: 44px;
 	padding: 10px 18px;
@@ -584,10 +589,12 @@
 	cursor: pointer;
 }
 
+.voice-btn-secondary:hover,
 .dnt-voice-btn-secondary:hover {
 	background: var(--paper-soft);
 }
 
+.voice-btn-primary,
 .dnt-voice-btn-primary {
 	min-height: 44px;
 	padding: 10px 20px;
@@ -603,10 +610,12 @@
 	gap: 8px;
 }
 
+.voice-btn-primary:hover,
 .dnt-voice-btn-primary:hover {
 	background: var(--teal-dark);
 }
 
+.voice-btn-primary:disabled,
 .dnt-voice-btn-primary:disabled {
 	opacity: 0.5;
 	cursor: not-allowed;

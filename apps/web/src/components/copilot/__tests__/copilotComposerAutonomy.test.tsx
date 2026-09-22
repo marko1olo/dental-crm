@@ -65,7 +65,7 @@ describe("CopilotComposer & Voice Dictation Autonomy (Mandates 8d, 8e, 8k, 8n)",
 		expect(html).toContain("disabled");
 	});
 
-	it("3. VoiceDictationAssistantModal simulate button is NOT disabled by default (Mandate 8e)", () => {
+	it("3. VoiceDictationAssistantModal action buttons are NOT disabled by default (Mandates 8e, 8s)", () => {
 		const html = renderToStaticMarkup(
 			<VoiceDictationAssistantModal
 				isOpen={true}
@@ -74,8 +74,14 @@ describe("CopilotComposer & Voice Dictation Autonomy (Mandates 8d, 8e, 8k, 8n)",
 			/>,
 		);
 
-		expect(html).toContain("dnt-voice-btn-simulate");
-		expect(html).not.toMatch(/dnt-voice-btn-simulate[^>]*disabled|disabled[^>]*dnt-voice-btn-simulate/);
+		// Action buttons use modernized voice-btn-* classes and are never disabled without cause (Mandate 8e)
+		expect(html).toContain("voice-btn-apply");
+		expect(html).not.toMatch(/voice-btn-apply[^>]*disabled|disabled[^>]*voice-btn-apply/);
+		expect(html).toContain("voice-btn-primary");
+		expect(html).not.toMatch(/voice-btn-primary[^>]*disabled|disabled[^>]*voice-btn-primary/);
+
+		// Zero fake simulators in rendered modal markup
+		expect(html).not.toContain("dnt-voice-btn-simulate");
 	});
 
 	it("4. source code audit: empty send click populates default prompt and triggers info toast (Mandates 8e & 8k)", () => {
@@ -90,12 +96,16 @@ describe("CopilotComposer & Voice Dictation Autonomy (Mandates 8d, 8e, 8k, 8n)",
 		expect(sourceCode).not.toContain("disabled={!value.trim() || busy}");
 	});
 
-	it("5. source code audit: VoiceDictationAssistantModal text simulation fallback has sensible clinical phrase", () => {
+	it("5. source code audit: VoiceDictationAssistantModal real clinical behavior without simulator mocks (Mandates 8e, 8k, 8s)", () => {
 		const modalPath = path.resolve(__dirname, "../../voice/VoiceDictationAssistantModal.tsx");
 		const sourceCode = fs.readFileSync(modalPath, "utf-8");
 
-		expect(sourceCode).toContain('const targetText = trimmed || "Зуб 16 кариес дентина, зуб 21 норма, зуб 36 пульпит";');
-		expect(sourceCode).toContain('showToast("Подставлен пример клинической надиктовки", "info");');
+		// Real clinical text fallback: parses genuine clinical speech instead of mock fallback strings
+		expect(sourceCode).toContain("handleApplyManualText");
+		expect(sourceCode).toContain("parseClinicalVoiceSpeech");
+		expect(sourceCode).toContain('showToast("Введите текст клинической команды для распознавания", "warning");');
+		expect(sourceCode).not.toContain("Подставлен пример клинической надиктовки");
+		expect(sourceCode).not.toContain("dnt-voice-btn-simulate");
 		expect(sourceCode).toContain("disabled={false}");
 	});
 });

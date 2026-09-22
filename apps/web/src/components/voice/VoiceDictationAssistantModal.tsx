@@ -384,7 +384,7 @@ export function VoiceDictationAssistantModal({
 										setParseResult(null);
 										setAppliedCommandIds(new Set());
 									}}
-									className="dnt-voice-btn-icon-only"
+									className="voice-btn-icon"
 									style={{ minHeight: "28px", minWidth: "28px", padding: "4px" }}
 									title="Очистить транскрипт"
 									aria-label="Очистить транскрипт"
@@ -495,7 +495,7 @@ export function VoiceDictationAssistantModal({
 													<button
 														type="button"
 														onClick={() => handleApplySingleCommand(cmd)}
-														className="dnt-voice-btn-apply"
+														className="voice-btn-apply"
 														title="Применить команду"
 													>
 														<Check size={16} />
@@ -505,7 +505,7 @@ export function VoiceDictationAssistantModal({
 												<button
 													type="button"
 													onClick={() => handleDeleteCommand(cmd.id)}
-													className="dnt-voice-btn-icon-only"
+													className="voice-btn-icon"
 													title="Удалить команду"
 													aria-label="Удалить команду"
 												>
@@ -625,7 +625,7 @@ export function VoiceDictationAssistantModal({
 						<button
 							type="submit"
 							disabled={false}
-							className="dnt-voice-btn-apply"
+							className="voice-btn-apply"
 						>
 							<Send size={16} />
 							<span>Распознать</span>
@@ -638,7 +638,7 @@ export function VoiceDictationAssistantModal({
 					<button
 						type="button"
 						onClick={onClose}
-						className="dnt-voice-btn-secondary"
+						className="voice-btn-secondary"
 					>
 						Закрыть
 					</button>
@@ -648,7 +648,7 @@ export function VoiceDictationAssistantModal({
 							type="button"
 							onClick={handleApplyAll}
 							disabled={false}
-							className="dnt-voice-btn-primary"
+							className="voice-btn-primary"
 						>
 							<CheckCheck size={18} />
 							<span>
