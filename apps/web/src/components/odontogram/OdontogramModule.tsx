@@ -126,7 +126,7 @@ export const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 		state: "Caries",
 		label: "Кариес (C)",
 		className:
-			"bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
+			"bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20",
 	},
 	{
 		state: "Pulpitis",
@@ -138,7 +138,7 @@ export const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 		state: "Periodontitis",
 		label: "Периодонтит (Pt)",
 		className:
-			"bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20 hover:bg-orange-500/20",
+			"bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
 	},
 	{
 		state: "Filled",
@@ -150,19 +150,19 @@ export const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 		state: "Crown",
 		label: "Коронка (Cr)",
 		className:
-			"bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20",
+			"bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20",
 	},
 	{
 		state: "Implant",
 		label: "Имплант (Imp)",
 		className:
-			"bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20",
+			"bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
 	},
 	{
 		state: "Planned_Implant",
 		label: "Имплант в плане",
 		className:
-			"bg-indigo-500/10 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20",
+			"bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20",
 	},
 	{
 		state: "Missing",

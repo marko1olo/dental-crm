@@ -2069,13 +2069,19 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 	const handleSelectQuadrant = (q: OdontogramQuadrantId) => {
 		setLocalQuadrant(q);
 		onQuadrantChange?.(q);
+		if (archContainerRef.current) {
+			archContainerRef.current.scrollLeft = 0;
+		}
 	};
 
 	useEffect(() => {
 		if (controlledQuadrant !== undefined) {
 			setLocalQuadrant(controlledQuadrant);
 		}
-	}, [controlledQuadrant]);
+		if (archContainerRef.current) {
+			archContainerRef.current.scrollLeft = 0;
+		}
+	}, [controlledQuadrant, currentQuadrant]);
 
 	const defaultTopTeeth = isMixedEffective
 		? MIXED_TOP_TEETH
@@ -2133,7 +2139,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 			const isShortHeight = windowHeight <= 768;
 			const heightScaleFactor = isShortHeight ? Math.max(0.68, Math.min(1.0, (windowHeight - 340) / 280)) : 1.0;
 
-			const minScale = isQuadrantView ? (isShortHeight ? 0.8 : 0.95) : (isShortHeight ? 0.52 : 0.65);
+			const minScale = isQuadrantView ? (available < 420 ? 0.65 : (isShortHeight ? 0.8 : 0.95)) : (isShortHeight ? 0.52 : 0.65);
 			const widthScale = (available / baseNaturalWidth) * (isQuadrantView ? 1.15 : 0.96);
 			const targetScale = Math.min(
 				1.8,
@@ -2401,7 +2407,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 						style={{
 							width: "100%",
 							maxWidth: "100%",
-							margin: "0 auto",
+							margin: 0,
 							position: "relative",
 						}}
 					>

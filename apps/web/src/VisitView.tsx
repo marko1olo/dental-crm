@@ -1385,13 +1385,13 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</div>
 
 						<div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-							{/* Кнопка физиологической нормы 043/у (1-клик) — на вкладке ЭМК скрыта, так как в тулбаре ЭМК уже есть каноническая btn-quick-soap-norm (Мандат 8s) */}
+							{/* Кнопка физиологической нормы 043/у (1-клик) — на вкладках ЭМК и Одонтограмма скрыта, так как в клиническом пространстве уже есть канонические кнопки нормы (Мандат 8s) */}
 							<button
 								type="button"
 								onClick={handleApplySomaticNormQuick}
 								data-testid="btn-somatic-norm-one-click"
 								className={`secondary-button h-7 min-h-[28px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg ${
-									visitSubViewTab === "emk" ? "!hidden" : "flex"
+									visitSubViewTab === "emk" || visitSubViewTab === "odontogram" ? "!hidden" : "flex"
 								}`}
 								title="Соматически здоров / норма (1-клик): зафиксировать норму во всех показателях и перенести в дневник 043/у"
 								aria-label="Соматически здоров / норма (1-клик)"
@@ -1402,12 +1402,14 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<span className="sm:hidden">Норма</span>
 							</button>
 
-							{/* Печать Формы 043/у (Мандат 8e) — на десктопе */}
+							{/* Печать Формы 043/у (Мандат 8e) — на десктопе (на одонтограмме скрыта в пользу канонической кнопки дневника diary-print-043) */}
 							<button
 								type="button"
 								onClick={handlePrintForm043uFast}
 								data-testid="btn-visit-fast-print-043u"
-								className="!hidden sm:!inline-flex secondary-button h-7 min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg"
+								className={`secondary-button h-7 min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg ${
+									visitSubViewTab === "odontogram" ? "!hidden" : "!hidden sm:!inline-flex"
+								}`}
 								title="Печать Формы 043/у в любой момент (если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
 							>
 								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />

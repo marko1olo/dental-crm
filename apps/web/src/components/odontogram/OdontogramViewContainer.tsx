@@ -68,6 +68,7 @@ export interface OdontogramViewOption {
 	mode: OdontogramViewMode;
 	label: string;
 	shortLabel: string;
+	mobileLabel?: string;
 	icon: React.ReactNode;
 	tooltip: string;
 	badge?: string;
@@ -77,7 +78,8 @@ export const ODONTOGRAM_VIEW_MODES: readonly OdontogramViewOption[] = [
 	{
 		mode: "anatomical_svg",
 		label: "3D Анатомический",
-		shortLabel: "Анатомия",
+		shortLabel: "Анатомический",
+		mobileLabel: "3D",
 		icon: <Sparkles size={14} className="text-indigo-500 shrink-0" />,
 		tooltip: "Векторная анатомическая визуализация коронок, корней и каналов",
 		badge: "3D",
@@ -85,7 +87,8 @@ export const ODONTOGRAM_VIEW_MODES: readonly OdontogramViewOption[] = [
 	{
 		mode: "compact_clinical",
 		label: "Клинический 6-поверхностный",
-		shortLabel: "6-Поверхностный",
+		shortLabel: "6-Поверхностный FDI",
+		mobileLabel: "FDI 6-пов.",
 		icon: <Zap size={14} className="text-amber-500 shrink-0" />,
 		tooltip: "Быстрая разметка патологий по 6 граням зуба (O, V, L/P, M, D, C)",
 		badge: "FDI",
@@ -94,6 +97,7 @@ export const ODONTOGRAM_VIEW_MODES: readonly OdontogramViewOption[] = [
 		mode: "classic_gost",
 		label: "ГОСТ 043/у",
 		shortLabel: "ГОСТ 043/у",
+		mobileLabel: "043/у",
 		icon: <FileText size={14} className="text-[var(--teal)] shrink-0" />,
 		tooltip: "Табличная форма карты стоматологического больного (Минздрав РФ)",
 		badge: "МЗ РФ",
@@ -140,6 +144,8 @@ export interface OdontogramViewContainerProps {
 	onOpenFastCheckout?: (() => void) | undefined;
 	allergyText?: string | undefined;
 	onOneClickLabOrder?: ((teeth: number[]) => void) | undefined;
+	contextDrawerTooth?: number | null | undefined;
+	setContextDrawerTooth?: ((tooth: number | null) => void) | React.Dispatch<React.SetStateAction<number | null>> | undefined;
 }
 
 const STAMP_ITEMS: Array<{
@@ -343,6 +349,8 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 	onOpenFastCheckout,
 	allergyText,
 	onOneClickLabOrder,
+	contextDrawerTooth: controlledContextDrawerTooth,
+	setContextDrawerTooth: controlledSetContextDrawerTooth,
 }) => {
 	// 1. Read mode from zustand app store or initialViewMode or localStorage preferences
 	const storeMode = useAppStore((state) => state.odontogramViewMode);
@@ -381,7 +389,9 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 	const [isLiveInvoiceOpen, setIsLiveInvoiceOpen] = useState<boolean>(false);
 	const [isFastExtractMode, setIsFastExtractMode] = useState<boolean>(false);
 	const [activeStampTool, setActiveStampTool] = useState<ToothState | null>(null);
-	const [contextDrawerTooth, setContextDrawerTooth] = useState<number | null>(null);
+	const [internalContextDrawerTooth, setInternalContextDrawerTooth] = useState<number | null>(null);
+	const contextDrawerTooth = controlledContextDrawerTooth !== undefined ? controlledContextDrawerTooth : internalContextDrawerTooth;
+	const setContextDrawerTooth = controlledSetContextDrawerTooth ?? setInternalContextDrawerTooth;
 	const [endoDrawerTooth, setEndoDrawerTooth] = useState<number | null>(null);
 	const [isPlanWizardOpen, setIsPlanWizardOpen] = useState<boolean>(false);
 	const [isVoiceListening, setIsVoiceListening] = useState<boolean>(false);
@@ -719,8 +729,8 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 										}`}
 									>
 										{option.icon}
-										<span className="hidden sm:inline truncate max-w-[100px] sm:max-w-none">{option.shortLabel}</span>
-										<span className="sm:hidden font-black text-[10px]">{option.badge}</span>
+										<span className="hidden sm:inline truncate max-w-[130px] sm:max-w-none">{option.shortLabel}</span>
+										<span className="sm:hidden font-bold text-[11px] truncate max-w-[85px]">{option.mobileLabel || option.shortLabel}</span>
 										{option.badge && (
 											<span
 												className={`hidden sm:inline text-[9px] px-1 py-0.2 rounded font-black tracking-tight ${
@@ -754,11 +764,11 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 											? "bg-emerald-600 text-white font-black shadow-xs"
 											: "text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15"
 									}`}
-									title="Норма / Здоров: применить к выделенным зубам или включить штамп нормы"
+									title="Здоров: применить к выделенным зубам или включить штамп нормы"
 									data-testid="quick-trigger-healthy-btn"
 								>
 									<span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-									<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">Норма</span>
+									<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">Здоров</span>
 								</button>
 								<button
 									type="button"
@@ -1378,7 +1388,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 												type="button"
 												onClick={() => {
 													const targetTooth = selectedTeeth && selectedTeeth.length > 0 ? selectedTeeth[0]! : (isPediatricEffective ? 55 : 16);
-													setCardModalTooth(targetTooth);
+													setContextDrawerTooth(targetTooth);
 													setIsMoreMenuOpen(false);
 												}}
 												className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-blue-500/10 text-blue-800 dark:text-blue-200 hover:bg-blue-500/20 border border-blue-500/30"

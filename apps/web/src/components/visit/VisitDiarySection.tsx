@@ -788,22 +788,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				<div className="vde-043__actions">
 					<button
 						type="button"
-						id="diary-1click-norm-btn"
-						data-testid="diary-1click-norm-btn"
-						onClick={() => {
-							if (isLocked && !isRevising) {
-								beginRevise();
-							}
-							handleApplyFullPhysiologicalNorm();
-						}}
-						className="vde-043__btn"
-						title="Заполнить физиологической нормой в 1 клик (Соматически здоров / норма). Врач правит только патологию"
-					>
-						<CheckCircle2 className="w-4 h-4 text-emerald-500" />
-						Норма / Здоров
-					</button>
-					<button
-						type="button"
 						id="diary-open-templates-btn"
 						data-testid="open-1click-templates-btn"
 						onClick={() => setShowTemplatesModal(true)}
@@ -842,6 +826,23 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							>
 								<button
 									type="button"
+									id="diary-1click-norm-btn"
+									data-testid="diary-1click-norm-btn"
+									onClick={() => {
+										setIsExtraActionsOpen(false);
+										if (isLocked && !isRevising) {
+											beginRevise();
+										}
+										handleApplyFullPhysiologicalNorm();
+									}}
+									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+									title="Заполнить физиологической нормой в 1 клик (Соматически здоров / норма). Врач правит только патологию"
+								>
+									<CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+									<span>Норма / Здоров</span>
+								</button>
+								<button
+									type="button"
 									data-testid="diary-summary-btn"
 									onClick={() => {
 										setIsExtraActionsOpen(false);
@@ -875,6 +876,19 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								>
 									<Scan className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
 									<span>Направление КЛКТ/ОПТГ</span>
+								</button>
+								<button
+									type="button"
+									data-testid="open-tier3-perio-btn"
+									onClick={() => {
+										setIsExtraActionsOpen(false);
+										setIsTier3PerioModalOpen(true);
+									}}
+									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+									title="Открыть детальную пародонтограмму (6-точечное зондирование Florida Probe)"
+								>
+									<BarChart2 className="w-4 h-4 text-teal-500 shrink-0" />
+									<span>Пародонтограмма (Florida Probe)</span>
 								</button>
 								<button
 									type="button"
@@ -947,12 +961,8 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						<span className="text-[10px] font-normal text-[var(--muted)] hidden group-open:inline">Свернуть &uarr;</span>
 					</summary>
 					<div className="pt-2.5 flex flex-col gap-2">
-						<div className="flex items-center justify-between gap-2 flex-wrap">
-							<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
-								<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" />
-								1-Click Клинические протоколы:
-							</span>
-							{activeTeeth && activeTeeth.length > 0 && (
+						{activeTeeth && activeTeeth.length > 0 && (
+							<div className="flex items-center justify-end gap-2 flex-wrap">
 								<button
 									type="button"
 									onClick={() => populateFromOdontogram(activeTeeth)}
@@ -963,8 +973,8 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									<FileText size={15} className="shrink-0" />
 									<span className="min-w-0 break-words">Заполнить дневник из формулы</span>
 								</button>
-							)}
-						</div>
+							</div>
+						)}
 						<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 scrollbar-none overscroll-x-contain min-w-0">
 							{/* 1-Click Physiological Norm Button (Zero Bloat, Instant Standard 043/u Fill) */}
 							<button
@@ -1046,17 +1056,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									</div>
 								)}
 							</div>
-
-							<button
-								type="button"
-								onClick={() => setIsTier3PerioModalOpen(true)}
-								className="inline-flex items-center gap-1.5 px-3 py-1.5 h-9 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-teal-500/15 text-teal-400 border border-[var(--line,#334155)] hover:border-teal-500/40 text-xs font-semibold transition-all shrink-0 shadow-xs touch-manipulation min-w-0 cursor-pointer"
-								title="Открыть детальную пародонтограмму (6-точечное зондирование Florida Probe)"
-								data-testid="open-tier3-perio-btn"
-							>
-								<BarChart2 className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-								<span className="whitespace-nowrap">Пародонтограмма (Florida Probe)</span>
-							</button>
 							<button
 								type="button"
 								onClick={handleInsertPediatricStatus}
