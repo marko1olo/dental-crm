@@ -272,7 +272,8 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		string | null
 	>(null);
 	const [isSaving, setIsSaving] = useState(false);
-	const [showScanner, setShowScanner] = useState(false);
+	// Mandate 8v: Лоток по умолчанию считается стерильным (стандартный лоток по СанПиН).
+	// Врач на приеме лечит людей, а не работает сканером крафт-пакетов со штрихкодами.
 	const [trayBarcode, setTrayBarcode] = useState<string | null>(null);
 	const [showIcdDropdown, setShowIcdDropdown] = useState(false);
 	const [icdSearch, setIcdSearch] = useState("");
@@ -2083,7 +2084,6 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			/* Ревизия подписанного: barcode уйдёт с doRevise, не draft POST. */
 			if (isRevising) {
 				setTrayBarcode(code);
-				setShowScanner(false);
 				showToast(
 					"Лоток указан на экране. Нажмите «Сохранить правку», чтобы записать в историю.",
 					"info",
@@ -2108,7 +2108,6 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				return;
 			}
 			setTrayBarcode(code);
-			setShowScanner(false);
 			if (!activeDoctor) {
 				showToast(
 					"Лоток указан на экране. Выберите врача и сохраните черновик, чтобы записать привязку.",
@@ -2254,8 +2253,6 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		isDraftRecovered,
 		recoveredDraftTime,
 		clearDraft,
-		showScanner,
-		setShowScanner,
 		trayBarcode,
 		setTrayBarcode,
 		clearTrayBarcode,

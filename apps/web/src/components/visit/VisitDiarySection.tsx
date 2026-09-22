@@ -56,7 +56,6 @@ import {
 } from "../odontogram/pediatricDentitionEngine";
 import { ClinicalQuickPresetsBar } from "./ClinicalQuickPresetsBar";
 import { CryptoProSigner } from "./CryptoProSigner";
-import { KraftPackageQuickScanner } from "../sterilization/KraftPackageQuickScanner";
 import { realVisitFieldId } from "./visitIdentity";
 import type { RadiologySnapshotItem } from "./VisitSummaryModal";
 import { PeriodontogramChart } from "../perio/PeriodontogramChart";
@@ -141,12 +140,8 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		revisionCount,
 		diaryRevisions,
 		isSaving,
-		showScanner,
-		setShowScanner,
 		trayBarcode,
 		setTrayBarcode,
-		clearTrayBarcode,
-		assignTrayBarcode,
 		showIcdDropdown,
 		setShowIcdDropdown,
 		icdSearch,
@@ -1755,30 +1750,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					</span>
 					<button
 						type="button"
-						data-testid="diary-tray-scan"
-						onClick={() => setShowScanner(true)}
-						className="vde-043__btn text-[var(--teal)]"
-					>
-						<Activity className="w-4 h-4" />
-						{trayBarcode ? `Лоток: ${trayBarcode}` : "Сканировать Лоток"}
-					</button>
-					{trayBarcode ? (
-						<button
-							type="button"
-							data-testid="diary-tray-clear"
-							onClick={() => {
-								void clearTrayBarcode();
-							}}
-							disabled={isSaving}
-							className="vde-043__btn vde-043__btn--ghost vde-043__btn--icon"
-							title="Снять лоток с черновика"
-							aria-label="Снять лоток с черновика"
-						>
-							<X className="w-4 h-4" />
-						</button>
-					) : null}
-					<button
-						type="button"
 						id="diary-save-btn"
 						onClick={() => doSave(false)}
 						className="vde-043__btn"
@@ -1804,30 +1775,18 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						</span>
 					</div>
 					<label className="vde-043__revise-label">
-						Инструментальный лоток (штрихкод)
-						<div className="flex items-center gap-2">
-							<input
-								data-testid="diary-revise-tray"
-								value={trayBarcode ?? ""}
-								onChange={(e) => {
-									const v = e.target.value.trim();
-									setTrayBarcode(v.length > 0 ? v : null);
-								}}
-								placeholder="Штрихкод лотка или пусто, чтобы снять"
-								className="vde-043__input flex-1"
-								disabled={isRevisingBusy}
-							/>
-							<button
-								type="button"
-								data-testid="diary-revise-tray-scan"
-								onClick={() => setShowScanner(true)}
-								disabled={isRevisingBusy}
-								className="vde-043__btn"
-								title="Сканировать штрихкод лотка"
-							>
-								<Activity className="w-4 h-4" />
-							</button>
-						</div>
+						Инструментальный лоток (штрихкод, необязательно)
+						<input
+							data-testid="diary-revise-tray"
+							value={trayBarcode ?? ""}
+							onChange={(e) => {
+								const v = e.target.value.trim();
+								setTrayBarcode(v.length > 0 ? v : null);
+							}}
+							placeholder="Стандартный стерильный лоток по СанПиН (или укажите номер/штрихкод)"
+							className="vde-043__input"
+							disabled={isRevisingBusy}
+						/>
 					</label>
 					<label className="vde-043__revise-label">
 						Причина правки («Исправленному верить»)
@@ -1991,16 +1950,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				</details>
 			)}
 
-			{/* ── Sterilization Kraft Package Scanner Modal (SanPiN 3.3686-21) ── */}
-			<KraftPackageQuickScanner
-				isOpen={showScanner}
-				onClose={() => setShowScanner(false)}
-				initialBarcode={trayBarcode || ""}
-				currentDiaryBarcode={trayBarcode}
-				onAttachToProtocol={async (parsed) => {
-					await assignTrayBarcode(parsed.rawInput, parsed.formattedProtocolRecord043);
-				}}
-			/>
 
 			{/* ── Summary Modal ── */}
 			{showSummaryModal && (
