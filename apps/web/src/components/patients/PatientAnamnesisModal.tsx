@@ -145,7 +145,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 					case "clean":
 						setProfile({
 							...DEFAULT_PROFILE,
-							customChronicNotes: "Соматически здоров. Аллергический статус не отягощен. Физиологическая норма (без особенностей).",
+							customChronicNotes: "Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает. Физиологическая норма.",
 						});
 						showToast("Применен шаблон: Соматически здоров / норма (без особенностей)", "info");
 						break;

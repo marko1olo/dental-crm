@@ -399,7 +399,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 									} else if (onUpdateSafetyProfile) {
 										onUpdateSafetyProfile({
 											...DEFAULT_SOMATIC_HEALTHY_NORM,
-											customChronicNotes: "Соматически здоров. Физиологическая норма.",
+											customChronicNotes: "Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает. Физиологическая норма.",
 										});
 									}
 								}}

@@ -85,7 +85,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 		const updatedProfile: PatientClinicalSafetyProfile = {
 			...normProfile,
 			customChronicNotes:
-				"Соматически здоров / без отягощенного анамнеза. Аллергологический статус не отягощен.",
+				"Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает. Физиологическая норма.",
 		};
 		setProfile(updatedProfile);
 		if (onApplyNorm) {

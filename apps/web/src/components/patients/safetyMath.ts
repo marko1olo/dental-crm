@@ -117,13 +117,18 @@ export const DEFAULT_SOMATIC_HEALTHY_NORM: PatientClinicalSafetyProfile = {
 	hasArticaineAllergy: false,
 	hasMepivacaineAllergy: false,
 	hasSulfiteAllergy: false,
+	hasSulfitesAllergy: false,
+	hasAnestheticAllergy: false,
+	hasIodineAllergy: false,
 	hasAnaphylaxisHistory: false,
 	hasPacemakerExs: false,
 	hasCardiovascularDisease: false,
 	hasHypertension: false,
 	takesAnticoagulants: false,
+	hasAnticoagulantTherapy: false,
 	anticoagulantName: "",
 	takesBisphosphonates: false,
+	hasBisphosphonateTherapy: false,
 	bisphosphonateName: "",
 	pregnancyTrimester: "none",
 	hasDiabetesMellitus: false,
@@ -135,8 +140,9 @@ export const DEFAULT_SOMATIC_HEALTHY_NORM: PatientClinicalSafetyProfile = {
 	hasThyroidDisease: false,
 	hasPenicillinAllergy: false,
 	hasLatexAllergy: false,
+	hasNsaidAllergy: false,
 	customAllergyNotes: "",
-	customChronicNotes: "Соматически здоров. Аллергический статус не отягощен. Физиологическая норма (без особенностей).",
+	customChronicNotes: "Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает. Физиологическая норма.",
 	currentMedicationsList: "",
 };
 
@@ -159,12 +165,17 @@ export function isSomaticProfilePhysiologicalNorm(
 		!profile.hasArticaineAllergy &&
 		!profile.hasMepivacaineAllergy &&
 		!profile.hasSulfiteAllergy &&
+		!profile.hasSulfitesAllergy &&
+		!profile.hasAnestheticAllergy &&
+		!profile.hasIodineAllergy &&
 		!profile.hasAnaphylaxisHistory &&
 		!profile.hasPacemakerExs &&
 		!profile.hasCardiovascularDisease &&
 		!profile.hasHypertension &&
 		!profile.takesAnticoagulants &&
+		!profile.hasAnticoagulantTherapy &&
 		!profile.takesBisphosphonates &&
+		!profile.hasBisphosphonateTherapy &&
 		(profile.pregnancyTrimester === "none" || !profile.pregnancyTrimester) &&
 		!profile.hasDiabetesMellitus &&
 		!profile.hasBronchialAsthma &&
@@ -173,7 +184,8 @@ export function isSomaticProfilePhysiologicalNorm(
 		!profile.hasHiv &&
 		!profile.hasThyroidDisease &&
 		!profile.hasPenicillinAllergy &&
-		!profile.hasLatexAllergy
+		!profile.hasLatexAllergy &&
+		!profile.hasNsaidAllergy
 	);
 }
 
@@ -1201,7 +1213,7 @@ export function formatSafetyProfileToDiaryText(profile?: Partial<PatientClinical
 			items.push(`Сопутствующие соматические заболевания: ${chronic.join(", ")}.`);
 		}
 	} else {
-		items.push("Соматический статус: Соматически здоров / норма. Хронические заболевания (ССЗ, диабет, астму, гепатиты) со слов отрицает.");
+		items.push("Соматический статус: Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает. Физиологическая норма.");
 	}
 
 	return items.join("\n");

@@ -616,21 +616,21 @@ export function validatePatientIntakeQuestionnaire(
 		dashboard,
 	} = state;
 	const effectiveComplaint =
-		intakeChiefComplaint.trim() ||
+		(intakeChiefComplaint || "").trim() ||
 		dashboard?.activeVisit?.complaint ||
 		"Первичный осмотр и консультация (жалоб нет)";
 	const effectiveAllergy =
-		intakeAllergyStatus.trim() || "Аллергии со слов пациента отрицает";
+		(intakeAllergyStatus || "").trim() || "Аллергии со слов пациента отрицает";
 	const effectiveMedications =
-		intakeCurrentMedications.trim() || "Постоянные препараты не принимает";
+		(intakeCurrentMedications || "").trim() || "Постоянные препараты не принимает";
 	const effectiveChronic =
-		intakeChronicConditions.trim() || "Хронические заболевания отрицает";
+		(intakeChronicConditions || "").trim() || "Хронические заболевания отрицает";
 	const effectiveAnticoagulants =
-		intakeAnticoagulants.trim() || "Антикоагулянты не принимает";
+		(intakeAnticoagulants || "").trim() || "Антикоагулянты не принимает";
 	const effectiveInfectious =
-		intakeInfectiousRiskNotes.trim() || "Инфекционные риски отрицает";
+		(intakeInfectiousRiskNotes || "").trim() || "Инфекционные риски отрицает";
 	const effectiveCardio =
-		intakeCardioEndocrineNotes.trim() || "Соматически здоров / патологий не заявлено";
+		(intakeCardioEndocrineNotes || "").trim() || "Соматически здоров / патологий не заявлено";
 
 	return (
 		requiredDocumentField(
@@ -654,10 +654,7 @@ export function validatePatientIntakeQuestionnaire(
 		requiredDocumentField(
 			effectiveCardio,
 			"анкета, системные риски",
-		) ??
-		(intakeAccuracyConfirmed !== false
-			? null
-			: "Пациент должен подтвердить достоверность анкеты перед созданием документа.")
+		)
 	);
 }
 

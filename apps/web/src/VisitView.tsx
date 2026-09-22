@@ -258,6 +258,10 @@ import { VisitAnamnesisTab } from "./components/visit/VisitAnamnesisTab";
 import { VisitSoapEditor, type VisitSoapNoteValues } from "./components/visit/VisitSoapEditor";
 import { DoctorMobileShiftModal } from "./components/doctor-portal/DoctorMobileShiftModal";
 import { PatientAllergySafetyBanner } from "./components/patients/PatientAllergySafetyBanner";
+import {
+	type PatientClinicalSafetyProfile,
+	parseSafetyProfileFromText,
+} from "./components/patients/safetyMath";
 import { EmergencyRescueModal } from "./components/emergency/EmergencyRescueModal";
 import { VoiceDictationAssistantModal, type DictationCommand } from "./components/voice/VoiceDictationAssistantModal";
 import { WarrantyPassportModal } from "./components/warranty/WarrantyPassportModal";
@@ -354,7 +358,7 @@ export function executeApplySomaticNormAutonomy({
 	showToastFn?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
 }) {
 	const normText =
-		"Соматически здоров. Хронические заболевания, сердечно-сосудистые патологии и аллергологический статус со слов пациента отрицает. Физиологическая норма.";
+		"Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает. Физиологическая норма.";
 	if (typeof updateVisitNoteField === "function") {
 		updateVisitNoteField("anamnesis", normText);
 		const currentObj = visitNoteForm?.objectiveInspection || (visitNoteForm as any)?.objectiveStatus || "";
@@ -1183,6 +1187,30 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		if (visitSubViewTab === "diagnostics") setDiagnosticsTabWasOpened(true);
 	}, [visitSubViewTab]);
 
+	const activePatientSafetyProfile = useMemo<PatientClinicalSafetyProfile | null>(() => {
+		if (!activePatient) return null;
+		// biome-ignore lint/suspicious/noExplicitAny: patient safety profile compatibility
+		const p = activePatient as any;
+		if (p.clinicalSafetyProfile && typeof p.clinicalSafetyProfile === "object") {
+			return p.clinicalSafetyProfile as PatientClinicalSafetyProfile;
+		}
+		const rawText = [
+			p.allergies,
+			p.chronicConditions,
+			typeof p.anamnesis === "string" ? p.anamnesis : "",
+			p.anamnesis?.allergies,
+			p.anamnesis?.somaticNotes,
+			p.anamnesis?.chronicConditions,
+			p.notes,
+		]
+			.filter(Boolean)
+			.join(" ");
+		if (rawText.trim()) {
+			return parseSafetyProfileFromText(rawText);
+		}
+		return null;
+	}, [activePatient]);
+
 	const activePatientAllergyText = useMemo(() => {
 		if (!activePatient) return "";
 		// biome-ignore lint/suspicious/noExplicitAny: patient allergy types
@@ -1193,19 +1221,98 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		if (raw && typeof raw === "string" && raw.trim()) {
 			return raw.trim();
 		}
-		// biome-ignore lint/suspicious/noExplicitAny: clinical safety profile compatibility
-		const safetyProfile = (activePatient as any).clinicalSafetyProfile;
+		const safetyProfile = activePatientSafetyProfile;
 		if (safetyProfile) {
 			const flags: string[] = [];
 			if (safetyProfile.hasArticaineAllergy) flags.push("Артикаин");
 			if (safetyProfile.hasLidocaineAllergy) flags.push("Лидокаин");
 			if (safetyProfile.hasMepivacaineAllergy) flags.push("Мепивакаин");
+			if (safetyProfile.hasPenicillinAllergy) flags.push("Пенициллины");
 			if (safetyProfile.hasLatexAllergy) flags.push("Латекс");
+			if (safetyProfile.hasNsaidAllergy) flags.push("НПВП");
+			if (safetyProfile.hasSulfiteAllergy || safetyProfile.hasSulfitesAllergy) flags.push("Сульфиты");
+			if (safetyProfile.hasIodineAllergy) flags.push("Йод");
 			if (safetyProfile.customAllergyNotes?.trim()) flags.push(safetyProfile.customAllergyNotes.trim());
 			if (flags.length > 0) return flags.join(", ");
 		}
 		return "";
-	}, [activePatient]);
+	}, [activePatient, activePatientSafetyProfile]);
+
+	const activePatientCriticalBadges = useMemo(() => {
+		if (!activePatient) return [];
+		const badges: Array<{
+			id: string;
+			testId: string;
+			shortLabel: string;
+			fullLabel: string;
+			title: string;
+		}> = [];
+
+		if (activePatientAllergyText) {
+			badges.push({
+				id: "allergy",
+				testId: "visit-focus-allergy-alert",
+				shortLabel: "АЛЛЕРГИЯ",
+				fullLabel: `АЛЛЕРГИЯ: ${activePatientAllergyText}`,
+				title: `Критический стоп-фактор / аллергия пациента: ${activePatientAllergyText}`,
+			});
+		}
+
+		const sp = activePatientSafetyProfile;
+		if (sp) {
+			if (sp.hasPacemakerExs) {
+				badges.push({
+					id: "pacemaker",
+					testId: "visit-focus-pacemaker-alert",
+					shortLabel: "ЭКС",
+					fullLabel: "ЭКС: ЗАПРЕТ УЗ",
+					title: "Имплантированный кардиостимулятор (ЭКС): абсолютный запрет УЗ-скейлинга и монополярной электрокоагуляции",
+				});
+			}
+			if (sp.takesAnticoagulants || sp.hasAnticoagulantTherapy) {
+				badges.push({
+					id: "anticoagulant",
+					testId: "visit-focus-anticoagulant-alert",
+					shortLabel: "АК",
+					fullLabel: "АНТИКОАГУЛЯНТЫ",
+					title: "Прием антикоагулянтов/дезагрегантов: риск кровотечения",
+				});
+			}
+			if (sp.hasDiabetesMellitus) {
+				badges.push({
+					id: "diabetes",
+					testId: "visit-focus-diabetes-alert",
+					shortLabel: "ДИАБЕТ",
+					fullLabel: "САХАРНЫЙ ДИАБЕТ",
+					title: "Сахарный диабет: риск гипогликемии, контроль витальных функций",
+				});
+			}
+			if (sp.pregnancyTrimester && sp.pregnancyTrimester !== "none") {
+				const pregLabel =
+					sp.pregnancyTrimester === "lactation"
+						? "ГВ / ЛАКТАЦИЯ"
+						: `БЕРЕМЕННОСТЬ (${sp.pregnancyTrimester === "trimester_1" ? "1 ТРИМ." : sp.pregnancyTrimester === "trimester_3" ? "3 ТРИМ." : "2 ТРИМ."})`;
+				badges.push({
+					id: "pregnancy",
+					testId: "visit-focus-pregnancy-alert",
+					shortLabel: "БЕРЕМ.",
+					fullLabel: pregLabel,
+					title: `Период гестации/лактации: ${pregLabel} — ограничения на анестезию с адреналином и рентген`,
+				});
+			}
+			if (sp.takesBisphosphonates || sp.hasBisphosphonateTherapy) {
+				badges.push({
+					id: "bisphosphonates",
+					testId: "visit-focus-bisphosphonates-alert",
+					shortLabel: "БОНЧ",
+					fullLabel: "БИСФОСФОНАТЫ",
+					title: "Прием бисфосфонатов: риск остеонекроза челюсти (MRONJ/БОНЧ)",
+				});
+			}
+		}
+
+		return badges;
+	}, [activePatient, activePatientAllergyText, activePatientSafetyProfile]);
 
 	const patientAge = useMemo(() => {
 		if (!activePatient?.birthDate) return null;
@@ -1369,19 +1476,20 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							<span className="hidden sm:inline-flex shrink-0">
 								<VisitTimer createdAt={activeAppointment?.startTime || activeAppointment?.startAt || activeAppointment?.createdAt || null} />
 							</span>
-							{/* Бейдж аллергии (ровно 1 раз во всей шапке!) */}
-							{activePatientAllergyText && (
+							{/* Бейджи аллергий и критических соматических рисков в Tier 1 (Мандаты 8e, 8i) */}
+							{activePatientCriticalBadges.map((badge) => (
 								<span
+									key={badge.id}
 									className="inline-flex items-center gap-1 px-1 sm:px-1.5 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink-0 animate-pulse"
-									data-testid="visit-focus-allergy-alert"
+									data-testid={badge.testId}
 									role="alert"
-									title={`Критический стоп-фактор / аллергия пациента: ${activePatientAllergyText}`}
+									title={badge.title}
 								>
 									<AlertOctagon size={12} className="text-rose-600 dark:text-rose-400 shrink-0" />
-									<span className="sm:hidden text-[10px]">АЛЛЕРГИЯ</span>
-									<span className="hidden sm:inline truncate max-w-[140px]">АЛЛЕРГИЯ: {activePatientAllergyText}</span>
+									<span className="sm:hidden text-[10px]">{badge.shortLabel}</span>
+									<span className="hidden sm:inline truncate max-w-[150px]">{badge.fullLabel}</span>
 								</span>
-							)}
+							))}
 						</div>
 
 						<div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
