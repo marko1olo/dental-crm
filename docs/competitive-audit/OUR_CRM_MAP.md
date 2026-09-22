@@ -5925,3 +5925,28 @@
   - `docs/competitive-audit/FEATURES_REGISTRY.md`
   - `docs/competitive-audit/BACKLOG.md`
   - `docs/competitive-audit/OUR_CRM_MAP.md`
+
+### 2.10.360. Wave 268: Искоренение процедурных симуляторов, подтверждение суверенитета амбулаторной стоматологии (Мандаты 8i, 8s) и гармонизация тест-стражей 043/у (Мандаты 8i, 8s, 8t)
+- **Функционал**:
+  1. *Амбулаторный стоматологический суверенитет и искоренение стационарного блоата (Мандат 8i)*:
+     - Проведен аудит кодовой базы `apps/api/src` и `apps/web/src` на рудименты стационарной медицины (трансфузиология, коечный фонд, паллиатив, полостные операции);
+     - Подтверждено, что рабочее место врача у кресла сфокусировано на амбулаторной стоматологии (FDI 11..48, МКБ-10, 043/у норма в 1 клик, смета 804н, соматика, рецепт 107-1/у);
+     - Стерилизация, автоклавы, журналы ПСО (форма № 366/у) и крафт-пакеты изолированы в холодном бэкофисе медсестры (`ScannerView.tsx`, `SanpinRegisters.tsx`) и исключены из горячего цикла врача.
+  2. *Ликвидация процедурных симуляторов и псевдо-диорам (Мандат 8s)*:
+     - В `apps/web/src/components/dicom/Cornerstone3DViewer.tsx` устранено вводящее в заблуждение наименование `simulateImplantPlacement` с переименованием в каноническую функцию `placeImplantModel`, выполняющую реальный расчет плотности кости по шкале Хаунсфилда (HU) из Cornerstone3D вокселей;
+     - Обновлен файл `apps/web/src/components/dicom/ctPlanningPersistence.ts`;
+     - Подтверждено полное отсутствие фейковых симуляторов графиков через `Math.sin`/`Math.cos` в продуктовой логике.
+  3. *Гармонизация и синхронизация тестов-стражей Формы 043/у (Мандат 8s)*:
+     - В `apps/web/src/components/documents/__tests__/dentalOutpatientSovereignty.test.ts` актуализирована проверка фильтрации устаревшей формы 025/у в пользу канонической стоматологической Формы 043/у;
+     - В `apps/web/src/components/documents/__tests__/wave115BloatExtermination.test.ts` синхронизированы проверки отсутствия рудиментов 025/у в хуках и наименование выписки `(Форма 043/у)`;
+     - Все тесты инквизиции (`panelsAreMounted.test.ts` 15/15, `emrPerioAutonomyInquisition.test.ts` 48/48, `wave115BloatExtermination.test.ts` 4/4, `dentalOutpatientSovereignty.test.ts` 4/4) прошли на 100% с Exit Code 0.
+  4. *Защита Single-Compiler Gate (Мандат 8t)*:
+     - Глобальные компиляторы (`tsc`, `npm run typecheck`, `npm run build`) субагентом не запускались.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/dicom/Cornerstone3DViewer.tsx`
+  - `apps/web/src/components/dicom/ctPlanningPersistence.ts`
+  - `apps/web/src/components/documents/__tests__/dentalOutpatientSovereignty.test.ts`
+  - `apps/web/src/components/documents/__tests__/wave115BloatExtermination.test.ts`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+
