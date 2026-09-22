@@ -705,7 +705,7 @@ export function AnalyticsDashboardView() {
 									color="var(--ok-fg, #10b981)"
 									subtitle={
 										<span>
-											Нал: {formatRub(data?.kpis?.cashRevenue ?? 0)} • Безнал: {formatRub(data?.kpis?.cashlessRevenue ?? 0)}
+											Нал: {formatRub(data?.kpis?.cashRevenue ?? 0)} • Карта: {formatRub(data?.kpis?.cardRevenue ?? 0)} • Безнал: {formatRub(data?.kpis?.cashlessRevenue ?? 0)} • Авансы: {formatRub(data?.kpis?.advanceRevenue ?? 0)}
 										</span>
 									}
 								/>
@@ -1032,7 +1032,11 @@ export function AnalyticsDashboardView() {
 									<div className="analytics-chart-container analytics-table-container">
 										{Array.isArray(data?.doctorProfitabilityJson) &&
 										(data?.doctorProfitabilityJson ?? []).filter(
-											(x) => (x?.revenue ?? 0) > 0,
+											(x) =>
+												(x?.revenue ?? 0) > 0 ||
+												(x?.services804nCount ?? 0) > 0 ||
+												(x?.labOrdersCount ?? 0) > 0 ||
+												(x?.appointmentsCount ?? 0) > 0,
 										).length > 0 ? (
 											<DoctorProfitabilityTable
 												rows={data?.doctorProfitabilityJson ?? []}
@@ -1165,6 +1169,8 @@ function DoctorProfitabilityTable({
 		revenue: number;
 		margin: number | null;
 		completionRate: number | null;
+		services804nCount?: number;
+		labOrdersCount?: number;
 	}[];
 }) {
 	const hasUnknownMetric = (rows ?? []).some(
@@ -1180,6 +1186,8 @@ function DoctorProfitabilityTable({
 						<th scope="col" className="whitespace-nowrap">Выручка</th>
 						<th scope="col" className="whitespace-nowrap min-w-[110px]">Прибыль</th>
 						<th scope="col" className="whitespace-nowrap">Успешность</th>
+						<th scope="col" className="whitespace-nowrap">Услуг (804н)</th>
+						<th scope="col" className="whitespace-nowrap">Нарядов ЗТЛ</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -1204,6 +1212,12 @@ function DoctorProfitabilityTable({
 									>
 										{completion.text}
 									</span>
+								</td>
+								<td className="whitespace-nowrap font-medium text-center">
+									{doc?.services804nCount ?? 0}
+								</td>
+								<td className="whitespace-nowrap font-medium text-center">
+									{doc?.labOrdersCount ?? 0}
 								</td>
 							</tr>
 						);

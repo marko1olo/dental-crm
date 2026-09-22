@@ -182,6 +182,7 @@ export interface AnalyticsKpis {
 	readonly totalAppointments: number;
 	readonly avgRevenuePerPatient: number;
 	readonly cashRevenue?: number;
+	readonly cardRevenue?: number;
 	readonly cashlessRevenue?: number;
 	readonly advanceRevenue?: number;
 	readonly bonusRevenue?: number;
@@ -205,6 +206,8 @@ export interface DoctorProfitabilityRow {
 	readonly hourlyRevenueRub?: number;
 	readonly margin: number | null;
 	readonly completionRate: number | null;
+	readonly services804nCount?: number;
+	readonly labOrdersCount?: number;
 }
 
 /**
@@ -380,6 +383,8 @@ function toDoctorRows(value: unknown): DoctorProfitabilityRow[] {
 				hourlyRevenueRub: numberOr(row.hourlyRevenueRub, 0),
 				margin: nullableNumber(row.margin),
 				completionRate: nullableNumber(row.completionRate),
+				services804nCount: numberOr(row.services804nCount, 0),
+				labOrdersCount: numberOr(row.labOrdersCount, 0),
 			},
 		];
 	});
@@ -536,6 +541,7 @@ export function parseDashboardPayload(
 				totalAppointments: numberOr(kpisRow?.totalAppointments, 0),
 				avgRevenuePerPatient: numberOr(kpisRow?.avgRevenuePerPatient, 0),
 				cashRevenue: numberOr(kpisRow?.cashRevenue, 0),
+				cardRevenue: numberOr(kpisRow?.cardRevenue, 0),
 				cashlessRevenue: numberOr(kpisRow?.cashlessRevenue, 0),
 				advanceRevenue: numberOr(kpisRow?.advanceRevenue, 0),
 				bonusRevenue: numberOr(kpisRow?.bonusRevenue, 0),
@@ -580,6 +586,7 @@ export function computeLocalAnalyticsData(
 				totalAppointments: 0,
 				avgRevenuePerPatient: 0,
 				cashRevenue: 0,
+				cardRevenue: 0,
 				cashlessRevenue: 0,
 				advanceRevenue: 0,
 				bonusRevenue: 0,
@@ -607,6 +614,12 @@ export function computeLocalAnalyticsData(
 		: [];
 	const rawVisits = Array.isArray(dashboard.visits)
 		? (dashboard.visits as Record<string, unknown>[])
+		: [];
+	const rawTreatmentItems = Array.isArray(dashboard.treatmentItems)
+		? (dashboard.treatmentItems as Record<string, unknown>[])
+		: [];
+	const rawLabOrders = Array.isArray(dashboard.labOrders)
+		? (dashboard.labOrders as Record<string, unknown>[])
 		: [];
 	const chairs = Array.isArray(dashboard.chairs)
 		? (dashboard.chairs as Record<string, unknown>[])
@@ -654,6 +667,7 @@ export function computeLocalAnalyticsData(
 	const totalAppointments = appointments.length;
 	let totalRevenue = 0;
 	let cashRevenue = 0;
+	let cardRevenue = 0;
 	let cashlessRevenue = 0;
 	let advanceRevenue = 0;
 	let bonusRevenue = 0;
@@ -666,6 +680,12 @@ export function computeLocalAnalyticsData(
 		const method = String(p.method || p.paymentMethod || "card").toLowerCase();
 		if (method === "cash") {
 			cashRevenue += amt;
+		} else if (
+			method === "card" ||
+			method === "bank_card" ||
+			method === "terminal"
+		) {
+			cardRevenue += amt;
 		} else if (
 			method === "advance" ||
 			method === "deposit" ||
@@ -844,6 +864,44 @@ export function computeLocalAnalyticsData(
 		}
 	}
 
+	// 4b. Выработка врачей по номенклатуре 804н (услуги) и сданным нарядам ЗТЛ
+	const doctorServicesMap = new Map<string, number>();
+	for (const item of rawTreatmentItems) {
+		const vId = String(item.visitId || "");
+		const dId =
+			String(item.plannedDoctorUserId || item.doctorUserId || "") ||
+			(vId ? visitToDocMap.get(vId) : "") ||
+			"";
+		if (dId) {
+			doctorServicesMap.set(dId, (doctorServicesMap.get(dId) || 0) + 1);
+		}
+	}
+	for (const v of visits) {
+		const vId = String(v.id || "");
+		const dId = visitToDocMap.get(vId);
+		if (dId && Array.isArray(v.services)) {
+			doctorServicesMap.set(dId, (doctorServicesMap.get(dId) || 0) + v.services.length);
+		} else if (dId && Array.isArray(v.treatmentItems)) {
+			doctorServicesMap.set(dId, (doctorServicesMap.get(dId) || 0) + v.treatmentItems.length);
+		}
+	}
+
+	const doctorLabMap = new Map<string, number>();
+	for (const lab of rawLabOrders) {
+		const dId = String(lab.doctorId || lab.doctorUserId || "");
+		const status = String(lab.status || "").toLowerCase();
+		if (
+			dId &&
+			(!status ||
+				status === "completed" ||
+				status === "received" ||
+				status === "installed" ||
+				status === "done")
+		) {
+			doctorLabMap.set(dId, (doctorLabMap.get(dId) || 0) + 1);
+		}
+	}
+
 	const doctorProfitabilityJson: DoctorProfitabilityRow[] = doctorList.map(
 		(doc) => {
 			const docId = typeof doc.id === "string" ? doc.id : "doc-1";
@@ -861,6 +919,8 @@ export function computeLocalAnalyticsData(
 					: null;
 			// Честный расчет индивидуальной выручки (или 0 при отсутствии данных)
 			const docRev = doctorRevenueMap.get(docId) || 0;
+			const services804nCount = doctorServicesMap.get(docId) || 0;
+			const labOrdersCount = doctorLabMap.get(docId) || 0;
 			return {
 				doctorId: docId,
 				name: docName,
@@ -877,6 +937,8 @@ export function computeLocalAnalyticsData(
 					docAppts.length > 0 ? Math.round(docRev / docAppts.length) : 0,
 				margin: null,
 				completionRate,
+				services804nCount,
+				labOrdersCount,
 			};
 		},
 	);
@@ -903,7 +965,17 @@ export function computeLocalAnalyticsData(
 	);
 
 	const isEmpty =
-		totalPatients === 0 && totalAppointments === 0 && totalRevenue === 0;
+		totalPatients === 0 &&
+		totalAppointments === 0 &&
+		totalRevenue === 0 &&
+		planScenarios.length === 0 &&
+		doctorProfitabilityJson.every(
+			(d) =>
+				d.revenue === 0 &&
+				(d.appointmentsCount ?? 0) === 0 &&
+				(d.services804nCount ?? 0) === 0 &&
+				(d.labOrdersCount ?? 0) === 0,
+		);
 
 	return {
 		kpis: {
@@ -912,6 +984,7 @@ export function computeLocalAnalyticsData(
 			totalAppointments,
 			avgRevenuePerPatient,
 			cashRevenue,
+			cardRevenue,
 			cashlessRevenue,
 			advanceRevenue,
 			bonusRevenue,

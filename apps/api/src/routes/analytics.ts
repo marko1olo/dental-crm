@@ -13,6 +13,7 @@ import {
 	crmLeads,
 	diagnocatAiFindings,
 	diagnocatReports,
+	labOrders,
 	patients,
 	payments,
 	rebookingConversionRules,
@@ -317,10 +318,44 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				.where(eq(users.organizationId, orgId));
 			const docMap = new Map(allDocs.map((d) => [d.id, d.fullName]));
 
+			// 2b. Выработка врачей по номенклатуре 804н (услуги) и сданным нарядам ЗТЛ
+			const docServicesRes = await db
+				.select({
+					doctorId: sql<string | null>`coalesce(${treatmentItems.plannedDoctorUserId}, ${appointments.doctorUserId})`,
+					servicesCount: sql<number>`count(*)::int`,
+				})
+				.from(treatmentItems)
+				.innerJoin(visits, eq(treatmentItems.visitId, visits.id))
+				.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
+				.where(withDate(treatmentItems.organizationId, visits.createdAt))
+				.groupBy(sql`coalesce(${treatmentItems.plannedDoctorUserId}, ${appointments.doctorUserId})`);
+			const docServicesMap = new Map(
+				docServicesRes.map((s) => [s.doctorId ?? "unassigned", Number(s.servicesCount || 0)]),
+			);
+
+			const docLabRes = await db
+				.select({
+					doctorId: labOrders.doctorId,
+					labOrdersCount: sql<number>`count(*)::int`,
+				})
+				.from(labOrders)
+				.where(
+					and(
+						withDate(labOrders.organizationId, labOrders.createdAt),
+						inArray(labOrders.status, ["completed", "received", "installed"]),
+					),
+				)
+				.groupBy(labOrders.doctorId);
+			const docLabMap = new Map(
+				docLabRes.map((l) => [l.doctorId ?? "unassigned", Number(l.labOrdersCount || 0)]),
+			);
+
 			const allDoctorIds = Array.from(
 				new Set([
 					...docProfRes.map((r) => r.doctorId),
 					...docApptRes.map((r) => r.doctorId),
+					...docServicesRes.map((r) => r.doctorId),
+					...docLabRes.map((r) => r.doctorId),
 				]),
 			);
 
@@ -349,6 +384,8 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 						appointmentsCount > 0
 							? Math.round((completedCount / appointmentsCount) * 100)
 							: null;
+					const services804nCount = docServicesMap.get(docId ?? "unassigned") || 0;
+					const labOrdersCount = docLabMap.get(docId ?? "unassigned") || 0;
 
 					return {
 						doctorId: docId ?? null,
@@ -366,9 +403,17 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 						// прочерк вместо правдоподобного, но выдуманного числа.
 						margin: null as number | null,
 						completionRate,
+						services804nCount,
+						labOrdersCount,
 					};
 				})
-				.filter((x) => x.revenue > 0 || x.appointmentsCount > 0)
+				.filter(
+					(x) =>
+						x.revenue > 0 ||
+						(x.appointmentsCount ?? 0) > 0 ||
+						(x.services804nCount ?? 0) > 0 ||
+						(x.labOrdersCount ?? 0) > 0,
+				)
 				.sort((a, b) => b.revenue - a.revenue);
 
 			// 3. Chair Utilization (% времени в кресле от доступного рабочего времени смены)
@@ -541,7 +586,8 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				.select({
 					total: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
 					cash: sql<number>`coalesce(sum(case when ${payments.method} = 'cash' then ${payments.amountRub} else 0 end), 0)`,
-					cashless: sql<number>`coalesce(sum(case when ${payments.method} in ('card', 'bank_transfer', 'online') then ${payments.amountRub} else 0 end), 0)`,
+					card: sql<number>`coalesce(sum(case when ${payments.method} = 'card' then ${payments.amountRub} else 0 end), 0)`,
+					cashless: sql<number>`coalesce(sum(case when ${payments.method} in ('bank_transfer', 'online') then ${payments.amountRub} else 0 end), 0)`,
 					advance: sql<number>`coalesce(sum(case when ${payments.method} in ('family_wallet', 'insurance', 'other') then ${payments.amountRub} else 0 end), 0)`,
 				})
 				.from(payments)
@@ -826,6 +872,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					totalPatients: primaryCount,
 					totalRevenue: Number(revenueRow?.total ?? 0),
 					cashRevenue: Number(revenueRow?.cash ?? 0),
+					cardRevenue: Number(revenueRow?.card ?? 0),
 					cashlessRevenue: Number(revenueRow?.cashless ?? 0),
 					advanceRevenue: Number(revenueRow?.advance ?? 0),
 					bonusRevenue: 0,
@@ -855,7 +902,9 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					!doctorProfitabilityJson.length &&
 					totalPlansCount === 0 &&
 					totalCancelled === 0 &&
-					totalNoShow === 0,
+					totalNoShow === 0 &&
+					Number(revenueRow?.total ?? 0) === 0 &&
+					Number(apptCountRow?.count ?? 0) === 0,
 			};
 
 			return { success: true, data };

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+	computeLocalAnalyticsData,
 	EMPTY_BODY_MESSAGE,
 	formatCompletionRate,
 	formatMarginCell,
@@ -333,4 +334,136 @@ test("мусор в строке врача не превращается в н�
 	// Строка — не число. Приводить её к нулю нельзя: ноль это утверждение.
 	assert.equal(doctor.margin, null);
 	assert.equal(doctor.completionRate, null);
+});
+
+test("computeLocalAnalyticsData: честный сплит выручки 54-ФЗ (нал, карта, безнал, аванс)", () => {
+	const data = computeLocalAnalyticsData({
+		patients: [{ id: "p-1" }, { id: "p-2" }],
+		appointments: [{ id: "a-1", doctorUserId: "doc-1", startsAt: new Date().toISOString() }],
+		payments: [
+			{ id: "pay-1", amount: 10_000, method: "cash", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
+			{ id: "pay-2", amount: 25_000, method: "card", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
+			{ id: "pay-3", amount: 15_000, method: "bank_transfer", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
+			{ id: "pay-4", amount: 5_000, method: "family_wallet", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
+		],
+		staff: [{ id: "doc-1", name: "Доктор Тестов", role: "doctor" }],
+	});
+
+	assert.equal(data.kpis.totalRevenue, 55_000);
+	assert.equal(data.kpis.cashRevenue, 10_000);
+	assert.equal(data.kpis.cardRevenue, 25_000);
+	assert.equal(data.kpis.cashlessRevenue, 15_000);
+	assert.equal(data.kpis.advanceRevenue, 5_000);
+	assert.equal(data.isEmpty, false);
+});
+
+test("computeLocalAnalyticsData: выработка врачей по услугам 804н и нарядам ЗТЛ", () => {
+	const data = computeLocalAnalyticsData({
+		patients: [{ id: "p-1" }],
+		appointments: [{ id: "a-1", doctorUserId: "doc-1", startsAt: new Date().toISOString(), status: "completed" }],
+		visits: [{ id: "v-1", appointmentId: "a-1", doctorUserId: "doc-1" }],
+		treatmentItems: [
+			{ id: "ti-1", visitId: "v-1", title: "A16.07.002 Восстановление зуба пломбой" },
+			{ id: "ti-2", visitId: "v-1", title: "A16.07.030 Инфильтрационная анестезия" },
+		],
+		labOrders: [
+			{ id: "lab-1", doctorId: "doc-1", status: "completed" },
+			{ id: "lab-2", doctorId: "doc-1", status: "draft" }, // черновик не считается выполненным
+		],
+		payments: [
+			{ id: "pay-1", amount: 8_000, method: "card", doctorUserId: "doc-1", createdAt: new Date().toISOString() },
+		],
+		staff: [{ id: "doc-1", name: "Иванов И.И.", role: "doctor" }],
+	});
+
+	assert.equal(data.doctorProfitabilityJson.length, 1);
+	const doc = data.doctorProfitabilityJson[0];
+	assert.ok(doc);
+	assert.equal(doc.revenue, 8_000);
+	assert.equal(doc.services804nCount, 2, "Должно быть учтено ровно 2 оказанные услуги");
+	assert.equal(doc.labOrdersCount, 1, "Должен быть учтен только сданный наряд ЗТЛ со статусом completed");
+});
+
+test("computeLocalAnalyticsData: процент загрузки кресел без симуляторов", () => {
+	const data = computeLocalAnalyticsData({
+		appointments: [
+			{ id: "a-1", chairId: "chair-1", startsAt: new Date().toISOString() },
+			{ id: "a-2", chairId: "chair-1", startsAt: new Date().toISOString() },
+		],
+		chairs: [{ id: "chair-1", name: "Кресло 1" }],
+	});
+
+	assert.equal(data.chairUtilizationJson.length, 1);
+	const chair = data.chairUtilizationJson[0];
+	assert.ok(chair);
+	assert.equal(chair.occupiedMinutes, 120); // 2 приёма * 60 мин
+	assert.ok(typeof chair.utilizationPercent === "number");
+	assert.ok(chair.utilizationPercent >= 0 && chair.utilizationPercent <= 100);
+	assert.ok(data.kpis.chairOccupancyRatePercent !== undefined);
+});
+
+test("computeLocalAnalyticsData: честный isEmpty:true при отсутствии данных", () => {
+	const data = computeLocalAnalyticsData({
+		patients: [],
+		appointments: [],
+		payments: [],
+		visits: [],
+		treatmentItems: [],
+		labOrders: [],
+		treatmentPlanScenarios: [],
+		staff: [],
+	});
+
+	assert.equal(data.isEmpty, true, "Дашборд без данных обязан иметь isEmpty = true для показа честного EmptyState");
+	assert.equal(data.kpis.totalRevenue, 0);
+	assert.equal(data.kpis.cashRevenue, 0);
+	assert.equal(data.kpis.cardRevenue, 0);
+});
+
+test("parseDashboardPayload: парсинг cardRevenue, services804nCount и labOrdersCount с бэкенда", () => {
+	const body = JSON.stringify({
+		success: true,
+		data: {
+			kpis: {
+				totalPatients: 10,
+				totalRevenue: 100_000,
+				cashRevenue: 30_000,
+				cardRevenue: 50_000,
+				cashlessRevenue: 15_000,
+				advanceRevenue: 5_000,
+				totalAppointments: 15,
+				avgRevenuePerPatient: 10_000,
+			},
+			cohortLtvJson: [],
+			planFunnelJson: [],
+			chairUtilizationJson: [],
+			doctorProfitabilityJson: [
+				{
+					doctorId: "doc-1",
+					name: "Петров П.П.",
+					revenue: 100_000,
+					appointmentsCount: 15,
+					margin: null,
+					completionRate: 90,
+					services804nCount: 28,
+					labOrdersCount: 5,
+				},
+			],
+			isEmpty: false,
+		},
+	});
+
+	const result = parseDashboardPayload(200, body);
+	assert.equal(result.ok, true);
+	if (!result.ok) return;
+
+	assert.equal(result.data.kpis.cashRevenue, 30_000);
+	assert.equal(result.data.kpis.cardRevenue, 50_000);
+	assert.equal(result.data.kpis.cashlessRevenue, 15_000);
+	assert.equal(result.data.kpis.advanceRevenue, 5_000);
+
+	const doc = result.data.doctorProfitabilityJson[0];
+	assert.ok(doc);
+	assert.equal(doc.services804nCount, 28);
+	assert.equal(doc.labOrdersCount, 5);
 });

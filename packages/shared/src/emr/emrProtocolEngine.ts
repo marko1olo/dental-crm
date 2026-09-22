@@ -338,7 +338,7 @@ export function synthesizeClinicalDiary(request: ClinicalDiarySynthesisRequest):
 
 	const materialsList = request.customMaterials && request.customMaterials.length > 0 ? Array.from(request.customMaterials) : template.defaultMaterials;
 
-	const entryId = `diary-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+	const entryId = `diary-${Date.now().toString(36)}-${((materialsList.length * 31 + (request.toothNumber ? Number(request.toothNumber) : 1)) % 1000).toString(36).padStart(3, "0")}`;
 
 	return {
 		id: entryId,
