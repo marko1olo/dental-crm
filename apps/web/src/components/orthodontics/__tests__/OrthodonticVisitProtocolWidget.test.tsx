@@ -610,17 +610,40 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 			assert.ok(html.includes("1-клик подтвердить"));
 		});
 
-		it("renders 1-click ZTL lab order buttons for aligners, retainers, and expansion plates", () => {
+		it("renders 1-click ZTL lab order buttons for aligners, retainers, expansion plates, and splints", () => {
 			const html = renderToString(
-				<OrthodonticVisitProtocolWidget isOpen={true} onClose={() => {}} />,
+				<OrthodonticVisitProtocolWidget isOpen={true} onClose={() => {}} currentAligner={5} totalAligners={36} />,
 			);
 
 			assert.ok(html.includes("data-testid=\"ortho-preset-aligner-lab-order\""));
 			assert.ok(html.includes("data-testid=\"ortho-preset-retainer-lab-order\""));
 			assert.ok(html.includes("data-testid=\"ortho-preset-plate-lab-order\""));
+			assert.ok(html.includes("data-testid=\"ortho-preset-splint-lab-order\""));
 			assert.ok(html.includes("1-клик: Наряд ЗТЛ (Элайнеры / Каппа)"));
+			assert.ok(html.includes("шаг 5 из 36"));
 			assert.ok(html.includes("1-клик: Наряд ЗТЛ (Ретейнер / Каппа)"));
 			assert.ok(html.includes("1-клик: Наряд ЗТЛ (Пластинка с винтом)"));
+			assert.ok(html.includes("1-клик: Наряд ЗТЛ (Окклюзионный сплинт)"));
+			assert.ok(html.includes("миорелаксирующий / шина ВНЧС"));
+		});
+
+		it("renders 1-click Steiner ANB TRG analysis launch button", () => {
+			const html = renderToString(
+				<OrthodonticVisitProtocolWidget isOpen={true} onClose={() => {}} />,
+			);
+
+			assert.ok(html.includes("data-testid=\"ortho-open-ceph-analysis-btn\""));
+			assert.ok(html.includes("ТРГ-анализ (Steiner)"));
+		});
+
+		it("conforms to Mandate 8e: zero disabled buttons in orthodontic visit protocol", () => {
+			const html = renderToString(
+				<OrthodonticVisitProtocolWidget isOpen={true} onClose={() => {}} />,
+			);
+
+			// Ensure zero disabled buttons exist in the rendered HTML
+			assert.ok(!html.includes("disabled=\"\""));
+			assert.ok(!html.includes("disabled=\"true\""));
 		});
 	});
 });

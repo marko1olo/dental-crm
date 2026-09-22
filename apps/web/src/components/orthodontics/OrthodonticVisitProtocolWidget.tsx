@@ -14,6 +14,7 @@ import {
 	Send,
 	Sliders,
 	Sparkles,
+	ShieldCheck,
 	X,
 	Zap,
 } from "lucide-react";
@@ -31,6 +32,7 @@ import {
 	type WorkhorseArchwireOption,
 } from "@dental/shared";
 import { OrthodonticPhotoProtocolModal } from "../diagnostics/OrthodonticPhotoProtocolModal";
+import { CephalometricAnalysisModal } from "../radiology/CephalometricAnalysisModal";
 
 export { ANB_CLASS_OPTIONS, ANGLE_CLASS_OPTIONS, WORKHORSE_ARCHWIRES };
 export type { AnbClass, AnbClassOption, AngleClass, AngleClassOption, WorkhorseArchwireOption };
@@ -566,6 +568,9 @@ export function OrthodonticVisitProtocolWidget({
 	const [isPhotoProtocolOpen, setIsPhotoProtocolOpen] = useState<boolean>(false);
 	const [isPhotoProtocolCompleted, setIsPhotoProtocolCompleted] = useState<boolean>(false);
 
+	// 1-Click Cephalometric TRG Analysis Modal State (Steiner / Tweed / Downs)
+	const [isCephModalOpen, setIsCephModalOpen] = useState<boolean>(false);
+
 	// Hick's Law: Orthodontic Stages Filter Bar State (32–36px)
 	const [stageFilter, setStageFilter] = useState<OrthodonticStageFilter>("all");
 
@@ -879,6 +884,10 @@ export function OrthodonticVisitProtocolWidget({
 				? selectedTeeth.map(String)
 				: ["17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27", "37", "36", "35", "34", "33", "32", "31", "41", "42", "43", "44", "45", "46", "47"];
 
+		const stepInfo = isSplitArchAligners
+			? `ВЧ: каппа ${alignerStepUpper} из ${alignerTotalUpper}, НЧ: каппа ${alignerStepLower} из ${alignerTotalLower}`
+			: `каппа ${alignerStep} из ${alignerTotal}`;
+
 		const labOrderPayload = {
 			orderNumber,
 			createdAt: new Date().toISOString(),
@@ -887,7 +896,7 @@ export function OrthodonticVisitProtocolWidget({
 			constructionType: "aligner_nightguard",
 			prostheticTypeId: "orthodontic_aligners_set",
 			material: "aligner_polyurethane_duran",
-			doctorNotes: `1-клик наряд ЗТЛ на элайнеры (полный сет). Пациент: ${patientName}. Этап: ортодонтическая коррекция. Срок: 5-7 раб. дней. Без бюрократических блокировок (Мандат 8e).`,
+			doctorNotes: `1-клик наряд ЗТЛ на элайнеры (${stepInfo}). Пациент: ${patientName}. Этап: ортодонтическая коррекция. Срок: 5-7 раб. дней. Без бюрократических блокировок (Мандат 8e).`,
 			overrideActive: true,
 			overrideReason: "Мандат 8e: прямое создание наряда ЗТЛ ортодонтом без блокировок и ожидания согласований",
 		};
@@ -901,9 +910,9 @@ export function OrthodonticVisitProtocolWidget({
 		}
 
 		setNotes(
-			`Сняты высокоточные оптические оттиски (3D интраоральное сканирование) для изготовления комплекта ортодонтических элайнеров. Сформирован наряд ЗТЛ №${orderNumber} (материал: полиуретан Duran / Zendura). План лечения активен без бюрократических согласований (Мандат 8e).`,
+			`Сняты высокоточные оптические оттиски (3D интраоральное сканирование) для изготовления комплекта ортодонтических элайнеров (${stepInfo}). Сформирован наряд ЗТЛ №${orderNumber} (материал: полиуретан Duran / Zendura). План лечения активен без бюрократических согласований (Мандат 8e).`,
 		);
-		showToast(`Наряд ЗТЛ №${orderNumber} на комплект элайнеров успешно отправлен!`, "success", 4000);
+		showToast(`Наряд ЗТЛ №${orderNumber} на комплект элайнеров (${stepInfo}) успешно отправлен!`, "success", 4000);
 	};
 
 	const handlePresetRetainerLabOrder = () => {
@@ -974,6 +983,41 @@ export function OrthodonticVisitProtocolWidget({
 			`Сняты анатомические оттиски для изготовления съемного пластиночного аппарата с расширяющим винтом. Сформирован наряд ЗТЛ №${orderNumber} (материал: акрил Leocryl). Мандат 8e: отправка без бюрократических задержек.`,
 		);
 		showToast(`Наряд ЗТЛ №${orderNumber} на расширяющую пластинку отправлен!`, "success", 4000);
+	};
+
+	const handlePresetSplintLabOrder = () => {
+		setActivePreset(null);
+		const orderNumber = `ЗТЛ-ОРТО-${Date.now().toString().slice(-6)}`;
+		const teethList =
+			selectedTeeth.length > 0
+				? selectedTeeth.map(String)
+				: ["17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27", "37", "36", "35", "34", "33", "32", "31", "41", "42", "43", "44", "45", "46", "47"];
+
+		const labOrderPayload = {
+			orderNumber,
+			createdAt: new Date().toISOString(),
+			teeth: teethList,
+			jawScope: targetArch === "upper" ? "upper" : targetArch === "lower" ? "lower" : "both",
+			constructionType: "splint_nightguard",
+			prostheticTypeId: "orthodontic_tmj_splint",
+			material: "aligner_polyurethane_duran",
+			doctorNotes: `1-клик наряд ЗТЛ на окклюзионный сплинт / шину ВНЧС (миорелаксирующая / стабилизирующая шина). Пациент: ${patientName}. Этап: сплинт-терапия / депрограммация ВНЧС. Срок: 3-5 раб. дней. Без бюрократических блокировок (Мандат 8e).`,
+			overrideActive: true,
+			overrideReason: "Мандат 8e: прямое создание наряда ЗТЛ ортодонтом без блокировок и ожидания согласований",
+		};
+
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-lab-order-created", {
+					detail: labOrderPayload,
+				}),
+			);
+		}
+
+		setNotes(
+			`Сняты высокоточные оптические сканы/оттиски и регистрат центрального соотношения для изготовления окклюзионного сплита/шины ВНЧС (миорелаксирующий депрограмматор). Сформирован наряд ЗТЛ №${orderNumber} (материал: полиуретан Duran / фрезерованный акрил). Мандат 8e: отправка без бюрократических задержек.`,
+		);
+		showToast(`Наряд ЗТЛ №${orderNumber} на окклюзионный сплинт (шина ВНЧС) успешно отправлен!`, "success", 4000);
 	};
 
 	// Aligner Attachments 1-Click Handlers (Mandates 8e, 8k, 8n)
@@ -1884,7 +1928,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 											1-клик: Наряд ЗТЛ (Элайнеры / Каппа)
 										</div>
 										<div className="text-[10px] truncate text-slate-500 dark:text-slate-400">
-											(полный сет капп, срок 5-7 раб. дней)
+											{`(шаг ${alignerStep} из ${alignerTotal}, срок 5-7 дней)`}
 										</div>
 									</div>
 								</button>
@@ -1923,6 +1967,25 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 										</div>
 										<div className="text-[10px] truncate text-slate-500 dark:text-slate-400">
 											(расширяющий аппарат Хааса / Бертони)
+										</div>
+									</div>
+								</button>
+
+								<button
+									type="button"
+									onClick={handlePresetSplintLabOrder}
+									data-testid="ortho-preset-splint-lab-order"
+									className="min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-white dark:bg-slate-900 border-teal-500/40 hover:border-teal-500 text-slate-800 dark:text-slate-100"
+								>
+									<div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-teal-500/15 text-teal-600 dark:text-teal-400">
+										<ShieldCheck size={14} />
+									</div>
+									<div className="min-w-0 flex-1">
+										<div className="text-xs font-bold leading-tight text-teal-700 dark:text-teal-300">
+											1-клик: Наряд ЗТЛ (Окклюзионный сплинт)
+										</div>
+										<div className="text-[10px] truncate text-slate-500 dark:text-slate-400">
+											(миорелаксирующий / шина ВНЧС)
 										</div>
 									</div>
 								</button>
@@ -2313,6 +2376,16 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 									>
 										<CheckCircle2 size={12} />
 										<span>Норма (ANB I: 2.0°)</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => setIsCephModalOpen(true)}
+										className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-slate-800 cursor-pointer min-h-[36px]"
+										data-testid="ortho-open-ceph-analysis-btn"
+										title="Открыть боковую ТРГ цефалометрию (расчет углов Steiner, Tweed, Downs, Ricketts)"
+									>
+										<Sliders size={12} className="text-indigo-600 dark:text-indigo-400" />
+										<span>ТРГ-анализ (Steiner)</span>
 									</button>
 									<span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
 										{ANB_CLASS_OPTIONS.find((a) => a.id === anbClass)?.shortLabel} ({anbAngle.toFixed(1)}°)
@@ -2961,6 +3034,19 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 						setIsPhotoProtocolCompleted(true);
 						setIsPhotoProtocolOpen(false);
 						showToast("Фотопротокол сохранен (8 ракурсов ABO зафиксированы)", "success");
+					}}
+				/>
+			)}
+			{isCephModalOpen && (
+				<CephalometricAnalysisModal
+					isOpen={isCephModalOpen}
+					onClose={() => setIsCephModalOpen(false)}
+					patientId={_patientId || ""}
+					patientName={patientName}
+					onInsertToProtocol={(protocolText) => {
+						setNotes((prev) => (prev ? `${prev}\n\n${protocolText}` : protocolText));
+						setIsCephModalOpen(false);
+						showToast("ТРГ цефалометрический протокол добавлен в дневник", "success", 3000);
 					}}
 				/>
 			)}

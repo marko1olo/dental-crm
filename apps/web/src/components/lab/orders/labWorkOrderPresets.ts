@@ -19,7 +19,8 @@ export type ProstheticTypeId =
 	| 'surgical_guide_3d'            // Навигационный хирургический шаблон с титановыми втулками
 	| 'orthodontic_aligners_set'     // Комплект ортодонтических элайнеров CAD/CAM (1 клик)
 	| 'orthodontic_retention_splint' // Ретенционная прозрачная каппа / вакуум-сплинт
-	| 'orthodontic_expansion_plate'; // Съемная пластинка с расширяющим винтом
+	| 'orthodontic_expansion_plate'  // Съемная пластинка с расширяющим винтом
+	| 'orthodontic_tmj_splint';      // Окклюзионный миорелаксирующий сплинт / шина ВНЧС (1 клик)
 
 export type ProstheticCategory =
 	| 'fixed'
@@ -239,6 +240,22 @@ export const PROSTHETIC_TYPES: Record<ProstheticTypeId, ProstheticTypeDefinition
 		requiresFittingStage: true,
 		defaultPriceClinicRub: 14000,
 		defaultCostLabRub: 5000
+	},
+	orthodontic_tmj_splint: {
+		id: 'orthodontic_tmj_splint',
+		nameRu: 'Окклюзионный сплинт / миорелаксирующая шина ВНЧС (1 клик)',
+		shortNameRu: 'Сплинт ВНЧС',
+		category: 'orthodontic',
+		categoryNameRu: 'Ортодонтия и элайнеры',
+		descriptionRu: 'Фрезерованный или вакуумный депрограммирующий/стабилизирующий окклюзионный сплинт для лечения дисфункций ВНЧС и бруксизма.',
+		icon: 'shield',
+		defaultMaterialId: 'aligner_polyurethane_duran',
+		standardTurnaroundWorkingDays: 4,
+		requiresStumpShade: false,
+		requiresImplantSystem: false,
+		requiresFittingStage: false,
+		defaultPriceClinicRub: 18000,
+		defaultCostLabRub: 6000
 	}
 };
 
