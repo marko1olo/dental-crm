@@ -253,6 +253,8 @@ export interface DesktopNativeApi {
 	onDesktopSoftRefresh?: (callback: () => void) => () => void;
 	onDesktopPrintRequest?: (callback: () => void) => () => void;
 	onDesktopSaveRequest?: (callback: () => void) => () => void;
+	onDesktopSearchRequest?: (callback: () => void) => () => void;
+	onDesktopEscapeRequest?: (callback: () => void) => () => void;
 }
 
 declare global {
@@ -1502,8 +1504,10 @@ export interface DesktopHotkeyHandlers {
 	onToggleFullScreen?: () => void;
 	/** Callback on F1 (clinical guidelines & nomenclature 804n) */
 	onF1Help?: () => void;
-	/** Callback on F2 (quick patient search) */
+	/** Callback on F2 or Ctrl+K / Cmd+K (quick patient search / Omnibar) */
 	onF2SearchPatient?: () => void;
+	/** Callback on Ctrl+K / Cmd+K / F2 (quick search / Omnibar alias) */
+	onSearch?: () => void;
 	/** Callback on F3 (new appointment booking) */
 	onF3NewAppointment?: () => void;
 	/** Callback on F4 (odontogram tooth formula) */
@@ -1591,6 +1595,31 @@ export function registerDesktopHotkeys(
 			}),
 		);
 	}
+	if (nativeApi?.onDesktopSearchRequest) {
+		unsubs.push(
+			nativeApi.onDesktopSearchRequest(() => {
+				triggerHaptic("selection");
+				if (handlers.onSearch) {
+					handlers.onSearch();
+				} else if (handlers.onF2SearchPatient) {
+					handlers.onF2SearchPatient();
+				} else if (typeof window !== "undefined") {
+					window.dispatchEvent(new CustomEvent("dente:search-patient", { bubbles: true }));
+				}
+			}),
+		);
+	}
+	if (nativeApi?.onDesktopEscapeRequest) {
+		unsubs.push(
+			nativeApi.onDesktopEscapeRequest(() => {
+				if (handlers.onEscape) {
+					handlers.onEscape();
+				} else if (typeof window !== "undefined") {
+					window.dispatchEvent(new CustomEvent("dente:escape-pressed", { bubbles: true }));
+				}
+			}),
+		);
+	}
 
 	if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
 		const onSoftRefreshEvent = () => {
@@ -1616,15 +1645,36 @@ export function registerDesktopHotkeys(
 				window.dispatchEvent(new CustomEvent("dente:save-card", { bubbles: true }));
 			}
 		};
+		const onSearchRequestEvent = () => {
+			triggerHaptic("selection");
+			if (handlers.onSearch) {
+				handlers.onSearch();
+			} else if (handlers.onF2SearchPatient) {
+				handlers.onF2SearchPatient();
+			} else {
+				window.dispatchEvent(new CustomEvent("dente:search-patient", { bubbles: true }));
+			}
+		};
+		const onEscapeRequestEvent = () => {
+			if (handlers.onEscape) {
+				handlers.onEscape();
+			} else {
+				window.dispatchEvent(new CustomEvent("dente:escape-pressed", { bubbles: true }));
+			}
+		};
 
 		window.addEventListener("dente:desktop-soft-refresh", onSoftRefreshEvent);
 		window.addEventListener("dente:desktop-print-request", onPrintRequestEvent);
 		window.addEventListener("dente:desktop-save-request", onSaveRequestEvent);
+		window.addEventListener("dente:desktop-search-request", onSearchRequestEvent);
+		window.addEventListener("dente:desktop-escape-request", onEscapeRequestEvent);
 
 		unsubs.push(() => {
 			window.removeEventListener("dente:desktop-soft-refresh", onSoftRefreshEvent);
 			window.removeEventListener("dente:desktop-print-request", onPrintRequestEvent);
 			window.removeEventListener("dente:desktop-save-request", onSaveRequestEvent);
+			window.removeEventListener("dente:desktop-search-request", onSearchRequestEvent);
+			window.removeEventListener("dente:desktop-escape-request", onEscapeRequestEvent);
 		});
 	}
 
@@ -1669,6 +1719,26 @@ export function registerDesktopHotkeys(
 				void handlers.onPrint();
 			} else if (typeof window !== "undefined") {
 				window.dispatchEvent(new CustomEvent("dente:print-active-document", { bubbles: true }));
+			}
+			return;
+		}
+
+		// 3A. Ctrl+K / Cmd+K / Ctrl+Л: Quick patient search in Omnibar (Mandates 8c, 8e)
+		const isCtrlK =
+			isCtrlOrMeta &&
+			(key === "k" || key === "л" || code === "KeyK") &&
+			!event.altKey &&
+			!event.shiftKey;
+		if (isCtrlK) {
+			event.preventDefault();
+			event.stopPropagation();
+			triggerHaptic("selection");
+			if (handlers.onSearch) {
+				handlers.onSearch();
+			} else if (handlers.onF2SearchPatient) {
+				handlers.onF2SearchPatient();
+			} else if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:search-patient", { bubbles: true }));
 			}
 			return;
 		}
@@ -1826,6 +1896,22 @@ export function initDesktopHotkeys(
 	}
 	activeDesktopHotkeyCleanup = registerDesktopHotkeys(handlers, options);
 	return activeDesktopHotkeyCleanup;
+}
+
+export function onDesktopSearchRequest(callback: () => void): () => void {
+	const api = getDesktopNativeApi();
+	if (api?.onDesktopSearchRequest) {
+		return api.onDesktopSearchRequest(callback);
+	}
+	return () => {};
+}
+
+export function onDesktopEscapeRequest(callback: () => void): () => void {
+	const api = getDesktopNativeApi();
+	if (api?.onDesktopEscapeRequest) {
+		return api.onDesktopEscapeRequest(callback);
+	}
+	return () => {};
 }
 
 export {

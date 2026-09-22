@@ -307,8 +307,10 @@ export function getPlatformCapabilities(): PlatformCapabilitiesMatrix {
 export interface DoctorHotkeyHandlers {
 	/** F1: Open 804n / clinical hints */
 	onF1Help?: () => void;
-	/** F2: Quick patient search modal */
+	/** F2 or Ctrl+K / Cmd+K: Quick patient search modal / Omnibar */
 	onF2SearchPatient?: () => void;
+	/** Ctrl+K / Cmd+K / F2: Quick search alias */
+	onSearch?: () => void;
 	/** F3: Quick new booking / next patient */
 	onF3NewAppointment?: () => void;
 	/** F4: Odontogram FDI formula */
@@ -382,11 +384,23 @@ export function registerDoctorHotkeys(
 			return;
 		}
 
-		// 2. F2: Quick patient search in Omnibar
-		if ((event.key === "F2" || code === "F2") && handlers.onF2SearchPatient) {
+		// 2. F2 / Ctrl+K / Cmd+K: Quick patient search in Omnibar
+		const isCtrlK =
+			isCtrlOrMeta &&
+			(key === "k" || key === "л" || code === "KeyK") &&
+			!event.altKey &&
+			!event.shiftKey;
+		if (
+			((event.key === "F2" || code === "F2") && (handlers.onF2SearchPatient || handlers.onSearch)) ||
+			(isCtrlK && (handlers.onSearch || handlers.onF2SearchPatient))
+		) {
 			event.preventDefault();
 			event.stopPropagation();
-			handlers.onF2SearchPatient();
+			if (handlers.onSearch) {
+				handlers.onSearch();
+			} else if (handlers.onF2SearchPatient) {
+				handlers.onF2SearchPatient();
+			}
 			return;
 		}
 

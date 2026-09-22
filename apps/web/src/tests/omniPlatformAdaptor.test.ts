@@ -540,6 +540,26 @@ test("Omni-Platform Adaptor & Multi-Environment Invariants Suite", async (t) => 
 		assert.equal(f1Fired, true);
 		assert.equal(eF1.defaultPrevented, true);
 
+		// Test F2 (Patient Search)
+		const eF2 = createFakeEvent("F2", "F2");
+		listeners.keydown(eF2);
+		assert.equal(f2Fired, true);
+		assert.equal(eF2.defaultPrevented, true);
+
+		// Test Ctrl+K (Omnibar Search)
+		f2Fired = false;
+		const eCtrlK = createFakeEvent("k", "KeyK", true);
+		listeners.keydown(eCtrlK);
+		assert.equal(f2Fired, true);
+		assert.equal(eCtrlK.defaultPrevented, true);
+
+		// Test Russian layout Ctrl+Л (Omnibar Search)
+		f2Fired = false;
+		const eCtrlRu = createFakeEvent("л", "KeyK", true);
+		listeners.keydown(eCtrlRu);
+		assert.equal(f2Fired, true);
+		assert.equal(eCtrlRu.defaultPrevented, true);
+
 		// Test F4 (Odontogram)
 		const eF4 = createFakeEvent("F4", "F4");
 		listeners.keydown(eF4);

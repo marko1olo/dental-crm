@@ -279,6 +279,13 @@ export const DOCTOR_HOTKEYS = {
 		actionDescription: "Фокус в глобальный Омнибар поиска пациентов",
 		preventsBrowserDefault: true,
 	},
+	CTRL_K: {
+		key: "k",
+		code: "KeyK",
+		labelRu: "Ctrl+K — Глобальный поиск пациента / Омнибар",
+		actionDescription: "Мгновенный поиск пациента по телефону или фамилии (Ctrl+K / ⌘K)",
+		preventsBrowserDefault: true,
+	},
 	F3: {
 		key: "F3",
 		code: "F3",

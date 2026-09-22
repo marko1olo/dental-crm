@@ -1019,6 +1019,23 @@ function createWindow() {
 			}
 			return;
 		}
+
+		// 5. Ctrl+K / Cmd+K / Ctrl+Л: Route to global search / Omnibar
+		if ((input.control || input.meta) && (input.key.toLowerCase() === "k" || input.key.toLowerCase() === "л")) {
+			event.preventDefault();
+			if (mainWindow && !mainWindow.isDestroyed()) {
+				mainWindow.webContents.send("dente:desktop-search-request");
+			}
+			return;
+		}
+
+		// 6. Escape: Close top modal or dismiss drawer
+		if (input.key === "Escape") {
+			if (mainWindow && !mainWindow.isDestroyed()) {
+				mainWindow.webContents.send("dente:desktop-escape-request");
+			}
+			return;
+		}
 	});
 
 	// Silent background update check 5 seconds after startup
@@ -1032,6 +1049,13 @@ function createWindow() {
 			} catch {}
 		}
 	}, 5000);
+}
+
+if (app && app.commandLine) {
+	// Enable GPU hardware acceleration for smooth 3D DICOM / Visiograph / Odontogram rendering
+	app.commandLine.appendSwitch("enable-gpu-rasterization");
+	app.commandLine.appendSwitch("enable-zero-copy");
+	app.commandLine.appendSwitch("ignore-gpu-blocklist");
 }
 
 if (app && app.whenReady) {

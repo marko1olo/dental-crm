@@ -136,4 +136,20 @@ contextBridge.exposeInMainWorld("denteDesktopNative", {
 			ipcRenderer.removeListener("dente:desktop-save-request", handler);
 		};
 	},
+
+	onDesktopSearchRequest: (callback) => {
+		const handler = () => callback();
+		ipcRenderer.on("dente:desktop-search-request", handler);
+		return () => {
+			ipcRenderer.removeListener("dente:desktop-search-request", handler);
+		};
+	},
+
+	onDesktopEscapeRequest: (callback) => {
+		const handler = () => callback();
+		ipcRenderer.on("dente:desktop-escape-request", handler);
+		return () => {
+			ipcRenderer.removeListener("dente:desktop-escape-request", handler);
+		};
+	},
 });
