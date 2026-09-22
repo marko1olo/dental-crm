@@ -82,11 +82,21 @@ export interface EnqueueOfflinePaymentInput {
 const memoryPaymentCache = new Map<string, OfflinePaymentItem>();
 const PAYMENT_STORAGE_PREFIX = "dente_offline_payments_";
 
+function getCryptoRandomString(length: number): string {
+	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+		const bytes = new Uint8Array(length);
+		crypto.getRandomValues(bytes);
+		return Array.from(bytes, (b) => (b % 36).toString(36)).join("");
+	}
+	const time = Date.now();
+	return ((time ^ (time >> 3)) % 10000000).toString(36);
+}
+
 /**
  * Generates collision-resistant unique offline payment identifier.
  */
 export function generateOfflinePaymentId(): string {
-	const rand = Math.random().toString(36).substring(2, 9);
+	const rand = getCryptoRandomString(7);
 	const time = Date.now().toString(36);
 	return `off_pay_${time}_${rand}`;
 }
@@ -99,7 +109,7 @@ export function generatePaymentIdempotencyKey(
 	totalKopecks: number,
 	timestamp = Date.now(),
 ): string {
-	const rand = Math.random().toString(36).substring(2, 7);
+	const rand = getCryptoRandomString(5);
 	return `idem_${patientId}_${totalKopecks}_${timestamp}_${rand}`;
 }
 

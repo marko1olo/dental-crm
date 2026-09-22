@@ -715,7 +715,7 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 				.limit(1);
 
 			const identity = getRequestIdentity(request);
-			const isDirectorOrChiefDoctor =
+			const isDirectorOrCmo =
 				identity.role === "owner" ||
 				identity.role === "admin" ||
 				identity.role === "cmo" ||
@@ -745,7 +745,7 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 				!identity.role; // Приоритет автономии врача при отсутствии строгой роли (Мандат 8e)
 
 			// Врач имеет право редактировать карту в любой момент: isLocked ВСЕГДА возвращает false (canEdit: true)
-			const isDoctorOrPrivileged = isAttendingDoctor || isDirectorOrChiefDoctor;
+			const isDoctorOrPrivileged = isAttendingDoctor || isDirectorOrCmo;
 			const isLocked = isDoctorOrPrivileged ? false : (isDeadlineExpired || isApproved);
 
 			return reply.send({

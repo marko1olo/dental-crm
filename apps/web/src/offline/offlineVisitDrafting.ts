@@ -14,13 +14,15 @@
 import {
 	saveOfflineDraftDebounced,
 	saveOfflineDraft,
-	getOfflineDraft,
+	loadOfflineDraft,
 	deleteOfflineDraft,
-	getOfflineDraftsByType,
-	type OfflineDraftRecord,
+	listOfflineDrafts,
+	type OfflineDraft,
 } from "../services/offline/offlineStorage.js";
 import { isLowSpecDevice } from "../utils/lowSpecHddOptimizer.js";
 import { logger } from "../utils/logger.js";
+
+export type OfflineDraftRecord<T = unknown> = OfflineDraft<T>;
 
 export interface VisitDraftPayload {
 	readonly patientId: string;
@@ -114,7 +116,7 @@ export async function getVisitDraftOffline(
 	}
 
 	try {
-		const record = await getOfflineDraft<VisitDraftPayload>(key);
+		const record = await loadOfflineDraft<VisitDraftPayload>(key);
 		if (record?.data) {
 			memoryDraftCache.set(key, record.data);
 			return record.data;
@@ -133,14 +135,15 @@ export async function listVisitDraftsOffline(
 	patientId?: string,
 ): Promise<Array<{ key: string; draft: VisitDraftPayload; updatedAt: string }>> {
 	try {
-		const records = await getOfflineDraftsByType<VisitDraftPayload>("DIARY_043_DRAFT");
+		const records = await listOfflineDrafts({ entityType: "DIARY_043_DRAFT" });
 		const results: Array<{ key: string; draft: VisitDraftPayload; updatedAt: string }> = [];
 
 		for (const rec of records) {
-			if (!patientId || rec.entityId === patientId || rec.data?.patientId === patientId) {
+			const data = rec.data as VisitDraftPayload | undefined;
+			if (!patientId || rec.entityId === patientId || data?.patientId === patientId) {
 				results.push({
-					key: rec.id,
-					draft: rec.data,
+					key: rec.draftKey,
+					draft: data ?? ({} as VisitDraftPayload),
 					updatedAt: rec.updatedAt,
 				});
 			}

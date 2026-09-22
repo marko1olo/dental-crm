@@ -48,11 +48,21 @@ export interface QueuedAppointmentMutation {
 // In-memory optimistic schedule cache keyed by YYYY-MM-DD
 const scheduleDateCache = new Map<string, OfflineAppointmentItem[]>();
 
+function getCryptoRandomString(length: number): string {
+	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+		const bytes = new Uint8Array(length);
+		crypto.getRandomValues(bytes);
+		return Array.from(bytes, (b) => (b % 36).toString(36)).join("");
+	}
+	const time = Date.now();
+	return ((time ^ (time >> 3)) % 10000000).toString(36);
+}
+
 /**
  * Generates collision-resistant unique client reference ID for offline appointments.
  */
 export function generateOfflineAppointmentId(): string {
-	const rand = Math.random().toString(36).substring(2, 9);
+	const rand = getCryptoRandomString(7);
 	const time = Date.now().toString(36);
 	return `off_apt_${time}_${rand}`;
 }

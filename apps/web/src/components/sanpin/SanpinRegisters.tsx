@@ -1244,34 +1244,6 @@ function SanpinRegistersInner() {
 									gap: "0.2rem",
 								}}
 							>
-								{/* + Новый цикл (ф. 257/у + ПСО ф. 366/у) */}
-								<button
-									type="button"
-									onClick={() => {
-										setIsExportMenuOpen(false);
-										setIsCycleModalOpen(true);
-									}}
-									className="sanpin-dropdown-item"
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "0.5rem",
-										padding: "0.5rem 0.75rem",
-										borderRadius: "6px",
-										background: "none",
-										border: "none",
-										width: "100%",
-										textAlign: "left",
-										fontSize: "0.825rem",
-										fontWeight: 600,
-										color: "var(--ink, #0f172a)",
-										cursor: "pointer",
-									}}
-									data-testid="sanpin-new-cycle-dropdown-btn"
-								>
-									<Plus size={15} color="var(--teal)" />
-									<span>Новый цикл (ф. 257/у + ПСО ф. 366/у)</span>
-								</button>
 
 								{/* Обновить сводку */}
 								<button
