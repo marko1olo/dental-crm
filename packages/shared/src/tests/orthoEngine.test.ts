@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	ALIGNER_ATTACHMENT_PRESETS,
+	ANB_CLASS_OPTIONS,
+	ANGLE_CLASS_OPTIONS,
 	ANTERIOR_TEETH,
 	ARCHWIRE_MATERIALS,
 	BRACKET_SYSTEMS,
@@ -265,6 +267,70 @@ describe("Orthodontic Engine & 1-Click Protocols (@dental/shared)", () => {
 			assert.ok(note.includes("Раскрутка винта: 1/4 оборота (0.25 мм)"));
 			assert.ok(note.includes("Ношение пластинки строго 20–22 часа в сутки"));
 			assert.equal(RAW_EMOJI_REGEX.test(note), false);
+		});
+
+		it("generates complete Form 043/u note with Angle and ANB skeletal classification", () => {
+			// Class I Norm
+			const noteClass1 = generateOrthodonticSoapNote({
+				dateStr: "06.09.2026",
+				patientName: "Васильев Артем",
+				bracketSystem: "damon_q2",
+				angleClass: "class_1",
+				anbAngle: 2.1,
+				anbClass: "class_1",
+				notes: "Контрольный осмотр. Скелетный класс I (норма).",
+			});
+			assert.ok(noteClass1.includes("Прикус (классификация Энгля): I класс по Энглю"));
+			assert.ok(noteClass1.includes("Сагиттальное соотношение базисов (ТРГ угол ANB): 2.1°"));
+			assert.ok(noteClass1.includes("Скелетный класс I"));
+			assert.equal(RAW_EMOJI_REGEX.test(noteClass1), false);
+
+			// Class II Distal (ANB > 4°)
+			const noteClass2 = generateOrthodonticSoapNote({
+				bracketSystem: "damon_q2",
+				angleClass: "class_2_div_1",
+				anbAngle: 5.5,
+				anbClass: "class_2",
+			});
+			assert.ok(noteClass2.includes("II класс 1 подкласс"));
+			assert.ok(noteClass2.includes("5.5°"));
+			assert.ok(noteClass2.includes("Скелетный класс II (сагиттальное опережение ВЧ / дистальный базис)"));
+
+			// Class III Mesial (ANB < 0°)
+			const noteClass3 = generateOrthodonticSoapNote({
+				bracketSystem: "damon_q2",
+				angleClass: "class_3",
+				anbAngle: -1.8,
+				anbClass: "class_3",
+			});
+			assert.ok(noteClass3.includes("III класс по Энглю"));
+			assert.ok(noteClass3.includes("-1.8°"));
+			assert.ok(noteClass3.includes("Скелетный класс III (сагиттальное опережение НЧ / мезиальный базис)"));
+		});
+	});
+
+	describe("5. ANB Skeletal & Angle Classification Catalogs", () => {
+		it("provides all 3 canonical ANB skeletal classes (I, II, III)", () => {
+			assert.equal(ANB_CLASS_OPTIONS.length, 3);
+			const class1 = ANB_CLASS_OPTIONS.find((c) => c.id === "class_1");
+			const class2 = ANB_CLASS_OPTIONS.find((c) => c.id === "class_2");
+			const class3 = ANB_CLASS_OPTIONS.find((c) => c.id === "class_3");
+			assert.ok(class1 && class1.typicalDegrees === 2);
+			assert.ok(class2 && class2.typicalDegrees === 5);
+			assert.ok(class3 && class3.typicalDegrees === -2);
+		});
+
+		it("contains zero raw emojis in ANB and Angle option descriptions", () => {
+			for (const opt of ANB_CLASS_OPTIONS) {
+				assert.equal(RAW_EMOJI_REGEX.test(opt.label), false);
+				assert.equal(RAW_EMOJI_REGEX.test(opt.shortLabel), false);
+				assert.equal(RAW_EMOJI_REGEX.test(opt.desc), false);
+			}
+			for (const opt of ANGLE_CLASS_OPTIONS) {
+				assert.equal(RAW_EMOJI_REGEX.test(opt.label), false);
+				assert.equal(RAW_EMOJI_REGEX.test(opt.shortLabel), false);
+				assert.equal(RAW_EMOJI_REGEX.test(opt.desc), false);
+			}
 		});
 	});
 });

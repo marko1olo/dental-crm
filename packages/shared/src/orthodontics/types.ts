@@ -43,6 +43,17 @@ export interface AngleClassOption {
 	desc: string;
 }
 
+export type AnbClass = "class_1" | "class_2" | "class_3";
+
+export interface AnbClassOption {
+	id: AnbClass;
+	label: string;
+	shortLabel: string;
+	desc: string;
+	normRange: string;
+	typicalDegrees: number;
+}
+
 export interface WorkhorseArchwireOption {
 	id: string;
 	label: string;
@@ -111,6 +122,8 @@ export interface OrthodonticQuickPreset {
 	teeth?: number[];
 	notes: string;
 	angleClass?: AngleClass;
+	anbClass?: AnbClass;
+	anbAngle?: number;
 }
 
 export interface OrthodonticSoapParams {
@@ -134,4 +147,6 @@ export interface OrthodonticSoapParams {
 	alignerSetIssued?: { count: number; days: number } | null;
 	plateActivationTurns?: number;
 	angleClass?: AngleClass;
+	anbClass?: AnbClass;
+	anbAngle?: number;
 }

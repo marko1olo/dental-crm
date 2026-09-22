@@ -96,6 +96,9 @@ registerHooks({
 				`),
 			};
 		}
+		if (specifier === "@dental/shared") {
+			return nextResolve(new URL("../../packages/shared/src/index.ts", import.meta.url).href, context);
+		}
 		return nextResolve(specifier, context);
 	},
 	load(url, context, nextLoad) {

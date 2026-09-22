@@ -1,6 +1,7 @@
 import {
 	Activity,
 	Calendar,
+	Camera,
 	Check,
 	CheckCircle2,
 	Copy,
@@ -20,15 +21,19 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import {
+	ANB_CLASS_OPTIONS,
+	type AnbClass,
+	type AnbClassOption,
 	ANGLE_CLASS_OPTIONS,
 	type AngleClass,
 	type AngleClassOption,
 	WORKHORSE_ARCHWIRES,
 	type WorkhorseArchwireOption,
 } from "@dental/shared";
+import { OrthodonticPhotoProtocolModal } from "../diagnostics/OrthodonticPhotoProtocolModal";
 
-export { ANGLE_CLASS_OPTIONS, WORKHORSE_ARCHWIRES };
-export type { AngleClass, AngleClassOption, WorkhorseArchwireOption };
+export { ANB_CLASS_OPTIONS, ANGLE_CLASS_OPTIONS, WORKHORSE_ARCHWIRES };
+export type { AnbClass, AnbClassOption, AngleClass, AngleClassOption, WorkhorseArchwireOption };
 
 export type OrthodonticStageFilter =
 	| "all"
@@ -551,9 +556,15 @@ export function OrthodonticVisitProtocolWidget({
 	const [activeAttachmentPreset, setActiveAttachmentPreset] = useState<string | null>(null);
 	const [alignerSetIssued, setAlignerSetIssued] = useState<{ count: number; days: number } | null>(null);
 
-	// Angle Classification State & Plate Activation
+	// Angle & ANB Sagittal Skeletal Classification State (1-Click Autonomy)
 	const [angleClass, setAngleClass] = useState<AngleClass>("class_1");
+	const [anbClass, setAnbClass] = useState<AnbClass>("class_1");
+	const [anbAngle, setAnbAngle] = useState<number>(2.0);
 	const [plateActivationTurns, setPlateActivationTurns] = useState<number>(1);
+
+	// 1-Click Photo Protocol State (8 Angles ABO)
+	const [isPhotoProtocolOpen, setIsPhotoProtocolOpen] = useState<boolean>(false);
+	const [isPhotoProtocolCompleted, setIsPhotoProtocolCompleted] = useState<boolean>(false);
 
 	// Hick's Law: Orthodontic Stages Filter Bar State (32–36px)
 	const [stageFilter, setStageFilter] = useState<OrthodonticStageFilter>("all");
@@ -862,10 +873,107 @@ export function OrthodonticVisitProtocolWidget({
 
 	const handlePresetAlignerLabOrder = () => {
 		setActivePreset(null);
+		const orderNumber = `ЗТЛ-ОРТО-${Date.now().toString().slice(-6)}`;
+		const teethList =
+			selectedTeeth.length > 0
+				? selectedTeeth.map(String)
+				: ["17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27", "37", "36", "35", "34", "33", "32", "31", "41", "42", "43", "44", "45", "46", "47"];
+
+		const labOrderPayload = {
+			orderNumber,
+			createdAt: new Date().toISOString(),
+			teeth: teethList,
+			jawScope: targetArch === "upper" ? "upper" : targetArch === "lower" ? "lower" : "both",
+			constructionType: "aligner_nightguard",
+			prostheticTypeId: "orthodontic_aligners_set",
+			material: "aligner_polyurethane_duran",
+			doctorNotes: `1-клик наряд ЗТЛ на элайнеры (полный сет). Пациент: ${patientName}. Этап: ортодонтическая коррекция. Срок: 5-7 раб. дней. Без бюрократических блокировок (Мандат 8e).`,
+			overrideActive: true,
+			overrideReason: "Мандат 8e: прямое создание наряда ЗТЛ ортодонтом без блокировок и ожидания согласований",
+		};
+
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-lab-order-created", {
+					detail: labOrderPayload,
+				}),
+			);
+		}
+
 		setNotes(
-			"Сняты высокоточные оптические оттиски (3D интраоральное сканирование) для изготовления комплекта ортодонтических элайнеров / ретенционных капп в ЗТЛ. Наряд сформирован (срок 5 рабочих дней). План лечения активен без бюрократических согласований."
+			`Сняты высокоточные оптические оттиски (3D интраоральное сканирование) для изготовления комплекта ортодонтических элайнеров. Сформирован наряд ЗТЛ №${orderNumber} (материал: полиуретан Duran / Zendura). План лечения активен без бюрократических согласований (Мандат 8e).`,
 		);
-		showToast("1-клик: Наряд на каппы/элайнеры в ЗТЛ сформирован", "success");
+		showToast(`Наряд ЗТЛ №${orderNumber} на комплект элайнеров успешно отправлен!`, "success", 4000);
+	};
+
+	const handlePresetRetainerLabOrder = () => {
+		setActivePreset(null);
+		const orderNumber = `ЗТЛ-ОРТО-${Date.now().toString().slice(-6)}`;
+		const teethList =
+			selectedTeeth.length > 0
+				? selectedTeeth.map(String)
+				: ["13", "12", "11", "21", "22", "23", "33", "32", "31", "41", "42", "43"];
+
+		const labOrderPayload = {
+			orderNumber,
+			createdAt: new Date().toISOString(),
+			teeth: teethList,
+			jawScope: targetArch === "upper" ? "upper" : targetArch === "lower" ? "lower" : "both",
+			constructionType: "splint_nightguard",
+			prostheticTypeId: "orthodontic_retention_splint",
+			material: "aligner_polyurethane_duran",
+			doctorNotes: `1-клик наряд ЗТЛ на ретенционный аппарат (ретенционная каппа / несъемный проволочный ретейнер). Пациент: ${patientName}. Мандат 8e: немедленная отправка в лабораторию.`,
+			overrideActive: true,
+			overrideReason: "Мандат 8e: прямое создание наряда ЗТЛ ортодонтом без блокировок",
+		};
+
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-lab-order-created", {
+					detail: labOrderPayload,
+				}),
+			);
+		}
+
+		setNotes(
+			`Сняты оттиски/сканы для изготовления ретенционного аппарата (ретенционная каппа / проволочный ретейнер). Сформирован наряд ЗТЛ №${orderNumber}. Ретенционный период начат (Мандат 8e).`,
+		);
+		showToast(`Наряд ЗТЛ №${orderNumber} на ретенционный аппарат отправлен!`, "success", 4000);
+	};
+
+	const handlePresetPlateLabOrder = () => {
+		setActivePreset(null);
+		const orderNumber = `ЗТЛ-ОРТО-${Date.now().toString().slice(-6)}`;
+		const teethList =
+			selectedTeeth.length > 0
+				? selectedTeeth.map(String)
+				: ["16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26"];
+
+		const labOrderPayload = {
+			orderNumber,
+			createdAt: new Date().toISOString(),
+			teeth: teethList,
+			jawScope: targetArch === "lower" ? "lower" : "upper",
+			constructionType: "removable_plates",
+			prostheticTypeId: "orthodontic_expansion_plate",
+			material: "orthodontic_acrylic_leocryl",
+			doctorNotes: `1-клик наряд ЗТЛ на съемный пластиночный аппарат с расширяющим винтом Бертони/Хааса. Пациент: ${patientName}. Мандат 8e: немедленная отправка в лабораторию.`,
+			overrideActive: true,
+			overrideReason: "Мандат 8e: прямое создание наряда ЗТЛ ортодонтом без блокировок",
+		};
+
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-lab-order-created", {
+					detail: labOrderPayload,
+				}),
+			);
+		}
+
+		setNotes(
+			`Сняты анатомические оттиски для изготовления съемного пластиночного аппарата с расширяющим винтом. Сформирован наряд ЗТЛ №${orderNumber} (материал: акрил Leocryl). Мандат 8e: отправка без бюрократических задержек.`,
+		);
+		showToast(`Наряд ЗТЛ №${orderNumber} на расширяющую пластинку отправлен!`, "success", 4000);
 	};
 
 	// Aligner Attachments 1-Click Handlers (Mandates 8e, 8k, 8n)
@@ -1037,6 +1145,11 @@ export function OrthodonticVisitProtocolWidget({
 			? `• Прикус (классификация Энгля): ${angleObj.label}.\n`
 			: "• Прикус (классификация Энгля): I класс по Энглю (нейтральный прикус).\n";
 
+		const anbObj = ANB_CLASS_OPTIONS.find((a) => a.id === anbClass);
+		const anbText = anbObj
+			? `• Скелетный класс (Steiner ANB): ${anbObj.label} (угол ANB: ${anbAngle.toFixed(1)}°).\n`
+			: `• Скелетный класс (Steiner ANB): I класс (норма, угол ANB: ${anbAngle.toFixed(1)}°).\n`;
+
 		let elasticsText = "Межчелюстная тяга не назначена.";
 		if (elasticScheme !== "none") {
 			elasticsText = `Межчелюстные эластики: ${elasticObj?.label || ""} (${elasticSizeObj?.label || ""}, ${elasticSizeObj?.strength || ""}). Режим ношения: ${elasticWear}.`;
@@ -1103,7 +1216,7 @@ export function OrthodonticVisitProtocolWidget({
 ${notes || "Плановый визит по графику ортодонтического лечения. Жалоб на острую боль и отклейку аппаратуры нет."}
 
 2. ОБЪЕКТИВНЫЙ СТАТУС:
-${angleText}• Аппаратура: ${
+${angleText}${anbText}• Аппаратура: ${
 	bracketSystem === "aligners"
 		? "Ортодонтические элайнеры (каппы с аттачментами)"
 		: bracketSystem === "removable_plate"
@@ -1113,7 +1226,7 @@ ${angleText}• Аппаратура: ${
 • Зона фиксации/активации (зубы): ${teethListStr}.
 ${attachmentText ? `${attachmentText}\n` : ""}${alignerTrackerText ? `${alignerTrackerText}\n` : ""}${alignerSetText ? `${alignerSetText}\n` : ""}${archwireText}${separationText}
 ${torqueAngulationText ? `${torqueAngulationText}\n` : ""}• Фиксация аппаратуры стабильна, окклюзионных контактов с замками/каппами не выявлено.
-• Фотопротокол: опционален (Мандат 8e: отсутствие фото не блокирует приём).
+• Фотопротокол: ${isPhotoProtocolCompleted ? "выполнен (8 ракурсов ABO: анфас, профиль, улыбка, окклюзия)" : "опционален (Мандат 8e: отсутствие фото не блокирует приём)"}.
 
 3. ПРОВЕДЁННОЕ ЛЕЧЕНИЕ:
 • Выполненные манипуляции: ${actionsListStr || (activeAttachmentPreset ? currentAttachmentObj?.shortLabel : "Активация аппаратуры")}.${powerChainText}
@@ -1140,6 +1253,9 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 		patientName,
 		notes,
 		angleClass,
+		anbClass,
+		anbAngle,
+		isPhotoProtocolCompleted,
 		bracketSlot,
 		bracketSystem,
 		archwireMaterial,
@@ -1552,15 +1668,50 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 						{/* Mandate 8e: Doctor Autonomy & Photo Protocol Optionality Banner */}
 						<div
 							data-testid="photo-protocol-optional-badge"
-							className="flex items-center justify-between p-2 rounded-lg bg-teal-500/10 dark:bg-teal-950/30 border border-teal-500/20 text-xs flex-wrap gap-1"
+							className="flex items-center justify-between p-2 rounded-lg bg-teal-500/10 dark:bg-teal-950/30 border border-teal-500/20 text-xs flex-wrap gap-2"
 						>
 							<div className="flex items-center gap-1.5 text-teal-800 dark:text-teal-200 font-bold text-[11px]">
 								<CheckCircle2 size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
 								<span>Автономия врача: фотопротокол опционален (отсутствие фото не блокирует приём)</span>
 							</div>
-							<span className="text-[10px] text-teal-700 dark:text-teal-300 font-mono font-medium">
-								Мандат 8e / 0 disabled кнопок
-							</span>
+							<div className="flex items-center gap-2 flex-wrap">
+								<button
+									type="button"
+									onClick={() => setIsPhotoProtocolOpen(true)}
+									data-testid="ortho-open-photo-protocol-btn"
+									className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-300 border border-teal-300 dark:border-teal-700 hover:bg-teal-50 dark:hover:bg-slate-800 cursor-pointer min-h-[32px] transition-colors"
+									title="Открыть фотопротокол ортодонтии (8 ракурсов ABO: анфас, профиль, улыбка, окклюзия)"
+								>
+									<Camera size={13} className="text-teal-600 dark:text-teal-400" />
+									<span>{isPhotoProtocolCompleted ? "Фотопротокол (8/8)" : "Фотопротокол (8 ракурсов ABO)"}</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setIsPhotoProtocolCompleted((prev) => !prev);
+										showToast(
+											!isPhotoProtocolCompleted
+												? "1-клик: Фотопротокол зафиксирован (8 ракурсов ABO подтверждены)"
+												: "Статус фотопротокола сброшен",
+											"info",
+											2500,
+										);
+									}}
+									data-testid="ortho-confirm-photos-1click-btn"
+									className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border cursor-pointer min-h-[32px] transition-colors ${
+										isPhotoProtocolCompleted
+											? "bg-teal-600 text-white border-teal-700"
+											: "bg-teal-50 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800 hover:bg-teal-100"
+									}`}
+									title="1-клик экспресс-подтверждение съемки фотопротокола"
+								>
+									<Check size={12} />
+									<span>{isPhotoProtocolCompleted ? "Снято" : "1-клик подтвердить"}</span>
+								</button>
+								<span className="text-[10px] text-teal-700 dark:text-teal-300 font-mono font-medium">
+									Мандат 8e / 0 disabled кнопок
+								</span>
+							</div>
 						</div>
 
 						{/* 0. Autonomous 1-Click Clinical Presets Panel */}
@@ -1733,7 +1884,45 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 											1-клик: Наряд ЗТЛ (Элайнеры / Каппа)
 										</div>
 										<div className="text-[10px] truncate text-slate-500 dark:text-slate-400">
-											(срок 5 раб. дней, без задержек и согласований)
+											(полный сет капп, срок 5-7 раб. дней)
+										</div>
+									</div>
+								</button>
+
+								<button
+									type="button"
+									onClick={handlePresetRetainerLabOrder}
+									data-testid="ortho-preset-retainer-lab-order"
+									className="min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-white dark:bg-slate-900 border-teal-500/40 hover:border-teal-500 text-slate-800 dark:text-slate-100"
+								>
+									<div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-teal-500/15 text-teal-600 dark:text-teal-400">
+										<CheckCircle2 size={14} />
+									</div>
+									<div className="min-w-0 flex-1">
+										<div className="text-xs font-bold leading-tight text-teal-700 dark:text-teal-300">
+											1-клик: Наряд ЗТЛ (Ретейнер / Каппа)
+										</div>
+										<div className="text-[10px] truncate text-slate-500 dark:text-slate-400">
+											(ретенционная каппа / дуга)
+										</div>
+									</div>
+								</button>
+
+								<button
+									type="button"
+									onClick={handlePresetPlateLabOrder}
+									data-testid="ortho-preset-plate-lab-order"
+									className="min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-white dark:bg-slate-900 border-teal-500/40 hover:border-teal-500 text-slate-800 dark:text-slate-100"
+								>
+									<div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-teal-500/15 text-teal-600 dark:text-teal-400">
+										<Layers size={14} />
+									</div>
+									<div className="min-w-0 flex-1">
+										<div className="text-xs font-bold leading-tight text-teal-700 dark:text-teal-300">
+											1-клик: Наряд ЗТЛ (Пластинка с винтом)
+										</div>
+										<div className="text-[10px] truncate text-slate-500 dark:text-slate-400">
+											(расширяющий аппарат Хааса / Бертони)
 										</div>
 									</div>
 								</button>
@@ -2055,8 +2244,10 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 										type="button"
 										onClick={() => {
 											setAngleClass("class_1");
+											setAnbClass("class_1");
+											setAnbAngle(2.0);
 											setElasticScheme("none");
-											setNotes("Скелетный класс I по Энглю, соотношение моляров и клыков нейтральное. Патологии смыкания не выявлено (физиологическая норма).");
+											setNotes("Скелетный класс I по Энглю и Steiner (ANB 2.0°), соотношение моляров и клыков нейтральное. Патологии смыкания не выявлено (физиологическая норма).");
 											showToast("1-клик норма: Скелетный класс I / Физиологический прикус", "success", 2500);
 										}}
 										className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 cursor-pointer min-h-[36px]"
@@ -2091,6 +2282,66 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 											<span className="text-xs font-bold leading-tight">{opt.shortLabel}</span>
 											<span className={`text-[10px] truncate w-full ${isSelected ? "text-blue-100" : "text-slate-400"}`}>
 												{opt.id === "class_1" ? "Нейтральный" : opt.id === "class_2_div_1" ? "Протрузия" : opt.id === "class_2_div_2" ? "Ретрузия" : "Мезиальный"}
+											</span>
+										</button>
+									);
+								})}
+							</div>
+						</div>
+
+						{/* 0.85 1-Click Steiner ANB Sagittal Skeletal Classification Bar (I, II, III) */}
+						<div
+							data-testid="ortho-anb-class-selector"
+							className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2"
+						>
+							<div className="flex items-center justify-between flex-wrap gap-1.5">
+								<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
+									<Activity size={14} className="text-indigo-500" />
+									Скелетный класс по Steiner (угол ANB)
+								</span>
+								<div className="flex items-center gap-2">
+									<button
+										type="button"
+										onClick={() => {
+											setAnbClass("class_1");
+											setAnbAngle(2.0);
+											showToast("1-клик норма: Скелетный класс I (ANB 2.0°)", "success", 2500);
+										}}
+										className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 cursor-pointer min-h-[36px]"
+										data-testid="anb-class-norm-1click-btn"
+										title="1 клик: Скелетный класс I по Steiner (норма ANB 2° ± 2°)"
+									>
+										<CheckCircle2 size={12} />
+										<span>Норма (ANB I: 2.0°)</span>
+									</button>
+									<span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
+										{ANB_CLASS_OPTIONS.find((a) => a.id === anbClass)?.shortLabel} ({anbAngle.toFixed(1)}°)
+									</span>
+								</div>
+							</div>
+
+							<div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+								{ANB_CLASS_OPTIONS.map((opt) => {
+									const isSelected = anbClass === opt.id;
+									return (
+										<button
+											key={opt.id}
+											type="button"
+											onClick={() => {
+												setAnbClass(opt.id);
+												setAnbAngle(opt.anbDegrees);
+											}}
+											data-testid={`anb-class-${opt.id}-btn`}
+											className={`min-h-[44px] px-2 py-1.5 rounded-xl border text-center flex flex-col items-center justify-center transition-all cursor-pointer ${
+												isSelected
+													? "bg-indigo-600 text-white border-indigo-700 font-black shadow-xs ring-1 ring-indigo-400"
+													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+											}`}
+											title={opt.description}
+										>
+											<span className="text-xs font-bold leading-tight">{opt.shortLabel}</span>
+											<span className={`text-[10px] truncate w-full ${isSelected ? "text-indigo-100" : "text-slate-400"}`}>
+												{opt.id === "class_1" ? "Норма 2° (0°..4°)" : opt.id === "class_2" ? "Дистальный >4°" : "Мезиальный <0°"}
 											</span>
 										</button>
 									);
@@ -2698,6 +2949,21 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 					</div>
 				</div>
 			</div>
+			{isPhotoProtocolOpen && (
+				<OrthodonticPhotoProtocolModal
+					isOpen={isPhotoProtocolOpen}
+					onClose={() => setIsPhotoProtocolOpen(false)}
+					patientId={_patientId || ""}
+					patientName={patientName}
+					doctorName={doctorName}
+					clinicName={clinicName}
+					onSaveSession={() => {
+						setIsPhotoProtocolCompleted(true);
+						setIsPhotoProtocolOpen(false);
+						showToast("Фотопротокол сохранен (8 ракурсов ABO зафиксированы)", "success");
+					}}
+				/>
+			)}
 		</div>
 	);
 }

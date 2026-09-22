@@ -5,6 +5,7 @@ import { renderToString } from "react-dom/server";
 import {
 	ALIGNER_804N_SERVICES,
 	ALIGNER_ATTACHMENT_PRESETS,
+	ANB_CLASS_OPTIONS,
 	ANGLE_CLASS_OPTIONS,
 	ANGULATION_PRESETS,
 	ARCHWIRE_MATERIALS,
@@ -572,6 +573,54 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 			assert.ok("separation" in ORTHO_804N_ACTIONS_MAP);
 			const sepServices = ORTHO_804N_ACTIONS_MAP.separation;
 			assert.ok(sepServices.some((s) => s.code === "A16.07.048.003"));
+		});
+	});
+
+	describe("Wave 250 Orthodontic Autonomy, Steiner ANB & 1-Click ZTL Lab Orders", () => {
+		it("renders 1-click Steiner ANB classification bar with classes I, II, III and norm button", () => {
+			const html = renderToString(
+				<OrthodonticVisitProtocolWidget isOpen={true} onClose={() => {}} />,
+			);
+
+			assert.ok(html.includes("data-testid=\"ortho-anb-class-selector\""));
+			assert.ok(html.includes("data-testid=\"anb-class-norm-1click-btn\""));
+			assert.ok(html.includes("data-testid=\"anb-class-class_1-btn\""));
+			assert.ok(html.includes("data-testid=\"anb-class-class_2-btn\""));
+			assert.ok(html.includes("data-testid=\"anb-class-class_3-btn\""));
+			assert.ok(html.includes("Скелетный класс по Steiner"));
+			assert.ok(html.includes("ANB I (Норма)"));
+			assert.ok(html.includes("ANB II (Дистальный)"));
+			assert.ok(html.includes("ANB III (Мезиальный)"));
+
+			// Check exports
+			assert.equal(ANB_CLASS_OPTIONS.length, 3);
+			assert.equal(ANB_CLASS_OPTIONS[0]?.id, "class_1");
+			assert.equal(ANB_CLASS_OPTIONS[1]?.id, "class_2");
+			assert.equal(ANB_CLASS_OPTIONS[2]?.id, "class_3");
+		});
+
+		it("renders 1-click photo protocol launch and express confirm buttons in autonomy banner", () => {
+			const html = renderToString(
+				<OrthodonticVisitProtocolWidget isOpen={true} onClose={() => {}} />,
+			);
+
+			assert.ok(html.includes("data-testid=\"ortho-open-photo-protocol-btn\""));
+			assert.ok(html.includes("data-testid=\"ortho-confirm-photos-1click-btn\""));
+			assert.ok(html.includes("Фотопротокол (8 ракурсов ABO)"));
+			assert.ok(html.includes("1-клик подтвердить"));
+		});
+
+		it("renders 1-click ZTL lab order buttons for aligners, retainers, and expansion plates", () => {
+			const html = renderToString(
+				<OrthodonticVisitProtocolWidget isOpen={true} onClose={() => {}} />,
+			);
+
+			assert.ok(html.includes("data-testid=\"ortho-preset-aligner-lab-order\""));
+			assert.ok(html.includes("data-testid=\"ortho-preset-retainer-lab-order\""));
+			assert.ok(html.includes("data-testid=\"ortho-preset-plate-lab-order\""));
+			assert.ok(html.includes("1-клик: Наряд ЗТЛ (Элайнеры / Каппа)"));
+			assert.ok(html.includes("1-клик: Наряд ЗТЛ (Ретейнер / Каппа)"));
+			assert.ok(html.includes("1-клик: Наряд ЗТЛ (Пластинка с винтом)"));
 		});
 	});
 });

@@ -6375,3 +6375,41 @@
   - `apps/web/src/components/surgery/__tests__/surgeryProtocols.test.ts`
   - `apps/web/src/components/surgery/__tests__/surgeryCockpitModal.test.tsx` (коммиты `61eabcef3`, `04c894b64`, `257d0fbba`, Wave 281)
 
+### 2.10.382. Wave 282: Ортодонтия — 1-клик фотопротокол (8 ракурсов ABO), скелетная классификация Steiner ANB (I, II, III), экспресс-наряды ЗТЛ и ликвидация академических симуляторов (Мандаты 8e, 8h, 8i, 8k, 8n, 8s, 8t) (Фича #390)
+- **Функционал**:
+  1. *Ликвидация академического блоата и процедурных симуляторов (Мандаты 8i, 8k, 8s)*:
+     - Проведен аудит модуля ортодонтии: подтверждено полное отсутствие тяжелых процедурных симуляторов изгиба проволочных дуг, 100-точечных цефалометрических тренажеров и фальшивых физических анимаций;
+     - Все расчеты ТРГ боковой проекции опираются на O(1) замкнутую векторную геометрию (`cephalometricMath.ts`, 16 анатомических ориентиров, пресеты Steiner/Tweed/Downs/Ricketts);
+  2. *Скелетная сагиттальная классификация Steiner ANB (I, II, III) (Мандаты 8e, 8k)*:
+     - В `packages/shared/src/orthodontics/types.ts` и `orthoEngine.ts` добавлены типы `AnbClass`, `AnbClassOption`, каталог `ANB_CLASS_OPTIONS` (ANB I норма 2.0° ± 2°, ANB II дистальный 5.0°, ANB III мезиальный -2.0°) без сырых эмодзи по Закону 7 смертных грехов (Грех 7);
+     - Генератор дневника ортодонтического приёма ЭМК 043/у `generateOrthodonticSoapNote` дополнен разделом объективного статуса со Steiner ANB и Энглем;
+     - Все 21/21 тест `packages/shared/src/tests/orthoEngine.test.ts` проходят на 100% PASS;
+  3. *Пресеты зуботехнической лаборатории ЗТЛ для ортодонтии (Мандаты 8e, 8n)*:
+     - В `apps/web/src/components/lab/orders/labWorkOrderPresets.ts` добавлены новые типы конструкций `orthodontic_aligners_set` (набор элайнеров), `orthodontic_retention_splint` (ретенционная каппа / шина), `orthodontic_expansion_plate` (съемный пластиночный аппарат с расширяющим винтом), категория `orthodontic`, и материалы `aligner_polyurethane_duran` и `orthodontic_acrylic_leocryl`;
+  4. *Ортодонтический протокол приёма OrthodonticVisitProtocolWidget (Мандаты 8e, 8k, 8n)*:
+     - Внедрен 1-клик селектор скелетного класса Steiner ANB (`ortho-anb-class-selector`) с экспресс-кнопкой нормы `anb-class-norm-1click-btn` (ANB I: 2.0°);
+     - Кнопка нормы прикуса по Энглю (`angle-class-norm-1click-btn`) обновлена: в 1 клик выставляет норму для обоих классификаторов (Энгль I + Steiner ANB 2.0°);
+     - В баннер автономии врача добавлены кнопки `ortho-open-photo-protocol-btn` (открытие `OrthodonticPhotoProtocolModal` с 8 ракурсами ABO) и `ortho-confirm-photos-1click-btn` (1-клик фиксация съемки); подтверждение статуса фотопротокола динамически отражается в дневнике 043/у; при этом отсутствие фото не блокирует завершение приёма (Мандат 8e);
+     - В быстрые пресеты нарядов ЗТЛ добавлены 1-клик наряд на элайнеры `ortho-preset-aligner-lab-order`, наряд на ретейнер `ortho-preset-retainer-lab-order` и наряд на расширяющую пластинку `ortho-preset-plate-lab-order` с немедленным диспатчем `dente-lab-order-created` и флагом `overrideActive: true` (Мандат 8e: прямое создание наряда ортодонтом без задержек и ожидания согласований);
+     - Все 30/30 тестов `apps/web/src/components/orthodontics/__tests__/OrthodonticVisitProtocolWidget.test.tsx` и 31/31 тестов цефалометрии проходят на 100% PASS;
+  5. *Закон Единого Неделимого Авторитета (Мандат 8s)*:
+     - Развернут 7-строчный прозрачный фасад `apps/web/src/components/ortho/index.ts` (`export * from "../orthodontics/index";`), гарантирующий согласованность путей импорта с нулевым дублированием кода;
+  6. *Fastify API: маршруты ортодонтии и изоляция арендаторов (Мандаты 8e, 8n)*:
+     - В `apps/api/src/tests/routes/orthodonticsRoutes.test.ts` реализован тестовый набор на 6 сценариев (GET progress, POST aligners/issue-set, POST archwire-change, POST ligatures-activate, POST stages/advance, tenant isolation 404);
+     - Все 6/6 тестов API проходят на 100% PASS;
+  7. *Защита хост-машины и компилятора (Мандат 8t)*:
+     - Субагентом соблюден строгий запрет на запуск `tsc` и `npm run build`. Кодировка проверена централизованно через `npm run check:encoding` (0 ошибок, 4970 файлов).
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `packages/shared/src/orthodontics/types.ts`
+  - `packages/shared/src/orthodontics/orthoEngine.ts`
+  - `packages/shared/src/tests/orthoEngine.test.ts`
+  - `apps/web/src/components/lab/orders/labWorkOrderPresets.ts`
+  - `apps/web/src/components/orthodontics/OrthodonticVisitProtocolWidget.tsx`
+  - `apps/web/src/components/orthodontics/index.ts`
+  - `apps/web/src/components/ortho/index.ts`
+  - `apps/web/src/components/orthodontics/__tests__/OrthodonticVisitProtocolWidget.test.tsx`
+  - `apps/web/testCssStub.mjs`
+  - `apps/api/src/routes/orthodontics.ts`
+  - `apps/api/src/tests/routes/orthodonticsRoutes.test.ts`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`

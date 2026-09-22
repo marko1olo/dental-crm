@@ -16,7 +16,10 @@ export type ProstheticTypeId =
 	| 'implant_screw_retained_crown' // Коронка на имплантате с винтовой фиксацией (Ti-base + ZrO₂)
 	| 'removable_clasp_prosthesis'   // Бюгельный протез с кламмерной/замковой фиксацией Bredent
 	| 'all_on_4_hybrid'              // Условно-съемный протез на титановой балке All-on-4 / All-on-6
-	| 'surgical_guide_3d';           // Навигационный хирургический шаблон с титановыми втулками
+	| 'surgical_guide_3d'            // Навигационный хирургический шаблон с титановыми втулками
+	| 'orthodontic_aligners_set'     // Комплект ортодонтических элайнеров CAD/CAM (1 клик)
+	| 'orthodontic_retention_splint' // Ретенционная прозрачная каппа / вакуум-сплинт
+	| 'orthodontic_expansion_plate'; // Съемная пластинка с расширяющим винтом
 
 export type ProstheticCategory =
 	| 'fixed'
@@ -24,7 +27,8 @@ export type ProstheticCategory =
 	| 'implant'
 	| 'removable'
 	| 'implant_full_arch'
-	| 'digital_cad';
+	| 'digital_cad'
+	| 'orthodontic';
 
 export interface ProstheticTypeDefinition {
 	id: ProstheticTypeId;
@@ -187,6 +191,54 @@ export const PROSTHETIC_TYPES: Record<ProstheticTypeId, ProstheticTypeDefinition
 		requiresFittingStage: false,
 		defaultPriceClinicRub: 15000,
 		defaultCostLabRub: 5000
+	},
+	orthodontic_aligners_set: {
+		id: 'orthodontic_aligners_set',
+		nameRu: 'Комплект ортодонтических элайнеров 3D CAD/CAM (1 клик)',
+		shortNameRu: 'Элайнеры CAD/CAM',
+		category: 'orthodontic',
+		categoryNameRu: 'Ортодонтия и элайнеры',
+		descriptionRu: 'Набор прецизионных прозрачных элайнеров из термопластического полиуретана по виртуальному 3D-сетапу.',
+		icon: 'sparkles',
+		defaultMaterialId: 'aligner_polyurethane_duran',
+		standardTurnaroundWorkingDays: 5,
+		requiresStumpShade: false,
+		requiresImplantSystem: false,
+		requiresFittingStage: false,
+		defaultPriceClinicRub: 60000,
+		defaultCostLabRub: 22000
+	},
+	orthodontic_retention_splint: {
+		id: 'orthodontic_retention_splint',
+		nameRu: 'Ретенционная прозрачная каппа / вакуум-сплинт',
+		shortNameRu: 'Ретенционная каппа',
+		category: 'orthodontic',
+		categoryNameRu: 'Ортодонтия и элайнеры',
+		descriptionRu: 'Вакуумформованная прозрачная ретенционная каппа толщиной 1.0 мм для стабилизации результатов лечения.',
+		icon: 'shield',
+		defaultMaterialId: 'aligner_polyurethane_duran',
+		standardTurnaroundWorkingDays: 3,
+		requiresStumpShade: false,
+		requiresImplantSystem: false,
+		requiresFittingStage: false,
+		defaultPriceClinicRub: 7000,
+		defaultCostLabRub: 2500
+	},
+	orthodontic_expansion_plate: {
+		id: 'orthodontic_expansion_plate',
+		nameRu: 'Съемная ортодонтическая пластинка с расширяющим винтом',
+		shortNameRu: 'Пластинка с винтом',
+		category: 'orthodontic',
+		categoryNameRu: 'Ортодонтия и элайнеры',
+		descriptionRu: 'Акриловый съемный аппарат с кламмерами Адамса, вестибулярной дугой и расширяющим винтом Бертони/Хааса.',
+		icon: 'sliders',
+		defaultMaterialId: 'orthodontic_acrylic_leocryl',
+		standardTurnaroundWorkingDays: 6,
+		requiresStumpShade: false,
+		requiresImplantSystem: false,
+		requiresFittingStage: true,
+		defaultPriceClinicRub: 14000,
+		defaultCostLabRub: 5000
 	}
 };
 
@@ -274,6 +326,22 @@ export const LAB_MATERIALS: Record<string, DentalLabMaterial> = {
 		manufacturerRu: 'Dentsply Sirona / BEGO Wirobond',
 		strengthMpa: 650,
 		indicationsRu: 'Классические металлокерамические коронки и мостовидные конструкции.',
+		isBiocompatible: true
+	},
+	aligner_polyurethane_duran: {
+		id: 'aligner_polyurethane_duran',
+		nameRu: 'Термопластический полиуретан / PETG (Duran / Erkodur 0.75-1.0 мм)',
+		manufacturerRu: 'Scheu Dental / Erkodent',
+		strengthMpa: 95,
+		indicationsRu: 'Ортодонтические элайнеры, ретенционные каппы, бруксо-сплинты.',
+		isBiocompatible: true
+	},
+	orthodontic_acrylic_leocryl: {
+		id: 'orthodontic_acrylic_leocryl',
+		nameRu: 'Ортодонтический акрил холодной полимеризации Leocryl + винт Бертони',
+		manufacturerRu: 'Dentaurum / Leone',
+		strengthMpa: 85,
+		indicationsRu: 'Съемные ортодонтические пластинки с расширяющими винтами, ретенционные аппараты.',
 		isBiocompatible: true
 	}
 };

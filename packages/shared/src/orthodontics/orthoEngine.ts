@@ -13,6 +13,8 @@
 import type { AngleClass } from "../diagnostics/photoProtocolEngine.js";
 import type {
 	AlignerAttachmentPreset,
+	AnbClass,
+	AnbClassOption,
 	AngleClassOption,
 	ArchwireMaterial,
 	ArchwireMaterialOption,
@@ -55,6 +57,33 @@ export const ANGLE_CLASS_OPTIONS: AngleClassOption[] = [
 		label: "III класс по Энглю (мезиальный прикус / прогения)",
 		shortLabel: "III класс",
 		desc: "Мезиальное соотношение первых моляров, обратная резцовая окклюзия",
+	},
+];
+
+export const ANB_CLASS_OPTIONS: AnbClassOption[] = [
+	{
+		id: "class_1",
+		label: "I Скелетный класс (Норма ANB 2° ± 2°)",
+		shortLabel: "ANB I (Норма)",
+		desc: "Гармоничное сагиттальное соотношение челюстных базисов (0°–4°)",
+		normRange: "0° – 4°",
+		typicalDegrees: 2,
+	},
+	{
+		id: "class_2",
+		label: "II Скелетный класс (Дистальный базис ANB > 4°)",
+		shortLabel: "ANB II (Дистальный)",
+		desc: "Сагиттальное опережение верхней челюсти или ретрогнатия нижней челюсти",
+		normRange: "> 4°",
+		typicalDegrees: 5,
+	},
+	{
+		id: "class_3",
+		label: "III Скелетный класс (Мезиальный базис ANB < 0°)",
+		shortLabel: "ANB III (Мезиальный)",
+		desc: "Сагиттальное опережение нижней челюсти или ретрогнатия верхней челюсти",
+		normRange: "< 0°",
+		typicalDegrees: -2,
 	},
 ];
 
@@ -325,6 +354,20 @@ export function generateOrthodonticSoapNote(params: OrthodonticSoapParams): stri
 		? `• Прикус (классификация Энгля): ${angleObj.label}.\n`
 		: "• Прикус (классификация Энгля): I класс по Энглю (нейтральный прикус).\n";
 
+	let anbText = "";
+	if (params.anbAngle !== undefined && params.anbAngle !== null) {
+		const anbInterp =
+			params.anbAngle > 4.0
+				? "Скелетный класс II (сагиттальное опережение ВЧ / дистальный базис)"
+				: params.anbAngle < 0.0
+					? "Скелетный класс III (сагиттальное опережение НЧ / мезиальный базис)"
+					: "Скелетный класс I (нормальное гармоничное соотношение базисов)";
+		anbText = `• Сагиттальное соотношение базисов (ТРГ угол ANB): ${params.anbAngle}° (${anbInterp}).\n`;
+	} else if (params.anbClass) {
+		const anbObj = ANB_CLASS_OPTIONS.find((a) => a.id === params.anbClass);
+		anbText = `• Сагиттальное соотношение базисов (угол ANB): ${anbObj?.label || params.anbClass}.\n`;
+	}
+
 	let elasticsText = "Межчелюстная тяга не назначена.";
 	if (params.elasticScheme && params.elasticScheme !== "none") {
 		elasticsText = `Межчелюстные эластики: ${elasticObj?.label || ""} (${elasticSizeObj?.label || ""}, ${elasticSizeObj?.strength || ""}). Режим ношения: ${params.elasticWear || "22 часа/сутки"}.`;
@@ -369,7 +412,7 @@ export function generateOrthodonticSoapNote(params: OrthodonticSoapParams): stri
 ${params.notes || "Плановый визит по графику ортодонтического лечения. Жалоб на острую боль и отклейку аппаратуры нет."}
 
 2. ОБЪЕКТИВНЫЙ СТАТУС:
-${angleText}• Аппаратура: ${
+${angleText}${anbText}• Аппаратура: ${
 	params.bracketSystem === "aligners"
 		? "Ортодонтические элайнеры (каппы с аттачментами)"
 		: params.bracketSystem === "removable_plate"
