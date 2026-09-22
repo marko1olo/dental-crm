@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
 	X,
 	CreditCard,
@@ -1306,7 +1307,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		}, 1200);
 	};
 
-	return (
+	const modalContent = (
 		<div
 			className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 payment-modal-backdrop"
 			role="dialog"
@@ -2856,4 +2857,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 };

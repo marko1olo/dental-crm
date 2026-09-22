@@ -786,4 +786,59 @@
 	.tier-segment-btn {
 		min-height: 44px !important;
 	}
+
+	.pricelist-modal-overlay {
+		padding: 0 !important;
+	}
+
+	.pricelist-modal-container {
+		height: 100dvh !important;
+		max-height: 100dvh !important;
+		border-radius: 0 !important;
+		border: none !important;
+	}
+
+	.pricelist-modal-header {
+		flex-direction: column !important;
+		align-items: stretch !important;
+		gap: 0.5rem !important;
+		padding: 0.5rem 0.75rem !important;
+	}
+
+	.pricelist-header-left {
+		width: 100% !important;
+		justify-content: space-between !important;
+	}
+
+	.pricelist-header-actions {
+		width: 100% !important;
+		overflow-x: auto !important;
+		flex-wrap: nowrap !important;
+		justify-content: flex-start !important;
+		padding-bottom: 4px !important;
+		scrollbar-width: thin !important;
+		-webkit-overflow-scrolling: touch !important;
+	}
+
+	.pricelist-header-actions .pricelist-btn {
+		flex-shrink: 0 !important;
+		white-space: nowrap !important;
+		padding: 0 0.75rem !important;
+		font-size: 0.8125rem !important;
+	}
+
+	.pricelist-toolbar {
+		flex-direction: column !important;
+		height: auto !important;
+		min-height: auto !important;
+		align-items: stretch !important;
+		gap: 0.5rem !important;
+		padding: 0.5rem 0.75rem !important;
+	}
+
+	.pricelist-search-box {
+		max-width: 100% !important;
+		width: 100% !important;
+		min-width: 0 !important;
+	}
 }

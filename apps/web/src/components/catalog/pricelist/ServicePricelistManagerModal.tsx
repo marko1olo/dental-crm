@@ -11,6 +11,7 @@
  */
 
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
 	AlertCircle,
 	ArrowUpDown,
@@ -692,7 +693,11 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 		onClose();
 	};
 
-	return (
+	if (!isOpen) {
+		return null;
+	}
+
+	const modalContent = (
 		<div className="pricelist-modal-overlay" role="dialog" aria-modal="true">
 			<div className="pricelist-modal-container">
 				{/* Header */}
@@ -1713,4 +1718,8 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 			)}
 		</div>
 	);
+
+	return typeof document !== 'undefined'
+		? createPortal(modalContent, document.body)
+		: modalContent;
 };

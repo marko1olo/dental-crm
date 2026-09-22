@@ -23,7 +23,7 @@ const crypto = require("node:crypto");
 const API_BASE = "http://127.0.0.1:4100";
 const WEB_BASE = "http://127.0.0.1:5173";
 const OUT_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/visual_redteam_audit");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/ddb49bbf-2251-4461-a748-75b4ca4b2b3a/screenshots");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/744011f8-78fd-4df5-8642-30ecccad028c/screenshots");
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 fs.mkdirSync(BRAIN_DIR, { recursive: true });
@@ -255,8 +255,9 @@ async function runAuditCapture() {
     const targetFile = path.join(OUT_DIR, fileName);
     const brainFile = path.join(BRAIN_DIR, fileName);
 
-    await page.waitForSelector(".boot-state", { state: "detached", timeout: 20000 }).catch(() => {});
-    await page.waitForTimeout(800);
+    await page.waitForSelector(".boot-state", { state: "detached", timeout: 30000 }).catch(() => {});
+    await page.waitForSelector(".app-shell", { state: "visible", timeout: 30000 }).catch(() => {});
+    await page.waitForTimeout(1000);
     await page.screenshot({ path: targetFile, fullPage: false });
 
     fs.copyFileSync(targetFile, brainFile);
@@ -355,14 +356,16 @@ async function runAuditCapture() {
       // Screen 1A: SettingsPricesTab (Прейскурант 804н)
       // -----------------------------------------------------------------------
       await navigateHash(page, "settings/prices");
-      await page.waitForTimeout(1200);
+      await page.waitForSelector(".boot-state", { state: "detached", timeout: 30000 }).catch(() => {});
+      await page.waitForSelector(".app-shell", { state: "visible", timeout: 30000 });
+      await page.waitForTimeout(1000);
       await configureTheme(page, theme);
       const pricesTabBtn = page.locator("#settings-tab-prices, button:has-text('Цены и услуги')").first();
       if (await pricesTabBtn.isVisible().catch(() => false)) {
         await pricesTabBtn.click().catch(() => {});
         await page.waitForTimeout(800);
       }
-      await page.waitForSelector(".catalog-groups, .settings-prices-tab, button:has-text('Прейскурант 804н')", { timeout: 20000 }).catch(() => {});
+      await page.waitForSelector("button:has-text('Номенклатура 804н'), button:has-text('Прейскурант 804н'), .settings-prices-tab, .catalog-groups", { state: "visible", timeout: 30000 });
       await page.waitForTimeout(1000);
       await takeProof(
         page,
@@ -428,11 +431,17 @@ async function runAuditCapture() {
       await page.waitForTimeout(1000);
       await configureTheme(page, theme);
 
-      // Click quick chip "5000 наличными" to populate the payment form and demonstrate active cash calculations
-      const chip5000 = page.locator("button:has-text('5000 наличными'), button:has-text('5000 нал'), button:has-text('5 000 ₽')").first();
-      if (await chip5000.isVisible().catch(() => false)) {
-        await chip5000.click().catch(() => {});
-        await page.waitForTimeout(600);
+      // Fill amount 5000 to populate the payment form and demonstrate active cash calculations
+      const amountInput = page.locator("#payment-amount-input");
+      if (await amountInput.isVisible().catch(() => false)) {
+        await amountInput.fill("5000");
+        await page.waitForTimeout(400);
+      } else {
+        const chip5000 = page.locator("button:has-text('5 000 ₽'), button:has-text('5000 нал'), button:has-text('5000 наличными')").first();
+        if (await chip5000.isVisible().catch(() => false)) {
+          await chip5000.click().catch(() => {});
+          await page.waitForTimeout(600);
+        }
       }
       await page.waitForTimeout(800);
       const checkoutBarBox = await page.locator("#payment-checkout-bar").boundingBox().catch(() => null);
@@ -462,13 +471,18 @@ async function runAuditCapture() {
       // -----------------------------------------------------------------------
       // Screen 3B: PaymentModal (54-ФЗ Сплит-оплата и скидки врача 0..100%)
       // -----------------------------------------------------------------------
+      const currentAmt = await page.locator("#payment-amount-input").inputValue().catch(() => "");
+      if (!currentAmt || currentAmt === "0" || currentAmt.trim() === "") {
+        await page.locator("#payment-amount-input").fill("5000").catch(() => {});
+        await page.waitForTimeout(300);
+      }
       await page.evaluate(() => {
         const btn = document.querySelector('[data-testid="btn-combo-split-three-way"]') ||
                     document.querySelector('button[title*="Нал + Карта + Баланс"]') ||
                     document.querySelector('[data-testid="payment-split-modal-button"]');
         if (btn) btn.click();
       });
-      await page.waitForSelector('.payment-modal-backdrop, .payment-modal, #payment-modal-title, [role="dialog"][aria-labelledby="payment-modal-title"]', { state: "visible", timeout: 15000 });
+      await page.waitForSelector('.payment-modal, .payment-modal-backdrop, #payment-modal-title', { state: "visible", timeout: 15000 });
       await page.waitForTimeout(1000);
       await takeProof(
         page,
