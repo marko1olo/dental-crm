@@ -284,8 +284,8 @@ export function VisitDiaryPhotoUpload({
 
 		setIsUploading(true);
 		let localObjectUrl: string | null = null;
+		let compressedBlob: Blob | null = null;
 		try {
-			let compressedBlob: Blob | null = null;
 			try {
 				const decoded = await decodeHeicImage(file, {
 					targetFormat: "webp",
@@ -295,6 +295,7 @@ export function VisitDiaryPhotoUpload({
 					applyExifRotation: true,
 				});
 				const res = await fetch(decoded.dataUrl);
+				if (!res.ok) throw new Error("DECODE_FETCH_FAILED");
 				compressedBlob = await res.blob();
 			} catch (_heicErr) {
 				const img = new Image();
@@ -542,6 +543,7 @@ export function VisitDiaryPhotoUpload({
 			let blob: Blob;
 			try {
 				const resBlob = await fetch(result.dataUrl);
+				if (!resBlob.ok) throw new Error("FETCH_BLOB_FAILED");
 				blob = await resBlob.blob();
 			} catch {
 				const arr = result.dataUrl.split(",");

@@ -15,11 +15,11 @@
 
 export interface VisiographProgressiveConfig {
 	/** Порог зума для инициации подгрузки 16-битного буфера (по умолчанию 1.25x) */
-	readonly zoomThreshold?: number;
+	readonly zoomThreshold?: number | undefined;
 	/** Ширина окна радиометрии (Window Width) */
-	readonly defaultWindowWidth?: number;
+	readonly defaultWindowWidth?: number | undefined;
 	/** Центр окна радиометрии (Window Center) */
-	readonly defaultWindowCenter?: number;
+	readonly defaultWindowCenter?: number | undefined;
 }
 
 export interface ProgressiveScanState {
@@ -93,10 +93,10 @@ export function convert16BitToRgbaImageData(
 	width: number,
 	height: number,
 	options?: {
-		windowWidth?: number;
-		windowCenter?: number;
-		invert?: boolean;
-	},
+		windowWidth?: number | undefined;
+		windowCenter?: number | undefined;
+		invert?: boolean | undefined;
+	} | undefined,
 ): ImageData {
 	const totalPixels = width * height;
 	if (raw16.length < totalPixels) {
@@ -153,17 +153,17 @@ export function convert16BitToRgbaImageData(
 export class ProgressiveVisiographController {
 	private state: ProgressiveScanState;
 	private readonly zoomThreshold: number;
-	private readonly rawBufferFetcher?: () => Promise<Uint16Array | ArrayBuffer>;
+	private readonly rawBufferFetcher?: (() => Promise<Uint16Array | ArrayBuffer>) | undefined;
 
 	constructor(
 		previewUrl: string,
 		width: number,
 		height: number,
 		options?: {
-			raw16BitUrl?: string;
-			rawBufferFetcher?: () => Promise<Uint16Array | ArrayBuffer>;
-			zoomThreshold?: number;
-		},
+			raw16BitUrl?: string | undefined;
+			rawBufferFetcher?: (() => Promise<Uint16Array | ArrayBuffer>) | undefined;
+			zoomThreshold?: number | undefined;
+		} | undefined,
 	) {
 		this.zoomThreshold = options?.zoomThreshold ?? DEFAULT_VISIOGRAPH_ZOOM_THRESHOLD;
 		this.rawBufferFetcher = options?.rawBufferFetcher;

@@ -27,6 +27,7 @@ export type MutationEntityType =
 	| "APPOINTMENT_BOOKING_DRAFT"
 	| "TREATMENT_PLAN_DRAFT"
 	| "PATIENT_DRAFT"
+	| "IMAGING_STUDY_DRAFT"
 	| "GENERIC"
 	| "odontogram"
 	| "treatment_plan"

@@ -112,6 +112,8 @@ export function mapToSyncEntityKind(
 		case "PATIENT_DRAFT":
 		case "GENERIC":
 			return "patient";
+		case "IMAGING_STUDY_DRAFT":
+			return "visit";
 		case "patient":
 		case "visit":
 		case "visit_diary":
