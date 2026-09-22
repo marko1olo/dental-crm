@@ -569,6 +569,18 @@
 	backdrop-filter: none !important;
 }
 
+#payment-capture,
+.payment-capture {
+	padding-bottom: 7rem !important; /* pb-28 */
+}
+
+@media (min-width: 640px) {
+	#payment-capture,
+	.payment-capture {
+		padding-bottom: 6rem !important; /* sm:pb-24 */
+	}
+}
+
 #payment-checkout-bar,
 .payment-checkout-bar {
 	position: fixed !important;
@@ -578,6 +590,29 @@
 	z-index: 50 !important;
 	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15) !important;
 	background: var(--paper-strong, var(--paper, #ffffff)) !important;
+	max-width: 100vw !important;
+	box-sizing: border-box !important;
+}
+
+.payment-checkout-bar .payment-actions {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: flex-end !important;
+	gap: 6px !important;
+	min-width: 0 !important;
+	flex-shrink: 1 !important;
+}
+
+@media (max-width: 1200px) {
+	.payment-checkout-bar .payment-total-due-banner {
+		min-width: 0 !important;
+		padding-left: 6px !important;
+		padding-right: 6px !important;
+	}
+	.payment-checkout-bar .payment-actions button {
+		padding-left: 8px !important;
+		padding-right: 8px !important;
+	}
 }
 
 @media (max-width: 1024px) {

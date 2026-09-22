@@ -52,7 +52,7 @@ export function GlobalToast() {
 	// Re-use sa-toast styles from ShadowAnalyst with full theme tokens support
 	return (
 		<div
-			className={`sa-toast sa-toast--${toast.type} fixed sm:bottom-4 sm:right-4 sm:top-auto max-sm:bottom-[calc(env(safe-area-inset-bottom,0px)+12px)] max-sm:top-auto max-sm:left-4 max-sm:right-4 z-[99999] flex items-center gap-2 px-4 py-3 max-w-[420px] max-sm:max-w-[calc(100vw-2rem)] rounded-xl shadow-2xl transition-all select-none border font-medium text-xs sm:text-sm bg-neutral-900 text-slate-100 dark:bg-neutral-900 dark:text-slate-100 pointer-events-auto ${toast.type === "error" ? "border-rose-500/60 dark:border-rose-500/50" : toast.type === "warning" ? "border-amber-500/60 dark:border-amber-500/50" : "border-neutral-700 dark:border-neutral-700"}`}
+			className={`sa-toast sa-toast--${toast.type} fixed sm:top-16 sm:right-6 sm:bottom-auto max-sm:top-4 max-sm:bottom-auto max-sm:inset-x-4 z-[99999] flex items-center gap-2 px-4 py-3 max-w-[420px] max-sm:max-w-[calc(100vw-2rem)] rounded-xl shadow-2xl transition-all select-none border font-medium text-xs sm:text-sm bg-neutral-900 text-slate-100 dark:bg-neutral-900 dark:text-slate-100 pointer-events-auto ${toast.type === "error" ? "border-rose-500/60 dark:border-rose-500/50" : toast.type === "warning" ? "border-amber-500/60 dark:border-amber-500/50" : "border-neutral-700 dark:border-neutral-700"}`}
 			data-testid="global-toast"
 			style={{
 				zIndex: 99999,
@@ -65,9 +65,6 @@ export function GlobalToast() {
 				borderRadius: "12px",
 				boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
 				pointerEvents: "auto",
-				bottom: "16px",
-				right: "16px",
-				top: "auto",
 				border:
 					toast.type === "error"
 						? "1px solid rgba(244,63,94,0.6)"

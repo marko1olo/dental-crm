@@ -2777,11 +2777,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								onClick={handleSplitSubmit}
 								disabled={isSubmittingSplit}
 								title={isSubmittingSplit ? "Идет фиксация комбинированной оплаты..." : undefined}
-								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all min-w-0 truncate"
+								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all whitespace-nowrap shrink-0"
 								data-testid="btn-split-submit-footer"
 							>
 								<CheckCircle size={16} className="shrink-0" />
-								<span className="truncate">
+								<span className="whitespace-nowrap">
 									{isSubmittingSplit ? "Фиксация..." : `Пробить сплит (${totalDueRub.toLocaleString("ru-RU")} ₽)`}
 								</span>
 							</button>

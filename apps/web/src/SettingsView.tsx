@@ -76,8 +76,8 @@ import type {
 	WeekdayIndex,
 } from "@dental/shared";
 import { motion } from "framer-motion";
-import { ChevronDown, ClipboardCheck, Lock, ShieldCheck } from "lucide-react";
-import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
+import { ChevronDown, ClipboardCheck, Lock, MoreHorizontal, ShieldCheck } from "lucide-react";
+import { useState, type ChangeEvent, type CSSProperties, type KeyboardEvent } from "react";
 /*
  * Разделы левого меню берутся из общего объявления, а не собираются здесь.
  *
@@ -249,6 +249,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     набивался руками, и вкладки получали малую часть того, что читают.
   */
 	const appLogic = useAppLogicContext();
+	const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
 	const {
 		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		activePatient,
@@ -1898,15 +1899,38 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
           тёмной теме это был красный текст на почти белом фоне. Возвращать такую
           разметку нельзя даже с живыми данными — только через var(--...).
         */}
-				<div className="settings-heading-actions">
+				<div className="settings-heading-actions relative">
 					<button
-						className="secondary-button"
+						className="secondary-button min-h-[36px] h-9 w-9 p-0 flex items-center justify-center rounded-xl shrink-0 cursor-pointer"
 						type="button"
-						onClick={reopenOnboarding}
-						style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+						onClick={() => setIsMoreActionsOpen((prev) => !prev)}
+						aria-expanded={isMoreActionsOpen}
+						aria-label="Дополнительные действия"
+						title="Дополнительные действия"
+						data-testid="btn-settings-more-actions"
 					>
-						<ClipboardCheck aria-hidden="true" /> Мастер первого запуска
+						<MoreHorizontal size={18} className="text-[var(--muted)] hover:text-[var(--ink)] transition-colors" />
 					</button>
+					{isMoreActionsOpen && (
+						<div
+							className="absolute right-0 top-full mt-1.5 w-60 py-1.5 px-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl z-50 flex flex-col gap-1 text-left animate-in fade-in zoom-in-95 duration-100"
+							role="menu"
+						>
+							<button
+								type="button"
+								onClick={() => {
+									setIsMoreActionsOpen(false);
+									reopenOnboarding();
+								}}
+								className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
+								role="menuitem"
+								data-testid="btn-reopen-onboarding-menuitem"
+							>
+								<ClipboardCheck size={16} className="text-[var(--teal)] shrink-0" />
+								<span>Мастер первого запуска</span>
+							</button>
+						</div>
+					)}
 				</div>
 			</div>
 

@@ -472,7 +472,8 @@ export function SettingsPricesTab() {
 								placeholder="Поиск по услугам или коду 804н..."
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
-								className="w-full min-h-[32px] h-7 sm:h-8 pl-8 pr-7 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--teal)] transition-all"
+								className="w-full min-h-[32px] h-7 sm:h-8 pl-8 pr-9 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--teal)] transition-all"
+								style={{ paddingRight: "36px" }}
 							/>
 							{searchQuery && (
 								<button

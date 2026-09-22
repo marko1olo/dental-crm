@@ -395,6 +395,7 @@ function TaxPayerDetails({
 								<button
 									key={rel}
 									type="button"
+									style={{ minHeight: "44px" }}
 									className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-3.5 text-xs sm:text-sm font-semibold"
 									onClick={() => onPayerRelationshipChange(rel)}
 								>
@@ -410,6 +411,7 @@ function TaxPayerDetails({
 						aria-label="Код медицинской услуги для налогового вычета"
 					>
 						<button
+							style={{ minHeight: "44px" }}
 							className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-3.5 text-xs sm:text-sm font-semibold ${taxDeductionCode === "" ? "active" : ""}`}
 							type="button"
 							aria-pressed={taxDeductionCode === ""}
@@ -419,6 +421,7 @@ function TaxPayerDetails({
 						</button>
 						{(["1", "2"] as const).map((code) => (
 							<button
+								style={{ minHeight: "44px" }}
 								className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-3.5 text-xs sm:text-sm font-semibold ${taxDeductionCode === code ? "active" : ""}`}
 								key={code}
 								type="button"
@@ -431,6 +434,7 @@ function TaxPayerDetails({
 					</div>
 					<div className="payment-tax-defaults">
 						<button
+							style={{ minHeight: "44px" }}
 							className="secondary-button min-h-[44px] sm:min-h-8 sm:h-8"
 							type="button"
 							onClick={applyPatientTaxDefaults}
@@ -1137,7 +1141,7 @@ export function PaymentCapture({
 
 	return (
 		<div
-			className="payment-capture bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-2 sm:p-3 mb-4 pb-28 sm:pb-24 max-md:pb-44"
+			className="payment-capture bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-2 sm:p-3 mb-4 pb-28 sm:pb-24"
 			id="payment-capture"
 		>
 			{feedback ? (
@@ -1683,22 +1687,22 @@ export function PaymentCapture({
 					</span>
 				</div>
 			) : null}
-			<p className="payment-capture-safeguard text-[10px] text-[var(--muted)] my-0.5 hidden sm:block">
+			<p className="payment-capture-safeguard text-[10px] text-[var(--muted)] my-1 block">
 				Каждая оплата добавляет новую строку в историю. Ошибку закрывайте
 				возвратом или коррекцией, не повторной записью.
 			</p>
 
-			{/* Буфер прокрутки для мобильных устройств, чтобы фиксированная нижняя панель не перекрывала кнопки оплат */}
+			{/* Буфер прокрутки, чтобы фиксированная нижняя планка не перекрывала историю и юридический текст */}
 			<div
-				className="payment-capture-bottom-spacer block sm:hidden w-full"
-				style={{ height: "72px", minHeight: "72px" }}
+				className="payment-capture-bottom-spacer block w-full h-16 sm:h-12 pointer-events-none select-none"
+				style={{ minHeight: "48px" }}
 				aria-hidden="true"
 			/>
 
 			{/* Панель оформления чека и кнопок оплаты (Мандат 8e / 8c / 8p: фиксирована внизу экрана) */}
 			<div
 				id="payment-checkout-bar"
-				className="payment-checkout-bar col-span-full fixed bottom-0 right-0 z-50 bg-[var(--paper-strong,var(--paper))] dark:bg-[var(--paper-strong)] border-t border-[var(--line)] shadow-2xl px-3 py-2 sm:py-2.5 flex flex-row items-center justify-between gap-2 sm:gap-3 max-w-full min-w-0 box-border left-0 md:left-[var(--sidebar-width,252px)] pb-safe"
+				className="payment-checkout-bar col-span-full fixed bottom-0 right-0 z-50 bg-[var(--paper-strong,var(--paper))] dark:bg-[var(--paper-strong)] border-t border-[var(--line)] shadow-2xl px-2 sm:px-3 py-2 sm:py-2.5 flex flex-row items-center justify-between gap-1.5 sm:gap-2 max-w-full min-w-0 box-border left-0 md:left-[var(--sidebar-width,252px)] pb-safe overflow-hidden"
 				style={{
 					position: "fixed",
 					bottom: 0,
@@ -1709,10 +1713,10 @@ export function PaymentCapture({
 			>
 				{/* Итого к списанию / оплате по 54-ФЗ */}
 				<div
-					className="payment-total-due-banner flex items-center justify-between gap-1.5 sm:gap-3 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] select-none mb-0 max-sm:bg-transparent max-sm:border-none max-sm:p-0 shrink-0 min-w-0 sm:min-w-[200px]"
+					className="payment-total-due-banner flex items-center justify-between gap-1 sm:gap-2 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] select-none mb-0 max-sm:bg-transparent max-sm:border-none max-sm:p-0 shrink sm:shrink-0 min-w-0 sm:min-w-[150px] md:min-w-[170px]"
 					data-testid="payment-total-due-banner"
 				>
-					<span className="text-xs sm:text-xs font-bold text-[var(--muted)] max-sm:text-xs max-sm:leading-none whitespace-nowrap pr-1 sm:pr-2 shrink-0">
+					<span className="text-xs sm:text-xs font-bold text-[var(--muted)] max-sm:text-xs max-sm:leading-none whitespace-nowrap pr-1 sm:pr-1.5 shrink-0">
 						<span className="hidden sm:inline">Итого к списанию:</span>
 						<span className="sm:hidden">Итого:</span>
 					</span>
@@ -1726,10 +1730,10 @@ export function PaymentCapture({
 				</div>
 
 				<div
-					className="payment-actions flex items-center gap-1.5 sm:gap-2 max-sm:flex-1 max-sm:flex max-sm:flex-row max-sm:items-center max-sm:justify-end flex-1 min-w-0"
+					className="payment-actions flex items-center gap-1 sm:gap-1.5 md:gap-2 flex-1 min-w-0 justify-end"
 				>
 					<button
-						className="primary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 sm:flex-initial font-bold text-xs sm:text-sm min-w-0 px-2.5 sm:px-3.5 whitespace-nowrap"
+						className="primary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 sm:flex-initial font-bold text-xs sm:text-sm min-w-0 px-2 sm:px-3 whitespace-nowrap shrink-0"
 						type="button"
 						onClick={handlePrimarySubmit}
 						aria-busy={isSaving || undefined}
@@ -1750,7 +1754,7 @@ export function PaymentCapture({
 						</span>
 					</button>
 					<button
-						className="secondary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-semibold text-xs max-sm:!hidden min-w-0 px-2.5 sm:px-3 overflow-hidden shrink-0 flex-shrink-0"
+						className="secondary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-semibold text-xs max-sm:!hidden min-w-0 px-2 sm:px-2.5 lg:px-3 overflow-hidden shrink"
 						type="button"
 						onClick={handleSberPosClick}
 						aria-describedby={
@@ -1762,12 +1766,13 @@ export function PaymentCapture({
 					>
 						<CreditCard aria-hidden="true" size={15} className="shrink-0" />{" "}
 						<span className="hidden sm:inline truncate whitespace-nowrap">
-							<span className="xl:hidden">Картой (POS/QR)</span>
-							<span className="hidden xl:inline">Оплата картой (Сбербанк POS / QR)</span>
+							<span className="2xl:inline hidden">Оплата картой (Сбербанк POS / QR)</span>
+							<span className="2xl:hidden xl:inline hidden">Картой (POS/QR)</span>
+							<span className="xl:hidden">Картой</span>
 						</span>
 					</button>
 					<button
-						className="secondary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-semibold text-xs max-sm:!hidden flex items-center gap-1.5 min-w-0 px-2.5 sm:px-3 whitespace-nowrap shrink-0"
+						className="secondary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-semibold text-xs max-sm:!hidden flex items-center gap-1 sm:gap-1.5 min-w-0 px-2 sm:px-2.5 lg:px-3 whitespace-nowrap shrink"
 						type="button"
 						onClick={handleOpenSplitModal}
 						aria-describedby={
@@ -1778,7 +1783,9 @@ export function PaymentCapture({
 						data-testid="payment-split-modal-button"
 					>
 						<Coins aria-hidden="true" size={15} className="shrink-0 text-indigo-600 dark:text-indigo-400" />{" "}
-						<span className="hidden sm:inline truncate whitespace-nowrap">Комбо (Сплит)</span>
+						<span className="hidden sm:inline whitespace-nowrap">
+							<span className="hidden xl:inline">Комбо </span>Сплит
+						</span>
 					</button>
 					<div className="relative shrink-0 flex-shrink-0">
 						<button
