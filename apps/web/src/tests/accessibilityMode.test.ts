@@ -23,7 +23,7 @@
  */
 
 import assert from "node:assert/strict";
-import { beforeEach, describe, it } from "node:test";
+import { beforeEach, describe, it } from "vitest";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
@@ -216,14 +216,15 @@ describe("UI Компоненты доступности: AccessibilityModeButto
 		);
 	});
 
-	it("ClinicControlPill монтирует кнопку доступности в верхний тулбар", () => {
+	it("ClinicControlPill не засоряет верхний тулбар кнопкой для слабовидящих (перенесена в пульт управления/настройки)", () => {
 		const html = renderToStaticMarkup(React.createElement(ClinicControlPill));
 		assert.ok(
-			html.includes("dnt-a11y-toggle-btn"),
-			"ClinicControlPill монтирует кнопку версии для слабовидящих",
+			html.includes("dnt-clinic-control-wrapper"),
+			"ClinicControlPill монтирует пульт управления клиникой",
 		);
 		assert.ok(
-			html.includes("Для слабовидящих") || html.includes("Обычная версия"),
+			!html.includes("dnt-a11y-toggle-btn"),
+			"Кнопка для слабовидящих выкорчевана из шапки тулбара и убрана в пульт управления",
 		);
 	});
 });

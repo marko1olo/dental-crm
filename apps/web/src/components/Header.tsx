@@ -285,8 +285,6 @@ export function ClinicControlPill({
 			className={`dnt-clinic-control-wrapper ${className}`}
 			data-testid="clinic-control-center-wrapper"
 		>
-			<AccessibilityModeButton />
-
 			{/* Unified Capsule Button [ Смена | АТС | Синхро ] */}
 			<button
 				type="button"

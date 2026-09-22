@@ -994,10 +994,6 @@ export function PaymentCapture({
 
 	const handleOpenSplitModal = () => {
 		if (isSaving) return;
-		if (!patientId) {
-			showToast("Выберите пациента для проведения платежа", "warning");
-			return;
-		}
 		setIsSplit5050Mode(false);
 		setIsSplitModalOpen(true);
 	};
@@ -1923,15 +1919,14 @@ export function PaymentCapture({
 					}}
 				/>
 			)}
-			{patientId && (
-				<PaymentModal
-					isOpen={isSplitModalOpen}
-					onClose={() => {
-						setIsSplitModalOpen(false);
-						setIsSplit5050Mode(false);
-					}}
-					patientId={patientId || undefined}
-					patientName={patientDefaults?.fullName || payerFullName || undefined}
+			<PaymentModal
+				isOpen={isSplitModalOpen}
+				onClose={() => {
+					setIsSplitModalOpen(false);
+					setIsSplit5050Mode(false);
+				}}
+				patientId={patientId || undefined}
+				patientName={patientDefaults?.fullName || payerFullName || undefined}
 					amountRub={
 						normalizeRubAmountInput(amount) ??
 						(remainingDebt && remainingDebt > 0 ? remainingDebt : undefined)
@@ -1956,7 +1951,6 @@ export function PaymentCapture({
 						);
 					}}
 				/>
-			)}
 		</div>
 	);
 }
