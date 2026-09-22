@@ -575,6 +575,8 @@ export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 	},
 ];
 
+export const CANONICAL_SURGICAL_OPERATION_NORMS = SURGICAL_OPERATION_NORMS;
+
 /**
  * Проверка мягкого овердрафта склада (Мандат 8e):
  * Если накладная поставщика задерживается (включая шовный материал или гемостатическую губку),

@@ -1072,7 +1072,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 	});
 
 	// POST /:organizationId/quick-writeoff-carpules — 1-клик списание пустых карпул анестетиков
-	// медсестрой (СанПиН 3.3686-21, ПКУ) без требования комиссии из 3 человек.
+	// медсестрой (СанПиН 3.3686-21, отходы Класса Б) без требования комиссии из 3 человек.
 	server.post<{
 		Params: { organizationId: string };
 		Body?: { carpulesCount?: number; drugName?: string; visitId?: string; notes?: string };

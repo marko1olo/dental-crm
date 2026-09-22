@@ -31,6 +31,7 @@ import { registerCommerceMlRoutes } from "./routes/commerceMl.js";
 import { registerChatRoutes } from "./routes/chat.js";
 import { registerClinicalRoutes } from "./routes/clinical.js";
 import { registerClinicalImplantRoutes } from "./routes/clinicalImplants.js";
+import { registerSurgeryRoutes } from "./routes/surgery/index.js";
 import { registerClinicWorkflowsRoutes } from "./routes/clinicWorkflows.js";
 import { registerCommunicationReceiptRoutes } from "./routes/communicationReceipts.js";
 import { registerCommunicationRoutes } from "./routes/communications.js";
@@ -682,6 +683,7 @@ export async function createDenteApiApp(
 	await registerReferralRoutes(app);
 	await registerAnesthesiaRoutes(app);
 	await registerClinicalImplantRoutes(app);
+	await registerSurgeryRoutes(app);
 	await registerSbpQrRoutes(app);
 	await registerFiscalReceiptRoutes(app);
 	await registerPharmacologyRoutes(app);

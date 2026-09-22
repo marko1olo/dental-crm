@@ -87,6 +87,7 @@ export default defineConfig({
 					if (lower.includes("d3") || lower.includes("panoramic") || lower.includes("cbct") || lower.includes("zip") || lower.includes("fflate")) return false;
 					if (lower.includes("radiology") || lower.includes("perio") || lower.includes("endo") || lower.includes("egisz") || lower.includes("marketing")) return false;
 					if (lower.includes("telephony") || lower.includes("dental-lab") || lower.includes("inventory") || lower.includes("onboarding") || lower.includes("sanpin")) return false;
+					if (lower.includes("ortho") || lower.includes("surgery") || lower.includes("prosthetics") || lower.includes("reports") || lower.includes("audit") || lower.includes("somatic") || lower.includes("speech")) return false;
 					return true;
 				});
 			},

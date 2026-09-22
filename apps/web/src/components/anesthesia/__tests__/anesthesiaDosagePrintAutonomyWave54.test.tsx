@@ -15,7 +15,14 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+const { describe, it } = await (async () => {
+	try {
+		// @ts-ignore
+		return await import("vitest");
+	} catch {
+		return await import("node:test");
+	}
+})();
 import React from "react";
 import { renderToString } from "react-dom/server";
 import {

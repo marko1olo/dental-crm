@@ -428,6 +428,11 @@ function setBoundedInMemoryMap<K, V>(map: Map<K, V>, key: K, value: V): void {
 const inMemoryDraftsMap = new Map<string, OfflineDraft<unknown>>();
 const inMemoryMutationsMap = new Map<string, OfflineMutation<unknown>>();
 
+export function clearInMemoryOfflineStorage(): void {
+	inMemoryMutationsMap.clear();
+	inMemoryDraftsMap.clear();
+}
+
 const CHUNK_SIZE_BYTES = 512 * 1024; // 512 KB per chunk
 const CHUNK_MANIFEST_PREFIX = "__chunk_manifest__";
 
@@ -1004,6 +1009,8 @@ export async function deleteOfflineMutation(mutationId: string): Promise<void> {
 		saveLocalStorageMutations(filtered);
 	}
 }
+
+export { deleteOfflineMutation as removeOfflineMutation };
 
 /**
  * Очистка успешно синхронизированных мутаций

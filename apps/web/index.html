@@ -13,6 +13,7 @@
     <link rel="apple-touch-icon" href="/icon.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="dns-prefetch" href="/api" />
+    <link rel="preconnect" href="/api" />
     <title>Dental CRM | Управление клиникой</title>
     <script>
       (function() {
@@ -76,10 +77,36 @@
           document.documentElement.style.setProperty("--sab", "env(safe-area-inset-bottom, 0px)");
           document.documentElement.style.setProperty("--sal", "env(safe-area-inset-left, 0px)");
           document.documentElement.style.setProperty("--sar", "env(safe-area-inset-right, 0px)");
+
+          // Runtime global markers
+          window.__DENTE_RUNTIME__ = platform;
+          window.__DENTE_LOW_SPEC__ = isLowSpec;
+          window.__DENTE_PLATFORM__ = platform;
+
+          // Network online/offline status
+          var isOnline = typeof navigator !== "undefined" && typeof navigator.onLine === "boolean" ? navigator.onLine : true;
+          document.documentElement.setAttribute("data-online", isOnline ? "true" : "false");
+          if (!isOnline) document.documentElement.classList.add("is-offline");
+
+          window.addEventListener("online", function() {
+            document.documentElement.setAttribute("data-online", "true");
+            document.documentElement.classList.remove("is-offline");
+          });
+          window.addEventListener("offline", function() {
+            document.documentElement.setAttribute("data-online", "false");
+            document.documentElement.classList.add("is-offline");
+          });
         } catch (e) {}
       })();
     </script>
     <style>
+      html[data-low-spec="true"] *,
+      html[data-perf="low"] * {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
       :root {
         --boot-bg: #fdfdfd;
         --boot-title: #111827;

@@ -36,6 +36,7 @@ export * from "./clinical/index.js";
 export * from "./perio/index.js";
 export * from "./emr/index.js";
 export * from "./egisz/index.js";
+export * from "./types/surgery.js";
 export { consumableUnitSchema, type ConsumableUnit } from "./inventory/index.js";
 export {
 	type TimelineCategory,
