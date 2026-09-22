@@ -13,7 +13,7 @@
  * - Mandate 8n: Solo-doctor & small clinic ergonomics.
  */
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
 	Plus,
 	Minus,
@@ -67,6 +67,7 @@ export interface VisitServiceBillingWidgetProps {
 	readonly onServicesChange?: ((services: VisitBillingServiceItem[]) => void) | undefined;
 	readonly onSave?: ((services: VisitBillingServiceItem[], totals: VisitBillingTotals) => void) | undefined;
 	readonly onOpenPayment?: ((totals: VisitBillingTotals) => void) | undefined;
+	readonly onAddBillingItem?: ((item: { code804n?: string; title: string; priceRub: number; toothNumber?: number; quantity?: number }) => void) | undefined;
 	readonly readOnly?: boolean | undefined;
 	readonly className?: string | undefined;
 }
@@ -131,6 +132,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 	onServicesChange,
 	onSave,
 	onOpenPayment,
+	onAddBillingItem,
 	readOnly = false,
 	className = "",
 }) => {
@@ -154,6 +156,56 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 		},
 		[onServicesChange]
 	);
+
+	// Слушатель событий добавления и отката услуг от Копилота (Мандат 8e / DEF-COPILOT-01)
+	useEffect(() => {
+		const handleAddBillingEvent = (e: Event) => {
+			const detail = (e as CustomEvent)?.detail;
+			if (!detail) return;
+			const item = detail.item || detail;
+			if (!item.title && !item.name) return;
+			const newItem: VisitBillingServiceItem = {
+				id: `copilot-serv-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+				code804n: item.code804n || "A16.07.001",
+				title: item.title || item.name || "Услуга",
+				toothCode: item.toothNumber ? String(item.toothNumber) : item.toothCode,
+				quantity: item.quantity || 1,
+				unitPriceRub: Number(item.priceRub ?? item.unitPriceRub ?? item.basePriceRub ?? 0),
+				discountPercent: 0,
+				discountRub: 0,
+				isWarranty: false,
+			};
+			setServices((prev) => {
+				const next = [...prev, newItem];
+				onServicesChange?.(next);
+				return next;
+			});
+			onAddBillingItem?.(item);
+		};
+
+		const handleRemoveBillingEvent = (e: Event) => {
+			const detail = (e as CustomEvent)?.detail;
+			if (!detail) return;
+			const codesOrTitles = detail.items || [detail.item || detail];
+			setServices((prev) => {
+				const next = prev.filter((s) => {
+					return !codesOrTitles.some((t: any) => {
+						if (typeof t === "string") return s.code804n === t || s.title === t;
+						return (t.code804n && s.code804n === t.code804n) || (t.title && s.title === t.title);
+					});
+				});
+				onServicesChange?.(next);
+				return next;
+			});
+		};
+
+		window.addEventListener("dente-add-billing-item", handleAddBillingEvent);
+		window.addEventListener("dente-remove-billing-items", handleRemoveBillingEvent);
+		return () => {
+			window.removeEventListener("dente-add-billing-item", handleAddBillingEvent);
+			window.removeEventListener("dente-remove-billing-items", handleRemoveBillingEvent);
+		};
+	}, [onServicesChange, onAddBillingItem]);
 
 	// Inline Price Step (+500 ₽ / -500 ₽)
 	const handleStepPrice = useCallback(

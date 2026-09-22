@@ -31,9 +31,12 @@ import {
   Layers,
   Loader2,
   Zap,
+  RotateCcw,
+  Edit3,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { globalDentalVoiceEngine } from "../../services/voice";
+import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import "./ChairsideCopilotHUD.css";
 
 export interface ChairsideThoughtStep {
@@ -87,11 +90,18 @@ export interface ChairsideCopilotHUDProps {
   readonly initialOpen?: boolean | undefined;
   readonly initialDocked?: boolean | undefined;
   readonly activeTooth?: number | null | undefined;
+  readonly patientId?: string | undefined;
+  readonly visitId?: string | undefined;
+  readonly chairId?: string | undefined;
   readonly patientName?: string | undefined;
   readonly patientAllergies?: readonly string[] | undefined;
+  readonly patientSomaticHistory?: readonly string[] | undefined;
   readonly onApplyToothState?: ((toothNumber: number, state: string, surfaces?: string[]) => void) | undefined;
+  readonly onUpdateToothStatus?: ((toothNumber: number, status: string, surfaces?: string[]) => void) | undefined;
   readonly onApplyServices?: ((services: ChairsideServiceProposal[]) => void) | undefined;
+  readonly onAddBillingItem?: ((item: ChairsideServiceProposal | ChairsideServiceProposal[] | any) => void) | undefined;
   readonly onApplySoapNotes?: ((notes: Record<string, string>) => void) | undefined;
+  readonly onApplySoapDiary?: ((diary: any) => void) | undefined;
   readonly onApplyAll?: (() => void) | undefined;
   readonly onClose?: (() => void) | undefined;
   readonly className?: string | undefined;
@@ -344,11 +354,18 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
   initialOpen = true,
   initialDocked = false,
   activeTooth = 16,
+  patientId,
+  visitId,
+  chairId,
   patientName = "Пациент",
   patientAllergies = ["Пенициллины"],
+  patientSomaticHistory,
   onApplyToothState,
+  onUpdateToothStatus,
   onApplyServices,
+  onAddBillingItem,
   onApplySoapNotes,
+  onApplySoapDiary,
   onApplyAll,
   onClose,
   className = "",
@@ -360,6 +377,11 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
   const [isListening, setIsListening] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [inputText, setInputText] = useState("");
+  const [verdict, setVerdict] = useState<string>("");
+  const [isEditingSoap, setIsEditingSoap] = useState<boolean>(false);
+  const [previousToothState, setPreviousToothState] = useState<string | null>(null);
+  const [previousSoapSnapshot, setPreviousSoapSnapshot] = useState<Record<string, string> | null>(null);
+  const [addedServiceIds, setAddedServiceIds] = useState<string[]>([]);
 
   // Current active preset (default: Caries 16)
   const [activePresetIndex, setActivePresetIndex] = useState(0);
@@ -413,7 +435,6 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
 
       if (simulateDelay) {
         setIsThinking(true);
-        // Set steps to running
         setThoughts(
           preset.thoughts.map((t, i) => ({
             ...t,
@@ -453,6 +474,189 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     []
   );
 
+  // Real POST request to /api/v1/copilot/agent/execute
+  const executeCopilotAgent = useCallback(
+    async (promptText: string) => {
+      setIsThinking(true);
+      const text = promptText.trim();
+      const staffToken = readDenteStaffToken();
+      const clinicToken = readDenteClinicToken();
+      const authToken = staffToken || clinicToken;
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+      if (clinicToken) {
+        headers["x-dente-clinic-token"] = clinicToken;
+      }
+      if (staffToken) {
+        headers["x-dente-staff-token"] = staffToken;
+      }
+
+      const requestBody = {
+        patientId: patientId || "pat-chairside-default",
+        prompt: text || undefined,
+        toothNumber: activeTooth ?? undefined,
+        complaints: text || undefined,
+        allergies: patientAllergies ? [...patientAllergies] : undefined,
+        somaticHistory: patientSomaticHistory ? [...patientSomaticHistory] : undefined,
+        appointmentRequest: visitId
+          ? {
+              startsAt: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
+              chairId: chairId || undefined,
+              reason: text || "Повторный клинический приём",
+            }
+          : undefined,
+        mode: "autonomous" as const,
+      };
+
+      try {
+        const response = await fetch("/api/v1/copilot/agent/execute", {
+          method: "POST",
+          headers,
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const json = await response.json();
+        const data = json?.data;
+
+        if (data) {
+          // 1. Thought stream / steps
+          if (Array.isArray(data.steps) && data.steps.length > 0) {
+            setThoughts(
+              data.steps.map((s: any, idx: number) => ({
+                id: `step-${s.iteration}-${idx}`,
+                stepNumber: s.iteration,
+                title: String(s.thought || "").split("\n")[0] || `Итерация ${s.iteration}`,
+                status: "done" as const,
+                detail: String(s.thought || "").split("\n").slice(1).filter(Boolean).join(" • ") || undefined,
+                durationMs: 75,
+              }))
+            );
+          } else if (data.thought) {
+            const lines = String(data.thought).split("\n\n").filter(Boolean);
+            setThoughts(
+              lines.map((l: string, idx: number) => ({
+                id: `step-${idx + 1}`,
+                stepNumber: idx + 1,
+                title: l.split("\n")[0] || `Шаг ${idx + 1}`,
+                status: "done" as const,
+                detail: l.split("\n").slice(1).join(" ") || undefined,
+                durationMs: 75,
+              }))
+            );
+          }
+
+          // 2. Clinical verdict
+          if (data.verdict) {
+            setVerdict(data.verdict);
+          }
+
+          // 3. Safety alerts
+          if (Array.isArray(data.safetyAlerts) && data.safetyAlerts.length > 0) {
+            const topAlert = data.safetyAlerts[0];
+            setSafetyAlert({
+              id: topAlert.id || `alert-${Date.now()}`,
+              severity: (topAlert.severity as "critical" | "warning" | "info") || "info",
+              title: topAlert.title || "Алерт безопасности",
+              description: topAlert.message || topAlert.description || "",
+              recommendedAction: topAlert.safeAlternative,
+              acknowledged: false,
+            });
+          }
+
+          // 4. Action proposals
+          if (Array.isArray(data.actions)) {
+            for (const action of data.actions) {
+              if (action.type === "apply_tooth_status" && action.payload) {
+                const p = action.payload;
+                setToothProposal({
+                  toothNumber: (p.tooth as number) || data.toothNumber || activeTooth || 16,
+                  state: (p.statusCode as string) || (p.newStatus as string) || "C2",
+                  stateLabel: p.newStatus ? `${p.newStatus} (${p.statusCode || ""})` : (p.diagnosisText as string) || "Обновление статуса",
+                  surfaces: Array.isArray(p.surfaces) ? p.surfaces : [],
+                  applied: false,
+                });
+              } else if (action.type === "apply_estimate_804n" && action.payload) {
+                const p = action.payload;
+                if (Array.isArray(p.items)) {
+                  setServicesProposal(
+                    p.items.map((it: any, idx: number) => ({
+                      id: `srv-${it.code804n || idx}-${idx}`,
+                      code804n: it.code804n || "A16.07.001",
+                      title: it.title || "Услуга",
+                      toothNumber: it.toothNumber || data.toothNumber,
+                      quantity: it.quantity || 1,
+                      priceRub: it.priceRub || 0,
+                      discountPercent: p.discountPercent,
+                      applied: false,
+                    }))
+                  );
+                }
+              } else if (action.type === "apply_soap_diary" && action.payload) {
+                const p = action.payload;
+                setSoapProposal({
+                  complaint: p.subjective?.complaints || p.complaint || "",
+                  anamnesis: [p.subjective?.anamnesisMorbi, p.subjective?.anamnesisVitae].filter(Boolean).join(" ") || p.anamnesis || "",
+                  objectiveStatus: [p.objective?.statusLocalis, p.objective?.percussion, p.objective?.coldTest, p.objective?.probing].filter(Boolean).join(" ") || p.objectiveStatus || "",
+                  diagnosis: p.assessment?.icd10Name || p.assessment?.clinicalDiagnosis || p.diagnosis || "",
+                  treatmentPlan: p.plan?.procedureProtocol || p.plan?.treatmentDescription || p.treatmentPlan || "",
+                  recommendations: p.plan?.recommendations || p.recommendations || "",
+                  applied: false,
+                });
+              }
+            }
+          }
+
+          if (data.soapDiary && !data.actions?.some((a: any) => a.type === "apply_soap_diary")) {
+            const p = data.soapDiary;
+            setSoapProposal((prev) => ({
+              ...prev,
+              complaint: p.subjective?.complaints || prev.complaint,
+              anamnesis: [p.subjective?.anamnesisMorbi, p.subjective?.anamnesisVitae].filter(Boolean).join(" ") || prev.anamnesis,
+              objectiveStatus: [p.objective?.statusLocalis, p.objective?.percussion, p.objective?.coldTest, p.objective?.probing].filter(Boolean).join(" ") || prev.objectiveStatus,
+              diagnosis: p.assessment?.icd10Name || prev.diagnosis,
+              treatmentPlan: p.plan?.procedureProtocol || prev.treatmentPlan,
+              recommendations: p.plan?.recommendations || prev.recommendations,
+              applied: false,
+            }));
+          }
+
+          showToast("Рекомендации ИИ-копилота получены и готовы к применению", "info");
+          return;
+        }
+      } catch (err) {
+        console.warn("[ChairsideCopilotHUD] API call failed, falling back to local clinical preset:", err);
+        if (/пульпит|26|канал/i.test(text)) {
+          loadPreset(1, false);
+        } else if (/гигиен|чистк|налет|скейлинг/i.test(text)) {
+          loadPreset(2, false);
+        } else {
+          loadPreset(0, false);
+        }
+        showToast("Автономный режим: сформированы предложения у кресла", "info");
+      } finally {
+        setIsThinking(false);
+      }
+    },
+    [
+      patientId,
+      activeTooth,
+      patientAllergies,
+      patientSomaticHistory,
+      visitId,
+      chairId,
+      loadPreset,
+    ]
+  );
+
   // Hotkey & custom event listeners
   useEffect(() => {
     const handleToggleEvent = () => {
@@ -461,7 +665,6 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Hotkey: Ctrl+Shift+C or Alt+C
       if ((e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "c") || (e.altKey && e.key.toLowerCase() === "c")) {
         e.preventDefault();
         handleToggleEvent();
@@ -490,8 +693,12 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     return () => unsub();
   }, []);
 
-  // 1-Click apply tooth proposal
+  // 1-Click apply tooth proposal with undo tracking (Mandate 8e)
   const handleApplyTooth = useCallback(() => {
+    setPreviousToothState(toothProposal.state);
+    if (onUpdateToothStatus) {
+      onUpdateToothStatus(toothProposal.toothNumber, toothProposal.state, toothProposal.surfaces);
+    }
     if (onApplyToothState) {
       onApplyToothState(toothProposal.toothNumber, toothProposal.state, toothProposal.surfaces);
     }
@@ -499,6 +706,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
       window.dispatchEvent(
         new CustomEvent("dente-odontogram-update", {
           detail: {
+            patientId,
             states: [{ toothNumber: toothProposal.toothNumber, state: toothProposal.state }],
           },
         })
@@ -516,19 +724,75 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     }
     setToothProposal((prev) => ({ ...prev, applied: true }));
     showToast(`Зуб ${toothProposal.toothNumber} обновлен: ${toothProposal.stateLabel}`, "success");
-  }, [toothProposal, onApplyToothState]);
+  }, [toothProposal, onUpdateToothStatus, onApplyToothState, patientId]);
 
-  // 1-Click apply services proposal
+  const handleUndoTooth = useCallback(() => {
+    const revertState = previousToothState || "Norm";
+    if (onUpdateToothStatus) {
+      onUpdateToothStatus(toothProposal.toothNumber, revertState);
+    }
+    if (onApplyToothState) {
+      onApplyToothState(toothProposal.toothNumber, revertState);
+    }
+    try {
+      window.dispatchEvent(
+        new CustomEvent("dente-odontogram-update", {
+          detail: {
+            patientId,
+            states: [{ toothNumber: toothProposal.toothNumber, state: revertState }],
+          },
+        })
+      );
+    } catch {}
+    setToothProposal((prev) => ({ ...prev, applied: false }));
+    showToast(`Откат статуса зуба ${toothProposal.toothNumber} выполнен`, "info");
+  }, [toothProposal.toothNumber, previousToothState, onUpdateToothStatus, onApplyToothState, patientId]);
+
+  // 1-Click apply services proposal with undo tracking (Mandate 8e)
   const handleApplyServices = useCallback(() => {
+    if (onAddBillingItem) {
+      onAddBillingItem(servicesProposal);
+    }
     if (onApplyServices) {
       onApplyServices(servicesProposal);
     }
+    try {
+      window.dispatchEvent(
+        new CustomEvent("dente-add-billing-item", {
+          detail: { services: servicesProposal },
+        })
+      );
+    } catch {}
+    setAddedServiceIds(servicesProposal.map((s) => s.id));
     setServicesProposal((prev) => prev.map((s) => ({ ...s, applied: true })));
     showToast(`${servicesProposal.length} услуг добавлено в смету (${servicesTotalPrice.toLocaleString("ru-RU")} ₽)`, "success");
-  }, [servicesProposal, servicesTotalPrice, onApplyServices]);
+  }, [servicesProposal, servicesTotalPrice, onAddBillingItem, onApplyServices]);
 
-  // 1-Click apply SOAP notes
+  const handleUndoServices = useCallback(() => {
+    try {
+      window.dispatchEvent(
+        new CustomEvent("dente-remove-billing-items", {
+          detail: { serviceIds: addedServiceIds },
+        })
+      );
+    } catch {}
+    setServicesProposal((prev) => prev.map((s) => ({ ...s, applied: false })));
+    showToast("Откат услуг из сметы выполнен", "info");
+  }, [addedServiceIds]);
+
+  // 1-Click apply SOAP notes with undo tracking (Mandate 8e)
   const handleApplySoap = useCallback(() => {
+    setPreviousSoapSnapshot({
+      complaint: soapProposal.complaint,
+      objective: soapProposal.objectiveStatus,
+      assessment: soapProposal.diagnosis,
+      plan: soapProposal.treatmentPlan,
+      recommendations: soapProposal.recommendations ?? "",
+    });
+
+    if (onApplySoapDiary) {
+      onApplySoapDiary(soapProposal);
+    }
     if (onApplySoapNotes) {
       onApplySoapNotes({
         subjective: soapProposal.complaint,
@@ -558,13 +822,29 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     }
     setSoapProposal((prev) => ({ ...prev, applied: true }));
     showToast("Протокол SOAP 043/у сохранен в ЭМК визита", "success");
-  }, [soapProposal, onApplySoapNotes]);
+  }, [soapProposal, onApplySoapDiary, onApplySoapNotes]);
+
+  const handleUndoSoap = useCallback(() => {
+    try {
+      window.dispatchEvent(
+        new CustomEvent("dente-undo-soap-protocol", {
+          detail: { previousSnapshot: previousSoapSnapshot },
+        })
+      );
+    } catch {}
+    setSoapProposal((prev) => ({ ...prev, applied: false }));
+    showToast("Откат вставки дневника SOAP выполнен", "info");
+  }, [previousSoapSnapshot]);
 
   // Acknowledge safety alert
   const handleAcknowledgeAlert = useCallback(() => {
     setSafetyAlert((prev) => ({ ...prev, acknowledged: true }));
     showToast("Алерт безопасности принят к сведению", "info");
   }, []);
+
+  const allApplied = useMemo(() => {
+    return toothProposal.applied && servicesProposal.every((s) => s.applied) && soapProposal.applied;
+  }, [toothProposal.applied, servicesProposal, soapProposal.applied]);
 
   // MANDATE 8e / 8k: 1-CLICK APPLY ALL (Zero modal barriers, frictionless)
   const handleApplyAll = useCallback(() => {
@@ -601,6 +881,26 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     onApplyAll,
   ]);
 
+  const handleUndoAll = useCallback(() => {
+    if (toothProposal.applied) {
+      handleUndoTooth();
+    }
+    if (servicesProposal.some((s) => s.applied)) {
+      handleUndoServices();
+    }
+    if (soapProposal.applied) {
+      handleUndoSoap();
+    }
+    showToast("Откат всех примененных действий выполнен", "info");
+  }, [
+    toothProposal.applied,
+    servicesProposal,
+    soapProposal.applied,
+    handleUndoTooth,
+    handleUndoServices,
+    handleUndoSoap,
+  ]);
+
   // Dismiss / reset proposals
   const handleDismissAll = useCallback(() => {
     setToothProposal((prev) => ({ ...prev, applied: false }));
@@ -616,24 +916,14 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
       if (e) e.preventDefault();
       const text = inputText.trim();
       if (!text) {
-        // Fallback default prompt per Mandate 8e / 8k
         const defaultPrompt = "вылечили кариес 16 зуба, световая пломба, анестезия убистезин 1 карпула";
         setInputText(defaultPrompt);
-        loadPreset(0, true);
-        showToast("Подставлен клинический запрос по умолчанию", "info");
+        executeCopilotAgent(defaultPrompt);
         return;
       }
-
-      // Check if text matches known presets
-      if (/пульпит|26|канал/i.test(text)) {
-        loadPreset(1, true);
-      } else if (/гигиен|чистк|налет|скейлинг/i.test(text)) {
-        loadPreset(2, true);
-      } else {
-        loadPreset(0, true);
-      }
+      executeCopilotAgent(text);
     },
-    [inputText, loadPreset]
+    [inputText, executeCopilotAgent]
   );
 
   // Toggle voice dictation
@@ -698,6 +988,11 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
               <Sparkles size={14} />
             </div>
             <span className="chairside-hud-title">Копилот у кресла</span>
+            {patientName && (
+              <span className="chairside-hud-patient-name" data-testid="chairside-hud-patient-name">
+                {patientName}
+              </span>
+            )}
             <span className="chairside-hud-badge" data-testid="chairside-hud-badge-mode">
               В кресле
             </span>
@@ -757,6 +1052,17 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
               </button>
             ))}
           </div>
+
+          {/* Clinical Verdict Banner (T.A.R.S. 100%) */}
+          {verdict && (
+            <section className="chairside-hud-verdict" data-testid="chairside-hud-verdict">
+              <div className="chairside-hud-verdict-title">
+                <Sparkles size={13} className="text-[var(--teal-dark)]" />
+                <span>Вердикт цифрового начмеда DENTE (T.A.R.S. 100%)</span>
+              </div>
+              <div className="chairside-hud-verdict-body">{verdict}</div>
+            </section>
+          )}
 
           {/* Collapsible Thought Stream */}
           <section className="chairside-hud-thought-stream" data-testid="chairside-thought-stream">
@@ -876,15 +1182,28 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
                 )}
               </div>
               <div className="chairside-hud-card-actions">
-                <button
-                  type="button"
-                  className="chairside-hud-btn-primary"
-                  onClick={handleApplyTooth}
-                  data-testid="btn-apply-tooth"
-                >
-                  <Check size={13} />
-                  <span>{toothProposal.applied ? "Обновить в одонтограмме" : "Применить к зубу"}</span>
-                </button>
+                {toothProposal.applied ? (
+                  <button
+                    type="button"
+                    className="chairside-hud-btn-undo"
+                    onClick={handleUndoTooth}
+                    data-testid="btn-undo-tooth"
+                    title="Откатить статус зуба"
+                  >
+                    <RotateCcw size={13} />
+                    <span>Откатить</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="chairside-hud-btn-primary"
+                    onClick={handleApplyTooth}
+                    data-testid="btn-apply-tooth"
+                  >
+                    <Check size={13} />
+                    <span>Применить к зубу</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -915,19 +1234,32 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
                 </div>
               </div>
               <div className="chairside-hud-card-actions">
-                <button
-                  type="button"
-                  className="chairside-hud-btn-primary"
-                  onClick={handleApplyServices}
-                  data-testid="btn-apply-services"
-                >
-                  <Check size={13} />
-                  <span>{servicesProposal.every((s) => s.applied) ? "Обновить смету" : "Добавить в смету"}</span>
-                </button>
+                {servicesProposal.every((s) => s.applied) ? (
+                  <button
+                    type="button"
+                    className="chairside-hud-btn-undo"
+                    onClick={handleUndoServices}
+                    data-testid="btn-undo-services"
+                    title="Откатить услуги из сметы"
+                  >
+                    <RotateCcw size={13} />
+                    <span>Откатить</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="chairside-hud-btn-primary"
+                    onClick={handleApplyServices}
+                    data-testid="btn-apply-services"
+                  >
+                    <Check size={13} />
+                    <span>Добавить в смету</span>
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* 4. Form 043/u SOAP Diary Card */}
+            {/* 4. Form 043/u SOAP Diary Card (Mandate 8e: Editable before apply + Undo) */}
             <div className="chairside-hud-card" data-testid="chairside-card-soap">
               <div className="chairside-hud-card-head">
                 <div className="chairside-hud-card-title">
@@ -939,35 +1271,100 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
                 </span>
               </div>
               <div className="chairside-hud-card-body">
-                <div className="chairside-hud-soap-grid">
-                  <div className="chairside-hud-soap-field">
-                    <span className="chairside-hud-soap-label">Жалобы (S):</span>
-                    <span className="chairside-hud-soap-val">{soapProposal.complaint}</span>
+                {isEditingSoap ? (
+                  <div className="chairside-hud-soap-grid" data-testid="chairside-soap-edit-mode">
+                    <div className="chairside-hud-soap-field">
+                      <label className="chairside-hud-soap-label">Жалобы (S):</label>
+                      <textarea
+                        className="chairside-hud-soap-edit-textarea"
+                        value={soapProposal.complaint}
+                        onChange={(e) => setSoapProposal((prev) => ({ ...prev, complaint: e.target.value }))}
+                        data-testid="input-edit-soap-complaint"
+                      />
+                    </div>
+                    <div className="chairside-hud-soap-field">
+                      <label className="chairside-hud-soap-label">Объективно (O):</label>
+                      <textarea
+                        className="chairside-hud-soap-edit-textarea"
+                        value={soapProposal.objectiveStatus}
+                        onChange={(e) => setSoapProposal((prev) => ({ ...prev, objectiveStatus: e.target.value }))}
+                        data-testid="input-edit-soap-objective"
+                      />
+                    </div>
+                    <div className="chairside-hud-soap-field">
+                      <label className="chairside-hud-soap-label">Диагноз (A):</label>
+                      <input
+                        type="text"
+                        className="chairside-hud-soap-edit-input"
+                        value={soapProposal.diagnosis}
+                        onChange={(e) => setSoapProposal((prev) => ({ ...prev, diagnosis: e.target.value }))}
+                        data-testid="input-edit-soap-diagnosis"
+                      />
+                    </div>
+                    <div className="chairside-hud-soap-field">
+                      <label className="chairside-hud-soap-label">План лечения (P):</label>
+                      <textarea
+                        className="chairside-hud-soap-edit-textarea"
+                        value={soapProposal.treatmentPlan}
+                        onChange={(e) => setSoapProposal((prev) => ({ ...prev, treatmentPlan: e.target.value }))}
+                        data-testid="input-edit-soap-plan"
+                      />
+                    </div>
                   </div>
-                  <div className="chairside-hud-soap-field">
-                    <span className="chairside-hud-soap-label">Объективно (O):</span>
-                    <span className="chairside-hud-soap-val">{soapProposal.objectiveStatus}</span>
+                ) : (
+                  <div className="chairside-hud-soap-grid">
+                    <div className="chairside-hud-soap-field">
+                      <span className="chairside-hud-soap-label">Жалобы (S):</span>
+                      <span className="chairside-hud-soap-val">{soapProposal.complaint}</span>
+                    </div>
+                    <div className="chairside-hud-soap-field">
+                      <span className="chairside-hud-soap-label">Объективно (O):</span>
+                      <span className="chairside-hud-soap-val">{soapProposal.objectiveStatus}</span>
+                    </div>
+                    <div className="chairside-hud-soap-field">
+                      <span className="chairside-hud-soap-label">Диагноз (A):</span>
+                      <span className="chairside-hud-soap-val font-semibold">{soapProposal.diagnosis}</span>
+                    </div>
+                    <div className="chairside-hud-soap-field">
+                      <span className="chairside-hud-soap-label">План лечения (P):</span>
+                      <span className="chairside-hud-soap-val">{soapProposal.treatmentPlan}</span>
+                    </div>
                   </div>
-                  <div className="chairside-hud-soap-field">
-                    <span className="chairside-hud-soap-label">Диагноз (A):</span>
-                    <span className="chairside-hud-soap-val font-semibold">{soapProposal.diagnosis}</span>
-                  </div>
-                  <div className="chairside-hud-soap-field">
-                    <span className="chairside-hud-soap-label">План лечения (P):</span>
-                    <span className="chairside-hud-soap-val">{soapProposal.treatmentPlan}</span>
-                  </div>
-                </div>
+                )}
               </div>
               <div className="chairside-hud-card-actions">
                 <button
                   type="button"
-                  className="chairside-hud-btn-primary"
-                  onClick={handleApplySoap}
-                  data-testid="btn-apply-soap"
+                  className="chairside-hud-btn-secondary"
+                  onClick={() => setIsEditingSoap((prev) => !prev)}
+                  data-testid="btn-edit-soap"
+                  title="Редактировать текст перед применением"
                 >
-                  <Check size={13} />
-                  <span>{soapProposal.applied ? "Обновить в дневнике" : "Вставить в дневник"}</span>
+                  <Edit3 size={12} />
+                  <span>{isEditingSoap ? "Завершить правку" : "Править"}</span>
                 </button>
+                {soapProposal.applied ? (
+                  <button
+                    type="button"
+                    className="chairside-hud-btn-undo"
+                    onClick={handleUndoSoap}
+                    data-testid="btn-undo-soap"
+                    title="Откатить вставку дневника"
+                  >
+                    <RotateCcw size={13} />
+                    <span>Откатить</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="chairside-hud-btn-primary"
+                    onClick={handleApplySoap}
+                    data-testid="btn-apply-soap"
+                  >
+                    <Check size={13} />
+                    <span>Вставить в дневник</span>
+                  </button>
+                )}
               </div>
             </div>
           </section>
@@ -1010,15 +1407,27 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
 
           {/* 1-Click Apply All Button (Mandate 8e & 8k) */}
           <div className="chairside-hud-apply-all-row">
-            <button
-              type="button"
-              className="chairside-hud-btn-apply-all"
-              onClick={handleApplyAll}
-              data-testid="btn-chairside-apply-all"
-            >
-              <CheckCheck size={16} />
-              <span>Применить всё в 1 клик</span>
-            </button>
+            {allApplied ? (
+              <button
+                type="button"
+                className="chairside-hud-btn-apply-all chairside-hud-btn-apply-all--undo"
+                onClick={handleUndoAll}
+                data-testid="btn-chairside-undo-all"
+              >
+                <RotateCcw size={16} />
+                <span>Откатить всё</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="chairside-hud-btn-apply-all"
+                onClick={handleApplyAll}
+                data-testid="btn-chairside-apply-all"
+              >
+                <CheckCheck size={16} />
+                <span>Применить всё в 1 клик</span>
+              </button>
+            )}
             <button
               type="button"
               className="chairside-hud-btn-dismiss"
@@ -1040,3 +1449,4 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     </aside>
   );
 };
+

@@ -71,6 +71,7 @@ export interface ToothContextDrawerProps {
 	} | undefined;
 	readonly doctorName?: string | undefined;
 	readonly onUpdateTooth?: ((num: number, updates: Partial<ToothData>) => void) | undefined;
+	readonly onUpdateToothStatus?: ((toothNumber: number, state: string) => void) | undefined;
 	readonly onApplyAnesthesia?: ((diaryText: string, result: AnesthesiaCalculationResult) => void) | undefined;
 	readonly onInsertToProtocol?: ((text: string) => void) | undefined;
 	readonly onBindKraftPackage?: ((pkg: KraftPackageRecord) => void) | undefined;
@@ -157,6 +158,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 	patient,
 	doctorName = "Лечащий врач-стоматолог",
 	onUpdateTooth,
+	onUpdateToothStatus,
 	onApplyAnesthesia,
 	onInsertToProtocol,
 	onBindKraftPackage,
@@ -178,6 +180,25 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 			setCurrentState(toothData.state);
 		}
 	}, [toothData?.state]);
+
+	// Слушатель обновления одонтограммы от Копилота (DEF-COPILOT-01)
+	useEffect(() => {
+		const handleOdontogramEvent = (e: Event) => {
+			const detail = (e as CustomEvent)?.detail;
+			if (!detail) return;
+			const states = detail.states || [detail];
+			const match = states.find((s: any) => Number(s.toothNumber) === toothNumber);
+			if (match && match.state) {
+				setCurrentState(match.state);
+				onUpdateTooth?.(toothNumber, { state: match.state });
+				onUpdateToothStatus?.(toothNumber, match.state);
+			}
+		};
+		window.addEventListener("dente-odontogram-update", handleOdontogramEvent);
+		return () => {
+			window.removeEventListener("dente-odontogram-update", handleOdontogramEvent);
+		};
+	}, [toothNumber, onUpdateTooth, onUpdateToothStatus]);
 
 	const suggestedRecall = useMemo(() => {
 		return getSuggestedRecallForToothState(currentState);
@@ -208,6 +229,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 	const handleQuickStateSelect = (newState: ToothState) => {
 		setCurrentState(newState);
 		onUpdateTooth?.(toothNumber, { state: newState });
+		onUpdateToothStatus?.(toothNumber, newState);
 	};
 
 	// Default open section (or initialSection if specified)

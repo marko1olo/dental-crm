@@ -1474,6 +1474,86 @@ export function VisitEmkTab() {
 		[updateVisitNoteField, visitNoteForm.treatmentPlan],
 	);
 
+	// Автономный ИИ-копилот (DEF-COPILOT-01): вставка дневника 043/у (SOAP)
+	const handleApplySoapDiary = React.useCallback(
+		(diary: {
+			complaint?: string;
+			anamnesis?: string;
+			objectiveStatus?: string;
+			diagnosis?: string;
+			treatmentPlan?: string;
+			recommendations?: string;
+		}) => {
+			if (isSignedVisit && !isRevisingVisitNote) {
+				setIsRevisingVisitNote(true);
+			}
+			if (!updateVisitNoteField) return;
+			if (diary.complaint) {
+				updateVisitNoteField("complaint", diary.complaint);
+			}
+			if (diary.anamnesis) {
+				updateVisitNoteField("anamnesis", diary.anamnesis);
+			}
+			if (diary.objectiveStatus) {
+				updateVisitNoteField("objectiveStatus", diary.objectiveStatus);
+			}
+			if (diary.diagnosis) {
+				updateVisitNoteField("diagnosis", diary.diagnosis);
+			}
+			if (diary.treatmentPlan) {
+				updateVisitNoteField("treatmentPlan", diary.treatmentPlan);
+			}
+			if (diary.recommendations) {
+				updateVisitNoteField("recommendations", diary.recommendations);
+			}
+		},
+		[isSignedVisit, isRevisingVisitNote, setIsRevisingVisitNote, updateVisitNoteField],
+	);
+
+	// Автономный ИИ-копилот (DEF-COPILOT-01): добавление услуги 804н в счет
+	const handleAddBillingItem = React.useCallback(
+		(item: {
+			code804n?: string;
+			title: string;
+			priceRub: number;
+			toothNumber?: number;
+			quantity?: number;
+		}) => {
+			handleAddServiceToPlan({
+				title: item.title,
+				basePriceRub: item.priceRub,
+				code804n: item.code804n,
+			});
+			try {
+				window.dispatchEvent(
+					new CustomEvent("dente-add-billing-item", {
+						detail: { item },
+					}),
+				);
+			} catch {}
+		},
+		[handleAddServiceToPlan],
+	);
+
+	// Слушатель отката SOAP протокола от Копилота (Мандат 8e: Автономия врача)
+	React.useEffect(() => {
+		const handleUndoSoapProtocol = (e: Event) => {
+			const detail = (e as CustomEvent)?.detail;
+			if (!detail?.previousSnapshot || !updateVisitNoteField) return;
+			const snap = detail.previousSnapshot;
+			if (snap.complaint !== undefined) updateVisitNoteField("complaint", snap.complaint);
+			if (snap.anamnesis !== undefined) updateVisitNoteField("anamnesis", snap.anamnesis);
+			if (snap.objectiveStatus !== undefined) updateVisitNoteField("objectiveStatus", snap.objectiveStatus);
+			if (snap.diagnosis !== undefined) updateVisitNoteField("diagnosis", snap.diagnosis);
+			if (snap.treatmentPlan !== undefined) updateVisitNoteField("treatmentPlan", snap.treatmentPlan);
+			if (snap.recommendations !== undefined) updateVisitNoteField("recommendations", snap.recommendations);
+		};
+		window.addEventListener("dente-undo-soap-protocol", handleUndoSoapProtocol);
+		return () => {
+			window.removeEventListener("dente-undo-soap-protocol", handleUndoSoapProtocol);
+		};
+	}, [updateVisitNoteField]);
+
 	const handleDownloadCdaXml = async () => {
 		const visitId = realVisitFieldId(dashboard?.activeVisit?.id);
 		if (!visitId) {
@@ -1962,10 +2042,16 @@ export function VisitEmkTab() {
 					initialOpen={true}
 					initialDocked={false}
 					activeTooth={activeSelectedTooth}
+					patientId={realVisitFieldId(activePatient?.id)}
+					visitId={realVisitFieldId((appLogic as any)?.activeVisitId || dashboard?.activeVisit?.id || (visitNoteForm as any)?.visitId)}
+					chairId={(dashboard as any)?.activeChairId || "chair-1"}
 					patientName={activePatient?.fullName}
 					patientAllergies={(activePatient as any)?.allergies}
+					patientSomaticHistory={(activePatient as any)?.somaticHistory || visitNoteForm?.anamnesis}
 					onApplyToothState={handleApplyVoiceToothState}
+					onUpdateToothStatus={handleApplyVoiceToothState}
 					onApplySoapNotes={handleApplyVoiceSoapNotes}
+					onApplySoapDiary={handleApplySoapDiary}
 					onApplyServices={(services) => {
 						services.forEach((s) => {
 							handleAddServiceToPlan({
@@ -1975,6 +2061,7 @@ export function VisitEmkTab() {
 							});
 						});
 					}}
+					onAddBillingItem={handleAddBillingItem}
 					onClose={() => setIsChairsideHudOpen(false)}
 				/>
 			)}
