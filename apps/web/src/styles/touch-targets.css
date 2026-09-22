@@ -69,9 +69,12 @@
      `.visit-sub-nav-tabs button` (VisitView.tsx:417). То есть правило про 44px
      существовало, но ни к чему не применялось, и вкладки оставались 29px даже
      на телефоне. */
+	.visit-sub-nav-tabs {
+		min-height: 44px !important;
+	}
 	.visit-sub-nav-tabs button {
-		min-height: 34px !important;
-		height: 32px !important;
+		min-height: 44px !important;
+		height: 44px !important;
 	}
 	.emk-tab-button {
 		min-height: 44px !important;

@@ -2615,7 +2615,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 							onClick={handleRequestClose}
 							disabled={isSubmitting}
 							data-testid="quick-booking-cancel-btn"
-							className="min-h-[40px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center"
+							className="min-h-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center"
 						>
 							Отмена (Esc)
 						</button>

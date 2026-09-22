@@ -2010,7 +2010,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					style={{ minHeight: "44px" }}
 				>
 					<Plus size={18} />
-					<span>Создать первое кресло</span>
+					<span>+ Создать первое кресло</span>
 				</button>
 				{!props.onOpenAddChair && isInternalAddChairModalOpen && (
 					<QuickAddChairModal
@@ -2043,7 +2043,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 	}
 
 	return (
-		<div className="space-y-3">
+		<div className="space-y-1.5 sm:space-y-2">
 			{/* Day 0 Empty State Banner when no appointments for selected day (minimal 24-28px indicator strip, Mandate 8p) */}
 			{dayAppointments.length === 0 && (
 				<div className="h-6 sm:h-7 min-h-[24px] max-h-7 px-2.5 rounded-md bg-[var(--paper-soft)] border border-dashed border-[var(--line)] flex items-center gap-1.5 text-[11px] select-none -mb-1">
@@ -2300,8 +2300,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 												data-testid={`chair-duty-doctor-select-${chair.id}`}
 												aria-label={`Дежурный врач для ${chair.name}`}
 											>
-												<option value="" disabled={Boolean(assignment?.doctorId)}>
-													{assignment?.doctorId ? "Сменить..." : "+ Врач..."}
+												<option value="">
+													{assignment?.doctorId ? "Снять врача (без назначения)" : "+ Врач..."}
 												</option>
 												{doctors.map((d) => (
 													<option key={d.id} value={d.id} title={d.fullName}>
@@ -3195,7 +3195,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 											<button
 												type="button"
 												onClick={() => openAssignModal(chair.id)}
-												className="min-h-[36px] sm:min-h-[30px] sm:h-7.5 w-full px-2.5 py-1 rounded-lg border-2 border-dashed border-[var(--teal,var(--brand-primary))]/40 bg-[var(--paper)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1.5 text-xs font-bold normal-case transition-all cursor-pointer shadow-2xs active:scale-98"
+												className="min-h-[44px] sm:min-h-[30px] sm:h-7.5 w-full px-2.5 py-1 rounded-lg border-2 border-dashed border-[var(--teal,var(--brand-primary))]/40 bg-[var(--paper)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1.5 text-xs font-bold normal-case transition-all cursor-pointer shadow-2xs active:scale-98"
 												title={`Назначить врача на кресло «${chair.name}»`}
 												aria-label={`Назначить врача на кресло ${chair.name}`}
 												data-testid={`btn-assign-doctor-${chair.id}`}
@@ -4086,7 +4086,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 										title="Выбрать другого врача"
 										data-testid={`mobile-reassign-doctor-select-${selectedMobileAppt.id}`}
 									>
-										<option value="" disabled>Все врачи...</option>
+										<option value="">Все врачи...</option>
 										{doctors.map((d) => (
 											<option key={d.id} value={d.id}>
 												{d.fullName}

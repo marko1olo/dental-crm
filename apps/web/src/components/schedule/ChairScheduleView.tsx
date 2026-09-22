@@ -1405,7 +1405,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 										className="text-xs text-[var(--muted)] font-normal shrink-0 whitespace-nowrap"
 										data-testid={`chair-view-room-${chair.id}`}
 									>
-										({roomLabel})
+										({typeof roomLabel === "string" && roomLabel.startsWith("Каб") ? roomLabel : `Каб. ${roomLabel}`})
 									</span>
 								)}
 								{(assignedDocName || hasTwoSubShifts) && (

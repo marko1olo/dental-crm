@@ -208,10 +208,11 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 38px;
-  padding: 6px 12px;
+  min-height: 32px;
+  height: 32px;
+  padding: 4px 10px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--muted, #64748b);
   background: transparent;
@@ -220,6 +221,15 @@
   transition: all 0.15s ease;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+@media (pointer: coarse) and (max-width: 640px) {
+  .emr043-tab-btn {
+    min-height: 44px;
+    height: 44px;
+    padding: 6px 12px;
+    font-size: 13px;
+  }
 }
 
 .emr043-tab-btn:hover {

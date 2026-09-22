@@ -1546,12 +1546,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handleFinishVisitAction}
 								data-testid="btn-complete-visit-header"
-								className="primary-button h-7 min-h-[28px] sm:min-h-0 sm:h-7 px-2 sm:px-3 py-0 text-xs font-bold flex items-center gap-1 sm:gap-1.5 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap"
+								className="primary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 py-0 text-xs font-bold flex items-center gap-1 sm:gap-1.5 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap h-11 sm:h-7"
 								title="Завершить приём и сохранить все изменения"
 							>
-								<CheckCircle2 size={14} className="shrink-0" />
+								<CheckCircle2 size={15} className="shrink-0" />
 								<span className="hidden sm:inline whitespace-nowrap">Завершить приём</span>
-								<span className="sm:hidden text-[11px] font-bold whitespace-nowrap">Готово</span>
+								<span className="sm:hidden text-xs font-bold whitespace-nowrap">Готово</span>
 							</button>
 
 							{/* Меню дополнительных действий врача «...» (Мандаты 8d, 8e, 8p: ровно 1 строка тулбара, вторичные действия в поповере) */}
@@ -1560,12 +1560,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									type="button"
 									onClick={() => setIsHeaderMoreMenuOpen((prev) => !prev)}
 									data-testid="visit-header-more-actions-btn"
-									className="secondary-button min-h-[32px] min-w-[32px] sm:min-h-7 sm:min-w-0 sm:h-7 px-1.5 sm:px-2 py-0 text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer shrink-0 rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
+									className="secondary-button min-h-[44px] min-w-[44px] sm:min-h-7 sm:min-w-0 sm:h-7 px-2 sm:px-2 py-0 text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer shrink-0 rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors h-11 sm:h-7 w-11 sm:w-auto"
 									title="Дополнительные действия и бланки приема"
 									aria-label="Дополнительные действия приема"
 									aria-expanded={isHeaderMoreMenuOpen}
 								>
-									<MoreHorizontal size={15} className="shrink-0" />
+									<MoreHorizontal size={16} className="shrink-0" />
 								</button>
 
 								{isHeaderMoreMenuOpen && (
@@ -1681,8 +1681,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</div>
 					</div>
 
-					{/* Строка 2 (высота ~30-34px): Компактные табы разделов визита (DEF-VIS-02, DEFECT-MOB-01) */}
-					<div className="relative min-h-[32px] sm:h-8 flex items-center bg-[var(--paper-soft,rgba(0,0,0,0.02))] min-w-0 max-w-full overflow-hidden">
+					{/* Строка 2 (высота ~30-34px на десктопе, 44px на мобильном): Компактные табы разделов визита (DEF-VIS-02, DEFECT-MOB-01) */}
+					<div className="relative min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center bg-[var(--paper-soft,rgba(0,0,0,0.02))] min-w-0 max-w-full overflow-hidden">
 						<VisitMainTabs
 							visitSubViewTab={visitSubViewTab}
 							setVisitSubViewTab={setVisitSubViewTab}

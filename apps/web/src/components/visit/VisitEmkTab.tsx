@@ -2074,7 +2074,7 @@ export function VisitEmkTab() {
 			)}
 
 			{/* ── ЕДИНЫЙ ТУЛБАР ЭМК 043/у (СТРОГО 1 СТРОКА 30–32px, МАНДАТЫ 8c, 8d, 8p) ── */}
-			<div className="emk-unified-toolbar flex items-center justify-between gap-1.5 my-0 py-0.5 border-b border-[var(--line)] w-full min-w-0 max-w-full overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-nowrap min-h-[30px] sm:min-h-[32px]">
+			<div className="emk-unified-toolbar flex items-center justify-start sm:justify-between gap-1 sm:gap-1.5 my-0 py-0.5 border-b border-[var(--line)] w-full min-w-0 max-w-full overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-nowrap min-h-[44px] sm:min-h-[32px]">
 				{/* 1. HUD ГОЛОСОВОЙ ДИКТОВКИ / AI-ПИЛОТ (инлайн в едином тулбаре 32-36px, Мандаты 8c, 8d, 8p) */}
 				<EmkVoicePilot
 					onApplyToothState={handleApplyVoiceToothState}
@@ -2103,7 +2103,7 @@ export function VisitEmkTab() {
 								type="button"
 								role="tab"
 								aria-selected={activeEmkTab === tab.id}
-								className={`emk-tab-button min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center gap-1 shrink-0 flex-shrink-0 whitespace-nowrap touch-manipulation ${
+								className={`emk-tab-button min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2.5 sm:px-2.5 py-0 text-xs font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center gap-1 shrink-0 flex-shrink-0 whitespace-nowrap touch-manipulation ${
 									activeEmkTab === tab.id
 										? "active bg-[var(--teal-fill,var(--teal))] text-white border-[var(--teal-fill,var(--teal))] shadow-2xs"
 										: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)]"
@@ -2131,7 +2131,7 @@ export function VisitEmkTab() {
 						type="button"
 						data-testid="btn-quick-soap-norm"
 						onClick={handleApplyPhysiologicalNorm}
-						className="shrink-0 flex-shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
+						className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
 						title="Соматически здоров / норма (1-клик): зафиксировать физиологическую норму по умолчанию в форме 043/у"
 						aria-label="Соматически здоров / норма (1-клик)"
 					>
@@ -2152,7 +2152,7 @@ export function VisitEmkTab() {
 									"clean_replace",
 								);
 						}}
-						className="shrink-0 flex-shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
+						className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
 						title="Профгигиена K05.0: комплексная чистка УЗ + Air-Flow + Clinpro"
 					>
 						<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
@@ -2169,7 +2169,7 @@ export function VisitEmkTab() {
 									"clean_replace",
 								);
 						}}
-						className="shrink-0 flex-shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
+						className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
 						title="Кариес дентина K02.1: автозаполнение нормы + жалобы + статус + протокол 804н"
 					>
 						<FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
@@ -2181,10 +2181,10 @@ export function VisitEmkTab() {
 							type="button"
 							data-testid="btn-toggle-extra-soap-menu"
 							onClick={() => setIsExtraSoapMenuOpen((prev) => !prev)}
-							className={`shrink-0 flex-shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max ${
+							className={`shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max ${
 								isExtraSoapMenuOpen || isStarProtocolsOpen
-									? "bg-[var(--teal-soft)] text-[var(--teal-dark)] border-[var(--teal)]"
-									: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)]"
+									? "border-[var(--teal)] bg-[var(--teal-soft)] text-[var(--teal-dark)]"
+									: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:bg-[var(--paper)] hover:text-[var(--ink)]"
 							}`}
 							title="Дополнительные протоколы: Пульпит, Периодонтит, Удаление, СтАР 804н"
 							aria-expanded={isExtraSoapMenuOpen}

@@ -805,60 +805,54 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 					</header>
 
 					{/* ── Навигационные вкладки ── */}
-					<nav className="emr043-nav-tabs" style={{ flexWrap: "nowrap", width: "100%", padding: "6px 16px", gap: "6px", overflowX: "auto" }}>
+					<nav className="emr043-nav-tabs" style={{ flexWrap: "nowrap", width: "100%", padding: "4px 16px", gap: "6px", overflowX: "auto" }}>
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "overview" ? "active" : ""}`}
-							style={{ minHeight: "44px", flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("overview")}
 						>
-							<FileText className="w-4 h-4" />
+							<FileText className="w-3.5 h-3.5 shrink-0" />
 							<span>Обзор и печать A4</span>
 						</button>
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "passport" ? "active" : ""}`}
-							style={{ minHeight: "44px", flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("passport")}
 						>
-							<User className="w-4 h-4" />
+							<User className="w-3.5 h-3.5 shrink-0" />
 							<span>1. Паспортная часть</span>
 						</button>
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "anamnesis" ? "active" : ""}`}
-							style={{ minHeight: "44px", flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("anamnesis")}
 						>
-							<HeartPulse className="w-4 h-4" />
+							<HeartPulse className="w-3.5 h-3.5 shrink-0" />
 							<span>2. Анамнез и соматика</span>
 						</button>
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "odontogram" ? "active" : ""}`}
-							style={{ minHeight: "44px", flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("odontogram")}
 						>
-							<Activity className="w-4 h-4" />
+							<Activity className="w-3.5 h-3.5 shrink-0" />
 							<span>3. Зубная формула и индексы</span>
 						</button>
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "diaries" ? "active" : ""}`}
-							style={{ minHeight: "44px", flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("diaries")}
 						>
-							<Calendar className="w-4 h-4" />
+							<Calendar className="w-3.5 h-3.5 shrink-0" />
 							<span>4. Дневники визитов (Форма 043/у)</span>
 							<span style={{ fontSize: "11px", fontWeight: "bold", opacity: 0.8 }}>({formData.visitDiaries.length})</span>
 						</button>
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "epicrisis" ? "active" : ""}`}
-							style={{ minHeight: "44px", flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("epicrisis")}
 						>
-							<Award className="w-4 h-4" />
+							<Award className="w-3.5 h-3.5 shrink-0" />
 							<span>5. Эпикриз и диспансеризация</span>
 						</button>
 					</nav>

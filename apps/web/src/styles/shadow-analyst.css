@@ -46,8 +46,8 @@
 
 @media (max-width: 640px) {
 	.sa-toast {
-		top: 1rem !important;
-		bottom: auto !important;
+		top: auto !important;
+		bottom: 5rem !important;
 		left: 1rem !important;
 		right: 1rem !important;
 		max-width: calc(100vw - 2rem) !important;
@@ -79,7 +79,7 @@ body:has(.payment-modal) .sa-toast,
 .sa-toast--modal-active {
 	top: auto !important;
 	bottom: 5rem !important;
-	z-index: 50 !important;
+	z-index: 99999 !important;
 }
 
 @keyframes sa-slide-up {

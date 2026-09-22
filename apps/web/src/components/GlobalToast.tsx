@@ -70,7 +70,7 @@ export function GlobalToast() {
 
 	if (!toast) return null;
 
-	const toastZIndex = isModalOpen ? 50 : 99999;
+	const toastZIndex = 99999;
 
 	// Re-use sa-toast styles from ShadowAnalyst with full theme tokens support
 	return (

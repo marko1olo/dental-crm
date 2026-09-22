@@ -1344,7 +1344,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						<button
 							type="button"
 							onClick={handleQuickPrintInvoice}
-							className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-8 sm:min-w-0 px-2.5 py-1 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+							className="hidden sm:flex min-h-[32px] sm:h-8 sm:min-w-0 px-2.5 py-1 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0"
 							title="Быстрая печать счета"
 							aria-label="Печать счета"
 							data-testid="btn-payment-modal-print-invoice"
@@ -1355,7 +1355,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						<button
 							type="button"
 							onClick={handleQuickPrintAct}
-							className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:h-8 sm:min-w-0 px-2.5 py-1 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+							className="hidden sm:flex min-h-[32px] sm:h-8 sm:min-w-0 px-2.5 py-1 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0"
 							title="Быстрая печать акта сдачи-приемки (804н)"
 							aria-label="Печать акта 804н"
 							data-testid="btn-payment-modal-print-act"
@@ -1457,7 +1457,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						}`}
 					>
 						<CreditCard size={15} className="text-emerald-600 shrink-0" />
-						<span className="whitespace-nowrap shrink-0">POS Терминал Сбербанк</span>
+						<span className="whitespace-nowrap shrink-0 hidden sm:inline">POS Терминал Сбербанк</span>
+						<span className="whitespace-nowrap shrink-0 sm:hidden">Терминал</span>
 					</button>
 
 					<button
@@ -1471,7 +1472,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						}`}
 					>
 						<QrCode size={15} className="text-teal-600 shrink-0" />
-						<span className="whitespace-nowrap shrink-0">SberPay QR (СБП)</span>
+						<span className="whitespace-nowrap shrink-0 hidden sm:inline">SberPay QR (СБП)</span>
+						<span className="whitespace-nowrap shrink-0 sm:hidden">SberPay QR</span>
 					</button>
 
 					<button
@@ -1486,7 +1488,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						title="Оплата СБП по QR (НСПК / ГОСТ Р 56042-2014)"
 					>
 						<QrCode size={15} className="text-teal-600 shrink-0" />
-						<span className="whitespace-nowrap shrink-0">Оплата СБП по QR</span>
+						<span className="whitespace-nowrap shrink-0 hidden sm:inline">Оплата СБП по QR</span>
+						<span className="whitespace-nowrap shrink-0 sm:hidden">СБП QR</span>
 					</button>
 
 					<button
@@ -1514,7 +1517,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						}`}
 					>
 						<Users size={15} className="text-pink-600 shrink-0" />
-						<span className="whitespace-nowrap shrink-0">Депозит / Семья</span>
+						<span className="whitespace-nowrap shrink-0 hidden sm:inline">Депозит / Семья</span>
+						<span className="whitespace-nowrap shrink-0 sm:hidden">Депозит</span>
 					</button>
 
 					<button
@@ -1528,7 +1532,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						}`}
 					>
 						<Wallet size={15} className="text-purple-600 shrink-0" />
-						<span className="whitespace-nowrap shrink-0">Комбинированная (Сплит)</span>
+						<span className="whitespace-nowrap shrink-0 hidden sm:inline">Комбинированная (Сплит)</span>
+						<span className="whitespace-nowrap shrink-0 sm:hidden">Сплит</span>
 					</button>
 				</div>
 
@@ -2147,23 +2152,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 									)}
 								</span>
 							</div>
-
-							<button
-								type="button"
-								onClick={handleSplitSubmit}
-								disabled={isSubmittingSplit}
-								title={
-									isSubmittingSplit
-										? "Идет фиксация комбинированной оплаты..."
-										: !isBalanced
-											? "Автоматически сбалансирует остаток и проведет оплату"
-											: undefined
-								}
-								className="min-h-[44px] w-full rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all bg-purple-600 hover:bg-purple-700 active:scale-98 disabled:opacity-50"
-							>
-								<CheckCircle size={16} />
-								<span>{isSubmittingSplit ? "Фиксация..." : `Подтвердить комбинированную оплату ${totalDueRub} ₽`}</span>
-							</button>
 						</div>
 					) : (
 						<div className="space-y-4" data-testid="payment-family-deposit-view">
@@ -2782,7 +2770,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								type="button"
 								onClick={handleSplitSubmit}
 								disabled={isSubmittingSplit}
-								title={isSubmittingSplit ? "Идет фиксация комбинированной оплаты..." : undefined}
+								title={
+									isSubmittingSplit
+										? "Идет фиксация комбинированной оплаты..."
+										: !isBalanced
+											? "Автоматически сбалансирует остаток и проведет оплату"
+											: undefined
+								}
 								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 sm:px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer shadow-sm transition-all min-w-0 truncate shrink-0"
 								data-testid="btn-split-submit-footer"
 							>
