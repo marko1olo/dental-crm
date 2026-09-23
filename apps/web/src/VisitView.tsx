@@ -266,6 +266,8 @@ import {
 import { EmergencyRescueModal } from "./components/emergency/EmergencyRescueModal";
 import { VoiceDictationAssistantModal, type DictationCommand } from "./components/voice/VoiceDictationAssistantModal";
 import { WarrantyPassportModal } from "./components/warranty/WarrantyPassportModal";
+import { InformedConsentModal } from "./components/consents/InformedConsentModal";
+import { generateInformedConsent1051nHtml } from "./lib/clinicalProtocols043";
 import { renderForm043uHtml } from "@dental/shared";
 import {
 	Activity,
@@ -280,6 +282,7 @@ import {
 	CircleDot,
 	ClipboardCheck as DefaultClipboardCheck,
 	ClipboardList,
+	Clock,
 	Compass,
 	Crown,
 	Edit3,
@@ -656,6 +659,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [isEmergencyModalOpen, setIsEmergencyModalOpen] = React.useState(false);
 	const [isVoiceDictationModalOpen, setIsVoiceDictationModalOpen] = React.useState(false);
 	const [isWarrantyModalOpen, setIsWarrantyModalOpen] = React.useState(false);
+	const [isInformedConsentModalOpen, setIsInformedConsentModalOpen] = React.useState(false);
 	const [isHeaderMoreMenuOpen, setIsHeaderMoreMenuOpen] = React.useState(false);
 	const headerMoreMenuRef = React.useRef<HTMLDivElement>(null);
 
@@ -771,6 +775,26 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		visitNoteForm?.treatmentPlan,
 		draft?.treatmentPlan,
 	]);
+
+	// Мандат 8e: Срок действия плана лечения (> 30 дней) — мягкое предупреждение без блокировок
+	const treatmentPlanAgeDays = React.useMemo(() => {
+		const planCreatedAt =
+			(activePatient as { treatmentPlanCreatedAt?: string; activeTreatmentPlanCreatedAt?: string } | null)?.treatmentPlanCreatedAt ||
+			(activePatient as { treatmentPlanCreatedAt?: string; activeTreatmentPlanCreatedAt?: string } | null)?.activeTreatmentPlanCreatedAt ||
+			(activeAppointment as { planCreatedAt?: string; treatmentPlanCreatedAt?: string } | null)?.planCreatedAt ||
+			(activeAppointment as { planCreatedAt?: string; treatmentPlanCreatedAt?: string } | null)?.treatmentPlanCreatedAt ||
+			priceValidatorPlanPayload?.createdAtIso;
+		if (!planCreatedAt) return 0;
+		const start = new Date(planCreatedAt).getTime();
+		const now = Date.now();
+		if (Number.isNaN(start)) return 0;
+		return Math.max(0, Math.floor((now - start) / (1000 * 60 * 60 * 24)));
+	}, [activePatient, activeAppointment, priceValidatorPlanPayload]);
+
+	const isTreatmentPlanExpiredSoft =
+		treatmentPlanAgeDays > 30 ||
+		Boolean((activePatient as { isPlanExpired?: boolean } | null)?.isPlanExpired) ||
+		Boolean((activeAppointment as { isPlanExpired?: boolean } | null)?.isPlanExpired);
 
 	/*
     НАЗВАНИЯ МАТЕРИАЛОВ ПОПАДАЮТ В ТЕКСТ ПЛАНА ЛЕЧЕНИЯ, ПОЭТОМУ ОНИ ТОЧНЫЕ.
@@ -1039,6 +1063,96 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			window.removeEventListener("dente:print-043-diary", handlePrintEvent);
 		};
 	}, [handlePrintForm043uFast]);
+
+	// Мандат 8e: Печать информированного добровольного согласия (ИДС 1051н) в 1 клик
+	// Врач печатает согласие в любой момент: открытый визит — штамп «ЧЕРНОВИК», закрытый — «ПОДПИСАНО ВРАЧОМ»
+	const handlePrintInformedConsentFast = useCallback(() => {
+		if (typeof window === "undefined") return;
+		const isClosed =
+			activeAppointment?.status === "completed" ||
+			activeAppointment?.status === "signed" ||
+			activeAppointment?.status === "closed" ||
+			visitNoteForm?.status === "completed" ||
+			visitNoteForm?.status === "signed";
+		const watermarkText = isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК";
+
+		const consentHtml = generateInformedConsent1051nHtml({
+			patientFullName:
+				activePatient?.fullName ||
+				activePatient?.name ||
+				"________________________",
+			patientBirthDate: activePatient?.birthDate || "—",
+			patientAddress: activePatient?.address || "—",
+			doctorFullName:
+				activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог",
+			doctorSpecialty:
+				activeDoctor?.specialty ||
+				activeDoctor?.specialtyRu ||
+				"Врач-стоматолог",
+			clinicName:
+				(dashboard as { clinicSettings?: { profile?: { brandName?: string } } } | null)?.clinicSettings?.profile?.brandName ||
+				"Стоматологическая клиника «DENTE» (ООО «ДЕНТЕ МЕДИКАЛ ГРУПП»)",
+			clinicLicense:
+				(dashboard as { clinicSettings?: { profile?: { medicalLicenseNumber?: string } } } | null)?.clinicSettings?.profile?.medicalLicenseNumber ||
+				"№ ЛО41-01137-77/00368421 от 14.02.2023 г. выдана Департаментом здравоохранения города Москвы",
+			diagnosisIcd: visitNoteForm?.diagnosis || "Z01.2 Стоматологическое обследование",
+			toothNumbers: typeof selectedToothForMenu === "number" ? String(selectedToothForMenu) : undefined,
+			isClosed,
+			watermarkText,
+		});
+
+		const printFrame = document.createElement("iframe");
+		printFrame.style.position = "fixed";
+		printFrame.style.right = "0";
+		printFrame.style.bottom = "0";
+		printFrame.style.width = "0";
+		printFrame.style.height = "0";
+		printFrame.style.border = "0";
+		document.body.appendChild(printFrame);
+
+		const frameDoc =
+			printFrame.contentWindow?.document || printFrame.contentDocument;
+		if (frameDoc) {
+			frameDoc.write(consentHtml);
+			frameDoc.close();
+			setTimeout(() => {
+				printFrame.contentWindow?.focus();
+				printFrame.contentWindow?.print();
+				setTimeout(() => {
+					if (document.body.contains(printFrame)) {
+						document.body.removeChild(printFrame);
+					}
+				}, 1000);
+			}, 150);
+		} else {
+			const printWindow = window.open("", "_blank");
+			if (printWindow) {
+				printWindow.document.write(consentHtml);
+				printWindow.document.close();
+				printWindow.focus();
+				printWindow.print();
+			} else {
+				window.print();
+			}
+		}
+
+		showToast(
+			`ИДС на медицинское вмешательство (Приказ 1051н) отправлено на печать (${watermarkText})`,
+			"success",
+			6000,
+		);
+	}, [activeAppointment, activeDoctor, activePatient, dashboard, selectedToothForMenu, visitNoteForm]);
+
+	// Мандат 8e: Печать согласий по событию (dente:print-consent)
+	React.useEffect(() => {
+		const handlePrintConsentEvent = () => {
+			handlePrintInformedConsentFast();
+		};
+		window.addEventListener("dente:print-consent", handlePrintConsentEvent);
+		return () => {
+			window.removeEventListener("dente:print-consent", handlePrintConsentEvent);
+		};
+	}, [handlePrintInformedConsentFast]);
 
 	// Мандат 8e: Сохранение визита по горячей клавише Ctrl+S (App.tsx:266 dente:autosave-visit)
 	React.useEffect(() => {
@@ -1652,13 +1766,47 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												handlePrintForm043uFast();
 											}}
 											data-testid="visit-more-action-print-043u"
-											className="sm:hidden w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
 											role="menuitem"
 										>
 											<Printer size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
 											<div className="flex flex-col">
 												<span className="font-semibold">Печать Формы 043/у</span>
 												<span className="text-[10px] text-[var(--muted)]">С текущим штампом (черновик/подписано)</span>
+											</div>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												setIsHeaderMoreMenuOpen(false);
+												handlePrintInformedConsentFast();
+											}}
+											data-testid="visit-more-action-print-consent"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+											role="menuitem"
+										>
+											<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+											<div className="flex flex-col">
+												<span className="font-semibold">Печать согласия (ИДС 1051н)</span>
+												<span className="text-[10px] text-[var(--muted)]">С текущим штампом (черновик/подписано)</span>
+											</div>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												setIsHeaderMoreMenuOpen(false);
+												setIsInformedConsentModalOpen(true);
+											}}
+											data-testid="visit-more-action-consent-modal"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+											role="menuitem"
+										>
+											<FileText size={14} className="text-[var(--teal)] shrink-0" />
+											<div className="flex flex-col">
+												<span className="font-semibold">Выбор бланка согласия (ИДС)</span>
+												<span className="text-[10px] text-[var(--muted)]">Терапия, хирургия, анестезия, КТ</span>
 											</div>
 										</button>
 
@@ -1931,14 +2079,36 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								</p>
 							</div>
 						</div>
-						<div className="flex items-center gap-2 shrink-0">
+						<div className="flex items-center gap-2 shrink-0 flex-wrap">
 							<button
 								type="button"
 								onClick={handlePrintForm043uFast}
+								data-testid="btn-visit-consents-print-043u"
 								className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+								title="Распечатать карту 043/у (со штампом ЧЕРНОВИК или ПОДПИСАНО ВРАЧОМ)"
 							>
 								<Printer size={14} />
 								<span>Печать 043/у</span>
+							</button>
+							<button
+								type="button"
+								onClick={handlePrintInformedConsentFast}
+								data-testid="btn-visit-fast-print-consent-1051n"
+								className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+								title="Распечатать официальный бланк ИДС по Приказу Минздрава РФ № 1051н (со штампом ЧЕРНОВИК или ПОДПИСАНО ВРАЧОМ)"
+							>
+								<Printer size={14} className="text-emerald-600 dark:text-emerald-400" />
+								<span>Печать ИДС 1051н</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setIsInformedConsentModalOpen(true)}
+								data-testid="btn-visit-open-consent-modal"
+								className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+								title="Открыть выбор специализированных бланков согласий (терапия, анестезия, хирургия, КТ)"
+							>
+								<ShieldCheck size={14} className="text-[var(--teal)]" />
+								<span>Выбрать бланк ИДС</span>
 							</button>
 							<button
 								type="button"
@@ -3708,6 +3878,16 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								>
 									Сверка позиций с каталогом услуг, фиксация гарантийной сметы и формирование наряда/акта
 								</div>
+								{isTreatmentPlanExpiredSoft && (
+									<div
+										className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs font-semibold mt-1"
+										data-testid="visit-plan-expired-soft-notice"
+										title="План составлен более 30 дней назад. Оказание услуг, создание нарядов ЗТЛ и оплата разрешены без ограничений (Мандат 8e)"
+									>
+										<Clock size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
+										<span>План составлен более 30 дней назад ({treatmentPlanAgeDays} дн.). Цены могут быть скорректированы, наряды ЗТЛ и оплата не блокируются.</span>
+									</div>
+								)}
 							</div>
 						</div>
 
@@ -4555,6 +4735,56 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				}}
 				onCertificateIssued={(cert) => {
 					showToast(`Выдан гарантийный сертификат № ${cert.certificateId}`, "success");
+				}}
+			/>
+
+			{/* Informed Consent Modal (Приказ Минздрава РФ № 1051н) */}
+			<InformedConsentModal
+				isOpen={isInformedConsentModalOpen}
+				onClose={() => setIsInformedConsentModalOpen(false)}
+				patient={
+					activePatient
+						? {
+								fullName: activePatient.fullName || activePatient.name,
+								birthDate: activePatient.birthDate,
+								passport: (activePatient as { passport?: string } | null)?.passport,
+								phone: activePatient.phone,
+								address: activePatient.address,
+								cardNumber: activePatient.cardNumber || activePatient.medCardNumber,
+							}
+						: null
+				}
+				doctorName={activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог"}
+				doctorSpecialty={activeDoctor?.specialty || activeDoctor?.specialtyRu || "Стоматолог-терапевт"}
+				clinicName={
+					(dashboard as { clinicSettings?: { profile?: { brandName?: string } } } | null)?.clinicSettings?.profile?.brandName ||
+					dashboard?.organization?.name ||
+					"Стоматологическая клиника «DENTE»"
+				}
+				clinicLegalName={
+					(dashboard as { clinicSettings?: { profile?: { legalName?: string; brandName?: string } } } | null)?.clinicSettings?.profile?.legalName ||
+					(dashboard as { clinicSettings?: { profile?: { brandName?: string } } } | null)?.clinicSettings?.profile?.brandName ||
+					dashboard?.organization?.name ||
+					"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
+				}
+				licenseNumber={
+					(dashboard as { clinicSettings?: { profile?: { medicalLicenseNumber?: string } } } | null)?.clinicSettings?.profile?.medicalLicenseNumber ||
+					"ЛО41-01137-77/00368421"
+				}
+				diagnosisIcd={visitNoteForm?.diagnosis || "Z01.2 Стоматологическое обследование"}
+				toothNumbers={typeof selectedToothForMenu === "number" ? String(selectedToothForMenu) : undefined}
+				isSigned={
+					activeAppointment?.status === "completed" ||
+					activeAppointment?.status === "signed" ||
+					visitNoteForm?.status === "signed"
+				}
+				status={activeAppointment?.status}
+				onConsentConfirmed={(payload) => {
+					appendToEMKField(
+						"recommendations",
+						`Пациент ознакомлен и подписал ${payload.consentType} (${payload.intervention}, область: ${payload.toothOrArea || "по плану"}).`,
+					);
+					showToast("Информированное согласие прикреплено к протоколу приёма", "success");
 				}}
 			/>
 

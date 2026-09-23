@@ -341,6 +341,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 								{report.isPlanExpired ? (
 									<span
 										className="pv-badge pv-badge-warn"
+										data-testid="validator-expired-unblocked-badge"
 										title="План составлен более 30 дней назад, цены могут быть скорректированы. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (согласовано врачом)."
 									>
 										<Clock size={12} /> План составлен более 30 дней назад, цены могут быть скорректированы
@@ -571,6 +572,28 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 					{/* TAB 1: PRICELIST VERIFICATION */}
 					{activeTab === "prices" && (
 						<>
+							{/* Мягкое информационное предупреждение об истечении 30 дней (Мандат 8e: без блокировок) */}
+							{report.isPlanExpired && (
+								<div
+									className="price-validator-banner status-info"
+									data-testid="validator-plan-expired-soft-banner"
+									style={{
+										background: "rgba(245, 158, 11, 0.08)",
+										borderColor: "rgba(245, 158, 11, 0.3)",
+										color: "var(--ink)",
+										marginBottom: "0.75rem",
+									}}
+								>
+									<Clock size={20} className="text-amber-600 dark:text-amber-400 shrink-0" />
+									<div>
+										<strong>Мягкое предупреждение: срок составления сметы превысил 30 дней</strong>
+										<div style={{ marginTop: 2, fontSize: "0.85rem" }}>
+											В соответствии с Мандатом 8e, истечение 30 дней с момента составления плана лечения НЕ БЛОКИРУЕТ оказание услуг, создание нарядов ЗТЛ или проведение оплаты. Цены зафиксированы по согласованию с лечащим врачом.
+										</div>
+									</div>
+								</div>
+							)}
+
 							{/* Validation Messages Banner */}
 							{report.validationMessages.length > 0 && (
 								<div
@@ -768,7 +791,11 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 																	"UPDATE_TO_CURRENT_PRICE",
 																)
 															}
-															title="Пересчет по текущему прайсу"
+															title={
+																item.isArchived
+																	? "Услуга выведена в архив прайс-листа клиники (пересчет по новому прайсу недоступен)"
+																	: "Пересчет по текущему прайсу клиники"
+															}
 															disabled={item.isArchived}
 														>
 															Прайс

@@ -424,7 +424,7 @@ export function validateTreatmentPlanPrices(
 		(i) => (i.isArchived || i.isNotFound) && (i.selectedResolution as string) !== "REPLACE_WITH_804N_ANALOGUE",
 	);
 
-	if (hasUnresolvedArchivedOrMissing) {
+	if (hasUnresolvedArchivedOrMissing && !isAuthorizedByAdmin) {
 		overallStatus = "BLOCKED_ARCHIVED_SERVICE";
 		validationMessages.push(
 			`Обнаружено ${archivedItemsCount + notFoundItemsCount} архивных позиций. Оказание услуг, создание наряда ЗТЛ и печать акта разрешены в полном объеме по гарантии сметы (Мандат 8e: автономия врача, без блокировок).`,

@@ -114,4 +114,57 @@ describe("planPriceValidationEngine: Pricelist Matching, Inflation Thresholds & 
 		assert.ok(act.orderNumber.startsWith("АВР-"));
 		assert.equal(act.orderType, "completed_works_act");
 	});
+
+	test("Мандат 8e: план составленный более 30 дней назад НЕ БЛОКИРУЕТ создание нарядов ЗТЛ, оказание услуг или оплату", () => {
+		const preset = PLAN_PRICE_POLICY_PRESETS.standard_30;
+		// План составлен 45 дней назад
+		const expiredDateIso = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString();
+		const expiredPlan = {
+			...SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
+			createdAtIso: expiredDateIso,
+			items: SAMPLE_TREATMENT_PLAN_FOR_VALIDATION.items.slice(0, 4), // 4 активные позиции
+		};
+
+		const report = validateTreatmentPlanPrices(
+			expiredPlan,
+			SAMPLE_CURRENT_PRICELIST,
+			preset,
+		);
+
+		// Проверки автономии врача (Мандат 8e):
+		assert.equal(report.isPlanExpired, true, "План должен быть помечен как истекший (> 30 дней)");
+		assert.ok(report.planAgeDays >= 45, "Возраст плана должен быть >= 45 дней");
+		assert.equal(report.canGenerateWorkOrder, true, "Создание нарядов ЗТЛ НЕ БЛОКИРУЕТСЯ");
+		assert.equal(report.canGenerateCompletedAct, true, "Формирование акта выполненных работ НЕ БЛОКИРУЕТСЯ");
+		assert.equal(report.overallStatus, "APPROVED_PRICE_LOCKED", "Статус должен фиксировать цены плана по гарантии");
+		assert.ok(
+			report.validationMessages.some((m) => m.includes("не блокируются")),
+			"В отчете должно быть мягкое информационное предупреждение о неблокирующем истечении 30 дней",
+		);
+
+		// Формирование наряда ЗТЛ по просроченному плану разрешено без обязательного PIN-кода администратора
+		const workOrder = generateWorkOrderExportPayload(report, "work_order");
+		assert.ok(workOrder.orderNumber.startsWith("НЗ-"));
+		assert.equal(workOrder.totalPayableRub, report.resolvedNetRub);
+
+		// Проверка плана с архивной позицией при подтверждении врачом в 1 клик (Мандат 8e)
+		const expiredPlanWithArchived = {
+			...SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
+			createdAtIso: expiredDateIso,
+		};
+		const reportDoctorAutonomy = validateTreatmentPlanPrices(
+			expiredPlanWithArchived,
+			SAMPLE_CURRENT_PRICELIST,
+			preset,
+			undefined,
+			undefined,
+			{ isAuthorized: true, authorizedByAdminName: "Лечащий врач (автономия)" },
+		);
+		assert.ok(
+			reportDoctorAutonomy.overallStatus.startsWith("APPROVED_"),
+			`При автономии врача статус должен быть одобрен, получено: ${reportDoctorAutonomy.overallStatus}`,
+		);
+		assert.equal(reportDoctorAutonomy.canGenerateWorkOrder, true);
+	});
 });
+
