@@ -1,0 +1,445 @@
+[
+  {
+    "caseUuid": "f6f8d22e-5fc8-4dd1-bfee-5f5de980e65f",
+    "device": "3ds",
+    "diagnoseDate": "2026-08-18T16:10:27",
+    "preparationType": 2,
+    "comments": "неодент",
+    "meshFiles": [
+      "implant_upper.ply",
+      "implant_lower.ply",
+      "implant_scanbody_lower.ply",
+      "implant_buccal_1.stl",
+      "implant_buccal_2.stl"
+    ],
+    "teethItems": [
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 87,
+        "ToothNumber": 46,
+        "ColorType": "",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "SCREW_RETAINED",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      }
+    ]
+  },
+  {
+    "caseUuid": "02d0b21a-174b-4335-b60a-5f7668a4fb50",
+    "device": "3ds",
+    "diagnoseDate": "2026-07-28T17:47:45",
+    "preparationType": 2,
+    "comments": "",
+    "meshFiles": [
+      "implant_upper.ply",
+      "implant_lower.ply",
+      "implant_scanbody_lower.ply",
+      "implant_buccal_1.stl",
+      "implant_buccal_2.stl"
+    ],
+    "teethItems": [
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 79,
+        "ToothNumber": 12,
+        "ColorType": "",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "SCREW_RETAINED",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      },
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 79,
+        "ToothNumber": 22,
+        "ColorType": "",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "NONE",
+        "Implant_Retention_Code": "",
+        "Implant_Abutument_Code": "",
+        "Implant_Substructure_Code": "",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "MISSING_TOOTH"
+      },
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 79,
+        "ToothNumber": 21,
+        "ColorType": "",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "SCREW_RETAINED",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      }
+    ]
+  },
+  {
+    "caseUuid": "f11e808d-9b79-40b7-b3f0-b641b19f955b",
+    "device": "3ds",
+    "diagnoseDate": "2026-07-20T09:08:00",
+    "preparationType": 2,
+    "comments": "",
+    "meshFiles": [
+      "implant_upper.ply",
+      "implant_lower.ply",
+      "implant_scanbody_lower.ply",
+      "implant_buccal_1.stl",
+      "implant_buccal_2.stl"
+    ],
+    "teethItems": [
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 76,
+        "ToothNumber": 46,
+        "ColorType": "",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "SCREW_RETAINED",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      }
+    ]
+  },
+  {
+    "caseUuid": "f11e808d-9b79-40b7-b3f0-b641b19f955b",
+    "device": "3ds",
+    "diagnoseDate": "2026-07-20T09:08:00",
+    "preparationType": 2,
+    "comments": "",
+    "meshFiles": [
+      "implant_upper.ply",
+      "implant_lower.ply",
+      "implant_scanbody_lower.ply",
+      "implant_buccal_1.stl",
+      "implant_buccal_2.stl"
+    ],
+    "teethItems": [
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 76,
+        "ToothNumber": 46,
+        "ColorType": "",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "SCREW_RETAINED",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      }
+    ]
+  },
+  {
+    "caseUuid": "1eabb3ff-7e7a-4a00-bbcd-480169bf2619",
+    "device": "3ds",
+    "diagnoseDate": "2026-06-29T16:21:56",
+    "preparationType": 2,
+    "comments": "цвет а3.5",
+    "meshFiles": [
+      "implant_upper.ply",
+      "implant_lower.ply",
+      "implant_scanbody_lower.ply",
+      "implant_buccal_1.stl",
+      "implant_buccal_2.stl"
+    ],
+    "teethItems": [
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 70,
+        "ToothNumber": 47,
+        "ColorType": "A3.5",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "NONE",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      },
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 70,
+        "ToothNumber": 46,
+        "ColorType": "A3.5",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "NONE",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      },
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 70,
+        "ToothNumber": 37,
+        "ColorType": "A3.5",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "NONE",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      },
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 70,
+        "ToothNumber": 36,
+        "ColorType": "A3.5",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "NONE",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      }
+    ]
+  },
+  {
+    "caseUuid": "1eabb3ff-7e7a-4a00-bbcd-480169bf2619",
+    "device": "3ds",
+    "diagnoseDate": "2026-06-29T16:21:56",
+    "preparationType": 2,
+    "comments": "цвет а3.5",
+    "meshFiles": [
+      "implant_upper.ply",
+      "implant_lower.ply",
+      "implant_scanbody_lower.ply",
+      "implant_buccal_1.stl",
+      "implant_buccal_2.stl"
+    ],
+    "teethItems": [
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 70,
+        "ToothNumber": 47,
+        "ColorType": "A3.5",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "NONE",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      },
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 70,
+        "ToothNumber": 46,
+        "ColorType": "A3.5",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "NONE",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      },
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 70,
+        "ToothNumber": 37,
+        "ColorType": "A3.5",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "NONE",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      },
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 70,
+        "ToothNumber": 36,
+        "ColorType": "A3.5",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "NONE",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      }
+    ]
+  },
+  {
+    "caseUuid": "5443bf0c-4df8-4fbd-a047-37fa35828e6b",
+    "device": "3ds",
+    "diagnoseDate": "2026-07-01T11:09:28",
+    "preparationType": 2,
+    "comments": "",
+    "meshFiles": [
+      "implant_upper.ply",
+      "implant_lower.ply",
+      "implant_scanbody_lower.ply",
+      "implant_buccal_1.stl",
+      "implant_buccal_2.stl"
+    ],
+    "teethItems": [
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 72,
+        "ToothNumber": 46,
+        "ColorType": "A3",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "SCREW_RETAINED",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      }
+    ]
+  },
+  {
+    "caseUuid": "4fdc928c-4b03-4e10-bcea-6c44aa142778",
+    "device": "3ds",
+    "diagnoseDate": "2026-06-22T18:40:10",
+    "preparationType": 0,
+    "comments": "",
+    "meshFiles": [
+      "implant_upper.ply",
+      "implant_lower.ply",
+      "implant_scanbody_lower.ply",
+      "implant_buccal_1.stl",
+      "implant_buccal_2.stl"
+    ],
+    "teethItems": [
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 69,
+        "ToothNumber": 13,
+        "ColorType": "",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "NONE",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      },
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 69,
+        "ToothNumber": 12,
+        "ColorType": "",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "NONE",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      },
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 69,
+        "ToothNumber": 11,
+        "ColorType": "",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "NONE",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      },
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 69,
+        "ToothNumber": 21,
+        "ColorType": "",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "NONE",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      },
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 69,
+        "ToothNumber": 22,
+        "ColorType": "",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "NONE",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      },
+      {
+        "Id": -1,
+        "PatientTrateCaseId": 69,
+        "ToothNumber": 23,
+        "ColorType": "",
+        "BridgeType": -1,
+        "ColorSystem": "VCL",
+        "FormatVersion": "2.0",
+        "MaterialTypeCode": "ZIRCONIA",
+        "Implant_Retention_Code": "NONE",
+        "Implant_Abutument_Code": "NONE",
+        "Implant_Substructure_Code": "NONE",
+        "PonticDesignTypeCode": "",
+        "PreparationTypeCode": "CROWN_ANATOMIC"
+      }
+    ]
+  }
+]

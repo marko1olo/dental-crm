@@ -1,0 +1,657 @@
+[
+  {
+    "anonymousCaseId": "CASE-SAMARA-001",
+    "originalPatientUuid": "6d3e7928-daca-4368-a773-c824c94585b8",
+    "gender": "Male",
+    "approximateAge": 0,
+    "diagnoseDate": "2026-04-22T19:26:03",
+    "teethCount": 1,
+    "targetTeeth": [
+      13
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 13,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [13]. Конструкция: CROWN_ANATOMIC. Материал: ZIRCONIA."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-002",
+    "originalPatientUuid": "4b4c66aa-3957-413d-9363-cf630a9da058",
+    "gender": "Female",
+    "approximateAge": 0,
+    "diagnoseDate": "2026-04-08T17:49:54",
+    "teethCount": 1,
+    "targetTeeth": [
+      16
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 16,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [16]. Конструкция: CROWN_ANATOMIC. Материал: ZIRCONIA."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-003",
+    "originalPatientUuid": "4b4c66aa-3957-413d-9363-cf630a9da058",
+    "gender": "Female",
+    "approximateAge": 0,
+    "diagnoseDate": "2026-04-08T17:49:54",
+    "teethCount": 1,
+    "targetTeeth": [
+      16
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 16,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [16]. Конструкция: CROWN_ANATOMIC. Материал: ZIRCONIA."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-004",
+    "originalPatientUuid": "4b4c66aa-3957-413d-9363-cf630a9da058",
+    "gender": "Female",
+    "approximateAge": 0,
+    "diagnoseDate": "2026-04-08T17:49:54",
+    "teethCount": 1,
+    "targetTeeth": [
+      16
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 16,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [16]. Конструкция: CROWN_ANATOMIC. Материал: ZIRCONIA."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-005",
+    "originalPatientUuid": "a6abe3e6-303f-468b-809f-d85d0efc2151",
+    "gender": "Female",
+    "approximateAge": 0,
+    "diagnoseDate": "2026-08-18T16:10:27",
+    "teethCount": 1,
+    "targetTeeth": [
+      46
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 46,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A3",
+        "fixation": "screw_retained"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [46]. Конструкция: CROWN_ANATOMIC. Материал: ZIRCONIA."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-006",
+    "originalPatientUuid": "0d35abf3-b1e5-4170-9b80-d107d646d7f5",
+    "gender": "Female",
+    "approximateAge": 0,
+    "diagnoseDate": "2026-05-14T16:55:40",
+    "teethCount": 3,
+    "targetTeeth": [
+      35,
+      37,
+      46
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 35,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A3",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 37,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A3",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 46,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A3",
+        "fixation": "screw_retained"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [35, 37, 46]. Конструкция: CROWN_ANATOMIC. Материал: ZIRCONIA."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-007",
+    "originalPatientUuid": "0d3e51df-419b-4b15-a130-94ac2d1766b8",
+    "gender": "Female",
+    "approximateAge": 0,
+    "diagnoseDate": "2026-06-08T10:58:09",
+    "teethCount": 1,
+    "targetTeeth": [
+      21
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 21,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [21]. Конструкция: CROWN_ANATOMIC. Материал: ZIRCONIA."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-008",
+    "originalPatientUuid": "cc408588-63ae-47fd-beba-c16eca151ca0",
+    "gender": "Female",
+    "approximateAge": 0,
+    "diagnoseDate": "2026-02-04T16:30:13",
+    "teethCount": 3,
+    "targetTeeth": [
+      12,
+      14,
+      16
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 12,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 14,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 16,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [12, 14, 16]. Конструкция: CROWN_ANATOMIC. Материал: ZIRCONIA."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-009",
+    "originalPatientUuid": "cc408588-63ae-47fd-beba-c16eca151ca0",
+    "gender": "Female",
+    "approximateAge": 0,
+    "diagnoseDate": "2026-01-28T16:16:23",
+    "teethCount": 4,
+    "targetTeeth": [
+      12,
+      22,
+      14,
+      16
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 12,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 22,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 14,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 16,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [12, 22, 14, 16]. Конструкция: CROWN_ANATOMIC. Материал: ZIRCONIA."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-010",
+    "originalPatientUuid": "851ca3d9-f13e-4a06-a981-137ca2088b90",
+    "gender": "Male",
+    "approximateAge": 0,
+    "diagnoseDate": "2026-07-28T17:47:45",
+    "teethCount": 3,
+    "targetTeeth": [
+      12,
+      22,
+      21
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 12,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 22,
+        "preparation": "MISSING_TOOTH",
+        "material": "NONE",
+        "shadeVita": "A2",
+        "fixation": "cement"
+      },
+      {
+        "toothNumber": 21,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [12, 22, 21]. Конструкция: MISSING_TOOTH, CROWN_ANATOMIC. Материал: ZIRCONIA, NONE."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-011",
+    "originalPatientUuid": "b6aa1a09-38d1-4669-ac70-3a4c9fd73097",
+    "gender": "Male",
+    "approximateAge": 0,
+    "diagnoseDate": "2026-07-31T10:13:41",
+    "teethCount": 1,
+    "targetTeeth": [
+      26
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 26,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [26]. Конструкция: CROWN_ANATOMIC. Материал: ZIRCONIA."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-012",
+    "originalPatientUuid": "c4f60d04-ea2a-4e69-9884-fef8c13c0951",
+    "gender": "Male",
+    "approximateAge": 0,
+    "diagnoseDate": "2026-08-17T12:29:14",
+    "teethCount": 2,
+    "targetTeeth": [
+      46,
+      47
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 46,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A3",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 47,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A3",
+        "fixation": "screw_retained"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [46, 47]. Конструкция: CROWN_ANATOMIC. Материал: ZIRCONIA."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-013",
+    "originalPatientUuid": "e393cf10-3fd4-4b6b-85ad-71a25f9da511",
+    "gender": "Male",
+    "approximateAge": 1,
+    "diagnoseDate": "2025-12-04T19:23:42",
+    "teethCount": 2,
+    "targetTeeth": [
+      23,
+      24
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 23,
+        "preparation": "MISSING_TOOTH",
+        "material": "NONE",
+        "shadeVita": "A2",
+        "fixation": "cement"
+      },
+      {
+        "toothNumber": 24,
+        "preparation": "MISSING_TOOTH",
+        "material": "NONE",
+        "shadeVita": "A2",
+        "fixation": "cement"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [23, 24]. Конструкция: MISSING_TOOTH. Материал: NONE."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-014",
+    "originalPatientUuid": "c0a0123e-de14-475b-8d35-668925faa219",
+    "gender": "Female",
+    "approximateAge": 0,
+    "diagnoseDate": "2026-08-17T10:24:50",
+    "teethCount": 6,
+    "targetTeeth": [
+      23,
+      26,
+      14,
+      15,
+      24,
+      25
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 23,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "NP",
+        "shadeVita": "A2",
+        "fixation": "cement"
+      },
+      {
+        "toothNumber": 26,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "NP",
+        "shadeVita": "A2",
+        "fixation": "cement"
+      },
+      {
+        "toothNumber": 14,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "NP",
+        "shadeVita": "A2",
+        "fixation": "cement"
+      },
+      {
+        "toothNumber": 15,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "NP",
+        "shadeVita": "A2",
+        "fixation": "cement"
+      },
+      {
+        "toothNumber": 24,
+        "preparation": "PONTIC_ANATOMIC",
+        "material": "NP",
+        "shadeVita": "A2",
+        "fixation": "cement"
+      },
+      {
+        "toothNumber": 25,
+        "preparation": "PONTIC_ANATOMIC",
+        "material": "NP",
+        "shadeVita": "A2",
+        "fixation": "cement"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [23, 26, 14, 15, 24, 25]. Конструкция: PONTIC_ANATOMIC, CROWN_ANATOMIC. Материал: NP."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-015",
+    "originalPatientUuid": "2770668c-4187-4a33-bb13-25cd9584812a",
+    "gender": "Male",
+    "approximateAge": 1,
+    "diagnoseDate": "2025-12-10T13:47:12",
+    "teethCount": 1,
+    "targetTeeth": [
+      16
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 16,
+        "preparation": "CROWN_PRESSED",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [16]. Конструкция: CROWN_PRESSED. Материал: ZIRCONIA."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-016",
+    "originalPatientUuid": "45f5c30b-fd43-4568-8864-8d815a7526f3",
+    "gender": "Male",
+    "approximateAge": 0,
+    "diagnoseDate": "2026-04-22T16:52:39",
+    "teethCount": 5,
+    "targetTeeth": [
+      13,
+      14,
+      15,
+      25,
+      26
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 13,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 14,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 15,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 25,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 26,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [13, 14, 15, 25, 26]. Конструкция: CROWN_ANATOMIC. Материал: ZIRCONIA."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-017",
+    "originalPatientUuid": "9ce82d46-b54c-4dfe-a7de-6e428987b250",
+    "gender": "Male",
+    "approximateAge": 0,
+    "diagnoseDate": "2026-09-10T15:42:38",
+    "teethCount": 3,
+    "targetTeeth": [
+      24,
+      25,
+      26
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 24,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 25,
+        "preparation": "PONTIC_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 26,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [24, 25, 26]. Конструкция: PONTIC_ANATOMIC, CROWN_ANATOMIC. Материал: ZIRCONIA."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-018",
+    "originalPatientUuid": "78bcd331-8ca8-4a74-95a2-22bdccfe006c",
+    "gender": "Male",
+    "approximateAge": 0,
+    "diagnoseDate": "2026-06-22T18:40:10",
+    "teethCount": 6,
+    "targetTeeth": [
+      13,
+      12,
+      11,
+      21,
+      22,
+      23
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 13,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 12,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 11,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 21,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 22,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 23,
+        "preparation": "CROWN_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [13, 12, 11, 21, 22, 23]. Конструкция: CROWN_ANATOMIC. Материал: ZIRCONIA."
+  },
+  {
+    "anonymousCaseId": "CASE-SAMARA-019",
+    "originalPatientUuid": "78bcd331-8ca8-4a74-95a2-22bdccfe006c",
+    "gender": "Male",
+    "approximateAge": 0,
+    "diagnoseDate": "2026-06-22T16:24:42",
+    "teethCount": 6,
+    "targetTeeth": [
+      11,
+      21,
+      13,
+      12,
+      22,
+      23
+    ],
+    "treatmentPlan": [
+      {
+        "toothNumber": 11,
+        "preparation": "PONTIC_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 21,
+        "preparation": "PONTIC_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 13,
+        "preparation": "PONTIC_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 12,
+        "preparation": "PONTIC_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 22,
+        "preparation": "PONTIC_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      },
+      {
+        "toothNumber": 23,
+        "preparation": "PONTIC_ANATOMIC",
+        "material": "ZIRCONIA",
+        "shadeVita": "A2",
+        "fixation": "screw_retained"
+      }
+    ],
+    "clinicalNotes": "Реальный клинический случай клиники Dentalia (Самара). Протезирование зубов [11, 21, 13, 12, 22, 23]. Конструкция: PONTIC_ANATOMIC. Материал: ZIRCONIA."
+  }
+]
