@@ -89,6 +89,54 @@ export function formatTagHex(group: number, element: number): string {
 }
 
 /**
+ * Safely skips an undefined-length sequence (0xFFFFFFFF) by scanning forward
+ * until the matching Sequence Delimitation Item (FFFE, E0DD) with 4-byte length 0 is found.
+ */
+function skipUndefinedLengthSequence(
+	buffer: Uint8Array,
+	view: DataView,
+	startOffset: number,
+	isLittleEndian: boolean,
+): number {
+	let pos = startOffset;
+	const end = buffer.length - 8;
+	let depth = 1;
+
+	while (pos <= end && depth > 0) {
+		const group = view.getUint16(pos, isLittleEndian);
+		const element = view.getUint16(pos + 2, isLittleEndian);
+
+		// Sequence Delimitation Item tag is (FFFE, E0DD)
+		if (group === 0xfffe && element === 0xe0dd) {
+			depth--;
+			pos += 8; // skip tag (4 bytes) + length (4 bytes)
+			if (depth === 0) {
+				return pos;
+			}
+			continue;
+		}
+
+		// Nested sequence with undefined length: VR "SQ" followed by 0xFFFFFFFF
+		if (pos + 12 <= buffer.length) {
+			const c0 = buffer[pos + 4];
+			const c1 = buffer[pos + 5];
+			if (c0 === 0x53 && c1 === 0x51) {
+				const len = view.getUint32(pos + 8, isLittleEndian);
+				if (len === 0xffffffff) {
+					depth++;
+					pos += 12;
+					continue;
+				}
+			}
+		}
+
+		pos += 2;
+	}
+
+	return pos <= buffer.length ? pos : buffer.length;
+}
+
+/**
  * Parses binary DICOM data buffer (Uint8Array or Buffer) and extracts clinical imaging metadata.
  */
 export function parseDicomDataset(input: Uint8Array | ArrayBuffer): ParsedDicomDataset {
@@ -171,6 +219,12 @@ export function parseDicomDataset(input: Uint8Array | ArrayBuffer): ParsedDicomD
 				if (cursor + 12 > buffer.length) break;
 				valueLength = view.getUint32(cursor + 8, isLittleEndian);
 				valueOffset = cursor + 12;
+
+				if (vr === "SQ" && valueLength === 0xffffffff) {
+					cursor = skipUndefinedLengthSequence(buffer, view, valueOffset, isLittleEndian);
+					continue;
+				}
+
 				cursor += 12 + valueLength;
 			} else {
 				if (cursor + 8 > buffer.length) break;
@@ -182,6 +236,12 @@ export function parseDicomDataset(input: Uint8Array | ArrayBuffer): ParsedDicomD
 			// Implicit VR
 			valueLength = view.getUint32(cursor + 4, isLittleEndian);
 			valueOffset = cursor + 8;
+
+			if (valueLength === 0xffffffff) {
+				cursor = skipUndefinedLengthSequence(buffer, view, valueOffset, isLittleEndian);
+				continue;
+			}
+
 			cursor += 8 + valueLength;
 		}
 

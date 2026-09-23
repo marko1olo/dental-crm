@@ -65,5 +65,6 @@ describe("Hardware DICOM Fixtures & Imaging Compatibility (Mandates 8e, 8k, 8n)"
 		assert.equal(parsed.windowWidth, 65536);
 		assert.equal(parsed.rescaleIntercept, 0);
 		assert.equal(parsed.rescaleSlope, 1);
+		assert.equal(parsed.warnings.length, 0, "Xpect Vision undefined sequence (0040,0260) must be skipped with 0 warnings");
 	});
 });

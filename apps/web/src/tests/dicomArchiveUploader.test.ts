@@ -7,11 +7,13 @@ import {
 	filterDicomArchiveEntries,
 	isDicomEntry,
 	isDicomdirEntry,
+	sortDicomEntries,
 } from "../components/dicom/dicomArchiveFilter";
 import {
 	filterDicomArchiveEntries as uploaderFilterEntries,
 	isDicomEntry as uploaderIsDicomEntry,
 	isDicomdirEntry as uploaderIsDicomdirEntry,
+	sortDicomEntries as uploaderSortEntries,
 	DicomArchiveUploader,
 } from "../components/dicom/DicomArchiveUploader";
 import { DicomArchiveUploader as ImagingDicomArchiveUploader } from "../components/imaging/DicomArchiveUploader";
@@ -224,5 +226,26 @@ describe("DicomArchiveUploader - DICOM filter and format validation", () => {
 		assert.equal(typeof DicomArchiveUploader, "function");
 		assert.equal(typeof ImagingDicomArchiveUploader, "function");
 		assert.equal(DicomArchiveUploader, ImagingDicomArchiveUploader);
+	});
+
+	test("sortDicomEntries sorts KaVo OP300 and standard DICOM slices numerically", () => {
+		const kavoSlices = [
+			{ name: "I0000010" },
+			{ name: "I0000002" },
+			{ name: "I0000001" },
+			{ name: "I0000100" },
+			{ name: "I0000020" },
+		];
+		const sorted = sortDicomEntries(kavoSlices);
+		assert.deepEqual(
+			sorted.map((s) => s.name),
+			["I0000001", "I0000002", "I0000010", "I0000020", "I0000100"],
+		);
+
+		const uploaderSorted = uploaderSortEntries(kavoSlices);
+		assert.deepEqual(
+			uploaderSorted.map((s) => s.name),
+			["I0000001", "I0000002", "I0000010", "I0000020", "I0000100"],
+		);
 	});
 });

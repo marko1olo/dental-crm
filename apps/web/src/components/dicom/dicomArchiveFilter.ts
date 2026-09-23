@@ -91,3 +91,17 @@ export function filterDicomArchiveEntries(filenames: string[]): string[] {
 			!name.toLowerCase().endsWith("desktop.ini"),
 	);
 }
+
+/**
+ * Sorts DICOM filenames or entry paths using natural numeric sorting
+ * (e.g. I0000001, I0000002 ... I0000010 ... I0000408) so CBCT slices
+ * remain in strict anatomical order along the Z axis per Mandate 8e.
+ */
+export function sortDicomEntries<T extends string | { name: string }>(items: T[]): T[] {
+	return [...items].sort((a, b) => {
+		const nameA = typeof a === "string" ? a : a.name;
+		const nameB = typeof b === "string" ? b : b.name;
+		return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: "base" });
+	});
+}
+

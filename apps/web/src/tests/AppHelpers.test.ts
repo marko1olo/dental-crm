@@ -11,6 +11,21 @@ describe("classifyBrowserImagingFileName", () => {
 		assert.strictEqual(classifyBrowserImagingFileName("scan.dcm"), "dicom");
 	});
 
+	test('returns "dicom" for KaVo OP300 / Instrumentarium extensionless CBCT slices', () => {
+		assert.strictEqual(classifyBrowserImagingFileName("I0000001"), "dicom");
+		assert.strictEqual(classifyBrowserImagingFileName("I0000382"), "dicom");
+		assert.strictEqual(classifyBrowserImagingFileName("IMGDATA/20260903/I0000408"), "dicom");
+		assert.strictEqual(classifyBrowserImagingFileName("Data\\slice_042"), "dicom");
+
+		// Buffer with DICM magic at offset 128
+		const dicmBuf = new Uint8Array(140);
+		dicmBuf[128] = 0x44; // D
+		dicmBuf[129] = 0x49; // I
+		dicmBuf[130] = 0x43; // C
+		dicmBuf[131] = 0x4d; // M
+		assert.strictEqual(classifyBrowserImagingFileName("arbitrary_name", dicmBuf), "dicom");
+	});
+
 	test('returns "archive" for archive files', () => {
 		assert.strictEqual(classifyBrowserImagingFileName("scans.zip"), "archive");
 	});

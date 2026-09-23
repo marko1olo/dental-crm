@@ -245,13 +245,39 @@ export const browserLegacyMisTextPattern =
 
 export function classifyBrowserImagingFileName(
 	fileName: string,
+	buffer?: Uint8Array | ArrayBuffer,
 ): "dicom" | "archive" | "model" | "image" | "other" {
 	const lowerName = fileName.toLowerCase();
-	const extension = lowerName.includes(".")
-		? lowerName.slice(lowerName.lastIndexOf(".") + 1)
+	const baseName = lowerName.includes("/") || lowerName.includes("\\")
+		? lowerName.slice(Math.max(lowerName.lastIndexOf("/"), lowerName.lastIndexOf("\\")) + 1)
+		: lowerName;
+	const extension = baseName.includes(".")
+		? baseName.slice(baseName.lastIndexOf(".") + 1)
 		: "";
-	if (["dcm", "dicom", "ima"].includes(extension) || lowerName === "dicomdir")
+
+	if (["dcm", "dicom", "ima"].includes(extension) || baseName === "dicomdir")
 		return "dicom";
+
+	// KaVo OP300 / Instrumentarium / Soredex extensionless CBCT slices (e.g. I0000001 - I0000999 or slice_001)
+	if (/^i[0-9]{4,}$/i.test(baseName) || /^(?:slice|ct|cbct)[_\-]?[0-9]+$/i.test(baseName)) {
+		return "dicom";
+	}
+
+	// Binary check: valid DICOM Part 10 preamble with "DICM" magic at offset 128..131
+	if (buffer) {
+		const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+		if (bytes.length >= 132) {
+			if (
+				bytes[128] === 0x44 && // 'D'
+				bytes[129] === 0x49 && // 'I'
+				bytes[130] === 0x43 && // 'C'
+				bytes[131] === 0x4d // 'M'
+			) {
+				return "dicom";
+			}
+		}
+	}
+
 	if (["zip", "7z", "rar"].includes(extension)) return "archive";
 	if (["stl", "obj", "ply", "glb", "gltf", "3mf"].includes(extension))
 		return "model";
@@ -259,6 +285,7 @@ export function classifyBrowserImagingFileName(
 		return "image";
 	return "other";
 }
+
 
 export function classifyBrowserMigrationFileName(
 	fileName: string,

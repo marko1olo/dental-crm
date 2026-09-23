@@ -24,9 +24,11 @@ import {
 	filterDicomArchiveEntries,
 	isDicomEntry,
 	isDicomdirEntry,
+	sortDicomEntries,
 } from "./dicomArchiveFilter";
 
-export { filterDicomArchiveEntries, isDicomEntry, isDicomdirEntry };
+export { filterDicomArchiveEntries, isDicomEntry, isDicomdirEntry, sortDicomEntries };
+
 
 export function DicomArchiveUploader({
 	onImagesLoaded,
@@ -120,7 +122,7 @@ export function DicomArchiveUploader({
 						return;
 					}
 
-					const entries = Object.keys(unzipped);
+					const entries = sortDicomEntries(Object.keys(unzipped));
 					const totalFiles = entries.length;
 					const imageIds: string[] = [];
 
@@ -248,9 +250,10 @@ export function DicomArchiveUploader({
 				const zipFiles = files.filter((f) =>
 					f.name.toLowerCase().endsWith(".zip"),
 				);
-				const nonZipFiles = files.filter(
-					(f) => !f.name.toLowerCase().endsWith(".zip"),
+				const nonZipFiles = sortDicomEntries(
+					files.filter((f) => !f.name.toLowerCase().endsWith(".zip")),
 				);
+
 
 				// Process ZIP files
 				for (const zipFile of zipFiles) {
