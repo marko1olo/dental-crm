@@ -876,12 +876,20 @@ export function normalizeUiPreferencesPayload(
 			defaultUiPreferences.scheduleStatusFilter,
 			isAppointmentStatusFilterPreference,
 		),
-		scheduleDateFilter: pickUiPreference(
-			source,
-			"scheduleDateFilter",
-			defaultUiPreferences.scheduleDateFilter,
-			isBoundedPreferenceString,
-		),
+		scheduleDateFilter: (() => {
+			const val = pickUiPreference(
+				source,
+				"scheduleDateFilter",
+				defaultUiPreferences.scheduleDateFilter,
+				isBoundedPreferenceString,
+			);
+			if (val) {
+				const d = new Date();
+				const todayIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+				if (val <= todayIso) return "";
+			}
+			return val;
+		})(),
 		paymentMethod: pickUiPreference(
 			source,
 			"paymentMethod",

@@ -14,6 +14,7 @@ import {
 	MessageSquare,
 	Phone,
 	UserCheck,
+	Users,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { patientInsightRiskLabels } from "./AppConstants";
@@ -314,6 +315,65 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 	const [showAnalytics, setShowAnalytics] = useState(false);
 	const [showOtherQueues, setShowOtherQueues] = useState(false);
 
+	// StomX Operational Shift Board Queues
+	const [shiftQueueFilter, setShiftQueueFilter] = useState<
+		"all" | "in_chair" | "waiting" | "payment"
+	>("all");
+
+	const inChairAppointments = useMemo(() => {
+		const now = Date.now();
+		return todayAppointments.filter((app: any) => {
+			const statusKey = String(
+				app.status || app.appointmentStatus || app.state || "",
+			).toLowerCase();
+			if (["in_chair", "in_treatment", "in_progress"].includes(statusKey)) {
+				return true;
+			}
+			if (["cancelled", "no_show", "completed", "done"].includes(statusKey)) {
+				return false;
+			}
+			const starts = new Date(app.startsAt).getTime();
+			const ends = new Date(app.endsAt ?? app.startsAt).getTime();
+			return Number.isFinite(starts) && Number.isFinite(ends) && starts <= now && now <= ends;
+		});
+	}, [todayAppointments]);
+
+	const waitingAppointments = useMemo(() => {
+		const inChairIds = new Set(inChairAppointments.map((a: any) => a.id));
+		return todayAppointments.filter((app: any) => {
+			if (inChairIds.has(app.id)) return false;
+			const statusKey = String(
+				app.status || app.appointmentStatus || app.state || "",
+			).toLowerCase();
+			return (
+				["arrived", "waiting", "planned", "scheduled", "pending", "confirmed"].includes(statusKey) &&
+				!["completed", "done", "cancelled", "no_show"].includes(statusKey)
+			);
+		});
+	}, [todayAppointments, inChairAppointments]);
+
+	const awaitingPaymentAppointments = useMemo(() => {
+		return todayAppointments.filter((app: any) => {
+			const statusKey = String(
+				app.status || app.appointmentStatus || app.state || "",
+			).toLowerCase();
+			return ["completed", "done"].includes(statusKey) || statusKey === "payment_pending";
+		});
+	}, [todayAppointments]);
+
+	const displayedAppointments = useMemo(() => {
+		if (shiftQueueFilter === "in_chair") return inChairAppointments;
+		if (shiftQueueFilter === "waiting") return waitingAppointments;
+		if (shiftQueueFilter === "payment") return awaitingPaymentAppointments;
+		return todayAppointments;
+	}, [
+		shiftQueueFilter,
+		todayAppointments,
+		inChairAppointments,
+		waitingAppointments,
+		awaitingPaymentAppointments,
+	]);
+
 	/** Переход по срочному делу: раздел берём из самого дела, пациента подставляем. */
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	function runRecommendedAction(action: any) {
@@ -605,21 +665,137 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 					)}
 				</div>
 
-				{/* РАСПИСАНИЕ НА СЕГОДНЯ */}
+				{/* РАСПИСАНИЕ НА СЕГОДНЯ / STOMX ОПЕРАТИВНАЯ ДОСКА СМЕНЫ */}
 				<div className="today-schedule-box min-w-0">
 					<div className="today-schedule-header">
 						<h3 style={{ color: "var(--ink)" }}>
-							<ClipboardCheck size={16} aria-hidden="true" /> Расписание приемов
-							на сегодня
+							<ClipboardCheck size={16} aria-hidden="true" /> Оперативная сводка смены (StomX)
 						</h3>
-						<span className="today-schedule-count">
-							{appointmentsCountLabel(todayAppointments.length)}
-						</span>
+						<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+							<span className="today-schedule-count">
+								{appointmentsCountLabel(todayAppointments.length)}
+							</span>
+							<button
+								type="button"
+								className="secondary-button"
+								style={{
+									fontSize: "11.5px",
+									padding: "3px 8px",
+									minHeight: "28px",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "4px",
+								}}
+								onClick={() => {
+									window.location.hash = "schedule";
+								}}
+								title="Перейти к полной сетке расписания"
+							>
+								<Calendar size={13} aria-hidden="true" /> В расписание →
+							</button>
+						</div>
 					</div>
-					{todayAppointments.length > 0 ? (
+
+					{/* StomX Queue Filter Pills */}
+					<div
+						className="stomx-queue-strip"
+						role="tablist"
+						aria-label="Очереди оперативной сводки"
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: "6px",
+							overflowX: "auto",
+							paddingBottom: "6px",
+							marginBottom: "10px",
+						}}
+					>
+						<button
+							type="button"
+							role="tab"
+							aria-selected={shiftQueueFilter === "all"}
+							className={`filter-pill ${shiftQueueFilter === "all" ? "active" : ""}`}
+							style={{
+								fontSize: "12px",
+								padding: "4px 10px",
+								borderRadius: "8px",
+								fontWeight: shiftQueueFilter === "all" ? 700 : 500,
+								background: shiftQueueFilter === "all" ? "var(--teal-dark, #0d9488)" : "var(--paper-soft, rgba(0,0,0,0.04))",
+								color: shiftQueueFilter === "all" ? "#ffffff" : "var(--ink)",
+								border: "1px solid var(--line)",
+								cursor: "pointer",
+								whiteSpace: "nowrap",
+							}}
+							onClick={() => setShiftQueueFilter("all")}
+						>
+							Все ({todayAppointments.length})
+						</button>
+						<button
+							type="button"
+							role="tab"
+							aria-selected={shiftQueueFilter === "in_chair"}
+							className={`filter-pill ${shiftQueueFilter === "in_chair" ? "active" : ""}`}
+							style={{
+								fontSize: "12px",
+								padding: "4px 10px",
+								borderRadius: "8px",
+								fontWeight: shiftQueueFilter === "in_chair" ? 700 : 500,
+								background: shiftQueueFilter === "in_chair" ? "var(--teal-dark, #0f766e)" : "var(--paper-soft, rgba(0,0,0,0.04))",
+								color: shiftQueueFilter === "in_chair" ? "#ffffff" : "var(--ink)",
+								border: "1px solid var(--line)",
+								cursor: "pointer",
+								whiteSpace: "nowrap",
+							}}
+							onClick={() => setShiftQueueFilter("in_chair")}
+						>
+							В кресле ({inChairAppointments.length})
+						</button>
+						<button
+							type="button"
+							role="tab"
+							aria-selected={shiftQueueFilter === "waiting"}
+							className={`filter-pill ${shiftQueueFilter === "waiting" ? "active" : ""}`}
+							style={{
+								fontSize: "12px",
+								padding: "4px 10px",
+								borderRadius: "8px",
+								fontWeight: shiftQueueFilter === "waiting" ? 700 : 500,
+								background: shiftQueueFilter === "waiting" ? "var(--warn-fg, #b45309)" : "var(--paper-soft, rgba(0,0,0,0.04))",
+								color: shiftQueueFilter === "waiting" ? "#ffffff" : "var(--ink)",
+								border: "1px solid var(--line)",
+								cursor: "pointer",
+								whiteSpace: "nowrap",
+							}}
+							onClick={() => setShiftQueueFilter("waiting")}
+						>
+							Ожидает приема ({waitingAppointments.length})
+						</button>
+						<button
+							type="button"
+							role="tab"
+							aria-selected={shiftQueueFilter === "payment"}
+							className={`filter-pill ${shiftQueueFilter === "payment" ? "active" : ""}`}
+							style={{
+								fontSize: "12px",
+								padding: "4px 10px",
+								borderRadius: "8px",
+								fontWeight: shiftQueueFilter === "payment" ? 700 : 500,
+								background: shiftQueueFilter === "payment" ? "var(--teal-dark, #0d9488)" : "var(--paper-soft, rgba(0,0,0,0.04))",
+								color: shiftQueueFilter === "payment" ? "#ffffff" : "var(--ink)",
+								border: "1px solid var(--line)",
+								cursor: "pointer",
+								whiteSpace: "nowrap",
+							}}
+							onClick={() => setShiftQueueFilter("payment")}
+						>
+							Ожидает оплаты ({awaitingPaymentAppointments.length})
+						</button>
+					</div>
+
+					{displayedAppointments.length > 0 ? (
 						<div className="today-schedule-list">
 							{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-							{todayAppointments.map((app: any) => {
+							{displayedAppointments.map((app: any) => {
 								const patient = patientsById.get(app.patientId);
 								const isCurrent = Boolean(
 									currentPatient &&
@@ -639,6 +815,7 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 									pending: "Ожидает приема",
 									confirmed: "Подтвержден",
 									arrived: "Ожидает приема",
+									waiting: "Ожидает приема",
 									in_chair: "На приеме",
 									in_treatment: "На приеме",
 									in_progress: "На приеме",
@@ -648,28 +825,33 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 									no_show: "Не пришел",
 								};
 
+								const isInChair = ["in_chair", "in_treatment", "in_progress"].includes(statusKey);
+								const isDone = ["completed", "done"].includes(statusKey);
+
 								return (
-									<button
-										type="button"
+									<div
 										key={app.id}
-										aria-label={`Прием: ${patient ? patient.fullName : "Неизвестный пациент"}, ${timeStart} – ${timeEnd}`}
-										className={`today-schedule-item min-h-[44px] py-2 px-3 focus:ring-2 focus:ring-teal-600 focus:outline-none min-w-0 ${isCurrent ? "current-active" : ""}`}
-										style={{ textAlign: "left", width: "100%" }}
-										onClick={() => {
-											if (patient) {
-												setSelectedPatientId(patient.id);
-												window.location.hash = "visit";
-											}
-										}}
-										onKeyDown={(e) => {
-											if ((e.key === "Enter" || e.key === " ") && patient) {
-												e.preventDefault();
-												setSelectedPatientId(patient.id);
-												window.location.hash = "visit";
-											}
-										}}
+										className={`today-schedule-item min-h-[44px] py-2 px-3 min-w-0 ${isCurrent ? "current-active" : ""}`}
+										style={{ width: "100%", borderRadius: "8px" }}
 									>
-										<div className="today-schedule-item-info min-w-0">
+										<div
+											className="today-schedule-item-info min-w-0 flex-1 cursor-pointer"
+											onClick={() => {
+												if (patient) {
+													setSelectedPatientId(patient.id);
+													window.location.hash = "visit";
+												}
+											}}
+											role="button"
+											tabIndex={0}
+											onKeyDown={(e) => {
+												if ((e.key === "Enter" || e.key === " ") && patient) {
+													e.preventDefault();
+													setSelectedPatientId(patient.id);
+													window.location.hash = "visit";
+												}
+											}}
+										>
 											<span className="today-schedule-time shrink-0">
 												{timeStart} – {timeEnd}
 											</span>
@@ -681,12 +863,107 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 												{manyDoctors && doctor ? ` · ${doctor.fullName}` : ""}
 											</span>
 										</div>
-										<span className={`status-pill status-${statusKey} shrink-0`}>
-											{statusLabels[statusKey] ?? "Ожидает приема"}
-										</span>
-									</button>
+
+										<div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+											<span className={`status-pill status-${statusKey} shrink-0`}>
+												{statusLabels[statusKey] ?? "Ожидает приема"}
+											</span>
+
+											{/* StomX 1-Click Action Buttons */}
+											{isDone ? (
+												<button
+													type="button"
+													className="secondary-button"
+													style={{
+														fontSize: "11px",
+														padding: "3px 7px",
+														minHeight: "26px",
+														display: "inline-flex",
+														alignItems: "center",
+														gap: "4px",
+													}}
+													onClick={() => {
+														if (patient) setSelectedPatientId(patient.id);
+														window.location.hash = "finance";
+													}}
+													title="Перейти к оплате на кассе (54-ФЗ)"
+												>
+													<CreditCard size={12} aria-hidden="true" /> На кассу
+												</button>
+											) : isInChair ? (
+												<button
+													type="button"
+													className="primary-button"
+													style={{
+														fontSize: "11px",
+														padding: "3px 7px",
+														minHeight: "26px",
+														display: "inline-flex",
+														alignItems: "center",
+														gap: "4px",
+													}}
+													onClick={() => {
+														if (patient) setSelectedPatientId(patient.id);
+														window.location.hash = "visit";
+													}}
+													title="Открыть карту и продолжить прием"
+												>
+													<ClipboardCheck size={12} aria-hidden="true" /> ЭМК
+												</button>
+											) : (
+												<button
+													type="button"
+													className="secondary-button"
+													style={{
+														fontSize: "11px",
+														padding: "3px 7px",
+														minHeight: "26px",
+														display: "inline-flex",
+														alignItems: "center",
+														gap: "4px",
+													}}
+													onClick={() => {
+														if (patient) setSelectedPatientId(patient.id);
+														window.location.hash = "visit";
+													}}
+													title="Принять в кресло и начать прием"
+												>
+													<UserCheck size={12} aria-hidden="true" /> В кресло
+												</button>
+											)}
+										</div>
+									</div>
 								);
 							})}
+						</div>
+					) : todayAppointments.length > 0 ? (
+						<div
+							className="compact-schedule-empty-card"
+							style={{
+								padding: "14px",
+								borderRadius: "10px",
+								background: "var(--paper-soft, rgba(0,0,0,0.02))",
+								border: "1px solid var(--line)",
+								textAlign: "center",
+								fontSize: "12.5px",
+								color: "var(--muted)",
+							}}
+						>
+							В этой очереди сейчас нет пациентов.{" "}
+							<button
+								type="button"
+								style={{
+									background: "none",
+									border: "none",
+									color: "var(--teal-dark, #0d9488)",
+									textDecoration: "underline",
+									cursor: "pointer",
+									fontWeight: 600,
+								}}
+								onClick={() => setShiftQueueFilter("all")}
+							>
+								Показать все записи ({todayAppointments.length})
+							</button>
 						</div>
 					) : (
 						<div

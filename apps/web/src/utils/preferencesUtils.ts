@@ -159,10 +159,19 @@ export function loadUiPreferences(): UiPreferences {
 		const raw = safeLocalStorageGetItem(uiPreferencesStorageKey);
 		if (!raw) return defaultUiPreferences;
 		const parsed = JSON.parse(raw) as Partial<UiPreferences>;
-		return {
+		const prefs: UiPreferences = {
 			...defaultUiPreferences,
 			...parsed,
 		};
+		// Prevent parasitic yesterday/stale date filter leak into new sessions (Mandates 8d, 8n)
+		if (prefs.scheduleDateFilter) {
+			const d = new Date();
+			const todayIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+			if (prefs.scheduleDateFilter <= todayIso) {
+				prefs.scheduleDateFilter = "";
+			}
+		}
+		return prefs;
 	} catch {
 		return defaultUiPreferences;
 	}

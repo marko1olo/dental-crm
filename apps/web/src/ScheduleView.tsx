@@ -999,17 +999,10 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		}
 	}, [scheduleViewMode]);
 
-	const todayScheduleDate = useCallback(
-		() =>
-			dashboard?.todayIso ||
-			(toDateTimeLocalValue
-				? toDateTimeLocalValue(
-						new Date().toISOString(),
-						dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow",
-					).slice(0, 10)
-				: new Date().toISOString().slice(0, 10)),
-		[dashboard?.todayIso, toDateTimeLocalValue, dashboard?.clinicSettings?.profile?.timezone],
-	);
+	const todayScheduleDate = useCallback(() => {
+		const localNow = new Date();
+		return `${localNow.getFullYear()}-${String(localNow.getMonth() + 1).padStart(2, "0")}-${String(localNow.getDate()).padStart(2, "0")}`;
+	}, []);
 
 	const clinicToday = todayScheduleDate();
 	const currentDateKey = scheduleDateFilter || clinicToday || todayScheduleDate();
@@ -1659,7 +1652,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	 * Отбор идемпотентен: если наверху фильтр когда-нибудь заработает, здесь
 	 * останется тот же единственный день и ничего не изменится.
 	 */
-	const selectedDayKey = scheduleDateFilter.trim();
+	const effectiveSelectedDay = scheduleDateFilter.trim() || clinicToday;
+	const selectedDayKey = effectiveSelectedDay;
 	const visibleDayGroups = selectedDayKey
 		? scheduleDayGroups.filter((group) => group.dateKey === selectedDayKey)
 		: scheduleDayGroups;
@@ -1764,8 +1758,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	// делал вывод, что день пустой, и отказывал пациентам в приёме.
 	// Фильтры по врачу, ассистенту и креслу реально применяются к списку
 	// (см. sortedAppointments в useAppLogic), поэтому они обязаны быть здесь.
+	const isNonTodayDateFilter = Boolean(
+		scheduleDateFilter?.trim() &&
+		scheduleDateFilter.trim() !== clinicToday
+	);
 	const activeScheduleFilterCount = [
-		scheduleDateFilter.trim(),
+		isNonTodayDateFilter ? scheduleDateFilter.trim() : null,
 		scheduleStatusFilter !== "all" ? scheduleStatusFilter : null,
 		scheduleDoctorFilterId,
 		scheduleAssistantFilterId,
@@ -1789,7 +1787,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			(member: { id: string }) => member?.id === staffId,
 		)?.fullName ?? "неизвестный сотрудник";
 	const activeScheduleFilterLabels = [
-		scheduleDateFilter?.trim()
+		isNonTodayDateFilter
 			? `день: ${formatDayTitle(scheduleDateFilter.trim())}`
 			: null,
 		scheduleDoctorFilterId
@@ -1891,7 +1889,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					<button
 						className="text-button shrink-0 h-7 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-xs font-medium inline-flex items-center cursor-pointer transition-all"
 						type="button"
-						onClick={() => setScheduleDateFilter(todayScheduleDate())}
+						onClick={() => setScheduleDateFilter("")}
 					>
 						Только сегодня
 					</button>

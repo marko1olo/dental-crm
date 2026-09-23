@@ -93,7 +93,7 @@ export function formatChairSpecialtyLabel(rawSpec?: string | null): string | nul
 	const lower = rawSpec.toLowerCase().trim();
 	if (lower === "surgeon" || lower === "хирург" || lower === "хирургия") return "Хирургия";
 	if (lower === "therapist" || lower === "терапевт" || lower === "терапия") return "Терапия";
-	if (lower === "orthodontist" || lower === "ортодонт" || lower === "ортодонтия") return "Ортодонт.";
+	if (lower === "orthodontist" || lower === "ортодонт" || lower === "ортодонтия") return "Ортодонтия";
 	if (lower === "orthopedist" || lower === "ортопед" || lower === "ортопедия") return "Ортопедия";
 	if (lower === "periodontist" || lower === "пародонтолог" || lower === "пародонтология") return "Пародонт.";
 	if (lower === "hygienist" || lower === "гигиенист" || lower === "гигиена") return "Гигиена";
@@ -162,8 +162,11 @@ export function ScheduleFilterStrip({
 }: ScheduleFilterStripProps): ReactElement {
 	const activeChairs = chairs.filter((chair) => chair?.active);
 	const displayChairs: readonly ScheduleChair[] = activeChairs.length > 0 ? activeChairs : DEFAULT_CLINIC_CHAIRS;
-	const todayIso = propsTodayIso || new Date().toISOString().slice(0, 10);
-	const tomorrowIso = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+	const localNow = new Date();
+	const localTodayIso = `${localNow.getFullYear()}-${String(localNow.getMonth() + 1).padStart(2, "0")}-${String(localNow.getDate()).padStart(2, "0")}`;
+	const todayIso = propsTodayIso || localTodayIso;
+	const localTomorrow = new Date(localNow.getTime() + 86400000);
+	const tomorrowIso = `${localTomorrow.getFullYear()}-${String(localTomorrow.getMonth() + 1).padStart(2, "0")}-${String(localTomorrow.getDate()).padStart(2, "0")}`;
 	const currentDateIso = scheduleDateFilter || todayIso;
 
 	// Branch management (Mandates 8n, 8p: if <= 1 branch, selector is strictly hidden)
@@ -788,6 +791,19 @@ export function ScheduleFilterStrip({
 							<button
 								type="button"
 								onClick={() => {
+									setScheduleDateFilter("");
+									setIsOptionsMenuOpen(false);
+								}}
+								className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+								role="menuitem"
+							>
+								<Calendar size={14} className="text-[var(--teal,var(--brand-primary))]" />
+								<span>Сегодня</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => {
 									setScheduleDateFilter(tomorrowIso);
 									setIsOptionsMenuOpen(false);
 								}}
@@ -796,6 +812,20 @@ export function ScheduleFilterStrip({
 							>
 								<Calendar size={14} className="text-[var(--teal,var(--brand-primary))]" />
 								<span>Завтра</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => {
+									window.location.hash = "shift";
+									setIsOptionsMenuOpen(false);
+								}}
+								className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+								role="menuitem"
+								title="Перейти на сводку смены и оперативные очереди (StomX Главная)"
+							>
+								<Clock size={14} className="text-[var(--teal,var(--brand-primary))]" />
+								<span>Сводка смены (StomX Главная)</span>
 							</button>
 
 							<button
