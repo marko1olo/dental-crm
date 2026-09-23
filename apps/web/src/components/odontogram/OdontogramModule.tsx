@@ -316,6 +316,8 @@ export const OdontogramModule = React.memo(({
 	const [isPerioOpen, setIsPerioOpen] = useState(false);
 	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
 	const [activeSurfaces, setActiveSurfaces] = useState<string[]>([]);
+	const activeSurfacesRef = useRef(activeSurfaces);
+	activeSurfacesRef.current = activeSurfaces;
 	const [isVoiceOpen, setIsVoiceOpen] = useState(false);
 	const [diagnocatLoading, setDiagnocatLoading] = useState(false);
 	const [diagnocatPendingReport, setDiagnocatPendingReport] = useState<{
@@ -527,13 +529,14 @@ export const OdontogramModule = React.memo(({
 	// Load states from API
 	const updateToothState = useCallback(
 		async (toothNumbers: number[], state: ToothState, surfacesOverride?: readonly string[] | undefined) => {
+			const currentActiveSurfaces = activeSurfacesRef.current;
 			let apiSurfaces: string[] | undefined =
 				surfacesOverride !== undefined
 					? surfacesOverride.length > 0
 						? [...surfacesOverride]
 						: undefined
-					: activeSurfaces.length > 0
-						? [...activeSurfaces]
+					: currentActiveSurfaces.length > 0
+						? [...currentActiveSurfaces]
 						: undefined;
 
 			const currentTeeth = teethDataRef.current;
@@ -546,8 +549,8 @@ export const OdontogramModule = React.memo(({
 					} else {
 						delete updated.surfaces;
 					}
-				} else if (activeSurfaces.length > 0) {
-					updated.surfaces = [...activeSurfaces];
+				} else if (currentActiveSurfaces.length > 0) {
+					updated.surfaces = [...currentActiveSurfaces];
 				} else if (state === "Healthy" || state === "Missing") {
 					delete updated.surfaces;
 				} else if (tooth.surfaces && tooth.surfaces.length > 0) {
@@ -562,8 +565,8 @@ export const OdontogramModule = React.memo(({
 				const newItem: ToothData = { toothNumber: t, state };
 				if (surfacesOverride && surfacesOverride.length > 0) {
 					newItem.surfaces = [...surfacesOverride];
-				} else if (activeSurfaces.length > 0) {
-					newItem.surfaces = [...activeSurfaces];
+				} else if (currentActiveSurfaces.length > 0) {
+					newItem.surfaces = [...currentActiveSurfaces];
 				}
 				next.push(newItem);
 			}
@@ -580,7 +583,7 @@ export const OdontogramModule = React.memo(({
 			);
 
 			setMenuConfig(null);
-			setSelectedTeeth([]);
+			setSelectedTeeth((prev) => (prev.length > 0 ? [] : prev));
 
 			if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
 				try {
@@ -649,10 +652,13 @@ export const OdontogramModule = React.memo(({
 			 * Planned_Implant; Missing не обрабатывается сознательно, :133). Он же
 			 * помнит, какие строки врач снял корзиной, чего очередь не умела.
 			 */
-			setActiveSurfaces([]);
+			setActiveSurfaces((prev) => (prev.length > 0 ? [] : prev));
 		},
-		[activeSurfaces, patientId],
+		[patientId],
 	);
+
+	const updateToothStateRef = useRef(updateToothState);
+	updateToothStateRef.current = updateToothState;
 
 	const handleApplyAiProposal = useCallback(async () => {
 		if (!aiPendingProposal) return;
@@ -829,8 +835,8 @@ export const OdontogramModule = React.memo(({
 		setTeethLoad({ phase: "loading" });
 
 		/* Сбрасываем выбор зубов, поверхности и открытые меню от прошлого пациента. */
-		setSelectedTeeth([]);
-		setActiveSurfaces([]);
+		setSelectedTeeth((prev) => (prev.length > 0 ? [] : prev));
+		setActiveSurfaces((prev) => (prev.length > 0 ? [] : prev));
 		setMenuConfig(null);
 		setHistoryTooth(null);
 
@@ -959,7 +965,7 @@ export const OdontogramModule = React.memo(({
 				"info",
 				15000,
 			);
-			void updateToothState([toothNumber], "Planned_Implant");
+			void updateToothStateRef.current([toothNumber], "Planned_Implant");
 		};
 		window.addEventListener("clinical-implant-placed", handleClinicalCollision);
 
@@ -1066,7 +1072,7 @@ export const OdontogramModule = React.memo(({
 			window.removeEventListener("keyup", handleKeyUp);
 		};
 		// teethReloadToken — кнопка «Повторить» под сообщением об отказе.
-	}, [patientId, updateToothState, teethReloadToken]);
+	}, [patientId, teethReloadToken]);
 
 	const handleToothClick = (
 		toothNumber: number,
