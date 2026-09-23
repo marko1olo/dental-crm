@@ -449,12 +449,15 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 				(validation as { errorMessage?: string }).errorMessage ||
 				"Скорректируйте сумму оплаты перед пробитием чека";
 
+			// По ст. 4.7 № 54-ФЗ и Мандату 8e: с физических лиц ИНН строго не требуется и КАТЕГОРИЧЕСКИ НЕ МОЖЕТ блокировать чек
 			if (clientType !== "physical_person" && validation.errorMessageRu?.includes("ИНН")) {
 				showToast(errorMsg, "warning");
 				return;
 			}
 
-			if (remainingRub > 0) {
+			if (clientType === "physical_person" && validation.errorMessageRu?.includes("ИНН") && remainingRub === 0) {
+				// Автономный пропуск проверки ИНН для физлица — оплата продолжается без задержек
+			} else if (remainingRub > 0) {
 				const method = activeMethod || "bank_card";
 				if (method === "cash") {
 					const nextCash = +(cashAmountRub + remainingRub).toFixed(2);
@@ -960,12 +963,12 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		isOpen,
 		onClose,
 		onSubmit: () => {
-			if (validation.isValid && !isPrinting) {
+			if (!isPrinting) {
 				void handleExecutePayment();
 			}
 		},
 		autoFocusRef: primaryInputRef,
-		initialFocusSelector: '[data-testid="simple-card-btn"], [data-testid="simple-cash-btn"], [data-testid="simple-sbp-btn"], input, button',
+		initialFocusSelector: '[data-testid="simple-card-btn"], [data-testid="simple-cash-btn"], [data-testid="simple-sbp-btn"], [data-testid="simple-deposit-btn"], input, button',
 	});
 
 	return (
@@ -1091,6 +1094,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 					<details
 						className="group rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-teal-500/30 shadow-xs"
 						data-testid="quick-presets-section"
+						open
 					>
 						<summary className="p-2 px-3 flex items-center justify-between cursor-pointer select-none text-xs list-none [&::-webkit-details-marker]:hidden">
 							<div className="flex items-center gap-1.5 font-bold text-teal-800 dark:text-teal-200">
@@ -1536,10 +1540,17 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									maxLength={12}
 									value={buyerInn}
 									onChange={(e) => setBuyerInn(e.target.value.replace(/\D/g, ""))}
+									onKeyDown={handleInputEnterKeyDown}
 									placeholder="Не требуется (пациент-физлицо)"
 									className="min-h-[44px] sm:min-h-0 sm:h-8 w-full max-w-sm px-2.5 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink)] focus:border-teal-500 outline-none"
 									data-testid="input-buyer-inn-physical"
 								/>
+								{buyerInn && buyerInn.length !== 12 && (
+									<p className="text-[10px] text-amber-600 dark:text-amber-400 m-0 mt-0.5 flex items-center gap-1 font-medium">
+										<ShieldCheck size={12} className="text-emerald-500 shrink-0" />
+										<span>ИНН физлица обычно 12 цифр (для 54-ФЗ опционально, оплата не блокируется)</span>
+									</p>
+								)}
 							</div>
 						) : (
 							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1581,7 +1592,10 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							Способ оплаты:
 						</span>
 						{isSimpleCashierMode ? (
-							<div className="grid grid-cols-3 gap-2" data-testid="simple-cashier-methods">
+							<div
+								className={`grid gap-2 ${(patientDepositRub > 0 || patientFamilyBalanceRub > 0) ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}
+								data-testid="simple-cashier-methods"
+							>
 								<button
 									type="button"
 									onClick={() => handleSingle100Percent("bank_card")}
@@ -1623,6 +1637,23 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									<QrCode size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 									<span className="truncate">СБП QR</span>
 								</button>
+
+								{(patientDepositRub > 0 || patientFamilyBalanceRub > 0) && (
+									<button
+										type="button"
+										onClick={() => handleSingle100Percent("patient_deposit")}
+										className={`h-9 px-3 rounded-xl border flex items-center justify-center gap-2 font-extrabold text-xs sm:text-sm transition-all cursor-pointer select-none active:scale-95 ${
+											activeMethod === "patient_deposit"
+												? "border-amber-600 bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-xs ring-1 ring-amber-500/30"
+												: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
+										}`}
+										data-testid="simple-deposit-btn"
+										title={`Списать с депозита пациента (${((patientDepositRub || 0) + (patientFamilyBalanceRub || 0)).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)`}
+									>
+										<Coins size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+										<span className="truncate">Депозит</span>
+									</button>
+								)}
 							</div>
 						) : (
 							<div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] overflow-x-auto">

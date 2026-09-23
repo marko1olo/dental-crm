@@ -116,6 +116,29 @@ describe("FastCheckoutModal — 1-Click Presets & Combined Payment Autonomy (Man
 		);
 		assert.ok(html.includes("data-testid=\"btn-checkout-split-three-way\""));
 	});
+
+	it("renders 1-click deposit button in simple cashier mode when deposit or family balance is available (Mandate 8e, 8n)", () => {
+		const htmlWithDeposit = renderToString(
+			React.createElement(FastCheckoutModal, {
+				isOpen: true,
+				onClose: () => {},
+				totalBillRub: 4000,
+				patientDepositRub: 2500,
+			})
+		);
+		assert.ok(htmlWithDeposit.includes('data-testid="simple-deposit-btn"'), "Must render simple deposit button when deposit > 0");
+
+		const htmlWithoutDeposit = renderToString(
+			React.createElement(FastCheckoutModal, {
+				isOpen: true,
+				onClose: () => {},
+				totalBillRub: 4000,
+				patientDepositRub: 0,
+				patientFamilyBalanceRub: 0,
+			})
+		);
+		assert.equal(htmlWithoutDeposit.includes('data-testid="simple-deposit-btn"'), false, "Must omit simple deposit button when balance is 0");
+	});
 });
 
 describe("PaymentModal — Multi-Tender & Doctor Autonomy Presets", () => {
