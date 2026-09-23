@@ -113,7 +113,7 @@ export function checkDentalLabFinancialGate(
 		(params.treatmentPlanAgeDays !== undefined && params.treatmentPlanAgeDays > 30) ||
 		params.isPlanExpired === true;
 	const planExpiredNotice = isPlanOver30Days
-		? "План составлен >30 дней назад: по регламенту клиники срок плана НЕ БЛОКИРУЕТ наряды ЗТЛ, услуги и оплату (Клинический регламент)."
+		? "План составлен более 30 дней назад, цены могут быть скорректированы: срок плана НЕ БЛОКИРУЕТ создание наряда ЗТЛ, услуги и оплату (Мандат 8e)."
 		: undefined;
 
 	let gateStatus: DentalLabGateStatus;

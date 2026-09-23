@@ -618,7 +618,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 					>
 						<CheckCircle2 size={15} style={{ color: "var(--ok-fg, #10b981)", flexShrink: 0 }} />
 						<span>
-							<strong>Клинический регламент:</strong> Срок плана лечения{treatmentPlanAgeDays !== undefined ? ` (${treatmentPlanAgeDays} дн.)` : ""} превысил 30 дней, но это <strong>не блокирует</strong> оформление нарядов ЗТЛ, оказание услуг или взаиморасчеты.
+							<strong>Клинический регламент:</strong> План составлен более 30 дней назад{treatmentPlanAgeDays !== undefined ? ` (${treatmentPlanAgeDays} дн.)` : ""}, цены могут быть скорректированы, но это <strong>не блокирует</strong> оформление нарядов ЗТЛ, оказание услуг или взаиморасчеты (Мандат 8e).
 						</span>
 					</div>
 				)}

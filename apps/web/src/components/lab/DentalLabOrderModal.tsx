@@ -489,10 +489,8 @@ export function DentalLabOrderModal({
 	const handleSaveOrder = async (e?: React.FormEvent, forceSaveWithOverride = false) => {
 		if (e) e.preventDefault();
 
-		if (!formPatientId) {
-			showToast("ID пациента обязателен для создания наряда ЗТЛ", "error");
-			return;
-		}
+		// Мандат 8n (Соло-врач): создание наряда ЗТЛ в 1 клик без блокирующих валидаций
+		const effectivePatientId = formPatientId.trim() || (patientId ? patientId.trim() : `pat-solo-${Date.now()}`);
 
 		// Проверка финансового шлюза (50% аванс за этап)
 		// Автономия врача (Мандат 8e): не блокировать гарантийные переделки (0 ₽) и работы без оплаты.
@@ -549,7 +547,7 @@ export function DentalLabOrderModal({
 				.join("\n• ");
 
 			const payload = {
-				patientId: formPatientId,
+				patientId: effectivePatientId,
 				doctorId: formDoctorId || null,
 				toothFdi: toothFdiStr,
 				jawScope: jawScope || undefined,

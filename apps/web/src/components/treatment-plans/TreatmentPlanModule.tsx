@@ -739,10 +739,10 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 							{planAgeDays > 30 && (
 								<span
 									className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-200 font-bold border border-amber-500/30 inline-flex items-center gap-1 shadow-2xs shrink-0"
-									title="Смета составлена >30 дней назад. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (согласовано врачом)."
+									title="План составлен более 30 дней назад, цены могут быть скорректированы. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (Мандат 8e)."
 								>
 									<Clock size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
-									Смета составлена &gt;30 дней назад (актуальна / продлена)
+									План составлен более 30 дней назад, цены могут быть скорректированы
 								</span>
 							)}
 
@@ -1138,6 +1138,21 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 										0 ₽ (Гарантия / Персонал)
 									</span>
 								)}
+								<div className="inline-flex items-center gap-1 ml-1.5" title="Произвольная скидка врача (0-100%) без мастер-паролей (Мандат 8e)">
+									<input
+										type="number"
+										min="0"
+										max="100"
+										value={discountPercent}
+										onChange={(e) => {
+											const val = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+											setDiscountPercent(val);
+										}}
+										className="w-14 min-h-[32px] h-8 px-1.5 text-xs font-mono font-bold rounded-lg border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-center focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+										placeholder="%"
+									/>
+									<span className="text-xs text-[var(--muted,#64748b)] font-bold">%</span>
+								</div>
 							</div>
 						</div>
 

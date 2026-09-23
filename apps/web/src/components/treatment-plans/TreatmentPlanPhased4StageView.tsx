@@ -240,11 +240,11 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
             {effectivePlanAgeDays > 30 && (
               <span
                 className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/30 whitespace-nowrap inline-flex items-center gap-1 shadow-2xs"
-                title="Смета составлена >30 дней назад. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (согласовано врачом)."
+                title="План составлен более 30 дней назад, цены могут быть скорректированы. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (согласовано врачом)."
                 data-testid="phased-expired-unblocked-badge"
               >
                 <Clock size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
-                Смета &gt;30 дн. (актуальна / продлена)
+                План составлен более 30 дней назад, цены могут быть скорректированы
               </span>
             )}
           </div>

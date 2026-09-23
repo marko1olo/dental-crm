@@ -179,7 +179,7 @@ export const TreatmentPlanComparatorModal: React.FC<TreatmentPlanComparatorModal
 					>
 						<Clock size={15} style={{ color: "var(--amber, #d97706)", flexShrink: 0 }} />
 						<span>
-							Смета составлена {effectivePlanAgeDays} дн. назад. Стоимость зафиксирована врачом. Оказание услуг, оформление нарядов ЗТЛ и оплата производятся без ограничений (Мандат 8e п. 7).
+							План составлен более 30 дней назад ({effectivePlanAgeDays} дн.), цены могут быть скорректированы. Стоимость зафиксирована врачом. Оказание услуг, оформление нарядов ЗТЛ и оплата производятся без ограничений (Мандат 8e п. 7).
 						</span>
 					</div>
 				)}

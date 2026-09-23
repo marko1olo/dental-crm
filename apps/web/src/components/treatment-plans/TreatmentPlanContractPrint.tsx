@@ -428,7 +428,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 							<div className="p-2.5 rounded-lg bg-white border border-amber-300 text-amber-900 text-[10px] flex items-center gap-2">
 								<Clock size={13} className="text-amber-600 shrink-0" />
 								<span>
-									<strong>Примечание:</strong> Смета составлена {planAgeDays} дн. назад. Стоимость зафиксирована и утверждена лечащим врачом. Оказание услуг, оформление нарядов ЗТЛ и оплата производятся без ограничений.
+									<strong>Примечание:</strong> План составлен более 30 дней назад ({planAgeDays} дн.), цены могут быть скорректированы. Стоимость зафиксирована и утверждена лечащим врачом. Оказание услуг, оформление нарядов ЗТЛ и оплата производятся без ограничений (Мандат 8e).
 								</span>
 							</div>
 						)}

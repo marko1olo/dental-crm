@@ -650,11 +650,11 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 									{planAgeDays > 30 && (
 										<span
 											className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 font-bold border border-amber-500/30 text-xs inline-flex items-center gap-1 shadow-2xs whitespace-nowrap"
-											title="Смета составлена >30 дней назад. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (согласовано врачом)."
+											title="План составлен более 30 дней назад, цены могут быть скорректированы. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (согласовано врачом)."
 											data-testid="presenter-expired-unblocked-badge"
 										>
 											<Clock size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
-											Смета составлена &gt;30 дней назад (актуальна / продлена)
+											План составлен более 30 дней назад, цены могут быть скорректированы
 										</span>
 									)}
 								</h2>
@@ -987,6 +987,22 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 								0 ₽ (Гарантийная переделка / Персонал)
 							</span>
 						)}
+						<div className="inline-flex items-center gap-1 ml-1" title="Свободная скидка врача (0-100%) без мастер-паролей (Мандат 8e)">
+							<input
+								type="number"
+								min="0"
+								max="100"
+								value={doctorDiscountPercent}
+								onChange={(e) => {
+									const val = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+									handleApplyDoctorDiscount(val);
+								}}
+								className="w-14 min-h-[32px] h-8 px-1.5 text-xs font-mono font-bold rounded-lg border border-[var(--tp-border)] bg-[var(--tp-surface)] text-[var(--tp-text-main)] text-center focus:outline-none focus:ring-1 focus:ring-[var(--tp-primary)]"
+								placeholder="%"
+								data-testid="presenter-custom-discount-input"
+							/>
+							<span className="text-xs text-[var(--tp-text-muted)] font-bold">%</span>
+						</div>
 					</div>
 					<div className="text-[11px] text-[var(--tp-text-muted)] hidden lg:block">
 						Автономия врача: свободные скидки и переделки без согласований с администратором
@@ -1825,7 +1841,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 										<div className="p-2.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs font-semibold mb-4 flex items-center gap-2">
 											<Clock size={15} className="text-amber-600 shrink-0" />
 											<span>
-												Смета составлена &gt;30 дней назад. Стоимость зафиксирована по согласованию с лечащим врачом. Оказание услуг, оформление нарядов в ЗТЛ и оплата производятся без ограничений.
+												План составлен более 30 дней назад, цены могут быть скорректированы. Стоимость зафиксирована по согласованию с лечащим врачом. Оказание услуг, оформление нарядов в ЗТЛ и оплата производятся без ограничений (Мандат 8e).
 											</span>
 										</div>
 									)}
