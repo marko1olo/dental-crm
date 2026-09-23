@@ -99,6 +99,24 @@ describe('Statutory Order 804n Service Catalog & Pricelist Matrix Suite', () => 
 				assert.ok(item.statutoryTitle804n.length > 5);
 			}
 		});
+
+		it('includes real-world clinical services from Dentalia extract (zirconia implant crowns, wedge defects, US scaling)', () => {
+			const zirconiaImplant = STATUTORY_ORDER_804N_PRESETS.find((p) => p.id === 'srv-a16-07-006-004-zirconia');
+			assert.ok(zirconiaImplant, 'Should contain zirconia implant crown preset');
+			assert.equal(zirconiaImplant.code804n, 'A16.07.006.004');
+			assert.equal(zirconiaImplant.basePriceRub, 26000);
+			assert.equal(zirconiaImplant.basePriceKopecks, 2600000);
+
+			const wedgeDefect = STATUTORY_ORDER_804N_PRESETS.find((p) => p.id === 'srv-a16-07-002-005-erosion');
+			assert.ok(wedgeDefect, 'Should contain wedge defect / erosion preset');
+			assert.equal(wedgeDefect.code804n, 'A16.07.002.005');
+			assert.equal(wedgeDefect.basePriceRub, 4200);
+
+			const usScaling = STATUTORY_ORDER_804N_PRESETS.find((p) => p.id === 'srv-a16-07-051-002');
+			assert.ok(usScaling, 'Should contain ultrasound scaling preset');
+			assert.equal(usScaling.code804n, 'A16.07.051.001');
+			assert.equal(usScaling.basePriceRub, 3800);
+		});
 	});
 
 	describe('3. Kopeck-Exact Financial Math & Price Formatting', () => {

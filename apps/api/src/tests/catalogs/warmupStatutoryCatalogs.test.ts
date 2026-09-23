@@ -51,6 +51,25 @@ test("Statutory Catalogs Warmup & Offline Snapshot Suite (Order 804n, Pharmacolo
 		assert.ok(implant, "Should contain A16.07.054.001");
 		assert.strictEqual(implant.category, "surgery");
 
+		// Check Dentalia extract orthopedics: zirconia crown on implant screw-retained (A16.07.006.004)
+		const zirconiaImplantCrown = all804n.find((i) => i.code === "A16.07.006.004");
+		assert.ok(zirconiaImplantCrown, "Should contain A16.07.006.004");
+		assert.strictEqual(zirconiaImplantCrown.category, "orthopedics");
+		assert.strictEqual(zirconiaImplantCrown.defaultPriceRub, 26000);
+		assert.strictEqual(zirconiaImplantCrown.defaultPriceKopecks, 2600000);
+
+		// Check Dentalia extract therapy: wedge defect / erosion (A16.07.002.005)
+		const wedgeDefect = all804n.find((i) => i.code === "A16.07.002.005");
+		assert.ok(wedgeDefect, "Should contain A16.07.002.005");
+		assert.strictEqual(wedgeDefect.category, "therapy");
+		assert.strictEqual(wedgeDefect.defaultPriceRub, 3800);
+
+		// Check Dentalia extract hygiene: ultrasound scaling (A16.07.051.001)
+		const usScaling = all804n.find((i) => i.code === "A16.07.051.001");
+		assert.ok(usScaling, "Should contain A16.07.051.001");
+		assert.strictEqual(usScaling.category, "hygiene");
+		assert.strictEqual(usScaling.defaultPriceRub, 3800);
+
 		// Filter by query
 		const endo = getStatutory804nSnapshot({ q: "корневого канала" });
 		assert.ok(endo.length >= 2, "Search for root canal should return items");
@@ -127,10 +146,21 @@ test("Statutory Catalogs Warmup & Offline Snapshot Suite (Order 804n, Pharmacolo
 		assert.strictEqual(cariesDentine.requiresTooth, true);
 
 		const templates = getStatutoryEmrTemplatesSnapshot();
-		assert.ok(templates.length >= 4);
+		assert.ok(templates.length >= 6);
 		const cariesTmpl = templates.find((t) => t.id === "caries_dentine");
 		assert.ok(cariesTmpl);
 		assert.ok(cariesTmpl.defaultProcedureProtocol.includes("коффердам"));
+
+		const implantTmpl = templates.find((t) => t.id === "implant_crown_zirconia");
+		assert.ok(implantTmpl, "Should contain implant_crown_zirconia template");
+		assert.strictEqual(implantTmpl.icd10Code, "K08.1");
+		assert.ok(implantTmpl.defaultProcedureProtocol.includes("Ti-base"));
+		assert.ok(implantTmpl.defaultProcedureProtocol.includes("25–30 Нсм"));
+
+		const wearTmpl = templates.find((t) => t.id === "enamel_wear_erosion");
+		assert.ok(wearTmpl, "Should contain enamel_wear_erosion template");
+		assert.strictEqual(wearTmpl.icd10Code, "K03.1");
+		assert.ok(wearTmpl.defaultProcedureProtocol.includes("UltraPak"));
 	});
 
 	await t.test("6. Idempotent execution & status reporting", () => {
