@@ -26,6 +26,19 @@ import {
 	setupAutoHardwareWatchers,
 	launchSlidaExport,
 	getAnatomicalDentalPreviewDataUri,
+	DENTAL_PHOTO_PROTOCOL_12,
+	matchPhotoProtocolSlot,
+	parseHotFolderFilenameMetadata,
+	parseSlidaIniResponse,
+	parseSlidaXmlResponse,
+	parseSlidaResponse,
+	generateVddsMediaContent,
+	parseVddsMediaResponse,
+	launchVddsExport,
+	VENDOR_CLI_TEMPLATES,
+	getVendorCliTemplate,
+	formatCommandLineBridge,
+	launchCliBridge,
 } from "../main.cjs";
 
 test("Desktop Standalone Windows Runtime Harness", async (t) => {
@@ -243,8 +256,16 @@ test("Desktop Standalone Windows Runtime Harness", async (t) => {
 		assert.equal(toggled.isFullScreen, true);
 	});
 
-	await t.test("Multi-vendor dental hardware presets and vendor detection (Vatech, Sirona, Planmeca, CS, KaVo, Xpect, Runyes, Pantum)", async () => {
-		assert.equal(DENTAL_HARDWARE_PRESETS.length, 8);
+	await t.test("Multi-vendor dental hardware presets and vendor detection across 5 families (37 presets)", async () => {
+		assert.equal(DENTAL_HARDWARE_PRESETS.length, 37);
+
+		// Verify all 5 equipment families are represented
+		const families = new Set(DENTAL_HARDWARE_PRESETS.map((p) => p.family));
+		assert.ok(families.has("rvg"), "Must have RVG family");
+		assert.ok(families.has("cbct_opg"), "Must have CBCT/OPG family");
+		assert.ok(families.has("scanner_3d"), "Must have 3D Scanner family");
+		assert.ok(families.has("document_scanner"), "Must have Document Scanner family");
+		assert.ok(families.has("photo_protocol"), "Must have Photo Protocol family");
 
 		// Vendor path detection
 		assert.equal(detectHardwareVendorFromPath("C:\\EzDent-i\\Capture\\scan01.dcm"), "vatech");
@@ -257,6 +278,10 @@ test("Desktop Standalone Windows Runtime Harness", async (t) => {
 		assert.equal(detectHardwareVendorFromPath("quickscan_model.ply"), "runyes");
 		assert.equal(detectHardwareVendorFromPath("C:\\Pantum\\Scan\\doc.pdf"), "pantum");
 		assert.equal(detectHardwareVendorFromPath("pantum_scan.jpg"), "pantum");
+		assert.equal(detectHardwareVendorFromPath("C:\\Kyocera\\Scan\\passport.pdf"), "kyocera");
+		assert.equal(detectHardwareVendorFromPath("C:\\Medit\\Scans\\arch.obj"), "medit");
+		assert.equal(detectHardwareVendorFromPath("C:\\3Shape\\DentalDesktop\\export.stl"), "threeshape");
+		assert.equal(detectHardwareVendorFromPath("D:\\DCIM\\100CANON\\IMG_0001.JPG"), "canon_photo");
 		assert.equal(detectHardwareVendorFromPath("C:\\SomeGenericFolder\\file.dcm"), "generic");
 
 		// Installed hardware detection
@@ -313,6 +338,146 @@ test("Desktop Standalone Windows Runtime Harness", async (t) => {
 		try {
 			fs.rmSync(tempDir, { recursive: true, force: true });
 		} catch {}
+	});
+
+	await t.test("Parses SLIDA INI and XML responses", () => {
+		const iniResponse = `[Patient]
+Id=P-888
+Tooth=25
+Modality=IO
+Status=OK
+File=C:\\Sidexis\\Data\\P888_25.dcm
+File=C:\\Sidexis\\Data\\P888_25_preview.jpg`;
+
+		const parsedIni = parseSlidaResponse(iniResponse);
+		assert.equal(parsedIni.success, true);
+		assert.equal(parsedIni.patientId, "P-888");
+		assert.equal(parsedIni.toothCode, "25");
+		assert.equal(parsedIni.modality, "IO");
+		assert.equal(parsedIni.imagePaths.length, 2);
+
+		const xmlResponse = `<?xml version="1.0"?>
+<SlidaResponse status="OK">
+  <Patient id="P-999" />
+  <Tooth>16</Tooth>
+  <Modality>CT</Modality>
+  <File>C:\\Romexis\\Scans\\P999_CBCT.dcm</File>
+</SlidaResponse>`;
+
+		const parsedXml = parseSlidaResponse(xmlResponse);
+		assert.equal(parsedXml.success, true);
+		assert.equal(parsedXml.patientId, "P-999");
+		assert.equal(parsedXml.toothCode, "16");
+		assert.equal(parsedXml.modality, "CT");
+		assert.equal(parsedXml.imagePaths[0], "C:\\Romexis\\Scans\\P999_CBCT.dcm");
+	});
+
+	await t.test("VDDS-Media 5/6 export generation and response parsing", () => {
+		const tempDir = path.join(os.tmpdir(), `dente-vdds-test-${Date.now()}`);
+		const vddsRes = launchVddsExport({
+			targetDir: tempDir,
+			patient: {
+				patientId: "PID-500",
+				lastName: "Морозов",
+				firstName: "Артем",
+				birthDate: "19920412",
+				gender: "M",
+				toothCode: "46",
+				command: "NewImage",
+			},
+			xRayType: "IO",
+		});
+
+		assert.equal(vddsRes.success, true);
+		assert.ok(fs.existsSync(vddsRes.filePath));
+		assert.ok(vddsRes.content.includes("[VDDS]"));
+		assert.ok(vddsRes.content.includes("Version=5.0"));
+		assert.ok(vddsRes.content.includes("ID=PID-500"));
+		assert.ok(vddsRes.content.includes("ZAHN=46"));
+		assert.ok(vddsRes.content.includes("AUFNAHMEART=IO"));
+		assert.ok(vddsRes.content.includes("AKTION=ACQUIRE"));
+
+		// Parse response
+		const responseIni = `[VDDS]
+Status=SUCCESS
+ID=PID-500
+ZAHN=46
+FILE=C:\\Temp\\xray_46.dcm`;
+		const parsed = parseVddsMediaResponse(responseIni);
+		assert.equal(parsed.success, true);
+		assert.equal(parsed.patientId, "PID-500");
+		assert.equal(parsed.toothCode, "46");
+		assert.equal(parsed.imagePaths[0], "C:\\Temp\\xray_46.dcm");
+
+		try {
+			fs.rmSync(tempDir, { recursive: true, force: true });
+		} catch {}
+	});
+
+	await t.test("CLI Command-Line Bridge formats templates and simulates launch", async () => {
+		const vatechCmd = formatCommandLineBridge(getVendorCliTemplate("vatech"), {
+			patientId: "P-101",
+			lastName: "Петров",
+			firstName: "Иван",
+		}, { exePath: "C:\\EzDent-i\\bin\\EzDent-i.exe" });
+		assert.equal(vatechCmd, '"C:\\EzDent-i\\bin\\EzDent-i.exe" -c P-101');
+
+		const sironaCmd = formatCommandLineBridge(getVendorCliTemplate("sirona"), {
+			patientId: "P-202",
+			lastName: "Иванов",
+			firstName: "Петр",
+			birthDate: "19850615",
+		}, { exePath: "C:\\Sidexis4\\Sidexis.exe" });
+		assert.equal(sironaCmd, '"C:\\Sidexis4\\Sidexis.exe" /P:P-202 /N:"Иванов^Петр" /DOB:19850615');
+
+		const launchRes = await launchCliBridge({
+			vendor: "eighteeth",
+			patient: { patientId: "P-303", lastName: "Сидоров", firstName: "Олег" },
+			exePath: "C:\\NanoPix\\NanoPix.exe",
+		});
+		assert.equal(launchRes.success, true);
+		assert.ok(launchRes.commandLine.includes("NanoPix.exe"));
+		assert.ok(launchRes.commandLine.includes("P-303"));
+	});
+
+	await t.test("Hot folder universal metadata parser and 12-slot photo protocol", () => {
+		// 1. DICOM with tooth and patient
+		const dcmMeta = parseHotFolderFilenameMetadata("VATECH_patient-102_tooth-16.dcm");
+		assert.equal(dcmMeta.fileCategory, "dicom");
+		assert.equal(dcmMeta.modality, "IO");
+		assert.equal(dcmMeta.toothCode, "16");
+		assert.equal(dcmMeta.patientId, "102");
+		assert.equal(dcmMeta.vendor, "vatech");
+
+		// 2. 3D Scan Mesh STL
+		const meshMeta = parseHotFolderFilenameMetadata("patient_77_maxilla.stl", "C:\\Runyes\\Scans");
+		assert.equal(meshMeta.fileCategory, "mesh");
+		assert.equal(meshMeta.modality, "3D_SCAN");
+		assert.equal(meshMeta.patientId, "77");
+		assert.equal(meshMeta.vendor, "runyes");
+
+		// 3. Document PDF
+		const docMeta = parseHotFolderFilenameMetadata("Pantum_scan_patient-88_consent.pdf");
+		assert.equal(docMeta.fileCategory, "document");
+		assert.equal(docMeta.modality, "DOC");
+		assert.equal(docMeta.patientId, "88");
+		assert.equal(docMeta.vendor, "pantum");
+
+		// 4. Photo protocol 12 slots matching
+		assert.equal(DENTAL_PHOTO_PROTOCOL_12.length, 12);
+
+		const portraitSlot = matchPhotoProtocolSlot("IMG_0001_portrait_rest.jpg");
+		assert.ok(portraitSlot);
+		assert.equal(portraitSlot.id, "extraoral_portrait_rest");
+		assert.equal(portraitSlot.index, 1);
+
+		const smileSlot = matchPhotoProtocolSlot("02_face_smile.jpg");
+		assert.ok(smileSlot);
+		assert.equal(smileSlot.id, "extraoral_portrait_smile");
+
+		const occlusalUpperSlot = matchPhotoProtocolSlot("slot9_upper_arch.png");
+		assert.ok(occlusalUpperSlot);
+		assert.equal(occlusalUpperSlot.id, "intraoral_occlusal_maxillary");
 	});
 
 	await t.test("Generates rich anatomical dental preview data URI without 1x1 mock PNGs (Mandate 2)", () => {
