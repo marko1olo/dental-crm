@@ -912,7 +912,7 @@ export function VisitEmkTab() {
 				);
 			}
 			if (notes.recommendations) {
-				const curr = visitNoteForm.recommendations || "";
+				const curr = visitNoteForm?.recommendations || "";
 				updateVisitNoteField(
 					"recommendations",
 					appendClinicalText(curr, notes.recommendations, "\n"),

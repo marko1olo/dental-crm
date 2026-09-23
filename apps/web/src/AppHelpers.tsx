@@ -1867,7 +1867,9 @@ export type VisitNoteField =
 	| "objectiveStatus"
 	| "diagnosis"
 	| "treatmentPlan";
-export type VisitNoteForm = Record<VisitNoteField, string>;
+export type VisitNoteForm = Record<VisitNoteField, string> & {
+	recommendations?: string;
+};
 
 export const visitNoteFieldDefinitions: Array<{
 	key: VisitNoteField;
