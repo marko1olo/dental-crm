@@ -29,7 +29,6 @@ import {
 	Printer,
 	QrCode,
 	Receipt,
-	ScanLine,
 	Scissors,
 	Search,
 	ShieldAlert,
@@ -1652,18 +1651,26 @@ export function VisitEmkTab() {
 	);
 
 	const executeLinkSterilizationTray = React.useCallback(
-		async (barcodeToLink: string) => {
-			const targetBarcode = barcodeToLink.trim();
+		async (barcodeToLink?: string, options?: { silent?: boolean }) => {
+			const targetBarcode = (
+				barcodeToLink ||
+				trayBarcode ||
+				CHAIRSIDE_STERILIZATION_PRESETS[0].code
+			).trim();
 			if (!targetBarcode) {
-				showToast("Укажите или выберите штрихкод стерильного лотка", "warning");
+				if (!options?.silent) {
+					showToast("Укажите или выберите штрихкод стерильного лотка", "warning");
+				}
 				return;
 			}
 			const visitId = realVisitFieldId(dashboard?.activeVisit?.id);
 			if (!visitId) {
-				showToast(
-					"Сначала выберите или откройте активный визит для привязки лотка",
-					"warning",
-				);
+				if (!options?.silent) {
+					showToast(
+						"Сначала выберите или откройте активный визит для привязки лотка",
+						"warning",
+					);
+				}
 				return;
 			}
 			if (isLinkingTray) return;
@@ -1682,56 +1689,76 @@ export function VisitEmkTab() {
 					body: JSON.stringify({ visitId, barcode: targetBarcode }),
 				});
 				if (!res.ok) {
-					const errData = (await res.json().catch((err: unknown) => {
-						logger.error(err);
+					if (!options?.silent) {
+						const errData = (await res.json().catch((err: unknown) => {
+							logger.error(err);
+							showToast(
+								actionFailureToast(
+									"Ошибка чтения ответа",
+									(err as { status?: number })?.status ?? null,
+								),
+								"error",
+							);
+							return null;
+						})) as { message?: string; error?: string } | null;
 						showToast(
-							actionFailureToast(
-								"Ошибка чтения ответа",
-								(err as { status?: number })?.status ?? null,
-							),
+							errData?.message ||
+								errData?.error ||
+								"Лоток не прошёл стерилизацию или не найден в журнале",
 							"error",
 						);
-						return null;
-					})) as { message?: string; error?: string } | null;
-					showToast(
-						errData?.message ||
-							errData?.error ||
-							"Лоток не прошёл стерилизацию или не найден в журнале",
-						"error",
-					);
+					}
 					return;
 				}
 				setLinkedBarcode(targetBarcode);
 				setTrayBarcode(targetBarcode);
-				showToast(
-					`Лоток ${targetBarcode} успешно привязан к дневнику приема`,
-					"success",
-				);
+				if (!options?.silent) {
+					showToast(
+						`Лоток ${targetBarcode} успешно привязан к дневнику приема`,
+						"success",
+					);
+				}
 			} catch (err) {
 				logger.error("[EMK] Ошибка привязки лотка стерилизации:", err);
-				showToast(
-					actionFailureToast(
-						"Ошибка привязки лотка стерилизации",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
+				if (!options?.silent) {
+					showToast(
+						actionFailureToast(
+							"Ошибка привязки лотка стерилизации",
+							(err as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
+				}
 			} finally {
 				setIsLinkingTray(false);
 			}
 		},
-		[dashboard?.activeVisit?.id, isLinkingTray, appLogic.auth],
+		[
+			dashboard?.activeVisit?.id,
+			isLinkingTray,
+			appLogic.auth,
+			trayBarcode,
+			CHAIRSIDE_STERILIZATION_PRESETS,
+		],
 	);
 
-	const handleLinkSterilizationTray = async (e: React.FormEvent) => {
-		e.preventDefault();
-		const targetBarcode =
-			trayBarcode.trim() || CHAIRSIDE_STERILIZATION_PRESETS[0].code;
-		if (!trayBarcode.trim()) {
-			setTrayBarcode(targetBarcode);
+	// Мандаты 8v, 8e: Инструменты стерильны по умолчанию (СанПиН 3.3686-21).
+	// Фоновая привязка стандартного лотка без навязывания сканирования врачу на приеме.
+	React.useEffect(() => {
+		const visitId = realVisitFieldId(dashboard?.activeVisit?.id);
+		if (visitId && !linkedBarcode && !isLinkingTray) {
+			void executeLinkSterilizationTray(
+				CHAIRSIDE_STERILIZATION_PRESETS[0].code,
+				{ silent: true },
+			);
 		}
-		await executeLinkSterilizationTray(targetBarcode);
-	};
+	}, [
+		dashboard?.activeVisit?.id,
+		linkedBarcode,
+		isLinkingTray,
+		executeLinkSterilizationTray,
+		CHAIRSIDE_STERILIZATION_PRESETS,
+	]);
 
 	const handleConsentSigned = React.useCallback(
 		async (payload: SignedConsentPayload) => {
@@ -4098,102 +4125,18 @@ export function VisitEmkTab() {
 					<EgiszMultipleDiagnosesWidget />
 				</div>
 
-				<hr className="my-4 border-t border-[var(--line)]" />
-
-				<form
-					onSubmit={handleLinkSterilizationTray}
-					className="flex flex-col gap-2.5"
-				>
-					<div className="flex items-center justify-between gap-2 flex-wrap">
-						<label
-							htmlFor="visit-tray-barcode-input"
-							className="text-xs sm:text-sm font-bold text-[var(--ink)] flex items-center gap-1.5"
+				{/* Лоток стерилен по умолчанию (СанПиН 3.3686-21, Мандаты 8v, 8p): без интерактивного частокола сканирования */}
+				{linkedBarcode ? (
+					<div className="mt-3 flex items-center gap-2">
+						<span
+							className="text-[11px] font-medium text-[var(--ok-fg)] bg-[var(--ok-bg)] px-2.5 py-0.5 rounded-md border border-[var(--ok-fg)]/20 flex items-center gap-1"
+							data-testid="status-tray-sanpin"
 						>
-							<ScanLine className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
-							Привязка простерилизованного лотка (СанПиН)
-						</label>
-						{linkedBarcode ? (
-							<span className="text-xs font-bold text-[var(--ok-fg)] bg-[var(--ok-bg)] px-2.5 py-1 rounded-lg border border-[var(--ok-fg)]/30 flex items-center gap-1">
-								<Check size={14} className="shrink-0" />
-								<span>Лоток {linkedBarcode} привязан</span>
-							</span>
-						) : null}
-					</div>
-
-					{/* 1-клик пресеты лотков СанПиН без сканера (Мандаты 8e, 8n) */}
-					<div className="flex items-center gap-1.5 flex-wrap">
-						<span className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1 shrink-0">
-							<Zap size={12} className="text-amber-500 shrink-0" />
-							Пресеты:
+							<Check size={12} className="shrink-0" />
+							<span>Лоток стерилен / СанПиН 3.3686-21 ({linkedBarcode})</span>
 						</span>
-						{CHAIRSIDE_STERILIZATION_PRESETS.map((preset) => {
-							const isSelected =
-								trayBarcode === preset.code || linkedBarcode === preset.code;
-							return (
-								<button
-									key={preset.id}
-									type="button"
-									onClick={() => {
-										setTrayBarcode(preset.code);
-										void executeLinkSterilizationTray(preset.code);
-									}}
-									disabled={isLinkingTray}
-									title={`Привязать ${preset.label} (${preset.code}) в 1 клик`}
-									className={`inline-flex items-center gap-1.5 px-2.5 py-1 min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 rounded-lg text-xs font-medium border transition-colors cursor-pointer touch-manipulation whitespace-nowrap shadow-2xs ${
-										isSelected
-											? "bg-[var(--teal,var(--brand-primary))]/10 border-[var(--teal,var(--brand-primary))] text-[var(--teal,var(--brand-primary))] font-bold shadow-xs"
-											: "bg-[var(--paper-soft,var(--paper))] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)] hover:border-[var(--line-strong)]"
-									}`}
-									data-testid={`btn-tray-preset-${preset.id}`}
-								>
-									<Zap
-										size={12}
-										className={
-											isSelected
-												? "text-[var(--teal,var(--brand-primary))] shrink-0"
-												: "text-amber-500 shrink-0"
-										}
-									/>
-									<span>{preset.label}</span>
-									<span className="font-mono text-[10px] opacity-70">
-										({preset.code})
-									</span>
-									{linkedBarcode === preset.code && (
-										<Check size={14} className="text-[var(--ok-fg)] shrink-0" />
-									)}
-								</button>
-							);
-						})}
 					</div>
-
-					<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-						<input
-							id="visit-tray-barcode-input"
-							type="text"
-							className="flex-1 text-xs sm:text-sm px-3 py-1.5 min-h-[34px] sm:min-h-[36px] h-8.5 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] font-mono"
-							placeholder="Отсканируйте или выберите пресет (напр. TRAY-THERAPY-STD)"
-							value={trayBarcode}
-							onChange={(e) => setTrayBarcode(e.target.value)}
-							disabled={isLinkingTray}
-							data-testid="input-tray-barcode"
-						/>
-						<button
-							className="secondary-button text-xs sm:text-sm font-bold py-1 px-3 min-h-[34px] sm:min-h-[36px] h-8.5 sm:h-9 rounded-lg inline-flex items-center justify-center gap-1.5 touch-manipulation shrink-0 cursor-pointer shadow-2xs"
-							type="submit"
-							disabled={isLinkingTray}
-							data-testid="btn-link-tray-barcode"
-						>
-							{isLinkingTray ? (
-								"Привязка…"
-							) : (
-								<>
-									<ScanLine size={14} className="shrink-0" />
-									<span>Привязать лоток</span>
-								</>
-							)}
-						</button>
-					</div>
-				</form>
+				) : null}
 			</div>
 
 			{/* Confirmation Modal when switching patient with unsaved Form 043/u changes */}
