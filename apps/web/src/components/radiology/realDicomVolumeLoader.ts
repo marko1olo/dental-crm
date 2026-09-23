@@ -443,7 +443,12 @@ export async function buildVolumeFromDicomZip(
   const unzipped = fflate.unzipSync(new Uint8Array(zipBuffer), {
     filter: (file) => {
       const lower = file.name.toLowerCase();
-      return (!lower.includes("__macosx") && !lower.startsWith("._") && (lower.endsWith(".dcm") || lower.endsWith(".dicom") || !lower.includes(".")));
+      return (
+        !lower.includes("__macosx") &&
+        !lower.startsWith("._") &&
+        !file.name.toUpperCase().includes("DICOMDIR") &&
+        (lower.endsWith(".dcm") || lower.endsWith(".dicom") || !lower.includes("."))
+      );
     },
   });
   const fileKeys = Object.keys(unzipped);

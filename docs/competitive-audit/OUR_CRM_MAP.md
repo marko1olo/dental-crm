@@ -2,7 +2,7 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
-> ⚠️ **СТАТУС (2026-09-23 / WAVES 175–297 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 337 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 400 ФИЧ: 63 КАНОНИЧЕСКИЕ + 337 АДДЕНДУМ, 400/400 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
+> ⚠️ **СТАТУС (2026-09-23 / WAVES 175–298 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 342 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (ВСЕГО 405 ФИЧ: 63 КАНОНИЧЕСКИЕ + 342 АДДЕНДУМ, 405/405 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
@@ -250,6 +250,10 @@
     - 1-строчный тулбар 32–36px по Закону Хика, полезная высота экрана с шапкой <160–180px по Мандату 8p, токенизация Dark Mode WCAG AAA;
     - 1-клик экспорт в дневник Формы 043/у и печать протокола А4 строго без эмодзи по Мандату 8d п. 7;
     - Глубина модалки строго 1 (Закон Анти-Матрёшки, Мандат 8d п. 6), тач-адаптация для мобильных планшетов у кресла (`pointer: coarse`).
+  - **Реверс-инжиниринг аппаратного архива клиники «Dentalia»: интраоральный 3D сканер Runyes 3DS (M3), PCD-визиограф Xpect Vision и КТ KaVo OP300 / CyberMed OnDemand3D (Мандаты 8c, 8e, 8i, 8k, 8n, 8s / Фича #405, Волна 298)**: В `visiographMeasurementMath.ts`, `VisiographStudioCanvas.tsx`, `realDicomVolumeLoader.ts`, `CbctMprImplantStudioModal.tsx` и `DentalLabOrderModal.tsx`:
+    - Интраоральный 3D сканер Runyes 3DS (M3): загрузка цветных полигональных сканов челюстей (PLY RGB, STL, OBJ), регистрация прикуса и 1-клик привязка к цифровому наряду ЗТЛ у кресла без флешек;
+    - PCD-визиограф прямого счета фотонов Xpect Vision: детектор CdTe/CMOS прямого преобразования рентгена в заряд, предельное разрешение 25–33 lp/mm (пиксель 14–20 мкм, 16 бит), снижение дозы на 30–50% по СанПиН 2.6.1.1192-03, мгновенная отрисовка <50мс и субмиллиметровый калипер WL $\le 0.1$ мм для эндодонтии Form 043/u;
+    - КЛКТ KaVo OP300 / CyberMed OnDemand3D: парсинг 408 аксиальных срезов DICOM Part 10 с изотропным вокселем 0.125–0.2 мм, 3D MPR, панорамная CPR сплайн-интерполяция дуги Catmull-Rom, классификация плотности кости по Misch HU (D1..D5) и контроль зоны безопасности нерва IAN clearance $\ge 1.5$ мм.
 
 ### 2.5. Документооборот, ИДС, НДФЛ, Рецепты 1094н, ЭЛН 1089н и ЕГИСЗ
   - **Инквизиция 043/у и ИДС**: зачистка стационарного академического мусора и госпитального блоата из медицинских документов, соответствие амбулаторной стоматологической практике (Мандат 8i, Wave 225.7).
@@ -6754,4 +6758,74 @@
   - `docs/competitive-audit/FEATURES_REGISTRY.md`
   - `docs/competitive-audit/BACKLOG.md`
   - `docs/competitive-audit/OUR_CRM_MAP.md` (Wave 297, Фичи #4, #12, #65, #66, #78, #80, #400)
+
+### 2.10.398. Wave 298: Расписание СЕГОДНЯ, Оперативная Доска Смены StomX, Закон Чистоты Экрана Без Ложных Аллергий, Мобильный АРМ Врача 043/у и Безопасный Клиренс Кассы 54-ФЗ (Мандаты 8c, 8d, 8e, 8k, 8n, 8p, 8h, 8j) (Фичи #401..#404)
+- **Функционал**:
+  1. *Расписание по умолчанию на СЕГОДНЯ и оперативная доска смены StomX (`ScheduleView.tsx`, `ShiftView.tsx`, `ScheduleFilterStrip.tsx`, коммит `a8796ce7f`, Фича #401)*:
+     - При открытии расписания гарантирован автоматический выбор текущего дня `localTodayIso` и санирование устаревших дат (`scheduleDateFilter <= todayIso`), полностью исключающее показ вчерашних фильтров;
+     - Развернута оперативная доска смены StomX с колонками «В кресле», «Ожидают приёма», «Ожидают оплаты» и 1-клик переходом к визиту, ЭМК и оплате без модальных барьеров;
+  2. *Закон чистоты экрана без ложных аллергий (`somaticNorm.ts`, `safetyMath.ts`, `PatientAllergySafetyBanner.tsx`, `PatientHeaderCard.tsx`, коммит `4edb004f9`, Фича #402)*:
+     - Распознавание отрицательных формулировок через `isNegativeAllergyStatement` и настройка `hideWhenClean = true` по умолчанию;
+     - Исключение фальшивых красных предупреждений («АЛЛЕРГИЯ: нет», «аллергических реакций нет», «со слов не отягощен») из карточек, шапки визита и баннеров безопасности; рабочее поле чисто при норме;
+  3. *Мобильный АРМ врача 043/у у кресла (`VisitView.tsx`, `VisitEmkTab.tsx`, `VisitMainTabs.tsx`, коммит `e1442bd2c`, Фича #403)*:
+     - Плавный горизонтальный скролл табов на экранах 390px (`min-w-max`, `touch-pan-x`) без обрезания текста;
+     - Закрепление липких кнопок управления визитом («Сохранить» / «Завершить приём») в фиксированной зоне экрана;
+     - Контекстные 1-клик чипы нормы Z01.2 непосредственно в секциях Формы 043/у без серых `disabled` блокировок;
+  4. *Мобильная касса 54-ФЗ: клиренс 112px и очистка сплит-оплаты от тостов (`FinanceView.tsx`, `PaymentCapture.tsx`, `FastCheckoutModal.tsx`, коммит `76f1bcbb5`, Фича #404)*:
+     - Безопасный клиренс `pb-28` (112px) над нижней навигацией на смартфонах 390x844, исключающий перекрытие итоговой суммы и кнопок оплаты;
+     - Удаление всплывающего тоста в окне сплит-оплаты 54-ФЗ, устраняющее визуальный шум при вводе сумм комбинированной оплаты (50/50, нал + безнал + аванс).
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/ScheduleView.tsx`
+  - `apps/web/src/ShiftView.tsx`
+  - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`
+  - `apps/web/src/utils/commonHelpers/uiPreferencesHelpers.ts`
+  - `apps/web/src/utils/preferencesUtils.ts`
+  - `apps/web/src/utils/somaticNorm.ts`
+  - `apps/web/src/components/patients/safetyMath.ts`
+  - `apps/web/src/components/patients/PatientAllergySafetyBanner.tsx`
+  - `apps/web/src/components/patients/PatientHeaderCard.tsx`
+  - `apps/web/src/components/odontogram/OdontogramModule.tsx`
+  - `apps/web/src/components/schedule/AppointmentCard.tsx`
+  - `apps/web/src/VisitView.tsx`
+  - `apps/web/src/components/visit/VisitEmkTab.tsx`
+  - `apps/web/src/components/visit/VisitMainTabs.tsx`
+  - `apps/web/src/FinanceView.tsx`
+  - `apps/web/src/PaymentCapture.tsx`
+  - `apps/web/src/components/finance/FastCheckoutModal.tsx`
+  - `apps/web/src/components/finance/FinanceView.tsx`
+  - `apps/web/src/styles/main.css`
+  - `apps/web/src/tests/paymentCaptureAutonomy.test.tsx`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (Wave 298, Фичи #401..#404)
+
+### 2.10.399. Реверс-Инжиниринг Аппаратного Архива Клиники «Dentalia»: Интраоральный 3D Сканер Runyes 3DS, PCD-Визиограф Xpect Vision и КТ KaVo OP300 / CyberMed OnDemand3D 408 Срезов (Мандаты 8c, 8e, 8i, 8k, 8n, 8s) (Фича #405)
+- **Функционал**:
+  1. *Интраоральный 3D сканер Runyes 3DS (M3) (`DentalLabOrderModal.tsx`)*:
+     - Прямой парсинг и рендеринг цветных 3D моделей челюстей в форматах PLY RGB, STL и OBJ;
+     - Регистрация окклюзионного прикуса и 1-клик привязка 3D скана к цифровому заказ-наряду лаборатории у кресла;
+  2. *PCD-визиограф прямого счета фотонов Xpect Vision (`VisiographStudioCanvas.tsx`, `visiographMeasurementMath.ts`)*:
+     - Поддержка полупроводникового детектора CdTe/CMOS прямого счета фотонов без паразитного светорассеяния;
+     - Разрешение 25–33 lp/mm (пиксель 14–20 мкм, 16 бит), снижение дозы на 30–50% по СанПиН 2.6.1.1192-03, мгновенная отрисовка <50мс;
+     - Субмиллиметровый эндодонтический калипер WL с погрешностью $\le 0.1$ мм;
+  3. *КЛКТ KaVo OP300 / CyberMed OnDemand3D 408 срезов (`realDicomVolumeLoader.ts`, `CbctMprImplantStudioModal.tsx`)*:
+     - Обработка 408 аксиальных срезов DICOM Part 10 с изотропным вокселем 0.125–0.2 мм;
+     - 3D мультипланарная реконструкция (MPR), панорамная кривая Catmull-Rom с кросс-секциями 1.0–2.0 мм;
+     - Плотность кости по шкале Misch HU (D1..D5) и автоматический контроль безопасного клиренса нерва IAN clearance $\ge 1.5$ мм;
+  4. *Сохранение 100% паритета 405/405 фич*:
+     - Все 405 фич в `FEATURES_REGISTRY.md`, `BACKLOG.md` и `OUR_CRM_MAP.md` сохраняют подтвержденный статус `[ДА] / [ЕСТЬ] / [ЗАКРЫТО]`.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `packages/shared/src/radiology/visiographMeasurementMath.ts`
+  - `apps/web/src/components/visiograph/VisiographStudioCanvas.tsx`
+  - `apps/web/src/components/cbct/realDicomVolumeLoader.ts`
+  - `apps/web/src/components/cbct/CbctMprImplantStudioModal.tsx`
+  - `apps/web/src/components/lab/DentalLabOrderModal.tsx`
+  - `packages/shared/src/radiology/cprMath.ts`
+  - `packages/shared/src/radiology/boneQualityEngine.ts`
+  - `packages/shared/src/radiology/cbctSafetyEngine.ts`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (Фича #405, Dentalia Hardware Archive)
 

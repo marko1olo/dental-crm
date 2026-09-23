@@ -4,6 +4,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
+export * from "./DicomArchiveUploader";
 export * from "./DicomViewerModal";
 export * from "./DicomViewport";
 export * from "./ShadowAnalystImageSlider";

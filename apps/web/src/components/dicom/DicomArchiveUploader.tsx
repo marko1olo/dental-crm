@@ -15,50 +15,13 @@ interface DicomArchiveUploaderProps {
 const MAX_SAFE_FILE_SIZE_BYTES = 1.5 * 1024 * 1024 * 1024; // 1.5 GB
 const BATCH_PROCESSING_CHUNK_SIZE = 50;
 
-/**
- * Checks if a byte buffer or filename represents a valid DICOM slice.
- * Standard DICOM has 128-byte preamble followed by "DICM" magic string.
- * Non-preamble DICOM or raw files identified by .dcm/.dicom extensions.
- */
-function isDicomEntry(filename: string, byteArray: Uint8Array): boolean {
-	const lower = filename.toLowerCase();
-	if (
-		lower.includes("__macosx") ||
-		lower.includes("/._") ||
-		lower.startsWith("._") ||
-		lower.endsWith(".ds_store") ||
-		lower.endsWith("thumbs.db") ||
-		lower.endsWith("desktop.ini")
-	) {
-		return false;
-	}
+import {
+	filterDicomArchiveEntries,
+	isDicomEntry,
+	isDicomdirEntry,
+} from "./dicomArchiveFilter";
 
-	if (byteArray.length >= 132) {
-		const dicmPrefix = String.fromCharCode(
-			byteArray[128] ?? 0,
-			byteArray[129] ?? 0,
-			byteArray[130] ?? 0,
-			byteArray[131] ?? 0,
-		);
-		if (dicmPrefix === "DICM") {
-			return true;
-		}
-	}
-
-	if (lower.endsWith(".dcm") || lower.endsWith(".dicom")) {
-		return byteArray.length > 32;
-	}
-
-	// DICOM without preamble typically begins with Group 0x0002 or Group 0x0008 tag
-	if (byteArray.length >= 4) {
-		const tagGroup = (byteArray[0] ?? 0) | ((byteArray[1] ?? 0) << 8);
-		if (tagGroup === 0x0002 || tagGroup === 0x0008) {
-			return true;
-		}
-	}
-
-	return false;
-}
+export { filterDicomArchiveEntries, isDicomEntry, isDicomdirEntry };
 
 export function DicomArchiveUploader({
 	onImagesLoaded,
@@ -93,6 +56,9 @@ export function DicomArchiveUploader({
 
 	const processFile = useCallback(
 		async (file: File): Promise<string | null> => {
+			if (isDicomdirEntry(file.name)) {
+				return null;
+			}
 			return new Promise((resolve) => {
 				const reader = new FileReader();
 				reader.onload = () => {
@@ -178,6 +144,13 @@ export function DicomArchiveUploader({
 						for (let i = currentIndex; i < batchEnd; i++) {
 							const filename = entries[i];
 							if (!filename) continue;
+
+							// Filter out DICOMDIR index files immediately (KaVo OP300, CyberMed OnDemand3D)
+							if (isDicomdirEntry(filename)) {
+								delete unzipped[filename];
+								continue;
+							}
+
 							const fileData = unzipped[filename];
 							if (!fileData) continue;
 
@@ -290,6 +263,7 @@ export function DicomArchiveUploader({
 						}
 						const f = nonZipFiles[i];
 						if (f) {
+							if (isDicomdirEntry(f.name)) continue;
 							const imageId = await processFile(f);
 							if (imageId) validImageIds.push(imageId);
 						}

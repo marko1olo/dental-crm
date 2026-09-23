@@ -96,6 +96,23 @@ registerHooks({
 				`),
 			};
 		}
+		if (specifier === "@cornerstonejs/dicom-image-loader") {
+			return {
+				format: "module",
+				shortCircuit: true,
+				url: "data:text/javascript," + encodeURIComponent(`
+					const fileManager = {
+						add: (file) => "wadouri:" + (file?.name || "image"),
+						purge: () => {},
+					};
+					export default {
+						wadouri: {
+							fileManager,
+						},
+					};
+				`),
+			};
+		}
 		if (specifier === "@dental/shared") {
 			return nextResolve(new URL("../../packages/shared/src/index.ts", import.meta.url).href, context);
 		}
