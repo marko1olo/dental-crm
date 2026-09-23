@@ -4,8 +4,10 @@ import {
 	AlertTriangle,
 	CalendarCheck,
 	Check,
+	CheckCircle2,
 	Clock,
 	Copy,
+	CreditCard,
 	MessageSquare,
 	Phone,
 	PhoneCall,
@@ -14,6 +16,8 @@ import {
 	UserCheck,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
+import { useAppStore } from "../../store/appStore";
+import { usePatientStore } from "../../store/patientStore";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAppMessage";
 import { openWhatsAppChat } from "../../store/telephonyStore";
@@ -98,32 +102,69 @@ export function AppointmentHoverHud({
 					</span>
 				</span>
 				{patientBalance !== null ? (
-					<span
-						className={`px-2.5 py-0.5 rounded-lg text-xs font-black font-mono shrink-0 whitespace-nowrap ${
+					<button
+						type="button"
+						data-testid="hud-patient-balance-btn"
+						onClick={(e) => {
+							e.stopPropagation();
+							const pId = appointmentPatient?.id || appointment.patientId;
+							if (pId) {
+								usePatientStore.getState().setSelectedPatientId(pId);
+							}
+							useAppStore.getState().setCurrentView("finance");
+							onClose();
+							showToast(
+								`Касса 54-ФЗ: расчёт ${appointmentPatientName || "пациента"}`,
+								"info",
+							);
+						}}
+						className={`px-2.5 py-0.5 rounded-lg text-xs font-black font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1 ${
 							patientBalance > 0
-								? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40"
+								? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/25"
 								: patientBalance < 0
-									? "bg-rose-500/20 text-rose-800 dark:text-rose-100 border border-rose-500"
-									: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20"
+									? "bg-rose-500/20 text-rose-800 dark:text-rose-100 border border-rose-500 hover:bg-rose-500/30"
+									: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20 hover:bg-slate-500/20"
 						}`}
 						title={
 							patientBalance > 0
-								? "Аванс / Депозит (54-ФЗ)"
+								? "Аванс / Депозит (54-ФЗ). Нажмите для расчёта на кассе"
 								: patientBalance < 0
-									? "Задолженность по 54-ФЗ"
-									: "Оплачено по 54-ФЗ"
+									? "Задолженность по 54-ФЗ. Нажмите для расчёта на кассе"
+									: "Оплачено по 54-ФЗ. Нажмите для расчёта на кассе"
 						}
 					>
-						{patientBalance > 0
-							? `Депозит: +${patientBalance.toLocaleString("ru-RU")} ₽`
-							: patientBalance < 0
-								? `Долг: ${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`
-								: "Оплата: 54-ФЗ (0 ₽)"}
-					</span>
+						<CreditCard size={11} className="shrink-0" />
+						<span>
+							{patientBalance > 0
+								? `Депозит: +${patientBalance.toLocaleString("ru-RU")} ₽`
+								: patientBalance < 0
+									? `Долг: ${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`
+									: "Оплата: 54-ФЗ (0 ₽)"}
+						</span>
+					</button>
 				) : (
-					<span className="px-2 py-0.5 rounded-lg text-[11px] font-medium font-mono text-slate-500 bg-slate-500/10 border border-slate-500/20 shrink-0 whitespace-nowrap">
-						54-ФЗ: Баланс 0 ₽
-					</span>
+					<button
+						type="button"
+						data-testid="hud-patient-balance-btn"
+						onClick={(e) => {
+							e.stopPropagation();
+							const pId = appointmentPatient?.id || appointment.patientId;
+							if (pId) {
+								usePatientStore.getState().setSelectedPatientId(pId);
+							}
+							useAppStore.getState().setCurrentView("finance");
+							onClose();
+							showToast(
+								`Касса 54-ФЗ: расчёт ${appointmentPatientName || "пациента"}`,
+								"info",
+							);
+						}}
+						className="px-2 py-0.5 rounded-lg text-[11px] font-medium font-mono text-slate-500 bg-slate-500/10 border border-slate-500/20 shrink-0 whitespace-nowrap cursor-pointer hover:bg-slate-500/20 flex items-center gap-1"
+						title="Открыть кассу 54-ФЗ для расчёта"
+					>
+						<CreditCard size={10} className="shrink-0" />
+						<span>54-ФЗ: Баланс 0 ₽</span>
+					</button>
 				)}
 			</div>
 
@@ -278,7 +319,7 @@ export function AppointmentHoverHud({
 				<div className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
 					Быстрый статус (Apple HIG)
 				</div>
-				<div className="grid grid-cols-3 gap-1.5">
+				<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
 					<button
 						type="button"
 						onClick={(e) => {
@@ -286,14 +327,15 @@ export function AppointmentHoverHud({
 							void onQuickStatusChange("confirmed");
 							onClose();
 						}}
-						className={`px-2.5 py-1.5 min-h-[44px] sm:min-h-[36px] rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+						className={`px-2 py-1.5 min-h-[36px] rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
 							displayStatus === "confirmed"
 								? "bg-emerald-600 text-white border-emerald-600"
 								: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 border-emerald-500/30 hover:bg-emerald-500/20"
 						}`}
+						title="Статус «Подтвержден»"
 					>
-						<PhoneCall size={13} />
-						<span>Подтвержден</span>
+						<PhoneCall size={12} />
+						<span className="truncate">Подтвержден</span>
 					</button>
 					<button
 						type="button"
@@ -302,14 +344,15 @@ export function AppointmentHoverHud({
 							void onQuickStatusChange("arrived");
 							onClose();
 						}}
-						className={`px-2.5 py-1.5 min-h-[44px] sm:min-h-[36px] rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+						className={`px-2 py-1.5 min-h-[36px] rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
 							displayStatus === "arrived"
 								? "bg-amber-500 text-white border-amber-500"
 								: "bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20"
 						}`}
+						title="Пациент в клинике — статус «Ожидает приёма»"
 					>
-						<UserCheck size={13} />
-						<span>Пришел</span>
+						<UserCheck size={12} />
+						<span className="truncate">Ожидает приёма</span>
 					</button>
 					<button
 						type="button"
@@ -318,16 +361,56 @@ export function AppointmentHoverHud({
 							void onQuickStatusChange("in_treatment");
 							onClose();
 						}}
-						className={`px-2.5 py-1.5 min-h-[44px] sm:min-h-[36px] rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+						className={`px-2 py-1.5 min-h-[36px] rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
 							displayStatus === "in_treatment"
 								? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal)]"
 								: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal)]/30 hover:bg-[var(--teal-surface)]"
 						}`}
+						title="Пациент в кабинете врача — статус «На приёме»"
 					>
-						<CalendarCheck size={13} />
-						<span>В кресле</span>
+						<CalendarCheck size={12} />
+						<span className="truncate">На приёме</span>
+					</button>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							void onQuickStatusChange("completed");
+							onClose();
+						}}
+						className={`px-2 py-1.5 min-h-[36px] rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+							displayStatus === "completed"
+								? "bg-slate-600 text-white border-slate-600"
+								: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30 hover:bg-slate-500/20"
+						}`}
+						title="Приём завершён — перевести в статус «Ожидает оплаты»"
+					>
+						<CheckCircle2 size={12} />
+						<span className="truncate">Ожидает оплаты</span>
 					</button>
 				</div>
+				<button
+					type="button"
+					data-testid="hud-pay-54fz-btn"
+					onClick={(e) => {
+						e.stopPropagation();
+						const pId = appointmentPatient?.id || appointment.patientId;
+						if (pId) {
+							usePatientStore.getState().setSelectedPatientId(pId);
+						}
+						useAppStore.getState().setCurrentView("finance");
+						onClose();
+						showToast(
+							`Касса 54-ФЗ: расчёт ${appointmentPatientName || "пациента"}`,
+							"info",
+						);
+					}}
+					className="mt-2 w-full py-1.5 px-3 min-h-[36px] rounded-xl text-xs font-bold border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+					title="Быстрый переход в кассу 54-ФЗ для расчёта"
+				>
+					<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400" />
+					<span>Касса 54-ФЗ: Оформить оплату (1 клик)</span>
+				</button>
 			</div>
 		</div>
 	);

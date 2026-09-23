@@ -1937,6 +1937,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				setScheduleDoctorFilterId={setScheduleDoctorFilterId}
 				scheduleChairFilterId={scheduleChairFilterId}
 				setScheduleChairFilterId={setScheduleChairFilterId}
+				scheduleStatusFilter={scheduleStatusFilter}
+				setScheduleStatusFilter={setScheduleStatusFilter}
 				chairDoctorAssignments={computedChairDoctorAssignments}
 				scheduleViewMode={scheduleViewMode}
 				setScheduleViewMode={setScheduleViewMode}

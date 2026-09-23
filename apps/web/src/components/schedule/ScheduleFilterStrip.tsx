@@ -1,4 +1,4 @@
-import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, AlertCircle, UserSearch, MoreVertical, Users, UserPlus, PhoneCall, Clock, Clipboard, BarChart3, Printer, Plus, Armchair } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, AlertCircle, UserSearch, MoreVertical, Users, UserPlus, PhoneCall, Clock, Clipboard, BarChart3, Printer, Plus, Armchair, UserCheck, CalendarCheck, CheckCircle2 } from "lucide-react";
 import React, { type ReactElement, useState, useRef, useEffect, useMemo } from "react";
 import type { DentalSpecialty } from "@dental/shared";
 import { specialtyLabels } from "../../workspaceUiLabels";
@@ -86,6 +86,8 @@ export interface ScheduleFilterStripProps {
 	gridStepMinutes?: 15 | 30 | 60 | undefined;
 	onGridStepChange?: ((step: 15 | 30 | 60) => void) | undefined;
 	activeFilterSummary?: React.ReactNode | undefined;
+	scheduleStatusFilter?: string | null | undefined;
+	setScheduleStatusFilter?: ((status: string | null) => void) | undefined;
 }
 
 export function formatChairSpecialtyLabel(rawSpec?: string | null): string | null {
@@ -159,6 +161,8 @@ export function ScheduleFilterStrip({
 	gridStepMinutes = 30,
 	onGridStepChange,
 	activeFilterSummary,
+	scheduleStatusFilter,
+	setScheduleStatusFilter,
 }: ScheduleFilterStripProps): ReactElement {
 	const activeChairs = chairs.filter((chair) => chair?.active);
 	const displayChairs: readonly ScheduleChair[] = activeChairs.length > 0 ? activeChairs : DEFAULT_CLINIC_CHAIRS;
@@ -549,6 +553,60 @@ export function ScheduleFilterStrip({
 					</button>
 				)}
 
+				{/* StomX Shift Queue Status Filter Chips (Mandates 8d, 8e, 8n) */}
+				{setScheduleStatusFilter && (
+					<>
+						<button
+							type="button"
+							data-testid="schedule-status-filter-arrived"
+							className={`quick-chip ${scheduleStatusFilter === "arrived" ? "active font-bold border-amber-500 bg-amber-500 text-white" : "border-amber-500/30 text-amber-800 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20"} min-h-[44px] sm:min-h-0 sm:h-7 min-w-max shrink-0 flex-shrink-0 px-2 text-xs font-semibold cursor-pointer rounded-lg inline-flex items-center gap-1 select-none whitespace-nowrap`}
+							style={{ whiteSpace: "nowrap", flexShrink: 0 }}
+							onClick={() =>
+								setScheduleStatusFilter(
+									scheduleStatusFilter === "arrived" ? "all" : "arrived",
+								)
+							}
+							title="Очередь смены: Ожидает приёма (пациент в клинике)"
+							aria-label="Фильтр: Ожидает приёма"
+						>
+							<UserCheck size={12} className="shrink-0" />
+							<span className="whitespace-nowrap shrink-0 flex-shrink-0">Ожидает приёма</span>
+						</button>
+						<button
+							type="button"
+							data-testid="schedule-status-filter-in-treatment"
+							className={`quick-chip ${scheduleStatusFilter === "in_treatment" ? "active font-bold border-[var(--teal)] bg-[var(--teal,var(--brand-primary))] text-white" : "border-[var(--teal)]/30 text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)]"} min-h-[44px] sm:min-h-0 sm:h-7 min-w-max shrink-0 flex-shrink-0 px-2 text-xs font-semibold cursor-pointer rounded-lg inline-flex items-center gap-1 select-none whitespace-nowrap`}
+							style={{ whiteSpace: "nowrap", flexShrink: 0 }}
+							onClick={() =>
+								setScheduleStatusFilter(
+									scheduleStatusFilter === "in_treatment" ? "all" : "in_treatment",
+								)
+							}
+							title="Очередь смены: На приёме (в кресле врача)"
+							aria-label="Фильтр: На приёме"
+						>
+							<CalendarCheck size={12} className="shrink-0" />
+							<span className="whitespace-nowrap shrink-0 flex-shrink-0">На приёме</span>
+						</button>
+						<button
+							type="button"
+							data-testid="schedule-status-filter-completed"
+							className={`quick-chip ${scheduleStatusFilter === "completed" ? "active font-bold border-slate-700 bg-slate-700 text-white" : "border-slate-500/30 text-slate-700 dark:text-slate-300 bg-slate-500/10 hover:bg-slate-500/20"} min-h-[44px] sm:min-h-0 sm:h-7 min-w-max shrink-0 flex-shrink-0 px-2 text-xs font-semibold cursor-pointer rounded-lg inline-flex items-center gap-1 select-none whitespace-nowrap`}
+							style={{ whiteSpace: "nowrap", flexShrink: 0 }}
+							onClick={() =>
+								setScheduleStatusFilter(
+									scheduleStatusFilter === "completed" ? "all" : "completed",
+								)
+							}
+							title="Очередь смены: Ожидает оплаты (приём завершён, готов к кассе 54-ФЗ)"
+							aria-label="Фильтр: Ожидает оплаты"
+						>
+							<CheckCircle2 size={12} className="shrink-0" />
+							<span className="whitespace-nowrap shrink-0 flex-shrink-0">Ожидает оплаты</span>
+						</button>
+					</>
+				)}
+
 				{/* Active filter summary & shift warning chips integrated directly into single-row filter strip (Mandates 8d, 8p) */}
 				{activeFilterSummary}
 			</div>
@@ -827,6 +885,73 @@ export function ScheduleFilterStrip({
 								<Clock size={14} className="text-[var(--teal,var(--brand-primary))]" />
 								<span>Сводка смены (StomX Главная)</span>
 							</button>
+
+							{/* StomX Shift Queue Statuses in Options Menu */}
+							{setScheduleStatusFilter && (
+								<div className="px-2 py-1.5 border-t border-[var(--line)] mt-1 pt-1.5">
+									<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1">
+										Очередь смены (StomX)
+									</div>
+									<div className="grid grid-cols-2 gap-1">
+										<button
+											type="button"
+											onClick={() => {
+												setScheduleStatusFilter("all");
+												setIsOptionsMenuOpen(false);
+											}}
+											className={`px-2 py-1 rounded-md text-xs font-semibold text-left transition-colors ${
+												!scheduleStatusFilter || scheduleStatusFilter === "all"
+													? "bg-[var(--teal,var(--brand-primary))] text-white"
+													: "bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)]"
+											}`}
+										>
+											Все статусы
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setScheduleStatusFilter("arrived");
+												setIsOptionsMenuOpen(false);
+											}}
+											className={`px-2 py-1 rounded-md text-xs font-semibold text-left transition-colors ${
+												scheduleStatusFilter === "arrived"
+													? "bg-amber-500 text-white"
+													: "bg-amber-500/10 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20"
+											}`}
+										>
+											Ожидает приёма
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setScheduleStatusFilter("in_treatment");
+												setIsOptionsMenuOpen(false);
+											}}
+											className={`px-2 py-1 rounded-md text-xs font-semibold text-left transition-colors ${
+												scheduleStatusFilter === "in_treatment"
+													? "bg-[var(--teal,var(--brand-primary))] text-white"
+													: "bg-[var(--teal-soft)] text-[var(--teal-dark)] hover:bg-[var(--teal-surface)]"
+											}`}
+										>
+											На приёме
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setScheduleStatusFilter("completed");
+												setIsOptionsMenuOpen(false);
+											}}
+											className={`px-2 py-1 rounded-md text-xs font-semibold text-left transition-colors ${
+												scheduleStatusFilter === "completed"
+													? "bg-slate-700 text-white"
+													: "bg-slate-500/10 text-slate-700 dark:text-slate-300 hover:bg-slate-500/20"
+											}`}
+										>
+											Ожидает оплаты
+										</button>
+									</div>
+								</div>
+							)}
 
 							<button
 								type="button"

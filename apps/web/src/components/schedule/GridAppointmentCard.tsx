@@ -11,6 +11,7 @@ import {
 	CheckCircle2,
 	Clock,
 	Copy,
+	CreditCard,
 	FastForward,
 	MessageSquare,
 	MoreVertical,
@@ -24,6 +25,8 @@ import {
 	Zap,
 } from "lucide-react";
 import React, { memo } from "react";
+import { useAppStore } from "../../store/appStore";
+import { usePatientStore } from "../../store/patientStore";
 import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAppMessage";
 import { openWhatsAppChat } from "../../store/telephonyStore";
 import { specialtyLabels } from "../../workspaceUiLabels";
@@ -74,7 +77,9 @@ export function getNormalizedAppointmentStatusLabel(
 ): string {
 	if (!status) return "";
 	const s = String(status).toLowerCase();
-	if (s === "in_treatment" || s === "in_progress") return "В кресле";
+	if (s === "in_treatment" || s === "in_progress") return "На приёме";
+	if (s === "arrived") return "Ожидает приёма";
+	if (s === "completed") return "Ожидает оплаты";
 	if (labels) {
 		if (labels[s]) return labels[s];
 		if (labels[status]) return labels[status];
@@ -278,32 +283,59 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 							{pName || "Пациент"}
 						</span>
 						{pBalance !== null ? (
-							<span
-								className={`px-2.5 py-0.5 rounded-lg text-xs font-black font-mono shrink-0 whitespace-nowrap ${
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									if (patObj?.id) {
+										usePatientStore.getState().setSelectedPatientId(patObj.id);
+									}
+									useAppStore.getState().setCurrentView("finance");
+									showToast(`Касса 54-ФЗ: расчёт ${pName}`, "info");
+								}}
+								className={`px-2.5 py-0.5 rounded-lg text-xs font-black font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1 ${
 									pBalance > 0
-										? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40"
+										? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/25"
 										: pBalance < 0
-											? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40"
-											: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20"
+											? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40 hover:bg-rose-500/25"
+											: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20 hover:bg-slate-500/20"
 								}`}
 								title={
 									pBalance > 0
-										? "Аванс / Депозит (54-ФЗ)"
+										? "Аванс / Депозит (54-ФЗ). Нажмите для расчёта на кассе"
 										: pBalance < 0
-											? "Задолженность по 54-ФЗ"
-											: "Оплачено по 54-ФЗ"
+											? "Задолженность по 54-ФЗ. Нажмите для расчёта на кассе"
+											: "Оплачено по 54-ФЗ. Нажмите для расчёта на кассе"
 								}
+								data-testid={`appointment-grid-balance-btn-${a.id}`}
 							>
-								{pBalance > 0
-									? `Депозит: +${pBalance.toLocaleString("ru-RU")} ₽`
-									: pBalance < 0
-										? `Долг: ${Math.abs(pBalance).toLocaleString("ru-RU")} ₽`
-										: "Оплата: 54-ФЗ (0 ₽)"}
-							</span>
+								<CreditCard size={11} className="shrink-0" />
+								<span>
+									{pBalance > 0
+										? `Депозит: +${pBalance.toLocaleString("ru-RU")} ₽`
+										: pBalance < 0
+											? `Долг: ${Math.abs(pBalance).toLocaleString("ru-RU")} ₽`
+											: "Оплата: 54-ФЗ (0 ₽)"}
+								</span>
+							</button>
 						) : (
-							<span className="px-2 py-0.5 rounded-lg text-[11px] font-medium font-mono text-slate-500 bg-slate-500/10 border border-slate-500/20 shrink-0 whitespace-nowrap">
-								54-ФЗ: Баланс 0 ₽
-							</span>
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									if (patObj?.id) {
+										usePatientStore.getState().setSelectedPatientId(patObj.id);
+									}
+									useAppStore.getState().setCurrentView("finance");
+									showToast(`Касса 54-ФЗ: расчёт ${pName}`, "info");
+								}}
+								className="px-2 py-0.5 rounded-lg text-[11px] font-medium font-mono text-slate-500 bg-slate-500/10 border border-slate-500/20 shrink-0 whitespace-nowrap cursor-pointer hover:bg-slate-500/20 flex items-center gap-1"
+								title="Открыть кассу 54-ФЗ для расчёта"
+								data-testid={`appointment-grid-balance-btn-${a.id}`}
+							>
+								<CreditCard size={10} className="shrink-0" />
+								<span>54-ФЗ: Баланс 0 ₽</span>
+							</button>
 						)}
 					</div>
 
@@ -475,9 +507,10 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 											? "bg-amber-500 text-white border-amber-500"
 											: "bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20"
 									}`}
+									title="Пациент пришёл — перевести в статус «Ожидает приёма»"
 								>
 									<UserCheck size={11} />
-									<span>Прибыл</span>
+									<span>Ожидает приёма</span>
 								</button>
 								<button
 									type="button"
@@ -492,9 +525,10 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 											? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal)]"
 											: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal)]/30 hover:bg-[var(--teal-surface)]"
 									}`}
+									title="Пациент в кабинете — статус «На приёме»"
 								>
 									<CalendarCheck size={11} />
-									<span>В кресле</span>
+									<span>На приёме</span>
 								</button>
 								<button
 									type="button"
@@ -509,9 +543,10 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 											? "bg-slate-600 text-white border-slate-600"
 											: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30 hover:bg-slate-500/20"
 									}`}
+									title="Приём завершён — перевести в статус «Ожидает оплаты»"
 								>
 									<CheckCircle2 size={11} />
-									<span>Завершен</span>
+									<span>Ожидает оплаты</span>
 								</button>
 								<button
 									type="button"
@@ -531,6 +566,24 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 									<span>Не явился</span>
 								</button>
 							</div>
+							<button
+								type="button"
+								data-testid={`hover-pay-54fz-${a.id}`}
+								onClick={(e) => {
+									e.stopPropagation();
+									onMouseLeave();
+									if (patObj?.id) {
+										usePatientStore.getState().setSelectedPatientId(patObj.id);
+									}
+									useAppStore.getState().setCurrentView("finance");
+									showToast(`Касса 54-ФЗ: расчёт ${pName}`, "info");
+								}}
+								className="mt-1.5 w-full py-1 px-2 rounded-lg text-xs font-bold border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+								title="Быстрый переход в кассу 54-ФЗ для расчёта"
+							>
+								<CreditCard size={12} className="text-emerald-600 dark:text-emerald-400" />
+								<span>Касса 54-ФЗ: Оформить оплату</span>
+							</button>
 						</div>
 					)}
 
@@ -731,7 +784,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 									data-testid={`quick-status-picker-arrived-${a.id}`}
 								>
 									<UserCheck size={13} />
-									<span>Прибыл</span>
+									<span>Ожидает приёма</span>
 								</button>
 								<button
 									type="button"
@@ -747,7 +800,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 									data-testid={`quick-status-picker-in-treatment-${a.id}`}
 								>
 									<CalendarCheck size={13} />
-									<span>В кресле</span>
+									<span>На приёме</span>
 								</button>
 								<button
 									type="button"
@@ -763,7 +816,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 									data-testid={`quick-status-picker-completed-${a.id}`}
 								>
 									<CheckCircle2 size={13} />
-									<span>Завершен</span>
+									<span>Ожидает оплаты</span>
 								</button>
 								<button
 									type="button"
@@ -780,6 +833,23 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 								>
 									<UserX size={13} />
 									<span>Не явился</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										onCloseStatusPicker();
+										if (patObj?.id) {
+											usePatientStore.getState().setSelectedPatientId(patObj.id);
+										}
+										useAppStore.getState().setCurrentView("finance");
+										showToast(`Касса 54-ФЗ: расчёт ${pName}`, "info");
+									}}
+									className="w-full text-left min-h-[36px] px-2 py-1 rounded-lg flex items-center gap-2 font-bold transition-colors cursor-pointer border-t border-[var(--line)] pt-1.5 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10"
+									data-testid={`quick-status-picker-pay-${a.id}`}
+									title="Перейти к приёму оплаты на кассе (54-ФЗ)"
+								>
+									<CreditCard size={13} className="text-emerald-600 dark:text-emerald-400" />
+									<span>Оплата 54-ФЗ</span>
 								</button>
 							</div>
 						)}

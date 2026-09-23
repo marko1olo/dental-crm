@@ -247,5 +247,33 @@ describe("ScheduleFilterStrip Component", () => {
 		assert.ok(html.includes("Лента"), "Contains 'Лента' view mode switcher");
 		assert.ok(html.includes("Быстрая запись"), "Contains quick booking button");
 	});
+
+	it("renders StomX shift queue status filter chips (Ожидает приёма, На приёме, Ожидает оплаты) per Mandates 8d, 8e, 8n", () => {
+		const html = renderToStaticMarkup(
+			createElement(ScheduleFilterStrip, {
+				scheduleDateFilter: "2026-08-09",
+				setScheduleDateFilter: () => {},
+				stepScheduleDay: () => {},
+				activeScheduleFilterCount: 0,
+				resetScheduleFilters: () => {},
+				staffMembers: [],
+				chairs: [],
+				scheduleDoctorFilterId: null,
+				setScheduleDoctorFilterId: () => {},
+				scheduleChairFilterId: null,
+				setScheduleChairFilterId: () => {},
+				scheduleStatusFilter: "arrived",
+				setScheduleStatusFilter: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("data-testid=\"schedule-status-filter-arrived\""), "Renders 'Ожидает приёма' status chip");
+		assert.ok(html.includes("Ожидает приёма"), "Contains 'Ожидает приёма' label");
+		assert.ok(html.includes("data-testid=\"schedule-status-filter-in-treatment\""), "Renders 'На приёме' status chip");
+		assert.ok(html.includes("На приёме"), "Contains 'На приёме' label");
+		assert.ok(html.includes("data-testid=\"schedule-status-filter-completed\""), "Renders 'Ожидает оплаты' status chip");
+		assert.ok(html.includes("Ожидает оплаты"), "Contains 'Ожидает оплаты' label");
+	});
 });
+
 
