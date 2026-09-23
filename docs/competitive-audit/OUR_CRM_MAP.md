@@ -2,7 +2,7 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
-> ⚠️ **СТАТУС (2026-09-23 / WAVES 175–296 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 337 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 400 ФИЧ: 63 КАНОНИЧЕСКИЕ + 337 АДДЕНДУМ, 400/400 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
+> ⚠️ **СТАТУС (2026-09-23 / WAVES 175–297 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 337 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 400 ФИЧ: 63 КАНОНИЧЕСКИЕ + 337 АДДЕНДУМ, 400/400 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
@@ -6722,3 +6722,36 @@
   - `docs/competitive-audit/FEATURES_REGISTRY.md`
   - `docs/competitive-audit/BACKLOG.md`
   - `docs/competitive-audit/OUR_CRM_MAP.md` (Wave 296, Фичи #4, #12, #65, #66, #80, #86, #400)
+
+### 2.10.397. Wave 297: Визуальная Полировка и Эргономика Мобильного АРМ — Устранение дефектов мобильной ЭМК 043/у, кассы 54-ФЗ, окна сплит-оплаты и авто-выбор сегодняшнего дня в расписании (Мандаты 8c, 8d, 8e, 8n, 8p, 8h, 8j, 8t) (Фичи #4, #12, #65, #66, #78, #80, #400)
+- **Функционал**:
+  1. *Мобильный АРМ врача 043/у: устранение обрезания табов и быстрый доступ к завершению приёма у кресла (`VisitEmkTab.tsx`, `VisitDiarySection.tsx`, `doctorAutonomyEmkWave65.test.tsx`, коммит `35b39e8fe`)*:
+     - Ликвидировано обрезание вкладок на мобильных устройствах (390px viewport), обеспечен аккуратный горизонтальный скролл без выпадения управляющих элементов;
+     - Добавлен прямой доступ к кнопке «Завершить приём» (`btn-complete-visit-emk`) рядом с сохранением записи внизу экрана без лишних переходов;
+     - При сохранении и завершении приёма поля диагноза, жалоб, анамнеза и объективного статуса автоматически заполняются физиологической нормой Z01.2 («Соматически здоров / патологий не выявлено»), исключая любые блокировки врача по Мандату 8e;
+  2. *Мобильная касса 54-ФЗ: устранение перекрытия способов оплаты нижним баром (`FastCheckoutModal.tsx`, `PaymentCapture.tsx`)*:
+     - Устранено перекрытие кнопок выбора способа оплаты (карта, наличные, СБП, депозит) нижним баром на узких экранах;
+     - Настроены адаптивные отступы и безопасные зоны (safe-area / pb), сохраняющие мгновенную видимость всех способов расчета;
+  3. *Ликвидация перекрывающего тоста в окне сплит-оплаты (`PaymentModal.tsx`, `FastCheckoutModal.tsx`, `FiscalReceipt54FzModal.tsx`)*:
+     - Устранено наложение всплывающих toast-уведомлений на область ввода комбинированных платежей (сплит 54-ФЗ);
+     - Обеспечена чистота фокуса ввода сумм и беспрепятственное проведение фискального чека;
+  4. *Авто-выбор сегодняшнего дня в расписании (`ScheduleView.tsx`, `ScheduleFilterStrip.tsx`)*:
+     - Реализована мгновенная автоматическая фокусировка на текущей дате («Сегодня») при загрузке расписания;
+     - Устранена необходимость ручной прокрутки или повторного клика на календарь для соло-врача и администратора (Мандаты 8e, 8n);
+  5. *Сохранение 100% паритета 400/400 фич*:
+     - Все 400 фич в `FEATURES_REGISTRY.md`, `BACKLOG.md` и `OUR_CRM_MAP.md` сохраняют подтвержденный статус `[ДА] / [ЕСТЬ] / [ЗАКРЫТО]`.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/visit/VisitEmkTab.tsx`
+  - `apps/web/src/components/visit/VisitDiarySection.tsx`
+  - `apps/web/src/components/visit/__tests__/doctorAutonomyEmkWave65.test.tsx`
+  - `apps/web/src/components/finance/FastCheckoutModal.tsx`
+  - `apps/web/src/PaymentCapture.tsx`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `apps/web/src/components/finance/FiscalReceipt54FzModal.tsx`
+  - `apps/web/src/ScheduleView.tsx`
+  - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (Wave 297, Фичи #4, #12, #65, #66, #78, #80, #400)
+
