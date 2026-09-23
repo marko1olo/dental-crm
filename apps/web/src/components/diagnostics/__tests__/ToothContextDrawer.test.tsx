@@ -5,7 +5,6 @@ import { renderToString } from "react-dom/server";
 import { ToothContextDrawer, TOOTH_EXPRESS_ANESTHESIA_OPTIONS } from "../ToothContextDrawer.js";
 import { ToothSurfacesAndEndoMatrix, BLACK_MACROS } from "../ToothSurfacesAndEndoMatrix.js";
 import { AnesthesiaQuickBar, WEIGHT_PRESETS } from "../../anesthesia/AnesthesiaQuickBar.js";
-import { ToothSanpinKraftBinding } from "../ToothSanpinKraftBinding.js";
 import { ToothRvgThumbnail } from "../ToothRvgThumbnail.js";
 import { ToothFamilyLoyaltyAccordion } from "../ToothFamilyLoyaltyAccordion.js";
 import { ToothPediatricContext, RESORPTION_STAGES } from "../ToothPediatricContext.js";
@@ -36,9 +35,9 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.ok(html.includes("16"), "Tooth number 16 should be displayed");
 		assert.ok(html.includes("MOD &amp; Каналы") || html.includes("MOD & Каналы"), "MOD tab should be present");
 		assert.ok(html.includes("2. Анестезия"), "Anesthesia quick tab should be present");
-		assert.ok(html.includes("3. Крафт СанПиН"), "SanPiN Kraft quick tab should be present");
-		assert.ok(html.includes("4. Снимок RVG"), "RVG quick tab should be present");
-		assert.ok(html.includes("5. Депозит &amp; Бонусы") || html.includes("5. Депозит & Бонусы"), "Deposit tab should be present");
+		assert.ok(!html.includes("Крафт СанПиН"), "SanPiN Kraft quick tab must NOT be present (Mandate 8v, 8k)");
+		assert.ok(html.includes("3. Снимок RVG"), "RVG quick tab should be present");
+		assert.ok(html.includes("4. Депозит &amp; Бонусы") || html.includes("4. Депозит & Бонусы"), "Deposit tab should be present");
 	});
 
 	it("ToothContextDrawer returns null when closed (zero DOM bloat on Tier 1)", () => {
@@ -113,17 +112,18 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.ok(html.includes("безопасно"), "Safe dosage badge should be ok for standard dose");
 	});
 
-	it("ToothSanpinKraftBinding renders Kraft autoclave packages and expiration safety check", () => {
+	it("ToothContextDrawer contains NO per-tooth Kraft package binding bloat (Mandates 8v, 8k, 8s)", () => {
 		const html = renderToString(
-			<ToothSanpinKraftBinding
+			<ToothContextDrawer
+				isOpen={true}
+				onClose={() => {}}
 				toothNumber={16}
 			/>,
 		);
 
-		assert.ok(html.includes("tooth-sanpin-kraft-binding"), "Kraft binding tool should render");
-		assert.ok(html.includes("СанПиН 3.3686-21"), "SanPiN standard header should be displayed");
-		assert.ok(html.includes("Стерильность подтверждена"), "Sterility badge should be visible");
-		assert.ok(html.includes("Привязать крафт-пакет"), "1-Click binding action button should be present");
+		assert.ok(!html.includes("tooth-sanpin-kraft-binding"), "Kraft binding component must NOT be rendered in tooth drawer");
+		assert.ok(!html.includes("Привязка крафт-пакета автоклава"), "Kraft accordion title must NOT be present");
+		assert.ok(!html.includes("Крафт СанПиН"), "Kraft tab must NOT be present in drawer");
 	});
 
 	it("ToothRvgThumbnail renders 200x200 periapical viewport with contrast and negative controls", () => {

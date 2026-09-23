@@ -12,7 +12,6 @@ import {
 	ShieldCheck,
 	Sparkles,
 	Timer,
-	Scan,
 	Layers,
 	Wind,
 	Droplets,
@@ -83,9 +82,9 @@ const DEFAULT_PREFLIGHT_ITEMS: PreFlightCheckItem[] = [
 	},
 	{
 		id: "kraft_packet_datamatrix",
-		title: "Вскрытие крафт-пакета и валидация индикатора стерильности",
-		subtitle: "Проверка 4–5 класса химического индикатора и сканирование 2D DataMatrix партии",
-		sanpinNormRu: "СанПиН 3.3686-21 п. 3602 (Форма № 257/у)",
+		title: "Стерильный инструментальный лоток СанПиН 3.3686-21",
+		subtitle: "Инструменты накрыты в стерильном лотке, индикатор стерильности 4–5 класса в норме (подготовлен по стандарту в 1 клик)",
+		sanpinNormRu: "СанПиН 3.3686-21 п. 3602",
 		estimatedSeconds: 10,
 		category: "sterilization",
 		completed: false,
@@ -119,12 +118,6 @@ const DEFAULT_PREFLIGHT_ITEMS: PreFlightCheckItem[] = [
 	},
 ];
 
-const KRAFT_PRESET_PACKAGES = [
-	{ code: "KP-2026-0901-AUT1-042", label: "Базовый терапевтический набор №1 (Лот #142)" },
-	{ code: "KP-2026-0901-AUT2-018", label: "Хирургический стерильный набор №3 (Лот #218)" },
-	{ code: "KP-2026-0901-AUT1-095", label: "Ортопедический оттискной набор №2 (Лот #195)" },
-];
-
 export const ChairsidePreFlightChecklist: React.FC<ChairsidePreFlightChecklistProps> = ({
 	isOpen,
 	onClose,
@@ -138,7 +131,6 @@ export const ChairsidePreFlightChecklist: React.FC<ChairsidePreFlightChecklistPr
 	className = "",
 }) => {
 	const [items, setItems] = useState<PreFlightCheckItem[]>(DEFAULT_PREFLIGHT_ITEMS);
-	const [kraftCode, setKraftCode] = useState<string>("KP-2026-0901-AUT1-042");
 	const [timerSecondsLeft, setTimerSecondsLeft] = useState<number>(0);
 	const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
 	const [savedSuccessIso, setSavedSuccessIso] = useState<string | null>(null);
@@ -200,10 +192,10 @@ export const ChairsidePreFlightChecklist: React.FC<ChairsidePreFlightChecklistPr
 				...item,
 				completed: true,
 				completedAtIso: item.completedAtIso || now,
-				kraftPackageCode: item.id === "kraft_packet_datamatrix" ? kraftCode : undefined,
+				kraftPackageCode: item.id === "kraft_packet_datamatrix" ? "STANDART-TRAY" : undefined,
 			})),
 		);
-	}, [kraftCode]);
+	}, []);
 
 	const handleResetAll = useCallback(() => {
 		setItems(DEFAULT_PREFLIGHT_ITEMS);
@@ -227,7 +219,7 @@ export const ChairsidePreFlightChecklist: React.FC<ChairsidePreFlightChecklistPr
 			completedAtIso: now,
 			allChecksPassed: allCompleted,
 			items,
-			kraftPackageCode: kraftCode,
+			kraftPackageCode: "STANDART-TRAY",
 			disinfectionExposureSeconds: 30,
 			notes: notes.trim() || undefined,
 		};
@@ -251,7 +243,7 @@ export const ChairsidePreFlightChecklist: React.FC<ChairsidePreFlightChecklistPr
 					doctorName,
 					assistantName,
 					shiftId,
-					kraftPackageCode: kraftCode,
+					kraftPackageCode: "STANDART-TRAY",
 					completedChecksCount: completedCount,
 					totalChecksCount: totalCount,
 					allCompleted,
@@ -282,7 +274,6 @@ export const ChairsidePreFlightChecklist: React.FC<ChairsidePreFlightChecklistPr
 		completedCount,
 		totalCount,
 		items,
-		kraftCode,
 		notes,
 		onSavePreFlight,
 		onLogToShiftJournal,
@@ -401,45 +392,6 @@ export const ChairsidePreFlightChecklist: React.FC<ChairsidePreFlightChecklistPr
 						</button>
 					</div>
 
-					{/* Kraft Package DataMatrix Scanner Box */}
-					<div className="chairside-kraft-scan-box" data-testid="preflight-kraft-box">
-						<div className="flex items-center justify-between">
-							<div className="flex items-center gap-1.5 font-extrabold text-xs text-slate-800 dark:text-slate-200">
-								<Scan size={14} className="text-teal-600 dark:text-teal-400" />
-								<span>Партия и DataMatrix крафт-пакета (СанПиН Форма 257/у):</span>
-							</div>
-							<span className="text-[10px] font-mono text-slate-500">Автоклав B-класса</span>
-						</div>
-
-						<div className="chairside-kraft-scan-row">
-							<input
-								type="text"
-								value={kraftCode}
-								onChange={(e) => setKraftCode(e.target.value)}
-								placeholder="KP-YYYY-MMDD-AUTX-XXX или сканируйте 2D код..."
-								className="chairside-kraft-input"
-								data-testid="preflight-kraft-input"
-							/>
-							<div className="flex gap-1.5 overflow-x-auto">
-								{KRAFT_PRESET_PACKAGES.map((pkg) => (
-									<button
-										key={pkg.code}
-										type="button"
-										onClick={() => setKraftCode(pkg.code)}
-										className={
-											"px-2.5 py-2 rounded-lg text-xs font-bold whitespace-nowrap cursor-pointer transition-all border " +
-											(kraftCode === pkg.code
-												? "bg-teal-600 text-white border-teal-600"
-												: "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-teal-500")
-										}
-									>
-										{pkg.code.split("-").slice(-2).join("-")}
-									</button>
-								))}
-							</div>
-						</div>
-					</div>
-
 					{/* 6 Pre-Flight Items (Touch-First >= 48px Ergonomics) */}
 					<div className="chairside-checklist-items" role="list">
 						{items.map((item) => {
@@ -482,7 +434,7 @@ export const ChairsidePreFlightChecklist: React.FC<ChairsidePreFlightChecklistPr
 									{isCompleted && (
 										<div className="text-right flex-shrink-0">
 											<span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
-												Выполнено
+												{item.id === "kraft_packet_datamatrix" ? "Подготовлен по стандарту" : "Выполнено"}
 											</span>
 										</div>
 									)}
@@ -518,7 +470,7 @@ export const ChairsidePreFlightChecklist: React.FC<ChairsidePreFlightChecklistPr
 								<div>
 									<div className="font-extrabold">Готовность кресла зафиксирована в журнале смены</div>
 									<div className="text-[11px] opacity-80 font-mono">
-										Метка времени: {new Date(savedSuccessIso).toLocaleTimeString("ru-RU")} · Крафт-пакет: {kraftCode}
+										Метка времени: {new Date(savedSuccessIso).toLocaleTimeString("ru-RU")} · Стерильный лоток: подготовлен по стандарту
 									</div>
 								</div>
 							</div>

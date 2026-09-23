@@ -5,7 +5,6 @@ import {
 	ChevronUp,
 	Heart,
 	Layers,
-	PackageCheck,
 	Scan,
 	ShieldAlert,
 	ShieldCheck,
@@ -16,12 +15,10 @@ import {
 import type { ToothData, ToothState } from "../odontogram/ToothChart";
 import { getToothAnatomicalNameRu, getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { ToothSurfacesAndEndoMatrix } from "./ToothSurfacesAndEndoMatrix";
-import { ToothSanpinKraftBinding } from "./ToothSanpinKraftBinding";
 import { ToothRvgThumbnail } from "./ToothRvgThumbnail";
 import { ToothFamilyLoyaltyAccordion } from "./ToothFamilyLoyaltyAccordion";
 import { ToothPediatricContext } from "./ToothPediatricContext";
 import { calculateAnesthesiaSafety, type AnesthesiaCalculationResult } from "../anesthesia/anesthesiaEngine";
-import type { KraftPackageRecord } from "../sanpin/kraft/kraftPackageEngine";
 import { showToast } from "../GlobalToast";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
 import "./ToothContextDrawer.css";
@@ -74,7 +71,7 @@ export interface ToothContextDrawerProps {
 	readonly onUpdateToothStatus?: ((toothNumber: number, state: string) => void) | undefined;
 	readonly onApplyAnesthesia?: ((diaryText: string, result: AnesthesiaCalculationResult) => void) | undefined;
 	readonly onInsertToProtocol?: ((text: string) => void) | undefined;
-	readonly onBindKraftPackage?: ((pkg: KraftPackageRecord) => void) | undefined;
+	readonly onBindKraftPackage?: ((pkg: any) => void) | undefined;
 	readonly onOpenFullRadiology?: ((toothNumber: number) => void) | undefined;
 	readonly onOpenFamilyBilling?: (() => void) | undefined;
 	readonly onOpenParentMemo?: (() => void) | undefined;
@@ -88,7 +85,6 @@ export interface ToothContextDrawerProps {
 export type WarmAccordionSection =
 	| "surfaces_endo"
 	| "anesthesia"
-	| "kraft_sanpin"
 	| "rvg_xray"
 	| "family_loyalty"
 	| "pediatric";
@@ -374,20 +370,11 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 
 					<button
 						type="button"
-						onClick={() => setActiveSection("kraft_sanpin")}
-						className={`dente-quick-tab-btn ${activeSection === "kraft_sanpin" ? "active" : ""}`}
-					>
-						<PackageCheck size={14} />
-						<span>3. Крафт СанПиН</span>
-					</button>
-
-					<button
-						type="button"
 						onClick={() => setActiveSection("rvg_xray")}
 						className={`dente-quick-tab-btn ${activeSection === "rvg_xray" ? "active" : ""}`}
 					>
 						<Scan size={14} />
-						<span>4. Снимок RVG</span>
+						<span>3. Снимок RVG</span>
 					</button>
 
 					<button
@@ -396,7 +383,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 						className={`dente-quick-tab-btn ${activeSection === "family_loyalty" ? "active" : ""}`}
 					>
 						<Wallet size={14} />
-						<span>5. Депозит & Бонусы</span>
+						<span>4. Депозит & Бонусы</span>
 					</button>
 
 					{isPediatricTooth && (
@@ -406,7 +393,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 							className={`dente-quick-tab-btn pediatric ${activeSection === "pediatric" ? "active" : ""}`}
 						>
 							<Heart size={14} />
-							<span>6. Детский (Франкл)</span>
+							<span>5. Детский (Франкл)</span>
 						</button>
 					)}
 				</nav>
@@ -560,35 +547,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 						)}
 					</section>
 
-					{/* ACCORDION 3: 1-CLICK KRAFT PACKAGE BINDING */}
-					<section className="dente-accordion-item">
-						<button
-							type="button"
-							onClick={() => toggleSection("kraft_sanpin")}
-							className={`dente-accordion-trigger ${activeSection === "kraft_sanpin" ? "expanded" : ""}`}
-						>
-							<div className="trigger-left">
-								<PackageCheck size={16} color="var(--brand-primary, var(--teal))" />
-								<span className="trigger-title">3. Привязка крафт-пакета автоклава СанПиН</span>
-							</div>
-							<div className="trigger-right">
-								<span className="trigger-summary">Автоклав ЦСО • Стерильно</span>
-								{activeSection === "kraft_sanpin" ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-							</div>
-						</button>
-
-						{activeSection === "kraft_sanpin" && (
-							<div className="dente-accordion-content animate-in">
-								<ToothSanpinKraftBinding
-									toothNumber={toothNumber}
-									onBindPackage={onBindKraftPackage}
-									onInsertToProtocol={onInsertToProtocol}
-								/>
-							</div>
-						)}
-					</section>
-
-					{/* ACCORDION 4: 200x200 RVG X-RAY THUMBNAIL */}
+					{/* ACCORDION 3: 200x200 RVG X-RAY THUMBNAIL */}
 					<section className="dente-accordion-item">
 						<button
 							type="button"
@@ -597,7 +556,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 						>
 							<div className="trigger-left">
 								<Scan size={16} color="var(--brand-primary, var(--teal))" />
-								<span className="trigger-title">4. Прицельный снимок визиографа (200×200 RVG)</span>
+								<span className="trigger-title">3. Прицельный снимок визиографа (200×200 RVG)</span>
 							</div>
 							<div className="trigger-right">
 								<span className="trigger-summary">Периапикальный контроль</span>
@@ -617,7 +576,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 						)}
 					</section>
 
-					{/* ACCORDION 5: FAMILY DEPOSIT & LOYALTY SPLIT */}
+					{/* ACCORDION 4: FAMILY DEPOSIT & LOYALTY SPLIT */}
 					<section className="dente-accordion-item">
 						<button
 							type="button"
@@ -626,7 +585,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 						>
 							<div className="trigger-left">
 								<Wallet size={16} color="var(--brand-primary, var(--teal))" />
-								<span className="trigger-title">5. Семейный депозит & Кешбэк (Сплит 54-ФЗ)</span>
+								<span className="trigger-title">4. Семейный депозит & Кешбэк (Сплит 54-ФЗ)</span>
 							</div>
 							<div className="trigger-right">
 								<span className="trigger-summary">Единый счет семьи</span>
@@ -646,7 +605,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 						)}
 					</section>
 
-					{/* ACCORDION 6: PEDIATRIC CONTEXT & FRANKL RATING */}
+					{/* ACCORDION 5: PEDIATRIC CONTEXT & FRANKL RATING */}
 					{isPediatricTooth && (
 						<section className="dente-accordion-item">
 							<button
@@ -656,7 +615,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 							>
 								<div className="trigger-left">
 									<Heart size={16} color="#ec4899" />
-									<span className="trigger-title">6. Детский прием (Шкала Франкла & Резорбция)</span>
+									<span className="trigger-title">5. Детский прием (Шкала Франкла & Резорбция)</span>
 								</div>
 								<div className="trigger-right">
 									<span className="trigger-summary">Психологическая адаптация</span>

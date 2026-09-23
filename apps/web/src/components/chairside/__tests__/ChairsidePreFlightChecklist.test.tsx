@@ -36,8 +36,8 @@ describe("ChairsidePreFlightChecklist (SanPiN 3.3686-21 & Touch-First Glove Ergo
 			"Must include handpiece replacement item"
 		);
 		assert.ok(
-			html.includes("Вскрытие крафт-пакета и валидация индикатора стерильности"),
-			"Must include Kraft package item"
+			html.includes("Стерильный инструментальный лоток СанПиН 3.3686-21"),
+			"Must include sterile instrument tray item"
 		);
 		assert.ok(
 			html.includes("Дезинфекция контактных поверхностей и плевательницы"),
@@ -54,13 +54,31 @@ describe("ChairsidePreFlightChecklist (SanPiN 3.3686-21 & Touch-First Glove Ergo
 
 		// SanPiN statutory references
 		assert.ok(html.includes("СанПиН 3.3686-21"), "Must display SanPiN regulatory standards");
-		assert.ok(html.includes("Форма № 257/у"), "Must reference Form 257/u for autoclave/kraft");
 
 		// Touch-First Controls & Action Buttons
 		assert.ok(html.includes("preflight-disinfection-timer-btn"), "Must contain disinfection timer trigger");
-		assert.ok(html.includes("preflight-kraft-input"), "Must contain Kraft package barcode input");
 		assert.ok(html.includes("preflight-save-btn"), "Must contain shift journal save button");
 		assert.ok(html.includes("Зафиксировать готовность кресла №2 к приёму"), "Must render save button text with chair number");
+
+		// Zero DataMatrix scanner bloat (Mandate 8v, 8k)
+		assert.ok(!html.includes("preflight-kraft-input"), "Must NOT contain Kraft package barcode input (Mandate 8v, 8k)");
+		assert.ok(!html.includes("preflight-kraft-box"), "Must NOT contain Kraft scanner container (Mandate 8v, 8k)");
+		assert.ok(!html.includes("KP-YYYY-MMDD-AUTX-XXX"), "Must NOT contain Kraft scanner placeholder");
+		assert.ok(!html.includes("DataMatrix"), "Must NOT force 2D DataMatrix scanning");
+	});
+
+	it("verifies 1-click standard tray preparation and zero DataMatrix scanning bloat (Mandate 8v, 8k)", () => {
+		const html = renderToString(
+			<ChairsidePreFlightChecklist
+				isOpen={true}
+				onClose={() => {}}
+				chairNumber={1}
+			/>
+		);
+
+		assert.ok(html.includes("Стерильный инструментальный лоток СанПиН 3.3686-21"));
+		assert.ok(html.includes("preflight-complete-all-btn"), "Must contain 1-click complete all items button");
+		assert.ok(!html.includes("preflight-kraft-input"), "Zero DataMatrix barcode inputs allowed");
 	});
 
 	it("returns null when isOpen is false", () => {
