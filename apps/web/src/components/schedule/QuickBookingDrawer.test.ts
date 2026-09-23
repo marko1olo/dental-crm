@@ -331,5 +331,80 @@ describe("QuickBookingDrawer", () => {
 		assert.ok(html.includes("quick-booking-print-blank-contract-btn"), "должна быть кнопка печати чистого договора");
 		assert.ok(html.includes("Бланк договора (_______)"), "должно содержать подпись бланка со строками");
 	});
+
+	it("guarantees 5-second booking flow: optional assistant, 1-click status chips and enabled save button per Mandates 8e, 8n", () => {
+		const multiStaffDashboard: any = {
+			...mockDashboard,
+			clinicSettings: {
+				...mockDashboard.clinicSettings,
+				profile: { mode: "standard", timezone: "Europe/Moscow" },
+				staff: [
+					{ id: "doc-1", fullName: "Д-р Айболит", role: "doctor", active: true },
+					{ id: "doc-2", fullName: "Д-р Быков", role: "doctor", active: true },
+					{ id: "ast-1", fullName: "Асс. Варя", role: "assistant", active: true },
+				],
+				chairs: [
+					{ id: "chair-1", name: "Кабинет 1", active: true },
+					{ id: "chair-2", name: "Кабинет 2", active: true },
+				],
+			},
+		};
+
+		const html = renderToStaticMarkup(
+			React.createElement(QuickBookingDrawer, {
+				isOpen: true,
+				onClose: () => {},
+				dashboard: multiStaffDashboard as Dashboard,
+				initialSlot: {
+					patientId: "pat-1",
+					dateKey: "2026-08-20",
+					startTime: "14:00",
+					durationMinutes: 30,
+				},
+			}),
+		);
+
+		// 1. Assistant is rendered as strictly optional in multi-staff clinic
+		assert.ok(
+			html.includes('data-testid="select-booking-assistant"'),
+			"Assistant selector rendered in multi-staff mode",
+		);
+		assert.ok(
+			html.includes("-- Без ассистента (соло-приём) --"),
+			"Must offer solo reception without assistant by default",
+		);
+		assert.ok(
+			html.includes("Выбор ассистента строго опционален"),
+			"Must reassure receptionist that assistant does not block booking",
+		);
+
+		// 2. 1-Click status selection buttons are present
+		assert.ok(
+			html.includes('data-testid="quick-booking-status-selector"'),
+			"Status selector must be rendered",
+		);
+		assert.ok(
+			html.includes('data-testid="quick-status-btn-planned"'),
+			"1-click planned button rendered",
+		);
+		assert.ok(
+			html.includes('data-testid="quick-status-btn-confirmed"'),
+			"1-click confirmed button rendered",
+		);
+		assert.ok(
+			html.includes('data-testid="quick-status-btn-arrived"'),
+			"1-click arrived button rendered",
+		);
+
+		// 3. Save button is active and ready
+		assert.ok(
+			html.includes('data-testid="quick-drawer-save-btn"'),
+			"Save button must be rendered",
+		);
+		assert.ok(
+			!html.includes('data-testid="quick-drawer-save-btn" disabled'),
+			"Save button must never be disabled when patient and time are present",
+		);
+	});
 });
 

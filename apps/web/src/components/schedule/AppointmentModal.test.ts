@@ -185,5 +185,74 @@ describe("AppointmentModal", () => {
 			"Save button must be present",
 		);
 	});
+
+	it("renders 1-click + CITO button and optional assistant in multi-staff clinic per Mandate 8e, 8n", () => {
+		const multiStaffDashboard: any = {
+			...mockDashboard,
+			clinicSettings: {
+				...mockDashboard.clinicSettings,
+				profile: { mode: "standard", timezone: "Europe/Moscow" },
+				staff: [
+					{ id: "doc-1", fullName: "Д-р Смирнов", role: "doctor", active: true },
+					{ id: "doc-2", fullName: "Д-р Кузнецов", role: "doctor", active: true },
+					{ id: "ast-1", fullName: "Асс. Сидорова", role: "assistant", active: true },
+				],
+				chairs: [
+					{ id: "chair-1", name: "Кабинет 1", active: true },
+					{ id: "chair-2", name: "Кабинет 2", active: true },
+				],
+			},
+		};
+
+		const html = renderToStaticMarkup(
+			React.createElement(AppointmentModal, {
+				isOpen: true,
+				appointment: mockAppointment,
+				dashboard: multiStaffDashboard as Dashboard,
+				onClose: () => {},
+				onSave: async () => true,
+				patientName: () => "Иванов Иван",
+				formatTime: () => "10:00",
+				toDateTimeLocalValue: () => "2026-08-21T10:00",
+				fromDateTimeLocalValue: () => "2026-08-21T10:00:00.000Z",
+				appointmentLabels: mockLabels,
+				activeVisitLockedAppointmentStatuses: new Set<Appointment["status"]>(),
+			}),
+		);
+
+		// 1-Click + CITO button must be present in header
+		assert.ok(
+			html.includes('data-testid="appointment-modal-cito-express-btn"'),
+			"Must render + CITO express button",
+		);
+		assert.ok(
+			html.includes("+ CITO"),
+			"Must show + CITO label for 1-click patient creation",
+		);
+
+		// Assistant is optional
+		assert.ok(
+			html.includes('data-testid="select-appointment-assistant"'),
+			"Assistant selector rendered in multi-staff mode",
+		);
+		assert.ok(
+			html.includes("-- Без ассистента (соло-приём) --"),
+			"Default option must be without assistant",
+		);
+		assert.ok(
+			html.includes("Ассистент: опционально"),
+			"Footer must indicate assistant is optional",
+		);
+
+		// Save button is not disabled
+		assert.ok(
+			html.includes('data-testid="appointment-modal-save-btn"'),
+			"Save button must be rendered and ready",
+		);
+		assert.ok(
+			!html.includes('data-testid="appointment-modal-save-btn" disabled'),
+			"Save button must never be disabled when patient and time are selected",
+		);
+	});
 });
 
