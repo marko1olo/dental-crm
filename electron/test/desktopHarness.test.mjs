@@ -43,12 +43,20 @@ test("Desktop Standalone Windows Runtime Harness", async (t) => {
 	await t.test("Lists installed TWAIN dental sensors & intraoral cameras", async () => {
 		const devices = await getTwainDevices();
 		assert.ok(Array.isArray(devices));
-		assert.ok(devices.length >= 3);
+		assert.ok(devices.length >= 5);
 
 		const vatech = devices.find((d) => d.id.includes("vatech"));
 		assert.ok(vatech);
 		assert.equal(vatech.type, "sensor");
 		assert.equal(vatech.connected, true);
+
+		const runyes = devices.find((d) => d.id.includes("runyes"));
+		assert.ok(runyes);
+		assert.equal(runyes.connected, true);
+
+		const pantum = devices.find((d) => d.id.includes("pantum"));
+		assert.ok(pantum);
+		assert.equal(pantum.connected, true);
 	});
 
 	await t.test("Queries local offline SQLite/Postgres server engine health", async () => {
@@ -235,8 +243,8 @@ test("Desktop Standalone Windows Runtime Harness", async (t) => {
 		assert.equal(toggled.isFullScreen, true);
 	});
 
-	await t.test("Multi-vendor dental hardware presets and vendor detection (Vatech, Sirona, Planmeca, CS, KaVo, Xpect)", async () => {
-		assert.equal(DENTAL_HARDWARE_PRESETS.length, 6);
+	await t.test("Multi-vendor dental hardware presets and vendor detection (Vatech, Sirona, Planmeca, CS, KaVo, Xpect, Runyes, Pantum)", async () => {
+		assert.equal(DENTAL_HARDWARE_PRESETS.length, 8);
 
 		// Vendor path detection
 		assert.equal(detectHardwareVendorFromPath("C:\\EzDent-i\\Capture\\scan01.dcm"), "vatech");
@@ -245,6 +253,10 @@ test("Desktop Standalone Windows Runtime Harness", async (t) => {
 		assert.equal(detectHardwareVendorFromPath("C:\\Trophy\\Data\\RVG6200.tif"), "carestream");
 		assert.equal(detectHardwareVendorFromPath("C:\\VixWin\\001.jpg"), "kavo");
 		assert.equal(detectHardwareVendorFromPath("C:\\XVSensor\\Images\\exp.dcm"), "xpect_vision");
+		assert.equal(detectHardwareVendorFromPath("C:\\Runyes\\Scans\\jaw.stl"), "runyes");
+		assert.equal(detectHardwareVendorFromPath("quickscan_model.ply"), "runyes");
+		assert.equal(detectHardwareVendorFromPath("C:\\Pantum\\Scan\\doc.pdf"), "pantum");
+		assert.equal(detectHardwareVendorFromPath("pantum_scan.jpg"), "pantum");
 		assert.equal(detectHardwareVendorFromPath("C:\\SomeGenericFolder\\file.dcm"), "generic");
 
 		// Installed hardware detection

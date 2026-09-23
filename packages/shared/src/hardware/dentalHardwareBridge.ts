@@ -19,6 +19,8 @@ export type DentalHardwareVendor =
 	| "carestream"
 	| "kavo"
 	| "xpect_vision"
+	| "runyes"
+	| "pantum"
 	| "generic";
 
 export interface DentalHardwarePreset {
@@ -140,6 +142,42 @@ export const DENTAL_HARDWARE_PRESETS: readonly DentalHardwarePreset[] = [
 		exchangeFileName: "xvsensor_export.ini",
 		defaultModality: "IO",
 	},
+	{
+		id: "preset-runyes-3ds",
+		vendor: "runyes",
+		name: "Runyes (3DS Intraoral Scanner)",
+		description: "Интраоральный 3D-сканер Runyes (Runyes 3DS / QuickScan, экспорт STL, PLY, OBJ)",
+		defaultPaths: [
+			"C:\\Runyes\\3DS",
+			"C:\\Runyes\\Scans",
+			"C:\\Program Files\\Runyes\\3DS",
+			"C:\\Program Files (x86)\\Runyes",
+			"C:\\Runyes\\Data",
+			"C:\\Runyes",
+		],
+		protocol: "watch_folder",
+		filePatterns: ["runyes", "3ds", "quickscan", "ply", "stl"],
+		exchangeFileName: "runyes_project.json",
+		defaultModality: "IO",
+	},
+	{
+		id: "preset-pantum-scanner",
+		vendor: "pantum",
+		name: "Pantum (M6500 / M7100 Network Scanner)",
+		description: "Сетевые МФУ и документ-сканеры Pantum для оцифровки паспортов, полисов, согласий и анализов",
+		defaultPaths: [
+			"C:\\Pantum\\Scan",
+			"C:\\Pantum",
+			"C:\\Program Files\\Pantum",
+			"C:\\Program Files (x86)\\Pantum",
+			"C:\\Scans\\Pantum",
+			"C:\\Scan\\Pantum",
+		],
+		protocol: "watch_folder",
+		filePatterns: ["pantum", "ptm", "scan"],
+		exchangeFileName: "scan_config.ini",
+		defaultModality: "CR",
+	},
 ];
 
 /**
@@ -217,6 +255,21 @@ export function detectHardwareVendorFromPath(targetPath: string): DentalHardware
 		normalized.includes("mammo")
 	) {
 		return "xpect_vision";
+	}
+
+	// 7. Runyes 3D Intraoral Scanner
+	if (
+		normalized.includes("runyes") ||
+		normalized.includes("quickscan")
+	) {
+		return "runyes";
+	}
+
+	// 8. Pantum Network Document Scanner
+	if (
+		normalized.includes("pantum")
+	) {
+		return "pantum";
 	}
 
 	return "generic";

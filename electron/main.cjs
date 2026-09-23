@@ -90,6 +90,18 @@ async function getTwainDevices() {
 			type: "camera",
 			connected: false,
 		},
+		{
+			id: "twain-runyes-3ds",
+			name: "Runyes 3DS Intraoral Scanner (TWAIN/Direct)",
+			type: "scanner",
+			connected: true,
+		},
+		{
+			id: "twain-pantum-m6500",
+			name: "Pantum M6500/M7100 Series Network Scanner (TWAIN/WIA)",
+			type: "scanner",
+			connected: true,
+		},
 	];
 }
 
@@ -419,6 +431,42 @@ const DENTAL_HARDWARE_PRESETS = [
 		exchangeFileName: "xvsensor_export.ini",
 		defaultModality: "IO",
 	},
+	{
+		id: "preset-runyes-3ds",
+		vendor: "runyes",
+		name: "Runyes (3DS Intraoral Scanner)",
+		description: "Интраоральный 3D-сканер Runyes (Runyes 3DS / QuickScan, экспорт STL, PLY, OBJ)",
+		defaultPaths: [
+			"C:\\Runyes\\3DS",
+			"C:\\Runyes\\Scans",
+			"C:\\Program Files\\Runyes\\3DS",
+			"C:\\Program Files (x86)\\Runyes",
+			"C:\\Runyes\\Data",
+			"C:\\Runyes",
+		],
+		protocol: "watch_folder",
+		filePatterns: ["runyes", "3ds", "quickscan", "ply", "stl"],
+		exchangeFileName: "runyes_project.json",
+		defaultModality: "IO",
+	},
+	{
+		id: "preset-pantum-scanner",
+		vendor: "pantum",
+		name: "Pantum (M6500 / M7100 Network Scanner)",
+		description: "Сетевые МФУ и документ-сканеры Pantum для оцифровки паспортов, полисов, согласий и анализов",
+		defaultPaths: [
+			"C:\\Pantum\\Scan",
+			"C:\\Pantum",
+			"C:\\Program Files\\Pantum",
+			"C:\\Program Files (x86)\\Pantum",
+			"C:\\Scans\\Pantum",
+			"C:\\Scan\\Pantum",
+		],
+		protocol: "watch_folder",
+		filePatterns: ["pantum", "ptm", "scan"],
+		exchangeFileName: "scan_config.ini",
+		defaultModality: "CR",
+	},
 ];
 
 /**
@@ -446,6 +494,12 @@ function detectHardwareVendorFromPath(targetPath) {
 	}
 	if (normalized.includes("xvsensor") || normalized.includes("xpect") || normalized.includes("mammo")) {
 		return "xpect_vision";
+	}
+	if (normalized.includes("runyes") || normalized.includes("quickscan")) {
+		return "runyes";
+	}
+	if (normalized.includes("pantum")) {
+		return "pantum";
 	}
 	return "generic";
 }
