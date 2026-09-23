@@ -43,6 +43,7 @@ import { AppointmentQuickActions } from "./AppointmentQuickActions";
 import { AppointmentHoverHud } from "./AppointmentHoverHud";
 import { printBlankMedicalContract } from "../patients/blankContractPrint";
 import { isTechnicalBreakAppointment } from "./AppointmentModal";
+import { isNegativeAllergyStatement } from "../../utils/somaticNorm";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -413,17 +414,23 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 		const rawAllergies =
 			(appointmentPatient as { allergies?: string | null } | undefined)?.allergies ||
 			(appointmentPatient as { anamnesis?: { allergies?: string | null } } | undefined)?.anamnesis?.allergies;
-		if (rawAllergies && typeof rawAllergies === "string" && rawAllergies.trim()) {
+		if (
+			rawAllergies &&
+			typeof rawAllergies === "string" &&
+			rawAllergies.trim() &&
+			!isNegativeAllergyStatement(rawAllergies)
+		) {
 			return `Внимание: ${rawAllergies.trim()}`;
 		}
 		const notes = appointmentPatient?.notes || "";
 		const match = notes.match(/аллерги[яеи][^.;\n]*/i);
-		if (match) {
+		if (match && !isNegativeAllergyStatement(match[0])) {
 			return `Внимание: ${match[0].trim()}`;
 		}
+		const reason = appointment?.reason || "";
 		if (
-			/лидокаин/i.test(appointment?.reason || "") ||
-			/аллерги/i.test(appointment?.reason || "")
+			(/лидокаин/i.test(reason) || /аллерги/i.test(reason)) &&
+			!isNegativeAllergyStatement(reason)
 		) {
 			return "Внимание: Аллергия на лидокаин";
 		}

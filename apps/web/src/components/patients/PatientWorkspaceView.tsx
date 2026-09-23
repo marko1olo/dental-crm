@@ -282,6 +282,12 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 				);
 			}, [dashboard?.treatmentPlanItems, patientId]);
 
+			const currentPatient = useMemo(() => {
+				return (dashboard?.patients ?? []).find(
+					(p: any) => String(p?.id) === String(patientId),
+				);
+			}, [dashboard?.patients, patientId]);
+
 			// Low-Spec Celeron / 4GB RAM Optimization: Bound DOM render to keep total nodes strictly <= 400
 			// 30 items * ~10 DOM nodes = 300 nodes + ~80 container nodes = 380 DOM nodes total per active tab
 			const DEFAULT_WORKSPACE_PAGE_SIZE = 30;
@@ -401,11 +407,18 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 					data-testid="patient-workspace-view"
 					className="patient-workspace-view flex flex-col gap-2 rounded-xl bg-[var(--paper)] p-2.5 sm:p-3 text-[var(--ink)] border border-[var(--line)] shadow-xs pb-16"
 				>
-					{/* Clinical Safety & Allergy Red-Flag Emergency Banner */}
+					{/* Clinical Safety & Allergy Red-Flag Emergency Banner (Zero Noise when clean, Mandates 8d, 8p) */}
 					<PatientAllergySafetyBanner
 						patientId={patientId}
 						patientName={patientName}
+						profile={currentPatient?.anamnesis || currentPatient?.notes}
+						notes={
+							typeof currentPatient?.anamnesis === "string"
+								? currentPatient.anamnesis
+								: currentPatient?.notes
+						}
 						showModalButton={true}
+						hideWhenClean={true}
 					/>
 
 					{/* Patient Duplicate Alert Guard */}

@@ -20,6 +20,7 @@ import {
 	CANONICAL_SOMATIC_NORM_SHORT,
 	applySomaticNormToText,
 	extractDentalContraindicationBadges,
+	isNegativeAllergyStatement,
 	isSomaticTextPhysiologicalNorm,
 } from "./somaticNorm";
 
@@ -213,6 +214,72 @@ describe("somaticNorm.ts Unit Tests (Mandates 8e, 8i, 8k, 8s, 8d)", () => {
 			assert.strictEqual(diabBadge.id, "diabetes");
 			assert.strictEqual(diabBadge.testId, "visit-focus-diabetes-alert");
 			assert.ok(diabBadge.fullLabel.includes("САХАРНЫЙ ДИАБЕТ"));
+		});
+
+		it("returns ZERO allergy badges when allergyText is negative/clean (Mandates 8d, 8p zero noise)", () => {
+			const cleanTexts = [
+				"нет",
+				"Аллергий нет",
+				"аллергии нет",
+				"аллергии отрицает",
+				"аллергоанамнез не отягощен",
+				"Соматически здоров, аллергий нет",
+				"без особенностей",
+				"не выявлено",
+				"отсутствует",
+				"-",
+				"—",
+			];
+
+			for (const text of cleanTexts) {
+				const badges = extractDentalContraindicationBadges(null, text);
+				assert.strictEqual(
+					badges.length,
+					0,
+					`Must return 0 badges for clean text "${text}"`,
+				);
+			}
+		});
+
+		it("returns ZERO allergy badges when customAllergyNotes is negative/clean", () => {
+			const cleanProfiles = [
+				{ customAllergyNotes: "нет" },
+				{ customAllergyNotes: "Аллергий нет" },
+				{ customAllergyNotes: "аллергии отрицает" },
+				{ customAllergyNotes: "не отягощен" },
+			];
+
+			for (const profile of cleanProfiles) {
+				const badges = extractDentalContraindicationBadges(profile, null);
+				assert.strictEqual(
+					badges.length,
+					0,
+					`Must return 0 badges for profile with notes "${profile.customAllergyNotes}"`,
+				);
+			}
+		});
+	});
+
+	describe("6. isNegativeAllergyStatement (Zero Noise Detection)", () => {
+		it("detects clean / negative statements accurately", () => {
+			assert.strictEqual(isNegativeAllergyStatement(""), true);
+			assert.strictEqual(isNegativeAllergyStatement(null), true);
+			assert.strictEqual(isNegativeAllergyStatement("нет"), true);
+			assert.strictEqual(isNegativeAllergyStatement("Аллергий нет"), true);
+			assert.strictEqual(isNegativeAllergyStatement("аллергии отрицает"), true);
+			assert.strictEqual(isNegativeAllergyStatement("аллергоанамнез не отягощен"), true);
+			assert.strictEqual(isNegativeAllergyStatement("Соматически здоров, аллергий нет"), true);
+			assert.strictEqual(isNegativeAllergyStatement("-"), true);
+			assert.strictEqual(isNegativeAllergyStatement("—"), true);
+		});
+
+		it("does NOT mark positive allergens as negative", () => {
+			assert.strictEqual(isNegativeAllergyStatement("Лидокаин"), false);
+			assert.strictEqual(isNegativeAllergyStatement("Аллергия на артикаин"), false);
+			assert.strictEqual(isNegativeAllergyStatement("Пенициллин"), false);
+			assert.strictEqual(isNegativeAllergyStatement("Латекс"), false);
+			assert.strictEqual(isNegativeAllergyStatement("Аспирин / НПВП"), false);
+			assert.strictEqual(isNegativeAllergyStatement("Цитрусовые, пыльца"), false);
 		});
 	});
 });

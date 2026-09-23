@@ -136,6 +136,105 @@ export function applySomaticNormToText(existingNotes?: string | null): string {
 }
 
 /**
+ * Evaluates whether an allergy text string represents absence of allergies / physiological norm
+ * (e.g. "нет", "аллергий нет", "аллергии отрицает", "не отягощен", "норма", "-", "—").
+ * Returns true if the statement declares NO allergies, or if it is empty/falsy.
+ */
+export function isNegativeAllergyStatement(text?: string | null): boolean {
+	if (!text) return true;
+	const trimmed = text.trim();
+	if (!trimmed) return true;
+	const lower = trimmed.toLowerCase();
+
+	// Pure punctuation or single dash / dash-like tokens
+	if (/^[-—–._\s/]*$/.test(trimmed) || /^(нет|none|no|n\/a|0)$/i.test(trimmed)) {
+		return true;
+	}
+
+	// If text contains positive confirmed allergens, it is NOT negative
+	const hasSpecificAllergen =
+		lower.includes("артикаин") ||
+		lower.includes("ультракаин") ||
+		lower.includes("лидокаин") ||
+		lower.includes("мепивакаин") ||
+		lower.includes("скандонест") ||
+		lower.includes("септанест") ||
+		lower.includes("убистезин") ||
+		lower.includes("пенициллин") ||
+		lower.includes("амоксициллин") ||
+		lower.includes("амоксиклав") ||
+		lower.includes("аугментин") ||
+		lower.includes("латекс") ||
+		lower.includes("нпвп") ||
+		lower.includes("нпвс") ||
+		lower.includes("аспирин") ||
+		lower.includes("кеторол") ||
+		lower.includes("кеторолак") ||
+		lower.includes("ибупрофен") ||
+		lower.includes("йод") ||
+		lower.includes("йодоформ") ||
+		lower.includes("сульфит") ||
+		lower.includes("анафилакс") ||
+		lower.includes("отек квинке");
+
+	if (hasSpecificAllergen) {
+		return false;
+	}
+
+	const negativePhrases = [
+		"аллергий нет",
+		"аллергии нет",
+		"аллергия нет",
+		"нет аллергии",
+		"нет аллергий",
+		"аллергоанамнез не отягощен",
+		"аллергоанамнез не отягощён",
+		"анамнез не отягощен",
+		"анамнез не отягощён",
+		"аллергии отрицает",
+		"аллергию отрицает",
+		"аллергические реакции отрицает",
+		"аллергический статус без особенностей",
+		"со слов отрицает",
+		"без особенностей",
+		"соматически здоров",
+		"физиологическая норма",
+		"не выявлено",
+		"не установлено",
+		"не отмечен",
+		"не отмечено",
+		"отсутствует",
+		"отсутствуют",
+		"патологий не заявлено",
+	];
+
+	for (const phrase of negativePhrases) {
+		if (lower.includes(phrase)) {
+			return true;
+		}
+	}
+
+	// Exact words of negation or norm
+	if (
+		lower === "нет" ||
+		lower === "норма" ||
+		lower === "отрицает" ||
+		lower === "не отягощен" ||
+		lower === "не отягощён" ||
+		lower === "не отмечено" ||
+		lower === "не отмечен" ||
+		lower === "отсутствуют" ||
+		lower === "отсутствует" ||
+		lower === "здоров" ||
+		lower === "чисто"
+	) {
+		return true;
+	}
+
+	return false;
+}
+
+/**
  * Extracts Tier-1 visible red badges for dental contraindications (Mandates 8e, 8i):
  * - Allergies (local anesthetics, penicillin, NSAIDs, latex, anaphylaxis)
  * - Pacemaker (ЭКС/ИКД -> ultrasonic scaler and monopolar electrosurgery prohibition)
@@ -150,8 +249,8 @@ export function extractDentalContraindicationBadges(
 ): DentalContraindicationBadge[] {
 	const badges: DentalContraindicationBadge[] = [];
 
-	// 1. Allergies
-	if (allergyText && allergyText.trim()) {
+	// 1. Allergies (only when active allergy present, zero noise when clean per Mandate 8p)
+	if (allergyText && allergyText.trim() && !isNegativeAllergyStatement(allergyText)) {
 		badges.push({
 			id: "allergy",
 			testId: "visit-focus-allergy-alert",
@@ -173,8 +272,16 @@ export function extractDentalContraindicationBadges(
 		if (profile.hasIodineAllergy) specificAllergies.push("Йод");
 		if (profile.hasAnaphylaxisHistory) specificAllergies.push("Анафилаксия в анамнезе");
 
-		if (specificAllergies.length > 0 || (profile.customAllergyNotes && profile.customAllergyNotes.trim())) {
-			const label = specificAllergies.length > 0 ? specificAllergies.join(", ") : (profile.customAllergyNotes || "");
+		const hasCustomAllergy =
+			profile.customAllergyNotes &&
+			profile.customAllergyNotes.trim() &&
+			!isNegativeAllergyStatement(profile.customAllergyNotes);
+
+		if (specificAllergies.length > 0 || hasCustomAllergy) {
+			const label =
+				specificAllergies.length > 0
+					? specificAllergies.join(", ")
+					: (profile.customAllergyNotes || "");
 			badges.push({
 				id: "allergy",
 				testId: "visit-focus-allergy-alert",

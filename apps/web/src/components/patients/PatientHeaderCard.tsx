@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
-import { evaluatePatientSafetyFlags } from "./safetyMath";
+import { evaluatePatientSafetyFlags, isNegativeAllergyStatement } from "./safetyMath";
 import { openWhatsAppChat } from "../../store/telephonyStore";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
@@ -137,7 +137,12 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 			resolvedPatient.allergies ||
 			resolvedPatient.anamnesis?.allergies ||
 			"";
-		if (raw && typeof raw === "string" && raw.trim()) {
+		if (
+			raw &&
+			typeof raw === "string" &&
+			raw.trim() &&
+			!isNegativeAllergyStatement(raw)
+		) {
 			return raw.trim();
 		}
 		if (resolvedPatient.clinicalSafetyProfile) {

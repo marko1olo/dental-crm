@@ -21,6 +21,8 @@ import {
 	calculatePatientMrd,
 	resolveAutopilotAnesthesia,
 } from "../visit/anesthesiaCalculatorEngine";
+import { isNegativeAllergyStatement } from "../../utils/somaticNorm";
+export { isNegativeAllergyStatement };
 
 export type ClinicalSafetySeverity = "critical" | "high" | "moderate" | "info" | "none";
 
@@ -837,7 +839,11 @@ export function evaluatePatientSafetyFlags(
 		precautionsSet.add("Проверка готовности посиндромной аптечки «Антишок» в кабинете перед началом приёма");
 	}
 
-	if (profile.customAllergyNotes && profile.customAllergyNotes.trim()) {
+	if (
+		profile.customAllergyNotes &&
+		profile.customAllergyNotes.trim() &&
+		!isNegativeAllergyStatement(profile.customAllergyNotes)
+	) {
 		const rawNotes = profile.customAllergyNotes.trim();
 		activeFlags.push({
 			id: "custom_allergy_notes",
@@ -846,6 +852,30 @@ export function evaluatePatientSafetyFlags(
 			shortBadge: `[АЛЛЕРГИЯ] ${rawNotes.toUpperCase()}`,
 			titleRu: `Индивидуальная лекарственная/вещественная аллергия: ${rawNotes}`,
 			description: `У пациента зарегистрирована индивидуальная аллергия или гиперчувствительность: ${rawNotes}`,
+			forbiddenProcedures: [`Применение препаратов, содержащих ${rawNotes}`],
+			mandatoryPrecautions: [
+				"Яркая маркировка титульного листа амбулаторной карты 043/у",
+				"Уточнение анамнеза и выбор безопасных альтернативных препаратов",
+			],
+			source: "structured_profile",
+		});
+		forbiddenSet.add(`Применение препаратов, содержащих ${rawNotes}`);
+		precautionsSet.add("Уточнение анамнеза и выбор безопасных альтернативных препаратов");
+	}
+
+	if (
+		profile.customAllergiesNotes &&
+		profile.customAllergiesNotes.trim() &&
+		!isNegativeAllergyStatement(profile.customAllergiesNotes)
+	) {
+		const rawNotes = profile.customAllergiesNotes.trim();
+		activeFlags.push({
+			id: "custom_allergies_notes",
+			category: "anesthesia_allergy",
+			severity: "critical",
+			shortBadge: `[АЛЛЕРГИЯ] ${rawNotes.toUpperCase()}`,
+			titleRu: `Индивидуальная аллергия: ${rawNotes}`,
+			description: `У пациента зарегистрирована аллергия: ${rawNotes}`,
 			forbiddenProcedures: [`Применение препаратов, содержащих ${rawNotes}`],
 			mandatoryPrecautions: [
 				"Яркая маркировка титульного листа амбулаторной карты 043/у",
@@ -897,42 +927,48 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 		return { pregnancyTrimester: "none" };
 	}
 
+	const isCleanAllergyText = isNegativeAllergyStatement(raw);
+
 	const hasArticaine =
-		raw.includes("артикаин") ||
-		raw.includes("ультракаин") ||
-		raw.includes("септанест") ||
-		raw.includes("убистезин");
+		!isCleanAllergyText &&
+		(raw.includes("артикаин") ||
+			raw.includes("ультракаин") ||
+			raw.includes("септанест") ||
+			raw.includes("убистезин"));
 
 	const hasLidocaine =
-		raw.includes("лидокаин") ||
-		raw.includes("ксилокаин");
+		!isCleanAllergyText &&
+		(raw.includes("лидокаин") || raw.includes("ксилокаин"));
 
 	const hasEsterAnesthetics =
-		raw.includes("дикаин") ||
-		raw.includes("тетракаин") ||
-		raw.includes("новокаин") ||
-		raw.includes("прокаин") ||
-		raw.includes("анестезин") ||
-		raw.includes("бензокаин");
+		!isCleanAllergyText &&
+		(raw.includes("дикаин") ||
+			raw.includes("тетракаин") ||
+			raw.includes("новокаин") ||
+			raw.includes("прокаин") ||
+			raw.includes("анестезин") ||
+			raw.includes("бензокаин"));
 
 	const hasMepivacaine =
-		raw.includes("мепивакаин") ||
-		raw.includes("скандонест") ||
-		raw.includes("мепивастезин");
+		!isCleanAllergyText &&
+		(raw.includes("мепивакаин") ||
+			raw.includes("скандонест") ||
+			raw.includes("мепивастезин"));
 
 	const hasSulfites =
-		raw.includes("сульфит") ||
-		raw.includes("дисульфит") ||
-		raw.includes("метабисульфит") ||
-		raw.includes("пиросульфит") ||
-		raw.includes("е223") ||
-		raw.includes("e223") ||
-		raw.includes("консервант");
+		!isCleanAllergyText &&
+		(raw.includes("сульфит") ||
+			raw.includes("дисульфит") ||
+			raw.includes("метабисульфит") ||
+			raw.includes("пиросульфит") ||
+			raw.includes("е223") ||
+			raw.includes("e223") ||
+			raw.includes("консервант"));
 
 	const hasPacemaker =
 		raw.includes("кардиостимулятор") ||
-		raw.includes("экс") ||
-		raw.includes("икд") ||
+		/(^|[^а-яёa-z0-9])экс([^а-яёa-z0-9]|$)/i.test(raw) ||
+		/(^|[^а-яёa-z0-9])икд([^а-яёa-z0-9]|$)/i.test(raw) ||
 		raw.includes("пейсмейкер") ||
 		raw.includes("водитель ритма") ||
 		raw.includes("z95.0");
@@ -1065,40 +1101,42 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 		raw.includes("b20");
 
 	const hasPenicillin =
-		raw.includes("пенициллин") ||
-		raw.includes("амоксициллин") ||
-		raw.includes("амоксиклав") ||
-		raw.includes("аугментин") ||
-		raw.includes("флемоксин") ||
-		raw.includes("z88.0");
+		!isCleanAllergyText &&
+		(raw.includes("пенициллин") ||
+			raw.includes("амоксициллин") ||
+			raw.includes("амоксиклав") ||
+			raw.includes("аугментин") ||
+			raw.includes("флемоксин") ||
+			raw.includes("z88.0"));
 
-	const hasLatex =
-		raw.includes("латекс");
+	const hasLatex = !isCleanAllergyText && raw.includes("латекс");
 
 	const hasNsaid =
-		raw.includes("нпвп") ||
-		raw.includes("нпвс") ||
-		raw.includes("аспирин") ||
-		raw.includes("кеторол") ||
-		raw.includes("кеторолак") ||
-		raw.includes("ибупрофен") ||
-		raw.includes("нурофен") ||
-		raw.includes("диклофенак") ||
-		raw.includes("нимесулид") ||
-		raw.includes("кетонал") ||
-		raw.includes("аспириновая астма") ||
-		raw.includes("z88.6");
+		!isCleanAllergyText &&
+		(raw.includes("нпвп") ||
+			raw.includes("нпвс") ||
+			raw.includes("аспирин") ||
+			raw.includes("кеторол") ||
+			raw.includes("кеторолак") ||
+			raw.includes("ибупрофен") ||
+			raw.includes("нурофен") ||
+			raw.includes("диклофенак") ||
+			raw.includes("нимесулид") ||
+			raw.includes("кетонал") ||
+			raw.includes("аспириновая астма") ||
+			raw.includes("z88.6"));
 
 	const hasIodine =
-		raw.includes("йод") ||
-		raw.includes("йодоформ") ||
-		raw.includes("повидон-йод") ||
-		raw.includes("бетадин") ||
-		raw.includes("метапекс") ||
-		raw.includes("йодинол") ||
-		raw.includes("альвожил") ||
-		raw.includes("alveogyl") ||
-		raw.includes("люголь");
+		!isCleanAllergyText &&
+		(raw.includes("йод") ||
+			raw.includes("йодоформ") ||
+			raw.includes("повидон-йод") ||
+			raw.includes("бетадин") ||
+			raw.includes("метапекс") ||
+			raw.includes("йодинол") ||
+			raw.includes("альвожил") ||
+			raw.includes("alveogyl") ||
+			raw.includes("люголь"));
 
 	const hasPheochromocytoma =
 		raw.includes("феохромоцитом") ||

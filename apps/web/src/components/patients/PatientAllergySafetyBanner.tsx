@@ -54,7 +54,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 			onSyncToEmkDiary,
 			showModalButton = true,
 			compact = false,
-			hideWhenClean = false,
+			hideWhenClean = true,
 			className = "",
 		}) => {
 			const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -162,7 +162,20 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 			}, [evaluation]);
 
 			if (hideWhenClean && evaluation.totalAlertCount === 0) {
-				return null;
+				if (!isModalOpen) {
+					return null;
+				}
+				return (
+					<PatientAnamnesisModal
+						isOpen={isModalOpen}
+						onClose={() => setIsModalOpen(false)}
+						patientId={patientId ?? undefined}
+						patientName={patientName ?? undefined}
+						initialProfile={effectiveProfile}
+						onSaveProfile={handleSaveModalProfile}
+						onSyncToEmkDiary={onSyncToEmkDiary ?? undefined}
+					/>
+				);
 			}
 
 			return (

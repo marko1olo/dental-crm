@@ -17,6 +17,7 @@ import {
 	X,
 } from "lucide-react";
 import { kopecksToRub } from "@dental/shared";
+import { isNegativeAllergyStatement } from "../../utils/somaticNorm";
 
 export type PatientSentimentType =
 	| "loyal_vip"
@@ -152,7 +153,7 @@ export function computePatientSentiment(
 	}
 
 	// 3b. Severe Allergies
-	const hasSevereAllergies = Boolean(
+	const hasSevereAllergies = !isNegativeAllergyStatement(allergiesStr) && Boolean(
 		safety?.hasLidocaineAllergy ||
 			safety?.hasArticaineAllergy ||
 			safety?.hasMepivacaineAllergy ||
@@ -173,7 +174,9 @@ export function computePatientSentiment(
 			allergiesStr.includes("анестетик") ||
 			allergiesStr.includes("пенициллин") ||
 			allergiesStr.includes("латекс") ||
-			(Array.isArray(patient?.allergies) && patient.allergies.length > 0),
+			(Array.isArray(patient?.allergies) &&
+				patient.allergies.length > 0 &&
+				patient.allergies.some((a: string) => !isNegativeAllergyStatement(a))),
 	);
 	if (hasSevereAllergies) {
 		somaticRiskFactors.push(

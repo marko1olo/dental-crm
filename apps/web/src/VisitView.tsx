@@ -261,6 +261,7 @@ import { PatientAllergySafetyBanner } from "./components/patients/PatientAllergy
 import {
 	type PatientClinicalSafetyProfile,
 	parseSafetyProfileFromText,
+	isNegativeAllergyStatement,
 } from "./components/patients/safetyMath";
 import { EmergencyRescueModal } from "./components/emergency/EmergencyRescueModal";
 import { VoiceDictationAssistantModal, type DictationCommand } from "./components/voice/VoiceDictationAssistantModal";
@@ -1218,7 +1219,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			(activePatient as any).allergies ||
 			(activePatient as any).anamnesis?.allergies ||
 			"";
-		if (raw && typeof raw === "string" && raw.trim()) {
+		if (
+			raw &&
+			typeof raw === "string" &&
+			raw.trim() &&
+			!isNegativeAllergyStatement(raw)
+		) {
 			return raw.trim();
 		}
 		const safetyProfile = activePatientSafetyProfile;
@@ -1232,7 +1238,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			if (safetyProfile.hasNsaidAllergy) flags.push("НПВП");
 			if (safetyProfile.hasSulfiteAllergy || safetyProfile.hasSulfitesAllergy) flags.push("Сульфиты");
 			if (safetyProfile.hasIodineAllergy) flags.push("Йод");
-			if (safetyProfile.customAllergyNotes?.trim()) flags.push(safetyProfile.customAllergyNotes.trim());
+			if (
+				safetyProfile.customAllergyNotes?.trim() &&
+				!isNegativeAllergyStatement(safetyProfile.customAllergyNotes)
+			) {
+				flags.push(safetyProfile.customAllergyNotes.trim());
+			}
 			if (flags.length > 0) return flags.join(", ");
 		}
 		return "";

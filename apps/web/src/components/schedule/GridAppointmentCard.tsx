@@ -29,6 +29,7 @@ import { openWhatsAppChat } from "../../store/telephonyStore";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { extractTeethList, formatPatientDisplayFio } from "./AppointmentCard";
 import { showToast } from "../GlobalToast";
+import { isNegativeAllergyStatement } from "../../utils/somaticNorm";
 
 export function formatDoctorShortName(fullName?: string | null): string {
 	if (!fullName) return "";
@@ -197,17 +198,23 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 		const rawAllergies =
 			(patObj as { allergies?: string | null } | undefined)?.allergies ||
 			(patObj as { anamnesis?: { allergies?: string | null } } | undefined)?.anamnesis?.allergies;
-		if (rawAllergies && typeof rawAllergies === "string" && rawAllergies.trim()) {
+		if (
+			rawAllergies &&
+			typeof rawAllergies === "string" &&
+			rawAllergies.trim() &&
+			!isNegativeAllergyStatement(rawAllergies)
+		) {
 			return `Внимание: ${rawAllergies.trim()}`;
 		}
 		const notes = patObj?.notes || "";
 		const match = notes.match(/аллерги[яеи][^.;\n]*/i);
-		if (match) {
+		if (match && !isNegativeAllergyStatement(match[0])) {
 			return `Внимание: ${match[0].trim()}`;
 		}
+		const reason = a?.reason || "";
 		if (
-			/лидокаин/i.test(a?.reason || "") ||
-			/аллерги/i.test(a?.reason || "")
+			(/лидокаин/i.test(reason) || /аллерги/i.test(reason)) &&
+			!isNegativeAllergyStatement(reason)
 		) {
 			return "Внимание: Аллергия на лидокаин";
 		}

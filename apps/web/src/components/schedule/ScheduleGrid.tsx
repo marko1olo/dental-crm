@@ -55,6 +55,7 @@ import {
 } from "../../utils/scheduleCollisionUtils";
 export type { ChairMaintenanceBlock } from "../../utils/scheduleCollisionUtils";
 import { showToast } from "../GlobalToast";
+import { isNegativeAllergyStatement } from "../../utils/somaticNorm";
 import { calculateDailyChairDoctorTally } from "./doctorFreeSlotsEngine";
 import { countLabel } from "../../lib/russianPlural";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
@@ -3697,17 +3698,23 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			const rawAllergies =
 				(mPatObj as { allergies?: string | null } | undefined)?.allergies ||
 				(mPatObj as { anamnesis?: { allergies?: string | null } } | undefined)?.anamnesis?.allergies;
-			if (rawAllergies && typeof rawAllergies === "string" && rawAllergies.trim()) {
+			if (
+				rawAllergies &&
+				typeof rawAllergies === "string" &&
+				rawAllergies.trim() &&
+				!isNegativeAllergyStatement(rawAllergies)
+			) {
 				return `Внимание: ${rawAllergies.trim()}`;
 			}
 			const notes = mPatObj?.notes || "";
 			const match = notes.match(/аллерги[яеи][^.;\n]*/i);
-			if (match) {
+			if (match && !isNegativeAllergyStatement(match[0])) {
 				return `Внимание: ${match[0].trim()}`;
 			}
+			const reason = selectedMobileAppt?.reason || "";
 			if (
-				/лидокаин/i.test(selectedMobileAppt?.reason || "") ||
-				/аллерги/i.test(selectedMobileAppt?.reason || "")
+				(/лидокаин/i.test(reason) || /аллерги/i.test(reason)) &&
+				!isNegativeAllergyStatement(reason)
 			) {
 				return "Внимание: Аллергия на лидокаин";
 			}

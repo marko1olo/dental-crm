@@ -441,12 +441,29 @@ describe("Wave 50: Dental Allergy Presets & Safety Engine (Feature 235)", () => 
 			);
 		});
 
-		it("4.3. renders PatientAllergySafetyBanner with clean norm and displays 1-click norm button", () => {
+		it("4.3. does NOT render PatientAllergySafetyBanner when clean norm (Mandates 8d, 8p zero visual noise)", () => {
 			const html = renderToString(
 				React.createElement(PatientAllergySafetyBanner, {
 					patientId: "pat-test-banner-clean",
 					patientName: "Ковалев Андрей Павлович",
 					profile: { pregnancyTrimester: "none" },
+				}),
+			);
+
+			assert.strictEqual(
+				html,
+				"",
+				"Banner must return null / empty string when patient is clean without active alerts",
+			);
+		});
+
+		it("4.4. renders PatientAllergySafetyBanner when explicitly forcing hideWhenClean={false}", () => {
+			const html = renderToString(
+				React.createElement(PatientAllergySafetyBanner, {
+					patientId: "pat-test-banner-clean",
+					patientName: "Ковалев Андрей Павлович",
+					profile: { pregnancyTrimester: "none" },
+					hideWhenClean: false,
 				}),
 			);
 

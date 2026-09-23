@@ -18,7 +18,7 @@ import {
 	addWorkingDays,
 	calculateMaterialTotalCostKopecks,
 } from "../lab/labMath";
-import { evaluatePatientSafetyFlags } from "../patients/safetyMath";
+import { evaluatePatientSafetyFlags, isNegativeAllergyStatement } from "../patients/safetyMath";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
@@ -252,8 +252,8 @@ export const OdontogramModule = React.memo(({
 	const allergyText = useMemo(() => {
 		const pat = activePatient as any;
 		if (!pat) return null;
-		if (pat.allergies) return String(pat.allergies);
-		if (pat.anamnesis?.allergies) return String(pat.anamnesis.allergies);
+		if (pat.allergies && !isNegativeAllergyStatement(String(pat.allergies))) return String(pat.allergies);
+		if (pat.anamnesis?.allergies && !isNegativeAllergyStatement(String(pat.anamnesis.allergies))) return String(pat.anamnesis.allergies);
 		if (pat.clinicalSafetyProfile) {
 			const flags = evaluatePatientSafetyFlags(pat.clinicalSafetyProfile);
 			const allergyFlags = flags.activeFlags.filter(
@@ -263,11 +263,18 @@ export const OdontogramModule = React.memo(({
 			if (allergyFlags.length > 0) {
 				return allergyFlags.map((f: { shortBadge: string; titleRu: string }) => f.shortBadge || f.titleRu).join(", ");
 			}
-			if (pat.clinicalSafetyProfile.customAllergyNotes) {
+			if (
+				pat.clinicalSafetyProfile.customAllergyNotes &&
+				!isNegativeAllergyStatement(String(pat.clinicalSafetyProfile.customAllergyNotes))
+			) {
 				return String(pat.clinicalSafetyProfile.customAllergyNotes);
 			}
 		}
-		if (typeof pat.notes === "string" && /аллерг|новокаин|лидокаин|артикаин/i.test(pat.notes)) {
+		if (
+			typeof pat.notes === "string" &&
+			/аллерг|новокаин|лидокаин|артикаин/i.test(pat.notes) &&
+			!isNegativeAllergyStatement(pat.notes)
+		) {
 			return pat.notes;
 		}
 		return null;
