@@ -428,7 +428,7 @@ export function LabOrdersPage() {
 		setOpenMenuOrderId(null);
 		setPromptState({
 			title: "Фото прикуса / 3D-скан (ЗТЛ)",
-			description: `Укажите URL или ссылку на фото прикуса, окклюдограмму или STL-скан для заказа #${order.orderNumber || order.id?.slice(0, 8)}.`,
+			description: `Укажите URL или ссылку на фото прикуса, окклюдограмму или STL-скан для заказа #${order.id ? order.id.slice(0, 8) : ""}.`,
 			icon: <Camera className="w-4 h-4 text-teal-600 dark:text-teal-400" />,
 			initialValue: order.attachedImageUrl || "",
 			placeholder: "https://... или storage/scans/bite_photo.jpg",
@@ -459,7 +459,7 @@ export function LabOrdersPage() {
 		setOpenMenuOrderId(null);
 		setPromptState({
 			title: "Клинический комментарий технику",
-			description: `Уточнение границ уступа, цвета по VITA, рельефа фиссур или особенностей моделировки для наряда #${order.orderNumber || order.id?.slice(0, 8)}.`,
+			description: `Уточнение границ уступа, цвета по VITA, рельефа фиссур или особенностей моделировки для наряда #${order.id ? order.id.slice(0, 8) : ""}.`,
 			icon: <MessageSquare className="w-4 h-4 text-teal-600 dark:text-teal-400" />,
 			initialValue: order.labComments || "",
 			placeholder: "Например: поднутрения с дистальной стороны не заливать, уступ плечевой 0.8мм...",
