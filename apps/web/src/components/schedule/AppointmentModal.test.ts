@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import type { Appointment, Dashboard } from "@dental/shared";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { Appointment, Dashboard } from "@dental/shared";
 import { AppointmentModal } from "./AppointmentModal";
 
 const mockAppointment: Appointment = {
@@ -21,18 +21,19 @@ const mockAppointment: Appointment = {
 
 // biome-ignore lint/suspicious/noExplicitAny: mock
 const mockDashboard: any = {
-	patients: [
-		{ id: "pat-1", fullName: "Иванов Иван", phone: "+79991112233" },
-	],
+	patients: [{ id: "pat-1", fullName: "Иванов Иван", phone: "+79991112233" }],
 	appointments: [mockAppointment],
 	clinicSettings: {
 		staff: [
 			{ id: "doc-1", fullName: "Д-р Смирнов", role: "doctor", active: true },
-			{ id: "ast-1", fullName: "Асс. Сидорова", role: "assistant", active: true },
+			{
+				id: "ast-1",
+				fullName: "Асс. Сидорова",
+				role: "assistant",
+				active: true,
+			},
 		],
-		chairs: [
-			{ id: "chair-1", name: "Кабинет 1", active: true },
-		],
+		chairs: [{ id: "chair-1", name: "Кабинет 1", active: true }],
 		profile: {
 			mode: "solo_doctor",
 			timezone: "Europe/Samara",
@@ -89,13 +90,19 @@ describe("AppointmentModal", () => {
 			}),
 		);
 
-		assert.ok(html.includes("Детали записи"), "должен быть заголовок модального окна");
+		assert.ok(
+			html.includes("Детали записи"),
+			"должен быть заголовок модального окна",
+		);
 		assert.ok(html.includes("Иванов Иван"), "должно быть ФИО пациента");
 		assert.ok(html.includes("Д-р Смирнов"), "должно быть имя врача");
 		assert.ok(html.includes("Кабинет 1"), "должно быть название кресла");
 		assert.ok(html.includes("Повторить"), "должна быть кнопка повтора записи");
 		assert.ok(html.includes("Сохранить"), "должна быть кнопка сохранения");
-		assert.ok(html.includes("Быстрый выбор длительности"), "должна быть панель быстрого выбора длительности");
+		assert.ok(
+			html.includes("Быстрый выбор длительности"),
+			"должна быть панель быстрого выбора длительности",
+		);
 		assert.ok(html.includes("30 мин"), "должна быть кнопка 30 минут");
 		assert.ok(html.includes("1 час"), "должна быть кнопка 1 час");
 		assert.ok(html.includes("Острая боль"), "должен быть пресет острой боли");
@@ -193,9 +200,24 @@ describe("AppointmentModal", () => {
 				...mockDashboard.clinicSettings,
 				profile: { mode: "standard", timezone: "Europe/Moscow" },
 				staff: [
-					{ id: "doc-1", fullName: "Д-р Смирнов", role: "doctor", active: true },
-					{ id: "doc-2", fullName: "Д-р Кузнецов", role: "doctor", active: true },
-					{ id: "ast-1", fullName: "Асс. Сидорова", role: "assistant", active: true },
+					{
+						id: "doc-1",
+						fullName: "Д-р Смирнов",
+						role: "doctor",
+						active: true,
+					},
+					{
+						id: "doc-2",
+						fullName: "Д-р Кузнецов",
+						role: "doctor",
+						active: true,
+					},
+					{
+						id: "ast-1",
+						fullName: "Асс. Сидорова",
+						role: "assistant",
+						active: true,
+					},
 				],
 				chairs: [
 					{ id: "chair-1", name: "Кабинет 1", active: true },
@@ -254,5 +276,104 @@ describe("AppointmentModal", () => {
 			"Save button must never be disabled when patient and time are selected",
 		);
 	});
-});
 
+	it("renders 1-click blank contract button and clean 1-row toolbar with more actions popover per Mandates 8e, 8p", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(AppointmentModal, {
+				isOpen: true,
+				appointment: mockAppointment,
+				dashboard: mockDashboard as Dashboard,
+				onClose: () => {},
+				onSave: async () => true,
+				repeatAppointment: () => {},
+				copyAppointmentToBuffer: () => {},
+				patientName: () => "Иванов Иван",
+				formatTime: () => "10:00",
+				toDateTimeLocalValue: () => "2026-08-21T10:00",
+				fromDateTimeLocalValue: () => "2026-08-21T10:00:00.000Z",
+				appointmentLabels: mockLabels,
+				activeVisitLockedAppointmentStatuses: new Set<Appointment["status"]>(),
+			}),
+		);
+
+		// 1-Click Blank contract button in header (Mandate 8e item 8)
+		assert.ok(
+			html.includes('data-testid="appointment-modal-print-blank-contract-btn"'),
+			"Must render 1-click blank contract print button",
+		);
+		assert.ok(
+			!html.includes(
+				'data-testid="appointment-modal-print-blank-contract-btn" disabled',
+			),
+			"Blank contract button must never be disabled",
+		);
+		assert.ok(
+			html.includes("Бланк договора"),
+			"Must display blank contract label",
+		);
+
+		// More actions menu (Hick / Miller: Mandate 8p)
+		assert.ok(
+			html.includes('data-testid="appointment-modal-more-actions-btn"'),
+			"Must render ... more actions button",
+		);
+		assert.ok(
+			html.includes('data-testid="appointment-modal-print-blank-consent-btn"'),
+			"Must contain blank consent in more menu",
+		);
+		assert.ok(
+			html.includes(
+				'data-testid="appointment-modal-menu-print-blank-contract-btn"',
+			),
+			"Must contain blank contract in more menu",
+		);
+		assert.ok(
+			html.includes('data-testid="appointment-modal-repeat-btn"'),
+			"Must contain repeat appointment action",
+		);
+		assert.ok(
+			html.includes('data-testid="appointment-modal-copy-btn"'),
+			"Must contain copy to buffer action",
+		);
+	});
+
+	it("renders blank contract button for unassigned walk-in patient without passport or SNILS", () => {
+		const walkInAppt: Appointment = {
+			...mockAppointment,
+			id: "appt-walkin-1",
+			patientId: null,
+			doctorUserId: "doc-1",
+		};
+		const emptyDashboard: any = {
+			...mockDashboard,
+			patients: [],
+		};
+		const html = renderToStaticMarkup(
+			React.createElement(AppointmentModal, {
+				isOpen: true,
+				appointment: walkInAppt,
+				dashboard: emptyDashboard as Dashboard,
+				onClose: () => {},
+				onSave: async () => true,
+				patientName: () => "",
+				formatTime: () => "10:00",
+				toDateTimeLocalValue: () => "2026-08-21T10:00",
+				fromDateTimeLocalValue: () => "2026-08-21T10:00:00.000Z",
+				appointmentLabels: mockLabels,
+				activeVisitLockedAppointmentStatuses: new Set<Appointment["status"]>(),
+			}),
+		);
+
+		// Blank contract button must be present and clickable even for walk-in patient without data
+		assert.ok(
+			html.includes('data-testid="appointment-modal-print-blank-contract-btn"'),
+			"Must render blank contract print button even when patient is null",
+		);
+		assert.ok(
+			!html.includes(
+				'data-testid="appointment-modal-print-blank-contract-btn" disabled',
+			),
+			"Blank contract button must not be disabled for walk-in patient",
+		);
+	});
+});
