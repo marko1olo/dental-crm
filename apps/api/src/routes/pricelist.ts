@@ -13,6 +13,7 @@ import {
 import {
 	createServiceCatalogItemInDb,
 	getServiceCatalogForOrganization,
+	seedBaseline804nServicesInDb,
 	updateServiceCatalogItemInDb,
 } from "../db/pricelistQuery.js";
 import { analyzePricelist } from "../pricelist/analyzer.js";
@@ -223,4 +224,45 @@ export async function registerPricelistRoutes(app: FastifyInstance) {
 				.send(priceListIngestionResponseSchema.parse(ingestionResult));
 		},
 	);
+
+	/**
+	 * 1-клик быстрое наполнение прейскуранта базовым набором 804н (30 услуг).
+	 * Доступно для соло-врача и клиники (Мандаты 8e, 8k, 8n).
+	 */
+	app.post(
+		"/api/pricelist/seed-baseline-804n",
+		async (request, reply) => {
+			if (
+				!(await requireClinicalMutationAccess(
+					request,
+					reply,
+					"pricelist seed baseline",
+				))
+			) {
+				return;
+			}
+
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"pricelist seed baseline",
+			);
+			if (!orgId) return;
+
+			const body = (request.body as { replace?: boolean } | null) || {};
+			const replace = Boolean(body.replace);
+
+			try {
+				const result = await seedBaseline804nServicesInDb(orgId, { replace });
+				return reply.code(200).send(result);
+			} catch (error) {
+				request.log.error({ err: error }, "Ошибка при наполнении базового прейскуранта 804н");
+				return reply.code(500).send({
+					error: "PricelistSeedBaselineError",
+					message: (error as Error).message || "Не удалось наполнить базовый прейскурант 804н",
+				});
+			}
+		},
+	);
 }
+

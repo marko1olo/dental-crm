@@ -9,6 +9,20 @@
  * - Мандату 8e: Автономия врача (1-клик шаблоны, мгновенная норма)
  */
 
+import type { DentalSpecialty, ServiceCategory } from "@dental/shared";
+
+export interface Baseline804nServiceDefinition {
+	readonly code: string;
+	readonly title: string;
+	readonly category: ServiceCategory;
+	readonly specialty: DentalSpecialty;
+	readonly basePriceRub: number;
+	readonly basePriceKopecks: number;
+	readonly durationMinutes: number;
+	readonly taxDeductible: boolean;
+	readonly active: boolean;
+}
+
 export interface Statutory804nItem {
 	readonly code: string;
 	readonly name: string;
@@ -695,3 +709,354 @@ export function getStatutoryEmrTemplates(options?: { q?: string; category?: stri
 	}
 	return list;
 }
+
+/**
+ * 4. БАЗОВЫЙ ПРЕЙСКУРАНТ РФ (ПРИКАЗ 804Н) — 30 ЭТАЛОННЫХ УСЛУГ (МАНДАТЫ 8e, 8k, 8n)
+ * 
+ * Точные рыночные цены в рублях и копейках (Мандат 8b) для быстрого старта соло-врача
+ * и клиник без ручного вбивания сотен строк.
+ */
+export const BASELINE_804N_PRICELIST_SERVICES: readonly Baseline804nServiceDefinition[] = [
+	// ─── 1. ТЕРАПИЯ И АНЕСТЕЗИЯ ──────────────────────────────────────────
+	{
+		code: "A11.07.012",
+		title: "Инъекционное введение лекарственных препаратов в челюстно-лицевую область (инфильтрационная анестезия)",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 950,
+		basePriceKopecks: 95000,
+		durationMinutes: 15,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A11.07.010",
+		title: "Введение лекарственных препаратов в область периферического нерва (проводниковая анестезия)",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 1100,
+		basePriceKopecks: 110000,
+		durationMinutes: 15,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.002.009",
+		title: "Изоляция операционного поля (наложение коффердама / раббердама)",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 650,
+		basePriceKopecks: 65000,
+		durationMinutes: 15,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.002.010",
+		title: "Восстановление зуба пломбой при лечении поверхностного кариеса (светоотверждаемый композит)",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 3500,
+		basePriceKopecks: 350000,
+		durationMinutes: 30,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.002.011",
+		title: "Восстановление зуба пломбой при лечении среднего кариеса (светоотверждаемый композит)",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 4200,
+		basePriceKopecks: 420000,
+		durationMinutes: 45,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.002.012",
+		title: "Восстановление зуба пломбой при лечении глубокого кариеса с наложением лечебной прокладки",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 4800,
+		basePriceKopecks: 480000,
+		durationMinutes: 45,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.030.001",
+		title: "Инструментальная и медикаментозная обработка 1 корневого канала",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 2100,
+		basePriceKopecks: 210000,
+		durationMinutes: 30,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.030.002",
+		title: "Инструментальная и медикаментозная обработка 2 корневых каналов",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 3800,
+		basePriceKopecks: 380000,
+		durationMinutes: 45,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.030.003",
+		title: "Инструментальная и медикаментозная обработка 3 корневых каналов",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 5200,
+		basePriceKopecks: 520000,
+		durationMinutes: 60,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.030.004",
+		title: "Инструментальная и медикаментозная обработка 4 корневых каналов",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 6500,
+		basePriceKopecks: 650000,
+		durationMinutes: 60,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.008.002",
+		title: "Пломбирование корневого канала зуба гуттаперчевыми штифтами (1 канал)",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 2400,
+		basePriceKopecks: 240000,
+		durationMinutes: 30,
+		taxDeductible: true,
+		active: true,
+	},
+
+	// ─── 2. ОРТОПЕДИЯ И ПРОТЕЗИРОВАНИЕ ───────────────────────────────────
+	{
+		code: "A16.07.006.004",
+		title: "Восстановление зуба коронкой из диоксида циркония",
+		category: "prosthetics",
+		specialty: "orthopedist",
+		basePriceRub: 25000,
+		basePriceKopecks: 2500000,
+		durationMinutes: 60,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.006.002",
+		title: "Восстановление зуба коронкой металлокерамической",
+		category: "prosthetics",
+		specialty: "orthopedist",
+		basePriceRub: 14500,
+		basePriceKopecks: 1450000,
+		durationMinutes: 60,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.003.001",
+		title: "Восстановление зуба керамической вкладкой / виниром (E.max)",
+		category: "prosthetics",
+		specialty: "orthopedist",
+		basePriceRub: 24000,
+		basePriceKopecks: 2400000,
+		durationMinutes: 60,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A02.07.010.001",
+		title: "Снятие оттиска с одной челюсти эластомерным материалом (А-силикон)",
+		category: "prosthetics",
+		specialty: "orthopedist",
+		basePriceRub: 2500,
+		basePriceKopecks: 250000,
+		durationMinutes: 20,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.053",
+		title: "Фиксация на постоянный цемент несъемных ортопедических конструкций (1 единица)",
+		category: "prosthetics",
+		specialty: "orthopedist",
+		basePriceRub: 1500,
+		basePriceKopecks: 150000,
+		durationMinutes: 20,
+		taxDeductible: true,
+		active: true,
+	},
+
+	// ─── 3. ХИРУРГИЯ ─────────────────────────────────────────────────────
+	{
+		code: "A16.07.001.001",
+		title: "Удаление постоянного зуба простое",
+		category: "surgery",
+		specialty: "surgeon",
+		basePriceRub: 3200,
+		basePriceKopecks: 320000,
+		durationMinutes: 30,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.001.002",
+		title: "Удаление зуба сложное с разъединением корней",
+		category: "surgery",
+		specialty: "surgeon",
+		basePriceRub: 5500,
+		basePriceKopecks: 550000,
+		durationMinutes: 45,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.001.003",
+		title: "Операция удаления ретинированного, дистопированного зуба (8-й зуб)",
+		category: "surgery",
+		specialty: "surgeon",
+		basePriceRub: 8500,
+		basePriceKopecks: 850000,
+		durationMinutes: 60,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.097",
+		title: "Наложение шва на слизистую оболочку рта при хирургических операциях",
+		category: "surgery",
+		specialty: "surgeon",
+		basePriceRub: 900,
+		basePriceKopecks: 90000,
+		durationMinutes: 15,
+		taxDeductible: true,
+		active: true,
+	},
+
+	// ─── 4. ПРОФГИГИЕНА И ПРОФИЛАКТИКА ────────────────────────────────────
+	{
+		code: "A16.07.051.001",
+		title: "Ультразвуковое удаление наддесневых и поддесневых зубных отложений (УЗ-скейлинг)",
+		category: "hygiene",
+		specialty: "hygienist",
+		basePriceRub: 3500,
+		basePriceKopecks: 350000,
+		durationMinutes: 30,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.051",
+		title: "Снятие пигментированного зубного налета аппаратом Air-Flow",
+		category: "hygiene",
+		specialty: "hygienist",
+		basePriceRub: 2500,
+		basePriceKopecks: 250000,
+		durationMinutes: 30,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A11.07.024",
+		title: "Глубокое фторирование эмали зубов (реминерализующая терапия)",
+		category: "hygiene",
+		specialty: "hygienist",
+		basePriceRub: 1200,
+		basePriceKopecks: 120000,
+		durationMinutes: 20,
+		taxDeductible: true,
+		active: true,
+	},
+
+	// ─── 5. ИМПЛАНТАЦИЯ ──────────────────────────────────────────────────
+	{
+		code: "A16.07.054",
+		title: "Внутрикостная дентальная имплантация (установка дентального имплантата)",
+		category: "surgery",
+		specialty: "implantologist",
+		basePriceRub: 35000,
+		basePriceKopecks: 3500000,
+		durationMinutes: 60,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.055",
+		title: "Установка формирователя десны на дентальный имплантат",
+		category: "surgery",
+		specialty: "implantologist",
+		basePriceRub: 4500,
+		basePriceKopecks: 450000,
+		durationMinutes: 30,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.07.006.007",
+		title: "Протезирование с использованием индивидуального циркониевого абатмента",
+		category: "prosthetics",
+		specialty: "orthopedist",
+		basePriceRub: 12000,
+		basePriceKopecks: 1200000,
+		durationMinutes: 45,
+		taxDeductible: true,
+		active: true,
+	},
+
+	// ─── 6. КОНСУЛЬТАЦИИ, ДИАГНОСТИКА И МАНИПУЛЯЦИИ ───────────────────────
+	{
+		code: "B01.065.001",
+		title: "Прием (осмотр, консультация) врача-стоматолога-терапевта первичный",
+		category: "consultation",
+		specialty: "therapist",
+		basePriceRub: 1000,
+		basePriceKopecks: 100000,
+		durationMinutes: 30,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A06.07.003",
+		title: "Прицельная внутриротовая контактная радиовизиография",
+		category: "imaging",
+		specialty: "radiologist",
+		basePriceRub: 650,
+		basePriceKopecks: 65000,
+		durationMinutes: 10,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A06.07.004",
+		title: "Ортопантомография челюстей (панорамный снимок ОПТГ)",
+		category: "imaging",
+		specialty: "radiologist",
+		basePriceRub: 1400,
+		basePriceKopecks: 140000,
+		durationMinutes: 15,
+		taxDeductible: true,
+		active: true,
+	},
+	{
+		code: "A16.01.008",
+		title: "Снятие послеоперационных швов (лигатур)",
+		category: "surgery",
+		specialty: "surgeon",
+		basePriceRub: 500,
+		basePriceKopecks: 50000,
+		durationMinutes: 15,
+		taxDeductible: true,
+		active: true,
+	},
+];
+

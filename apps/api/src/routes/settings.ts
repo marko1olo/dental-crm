@@ -28,6 +28,7 @@ import { db } from "../db/client.js";
 import {
 	createServiceCatalogItemInDb,
 	deactivateServiceCatalogItemInDb,
+	seedBaseline804nServicesInDb,
 	ServiceCatalogItemNotFoundError,
 	ServiceCatalogStorageDisabledError,
 	updateServiceCatalogItemInDb,
@@ -1652,6 +1653,30 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
 				serviceCatalogCreateNotFoundMessage,
 				serviceCatalogCreateValidationMessage,
 				"ServiceCatalogCreate",
+			);
+		}
+	});
+
+	/**
+	 * 1-клик быстрое наполнение каталога базовыми услугами 804н (30 услуг).
+	 * Доступно для соло-врача и клиник (Мандаты 8e, 8k, 8n).
+	 */
+	app.post("/api/settings/catalog-seed-baseline", async (request, reply) => {
+		const orgId = await requireSettingsAccess(request, reply);
+		if (!orgId) return;
+		const body = (request.body as { replace?: boolean } | null) || {};
+		const replace = Boolean(body.replace);
+		try {
+			const result = await seedBaseline804nServicesInDb(orgId, { replace });
+			reply.code(200);
+			return result;
+		} catch (error) {
+			return serviceCatalogMutationRejection(
+				reply,
+				error,
+				serviceCatalogCreateNotFoundMessage,
+				serviceCatalogCreateValidationMessage,
+				"ServiceCatalogSeedBaseline",
 			);
 		}
 	});

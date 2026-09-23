@@ -44,6 +44,7 @@ import { and, eq } from "drizzle-orm";
  * текстов отказа по кабинету клиники (utils/clinicSessionRefusal.ts).
  */
 import { schemaIssueWords } from "../utils/schemaRefusalWords.js";
+import { BASELINE_804N_PRICELIST_SERVICES } from "../services/clinical/statutoryCatalogs.js";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 
@@ -460,3 +461,79 @@ export async function deactivateServiceCatalogItemInDb(
 	if (!row) throw new ServiceCatalogItemNotFoundError();
 	return projectSingleRow(row);
 }
+
+/**
+ * 1-клик быстрое наполнение прейскуранта клиники базовым набором по Приказу Минздрава РФ № 804н (30 услуг).
+ * Соответствует Мандатам 8b (суммы точны до копейки), 8e (автономия врача), 8k (снижение трения), 8n (соло-врач).
+ */
+export async function seedBaseline804nServicesInDb(
+	organizationId: string,
+	options: { replace?: boolean } = {},
+): Promise<{
+	success: true;
+	createdCount: number;
+	skippedCount: number;
+	totalBaseline: number;
+	items: ServiceCatalogItem[];
+}> {
+	if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
+
+	const existingCatalog = await getServiceCatalogForOrganization(organizationId);
+	const existingCodes = new Set(
+		existingCatalog
+			.map((item) => (item.code || "").trim().toUpperCase())
+			.filter(Boolean),
+	);
+	const existingTitles = new Set(
+		existingCatalog.map((item) => item.title.trim().toLowerCase()),
+	);
+
+	if (options.replace && existingCatalog.length > 0) {
+		await db
+			.update(schema.serviceCatalogItems)
+			.set({ isActive: false })
+			.where(eq(schema.serviceCatalogItems.organizationId, organizationId));
+		existingCodes.clear();
+		existingTitles.clear();
+	}
+
+	const createdItems: ServiceCatalogItem[] = [];
+	let skippedCount = 0;
+
+	for (const baseline of BASELINE_804N_PRICELIST_SERVICES) {
+		const normCode = baseline.code.trim().toUpperCase();
+		const normTitle = baseline.title.trim().toLowerCase();
+
+		if (!options.replace && (existingCodes.has(normCode) || existingTitles.has(normTitle))) {
+			skippedCount++;
+			continue;
+		}
+
+		try {
+			const item = await createServiceCatalogItemInDb(organizationId, {
+				code: baseline.code,
+				title: baseline.title,
+				category: baseline.category,
+				specialty: baseline.specialty,
+				basePriceRub: baseline.basePriceRub,
+				durationMinutes: baseline.durationMinutes,
+				taxDeductible: baseline.taxDeductible,
+				active: baseline.active,
+			});
+			createdItems.push(item);
+			existingCodes.add(normCode);
+			existingTitles.add(normTitle);
+		} catch (err) {
+			console.warn(`[pricelist] Не удалось посеять услугу ${baseline.code}:`, err);
+		}
+	}
+
+	return {
+		success: true,
+		createdCount: createdItems.length,
+		skippedCount,
+		totalBaseline: BASELINE_804N_PRICELIST_SERVICES.length,
+		items: createdItems,
+	};
+}
+

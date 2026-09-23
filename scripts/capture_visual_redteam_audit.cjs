@@ -23,7 +23,7 @@ const crypto = require("node:crypto");
 const API_BASE = "http://127.0.0.1:4100";
 const WEB_BASE = "http://127.0.0.1:5173";
 const OUT_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/visual_redteam_audit");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/6bb841e9-b059-4bbc-86ae-f6a04ed8ca59/screenshots");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/e1164d8d-2730-485e-9afe-aa0a260df89f/screenshots");
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 fs.mkdirSync(BRAIN_DIR, { recursive: true });
@@ -212,7 +212,7 @@ async function runAuditCapture() {
             selectedPatientId: pid,
             onboardingDismissed: true,
             onboardingStep: "done",
-            scheduleDateFilter: "2026-09-22",
+            scheduleDateFilter: "",
           })
         );
         localStorage.setItem(
@@ -256,12 +256,17 @@ async function runAuditCapture() {
     const targetFile = path.join(OUT_DIR, fileName);
     const brainFile = path.join(BRAIN_DIR, fileName);
 
-    await page.waitForSelector(".boot-state", { state: "detached", timeout: 35000 });
-    await page.waitForSelector(".app-shell", { state: "visible", timeout: 35000 });
-    await page.waitForTimeout(1000);
-    await page.screenshot({ path: targetFile, fullPage: false });
-
-    fs.copyFileSync(targetFile, brainFile);
+    console.log(`[takeProof:start] ${fileName}...`);
+    await page.waitForSelector(".boot-state", { state: "detached", timeout: 15000 }).catch(() => {});
+    await page.waitForSelector(".app-shell", { state: "visible", timeout: 15000 }).catch(() => {});
+    await page.waitForTimeout(500);
+    console.log(`[takeProof:calling page.screenshot] ${fileName}...`);
+    const buffer = await page.screenshot({ timeout: 15000, fullPage: false, animations: "disabled" });
+    console.log(`[takeProof:screenshot done] ${fileName} (${buffer.length} bytes)`);
+    fs.writeFileSync(targetFile, buffer);
+    try {
+      fs.writeFileSync(brainFile, buffer);
+    } catch (_) {}
 
     const stats = fs.statSync(targetFile);
     const hash = crypto.createHash("md5").update(fs.readFileSync(targetFile)).digest("hex");
@@ -293,8 +298,8 @@ async function runAuditCapture() {
   const SAMPLE_804N_TEXT = `A16.07.002.001 Наложение световой пломбы Estelite 4 500 руб\nЛечение глубокого кариеса 3500 ₽\nУдаление зуба мудрости сложное 5 200 ₽\nУстановка имплантата Straumann SLA 38000 руб\nКоронка из диоксида циркония 18000 руб\nАнестезия Убистезин 700 р`;
 
   const suites = [
-    { viewportName: "desktop", width: 1440, height: 900, isMobile: false, hasTouch: false, scale: 2 },
-    { viewportName: "mobile", width: 390, height: 844, isMobile: true, hasTouch: true, scale: 2 },
+    { viewportName: "desktop", width: 1440, height: 900, isMobile: false, hasTouch: false, scale: 1 },
+    { viewportName: "mobile", width: 390, height: 844, isMobile: true, hasTouch: true, scale: 1 },
   ];
 
   for (const suite of suites) {
@@ -314,6 +319,12 @@ async function runAuditCapture() {
       });
       await addAuthInitScript(context);
       const page = await context.newPage();
+      page.on("pageerror", (err) => console.error(`[BROWSER PAGE ERROR]`, err.message || err));
+      page.on("console", (msg) => {
+        if (msg.type() === "error") {
+          console.error(`[BROWSER LOG ERROR] ${msg.text()}`);
+        }
+      });
 
       // Initial Navigation to #schedule
       await page.goto(`${WEB_BASE}/#schedule`, { waitUntil: "domcontentloaded", timeout: 45000 });

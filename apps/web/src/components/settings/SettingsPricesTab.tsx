@@ -34,7 +34,11 @@ import {
 	staffMutationHeaders,
 } from "./staffMutationRequest";
 import { ServicePricelistManagerModal } from "../catalog/pricelist/ServicePricelistManagerModal";
-import type { ServicePricelistItem } from "../catalog/pricelist/servicePricelistPresets";
+import {
+	BASELINE_804N_PRICELIST_SERVICES,
+	type ServicePricelistItem,
+} from "../catalog/pricelist/servicePricelistPresets";
+import { showToast } from "../GlobalToast";
 import { sliceDomList } from "../../utils/domVirtualizationHelper";
 
 // biome-ignore lint/correctness/noUnusedVariables: automated suppression
@@ -179,6 +183,7 @@ export function SettingsPricesTab() {
 	const [deletingServiceId, setDeletingServiceId] = useState<string | null>(
 		null,
 	);
+	const [isSeedingBaseline, setIsSeedingBaseline] = useState(false);
 
 	const [isImporting, setIsImporting] = useState(false);
 	const [importResult, setImportResult] = useState<{
@@ -439,6 +444,62 @@ export function SettingsPricesTab() {
 		}
 	};
 
+	const handleSeedBaseline804n = async (replace = false) => {
+		if (isSeedingBaseline) return;
+		setIsSeedingBaseline(true);
+		try {
+			let seededCount = 0;
+			let apiSucceeded = false;
+			try {
+				const headers = staffMutationHeaders(
+					(mergedProps.accessHeaders as SettingsAccessHeaders | undefined) ??
+						(appLogic?.accessHeaders as SettingsAccessHeaders | undefined),
+				);
+				const response = await fetch("/api/pricelist/seed-baseline-804n", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...headers,
+					},
+					body: JSON.stringify({ replace }),
+				});
+				if (response.ok) {
+					const data = await response.json();
+					seededCount = data.createdCount ?? 30;
+					apiSucceeded = true;
+				}
+			} catch (fetchErr) {
+				console.warn("[pricelist] fetch /api/pricelist/seed-baseline-804n fallback to client loop:", fetchErr);
+			}
+
+			if (!apiSucceeded) {
+				await handleSaveCatalog(BASELINE_804N_PRICELIST_SERVICES);
+				seededCount = BASELINE_804N_PRICELIST_SERVICES.length;
+			}
+
+			if (typeof mergedProps.refreshDashboard === "function") {
+				await mergedProps.refreshDashboard();
+			} else if (typeof appLogic?.refreshDashboard === "function") {
+				await appLogic.refreshDashboard();
+			} else if (typeof appLogic?.loadClinicSettings === "function") {
+				await appLogic.loadClinicSettings();
+			}
+
+			showToast(
+				seededCount > 0
+					? `Базовый прейскурант 804н успешно заполнен (${seededCount} услуг)`
+					: "Базовый прейскурант 804н актуален (услуги уже присутствуют в каталоге)",
+				"success",
+			);
+			setIs804nCodesMenuOpen(false);
+		} catch (error: any) {
+			console.error("[pricelist] Ошибка наполнения базового прейскуранта 804н:", error);
+			showToast(error?.message || "Не удалось наполнить базовый прейскурант 804н", "error");
+		} finally {
+			setIsSeedingBaseline(false);
+		}
+	};
+
 	return (
 		<div className="pricelist-studio-container animate-fade-in">
 			<div className="pricelist-tabs-header">
@@ -543,6 +604,23 @@ export function SettingsPricesTab() {
 												<span>{chip.label}</span>
 											</button>
 										))}
+									</div>
+									<div className="mt-1.5 pt-1.5 border-t border-[var(--line)]">
+										<button
+											type="button"
+											data-testid="pricelist-seed-baseline-804n-btn"
+											disabled={isSeedingBaseline}
+											onClick={() => handleSeedBaseline804n(false)}
+											className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-white text-[var(--teal-dark)] transition-all cursor-pointer flex items-center gap-2 group disabled:opacity-50"
+										>
+											<Sparkles size={14} className="shrink-0 text-[var(--teal)] group-hover:text-white" />
+											<div className="flex flex-col min-w-0">
+												<span className="font-bold truncate">
+													{isSeedingBaseline ? "Наполнение каталога..." : "Заполнить базовый 804н (30 услуг)"}
+												</span>
+												<span className="text-[10px] opacity-80 truncate">Добавить недостающие типовые услуги с ценами</span>
+											</div>
+										</button>
 									</div>
 									{searchQuery && (
 										<button
@@ -743,29 +821,75 @@ export function SettingsPricesTab() {
 							);
 						})}
 						{Object.keys(groupedCatalog).length === 0 && (
-							<div className="empty-catalog-state">
-								{/* БЫЛО: color="var(--border)". Имени --border нет ни в одном файле
-								    стилей — есть --line, --line-strong и псевдонимы
-								    --border-default/--border-subtle (styles/token-aliases.css).
-								    Недействительное значение у наследуемого свойства color
-								    означает «наследовать», поэтому значок брал цвет текста
-								    родителя (--muted) и в пустом состоянии весил больше самой
-								    надписи. Проверка scripts/check-css-tokens.mjs читает только
-								    .css и инлайновые стили в TSX не видит — отсюда и жило. */}
-								<FolderTree size={48} color="var(--line-strong)" />
-								{/* Пустота без подсказки — тупик: непонятно, каталог пуст или
-								    поиск ничего не нашёл, и что делать дальше. */}
-								<p>
-									{searchQuery.trim()
-										? `По запросу «${searchQuery.trim()}» ничего не найдено`
-										: "В каталоге клиники пока нет услуг"}
-								</p>
-								<small style={{ color: "var(--muted)", marginTop: "4px" }}>
-									{searchQuery.trim()
-										? "Проверьте написание или очистите поиск — возможно, услуга названа иначе."
-										: "Добавьте услугу кнопкой «Добавить услугу» или перенесите прайс целиком на вкладке «ИИ-Распознавание»."}
-								</small>
-							</div>
+							searchQuery.trim() ? (
+								<div className="empty-catalog-state">
+									<FolderTree size={48} color="var(--line-strong)" />
+									<p>По запросу «{searchQuery.trim()}» ничего не найдено</p>
+									<small style={{ color: "var(--muted)", marginTop: "4px" }}>
+										Проверьте написание или очистите поиск — возможно, услуга названа иначе.
+									</small>
+									<button
+										type="button"
+										onClick={() => setSearchQuery("")}
+										className="secondary-button min-h-[32px] px-3 py-1.5 text-xs font-medium rounded-lg mt-2 cursor-pointer"
+									>
+										Сбросить поиск
+									</button>
+								</div>
+							) : (
+								<div className="empty-catalog-state p-6 max-w-lg mx-auto my-6 bg-[var(--paper)] border border-[var(--line)] rounded-2xl shadow-sm text-center flex flex-col items-center gap-3">
+									<div className="w-12 h-12 rounded-full bg-[var(--teal-soft)] text-[var(--teal)] flex items-center justify-center shrink-0">
+										<Sparkles size={24} />
+									</div>
+									<div className="flex flex-col gap-1">
+										<h4 className="text-base font-bold text-[var(--ink)]">
+											Каталог услуг пуст
+										</h4>
+										<p className="text-xs text-[var(--muted)] leading-relaxed max-w-sm">
+											Быстро наполните прейскурант клиники 30 основными услугами по Приказу Минздрава РФ № 804н с рекомендованными ценами для соло-врача и небольших клиник (Мандаты 8e, 8n).
+										</p>
+									</div>
+									<div className="flex flex-col sm:flex-row items-center gap-2 mt-2 w-full justify-center">
+										<button
+											type="button"
+											data-testid="pricelist-seed-baseline-804n-btn"
+											disabled={isSeedingBaseline}
+											onClick={() => handleSeedBaseline804n(false)}
+											className="primary-button min-h-[36px] w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
+										>
+											<Sparkles size={15} className="shrink-0" />
+											<span>
+												{isSeedingBaseline
+													? "Наполнение каталога..."
+													: "Заполнить рекомендованный прейскурант 804н (30 базовых услуг)"}
+											</span>
+										</button>
+									</div>
+									<div className="flex items-center gap-3 mt-1 text-[11px] text-[var(--muted)]">
+										<span>или</span>
+										<button
+											type="button"
+											onClick={() => {
+												setEditServiceForm(NEW_SERVICE_TEMPLATE);
+												setPriceRubInput("");
+												setPriceProblem(null);
+												setEditServiceId("new");
+											}}
+											className="text-[var(--teal)] hover:underline font-semibold cursor-pointer"
+										>
+											добавить услугу вручную
+										</button>
+										<span>•</span>
+										<button
+											type="button"
+											onClick={() => setActiveTab("ai_import")}
+											className="text-[var(--teal)] hover:underline font-semibold cursor-pointer"
+										>
+											ИИ-импорт из файла
+										</button>
+									</div>
+								</div>
+							)
 						)}
 					</div>
 				</section>
