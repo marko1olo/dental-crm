@@ -802,7 +802,7 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 					{onCancel && (
 						<button
 							type="button"
-							className="pricelist-diff-btn"
+							className="pricelist-diff-btn shrink-0 min-w-fit px-3 text-xs sm:text-sm"
 							onClick={onCancel}
 						>
 							Отмена
@@ -811,7 +811,7 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 
 					<button
 						type="button"
-						className="pricelist-diff-btn pricelist-diff-btn-primary"
+						className="pricelist-diff-btn pricelist-diff-btn-primary shrink-0 min-w-fit px-3 text-xs sm:text-sm"
 						onClick={() => {
 							if (isLoading) return;
 							const approved = items.filter((i) => i.isApproved);
@@ -827,10 +827,19 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 						}}
 						title="Загрузить все утверждённые услуги в каталог клиники"
 					>
-						<Check size={13} />
-						<span>
-							{isLoading ? 'Загрузка...' : `Загрузить в прейскурант (${items.filter((i) => i.isApproved).length || items.length})`}
-						</span>
+						<Check size={13} className="shrink-0" />
+						{isLoading ? (
+							<span>Загрузка...</span>
+						) : (
+							<span>
+								<span className="sm:hidden">
+									{`Загрузить (${items.filter((i) => i.isApproved).length || items.length})`}
+								</span>
+								<span className="hidden sm:inline">
+									{`Загрузить в прейскурант (${items.filter((i) => i.isApproved).length || items.length})`}
+								</span>
+							</span>
+						)}
 					</button>
 				</div>
 			</footer>

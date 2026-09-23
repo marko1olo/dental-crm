@@ -1341,8 +1341,17 @@ export function VisitEmkTab() {
 	const [isPriceSearchModalOpen, setIsPriceSearchModalOpen] =
 		React.useState(false);
 	const [priceSearchQuery, setPriceSearchQuery] = React.useState("");
+	const [debouncedPriceSearchQuery, setDebouncedPriceSearchQuery] = React.useState("");
 	const [selectedPriceCategory, setSelectedPriceCategory] =
 		React.useState<string>("all");
+
+	// Дебаунс 280 мс для поиска услуг 804н по прейскуранту без троттлинга UI и диска (Мандаты 8s, 8e)
+	React.useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedPriceSearchQuery(priceSearchQuery);
+		}, 280);
+		return () => clearTimeout(timer);
+	}, [priceSearchQuery]);
 
 	const DEFAULT_PRICE_SERVICES = React.useMemo(
 		() => [
@@ -1470,7 +1479,7 @@ export function VisitEmkTab() {
 	}, [dashboard?.serviceCatalog, DEFAULT_PRICE_SERVICES]);
 
 	const filteredPriceServices = React.useMemo(() => {
-		const rawQ = priceSearchQuery.trim().toLowerCase();
+		const rawQ = debouncedPriceSearchQuery.trim().toLowerCase();
 		const cleanQ = rawQ.replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, "");
 		return allPriceServices.filter((srv) => {
 			// When user types a search query (by 804n code or name), search globally across all categories
@@ -1492,12 +1501,12 @@ export function VisitEmkTab() {
 				srv.basePriceRub.toString().includes(rawQ)
 			);
 		});
-	}, [allPriceServices, priceSearchQuery, selectedPriceCategory]);
+	}, [allPriceServices, debouncedPriceSearchQuery, selectedPriceCategory]);
 
 	const [priceServicesLimit, setPriceServicesLimit] = React.useState(40);
 	React.useEffect(() => {
 		setPriceServicesLimit(40);
-	}, [priceSearchQuery, selectedPriceCategory]);
+	}, [debouncedPriceSearchQuery, selectedPriceCategory]);
 
 	const paginatedPriceServices = React.useMemo(() => {
 		return sliceDomList(filteredPriceServices, priceServicesLimit, 0);
@@ -2167,7 +2176,7 @@ export function VisitEmkTab() {
 
 				{/* ЛЕВАЯ ЧАСТЬ: Вкладки секций ЭМК (Все поля, Жалобы, Анамнез...) */}
 				<div
-					className="emk-tabs-container flex flex-nowrap items-center gap-1 overflow-x-auto scrollbar-none whitespace-nowrap min-w-max px-1 shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x"
+					className="emk-tabs-container flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth pb-1 px-1 min-w-0 shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x"
 					role="tablist"
 					aria-label="Вкладки протокола приема"
 				>
@@ -2181,7 +2190,7 @@ export function VisitEmkTab() {
 								type="button"
 								role="tab"
 								aria-selected={activeEmkTab === tab.id}
-								className={`emk-tab-button min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2.5 sm:px-2.5 py-0 text-xs font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center gap-1 shrink-0 flex-shrink-0 whitespace-nowrap min-w-max touch-manipulation ${
+								className={`emk-tab-button shrink-0 whitespace-nowrap text-xs sm:text-sm min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2.5 sm:px-2.5 py-0 font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center gap-1 touch-manipulation ${
 									activeEmkTab === tab.id
 										? "active bg-[var(--teal-fill,var(--teal))] text-white border-[var(--teal-fill,var(--teal))] shadow-2xs"
 										: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)]"
@@ -4447,7 +4456,7 @@ export function VisitEmkTab() {
 						</div>
 
 						{/* Category Filter Chips */}
-						<div className="flex items-center gap-1.5 overflow-x-auto pb-1 flex-nowrap scrollbar-thin">
+						<div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth pb-1 px-1 flex-nowrap scrollbar-thin">
 							{[
 								{ id: "all", label: "Все услуги" },
 								{ id: "therapy", label: "Терапия / Кариес" },
@@ -4461,7 +4470,7 @@ export function VisitEmkTab() {
 									key={cat.id}
 									type="button"
 									onClick={() => setSelectedPriceCategory(cat.id)}
-									className={`min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap border ${
+									className={`shrink-0 whitespace-nowrap text-xs sm:text-sm min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-3 py-1 rounded-lg font-bold transition-all cursor-pointer border ${
 										selectedPriceCategory === cat.id
 											? "bg-indigo-600 text-white border-indigo-700 shadow-xs"
 											: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"

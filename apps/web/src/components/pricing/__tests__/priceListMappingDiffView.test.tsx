@@ -368,4 +368,26 @@ describe('PriceListMappingDiffView (804n Statutory Diff-View & Ingestion)', () =
 		expect(html).toContain('Нет строк, соответствующих выбранному фильтру');
 		expect(html).toContain('Нет позиций для сопоставления');
 	});
+
+	it('renders responsive mobile footer action button with shrink-0 and adaptive text to prevent truncation (Mandates 8d, 8p)', () => {
+		const html = renderToString(
+			<PriceListMappingDiffView
+				items={MOCK_ITEMS}
+				existingCatalog={MOCK_CATALOG}
+			/>,
+		);
+
+		// Button must have shrink-0, min-w-fit and responsive text sizes
+		expect(html).toContain('pricelist-diff-btn-primary');
+		expect(html).toContain('shrink-0');
+		expect(html).toContain('min-w-fit');
+		expect(html).toContain('px-3');
+		expect(html).toContain('text-xs sm:text-sm');
+
+		// Adaptive mobile and desktop labels
+		expect(html).toContain('sm:hidden');
+		expect(html).toContain('hidden sm:inline');
+		expect(html).toContain('Загрузить (3)');
+		expect(html).toContain('Загрузить в прейскурант (3)');
+	});
 });
