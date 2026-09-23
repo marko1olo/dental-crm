@@ -467,11 +467,74 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			fullName: "Лечащий врач",
 			specialties: ["Стоматолог-терапевт"],
 		};
-	const [diary, setDiary] = useState<DiaryState>(EMPTY_DIARY);
-	const isSyncingToStoreRef = useRef(false);
-	const isSyncingFromStoreRef = useRef(false);
-	const lastSyncedStoreSigRef = useRef("");
-	const lastSyncedDiarySigRef = useRef("");
+	const [rawDiary, setRawDiary] = useState<DiaryState>(EMPTY_DIARY);
+	const diary = rawDiary;
+	const diaryRef = useRef(diary);
+	diaryRef.current = diary;
+
+	const activeVisit = appLogic?.dashboard?.activeVisit ?? null;
+	const openVisitId =
+		activeVisit && typeof activeVisit === "object" && "id" in activeVisit
+			? (activeVisit as { id?: unknown }).id
+			: undefined;
+	const isCurrentActiveVisit =
+		!openVisitId ||
+		typeof openVisitId !== "string" ||
+		openVisitId === visitId ||
+		realVisitFieldId(openVisitId) === visitId;
+
+	const hasHydratedFromStoreRef = useRef<string | null>(null);
+
+	// DEF-03 (Мандат 8s, 8t): Синхронизация дневника в useVisitStore при реальных изменениях
+	const syncDiaryToStore = useCallback(
+		(nextDiary: DiaryState) => {
+			if (!isCurrentActiveVisit) return;
+			const hasDiaryContent = Boolean(
+				nextDiary.anamnesis.trim() ||
+					nextDiary.statusLocalis.trim() ||
+					nextDiary.diagnosisIcd10.trim() ||
+					nextDiary.diagnosisTooth.trim() ||
+					nextDiary.treatmentDescription.trim(),
+			);
+			if (!hasDiaryContent) return;
+
+			const storeState = useVisitStore.getState();
+			const currentStoreForm = storeState.visitNoteForm ?? {};
+			const converted = visitNoteFromSoapDiary(nextDiary, currentStoreForm);
+			storeState.setVisitNoteForm((prev) => ({
+				...prev,
+				...converted,
+			}));
+			if (storeState.visitDraftUserEditedRef) {
+				storeState.visitDraftUserEditedRef.current = true;
+			}
+		},
+		[isCurrentActiveVisit],
+	);
+
+	// Безопасный сеттер diary: обновляет локальный state и store при реальных действиях
+	const setDiary: React.Dispatch<React.SetStateAction<DiaryState>> = useCallback(
+		(action: React.SetStateAction<DiaryState>) => {
+			const prev = diaryRef.current;
+			const next = typeof action === "function" ? action(prev) : action;
+			diaryRef.current = next;
+			setRawDiary(next);
+			syncDiaryToStore(next);
+		},
+		[syncDiaryToStore],
+	);
+
+	// Хелпер для точечного обновления поля дневника
+	const updateField = useCallback(
+		(field: keyof DiaryState, value: string) => {
+			setDiary((prev) => ({
+				...prev,
+				[field]: value,
+			}));
+		},
+		[setDiary],
+	);
+
 	const [diaryId, setDiaryId] = useState<string | null>(null);
 	const [isLocked, setIsLocked] = useState(false);
 	const [lockedAt, setLockedAt] = useState<string | null>(null);
@@ -580,8 +643,6 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	const authRef = useRef(auth);
 	authRef.current = auth;
 
-	const diaryRef = useRef(diary);
-	diaryRef.current = diary;
 	const trayBarcodeRef = useRef(trayBarcode);
 	trayBarcodeRef.current = trayBarcode;
 
@@ -605,7 +666,8 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	useEffect(() => {
 		let alive = true;
 
-		setDiary(EMPTY_DIARY);
+		setRawDiary(EMPTY_DIARY);
+		hasHydratedFromStoreRef.current = null;
 		setIcdSearch("");
 		setShowPreview(false);
 		setIsLocked(false);
@@ -685,17 +747,13 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					setDiaryDoctorSpecialty(null);
 					setLoadState({ phase: "empty" });
 
-					// DEF-03 (Мандат 8s): Если дневника на сервере ещё нет, но в store (ЭМК) уже есть набранный текст — гидрируем дневник сразу
+					// DEF-03 (Мандат 8s): Если дневника на сервере ещё нет, но в store (ЭМК) уже есть набранный текст — гидрируем дневник сразу (один раз)
 					const storeState = useVisitStore.getState();
 					const formFromStore = storeState.visitNoteForm ?? {};
 					const prefill = soapPrefillFromVisitNote(formFromStore);
 					if (Object.keys(prefill).length > 0) {
-						setDiary((prev) => ({ ...prev, ...prefill }));
-						lastSyncedDiarySigRef.current = computeDiarySig({
-							...EMPTY_DIARY,
-							...prefill,
-						});
-						lastSyncedStoreSigRef.current = computeStoreSig(formFromStore);
+						hasHydratedFromStoreRef.current = visitId;
+						setRawDiary((prev) => ({ ...prev, ...prefill }));
 						if (prefill.diagnosisIcd10) {
 							setIcdSearch((c) => (c.trim() ? c : (prefill.diagnosisIcd10 ?? c)));
 						}
@@ -713,8 +771,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					complications: d.complications ?? "",
 					comorbidities: d.comorbidities ?? "",
 				};
-				setDiary(loadedDiary);
-				lastSyncedDiarySigRef.current = computeDiarySig(loadedDiary);
+				setRawDiary(loadedDiary);
 
 				// DEF-03 (Мандат 8s): Синхронизация загруженного с сервера дневника в visitStore (ЭМК)
 				const storeState = useVisitStore.getState();
@@ -736,15 +793,10 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 						loadedDiary,
 						currentStoreForm,
 					);
-					isSyncingToStoreRef.current = true;
 					storeState.setVisitNoteForm((prev) => ({
 						...prev,
 						...convertedFromLoaded,
 					}));
-					lastSyncedStoreSigRef.current = computeStoreSig(
-						useVisitStore.getState().visitNoteForm,
-					);
-					isSyncingToStoreRef.current = false;
 				}
 				setTrayBarcode(
 					typeof d.instrumentTrayBarcode === "string" && d.instrumentTrayBarcode
@@ -862,40 +914,27 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	}, []);
 
 	/*
-	 * DEF-03 (Мандат 8s — Закон Единого Неделимого Авторитета):
-	 * Непрерывная двусторонняя синхронизация дневника 043/у между вкладками ЭМК и Одонтограммы.
-	 *
-	 * БЫЛО: Текст, набранный на вкладке «ЭМК» (VisitSoapEditor / DebouncedEmkTextarea),
-	 * оставался в useVisitStore, а VisitDiarySection на вкладке «Одонтограмма»
-	 * держал локальный state diary. Префилл происходил только один раз при пустом дневнике.
-	 * Врач вбивал данные на одной вкладке, переходил на другую — и видел пустоту или старый текст.
-	 *
-	 * СТАЛО:
-	 * 1. Sync A (store -> diary): любые изменения в visitNoteForm (ЭМК / шаблоны 448 / диктовка)
-	 *    мгновенно и реактивно отражаются в diary.
-	 * 2. Sync B (diary -> store): любые изменения в diary (Одонтограмма / пресеты / 1-клик норма)
-	 *    мгновенно и реактивно записываются в useVisitStore.visitNoteForm.
-	 * 3. Подпись (сигнатура) и directional lock защищают от зацикливания (feedback loop).
+	 * DEF-03 (Мандат 8s, 8t):
+	 * Безопасная однократная гидратация дневника при первой загрузке или смене визита:
+	 * если в useVisitStore есть данные, а дневник пуст — гидрируем дневник один раз (hasHydratedFromStoreRef).
+	 * Устранён слепой цикличный useEffect([visitNoteForm]) / useEffect([diary]), который приводил
+	 * к бесконечному state ping-pong между смонтированными вкладками ЭМК и Одонтограммы.
 	 */
-	const visitNoteForm = useVisitStore((s) => s.visitNoteForm);
-	const activeVisit = appLogic?.dashboard?.activeVisit ?? null;
-
-	const openVisitId =
-		activeVisit && typeof activeVisit === "object" && "id" in activeVisit
-			? (activeVisit as { id?: unknown }).id
-			: undefined;
-	const isCurrentActiveVisit =
-		!openVisitId ||
-		typeof openVisitId !== "string" ||
-		openVisitId === visitId ||
-		realVisitFieldId(openVisitId) === visitId;
-
-	// Sync A: Store (visitNoteForm) -> Diary (diary)
 	useEffect(() => {
+		if (loadState.phase !== "empty") return;
+		if (hasHydratedFromStoreRef.current === visitId) return;
 		if (!isCurrentActiveVisit) return;
-		if (isSyncingToStoreRef.current) return;
 
-		const formFromStore = visitNoteForm ?? {};
+		const isDiaryEmpty = !Object.values(diaryRef.current).some(
+			(v) => typeof v === "string" && v.trim().length > 0,
+		);
+		if (!isDiaryEmpty) {
+			hasHydratedFromStoreRef.current = visitId;
+			return;
+		}
+
+		const storeState = useVisitStore.getState();
+		const formFromStore = storeState.visitNoteForm ?? {};
 		const visitRow =
 			activeVisit && typeof activeVisit === "object"
 				? (activeVisit as Record<string, unknown>)
@@ -922,110 +961,29 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			treatmentPlan: pick("treatmentPlan"),
 		};
 
-		const currentStoreSig = computeStoreSig(effectiveForm);
-		if (currentStoreSig === lastSyncedStoreSigRef.current) return;
-		lastSyncedStoreSigRef.current = currentStoreSig;
+		const prefill = soapPrefillFromVisitNote(effectiveForm);
+		if (Object.keys(prefill).length === 0) return;
 
-		const hasContent = Object.values(effectiveForm).some(
-			(v) => typeof v === "string" && v.trim().length > 0,
-		);
-		if (
-			!hasContent &&
-			(loadState.phase === "ready" || loadState.phase === "loading")
-		) {
-			return;
-		}
-
-		const converted = soapDiaryFromVisitNote(effectiveForm);
-		isSyncingFromStoreRef.current = true;
-		setDiary((prev) => {
-			const nextAnamnesis = converted.anamnesis ?? "";
-			const nextStatusLocalis = converted.statusLocalis ?? "";
-			const nextDiagnosisIcd = converted.diagnosisIcd10 ?? "";
-			const nextDiagnosisTooth = converted.diagnosisTooth ?? "";
-			const nextTreatment = converted.treatmentDescription ?? "";
-
-			const isDiff =
-				prev.anamnesis !== nextAnamnesis ||
-				prev.statusLocalis !== nextStatusLocalis ||
-				(nextDiagnosisIcd && prev.diagnosisIcd10 !== nextDiagnosisIcd) ||
-				(nextDiagnosisTooth && prev.diagnosisTooth !== nextDiagnosisTooth) ||
-				prev.treatmentDescription !== nextTreatment;
-
-			if (!isDiff) {
-				return prev;
-			}
-
-			const next: DiaryState = {
-				...prev,
-				anamnesis: nextAnamnesis,
-				statusLocalis: nextStatusLocalis,
-				diagnosisIcd10: nextDiagnosisIcd || prev.diagnosisIcd10,
-				diagnosisTooth: nextDiagnosisTooth || prev.diagnosisTooth,
-				treatmentDescription: nextTreatment,
-			};
-			lastSyncedDiarySigRef.current = computeDiarySig(next);
-			return next;
+		hasHydratedFromStoreRef.current = visitId;
+		setRawDiary((prev) => {
+			let changed = false;
+			const next: DiaryState = { ...prev };
+			(Object.keys(prefill) as Array<keyof DiaryState>).forEach((key) => {
+				const incoming = prefill[key];
+				if (typeof incoming !== "string" || !incoming) return;
+				if ((prev[key] ?? "").trim()) return;
+				next[key] = incoming;
+				changed = true;
+			});
+			return changed ? next : prev;
 		});
 
-		if (converted.diagnosisIcd10) {
+		if (prefill.diagnosisIcd10) {
 			setIcdSearch((current) =>
-				current.trim() ? current : (converted.diagnosisIcd10 ?? current),
+				current.trim() ? current : (prefill.diagnosisIcd10 ?? current),
 			);
 		}
-		isSyncingFromStoreRef.current = false;
-	}, [visitNoteForm, isCurrentActiveVisit, loadState.phase, activeVisit]);
-
-	// Sync B: Diary (diary) -> Store (visitNoteForm)
-	useEffect(() => {
-		if (!isCurrentActiveVisit) return;
-		if (isSyncingFromStoreRef.current) return;
-		if (loadState.phase === "loading") return;
-
-		const currentDiarySig = computeDiarySig(diary);
-		if (currentDiarySig === lastSyncedDiarySigRef.current) return;
-		lastSyncedDiarySigRef.current = currentDiarySig;
-
-		const hasDiaryContent = Boolean(
-			diary.anamnesis.trim() ||
-				diary.statusLocalis.trim() ||
-				diary.diagnosisIcd10.trim() ||
-				diary.treatmentDescription.trim(),
-		);
-		if (!hasDiaryContent) return;
-
-		const storeState = useVisitStore.getState();
-		const currentStoreForm = storeState.visitNoteForm ?? {};
-		const converted = visitNoteFromSoapDiary(diary, currentStoreForm);
-
-		const isDiff =
-			(converted.complaint !== undefined &&
-				converted.complaint !== (currentStoreForm.complaint ?? "")) ||
-			(converted.anamnesis !== undefined &&
-				converted.anamnesis !== (currentStoreForm.anamnesis ?? "")) ||
-			(converted.objectiveStatus !== undefined &&
-				converted.objectiveStatus !==
-					(currentStoreForm.objectiveStatus ?? "")) ||
-			(converted.diagnosis !== undefined &&
-				converted.diagnosis !== (currentStoreForm.diagnosis ?? "")) ||
-			(converted.treatmentPlan !== undefined &&
-				converted.treatmentPlan !== (currentStoreForm.treatmentPlan ?? ""));
-
-		if (!isDiff) return;
-
-		isSyncingToStoreRef.current = true;
-		storeState.setVisitNoteForm((prev) => ({
-			...prev,
-			...converted,
-		}));
-		if (storeState.visitDraftUserEditedRef) {
-			storeState.visitDraftUserEditedRef.current = true;
-		}
-		lastSyncedStoreSigRef.current = computeStoreSig(
-			useVisitStore.getState().visitNoteForm,
-		);
-		isSyncingToStoreRef.current = false;
-	}, [diary, isCurrentActiveVisit, loadState.phase]);
+	}, [loadState.phase, visitId, isCurrentActiveVisit, activeVisit]);
 
 	// ── Dual-layer IndexedDB & LocalStorage resilience for draft protection across browser reloads / crashes
 	const localDiaryStorageKey = `dente_diary_draft_${visitId}`;
@@ -2584,6 +2542,8 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	return {
 		diary,
 		setDiary,
+		updateField,
+		syncDiaryToStore,
 		diaryId,
 		/**
 		 * Состояние чтения для разметки: три отдельных состояния вместо одной
