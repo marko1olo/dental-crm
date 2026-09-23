@@ -360,13 +360,32 @@ export function executeApplySomaticNormAutonomy({
 }) {
 	const normText =
 		"Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает. Физиологическая норма.";
+	const objNorm =
+		"Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны.";
 	if (typeof updateVisitNoteField === "function") {
 		updateVisitNoteField("anamnesis", normText);
 		const currentObj = visitNoteForm?.objectiveInspection || (visitNoteForm as any)?.objectiveStatus || "";
 		if (!currentObj) {
-			const objNorm = "Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны.";
 			updateVisitNoteField("objectiveInspection", objNorm);
 			updateVisitNoteField("objectiveStatus", objNorm);
+		}
+	}
+	if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+		try {
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						soap: {
+							anamnesis: normText,
+							statusLocalis: objNorm,
+						},
+						mode: "smart_append",
+						immediate: true,
+					},
+				}),
+			);
+		} catch {
+			// ignore in SSR or test environments
 		}
 	}
 	showToastFn("Применена норма: соматически здоров (1 клик)", "success");
@@ -601,7 +620,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		universal: "Универсальный прием",
 	};
 
-	const [visitSubViewTab, setVisitSubViewTab] = useState<VisitSubViewTab>("emk");
+	const [visitSubViewTab, setVisitSubViewTab] = useState<VisitSubViewTab>("odontogram");
 	const [showHints, setShowHints] = useState(false);
 	const [showSmartPreview, setShowSmartPreview] = useState(false);
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -1179,7 +1198,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
     только скрывается, но не размонтируется, чтобы не терялся набранный
     дневник приёма. Подробнее — в комментарии у самой вкладки.
   */
-	const [odontogramTabWasOpened, setOdontogramTabWasOpened] = useState(false);
+	const [odontogramTabWasOpened, setOdontogramTabWasOpened] = useState(true);
 	const [anamnesisTabWasOpened, setAnamnesisTabWasOpened] = useState(false);
 	const [diagnosticsTabWasOpened, setDiagnosticsTabWasOpened] = useState(false);
 	React.useEffect(() => {
@@ -1504,14 +1523,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</div>
 
 						<div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-							{/* Кнопка физиологической нормы 043/у (1-клик) — на вкладках ЭМК и Одонтограмма скрыта, так как в клиническом пространстве уже есть канонические кнопки нормы (Мандат 8s) */}
+							{/* Кнопка физиологической нормы 043/у (1-клик) — всегда доступна врачу в монолитной шапке приёма на всех клинических вкладках (Мандаты 8e, 8p) */}
 							<button
 								type="button"
 								onClick={handleApplySomaticNormQuick}
 								data-testid="btn-somatic-norm-one-click"
-								className={`secondary-button h-7 min-h-[28px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg ${
-									visitSubViewTab === "emk" || visitSubViewTab === "odontogram" ? "!hidden" : "flex"
-								}`}
+								className="secondary-button h-7 min-h-[28px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
 								title="Соматически здоров / норма (1-клик): зафиксировать норму во всех показателях и перенести в дневник 043/у"
 								aria-label="Соматически здоров / норма (1-клик)"
 							>
