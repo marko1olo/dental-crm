@@ -1,0 +1,52 @@
+{
+  "generatedAt": "2026-09-23T14:40:00Z",
+  "description": "Real hardware DICOM test fixtures anonymized per HIPAA/GDPR and Mandates 8e, 8k, 8n",
+  "fixtures": [
+    {
+      "filename": "xspect_visiograph_periapical_anonymized.dcm",
+      "hardware": "Xpect Vision V7.3 Intraoral Radiovisiograph",
+      "detectorType": "Direct photon counting CdTe",
+      "modality": "IO",
+      "fileSizeBytes": 462768,
+      "fileSizeKb": 451.9,
+      "matrix": [
+        480,
+        480
+      ],
+      "bitsAllocated": 16,
+      "bitsStored": 16,
+      "pixelSpacingMm": [
+        0.035,
+        0.035
+      ],
+      "windowCenter": 32768,
+      "windowWidth": 65536,
+      "targetAnode": "MOLYBDENUM"
+    },
+    {
+      "filename": "kavo_op300_cbct_slice_anonymized.dcm",
+      "hardware": "KaVo Instrumentarium OP300 CBCT 3D Tomograph",
+      "modality": "CT",
+      "fileSizeBytes": 442832,
+      "fileSizeKb": 432.5,
+      "matrix": [
+        468,
+        468
+      ],
+      "bitsAllocated": 16,
+      "bitsStored": 12,
+      "pixelSpacingMm": [
+        0.32,
+        0.32
+      ],
+      "sliceThicknessMm": 0.32,
+      "windowCenter": 1556,
+      "windowWidth": 3113,
+      "kvp": 89.8,
+      "tubeCurrentMa": 9,
+      "exposureTimeMs": 8140,
+      "rescaleIntercept": -1000,
+      "rescaleSlope": 1
+    }
+  ]
+}
