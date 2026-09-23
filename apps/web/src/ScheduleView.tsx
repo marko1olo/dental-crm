@@ -1668,6 +1668,35 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		0,
 	);
 	/**
+	 * Счетчики очереди смены StomX (Все, Ожидает приема, На приеме, Ожидает оплаты).
+	 * Рассчитываются в реальном времени по записям выбранного дня с учетом фильтров врача/кресла.
+	 */
+	const shiftQueueCounts = useMemo(() => {
+		let all = 0;
+		let arrived = 0;
+		let inTreatment = 0;
+		let awaitingPayment = 0;
+
+		for (const g of visibleDayGroups) {
+			for (const r of g.rows) {
+				if (r.kind === "appointment") {
+					const appt = r.appointment;
+					if (scheduleDoctorFilterId && appt.doctorUserId !== scheduleDoctorFilterId) {
+						continue;
+					}
+					if (scheduleChairFilterId && appt.chairId !== scheduleChairFilterId) {
+						continue;
+					}
+					all++;
+					if (appt.status === "arrived") arrived++;
+					else if (appt.status === "in_treatment") inTreatment++;
+					else if (appt.status === "completed") awaitingPayment++;
+				}
+			}
+		}
+		return { all, arrived, inTreatment, awaitingPayment };
+	}, [visibleDayGroups, scheduleDoctorFilterId, scheduleChairFilterId]);
+	/**
 	 * Шаг по дням. Раньше выбрать день можно было только полем даты, а пойти
 	 * «на день назад» — никак: администратор, у которого заболел врач, не мог
 	 * пролистать его неделю. Когда фильтр даты пуст, шаг считается от сегодня.
@@ -1938,6 +1967,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				scheduleChairFilterId={scheduleChairFilterId}
 				setScheduleChairFilterId={setScheduleChairFilterId}
 				scheduleStatusFilter={scheduleStatusFilter}
+				queueCounts={shiftQueueCounts}
 				setScheduleStatusFilter={(status: string | null) => {
 					if (!setScheduleStatusFilter) return;
 					if (!status || status === "all") {

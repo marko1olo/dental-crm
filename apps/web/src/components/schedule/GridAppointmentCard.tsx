@@ -87,6 +87,104 @@ export function getNormalizedAppointmentStatusLabel(
 	return status;
 }
 
+export interface DoctorSpecialtyTheme {
+	specialtyKey: string;
+	cardBgClass: string;
+	borderClass: string;
+	textClass: string;
+	badgeClass: string;
+	label: string;
+}
+
+/**
+ * Цветовая дифференциация врачей по специальностям (IDENT Parity):
+ * Клиническая пастельная дифференциация колонок и карточек (WCAG AAA):
+ * - Терапия: blue/indigo (indigo-500/10, text-indigo-700 dark:text-indigo-300)
+ * - Ортопедия: purple/violet (purple-500/10, text-purple-700 dark:text-purple-300)
+ * - Хирургия / Имплантология: burgundy/brick/rose (rose-500/10, text-rose-800 dark:text-rose-300)
+ * - Ортодонтия: emerald/green (emerald-500/10, text-emerald-700 dark:text-emerald-300)
+ * - Профгигиена / Пародонтология: teal/cyan (teal-500/10, text-teal-800 dark:text-teal-200)
+ * - Детская стоматология: amber (amber-500/10, text-amber-800 dark:text-amber-300)
+ */
+export function getDoctorSpecialtyTheme(rawSpecialty?: string | null): DoctorSpecialtyTheme | null {
+	if (!rawSpecialty) return null;
+	const s = rawSpecialty.toLowerCase().trim();
+
+	// Терапия (blue/indigo)
+	if (s.includes("therap") || s.includes("терап") || s.includes("лечен")) {
+		return {
+			specialtyKey: "therapist",
+			cardBgClass: "bg-indigo-500/10 dark:bg-indigo-950/30",
+			borderClass: "border-indigo-500/30 dark:border-indigo-500/40",
+			textClass: "text-indigo-900 dark:text-indigo-200",
+			badgeClass: "bg-indigo-500/15 text-indigo-800 dark:text-indigo-300 border-indigo-500/30",
+			label: "Терапия",
+		};
+	}
+
+	// Ортопедия (purple/violet)
+	if (s.includes("orthoped") || s.includes("ортопед") || s.includes("протез")) {
+		return {
+			specialtyKey: "orthopedist",
+			cardBgClass: "bg-purple-500/10 dark:bg-purple-950/30",
+			borderClass: "border-purple-500/30 dark:border-purple-500/40",
+			textClass: "text-purple-900 dark:text-purple-200",
+			badgeClass: "bg-purple-500/15 text-purple-800 dark:text-purple-300 border-purple-500/30",
+			label: "Ортопедия",
+		};
+	}
+
+	// Хирургия / Имплантология (rose/burgundy)
+	if (s.includes("surg") || s.includes("хирург") || s.includes("implant") || s.includes("имплант") || s.includes("удал")) {
+		return {
+			specialtyKey: "surgeon",
+			cardBgClass: "bg-rose-500/10 dark:bg-rose-950/30",
+			borderClass: "border-rose-500/30 dark:border-rose-500/40",
+			textClass: "text-rose-900 dark:text-rose-200",
+			badgeClass: "bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-500/30",
+			label: "Хирургия",
+		};
+	}
+
+	// Ортодонтия (emerald/green)
+	if (s.includes("orthodont") || s.includes("ортодонт") || s.includes("брекет") || s.includes("элайнер")) {
+		return {
+			specialtyKey: "orthodontist",
+			cardBgClass: "bg-emerald-500/10 dark:bg-emerald-950/30",
+			borderClass: "border-emerald-500/30 dark:border-emerald-500/40",
+			textClass: "text-emerald-900 dark:text-emerald-200",
+			badgeClass: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30",
+			label: "Ортодонтия",
+		};
+	}
+
+	// Профгигиена / Пародонтология (teal/cyan)
+	if (s.includes("hygien") || s.includes("гигиен") || s.includes("periodont") || s.includes("пародонт") || s.includes("чистк")) {
+		return {
+			specialtyKey: "hygienist",
+			cardBgClass: "bg-teal-500/10 dark:bg-teal-950/30",
+			borderClass: "border-teal-500/30 dark:border-teal-500/40",
+			textClass: "text-teal-900 dark:text-teal-200",
+			badgeClass: "bg-teal-500/15 text-teal-800 dark:text-teal-200 border-teal-500/30",
+			label: "Гигиена",
+		};
+	}
+
+	// Детская стоматология (amber)
+	if (s.includes("pediatr") || s.includes("детск")) {
+		return {
+			specialtyKey: "pediatric",
+			cardBgClass: "bg-amber-500/10 dark:bg-amber-950/30",
+			borderClass: "border-amber-500/30 dark:border-amber-500/40",
+			textClass: "text-amber-900 dark:text-amber-200",
+			badgeClass: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30",
+			label: "Детская",
+		};
+	}
+
+	return null;
+}
+
 export interface GridAppointmentCardProps {
 	appointment: Appointment;
 	chair: { id: string; name: string };
@@ -189,6 +287,11 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 
 	const patObj = a.patientId ? patientLookupMap.get(a.patientId) : undefined;
 	const docObj = a.doctorUserId ? staffLookupMap.get(a.doctorUserId) : undefined;
+	const doctorSpecialty =
+		docObj?.specialty ||
+		(Array.isArray(docObj?.specialties) ? docObj?.specialties[0] : undefined) ||
+		docObj?.role;
+	const docTheme = getDoctorSpecialtyTheme(doctorSpecialty);
 	const collision = collisionMap.get(a.id);
 	const isCito = Boolean(
 		(a as any)?.isCito ||
@@ -253,17 +356,21 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 					? "bg-amber-500/15 border-amber-500/40 text-amber-900 dark:text-amber-100 ring-1 ring-amber-500/50"
 					: isCito
 						? "bg-rose-500/20 border-rose-500 text-rose-900 dark:text-rose-100 ring-2 ring-rose-500/60 font-bold"
-						: a.status === "confirmed"
-							? "bg-emerald-500/15 border-emerald-500/50 text-emerald-800 dark:text-emerald-200"
-							: isAppointmentInChair(a.status)
-								? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal,var(--brand-primary))]/50 text-[var(--teal-dark,var(--teal))]"
+						: isAppointmentInChair(a.status)
+							? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal,var(--brand-primary))]/50 text-[var(--teal-dark,var(--teal))]"
 							: a.status === "arrived"
-									? "bg-amber-500/15 border-amber-500/50 text-amber-800 dark:text-amber-200"
-									: a.status === "completed"
-										? "bg-slate-500/10 border-slate-400/30 text-slate-600 dark:text-slate-400"
-										: a.status === "cancelled" || a.status === "no_show"
-											? "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300 opacity-70"
-											: "bg-[var(--paper)] border-[var(--line-strong)] text-[var(--ink)]"
+								? "bg-amber-500/15 border-amber-500/50 text-amber-800 dark:text-amber-200"
+								: a.status === "completed"
+									? "bg-slate-500/10 border-slate-400/30 text-slate-600 dark:text-slate-400"
+									: a.status === "cancelled" || a.status === "no_show"
+										? "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300 opacity-70"
+										: a.status === "confirmed"
+											? docTheme
+												? `${docTheme.cardBgClass} ${docTheme.borderClass} ${docTheme.textClass}`
+												: "bg-emerald-500/15 border-emerald-500/50 text-emerald-800 dark:text-emerald-200"
+											: docTheme
+												? `${docTheme.cardBgClass} ${docTheme.borderClass} ${docTheme.textClass}`
+												: "bg-[var(--paper)] border-[var(--line-strong)] text-[var(--ink)]"
 			}`}
 		>
 			{/* macOS Hover HUD с задержкой 150ms без сдвига сетки расписания (Apple HIG Progressive Disclosure) */}
@@ -412,6 +519,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 						<div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300">
 							<Clock size={13} className="text-[var(--teal)] shrink-0" />
 							<span className="font-semibold">
+								<span className="text-[var(--muted)] font-medium">Услуги / жалоба: </span>
 								{a?.reason || (a as Record<string, any>)?.notes || a?.comment || "Консультация стоматолога"}
 							</span>
 						</div>
@@ -444,7 +552,14 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 									{docObj?.fullName || "Врач не назначен"}
 								</span>
 							</span>
-							{docObj?.specialties && docObj.specialties.length > 0 && (
+							{docTheme ? (
+								<span
+									className={`text-[10px] px-1.5 py-0.5 rounded border shrink-0 truncate max-w-[120px] font-bold ${docTheme.badgeClass}`}
+									title={`Специальность врача: ${docTheme.label}`}
+								>
+									{docTheme.label}
+								</span>
+							) : docObj?.specialties && docObj.specialties.length > 0 && (
 								<span
 									className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] shrink-0 truncate max-w-[120px]"
 									title={docObj.specialties.map((s: string) => specialtyLabels[s as DentalSpecialty] || s).join(", ")}
@@ -689,7 +804,15 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 									.map((part: string, index: number) => (index === 0 ? part : `${part[0]}.`))
 									.join(" ") || docObj.fullName}
 							</span>
-							{docObj.specialties && docObj.specialties.length > 0 && (
+							{docTheme ? (
+								<span
+									className={`text-[10px] px-1.5 py-0.2 rounded border shrink-0 max-w-[120px] truncate font-bold ${docTheme.badgeClass}`}
+									title={`Специализация врача: ${docTheme.label}`}
+									data-testid={`card-specialty-badge-${a.id}`}
+								>
+									{docTheme.label}
+								</span>
+							) : docObj.specialties && docObj.specialties.length > 0 && (
 								<span
 									className="text-xs px-1 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)] shrink-0 max-w-[110px] truncate"
 									title={docObj.specialties.map((s: string) => specialtyLabels[s as DentalSpecialty] || s).join(", ")}
@@ -889,7 +1012,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 				</div>
 			)}
 
-			{/* Compact Action Bar (Позвонить, Профиль, Меню ...) — Compact 24px height to avoid distorting 15-30 min grid slots */}
+			{/* Compact Action Bar (Позвонить/Прием + Меню ...) — Strictly 1 primary action button + 1 menu button per Mandates 8c, 8d, 8e, 8p */}
 			<div className="flex items-center gap-1 pt-1 border-t border-[var(--line)]/50 mt-1">
 				{patObj?.phone ? (
 					<a
@@ -898,9 +1021,10 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 						className="h-6 min-h-[24px] max-h-[24px] px-2 py-0.5 rounded-md border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 						title={`Позвонить ${pName}: ${patObj.phone}`}
 						aria-label={`Позвонить ${pName}`}
+						data-testid={`appointment-action-call-${a.id}`}
 					>
 						<Phone size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-						<span className="hidden sm:inline whitespace-nowrap">Позвонить</span>
+						<span className="whitespace-nowrap">Позвонить</span>
 					</a>
 				) : (
 					<button
@@ -912,25 +1036,12 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 						className="h-6 min-h-[24px] max-h-[24px] px-2 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 						title={`Открыть прием ${pName}`}
 						aria-label={`Открыть прием ${pName}`}
+						data-testid={`appointment-action-start-${a.id}`}
 					>
 						<User size={12} className="text-[var(--teal)] shrink-0" />
-						<span className="hidden sm:inline whitespace-nowrap">Прием</span>
+						<span className="whitespace-nowrap">Прием</span>
 					</button>
 				)}
-
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						onAppointmentClick(a);
-					}}
-					className="h-6 min-h-[24px] max-h-[24px] px-2 py-0.5 rounded-md border border-[var(--teal,var(--brand-primary))]/40 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
-					title={`Открыть профиль ${pName}`}
-					aria-label={`Открыть профиль ${pName}`}
-				>
-					<User size={12} className="text-[var(--teal)] shrink-0" />
-					<span className="whitespace-nowrap">Профиль</span>
-				</button>
 
 				{/* Overflow Actions Dropdown Menu (...) */}
 				<div className="relative ml-auto">
@@ -948,14 +1059,45 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 						<MoreVertical size={13} />
 					</button>
 
-					{isMenuOpen && (
-						<div
-							className="absolute right-0 bottom-full mb-1 z-50 p-1.5 rounded-2xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl min-w-[210px] max-w-[calc(100vw-32px)] space-y-1 text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100"
-							onClick={(e) => e.stopPropagation()}
-						>
-							<div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] border-b border-[var(--line)] pb-1">
-								Статус визита
-							</div>
+					<div
+						className={`${isMenuOpen ? "block" : "hidden"} absolute right-0 bottom-full mb-1 z-50 p-1.5 rounded-2xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl min-w-[210px] max-w-[calc(100vw-32px)] space-y-1 text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100`}
+						onClick={(e) => e.stopPropagation()}
+					>
+						{/* Быстрые переходы: Карточка приема и Профиль пациента */}
+						<div className="space-y-0.5 pb-1 border-b border-[var(--line)]">
+							<button
+								type="button"
+								onClick={() => {
+									onAppointmentClick(a);
+									onCloseMenu();
+								}}
+								className="w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--teal-dark,var(--teal))] font-bold transition-colors cursor-pointer"
+								title={`Открыть профиль ${pName}`}
+								aria-label={`Открыть профиль ${pName}`}
+								data-testid={`menu-profile-btn-${a.id}`}
+							>
+								<User size={14} className="text-[var(--teal)] shrink-0" />
+								<span>Профиль пациента</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									onAppointmentClick(a);
+									onCloseMenu();
+								}}
+								className="w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium transition-colors cursor-pointer"
+								title={`Открыть прием ${pName}`}
+								aria-label={`Открыть прием ${pName}`}
+								data-testid={`menu-treatment-btn-${a.id}`}
+							>
+								<CalendarCheck size={14} className="text-[var(--teal)] shrink-0" />
+								<span>Прием (детали)</span>
+							</button>
+						</div>
+
+						<div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] border-b border-[var(--line)] pb-1">
+							Статус визита
+						</div>
 							{onQuickStatusChange && (
 								<div className="space-y-0.5">
 									<button
@@ -1265,7 +1407,6 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 								</button>
 							</div>
 						</div>
-					)}
 				</div>
 			</div>
 		</div>

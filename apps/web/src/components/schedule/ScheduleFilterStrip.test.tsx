@@ -274,6 +274,41 @@ describe("ScheduleFilterStrip Component", () => {
 		assert.ok(html.includes("data-testid=\"schedule-status-filter-completed\""), "Renders 'Ожидает оплаты' status chip");
 		assert.ok(html.includes("Ожидает оплаты"), "Contains 'Ожидает оплаты' label");
 	});
+
+	it("renders StomX shift queue count badges when queueCounts are provided", () => {
+		const html = renderToStaticMarkup(
+			createElement(ScheduleFilterStrip, {
+				scheduleDateFilter: "2026-08-09",
+				setScheduleDateFilter: () => {},
+				stepScheduleDay: () => {},
+				activeScheduleFilterCount: 0,
+				resetScheduleFilters: () => {},
+				staffMembers: [],
+				chairs: [],
+				scheduleDoctorFilterId: null,
+				setScheduleDoctorFilterId: () => {},
+				scheduleChairFilterId: null,
+				setScheduleChairFilterId: () => {},
+				scheduleStatusFilter: "all",
+				setScheduleStatusFilter: () => {},
+				queueCounts: {
+					all: 14,
+					arrived: 3,
+					inTreatment: 2,
+					awaitingPayment: 5,
+				},
+			}),
+		);
+
+		assert.ok(html.includes("data-testid=\"schedule-queue-count-all\""), "Renders 'all' queue count badge");
+		assert.ok(html.includes(">14<"), "Displays 14 for all appointments");
+		assert.ok(html.includes("data-testid=\"schedule-queue-count-arrived\""), "Renders 'arrived' count badge");
+		assert.ok(html.includes(">3<"), "Displays 3 arrived patients");
+		assert.ok(html.includes("data-testid=\"schedule-queue-count-in-treatment\""), "Renders 'inTreatment' count badge");
+		assert.ok(html.includes(">2<"), "Displays 2 in treatment");
+		assert.ok(html.includes("data-testid=\"schedule-queue-count-completed\""), "Renders 'awaitingPayment' count badge");
+		assert.ok(html.includes(">5<"), "Displays 5 awaiting payment");
+	});
 });
 
 
