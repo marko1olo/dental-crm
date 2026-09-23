@@ -770,6 +770,44 @@ export function VisitEmkTab() {
 	const handleCompleteVisitAndGenerateReceipt = React.useCallback(async () => {
 		setIsCompletingVisit(true);
 		try {
+			if (!visitNoteReadyToAccept) {
+				if (
+					!visitNoteForm?.diagnosis ||
+					visitNoteForm.diagnosis.length < 4
+				) {
+					updateVisitNoteField?.(
+						"diagnosis",
+						"Z01.2 Осмотр полости рта, патологий не выявлено (Норма)",
+					);
+				}
+				if (!visitNoteForm?.treatmentPlan) {
+					updateVisitNoteField?.(
+						"treatmentPlan",
+						"Осмотр полости рта проведен, патологий не выявлено. Проведена консультация, рекомендована плановая профгигиена через 6 месяцев.",
+					);
+				}
+				if (!visitNoteForm?.complaint) {
+					updateVisitNoteField?.(
+						"complaint",
+						"Жалоб на момент осмотра не предъявляет.",
+					);
+				}
+				if (!visitNoteForm?.anamnesis) {
+					updateVisitNoteField?.(
+						"anamnesis",
+						"Соматически здоров. Аллергоанамнез не отягощен.",
+					);
+				}
+				if (!visitNoteForm?.objectiveStatus) {
+					updateVisitNoteField?.(
+						"objectiveStatus",
+						"Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.",
+					);
+				}
+			}
+			if (acceptDraftToVisit) {
+				await acceptDraftToVisit();
+			}
 			if (flushSoloPendingSave) {
 				await flushSoloPendingSave();
 			}
@@ -798,8 +836,12 @@ export function VisitEmkTab() {
 						"Стоматологическая клиника «DENTE»",
 				),
 				diary: {
-					anamnesis: visitNoteForm?.anamnesis || "",
-					statusLocalis: visitNoteForm?.objectiveStatus || "",
+					anamnesis:
+						visitNoteForm?.anamnesis ||
+						"Соматически здоров. Аллергоанамнез не отягощен.",
+					statusLocalis:
+						visitNoteForm?.objectiveStatus ||
+						"Слизистая оболочка полости рта физиологической окраски, влажная.",
 					diagnosisIcd10:
 						typeof visitNoteForm?.diagnosis === "string"
 							? visitNoteForm.diagnosis.match(/[A-Z]\d{2}(?:\.\d+)?/i)?.[0] ||
@@ -809,7 +851,9 @@ export function VisitEmkTab() {
 						typeof visitNoteForm?.diagnosis === "string"
 							? visitNoteForm.diagnosis.match(/\b\d{2}\b/)?.[0] || ""
 							: "",
-					treatmentDescription: visitNoteForm?.treatmentPlan || "",
+					treatmentDescription:
+						visitNoteForm?.treatmentPlan ||
+						"Осмотр полости рта проведен, патологий не выявлено. Проведена консультация, рекомендована плановая профгигиена.",
 				},
 				completedPlanItems: (appLogic as any)?.activeTreatmentPlanItems || [],
 			});
@@ -821,12 +865,15 @@ export function VisitEmkTab() {
 			setIsCompletingVisit(false);
 		}
 	}, [
+		visitNoteReadyToAccept,
+		visitNoteForm,
+		updateVisitNoteField,
+		acceptDraftToVisit,
 		flushSoloPendingSave,
 		flushPendingVisitSaves,
 		appLogic,
 		dashboard,
 		activePatient,
-		visitNoteForm,
 	]);
 
 	const handleApplyVoiceSoapNotes = React.useCallback(
@@ -3537,61 +3584,79 @@ export function VisitEmkTab() {
 					) : null}
 
 					{!isSignedVisit ? (
-						<button
-							className="primary-button min-h-[50px] px-6 py-3 text-sm sm:text-base font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-							type="button"
-							onClick={() => {
-								if (noteTextOfAnotherVisit) {
-									showToast(
-										"В полях остался текст предыдущего приёма. Скопируйте нужные данные и переключитесь на текущий приём перед сохранением.",
-										"warning",
-										6000,
-									);
-									return;
+						<div className="flex items-center gap-2.5 flex-wrap">
+							<button
+								className="primary-button min-h-[50px] px-6 py-3 text-sm sm:text-base font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+								type="button"
+								data-testid="btn-save-visit-note"
+								onClick={() => {
+									if (noteTextOfAnotherVisit) {
+										showToast(
+											"В полях остался текст предыдущего приёма. Скопируйте нужные данные и переключитесь на текущий приём перед сохранением.",
+											"warning",
+											6000,
+										);
+										return;
+									}
+									if (!visitNoteReadyToAccept) {
+										if (
+											!visitNoteForm?.diagnosis ||
+											visitNoteForm.diagnosis.length < 4
+										) {
+											updateVisitNoteField?.(
+												"diagnosis",
+												"Z01.2 Осмотр полости рта, патологий не выявлено (Норма)",
+											);
+										}
+										if (!visitNoteForm?.treatmentPlan) {
+											updateVisitNoteField?.(
+												"treatmentPlan",
+												"Осмотр полости рта проведен, патологий не выявлено. Проведена консультация, рекомендована плановая профгигиена через 6 месяцев.",
+											);
+										}
+										if (!visitNoteForm?.complaint) {
+											updateVisitNoteField?.(
+												"complaint",
+												"Жалоб на момент осмотра не предъявляет.",
+											);
+										}
+										if (!visitNoteForm?.anamnesis) {
+											updateVisitNoteField?.(
+												"anamnesis",
+												"Соматически здоров. Аллергоанамнез не отягощен.",
+											);
+										}
+										if (!visitNoteForm?.objectiveStatus) {
+											updateVisitNoteField?.(
+												"objectiveStatus",
+												"Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.",
+											);
+										}
+									}
+									acceptDraftToVisit();
+								}}
+								disabled={isDraftAccepting}
+								aria-describedby={
+									noteTextOfAnotherVisit ? "visit-note-foreign-text" : undefined
 								}
-								if (!visitNoteReadyToAccept) {
-									if (
-										!visitNoteForm?.diagnosis ||
-										visitNoteForm.diagnosis.length < 4
-									) {
-										updateVisitNoteField?.(
-											"diagnosis",
-											"Z01.2 Осмотр полости рта, патологий не выявлено (Норма)",
-										);
-									}
-									if (!visitNoteForm?.treatmentPlan) {
-										updateVisitNoteField?.(
-											"treatmentPlan",
-											"Осмотр полости рта проведен, патологий не выявлено. Проведена консультация, рекомендована плановая профгигиена через 6 месяцев.",
-										);
-									}
-									if (!visitNoteForm?.complaint && !visitNoteForm?.anamnesis) {
-										updateVisitNoteField?.(
-											"complaint",
-											"Жалоб на момент осмотра не предъявляет.",
-										);
-										updateVisitNoteField?.(
-											"anamnesis",
-											"Соматически здоров. Аллергоанамнез не отягощен.",
-										);
-									}
-									if (!visitNoteForm?.objectiveStatus) {
-										updateVisitNoteField?.(
-											"objectiveStatus",
-											"Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.",
-										);
-									}
-								}
-								acceptDraftToVisit();
-							}}
-							disabled={isDraftAccepting}
-							aria-describedby={
-								noteTextOfAnotherVisit ? "visit-note-foreign-text" : undefined
-							}
-						>
-							<Check aria-hidden="true" size={20} className="stroke-[3]" />
-							<span>{visitNoteActionLabel || "Сохранить запись приёма"}</span>
-						</button>
+								title="Сохранить дневник приёма Формы 043/у (никогда не блокируется из-за пустых полей)"
+							>
+								<Check aria-hidden="true" size={20} className="stroke-[3]" />
+								<span>{visitNoteActionLabel || "Сохранить запись приёма"}</span>
+							</button>
+
+							<button
+								className="primary-button min-h-[50px] px-5 py-3 text-sm sm:text-base font-extrabold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+								type="button"
+								data-testid="btn-complete-visit-emk"
+								onClick={handleCompleteVisitAndGenerateReceipt}
+								disabled={isCompletingVisit}
+								title="Завершить приём, зафиксировать дневник 043/у и сформировать чек на оплату"
+							>
+								<Check aria-hidden="true" size={20} className="stroke-[3]" />
+								<span>{isCompletingVisit ? "Завершаю приём…" : "Завершить приём"}</span>
+							</button>
+						</div>
 					) : null}
 				</div>
 

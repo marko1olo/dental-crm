@@ -794,6 +794,22 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					</button>
 					<button
 						type="button"
+						id="diary-norm-direct-btn"
+						data-testid="diary-norm-direct-btn"
+						onClick={() => {
+							if (isLocked && !isRevising) {
+								beginRevise();
+							}
+							handleApplyFullPhysiologicalNorm();
+						}}
+						className="vde-043__btn text-emerald-700 dark:text-emerald-300 border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20"
+						title="Заполнить физиологической нормой в 1 клик (Соматически здоров / норма). Врач правит только патологию"
+					>
+						<CheckCircle2 className="w-4 h-4 text-emerald-600" />
+						Норма (1-клик)
+					</button>
+					<button
+						type="button"
 						id="diary-print-btn"
 						data-testid="diary-print-043"
 						onClick={() => setShowPreview(true)}
@@ -1751,6 +1767,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					<button
 						type="button"
 						id="diary-save-btn"
+						data-testid="diary-save-btn"
 						onClick={() => doSave(false)}
 						className="vde-043__btn"
 					>
