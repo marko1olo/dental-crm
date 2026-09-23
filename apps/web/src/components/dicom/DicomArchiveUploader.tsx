@@ -15,6 +15,11 @@ interface DicomArchiveUploaderProps {
 const MAX_SAFE_FILE_SIZE_BYTES = 1.5 * 1024 * 1024 * 1024; // 1.5 GB
 const BATCH_PROCESSING_CHUNK_SIZE = 50;
 
+/**
+ * DicomArchiveUploader.tsx — Asynchronous DICOM & CBCT archive uploader and parser.
+ * Supports KaVo Instrumentarium OP300 and CyberMed OnDemand3D CBCT ZIP archives
+ * by automatically filtering out DICOMDIR directory index files per Mandate 8e.
+ */
 import {
 	filterDicomArchiveEntries,
 	isDicomEntry,
