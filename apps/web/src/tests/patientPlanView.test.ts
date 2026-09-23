@@ -5,18 +5,24 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import React from "react";
+import { renderToString } from "react-dom/server";
 import {
 	formatDualServiceName,
+	PatientPortalTreatmentStageCard,
 	type DualServiceFormatResult,
 } from "../components/patient-portal/PatientPortalTreatmentStageCard.js";
 import {
 	CLINIC_GUARANTEE_ITEMS,
 	PATIENT_COMFORT_STANDARDS,
 	POST_TREATMENT_TRIAGE_FAQ,
+	PatientPlanView,
 } from "../components/patient-portal/PatientPlanView.js";
 import {
 	calculateDentalHealthIndex,
+	computePatientTeethFromStages,
 	DEFAULT_PATIENT_TEETH,
+	PatientFriendlyOdontogram,
 	type PatientToothInfo,
 } from "../components/patient-portal/PatientFriendlyOdontogram.js";
 import {
@@ -228,3 +234,129 @@ describe("Patient Treatment Plan - Reschedule Request Validation", () => {
 		assert.ok(payload.requestedAtIso.length > 0);
 	});
 });
+
+describe("Patient Treatment Plan - Dynamic Teeth Calculation (Mandates 8c, 8e, 8i)", () => {
+	it("dynamically computes 32 teeth statuses from plan stages without hardcoded defaults", () => {
+		const stages = [
+			{
+				titleRu: "Лечение каналов зуба 16",
+				status: "in_progress" as const,
+				teethFdi: ["1.6"],
+			},
+			{
+				titleRu: "Пломбирование зуба 25",
+				status: "planned" as const,
+				teethFdi: ["25"],
+			},
+			{
+				titleRu: "Установка имплантата 46",
+				status: "completed" as const,
+				teethFdi: ["46"],
+			},
+		];
+
+		const teeth = computePatientTeethFromStages(stages);
+		assert.equal(teeth.length, 32);
+
+		const tooth16 = teeth.find((t) => t.fdiCode === "16");
+		assert.ok(tooth16);
+		assert.equal(tooth16.status, "in_treatment");
+		assert.ok(tooth16.clinicalStateRu.includes("В процессе лечения"));
+
+		const tooth25 = teeth.find((t) => t.fdiCode === "25");
+		assert.ok(tooth25);
+		assert.equal(tooth25.status, "needs_treatment");
+		assert.ok(tooth25.clinicalStateRu.includes("Требует лечения"));
+
+		const tooth46 = teeth.find((t) => t.fdiCode === "46");
+		assert.ok(tooth46);
+		assert.equal(tooth46.status, "missing_or_implant");
+		assert.ok(tooth46.clinicalStateRu.includes("Установлен имплантат"));
+
+		// Untreated teeth remain healthy
+		const tooth11 = teeth.find((t) => t.fdiCode === "11");
+		assert.ok(tooth11);
+		assert.equal(tooth11.status, "healthy");
+		assert.equal(tooth11.clinicalStateRu, "Здоров, патологий не выявлено");
+	});
+
+	it("PatientPlanView dynamically computes and binds teeth from patient plan to odontogram", () => {
+		const plan = PATIENT_CABINET_PRESET_ALEXEY.treatmentPlans[0];
+		const html = renderToString(React.createElement(PatientPlanView, { plan }));
+
+		// Odontogram receives dynamic teeth from Alexey's plan
+		assert.ok(html.includes('data-testid="patient-friendly-odontogram"'));
+		assert.ok(html.includes('data-testid="patient-odontogram-arch-container"'));
+	});
+});
+
+describe("Patient Treatment Plan - Odontogram Responsive 4 Quadrants & Zero Horizontal Scroll", () => {
+	it("renders 4 compact quadrants without horizontal scroll container and without crutch label", () => {
+		const html = renderToString(React.createElement(PatientFriendlyOdontogram));
+
+		// All 4 quadrant blocks rendered
+		assert.ok(html.includes('data-testid="quadrant-upper-right"'));
+		assert.ok(html.includes('data-testid="quadrant-upper-left"'));
+		assert.ok(html.includes('data-testid="quadrant-lower-right"'));
+		assert.ok(html.includes('data-testid="quadrant-lower-left"'));
+
+		// Crutch scroll label must be completely eliminated
+		assert.ok(!html.includes("Прокрутите влево/вправо для просмотра всех зубов формулы"));
+
+		// Horizontal scroll overflow-x: auto must be eliminated
+		assert.ok(!html.includes("overflow-x: auto"));
+		assert.ok(!html.includes("overflowX: auto"));
+
+		// Responsive style block is embedded
+		assert.ok(html.includes("patient-odontogram-quadrants-row"));
+	});
+});
+
+describe("Patient Treatment Plan - Stage Cards Clean Human Display (Mandate 8i)", () => {
+	it("does not render raw 804n code or synthetic concatenation in procedure breakdown", () => {
+		const stage = {
+			id: "st-test-1",
+			orderIndex: 1,
+			titleRu: "Этап 1: Профессиональная гигиена",
+			teethFdi: ["11", "21"],
+			costRub: 15000,
+			status: "planned" as const,
+			procedures: ["Ультразвуковой скейлинг и Air-Flow Clinpro", "Полировка пастой"],
+		};
+
+		const html = renderToString(React.createElement(PatientPortalTreatmentStageCard, { stage }));
+
+		// Zero raw 804n bureaucratics shown to patient
+		assert.ok(!html.includes("Минздрав 804н:"));
+		assert.ok(!html.includes("A16.07.001"));
+		assert.ok(!html.includes("A16.07.002"));
+
+		// Human procedure title rendered
+		assert.ok(html.includes("Комплексная гигиена"));
+		assert.ok(html.includes("Ультразвуковой скейлинг и Air-Flow Clinpro"));
+	});
+});
+
+describe("Patient Treatment Plan - Dynamic Next Appointment Resolution", () => {
+	it("hides next-visit-card when no appointment is scheduled", () => {
+		const html = renderToString(React.createElement(PatientPlanView, { nextAppointment: null, fullCabinetData: undefined }));
+		assert.ok(!html.includes('data-testid="next-visit-card"'));
+		assert.ok(!html.includes("Пятница, 28 августа"));
+	});
+
+	it("renders dynamic appointment details when scheduled", () => {
+		const customAppointment = {
+			dateRu: "Понедельник, 15 сентября",
+			timeRu: "11:00",
+			doctorName: "Д-р Иванова М. С.",
+		};
+
+		const html = renderToString(React.createElement(PatientPlanView, { nextAppointment: customAppointment }));
+		assert.ok(html.includes('data-testid="next-visit-card"'));
+		assert.ok(html.includes("Понедельник, 15 сентября"));
+		assert.ok(html.includes("11:00"));
+		assert.ok(html.includes("Д-р Иванова М. С."));
+		assert.ok(!html.includes("Пятница, 28 августа в 14:30 • Врач: Смирнов А. В."));
+	});
+});
+

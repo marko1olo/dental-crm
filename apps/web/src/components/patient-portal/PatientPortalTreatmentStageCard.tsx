@@ -341,7 +341,7 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 			{showDetailedBreakdown && (
 				<div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
 					{stage.procedures.map((proc, pIdx) => {
-						const dual = formatDualServiceName(`A16.07.00${pIdx + 1}`, proc);
+						const dual = formatDualServiceName("", proc);
 						return (
 							<div
 								key={pIdx}
@@ -366,23 +366,27 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 								</div>
 
 								{/* Reassuring sensation guidance reducing anxiety */}
-								<div
-									style={{
-										fontSize: "11px",
-										color: "var(--pc-primary, #0d9488)",
-										display: "flex",
-										alignItems: "center",
-										gap: "4px",
-										marginTop: "2px",
-									}}
-								>
-									<Smile size={13} style={{ flexShrink: 0 }} />
-									<span><strong>Ощущения:</strong> {dual.sensationRu}</span>
-								</div>
+								{dual.sensationRu && (
+									<div
+										style={{
+											fontSize: "11px",
+											color: "var(--pc-primary, #0d9488)",
+											display: "flex",
+											alignItems: "center",
+											gap: "4px",
+											marginTop: "2px",
+										}}
+									>
+										<Smile size={13} style={{ flexShrink: 0 }} />
+										<span><strong>Ощущения:</strong> {dual.sensationRu}</span>
+									</div>
+								)}
 
-								<div style={{ fontSize: "10px", color: "var(--pc-text-muted, #64748b)", marginTop: "2px" }}>
-									Минздрав 804н: {dual.statutoryCode804n} &bull; {proc}
-								</div>
+								{proc && proc !== dual.humanTitleRu && (
+									<div style={{ fontSize: "11px", color: "var(--pc-text-muted, #64748b)", marginTop: "2px" }}>
+										{proc}
+									</div>
+								)}
 							</div>
 						);
 					})}

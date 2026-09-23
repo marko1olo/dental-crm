@@ -101,6 +101,153 @@ export const HUMAN_TOOTH_NAMES: Record<string, string> = {
 	"41": "Нижний правый передний центральный резец",
 };
 
+export const ALL_ADULT_FDI_TEETH: readonly string[] = [
+	"18", "17", "16", "15", "14", "13", "12", "11",
+	"21", "22", "23", "24", "25", "26", "27", "28",
+	"48", "47", "46", "45", "44", "43", "42", "41",
+	"31", "32", "33", "34", "35", "36", "37", "38",
+];
+
+export interface TreatmentPlanStageLike {
+	readonly id?: string | undefined;
+	readonly titleRu: string;
+	readonly status: "completed" | "in_progress" | "planned";
+	readonly teethFdi: readonly string[];
+	readonly procedures?: readonly string[] | undefined;
+	readonly categoryRu?: string | undefined;
+}
+
+export interface WarrantyItemLike {
+	readonly toothFdi: string;
+	readonly workTitleRu: string;
+}
+
+export interface WarrantyCardLike {
+	readonly items: readonly WarrantyItemLike[];
+	readonly status?: string | undefined;
+}
+
+/**
+ * Dynamically computes patient's 32 teeth statuses from current treatment plan stages and active warranties.
+ * Eliminates hardcoded dummy mouth per Mandates 8c, 8e, 8i.
+ */
+export function computePatientTeethFromStages(
+	stages: readonly TreatmentPlanStageLike[] = [],
+	warranties?: readonly WarrantyCardLike[] | undefined,
+): readonly PatientToothInfo[] {
+	const normalizeTooth = (raw: string) => raw.replace(/[^0-9]/g, "");
+
+	return ALL_ADULT_FDI_TEETH.map((fdiCode) => {
+		const humanNameRu = HUMAN_TOOTH_NAMES[fdiCode] || `Зуб №${fdiCode}`;
+
+		// Find stages that specifically target this tooth
+		const directStages = stages.filter((stage) => {
+			if (!stage.teethFdi || stage.teethFdi.length === 0) return false;
+			return stage.teethFdi.some((raw) => {
+				const norm = normalizeTooth(raw);
+				if (norm === fdiCode) return true;
+				if (raw.includes("-") && !raw.includes("1.1-4.8") && !raw.includes("11-48")) {
+					const parts = raw.split("-").map(normalizeTooth);
+					if (parts.length === 2) {
+						const start = parseInt(parts[0], 10);
+						const end = parseInt(parts[1], 10);
+						const current = parseInt(fdiCode, 10);
+						if (!isNaN(start) && !isNaN(end) && !isNaN(current)) {
+							const min = Math.min(start, end);
+							const max = Math.max(start, end);
+							if (current >= min && current <= max) {
+								return true;
+							}
+						}
+					}
+				}
+				return false;
+			});
+		});
+
+		if (directStages.length > 0) {
+			const inProgress = directStages.find((s) => s.status === "in_progress");
+			if (inProgress) {
+				return {
+					fdiCode,
+					status: "in_treatment",
+					humanNameRu,
+					clinicalStateRu: `В процессе лечения: ${inProgress.titleRu}`,
+					plannedStageTitleRu: inProgress.titleRu,
+				};
+			}
+
+			const planned = directStages.find((s) => s.status === "planned");
+			if (planned) {
+				return {
+					fdiCode,
+					status: "needs_treatment",
+					humanNameRu,
+					clinicalStateRu: `Требует лечения: ${planned.titleRu}`,
+					plannedStageTitleRu: planned.titleRu,
+				};
+			}
+
+			// All direct stages completed
+			const completed = directStages[0];
+			const isImplant = directStages.some(
+				(s) =>
+					s.titleRu.toLowerCase().includes("имплант") ||
+					(s.categoryRu && s.categoryRu.toLowerCase().includes("имплант")),
+			);
+			const isExtraction = directStages.some((s) => s.titleRu.toLowerCase().includes("удален"));
+
+			if (isImplant) {
+				return {
+					fdiCode,
+					status: "missing_or_implant",
+					humanNameRu,
+					clinicalStateRu: `Установлен имплантат: ${completed.titleRu}`,
+					warrantyActive: true,
+				};
+			}
+			if (isExtraction) {
+				return {
+					fdiCode,
+					status: "missing_or_implant",
+					humanNameRu,
+					clinicalStateRu: `Удален: ${completed.titleRu}`,
+				};
+			}
+			return {
+				fdiCode,
+				status: "healthy",
+				humanNameRu,
+				clinicalStateRu: `Вылечен: ${completed.titleRu}`,
+				warrantyActive: true,
+			};
+		}
+
+		// Check active warranties
+		const activeWarranty = warranties?.find((w) =>
+			w.items?.some((i) => normalizeTooth(i.toothFdi) === fdiCode),
+		);
+		if (activeWarranty) {
+			const item = activeWarranty.items.find((i) => normalizeTooth(i.toothFdi) === fdiCode);
+			return {
+				fdiCode,
+				status: "healthy",
+				humanNameRu,
+				clinicalStateRu: `Вылечен: ${item?.workTitleRu || "Комплексная реставрация"}`,
+				warrantyActive: true,
+			};
+		}
+
+		// Default healthy tooth
+		return {
+			fdiCode,
+			status: "healthy",
+			humanNameRu,
+			clinicalStateRu: "Здоров, патологий не выявлено",
+		};
+	});
+}
+
 export const DEFAULT_PATIENT_TEETH: readonly PatientToothInfo[] = [
 	{ fdiCode: "18", status: "healthy", humanNameRu: "Верхний правый зуб мудрости", clinicalStateRu: "Здоров, прорезался правильно" },
 	{ fdiCode: "17", status: "healthy", humanNameRu: "Верхний правый 2-й жевательный зуб", clinicalStateRu: "Здоров, пломб нет" },
@@ -523,50 +670,135 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 				</button>
 			</div>
 
-			{/* Mobile scroll hint */}
-			<div style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", textAlign: "center" }}>
-				<span>↔ Прокрутите влево/вправо для просмотра всех зубов формулы (нажмите на зуб для расшифровки)</span>
-			</div>
+			{/* Embedded Responsive Styles for Mobile 4-Quadrant Odontogram (< 640px) */}
+			<style>{`
+				.patient-odontogram-arch-container {
+					padding: 14px;
+					background-color: var(--pc-bg, #0f172a);
+					border: 1px solid var(--pc-border, #334155);
+					border-radius: 12px;
+					display: flex;
+					flex-direction: column;
+					gap: 12px;
+					overflow: hidden;
+					max-width: 100%;
+					box-sizing: border-box;
+				}
+				.patient-odontogram-arch {
+					width: 100%;
+					display: flex;
+					flex-direction: column;
+					align-items: center;
+				}
+				.patient-odontogram-jaw-title {
+					font-size: 11px;
+					color: var(--pc-text-muted, #94a3b8);
+					text-align: center;
+					margin-bottom: 6px;
+					font-weight: 700;
+					letter-spacing: 0.5px;
+				}
+				.patient-odontogram-quadrants-row {
+					display: flex;
+					justify-content: center;
+					align-items: flex-start;
+					gap: 12px;
+					width: 100%;
+					max-width: 100%;
+					box-sizing: border-box;
+				}
+				.patient-odontogram-quadrant {
+					display: flex;
+					flex-direction: column;
+					align-items: center;
+					gap: 6px;
+					box-sizing: border-box;
+				}
+				.patient-odontogram-quadrant-title {
+					font-size: 11px;
+					font-weight: 700;
+					color: var(--pc-text-muted, #94a3b8);
+					text-align: center;
+				}
+				.patient-odontogram-teeth-row {
+					display: flex;
+					gap: 3px;
+					flex-wrap: nowrap;
+					justify-content: center;
+				}
+				.patient-odontogram-divider {
+					height: 1px;
+					background-color: var(--pc-border, #334155);
+					margin: 4px 0;
+					width: 100%;
+				}
+				@media (max-width: 639px) {
+					.patient-odontogram-arch-container {
+						padding: 10px 8px;
+						gap: 10px;
+					}
+					.patient-odontogram-quadrants-row {
+						flex-direction: column;
+						align-items: center;
+						gap: 10px;
+					}
+					.patient-odontogram-quadrant {
+						width: 100%;
+						max-width: 320px;
+						background: rgba(255, 255, 255, 0.02);
+						border: 1px solid var(--pc-border, #334155);
+						border-radius: 8px;
+						padding: 8px 6px;
+					}
+					.patient-odontogram-teeth-row {
+						flex-wrap: wrap;
+						max-width: 200px;
+						gap: 4px;
+					}
+				}
+			`}</style>
 
-			{/* 3. DENTAL ARCH DISPLAY */}
+			{/* 3. DENTAL ARCH DISPLAY (RESPONSIVE 4 QUADRANTS, ZERO HORIZONTAL SCROLL) */}
 			<div
-				style={{
-					padding: "14px",
-					backgroundColor: "var(--pc-bg, #0f172a)",
-					border: "1px solid var(--pc-border, #334155)",
-					borderRadius: "12px",
-					display: "flex",
-					flexDirection: "column",
-					gap: "12px",
-					overflowX: "auto",
-					WebkitOverflowScrolling: "touch",
-					maxWidth: "100%",
-					boxSizing: "border-box",
-				}}
+				className="patient-odontogram-arch-container"
+				data-testid="patient-odontogram-arch-container"
 			>
 				{/* Upper Arch */}
-				<div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
-					<div style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", textAlign: "center", marginBottom: "6px" }}>
+				<div className="patient-odontogram-arch">
+					<div className="patient-odontogram-jaw-title">
 						ВЕРХНЯЯ ЧЕЛЮСТЬ (ПРАВО ↔ ЛЕВО)
 					</div>
-					<div style={{ display: "flex", justifyContent: "center", gap: "4px", flexWrap: "wrap", maxWidth: "100%" }}>
-						<div style={{ display: "flex", gap: "3px", flexWrap: "nowrap" }}>{upperRight.map(renderToothButton)}</div>
-						<div style={{ width: "8px" }} />
-						<div style={{ display: "flex", gap: "3px", flexWrap: "nowrap" }}>{upperLeft.map(renderToothButton)}</div>
+					<div className="patient-odontogram-quadrants-row">
+						{/* Quadrant 1: Upper Right (18..11) */}
+						<div className="patient-odontogram-quadrant" data-testid="quadrant-upper-right">
+							<span className="patient-odontogram-quadrant-title">Верхний правый (18..11)</span>
+							<div className="patient-odontogram-teeth-row">{upperRight.map(renderToothButton)}</div>
+						</div>
+						{/* Quadrant 2: Upper Left (21..28) */}
+						<div className="patient-odontogram-quadrant" data-testid="quadrant-upper-left">
+							<span className="patient-odontogram-quadrant-title">Верхний левый (21..28)</span>
+							<div className="patient-odontogram-teeth-row">{upperLeft.map(renderToothButton)}</div>
+						</div>
 					</div>
 				</div>
 
-				{/* Divider */}
-				<div style={{ height: "1px", backgroundColor: "var(--pc-border, #334155)", margin: "4px 0", width: "100%" }} />
+				<div className="patient-odontogram-divider" />
 
 				{/* Lower Arch */}
-				<div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
-					<div style={{ display: "flex", justifyContent: "center", gap: "4px", flexWrap: "wrap", maxWidth: "100%" }}>
-						<div style={{ display: "flex", gap: "3px", flexWrap: "nowrap" }}>{lowerRight.map(renderToothButton)}</div>
-						<div style={{ width: "8px" }} />
-						<div style={{ display: "flex", gap: "3px", flexWrap: "nowrap" }}>{lowerLeft.map(renderToothButton)}</div>
+				<div className="patient-odontogram-arch">
+					<div className="patient-odontogram-quadrants-row">
+						{/* Quadrant 4: Lower Right (48..41) */}
+						<div className="patient-odontogram-quadrant" data-testid="quadrant-lower-right">
+							<span className="patient-odontogram-quadrant-title">Нижний правый (48..41)</span>
+							<div className="patient-odontogram-teeth-row">{lowerRight.map(renderToothButton)}</div>
+						</div>
+						{/* Quadrant 3: Lower Left (31..38) */}
+						<div className="patient-odontogram-quadrant" data-testid="quadrant-lower-left">
+							<span className="patient-odontogram-quadrant-title">Нижний левый (31..38)</span>
+							<div className="patient-odontogram-teeth-row">{lowerLeft.map(renderToothButton)}</div>
+						</div>
 					</div>
-					<div style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", textAlign: "center", marginTop: "6px" }}>
+					<div className="patient-odontogram-jaw-title" style={{ marginTop: "6px", marginBottom: 0 }}>
 						НИЖНЯЯ ЧЕЛЮСТЬ (ПРАВО ↔ ЛЕВО)
 					</div>
 				</div>

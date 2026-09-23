@@ -69,8 +69,18 @@ import {
 	type PatientToothInfo,
 	DEFAULT_PATIENT_TEETH,
 	calculateDentalHealthIndex,
+	computePatientTeethFromStages,
 } from "./PatientFriendlyOdontogram.js";
 import { PatientPortalTreatmentStageCard } from "./PatientPortalTreatmentStageCard.js";
+
+export interface PatientPlanNextAppointment {
+	readonly id?: string | undefined;
+	readonly dateRu?: string | undefined;
+	readonly dateIso?: string | undefined;
+	readonly timeRu?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly roomNumber?: string | undefined;
+}
 
 export interface PatientPlanViewProps {
 	readonly plan?: PatientTreatmentPlan | undefined;
@@ -81,6 +91,8 @@ export interface PatientPlanViewProps {
 	readonly birthDate?: string | undefined;
 	readonly fullCabinetData?: PatientPersonalCabinetData | undefined;
 	readonly scans?: readonly PatientDiagnosticScan[] | undefined;
+	readonly teeth?: readonly PatientToothInfo[] | undefined;
+	readonly nextAppointment?: PatientPlanNextAppointment | null | undefined;
 	readonly onPayStageSbp?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onBookAppointment?: (() => void) | undefined;
 	readonly onRescheduleAppointment?: (() => void) | undefined;
@@ -225,6 +237,8 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 	birthDate = "1984-05-14",
 	fullCabinetData,
 	scans,
+	teeth: teethProp,
+	nextAppointment: nextAppointmentProp,
 	onPayStageSbp,
 	onBookAppointment,
 	onRescheduleAppointment,
@@ -286,8 +300,39 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 	const remainingCostRub = Math.max(0, totalCostRub - paidCostRub);
 	const progressPercent = stagesCount > 0 ? Math.round((completedStagesCount / stagesCount) * 100) : 0;
 
+	// Dynamic teeth calculation from current patient plan (Mandate 8c, 8e, 8i)
+	const dynamicPatientTeeth: readonly PatientToothInfo[] = useMemo(() => {
+		if (teethProp && teethProp.length > 0) {
+			return teethProp;
+		}
+		return computePatientTeethFromStages(activeStages, fullCabinetData?.warranties);
+	}, [teethProp, activeStages, fullCabinetData?.warranties]);
+
 	// Dental health index
-	const healthIndex = useMemo(() => calculateDentalHealthIndex(DEFAULT_PATIENT_TEETH), []);
+	const healthIndex = useMemo(() => calculateDentalHealthIndex(dynamicPatientTeeth), [dynamicPatientTeeth]);
+
+	// Dynamic next appointment resolution (Mandates 8e, 8i)
+	const resolvedNextAppointment = useMemo(() => {
+		if (nextAppointmentProp !== undefined) {
+			return nextAppointmentProp;
+		}
+		if (fullCabinetData?.appointments && fullCabinetData.appointments.length > 0) {
+			const upcoming = fullCabinetData.appointments.find(
+				(a) => a.status === "scheduled" || a.status === "confirmed",
+			);
+			if (upcoming) {
+				return {
+					id: upcoming.id,
+					dateRu: upcoming.dateRu,
+					dateIso: upcoming.dateIso,
+					timeRu: upcoming.timeRu,
+					doctorName: upcoming.doctorName,
+					roomNumber: upcoming.roomNumber,
+				};
+			}
+		}
+		return null;
+	}, [nextAppointmentProp, fullCabinetData?.appointments]);
 
 	// Estimated tax refund 13%
 	const estimatedTaxRefundRub = useMemo(() => {
@@ -669,87 +714,93 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 				</div>
 			)}
 
-			{/* 2.2. NEXT APPOINTMENT & RESCHEDULE BAR */}
-			<div
-				className="pc-card next-visit-card"
-				data-testid="next-visit-card"
-				style={{
-					backgroundColor: "var(--pc-surface, #1e293b)",
-					border: "1px solid var(--pc-border, #334155)",
-					borderRadius: "12px",
-					padding: "14px 16px",
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					flexWrap: "wrap",
-					gap: "12px",
-				}}
-			>
-				<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-					<div
-						style={{
-							width: "36px",
-							height: "36px",
-							borderRadius: "8px",
-							backgroundColor: "var(--pc-primary-light, rgba(13, 148, 136, 0.15))",
-							color: "var(--pc-primary, #0d9488)",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							flexShrink: 0,
-						}}
-					>
-						<Calendar size={20} />
-					</div>
-					<div>
-						<div style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
-							Следующий визит по плану лечения:
+			{/* 2.2. NEXT APPOINTMENT & RESCHEDULE BAR (HIDDEN IF NO APPOINTMENT SCHEDULED) */}
+			{resolvedNextAppointment && (
+				<div
+					className="pc-card next-visit-card"
+					data-testid="next-visit-card"
+					style={{
+						backgroundColor: "var(--pc-surface, #1e293b)",
+						border: "1px solid var(--pc-border, #334155)",
+						borderRadius: "12px",
+						padding: "14px 16px",
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+						flexWrap: "wrap",
+						gap: "12px",
+					}}
+				>
+					<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+						<div
+							style={{
+								width: "36px",
+								height: "36px",
+								borderRadius: "8px",
+								backgroundColor: "var(--pc-primary-light, rgba(13, 148, 136, 0.15))",
+								color: "var(--pc-primary, #0d9488)",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								flexShrink: 0,
+							}}
+						>
+							<Calendar size={20} />
 						</div>
-						<strong style={{ fontSize: "14px", color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
-							Пятница, 28 августа в 14:30 &bull; Врач: Смирнов А. В.
-						</strong>
+						<div>
+							<div style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
+								Следующий визит по плану лечения:
+							</div>
+							<strong style={{ fontSize: "14px", color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
+								{[
+									resolvedNextAppointment.dateRu || (resolvedNextAppointment.dateIso ? formatRussianDateIso(resolvedNextAppointment.dateIso) : ""),
+									resolvedNextAppointment.timeRu ? `в ${resolvedNextAppointment.timeRu}` : "",
+									resolvedNextAppointment.doctorName ? `Врач: ${resolvedNextAppointment.doctorName}` : "",
+								].filter(Boolean).join(" • ")}
+							</strong>
+						</div>
+					</div>
+
+					<div style={{ display: "flex", gap: "8px" }}>
+						{onRescheduleAppointment && (
+							<button
+								type="button"
+								onClick={onRescheduleAppointment}
+								className="pc-btn-secondary"
+								data-testid="request-reschedule-btn"
+								style={{
+									minHeight: "44px",
+									padding: "8px 16px",
+									borderRadius: "8px",
+									fontSize: "13px",
+									fontWeight: 700,
+									touchAction: "manipulation",
+								}}
+							>
+								<Clock size={16} />
+								<span>Запросить перенос</span>
+							</button>
+						)}
+						{onBookAppointment && (
+							<button
+								type="button"
+								onClick={onBookAppointment}
+								className="pc-btn-primary"
+								style={{
+									minHeight: "44px",
+									padding: "8px 16px",
+									borderRadius: "8px",
+									fontSize: "13px",
+									fontWeight: 700,
+									touchAction: "manipulation",
+								}}
+							>
+								<span>Записаться</span>
+							</button>
+						)}
 					</div>
 				</div>
-
-				<div style={{ display: "flex", gap: "8px" }}>
-					{onRescheduleAppointment && (
-						<button
-							type="button"
-							onClick={onRescheduleAppointment}
-							className="pc-btn-secondary"
-							data-testid="request-reschedule-btn"
-							style={{
-								minHeight: "44px",
-								padding: "8px 16px",
-								borderRadius: "8px",
-								fontSize: "13px",
-								fontWeight: 700,
-								touchAction: "manipulation",
-							}}
-						>
-							<Clock size={16} />
-							<span>Запросить перенос</span>
-						</button>
-					)}
-					{onBookAppointment && (
-						<button
-							type="button"
-							onClick={onBookAppointment}
-							className="pc-btn-primary"
-							style={{
-								minHeight: "44px",
-								padding: "8px 16px",
-								borderRadius: "8px",
-								fontSize: "13px",
-								fontWeight: 700,
-								touchAction: "manipulation",
-							}}
-						>
-							<span>Записаться</span>
-						</button>
-					)}
-				</div>
-			</div>
+			)}
 
 			{/* 3. 3-TIER COMPARISON TABS (IF AVAILABLE) */}
 			{threeTierModel && threeTierModel.tiers.length > 0 && (
@@ -872,7 +923,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 					</div>
 				</div>
 
-				<PatientFriendlyOdontogram showHealthIndexHeader={true} />
+				<PatientFriendlyOdontogram teeth={dynamicPatientTeeth} showHealthIndexHeader={true} />
 			</div>
 
 			{/* 4.1. PATIENT COMFORT & PAINLESS CARE STANDARDS (ANTI-ANXIETY) */}
