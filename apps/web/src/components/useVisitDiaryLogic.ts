@@ -23,6 +23,8 @@ import {
 	type Template,
 } from "./visit/clinicalSoapPresets";
 import { useVisitStore } from "../store/visitStore";
+import { ICD10_DICTIONARY } from "../lib/icd10";
+import { realVisitFieldId } from "./visit/visitIdentity";
 import { logger } from "../utils/logger";
 import {
 	deleteOfflineDraft,
@@ -122,6 +124,223 @@ export function soapPrefillFromVisitNote(form: {
 	if (tooth) out.diagnosisTooth = tooth;
 
 	return out;
+}
+
+/**
+ * Разделяет один абзац анамнеза по знакам препинания или семантическим маркерам.
+ */
+function splitSingleParagraphAnamnesis(
+	text: string,
+	currentComplaint?: string,
+	currentAnamnesis?: string,
+): { complaint: string; anamnesis: string } {
+	const cComp = (currentComplaint ?? "").trim();
+	const cAnam = (currentAnamnesis ?? "").trim();
+
+	// Разделение по первому предложению
+	const match = text.match(/^([^.!?]+[.!?]+)\s+([\s\S]+)$/);
+	if (match) {
+		const firstSentence = (match[1] ?? "").trim();
+		const rest = (match[2] ?? "").trim();
+		if (firstSentence && rest) {
+			return {
+				complaint: firstSentence,
+				anamnesis: rest,
+			};
+		}
+	}
+
+	// Если предложение только одно или нет знаков препинания:
+	// Проверяем, содержит ли оно характерные маркеры соматики/анамнеза
+	const isAnamnesisOnly =
+		/\b(соматическ|хроническ|здоров|аллерг|анамнез|ранее)\b/i.test(text);
+
+	if (isAnamnesisOnly && cComp) {
+		return { complaint: cComp, anamnesis: text };
+	}
+	if (isAnamnesisOnly && !cComp) {
+		return { complaint: "", anamnesis: text };
+	}
+
+	return {
+		complaint: text,
+		anamnesis: cAnam,
+	};
+}
+
+/**
+ * Разделяет поле `anamnesis` дневника 043/у (где жалобы и анамнез объединены)
+ * обратно на `complaint` (жалобы) и `anamnesis` (анамнез) для формы ЭМК приёма.
+ */
+export function splitDiaryAnamnesis(
+	text: string,
+	currentComplaint?: string,
+	currentAnamnesis?: string,
+): { complaint: string; anamnesis: string } {
+	const trimmed = (text ?? "").trim();
+	if (!trimmed) {
+		return { complaint: "", anamnesis: "" };
+	}
+
+	const cComp = (currentComplaint ?? "").trim();
+	const cAnam = (currentAnamnesis ?? "").trim();
+
+	// Случай 1: точное совпадение со склеенным ранее текстом (жалобы + \n + анамнез)
+	if (cComp && cAnam) {
+		if (trimmed === `${cComp}\n${cAnam}`) {
+			return { complaint: cComp, anamnesis: cAnam };
+		}
+		if (trimmed === cComp) {
+			return { complaint: cComp, anamnesis: cAnam };
+		}
+		if (trimmed === cAnam) {
+			return { complaint: cComp, anamnesis: cAnam };
+		}
+		if (trimmed.startsWith(cComp)) {
+			const remainder = trimmed
+				.slice(cComp.length)
+				.replace(/^[\n\r\s,;.]+/, "")
+				.trim();
+			return { complaint: cComp, anamnesis: remainder || cAnam };
+		}
+	}
+
+	// Случай 2: текст содержит перевод строки \n
+	if (trimmed.includes("\n")) {
+		const lines = trimmed.split("\n").map((l) => l.trim()).filter(Boolean);
+		if (lines.length >= 2) {
+			return {
+				complaint: lines[0] ?? "",
+				anamnesis: lines.slice(1).join("\n"),
+			};
+		}
+		if (lines.length === 1) {
+			return splitSingleParagraphAnamnesis(lines[0] ?? "", cComp, cAnam);
+		}
+	}
+
+	// Случай 3: один абзац без переносов строк (например, стандартная норма в 1 клик)
+	return splitSingleParagraphAnamnesis(trimmed, cComp, cAnam);
+}
+
+/**
+ * Преобразует поля формы ЭМК приёма (visits / visitNoteForm) в структуру дневника 043/у.
+ * Поддерживает очистку полей при удалении текста врачом.
+ */
+export function soapDiaryFromVisitNote(form: {
+	complaint?: string | null;
+	anamnesis?: string | null;
+	objectiveStatus?: string | null;
+	diagnosis?: string | null;
+	treatmentPlan?: string | null;
+}): Partial<DiaryState> {
+	const complaint = (form.complaint ?? "").trim();
+	const anamnesis = (form.anamnesis ?? "").trim();
+	const sParts: string[] = [];
+	if (complaint) sParts.push(complaint);
+	if (anamnesis && anamnesis !== complaint) sParts.push(anamnesis);
+
+	const out: Partial<DiaryState> = {
+		anamnesis: sParts.join("\n"),
+		statusLocalis: (form.objectiveStatus ?? "").trim(),
+		treatmentDescription: (form.treatmentPlan ?? "").trim(),
+	};
+
+	const diagnosis = (form.diagnosis ?? "").trim();
+	const icd = icd10CodeFromDiagnosisText(diagnosis);
+	if (icd) out.diagnosisIcd10 = icd;
+	const tooth = fdiToothFromText(diagnosis);
+	if (tooth) out.diagnosisTooth = tooth;
+
+	return out;
+}
+
+/**
+ * Преобразует состояние дневника 043/у (SOAP) в поля формы ЭМК приёма (visits / visitNoteForm).
+ */
+export function visitNoteFromSoapDiary(
+	diary: DiaryState,
+	currentForm?: Partial<
+		Record<
+			| "complaint"
+			| "anamnesis"
+			| "objectiveStatus"
+			| "diagnosis"
+			| "treatmentPlan",
+			string
+		>
+	>,
+): {
+	complaint: string;
+	anamnesis: string;
+	objectiveStatus: string;
+	diagnosis: string;
+	treatmentPlan: string;
+} {
+	const currentComplaint = currentForm?.complaint ?? "";
+	const currentAnamnesis = currentForm?.anamnesis ?? "";
+	const { complaint, anamnesis } = splitDiaryAnamnesis(
+		diary.anamnesis ?? "",
+		currentComplaint,
+		currentAnamnesis,
+	);
+
+	const objectiveStatus = (diary.statusLocalis ?? "").trim();
+	const treatmentPlan = (diary.treatmentDescription ?? "").trim();
+
+	// Разрешение диагноза
+	let diagnosis = (currentForm?.diagnosis ?? "").trim();
+	const icd = (diary.diagnosisIcd10 ?? "").trim().toUpperCase();
+	const tooth = (diary.diagnosisTooth ?? "").trim();
+
+	if (icd) {
+		const existingIcd = icd10CodeFromDiagnosisText(diagnosis);
+		if (!diagnosis || existingIcd !== icd) {
+			const icdEntry = (ICD10_DICTIONARY ?? []).find(
+				(entry) => entry.code === icd,
+			);
+			const label = icdEntry?.label ? ` ${icdEntry.label}` : "";
+			diagnosis = tooth ? `${icd}${label} (зуб ${tooth})` : `${icd}${label}`;
+		} else if (tooth && !diagnosis.includes(tooth)) {
+			diagnosis = `${diagnosis} (зуб ${tooth})`;
+		}
+	} else if (!diagnosis && tooth) {
+		diagnosis = `Зуб ${tooth}`;
+	}
+
+	return {
+		complaint,
+		anamnesis,
+		objectiveStatus,
+		diagnosis,
+		treatmentPlan,
+	};
+}
+
+export function computeStoreSig(form: {
+	complaint?: string | null;
+	anamnesis?: string | null;
+	objectiveStatus?: string | null;
+	diagnosis?: string | null;
+	treatmentPlan?: string | null;
+}): string {
+	return [
+		(form.complaint ?? "").trim(),
+		(form.anamnesis ?? "").trim(),
+		(form.objectiveStatus ?? "").trim(),
+		(form.diagnosis ?? "").trim(),
+		(form.treatmentPlan ?? "").trim(),
+	].join("|||");
+}
+
+export function computeDiarySig(diary: DiaryState): string {
+	return [
+		(diary.anamnesis ?? "").trim(),
+		(diary.statusLocalis ?? "").trim(),
+		(diary.diagnosisIcd10 ?? "").trim(),
+		(diary.diagnosisTooth ?? "").trim(),
+		(diary.treatmentDescription ?? "").trim(),
+	].join("|||");
 }
 
 /**
@@ -249,6 +468,10 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			specialties: ["Стоматолог-терапевт"],
 		};
 	const [diary, setDiary] = useState<DiaryState>(EMPTY_DIARY);
+	const isSyncingToStoreRef = useRef(false);
+	const isSyncingFromStoreRef = useRef(false);
+	const lastSyncedStoreSigRef = useRef("");
+	const lastSyncedDiarySigRef = useRef("");
 	const [diaryId, setDiaryId] = useState<string | null>(null);
 	const [isLocked, setIsLocked] = useState(false);
 	const [lockedAt, setLockedAt] = useState<string | null>(null);
@@ -461,11 +684,27 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					setDiaryDoctorFullName(null);
 					setDiaryDoctorSpecialty(null);
 					setLoadState({ phase: "empty" });
+
+					// DEF-03 (Мандат 8s): Если дневника на сервере ещё нет, но в store (ЭМК) уже есть набранный текст — гидрируем дневник сразу
+					const storeState = useVisitStore.getState();
+					const formFromStore = storeState.visitNoteForm ?? {};
+					const prefill = soapPrefillFromVisitNote(formFromStore);
+					if (Object.keys(prefill).length > 0) {
+						setDiary((prev) => ({ ...prev, ...prefill }));
+						lastSyncedDiarySigRef.current = computeDiarySig({
+							...EMPTY_DIARY,
+							...prefill,
+						});
+						lastSyncedStoreSigRef.current = computeStoreSig(formFromStore);
+						if (prefill.diagnosisIcd10) {
+							setIcdSearch((c) => (c.trim() ? c : (prefill.diagnosisIcd10 ?? c)));
+						}
+					}
 					return;
 				}
 				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 				const d = diaryRow as Record<string, any>;
-				setDiary({
+				const loadedDiary: DiaryState = {
 					anamnesis: d.anamnesis ?? "",
 					statusLocalis: d.statusLocalis ?? "",
 					diagnosisIcd10: d.diagnosisIcd10 ?? "",
@@ -473,7 +712,40 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					treatmentDescription: d.treatmentDescription ?? "",
 					complications: d.complications ?? "",
 					comorbidities: d.comorbidities ?? "",
-				});
+				};
+				setDiary(loadedDiary);
+				lastSyncedDiarySigRef.current = computeDiarySig(loadedDiary);
+
+				// DEF-03 (Мандат 8s): Синхронизация загруженного с сервера дневника в visitStore (ЭМК)
+				const storeState = useVisitStore.getState();
+				const currentStoreForm = storeState.visitNoteForm ?? {};
+				const hasStoreContent = Object.values(currentStoreForm).some(
+					(v) => typeof v === "string" && v.trim().length > 0,
+				);
+				const hasLoadedContent = Boolean(
+					loadedDiary.anamnesis.trim() ||
+						loadedDiary.statusLocalis.trim() ||
+						loadedDiary.treatmentDescription.trim() ||
+						loadedDiary.diagnosisIcd10.trim(),
+				);
+				if (
+					hasLoadedContent &&
+					(!hasStoreContent || !storeState.visitDraftUserEditedRef?.current)
+				) {
+					const convertedFromLoaded = visitNoteFromSoapDiary(
+						loadedDiary,
+						currentStoreForm,
+					);
+					isSyncingToStoreRef.current = true;
+					storeState.setVisitNoteForm((prev) => ({
+						...prev,
+						...convertedFromLoaded,
+					}));
+					lastSyncedStoreSigRef.current = computeStoreSig(
+						useVisitStore.getState().visitNoteForm,
+					);
+					isSyncingToStoreRef.current = false;
+				}
 				setTrayBarcode(
 					typeof d.instrumentTrayBarcode === "string" && d.instrumentTrayBarcode
 						? d.instrumentTrayBarcode
@@ -590,33 +862,38 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	}, []);
 
 	/*
-	 * Prefill SOAP из ЭМК, только когда дневника на сервере ещё нет.
+	 * DEF-03 (Мандат 8s — Закон Единого Неделимого Авторитета):
+	 * Непрерывная двусторонняя синхронизация дневника 043/у между вкладками ЭМК и Одонтограммы.
 	 *
-	 * БЫЛО: load phase "empty" оставлял EMPTY_DIARY, хотя visits.complaint /
-	 * anamnesis / objectiveStatus / treatmentPlan (visitNoteForm) уже заполнены
-	 * в том же приёме. Врач перепечатывал анамнез в S, осмотр в O, план в P.
+	 * БЫЛО: Текст, набранный на вкладке «ЭМК» (VisitSoapEditor / DebouncedEmkTextarea),
+	 * оставался в useVisitStore, а VisitDiarySection на вкладке «Одонтограмма»
+	 * держал локальный state diary. Префилл происходил только один раз при пустом дневнике.
+	 * Врач вбивал данные на одной вкладке, переходил на другую — и видел пустоту или старый текст.
 	 *
-	 * Только empty — ready/loading/failed не трогаем. Только пустые поля
-	 * дневника — набранный текст не затираем. Источник: visitNoteForm в store
-	 * (тот же, что ЭМК); если форма ещё пуста — поля activeVisit со сводки.
-	 * Чужой приём (activeVisit.id !== visitId) не подмешиваем.
+	 * СТАЛО:
+	 * 1. Sync A (store -> diary): любые изменения в visitNoteForm (ЭМК / шаблоны 448 / диктовка)
+	 *    мгновенно и реактивно отражаются в diary.
+	 * 2. Sync B (diary -> store): любые изменения в diary (Одонтограмма / пресеты / 1-клик норма)
+	 *    мгновенно и реактивно записываются в useVisitStore.visitNoteForm.
+	 * 3. Подпись (сигнатура) и directional lock защищают от зацикливания (feedback loop).
 	 */
 	const visitNoteForm = useVisitStore((s) => s.visitNoteForm);
 	const activeVisit = appLogic?.dashboard?.activeVisit ?? null;
 
+	const openVisitId =
+		activeVisit && typeof activeVisit === "object" && "id" in activeVisit
+			? (activeVisit as { id?: unknown }).id
+			: undefined;
+	const isCurrentActiveVisit =
+		!openVisitId ||
+		typeof openVisitId !== "string" ||
+		openVisitId === visitId ||
+		realVisitFieldId(openVisitId) === visitId;
+
+	// Sync A: Store (visitNoteForm) -> Diary (diary)
 	useEffect(() => {
-		if (loadState.phase !== "empty") return;
-		const openVisitId =
-			activeVisit && typeof activeVisit === "object" && "id" in activeVisit
-				? (activeVisit as { id?: unknown }).id
-				: undefined;
-		if (
-			typeof openVisitId === "string" &&
-			openVisitId &&
-			openVisitId !== visitId
-		) {
-			return;
-		}
+		if (!isCurrentActiveVisit) return;
+		if (isSyncingToStoreRef.current) return;
 
 		const formFromStore = visitNoteForm ?? {};
 		const visitRow =
@@ -636,33 +913,119 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			const fromVisit = visitRow?.[key];
 			return typeof fromVisit === "string" ? fromVisit : "";
 		};
-		const prefill = soapPrefillFromVisitNote({
+
+		const effectiveForm = {
 			complaint: pick("complaint"),
 			anamnesis: pick("anamnesis"),
 			objectiveStatus: pick("objectiveStatus"),
 			diagnosis: pick("diagnosis"),
 			treatmentPlan: pick("treatmentPlan"),
-		});
-		if (Object.keys(prefill).length === 0) return;
+		};
 
+		const currentStoreSig = computeStoreSig(effectiveForm);
+		if (currentStoreSig === lastSyncedStoreSigRef.current) return;
+		lastSyncedStoreSigRef.current = currentStoreSig;
+
+		const hasContent = Object.values(effectiveForm).some(
+			(v) => typeof v === "string" && v.trim().length > 0,
+		);
+		if (
+			!hasContent &&
+			(loadState.phase === "ready" || loadState.phase === "loading")
+		) {
+			return;
+		}
+
+		const converted = soapDiaryFromVisitNote(effectiveForm);
+		isSyncingFromStoreRef.current = true;
 		setDiary((prev) => {
-			let changed = false;
-			const next: DiaryState = { ...prev };
-			(Object.keys(prefill) as Array<keyof DiaryState>).forEach((key) => {
-				const incoming = prefill[key];
-				if (typeof incoming !== "string" || !incoming) return;
-				if ((prev[key] ?? "").trim()) return;
-				next[key] = incoming;
-				changed = true;
-			});
-			return changed ? next : prev;
+			const nextAnamnesis = converted.anamnesis ?? "";
+			const nextStatusLocalis = converted.statusLocalis ?? "";
+			const nextDiagnosisIcd = converted.diagnosisIcd10 ?? "";
+			const nextDiagnosisTooth = converted.diagnosisTooth ?? "";
+			const nextTreatment = converted.treatmentDescription ?? "";
+
+			const isDiff =
+				prev.anamnesis !== nextAnamnesis ||
+				prev.statusLocalis !== nextStatusLocalis ||
+				(nextDiagnosisIcd && prev.diagnosisIcd10 !== nextDiagnosisIcd) ||
+				(nextDiagnosisTooth && prev.diagnosisTooth !== nextDiagnosisTooth) ||
+				prev.treatmentDescription !== nextTreatment;
+
+			if (!isDiff) {
+				return prev;
+			}
+
+			const next: DiaryState = {
+				...prev,
+				anamnesis: nextAnamnesis,
+				statusLocalis: nextStatusLocalis,
+				diagnosisIcd10: nextDiagnosisIcd || prev.diagnosisIcd10,
+				diagnosisTooth: nextDiagnosisTooth || prev.diagnosisTooth,
+				treatmentDescription: nextTreatment,
+			};
+			lastSyncedDiarySigRef.current = computeDiarySig(next);
+			return next;
 		});
-		if (prefill.diagnosisIcd10) {
+
+		if (converted.diagnosisIcd10) {
 			setIcdSearch((current) =>
-				current.trim() ? current : (prefill.diagnosisIcd10 ?? current),
+				current.trim() ? current : (converted.diagnosisIcd10 ?? current),
 			);
 		}
-	}, [loadState.phase, visitId, visitNoteForm, activeVisit]);
+		isSyncingFromStoreRef.current = false;
+	}, [visitNoteForm, isCurrentActiveVisit, loadState.phase, activeVisit]);
+
+	// Sync B: Diary (diary) -> Store (visitNoteForm)
+	useEffect(() => {
+		if (!isCurrentActiveVisit) return;
+		if (isSyncingFromStoreRef.current) return;
+		if (loadState.phase === "loading") return;
+
+		const currentDiarySig = computeDiarySig(diary);
+		if (currentDiarySig === lastSyncedDiarySigRef.current) return;
+		lastSyncedDiarySigRef.current = currentDiarySig;
+
+		const hasDiaryContent = Boolean(
+			diary.anamnesis.trim() ||
+				diary.statusLocalis.trim() ||
+				diary.diagnosisIcd10.trim() ||
+				diary.treatmentDescription.trim(),
+		);
+		if (!hasDiaryContent) return;
+
+		const storeState = useVisitStore.getState();
+		const currentStoreForm = storeState.visitNoteForm ?? {};
+		const converted = visitNoteFromSoapDiary(diary, currentStoreForm);
+
+		const isDiff =
+			(converted.complaint !== undefined &&
+				converted.complaint !== (currentStoreForm.complaint ?? "")) ||
+			(converted.anamnesis !== undefined &&
+				converted.anamnesis !== (currentStoreForm.anamnesis ?? "")) ||
+			(converted.objectiveStatus !== undefined &&
+				converted.objectiveStatus !==
+					(currentStoreForm.objectiveStatus ?? "")) ||
+			(converted.diagnosis !== undefined &&
+				converted.diagnosis !== (currentStoreForm.diagnosis ?? "")) ||
+			(converted.treatmentPlan !== undefined &&
+				converted.treatmentPlan !== (currentStoreForm.treatmentPlan ?? ""));
+
+		if (!isDiff) return;
+
+		isSyncingToStoreRef.current = true;
+		storeState.setVisitNoteForm((prev) => ({
+			...prev,
+			...converted,
+		}));
+		if (storeState.visitDraftUserEditedRef) {
+			storeState.visitDraftUserEditedRef.current = true;
+		}
+		lastSyncedStoreSigRef.current = computeStoreSig(
+			useVisitStore.getState().visitNoteForm,
+		);
+		isSyncingToStoreRef.current = false;
+	}, [diary, isCurrentActiveVisit, loadState.phase]);
 
 	// ── Dual-layer IndexedDB & LocalStorage resilience for draft protection across browser reloads / crashes
 	const localDiaryStorageKey = `dente_diary_draft_${visitId}`;

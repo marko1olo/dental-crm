@@ -273,8 +273,9 @@ export function VisitEmkTab() {
 	// выдумывает, и вторая ветка была недостижима.
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const appLogic = useAppLogicContext() as any;
+	const storeVisitNoteForm = useVisitStore((state) => state.visitNoteForm);
 	const {
-		visitNoteForm = {},
+		visitNoteForm: contextVisitNoteForm = {},
 		updateVisitNoteField,
 		isVisitNoteDirty,
 		pendingVisitSaveCount,
@@ -291,6 +292,8 @@ export function VisitEmkTab() {
 		visitNoteAcceptMissingSteps,
 		activePatient,
 	} = appLogic;
+
+	const visitNoteForm = storeVisitNoteForm ?? contextVisitNoteForm ?? {};
 
 	/*
 	 * БЫЛО: activeEmkTab и setActiveEmkTab брались из useAppLogicContext, а таких
