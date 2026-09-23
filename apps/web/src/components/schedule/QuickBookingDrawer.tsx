@@ -1144,7 +1144,6 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			if (!Number.isNaN(startMs)) {
 				const defaultEndIso = new Date(startMs + (durationMinutes || 30) * 60_000).toISOString();
 				effectiveEndsAt = toLocal(defaultEndIso);
-				setEndsAtLocal(effectiveEndsAt);
 			}
 		}
 
@@ -1156,7 +1155,6 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			const startMs = Date.parse(startsAtIso);
 			const fixedEndIso = new Date(startMs + (durationMinutes || 30) * 60_000).toISOString();
 			endsAtIso = fixedEndIso;
-			setEndsAtLocal(toLocal(fixedEndIso));
 		}
 
 		setIsSubmitting(true);
