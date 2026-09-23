@@ -2,7 +2,7 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
-> ⚠️ **СТАТУС (2026-09-23 / WAVES 175–292 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 337 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 400 ФИЧ: 63 КАНОНИЧЕСКИЕ + 337 АДДЕНДУМ, 400/400 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
+> ⚠️ **СТАТУС (2026-09-23 / WAVES 175–293 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 337 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 400 ФИЧ: 63 КАНОНИЧЕСКИЕ + 337 АДДЕНДУМ, 400/400 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
@@ -6606,4 +6606,31 @@
   - `apps/api/src/routes/inventory.ts`
   - `.agents/WAREHOUSE_AND_SUPPLY.md`
   - `.agents/API_ROUTES_CATALOG.md` (Wave 292, Фича #400)
+
+### 2.10.393. Wave 293: ЗТЛ и Клиническая Автономия — ликвидация блокирующих prompt и остаточного медсестринского шума (Мандаты 8e, 8n, 8v) (Фича #400)
+- **Функционал**:
+  1. *Ликвидация блокирующих window.prompt в нарядах ЗТЛ (Мандаты 8e, 8n)*:
+     - В компонентах зуботехнической лаборатории `LabOrdersPage.tsx` и `LabOrdersPanel.tsx` ликвидированы все блокирующие вызовы `window.prompt()`, замораживавшие интерфейс браузера и создававшие искусственные барьеры для врача у кресла;
+     - Добавление URL фото окклюзии/прикуса, комментарии зубному технику и оформление причин рекламаций/переделок нарядов переведены на неблокирующие нативные диалоги и всплывающие поповеры с сохранением фокуса, debounced-автосохранением и валидацией;
+     - Врач имеет полную свободу при рекламациях и гарантийных переделках без модальных тупиков (Zero Dead-Ends);
+  2. *Окончательное искоренение остаточного медсестринского шума (Мандат 8v)*:
+     - Окончательно вычищены остаточные зависимости от исключительной роли медсестры в списании анестетиков (`NurseCarpuleDisposalModal.tsx`), журналах ПСО (`PsoRegisterTab.tsx`) и автоклава (`AutoclaveRegisterTab.tsx`, `AutoclaveJournal257Tab.tsx`, `AutoclaveLog257Modal.tsx`);
+     - В дневнике приёма Формы 043/у (`VisitDiarySection.tsx`, `useVisitDiaryLogic.ts`) исключено навязывание сканирования крафт-пакетов стерилизации перед приёмом: стерильность инструментов гарантирована клиникой по умолчанию согласно СанПиН 3.3686-21;
+     - Обеспечен 100% суверенитет соло-врача и администратора без ожидания вспомогательного персонала.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/patients/LabOrdersPanel.tsx`
+  - `apps/web/src/pages/LabOrdersPage.tsx`
+  - `apps/web/src/components/visit/VisitDiarySection.tsx`
+  - `apps/web/src/components/useVisitDiaryLogic.ts`
+  - `apps/web/src/components/inventory/NurseCarpuleDisposalModal.tsx`
+  - `apps/web/src/components/sanpin/AutoclaveRegisterTab.tsx`
+  - `apps/web/src/components/sanpin/PsoRegisterTab.tsx`
+  - `apps/web/src/components/sanpin/SanpinRegisters.tsx`
+  - `apps/web/src/components/sanpin/autoclaveLog/AutoclaveJournal257Tab.tsx`
+  - `apps/web/src/components/sanpin/autoclaveLog/AutoclaveLog257Modal.tsx`
+  - `apps/web/src/components/sanpin/kraft/kraftPackageEngine.ts`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md` (Wave 293)
+
 

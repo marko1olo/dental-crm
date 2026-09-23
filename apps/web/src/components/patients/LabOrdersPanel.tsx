@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
-import { LabOrdersPage } from "../../pages/LabOrdersPage";
+import { LabOrdersPage, LabActionPromptModal, type LabPromptDialogState } from "../../pages/LabOrdersPage";
 
 // Lazy-loaded secondary modals for low-spec hardware (4GB RAM, 5400 RPM HDD)
 const DentalLabOrderModal = lazy(() =>
@@ -124,6 +124,9 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 	const [openMenuOrderId, setOpenMenuOrderId] = useState<string | null>(null);
 	const [modalInitialTab, setModalInitialTab] = useState<"main" | "shades" | "stages" | "print">("main");
 	const cardMenuRef = useRef<HTMLDivElement | null>(null);
+
+	// Action Prompt Modal State (Mandates 8e, 8n)
+	const [promptState, setPromptState] = useState<LabPromptDialogState | null>(null);
 
 	// Fast Presets dropdown state
 	const [isPresetsMenuOpen, setIsPresetsMenuOpen] = useState(false);
@@ -355,43 +358,66 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 	};
 
 	const handleAttachBitePhoto = (order: LabOrder) => {
-		const url = window.prompt("Введите URL фото окклюзии/прикуса или ссылку на облачный снимок:", order.attachedImageUrl || "");
-		if (url === null) return;
-		void fetch(`/api/clinical/lab-orders/${order.id}`, {
-			method: "PATCH",
-			headers: {
-				"Content-Type": "application/json",
-				...denteAdminSecretRequestHeaders(),
+		setOpenMenuOrderId(null);
+		setPromptState({
+			title: "Фото прикуса / 3D-скан (ЗТЛ)",
+			description: `Укажите URL или ссылку на фото прикуса, окклюдограмму или 3D-снимок для наряда #${order.id.slice(0, 8)}.`,
+			icon: <Camera className="w-4 h-4 text-teal-600 dark:text-teal-400" />,
+			initialValue: order.attachedImageUrl || "",
+			placeholder: "https://... или storage/scans/bite_photo.jpg",
+			submitLabel: "Прикрепить фото",
+			submitVariant: "teal",
+			onSubmit: (url: string) => {
+				setPromptState(null);
+				void fetch(`/api/clinical/lab-orders/${order.id}`, {
+					method: "PATCH",
+					headers: {
+						"Content-Type": "application/json",
+						...denteAdminSecretRequestHeaders(),
+					},
+					body: JSON.stringify({ attachedImageUrl: url.trim() || null }),
+				}).then((res) => {
+					if (res.ok) {
+						showToast("Фото прикуса сохранено в наряде ЗТЛ", "success");
+						void fetchOrders();
+					} else {
+						showToast("Не удалось сохранить фото", "error");
+					}
+				}).catch(() => showToast("Ошибка сети при сохранении фото", "error"));
 			},
-			body: JSON.stringify({ attachedImageUrl: url.trim() || null }),
-		}).then((res) => {
-			if (res.ok) {
-				showToast("Фото прикуса сохранено в наряде ЗТЛ", "success");
-				void fetchOrders();
-			} else {
-				showToast("Не удалось сохранить фото", "error");
-			}
-		}).catch(() => showToast("Ошибка сети при сохранении фото", "error"));
+		});
 	};
 
 	const handleTechnicianComment = (order: LabOrder) => {
-		const comment = window.prompt("Комментарий/уточнение для зубного техника:", order.labComments || "");
-		if (comment === null) return;
-		void fetch(`/api/clinical/lab-orders/${order.id}`, {
-			method: "PATCH",
-			headers: {
-				"Content-Type": "application/json",
-				...denteAdminSecretRequestHeaders(),
+		setOpenMenuOrderId(null);
+		setPromptState({
+			title: "Комментарий зубному технику",
+			description: `Клиническое уточнение границ уступа, цвета по VITA, рельефа фиссур или анатомии для наряда #${order.id.slice(0, 8)}.`,
+			icon: <MessageSquare className="w-4 h-4 text-teal-600 dark:text-teal-400" />,
+			initialValue: order.labComments || "",
+			placeholder: "Например: поднутрения с дистальной стороны не заливать, уступ плечевой 0.8мм...",
+			submitLabel: "Сохранить комментарий",
+			submitVariant: "teal",
+			multiline: true,
+			onSubmit: (comment: string) => {
+				setPromptState(null);
+				void fetch(`/api/clinical/lab-orders/${order.id}`, {
+					method: "PATCH",
+					headers: {
+						"Content-Type": "application/json",
+						...denteAdminSecretRequestHeaders(),
+					},
+					body: JSON.stringify({ labComments: comment.trim() || null }),
+				}).then((res) => {
+					if (res.ok) {
+						showToast("Комментарий технику обновлен", "success");
+						void fetchOrders();
+					} else {
+						showToast("Не удалось обновить комментарий", "error");
+					}
+				}).catch(() => showToast("Ошибка сети", "error"));
 			},
-			body: JSON.stringify({ labComments: comment.trim() || null }),
-		}).then((res) => {
-			if (res.ok) {
-				showToast("Комментарий технику обновлен", "success");
-				void fetchOrders();
-			} else {
-				showToast("Не удалось обновить комментарий", "error");
-			}
-		}).catch(() => showToast("Ошибка сети", "error"));
+		});
 	};
 
 	const handleRepeatFitting = (order: LabOrder) => {
@@ -400,25 +426,46 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 	};
 
 	const handleReclamation = (order: LabOrder) => {
-		const reason = window.prompt("Причина рекламации/переделки наряда ЗТЛ (скол, не садится, цвет):", "");
-		if (reason === null) return;
-		void fetch(`/api/clinical/lab-orders/${order.id}`, {
-			method: "PATCH",
-			headers: {
-				"Content-Type": "application/json",
-				...denteAdminSecretRequestHeaders(),
+		setOpenMenuOrderId(null);
+		const defaultReason = "Несоответствие цвета VITA / переделка по гарантии (0 ₽)";
+		setPromptState({
+			title: "Оформление рекламации ЗТЛ",
+			description: "Перевод наряда на гарантийную доработку (0 ₽). Выберите причину из списка или введите подробное описание дефекта:",
+			icon: <AlertOctagon className="w-4 h-4 text-rose-600 dark:text-rose-400" />,
+			initialValue: defaultReason,
+			placeholder: "Опишите дефект конструкции...",
+			submitLabel: "Оформить рекламацию (0 ₽)",
+			submitVariant: "danger",
+			multiline: true,
+			quickPresets: [
+				"Несоответствие цвета VITA / переделка по гарантии (0 ₽)",
+				"Скол облицовочной керамики",
+				"Балансир каркаса / неплотное краевое прилегание",
+				"Завышение по прикусу / окклюзионная интерференция",
+				"Некорректная анатомическая форма / контактный пункт",
+			],
+			onSubmit: (reason: string) => {
+				setPromptState(null);
+				if (!reason.trim()) return;
+				void fetch(`/api/clinical/lab-orders/${order.id}`, {
+					method: "PATCH",
+					headers: {
+						"Content-Type": "application/json",
+						...denteAdminSecretRequestHeaders(),
+					},
+					body: JSON.stringify({
+						clinicalNotes: `${order.clinicalNotes ? `${order.clinicalNotes}\n` : ""}[РЕКЛАМАЦИЯ]: ${reason.trim()}`,
+					}),
+				}).then((res) => {
+					if (res.ok) {
+						showToast("Рекламация зафиксирована в наряде ЗТЛ", "success");
+						void fetchOrders();
+					} else {
+						showToast("Не удалось зафиксировать рекламацию", "error");
+					}
+				}).catch(() => showToast("Ошибка сети", "error"));
 			},
-			body: JSON.stringify({
-				clinicalNotes: `${order.clinicalNotes ? `${order.clinicalNotes}\n` : ""}[РЕКЛАМАЦИЯ]: ${reason}`,
-			}),
-		}).then((res) => {
-			if (res.ok) {
-				showToast("Рекламация зафиксирована в наряде ЗТЛ", "success");
-				void fetchOrders();
-			} else {
-				showToast("Не удалось зафиксировать рекламацию", "error");
-			}
-		}).catch(() => showToast("Ошибка сети", "error"));
+		});
 	};
 
 	const handleQuickSubmit = async (e: React.FormEvent) => {
@@ -1566,6 +1613,12 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 					/>
 				</Suspense>
 			)}
+
+			{/* Non-blocking Action Prompt Modal (Mandates 8e, 8n) */}
+			<LabActionPromptModal
+				state={promptState}
+				onClose={() => setPromptState(null)}
+			/>
 		</div>
 	);
 }
