@@ -57,7 +57,9 @@ registerHooks({
 							toBeTruthy: wrap(() => assert.ok(val)),
 							toBeFalsy: wrap(() => assert.ok(!val)),
 							toBeGreaterThan: wrap((exp) => assert.ok(val > exp)),
+							toBeGreaterThanOrEqual: wrap((exp) => assert.ok(val >= exp)),
 							toBeLessThan: wrap((exp) => assert.ok(val < exp)),
+							toBeLessThanOrEqual: wrap((exp) => assert.ok(val <= exp)),
 						};
 						if (!isNot) {
 							res.not = makeExpect(val, true);

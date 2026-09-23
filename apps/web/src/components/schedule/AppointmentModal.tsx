@@ -13,6 +13,7 @@ import {
 	CheckCircle2,
 	Clock,
 	Copy,
+	CreditCard,
 	FileText,
 	FlaskConical,
 	Globe,
@@ -28,9 +29,10 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { useAppStore } from "../../store/appStore";
+import { usePatientStore } from "../../store/patientStore";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { matchesPatientSearch } from "../../utils/patientSearchUtils";
 import {
@@ -1128,6 +1130,32 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							</span>
 							<span className="sm:hidden">Договор</span>
 						</button>
+						{patientId && !isNewAppointment && (
+							<button
+								type="button"
+								onClick={() => {
+									onClose();
+									usePatientStore.getState().setSelectedPatientId(patientId);
+									useAppStore.getState().setCurrentView("finance");
+									showToast(
+										`Касса 54-ФЗ: расчёт ${currentPatientName}`,
+										"info",
+									);
+								}}
+								className="h-8 min-h-[32px] px-2 sm:px-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+								title="Принять оплату через кассу 54-ФЗ (1 клик)"
+								data-testid="appointment-modal-pay-btn"
+							>
+								<CreditCard
+									size={14}
+									className="text-emerald-600 dark:text-emerald-400 shrink-0"
+								/>
+								<span className="hidden sm:inline whitespace-nowrap">
+									Оплата 54-ФЗ
+								</span>
+								<span className="sm:hidden">Оплата</span>
+							</button>
+						)}
 						{/* Secondary actions popover (Hick / Miller: all non-primary actions in ... menu) */}
 						<div className="relative">
 							<button
@@ -1152,6 +1180,30 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								className={`absolute right-0 top-full mt-1 w-56 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl z-30 py-1 ${isMenuOpen ? "block" : "hidden"}`}
 								data-testid="appointment-modal-more-menu"
 							>
+								{patientId && !isNewAppointment && (
+									<button
+										type="button"
+										onClick={() => {
+											setIsMenuOpen(false);
+											onClose();
+											usePatientStore.getState().setSelectedPatientId(patientId);
+											useAppStore.getState().setCurrentView("finance");
+											showToast(
+												`Касса 54-ФЗ: расчёт ${currentPatientName}`,
+												"info",
+											);
+										}}
+										className="w-full px-3 py-2 text-left text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
+										title="Принять оплату через кассу 54-ФЗ"
+										data-testid="appointment-modal-menu-pay-btn"
+									>
+										<CreditCard
+											size={14}
+											className="text-emerald-600 dark:text-emerald-400 shrink-0"
+										/>
+										<span className="truncate">Касса 54-ФЗ / Оплата</span>
+									</button>
+								)}
 								<button
 									type="button"
 									onClick={() => {

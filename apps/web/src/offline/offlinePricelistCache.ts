@@ -10,6 +10,10 @@
 
 import { isLowSpecDevice } from "../utils/lowSpecHddOptimizer.js";
 import { logger } from "../utils/logger.js";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../lib/safeLocalStorage.js";
 
 export interface CachedPricelistItem {
 	readonly id: string;
@@ -61,9 +65,9 @@ export function cachePricelistOffline(items: CachedPricelistItem[]): void {
 	}
 
 	try {
-		if (typeof localStorage !== "undefined") {
-			localStorage.setItem(PRICELIST_STORAGE_KEY, JSON.stringify(bounded));
-			localStorage.setItem(
+		if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+			safeLocalStorageSetItem(PRICELIST_STORAGE_KEY, JSON.stringify(bounded));
+			safeLocalStorageSetItem(
 				CACHE_METADATA_KEY,
 				JSON.stringify({
 					cachedAt: Date.now(),
@@ -85,8 +89,8 @@ export function getCachedPricelistOffline(): CachedPricelistItem[] {
 	}
 
 	try {
-		if (typeof localStorage !== "undefined") {
-			const raw = localStorage.getItem(PRICELIST_STORAGE_KEY);
+		if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+			const raw = safeLocalStorageGetItem(PRICELIST_STORAGE_KEY);
 			if (raw) {
 				const parsed = JSON.parse(raw);
 				if (Array.isArray(parsed)) {
@@ -149,8 +153,8 @@ export function cacheNomenclature804nOffline(items: CachedNomenclature804nItem[]
 	}
 
 	try {
-		if (typeof localStorage !== "undefined") {
-			localStorage.setItem(NOMENCLATURE_STORAGE_KEY, JSON.stringify(bounded));
+		if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+			safeLocalStorageSetItem(NOMENCLATURE_STORAGE_KEY, JSON.stringify(bounded));
 		}
 	} catch (e) {
 		// Ignore quota
@@ -166,8 +170,8 @@ export function searchCachedNomenclature804n(query: string, limit = 15): CachedN
 
 	if (items.length === 0) {
 		try {
-			if (typeof localStorage !== "undefined") {
-				const raw = localStorage.getItem(NOMENCLATURE_STORAGE_KEY);
+			if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+				const raw = safeLocalStorageGetItem(NOMENCLATURE_STORAGE_KEY);
 				if (raw) {
 					const parsed = JSON.parse(raw);
 					if (Array.isArray(parsed)) {
@@ -195,8 +199,8 @@ export function searchCachedNomenclature804n(query: string, limit = 15): CachedN
  */
 export function isPricelistCacheStale(): boolean {
 	try {
-		if (typeof localStorage !== "undefined") {
-			const metaRaw = localStorage.getItem(CACHE_METADATA_KEY);
+		if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+			const metaRaw = safeLocalStorageGetItem(CACHE_METADATA_KEY);
 			if (!metaRaw) return true;
 			const meta = JSON.parse(metaRaw);
 			const limits = getPricelistCacheLimits();

@@ -35,6 +35,7 @@ import {
 	X,
 } from 'lucide-react';
 import { sliceDomList } from '../../../utils/domVirtualizationHelper';
+import { getOptimizedTiming } from '../../../utils/lowSpecHddOptimizer';
 import {
 	PriceListMappingDiffView,
 	type IngestedMappingItem,
@@ -98,6 +99,21 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 	const [selectedCategory, setSelectedCategory] = useState<Order804nCategory | 'all'>('all');
 	const [selectedSpecialty, setSelectedSpecialty] = useState<DoctorSpecialty | 'all'>('all');
 	const [searchTerm, setSearchTerm] = useState('');
+	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+
+	// Адаптивный дебаунс поиска номенклатуры под медленные CPU и HDD (Mandate 8c, 8n)
+	useEffect(() => {
+		if (!searchTerm) {
+			setDebouncedSearchTerm('');
+			return;
+		}
+		const timing = getOptimizedTiming();
+		const timer = setTimeout(() => {
+			setDebouncedSearchTerm(searchTerm);
+		}, timing.searchDebounceMs);
+		return () => clearTimeout(timer);
+	}, [searchTerm]);
+
 	const [activeTier, setActiveTier] = useState<PriceTierKind>('standard');
 	const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
 
@@ -308,13 +324,13 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 	// Filtered & Sorted Catalog (Mandate 8c)
 	const filteredItems = useMemo(() => {
 		const searchResults = searchPricelistItems(items, {
-			searchTerm,
+			searchTerm: debouncedSearchTerm,
 			category: selectedCategory,
 			specialty: selectedSpecialty,
 			includeArchived: false,
 		});
 		return sortPricelistItems(searchResults, sortField, sortDirection, activeTier);
-	}, [items, searchTerm, selectedCategory, selectedSpecialty, sortField, sortDirection, activeTier]);
+	}, [items, debouncedSearchTerm, selectedCategory, selectedSpecialty, sortField, sortDirection, activeTier]);
 
 	const handleToggleSort = (field: PricelistSortField) => {
 		if (sortField === field) {
@@ -521,7 +537,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 	// Сброс лимита видимости при смене фильтров, сортировки и поиска
 	useEffect(() => {
 		setDisplayLimit(40);
-	}, [searchTerm, selectedCategory, selectedSpecialty, activeTier, sortField, sortDirection]);
+	}, [debouncedSearchTerm, selectedCategory, selectedSpecialty, activeTier, sortField, sortDirection]);
 
 	// Виртуализация списка услуг порциями по 40 элементов (снижение DOM узлов с 7500+ до ~300)
 	const pricelistSlice = useMemo(() => {

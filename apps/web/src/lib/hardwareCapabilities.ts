@@ -389,6 +389,30 @@ export function initHardwareCapabilities(): HardwareCapabilities {
 		}
 	}
 
+	// Dynamic background probe for slow mechanical HDD (5400 RPM / low-spec I/O)
+	if (
+		typeof window !== "undefined" &&
+		typeof window.indexedDB !== "undefined" &&
+		typeof process !== "undefined" &&
+		process.env?.NODE_ENV !== "test"
+	) {
+		const runDiskBenchmark = () => {
+			import("../utils/lowSpecHddOptimizer.js")
+				.then((m) => m.measureIndexedDbDiskSpeed())
+				.then((res) => {
+					if (res?.isSlowDisk) {
+						applyLowSpecToRoot(true);
+					}
+				})
+				.catch(() => {});
+		};
+		if ("requestIdleCallback" in window) {
+			(window as unknown as { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(runDiskBenchmark);
+		} else {
+			setTimeout(runDiskBenchmark, 1000);
+		}
+	}
+
 	return caps;
 }
 

@@ -376,4 +376,35 @@ describe("AppointmentModal", () => {
 			"Blank contract button must not be disabled for walk-in patient",
 		);
 	});
+
+	it("renders 1-click Оплата 54-ФЗ button for assigned patient to eliminate cashier friction per Mandates 8e, 8n", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(AppointmentModal, {
+				isOpen: true,
+				appointment: mockAppointment,
+				dashboard: mockDashboard as Dashboard,
+				onClose: () => {},
+				onSave: async () => true,
+				patientName: () => "Иванов Иван",
+				formatTime: () => "10:00",
+				toDateTimeLocalValue: () => "2026-08-21T10:00",
+				fromDateTimeLocalValue: () => "2026-08-21T10:00:00.000Z",
+				appointmentLabels: mockLabels,
+				activeVisitLockedAppointmentStatuses: new Set<Appointment["status"]>(),
+			}),
+		);
+
+		assert.ok(
+			html.includes('data-testid="appointment-modal-pay-btn"'),
+			"Must render 1-click Оплата 54-ФЗ button",
+		);
+		assert.ok(
+			html.includes("Оплата 54-ФЗ"),
+			"Must show text Оплата 54-ФЗ",
+		);
+		assert.ok(
+			html.includes('data-testid="appointment-modal-menu-pay-btn"'),
+			"Must also include pay button in more options dropdown",
+		);
+	});
 });
