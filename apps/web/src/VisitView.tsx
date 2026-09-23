@@ -1441,7 +1441,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			<div className="panel visit-panel pb-28 sm:pb-8" id="visit" data-testid="visit-view">
 				{/* ═══ 2-ROW COMPACT MONOLITHIC VISIT HEADER (<=68px) (Mandates 8e, 8p, HIG) ═══ */}
 				<header
-					className="visit-monolithic-header rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs mb-1 sm:mb-1.5 overflow-hidden shrink-0"
+					className="visit-monolithic-header rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs mb-1 sm:mb-1.5 overflow-hidden shrink-0 sticky top-0 z-30 backdrop-blur-md"
 					data-testid="visit-header-monolith"
 					aria-label="Шапка текущего приёма"
 				>
@@ -1541,6 +1541,23 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								{isSignedVisit ? "Подписано" : "На приёме"}
 							</span>
 
+							{/* Кнопка «Сохранить» на мобильном в шапке (Мандаты 8d, 8e) */}
+							<button
+								type="button"
+								onClick={async () => {
+									if (typeof flushPendingVisitSaves === "function") {
+										await flushPendingVisitSaves();
+									}
+									showToast("Изменения приёма сохранены", "success", 2000);
+								}}
+								data-testid="btn-save-visit-header-mobile"
+								className="sm:hidden secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 py-0 text-xs font-bold flex items-center gap-1 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap h-11 sm:h-7 text-[var(--teal)] border-[var(--teal)]/40 hover:bg-[var(--teal-soft)]"
+								title="Сохранить изменения приёма в 1 клик"
+							>
+								<Check size={14} className="stroke-[3] shrink-0" />
+								<span className="text-xs font-bold whitespace-nowrap">Сохранить</span>
+							</button>
+
 							{/* Кнопка «Завершить приём» */}
 							<button
 								type="button"
@@ -1551,7 +1568,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							>
 								<CheckCircle2 size={15} className="shrink-0" />
 								<span className="hidden sm:inline whitespace-nowrap">Завершить приём</span>
-								<span className="sm:hidden text-xs font-bold whitespace-nowrap">Готово</span>
+								<span className="sm:hidden text-xs font-bold whitespace-nowrap">Завершить</span>
 							</button>
 
 							{/* Меню дополнительных действий врача «...» (Мандаты 8d, 8e, 8p: ровно 1 строка тулбара, вторичные действия в поповере) */}
@@ -1682,7 +1699,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</div>
 
 					{/* Строка 2 (высота ~30-34px на десктопе, 44px на мобильном): Компактные табы разделов визита (DEF-VIS-02, DEFECT-MOB-01) */}
-					<div className="relative min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center bg-[var(--paper-soft,rgba(0,0,0,0.02))] min-w-0 max-w-full overflow-hidden">
+					<div className="relative min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center bg-[var(--paper-soft,rgba(0,0,0,0.02))] w-full min-w-0 max-w-full overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 						<VisitMainTabs
 							visitSubViewTab={visitSubViewTab}
 							setVisitSubViewTab={setVisitSubViewTab}

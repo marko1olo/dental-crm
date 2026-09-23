@@ -10,6 +10,7 @@ import {
 	Bone,
 	Calendar,
 	Check,
+	CheckCircle2,
 	CheckSquare,
 	ChevronDown,
 	Clock,
@@ -2148,7 +2149,7 @@ export function VisitEmkTab() {
 			)}
 
 			{/* ── ЕДИНЫЙ ТУЛБАР ЭМК 043/у (СТРОГО 1 СТРОКА 30–32px, МАНДАТЫ 8c, 8d, 8p) ── */}
-			<div className="emk-unified-toolbar flex items-center justify-start sm:justify-between gap-1 sm:gap-1.5 my-0 py-0.5 border-b border-[var(--line)] w-full min-w-0 max-w-full overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-nowrap min-h-[44px] sm:min-h-[32px]">
+			<div className="emk-unified-toolbar flex flex-nowrap items-center justify-start sm:justify-between gap-1 sm:gap-1.5 my-0 py-0.5 border-b border-[var(--line)] w-full min-w-0 max-w-full overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-h-[44px] sm:min-h-[32px] px-1 touch-pan-x">
 				{/* 1. HUD ГОЛОСОВОЙ ДИКТОВКИ / AI-ПИЛОТ (инлайн в едином тулбаре 32-36px, Мандаты 8c, 8d, 8p) */}
 				<EmkVoicePilot
 					onApplyToothState={handleApplyVoiceToothState}
@@ -2163,7 +2164,7 @@ export function VisitEmkTab() {
 
 				{/* ЛЕВАЯ ЧАСТЬ: Вкладки секций ЭМК (Все поля, Жалобы, Анамнез...) */}
 				<div
-					className="emk-tabs-container flex items-center gap-1 min-w-0 flex-nowrap shrink-0"
+					className="emk-tabs-container flex flex-nowrap items-center gap-1 overflow-x-auto scrollbar-none whitespace-nowrap min-w-max px-1 shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x"
 					role="tablist"
 					aria-label="Вкладки протокола приема"
 				>
@@ -2177,14 +2178,14 @@ export function VisitEmkTab() {
 								type="button"
 								role="tab"
 								aria-selected={activeEmkTab === tab.id}
-								className={`emk-tab-button min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2.5 sm:px-2.5 py-0 text-xs font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center gap-1 shrink-0 flex-shrink-0 whitespace-nowrap touch-manipulation ${
+								className={`emk-tab-button min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2.5 sm:px-2.5 py-0 text-xs font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center gap-1 shrink-0 flex-shrink-0 whitespace-nowrap min-w-max touch-manipulation ${
 									activeEmkTab === tab.id
 										? "active bg-[var(--teal-fill,var(--teal))] text-white border-[var(--teal-fill,var(--teal))] shadow-2xs"
 										: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)]"
 								}`}
 								onClick={() => setActiveEmkTab(tab.id)}
 							>
-								<span className="whitespace-nowrap shrink-0 flex-shrink-0">
+								<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">
 									<span className="hidden sm:inline">{tab.label}</span>
 									<span className="sm:hidden">{tab.shortLabel || tab.label}</span>
 								</span>
@@ -2649,7 +2650,7 @@ export function VisitEmkTab() {
 							}}
 						>
 							<div className="flex items-center justify-between gap-2 w-full flex-wrap">
-								<div className="flex items-center gap-2 min-w-0">
+								<div className="flex items-center gap-2 min-w-0 flex-wrap">
 									<span
 										className={`w-2.5 h-2.5 rounded-full shrink-0 ${meta.dotColor}`}
 									/>
@@ -2663,6 +2664,47 @@ export function VisitEmkTab() {
 											{meta.badge}
 										</span>
 									) : null}
+									{["complaint", "anamnesis", "objectiveStatus"].includes(field.key) && (
+										<button
+											type="button"
+											data-testid={`btn-norm-section-${field.key}`}
+											onClick={() => {
+												if (isSignedVisit && !isRevisingVisitNote) {
+													setIsRevisingVisitNote(true);
+												}
+												if (!updateVisitNoteField) return;
+												if (field.key === "complaint") {
+													updateVisitNoteField(
+														"complaint",
+														"Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).",
+													);
+													const currDiag = (visitNoteForm.diagnosis || "").trim();
+													if (!currDiag || currDiag === "K02.1" || currDiag.length < 4) {
+														updateVisitNoteField("diagnosis", "Z01.2 Стоматологическое обследование и гигиена");
+													}
+													showToast("Жалобы: заполнена норма («Жалоб не предъявляет»)", "success", 2000);
+												} else if (field.key === "anamnesis") {
+													updateVisitNoteField(
+														"anamnesis",
+														"Соматически здоров. Аллергоанамнез не отягощен. Вредных привычек нет. Полоскания и гигиенический уход регулярные.",
+													);
+													showToast("Анамнез: заполнена норма («Соматически здоров»)", "success", 2000);
+												} else if (field.key === "objectiveStatus") {
+													updateVisitNoteField(
+														"objectiveStatus",
+														"Слизистая оболочка полости рта физиологической окраски, бледно-розовая, умеренно влажная. Десневой край плотный, бледно-розовый, кровоточивость при зондировании отсутствует. Патологических зубодесневых карманов нет (глубина бороздки 1–2 мм). Регионарные лимфоузлы не увеличены, подвижные, безболезненные при пальпации. Зубные ряды интактны / санированы.",
+													);
+													showToast("Объективно: заполнена физиологическая норма полости рта", "success", 2000);
+												}
+											}}
+											className="min-h-[26px] sm:min-h-0 sm:h-6 h-6.5 px-2 py-0 text-xs font-bold rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1 shrink-0 shadow-2xs whitespace-nowrap"
+											title={`Заполнить физиологическую норму для «${field.label}» в 1 клик`}
+											aria-label={`Норма для ${field.label}`}
+										>
+											<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+											<span>Норма</span>
+										</button>
+									)}
 								</div>
 								<SmartMicrophoneButton
 									context="visit"
@@ -4652,6 +4694,54 @@ export function VisitEmkTab() {
 					/>
 				</Suspense>
 			)}
+
+			{/* ═══ МОБИЛЬНЫЙ ФИКСИРОВАННЫЙ БАР БЫСТРЫХ ДЕЙСТВИЙ (МАНДАТЫ 8d, 8e: СОХРАНЕНИЕ И ЗАВЕРШЕНИЕ В 1 КЛИК) ═══ */}
+			<div
+				className="sm:hidden fixed bottom-14 left-0 right-0 z-20 px-3 py-2 bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--line)] shadow-lg flex items-center justify-between gap-2"
+				data-testid="mobile-emk-sticky-bottom-bar"
+			>
+				<button
+					type="button"
+					data-testid="btn-mobile-sticky-norm"
+					onClick={handleApplyPhysiologicalNorm}
+					className="min-h-[36px] h-9 px-2.5 py-0 text-xs font-bold rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 flex items-center gap-1 shrink-0 shadow-2xs active:scale-95 cursor-pointer"
+					title="Физиологическая норма в 1 клик (соматически здоров)"
+				>
+					<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+					<span>Норма</span>
+				</button>
+				<div className="flex items-center gap-1.5 shrink-0">
+					<button
+						type="button"
+						data-testid="btn-mobile-sticky-save"
+						onClick={async () => {
+							if (typeof flushPendingVisitSaves === "function") {
+								await flushPendingVisitSaves();
+							}
+							if (typeof flushSoloPendingSave === "function") {
+								flushSoloPendingSave();
+							}
+							showToast("Запись приёма сохранена", "success", 2000);
+						}}
+						className="secondary-button min-h-[36px] h-9 px-3 py-0 text-xs font-bold text-[var(--teal)] border-[var(--teal)]/40 hover:bg-[var(--teal-soft)] flex items-center gap-1 rounded-lg shrink-0 cursor-pointer active:scale-95"
+						title="Сохранить дневник приёма в 1 клик"
+					>
+						<Check size={14} className="stroke-[3] shrink-0" />
+						<span>Сохранить</span>
+					</button>
+					<button
+						type="button"
+						data-testid="btn-mobile-sticky-complete"
+						onClick={handleCompleteVisitAndGenerateReceipt}
+						disabled={isCompletingVisit}
+						className="primary-button min-h-[36px] h-9 px-3 py-0 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1 rounded-lg shrink-0 shadow-sm cursor-pointer active:scale-95 disabled:opacity-50"
+						title="Завершить приём и сформировать чек"
+					>
+						<CheckCircle2 size={14} className="shrink-0" />
+						<span>{isCompletingVisit ? "…" : "Завершить"}</span>
+					</button>
+				</div>
+			</div>
 
 			{/* ── ПЕЧАТНАЯ ВЕРСИЯ КАРТЫ 043/У И ДНЕВНИКА ПРИЁМА ДЛЯ А4 ── */}
 			<div
