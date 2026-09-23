@@ -1938,7 +1938,24 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				scheduleChairFilterId={scheduleChairFilterId}
 				setScheduleChairFilterId={setScheduleChairFilterId}
 				scheduleStatusFilter={scheduleStatusFilter}
-				setScheduleStatusFilter={setScheduleStatusFilter}
+				setScheduleStatusFilter={(status: string | null) => {
+					if (!setScheduleStatusFilter) return;
+					if (!status || status === "all") {
+						setScheduleStatusFilter("all");
+					} else {
+						setScheduleStatusFilter(
+							status as
+								| "cancelled"
+								| "completed"
+								| "confirmed"
+								| "no_show"
+								| "in_treatment"
+								| "planned"
+								| "arrived"
+								| "all",
+						);
+					}
+				}}
 				chairDoctorAssignments={computedChairDoctorAssignments}
 				scheduleViewMode={scheduleViewMode}
 				setScheduleViewMode={setScheduleViewMode}
