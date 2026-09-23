@@ -2,7 +2,7 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
-> ⚠️ **СТАТУС (2026-09-23 / WAVES 175–295 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 337 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 400 ФИЧ: 63 КАНОНИЧЕСКИЕ + 337 АДДЕНДУМ, 400/400 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
+> ⚠️ **СТАТУС (2026-09-23 / WAVES 175–296 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 337 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 400 ФИЧ: 63 КАНОНИЧЕСКИЕ + 337 АДДЕНДУМ, 400/400 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
@@ -6687,5 +6687,38 @@
   - `docs/competitive-audit/BACKLOG.md`
   - `docs/competitive-audit/OUR_CRM_MAP.md` (Wave 295, Фичи #4, #12, #400)
 
-
-
+### 2.10.396. Wave 296: Автономия Врача и Стабильность Расписания — Устранение регрессии компилятора в QuickBookingDrawer, свобода скидок 100% и снятие 30-дневного замка с планов лечения (Мандаты 8e, 8n, 8w, 8h, 8j, 8t) (Фичи #4, #12, #65, #66, #80, #86, #400)
+- **Функционал**:
+  1. *Устранение регрессии компилятора в шторке расписания `QuickBookingDrawer.tsx` (Мандат 8w, коммит `29be8a59f`)*:
+     - Удален необъявленный стейт-сеттер `setEndsAtLocal` в `QuickBookingDrawer.tsx`, восстановив безупречную сборку и Single-Compiler Gate;
+     - Подтверждена работа автотестов `AppointmentModal.test.ts` и `QuickBookingDrawer.test.ts` (коммит `abb64bd84`), гарантирующих 5-секундную экспресс-запись без обязательного ассистента (`assistantUserId: null`) для соло-врача и администратора (Мандаты 8e п. 8, 8n);
+  2. *1-кликовая касса 54-ФЗ без ИНН физлиц и свобода врачебных скидок (`FastCheckoutModal.tsx`, `CashDayTally.tsx`, `CashShiftWidget.tsx`, `cashShiftAutonomyAndFiscal54Fz.test.tsx`)*:
+     - При приёме оплат от физических лиц (наличные, карта, СБП, семейный депозит) поле ИНН строго опционально/скрыто, чек фискализируется в 1 клик по 54-ФЗ;
+     - Врач наделен полной свободой применения скидок (вплоть до 100% на гарантийные переделки и персонал) без ввода мастер-паролей администратора;
+     - Ноль `disabled` кнопок оплаты при валидной сумме чека;
+  3. *Снятие 30-дневного замка на планы лечения и автономия Формы 043/у (`TreatmentPlanModule.tsx`, `TreatmentPlan3TierComparison.tsx`, `DentalLabOrderModal.tsx`)*:
+     - Истечение 30 дней с момента составления плана лечения НЕ блокирует создание нарядов ЗТЛ, оказание услуг или оплату в кассе (неблокирующий предупреждающий баннер по Мандату 8e п. 7);
+     - Форма 043/у, согласия и сметы сохраняются и печатаются без искусственных блокировок из-за второстепенных полей;
+     - Врач свободно правит свои дневники в 1 клик с версионным аудитом («Исправленному верить»);
+  4. *Изоляция сессионных ошибок JWT и скидок от СанПиН-алертов (`humanizeRussianError.ts`, `foolproofDangerGuard.ts`)*:
+     - Подтверждена санитаризация глобального хендлера ошибок (коммит `6a4a740cb`, Мандаты 8v, 8e), исключающая появление ложных блокирующих предупреждений стерилизации при просрочке токенов авторизации или вводе скидочных купонов;
+  5. *Сохранение 100% паритета 400/400 фич*:
+     - Все 400 фич в `FEATURES_REGISTRY.md`, `BACKLOG.md` и `OUR_CRM_MAP.md` сохраняют статус `[ДА] / [ЕСТЬ] / [ЗАКРЫТО]`.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/schedule/QuickBookingDrawer.tsx`
+  - `apps/web/src/components/schedule/AppointmentModal.tsx`
+  - `apps/web/src/components/schedule/AppointmentModal.test.ts`
+  - `apps/web/src/components/schedule/QuickBookingDrawer.test.ts`
+  - `apps/web/src/components/finance/FastCheckoutModal.tsx`
+  - `apps/web/src/components/finance/CashDayTally.tsx`
+  - `apps/web/src/components/finance/CashShiftWidget.tsx`
+  - `apps/web/src/tests/cashShiftAutonomyAndFiscal54Fz.test.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlan3TierComparison.tsx`
+  - `apps/web/src/components/lab/DentalLabOrderModal.tsx`
+  - `apps/web/src/components/common/humanizeRussianError.ts`
+  - `apps/web/src/components/common/foolproofDangerGuard.ts`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (Wave 296, Фичи #4, #12, #65, #66, #80, #86, #400)

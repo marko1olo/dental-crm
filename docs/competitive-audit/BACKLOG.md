@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-23 / WAVES 268–295 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 337 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 400 ФИЧ: 63 КАНОНИЧЕСКИЕ + 337 АДДЕНДУМ, 400/400 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54).**  
+> ⚠️ **СТАТУС (2026-09-23 / WAVES 268–296 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 337 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 400 ФИЧ: 63 КАНОНИЧЕСКИЕ + 337 АДДЕНДУМ, 400/400 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54).**  
 > Проведена тотальная дедупликация кодовой базы и актуализация документации по Мандатам 8s, 8j, 8l, 8t, 8d, 8e, 8g, 8h:
 > 1. Схлопнуты и удалены дублирующие файлы схем БД `_v2` в API (`finance_v2.ts`, `documents_v2.ts` -> канонические `finance.ts`, `documents.ts`, коммиты `d755e0b1c`, `ede2cb469`).
 > 2. Ликвидирован мертвый академический расчет окладов `advancedDoctorPayrollEngine.ts` (-843 строки) и мертвый CSS `staffPayrollLedger.css` (-334 строки) (коммит `aab4e4bae`).
@@ -9963,6 +9963,41 @@
   - **4. Сохранение 100% паритета 400/400 фич**:
     * Все 400 фич в `FEATURES_REGISTRY.md` и `BACKLOG.md` сохраняют статус `[ДА] / [ЕСТЬ] / [ЗАКРЫТО]`.
 
+### 460. Волна 296: Автономия Врача и Стабильность Расписания — Устранение регрессии компилятора в QuickBookingDrawer, свобода 100% скидок врача и отсутствие 30-дневного замка на планы лечения (Мандаты 8e, 8n, 8w, 8h, 8j, 8t) (Фичи #4, #12, #65, #66, #80, #86, #400)
+
+* **Статус**: `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]` (Фичи #4, #12, #65, #66, #80, #86, #400)
+* **Задействованные компоненты и модули**:
+  - `apps/web/src/components/schedule/QuickBookingDrawer.tsx`
+  - `apps/web/src/components/schedule/AppointmentModal.tsx`
+  - `apps/web/src/components/schedule/AppointmentModal.test.ts`
+  - `apps/web/src/components/schedule/QuickBookingDrawer.test.ts`
+  - `apps/web/src/components/finance/FastCheckoutModal.tsx`
+  - `apps/web/src/components/finance/CashDayTally.tsx`
+  - `apps/web/src/components/finance/CashShiftWidget.tsx`
+  - `apps/web/src/tests/cashShiftAutonomyAndFiscal54Fz.test.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlan3TierComparison.tsx`
+  - `apps/web/src/components/lab/DentalLabOrderModal.tsx`
+  - `apps/web/src/components/common/humanizeRussianError.ts`
+  - `apps/web/src/components/common/foolproofDangerGuard.ts`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md`
+* **Архитектурные механизмы**:
+  - **1. Устранение регрессии компилятора в шторке расписания `QuickBookingDrawer.tsx` (Мандат 8w, коммит `29be8a59f`)**:
+    * Удален необъявленный стейт-сеттер `setEndsAtLocal` в `QuickBookingDrawer.tsx`, вызывавший сбой сборщика;
+    * Гарантирована чистота компиляции Single-Compiler Gate без ошибок типизации;
+    * Автотесты `AppointmentModal.test.ts` и `QuickBookingDrawer.test.ts` подтверждают 5-секундное создание записи без обязательного выбора ассистента (`assistantUserId: null`) для соло-врача и администратора (Мандаты 8e п. 8, 8n);
+  - **2. Закрепление 1-кликовой кассы 54-ФЗ без ИНН физлиц и свободы скидок врача (`FastCheckoutModal.tsx`, `CashDayTally.tsx`, `CashShiftWidget.tsx`) (Мандат 8e п. 9, Мандат 8n, коммит `685cd8cf6`)**:
+    * Поле ИНН при расчетах с физлицами строго опционально/скрыто, чек фискализируется в 1 клик;
+    * Врач свободно применяет скидки вплоть до 100% на гарантийные переделки и лечение персонала без мастер-паролей администратора;
+    * Ноль `disabled` кнопок оплаты при валидной сумме чека;
+  - **3. Снятие 30-дневного замка на планы лечения и автономия Формы 043/у (`TreatmentPlanModule.tsx`, `DentalLabOrderModal.tsx`) (Мандат 8e пп. 2, 4, 7, Мандат 8n)**:
+    * Истечение 30 дней с момента составления плана лечения НЕ блокирует создание нарядов ЗТЛ, оказание услуг или оплату в кассе (неблокирующий предупреждающий баннер);
+    * Форма 043/у, согласия и сметы сохраняются и печатаются без искусственных блокировок из-за второстепенных полей;
+    * Врач свободно правит свои дневники в 1 клик с версионным аудитом («Исправленному верить»);
+  - **4. Сохранение 100% паритета 400/400 фич**:
+    * Все 400 фич в `FEATURES_REGISTRY.md` и `BACKLOG.md` сохраняют статус `[ДА] / [ЕСТЬ] / [ЗАКРЫТО]`.
 
 ## ЧАСТЬ IV: ОБЪЕКТИВНАЯ RED TEAM ИНКВИЗИЦИЯ И СРАВНИТЕЛЬНЫЙ АУДИТ КОНКУРЕНТНОГО ПАРИТЕТА
 
@@ -10026,6 +10061,13 @@
     - Устранение утечки ошибок крафт-пакетов в глобальный humanizer ошибок (`humanizeRussianError.ts`): строгое разделение сессионных ошибок JWT/токенов от предупреждений стерилизации СанПиН без ложных блокировок;
     - Подтверждение 1-кликовой автономии кассы 54-ФЗ без ИНН физлиц (`FastCheckoutModal.tsx`, `CashDayTally.tsx`) и свободы применения скидок врача до 100%;
     - Подтверждение 5-секундной быстрой записи в расписании без обязательного ассистента (`QuickBookingDrawer.tsx`, `AppointmentModal.tsx`);
+    - Все 400 фич сохраняют статус `[ДА] / [ЕСТЬ] / [ЗАКРЫТО]`.
+16. **Автономия врача, касса 54-ФЗ без ИНН и стабильность расписания (Мандаты 8e, 8n, 8w, 8h, 8j, 8t / Волна 296, Фичи #4, #12, #65, #66, #80, #86, #400, коммит `29be8a59f`)**:
+    - Устранена регрессия компилятора в шторке расписания: удаление необъявленного сеттера `setEndsAtLocal` в `QuickBookingDrawer.tsx` (Мандат 8w, коммит `29be8a59f`), чистый гейт Single-Compiler Gate;
+    - 1-кликовая касса 54-ФЗ без требования ИНН с физлиц и свобода 100% скидок врача без мастер-паролей администратора (коммит `685cd8cf6`, Мандаты 8e, 8n);
+    - Экспресс-запись за 5 секунд без обязательного ассистента (`AppointmentModal.test.ts`, `QuickBookingDrawer.test.ts`, коммит `abb64bd84`, Мандаты 8e, 8n);
+    - Изоляция сессионных ошибок JWT и скидок от СанПиН-алертов в `humanizeRussianError.ts` и `foolproofDangerGuard.ts` (коммит `6a4a740cb`, Мандаты 8v, 8e);
+    - Отсутствие 30-дневного замка на планы лечения и 0 блокирующих полей в 043/у;
     - Все 400 фич сохраняют статус `[ДА] / [ЕСТЬ] / [ЗАКРЫТО]`.
 
 
