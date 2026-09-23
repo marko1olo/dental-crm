@@ -6,3 +6,4 @@ export * from "./cbctSeriesManager.js";
 export * from "./heicTypes.js";
 export * from "./colorCalibration.js";
 export * from "./volumeImporters/index.js";
+export * from "../hardware/dentalHardwareBridge.js";

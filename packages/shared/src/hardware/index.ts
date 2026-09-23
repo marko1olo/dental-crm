@@ -8,3 +8,4 @@ export * from "./shtrihMDriver.js";
 export * from "./scannerProtocol.js";
 export * from "./offlineDatabaseEngine.js";
 export * from "./escposGenerator.js";
+export * from "./dentalHardwareBridge.js";

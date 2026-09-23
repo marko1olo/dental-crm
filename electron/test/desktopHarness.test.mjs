@@ -20,6 +20,12 @@ import {
 	printDocumentSilent,
 	getWindowState,
 	toggleFullScreen,
+	DENTAL_HARDWARE_PRESETS,
+	detectHardwareVendorFromPath,
+	detectInstalledDentalHardware,
+	setupAutoHardwareWatchers,
+	launchSlidaExport,
+	getAnatomicalDentalPreviewDataUri,
 } from "../main.cjs";
 
 test("Desktop Standalone Windows Runtime Harness", async (t) => {
@@ -227,5 +233,81 @@ test("Desktop Standalone Windows Runtime Harness", async (t) => {
 
 		const toggled = await toggleFullScreen(true);
 		assert.equal(toggled.isFullScreen, true);
+	});
+
+	await t.test("Multi-vendor dental hardware presets and vendor detection (Vatech, Sirona, Planmeca, CS, KaVo, Xpect)", async () => {
+		assert.equal(DENTAL_HARDWARE_PRESETS.length, 6);
+
+		// Vendor path detection
+		assert.equal(detectHardwareVendorFromPath("C:\\EzDent-i\\Capture\\scan01.dcm"), "vatech");
+		assert.equal(detectHardwareVendorFromPath("C:\\Sidexis\\pdata\\img.dcm"), "sirona");
+		assert.equal(detectHardwareVendorFromPath("C:\\Planmeca\\Romexis\\46.dcm"), "planmeca");
+		assert.equal(detectHardwareVendorFromPath("C:\\Trophy\\Data\\RVG6200.tif"), "carestream");
+		assert.equal(detectHardwareVendorFromPath("C:\\VixWin\\001.jpg"), "kavo");
+		assert.equal(detectHardwareVendorFromPath("C:\\XVSensor\\Images\\exp.dcm"), "xpect_vision");
+		assert.equal(detectHardwareVendorFromPath("C:\\SomeGenericFolder\\file.dcm"), "generic");
+
+		// Installed hardware detection
+		const detected = detectInstalledDentalHardware();
+		assert.ok(Array.isArray(detected));
+
+		// Auto watchers
+		const watchers = setupAutoHardwareWatchers(null);
+		assert.ok(Array.isArray(watchers));
+	});
+
+	await t.test("Generates SLIDA INI and XML export files for external software (Sidexis, EzDent, Romexis)", async () => {
+		const tempDir = path.join(os.tmpdir(), `dente-slida-test-${Date.now()}`);
+
+		const slidaRes = launchSlidaExport({
+			vendor: "sirona",
+			targetDir: tempDir,
+			patient: {
+				patientId: "PID-777",
+				lastName: "Соколов",
+				firstName: "Дмитрий",
+				birthDate: "19870315",
+				gender: "M",
+				toothCode: "36",
+			},
+		});
+
+		assert.equal(slidaRes.success, true);
+		assert.ok(fs.existsSync(slidaRes.filePath));
+		const iniContent = fs.readFileSync(slidaRes.filePath, "utf8");
+		assert.ok(iniContent.includes("[Patient]"));
+		assert.ok(iniContent.includes("Id=PID-777"));
+		assert.ok(iniContent.includes("LastName=Соколов"));
+		assert.ok(iniContent.includes("Tooth=36"));
+
+		// Vatech Link.ini
+		const vatechRes = launchSlidaExport({
+			vendor: "vatech",
+			targetDir: tempDir,
+			patient: {
+				patientId: "PID-777",
+				lastName: "Соколов",
+				firstName: "Дмитрий",
+				birthDate: "19870315",
+				gender: "M",
+			},
+		});
+		assert.equal(vatechRes.success, true);
+		const vatechContent = fs.readFileSync(vatechRes.filePath, "utf8");
+		assert.ok(vatechContent.includes("ChartNo=PID-777"));
+		assert.ok(vatechContent.includes("Name=Соколов Дмитрий"));
+
+		// Clean up
+		try {
+			fs.rmSync(tempDir, { recursive: true, force: true });
+		} catch {}
+	});
+
+	await t.test("Generates rich anatomical dental preview data URI without 1x1 mock PNGs (Mandate 2)", () => {
+		const preview = getAnatomicalDentalPreviewDataUri("16");
+		assert.ok(preview.startsWith("data:image/svg+xml;utf8,"));
+		assert.ok(!preview.includes("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="));
+		assert.ok(preview.includes("FDI%20%2316"));
+		assert.ok(preview.includes("RVG%20INTRAORAL"));
 	});
 });

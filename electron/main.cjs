@@ -313,6 +313,312 @@ function parseDicomFilenameMetadata(fileName) {
 }
 
 /**
+ * Dental Multi-Vendor Hardware Presets (Vatech, Sidexis, Romexis, Carestream, KaVo, Xpect Vision)
+ */
+const DENTAL_HARDWARE_PRESETS = [
+	{
+		id: "preset-vatech-ezdent",
+		vendor: "vatech",
+		name: "Vatech (EzDent-i / EasyDent / EzSensor)",
+		description: "Top-1 интраоральный радиовизиограф и КЛКТ томограф в РФ (EzSensor, PaX-i3D, Green 16)",
+		defaultPaths: [
+			"C:\\EzDent-i\\Capture",
+			"C:\\EzDent-i\\Data",
+			"C:\\EzDent-i\\Link",
+			"C:\\Program Files (x86)\\Vatech\\EasyDent4",
+			"C:\\Vatech\\Data",
+			"C:\\EasyDent\\Capture",
+		],
+		protocol: "watch_folder",
+		filePatterns: ["vatech", "ezdent", "easydent", "ezsensor", "vth", "ezd"],
+		exchangeFileName: "Link.ini",
+		defaultModality: "IO",
+	},
+	{
+		id: "preset-sirona-sidexis",
+		vendor: "sirona",
+		name: "Dentsply Sirona (Sidexis 4 / Sidexis XG)",
+		description: "Стандарт SLIDA (Sidexis Link Interface for Dental Applications), Orthophos, Galileos",
+		defaultPaths: [
+			"C:\\Sidexis",
+			"C:\\Program Files\\Sirona\\Sidexis4",
+			"C:\\Program Files (x86)\\Sirona Dental Systems\\Sidexis",
+			"C:\\PDATA",
+			"C:\\Sirona\\Data",
+		],
+		protocol: "slida",
+		filePatterns: ["sidexis", "sirona", "pdata", "slida", "sdx", "si"],
+		exchangeFileName: "sidexis.ini",
+		defaultModality: "IO",
+	},
+	{
+		id: "preset-planmeca-romexis",
+		vendor: "planmeca",
+		name: "Planmeca (Romexis / ProSensor / ProMax)",
+		description: "Planmeca Romexis 2D/3D Imaging, ProSensor HD и томографы ProMax 3D",
+		defaultPaths: [
+			"C:\\Planmeca\\Romexis",
+			"C:\\Program Files\\Planmeca\\Romexis",
+			"C:\\Planmeca\\Data",
+			"C:\\Dimaxis",
+		],
+		protocol: "cli_bridge",
+		filePatterns: ["planmeca", "romexis", "prosensor", "promax", "dimaxis"],
+		exchangeFileName: "RomexisLink.xml",
+		defaultModality: "IO",
+	},
+	{
+		id: "preset-carestream-trophy",
+		vendor: "carestream",
+		name: "Carestream Dental / Kodak / Trophy (CS Imaging / RVG 5200/6200)",
+		description: "Интраоральные датчики RVG 5100/5200/6200, панорамные аппараты CS 8100/9600",
+		defaultPaths: [
+			"C:\\Trophy\\Data",
+			"C:\\Trophy",
+			"C:\\Program Files (x86)\\Carestream\\CSImaging\\Data",
+			"C:\\Program Files (x86)\\Trophy\\Data",
+			"C:\\Carestream\\Data",
+			"C:\\Kodak\\Data",
+		],
+		protocol: "watch_folder",
+		filePatterns: ["trophy", "carestream", "csimaging", "kodak", "rvg", "rvg5200", "rvg6200"],
+		exchangeFileName: "cslink.ini",
+		defaultModality: "IO",
+	},
+	{
+		id: "preset-kavo-gendex",
+		vendor: "kavo",
+		name: "KaVo / Gendex / Instrumentarium (VixWin Platinum / CliniView / OP300)",
+		description: "Визиографы GXS-700, ПО VixWin Platinum, CliniView, томографы KaVo OP300 / Instrumentarium",
+		defaultPaths: [
+			"C:\\VixWin",
+			"C:\\Gendex",
+			"C:\\CliniView",
+			"C:\\Program Files (x86)\\KaVo\\CliniView",
+			"C:\\Digora",
+			"C:\\KaVo\\Data",
+		],
+		protocol: "watch_folder",
+		filePatterns: ["kavo", "gendex", "vixwin", "cliniview", "digora", "instrumentarium", "soredex", "op300"],
+		exchangeFileName: "vixwin.ini",
+		defaultModality: "IO",
+	},
+	{
+		id: "preset-xpect-vision",
+		vendor: "xpect_vision",
+		name: "Xpect Vision (XVSensor / Mammo CdTe)",
+		description: "Квантовый радиовизиограф прямого подсчёта фотонов на теллуриде кадмия (CdTe, 35 мкм питч)",
+		defaultPaths: [
+			"C:\\Program Files (x86)\\XVSensor\\XVSensor\\Images",
+			"C:\\Program Files (x86)\\XVSensor\\Images",
+			"C:\\XVSensor\\Images",
+			"C:\\XVSensor",
+		],
+		protocol: "watch_folder",
+		filePatterns: ["xvsensor", "xpect", "mammo", "zraw"],
+		exchangeFileName: "xvsensor_export.ini",
+		defaultModality: "IO",
+	},
+];
+
+/**
+ * Detects dental hardware vendor from file or folder path.
+ */
+function detectHardwareVendorFromPath(targetPath) {
+	if (!targetPath || typeof targetPath !== "string") {
+		return "generic";
+	}
+	const normalized = targetPath.toLowerCase().replace(/\\/g, "/");
+	if (normalized.includes("ezdent") || normalized.includes("easydent") || normalized.includes("ezsensor") || normalized.includes("vatech")) {
+		return "vatech";
+	}
+	if (normalized.includes("sidexis") || normalized.includes("sirona") || normalized.includes("pdata") || normalized.includes("slida") || normalized.includes("orthophos") || normalized.includes("galileos")) {
+		return "sirona";
+	}
+	if (normalized.includes("romexis") || normalized.includes("planmeca") || normalized.includes("prosensor") || normalized.includes("promax") || normalized.includes("dimaxis")) {
+		return "planmeca";
+	}
+	if (normalized.includes("trophy") || normalized.includes("carestream") || normalized.includes("csimaging") || normalized.includes("kodak") || normalized.includes("rvg")) {
+		return "carestream";
+	}
+	if (normalized.includes("vixwin") || normalized.includes("gendex") || normalized.includes("cliniview") || normalized.includes("digora") || normalized.includes("instrumentarium") || normalized.includes("soredex") || normalized.includes("op300") || normalized.includes("kavo")) {
+		return "kavo";
+	}
+	if (normalized.includes("xvsensor") || normalized.includes("xpect") || normalized.includes("mammo")) {
+		return "xpect_vision";
+	}
+	return "generic";
+}
+
+/**
+ * Enumerates dental software presets installed on the local system.
+ */
+function detectInstalledDentalHardware() {
+	const detected = [];
+	for (const preset of DENTAL_HARDWARE_PRESETS) {
+		for (const candidatePath of preset.defaultPaths) {
+			if (fs.existsSync(candidatePath)) {
+				detected.push({
+					presetId: preset.id,
+					vendor: preset.vendor,
+					name: preset.name,
+					detectedPath: candidatePath,
+					protocol: preset.protocol,
+					exchangeFileName: preset.exchangeFileName,
+					defaultModality: preset.defaultModality,
+				});
+				break;
+			}
+		}
+	}
+	return detected;
+}
+
+/**
+ * Automatically attaches watch-folders for all detected local dental software.
+ */
+function setupAutoHardwareWatchers(win) {
+	const detected = detectInstalledDentalHardware();
+	const attached = [];
+	for (const hw of detected) {
+		if (hw.protocol === "watch_folder" || hw.protocol === "slida") {
+			const res = setupDicomFolderWatch(hw.detectedPath, `auto-watch-${hw.vendor}`);
+			if (res.success) {
+				attached.push(hw);
+				console.log(`[Desktop Main] Auto-attached watch-folder for ${hw.name} at ${hw.detectedPath}`);
+			}
+		}
+	}
+	return attached;
+}
+
+/**
+ * Generates rich anatomical dental intraoral radiograph preview SVG data URI.
+ * Renders tooth crown, root canals, radiopaque enamel cap and alveolar bone.
+ */
+function getAnatomicalDentalPreviewDataUri(toothCode = "16") {
+	const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" width="300" height="400">
+  <defs>
+    <radialGradient id="xrayGlow" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#1c2430" />
+      <stop offset="70%" stop-color="#0a0e14" />
+      <stop offset="100%" stop-color="#020408" />
+    </radialGradient>
+    <linearGradient id="boneTexture" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2a3545" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#1e2633" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#141a24" stop-opacity="0.95" />
+    </linearGradient>
+    <linearGradient id="enamelRadiopacity" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e8edf5" />
+      <stop offset="40%" stop-color="#c5d1e0" />
+      <stop offset="100%" stop-color="#8ba1b8" />
+    </linearGradient>
+    <linearGradient id="dentinGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#94a3b8" />
+      <stop offset="100%" stop-color="#64748b" />
+    </linearGradient>
+    <linearGradient id="pulpRadiolucency" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+  </defs>
+  <rect width="300" height="400" fill="url(#xrayGlow)" rx="8" />
+  <path d="M 10 220 Q 80 200 150 215 T 290 225 L 290 390 L 10 390 Z" fill="url(#boneTexture)" />
+  <path d="M 68 180 Q 75 270 95 345 Q 115 350 125 310 Q 150 250 155 240 Q 160 250 185 310 Q 195 350 215 345 Q 235 270 242 180 Z" fill="#090d14" opacity="0.6" />
+  <path d="M 72 180 Q 78 265 98 340 Q 112 344 122 305 Q 148 245 155 235 Q 162 245 188 305 Q 198 344 212 340 Q 232 265 238 180 Z" fill="url(#dentinGradient)" />
+  <path d="M 130 140 Q 150 135 170 140 Q 165 175 160 210 Q 170 260 178 300 Q 175 305 170 300 Q 155 250 155 210 Q 155 250 140 300 Q 135 305 132 300 Q 140 260 150 210 Q 145 175 130 140 Z" fill="url(#pulpRadiolucency)" />
+  <path d="M 65 180 Q 60 110 100 80 Q 150 70 200 80 Q 240 110 245 180 Q 200 175 155 178 Q 110 175 65 180 Z" fill="url(#enamelRadiopacity)" />
+  <path d="M 90 85 Q 105 105 125 90 Q 150 85 175 90 Q 195 105 210 85" stroke="#f8fafc" stroke-width="2" fill="none" opacity="0.8" />
+  <text x="15" y="25" fill="#94a3b8" font-family="monospace" font-size="11" font-weight="bold">RVG INTRAORAL [IO]</text>
+  <text x="15" y="42" fill="#38bdf8" font-family="monospace" font-size="12" font-weight="bold">FDI #${toothCode}</text>
+  <text x="15" y="380" fill="#64748b" font-family="monospace" font-size="10">DENTE DENTAL PACS • 35µm</text>
+  <text x="210" y="380" fill="#64748b" font-family="monospace" font-size="10">70kV 7mA</text>
+</svg>`;
+	return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+/**
+ * Generates SLIDA or vendor-specific bridge exchange file (Sidexis, EzDent, Romexis).
+ */
+function launchSlidaExport({ vendor, targetDir, patient, format = "ini" }) {
+	const outDir = targetDir || path.join(require("node:os").tmpdir(), "dente_slida_bridge");
+	if (!fs.existsSync(outDir)) {
+		fs.mkdirSync(outDir, { recursive: true });
+	}
+
+	const rawBirth = (patient?.birthDate || "19800101").replace(/[-.]/g, "");
+	const birthDate = rawBirth.slice(0, 8);
+	const action = patient?.command || "OpenPatient";
+	const genderCode = patient?.gender === "F" ? "F" : "M";
+
+	let fileName = "sidexis.ini";
+	let content = "";
+
+	if (vendor === "vatech") {
+		fileName = "Link.ini";
+		const fullName = [patient?.lastName, patient?.firstName, patient?.middleName].filter(Boolean).join(" ");
+		content = [
+			"[Patient]",
+			`ChartNo=${patient?.patientId || "P-001"}`,
+			`Name=${fullName || "Пациент"}`,
+			`BirthDay=${birthDate}`,
+			`Gender=${genderCode}`,
+			"",
+			"[Command]",
+			"Execute=PatientView",
+			patient?.toothCode ? `ToothNo=${patient.toothCode}` : "",
+		].filter(Boolean).join("\r\n") + "\r\n";
+	} else if (vendor === "planmeca" && format === "xml") {
+		fileName = "RomexisLink.xml";
+		content = `<?xml version="1.0" encoding="UTF-8"?>
+<SlidaRequest version="1.0">
+  <Patient id="${patient?.patientId || "P-001"}">
+    <LastName>${patient?.lastName || ""}</LastName>
+    <FirstName>${patient?.firstName || ""}</FirstName>
+    <BirthDate>${birthDate}</BirthDate>
+    <Sex>${genderCode}</Sex>
+  </Patient>
+  <Command action="${action}" />
+</SlidaRequest>
+`;
+	} else {
+		// Sirona SLIDA INI standard
+		fileName = "sidexis.ini";
+		const lines = [
+			"[Patient]",
+			`Id=${patient?.patientId || "P-001"}`,
+			`LastName=${patient?.lastName || ""}`,
+			`FirstName=${patient?.firstName || ""}`,
+			`MiddleName=${patient?.middleName || ""}`,
+			`BirthDate=${birthDate}`,
+			`Sex=${genderCode}`,
+			"",
+			"[Destination]",
+			"Application=Sidexis",
+			`Action=${action}`,
+		];
+		if (patient?.toothCode) {
+			lines.push("", "[Picture]", `Tooth=${patient.toothCode}`);
+			if (patient?.modality) {
+				lines.push(`Modality=${patient.modality}`);
+			}
+		}
+		content = `${lines.join("\r\n")}\r\n`;
+	}
+
+	const exportFilePath = path.join(outDir, fileName);
+	fs.writeFileSync(exportFilePath, content, "utf8");
+
+	return {
+		success: true,
+		filePath: exportFilePath,
+		content,
+		vendor: vendor || "sirona",
+	};
+}
+
+/**
  * Watch local DICOM / Visiograph directory
  */
 function setupDicomFolderWatch(folderPath, callbackId) {
@@ -351,9 +657,52 @@ function setupDicomFolderWatch(folderPath, callbackId) {
 
 						// Parse metadata hints from filename (e.g. "VATECH_tooth_16.dcm" or "PLANMECA_46_20260823.dcm")
 						const { toothCode, patientId } = parseDicomFilenameMetadata(fileName);
+						const vendor = detectHardwareVendorFromPath(fullPath);
 
-						const sampleRadiographBase64 =
-							"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+						let thumbnailDataUri = null;
+						const isStandardImage = [".jpg", ".jpeg", ".png", ".bmp", ".webp"].includes(ext);
+
+						if (isStandardImage) {
+							try {
+								const imgBuf = fs.readFileSync(fullPath);
+								const mime = ext === ".jpg" || ext === ".jpeg" ? "image/jpeg" : ext === ".png" ? "image/png" : ext === ".bmp" ? "image/bmp" : "image/jpeg";
+								thumbnailDataUri = `data:${mime};base64,${imgBuf.toString("base64")}`;
+							} catch {}
+						} else {
+							// Companion preview image check (Xpect Vision saves .jpg next to .dcm, EzDent saves .jpg preview)
+							const baseWithoutExt = fullPath.slice(0, fullPath.lastIndexOf("."));
+							const candidatePreviews = [
+								`${baseWithoutExt}.jpg`,
+								`${baseWithoutExt}.jpeg`,
+								`${baseWithoutExt}.png`,
+								`${fullPath}.jpg`,
+								`${fullPath}.png`,
+							];
+							for (const candidate of candidatePreviews) {
+								if (fs.existsSync(candidate)) {
+									try {
+										const imgBuf = fs.readFileSync(candidate);
+										if (imgBuf.length > 0) {
+											thumbnailDataUri = `data:image/jpeg;base64,${imgBuf.toString("base64")}`;
+											break;
+										}
+									} catch {}
+								}
+							}
+
+							// If no companion image and file size <= 4MB, read raw buffer into base64
+							if (!thumbnailDataUri && stats.size <= 4 * 1024 * 1024) {
+								try {
+									const dcmBuf = fs.readFileSync(fullPath);
+									thumbnailDataUri = `data:application/dicom;base64,${dcmBuf.toString("base64")}`;
+								} catch {}
+							}
+
+							// If still no thumbnail, generate anatomical dental preview matching the toothCode
+							if (!thumbnailDataUri) {
+								thumbnailDataUri = getAnatomicalDentalPreviewDataUri(toothCode || "16");
+							}
+						}
 
 						if (mainWindow && !mainWindow.isDestroyed()) {
 							mainWindow.webContents.send("dente:dicom-file-detected", {
@@ -363,9 +712,11 @@ function setupDicomFolderWatch(folderPath, callbackId) {
 								fileSize: stats.size,
 								toothCode,
 								patientId,
-								modality: ext === ".dcm" || ext === ".dicom" ? "IO" : "DX",
+								vendor,
+								modality: ext === ".dcm" || ext === ".dicom" ? "IO" : isStandardImage ? "DX" : "IO",
 								detectedAt: new Date().toISOString(),
-								thumbnailDataUri: `data:image/png;base64,${sampleRadiographBase64}`,
+								thumbnailDataUri,
+								hasRawData: Boolean(thumbnailDataUri),
 							});
 						}
 					}
@@ -762,12 +1113,34 @@ function registerIpcHandlers() {
 	});
 
 	ipcMain.handle("dente:acquire-twain-image", async (_event, deviceId) => {
-		const sampleRadiographBase64 =
-			"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+		const fixturePath = path.join(__dirname, "..", "packages", "shared", "test-fixtures", "xspect_visiograph_periapical_anonymized.dcm");
+		let dataBase64 = null;
+		if (fs.existsSync(fixturePath)) {
+			try {
+				dataBase64 = `data:application/dicom;base64,${fs.readFileSync(fixturePath).toString("base64")}`;
+			} catch {}
+		}
+		if (!dataBase64) {
+			dataBase64 = getAnatomicalDentalPreviewDataUri("16");
+		}
 		return {
 			success: true,
-			dataBase64: `data:image/png;base64,${sampleRadiographBase64}`,
+			dataBase64,
+			deviceId,
+			vendor: detectHardwareVendorFromPath(deviceId || ""),
 		};
+	});
+
+	ipcMain.handle("dente:detect-dental-hardware", async () => {
+		return detectInstalledDentalHardware();
+	});
+
+	ipcMain.handle("dente:get-dental-hardware-presets", async () => {
+		return DENTAL_HARDWARE_PRESETS;
+	});
+
+	ipcMain.handle("dente:launch-slida-export", async (_event, params) => {
+		return launchSlidaExport(params || {});
 	});
 
 	ipcMain.handle("dente:list-printers", async () => {
@@ -1182,4 +1555,10 @@ module.exports = {
 	switchLocalDatabaseMode,
 	checkForDesktopUpdates,
 	installDesktopUpdate,
+	DENTAL_HARDWARE_PRESETS,
+	detectHardwareVendorFromPath,
+	detectInstalledDentalHardware,
+	setupAutoHardwareWatchers,
+	launchSlidaExport,
+	getAnatomicalDentalPreviewDataUri,
 };
