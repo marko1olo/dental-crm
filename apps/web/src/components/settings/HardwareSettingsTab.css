@@ -1,0 +1,484 @@
+/* DENTE CRM — Hardware Studio Settings CSS */
+/* Mac HIG Studio density & Pure CSS Tokens */
+
+.hw-studio-container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	width: 100%;
+	color: var(--ink);
+}
+
+/* 1-Row Dense Clinical Toolbar (32-36px) per Mandates 8d & 8p */
+.hw-studio-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	min-height: 34px;
+	max-height: 36px;
+	height: 36px;
+	padding: 0 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	box-sizing: border-box;
+}
+
+.hw-studio-toolbar-left {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.hw-studio-toolbar-left::-webkit-scrollbar {
+	display: none;
+}
+
+.hw-studio-category-tab {
+	height: 26px;
+	padding: 0 10px;
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--muted);
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 6px;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease-out;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.hw-studio-category-tab:hover {
+	color: var(--ink);
+	background: var(--paper);
+}
+
+.hw-studio-category-tab.active {
+	color: var(--ink);
+	background: var(--paper);
+	border-color: var(--line);
+	font-weight: 600;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.hw-studio-toolbar-right {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+/* Status summary counters in toolbar */
+.hw-studio-counters {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.hw-counter-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 6px;
+	border-radius: 10px;
+	font-size: 11px;
+	font-variant-numeric: tabular-nums;
+	background: var(--paper);
+	border: 1px solid var(--line);
+}
+
+.hw-counter-pill.ready {
+	color: #059669;
+	border-color: rgba(16, 185, 129, 0.3);
+}
+
+.hw-counter-pill.warn {
+	color: #d97706;
+	border-color: rgba(245, 158, 11, 0.3);
+}
+
+.hw-counter-pill.untested {
+	color: var(--muted);
+}
+
+/* Action button inside 1-row toolbar (28-30px) */
+.hw-btn-compact {
+	height: 28px;
+	padding: 0 10px;
+	font-size: 12px;
+	font-weight: 600;
+	border-radius: 6px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	transition: all 0.15s ease-out;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	white-space: nowrap;
+}
+
+.hw-btn-compact:hover {
+	background: var(--paper-soft);
+	border-color: var(--muted);
+}
+
+.hw-btn-compact.primary {
+	background: var(--primary, #0284c7);
+	color: #ffffff;
+	border-color: transparent;
+}
+
+.hw-btn-compact.primary:hover {
+	opacity: 0.92;
+}
+
+/* Quick Vendor Presets Strip */
+.hw-presets-strip {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+
+.hw-presets-strip-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--muted);
+}
+
+.hw-presets-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+	gap: 8px;
+}
+
+.hw-preset-card {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 8px 10px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	cursor: pointer;
+	text-align: left;
+	transition: all 0.15s ease-out;
+}
+
+.hw-preset-card:hover {
+	border-color: var(--primary, #0284c7);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+	transform: translateY(-1px);
+}
+
+.hw-preset-card-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.hw-preset-title {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.hw-preset-badge {
+	font-size: 10px;
+	font-weight: 600;
+	padding: 1px 5px;
+	border-radius: 4px;
+	background: var(--paper-soft);
+	color: var(--muted);
+	border: 1px solid var(--line);
+	flex-shrink: 0;
+}
+
+.hw-preset-desc {
+	font-size: 11px;
+	color: var(--muted);
+	line-height: 1.3;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Devices List (Single Monolithic Surface, Anti-Matryoshka) */
+.hw-devices-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.hw-device-row {
+	display: flex;
+	flex-direction: column;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	overflow: hidden;
+	transition: border-color 0.15s ease-out;
+}
+
+.hw-device-row:hover {
+	border-color: var(--muted);
+}
+
+.hw-device-row.active {
+	border-color: var(--primary, #0284c7);
+	box-shadow: 0 1px 4px rgba(2, 132, 199, 0.08);
+}
+
+/* Device Main Header Bar (Dense Clinical) */
+.hw-device-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 14px;
+	background: var(--paper);
+	gap: 12px;
+}
+
+.hw-device-header-left {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	flex: 1;
+}
+
+.hw-device-status-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.hw-device-status-dot.ready {
+	background: #10b981;
+	box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.hw-device-status-dot.not_found {
+	background: #f59e0b;
+	box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+}
+
+.hw-device-status-dot.untested {
+	background: var(--muted);
+	opacity: 0.5;
+}
+
+.hw-device-status-dot.testing {
+	background: var(--primary, #0284c7);
+	animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.4; }
+}
+
+.hw-device-info {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	gap: 2px;
+}
+
+.hw-device-name-line {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+}
+
+.hw-device-title {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.hw-device-vendor-badge {
+	font-size: 10px;
+	font-weight: 500;
+	padding: 1px 6px;
+	border-radius: 4px;
+	background: var(--paper-soft);
+	color: var(--muted);
+	border: 1px solid var(--line);
+	flex-shrink: 0;
+}
+
+.hw-device-path-line {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 11px;
+	color: var(--muted);
+	font-family: ui-monospace, monospace;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.hw-device-header-right {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+/* Test Connection Button with 3 States */
+.hw-btn-test-connection {
+	height: 30px;
+	padding: 0 12px;
+	font-size: 12px;
+	font-weight: 600;
+	border-radius: 6px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	transition: all 0.15s ease-out;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+.hw-btn-test-connection:hover {
+	border-color: var(--muted);
+	background: var(--paper);
+}
+
+.hw-btn-test-connection.ready {
+	border-color: rgba(16, 185, 129, 0.4);
+	color: #059669;
+	background: rgba(16, 185, 129, 0.08);
+}
+
+.hw-btn-test-connection.not_found {
+	border-color: rgba(245, 158, 11, 0.4);
+	color: #d97706;
+	background: rgba(245, 158, 11, 0.08);
+}
+
+/* Device Expanded Settings Editor (Warm Context Accordion, Depth = 1) */
+.hw-device-editor {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 14px;
+	border-top: 1px solid var(--line);
+	background: var(--paper-soft);
+}
+
+.hw-editor-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+	gap: 12px;
+}
+
+.hw-field-group {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.hw-field-label {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.hw-field-input {
+	height: 32px;
+	padding: 0 10px;
+	font-size: 12px;
+	color: var(--ink);
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	outline: none;
+	font-family: ui-monospace, monospace;
+	transition: border-color 0.15s ease-out;
+}
+
+.hw-field-input:focus {
+	border-color: var(--primary, #0284c7);
+}
+
+.hw-field-select {
+	height: 32px;
+	padding: 0 8px;
+	font-size: 12px;
+	color: var(--ink);
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	outline: none;
+}
+
+.hw-device-editor-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-top: 10px;
+	border-top: 1px solid var(--line);
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.hw-editor-footer-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.hw-status-message-banner {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	border-radius: 6px;
+	font-size: 12px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+}
+
+.hw-status-message-banner.ready {
+	background: rgba(16, 185, 129, 0.08);
+	border-color: rgba(16, 185, 129, 0.3);
+	color: #065f46;
+}
+
+.hw-status-message-banner.not_found {
+	background: rgba(245, 158, 11, 0.08);
+	border-color: rgba(245, 158, 11, 0.3);
+	color: #92400e;
+}

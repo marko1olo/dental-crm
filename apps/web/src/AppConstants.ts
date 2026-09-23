@@ -237,6 +237,7 @@ export const settingsTabs = [
 	{ id: "staff", title: "Сотрудники", group: "main" },
 	{ id: "access", title: "Доступы", group: "main" },
 	{ id: "telegram", title: "Мессенджеры", group: "main" },
+	{ id: "hardware", title: "Оборудование", group: "main" },
 	{ id: "protocols", title: "Протоколы", group: "clinical" },
 	{ id: "rules", title: "Правила", group: "clinical" },
 	{ id: "procedure-boms", title: "Техкарты 804н", group: "clinical" },

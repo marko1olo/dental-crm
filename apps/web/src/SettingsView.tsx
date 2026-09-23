@@ -92,6 +92,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { EgiszBlankPermissionsWidget } from "./components/integrations/EgiszBlankPermissionsWidget";
 import { YandexCalendarSyncsWidget } from "./components/integrations/YandexCalendarSyncsWidget";
 import { InsuranceContractsPanel } from "./components/settings/InsuranceContractsPanel";
+import { HardwareSettingsTab } from "./components/settings/HardwareSettingsTab";
 import { MigrationWizard } from "./components/settings/MigrationWizard";
 import { SettingsAccessTab } from "./components/settings/SettingsAccessTab";
 import { SettingsAiTab } from "./components/settings/SettingsAiTab";
@@ -2102,6 +2103,12 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 						props={settingsProps}
 						settingsTab={settingsTab}
 					/>
+				) : null}
+
+				{settingsTab === "hardware" ? (
+					<ErrorBoundary moduleName="Оборудование и рентген">
+						<HardwareSettingsTab />
+					</ErrorBoundary>
 				) : null}
 
 				{settingsTab === "insurance" ? <InsuranceContractsPanel /> : null}
