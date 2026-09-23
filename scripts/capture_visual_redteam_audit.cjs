@@ -410,6 +410,11 @@ async function runAuditCapture() {
 
       await page.waitForSelector("[data-testid='pricelist-diff-container'], .pricelist-diff-container", { state: "visible", timeout: 20000 });
       await page.waitForTimeout(1000);
+      // Dismiss any lingering error toasts from previous screens so diff footer buttons are unoccluded
+      await page.evaluate(() => {
+        document.querySelectorAll('.sa-toast, .global-toast, [data-testid="global-toast"]').forEach(el => el.remove());
+      });
+      await page.waitForTimeout(400);
       await takeProof(
         page,
         `01B_pricelist_diff_804n_${suite.viewportName}_${theme}.png`,
