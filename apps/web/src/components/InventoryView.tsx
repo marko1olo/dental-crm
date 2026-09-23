@@ -520,7 +520,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 							border: `1px solid ${borderColor}`,
 							color: "var(--ink)",
 						}}
-						title="Списать пустую карпулу анестетика медсестрой в 1 клик (СанПиН 3.3686-21, ПКУ без комиссии из 3 человек)"
+						title="Списать пустую карпулу анестетика в 1 клик без комиссии (СанПиН 3.3686-21, ПКУ)"
 					>
 						<Syringe size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span className="hidden sm:inline">
@@ -935,7 +935,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 												textAlign: "left",
 												width: "100%",
 											}}
-											title="1-клик списание пустых карпул анестетиков медсестрой (без комиссии из 3 человек)"
+											title="Списание пустых карпул анестетиков в 1 клик без комиссии"
 											role="menuitem"
 										>
 											<Syringe size={16} className="text-teal-600 shrink-0" />

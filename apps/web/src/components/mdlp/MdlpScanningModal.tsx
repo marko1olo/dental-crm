@@ -188,7 +188,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 	const [xmlDocType, setXmlDocType] = useState<"701" | "531" | null>(null);
 	const [isCopied, setIsCopied] = useState(false);
 
-	// Статус связи с ЦРПТ и фоновый офлайн-буфер (Законы медсестры и МДЛП)
+	// Статус связи с ЦРПТ и фоновый офлайн-буфер (Законы быстрого списания и МДЛП)
 	const [crptStatus] = useState<"online" | "degraded" | "offline">("online");
 	const [offlineQueue, setOfflineQueue] = useState<MdlpOfflinePackage[]>(() => loadMdlpOfflineQueue());
 	const [showOfflineDrawer, setShowOfflineDrawer] = useState(false);
@@ -475,7 +475,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 						<div className="mdlp-nurse-rules-info">
 							<Syringe className="w-4 h-4 text-teal-400 shrink-0" />
 							<span>
-								<strong>Правило медсестры:</strong> Списание пустых карпул в 1 клик без комиссии из 3 человек · <strong>Мягкий овердрафт:</strong> Задержка накладной не блокирует операцию.
+								<strong>Быстрое списание:</strong> Списание пустых карпул в 1 клик без комиссии из 3 человек · <strong>Мягкий овердрафт:</strong> Задержка накладной не блокирует операцию.
 							</span>
 						</div>
 						<div className="mdlp-nurse-rules-actions">

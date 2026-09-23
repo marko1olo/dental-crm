@@ -637,7 +637,7 @@ export class HardwareScanner {
 				daysRemaining: daysRemaining ?? (isExpired ? 0 : 50),
 				isExpired,
 				toolSetNameRu: sanpin.toolSetId || "Стоматологический набор инструментов",
-				operatorNameRu: sanpin.operatorId || "Медсестра ЦСО",
+				operatorNameRu: sanpin.operatorId || "Сотрудник клиники",
 				indicatorStatusRu: "Химический индикатор 5 класса (норма)",
 				statutoryReference: "СанПиН 3.3686-21 (п. 3600-3620)",
 				failureReasonRu: isExpired ? "Истек нормативный срок стерильности крафт-пакета (50 суток)" : undefined,
@@ -695,7 +695,7 @@ export class HardwareScanner {
 				daysRemaining: 48,
 				isExpired: false,
 				toolSetNameRu: "Терапевтический лоток инструментов",
-				operatorNameRu: "Медсестра ЦСО",
+				operatorNameRu: "Сотрудник клиники",
 				statutoryReference: "СанПиН 3.3686-21",
 			};
 		}

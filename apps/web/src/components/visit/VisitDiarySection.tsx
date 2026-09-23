@@ -1186,7 +1186,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								ensureRevisingIfLocked();
 								const drugName =
 									DENTAL_ANESTHETICS[drugId]?.tradeNamesRu[0] ?? "Анестетик";
-								const disposalNote = `[СанПиН 3.3686-21] Медсестра: списана пустая карпула ${drugName} (${count} шт., отходы Класса Б, дезинфекция 1 клик без комиссии).`;
+								const disposalNote = `[СанПиН 3.3686-21] Утилизация: списана пустая карпула ${drugName} (${count} шт., отходы Класса Б, дезинфекция 1 клик без комиссии).`;
 								applyAnesthesiaPreset(disposalNote);
 							}}
 						/>

@@ -37,7 +37,7 @@ describe("MDLP / Chestny Znak Scanning Modal (Mandate 8e Invariants)", () => {
 
 		// Nurse rules & soft overdraft banner
 		assert.ok(html.includes("data-testid=\"mdlp-nurse-rules-banner\""));
-		assert.ok(html.includes("Правило медсестры:"));
+		assert.ok(html.includes("Быстрое списание:"));
 		assert.ok(html.includes("Мягкий овердрафт:"));
 
 		// 1-click actions: shift carpules & deferred disposal

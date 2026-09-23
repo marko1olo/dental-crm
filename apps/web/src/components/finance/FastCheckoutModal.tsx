@@ -1079,7 +1079,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									? "bg-teal-600 text-white shadow-xs ring-2 ring-teal-500/30"
 									: "bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:border-teal-500"
 							}`}
-							title="Переключить крупный режим «Простая касса» для медсестры/кассира"
+							title="Переключить крупный режим «Простая касса» для врача/кассира"
 							data-testid="toggle-simple-cashier-btn"
 						>
 							<span>Простая касса</span>
