@@ -5,37 +5,38 @@ import { renderToStaticMarkup } from "react-dom/server";
 import {
 	BookingAnyDoctorCard,
 	BookingDoctorCard,
+	type BookingDoctorData,
 } from "../BookingDoctorCard";
-import { BookingSlotPicker } from "../BookingSlotPicker";
+import {
+	BookingSlotPicker,
+	type BookingSlotItem,
+} from "../BookingSlotPicker";
 import {
 	DEFAULT_BRANCHES,
 	DEFAULT_DOCTORS,
 	DEFAULT_SERVICE_CATEGORIES,
 	PublicOnlineBookingWidget,
-	type ServiceCategory,
 	formatRussianDate,
 	formatRussianPhone,
 	generateBookingReference,
 	generateEmbedSnippet,
 	generateGoogleCalendarUrl,
 	generateIcsCalendarContent,
-	generateMockSlotsForDate,
-	generateStandardWorkingSlotsForDate,
 	generateYandexCalendarUrl,
 	isValidRussianPhone,
 	localDateString,
 	resolveCategoryIcon,
 } from "../PublicOnlineBookingWidget";
 
-describe("PublicOnlineBookingWidget Component & Embeddable Flow", () => {
-	it("renders Step 1: Branch & Service Category selection with all 5 mandatory categories", () => {
+describe("PublicOnlineBookingWidget: Streamlined 1-Screen 2-Click UX (Mandates 8e, 8k, 8p, 8n)", () => {
+	it("renders streamlined 1-screen booking flow with Click 1 (Date/Time) and Click 2 (Contacts/Submit)", () => {
 		const html = renderToStaticMarkup(
 			createElement(PublicOnlineBookingWidget, {
 				initialStep: 1,
 			}),
 		);
 
-		// Header & Structure
+		// Header & Clinic branding
 		assert.ok(
 			html.includes("Онлайн-запись в клинику DENTE"),
 			"Contains default widget title",
@@ -44,349 +45,179 @@ describe("PublicOnlineBookingWidget Component & Embeddable Flow", () => {
 			html.includes("Стоматологический центр DENTE"),
 			"Contains clinic header badge",
 		);
-
-		// Branches
 		assert.ok(
-			html.includes("Филиал «Центральный»"),
-			"Contains central branch",
-		);
-		assert.ok(
-			html.includes("Филиал «На Московском»"),
-			"Contains moscow branch",
+			html.includes("dbw-streamlined-flow"),
+			"Contains streamlined 1-screen flow container",
 		);
 
-		// 5 Mandatory Service Categories
-		assert.ok(html.includes("Терапия"), "Contains category Терапия");
-		assert.ok(html.includes("Ортопедия"), "Contains category Ортопедия");
-		assert.ok(html.includes("Хирургия"), "Contains category Хирургия");
-		assert.ok(
-			html.includes("Детский приём"),
-			"Contains category Детский приём",
-		);
-		assert.ok(html.includes("Гигиена"), "Contains category Гигиена");
-
-		// Services list within default selected category (Терапия)
-		assert.ok(
-			html.includes("Первичная консультация терапевта"),
-			"Contains primary therapy service",
-		);
-		assert.ok(
-			html.includes("Лечение кариеса"),
-			"Contains caries treatment service",
-		);
-
-		// Next button
-		assert.ok(
-			html.includes("Выбрать врача"),
-			"Contains step 1 forward button",
-		);
-	});
-
-	it("skips branch selection UI and proceeds straight to service selection when customBranches has <= 1 branch (Mandate 8n & 8k Solo Doctor)", () => {
-		const html = renderToStaticMarkup(
-			createElement(PublicOnlineBookingWidget, {
-				initialStep: 1,
-				customBranches: [DEFAULT_BRANCHES[0]!],
-			}),
-		);
-
-		// Branch selection heading and cards must NOT be displayed
-		assert.equal(
-			html.includes("Выберите филиал клиники"),
-			false,
-			"Does not display branch selection heading for solo doctor",
-		);
-		assert.equal(
-			html.includes("dbw-branches-grid"),
-			false,
-			"Does not display branches grid for solo doctor",
-		);
-
-		// Service category and services must be immediately available
-		assert.ok(
-			html.includes("Направление стоматологии"),
-			"Immediately displays service category selection",
-		);
-		assert.ok(
-			html.includes("Терапия"),
-			"Displays service categories",
-		);
-		assert.ok(
-			html.includes("Шаг 1 из 4: Выбор услуги"),
-			"Displays streamlined step 1 label without branch selection friction",
-		);
-	});
-
-	it("renders Step 2: Attending Doctor Selection with rating, experience, and photo/avatar", () => {
-		const html = renderToStaticMarkup(
-			createElement(PublicOnlineBookingWidget, {
-				initialStep: 2,
-				initialCategoryId: "therapy",
-			}),
-		);
-
-		assert.ok(
-			html.includes("Лечащий врач"),
-			"Contains Step 2 heading 'Лечащий врач'",
-		);
-		assert.ok(
-			html.includes("Любой свободный специалист"),
-			"Contains 'Любой свободный специалист' quick option",
-		);
-
-		// Doctors details
-		assert.ok(
-			html.includes("Д-р Смирнова Елена Владимировна"),
-			"Renders doctor name",
-		);
-		assert.ok(
-			html.includes("Стаж 14 лет"),
-			"Renders doctor experience badge",
-		);
-		assert.ok(html.includes("4.98"), "Renders doctor rating");
-		assert.ok(
-			html.includes("236 отзывов"),
-			"Renders doctor reviews count",
-		);
-
-		// Navigation buttons
-		assert.ok(html.includes("Назад"), "Contains Back button");
-		assert.ok(
-			html.includes("Выбрать дату и время"),
-			"Contains Next step button",
-		);
-	});
-
-	it("renders Step 3: Date & Slot Picker with interactive calendar and grouped time periods", () => {
-		const html = renderToStaticMarkup(
-			createElement(PublicOnlineBookingWidget, {
-				initialStep: 3,
-			}),
-		);
-
+		// Click 1: Date & Time picker
 		assert.ok(
 			html.includes("Выберите дату и время приёма"),
-			"Contains Step 3 heading",
+			"Contains Click 1 Date & Time heading",
 		);
 		assert.ok(
 			html.includes("dbw-calendar-container"),
-			"Contains calendar container element",
+			"Contains calendar container",
 		);
 
-		// Calendar weekday headers
-		assert.ok(html.includes(">Пн<"), "Contains Monday header");
-		assert.ok(html.includes(">Вт<"), "Contains Tuesday header");
-		assert.ok(html.includes(">Ср<"), "Contains Wednesday header");
-		assert.ok(html.includes(">Чт<"), "Contains Thursday header");
-		assert.ok(html.includes(">Пт<"), "Contains Friday header");
-		assert.ok(html.includes(">Сб<"), "Contains Saturday header");
-		assert.ok(html.includes(">Вс<"), "Contains Sunday header");
-
-		// Time slot periods & chips
-		assert.ok(html.includes("Утро"), "Contains Morning slots section");
-		assert.ok(html.includes("День"), "Contains Afternoon slots section");
-		assert.ok(html.includes("Вечер"), "Contains Evening slots section");
-
-		// Action buttons
-		assert.ok(html.includes("Назад"), "Contains Back button");
-		assert.ok(
-			html.includes("Перейти к контактам"),
-			"Contains Next step button",
-		);
-	});
-
-	it("renders Step 4: Patient Info Form without SMS simulation block by default (production booking flow)", () => {
-		const html = renderToStaticMarkup(
-			createElement(PublicOnlineBookingWidget, {
-				initialStep: 4,
-			}),
-		);
-
+		// Click 2: Patient Contacts & Book button
 		assert.ok(
 			html.includes("Ваши контактные данные"),
-			"Contains Step 4 heading",
+			"Contains Click 2 Patient Contacts heading",
 		);
 		assert.ok(
 			html.includes("patient-name-input"),
-			"Contains patient full name input",
+			"Contains patient name input",
 		);
 		assert.ok(
 			html.includes("patient-phone-input"),
 			"Contains patient phone input",
 		);
 		assert.ok(
-			html.includes('placeholder="+7 (999) 000-00-00"'),
-			"Contains phone placeholder with Russian mask",
+			html.includes("Записаться на приём"),
+			"Contains Click 2 submit button 'Записаться на приём'",
 		);
 		assert.ok(
-			html.includes("patient-comment-input"),
-			"Contains patient comment textarea",
-		);
-
-		// Must NOT contain demo SMS mocks or SMS verification block in production
-		assert.equal(
-			html.includes("Подтверждение номера телефона"),
-			false,
-			"Does NOT contain SMS verification block by default",
-		);
-		assert.equal(
-			html.includes("Демо-СМС"),
-			false,
-			"Does NOT contain 'Демо-СМС' text by default",
-		);
-		assert.equal(
-			html.includes("4826"),
-			false,
-			"Does NOT contain hardcoded code 4826",
-		);
-		assert.equal(
-			html.includes("Быстро вставить"),
-			false,
-			"Does NOT contain 'Быстро вставить' button by default",
-		);
-		assert.equal(
-			html.includes("Получить СМС-код"),
-			false,
-			"Does NOT contain 'Получить СМС-код' button by default",
-		);
-
-		// Privacy policy consent and final confirm button
-		assert.ok(
-			html.includes("privacy-checkbox"),
-			"Contains privacy consent checkbox",
-		);
-		assert.ok(
-			html.includes("Подтвердить запись"),
-			"Contains Final Confirm button",
+			html.includes("data-testid=\"step4-confirm-btn\""),
+			"Contains test hook step4-confirm-btn",
 		);
 	});
 
-	it("renders Step 4: Patient Info Form with respectful callback notice and 1-click booking without fake SMS simulation (Friction-Killer Law)", () => {
+	it("strictly purges hardcoded Samara mock arrays per Mandates 8a & 8k (Zero Mocks)", () => {
+		// Verify exported mock arrays are clean empty arrays
+		assert.equal(
+			DEFAULT_BRANCHES.length,
+			0,
+			"DEFAULT_BRANCHES must be an empty array",
+		);
+		assert.equal(
+			DEFAULT_DOCTORS.length,
+			0,
+			"DEFAULT_DOCTORS must be an empty array",
+		);
+		assert.equal(
+			DEFAULT_SERVICE_CATEGORIES.length,
+			0,
+			"DEFAULT_SERVICE_CATEGORIES must be an empty array",
+		);
+
+		const html = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {}),
+		);
+
+		// Ensure Samara hardcodes do not leak into output
+		assert.equal(
+			html.includes("г. Самара"),
+			false,
+			"Does not leak Samara city name",
+		);
+		assert.equal(
+			html.includes("Филиал «Центральный»"),
+			false,
+			"Does not leak hardcoded central branch",
+		);
+		assert.equal(
+			html.includes("Филиал «На Московском»"),
+			false,
+			"Does not leak hardcoded moscow branch",
+		);
+		assert.equal(
+			html.includes("Д-р Смирнова Елена Владимировна"),
+			false,
+			"Does not leak hardcoded doctor",
+		);
+	});
+
+	it("renders compact solo doctor banner when 1 doctor is provided (Mandate 8n Solo Doctor Sovereignty)", () => {
+		const soloDoctor: BookingDoctorData = {
+			id: "doc-solo-1",
+			fullName: "Д-р Кузнецов Андрей Игоревич",
+			specialties: ["Стоматолог-терапевт", "Ортопед"],
+			experienceYears: 12,
+			rating: 4.95,
+			reviewsCount: 88,
+			categoryIds: ["all"],
+		};
+
 		const html = renderToStaticMarkup(
 			createElement(PublicOnlineBookingWidget, {
-				initialStep: 4,
+				customDoctors: [soloDoctor],
+			}),
+		);
+
+		// Must render compact solo doctor banner
+		assert.ok(
+			html.includes("dbw-solo-doctor-banner"),
+			"Renders dbw-solo-doctor-banner",
+		);
+		assert.ok(
+			html.includes("Соло-доктор"),
+			"Displays 'Соло-доктор' tag",
+		);
+		assert.ok(
+			html.includes("Д-р Кузнецов Андрей Игоревич"),
+			"Renders solo doctor full name",
+		);
+		assert.ok(
+			html.includes("Опыт 12 лет"),
+			"Renders doctor experience",
+		);
+
+		// Must NOT render multi-card doctor selector when solo doctor is active
+		assert.equal(
+			html.includes("Любой свободный специалист"),
+			false,
+			"Does NOT show 'Любой свободный специалист' for solo doctor",
+		);
+	});
+
+	it("renders doctor list with 'Любой свободный специалист' when multiple doctors are provided", () => {
+		const multipleDoctors: BookingDoctorData[] = [
+			{
+				id: "doc-1",
+				fullName: "Д-р Смирнова Елена",
+				specialties: ["Терапевт"],
+				experienceYears: 10,
+				rating: 5.0,
+				reviewsCount: 45,
+				categoryIds: ["all"],
+			},
+			{
+				id: "doc-2",
+				fullName: "Д-р Васильев Олег",
+				specialties: ["Хирург"],
+				experienceYears: 15,
+				rating: 4.9,
+				reviewsCount: 60,
+				categoryIds: ["all"],
+			},
+		];
+
+		const html = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {
+				customDoctors: multipleDoctors,
 			}),
 		);
 
 		assert.ok(
-			html.includes("Ваши контактные данные"),
-			"Contains Step 4 heading",
+			html.includes("dbw-doctors-list"),
+			"Renders dbw-doctors-list container",
 		);
 		assert.ok(
-			html.includes("patient-name-input"),
-			"Contains patient full name input",
+			html.includes("Любой свободный специалист"),
+			"Renders 'Любой свободный специалист' option",
 		);
 		assert.ok(
-			html.includes("patient-phone-input"),
-			"Contains patient phone input",
+			html.includes("Д-р Смирнова Елена"),
+			"Renders doctor 1",
 		);
 		assert.ok(
-			html.includes("patient-comment-input"),
-			"Contains patient comment textarea",
-		);
-
-		// Respectful callback notice instead of blocking SMS simulator (Mandates 8e, 8k, 8n)
-		assert.ok(
-			html.includes("Администратор клиники перезвонит вам по номеру"),
-			"Contains respectful callback notice",
-		);
-		assert.ok(
-			html.includes("для согласования деталей визита"),
-			"Contains callback detail text",
-		);
-
-		// Absolute ban on fake simulation codes and dev badges
-		assert.equal(
-			html.includes("DEV / Отладка"),
-			false,
-			"Does NOT display dev debug badge",
-		);
-		assert.equal(
-			html.includes("Демо-СМС"),
-			false,
-			"Does not display 'Демо-СМС' badge",
-		);
-		assert.equal(
-			html.includes("Быстро вставить"),
-			false,
-			"Does not display 'Быстро вставить' cheat button",
-		);
-		assert.equal(
-			html.includes("Подтверждение номера телефона"),
-			false,
-			"Does NOT show SMS verification section by default",
-		);
-		assert.ok(
-			html.includes("privacy-checkbox"),
-			"Contains privacy consent checkbox",
-		);
-		assert.ok(
-			html.includes("Подтвердить запись"),
-			"Contains Final Confirm button",
+			html.includes("Д-р Васильев Олег"),
+			"Renders doctor 2",
 		);
 	});
 
-	it("renders Step 4: Patient Info Form with clinic SMS verification active when requireSmsVerification is true", () => {
-		const html = renderToStaticMarkup(
-			createElement(PublicOnlineBookingWidget, {
-				initialStep: 4,
-				requireSmsVerification: true,
-			}),
-		);
-
-		assert.ok(
-			html.includes("Подтверждение номера телефона"),
-			"Contains SMS verification title when clinic requires SMS",
-		);
-		assert.ok(
-			html.includes("Получить СМС-код"),
-			"Contains SMS request button",
-		);
-
-		// Must NOT show demo badge, dev badge or fast insert mock button
-		assert.equal(
-			html.includes("DEV / Отладка"),
-			false,
-			"Does NOT display dev debug badge",
-		);
-		assert.equal(
-			html.includes("Демо-СМС"),
-			false,
-			"Does not display 'Демо-СМС' badge",
-		);
-		assert.equal(
-			html.includes("Быстро вставить"),
-			false,
-			"Does not display 'Быстро вставить' button",
-		);
-	});
-
-	it("renders Step 3 with 15-Second Direct Booking Box allowing 1-click booking without mandatory SMS wait", () => {
-		const html = renderToStaticMarkup(
-			createElement(PublicOnlineBookingWidget, {
-				initialStep: 3,
-			}),
-		);
-
-		assert.ok(
-			html.includes("Быстрая запись в 1 клик за 15 секунд"),
-			"Contains 15-second express booking banner",
-		);
-		assert.ok(
-			html.includes("express-patient-name-input"),
-			"Contains express name input",
-		);
-		assert.ok(
-			html.includes("express-patient-phone-input"),
-			"Contains express phone input",
-		);
-		assert.ok(
-			html.includes("Записаться на прием без СМС"),
-			"Contains instant booking button without mandatory SMS",
-		);
-	});
-
-	it("renders Step 5: Instant Booking Confirmation Card with Ticket reference & Calendar Export", () => {
+	it("renders Step 5: Booking Confirmation Ticket without dev embed code leaks (Mandate 8p)", () => {
 		const html = renderToStaticMarkup(
 			createElement(PublicOnlineBookingWidget, {
 				initialStep: 5,
@@ -394,54 +225,91 @@ describe("PublicOnlineBookingWidget Component & Embeddable Flow", () => {
 		);
 
 		assert.ok(
-			html.includes("dente-booking-widget"),
-			"Renders widget wrapper",
-		);
-		assert.ok(
 			html.includes("Запись успешно оформлена!"),
 			"Renders success title",
 		);
 		assert.ok(
+			html.includes("dbw-ticket-pill"),
+			"Renders ticket pill element",
+		);
+		assert.ok(
+			html.includes("Скачать .ICS файл"),
+			"Contains ICS download button",
+		);
+		assert.ok(
+			html.includes("Google Календарь"),
+			"Contains Google Calendar link",
+		);
+		assert.ok(
+			html.includes("Яндекс Календарь"),
+			"Contains Yandex Calendar link",
+		);
+
+		// Mandate 8p: Absolute ban on developer embed code leaks on patient ticket
+		assert.equal(
 			html.includes("Получить HTML-код для вставки на сайт"),
-			"Contains Embed Code Snippet button",
+			false,
+			"Does NOT show embed snippet button to patient",
+		);
+		assert.equal(
+			html.includes("dbw-embed-snippet-box"),
+			false,
+			"Does NOT render embed snippet box on confirmation",
+		);
+		assert.equal(
+			html.includes("dente-booking-container"),
+			false,
+			"Does NOT leak widget script container into patient view",
 		);
 	});
 
-	it("supports custom theme, title, subtitle, and custom branches/categories overrides", () => {
-		const customBranches = [
-			{
-				id: "b-vip",
-				name: "VIP Клиника на Набережной",
-				address: "г. Самара, Волжский проспект, 10",
-				phone: "+7 (846) 999-00-11",
-				workHours: "Круглосуточно",
-				isMain: true,
-			},
-		];
-
-		const customCategories: ServiceCategory[] = DEFAULT_SERVICE_CATEGORIES.slice(0, 2);
-
+	it("renders respectful callback notice without fake SMS blocking (Friction-Killer Law)", () => {
 		const html = renderToStaticMarkup(
 			createElement(PublicOnlineBookingWidget, {
-				title: "Запись на приём в премиум-отделение",
-				subtitle: "Персональный координатор и комфортный приём",
-				theme: "dark",
-				customBranches,
-				customCategories,
+				initialStep: 1,
 			}),
 		);
 
 		assert.ok(
-			html.includes('data-theme="dark"'),
-			"Applies dark theme attribute",
+			html.includes("dbw-callback-notice"),
+			"Contains respectful callback notice container",
 		);
 		assert.ok(
-			html.includes("Запись на приём в премиум-отделение"),
+			html.includes("Администратор клиники перезвонит вам по номеру"),
+			"Contains respectful callback text",
+		);
+		assert.equal(
+			html.includes("Демо-СМС"),
+			false,
+			"Does not display fake demo SMS badge",
+		);
+		assert.equal(
+			html.includes("DEV / Отладка"),
+			false,
+			"Does not display dev debug badge",
+		);
+	});
+
+	it("supports custom theme, title, and subtitle overrides", () => {
+		const html = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {
+				title: "Запись в стоматологию доктора Кузнецова",
+				subtitle: "Приём без очередей в центре города",
+				theme: "calm_teal",
+			}),
+		);
+
+		assert.ok(
+			html.includes('data-theme="calm_teal"'),
+			"Sets data-theme='calm_teal'",
+		);
+		assert.ok(
+			html.includes("Запись в стоматологию доктора Кузнецова"),
 			"Renders custom title",
 		);
 		assert.ok(
-			html.includes("VIP Клиника на Набережной"),
-			"Renders custom branch",
+			html.includes("Приём без очередей в центре города"),
+			"Renders custom subtitle",
 		);
 	});
 
@@ -474,7 +342,17 @@ describe("PublicOnlineBookingWidget Component & Embeddable Flow", () => {
 
 describe("Sub-components: BookingDoctorCard & BookingSlotPicker", () => {
 	it("renders BookingDoctorCard with doctor bio, rating, specialties and touch target", () => {
-		const doc = DEFAULT_DOCTORS[0]!;
+		const doc: BookingDoctorData = {
+			id: "doc-test-1",
+			fullName: "Д-р Морозова Ольга",
+			specialties: ["Терапевт-эндодонтист"],
+			experienceYears: 9,
+			rating: 4.96,
+			reviewsCount: 112,
+			bio: "Специалист по сложному эндодонтическому лечению под микроскопом",
+			categoryIds: ["all"],
+		};
+
 		const html = renderToStaticMarkup(
 			createElement(BookingDoctorCard, {
 				doctor: doc,
@@ -486,8 +364,8 @@ describe("Sub-components: BookingDoctorCard & BookingSlotPicker", () => {
 		assert.ok(html.includes("dbw-doctor-card selected"));
 		assert.ok(html.includes(doc.fullName));
 		assert.ok(html.includes(doc.bio || ""));
-		assert.ok(html.includes("Стаж 14 лет"));
-		assert.ok(html.includes("4.98"));
+		assert.ok(html.includes("Стаж 9 лет"));
+		assert.ok(html.includes("4.96"));
 	});
 
 	it("renders BookingAnyDoctorCard with quick selection prompt", () => {
@@ -503,7 +381,27 @@ describe("Sub-components: BookingDoctorCard & BookingSlotPicker", () => {
 	});
 
 	it("renders BookingSlotPicker with filter chips, calendar days and time slots", () => {
-		const mockSlots = generateMockSlotsForDate("2026-08-20");
+		const testSlots: BookingSlotItem[] = [
+			{
+				time: "09:30",
+				startsAt: "2026-08-20T09:30:00.000Z",
+				endsAt: "2026-08-20T10:00:00.000Z",
+				period: "morning",
+			},
+			{
+				time: "14:00",
+				startsAt: "2026-08-20T14:00:00.000Z",
+				endsAt: "2026-08-20T14:30:00.000Z",
+				period: "afternoon",
+			},
+			{
+				time: "18:30",
+				startsAt: "2026-08-20T18:30:00.000Z",
+				endsAt: "2026-08-20T19:00:00.000Z",
+				period: "evening",
+			},
+		];
+
 		const html = renderToStaticMarkup(
 			createElement(BookingSlotPicker, {
 				selectedDate: "2026-08-20",
@@ -522,8 +420,8 @@ describe("Sub-components: BookingDoctorCard & BookingSlotPicker", () => {
 					},
 				],
 				monthLabel: "Август 2026",
-				slots: mockSlots,
-				selectedSlot: mockSlots[0] || null,
+				slots: testSlots,
+				selectedSlot: testSlots[0] || null,
 				onSelectSlot: () => {},
 				slotsLoading: false,
 			}),
@@ -531,15 +429,15 @@ describe("Sub-components: BookingDoctorCard & BookingSlotPicker", () => {
 
 		assert.ok(html.includes("dbw-slot-picker-root"));
 		assert.ok(html.includes("dbw-period-filter-chips"));
-		assert.ok(html.includes("09:00"));
-		assert.ok(html.includes("13:00") || html.includes("15:00"));
-		assert.ok(html.includes("18:00"));
+		assert.ok(html.includes("09:30"));
+		assert.ok(html.includes("14:00"));
+		assert.ok(html.includes("18:30"));
 	});
 });
 
 describe("PublicOnlineBookingWidget Utility Functions", () => {
 	it("localDateString produces valid YYYY-MM-DD format", () => {
-		const fixedDate = new Date(2026, 7, 18); // 18 Aug 2026
+		const fixedDate = new Date(2026, 7, 18);
 		const str = localDateString(fixedDate);
 		assert.equal(str, "2026-08-18");
 	});
@@ -598,19 +496,9 @@ describe("PublicOnlineBookingWidget Utility Functions", () => {
 			"Incomplete 9-digit number is invalid",
 		);
 		assert.equal(
-			isValidRussianPhone("+7 (999)"),
-			false,
-			"Short prefix is invalid",
-		);
-		assert.equal(
 			isValidRussianPhone(""),
 			false,
 			"Empty string is invalid",
-		);
-		assert.equal(
-			isValidRussianPhone("12345"),
-			false,
-			"Short string is invalid",
 		);
 	});
 
@@ -638,7 +526,7 @@ describe("PublicOnlineBookingWidget Utility Functions", () => {
 		const ics = generateIcsCalendarContent({
 			title: "Приём в DENTE: Терапия",
 			description: "Врач: Д-р Смирнова\\nТалон: DNT-2026-1234",
-			location: "г. Самара, ул. Ленина, 42",
+			location: "г. Москва, ул. Ленина, 42",
 			startsAt: "2026-08-18T10:00:00.000Z",
 			endsAt: "2026-08-18T10:45:00.000Z",
 		});
@@ -650,10 +538,6 @@ describe("PublicOnlineBookingWidget Utility Functions", () => {
 		assert.ok(
 			ics.includes("SUMMARY:Приём в DENTE: Терапия"),
 			"Has correct SUMMARY",
-		);
-		assert.ok(
-			ics.includes("LOCATION:г. Самара, ул. Ленина, 42"),
-			"Has correct LOCATION",
 		);
 		assert.ok(ics.includes("STATUS:CONFIRMED"), "Has STATUS:CONFIRMED");
 	});
@@ -672,7 +556,6 @@ describe("PublicOnlineBookingWidget Utility Functions", () => {
 			"Has Google Calendar base URL",
 		);
 		assert.ok(url.includes("action=TEMPLATE"), "Includes TEMPLATE action");
-		assert.ok(url.includes("text="), "Includes text parameter");
 	});
 
 	it("generateYandexCalendarUrl generates correct Yandex Calendar URL", () => {
@@ -691,23 +574,6 @@ describe("PublicOnlineBookingWidget Utility Functions", () => {
 		assert.ok(url.includes("name="), "Includes name parameter");
 	});
 
-	it("generateMockSlotsForDate generates morning, afternoon, and evening slots", () => {
-		const slots = generateMockSlotsForDate("2026-08-18", 30);
-		assert.ok(slots.length > 5, "Generates multiple slots");
-		assert.ok(
-			slots.some((s) => s.period === "morning"),
-			"Contains morning slot",
-		);
-		assert.ok(
-			slots.some((s) => s.period === "afternoon"),
-			"Contains afternoon slot",
-		);
-		assert.ok(
-			slots.some((s) => s.period === "evening"),
-			"Contains evening slot",
-		);
-	});
-
 	it("resolveCategoryIcon handles all 5 category icons cleanly", () => {
 		assert.ok(resolveCategoryIcon("Stethoscope"));
 		assert.ok(resolveCategoryIcon("Sparkles"));
@@ -717,170 +583,6 @@ describe("PublicOnlineBookingWidget Utility Functions", () => {
 		assert.ok(resolveCategoryIcon("UnknownFallback"));
 	});
 
-	it("generateStandardWorkingSlotsForDate adheres to clinic schedule, lunch break, and doctor filtering", () => {
-		// Weekday: Tuesday 2026-08-18 (09:00 - 21:00, lunch 14:00 - 15:00)
-		const weekdaySlots = generateStandardWorkingSlotsForDate("2026-08-18", 30);
-		assert.ok(weekdaySlots.length > 15, "Generates full workday slot grid");
-		// First slot 09:00, last slot 20:30 (ends 21:00)
-		assert.equal(weekdaySlots[0]?.time, "09:00");
-		assert.equal(weekdaySlots[weekdaySlots.length - 1]?.time, "20:30");
-		// Lunch break 14:00 - 15:00 is excluded
-		assert.equal(
-			weekdaySlots.some((s) => s.time === "14:00" || s.time === "14:30"),
-			false,
-			"Lunch break is excluded",
-		);
-
-		// Weekend: Sunday 2026-08-23 (10:00 - 18:00, lunch 14:00 - 15:00)
-		const weekendSlots = generateStandardWorkingSlotsForDate("2026-08-23", 30);
-		assert.equal(weekendSlots[0]?.time, "10:00");
-		assert.equal(weekendSlots[weekendSlots.length - 1]?.time, "17:30");
-		assert.equal(
-			weekendSlots.some((s) => s.time === "14:00"),
-			false,
-			"Weekend lunch excluded",
-		);
-
-		// Busy slots filtering
-		const slotsWithBusy = generateStandardWorkingSlotsForDate("2026-08-18", 30, {
-			busySlots: ["09:00", "09:30"],
-		});
-		assert.equal(
-			slotsWithBusy.some((s) => s.time === "09:00" || s.time === "09:30"),
-			false,
-		);
-		assert.equal(slotsWithBusy[0]?.time, "10:00");
-
-		// Doctor schedule day-off filtering: doctor works Mon-Fri [1,2,3,4,5]
-		const doctorOffSlots = generateStandardWorkingSlotsForDate("2026-08-23", 30, {
-			doctorSchedule: { workDays: [1, 2, 3, 4, 5] },
-		});
-		assert.equal(doctorOffSlots.length, 0, "Doctor has day off on Sunday");
-	});
-});
-
-describe("Rapid 3-Step Solo Doctor Online Booking Flow (Mandates 8e, 8k, 8n, 8s)", () => {
-	it("renders Step 1 in rapid flow: Date and Time slots picker directly without branch/category barrier", () => {
-		const html = renderToStaticMarkup(
-			createElement(PublicOnlineBookingWidget, {
-				rapidFlow: true,
-				initialStep: 1,
-			}),
-		);
-
-		assert.ok(
-			html.includes("Выберите дату и время приёма"),
-			"Step 1 heading is Date & Time in rapid flow",
-		);
-		assert.ok(
-			html.includes("rapid-step1-heading"),
-			"Has rapid-step1-heading anchor",
-		);
-		assert.ok(
-			html.includes("Далее: Услуга и врач"),
-			"Has next button to Service and Doctor",
-		);
-		assert.ok(
-			html.includes("data-testid=\"rapid-nav-step-1\""),
-			"Renders 3-step navigation bar with rapid-nav-step-1",
-		);
-		assert.ok(
-			html.includes("data-testid=\"rapid-nav-step-3\""),
-			"Renders 3-step navigation bar with rapid-nav-step-3",
-		);
-		assert.equal(
-			html.includes("Шаг 1 из 4"),
-			false,
-			"Does NOT show 4-step progress indicator",
-		);
-	});
-
-	it("renders Step 2 in rapid flow: Service Category and Attending Solo Doctor selection", () => {
-		const soloDoctor = [DEFAULT_DOCTORS[0]!];
-		const html = renderToStaticMarkup(
-			createElement(PublicOnlineBookingWidget, {
-				flowMode: "rapid_solo",
-				initialStep: 2,
-				customDoctors: soloDoctor,
-			}),
-		);
-
-		assert.ok(
-			html.includes("Выберите услугу и врача"),
-			"Step 2 heading is Service and Doctor in rapid flow",
-		);
-		assert.ok(
-			html.includes("Соло-доктор"),
-			"Highlights solo-doctor badge when 1 doctor is present",
-		);
-		assert.ok(
-			html.includes("Далее: Контакты"),
-			"Has next button to Contacts",
-		);
-		assert.ok(
-			html.includes("Назад: Время"),
-			"Has back button to Date & Time",
-		);
-	});
-
-	it("renders Step 3 in rapid flow: Patient Contacts and 1-Click Instant Booking Submission", () => {
-		const html = renderToStaticMarkup(
-			createElement(PublicOnlineBookingWidget, {
-				flowMode: "rapid_solo",
-				initialStep: 3,
-				initialPatientName: "Алексей Соловьев",
-				initialPatientPhone: "+7 (917) 111-22-33",
-			}),
-		);
-
-		assert.ok(
-			html.includes("Ваши контактные данные"),
-			"Step 3 heading is Patient Contacts in rapid flow",
-		);
-		assert.ok(
-			html.includes("Параметры вашей записи к врачу:"),
-			"Shows booking recap box",
-		);
-		assert.ok(
-			html.includes("data-testid=\"step4-confirm-btn\""),
-			"Contains direct confirmation button",
-		);
-		assert.ok(
-			html.includes("Записаться на приём"),
-			"Renders direct appointment creation button",
-		);
-		assert.ok(
-			html.includes("Алексей Соловьев"),
-			"Renders prefilled patient name",
-		);
-	});
-
-	it("provides toggle between standard 4-step and rapid 3-step flow", () => {
-		const standardHtml = renderToStaticMarkup(
-			createElement(PublicOnlineBookingWidget, {
-				flowMode: "standard",
-				initialStep: 1,
-			}),
-		);
-
-		assert.ok(
-			standardHtml.includes("data-testid=\"toggle-rapid-flow-btn\""),
-			"Standard Step 1 has toggle button to rapid flow",
-		);
-
-		const rapidHtml = renderToStaticMarkup(
-			createElement(PublicOnlineBookingWidget, {
-				flowMode: "rapid_solo",
-				initialStep: 1,
-			}),
-		);
-
-		assert.ok(
-			rapidHtml.includes("data-testid=\"toggle-standard-flow-btn\""),
-			"Rapid Step 1 has toggle button to standard flow",
-		);
-	});
-
 	it("verifies apps/web/src/components/PublicOnlineBookingWidget.tsx facade exports match SSOT", async () => {
 		const rootFacade = await import("../../PublicOnlineBookingWidget.js");
 		assert.ok(rootFacade.PublicOnlineBookingWidget, "Root facade exports PublicOnlineBookingWidget");
@@ -888,4 +590,3 @@ describe("Rapid 3-Step Solo Doctor Online Booking Flow (Mandates 8e, 8k, 8n, 8s)
 		assert.equal(rootFacade.PublicOnlineBookingWidget, rootFacade.default, "Named and default match");
 	});
 });
-

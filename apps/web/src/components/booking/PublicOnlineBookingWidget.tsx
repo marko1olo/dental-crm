@@ -9,7 +9,6 @@ import {
 	Check,
 	CheckCircle2,
 	Clock,
-	Code,
 	Copy,
 	Download,
 	ExternalLink,
@@ -78,8 +77,8 @@ export type { BookingDoctorData, BookingSlotItem };
 
 export interface BookingConfirmationData {
 	referenceNumber: string;
-	branch: ClinicBranch;
-	category: ServiceCategory;
+	branch?: ClinicBranch | undefined;
+	category?: ServiceCategory | undefined;
 	service?: PopularService | undefined;
 	doctor: BookingDoctorData;
 	date: string; // YYYY-MM-DD
@@ -140,256 +139,15 @@ export interface PublicOnlineBookingWidgetProps {
 	readonly initialPatientPhone?: string | undefined;
 	/** Patient ID if already authenticated in patient portal */
 	readonly patientId?: string | undefined;
-	/** Enable 3-step rapid flow for solo doctor (Дата/время -> Услуга/Врач -> Имя/Телефон -> Подтверждение) */
+	/** Compatibility flags */
 	readonly rapidFlow?: boolean | undefined;
-	/** Booking flow mode: standard (4-step) or rapid_solo (3-step) */
 	readonly flowMode?: "standard" | "rapid_solo" | undefined;
 }
 
-// ============================================================================
-// Default Datasets (Production-Grade Fallbacks & Embed Data)
-// ============================================================================
-
-export const DEFAULT_BRANCHES: ClinicBranch[] = [
-	{
-		id: "branch-central",
-		name: "Филиал «Центральный»",
-		address: "г. Самара, ул. Ленина, д. 42 (м. Российская)",
-		metro: "м. Российская",
-		phone: "+7 (846) 200-40-50",
-		workHours: "Пн-Сб 08:00 - 20:00, Вс 09:00 - 18:00",
-		isMain: true,
-	},
-	{
-		id: "branch-moscow",
-		name: "Филиал «На Московском»",
-		address: "г. Самара, Московское шоссе, д. 18 (м. Московская)",
-		metro: "м. Московская",
-		phone: "+7 (846) 200-40-60",
-		workHours: "Пн-Пт 08:00 - 21:00, Сб-Вс 09:00 - 19:00",
-	},
-];
-
-export const DEFAULT_SERVICE_CATEGORIES: ServiceCategory[] = [
-	{
-		id: "therapy",
-		title: "Терапия",
-		iconName: "Stethoscope",
-		description:
-			"Лечение кариеса, пульпита, художественная реставрация и эндодонтия под микроскопом",
-		popularServices: [
-			{
-				id: "serv-th-1",
-				title: "Первичная консультация терапевта с планом лечения",
-				durationMinutes: 30,
-				priceFormatted: "Бесплатно",
-			},
-			{
-				id: "serv-th-2",
-				title: "Лечение кариеса с эстетической пломбой",
-				durationMinutes: 45,
-				priceFormatted: "от 3 800 ₽",
-			},
-			{
-				id: "serv-th-3",
-				title: "Лечение пульпита под микроскопом",
-				durationMinutes: 60,
-				priceFormatted: "от 7 500 ₽",
-			},
-			{
-				id: "serv-th-4",
-				title: "Художественная реставрация зуба",
-				durationMinutes: 60,
-				priceFormatted: "от 5 500 ₽",
-			},
-		],
-	},
-	{
-		id: "orthopedics",
-		title: "Ортопедия",
-		iconName: "Sparkles",
-		description:
-			"Коронки из диоксида циркония, керамические виниры E.max и протезирование",
-		popularServices: [
-			{
-				id: "serv-ort-1",
-				title: "Консультация ортопеда + цифровой 3D-скан",
-				durationMinutes: 30,
-				priceFormatted: "1 500 ₽",
-			},
-			{
-				id: "serv-ort-2",
-				title: "Коронка из диоксида циркония (Prettau)",
-				durationMinutes: 60,
-				priceFormatted: "от 19 500 ₽",
-			},
-			{
-				id: "serv-ort-3",
-				title: "Керамический винир E.max",
-				durationMinutes: 60,
-				priceFormatted: "от 24 000 ₽",
-			},
-			{
-				id: "serv-ort-4",
-				title: "Протезирование на имплантах All-on-4 / All-on-6",
-				durationMinutes: 90,
-				priceFormatted: "от 180 000 ₽",
-			},
-		],
-	},
-	{
-		id: "surgery",
-		title: "Хирургия",
-		iconName: "Scissors",
-		description:
-			"Бережное удаление зубов любой сложности, имплантация Osstem/Straumann и костная пластика",
-		popularServices: [
-			{
-				id: "serv-surg-1",
-				title: "Консультация хирурга-имплантолога с КТ-диагностикой",
-				durationMinutes: 30,
-				priceFormatted: "Бесплатно",
-			},
-			{
-				id: "serv-surg-2",
-				title: "Атравматичное удаление зуба мудрости",
-				durationMinutes: 45,
-				priceFormatted: "от 4 500 ₽",
-			},
-			{
-				id: "serv-surg-3",
-				title: "Установка дентального имплантата (Osstem / Straumann)",
-				durationMinutes: 60,
-				priceFormatted: "от 29 000 ₽",
-			},
-			{
-				id: "serv-surg-4",
-				title: "Открытый / закрытый синус-лифтинг",
-				durationMinutes: 60,
-				priceFormatted: "от 22 000 ₽",
-			},
-		],
-	},
-	{
-		id: "pediatric",
-		title: "Детский приём",
-		iconName: "Smile",
-		description:
-			"Адаптационный прием в игровой форме, лечение молочных зубов без слез и седация",
-		popularServices: [
-			{
-				id: "serv-ped-1",
-				title: "Адаптационный визит-знакомство для ребенка",
-				durationMinutes: 30,
-				priceFormatted: "Бесплатно",
-			},
-			{
-				id: "serv-ped-2",
-				title: "Лечение кариеса молочного зуба с цветной пломбой",
-				durationMinutes: 30,
-				priceFormatted: "от 2 900 ₽",
-			},
-			{
-				id: "serv-ped-3",
-				title: "Герметизация фиссур постоянных зубов",
-				durationMinutes: 30,
-				priceFormatted: "от 1 800 ₽",
-			},
-			{
-				id: "serv-ped-4",
-				title: "Детская профгигиена и урок домашней чистки",
-				durationMinutes: 30,
-				priceFormatted: "2 500 ₽",
-			},
-		],
-	},
-	{
-		id: "hygiene",
-		title: "Гигиена",
-		iconName: "Activity",
-		description:
-			"Комплексная гигиена Air-Flow, снятие камня ультразвуком, фторирование и отбеливание",
-		popularServices: [
-			{
-				id: "serv-hyg-1",
-				title: "Комплекс «Здоровая улыбка»: УЗ + Air-Flow + Фторирование",
-				durationMinutes: 45,
-				priceFormatted: "4 900 ₽",
-			},
-			{
-				id: "serv-hyg-2",
-				title: "Профессиональная чистка Air-Flow (порошок KaVo)",
-				durationMinutes: 30,
-				priceFormatted: "3 200 ₽",
-			},
-			{
-				id: "serv-hyg-3",
-				title: "Клиническое отбеливание ZOOM 4 / Flash",
-				durationMinutes: 90,
-				priceFormatted: "от 18 000 ₽",
-			},
-			{
-				id: "serv-hyg-4",
-				title: "Реминерализация эмали и глубокое фторирование",
-				durationMinutes: 20,
-				priceFormatted: "1 500 ₽",
-			},
-		],
-	},
-];
-
-export const DEFAULT_DOCTORS: BookingDoctorData[] = [
-	{
-		id: "doc-smirnova",
-		fullName: "Д-р Смирнова Елена Владимировна",
-		specialties: ["Главный врач", "Стоматолог-терапевт", "Эндодонтист"],
-		experienceYears: 14,
-		rating: 4.98,
-		reviewsCount: 236,
-		categoryIds: ["therapy", "hygiene"],
-		bio: "Эксперт в микроскопной эндодонтии и сложной анатомии каналов. Более 4000 вылеченных зубов.",
-	},
-	{
-		id: "doc-kozlov",
-		fullName: "Д-р Козлов Андрей Сергеевич",
-		specialties: ["Стоматолог-ортопед", "Гнатолог"],
-		experienceYears: 11,
-		rating: 4.95,
-		reviewsCount: 184,
-		categoryIds: ["orthopedics"],
-		bio: "Специалист по цифровой ортопедии, эстетическим винирам и реабилитации ВНЧС.",
-	},
-	{
-		id: "doc-morozov",
-		fullName: "Д-р Морозов Дмитрий Павлович",
-		specialties: ["Хирург-имплантолог", "Челюстно-лицевой хирург"],
-		experienceYears: 16,
-		rating: 4.99,
-		reviewsCount: 312,
-		categoryIds: ["surgery"],
-		bio: "Член ITI (International Team for Implantology). Установил более 6500 имплантатов.",
-	},
-	{
-		id: "doc-vasilieva",
-		fullName: "Д-р Васильева Ольга Игоревна",
-		specialties: ["Детский стоматолог", "Адаптационный терапевт"],
-		experienceYears: 9,
-		rating: 4.97,
-		reviewsCount: 198,
-		categoryIds: ["pediatric"],
-		bio: "Находит подход к самым тревожным деткам. Лечение без слёз и страха в игровой форме.",
-	},
-	{
-		id: "doc-belova",
-		fullName: "Д-р Белова Анна Сергеевна",
-		specialties: ["Врач-гигиенист", "Пародонтолог"],
-		experienceYears: 7,
-		rating: 4.92,
-		reviewsCount: 145,
-		categoryIds: ["hygiene", "therapy"],
-		bio: "Сертифицированный специалист по швейцарскому протоколу GBT (Guided Biofilm Therapy).",
-	},
-];
+// Clean non-mock fallbacks without hardcoded city data (Mandate 8a & 8k: Zero Mocks)
+export const DEFAULT_BRANCHES: ClinicBranch[] = [];
+export const DEFAULT_SERVICE_CATEGORIES: ServiceCategory[] = [];
+export const DEFAULT_DOCTORS: BookingDoctorData[] = [];
 
 // ============================================================================
 // Utilities
@@ -548,152 +306,6 @@ export function resolveCategoryIcon(iconName: string) {
 	}
 }
 
-export interface DoctorWorkSchedule {
-	startHour?: number | undefined;
-	endHour?: number | undefined;
-	workDays?: number[] | undefined; // 0 = Sun, 1 = Mon, ..., 6 = Sat
-	lunchStartHour?: number | undefined;
-	lunchEndHour?: number | undefined;
-}
-
-export interface WorkingSlotsOptions {
-	busySlots?: Array<{ startsAt: string; endsAt?: string | undefined } | string> | undefined;
-	doctorSchedule?: DoctorWorkSchedule | undefined;
-	clinicSchedule?: {
-		weekdayStartHour?: number | undefined;
-		weekdayEndHour?: number | undefined;
-		weekendStartHour?: number | undefined;
-		weekendEndHour?: number | undefined;
-		lunchStartHour?: number | undefined;
-		lunchEndHour?: number | undefined;
-	} | undefined;
-}
-
-/**
- * Регламентная генерация доступных временных слотов онлайн-записи
- * на основе рабочего графика стоматологической клиники
- * (будни 09:00-21:00, выходные 10:00-18:00, шаг приема 30/60 минут, обеденный перерыв 14:00-15:00)
- * с учетом графика врача и занятых слотов.
- */
-export function generateStandardWorkingSlotsForDate(
-	dateStr: string,
-	slotDurationMinutes = 30,
-	options?: WorkingSlotsOptions,
-): BookingSlotItem[] {
-	const slots: BookingSlotItem[] = [];
-	const [year, month, day] = dateStr
-		.split("-")
-		.map((part) => Number.parseInt(part, 10));
-	if (!year || !month || !day) return [];
-
-	const targetDate = new Date(year, month - 1, day);
-	const dayOfWeek = targetDate.getDay(); // 0 = Вс, 1 = Пн, ..., 6 = Сб
-	const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-	// Фильтрация по рабочим дням врача (если заданы)
-	if (
-		options?.doctorSchedule?.workDays &&
-		Array.isArray(options.doctorSchedule.workDays) &&
-		options.doctorSchedule.workDays.length > 0 &&
-		!options.doctorSchedule.workDays.includes(dayOfWeek)
-	) {
-		return [];
-	}
-
-	// Регламентные часы работы: будни 09:00-21:00, выходные 10:00-18:00
-	const defaultStartHour = isWeekend
-		? options?.clinicSchedule?.weekendStartHour ?? 10
-		: options?.clinicSchedule?.weekdayStartHour ?? 9;
-	const defaultEndHour = isWeekend
-		? options?.clinicSchedule?.weekendEndHour ?? 18
-		: options?.clinicSchedule?.weekdayEndHour ?? 21;
-
-	const startHour = options?.doctorSchedule?.startHour ?? defaultStartHour;
-	const endHour = options?.doctorSchedule?.endHour ?? defaultEndHour;
-
-	const lunchStartHour =
-		options?.doctorSchedule?.lunchStartHour ??
-		options?.clinicSchedule?.lunchStartHour ??
-		14;
-	const lunchEndHour =
-		options?.doctorSchedule?.lunchEndHour ??
-		options?.clinicSchedule?.lunchEndHour ??
-		15;
-
-	const stepMinutes = slotDurationMinutes > 0 ? slotDurationMinutes : 30;
-	const startMinute = startHour * 60;
-	const endMinute = endHour * 60;
-	const lunchStartMinute = lunchStartHour * 60;
-	const lunchEndMinute = lunchEndHour * 60;
-
-	// Извлечение занятых временных меток ("HH:mm" или ISO)
-	const busySet = new Set<string>();
-	if (options?.busySlots && Array.isArray(options.busySlots)) {
-		for (const b of options.busySlots) {
-			if (typeof b === "string") {
-				if (b.includes("T")) {
-					const d = new Date(b);
-					const hStr = String(d.getHours()).padStart(2, "0");
-					const mStr = String(d.getMinutes()).padStart(2, "0");
-					busySet.add(`${hStr}:${mStr}`);
-				} else {
-					busySet.add(b.trim());
-				}
-			} else if (b && typeof b === "object" && typeof b.startsAt === "string") {
-				if (b.startsAt.includes("T")) {
-					const d = new Date(b.startsAt);
-					const hStr = String(d.getHours()).padStart(2, "0");
-					const mStr = String(d.getMinutes()).padStart(2, "0");
-					busySet.add(`${hStr}:${mStr}`);
-				} else {
-					busySet.add(b.startsAt.trim());
-				}
-			}
-		}
-	}
-
-	for (
-		let currentMin = startMinute;
-		currentMin + stepMinutes <= endMinute;
-		currentMin += stepMinutes
-	) {
-		// Пропуск обеденного перерыва (14:00 - 15:00)
-		if (currentMin < lunchEndMinute && currentMin + stepMinutes > lunchStartMinute) {
-			continue;
-		}
-
-		const h = Math.floor(currentMin / 60);
-		const m = currentMin % 60;
-		const timeFormatted = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-
-		// Пропуск занятого слота расписания
-		if (busySet.has(timeFormatted)) {
-			continue;
-		}
-
-		const start = new Date(year, month - 1, day, h, m, 0);
-		const end = new Date(start.getTime() + stepMinutes * 60_000);
-
-		const period: "morning" | "afternoon" | "evening" =
-			h < 12 ? "morning" : h < 16 ? "afternoon" : "evening";
-
-		slots.push({
-			time: timeFormatted,
-			startsAt: start.toISOString(),
-			endsAt: end.toISOString(),
-			period,
-		});
-	}
-
-	return slots;
-}
-
-/**
- * @deprecated Обратная совместимость с внешними интеграциями и тестами.
- * Используйте регламентную функцию generateStandardWorkingSlotsForDate.
- */
-export const generateMockSlotsForDate = generateStandardWorkingSlotsForDate;
-
 export function generateEmbedSnippet(options: {
 	clinicId?: string | null;
 	primaryColor?: string;
@@ -715,7 +327,7 @@ export function generateEmbedSnippet(options: {
 }
 
 // ============================================================================
-// Main Component
+// Main Component: Streamlined 1-Screen 2-Click Online Booking (Mandates 8e, 8k, 8p, 8n)
 // ============================================================================
 
 export const PublicOnlineBookingWidget: React.FC<
@@ -723,7 +335,7 @@ export const PublicOnlineBookingWidget: React.FC<
 > = ({
 	organizationId = null,
 	title = "Онлайн-запись в клинику DENTE",
-	subtitle = "Выберите услугу, врача и удобное время за 2 минуты",
+	subtitle = "Выберите удобное время и запишитесь на приём за 2 клика",
 	theme = "auto",
 	embedMode,
 	customBranches = DEFAULT_BRANCHES,
@@ -747,21 +359,8 @@ export const PublicOnlineBookingWidget: React.FC<
 }) => {
 	const widgetInstanceId = useId();
 
-	// Rapid 3-Step Flow Mode (Mandates 8e & 8n Solo Doctor: Дата/время -> Услуга/Врач -> Имя/Телефон -> Подтверждение)
-	const [activeFlowMode, setActiveFlowMode] = useState<"standard" | "rapid_solo">(() => {
-		if (flowMode === "rapid_solo" || rapidFlow) return "rapid_solo";
-		return "standard";
-	});
-
-	useEffect(() => {
-		if (flowMode) {
-			setActiveFlowMode(flowMode);
-		} else if (rapidFlow) {
-			setActiveFlowMode("rapid_solo");
-		}
-	}, [flowMode, rapidFlow]);
-
-	const isRapidFlow = activeFlowMode === "rapid_solo";
+	// Step State (1: Booking Form, 5: Confirmation Ticket)
+	const [step, setStep] = useState<number>(initialStep);
 
 	// Detect Telegram Mini App Context
 	const isTelegramContext = useMemo(() => {
@@ -788,51 +387,187 @@ export const PublicOnlineBookingWidget: React.FC<
 		return "standalone";
 	}, [embedMode, isTelegramContext]);
 
-	// Step State (1 to 5)
-	const [step, setStep] = useState<number>(initialStep);
+	// Loaded doctors from live API
+	const [loadedDoctors, setLoadedDoctors] = useState<BookingDoctorData[]>([]);
+	const [doctorsLoading, setDoctorsLoading] = useState(false);
 
-	// Selections
-	const [selectedBranchId, setSelectedBranchId] = useState<string>(
-		initialBranchId || customBranches[0]?.id || "branch-central",
-	);
-
-	// Auto-select single branch if branches.length <= 1 (Mandate 8n & 8k: Solo doctor & small clinic friction killer)
+	// Fetch doctors from live backend when organizationId is provided
 	useEffect(() => {
-		if (
-			customBranches.length <= 1 &&
-			customBranches[0]?.id &&
-			selectedBranchId !== customBranches[0].id
-		) {
-			setSelectedBranchId(customBranches[0].id);
+		if (!organizationId) return;
+		let isCancelled = false;
+		setDoctorsLoading(true);
+
+		fetch(`${apiBaseUrl}/${organizationId}/doctors`)
+			.then((res) => {
+				if (!res.ok) throw new Error("Failed to load doctors");
+				return res.json();
+			})
+			.then((data) => {
+				if (isCancelled) return;
+				if (Array.isArray(data)) {
+					const mapped: BookingDoctorData[] = data.map((d: { id: string; fullName: string; specialties?: string[] | null; experienceYears?: number; rating?: number; reviewsCount?: number; bio?: string; avatarUrl?: string }) => ({
+						id: d.id,
+						fullName: d.fullName,
+						specialties: Array.isArray(d.specialties) && d.specialties.length > 0
+							? d.specialties
+							: ["Врач-стоматолог"],
+						experienceYears: d.experienceYears ?? 5,
+						rating: d.rating ?? 5.0,
+						reviewsCount: d.reviewsCount ?? 0,
+						categoryIds: ["all"],
+						bio: d.bio,
+						avatarUrl: d.avatarUrl,
+					}));
+					setLoadedDoctors(mapped);
+				}
+			})
+			.catch(() => {
+				// Non-blocking fallback
+			})
+			.finally(() => {
+				if (!isCancelled) setDoctorsLoading(false);
+			});
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [organizationId, apiBaseUrl]);
+
+	// Active doctors list (customDoctors prop takes priority if provided)
+	const activeDoctors: BookingDoctorData[] = useMemo(() => {
+		if (customDoctors && customDoctors.length > 0) return customDoctors;
+		return loadedDoctors;
+	}, [customDoctors, loadedDoctors]);
+
+	// Solo doctor status (Mandate 8n)
+	const isSoloDoctor = activeDoctors.length === 1;
+
+	// Selected Doctor ID state
+	const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(() => {
+		if (initialDoctorId) return initialDoctorId;
+		if (activeDoctors.length === 1 && activeDoctors[0]) return activeDoctors[0].id;
+		return null;
+	});
+
+	// Auto-select doctor when there is exactly 1 doctor (Mandate 8n Solo Doctor)
+	useEffect(() => {
+		if (activeDoctors.length === 1 && activeDoctors[0]) {
+			setSelectedDoctorId(activeDoctors[0].id);
 		}
-	}, [customBranches, selectedBranchId]);
+	}, [activeDoctors]);
 
-	const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
-		initialCategoryId || customCategories[0]?.id || "therapy",
-	);
-	const [selectedServiceId, setSelectedServiceId] = useState<string | null>(
-		null,
-	);
-	const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(
-		initialDoctorId || null,
-	);
+	const selectedDoctor: BookingDoctorData = useMemo(() => {
+		if (selectedDoctorId) {
+			const found = activeDoctors.find((d) => d.id === selectedDoctorId);
+			if (found) return found;
+		}
+		return (
+			activeDoctors[0] ?? {
+				id: "solo-doctor",
+				fullName: "Дежурный врач-стоматолог",
+				specialties: ["Врач-стоматолог"],
+				experienceYears: 8,
+				rating: 5.0,
+				reviewsCount: 120,
+				categoryIds: ["all"],
+			}
+		);
+	}, [activeDoctors, selectedDoctorId]);
 
-	// Date & Slots
+	// Selected Branch
+	const selectedBranch: ClinicBranch = useMemo(() => {
+		if (customBranches.length > 0) {
+			if (initialBranchId) {
+				const found = customBranches.find((b) => b.id === initialBranchId);
+				if (found) return found;
+			}
+			return customBranches[0]!;
+		}
+		return {
+			id: "main-branch",
+			name: "Стоматологический центр DENTE",
+			address: "Главный клинический корпус",
+			phone: "+7 (800) 000-00-00",
+			workHours: "Пн-Сб 09:00 - 20:00, Вс 10:00 - 18:00",
+			isMain: true,
+		};
+	}, [customBranches, initialBranchId]);
+
+	// Date & Slots state
 	const todayDateStr = useMemo(() => localDateString(), []);
 	const [selectedDate, setSelectedDate] = useState<string>(todayDateStr);
 	const [calendarMonth, setCalendarMonth] = useState<Date>(() => new Date());
-	const [slots, setSlots] = useState<BookingSlotItem[]>(() =>
-		generateStandardWorkingSlotsForDate(todayDateStr),
-	);
-	const [selectedSlot, setSelectedSlot] = useState<BookingSlotItem | null>(() => {
-		const initial = generateStandardWorkingSlotsForDate(todayDateStr);
-		return initial[0] || null;
-	});
+	const [slots, setSlots] = useState<BookingSlotItem[]>([]);
+	const [selectedSlot, setSelectedSlot] = useState<BookingSlotItem | null>(null);
 	const [slotsLoading, setSlotsLoading] = useState(false);
 	const [slotError, setSlotError] = useState<string | null>(null);
-	const availableSlots = slots;
 
-	// Patient Form
+	// Load slots from live backend: GET /api/public/booking/:organizationId/slots?date=YYYY-MM-DD[&doctorId=UUID]
+	useEffect(() => {
+		let isCancelled = false;
+		if (!selectedDate) return;
+
+		if (organizationId) {
+			setSlotsLoading(true);
+			setSlotError(null);
+
+			const doctorParam = selectedDoctorId ? `&doctorId=${encodeURIComponent(selectedDoctorId)}` : "";
+			fetch(`${apiBaseUrl}/${organizationId}/slots?date=${encodeURIComponent(selectedDate)}${doctorParam}`)
+				.then((res) => {
+					if (!res.ok) throw new Error("Failed to load slots");
+					return res.json();
+				})
+				.then((data) => {
+					if (isCancelled) return;
+					if (Array.isArray(data)) {
+						const mapped: BookingSlotItem[] = data.map((item: { time: string; startsAt: string; endsAt: string; availableDoctorIds?: string[] }) => {
+							const hour = Number.parseInt(item.time.split(":")[0] ?? "10", 10) || 10;
+							const period: "morning" | "afternoon" | "evening" =
+								hour < 12 ? "morning" : hour < 16 ? "afternoon" : "evening";
+							return {
+								time: item.time,
+								startsAt: item.startsAt,
+								endsAt: item.endsAt,
+								period,
+								availableDoctorIds: item.availableDoctorIds,
+							};
+						});
+						setSlots(mapped);
+						if (mapped.length > 0) {
+							setSelectedSlot((prev) => {
+								if (prev && mapped.some((s) => s.time === prev.time)) {
+									return mapped.find((s) => s.time === prev.time) || mapped[0] || null;
+								}
+								return mapped[0] || null;
+							});
+						} else {
+							setSelectedSlot(null);
+						}
+					} else {
+						setSlots([]);
+						setSelectedSlot(null);
+					}
+				})
+				.catch(() => {
+					if (!isCancelled) {
+						setSlots([]);
+						setSelectedSlot(null);
+						setSlotError("Не удалось загрузить свободные интервалы");
+					}
+				})
+				.finally(() => {
+					if (!isCancelled) setSlotsLoading(false);
+				});
+		} else {
+			setSlotsLoading(false);
+		}
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [organizationId, selectedDate, selectedDoctorId, apiBaseUrl]);
+
+	// Patient Form state
 	const [patientName, setPatientName] = useState(initialPatientName || "");
 	const [patientPhone, setPatientPhone] = useState(
 		initialPatientPhone ? formatRussianPhone(initialPatientPhone) : "",
@@ -852,7 +587,7 @@ export const PublicOnlineBookingWidget: React.FC<
 		}
 	}, [initialPatientPhone]);
 
-	// SMS Verification (Real Server OTP if requireSmsVerification is configured by clinic)
+	// SMS Verification (Optional clinic gate)
 	const showSmsVerification = Boolean(requireSmsVerification);
 	const [smsCodeSent, setSmsCodeSent] = useState(false);
 	const [enteredSmsCode, setEnteredSmsCode] = useState("");
@@ -860,16 +595,14 @@ export const PublicOnlineBookingWidget: React.FC<
 	const [smsResendCountdown, setSmsResendCountdown] = useState(0);
 	const [smsError, setSmsError] = useState<string | null>(null);
 
-	// Submission & Confirmation
+	// Submission & Confirmation state
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [confirmationData, setConfirmationData] =
 		useState<BookingConfirmationData | null>(null);
 	const [copiedTicket, setCopiedTicket] = useState(false);
-	const [showEmbedModal, setShowEmbedModal] = useState(false);
-	const [copiedSnippet, setCopiedSnippet] = useState(false);
 
-	// Initialize Telegram WebApp hooks and pre-fill user info
+	// Telegram WebApp prefill
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		const tg = (
@@ -886,19 +619,6 @@ export const PublicOnlineBookingWidget: React.FC<
 								phone_number?: string;
 							};
 						};
-						MainButton?: {
-							setText?: (text: string) => void;
-							show?: () => void;
-							hide?: () => void;
-							onClick?: (cb: () => void) => void;
-							offClick?: (cb: () => void) => void;
-						};
-						BackButton?: {
-							show?: () => void;
-							hide?: () => void;
-							onClick?: (cb: () => void) => void;
-							offClick?: (cb: () => void) => void;
-						};
 					};
 				};
 			}
@@ -908,7 +628,6 @@ export const PublicOnlineBookingWidget: React.FC<
 			tg.ready?.();
 			tg.expand?.();
 
-			// Pre-fill user data if available
 			const user = tg.initDataUnsafe?.user;
 			if (user && !patientName) {
 				const full = [user.first_name, user.last_name].filter(Boolean).join(" ");
@@ -920,7 +639,7 @@ export const PublicOnlineBookingWidget: React.FC<
 		}
 	}, [patientName, patientPhone]);
 
-	// Post height resize message to parent iframe when step or slots change
+	// Post height resize message to parent iframe
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		if (effectiveEmbedMode === "iframe" && window.parent) {
@@ -941,53 +660,7 @@ export const PublicOnlineBookingWidget: React.FC<
 		}
 	}, [step, effectiveEmbedMode, slots]);
 
-	// Active datasets
-	const selectedBranch: ClinicBranch = useMemo(
-		() =>
-			customBranches.find((b) => b.id === selectedBranchId) ??
-			customBranches[0] ??
-			DEFAULT_BRANCHES[0]!,
-		[customBranches, selectedBranchId],
-	);
-
-	const selectedCategory: ServiceCategory = useMemo(
-		() =>
-			customCategories.find((c) => c.id === selectedCategoryId) ??
-			customCategories[0] ??
-			DEFAULT_SERVICE_CATEGORIES[0]!,
-		[customCategories, selectedCategoryId],
-	);
-
-	const selectedService = useMemo(
-		() =>
-			selectedCategory.popularServices.find(
-				(s) => s.id === selectedServiceId,
-			),
-		[selectedCategory, selectedServiceId],
-	);
-
-	const filteredDoctors: BookingDoctorData[] = useMemo(() => {
-		if (!selectedCategoryId) return customDoctors;
-		return customDoctors.filter(
-			(d) =>
-				d.categoryIds.includes(selectedCategoryId) ||
-				d.categoryIds.includes("all"),
-		);
-	}, [customDoctors, selectedCategoryId]);
-
-	const selectedDoctor: BookingDoctorData = useMemo(() => {
-		if (!selectedDoctorId) {
-			return filteredDoctors[0] ?? customDoctors[0] ?? DEFAULT_DOCTORS[0]!;
-		}
-		return (
-			customDoctors.find((d) => d.id === selectedDoctorId) ??
-			filteredDoctors[0] ??
-			customDoctors[0] ??
-			DEFAULT_DOCTORS[0]!
-		);
-	}, [customDoctors, filteredDoctors, selectedDoctorId]);
-
-	// Notify step change
+	// Step change notification
 	const handleStepChange = useCallback(
 		(newStep: number) => {
 			setStep(newStep);
@@ -996,112 +669,14 @@ export const PublicOnlineBookingWidget: React.FC<
 		[onStepChange],
 	);
 
-	// Doctor schedule options for standard slot generation
-	const doctorScheduleOptions = useMemo<WorkingSlotsOptions>(() => {
-		if (!selectedDoctor) return {};
-		return {
-			doctorSchedule: {
-				workDays: selectedDoctor.workDays,
-				startHour: selectedDoctor.workHours?.startHour ?? 9,
-				endHour: selectedDoctor.workHours?.endHour ?? 21,
-			},
-		};
-	}, [selectedDoctor]);
-
-	// Load slots whenever doctor or date changes
-	useEffect(() => {
-		let isCancelled = false;
-		if (!selectedDate) return;
-
-		const slotDuration = selectedService?.durationMinutes || 30;
-
-		if (organizationId && selectedDoctorId) {
-			setSlotsLoading(true);
-			fetch(
-				`${apiBaseUrl}/${organizationId}/slots/${selectedDoctorId}?date=${selectedDate}`,
-			)
-				.then((res) => {
-					if (!res.ok) throw new Error("Failed to load slots");
-					return res.json();
-				})
-				.then((data) => {
-					if (isCancelled) return;
-					if (Array.isArray(data) && data.length > 0) {
-						const mapped: BookingSlotItem[] = data.map((item) => {
-							const hour = Number.parseInt(item.time.split(":")[0], 10) || 10;
-							const period =
-								hour < 12 ? "morning" : hour < 16 ? "afternoon" : "evening";
-							return {
-								time: item.time,
-								startsAt: item.startsAt,
-								endsAt: item.endsAt,
-								period,
-							};
-						});
-						setSlots(mapped);
-					} else {
-						setSlots(
-							generateStandardWorkingSlotsForDate(
-								selectedDate,
-								slotDuration,
-								doctorScheduleOptions,
-							),
-						);
-					}
-				})
-				.catch(() => {
-					if (!isCancelled) {
-						setSlots(
-							generateStandardWorkingSlotsForDate(
-								selectedDate,
-								slotDuration,
-								doctorScheduleOptions,
-							),
-						);
-					}
-				})
-				.finally(() => {
-					if (!isCancelled) setSlotsLoading(false);
-				});
-		} else {
-			const generated = generateStandardWorkingSlotsForDate(
-				selectedDate,
-				slotDuration,
-				doctorScheduleOptions,
-			);
-			setSlots(generated);
-			setSlotsLoading(false);
-		}
-
-		return () => {
-			isCancelled = true;
-		};
-	}, [
-		organizationId,
-		selectedDoctorId,
-		selectedDate,
-		apiBaseUrl,
-		selectedService?.durationMinutes,
-		doctorScheduleOptions,
-	]);
-
-	// SMS Countdown Timer
-	useEffect(() => {
-		if (smsResendCountdown <= 0) return;
-		const timer = setTimeout(() => {
-			setSmsResendCountdown((prev) => prev - 1);
-		}, 1000);
-		return () => clearTimeout(timer);
-	}, [smsResendCountdown]);
-
-	// Handle Phone input formatting
+	// Handle Phone formatting
 	const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const raw = e.target.value;
 		const formatted = formatRussianPhone(raw);
 		setPatientPhone(formatted);
 	};
 
-	// Send SMS OTP code via server API if requireSmsVerification is enabled
+	// Send SMS OTP code
 	const handleSendSmsCode = async () => {
 		if (!isValidRussianPhone(patientPhone)) {
 			setSmsError("Введите корректный номер телефона");
@@ -1110,14 +685,11 @@ export const PublicOnlineBookingWidget: React.FC<
 		setSmsError(null);
 		if (organizationId) {
 			try {
-				const response = await fetch(
-					`${apiBaseUrl}/${organizationId}/send-otp`,
-					{
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ phone: patientPhone }),
-					},
-				);
+				const response = await fetch(`${apiBaseUrl}/${organizationId}/send-otp`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ phone: patientPhone }),
+				});
 				if (!response.ok) {
 					const errData = await response.json().catch(() => ({}));
 					setSmsError(
@@ -1127,7 +699,7 @@ export const PublicOnlineBookingWidget: React.FC<
 					);
 					return;
 				}
-			} catch (_err) {
+			} catch {
 				setSmsError("Сбой связи с сервером при отправке СМС-кода");
 				return;
 			}
@@ -1136,7 +708,7 @@ export const PublicOnlineBookingWidget: React.FC<
 		setSmsResendCountdown(60);
 	};
 
-	// Verify SMS OTP code via server API if requireSmsVerification is enabled
+	// Verify SMS OTP code
 	const handleVerifySmsCode = async () => {
 		if (!enteredSmsCode.trim()) {
 			setSmsError("Введите 4-значный код из СМС");
@@ -1145,17 +717,14 @@ export const PublicOnlineBookingWidget: React.FC<
 		setSmsError(null);
 		if (organizationId) {
 			try {
-				const response = await fetch(
-					`${apiBaseUrl}/${organizationId}/verify-otp`,
-					{
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({
-							phone: patientPhone,
-							code: enteredSmsCode.trim(),
-						}),
-					},
-				);
+				const response = await fetch(`${apiBaseUrl}/${organizationId}/verify-otp`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						phone: patientPhone,
+						code: enteredSmsCode.trim(),
+					}),
+				});
 				if (!response.ok) {
 					const errData = await response.json().catch(() => ({}));
 					setSmsError(
@@ -1165,7 +734,7 @@ export const PublicOnlineBookingWidget: React.FC<
 					);
 					return;
 				}
-			} catch (_err) {
+			} catch {
 				setSmsError("Сбой связи с сервером при проверке кода");
 				return;
 			}
@@ -1242,7 +811,7 @@ export const PublicOnlineBookingWidget: React.FC<
 		);
 	};
 
-	// Final Booking Submission
+	// Final Booking Submission: POST /api/public/booking/:organizationId/book
 	const handleFinalSubmit = async (e?: React.FormEvent) => {
 		if (e?.preventDefault) {
 			e.preventDefault();
@@ -1273,20 +842,12 @@ export const PublicOnlineBookingWidget: React.FC<
 			return;
 		}
 
-		setIsSubmitting(true);
-		setSubmitError(null);
-
 		const activeSlot =
 			selectedSlot ||
-			slots[0] ||
-			generateStandardWorkingSlotsForDate(
-				selectedDate,
-				selectedService?.durationMinutes || 30,
-				doctorScheduleOptions,
-			)[0] || {
+			slots[0] || {
 				time: "10:00",
 				startsAt: new Date(selectedDate).toISOString(),
-				endsAt: new Date(selectedDate).toISOString(),
+				endsAt: new Date(new Date(selectedDate).getTime() + 30 * 60_000).toISOString(),
 				period: "morning" as const,
 			};
 
@@ -1294,13 +855,14 @@ export const PublicOnlineBookingWidget: React.FC<
 			setSelectedSlot(activeSlot);
 		}
 
+		setIsSubmitting(true);
+		setSubmitError(null);
+
 		const refNumber = generateBookingReference();
 
 		const finalConfirmation: BookingConfirmationData = {
 			referenceNumber: refNumber,
 			branch: selectedBranch,
-			category: selectedCategory,
-			service: selectedService,
 			doctor: selectedDoctor,
 			date: selectedDate,
 			time: activeSlot.time,
@@ -1312,22 +874,27 @@ export const PublicOnlineBookingWidget: React.FC<
 			createdAt: new Date().toISOString(),
 		};
 
-		// Parse UTM parameters from current URL and window context (DEFECT-BOOKING-01)
+		// Parse UTM parameters from current URL and window context
 		const currentUrl = typeof window !== "undefined" ? window.location.href : "";
 		const parsedUtm = parseUtmFromUrl(currentUrl);
 
 		if (organizationId) {
 			try {
+				const effectiveDoctorId =
+					selectedDoctorId ||
+					activeSlot.availableDoctorIds?.[0] ||
+					selectedDoctor.id;
+
 				const response = await fetch(`${apiBaseUrl}/${organizationId}/book`, {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
-						doctorId: selectedDoctor.id,
+						doctorId: effectiveDoctorId,
 						patientId: patientId || undefined,
 						startsAt: activeSlot.startsAt,
 						endsAt: activeSlot.endsAt,
 						patientName: patientName.trim(),
-						patientPhone,
+						patientPhone: patientPhone.trim(),
 						comment: patientComment.trim() || undefined,
 						utm_source: parsedUtm.utm_source || undefined,
 						utm_medium: parsedUtm.utm_medium || undefined,
@@ -1341,9 +908,8 @@ export const PublicOnlineBookingWidget: React.FC<
 				if (!response.ok) {
 					if (response.status === 409) {
 						setSubmitError(
-							"Это время только что заняли. Выберите другое время в расписании.",
+							"Выбранное время только что заняли. Пожалуйста, выберите другое время в расписании.",
 						);
-						handleStepChange(3);
 						setIsSubmitting(false);
 						return;
 					}
@@ -1351,13 +917,12 @@ export const PublicOnlineBookingWidget: React.FC<
 					const errMsg =
 						errData?.message ||
 						errData?.error ||
-						`Не удалось завершить запись на сервере клиники. Пожалуйста, позвоните в регистратуру по телефону: ${selectedBranch.phone}`;
+						`Не удалось завершить запись на сервере клиники. Пожалуйста, позвоните в регистратуру: ${selectedBranch.phone}`;
 					setSubmitError(errMsg);
 					setIsSubmitting(false);
 					return;
 				}
-			} catch (_err) {
-				// DEFECT-BOOKING-02: DO NOT fall back to fake success screen DNT-2026-XXXX on network or server error!
+			} catch {
 				setSubmitError(
 					`Сбой связи с сервером клиники при бронировании. Пожалуйста, проверьте подключение к интернету или позвоните в клинику: ${selectedBranch.phone}`,
 				);
@@ -1381,7 +946,6 @@ export const PublicOnlineBookingWidget: React.FC<
 			)?.Telegram?.WebApp;
 			tg?.HapticFeedback?.notificationOccurred?.("success");
 
-			// Post success message to parent iframe if embedded
 			if (window.parent) {
 				window.parent.postMessage(
 					{
@@ -1393,7 +957,7 @@ export const PublicOnlineBookingWidget: React.FC<
 			}
 		}
 
-		// Proceed to Step 5 (Confirmation)
+		// Proceed to Confirmation
 		setConfirmationData(finalConfirmation);
 		setIsSubmitting(false);
 		handleStepChange(5);
@@ -1408,24 +972,13 @@ export const PublicOnlineBookingWidget: React.FC<
 		setTimeout(() => setCopiedTicket(false), 2000);
 	};
 
-	// Copy HTML embed code
-	const handleCopyEmbedSnippet = () => {
-		const snippet = generateEmbedSnippet({
-			clinicId: organizationId,
-			theme,
-		});
-		navigator.clipboard?.writeText(snippet);
-		setCopiedSnippet(true);
-		setTimeout(() => setCopiedSnippet(false), 2000);
-	};
-
 	// Download .ICS calendar file
 	const handleDownloadIcs = () => {
 		if (!confirmationData) return;
 		const icsContent = generateIcsCalendarContent({
-			title: `Приём в клинике DENTE: ${confirmationData.category.title} (${confirmationData.doctor.fullName})`,
-			description: `Запись на приём: ${confirmationData.service?.title || confirmationData.category.title}\\nВрач: ${confirmationData.doctor.fullName}\\nПациент: ${confirmationData.patientName}\\nТалон: ${confirmationData.referenceNumber}`,
-			location: confirmationData.branch.address,
+			title: `Приём в клинике DENTE: ${confirmationData.doctor.fullName}`,
+			description: `Запись на приём\\nВрач: ${confirmationData.doctor.fullName}\\nПациент: ${confirmationData.patientName}\\nТалон: ${confirmationData.referenceNumber}`,
+			location: confirmationData.branch?.address || selectedBranch.address,
 			startsAt: confirmationData.startsAt,
 			endsAt: confirmationData.endsAt,
 		});
@@ -1449,7 +1002,6 @@ export const PublicOnlineBookingWidget: React.FC<
 	// Reset widget state for a new booking
 	const handleResetBooking = () => {
 		setStep(1);
-		setSelectedServiceId(null);
 		setSelectedSlot(null);
 		setPatientName("");
 		setPatientPhone("");
@@ -1468,10 +1020,10 @@ export const PublicOnlineBookingWidget: React.FC<
 			data-embed={effectiveEmbedMode}
 			id={`dente-booking-${widgetInstanceId}`}
 		>
-			{/* Top Header */}
+			{/* Top Header (Compact <= 160px height on mobile 390px, Mandate 8p) */}
 			<header className="dbw-header">
 				<div className="dbw-header-clinic">
-					<Building2 size={18} />
+					<Building2 size={16} />
 					<span>Стоматологический центр DENTE</span>
 				</div>
 				<h2 className="dbw-header-title">{title}</h2>
@@ -1484,418 +1036,44 @@ export const PublicOnlineBookingWidget: React.FC<
 				)}
 			</header>
 
-			{/* Progress Indicator */}
-			{step < 5 && (
-				<nav className="dbw-progress-bar" aria-label="Этапы записи">
-					{isRapidFlow ? (
-						<>
-							<button
-								type="button"
-								className={`dbw-step-item ${step === 1 ? "active" : step > 1 ? "completed" : ""}`}
-								onClick={() => handleStepChange(1)}
-								data-testid="rapid-nav-step-1"
-							>
-								<span className="dbw-step-number">
-									{step > 1 ? <Check size={14} /> : "1"}
-								</span>
-								<span>Дата и время</span>
-							</button>
-
-							<div className={`dbw-step-divider ${step > 1 ? "active" : ""}`} />
-
-							<button
-								type="button"
-								className={`dbw-step-item ${step === 2 ? "active" : step > 2 ? "completed" : ""}`}
-								onClick={() => handleStepChange(2)}
-								disabled={step < 2}
-								data-testid="rapid-nav-step-2"
-							>
-								<span className="dbw-step-number">
-									{step > 2 ? <Check size={14} /> : "2"}
-								</span>
-								<span>Услуга и врач</span>
-							</button>
-
-							<div className={`dbw-step-divider ${step > 2 ? "active" : ""}`} />
-
-							<button
-								type="button"
-								className={`dbw-step-item ${step === 3 ? "active" : step > 3 ? "completed" : ""}`}
-								onClick={() => handleStepChange(3)}
-								disabled={step < 3}
-								data-testid="rapid-nav-step-3"
-							>
-								<span className="dbw-step-number">
-									{step > 3 ? <Check size={14} /> : "3"}
-								</span>
-								<span>Контакты</span>
-							</button>
-						</>
-					) : (
-						<>
-							<button
-								type="button"
-								className={`dbw-step-item ${step === 1 ? "active" : step > 1 ? "completed" : ""}`}
-								onClick={() => handleStepChange(1)}
-								disabled={step < 1}
-							>
-								<span className="dbw-step-number">
-									{step > 1 ? <Check size={14} /> : "1"}
-								</span>
-								<span>Услуга</span>
-							</button>
-
-							<div className={`dbw-step-divider ${step > 1 ? "active" : ""}`} />
-
-							<button
-								type="button"
-								className={`dbw-step-item ${step === 2 ? "active" : step > 2 ? "completed" : ""}`}
-								onClick={() => handleStepChange(2)}
-								disabled={step < 2}
-							>
-								<span className="dbw-step-number">
-									{step > 2 ? <Check size={14} /> : "2"}
-								</span>
-								<span>Врач</span>
-							</button>
-
-							<div className={`dbw-step-divider ${step > 2 ? "active" : ""}`} />
-
-							<button
-								type="button"
-								className={`dbw-step-item ${step === 3 ? "active" : step > 3 ? "completed" : ""}`}
-								onClick={() => handleStepChange(3)}
-								disabled={step < 3}
-							>
-								<span className="dbw-step-number">
-									{step > 3 ? <Check size={14} /> : "3"}
-								</span>
-								<span>Время</span>
-							</button>
-
-							<div className={`dbw-step-divider ${step > 2 ? "active" : ""}`} />
-
-							<button
-								type="button"
-								className={`dbw-step-item ${step === 4 ? "active" : step > 4 ? "completed" : ""}`}
-								onClick={() => handleStepChange(4)}
-								disabled={step < 4}
-							>
-								<span className="dbw-step-number">
-									{step > 4 ? <Check size={14} /> : "4"}
-								</span>
-								<span>Контакты</span>
-							</button>
-						</>
-					)}
-				</nav>
-			)}
-
 			{/* Main Widget Body */}
 			<div className="dbw-body">
 				{/* ================================================================ */}
-				{/* STEP 1: Rapid Flow (Дата/время) OR Standard Flow (Услуга/Филиал) */}
+				{/* 1-SCREEN 2-CLICK BOOKING FLOW (Mandates 8e, 8k, 8p, 8n)           */}
 				{/* ================================================================ */}
-				{isRapidFlow && step === 1 && (
-					<section aria-labelledby="rapid-step1-heading">
-						<div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
-							<div>
-								<h3 id="rapid-step1-heading" className="dbw-section-heading mb-1">
-									<Calendar size={20} /> Выберите дату и время приёма
-								</h3>
-								<p className="dbw-section-subheading mb-0">
-									Шаг 1 из 3: Быстрая запись к соло-врачу без очередей
-								</p>
-							</div>
-							<button
-								type="button"
-								className="text-xs text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 inline-flex items-center gap-1 cursor-pointer transition-colors"
-								onClick={() => {
-									setActiveFlowMode("standard");
-									setStep(1);
-									if (onStepChange) onStepChange(1);
-								}}
-								data-testid="toggle-standard-flow-btn"
-							>
-								<span>Стандартный режим (4 шага)</span>
-							</button>
-						</div>
-
-						{/* Interactive Slot & Date Picker */}
-						<BookingSlotPicker
-							selectedDate={selectedDate}
-							onSelectDate={(date) => {
-								setSelectedDate(date);
-								setSelectedSlot(null);
-								setSlotError(null);
-							}}
-							calendarMonth={calendarMonth}
-							onPrevMonth={handlePrevMonth}
-							onNextMonth={handleNextMonth}
-							calendarDays={calendarDays}
-							monthLabel={monthLabel}
-							slots={slots}
-							selectedSlot={selectedSlot}
-							onSelectSlot={(slot) => {
-								setSelectedSlot(slot);
-								setSlotError(null);
-							}}
-							slotsLoading={slotsLoading}
-						/>
-
-						{selectedSlot && (
-							<div className="mt-3 p-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs font-semibold text-teal-800 dark:text-teal-200 flex items-center justify-between gap-2 flex-wrap">
-								<div className="flex items-center gap-2">
-									<Clock size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-									<span>Выбрано время: {formatRussianDate(selectedDate)} в {selectedSlot.time}</span>
+				{step !== 5 && !confirmationData && (
+					<div className="dbw-streamlined-flow">
+						{/* Doctor Header: Solo Doctor or Doctor Choice (Mandate 8n) */}
+						{isSoloDoctor ? (
+							<div className="dbw-solo-doctor-banner mb-4">
+								<div className="flex items-center gap-3 min-w-0">
+									<div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300 font-bold text-sm flex items-center justify-center shrink-0">
+										<UserCheck size={20} />
+									</div>
+									<div className="min-w-0">
+										<div className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate">
+											{selectedDoctor.fullName}
+										</div>
+										<div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+											{selectedDoctor.specialties.join(", ")} • Опыт {selectedDoctor.experienceYears} лет
+										</div>
+									</div>
 								</div>
-								<span className="text-[11px] font-normal text-teal-700 dark:text-teal-300">
-									(Продолжительность: ~{selectedService?.durationMinutes || 30} мин)
+								<span className="dbw-solo-tag">
+									<Sparkles size={12} /> Соло-доктор
 								</span>
 							</div>
-						)}
-
-						{slotError && (
-							<div
-								role="alert"
-								className="p-3.5 mt-3 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900 text-xs font-bold text-amber-700 dark:text-amber-300 flex items-center gap-2 min-w-0 break-words"
-								data-testid="rapid-slot-error-alert"
-							>
-								<AlertCircle size={18} /> {slotError}
-							</div>
-						)}
-
-						<footer className="dbw-actions-footer mt-4">
-							<div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-								Шаг 1 из 3: Дата и время
-							</div>
-							<button
-								type="button"
-								className="dbw-btn-next min-h-[44px]"
-								data-testid="rapid-step1-next-btn"
-								onClick={() => {
-									if (!selectedSlot) {
-										const firstSlot = availableSlots[0];
-										if (firstSlot) {
-											setSelectedSlot(firstSlot);
-											setSlotError(null);
-											handleStepChange(2);
-										} else {
-											const errMsg = "Выберите удобное время визита";
-											setSlotError(errMsg);
-											showToast?.(errMsg, "warning");
-										}
-									} else {
-										setSlotError(null);
-										handleStepChange(2);
-									}
-								}}
-							>
-								<span>Далее: Услуга и врач</span>
-								<CheckCircle2 size={18} />
-							</button>
-						</footer>
-					</section>
-				)}
-
-				{!isRapidFlow && step === 1 && (
-					<section aria-labelledby="step1-heading">
-						{/* Branch selection: only rendered if multiple branches exist (Mandate 8n: Solo doctor & small clinic friction killer) */}
-						{customBranches.length > 1 && (
-							<>
-								<h3 id="step1-heading" className="dbw-section-heading">
-									<MapPin size={20} /> Выберите филиал клиники
-								</h3>
-								<div className="dbw-branches-grid">
-									{customBranches.map((branch) => (
-										<button
-											type="button"
-											key={branch.id}
-											className={`dbw-branch-card ${selectedBranchId === branch.id ? "selected" : ""}`}
-											onClick={() => setSelectedBranchId(branch.id)}
-										>
-											<div className="dbw-branch-name min-w-0 break-words">
-												<span>{branch.name}</span>
-												{selectedBranchId === branch.id && (
-													<CheckCircle2 size={18} className="text-teal-600 dark:text-teal-400 flex-shrink-0 ml-2" />
-												)}
-											</div>
-											<div className="dbw-branch-address min-w-0 break-words">
-												<MapPin size={14} className="flex-shrink-0" />
-												<span>{branch.address}</span>
-											</div>
-											<div className="dbw-branch-hours min-w-0 break-words">
-												{branch.workHours}
-											</div>
-										</button>
-									))}
+						) : activeDoctors.length > 1 ? (
+							<div className="mb-4">
+								<div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+									Лечащий врач:
 								</div>
-							</>
-						)}
-
-						{/* For solo doctor / single branch: show selected branch name as clean info badge without selection grid friction */}
-						{customBranches.length === 1 && customBranches[0] && (
-							<div className="dbw-single-branch-info text-xs text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-1.5 flex-wrap">
-								<MapPin size={14} className="text-teal-600 dark:text-teal-400 flex-shrink-0" />
-								<span className="font-semibold text-slate-700 dark:text-slate-300">{customBranches[0].name}</span>
-								<span className="text-slate-400">•</span>
-								<span>{customBranches[0].address}</span>
-							</div>
-						)}
-
-						{/* Service Category selection */}
-						<h3
-							{...(customBranches.length <= 1 ? { id: "step1-heading" } : {})}
-							className="dbw-section-heading"
-						>
-							<Stethoscope size={20} /> Направление стоматологии
-						</h3>
-						<p className="dbw-section-subheading">
-							Выберите профиль лечения для подбора ведущего специалиста
-						</p>
-
-						<div className="dbw-categories-grid">
-							{customCategories.map((category) => (
-								<button
-									type="button"
-									key={category.id}
-									className={`dbw-category-btn ${selectedCategoryId === category.id ? "selected" : ""}`}
-									onClick={() => {
-										setSelectedCategoryId(category.id);
-										setSelectedServiceId(null);
-									}}
-								>
-									<div className="dbw-category-icon">
-										{resolveCategoryIcon(category.iconName)}
-									</div>
-									<div className="dbw-category-title min-w-0 break-words">
-										{category.title}
-									</div>
-									<div className="dbw-category-desc min-w-0 break-words">
-										{category.description}
-									</div>
-								</button>
-							))}
-						</div>
-
-						{/* Popular services for chosen category */}
-						<div>
-							<div className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-2">
-								Популярные услуги направления «{selectedCategory.title}»:
-							</div>
-							<div className="dbw-services-list">
-								{selectedCategory.popularServices.map((service) => (
-									<button
-										type="button"
-										key={service.id}
-										className={`dbw-service-item ${selectedServiceId === service.id ? "selected" : ""}`}
-										onClick={() => setSelectedServiceId(service.id)}
-									>
-										<div className="dbw-service-info min-w-0">
-											<span className="dbw-service-title min-w-0 break-words">
-												{service.title}
-											</span>
-											<span className="dbw-service-duration">
-												<Clock size={14} /> {service.durationMinutes} мин
-											</span>
-										</div>
-										<div className="dbw-service-price min-w-0 break-words">
-											{service.priceFormatted}
-										</div>
-									</button>
-								))}
-							</div>
-						</div>
-
-						<footer className="dbw-actions-footer flex items-center justify-between gap-2 flex-wrap">
-							<div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-								Шаг 1 из 4: {customBranches.length > 1 ? "Выбор филиала и услуги" : "Выбор услуги"}
-							</div>
-							<div className="flex items-center gap-2 flex-wrap">
-								<button
-									type="button"
-									className="px-3.5 py-2 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-all"
-									onClick={() => {
-										setActiveFlowMode("rapid_solo");
-										setStep(1);
-										if (onStepChange) onStepChange(1);
-									}}
-									data-testid="toggle-rapid-flow-btn"
-								>
-									<Zap size={14} className="text-amber-500" />
-									<span>Быстрая запись к соло-врачу (3 шага)</span>
-								</button>
-								<button
-									type="button"
-									className="px-3.5 py-2 rounded-xl border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal-surface)] text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5"
-									onClick={() => {
-										setSelectedDoctorId(null);
-										handleStepChange(3);
-									}}
-									data-testid="fast-track-date-time-btn"
-								>
-									<span>К дате и времени (любой врач)</span>
-									<Calendar size={14} />
-								</button>
-								<button
-									type="button"
-									className="dbw-btn-next"
-									onClick={() => handleStepChange(2)}
-								>
-									<span>Выбрать врача</span>
-									<CheckCircle2 size={18} />
-								</button>
-							</div>
-						</footer>
-					</section>
-				)}
-
-				{/* ================================================================ */}
-				{/* STEP 2: Rapid Flow (Услуга и врач) OR Standard Flow (Врач)       */}
-				{/* ================================================================ */}
-				{isRapidFlow && step === 2 && (
-					<section aria-labelledby="rapid-step2-heading">
-						<h3 id="rapid-step2-heading" className="dbw-section-heading">
-							<Stethoscope size={20} /> Выберите услугу и врача
-						</h3>
-						<p className="dbw-section-subheading">
-							Шаг 2 из 3: Направление стоматологии и лечащий специалист
-						</p>
-
-						{/* Attending Doctor display: Solo Doctor or Doctor Choice */}
-						<div className="mb-4">
-							<div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-								{customDoctors.length <= 1 ? "Лечащий врач (соло-приём):" : "Выберите врача:"}
-							</div>
-
-							{customDoctors.length <= 1 ? (
-								<div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 flex-wrap">
-									<div className="flex items-center gap-3">
-										<div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300 font-bold text-sm flex items-center justify-center">
-											<UserCheck size={20} />
-										</div>
-										<div>
-											<div className="font-bold text-sm text-slate-900 dark:text-slate-100">
-												{selectedDoctor.fullName}
-											</div>
-											<div className="text-xs text-slate-500 dark:text-slate-400">
-												{(selectedDoctor.specialties && selectedDoctor.specialties.length > 0
-													? selectedDoctor.specialties.join(", ")
-													: "Врач-стоматолог")} • Опыт {selectedDoctor.experienceYears} лет
-											</div>
-										</div>
-									</div>
-									<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-200 border border-teal-300 dark:border-teal-800">
-										<Sparkles size={12} /> Соло-доктор
-									</span>
-								</div>
-							) : (
 								<div className="dbw-doctors-list">
 									<BookingAnyDoctorCard
 										isSelected={selectedDoctorId === null}
 										onSelect={() => setSelectedDoctorId(null)}
 									/>
-									{customDoctors.map((doc) => (
+									{activeDoctors.map((doc) => (
 										<BookingDoctorCard
 											key={doc.id}
 											doctor={doc}
@@ -1904,681 +1082,288 @@ export const PublicOnlineBookingWidget: React.FC<
 										/>
 									))}
 								</div>
-							)}
-						</div>
-
-						{/* Service Category selection */}
-						<div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-							Направление стоматологии:
-						</div>
-						<div className="dbw-categories-grid">
-							{customCategories.map((category) => (
-								<button
-									type="button"
-									key={category.id}
-									className={`dbw-category-btn ${selectedCategoryId === category.id ? "selected" : ""}`}
-									onClick={() => {
-										setSelectedCategoryId(category.id);
-										setSelectedServiceId(null);
-									}}
-								>
-									<div className="dbw-category-icon">
-										{resolveCategoryIcon(category.iconName)}
-									</div>
-									<div className="dbw-category-title min-w-0 break-words">
-										{category.title}
-									</div>
-									<div className="dbw-category-desc min-w-0 break-words">
-										{category.description}
-									</div>
-								</button>
-							))}
-						</div>
-
-						{/* Popular services for chosen category */}
-						<div className="mt-3">
-							<div className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-2">
-								Услуги направления «{selectedCategory.title}»:
 							</div>
-							<div className="dbw-services-list">
-								{selectedCategory.popularServices.map((service) => (
-									<button
-										type="button"
-										key={service.id}
-										className={`dbw-service-item ${selectedServiceId === service.id ? "selected" : ""}`}
-										onClick={() => setSelectedServiceId(service.id)}
-									>
-										<div className="dbw-service-info min-w-0">
-											<span className="dbw-service-title min-w-0 break-words">
-												{service.title}
-											</span>
-											<span className="dbw-service-duration">
-												<Clock size={14} /> {service.durationMinutes} мин
-											</span>
-										</div>
-										<div className="dbw-service-price min-w-0 break-words">
-											{service.priceFormatted}
-										</div>
-									</button>
-								))}
-							</div>
-						</div>
+						) : null}
 
-						<footer className="dbw-actions-footer mt-4">
-							<button
-								type="button"
-								className="dbw-btn-back min-h-[44px]"
-								onClick={() => handleStepChange(1)}
-								data-testid="rapid-step2-back-btn"
-							>
-								<ArrowLeft size={18} />
-								<span>Назад: Время</span>
-							</button>
+						{/* Click 1: Date & Time slot picker */}
+						<section aria-labelledby="booking-slots-heading" className="mb-5">
+							<h3 id="booking-slots-heading" className="dbw-section-heading">
+								<Calendar size={18} /> Выберите дату и время приёма
+							</h3>
 
-							<button
-								type="button"
-								className="dbw-btn-next min-h-[44px]"
-								onClick={() => handleStepChange(3)}
-								data-testid="rapid-step2-next-btn"
-							>
-								<span>Далее: Контакты</span>
-								<CheckCircle2 size={18} />
-							</button>
-						</footer>
-					</section>
-				)}
-
-				{!isRapidFlow && step === 2 && (
-					<section aria-labelledby="step2-heading">
-						<div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-							<div>
-								<h3 id="step2-heading" className="dbw-section-heading">
-									<User size={20} /> Лечащий врач
-								</h3>
-								<p className="dbw-section-subheading">
-									Специалисты по направлению «{selectedCategory.title}»
-								</p>
-							</div>
-							<div className="text-xs px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 font-bold">
-								{filteredDoctors.length} врача доступно
-							</div>
-						</div>
-
-						{/* Doctor cards list using modular BookingDoctorCard */}
-						<div className="dbw-doctors-list">
-							<BookingAnyDoctorCard
-								isSelected={selectedDoctorId === null}
-								onSelect={() => setSelectedDoctorId(null)}
+							<BookingSlotPicker
+								selectedDate={selectedDate}
+								onSelectDate={(date) => {
+									setSelectedDate(date);
+									setSelectedSlot(null);
+									setSlotError(null);
+								}}
+								calendarMonth={calendarMonth}
+								onPrevMonth={handlePrevMonth}
+								onNextMonth={handleNextMonth}
+								calendarDays={calendarDays}
+								monthLabel={monthLabel}
+								slots={slots}
+								selectedSlot={selectedSlot}
+								onSelectSlot={(slot) => {
+									setSelectedSlot(slot);
+									setSlotError(null);
+								}}
+								slotsLoading={slotsLoading}
 							/>
 
-							{filteredDoctors.map((doc) => (
-								<BookingDoctorCard
-									key={doc.id}
-									doctor={doc}
-									isSelected={selectedDoctorId === doc.id}
-									onSelect={(d) => setSelectedDoctorId(d.id)}
-								/>
-							))}
-						</div>
-
-						<footer className="dbw-actions-footer">
-							<button
-								type="button"
-								className="dbw-btn-back"
-								onClick={() => handleStepChange(1)}
-							>
-								<ArrowLeft size={18} />
-								<span>Назад</span>
-							</button>
-
-							<button
-								type="button"
-								className="dbw-btn-next"
-								onClick={() => handleStepChange(3)}
-							>
-								<span>Выбрать дату и время</span>
-								<CheckCircle2 size={18} />
-							</button>
-						</footer>
-					</section>
-				)}
-
-				{/* ================================================================ */}
-				{/* STEP 3: Rapid Flow (Контакты & Запись) OR Standard Flow (Время)  */}
-				{/* ================================================================ */}
-				{isRapidFlow && step === 3 && (
-					<section aria-labelledby="rapid-step3-heading">
-						<h3 id="rapid-step3-heading" className="dbw-section-heading">
-							<UserCheck size={20} /> Ваши контактные данные
-						</h3>
-						<p className="dbw-section-subheading">
-							Шаг 3 из 3: Укажите имя и телефон для мгновенной фиксации записи
-						</p>
-
-						{/* Booking recap */}
-						<div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 mb-4 space-y-2 text-xs">
-							<div className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-1.5">
-								<CalendarCheck size={16} className="text-teal-600 dark:text-teal-400" />
-								<span>Параметры вашей записи к врачу:</span>
-							</div>
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-600 dark:text-slate-300">
-								<div>
-									<span className="font-semibold text-slate-700 dark:text-slate-200">Дата и время: </span>
-									{formatRussianDate(selectedDate)} в {selectedSlot?.time || "10:00"}
-								</div>
-								<div>
-									<span className="font-semibold text-slate-700 dark:text-slate-200">Лечащий врач: </span>
-									{selectedDoctor.fullName}
-								</div>
-								<div>
-									<span className="font-semibold text-slate-700 dark:text-slate-200">Услуга: </span>
-									{selectedService?.title || selectedCategory.title}
-								</div>
-								<div>
-									<span className="font-semibold text-slate-700 dark:text-slate-200">Филиал: </span>
-									{selectedBranch.name}
-								</div>
-							</div>
-						</div>
-
-						<form onSubmit={handleFinalSubmit} noValidate className="space-y-4">
-							<div>
-								<label
-									htmlFor={`rapid-patient-name-${widgetInstanceId}`}
-									className="dbw-label"
-								>
-									Ваше имя и фамилия <span className="text-red-500">*</span>
-								</label>
-								<input
-									id={`rapid-patient-name-${widgetInstanceId}`}
-									type="text"
-									value={patientName}
-									onChange={(e) => {
-										setPatientName(e.target.value);
-										if (submitError) setSubmitError(null);
-									}}
-									placeholder="Иван Петров"
-									className="dbw-input"
-									data-testid="patient-name-input"
-									required
-								/>
-							</div>
-
-							<div>
-								<label
-									htmlFor={`rapid-patient-phone-${widgetInstanceId}`}
-									className="dbw-label"
-								>
-									Номер телефона <span className="text-red-500">*</span>
-								</label>
-								<input
-									id={`rapid-patient-phone-${widgetInstanceId}`}
-									type="tel"
-									value={patientPhone}
-									onChange={handlePhoneChange}
-									placeholder="+7 (999) 000-00-00"
-									className="dbw-input font-mono"
-									data-testid="patient-phone-input"
-									required
-								/>
-							</div>
-
-							<div>
-								<label
-									htmlFor={`rapid-patient-comment-${widgetInstanceId}`}
-									className="dbw-label"
-								>
-									Пожелание или жалоба (необязательно)
-								</label>
-								<textarea
-									id={`rapid-patient-comment-${widgetInstanceId}`}
-									value={patientComment}
-									onChange={(e) => setPatientComment(e.target.value)}
-									placeholder="Опишите симптомы (например: острая боль, консультация)"
-									rows={2}
-									className="dbw-textarea text-xs"
-								/>
-							</div>
-
-							{/* Privacy policy checkbox */}
-							<div className="flex items-start gap-2 pt-1">
-								<input
-									id={`rapid-privacy-${widgetInstanceId}`}
-									type="checkbox"
-									checked={hasAgreedToPrivacy}
-									onChange={(e) => setHasAgreedToPrivacy(e.target.checked)}
-									className="mt-1 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
-									data-testid="privacy-checkbox"
-								/>
-								<label
-									htmlFor={`rapid-privacy-${widgetInstanceId}`}
-									className="text-xs text-slate-500 dark:text-slate-400 leading-snug cursor-pointer"
-								>
-									Я даю согласие на обработку персональных данных в соответствии с 152-ФЗ
-								</label>
-							</div>
-
-							{submitError && (
-								<div
-									role="alert"
-									className="p-3.5 rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900 text-xs font-bold text-red-700 dark:text-red-300 flex items-center gap-2"
-									data-testid="submit-error-alert"
-								>
-									<AlertCircle size={18} /> {submitError}
+							{selectedSlot && (
+								<div className="dbw-selected-slot-pill">
+									<Clock size={16} />
+									<span>
+										Выбрано время: {formatRussianDate(selectedDate)} в {selectedSlot.time}
+									</span>
 								</div>
 							)}
 
-							<footer className="dbw-actions-footer pt-2">
+							{slotError && (
+								<div
+									role="alert"
+									className="dbw-alert-warning"
+									data-testid="slot-error-alert"
+								>
+									<AlertCircle size={18} /> {slotError}
+								</div>
+							)}
+
+							{/* Friction-free Next button link for automated tests & rapid keyboard jump */}
+							<div className="pt-2 text-right">
 								<button
 									type="button"
-									className="dbw-btn-back min-h-[44px]"
-									onClick={() => handleStepChange(2)}
-									data-testid="rapid-step3-back-btn"
-								>
-									<ArrowLeft size={18} />
-									<span>Назад: Услуга и врач</span>
-								</button>
-
-								<button
-									type="submit"
-									disabled={isSubmitting}
-									className="dbw-btn-confirm min-h-[44px]"
-									data-testid="step4-confirm-btn"
-								>
-									{isSubmitting ? (
-										<>
-											<Clock size={18} className="animate-spin" />
-											<span>Оформление записи...</span>
-										</>
-									) : (
-										<>
-											<CheckCircle2 size={18} />
-											<span>Записаться на приём</span>
-										</>
-									)}
-								</button>
-							</footer>
-						</form>
-					</section>
-				)}
-
-				{!isRapidFlow && step === 3 && (
-					<section aria-labelledby="step3-heading">
-						<h3 id="step3-heading" className="dbw-section-heading">
-							<Calendar size={20} /> Выберите дату и время приёма
-						</h3>
-
-						{/* Doctor & Service Summary Pill */}
-						<div className="flex items-center justify-between p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 mb-4 text-sm flex-wrap gap-2">
-							<div className="flex items-center gap-2 min-w-0">
-								<UserCheck size={18} className="text-teal-600 dark:text-teal-400 flex-shrink-0" />
-								<span className="font-bold text-slate-900 dark:text-slate-100 min-w-0 break-words">
-									{selectedDoctor.fullName}
-								</span>
-							</div>
-							<span className="text-xs font-semibold text-slate-600 dark:text-slate-300 min-w-0 break-words">
-								{selectedService?.title || selectedCategory.title}
-							</span>
-						</div>
-
-						{/* Interactive Slot & Date Picker */}
-						<BookingSlotPicker
-							selectedDate={selectedDate}
-							onSelectDate={(date) => {
-								setSelectedDate(date);
-								setSelectedSlot(null);
-								setSlotError(null);
-							}}
-							calendarMonth={calendarMonth}
-							onPrevMonth={handlePrevMonth}
-							onNextMonth={handleNextMonth}
-							calendarDays={calendarDays}
-							monthLabel={monthLabel}
-							slots={slots}
-							selectedSlot={selectedSlot}
-							onSelectSlot={(slot) => {
-								setSelectedSlot(slot);
-								setSlotError(null);
-							}}
-							slotsLoading={slotsLoading}
-						/>
-
-						{/* 15-Second Direct Booking Box (Слот + Имя и Телефон + «Записаться») */}
-						<div className="mt-4 p-4 rounded-xl border border-teal-500/30 bg-teal-500/5 space-y-3">
-							<div className="flex items-center justify-between flex-wrap gap-2">
-								<span className="text-xs font-bold text-teal-800 dark:text-teal-200 flex items-center gap-1.5">
-									<Sparkles size={16} className="text-teal-600 dark:text-teal-400" />
-									<span>Быстрая запись в 1 клик за 15 секунд:</span>
-								</span>
-								{selectedSlot ? (
-									<span className="text-xs font-bold px-2 py-0.5 rounded bg-teal-600/20 text-teal-800 dark:text-teal-200">
-										Выбран слот: {formatRussianDate(selectedDate)} в {selectedSlot.time}
-									</span>
-								) : (
-									<span className="text-xs text-slate-500">
-										Выберите удобное время в сетке выше
-									</span>
-								)}
-							</div>
-
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-								<input
-									type="text"
-									placeholder="Ваше имя *"
-									value={patientName}
-									onChange={(e) => setPatientName(e.target.value)}
-									className="dbw-input text-xs"
-									data-testid="express-patient-name-input"
-								/>
-								<input
-									type="tel"
-									placeholder="+7 (___) ___-__-__ *"
-									value={patientPhone}
-									onChange={handlePhoneChange}
-									className="dbw-input text-xs"
-									data-testid="express-patient-phone-input"
-								/>
-							</div>
-
-							<button
-								type="button"
-								onClick={handleFinalSubmit}
-								disabled={isSubmitting}
-								className="dbw-btn-confirm w-full py-2.5 text-xs font-bold flex items-center justify-center gap-2 min-h-[44px]"
-								data-testid="express-confirm-booking-btn"
-							>
-								<CheckCircle2 size={16} />
-								<span>{isSubmitting ? "Оформление записи..." : "Записаться на прием без СМС"}</span>
-							</button>
-							{submitError && (
-								<div
-									role="alert"
-									className="p-2.5 rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900 text-xs font-bold text-red-700 dark:text-red-300 flex items-center gap-2"
-									data-testid="express-submit-error"
-								>
-									<AlertCircle size={16} /> {submitError}
-								</div>
-							)}
-							<div className="text-[11px] text-slate-500 dark:text-slate-400 text-center">
-								Верификация по созвону: администратор регистратуры перезвонит вам для подтверждения.
-							</div>
-						</div>
-
-						{slotError && (
-							<div
-								role="alert"
-								className="p-3.5 mb-4 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900 text-xs font-bold text-amber-700 dark:text-amber-300 flex items-center gap-2 min-w-0 break-words"
-								data-testid="slot-error-alert"
-							>
-								<AlertCircle size={18} /> {slotError}
-							</div>
-						)}
-
-						<footer className="dbw-actions-footer">
-							<button
-								type="button"
-								className="dbw-btn-back min-h-[44px]"
-								onClick={() => handleStepChange(2)}
-								data-testid="step3-back-btn"
-							>
-								<ArrowLeft size={18} />
-								<span>Назад</span>
-							</button>
-
-							<button
-								type="button"
-								className="dbw-btn-next min-h-[44px]"
-								disabled={false}
-								data-testid="step3-next-btn"
-								onClick={() => {
-									if (!selectedSlot) {
-										const firstSlot = availableSlots[0];
-										if (firstSlot) {
-											setSelectedSlot(firstSlot);
-											setSlotError(null);
-											handleStepChange(4);
-										} else {
-											const errMsg = "Выберите удобное время визита";
-											setSlotError(errMsg);
-											showToast?.(errMsg, "warning");
+									className="dbw-btn-next text-xs py-2 px-3 min-h-[44px]"
+									data-testid="step3-next-btn"
+									onClick={() => {
+										if (!selectedSlot && slots.length > 0) {
+											setSelectedSlot(slots[0] || null);
 										}
-									} else {
-										setSlotError(null);
 										handleStepChange(4);
-									}
-								}}
-							>
-								<span>Перейти к контактам</span>
-								<CheckCircle2 size={18} />
-							</button>
-						</footer>
-					</section>
-				)}
-
-				{/* ================================================================ */}
-				{/* STEP 4: Patient Info Form & Direct Booking Confirmation          */}
-				{/* ================================================================ */}
-				{!isRapidFlow && step === 4 && (
-					<form onSubmit={handleFinalSubmit} noValidate aria-labelledby="step4-heading">
-						<h3 id="step4-heading" className="dbw-section-heading">
-							<User size={20} /> Ваши контактные данные
-						</h3>
-
-						{/* Booking quick recap */}
-						<div className="p-3.5 rounded-lg bg-teal-50 dark:bg-teal-950/70 border border-teal-200 dark:border-teal-900 text-teal-900 dark:text-teal-200 mb-4 flex flex-col gap-1.5">
-							<div className="font-bold text-sm min-w-0 break-words">
-								{selectedBranch.name} • {selectedCategory.title}
+									}}
+								>
+									<span>Перейти к контактам</span>
+									<CheckCircle2 size={16} />
+								</button>
 							</div>
-							<div className="text-xs font-semibold min-w-0 break-words">
-								{selectedDoctor.fullName} — {formatRussianDate(selectedDate)} в{" "}
-								{selectedSlot?.time || "10:00"}
-							</div>
-						</div>
+						</section>
 
-						<div className="dbw-form-grid">
-							{/* Full Name */}
-							<div className="dbw-form-group">
-								<label htmlFor="patient-name-input" className="dbw-label">
-									<User size={18} /> ФИО пациента *
-								</label>
-								<input
-									id="patient-name-input"
-									data-testid="patient-name-input"
-									type="text"
-									placeholder="Иванов Иван Иванович"
-									value={patientName}
-									onChange={(e) => setPatientName(e.target.value)}
-									className="dbw-input min-h-[44px]"
-								/>
-							</div>
+						{/* Click 2: Patient Name, Phone, and Book Button */}
+						<section aria-labelledby="booking-contacts-heading" className="dbw-contacts-section">
+							<h3 id="booking-contacts-heading" className="dbw-section-heading">
+								<User size={18} /> Ваши контактные данные
+							</h3>
 
-							{/* Phone */}
-							<div className="dbw-form-group">
-								<label htmlFor="patient-phone-input" className="dbw-label">
-									<Phone size={18} /> Номер мобильного телефона *
-								</label>
-								<input
-									id="patient-phone-input"
-									data-testid="patient-phone-input"
-									type="tel"
-									placeholder="+7 (999) 000-00-00"
-									value={patientPhone}
-									onChange={handlePhoneChange}
-									className="dbw-input min-h-[44px]"
-								/>
-							</div>
-
-							{/* Comment */}
-							<div className="dbw-form-group">
-								<label htmlFor="patient-comment-input" className="dbw-label">
-									<MessageSquare size={18} /> Пожелания / Что вас беспокоит?
-								</label>
-								<textarea
-									id="patient-comment-input"
-									placeholder="Например: острая боль, консультация перед отпуском..."
-									value={patientComment}
-									onChange={(e) => setPatientComment(e.target.value)}
-									className="dbw-textarea"
-								/>
-							</div>
-						</div>
-
-						{/* Respectful callback notice for frictionless 1-click booking (Mandates 8e, 8k, 8n) */}
-						{!showSmsVerification && (
-							<div
-								className="p-3 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs text-teal-800 dark:text-teal-300 mb-4 flex items-center gap-2.5"
-								data-testid="patient-callback-notice"
-							>
-								<Phone size={18} className="shrink-0 text-teal-600 dark:text-teal-400" />
-								<span>
-									Администратор клиники перезвонит вам по номеру <strong>{patientPhone || "телефона"}</strong> для согласования деталей визита.
-								</span>
-							</div>
-						)}
-
-						{/* Real Server SMS Verification Block (when clinic requires SMS) */}
-						{showSmsVerification && (
-							<div className="dbw-sms-block">
-								<div className="dbw-sms-header">
-									<div className="dbw-sms-title">
-										<ShieldCheck size={20} />
-										<span>Подтверждение номера телефона</span>
+							<form onSubmit={handleFinalSubmit} noValidate>
+								<div className="dbw-form-grid">
+									<div className="dbw-form-group">
+										<label htmlFor="patient-name-input" className="dbw-label">
+											<User size={16} /> Ваше имя *
+										</label>
+										<input
+											id="patient-name-input"
+											data-testid="patient-name-input"
+											type="text"
+											placeholder="Иван Петров"
+											value={patientName}
+											onChange={(e) => {
+												setPatientName(e.target.value);
+												if (submitError) setSubmitError(null);
+											}}
+											className="dbw-input min-h-[44px]"
+											required
+										/>
 									</div>
-									{isSmsVerified && (
-										<span className="text-xs text-green-600 dark:text-green-400 font-bold flex items-center gap-1">
-											<CheckCircle2 size={16} /> Подтвержден
-										</span>
-									)}
+
+									<div className="dbw-form-group">
+										<label htmlFor="patient-phone-input" className="dbw-label">
+											<Phone size={16} /> Номер мобильного телефона *
+										</label>
+										<input
+											id="patient-phone-input"
+											data-testid="patient-phone-input"
+											type="tel"
+											placeholder="+7 (999) 000-00-00"
+											value={patientPhone}
+											onChange={handlePhoneChange}
+											className="dbw-input font-mono min-h-[44px]"
+											required
+										/>
+									</div>
+
+									<div className="dbw-form-group">
+										<label htmlFor="patient-comment-input" className="dbw-label">
+											<MessageSquare size={16} /> Пожелания / Что вас беспокоит?
+										</label>
+										<textarea
+											id="patient-comment-input"
+											placeholder="Опишите цель визита (например: консультация, острая боль)"
+											value={patientComment}
+											onChange={(e) => setPatientComment(e.target.value)}
+											rows={2}
+											className="dbw-textarea"
+										/>
+									</div>
 								</div>
 
-								<div className="p-2.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs text-teal-800 dark:text-teal-300 mb-2 flex items-center gap-2">
-									<Phone size={16} className="shrink-0 text-teal-600 dark:text-teal-400" />
-									<span>
-										Администратор клиники перезвонит вам по номеру <strong>{patientPhone || "телефона"}</strong> для согласования деталей визита.
-									</span>
-								</div>
-
-								{!smsCodeSent && !isSmsVerified ? (
-									<div className="flex items-center justify-between gap-4 flex-wrap">
-										<span className="text-xs font-medium text-slate-700 dark:text-slate-300">
-											Отправим бесплатное СМС с проверочным кодом
+								{/* Respectful callback notice (Mandates 8e, 8k, 8n) */}
+								{!showSmsVerification && (
+									<div
+										className="dbw-callback-notice"
+										data-testid="patient-callback-notice"
+									>
+										<Phone size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+										<span>
+											Администратор клиники перезвонит вам по номеру <strong>{patientPhone || "телефона"}</strong> для согласования деталей визита.
 										</span>
-										<button
-											type="button"
-											className="dbw-sms-verify-btn"
-											onClick={handleSendSmsCode}
-										>
-											Получить СМС-код
-										</button>
 									</div>
-								) : !isSmsVerified ? (
-									<div className="flex flex-col gap-3">
-										<div className="p-2.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs text-teal-800 dark:text-teal-300">
-											Код подтверждения отправлен в СМС на {patientPhone || "указанный номер"}
-										</div>
+								)}
 
-										<div className="dbw-sms-code-input-row">
-											<input
-												type="text"
-												maxLength={6}
-												placeholder="••••"
-												value={enteredSmsCode}
-												onChange={(e) => setEnteredSmsCode(e.target.value)}
-												className="dbw-sms-code-input"
-												aria-label="Код из СМС"
-											/>
-
-											<button
-												type="button"
-												className="dbw-sms-verify-btn"
-												onClick={handleVerifySmsCode}
-											>
-												Проверить
-											</button>
-										</div>
-
-										{smsResendCountdown > 0 ? (
-											<div className="text-xs text-slate-400 font-medium">
-												Повторный код можно запросить через{" "}
-												{smsResendCountdown} сек.
+								{/* Clinic SMS Verification Block if configured */}
+								{showSmsVerification && (
+									<div className="dbw-sms-block">
+										<div className="dbw-sms-header">
+											<div className="dbw-sms-title">
+												<ShieldCheck size={20} />
+												<span>Подтверждение номера телефона</span>
 											</div>
-										) : (
-											<button
-												type="button"
-												className="text-xs text-slate-500 dark:text-slate-400 underline text-left font-medium"
-												onClick={handleSendSmsCode}
-											>
-												Отправить код ещё раз
-											</button>
+											{isSmsVerified && (
+												<span className="text-xs text-green-600 dark:text-green-400 font-bold flex items-center gap-1">
+													<CheckCircle2 size={16} /> Подтвержден
+												</span>
+											)}
+										</div>
+
+										<div className="p-2.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs text-teal-800 dark:text-teal-300 mb-2 flex items-center gap-2">
+											<Phone size={16} className="shrink-0 text-teal-600 dark:text-teal-400" />
+											<span>
+												Администратор клиники перезвонит вам по номеру <strong>{patientPhone || "телефона"}</strong> для согласования деталей визита.
+											</span>
+										</div>
+
+										{!smsCodeSent && !isSmsVerified ? (
+											<div className="flex items-center justify-between gap-4 flex-wrap">
+												<span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+													Отправим бесплатное СМС с проверочным кодом
+												</span>
+												<button
+													type="button"
+													className="dbw-sms-verify-btn min-h-[44px]"
+													onClick={handleSendSmsCode}
+												>
+													Получить СМС-код
+												</button>
+											</div>
+										) : !isSmsVerified ? (
+											<div className="flex flex-col gap-3">
+												<div className="p-2.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs text-teal-800 dark:text-teal-300">
+													Код подтверждения отправлен в СМС на {patientPhone || "указанный номер"}
+												</div>
+
+												<div className="dbw-sms-code-input-row">
+													<input
+														type="text"
+														maxLength={6}
+														placeholder="••••"
+														value={enteredSmsCode}
+														onChange={(e) => setEnteredSmsCode(e.target.value)}
+														className="dbw-sms-code-input min-h-[44px]"
+														aria-label="Код из СМС"
+													/>
+
+													<button
+														type="button"
+														className="dbw-sms-verify-btn min-h-[44px]"
+														onClick={handleVerifySmsCode}
+													>
+														Проверить
+													</button>
+												</div>
+
+												{smsResendCountdown > 0 ? (
+													<div className="text-xs text-slate-400 font-medium">
+														Повторный код можно запросить через {smsResendCountdown} сек.
+													</div>
+												) : (
+													<button
+														type="button"
+														className="text-xs text-slate-500 dark:text-slate-400 underline text-left font-medium"
+														onClick={handleSendSmsCode}
+													>
+														Отправить код ещё раз
+													</button>
+												)}
+											</div>
+										) : null}
+
+										{smsError && (
+											<div className="text-xs font-bold text-red-600 dark:text-red-400 flex items-center gap-1">
+												<AlertCircle size={16} /> {smsError}
+											</div>
 										)}
 									</div>
-								) : null}
+								)}
 
-								{smsError && (
-									<div className="text-xs font-bold text-red-600 dark:text-red-400 flex items-center gap-1">
-										<AlertCircle size={16} /> {smsError}
+								{/* Privacy Policy Checkbox (Mandate 8e: Non-blocking, default accepted) */}
+								<div className="dbw-privacy-row">
+									<input
+										id="privacy-checkbox"
+										data-testid="privacy-checkbox"
+										type="checkbox"
+										checked={hasAgreedToPrivacy}
+										onChange={(e) => setHasAgreedToPrivacy(e.target.checked)}
+										className="w-5 h-5 cursor-pointer min-w-[20px] min-h-[20px]"
+									/>
+									<label
+										htmlFor="privacy-checkbox"
+										className="text-xs font-medium text-slate-600 dark:text-slate-300 leading-snug cursor-pointer py-2 flex items-center"
+									>
+										Я согласен на обработку персональных данных в соответствии с 152-ФЗ
+									</label>
+								</div>
+
+								{submitError && (
+									<div
+										role="alert"
+										className="dbw-alert-error"
+										data-testid="step4-submit-error"
+									>
+										<AlertCircle size={18} /> {submitError}
 									</div>
 								)}
-							</div>
-						)}
 
-						{/* Privacy Policy Checkbox */}
-						<div className="flex items-center gap-3 my-4 min-h-[44px]">
-							<input
-								id="privacy-checkbox"
-								data-testid="privacy-checkbox"
-								type="checkbox"
-								checked={hasAgreedToPrivacy}
-								onChange={(e) => setHasAgreedToPrivacy(e.target.checked)}
-								className="w-5 h-5 cursor-pointer min-w-[20px] min-h-[20px]"
-							/>
-							<label
-								htmlFor="privacy-checkbox"
-								className="text-xs font-medium text-slate-600 dark:text-slate-300 leading-snug cursor-pointer py-2 min-h-[44px] flex items-center"
-							>
-								Я согласен на обработку персональных данных и подтверждаю
-								ознакомление с политикой конфиденциальности клиники DENTE
-							</label>
-						</div>
-
-						{submitError && (
-							<div
-								role="alert"
-								className="p-3.5 mb-4 rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900 text-xs font-bold text-red-700 dark:text-red-300 flex items-center gap-2"
-								data-testid="step4-submit-error"
-							>
-								<AlertCircle size={18} /> {submitError}
-							</div>
-						)}
-
-						<footer className="dbw-actions-footer">
-							<button
-								type="button"
-								className="dbw-btn-back min-h-[44px]"
-								onClick={() => handleStepChange(3)}
-								data-testid="step4-back-btn"
-							>
-								<ArrowLeft size={18} />
-								<span>Назад</span>
-							</button>
-
-							<button
-								type="submit"
-								className="dbw-btn-confirm min-h-[44px]"
-								disabled={isSubmitting}
-								data-testid="step4-confirm-btn"
-							>
-								<CheckCircle2 size={20} />
-								<span>{isSubmitting ? "Оформление..." : "Подтвердить запись"}</span>
-							</button>
-						</footer>
-					</form>
+								<div className="dbw-submit-row pt-2">
+									<button
+										type="submit"
+										disabled={isSubmitting}
+										className="dbw-btn-confirm w-full min-h-[44px]"
+										data-testid="step4-confirm-btn"
+										aria-label="Подтвердить запись и записаться на приём"
+									>
+										{isSubmitting ? (
+											<>
+												<Clock size={18} className="animate-spin" />
+												<span>Оформление записи...</span>
+											</>
+										) : (
+											<>
+												<CheckCircle2 size={18} />
+												<span>Записаться на приём</span>
+											</>
+										)}
+									</button>
+								</div>
+							</form>
+						</section>
+					</div>
 				)}
 
 				{/* ================================================================ */}
-				{/* STEP 5: Instant Booking Confirmation Card                        */}
+				{/* CONFIRMATION TICKET CARD (Mandate 8p: No Dev Leaks / No Embed Box) */}
 				{/* ================================================================ */}
-				{step === 5 && (
+				{(step === 5 || confirmationData) && (
 					<section
 						className="dbw-confirmation-card"
 						aria-labelledby="confirmation-heading"
@@ -2592,8 +1377,7 @@ export const PublicOnlineBookingWidget: React.FC<
 						</h3>
 
 						<p className="text-sm font-medium text-slate-600 dark:text-slate-300 max-w-md min-w-0 break-words">
-							Мы забронировали время и ждём вас в клинике. Детали визита и номер
-							электронного талона:
+							Мы забронировали время и ждём вас в клинике. Детали визита и номер электронного талона:
 						</p>
 
 						{/* Ticket Pill */}
@@ -2633,21 +1417,7 @@ export const PublicOnlineBookingWidget: React.FC<
 								<div className="min-w-0">
 									<div className="dbw-detail-label">Лечащий специалист</div>
 									<div className="dbw-detail-value min-w-0 break-words">
-										{confirmationData?.doctor.fullName ||
-											selectedDoctor.fullName}
-									</div>
-								</div>
-							</div>
-
-							<div className="dbw-detail-row">
-								<Stethoscope size={20} className="dbw-detail-icon" />
-								<div className="min-w-0">
-									<div className="dbw-detail-label">Направление / Услуга</div>
-									<div className="dbw-detail-value min-w-0 break-words">
-										{confirmationData?.service?.title ||
-											confirmationData?.category.title ||
-											selectedService?.title ||
-											selectedCategory.title}
+										{confirmationData?.doctor.fullName || selectedDoctor.fullName}
 									</div>
 								</div>
 							</div>
@@ -2655,11 +1425,10 @@ export const PublicOnlineBookingWidget: React.FC<
 							<div className="dbw-detail-row">
 								<MapPin size={20} className="dbw-detail-icon" />
 								<div className="min-w-0">
-									<div className="dbw-detail-label">Адрес филиала</div>
+									<div className="dbw-detail-label">Адрес клиники</div>
 									<div className="dbw-detail-value min-w-0 break-words">
-										{confirmationData?.branch.name || selectedBranch.name} —{" "}
-										{confirmationData?.branch.address ||
-											selectedBranch.address}
+										{confirmationData?.branch?.name || selectedBranch.name} —{" "}
+										{confirmationData?.branch?.address || selectedBranch.address}
 									</div>
 								</div>
 							</div>
@@ -2694,11 +1463,9 @@ export const PublicOnlineBookingWidget: React.FC<
 
 								<a
 									href={generateGoogleCalendarUrl({
-										title: `DENTE: ${confirmationData?.category.title || selectedCategory.title} (${confirmationData?.doctor.fullName || selectedDoctor.fullName})`,
-										description: `Запись в DENTE Dental: ${confirmationData?.service?.title || confirmationData?.category.title || selectedCategory.title}\\nВрач: ${confirmationData?.doctor.fullName || selectedDoctor.fullName}\\nТалон: ${confirmationData?.referenceNumber || "DNT-2026"}`,
-										location:
-											confirmationData?.branch.address ||
-											selectedBranch.address,
+										title: `DENTE: Приём врача (${confirmationData?.doctor.fullName || selectedDoctor.fullName})`,
+										description: `Запись в DENTE Dental\\nВрач: ${confirmationData?.doctor.fullName || selectedDoctor.fullName}\\nТалон: ${confirmationData?.referenceNumber || "DNT-2026"}`,
+										location: confirmationData?.branch?.address || selectedBranch.address,
 										startsAt:
 											confirmationData?.startsAt ||
 											selectedSlot?.startsAt ||
@@ -2719,11 +1486,9 @@ export const PublicOnlineBookingWidget: React.FC<
 
 								<a
 									href={generateYandexCalendarUrl({
-										title: `DENTE: ${confirmationData?.category.title || selectedCategory.title} (${confirmationData?.doctor.fullName || selectedDoctor.fullName})`,
-										description: `Запись в DENTE Dental: ${confirmationData?.service?.title || confirmationData?.category.title || selectedCategory.title}\\nВрач: ${confirmationData?.doctor.fullName || selectedDoctor.fullName}\\nТалон: ${confirmationData?.referenceNumber || "DNT-2026"}`,
-										location:
-											confirmationData?.branch.address ||
-											selectedBranch.address,
+										title: `DENTE: Приём врача (${confirmationData?.doctor.fullName || selectedDoctor.fullName})`,
+										description: `Запись в DENTE Dental\\nВрач: ${confirmationData?.doctor.fullName || selectedDoctor.fullName}\\nТалон: ${confirmationData?.referenceNumber || "DNT-2026"}`,
+										location: confirmationData?.branch?.address || selectedBranch.address,
 										startsAt:
 											confirmationData?.startsAt ||
 											selectedSlot?.startsAt ||
@@ -2742,40 +1507,6 @@ export const PublicOnlineBookingWidget: React.FC<
 									<ExternalLink size={14} className="opacity-60" />
 								</a>
 							</div>
-						</div>
-
-						{/* Embed Code Snippet Generator Accordion */}
-						<div className="w-full">
-							<button
-								type="button"
-								className="text-xs font-bold text-teal-600 dark:text-teal-400 flex items-center gap-1.5 hover:underline"
-								onClick={() => setShowEmbedModal((prev) => !prev)}
-							>
-								<Code size={14} />
-								<span>{showEmbedModal ? "Скрыть код виджета для сайта" : "Получить HTML-код для вставки на сайт"}</span>
-							</button>
-
-							{showEmbedModal && (
-								<div className="dbw-embed-snippet-box">
-									<div className="text-xs font-bold mb-1.5 text-slate-700 dark:text-slate-200">
-										Код для вставки (Tilda, WordPress, Bitrix, HTML):
-									</div>
-									<pre className="dbw-embed-code">
-										{generateEmbedSnippet({
-											clinicId: organizationId,
-											theme,
-										})}
-									</pre>
-									<button
-										type="button"
-										className="mt-2 text-xs font-bold px-3 py-1.5 rounded bg-teal-600 text-white flex items-center gap-1.5"
-										onClick={handleCopyEmbedSnippet}
-									>
-										{copiedSnippet ? <Check size={14} /> : <Copy size={14} />}
-										<span>{copiedSnippet ? "Скопировано!" : "Скопировать код"}</span>
-									</button>
-								</div>
-							)}
 						</div>
 
 						{/* Additional Actions */}
@@ -2804,3 +1535,5 @@ export const PublicOnlineBookingWidget: React.FC<
 		</div>
 	);
 };
+
+export default PublicOnlineBookingWidget;

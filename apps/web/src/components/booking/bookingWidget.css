@@ -1206,33 +1206,123 @@
 	background: var(--dbw-primary-hover);
 }
 
-/* Embed Snippet Generator Box */
-.dbw-embed-snippet-box {
-	background: var(--dbw-surface);
-	border: 1px solid var(--dbw-border);
-	border-radius: var(--dbw-radius-md);
-	padding: 14px;
-	margin-top: 16px;
-	width: 100%;
-	box-sizing: border-box;
-	text-align: left;
+/* ==========================================================================
+   Streamlined 1-Screen 2-Click Booking (Mandates 8e, 8k, 8p, 8n)
+   ========================================================================== */
+
+.dbw-streamlined-flow {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
 }
 
-.dbw-embed-code {
-	font-family: monospace;
-	font-size: 0.8125rem;
-	background: var(--dbw-bg);
+.dbw-solo-doctor-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 12px 16px;
+	border-radius: var(--dbw-radius-md);
+	background: var(--dbw-surface);
 	border: 1px solid var(--dbw-border);
+}
+
+.dbw-solo-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 10px;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	background: var(--dbw-primary-light);
+	color: var(--dbw-primary);
+	white-space: nowrap;
+}
+
+.dbw-selected-slot-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 14px;
+	margin-top: 12px;
 	border-radius: var(--dbw-radius-sm);
-	padding: 10px;
+	background: var(--dbw-primary-light);
+	color: var(--dbw-primary);
+	font-size: 0.875rem;
+	font-weight: 700;
+	border: 1px solid var(--dbw-primary-glow);
+}
+
+.dbw-alert-warning {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 14px;
+	margin-top: 12px;
+	border-radius: var(--dbw-radius-sm);
+	background: var(--dbw-warning-light);
+	color: var(--dbw-warning);
+	font-size: 0.875rem;
+	font-weight: 600;
+	border: 1px solid rgba(217, 119, 6, 0.3);
+}
+
+.dbw-alert-error {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 14px;
+	margin-top: 12px;
+	border-radius: var(--dbw-radius-sm);
+	background: var(--dbw-danger-light);
+	color: var(--dbw-danger);
+	font-size: 0.875rem;
+	font-weight: 600;
+	border: 1px solid rgba(185, 28, 28, 0.3);
+}
+
+.dbw-contacts-section {
+	border-top: 1px solid var(--dbw-border);
+	padding-top: 20px;
+	margin-top: 8px;
+}
+
+.dbw-callback-notice {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 14px;
+	margin-bottom: 16px;
+	border-radius: var(--dbw-radius-sm);
+	background: var(--dbw-surface);
+	border: 1px solid var(--dbw-border);
+	font-size: 0.8125rem;
+	color: var(--dbw-text-muted);
+	line-height: 1.4;
+}
+
+.dbw-callback-notice strong {
 	color: var(--dbw-text-main);
-	overflow-x: auto;
-	white-space: pre-wrap;
-	word-break: break-all;
+}
+
+.dbw-privacy-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 12px;
+	user-select: none;
+}
+
+.dbw-submit-row {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
 }
 
 /* ==========================================================================
-   Responsive queries (Strict 390px Mobile Viewport & TG Mini App)
+   Responsive queries (Strict 390px Mobile Viewport & TG Mini App, Mandate 8p)
+   Header height budget <= 160px strictly observed
    ========================================================================== */
 
 @media (max-width: 640px) {
@@ -1244,11 +1334,29 @@
 	}
 
 	.dbw-header {
-		padding: 18px 14px;
+		padding: 14px 16px;
+		max-height: 140px;
+		box-sizing: border-box;
+	}
+
+	.dbw-header-clinic {
+		font-size: 0.75rem;
+		margin-bottom: 2px;
+	}
+
+	.dbw-header-title {
+		font-size: 1.1875rem;
+		line-height: 1.25;
+		margin: 0;
+	}
+
+	.dbw-header-subtitle {
+		font-size: 0.8125rem;
+		margin-top: 2px;
 	}
 
 	.dbw-progress-bar {
-		padding: 10px 12px;
+		padding: 8px 12px;
 	}
 
 	.dbw-body {
