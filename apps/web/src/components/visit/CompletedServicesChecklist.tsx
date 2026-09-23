@@ -259,14 +259,23 @@ export const CompletedServicesChecklist: React.FC<
 	);
 	const [isToothGridOpen, setIsToothGridOpen] = React.useState<boolean>(false);
 
-	// Быстрый инлайн-поиск по прейскуранту
+	// Быстрый инлайн-поиск по прейскуранту с дебаунсом 280 мс (Мандаты 8s, 8e)
 	const [catalogSearch, setCatalogSearch] = React.useState<string>("");
+	const [debouncedCatalogSearch, setDebouncedCatalogSearch] = React.useState<string>("");
+
+	React.useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedCatalogSearch(catalogSearch);
+		}, 280);
+		return () => clearTimeout(timer);
+	}, [catalogSearch]);
+
 	const [bundlesExpanded, setBundlesExpanded] = React.useState<boolean>(false);
 
 	const effectiveCatalog = overrideCatalog ?? dashboard?.serviceCatalog ?? [];
 	const filteredCatalog = React.useMemo(
-		() => filterServiceCatalog(effectiveCatalog, catalogSearch, 20),
-		[effectiveCatalog, catalogSearch],
+		() => filterServiceCatalog(effectiveCatalog, debouncedCatalogSearch, 20),
+		[effectiveCatalog, debouncedCatalogSearch],
 	);
 
 	// Позиции предварительного плана открытого приёма

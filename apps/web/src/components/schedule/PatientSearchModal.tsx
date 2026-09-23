@@ -33,6 +33,7 @@ import {
 } from "./patientSearchEngine";
 import { openWhatsAppChat } from "../../store/telephonyStore";
 import { showToast, type ToastType } from "../GlobalToast";
+import { getOptimizedTiming } from "../../utils/lowSpecHddOptimizer";
 
 export interface PatientSearchModalProps {
 	readonly isOpen: boolean;
@@ -94,12 +95,13 @@ export function PatientSearchModal({
 		};
 	}, []);
 
-	// 150ms Debounce for lightning responsiveness without stutter
+	// Adaptive Debounce (280-350ms) for responsive search without disk/CPU thrashing (Mandates 8e, 8s)
 	useEffect(() => {
+		const debounceMs = getOptimizedTiming().searchDebounceMs;
 		const timer = setTimeout(() => {
 			setDebouncedQuery(rawQuery);
 			setSelectedIndex(0);
-		}, 150);
+		}, debounceMs);
 		return () => clearTimeout(timer);
 	}, [rawQuery]);
 

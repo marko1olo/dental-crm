@@ -1483,10 +1483,34 @@ if (app && app.commandLine) {
 	app.commandLine.appendSwitch("enable-gpu-rasterization");
 	app.commandLine.appendSwitch("enable-zero-copy");
 	app.commandLine.appendSwitch("ignore-gpu-blocklist");
+	// 256 MB disk cache size to avoid repeated disk reads on 5400 RPM HDDs (Mandates 8s, 8e)
+	app.commandLine.appendSwitch("disk-cache-size", "268435456");
+	app.commandLine.appendSwitch("media-cache-size", "134217728");
 }
 
 if (app && app.whenReady) {
 	app.whenReady().then(() => {
+		// Aggressive static asset caching for low-spec HDDs (5400 RPM)
+		if (session?.defaultSession) {
+			session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+				const responseHeaders = { ...details.responseHeaders };
+				const url = (details.url || "").toLowerCase();
+				if (
+					url.includes("/assets/") ||
+					url.endsWith(".js") ||
+					url.endsWith(".css") ||
+					url.endsWith(".woff2") ||
+					url.endsWith(".woff") ||
+					url.endsWith(".svg") ||
+					url.endsWith(".png") ||
+					url.endsWith(".jpg")
+				) {
+					responseHeaders["Cache-Control"] = ["public, max-age=31536000, immutable"];
+				}
+				callback({ responseHeaders });
+			});
+		}
+
 		registerIpcHandlers();
 		createWindow();
 

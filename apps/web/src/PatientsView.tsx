@@ -44,6 +44,7 @@ import {
 } from "./components/patients/blankContractPrint";
 import { PatientAdministrativeForm } from "./components/patients/PatientAdministrativeForm";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
+import { getOptimizedTiming } from "./utils/lowSpecHddOptimizer";
 
 const LoyaltyProgramModal = lazy(() =>
 	import("./components/loyalty/program/LoyaltyProgramModal").then((module) => ({
@@ -454,12 +455,13 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			if (searchDebounceTimerRef.current !== null) {
 				window.clearTimeout(searchDebounceTimerRef.current);
 			}
+			const debounceMs = getOptimizedTiming().searchDebounceMs;
 			searchDebounceTimerRef.current = window.setTimeout(() => {
 				searchDebounceTimerRef.current = null;
 				startTransition(() => {
 					setQuery(val);
 				});
-			}, 120);
+			}, debounceMs);
 		},
 		[setQuery],
 	);

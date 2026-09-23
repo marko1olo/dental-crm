@@ -163,9 +163,13 @@ html.low-spec-mode *::after,
 		filter: none !important;
 	}
 
-	[class*="backdrop-blur"] {
+	[class*="backdrop-blur"],
+	.glass-panel,
+	.glass-card,
+	.card-glass {
 		backdrop-filter: none !important;
 		-webkit-backdrop-filter: none !important;
+		background-color: var(--paper-strong) !important;
 	}
 }
 
@@ -267,7 +271,7 @@ html.low-spec-mode .sheet-backdrop {
 	background-color: rgba(2, 6, 23, 0.75) !important;
 }
 
-/* Clean semi-transparent solid backgrounds replacing GPU-choking backdrop-filter: blur() */
+/* Clean semi-transparent tonal backgrounds replacing GPU-choking backdrop-filter: blur() (Mandates 8s, 8e) */
 html[data-hardware-tier="low"] [class*="backdrop-blur"],
 html[data-low-spec="true"] [class*="backdrop-blur"],
 html[data-perf="low"] [class*="backdrop-blur"],
@@ -295,7 +299,7 @@ html.low-spec-mode .glass-card,
 html.low-spec-mode .card-glass {
 	backdrop-filter: none !important;
 	-webkit-backdrop-filter: none !important;
-	background-color: rgba(255, 255, 255, 0.95) !important;
+	background-color: var(--paper-strong) !important;
 }
 
 html[data-theme="dark"][data-hardware-tier="low"] [class*="backdrop-blur"],
@@ -325,7 +329,7 @@ html[data-theme="dark"].low-spec-mode .glass-card,
 html[data-theme="dark"].low-spec-mode .card-glass {
 	backdrop-filter: none !important;
 	-webkit-backdrop-filter: none !important;
-	background-color: rgba(15, 23, 42, 0.95) !important;
+	background-color: var(--paper-strong) !important;
 }
 
 /* Header, topbar, toolbar solid background */

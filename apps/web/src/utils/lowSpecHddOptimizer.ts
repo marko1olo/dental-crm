@@ -360,8 +360,8 @@ export function getOptimizedTiming(): OptimizedTimingConfig {
 		return {
 			// На медленных HDD интервал 1800 мс предотвращает троттлинг диска при наборе текста врачом
 			autosaveDebounceMs: 1800,
-			// Снижает нагрузку на слабый CPU при фильтрации номенклатуры
-			searchDebounceMs: 400,
+			// Снижает нагрузку на слабый CPU при фильтрации номенклатуры (250–350ms по Мандатам 8s, 8e)
+			searchDebounceMs: 350,
 			// Группировка мутаций снижает число случайных операций ввода-вывода (I/O)
 			batchFlushDelayMs: 1500,
 			// Редкая фоновая синхронизация, чтобы не забивать диск
@@ -381,7 +381,8 @@ export function getOptimizedTiming(): OptimizedTimingConfig {
 
 	return {
 		autosaveDebounceMs: 800,
-		searchDebounceMs: 200,
+		// Дебаунс поиска 280 мс предотвращает спам диска и сети при вводе символов (Мандаты 8s, 8e)
+		searchDebounceMs: 280,
 		batchFlushDelayMs: 500,
 		backgroundSyncIntervalMs: 30_000,
 		maxLruCacheEntries: 1200,
