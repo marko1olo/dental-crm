@@ -951,29 +951,17 @@ export function PaymentCapture({
 		} else {
 			setIsSplit5050Mode(true);
 			setIsSplitModalOpen(true);
-			showToast(
-				"Открыто окно комбинированной оплаты (50% Наличные + 50% Карта)",
-				"info",
-			);
 		}
 	};
 
 	const applyThreeWaySplitPreset = () => {
 		setIsSplit5050Mode(false);
 		setIsSplitModalOpen(true);
-		showToast(
-			"Открыто окно комбинированной оплаты (Нал + Карта + Баланс)",
-			"info",
-		);
 	};
 
 	const applyDepositPlusCardPreset = () => {
 		setIsSplit5050Mode(false);
 		setIsSplitModalOpen(true);
-		showToast(
-			"Открыто окно комбинированной оплаты (Баланс + Карта)",
-			"info",
-		);
 	};
 
 	const handleOpenSplitModal = () => {
@@ -1692,10 +1680,10 @@ export function PaymentCapture({
 				возвратом или коррекцией, не повторной записью.
 			</p>
 
-			{/* Буфер прокрутки, чтобы фиксированная нижняя планка не перекрывала историю и юридический текст */}
+			{/* Буфер прокрутки (pb-28), чтобы фиксированная нижняя планка не перекрывала табы и элементы управления */}
 			<div
-				className="payment-capture-bottom-spacer block w-full h-16 sm:h-12 pointer-events-none select-none"
-				style={{ minHeight: "48px" }}
+				className="payment-capture-bottom-spacer block w-full h-28 sm:h-20 pointer-events-none select-none"
+				style={{ minHeight: "112px" }}
 				aria-hidden="true"
 			/>
 

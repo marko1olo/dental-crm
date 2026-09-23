@@ -767,54 +767,57 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				</div>
 			</details>
 
-			<PaymentCapture
-				{...remainingDebtProp}
-				amount={paymentAmount}
-				feedback={paymentFeedback}
-				fiscalCashierName={paymentFiscalCashierName}
-				fiscalFd={paymentFiscalFd}
-				fiscalFn={paymentFiscalFn}
-				fiscalFpd={paymentFiscalFpd}
-				fiscalReceiptIssuedAt={paymentFiscalReceiptIssuedAt}
-				fiscalReceiptNumber={paymentFiscalReceiptNumber}
-				fiscalReceiptUrl={paymentFiscalReceiptUrl}
-				isSaving={isPaymentSaving}
-				method={paymentMethod}
-				methodLabels={paymentMethodLabels}
-				onAmountChange={setPaymentAmount}
-				onFiscalCashierNameChange={setPaymentFiscalCashierName}
-				onFiscalFdChange={setPaymentFiscalFd}
-				onFiscalFnChange={setPaymentFiscalFn}
-				onFiscalFpdChange={setPaymentFiscalFpd}
-				onFiscalReceiptIssuedAtChange={setPaymentFiscalReceiptIssuedAt}
-				onFiscalReceiptNumberChange={setPaymentFiscalReceiptNumber}
-				onFiscalReceiptUrlChange={setPaymentFiscalReceiptUrl}
-				onMethodChange={setPaymentMethod}
-				onPayerBirthDateChange={setPaymentPayerBirthDate}
-				onPayerFullNameChange={setPaymentPayerFullName}
-				onPayerIdentityDocumentChange={setPaymentPayerIdentityDocument}
-				onPayerInnChange={setPaymentPayerInn}
-				onPayerRelationshipChange={setPaymentPayerRelationship}
-				onSubmit={onRecordPayment}
-				onTaxDeductionCodeChange={setPaymentTaxDeductionCode}
-				patientContextMessage={paymentPatientContextMessage}
-				patientContextReady={paymentPatientContextReady}
-				patientDefaults={{
-					birthDate: documentPatient?.birthDate ?? null,
-					fullName: documentPatient?.fullName ?? null,
-					identityDocument:
-						documentPatient?.administrativeProfile?.identityDocument ?? null,
-					taxpayerInn:
-						documentPatient?.administrativeProfile?.taxpayerInn ?? null,
-				}}
-				patientId={documentPatient?.id ?? null}
-				payerBirthDate={paymentPayerBirthDate}
-				payerFullName={paymentPayerFullName}
-				payerIdentityDocument={paymentPayerIdentityDocument}
-				payerInn={paymentPayerInn}
-				payerRelationship={paymentPayerRelationship}
-				taxDeductionCode={paymentTaxDeductionCode}
-			/>
+			{/* Контейнер кассового модуля с отступом pb-28 для исключения перекрытия интерактивных кнопок плавающим баром (Мандаты 8d, 8p) */}
+			<div className="finance-cashbox-container pb-28 sm:pb-24">
+				<PaymentCapture
+					{...remainingDebtProp}
+					amount={paymentAmount}
+					feedback={paymentFeedback}
+					fiscalCashierName={paymentFiscalCashierName}
+					fiscalFd={paymentFiscalFd}
+					fiscalFn={paymentFiscalFn}
+					fiscalFpd={paymentFiscalFpd}
+					fiscalReceiptIssuedAt={paymentFiscalReceiptIssuedAt}
+					fiscalReceiptNumber={paymentFiscalReceiptNumber}
+					fiscalReceiptUrl={paymentFiscalReceiptUrl}
+					isSaving={isPaymentSaving}
+					method={paymentMethod}
+					methodLabels={paymentMethodLabels}
+					onAmountChange={setPaymentAmount}
+					onFiscalCashierNameChange={setPaymentFiscalCashierName}
+					onFiscalFdChange={setPaymentFiscalFd}
+					onFiscalFnChange={setPaymentFiscalFn}
+					onFiscalFpdChange={setPaymentFiscalFpd}
+					onFiscalReceiptIssuedAtChange={setPaymentFiscalReceiptIssuedAt}
+					onFiscalReceiptNumberChange={setPaymentFiscalReceiptNumber}
+					onFiscalReceiptUrlChange={setPaymentFiscalReceiptUrl}
+					onMethodChange={setPaymentMethod}
+					onPayerBirthDateChange={setPaymentPayerBirthDate}
+					onPayerFullNameChange={setPaymentPayerFullName}
+					onPayerIdentityDocumentChange={setPaymentPayerIdentityDocument}
+					onPayerInnChange={setPaymentPayerInn}
+					onPayerRelationshipChange={setPaymentPayerRelationship}
+					onSubmit={onRecordPayment}
+					onTaxDeductionCodeChange={setPaymentTaxDeductionCode}
+					patientContextMessage={paymentPatientContextMessage}
+					patientContextReady={paymentPatientContextReady}
+					patientDefaults={{
+						birthDate: documentPatient?.birthDate ?? null,
+						fullName: documentPatient?.fullName ?? null,
+						identityDocument:
+							documentPatient?.administrativeProfile?.identityDocument ?? null,
+						taxpayerInn:
+							documentPatient?.administrativeProfile?.taxpayerInn ?? null,
+					}}
+					patientId={documentPatient?.id ?? null}
+					payerBirthDate={paymentPayerBirthDate}
+					payerFullName={paymentPayerFullName}
+					payerIdentityDocument={paymentPayerIdentityDocument}
+					payerInn={paymentPayerInn}
+					payerRelationship={paymentPayerRelationship}
+					taxDeductionCode={paymentTaxDeductionCode}
+				/>
+			</div>
 
 			{/*
         Итог дня стоит ПЕРЕД историей оплат и после формы приёма: рядом с

@@ -64,6 +64,16 @@ function expect(actual: any) {
 					`Expected function NOT to have been called, but was called ${count} times`,
 				);
 			},
+			toHaveBeenCalledWith: (...expectedArgs: any[]) => {
+				const calls = actual?.mock?.calls ?? actual?.calls ?? [];
+				const match = calls.some((callArgs: any[]) =>
+					expectedArgs.every((arg, i) => callArgs[i] === arg),
+				);
+				assert.ok(
+					!match,
+					`Expected NOT to be called with ${JSON.stringify(expectedArgs)}, but was called with: ${JSON.stringify(calls)}`,
+				);
+			},
 		},
 		toContain: (expected: string) => {
 			assert.ok(
@@ -694,20 +704,20 @@ describe("PaymentCapture Autonomy & Non-Blocking Guidance (Mandates 8e, 8n)", ()
 			"info",
 		);
 
-		// 2. Нал + Карта + Баланс
+		// 2. Нал + Карта + Баланс (открывает сплит-модалку чисто, без блокирующего тавтологического тоста)
 		const splitThreeWayBtn = findNodeByTestId(container, "btn-combo-split-three-way");
 		expect(splitThreeWayBtn).not.toBeNull();
 		await clickNode(splitThreeWayBtn!);
-		expect(showToast).toHaveBeenCalledWith(
+		expect(showToast).not.toHaveBeenCalledWith(
 			"Открыто окно комбинированной оплаты (Нал + Карта + Баланс)",
 			"info",
 		);
 
-		// 3. Баланс + Карта
+		// 3. Баланс + Карта (без блокирующего тоста)
 		const splitDepositBtn = findNodeByTestId(container, "btn-combo-split-deposit-card");
 		expect(splitDepositBtn).not.toBeNull();
 		await clickNode(splitDepositBtn!);
-		expect(showToast).toHaveBeenCalledWith(
+		expect(showToast).not.toHaveBeenCalledWith(
 			"Открыто окно комбинированной оплаты (Баланс + Карта)",
 			"info",
 		);

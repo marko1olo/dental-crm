@@ -999,8 +999,8 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 					</button>
 				</div>
 
-				{/* Body Content */}
-				<div className="p-3 sm:p-4 pb-24 overflow-y-auto flex flex-col gap-4 flex-1 min-h-0">
+				{/* Body Content (pb-28 clearance per Mandates 8d, 8p) */}
+				<div className="p-3 sm:p-4 pb-28 sm:pb-24 overflow-y-auto flex flex-col gap-4 flex-1 min-h-0">
 					{/* Acquiring & Fiscalization Emergency Fault-Tolerance Banner (Mandates 8e, 8n) */}
 					{interruptedPaymentState?.isInterrupted && (
 						<div
