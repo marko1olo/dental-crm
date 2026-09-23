@@ -88,7 +88,7 @@ export function AccessibilityModeButton({
 		>
 			<Glasses size={14} className="shrink-0" />
 			{!compact && (
-				<span className="hidden sm:inline">
+				<span>
 					{isAccessibilityMode ? "Обычная версия" : "Для слабовидящих"}
 				</span>
 			)}
@@ -688,21 +688,10 @@ export function ClinicControlPill({
 						</div>
 
 						<div className="flex items-center justify-between gap-2 pt-2 text-xs">
-							<button
-								type="button"
-								onClick={toggleAccessibilityMode}
-								className={`dnt-cc-btn flex-1 !min-h-[44px] ${
-									isAccessibilityMode
-										? "dnt-cc-btn--primary"
-										: "dnt-cc-btn--secondary"
-								}`}
-								title="Режим высокой контрастности (ГОСТ Р 52872-2019 / WCAG AAA)"
-							>
-								<Glasses size={14} />
-								<span>
-									{isAccessibilityMode ? "Обычная версия" : "Для слабовидящих"}
-								</span>
-							</button>
+							<AccessibilityModeButton
+								className="flex-1 !min-h-[44px]"
+								onToggle={toggleAccessibilityMode}
+							/>
 
 							<button
 								type="button"

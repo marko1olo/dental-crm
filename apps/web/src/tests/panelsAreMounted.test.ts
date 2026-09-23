@@ -260,6 +260,18 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Чеклист предполетной подготовки ассистента и стерильности кабинета перед приемом пациента по стандартам СанПиН (components/chairside/ChairsidePreFlightChecklist.tsx:128). Вызывается из мобильного ассистентского терминала.",
 	},
+	{
+		file: "components/diagnostics/ToothSanpinKraftBinding.tsx",
+		name: "ToothSanpinKraftBinding",
+		reason:
+			"Автономный компонент привязки крафт-пакетов СанПиН 3.3686-21 к конкретному зубу и протоколу 043/у. Демонтирован из контекстного меню кресла per Mandate 8v, 8k (согласно санитарным правилам лоток стерилен по умолчанию; запрещено навязывать врачу ручное сканирование штрихкодов на каждом отдельном зубе).",
+	},
+	{
+		file: "components/sanpin/SanpinCycleModal.tsx",
+		name: "SanpinCycleModal",
+		reason:
+			"Фасад модального окна цикла автоклавирования СанПиН (Форма 257/у). Интерактивный процедурный симулятор демонтирован per Mandates 8k, 8s в пользу 1-кликовых нормативных пресетов журналов производственного контроля ЦСО (SanpinRegisters).",
+	},
 	/*
 	 * EgiszSigningCabinetModal УДАЛЁН per Mandate 8s (канонический SSOT: EgiszRemdHubModal.tsx).
 	 */
