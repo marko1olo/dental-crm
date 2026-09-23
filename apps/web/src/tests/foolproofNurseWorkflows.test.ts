@@ -16,6 +16,8 @@ import { describe, it } from "node:test";
 import {
 	DANGEROUS_ACTIONS_REGISTRY,
 	getDangerousActionDefinition,
+	isRoutineClinicalAction,
+	requiresDangerConfirmation,
 	type DangerousActionType,
 } from "../components/common/foolproofDangerGuard";
 import { humanizeRussianError } from "../components/common/humanizeRussianError";
@@ -265,6 +267,17 @@ describe("FOOLPROOF & SENIOR NURSE UX SIMPLIFIER («БАБУШКА-PROOF»)", ()
 			assert.equal(breachDef.requiresExplicitCheckbox, true);
 			assert.equal(breachDef.dangerSeverity, "critical");
 		});
+
+		it("Не навязывает блокирующих подтверждений на рутинные действия врача и администратора (Мандат 8e)", () => {
+			assert.equal(requiresDangerConfirmation("autosave_visit_diary"), false);
+			assert.equal(requiresDangerConfirmation("apply_doctor_discount"), false);
+			assert.equal(requiresDangerConfirmation("update_dental_formula_routine"), false);
+			assert.equal(requiresDangerConfirmation("print_outpatient_document"), false);
+			assert.equal(requiresDangerConfirmation("cash_desk_routine_checkout"), false);
+			assert.equal(requiresDangerConfirmation("nurse_dispose_carpule"), false);
+			assert.equal(requiresDangerConfirmation("schedule_create_appointment"), false);
+			assert.equal(isRoutineClinicalAction("apply_doctor_discount"), true);
+		});
 	});
 
 	// ========================================================================
@@ -303,6 +316,51 @@ describe("FOOLPROOF & SENIOR NURSE UX SIMPLIFIER («БАБУШКА-PROOF»)", ()
 
 			assert.equal(humanized.titleRu, "Сессия сотрудника истекла");
 			assert.ok(humanized.actionAdviceRu.includes("PIN-код"));
+		});
+
+		it("Не подменяет истекшую сессию JWT сообщением о крафт-пакете (ликвидация крафт-пакетного заражения Мандат 8v)", () => {
+			const jwtErr = new Error("jwt expired");
+			const humanizedJwt = humanizeRussianError(jwtErr);
+			assert.equal(humanizedJwt.titleRu, "Сессия сотрудника истекла");
+			assert.ok(!humanizedJwt.titleRu.includes("крафт-пакет"));
+			assert.ok(!humanizedJwt.descriptionRu.includes("крафт-пакет"));
+
+			const tokenErr = new Error("TokenExpiredError: token expired");
+			const humanizedToken = humanizeRussianError(tokenErr);
+			assert.equal(humanizedToken.titleRu, "Сессия сотрудника истекла");
+			assert.ok(!humanizedToken.titleRu.includes("крафт-пакет"));
+
+			const sessionErr = new Error("session expired");
+			const humanizedSession = humanizeRussianError(sessionErr);
+			assert.equal(humanizedSession.titleRu, "Сессия сотрудника истекла");
+			assert.ok(!humanizedSession.titleRu.includes("крафт-пакет"));
+		});
+
+		it("Корректно обрабатывает просроченные скидки и купоны без крафт-пакетного заражения", () => {
+			const discountErr = new Error("discount coupon expired");
+			const humanizedDiscount = humanizeRussianError(discountErr);
+			assert.equal(humanizedDiscount.titleRu, "Срок действия скидки или промокода истёк");
+			assert.ok(!humanizedDiscount.titleRu.includes("крафт-пакет"));
+			assert.ok(!humanizedDiscount.descriptionRu.includes("крафт-пакет"));
+
+			const promoErr = new Error("Скидка просрочена");
+			const humanizedPromo = humanizeRussianError(promoErr);
+			assert.equal(humanizedPromo.titleRu, "Срок действия скидки или промокода истёк");
+		});
+
+		it("Срабатывает на СанПиН крафт-пакеты ТОЛЬКО при явном указании kraft или стерилизации", () => {
+			const kraftErr = new Error("kraft package expired");
+			const humanizedKraft = humanizeRussianError(kraftErr);
+			assert.equal(humanizedKraft.titleRu, "Использование крафт-пакета заблокировано СанПиН");
+
+			const sterilErr = new Error("Срок стерилизации истёк");
+			const humanizedSteril = humanizeRussianError(sterilErr);
+			assert.equal(humanizedSteril.titleRu, "Использование крафт-пакета заблокировано СанПиН");
+
+			// Слово "брак" само по себе НЕ должно вызывать блокировку крафт-пакета
+			const generalDefectErr = new Error("Обнаружен брак в поставке канцтоваров");
+			const humanizedGeneral = humanizeRussianError(generalDefectErr);
+			assert.notEqual(humanizedGeneral.titleRu, "Использование крафт-пакета заблокировано СанПиН");
 		});
 
 		it("Переводит блокировку СанПиН по просроченному крафт-пакету", () => {

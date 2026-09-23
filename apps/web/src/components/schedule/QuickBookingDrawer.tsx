@@ -1020,11 +1020,15 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 
 		// 10-секундный CITO-прием: авто-создание пациента на лету без блокировок
 		if (!activePatientId) {
+			const trimmedSearch = searchQuery.trim();
+			const isPhoneOnly = /^[0-9+()-\s]+$/.test(trimmedSearch);
 			const candidateName =
 				newPatientFullName.trim() ||
-				searchQuery.trim() ||
+				(isPhoneOnly ? `Пациент (${trimmedSearch})` : trimmedSearch) ||
 				(newPatientPhone.trim() ? `Пациент (${newPatientPhone.trim()})` : "") ||
 				(isEmergencyMode ? "Пациент с острой болью (CITO)" : "");
+			const candidatePhone =
+				newPatientPhone.trim() || (isPhoneOnly ? trimmedSearch : null);
 
 			if (candidateName) {
 				try {
@@ -1038,7 +1042,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 						headers,
 						body: JSON.stringify({
 							fullName: candidateName,
-							phone: newPatientPhone.trim() || null,
+							phone: candidatePhone,
 							birthDate: newPatientBirthDate.trim() || null,
 						}),
 					});
@@ -1099,7 +1103,8 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			(isSoloDoctor && doctors[0] ? doctors[0].id : "") ||
 			(doctors.length === 1 ? doctors[0]?.id : "") ||
 			doctors[0]?.id ||
-			(isSoloDoctor ? "doctor-solo" : "");
+			auth?.user?.id ||
+			"doctor-solo";
 		let effectiveChairId =
 			chairId ||
 			(chairs.length === 1 ? chairs[0]?.id : "") ||
@@ -1122,31 +1127,36 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			effectiveChairId = DEFAULT_SOLO_CHAIR.id;
 		}
 
-		if (!effectiveDoctorId) {
-			setSubmitError("В клинике нет доступных врачей");
-			showToast("Выберите врача", "error");
-			return;
+		let effectiveStartsAt = startsAtLocal;
+		let effectiveEndsAt = endsAtLocal;
+
+		// 1-Click Autonomy (Mandates 8e, 8n): если не указано время начала — авто-подстановка слота (ближайшие 15 мин)
+		if (!effectiveStartsAt) {
+			const now = new Date();
+			now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
+			effectiveStartsAt = toLocal(now.toISOString());
+			setStartsAtLocal(effectiveStartsAt);
 		}
 
-		if (!effectiveChairId) {
-			setSubmitError("В клинике нет активных кресел");
-			showToast("В клинике нет доступных кресел", "error");
-			return;
+		// 1-Click Autonomy (Mandates 8e, 8n): если указано время начала, но не указан конец — авто-расчет (+durationMinutes)
+		if (effectiveStartsAt && !effectiveEndsAt) {
+			const startMs = Date.parse(fromLocal(effectiveStartsAt));
+			if (!Number.isNaN(startMs)) {
+				const defaultEndIso = new Date(startMs + (durationMinutes || 30) * 60_000).toISOString();
+				effectiveEndsAt = toLocal(defaultEndIso);
+				setEndsAtLocal(effectiveEndsAt);
+			}
 		}
 
-		if (!startsAtLocal || !endsAtLocal) {
-			setSubmitError("Укажите время начала и окончания");
-			showToast("Проверьте дату и время", "error");
-			return;
-		}
+		const startsAtIso = fromLocal(effectiveStartsAt);
+		let endsAtIso = fromLocal(effectiveEndsAt);
 
-		const startsAtIso = fromLocal(startsAtLocal);
-		const endsAtIso = fromLocal(endsAtLocal);
-
+		// Авто-восстановление при некорректном времени: если конец раньше или равен началу, авто-исправляем на +durationMinutes
 		if (Date.parse(endsAtIso) <= Date.parse(startsAtIso)) {
-			setSubmitError("Время окончания должно быть позже времени начала");
-			showToast("Некорректная длительность приема", "error");
-			return;
+			const startMs = Date.parse(startsAtIso);
+			const fixedEndIso = new Date(startMs + (durationMinutes || 30) * 60_000).toISOString();
+			endsAtIso = fixedEndIso;
+			setEndsAtLocal(toLocal(fixedEndIso));
 		}
 
 		setIsSubmitting(true);
@@ -1628,12 +1638,19 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 										type="button"
 										onClick={() => {
 											setShowInlineNewPatient(true);
-											setNewPatientFullName(
-												/^[а-яёa-z\s]+$/i.test(searchQuery) ? searchQuery : "",
-											);
-											setNewPatientPhone(
-												/^[0-9+()-\s]+$/.test(searchQuery) ? searchQuery : "",
-											);
+											const trimmedQ = searchQuery.trim();
+											const hasLetters = /[а-яёa-z]/i.test(trimmedQ);
+											const hasDigits = /\d/.test(trimmedQ);
+											if (hasLetters && !hasDigits) {
+												setNewPatientFullName(trimmedQ);
+												setNewPatientPhone("");
+											} else if (hasDigits && !hasLetters) {
+												setNewPatientFullName("");
+												setNewPatientPhone(trimmedQ);
+											} else {
+												setNewPatientFullName(trimmedQ);
+												setNewPatientPhone("");
+											}
 										}}
 										className="text-xs font-bold text-[var(--teal)] hover:underline flex items-center gap-1 min-h-[44px] px-3 py-2 bg-[var(--teal)]/10 rounded-xl cursor-pointer transition-colors"
 										data-testid="quick-booking-new-patient-toggle"
@@ -1975,12 +1992,19 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 													onClick={() => {
 														setShowInlineNewPatient(true);
 														setIsTypeaheadOpen(false);
-														setNewPatientFullName(
-															/^[а-яёa-z\s]+$/i.test(searchQuery) ? searchQuery : "",
-														);
-														setNewPatientPhone(
-															/^[0-9+()-\s]+$/.test(searchQuery) ? searchQuery : "",
-														);
+														const trimmedQ = searchQuery.trim();
+														const hasLetters = /[а-яёa-z]/i.test(trimmedQ);
+														const hasDigits = /\d/.test(trimmedQ);
+														if (hasLetters && !hasDigits) {
+															setNewPatientFullName(trimmedQ);
+															setNewPatientPhone("");
+														} else if (hasDigits && !hasLetters) {
+															setNewPatientFullName("");
+															setNewPatientPhone(trimmedQ);
+														} else {
+															setNewPatientFullName(trimmedQ);
+															setNewPatientPhone("");
+														}
 													}}
 													className="block mx-auto mt-2 text-xs font-bold text-[var(--teal)] hover:underline min-h-[44px] px-3 py-2 rounded-lg cursor-pointer"
 												>
@@ -2403,8 +2427,8 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 
 						{!isSoloDoctor && assistants.length > 0 && (
 							<div className="sm:col-span-2">
-								<label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
-									Ассистент (опционально)
+								<label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
+									Ассистент <span className="font-normal text-[var(--muted)] lowercase">(опционально, соло-приём без ассистента)</span>
 								</label>
 								<select
 									value={assistantUserId}
@@ -2412,13 +2436,16 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 									className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
 									data-testid="select-booking-assistant"
 								>
-									<option value="">-- Без ассистента --</option>
+									<option value="">-- Без ассистента (соло-приём) --</option>
 									{assistants.map((a) => (
 										<option key={a.id} value={a.id}>
 											{a.fullName}
 										</option>
 									))}
 								</select>
+								<span className="text-[11px] text-[var(--muted)] block mt-0.5">
+									Выбор ассистента строго опционален и не блокирует запись (Мандаты 8e, 8n)
+								</span>
 							</div>
 						)}
 					</div>

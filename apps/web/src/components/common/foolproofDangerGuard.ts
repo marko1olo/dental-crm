@@ -4,6 +4,15 @@
  * SanPiN / 54-FZ / Medical Record 043/u Protection Layer
  * Protects senior nurses and novice receptionists from accidental irreversible actions.
  * ============================================================================
+ * Мандат 8e (Автономия врача и администратора):
+ * Запрещено навязывать блокирующие подтверждения на рутинные действия персонала:
+ * - Автосохранение дневника приёма (debounced autosave)
+ * - Редактирование зубной формулы при обычном осмотре
+ * - Применение скидки врачом (до 100%)
+ * - Печать бланков/договоров со штампом ЧЕРНОВИК
+ * - Касса 54-ФЗ без ИНН физлиц
+ * - Списание пустых карпул анестетика медсестрой в 1 клик
+ * - Создание записи в расписании без обязательного выбора ассистента
  */
 
 export type DangerousActionType =
@@ -42,9 +51,9 @@ export const DANGEROUS_ACTIONS_REGISTRY: Record<DangerousActionType, DangerousAc
 	},
 	delete_tooth: {
 		type: "delete_tooth",
-		titleRu: "Удаление зуба / изменение зубной формулы 043/у",
-		descriptionRu: "Вы собираетесь отметить удаление постоянного зуба в медицинской карте пациента.",
-		confirmButtonLabelRu: "Подтвердить удаление зуба",
+		titleRu: "Хирургическое удаление зуба (экстракция 043/у)",
+		descriptionRu: "Вы собираетесь зафиксировать операцию хирургического удаления постоянного зуба в карте пациента. Обычное заполнение зубной формулы при осмотре подтверждения не требует (Мандат 8e).",
+		confirmButtonLabelRu: "Подтвердить операцию удаления",
 		cancelButtonLabelRu: "Отмена (Сохранить статус)",
 		consequencesRu: [
 			"Статус зуба изменится на «Отсутствует (удалён)» в электронной карте 043/у",
@@ -112,4 +121,39 @@ export const DANGEROUS_ACTIONS_REGISTRY: Record<DangerousActionType, DangerousAc
 
 export function getDangerousActionDefinition(actionType: DangerousActionType): DangerousActionDefinition {
 	return DANGEROUS_ACTIONS_REGISTRY[actionType] || DANGEROUS_ACTIONS_REGISTRY.cancel_appointment;
+}
+
+/**
+ * Реестр рутинных клинических и административных действий (Мандаты 8e, 8n).
+ * Для этих операций категорически ЗАПРЕЩЕНЫ любые блокирующие диалоги,
+ * обязательные подтверждающие чекбоксы или искусственные препоны.
+ */
+export const ROUTINE_CLINICAL_ACTIONS = [
+	"autosave_visit_diary",
+	"update_dental_formula_routine",
+	"apply_doctor_discount",
+	"print_outpatient_document",
+	"cash_desk_routine_checkout",
+	"nurse_dispose_carpule",
+	"schedule_create_appointment",
+] as const;
+
+export type RoutineClinicalAction = (typeof ROUTINE_CLINICAL_ACTIONS)[number];
+
+/**
+ * Проверяет, является ли операция рутинной клинической деятельностью.
+ */
+export function isRoutineClinicalAction(action: string): boolean {
+	return (ROUTINE_CLINICAL_ACTIONS as readonly string[]).includes(action as RoutineClinicalAction);
+}
+
+/**
+ * Проверяет необходимость отображения диалога подтверждения опасной операции.
+ * Рутинные действия врача и персонала никогда не блокируются (Мандат 8e).
+ */
+export function requiresDangerConfirmation(action: string): boolean {
+	if (isRoutineClinicalAction(action)) {
+		return false;
+	}
+	return action in DANGEROUS_ACTIONS_REGISTRY;
 }

@@ -830,8 +830,17 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 		const isTechnicalBreak = isTechnicalBreakAppointment({ reason, comment });
 		if (!effectivePatientId && !isTechnicalBreak) {
-			setError("Укажите пациента: выберите из списка или создайте во вкладке «+ Новый пациент»");
-			return;
+			if (isCito || isCitoAppointment({ reason, comment })) {
+				const created = await handleCreateInlinePatient({
+					fullName: "Пациент с острой болью (CITO)",
+				});
+				if (created?.id) {
+					effectivePatientId = created.id;
+				}
+			} else {
+				setError("Укажите пациента: выберите из списка или создайте во вкладке «+ Новый пациент»");
+				return;
+			}
 		}
 
 		const startsAtIso = safeFromDateTimeLocalValue(effectiveStartsAt, timezone);
@@ -1248,6 +1257,21 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									>
 										<UserPlus size={13} />
 										<span>+ Новый пациент</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											handleConvertToCito();
+											void handleCreateInlinePatient({
+												fullName: "Пациент с острой болью (CITO)",
+											});
+										}}
+										className="h-7 px-2.5 py-1 rounded-md text-rose-700 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 font-bold transition-all cursor-pointer flex items-center gap-1 text-xs"
+										title="Создать временную карту CITO за 1 клик (Мандат 8e)"
+										data-testid="appointment-modal-cito-express-btn"
+									>
+										<Zap size={12} className="text-rose-600 dark:text-rose-400" />
+										<span>+ CITO</span>
 									</button>
 								</div>
 							</div>
