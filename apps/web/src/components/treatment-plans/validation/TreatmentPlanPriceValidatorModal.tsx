@@ -308,6 +308,22 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 		window.print();
 	};
 
+	// Мандат 8d (Анти-Матрёшка глубина 1): при переходе к наряду ЗТЛ показываем его как самостоятельное модальное окно без задваивания бэкдропов
+	if (isLabOrderModalOpen) {
+		return (
+			<LabWorkOrderModal
+				isOpen={isLabOrderModalOpen}
+				onClose={() => setIsLabOrderModalOpen(false)}
+				patientId={planPayload.patientId || "pat-001"}
+				patientName={planPayload.patientName || "Пациент"}
+				patientChartNumber={planPayload.planNumber || `К-${(planPayload.patientId || "001").slice(0, 5)}`}
+				doctorId={planPayload.doctorId || "doc-001"}
+				doctorName={planPayload.doctorFullName || "Д-р Ковалев С. П."}
+				initialTeeth={labTeeth}
+			/>
+		);
+	}
+
 	return (
 		<div className="price-validator-backdrop" role="dialog" aria-modal="true">
 			<div className="price-validator-modal">
@@ -977,20 +993,6 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 					</div>
 				</footer>
 			</div>
-
-			{/* Statutory Lab Work Order & Tracking Studio Modal */}
-			{isLabOrderModalOpen && (
-				<LabWorkOrderModal
-					isOpen={isLabOrderModalOpen}
-					onClose={() => setIsLabOrderModalOpen(false)}
-					patientId={planPayload.patientId || "pat-001"}
-					patientName={planPayload.patientName || "Пациент"}
-					patientChartNumber={planPayload.planNumber || `К-${(planPayload.patientId || "001").slice(0, 5)}`}
-					doctorId={planPayload.doctorId || "doc-001"}
-					doctorName={planPayload.doctorFullName || "Д-р Ковалев С. П."}
-					initialTeeth={labTeeth}
-				/>
-			)}
 		</div>
 	);
 };

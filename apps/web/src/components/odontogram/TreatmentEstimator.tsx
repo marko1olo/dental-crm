@@ -628,6 +628,16 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					</button>
 					<button
 						type="button"
+						onClick={() => window.print()}
+						className="flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[32px] sm:min-h-[34px] sm:h-[34px] text-xs font-bold text-slate-700 dark:text-slate-300 bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer"
+						title="Распечатать смету плана лечения для согласования с пациентом"
+						data-testid="estimator-direct-print-btn"
+					>
+						<Printer size={14} />
+						<span>Печать сметы</span>
+					</button>
+					<button
+						type="button"
 						onClick={() => setShowSignModal(true)}
 						disabled={planLoad.phase === "loading"}
 						title={unpricedWarning ?? "Подписать план у пациента"}

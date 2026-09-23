@@ -3582,13 +3582,23 @@ export function VisitEmkTab() {
 								<FileText size={15} />
 								<span>Внести исправление («Исправленному верить»)</span>
 							</button>
+							<button
+								className="secondary-button min-h-[34px] sm:min-h-[36px] h-8.5 sm:h-9 px-3.5 py-1 text-xs sm:text-sm font-bold rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] cursor-pointer flex items-center gap-2 transition-all shadow-2xs"
+								type="button"
+								data-testid="btn-print-signed-visit-043u"
+								onClick={() => window.print()}
+								title="Распечатать карту 043/у и дневник приёма (ПОДПИСАНО ВРАЧОМ)"
+							>
+								<Printer size={15} />
+								<span>Печать 043/у</span>
+							</button>
 						</div>
 					) : null}
 
 					{isSignedVisit && isRevisingVisitNote ? (
 						<div className="flex items-center gap-2 flex-wrap">
 							<button
-								className="primary-button min-h-[50px] px-6 py-3 text-sm sm:text-base font-extrabold rounded-xl bg-amber-600 hover:bg-amber-500 text-white shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+								className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 py-2 sm:py-1 text-xs sm:text-sm font-extrabold rounded-xl bg-amber-600 hover:bg-amber-500 text-white shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
 								type="button"
 								data-testid="btn-save-revision-signed-visit"
 								onClick={async () => {
@@ -3614,7 +3624,7 @@ export function VisitEmkTab() {
 								<span>Сохранить («Исправленному верить»)</span>
 							</button>
 							<button
-								className="secondary-button min-h-[50px] px-4 py-3 text-xs sm:text-sm font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5"
+								className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 py-2 sm:py-1 text-xs sm:text-sm font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5"
 								type="button"
 								data-testid="btn-cancel-revision-signed-visit"
 								onClick={() => {
@@ -3625,13 +3635,23 @@ export function VisitEmkTab() {
 								<X size={16} />
 								<span>Отмена</span>
 							</button>
+							<button
+								className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 py-1 text-xs sm:text-sm font-bold rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] cursor-pointer flex items-center gap-2 transition-all shadow-2xs"
+								type="button"
+								data-testid="btn-print-revision-visit-043u"
+								onClick={() => window.print()}
+								title="Распечатать текущую версию карты 043/у (РЕВИЗИЯ)"
+							>
+								<Printer size={15} />
+								<span>Печать 043/у</span>
+							</button>
 						</div>
 					) : null}
 
 					{!isSignedVisit ? (
 						<div className="flex items-center gap-2.5 flex-wrap">
 							<button
-								className="primary-button min-h-[50px] px-6 py-3 text-sm sm:text-base font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+								className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 py-2 sm:py-1 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
 								type="button"
 								data-testid="btn-save-visit-note"
 								onClick={() => {
@@ -3686,20 +3706,31 @@ export function VisitEmkTab() {
 								}
 								title="Сохранить дневник приёма Формы 043/у (никогда не блокируется из-за пустых полей)"
 							>
-								<Check aria-hidden="true" size={20} className="stroke-[3]" />
+								<Check aria-hidden="true" size={18} className="stroke-[3]" />
 								<span>{visitNoteActionLabel || "Сохранить запись приёма"}</span>
 							</button>
 
 							<button
-								className="primary-button min-h-[50px] px-5 py-3 text-sm sm:text-base font-extrabold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+								className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 py-2 sm:py-1 text-xs sm:text-sm font-extrabold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
 								type="button"
 								data-testid="btn-complete-visit-emk"
 								onClick={handleCompleteVisitAndGenerateReceipt}
 								disabled={isCompletingVisit}
 								title="Завершить приём, зафиксировать дневник 043/у и сформировать чек на оплату"
 							>
-								<Check aria-hidden="true" size={20} className="stroke-[3]" />
+								<Check aria-hidden="true" size={18} className="stroke-[3]" />
 								<span>{isCompletingVisit ? "Завершаю приём…" : "Завершить приём"}</span>
+							</button>
+
+							<button
+								className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 py-1 text-xs sm:text-sm font-bold rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] cursor-pointer flex items-center gap-2 transition-all shadow-2xs"
+								type="button"
+								data-testid="btn-print-draft-visit-043u"
+								onClick={() => window.print()}
+								title="Распечатать карту 043/у (со штампом ЧЕРНОВИК)"
+							>
+								<Printer size={15} />
+								<span>Печать 043/у (Черновик)</span>
 							</button>
 						</div>
 					) : null}
@@ -4714,6 +4745,16 @@ export function VisitEmkTab() {
 					<span>Норма</span>
 				</button>
 				<div className="flex items-center gap-1.5 shrink-0">
+					<button
+						type="button"
+						data-testid="btn-mobile-sticky-print"
+						onClick={() => window.print()}
+						className="secondary-button min-h-[36px] h-9 px-2.5 py-0 text-xs font-bold border border-slate-300 dark:border-slate-700 bg-[var(--paper)] text-[var(--ink)] flex items-center gap-1 rounded-lg shrink-0 cursor-pointer active:scale-95"
+						title="Распечатать карту 043/у"
+					>
+						<Printer size={14} className="shrink-0" />
+						<span className="hidden sm:inline">Печать</span>
+					</button>
 					<button
 						type="button"
 						data-testid="btn-mobile-sticky-save"

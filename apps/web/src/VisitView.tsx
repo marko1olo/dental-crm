@@ -1028,6 +1028,32 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		);
 	}, [activeAppointment, activeDoctor, activePatient, visitNoteForm]);
 
+	// Мандат 8e: Печать 043/у по горячей клавише F12 (App.tsx:262 dente:print-043-diary)
+	// Доктор в перчатках у кресла нажимает F12 — карта 043/у немедленно уходит на печать
+	React.useEffect(() => {
+		const handlePrintEvent = () => {
+			handlePrintForm043uFast();
+		};
+		window.addEventListener("dente:print-043-diary", handlePrintEvent);
+		return () => {
+			window.removeEventListener("dente:print-043-diary", handlePrintEvent);
+		};
+	}, [handlePrintForm043uFast]);
+
+	// Мандат 8e: Сохранение визита по горячей клавише Ctrl+S (App.tsx:266 dente:autosave-visit)
+	React.useEffect(() => {
+		const handleAutosaveEvent = () => {
+			if (typeof flushPendingVisitSaves === "function") {
+				void flushPendingVisitSaves();
+				showToast("Изменения приёма сохранены (Ctrl+S)", "success", 2000);
+			}
+		};
+		window.addEventListener("dente:autosave-visit", handleAutosaveEvent);
+		return () => {
+			window.removeEventListener("dente:autosave-visit", handleAutosaveEvent);
+		};
+	}, [flushPendingVisitSaves]);
+
 	const closeClinicalModal = useCallback(() => {
 		setSelectedToothForMenu(null);
 		setMaterialCategory(null);
