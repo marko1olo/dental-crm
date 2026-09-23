@@ -325,4 +325,92 @@ describe("Portal Budget Routes & Digital Signature Adapter", () => {
 		assert.equal(dataB.clinicName, "Клиника Стоматологии Б");
 		assert.notEqual(dataB.clinicName, "Клиника Стоматологии А");
 	});
+
+	test("6. Сохранение смет при перезапуске сервера (PostgreSQL persistence & zero 404 on SMS link)", async () => {
+		// Simulate full backend server process restart by wiping in-memory cache
+		PortalBudgetService.resetMemoryCacheOnly();
+
+		// Fetch tokenA from database
+		const resA = await app.inject({
+			method: "GET",
+			url: `/api/portal/budget/${tokenA}`,
+		});
+		assert.equal(resA.statusCode, 200, "Token A link from SMS must not 404 after backend restart");
+		const bodyA = JSON.parse(resA.payload);
+		assert.equal(bodyA.token, tokenA);
+		assert.equal(bodyA.clinicName, "Клиника Стоматологии А");
+		assert.equal(bodyA.status, "viewed");
+		assert.equal(bodyA.netTotalRub, 22500);
+		assert.equal(bodyA.items.length, 2);
+
+		// Fetch tokenB from database — must retain accepted status and signature audit
+		const resB = await app.inject({
+			method: "GET",
+			url: `/api/portal/budget/${tokenB}`,
+		});
+		assert.equal(resB.statusCode, 200, "Token B link must not 404 after backend restart");
+		const bodyB = JSON.parse(resB.payload);
+		assert.equal(bodyB.status, "accepted");
+		assert.equal(bodyB.signerName, "Петров Петр Петрович");
+		assert.ok(bodyB.documentHash);
+		assert.equal(bodyB.documentHash.length, 64);
+	});
+
+	test("7. Усиленный аудит: персистентная защита от брутфорса и 15-минутный локаут переживают рестарт", async () => {
+		// Generate new standalone token C
+		const genC = await PortalBudgetService.generateBudgetPortalToken({
+			organizationId: ORG_A_ID,
+			patientId: PATIENT_A_ID,
+			patientPhone: "+7 (999) 123-45-67",
+			patientFirstName: "Иван",
+			clinicName: "Клиника Стоматологии А",
+			doctorName: "Д-р Смирнов А.В.",
+			authMethod: "phone_last4",
+			items: [
+				{
+					title: "Консультация врача-стоматолога",
+					priceRub: 2000,
+				},
+			],
+			totalPriceRub: 2000,
+		});
+		const tokenC = genC.token;
+
+		// 4 failed attempts
+		for (let i = 1; i <= 4; i++) {
+			const failRes = await app.inject({
+				method: "POST",
+				url: `/api/portal/budget/${tokenC}/verify`,
+				payload: { phone_last4: `000${i}` },
+			});
+			assert.equal(failRes.statusCode, 401);
+			const failBody = JSON.parse(failRes.payload);
+			assert.equal(failBody.remainingAttempts, 5 - i);
+		}
+
+		// 5th failed attempt -> lockout triggered
+		const lockRes = await app.inject({
+			method: "POST",
+			url: `/api/portal/budget/${tokenC}/verify`,
+			payload: { phone_last4: "9999" },
+		});
+		assert.equal(lockRes.statusCode, 429);
+		const lockBody = JSON.parse(lockRes.payload);
+		assert.equal(lockBody.error, "RateLimited");
+		assert.equal(lockBody.isLocked, true);
+
+		// Simulate server restart: clear in-memory cache
+		PortalBudgetService.resetMemoryCacheOnly();
+
+		// Immediate attempt after restart must STILL be locked (persisted in DB)
+		const postRestartRes = await app.inject({
+			method: "POST",
+			url: `/api/portal/budget/${tokenC}/verify`,
+			payload: { phone_last4: "4567" }, // Even correct code must be rejected during lockout
+		});
+		assert.equal(postRestartRes.statusCode, 429, "Lockout must persist across backend restarts");
+		const postRestartBody = JSON.parse(postRestartRes.payload);
+		assert.equal(postRestartBody.error, "RateLimited");
+		assert.equal(postRestartBody.isLocked, true);
+	});
 });

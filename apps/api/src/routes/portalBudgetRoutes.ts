@@ -128,7 +128,7 @@ export const portalBudgetRoutes: FastifyPluginAsync = async (server) => {
 				"127.0.0.1";
 			const clientIp = rawIp.split(",")[0]?.trim() || "127.0.0.1";
 
-			const result = PortalBudgetService.markBudgetViewed(token, clientIp);
+			const result = await PortalBudgetService.markBudgetViewed(token, clientIp);
 			if (!result.success) {
 				reply.status(404);
 				return { error: "BudgetNotFound", message: "Смета не найдена." };
@@ -167,7 +167,7 @@ export const portalBudgetRoutes: FastifyPluginAsync = async (server) => {
 				"127.0.0.1";
 			const clientIp = rawIp.split(",")[0]?.trim() || "127.0.0.1";
 
-			const result = PortalBudgetService.verifyBudgetAccess(token, parsed.data, clientIp);
+			const result = await PortalBudgetService.verifyBudgetAccess(token, parsed.data, clientIp);
 
 			if (!result.success) {
 				reply.status(result.status);
