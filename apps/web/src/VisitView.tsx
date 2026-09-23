@@ -257,7 +257,6 @@ import { VisitNoteDraftPanel } from "./VisitNoteDraftPanel";
 import { VisitAnamnesisTab } from "./components/visit/VisitAnamnesisTab";
 import { VisitSoapEditor, type VisitSoapNoteValues } from "./components/visit/VisitSoapEditor";
 import { DoctorMobileShiftModal } from "./components/doctor-portal/DoctorMobileShiftModal";
-import { PatientAllergySafetyBanner } from "./components/patients/PatientAllergySafetyBanner";
 import {
 	type PatientClinicalSafetyProfile,
 	parseSafetyProfileFromText,
@@ -1979,31 +1978,6 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						}}
 						aria-hidden={visitSubViewTab !== "anamnesis"}
 					>
-						{/* 1-Click Somatic Status Autonomy Strip (Mandates 8e, 8k, 8n - 36px Compact Height) */}
-						<section
-							aria-label="Соматический статус"
-							data-testid="visit-somatic-status-block"
-							className="visit-somatic-status-block flex items-center justify-between gap-3 px-3 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs flex-wrap min-h-[36px]"
-						>
-							<div className="flex items-center gap-2 min-w-0 flex-1">
-								<HeartPulse className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
-								<div className="flex items-center gap-1.5 text-xs truncate">
-									<span className="font-bold text-[var(--muted)] shrink-0">043/у:</span>
-									<span className="font-medium truncate text-[var(--ink)]">
-										{visitNoteForm?.anamnesis?.includes("Соматически здоров")
-											? "Соматически здоров • Норма"
-											: "Физиологическая норма • 0 противопоказаний"}
-									</span>
-								</div>
-							</div>
-							<div className="flex items-center gap-2 shrink-0 text-xs text-[var(--muted)]">
-								<span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
-									<Check className="w-3 h-3" />
-									Аудит соматики ОК
-								</span>
-							</div>
-						</section>
-
 						{/* ── ОСНОВНОЙ РЕДАКТОР ДНЕВНИКА ФОРМЫ 043/У (SOAP) СО STOMX ШАБЛОНАМИ ── */}
 						<div id="visit-soap-editor-container" className="w-full my-3">
 							<VisitSoapEditor

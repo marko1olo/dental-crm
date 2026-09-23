@@ -136,4 +136,43 @@ describe("АРМ Врача: Автономия смет, согласий и Ф
 		assert.ok(validatorSource.includes("btn-generate-lab-work-order"), "Кнопка создания наряда ЗТЛ присутствует");
 		assert.ok(validatorSource.includes("btn-generate-completed-act"), "Кнопка формирования акта присутствует");
 	});
+
+	test("8. Мандаты 8e, 8p: Если у пациента нет аллергий — аллергические плашки скрыты, ноль кричащих зеленых баннеров", () => {
+		const anamnesisPath = path.resolve(__dirname, "../VisitAnamnesisTab.tsx");
+		const anamnesisSource = fs.readFileSync(anamnesisPath, "utf8");
+		const visitViewPath = path.resolve(__dirname, "../../../VisitView.tsx");
+		const visitViewSource = fs.readFileSync(visitViewPath, "utf8");
+
+		// В VisitAnamnesisTab при отсутствии аллергий и стоп-факторов нет кричащей зеленой плашки
+		assert.ok(
+			!anamnesisSource.includes("visit-anamnesis-norm-banner"),
+			"VisitAnamnesisTab не отображает кричащую зеленую плашку, когда у пациента нет аллергий",
+		);
+
+		// В VisitView отсутствует дублирующая плашка соматики в теле приёма
+		assert.ok(
+			!visitViewSource.includes("visit-somatic-status-block"),
+			"VisitView не дублирует статус соматики в теле приёма при наличии кнопки в шапке (Мандат 8p)",
+		);
+	});
+
+	test("9. Мандаты 8e, 8k: 1-клик заполнение физиологической нормой по умолчанию («Соматически здоров / норма»)", () => {
+		const visitViewPath = path.resolve(__dirname, "../../../VisitView.tsx");
+		const visitViewSource = fs.readFileSync(visitViewPath, "utf8");
+
+		// Кнопка 1-клик нормы в шапке VisitView всегда присутствует и не заблокирована
+		assert.ok(
+			visitViewSource.includes('data-testid="btn-somatic-norm-one-click"'),
+			"Кнопка 1-клик нормы присутствует в шапке VisitView",
+		);
+		assert.ok(
+			visitViewSource.includes("handleApplySomaticNormQuick"),
+			"Обработчик 1-клик нормы подключен в VisitView",
+		);
+		assert.ok(
+			visitViewSource.includes("executeApplySomaticNormAutonomy"),
+			"Функция автономного заполнения нормы присутствует",
+		);
+	});
 });
+
