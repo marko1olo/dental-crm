@@ -85,8 +85,7 @@ describe("AuthContext — изоляция контекста авторизац
 		renderToStaticMarkup(
 			createElement(
 				AuthProvider,
-				{ value: mockAuthValue },
-				createElement(ValueCaptureProbe),
+				{ value: mockAuthValue, children: createElement(ValueCaptureProbe) },
 			),
 		);
 
@@ -108,8 +107,7 @@ describe("AuthContext — изоляция контекста авторизац
 		renderToStaticMarkup(
 			createElement(
 				AppLogicProvider,
-				{ value: mockAppLogicValue },
-				createElement(AppLogicFallbackProbe),
+				{ value: mockAppLogicValue, children: createElement(AppLogicFallbackProbe) },
 			),
 		);
 
@@ -124,8 +122,7 @@ describe("AuthContext — изоляция контекста авторизац
 		const markupWith = renderToStaticMarkup(
 			createElement(
 				AuthProvider,
-				{ value: mockAuthValue },
-				createElement(OptionalAuthProbe),
+				{ value: mockAuthValue, children: createElement(OptionalAuthProbe) },
 			),
 		);
 		assert.ok(markupWith.includes("есть_контекст"));

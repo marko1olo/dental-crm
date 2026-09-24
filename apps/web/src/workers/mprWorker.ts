@@ -26,14 +26,16 @@ ctx.onmessage = (e: MessageEvent<MprWorkerRequest>) => {
 		return;
 	}
 
+	const reqType = (req as { type?: string }).type;
+
 	// Branch 0: Liveness & Health Check
-	if ("type" in req && req.type === "ping") {
+	if (reqType === "ping") {
 		ctx.postMessage({ success: true, type: "pong", timestamp: Date.now() });
 		return;
 	}
 
 	// Branch 1: Orthogonal Cross-Section Reconstruction
-	if ("type" in req && (req.type === "crossSection" || req.type === "cross_section")) {
+	if (reqType === "crossSection" || reqType === "cross_section") {
 		const csReq = req as CrossSectionWorkerRequest;
 		try {
 			if (!csReq.dimensions || !csReq.spacing || !csReq.scalarData || !csReq.controlPoints) {
@@ -108,7 +110,8 @@ ctx.onmessage = (e: MessageEvent<MprWorkerRequest>) => {
 
 	// Branch 2: Panoramic Curved Planar Reformation (OPG unwrap)
 	if (
-		("type" in req && (req.type === "panoramic" || req.type === "panoramic_opg")) ||
+		reqType === "panoramic" ||
+		reqType === "panoramic_opg" ||
 		"splinePoints" in req
 	) {
 		const panReq = req as PanoramicWorkerRequest;

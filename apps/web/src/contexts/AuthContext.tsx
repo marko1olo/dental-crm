@@ -40,13 +40,15 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+export interface AuthProviderProps {
+	children?: React.ReactNode;
+	value?: AuthContextType | undefined;
+}
+
 export function AuthProvider({
 	children,
 	value,
-}: {
-	children: React.ReactNode;
-	value?: AuthContextType | undefined;
-}) {
+}: AuthProviderProps) {
 	const appLogic = useOptionalAppLogicContext();
 	const resolvedValue = value ?? (appLogic?.auth as AuthContextType | undefined) ?? null;
 

@@ -17,13 +17,15 @@ export function registerTabTeardown(callback: () => void): () => void {
 	};
 }
 
+export interface AppLogicProviderProps {
+	children?: React.ReactNode;
+	value: AppLogicContextType;
+}
+
 export function AppLogicProvider({
 	children,
 	value,
-}: {
-	children: React.ReactNode;
-	value: AppLogicContextType;
-}) {
+}: AppLogicProviderProps) {
 	const currentView = (value as { currentView?: string })?.currentView;
 	const prevViewRef = useRef<string | undefined>(currentView);
 

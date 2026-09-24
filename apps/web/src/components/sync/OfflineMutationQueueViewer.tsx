@@ -48,9 +48,9 @@ export const OfflineMutationQueueViewer: React.FC<OfflineMutationQueueViewerProp
 		if (isSyncing) return;
 		try {
 			const result = await syncNow();
-			if (result.successCount > 0) {
+			if (result.appliedCount > 0) {
 				showToast(
-					`Синхронизировано мутаций: ${result.successCount}`,
+					`Синхронизировано мутаций: ${result.appliedCount}`,
 					"success",
 				);
 			} else if (result.failedCount > 0) {
@@ -133,7 +133,7 @@ export const OfflineMutationQueueViewer: React.FC<OfflineMutationQueueViewerProp
 				) : (
 					pendingMutations.map((mut) => (
 						<div
-							key={mut.id}
+							key={mut.mutationId}
 							onClick={() => setSelectedMutation(mut)}
 							className="p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors cursor-pointer flex items-center justify-between gap-3 text-xs"
 						>
@@ -147,7 +147,7 @@ export const OfflineMutationQueueViewer: React.FC<OfflineMutationQueueViewerProp
 									</span>
 								</div>
 								<div className="text-[11px] text-[var(--muted,#64748b)] dark:text-slate-400 truncate mt-0.5">
-									ID: {mut.entityId} • {new Date(mut.createdAtIso).toLocaleTimeString("ru-RU")}
+									ID: {mut.entityId} • {new Date(mut.timestamp).toLocaleTimeString("ru-RU")}
 								</div>
 							</div>
 
@@ -170,7 +170,7 @@ export const OfflineMutationQueueViewer: React.FC<OfflineMutationQueueViewerProp
 			{selectedMutation && (
 				<div className="p-3 border-t border-[var(--glass-border,rgba(0,0,0,0.06))] dark:border-white/5 bg-slate-50/50 dark:bg-black/30">
 					<div className="flex items-center justify-between text-xs mb-1.5">
-						<span className="font-semibold">Полезная нагрузка ({selectedMutation.id}):</span>
+						<span className="font-semibold">Полезная нагрузка ({selectedMutation.mutationId}):</span>
 						<button
 							type="button"
 							onClick={() => setSelectedMutation(null)}
