@@ -18,7 +18,7 @@
  */
 
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { showToast } from "./components/GlobalToast";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { actionFailureToast } from "./lib/panelStateText";
@@ -174,6 +174,36 @@ export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
 		},
 		hint: "1 клик: создать задачу на контрольный снимок визиографа RVG",
 	},
+	{
+		id: "preset-prepare-cast",
+		testId: "preset-task-prepare-cast",
+		label: "Подготовить слепок",
+		title: "Подготовить слепок",
+		defaultDescription:
+			"Отливка и подготовка гипсовой диагностической/рабочей модели по полученному оттиску/слепку.",
+		taskType: "cast_preparation",
+		computeDueAt: () => {
+			const d = new Date();
+			d.setDate(d.getDate() + 1);
+			return d.toISOString();
+		},
+		hint: "1 клик: подготовить диагностический/рабочий слепок за 24 часа",
+	},
+	{
+		id: "preset-order-implant",
+		testId: "preset-task-order-implant",
+		label: "Заказать имплант",
+		title: "Заказать имплант",
+		defaultDescription:
+			"Заказ дентального имплантата, формирователя десны и хирургических компонентов под клинический случай.",
+		taskType: "order_implant",
+		computeDueAt: () => {
+			const d = new Date();
+			d.setDate(d.getDate() + 3);
+			return d.toISOString();
+		},
+		hint: "1 клик: заказать имплант и хирургические компоненты за 3 дня",
+	},
 ];
 
 const LOCAL_STORAGE_KEY_PREFIX = "dente_clinical_local_tasks_";
@@ -318,6 +348,14 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 	const appLogic = useAppLogicContext();
 	const auth = appLogic?.auth;
 
+	const isMountedRef = useRef(true);
+	useEffect(() => {
+		isMountedRef.current = true;
+		return () => {
+			isMountedRef.current = false;
+		};
+	}, []);
+
 	const [tasks, setTasks] = useState<ClinicalTask[] | null>(null);
 	const [customTaskTypes, setCustomTaskTypes] = useState<
 		CustomTaskType[] | null
@@ -366,11 +404,14 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 
 	const load = useCallback(async () => {
 		if (!patientId) {
-			setTasks(null);
-			setError(null);
-			setLoading(false);
+			if (isMountedRef.current) {
+				setTasks(null);
+				setError(null);
+				setLoading(false);
+			}
 			return;
 		}
+		if (!isMountedRef.current) return;
 		setError(null);
 		setLoading(true);
 		try {
@@ -387,6 +428,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 					headers: auth ? auth.denteClinicalReadHeaders() : {},
 				});
 			} catch {
+				if (!isMountedRef.current) return;
 				const local = getLocalTasks(patientId);
 				if (local.length > 0) {
 					setTasks(local);
@@ -411,6 +453,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 				);
 				return null;
 			})) as ClinicalTask[] | { message?: string } | null;
+			if (!isMountedRef.current) return;
 			if (!response.ok) {
 				const local = getLocalTasks(patientId);
 				if (local.length > 0) {
@@ -445,7 +488,9 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 				...payload,
 				...local.filter((t) => !serverIds.has(t.id)),
 			];
-			setTasks(combined);
+			if (isMountedRef.current) {
+				setTasks(combined);
+			}
 
 			if (customTypesResponse?.ok) {
 				const customData = await customTypesResponse.json().catch((err) => {
@@ -459,12 +504,14 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 					);
 					return null;
 				});
-				if (Array.isArray(customData)) {
+				if (isMountedRef.current && Array.isArray(customData)) {
 					setCustomTaskTypes(customData as CustomTaskType[]);
 				}
 			}
 		} finally {
-			setLoading(false);
+			if (isMountedRef.current) {
+				setLoading(false);
+			}
 		}
 	}, [auth, patientId, loadFailureText]);
 

@@ -75,4 +75,15 @@ describe("ClinicalTasksPanel — Clinical Transfer Presets & Doctor Autonomy (Ma
 		const forbiddenEmojis = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 		assert.ok(!forbiddenEmojis.test(html), "ClinicalTasksPanel must contain 0 cartoon emojis");
 	});
+
+	it("renders 1-click presets for cast preparation and implant ordering", () => {
+		const html = renderToString(
+			<AppLogicProvider value={mockAppContext}>
+				<ClinicalTasksPanel patientId="pat-1" />
+			</AppLogicProvider>,
+		);
+
+		assert.ok(html.includes("Подготовить слепок"), "Must include preset for cast preparation");
+		assert.ok(html.includes("Заказать имплант"), "Must include preset for implant ordering");
+	});
 });
