@@ -10,6 +10,7 @@ import {
 	MoreHorizontal,
 	Printer,
 	RefreshCw,
+	Scale,
 	TrendingUp,
 	Users,
 } from "lucide-react";
@@ -1088,41 +1089,8 @@ export function AnalyticsDashboardView() {
 						ноль, строк в живой базе ноль. Эффективность подтверждения приёмов
 						считается по настоящим приёмам в «Обзвоне и подтверждениях».
 					*/}
-					{/*
-						Здесь стоял блок «Кому засчитана повторная запись» (порог 15 минут:
-						записался сразу после визита — засчитываем врачу, позже —
-						администратору). Удалён вместе с маршрутом
-						/api/hr/rebooking-conversion-rules и его модулем выборки.
-
-						ЧЕМ ФАКТИЧЕСКИ ОТВЕЧАЛ СЕРВЕР: маршрут был живой и отдавал HTTP 200
-						с пустым массивом — всегда. Таблица rebooking_conversion_rules в
-						живой базе содержит 0 строк, и наполнить её нечем: писателей ноль
-						(ни одного db.insert/db.update во всём apps/api/src). То есть врач и
-						администратор видели «Повторных записей пока нет» при 27 приёмах и
-						10 визитах в базе — и делали ложный вывод, что повторных записей нет.
-
-						ПОЧЕМУ НЕ ПЕРЕВЕДЕНО НА ЖИВОЙ РАСЧЁТ: для этой цифры нужны ровно два
-						факта — КОГДА запись создали и КТО её создал. В таблице appointments
-						нет ни одного из них (колонки: id, organization_id, patient_id,
-						doctor_user_id, assistant_user_id, chair_id, status, starts_at,
-						ends_at, reason, comment, is_synced, version). Без created_at задержку
-						«создано через N минут после приёма» взять физически неоткуда, а
-						doctor_user_id — это тот, кто БУДЕТ ЛЕЧИТЬ, а не тот, кто ЗАПИСАЛ;
-						подставить одно вместо другого значит соврать именно в том поле, ради
-						которого блок и существовал. Обход через audit_events тоже закрыт: в
-						живой базе 989 событий аудита и среди них ноль по приёмам, а вызовы
-						appointment_created сидят только в файлах демо-данных, то есть в
-						памяти, а не в базе.
-
-						ДОЛГ (настоящая задача, а не потеря): зачисление повторной записи
-						врачу или администратору — реальный KPI, по нему платят премии.
-						Возвращать блок имеет смысл только вместе с appointments.created_at и
-						appointments.created_by_user_id (либо со записью appointment_created с
-						автором из серверного пути записи — писатель аудита с автором уже
-						есть, это recordAuditEventInDb в apps/api/src/db/auditQuery.ts).
-						После этого KPI считается живьём по appointments + visits + users,
-						и таблица-снимок не нужна вообще.
-					*/}
+					{/* Виджет «Кому засчитана повторная запись» (Фича #54/#61, Мандаты 8e, 8n & 8p) */}
+					<RebookingConversionRulesWidget dateRange={dateRange} />
 						</>
 					)}
 				</>
@@ -1280,5 +1248,287 @@ function KpiCard({
 			<div className="analytics-kpi-value">{value}</div>
 			{subtitle && <div className="analytics-kpi-subtext">{subtitle}</div>}
 		</div>
+	);
+}
+
+interface RebookingConversionSummary {
+	readonly totalCompletedVisits: number;
+	readonly totalVisits: number;
+	readonly totalRebookings: number;
+	readonly rebookingRate: number;
+	readonly doctorRebookingsCount: number;
+	readonly chairsideRebookingsCount: number;
+	readonly adminRebookingsCount: number;
+	readonly frontdeskRebookingsCount: number;
+	readonly doctorConversionRate: number;
+	readonly adminConversionRate: number;
+	readonly overallConversionRate: number;
+	readonly chairsideRetentionRate: number;
+	readonly thresholdMinutes: number;
+	readonly isSoloDoctor: boolean;
+	readonly isEmpty: boolean;
+}
+
+interface RebookingItem {
+	readonly id: string;
+	readonly patientName: string;
+	readonly rebookedBy: string;
+	readonly timeDeltaMinutes: number | null;
+	readonly creditedRole: "doctor" | "administrator";
+	readonly appointmentDate: string;
+	readonly createdAt?: string;
+	readonly attributionReason?: string;
+	readonly doctorName?: string | null;
+	readonly specialty?: string;
+}
+
+interface RebookingConversionResponse {
+	readonly summary: RebookingConversionSummary;
+	readonly events: readonly RebookingItem[];
+	readonly records: readonly RebookingItem[];
+}
+
+function RebookingConversionRulesWidget({ dateRange }: { dateRange: string }) {
+	const appLogic = useAppLogicContext();
+	const authContext = appLogic?.auth;
+	const [data, setData] = useState<RebookingConversionResponse | null>(null);
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		let mounted = true;
+		const controller = new AbortController();
+
+		const load = async () => {
+			setLoading(true);
+			setError(null);
+			try {
+				const headers = authContext
+					? authContext.denteClinicalReadHeaders()
+					: {};
+
+				const res = await fetch(
+					`/api/analytics/rebooking-conversion?range=${dateRange}`,
+					{
+						headers,
+						signal: controller.signal,
+					},
+				);
+
+				if (!res.ok) {
+					if (mounted) {
+						setError("Не удалось загрузить данные о повторной записи");
+						setLoading(false);
+					}
+					return;
+				}
+
+				const body = (await res.json()) as {
+					success: boolean;
+					data?: RebookingConversionResponse;
+					message?: string;
+				};
+				if (!mounted) return;
+
+				if (body.success && body.data) {
+					setData(body.data);
+				} else {
+					setError(body.message || "Данные не получены");
+				}
+			} catch {
+				if (mounted && !controller.signal.aborted) {
+					setError("Сетевая ошибка при загрузке аналитики повторной записи");
+				}
+			} finally {
+				if (mounted) setLoading(false);
+			}
+		};
+
+		void load();
+
+		return () => {
+			mounted = false;
+			controller.abort();
+		};
+	}, [dateRange, authContext]);
+
+	const summary = data?.summary;
+	const isSolo = summary?.isSoloDoctor ?? false;
+	const totalVisits = summary?.totalVisits ?? summary?.totalCompletedVisits ?? 0;
+	const totalRebookings = summary?.totalRebookings ?? 0;
+	const rebookingRate = summary?.rebookingRate ?? summary?.overallConversionRate ?? 0;
+	const doctorRate = summary?.doctorConversionRate ?? 0;
+	const adminRate = summary?.adminConversionRate ?? 0;
+	const items = (data?.events?.length ?? 0) > 0 ? (data?.events ?? []) : (data?.records ?? []);
+	const isEmpty = summary?.isEmpty || (totalVisits === 0 && items.length === 0);
+
+	return (
+		<article
+			className="glass-widget mt-4"
+			data-testid="rebooking-conversion-widget"
+		>
+			<div className="glass-widget-header">
+				<h3 title="Если повторная запись создана у кресла (в течение 15 минут после визита), она засчитывается врачу. Позже — администратору. В соло-режиме 100% повторных записей засчитываются врачу.">
+					<Scale className="w-4 h-4 text-[var(--teal)]" aria-hidden="true" />
+					<span>Кому засчитана повторная запись</span>
+				</h3>
+				<div className="glass-widget-actions flex items-center gap-2">
+					{isSolo ? (
+						<span
+							className="text-[11px] px-2 py-0.5 rounded border bg-[var(--teal-surface,#ccfbf1)] text-[var(--teal-dark,#0f766e)] border-[var(--teal)] font-medium"
+							title="В соло-режиме (1 кабинет) у врача нет администратора на ресепшене — все записи атрибутируются врачу (Мандат 8n)"
+						>
+							Соло-режим (100% врачу)
+						</span>
+					) : (
+						<span
+							className="text-[11px] px-2 py-0.5 rounded border bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] font-medium"
+							title="Окно повторной записи у кресла — 15 минут"
+						>
+							Порог: 15 минут
+						</span>
+					)}
+					<button
+						type="button"
+						className="glass-action-btn"
+						onClick={() => window.print()}
+						title="Распечатать отчёт по повторным записям"
+					>
+						<Printer size={13} aria-hidden="true" />
+						<span>Печать</span>
+					</button>
+				</div>
+			</div>
+
+			{/* KPI pills row */}
+			<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 border-b border-[var(--line)] bg-[var(--paper-soft)]/50">
+				<div className="flex flex-col gap-0.5">
+					<span className="text-[11px] text-[var(--muted)]">Общая конверсия повторной записи</span>
+					<div className="flex items-baseline gap-2">
+						<span className="text-lg font-bold text-[var(--ink)]">
+							{rebookingRate}%
+						</span>
+						<span className="text-[11px] text-[var(--muted)]">
+							({totalRebookings} из {totalVisits} визитов)
+						</span>
+					</div>
+				</div>
+
+				<div className="flex flex-col gap-0.5">
+					<span className="text-[11px] text-[var(--muted)]">Врач у кресла (≤ 15 мин)</span>
+					<div className="flex items-baseline gap-2">
+						<span className="text-lg font-bold text-[var(--teal)]">
+							{doctorRate}%
+						</span>
+						<span className="text-[11px] text-[var(--muted)]">
+							({summary?.doctorRebookingsCount ?? 0} записей)
+						</span>
+					</div>
+				</div>
+
+				<div className="flex flex-col gap-0.5">
+					<span className="text-[11px] text-[var(--muted)]">
+						{isSolo ? "Администратор (соло: 0)" : "Администратор / Ресепшен (> 15 мин)"}
+					</span>
+					<div className="flex items-baseline gap-2">
+						<span className="text-lg font-bold text-[var(--ink-2,var(--muted))]">
+							{adminRate}%
+						</span>
+						<span className="text-[11px] text-[var(--muted)]">
+							({summary?.adminRebookingsCount ?? 0} записей)
+						</span>
+					</div>
+				</div>
+			</div>
+
+			{/* Main body: loading, error, empty, or table */}
+			<div className="p-3">
+				{loading && (
+					<div className="text-xs text-[var(--muted)] py-6 text-center">
+						Загрузка повторных записей...
+					</div>
+				)}
+
+				{!loading && error && (
+					<div role="status" className="text-xs text-amber-600 dark:text-amber-400 py-4 text-center">
+						{error}
+					</div>
+				)}
+
+				{!loading && !error && isEmpty && (
+					<EmptyState
+						glass={false}
+						icon={<Calendar size={20} aria-hidden="true" />}
+						title="Повторных записей за период нет"
+						description="Показатели конверсии повторной записи рассчитываются автоматически при создании следующих визитов пациентов."
+						className="py-6 text-xs"
+					/>
+				)}
+
+				{!loading && !error && !isEmpty && (
+					<div className="overflow-x-auto">
+						<table className="analytics-table w-full text-xs">
+							<thead>
+								<tr className="border-b border-[var(--line)] text-left text-[var(--muted)]">
+									<th className="py-2 px-2.5 font-medium">Пациент</th>
+									<th className="py-2 px-2.5 font-medium">Дата визита</th>
+									<th className="py-2 px-2.5 font-medium">Дельта создания</th>
+									<th className="py-2 px-2.5 font-medium">Засчитано</th>
+									<th className="py-2 px-2.5 font-medium">Сотрудник</th>
+								</tr>
+							</thead>
+							<tbody className="divide-y divide-[var(--line)]">
+								{items.slice(0, 10).map((item, idx) => {
+									const delta = item.timeDeltaMinutes;
+									const isDoctor = item.creditedRole === "doctor";
+									return (
+										<tr key={item.id || `rebooking-${idx}`} className="hover:bg-[var(--paper-soft)]/50 transition-colors">
+											<td className="py-2 px-2.5 font-medium text-[var(--ink)]">
+												{item.patientName}
+											</td>
+											<td className="py-2 px-2.5 text-[var(--muted)]">
+												{item.appointmentDate}
+											</td>
+											<td className="py-2 px-2.5 text-[var(--ink)]">
+												{delta === null || delta === undefined ? (
+													<span className="text-[var(--muted)]">Не зафиксировано</span>
+												) : delta <= 0 ? (
+													<span className="text-emerald-600 dark:text-emerald-400 font-medium">
+														У кресла (во время приёма)
+													</span>
+												) : (
+													<span>
+														Через <strong>{countLabel(Math.round(delta), "минуту", "минуты", "минут")}</strong>
+													</span>
+												)}
+											</td>
+											<td className="py-2 px-2.5">
+												{isDoctor ? (
+													<span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+														{isSolo ? "Врач (Соло)" : "Врач у кресла (≤ 15 мин)"}
+													</span>
+												) : (
+													<span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-sky-100 text-sky-800 dark:bg-sky-950/80 dark:text-sky-300 border border-sky-300 dark:border-sky-800">
+														Администратор (&gt; 15 мин)
+													</span>
+												)}
+											</td>
+											<td className="py-2 px-2.5 text-[var(--muted)]">
+												{item.rebookedBy || item.doctorName || "Врач у кресла"}
+											</td>
+										</tr>
+									);
+								})}
+							</tbody>
+						</table>
+						{items.length > 10 && (
+							<div className="p-2 text-center text-[11px] text-[var(--muted)] border-t border-[var(--line)]">
+								Показано 10 из {items.length} повторных записей
+							</div>
+						)}
+					</div>
+				)}
+			</div>
+		</article>
 	);
 }

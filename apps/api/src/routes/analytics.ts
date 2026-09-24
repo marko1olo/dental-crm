@@ -16,6 +16,7 @@ import {
 	diagnocatReports,
 	doctorPayrollStatements,
 	labOrders,
+	organizations,
 	patients,
 	payments,
 	rebookingConversionRules,
@@ -104,6 +105,7 @@ export function extractCreatedAtFromUuidV7(id: string | null | undefined): Date 
 export function calculateRebookingDeltaMinutes(
 	createdAt: Date | string,
 	completedAt: Date | string,
+	isSoloDoctor = false,
 ): {
 	deltaMinutes: number;
 	creditedRole: "doctor" | "administrator";
@@ -113,6 +115,16 @@ export function calculateRebookingDeltaMinutes(
 	const completed = typeof completedAt === "string" ? new Date(completedAt) : completedAt;
 	const diffMs = created.getTime() - completed.getTime();
 	const deltaMinutes = Math.floor(diffMs / 60000);
+
+	// В соло-режиме (1–2 кресла, субаренда, solo doctor) нет администратора на ресепшене (Мандат 8n).
+	// Все 100% повторных записей атрибутируются врачу у кресла.
+	if (isSoloDoctor) {
+		return {
+			deltaMinutes: Math.max(0, deltaMinutes),
+			creditedRole: "doctor",
+			attributionReason: "chairside_rebooking_under_15m",
+		};
+	}
 
 	if (deltaMinutes <= 15) {
 		return {
@@ -1641,6 +1653,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				doctorId: qDoctorId,
 				doctor_id: qDoctorIdSnake,
 				specialty: qSpecialty,
+				isSoloDoctor: qIsSoloDoctor,
 			} = request.query as {
 				range?: string;
 				startDate?: string;
@@ -1650,10 +1663,45 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				doctorId?: string;
 				doctor_id?: string;
 				specialty?: string;
+				isSoloDoctor?: string | boolean;
 			};
 
 			const targetDoctorId = qDoctorId || qDoctorIdSnake || undefined;
 			const targetSpecialty = qSpecialty?.trim() || undefined;
+
+			// Определение соло-режима (Мандат 8n: Solo Doctor & Small Clinic):
+			// 1) Явный флаг из query (?isSoloDoctor=true)
+			// 2) Режим клиники (solo_doctor | one_chair) из таблицы organizations
+			// 3) Количество кабинетов/кресел <= 1 в таблице chairs
+			let isSoloDoctor =
+				qIsSoloDoctor === true ||
+				qIsSoloDoctor === "true" ||
+				qIsSoloDoctor === "1";
+
+			if (!isSoloDoctor) {
+				const [orgRecord] = await db
+					.select({ clinicMode: organizations.clinicMode })
+					.from(organizations)
+					.where(eq(organizations.id, orgId))
+					.limit(1);
+
+				if (
+					orgRecord?.clinicMode === "solo_doctor" ||
+					orgRecord?.clinicMode === "one_chair"
+				) {
+					isSoloDoctor = true;
+				} else {
+					const chairsList = await db
+						.select({ id: chairs.id })
+						.from(chairs)
+						.where(eq(chairs.organizationId, orgId))
+						.limit(2);
+
+					if (chairsList.length <= 1) {
+						isSoloDoctor = true;
+					}
+				}
+			}
 
 			const now = new Date();
 			let startDate: Date | undefined;
@@ -1817,7 +1865,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					const apptCreatedAt =
 						extractCreatedAtFromUuidV7(candidateAppt.id) ?? candidateAppt.startsAt;
 					const { deltaMinutes, creditedRole, attributionReason } =
-						calculateRebookingDeltaMinutes(apptCreatedAt, completedAt);
+						calculateRebookingDeltaMinutes(apptCreatedAt, completedAt, isSoloDoctor);
 
 					const doctorName = visit.doctorName || candidateAppt.doctorName || "Врач у кресла";
 					const rebookedBy =
@@ -2032,6 +2080,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 						totalCompletedVisits,
 						totalVisits: totalCompletedVisits,
 						totalRebookings,
+						rebookingRate: overallConversionRate,
 						doctorRebookingsCount,
 						chairsideRebookingsCount: doctorRebookingsCount,
 						adminRebookingsCount,
@@ -2041,10 +2090,27 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 						overallConversionRate,
 						chairsideRetentionRate: doctorConversionRate,
 						thresholdMinutes: 15,
+						isSoloDoctor,
 						isEmpty: totalCompletedVisits === 0 && totalRebookings === 0,
 					},
 					byStaff,
 					byDoctors: byStaff.filter((s) => s.role === "doctor"),
+					events: computedEvents.map((e) => ({
+						id: e.id,
+						patientName: e.patientName,
+						rebookedBy: e.rebookedBy,
+						timeDeltaMinutes: e.timeDeltaMinutes,
+						creditedRole: e.creditedRole,
+						appointmentDate: e.appointmentDate,
+						createdAt:
+							e.createdAt instanceof Date
+								? e.createdAt.toISOString()
+								: e.createdAt,
+						attributionReason: e.attributionReason,
+						doctorId: e.doctorId,
+						doctorName: e.doctorName,
+						specialty: e.specialty,
+					})),
 					records: allRecords.map((r) => ({
 						id: r.id,
 						patientName: r.patientName,
@@ -2052,7 +2118,10 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 						timeDeltaMinutes: r.timeDeltaMinutes,
 						creditedRole: r.creditedRole,
 						appointmentDate: r.appointmentDate,
-						createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
+						createdAt:
+							r.createdAt instanceof Date
+								? e.createdAt.toISOString()
+								: r.createdAt,
 						attributionReason: r.attributionReason,
 					})),
 					period: {
@@ -2080,6 +2149,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 		completedAt: z.string().optional(),
 		creditedRole: z.enum(["doctor", "administrator"]).optional(),
 		appointmentDate: z.string().optional(),
+		isSoloDoctor: z.boolean().optional(),
 	});
 
 	/**
@@ -2119,6 +2189,32 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			const appointmentDate =
 				body.appointmentDate?.trim() || new Date().toISOString().slice(0, 10);
 
+			let isSoloDoctor = body.isSoloDoctor;
+			if (isSoloDoctor === undefined) {
+				const [orgRecord] = await db
+					.select({ clinicMode: organizations.clinicMode })
+					.from(organizations)
+					.where(eq(organizations.id, orgId))
+					.limit(1);
+
+				if (
+					orgRecord?.clinicMode === "solo_doctor" ||
+					orgRecord?.clinicMode === "one_chair"
+				) {
+					isSoloDoctor = true;
+				} else {
+					const chairsList = await db
+						.select({ id: chairs.id })
+						.from(chairs)
+						.where(eq(chairs.organizationId, orgId))
+						.limit(2);
+
+					if (chairsList.length <= 1) {
+						isSoloDoctor = true;
+					}
+				}
+			}
+
 			let timeDeltaMinutes = body.timeDeltaMinutes;
 			let creditedRole = body.creditedRole;
 
@@ -2127,6 +2223,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					const deltaCalc = calculateRebookingDeltaMinutes(
 						body.createdAt,
 						body.completedAt,
+						isSoloDoctor,
 					);
 					timeDeltaMinutes = deltaCalc.deltaMinutes;
 					if (!creditedRole) creditedRole = deltaCalc.creditedRole;
@@ -2136,7 +2233,8 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			}
 
 			if (!creditedRole) {
-				creditedRole = timeDeltaMinutes <= 15 ? "doctor" : "administrator";
+				creditedRole =
+					isSoloDoctor || timeDeltaMinutes <= 15 ? "doctor" : "administrator";
 			}
 
 			const [inserted] = await db
