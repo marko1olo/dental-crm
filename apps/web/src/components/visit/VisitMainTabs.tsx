@@ -51,7 +51,7 @@ export function VisitMainTabs({
 	return (
 		<div
 			ref={containerRef}
-			className="visit-sub-nav-tabs flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth pb-1 px-1 w-full min-w-0 touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-h-[44px] sm:min-h-[32px] h-11 sm:h-8"
+			className="visit-sub-nav-tabs flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar scroll-smooth pb-0.5 px-0.5 w-full min-w-0 touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-h-[40px] sm:min-h-[32px] h-10 sm:h-8"
 			style={{
 				WebkitOverflowScrolling: "touch",
 			}}
@@ -62,7 +62,7 @@ export function VisitMainTabs({
 				type="button"
 				role="tab"
 				aria-selected={visitSubViewTab === "odontogram"}
-				className={`secondary-button shrink-0 whitespace-nowrap text-xs sm:text-sm px-2.5 sm:px-3 py-1 min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 inline-flex items-center justify-center gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "odontogram" ? "active" : ""}`}
+				className={`secondary-button shrink-0 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1 min-h-[38px] sm:min-h-[32px] h-9 sm:h-8 inline-flex items-center justify-center gap-1 sm:gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "odontogram" ? "active" : ""}`}
 				style={{
 					background:
 						visitSubViewTab === "odontogram" ? "var(--teal-dark)" : undefined,
@@ -82,7 +82,7 @@ export function VisitMainTabs({
 				type="button"
 				role="tab"
 				aria-selected={visitSubViewTab === "emk"}
-				className={`secondary-button shrink-0 whitespace-nowrap text-xs sm:text-sm px-2.5 sm:px-3 py-1 min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 inline-flex items-center justify-center gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "emk" ? "active" : ""}`}
+				className={`secondary-button shrink-0 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1 min-h-[38px] sm:min-h-[32px] h-9 sm:h-8 inline-flex items-center justify-center gap-1 sm:gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "emk" ? "active" : ""}`}
 				style={{
 					background:
 						visitSubViewTab === "emk" ? "var(--teal-dark)" : undefined,
@@ -101,7 +101,7 @@ export function VisitMainTabs({
 				type="button"
 				role="tab"
 				aria-selected={visitSubViewTab === "anamnesis"}
-				className={`secondary-button shrink-0 whitespace-nowrap text-xs sm:text-sm px-2.5 sm:px-3 py-1 min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 inline-flex items-center justify-center gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "anamnesis" ? "active" : ""}`}
+				className={`secondary-button shrink-0 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1 min-h-[38px] sm:min-h-[32px] h-9 sm:h-8 inline-flex items-center justify-center gap-1 sm:gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "anamnesis" ? "active" : ""}`}
 				style={{
 					background:
 						visitSubViewTab === "anamnesis" ? "var(--teal-dark)" : undefined,
@@ -121,7 +121,7 @@ export function VisitMainTabs({
 				type="button"
 				role="tab"
 				aria-selected={visitSubViewTab === "diagnostics"}
-				className={`secondary-button shrink-0 whitespace-nowrap text-xs sm:text-sm px-2.5 sm:px-3 py-1 min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 inline-flex items-center justify-center gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "diagnostics" ? "active" : ""}`}
+				className={`secondary-button shrink-0 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1 min-h-[38px] sm:min-h-[32px] h-9 sm:h-8 inline-flex items-center justify-center gap-1 sm:gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "diagnostics" ? "active" : ""}`}
 				style={{
 					background:
 						visitSubViewTab === "diagnostics" ? "var(--teal-dark)" : undefined,
@@ -132,7 +132,7 @@ export function VisitMainTabs({
 			>
 				<ImageIcon size={14} className="shrink-0" />
 				<span className="whitespace-nowrap flex-shrink-0 min-w-max">
-					<span className="sm:hidden">Рентгены</span>
+					<span className="sm:hidden">Снимки</span>
 					<span className="hidden sm:inline">Рентгены и Диагностика</span>
 				</span>
 			</button>

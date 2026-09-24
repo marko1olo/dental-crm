@@ -135,18 +135,18 @@ async function provisionLiveSession() {
 }
 
 async function runInquisitionCapture() {
-  const outDir = path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/inquisition_live");
-  if (!fs.existsSync(outDir)) {
-    fs.mkdirSync(outDir, { recursive: true });
+  const targetDirs = [
+    path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/inquisition_live"),
+    path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/audit_7sins"),
+    path.resolve("C:/Users/Admin/.gemini/antigravity/brain/a84df016-a7cc-461c-ba80-899ae84de477/screenshots"),
+    path.resolve("C:/Users/Admin/.gemini/antigravity/brain/afa7ddc2-eb55-4252-ac49-ad72d47ca7b5/screenshots"),
+  ];
+  for (const d of targetDirs) {
+    if (!fs.existsSync(d)) {
+      fs.mkdirSync(d, { recursive: true });
+    }
   }
-
-  const brainDir = path.resolve(
-    process.env.BRAIN_DIR ||
-      "C:/Users/Admin/.gemini/antigravity/brain/b0211abe-fa07-4302-a768-4d0e87438251"
-  );
-  if (!fs.existsSync(brainDir)) {
-    fs.mkdirSync(brainDir, { recursive: true });
-  }
+  const outDir = targetDirs[0];
 
   const auth = await provisionLiveSession();
 
@@ -263,14 +263,18 @@ async function runInquisitionCapture() {
 
   async function takeProof(page, fileName, viewName, modeName) {
     const targetFile = path.join(outDir, fileName);
-    const brainFile = path.join(brainDir, fileName);
 
     await page.waitForSelector(".boot-state", { state: "detached", timeout: 20000 }).catch(() => {});
     await page.waitForSelector(".app-shell", { state: "visible", timeout: 20000 }).catch(() => {});
     await page.waitForTimeout(1200);
     await page.screenshot({ path: targetFile, fullPage: false });
 
-    fs.copyFileSync(targetFile, brainFile);
+    for (const d of targetDirs) {
+      const dest = path.join(d, fileName);
+      if (dest !== targetFile) {
+        fs.copyFileSync(targetFile, dest);
+      }
+    }
 
     const stats = fs.statSync(targetFile);
     const hash = crypto.createHash("md5").update(fs.readFileSync(targetFile)).digest("hex");

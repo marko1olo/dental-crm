@@ -415,13 +415,13 @@ export function ScheduleFilterStrip({
 				<button
 					type="button"
 					onClick={onQuickBooking}
-					className="schedule-toolbar-primary-quick-booking-btn min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1 shrink-0 cursor-pointer shadow-2xs whitespace-nowrap"
+					className="schedule-toolbar-primary-quick-booking-btn min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:scale-95 transition-all hidden sm:flex items-center justify-center gap-1 shrink-0 cursor-pointer shadow-2xs whitespace-nowrap"
 					data-testid="schedule-toolbar-primary-quick-booking-btn"
 					title="Быстрая запись (N) / Новая запись пациента на прием"
-					aria-label="Быстрая запись (+ Запись)"
+					aria-label="Быстрая запись (Запись)"
 				>
 					<Plus size={14} className="shrink-0" aria-hidden="true" />
-					<span className="whitespace-nowrap font-bold">+ Запись</span>
+					<span className="whitespace-nowrap font-bold">Запись</span>
 				</button>
 			)}
 
