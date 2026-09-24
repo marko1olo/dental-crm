@@ -5,6 +5,7 @@ import { PublicOnlineBookingWidget } from "../components/booking/PublicOnlineBoo
 import { PatientCabinetModal } from "../components/portal/patientCabinet/PatientCabinetModal";
 import { DEMO_PATIENT_CABINET } from "../components/portal/patientCabinet/patientCabinetPresets";
 import type { PatientPersonalCabinetData } from "../components/portal/patientCabinet/patientCabinetEngine";
+import { AuthArtBackground } from "../components/auth/AuthArtBackground";
 import "./PublicBookingWidget.css";
 
 export interface PublicBookingWidgetProps {
@@ -132,9 +133,12 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 	}
 
 	return (
-		<div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-3 sm:p-6 md:p-8">
+		<div className="PublicBookingWidget-root min-h-screen relative overflow-hidden flex flex-col items-center justify-center p-3 sm:p-6 md:p-8">
+			{/* Shared Atmospheric Art Background Layer (Mandates 8p, 8n) */}
+			<AuthArtBackground />
+
 			{/* Верхний переключатель режимов (Запись / Личный кабинет) */}
-			<div className="w-full max-w-2xl mb-4 flex items-center justify-between bg-white dark:bg-slate-900 p-1.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+			<div className="w-full max-w-2xl mb-4 flex items-center justify-between PublicBookingWidget-glass-nav p-1.5 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800/80">
 				<button
 					type="button"
 					onClick={() => setActiveMode("booking")}
@@ -168,12 +172,15 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 
 			{/* Режим 1: Онлайн-запись */}
 			{activeMode === "booking" && (
-				<PublicOnlineBookingWidget organizationId={organizationId} />
+				<PublicOnlineBookingWidget
+					organizationId={organizationId}
+					className="dbw-with-art-bg"
+				/>
 			)}
 
 			{/* Режим 2: Вход в личный кабинет */}
 			{activeMode === "cabinet" && !isCabinetModalOpen && (
-				<div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 animate-in fade-in zoom-in-95 duration-200">
+				<div className="w-full max-w-md PublicBookingWidget-glass-card rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-200/80 dark:border-slate-800/80 text-slate-900 dark:text-slate-100 animate-in fade-in zoom-in-95 duration-200">
 					<div className="text-center mb-6">
 						<div className="w-16 h-16 bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
 							<ShieldCheck className="w-8 h-8" />

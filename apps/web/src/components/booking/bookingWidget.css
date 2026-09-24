@@ -1699,3 +1699,32 @@
 		padding: 12px;
 	}
 }
+
+/* ==========================================================================
+   Art Background Glass & Scrim Support (Mandates 8p, 8n)
+   ========================================================================== */
+
+.dente-booking-widget.dbw-with-art-bg,
+.dente-booking-widget[data-art-bg="true"] {
+	position: relative;
+	background: var(--glass-panel, rgba(255, 255, 255, 0.88));
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	border: 1px solid var(--glass-border, rgba(226, 232, 240, 0.8));
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .dente-booking-widget.dbw-with-art-bg,
+.dente-booking-widget.dbw-with-art-bg[data-theme="dark"],
+[data-theme="dark"] .dente-booking-widget[data-art-bg="true"] {
+	background: var(--glass-panel, rgba(15, 23, 42, 0.88));
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	border: 1px solid var(--glass-border, rgba(51, 65, 85, 0.6));
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+.dente-booking-widget.dbw-with-art-bg .dbw-body,
+.dente-booking-widget[data-art-bg="true"] .dbw-body {
+	background: transparent;
+}

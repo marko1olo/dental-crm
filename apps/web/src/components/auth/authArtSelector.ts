@@ -11,8 +11,15 @@ export interface AuthArtItem {
 	avifQuality?: number;
 }
 
+export type AuthArtPack =
+	| "nature"
+	| "dental-epic"
+	| "abstract"
+	| "anime"
+	| "all";
+
 export interface AuthArtOptions {
-	pack: string;
+	pack: AuthArtPack | string;
 	slot: string;
 	saveData: boolean;
 	reducedMotion: boolean;
@@ -22,22 +29,27 @@ export function selectAuthArt(
 	manifest: AuthArtItem[],
 	options: AuthArtOptions,
 ): AuthArtItem | null {
-	if (options.saveData) {
+	if (options.saveData || manifest.length === 0) {
 		return null;
 	}
 
-	const packItems = manifest.filter((item) => item.pack === options.pack);
-	if (packItems.length === 0) {
+	const isAll = options.pack === "all";
+	const pool = isAll
+		? manifest
+		: manifest.filter((item) => item.pack === options.pack);
+
+	if (pool.length === 0) {
 		return null;
 	}
 
-	let eligibleItems = packItems.filter((item) => item.slot === options.slot);
+	let eligibleItems = pool.filter((item) => item.slot === options.slot);
 
-	// If the slot has less than 2 items, expand choice to the entire pack.
-	// This ensures we still have variety, especially for packs like 'dental-epic' and 'abstract'
-	// which might mostly have 'day' items.
+	// If the slot has less than 2 items, expand choice to the entire pool.
+	// This ensures variety, especially for packs like 'dental-epic', 'abstract', 'anime'
+	// where certain time-of-day slots may only have 1 or 2 items, and guarantees
+	// the screen never remains without background art.
 	if (eligibleItems.length < 2) {
-		eligibleItems = packItems;
+		eligibleItems = pool;
 	}
 
 	if (eligibleItems.length === 0) {

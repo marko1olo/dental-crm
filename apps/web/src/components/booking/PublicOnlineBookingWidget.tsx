@@ -40,6 +40,7 @@ import {
 	type CalendarDayItem,
 } from "./BookingSlotPicker";
 import { parseUtmFromUrl } from "@dental/shared";
+import { AuthArtBackground } from "../auth/AuthArtBackground";
 import "./bookingWidget.css";
 
 // ============================================================================
@@ -142,6 +143,8 @@ export interface PublicOnlineBookingWidgetProps {
 	/** Compatibility flags */
 	readonly rapidFlow?: boolean | undefined;
 	readonly flowMode?: "standard" | "rapid_solo" | undefined;
+	/** Optional atmospheric art background with glass surface (Mandates 8p, 8n) */
+	readonly artBackground?: boolean | undefined;
 }
 
 // Clean non-mock fallbacks without hardcoded city data (Mandate 8a & 8k: Zero Mocks)
@@ -356,6 +359,7 @@ export const PublicOnlineBookingWidget: React.FC<
 	patientId,
 	rapidFlow = false,
 	flowMode,
+	artBackground = false,
 }) => {
 	const widgetInstanceId = useId();
 
@@ -1037,11 +1041,13 @@ export const PublicOnlineBookingWidget: React.FC<
 
 	return (
 		<div
-			className={`dente-booking-widget ${className}`}
+			className={`dente-booking-widget ${artBackground ? "dbw-with-art-bg" : ""} ${className}`}
 			data-theme={theme}
 			data-embed={effectiveEmbedMode}
+			data-art-bg={artBackground ? "true" : undefined}
 			id={`dente-booking-${widgetInstanceId}`}
 		>
+			{artBackground && <AuthArtBackground />}
 			{/* Top Glass Header (Strictly <= 110px on mobile, Mandate 8p) */}
 			<header className="dbw-header">
 				<div className="dbw-header-clinic">

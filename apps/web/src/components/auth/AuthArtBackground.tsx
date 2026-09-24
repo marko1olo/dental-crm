@@ -1,18 +1,35 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { safeLocalStorageGetItem } from "../../lib/safeLocalStorage";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import {
 	type AuthArtItem,
+	type AuthArtPack,
 	getCurrentTimeSlot,
 	selectAuthArt,
 } from "./authArtSelector";
 
-export function AuthArtBackground() {
+export interface AuthArtSettingsState {
+	enabled: boolean;
+	pack: AuthArtPack | string;
+	dynamicByTimeOfDay: boolean;
+}
+
+export interface AuthArtBackgroundProps {
+	readonly settings?: Partial<AuthArtSettingsState> | undefined;
+	readonly overlayAlpha?: number | undefined;
+	readonly className?: string | undefined;
+}
+
+export function AuthArtBackground({
+	settings: propSettings,
+	overlayAlpha = 0.25,
+	className,
+}: AuthArtBackgroundProps = {}) {
 	const [manifest, setManifest] = useState<AuthArtItem[]>([]);
 	const [selectedArt, setSelectedArt] = useState<AuthArtItem | null>(null);
-	const [artSettings, setArtSettings] = useState({
+	const [artSettings, setArtSettings] = useState<AuthArtSettingsState>({
 		enabled: true,
 		pack: "nature",
 		dynamicByTimeOfDay: true,
@@ -24,7 +41,10 @@ export function AuthArtBackground() {
 		const saved = safeLocalStorageGetItem("dente_auth_art_settings");
 		if (saved) {
 			try {
-				setArtSettings(JSON.parse(saved));
+				setArtSettings((prev) => ({
+					...prev,
+					...JSON.parse(saved),
+				}));
 			} catch (e) {
 				showToast(
 					actionFailureToast(
@@ -36,6 +56,22 @@ export function AuthArtBackground() {
 				logger.error("Failed to parse auth art settings from local storage", e);
 			}
 		}
+
+		// Listen to storage events for cross-tab or settings sync
+		const handleStorage = (e: StorageEvent) => {
+			if (e.key === "dente_auth_art_settings" && e.newValue) {
+				try {
+					const parsed = JSON.parse(e.newValue);
+					setArtSettings((prev) => ({
+						...prev,
+						...parsed,
+					}));
+				} catch {
+					// ignore
+				}
+			}
+		};
+		window.addEventListener("storage", handleStorage);
 
 		// Fetch manifest
 		fetch("/auth-art/manifest.json")
@@ -56,12 +92,29 @@ export function AuthArtBackground() {
 				setManifest(data);
 			})
 			.catch((e) => logger.error("Failed to load auth art manifest", e));
+
+		return () => {
+			window.removeEventListener("storage", handleStorage);
+		};
 	}, []);
 
-	useEffect(() => {
-		if (!artSettings.enabled || manifest.length === 0) return;
+	const effectiveSettings = useMemo(
+		() => ({
+			...artSettings,
+			...(propSettings || {}),
+		}),
+		[artSettings, propSettings],
+	);
 
-		const slot = artSettings.dynamicByTimeOfDay ? getCurrentTimeSlot() : "day";
+	useEffect(() => {
+		if (!effectiveSettings.enabled || manifest.length === 0) {
+			setSelectedArt(null);
+			return;
+		}
+
+		const slot = effectiveSettings.dynamicByTimeOfDay
+			? getCurrentTimeSlot()
+			: "day";
 		const isReducedMotion = window.matchMedia(
 			"(prefers-reduced-motion: reduce)",
 		).matches;
@@ -71,23 +124,22 @@ export function AuthArtBackground() {
 			nav.connection?.saveData || nav.connection?.effectiveType?.includes("2g");
 
 		const art = selectAuthArt(manifest, {
-			pack: artSettings.pack,
+			pack: effectiveSettings.pack,
 			slot,
 			saveData: !!isSaveData,
 			reducedMotion: isReducedMotion,
 		});
 		setSelectedArt(art);
-	}, [manifest, artSettings]);
+	}, [manifest, effectiveSettings]);
 
-	if (!artSettings.enabled || !selectedArt) {
+	if (!effectiveSettings.enabled || !selectedArt) {
 		return null; // Let the fallback mesh gradient handle the background
 	}
-
-	const overlayAlpha = 0.2; // Subtle scrim so background image stays crisp & clearly visible
 
 	return (
 		<div
 			aria-hidden="true"
+			className={`auth-art-background ${className || ""}`}
 			style={{
 				position: "absolute",
 				top: 0,
@@ -97,6 +149,7 @@ export function AuthArtBackground() {
 				zIndex: -1,
 				overflow: "hidden",
 				backgroundColor: selectedArt.dominantColor,
+				pointerEvents: "none",
 			}}
 		>
 			<div

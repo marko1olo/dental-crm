@@ -1,9 +1,10 @@
 /**
- * Antigravity Transcript Relay Engine (Mandate 8l)
+ * Antigravity Transcript Relay Engine (Mandate 8l) — Deep Trajectory Recovery
  *
  * Automatically parses a predecessor subagent's transcript.jsonl,
- * extracts task context, completed steps, pending files, and generates
- * a clean handover prompt for a fresh subagent with 100% context continuity.
+ * extracts full task context, all completed milestones, executed commands,
+ * modified files, latest thinking, and last model report to generate
+ * an exhaustive handover prompt for a fresh subagent with 100% context continuity.
  */
 
 const fs = require("fs");
@@ -33,10 +34,12 @@ function parseTranscript(conversationId) {
 
   const lines = fs.readFileSync(transcriptPath, "utf-8").split("\n").filter(Boolean);
   let initialPrompt = "";
-  let role = "";
-  const completedActions = [];
+  const allActions = [];
   const modifiedFiles = new Set();
   const inspectedFiles = new Set();
+  const executedCommands = [];
+  let latestThinking = "";
+  let latestAgentResponse = "";
   let lastError = null;
 
   for (const line of lines) {
@@ -45,15 +48,34 @@ function parseTranscript(conversationId) {
       if (step.type === "USER_INPUT" && !initialPrompt) {
         initialPrompt = step.content;
       }
+
+      if (step.thinking) {
+        latestThinking = step.thinking.trim();
+      }
+
+      if (step.type === "PLANNER_RESPONSE" || step.source === "MODEL") {
+        if (step.content && step.content.trim().length > 20) {
+          latestAgentResponse = step.content.trim();
+        }
+      }
+
       if (step.tool_calls) {
         for (const tc of step.tool_calls) {
-          const action = `${tc.name}: ${tc.args?.toolSummary || tc.args?.toolAction || ""}`;
-          completedActions.push(action);
+          const summary = tc.args?.toolSummary || tc.args?.toolAction || "";
+          const name = tc.name;
+          const entry = summary ? `${name}: ${summary}` : name;
+          allActions.push(entry);
+
           if (tc.args?.TargetFile) modifiedFiles.add(tc.args.TargetFile);
           if (tc.args?.AbsolutePath) inspectedFiles.add(tc.args.AbsolutePath);
           if (tc.args?.SearchPath) inspectedFiles.add(tc.args.SearchPath);
+
+          if (name === "run_command" && tc.args?.CommandLine) {
+            executedCommands.push(tc.args.CommandLine);
+          }
         }
       }
+
       if (step.status === "ERROR") {
         lastError = step.content || "Unknown error";
       }
@@ -62,15 +84,27 @@ function parseTranscript(conversationId) {
     }
   }
 
+  // Deduplicate and aggregate actions
+  const uniqueCommands = Array.from(new Set(executedCommands));
+  const recentActions = allActions.slice(-25);
+
   return {
     conversationId,
     transcriptPath,
     totalSteps: lines.length,
     initialPrompt,
-    completedActionsCount: completedActions.length,
-    recentActions: completedActions.slice(-10),
+    completedActionsCount: allActions.length,
+    allActionsSummary: allActions.length <= 15 ? allActions : [
+      ...allActions.slice(0, 5),
+      `... [пропущено ${allActions.length - 15} промежуточных шагов] ...`,
+      ...allActions.slice(-10),
+    ],
+    recentActions,
     modifiedFiles: Array.from(modifiedFiles),
-    inspectedFiles: Array.from(inspectedFiles).slice(0, 15),
+    inspectedFiles: Array.from(inspectedFiles),
+    executedCommands: uniqueCommands.slice(-10),
+    latestThinking: latestThinking ? latestThinking.slice(-1500) : "",
+    latestAgentResponse: latestAgentResponse ? latestAgentResponse.slice(-2500) : "",
     lastError,
   };
 }
@@ -79,30 +113,39 @@ function generateHandoverPrompt(conversationId, options = {}) {
   const summary = parseTranscript(conversationId);
   const normalizedTranscriptUri = summary.transcriptPath.replace(/\\/g, "/");
 
-  return `[МАНДАТ 8l: СВЕЖИЙ СУБАГЕНТ — TRANSCRIPT RELAY HANDOVER]
-ОБЯЗАТЕЛЬНО ПРОЧИТАЙ КОНСТИТУЦИЮ:
+  return `[МАНДАТ 8l: СВЕЖИЙ СУБАГЕНТ — DEEP TRANSCRIPT RELAY HANDOVER]
+ВЫСШАЯ КОНСТИТУЦИЯ (ОБЯЗАТЕЛЬНО К ИСПОЛНЕНИЮ):
 1. \`C:\\Clinic_MVP\\dental-crm\\.agents\\THE_HAMMER_MASTER_PROMPT.md\`
 2. \`C:\\Clinic_MVP\\dental-crm\\.agents\\AGENTS.md\` (Мандаты 8c, 8e, 8l, 8t).
 
-ТРАНСКРИПТ ПРЕДШЕСТВЕННИКА:
-Предыдущий субагент (Conversation ID: ${summary.conversationId}) выполнил ${summary.completedActionsCount} шагов и завершил сессию.
+ТРАНСКРИПТ И КОНТЕКСТ ПРЕДШЕСТВЕННИКА:
+Предыдущий субагент (Conversation ID: ${summary.conversationId}) выполнил ${summary.completedActionsCount} шагов (${summary.totalSteps} записей журнала).
 Абсолютный путь к его журналу:
 file:///${normalizedTranscriptUri}
 
-ИЗУЧЕННЫЕ И МОДИФИЦИРОВАННЫЕ ФАЙЛЫ:
+МОДИФИЦИРОВАННЫЕ ФАЙЛЫ (УЖЕ НА ДИСКЕ):
 ${summary.modifiedFiles.length > 0 ? summary.modifiedFiles.map(f => `- [ИЗМЕНЕН] ${f}`).join("\n") : "- Изменений на диск записано не было."}
-${summary.inspectedFiles.length > 0 ? summary.inspectedFiles.slice(0, 8).map(f => `- [ИЗУЧЕН] ${f}`).join("\n") : ""}
 
-ПОСЛЕДНИЕ ШАГИ ПРЕДШЕСТВЕННИКА:
-${summary.recentActions.map(a => `  • ${a}`).join("\n")}
+ИЗУЧЕННЫЕ ФАЙЛЫ:
+${summary.inspectedFiles.length > 0 ? summary.inspectedFiles.slice(0, 15).map(f => `- [ИЗУЧЕН] ${f}`).join("\n") : "- Нет данных."}
+
+ПОСЛЕДНИЕ ВЫПОЛНЕННЫЕ КОМАНДЫ:
+${summary.executedCommands.length > 0 ? summary.executedCommands.map(c => `  $ ${c}`).join("\n") : "  (нет команд)"}
+
+${summary.latestThinking ? `ПОСЛЕДНИЕ РАССУЖДЕНИЯ И ПЛАН ПРЕДШЕСТВЕННИКА:\n"""\n${summary.latestThinking}\n"""\n` : ""}
+${summary.latestAgentResponse ? `ПОСЛЕДНИЙ СВОДНЫЙ ДОКЛАД ПРЕДШЕСТВЕННИКА:\n"""\n${summary.latestAgentResponse}\n"""\n` : ""}
+${summary.lastError ? `ПОСЛЕДНЯЯ ОШИБКА:\n${summary.lastError}\n` : ""}
+
+ХРОНОЛОГИЯ ШАГОВ:
+${summary.allActionsSummary.map(a => `  • ${a}`).join("\n")}
 
 ИСХОДНАЯ ЗАДАЧА:
 ${summary.initialPrompt}
 
 ${options.additionalDirective ? `ДОПОЛНИТЕЛЬНАЯ ДИРЕКТИВА:\n${options.additionalDirective}\n` : ""}
-ПРАВИЛА ВЫПОЛНЕНИЯ:
-1. Начни с проверки текущего состояния целевых файлов.
-2. Не повторяй уже сделанные и проверенные шаги.
+ПРАВИЛА ИСПОЛНЕНИЯ:
+1. НЕ НАЧИНАЙ С НУЛЯ: все модифицированные файлы уже на диске, продолжай работу ровно с места остановки.
+2. Проверь текущее состояние файлов и доведи задачу до 100% готовности.
 3. Соблюдай Мандат 8t: компиляцию и typecheck запускает только L1 оркестратор.
 4. Выдай подробный отчет с доказательствами после завершения.`;
 }
@@ -133,17 +176,21 @@ if (require.main === module) {
       console.log(generateHandoverPrompt(targetId));
     } else {
       const info = parseTranscript(targetId);
-      console.log("=== TRANSCRIPT RELAY SUMMARY ===");
+      console.log("=== DEEP TRANSCRIPT RELAY SUMMARY ===");
       console.log(`Conversation ID: ${info.conversationId}`);
       console.log(`Transcript URI:  file:///${info.transcriptPath.replace(/\\/g, "/")}`);
       console.log(`Total Steps:     ${info.totalSteps}`);
       console.log(`Tool Actions:    ${info.completedActionsCount}`);
       console.log(`Modified Files:  ${info.modifiedFiles.length}`);
-      console.log(`\n=== HANDOVER PROMPT PREVIEW ===\n`);
-      console.log(generateHandoverPrompt(targetId));
+      console.log(`Inspected Files: ${info.inspectedFiles.length}`);
+      console.log(`Commands Run:    ${info.executedCommands.length}`);
+      console.log(`Has Thinking:    ${Boolean(info.latestThinking)}`);
+      console.log(`Has Last Report: ${Boolean(info.latestAgentResponse)}`);
+      console.log("\n=== GENERATED HANDOVER PROMPT PREVIEW ===");
+      console.log(generateHandoverPrompt(targetId).slice(0, 2000) + "\n... [truncated preview]");
     }
   } catch (err) {
-    console.error("Relay Error:", err.message);
+    console.error(`[Transcript Relay Error] ${err.message}`);
     process.exit(1);
   }
 }
