@@ -64,9 +64,21 @@ const requestLoggingPluginAsync: FastifyPluginAsync = async (
 
 	// Hook 2: onResponse — Структурированное логирование завершения HTTP-запроса
 	app.addHook("onResponse", async (request: FastifyRequest, reply: FastifyReply) => {
-		// Игнорируем частые health-check запросы в обычных логах, если не dev
-		const isHealthCheck = request.url === "/api/health" || request.url === "/health";
-		if (isHealthCheck && process.env.NODE_ENV === "production") {
+		// Исключаем шумные запросы (health-check, CORS OPTIONS, favicon, metrics) из обычных логов,
+		// но всегда логируем ошибки (>= 400), если проверка здоровья упала
+		const isNoiseEndpoint =
+			request.method === "OPTIONS" ||
+			request.url === "/api/health" ||
+			request.url === "/health" ||
+			request.url === "/favicon.ico" ||
+			request.url.startsWith("/api/health/") ||
+			request.url === "/metrics";
+
+		if (isNoiseEndpoint && statusCode < 400) {
+			request.log.debug(
+				{ correlationId: request.correlationId, method: request.method, url: request.url, statusCode },
+				`[HTTP_PROBE] ${request.method} ${request.url} ${statusCode}`,
+			);
 			return;
 		}
 
