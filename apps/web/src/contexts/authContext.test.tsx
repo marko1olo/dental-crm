@@ -76,7 +76,7 @@ describe("AuthContext — изоляция контекста авторизац
 	});
 
 	test("2. Внутри AuthProvider — отдаёт переданное значение", () => {
-		let captured: AuthContextType | null = null;
+		let captured: any = null;
 		function ValueCaptureProbe() {
 			captured = useAuthContext();
 			return createElement("i", null, "захвачено");
@@ -90,11 +90,11 @@ describe("AuthContext — изоляция контекста авторизац
 		);
 
 		assert.equal(captured, mockAuthValue);
-		assert.equal(captured?.activeWorkspaceProfile?.mode, "solo");
+		assert.equal((captured as any)?.activeWorkspaceProfile?.mode, "solo");
 	});
 
 	test("3. Внутри AppLogicProvider — бесшовно извлекает auth", () => {
-		let captured: AuthContextType | null = null;
+		let captured: any = null;
 		function AppLogicFallbackProbe() {
 			captured = useAuthContext();
 			return createElement("i", null, "извлечено_из_app_logic");
@@ -112,7 +112,7 @@ describe("AuthContext — изоляция контекста авторизац
 		);
 
 		assert.equal(captured, mockAuthValue);
-		assert.equal(captured?.currentAdminSecretUnlockDomain(), "clinical");
+		assert.equal((captured as any)?.currentAdminSecretUnlockDomain(), "clinical");
 	});
 
 	test("4. useOptionalAuthContext возвращает null вне провайдера и значение внутри", () => {
