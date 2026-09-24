@@ -26,6 +26,7 @@ import {
 	search804nServices,
 	type DmsGuaranteeLetter,
 } from "./insuranceMath";
+import { DmsBillSplitCalculatorSection } from "./DmsBillSplitCalculatorSection";
 
 export interface PatientDmsProfile {
 	readonly id: string;
@@ -278,6 +279,54 @@ export function DmsGuaranteeLetterModal({
 			: activeInsurer?.shortName || "Страховая компания";
 
 	const remainingLimitRub = Math.max(0, maxCoverageRub - usedAmountRub);
+
+	const letterForSplit: DmsGuaranteeLetter = useMemo(
+		() => ({
+			id: initialLetter?.id || "preview-letter",
+			patientId: patient?.id || "preview-patient",
+			patientFullName: patient?.fullName || "Пациент ДМС",
+			insurerId: insurerKey,
+			insurerName: insurerDisplayName,
+			letterNumber: letterNumber || "ГП-ПРЕВЬЮ",
+			policyNumber: policyNumber || "ПОЛИС",
+			issueDate: issueDate || todayStr,
+			validFrom: validFrom || todayStr,
+			validUntil: validUntil || nextMonthStr,
+			maxCoverageKopecks: Math.round(maxCoverageRub * 100),
+			usedAmountKopecks: Math.round(usedAmountRub * 100),
+			franchisePercent: franchiseType === "percent" ? franchisePct : 0,
+			franchiseFixedKopecks:
+				franchiseType === "fixed_rub" ? Math.round(franchiseFixedRub * 100) : 0,
+			approvedTeethFdi: [],
+			approvedServiceCodes804n: approvedServiceCodes,
+			programExclusions: selectedExclusions,
+			notes: notes,
+			status: status,
+		}),
+		[
+			initialLetter?.id,
+			patient?.id,
+			patient?.fullName,
+			insurerKey,
+			insurerDisplayName,
+			letterNumber,
+			policyNumber,
+			issueDate,
+			todayStr,
+			validFrom,
+			validUntil,
+			nextMonthStr,
+			maxCoverageRub,
+			usedAmountRub,
+			franchiseType,
+			franchisePct,
+			franchiseFixedRub,
+			approvedServiceCodes,
+			selectedExclusions,
+			notes,
+			status,
+		],
+	);
 
 	// Фильтрация каталога 804н
 	const filteredCatalog = search804nServices(searchQuery).filter((item) => {
@@ -918,7 +967,7 @@ export function DmsGuaranteeLetterModal({
 											type="button"
 											className={`dms-btn ${isSelected ? "dms-btn-primary" : "dms-btn-secondary"}`}
 											onClick={() => toggleApprovedService(item.code)}
-											style={{ minHeight: "44px", minWidth: "120px" }}
+											style={{ minWidth: "115px" }}
 										>
 											{isSelected ? (
 												<>
@@ -935,6 +984,12 @@ export function DmsGuaranteeLetterModal({
 							})}
 						</div>
 					</div>
+
+					{/* 5. Интерактивный калькулятор распределения счета визита (ДМС / Пациент) */}
+					<DmsBillSplitCalculatorSection
+						letter={letterForSplit}
+						billItems={DEFAULT_BILL_ITEMS_TO_SPLIT}
+					/>
 
 					{/* Примечания */}
 					<div className="dms-field-group">

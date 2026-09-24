@@ -42,6 +42,9 @@ import {
 	calculateMedicationDosage,
 	formatPatientPrescriptionMemo,
 	normalizeDrugId,
+	validateDentalMnn,
+	validateLatinRxSigna,
+	validatePrescriptionDosage,
 	type DosageCalculationResult,
 } from "./generator/prescriptionEngine";
 import { DENTAL_MEDICATIONS_CATALOG, type DentalMedicationPreset } from "./generator/prescriptionPresets";
@@ -62,6 +65,24 @@ export interface DentalFastPrescriptionSet {
 }
 
 export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[] = [
+	{
+		id: "pulpitis_acute_relief",
+		label: "«Пульпит (купирование острой боли и воспаления)»",
+		desc: "Нимесил 100 мг №9 + Омепразол 20 мг №20 + Хлоргексидин 0.05% 100 мл (купирование острой боли и асептического воспаления пульпы)",
+		drugIds: ["nimesulide_100", "chlorhexidine_005"],
+	},
+	{
+		id: "alveolitis_dry_socket",
+		label: "«Альвеолит / Сухая лунка (постэкстракционный синдром)»",
+		desc: "Амоксиклав 875/125 мг №14 + Нимесил 100 мг №9 + Холисал гель 10 г + Хлоргексидин 0.05% 100 мл (протокол лечения альвеолита)",
+		drugIds: ["amoxiclav_875_125", "nimesulide_100", "cholisal_gel", "chlorhexidine_005"],
+	},
+	{
+		id: "post_tooth_extraction",
+		label: "«После удаления зуба (хирургический протокол)»",
+		desc: "Ибупрофен 400 мг №20 + Хлоргексидин 0.05% 100 мл + Супрастин 25 мг №20 (противоболевой, антисептический и противоотечный комплекс)",
+		drugIds: ["ibuprofen_400", "chlorhexidine_005", "suprastin_25"],
+	},
 	{
 		id: "amoxiclav_first_line",
 		label: "«Антибиотик первого ряда (Амоксиклав 875+125 мг)»",
@@ -516,6 +537,25 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		for (const extra of DENTAL_OUTPATIENT_EXTENDED_DRUGS) {
 			if (!combined.some((d) => d.id === extra.id)) {
 				combined.push(extra);
+			}
+		}
+		for (const med of DENTAL_MEDICATIONS_CATALOG) {
+			if (!combined.some((d) => d.id === med.id)) {
+				combined.push({
+					id: med.id,
+					tradeNameRu: med.tradeNameRu,
+					activeSubstanceRu: med.activeSubstanceRu,
+					category: med.category as any,
+					categoryLabel: med.categoryLabelRu,
+					categoryLabelRu: med.categoryLabelRu,
+					latinRp: med.latinRp,
+					formRu: med.formRu,
+					dosageRu: med.dosageRu,
+					quantityLabel: med.quantityLabel,
+					dispenseLatin: med.dispenseLatin,
+					signaRu: med.signaRu,
+					validityDays: med.validityDays,
+				} as any);
 			}
 		}
 		if (activeForm === "148-1u-88") {

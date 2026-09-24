@@ -1,6 +1,8 @@
 export * from "./insuranceCatalogs.js";
 export {
 	calculateDmsCoPaymentSplit,
+	calculateDmsCoPaymentSplitWithPayment,
+	calculatePatientPaymentSplit,
 	buildDmsReconciliationRegistry,
 	exportDmsRegistryToCsv,
 	kopecksToRubles,
@@ -15,8 +17,11 @@ export {
 	type DmsSplitCalculationResult,
 	type DmsRegistryItem,
 	type DmsReconciliationRegistry,
+	type PatientPaymentMethod,
+	type PatientPaymentSplit,
 } from "./dmsSplitEngine.js";
 export * from "./DmsGuaranteeLetterModal.js";
+export * from "./DmsBillSplitCalculatorSection.js";
 export * from "./DmsRegistryExportModal.js";
 export * from "./dmsClaimRegistryExport.js";
 export {

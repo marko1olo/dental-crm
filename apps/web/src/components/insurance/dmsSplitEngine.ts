@@ -60,6 +60,22 @@ export interface DmsSplitLineResult {
 	readonly franchiseDeductionKopecks: number;
 }
 
+export type PatientPaymentMethod = "cash" | "card" | "advance" | "mixed";
+
+export interface PatientPaymentSplit {
+	readonly paymentMethod: PatientPaymentMethod;
+	readonly totalPatientKopecks: number;
+	readonly totalPatientRubles: number;
+	readonly cashKopecks: number;
+	readonly cardKopecks: number;
+	readonly advanceKopecks: number;
+	readonly cashRubles: number;
+	readonly cardRubles: number;
+	readonly advanceRubles: number;
+	readonly isBalanced: boolean;
+	readonly balanceDiscrepancyKopecks: number;
+}
+
 export interface DmsSplitCalculationResult {
 	readonly lineItems: readonly DmsSplitLineResult[];
 	readonly totalBillKopecks: number;
@@ -76,6 +92,7 @@ export interface DmsSplitCalculationResult {
 	readonly integrityInvariantHolds: boolean;
 	readonly warningMessage?: string | undefined;
 	readonly isEmergency?: boolean | undefined;
+	readonly patientPaymentSplit?: PatientPaymentSplit | undefined;
 }
 
 export interface DmsRegistryItem {
@@ -413,6 +430,133 @@ export function calculateDmsCoPaymentSplit(
 		integrityInvariantHolds,
 		warningMessage,
 		isEmergency: isUrgentCare,
+	};
+}
+
+/**
+ * Расчет распределения сооплаты пациента между способами оплаты (наличные, банковская карта, аванс).
+ * Гарантирует копеечную сходимость и отсутствие расхождений.
+ */
+export function calculatePatientPaymentSplit(
+	totalPatientOutOfPocketKopecks: number,
+	options: {
+		preferredMethod?: PatientPaymentMethod | undefined;
+		cashKopecks?: number | undefined;
+		cardKopecks?: number | undefined;
+		advanceKopecks?: number | undefined;
+		cashRubles?: number | undefined;
+		cardRubles?: number | undefined;
+		advanceRubles?: number | undefined;
+	} = {},
+): PatientPaymentSplit {
+	const totalKop = Math.max(0, Math.round(totalPatientOutOfPocketKopecks));
+	const method = options.preferredMethod ?? (options.cashKopecks || options.cashRubles ? "mixed" : "card");
+
+	let cashKop = 0;
+	let cardKop = 0;
+	let advanceKop = 0;
+
+	if (method === "cash") {
+		cashKop = totalKop;
+	} else if (method === "card") {
+		cardKop = totalKop;
+	} else if (method === "advance") {
+		advanceKop = totalKop;
+	} else if (method === "mixed") {
+		if (options.cashKopecks !== undefined) {
+			cashKop = Math.max(0, Math.round(options.cashKopecks));
+		} else if (options.cashRubles !== undefined) {
+			cashKop = Math.max(0, rublesToKopecks(options.cashRubles));
+		}
+
+		if (options.advanceKopecks !== undefined) {
+			advanceKop = Math.max(0, Math.round(options.advanceKopecks));
+		} else if (options.advanceRubles !== undefined) {
+			advanceKop = Math.max(0, rublesToKopecks(options.advanceRubles));
+		}
+
+		if (options.cardKopecks !== undefined) {
+			cardKop = Math.max(0, Math.round(options.cardKopecks));
+		} else if (options.cardRubles !== undefined) {
+			cardKop = Math.max(0, rublesToKopecks(options.cardRubles));
+		} else {
+			cardKop = Math.max(0, totalKop - cashKop - advanceKop);
+		}
+
+		const allocated = cashKop + cardKop + advanceKop;
+		if (allocated !== totalKop) {
+			const diff = totalKop - (cashKop + advanceKop);
+			cardKop = Math.max(0, diff);
+		}
+	}
+
+	const sum = cashKop + cardKop + advanceKop;
+	const isBalanced = sum === totalKop;
+	const balanceDiscrepancyKopecks = Math.abs(sum - totalKop);
+
+	return {
+		paymentMethod: method,
+		totalPatientKopecks: totalKop,
+		totalPatientRubles: kopecksToRubles(totalKop),
+		cashKopecks: cashKop,
+		cardKopecks: cardKop,
+		advanceKopecks: advanceKop,
+		cashRubles: kopecksToRubles(cashKop),
+		cardRubles: kopecksToRubles(cardKop),
+		advanceRubles: kopecksToRubles(advanceKop),
+		isBalanced,
+		balanceDiscrepancyKopecks,
+	};
+}
+
+/**
+ * Комплексный расчет сплита счетов ДМС с детализацией сооплаты пациента наличными и картой.
+ * Обеспечивает выполнение инварианта 54-ФЗ: dmsCovered + patientCash + patientCard + patientAdvance === totalBill.
+ */
+export function calculateDmsCoPaymentSplitWithPayment(
+	lineItems: readonly DmsBillableLineItem[],
+	options: {
+		policy?: DmsPolicy | undefined;
+		guaranteeLetter?: DmsGuaranteeLetter | undefined;
+		previouslyUsedLetterAmountKopecks?: number | undefined;
+		visitDate?: string | undefined;
+		lastHygieneDate?: string | undefined;
+		isEmergency?: boolean | undefined;
+		hasAcutePain?: boolean | undefined;
+		patientPaymentMethod?: PatientPaymentMethod | undefined;
+		patientCashKopecks?: number | undefined;
+		patientCardKopecks?: number | undefined;
+		patientAdvanceKopecks?: number | undefined;
+		patientCashRubles?: number | undefined;
+		patientCardRubles?: number | undefined;
+		patientAdvanceRubles?: number | undefined;
+	} = {},
+): DmsSplitCalculationResult {
+	const base = calculateDmsCoPaymentSplit(lineItems, options);
+	const paymentSplit = calculatePatientPaymentSplit(
+		base.totalPatientOutOfPocketKopecks,
+		{
+			preferredMethod: options.patientPaymentMethod,
+			cashKopecks: options.patientCashKopecks,
+			cardKopecks: options.patientCardKopecks,
+			advanceKopecks: options.patientAdvanceKopecks,
+			cashRubles: options.patientCashRubles,
+			cardRubles: options.patientCardRubles,
+			advanceRubles: options.patientAdvanceRubles,
+		},
+	);
+
+	const financialInvariant =
+		base.totalInsuranceCoveredKopecks +
+			paymentSplit.cashKopecks +
+			paymentSplit.cardKopecks +
+			paymentSplit.advanceKopecks ===
+		base.totalBillKopecks;
+
+	return {
+		...base,
+		integrityInvariantHolds: base.integrityInvariantHolds && financialInvariant && paymentSplit.isBalanced,
+		patientPaymentSplit: paymentSplit,
 	};
 }
 

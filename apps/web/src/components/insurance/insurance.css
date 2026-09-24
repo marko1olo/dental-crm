@@ -76,18 +76,18 @@
 	background: var(--surface, #f8fafc);
 }
 
-/* Touch Targets >= 44px */
+/* Эргономика элементов управления: десктоп 32–36px, тач/мобильные 44px */
 .dms-btn {
-	min-height: 44px;
-	min-width: 44px;
-	padding: 10px 18px;
-	border-radius: 12px;
-	font-size: 0.875rem;
+	min-height: 34px;
+	height: 34px;
+	padding: 6px 14px;
+	border-radius: 8px;
+	font-size: 0.8125rem;
 	font-weight: 600;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 8px;
+	gap: 6px;
 	cursor: pointer;
 	transition: all 0.15s ease-in-out;
 	border: 1px solid transparent;
@@ -139,8 +139,12 @@
 }
 
 .dms-btn-icon {
-	padding: 10px;
-	border-radius: 10px;
+	min-height: 34px;
+	height: 34px;
+	min-width: 34px;
+	width: 34px;
+	padding: 6px;
+	border-radius: 8px;
 }
 
 /* Формы и поля ввода */
@@ -157,15 +161,28 @@
 }
 
 .dms-input,
-.dms-select,
-.dms-textarea {
-	min-height: 44px;
-	padding: 10px 14px;
-	border-radius: 12px;
+.dms-select {
+	min-height: 34px;
+	height: 34px;
+	padding: 6px 10px;
+	border-radius: 8px;
 	border: 1px solid var(--line, #cbd5e1);
 	background: var(--paper, #ffffff);
 	color: var(--ink, #0f172a);
-	font-size: 0.875rem;
+	font-size: 0.8125rem;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.dms-textarea {
+	min-height: 64px;
+	padding: 8px 10px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.8125rem;
 	transition: border-color 0.15s ease, box-shadow 0.15s ease;
 	box-sizing: border-box;
 	width: 100%;
@@ -217,17 +234,20 @@
 
 /* Чекбоксы и бейджи исключений */
 .dms-checkbox-pill {
-	min-height: 44px;
+	min-height: 32px;
+	height: 32px;
 	display: inline-flex;
 	align-items: center;
-	gap: 10px;
-	padding: 8px 14px;
-	border-radius: 12px;
+	gap: 8px;
+	padding: 4px 10px;
+	border-radius: 8px;
 	border: 1px solid var(--line, #cbd5e1);
 	background: var(--paper, #ffffff);
 	cursor: pointer;
 	user-select: none;
+	font-size: 0.75rem;
 	transition: all 0.15s ease;
+	box-sizing: border-box;
 }
 
 .dms-checkbox-pill.active {
@@ -512,6 +532,43 @@
 	background: var(--paper, #0f172a);
 	border-color: var(--line, #334155);
 	color: var(--ink, #f8fafc);
+}
+
+/* Touch-адаптация для мобильных устройств и сенсорных экранов (pointer: coarse / max-width: 640px) */
+@media (pointer: coarse), (max-width: 640px) {
+	.dms-btn {
+		min-height: 44px;
+		height: 44px;
+		padding: 10px 18px;
+		border-radius: 12px;
+		font-size: 0.875rem;
+	}
+
+	.dms-btn-icon {
+		min-height: 44px;
+		height: 44px;
+		min-width: 44px;
+		width: 44px;
+		padding: 10px;
+		border-radius: 10px;
+	}
+
+	.dms-input,
+	.dms-select {
+		min-height: 44px;
+		height: 44px;
+		padding: 10px 14px;
+		border-radius: 12px;
+		font-size: 0.875rem;
+	}
+
+	.dms-checkbox-pill {
+		min-height: 44px;
+		height: 44px;
+		padding: 8px 14px;
+		border-radius: 12px;
+		font-size: 0.875rem;
+	}
 }
 
 /* Стили печати для документов */

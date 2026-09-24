@@ -168,8 +168,7 @@ export function DmsRegistryExportModal({
 			showToast("Разрешите всплывающие окна для печати акта", "warning");
 		}
 	};
-
-	return createPortal(
+	const modalContent = (
 		<div className="dms-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
 			<div
 				className="dms-modal-window"
@@ -514,7 +513,8 @@ export function DmsRegistryExportModal({
 					</div>
 				</div>
 			</div>
-		</div>,
-		document.body,
+		</div>
 	);
+
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 }

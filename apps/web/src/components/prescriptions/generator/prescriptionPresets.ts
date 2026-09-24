@@ -7,7 +7,7 @@ export interface DentalMedicationPreset {
 	readonly id: string;
 	readonly tradeNameRu: string;
 	readonly activeSubstanceRu: string;
-	readonly category: "antibiotic" | "nsaid" | "antiseptic" | "dental_gel" | "antihistamine" | "controlled_pku" | "hemostatic" | "gastroprotective" | "preferential_somatic" | "other";
+	readonly category: "antibiotic" | "nsaid" | "antiseptic" | "dental_gel" | "antihistamine" | "controlled_pku" | "hemostatic" | "gastroprotective" | "preferential_somatic" | "anesthetic" | "other";
 	readonly categoryLabelRu: string;
 	readonly latinRp: string;
 	readonly formRu: string;
@@ -299,6 +299,34 @@ export const DENTAL_MEDICATIONS_CATALOG: readonly DentalMedicationPreset[] = [
 		signaRu: "S. Внутрь по 1 капсуле (20 мг) утром за 30 минут до завтрака на весь период приема НПВП, курс 5-10 дней.",
 		validityDays: 60,
 	},
+	{
+		id: "articaine_epinephrine_100",
+		tradeNameRu: "Ультракаин Д-С форте (Артикаин 4% + Эпинефрин 1:100 000)",
+		activeSubstanceRu: "Артикаин + Эпинефрин",
+		category: "anesthetic",
+		categoryLabelRu: "Местный анестетик (амидный ряд с вазоконстриктором)",
+		latinRp: "Rp.: Sol. Articaini 4% cum Epinephrino 1:100 000 - 1.7 ml",
+		formRu: "раствор для инъекций (карпулы)",
+		dosageRu: "4% (68 мг/1.7 мл) + 1:100 000",
+		quantityLabel: "N. 10 (карпулы)",
+		dispenseLatin: "D.t.d. N 10 in carpp.",
+		signaRu: "S. Для инфильтрационной и проводниковой анестезии в амбулаторной стоматологии (1-2 карпулы, 1.7-3.4 мл).",
+		validityDays: 60,
+	},
+	{
+		id: "articaine_epinephrine_200",
+		tradeNameRu: "Ультракаин Д-С (Артикаин 4% + Эпинефрин 1:200 000)",
+		activeSubstanceRu: "Артикаин + Эпинефрин",
+		category: "anesthetic",
+		categoryLabelRu: "Местный анестетик (пониженная концентрация вазоконстриктора)",
+		latinRp: "Rp.: Sol. Articaini 4% cum Epinephrino 1:200 000 - 1.7 ml",
+		formRu: "раствор для инъекций (карпулы)",
+		dosageRu: "4% (68 мг/1.7 мл) + 1:200 000",
+		quantityLabel: "N. 10 (карпулы)",
+		dispenseLatin: "D.t.d. N 10 in carpp.",
+		signaRu: "S. Для инфильтрационной и проводниковой анестезии у пациентов с сердечно-сосудистой патологией.",
+		validityDays: 60,
+	},
 ];
 
 export interface DentalFastPrescriptionPackage {
@@ -310,6 +338,27 @@ export interface DentalFastPrescriptionPackage {
 }
 
 export const DENTAL_FAST_PRESCRIPTION_PACKAGES: readonly DentalFastPrescriptionPackage[] = [
+	{
+		id: "pulpitis_acute_relief",
+		label: "«Пульпит (купирование острого болевого синдрома и воспаления)»",
+		desc: "Нимесил 100 мг №9 + Омепразол 20 мг №20 + Хлоргексидин 0.05% 100 мл (купирование острой боли и асептического воспаления пульпы)",
+		drugIds: ["nimesil_100", "omeprazole_20", "chlorhexidine_005"],
+		badge: "Пульпит",
+	},
+	{
+		id: "alveolitis_dry_socket",
+		label: "«Альвеолит / Сухая лунка (постэкстракционный синдром)»",
+		desc: "Амоксиклав 875/125 мг №14 + Нимесил 100 мг №9 + Холисал гель 10 г + Хлоргексидин 0.05% 100 мл (протокол лечения альвеолита)",
+		drugIds: ["amoxiclav_875_125", "nimesil_100", "holisal_gel", "chlorhexidine_005"],
+		badge: "Альвеолит",
+	},
+	{
+		id: "post_tooth_extraction",
+		label: "«После удаления зуба (стандартный хирургический протокол)»",
+		desc: "Ибупрофен 400 мг №20 + Хлоргексидин 0.05% 100 мл + Супрастин 25 мг №20 (противоболевой, антисептический и противоотечный комплекс)",
+		drugIds: ["ibuprofen_400", "chlorhexidine_005", "suprastin_25"],
+		badge: "После удаления",
+	},
 	{
 		id: "amoxiclav_first_line",
 		label: "«Антибиотик первого ряда (Амоксиклав 875+125 мг)»",
