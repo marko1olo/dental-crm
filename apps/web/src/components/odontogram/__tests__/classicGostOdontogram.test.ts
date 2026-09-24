@@ -213,8 +213,11 @@ describe("Classic GOST 043/u — Single-Key & Sequence Hotkey Parser", () => {
 		assert.equal(getToothStateFromHotkey("з"), "Healthy");
 		assert.equal(getToothStateFromHotkey("З"), "Healthy");
 		assert.equal(getToothStateFromHotkey("h"), "Healthy");
-		assert.equal(getToothStateFromHotkey("р"), "Healthy");
 		assert.equal(getToothStateFromHotkey("z"), "Healthy");
+		assert.equal(getToothStateFromHotkey("р"), "Retained");
+		assert.equal(getToothStateFromHotkey("Р"), "Retained");
+		assert.equal(getToothStateFromHotkey("r"), "Root");
+		assert.equal(getToothStateFromHotkey("R"), "Root");
 	});
 
 	test("Распознавание двухбуквенных последовательностей (Пт, Кр, Ип, Pt)", () => {

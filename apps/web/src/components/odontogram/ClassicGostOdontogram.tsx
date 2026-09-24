@@ -300,12 +300,11 @@ export function getToothStateFromHotkey(
 	}
 
 	// Single key mappings:
-	// 1-Click fast keys: К (Caries), П (Filled), Е (Periodontitis), Ф (Pulpitis), Ц (Crown), И (Implant), 0 (Missing), З (Healthy)
+	// 1-Click fast keys: К (Caries), П (Filled), Е (Periodontitis), Ф (Pulpitis), Ц (Crown), И (Implant), 0 (Missing), З (Healthy), Р (Retained), R (Root)
 	switch (k) {
 		case "к":
 		case "k":
 		case "c":
-		case "r":
 			return "Caries";
 		case "п":
 		case "p":
@@ -337,9 +336,12 @@ export function getToothStateFromHotkey(
 			return "Missing";
 		case "з":
 		case "h":
-		case "р":
 		case "z":
 			return "Healthy";
+		case "р":
+			return "Retained";
+		case "r":
+			return "Root";
 		default:
 			return null;
 	}

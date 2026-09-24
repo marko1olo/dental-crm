@@ -100,7 +100,8 @@ describe("54-FZ FFD 1.2 Fiscal Routes Suite (/api/fiscal/*)", () => {
 		}
 	});
 
-	it("1.1 POST /api/fiscal/validate — Pre-flight validation with Minzdrav 804n code and DataMatrix marking", async () => {
+	it("1.1 POST /api/fiscal/validate — Pre-flight validation with Minzdrav 804n code and DataMatrix marking", async (context) => {
+		if (!databaseAvailable) return context.skip("Database unavailable");
 		const payload = {
 			patientId: PATIENT_ID,
 			operationType: "income",
@@ -158,7 +159,8 @@ describe("54-FZ FFD 1.2 Fiscal Routes Suite (/api/fiscal/*)", () => {
 		assert.ok(body.compiledReceipt.items[0].tag2000_markingPayload);
 	});
 
-	it("1.2 POST /api/fiscal/validate — Rejects unbalanced split tender sum", async () => {
+	it("1.2 POST /api/fiscal/validate — Rejects unbalanced split tender sum", async (context) => {
+		if (!databaseAvailable) return context.skip("Database unavailable");
 		const payload = {
 			patientId: PATIENT_ID,
 			customerContact: "+79991112233",

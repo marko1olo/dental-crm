@@ -126,6 +126,7 @@ function stubTransaction(options: {
 				values: () => ({ returning: async () => options.insertedRows ?? [] }),
 			};
 		},
+		execute: async () => [],
 	};
 	mock.method(db, "transaction", async (callback: (tx: unknown) => unknown) =>
 		callback(tx),
@@ -203,5 +204,38 @@ describe("createPaymentInDb", () => {
 		assert.strictEqual(result.id, "pay-123");
 		assert.strictEqual(result.amountRub, 0);
 		assert.strictEqual(calls.insert, 1);
+	});
+
+	test("успешно проводит смешанную оплату (split payment) с точностью до копейки и создает 2 записи (cash + card)", async () => {
+		const calls = stubTransaction({ insertedRows: [mockPaymentData] });
+
+		const result = await createPaymentInDb("org-123", {
+			patientId: "pat-123",
+			amountRub: 4000,
+			method: "split" as any,
+			cashAmountKopecks: 150050,
+			electronicAmountKopecks: 249950,
+			clientMutationId: "split-mut-1",
+		});
+
+		assert.strictEqual(result.amountRub, 4000);
+		// Должно быть ровно 2 вставки: наличная и безналичная части
+		assert.strictEqual(calls.insert, 2);
+	});
+
+	test("отклоняет смешанную оплату, если сумма частей не совпадает с общей суммой", async () => {
+		stubTransaction({ insertedRows: [mockPaymentData] });
+
+		await assert.rejects(
+			() =>
+				createPaymentInDb("org-123", {
+					patientId: "pat-123",
+					amountRub: 4000,
+					method: "split" as any,
+					cashAmountKopecks: 100000,
+					electronicAmountKopecks: 200000, // 1000 + 2000 = 3000 != 4000
+				}),
+			/не совпадает с общей суммой/,
+		);
 	});
 });

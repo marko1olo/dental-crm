@@ -31,6 +31,8 @@ export type DayGroupingAppointment = {
 	chairId: string | null;
 	patientId: string | null;
 	assistantUserId?: string | null;
+	invoice?: { status?: string; [key: string]: unknown } | null;
+	visit?: { invoice?: { status?: string; [key: string]: unknown } | null; [key: string]: unknown } | null;
 };
 
 /**

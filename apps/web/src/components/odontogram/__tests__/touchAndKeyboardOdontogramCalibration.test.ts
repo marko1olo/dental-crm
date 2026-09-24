@@ -103,6 +103,8 @@ describe("Odontogram High-Speed Keyboard Triggers & 1-Key Assigning", () => {
 			{ key: "0", expected: "Missing" },
 			{ key: "з", expected: "Healthy" },
 			{ key: "З", expected: "Healthy" },
+			{ key: "р", expected: "Retained" },
+			{ key: "Р", expected: "Retained" },
 		];
 
 		for (const { key, expected } of cyrillicMappings) {
@@ -117,8 +119,8 @@ describe("Odontogram High-Speed Keyboard Triggers & 1-Key Assigning", () => {
 
 	test("Latin QWERTY phonetic/layout equivalents trigger corresponding clinical states", () => {
 		const latinMappings: Array<{ key: string; expected: ToothState }> = [
-			{ key: "r", expected: "Caries" },
-			{ key: "R", expected: "Caries" },
+			{ key: "r", expected: "Root" },
+			{ key: "R", expected: "Root" },
 			{ key: "k", expected: "Caries" },
 			{ key: "c", expected: "Caries" },
 			{ key: "g", expected: "Filled" },

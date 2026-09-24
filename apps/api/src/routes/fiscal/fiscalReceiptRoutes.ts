@@ -926,7 +926,7 @@ export async function registerFiscalReceiptRoutes(
 							success: true,
 							replayed: true,
 							refundQueueId: existingRow.id,
-							status: existingRow.status,
+							status: existingRow.status === "hardware_offline" ? "hardware_offline" : "completed",
 							originalReceiptNumber: data.originalReceiptNumber,
 							fnSerial: (storedPayload["fnSerial"] as string) || undefined,
 							fiscalDocumentNumber: (storedPayload["fiscalDocumentNumber"] as string) || undefined,
@@ -970,12 +970,19 @@ export async function registerFiscalReceiptRoutes(
 				let validPaymentId: string | null = null;
 				if (data.originalPaymentId) {
 					const [existingPayment] = await tx
-						.select({ id: payments.id })
+						.select({ id: payments.id, amountRub: payments.amountRub })
 						.from(payments)
 						.where(and(eq(payments.id, data.originalPaymentId), eq(payments.organizationId, orgId)))
 						.limit(1);
 					if (existingPayment) {
 						validPaymentId = existingPayment.id;
+						const origKop = Math.round(Number(existingPayment.amountRub) * 100);
+						if (data.totalRefundKopecks >= origKop) {
+							await tx
+								.update(payments)
+								.set({ status: "refunded" })
+								.where(eq(payments.id, validPaymentId));
+						}
 					}
 				}
 
@@ -1010,7 +1017,7 @@ export async function registerFiscalReceiptRoutes(
 					success: true,
 					replayed: false,
 					refundQueueId: queueRow?.id,
-					status: queueRow?.status,
+					status: isOffline ? "hardware_offline" : "completed",
 					originalReceiptNumber: data.originalReceiptNumber,
 					fnSerial: printResult.fnSerial,
 					fiscalDocumentNumber: printResult.fiscalDocumentNumber,
@@ -1061,12 +1068,19 @@ export async function registerFiscalReceiptRoutes(
 			let validPaymentId: string | null = null;
 			if (data.originalPaymentId) {
 				const [existingPayment] = await tx
-					.select({ id: payments.id })
+					.select({ id: payments.id, amountRub: payments.amountRub })
 					.from(payments)
 					.where(and(eq(payments.id, data.originalPaymentId), eq(payments.organizationId, orgId)))
 					.limit(1);
 				if (existingPayment) {
 					validPaymentId = existingPayment.id;
+					const origKop = Math.round(Number(existingPayment.amountRub) * 100);
+					if (data.totalRefundKopecks >= origKop) {
+						await tx
+							.update(payments)
+							.set({ status: "refunded" })
+							.where(eq(payments.id, validPaymentId));
+					}
 				}
 			}
 
@@ -1090,7 +1104,7 @@ export async function registerFiscalReceiptRoutes(
 				success: true,
 				replayed: false,
 				refundQueueId: queueRow?.id,
-				status: queueRow?.status,
+				status: isOffline ? "hardware_offline" : "completed",
 				originalReceiptNumber: data.originalReceiptNumber,
 				fnSerial: printResult.fnSerial,
 				fiscalDocumentNumber: printResult.fiscalDocumentNumber,

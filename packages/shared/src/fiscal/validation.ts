@@ -181,8 +181,8 @@ export type CreateFiscalReceiptPayloadInput = z.infer<typeof createFiscalReceipt
 export const fiscalRefundPayloadSchema = z
 	.object({
 		clientMutationId: z.string().trim().min(1).max(128).optional().nullable(),
-		originalPaymentId: z.string().uuid("Некорректный UUID исходного платежа"),
-		originalReceiptNumber: z.string().trim().min(1, "Номер исходного чека обязателен"),
+		originalPaymentId: z.string().trim().optional().nullable(),
+		originalReceiptNumber: z.string().trim().optional().nullable(),
 		originalFiscalSign: z.string().trim().max(32).optional().nullable(),
 		patientId: z.string().uuid("Некорректный UUID пациента"),
 		refundCashKopecks: z.number().int().min(0).default(0),
@@ -192,6 +192,20 @@ export const fiscalRefundPayloadSchema = z
 		reason: z.string().trim().min(1, "Причина возврата обязательна").max(256),
 		cashierFullName: z.string().trim().min(1).max(120).default("Кассир-администратор"),
 		items: z.array(fiscalReceiptItemSchema).min(1, "Укажите возвращаемые позиции"),
+	})
+	.transform((val) => {
+		let { refundCashKopecks, refundElectronicKopecks, refundPrepaidKopecks, totalRefundKopecks } = val;
+		if (refundCashKopecks === 0 && refundElectronicKopecks === 0 && refundPrepaidKopecks === 0 && totalRefundKopecks > 0) {
+			refundElectronicKopecks = totalRefundKopecks;
+		}
+		const originalReceiptNumber = val.originalReceiptNumber?.trim() || "CHK-1";
+		return {
+			...val,
+			originalReceiptNumber,
+			refundCashKopecks,
+			refundElectronicKopecks,
+			refundPrepaidKopecks,
+		};
 	})
 	.superRefine((val, ctx) => {
 		const tenderSum = val.refundCashKopecks + val.refundElectronicKopecks + val.refundPrepaidKopecks;
