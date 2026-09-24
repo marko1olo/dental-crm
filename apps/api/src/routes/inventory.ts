@@ -519,11 +519,11 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 					parsedStock.data.batchNumber ||
 					parsedStock.data.lotNumber ||
 					item.lotNumber ||
-					undefined;
+					`BATCH-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`;
 				const expirationDate =
 					parsedStock.data.expirationDate ||
 					item.expirationDate ||
-					undefined;
+					getDefaultExpirationDate();
 				const purchasePrice =
 					parsedStock.data.purchasePricePerUnit != null
 						? parsedStock.data.purchasePricePerUnit
@@ -534,8 +534,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				const createdBatch = await fefoStockService.receiveBatch(tx, {
 					organizationId,
 					inventoryItemId: itemId,
-					batchNumber: batchNumber || undefined,
-					expirationDate: expirationDate || undefined,
+					batchNumber,
+					expirationDate,
 					manufactureDate: parsedStock.data.manufactureDate || undefined,
 					quantity: actualAdjustment,
 					purchasePricePerUnit: purchasePrice,

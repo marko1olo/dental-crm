@@ -799,7 +799,7 @@ export async function createPaymentInDb(
 		} else {
 			const effectiveMethod = (input.method === "split" || input.method === "mixed")
 				? "card"
-				: (input.method === "deposit" || (input.method as string) === "family_deposit")
+				: ((input.method as string) === "deposit" || (input.method as string) === "family_deposit")
 				? "family_wallet"
 				: input.method;
 

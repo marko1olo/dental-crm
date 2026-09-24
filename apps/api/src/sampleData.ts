@@ -7455,6 +7455,10 @@ function _createPayment(input: CreatePaymentInput): Payment {
 	assertPaidPaymentFiscalReceiptOperation(input);
 	const fiscalReceipt = normalizeFiscalReceiptDetails(input.fiscalReceipt);
 	const clientMutationId = input.clientMutationId?.trim() || null;
+	const effectiveMethod =
+		input.method === "split" || input.method === "mixed"
+			? "card"
+			: input.method;
 	const payment: Payment = {
 		id: randomUUID(),
 		organizationId,
@@ -7462,7 +7466,7 @@ function _createPayment(input: CreatePaymentInput): Payment {
 		visitId: input.visitId ?? null,
 		documentId: input.documentId ?? null,
 		amountRub: input.amountRub,
-		method: input.method,
+		method: effectiveMethod,
 		status: "paid",
 		paidAt: createdAt,
 		createdAt,

@@ -496,7 +496,6 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 				.update(appointments)
 				.set({
 					status: "in_treatment",
-					updatedAt: new Date(),
 				})
 				.where(
 					and(
@@ -647,7 +646,6 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 					.update(appointments)
 					.set({
 						status: "completed",
-						updatedAt: new Date(),
 					})
 					.where(
 						and(
@@ -856,7 +854,6 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 					.update(appointments)
 					.set({
 						status: "completed",
-						updatedAt: new Date(),
 					})
 					.where(
 						and(
