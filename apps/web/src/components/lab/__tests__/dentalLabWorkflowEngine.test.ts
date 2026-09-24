@@ -363,7 +363,8 @@ describe("7. Vector SVG Generators (Одонтограмма, Barcode, QR)", () 
 	test("generateQrCodeSvg генерирует матричный QR-код", () => {
 		const svg = generateQrCodeSvg("DENTE-ZTL:1042", 90);
 		assert.ok(svg.includes("<svg"));
-		assert.ok(svg.includes("viewBox=\"0 0 90 90\""));
+		assert.ok(svg.includes("viewBox="));
+		assert.ok(svg.includes('width="90"'));
 		assert.ok(svg.includes("<rect"));
 	});
 });

@@ -138,6 +138,7 @@ export interface GeminiBidiBridgeOptions {
 	readonly sampleRate?: number | undefined;
 	readonly proxyUrl?: string | undefined;
 	readonly maxRetryAttempts?: number | undefined;
+	readonly maxBufferSizeBytes?: number | undefined;
 	readonly providerId?: ("google_speech" | "gemini_transcribe_live") | undefined;
 	readonly wsFactory?:
 		| ((
@@ -147,6 +148,9 @@ export interface GeminiBidiBridgeOptions {
 		  ) => WebSocket)
 		| undefined;
 }
+
+export const DEFAULT_MAX_BIDI_BUFFER_BYTES = 8 * 1024 * 1024; // 8MB per connection ceiling
+export const MAX_SINGLE_AUDIO_CHUNK_BYTES = 2 * 1024 * 1024; // 2MB max single audio chunk
 
 /**
  * Builds the dental system instruction with speech biasing terms.
@@ -377,6 +381,8 @@ export class GeminiBidiBridge extends EventEmitter {
 	private reconnectAttempts = 0;
 	private readonly maxRetries: number;
 	private readonly audioQueue: Buffer[] = [];
+	private audioQueueBytes = 0;
+	private readonly maxBufferSizeBytes: number;
 	private fullFinalizedText = "";
 	private currentInterimText = "";
 
@@ -402,6 +408,8 @@ export class GeminiBidiBridge extends EventEmitter {
 		this.maxRetries =
 			options.maxRetryAttempts ??
 			Math.max(1, keyRetryLimit(provider) || 8);
+		this.maxBufferSizeBytes =
+			options.maxBufferSizeBytes ?? DEFAULT_MAX_BIDI_BUFFER_BYTES;
 	}
 
 	public get activeKeyFingerprint(): string | null {
@@ -444,7 +452,7 @@ export class GeminiBidiBridge extends EventEmitter {
 				const error = new Error(
 					`[GeminiBidiBridge] No available API keys in key pool for provider "${provider}" (tried ${this.triedFingerprints.size} keys)`,
 				);
-				this.emit("error", error);
+				this.safeEmitError(error);
 				throw error;
 			}
 			this.currentKey = candidate;
@@ -563,7 +571,7 @@ export class GeminiBidiBridge extends EventEmitter {
 				);
 				return;
 			}
-			this.emit("error", new Error(`[Gemini Live STT ${code}]: ${message}`));
+			this.safeEmitError(new Error(`[Gemini Live STT ${code}]: ${message}`));
 			return;
 		}
 
@@ -604,7 +612,7 @@ export class GeminiBidiBridge extends EventEmitter {
 			this.rotateKeyAndReconnect(error);
 			return;
 		}
-		this.emit("error", error);
+		this.safeEmitError(error);
 	}
 
 	private handleSocketClose(code: number, reason: string): void {
@@ -636,7 +644,7 @@ export class GeminiBidiBridge extends EventEmitter {
 			setTimeout(() => {
 				if (!this.isClosed) {
 					this.initiateSocketConnection().catch((reconnErr) => {
-						this.emit("error", reconnErr);
+						this.safeEmitError(reconnErr);
 					});
 				}
 			}, 1000);
@@ -659,13 +667,12 @@ export class GeminiBidiBridge extends EventEmitter {
 
 		if (this.options.apiKey) {
 			// Manual static key — cannot rotate from pool
-			this.emit("error", triggerError);
+			this.safeEmitError(triggerError);
 			return;
 		}
 
 		if (this.reconnectAttempts >= this.maxRetries) {
-			this.emit(
-				"error",
+			this.safeEmitError(
 				new Error(
 					`[GeminiBidiBridge] Max key rotation retries (${this.maxRetries}) exceeded. Last error: ${triggerError.message}`,
 				),
@@ -707,57 +714,116 @@ export class GeminiBidiBridge extends EventEmitter {
 						});
 					})
 					.catch((reconnErr) => {
-						this.emit("error", reconnErr);
+						this.safeEmitError(reconnErr);
 					});
 			}
 		}, 800);
+	}
+
+	private safeEmitError(error: Error): void {
+		if (this.listenerCount("error") > 0) {
+			this.emit("error", error);
+		} else {
+			console.error("[GeminiBidiBridge] Unhandled bridge error event:", error.message);
+		}
+	}
+
+	public get queuedChunksCount(): number {
+		return this.audioQueue.length;
+	}
+
+	public get queuedBytes(): number {
+		return this.audioQueueBytes;
+	}
+
+	private enqueueAudio(chunk: Buffer): void {
+		if (this.isClosed) return;
+		while (
+			this.audioQueue.length > 0 &&
+			this.audioQueueBytes + chunk.byteLength > this.maxBufferSizeBytes
+		) {
+			const dropped = this.audioQueue.shift();
+			if (dropped) {
+				this.audioQueueBytes -= dropped.byteLength;
+			}
+		}
+
+		if (this.audioQueueBytes + chunk.byteLength <= this.maxBufferSizeBytes) {
+			this.audioQueue.push(chunk);
+			this.audioQueueBytes += chunk.byteLength;
+		}
 	}
 
 	private flushQueuedAudio(): void {
 		while (this.audioQueue.length > 0 && this.ready) {
 			const chunk = this.audioQueue.shift();
 			if (chunk) {
+				this.audioQueueBytes = Math.max(0, this.audioQueueBytes - chunk.byteLength);
 				this.sendAudioChunkDirect(chunk);
 			}
+		}
+		if (this.audioQueue.length === 0) {
+			this.audioQueueBytes = 0;
 		}
 	}
 
 	private sendAudioChunkDirect(chunk: Buffer): void {
 		if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-			this.audioQueue.push(chunk);
+			this.enqueueAudio(chunk);
 			return;
 		}
 
-		const mediaFrame = buildBidiMediaChunkFrame(
-			chunk,
-			this.options.sampleRate || DEFAULT_SAMPLE_RATE,
-		);
-		this.ws.send(JSON.stringify(mediaFrame));
+		try {
+			const mediaFrame = buildBidiMediaChunkFrame(
+				chunk,
+				this.options.sampleRate || DEFAULT_SAMPLE_RATE,
+			);
+			this.ws.send(JSON.stringify(mediaFrame), (err) => {
+				if (err) {
+					console.warn("[GeminiBidiBridge] ws.send error:", err.message);
+				}
+			});
+		} catch (err) {
+			console.warn("[GeminiBidiBridge] ws.send exception:", err);
+			this.enqueueAudio(chunk);
+		}
 	}
 
 	/**
 	 * Feeds raw audio data into the live transcription pipeline.
 	 * Supports Buffer, Uint8Array, ArrayBuffer, or base64 PCM string.
+	 * Enforces strict single-chunk and total queue memory ceilings (Anti-RAM-Hog law).
 	 */
 	public sendAudio(data: Buffer | Uint8Array | ArrayBuffer | string): void {
 		if (this.isClosed) {
 			throw new Error("Cannot send audio to a closed GeminiBidiBridge");
 		}
 
-		const buffer =
-			typeof data === "string"
-				? Buffer.from(data, "base64")
-				: Buffer.isBuffer(data)
-					? data
-					: data instanceof ArrayBuffer
-						? Buffer.from(data)
-						: Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+		let buffer: Buffer;
+		if (typeof data === "string") {
+			const maxAllowedB64 = Math.ceil((MAX_SINGLE_AUDIO_CHUNK_BYTES * 4) / 3) + 8;
+			if (data.length > maxAllowedB64) {
+				throw new Error(
+					`Single audio chunk exceeds maximum allowed size of ${MAX_SINGLE_AUDIO_CHUNK_BYTES} bytes`,
+				);
+			}
+			buffer = Buffer.from(data, "base64");
+		} else if (Buffer.isBuffer(data)) {
+			buffer = data;
+		} else if (data instanceof ArrayBuffer) {
+			buffer = Buffer.from(data);
+		} else {
+			buffer = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+		}
+
+		if (buffer.byteLength > MAX_SINGLE_AUDIO_CHUNK_BYTES) {
+			throw new Error(
+				`Single audio chunk exceeds maximum allowed size of ${MAX_SINGLE_AUDIO_CHUNK_BYTES} bytes`,
+			);
+		}
 
 		if (!this.ready) {
-			// Buffer audio until connection is open and setup is complete
-			if (this.audioQueue.length < 500) {
-				this.audioQueue.push(buffer);
-			}
+			this.enqueueAudio(buffer);
 			return;
 		}
 
@@ -784,11 +850,12 @@ export class GeminiBidiBridge extends EventEmitter {
 	}
 
 	/**
-	 * Closes the bridge connection cleanly.
+	 * Closes the bridge connection cleanly and frees all in-memory buffers.
 	 */
 	public close(code = 1000, reason = "Client Closed"): void {
 		this.isClosed = true;
 		this.audioQueue.length = 0;
+		this.audioQueueBytes = 0;
 
 		if (this.ws) {
 			try {

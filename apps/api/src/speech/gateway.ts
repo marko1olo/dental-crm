@@ -1453,17 +1453,32 @@ export function speechJsonBodyLimitBytes(): number {
 	return Math.ceil(getSpeechGatewayStatus().maxChunkBytes * 1.4) + 4096;
 }
 
-function decodeBase64Audio(
+export function decodeBase64Audio(
 	value: string | undefined,
 	maxChunkBytes: number,
 ): Buffer {
 	if (!value?.trim()) return Buffer.alloc(0);
-	if (!/^[A-Za-z0-9+/=]+$/.test(value)) {
+	const trimmed = value.trim();
+
+	// Anti-RAM-Hog ceiling: check raw base64 string length BEFORE Buffer.from allocation in V8 heap
+	// Base64 encoding expands raw bytes by 4/3. A valid payload cannot exceed Math.ceil(maxChunkBytes * 4 / 3) + 8.
+	const maxAllowedBase64Length = Math.ceil((maxChunkBytes * 4) / 3) + 8;
+	if (trimmed.length > maxAllowedBase64Length) {
+		throw new SpeechChunkPayloadError(
+			`Аудиофрагмент слишком большой для текущих настроек (${Math.ceil(
+				(trimmed.length * 3) / 4 / 1024 / 1024,
+			)} МБ из ${Math.ceil(
+				maxChunkBytes / 1024 / 1024,
+			)} МБ). Запишите короче или дождитесь отправки очереди.`,
+		);
+	}
+
+	if (!/^[A-Za-z0-9+/=]+$/.test(trimmed)) {
 		throw new SpeechChunkPayloadError(
 			"Аудиофрагмент поврежден или передан не как файл записи. Повторите запись либо оставьте текстовый черновик.",
 		);
 	}
-	const buffer = Buffer.from(value, "base64");
+	const buffer = Buffer.from(trimmed, "base64");
 	if (buffer.byteLength > maxChunkBytes) {
 		throw new SpeechChunkPayloadError(
 			`Аудиофрагмент слишком большой для текущих настроек (${Math.ceil(buffer.byteLength / 1024 / 1024)} МБ из ${Math.ceil(

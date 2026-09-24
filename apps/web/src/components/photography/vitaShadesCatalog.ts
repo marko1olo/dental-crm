@@ -220,10 +220,49 @@ export const VITA_3D_MASTER_SHADES: VitaShade[] = [
 
 export const ALL_VITA_SHADES: VitaShade[] = [...VITA_CLASSICAL_SHADES, ...VITA_3D_MASTER_SHADES];
 
+/**
+ * Normalizes VITA shade codes handling:
+ * 1. Cyrillic homoglyphs typed on Russian keyboard layouts (А->A, В->B, С->C, Д->D, О->O, М->M, etc.)
+ * 2. Bleach Group 0 aliases: OM1, OM2, OM3 (Latin letter O) mapped to official 0M1, 0M2, 0M3 (Digit 0)
+ * 3. Whitespace, hyphens, and standard prefixes ('VITA ', '3D-')
+ */
+export function normalizeVitaShadeCode(code: string): string {
+	if (!code) return '';
+	let s = code.trim().toUpperCase();
+
+	// Strip common prefixes
+	s = s.replace(/^(VITA|3D|3D-MASTER)\s*[-_]?\s*/i, '');
+
+	// Cyrillic to Latin homoglyphs mapping
+	const cyrillicMap: Record<string, string> = {
+		'А': 'A', 'а': 'A',
+		'В': 'B', 'в': 'B',
+		'С': 'C', 'с': 'C',
+		'Д': 'D', 'д': 'D',
+		'О': 'O', 'о': 'O',
+		'М': 'M', 'м': 'M',
+		'Л': 'L', 'л': 'L',
+		'Р': 'R', 'р': 'R',
+	};
+	s = s.replace(/[АаВвСсДдОоМмЛлРр]/g, char => cyrillicMap[char] || char);
+
+	// Strip hyphens and spaces between letter and number (e.g., 'A-2' -> 'A2', 'BL 1' -> 'BL1')
+	s = s.replace(/[\s\-_]+/g, '');
+
+	// Normalize OM1/OM2/OM3 (Latin letter O) to 0M1/0M2/0M3 (Digit 0)
+	if (/^OM[1-3]$/.test(s)) {
+		s = '0' + s.slice(1);
+	}
+
+	return s;
+}
+
 export function getVitaShadeByCode(code: string): VitaShade | undefined {
-	const normalized = (code || '').trim().toUpperCase();
+	const normalized = normalizeVitaShadeCode(code);
+	if (!normalized) return undefined;
 	return ALL_VITA_SHADES.find(s => s.code.toUpperCase() === normalized);
 }
+
 
 // ---------------------------------------------------------------------------
 // Comprehensive Shade Delta Calculator (Lightness, Saturation & Clinical Impact)
@@ -303,40 +342,69 @@ export function colorDistanceDeltaE2000(lab1: ColorLab, lab2: ColorLab): number 
 	const RT = -Math.sin(2 * dTheta) * RC;
 
 	const deltaE = Math.sqrt(
-		Math.pow(dLp / SL, 2) +
-		Math.pow(dCp / SC, 2) +
-		Math.pow(dHp / SH, 2) +
-		RT * (dCp / SC) * (dHp / SH)
+		Math.max(
+			0,
+			Math.pow(dLp / SL, 2) +
+			Math.pow(dCp / SC, 2) +
+			Math.pow(dHp / SH, 2) +
+			RT * (dCp / SC) * (dHp / SH)
+		)
 	);
 
-	return deltaE;
+	return Number.isFinite(deltaE) ? deltaE : 0;
 }
 
 export function calculateShadeDelta(
-	beforeInput: VitaShade | string,
-	afterInput: VitaShade | string
+	beforeInput: VitaShade | string | null | undefined,
+	afterInput: VitaShade | string | null | undefined
 ): ShadeDeltaResult {
-	const before = typeof beforeInput === 'string' ? (getVitaShadeByCode(beforeInput) || VITA_CLASSICAL_SHADES[8]!) : beforeInput;
-	const after = typeof afterInput === 'string' ? (getVitaShadeByCode(afterInput) || VITA_CLASSICAL_SHADES[4]!) : afterInput;
+	const defaultBefore = VITA_CLASSICAL_SHADES[8]!; // A2 default
+	const defaultAfter = VITA_CLASSICAL_SHADES[4]!; // B1 default
 
-	const deltaE00 = colorDistanceDeltaE2000(before.lab, after.lab);
-	const deltaE76 = colorDistanceDeltaE76(before.lab, after.lab);
+	let before: VitaShade = defaultBefore;
+	if (beforeInput) {
+		if (typeof beforeInput === 'string') {
+			before = getVitaShadeByCode(beforeInput) || defaultBefore;
+		} else if (typeof beforeInput === 'object' && beforeInput.lab && Number.isFinite(beforeInput.lab.L)) {
+			before = beforeInput;
+		}
+	}
 
-	const deltaL = Math.round((after.lab.L - before.lab.L) * 10) / 10;
+	let after: VitaShade = defaultAfter;
+	if (afterInput) {
+		if (typeof afterInput === 'string') {
+			after = getVitaShadeByCode(afterInput) || defaultAfter;
+		} else if (typeof afterInput === 'object' && afterInput.lab && Number.isFinite(afterInput.lab.L)) {
+			after = afterInput;
+		}
+	}
 
-	const cBefore = Math.sqrt(before.lab.a * before.lab.a + before.lab.b * before.lab.b);
-	const cAfter = Math.sqrt(after.lab.a * after.lab.a + after.lab.b * after.lab.b);
-	const deltaC = Math.round((cAfter - cBefore) * 10) / 10;
+	const rawDeltaE00 = colorDistanceDeltaE2000(before.lab, after.lab);
+	const deltaE00 = Number.isFinite(rawDeltaE00) ? Math.round(rawDeltaE00 * 100) / 100 : 0;
+
+	const rawDeltaE76 = colorDistanceDeltaE76(before.lab, after.lab);
+	const deltaE76 = Number.isFinite(rawDeltaE76) ? Math.round(rawDeltaE76 * 100) / 100 : 0;
+
+	const rawDeltaL = after.lab.L - before.lab.L;
+	const deltaL = Number.isFinite(rawDeltaL) ? Math.round(rawDeltaL * 10) / 10 : 0;
+
+	const cBefore = Math.sqrt(Math.max(0, before.lab.a * before.lab.a + before.lab.b * before.lab.b));
+	const cAfter = Math.sqrt(Math.max(0, after.lab.a * after.lab.a + after.lab.b * after.lab.b));
+	const rawDeltaC = cAfter - cBefore;
+	const deltaC = Number.isFinite(rawDeltaC) ? Math.round(rawDeltaC * 10) / 10 : 0;
 
 	let hBefore = radToDeg(Math.atan2(before.lab.b, before.lab.a));
 	if (hBefore < 0) hBefore += 360;
 	let hAfter = radToDeg(Math.atan2(after.lab.b, after.lab.a));
 	if (hAfter < 0) hAfter += 360;
-	const deltaH = Math.round((hAfter - hBefore) * 10) / 10;
+	let rawDeltaH = hAfter - hBefore;
+	if (rawDeltaH > 180) rawDeltaH -= 360;
+	if (rawDeltaH < -180) rawDeltaH += 360;
+	const deltaH = Number.isFinite(rawDeltaH) ? Math.round(rawDeltaH * 10) / 10 : 0;
 
 	const isLighter = deltaL > 0;
 	const isNoticeable = deltaE00 >= 1.2;
-	const stepDelta = before.valueRanking - after.valueRanking;
+	const stepDelta = (before.valueRanking || 0) - (after.valueRanking || 0);
 
 	let lightnessImprovementRu = 'Без изменений светлоты';
 	if (deltaL > 0.5) {
@@ -364,8 +432,8 @@ export function calculateShadeDelta(
 	return {
 		beforeShade: before,
 		afterShade: after,
-		deltaE00: Math.round(deltaE00 * 100) / 100,
-		deltaE76: Math.round(deltaE76 * 100) / 100,
+		deltaE00,
+		deltaE76,
 		deltaL,
 		deltaC,
 		deltaH,

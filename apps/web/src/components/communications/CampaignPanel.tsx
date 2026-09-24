@@ -17,6 +17,13 @@ import { showToast } from "../GlobalToast";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import {
+	type Notice,
+	calculateSmsCostKopecks,
+	failNotice,
+	formatMoment,
+	formatSmsCostRu,
+} from "./deliveryReportNotice.js";
 
 type CampaignCriteria = {
 	status?: "active" | "archived";
@@ -139,33 +146,6 @@ async function readJson<T>(response: Response): Promise<T> {
 	return payload as T;
 }
 
-/**
- * ПОЧЕМУ У СООБЩЕНИЯ ЕСТЬ ВИД. БЫЛО СЛОМАНО: и «Рассылка создана», и отказ
- * сервера писались в одно поле notice и выводились одинаковой серой строкой с
- * role="status". Администратор нажимал «Запустить», получал «Сервер ответил 500»
- * таким же спокойным текстом, как подтверждение, и уходил в уверенности, что
- * рассылка пошла. Теперь отказ — красный блок с role="alert" и подсказкой.
- */
-type Notice = { kind: "done" | "fail"; text: string };
-
-/** Отказ: сначала понятная человеку подсказка, потом причина от сервера. */
-function failNotice(error: unknown, hint: string): Notice {
-	const reason = error instanceof Error ? error.message : String(error);
-	return { kind: "fail", text: `${hint} Причина: ${reason}` };
-}
-
-function formatMoment(value: string | null): string {
-	if (!value) return "—";
-	const parsed = new Date(value);
-	return Number.isNaN(parsed.getTime())
-		? "—"
-		: parsed.toLocaleString("ru-RU", {
-				day: "2-digit",
-				month: "2-digit",
-				hour: "2-digit",
-				minute: "2-digit",
-			});
-}
 
 export function CampaignPanel({
 	initialTemplates,
@@ -216,7 +196,7 @@ export function CampaignPanel({
 
 	const [title, setTitle] = useState("");
 	const [templateId, setTemplateId] = useState("");
-	const [scope, setScope] = useState<"service" | "marketing">("marketing");
+	const [scope, setScope] = useState<"service" | "marketing">("service");
 	const [monthsSinceVisit, setMonthsSinceVisit] = useState("6");
 	const [excludeBooked, setExcludeBooked] = useState(true);
 
@@ -502,7 +482,6 @@ export function CampaignPanel({
 					className="secondary-button"
 					type="button"
 					onClick={() => void load()}
-					style={{ minHeight: "44px" }}
 				>
 					Повторить
 				</button>
@@ -587,7 +566,6 @@ export function CampaignPanel({
 											className="secondary-button"
 											type="button"
 											onClick={() => void openPreview(campaign.id)}
-											style={{ minHeight: "44px" }}
 										>
 											Предпросмотр
 										</button>
@@ -610,7 +588,6 @@ export function CampaignPanel({
 													onClick={() =>
 														void campaignAction(campaign.id, "launch")
 													}
-													style={{ minHeight: "44px" }}
 												>
 													Запустить
 												</button>
@@ -621,7 +598,6 @@ export function CampaignPanel({
 													onClick={() =>
 														void campaignAction(campaign.id, "cancel")
 													}
-													style={{ minHeight: "44px" }}
 												>
 													Отменить
 												</button>
@@ -633,7 +609,6 @@ export function CampaignPanel({
 													type="button"
 													data-testid={`campaign-progress-btn-${campaign.id}`}
 													onClick={() => void loadProgress(campaign.id)}
-													style={{ minHeight: "44px" }}
 												>
 													Ход отправки
 												</button>
@@ -644,7 +619,6 @@ export function CampaignPanel({
 													onClick={() =>
 														void campaignAction(campaign.id, "cancel")
 													}
-													style={{ minHeight: "44px" }}
 												>
 													Остановить
 												</button>
@@ -656,7 +630,6 @@ export function CampaignPanel({
 												type="button"
 												data-testid={`campaign-progress-btn-${campaign.id}`}
 												onClick={() => void loadProgress(campaign.id)}
-												style={{ minHeight: "44px" }}
 											>
 												Ход отправки
 											</button>
@@ -758,7 +731,6 @@ export function CampaignPanel({
 							data-testid="campaign-progress-refresh"
 							disabled={progressLoading}
 							onClick={() => void loadProgress(progressFor)}
-							style={{ minHeight: "44px" }}
 						>
 							Обновить
 						</button>
@@ -770,7 +742,6 @@ export function CampaignPanel({
 								setProgress(null);
 								setProgressError(null);
 							}}
-							style={{ minHeight: "44px" }}
 						>
 							Закрыть ход
 						</button>
@@ -845,6 +816,16 @@ export function CampaignPanel({
 											: "сегментов к оплате"}
 									</span>
 								</li>
+								{preview.cost.segmentsPerMessage !== null ? (
+									<li className="ops-metric" data-testid="campaign-cost-estimate">
+										<span className="ops-metric__value">
+											{formatSmsCostRu(calculateSmsCostKopecks(preview.cost.segmentsPerMessage, preview.audience.deliverable))}
+										</span>
+										<span className="ops-metric__label">
+											расчётная стоимость (SMS)
+										</span>
+									</li>
+								) : null}
 							</ul>
 							{/* Отсев с причинами: «отправлено 12 из 400» иначе выглядит как ошибка. */}
 							<ul>
@@ -898,7 +879,6 @@ export function CampaignPanel({
 						className="secondary-button"
 						type="button"
 						onClick={() => setPreviewFor(null)}
-						style={{ minHeight: "44px" }}
 					>
 						Закрыть предпросмотр
 					</button>
@@ -911,78 +891,120 @@ export function CampaignPanel({
 					Нет активных шаблонов — сначала создайте шаблон для нужного канала.
 				</p>
 			) : (
-				<div className="ops-toolbar">
-					<span className="ops-field ops-field--grow">
-						<label htmlFor="campaign-title">Название</label>
-						<input
-							id="campaign-title"
-							type="text"
-							value={title}
-							onChange={(event) => setTitle(event.target.value)}
-							placeholder="Приглашение на осмотр"
-						/>
-					</span>
-					<span className="ops-field">
-						<label htmlFor="campaign-template">Шаблон</label>
-						<select
-							id="campaign-template"
-							value={templateId}
-							onChange={(event) => setTemplateId(event.target.value)}
+				<>
+					<div className="quick-chips-row mb-2" role="toolbar" aria-label="Быстрый выбор для врача">
+						<span className="ops-note">Быстрый выбор:</span>
+						<button
+							type="button"
+							className="quick-chip"
+							data-testid="preset-recall-6m"
+							onClick={() => {
+								setTitle("Приглашение на плановый профосмотр (6 мес.)");
+								setScope("service");
+								setMonthsSinceVisit("6");
+								setExcludeBooked(true);
+							}}
 						>
-							<option value="">Выберите шаблон</option>
-							{templates.map((template) => (
-								<option key={template.id} value={template.id}>
-									{template.title} ·{" "}
-									{channelLabels[template.channel] ?? template.channel}
+							Профосмотр 6 мес.
+						</button>
+						<button
+							type="button"
+							className="quick-chip"
+							data-testid="preset-recall-12m"
+							onClick={() => {
+								setTitle("Приглашение на контрольный осмотр (12 мес.)");
+								setScope("service");
+								setMonthsSinceVisit("12");
+								setExcludeBooked(true);
+							}}
+						>
+							Профосмотр 12 мес.
+						</button>
+						<button
+							type="button"
+							className="quick-chip"
+							data-testid="preset-hygiene-3m"
+							onClick={() => {
+								setTitle("Плановый осмотр и гигиена (3 мес.)");
+								setScope("service");
+								setMonthsSinceVisit("3");
+								setExcludeBooked(true);
+							}}
+						>
+							Гигиена 3 мес.
+						</button>
+					</div>
+					<div className="ops-toolbar">
+						<span className="ops-field ops-field--grow">
+							<label htmlFor="campaign-title">Название</label>
+							<input
+								id="campaign-title"
+								type="text"
+								value={title}
+								onChange={(event) => setTitle(event.target.value)}
+								placeholder="Приглашение на осмотр"
+							/>
+						</span>
+						<span className="ops-field">
+							<label htmlFor="campaign-template">Шаблон</label>
+							<select
+								id="campaign-template"
+								value={templateId}
+								onChange={(event) => setTemplateId(event.target.value)}
+							>
+								<option value="">Выберите шаблон</option>
+								{templates.map((template) => (
+									<option key={template.id} value={template.id}>
+										{template.title} ·{" "}
+										{channelLabels[template.channel] ?? template.channel}
+									</option>
+								))}
+							</select>
+						</span>
+						<span className="ops-field">
+							<label htmlFor="campaign-scope">Вид</label>
+							<select
+								id="campaign-scope"
+								value={scope}
+								onChange={(event) =>
+									setScope(event.target.value as "service" | "marketing")
+								}
+							>
+								<option value="service">Сервисная — в рамках договора</option>
+								<option value="marketing">
+									Рекламная — нужно согласие пациента
 								</option>
-							))}
-						</select>
-					</span>
-					<span className="ops-field">
-						<label htmlFor="campaign-scope">Вид</label>
-						<select
-							id="campaign-scope"
-							value={scope}
-							onChange={(event) =>
-								setScope(event.target.value as "service" | "marketing")
-							}
-						>
-							<option value="marketing">
-								Рекламная — нужно согласие пациента
-							</option>
-							<option value="service">Сервисная — в рамках договора</option>
-						</select>
-					</span>
-					<span className="ops-field">
-						<label htmlFor="campaign-months">Не был, месяцев</label>
-						<input
-							id="campaign-months"
-							type="number"
-							min={0}
-							max={120}
-							value={monthsSinceVisit}
-							onChange={(event) => setMonthsSinceVisit(event.target.value)}
-						/>
-					</span>
-					<label className="ops-checkbox" htmlFor="campaign-exclude-booked">
-						<input
-							id="campaign-exclude-booked"
-							type="checkbox"
-							checked={excludeBooked}
-							onChange={(event) => setExcludeBooked(event.target.checked)}
-						/>{" "}
-						Не писать тем, кто уже записан
-					</label>
+							</select>
+						</span>
+						<span className="ops-field">
+							<label htmlFor="campaign-months">Не был, месяцев</label>
+							<input
+								id="campaign-months"
+								type="number"
+								min={0}
+								max={120}
+								value={monthsSinceVisit}
+								onChange={(event) => setMonthsSinceVisit(event.target.value)}
+							/>
+						</span>
+						<label className="ops-checkbox" htmlFor="campaign-exclude-booked">
+							<input
+								id="campaign-exclude-booked"
+								type="checkbox"
+								checked={excludeBooked}
+								onChange={(event) => setExcludeBooked(event.target.checked)}
+							/>{" "}
+							Не писать тем, кто уже записан
+						</label>
 
-					<button
-						className="primary-button"
-						type="button"
-						disabled={busy}
-						onClick={() => void createCampaign()}
-						style={{ minHeight: "44px" }}
-					>
-						Создать и посмотреть получателей
-					</button>
+						<button
+							className="primary-button"
+							type="button"
+							disabled={busy}
+							onClick={() => void createCampaign()}
+						>
+							Создать и посмотреть получателей
+						</button>
 
 					{variables.length > 0 ? (
 						<p className="ops-hint ops-variable-catalog__title">
@@ -993,7 +1015,8 @@ export function CampaignPanel({
 						</p>
 					) : null}
 				</div>
-			)}
+			</>
+		)}
 		</section>
 	);
 }

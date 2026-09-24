@@ -278,54 +278,63 @@ export async function registerSpeechLiveRoutes(
 
 			// Handle inbound messages from client socket
 			clientSocket.on("message", (data: WebSocket.Data, isBinary: boolean) => {
-				if (isBinary || Buffer.isBuffer(data) || data instanceof ArrayBuffer) {
-					// Binary audio frame (PCM)
-					bridge.sendAudio(data as Buffer | ArrayBuffer);
-					return;
-				}
-
-				const text = data.toString();
 				try {
-					const json = JSON.parse(text);
-
-					if (
-						(json.type === "audio" || json.type === "audio_chunk") &&
-						(json.data || json.audioBase64)
-					) {
-						// Base64 PCM audio chunk
-						bridge.sendAudio(json.data || json.audioBase64);
+					if (isBinary || Buffer.isBuffer(data) || data instanceof ArrayBuffer) {
+						// Binary audio frame (PCM)
+						bridge.sendAudio(data as Buffer | ArrayBuffer);
 						return;
 					}
 
-					if (json.type === "stop" || json.type === "turn_complete") {
-						bridge.endAudioStream();
-						return;
-					}
+					const text = data.toString();
+					try {
+						const json = JSON.parse(text);
 
-					if (json.type === "ping") {
-						clientSocket.send(
-							JSON.stringify({
-								type: "pong",
-								timestampMs: Date.now(),
-							}),
-						);
-						return;
-					}
-
-					if (json.realtimeInput?.mediaChunks) {
-						// Raw Gemini protocol forward
-						for (const chunk of json.realtimeInput.mediaChunks) {
-							if (chunk.data) {
-								bridge.sendAudio(chunk.data);
-							}
+						if (
+							(json.type === "audio" || json.type === "audio_chunk") &&
+							(json.data || json.audioBase64)
+						) {
+							// Base64 PCM audio chunk
+							bridge.sendAudio(json.data || json.audioBase64);
+							return;
 						}
-						return;
+
+						if (json.type === "stop" || json.type === "turn_complete") {
+							bridge.endAudioStream();
+							return;
+						}
+
+						if (json.type === "ping") {
+							if (clientSocket.readyState === clientSocket.OPEN) {
+								clientSocket.send(
+									JSON.stringify({
+										type: "pong",
+										timestampMs: Date.now(),
+									}),
+								);
+							}
+							return;
+						}
+
+						if (json.realtimeInput?.mediaChunks) {
+							// Raw Gemini protocol forward
+							for (const chunk of json.realtimeInput.mediaChunks) {
+								if (chunk.data) {
+									bridge.sendAudio(chunk.data);
+								}
+							}
+							return;
+						}
+					} catch {
+						// Non-JSON text payload: if base64 encoded audio, attempt sending
+						if (/^[A-Za-z0-9+/=]+$/.test(text.trim())) {
+							bridge.sendAudio(text.trim());
+						}
 					}
-				} catch {
-					// Non-JSON text payload: if base64 encoded audio, attempt sending
-					if (/^[A-Za-z0-9+/=]+$/.test(text.trim())) {
-						bridge.sendAudio(text.trim());
-					}
+				} catch (msgErr: unknown) {
+					request.log.warn(
+						{ err: msgErr instanceof Error ? msgErr.message : String(msgErr) },
+						"[speechLive] Inbound message processing error",
+					);
 				}
 			});
 

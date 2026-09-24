@@ -115,10 +115,28 @@ export const PhotoCalibrationDrawer: React.FC<PhotoCalibrationDrawerProps> = ({
 		};
 	}, [record, activeGridOverlay]);
 
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') {
+				e.stopPropagation();
+				onClose();
+			}
+		};
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, [onClose]);
+
 	const shadesList: VitaShade[] = selectedSystem === 'classical' ? VITA_CLASSICAL_SHADES : VITA_3D_MASTER_SHADES;
 
 	return (
-		<div className="photo-editor-overlay" role="dialog" aria-modal="true">
+		<div
+			className="photo-editor-overlay"
+			role="dialog"
+			aria-modal="true"
+			onClick={(e) => {
+				if (e.target === e.currentTarget) onClose();
+			}}
+		>
 			<div className="photo-editor-modal">
 				{/* Editor Header: 1 row, 32-36px height */}
 				<div className="photo-protocol-header" style={{ minHeight: '36px', height: '36px' }}>
@@ -131,7 +149,7 @@ export const PhotoCalibrationDrawer: React.FC<PhotoCalibrationDrawerProps> = ({
 					<button
 						className="photo-touch-btn"
 						onClick={onClose}
-						aria-label="Закрыть редактор"
+						aria-label="Закрыть редактор (Esc)"
 						style={{ minHeight: '32px', minWidth: '32px', padding: '4px' }}
 					>
 						<X size={18} />

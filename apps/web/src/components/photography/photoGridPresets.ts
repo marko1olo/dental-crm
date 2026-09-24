@@ -526,23 +526,26 @@ export const AESTHETIC_8_SLOT_PROTOCOL: PhotoProtocolPreset = {
 	id: 'aesthetic_8_prosthodontic',
 	nameRu: 'Ортопедический / Эстетический протокол (8 кадров)',
 	shortNameRu: 'Ортопедия 8 кадров',
-	descriptionRu: 'Сфокусирован на дизайне улыбки, винирах, коронках и тотальной реабилитации: 4 портретных + 4 ключевых внутриротовых кадра.',
+	descriptionRu: 'Сфокусирован на дизайне улыбки, винирах, коронках и тотальной реабилитации: 3 портретных + 5 ключевых внутриротовых кадров (включая окклюзию в/ч и н/ч).',
 	slots: [
 		DENTAL_PHOTO_SLOTS.portrait_rest,
 		DENTAL_PHOTO_SLOTS.portrait_smile,
 		DENTAL_PHOTO_SLOTS.profile_90_smile,
-		DENTAL_PHOTO_SLOTS.portrait_45_smile,
 		DENTAL_PHOTO_SLOTS.intraoral_frontal_occlusion,
 		DENTAL_PHOTO_SLOTS.intraoral_right_buccal,
 		DENTAL_PHOTO_SLOTS.intraoral_left_buccal,
 		DENTAL_PHOTO_SLOTS.intraoral_maxillary_occlusal,
+		DENTAL_PHOTO_SLOTS.intraoral_mandibular_occlusal,
 	],
 	totalSlots: 8,
 	categoryCount: {
-		extraoral: 4,
-		intraoral: 4
+		extraoral: 3,
+		intraoral: 5
 	}
 };
+
+export const STANDARD_8_SLOT_PROTOCOL = AESTHETIC_8_SLOT_PROTOCOL;
+export const ORTHO_8_SLOT_PROTOCOL = AESTHETIC_8_SLOT_PROTOCOL;
 
 export const EXPRESS_6_SLOT_PROTOCOL: PhotoProtocolPreset = {
 	id: 'express_6_monitoring',

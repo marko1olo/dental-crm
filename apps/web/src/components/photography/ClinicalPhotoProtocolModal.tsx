@@ -316,20 +316,46 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 						<>
 							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
 								<div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-									<span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--muted, #64748b)' }}>
+									<span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--muted, #64748b)' }}>
 										Протокол:
 									</span>
+									{/* 1-Click Clinical Presets (Mandate 8e: Doctor Autonomy) */}
+									<div style={{ display: 'flex', gap: '4px', background: 'var(--surface, #f1f5f9)', padding: '3px', borderRadius: '8px' }}>
+										{CLINICAL_PROTOCOLS_REGISTRY.map((p) => {
+											const isSelected = activePreset.id === p.id;
+											return (
+												<button
+													key={p.id}
+													type="button"
+													className={`photo-touch-btn ${isSelected ? 'primary' : ''}`}
+													onClick={() => setActivePreset(p)}
+													style={{
+														minHeight: '34px',
+														padding: '4px 10px',
+														fontSize: '12px',
+														fontWeight: isSelected ? 700 : 500,
+														borderRadius: '6px',
+													}}
+													title={p.descriptionRu}
+												>
+													{p.shortNameRu}
+												</button>
+											);
+										})}
+									</div>
+
 									<select
 										value={activePreset.id}
 										onChange={(e) => setActivePreset(getPresetById(e.target.value))}
+										aria-label="Выбор клинического фотопротокола"
 										style={{
-											minHeight: '40px',
-											padding: '6px 12px',
+											minHeight: '34px',
+											padding: '4px 10px',
 											borderRadius: '8px',
 											border: '1px solid var(--line, #cbd5e1)',
 											background: 'var(--paper, #ffffff)',
 											color: 'var(--ink, #0f172a)',
-											fontSize: '13px',
+											fontSize: '12px',
 											fontWeight: 600,
 											cursor: 'pointer'
 										}}
@@ -344,7 +370,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 										className="photo-touch-btn"
 										onClick={triggerBatchUpload}
 										title="Загрузить несколько снимков сразу (авто-раскладка по слотам)"
-										style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', minHeight: '40px', fontSize: '13px', fontWeight: 600 }}
+										style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', minHeight: '34px', fontSize: '12px', fontWeight: 600 }}
 									>
 										<UploadCloud size={16} />
 										Пакетная загрузка снимков

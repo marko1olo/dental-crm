@@ -24,6 +24,7 @@ import {
 	colorDistanceDeltaE2000,
 	calculateShadeDelta,
 	getVitaShadeByCode,
+	normalizeVitaShadeCode,
 	VITA_CLASSICAL_BLEACH_SHADES,
 	VITA_CLASSICAL_STANDARD_SHADES,
 	VITA_CLASSICAL_SHADES,
@@ -45,6 +46,7 @@ export {
 	colorDistanceDeltaE2000,
 	calculateShadeDelta,
 	getVitaShadeByCode,
+	normalizeVitaShadeCode,
 	VITA_CLASSICAL_BLEACH_SHADES,
 	VITA_CLASSICAL_STANDARD_SHADES,
 	VITA_CLASSICAL_SHADES,
@@ -498,7 +500,8 @@ export function calculateSplitClipPath(
 	sliderPercent: number,
 	direction: 'vertical' | 'horizontal' = 'vertical'
 ): string {
-	const clamped = clamp(sliderPercent, 0, 100);
+	const safePercent = Number.isFinite(sliderPercent) ? sliderPercent : 50;
+	const clamped = clamp(safePercent, 0, 100);
 	if (direction === 'vertical') {
 		return `polygon(${clamped}% 0%, 100% 0%, 100% 100%, ${clamped}% 100%)`;
 	} else {
@@ -519,7 +522,7 @@ export function calculateSimilarityTransform(
 	const bLen = vectorLength(bVec);
 	const aLen = vectorLength(aVec);
 
-	if (aLen === 0 || bLen === 0) {
+	if (aLen === 0 || bLen === 0 || !Number.isFinite(aLen) || !Number.isFinite(bLen)) {
 		return {
 			translateX: 0,
 			translateY: 0,
@@ -750,7 +753,7 @@ export interface VitaPhysicalTabReference {
 }
 
 export function createVitaPhysicalTabReference(shadeCode: string): VitaPhysicalTabReference {
-	const shade = getVitaShadeByCode(shadeCode) || VITA_CLASSICAL_SHADES[1]!; // A2 default
+	const shade = getVitaShadeByCode(shadeCode) || VITA_CLASSICAL_SHADES[8]!; // A2 universal baseline default
 	const isBleach = shade.hueGroup === 'Bleach';
 	const clinicalNoteRu = `Эталон VITA ${shade.code} (${shade.nameRu}) зафиксирован по физической расцветке у зуба для ЗТЛ`;
 	return {

@@ -3,7 +3,7 @@
  * for Dental Lab Orders & Prosthetics Work Orders.
  */
 
-import { generateQrMatrix, generateQrCodeSvg as sharedGenerateQrCodeSvg } from "@dental/shared";
+import { generateQrCodeSvg as sharedGenerateQrCodeSvg, type QrSvgOptions } from "@dental/shared";
 
 // ─── TYPES & INTERFACES ────────────────────────────────────────────────────────
 
@@ -1617,24 +1617,10 @@ export function generateBarcodeSvg(data: string, width = 240, height = 50): stri
  * Generates an ISO/IEC 18004 Reed-Solomon QR Code vector SVG for the lab work order.
  * Strictly zero fake Math.sin generators — uses canonical Galois Field GF(256) Reed-Solomon engine.
  */
-export function generateQrCodeSvg(text: string): string {
+export function generateQrCodeSvg(text: string, options?: number | QrSvgOptions): string {
 	const safeText = text || "DENTE-ZTL";
-	try {
-		const { matrix, size } = generateQrMatrix(safeText, "M");
-		let rects = "";
-		for (let r = 0; r < size; r++) {
-			const row = matrix[r];
-			if (!row) continue;
-			for (let c = 0; c < size; c++) {
-				if (row[c]) {
-					rects += `<rect x="${c * 4}" y="${r * 4}" width="4" height="4" fill="currentColor"/>`;
-				}
-			}
-		}
-		return `<svg viewBox="0 0 ${size * 4} ${size * 4}" xmlns="http://www.w3.org/2000/svg" class="w-24 h-24">${rects}</svg>`;
-	} catch {
-		return sharedGenerateQrCodeSvg(safeText, { margin: 2 });
-	}
+	const opts = typeof options === "number" ? { size: options, margin: 2 } : (options ?? { margin: 2 });
+	return sharedGenerateQrCodeSvg(safeText, opts);
 }
 
 export function formatGostOrderNumber(token?: string, date?: Date): string {

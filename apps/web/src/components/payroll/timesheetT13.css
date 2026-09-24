@@ -19,9 +19,9 @@
 	max-width: 1280px;
 	height: 90vh;
 	max-height: 900px;
-	background-color: var(--paper, #ffffff);
-	color: var(--ink, #0f172a);
-	border: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
 	border-radius: 1rem;
 	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 	overflow: hidden;
@@ -32,8 +32,8 @@
 	flex-direction: column;
 	gap: 0.25rem;
 	padding: 0.875rem;
-	background-color: var(--paper-soft, #f8fafc);
-	border: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line);
 	border-radius: 0.75rem;
 }
 
@@ -44,39 +44,39 @@
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	border: 1px solid var(--line, #e2e8f0);
+	border: 1px solid var(--line);
 	font-size: 0.75rem;
 	transition: all 0.15s ease;
 	cursor: pointer;
 }
 
 .timesheet-grid-cell:hover {
-	background-color: var(--paper-soft, #f1f5f9);
+	background-color: var(--paper-soft);
 }
 
 .timesheet-cell-work {
-	background-color: var(--teal-soft, rgba(20, 184, 166, 0.08));
-	border-color: var(--teal, rgba(20, 184, 166, 0.3));
+	background-color: var(--teal-soft);
+	border-color: var(--teal);
 }
 
 .timesheet-cell-weekend {
-	background-color: var(--paper-soft, rgba(148, 163, 184, 0.1));
-	border-color: var(--line, rgba(148, 163, 184, 0.2));
+	background-color: var(--paper-soft);
+	border-color: var(--line);
 }
 
 .timesheet-cell-vacation {
-	background-color: var(--teal-soft, rgba(59, 130, 246, 0.08));
-	border-color: var(--teal, rgba(59, 130, 246, 0.3));
+	background-color: var(--teal-soft);
+	border-color: var(--teal);
 }
 
 .timesheet-cell-sick {
-	background-color: var(--bad-bg, rgba(244, 63, 94, 0.08));
-	border-color: var(--bad-fg, rgba(244, 63, 94, 0.3));
+	background-color: var(--bad-bg);
+	border-color: var(--bad-fg);
 }
 
 .timesheet-cell-overtime {
-	background-color: var(--warn-bg, rgba(245, 158, 11, 0.08));
-	border-color: var(--warn-fg, rgba(245, 158, 11, 0.3));
+	background-color: var(--warn-bg);
+	border-color: var(--warn-fg);
 }
 
 @media print {

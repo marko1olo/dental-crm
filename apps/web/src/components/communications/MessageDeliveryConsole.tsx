@@ -29,10 +29,13 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 import {
 	type DispatchReport,
+	calculateSmsCostKopecks,
 	describeDispatchReport,
 	describeReminderReport,
 	failNotice,
 	formatMoment,
+	formatSmsBalance,
+	formatSmsCostRu,
 	type Notice,
 	type ReminderScheduleReport,
 } from "./deliveryReportNotice.js";
@@ -665,8 +668,6 @@ export function MessageDeliveryConsole(props?: MessageDeliveryConsoleProps) {
 		if (!enqueueTemplateId && !bodyToSend) {
 			bodyToSend = "Здравствуйте! Напоминаем о вашей записи на приём в клинику ДЕНТЕ. Ждём вас!";
 			setEnqueueBody(bodyToSend);
-			showToast("Заполнен текст напоминания по умолчанию. Нажмите кнопку ещё раз для отправки", "info");
-			return;
 		}
 
 		setEnqueueBusy(true);
@@ -916,7 +917,7 @@ export function MessageDeliveryConsole(props?: MessageDeliveryConsoleProps) {
 								: ""}
 							.{" "}
 							{gateways?.channels?.sms?.balance
-								? `Остаток ${typeof gateways?.channels?.sms?.balance?.amount === "number" ? gateways.channels.sms.balance.amount.toFixed(2) : "0.00"} ${gateways?.channels?.sms?.balance?.currency ?? ""}.`
+								? `Остаток ${formatSmsBalance(gateways.channels.sms.balance)} ${gateways?.channels?.sms?.balance?.currency ?? ""}.`
 								: gateways?.channels?.sms?.balanceError
 									? `Остаток не получен: ${gateways?.channels?.sms?.balanceError}`
 									: ""}
@@ -1225,10 +1226,25 @@ export function MessageDeliveryConsole(props?: MessageDeliveryConsoleProps) {
 			{/* ── Шаблоны ───────────────────────────────────────────────────── */}
 			<h3 className="ops-section-title">Шаблоны сообщений</h3>
 			{(templates ?? []).length === 0 ? (
-				<p className="ops-empty">
-					Шаблонов пока нет. Без шаблона «Подтверждение приёма» автоматические
-					напоминания не включаются.
-				</p>
+				<div className="ops-empty">
+					<p>
+						Шаблонов пока нет. Без шаблона «Подтверждение приёма» автоматические
+						напоминания не включаются.
+					</p>
+					<button
+						type="button"
+						className="secondary-button"
+						data-testid="btn-fill-default-confirmation-template"
+						onClick={() => {
+							setDraftTitle("Подтверждение приёма (SMS)");
+							setDraftChannel("sms");
+							setDraftIntent("appointment_confirmation");
+							setDraftBody("Здравствуйте, {patient}! Напоминаем о приёме {date} в {time}. Клиника ДЕНТЕ.");
+						}}
+					>
+						Заполнить шаблон подтверждения по умолчанию
+					</button>
+				</div>
 			) : (
 				<ul className="ops-template-list">
 					{(templates || []).map((template) => (
@@ -1375,7 +1391,7 @@ export function MessageDeliveryConsole(props?: MessageDeliveryConsoleProps) {
 							{preview.length} симв. из {preview.limit}
 							{preview.sms
 								? ` · ${preview.sms.encoding === "ucs2" ? "кириллица" : "латиница"}, сегментов ${preview.sms.segments}, ` +
-									`свободно ${preview.sms.charactersLeftInSegment}`
+									`свободно ${preview.sms.charactersLeftInSegment} · расчёт: ${formatSmsCostRu(calculateSmsCostKopecks(preview.sms.segments, 1))}`
 								: ""}
 						</span>
 						{(preview?.problems ?? []).length > 0 ? (

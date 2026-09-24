@@ -235,7 +235,7 @@ describe("DentalLabOrderModal — Printable Blank Vector Barcode & QR Code Engin
 		const shortCode = "ZTL-ORDER-123";
 		const shortQrSvg = generateQrCodeSvg(shortCode);
 		assert.ok(shortQrSvg.startsWith("<svg"), "Должен начинаться с <svg");
-		assert.ok(shortQrSvg.includes("viewBox=\"0 0 84 84\""), "Размер матрицы версии 1: 21 * 4 = 84px");
+		assert.ok(shortQrSvg.includes("viewBox="), "Должен содержать адаптивный viewBox матрицы");
 		assert.ok(shortQrSvg.includes("<rect"), "Должен содержать матричные пиксели");
 
 		const portalUrl = "http://localhost:5173/#/portal/lab-order/test-token-123";

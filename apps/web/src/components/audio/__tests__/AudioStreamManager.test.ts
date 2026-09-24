@@ -158,4 +158,115 @@ describe("AudioStreamManager: Dental Filters, VAD & WAV Header", () => {
 			manager.dispose();
 		});
 	});
+
+	it("VAD: prevents duplicate silence timeout callbacks during prolonged silence", async () => {
+		let silenceCount = 0;
+		const manager = new AudioStreamManager({
+			vadOptions: {
+				enabled: true,
+				speechThresholdRms: 0.02,
+				silenceThresholdRms: 0.005,
+				silenceTimeoutMs: 50,
+				minSpeechDurationMs: 0,
+			},
+			onSilenceTimeout: () => {
+				silenceCount++;
+			},
+		});
+
+		(manager as any).isRunning = true;
+		const speechChunk = new Int16Array(100);
+		// Speech start
+		(manager as any).handleIncomingPcmChunk(speechChunk, 0.05);
+		assert.strictEqual((manager as any).isSpeaking, true);
+
+		// Silence chunk 1 - triggers timer
+		(manager as any).handleIncomingPcmChunk(speechChunk, 0.001);
+		// Silence chunk 2 - should NOT start another timer
+		(manager as any).handleIncomingPcmChunk(speechChunk, 0.001);
+
+		// Wait for timer
+		await new Promise((resolve) => setTimeout(resolve, 80));
+
+		assert.strictEqual(silenceCount, 1, "Must only fire silence timeout once");
+
+		// Another silence chunk after timeout fired - must not trigger again until new speech
+		(manager as any).handleIncomingPcmChunk(speechChunk, 0.001);
+		await new Promise((resolve) => setTimeout(resolve, 80));
+
+		assert.strictEqual(silenceCount, 1, "Must not fire duplicate silence callback");
+		manager.dispose();
+	});
+
+	it("VAD: does not fire silence callback after stop() has been called", async () => {
+		let silenceTriggered = false;
+		const manager = new AudioStreamManager({
+			vadOptions: {
+				enabled: true,
+				speechThresholdRms: 0.02,
+				silenceThresholdRms: 0.005,
+				silenceTimeoutMs: 50,
+				minSpeechDurationMs: 0,
+			},
+			onSilenceTimeout: () => {
+				silenceTriggered = true;
+			},
+		});
+
+		(manager as any).isRunning = true;
+		const speechChunk = new Int16Array(100);
+		(manager as any).handleIncomingPcmChunk(speechChunk, 0.05);
+		(manager as any).handleIncomingPcmChunk(speechChunk, 0.001);
+
+		// Stop immediately
+		manager.stop();
+
+		await new Promise((resolve) => setTimeout(resolve, 80));
+		assert.strictEqual(silenceTriggered, false, "Must not trigger silence timeout after stop");
+		manager.dispose();
+	});
+
+	it("Anti-RAM-Hog: auto-flushes speech segment when total session samples exceed ceiling", () => {
+		let flushedReason = "";
+		const manager = new AudioStreamManager({
+			vadOptions: {
+				enabled: true,
+				speechThresholdRms: 0.02,
+				maxSpeechDurationMs: 60000,
+				minSpeechDurationMs: 0,
+			},
+			onSpeechEnd: () => {
+				flushedReason = "flushed";
+			},
+		});
+
+		(manager as any).isRunning = true;
+		// Initialize speech
+		const speechChunk = new Int16Array(100);
+		(manager as any).handleIncomingPcmChunk(speechChunk, 0.05);
+
+		// Simulate large sample count beyond 9_600_000
+		(manager as any).totalSessionSamples = 9_600_001;
+		(manager as any).handleIncomingPcmChunk(speechChunk, 0.05);
+
+		assert.strictEqual(flushedReason, "flushed", "Must auto-flush on sample ceiling breach");
+		assert.strictEqual((manager as any).totalSessionSamples, 0, "Buffer samples must reset to 0");
+		manager.dispose();
+	});
+
+	it("unconditionally nulls audioContext and cleans timers upon dispose()", () => {
+		const manager = new AudioStreamManager();
+		let closeCalled = false;
+		const mockCtx = {
+			state: "running",
+			close: async () => {
+				closeCalled = true;
+			},
+		};
+		(manager as any).audioContext = mockCtx;
+
+		manager.dispose();
+		assert.strictEqual((manager as any).audioContext, null, "audioContext must be immediately nulled");
+		assert.strictEqual(closeCalled, true, "ctx.close() must be called");
+	});
 });

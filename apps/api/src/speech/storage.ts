@@ -117,6 +117,20 @@ function maxCachedChunksPerRecording(): number {
 	);
 }
 
+function maxUndurableChunksPerRecording(): number {
+	return Math.max(
+		maxCachedChunksPerRecording(),
+		numberFromEnv("DENTAL_SPEECH_MAX_UNDURABLE_CHUNKS_PER_RECORDING", 1200),
+	);
+}
+
+function maxGlobalCachedChunks(): number {
+	return Math.max(
+		1000,
+		numberFromEnv("DENTAL_SPEECH_MAX_GLOBAL_CACHED_CHUNKS", 10_000),
+	);
+}
+
 /**
  * ПОТОЛОК ВОССТАНОВЛЕНИЯ НА ВЕСЬ ПРОЦЕСС, а не на клинику.
  *
@@ -596,6 +610,8 @@ function describeSpeechRecordingIdentity(
 function trimSpeechTranscriptionChunkRetention(): void {
 	const chunkCap = maxCachedChunksPerRecording();
 	const recordingCap = maxCachedRecordingCount();
+	const undurableChunkCap = maxUndurableChunksPerRecording();
+	const globalChunkCap = maxGlobalCachedChunks();
 	const retainedByOrganization = new Map<string, Set<string>>();
 	for (const chunk of speechTranscriptionChunks) {
 		const retained =
@@ -614,9 +630,16 @@ function trimSpeechTranscriptionChunkRetention(): void {
 			!retainedByOrganization
 				.get(chunk.organizationId)
 				?.has(chunk.recordingId) || count >= chunkCap;
+
+		// Anti-RAM-Hog ceiling: even if undurable, never exceed undurableChunkCap per recording
+		// or globalChunkCap across entire process, preventing catastrophic OOM under DB outage
+		const hardOverCap =
+			count >= undurableChunkCap || keptChunks.length >= globalChunkCap;
+
 		if (
-			overCap &&
-			durableChunkKeys.has(speechChunkKey(chunk.recordingId, chunk.chunkIndex))
+			(overCap &&
+			durableChunkKeys.has(speechChunkKey(chunk.recordingId, chunk.chunkIndex))) ||
+			hardOverCap
 		) {
 			continue;
 		}
@@ -641,14 +664,12 @@ function trimSpeechTranscriptionChunkRetention(): void {
 
 /**
  * Сколько фрагментов диктовки держится в памяти без подтверждения записи в базу.
- * Это то самое неограниченное потребление памяти, которым оплачен запрет на
- * уничтожение текста: пока база не приняла фрагмент, вытеснить его нельзя.
- * Число попадает в предупреждение врачу, чтобы отказ базы был виден по величине,
- * а не только по факту.
+ * Изолировано по организации: врач клиники А не видит счётчики клиники Б.
  */
-function undurableCachedChunkCount(): number {
+function undurableCachedChunkCount(organizationId?: string): number {
 	let count = 0;
 	for (const chunk of speechTranscriptionChunks) {
+		if (organizationId && chunk.organizationId !== organizationId) continue;
 		if (
 			!durableChunkKeys.has(speechChunkKey(chunk.recordingId, chunk.chunkIndex))
 		)
@@ -919,9 +940,13 @@ function withoutDurableFailureWarnings(
 	);
 }
 
-function clearCachedDurableFailureWarnings(recordingId: string): void {
+function clearCachedDurableFailureWarnings(
+	recordingId: string,
+	organizationId?: string,
+): void {
 	for (const chunk of speechTranscriptionChunks) {
 		if (chunk.recordingId !== recordingId) continue;
+		if (organizationId && chunk.organizationId !== organizationId) continue;
 		if (
 			!chunk.warnings.some((warning) =>
 				warning.startsWith(durableWriteFailureWarningPrefix),
@@ -1023,8 +1048,8 @@ async function persistSpeechRecording(
 	const chunks = withoutDurableFailureWarnings(
 		mergeDurableAndCachedChunks(
 			stored.chunks,
-			listSpeechTranscriptionChunks(recordingId).filter((chunk) =>
-				speechRecordingIdentityMatches(chunk, identity),
+			listSpeechTranscriptionChunks(recordingId, { organizationId }).filter(
+				(chunk) => speechRecordingIdentityMatches(chunk, identity),
 			),
 		),
 	);
@@ -1424,6 +1449,26 @@ export function resetSpeechTranscriptionCacheForRestart(): void {
 	speechRestoreCachedCharCount = 0;
 }
 
+export function seedSpeechTranscriptionChunkForTesting(
+	chunk: SpeechTranscriptionChunk,
+	durable = false,
+): void {
+	speechTranscriptionChunks.push(chunk);
+	if (durable) {
+		durableChunkKeys.add(speechChunkKey(chunk.recordingId, chunk.chunkIndex));
+	}
+}
+
+export function trimSpeechTranscriptionChunkRetentionForTesting(): void {
+	trimSpeechTranscriptionChunkRetention();
+}
+
+export function getUndurableCachedChunkCountForTesting(
+	organizationId?: string,
+): number {
+	return undurableCachedChunkCount(organizationId);
+}
+
 /**
  * Восстановление кэша НИКОГДА не выполняется внутри чужой транзакции.
  *
@@ -1593,7 +1638,7 @@ async function withDurableSpeechRecording(
 		);
 		// Запись прошла — прежнее предупреждение о том, что текст только в памяти,
 		// стало неправдой и снимается, иначе оно висело бы на сохранённой записи.
-		clearCachedDurableFailureWarnings(chunk.recordingId);
+		clearCachedDurableFailureWarnings(chunk.recordingId, organizationId);
 		return chunk;
 	} catch (error) {
 		// Несовпадение личности записи — это отказ ЗАПРОСУ, а не сбой хранилища.
@@ -1611,7 +1656,7 @@ async function withDurableSpeechRecording(
 			...chunk.warnings.filter(
 				(warning) => !warning.startsWith(durableWriteFailureWarningPrefix),
 			),
-			`${durableWriteFailureWarningPrefix} (${reason}); текст держится только в памяти сервера (несохраненных фрагментов: ${undurableCachedChunkCount()}) и будет потерян при перезапуске.`,
+			`${durableWriteFailureWarningPrefix} (${reason}); текст держится только в памяти сервера (несохраненных фрагментов: ${undurableCachedChunkCount(organizationId)}) и будет потерян при перезапуске.`,
 		]).slice(0, 12);
 		return chunk;
 	}

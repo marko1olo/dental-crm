@@ -27,7 +27,9 @@ export type DoctorSpecialtyId =
 	| "surgeon_implantologist"
 	| "orthodontist"
 	| "hygienist"
-	| "pediatric";
+	| "pediatric"
+	| "general_dentist"
+	| "solo_practitioner";
 
 export type AssistantCategoryId = "none" | "second" | "first" | "highest";
 
@@ -102,6 +104,26 @@ export const DOCTOR_SPECIALTY_CONFIGS: Record<DoctorSpecialtyId, DoctorSpecialty
 		deductsMaterialCosts: true,
 		minGuaranteeMonthlyKop: 6000000, // 60,000 RUB
 		descriptionRu: "25% от детского терапевтического приема (минус материалы) + адаптационный прием.",
+	},
+	general_dentist: {
+		specialtyId: "general_dentist",
+		titleRu: "Врач-стоматолог общей практики",
+		defaultPercentage: 25,
+		retailProductsPercentage: 10,
+		deductsLabCosts: true,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 7000000, // 70,000 RUB
+		descriptionRu: "25% от чистой базы (выручка за вычетом лаборатории и материалов).",
+	},
+	solo_practitioner: {
+		specialtyId: "solo_practitioner",
+		titleRu: "Врач-стоматолог (Индивидуальная практика / Соло)",
+		defaultPercentage: 100,
+		retailProductsPercentage: 100,
+		deductsLabCosts: true,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 0,
+		descriptionRu: "Индивидуальная практика: 100% операционной выручки за вычетом лаборатории и материалов.",
 	},
 };
 
@@ -365,20 +387,24 @@ export function calculateDoctorStaffPayroll(
 	let earnedRetail = 0;
 
 	for (const item of input.services) {
-		totalGross += item.grossRevenueKop;
+		const itemGrossKop = Math.round(Number(item.grossRevenueKop) || 0);
+		const itemLabKop = Math.round(Number(item.labCostKop) || 0);
+		const itemMatKop = Math.round(Number(item.materialCostKop) || 0);
 
-		const labCost = preset.deductsLabCosts ? item.labCostKop : 0;
-		const materialCost = preset.deductsMaterialCosts ? item.materialCostKop : 0;
+		totalGross += itemGrossKop;
+
+		const labCost = preset.deductsLabCosts ? itemLabKop : 0;
+		const materialCost = preset.deductsMaterialCosts ? itemMatKop : 0;
 
 		totalLab += labCost;
 		totalMaterial += materialCost;
 
 		if (item.category === "retail_hygiene") {
 			const retailPercent = item.customCommissionPercent ?? preset.retailProductsPercentage;
-			const retailEarned = Math.round((item.grossRevenueKop * retailPercent) / 100);
+			const retailEarned = Math.round((itemGrossKop * retailPercent) / 100);
 			earnedRetail += retailEarned;
 		} else {
-			const netItemBase = Math.max(0, item.grossRevenueKop - labCost - materialCost);
+			const netItemBase = Math.max(0, itemGrossKop - labCost - materialCost);
 			const itemCommissionPercent = item.customCommissionPercent ?? basePercent;
 			const itemEarned = Math.round((netItemBase * itemCommissionPercent) / 100);
 			earnedBase += itemEarned;
@@ -401,11 +427,11 @@ export function calculateDoctorStaffPayroll(
 	const revenueKpiBonusKop = Math.round((totalNetBase * revenueKpiPercent) / 100);
 
 	// Comprehensive plans KPI (e.g. 5,000 RUB per plan)
-	const compPlansCount = input.comprehensivePlansCount ?? 0;
-	const compPlanBonusPerUnit = input.comprehensivePlanBonusPerUnitKop ?? 500000; // 5,000 RUB
-	const comprehensivePlanBonusKop = compPlansCount * compPlanBonusPerUnit;
+	const compPlansCount = Math.round(Number(input.comprehensivePlansCount) || 0);
+	const compPlanBonusPerUnit = Math.round(Number(input.comprehensivePlanBonusPerUnitKop) || 500000); // 5,000 RUB
+	const comprehensivePlanBonusKop = Math.round(compPlansCount * compPlanBonusPerUnit);
 
-	const manualAdj = input.manualAdjustmentKop ?? 0;
+	const manualAdj = Math.round(Number(input.manualAdjustmentKop) || 0);
 	const noteRu = input.manualAdjustmentNoteRu ?? "";
 
 	const preGuaranteeCalculated = earnedBase + earnedRetail + revenueKpiBonusKop + comprehensivePlanBonusKop + manualAdj;
@@ -413,16 +439,21 @@ export function calculateDoctorStaffPayroll(
 	let guaranteeApplied = false;
 	let guaranteeTopUpKop = 0;
 
-	if (preGuaranteeGross < preset.minGuaranteeMonthlyKop && input.services.length > 0) {
+	// Mandate 8s: Solo Doctor & Small Clinic Sovereignty
+	// Active production or shift attendance qualifies for minimum statutory guarantee floor
+	const daysWorked = input.daysWorked !== undefined ? Math.round(Number(input.daysWorked)) : (input.services.length > 0 ? 21 : 0);
+	// Art. 350 Labor Code RF: 33h week = 6.6h/day for dentists (outpatient reception)
+	const hoursWorked = input.hoursWorked !== undefined ? Number(input.hoursWorked) : Number((daysWorked * 6.6).toFixed(1));
+
+	const hasActiveProductionOrAttendance = input.services.length > 0 || daysWorked > 0;
+
+	if (preGuaranteeGross < preset.minGuaranteeMonthlyKop && hasActiveProductionOrAttendance && preset.minGuaranteeMonthlyKop > 0) {
 		guaranteeTopUpKop = preset.minGuaranteeMonthlyKop - preGuaranteeGross;
 		preGuaranteeGross = preset.minGuaranteeMonthlyKop;
 		guaranteeApplied = true;
 	}
 
 	const grossPayoutBeforeTaxKop = Math.max(0, preGuaranteeGross);
-
-	const daysWorked = input.daysWorked ?? (input.services.length > 0 ? 21 : 0);
-	const hoursWorked = input.hoursWorked ?? (daysWorked * 6.0);
 
 	return {
 		employeeId: input.employeeId,
@@ -473,35 +504,36 @@ export function calculateAssistantStaffPayroll(
 
 	for (const shift of input.shifts) {
 		totalShifts += 1;
-		totalHours += shift.hoursWorked;
+		const shiftHours = Number(shift.hoursWorked) || 0;
+		totalHours += shiftHours;
 
 		if (shift.isSterilizationShift) {
 			sterilizationShiftsCount += 1;
 		}
 		if (shift.radiographsTakenCount) {
-			totalRadiographs += shift.radiographsTakenCount;
+			totalRadiographs += Math.round(Number(shift.radiographsTakenCount) || 0);
 		}
 		if (shift.surgeriesAssistedCount) {
-			totalSurgeries += shift.surgeriesAssistedCount;
+			totalSurgeries += Math.round(Number(shift.surgeriesAssistedCount) || 0);
 		}
 
 		if (shift.shiftType === "standard_6h") {
-			baseShiftsPayout += rates.baseShiftRate6hKop;
+			baseShiftsPayout += Math.round(rates.baseShiftRate6hKop);
 		} else if (shift.shiftType === "full_12h") {
-			baseShiftsPayout += rates.baseShiftRate12hKop;
+			baseShiftsPayout += Math.round(rates.baseShiftRate12hKop);
 		} else {
 			// Pro-rated hourly based on 6h base
-			baseShiftsPayout += Math.round((shift.hoursWorked / 6.0) * rates.baseShiftRate6hKop);
+			baseShiftsPayout += Math.round((shiftHours / 6.0) * rates.baseShiftRate6hKop);
 		}
 	}
 
 	const categoryBonusPercent = rates.categoryBonusPercentMap[input.category] ?? 0;
 	const categoryBonusKop = Math.round((baseShiftsPayout * categoryBonusPercent) / 100);
 
-	const sterilizationBonusKop = sterilizationShiftsCount * rates.sterilizationShiftBonusKop;
-	const radiographsPayoutKop = totalRadiographs * rates.radiographBonusKop;
-	const surgeriesPayoutKop = totalSurgeries * rates.surgeryAssistanceBonusKop;
-	const manualAdj = input.manualAdjustmentKop ?? 0;
+	const sterilizationBonusKop = Math.round(sterilizationShiftsCount * rates.sterilizationShiftBonusKop);
+	const radiographsPayoutKop = Math.round(totalRadiographs * rates.radiographBonusKop);
+	const surgeriesPayoutKop = Math.round(totalSurgeries * rates.surgeryAssistanceBonusKop);
+	const manualAdj = Math.round(Number(input.manualAdjustmentKop) || 0);
 	const noteRu = input.manualAdjustmentNoteRu ?? "";
 
 	const grossPayoutBeforeTaxKop = Math.max(
@@ -547,28 +579,31 @@ export function calculateAdministratorStaffPayroll(
 	input: AdministratorStaffPayrollInput
 ): AdministratorStaffPayrollResult {
 	const rates = input.ratesConfig ?? DEFAULT_ADMINISTRATOR_RATES;
-	const shiftsWorked = input.shiftsWorked;
-	const hoursWorked = input.hoursWorked ?? (shiftsWorked * 12.0);
+	const shiftsWorked = Math.round(Number(input.shiftsWorked) || 0);
+	const hoursWorked = input.hoursWorked !== undefined ? Number(input.hoursWorked) : (shiftsWorked * 12.0);
 
 	// Salary calculated by shift count (e.g. 15 shifts * 3,000 RUB = 45,000 RUB)
-	const baseSalaryPayoutKop = shiftsWorked * rates.baseShiftRateKop;
+	const baseSalaryPayoutKop = Math.round(shiftsWorked * rates.baseShiftRateKop);
 
 	// Revenue commission
+	const cashRevKop = Math.round(Number(input.clinicCashRevenueKop) || 0);
 	const cashRevenueCommissionKop = Math.round(
-		(input.clinicCashRevenueKop * rates.cashRevenueCommissionPercent) / 100
+		(cashRevKop * rates.cashRevenueCommissionPercent) / 100
 	);
 
 	// Lead conversion calculation
-	const conversionRatePercent = input.primaryLeadsCount > 0
-		? Number(((input.convertedLeadsCount / input.primaryLeadsCount) * 100).toFixed(1))
+	const primLeads = Math.round(Number(input.primaryLeadsCount) || 0);
+	const convLeads = Math.round(Number(input.convertedLeadsCount) || 0);
+	const conversionRatePercent = primLeads > 0
+		? Number(((convLeads / primLeads) * 100).toFixed(1))
 		: 0;
 
 	const leadConversionBonusKop =
-		conversionRatePercent >= rates.leadConversionThresholdPercent && input.convertedLeadsCount > 0
-			? rates.leadConversionBonusKop
+		conversionRatePercent >= rates.leadConversionThresholdPercent && convLeads > 0
+			? Math.round(rates.leadConversionBonusKop)
 			: 0;
 
-	const manualAdj = input.manualAdjustmentKop ?? 0;
+	const manualAdj = Math.round(Number(input.manualAdjustmentKop) || 0);
 	const noteRu = input.manualAdjustmentNoteRu ?? "";
 
 	const grossPayoutBeforeTaxKop = Math.max(

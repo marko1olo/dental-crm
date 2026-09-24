@@ -241,7 +241,9 @@ describe('Statutory Dental Laboratory Work Order & Tracking Studio Suite', () =>
 		it('generates valid vector SVG for QR Code', () => {
 			const qrSvg = generateQrCodeSvg('DENTE-LAB:TEST-001', 100);
 			assert.ok(qrSvg.includes('<svg'));
-			assert.ok(qrSvg.includes('viewBox="0 0 100 100"'));
+			assert.ok(qrSvg.includes('viewBox='));
+			assert.ok(qrSvg.includes('width="100"'));
+			assert.ok(qrSvg.includes('height="100"'));
 			assert.ok(qrSvg.includes('<rect'));
 		});
 

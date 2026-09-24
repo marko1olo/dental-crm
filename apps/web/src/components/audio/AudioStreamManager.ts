@@ -113,6 +113,8 @@ export class AudioStreamManager {
 	private sessionPcmChunks: Int16Array[] = [];
 	private totalSessionSamples = 0;
 	private noiseFloorRms = 0.005;
+	private isFlushing = false;
+	private silenceTimeoutTriggered = false;
 
 	constructor(config: AudioStreamManagerConfig = {}) {
 		this.config = {
@@ -357,6 +359,7 @@ export class AudioStreamManager {
 			this.lastSpeechTime = now;
 			if (!this.isSpeaking) {
 				this.isSpeaking = true;
+				this.silenceTimeoutTriggered = false;
 				this.speechStartTime = now;
 				this.sessionPcmChunks = [];
 				this.totalSessionSamples = 0;
@@ -365,6 +368,7 @@ export class AudioStreamManager {
 				// Таймер максимальной длины записи
 				if (this.maxDurationTimer) clearTimeout(this.maxDurationTimer);
 				this.maxDurationTimer = setTimeout(() => {
+					this.maxDurationTimer = null;
 					this.flushCurrentSpeechSegment("max_duration");
 				}, this.config.vadOptions.maxSpeechDurationMs);
 			}
@@ -382,12 +386,19 @@ export class AudioStreamManager {
 			this.sessionPcmChunks.push(pcm);
 			this.totalSessionSamples += pcm.length;
 
-			if (rms <= silenceThreshold && !this.silenceTimer) {
+			if (rms <= silenceThreshold && !this.silenceTimer && !this.silenceTimeoutTriggered) {
 				// Запуск таймера тишины на 1.8 сек (Hands-free режим)
 				this.silenceTimer = setTimeout(() => {
+					this.silenceTimer = null;
 					this.flushCurrentSpeechSegment("silence_timeout");
 				}, this.config.vadOptions.silenceTimeoutMs);
 			}
+		}
+
+		// Защита от бесконечного накопления сэмплов в оперативной памяти (Anti-RAM-Hog)
+		// 9 600 000 сэмплов @ 16kHz = 10 минут непрерывной записи без пауз (~19.2 МБ)
+		if (this.totalSessionSamples > 9_600_000) {
+			this.flushCurrentSpeechSegment("max_duration");
 		}
 	}
 
@@ -397,29 +408,41 @@ export class AudioStreamManager {
 	private flushCurrentSpeechSegment(
 		reason: "silence_timeout" | "max_duration" | "manual_stop",
 	): void {
+		if (this.isFlushing) return;
+		if (!this.isRunning && reason !== "manual_stop") return;
 		if (!this.isSpeaking && this.sessionPcmChunks.length === 0) return;
+		if (reason === "silence_timeout" && this.silenceTimeoutTriggered) return;
 
-		const durationMs = this.speechStartTime > 0 ? Date.now() - this.speechStartTime : 0;
-		const combined = this.exportCombinedInt16Array();
-
-		if (this.silenceTimer) {
-			clearTimeout(this.silenceTimer);
-			this.silenceTimer = null;
-		}
-		if (this.maxDurationTimer) {
-			clearTimeout(this.maxDurationTimer);
-			this.maxDurationTimer = null;
-		}
-
-		this.isSpeaking = false;
-		this.sessionPcmChunks = [];
-		this.totalSessionSamples = 0;
-
-		if (durationMs >= this.config.vadOptions.minSpeechDurationMs) {
-			this.config.onSpeechEnd(durationMs);
-			if (reason === "silence_timeout") {
-				this.config.onSilenceTimeout(combined, durationMs);
+		this.isFlushing = true;
+		try {
+			if (this.silenceTimer) {
+				clearTimeout(this.silenceTimer);
+				this.silenceTimer = null;
 			}
+			if (this.maxDurationTimer) {
+				clearTimeout(this.maxDurationTimer);
+				this.maxDurationTimer = null;
+			}
+
+			if (reason === "silence_timeout") {
+				this.silenceTimeoutTriggered = true;
+			}
+
+			const durationMs = this.speechStartTime > 0 ? Date.now() - this.speechStartTime : 0;
+			const combined = this.exportCombinedInt16Array();
+
+			this.isSpeaking = false;
+			this.sessionPcmChunks = [];
+			this.totalSessionSamples = 0;
+
+			if (durationMs >= this.config.vadOptions.minSpeechDurationMs) {
+				this.config.onSpeechEnd(durationMs);
+				if (reason === "silence_timeout") {
+					this.config.onSilenceTimeout(combined, durationMs);
+				}
+			}
+		} finally {
+			this.isFlushing = false;
 		}
 	}
 
@@ -542,6 +565,7 @@ export class AudioStreamManager {
 		this.isRunning = false;
 		this.isPaused = false;
 		this.isSpeaking = false;
+		this.silenceTimeoutTriggered = false;
 
 		if (this.silenceTimer) {
 			clearTimeout(this.silenceTimer);
@@ -650,15 +674,18 @@ export class AudioStreamManager {
 		this.sessionPcmChunks = [];
 		this.totalSessionSamples = 0;
 
-		if (this.audioContext && this.audioContext.state !== "closed") {
+		if (this.audioContext) {
+			const ctx = this.audioContext;
+			this.audioContext = null;
 			try {
-				void this.audioContext.close().catch((err: unknown) => {
-					logger.warn("[AudioStreamManager] audioContext close async error:", err);
-				});
+				if (ctx.state !== "closed" && typeof ctx.close === "function") {
+					void ctx.close().catch((err: unknown) => {
+						logger.warn("[AudioStreamManager] audioContext close async error:", err);
+					});
+				}
 			} catch (err: unknown) {
 				logger.warn("[AudioStreamManager] audioContext close error:", err);
 			}
-			this.audioContext = null;
 		}
 	}
 }

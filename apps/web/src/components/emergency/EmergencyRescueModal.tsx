@@ -5,7 +5,7 @@
  * Adrenaline Timer, Weight-Adjusted Dosage, and Statutory Form 043/u Protocol Generation.
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
 	AlertOctagon,
 	Heart,
@@ -142,9 +142,25 @@ export function EmergencyRescueModal({
 	const [isCopiedCheatSheet, setIsCopiedCheatSheet] = useState<boolean>(false);
 	const [activeProtocolTab, setActiveProtocolTab] = useState<'act' | 'cheatsheet'>('act');
 
-	// Adrenaline Timer countdown effect
+	// Safe timeout references for memory leak prevention
+	const copyActTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const copyCheatSheetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	// Cleanup copy timeouts on unmount
 	useEffect(() => {
-		let intervalId: NodeJS.Timeout | null = null;
+		return () => {
+			if (copyActTimeoutRef.current) clearTimeout(copyActTimeoutRef.current);
+			if (copyCheatSheetTimeoutRef.current) clearTimeout(copyCheatSheetTimeoutRef.current);
+		};
+	}, []);
+
+	// Adrenaline Timer countdown effect (safely pauses/cleans up when modal is closed or unmounted)
+	useEffect(() => {
+		if (!isOpen) {
+			setIsAdrenalineTimerRunning(false);
+			return;
+		}
+		let intervalId: ReturnType<typeof setInterval> | null = null;
 		if (isAdrenalineTimerRunning) {
 			intervalId = setInterval(() => {
 				setAdrenalineTimerSeconds((prev) => {
@@ -160,7 +176,7 @@ export function EmergencyRescueModal({
 		return () => {
 			if (intervalId) clearInterval(intervalId);
 		};
-	}, [isAdrenalineTimerRunning]);
+	}, [isOpen, isAdrenalineTimerRunning]);
 
 	// Toggle Step completion
 	const handleToggleStep = (stepId: string) => {
@@ -273,9 +289,13 @@ export function EmergencyRescueModal({
 	// Copy to clipboard handlers
 	const handleCopyAct = async () => {
 		try {
-			await navigator.clipboard.writeText(generatedActText);
+			if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(generatedActText);
+			}
 			setIsCopiedAct(true);
-			setTimeout(() => setIsCopiedAct(false), 2500);
+			showToast("Акт оказания экстренной помощи скопирован в буфер обмена", "success");
+			if (copyActTimeoutRef.current) clearTimeout(copyActTimeoutRef.current);
+			copyActTimeoutRef.current = setTimeout(() => setIsCopiedAct(false), 2500);
 		} catch {
 			// fallback
 		}
@@ -283,9 +303,28 @@ export function EmergencyRescueModal({
 
 	const handleCopyCheatSheet = async () => {
 		try {
-			await navigator.clipboard.writeText(generatedCheatSheetText);
+			if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(generatedCheatSheetText);
+			}
 			setIsCopiedCheatSheet(true);
-			setTimeout(() => setIsCopiedCheatSheet(false), 2500);
+			showToast("Шпаргалка для диспетчера СМП 112 скопирована в буфер обмена", "success");
+			if (copyCheatSheetTimeoutRef.current) clearTimeout(copyCheatSheetTimeoutRef.current);
+			copyCheatSheetTimeoutRef.current = setTimeout(() => setIsCopiedCheatSheet(false), 2500);
+		} catch {
+			// fallback
+		}
+	};
+
+	const handleCallSmpCheatSheet = async () => {
+		setActiveProtocolTab('cheatsheet');
+		try {
+			if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(generatedCheatSheetText);
+				setIsCopiedCheatSheet(true);
+				showToast("Шпаргалка для диспетчера СМП 112 скопирована в буфер обмена", "success");
+				if (copyCheatSheetTimeoutRef.current) clearTimeout(copyCheatSheetTimeoutRef.current);
+				copyCheatSheetTimeoutRef.current = setTimeout(() => setIsCopiedCheatSheet(false), 2500);
+			}
 		} catch {
 			// fallback
 		}
@@ -344,7 +383,7 @@ export function EmergencyRescueModal({
 							</h2>
 							<span className="emergency-header-badge">
 								<ShieldAlert size={13} />
-								Приказы МЗ РФ № 1079н / 1144н / 138н & ФАР
+								Приказы МЗ РФ № 786н / 1079н / 1144н / 138н & ФАР
 							</span>
 						</div>
 					</div>
@@ -353,8 +392,9 @@ export function EmergencyRescueModal({
 						<button
 							type="button"
 							className="emergency-call-112-btn"
-							onClick={() => setActiveProtocolTab('cheatsheet')}
-							title="Шпаргалка вызова 103 / 112"
+							onClick={handleCallSmpCheatSheet}
+							data-testid="emergency-call-112-header-btn"
+							title="Шпаргалка вызова 103 / 112 (1-клик копирование для диспетчера)"
 						>
 							<PhoneCall size={18} />
 							ВЫЗОВ СМП (103 / 112)
@@ -469,6 +509,46 @@ export function EmergencyRescueModal({
 										onChange={(e) => setVitals((prev) => ({ ...prev, spo2: Number(e.target.value) || prev.spo2 }))}
 									/>
 								</div>
+							</div>
+
+							{/* 1-Click Weight Presets for Instant Recalculation (Mandate 8e Autonomy) */}
+							<div className="emergency-quick-weight-presets" role="group" aria-label="Быстрый выбор массы для расчета доз">
+								<button
+									type="button"
+									className={`emergency-weight-chip ${patientWeightKg === 15 ? 'active' : ''}`}
+									onClick={() => { setPatientWeightKg(15); setPatientAgeYears(4); }}
+									data-testid="preset-weight-15"
+									title="Ребенок (15 кг, 4 года)"
+								>
+									15 кг (ребёнок)
+								</button>
+								<button
+									type="button"
+									className={`emergency-weight-chip ${patientWeightKg === 45 ? 'active' : ''}`}
+									onClick={() => { setPatientWeightKg(45); setPatientAgeYears(14); }}
+									data-testid="preset-weight-45"
+									title="Подросток (45 кг, 14 лет)"
+								>
+									45 кг (подросток)
+								</button>
+								<button
+									type="button"
+									className={`emergency-weight-chip ${patientWeightKg === 70 ? 'active' : ''}`}
+									onClick={() => { setPatientWeightKg(70); setPatientAgeYears(35); }}
+									data-testid="preset-weight-70"
+									title="Взрослый стандартный (70 кг)"
+								>
+									70 кг (взрослый)
+								</button>
+								<button
+									type="button"
+									className={`emergency-weight-chip ${patientWeightKg === 90 ? 'active' : ''}`}
+									onClick={() => { setPatientWeightKg(90); setPatientAgeYears(50); }}
+									data-testid="preset-weight-90"
+									title="Взрослый крупный (90 кг)"
+								>
+									90 кг (крупный)
+								</button>
 							</div>
 						</div>
 
@@ -811,7 +891,7 @@ export function EmergencyRescueModal({
 
 												{step.dosageHintRu && (
 													<div className="emergency-step-dosage-hint min-w-0">
-														<Syringe size={13} className="inline mr-1" style={{ color: 'var(--ok-fg, #10b981)' }} /> {step.dosageHintRu}
+														<Syringe size={13} className="inline mr-1" style={{ color: 'var(--ok-fg)' }} /> {step.dosageHintRu}
 													</div>
 												)}
 											</div>
@@ -868,19 +948,19 @@ export function EmergencyRescueModal({
 						<div className="emergency-cpr-box">
 							<div className="emergency-cpr-header">
 								<div className="emergency-cpr-title min-w-0">
-									<Syringe size={18} style={{ color: 'var(--primary, #0ea5e9)' }} />
+									<Syringe size={18} style={{ color: 'var(--teal)' }} />
 									<span className="truncate min-w-0">УКЛАДКА ЭКСТРЕННОЙ ПОМОЩИ (ПРИКАЗ МЗ РФ № 786н / 1144н)</span>
 								</div>
 							</div>
 
 							<div className="emergency-cpr-guidelines-list">
 								{STATUTORY_EMERGENCY_KIT_MEMO.map((kit) => (
-									<div key={kit.drugId} className="emergency-cpr-guideline-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '2px', padding: '6px 0', borderBottom: '1px solid var(--border-subtle, rgba(255,255,255,0.08))' }}>
-										<div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', minWidth: 0, gap: '6px' }}>
-											<span className="truncate min-w-0" style={{ fontWeight: 800, fontSize: '0.8125rem', color: 'var(--ink)' }} title={kit.tradeNameRu}>{kit.tradeNameRu}</span>
-											<span className="emergency-cpr-val highlight-ok shrink-0" style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>{kit.dosageStandardRu.split(';')[0]}</span>
+									<div key={kit.drugId} className="emergency-kit-row">
+										<div className="emergency-kit-row-top">
+											<span className="emergency-kit-row-name truncate min-w-0" title={kit.tradeNameRu}>{kit.tradeNameRu}</span>
+											<span className="emergency-cpr-val highlight-ok shrink-0 emergency-kit-row-dose">{kit.dosageStandardRu.split(';')[0]}</span>
 										</div>
-										<span className="truncate min-w-0 w-full" style={{ fontSize: '0.75rem', color: 'var(--muted)' }} title={kit.routeRu}>{kit.routeRu}</span>
+										<span className="truncate min-w-0 emergency-kit-row-route" title={kit.routeRu}>{kit.routeRu}</span>
 									</div>
 								))}
 							</div>
@@ -963,8 +1043,7 @@ export function EmergencyRescueModal({
 											{onApplyToDiary ? (
 												<button
 													type="button"
-													className="emergency-copy-act-btn"
-													style={{ background: 'var(--teal, #0d9488)', color: 'var(--on-teal, #ffffff)' }}
+													className="emergency-copy-act-btn teal"
 													onClick={handleApplyToForm043}
 													title="Вставить протокол оказания экстренной помощи в дневник карты 043/у"
 												>
@@ -983,8 +1062,7 @@ export function EmergencyRescueModal({
 											)}
 											<button
 												type="button"
-												className="emergency-copy-act-btn"
-												style={{ background: 'var(--primary, #0ea5e9)', color: '#ffffff' }}
+												className="emergency-copy-act-btn primary"
 												onClick={handlePrintEmergencyAct}
 												data-testid="emergency-print-act-btn"
 												title="Распечатать Акт оказания экстренной помощи для передачи бригаде СМП (А4)"
@@ -1009,8 +1087,7 @@ export function EmergencyRescueModal({
 											)}
 											<button
 												type="button"
-												className="emergency-copy-act-btn secondary"
-												style={{ background: 'var(--surface-strong, #334155)', color: '#ffffff' }}
+												className="emergency-copy-act-btn surface"
 												onClick={handleCopyRelativeNotice}
 												data-testid="emergency-copy-relative-notice-btn"
 												title="Скопировать экстренное извещение для родственников в WhatsApp/Telegram"
@@ -1023,9 +1100,9 @@ export function EmergencyRescueModal({
 								) : (
 									<button
 										type="button"
-										className="emergency-copy-act-btn"
-										style={{ background: 'var(--bad-fg, #ef4444)' }}
+										className="emergency-copy-act-btn danger"
 										onClick={handleCopyCheatSheet}
+										data-testid="emergency-copy-cheatsheet-btn"
 									>
 										{isCopiedCheatSheet ? <Check size={16} /> : <Copy size={16} />}
 										<span>{isCopiedCheatSheet ? 'Скопировано для звонка!' : 'Копировать шпаргалку 112'}</span>

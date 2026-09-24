@@ -22,6 +22,8 @@ export interface QrSvgOptions {
 	readonly colorLight?: string | undefined;
 	readonly color?: string | undefined;
 	readonly background?: string | undefined;
+	readonly fgColor?: string | undefined;
+	readonly bgColor?: string | undefined;
 	readonly title?: string | undefined;
 }
 
@@ -499,8 +501,8 @@ export function generateQrMatrix(
 export function generateQrCodeSvg(text: string, options: QrSvgOptions = {}): string {
 	const { matrix, size } = generateQrMatrix(text, "M");
 	const margin = options.margin ?? 4;
-	const fg = options.colorDark ?? options.color ?? options.foregroundColor ?? "#000000";
-	const bg = options.colorLight ?? options.background ?? options.backgroundColor ?? "#ffffff";
+	const fg = options.colorDark ?? options.color ?? options.foregroundColor ?? options.fgColor ?? "#000000";
+	const bg = options.colorLight ?? options.background ?? options.backgroundColor ?? options.bgColor ?? "#ffffff";
 	const totalSize = size + margin * 2;
 	const renderSize = options.size ?? 160;
 

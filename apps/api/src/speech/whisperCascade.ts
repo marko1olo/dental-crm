@@ -486,6 +486,14 @@ export async function transcribeWhisperCascade(
 		? input.audio
 		: Buffer.from(input.audio);
 
+	const maxAudioBytes = numberFromEnv("DENTAL_SPEECH_MAX_AUDIO_BYTES", 25 * 1024 * 1024);
+	if (audioBuf.byteLength > maxAudioBytes) {
+		throw new SpeechProviderRequestError(
+			`Размер аудиофайла (${Math.ceil(audioBuf.byteLength / 1024 / 1024)} МБ) превышает максимальный лимит (${Math.ceil(maxAudioBytes / 1024 / 1024)} МБ) для каскада Whisper.`,
+			{ statusCode: 413, retryable: false },
+		);
+	}
+
 	const mimeType = input.mimeType || "audio/wav";
 	const language = input.language || "ru";
 	const timeoutMs =

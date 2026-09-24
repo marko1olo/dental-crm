@@ -17,6 +17,7 @@ import {
 	Check,
 	Maximize2,
 	Link as LinkIcon,
+	X,
 } from 'lucide-react';
 import { PhotoProtocolPreset, PhotoSlotRecord, getSlotDefinitionById } from './photoGridPresets';
 import {
@@ -107,6 +108,18 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 			setAfterShade(afterSlotRecord.detectedVitaShade);
 		}
 	}, [beforeSlotRecord.detectedVitaShade, afterSlotRecord.detectedVitaShade]);
+
+	useEffect(() => {
+		if (!showExportModal) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') {
+				e.stopPropagation();
+				setShowExportModal(false);
+			}
+		};
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, [showExportModal]);
 
 	const COMPARISON_PROJECTIONS = useMemo(() => [
 		{ id: 'portrait_smile', labelRu: 'Анфас улыбка' },
@@ -228,6 +241,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 
 	// 1-Click High-Res Canvas Export
 	const exportCollageToPng = useCallback(() => {
+		if (isExporting) return;
 		setIsExporting(true);
 		const dimensions = calculateCollageDimensions(exportFormat);
 		const canvas = document.createElement('canvas');
@@ -1087,6 +1101,9 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 					}}
 					role="dialog"
 					aria-modal="true"
+					onClick={(e) => {
+						if (e.target === e.currentTarget) setShowExportModal(false);
+					}}
 				>
 					<div style={{
 						background: 'var(--paper, #ffffff)',
@@ -1112,9 +1129,10 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 								type="button"
 								className="photo-touch-btn"
 								onClick={() => setShowExportModal(false)}
+								aria-label="Закрыть окно экспорта (Esc)"
 								style={{ minHeight: '36px', minWidth: '44px', padding: '4px 8px' }}
 							>
-								✕
+								<X size={18} />
 							</button>
 						</div>
 
@@ -1177,7 +1195,6 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 								type="button"
 								className="photo-touch-btn primary"
 								onClick={exportCollageToPng}
-								disabled={isExporting}
 								style={{ minHeight: '44px', minWidth: '44px', padding: '8px 20px', fontWeight: 700 }}
 							>
 								<Download size={16} />

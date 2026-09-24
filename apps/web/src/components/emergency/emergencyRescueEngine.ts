@@ -83,6 +83,30 @@ export const STATUTORY_EMERGENCY_KIT_MEMO: readonly StatutoryEmergencyKitItem[] 
 		indicationsRu: 'Генерализованная крапивница, отек Квинке, зудящий дерматоз',
 		statutoryOrderRu: 'Приказ МЗ РФ № 786н (Прил. 11)',
 	},
+	{
+		drugId: 'salbutamol_spray',
+		tradeNameRu: 'Сальбутамол аэрозоль 100 мкг/доза',
+		dosageStandardRu: 'Взрослые и дети: 2–4 ингаляционные дозы',
+		routeRu: 'Ингаляционно через рот (со спейсером)',
+		indicationsRu: 'Острый бронхоспазм, приступ бронхиальной астмы',
+		statutoryOrderRu: 'Приказ МЗ РФ № 786н (Прил. 11), 1144н',
+	},
+	{
+		drugId: 'nitroglycerin_sublingual',
+		tradeNameRu: 'Нитроглицерин 0.5 мг (таб. / спрей)',
+		dosageStandardRu: '0.5 мг (1 таб.) под язык при АД сист > 100',
+		routeRu: 'Сублингвально (под язык) строго сидя',
+		indicationsRu: 'Острый коронарный синдром, стенокардия, ишемия миокарда',
+		statutoryOrderRu: 'Приказ МЗ РФ № 786н (Прил. 11), 138н',
+	},
+	{
+		drugId: 'glucose_dextrose_40',
+		tradeNameRu: 'Глюкоза (Декстроза) 40%',
+		dosageStandardRu: 'Взрослые: 20–60 мл; Дети: 2 мл/кг струйно',
+		routeRu: 'В/в струйно до восстановления ясного сознания',
+		indicationsRu: 'Гипогликемическое состояние / кома у диабетиков',
+		statutoryOrderRu: 'Приказ МЗ РФ № 786н (Прил. 11)',
+	},
 ];
 
 export interface EmergencyVitals {
@@ -151,13 +175,13 @@ export function calculateWeightAdjustedDose(
 					drugId,
 					drugNameRu: 'Адреналина гидрохлорид (Эпинефрин) 0.1%',
 					concentrationRu: '1 мг/мл (0.1%)',
-					routeRu: 'в/в болюсно (развести в 10 мл 0.9% NaCl) или внутрикостно',
+					routeRu: 'в/в болюсно (развести в 10 мл 0.9% NaCl) или в/м в бедро до венозного доступа',
 					calculatedDoseMg: doseMg,
 					calculatedVolumeMl: +volMl.toFixed(2),
 					numberOfAmpoules: Math.ceil(volMl),
 					instructionsRu: isPediatric
-						? `СЛР у детей: 0.01 мг/кг (${volMl.toFixed(2)} мл) в/в каждые 3–5 минут СЛР.`
-						: 'СЛР у взрослых: 1 мг (1 мл) в/в каждые 3–5 минут СЛР с промыванием 20 мл 0.9% NaCl.',
+						? `СЛР у детей: 0.01 мг/кг (${volMl.toFixed(2)} мл) в/в болюсно или в/м каждые 3–5 минут СЛР.`
+						: 'СЛР у взрослых: 1 мг (1 мл) в/в каждые 3–5 минут СЛР с промыванием 20 мл 0.9% NaCl (или в/м в бедро).',
 					repeatIntervalMinutes: 3,
 					maxSingleDoseRu: isPediatric ? '1 мг' : '1 мг',
 					contraindicationsRu: ['При остановке кровообращения абсолютных противопоказаний нет!'],

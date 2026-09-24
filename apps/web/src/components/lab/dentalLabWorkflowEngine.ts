@@ -39,7 +39,7 @@ import {
 	type LabImplantComponentsManifest,
 	formatImplantComponentsSummary,
 } from "./orders/labWorkOrderPresets";
-import { generateQrMatrix, generateQrCodeSvg as sharedGenerateQrCodeSvg } from "@dental/shared";
+import { generateQrCodeSvg as sharedGenerateQrCodeSvg } from "@dental/shared";
 import { generateBarcodeSvg as canonicalCode128BarcodeSvg } from "./labMath";
 
 export type { ImplantPlatformType, AbutmentCategoryType, FixationType, LabTechnologicalStageId, LabImplantComponentsManifest };
@@ -1084,29 +1084,7 @@ export function generateBarcodeSvg(data: string, width = 220, height = 48): stri
  * Векторный QR-код SVG для мобильных сканеров курьеров ЗТЛ по стандарту ISO/IEC 18004.
  */
 export function generateQrCodeSvg(content: string, size = 90): string {
-	try {
-		const { matrix, size: matrixSize } = generateQrMatrix(content || "DENTE-ZTL", "M");
-		const margin = 1;
-		const totalCells = matrixSize + margin * 2;
-		const cellSize = size / totalCells;
-		let rects = "";
-		for (let r = 0; r < matrixSize; r++) {
-			const row = matrix[r];
-			if (!row) continue;
-			for (let c = 0; c < matrixSize; c++) {
-				if (row[c]) {
-					const x = ((c + margin) * cellSize).toFixed(2);
-					const y = ((r + margin) * cellSize).toFixed(2);
-					const w = cellSize.toFixed(2);
-					const h = cellSize.toFixed(2);
-					rects += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#0f172a" />`;
-				}
-			}
-		}
-		return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><rect width="100%" height="100%" fill="#ffffff" />${rects}</svg>`;
-	} catch {
-		return sharedGenerateQrCodeSvg(content || "DENTE-ZTL", { size, margin: 1 });
-	}
+	return sharedGenerateQrCodeSvg(content || "DENTE-ZTL", { size, margin: 1 });
 }
 
 // ─── 7. ГЕНЕРАТОР ПЕЧАТНОГО БЛАНКА А4 ─────────────────────────────────────────

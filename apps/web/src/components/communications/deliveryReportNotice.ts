@@ -445,3 +445,13 @@ function saySkipped(
 export function describeReminderReport(report: ReminderScheduleReport): Notice {
 	return noticeFrom(speak(report, reminderVoice));
 }
+
+// ─── Kopeck-Exact SMS Costing (Mandate 8b & 8s) ──────────────────────────────
+export {
+	calculateSmsCostKopecks,
+	calculateMessagingCostKopecks,
+	formatSmsBalance,
+	formatSmsCostRu,
+	DEFAULT_SMS_SEGMENT_COST_KOPECKS,
+} from "./communicationsCostEngine.js";
+
