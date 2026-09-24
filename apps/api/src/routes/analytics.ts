@@ -2120,7 +2120,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 						appointmentDate: r.appointmentDate,
 						createdAt:
 							r.createdAt instanceof Date
-								? e.createdAt.toISOString()
+								? r.createdAt.toISOString()
 								: r.createdAt,
 						attributionReason: r.attributionReason,
 					})),
