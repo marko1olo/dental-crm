@@ -11,6 +11,7 @@
  * - Программа лояльности и бонусы.
  */
 
+import { generateQrCodeSvg, sha256Hex } from "@dental/shared";
 import {
 	generateFnsNdflPrintHtml,
 	type FnsNdflFiscalReceiptItem,
@@ -314,232 +315,24 @@ export const SBP_POPULAR_BANKS: readonly SbpBankMember[] = [
 ];
 
 // ============================================================================
-// SHA-256 CRYPTOGRAPHIC HASH IMPLEMENTATION (ZERO DEPENDENCY)
+// SHA-256 CRYPTOGRAPHIC HASH & QR CODE SVG DELEGATES (CANONICAL SHARED)
 // ============================================================================
+
+export async function computeSha256Subtle(inputString: string): Promise<string> {
+	if (typeof crypto !== "undefined" && crypto.subtle) {
+		const msgUint8 = new TextEncoder().encode(inputString);
+		const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
+		const hashArray = Array.from(new Uint8Array(hashBuffer));
+		return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+	}
+	return sha256Hex(inputString);
+}
 
 export function generateSha256(inputString: string): string {
-	function rightRotate(value: number, amount: number): number {
-		return (value >>> amount) | (value << (32 - amount));
-	}
-
-	const k: readonly number[] = [
-		0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-		0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-		0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-		0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-		0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-		0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-		0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-		0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
-	];
-
-	const hash = new Uint32Array([
-		0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
-		0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
-	]);
-
-	const utf8Bytes: number[] = [];
-	for (let i = 0; i < inputString.length; i++) {
-		let charcode = inputString.charCodeAt(i);
-		if (charcode < 0x80) {
-			utf8Bytes.push(charcode);
-		} else if (charcode < 0x800) {
-			utf8Bytes.push(0xc0 | (charcode >> 6), 0x80 | (charcode & 0x3f));
-		} else if (charcode < 0xd800 || charcode >= 0xe000) {
-			utf8Bytes.push(0xe0 | (charcode >> 12), 0x80 | ((charcode >> 6) & 0x3f), 0x80 | (charcode & 0x3f));
-		} else {
-			i++;
-			charcode = 0x10000 + (((charcode & 0x3ff) << 10) | (inputString.charCodeAt(i) & 0x3ff));
-			utf8Bytes.push(
-				0xf0 | (charcode >> 18),
-				0x80 | ((charcode >> 12) & 0x3f),
-				0x80 | ((charcode >> 6) & 0x3f),
-				0x80 | (charcode & 0x3f),
-			);
-		}
-	}
-
-	const bitLength = utf8Bytes.length * 8;
-	utf8Bytes.push(0x80);
-	while ((utf8Bytes.length % 64) !== 56) {
-		utf8Bytes.push(0x00);
-	}
-
-	const highBits = Math.floor(bitLength / 0x100000000);
-	const lowBits = bitLength >>> 0;
-	utf8Bytes.push(
-		(highBits >>> 24) & 0xff,
-		(highBits >>> 16) & 0xff,
-		(highBits >>> 8) & 0xff,
-		highBits & 0xff,
-		(lowBits >>> 24) & 0xff,
-		(lowBits >>> 16) & 0xff,
-		(lowBits >>> 8) & 0xff,
-		lowBits & 0xff,
-	);
-
-	const words = new Uint32Array(utf8Bytes.length / 4);
-	for (let i = 0; i < utf8Bytes.length; i += 4) {
-		words[i / 4] =
-			((utf8Bytes[i] ?? 0) << 24) |
-			((utf8Bytes[i + 1] ?? 0) << 16) |
-			((utf8Bytes[i + 2] ?? 0) << 8) |
-			(utf8Bytes[i + 3] ?? 0);
-	}
-
-	const w = new Uint32Array(64);
-	for (let i = 0; i < words.length; i += 16) {
-		let [a, b, c, d, e, f, g, h] = [
-			hash[0] ?? 0, hash[1] ?? 0, hash[2] ?? 0, hash[3] ?? 0,
-			hash[4] ?? 0, hash[5] ?? 0, hash[6] ?? 0, hash[7] ?? 0,
-		];
-
-		for (let j = 0; j < 64; j++) {
-			if (j < 16) {
-				w[j] = words[i + j] ?? 0;
-			} else {
-				const w15 = w[j - 15] ?? 0;
-				const w2 = w[j - 2] ?? 0;
-				const s0 = rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3);
-				const s1 = rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10);
-				w[j] = ((w[j - 16] ?? 0) + s0 + (w[j - 7] ?? 0) + s1) >>> 0;
-			}
-
-			const s1 = rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25);
-			const ch = (e & f) ^ (~e & g);
-			const temp1 = (h + s1 + ch + (k[j] ?? 0) + (w[j] ?? 0)) >>> 0;
-			const s0 = rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22);
-			const maj = (a & b) ^ (a & c) ^ (b & c);
-			const temp2 = (s0 + maj) >>> 0;
-
-			h = g;
-			g = f;
-			f = e;
-			e = (d + temp1) >>> 0;
-			d = c;
-			c = b;
-			b = a;
-			a = (temp1 + temp2) >>> 0;
-		}
-
-		hash[0] = ((hash[0] ?? 0) + a) >>> 0;
-		hash[1] = ((hash[1] ?? 0) + b) >>> 0;
-		hash[2] = ((hash[2] ?? 0) + c) >>> 0;
-		hash[3] = ((hash[3] ?? 0) + d) >>> 0;
-		hash[4] = ((hash[4] ?? 0) + e) >>> 0;
-		hash[5] = ((hash[5] ?? 0) + f) >>> 0;
-		hash[6] = ((hash[6] ?? 0) + g) >>> 0;
-		hash[7] = ((hash[7] ?? 0) + h) >>> 0;
-	}
-
-	let result = "";
-	for (let i = 0; i < 8; i++) {
-		result += (hash[i] ?? 0).toString(16).padStart(8, "0");
-	}
-	return result;
+	return sha256Hex(inputString);
 }
 
-// ============================================================================
-// QR CODE SVG GENERATOR (PURE DETERMINISTIC SVG)
-// ============================================================================
-
-export function generateQrCodeSvg(content: string, options?: { size?: number; margin?: number; color?: string; background?: string }): string {
-	const size = options?.size ?? 160;
-	const margin = options?.margin ?? 2;
-	const color = options?.color ?? "#0f172a";
-	const bg = options?.background ?? "#ffffff";
-
-	const matrixSize = 25; // 25x25 grid
-	const matrix: boolean[][] = Array.from({ length: matrixSize }, () => Array(matrixSize).fill(false));
-
-	const drawFinder = (startX: number, startY: number) => {
-		for (let r = 0; r < 7; r++) {
-			for (let c = 0; c < 7; c++) {
-				if (
-					r === 0 || r === 6 || c === 0 || c === 6 ||
-					(r >= 2 && r <= 4 && c >= 2 && c <= 4)
-				) {
-					const y = startY + r;
-					const x = startX + c;
-					if (matrix[y] && matrix[y][x] !== undefined) {
-						matrix[y][x] = true;
-					}
-				}
-			}
-		}
-	};
-
-	drawFinder(0, 0);
-	drawFinder(matrixSize - 7, 0);
-	drawFinder(0, matrixSize - 7);
-
-	// Timing patterns
-	for (let i = 8; i < matrixSize - 8; i++) {
-		const isEven = i % 2 === 0;
-		const row6 = matrix[6];
-		if (row6) row6[i] = isEven;
-		const rowI = matrix[i];
-		if (rowI) rowI[6] = isEven;
-	}
-
-	// Alignment pattern
-	const alignX = matrixSize - 7;
-	const alignY = matrixSize - 7;
-	for (let r = -2; r <= 2; r++) {
-		for (let c = -2; c <= 2; c++) {
-			if (Math.abs(r) === 2 || Math.abs(c) === 2 || (r === 0 && c === 0)) {
-				const y = alignY + r;
-				const x = alignX + c;
-				const rowY = matrix[y];
-				if (rowY && rowY[x] !== undefined) {
-					rowY[x] = true;
-				}
-			}
-		}
-	}
-
-	const hashHex = generateSha256(content);
-	let bitIndex = 0;
-	for (let r = 0; r < matrixSize; r++) {
-		for (let c = 0; c < matrixSize; c++) {
-			const inTopLeft = r < 8 && c < 8;
-			const inTopRight = r < 8 && c >= matrixSize - 8;
-			const inBottomLeft = r >= matrixSize - 8 && c < 8;
-			const inTiming = r === 6 || c === 6;
-			const inAlignment = r >= alignY - 2 && r <= alignY + 2 && c >= alignX - 2 && c <= alignX + 2;
-
-			if (!inTopLeft && !inTopRight && !inBottomLeft && !inTiming && !inAlignment) {
-				const hexChar = hashHex[bitIndex % hashHex.length] ?? "0";
-				const charCode = parseInt(hexChar, 16);
-				const isBitSet = ((charCode + r * 3 + c * 7) % 3) === 0;
-				const rowR = matrix[r];
-				if (rowR) {
-					rowR[c] = isBitSet;
-				}
-				bitIndex++;
-			}
-		}
-	}
-
-	const totalSize = matrixSize + margin * 2;
-	const scale = size / totalSize;
-	const rects: string[] = [];
-
-	for (let r = 0; r < matrixSize; r++) {
-		for (let c = 0; c < matrixSize; c++) {
-			if (matrix[r]?.[c]) {
-				const x = (c + margin) * scale;
-				const y = (r + margin) * scale;
-				rects.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${scale.toFixed(1)}" height="${scale.toFixed(1)}" fill="${color}" />`);
-			}
-		}
-	}
-
-	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" shape-rendering="crispEdges">
-		<rect width="${size}" height="${size}" fill="${bg}" />
-		${rects.join("\n")}
-	</svg>`;
-}
+export { generateQrCodeSvg };
 
 // ============================================================================
 // FORMATTERS & CALCULATIONS

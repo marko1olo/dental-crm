@@ -9,7 +9,6 @@
 
 export * from "./patientCabinet";
 export * from "./selfCheckin";
-export * from "./timeline";
 export { PatientCabinetModal as PatientPortalModal } from "./patientCabinet";
 export * from "./patientPortalEngine";
 export * from "./patientPortalPresets";
