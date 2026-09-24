@@ -99,6 +99,9 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 	const [newMemberName, setNewMemberName] = useState<string>("");
 	const [newMemberRole, setNewMemberRole] = useState<FamilyMember["roleRu"]>("Супруг / Супруга");
 
+	// Doctor Autonomy / Warranty override state (Mandates 8e, 8s)
+	const [isDoctorOverride, setIsDoctorOverride] = useState<boolean>(false);
+
 	// Certificate State
 	const [certificateNominalRub, setCertificateNominalRub] = useState<number>(5000);
 	const [recipientName, setRecipientName] = useState<string>("");
@@ -143,8 +146,9 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 			availablePointsBalanceRub: effectiveBalanceRub,
 			requestedPointsRub,
 			tierId: currentTier.id,
+			isDoctorOverride,
 		});
-	}, [invoiceAmountRub, excludedAmountRub, effectiveBalanceRub, requestedPointsRub, currentTier.id]);
+	}, [invoiceAmountRub, excludedAmountRub, effectiveBalanceRub, requestedPointsRub, currentTier.id, isDoctorOverride]);
 
 	if (!isOpen) return null;
 
@@ -182,6 +186,52 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 		);
 		if (onRedeemSuccess) {
 			onRedeemSuccess(redemptionCalc.actualRedeemedPointsRub, redemptionCalc.fiscal54FzSplit);
+		}
+	};
+
+	const handleOneClickRedeemToInvoice = () => {
+		const targetCalc = calculateLoyaltyRedemption({
+			grossInvoiceKop: Math.round(invoiceAmountRub * 100),
+			discountKop: 0,
+			excludedFromRedemptionKop: Math.round(excludedAmountRub * 100),
+			availablePointsBalanceRub: effectiveBalanceRub,
+			requestedPointsRub: effectiveBalanceRub,
+			tierId: currentTier.id,
+			isDoctorOverride,
+		});
+
+		if (targetCalc.actualRedeemedPointsRub <= 0) return;
+
+		setRequestedPointsRub(targetCalc.actualRedeemedPointsRub);
+		setActivePointsBalance((prev) => prev - targetCalc.actualRedeemedPointsRub);
+
+		const newLedgerItem: LoyaltyLedgerEntry = {
+			id: `tx-${Date.now().toString().slice(-4)}`,
+			timestampIso: new Date().toLocaleString("ru-RU"),
+			patientId,
+			patientName,
+			medicalCardNumber,
+			operationType: "redemption",
+			operationTypeRu: isDoctorOverride
+				? `1-клик списание: Привилегия врача 100% (${currentTier.nameRu})`
+				: `1-клик списание в чек (${currentTier.nameRu})`,
+			invoiceAmountKop: Math.round(invoiceAmountRub * 100),
+			pointsDeltaRub: -targetCalc.actualRedeemedPointsRub,
+			balanceAfterRub: effectiveBalanceRub - targetCalc.actualRedeemedPointsRub,
+			paymentMethodRu: "Бонусы + Касса",
+			staffNameRu: "Администратор / Врач",
+			noteRu: isDoctorOverride
+				? `1-клик: Гарантийное/автономное покрытие счета бонусами ${targetCalc.actualRedeemedPointsRub} ₽`
+				: `1-клик: Списание бонусов ${targetCalc.actualRedeemedPointsRub} ₽ в чек`,
+		};
+
+		setLedgerEntries((prev) => [newLedgerItem, ...prev]);
+		setRedemptionSuccessMsg(
+			`1-клик списание: Успешно списано ${targetCalc.actualRedeemedPointsRub} бонусов. К доплате: ${targetCalc.remainingPayableRub.toLocaleString("ru-RU")} ₽`
+		);
+
+		if (onRedeemSuccess) {
+			onRedeemSuccess(targetCalc.actualRedeemedPointsRub, targetCalc.fiscal54FzSplit);
 		}
 	};
 
@@ -582,6 +632,25 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 
 								{/* Quick Buttons */}
 								<div className="loyalty-quick-actions-row">
+									<button
+										type="button"
+										className="loyalty-quick-btn one-click-btn"
+										onClick={handleOneClickRedeemToInvoice}
+										disabled={effectiveBalanceRub <= 0 || invoiceAmountRub <= 0}
+										data-testid="loyalty-one-click-redeem-btn"
+										title="Списать максимально разрешенные бонусы в чек в 1 клик (54-ФЗ)"
+										style={{
+											background: "var(--teal, #0d9488)",
+											color: "#ffffff",
+											fontWeight: 700,
+											display: "inline-flex",
+											alignItems: "center",
+											gap: "0.375rem",
+										}}
+									>
+										<Sparkles size={14} />
+										1-клик списать в чек ({redemptionCalc.maxAllowedRedemptionRub} ₽)
+									</button>
 									{QUICK_REDEMPTION_PRESETS_RUB.map((preset) => (
 										<button
 											key={preset}
@@ -599,6 +668,49 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 									>
 										Списать максимум ({redemptionCalc.maxAllowedRedemptionRub} ₽)
 									</button>
+								</div>
+
+								{/* Doctor Autonomy / Warranty override (Mandates 8e, 8s) */}
+								<div
+									style={{
+										marginTop: "0.75rem",
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.5rem 0.75rem",
+										background: "var(--paper-alt, #f8fafc)",
+										borderRadius: "0.375rem",
+										border: "1px dashed var(--line, #cbd5e1)",
+									}}
+								>
+									<input
+										type="checkbox"
+										id="doctor-override-checkbox"
+										checked={isDoctorOverride}
+										onChange={(e) => setIsDoctorOverride(e.target.checked)}
+										style={{
+											width: "16px",
+											height: "16px",
+											cursor: "pointer",
+											accentColor: "var(--teal, #0d9488)",
+										}}
+										data-testid="loyalty-doctor-override-checkbox"
+									/>
+									<label
+										htmlFor="doctor-override-checkbox"
+										style={{
+											fontSize: "0.8125rem",
+											color: "var(--ink, #0f172a)",
+											cursor: "pointer",
+											fontWeight: 600,
+											display: "flex",
+											alignItems: "center",
+											gap: "0.375rem",
+										}}
+									>
+										<ShieldCheck size={15} color="var(--teal, #0d9488)" />
+										Привилегия врача / Гарантийная переделка (покрытие до 100% счета бонусами)
+									</label>
 								</div>
 
 								{/* 54-FZ Fiscal Breakdown */}

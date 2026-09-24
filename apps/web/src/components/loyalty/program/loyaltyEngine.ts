@@ -46,6 +46,7 @@ export interface LoyaltyRedemptionInput {
 	readonly requestedPointsRub: number;
 	readonly tierId: LoyaltyTierId;
 	readonly customMaxCoveragePercent?: number;
+	readonly isDoctorOverride?: boolean; // Doctor Autonomy / Warranty rework override (Mandates 8e, 8s) up to 100%
 }
 
 export interface Fiscal54FzSplitResult {
@@ -218,7 +219,9 @@ export function calculateLoyaltyRedemption(input: LoyaltyRedemptionInput): Loyal
 	const redeemableBaseKop = Math.max(0, totalAfterDiscountKop - excludedKop);
 
 	const tier = getTierDefinition(input.tierId);
-	const maxCoveragePercent = input.customMaxCoveragePercent ?? tier.maxInvoiceCoveragePercent;
+	const maxCoveragePercent = input.isDoctorOverride
+		? 100
+		: (input.customMaxCoveragePercent ?? tier.maxInvoiceCoveragePercent);
 
 	// Calculate maximum permissible points in kopecks
 	const maxAllowedRedemptionKop = Math.min(

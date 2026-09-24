@@ -135,6 +135,24 @@ describe("Statutory Dental Loyalty Math Engine", () => {
 			assert.equal(res.remainingPayableRub, 10000);
 			assert.equal(res.remainingPointsBalanceRub, 5000);
 		});
+
+		it("should allow up to 100% invoice coverage when isDoctorOverride is enabled (Mandates 8e, 8s)", () => {
+			const res = calculateLoyaltyRedemption({
+				grossInvoiceKop: 1000000, // 10,000 RUB
+				availablePointsBalanceRub: 10000, // 10,000 pts available
+				requestedPointsRub: 10000,
+				tierId: "silver", // normally 30%, but doctor override allows 100%
+				isDoctorOverride: true,
+			});
+
+			assert.equal(res.maxCoveragePercent, 100);
+			assert.equal(res.maxAllowedRedemptionRub, 10000);
+			assert.equal(res.actualRedeemedPointsRub, 10000);
+			assert.equal(res.remainingPayableRub, 0);
+			assert.equal(res.remainingPointsBalanceRub, 0);
+			assert.equal(res.fiscal54FzSplit.tag1215AdvancePrepaymentBonusKop, 1000000);
+			assert.equal(res.fiscal54FzSplit.totalNetPayableKop, 0);
+		});
 	});
 
 	describe("3. calculateTierProgression — Upgrades & Spend Milestones", () => {
