@@ -1596,3 +1596,146 @@ html.dark:not([data-theme="light"]) .patient-cabinet-modal,
 		justify-content: center;
 	}
 }
+
+/* ==========================================================================
+   WAVE 2: SLEEK BOTTOM SHEETS (ANTI-MATRYOSHKA - MANDATE 8d #6)
+   Depth strictly 1 - Inside modal container
+   ========================================================================== */
+
+.pc-sheet-overlay {
+	position: absolute;
+	inset: 0;
+	background: rgba(15, 23, 42, 0.65);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	z-index: 50;
+	overscroll-behavior: contain;
+	touch-action: pan-y;
+	animation: pcFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	box-sizing: border-box;
+}
+
+.pc-sheet-window {
+	width: 100%;
+	max-width: 580px;
+	max-height: 90%;
+	background: var(--pc-bg);
+	color: var(--pc-text-main);
+	border: 1px solid var(--pc-border);
+	border-top-left-radius: 24px;
+	border-top-right-radius: 24px;
+	padding: 12px 20px 24px 20px;
+	box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.28);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	overflow-y: auto;
+	box-sizing: border-box;
+	animation: pcSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pc-sheet-handle-bar {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	padding-bottom: 4px;
+	cursor: grab;
+}
+
+.pc-sheet-handle {
+	width: 40px;
+	height: 4px;
+	border-radius: 2px;
+	background: var(--pc-border);
+}
+
+@keyframes pcFadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes pcSlideUp {
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: translateY(0);
+	}
+}
+
+/* ==========================================================================
+   MOBILE PWA BOTTOM NAVIGATION BAR (390PX VIEWPORTS)
+   ========================================================================== */
+
+.pc-mobile-tab-bar {
+	display: none;
+}
+
+@media (max-width: 640px) {
+	.pc-nav-bar {
+		display: none;
+	}
+
+	.pc-mobile-tab-bar {
+		display: flex;
+		position: sticky;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background: var(--pc-surface);
+		border-top: 1px solid var(--pc-border);
+		padding: 6px 6px env(safe-area-inset-bottom, 8px) 6px;
+		gap: 2px;
+		z-index: 30;
+		box-sizing: border-box;
+	}
+
+	.pc-mobile-tab-btn {
+		flex: 1;
+		min-height: 48px;
+		min-width: 44px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 3px;
+		font-size: 0.6875rem;
+		font-weight: 700;
+		color: var(--pc-text-muted);
+		background: transparent;
+		border: none;
+		border-radius: 8px;
+		cursor: pointer;
+		touch-action: manipulation;
+		transition: all 0.15s ease;
+		padding: 4px 2px;
+	}
+
+	.pc-mobile-tab-btn:hover {
+		color: var(--pc-text-main);
+	}
+
+	.pc-mobile-tab-btn.active {
+		color: var(--pc-primary);
+		background: var(--pc-primary-light);
+	}
+
+	.patient-cabinet-modal {
+		max-width: 100%;
+		height: 100vh;
+		max-height: 100vh;
+		border-radius: 0;
+		border: none;
+	}
+
+	.patient-cabinet-backdrop {
+		padding: 0;
+	}
+}
+
