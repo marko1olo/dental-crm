@@ -3569,21 +3569,23 @@ async function handleWebhook(
 				runtime,
 				linkResult.chatLink,
 			);
-			updateTelegramDialogSession(
-				chatHash,
-				runtime.organizationId,
-				{
-					clinicId: runtime.clinicId,
-					chatId: chatId ? String(chatId) : null,
-					subjectType: linkResult.subjectType,
-					subjectId: linkResult.chatLink.subjectId,
-					currentStep: "linked",
-					lastCommand: command,
-					lastMessageText: messageText ? messageText.slice(0, 200) : null,
-				},
-				runtime.botConfigId,
-			);
-		} else {
+			if (chatHash) {
+				updateTelegramDialogSession(
+					chatHash,
+					runtime.organizationId,
+					{
+						clinicId: runtime.clinicId,
+						chatId: chatId ? String(chatId) : null,
+						subjectType: linkResult.subjectType,
+						subjectId: linkResult.chatLink.subjectId,
+						currentStep: "linked",
+						lastCommand: command,
+						lastMessageText: messageText ? messageText.slice(0, 200) : null,
+					},
+					runtime.botConfigId,
+				);
+			}
+		} else if (chatHash) {
 			updateTelegramDialogSession(
 				chatHash,
 				runtime.organizationId,

@@ -30,6 +30,9 @@ import {
 	type TreatmentChargeRow,
 	visitOutstandingKopecks,
 	visitOverpaidKopecks,
+	validateSplitPaymentRow,
+	aggregateSplitTenders,
+	matchesOrganization,
 } from "./patientDebt.js";
 
 /**
@@ -1945,5 +1948,218 @@ describe("порог значимости: фильтр списка не име
 			"100.00",
 			"прежняя формула итога вернула бы 100,00 — на 50 копеек больше, чем клинике причитается",
 		);
+	});
+});
+
+describe("сплит-оплаты (нал + безнал + аванс + сертификат): нулевой дрейф и строгая точность", () => {
+	test("сплит-оплата из 4 тендеров точно закрывает сумму до копейки", () => {
+		// Общая сумма лечения: 15 450,50 ₽
+		// Наличные: 5 000,00 ₽ (500 000 коп)
+		// Карта: 7 000,25 ₽ (700 025 коп)
+		// Аванс: 3 000,00 ₽ (300 000 коп)
+		// Сертификат: 450,25 ₽ (45 025 коп)
+		// Итого: 1 545 050 коп.
+		const payment: PaymentRow = {
+			patientId: "p_split_1",
+			status: "paid",
+			amountRub: "15450.50",
+			splitTenders: [
+				{ kind: "cash", amountRub: "5000.00" },
+				{ kind: "card", amountKopecks: 700025 },
+				{ kind: "advance", amountRub: "3000.00" },
+				{ kind: "certificate", amountKopecks: 45025 },
+			],
+		};
+
+		const kopecks = validateSplitPaymentRow(payment);
+		assert.strictEqual(kopecks, 1545050);
+
+		const charges: TreatmentChargeRow[] = [
+			{
+				patientId: "p_split_1",
+				status: "completed",
+				unitPriceRub: "15450.50",
+				quantity: 1,
+				discountRub: "0.00",
+			},
+		];
+
+		const ledger = buildPatientLedger("p_split_1", charges, [payment]);
+		assert.strictEqual(ledger.chargedKopecks, 1545050);
+		assert.strictEqual(ledger.paidKopecks, 1545050);
+		assert.strictEqual(ledger.balanceKopecks, 0);
+	});
+
+	test("расхождение даже в 1 копейку при сплит-оплате отвергается с MoneyPrecisionError", () => {
+		const paymentUnderpaid: PaymentRow = {
+			patientId: "p_split_err",
+			status: "paid",
+			amountRub: "15450.50",
+			splitTenders: [
+				{ kind: "cash", amountRub: "5000.00" },
+				{ kind: "card", amountRub: "7000.25" },
+				{ kind: "advance", amountRub: "3000.00" },
+				{ kind: "certificate", amountRub: "450.24" }, // На 1 копейку меньше!
+			],
+		};
+
+		assert.throws(
+			() => validateSplitPaymentRow(paymentUnderpaid),
+			(err: unknown) => {
+				assert.ok(err instanceof MoneyPrecisionError);
+				assert.ok((err as MoneyPrecisionError).message.includes("не совпадает с суммой платежа"));
+				return true;
+			},
+		);
+	});
+
+	test("отрицательный тендер в сплит-оплате не допускается", () => {
+		const paymentNegative: PaymentRow = {
+			patientId: "p_neg",
+			status: "paid",
+			amountRub: "1000.00",
+			splitTenders: [
+				{ kind: "cash", amountRub: "1200.00" },
+				{ kind: "certificate", amountRub: "-200.00" },
+			],
+		};
+
+		assert.throws(
+			() => validateSplitPaymentRow(paymentNegative),
+			(err: unknown) => {
+				assert.ok(err instanceof MoneyPrecisionError);
+				assert.ok((err as MoneyPrecisionError).message.includes("не может быть отрицательной"));
+				return true;
+			},
+		);
+	});
+
+	test("aggregateSplitTenders агрегирует суммы по видам оплат с нулевым дрейфом", () => {
+		const payments: PaymentRow[] = [
+			{
+				patientId: "p1",
+				status: "paid",
+				amountRub: "1000.00",
+				splitTenders: [
+					{ kind: "cash", amountKopecks: 40000 },
+					{ kind: "card", amountKopecks: 60000 },
+				],
+			},
+			{
+				patientId: "p2",
+				status: "paid",
+				amountRub: "2500.50",
+				splitTenders: [
+					{ kind: "advance", amountKopecks: 150050 },
+					{ kind: "certificate", amountKopecks: 100000 },
+				],
+			},
+			{
+				patientId: "p3",
+				status: "paid",
+				amountRub: "500.00", // без сплита (единая оплата)
+			},
+		];
+
+		const summary = aggregateSplitTenders(payments);
+		assert.strictEqual(summary.cashKopecks, 40000);
+		assert.strictEqual(summary.cardKopecks, 60000);
+		assert.strictEqual(summary.advanceKopecks, 150050);
+		assert.strictEqual(summary.certificateKopecks, 100000);
+		assert.strictEqual(summary.otherKopecks, 50000);
+		assert.strictEqual(summary.totalKopecks, 400050);
+	});
+});
+
+describe("мультитенантность: изоляция долгов и переплат разных клиник (organizationId)", () => {
+	const multiOrgCharges: TreatmentChargeRow[] = [
+		{
+			patientId: "patient_shared",
+			organizationId: "clinic_alpha",
+			status: "completed",
+			unitPriceRub: "10000.00",
+			quantity: 1,
+			discountRub: "0.00",
+		},
+		{
+			patientId: "patient_shared",
+			organizationId: "clinic_beta",
+			status: "completed",
+			unitPriceRub: "25000.00",
+			quantity: 1,
+			discountRub: "0.00",
+		},
+	];
+
+	const multiOrgPayments: PaymentRow[] = [
+		{
+			patientId: "patient_shared",
+			organizationId: "clinic_alpha",
+			status: "paid",
+			amountRub: "10000.00",
+		},
+		{
+			patientId: "patient_shared",
+			organizationId: "clinic_beta",
+			status: "paid",
+			amountRub: "5000.00",
+		},
+	];
+
+	test("без указания organizationId расчет включает все записи (обратная совместимость)", () => {
+		const ledger = buildPatientLedger("patient_shared", multiOrgCharges, multiOrgPayments);
+		assert.strictEqual(ledger.chargedKopecks, 3500000);
+		assert.strictEqual(ledger.paidKopecks, 1500000);
+		assert.strictEqual(ledger.balanceKopecks, 2000000);
+	});
+
+	test("при фильтрации по clinic_alpha долги и оплаты clinic_beta не учитываются", () => {
+		const ledgerAlpha = buildPatientLedger("patient_shared", multiOrgCharges, multiOrgPayments, {
+			organizationId: "clinic_alpha",
+		});
+		assert.strictEqual(ledgerAlpha.organizationId, "clinic_alpha");
+		assert.strictEqual(ledgerAlpha.chargedKopecks, 1000000);
+		assert.strictEqual(ledgerAlpha.paidKopecks, 1000000);
+		assert.strictEqual(ledgerAlpha.balanceKopecks, 0); // В клинике Альфа пациент ничего не должен!
+	});
+
+	test("при фильтрации по clinic_beta виден только долг 20 000 руб этой клиники", () => {
+		const ledgerBeta = buildPatientLedger("patient_shared", multiOrgCharges, multiOrgPayments, {
+			organizationId: "clinic_beta",
+		});
+		assert.strictEqual(ledgerBeta.organizationId, "clinic_beta");
+		assert.strictEqual(ledgerBeta.chargedKopecks, 2500000);
+		assert.strictEqual(ledgerBeta.paidKopecks, 500000);
+		assert.strictEqual(ledgerBeta.balanceKopecks, 2000000); // 20 000 руб долга
+	});
+
+	test("buildVisitLedger изолирует приемы по organizationId", () => {
+		const visitCharges: TreatmentChargeRow[] = [
+			{
+				patientId: "p1",
+				visitId: "v_101",
+				organizationId: "clinic_alpha",
+				status: "completed",
+				unitPriceRub: "3000.00",
+				quantity: 1,
+				discountRub: "0.00",
+			},
+			{
+				patientId: "p1",
+				visitId: "v_101",
+				organizationId: "clinic_beta", // Ошибочная или чужая позиция
+				status: "completed",
+				unitPriceRub: "5000.00",
+				quantity: 1,
+				discountRub: "0.00",
+			},
+		];
+
+		const ledger = buildVisitLedger("v_101", visitCharges, [], {
+			organizationId: "clinic_alpha",
+		});
+		assert.strictEqual(ledger.chargedKopecks, 300000);
+		assert.strictEqual(ledger.billedLineCount, 1);
+		assert.strictEqual(ledger.organizationId, "clinic_alpha");
 	});
 });

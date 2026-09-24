@@ -119,7 +119,8 @@ function tripletToWords(num: number, isFeminine: boolean): string[] {
 }
 
 export function integerToWordsRu(num: number, forms?: WordDeclension, isFeminine = false): string {
-	if (num === 0) {
+	const isNegative = num < 0;
+	if (num === 0 || Object.is(num, -0)) {
 		const unit = forms ? ` ${getDeclension(0, forms)}` : "";
 		return `ноль${unit}`;
 	}
@@ -160,12 +161,14 @@ export function integerToWordsRu(num: number, forms?: WordDeclension, isFeminine
 		parts.push(getDeclension(Math.abs(Math.trunc(num)), forms));
 	}
 
-	return parts.join(" ");
+	const words = parts.join(" ");
+	return isNegative ? `минус ${words}` : words;
 }
 
 /**
  * Преобразует сумму в целых копейках в строку прописью с заглавной буквы.
  * Пример: 1545050 -> "Пятнадцать тысяч четыреста пятьдесят рублей 50 копеек"
+ * Пример: -150050 -> "Минус одна тысяча пятьсот рублей 50 копеек"
  */
 export function kopecksToWordsRu(kopecks: number): string {
 	const negative = kopecks < 0;
@@ -173,18 +176,21 @@ export function kopecksToWordsRu(kopecks: number): string {
 	const rubles = Math.floor(abs / 100);
 	const kop = abs % 100;
 
+	// Чистый текст рублей без знака минуса для форматирования
 	const rublesText = integerToWordsRu(rubles, RUBLE_FORMS, false);
 	const kopStr = String(kop).padStart(2, "0");
 	const kopDeclension = getDeclension(kop, KOPECK_FORMS);
 
+	if (negative) {
+		return `Минус ${rublesText} ${kopStr} ${kopDeclension}`;
+	}
 	const capitalized = rublesText.charAt(0).toUpperCase() + rublesText.slice(1);
-	const sign = negative ? "минус " : "";
-	return `${sign}${capitalized} ${kopStr} ${kopDeclension}`;
+	return `${capitalized} ${kopStr} ${kopDeclension}`;
 }
 
 /**
  * Преобразует целое количество рублей в строку прописью со склонением.
- * Пример: 1 -> "один рубль", 2 -> "два рубля", 5 -> "пять рублей", 0 -> "ноль рублей".
+ * Пример: 1 -> "один рубль", 2 -> "два рубля", 5 -> "пять рублей", 0 -> "ноль рублей", -100 -> "минус сто рублей".
  */
 export function rublesToWordsRu(rubles: number): string {
 	return integerToWordsRu(rubles, RUBLE_FORMS, false);
@@ -200,6 +206,7 @@ export const moneyToWordsRu = kopecksToWordsRu;
  * Полная официальная формулировка суммы прописью строго из КОПЕЕК (целое число)
  * для договоров, смет и актов выполненных работ.
  * Пример: 3850000 -> "38 500,00 ₽ (Тридцать восемь тысяч пятьсот) рублей 00 копеек"
+ * Пример: -150050 -> "-1 500,50 ₽ (Минус одна тысяча пятьсот) рублей 50 копеек"
  */
 export function legalMoneyInWordsFromKopecksRu(kopecks: number | null | undefined): string {
 	if (kopecks === null || kopecks === undefined || !Number.isFinite(kopecks)) {
@@ -211,12 +218,15 @@ export function legalMoneyInWordsFromKopecksRu(kopecks: number | null | undefine
 	const kop = abs % 100;
 	const formattedNumeric = formatKopecksRu(roundKop);
 	const rublesWords = integerToWordsRu(rubles, undefined, false);
-	const capitalizedRublesWords = rublesWords.charAt(0).toUpperCase() + rublesWords.slice(1);
 	const rubDeclension = getDeclension(rubles, RUBLE_FORMS);
 	const kopStr = String(kop).padStart(2, "0");
 	const kopDeclension = getDeclension(kop, KOPECK_FORMS);
 
-	return `${formattedNumeric} (${capitalizedRublesWords}) ${rubDeclension} ${kopStr} ${kopDeclension}`;
+	const inParentheses = roundKop < 0
+		? `Минус ${rublesWords}`
+		: rublesWords.charAt(0).toUpperCase() + rublesWords.slice(1);
+
+	return `${formattedNumeric} (${inParentheses}) ${rubDeclension} ${kopStr} ${kopDeclension}`;
 }
 
 /**

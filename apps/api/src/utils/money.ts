@@ -1,6 +1,6 @@
 /**
  * apps/api/src/utils/money.ts
- * Re-export facade to @dental/shared canonical money helpers per Mandate 8s.
+ * Re-export facade to @dental/shared canonical money helpers and patient debt logic per Mandates 8a, 8b, 8s.
  */
 export {
 	parseKopecks,
@@ -19,6 +19,57 @@ export {
 	moneyRubSchema,
 	positiveMoneyRubSchema,
 	nonNegativeMoneyRubSchema,
+	allocateGlobalDiscountCents,
 	type Kopecks,
+	// Documents & Money words (Минфин/ЦБ РФ)
+	moneyToWordsRu,
+	kopecksToWordsRu,
+	rublesToWordsRu,
+	legalMoneyInWordsFromKopecksRu,
+	legalMoneyInWordsRu,
+	integerToWordsRu,
+	getDeclension,
+	RUBLE_FORMS,
+	KOPECK_FORMS,
+	type WordDeclension,
+	// Split payments 54-FZ
+	validateAndBalanceSplitPayment,
+	allocateSplitPaymentAcrossItems,
+	type SplitTenderKind,
+	type SplitPaymentTenderInput,
+	type NormalizedSplitTender,
+	type Ffd12PaymentTagsSummary,
+	type SplitPaymentValidationResult,
+	type SplitPaymentPositionItem,
+	type AllocatedItemSplitPayment,
+	SplitPaymentValidationError,
 } from "@dental/shared";
 
+export {
+	toKopecks,
+	rublesFromKopecks,
+	chargeLineKopecks,
+	chargeLineOutcome,
+	buildPatientLedgers,
+	buildPatientLedger,
+	buildVisitLedger,
+	patientOwesClinicKopecks,
+	clinicOwesPatientKopecks,
+	patientAccountBalanceKopecks,
+	clinicDebtTotals,
+	explainDebtTotals,
+	debtNumericText,
+	validateSplitPaymentRow,
+	aggregateSplitTenders,
+	matchesOrganization,
+	type ChargeLineInput,
+	type TreatmentChargeRow,
+	type PaymentRow,
+	type PatientLedger,
+	type VisitLedger,
+	type SplitTenderItem,
+	type SplitPaymentMethodBreakdown,
+	type PatientDebtFilterOptions,
+	MoneyPrecisionError,
+	QuantityContractError,
+} from "../money/patientDebt.js";

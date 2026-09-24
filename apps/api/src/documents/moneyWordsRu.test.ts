@@ -3,9 +3,12 @@ import { describe, test } from "node:test";
 import {
 	integerToWordsRu,
 	kopecksToWordsRu,
+	rublesToWordsRu,
 	legalMoneyInWordsFromKopecksRu,
 	legalMoneyInWordsRu,
 	RUBLE_FORMS,
+	KOPECK_FORMS,
+	getDeclension,
 } from "./moneyWordsRu.js";
 
 describe("moneyWordsRu", () => {
@@ -27,7 +30,15 @@ describe("moneyWordsRu", () => {
 		assert.equal(integerToWordsRu(1002003, RUBLE_FORMS), "один миллион две тысячи три рубля");
 	});
 
-	test("kopecksToWordsRu formats rubles and kopecks in title case", () => {
+	test("integerToWordsRu and rublesToWordsRu preserve negative sign without dropping minus", () => {
+		assert.equal(integerToWordsRu(-1, RUBLE_FORMS), "минус один рубль");
+		assert.equal(integerToWordsRu(-100, RUBLE_FORMS), "минус сто рублей");
+		assert.equal(rublesToWordsRu(-100), "минус сто рублей");
+		assert.equal(rublesToWordsRu(100), "сто рублей");
+		assert.equal(rublesToWordsRu(0), "ноль рублей");
+	});
+
+	test("kopecksToWordsRu formats rubles and kopecks in title case with proper grammar on negative values", () => {
 		assert.equal(kopecksToWordsRu(0), "Ноль рублей 00 копеек");
 		assert.equal(kopecksToWordsRu(100), "Один рубль 00 копеек");
 		assert.equal(kopecksToWordsRu(250), "Два рубля 50 копеек");
@@ -35,6 +46,10 @@ describe("moneyWordsRu", () => {
 		assert.equal(kopecksToWordsRu(2101), "Двадцать один рубль 01 копейка");
 		assert.equal(kopecksToWordsRu(2202), "Двадцать два рубля 02 копейки");
 		assert.equal(kopecksToWordsRu(2505), "Двадцать пять рублей 05 копеек");
+		// Отрицательные суммы: "Минус" с заглавной, далее строчными
+		assert.equal(kopecksToWordsRu(-150050), "Минус одна тысяча пятьсот рублей 50 копеек");
+		assert.equal(kopecksToWordsRu(-100), "Минус один рубль 00 копеек");
+		assert.equal(kopecksToWordsRu(-1), "Минус ноль рублей 01 копейка");
 	});
 
 	test("legalMoneyInWordsRu returns full formal legal amount in words", () => {
@@ -49,5 +64,39 @@ describe("moneyWordsRu", () => {
 		assert.ok(result.includes("38 500,00 ₽") || result.includes("38 500,00"));
 		assert.ok(result.includes("(Тридцать восемь тысяч пятьсот) рублей 00 копеек"));
 		assert.ok(!result.includes("миллион"), "Must NOT inflate kopecks to millions!");
+	});
+
+	test("legalMoneyInWordsFromKopecksRu formats 1 000 000 rub and 0 rub boundary values", () => {
+		// 1 000 000.00 ₽
+		const millionResult = legalMoneyInWordsFromKopecksRu(100000000);
+		assert.ok(millionResult.includes("(Один миллион) рублей 00 копеек"));
+
+		// 0.00 ₽
+		const zeroResult = legalMoneyInWordsFromKopecksRu(0);
+		assert.ok(zeroResult.includes("(Ноль) рублей 00 копеек"));
+	});
+
+	test("legalMoneyInWordsFromKopecksRu includes minus in parentheses for negative amounts", () => {
+		// -1 500.50 ₽ = -150050 kopecks
+		const negativeResult = legalMoneyInWordsFromKopecksRu(-150050);
+		assert.ok(
+			negativeResult.includes("(Минус одна тысяча пятьсот) рублей 50 копеек"),
+			`Expected '(Минус одна тысяча пятьсот) рублей 50 копеек', got: ${negativeResult}`,
+		);
+	});
+
+	test("getDeclension handles all Russian noun forms correctly", () => {
+		assert.equal(getDeclension(1, RUBLE_FORMS), "рубль");
+		assert.equal(getDeclension(2, RUBLE_FORMS), "рубля");
+		assert.equal(getDeclension(4, RUBLE_FORMS), "рубля");
+		assert.equal(getDeclension(5, RUBLE_FORMS), "рублей");
+		assert.equal(getDeclension(11, RUBLE_FORMS), "рублей");
+		assert.equal(getDeclension(21, RUBLE_FORMS), "рубль");
+		assert.equal(getDeclension(22, RUBLE_FORMS), "рубля");
+		assert.equal(getDeclension(25, RUBLE_FORMS), "рублей");
+		assert.equal(getDeclension(1, KOPECK_FORMS), "копейка");
+		assert.equal(getDeclension(2, KOPECK_FORMS), "копейки");
+		assert.equal(getDeclension(5, KOPECK_FORMS), "копеек");
+		assert.equal(getDeclension(21, KOPECK_FORMS), "копейка");
 	});
 });

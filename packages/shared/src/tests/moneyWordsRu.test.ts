@@ -109,7 +109,7 @@ describe("moneyWordsRu canonical shared engine", () => {
 		});
 
 		test("handles negative balances with minus sign", () => {
-			assert.equal(kopecksToWordsRu(-15050), "минус Сто пятьдесят рублей 50 копеек");
+			assert.equal(kopecksToWordsRu(-15050), "Минус сто пятьдесят рублей 50 копеек");
 		});
 	});
 

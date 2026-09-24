@@ -31,8 +31,8 @@ export type SendTelegramTextMessageInput = {
 	botToken: string;
 	chatId: string;
 	text: string;
-	replyMarkup?: Record<string, unknown> | null;
-	timeoutMs?: number;
+	replyMarkup?: Record<string, unknown> | null | undefined;
+	timeoutMs?: number | undefined;
 };
 
 export type SendTelegramPhotoMessageInput = {
@@ -40,8 +40,8 @@ export type SendTelegramPhotoMessageInput = {
 	chatId: string;
 	photoUrl: string;
 	caption: string;
-	replyMarkup?: Record<string, unknown> | null;
-	timeoutMs?: number;
+	replyMarkup?: Record<string, unknown> | null | undefined;
+	timeoutMs?: number | undefined;
 };
 
 export type TelegramTransportFailure = Extract<
@@ -54,8 +54,8 @@ type TelegramTransportErrorClass = TelegramTransportFailure["errorClass"];
 export type AnswerTelegramCallbackQueryInput = {
 	botToken: string;
 	callbackQueryId: string;
-	text?: string | null;
-	timeoutMs?: number;
+	text?: string | null | undefined;
+	timeoutMs?: number | undefined;
 };
 
 function classifyTelegramError(status: number): TelegramTransportErrorClass {
@@ -341,9 +341,9 @@ export type SendVisitConfirmationReceiptInput = {
 export function buildVisitReminderText(params: {
 	clinicName: string;
 	appointmentStartsAt: string;
-	doctorName?: string | null;
-	clinicAddress?: string | null;
-	clinicPhone?: string | null;
+	doctorName?: string | null | undefined;
+	clinicAddress?: string | null | undefined;
+	clinicPhone?: string | null | undefined;
 }): string {
 	const startsDate = new Date(params.appointmentStartsAt);
 	const formattedDate = Number.isFinite(startsDate.getTime())
@@ -381,8 +381,8 @@ export function buildSignedAppointmentCallbackData(params: {
 	startsAtIso: string;
 	secret: string;
 	organizationId: string;
-	clinicId?: string | null;
-	botConfigId?: string | null;
+	clinicId?: string | null | undefined;
+	botConfigId?: string | null | undefined;
 }): string {
 	const startsMs = Date.parse(params.startsAtIso);
 	const expirySec = Math.floor(
@@ -412,8 +412,8 @@ export function buildVisitReminderInlineKeyboard(params: {
 	startsAtIso: string;
 	callbackSecret: string;
 	organizationId: string;
-	clinicId?: string | null;
-	botConfigId?: string | null;
+	clinicId?: string | null | undefined;
+	botConfigId?: string | null | undefined;
 }): Record<string, unknown> {
 	const confirmData = buildSignedAppointmentCallbackData({
 		action: "c",

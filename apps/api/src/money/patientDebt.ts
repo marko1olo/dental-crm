@@ -399,6 +399,7 @@ export interface ChargeLineInput {
 	 */
 	readonly patientId?: string;
 	readonly visitId?: string | null;
+	readonly organizationId?: string | null;
 	readonly status?: string;
 }
 
@@ -414,8 +415,22 @@ export interface TreatmentChargeRow extends ChargeLineInput {
 	 * `buildVisitLedger`.
 	 */
 	readonly visitId?: string | null;
+	/** Идентификатор организации/клиники (мультитенантность). */
+	readonly organizationId?: string | null;
 	/** `"cancelled"` исключается из назначенного — это часть канона. */
 	readonly status: string;
+}
+
+/**
+ * Отдельный способ оплаты в составе сплит-платежа (нал + безнал + аванс + сертификат).
+ */
+export interface SplitTenderItem {
+	/** Вид оплаты: "cash" | "card" | "sbp" | "advance_deposit" | "family_deposit" | "credit" | "certificate_or_bonus" | "dms_insurance" | string */
+	readonly kind: string;
+	/** Сумма в целых копейках (приоритет, нулевой дрейф) */
+	readonly amountKopecks?: Kopecks;
+	/** Сумма в рублях (текст numeric или число) */
+	readonly amountRub?: MoneyInput;
 }
 
 /** Платёж в том виде, в каком его отдаёт `payments`. */
@@ -423,9 +438,65 @@ export interface PaymentRow {
 	readonly patientId: string;
 	/** Приём, к которому привязан платёж (`payments.visit_id`, nullable). */
 	readonly visitId?: string | null;
+	/** Идентификатор организации/клиники (мультитенантность). */
+	readonly organizationId?: string | null;
 	/** Только `"paid"` считается полученными деньгами. */
 	readonly status: string;
 	readonly amountRub: MoneyInput;
+	/**
+	 * Опциональная детальная разбивка сплит-оплаты (нал + безнал + аванс + сертификат).
+	 * При наличии проверяется строжайшее равенство: сумма тендеров в копейках === сумма платежа в копейках.
+	 * Расхождение даже в 1 копейку отвергается (выброс MoneyPrecisionError).
+	 */
+	readonly splitTenders?: readonly SplitTenderItem[];
+}
+
+/**
+ * Валидация сплит-составляющих платежа: сумма тендеров в копейках обязана
+ * в точности совпадать с amountRub платежа (расхождение ровно 0 копеек).
+ * Исключает любые ошибки округления при сплит-оплатах (нал + безнал + аванс + сертификат).
+ */
+export function validateSplitPaymentRow(row: PaymentRow): Kopecks {
+	const totalKopecks = toKopecks(row.amountRub, "сумма платежа");
+	if (!row.splitTenders || row.splitTenders.length === 0) {
+		return totalKopecks;
+	}
+
+	const tenderKopecksList: Kopecks[] = [];
+	for (const tender of row.splitTenders) {
+		let tenderKop: Kopecks;
+		if (tender.amountKopecks !== undefined) {
+			assertKopecks(tender.amountKopecks, `тендер сплит-оплаты ${tender.kind}`);
+			tenderKop = tender.amountKopecks;
+		} else if (tender.amountRub !== undefined) {
+			tenderKop = toKopecks(tender.amountRub, `тендер сплит-оплаты ${tender.kind}`);
+		} else {
+			throw new MoneyPrecisionError(
+				`тендер сплит-оплаты ${tender.kind}`,
+				tender,
+				"отсутствует сумма как в копейках, так и в рублях",
+			);
+		}
+		if (tenderKop < 0) {
+			throw new MoneyPrecisionError(
+				`тендер сплит-оплаты ${tender.kind}`,
+				tenderKop,
+				"сумма тендера не может быть отрицательной",
+			);
+		}
+		tenderKopecksList.push(tenderKop);
+	}
+
+	const tendersSumKopecks = sumKopecks(tenderKopecksList);
+	if (tendersSumKopecks !== totalKopecks) {
+		throw new MoneyPrecisionError(
+			"сплит-оплата",
+			{ totalKopecks, tendersSumKopecks, splitTenders: row.splitTenders },
+			`сумма сплит-тендеров (${tendersSumKopecks} коп.) не совпадает с суммой платежа (${totalKopecks} коп.), расхождение ${tendersSumKopecks - totalKopecks} коп.`,
+		);
+	}
+
+	return totalKopecks;
 }
 
 /**
@@ -549,6 +620,30 @@ function assertContractQuantity(value: number | string): number {
 }
 
 /**
+ * Опции фильтрации расчета задолженности.
+ */
+export interface PatientDebtFilterOptions {
+	/**
+	 * Идентификатор организации/клиники (мультитенантность).
+	 * Если задан, в сальдо попадают ТОЛЬКО позиции и оплаты этой организации.
+	 * Исключает перекрестный зачет долгов и переплат между разными филиалами/клиниками.
+	 */
+	readonly organizationId?: string | null;
+}
+
+/**
+ * Проверка принадлежности строки к организации при активной фильтрации.
+ */
+export function matchesOrganization(
+	rowOrg: string | null | undefined,
+	filterOrg?: string | null,
+): boolean {
+	if (!filterOrg) return true;
+	if (rowOrg === undefined || rowOrg === null) return false;
+	return rowOrg === filterOrg;
+}
+
+/**
  * Сальдо одного пациента. Первичная величина: пять ответов ниже — её чтения.
  *
  * Область здесь — пациент целиком, поэтому позиции и оплаты берутся независимо
@@ -557,6 +652,8 @@ function assertContractQuantity(value: number | string): number {
  */
 export interface PatientLedger {
 	readonly patientId: string;
+	/** Идентификатор организации/клиники (мультитенантность). */
+	readonly organizationId?: string | null | undefined;
 	/** Назначено: сумма строк позиций, кроме отменённых. */
 	readonly chargedKopecks: Kopecks;
 	/** Оплачено: сумма платежей в статусе `paid`. */
@@ -580,13 +677,20 @@ export interface PatientLedger {
  * до любых назначений, в позициях не встречается вовсе, и по одной таблице его
  * переплату не увидеть. Ровно на этом отчёт дебиторки терял переплативших, пока
  * в нём не появилось объединение множеств ключей.
+ *
+ * При указании options.organizationId исключается перекрестный зачет долгов
+ * разных клиник (мультитенантная изоляция).
  */
 export function buildPatientLedgers(
 	charges: readonly TreatmentChargeRow[],
 	payments: readonly PaymentRow[],
+	options?: PatientDebtFilterOptions,
 ): Map<string, PatientLedger> {
+	const filterOrg = options?.organizationId;
+
 	const chargeLines = new Map<string, Kopecks[]>();
 	for (const row of charges) {
+		if (filterOrg && !matchesOrganization(row.organizationId, filterOrg)) continue;
 		if (row.status === CANCELLED_ITEM_STATUS) continue;
 		const lines = chargeLines.get(row.patientId) ?? [];
 		lines.push(chargeLineKopecks(row));
@@ -595,9 +699,10 @@ export function buildPatientLedgers(
 
 	const paymentLines = new Map<string, Kopecks[]>();
 	for (const row of payments) {
+		if (filterOrg && !matchesOrganization(row.organizationId, filterOrg)) continue;
 		if (row.status !== PAID_PAYMENT_STATUS) continue;
 		const lines = paymentLines.get(row.patientId) ?? [];
-		lines.push(toKopecks(row.amountRub, "сумма платежа"));
+		lines.push(validateSplitPaymentRow(row));
 		paymentLines.set(row.patientId, lines);
 	}
 
@@ -612,6 +717,7 @@ export function buildPatientLedgers(
 		const paidKopecks = sumKopecks(paymentLines.get(patientId) ?? []);
 		ledgers.set(patientId, {
 			patientId,
+			organizationId: filterOrg ?? undefined,
 			chargedKopecks,
 			paidKopecks,
 			balanceKopecks: chargedKopecks - paidKopecks,
@@ -625,13 +731,16 @@ export function buildPatientLedger(
 	patientId: string,
 	charges: readonly TreatmentChargeRow[],
 	payments: readonly PaymentRow[],
+	options?: PatientDebtFilterOptions,
 ): PatientLedger {
 	return (
 		buildPatientLedgers(
 			charges.filter((row) => row.patientId === patientId),
 			payments.filter((row) => row.patientId === patientId),
+			options,
 		).get(patientId) ?? {
 			patientId,
+			organizationId: options?.organizationId ?? undefined,
 			chargedKopecks: 0,
 			paidKopecks: 0,
 			balanceKopecks: 0,
@@ -1047,6 +1156,8 @@ function explainSubThreshold(totals: ClinicDebtTotals): string {
  */
 export interface VisitLedger {
 	readonly visitId: string;
+	/** Идентификатор организации/клиники (мультитенантность). */
+	readonly organizationId?: string | null | undefined;
 	/** Назначено по приёму: сумма строк позиций, кроме отменённых. */
 	readonly chargedKopecks: Kopecks;
 	/** Оплачено по приёму: сумма платежей в статусе `paid`. */
@@ -1082,11 +1193,15 @@ export interface VisitLedger {
  * Пустой идентификатор — отказ, а не «ничего не нашлось»: строки с
  * `visitId = null` не совпали бы с ним ни разу, и вызывающий получил бы
  * уверенный ноль по приёму, которого не назвал.
+ *
+ * При указании options.organizationId исключается перекрестный зачет долгов
+ * разных клиник (мультитенантная изоляция).
  */
 export function buildVisitLedger(
 	visitId: string,
 	charges: readonly TreatmentChargeRow[],
 	payments: readonly PaymentRow[],
+	options?: PatientDebtFilterOptions,
 ): VisitLedger {
 	if (typeof visitId !== "string" || visitId.trim() === "") {
 		throw new MoneyPrecisionError(
@@ -1096,10 +1211,13 @@ export function buildVisitLedger(
 		);
 	}
 
+	const filterOrg = options?.organizationId;
+
 	const chargeLines: Kopecks[] = [];
 	let chargeRowCount = 0;
 	for (const row of charges) {
 		if (row.visitId !== visitId) continue;
+		if (filterOrg && !matchesOrganization(row.organizationId, filterOrg)) continue;
 		chargeRowCount += 1;
 		if (row.status === CANCELLED_ITEM_STATUS) continue;
 		chargeLines.push(chargeLineKopecks(row));
@@ -1109,15 +1227,17 @@ export function buildVisitLedger(
 	let paymentRowCount = 0;
 	for (const row of payments) {
 		if (row.visitId !== visitId) continue;
+		if (filterOrg && !matchesOrganization(row.organizationId, filterOrg)) continue;
 		paymentRowCount += 1;
 		if (row.status !== PAID_PAYMENT_STATUS) continue;
-		paymentLines.push(toKopecks(row.amountRub, "сумма платежа"));
+		paymentLines.push(validateSplitPaymentRow(row));
 	}
 
 	const chargedKopecks = sumKopecks(chargeLines);
 	const paidKopecks = sumKopecks(paymentLines);
 	return {
 		visitId,
+		organizationId: filterOrg ?? undefined,
 		chargedKopecks,
 		paidKopecks,
 		balanceKopecks: chargedKopecks - paidKopecks,
@@ -1126,6 +1246,113 @@ export function buildVisitLedger(
 		paymentRowCount,
 		paidPaymentCount: paymentLines.length,
 		hasRecords: chargeRowCount > 0 || paymentRowCount > 0,
+	};
+}
+
+/**
+ * Структура детальной разбивки сплит-платежей по видам оплаты.
+ */
+export interface SplitPaymentMethodBreakdown {
+	readonly cashKopecks: Kopecks;
+	readonly cardKopecks: Kopecks;
+	readonly sbpKopecks: Kopecks;
+	readonly advanceKopecks: Kopecks;
+	readonly familyDepositKopecks: Kopecks;
+	readonly creditKopecks: Kopecks;
+	readonly certificateKopecks: Kopecks;
+	readonly dmsKopecks: Kopecks;
+	readonly otherKopecks: Kopecks;
+	readonly totalKopecks: Kopecks;
+}
+
+/**
+ * Агрегирует сплит-оплаты по видам оплат с точностью до 1 копейки (Мандат 8a).
+ */
+export function aggregateSplitTenders(
+	payments: readonly PaymentRow[],
+	options?: PatientDebtFilterOptions,
+): SplitPaymentMethodBreakdown {
+	let cashKopecks = 0;
+	let cardKopecks = 0;
+	let sbpKopecks = 0;
+	let advanceKopecks = 0;
+	let familyDepositKopecks = 0;
+	let creditKopecks = 0;
+	let certificateKopecks = 0;
+	let dmsKopecks = 0;
+	let otherKopecks = 0;
+
+	for (const row of payments) {
+		if (options?.organizationId && !matchesOrganization(row.organizationId, options.organizationId)) {
+			continue;
+		}
+		if (row.status !== PAID_PAYMENT_STATUS) continue;
+		const totalKop = validateSplitPaymentRow(row);
+		if (row.splitTenders && row.splitTenders.length > 0) {
+			for (const tender of row.splitTenders) {
+				const kop = tender.amountKopecks !== undefined
+					? tender.amountKopecks
+					: toKopecks(tender.amountRub ?? 0);
+				switch (tender.kind.toLowerCase()) {
+					case "cash":
+						cashKopecks += kop;
+						break;
+					case "card":
+						cardKopecks += kop;
+						break;
+					case "sbp":
+						sbpKopecks += kop;
+						break;
+					case "advance":
+					case "advance_deposit":
+						advanceKopecks += kop;
+						break;
+					case "family_deposit":
+						familyDepositKopecks += kop;
+						break;
+					case "credit":
+						creditKopecks += kop;
+						break;
+					case "certificate":
+					case "certificate_or_bonus":
+						certificateKopecks += kop;
+						break;
+					case "dms":
+					case "dms_insurance":
+						dmsKopecks += kop;
+						break;
+					default:
+						otherKopecks += kop;
+						break;
+				}
+			}
+		} else {
+			otherKopecks += totalKop;
+		}
+	}
+
+	const totalKopecks =
+		cashKopecks +
+		cardKopecks +
+		sbpKopecks +
+		advanceKopecks +
+		familyDepositKopecks +
+		creditKopecks +
+		certificateKopecks +
+		dmsKopecks +
+		otherKopecks;
+
+	return {
+		cashKopecks,
+		cardKopecks,
+		sbpKopecks,
+		advanceKopecks,
+		familyDepositKopecks,
+		creditKopecks,
+		certificateKopecks,
+		dmsKopecks,
+		otherKopecks,
+		totalKopecks,
 	};
 }
 
