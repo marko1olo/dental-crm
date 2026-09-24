@@ -323,7 +323,7 @@ export const YandexCalendarSyncsWidget: React.FC = () => {
 				showToast(err.message || "Ошибка при запуске синхронизации", "warning");
 			}
 		} catch {
-			showToast("Не удалось связаться с сервером синхронизации", "danger");
+			showToast("Не удалось связаться с сервером синхронизации", "error");
 		} finally {
 			setIsBackgroundSyncing(false);
 		}

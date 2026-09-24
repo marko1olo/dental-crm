@@ -47,21 +47,21 @@ export const DEFAULT_LEGAL_REPRESENTATIVE: LegalRepresentativeData = {
 
 export interface PediatricSomaticAndLegalRepProps {
 	/** Начальный соматический статус */
-	readonly initialSomatic?: Partial<PediatricSomaticStatus>;
+	readonly initialSomatic?: Partial<PediatricSomaticStatus> | undefined;
 	/** Обработчик изменения соматического статуса */
-	readonly onSomaticChange?: (status: PediatricSomaticStatus, formattedText: string) => void;
+	readonly onSomaticChange?: ((status: PediatricSomaticStatus, formattedText: string) => void) | undefined;
 	/** Данные законного представителя (если переданы из карточки пациента) */
-	readonly initialRepresentative?: Partial<LegalRepresentativeData>;
+	readonly initialRepresentative?: Partial<LegalRepresentativeData> | undefined;
 	/** Имя родителя из профиля пациента для автоподстановки */
-	readonly defaultRepresentativeFullName?: string;
+	readonly defaultRepresentativeFullName?: string | undefined;
 	/** Телефон родителя из профиля пациента для автоподстановки */
-	readonly defaultRepresentativePhone?: string;
+	readonly defaultRepresentativePhone?: string | undefined;
 	/** Роль представителя из профиля (например "Мать" или "Отец") */
-	readonly defaultRepresentativeRole?: string;
+	readonly defaultRepresentativeRole?: string | undefined;
 	/** Обработчик изменения представителя */
-	readonly onRepresentativeChange?: (rep: LegalRepresentativeData, formattedText: string) => void;
+	readonly onRepresentativeChange?: ((rep: LegalRepresentativeData, formattedText: string) => void) | undefined;
 	/** Дополнительный CSS класс */
-	readonly className?: string;
+	readonly className?: string | undefined;
 }
 
 export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepProps> = ({
