@@ -2,12 +2,15 @@ import {
 	AlertTriangle,
 	Check,
 	Copy,
+	Download,
 	FileText,
 	Layers,
 	Lock,
 	MoreHorizontal,
 	Package,
+	PenTool,
 	Printer,
+	RotateCcw,
 	ShieldCheck,
 	Sparkles,
 	X,
@@ -41,6 +44,13 @@ import {
 	generatePaperSignatureSvg,
 	PAPER_SIGNATURE_FALLBACK_PNG,
 	type SignatureVectorData,
+	type SignatureStroke,
+	type SignaturePoint,
+	calculateBoundingBox,
+	exportSignatureToSvg,
+	smoothStrokeToBezierCurves,
+	generatePdfA1bDocument,
+	downloadConsentPdfA,
 } from "./signaturePadMath.js";
 
 export interface InformedConsentModalProps {
@@ -233,6 +243,12 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	const [previewTemplateKey, setPreviewTemplateKey] = useState<ConsentTemplateKey | null>(null);
 	const [paperOriginalConfirmed, setPaperOriginalConfirmed] = useState<boolean>(true);
 	const [isPrintingBlank, setIsPrintingBlank] = useState<boolean>(false);
+	const [verificationMethod, setVerificationMethod] = useState<"tablet_stylus" | "sms_otp" | "paper_physical">(
+		initialVerificationMethod || "paper_physical"
+	);
+	const [strokes, setStrokes] = useState<SignatureStroke[]>([]);
+	const [currentPoints, setCurrentPoints] = useState<SignaturePoint[]>([]);
+	const [isDrawing, setIsDrawing] = useState<boolean>(false);
 
 	const isClosedOrSigned = !isDraft && Boolean(
 		isSigned ||
@@ -270,8 +286,12 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 			setCustomDiagnosis(diagnosisIcd || "");
 			setCustomTeeth(toothNumbers || "");
 			setIsMoreMenuOpen(false);
+			setVerificationMethod(initialVerificationMethod || "paper_physical");
+			setStrokes([]);
+			setCurrentPoints([]);
+			setIsDrawing(false);
 		}
-	}, [isOpen, initialMode, initialPackageKey, initialTemplateKey, diagnosisIcd, toothNumbers]);
+	}, [isOpen, initialMode, initialPackageKey, initialTemplateKey, initialVerificationMethod, diagnosisIcd, toothNumbers]);
 
 	// Закрытие по Escape
 	useEffect(() => {
@@ -362,11 +382,89 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 				phone: substitutionContext.phone,
 			},
 			timestamp: Date.now(),
-			strokes: [],
-			verificationMethod: "paper_physical",
+			strokes: verificationMethod === "tablet_stylus" ? strokes : [],
+			verificationMethod: verificationMethod,
 			smsOtpCode: null,
 		});
-	}, [rendered.fullTextContent, substitutionContext]);
+	}, [rendered.fullTextContent, substitutionContext, strokes, verificationMethod]);
+
+	// Обработчики сенсорного/стилусного ввода (SVG Vector Pad)
+	const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+		e.preventDefault();
+		(e.target as Element).setPointerCapture?.(e.pointerId);
+		const rect = e.currentTarget.getBoundingClientRect();
+		const x = e.clientX - rect.left;
+		const y = e.clientY - rect.top;
+		setCurrentPoints([{ x, y, time: Date.now() }]);
+		setIsDrawing(true);
+	};
+
+	const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+		if (!isDrawing) return;
+		e.preventDefault();
+		const rect = e.currentTarget.getBoundingClientRect();
+		const x = e.clientX - rect.left;
+		const y = e.clientY - rect.top;
+		setCurrentPoints((prev) => [...prev, { x, y, time: Date.now() }]);
+	};
+
+	const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
+		if (!isDrawing) return;
+		e.preventDefault();
+		try {
+			(e.target as Element).releasePointerCapture?.(e.pointerId);
+		} catch {}
+		setIsDrawing(false);
+		if (currentPoints.length > 0) {
+			setStrokes((prev) => [...prev, { points: currentPoints, color: "#0f172a" }]);
+			setCurrentPoints([]);
+		}
+	};
+
+	const handleClearStrokes = () => {
+		setStrokes([]);
+		setCurrentPoints([]);
+	};
+
+	// 1-клик генерация и скачивание архивного документа ISO 19005-1 (PDF/A-1b)
+	const handleDownloadPdfA = () => {
+		try {
+			const sigSvg = verificationMethod === "tablet_stylus" && strokes.length > 0
+				? exportSignatureToSvg(strokes, 400, 140, { strokeColor: "#0f172a" })
+				: generatePaperSignatureSvg({
+						date: effectiveContext.date || new Date().toLocaleDateString("ru-RU"),
+						clinicName: effectiveContext.clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»",
+				  });
+
+			const pdfBytes = generatePdfA1bDocument({
+				clinicName: effectiveContext.clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»",
+				clinicAddress: effectiveContext.clinicAddress,
+				clinicPhone: effectiveContext.phone || clinicPhone,
+				patientName: effectiveContext.patientName || "Пациент",
+				patientBirthDate: effectiveContext.birthDate || undefined,
+				medicalCardNumber: patient?.cardNumber || undefined,
+				doctorName: effectiveContext.doctorName || "Лечащий врач",
+				documentTitle: rendered.title,
+				documentCode: currentTemplate.code,
+				documentText: rendered.fullTextContent,
+				signedAtIso: new Date().toISOString(),
+				integrityHash: integrityRecord.hash,
+				strokes: verificationMethod === "tablet_stylus" ? strokes : undefined,
+				signatureSvg: sigSvg,
+				verificationMethod: verificationMethod,
+			});
+
+			const safeCode = (currentTemplate.code || "IDS").replace(/[^a-zA-Z0-9_-]/g, "_");
+			const safePt = (effectiveContext.patientName || "patient").replace(/[^a-zA-Z0-9а-яА-Я_-]/g, "_");
+			const filename = `Consent_${safeCode}_${safePt}.pdf`;
+
+			downloadConsentPdfA(filename, pdfBytes);
+			showToast("Архивный документ ISO 19005-1 (PDF/A-1b) успешно сохранён", "success");
+		} catch (err) {
+			console.error("Failed to generate PDF/A:", err);
+			showToast("Не удалось сформировать PDF/A документ", "error");
+		}
+	};
 
 	// Копирование хеша
 	const handleCopyHash = () => {
@@ -442,23 +540,31 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 		}
 	};
 
-	// Подписание и подтверждение на бумаге в 1 клик (Мандаты 8e, 8i, 8k, 8n)
-	const handleConfirmSign = (_forcedMethod?: "tablet_stylus" | "sms_otp" | "paper_physical") => {
+	// Подписание и подтверждение в 1 клик (Мандаты 8e, 8i, 8k, 8n)
+	const handleConfirmSign = (forcedMethod?: "tablet_stylus" | "sms_otp" | "paper_physical") => {
 		if (isSubmitting) return;
 		setIsSubmitting(true);
 
+		const effectiveMethod = forcedMethod || verificationMethod;
+
 		try {
-			const svg = generatePaperSignatureSvg({
-				date: effectiveContext.date || new Date().toLocaleDateString("ru-RU"),
-				clinicName: effectiveContext.clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»",
-			});
+			const svg = effectiveMethod === "tablet_stylus" && strokes.length > 0
+				? exportSignatureToSvg(strokes, 400, 140, { strokeColor: "#0f172a" })
+				: generatePaperSignatureSvg({
+						date: effectiveContext.date || new Date().toLocaleDateString("ru-RU"),
+						clinicName: effectiveContext.clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»",
+				  });
 			const pngBase64 = PAPER_SIGNATURE_FALLBACK_PNG;
 
 			const vectorData: SignatureVectorData = {
-				strokes: [],
-				bounds: { minX: 0, minY: 0, maxX: 400, maxY: 120, width: 400, height: 120 },
+				strokes: effectiveMethod === "tablet_stylus" ? strokes : [],
+				bounds: effectiveMethod === "tablet_stylus" && strokes.length > 0
+					? calculateBoundingBox(strokes)
+					: { minX: 0, minY: 0, maxX: 400, maxY: 120, width: 400, height: 120 },
 				timestamp: Date.now(),
-				pointCount: 0,
+				pointCount: effectiveMethod === "tablet_stylus"
+					? strokes.reduce((acc, s) => acc + s.points.length, 0)
+					: 0,
 				integrityHash: integrityRecord.hash,
 			};
 
@@ -477,8 +583,8 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							phone: substitutionContext.phone,
 						},
 						timestamp: Date.now(),
-						strokes: [],
-						verificationMethod: "paper_physical",
+						strokes: effectiveMethod === "tablet_stylus" ? strokes : [],
+						verificationMethod: effectiveMethod,
 						smsOtpCode: null,
 					});
 
@@ -504,11 +610,13 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 						vectorData: docVectorData,
 						integrityHash: docHashRecord.hash,
 						signedAt: new Date().toISOString(),
-						verificationMethod: "paper_physical",
+						verificationMethod: effectiveMethod,
 						smsOtpCode: null,
 						attachedToForm043u: true,
-						paperOriginalStored: paperOriginalConfirmed,
-						statusText: "Бумажный оригинал пакета подписан пациентом (хранится в архиве карты 043/у)",
+						paperOriginalStored: effectiveMethod === "paper_physical" ? paperOriginalConfirmed : false,
+						statusText: effectiveMethod === "paper_physical"
+							? "Бумажный оригинал пакета подписан пациентом (хранится в архиве карты 043/у)"
+							: "Электронный пакет согласий подписан на планшете (векторная подпись SVG)",
 						note: `Пакет: ${pkg.title}`,
 					};
 
@@ -550,11 +658,13 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 					vectorData,
 					integrityHash: integrityRecord.hash,
 					signedAt: new Date().toISOString(),
-					verificationMethod: "paper_physical",
+					verificationMethod: effectiveMethod,
 					smsOtpCode: null,
 					attachedToForm043u: true,
-					paperOriginalStored: paperOriginalConfirmed,
-					statusText: "Бумажный оригинал подписан пациентом (хранится в архиве карты 043/у)",
+					paperOriginalStored: effectiveMethod === "paper_physical" ? paperOriginalConfirmed : false,
+					statusText: effectiveMethod === "paper_physical"
+						? "Бумажный оригинал подписан пациентом (хранится в архиве карты 043/у)"
+						: "Электронное согласие подписано на планшете (векторная подпись SVG)",
 				};
 
 				if (onConsentSigned) {
@@ -961,7 +1071,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 						</div>
 					</div>
 
-					{/* Блок подтверждения бумажного оригинала и печати (323-ФЗ ст. 20) */}
+					{/* Блок подтверждения бумажного оригинала или векторного планшета (323-ФЗ ст. 20) */}
 					<div
 						className="consent-paper-box"
 						style={{
@@ -974,90 +1084,287 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							padding: "1.25rem",
 						}}
 					>
-						<div className="flex items-center justify-between">
-							<div className="flex items-center gap-2">
-								<ShieldCheck size={22} className="text-[var(--teal,#0d9488)]" />
-								<span className="font-bold text-sm">
-									Подписание на бумажном носителе (323-ФЗ ст. 20, Приказ МЗ РФ № 1051н)
-								</span>
+						{/* Переключение метода: Бумага vs Векторный планшет */}
+						<div className="flex items-center justify-between gap-2 flex-wrap pb-1">
+							<div className="flex items-center gap-1.5 p-0.5 bg-[var(--paper)] rounded-lg border border-[var(--line)]">
+								<button
+									type="button"
+									className={`consent-mode-btn ${verificationMethod === "paper_physical" ? "active" : ""}`}
+									onClick={() => setVerificationMethod("paper_physical")}
+									data-testid="tab-method-paper"
+									style={{ height: "26px", padding: "0 10px", fontSize: "12px", borderRadius: "6px" }}
+								>
+									<Printer size={13} />
+									<span>Бумажный носитель (323-ФЗ)</span>
+								</button>
+								<button
+									type="button"
+									className={`consent-mode-btn ${verificationMethod === "tablet_stylus" ? "active" : ""}`}
+									onClick={() => setVerificationMethod("tablet_stylus")}
+									data-testid="tab-method-tablet"
+									style={{ height: "26px", padding: "0 10px", fontSize: "12px", borderRadius: "6px" }}
+								>
+									<PenTool size={13} />
+									<span>Векторный планшет (экран)</span>
+								</button>
 							</div>
-							<span className="consent-statutory-badge">
-								Оригинал в карте 043/у
+							<span className="consent-statutory-badge shrink-0">
+								{verificationMethod === "paper_physical" ? "Оригинал в карте 043/у" : "Векторный росчерк SVG"}
 							</span>
 						</div>
-						<p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.5 }}>
-							Пациент знакомится с текстом согласия и расписывается шариковой ручкой на бумажном бланке.
-							Бумажный оригинал подшивается в амбулаторную медицинскую карту пациента формы № 043/у (срок хранения 25 лет).
-							В электронной карте фиксируется отметка с криптографическим отпечатком SHA-256.
-						</p>
 
-						{/* Чекбокс подтверждения наличия бумажного оригинала */}
-						<label className="consent-paper-checkbox-label">
-							<input
-								type="checkbox"
-								checked={paperOriginalConfirmed}
-								onChange={(e) => setPaperOriginalConfirmed(e.target.checked)}
-								data-testid="checkbox-paper-original-stored"
-								style={{ width: "18px", height: "18px", cursor: "pointer", accentColor: "var(--teal, #0d9488)" }}
-							/>
-							<span style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>
-								Оригинал подписан пациентом от руки на бумаге (подшит в карту № 043/у)
-							</span>
-						</label>
+						{verificationMethod === "paper_physical" ? (
+							<>
+								<div className="flex items-center justify-between">
+									<div className="flex items-center gap-2">
+										<ShieldCheck size={22} className="text-[var(--teal,#0d9488)]" />
+										<span className="font-bold text-sm">
+											Подписание на бумажном носителе (323-ФЗ ст. 20, Приказ МЗ РФ № 1051н)
+										</span>
+									</div>
+									<span className="consent-statutory-badge">
+										Оригинал в карте 043/у
+									</span>
+								</div>
+								<p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.5 }}>
+									Пациент знакомится с текстом согласия и расписывается шариковой ручкой на бумажном бланке.
+									Бумажный оригинал подшивается в амбулаторную медицинскую карту пациента формы № 043/у (срок хранения 25 лет).
+									В электронной карте фиксируется отметка с криптографическим отпечатком SHA-256.
+								</p>
 
-						<div className="flex items-center gap-3 pt-1 flex-wrap">
-							<button
-								type="button"
-								className="consent-action-btn primary"
-								data-testid="btn-confirm-paper-signed"
-								onClick={() => handleConfirmSign("paper_physical")}
-								disabled={isSubmitting}
-								style={{
-									minHeight: "44px",
-									fontSize: "14px",
-									fontWeight: "bold",
-									background: "var(--teal)",
-									color: "var(--on-teal, #ffffff)",
-									boxShadow: "var(--shadow-1)",
-								}}
-							>
-								<Zap size={18} />
-								<span>
-									{activeMode === "packages"
-										? `Подтвердить пакет (${currentPackage.templateKeys.length} док.) в 1 клик`
-										: "Подтвердить подписание на бумаге (1 клик)"}
-								</span>
-							</button>
-							<button
-								type="button"
-								className="consent-tool-btn"
-								onClick={handlePrint}
-								title={
-									activeMode === "packages"
-										? "Многостраничная печать заполненного пакета ИДС (А4)"
-										: "Печать заполненного бланка ИДС на принтер (А4)"
-								}
-							>
-								<Printer size={16} />
-								<span>{activeMode === "packages" ? "Печать пакета (А4)" : "Печать бланка (А4)"}</span>
-							</button>
-							<button
-								type="button"
-								className="consent-tool-btn"
-								data-testid="btn-print-blank-consent-inline"
-								onClick={handlePrintBlank}
-								title={
-									activeMode === "packages"
-										? "Печать чистых бланков всего пакета со строками «________» для ручного заполнения"
-										: "Печать чистого бланка со строками «________» для ручного заполнения пациентом"
-								}
-							>
-								<FileText size={16} />
-								<span>
-									{activeMode === "packages" ? "Печать чистых бланков пакета («________»)" : "Печать чистого бланка («________»)"}
-								</span>
-							</button>
-						</div>
+								{/* Чекбокс подтверждения наличия бумажного оригинала */}
+								<label className="consent-paper-checkbox-label">
+									<input
+										type="checkbox"
+										checked={paperOriginalConfirmed}
+										onChange={(e) => setPaperOriginalConfirmed(e.target.checked)}
+										data-testid="checkbox-paper-original-stored"
+										style={{ width: "18px", height: "18px", cursor: "pointer", accentColor: "var(--teal, #0d9488)" }}
+									/>
+									<span style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>
+										Оригинал подписан пациентом от руки на бумаге (подшит в карту № 043/у)
+									</span>
+								</label>
+
+								<div className="flex items-center gap-3 pt-1 flex-wrap">
+									<button
+										type="button"
+										className="consent-action-btn primary"
+										data-testid="btn-confirm-paper-signed"
+										onClick={() => handleConfirmSign("paper_physical")}
+										disabled={isSubmitting}
+										style={{
+											minHeight: "44px",
+											fontSize: "14px",
+											fontWeight: "bold",
+											background: "var(--teal)",
+											color: "var(--on-teal, #ffffff)",
+											boxShadow: "var(--shadow-1)",
+										}}
+									>
+										<Zap size={18} />
+										<span>
+											{activeMode === "packages"
+												? `Подтвердить пакет (${currentPackage.templateKeys.length} док.) в 1 клик`
+												: "Подтвердить подписание на бумаге (1 клик)"}
+										</span>
+									</button>
+									<button
+										type="button"
+										className="consent-tool-btn"
+										onClick={handlePrint}
+										title={
+											activeMode === "packages"
+												? "Многостраничная печать заполненного пакета ИДС (А4)"
+												: "Печать заполненного бланка ИДС на принтер (А4)"
+										}
+									>
+										<Printer size={16} />
+										<span>{activeMode === "packages" ? "Печать пакета (А4)" : "Печать бланка (А4)"}</span>
+									</button>
+									<button
+										type="button"
+										className="consent-tool-btn"
+										data-testid="btn-print-blank-consent-inline"
+										onClick={handlePrintBlank}
+										title={
+											activeMode === "packages"
+												? "Печать чистых бланков всего пакета со строками «________» для ручного заполнения"
+												: "Печать чистого бланка со строками «________» для ручного заполнения пациентом"
+										}
+									>
+										<FileText size={16} />
+										<span>
+											{activeMode === "packages" ? "Печать чистых бланков пакета («________»)" : "Печать чистого бланка («________»)"}
+										</span>
+									</button>
+									<button
+										type="button"
+										className="consent-tool-btn"
+										data-testid="btn-download-pdfa-inline"
+										onClick={handleDownloadPdfA}
+										title="Скачать архивный документ ISO 19005-1 PDF/A-1b с криптографическим отпечатком"
+									>
+										<Download size={16} />
+										<span>Скачать PDF/A</span>
+									</button>
+								</div>
+							</>
+						) : (
+							<>
+								<div className="flex items-center justify-between">
+									<div className="flex items-center gap-2">
+										<PenTool size={20} className="text-[var(--teal,#0d9488)]" />
+										<span className="font-bold text-sm">
+											Электронная векторная подпись (сенсорный ввод / стилус)
+										</span>
+									</div>
+									<div className="flex items-center gap-2">
+										<button
+											type="button"
+											className="consent-tool-btn py-1 px-2 text-xs"
+											onClick={handleClearStrokes}
+											disabled={strokes.length === 0 && currentPoints.length === 0}
+											data-testid="btn-clear-vector-strokes"
+											title="Очистить поле подписи"
+										>
+											<RotateCcw size={12} />
+											<span>Очистить</span>
+										</button>
+										<span className="consent-statutory-badge">
+											Векторные кривые Безье
+										</span>
+									</div>
+								</div>
+								<p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.5 }}>
+									Пациент ставит векторную подпись на экране планшета или монитора. Росчерк сглаживается кубическими кривыми Безье и фиксируется в векторе SVG с отпечатком SHA-256.
+								</p>
+
+								{/* Сенсорная SVG-панель без использования Canvas */}
+								<div
+									style={{
+										position: "relative",
+										width: "100%",
+										height: "140px",
+										background: "var(--paper)",
+										border: "1.5px dashed var(--line-strong, var(--teal))",
+										borderRadius: "8px",
+										touchAction: "none",
+										userSelect: "none",
+									}}
+								>
+									<svg
+										data-testid="consent-vector-pad-svg"
+										style={{
+											width: "100%",
+											height: "100%",
+											display: "block",
+											cursor: "crosshair",
+										}}
+										onPointerDown={handlePointerDown}
+										onPointerMove={handlePointerMove}
+										onPointerUp={handlePointerUp}
+										onPointerLeave={handlePointerUp}
+									>
+										{strokes.length === 0 && currentPoints.length === 0 && (
+											<text
+												x="50%"
+												y="50%"
+												textAnchor="middle"
+												dominantBaseline="middle"
+												fill="var(--muted, #94a3b8)"
+												fontSize="13"
+												style={{ pointerEvents: "none", userSelect: "none" }}
+											>
+												Поставьте подпись на сенсорном экране (векторный ввод)
+											</text>
+										)}
+										{strokes.map((stroke, sIdx) => {
+											const curves = smoothStrokeToBezierCurves(stroke.points);
+											if (curves.length === 0) {
+												if (stroke.points.length === 1 && stroke.points[0]) {
+													return (
+														<circle
+															key={sIdx}
+															cx={stroke.points[0].x}
+															cy={stroke.points[0].y}
+															r={1.5}
+															fill={stroke.color || "var(--ink, #0f172a)"}
+														/>
+													);
+												}
+												return null;
+											}
+											const d = curves
+												.map((c, cIdx) =>
+													cIdx === 0
+														? `M ${c.startPoint.x.toFixed(1)} ${c.startPoint.y.toFixed(1)} C ${c.control1.x.toFixed(1)} ${c.control1.y.toFixed(1)}, ${c.control2.x.toFixed(1)} ${c.control2.y.toFixed(1)}, ${c.endPoint.x.toFixed(1)} ${c.endPoint.y.toFixed(1)}`
+														: `C ${c.control1.x.toFixed(1)} ${c.control1.y.toFixed(1)}, ${c.control2.x.toFixed(1)} ${c.control2.y.toFixed(1)}, ${c.endPoint.x.toFixed(1)} ${c.endPoint.y.toFixed(1)}`
+												)
+												.join(" ");
+											return (
+												<path
+													key={sIdx}
+													d={d}
+													fill="none"
+													stroke={stroke.color || "var(--ink, #0f172a)"}
+													strokeWidth={2}
+													strokeLinecap="round"
+													strokeLinejoin="round"
+												/>
+											);
+										})}
+										{currentPoints.length > 1 && (
+											<path
+												d={`M ${currentPoints[0]?.x.toFixed(1)} ${currentPoints[0]?.y.toFixed(1)} ` +
+													currentPoints.slice(1).map((p) => `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ")
+												}
+												fill="none"
+												stroke="var(--teal, #0d9488)"
+												strokeWidth={2}
+												strokeLinecap="round"
+												strokeLinejoin="round"
+											/>
+										)}
+									</svg>
+								</div>
+
+								<div className="flex items-center gap-3 pt-1 flex-wrap">
+									<button
+										type="button"
+										className="consent-action-btn primary"
+										data-testid="btn-confirm-tablet-signed"
+										onClick={() => handleConfirmSign("tablet_stylus")}
+										disabled={isSubmitting}
+										style={{
+											minHeight: "44px",
+											fontSize: "14px",
+											fontWeight: "bold",
+											background: "var(--teal)",
+											color: "var(--on-teal, #ffffff)",
+											boxShadow: "var(--shadow-1)",
+										}}
+									>
+										<Zap size={18} />
+										<span>
+											{activeMode === "packages"
+												? `Подтвердить векторный пакет (${currentPackage.templateKeys.length} док.) в 1 клик`
+												: "Подтвердить векторную подпись (1 клик)"}
+										</span>
+									</button>
+									<button
+										type="button"
+										className="consent-tool-btn"
+										data-testid="btn-download-pdfa-tablet"
+										onClick={handleDownloadPdfA}
+										title="Скачать архивный документ ISO 19005-1 PDF/A-1b с векторной подписью"
+									>
+										<Download size={16} />
+										<span>Скачать PDF/A</span>
+									</button>
+								</div>
+							</>
+						)}
 					</div>
 
 					{/* Панель криптографической целостности SHA-256 */}
@@ -1095,6 +1402,17 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 						>
 							<Printer size={18} />
 							<span>{activeMode === "packages" ? "Печать пакета (А4)" : "Печать бланка (А4)"}</span>
+						</button>
+
+						<button
+							type="button"
+							className="consent-action-btn secondary"
+							data-testid="btn-download-pdfa"
+							onClick={handleDownloadPdfA}
+							title="Скачать архивный документ ISO 19005-1 PDF/A-1b с вшитым криптографическим отпечатком"
+						>
+							<Download size={18} />
+							<span>Скачать PDF/A</span>
 						</button>
 
 						{/* Вторичные действия вынесены в компактное меню ... по Закону Миллера (Мандат 8d) */}
@@ -1156,6 +1474,19 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 								>
 									<Copy size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
 									<span className="truncate">Скопировать для пациента</span>
+								</button>
+								<button
+									type="button"
+									className="consent-action-btn secondary w-full !justify-start !border-none !bg-transparent hover:!bg-[var(--paper-soft)] !min-h-[38px] !px-3 !py-2 text-xs text-[var(--ink)] cursor-pointer"
+									data-testid="btn-download-pdfa-menu"
+									onClick={() => {
+										setIsMoreMenuOpen(false);
+										handleDownloadPdfA();
+									}}
+									title="Скачать архивный документ ISO 19005-1 PDF/A-1b"
+								>
+									<Download size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
+									<span className="truncate">Скачать архивный PDF/A</span>
 								</button>
 								<div className="my-1 border-t border-[var(--line)]" />
 								<button
