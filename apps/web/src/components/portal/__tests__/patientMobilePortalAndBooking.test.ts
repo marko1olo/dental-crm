@@ -194,8 +194,8 @@ describe("Patient Mobile Portal & Online Booking Engine (Wave 18)", () => {
 			const payload = generateSbpPaymentQrPayload("inv-102", 5000, "Консультация");
 			const svg = generateQrCodeSvg(payload, { size: 160, colorDark: "#0f172a", colorLight: "#ffffff" });
 			assert.ok(svg.includes("<svg"));
-			assert.ok(svg.includes('viewBox="0 0 160 160"'));
-			assert.ok(svg.includes('shape-rendering="crispEdges"'));
+			assert.ok(svg.includes('width="160"') && svg.includes('height="160"'));
+			assert.ok(svg.includes("shape-rendering:crispEdges"));
 			assert.ok(svg.includes("<rect"));
 			assert.ok(svg.includes("</svg>"));
 		});

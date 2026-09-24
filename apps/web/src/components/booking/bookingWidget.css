@@ -1728,3 +1728,155 @@
 .dente-booking-widget[data-art-bg="true"] .dbw-body {
 	background: transparent;
 }
+
+/* ==========================================================================
+   Confirmation View & Floating Dental Boarding Pass (Mandates 8l, 8p)
+   ========================================================================== */
+
+.dbw-confirmation-view-container {
+	position: relative;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	border-radius: inherit;
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+/* Ambient Art Backdrop Wrapper & Soft Scrim Filter */
+.dbw-confirmation-art-wrapper {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 0;
+	pointer-events: none;
+	overflow: hidden;
+	border-radius: inherit;
+}
+
+.dbw-confirmation-art-layer {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.dbw-confirmation-scrim {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+	background: radial-gradient(
+		circle at 50% 15%,
+		rgba(255, 255, 255, 0.72) 0%,
+		rgba(248, 250, 252, 0.92) 100%
+	);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	transition: background-color 0.25s ease;
+}
+
+.dark .dbw-confirmation-scrim,
+[data-theme="dark"] .dbw-confirmation-scrim,
+.dbw-confirmation-view-container[data-theme="dark"] .dbw-confirmation-scrim {
+	background: radial-gradient(
+		circle at 50% 15%,
+		rgba(15, 23, 42, 0.75) 0%,
+		rgba(9, 13, 22, 0.94) 100%
+	);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+}
+
+[data-theme="night"] .dbw-confirmation-scrim,
+.dbw-confirmation-view-container[data-theme="night"] .dbw-confirmation-scrim {
+	background: radial-gradient(
+		circle at 50% 15%,
+		rgba(18, 18, 21, 0.85) 0%,
+		rgba(0, 0, 0, 0.96) 100%
+	);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+}
+
+[data-theme="calm_teal"] .dbw-confirmation-scrim,
+[data-theme="calm-teal"] .dbw-confirmation-scrim,
+.dbw-confirmation-view-container[data-theme="calm_teal"] .dbw-confirmation-scrim,
+.dbw-confirmation-view-container[data-theme="calm-teal"] .dbw-confirmation-scrim {
+	background: radial-gradient(
+		circle at 50% 15%,
+		rgba(240, 253, 250, 0.75) 0%,
+		rgba(204, 251, 241, 0.92) 100%
+	);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+}
+
+[data-theme="contrast"] .dbw-confirmation-scrim,
+.dbw-confirmation-view-container[data-theme="contrast"] .dbw-confirmation-scrim {
+	background: rgba(255, 255, 255, 0.96);
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+}
+
+/* Floating Dental Boarding Pass */
+.dbw-boarding-pass.dbw-floating-pass {
+	position: relative;
+	z-index: 2;
+	background: var(--dbw-surface);
+	border: 1px solid var(--dbw-border);
+	border-radius: var(--dbw-radius-lg);
+	box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.16),
+		0 8px 16px -4px rgba(15, 23, 42, 0.08),
+		0 0 0 1px rgba(226, 232, 240, 0.8);
+	transition: transform 0.25s ease, box-shadow 0.25s ease;
+	transform: translateZ(0);
+	overflow: hidden;
+}
+
+.dbw-boarding-pass.dbw-floating-pass:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 24px 48px -10px rgba(15, 23, 42, 0.2),
+		0 10px 20px -4px rgba(15, 23, 42, 0.1),
+		0 0 0 1px rgba(226, 232, 240, 0.95);
+}
+
+.dark .dbw-boarding-pass.dbw-floating-pass,
+[data-theme="dark"] .dbw-boarding-pass.dbw-floating-pass,
+.dbw-confirmation-view-container[data-theme="dark"] .dbw-boarding-pass.dbw-floating-pass {
+	background: var(--dbw-surface);
+	border: 1px solid rgba(45, 212, 191, 0.3);
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85),
+		0 10px 20px -5px rgba(0, 0, 0, 0.6),
+		0 0 0 1px rgba(45, 212, 191, 0.25),
+		0 0 32px rgba(45, 212, 191, 0.12);
+}
+
+.dark .dbw-boarding-pass.dbw-floating-pass:hover,
+[data-theme="dark"] .dbw-boarding-pass.dbw-floating-pass:hover,
+.dbw-confirmation-view-container[data-theme="dark"] .dbw-boarding-pass.dbw-floating-pass:hover {
+	box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.9),
+		0 12px 24px -5px rgba(0, 0, 0, 0.7),
+		0 0 0 1px rgba(45, 212, 191, 0.35),
+		0 0 40px rgba(45, 212, 191, 0.18);
+}
+
+[data-theme="night"] .dbw-boarding-pass.dbw-floating-pass,
+.dbw-confirmation-view-container[data-theme="night"] .dbw-boarding-pass.dbw-floating-pass {
+	background: #121215;
+	border: 1px solid rgba(45, 212, 191, 0.35);
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.95),
+		0 0 0 1px rgba(255, 255, 255, 0.15),
+		0 0 35px rgba(45, 212, 191, 0.15);
+}
+
+[data-theme="contrast"] .dbw-boarding-pass.dbw-floating-pass,
+.dbw-confirmation-view-container[data-theme="contrast"] .dbw-boarding-pass.dbw-floating-pass {
+	background: #ffffff;
+	border: 2px solid #000000;
+	box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+

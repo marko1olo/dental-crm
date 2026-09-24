@@ -15,5 +15,6 @@ export * from "./patientPortalPresets";
 export * from "./patientPortalTypes";
 export { generateQrCodeSvg, generateSha256 } from "./patientCabinet";
 export * from "./PatientBudgetSignView";
+export * from "../booking/BookingConfirmationView";
 export * from "../patient-portal";
 export { default } from "./patientCabinet";
