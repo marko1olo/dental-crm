@@ -22,7 +22,9 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { dateInputValuePlusDays } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWebsocket } from "../../hooks/useWebsocket";
+import { useAppStore } from "../../store/appStore";
 import { type Lead, useLeadsStore } from "../../store/leadsStore";
+import { useScheduleStore } from "../../store/scheduleStore";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 
@@ -510,6 +512,18 @@ export function LeadsKanbanView() {
 			setConvertingLeadId(null);
 			updateLeadStatus(convertingLeadId, "consult_booked");
 			fetchLeads();
+
+			try {
+				if (appointmentDate) {
+					useScheduleStore.getState().setScheduleDateFilter(appointmentDate);
+				}
+				useAppStore.getState().setCurrentView("schedule");
+				if (typeof window !== "undefined") {
+					window.location.hash = "schedule";
+				}
+			} catch {
+				// Store fallback
+			}
 		} catch (e) {
 			logger.error(e);
 			showToast("Нет связи с сервером: запись не создана", "error");
@@ -1248,7 +1262,7 @@ export function LeadsKanbanView() {
 												</span>
 											</button>
 
-											{lead.status === "consult_booked" && (
+											{lead.status !== "trash" && (
 												<button
 													type="button"
 													onClick={(e) => {

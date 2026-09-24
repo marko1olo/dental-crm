@@ -7,18 +7,20 @@
  */
 
 import type React from "react";
-import { useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import {
 	AlertTriangle,
 	BarChart3,
 	Calendar,
 	Check,
 	CheckCircle2,
+	ChevronDown,
 	Clock,
 	Lightbulb,
 	MessageCircle,
 	Phone,
 	PhoneCall,
+	RefreshCw,
 	RotateCcw,
 	Search,
 	Send,
@@ -31,7 +33,12 @@ import {
 	STOMX_TASK_CALLS_CATALOG,
 	STOMX_TASK_CALL_BY_TYPE,
 	type StomxTaskCallType,
+	type RecallCandidate,
+	type RecallReport,
 } from "@dental/shared";
+import { useAppStore } from "../../store/appStore";
+import { useScheduleStore } from "../../store/scheduleStore";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 import {
 	RECALL_CYCLE_CATALOG,
@@ -51,6 +58,52 @@ import {
 } from "./patientRecallEngine";
 import { CLINICAL_CALLING_SCRIPTS } from "./recallTemplates";
 import "./recalls.css";
+
+/**
+ * Адаптер: канонический RecallCandidate из PostgreSQL -> PatientRecallRecord для хаба
+ */
+export function mapRecallCandidateToRecord(
+	candidate: RecallCandidate,
+): PatientRecallRecord {
+	const months = candidate.monthsSinceLastVisit ?? 6;
+	const daysOverdue = Math.max(0, (months - 6) * 30);
+
+	let urgencyStatus: RecallUrgencyStatus = "due_now";
+	if (candidate.band === "probably_lost") {
+		urgencyStatus = "overdue_90";
+	} else if (candidate.band === "overdue") {
+		urgencyStatus = "overdue_30";
+	} else if (candidate.band === "due") {
+		urgencyStatus = "due_now";
+	}
+
+	const lastVisitDate =
+		(candidate.lastCompletedAt
+			? new Date(candidate.lastCompletedAt).toISOString().split("T")[0]
+			: new Date(Date.now() - months * 30 * 86400000).toISOString().split("T")[0]) ?? "";
+
+	const dueDateTime = candidate.lastCompletedAt
+		? new Date(new Date(candidate.lastCompletedAt).getTime() + 180 * 86400000)
+		: new Date();
+	const dueDate = dueDateTime.toISOString().split("T")[0] ?? "";
+
+	return {
+		id: candidate.patientId,
+		patientId: candidate.patientId,
+		fullName: candidate.fullName,
+		phone: candidate.phone ?? null,
+		email: candidate.email ?? null,
+		cycleType: "standard_prophylaxis",
+		lastVisitDate,
+		dueDate,
+		daysOverdue,
+		urgencyStatus,
+		status: "due_now",
+		clinicalNotes: candidate.reason,
+		historicalRevenueRub: 6500,
+		visitsCount: candidate.lastCompletedAt ? 1 : 0,
+	};
+}
 
 export interface PatientRecallsHubModalProps {
 	readonly isOpen?: boolean | undefined;
@@ -85,6 +138,51 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 	const [candidates, setCandidates] = useState<readonly PatientRecallRecord[]>(
 		initialCandidates ?? [],
 	);
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [fetchError, setFetchError] = useState<string | null>(null);
+	const [openContactDropdownId, setOpenContactDropdownId] = useState<string | null>(null);
+
+	const appLogic = useOptionalAppLogicContext();
+	const auth = appLogic?.auth;
+
+	const loadCandidates = useCallback(async () => {
+		if (initialCandidates && initialCandidates.length > 0) {
+			setCandidates(initialCandidates);
+			return;
+		}
+		setIsLoading(true);
+		setFetchError(null);
+		try {
+			const response = await fetch("/api/patients/recall-candidates?minMonths=6&limit=100", {
+				headers: {
+					...(auth ? auth.denteClinicalReadHeaders() : {}),
+					Accept: "application/json",
+				},
+			});
+			if (!response.ok) {
+				const body = (await response.json().catch(() => ({}))) as { message?: string };
+				throw new Error(body.message || `Сервер ответил ${response.status}`);
+			}
+			const payload = (await response.json()) as RecallReport;
+			const mapped = (payload.candidates || []).map(mapRecallCandidateToRecord);
+			setCandidates(mapped);
+		} catch (err) {
+			setCandidates([]);
+			setFetchError(
+				err instanceof Error
+					? err.message
+					: "Не удалось загрузить список диспансерных пациентов.",
+			);
+		} finally {
+			setIsLoading(false);
+		}
+	}, [auth, initialCandidates]);
+
+	useEffect(() => {
+		if (isOpen) {
+			void loadCandidates();
+		}
+	}, [isOpen, loadCandidates]);
 
 	const [activeTab, setActiveTab] = useState<"registry" | "cohorts" | "task_calls">("registry");
 	const [statusFilter, setStatusFilter] = useState<
@@ -239,6 +337,18 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 		} else {
 			handleStatusUpdate(candidate.id, "scheduled");
 			setStatusNotice(`Пациент «${candidate.fullName}» переведен в статус «Записался».`);
+			try {
+				if (candidate.dueDate) {
+					useScheduleStore.getState().setScheduleDateFilter(candidate.dueDate);
+				}
+				useAppStore.getState().setCurrentView("schedule");
+				if (typeof window !== "undefined") {
+					window.location.hash = "schedule";
+				}
+				onClose?.();
+			} catch {
+				// Standalone/test fallback
+			}
 			setTimeout(() => setStatusNotice(null), 3000);
 		}
 	};
@@ -331,49 +441,109 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 				</header>
 
 				{/* Metrics Ribbon */}
-				<section className="recall-metrics-grid" aria-label="Сводные метрики диспансеризации">
-					<div className="recall-metric-card recall-metric-card--primary">
-						<span className="recall-metric-label">Всего в реестре</span>
-						<div className="recall-metric-value-row">
-							<span className="recall-metric-value">{metrics.totalCandidates}</span>
-							<span className="recall-metric-subtext">пациентов</span>
-						</div>
+				<section
+					className="recall-metrics-grid recall-metrics-ribbon"
+					aria-label="Сводные метрики диспансеризации"
+					style={{
+						display: "flex",
+						flexWrap: "wrap",
+						alignItems: "center",
+						gap: "10px 16px",
+						padding: "8px 24px",
+						minHeight: "36px",
+					}}
+				>
+					<div
+						className="recall-metric-card recall-metric-card--primary"
+						style={{ padding: "4px 8px", minHeight: "26px", flexDirection: "row", alignItems: "center", gap: "6px" }}
+					>
+						<span className="recall-metric-label" style={{ fontSize: "0.75rem" }}>Всего:</span>
+						<span className="recall-metric-value" style={{ fontSize: "0.9375rem" }}>{metrics.totalCandidates}</span>
 					</div>
 
-					<div className="recall-metric-card recall-metric-card--warning">
-						<span className="recall-metric-label">Пора звать (срочные)</span>
-						<div className="recall-metric-value-row">
-							<span className="recall-metric-value">{metrics.dueNowCount}</span>
-							<span className="recall-metric-subtext">окно 0–30 дн.</span>
-						</div>
+					<div
+						className="recall-metric-card recall-metric-card--warning"
+						style={{ padding: "4px 8px", minHeight: "26px", flexDirection: "row", alignItems: "center", gap: "6px" }}
+					>
+						<span className="recall-metric-label" style={{ fontSize: "0.75rem" }}>Пора звать:</span>
+						<span className="recall-metric-value" style={{ fontSize: "0.9375rem" }}>{metrics.dueNowCount}</span>
 					</div>
 
-					<div className="recall-metric-card recall-metric-card--info">
-						<span className="recall-metric-label">Приглашены / Связались</span>
-						<div className="recall-metric-value-row">
-							<span className="recall-metric-value">{metrics.contactedCount}</span>
-							<span className="recall-metric-subtext">отклик {metrics.contactResponseRatePercent}%</span>
-						</div>
+					<div
+						className="recall-metric-card recall-metric-card--info"
+						style={{ padding: "4px 8px", minHeight: "26px", flexDirection: "row", alignItems: "center", gap: "6px" }}
+					>
+						<span className="recall-metric-label" style={{ fontSize: "0.75rem" }}>Связались:</span>
+						<span className="recall-metric-value" style={{ fontSize: "0.9375rem" }}>{metrics.contactedCount}</span>
+						<span className="recall-metric-subtext" style={{ fontSize: "0.6875rem" }}>({metrics.contactResponseRatePercent}%)</span>
 					</div>
 
-					<div className="recall-metric-card recall-metric-card--success">
-						<span className="recall-metric-label">Возвращаемость (Retention)</span>
-						<div className="recall-metric-value-row">
-							<span className="recall-metric-value">{metrics.retentionRatePercent}%</span>
-							<span className="recall-metric-subtext">завершили визит</span>
-						</div>
+					<div
+						className="recall-metric-card recall-metric-card--success"
+						style={{ padding: "4px 8px", minHeight: "26px", flexDirection: "row", alignItems: "center", gap: "6px" }}
+					>
+						<span className="recall-metric-label" style={{ fontSize: "0.75rem" }}>Retention:</span>
+						<span className="recall-metric-value" style={{ fontSize: "0.9375rem" }}>{metrics.retentionRatePercent}%</span>
 					</div>
 
-					<div className="recall-metric-card">
-						<span className="recall-metric-label">Средний LTV recall</span>
-						<div className="recall-metric-value-row">
-							<span className="recall-metric-value">
-								{metrics.averageRecallLtvRub.toLocaleString("ru-RU")} ₽
-							</span>
-							<span className="recall-metric-subtext">на пациента</span>
-						</div>
+					<div
+						className="recall-metric-card"
+						style={{ padding: "4px 8px", minHeight: "26px", flexDirection: "row", alignItems: "center", gap: "6px" }}
+					>
+						<span className="recall-metric-label" style={{ fontSize: "0.75rem" }}>Средний LTV:</span>
+						<span className="recall-metric-value" style={{ fontSize: "0.9375rem" }}>
+							{metrics.averageRecallLtvRub.toLocaleString("ru-RU")} ₽
+						</span>
 					</div>
 				</section>
+
+				{/* Loading Banner */}
+				{isLoading ? (
+					<div
+						style={{
+							padding: "10px 24px",
+							background: "var(--rm-bg)",
+							color: "var(--rm-text-muted)",
+							fontSize: "0.875rem",
+							display: "flex",
+							alignItems: "center",
+							gap: "8px",
+						}}
+					>
+						<RefreshCw size={16} className="animate-spin" />
+						<span>Загрузка списка диспансерных пациентов из базы данных...</span>
+					</div>
+				) : null}
+
+				{/* Error Banner */}
+				{fetchError ? (
+					<div
+						style={{
+							padding: "10px 24px",
+							background: "rgba(239, 68, 68, 0.1)",
+							color: "var(--rm-danger)",
+							fontSize: "0.875rem",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "space-between",
+							gap: "8px",
+						}}
+					>
+						<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+							<AlertTriangle size={16} />
+							<span>{fetchError}</span>
+						</div>
+						<button
+							type="button"
+							className="recall-action-btn"
+							style={{ minHeight: "32px", fontSize: "0.75rem", padding: "4px 10px" }}
+							onClick={() => void loadCandidates()}
+						>
+							<RefreshCw size={14} />
+							<span>Повторить</span>
+						</button>
+					</div>
+				) : null}
 
 				{/* Notice Banner */}
 				{statusNotice ? (
@@ -606,77 +776,131 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 														</td>
 
 														<td>
-															<div className="recall-actions-cell">
-																{/* WhatsApp */}
-																<button
-																	type="button"
-																	className="recall-action-btn recall-action-btn--whatsapp"
-																	title="Отправить готовое сообщение в WhatsApp"
-																	style={{ minHeight: "44px" }}
-																	onClick={() => void handleWhatsApp(candidate)}
-																	data-testid={`recall-whatsapp-btn-${candidate.id}`}
-																>
-																	<MessageCircle size={16} />
-																	<span>WhatsApp</span>
-																</button>
-
-																{/* Telegram */}
-																<button
-																	type="button"
-																	className="recall-action-btn recall-action-btn--telegram"
-																	title="Отправить персонализированное сообщение в Telegram"
-																	style={{ minHeight: "44px" }}
-																	onClick={() => void handleTelegram(candidate)}
-																	data-testid={`recall-telegram-btn-${candidate.id}`}
-																>
-																	<Send size={16} />
-																	<span>TG</span>
-																</button>
-
-																{/* Скрипт */}
-																<button
-																	type="button"
-																	className={`recall-action-btn recall-action-btn--script ${isScriptActive ? "active" : ""}`}
-																	title="Открыть речевой скрипт для администратора"
-																	style={{ minHeight: "44px" }}
-																	onClick={() => handleToggleScript(candidate)}
-																	data-testid={`recall-script-btn-${candidate.id}`}
-																>
-																	<PhoneCall size={16} />
-																	<span>Скрипт</span>
-																</button>
-
-																{/* Записать */}
+															<div className="recall-actions-cell" style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative" }}>
+																{/* Primary Action: Записать */}
 																<button
 																	type="button"
 																	className="recall-action-btn recall-action-btn--book"
 																	title="Записать пациента на прием"
-																	style={{ minHeight: "44px" }}
+																	style={{ minHeight: "36px", padding: "6px 12px" }}
 																	onClick={() => handleBook(candidate)}
 																	data-testid={`recall-book-btn-${candidate.id}`}
 																>
-																	<Calendar size={16} />
+																	<Calendar size={15} />
 																	<span>Записать</span>
 																</button>
 
-																{/* SMS */}
-																<button
-																	type="button"
-																	className="recall-action-btn"
-																	title="Скопировать SMS текст"
-																	style={{ minHeight: "44px" }}
-																	onClick={() => handleCopySms(candidate)}
-																	data-testid={`recall-sms-btn-${candidate.id}`}
-																>
-																	{copiedCandidateId === candidate.id ? (
-																		<span style={{ display: "inline-flex", alignItems: "center", gap: "2px" }}>
-																			<Check size={14} />
-																			<span>Скопировано</span>
-																		</span>
-																	) : (
-																		<span>SMS</span>
-																	)}
-																</button>
+																{/* Consolidating Dropdown: Связаться ▾ */}
+																<div style={{ position: "relative", display: "inline-block" }}>
+																	<button
+																		type="button"
+																		className="recall-action-btn"
+																		title="Каналы связи и речевой скрипт"
+																		style={{ minHeight: "36px", padding: "6px 10px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+																		onClick={() =>
+																			setOpenContactDropdownId(
+																				openContactDropdownId === candidate.id ? null : candidate.id,
+																			)
+																		}
+																		data-testid={`recall-contact-menu-btn-${candidate.id}`}
+																		aria-expanded={openContactDropdownId === candidate.id}
+																	>
+																		<MessageCircle size={15} />
+																		<span>Связаться</span>
+																		<ChevronDown size={14} />
+																	</button>
+
+																	{/* Floating Dropdown Menu Container */}
+																	<div
+																		className="recall-contact-dropdown-menu"
+																		style={{
+																			display: openContactDropdownId === candidate.id ? "flex" : "none",
+																			position: "absolute",
+																			right: 0,
+																			top: "100%",
+																			zIndex: 50,
+																			flexDirection: "column",
+																			gap: "4px",
+																			padding: "6px",
+																			marginTop: "4px",
+																			background: "var(--rm-surface)",
+																			border: "1px solid var(--rm-border)",
+																			borderRadius: "8px",
+																			boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+																			minWidth: "160px",
+																		}}
+																	>
+																		{/* WhatsApp */}
+																		<button
+																			type="button"
+																			className="recall-action-btn recall-action-btn--whatsapp"
+																			title="Отправить готовое сообщение в WhatsApp"
+																			style={{ width: "100%", justifyContent: "flex-start", minHeight: "34px" }}
+																			onClick={() => {
+																				setOpenContactDropdownId(null);
+																				void handleWhatsApp(candidate);
+																			}}
+																			data-testid={`recall-whatsapp-btn-${candidate.id}`}
+																		>
+																			<MessageCircle size={15} />
+																			<span>WhatsApp</span>
+																		</button>
+
+																		{/* Telegram */}
+																		<button
+																			type="button"
+																			className="recall-action-btn recall-action-btn--telegram"
+																			title="Отправить персонализированное сообщение в Telegram"
+																			style={{ width: "100%", justifyContent: "flex-start", minHeight: "34px" }}
+																			onClick={() => {
+																				setOpenContactDropdownId(null);
+																				void handleTelegram(candidate);
+																			}}
+																			data-testid={`recall-telegram-btn-${candidate.id}`}
+																		>
+																			<Send size={15} />
+																			<span>Telegram</span>
+																		</button>
+
+																		{/* SMS */}
+																		<button
+																			type="button"
+																			className="recall-action-btn"
+																			title="Скопировать SMS текст"
+																			style={{ width: "100%", justifyContent: "flex-start", minHeight: "34px" }}
+																			onClick={() => {
+																				setOpenContactDropdownId(null);
+																				handleCopySms(candidate);
+																			}}
+																			data-testid={`recall-sms-btn-${candidate.id}`}
+																		>
+																			{copiedCandidateId === candidate.id ? (
+																				<span style={{ display: "inline-flex", alignItems: "center", gap: "2px" }}>
+																					<Check size={14} />
+																					<span>Скопировано</span>
+																				</span>
+																			) : (
+																				<span>SMS</span>
+																			)}
+																		</button>
+
+																		{/* Скрипт */}
+																		<button
+																			type="button"
+																			className={`recall-action-btn recall-action-btn--script ${isScriptActive ? "active" : ""}`}
+																			title="Открыть речевой скрипт для администратора"
+																			style={{ width: "100%", justifyContent: "flex-start", minHeight: "34px" }}
+																			onClick={() => {
+																				setOpenContactDropdownId(null);
+																				handleToggleScript(candidate);
+																			}}
+																			data-testid={`recall-script-btn-${candidate.id}`}
+																		>
+																			<PhoneCall size={15} />
+																			<span>Скрипт</span>
+																		</button>
+																	</div>
+																</div>
 															</div>
 														</td>
 													</tr>

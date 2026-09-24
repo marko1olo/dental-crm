@@ -26,29 +26,14 @@ import { showToast } from "../GlobalToast";
 
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type {
+	RecallBand,
+	RecallCandidate,
+	RecallReport,
+} from "@dental/shared";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { countLabel } from "../../lib/russianPlural";
 import { sliceDomList } from "../../utils/domVirtualizationHelper";
-
-type RecallBand = "due" | "overdue" | "probably_lost" | "never_arrived";
-
-type RecallCandidate = {
-	patientId: string;
-	fullName: string;
-	phone: string | null;
-	email: string | null;
-	lastCompletedAt: string | null;
-	monthsSinceLastVisit: number | null;
-	band: RecallBand;
-	reason: string;
-};
-
-type RecallReport = {
-	candidates: RecallCandidate[];
-	byBand: Record<RecallBand, number>;
-	examinedPatients: number;
-	note: string;
-};
 
 const BAND_TITLES: Record<RecallBand, string> = {
 	due: "Пора на профилактику",
@@ -125,54 +110,15 @@ export const RecallListPanel: React.FC = () => {
 			if (!response.ok)
 				throw new Error(payload.message ?? `Сервер ответил ${response.status}`);
 			setReport(payload);
-		} catch (_loadError) {
-			const patients = Array.isArray(appLogic?.dashboard?.patients)
-				? appLogic.dashboard.patients
-				: [];
-			const candidates: RecallCandidate[] = patients
-				.slice(0, 10)
-				.map((p, idx) => {
-					const pId = typeof p.id === "string" ? p.id : `pat-${idx}`;
-					const pName = typeof p.name === "string" ? p.name : "Пациент";
-					const pPhone =
-						typeof p.phone === "string" ? p.phone : null;
-					const bands: RecallBand[] = [
-						"due",
-						"overdue",
-						"never_arrived",
-						"probably_lost",
-					];
-					const band = bands[idx % bands.length] || "due";
-					return {
-						patientId: pId,
-						fullName: pName,
-						phone: pPhone,
-						email: null,
-						lastCompletedAt: new Date(
-							Date.now() - (idx + 6) * 30 * 86400000,
-						).toISOString(),
-						monthsSinceLastVisit: 6 + idx * 3,
-						band,
-						reason: BAND_TITLES[band] || "Пора на профилактику",
-					};
-				});
-			const byBand: Record<RecallBand, number> = {
-				due: candidates.filter((c) => c.band === "due").length,
-				overdue: candidates.filter((c) => c.band === "overdue").length,
-				never_arrived: candidates.filter((c) => c.band === "never_arrived")
-					.length,
-				probably_lost: candidates.filter((c) => c.band === "probably_lost")
-					.length,
-			};
-			setReport({
-				candidates,
-				byBand,
-				examinedPatients: patients.length,
-				note: "Локальный расчет recall-кандидатов",
-			});
-			setError(null);
+		} catch (loadError) {
+			setReport(null);
+			setError(
+				loadError instanceof Error
+					? loadError.message
+					: "Не удалось загрузить список диспансерных пациентов. Проверьте соединение с сервером.",
+			);
 		}
-	}, [auth, appLogic?.dashboard]);
+	}, [auth]);
 
 	useEffect(() => {
 		void load();

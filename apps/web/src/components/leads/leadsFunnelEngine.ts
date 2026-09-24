@@ -911,17 +911,17 @@ export function exportFunnelReportSummaryText(
 ): string {
 	const s = result.summary;
 	return [
-		`📊 ДАЙДЖЕСТ ВОРОНКИ ПАЦИЕНТОВ CRM ДЕНТЕ (Период: ${result.period})`,
+		`ДАЙДЖЕСТ ВОРОНКИ ПАЦИЕНТОВ CRM ДЕНТЕ (Период: ${result.period})`,
 		"--------------------------------------------------",
-		`🎯 Лидов получено: ${s.totalLeads} | Записано: ${s.bookedLeads} (${s.bookingRatePercent}%)`,
-		`🏥 Дошли до клиники: ${s.showUpLeads} (Show-up: ${s.showUpRatePercent}%)`,
-		`💳 Оплатили лечение: ${s.paidLeads} (Итоговая конверсия: ${s.overallConversionPercent}%)`,
+		`Лидов получено: ${s.totalLeads} | Записано: ${s.bookedLeads} (${s.bookingRatePercent}%)`,
+		`Дошли до клиники: ${s.showUpLeads} (Show-up: ${s.showUpRatePercent}%)`,
+		`Оплатили лечение: ${s.paidLeads} (Итоговая конверсия: ${s.overallConversionPercent}%)`,
 		"--------------------------------------------------",
-		`💰 Расходы на рекламу: ${s.totalMarketingSpendRub.toLocaleString("ru-RU")} ₽`,
-		`💵 Выручка: ${s.totalRevenueRub.toLocaleString("ru-RU")} ₽`,
-		`📈 ROMI: ${s.romiPercent}% | Чистая выгода: ${s.netMarketingProfitRub.toLocaleString("ru-RU")} ₽`,
-		`🏷️ Ср. чек: ${s.avgBillRub.toLocaleString("ru-RU")} ₽ | CAC: ${s.cacRub.toLocaleString("ru-RU")} ₽ | CPL: ${s.cplRub.toLocaleString("ru-RU")} ₽`,
-		`⭐ Фактический LTV: ${s.ltvEstimatedRub.toLocaleString("ru-RU")} ₽ (LTV/CAC: ${s.ltvToCacRatio}x)`,
+		`Расходы на рекламу: ${s.totalMarketingSpendRub.toLocaleString("ru-RU")} ₽`,
+		`Выручка: ${s.totalRevenueRub.toLocaleString("ru-RU")} ₽`,
+		`ROMI: ${s.romiPercent}% | Чистая выгода: ${s.netMarketingProfitRub.toLocaleString("ru-RU")} ₽`,
+		`Ср. чек: ${s.avgBillRub.toLocaleString("ru-RU")} ₽ | CAC: ${s.cacRub.toLocaleString("ru-RU")} ₽ | CPL: ${s.cplRub.toLocaleString("ru-RU")} ₽`,
+		`Фактический LTV: ${s.ltvEstimatedRub.toLocaleString("ru-RU")} ₽ (LTV/CAC: ${s.ltvToCacRatio}x)`,
 		"--------------------------------------------------",
 	].join("\n");
 }
