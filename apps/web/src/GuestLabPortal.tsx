@@ -1,8 +1,11 @@
 import {
 	AlignLeft,
 	Beaker,
+	Box,
 	CheckCircle2,
 	Clock,
+	Download,
+	ExternalLink,
 	FileText,
 	Image as ImageIcon,
 	PackageCheck,
@@ -106,6 +109,30 @@ const MATERIAL_LABELS: Record<string, string> = {
 	composite: "Композит",
 	temporary: "Временная пластмасса",
 };
+
+function is3DScanFile(url: string): boolean {
+	return /\.(stl|ply|obj|3mf)($|[?#])/i.test(url);
+}
+
+function isImageFile(url: string): boolean {
+	return (
+		/\.(jpe?g|png|webp|gif|svg)($|[?#])/i.test(url) ||
+		url.startsWith("data:image/")
+	);
+}
+
+function getAttachmentFileName(url: string): string {
+	try {
+		const parsed = new URL(url, window.location.origin);
+		const lastSegment = parsed.pathname.split("/").filter(Boolean).pop();
+		if (lastSegment) return decodeURIComponent(lastSegment);
+	} catch {
+		// fallback
+	}
+	const clean = url.split("?")[0]?.split("#")[0] ?? "";
+	const last = clean.split("/").pop();
+	return last || "3d_scan.stl";
+}
 
 export function GuestLabPortal({ token }: GuestLabPortalProps) {
 	const [order, setOrder] = useState<LabOrderData | null>(null);
@@ -469,16 +496,87 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 							className="guest-portal-field-label"
 							style={{ marginBottom: "12px" }}
 						>
-							<ImageIcon size={16} /> Приложенные снимки
+							{order.attachedImageUrl && is3DScanFile(order.attachedImageUrl) ? (
+								<>
+									<Box size={16} /> Приложенный 3D-скан (STL/PLY)
+								</>
+							) : (
+								<>
+									<ImageIcon size={16} /> Приложенные материалы и снимки
+								</>
+							)}
 						</h3>
 						{order.attachedImageUrl ? (
-							<img
-								src={order.attachedImageUrl}
-								alt="Клинический снимок"
-								loading="lazy"
-								decoding="async"
-								className="guest-portal-image"
-							/>
+							is3DScanFile(order.attachedImageUrl) || !isImageFile(order.attachedImageUrl) ? (
+								<div className="guest-portal-scan-card">
+									<div className="guest-portal-scan-header">
+										<div className="guest-portal-scan-icon-wrapper">
+											<Box size={24} />
+										</div>
+										<div className="guest-portal-scan-meta">
+											<div
+												className="guest-portal-scan-filename"
+												title={getAttachmentFileName(order.attachedImageUrl)}
+											>
+												{getAttachmentFileName(order.attachedImageUrl)}
+											</div>
+											<div className="guest-portal-scan-subtext">
+												<span className="guest-portal-scan-badge">
+													{order.attachedImageUrl.toLowerCase().includes(".ply")
+														? "PLY 3D SCAN"
+														: "STL 3D SCAN"}
+												</span>
+												<span>Цифровой слепок / 3D-модель челюсти</span>
+											</div>
+										</div>
+									</div>
+
+									<div className="guest-portal-scan-actions">
+										<a
+											href={order.attachedImageUrl}
+											download={getAttachmentFileName(order.attachedImageUrl)}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="guest-portal-download-btn"
+										>
+											<Download size={16} />
+											Скачать файл скана (STL/PLY)
+										</a>
+										<a
+											href={order.attachedImageUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="guest-portal-open-link-btn"
+										>
+											<ExternalLink size={14} />
+											Открыть ссылку
+										</a>
+									</div>
+								</div>
+							) : (
+								<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+									<img
+										src={order.attachedImageUrl}
+										alt="Клинический снимок"
+										loading="lazy"
+										decoding="async"
+										className="guest-portal-image"
+									/>
+									<div style={{ display: "flex", justifyContent: "flex-end" }}>
+										<a
+											href={order.attachedImageUrl}
+											download={getAttachmentFileName(order.attachedImageUrl)}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="guest-portal-download-btn"
+											style={{ padding: "7px 14px", fontSize: "12px" }}
+										>
+											<Download size={14} />
+											Скачать снимок
+										</a>
+									</div>
+								</div>
+							)
 						) : (
 							<div
 								style={{
@@ -493,7 +591,7 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 									size={32}
 									style={{ margin: "0 auto 8px", opacity: 0.5 }}
 								/>
-								Нет приложенных снимков
+								Нет приложенных снимков и 3D-сканов
 							</div>
 						)}
 					</div>

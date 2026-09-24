@@ -161,6 +161,122 @@
 	border: 1px solid var(--line, #e2e8f0);
 }
 
+.guest-portal-scan-card {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding: 18px 20px;
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	background: var(--paper, #ffffff);
+	margin-top: 8px;
+	text-align: left;
+}
+
+.guest-portal-scan-header {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.guest-portal-scan-icon-wrapper {
+	width: 44px;
+	height: 44px;
+	border-radius: 10px;
+	background: var(--teal-surface, rgba(13, 148, 136, 0.12));
+	color: var(--teal, #0d9488);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	border: 1px solid var(--teal-soft, rgba(13, 148, 136, 0.25));
+}
+
+.guest-portal-scan-meta {
+	min-width: 0;
+	flex: 1;
+}
+
+.guest-portal-scan-filename {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--text-primary, #0f172a);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.guest-portal-scan-subtext {
+	font-size: 12px;
+	color: var(--text-secondary, #64748b);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 2px;
+	flex-wrap: wrap;
+}
+
+.guest-portal-scan-badge {
+	display: inline-block;
+	padding: 1px 6px;
+	border-radius: 4px;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.2));
+	color: var(--teal, #0d9488);
+}
+
+.guest-portal-scan-actions {
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin-top: 4px;
+}
+
+.guest-portal-download-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 9px 16px;
+	font-size: 13px;
+	font-weight: 600;
+	border-radius: 8px;
+	text-decoration: none;
+	background: var(--teal, #0d9488);
+	color: #ffffff !important;
+	border: 1px solid var(--teal, #0d9488);
+	cursor: pointer;
+	min-height: 36px;
+	transition: opacity 0.15s ease;
+}
+
+.guest-portal-download-btn:hover {
+	opacity: 0.9;
+}
+
+.guest-portal-open-link-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 9px 14px;
+	font-size: 13px;
+	font-weight: 500;
+	border-radius: 8px;
+	text-decoration: none;
+	background: transparent;
+	color: var(--text-primary, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	min-height: 36px;
+	transition: background-color 0.15s ease;
+}
+
+.guest-portal-open-link-btn:hover {
+	background: var(--teal-surface, rgba(13, 148, 136, 0.08));
+}
+
 .guest-portal-select {
 	padding: 12px 16px;
 	border-radius: 8px;

@@ -710,7 +710,7 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
       <div>Медицинская документация</div>
       <div><strong>ФОРМА № 043/у</strong></div>
       <div>Код формы по ОКУД: 3108805</div>
-      <div>Приказ Минздрава России от 15.12.2014 № 834н</div>
+      <div>${escapeHtml(data.formOrderName || "Приказ Минздрава СССР от 04.10.1980 № 1030")}</div>
     </div>
   </div>
 

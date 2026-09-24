@@ -59,6 +59,8 @@ export const CLINICAL_TOOTH_STATE_VALUES = [
 	"Missing",
 	"Extracted",
 	"Impacted",
+	"Retained",
+	"Root",
 	"Mobility_I",
 	"Mobility_II",
 	"Mobility_III",

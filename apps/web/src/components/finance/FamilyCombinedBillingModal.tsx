@@ -39,6 +39,7 @@ import {
 	calculateSbpMultiTenderSplit,
 	resolveDentalTaxDeductionCategory,
 } from "@dental/shared";
+import { generateQrCodeSvg } from "@dental/shared/fiscal/qrGenerator";
 import { TreatmentPlanQrCode } from "../treatment-plans/qr/TreatmentPlanQrCode";
 
 export interface FamilyCombinedBillingModalProps {
@@ -140,6 +141,12 @@ export function FamilyCombinedBillingModal({
 		const sbp = billingResult.defaultSplit.sbpQr;
 		if (!sbp) return;
 
+		const qrSvg = generateQrCodeSvg(sbp.nspkUrl, {
+			size: 180,
+			margin: 1,
+			title: "QR-код СБП",
+		});
+
 		const html = `
 <!DOCTYPE html>
 <html lang="ru">
@@ -148,7 +155,8 @@ export function FamilyCombinedBillingModal({
 	<title>QR-код СБП — ${clinicName}</title>
 	<style>
 		body { font-family: monospace; padding: 20px; text-align: center; max-width: 300px; margin: 0 auto; }
-		.qr { margin: 15px auto; }
+		.qr { margin: 15px auto; display: flex; justify-content: center; }
+		.qr svg { display: block; margin: 0 auto; }
 		.sum { font-size: 20px; font-weight: bold; margin: 10px 0; }
 		.meta { font-size: 11px; color: #555; margin: 5px 0; }
 	</style>
@@ -161,7 +169,7 @@ export function FamilyCombinedBillingModal({
 	<p class="meta">Плательщик: ${initialPayer.payerFullName}</p>
 	<p class="meta">Семья: ${familyGroupName}</p>
 	<div class="qr">
-		<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(sbp.nspkUrl)}" alt="SBP QR" width="180" height="180" />
+		${qrSvg}
 	</div>
 	<p class="meta" style="word-break: break-all; font-size: 9px;">${sbp.nspkUrl}</p>
 	<p class="meta">Наведите камеру смартфона или отсканируйте в приложении любого банка</p>

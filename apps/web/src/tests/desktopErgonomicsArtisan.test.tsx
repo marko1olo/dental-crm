@@ -15,7 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
-import { AppointmentHoverHud } from "../components/schedule/AppointmentHoverHud";
+import { GridAppointmentCard } from "../components/schedule/GridAppointmentCard";
 import { AppointmentCard, extractTeethList, formatPatientDisplayFio } from "../components/schedule/AppointmentCard";
 import type { Appointment } from "@dental/shared";
 
@@ -70,7 +70,11 @@ test("Desktop Ergonomics — ScheduleFilterStrip and schedule.css enforce 36px 1
 	);
 });
 
-test("Desktop Ergonomics — AppointmentHoverHud has CLS=0 containment, somatic norm, and 54-FZ fiscal balance", () => {
+test("Desktop Ergonomics — GridAppointmentCard real hover preview replaces dead AppointmentHoverHud (CLS=0 & 54-FZ)", () => {
+	// 1. Verify AppointmentHoverHud.tsx is eradicated (Mandates 8s, 8p)
+	const hoverHudPath = path.join(webRoot, "src/components/schedule/AppointmentHoverHud.tsx");
+	assert.ok(!fs.existsSync(hoverHudPath), "AppointmentHoverHud.tsx dead clone must be deleted per Mandate 8s");
+
 	const dummyAppt: Appointment = {
 		id: "appt-hud-test",
 		organizationId: "org-1",
@@ -85,74 +89,139 @@ test("Desktop Ergonomics — AppointmentHoverHud has CLS=0 containment, somatic 
 		comment: "Острая боль снята",
 	};
 
+	const mockDashboard = {
+		patients: [{ id: "pat-1", fullName: "Иванов Иван Иванович", balanceRub: 2500 }],
+		clinicSettings: { staff: [{ id: "doc-1", fullName: "Д-р Смирнов А. В." }] },
+	};
+
 	const markupNorm = renderToStaticMarkup(
-		<AppointmentHoverHud
-			appointment={dummyAppt}
-			appointmentPatientName="Иванов Иван Иванович"
-			patientBalance={2500}
-			allergyAlert={null}
-			somaticAlert={null}
-			displayStatus="confirmed"
-			formatTime={() => "11:00"}
-			onQuickStatusChange={() => {}}
-			onClose={() => {}}
-		/>,
+		React.createElement(GridAppointmentCard, {
+			appointment: dummyAppt,
+			chair: { id: "chair-1", name: "Кабинет 1" },
+			effectiveChairs: [{ id: "chair-1", name: "Кабинет 1" }],
+			doctors: [{ id: "doc-1", fullName: "Д-р Смирнов А. В." }],
+			patientLookupMap: new Map([["pat-1", mockDashboard.patients[0]]]),
+			staffLookupMap: new Map([["doc-1", mockDashboard.clinicSettings.staff[0]]]),
+			collisionMap: new Map(),
+			patientNameFn: () => "Иванов Иван Иванович",
+			dashboard: mockDashboard as any,
+			timezone: "Europe/Moscow",
+			toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+			appointmentLabels: {
+				planned: "Запланирован",
+				confirmed: "Подтвержден",
+				arrived: "Пришел",
+				in_treatment: "В кресле",
+				completed: "Завершен",
+				cancelled: "Отменен",
+				no_show: "Не явился",
+			},
+			isHovered: true,
+			isStatusPickerOpen: false,
+			isMenuOpen: false,
+			isNearBottom: false,
+			isNearRightEdge: false,
+			onAppointmentClick: () => {},
+			onSelectMobileAppt: () => {},
+			onQuickStatusChange: () => {},
+			onAdjustDuration: () => {},
+			onShiftLateness: () => {},
+			onReassignChair: () => {},
+			onReassignDoctor: () => {},
+			onFreeSlotToWaitlist: () => {},
+			onMouseEnter: () => {},
+			onMouseLeave: () => {},
+			onKeepHovered: () => {},
+			onToggleStatusPicker: () => {},
+			onToggleMenu: () => {},
+			onCloseStatusPicker: () => {},
+			onCloseMenu: () => {},
+		}),
 	);
 
-	// 1. Layout containment to prevent CLS
+	// 2. Layout containment to prevent CLS
 	assert.ok(
-		markupNorm.includes("contain:layout style"),
-		"AppointmentHoverHud must specify contain: layout style for CLS=0",
+		markupNorm.includes("content-visibility:auto") || markupNorm.includes("contain-intrinsic-size"),
+		"GridAppointmentCard must specify content-visibility/containment for CLS=0",
 	);
 
-	// 2. Physiological norm by default (Mandate 8e)
+	// 3. Hover preview DOM container
 	assert.ok(
-		markupNorm.includes("data-testid=\"hud-somatic-norm\""),
-		"AppointmentHoverHud must display physiological norm by default",
-	);
-	assert.ok(
-		markupNorm.includes("Соматический статус: норма"),
-		"AppointmentHoverHud text must state physiological norm",
+		markupNorm.includes("schedule-grid-patient-hover-preview"),
+		"GridAppointmentCard must render schedule-grid-patient-hover-preview on hover",
 	);
 
-	// 3. 54-FZ deposit balance (handling unicode non-breaking space \u00a0)
+	// 4. 54-FZ deposit balance (handling unicode non-breaking space \u00a0)
 	const normalizedNorm = markupNorm.replace(/\u00a0/g, " ");
 	assert.ok(
 		normalizedNorm.includes("Депозит: +2 500 ₽"),
-		"AppointmentHoverHud must display 54-FZ fiscal deposit",
+		"GridAppointmentCard hover preview must display 54-FZ fiscal deposit",
 	);
 
-	// 4. Somatic alert when present
+	// 5. Debt & Allergy alert when present
+	const mockAlertDashboard = {
+		patients: [{
+			id: "pat-1",
+			fullName: "Иванов Иван Иванович",
+			balanceRub: -1500,
+			notes: "Аллергия на ультракаин",
+		}],
+		clinicSettings: { staff: [{ id: "doc-1", fullName: "Д-р Смирнов А. В." }] },
+	};
+
 	const markupAlert = renderToStaticMarkup(
-		<AppointmentHoverHud
-			appointment={dummyAppt}
-			appointmentPatientName="Иванов Иван Иванович"
-			patientBalance={-1500}
-			allergyAlert="Внимание: Аллергия на ультракаин"
-			somaticAlert="Соматика: Гипертоническая болезнь II ст."
-			displayStatus="confirmed"
-			formatTime={() => "11:00"}
-			onQuickStatusChange={() => {}}
-			onClose={() => {}}
-		/>,
+		React.createElement(GridAppointmentCard, {
+			appointment: dummyAppt,
+			chair: { id: "chair-1", name: "Кабинет 1" },
+			effectiveChairs: [{ id: "chair-1", name: "Кабинет 1" }],
+			doctors: [{ id: "doc-1", fullName: "Д-р Смирнов А. В." }],
+			patientLookupMap: new Map([["pat-1", mockAlertDashboard.patients[0]]]),
+			staffLookupMap: new Map([["doc-1", mockAlertDashboard.clinicSettings.staff[0]]]),
+			collisionMap: new Map(),
+			patientNameFn: () => "Иванов Иван Иванович",
+			dashboard: mockAlertDashboard as any,
+			timezone: "Europe/Moscow",
+			toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+			appointmentLabels: {
+				planned: "Запланирован",
+				confirmed: "Подтвержден",
+				arrived: "Пришел",
+				in_treatment: "В кресле",
+				completed: "Завершен",
+				cancelled: "Отменен",
+				no_show: "Не явился",
+			},
+			isHovered: true,
+			isStatusPickerOpen: false,
+			isMenuOpen: false,
+			isNearBottom: false,
+			isNearRightEdge: false,
+			onAppointmentClick: () => {},
+			onSelectMobileAppt: () => {},
+			onQuickStatusChange: () => {},
+			onAdjustDuration: () => {},
+			onShiftLateness: () => {},
+			onReassignChair: () => {},
+			onReassignDoctor: () => {},
+			onFreeSlotToWaitlist: () => {},
+			onMouseEnter: () => {},
+			onMouseLeave: () => {},
+			onKeepHovered: () => {},
+			onToggleStatusPicker: () => {},
+			onToggleMenu: () => {},
+			onCloseStatusPicker: () => {},
+			onCloseMenu: () => {},
+		}),
 	);
 
-	assert.ok(
-		markupAlert.includes("data-testid=\"hud-somatic-alert\""),
-		"AppointmentHoverHud must display somatic alert badge when somatic risk exists",
-	);
-	assert.ok(
-		markupAlert.includes("Гипертоническая болезнь"),
-		"AppointmentHoverHud must contain somatic risk description",
-	);
-	assert.ok(
-		markupAlert.includes("data-testid=\"hud-allergy-alert\""),
-		"AppointmentHoverHud must display allergy alert",
-	);
 	const normalizedAlert = markupAlert.replace(/\u00a0/g, " ");
 	assert.ok(
 		normalizedAlert.includes("Долг: 1 500 ₽"),
-		"AppointmentHoverHud must display 54-FZ debt",
+		"GridAppointmentCard hover preview must display 54-FZ debt",
+	);
+	assert.ok(
+		markupAlert.includes("Аллергия на ультракаин"),
+		"GridAppointmentCard hover preview must display allergy alert",
 	);
 });
 

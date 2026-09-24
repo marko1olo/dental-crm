@@ -40,7 +40,6 @@ import { openWhatsAppChat } from "../../store/telephonyStore";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { AppointmentQuickActions } from "./AppointmentQuickActions";
-import { AppointmentHoverHud } from "./AppointmentHoverHud";
 import { printBlankMedicalContract } from "../patients/blankContractPrint";
 import { isTechnicalBreakAppointment } from "./AppointmentModal";
 import { isNegativeAllergyStatement } from "../../utils/somaticNorm";
@@ -977,34 +976,6 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 						containIntrinsicSize: "1px 48px",
 					}}
 				>
-					{/* macOS Hover HUD с задержкой <120ms без сдвига сетки (Apple HIG Progressive Disclosure) */}
-					{isHoverPreviewOpen && !appointmentEditing && (
-						<AppointmentHoverHud
-							appointment={appointment}
-							appointmentPatient={appointmentPatient}
-							appointmentPatientName={appointmentPatientName}
-							patientBalance={patientBalance}
-							allergyAlert={allergyAlert}
-							somaticAlert={somaticAlert}
-							teeth={cardTeeth}
-							appointmentDoctor={appointmentDoctor}
-							appointmentAssistant={appointmentAssistant}
-							appointmentChair={appointmentChair}
-							displayStatus={displayStatus}
-							formatTime={formatTime}
-							clinicSettings={dashboard?.clinicSettings}
-							onQuickStatusChange={handleQuickStatusChange}
-							onClose={handleCardMouseLeave}
-							onMouseEnter={() => {
-								if (hoverTimeoutRef.current) {
-									clearTimeout(hoverTimeoutRef.current);
-									hoverTimeoutRef.current = null;
-								}
-								setIsHoverPreviewOpen(true);
-							}}
-						/>
-					)}
-
 					<div className="appointment-card-header border-b border-[var(--line)] pb-2 mb-1 flex justify-between items-center gap-2 min-w-0 flex-wrap">
 						<div className="appointment-card-time font-semibold text-sm text-[var(--ink)] flex items-center gap-2 shrink-0">
 							{appointment?.startsAt ? formatTime(appointment.startsAt) : ""}

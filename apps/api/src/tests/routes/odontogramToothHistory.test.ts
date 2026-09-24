@@ -57,6 +57,8 @@ describe("FDI / ISO 3950 Dental Notation & State Taxonomy", () => {
 		assert.equal(CLINICAL_TOOTH_STATE_VALUES.includes("Missing"), true);
 		assert.equal(CLINICAL_TOOTH_STATE_VALUES.includes("Extracted"), true);
 		assert.equal(CLINICAL_TOOTH_STATE_VALUES.includes("Impacted"), true);
+		assert.equal(CLINICAL_TOOTH_STATE_VALUES.includes("Retained"), true);
+		assert.equal(CLINICAL_TOOTH_STATE_VALUES.includes("Root"), true);
 		assert.equal(CLINICAL_TOOTH_STATE_VALUES.includes("Mobility_I"), true);
 		assert.equal(CLINICAL_TOOTH_STATE_VALUES.includes("Furcation_I"), true);
 	});

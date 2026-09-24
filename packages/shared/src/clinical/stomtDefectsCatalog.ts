@@ -65,6 +65,34 @@ export type CrmToothState =
 	| "Retained"
 	| "Root";
 
+export const CLINICAL_TOOTH_STATE_VALUES = [
+	"Healthy",
+	"Caries",
+	"Pulpitis",
+	"Periodontitis",
+	"Root_Canal_Treated",
+	"Filled",
+	"Crown",
+	"Bridge",
+	"Bridge_Abutment",
+	"Implant",
+	"Planned_Implant",
+	"Missing",
+	"Extracted",
+	"Impacted",
+	"Retained",
+	"Root",
+	"Mobility_I",
+	"Mobility_II",
+	"Mobility_III",
+	"Mobility_IV",
+	"Furcation_I",
+	"Furcation_II",
+	"Furcation_III",
+] as const;
+
+export type ClinicalToothState = (typeof CLINICAL_TOOTH_STATE_VALUES)[number];
+
 export type StomxPositionAnomalyCode =
 	| "В"
 	| "О"

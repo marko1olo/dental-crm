@@ -21,6 +21,11 @@
 			"import": "./dist/fiscal/index.js",
 			"default": "./dist/fiscal/index.js"
 		},
+		"./fiscal/qrGenerator": {
+			"types": "./dist/fiscal/qrGenerator.d.ts",
+			"import": "./dist/fiscal/qrGenerator.js",
+			"default": "./dist/fiscal/qrGenerator.js"
+		},
 		"./compliance": {
 			"types": "./dist/compliance/decree659Engine.d.ts",
 			"import": "./dist/compliance/decree659Engine.js",

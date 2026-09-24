@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
 import type { db } from "../../db/client.js";
 import type { TenantDb } from "../../db/rls.js";
 import {
@@ -11,6 +11,54 @@ import {
 	warehouses,
 } from "../../db/schema/inventory.js";
 import { InsufficientStockError } from "./materialDeduction.js";
+
+/**
+ * Нормализация строковой даты к стандарту ISO (YYYY-MM-DD).
+ * Поддерживает российский формат (DD.MM.YYYY, DD/MM/YYYY) и ISO (YYYY-MM-DD).
+ * Проверяет валидность календарной даты (исключает 31 февраля и т.д.).
+ */
+export function normalizeDateToIso(
+	dateStr: string | null | undefined,
+): string | null {
+	if (!dateStr) return null;
+	const trimmed = String(dateStr).trim();
+	if (!trimmed) return null;
+
+	// Российский формат: DD.MM.YYYY или DD/MM/YYYY
+	const ruMatch = /^(\d{1,2})[./](\d{1,2})[./](\d{4})$/.exec(trimmed);
+	if (ruMatch) {
+		const day = ruMatch[1]!.padStart(2, "0");
+		const month = ruMatch[2]!.padStart(2, "0");
+		const year = ruMatch[3]!;
+		const iso = `${year}-${month}-${day}`;
+		const parsed = new Date(`${iso}T00:00:00Z`);
+		if (!Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === iso) {
+			return iso;
+		}
+		return null;
+	}
+
+	// ISO формат: YYYY-MM-DD
+	const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+	if (isoMatch) {
+		const parsed = new Date(`${trimmed}T00:00:00Z`);
+		if (!Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === trimmed) {
+			return trimmed;
+		}
+		return null;
+	}
+
+	return null;
+}
+
+/**
+ * Дефолтный срок годности для партий без явного указания (по умолчанию +3 года).
+ */
+export function getDefaultExpirationDate(yearsAhead = 3): string {
+	const d = new Date();
+	d.setFullYear(d.getFullYear() + yearsAhead);
+	return d.toISOString().slice(0, 10);
+}
 
 export type DbTransaction =
 	| Parameters<Parameters<typeof db.transaction>[0]>[0]
@@ -227,12 +275,31 @@ export class FefoStockService {
 			});
 		}
 
-		// 4. Обновляем итоговый баланс номенклатуры
+		// 4. Обновляем итоговый баланс номенклатуры и синхронизируем актуальную партию/срок годности
+		const [nextActiveBatch] = await tx
+			.select({
+				expirationDate: stockBatches.expirationDate,
+				batchNumber: stockBatches.batchNumber,
+			})
+			.from(stockBatches)
+			.where(
+				and(
+					eq(stockBatches.organizationId, organizationId),
+					eq(stockBatches.inventoryItemId, inv.id),
+					eq(stockBatches.status, "active"),
+					gt(sql`CAST(${stockBatches.remainingQty} AS numeric)`, 0),
+				),
+			)
+			.orderBy(asc(stockBatches.expirationDate), asc(stockBatches.createdAt))
+			.limit(1);
+
 		await tx
 			.update(inventoryItems)
 			.set({
 				stockQuantity: String(newStock),
 				currentQty: String(newStock),
+				lotNumber: nextActiveBatch ? nextActiveBatch.batchNumber : (newStock <= 0 ? null : inv.lotNumber),
+				expirationDate: nextActiveBatch ? nextActiveBatch.expirationDate : (newStock <= 0 ? null : inv.expirationDate),
 				updatedAt: new Date(),
 			})
 			.where(
@@ -269,9 +336,9 @@ export class FefoStockService {
 			organizationId,
 			inventoryItemId,
 			warehouseId,
-			batchNumber,
-			expirationDate,
-			manufactureDate,
+			batchNumber: rawBatchNumber,
+			expirationDate: rawExpirationDate,
+			manufactureDate: rawManufactureDate,
 			quantity,
 			purchasePricePerUnit,
 			barcode,
@@ -282,6 +349,13 @@ export class FefoStockService {
 		if (quantity <= 0) {
 			throw new Error("Количество приходуемой партии должно быть положительным числом.");
 		}
+
+		const batchNumber =
+			(rawBatchNumber && rawBatchNumber.trim()) ||
+			`LOT-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`;
+		const expirationDate =
+			normalizeDateToIso(rawExpirationDate) || getDefaultExpirationDate();
+		const manufactureDate = normalizeDateToIso(rawManufactureDate);
 
 		// 1. Блокируем карточку номенклатуры
 		const [inv] = await tx
@@ -299,20 +373,33 @@ export class FefoStockService {
 			throw new Error(`Материал с ID ${inventoryItemId} не найден.`);
 		}
 
-		// 2. Создаем партию FEFO
+		// 2. Ликвидация вечного овердрафта (Мандаты 8e, 8n):
+		// Если материал ранее списывался под экстренную операцию при нулевом остатке
+		// (мягкий минусовой овердрафт до прихода накладной снабженца), поступившая партия
+		// сначала закрывает накопленный дефицит, а остаток переходит в доступные запасы.
+		const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
+		const deficit = currentStock < 0 ? Math.abs(currentStock) : 0;
+		const remainingInBatch = Math.max(
+			0,
+			Number((quantity - deficit).toFixed(3)),
+		);
+		const isDepletedByDeficit = remainingInBatch <= 0;
+
+		// 3. Создаем партию FEFO
 		const [createdBatch] = await tx
 			.insert(stockBatches)
 			.values({
 				organizationId,
 				warehouseId: warehouseId ?? null,
 				inventoryItemId,
-				batchNumber: batchNumber.trim(),
+				batchNumber,
 				expirationDate,
 				manufactureDate: manufactureDate ?? null,
 				initialQty: String(quantity),
-				remainingQty: String(quantity),
-				purchasePricePerUnit: purchasePricePerUnit != null ? String(purchasePricePerUnit) : null,
-				status: "active",
+				remainingQty: String(remainingInBatch),
+				purchasePricePerUnit:
+					purchasePricePerUnit != null ? String(purchasePricePerUnit) : null,
+				status: isDepletedByDeficit ? "depleted" : "active",
 				barcode: barcode?.trim() || null,
 			})
 			.returning();
@@ -321,11 +408,10 @@ export class FefoStockService {
 			throw new Error("Не удалось сохранить партию в базе данных.");
 		}
 
-		// 3. Увеличиваем общий остаток номенклатуры
-		const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
+		// 4. Увеличиваем общий остаток номенклатуры
 		const newStock = Number((currentStock + quantity).toFixed(3));
 
-		// Если срок партии ближе, чем текущий срок в карточке, обновляем его
+		// Если срок партии ближе, чем текущий срок в карточке, или текущий срок пуст — обновляем его
 		const shouldUpdateCardDate =
 			!inv.expirationDate || expirationDate < inv.expirationDate;
 
@@ -335,12 +421,23 @@ export class FefoStockService {
 				stockQuantity: String(newStock),
 				currentQty: String(newStock),
 				lotNumber: shouldUpdateCardDate ? batchNumber : inv.lotNumber,
-				expirationDate: shouldUpdateCardDate ? expirationDate : inv.expirationDate,
+				expirationDate: shouldUpdateCardDate
+					? expirationDate
+					: inv.expirationDate,
+				unitCostRub:
+					purchasePricePerUnit != null
+						? String(purchasePricePerUnit)
+						: inv.unitCostRub,
 				updatedAt: new Date(),
 			})
 			.where(eq(inventoryItems.id, inv.id));
 
-		// 4. Фиксируем приходную транзакцию
+		// 5. Фиксируем приходную транзакцию
+		const transactionNote =
+			deficit > 0
+				? `${notes ? `${notes} • ` : ""}Поступление партии ${batchNumber} (${quantity} ед., закрыт технический дефицит ${deficit} ед.)`
+				: (notes ?? `Поступление партии ${batchNumber} (${quantity} ед.)`);
+
 		await tx.insert(inventoryTransactions).values({
 			organizationId,
 			itemId: inv.id,
@@ -348,10 +445,13 @@ export class FefoStockService {
 			batchId: createdBatch.id,
 			warehouseId: warehouseId ?? null,
 			quantityChanged: String(quantity),
-			unitCostRub: purchasePricePerUnit != null ? String(purchasePricePerUnit) : inv.unitCostRub,
+			unitCostRub:
+				purchasePricePerUnit != null
+					? String(purchasePricePerUnit)
+					: inv.unitCostRub,
 			transactionType: "receipt",
 			userId: userId ?? null,
-			notes: notes ?? `Поступление партии ${batchNumber} (${quantity} ед.)`,
+			notes: transactionNote,
 		});
 
 		return createdBatch;

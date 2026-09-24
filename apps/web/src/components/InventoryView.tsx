@@ -224,6 +224,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 	} = inventory;
 	const [isClinicalWriteoffOpen, setIsClinicalWriteoffOpen] = useState(false);
 	const [isProcedureDeductionOpen, setIsProcedureDeductionOpen] = useState(false);
+	const [isDeductingMaterials, setIsDeductingMaterials] = useState(false);
 	const [isWarehouseTransferOpen, setIsWarehouseTransferOpen] = useState(false);
 	const [isInventoryAuditOpen, setIsInventoryAuditOpen] = useState(false);
 	const [isMdlpDisposalOpen, setIsMdlpDisposalOpen] = useState(false);
@@ -2573,9 +2574,66 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 						isOpen={isProcedureDeductionOpen}
 						onClose={() => setIsProcedureDeductionOpen(false)}
 						warehouseItems={items}
-						onConfirmDeduction={async () => {
-							setIsProcedureDeductionOpen(false);
-							fetchItems();
+						isDeducting={isDeductingMaterials}
+						onConfirmDeduction={async (lines, summary) => {
+							try {
+								setIsDeductingMaterials(true);
+								let deductedCount = 0;
+								for (const line of lines) {
+									if (line.quantity <= 0) continue;
+									let targetId =
+										line.inventoryItemId ||
+										items.find(
+											(it) => it.name.toLowerCase() === line.materialName.toLowerCase(),
+										)?.id;
+
+									if (!targetId) {
+										// По закону Zero Dead-Ends (Мандат 8e): если номенклатура техкарты отсутствует на складе,
+										// создаем карточку материала с остатком 0 для последующего мягкого овердрафта.
+										const createRes = await fetch(`/api/inventory/${organizationId}`, {
+											method: "POST",
+											headers: getHeaders({ "Content-Type": "application/json" }),
+											body: JSON.stringify({
+												name: line.materialName,
+												stockQuantity: 0,
+												criticalThreshold: 0,
+											}),
+										});
+										if (createRes.ok) {
+											const created = (await createRes.json()) as { id?: string };
+											targetId = created.id;
+										}
+									}
+
+									if (targetId) {
+										const res = await fetch(
+											`/api/inventory/${organizationId}/${targetId}/stock`,
+											{
+												method: "PATCH",
+												headers: getHeaders({ "Content-Type": "application/json" }),
+												body: JSON.stringify({
+													adjustment: -line.quantity,
+													allowOverdraft: true,
+													isClinicalOperation: true,
+													reason: `Списание по техкарте: ${line.materialName} (${line.quantity} ${line.unit})`,
+												}),
+											},
+										);
+										if (res.ok) deductedCount++;
+									}
+								}
+								showToast(
+									`Списано материалов по техкартам: ${deductedCount} поз. на сумму ${summary.totalCostFormatted} (мягкий овердрафт разрешен)`,
+									"success",
+								);
+							} catch (e) {
+								console.error(e);
+								showToast("Ошибка при списании материалов", "error");
+							} finally {
+								setIsDeductingMaterials(false);
+								setIsProcedureDeductionOpen(false);
+								fetchItems();
+							}
 						}}
 					/>
 				</Suspense>

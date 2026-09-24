@@ -1792,20 +1792,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						</span>
 					</div>
 					<label className="vde-043__revise-label">
-						Инструментальный лоток (штрихкод, необязательно)
-						<input
-							data-testid="diary-revise-tray"
-							value={trayBarcode ?? ""}
-							onChange={(e) => {
-								const v = e.target.value.trim();
-								setTrayBarcode(v.length > 0 ? v : null);
-							}}
-							placeholder="Стандартный стерильный лоток по СанПиН (или укажите номер/штрихкод)"
-							className="vde-043__input"
-							disabled={isRevisingBusy}
-						/>
-					</label>
-					<label className="vde-043__revise-label">
 						Причина правки («Исправленному верить»)
 						<input
 							data-testid="diary-revise-reason"

@@ -98,27 +98,36 @@ const inventoryRuleBodySchema = z.object({
  * непонятная строка означает ошибку ввода, и молча превращать её в «срока нет»
  * значит потерять предупреждение о просрочке.
  */
-const INVALID_DATE = Symbol("invalid-expiration-date");
+export const INVALID_DATE = Symbol("invalid-expiration-date");
 
 /**
- * Приведение срока годности к виду, который принимает колонка date.
+ * Приведение срока годности к виду, который принимает колонка date (YYYY-MM-DD).
  *
- * Поле ввода типа date отдаёт «2027-03-31», и в этом же виде значение уходит в
- * базу. Всё остальное — ошибка, о которой надо сказать человеку, а не
- * подставлять пустоту.
+ * Принимает как ISO-формат «YYYY-MM-DD» (2027-03-31), так и российский формат «DD.MM.YYYY» (31.03.2027).
+ * Всё остальное, включая невалидные дни в месяце (например, 31.02.2027), — ошибка INVALID_DATE.
  */
-function normalizedExpirationDate(
+export function normalizedExpirationDate(
 	value: string | null | undefined,
 ): string | null | typeof INVALID_DATE {
 	if (value === null || value === undefined) return null;
 	const trimmed = String(value).trim();
 	if (!trimmed) return null;
-	if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return INVALID_DATE;
-	const parsed = new Date(`${trimmed}T00:00:00Z`);
+
+	let isoCandidate: string;
+	if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+		isoCandidate = trimmed;
+	} else if (/^\d{2}\.\d{2}\.\d{4}$/.test(trimmed)) {
+		const [dd, mm, yyyy] = trimmed.split(".");
+		isoCandidate = `${yyyy}-${mm}-${dd}`;
+	} else {
+		return INVALID_DATE;
+	}
+
+	const parsed = new Date(`${isoCandidate}T00:00:00Z`);
 	if (Number.isNaN(parsed.getTime())) return INVALID_DATE;
 	// 2027-02-31 разбирается в 3 марта: сверяем, что дата не «уехала».
-	if (parsed.toISOString().slice(0, 10) !== trimmed) return INVALID_DATE;
-	return trimmed;
+	if (parsed.toISOString().slice(0, 10) !== isoCandidate) return INVALID_DATE;
+	return isoCandidate;
 }
 
 export const inventoryRoutes: FastifyPluginAsync = async (

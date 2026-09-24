@@ -879,15 +879,35 @@ export const OdontogramModule = React.memo(({
 						: null;
 				if (body?.success === true && Array.isArray(body.states)) {
 					const incoming = body.states as ToothData[];
+					const localCached = loadStoredTeethData(patientId);
+					const baseTeeth =
+						localCached && localCached.length > 0
+							? localCached
+							: createDefaultAdultTeethData();
 					let finalTeeth: ToothData[];
 					if (incoming.length === 0) {
-						const localCached = loadStoredTeethData(patientId);
-						finalTeeth = localCached && localCached.length > 0 ? localCached : createDefaultAdultTeethData();
+						finalTeeth = baseTeeth;
 					} else {
-						const defaultTeeth = createDefaultAdultTeethData();
-						const merged = defaultTeeth.map((dt) => {
-							const found = incoming.find((inc) => inc.toothNumber === dt.toothNumber);
-							return found ?? dt;
+						// Мержим не с дефолтными пустыми зубами, а с локальным кэшем, чтобы не затирать локальные отметки при F5 (Мандаты 8s, 8e, 8k)
+						const merged = baseTeeth.map((cachedTooth) => {
+							const found = incoming.find((inc) => inc.toothNumber === cachedTooth.toothNumber);
+							if (!found) {
+								return cachedTooth;
+							}
+							if (
+								cachedTooth.state !== "Healthy" &&
+								(found.state === "Healthy" || (found.state as string) === "healthy")
+							) {
+								return {
+									...found,
+									...cachedTooth,
+									state: cachedTooth.state,
+								};
+							}
+							return {
+								...cachedTooth,
+								...found,
+							};
 						});
 						for (const item of incoming) {
 							if (!merged.some((m) => m.toothNumber === item.toothNumber)) {

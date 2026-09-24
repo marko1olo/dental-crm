@@ -376,32 +376,10 @@ export async function createPaymentInDb(
 						)
 						.orderBy(desc(schema.generatedDocuments.createdAt));
 
-					// Ищем соглашение, подходящее по услуге и сумме
+					// Ищем выданное дополнительное соглашение, покрывающее сумму платежа
 					const matchingAddendum = addendumDocs.find((doc) => {
 						const limit = Number(doc.totalAmountRub || 0);
-						if (input.amountRub > limit) return false;
-						const docTitleLower = (doc.title || "").toLowerCase();
-						const serviceTitleLower = (serviceItem.title || "").toLowerCase();
-						if (docTitleLower.includes("отбеливан") && !serviceTitleLower.includes("отбеливан")) return false;
-						if (docTitleLower.includes("имплант") && !serviceTitleLower.includes("имплант")) return false;
-						if (
-							docTitleLower.includes("анестези") &&
-							!serviceTitleLower.includes("анестези") &&
-							!serviceTitleLower.includes("ультракаин") &&
-							!serviceTitleLower.includes("артикаин") &&
-							!serviceTitleLower.includes("септанест") &&
-							!serviceTitleLower.includes("убистезин")
-						)
-							return false;
-						if (
-							(docTitleLower.includes("коффердам") || docTitleLower.includes("расходн")) &&
-							!serviceTitleLower.includes("коффердам") &&
-							!serviceTitleLower.includes("раббердам") &&
-							!serviceTitleLower.includes("оптрагейт") &&
-							!serviceTitleLower.includes("расходн")
-						)
-							return false;
-						return true;
+						return limit === 0 || input.amountRub <= limit;
 					});
 
 					if (!matchingAddendum) {
@@ -427,9 +405,9 @@ export async function createPaymentInDb(
 			}
 
 			const verifiedAmountKopecks = Math.max(0, catalogPriceKopecks - discountKopecks);
-			if (incomingPaymentKopecks !== verifiedAmountKopecks) {
+			if (incomingPaymentKopecks > verifiedAmountKopecks) {
 				throw new Error(
-					`Попытка подмены прайса для услуги «${serviceItem.title}»: цена в каталоге составляет ${formatKopecksToRubles(catalogPriceKopecks)} ₽ (к списанию с учетом скидки: ${formatKopecksToRubles(verifiedAmountKopecks)} ₽), получено ${formatKopecksToRubles(incomingPaymentKopecks)} ₽.`,
+					`Попытка подмены прайса для услуги «${serviceItem.title}»: цена в каталоге составляет ${formatKopecksToRubles(catalogPriceKopecks)} ₽ (к списанию с учетом скидки: ${formatKopecksToRubles(verifiedAmountKopecks)} ₽), получено ${formatKopecksToRubles(incomingPaymentKopecks)} ₽. Превышение стоимости запрещено.`,
 				);
 			}
 		} else {
@@ -473,13 +451,7 @@ export async function createPaymentInDb(
 
 				const remainingAgreedBalanceRub = Math.max(0, approvedTotalRub - paidTotalRub);
 
-				const noteLower = (input.note || "").toLowerCase();
-				const hasServiceKeyword =
-					/имплант|отбеливан|коронк|протез|брекет|удален|навязан|лечен|анестези|ультракаин|артикаин|септанест|скандонест|убистезин|карпул|обезбол|коффердам|раббердам|оптрагейт|шовн|мембран|расходн|материал/i.test(
-						noteLower,
-					);
-
-				if (input.amountRub > remainingAgreedBalanceRub || hasServiceKeyword) {
+				if (input.amountRub > remainingAgreedBalanceRub) {
 					// Проверяем наличие выданных Дополнительных соглашений
 					const addendumDocs = await tx
 						.select({
@@ -501,7 +473,7 @@ export async function createPaymentInDb(
 					const totalAuthorizedRub = approvedTotalRub + totalAddendumLimitRub;
 					const maxAllowedAmountRub = Math.max(0, totalAuthorizedRub - paidTotalRub);
 
-					if (input.amountRub > maxAllowedAmountRub || (hasServiceKeyword && addendumDocs.length === 0)) {
+					if (input.amountRub > maxAllowedAmountRub) {
 						// Не блокируем кассу и не выбрасываем 422 по ПП РФ №659!
 						// Логируем информационное предупреждение
 						console.warn(
