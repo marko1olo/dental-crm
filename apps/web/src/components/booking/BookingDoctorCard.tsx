@@ -1,4 +1,4 @@
-import { ChevronRight, Sparkles, Star } from "lucide-react";
+import { Check, ChevronRight, Sparkles, Star } from "lucide-react";
 import type React from "react";
 
 export interface BookingDoctorData {
@@ -40,14 +40,25 @@ export const BookingDoctorCard: React.FC<BookingDoctorCardProps> = ({
 			<div className="dbw-doctor-main min-w-0">
 				<div className="dbw-doctor-avatar flex-shrink-0" aria-hidden="true">
 					{doctor.avatarUrl ? (
-						<img src={doctor.avatarUrl} alt={doctor.fullName} loading="lazy" decoding="async" />
+						<img
+							src={doctor.avatarUrl}
+							alt={doctor.fullName}
+							loading="lazy"
+							decoding="async"
+						/>
 					) : (
 						<span>{initial}</span>
 					)}
+					<span className="dbw-doctor-status-dot" />
 				</div>
 				<div className="dbw-doctor-meta min-w-0 flex-1">
-					<div className="dbw-doctor-name min-w-0 break-words text-base font-bold text-slate-900 dark:text-slate-100">
-						{doctor.fullName}
+					<div className="dbw-doctor-name min-w-0 break-words text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+						<span>{doctor.fullName}</span>
+						{isSelected && (
+							<span className="dbw-doctor-selected-badge inline-flex items-center gap-0.5 text-xs text-teal-600 dark:text-teal-400 font-semibold">
+								<Check size={14} />
+							</span>
+						)}
 					</div>
 					<div className="dbw-doctor-specialties min-w-0 break-words text-sm font-medium text-slate-600 dark:text-slate-300">
 						{doctor.specialties.join(" • ")}
@@ -99,12 +110,17 @@ export const BookingAnyDoctorCard: React.FC<BookingAnyDoctorCardProps> = ({
 			aria-pressed={isSelected}
 		>
 			<div className="dbw-doctor-main min-w-0">
-				<div className="dbw-doctor-avatar flex-shrink-0" aria-hidden="true">
+				<div className="dbw-doctor-avatar any-specialist flex-shrink-0" aria-hidden="true">
 					<Sparkles size={24} />
 				</div>
 				<div className="dbw-doctor-meta min-w-0 flex-1">
-					<div className="dbw-doctor-name min-w-0 break-words text-base font-bold text-slate-900 dark:text-slate-100">
-						Любой свободный специалист
+					<div className="dbw-doctor-name min-w-0 break-words text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+						<span>Любой свободный специалист</span>
+						{isSelected && (
+							<span className="dbw-doctor-selected-badge inline-flex items-center gap-0.5 text-xs text-teal-600 dark:text-teal-400 font-semibold">
+								<Check size={14} />
+							</span>
+						)}
 					</div>
 					<div className="dbw-doctor-specialties min-w-0 break-words text-sm font-medium text-slate-600 dark:text-slate-300">
 						Самая быстрая запись на ближайшее удобное время

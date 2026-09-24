@@ -1,6 +1,7 @@
 /* ==========================================================================
    Public Online Booking Widget - DENTE Dental CRM
    Modern, responsive, embeddable styling with Light/Dark/Night/Calm Teal/TG support
+   Apple & Linear-grade UX (Mandates 8c, 8d, 8e, 8n, 8p)
    ========================================================================== */
 
 .dente-booking-widget {
@@ -20,7 +21,7 @@
 	--dbw-surface-hover: #f1f5f9;
 	--dbw-border: #e2e8f0;
 	--dbw-border-hover: #cbd5e1;
-	--dbw-text-main: #111827;
+	--dbw-text-main: #0f172a;
 	--dbw-text-muted: #64748b;
 	--dbw-text-subtle: #94a3b8;
 	--dbw-radius-lg: 16px;
@@ -30,6 +31,8 @@
 	--dbw-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
 	--dbw-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 	--dbw-focus-ring: 0 0 0 3px rgba(13, 148, 136, 0.25);
+	--glass-panel: rgba(255, 255, 255, 0.85);
+	--glass-border: rgba(226, 232, 240, 0.8);
 
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 	color: var(--dbw-text-main);
@@ -47,7 +50,7 @@
 }
 
 /* ==========================================================================
-   Multi-Theme Overrides
+   Multi-Theme Overrides (WCAG AAA Compliance, Mandate 8d)
    ========================================================================== */
 
 /* Dark Mode */
@@ -61,16 +64,18 @@
 	--dbw-success: #4ade80;
 	--dbw-success-hover: #22c55e;
 	--dbw-success-light: rgba(74, 222, 128, 0.15);
-	--dbw-bg: #0f172a;
-	--dbw-surface: #1e293b;
-	--dbw-surface-hover: #334155;
-	--dbw-border: #334155;
-	--dbw-border-hover: #475569;
+	--dbw-bg: #090d16;
+	--dbw-surface: #0f172a;
+	--dbw-surface-hover: #1e293b;
+	--dbw-border: #1e293b;
+	--dbw-border-hover: #334155;
 	--dbw-text-main: #f8fafc;
 	--dbw-text-muted: #94a3b8;
 	--dbw-text-subtle: #64748b;
-	--dbw-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6);
+	--dbw-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7);
 	--dbw-focus-ring: 0 0 0 3px rgba(45, 212, 191, 0.35);
+	--glass-panel: rgba(15, 23, 42, 0.85);
+	--glass-border: rgba(51, 65, 85, 0.6);
 }
 
 /* Night / OLED Mode */
@@ -149,51 +154,59 @@
 }
 
 /* ==========================================================================
-   Header & Progress Bar
+   Header (Apple Glass Style, <= 110px on mobile, Mandates 8c, 8p)
    ========================================================================== */
 
 .dbw-header {
-	background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+	background: linear-gradient(135deg, rgba(15, 118, 110, 0.94) 0%, rgba(13, 148, 136, 0.94) 100%);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.16);
 	color: #ffffff;
-	padding: 24px;
+	padding: 16px 20px;
 	position: relative;
+	transition: all 0.2s ease;
 }
 
 .dbw-header-clinic {
 	display: flex;
 	align-items: center;
+	justify-content: space-between;
 	gap: 8px;
-	font-size: 0.875rem;
+	font-size: 0.8125rem;
 	font-weight: 600;
-	color: rgba(255, 255, 255, 0.9);
-	margin-bottom: 6px;
+	color: rgba(255, 255, 255, 0.92);
+	margin-bottom: 4px;
 }
 
 .dbw-header-title {
-	font-size: 1.5rem;
+	font-size: 1.375rem;
 	font-weight: 800;
 	margin: 0;
 	line-height: 1.25;
+	letter-spacing: -0.02em;
 }
 
 .dbw-header-subtitle {
-	font-size: 0.9375rem;
+	font-size: 0.875rem;
 	font-weight: 500;
-	color: rgba(255, 255, 255, 0.85);
-	margin: 6px 0 0 0;
+	color: rgba(255, 255, 255, 0.88);
+	margin: 4px 0 0 0;
+	line-height: 1.35;
 }
 
-.dbw-tg-badge {
+.dbw-tg-badge,
+.dbw-tg-inline-badge {
 	display: inline-flex;
 	align-items: center;
-	gap: 6px;
-	background: rgba(255, 255, 255, 0.2);
+	gap: 4px;
+	background: rgba(255, 255, 255, 0.22);
 	color: #ffffff;
-	padding: 4px 10px;
+	padding: 2px 8px;
 	border-radius: 9999px;
-	font-size: 0.75rem;
+	font-size: 0.6875rem;
 	font-weight: 700;
-	margin-top: 8px;
+	white-space: nowrap;
 }
 
 /* Step Progress Indicator */
@@ -301,7 +314,7 @@
 	margin: -8px 0 16px 0;
 }
 
-/* Branch Selector Cards (Touch target >= 48px) */
+/* Branch Selector Cards */
 .dbw-branches-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -359,7 +372,7 @@
 	margin-top: 2px;
 }
 
-/* Service Category Cards (Touch target >= 48px) */
+/* Service Category Cards */
 .dbw-categories-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
@@ -422,7 +435,7 @@
 	overflow: hidden;
 }
 
-/* Services sub-list (Touch target >= 48px) */
+/* Services sub-list */
 .dbw-services-list {
 	display: flex;
 	flex-direction: column;
@@ -508,7 +521,7 @@
 	justify-content: space-between;
 	gap: 16px;
 	min-height: 64px;
-	transition: all 0.2s ease;
+	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 	text-align: left;
 	width: 100%;
 	box-sizing: border-box;
@@ -517,11 +530,17 @@
 .dbw-doctor-card:hover {
 	border-color: var(--dbw-border-hover);
 	background: var(--dbw-surface-hover);
+	transform: translateY(-1px);
+}
+
+.dbw-doctor-card:active {
+	transform: scale(0.99);
 }
 
 .dbw-doctor-card.selected {
 	border-color: var(--dbw-primary);
 	background: var(--dbw-primary-light);
+	box-shadow: 0 2px 8px var(--dbw-primary-glow);
 }
 
 .dbw-doctor-main {
@@ -533,8 +552,8 @@
 }
 
 .dbw-doctor-avatar {
-	width: 56px;
-	height: 56px;
+	width: 52px;
+	height: 52px;
 	border-radius: 50%;
 	background: var(--dbw-surface-hover);
 	color: var(--dbw-primary);
@@ -545,13 +564,30 @@
 	font-size: 1.25rem;
 	flex-shrink: 0;
 	border: 2px solid var(--dbw-border);
+	position: relative;
 	overflow: hidden;
+}
+
+.dbw-doctor-avatar.any-specialist {
+	background: var(--dbw-primary-light);
+	border-color: var(--dbw-primary);
 }
 
 .dbw-doctor-avatar img {
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
+}
+
+.dbw-doctor-status-dot {
+	position: absolute;
+	bottom: 2px;
+	right: 2px;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: var(--dbw-success);
+	border: 2px solid var(--dbw-bg);
 }
 
 .dbw-doctor-meta {
@@ -617,16 +653,139 @@
 
 .dbw-doctor-chevron {
 	flex-shrink: 0;
+	transition: transform 0.2s ease;
+}
+
+.dbw-doctor-card:hover .dbw-doctor-chevron {
+	transform: translateX(2px);
 }
 
 /* ==========================================================================
-   Calendar & Slots (Zero CLS Layout Stability)
+   Days Ribbon & Calendar Component (Zero CLS, Tactile 1-Tap)
    ========================================================================== */
 
 .dbw-slot-picker-root {
 	width: 100%;
 }
 
+/* Quick Days Ribbon */
+.dbw-ribbon-section {
+	margin-bottom: 14px;
+}
+
+.dbw-ribbon-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 8px;
+}
+
+.dbw-ribbon-toggle-btn {
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--dbw-primary);
+	padding: 4px 6px;
+	border-radius: var(--dbw-radius-sm);
+	transition: background 0.15s ease;
+	touch-action: manipulation;
+}
+
+.dbw-ribbon-toggle-btn:hover {
+	background: var(--dbw-primary-light);
+}
+
+.dbw-days-ribbon {
+	display: flex;
+	gap: 8px;
+	overflow-x: auto;
+	padding: 2px 2px 10px 2px;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+}
+
+.dbw-days-ribbon::-webkit-scrollbar {
+	display: none;
+}
+
+.dbw-day-ribbon-btn {
+	flex: 0 0 74px;
+	min-height: 76px;
+	border-radius: var(--dbw-radius-md);
+	border: 1.5px solid var(--dbw-border);
+	background: var(--dbw-surface);
+	color: var(--dbw-text-main);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 8px 4px;
+	cursor: pointer;
+	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+	position: relative;
+	user-select: none;
+	touch-action: manipulation;
+}
+
+.dbw-day-ribbon-btn:hover {
+	border-color: var(--dbw-primary);
+	background: var(--dbw-surface-hover);
+	transform: translateY(-1px);
+}
+
+.dbw-day-ribbon-btn:active {
+	transform: scale(0.97);
+}
+
+.dbw-day-ribbon-btn.selected {
+	background: var(--dbw-primary);
+	border-color: var(--dbw-primary);
+	color: #ffffff;
+	box-shadow: 0 4px 12px var(--dbw-primary-glow);
+}
+
+.dbw-day-ribbon-btn.today:not(.selected) {
+	border-color: var(--dbw-primary);
+	font-weight: 800;
+}
+
+.dbw-ribbon-weekday {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: inherit;
+	opacity: 0.9;
+}
+
+.dbw-ribbon-day {
+	font-size: 1.1875rem;
+	font-weight: 800;
+	color: inherit;
+	line-height: 1.1;
+	margin: 2px 0;
+}
+
+.dbw-ribbon-month {
+	font-size: 0.6875rem;
+	font-weight: 500;
+	color: inherit;
+	opacity: 0.8;
+}
+
+.dbw-ribbon-active-pill {
+	position: absolute;
+	bottom: 4px;
+	width: 14px;
+	height: 3px;
+	border-radius: 9999px;
+	background: #ffffff;
+}
+
+/* Calendar Container */
 .dbw-calendar-container {
 	border: 1px solid var(--dbw-border);
 	border-radius: var(--dbw-radius-md);
@@ -634,6 +793,11 @@
 	padding: 16px;
 	margin-bottom: 20px;
 	min-height: 310px; /* Reserve space to eliminate CLS */
+	transition: all 0.2s ease;
+}
+
+.dbw-calendar-container.is-compact {
+	margin-bottom: 16px;
 }
 
 .dbw-calendar-header {
@@ -724,7 +888,7 @@
 	color: #ffffff;
 	font-weight: 800;
 	border-color: var(--dbw-primary);
-	box-shadow: 0 2px 4px rgba(13, 148, 136, 0.3);
+	box-shadow: 0 2px 8px var(--dbw-primary-glow);
 }
 
 .dbw-calendar-day-btn.today:not(.selected) {
@@ -766,7 +930,7 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	border: 1px solid var(--dbw-border);
+	border: 1.5px solid var(--dbw-border);
 	background: var(--dbw-surface);
 	color: var(--dbw-text-main);
 	border-radius: 9999px;
@@ -789,6 +953,7 @@
 	border-color: var(--dbw-primary);
 	background: var(--dbw-primary);
 	color: #ffffff;
+	box-shadow: 0 2px 8px var(--dbw-primary-glow);
 }
 
 .dbw-chip-btn:disabled {
@@ -845,9 +1010,19 @@
 	gap: 6px;
 }
 
+.dbw-period-count-badge {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	padding: 2px 6px;
+	border-radius: 9999px;
+	background: var(--dbw-primary-light);
+	color: var(--dbw-primary);
+	margin-left: 4px;
+}
+
 .dbw-slots-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+	grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
 	gap: 10px;
 }
 
@@ -855,32 +1030,51 @@
 	border: 1.5px solid var(--dbw-border);
 	background: var(--dbw-surface);
 	border-radius: var(--dbw-radius-sm);
-	padding: 12px 6px;
+	padding: 10px 8px;
 	font-size: 0.9375rem;
 	font-weight: 700;
 	color: var(--dbw-text-main);
 	cursor: pointer;
 	text-align: center;
 	min-height: 48px;
-	transition: all 0.15s ease;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 	touch-action: manipulation;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	position: relative;
 }
 
 .dbw-slot-btn:hover {
 	border-color: var(--dbw-primary);
 	background: var(--dbw-primary-light);
 	color: var(--dbw-primary);
+	transform: translateY(-1px);
+}
+
+.dbw-slot-btn:active {
+	transform: scale(0.97);
 }
 
 .dbw-slot-btn.selected {
 	border-color: var(--dbw-primary);
 	background: var(--dbw-primary);
 	color: #ffffff;
-	box-shadow: 0 2px 4px rgba(13, 148, 136, 0.3);
+	box-shadow: 0 4px 12px var(--dbw-primary-glow);
+	transform: scale(1.02);
+}
+
+.dbw-slot-btn.selected:active {
+	transform: scale(0.98);
+}
+
+.dbw-slot-check {
+	flex-shrink: 0;
 }
 
 /* ==========================================================================
-   Patient Form & Verification
+   Patient Form & Telegram 1-Tap Card
    ========================================================================== */
 
 .dbw-form-grid {
@@ -930,6 +1124,26 @@
 .dbw-textarea {
 	min-height: 80px;
 	resize: vertical;
+}
+
+/* Telegram 1-Tap Card */
+.dbw-tg-1tap-card {
+	background: linear-gradient(135deg, rgba(34, 158, 217, 0.08) 0%, rgba(34, 158, 217, 0.03) 100%);
+	border: 1.5px solid rgba(34, 158, 217, 0.35);
+	border-radius: var(--dbw-radius-md);
+	padding: 12px 14px;
+	box-shadow: var(--dbw-shadow-sm);
+}
+
+.dbw-tg-share-btn {
+	cursor: pointer;
+	border: none;
+	touch-action: manipulation;
+	box-shadow: 0 2px 6px rgba(34, 158, 217, 0.3);
+}
+
+.dbw-tg-share-btn:hover {
+	box-shadow: 0 4px 10px rgba(34, 158, 217, 0.4);
 }
 
 /* SMS Verification Block */
@@ -1050,6 +1264,7 @@
 	cursor: pointer;
 	display: flex;
 	align-items: center;
+	justify-content: center;
 	gap: 8px;
 	min-height: 48px;
 	transition: all 0.15s ease;
@@ -1076,7 +1291,7 @@
 }
 
 /* ==========================================================================
-   Step 5: Confirmation Success Screen & Ticket
+   Step 5: Confirmation Success Screen & Dental Boarding Pass
    ========================================================================== */
 
 .dbw-confirmation-card {
@@ -1122,9 +1337,35 @@
 	min-height: 48px;
 }
 
-.dbw-confirmation-details-box {
+/* Dental Boarding Pass Card */
+.dbw-boarding-pass {
 	width: 100%;
 	background: var(--dbw-surface);
+	border: 1.5px solid var(--dbw-border);
+	border-radius: var(--dbw-radius-lg);
+	overflow: hidden;
+	box-shadow: var(--dbw-shadow-md);
+	position: relative;
+	margin: 8px 0 16px 0;
+	text-align: left;
+}
+
+.dbw-pass-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 18px;
+	background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+	color: #ffffff;
+}
+
+.dbw-pass-body {
+	padding: 16px;
+}
+
+.dbw-confirmation-details-box {
+	width: 100%;
+	background: var(--dbw-bg);
 	border: 1px solid var(--dbw-border);
 	border-radius: var(--dbw-radius-md);
 	padding: 18px;
@@ -1161,6 +1402,59 @@
 	font-weight: 700;
 	overflow-wrap: break-word;
 	word-break: break-word;
+}
+
+/* Boarding Pass Perforation */
+.dbw-pass-perforation {
+	position: relative;
+	height: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 12px -16px;
+}
+
+.dbw-pass-perforation::before,
+.dbw-pass-perforation::after {
+	content: "";
+	position: absolute;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: var(--dbw-bg);
+	border: 1.5px solid var(--dbw-border);
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 2;
+}
+
+.dbw-pass-perforation::before {
+	left: -12px;
+}
+
+.dbw-pass-perforation::after {
+	right: -12px;
+}
+
+.dbw-pass-perforation-line {
+	width: 100%;
+	border-bottom: 2px dashed var(--dbw-border);
+}
+
+.dbw-pass-barcode-section {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 14px;
+	background: #ffffff;
+	border-radius: var(--dbw-radius-sm);
+	margin-top: 8px;
+	border: 1px solid var(--dbw-border);
+}
+
+.dark .dbw-pass-barcode-section {
+	background: #f1f5f9;
 }
 
 /* Calendar export options */
@@ -1206,6 +1500,31 @@
 	background: var(--dbw-primary-hover);
 }
 
+/* Action Chip Button (Yandex Maps, WhatsApp) */
+.dbw-action-chip-btn {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	border: 1px solid var(--dbw-border);
+	background: var(--dbw-bg);
+	color: var(--dbw-text-main);
+	border-radius: var(--dbw-radius-sm);
+	padding: 10px 14px;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	text-decoration: none;
+	min-height: 44px;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.dbw-action-chip-btn:hover {
+	background: var(--dbw-surface-hover);
+	border-color: var(--dbw-border-hover);
+}
+
 /* ==========================================================================
    Streamlined 1-Screen 2-Click Booking (Mandates 8e, 8k, 8p, 8n)
    ========================================================================== */
@@ -1214,30 +1533,6 @@
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
-}
-
-.dbw-solo-doctor-banner {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	padding: 12px 16px;
-	border-radius: var(--dbw-radius-md);
-	background: var(--dbw-surface);
-	border: 1px solid var(--dbw-border);
-}
-
-.dbw-solo-tag {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	padding: 4px 10px;
-	border-radius: 9999px;
-	font-size: 0.75rem;
-	font-weight: 700;
-	background: var(--dbw-primary-light);
-	color: var(--dbw-primary);
-	white-space: nowrap;
 }
 
 .dbw-selected-slot-pill {
@@ -1322,7 +1617,7 @@
 
 /* ==========================================================================
    Responsive queries (Strict 390px Mobile Viewport & TG Mini App, Mandate 8p)
-   Header height budget <= 160px strictly observed
+   Header height budget <= 110px strictly observed on mobile
    ========================================================================== */
 
 @media (max-width: 640px) {
@@ -1334,8 +1629,9 @@
 	}
 
 	.dbw-header {
-		padding: 14px 16px;
-		max-height: 140px;
+		padding: 10px 14px;
+		max-height: 106px;
+		min-height: 68px;
 		box-sizing: border-box;
 	}
 
@@ -1345,13 +1641,13 @@
 	}
 
 	.dbw-header-title {
-		font-size: 1.1875rem;
-		line-height: 1.25;
+		font-size: 1.125rem;
+		line-height: 1.2;
 		margin: 0;
 	}
 
 	.dbw-header-subtitle {
-		font-size: 0.8125rem;
+		font-size: 0.75rem;
 		margin-top: 2px;
 	}
 
@@ -1392,5 +1688,14 @@
 
 	.dbw-calendar-day-btn {
 		min-height: 44px;
+	}
+
+	.dbw-day-ribbon-btn {
+		flex: 0 0 68px;
+		min-height: 70px;
+	}
+
+	.dbw-pass-body {
+		padding: 12px;
 	}
 }

@@ -590,3 +590,165 @@ describe("PublicOnlineBookingWidget Utility Functions", () => {
 		assert.equal(rootFacade.PublicOnlineBookingWidget, rootFacade.default, "Named and default match");
 	});
 });
+
+describe("PublicOnlineBookingWidget: Wave 2 Apple & Telegram Mini-App UX (Mandates 8c, 8d, 8e, 8p, 8n)", () => {
+	it("renders compact days ribbon with Сегодня, Завтра, and time slot periods", () => {
+		const html = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {
+				initialStep: 1,
+			}),
+		);
+
+		// Days ribbon
+		assert.ok(html.includes("dbw-days-ribbon"), "Contains days ribbon container");
+		assert.ok(html.includes("Сегодня"), "Contains 'Сегодня' in quick days ribbon");
+		assert.ok(html.includes("Завтра"), "Contains 'Завтра' in quick days ribbon");
+		assert.ok(
+			html.includes("Ближайшие дни:"),
+			"Contains quick ribbon section label",
+		);
+
+		// Period chip filters
+		assert.ok(html.includes("Утро ("), "Contains Morning period filter chip");
+		assert.ok(html.includes("День ("), "Contains Afternoon period filter chip");
+		assert.ok(html.includes("Вечер ("), "Contains Evening period filter chip");
+
+		// With sample slots in BookingSlotPicker:
+		const slotPickerHtml = renderToStaticMarkup(
+			createElement(BookingSlotPicker, {
+				selectedDate: "2026-08-20",
+				onSelectDate: () => {},
+				calendarMonth: new Date(2026, 7, 1),
+				onPrevMonth: () => {},
+				onNextMonth: () => {},
+				calendarDays: [],
+				monthLabel: "Август 2026",
+				slots: [
+					{
+						time: "09:30",
+						startsAt: "2026-08-20T09:30:00Z",
+						endsAt: "2026-08-20T10:00:00Z",
+						period: "morning",
+					},
+					{
+						time: "14:00",
+						startsAt: "2026-08-20T14:00:00Z",
+						endsAt: "2026-08-20T14:30:00Z",
+						period: "afternoon",
+					},
+					{
+						time: "18:00",
+						startsAt: "2026-08-20T18:00:00Z",
+						endsAt: "2026-08-20T18:30:00Z",
+						period: "evening",
+					},
+				],
+				selectedSlot: null,
+				onSelectSlot: () => {},
+				slotsLoading: false,
+			}),
+		);
+
+		assert.ok(
+			slotPickerHtml.includes("Утро (09:00–12:00)"),
+			"Contains Morning period with hours",
+		);
+		assert.ok(
+			slotPickerHtml.includes("День (12:00–16:00)"),
+			"Contains Afternoon period with hours",
+		);
+		assert.ok(
+			slotPickerHtml.includes("Вечер (16:00–21:00)"),
+			"Contains Evening period with hours",
+		);
+	});
+
+	it("renders solo-doctor 40px avatar and mini-badge per Mandate 8n", () => {
+		const soloDoc: BookingDoctorData = {
+			id: "doc-solo-smirnova",
+			fullName: "Смирнова Е. В.",
+			specialties: ["Врач-стоматолог-терапевт"],
+			experienceYears: 12,
+			rating: 4.9,
+			reviewsCount: 156,
+			categoryIds: ["all"],
+			avatarUrl: "https://dente.clinic/avatars/smirnova.jpg",
+		};
+
+		const html = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {
+				customDoctors: [soloDoc],
+			}),
+		);
+
+		assert.ok(html.includes("dbw-solo-doctor-banner"), "Renders solo doctor banner");
+		assert.ok(html.includes("Ваш доктор:"), "Renders 'Ваш доктор:' label");
+		assert.ok(html.includes("Смирнова Е. В."), "Renders doctor full name");
+		assert.ok(html.includes("Стаж 12 лет"), "Renders doctor experience as Стаж");
+		assert.ok(html.includes("Опыт 12 лет"), "Renders doctor experience as Опыт");
+		assert.ok(html.includes("4.9"), "Renders rating 4.9");
+		assert.ok(html.includes("smirnova.jpg"), "Renders 40px photo avatar image");
+	});
+
+	it("renders Telegram 1-tap booking card and 'Поделиться номером в Telegram' button when in Telegram context", () => {
+		const html = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {
+				embedMode: "telegram",
+			}),
+		);
+
+		assert.ok(
+			html.includes("dbw-tg-1tap-card"),
+			"Contains Telegram 1-tap card container",
+		);
+		assert.ok(
+			html.includes("Поделиться номером в Telegram"),
+			"Contains 'Поделиться номером в Telegram' button",
+		);
+		assert.ok(
+			html.includes("Telegram 1-тап запись"),
+			"Displays Telegram 1-tap header badge",
+		);
+	});
+
+	it("renders Dental Boarding Pass with barcode, QR section, Yandex Maps and WhatsApp links", () => {
+		const html = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {
+				initialStep: 5,
+			}),
+		);
+
+		// Boarding pass card & styling
+		assert.ok(
+			html.includes("dbw-boarding-pass"),
+			"Contains dbw-boarding-pass container",
+		);
+		assert.ok(
+			html.includes("Dental Boarding Pass"),
+			"Displays Dental Boarding Pass heading",
+		);
+		assert.ok(
+			html.includes("dbw-pass-perforation"),
+			"Contains perforation line with ticket notches",
+		);
+		assert.ok(
+			html.includes("dbw-pass-barcode-section"),
+			"Contains barcode & QR section for reception",
+		);
+
+		// 1-Click Action Buttons
+		assert.ok(
+			html.includes("Открыть маршрут в Яндекс.Картах"),
+			"Contains Yandex Maps route button",
+		);
+		assert.ok(
+			html.includes("Написать в WhatsApp клиники"),
+			"Contains WhatsApp clinic button",
+		);
+		assert.ok(
+			html.includes("Кабинет №3"),
+			"Displays room / cabinet information",
+		);
+	});
+});
+
