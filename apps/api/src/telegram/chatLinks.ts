@@ -8,7 +8,7 @@ import {
 } from "@dental/shared";
 import { and, desc, eq, isNull, or, type SQL, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { withTenantCtx } from "../db/rls.js";
+import { type TenantDb, withTenantCtx } from "../db/rls.js";
 import { clinics, denteTelegramChatLinks } from "../db/schema.js";
 
 /**
@@ -215,11 +215,12 @@ export async function revokeDenteTelegramChatLink(
  * telegram-пути, а не здесь.
  */
 async function persistableClinicId(
+	tx: TenantDb | typeof db,
 	organizationId: string,
 	clinicId: string | null,
 ): Promise<string | null> {
 	if (!clinicId) return null;
-	const [existing] = await db
+	const [existing] = await tx
 		.select({ id: clinics.id })
 		.from(clinics)
 		.where(
@@ -237,6 +238,7 @@ export async function upsertDenteTelegramChatLink(
 	// и снятие прежней активной связки идут под одним арендатором.
 	return withTenantCtx(input.organizationId, async (tx) => {
 		const clinicId = await persistableClinicId(
+			tx,
 			input.organizationId,
 			input.clinicId?.trim() || null,
 		);

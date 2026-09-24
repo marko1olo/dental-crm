@@ -13,6 +13,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	denteMaxBotConfigs,
 	denteTelegramBotConfigs,
@@ -112,26 +113,33 @@ export async function resolveChannelCredentials(
 	organizationId: string,
 	env: NodeJS.ProcessEnv = process.env,
 ): Promise<ChannelCredentialSet> {
-	const [whatsappConfig] = await db
-		.select()
-		.from(denteWhatsappBotConfigs)
-		.where(eq(denteWhatsappBotConfigs.organizationId, organizationId))
-		.limit(1);
+	const { whatsappConfig, telegramConfig, maxConfig } = await withTenantCtx(
+		organizationId,
+		async (tx) => {
+			const [wa] = await tx
+				.select()
+				.from(denteWhatsappBotConfigs)
+				.where(eq(denteWhatsappBotConfigs.organizationId, organizationId))
+				.limit(1);
 
-	const [telegramConfig] = await db
-		.select({ mode: denteTelegramBotConfigs.mode })
-		.from(denteTelegramBotConfigs)
-		.where(eq(denteTelegramBotConfigs.organizationId, organizationId))
-		.limit(1);
+			const [tg] = await tx
+				.select({ mode: denteTelegramBotConfigs.mode })
+				.from(denteTelegramBotConfigs)
+				.where(eq(denteTelegramBotConfigs.organizationId, organizationId))
+				.limit(1);
 
-	const [maxConfig] = await db
-		.select({
-			token: denteMaxBotConfigs.maxBotToken,
-			isActive: denteMaxBotConfigs.isActive,
-		})
-		.from(denteMaxBotConfigs)
-		.where(eq(denteMaxBotConfigs.organizationId, organizationId))
-		.limit(1);
+			const [max] = await tx
+				.select({
+					token: denteMaxBotConfigs.maxBotToken,
+					isActive: denteMaxBotConfigs.isActive,
+				})
+				.from(denteMaxBotConfigs)
+				.where(eq(denteMaxBotConfigs.organizationId, organizationId))
+				.limit(1);
+
+			return { whatsappConfig: wa, telegramConfig: tg, maxConfig: max };
+		},
+	);
 
 	return {
 		sms: readSmsCredentialsFromEnv(env),
@@ -155,17 +163,19 @@ export async function resolveTelegramChatId(
 	organizationId: string,
 	patientId: string,
 ): Promise<string | null> {
-	const [link] = await db
-		.select({ chatTransportRef: denteTelegramChatLinks.chatTransportRef })
-		.from(denteTelegramChatLinks)
-		.where(
-			and(
-				eq(denteTelegramChatLinks.organizationId, organizationId),
-				eq(denteTelegramChatLinks.subjectId, patientId),
-				eq(denteTelegramChatLinks.status, "active"),
-			),
-		)
-		.limit(1);
+	const [link] = await withTenantCtx(organizationId, async (tx) =>
+		tx
+			.select({ chatTransportRef: denteTelegramChatLinks.chatTransportRef })
+			.from(denteTelegramChatLinks)
+			.where(
+				and(
+					eq(denteTelegramChatLinks.organizationId, organizationId),
+					eq(denteTelegramChatLinks.subjectId, patientId),
+					eq(denteTelegramChatLinks.status, "active"),
+				),
+			)
+			.limit(1),
+	);
 
 	return decryptTelegramChatId(link?.chatTransportRef ?? null);
 }
