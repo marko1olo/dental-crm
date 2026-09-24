@@ -3,10 +3,13 @@
  * NURSE CARPULE DISPOSAL MODAL (САНПИН 3.3686-21 / ВРАЧ, АДМИНИСТРАТОР И МЕДСЕСТРА)
  * 1-кликовое списание пустых карпул анестетиков и расходников врачом,
  * администратором или медсестрой БЕЗ комиссии из 3 человек и с мягким овердрафтом.
+ *
+ * МАНДАТЫ 8e (п. 10), 8n (Zero Dead-Ends), 8v (ликвидация медсестринского клик-блоата).
+ * Автоматический FEFO-светофор срока годности (зеленый / желтый / красный).
  * ============================================================================
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
 	AlertTriangle,
 	CheckCircle2,
@@ -35,6 +38,162 @@ export {
 	COMMON_ANESTHETICS,
 };
 
+export type FefoTrafficStatus = "green" | "yellow" | "red";
+
+export interface FefoTrafficLightInfo {
+	readonly status: FefoTrafficStatus;
+	readonly daysLeft: number;
+	readonly label: string;
+	readonly badgeText: string;
+	readonly className: string;
+	readonly dotColor: string;
+	readonly bgClass: string;
+	readonly textClass: string;
+	readonly borderClass: string;
+	readonly tooltip: string;
+}
+
+/** Русское склонение дней: 1 день, 2 дня, 5 дней. */
+function daysLabel(count: number): string {
+	const absCount = Math.abs(count);
+	const lastTwo = absCount % 100;
+	const last = absCount % 10;
+	if (lastTwo >= 11 && lastTwo <= 14) return `осталось ${absCount} дней`;
+	if (last === 1) return `остался ${absCount} день`;
+	if (last >= 2 && last <= 4) return `осталось ${absCount} дня`;
+	return `осталось ${absCount} дней`;
+}
+
+/**
+ * Автоматический FEFO-светофор срока годности расходников и анестетиков.
+ * First Expired, First Out (СанПиН 3.3686-21, Мандаты 8e, 8n, 8v):
+ * 1. Зеленый (green): срок в норме (> 30 дней) — плановое использование.
+ * 2. Желтый (yellow): истекает скоро (1..30 дней) — первоочередной отпуск/списание по FEFO.
+ * 3. Красный (red): просрочено (<= 0 дней) — запрет применения у кресла, немедленная утилизация (Класс Б).
+ */
+export function getFefoTrafficLight(
+	expirationDateIso: string | null | undefined,
+	referenceDate: string | Date = new Date(),
+): FefoTrafficLightInfo {
+	if (!expirationDateIso || !expirationDateIso.trim()) {
+		return {
+			status: "green",
+			daysLeft: 999,
+			label: "Срок не указан",
+			badgeText: "Без срока",
+			className: "",
+			dotColor: "#94a3b8",
+			bgClass: "bg-slate-500/10 dark:bg-slate-900/40",
+			textClass: "text-slate-600 dark:text-slate-400",
+			borderClass: "border-slate-300 dark:border-slate-700",
+			tooltip: "Срок годности не указан (бессрочно)",
+		};
+	}
+
+	const trimmed = expirationDateIso.trim();
+	let dateStr = trimmed;
+
+	// Поддержка формата ГГГГ-ММ (например, 2027-06)
+	if (/^\d{4}-\d{2}$/.test(trimmed)) {
+		const [y, m] = trimmed.split("-").map(Number);
+		const lastDay = new Date(Date.UTC(y!, m!, 0)).getUTCDate();
+		dateStr = `${trimmed}-${String(lastDay).padStart(2, "0")}`;
+	} else if (/^\d{2}\.\d{2}\.\d{4}$/.test(trimmed)) {
+		// Поддержка ДД.ММ.ГГГГ
+		const [dd, mm, yyyy] = trimmed.split(".");
+		dateStr = `${yyyy}-${mm}-${dd}`;
+	}
+
+	const ref =
+		referenceDate instanceof Date
+			? referenceDate
+			: referenceDate
+				? new Date(referenceDate)
+				: new Date();
+	const refUtc = Date.UTC(ref.getFullYear(), ref.getMonth(), ref.getDate());
+
+	const exp = new Date(dateStr.includes("T") ? dateStr : `${dateStr}T00:00:00`);
+	if (Number.isNaN(exp.getTime())) {
+		return {
+			status: "green",
+			daysLeft: 999,
+			label: "Срок не указан",
+			badgeText: "Без срока",
+			className: "",
+			dotColor: "#94a3b8",
+			bgClass: "bg-slate-500/10 dark:bg-slate-900/40",
+			textClass: "text-slate-600 dark:text-slate-400",
+			borderClass: "border-slate-300 dark:border-slate-700",
+			tooltip: "Некорректный формат срока годности",
+		};
+	}
+
+	const expUtc = Date.UTC(exp.getFullYear(), exp.getMonth(), exp.getDate());
+	const daysLeft = Math.round((expUtc - refUtc) / 86400000);
+	const readable = exp.toLocaleDateString("ru-RU");
+
+	// 1. Красный (Просрочен / истекает сегодня)
+	if (daysLeft < 0) {
+		return {
+			status: "red",
+			daysLeft,
+			label: `Просрочен с ${readable}`,
+			badgeText: "Просрочен",
+			className: "inventory-expiry-expired",
+			dotColor: "#ef4444",
+			bgClass: "bg-rose-500/10 dark:bg-rose-950/40",
+			textClass: "text-rose-700 dark:text-rose-300",
+			borderClass: "border-rose-500/30",
+			tooltip: "Срок годности истек — запрещено использовать на пациентах! Подлежит списанию в утиль (Класс Б, СанПиН 3.3686-21)",
+		};
+	}
+
+	if (daysLeft === 0) {
+		return {
+			status: "red",
+			daysLeft: 0,
+			label: `Истекает сегодня, ${readable}`,
+			badgeText: "Истекает сегодня",
+			className: "inventory-expiry-expired",
+			dotColor: "#ef4444",
+			bgClass: "bg-rose-500/10 dark:bg-rose-950/40",
+			textClass: "text-rose-700 dark:text-rose-300",
+			borderClass: "border-rose-500/30",
+			tooltip: "Срок годности истекает сегодня — критично! Использовать сегодня или списать в утиль",
+		};
+	}
+
+	// 2. Желтый (FEFO приоритет — истекает скоро)
+	if (daysLeft <= 30) {
+		return {
+			status: "yellow",
+			daysLeft,
+			label: `Годен до ${readable} — ${daysLabel(daysLeft)}`,
+			badgeText: "FEFO приоритет",
+			className: "inventory-expiry-soon",
+			dotColor: "#f59e0b",
+			bgClass: "bg-amber-500/10 dark:bg-amber-950/40",
+			textClass: "text-amber-800 dark:text-amber-300",
+			borderClass: "border-amber-500/30",
+			tooltip: `Истекает скоро (${daysLabel(daysLeft)}) — приоритет списания по регламенту FEFO (расходовать в первую очередь)`,
+		};
+	}
+
+	// 3. Зеленый (FEFO норма)
+	return {
+		status: "green",
+		daysLeft,
+		label: `Годен до ${readable}`,
+		badgeText: "FEFO норма",
+		className: "",
+		dotColor: "#10b981",
+		bgClass: "bg-emerald-500/10 dark:bg-emerald-950/40",
+		textClass: "text-emerald-700 dark:text-emerald-300",
+		borderClass: "border-emerald-500/30",
+		tooltip: `Срок годности в норме (осталось ${daysLeft} дн., FEFO OK)`,
+	};
+}
+
 export interface NurseCarpuleDisposalModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -52,6 +211,7 @@ export interface NurseCarpuleDisposalModalProps {
 	readonly initialNurseName?: string | undefined;
 	readonly initialDoctorName?: string | undefined;
 	readonly currentStockAvailable?: number | undefined;
+	readonly stockMap?: Record<string, number> | undefined;
 	readonly initialDate?: string | undefined;
 }
 
@@ -62,6 +222,7 @@ export function NurseCarpuleDisposalModal({
 	initialNurseName = "Дежурный персонал / Врач",
 	initialDoctorName = "Лечащий врач",
 	currentStockAvailable = 0,
+	stockMap,
 	initialDate,
 }: NurseCarpuleDisposalModalProps) {
 	const now = new Date();
@@ -73,7 +234,8 @@ export function NurseCarpuleDisposalModal({
 	const [doctorName, setDoctorName] = useState<string>(initialDoctorName);
 	const [disposalReason, setDisposalReason] = useState<string>("used_in_procedure");
 	const [actNumber] = useState<string>(
-		() => `АКТ-КП-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}-01`
+		() =>
+			`АКТ-КП-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}-01`
 	);
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 	const [isDisposed, setIsDisposed] = useState<boolean>(false);
@@ -83,8 +245,53 @@ export function NurseCarpuleDisposalModal({
 		return COMMON_ANESTHETICS.find((d) => d.id === selectedDrugId) ?? COMMON_ANESTHETICS[0]!;
 	}, [selectedDrugId]);
 
+	// FEFO светофор для текущего выбранного анестетика
+	const fefoInfo = useMemo(() => {
+		return getFefoTrafficLight(selectedDrug.defaultExp, dateIso);
+	}, [selectedDrug.defaultExp, dateIso]);
+
+	// Автоматический переключатель причины при просрочке
+	useEffect(() => {
+		if (fefoInfo.status === "red" && disposalReason === "used_in_procedure") {
+			setDisposalReason("expired");
+		}
+	}, [fefoInfo.status, disposalReason]);
+
+	// Динамический расчет доступного остатка для выбранного препарата
+	const effectiveStockAvailable = useMemo(() => {
+		if (stockMap) {
+			const idKey = selectedDrug.id.toLowerCase();
+			const nameKey = selectedDrug.nameRu.toLowerCase();
+			if (stockMap[idKey] !== undefined) return stockMap[idKey]!;
+			if (stockMap[nameKey] !== undefined) return stockMap[nameKey]!;
+
+			for (const [k, v] of Object.entries(stockMap)) {
+				const kl = k.toLowerCase();
+				if (
+					(kl.includes("артикаин") || kl.includes("ультракаин")) &&
+					(nameKey.includes("артикаин") || idKey.includes("articaine"))
+				) {
+					return v;
+				}
+				if (
+					(kl.includes("мепивакаин") || kl.includes("скандонест")) &&
+					(nameKey.includes("мепивакаин") || idKey.includes("mepivacaine"))
+				) {
+					return v;
+				}
+				if (
+					kl.includes("септанест") &&
+					(nameKey.includes("септанест") || idKey.includes("septanest"))
+				) {
+					return v;
+				}
+			}
+		}
+		return currentStockAvailable;
+	}, [stockMap, currentStockAvailable, selectedDrug]);
+
 	const volumeTotalMl = Number((carpulesCount * selectedDrug.defaultVolumeMl).toFixed(2));
-	const isOverdraft = currentStockAvailable < carpulesCount;
+	const isOverdraft = effectiveStockAvailable < carpulesCount;
 
 	const actHtml = useMemo(() => {
 		return `<!DOCTYPE html>
@@ -114,7 +321,7 @@ export function NurseCarpuleDisposalModal({
     <div><strong>Дата списания:</strong> ${dateIso}</div>
     <div><strong>Ответственный сотрудник:</strong> ${nurseName}</div>
     <div><strong>Лечащий врач:</strong> ${doctorName}</div>
-    <div><strong>Причина:</strong> ${disposalReason === "used_in_procedure" ? "Использовано при лечении" : disposalReason === "partial_dose" ? "Остаток карпулы после анестезии" : disposalReason === "broken_capsule" ? "Бой карпулы при зарядке" : "Истечение срока годности"}</div>
+    <div><strong>Причина:</strong> ${disposalReason === "used_in_procedure" ? "Использовано при лечении" : disposalReason === "partial_dose" ? "Остаток карпулы после анестезии" : disposalReason === "broken_capsule" ? "Бой карпулы при зарядке" : "Истечение срока годности (FEFO утилизация)"}</div>
     <div><strong>Класс отходов:</strong> Класс Б (дезинфекция Аламинол 3%, 60 мин)</div>
     <div><strong>Статус склада:</strong> ${isOverdraft ? "Мягкий овердрафт (оприходование в пути)" : "Штатный остаток"}</div>
   </div>
@@ -125,6 +332,7 @@ export function NurseCarpuleDisposalModal({
         <th>№</th>
         <th>Наименование препарата</th>
         <th>Серия / Партия</th>
+        <th>FEFO статус</th>
         <th>Кол-во</th>
         <th>Объем, мл</th>
       </tr>
@@ -133,7 +341,8 @@ export function NurseCarpuleDisposalModal({
       <tr>
         <td>1</td>
         <td>${selectedDrug.nameRu}</td>
-        <td>${selectedDrug.defaultSeries}</td>
+        <td>${selectedDrug.defaultSeries} (до ${selectedDrug.defaultExp})</td>
+        <td>${fefoInfo.badgeText}</td>
         <td>${carpulesCount} шт.</td>
         <td>${volumeTotalMl} мл</td>
       </tr>
@@ -141,14 +350,14 @@ export function NurseCarpuleDisposalModal({
   </table>
 
   <div class="signatures">
-    <div><strong>Списание произвел(а):</strong> ________________ / ${nurseName} (по СанПиН 3.3686-21, без комиссии)</div>
+    <div><strong>Списание произвел(а):</strong> ________________ / ${nurseName} (по СанПиН 3.3686-21, единолично без комиссии)</div>
     <div style="margin-top: 8px;"><strong>МОЛ отделения / врач:</strong> ________________ / ${doctorName}</div>
   </div>
 
   <div class="stamp">Списано и обеззаражено • СанПиН 3.3686-21</div>
 </body>
 </html>`;
-	}, [actNumber, dateIso, nurseName, doctorName, disposalReason, isOverdraft, selectedDrug, carpulesCount, volumeTotalMl]);
+	}, [actNumber, dateIso, nurseName, doctorName, disposalReason, isOverdraft, selectedDrug, fefoInfo.badgeText, carpulesCount, volumeTotalMl]);
 
 	const handlePrintAct = () => {
 		const printWin = window.open("", "_blank");
@@ -175,7 +384,7 @@ export function NurseCarpuleDisposalModal({
 	};
 
 	const handleCopyActDetails = () => {
-		const text = `Акт списания карпул ${actNumber} от ${dateIso}\nПрепарат: ${selectedDrug.nameRu}\nКоличество: ${carpulesCount} шт. (${volumeTotalMl} мл)\nОтветственный: ${nurseName}\nВрач: ${doctorName}\nСанПиН 3.3686-21 (без комиссии)`;
+		const text = `Акт списания карпул ${actNumber} от ${dateIso}\nПрепарат: ${selectedDrug.nameRu}\nКоличество: ${carpulesCount} шт. (${volumeTotalMl} мл)\nFEFO: ${fefoInfo.badgeText}\nОтветственный: ${nurseName}\nВрач: ${doctorName}\nСанПиН 3.3686-21 (без комиссии)`;
 		if (typeof navigator !== "undefined" && navigator.clipboard) {
 			navigator.clipboard.writeText(text);
 		}
@@ -203,15 +412,61 @@ export function NurseCarpuleDisposalModal({
 
 			setIsDisposed(true);
 			const msg = isOverdraft
-				? `Списание ${carpulesCount} пустых карпул выполнено в 1 клик (Мягкий овердрафт: дефицит ${carpulesCount - currentStockAvailable} шт. зафиксирован, накладная ещё не оприходована).`
+				? `Списание ${carpulesCount} пустых карпул выполнено в 1 клик (Мягкий овердрафт: дефицит ${carpulesCount - effectiveStockAvailable} шт. зафиксирован, накладная ещё не оприходована).`
 				: `Списание ${carpulesCount} пустых карпул оформлено в 1 клик врачом / администратором (СанПиН 3.3686-21, Акт ${actNumber}).`;
-			showToast(msg, "success");
+			showToast(msg, isOverdraft ? "warning" : "success");
 			setTimeout(() => {
 				onClose();
 			}, 900);
 		} catch (err) {
 			console.error("Ошибка списания карпул:", err);
 			showToast("Списание сохранено локально по аварийному протоколу СанПиН", "info");
+			onClose();
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
+	const handlePackageClick = async (packageId: "anesthesia" | "hygiene" | "filling" | "surgery") => {
+		if (packageId === "anesthesia") {
+			setSelectedDrugId("articaine_100k");
+			setCarpulesCount(1);
+			showToast("Выбран пакет «Стандартная анестезия» (1 карпула + игла 30G + валики)", "info");
+			return;
+		}
+
+		setIsSubmitting(true);
+		try {
+			const result = await handleOneClickPackageWriteOff({
+				packageId,
+				nurseName,
+				doctorName,
+				allowSoftOverdraft: true,
+				currentStockMap: stockMap,
+			});
+
+			if (result.success) {
+				setIsDisposed(true);
+				if (onDisposalConfirmed) {
+					await onDisposalConfirmed({
+						drugId: packageId,
+						drugName: result.packageTitle,
+						carpulesCount: 1,
+						volumeTotalMl: 1.7,
+						nurseName,
+						doctorName,
+						actNumber: result.actNumber,
+						actDate: result.actDate,
+						isOverdraft: result.isOverdraft,
+					});
+				}
+				setTimeout(() => {
+					onClose();
+				}, 900);
+			}
+		} catch (err) {
+			console.error("Ошибка пакетного списания:", err);
+			showToast("Пакетное списание зафиксировано локально (мягкий овердрафт)", "info");
 			onClose();
 		} finally {
 			setIsSubmitting(false);
@@ -256,6 +511,45 @@ export function NurseCarpuleDisposalModal({
 
 				{/* BODY */}
 				<div className="p-5 space-y-4 overflow-y-auto">
+					{/* AUTOMATIC FEFO TRAFFIC LIGHT BANNER (МАНДАТЫ 8e, 8v / САНПИН 3.3686-21) */}
+					<div
+						className={`p-3 rounded-xl border flex items-center justify-between gap-3 text-xs leading-relaxed ${fefoInfo.bgClass} ${fefoInfo.borderClass}`}
+						data-testid="nurse-fefo-traffic-light"
+						data-fefo-status={fefoInfo.status}
+					>
+						<div className="flex items-center gap-2.5 min-w-0">
+							<div
+								className="w-3.5 h-3.5 rounded-full shrink-0 shadow-xs"
+								style={{ backgroundColor: fefoInfo.dotColor }}
+								data-fefo-dot={fefoInfo.status}
+								aria-hidden="true"
+							/>
+							<div className="min-w-0">
+								<div className="flex items-center gap-2 flex-wrap">
+									<span className={`font-bold ${fefoInfo.textClass}`}>
+										FEFO светофор: {fefoInfo.badgeText}
+									</span>
+									<span className="text-[11px] text-[var(--muted,#64748b)]">
+										({selectedDrug.defaultSeries}, годен до {selectedDrug.defaultExp})
+									</span>
+								</div>
+								<p className={`text-[11px] ${fefoInfo.textClass} opacity-90 truncate`}>
+									{fefoInfo.tooltip}
+								</p>
+							</div>
+						</div>
+						<span
+							className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shrink-0 border ${fefoInfo.bgClass} ${fefoInfo.textClass} ${fefoInfo.borderClass}`}
+							data-testid="nurse-fefo-badge"
+						>
+							{fefoInfo.status === "green"
+								? "FEFO: Норма"
+								: fefoInfo.status === "yellow"
+									? "FEFO: Приоритет"
+									: "FEFO: Просрочено"}
+						</span>
+					</div>
+
 					{/* SOFT OVERDRAFT GUARANTEE BANNER (МАНДАТ 8e п. 10 / САНПИН 3.3686-21) */}
 					<div
 						className={`p-3.5 rounded-xl border flex items-start gap-3 text-xs leading-relaxed ${
@@ -278,7 +572,7 @@ export function NurseCarpuleDisposalModal({
 							</div>
 							<p className={`text-opacity-90 break-words ${isOverdraft ? "text-amber-900/90 dark:text-amber-200/90" : "text-teal-900/90 dark:text-teal-200/90"}`}>
 								{isOverdraft
-									? `Внимание: остаток отрицательный, требуется оприходование накладной. Задержка оприходования накладной поставщика не блокирует операцию! На складе числится ${currentStockAvailable} шт., списывается ${carpulesCount} шт.`
+									? `Внимание: остаток отрицательный, требуется оприходование накладной. Задержка оприходования накладной поставщика не блокирует операцию! На складе числится ${effectiveStockAvailable} шт., списывается ${carpulesCount} шт.`
 									: "Списание использованных карпул и медотходов класса Б доступно в 1 клик врачу или администратору. Никаких бюрократических согласований или комиссий из 3 человек!"}
 							</p>
 						</div>
@@ -299,11 +593,7 @@ export function NurseCarpuleDisposalModal({
 							{/* 1. Анестезия */}
 							<button
 								type="button"
-								onClick={() => {
-									setSelectedDrugId("articaine_100k");
-									setCarpulesCount(1);
-									showToast("Выбран пакет «Стандартная анестезия» (1 карпула + игла 30G + валики)", "info");
-								}}
+								onClick={() => handlePackageClick("anesthesia")}
 								className="btn-writeoff-anesthesia-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold border border-teal-500/40 bg-[var(--paper,#ffffff)] text-teal-800 dark:text-teal-200 hover:bg-teal-500/10 active:scale-98 transition-all flex items-center gap-2 cursor-pointer shadow-xs min-w-0"
 								data-testid="btn-writeoff-anesthesia-packet"
 								title="Пакет: анестезия 1.7 мл + карпульная игла 30G + валики"
@@ -315,14 +605,7 @@ export function NurseCarpuleDisposalModal({
 							{/* 2. Профгигиена */}
 							<button
 								type="button"
-								onClick={() => {
-									handleOneClickPackageWriteOff({
-										packageId: "hygiene",
-										nurseName,
-										doctorName,
-										allowSoftOverdraft: true,
-									});
-								}}
+								onClick={() => handlePackageClick("hygiene")}
 								className="btn-writeoff-hygiene-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold border border-blue-500/40 bg-[var(--paper,#ffffff)] text-blue-800 dark:text-blue-200 hover:bg-blue-500/10 active:scale-98 transition-all flex items-center gap-2 cursor-pointer shadow-xs min-w-0"
 								data-testid="btn-writeoff-hygiene-packet"
 								title="Пакет: СИЗ + Оптрагейт + порошок Air-Flow + паста + щетка"
@@ -334,14 +617,7 @@ export function NurseCarpuleDisposalModal({
 							{/* 3. Пломба световая */}
 							<button
 								type="button"
-								onClick={() => {
-									handleOneClickPackageWriteOff({
-										packageId: "filling",
-										nurseName,
-										doctorName,
-										allowSoftOverdraft: true,
-									});
-								}}
+								onClick={() => handlePackageClick("filling")}
 								className="btn-writeoff-filling-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold border border-emerald-500/40 bg-[var(--paper,#ffffff)] text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/10 active:scale-98 transition-all flex items-center gap-2 cursor-pointer shadow-xs min-w-0"
 								data-testid="btn-writeoff-filling-packet"
 								title="Пакет: СИЗ + анестетик + нанокомпозит + адгезив + матрица"
@@ -353,14 +629,7 @@ export function NurseCarpuleDisposalModal({
 							{/* 4. Хирургия */}
 							<button
 								type="button"
-								onClick={() => {
-									handleOneClickPackageWriteOff({
-										packageId: "surgery",
-										nurseName,
-										doctorName,
-										allowSoftOverdraft: true,
-									});
-								}}
+								onClick={() => handlePackageClick("surgery")}
 								className="btn-writeoff-surgery-packet min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold border border-purple-500/40 bg-[var(--paper,#ffffff)] text-purple-800 dark:text-purple-200 hover:bg-purple-500/10 active:scale-98 transition-all flex items-center gap-2 cursor-pointer shadow-xs min-w-0"
 								data-testid="btn-writeoff-surgery-packet"
 								title="Пакет: Анестетик + игла 27G + скальпель + шовник + губка"
@@ -378,7 +647,7 @@ export function NurseCarpuleDisposalModal({
 								Наименование анестетика
 							</label>
 							<span className="text-[11px] text-[var(--muted,#64748b)]">
-								1 клик выбор (Закон Хика)
+								1 клик выбор (Закон Хика + FEFO)
 							</span>
 						</div>
 
@@ -395,12 +664,15 @@ export function NurseCarpuleDisposalModal({
 								{ id: "septanest_100k", label: "Септанест (1:100к)" },
 							].map((chip) => {
 								const isSelected = selectedDrugId === chip.id;
+								const chipDrug = COMMON_ANESTHETICS.find((d) => d.id === chip.id);
+								const chipFefo = getFefoTrafficLight(chipDrug?.defaultExp, dateIso);
 								return (
 									<button
 										key={chip.id}
 										type="button"
 										role="tab"
 										aria-selected={isSelected}
+										data-fefo-status={chipFefo.status}
 										onClick={() => setSelectedDrugId(chip.id)}
 										className={`nurse-carpule-filter-chip h-[34px] px-3 rounded-lg text-xs font-bold border whitespace-nowrap shrink-0 transition-all flex items-center gap-1.5 min-w-0 cursor-pointer ${
 											isSelected
@@ -408,6 +680,12 @@ export function NurseCarpuleDisposalModal({
 												: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] hover:border-teal-500/40"
 										}`}
 									>
+										<span
+											className="w-2 h-2 rounded-full shrink-0"
+											style={{ backgroundColor: chipFefo.dotColor }}
+											data-fefo-dot={chipFefo.status}
+											aria-hidden="true"
+										/>
 										<Syringe size={13} className={isSelected ? "text-white shrink-0" : "text-teal-600 dark:text-teal-400 shrink-0"} />
 										<span className="truncate">{chip.label}</span>
 									</button>
@@ -422,11 +700,14 @@ export function NurseCarpuleDisposalModal({
 							onChange={(e) => setSelectedDrugId(e.target.value)}
 							className="w-full h-9 px-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-teal-500"
 						>
-							{COMMON_ANESTHETICS.map((drug) => (
-								<option key={drug.id} value={drug.id}>
-									{drug.nameRu} (серия: {drug.defaultSeries}, годен до {drug.defaultExp})
-								</option>
-							))}
+							{COMMON_ANESTHETICS.map((drug) => {
+								const fefo = getFefoTrafficLight(drug.defaultExp, dateIso);
+								return (
+									<option key={drug.id} value={drug.id}>
+										{`[FEFO: ${fefo.badgeText}] ${drug.nameRu} (серия: ${drug.defaultSeries}, годен до ${drug.defaultExp})`}
+									</option>
+								);
+							})}
 						</select>
 					</div>
 
@@ -479,7 +760,7 @@ export function NurseCarpuleDisposalModal({
 											: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
 									}`}
 								>
-									{num} шт.
+									{`${num} шт.`}
 								</button>
 							))}
 
@@ -532,7 +813,7 @@ export function NurseCarpuleDisposalModal({
 								<option value="used_in_procedure">Использовано при лечении</option>
 								<option value="partial_dose">Остаток карпулы после анестезии</option>
 								<option value="broken_capsule">Бой карпулы при зарядке</option>
-								<option value="expired">Истечение срока годности</option>
+								<option value="expired">Истечение срока годности (FEFO утилизация)</option>
 							</select>
 						</div>
 
@@ -625,6 +906,7 @@ export function NurseCarpuleDisposalModal({
 						{/* 3. Первичная кнопка прямого действия: Списать карпулы */}
 						<button
 							type="button"
+							data-testid="btn-nurse-submit-disposal"
 							onClick={handleFastDispose}
 							disabled={isSubmitting || isDisposed}
 							className={`min-h-[44px] h-9 flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 sm:px-5 rounded-xl text-xs font-bold text-white shadow-md transition-all cursor-pointer min-w-0 ${

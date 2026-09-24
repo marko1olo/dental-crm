@@ -28,6 +28,10 @@ import { sliceDomList } from "../utils/domVirtualizationHelper";
 import { InventoryConfirmDialog } from "./inventory/InventoryConfirmDialog";
 import { useInventoryLogic } from "./inventory/useInventoryLogic";
 import { WarehousePackageWriteOffBar } from "./inventory/WarehousePackageWriteOffBar";
+import {
+	getFefoTrafficLight,
+	type FefoTrafficLightInfo,
+} from "./inventory/NurseCarpuleDisposalModal";
 
 const MaterialBomsSettingsPanel = lazy(() =>
 	import("./inventory/MaterialBomsSettingsPanel").then((module) => ({
@@ -78,46 +82,14 @@ const NurseCarpuleDisposalModal = lazy(() =>
 /**
  * Как показать срок годности расходника.
  *
- * Три состояния, а не два: просроченный материал использовать нельзя вообще,
- * истекающий надо успеть израсходовать, остальное просто дата. Раньше первые
- * два не различались и красились цветом var(--tomato) — токена с таким именем
- * в проекте нет, так что предупреждение не было видно.
- *
- * Дни считаются по календарным датам, а не по разнице в миллисекундах: срок
- * указан днём, и «осталось 0 дней» должно значить «истекает сегодня», а не
- * зависеть от времени суток.
+/**
+ * Автоматический FEFO-светофор срока годности расходников и материалов:
+ * - Зеленый (FEFO норма): срок годности > 30 дней.
+ * - Желтый (FEFO приоритет): истекает скоро (1..30 дней) — первоочередной отпуск.
+ * - Красный (Просрочен): истек (<= 0 дней) — запрет отпуска, утилизация (Класс Б).
  */
-function expirationState(isoDate: string): {
-	label: string;
-	className: string;
-} {
-	const readable = new Date(`${isoDate}T00:00:00`).toLocaleDateString("ru-RU");
-	const startOfDay = (value: Date) =>
-		Date.UTC(value.getFullYear(), value.getMonth(), value.getDate());
-	const expires = new Date(`${isoDate}T00:00:00`);
-	const daysLeft = Math.round(
-		(startOfDay(expires) - startOfDay(new Date())) / 86400000,
-	);
-
-	if (daysLeft < 0) {
-		return {
-			label: `Просрочен с ${readable}`,
-			className: "inventory-expiry-expired",
-		};
-	}
-	if (daysLeft === 0) {
-		return {
-			label: `Истекает сегодня, ${readable}`,
-			className: "inventory-expiry-expired",
-		};
-	}
-	if (daysLeft <= 30) {
-		return {
-			label: `Годен до ${readable} — ${daysLabel(daysLeft)}`,
-			className: "inventory-expiry-soon",
-		};
-	}
-	return { label: `Годен до ${readable}`, className: "" };
+function expirationState(isoDate: string): FefoTrafficLightInfo {
+	return getFefoTrafficLight(isoDate);
 }
 
 /**
@@ -1619,16 +1591,50 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 																	style={{
 																		display: "flex",
 																		flexDirection: "column",
+																		gap: 3,
 																	}}
+																	data-fefo-status={state.status}
+																	data-testid={`inventory-fefo-traffic-${state.status}`}
 																>
-																	<span className={state.className}>
-																		{state.label}
-																	</span>
-																	{item.lotNumber ? (
-																		<span style={{ fontSize: 12 }}>
-																			Партия: {item.lotNumber}
+																	<div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+																		<span
+																			style={{
+																				width: 8,
+																				height: 8,
+																				borderRadius: "50%",
+																				backgroundColor: state.dotColor,
+																				flexShrink: 0,
+																			}}
+																			data-fefo-dot={state.status}
+																			aria-hidden="true"
+																		/>
+																		<span className={state.className} style={{ fontSize: 13, lineHeight: "1.2" }}>
+																			{state.label}
 																		</span>
-																	) : null}
+																	</div>
+																	<div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 1 }}>
+																		<span
+																			style={{
+																				display: "inline-flex",
+																				alignItems: "center",
+																				padding: "1px 6px",
+																				borderRadius: 4,
+																				fontSize: 10,
+																				fontWeight: 700,
+																				textTransform: "uppercase",
+																				letterSpacing: "0.03em",
+																			}}
+																			className={`${state.bgClass} ${state.textClass}`}
+																			data-testid="fefo-traffic-badge"
+																		>
+																			{state.badgeText}
+																		</span>
+																		{item.lotNumber ? (
+																			<span style={{ fontSize: 11, color: "var(--muted)" }}>
+																				Партия: {item.lotNumber}
+																			</span>
+																		) : null}
+																	</div>
 																</div>
 															);
 														})()
@@ -2728,6 +2734,14 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 						onClose={() => setIsNurseCarpuleModalOpen(false)}
 						currentStockAvailable={
 							items.find((i) => /артикаин|убистезин|септонест|анесте/i.test(i.name))?.stockQuantity ?? 0
+						}
+						stockMap={
+							items.reduce<Record<string, number>>((acc, it) => {
+								if (it.id) acc[it.id] = Number(it.stockQuantity) || 0;
+								if (it.name) acc[it.name.toLowerCase()] = Number(it.stockQuantity) || 0;
+								if (it.sku) acc[it.sku.toLowerCase()] = Number(it.stockQuantity) || 0;
+								return acc;
+							}, {})
 						}
 						onDisposalConfirmed={async (details) => {
 							await handleQuickWriteoffCarpules({
