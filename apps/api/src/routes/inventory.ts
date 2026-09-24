@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import {
@@ -21,6 +21,11 @@ import {
 	serviceCatalogItems,
 } from "../db/schema.js";
 import { seedDefaultProcedureMaterialRules } from "../services/inventory/defaultBomSeeds.js";
+import {
+	fefoStockService,
+	getDefaultExpirationDate,
+	normalizeDateToIso,
+} from "../services/inventory/fefoStockService.js";
 import { ReorderSuggestionService } from "../services/reorderSuggestionService.js";
 import { TreatmentConsumablesService } from "../services/treatmentConsumablesService.js";
 
@@ -66,7 +71,72 @@ const inventoryStockBodySchema = z.object({
 	allowOverdraft: z.boolean().default(true).optional(),
 	reason: z.string().optional(),
 	isClinicalOperation: z.boolean().optional(),
+	batchNumber: z.string().optional(),
+	lotNumber: z.string().optional(),
+	expirationDate: z.string().optional(),
+	manufactureDate: z.string().nullable().optional(),
+	purchasePricePerUnit: z.number().finite().nonnegative().optional(),
+	barcode: z.string().nullable().optional(),
 });
+
+const inventoryReceiveBatchBodySchema = z.object({
+	inventoryItemId: z
+		.string({
+			required_error: "Укажите ID материала",
+			invalid_type_error: "ID материала должен быть строкой",
+		})
+		.min(1, { message: "Укажите ID материала" }),
+	warehouseId: z.string().nullable().optional(),
+	batchNumber: z.string().optional(),
+	lotNumber: z.string().optional(),
+	expirationDate: z.string().optional(),
+	manufactureDate: z.string().nullable().optional(),
+	quantity: z
+		.number({
+			required_error: "Укажите количество для оприходования",
+			invalid_type_error: "Количество должно быть числом",
+		})
+		.finite({ message: "Количество должно быть числом" })
+		.positive({ message: "Количество приходуемой партии должно быть больше 0" }),
+	purchasePricePerUnit: z.number().finite().nonnegative().optional(),
+	barcode: z.string().nullable().optional(),
+	notes: z.string().optional(),
+});
+
+const inventoryDeductItemSchema = z.object({
+	inventoryItemId: z.string().optional(),
+	id: z.string().optional(),
+	name: z.string().optional(),
+	quantity: z
+		.number({
+			required_error: "Укажите количество для списания",
+			invalid_type_error: "Количество должно быть числом",
+		})
+		.finite({ message: "Количество должно быть числом" })
+		.positive({ message: "Количество для списания должно быть больше 0" }),
+	unitCostRub: z.union([z.number(), z.string()]).optional(),
+	allowOverdraft: z.boolean().default(true).optional(),
+	reason: z.string().optional(),
+	notes: z.string().optional(),
+	lotNumber: z.string().nullable().optional(),
+	expirationDate: z.string().nullable().optional(),
+});
+
+const inventoryDeductBatchBodySchema = z.union([
+	z.array(inventoryDeductItemSchema),
+	z.object({
+		items: z.array(inventoryDeductItemSchema),
+		organizationId: z.string().optional(),
+		reason: z.string().optional(),
+		notes: z.string().optional(),
+		visitId: z.string().optional(),
+		cabinetId: z.string().optional(),
+		doctorName: z.string().optional(),
+		nurseName: z.string().optional(),
+		allowOverdraft: z.boolean().default(true).optional(),
+	}),
+	inventoryDeductItemSchema,
+]);
 
 const inventoryRuleBodySchema = z.object({
 	serviceId: z
@@ -436,6 +506,60 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 
 			const currentStock = Number(item.stockQuantity ?? 0);
 			const actualAdjustment = adjustment;
+
+			// Мандат 8s & 8e: если это приход товара (actualAdjustment > 0),
+			// проводим его через партионный учет FEFO (receiveBatch),
+			// чтобы физически создать запись в stock_batches и ликвидировать
+			// накопленный технический дефицит/овердрафт, если остаток был отрицательным.
+			if (actualAdjustment > 0) {
+				const userContext = request.user;
+				const identity = getRequestIdentity(request);
+				const effectiveUserId = identity.userId ?? userContext?.id ?? null;
+				const batchNumber =
+					parsedStock.data.batchNumber ||
+					parsedStock.data.lotNumber ||
+					item.lotNumber ||
+					undefined;
+				const expirationDate =
+					parsedStock.data.expirationDate ||
+					item.expirationDate ||
+					undefined;
+				const purchasePrice =
+					parsedStock.data.purchasePricePerUnit != null
+						? parsedStock.data.purchasePricePerUnit
+						: item.unitCostRub != null
+							? Number(item.unitCostRub)
+							: undefined;
+
+				const createdBatch = await fefoStockService.receiveBatch(tx, {
+					organizationId,
+					inventoryItemId: itemId,
+					batchNumber: batchNumber || undefined,
+					expirationDate: expirationDate || undefined,
+					manufactureDate: parsedStock.data.manufactureDate || undefined,
+					quantity: actualAdjustment,
+					purchasePricePerUnit: purchasePrice,
+					barcode: parsedStock.data.barcode || item.barcode || undefined,
+					userId: effectiveUserId,
+					notes:
+						parsedStock.data.reason ||
+						`Поступление товара по складу (+${actualAdjustment} ед.)`,
+				});
+
+				const [updated] = await tx
+					.select()
+					.from(inventoryItems)
+					.where(
+						and(
+							eq(inventoryItems.id, itemId),
+							eq(inventoryItems.organizationId, organizationId),
+						),
+					)
+					.limit(1);
+
+				return { updated: updated ?? item, isOverdraft: false, batch: createdBatch };
+			}
+
 			const newStock = currentStock + actualAdjustment;
 			const isOverdraft = newStock < 0;
 			const identity = getRequestIdentity(request);
@@ -1282,6 +1406,292 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		});
 
 		return result;
+	});
+
+	// =========================================================================
+	// BATCH RECEIPT & FEFO STOCK INTAKE (Мандаты 8e, 8k, 8s)
+	// =========================================================================
+
+	const handleReceiveBatchRequest = async (
+		targetOrgId: string,
+		rawBody: unknown,
+		request: any,
+		reply: any,
+	) => {
+		const parsed = inventoryReceiveBatchBodySchema.safeParse(rawBody);
+		if (!parsed.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message:
+					parsed.error.errors[0]?.message ||
+					"Неверные данные для оприходования партии",
+				details: parsed.error.errors,
+			});
+		}
+
+		const data = parsed.data;
+		const identity = getRequestIdentity(request);
+		const userContext = request.user;
+		const effectiveUserId = identity.userId ?? userContext?.id ?? null;
+
+		try {
+			const batch = await db.transaction(async (tx) => {
+				return fefoStockService.receiveBatch(tx, {
+					organizationId: targetOrgId,
+					inventoryItemId: data.inventoryItemId,
+					warehouseId: data.warehouseId ?? null,
+					batchNumber:
+						data.batchNumber ||
+						data.lotNumber ||
+						`LOT-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
+					expirationDate: data.expirationDate || getDefaultExpirationDate(),
+					manufactureDate: data.manufactureDate ?? null,
+					quantity: data.quantity,
+					purchasePricePerUnit: data.purchasePricePerUnit ?? null,
+					barcode: data.barcode ?? null,
+					userId: effectiveUserId,
+					notes: data.notes ?? null,
+				});
+			});
+
+			return reply.status(201).send({
+				success: true,
+				message: `Партия ${batch.batchNumber} успешно оприходована (${data.quantity} ед.)`,
+				batch,
+			});
+		} catch (error) {
+			request.log.error(error, "Failed to receive batch");
+			const msg =
+				error instanceof Error
+					? error.message
+					: "Не удалось сохранить приходную партию";
+			return reply.status(400).send({
+				error: "ReceiveBatchFailed",
+				message: msg,
+			});
+		}
+	};
+
+	// POST /:organizationId/receive-batch
+	server.post<{
+		Params: { organizationId: string };
+		Body: z.infer<typeof inventoryReceiveBatchBodySchema>;
+	}>("/:organizationId/receive-batch", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory receive batch",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		return handleReceiveBatchRequest(organizationId, request.body, request, reply);
+	});
+
+	// POST /receive-batch
+	server.post<{
+		Body: z.infer<typeof inventoryReceiveBatchBodySchema> & {
+			organizationId?: string;
+		};
+	}>("/receive-batch", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory receive batch",
+		);
+		if (!resolvedOrgId) return;
+
+		const body = (request.body as { organizationId?: string } | undefined) ?? {};
+		const targetOrgId = body.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		return handleReceiveBatchRequest(targetOrgId, request.body, request, reply);
+	});
+
+	// =========================================================================
+	// LIVE STOCK DEDUCTION & FEFO CONSUMPTION (Мандаты 8e, 8k, 8s)
+	// =========================================================================
+
+	const handleDeductRequest = async (
+		organizationId: string,
+		rawBody: unknown,
+		request: any,
+		reply: any,
+	) => {
+		const parsed = inventoryDeductBatchBodySchema.safeParse(rawBody);
+		if (!parsed.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Неверный формат данных для списания материалов",
+				details: parsed.error.errors,
+			});
+		}
+
+		let itemsList: z.infer<typeof inventoryDeductItemSchema>[] = [];
+		let commonReason: string | undefined;
+		let visitId: string | undefined;
+		let allowOverdraftDefault = true;
+
+		if (Array.isArray(parsed.data)) {
+			itemsList = parsed.data;
+		} else if ("items" in parsed.data && Array.isArray(parsed.data.items)) {
+			itemsList = parsed.data.items;
+			commonReason = parsed.data.reason || parsed.data.notes;
+			visitId = parsed.data.visitId;
+			if (parsed.data.allowOverdraft !== undefined) {
+				allowOverdraftDefault = parsed.data.allowOverdraft;
+			}
+		} else {
+			itemsList = [parsed.data as z.infer<typeof inventoryDeductItemSchema>];
+		}
+
+		if (itemsList.length === 0) {
+			return reply.status(400).send({
+				error: "EmptyDeduction",
+				message: "Список материалов для списания пуст",
+			});
+		}
+
+		const identity = getRequestIdentity(request);
+		const userContext = request.user;
+		const effectiveUserId = identity.userId ?? userContext?.id ?? null;
+
+		try {
+			const deductionResults = await db.transaction(async (tx) => {
+				const results: Array<any> = [];
+
+				for (const item of itemsList) {
+					let itemId = item.inventoryItemId || item.id;
+
+					// Если ID не передан, но передано наименование — ищем позицию в базе
+					if (!itemId && item.name?.trim()) {
+						const [found] = await tx
+							.select({ id: inventoryItems.id })
+							.from(inventoryItems)
+							.where(
+								and(
+									eq(inventoryItems.organizationId, organizationId),
+									sql`lower(${inventoryItems.name}) = lower(${item.name.trim()})`,
+								),
+							)
+							.limit(1);
+
+						if (found) {
+							itemId = found.id;
+						} else {
+							// По закону Zero Dead-Ends (Мандат 8e): если номенклатура отсутствует на складе,
+							// создаем карточку материала с остатком 0 для последующего мягкого овердрафта.
+							const [created] = await tx
+								.insert(inventoryItems)
+								.values({
+									organizationId,
+									name: item.name.trim(),
+									stockQuantity: "0",
+									currentQty: "0",
+									criticalThreshold: "0",
+									unitCostRub:
+										item.unitCostRub != null
+											? String(item.unitCostRub)
+											: "0",
+								})
+								.returning({ id: inventoryItems.id });
+							if (created) itemId = created.id;
+						}
+					}
+
+					if (!itemId) {
+						throw new Error(
+							`Не удалось определить позицию склада для материала «${item.name || "не указано"}»`,
+						);
+					}
+
+					const res = await fefoStockService.deductFefo(tx, {
+						organizationId,
+						inventoryItemId: itemId,
+						requiredQty: item.quantity,
+						allowOverdraft:
+							item.allowOverdraft ?? allowOverdraftDefault,
+						notes:
+							item.reason ||
+							item.notes ||
+							commonReason ||
+							"Ручное списание со склада",
+						userId: effectiveUserId,
+						visitId: visitId || null,
+						transactionType: "manual_writeoff",
+					});
+
+					results.push(res);
+				}
+
+				return results;
+			});
+
+			const hasOverdraft = deductionResults.some((r) => r.isOverdraft);
+
+			return reply.status(200).send({
+				success: true,
+				count: deductionResults.length,
+				items: deductionResults,
+				hasOverdraft,
+				message: hasOverdraft
+					? `Списано позиций: ${deductionResults.length} (зафиксирован мягкий овердрафт)`
+					: `Списано позиций: ${deductionResults.length}`,
+			});
+		} catch (error) {
+			request.log.error(error, "Failed to deduct inventory items");
+			const msg =
+				error instanceof Error
+					? error.message
+					: "Не удалось провести списание материалов";
+			return reply.status(400).send({
+				error: "DeductionFailed",
+				message: msg,
+			});
+		}
+	};
+
+	// POST /:organizationId/deduct — Пакетное или одиночное списание со склада (Мандаты 8e, 8k, 8s)
+	server.post<{
+		Params: { organizationId: string };
+	}>("/:organizationId/deduct", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory deduct",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		return handleDeductRequest(organizationId, request.body, request, reply);
+	});
+
+	// POST /deduct — Списание со склада (для клиентов без orgId в URL)
+	server.post("/deduct", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory deduct",
+		);
+		if (!resolvedOrgId) return;
+
+		const body = (request.body as { organizationId?: string } | undefined) ?? {};
+		const targetOrgId = body.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		return handleDeductRequest(targetOrgId, request.body, request, reply);
 	});
 };
 

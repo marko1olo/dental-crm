@@ -2578,57 +2578,38 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 						onConfirmDeduction={async (lines, summary) => {
 							try {
 								setIsDeductingMaterials(true);
-								let deductedCount = 0;
-								for (const line of lines) {
-									if (line.quantity <= 0) continue;
-									let targetId =
-										line.inventoryItemId ||
-										items.find(
-											(it) => it.name.toLowerCase() === line.materialName.toLowerCase(),
-										)?.id;
-
-									if (!targetId) {
-										// По закону Zero Dead-Ends (Мандат 8e): если номенклатура техкарты отсутствует на складе,
-										// создаем карточку материала с остатком 0 для последующего мягкого овердрафта.
-										const createRes = await fetch(`/api/inventory/${organizationId}`, {
-											method: "POST",
-											headers: getHeaders({ "Content-Type": "application/json" }),
-											body: JSON.stringify({
+								const res = await fetch(`/api/inventory/${organizationId}/deduct`, {
+									method: "POST",
+									headers: getHeaders({ "Content-Type": "application/json" }),
+									body: JSON.stringify({
+										organizationId,
+										items: lines
+											.filter((line) => line.quantity > 0)
+											.map((line) => ({
+												inventoryItemId: line.inventoryItemId || undefined,
 												name: line.materialName,
-												stockQuantity: 0,
-												criticalThreshold: 0,
-											}),
-										});
-										if (createRes.ok) {
-											const created = (await createRes.json()) as { id?: string };
-											targetId = created.id;
-										}
-									}
-
-									if (targetId) {
-										const res = await fetch(
-											`/api/inventory/${organizationId}/${targetId}/stock`,
-											{
-												method: "PATCH",
-												headers: getHeaders({ "Content-Type": "application/json" }),
-												body: JSON.stringify({
-													adjustment: -line.quantity,
-													allowOverdraft: true,
-													isClinicalOperation: true,
-													reason: `Списание по техкарте: ${line.materialName} (${line.quantity} ${line.unit})`,
-												}),
-											},
-										);
-										if (res.ok) deductedCount++;
-									}
+												quantity: line.quantity,
+												allowOverdraft: true,
+												reason: `Списание по техкарте: ${line.materialName} (${line.quantity} ${line.unit})`,
+											})),
+										reason: "Списание материалов по техкартам процедур (Мандат 8e)",
+										allowOverdraft: true,
+									}),
+								});
+								if (!res.ok) {
+									const errData = await res.json().catch(() => ({}));
+									throw new Error(errData.message || `Ошибка списания (${res.status})`);
 								}
 								showToast(
-									`Списано материалов по техкартам: ${deductedCount} поз. на сумму ${summary.totalCostFormatted} (мягкий овердрафт разрешен)`,
+									`Списано материалов по техкартам: ${lines.length} поз. на сумму ${summary.totalCostFormatted} (мягкий овердрафт разрешен)`,
 									"success",
 								);
 							} catch (e) {
 								console.error(e);
-								showToast("Ошибка при списании материалов", "error");
+								showToast(
+									e instanceof Error ? e.message : "Ошибка при списании материалов",
+									"error",
+								);
 							} finally {
 								setIsDeductingMaterials(false);
 								setIsProcedureDeductionOpen(false);
@@ -2687,9 +2668,44 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 						isOpen={isWarehouseManagerOpen}
 						onClose={() => setIsWarehouseManagerOpen(false)}
 						initialItems={items}
-						onConfirmWriteoff={async () => {
-							setIsWarehouseManagerOpen(false);
-							fetchItems();
+						onConfirmWriteoff={async (writeoffLines) => {
+							try {
+								const res = await fetch(`/api/inventory/${organizationId}/deduct`, {
+									method: "POST",
+									headers: getHeaders({ "Content-Type": "application/json" }),
+									body: JSON.stringify({
+										organizationId,
+										items: (writeoffLines || []).map((line) => ({
+											id: line.id,
+											inventoryItemId: line.id,
+											name: line.name,
+											quantity: line.writeoffQuantity,
+											unitCostRub: line.unitCostRub,
+											allowOverdraft: true,
+											reason: `Ручное списание: ${line.name}`,
+										})),
+										reason: "Ручное списание со склада (Мандат 8e, 8k)",
+										allowOverdraft: true,
+									}),
+								});
+								if (!res.ok) {
+									const errData = await res.json().catch(() => ({}));
+									throw new Error(errData.message || `Ошибка списания (${res.status})`);
+								}
+								showToast(
+									`Списание материалов успешно проведено (${writeoffLines?.length ?? 0} поз.)`,
+									"success",
+								);
+							} catch (e) {
+								console.error(e);
+								showToast(
+									e instanceof Error ? e.message : "Не удалось провести списание материалов на сервере",
+									"error",
+								);
+							} finally {
+								setIsWarehouseManagerOpen(false);
+								fetchItems();
+							}
 						}}
 					/>
 				</Suspense>

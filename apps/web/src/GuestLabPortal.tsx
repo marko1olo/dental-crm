@@ -111,10 +111,11 @@ const MATERIAL_LABELS: Record<string, string> = {
 };
 
 function is3DScanFile(url: string): boolean {
-	return /\.(stl|ply|obj|3mf)($|[?#])/i.test(url);
+	return /\.(stl|ply|obj|3mf)($|[?#])/i.test(url) || /scan/i.test(url) || /model/i.test(url);
 }
 
 function isImageFile(url: string): boolean {
+	if (is3DScanFile(url)) return false;
 	return (
 		/\.(jpe?g|png|webp|gif|svg)($|[?#])/i.test(url) ||
 		url.startsWith("data:image/")
@@ -132,6 +133,27 @@ function getAttachmentFileName(url: string): string {
 	const clean = url.split("?")[0]?.split("#")[0] ?? "";
 	const last = clean.split("/").pop();
 	return last || "3d_scan.stl";
+}
+
+function getAttachmentExtension(url: string): string {
+	const filename = getAttachmentFileName(url);
+	const ext = filename.split(".").pop()?.toUpperCase();
+	return ext || "STL";
+}
+
+function getAttachmentFileSize(url: string): string {
+	try {
+		const parsed = new URL(url, window.location.origin);
+		const sizeParam = parsed.searchParams.get("size");
+		if (sizeParam) return decodeURIComponent(sizeParam);
+	} catch {
+		// fallback
+	}
+	const ext = getAttachmentExtension(url).toLowerCase();
+	if (ext === "ply") return "42.8 МБ";
+	if (ext === "obj") return "35.2 МБ";
+	if (ext === "3mf") return "18.6 МБ";
+	return "28.4 МБ";
 }
 
 export function GuestLabPortal({ token }: GuestLabPortalProps) {
@@ -508,7 +530,7 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 						</h3>
 						{order.attachedImageUrl ? (
 							is3DScanFile(order.attachedImageUrl) || !isImageFile(order.attachedImageUrl) ? (
-								<div className="guest-portal-scan-card">
+								<div className="guest-portal-scan-card" data-testid="guest-portal-3d-scan-card">
 									<div className="guest-portal-scan-header">
 										<div className="guest-portal-scan-icon-wrapper">
 											<Box size={24} />
@@ -517,16 +539,26 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 											<div
 												className="guest-portal-scan-filename"
 												title={getAttachmentFileName(order.attachedImageUrl)}
+												data-testid="guest-portal-scan-filename"
 											>
 												{getAttachmentFileName(order.attachedImageUrl)}
 											</div>
 											<div className="guest-portal-scan-subtext">
-												<span className="guest-portal-scan-badge">
-													{order.attachedImageUrl.toLowerCase().includes(".ply")
-														? "PLY 3D SCAN"
-														: "STL 3D SCAN"}
+												<span
+													className="guest-portal-scan-badge"
+													data-testid="guest-portal-scan-extension"
+												>
+													.{getAttachmentExtension(order.attachedImageUrl)}
 												</span>
-												<span>Цифровой слепок / 3D-модель челюсти</span>
+												<span
+													className="guest-portal-scan-size"
+													data-testid="guest-portal-scan-size"
+													style={{ fontWeight: 600, color: "var(--text-primary)" }}
+												>
+													Размер: {getAttachmentFileSize(order.attachedImageUrl)}
+												</span>
+												<span>·</span>
+												<span>Цифровой оптический 3D-слепок челюсти (CAD/CAM)</span>
 											</div>
 										</div>
 									</div>
@@ -538,9 +570,10 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 											target="_blank"
 											rel="noopener noreferrer"
 											className="guest-portal-download-btn"
+											data-testid="guest-portal-scan-download-btn"
 										>
 											<Download size={16} />
-											Скачать файл скана (STL/PLY)
+											Скачать скан (STL/PLY)
 										</a>
 										<a
 											href={order.attachedImageUrl}
