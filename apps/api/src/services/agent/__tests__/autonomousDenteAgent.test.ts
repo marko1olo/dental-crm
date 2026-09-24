@@ -69,10 +69,14 @@ function expect(actual: any) {
 		},
 		rejects: {
 			async toThrow(pattern?: RegExp | string) {
-				await assert.rejects(
-					Promise.resolve(actual),
-					typeof pattern === "string" ? new RegExp(pattern) : pattern,
-				);
+				if (pattern !== undefined) {
+					await assert.rejects(
+						Promise.resolve(actual),
+						typeof pattern === "string" ? new RegExp(pattern) : pattern,
+					);
+				} else {
+					await assert.rejects(Promise.resolve(actual));
+				}
 			},
 		},
 	};
@@ -136,7 +140,7 @@ describe("DENTE Autonomous AI Engine & Extended Tools Suite", () => {
 			expect(res.dentalFormula[11]).toBeDefined();
 			expect(res.dentalFormula[26]).toBeDefined();
 			expect(res.dentalFormula[48]).toBeDefined();
-			expect(res.dentalFormula[26].statusCode).toBe("Norm");
+			expect(res.dentalFormula[26]!.statusCode).toBe("Norm");
 		});
 
 		it("update_tooth_status: updates status and normalizes anatomical surfaces", async () => {

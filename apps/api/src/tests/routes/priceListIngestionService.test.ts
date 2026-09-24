@@ -172,7 +172,11 @@ describe("POST /api/pricelist/ingest Route Integration", () => {
 			authTokenSecret(),
 		);
 
-		app = await createDenteApiApp({ logger: false });
+		app = await createDenteApiApp({
+			startTelegramWorker: false,
+			startCommunicationWorker: false,
+			startMigrationWorker: false,
+		});
 		await app.ready();
 	});
 

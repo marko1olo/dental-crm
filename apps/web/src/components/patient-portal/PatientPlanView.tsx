@@ -557,7 +557,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 			if (upcoming) {
 				return {
 					id: upcoming.id,
-					dateRu: upcoming.dateRu,
+					dateRu: (upcoming as any).appointmentDateRu || upcoming.dateIso || (upcoming as any).date || "",
 					dateIso: upcoming.dateIso,
 					timeRu: upcoming.timeRu,
 					doctorName: upcoming.doctorName,

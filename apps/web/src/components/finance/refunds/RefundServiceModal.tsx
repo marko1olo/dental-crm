@@ -705,8 +705,8 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 												dangerouslySetInnerHTML={{
 													__html: generateQrCodeSvg(receiptQrPayload, {
 														size: 140,
-														color: "#0f172a",
-														background: "#ffffff",
+														colorDark: "#0f172a",
+														colorLight: "#ffffff",
 													}),
 												}}
 											/>

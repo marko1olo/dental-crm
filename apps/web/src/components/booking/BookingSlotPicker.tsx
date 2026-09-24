@@ -16,7 +16,7 @@ export interface BookingSlotItem {
 	startsAt: string; // ISO string
 	endsAt: string; // ISO string
 	period: "morning" | "afternoon" | "evening";
-	availableDoctorIds?: string[];
+	availableDoctorIds?: string[] | undefined;
 }
 
 export interface CalendarDayItem {

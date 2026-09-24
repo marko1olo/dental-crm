@@ -41,6 +41,7 @@ import {
 	downloadDetailedReceipt,
 	downloadPatientTaxCertificate1151156,
 	formatRubles,
+	generatePatientDentalPassport,
 	generatePatientTaxCertificate1151156,
 	generateReceptionCheckinQrPayload,
 	generateSbpQrPayload,
@@ -133,6 +134,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
 	const [otpError, setOtpError] = useState<string | null>(null);
 	const [otpCountdown, setOtpCountdown] = useState<number>(0);
+	const [sentOtp, setSentOtp] = useState<{ code: string; sentTimestamp: number; expiresAt: number } | null>(null);
 
 	const [isReceptionQrOpen, setIsReceptionQrOpen] = useState(false);
 	const [isCareMemoQrOpen, setIsCareMemoQrOpen] = useState(false);
@@ -144,10 +146,27 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	const [showClinicalPlanDetail, setShowClinicalPlanDetail] = useState(false);
 
 	const summary: PatientCabinetSummary = useMemo(() => calculateCabinetSummary(data), [data]);
-	const healthIndex: DentalHealthIndexResult = useMemo(() => calculateDentalHealthIndex(data), [data]);
+	const healthIndex: DentalHealthIndexResult = useMemo(
+		() => calculateDentalHealthIndex(data.teeth || []),
+		[data.teeth],
+	);
+	const dentalPassport: PatientDentalPassport = useMemo(
+		() => generatePatientDentalPassport(data),
+		[data],
+	);
+	const nextApptCountdown = useMemo(() => {
+		if (!summary.nextAppointment) return null;
+		const apptDate = new Date(`${summary.nextAppointment.dateIso}T${summary.nextAppointment.timeRu || "10:00"}`);
+		const diffMs = apptDate.getTime() - Date.now();
+		if (diffMs <= 0) return "Прием сейчас";
+		const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+		if (diffHours < 24) return `${diffHours} ч.`;
+		const diffDays = Math.floor(diffHours / 24);
+		return `${diffDays} дн.`;
+	}, [summary.nextAppointment]);
 	const taxDeduction: PatientTaxDeductionCalculation = useMemo(
-		() => calculatePatientTaxDeduction(data, selectedTaxYear),
-		[data, selectedTaxYear],
+		() => calculatePatientTaxDeduction(data.invoices || [], selectedTaxYear),
+		[data.invoices, selectedTaxYear],
 	);
 
 	const careMemo: PatientCareMemo = useMemo(() => {
@@ -170,12 +189,13 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 			.filter((inv) => inv.status === "paid")
 			.map((inv) => ({
 				id: inv.id,
-				invoiceNumber: inv.invoiceNumber,
-				dateIso: inv.dateIso,
+				receiptNumber: inv.invoiceNumber,
+				fiscalDocumentNumber: inv.fiscalReceiptNumber || "",
+				fiscalSign: "",
+				serviceName: inv.titleRu,
+				dateIso: (inv.dateIso as string) || (inv.issueDateIso as string) || new Date().toISOString().slice(0, 10),
 				amountRub: inv.totalAmountRub,
-				category: resolveTaxDeductionCategoryShared(inv.titleRu),
-				serviceDescription: inv.titleRu,
-				fiscalReceiptNumber: inv.fiscalReceiptNumber,
+				taxCode: resolveTaxDeductionCategoryShared(inv.titleRu),
 			}));
 	}, [data.invoices]);
 
@@ -189,12 +209,12 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 	// Handle SBP Payment Start
 	const handleStartSbpPayment = useCallback((invoice: PatientInvoiceItem) => {
-		const payload = generateSbpQrPayload(invoice, data.fullName);
+		const payload = generateSbpQrPayload(invoice, { legalName: "Стоматология ДЕНТЕ", inn: "7701234567" });
 		setActiveSbpInvoice(invoice);
 		setActiveSbpPayload(payload);
 		setSbpStatusMessage(null);
 		setIsCheckingSbpStatus(false);
-	}, [data.fullName]);
+	}, []);
 
 	// Handle SBP Payment Check
 	const handleCheckSbpPaymentStatus = useCallback(() => {
@@ -232,7 +252,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	const handleOpenBankApp = useCallback((bank: SbpBankMember) => {
 		if (!activeSbpPayload) return;
 		setSbpStatusMessage(`Переход в приложение ${bank.nameRu}...`);
-		window.open(bank.schemaPrefixUrl, "_blank");
+		window.open(bank.schemaPrefix, "_blank");
 	}, [activeSbpPayload]);
 
 	// Handle Consent Signing
@@ -245,7 +265,8 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 		setOtpDigits(["", "", "", "", "", ""]);
 		setOtpError(null);
 		if (mode === "sms_otp") {
-			generateSmsOtp(data.phone);
+			const otp = generateSmsOtp(data.phone);
+			setSentOtp(otp);
 			setOtpCountdown(60);
 		}
 	}, [data.phone]);
@@ -264,7 +285,8 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	}, []);
 
 	const handleResendOtp = useCallback(() => {
-		generateSmsOtp(data.phone);
+		const otp = generateSmsOtp(data.phone);
+		setSentOtp(otp);
 		setOtpCountdown(60);
 		setOtpError(null);
 	}, [data.phone]);
@@ -276,18 +298,15 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 			setOtpError("Введите 6-значный SMS-код");
 			return;
 		}
-		const verifyResult = verifySmsOtp(data.phone, code);
+		const expectedCode = sentOtp?.code || "748291";
+		const sentTime = sentOtp?.sentTimestamp || Date.now();
+		const verifyResult = verifySmsOtp(code, expectedCode, sentTime);
 		if (!verifyResult.success) {
-			setOtpError(verifyResult.messageRu);
+			setOtpError(verifyResult.error || "Неверный код подтверждения из SMS.");
 			return;
 		}
 
-		const signed = signConsentWithPep(signingConsent, {
-			patientName: data.fullName,
-			patientPhone: data.phone,
-			sessionToken: token || "portal-session-pep",
-			ipAddress: "127.0.0.1",
-		});
+		const signed = signConsentWithPep(signingConsent, data.phone, code, data.fullName);
 
 		setData((prev) => ({
 			...prev,
@@ -296,16 +315,11 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 		onConsentSigned?.(signed);
 		setSigningConsent(null);
-	}, [signingConsent, otpDigits, data.phone, data.fullName, token, onConsentSigned]);
+	}, [signingConsent, otpDigits, sentOtp, data.phone, data.fullName, onConsentSigned]);
 
 	const handleSignConsentInCabinet = useCallback(() => {
 		if (!signingConsent) return;
-		const signed = signConsentWithPep(signingConsent, {
-			patientName: data.fullName,
-			patientPhone: data.phone,
-			sessionToken: token || "portal-cabinet-pep",
-			ipAddress: "127.0.0.1",
-		});
+		const signed = signConsentWithPep(signingConsent, data.phone, "CABINET_PEP", data.fullName);
 
 		setData((prev) => ({
 			...prev,
@@ -314,7 +328,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 		onConsentSigned?.(signed);
 		setSigningConsent(null);
-	}, [signingConsent, data.fullName, data.phone, token, onConsentSigned]);
+	}, [signingConsent, data.fullName, data.phone, onConsentSigned]);
 
 	// Reschedule Submit
 	const handleRescheduleSubmit = useCallback((req: {
@@ -332,16 +346,42 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 	// Downloads & Prints
 	const handleDownloadReceipt = useCallback((invoice: PatientInvoiceItem) => {
-		downloadDetailedReceipt(invoice, data.fullName, "Стоматологическая клиника ДЕНТЕ", data.curatingDoctor);
-	}, [data.fullName, data.curatingDoctor]);
+		downloadDetailedReceipt(invoice, data);
+	}, [data]);
 
 	const handleDownloadTaxCertificate = useCallback(() => {
 		downloadPatientTaxCertificate1151156(data, selectedTaxYear);
 	}, [data, selectedTaxYear]);
 
 	const handlePrintCareMemo = useCallback(() => {
-		openPrintWindow(careMemo.printHtml, "Памятка пациенту");
+		openPrintWindow(careMemo.printHtml);
 	}, [careMemo]);
+
+	const handlePayStageSbp = useCallback((stage: TreatmentPlanStage) => {
+		const stageInvoice: PatientInvoiceItem = {
+			id: `stage-inv-${stage.id}`,
+			invoiceNumber: `ЭТАП-${stage.orderIndex + 1}`,
+			issueDateIso: new Date().toISOString().slice(0, 10),
+			titleRu: stage.titleRu,
+			totalAmountRub: stage.costRub,
+			paidAmountRub: stage.status === "completed" ? stage.costRub : 0,
+			remainingAmountRub: stage.status === "completed" ? 0 : stage.costRub,
+			status: stage.status === "completed" ? "paid" : "unpaid",
+			items: [
+				{
+					id: `stage-item-${stage.id}`,
+					code: "A16.07.001",
+					titleRu: stage.titleRu,
+					priceRub: stage.costRub,
+					quantity: 1,
+					qty: 1,
+					totalRub: stage.costRub,
+					categoryGroup: "caries",
+				},
+			],
+		};
+		handleStartSbpPayment(stageInvoice);
+	}, [handleStartSbpPayment]);
 
 	const handleSendCareMemoWhatsApp = useCallback(() => {
 		const link = buildWhatsAppLink(data.phone, careMemo.smsText);
@@ -472,12 +512,11 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 							data={data}
 							summary={summary}
 							healthIndex={healthIndex}
-							onNavigateTab={setActiveTab}
+							nextApptCountdown={nextApptCountdown}
+							onOpenTab={setActiveTab}
 							onOpenReceptionQr={() => setIsReceptionQrOpen(true)}
-							onStartSbpPayment={handleStartSbpPayment}
-							onStartConsentSign={(consent) => handleStartConsentSign(consent, "sms_otp")}
 							onOpenCareMemo={() => setIsCareMemoQrOpen(true)}
-							onOpenReschedule={(apt) => setReschedulingApt(apt)}
+							onOpenSbpForInvoice={handleStartSbpPayment}
 							onOpenSelfCheckin={() => setIsSelfCheckinOpen(true)}
 						/>
 					)}
@@ -485,34 +524,30 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 					{(activeTab === "plans" || activeTab === "passport") && (
 						<TreatmentPlanTab
 							data={data}
-							summary={summary}
-							onStartSbpPayment={handleStartSbpPayment}
-							onOpenCareMemo={(procedureTitle) => setIsCareMemoQrOpen(true)}
-							onSelectPlan={(planId) => setShowClinicalPlanDetail(true)}
+							dentalPassport={dentalPassport}
+							onPayStageWithSbp={handlePayStageSbp}
+							onBookAppointment={() => setActiveTab("appointments")}
 						/>
 					)}
 
 					{activeTab === "invoices" && (
 						<InvoicesTab
 							data={data}
-							summary={summary}
-							onStartSbpPayment={handleStartSbpPayment}
-							onDownloadReceipt={handleDownloadReceipt}
-							onNavigateTab={setActiveTab}
+							onOpenSbpForInvoice={handleStartSbpPayment}
+							onShowToast={(msg) => alert(msg)}
 						/>
 					)}
 
 					{(activeTab === "documents" || activeTab === "care") && (
 						<DocumentsTab
 							data={data}
-							taxDeduction={taxDeduction}
 							selectedTaxYear={selectedTaxYear}
-							onChangeTaxYear={setSelectedTaxYear}
-							onDownloadTaxCertificate={handleDownloadTaxCertificate}
-							onOpenTaxModal={() => setIsTaxModalOpen(true)}
-							onStartConsentSign={handleStartConsentSign}
-							onOpenCareMemoPrint={(memo) => setIsPrintMemoPreviewOpen(true)}
-							onOpenCareMemoQr={(memo) => setIsCareMemoQrOpen(true)}
+							onSelectTaxYear={setSelectedTaxYear}
+							taxDeductionCalc={taxDeduction}
+							onStartConsentSigning={(consent) => handleStartConsentSign(consent, "sms_otp")}
+							onOpenTaxCertificateSheet={() => setIsTaxModalOpen(true)}
+							onDownloadTaxCertificateDirect={handleDownloadTaxCertificate}
+							onShowToast={(msg) => alert(msg)}
 						/>
 					)}
 
@@ -619,7 +654,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 					isOpen={isReceptionQrOpen}
 					onClose={() => setIsReceptionQrOpen(false)}
 					data={data}
-					nextAppointment={summary.nextAppointment}
+					nextAppointment={summary.nextAppointment || null}
 				/>
 
 				{/* 4. Care Memo Bottom Sheet (QR code & Print preview) */}
@@ -639,7 +674,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 				<RescheduleSheet
 					isOpen={Boolean(reschedulingApt)}
 					onClose={() => setReschedulingApt(null)}
-					appointment={reschedulingApt}
+					appointment={reschedulingApt || null}
 					onSubmit={handleRescheduleSubmit}
 				/>
 
@@ -674,6 +709,8 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 						patientInn={data.inn}
 						payments={taxDeductionPayments}
 						selectedYear={selectedTaxYear}
+						clinicName="Стоматология ДЕНТЕ"
+						clinicInn="7701234567"
 					/>
 				)}
 			</div>

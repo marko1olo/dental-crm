@@ -72,7 +72,7 @@ export const SbpPaymentSheet: React.FC<SbpPaymentSheetProps> = ({
 					</p>
 					{invoice && (
 						<p style={{ fontSize: "0.75rem", color: "var(--pc-text-muted)", margin: "2px 0 0 0" }}>
-							{invoice.descriptionRu}
+							{invoice.titleRu}
 						</p>
 					)}
 				</div>

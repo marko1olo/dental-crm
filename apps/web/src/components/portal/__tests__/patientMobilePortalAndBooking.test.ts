@@ -192,7 +192,7 @@ describe("Patient Mobile Portal & Online Booking Engine (Wave 18)", () => {
 
 		it("generates deterministic crisp SVG QR code containing finder and timing patterns", () => {
 			const payload = generateSbpPaymentQrPayload("inv-102", 5000, "Консультация");
-			const svg = generateQrCodeSvg(payload, { size: 160, color: "#0f172a", background: "#ffffff" });
+			const svg = generateQrCodeSvg(payload, { size: 160, colorDark: "#0f172a", colorLight: "#ffffff" });
 			assert.ok(svg.includes("<svg"));
 			assert.ok(svg.includes('viewBox="0 0 160 160"'));
 			assert.ok(svg.includes('shape-rendering="crispEdges"'));

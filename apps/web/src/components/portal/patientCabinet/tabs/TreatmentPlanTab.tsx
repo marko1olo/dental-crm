@@ -238,7 +238,9 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 								>
 									<span className="pc-tier-name">
 										{tierKey === "standard" && "★ "}
-										{tierObj?.nameRu ||
+										{tierObj?.titleRu ||
+											tierObj?.nameRu ||
+											tierObj?.tierNameRu ||
 											(tierKey === "basic"
 												? "Эконом"
 												: tierKey === "premium"

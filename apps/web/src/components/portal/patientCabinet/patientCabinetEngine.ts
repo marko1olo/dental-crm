@@ -66,13 +66,18 @@ export interface InvoiceServiceItem {
 	readonly priceRub: number;
 	readonly totalRub: number;
 	readonly toothFdi?: string | undefined;
+	readonly id?: string | undefined;
+	readonly qty?: number | undefined;
+	readonly categoryGroup?: string | undefined;
+	readonly toothNumber?: string | undefined;
 }
 
 export interface PatientInvoiceItem {
 	readonly id: string;
 	readonly invoiceNumber: string;
 	readonly issueDateIso: string;
-	readonly dueDateIso: string;
+	readonly dueDateIso?: string | undefined;
+	readonly dateIso?: string | undefined;
 	readonly titleRu: string;
 	readonly totalAmountRub: number;
 	readonly paidAmountRub: number;
@@ -116,6 +121,7 @@ export interface TreatmentPlanStage {
 	readonly status: "completed" | "in_progress" | "planned";
 	readonly procedures: readonly string[];
 	readonly targetDateRu?: string | undefined;
+	readonly estimatedVisitsCount?: number | undefined;
 }
 
 export interface PatientTreatmentPlan {
@@ -171,6 +177,8 @@ export interface ConsentSignatureAudit {
 export interface TreatmentPlanTier {
 	readonly tierId: "basic" | "standard" | "premium";
 	readonly tierNameRu: string;
+	readonly titleRu?: string | undefined;
+	readonly nameRu?: string | undefined;
 	readonly subtitleRu: string;
 	readonly totalCostRub: number;
 	readonly warrantyMonths: number;
@@ -219,6 +227,7 @@ export interface PatientPersonalCabinetData {
 	readonly treatmentPlans: readonly PatientTreatmentPlan[];
 	readonly warranties: readonly PatientWarrantyCard[];
 	readonly consents: readonly PatientStatutoryConsent[];
+	readonly teeth?: readonly PatientToothInfo[] | undefined;
 	readonly threeTierModel?: ThreeTierTreatmentPlanModel | undefined;
 	readonly somaticRiskProfile?: {
 		readonly hasCardiovascularRisk: boolean;
@@ -935,8 +944,8 @@ export function generateReceptionCheckinQrPayload(
 	const qrCodeSvg = generateQrCodeSvg(payload, {
 		size: 260,
 		margin: 2,
-		color: "#000000",
-		background: "#ffffff",
+		colorDark: "#000000",
+		colorLight: "#ffffff",
 	});
 
 	return {

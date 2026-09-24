@@ -147,9 +147,9 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 	}, [queueTicket]);
 
 	const doctorWaitMessage = useMemo(() => {
-		const docShort = doctorName.includes("(")
-			? doctorName.split("(")[0].trim()
-			: doctorName;
+		const docShort = doctorName?.includes("(")
+			? (doctorName.split("(")[0]?.trim() || doctorName)
+			: (doctorName || "");
 		const effectiveDoctor = docShort || "Д-р Смирнова";
 		const cabMatch = appointmentTime.match(/Кабинет\s*(\d+)/i);
 		const cabNum = cabinetName || (cabMatch ? cabMatch[1] : "3");
@@ -320,7 +320,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 					? prev.coagulation.details
 						? prev.coagulation.details
 						: "Аспирин / НПВС (риск кровотечений)"
-					: prev.coagulation.details,
+					: (prev.coagulation.details || ""),
 			},
 		}));
 	};

@@ -149,8 +149,8 @@ export function computePatientTeethFromStages(
 				if (raw.includes("-") && !raw.includes("1.1-4.8") && !raw.includes("11-48")) {
 					const parts = raw.split("-").map(normalizeTooth);
 					if (parts.length === 2) {
-						const start = parseInt(parts[0], 10);
-						const end = parseInt(parts[1], 10);
+						const start = parseInt(parts[0] || "", 10);
+						const end = parseInt(parts[1] || "", 10);
 						const current = parseInt(fdiCode, 10);
 						if (!isNaN(start) && !isNaN(end) && !isNaN(current)) {
 							const min = Math.min(start, end);
@@ -202,7 +202,7 @@ export function computePatientTeethFromStages(
 					fdiCode,
 					status: "missing_or_implant",
 					humanNameRu,
-					clinicalStateRu: `Установлен имплантат: ${completed.titleRu}`,
+					clinicalStateRu: `Установлен имплантат: ${completed?.titleRu || "Имплантация"}`,
 					warrantyActive: true,
 				};
 			}
@@ -211,14 +211,14 @@ export function computePatientTeethFromStages(
 					fdiCode,
 					status: "missing_or_implant",
 					humanNameRu,
-					clinicalStateRu: `Удален: ${completed.titleRu}`,
+					clinicalStateRu: `Удален: ${completed?.titleRu || "Удаление"}`,
 				};
 			}
 			return {
 				fdiCode,
 				status: "healthy",
 				humanNameRu,
-				clinicalStateRu: `Вылечен: ${completed.titleRu}`,
+				clinicalStateRu: `Вылечен: ${completed?.titleRu || "Лечение завершено"}`,
 				warrantyActive: true,
 			};
 		}
