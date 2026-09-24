@@ -140,8 +140,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		revisionCount,
 		diaryRevisions,
 		isSaving,
-		trayBarcode,
-		setTrayBarcode,
 		showIcdDropdown,
 		setShowIcdDropdown,
 		icdSearch,
@@ -1900,7 +1898,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							pushPrev("P (лечение)", rev.previousTreatmentDescription);
 							pushPrev("Осложнения", rev.previousComplications);
 							pushPrev("Сопутствующие", rev.previousComorbidities);
-							pushPrev("Лоток (штрихкод)", rev.previousInstrumentTrayBarcode);
 							return (
 								<li
 									key={rev.id}

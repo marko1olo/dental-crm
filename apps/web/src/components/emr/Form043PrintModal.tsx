@@ -54,7 +54,7 @@ export interface Form043PrintModalProps {
 
 export const DEFAULT_043_DATA: MedicalCardForm043uData = {
 	formNumber: "043/у",
-	formOrderName: "Приказ Минздрава России от 15.12.2014 № 834н",
+	formOrderName: "Приказ Минздрава СССР от 04.10.1980 № 1030" as unknown as MedicalCardForm043uData["formOrderName"],
 	clinic: {
 		clinicName: "Стоматологическая клиника «ДЕНТЕ»",
 		clinicLegalName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
@@ -537,7 +537,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						<div className="emr043-header-title-group">
 							<span className="emr043-header-badge">
 								<FileText className="w-3.5 h-3.5" />
-								Минздрав РФ № 834н
+								Приказ Минздрава СССР от 04.10.1980 № 1030
 							</span>
 							{effectiveIsDraft ? (
 								<span
@@ -861,7 +861,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 					<div className="emr043-completeness-bar emr043-non-printable">
 						<ShieldCheck className={`w-5 h-5 ${validation.isComplete ? "text-emerald-600" : "text-amber-500"}`} />
 						<div style={{ fontSize: "12px", fontWeight: 600 }}>
-							Полнота карты по приказу 834н: <strong>{validation.completenessScore}%</strong>
+							Полнота карты (Приказ Минздрава СССР от 04.10.1980 № 1030): <strong>{validation.completenessScore}%</strong>
 						</div>
 						<div className="emr043-progress-track">
 							<div
@@ -924,7 +924,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 								<div className="emr043-section-card">
 									<h3 className="emr043-section-card-title">
 										<User className="w-4 h-4 text-sky-600" />
-										1. Паспортная часть и регистрационные данные (Приказ Минздрава № 834н)
+										1. Паспортная часть и регистрационные данные (Приказ Минздрава СССР от 04.10.1980 № 1030)
 									</h3>
 									<div className="emr043-grid-2">
 										<div>

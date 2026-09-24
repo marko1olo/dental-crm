@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { curatorFunnelStageSchema } from "./curator/index.js";
+import {
+	CLINICAL_TOOTH_STATE_VALUES,
+	type ClinicalToothState,
+} from "./clinical/stomtDefectsCatalog.js";
 
 export * from "./money.js";
 export * from "./moneyWordsRu.js";
@@ -4477,6 +4481,9 @@ export const clinicalToothStatusSchema = z.enum([
 ]);
 export type ClinicalToothStatus = z.infer<typeof clinicalToothStatusSchema>;
 
+export { CLINICAL_TOOTH_STATE_VALUES, type ClinicalToothState };
+export const clinicalToothStateSchema = z.enum(CLINICAL_TOOTH_STATE_VALUES);
+
 export const clinicalToothRowSchema = z.object({
 	toothOrArea: z.string().trim().min(1).max(80),
 	surfaces: z.array(clinicalToothSurfaceSchema).min(1).max(8),
@@ -6945,7 +6952,11 @@ export const createPaymentSchema = z
 		discountRub: nonNegativeMoneyRubSchema.nullable().optional(),
 		discountPercent: z.number().min(0).max(100).refine((val) => typeof val === "number" && Number.isFinite(val) && !Number.isNaN(val)).nullable().optional(),
 		amountRub: nonNegativeMoneyRubSchema,
-		method: paymentMethodSchema.default("card"),
+		method: z.union([paymentMethodSchema, z.enum(["split", "mixed"])]).default("card"),
+		cashAmountKopecks: z.number().int().nonnegative().nullable().optional(),
+		electronicAmountKopecks: z.number().int().nonnegative().nullable().optional(),
+		cashAmountRub: nonNegativeMoneyRubSchema.nullable().optional(),
+		electronicAmountRub: nonNegativeMoneyRubSchema.nullable().optional(),
 		fiscalReceiptNumber: z.string().trim().max(120).nullable().optional(),
 		fiscalReceiptIssuedAt: strictFiscalReceiptIssuedAtSchema
 			.nullable()

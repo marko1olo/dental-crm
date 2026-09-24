@@ -71,6 +71,7 @@ export const CLINICAL_TOOTH_STATE_VALUES = [
 ] as const;
 
 export type ClinicalToothState = (typeof CLINICAL_TOOTH_STATE_VALUES)[number];
+export const clinicalToothStateSchema = z.enum(CLINICAL_TOOTH_STATE_VALUES);
 
 export const endoCanalMeasurementSchema = z.object({
 	id: z.string().optional(),
@@ -100,14 +101,14 @@ const toothEndoUpsertSchema = z.object({
 	canals: z.array(endoCanalMeasurementSchema).min(1),
 	irrigation: z.string().trim().max(1000).optional(),
 	radiologyControl: z.string().trim().max(1000).optional(),
-	state: z.enum(CLINICAL_TOOTH_STATE_VALUES).optional(),
+	state: clinicalToothStateSchema.optional(),
 	surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
 	visitId: z.string().uuid().optional().nullable(),
 });
 
 const batchToothStateSchema = z.object({
 	toothNumbers: z.array(fdiToothNumberSchema).min(1).max(64),
-	state: z.enum(CLINICAL_TOOTH_STATE_VALUES),
+	state: clinicalToothStateSchema,
 	surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
 	notes: z.string().max(10000).optional().nullable(),
 	clinicalData: endoToothClinicalDataSchema.optional().nullable(),
@@ -396,6 +397,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				state: toothStates.state,
 				surfaces: toothStates.surfaces,
 				notes: toothStates.notes,
+				updatedAt: toothStates.updatedAt,
 			})
 			.from(toothStates)
 			.where(
@@ -418,6 +420,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 			state: row.state,
 			surfaces: row.surfaces,
 			notes: row.notes,
+			updatedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null,
 			clinicalData: parseClinicalDataFromNotes(row.notes),
 		}));
 
@@ -591,6 +594,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 						state: toothStates.state,
 						surfaces: toothStates.surfaces,
 						notes: toothStates.notes,
+						updatedAt: toothStates.updatedAt,
 					})
 					.from(toothStates)
 					.where(
@@ -606,6 +610,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 					state: row.state,
 					surfaces: row.surfaces,
 					notes: row.notes,
+					updatedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null,
 					clinicalData: parseClinicalDataFromNotes(row.notes),
 				}));
 			});

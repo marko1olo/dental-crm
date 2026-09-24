@@ -13,6 +13,7 @@ import {
 	type DentitionMode,
 } from "./pediatricDentitionEngine";
 import { useIsTouchScreen } from "./useIsTouchScreen";
+import { loadStoredTeethData } from "./odontogramStorage";
 
 export { getNextFocusedTooth, getToothStateFromHotkey };
 export type { DentitionMode };
@@ -270,6 +271,7 @@ export interface ToothData {
 	periapicalLesionSize?: "small" | "medium" | "large" | 6 | 10 | 16;
 	hasFracture?: boolean;
 	hasApicoectomy?: boolean;
+	updatedAt?: string;
 }
 
 export type OdontogramQuadrantId =
@@ -442,7 +444,8 @@ export function getQuadrantTitle(quadrant: OdontogramQuadrantId, pediatricMode?:
 }
 
 export interface ToothChartProps {
-	teethData: ToothData[];
+	teethData?: ToothData[] | undefined;
+	patientId?: string | undefined;
 	pediatricMode?: boolean | undefined;
 	mixedDentition?: boolean | undefined;
 	dentitionMode?: DentitionMode | undefined;
@@ -2726,6 +2729,7 @@ export function areToothChartPropsEqual(
 	prev: ToothChartProps,
 	next: ToothChartProps,
 ): boolean {
+	if (prev.patientId !== next.patientId) return false;
 	if (prev.pediatricMode !== next.pediatricMode) return false;
 	if (prev.mixedDentition !== next.mixedDentition) return false;
 	if (prev.dentitionMode !== next.dentitionMode) return false;
@@ -2776,11 +2780,12 @@ export function areToothChartPropsEqual(
 		const nLen = next.teethData?.length ?? 0;
 		if (pLen !== nLen) return false;
 		for (let i = 0; i < pLen; i++) {
-			const pt = prev.teethData[i];
-			const nt = next.teethData[i];
+			const pt = prev.teethData?.[i];
+			const nt = next.teethData?.[i];
 			if (!pt || !nt) return false;
 			if (pt.toothNumber !== nt.toothNumber) return false;
 			if (pt.state !== nt.state) return false;
+			if (pt.updatedAt !== nt.updatedAt) return false;
 			if (pt.material !== nt.material) return false;
 			if (pt.canalObturation !== nt.canalObturation) return false;
 			if (pt.hasPost !== nt.hasPost) return false;
@@ -2801,6 +2806,7 @@ export function areToothChartPropsEqual(
 
 export const ToothChart: React.FC<ToothChartProps> = memo(({
 	teethData = [],
+	patientId,
 	pediatricMode,
 	mixedDentition,
 	dentitionMode,
@@ -2836,13 +2842,26 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 	const [archScale, setArchScale] = useState(1);
 	const appliedArchScaleRef = useRef(1);
 
+	const resolvedTeethData = useMemo(() => {
+		if (teethData && teethData.length > 0) {
+			return teethData;
+		}
+		if (patientId) {
+			const cached = loadStoredTeethData(patientId);
+			if (cached && cached.length > 0) {
+				return cached;
+			}
+		}
+		return teethData ?? [];
+	}, [teethData, patientId]);
+
 	const toothDataMap = useMemo(() => {
 		const map = new Map<number, ToothData>();
-		for (const t of teethData ?? []) {
+		for (const t of resolvedTeethData) {
 			map.set(t.toothNumber, t);
 		}
 		return map;
-	}, [teethData]);
+	}, [resolvedTeethData]);
 
 	const [localDentitionMode, setLocalDentitionMode] = useState<DentitionMode>(
 		dentitionMode ?? (mixedDentition ? "mixed" : pediatricMode ? "pediatric" : "adult"),
