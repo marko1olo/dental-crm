@@ -26,6 +26,7 @@ import {
 	getDefaultExpirationDate,
 	normalizeDateToIso,
 } from "../services/inventory/fefoStockService.js";
+import { InsufficientStockError } from "../services/inventory/materialDeduction.js";
 import { ReorderSuggestionService } from "../services/reorderSuggestionService.js";
 import { TreatmentConsumablesService } from "../services/treatmentConsumablesService.js";
 
@@ -125,10 +126,13 @@ const inventoryDeductItemSchema = z.object({
 const inventoryDeductBatchBodySchema = z.union([
 	z.array(inventoryDeductItemSchema),
 	z.object({
-		items: z.array(inventoryDeductItemSchema),
+		items: z.array(inventoryDeductItemSchema).optional(),
+		materials: z.array(inventoryDeductItemSchema).optional(),
 		organizationId: z.string().optional(),
 		reason: z.string().optional(),
 		notes: z.string().optional(),
+		operationTitle: z.string().optional(),
+		hasWarehouseDelay: z.boolean().optional(),
 		visitId: z.string().optional(),
 		cabinetId: z.string().optional(),
 		doctorName: z.string().optional(),
@@ -623,6 +627,53 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 							item.name,
 						),
 				);
+
+			// Списание со склада (actualAdjustment < 0) — автоматический FEFO партионный учет
+			if (actualAdjustment < 0) {
+				const requiredQty = Math.abs(actualAdjustment);
+				const userContext = request.user;
+				const effectiveUserId = identity.userId ?? userContext?.id ?? null;
+				const isAllowedOverdraft =
+					parsedStock.data.allowOverdraft !== false || isClinicalOperation;
+
+				let fefoResult: Awaited<ReturnType<typeof fefoStockService.deductFefo>>;
+				try {
+					fefoResult = await fefoStockService.deductFefo(tx, {
+						organizationId,
+						inventoryItemId: itemId,
+						requiredQty,
+						allowOverdraft: isAllowedOverdraft,
+						notes:
+							parsedStock.data.reason ||
+							(isClinicalOperation
+								? `Списание под операцию/приём (мягкий минусовой овердрафт партии, накладная ещё не внесена: дефицит ${Math.abs(newStock)} ед., Мандат 8e, 8v)`
+								: "Списание со склада (FEFO)"),
+						userId: effectiveUserId,
+						transactionType: isClinicalOperation
+							? "treatment_consumable"
+							: (isOverdraft ? "emergency_overdraft" : "manual_adjust"),
+					});
+				} catch (err) {
+					if (err instanceof InsufficientStockError) {
+						return { insufficientStock: true as const, currentStock };
+					}
+					throw err;
+				}
+
+				const [updated] = await tx
+					.select()
+					.from(inventoryItems)
+					.where(
+						and(
+							eq(inventoryItems.id, itemId),
+							eq(inventoryItems.organizationId, organizationId),
+						),
+					)
+					.limit(1);
+
+				return { updated: updated ?? item, isOverdraft: fefoResult.isOverdraft };
+			}
+
 			if (isOverdraft && parsedStock.data.allowOverdraft === false && !isClinicalOperation) {
 				return { insufficientStock: true as const, currentStock };
 			}
@@ -1540,12 +1591,25 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 
 		if (Array.isArray(parsed.data)) {
 			itemsList = parsed.data;
-		} else if ("items" in parsed.data && Array.isArray(parsed.data.items)) {
-			itemsList = parsed.data.items;
-			commonReason = parsed.data.reason || parsed.data.notes;
+		} else if (
+			("items" in parsed.data && Array.isArray(parsed.data.items)) ||
+			("materials" in parsed.data && Array.isArray(parsed.data.materials))
+		) {
+			itemsList =
+				parsed.data.materials && parsed.data.materials.length > 0
+					? parsed.data.materials
+					: (parsed.data.items ?? []);
+			commonReason =
+				parsed.data.reason ||
+				parsed.data.notes ||
+				(parsed.data.operationTitle
+					? `Списание под операцию «${parsed.data.operationTitle}» (FEFO у кресла)`
+					: undefined);
 			visitId = parsed.data.visitId;
 			if (parsed.data.allowOverdraft !== undefined) {
 				allowOverdraftDefault = parsed.data.allowOverdraft;
+			} else if (parsed.data.hasWarehouseDelay !== undefined) {
+				allowOverdraftDefault = true;
 			}
 		} else {
 			itemsList = [parsed.data as z.infer<typeof inventoryDeductItemSchema>];
@@ -1571,27 +1635,43 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 
 					// Если ID не передан, но передано наименование — ищем позицию в базе
 					if (!itemId && item.name?.trim()) {
-						const [found] = await tx
+						const searchName = item.name.trim();
+						let [found] = await tx
 							.select({ id: inventoryItems.id })
 							.from(inventoryItems)
 							.where(
 								and(
 									eq(inventoryItems.organizationId, organizationId),
-									sql`lower(${inventoryItems.name}) = lower(${item.name.trim()})`,
+									sql`lower(${inventoryItems.name}) = lower(${searchName})`,
 								),
 							)
 							.limit(1);
 
+						if (!found) {
+							// Поиск по ключевым словам/подстроке
+							const [partial] = await tx
+								.select({ id: inventoryItems.id })
+								.from(inventoryItems)
+								.where(
+									and(
+										eq(inventoryItems.organizationId, organizationId),
+										sql`lower(${inventoryItems.name}) LIKE lower(${'%' + searchName + '%'}) OR lower(${searchName}) LIKE ('%' || lower(${inventoryItems.name}) || '%')`,
+									),
+								)
+								.limit(1);
+							if (partial) found = partial;
+						}
+
 						if (found) {
 							itemId = found.id;
 						} else {
-							// По закону Zero Dead-Ends (Мандат 8e): если номенклатура отсутствует на складе,
+							// По закону Zero Dead-Ends (Мандат 8e, 8n): если номенклатура отсутствует на складе,
 							// создаем карточку материала с остатком 0 для последующего мягкого овердрафта.
 							const [created] = await tx
 								.insert(inventoryItems)
 								.values({
 									organizationId,
-									name: item.name.trim(),
+									name: searchName,
 									stockQuantity: "0",
 									currentQty: "0",
 									criticalThreshold: "0",
@@ -1621,10 +1701,10 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 							item.reason ||
 							item.notes ||
 							commonReason ||
-							"Ручное списание со склада",
+							"Списание со склада у кресла (автоматический FEFO по Мандату 8e, 8v)",
 						userId: effectiveUserId,
 						visitId: visitId || null,
-						transactionType: "manual_writeoff",
+						transactionType: "treatment_consumable",
 					});
 
 					results.push(res);
@@ -1641,8 +1721,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				items: deductionResults,
 				hasOverdraft,
 				message: hasOverdraft
-					? `Списано позиций: ${deductionResults.length} (зафиксирован мягкий овердрафт)`
-					: `Списано позиций: ${deductionResults.length}`,
+					? `Списано позиций по FEFO: ${deductionResults.length} (зафиксирован мягкий овердрафт, клинический процесс не блокируется)`
+					: `Списано позиций по FEFO: ${deductionResults.length}`,
 			});
 		} catch (error) {
 			request.log.error(error, "Failed to deduct inventory items");
@@ -1682,6 +1762,43 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			request,
 			reply,
 			"inventory deduct",
+		);
+		if (!resolvedOrgId) return;
+
+		const body = (request.body as { organizationId?: string } | undefined) ?? {};
+		const targetOrgId = body.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		return handleDeductRequest(targetOrgId, request.body, request, reply);
+	});
+
+	// POST /:organizationId/quick-deduct-surgical — 1-клик списание расходников операции (Мандат 8e, 8n)
+	server.post<{
+		Params: { organizationId: string };
+	}>("/:organizationId/quick-deduct-surgical", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory quick deduct surgical",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		return handleDeductRequest(organizationId, request.body, request, reply);
+	});
+
+	// POST /quick-deduct-surgical — 1-клик списание расходников операции без orgId в URL
+	server.post("/quick-deduct-surgical", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory quick deduct surgical",
 		);
 		if (!resolvedOrgId) return;
 
