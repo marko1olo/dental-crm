@@ -23,6 +23,11 @@ const PatientBudgetSignView = React.lazy(() =>
 		default: m.PatientBudgetSignView,
 	})),
 );
+const WaitingLoungeSignage = React.lazy(() =>
+	import("./components/lounge/WaitingLoungeSignage").then((m) => ({
+		default: m.WaitingLoungeSignage,
+	})),
+);
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
 // любому объявлению вне слоёв, поэтому порядок импорта на них не влияет —
 // но так виднее, что это фундамент, а не переопределение.
@@ -145,6 +150,32 @@ if (publicPortalRoute) {
 					) : (
 						<GuestLabPortal token={publicPortalRoute.token} />
 					)}
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.pathname === "/lounge-display" ||
+		window.location.pathname.startsWith("/lounge-display/") ||
+		window.location.hash === "#/lounge-display" ||
+		window.location.hash === "#lounge-display")
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="public">
+				<React.Suspense fallback={null}>
+					<WaitingLoungeSignage />
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>

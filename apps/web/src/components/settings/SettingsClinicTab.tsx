@@ -805,6 +805,19 @@ export function SettingsClinicTab({
 										Автоматический подбор фотообоев под текущее время суток
 									</small>
 								</label>
+
+								<div className="form-span-2" style={{ marginTop: "4px" }}>
+									<a
+										href="/#lounge-display"
+										target="_blank"
+										rel="noreferrer"
+										className="secondary-btn"
+										style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
+									>
+										<ExternalLink size={14} aria-hidden="true" />
+										<span>Открыть ТВ-табло зоны ожидания (/lounge-display)</span>
+									</a>
+								</div>
 							</div>
 						</div>
 						<label>

@@ -58,6 +58,7 @@
 	--background: var(--paper);
 	--surface-0: var(--paper);
 	--paper-light: var(--paper-soft);
+	--paper-glass: var(--glass-panel);
 	--border-default: var(--line-strong);
 	--border-subtle: var(--line);
 	--border-soft: var(--line);

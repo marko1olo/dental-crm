@@ -1,0 +1,605 @@
+/* ============================================================
+   WaitingLoungeSignage — Полноэкранное ТВ-табло зоны ожидания
+   Мандат 8l / 8p: Ambient TV Signage, Electronic Queue & Auth Art
+   ============================================================ */
+
+.lounge-signage-root {
+	position: fixed;
+	inset: 0;
+	width: 100vw;
+	height: 100vh;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	color: var(--ink);
+	font-family: inherit;
+	z-index: 1000;
+	box-sizing: border-box;
+	user-select: none;
+	background-color: var(--background, #0b1120);
+}
+
+/* ФОНОВЫЕ СЛОИ С ПЛАВНЫМ РАСТВОРЕНИЕМ (ZERO-CLS) */
+.lounge-bg-container {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	pointer-events: none;
+	z-index: 0;
+}
+
+.lounge-bg-layer {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+	transition: opacity 1.8s ease-in-out;
+}
+
+.lounge-bg-layer--visible {
+	opacity: 1;
+}
+
+.lounge-bg-layer--hidden {
+	opacity: 0;
+}
+
+.lounge-bg-scrim {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	background: radial-gradient(
+		ellipse at 50% 40%,
+		rgba(15, 23, 42, 0.45) 0%,
+		rgba(10, 15, 30, 0.78) 100%
+	);
+	pointer-events: none;
+	z-index: 1;
+}
+
+/* СТЕКЛЯННЫЕ КАРТОЧКИ (BACKDROP-FILTER: BLUR(16PX)) */
+.lounge-glass-card {
+	position: relative;
+	background: var(--paper-glass, var(--glass-panel));
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	border: 1px solid var(--glass-border);
+	border-radius: 20px;
+	box-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.28);
+	box-sizing: border-box;
+	z-index: 2;
+}
+
+/* ВЕРХНЯЯ ШАПКА ТАБЛО */
+.lounge-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 28px;
+	margin: 20px 24px 16px 24px;
+	flex-shrink: 0;
+	gap: 20px;
+}
+
+.lounge-header-brand {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.lounge-brand-logo-wrap {
+	width: 48px;
+	height: 48px;
+	border-radius: 14px;
+	background: var(--brand, var(--teal));
+	color: #ffffff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 4px 16px rgba(20, 184, 166, 0.35);
+	flex-shrink: 0;
+}
+
+.lounge-brand-logo-icon {
+	width: 28px;
+	height: 28px;
+}
+
+.lounge-brand-titles {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.lounge-brand-name {
+	font-size: 24px;
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	color: var(--ink);
+	line-height: 1.1;
+}
+
+.lounge-brand-subtitle {
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--muted);
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+
+.lounge-header-welcome {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 8px 18px;
+	border-radius: 9999px;
+	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid var(--glass-border);
+	font-size: 15px;
+	font-weight: 500;
+	color: var(--ink);
+	max-width: 620px;
+}
+
+.lounge-welcome-beacon {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: var(--ok-fg, #22c55e);
+	box-shadow: 0 0 10px var(--ok-fg, #22c55e);
+	animation: lounge-beacon-pulse 2s infinite ease-in-out;
+	flex-shrink: 0;
+}
+
+.lounge-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.lounge-badge-slot {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 14px;
+	border-radius: 9999px;
+	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid var(--glass-border);
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.lounge-icon-btn {
+	width: 40px;
+	height: 40px;
+	border-radius: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid var(--glass-border);
+	color: var(--ink);
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lounge-icon-btn:hover {
+	background: rgba(255, 255, 255, 0.18);
+	transform: translateY(-1px);
+}
+
+/* ГЛАВНАЯ СЕТКА ТАБЛО */
+.lounge-main-grid {
+	display: grid;
+	grid-template-columns: minmax(360px, 1.05fr) minmax(520px, 1.95fr);
+	gap: 24px;
+	padding: 0 24px 16px 24px;
+	flex: 1;
+	min-height: 0;
+}
+
+/* ЛЕВАЯ КОЛОНКА (ЧАСЫ И КОМФОРТ) */
+.lounge-left-col {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	min-height: 0;
+}
+
+.lounge-clock-card {
+	padding: 32px 28px;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 12px;
+}
+
+.lounge-clock-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.lounge-clock-time-wrap {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+}
+
+.lounge-clock-time {
+	font-size: 78px;
+	font-weight: 800;
+	line-height: 1;
+	letter-spacing: -0.03em;
+	font-variant-numeric: tabular-nums;
+	color: var(--ink);
+	text-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.lounge-clock-seconds {
+	font-size: 32px;
+	font-weight: 600;
+	color: var(--muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.lounge-clock-date {
+	font-size: 22px;
+	font-weight: 600;
+	color: var(--ink);
+	text-transform: capitalize;
+	line-height: 1.3;
+}
+
+.lounge-clock-footer {
+	margin-top: 8px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	color: var(--muted);
+}
+
+.lounge-comfort-card {
+	padding: 24px 28px;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	justify-content: center;
+}
+
+.lounge-comfort-title {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.lounge-comfort-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.lounge-comfort-item {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-size: 14px;
+	color: var(--ink);
+	background: rgba(255, 255, 255, 0.04);
+	padding: 10px 14px;
+	border-radius: 12px;
+	border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.lounge-comfort-icon {
+	color: var(--brand, var(--teal));
+	flex-shrink: 0;
+}
+
+/* ПРАВАЯ КОЛОНКА (ЭЛЕКТРОННАЯ ОЧЕРЕДЬ) */
+.lounge-queue-card {
+	padding: 28px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.lounge-queue-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	flex-shrink: 0;
+}
+
+.lounge-queue-title-wrap {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.lounge-queue-title {
+	font-size: 22px;
+	font-weight: 800;
+	color: var(--ink);
+	letter-spacing: -0.01em;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.lounge-queue-subtitle {
+	font-size: 14px;
+	color: var(--muted);
+}
+
+.lounge-queue-counter-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 14px;
+	border-radius: 9999px;
+	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid var(--glass-border);
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.lounge-queue-list {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	overflow-y: auto;
+	flex: 1;
+	min-height: 0;
+	padding-right: 6px;
+}
+
+.lounge-queue-list::-webkit-scrollbar {
+	width: 6px;
+}
+
+.lounge-queue-list::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, 0.2);
+	border-radius: 4px;
+}
+
+/* КАРТОЧКА КАБИНЕТА В ОЧЕРЕДИ */
+.lounge-cabinet-item {
+	display: grid;
+	grid-template-columns: minmax(180px, 1.2fr) minmax(150px, 1fr) 40px minmax(170px, 1.2fr) minmax(130px, 0.9fr);
+	align-items: center;
+	gap: 16px;
+	padding: 18px 22px;
+	border-radius: 16px;
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid var(--glass-border);
+	transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
+}
+
+.lounge-cabinet-item:hover {
+	background: rgba(255, 255, 255, 0.09);
+	border-color: rgba(255, 255, 255, 0.25);
+}
+
+.lounge-cabinet-item--calling {
+	background: rgba(34, 197, 94, 0.12);
+	border-color: var(--ok-fg, #22c55e);
+	box-shadow: 0 0 24px rgba(34, 197, 94, 0.25);
+	animation: lounge-call-pulse 2.4s infinite ease-in-out;
+}
+
+.lounge-cabinet-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.lounge-cabinet-number {
+	font-size: 18px;
+	font-weight: 800;
+	color: var(--ink);
+	letter-spacing: -0.01em;
+}
+
+.lounge-cabinet-spec {
+	font-size: 12px;
+	color: var(--muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.lounge-doctor-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.lounge-doctor-name {
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.lounge-doctor-role {
+	font-size: 12px;
+	color: var(--muted);
+}
+
+.lounge-flow-arrow {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--muted);
+}
+
+.lounge-cabinet-item--calling .lounge-flow-arrow {
+	color: var(--ok-fg, #22c55e);
+	animation: lounge-arrow-bounce 1.5s infinite ease-in-out;
+}
+
+.lounge-patient-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.lounge-patient-label {
+	font-size: 11px;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.lounge-patient-name {
+	font-size: 20px;
+	font-weight: 800;
+	color: var(--ink);
+	letter-spacing: -0.01em;
+}
+
+.lounge-cabinet-item--calling .lounge-patient-name {
+	color: var(--ok-fg, #4ade80);
+	text-shadow: 0 0 12px rgba(74, 222, 128, 0.4);
+}
+
+.lounge-status-wrap {
+	display: flex;
+	justify-content: flex-end;
+}
+
+.lounge-status-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 14px;
+	border-radius: 10px;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.lounge-status-badge--calling {
+	background: var(--ok-bg, rgba(34, 197, 94, 0.25));
+	color: var(--ok-fg, #22c55e);
+	border: 1px solid var(--ok-fg, #22c55e);
+}
+
+.lounge-status-badge--treatment {
+	background: rgba(56, 189, 248, 0.2);
+	color: #38bdf8;
+	border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.lounge-status-badge--waiting {
+	background: rgba(255, 255, 255, 0.07);
+	color: var(--muted);
+	border: 1px solid var(--glass-border);
+}
+
+/* НИЖНИЙ ПОДВАЛ-ТИКЕР */
+.lounge-footer {
+	padding: 12px 28px;
+	margin: 0 24px 20px 24px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 14px;
+	color: var(--muted);
+	flex-shrink: 0;
+	gap: 20px;
+}
+
+.lounge-footer-ticker {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.lounge-footer-accent {
+	color: var(--ink);
+	font-weight: 600;
+}
+
+.lounge-footer-contacts {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	flex-shrink: 0;
+	font-size: 13px;
+}
+
+/* АНИМАЦИИ */
+@keyframes lounge-call-pulse {
+	0%, 100% {
+		border-color: rgba(34, 197, 94, 0.6);
+		box-shadow: 0 0 16px rgba(34, 197, 94, 0.2);
+	}
+	50% {
+		border-color: rgba(34, 197, 94, 1);
+		box-shadow: 0 0 32px rgba(34, 197, 94, 0.45);
+	}
+}
+
+@keyframes lounge-beacon-pulse {
+	0%, 100% {
+		transform: scale(1);
+		opacity: 0.9;
+	}
+	50% {
+		transform: scale(1.3);
+		opacity: 1;
+	}
+}
+
+@keyframes lounge-arrow-bounce {
+	0%, 100% {
+		transform: translateX(0);
+	}
+	50% {
+		transform: translateX(4px);
+	}
+}
+
+/* АДАПТИВНОСТЬ ДЛЯ ВЕРТИКАЛЬНЫХ И КОМПАКТНЫХ ЭКРАНОВ */
+@media (max-width: 1024px) {
+	.lounge-main-grid {
+		grid-template-columns: 1fr;
+		overflow-y: auto;
+	}
+	.lounge-cabinet-item {
+		grid-template-columns: 1fr 1fr;
+		gap: 10px;
+	}
+	.lounge-flow-arrow {
+		display: none;
+	}
+	.lounge-header-welcome {
+		display: none;
+	}
+}
