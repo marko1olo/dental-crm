@@ -921,7 +921,7 @@ export function matchPhotoProtocolSlot(fileName: string): PhotoProtocolSlot | un
 	// 1. Explicit slot index pattern: slot1..slot12, slot_1..slot_12, слот1..слот12
 	const slotNumMatch = baseName.match(/(?:^|[_\W])(?:slot|слот)[_-]?(0?[1-9]|1[0-2])(?=[_\W]|$)/i);
 	if (slotNumMatch) {
-		const idx = parseInt(slotNumMatch[1], 10);
+		const idx = parseInt(slotNumMatch[1]!, 10);
 		const found = DENTAL_PHOTO_PROTOCOL_12.find((s) => s.index === idx);
 		if (found) return found;
 	}
@@ -929,7 +929,7 @@ export function matchPhotoProtocolSlot(fileName: string): PhotoProtocolSlot | un
 	// 2. Leading or delimited index: 01_..12_ or _01.._12
 	const delimitedNumMatch = baseName.match(/(?:^|[_\W])(0[1-9]|1[0-2])[_\W]/);
 	if (delimitedNumMatch) {
-		const idx = parseInt(delimitedNumMatch[1], 10);
+		const idx = parseInt(delimitedNumMatch[1]!, 10);
 		const found = DENTAL_PHOTO_PROTOCOL_12.find((s) => s.index === idx);
 		if (found) return found;
 	}
@@ -1430,27 +1430,27 @@ export function parseSlidaXmlResponse(xmlContent: string): SlidaResponse {
 		return { success: false, status: "ERROR", imagePaths: [], error: "Empty XML content" };
 	}
 	const statusMatch = xmlContent.match(/status=["']([^"']+)["']/i);
-	const status = statusMatch ? statusMatch[1].toUpperCase() : "OK";
+	const status = statusMatch ? statusMatch[1]!.toUpperCase() : "OK";
 
 	const patMatch = xmlContent.match(/<Patient[^>]*id=["']([^"']+)["']/i) || xmlContent.match(/<Id>([^<]+)<\/Id>/i);
-	const patientId = patMatch ? patMatch[1].trim() : undefined;
+	const patientId = patMatch ? patMatch[1]!.trim() : undefined;
 
 	const picToothMatch = xmlContent.match(/tooth=["']([^"']+)["']/i) || xmlContent.match(/<Tooth>([^<]+)<\/Tooth>/i);
-	const toothCode = picToothMatch ? picToothMatch[1].trim() : undefined;
+	const toothCode = picToothMatch ? picToothMatch[1]!.trim() : undefined;
 
 	const fileMatches: string[] = [];
 	const fileAttrRegex = /(?:file|path|image)=["']([^"']+)["']/gi;
 	let match: RegExpExecArray | null;
 	while ((match = fileAttrRegex.exec(xmlContent)) !== null) {
-		fileMatches.push(match[1]);
+		fileMatches.push(match[1]!);
 	}
 	const fileTagRegex = /<(?:File|Path|Image)>([^<]+)<\/(?:File|Path|Image)>/gi;
 	while ((match = fileTagRegex.exec(xmlContent)) !== null) {
-		fileMatches.push(match[1].trim());
+		fileMatches.push(match[1]!.trim());
 	}
 
 	const modalityMatch = xmlContent.match(/modality=["']([^"']+)["']/i) || xmlContent.match(/<Modality>([^<]+)<\/Modality>/i);
-	const modality = modalityMatch ? (modalityMatch[1].trim().toUpperCase() as any) : undefined;
+	const modality = modalityMatch ? (modalityMatch[1]!.trim().toUpperCase() as any) : undefined;
 
 	return {
 		success: status === "OK" || status === "SUCCESS",
@@ -1809,14 +1809,17 @@ export function parseHotFolderFilenameMetadata(
  */
 export function parseDicomFilenameMetadata(fileName: string): { toothCode?: string; patientId?: string } {
 	const res = parseHotFolderFilenameMetadata(fileName);
-	return { toothCode: res.toothCode, patientId: res.patientId };
+	const out: { toothCode?: string; patientId?: string } = {};
+	if (res.toothCode !== undefined) out.toothCode = res.toothCode;
+	if (res.patientId !== undefined) out.patientId = res.patientId;
+	return out;
 }
 
 // -----------------------------------------------------------------------------
 // Protocol 5: TWAIN / WIA Unified 2D Frame Capture Catalog
 // -----------------------------------------------------------------------------
 
-export interface TwainDeviceDescriptor {
+export interface TwainDeviceCatalogEntry {
 	readonly id: string;
 	readonly name: string;
 	readonly vendor: DentalHardwareVendor;
@@ -1829,7 +1832,7 @@ export interface TwainDeviceDescriptor {
 /**
  * Standard TWAIN device catalog across all 5 dental equipment families.
  */
-export function getTwainDeviceCatalog(): readonly TwainDeviceDescriptor[] {
+export function getTwainDeviceCatalog(): readonly TwainDeviceCatalogEntry[] {
 	return [
 		// RVG Sensors
 		{
