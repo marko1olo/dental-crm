@@ -17,13 +17,25 @@ import {
 	Search,
 	ShieldCheck,
 } from "lucide-react";
-import type { ChangeEvent } from "react";
+import { type ChangeEvent, useState } from "react";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../../lib/safeLocalStorage";
 import { useAppStore } from "../../store/appStore";
 import {
 	loadUiPreferences,
 	saveUiPreferences,
 } from "../../utils/preferencesUtils";
 import { showToast } from "../GlobalToast";
+
+const ART_PACK_LABELS: Record<string, string> = {
+	nature: "Природа",
+	"dental-epic": "Эпичная стоматология",
+	abstract: "Абстракция",
+	anime: "Аниме",
+	all: "Все коллекции (случайно)",
+};
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
@@ -155,6 +167,44 @@ export function SettingsClinicTab({
 	const setOdontogramViewMode = useAppStore(
 		(state) => state.setOdontogramViewMode,
 	);
+	const [artSettings, setArtSettings] = useState<{
+		enabled: boolean;
+		pack: "nature" | "dental-epic" | "abstract" | "anime" | "all";
+		dynamicByTimeOfDay: boolean;
+	}>(() => {
+		const saved = safeLocalStorageGetItem("dente_auth_art_settings");
+		if (saved) {
+			try {
+				const parsed = JSON.parse(saved);
+				return {
+					enabled: parsed.enabled !== false,
+					pack: parsed.pack || "nature",
+					dynamicByTimeOfDay: parsed.dynamicByTimeOfDay !== false,
+				};
+			} catch {
+				// fallback
+			}
+		}
+		return {
+			enabled: true,
+			pack: "nature",
+			dynamicByTimeOfDay: true,
+		};
+	});
+
+	const updateArtSettings = (
+		partial: Partial<{
+			enabled: boolean;
+			pack: "nature" | "dental-epic" | "abstract" | "anime" | "all";
+			dynamicByTimeOfDay: boolean;
+		}>,
+	) => {
+		setArtSettings((prev) => {
+			const next = { ...prev, ...partial };
+			safeLocalStorageSetItem("dente_auth_art_settings", JSON.stringify(next));
+			return next;
+		});
+	};
 
 	if (settingsTab !== "clinic") return null;
 
@@ -676,6 +726,90 @@ export function SettingsClinicTab({
 									"Режим отображения формулы по умолчанию"}
 							</small>
 						</label>
+						<div className="form-span-2 pt-3 border-t border-[var(--border)] mt-1">
+							<div className="font-semibold text-sm mb-1 text-[var(--ink)]">
+								Фоновое арт-оформление экранов
+							</div>
+							<small className="field-note mb-3 block">
+								Атмосферные фотообои и иллюстрации на экране входа, в портале пациента и на публичных экранах клиники
+							</small>
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								<label className="checkbox-line">
+									<input
+										type="checkbox"
+										className="toggle-switch"
+										checked={artSettings.enabled}
+										onChange={(event: InputChangeEvent) => {
+											const val = event.target.checked;
+											updateArtSettings({ enabled: val });
+											showToast(
+												val
+													? "Фоновое арт-оформление экранов включено"
+													: "Фоновое арт-оформление экранов отключено",
+												"info",
+											);
+										}}
+									/>
+									{artSettings.enabled ? "Включено" : "Выключено"}
+									<small className="field-note">
+										Переключатель отображения фоновых художественных коллекций
+									</small>
+								</label>
+
+								<label>
+									Коллекция оформления
+									<select
+										value={artSettings.pack}
+										disabled={!artSettings.enabled}
+										onChange={(event: SelectChangeEvent) => {
+											const newPack = event.target.value as
+												| "nature"
+												| "dental-epic"
+												| "abstract"
+												| "anime"
+												| "all";
+											updateArtSettings({ pack: newPack });
+											showToast(
+												`Выбрана коллекция «${ART_PACK_LABELS[newPack] || newPack}»`,
+												"info",
+											);
+										}}
+									>
+										<option value="nature">Природа</option>
+										<option value="dental-epic">Эпичная стоматология</option>
+										<option value="abstract">Абстракция</option>
+										<option value="anime">Аниме</option>
+										<option value="all">Все коллекции (случайно)</option>
+									</select>
+									<small className="field-note">
+										Тематический набор фоновых изображений
+									</small>
+								</label>
+
+								<label className="checkbox-line form-span-2">
+									<input
+										type="checkbox"
+										className="toggle-switch"
+										disabled={!artSettings.enabled}
+										checked={artSettings.dynamicByTimeOfDay}
+										onChange={(event: InputChangeEvent) => {
+											const val = event.target.checked;
+											updateArtSettings({ dynamicByTimeOfDay: val });
+											showToast(
+												val
+													? "Динамическая смена утро/день/вечер/ночь включена"
+													: "Динамическая смена времени суток выключена",
+												"info",
+											);
+										}}
+									/>
+									Динамическая смена утро/день/вечер/ночь
+									<small className="field-note">
+										Автоматический подбор фотообоев под текущее время суток
+									</small>
+								</label>
+							</div>
+						</div>
 						<label>
 							Минут на визит
 							<input
