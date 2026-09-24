@@ -82,6 +82,7 @@ import {
 	revokeDenteTelegramChatLink as revokeLegacyInMemoryTelegramChatLink,
 	safeDenteTelegramPublicHttpsUrl,
 	updateDenteTelegramBotSettings,
+	updateTelegramDialogSession,
 } from "../services/telegram/telegramLegacyMemoryStore.js";
 /**
  * СВЯЗКИ TELEGRAM-ЧАТОВ ЧИТАЮТСЯ И ПИШУТСЯ В POSTGRES.
@@ -3567,6 +3568,37 @@ async function handleWebhook(
 				request,
 				runtime,
 				linkResult.chatLink,
+			);
+			updateTelegramDialogSession(
+				chatHash,
+				runtime.organizationId,
+				{
+					clinicId: runtime.clinicId,
+					chatId: chatId ? String(chatId) : null,
+					subjectType: linkResult.subjectType,
+					subjectId: linkResult.chatLink.subjectId,
+					currentStep: "linked",
+					lastCommand: command,
+					lastMessageText: messageText ? messageText.slice(0, 200) : null,
+				},
+				runtime.botConfigId,
+			);
+		} else {
+			updateTelegramDialogSession(
+				chatHash,
+				runtime.organizationId,
+				{
+					clinicId: runtime.clinicId,
+					chatId: chatId ? String(chatId) : null,
+					currentStep: appointmentCallbackResult.handled
+						? appointmentCallbackResult.action
+						: command
+							? `command:${command}`
+							: "message",
+					lastCommand: command,
+					lastMessageText: messageText ? messageText.slice(0, 200) : null,
+				},
+				runtime.botConfigId,
 			);
 		}
 		const warnings = [

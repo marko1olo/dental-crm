@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { MessageTemplateEngine } from "./services/communications/MessageTemplateEngine.js";
 
 export type TelegramTransportResult =
@@ -289,4 +290,266 @@ export async function answerTelegramCallbackQuery(
 	} finally {
 		clearTimeout(timeout);
 	}
+}
+
+// ============================================================================
+// УВЕДОМЛЕНИЯ О ВИЗИТАХ С ЗАЩИТОЙ ВРАЧЕБНОЙ ТАЙНЫ (152-ФЗ / 323-ФЗ ст. 13)
+// ============================================================================
+
+export type SendVisitReminderNotificationInput = {
+	botToken: string;
+	chatId: string;
+	organizationId: string;
+	clinicName: string;
+	appointmentId: string;
+	appointmentStartsAt: string; // ISO date-time or formatted string
+	patientFullName?: string | null;
+	doctorName?: string | null;
+	clinicAddress?: string | null;
+	clinicPhone?: string | null;
+	clinicId?: string | null;
+	botConfigId?: string | null;
+	callbackSecret?: string | null;
+	timeoutMs?: number;
+	replyMarkup?: Record<string, unknown> | null;
+};
+
+export type SendVisitCancellationNotificationInput = {
+	botToken: string;
+	chatId: string;
+	organizationId: string;
+	clinicName: string;
+	appointmentStartsAt: string;
+	clinicPhone?: string | null;
+	timeoutMs?: number;
+};
+
+export type SendVisitConfirmationReceiptInput = {
+	botToken: string;
+	chatId: string;
+	organizationId: string;
+	clinicName: string;
+	appointmentStartsAt: string;
+	clinicPhone?: string | null;
+	timeoutMs?: number;
+};
+
+/**
+ * Формирование безопасного текста напоминания о приёме без диагнозов.
+ * В текст включаются ТОЛЬКО дата, время, клиника, врач и контакты (ст. 13 323-ФЗ).
+ */
+export function buildVisitReminderText(params: {
+	clinicName: string;
+	appointmentStartsAt: string;
+	doctorName?: string | null;
+	clinicAddress?: string | null;
+	clinicPhone?: string | null;
+}): string {
+	const startsDate = new Date(params.appointmentStartsAt);
+	const formattedDate = Number.isFinite(startsDate.getTime())
+		? startsDate.toLocaleString("ru-RU", {
+				day: "numeric",
+				month: "long",
+				hour: "2-digit",
+				minute: "2-digit",
+			})
+		: params.appointmentStartsAt;
+
+	const lines = [
+		`Здравствуйте! Напоминаем о вашем визите в клинику «${params.clinicName}».`,
+		`📅 Дата и время: ${formattedDate}`,
+	];
+	if (params.doctorName?.trim()) {
+		lines.push(`👨‍⚕️ Приём ведёт: ${params.doctorName.trim()}`);
+	}
+	if (params.clinicAddress?.trim()) {
+		lines.push(`📍 Адрес: ${params.clinicAddress.trim()}`);
+	}
+	if (params.clinicPhone?.trim()) {
+		lines.push(`📞 Телефон: ${params.clinicPhone.trim()}`);
+	}
+	lines.push("Пожалуйста, подтвердите ваш визит кнопкой ниже.");
+	return lines.join("\n");
+}
+
+/**
+ * Подписание callback_data для кнопок подтверждения/отмены приёма в 1 клик.
+ */
+export function buildSignedAppointmentCallbackData(params: {
+	action: "c" | "r" | "p"; // c = confirm, r = reschedule, p = cancel/call
+	appointmentId: string;
+	startsAtIso: string;
+	secret: string;
+	organizationId: string;
+	clinicId?: string | null;
+	botConfigId?: string | null;
+}): string {
+	const startsMs = Date.parse(params.startsAtIso);
+	const expirySec = Math.floor(
+		(Number.isFinite(startsMs) ? startsMs : Date.now() + 7 * 86400 * 1000) / 1000,
+	);
+	const expiryBase36 = expirySec.toString(36);
+	const compactAppId = params.appointmentId.replace(/-/g, "").toLowerCase();
+	const actionName =
+		params.action === "c"
+			? "confirm"
+			: params.action === "r"
+				? "reschedule"
+				: "call_request";
+	const scopePart = `${params.organizationId}:${params.clinicId ?? params.organizationId}:${params.botConfigId ?? "default"}`;
+	const signature = createHmac("sha256", params.secret)
+		.update(`${scopePart}:${params.appointmentId}:${actionName}:${expiryBase36}`)
+		.digest("base64url")
+		.slice(0, 10);
+	return `d1.${params.action}.${compactAppId}.${expiryBase36}.${signature}`;
+}
+
+/**
+ * Построение клавиатуры подтверждения/отмены приёма в 1 клик.
+ */
+export function buildVisitReminderInlineKeyboard(params: {
+	appointmentId: string;
+	startsAtIso: string;
+	callbackSecret: string;
+	organizationId: string;
+	clinicId?: string | null;
+	botConfigId?: string | null;
+}): Record<string, unknown> {
+	const confirmData = buildSignedAppointmentCallbackData({
+		action: "c",
+		appointmentId: params.appointmentId,
+		startsAtIso: params.startsAtIso,
+		secret: params.callbackSecret,
+		organizationId: params.organizationId,
+		clinicId: params.clinicId,
+		botConfigId: params.botConfigId,
+	});
+	const rescheduleData = buildSignedAppointmentCallbackData({
+		action: "r",
+		appointmentId: params.appointmentId,
+		startsAtIso: params.startsAtIso,
+		secret: params.callbackSecret,
+		organizationId: params.organizationId,
+		clinicId: params.clinicId,
+		botConfigId: params.botConfigId,
+	});
+	const cancelData = buildSignedAppointmentCallbackData({
+		action: "p",
+		appointmentId: params.appointmentId,
+		startsAtIso: params.startsAtIso,
+		secret: params.callbackSecret,
+		organizationId: params.organizationId,
+		clinicId: params.clinicId,
+		botConfigId: params.botConfigId,
+	});
+
+	return {
+		inline_keyboard: [
+			[{ text: "✅ Подтвердить приём", callback_data: confirmData }],
+			[
+				{ text: "📅 Перенести", callback_data: rescheduleData },
+				{ text: "❌ Отменить", callback_data: cancelData },
+			],
+		],
+	};
+}
+
+/**
+ * Отправка напоминания о визите за 24 часа с кнопками подтверждения/отмены в 1 клик.
+ */
+export async function sendVisitReminderNotification(
+	input: SendVisitReminderNotificationInput,
+): Promise<TelegramTransportResult> {
+	const text = buildVisitReminderText({
+		clinicName: input.clinicName,
+		appointmentStartsAt: input.appointmentStartsAt,
+		doctorName: input.doctorName,
+		clinicAddress: input.clinicAddress,
+		clinicPhone: input.clinicPhone,
+	});
+
+	let replyMarkup = input.replyMarkup;
+	if (!replyMarkup && input.callbackSecret) {
+		replyMarkup = buildVisitReminderInlineKeyboard({
+			appointmentId: input.appointmentId,
+			startsAtIso: input.appointmentStartsAt,
+			callbackSecret: input.callbackSecret,
+			organizationId: input.organizationId,
+			clinicId: input.clinicId,
+			botConfigId: input.botConfigId,
+		});
+	}
+
+	return sendTelegramTextMessage({
+		botToken: input.botToken,
+		chatId: input.chatId,
+		text,
+		replyMarkup,
+		timeoutMs: input.timeoutMs,
+	});
+}
+
+/**
+ * Отправка уведомления об отмене визита (без разглашения диагнозов).
+ */
+export async function sendVisitCancellationNotification(
+	input: SendVisitCancellationNotificationInput,
+): Promise<TelegramTransportResult> {
+	const startsDate = new Date(input.appointmentStartsAt);
+	const formattedDate = Number.isFinite(startsDate.getTime())
+		? startsDate.toLocaleString("ru-RU", {
+				day: "numeric",
+				month: "long",
+				hour: "2-digit",
+				minute: "2-digit",
+			})
+		: input.appointmentStartsAt;
+
+	const text = [
+		`Здравствуйте! Запись на приём в клинику «${input.clinicName}» на ${formattedDate} отменена.`,
+		input.clinicPhone
+			? `Если у вас возникли вопросы, свяжитесь с нами: ${input.clinicPhone}`
+			: null,
+	]
+		.filter(Boolean)
+		.join("\n");
+
+	return sendTelegramTextMessage({
+		botToken: input.botToken,
+		chatId: input.chatId,
+		text,
+		timeoutMs: input.timeoutMs,
+	});
+}
+
+/**
+ * Отправка квитанции об успешном подтверждении визита в 1 клик.
+ */
+export async function sendVisitConfirmationReceipt(
+	input: SendVisitConfirmationReceiptInput,
+): Promise<TelegramTransportResult> {
+	const startsDate = new Date(input.appointmentStartsAt);
+	const formattedDate = Number.isFinite(startsDate.getTime())
+		? startsDate.toLocaleString("ru-RU", {
+				day: "numeric",
+				month: "long",
+				hour: "2-digit",
+				minute: "2-digit",
+			})
+		: input.appointmentStartsAt;
+
+	const text = [
+		`✅ Спасибо! Ваш визит в клинику «${input.clinicName}» на ${formattedDate} успешно подтверждён.`,
+		"Ждём вас на приёме!",
+		input.clinicPhone ? `Контакты клиники: ${input.clinicPhone}` : null,
+	]
+		.filter(Boolean)
+		.join("\n");
+
+	return sendTelegramTextMessage({
+		botToken: input.botToken,
+		chatId: input.chatId,
+		text,
+		timeoutMs: input.timeoutMs,
+	});
 }

@@ -10,6 +10,7 @@ import { and, desc, eq, isNull, or, type SQL, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { type TenantDb, withTenantCtx } from "../db/rls.js";
 import { clinics, denteTelegramChatLinks } from "../db/schema.js";
+import { decryptTelegramChatId } from "../utils/telegramChatRef.js";
 
 /**
  * СВЯЗКИ TELEGRAM-ЧАТОВ ЖИВУТ В POSTGRES, А НЕ В МАССИВЕ ПРОЦЕССА.
@@ -390,4 +391,160 @@ export async function buildDenteTelegramChatLinkList(
 			denteTelegramChatLinkPublicSchema.parse(toDenteTelegramChatLink(row)),
 		),
 	});
+}
+
+/**
+ * Поиск активной связки Telegram-чата по отпечатку (chatFingerprint).
+ * Строго изолировано по organizationId (мультитенантность / 152-ФЗ).
+ */
+export async function findActiveDenteTelegramChatLinkByFingerprint(
+	scope: DenteTelegramChatLinkScope,
+	chatFingerprint: string,
+): Promise<DenteTelegramChatLink | null> {
+	const conditions: SQL[] = [
+		...chatLinkVisibilityConditions(scope),
+		eq(denteTelegramChatLinks.chatFingerprint, chatFingerprint),
+		eq(denteTelegramChatLinks.status, "active"),
+	];
+
+	const [row] = await withTenantCtx(scope.organizationId, async (tx) =>
+		tx
+			.select()
+			.from(denteTelegramChatLinks)
+			.where(and(...conditions))
+			.limit(1),
+	);
+
+	return row ? toDenteTelegramChatLink(row) : null;
+}
+
+/**
+ * Поиск активной связки Telegram-чата по субъекту (пациент или сотрудник).
+ * Строго изолировано по organizationId (мультитенантность / 152-ФЗ).
+ */
+export async function findActiveDenteTelegramChatLinkBySubject(
+	scope: DenteTelegramChatLinkScope,
+	subjectType: DenteTelegramSubjectType,
+	subjectId: string,
+): Promise<DenteTelegramChatLink | null> {
+	const conditions: SQL[] = [
+		...chatLinkVisibilityConditions(scope),
+		eq(denteTelegramChatLinks.subjectType, subjectType),
+		eq(denteTelegramChatLinks.subjectId, subjectId),
+		eq(denteTelegramChatLinks.status, "active"),
+	];
+
+	const [row] = await withTenantCtx(scope.organizationId, async (tx) =>
+		tx
+			.select()
+			.from(denteTelegramChatLinks)
+			.where(and(...conditions))
+			.limit(1),
+	);
+
+	return row ? toDenteTelegramChatLink(row) : null;
+}
+
+/**
+ * Поиск активной связки Telegram-чата по открытому Telegram chat_id.
+ * Дешифрует chatTransportRef локально в памяти тенанта, не раскрывая chat_id наружу.
+ */
+export async function findActiveDenteTelegramChatLinkByChatId(
+	scope: DenteTelegramChatLinkScope,
+	chatId: string,
+): Promise<DenteTelegramChatLink | null> {
+	const activeLinks = await withTenantCtx(scope.organizationId, async (tx) =>
+		tx
+			.select()
+			.from(denteTelegramChatLinks)
+			.where(
+				and(
+					...chatLinkVisibilityConditions(scope),
+					eq(denteTelegramChatLinks.status, "active"),
+				),
+			),
+	);
+
+	for (const row of activeLinks) {
+		const decryptedChatId = decryptTelegramChatId(row.chatTransportRef);
+		if (decryptedChatId === chatId) {
+			return toDenteTelegramChatLink(row);
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Сопоставление открытого Telegram chat_id с пациентом клиники.
+ *
+ * Безопасность и 152-ФЗ:
+ * 1. Запрос в БД СТРОГО фильтруется по organizationId и исполняется в withTenantCtx.
+ *    Чужая организация никогда не получит доступ к чужому чату или пациенту.
+ * 2. chatTransportRef дешифруется локально по алгоритму AES-256-GCM.
+ * 3. Возвращается ID пациента и филиала БЕЗ разглашения персональных данных другим тенантам.
+ */
+export async function findPatientByTelegramChatId(
+	scope: DenteTelegramChatLinkScope,
+	chatId: string,
+): Promise<{ patientId: string; clinicId: string | null; chatLink: DenteTelegramChatLink } | null> {
+	const activeLinks = await withTenantCtx(scope.organizationId, async (tx) =>
+		tx
+			.select()
+			.from(denteTelegramChatLinks)
+			.where(
+				and(
+					...chatLinkVisibilityConditions(scope),
+					eq(denteTelegramChatLinks.subjectType, "patient"),
+					eq(denteTelegramChatLinks.status, "active"),
+				),
+			),
+	);
+
+	for (const row of activeLinks) {
+		const decryptedChatId = decryptTelegramChatId(row.chatTransportRef);
+		if (decryptedChatId === chatId) {
+			return {
+				patientId: row.subjectId,
+				clinicId: row.clinicId,
+				chatLink: toDenteTelegramChatLink(row),
+			};
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Сопоставление открытого Telegram chat_id с сотрудником/врачом клиники.
+ */
+export async function findStaffByTelegramChatId(
+	scope: DenteTelegramChatLinkScope,
+	chatId: string,
+): Promise<{ staffId: string; clinicId: string | null; chatLink: DenteTelegramChatLink } | null> {
+	const activeLinks = await withTenantCtx(scope.organizationId, async (tx) =>
+		tx
+			.select()
+			.from(denteTelegramChatLinks)
+			.where(
+				and(
+					...chatLinkVisibilityConditions(scope),
+					eq(denteTelegramChatLinks.subjectType, "staff"),
+					eq(denteTelegramChatLinks.status, "active"),
+				),
+			),
+	);
+
+	for (const row of activeLinks) {
+		const decryptedChatId = decryptTelegramChatId(row.chatTransportRef);
+		if (decryptedChatId === chatId) {
+			return {
+				staffId: row.subjectId,
+				clinicId: row.clinicId,
+				chatLink: toDenteTelegramChatLink(row),
+			};
+		}
+	}
+
+	return null;
 }
