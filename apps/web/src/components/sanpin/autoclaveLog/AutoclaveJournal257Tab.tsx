@@ -9,6 +9,7 @@ import {
 	AlertTriangle,
 	CheckCircle2,
 	Download,
+	FileBadge,
 	FileSpreadsheet,
 	Filter,
 	Printer,
@@ -27,6 +28,7 @@ import {
 	exportForm257ToCsv,
 	filterForm257Records,
 	generateForm257PrintHtml,
+	generateRegulatorySanpinInspectionHtml,
 	type ClinicLegalInfo,
 	type Form257FilterCriteria,
 	type Form257Record,
@@ -193,6 +195,24 @@ export function AutoclaveJournal257Tab({
 		}
 	};
 
+	// 1-Клик: Нормативная выгрузка СанПиН 3.3686-21 (Формы 257/у и 366/у) для проверок Роспотребнадзора
+	const handleGenerateRegulatorySanpinInspection = () => {
+		const printHtml = generateRegulatorySanpinInspectionHtml({
+			form257Records: filteredRecords.length > 0 ? filteredRecords : records,
+			clinicInfo,
+			periodLabelRu: startDate || endDate ? `с ${startDate || "начала"} по ${endDate || "сегодня"}` : "за текущую смену",
+		});
+		const printWindow = window.open("", "_blank");
+		if (printWindow) {
+			printWindow.document.write(printHtml);
+			printWindow.document.close();
+			printWindow.focus();
+			setTimeout(() => {
+				printWindow.print();
+			}, 300);
+		}
+	};
+
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
 			{/* Top Action Bar & Filter Controls */}
@@ -274,22 +294,38 @@ export function AutoclaveJournal257Tab({
 				<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
 					<button
 						type="button"
-						onClick={handleGenerateMonthlyForm257}
+						onClick={handleGenerateRegulatorySanpinInspection}
 						className="autoclave-btn"
 						style={{
 							minHeight: "40px",
 							padding: "0.5rem 1rem",
 							fontWeight: 800,
-							background: "linear-gradient(135deg, #0d9488 0%, #059669 100%)",
+							background: "linear-gradient(135deg, #0284c7 0%, #0d9488 100%)",
 							color: "#fff",
 							border: "none",
-							boxShadow: "0 2px 8px rgba(13, 148, 136, 0.25)",
+							boxShadow: "0 2px 8px rgba(2, 132, 199, 0.25)",
+						}}
+						title="1-клик формирование нормативной выгрузки СанПиН 3.3686-21 (Формы 257/у и 366/у) для проверок Роспотребнадзора"
+						data-testid="journal-tab-regulatory-export-btn"
+					>
+						<FileBadge size={16} />
+						<span>Нормативная выгрузка СанПиН</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={handleGenerateMonthlyForm257}
+						className="autoclave-btn autoclave-btn-secondary"
+						style={{
+							minHeight: "40px",
+							padding: "0.5rem 0.875rem",
+							fontWeight: 600,
 						}}
 						title="Автоматическое формирование и печать нормативного журнала стерилизаторов (Форма 257/у) за текущий месяц"
 						data-testid="journal-tab-generate-monthly-form257-btn"
 					>
-						<Sparkles size={16} />
-						<span>Сгенерировать Форму 257/у за месяц</span>
+						<Sparkles size={16} color="var(--teal, #0d9488)" />
+						<span>Форма 257/у (Месяц)</span>
 					</button>
 
 					<button

@@ -9,6 +9,7 @@ import {
 	createForm257Record,
 	exportForm257ToCsv,
 	generateForm257PrintHtml,
+	generateRegulatorySanpinInspectionHtml,
 	type ChamberPointEvaluation,
 	type Form257Record,
 	type BiologicalControlTestRecord,
@@ -314,6 +315,37 @@ describe("SanPiN 3.3686-21 — Autoclave Journal (Form № 257/у)", () => {
 			assert.ok(html.includes("ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ"));
 			assert.ok(html.includes("Euronda"));
 			assert.ok(html.includes("ООО ДЕНТЕ КЛИНИК"));
+		});
+
+		it("generates 1-click regulatory SanPiN inspection HTML (Form 257/u + Form 366/u) for RosPotrebNadzor with chairside sterility presumption", () => {
+			const chamberPoints = createDefault5ChamberPoints("intetest_v_134_5", true);
+			const record = createForm257Record({
+				date: "2026-09-24",
+				cycleNumber: 1,
+				sterilizerId: "autoclave-melag-vacuklav-23b",
+				regimeId: "steam_134_5min",
+				sensors: {
+					actualTemperatureCelsius: 134.4,
+					actualPressureBar: 2.15,
+					actualExposureMinutes: 5.0,
+				},
+				itemsDescriptionRu: "Стоматологический инструментарий смены",
+				packsCount: 15,
+				packagingType: "kraft_pouch_sealed",
+				chamberPoints,
+				operatorStaffFullName: "Сотрудник клиники",
+			});
+
+			const regulatoryHtml = generateRegulatorySanpinInspectionHtml({
+				form257Records: [record],
+				periodLabelRu: "Сентябрь 2026",
+			});
+
+			assert.ok(regulatoryHtml.includes("ОФИЦИАЛЬНАЯ ВЫГРУЗКА ДЛЯ ПРОВЕРОК РОСПОТРЕБНАДЗОРА"));
+			assert.ok(regulatoryHtml.includes("Форма № 257/у"));
+			assert.ok(regulatoryHtml.includes("Форма № 366/у"));
+			assert.ok(regulatoryHtml.includes("Презумпция стерильности лотка у кресла врача"));
+			assert.ok(regulatoryHtml.includes("СТЕРИЛЬНО"));
 		});
 	});
 });

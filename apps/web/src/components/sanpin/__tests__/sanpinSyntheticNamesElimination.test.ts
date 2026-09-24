@@ -60,9 +60,9 @@ describe("SanPiN Registers — Synthetic Names Elimination & Regulatory Roles Ve
 
 	it("verifies regulatory statutory roles are used as clean defaults", () => {
 		// 1. Autoclave express cycle defaults
-		assert.equal(EXPRESS_CYCLE_DEFAULTS.defaultOperatorName, "Медсестра ЦСО");
+		assert.equal(EXPRESS_CYCLE_DEFAULTS.defaultOperatorName, "Сотрудник клиники");
 		const expressValues = computeExpressStandardCycleValues({});
-		assert.equal(expressValues.operatorFullName, "Медсестра ЦСО");
+		assert.equal(expressValues.operatorFullName, "Сотрудник клиники");
 
 		// 2. Shared autopilot shift bundle
 		const bundle = generateSanpinShiftAutopilotBundle();

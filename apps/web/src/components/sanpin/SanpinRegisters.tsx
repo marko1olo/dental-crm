@@ -1199,6 +1199,33 @@ function SanpinRegistersInner() {
 						</span>
 					</button>
 
+					{/* 1-Клик: Нормативная выгрузка СанПиН (Формы 257/у и 366/у) для проверок Роспотребнадзора */}
+					<button
+						type="button"
+						onClick={handlePrintConsolidatedBinder}
+						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+						style={{
+							minHeight: "34px",
+							height: "34px",
+							padding: "0.35rem 0.85rem",
+							fontSize: "0.825rem",
+							fontWeight: 700,
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.35rem",
+							whiteSpace: "nowrap",
+							border: "1px solid var(--line, #cbd5e1)",
+							background: "var(--paper-soft, #f8fafc)",
+							color: "var(--ink, #1e293b)",
+						}}
+						data-testid="sanpin-regulatory-export-btn"
+						title="Нормативная выгрузка СанПиН 3.3686-21: формирование официальных журналов 257/у и 366/у для проверок Роспотребнадзора в 1 клик"
+					>
+						<FileBadge size={15} color="var(--teal, #0d9488)" />
+						<span>Нормативная выгрузка СанПиН</span>
+					</button>
+
 					{/* Dropdown: [⋮ Опции СанПиН] — All secondary actions aggregated cleanly */}
 					<div ref={exportMenuRef} style={{ position: "relative", display: "inline-block", zIndex: 60 }}>
 						<button
@@ -1361,7 +1388,7 @@ function SanpinRegistersInner() {
 									data-testid="print-consolidated-binder-btn"
 								>
 									<FileBadge size={15} color="var(--teal)" />
-									<span>Сводный сшив СанПиН (А4)</span>
+									<span>Нормативная выгрузка СанПиН (Формы 257/у и 366/у)</span>
 								</button>
 
 								{/* CSV */}
