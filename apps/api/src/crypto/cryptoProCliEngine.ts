@@ -460,6 +460,20 @@ export async function listInstalledCertificates(): Promise<CryptoProCertInfo[]> 
 		} catch (err: unknown) {
 			const error = err as { stdout?: Buffer; stderr?: Buffer; message?: string };
 			const errOutput = decodeCryptoProOutput(error.stderr || error.stdout || Buffer.from(error.message || ""));
+			if (
+				errOutput.includes("0x8010000C") ||
+				errOutput.includes("SCARD_E_NO_SMARTCARD") ||
+				errOutput.includes("0x8010006E") ||
+				errOutput.includes("SCARD_W_REMOVED_CARD") ||
+				errOutput.includes("0x80090016") ||
+				errOutput.includes("NTE_BAD_KEYSET")
+			) {
+				throw new CryptoProCliError(
+					"HARDWARE_TOKEN_NOT_FOUND",
+					"Аппаратный токен (Рутокен/JaCarta) не обнаружен или извлечен из USB-порта",
+					{ rawError: errOutput },
+				);
+			}
 			throw new CryptoProCliError(
 				"CERTIFICATES_ENUM_FAILED",
 				`Не удалось перечислить сертификаты КриптоПро: ${errOutput}`,
@@ -601,9 +615,16 @@ export async function signDetachedGost(
 		let errorCode = "SIGNING_FAILED";
 		let userMessage = `Ошибка создания электронной подписи КриптоПро: ${decodedErr}`;
 
-		if (decodedErr.includes("0x80090016") || decodedErr.includes("NTE_BAD_KEYSET")) {
-			errorCode = "CERTIFICATE_KEYSET_NOT_FOUND";
-			userMessage = "Закрытый ключ сертификата не найден в контейнере или токен отключен";
+		if (
+			decodedErr.includes("0x8010000C") ||
+			decodedErr.includes("SCARD_E_NO_SMARTCARD") ||
+			decodedErr.includes("0x8010006E") ||
+			decodedErr.includes("SCARD_W_REMOVED_CARD") ||
+			decodedErr.includes("0x80090016") ||
+			decodedErr.includes("NTE_BAD_KEYSET")
+		) {
+			errorCode = "HARDWARE_TOKEN_NOT_FOUND";
+			userMessage = "Аппаратный токен (Рутокен/JaCarta) не обнаружен или извлечен из USB-порта";
 		} else if (decodedErr.includes("0x80090010") || decodedErr.includes("Access denied")) {
 			errorCode = "PIN_REQUIRED_OR_ACCESS_DENIED";
 			userMessage = "Требуется ввод PIN-кода аппаратного токена или доступ ограничен";

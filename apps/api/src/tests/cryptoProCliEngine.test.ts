@@ -21,7 +21,12 @@ import {
 	parseCertificatesOutput,
 	signDetachedGost,
 } from "../crypto/cryptoProCliEngine.js";
-import { registerCryptoProNativeRoutes } from "../routes/cryptoProNativeRoutes.js";
+import {
+	isCertificateAllowedForTenant,
+	mapCryptoErrorToHttpStatus,
+	registerCryptoProNativeRoutes,
+	type TenantCryptoContext,
+} from "../routes/cryptoProNativeRoutes.js";
 
 describe("CryptoPro CSP Native CLI Engine & Route Bridge", () => {
 	// ─── 1. Binary Discovery & Status ─────────────────────────────────────────
@@ -384,6 +389,188 @@ PrivateKey: Present
 				},
 			});
 			assert.ok(res2.statusCode === 400 || res2.statusCode === 503);
+		});
+
+		it("GET /api/crypto/certificates/:thumbprint rejects invalid thumbprint with 400", async () => {
+			const app = Fastify();
+			await registerCryptoProNativeRoutes(app);
+
+			const res = await app.inject({
+				method: "GET",
+				url: "/api/crypto/certificates/invalid-thumbprint-123",
+			});
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.strictEqual(body.code, "INVALID_THUMBPRINT");
+		});
+
+		it("POST /api/crypto/sign rejects invalid thumbprint format with 400", async () => {
+			const app = Fastify();
+			await registerCryptoProNativeRoutes(app);
+
+			const res = await app.inject({
+				method: "POST",
+				url: "/api/crypto/sign",
+				payload: {
+					data: "Test",
+					thumbprint: "NOT-HEX-40-CHARS",
+				},
+			});
+			assert.ok(res.statusCode === 400 || res.statusCode === 503);
+			if (res.statusCode === 400) {
+				const body = JSON.parse(res.body);
+				assert.strictEqual(body.code, "INVALID_THUMBPRINT");
+			}
+		});
+	});
+
+	// ─── 7. Multi-Tenant Certificate Isolation & Anti-IDOR ───────────────────
+
+	describe("7. Multi-Tenant Certificate Isolation & Anti-IDOR", () => {
+		const sampleCert = {
+			thumbprint: "38F8B1029384756A1029384756A1029384756A10",
+			serialNumber: "4B28DF892019A87C0001000200030004",
+			subjectName: "CN=Иванов Иван Иванович, SNILS=12345678901, OGRN=1027700132195, INN=7701234567, O=ООО ДЕНТЕ",
+			doctorFullName: "Иванов Иван Иванович",
+			doctorSnils: "12345678901",
+			ogrn: "1027700132195",
+			ogrnip: null,
+			inn: "7701234567",
+			organizationName: "ООО ДЕНТЕ",
+			issuerName: "АО ПФ СКБ Контур",
+			validFrom: "2025-05-12T14:00:00.000Z",
+			validTo: "2026-08-12T14:00:00.000Z",
+			hasPrivateKey: true,
+			isValid: true,
+		};
+
+		it("allows certificate when tenant INN matches", () => {
+			const context: TenantCryptoContext = {
+				organizationId: "org-1",
+				clinicInn: "7701234567",
+				clinicOgrn: null,
+				clinicName: null,
+				clinicLegalName: null,
+				allowedDoctorNames: [],
+				allowedSnils: [],
+				isBypass: false,
+			};
+			assert.strictEqual(isCertificateAllowedForTenant(sampleCert, context), true);
+		});
+
+		it("allows certificate when tenant OGRN matches", () => {
+			const context: TenantCryptoContext = {
+				organizationId: "org-1",
+				clinicInn: null,
+				clinicOgrn: "1027700132195",
+				clinicName: null,
+				clinicLegalName: null,
+				allowedDoctorNames: [],
+				allowedSnils: [],
+				isBypass: false,
+			};
+			assert.strictEqual(isCertificateAllowedForTenant(sampleCert, context), true);
+		});
+
+		it("allows certificate when doctor full name matches", () => {
+			const context: TenantCryptoContext = {
+				organizationId: "org-1",
+				clinicInn: null,
+				clinicOgrn: null,
+				clinicName: null,
+				clinicLegalName: null,
+				allowedDoctorNames: ["иванов иван иванович"],
+				allowedSnils: [],
+				isBypass: false,
+			};
+			assert.strictEqual(isCertificateAllowedForTenant(sampleCert, context), true);
+		});
+
+		it("allows certificate when doctor SNILS matches", () => {
+			const context: TenantCryptoContext = {
+				organizationId: "org-1",
+				clinicInn: null,
+				clinicOgrn: null,
+				clinicName: null,
+				clinicLegalName: null,
+				allowedDoctorNames: [],
+				allowedSnils: ["123-456-789 01"],
+				isBypass: false,
+			};
+			assert.strictEqual(isCertificateAllowedForTenant(sampleCert, context), true);
+		});
+
+		it("blocks certificate belonging to another clinic/doctor (IDOR defense)", () => {
+			const foreignContext: TenantCryptoContext = {
+				organizationId: "org-other",
+				clinicInn: "7801999999", // Другой ИНН
+				clinicOgrn: "1027800000000", // Другой ОГРН
+				clinicName: "Клиника Другая",
+				clinicLegalName: "ООО Другая Клиника",
+				allowedDoctorNames: ["петрова анна сергеевна"], // Другой врач
+				allowedSnils: ["99999999999"],
+				isBypass: false,
+			};
+			assert.strictEqual(isCertificateAllowedForTenant(sampleCert, foreignContext), false);
+		});
+
+		it("allows all certificates in bypass/unguarded mode", () => {
+			const bypassContext: TenantCryptoContext = {
+				organizationId: null,
+				clinicInn: null,
+				clinicOgrn: null,
+				clinicName: null,
+				clinicLegalName: null,
+				allowedDoctorNames: [],
+				allowedSnils: [],
+				isBypass: true,
+			};
+			assert.strictEqual(isCertificateAllowedForTenant(sampleCert, bypassContext), true);
+		});
+	});
+
+	// ─── 8. Crypto Error to HTTP Status Mapping ───────────────────────────────
+
+	describe("8. Crypto Error to HTTP Status Code Mapping", () => {
+		it("maps HARDWARE_TOKEN_NOT_FOUND, 0x80090016, 0x8010000C, 0x8010006E to HTTP 404", () => {
+			const err = new CryptoProCliError("HARDWARE_TOKEN_NOT_FOUND", "Токен не найден");
+			const mapped = mapCryptoErrorToHttpStatus(err);
+			assert.strictEqual(mapped.statusCode, 404);
+			assert.strictEqual(mapped.code, "HARDWARE_TOKEN_NOT_FOUND");
+
+			const keysetErr = new CryptoProCliError("CERTIFICATE_KEYSET_NOT_FOUND", "Ключ не найден");
+			assert.strictEqual(mapCryptoErrorToHttpStatus(keysetErr).statusCode, 404);
+
+			const notFoundErr = new CryptoProCliError("CERTIFICATE_NOT_FOUND", "Сертификат не найден");
+			assert.strictEqual(mapCryptoErrorToHttpStatus(notFoundErr).statusCode, 404);
+		});
+
+		it("maps CERTIFICATE_ACCESS_DENIED to HTTP 403", () => {
+			const accessDeniedErr = new CryptoProCliError("CERTIFICATE_ACCESS_DENIED", "Доступ запрещен");
+			const mapped = mapCryptoErrorToHttpStatus(accessDeniedErr);
+			assert.strictEqual(mapped.statusCode, 403);
+			assert.strictEqual(mapped.code, "CERTIFICATE_ACCESS_DENIED");
+		});
+
+		it("maps PIN, missing key, and payload errors to HTTP 400", () => {
+			const pinErr = new CryptoProCliError("PIN_REQUIRED_OR_ACCESS_DENIED", "PIN обязателен");
+			assert.strictEqual(mapCryptoErrorToHttpStatus(pinErr).statusCode, 400);
+
+			const keyMissingErr = new CryptoProCliError("CERTIFICATE_PRIVATE_KEY_MISSING", "Ключ отсутствует");
+			assert.strictEqual(mapCryptoErrorToHttpStatus(keyMissingErr).statusCode, 400);
+
+			const thumbErr = new CryptoProCliError("INVALID_THUMBPRINT", "Неверный отпечаток");
+			assert.strictEqual(mapCryptoErrorToHttpStatus(thumbErr).statusCode, 400);
+
+			const emptyErr = new CryptoProCliError("EMPTY_PAYLOAD", "Пустые данные");
+			assert.strictEqual(mapCryptoErrorToHttpStatus(emptyErr).statusCode, 400);
+		});
+
+		it("maps CSP_NOT_INSTALLED to HTTP 503", () => {
+			const cspErr = new CryptoProCliError("CSP_NOT_INSTALLED", "CSP не установлен");
+			const mapped = mapCryptoErrorToHttpStatus(cspErr);
+			assert.strictEqual(mapped.statusCode, 503);
+			assert.strictEqual(mapped.code, "CSP_NOT_INSTALLED");
 		});
 	});
 });

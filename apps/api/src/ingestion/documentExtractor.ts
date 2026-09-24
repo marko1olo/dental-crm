@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { inflateRawSync } from "node:zlib";
+import { inflateRawSync, inflateSync } from "node:zlib";
 import {
 	type DocumentIngestionKind,
 	type DocumentIngestionQuality,
@@ -43,8 +43,12 @@ const utf16BeDecoder = new TextDecoder("utf-16be", { fatal: false });
 
 function decodeBase64(value: string | undefined): Buffer {
 	if (!value?.trim()) return Buffer.alloc(0);
-	const clean = value.includes(",") ? (value.split(",").pop() ?? "") : value;
-	return Buffer.from(clean, "base64");
+	try {
+		const clean = value.includes(",") ? (value.split(",").pop() ?? "") : value;
+		return Buffer.from(clean, "base64");
+	} catch {
+		return Buffer.alloc(0);
+	}
 }
 
 function normalizeText(value: string): string {
@@ -119,7 +123,10 @@ function detectKind(
 	const ext = extensionOf(fileName);
 	if (isLegacyDatabaseExtension(ext)) return "legacy_database";
 	if (isLegacyDumpExtension(ext)) return "legacy_dump";
-	if (buffer.subarray(0, 16).toString("latin1") === "SQLite format 3\u0000")
+	if (
+		buffer.length >= 16 &&
+		buffer.subarray(0, 16).toString("latin1") === "SQLite format 3\u0000"
+	)
 		return "legacy_database";
 	if (["txt"].includes(ext)) return "txt";
 	if (["csv"].includes(ext)) return "csv";
@@ -128,7 +135,10 @@ function detectKind(
 	if (["xml"].includes(ext)) return "xml";
 	if (["html", "htm"].includes(ext)) return "html";
 	if (["rtf"].includes(ext)) return "rtf";
-	if (ext === "pdf" || buffer.subarray(0, 4).toString("latin1") === "%PDF")
+	if (
+		ext === "pdf" ||
+		(buffer.length >= 4 && buffer.subarray(0, 4).toString("latin1") === "%PDF")
+	)
 		return "pdf";
 	if (ext === "docx") return "docx";
 	if (ext === "xlsx" || ext === "xlsm") return "xlsx";
@@ -138,7 +148,8 @@ function detectKind(
 	if (ext === "odp") return "odp";
 	if (
 		ext === "zip" ||
-		buffer.subarray(0, 4).toString("latin1") === "PK\u0003\u0004"
+		(buffer.length >= 4 &&
+			buffer.subarray(0, 4).toString("latin1") === "PK\u0003\u0004")
 	)
 		return "zip";
 	if (
@@ -206,6 +217,7 @@ function stripXmlTags(xml: string): string {
 			xml
 				.replace(/<w:tab\/>/g, "\t")
 				.replace(/<\/w:tc>/g, "\t")
+				.replace(/<\/w:tr>/g, "\n")
 				.replace(/<\/w:p>/g, "\n")
 				.replace(/<\/a:p>/g, "\n")
 				.replace(/<\/row>/g, "\n")
@@ -247,77 +259,125 @@ export function readZipEntries(buffer: Buffer): {
 } {
 	const warnings: string[] = [];
 	const entries: ZipEntry[] = [];
-	let eocdOffset = -1;
 
-	for (
-		let offset = buffer.length - 22;
-		offset >= Math.max(0, buffer.length - 66_000);
-		offset -= 1
-	) {
-		if (buffer.readUInt32LE(offset) === 0x06054b50) {
-			eocdOffset = offset;
-			break;
-		}
+	if (!buffer || buffer.length < 22) {
+		return { entries, warnings: ["zip_buffer_too_small"] };
 	}
 
-	if (eocdOffset < 0) {
-		return { entries, warnings: ["zip_eocd_not_found"] };
-	}
+	try {
+		let eocdOffset = -1;
 
-	const totalEntries = buffer.readUInt16LE(eocdOffset + 10);
-	const centralOffset = buffer.readUInt32LE(eocdOffset + 16);
-	let cursor = centralOffset;
-
-	for (
-		let index = 0;
-		index < totalEntries && cursor + 46 <= buffer.length;
-		index += 1
-	) {
-		if (buffer.readUInt32LE(cursor) !== 0x02014b50) {
-			warnings.push("zip_central_directory_truncated");
-			break;
+		for (
+			let offset = buffer.length - 22;
+			offset >= Math.max(0, buffer.length - 66_000);
+			offset -= 1
+		) {
+			if (
+				offset + 4 <= buffer.length &&
+				buffer.readUInt32LE(offset) === 0x06054b50
+			) {
+				eocdOffset = offset;
+				break;
+			}
 		}
 
-		const method = buffer.readUInt16LE(cursor + 10);
-		const compressedSize = buffer.readUInt32LE(cursor + 20);
-		const fileNameLength = buffer.readUInt16LE(cursor + 28);
-		const extraLength = buffer.readUInt16LE(cursor + 30);
-		const commentLength = buffer.readUInt16LE(cursor + 32);
-		const localOffset = buffer.readUInt32LE(cursor + 42);
-		const name = buffer
-			.subarray(cursor + 46, cursor + 46 + fileNameLength)
-			.toString("utf8")
-			.replace(/\\/g, "/");
-
-		if (buffer.readUInt32LE(localOffset) !== 0x04034b50) {
-			warnings.push(
-				`zip_local_header_missing:${safeFileLabel(name, "Файл архива")}`,
-			);
-			cursor += 46 + fileNameLength + extraLength + commentLength;
-			continue;
+		if (eocdOffset < 0 || eocdOffset + 22 > buffer.length) {
+			return { entries, warnings: ["zip_eocd_not_found"] };
 		}
 
-		const localNameLength = buffer.readUInt16LE(localOffset + 26);
-		const localExtraLength = buffer.readUInt16LE(localOffset + 28);
-		const dataStart = localOffset + 30 + localNameLength + localExtraLength;
-		const compressed = buffer.subarray(dataStart, dataStart + compressedSize);
-		try {
-			if (method === 0) {
-				entries.push({ name, data: compressed });
-			} else if (method === 8) {
-				entries.push({ name, data: inflateRawSync(compressed) });
-			} else {
+		const totalEntries = buffer.readUInt16LE(eocdOffset + 10);
+		const centralOffset = buffer.readUInt32LE(eocdOffset + 16);
+
+		if (centralOffset < 0 || centralOffset >= buffer.length) {
+			return { entries, warnings: ["zip_invalid_central_offset"] };
+		}
+
+		let cursor = centralOffset;
+
+		for (
+			let index = 0;
+			index < totalEntries && cursor + 46 <= buffer.length;
+			index += 1
+		) {
+			if (buffer.readUInt32LE(cursor) !== 0x02014b50) {
+				warnings.push("zip_central_directory_truncated");
+				break;
+			}
+
+			const method = buffer.readUInt16LE(cursor + 10);
+			const compressedSize = buffer.readUInt32LE(cursor + 20);
+			const fileNameLength = buffer.readUInt16LE(cursor + 28);
+			const extraLength = buffer.readUInt16LE(cursor + 30);
+			const commentLength = buffer.readUInt16LE(cursor + 32);
+			const localOffset = buffer.readUInt32LE(cursor + 42);
+
+			if (cursor + 46 + fileNameLength > buffer.length) {
+				warnings.push("zip_entry_name_out_of_bounds");
+				break;
+			}
+
+			const name = buffer
+				.subarray(cursor + 46, cursor + 46 + fileNameLength)
+				.toString("utf8")
+				.replace(/\\/g, "/");
+
+			const nextCursor =
+				cursor + 46 + fileNameLength + extraLength + commentLength;
+
+			if (localOffset < 0 || localOffset + 30 > buffer.length) {
 				warnings.push(
-					`zip_unsupported_compression:${safeFileLabel(name, "Файл архива")}:${method}`,
+					`zip_local_header_out_of_bounds:${safeFileLabel(name, "Файл архива")}`,
+				);
+				cursor = nextCursor;
+				continue;
+			}
+
+			if (buffer.readUInt32LE(localOffset) !== 0x04034b50) {
+				warnings.push(
+					`zip_local_header_missing:${safeFileLabel(name, "Файл архива")}`,
+				);
+				cursor = nextCursor;
+				continue;
+			}
+
+			const localNameLength = buffer.readUInt16LE(localOffset + 26);
+			const localExtraLength = buffer.readUInt16LE(localOffset + 28);
+			const dataStart = localOffset + 30 + localNameLength + localExtraLength;
+
+			if (dataStart < 0 || dataStart + compressedSize > buffer.length) {
+				warnings.push(
+					`zip_data_out_of_bounds:${safeFileLabel(name, "Файл архива")}`,
+				);
+				cursor = nextCursor;
+				continue;
+			}
+
+			const compressed = buffer.subarray(dataStart, dataStart + compressedSize);
+			try {
+				if (method === 0) {
+					entries.push({ name, data: compressed });
+				} else if (method === 8) {
+					entries.push({
+						name,
+						data: inflateRawSync(compressed, {
+							maxOutputLength: 20 * 1024 * 1024,
+						}),
+					});
+				} else {
+					warnings.push(
+						`zip_unsupported_compression:${safeFileLabel(name, "Файл архива")}:${method}`,
+					);
+				}
+			} catch {
+				warnings.push(
+					`zip_entry_inflate_failed:${safeFileLabel(name, "Файл архива")}`,
 				);
 			}
-		} catch {
-			warnings.push(
-				`zip_entry_inflate_failed:${safeFileLabel(name, "Файл архива")}`,
-			);
-		}
 
-		cursor += 46 + fileNameLength + extraLength + commentLength;
+			cursor = nextCursor;
+		}
+	} catch (err: unknown) {
+		warnings.push(`zip_read_error:${(err as Error).message || "corrupted_zip"}`);
 	}
 
 	return { entries, warnings };
@@ -330,26 +390,86 @@ function zipText(entries: ZipEntry[], pathPattern: RegExp): string[] {
 		.filter(Boolean);
 }
 
-function extractDocx(buffer: Buffer): ExtractedDocument {
-	const zip = readZipEntries(buffer);
-	const parts = zipText(
-		zip.entries,
-		/(?:^|\/)word\/(?:document|header\d*|footer\d*)\.xml$/,
-	);
-	const tableCount =
-		zip.entries
-			.filter((entry) => /(?:^|\/)word\/document\.xml$/.test(entry.name))
-			.map(
-				(entry) => (decodeText(entry.data).match(/<w:tbl\b/g) ?? []).length,
-			)[0] ?? 0;
+function extractRunTexts(xml: string): string {
+	const texts: string[] = [];
+	for (const match of xml.matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/g)) {
+		texts.push(xmlDecode(match[1] ?? ""));
+	}
+	return texts.join("");
+}
+
+function extractOpenXmlTablesAndText(xml: string): {
+	text: string;
+	tableCount: number;
+} {
+	let tableCount = 0;
+	// Заменяем таблицы на структурированные строки с разделителем \t и переносом \n
+	const processed = xml.replace(/<w:tbl\b[\s\S]*?<\/w:tbl>/g, (tblXml) => {
+		tableCount += 1;
+		const rows: string[] = [];
+		const rowMatches = tblXml.matchAll(/<w:tr\b[\s\S]*?<\/w:tr>/g);
+		for (const rMatch of rowMatches) {
+			const rowXml = rMatch[0] ?? "";
+			const cells: string[] = [];
+			const cellMatches = rowXml.matchAll(/<w:tc\b[\s\S]*?<\/w:tc>/g);
+			for (const cMatch of cellMatches) {
+				const cellXml = cMatch[0] ?? "";
+				const cellText = extractRunTexts(cellXml)
+					.replace(/[\t\r\n]+/g, " ")
+					.trim();
+				cells.push(cellText);
+			}
+			if (cells.some(Boolean)) {
+				rows.push(cells.join("\t"));
+			}
+		}
+		return "\n\n" + rows.join("\n") + "\n\n";
+	});
+
 	return {
-		text: parts.join("\n\n"),
+		text: stripXmlTags(processed),
 		tableCount,
-		warnings: zip.warnings,
-		parserNotes: [
-			"DOCX разобран встроенным извлечением текста из OpenXML ZIP.",
-		],
 	};
+}
+
+function extractDocx(buffer: Buffer): ExtractedDocument {
+	try {
+		const zip = readZipEntries(buffer);
+		const docEntry = zip.entries.find((entry) =>
+			/(?:^|\/)word\/document\.xml$/.test(entry.name),
+		);
+		let tableCount = 0;
+		let mainText = "";
+
+		if (docEntry) {
+			const xml = decodeText(docEntry.data);
+			const extracted = extractOpenXmlTablesAndText(xml);
+			mainText = extracted.text;
+			tableCount = extracted.tableCount;
+		}
+
+		const otherParts = zipText(
+			zip.entries,
+			/(?:^|\/)word\/(?:header\d*|footer\d*)\.xml$/,
+		);
+
+		const allText = [mainText, ...otherParts].filter(Boolean).join("\n\n");
+		return {
+			text: allText,
+			tableCount,
+			warnings: zip.warnings,
+			parserNotes: [
+				"DOCX разобран встроенным извлечением текста и таблиц из OpenXML ZIP.",
+			],
+		};
+	} catch (err: unknown) {
+		return {
+			text: "",
+			tableCount: 0,
+			warnings: [`docx_extract_failed:${(err as Error).message}`],
+			parserNotes: ["Ошибка чтения содержимого DOCX."],
+		};
+	}
 }
 
 function sharedStrings(entries: ZipEntry[]): string[] {
@@ -376,68 +496,256 @@ function extractCellValue(cellXml: string, shared: string[]): string {
 }
 
 function extractXlsx(buffer: Buffer): ExtractedDocument {
-	const zip = readZipEntries(buffer);
-	const shared = sharedStrings(zip.entries);
-	const sheetTexts: string[] = [];
-	const sheets = zip.entries.filter((entry) =>
-		/(?:^|\/)xl\/worksheets\/sheet\d+\.xml$/.test(entry.name),
-	);
-
-	for (const sheet of sheets) {
-		const xml = decodeText(sheet.data);
-		const rows = Array.from(xml.matchAll(/<row\b[\s\S]*?<\/row>/g)).map(
-			(rowMatch) => {
-				const rowXml = rowMatch[0] ?? "";
-				return Array.from(rowXml.matchAll(/<c\b[\s\S]*?<\/c>/g))
-					.map((cellMatch) => extractCellValue(cellMatch[0] ?? "", shared))
-					.join("\t")
-					.replace(/\t+$/g, "");
-			},
+	try {
+		const zip = readZipEntries(buffer);
+		const shared = sharedStrings(zip.entries);
+		const sheetTexts: string[] = [];
+		const sheets = zip.entries.filter((entry) =>
+			/(?:^|\/)xl\/worksheets\/sheet\d+\.xml$/.test(entry.name),
 		);
-		sheetTexts.push(rows.filter(Boolean).join("\n"));
-	}
 
-	return {
-		text: sheetTexts.filter(Boolean).join("\n\n"),
-		tableCount: sheets.length,
-		warnings: zip.warnings,
-		parserNotes: [
-			"XLSX разобран встроенным извлечением таблиц из OpenXML ZIP; формулы не вычисляются.",
-		],
-	};
+		for (const sheet of sheets) {
+			const xml = decodeText(sheet.data);
+			const rows = Array.from(xml.matchAll(/<row\b[\s\S]*?<\/row>/g)).map(
+				(rowMatch) => {
+					const rowXml = rowMatch[0] ?? "";
+					return Array.from(rowXml.matchAll(/<c\b[\s\S]*?<\/c>/g))
+						.map((cellMatch) => extractCellValue(cellMatch[0] ?? "", shared))
+						.join("\t")
+						.replace(/\t+$/g, "");
+				},
+			);
+			sheetTexts.push(rows.filter(Boolean).join("\n"));
+		}
+
+		return {
+			text: sheetTexts.filter(Boolean).join("\n\n"),
+			tableCount: sheets.length,
+			warnings: zip.warnings,
+			parserNotes: [
+				"XLSX разобран встроенным извлечением таблиц из OpenXML ZIP; формулы не вычисляются.",
+			],
+		};
+	} catch (err: unknown) {
+		return {
+			text: "",
+			tableCount: 0,
+			warnings: [`xlsx_extract_failed:${(err as Error).message}`],
+			parserNotes: ["Ошибка чтения содержимого XLSX."],
+		};
+	}
 }
 
 function extractPptx(buffer: Buffer): ExtractedDocument {
-	const zip = readZipEntries(buffer);
-	const parts = zipText(zip.entries, /(?:^|\/)ppt\/slides\/slide\d+\.xml$/);
-	return {
-		text: parts.join("\n\n"),
-		tableCount: 0,
-		warnings: zip.warnings,
-		parserNotes: ["PPTX разобран встроенным извлечением текста слайдов."],
-	};
+	try {
+		const zip = readZipEntries(buffer);
+		const parts = zipText(zip.entries, /(?:^|\/)ppt\/slides\/slide\d+\.xml$/);
+		return {
+			text: parts.join("\n\n"),
+			tableCount: 0,
+			warnings: zip.warnings,
+			parserNotes: ["PPTX разобран встроенным извлечением текста слайдов."],
+		};
+	} catch (err: unknown) {
+		return {
+			text: "",
+			tableCount: 0,
+			warnings: [`pptx_extract_failed:${(err as Error).message}`],
+			parserNotes: ["Ошибка чтения содержимого PPTX."],
+		};
+	}
 }
 
 function extractOpenDocument(
 	buffer: Buffer,
 	kind: "odt" | "ods" | "odp",
 ): ExtractedDocument {
-	const zip = readZipEntries(buffer);
-	const content = zip.entries.find((entry) =>
-		/(?:^|\/)content\.xml$/.test(entry.name),
-	);
-	const text = content ? stripXmlTags(decodeText(content.data)) : "";
-	const tableCount = content
-		? (decodeText(content.data).match(/<table:table\b/g) ?? []).length
-		: 0;
-	return {
-		text,
-		tableCount,
-		warnings: zip.warnings,
-		parserNotes: [
-			`${kind.toUpperCase()} разобран встроенным извлечением текста из OpenDocument ZIP.`,
-		],
-	};
+	try {
+		const zip = readZipEntries(buffer);
+		const content = zip.entries.find((entry) =>
+			/(?:^|\/)content\.xml$/.test(entry.name),
+		);
+		const text = content ? stripXmlTags(decodeText(content.data)) : "";
+		const tableCount = content
+			? (decodeText(content.data).match(/<table:table\b/g) ?? []).length
+			: 0;
+		return {
+			text,
+			tableCount,
+			warnings: zip.warnings,
+			parserNotes: [
+				`${kind.toUpperCase()} разобран встроенным извлечением текста из OpenDocument ZIP.`,
+			],
+		};
+	} catch (err: unknown) {
+		return {
+			text: "",
+			tableCount: 0,
+			warnings: [`opendoc_extract_failed:${(err as Error).message}`],
+			parserNotes: [`Ошибка чтения содержимого ${kind.toUpperCase()}.`],
+		};
+	}
+}
+
+function decodePdfBytes(bytes: Buffer): string {
+	if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) {
+		return utf16BeDecoder.decode(bytes.subarray(2));
+	}
+	if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) {
+		return utf16LeDecoder.decode(bytes.subarray(2));
+	}
+	const utf8 = textDecoder.decode(bytes);
+	if (/[А-Яа-яЁё]/.test(utf8) && !utf8.includes("\ufffd")) {
+		return utf8;
+	}
+	try {
+		const cp1251Decoder = new TextDecoder("windows-1251");
+		const decoded = cp1251Decoder.decode(bytes);
+		if (/[А-Яа-яЁё]/.test(decoded)) {
+			return decoded;
+		}
+	} catch {
+		// ignore
+	}
+	return utf8;
+}
+
+function unescapePdfString(raw: string): string {
+	const withOctal = raw.replace(/\\([0-7]{1,3})/g, (_, oct) => {
+		const code = Number.parseInt(oct, 8);
+		return String.fromCharCode(code);
+	});
+	return withOctal
+		.replace(/\\n/g, "\n")
+		.replace(/\\r/g, "\n")
+		.replace(/\\t/g, "\t")
+		.replace(/\\([()\\])/g, "$1")
+		.trim();
+}
+
+function parsePdfStreamOperators(contentBuffer: Buffer): string {
+	const content = decodeText(contentBuffer);
+	const lines: string[] = [];
+	let currentLine: string[] = [];
+
+	const opPattern =
+		/(?:\(((?:\\.|[^\\)])*)\)\s*(?:Tj|'|")|<([0-9A-Fa-f\s]+)>\s*(?:Tj|'|")|\[((?:\\.|[^\]])*)\]\s*TJ|(?:T\*|(?:\d+(?:\.\d+)?\s+){2}(?:Td|TD)))/g;
+
+	for (const match of content.matchAll(opPattern)) {
+		if (match[1] !== undefined) {
+			const cleaned = unescapePdfString(match[1]);
+			if (cleaned) currentLine.push(cleaned);
+		} else if (match[2] !== undefined) {
+			const hexStr = match[2].replace(/\s/g, "");
+			if (hexStr.length >= 2 && hexStr.length % 2 === 0) {
+				const decoded = decodePdfBytes(Buffer.from(hexStr, "hex"));
+				if (decoded) currentLine.push(decoded);
+			}
+		} else if (match[3] !== undefined) {
+			const arrayContent = match[3];
+			const elemPattern = /\(((?:\\.|[^\\)])*)\)|<([0-9A-Fa-f\s]+)>/g;
+			const arrayTexts: string[] = [];
+			for (const elem of arrayContent.matchAll(elemPattern)) {
+				if (elem[1] !== undefined) {
+					const t = unescapePdfString(elem[1]);
+					if (t) arrayTexts.push(t);
+				} else if (elem[2] !== undefined) {
+					const h = elem[2].replace(/\s/g, "");
+					if (h.length >= 2 && h.length % 2 === 0) {
+						const decoded = decodePdfBytes(Buffer.from(h, "hex"));
+						if (decoded) arrayTexts.push(decoded);
+					}
+				}
+			}
+			if (arrayTexts.length) {
+				currentLine.push(arrayTexts.join(""));
+			}
+		} else {
+			if (currentLine.length) {
+				lines.push(currentLine.join(" "));
+				currentLine = [];
+			}
+		}
+	}
+
+	if (currentLine.length) {
+		lines.push(currentLine.join(" "));
+	}
+
+	return normalizeText(lines.join("\n"));
+}
+
+function extractPdfStreams(buffer: Buffer): string[] {
+	const extractedChunks: string[] = [];
+	let searchPos = 0;
+	let streamCount = 0;
+	const maxStreams = 25;
+	const maxTotalDecompressedBytes = 25 * 1024 * 1024;
+	let totalDecompressedBytes = 0;
+
+	const streamMarker = Buffer.from("stream");
+	const endstreamMarker = Buffer.from("endstream");
+
+	while (searchPos < buffer.length && streamCount < maxStreams) {
+		const streamIndex = buffer.indexOf(streamMarker, searchPos);
+		if (streamIndex < 0) break;
+
+		let dataStart = streamIndex + streamMarker.length;
+		if (buffer[dataStart] === 0x0d && buffer[dataStart + 1] === 0x0a) {
+			dataStart += 2;
+		} else if (buffer[dataStart] === 0x0a || buffer[dataStart] === 0x0d) {
+			dataStart += 1;
+		}
+
+		const endIndex = buffer.indexOf(endstreamMarker, dataStart);
+		if (endIndex < 0) break;
+
+		searchPos = endIndex + endstreamMarker.length;
+		streamCount += 1;
+
+		let streamData = buffer.subarray(dataStart, endIndex);
+		if (
+			streamData.length > 0 &&
+			(streamData[streamData.length - 1] === 0x0a ||
+				streamData[streamData.length - 1] === 0x0d)
+		) {
+			streamData = streamData.subarray(0, streamData.length - 1);
+		}
+		if (
+			streamData.length > 0 &&
+			streamData[streamData.length - 1] === 0x0d
+		) {
+			streamData = streamData.subarray(0, streamData.length - 1);
+		}
+
+		if (streamData.length === 0) continue;
+
+		let decompressed: Buffer | null = null;
+		try {
+			decompressed = inflateSync(streamData, {
+				maxOutputLength: 5 * 1024 * 1024,
+			});
+		} catch {
+			try {
+				decompressed = inflateRawSync(streamData, {
+					maxOutputLength: 5 * 1024 * 1024,
+				});
+			} catch {
+				// Not a zlib compressed stream
+			}
+		}
+
+		if (decompressed) {
+			totalDecompressedBytes += decompressed.length;
+			if (totalDecompressedBytes > maxTotalDecompressedBytes) break;
+			const text = parsePdfStreamOperators(decompressed);
+			if (text.trim()) {
+				extractedChunks.push(text);
+			}
+		}
+	}
+
+	return extractedChunks;
 }
 
 function extractPdfLiteralText(source: string): string[] {
@@ -472,32 +780,57 @@ function extractPdfHexText(source: string): string[] {
 }
 
 function extractPdf(buffer: Buffer): ExtractedDocument {
-	const latinSource = buffer.toString("latin1");
-	const utf8Source = decodeText(buffer);
-	const literalText = Array.from(
-		new Set([
-			...extractPdfLiteralText(utf8Source),
-			...extractPdfLiteralText(latinSource),
-			...extractPdfHexText(utf8Source),
-			...extractPdfHexText(latinSource),
-		]),
-	);
-	const plainText = utf8Source
-		.replace(/<[0-9A-Fa-f\s]{8,}>/g, " ")
-		.replace(/[^\t\n\r\x20-\x7E\p{L}\p{N}\p{Sc}]+/gu, " ")
-		.match(/[\p{L}\p{N}][\p{L}\p{N}\s.,;:+\-()/%\p{Sc}]{8,}/gu);
-	const fallbackText = literalText.length ? [] : (plainText ?? []);
-	const text = normalizeText([...literalText, ...fallbackText].join("\n"));
-	const warnings = ["pdf_best_effort_no_ocr"];
-	if (!text) warnings.push("pdf_text_not_extracted_may_be_scanned");
-	return {
-		text,
-		tableCount: 0,
-		warnings,
-		parserNotes: [
-			"PDF разобран встроенным извлечением текста; сканы все равно требуют распознавания изображения.",
-		],
-	};
+	try {
+		// 1. Декомпрессия FlateDecode потоков контента (95%+ реальных PDF)
+		const streamTexts = extractPdfStreams(buffer);
+
+		// 2. Извлечение литералов и шестнадцатеричных блоков из незашифрованного тела
+		const latinSource = buffer.toString("latin1");
+		const utf8Source = decodeText(buffer);
+		const literalText = Array.from(
+			new Set([
+				...extractPdfLiteralText(utf8Source),
+				...extractPdfLiteralText(latinSource),
+				...extractPdfHexText(utf8Source),
+				...extractPdfHexText(latinSource),
+			]),
+		);
+
+		// 3. Безопасное сопоставление открытого текста на ограниченном срезе (до 100k символов)
+		const sampleSource = utf8Source.slice(0, 100_000);
+		const plainText = sampleSource
+			.replace(/<[0-9A-Fa-f\s]{8,}>/g, " ")
+			.replace(/[^\t\n\r\x20-\x7E\p{L}\p{N}\p{Sc}]+/gu, " ")
+			.match(/[\p{L}\p{N}][\p{L}\p{N}\s.,;:+\-()/%\p{Sc}]{8,}/gu);
+
+		const fallbackText =
+			literalText.length || streamTexts.length ? [] : (plainText ?? []);
+		const combined = [...streamTexts, ...literalText, ...fallbackText];
+		const text = normalizeText(combined.join("\n"));
+		const warnings = ["pdf_best_effort_no_ocr"];
+		if (!text) warnings.push("pdf_text_not_extracted_may_be_scanned");
+
+		const tableCount = looksTabular(text) ? 1 : 0;
+
+		return {
+			text,
+			tableCount,
+			warnings,
+			parserNotes: [
+				"PDF разобран встроенным извлечением FlateDecode потоков и текстовых операторов; сканы требуют распознавания изображения.",
+			],
+		};
+	} catch (err: unknown) {
+		return {
+			text: "",
+			tableCount: 0,
+			warnings: [
+				"pdf_best_effort_no_ocr",
+				`pdf_parsing_error:${(err as Error).message}`,
+			],
+			parserNotes: ["Ошибка чтения бинарной структуры PDF."],
+		};
+	}
 }
 
 function countRows(text: string): number {
@@ -522,42 +855,53 @@ function extractByKind(
 	kind: DocumentIngestionKind,
 	buffer: Buffer,
 ): ExtractedDocument {
-	if (["txt", "csv", "tsv", "json", "xml"].includes(kind)) {
+	try {
+		if (["txt", "csv", "tsv", "json", "xml"].includes(kind)) {
+			return {
+				text: decodeText(buffer),
+				tableCount: looksTabular(decodeText(buffer)) ? 1 : 0,
+				warnings: [],
+				parserNotes: [`${kind.toUpperCase()} decoded as text.`],
+			};
+		}
+		if (kind === "html") {
+			const text = stripHtml(decodeText(buffer));
+			return {
+				text,
+				tableCount: looksTabular(text) ? 1 : 0,
+				warnings: [],
+				parserNotes: ["HTML tags stripped."],
+			};
+		}
+		if (kind === "rtf") {
+			const text = stripRtf(decodeText(buffer));
+			return {
+				text,
+				tableCount: looksTabular(text) ? 1 : 0,
+				warnings: [],
+				parserNotes: ["RTF controls stripped with built-in parser."],
+			};
+		}
+		if (kind === "pdf") return extractPdf(buffer);
+		if (kind === "docx") return extractDocx(buffer);
+		if (kind === "xlsx") return extractXlsx(buffer);
+		if (kind === "pptx") return extractPptx(buffer);
+		if (kind === "odt" || kind === "ods" || kind === "odp")
+			return extractOpenDocument(buffer, kind);
 		return {
-			text: decodeText(buffer),
+			text: "",
 			tableCount: 0,
-			warnings: [],
-			parserNotes: [`${kind.toUpperCase()} decoded as text.`],
+			warnings: [`unsupported_archive_entry_kind:${kind}`],
+			parserNotes: [],
+		};
+	} catch (err: unknown) {
+		return {
+			text: "",
+			tableCount: 0,
+			warnings: [`extract_by_kind_error:${kind}:${(err as Error).message}`],
+			parserNotes: [`Ошибка разбора формата ${kind}`],
 		};
 	}
-	if (kind === "html") {
-		return {
-			text: stripHtml(decodeText(buffer)),
-			tableCount: 0,
-			warnings: [],
-			parserNotes: ["HTML tags stripped."],
-		};
-	}
-	if (kind === "rtf") {
-		return {
-			text: stripRtf(decodeText(buffer)),
-			tableCount: 0,
-			warnings: [],
-			parserNotes: ["RTF controls stripped with built-in parser."],
-		};
-	}
-	if (kind === "pdf") return extractPdf(buffer);
-	if (kind === "docx") return extractDocx(buffer);
-	if (kind === "xlsx") return extractXlsx(buffer);
-	if (kind === "pptx") return extractPptx(buffer);
-	if (kind === "odt" || kind === "ods" || kind === "odp")
-		return extractOpenDocument(buffer, kind);
-	return {
-		text: "",
-		tableCount: 0,
-		warnings: [`unsupported_archive_entry_kind:${kind}`],
-		parserNotes: [],
-	};
 }
 
 function extractZipArchive(
@@ -666,7 +1010,10 @@ function collectSignals(
 	warnings: string[],
 ): string[] {
 	const signals: string[] = [];
-	const normalized = text.toLowerCase();
+	// Защита от зависаний regex (ReDoS): анализ сигналов на репрезентативной выборке
+	const sampleText = text.slice(0, 35_000);
+	const normalized = sampleText.toLowerCase();
+
 	if (kind === "zip") signals.push("архив");
 	if (kind === "image") signals.push("изображение");
 	if (kind === "pdf") signals.push("PDF");
@@ -674,30 +1021,51 @@ function collectSignals(
 	if (kind === "legacy_dump") signals.push("резервная копия старой базы");
 	if (warnings.includes("pdf_text_not_extracted_may_be_scanned"))
 		signals.push("PDF может быть сканом");
-	if (looksTabular(text)) signals.push("похоже на таблицу");
-	if (/[А-Яа-яЁё]/.test(text)) signals.push("русский текст");
-	if (/\+?\d[\d\s\-()]{8,}\d/.test(text)) signals.push("похож на телефон");
-	if (/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/.test(text))
+	if (looksTabular(sampleText)) signals.push("похоже на таблицу");
+	if (/[А-Яа-яЁё]/.test(sampleText)) signals.push("русский текст");
+
+	// Безопасный не-бэктрекинговый паттерн телефона РФ/международного формата
+	if (
+		/(?:\+?7|8)?[\s(]*\d{3}[)\s-]*\d{3}[\s-]*\d{2}[\s-]*\d{2}/.test(
+			sampleText,
+		)
+	) {
+		signals.push("похож на телефон");
+	}
+
+	if (/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/.test(sampleText))
 		signals.push("похоже на дату");
+
 	const hasDentalServiceSignal =
 		/(?:корон|имплант|реставрац|брекет|элайн|гигиен|канал|пломб|винир|абатмент|мембран|костн)/i.test(
-			text,
+			sampleText,
 		);
 	if (
-		/(?:руб|₽|р\.|price|стоимость)/i.test(text) ||
-		(hasDentalServiceSignal && /\b\d{3,7}\b/.test(text))
+		/(?:руб|₽|р\.|price|стоимость)/i.test(sampleText) ||
+		(hasDentalServiceSignal && /\b\d{3,7}\b/.test(sampleText))
 	) {
 		signals.push("похоже на цену");
 	}
 	if (
 		/\b(?:rvg|opg|cbct|dicom|dcm|jpg|png)\b|(?:оптг|кт|трг|рентген|сним)/i.test(
-			text,
+			sampleText,
 		)
 	)
 		signals.push("похоже на снимки");
 	if (hasDentalServiceSignal) signals.push("похоже на услуги");
-	if (/(?:договор|акт|соглас|справк|вычет|паспорт|полис)/i.test(text))
+	if (/(?:договор|акт|соглас|справк|вычет|паспорт|полис)/i.test(sampleText))
 		signals.push("похоже на документ");
+
+	// Профильная стоматологическая Форма 043/у
+	const hasForm043Signal =
+		/(?:форма\s*(?:№\s*)?043\s*[/уy]|карта\s*стоматологического|зубная\s*формула|прикус|состояние\s*слизистой|зубной\s*ряд|кпу|ohi-s|дневник\s*врача|осмотр\s*полости\s*рта|амбулаторная\s*карта\s*стоматолог|043[-/ ]*у)/i.test(
+			sampleText,
+		);
+	if (hasForm043Signal) {
+		signals.push("форма 043/у");
+		signals.push("стоматологическая карта");
+	}
+
 	if (
 		normalized.includes(".xlsx") ||
 		normalized.includes(".csv") ||
@@ -708,7 +1076,7 @@ function collectSignals(
 	}
 	if (
 		/legacy|migration|старая|мис|backup|dump|firebird|access|sqlite|pacs|dicomweb/i.test(
-			text,
+			sampleText,
 		)
 	) {
 		signals.push("похоже на источник миграции");
@@ -750,18 +1118,32 @@ function routesFor(
 			"implant",
 			"aligner",
 		]);
+	const hasForm043Hint = hasAnyHint(text, [
+		"043",
+		"043/у",
+		"043-у",
+		"зубная формула",
+		"карта стоматологического",
+		"дневник",
+		"прикус",
+	]);
+
 	const legacySource = kind === "legacy_database" || kind === "legacy_dump";
 	const routes: DocumentIngestionRoute[] = [
 		{
 			target: "smart_import",
-			title: "Предпросмотр умного импорта",
+			title: hasForm043Hint
+				? "Предпросмотр карты 043/у и импорта"
+				: "Предпросмотр умного импорта",
 			endpoint: "/api/imports/smart/preview",
 			enabled: hasText,
 			reason: legacySource
 				? "Старая база или резервная копия превращены в проверочный список; запись возможна только после локального разбора только для чтения и предварительного просмотра."
-				: hasText
-					? "Может разделить смешанные строки пациентов и снимков перед записью."
-					: "Текст пока не извлечен.",
+				: hasForm043Hint
+					? "Обнаружена стоматологическая карта (Форма 043/у); предпросмотр позволяет нормализовать паспортные данные, зубную формулу и дневник приёма."
+					: hasText
+						? "Может разделить смешанные строки пациентов и снимков перед записью."
+						: "Текст пока не извлечен.",
 		},
 		{
 			target: "patients",
@@ -770,9 +1152,11 @@ function routesFor(
 			enabled: hasText && !legacySource,
 			reason: legacySource
 				? "Старую базу нельзя напрямую писать как пациентов; сначала нужен локальный разбор только для чтения."
-				: tabular
-					? "Похоже на таблицу или экспорт."
-					: "Свободный текст можно нормализовать в строки пациентов.",
+				: hasForm043Hint
+					? "Из Формы 043/у можно напрямую извлечь ФИО, дату рождения, телефон, диагноз и соматический статус пациента."
+					: tabular
+						? "Похоже на таблицу или экспорт."
+						: "Свободный текст можно нормализовать в строки пациентов.",
 		},
 		{
 			target: "imaging",
@@ -799,6 +1183,7 @@ function routesFor(
 			reason: "Безопасно для ручной проверки и переноса.",
 		},
 	];
+
 	if (kind === "image") {
 		routes.forEach((route) => {
 			route.enabled = target === "pricelist" && route.target === "pricelist";
@@ -846,6 +1231,17 @@ function qualityFor(
 			signals,
 			nextAction:
 				"Открыть предварительный просмотр умного импорта по проверочному списку. Реальные таблицы старой базы разбирать только локальным модулем только для чтения, затем сверить 10 контрольных карт.",
+		};
+	}
+
+	if (signals.includes("форма 043/у")) {
+		return {
+			extractionQuality: "ready",
+			confidence: 0.92,
+			suggestedTarget: "smart_import",
+			signals,
+			nextAction:
+				"Обнаружена амбулаторная карта стоматологического больного (Форма 043/у). Откройте предпросмотр для проверки паспортных данных, зубной формулы и дневника посещений перед созданием электронной карты.",
 		};
 	}
 
@@ -921,58 +1317,73 @@ export function extractDocument(
 	let text = rawText;
 	let tableCount = 0;
 
-	if (!text && buffer.length) {
-		if (kind === "zip") {
-			const extracted = extractZipArchive(buffer, input.fileName);
-			text = extracted.text;
-			tableCount = extracted.tableCount;
-			extractedFiles = extracted.extractedFiles;
-			warnings.push(...extracted.warnings);
-			parserNotes.push(...extracted.parserNotes);
-		} else if (
-			[
-				"txt",
-				"csv",
-				"tsv",
-				"json",
-				"xml",
-				"html",
-				"rtf",
-				"pdf",
-				"docx",
-				"xlsx",
-				"pptx",
-				"odt",
-				"ods",
-				"odp",
-			].includes(kind)
-		) {
-			const extracted = extractByKind(kind, buffer);
-			text = extracted.text;
-			tableCount = extracted.tableCount;
-			warnings.push(...extracted.warnings);
-			parserNotes.push(...extracted.parserNotes);
-		} else if (kind === "image") {
-			warnings.push("image_requires_ocr_or_vision");
-			parserNotes.push(
-				"Получено изображение; перед текстовым импортом нужен поток распознавания изображения.",
-			);
-		} else if (kind === "legacy_database" || kind === "legacy_dump") {
-			text = legacyStagingManifest({
-				fileName: input.fileName,
-				kind,
-				byteSize: buffer.length,
-			});
-			warnings.push("legacy_source_staging_manifest_only");
-			parserNotes.push(
-				"Получена старая база или резервная копия; бинарное содержимое не расшифровывалось и не возвращалось.",
-			);
-			parserNotes.push(
-				"Используйте локальный модуль только для чтения, чтобы выгрузить пациентов, визиты, платежи и ссылки на снимки в проверяемые списки.",
-			);
-		} else {
-			text = decodeText(buffer);
-			warnings.push("unknown_format_decoded_as_text");
+	try {
+		if (!text && buffer.length) {
+			if (kind === "zip") {
+				const extracted = extractZipArchive(buffer, input.fileName);
+				text = extracted.text;
+				tableCount = extracted.tableCount;
+				extractedFiles = extracted.extractedFiles;
+				warnings.push(...extracted.warnings);
+				parserNotes.push(...extracted.parserNotes);
+			} else if (
+				[
+					"txt",
+					"csv",
+					"tsv",
+					"json",
+					"xml",
+					"html",
+					"rtf",
+					"pdf",
+					"docx",
+					"xlsx",
+					"pptx",
+					"odt",
+					"ods",
+					"odp",
+				].includes(kind)
+			) {
+				const extracted = extractByKind(kind, buffer);
+				text = extracted.text;
+				tableCount = extracted.tableCount;
+				warnings.push(...extracted.warnings);
+				parserNotes.push(...extracted.parserNotes);
+			} else if (kind === "image") {
+				warnings.push("image_requires_ocr_or_vision");
+				parserNotes.push(
+					"Получено изображение; перед текстовым импортом нужен поток распознавания изображения.",
+				);
+			} else if (kind === "legacy_database" || kind === "legacy_dump") {
+				text = legacyStagingManifest({
+					fileName: input.fileName,
+					kind,
+					byteSize: buffer.length,
+				});
+				warnings.push("legacy_source_staging_manifest_only");
+				parserNotes.push(
+					"Получена старая база или резервная копия; бинарное содержимое не расшифровывалось и не возвращалось.",
+				);
+				parserNotes.push(
+					"Используйте локальный модуль только для чтения, чтобы выгрузить пациентов, визиты, платежи и ссылки на снимки в проверяемые списки.",
+				);
+			} else {
+				text = decodeText(buffer);
+				warnings.push("unknown_format_decoded_as_text");
+			}
+		}
+	} catch (err: unknown) {
+		const msg = (err as Error).message || "corrupted_file";
+		warnings.push(`extraction_failed:${msg}`);
+		parserNotes.push(
+			`Не удалось разобрать внутреннюю структуру файла (${msg}). Попытка аварийного текстового декодирования.`,
+		);
+		if (!text) {
+			try {
+				text = decodeText(buffer.subarray(0, 50_000));
+			} catch {
+				text = "";
+			}
 		}
 	}
 

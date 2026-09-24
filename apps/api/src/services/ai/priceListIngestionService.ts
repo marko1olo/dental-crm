@@ -834,17 +834,20 @@ export function extractPriceAndTitleFromLine(rawLine: string): ExtractedPriceInf
 	let rawPriceString = "";
 	let cleanTitle = line;
 
-	// Regex 1: Explicit Rubles + Kopecks format at end of line:
+	// Regex 1: Explicit Rubles + Kopecks format at end of line (ReDoS safe, non-overlapping):
 	// "4 500,50 руб", "1500.50 ₽", "1 500-00", "1500 руб. 00 коп."
-	const endCurrencyKopecksRegex = /(?:от\s*)?(\d{1,3}(?:[\s\.]\d{3})*(?:[,\.]\d{2})|\d+(?:[,\.]\d{2}))\s*(?:руб(?:л[ейя]|ь|\.)?|р\b|₽|руб\.?\s*(\d{1,2})\s*коп\.?|-00)?\s*$/i;
+	const endCurrencyKopecksRegex =
+		/(?:от\s*)?(\d{1,3}(?: \d{3})*[.,]\d{2}|\d+[.,]\d{2}|\d{1,3}(?: \d{3})*-00|\d+-00)\s*(?:руб(?:л(?:ей|я)|ь)?\.?|р\.?|₽)?\s*$/i;
 
-	// Regex 2: Standard number with currency at end of line:
+	// Regex 2: Standard integer number with mandatory currency at end of line:
 	// "... 4 500 руб", "... 4500 ₽", "... 12500 р."
-	const endCurrencyIntegerRegex = /(?:от\s*)?(\d{1,3}(?:[\s\.]\d{3})*|\d+)\s*(?:руб(?:л[ейя]|ь|\.)?|р\b|₽)\s*$/i;
+	const endCurrencyIntegerRegex =
+		/(?:от\s*)?(\d{1,3}(?: \d{3})+|\d+)\s*(?:руб(?:л(?:ей|я)|ь)?\.?|р\b|₽)\s*$/i;
 
-	// Regex 3: Plain digits at end of line preceded by spaces/tabs:
+	// Regex 3: Plain digits at end of line preceded by spaces/tabs/delimiters:
 	// "Лечение кариеса    4500" or "Коронка 18000"
-	const endPlainNumberRegex = /(?:\s+|\t|;|\|)(\d{1,3}(?:[\s\.]\d{3})*(?:[,\.]\d{2})?|\d{2,7})\s*$/;
+	const endPlainNumberRegex =
+		/(?:[\s\t;|])(\d{1,3}(?: \d{3})+|\d{2,7})(?:[.,]\d{2})?\s*$/;
 
 	// Try Regex 1 (highest precision)
 	const match1 = line.match(endCurrencyKopecksRegex);
