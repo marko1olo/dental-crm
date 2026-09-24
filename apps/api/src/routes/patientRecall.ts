@@ -14,6 +14,13 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
 import {
+	recallBandSchema,
+	recallCandidateSchema,
+	recallReportSchema,
+	type RecallBand,
+	type RecallReport,
+} from "@dental/shared/recalls";
+import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../accessGuard.js";
@@ -23,11 +30,22 @@ import { enqueueMessage } from "../services/communications/dispatcher.js";
 import {
 	findRecallCandidates,
 	recallCandidateBelongsTo,
+	type RecallOptions,
 } from "../services/patients/recallCandidates.js";
+
+export {
+	recallBandSchema,
+	recallCandidateSchema,
+	recallReportSchema,
+	type RecallBand,
+	type RecallReport,
+};
 
 const listQuerySchema = z.object({
 	minMonths: z.coerce.number().int().min(1).max(60).optional(),
 	limit: z.coerce.number().int().min(1).max(1000).optional(),
+	band: recallBandSchema.optional(),
+	filterBand: recallBandSchema.optional(),
 	includeNeverArrived: z
 		.enum(["true", "false"])
 		.optional()
@@ -35,7 +53,7 @@ const listQuerySchema = z.object({
 });
 
 const inviteSchema = z.object({
-	patientId: z.string().uuid(),
+	patientId: z.string().min(1),
 	channel: z.string().min(2).max(20),
 	/** Текст готовит вызывающий: подстановка переменных уже выполнена. */
 	body: z.string().trim().min(5).max(2000),
@@ -47,36 +65,62 @@ function badRequest(reply: FastifyReply, message: string) {
 
 export async function registerPatientRecallRoutes(app: FastifyInstance) {
 	/** Список тех, кого пора звать. Считается при каждом запросе. */
-	app.get("/api/patients/recall-candidates", async (request, reply) => {
-		const context = await requireClinicalReadContext(
-			request,
-			reply,
-			"recall candidates",
-		);
-		if (!context) return;
-		if (!enforcePermissionWhenStaffKnown(request, reply, "patients.read"))
-			return;
-
-		const parsed = listQuerySchema.safeParse(request.query);
-		if (!parsed.success)
-			return badRequest(
+	app.get(
+		"/api/patients/recall-candidates",
+		{
+			schema: {
+				summary: "Список кандидатов на профилактический осмотр и диспансеризацию",
+				tags: ["patients", "recalls"],
+				querystring: {
+					type: "object",
+					properties: {
+						minMonths: { type: "integer", minimum: 1, maximum: 60 },
+						limit: { type: "integer", minimum: 1, maximum: 1000 },
+						band: {
+							type: "string",
+							enum: ["due", "overdue", "probably_lost", "never_arrived"],
+						},
+						filterBand: {
+							type: "string",
+							enum: ["due", "overdue", "probably_lost", "never_arrived"],
+						},
+						includeNeverArrived: { type: "string", enum: ["true", "false"] },
+					},
+				},
+			},
+		},
+		async (request, reply) => {
+			const context = await requireClinicalReadContext(
+				request,
 				reply,
-				"Проверьте параметры: срок в месяцах и предел списка.",
+				"recall candidates",
 			);
+			if (!context) return;
+			if (!enforcePermissionWhenStaffKnown(request, reply, "patients.read"))
+				return;
 
-		const options: {
-			minMonths?: number;
-			limit?: number;
-			includeNeverArrived?: boolean;
-		} = {};
-		if (parsed.data.minMonths !== undefined)
-			options.minMonths = parsed.data.minMonths;
-		if (parsed.data.limit !== undefined) options.limit = parsed.data.limit;
-		if (parsed.data.includeNeverArrived !== undefined)
-			options.includeNeverArrived = parsed.data.includeNeverArrived;
+			const parsed = listQuerySchema.safeParse(request.query);
+			if (!parsed.success)
+				return badRequest(
+					reply,
+					"Проверьте параметры: срок в месяцах, полосу (band) и предел списка.",
+				);
 
-		return findRecallCandidates(context.organizationId, options);
-	});
+			const options: RecallOptions = {
+				...(parsed.data.minMonths !== undefined ? { minMonths: parsed.data.minMonths } : {}),
+				...(parsed.data.limit !== undefined ? { limit: parsed.data.limit } : {}),
+				...(parsed.data.includeNeverArrived !== undefined ? { includeNeverArrived: parsed.data.includeNeverArrived } : {}),
+				...(parsed.data.band !== undefined ? { band: parsed.data.band } : {}),
+				...(parsed.data.filterBand !== undefined ? { filterBand: parsed.data.filterBand } : {}),
+			};
+
+			const report: RecallReport = await findRecallCandidates(
+				context.organizationId,
+				options,
+			);
+			return reply.code(200).send(report);
+		},
+	);
 
 	/**
 	 * Приглашение одному пациенту.

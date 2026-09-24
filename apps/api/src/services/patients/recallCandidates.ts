@@ -28,36 +28,24 @@
  */
 
 import { and, eq, isNull, lte, or, sql } from "drizzle-orm";
+import {
+	recallBandSchema,
+	recallCandidateSchema,
+	recallReportSchema,
+	type RecallBand,
+	type RecallCandidate,
+	type RecallReport,
+} from "@dental/shared/recalls";
 import { db } from "../../db/client.js";
 import { appointments, patients } from "../../db/schema.js";
 
-/**
- * Насколько давно человек был. Границы выбраны по тому, как это выглядит в
- * работе клиники, а не по круглым числам: полгода — срок профилактического
- * осмотра, год — человек пропустил один осмотр, два года — скорее всего лечится
- * в другом месте, и приглашение уже похоже на спам.
- */
-type RecallBand = "due" | "overdue" | "probably_lost" | "never_arrived";
-
-type RecallCandidate = {
-	readonly patientId: string;
-	readonly fullName: string;
-	readonly phone: string | null;
-	readonly email: string | null;
-	/** Последний завершённый приём. null — завершённых не было ни одного. */
-	readonly lastCompletedAt: Date | null;
-	readonly monthsSinceLastVisit: number | null;
-	readonly band: RecallBand;
-	/** Человеческая причина, почему пациент в списке. */
-	readonly reason: string;
-};
-
-export type RecallReport = {
-	readonly candidates: RecallCandidate[];
-	readonly byBand: Readonly<Record<RecallBand, number>>;
-	/** Сколько активных пациентов просмотрено. */
-	readonly examinedPatients: number;
-	readonly note: string;
+export {
+	recallBandSchema,
+	recallCandidateSchema,
+	recallReportSchema,
+	type RecallBand,
+	type RecallCandidate,
+	type RecallReport,
 };
 
 const BAND_LABELS: Readonly<Record<RecallBand, string>> = {
@@ -108,6 +96,9 @@ export type RecallOptions = {
 	readonly limit?: number;
 	/** Включать ли тех, кто ни разу не дошёл. */
 	readonly includeNeverArrived?: boolean;
+	/** Фильтр по полосе диспансеризации (due, overdue, probably_lost, never_arrived). */
+	readonly band?: RecallBand;
+	readonly filterBand?: RecallBand;
 };
 
 export async function findRecallCandidates(
@@ -117,6 +108,7 @@ export async function findRecallCandidates(
 	const minMonths = Math.max(1, Math.min(60, options.minMonths ?? 6));
 	const limit = Math.max(1, Math.min(1000, options.limit ?? 200));
 	const includeNeverArrived = options.includeNeverArrived ?? true;
+	const targetBand = options.band ?? options.filterBand;
 
 	const now = new Date();
 
@@ -202,16 +194,18 @@ export async function findRecallCandidates(
 		if (!band) continue;
 		if (band === "never_arrived" && !includeNeverArrived) continue;
 
-		byBand[band] += 1;
+		byBand[band] = (byBand[band] ?? 0) + 1;
+		if (targetBand && band !== targetBand) continue;
+
 		candidates.push({
 			patientId: row.patientId,
 			fullName: row.fullName,
 			phone: row.phone,
 			email: row.email,
-			lastCompletedAt: lastAt,
+			lastCompletedAt: lastAt ? lastAt.toISOString() : null,
 			monthsSinceLastVisit: monthsSince,
 			band,
-			reason: BAND_LABELS[band],
+			reason: BAND_LABELS[band] || "Плановый осмотр",
 		});
 	}
 
@@ -254,7 +248,7 @@ async function _countRecallCandidates(
 
 /** Ярлык полосы — чтобы интерфейс не собирал текст сам и не расходился с сервером. */
 function _recallBandLabel(band: RecallBand): string {
-	return BAND_LABELS[band];
+	return BAND_LABELS[band] || "Плановый осмотр";
 }
 
 /** Проверка принадлежности пациента клинике — нужна маршрутам отправки. */

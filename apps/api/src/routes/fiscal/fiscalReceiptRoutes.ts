@@ -601,7 +601,7 @@ export async function registerFiscalReceiptRoutes(
 				const q = queueRows[0];
 				if (q) {
 					resolvedFiscalReceiptId = q.id;
-					if (q.status === "completed" || q.status === "printed") {
+					if ((q.status as string) === "completed" || q.status === "printed") {
 						isPaid = true;
 						paidAtIso = q.printedAt ? q.printedAt.toISOString() : q.createdAt.toISOString();
 					}

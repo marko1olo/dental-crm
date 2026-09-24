@@ -134,6 +134,7 @@ export * from "./communications/index.js";
 export * from "./schedule/index.js";
 export * from "./types/schedule.js";
 export * from "./recalls/index.js";
+export type { RecallCandidate } from "./recalls/index.js";
 export * from "./patients/index.js";
 export * from "./patients/stomxPatientTagsCatalog.js";
 export * from "./storage/index.js";

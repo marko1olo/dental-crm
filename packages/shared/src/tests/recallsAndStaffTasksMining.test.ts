@@ -13,6 +13,14 @@ import {
 	isStaffTaskOverdue,
 	type LegacyStaffTaskItem as StaffTaskItem,
 } from "../staff/staffTasksEngine.js";
+import {
+	recallBandSchema,
+	recallCandidateSchema,
+	recallReportSchema,
+	type RecallBand,
+	type RecallCandidate,
+	type RecallReport,
+} from "../index.js";
 
 describe("Dentalpin Mining: Recalls & Preventive Checkup Engine", () => {
 	test("calculates next recall date for various clinical cadences", () => {
@@ -164,5 +172,80 @@ describe("Dentalpin Mining: Staff Tasks & Clinic Delegation Engine", () => {
 		const overdueNurseTasks = filterStaffTasks(tasks, { role: "nurse", overdueOnly: true }, now);
 		assert.strictEqual(overdueNurseTasks.length, 1);
 		assert.strictEqual(overdueNurseTasks[0]?.title, "Заказать карпулы Ультракаина");
+	});
+
+	test("validates canonical recallBandSchema, recallCandidateSchema, and recallReportSchema", () => {
+		// Valid bands
+		assert.strictEqual(recallBandSchema.parse("due"), "due");
+		assert.strictEqual(recallBandSchema.parse("overdue"), "overdue");
+		assert.strictEqual(recallBandSchema.parse("probably_lost"), "probably_lost");
+		assert.strictEqual(recallBandSchema.parse("never_arrived"), "never_arrived");
+		assert.throws(() => recallBandSchema.parse("unknown_band"));
+
+		// Valid candidate with Date object transformed to ISO string
+		const rawCandidateWithDate = {
+			patientId: "patient-uuid-12345",
+			fullName: "Барабаш Сергей Васильевич",
+			phone: "+7 (999) 111-22-33",
+			email: "barabash@example.com",
+			lastCompletedAt: new Date("2026-03-24T10:00:00Z"),
+			monthsSinceLastVisit: 6,
+			band: "due" as RecallBand,
+			reason: "Полгода без осмотра — пора на профилактику.",
+		};
+		const parsedWithDate: RecallCandidate = recallCandidateSchema.parse(rawCandidateWithDate);
+		assert.strictEqual(parsedWithDate.lastCompletedAt, "2026-03-24T10:00:00.000Z");
+		assert.strictEqual(parsedWithDate.band, "due");
+
+		// Valid candidate with ISO string date
+		const rawCandidateWithString = {
+			patientId: "patient-uuid-67890",
+			fullName: "Смирнова Елена Александровна",
+			phone: null,
+			email: null,
+			lastCompletedAt: "2025-09-01T12:00:00.000Z",
+			monthsSinceLastVisit: 12,
+			band: "overdue" as RecallBand,
+			reason: "Больше года не был: пропущен как минимум один осмотр.",
+		};
+		const parsedWithString: RecallCandidate = recallCandidateSchema.parse(rawCandidateWithString);
+		assert.strictEqual(parsedWithString.lastCompletedAt, "2025-09-01T12:00:00.000Z");
+		assert.strictEqual(parsedWithString.band, "overdue");
+
+		// Never arrived candidate (lastCompletedAt is null, monthsSinceLastVisit is null)
+		const rawNeverArrived = {
+			patientId: "patient-uuid-11111",
+			fullName: "Кузнецов Дмитрий Павлович",
+			phone: "+7 (916) 555-44-33",
+			email: null,
+			lastCompletedAt: null,
+			monthsSinceLastVisit: null,
+			band: "never_arrived" as RecallBand,
+			reason: "Записывался, но ни разу не дошёл до кресла.",
+		};
+		const parsedNeverArrived = recallCandidateSchema.parse(rawNeverArrived);
+		assert.strictEqual(parsedNeverArrived.lastCompletedAt, null);
+		assert.strictEqual(parsedNeverArrived.monthsSinceLastVisit, null);
+		assert.strictEqual(parsedNeverArrived.band, "never_arrived");
+
+		// Valid recall report
+		const rawReport = {
+			candidates: [parsedWithDate, parsedWithString, parsedNeverArrived],
+			byBand: {
+				due: 1,
+				overdue: 1,
+				probably_lost: 0,
+				never_arrived: 1,
+			},
+			examinedPatients: 42,
+			note: "Список считается по текущим данным при каждом запросе.",
+		};
+		const report: RecallReport = recallReportSchema.parse(rawReport);
+		assert.strictEqual(report.candidates.length, 3);
+		assert.strictEqual(report.byBand.due, 1);
+		assert.strictEqual(report.byBand.overdue, 1);
+		assert.strictEqual(report.byBand.probably_lost, 0);
+		assert.strictEqual(report.byBand.never_arrived, 1);
+		assert.strictEqual(report.examinedPatients, 42);
 	});
 });
