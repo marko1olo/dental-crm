@@ -5,6 +5,11 @@
  * Supports Byte & Alphanumeric encoding, Reed-Solomon Error Correction (L, M, Q, H),
  * optimal mask selection, and crisp SVG / Data-URI output for clinical documents and FNS QR verification.
  */
+import {
+	generateDynamicSbpQrPayload,
+	type SbpDynamicQrParams,
+	type SbpDynamicQrResult,
+} from "./sbpQrEngine.js";
 
 export type QrErrorCorrectionLevel = "L" | "M" | "Q" | "H";
 
@@ -523,3 +528,86 @@ export function generateQrCodeDataUri(text: string, options: QrSvgOptions = {}):
 		: btoa(unescape(encodeURIComponent(svg)));
 	return `data:image/svg+xml;base64,${encoded}`;
 }
+
+export interface Gost56042Params {
+	readonly clinicName: string;
+	readonly personalAcc: string;
+	readonly bankName: string;
+	readonly bic: string;
+	readonly correspAcc: string;
+	readonly payeeInn: string;
+	readonly sumKopecks: number;
+	readonly purpose: string;
+	readonly orderId?: string | undefined;
+	readonly payerInn?: string | undefined;
+	readonly kpp?: string | undefined;
+}
+
+/**
+ * Formats a payment string according to ГОСТ Р 56042-2014 (UTF-8 format ST00012).
+ * Guarantees exact kopecks without float drift.
+ */
+export function generateGost56042Payload(params: Gost56042Params): string {
+	const sumKop = Math.round(params.sumKopecks);
+	const parts = [
+		"ST00012",
+		`Name=${params.clinicName}`,
+		`PersonalAcc=${params.personalAcc}`,
+		`BankName=${params.bankName}`,
+		`BIC=${params.bic}`,
+		`CorrespAcc=${params.correspAcc}`,
+		`PayeeINN=${params.payeeInn}`,
+		`Sum=${sumKop}`,
+		`Purpose=${params.purpose}`,
+	];
+	if (params.kpp) parts.push(`KPP=${params.kpp}`);
+	if (params.orderId) parts.push(`DocNo=${params.orderId}`);
+	if (params.payerInn) parts.push(`PayerINN=${params.payerInn}`);
+	return parts.join("|");
+}
+
+/**
+ * Generates an SVG string representation of a ГОСТ Р 56042-2014 QR code.
+ */
+export function generateGost56042QrSvg(
+	params: Gost56042Params,
+	options: QrSvgOptions = {}
+): { svg: string; dataUri: string; payloadString: string } {
+	const payloadString = generateGost56042Payload(params);
+	const svg = generateQrCodeSvg(payloadString, options);
+	const dataUri = generateQrCodeDataUri(payloadString, options);
+	return { svg, dataUri, payloadString };
+}
+
+export interface DynamicSbpQrSvgResult {
+	readonly svg: string;
+	readonly dataUri: string;
+	readonly payload: SbpDynamicQrResult;
+	readonly nspkUrl: string;
+}
+
+/**
+ * Generates a dynamic SBP QR code vector SVG according to ГОСТ Р 56042-2014 & NSPK EMVCo standards.
+ * 100% local in-memory generation with ZERO external network calls to api.qrserver.com or third-party servers.
+ */
+export function generateDynamicSbpQrSvg(
+	params: SbpDynamicQrParams,
+	options: QrSvgOptions = {}
+): DynamicSbpQrSvgResult {
+	const payload = generateDynamicSbpQrPayload(params);
+	const svg = generateQrCodeSvg(payload.nspkUrl, {
+		size: options.size ?? 180,
+		margin: options.margin ?? 2,
+		foregroundColor: options.foregroundColor ?? options.colorDark ?? "#0f172a",
+		backgroundColor: options.backgroundColor ?? options.colorLight ?? "#ffffff",
+		title: options.title ?? `QR-код СБП: ${payload.sumFormattedRu}`,
+	});
+	const dataUri = generateQrCodeDataUri(payload.nspkUrl, options);
+	return {
+		svg,
+		dataUri,
+		payload,
+		nspkUrl: payload.nspkUrl,
+	};
+}
+

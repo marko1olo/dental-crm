@@ -16,8 +16,10 @@ import {
 	Wallet,
 	Printer,
 	ShieldCheck,
+	Check,
 	CheckCircle,
 	CheckCircle2,
+	RefreshCw,
 	AlertCircle,
 	AlertTriangle,
 	Coins,
@@ -58,7 +60,10 @@ import { SberPayIntegration } from "./SberPayIntegration.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
 import { showToast } from "../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
-import { SbpPaymentQrModal } from "../messaging/SbpPaymentQrModal.js";
+import {
+	generateDynamicSbpQrPayload,
+	generateQrCodeSvg,
+} from "@dental/shared/fiscal";
 
 let paymentMutationSeq = 0;
 
@@ -416,6 +421,49 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	const [splitSbpRub, setSplitSbpRub] = useState<number>(0);
 	const [splitCertificateRub, setSplitCertificateRub] = useState<number>(0);
 	const [splitBonusRub, setSplitBonusRub] = useState<number>(0);
+
+	// Dynamic SBP QR (ГОСТ Р 56042-2014 / НСПК) & Status Auto-Offset (Mandates 8b, 8e, 8k)
+	const [sbpStatus, setSbpStatus] = useState<"pending" | "paid">("pending");
+	const [isCheckingSbp, setIsCheckingSbp] = useState<boolean>(false);
+	const [sbpCheckMessage, setSbpCheckMessage] = useState<string | null>(null);
+
+	const effectiveSbpAmountRub =
+		activeMethod === "split"
+			? splitSbpRub
+			: totalDueRub;
+	const effectiveSbpKopecks = Math.round(effectiveSbpAmountRub * 100);
+	const effectiveSbpOrderId =
+		invoiceId?.trim() ||
+		documentId?.trim() ||
+		(visitId ? `VISIT-${visitId}` : `ORD-${Date.now()}`);
+
+	const sbpQrData = useMemo(() => {
+		if (effectiveSbpKopecks <= 0) return null;
+		try {
+			const payload = generateDynamicSbpQrPayload({
+				sumRub: effectiveSbpAmountRub,
+				orderId: effectiveSbpOrderId,
+				purpose: `Оплата стоматологических услуг (${patientName})`,
+				clinicName: clinicLegalName,
+				ttlMinutes: 15,
+			});
+			const svg = generateQrCodeSvg(payload.nspkUrl, {
+				size: 160,
+				margin: 2,
+				colorDark: "#0f172a",
+				colorLight: "#ffffff",
+				title: `QR-код СБП: ${payload.sumFormattedRu}`,
+			});
+			return { payload, svg };
+		} catch {
+			return null;
+		}
+	}, [effectiveSbpAmountRub, effectiveSbpKopecks, effectiveSbpOrderId, patientName, clinicLegalName]);
+
+	useEffect(() => {
+		setSbpStatus("pending");
+		setSbpCheckMessage(null);
+	}, [activeMethod, splitSbpRub]);
 
 	// Acquiring & 54-FZ Emergency Collision Resolution (Mandates 8e, 8n)
 	const [interruptedPaymentState, setInterruptedPaymentState] = useState<{
@@ -1306,6 +1354,176 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		}
 	};
 
+	// SBP Payment Execution & Auto-Offset (Mandates 8b, 8e, 8k)
+	const handleSbpExecutePayment = async (orderIdToConfirm?: string, receiptId?: string | null) => {
+		const effectiveOrderId = orderIdToConfirm || effectiveSbpOrderId;
+		const effectiveAmountRub = totalDueRub;
+		if (isWarranty100 || effectiveAmountRub <= 0) {
+			showToast(`Визит/счёт оформлен по 100% гарантии (0 ₽) (${effectiveCashier})`, "success");
+			onSuccess({
+				method: "warranty_discount_100",
+				amountKopecks: 0,
+				discountRub: discountCalc.discountRub,
+				discountPercent: discountCalc.discountPercent,
+				rawTotalRub: rawTotalDueRub,
+				discountReason: discountReason || "Гарантийная переделка / скидка 100%",
+			});
+			onClose();
+			return;
+		}
+
+		const clientMutationId = createCompositeIdempotencyKey(
+			`sbp:${Date.now()}-${++paymentMutationSeq}`,
+			{ patientId, amountRub: effectiveAmountRub, method: "sbp_qr", cashBoxType: selectedCashBoxType }
+		);
+		const headers = denteAdminSecretRequestHeaders({
+			"Content-Type": "application/json",
+			"Idempotency-Key": clientMutationId,
+		});
+
+		const activeCategoryTitle =
+			STOMX_CASH_RECEIPT_CATEGORIES.find((c) => c.alias === selectedReceiptAlias)?.name || "Оплата услуг";
+		const activeBoxTitle =
+			STOMX_CASH_BOXES.find((b) => b.type === selectedCashBoxType)?.name || "Основная касса";
+		const innNote = buyerInn.trim() ? ` [ИНН плательщика: ${buyerInn.trim()}]` : "";
+		const stomxNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
+
+		try {
+			const res = await fetch("/api/billing/payments", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					patientId,
+					amountRub: effectiveAmountRub,
+					method: "sbp_qr",
+					cashBoxType: selectedCashBoxType,
+					receiptTypeAlias: selectedReceiptAlias,
+					cashFlowCategory: activeCategoryTitle,
+					visitId: visitId || null,
+					documentId: documentId || (invoiceId ? invoiceId : null),
+					clientMutationId,
+					electronicAmountRub: effectiveAmountRub,
+					electronicAmountKopecks: discountCalc.totalDueKopecks,
+					note: `Оплата через СБП (НСПК / ГОСТ Р 56042-2014) (${effectiveAmountRub} ₽ • ${effectiveCashier}) [Заказ: ${effectiveOrderId}]${receiptId ? ` [Чек: ${receiptId}]` : ""}${innNote}${stomxNote}`,
+				}),
+			});
+
+			if (!res.ok) {
+				const errorData = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+				const errorMsg =
+					(errorData && typeof errorData.message === "string" && errorData.message) ||
+					`Ошибка фиксации оплаты СБП: HTTP ${res.status}`;
+				showToast(errorMsg, "error");
+				return;
+			}
+
+			const paymentData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+			showToast(`Оплата ${effectiveAmountRub} ₽ через СБП успешно зафиксирована (${effectiveCashier})`, "success");
+			onSuccess({
+				method: "sbp_qr",
+				amountKopecks: isWarranty100 ? 0 : discountCalc.totalDueKopecks,
+				discountRub,
+				discountPercent: effectiveDiscountPercent,
+				rawTotalRub: rawTotalDueRub,
+				discountReason: discountReason || undefined,
+				rrn: effectiveOrderId,
+				fiscalReceiptId: receiptId || undefined,
+				...paymentData,
+			});
+			onClose();
+		} catch (err: unknown) {
+			const errorMsg = err instanceof Error ? err.message : "Сбой соединения при фиксации оплаты СБП";
+			showToast(errorMsg, "error");
+		}
+	};
+
+	// SBP Payment Status Polling & Auto-Offset (Mandates 8b, 8e, 8k)
+	const handleCheckSbpStatus = async (manual = false) => {
+		if (isCheckingSbp || sbpStatus === "paid" || effectiveSbpKopecks <= 0) return;
+		setIsCheckingSbp(true);
+		try {
+			const headers = denteAdminSecretRequestHeaders({ Accept: "application/json" });
+			const queryUrl = `/api/fiscal/sbp-status?orderId=${encodeURIComponent(effectiveSbpOrderId)}&qrId=${encodeURIComponent(sbpQrData?.payload.qrId || "")}&sumKop=${effectiveSbpKopecks}`;
+			const res = await fetch(queryUrl, { headers });
+			if (res.ok) {
+				const data = (await res.json().catch(() => null)) as {
+					paid?: boolean;
+					status?: string;
+					fiscalReceiptId?: string | null;
+					orderId?: string | null;
+				} | null;
+				if (data && (data.paid || data.status === "paid")) {
+					setSbpStatus("paid");
+					setSbpCheckMessage("Оплата по СБП подтверждена банком! Формируем фискальный чек...");
+					showToast("Оплата по СБП успешно подтверждена банком!", "success");
+					if (activeMethod === "sbp_qr") {
+						await handleSbpExecutePayment(data.orderId || effectiveSbpOrderId, data.fiscalReceiptId);
+					} else if (activeMethod === "split") {
+						showToast(`Оплата части счета ${splitSbpRub} ₽ через СБП подтверждена банком!`, "success");
+					}
+					return;
+				}
+			}
+			if (manual) {
+				setSbpCheckMessage("Платёж через СБП пока не поступил. Ожидается проведение банком.");
+				showToast("Платёж пока не поступил от банка", "info");
+			}
+		} catch {
+			if (manual) {
+				setSbpCheckMessage("Шлюз СБП временно недоступен. Проверьте банковскую выписку.");
+			}
+		} finally {
+			setIsCheckingSbp(false);
+		}
+	};
+
+	const handleConfirmSbpManual = async () => {
+		setIsCheckingSbp(true);
+		try {
+			const headers = denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+				Accept: "application/json",
+			});
+			await fetch("/api/fiscal/sbp-status", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					orderId: effectiveSbpOrderId,
+					qrId: sbpQrData?.payload.qrId,
+					action: "confirm_manual",
+					sumKopecks: effectiveSbpKopecks,
+				}),
+			}).catch(() => null);
+
+			setSbpStatus("paid");
+			setSbpCheckMessage("Поступление средств по СБП подтверждено кассиром. Формируем чек 54-ФЗ...");
+			showToast("Оплата СБП подтверждена кассиром! Пробиваем фискальный чек 54-ФЗ...", "success");
+			if (activeMethod === "sbp_qr") {
+				await handleSbpExecutePayment(effectiveSbpOrderId);
+			} else if (activeMethod === "split") {
+				showToast(`СБП часть (${splitSbpRub} ₽) подтверждена кассиром вручную!`, "success");
+			}
+		} catch {
+			setSbpStatus("paid");
+			if (activeMethod === "sbp_qr") {
+				await handleSbpExecutePayment(effectiveSbpOrderId);
+			}
+		} finally {
+			setIsCheckingSbp(false);
+		}
+	};
+
+	// 3.5s background auto-poll when SBP QR is visible and awaiting payment
+	useEffect(() => {
+		if (!isOpen || sbpStatus === "paid" || (activeMethod !== "sbp_qr" && splitSbpRub <= 0)) {
+			return;
+		}
+		const interval = setInterval(() => {
+			handleCheckSbpStatus(false);
+		}, 3500);
+		return () => clearInterval(interval);
+	}, [isOpen, sbpStatus, activeMethod, splitSbpRub, effectiveSbpOrderId, effectiveSbpKopecks]);
+
 	const handleSberSuccess = (posRes: SberPosTransactionResponse) => {
 		onSuccess({
 			method: posRes.operationType,
@@ -1719,34 +1937,90 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						</div>
 					) : activeMethod === "sbp_qr" ? (
 						<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-3" data-testid="sbp-qr-embedded-container">
-							<SbpPaymentQrModal
-								isOpen={true}
-								embedded={true}
-								onClose={() => setActiveMethod("card_terminal")}
-								invoice={{
-									orderId: invoiceId || documentId || `ORD-${Date.now()}`,
-									patientId,
-									patientName,
-									phone: patientPhone || "",
-									sumRub: totalDueRub,
-									sumKopecks: discountCalc.totalDueKopecks,
-									purpose: `Оплата стоматологических услуг: ${patientName}`,
-									clinicName: clinicLegalName,
-								}}
-								onPaymentSuccess={(res) => {
-									onSuccess({
-										method: "sbp_qr",
-										amountKopecks: isWarranty100 ? 0 : discountCalc.totalDueKopecks,
-										discountRub,
-										discountPercent: effectiveDiscountPercent,
-										rawTotalRub: rawTotalDueRub,
-										discountReason: discountReason || undefined,
-										rrn: res.orderId,
-										fiscalReceiptId: res.fiscalReceiptId,
-									});
-									onClose();
-								}}
-							/>
+							<div
+								className="p-4 rounded-2xl bg-teal-500/5 border border-teal-500/30 flex flex-col items-center justify-center text-center gap-3 w-full"
+								data-testid="sbp-qr-display-panel"
+							>
+								<div className="flex items-center justify-between w-full flex-wrap gap-2 px-1">
+									<span className="text-xs font-bold text-teal-800 dark:text-teal-300 flex items-center gap-1.5">
+										<Zap size={14} className="text-teal-600 dark:text-teal-400" />
+										<span>Динамический QR-код СБП (НСПК)</span>
+									</span>
+									<span className="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide bg-teal-500/15 text-teal-700 dark:text-teal-300 rounded-full border border-teal-500/20 flex items-center gap-1">
+										СБП • НСПК ГОСТ Р 56042
+									</span>
+								</div>
+
+								{sbpStatus === "paid" ? (
+									<div className="w-full py-5 px-4 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/40 flex flex-col items-center justify-center gap-2 text-emerald-800 dark:text-emerald-200">
+										<div className="w-11 h-11 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-300">
+											<Check size={24} />
+										</div>
+										<p className="font-extrabold text-sm m-0">Оплачено по СБП (Тег 1081 «Безналичные / Электронные»)</p>
+										<p className="text-xs font-mono font-bold m-0 text-emerald-700 dark:text-emerald-300">
+											Сумма: {totalDueRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+										</p>
+										<span className="text-[11px] text-emerald-600 dark:text-emerald-400">
+											Транзакция подтверждена • Чек 54-ФЗ успешно сформирован
+										</span>
+									</div>
+								) : (
+									<>
+										<div
+											className="w-44 h-44 rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] p-2.5 shadow-md flex items-center justify-center border border-teal-500/30 overflow-hidden"
+											data-testid="sbp-dynamic-qr-svg"
+										>
+											{sbpQrData ? (
+												<div
+													className="w-full h-full flex items-center justify-center"
+													dangerouslySetInnerHTML={{ __html: sbpQrData.svg }}
+												/>
+											) : (
+												<QrCode className="w-full h-full text-teal-600 dark:text-teal-400" />
+											)}
+										</div>
+										<div className="text-xs text-[var(--ink)] space-y-1">
+											<p className="font-bold m-0 text-[var(--ink)]">
+												Отсканируйте камерой телефона или в приложении любого банка
+											</p>
+											<p className="text-[var(--muted)] m-0 font-mono text-[11px]">
+												Сумма СБП: {totalDueRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ • Без комиссии для пациента (Тег 1081)
+											</p>
+											{sbpCheckMessage && (
+												<p className="text-[11px] text-teal-700 dark:text-teal-300 font-medium m-0">
+													{sbpCheckMessage}
+												</p>
+											)}
+										</div>
+
+										{/* 1-Click Status Verification & Cashier Autonomy (Mandates 8e, 8k) */}
+										<div className="flex items-center gap-2 flex-wrap justify-center pt-1">
+											<button
+												type="button"
+												onClick={() => handleCheckSbpStatus(true)}
+												disabled={isCheckingSbp}
+												className="h-8 px-3 rounded-lg text-xs font-bold bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-500/30 cursor-pointer flex items-center gap-1.5 transition-all disabled:opacity-50"
+												data-testid="btn-check-sbp-status"
+												title="Опросить банковский шлюз СБП"
+											>
+												<RefreshCw size={13} className={isCheckingSbp ? "animate-spin" : ""} />
+												<span>{isCheckingSbp ? "Проверка..." : "Проверить оплату"}</span>
+											</button>
+											<button
+												type="button"
+												onClick={handleConfirmSbpManual}
+												disabled={isCheckingSbp}
+												className="h-8 px-3 rounded-lg text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 cursor-pointer flex items-center gap-1.5 transition-all disabled:opacity-50"
+												data-testid="btn-manual-confirm-sbp"
+												title="Подтвердить зачисление средств по выписке/СМС банка (Мандат 8e)"
+											>
+												<Check size={13} />
+												<span>Подтвердить вручную</span>
+											</button>
+										</div>
+									</>
+								)}
+							</div>
 						</div>
 					) : activeMethod === "cash" ? (
 						<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-4">
@@ -2167,6 +2441,91 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 									)}
 								</span>
 							</div>
+
+							{/* SBP Dynamic QR Display Panel for Split Payment Tender */}
+							{splitSbpRub > 0 && (
+								<div
+									className="p-3.5 rounded-2xl bg-teal-500/5 border border-teal-500/30 flex flex-col items-center justify-center text-center gap-2.5"
+									data-testid="split-sbp-qr-display-panel"
+								>
+									<div className="flex items-center justify-between w-full flex-wrap gap-2 px-1">
+										<span className="text-xs font-bold text-teal-800 dark:text-teal-300 flex items-center gap-1.5">
+											<Zap size={14} className="text-teal-600 dark:text-teal-400" />
+											<span>Динамический QR-код СБП (НСПК)</span>
+										</span>
+										<span className="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide bg-teal-500/15 text-teal-700 dark:text-teal-300 rounded-full border border-teal-500/20 flex items-center gap-1">
+											СБП • {splitSbpRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+										</span>
+									</div>
+
+									{sbpStatus === "paid" ? (
+										<div className="w-full py-4 px-3 rounded-xl bg-emerald-500/10 border-2 border-emerald-500/40 flex flex-col items-center justify-center gap-1 text-emerald-800 dark:text-emerald-200">
+											<div className="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-300">
+												<Check size={20} />
+											</div>
+											<p className="font-extrabold text-xs m-0">СБП часть ({splitSbpRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽) оплачена!</p>
+											<span className="text-[11px] text-emerald-600 dark:text-emerald-400">
+												Транзакция СБП подтверждена • Тег 1081 «Безналичные»
+											</span>
+										</div>
+									) : (
+										<>
+											<div
+												className="w-36 h-36 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] p-2 shadow-md flex items-center justify-center border border-teal-500/30 overflow-hidden"
+												data-testid="split-sbp-dynamic-qr-svg"
+											>
+												{sbpQrData ? (
+													<div
+														className="w-full h-full flex items-center justify-center"
+														dangerouslySetInnerHTML={{ __html: sbpQrData.svg }}
+													/>
+												) : (
+													<QrCode className="w-full h-full text-teal-600 dark:text-teal-400" />
+												)}
+											</div>
+											<div className="text-xs text-[var(--ink)] space-y-0.5">
+												<p className="font-bold m-0 text-[var(--ink)]">
+													Отсканируйте камерой телефона или в приложении любого банка
+												</p>
+												<p className="text-[var(--muted)] m-0 font-mono text-[11px]">
+													Сумма СБП: {splitSbpRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ • Тег 1081
+												</p>
+												{sbpCheckMessage && (
+													<p className="text-[11px] text-teal-700 dark:text-teal-300 font-medium m-0">
+														{sbpCheckMessage}
+													</p>
+												)}
+											</div>
+
+											{/* Status Verification buttons */}
+											<div className="flex items-center gap-2 flex-wrap justify-center pt-0.5">
+												<button
+													type="button"
+													onClick={() => handleCheckSbpStatus(true)}
+													disabled={isCheckingSbp}
+													className="h-7 px-2.5 rounded-lg text-xs font-bold bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-500/30 cursor-pointer flex items-center gap-1 transition-all disabled:opacity-50"
+													data-testid="btn-check-split-sbp-status"
+													title="Опросить банковский шлюз СБП"
+												>
+													<RefreshCw size={12} className={isCheckingSbp ? "animate-spin" : ""} />
+													<span>{isCheckingSbp ? "Проверка..." : "Проверить СБП"}</span>
+												</button>
+												<button
+													type="button"
+													onClick={handleConfirmSbpManual}
+													disabled={isCheckingSbp}
+													className="h-7 px-2.5 rounded-lg text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 cursor-pointer flex items-center gap-1 transition-all disabled:opacity-50"
+													data-testid="btn-manual-confirm-split-sbp"
+													title="Подтвердить зачисление СБП вручную (Мандат 8e)"
+												>
+													<Check size={12} />
+													<span>Подтвердить вручную</span>
+												</button>
+											</div>
+										</>
+									)}
+								</div>
+							)}
 						</div>
 					) : (
 						<div className="space-y-4" data-testid="payment-family-deposit-view">
@@ -2856,6 +3215,27 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										<>
 											<span className="sm:hidden">Карта {totalDueRub.toLocaleString("ru-RU")} ₽</span>
 											<span className="hidden sm:inline">Подтвердить оплату картой ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+										</>
+									)}
+								</span>
+							</button>
+						) : activeMethod === "sbp_qr" ? (
+							<button
+								type="button"
+								onClick={handleConfirmSbpManual}
+								disabled={isCheckingSbp}
+								title="Подтвердить получение оплаты СБП по выписке банка (Мандат 8e)"
+								className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-2.5 sm:px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer shadow-sm transition-all min-w-0 truncate"
+								data-testid="btn-sbp-submit-footer"
+							>
+								<CheckCircle size={16} className="shrink-0" />
+								<span className="truncate">
+									{isCheckingSbp ? (
+										"Проверка..."
+									) : (
+										<>
+											<span className="sm:hidden">СБП {totalDueRub.toLocaleString("ru-RU")} ₽</span>
+											<span className="hidden sm:inline">Подтвердить СБП ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
 										</>
 									)}
 								</span>
