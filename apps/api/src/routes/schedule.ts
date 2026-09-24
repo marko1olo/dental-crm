@@ -26,7 +26,9 @@ import {
 	scheduleClipboardItems,
 	urgentScheduleRequests,
 	users,
+	visits,
 } from "../db/schema.js";
+import { openVisitForAppointmentInDb } from "../db/visitsQuery.js";
 import { invalidateAppointmentReminders } from "../services/communications/appointmentReminders.js";
 import { wsBroker } from "../services/websocketBroker.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
@@ -59,9 +61,10 @@ type AppointmentRejectionReason =
 
 type AppointmentRejectionResponse = {
 	statusCode: 403 | 404 | 409;
-	code: AppointmentMutationCode;
+	code: AppointmentMutationCode | "CHAIR_OVERBOOKING_COLLISION";
 	reason: AppointmentRejectionReason;
 	message: string;
+	collisionCode?: "CHAIR_OVERBOOKING_COLLISION" | undefined;
 	error?: string | undefined;
 	suggestedSlots?: string[] | undefined;
 };
@@ -151,39 +154,53 @@ function normalizedAppointmentException(error: unknown): string {
 
 function extractExclusionConstraintMessage(error: unknown): string | null {
 	if (!error || typeof error !== "object") return null;
-	const err = error as { code?: string; constraint?: string; message?: string };
-	const code = err.code ?? "";
-	const constraint = err.constraint ?? "";
-	const message = typeof err.message === "string" ? err.message : "";
+	const errObj = error as Record<string, unknown>;
+	const cause = (errObj?.cause && typeof errObj.cause === "object" ? errObj.cause : {}) as Record<string, unknown>;
+
+	const code = String(errObj?.code ?? cause?.code ?? "");
+	const constraint = String(
+		errObj?.constraint ??
+		cause?.constraint ??
+		errObj?.constraint_name ??
+		cause?.constraint_name ??
+		""
+	);
+	const message = String(errObj?.message ?? cause?.message ?? "");
+	const detail = String(errObj?.detail ?? cause?.detail ?? "");
+
+	const fullText = `${constraint} ${message} ${detail}`;
 
 	const isExclusion =
 		code === "23P01" ||
-		message.includes("23P01") ||
-		message.includes("exclusion constraint") ||
-		constraint.includes("overlap_excl") ||
-		message.includes("overlap_excl");
+		fullText.includes("23P01") ||
+		fullText.includes("exclusion constraint") ||
+		fullText.includes("overlap_excl");
 
 	if (
-		constraint === "appointments_doctor_overlap_excl" ||
-		message.includes("appointments_doctor_overlap_excl")
+		constraint.includes("appointments_doctor_overlap_excl") ||
+		fullText.includes("appointments_doctor_overlap_excl") ||
+		(isExclusion && (fullText.includes("doctor_user_id") || fullText.includes("doctor")))
 	) {
 		return "У врача уже есть запись в это время";
 	}
 	if (
-		constraint === "appointments_chair_overlap_excl" ||
-		message.includes("appointments_chair_overlap_excl")
+		constraint.includes("appointments_chair_overlap_excl") ||
+		fullText.includes("appointments_chair_overlap_excl") ||
+		(isExclusion && (fullText.includes("chair_id") || fullText.includes("chair")))
 	) {
 		return "Кресло уже занято другой записью в это время";
 	}
 	if (
-		constraint === "appointments_assistant_overlap_excl" ||
-		message.includes("appointments_assistant_overlap_excl")
+		constraint.includes("appointments_assistant_overlap_excl") ||
+		fullText.includes("appointments_assistant_overlap_excl") ||
+		(isExclusion && (fullText.includes("assistant_user_id") || fullText.includes("assistant")))
 	) {
 		return "У ассистента уже есть запись в это время";
 	}
 	if (
-		constraint === "appointments_patient_overlap_excl" ||
-		message.includes("appointments_patient_overlap_excl")
+		constraint.includes("appointments_patient_overlap_excl") ||
+		fullText.includes("appointments_patient_overlap_excl") ||
+		(isExclusion && (fullText.includes("patient_id") || fullText.includes("patient")))
 	) {
 		return "У пациента уже есть запись в это время";
 	}
@@ -201,8 +218,10 @@ function classifyAppointmentRejection(
 	if (extractExclusionConstraintMessage(error) !== null) {
 		return "resource_overlap";
 	}
-	const err = error as { code?: string };
-	if (err && typeof err === "object" && err.code === "23P01") {
+	const errObj = error as Record<string, unknown>;
+	const cause = (errObj?.cause && typeof errObj.cause === "object" ? errObj.cause : {}) as Record<string, unknown>;
+	const code = String(errObj?.code ?? cause?.code ?? "");
+	if (code === "23P01") {
 		return "resource_overlap";
 	}
 	const message = normalizedAppointmentException(error);
@@ -476,6 +495,9 @@ async function appointmentRejectionResponse(
 				: "AppointmentUpdateRejected",
 		reason,
 		message: specificMessage,
+		...(reason === "resource_overlap"
+			? { collisionCode: "CHAIR_OVERBOOKING_COLLISION" as const }
+			: {}),
 		...(errorType ? { error: errorType } : {}),
 		...(suggestedSlots ? { suggestedSlots } : {}),
 	};
@@ -491,6 +513,9 @@ function sendAppointmentRejection(
 		reason: rejection.reason,
 		message: rejection.message,
 	};
+	if (rejection.collisionCode) {
+		payload.collisionCode = rejection.collisionCode;
+	}
 	if (rejection.error) {
 		payload.error = rejection.error;
 	}
@@ -1025,6 +1050,35 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 		try {
 			await updateAppointmentInDb(orgId, params.appointmentId, input);
 
+			if (input.status === "in_treatment") {
+				try {
+					await openVisitForAppointmentInDb(orgId, params.appointmentId);
+				} catch (err) {
+					request.log.warn(
+						{ err, appointmentId: params.appointmentId, orgId },
+						"[scheduleRoutes] Не удалось открыть визит при переходе в in_treatment",
+					);
+				}
+			} else if (input.status === "completed") {
+				try {
+					await db
+						.update(visits)
+						.set({ status: "signed", updatedAt: new Date() })
+						.where(
+							and(
+								eq(visits.appointmentId, params.appointmentId),
+								eq(visits.organizationId, orgId),
+								eq(visits.status, "draft"),
+							),
+						);
+				} catch (err) {
+					request.log.warn(
+						{ err, appointmentId: params.appointmentId, orgId },
+						"[scheduleRoutes] Не удалось обновить статус визита при переходе в completed",
+					);
+				}
+			}
+
 			// Напоминание ставится в очередь заранее и несёт в тексте дату и время.
 			// После переноса или отмены оно стало неверным: пациент получил бы
 			// «ждём вас 12 августа в 14:30» на приём, которого в это время уже нет.
@@ -1046,7 +1100,10 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 			// слот занятым, хотя он уже освобождён, и наоборот.
 			wsBroker.broadcastToOrganization(orgId, {
 				type: "APPOINTMENT_UPDATED",
-				payload: { appointmentId: params.appointmentId },
+				payload: {
+					appointmentId: params.appointmentId,
+					...(input.status ? { status: input.status } : {}),
+				},
 			});
 
 			// КРИТИЧНО: updateAppointmentInDb УЖЕ СОВЕРШЕНА. Дальше — опциональная услуга.
@@ -1103,8 +1160,16 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 	}
 
 	app.patch("/api/appointments/:appointmentId", updateAppointmentHandler);
+	app.patch(
+		"/api/appointments/:appointmentId/status",
+		updateAppointmentHandler,
+	);
 	app.put(
 		"/api/schedule/appointments/:appointmentId",
+		updateAppointmentHandler,
+	);
+	app.put(
+		"/api/schedule/appointments/:appointmentId/status",
 		updateAppointmentHandler,
 	);
 

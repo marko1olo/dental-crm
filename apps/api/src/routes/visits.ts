@@ -5,7 +5,7 @@ import {
 	visitDraftAutosaveRequestSchema,
 	visitDraftAutosaveResponseSchema,
 } from "@dental/shared";
-import type { FastifyInstance, FastifyReply } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 /*
  * ОДНА ИДИОМА ДОСТУПА НА ФАЙЛ, И ОНА ВЫПОЛНЯЕТСЯ.
  *
@@ -46,7 +46,7 @@ import {
 } from "../accessGuard.js";
 
 import { db as database } from "../db/client.js";
-import { chairs, clinics } from "../db/schema.js";
+import { appointments, chairs, clinics, visits } from "../db/schema.js";
 import { and, eq } from "drizzle-orm";
 import { createPatientInDb } from "../db/patientsQuery.js";
 import { createAppointmentInDb } from "../db/appointmentsQuery.js";
@@ -341,7 +341,7 @@ export function sendVisitOpenError(error: unknown, reply: FastifyReply) {
 }
 
 export async function registerVisitRoutes(app: FastifyInstance) {
-	app.post("/api/visits/quick", async (request, reply) => {
+	const quickVisitHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const context = await requireClinicalMutationContext(
 			request,
 			reply,
@@ -416,23 +416,49 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 
 		const startsAt = new Date().toISOString();
 		const endsAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-		const appointment = await createAppointmentInDb(orgId, {
-			patientId: patient.id,
-			doctorUserId,
-			chairId: chair.id,
-			status: "planned",
-			startsAt,
-			endsAt,
-			reason: "Быстрый прием",
-			comment: null,
-			assistantUserId: null,
-		});
+		try {
+			const appointment = await createAppointmentInDb(orgId, {
+				patientId: patient.id,
+				doctorUserId,
+				chairId: chair.id,
+				status: "in_treatment",
+				startsAt,
+				endsAt,
+				reason: "Быстрый прием",
+				comment: null,
+				assistantUserId: null,
+			});
 
-		await openVisitForAppointmentInDb(orgId, appointment.id);
+			await openVisitForAppointmentInDb(orgId, appointment.id);
 
-		reply.code(201);
-		return { patientId: patient.id, appointmentId: appointment.id };
-	});
+			reply.code(201);
+			return { patientId: patient.id, appointmentId: appointment.id };
+		} catch (error) {
+			const errObj = error as Record<string, unknown>;
+			const cause = (errObj?.cause && typeof errObj.cause === "object" ? errObj.cause : {}) as Record<string, unknown>;
+			const code = String(errObj?.code ?? cause?.code ?? "");
+			const message = String(errObj?.message ?? cause?.message ?? "");
+			const constraint = String(errObj?.constraint ?? cause?.constraint ?? errObj?.constraint_name ?? cause?.constraint_name ?? "");
+			if (
+				code === "23P01" ||
+				constraint.includes("overlap_excl") ||
+				message.includes("23P01") ||
+				message.includes("exclusion constraint") ||
+				message.includes("overlap_excl") ||
+				message.includes("уже есть запись") ||
+				message.includes("уже занято")
+			) {
+				return reply.code(409).send({
+					code: "CHAIR_OVERBOOKING_COLLISION",
+					reason: "resource_overlap",
+					message: "Выбранное кресло или врач уже заняты в это время.",
+				});
+			}
+			throw error;
+		}
+	};
+	app.post("/api/visits/quick", quickVisitHandler);
+	app.post("/api/visits/fast", quickVisitHandler);
 	/**
 	 * Открыть приём по записи расписания — недостающее звено цепочки.
 	 *
@@ -465,19 +491,28 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 
 		try {
 			const result = await openVisitForAppointmentInDb(orgId, appointmentId);
-			if (result.created) {
-				/*
-				 * Рассылаем APPOINTMENT_UPDATED, а не новый тип события: клиент
-				 * фильтрует сообщения множеством SCHEDULE_EVENTS
-				 * (apps/web/src/hooks/useScheduleRealtime.ts), поэтому неизвестный тип
-				 * молча отбросился бы. У записи появился открытый приём — расписание
-				 * коллеги должно это увидеть, не дожидаясь перезагрузки страницы.
-				 */
-				wsBroker.broadcastToOrganization(orgId, {
-					type: "APPOINTMENT_UPDATED",
-					payload: { appointmentId, visitId: result.visit.id },
-				});
-			}
+			// Атомарно переводим статус записи в расписании в "in_treatment" в PostgreSQL
+			await database
+				.update(appointments)
+				.set({
+					status: "in_treatment",
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(appointments.id, appointmentId),
+						eq(appointments.organizationId, orgId),
+					),
+				);
+
+			wsBroker.broadcastToOrganization(orgId, {
+				type: "APPOINTMENT_UPDATED",
+				payload: {
+					appointmentId,
+					visitId: result.visit.id,
+					status: "in_treatment",
+				},
+			});
 			reply.code(result.created ? 201 : 200);
 			return {
 				success: true,
@@ -606,6 +641,30 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 		let result: Awaited<ReturnType<typeof acceptVisitDraftInDb>>;
 		try {
 			result = await acceptVisitDraftInDb(orgId, input);
+			// Атомарно переводим статус связанной записи расписания в "completed" при подписании приёма в PostgreSQL
+			if (result?.visit?.appointmentId) {
+				await database
+					.update(appointments)
+					.set({
+						status: "completed",
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(appointments.id, result.visit.appointmentId),
+							eq(appointments.organizationId, orgId),
+						),
+					);
+
+				wsBroker.broadcastToOrganization(orgId, {
+					type: "APPOINTMENT_UPDATED",
+					payload: {
+						appointmentId: result.visit.appointmentId,
+						visitId: result.visit.id,
+						status: "completed",
+					},
+				});
+			}
 		} catch (error) {
 			/*
 			 * Отказ ПОСЛЕ подписания разбирается отдельно от доменных отказов. Общий
@@ -779,6 +838,43 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 				actorUserId: identity.userId ?? null,
 				status: body.status ?? "signed",
 			});
+
+			// Атомарно переводим статус связанной записи расписания в "completed" при завершении наряда приёма
+			const [linkedVisit] = await database
+				.select({ appointmentId: visits.appointmentId })
+				.from(visits)
+				.where(
+					and(
+						eq(visits.id, visitId),
+						eq(visits.organizationId, context.organizationId),
+					),
+				)
+				.limit(1);
+
+			if (linkedVisit?.appointmentId) {
+				await database
+					.update(appointments)
+					.set({
+						status: "completed",
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(appointments.id, linkedVisit.appointmentId),
+							eq(appointments.organizationId, context.organizationId),
+						),
+					);
+
+				wsBroker.broadcastToOrganization(context.organizationId, {
+					type: "APPOINTMENT_UPDATED",
+					payload: {
+						appointmentId: linkedVisit.appointmentId,
+						visitId,
+						status: "completed",
+					},
+				});
+			}
+
 			return result;
 		} catch (error) {
 			if (error instanceof VisitWorkOrderError) {

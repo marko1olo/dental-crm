@@ -374,7 +374,7 @@ export function ScheduleFilterStrip({
 	return (
 		<>
 			<section
-				className="schedule-filter-strip min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-start sm:justify-between gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-1 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-hidden shrink-0 select-none"
+				className="schedule-filter-strip min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex flex-nowrap items-center justify-start sm:justify-between gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-1 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-hidden shrink-0 select-none"
 				aria-label="Сохраненные фильтры расписания"
 				data-testid="schedule-toolbar"
 				role="toolbar"
@@ -1134,22 +1134,6 @@ export function ScheduleFilterStrip({
 								<span>Добавить кресло (+ Кресло)</span>
 							</button>
 
-							{onQuickBooking && (
-								<button
-									type="button"
-									onClick={() => {
-										onQuickBooking();
-										setIsOptionsMenuOpen(false);
-									}}
-									className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-									role="menuitem"
-									data-testid="schedule-toolbar-quick-booking-btn"
-									title="Новая запись пациента на прием (горячая клавиша N)"
-								>
-									<Sparkles size={14} className="text-[var(--teal,var(--brand-primary))]" />
-									<span>Быстрая запись (N)</span>
-								</button>
-							)}
 
 							{onOpenPatientSearch && (
 								<button

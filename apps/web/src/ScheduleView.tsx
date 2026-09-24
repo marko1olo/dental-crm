@@ -1690,12 +1690,82 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					all++;
 					if (appt.status === "arrived") arrived++;
 					else if (appt.status === "in_treatment") inTreatment++;
-					else if (appt.status === "completed") awaitingPayment++;
+					else if (appt.status === "completed") {
+						const invoice =
+							appt.invoice ??
+							(appt as any)?.visit?.invoice ??
+							(Array.isArray((dashboard as any)?.invoices)
+								? (dashboard as any).invoices.find(
+										(inv: any) =>
+											inv?.appointmentId === appt.id ||
+											(inv?.visitId &&
+												(inv.visitId === (appt as any)?.visitId ||
+													inv.visitId === (appt as any)?.visit?.id)),
+								  )
+								: undefined);
+
+						const invoiceStatus = String(invoice?.status || "")
+							.toLowerCase()
+							.trim();
+						const isInvoicePaid =
+							invoiceStatus === "paid" || invoiceStatus === "fully_paid";
+
+						const directPaymentStatus = String(
+							(appt as any)?.paymentStatus ||
+								(appt as any)?.payment_status ||
+								"",
+						)
+							.toLowerCase()
+							.trim();
+						const isDirectPaid =
+							directPaymentStatus === "paid" ||
+							directPaymentStatus === "fully_paid";
+
+						const visitId =
+							(appt as any)?.visitId || (appt as any)?.visit?.id;
+						const matchingPayments = Array.isArray(
+							(dashboard as any)?.payments,
+						)
+							? (dashboard as any).payments.filter(
+									(p: any) =>
+										(p?.appointmentId &&
+											p.appointmentId === appt.id) ||
+										(visitId &&
+											p?.visitId &&
+											p.visitId === visitId) ||
+										(invoice?.id &&
+											p?.invoiceId &&
+											p.invoiceId === invoice.id),
+							  )
+							: [];
+						const hasPaidPayment = matchingPayments.some(
+							(p: any) => {
+								const st = String(p?.status || "")
+									.toLowerCase()
+									.trim();
+								return (
+									st === "paid" ||
+									st === "completed" ||
+									st === "success"
+								);
+							},
+						);
+
+						const isPaid =
+							isInvoicePaid ||
+							isDirectPaid ||
+							hasPaidPayment ||
+							(appt as any)?.isPaid === true;
+
+						if (!isPaid) {
+							awaitingPayment++;
+						}
+					}
 				}
 			}
 		}
 		return { all, arrived, inTreatment, awaitingPayment };
-	}, [visibleDayGroups, scheduleDoctorFilterId, scheduleChairFilterId]);
+	}, [visibleDayGroups, scheduleDoctorFilterId, scheduleChairFilterId, dashboard]);
 	/**
 	 * Шаг по дням. Раньше выбрать день можно было только полем даты, а пойти
 	 * «на день назад» — никак: администратор, у которого заболел врач, не мог
