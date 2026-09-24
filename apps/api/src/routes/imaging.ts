@@ -125,7 +125,7 @@ import {
 	parseImagingManifest as parseImagingManifestService,
 } from "../services/imaging/DicomProcessorService.js";
 import { analyzeVisiographImage } from "../ai/visiograph.js";
-import { browserRenderableImageMimeType } from "../imaging/previewFormats.js";
+import { browserRenderableImageMimeType, isDicomOrRadiographFile } from "../imaging/previewFormats.js";
 import { analyzeImagingStudy } from "../ai/visionAnalyzer.js";
 import {
 	createImagingStudyInDb,
@@ -147,7 +147,13 @@ import { withTenantCtx } from "../db/rls.js";
 import { getVisitByIdInDb } from "../db/visitsQuery.js";
 import { getRequestIdentity, requireOrganizationId } from "../security/identity.js";
 import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
-import { LocalPacsStorageService } from "../services/imaging/localPacsStorageService.js";
+import {
+	InvalidMagicBytesError,
+	LocalPacsStorageService,
+	PathTraversalError,
+	TenantIsolationError,
+} from "../services/imaging/localPacsStorageService.js";
+import { decodeServerHeicImage } from "../services/imaging/serverHeicDecoder.js";
 
 const kindLabels = {
 	periapical: "Прицельный",
@@ -9402,7 +9408,25 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 					"У исследования не указан файл снимка. Анализ невозможен — загрузите изображение.",
 			});
 		}
-		if (!existsSync(study.storagePath)) {
+		let resolvedStoragePath: string;
+		try {
+			resolvedStoragePath = LocalPacsStorageService.validateAndResolveLocalFilePath(orgId, study.storagePath);
+		} catch (err) {
+			if (err instanceof PathTraversalError || err instanceof TenantIsolationError) {
+				return reply.code(403).send({
+					ok: false,
+					error: "ImagingStorageAccessDenied",
+					message: "Файл снимка находится за пределами разрешенного хранилища клиники.",
+				});
+			}
+			return reply.code(400).send({
+				ok: false,
+				error: "InvalidPath",
+				message: "Недопустимый путь к файлу снимка.",
+			});
+		}
+
+		if (!existsSync(resolvedStoragePath)) {
 			return reply.code(422).send({
 				ok: false,
 				error: "ImagingFileNotFound",
@@ -9420,7 +9444,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 		);
 		let imageBase64: string;
 		try {
-			const fileSizeBytes = statSync(study.storagePath).size;
+			const fileSizeBytes = statSync(resolvedStoragePath).size;
 			if (fileSizeBytes > maxAnalyzableBytes) {
 				return reply.code(413).send({
 					ok: false,
@@ -9428,11 +9452,11 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 					message: `Файл снимка слишком велик для анализа (${Math.round(fileSizeBytes / 1024 / 1024)} МБ, предел ${Math.round(maxAnalyzableBytes / 1024 / 1024)} МБ). Используйте отдельный кадр вместо полного тома.`,
 				});
 			}
-			const buf = await readFile(study.storagePath);
+			const buf = await readFile(resolvedStoragePath);
 			imageBase64 = buf.toString("base64");
 		} catch (readError) {
 			request.log.error(
-				{ err: readError, storagePath: study.storagePath },
+				{ err: readError, storagePath: resolvedStoragePath },
 				"[imaging] Не удалось прочитать файл снимка",
 			);
 			return reply.code(422).send({
@@ -9523,11 +9547,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			 * ПОЧЕМУ ЗДЕСЬ ЯВНЫЙ withTenantCtx (и config.tenantTxSelfManaged выше).
 			 * Тело ответа — поток файла снимка: рентген это мегабайты, том КЛКТ —
 			 * сотни мегабайт, и время передачи задаёт клиент. Автоматическая обёртка
-			 * из server.ts держала бы транзакцию и соединение из пула на всё это время
-			 * (см. развёрнутое объяснение в server.ts у хука onRoute). Строка
-			 * исследования читается под контекстом арендатора, транзакция закрывается,
-			 * поток открывается уже вне её. Организация берётся из проверенного токена,
-			 * обхода RLS нет.
+			 * из server.ts держала бы транзакцию и соединение из пула на всё это время.
 			 */
 			const study = await withTenantCtx(orgId, () =>
 				getImagingStudyById(orgId, id),
@@ -9543,39 +9563,21 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const mimeType = browserRenderableImageMimeType(storagePath);
-			if (!mimeType) {
-				return reply.code(415).send({
-					error: "ImagingPreviewUnsupported",
-					message:
-						"Этот формат браузер показать не может. Откройте снимок в просмотрщике DICOM.",
-				});
-			}
-
-			const resolved = path.resolve(storagePath);
-			// Безопасность: проверяем, что разрешённый путь не содержит null-байтов и не выходит за пределы диска/корня
-			if (resolved.includes("\0")) {
+			// Security: resolve file within tenant storage jail or sanitized workstation path
+			let resolved: string;
+			try {
+				resolved = LocalPacsStorageService.validateAndResolveLocalFilePath(orgId, storagePath);
+			} catch (err) {
+				if (err instanceof PathTraversalError || err instanceof TenantIsolationError) {
+					request.log.warn({ orgId, storagePath, err }, "Imaging storage access denied");
+					return reply.code(403).send({
+						error: "ImagingStorageAccessDenied",
+						message: "Файл снимка находится за пределами разрешенного хранилища клиники.",
+					});
+				}
 				return reply.code(400).send({
 					error: "InvalidPath",
 					message: "Недопустимый путь к файлу снимка.",
-				});
-			}
-
-			const allowedRoot = process.env.DENTE_IMAGING_STORAGE_ROOT
-				? path.resolve(process.env.DENTE_IMAGING_STORAGE_ROOT)
-				: null;
-			if (
-				allowedRoot &&
-				!resolved.startsWith(allowedRoot + path.sep) &&
-				resolved !== allowedRoot
-			) {
-				request.log.warn(
-					{ resolved, allowedRoot },
-					"Attempted imaging file access outside configured DENTE_IMAGING_STORAGE_ROOT",
-				);
-				return reply.code(403).send({
-					error: "ImagingStorageAccessDenied",
-					message: "Файл снимка находится за пределами разрешенного хранилища клиники.",
 				});
 			}
 
@@ -9589,10 +9591,60 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 				});
 			}
 
-			reply.type(mimeType);
-			return reply.send(createReadStream(resolved));
+			const browserMime = browserRenderableImageMimeType(resolved);
+			const query = (request.query || {}) as { raw?: string; download?: string };
+			const isDownload = query.download === "true" || query.raw === "true";
+
+			if (browserMime && !isDownload) {
+				reply.type(browserMime);
+				return reply.send(createReadStream(resolved));
+			}
+
+			const ext = path.extname(resolved).toLowerCase();
+			if (isDicomOrRadiographFile(resolved) || ext === ".dcm" || ext === ".dicom" || ext === ".ima" || isDownload) {
+				const mime = ext === ".dcm" || ext === ".dicom" || ext === ".ima" ? "application/dicom" : (browserMime || "application/octet-stream");
+				reply.type(mime);
+				reply.header("Content-Disposition", `attachment; filename="${path.basename(resolved)}"`);
+				return reply.send(createReadStream(resolved));
+			}
+
+			return reply.code(415).send({
+				error: "ImagingPreviewUnsupported",
+				message:
+					"Этот формат браузер показать не может. Откройте снимок в просмотрщике DICOM.",
+			});
 		},
 	);
+
+	const registerLocalStudyBodySchema = z.object({
+		patientId: z.string().uuid("Идентификатор пациента должен быть валидным UUID"),
+		visitId: z.string().uuid().optional().nullable(),
+		kind: z
+			.enum([
+				"ct",
+				"cbct",
+				"optg",
+				"opg",
+				"rvg",
+				"periapical",
+				"bitewing",
+				"panoramic",
+				"cephalometric",
+				"photo_intraoral",
+				"photo_extraoral",
+				"other",
+			])
+			.default("cbct"),
+		title: z.string().trim().min(1, "Название снимка обязательно").max(200).optional(),
+		toothCode: z.string().trim().max(50).optional().nullable(),
+		region: z.string().trim().max(100).optional().nullable(),
+		localFilePath: z.string().trim().min(1, "Путь к локальному файлу снимка обязателен"),
+		fileSizeBytes: z.number().int().nonnegative().optional(),
+		dicomStudyUid: z.string().trim().optional().nullable(),
+		dicomSeriesUid: z.string().trim().optional().nullable(),
+		dicomSopInstanceUid: z.string().trim().optional().nullable(),
+		localThumbnailDataUri: z.string().trim().optional().nullable(),
+	});
 
 	/**
 	 * POST /api/imaging/local-offline/register
@@ -9606,50 +9658,55 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 		const organizationId = requireOrganizationId(request, reply);
 		if (!organizationId) return;
 
-		const schema = createImagingStudySchema.extend({
-			localFilePath: createImagingStudySchema.shape.title.min(1, "Путь к локальному файлу снимка обязателен"),
-			fileSizeBytes: createImagingStudySchema.shape.title.optional(),
-			dicomStudyUid: createImagingStudySchema.shape.toothCode.optional(),
-			dicomSeriesUid: createImagingStudySchema.shape.toothCode.optional(),
-			dicomSopInstanceUid: createImagingStudySchema.shape.toothCode.optional(),
-			localThumbnailDataUri: createImagingStudySchema.shape.toothCode.optional(),
-		});
-
-		const body = request.body as Record<string, unknown>;
-		const patientId = typeof body.patientId === "string" ? body.patientId : "";
-		const kind = (typeof body.kind === "string" ? body.kind : "cbct") as ImagingStudyKind;
-		const title = typeof body.title === "string" ? body.title : `Снимок ${kind.toUpperCase()}`;
-		const localFilePath = typeof body.localFilePath === "string" ? body.localFilePath : typeof body.storagePath === "string" ? body.storagePath : "";
-		const visitId = typeof body.visitId === "string" ? body.visitId : undefined;
-		const toothCode = typeof body.toothCode === "string" ? body.toothCode : undefined;
-		const region = typeof body.region === "string" ? body.region : undefined;
-		const fileSizeBytes = typeof body.fileSizeBytes === "number" ? body.fileSizeBytes : undefined;
-		const dicomStudyUid = typeof body.dicomStudyUid === "string" ? body.dicomStudyUid : undefined;
-		const dicomSeriesUid = typeof body.dicomSeriesUid === "string" ? body.dicomSeriesUid : undefined;
-		const dicomSopInstanceUid = typeof body.dicomSopInstanceUid === "string" ? body.dicomSopInstanceUid : undefined;
-		const localThumbnailDataUri = typeof body.localThumbnailDataUri === "string" ? body.localThumbnailDataUri : undefined;
-
-		if (!patientId || !localFilePath) {
+		const parseResult = registerLocalStudyBodySchema.safeParse(request.body);
+		if (!parseResult.success) {
 			return reply.status(400).send({
 				error: "ValidationError",
-				message: "Необходимо указать patientId и localFilePath",
+				message: parseResult.error.issues[0]?.message || "Ошибка валидации параметров снимка",
+				issues: parseResult.error.issues,
+			});
+		}
+		const data = parseResult.data;
+
+		// 152-ФЗ / 323-ФЗ: Verify patient belongs to organization
+		const patient = await getPatientByIdFromDb(organizationId, data.patientId);
+		if (!patient) {
+			return reply.status(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в организации клиники",
+			});
+		}
+
+		// Security: Validate file path within tenant storage jail or sanitized local workstation scan path
+		try {
+			LocalPacsStorageService.validateAndResolveLocalFilePath(organizationId, data.localFilePath);
+		} catch (err) {
+			if (err instanceof PathTraversalError || err instanceof TenantIsolationError) {
+				return reply.status(403).send({
+					error: "ImagingStorageAccessDenied",
+					message: err.message,
+				});
+			}
+			return reply.status(400).send({
+				error: "InvalidPath",
+				message: err instanceof Error ? err.message : "Недопустимый путь к файлу снимка",
 			});
 		}
 
 		const result = await LocalPacsStorageService.registerLocalRadiologyScan({
 			organizationId,
-			patientId,
-			visitId,
-			kind,
-			title,
-			toothCode,
-			region,
-			localFilePath,
-			fileSizeBytes,
-			dicomStudyUid,
-			dicomSeriesUid,
-			dicomSopInstanceUid,
-			localThumbnailDataUri,
+			patientId: data.patientId,
+			visitId: data.visitId,
+			kind: data.kind as ImagingStudyKind,
+			title: data.title || `Снимок ${data.kind.toUpperCase()}`,
+			toothCode: data.toothCode,
+			region: data.region,
+			localFilePath: data.localFilePath,
+			fileSizeBytes: data.fileSizeBytes,
+			dicomStudyUid: data.dicomStudyUid || undefined,
+			dicomSeriesUid: data.dicomSeriesUid || undefined,
+			dicomSopInstanceUid: data.dicomSopInstanceUid || undefined,
+			localThumbnailDataUri: data.localThumbnailDataUri || undefined,
 		});
 
 		return reply.status(201).send({
@@ -9657,6 +9714,172 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			...result,
 		});
 	});
+
+	/**
+	 * POST /api/imaging/upload
+	 * Streams upload of radiology scans, RVG, CBCT, OPG, HEIC, PNG, JPEG with on-the-fly magic bytes verification
+	 * and zero memory leaks for multi-gigabyte scans.
+	 */
+	app.post(
+		"/api/imaging/upload",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			if (!(await requireClinicalMutationAccess(request, reply, "upload radiology scan"))) {
+				return;
+			}
+			const organizationId = requireOrganizationId(request, reply);
+			if (!organizationId) return;
+
+			let fileStream: NodeJS.ReadableStream | null = null;
+			let filename = "scan.dcm";
+			let patientId = "";
+			let kind: ImagingStudyKind = "cbct";
+			let title = "";
+			let toothCode: string | undefined;
+			let region: string | undefined;
+			let visitId: string | undefined;
+
+			// Handle multipart or raw stream
+			const isMulti = typeof (request as any).isMultipart === "function" && (request as any).isMultipart();
+			if (isMulti) {
+				const part = await (request as any).file();
+				if (!part) {
+					return reply.status(400).send({
+						error: "MissingFilePayload",
+						message: "Файл снимка не получен в запросе.",
+					});
+				}
+				fileStream = part.file;
+				filename = part.filename;
+				const fields = (part.fields || {}) as Record<string, { value?: unknown }>;
+				patientId = String(fields.patientId?.value || "");
+				kind = (String(fields.kind?.value || "cbct")) as ImagingStudyKind;
+				title = String(fields.title?.value || "");
+				toothCode = fields.toothCode?.value ? String(fields.toothCode.value) : undefined;
+				region = fields.region?.value ? String(fields.region.value) : undefined;
+				visitId = fields.visitId?.value ? String(fields.visitId.value) : undefined;
+			} else {
+				const query = (request.query || {}) as Record<string, string>;
+				patientId = query.patientId || (request.headers["x-patient-id"] as string) || "";
+				kind = (query.kind || (request.headers["x-study-kind"] as string) || "cbct") as ImagingStudyKind;
+				title = query.title || (request.headers["x-study-title"] as string) || "";
+				toothCode = query.toothCode || undefined;
+				region = query.region || undefined;
+				visitId = query.visitId || undefined;
+				filename = query.filename || (request.headers["x-file-name"] as string) || "scan.dcm";
+				fileStream = request.raw;
+			}
+
+			if (!patientId) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Необходимо указать patientId для загрузки снимка.",
+				});
+			}
+
+			// Validate patient ownership
+			const patient = await getPatientByIdFromDb(organizationId, patientId);
+			if (!patient) {
+				return reply.status(404).send({
+					error: "PatientNotFound",
+					message: "Пациент не найден в организации клиники.",
+				});
+			}
+
+			if (!fileStream) {
+				return reply.status(400).send({
+					error: "MissingFilePayload",
+					message: "Поток файла снимка не передан.",
+				});
+			}
+
+			try {
+				const stored = await LocalPacsStorageService.storeTenantFileStream(
+					organizationId,
+					filename,
+					fileStream,
+					{ maxSizeBytes: 2 * 1024 * 1024 * 1024 }, // 2 GB limit per scan
+				);
+
+				let dicomMetadata: any = null;
+				let localThumbnailDataUri: string | null = null;
+
+				// If DICOM, parse header safe
+				if (stored.detectedFormat === "dicom") {
+					try {
+						const headBuf = Buffer.alloc(Math.min(stored.fileSizeBytes, 65536));
+						const fd = openSync(stored.storagePath, "r");
+						readSync(fd, headBuf, 0, headBuf.length, 0);
+						closeSync(fd);
+						const safeParsed = DicomProcessorService.parseBufferSafe(headBuf);
+						if (safeParsed.success && safeParsed.metadata) {
+							dicomMetadata = safeParsed.metadata;
+						}
+					} catch {
+						// Non-fatal if header parsing fails on full file
+					}
+				} else if (stored.detectedFormat === "heic") {
+					try {
+						const fileBuf = await readFile(stored.storagePath);
+						const decoded = await decodeServerHeicImage(fileBuf, {
+							thumbnailSize: 200,
+							generateThumbnail: true,
+						});
+						if (decoded.success && decoded.thumbnailBuffer) {
+							localThumbnailDataUri = `data:image/webp;base64,${decoded.thumbnailBuffer.toString("base64")}`;
+						}
+					} catch {
+						// Non-fatal
+					}
+				}
+
+				const studyTitle = title.trim() || `Снимок ${kind.toUpperCase()}`;
+				const study = await createImagingStudyInDb(organizationId, {
+					patientId,
+					visitId: visitId || null,
+					kind,
+					title: studyTitle,
+					toothCode: toothCode || null,
+					region: region || null,
+					sourceKind: "dicom_file",
+					sourceName: filename,
+					storagePath: stored.relativePath,
+					dicomStudyUid: dicomMetadata?.studyInstanceUid || undefined,
+					aiSummary: localThumbnailDataUri ? "Снимок загружен. Сформировано превью." : null,
+				});
+
+				return reply.status(201).send({
+					success: true,
+					study,
+					file: {
+						fileName: stored.fileName,
+						relativePath: stored.relativePath,
+						fileSizeBytes: stored.fileSizeBytes,
+						detectedFormat: stored.detectedFormat,
+						sha256: stored.sha256,
+					},
+					dicomMetadata,
+				});
+			} catch (err) {
+				if (err instanceof InvalidMagicBytesError) {
+					return reply.status(400).send({
+						error: "InvalidMagicBytes",
+						message: err.message,
+					});
+				}
+				if (err instanceof PathTraversalError || err instanceof TenantIsolationError) {
+					return reply.status(403).send({
+						error: "ImagingStorageAccessDenied",
+						message: err.message,
+					});
+				}
+				request.log.error({ err }, "Error during imaging upload");
+				return reply.status(500).send({
+					error: "UploadFailed",
+					message: err instanceof Error ? err.message : "Ошибка при сохранении снимка.",
+				});
+			}
+		},
+	);
 
 	/**
 	 * GET /api/imaging/local-offline/studies/:studyId

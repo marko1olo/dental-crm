@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	DicomProcessorService,
+	createDicomPixelSampler,
 	isDicomArchivePath,
 	isDicomHeaderCandidatePath,
 	isDicomLikeEntry,
@@ -108,5 +109,106 @@ describe("DicomProcessorService — Unit & Domain Logic", () => {
 		assert.equal(result.totalRows, 0);
 		assert.deepEqual(result.rows, []);
 		assert.deepEqual(result.parserNotes, ["Нет строк для разбора."]);
+	});
+
+	it("parses PatientID, StudyDate, Modality, and SliceThickness tags accurately", () => {
+		// Build synthetic DICOM buffer with standard preamble
+		const buf = Buffer.alloc(512);
+		buf.write("DICM", 128, "latin1");
+
+		let offset = 132;
+
+		// 1. PatientName (0010, 0010) PN
+		buf.writeUInt16LE(0x0010, offset);
+		buf.writeUInt16LE(0x0010, offset + 2);
+		buf.write("PN", offset + 4, "latin1");
+		buf.writeUInt16LE(12, offset + 6);
+		buf.write("Ivanov^Ivan ", offset + 8, "latin1");
+		offset += 20;
+
+		// 2. PatientID (0010, 0020) LO
+		buf.writeUInt16LE(0x0010, offset);
+		buf.writeUInt16LE(0x0020, offset + 2);
+		buf.write("LO", offset + 4, "latin1");
+		buf.writeUInt16LE(10, offset + 6);
+		buf.write("PAT-987654", offset + 8, "latin1");
+		offset += 18;
+
+		// 3. Modality (0008, 0060) CS
+		buf.writeUInt16LE(0x0008, offset);
+		buf.writeUInt16LE(0x0060, offset + 2);
+		buf.write("CS", offset + 4, "latin1");
+		buf.writeUInt16LE(4, offset + 6);
+		buf.write("CT  ", offset + 8, "latin1");
+		offset += 12;
+
+		// 4. StudyDate (0008, 0020) DA
+		buf.writeUInt16LE(0x0008, offset);
+		buf.writeUInt16LE(0x0020, offset + 2);
+		buf.write("DA", offset + 4, "latin1");
+		buf.writeUInt16LE(8, offset + 6);
+		buf.write("20260925", offset + 8, "latin1");
+		offset += 16;
+
+		// 5. SliceThickness (0018, 0050) DS
+		buf.writeUInt16LE(0x0018, offset);
+		buf.writeUInt16LE(0x0050, offset + 2);
+		buf.write("DS", offset + 4, "latin1");
+		buf.writeUInt16LE(6, offset + 6);
+		buf.write("0.500 ", offset + 8, "latin1");
+		offset += 14;
+
+		const metadata = parseDicomHeader(buf);
+		assert.equal(metadata.patientName, "Ivanov Ivan");
+		assert.equal(metadata.patientId, "PAT-987654");
+		assert.equal(metadata.modality, "CT");
+		assert.equal(metadata.studyDate, "2026-09-25");
+		assert.equal(metadata.sliceThickness, 0.5);
+		assert.equal(metadata.tagsRead, 5);
+	});
+
+	it("parseDicomBufferSafe returns 400 Bad Request for non-DICOM or empty files", () => {
+		const emptyRes = DicomProcessorService.parseBufferSafe(Buffer.alloc(0));
+		assert.equal(emptyRes.success, false);
+		assert.equal(emptyRes.errorCode, 400);
+
+		const txtRes = DicomProcessorService.parseBufferSafe(Buffer.from("This is a plain text file, definitely not DICOM"));
+		assert.equal(txtRes.success, false);
+		assert.equal(txtRes.errorCode, 400);
+		assert.ok(txtRes.error?.includes("400 Bad Request"));
+	});
+
+	it("parseDicomBufferSafe returns 422 Unprocessable for damaged/truncated DICOM without crashing Node.js", () => {
+		// Truncated DICOM: has preamble but corrupt tag structure
+		const corruptBuf = Buffer.alloc(140);
+		corruptBuf.write("DICM", 128, "latin1");
+		// Write invalid tag with huge length that exceeds buffer
+		corruptBuf.writeUInt16LE(0x0010, 132);
+		corruptBuf.writeUInt16LE(0x0020, 134);
+		corruptBuf.write("LO", 136, "latin1");
+		corruptBuf.writeUInt16LE(9999, 138); // 9999 bytes length on a 140-byte buffer
+
+		const corruptRes = DicomProcessorService.parseBufferSafe(corruptBuf);
+		assert.equal(corruptRes.success, false);
+		assert.equal(corruptRes.errorCode, 422);
+		assert.ok(corruptRes.error?.includes("422 Unprocessable Entity"));
+	});
+
+	it("createDicomPixelSampler safely returns 0 for truncated pixel buffers without throwing RangeError", () => {
+		const smallBuf = Buffer.alloc(10);
+		// 16-bit sampler with 10-byte buffer: reading beyond index 4 requires >= 12 bytes
+		const sampler16 = createDicomPixelSampler(smallBuf, 0, 2, 16, 0, 1, 0);
+		// Safe within bounds
+		assert.equal(sampler16(0), 0);
+		assert.equal(sampler16(4), 0);
+		// Out of bounds: index 5 needs offset 10..12, buffer is only 10 bytes -> must return 0 instead of throwing
+		assert.doesNotThrow(() => {
+			const val = sampler16(5);
+			assert.equal(val, 0);
+		});
+		assert.doesNotThrow(() => {
+			const val = sampler16(100);
+			assert.equal(val, 0);
+		});
 	});
 });

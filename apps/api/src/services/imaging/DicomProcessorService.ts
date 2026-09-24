@@ -65,6 +65,7 @@ export const dicomFirstFramePixelReadLimit = 32 * 1024 * 1024;
 
 export const dicomMetadataTags = new Set([
 	"00100010", // PatientName
+	"00100020", // PatientID
 	"00080060", // Modality
 	"0020000d", // StudyInstanceUID
 	"0020000e", // SeriesInstanceUID
@@ -78,10 +79,14 @@ export const dicomMetadataTags = new Set([
 	"00280002", // SamplesPerPixel
 	"00080020", // StudyDate
 	"00080022", // AcquisitionDate
+	"00180050", // SliceThickness
 ]);
 
 export interface DicomHeaderMetadata {
 	patientName: string | null;
+	patientId: string | null;
+	studyDate: string | null;
+	sliceThickness: number | null;
 	modality: string | null;
 	studyInstanceUid: string | null;
 	seriesInstanceUid: string | null;
@@ -219,6 +224,15 @@ export const headerAliases: Record<string, string> = {
 
 export const dicomHeaderAliases: Record<string, string> = {
 	...headerAliases,
+	patientid: "patientId",
+	"patient id": "patientId",
+	"id пациента": "patientId",
+	slicethickness: "sliceThickness",
+	"slice thickness": "sliceThickness",
+	"толщина среза": "sliceThickness",
+	studydate: "studyDate",
+	"study date": "studyDate",
+	"дата исследования": "studyDate",
 	studyinstanceuid: "studyInstanceUid",
 	"study instance uid": "studyInstanceUid",
 	"study uid": "studyInstanceUid",
@@ -605,6 +619,9 @@ export function emptyDicomHeaderMetadata(
 ): DicomHeaderMetadata {
 	return {
 		patientName: null,
+		patientId: null,
+		studyDate: null,
+		sliceThickness: null,
 		modality: null,
 		studyInstanceUid: null,
 		seriesInstanceUid: null,
@@ -667,8 +684,11 @@ export function assignDicomHeaderValue(
 		metadata.bitsAllocated = parseDicomUnsignedInt(valueBuffer);
 	else if (tagKey === "00280002")
 		metadata.samplesPerPixel = parseDicomUnsignedInt(valueBuffer);
+	else if (tagKey === "00180050")
+		metadata.sliceThickness = readDicomDsNumber(valueBuffer);
 	else if (value) {
 		if (tagKey === "00100010") metadata.patientName = value;
+		else if (tagKey === "00100020") metadata.patientId = value;
 		else if (tagKey === "00080060")
 			metadata.modality = normalizeModality(value);
 		else if (tagKey === "0020000d")
@@ -681,10 +701,11 @@ export function assignDicomHeaderValue(
 		else if (tagKey === "0008103e") metadata.seriesDescription = value;
 		else if (tagKey === "00200013")
 			metadata.instanceNumber = parseInstanceNumber(value);
-		else if (
-			tagKey === "00080022" ||
-			(tagKey === "00080020" && !metadata.capturedAt)
-		) {
+		else if (tagKey === "00080020") {
+			const norm = normalizeDicomDate(value);
+			metadata.studyDate = norm;
+			if (!metadata.capturedAt) metadata.capturedAt = norm;
+		} else if (tagKey === "00080022") {
 			metadata.capturedAt = normalizeDicomDate(value);
 		}
 	}
@@ -692,100 +713,111 @@ export function assignDicomHeaderValue(
 }
 
 export function parseDicomHeader(buffer: Buffer): DicomHeaderMetadata {
-	if (buffer.length < 12)
+	if (!buffer || buffer.length < 12)
 		return emptyDicomHeaderMetadata([
 			"Заголовок снимка слишком короткий для разбора.",
 		]);
 
 	const metadata = emptyDicomHeaderMetadata();
-	let cursor =
-		buffer.length >= 132 &&
-		buffer.subarray(128, 132).toString("latin1") === "DICM"
-			? 132
-			: 0;
-	let explicitVr = true;
-	let bigEndian = false;
-	let transferSyntaxUid: string | null = null;
+	try {
+		let cursor =
+			buffer.length >= 132 &&
+			buffer.subarray(128, 132).toString("latin1") === "DICM"
+				? 132
+				: 0;
+		let explicitVr = true;
+		let bigEndian = false;
+		let transferSyntaxUid: string | null = null;
 
-	for (let guard = 0; guard < 4096 && cursor + 8 <= buffer.length; guard += 1) {
-		const group = bigEndian
-			? buffer.readUInt16BE(cursor)
-			: buffer.readUInt16LE(cursor);
-		const element = bigEndian
-			? buffer.readUInt16BE(cursor + 2)
-			: buffer.readUInt16LE(cursor + 2);
-		const tagKey = `${group.toString(16).padStart(4, "0")}${element.toString(16).padStart(4, "0")}`;
-		if (tagKey === "7fe00010") break;
+		for (let guard = 0; guard < 4096 && cursor + 8 <= buffer.length; guard += 1) {
+			const group = bigEndian
+				? buffer.readUInt16BE(cursor)
+				: buffer.readUInt16LE(cursor);
+			const element = bigEndian
+				? buffer.readUInt16BE(cursor + 2)
+				: buffer.readUInt16LE(cursor + 2);
+			const tagKey = `${group.toString(16).padStart(4, "0")}${element.toString(16).padStart(4, "0")}`;
+			if (tagKey === "7fe00010") break;
 
-		let valueLength = 0;
-		let valueOffset = 0;
+			let valueLength = 0;
+			let valueOffset = 0;
 
-		if (group === 0x0002 || explicitVr) {
-			const vr = buffer.subarray(cursor + 4, cursor + 6).toString("latin1");
-			const longVr = [
-				"OB",
-				"OD",
-				"OF",
-				"OL",
-				"OV",
-				"OW",
-				"SQ",
-				"UC",
-				"UR",
-				"UT",
-				"UN",
-			].includes(vr);
-			if (longVr) {
-				if (cursor + 12 > buffer.length) break;
-				valueLength = bigEndian
-					? buffer.readUInt32BE(cursor + 8)
-					: buffer.readUInt32LE(cursor + 8);
-				valueOffset = cursor + 12;
+			if (group === 0x0002 || explicitVr) {
+				const vr = buffer.subarray(cursor + 4, cursor + 6).toString("latin1");
+				const longVr = [
+					"OB",
+					"OD",
+					"OF",
+					"OL",
+					"OV",
+					"OW",
+					"SQ",
+					"UC",
+					"UR",
+					"UT",
+					"UN",
+				].includes(vr);
+				if (longVr) {
+					if (cursor + 12 > buffer.length) break;
+					valueLength = bigEndian
+						? buffer.readUInt32BE(cursor + 8)
+						: buffer.readUInt32LE(cursor + 8);
+					valueOffset = cursor + 12;
+				} else {
+					valueLength = bigEndian
+						? buffer.readUInt16BE(cursor + 6)
+						: buffer.readUInt16LE(cursor + 6);
+					valueOffset = cursor + 8;
+				}
 			} else {
-				valueLength = bigEndian
-					? buffer.readUInt16BE(cursor + 6)
-					: buffer.readUInt16LE(cursor + 6);
+				valueLength = buffer.readUInt32LE(cursor + 4);
 				valueOffset = cursor + 8;
 			}
-		} else {
-			valueLength = buffer.readUInt32LE(cursor + 4);
-			valueOffset = cursor + 8;
-		}
 
-		if (valueLength === 0xffffffff) {
-			metadata.warnings.push(
-				`Элемент метаданных снимка ${tagKey} с неопределенной длиной пропущен.`,
-			);
-			break;
-		}
-		if (valueLength < 0 || valueOffset + valueLength > buffer.length) break;
-
-		if (tagKey === "00020010") {
-			transferSyntaxUid = cleanDicomText(
-				buffer.subarray(valueOffset, valueOffset + valueLength),
-			);
-			metadata.transferSyntaxUid = transferSyntaxUid;
-			if (transferSyntaxUid === "1.2.840.10008.1.2") explicitVr = false;
-			if (transferSyntaxUid === "1.2.840.10008.1.2.2") {
-				bigEndian = true;
-				explicitVr = true;
+			if (valueLength === 0xffffffff) {
 				metadata.warnings.push(
-					"Обнаружен big-endian transfer syntax; предпросмотр метаданных выполнен в best-effort режиме.",
+					`Элемент метаданных снимка ${tagKey} с неопределенной длиной пропущен.`,
 				);
+				break;
 			}
-		}
+			if (valueLength < 0 || valueOffset + valueLength > buffer.length) {
+				metadata.warnings.push(
+					`Элемент ${tagKey} имеет длину ${valueLength}, превышающую остаток буфера (${buffer.length - valueOffset} байт). Заголовок усечен.`,
+				);
+				break;
+			}
 
-		if (dicomMetadataTags.has(tagKey)) {
-			assignDicomHeaderValue(
-				metadata,
-				tagKey,
-				buffer.subarray(valueOffset, valueOffset + valueLength),
-			);
-			metadata.tagsRead += 1;
-		}
+			if (tagKey === "00020010") {
+				transferSyntaxUid = cleanDicomText(
+					buffer.subarray(valueOffset, valueOffset + valueLength),
+				);
+				metadata.transferSyntaxUid = transferSyntaxUid;
+				if (transferSyntaxUid === "1.2.840.10008.1.2") explicitVr = false;
+				if (transferSyntaxUid === "1.2.840.10008.1.2.2") {
+					bigEndian = true;
+					explicitVr = true;
+					metadata.warnings.push(
+						"Обнаружен big-endian transfer syntax; предпросмотр метаданных выполнен в best-effort режиме.",
+					);
+				}
+			}
 
-		cursor = valueOffset + valueLength + (valueLength % 2);
-		if (cursor >= buffer.length) break;
+			if (dicomMetadataTags.has(tagKey)) {
+				assignDicomHeaderValue(
+					metadata,
+					tagKey,
+					buffer.subarray(valueOffset, valueOffset + valueLength),
+				);
+				metadata.tagsRead += 1;
+			}
+
+			cursor = valueOffset + valueLength + (valueLength % 2);
+			if (cursor >= buffer.length) break;
+		}
+	} catch (parseError) {
+		metadata.warnings.push(
+			`Сбой при разборе бинарного заголовка DICOM: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+		);
 	}
 
 	if (!metadata.tagsRead)
@@ -793,6 +825,62 @@ export function parseDicomHeader(buffer: Buffer): DicomHeaderMetadata {
 			"В доступной части заголовка не найдены известные метаданные снимка.",
 		);
 	return metadata;
+}
+
+export interface DicomParseResult {
+	success: boolean;
+	metadata: DicomHeaderMetadata;
+	errorCode?: 400 | 422;
+	error?: string;
+}
+
+/**
+ * Robust DICOM buffer parser that safely handles corrupted, truncated,
+ * or non-DICOM buffers without crashing the Node.js process.
+ * Returns 400 Bad Request if file signature is missing/invalid,
+ * or 422 Unprocessable Entity if header is damaged or unreadable.
+ */
+export function parseDicomBufferSafe(buffer: Buffer): DicomParseResult {
+	if (!buffer || buffer.length === 0) {
+		return {
+			success: false,
+			metadata: emptyDicomHeaderMetadata(["Буфер файла пуст."]),
+			errorCode: 400,
+			error: "Файл не содержит данных (400 Bad Request).",
+		};
+	}
+
+	const hasDicm = buffer.length >= 132 && buffer.subarray(128, 132).toString("latin1") === "DICM";
+	const hasPreambleLessTag = buffer.length >= 8 && (
+		(buffer[0] === 0x02 && buffer[1] === 0x00) ||
+		(buffer[0] === 0x08 && buffer[1] === 0x00) ||
+		(buffer[0] === 0x00 && buffer[1] === 0x02) ||
+		(buffer[0] === 0x00 && buffer[1] === 0x08)
+	);
+
+	if (!hasDicm && !hasPreambleLessTag) {
+		return {
+			success: false,
+			metadata: emptyDicomHeaderMetadata(["Файл не содержит валидной сигнатуры DICOM (DICM)."]),
+			errorCode: 400,
+			error: "Файл не является исследованием DICOM (400 Bad Request): отсутствует сигнатура DICM.",
+		};
+	}
+
+	const metadata = parseDicomHeader(buffer);
+	if (metadata.tagsRead === 0 && metadata.warnings.length > 0) {
+		return {
+			success: false,
+			metadata,
+			errorCode: 422,
+			error: `Файл DICOM поврежден и не может быть обработан (422 Unprocessable Entity): ${metadata.warnings.join("; ")}`,
+		};
+	}
+
+	return {
+		success: true,
+		metadata,
+	};
 }
 
 export function extractDicomMetadata(
@@ -1104,6 +1192,10 @@ export function createDicomPixelSampler(
 ): (index: number) => number {
 	return (index: number) => {
 		const offset = pixelDataOffset + index * bytesPerPixel;
+		const needed = bitsAllocated === 16 ? 2 : 1;
+		if (offset < 0 || offset + needed > buffer.length) {
+			return 0;
+		}
 		const raw =
 			bitsAllocated === 16
 				? pixelRepresentation === 1
@@ -1546,18 +1638,26 @@ export function parseManifestLine(
 
 export async function parseImagingManifest(
 	orgIdOrInput:
-		| { sourceName?: string; sourceKind?: ImagingSourceKind; rawText?: string }
+		| { sourceName?: string; sourceKind?: ImagingSourceKind; rawText?: string; organizationId?: string }
 		| string,
 	maybeInput?:
 		| { sourceName?: string; sourceKind?: ImagingSourceKind; rawText?: string }
 		| string,
 ) {
-	const orgId =
-		typeof orgIdOrInput === "string" && maybeInput ? orgIdOrInput : "default";
-	const input =
-		typeof orgIdOrInput === "object"
-			? orgIdOrInput
-			: (maybeInput ?? orgIdOrInput);
+	let orgId: string;
+	let input: { sourceName?: string; sourceKind?: ImagingSourceKind; rawText?: string } | undefined;
+
+	if (typeof orgIdOrInput === "string") {
+		orgId = orgIdOrInput;
+		input = typeof maybeInput === "object" ? maybeInput : typeof maybeInput === "string" ? { rawText: maybeInput } : undefined;
+	} else {
+		orgId = orgIdOrInput.organizationId || "";
+		input = orgIdOrInput;
+	}
+
+	if (!orgId) {
+		throw new Error("Organization ID is required for imaging manifest parsing.");
+	}
 	const rawText = typeof input === "string" ? input : (input?.rawText ?? "");
 	const sourceName =
 		typeof input === "string" ? "Manifest" : (input?.sourceName ?? "Manifest");
@@ -1797,6 +1897,8 @@ export async function commitImagingImport(
  */
 export class DicomProcessorService {
 	static parseHeader = parseDicomHeader;
+	static parseBufferSafe = parseDicomBufferSafe;
+	static parseSafe = parseDicomBufferSafe;
 	static extractMetadata = extractDicomMetadata;
 	static parseFirstFramePixel = parseDicomFirstFramePixel;
 	static renderPreview = renderDicomPreviewImage;
