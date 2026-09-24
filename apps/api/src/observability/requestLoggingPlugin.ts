@@ -74,6 +74,8 @@ const requestLoggingPluginAsync: FastifyPluginAsync = async (
 			request.url.startsWith("/api/health/") ||
 			request.url === "/metrics";
 
+		const statusCode = reply.statusCode;
+
 		if (isNoiseEndpoint && statusCode < 400) {
 			request.log.debug(
 				{ correlationId: request.correlationId, method: request.method, url: request.url, statusCode },
@@ -87,7 +89,6 @@ const requestLoggingPluginAsync: FastifyPluginAsync = async (
 		);
 		const identity = getRequestIdentity(request);
 		const ip = extractClientIp(request);
-		const statusCode = reply.statusCode;
 		const sanitizedUrl = sanitizeString(request.url);
 		const rawPath = request.routeOptions.url || request.url.split("?")[0] || "";
 		const sanitizedPath = sanitizeString(rawPath);
