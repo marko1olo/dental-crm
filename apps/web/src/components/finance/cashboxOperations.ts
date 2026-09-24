@@ -122,6 +122,24 @@ export function validate54FzBuyerInn(
 	};
 }
 
+/**
+ * Мандат 8e п. 9, 8n: Проверка блокировки кассовых действий из-за ИНН.
+ * Для физических лиц (граждан) по ст. 4.7 № 54-ФЗ ИНН не требуется,
+ * поэтому действие кассира/врача («Выбить чек», «Принять оплату») КАТЕГОРИЧЕСКИ НЕ БЛОКИРУЕТСЯ (всегда false).
+ * Для юридических лиц и ИП блокировка активна при отсутствии или невалидном ИНН.
+ */
+export function isCashierActionBlockedByInn(params: {
+	readonly payerType?: PayerType | PayerLegalType | undefined;
+	readonly buyerInn?: string | undefined;
+}): boolean {
+	const pType = params.payerType ?? "physical_person";
+	if (pType === "physical" || pType === "physical_person") {
+		return false;
+	}
+	const res = validate54FzBuyerInn(params.buyerInn, pType);
+	return !res.isValid;
+}
+
 export interface ZeroDiscountCheckoutResult {
 	readonly isZeroDue: boolean;
 	readonly totalGrossRub: number;
@@ -204,7 +222,15 @@ export function process100PercentDiscountCheckout(params: {
 	};
 }
 
-export type TenderAllocationTarget = "card" | "cash" | "sbp" | "deposit" | "family" | "certificate" | "bonus";
+export type TenderAllocationTarget =
+	| "card"
+	| "cash"
+	| "sbp"
+	| "deposit"
+	| "family"
+	| "certificate"
+	| "bonus"
+	| "card_and_cash_5050";
 
 export interface MultiTenderStateRub {
 	readonly cardRub: number;
@@ -217,7 +243,7 @@ export interface MultiTenderStateRub {
 }
 
 /**
- * Мандат 8e, п. 9: 1-тап кнопки «Оплатить остаток картой / налом / с депозита / через СБП / сертификатом / бонусами».
+ * Мандат 8e, п. 9: 1-тап кнопки «Оплатить остаток картой / налом / с депозита / через СБП / сертификатом / бонусами / 50/50».
  * Распределяет оставшуюся сумму до копейки без ручного ввода цифр.
  */
 export function allocateRemainderToTender(params: {
@@ -230,6 +256,29 @@ export function allocateRemainderToTender(params: {
 	readonly availableBonusRub?: number | undefined;
 }): MultiTenderStateRub {
 	const totalKop = rubToKopecks(params.totalDueRub);
+
+	if (params.targetTender === "card_and_cash_5050") {
+		let nonCardCashKop = 0;
+		if (params.currentTenders.sbpRub) nonCardCashKop += rubToKopecks(params.currentTenders.sbpRub);
+		if (params.currentTenders.depositRub) nonCardCashKop += rubToKopecks(params.currentTenders.depositRub);
+		if (params.currentTenders.familyRub) nonCardCashKop += rubToKopecks(params.currentTenders.familyRub);
+		if (params.currentTenders.certificateRub) nonCardCashKop += rubToKopecks(params.currentTenders.certificateRub);
+		if (params.currentTenders.bonusRub) nonCardCashKop += rubToKopecks(params.currentTenders.bonusRub);
+
+		const remKop = Math.max(0, totalKop - nonCardCashKop);
+		const halfCardKop = Math.floor(remKop / 2);
+		const halfCashKop = remKop - halfCardKop;
+
+		return {
+			cardRub: kopecksToRub(halfCardKop),
+			cashRub: kopecksToRub(halfCashKop),
+			sbpRub: params.currentTenders.sbpRub,
+			depositRub: params.currentTenders.depositRub,
+			familyRub: params.currentTenders.familyRub,
+			certificateRub: params.currentTenders.certificateRub || 0,
+			bonusRub: params.currentTenders.bonusRub || 0,
+		};
+	}
 
 	let otherKop = 0;
 	if (params.targetTender !== "card") otherKop += rubToKopecks(params.currentTenders.cardRub);
@@ -380,6 +429,30 @@ export function getFastCombinedTenderPresets(params: {
 		});
 	}
 
+	// Комбинированный сплит: Наличные + Карта + Аванс/Семья (3-way split) с копеечной точностью
+	if ((dep > 0 || fam > 0) && totalDue > 0) {
+		const totalKop = rubToKopecks(totalDue);
+		const maxAdvKop = rubToKopecks(Math.max(dep, fam));
+		const advKop = Math.min(totalKop, maxAdvKop);
+		const remKop = Math.max(0, totalKop - advKop);
+		const halfCardKop = Math.floor(remKop / 2);
+		const halfCashKop = remKop - halfCardKop;
+		const isFam = fam >= dep;
+
+		presets.push({
+			id: "family_cash_card_three_way",
+			title: isFam ? `Семья (${kopecksToRub(advKop)} ₽) + Нал + Карта` : `Аванс (${kopecksToRub(advKop)} ₽) + Нал + Карта`,
+			description: `${isFam ? "Семейный счет" : "Аванс"} ${kopecksToRub(advKop)} ₽ + ${kopecksToRub(halfCardKop)} ₽ картой + ${kopecksToRub(halfCashKop)} ₽ наличными`,
+			tenders: {
+				cardRub: kopecksToRub(halfCardKop),
+				cashRub: kopecksToRub(halfCashKop),
+				sbpRub: 0,
+				depositRub: !isFam ? kopecksToRub(advKop) : 0,
+				familyRub: isFam ? kopecksToRub(advKop) : 0,
+			},
+		});
+	}
+
 	return presets;
 }
 
@@ -498,3 +571,164 @@ export function createBonusAndCardComboTenders(totalDueRub: number, bonusRub: nu
 		bonusRub: kopecksToRub(bonusKop),
 	};
 }
+
+export interface CombinedSplitCalculationParams {
+	readonly totalDueRub: number;
+	readonly patientDepositRub?: number | undefined;
+	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly availableBonusRub?: number | undefined;
+	readonly preferFamilyAccount?: boolean | undefined;
+	readonly customAdvanceDeductionRub?: number | undefined;
+}
+
+export interface CombinedSplitCalculationResult {
+	readonly totalDueRub: number;
+	readonly totalDueKop: number;
+	readonly advanceDeductedRub: number;
+	readonly advanceDeductedKop: number;
+	readonly advanceSource: "deposit" | "family" | "bonus" | "none";
+	readonly remainderToPayRub: number;
+	readonly remainderToPayKop: number;
+	readonly cardRub: number;
+	readonly cardKop: number;
+	readonly cashRub: number;
+	readonly cashKop: number;
+	readonly tenders: MultiTenderStateRub;
+	readonly isPennyExact: boolean;
+	readonly descriptionRu: string;
+}
+
+/**
+ * 1-кликовая сплит-оплата: Комбинированный чек (наличные + карта + аванс/бонусы с семейного счета)
+ * с автоматическим распределением остатка 50/50 между картой и наличными (Мандат 8e п. 9, 8b).
+ * Гарантирует 100% копеечную точность без потерь и округлений (cardKop + cashKop + advanceKop === totalDueKop).
+ */
+export function calculateCombinedFamilyCashCardSplit(
+	params: CombinedSplitCalculationParams,
+): CombinedSplitCalculationResult {
+	const totalKop = rubToKopecks(Math.max(0, params.totalDueRub));
+	const depKop = rubToKopecks(Math.max(0, params.patientDepositRub || 0));
+	const famKop = rubToKopecks(Math.max(0, params.patientFamilyBalanceRub || 0));
+	const bonusKop = rubToKopecks(Math.max(0, params.availableBonusRub || 0));
+
+	let advanceKop = 0;
+	let advanceSource: "deposit" | "family" | "bonus" | "none" = "none";
+
+	if (params.customAdvanceDeductionRub !== undefined && params.customAdvanceDeductionRub > 0) {
+		const customKop = rubToKopecks(params.customAdvanceDeductionRub);
+		const maxPossible = Math.max(depKop, famKop, bonusKop);
+		advanceKop = Math.min(totalKop, Math.min(customKop, maxPossible));
+		advanceSource = params.preferFamilyAccount && famKop > 0 ? "family" : depKop > 0 ? "deposit" : famKop > 0 ? "family" : "bonus";
+	} else if (params.preferFamilyAccount && famKop > 0) {
+		advanceKop = Math.min(totalKop, famKop);
+		advanceSource = "family";
+	} else if (depKop > 0) {
+		advanceKop = Math.min(totalKop, depKop);
+		advanceSource = "deposit";
+	} else if (famKop > 0) {
+		advanceKop = Math.min(totalKop, famKop);
+		advanceSource = "family";
+	} else if (bonusKop > 0) {
+		advanceKop = Math.min(totalKop, bonusKop);
+		advanceSource = "bonus";
+	}
+
+	const remKop = Math.max(0, totalKop - advanceKop);
+	const cardKop = Math.floor(remKop / 2);
+	const cashKop = remKop - cardKop;
+
+	const tenders: MultiTenderStateRub = {
+		cardRub: kopecksToRub(cardKop),
+		cashRub: kopecksToRub(cashKop),
+		sbpRub: 0,
+		depositRub: advanceSource === "deposit" ? kopecksToRub(advanceKop) : 0,
+		familyRub: advanceSource === "family" ? kopecksToRub(advanceKop) : 0,
+		bonusRub: advanceSource === "bonus" ? kopecksToRub(advanceKop) : 0,
+		certificateRub: 0,
+	};
+
+	const isPennyExact = cardKop + cashKop + advanceKop === totalKop;
+	const advanceDesc =
+		advanceKop > 0
+			? `${advanceSource === "family" ? "Семейный счет" : advanceSource === "bonus" ? "Бонусы" : "Аванс"}: ${kopecksToRub(advanceKop)} ₽`
+			: "Без аванса";
+
+	const descriptionRu = `${advanceDesc} + Карта ${kopecksToRub(cardKop)} ₽ + Нал ${kopecksToRub(cashKop)} ₽`;
+
+	return {
+		totalDueRub: kopecksToRub(totalKop),
+		totalDueKop: totalKop,
+		advanceDeductedRub: kopecksToRub(advanceKop),
+		advanceDeductedKop: advanceKop,
+		advanceSource,
+		remainderToPayRub: kopecksToRub(remKop),
+		remainderToPayKop: remKop,
+		cardRub: kopecksToRub(cardKop),
+		cardKop,
+		cashRub: kopecksToRub(cashKop),
+		cashKop,
+		tenders,
+		isPennyExact,
+		descriptionRu,
+	};
+}
+
+/**
+ * 1-клик генерация сплит-тендеров (Аванс / Семейный счет + 50/50 Нал и Карта).
+ */
+export function createThreeWaySplitTenders(params: {
+	readonly totalDueRub: number;
+	readonly patientDepositRub?: number | undefined;
+	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly availableBonusRub?: number | undefined;
+	readonly preferFamily?: boolean | undefined;
+}): MultiTenderStateRub {
+	const res = calculateCombinedFamilyCashCardSplit({
+		totalDueRub: params.totalDueRub,
+		patientDepositRub: params.patientDepositRub,
+		patientFamilyBalanceRub: params.patientFamilyBalanceRub,
+		availableBonusRub: params.availableBonusRub,
+		preferFamilyAccount: params.preferFamily,
+	});
+	return res.tenders;
+}
+
+/**
+ * Автоматическое распределение остатка к оплате на выбранный тендер (или 50/50 карта + нал),
+ * гарантирующее строгое равенство суммы компонентов итоговому чеку до копейки (Mandate 8b).
+ */
+export function autoDistributeSplitRemainder(params: {
+	readonly totalDueRub: number;
+	readonly currentTenders: MultiTenderStateRub;
+	readonly targetTender?: TenderAllocationTarget | undefined;
+	readonly patientDepositRub?: number | undefined;
+	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly availableCertificateRub?: number | undefined;
+	readonly availableBonusRub?: number | undefined;
+}): MultiTenderStateRub {
+	const target = params.targetTender ?? "card_and_cash_5050";
+	return allocateRemainderToTender({
+		totalDueRub: params.totalDueRub,
+		currentTenders: params.currentTenders,
+		targetTender: target,
+		patientDepositRub: params.patientDepositRub,
+		patientFamilyBalanceRub: params.patientFamilyBalanceRub,
+		availableCertificateRub: params.availableCertificateRub,
+		availableBonusRub: params.availableBonusRub,
+	});
+}
+
+/**
+ * 1-клик пресет «Семейный счет + остаток картой»
+ */
+export function createFamilyCashCardComboTenders(params: {
+	readonly totalDueRub: number;
+	readonly patientFamilyBalanceRub: number;
+}): MultiTenderStateRub {
+	return calculateCombinedFamilyCashCardSplit({
+		totalDueRub: params.totalDueRub,
+		patientFamilyBalanceRub: params.patientFamilyBalanceRub,
+		preferFamilyAccount: true,
+	}).tenders;
+}
+

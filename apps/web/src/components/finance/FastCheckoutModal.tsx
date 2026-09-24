@@ -82,6 +82,7 @@ export interface FastCheckoutModalProps {
 	readonly stages?: readonly TreatmentPlanStageOption[] | undefined;
 	readonly cashierFullName?: string | undefined;
 	readonly attendingDoctorName?: string | undefined;
+	readonly initialSimpleCashierMode?: boolean | undefined;
 	readonly onPaymentComplete?: ((payload: Ffd12FiscalPayload) => void) | undefined;
 }
 
@@ -91,6 +92,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	totalBillKop: propTotalBillKop,
 	totalBillRub: propTotalBillRub,
 	initialPaymentMethod,
+	initialSimpleCashierMode,
 	patientId,
 	patientName = "",
 	patientPhone = "",
@@ -161,7 +163,9 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	}, [isOpen, initialPaymentMethod]);
 	const [isTier2Open, setIsTier2Open] = useState<boolean>(false);
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
-	const [isSimpleCashierMode, setIsSimpleCashierMode] = useState<boolean>(true);
+	const [isSimpleCashierMode, setIsSimpleCashierMode] = useState<boolean>(
+		initialSimpleCashierMode ?? true
+	);
 	const [selectedForeignCurrency, setSelectedForeignCurrency] = useState<SupportedCurrency>("USD");
 	const [clientType, setClientType] = useState<ClientLegalType>("physical_person");
 	const [buyerInn, setBuyerInn] = useState<string>("");
@@ -467,6 +471,28 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	const handleAddRemainingToLoyalty = () => {
 		if (remainingRub <= 0) return;
 		setLoyaltyAmountRub((prev) => +(prev + remainingRub).toFixed(2));
+	};
+
+	const handleAddRemaining5050 = () => {
+		if (remainingRub <= 0) return;
+		const remKop = Math.round(remainingRub * 100);
+		const halfCardKop = Math.floor(remKop / 2);
+		const halfCashKop = remKop - halfCardKop;
+		setCardAmountRub((prev) => +(prev + halfCardKop / 100).toFixed(2));
+		setCashAmountRub((prev) => {
+			const nextCash = +(prev + halfCashKop / 100).toFixed(2);
+			if (cashTenderedRub < nextCash) {
+				setCashTenderedRub(nextCash);
+			}
+			return nextCash;
+		});
+	};
+
+	const handleAddRemainingToFamily = () => {
+		if (remainingRub <= 0) return;
+		const availFam = Math.max(0, patientFamilyBalanceRub);
+		const toAdd = Math.min(remainingRub, availFam > 0 ? availFam : remainingRub);
+		setDepositAmountRub((prev) => +(prev + toAdd).toFixed(2));
 	};
 
 	const handleExecutePayment = async (forceOfflineBuffer = false) => {
@@ -1869,6 +1895,26 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 										data-testid="split-fill-loyalty-btn"
 									>
 										+ в Бонусы
+									</button>
+									{patientFamilyBalanceRub > 0 && (
+										<button
+											type="button"
+											onClick={handleAddRemainingToFamily}
+											className="min-h-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-teal-500/15 hover:bg-teal-500/25 text-teal-700 dark:text-teal-300 border border-teal-500/30 transition-all cursor-pointer select-none active:scale-95"
+											title={`Заполнить остаток из семейного счета (${familyPayerName || "семья"})`}
+											data-testid="split-fill-family-btn"
+										>
+											+ из Семьи
+										</button>
+									)}
+									<button
+										type="button"
+										onClick={handleAddRemaining5050}
+										className="min-h-[44px] px-2.5 py-1 rounded-xl text-xs font-bold bg-purple-500/15 hover:bg-purple-500/25 text-purple-700 dark:text-purple-300 border border-purple-500/30 transition-all cursor-pointer select-none active:scale-95"
+										title="Разделить остаток 50/50 между картой и наличными (без копеечного дрейфа)"
+										data-testid="split-fill-5050-btn"
+									>
+										+ 50/50 Нал + Карта
 									</button>
 								</div>
 							) : remainingRub === 0 ? (

@@ -652,11 +652,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			},
 			targetTender,
 			patientDepositRub,
+			patientFamilyBalanceRub,
 		});
 		resetSplitTenders({
 			card: next.cardRub,
 			cash: next.cashRub,
-			deposit: next.depositRub,
+			deposit: next.depositRub + next.familyRub,
 			sbp: next.sbpRub,
 			certificate: next.certificateRub || 0,
 			bonus: next.bonusRub || 0,
@@ -2423,6 +2424,25 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										Остаток из аванса
 									</button>
 								)}
+								{patientFamilyBalanceRub > 0 && (
+									<button
+										type="button"
+										onClick={() => applySplitRemainder("family")}
+										className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-teal-400 cursor-pointer flex items-center"
+										data-testid="btn-payment-remainder-family"
+									>
+										Остаток из семьи
+									</button>
+								)}
+								<button
+									type="button"
+									onClick={() => applySplitRemainder("card_and_cash_5050")}
+									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-purple-400 cursor-pointer flex items-center"
+									data-testid="btn-payment-remainder-5050"
+									title="Разделить оставшуюся сумму 50/50 между картой и наличными (копеечная точность)"
+								>
+									Остаток 50/50 Нал + Карта
+								</button>
 							</div>
 
 							{/* Parity indicator */}
