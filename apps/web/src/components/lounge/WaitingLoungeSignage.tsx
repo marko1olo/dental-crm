@@ -96,11 +96,14 @@ function formatPatientPublicName(fullName: string | null | undefined): string {
 function formatDoctorPublicName(fullName: string | null | undefined): string {
 	if (!fullName) return "Дежурный врач";
 	const parts = fullName.trim().split(/\s+/);
-	if (parts.length === 1) return parts[0] || "Дежурный врач";
+	const p0 = parts[0] || "Дежурный врач";
+	if (parts.length === 1) return p0;
+	const p1Initial = parts[1]?.[0] ? `${parts[1][0]}.` : "";
 	if (parts.length === 2) {
-		return `${parts[0]} ${parts[1][0]}.`;
+		return `${p0} ${p1Initial}`.trim();
 	}
-	return `${parts[0]} ${parts[1][0]}.${parts[2]?.[0] ? `${parts[2][0]}.` : ""}`;
+	const p2Initial = parts[2]?.[0] ? `${parts[2][0]}.` : "";
+	return `${p0} ${p1Initial}${p2Initial}`.trim();
 }
 
 /** Воспроизводит мягкий двухтональный сигнал вызова (Web Audio API) */

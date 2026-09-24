@@ -250,6 +250,7 @@ describe("Dental Lab 3D Shade & Order Inquisitor — Mandates 8d, 8e, 8k, 8n", (
 		assert.equal(VITA_CLASSICAL_GROUPS.length, 4, "Должно быть 4 тональных группы VITA Classical");
 
 		const [grpA, grpB, grpC, grpD] = VITA_CLASSICAL_GROUPS;
+		assert.ok(grpA && grpB && grpC && grpD, "Все 4 группы должны быть определены");
 
 		// Group A: Красновато-коричневый
 		assert.equal(grpA.id, "A");
@@ -285,8 +286,11 @@ describe("Dental Lab 3D Shade & Order Inquisitor — Mandates 8d, 8e, 8k, 8n", (
 		assert.equal(VITA_3D_MASTER_GROUPS.length, 5, "VITA 3D-Master должна иметь 5 уровней светлоты");
 
 		// Check level 1 (lightest) and level 5 (darkest)
-		assert.deepEqual(VITA_3D_MASTER_GROUPS[0].shades, ["1M1", "1M2"]);
-		assert.deepEqual(VITA_3D_MASTER_GROUPS[4].shades, ["5M1", "5M2", "5M3"]);
+		const grp0 = VITA_3D_MASTER_GROUPS[0];
+		const grp4 = VITA_3D_MASTER_GROUPS[4];
+		assert.ok(grp0 && grp4, "Группы 1 и 5 должны быть определены");
+		assert.deepEqual(grp0.shades, ["1M1", "1M2"]);
+		assert.deepEqual(grp4.shades, ["5M1", "5M2", "5M3"]);
 
 		// Bleach shades
 		const bleachIds = VITA_BLEACH_SHADES_CLASSIFIED.map((b) => b.id);
@@ -326,13 +330,17 @@ describe("Dental Lab 3D Shade & Order Inquisitor — Mandates 8d, 8e, 8k, 8n", (
 		assert.equal(STUMP_NATURAL_DIE_SHADES.length, 9, "Должно быть ровно 9 оттенков культи ND1–ND9");
 		const ids = STUMP_NATURAL_DIE_SHADES.map((s) => s.id);
 		for (let i = 1; i <= 9; i++) {
-			assert.ok(ids.includes(`ND${i}`), `Оттенок ND${i} должен присутствовать`);
-			assert.ok(SHADE_SWATCH_MAP[`ND${i}`], `ND${i} должен иметь цвет в SHADE_SWATCH_MAP`);
+			const ndKey = `ND${i}` as (typeof ids)[number];
+			assert.ok(ids.includes(ndKey), `Оттенок ${ndKey} должен присутствовать`);
+			assert.ok(SHADE_SWATCH_MAP[ndKey], `${ndKey} должен иметь цвет в SHADE_SWATCH_MAP`);
 		}
 
 		// ND1 is bleached stump, ND9 is metallic core
-		assert.ok(STUMP_NATURAL_DIE_SHADES[0].desc.includes("винир"), "ND1 оптимизирован для виниров");
-		assert.ok(STUMP_NATURAL_DIE_SHADES[8].name.includes("Металлическая"), "ND9 обозначает литую вкладку/титан");
+		const s0 = STUMP_NATURAL_DIE_SHADES[0];
+		const s8 = STUMP_NATURAL_DIE_SHADES[8];
+		assert.ok(s0 && s8, "ND1 и ND9 должны быть определены");
+		assert.ok(s0.desc.includes("винир"), "ND1 оптимизирован для виниров");
+		assert.ok(s8.name.includes("Металлическая"), "ND9 обозначает литую вкладку/титан");
 	});
 
 	it("5. 152-FZ patient name formatting generates valid full and courier-masked names", () => {

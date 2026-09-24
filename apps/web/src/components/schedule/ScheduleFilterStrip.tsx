@@ -51,10 +51,10 @@ export interface ScheduleFilterStripProps {
 	branches?: readonly ScheduleBranch[] | ScheduleBranch[];
 	selectedBranchId?: string | null;
 	onSelectBranch?: (branchId: string | null) => void;
-	scheduleDoctorFilterId: string | null;
-	setScheduleDoctorFilterId: (id: string | null) => void;
-	scheduleChairFilterId: string | null;
-	setScheduleChairFilterId: (id: string | null) => void;
+	scheduleDoctorFilterId?: string | null | undefined;
+	setScheduleDoctorFilterId?: ((id: string | null) => void) | undefined;
+	scheduleChairFilterId?: string | null | undefined;
+	setScheduleChairFilterId?: ((id: string | null) => void) | undefined;
 	chairDoctorAssignments?: Record<string, ChairDoctorShiftAssignment> | undefined;
 	currentDoctorId?: string | null | undefined;
 	onSelectMyChair?: (() => void) | undefined;
@@ -134,10 +134,10 @@ export function ScheduleFilterStrip({
 	branches = [],
 	selectedBranchId = null,
 	onSelectBranch,
-	scheduleDoctorFilterId,
-	setScheduleDoctorFilterId,
-	scheduleChairFilterId,
-	setScheduleChairFilterId,
+	scheduleDoctorFilterId = null,
+	setScheduleDoctorFilterId = () => {},
+	scheduleChairFilterId = null,
+	setScheduleChairFilterId = () => {},
 	chairDoctorAssignments,
 	currentDoctorId,
 	onSelectMyChair,

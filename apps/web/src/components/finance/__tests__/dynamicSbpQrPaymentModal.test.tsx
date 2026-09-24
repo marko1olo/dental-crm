@@ -13,7 +13,7 @@ import {
 	generateDynamicSbpQrPayload,
 	generateQrCodeSvg,
 } from "@dental/shared/fiscal";
-import { generateDynamicSbpQrSvg } from "../../../../../../packages/shared/src/fiscal/qrGenerator.js";
+import { generateDynamicSbpQrSvg } from "@dental/shared/fiscal/qrGenerator";
 import { PaymentModal } from "../PaymentModal.js";
 
 describe("Dynamic SBP QR & Split Tender Auto-Offset (Mandates 8b, 8e, 8k)", () => {

@@ -69,6 +69,7 @@ describe("FEFO Smart Anesthesia & Expiry Traffic Light (Mandates 8e, 8n, 8v)", (
 				sku: "ART-100K",
 				lotNumber: "LOT-GREEN-2028",
 				expirationDate: "2028-12-31",
+				updatedAt: "2026-09-24T12:00:00.000Z",
 			},
 			{
 				id: "item-amber",
@@ -80,6 +81,7 @@ describe("FEFO Smart Anesthesia & Expiry Traffic Light (Mandates 8e, 8n, 8v)", (
 				sku: "SEPT-100K",
 				lotNumber: "LOT-SOON-OCT",
 				expirationDate: "2026-10-10",
+				updatedAt: "2026-09-24T12:00:00.000Z",
 			},
 			{
 				id: "item-red",
@@ -91,6 +93,7 @@ describe("FEFO Smart Anesthesia & Expiry Traffic Light (Mandates 8e, 8n, 8v)", (
 				sku: "SCAND-EXP",
 				lotNumber: "LOT-EXPIRED-AUG",
 				expirationDate: "2026-08-01", // Просрочено
+				updatedAt: "2026-09-24T12:00:00.000Z",
 			},
 			{
 				id: "item-overdraft",
@@ -102,6 +105,7 @@ describe("FEFO Smart Anesthesia & Expiry Traffic Light (Mandates 8e, 8n, 8v)", (
 				sku: "NDL-30G",
 				lotNumber: "LOT-NDL",
 				expirationDate: "2028-06-30",
+				updatedAt: "2026-09-24T12:00:00.000Z",
 			},
 		];
 

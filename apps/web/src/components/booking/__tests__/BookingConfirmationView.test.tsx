@@ -23,10 +23,11 @@ const mockConfirmationData: BookingConfirmationData = {
 	doctor: {
 		id: "doc-1",
 		fullName: "Д-р Смирнова Анна Павловна",
-		specialty: "Стоматолог-терапевт",
+		specialties: ["Стоматолог-терапевт"],
+		categoryIds: ["cat-1"],
 		experienceYears: 12,
 		rating: 4.95,
-		reviewCount: 142,
+		reviewsCount: 142,
 	},
 	branch: {
 		id: "b-1",

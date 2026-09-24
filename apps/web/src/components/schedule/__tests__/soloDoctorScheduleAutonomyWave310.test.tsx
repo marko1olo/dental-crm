@@ -222,7 +222,7 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 					toDateTimeLocalValue: (iso) => iso.slice(0, 16),
 					fromDateTimeLocalValue: (val) => `${val}:00.000Z`,
 					appointmentLabels: mockAppointmentLabels,
-					activeVisitLockedAppointmentStatuses: new Set(),
+					activeVisitLockedAppointmentStatuses: new Set<any>(),
 				}),
 			);
 
@@ -244,7 +244,7 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 					toDateTimeLocalValue: (iso) => iso.slice(0, 16),
 					fromDateTimeLocalValue: (val) => `${val}:00.000Z`,
 					appointmentLabels: mockAppointmentLabels,
-					activeVisitLockedAppointmentStatuses: new Set(),
+					activeVisitLockedAppointmentStatuses: new Set<any>(),
 				}),
 			);
 
@@ -457,7 +457,7 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 					toDateTimeLocalValue: (iso) => iso.slice(0, 16),
 					fromDateTimeLocalValue: (val) => `${val}:00.000Z`,
 					appointmentLabels: mockAppointmentLabels,
-					activeVisitLockedAppointmentStatuses: new Set(),
+					activeVisitLockedAppointmentStatuses: new Set<any>(),
 				}),
 			);
 

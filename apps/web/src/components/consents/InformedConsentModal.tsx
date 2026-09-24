@@ -438,8 +438,8 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 
 			const pdfBytes = generatePdfA1bDocument({
 				clinicName: effectiveContext.clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»",
-				clinicAddress: effectiveContext.clinicAddress,
-				clinicPhone: effectiveContext.phone || clinicPhone,
+				clinicAddress: effectiveContext.clinicAddress || undefined,
+				clinicPhone: (effectiveContext.phone || clinicPhone) || undefined,
 				patientName: effectiveContext.patientName || "Пациент",
 				patientBirthDate: effectiveContext.birthDate || undefined,
 				medicalCardNumber: patient?.cardNumber || undefined,

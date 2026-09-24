@@ -55,6 +55,7 @@ describe("Wave 308: Patient Allergo-Somatic Guard & Emergency Rescue Inquisitor"
 			assert.strictEqual(status.isHealthyNorm, false);
 			assert.strictEqual(status.criticalBadges.length, 1);
 			const allergyBadge = status.criticalBadges[0];
+			assert.ok(allergyBadge);
 			assert.strictEqual(allergyBadge.severity, "critical");
 			assert.strictEqual(allergyBadge.id, "allergy");
 			assert.strictEqual(allergyBadge.testId, "visit-focus-allergy-alert");
@@ -71,6 +72,7 @@ describe("Wave 308: Patient Allergo-Somatic Guard & Emergency Rescue Inquisitor"
 			assert.strictEqual(status.isHealthyNorm, false);
 			assert.strictEqual(status.criticalBadges.length, 1);
 			const badge = status.criticalBadges[0];
+			assert.ok(badge);
 			assert.strictEqual(badge.severity, "critical");
 			assert.strictEqual(
 				badge.fullLabel,
@@ -88,6 +90,7 @@ describe("Wave 308: Patient Allergo-Somatic Guard & Emergency Rescue Inquisitor"
 			assert.strictEqual(status.isHealthyNorm, false);
 			assert.strictEqual(status.criticalBadges.length, 1);
 			const badge = status.criticalBadges[0];
+			assert.ok(badge);
 			assert.strictEqual(badge.severity, "critical");
 			assert.ok(badge.fullLabel.includes("Лидокаин"));
 			assert.ok(badge.fullLabel.includes("Пенициллины"));
@@ -103,6 +106,7 @@ describe("Wave 308: Patient Allergo-Somatic Guard & Emergency Rescue Inquisitor"
 			assert.strictEqual(status.isHealthyNorm, false);
 			assert.strictEqual(status.warningBadges.length, 1);
 			const pBadge = status.warningBadges[0];
+			assert.ok(pBadge);
 			assert.strictEqual(pBadge.id, "pacemaker");
 			assert.strictEqual(pBadge.testId, "visit-focus-pacemaker-alert");
 			assert.strictEqual(pBadge.severity, "warning");
@@ -117,6 +121,7 @@ describe("Wave 308: Patient Allergo-Somatic Guard & Emergency Rescue Inquisitor"
 			});
 			assert.strictEqual(statusT1.warningBadges.length, 1);
 			const b1 = statusT1.warningBadges[0];
+			assert.ok(b1);
 			assert.strictEqual(b1.severity, "warning");
 			assert.ok(b1.fullLabel.includes("I триместр (1 ТРИМ.)"));
 			assert.ok(b1.fullLabel.includes("ограничение адреналина и рентгена"));
@@ -125,12 +130,14 @@ describe("Wave 308: Patient Allergo-Somatic Guard & Emergency Rescue Inquisitor"
 				pregnancyTrimester: "trimester_2",
 			});
 			const b2 = statusT2.warningBadges[0];
+			assert.ok(b2);
 			assert.ok(b2.fullLabel.includes("II триместр (2 ТРИМ.)"));
 
 			const statusT3 = getPatientSomaticGuardStatus({
 				pregnancyTrimester: "trimester_3",
 			});
 			const b3 = statusT3.warningBadges[0];
+			assert.ok(b3);
 			assert.ok(b3.fullLabel.includes("III триместр (3 ТРИМ.)"));
 		});
 
@@ -141,6 +148,7 @@ describe("Wave 308: Patient Allergo-Somatic Guard & Emergency Rescue Inquisitor"
 
 			assert.strictEqual(status.warningBadges.length, 1);
 			const aBadge = status.warningBadges[0];
+			assert.ok(aBadge);
 			assert.strictEqual(aBadge.id, "asthma");
 			assert.strictEqual(aBadge.testId, "visit-focus-asthma-alert");
 			assert.strictEqual(aBadge.severity, "warning");
@@ -158,6 +166,7 @@ describe("Wave 308: Patient Allergo-Somatic Guard & Emergency Rescue Inquisitor"
 
 			assert.strictEqual(status.warningBadges.length, 1);
 			const eBadge = status.warningBadges[0];
+			assert.ok(eBadge);
 			assert.strictEqual(eBadge.id, "epilepsy");
 			assert.strictEqual(eBadge.testId, "visit-focus-epilepsy-alert");
 			assert.strictEqual(eBadge.severity, "warning");
