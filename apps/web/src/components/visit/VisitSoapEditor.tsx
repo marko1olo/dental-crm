@@ -37,13 +37,13 @@ import { sliceDomList } from "../../utils/domVirtualizationHelper";
 import { getOptimizedTiming } from "../../utils/lowSpecHddOptimizer";
 
 export interface VisitSoapNoteValues {
-	complaint?: string;
-	anamnesis?: string;
-	objectiveStatus?: string;
-	diagnosis?: string;
-	treatmentPlan?: string;
-	recommendations?: string;
-	icd10?: string;
+	complaint?: string | undefined;
+	anamnesis?: string | undefined;
+	objectiveStatus?: string | undefined;
+	diagnosis?: string | undefined;
+	treatmentPlan?: string | undefined;
+	recommendations?: string | undefined;
+	icd10?: string | undefined;
 }
 
 export interface VisitSoapEditorProps {
@@ -283,11 +283,11 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 	const soapStorageKeyRef = useRef(soapStorageKey);
 	soapStorageKeyRef.current = soapStorageKey;
 
-	// Дебаунс автосохранения (адаптивно: 400-800ms на ПК / 1800ms на слабом Celeron/HDD 5400 RPM)
+	// Дебаунс автосохранения (500–1000мс по Мандатам 8e, 8n)
 	useEffect(() => {
 		if (saveStatus !== "saving") return;
 		const timing = getOptimizedTiming();
-		const debounceMs = timing.autosaveDebounceMs || 400;
+		const debounceMs = Math.max(500, Math.min(1000, timing.autosaveDebounceMs || 800));
 		const timer = setTimeout(() => {
 			onChangeRef.current?.(values);
 			onSaveRef.current?.(values);
@@ -302,27 +302,27 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		return () => clearTimeout(timer);
 	}, [values, saveStatus, soapStorageKey]);
 
-	// Немедленный сброс несохраненного черновика строго при размонтировании или скрытии страницы (Мандат 8e)
-	useEffect(() => {
-		const flushDraft = () => {
-			if (saveStatusRef.current === "saving") {
-				onChangeRef.current?.(valuesRef.current);
-				onSaveRef.current?.(valuesRef.current);
-				try {
-					safeLocalStorageSetItem(
-						soapStorageKeyRef.current,
-						JSON.stringify(valuesRef.current),
-					);
-				} catch (err: unknown) {
-					console.warn(
-						"[VisitSoapEditor] Failed to cache soap note values on flush:",
-						err,
-					);
-				}
-				setSaveStatus("saved");
+	// Немедленный сброс несохраненного черновика строго при размонтировании, смене вкладок или скрытии страницы (Мандат 8e, 8n)
+	const flushDraft = useCallback(() => {
+		if (saveStatusRef.current === "saving") {
+			onChangeRef.current?.(valuesRef.current);
+			onSaveRef.current?.(valuesRef.current);
+			try {
+				safeLocalStorageSetItem(
+					soapStorageKeyRef.current,
+					JSON.stringify(valuesRef.current),
+				);
+			} catch (err: unknown) {
+				console.warn(
+					"[VisitSoapEditor] Failed to cache soap note values on flush:",
+					err,
+				);
 			}
-		};
+			setSaveStatus("saved");
+		}
+	}, []);
 
+	useEffect(() => {
 		const handleVisibilityChange = () => {
 			if (document.visibilityState === "hidden") {
 				flushDraft();
@@ -331,13 +331,63 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 
 		document.addEventListener("visibilitychange", handleVisibilityChange);
 		window.addEventListener("beforeunload", flushDraft);
+		window.addEventListener("pagehide", flushDraft);
+		window.addEventListener("blur", flushDraft);
+		window.addEventListener("dente-telephony-incoming-call", flushDraft);
+		window.addEventListener("dente:visit-tab-change", flushDraft);
 
 		return () => {
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
 			window.removeEventListener("beforeunload", flushDraft);
+			window.removeEventListener("pagehide", flushDraft);
+			window.removeEventListener("blur", flushDraft);
+			window.removeEventListener("dente-telephony-incoming-call", flushDraft);
+			window.removeEventListener("dente:visit-tab-change", flushDraft);
 			flushDraft();
 		};
-	}, []);
+	}, [flushDraft]);
+
+	// Слушатель внешней установки физиологической нормы или протокола SOAP (Мандат 8e, 8n)
+	useEffect(() => {
+		const handleExternalSoapProtocol = (e: Event) => {
+			const customEvent = e as CustomEvent<{
+				soap?: Partial<VisitSoapNoteValues> & { statusLocalis?: string };
+				mode?: "replace" | "smart_append";
+				immediate?: boolean;
+			}>;
+			if (!customEvent?.detail?.soap) return;
+			const { soap } = customEvent.detail;
+			const statusLocalis = soap.statusLocalis || soap.objectiveStatus;
+
+			setValues((prev) => {
+				const next: VisitSoapNoteValues = {
+					...prev,
+					anamnesis: soap.anamnesis ?? prev.anamnesis,
+					objectiveStatus: statusLocalis ?? prev.objectiveStatus,
+					complaint: soap.complaint ?? prev.complaint,
+					diagnosis: soap.diagnosis ?? prev.diagnosis,
+					treatmentPlan: soap.treatmentPlan ?? prev.treatmentPlan,
+					recommendations: soap.recommendations ?? prev.recommendations,
+					icd10: soap.icd10 ?? prev.icd10,
+				};
+				valuesRef.current = next;
+				setSaveStatus("saved");
+				try {
+					safeLocalStorageSetItem(soapStorageKey, JSON.stringify(next));
+				} catch (err: unknown) {
+					console.warn("[VisitSoapEditor] Failed to cache external soap note values:", err);
+				}
+				onSave?.(next);
+				onChange?.(next);
+				return next;
+			});
+		};
+
+		window.addEventListener("dente-apply-soap-protocol", handleExternalSoapProtocol);
+		return () => {
+			window.removeEventListener("dente-apply-soap-protocol", handleExternalSoapProtocol);
+		};
+	}, [soapStorageKey, onSave, onChange]);
 
 	// Мандат 8e: Автономия врача и версионный аудит («Исправленному верить»)
 	const handleEnableCorrection = useCallback(() => {
@@ -363,6 +413,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					? `${prev.treatmentPlan}\n\n${stamp}`
 					: stamp,
 			};
+			valuesRef.current = next;
 			setSaveStatus("saved");
 			try {
 				safeLocalStorageSetItem(soapStorageKey, JSON.stringify(next));
@@ -395,14 +446,29 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							? `${next.treatmentPlan}\n\n${stamp}`
 							: stamp;
 					}
+					valuesRef.current = next;
+					try {
+						safeLocalStorageSetItem(soapStorageKey, JSON.stringify(next));
+					} catch (err: unknown) {
+						// ignore storage quota errors
+					}
 					return next;
 				});
 				return;
 			}
 			setSaveStatus("saving");
-			setValues((prev) => ({ ...prev, [field]: val }));
+			setValues((prev) => {
+				const next = { ...prev, [field]: val };
+				valuesRef.current = next;
+				try {
+					safeLocalStorageSetItem(soapStorageKey, JSON.stringify(next));
+				} catch (err: unknown) {
+					// ignore storage quota errors
+				}
+				return next;
+			});
 		},
-		[isLocked, isCorrectionMode],
+		[isLocked, isCorrectionMode, soapStorageKey],
 	);
 
 	// Фильтрация протоколов StomX среди всех 448 шаблонов
@@ -533,7 +599,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		[selectedTooth, selectedSurfaces, values.anamnesis, isLocked, isCorrectionMode, onSave, onChange, onApplyFullDiary, setIsTemplatesOpen, soapStorageKey],
 	);
 
-	// 1-клик физиологическая норма (Мандат 8e)
+	// 1-клик физиологическая норма (Мандат 8e, 8n, 8s)
 	const handleApplyNorm = useCallback(() => {
 		const targetTooth = selectedTooth ?? 16;
 		if (isLocked && !isCorrectionMode) {
@@ -561,6 +627,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			icd10: "Z01.2",
 		};
 		setValues(normValues);
+		valuesRef.current = normValues;
 		setSaveStatus("saved");
 		try {
 			safeLocalStorageSetItem(soapStorageKey, JSON.stringify(normValues));
@@ -569,7 +636,18 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		}
 		onSave?.(normValues);
 		onChange?.(normValues);
-	}, [selectedTooth, isLocked, isCorrectionMode, onSave, onChange, soapStorageKey]);
+
+		const fullText = [
+			`=== МЕДИЦИНСКАЯ КАРТА 043/У (ЗУБ ${targetTooth}) ===`,
+			`[Жалобы]: ${normValues.complaint}`,
+			`[Анамнез]: ${normValues.anamnesis}`,
+			`[Объективный статус]: ${normValues.objectiveStatus}`,
+			`[Диагноз]: [${normValues.icd10}] ${normValues.diagnosis}`,
+			`[Протокол лечения]: ${normValues.treatmentPlan}`,
+			`[Рекомендации]: ${normValues.recommendations}`,
+		].join("\n\n");
+		onApplyFullDiary?.(fullText);
+	}, [selectedTooth, isLocked, isCorrectionMode, onSave, onChange, onApplyFullDiary, soapStorageKey]);
 
 	// Ручное сохранение дневника в 1 клик (Мандат 8e: никогда не disabled)
 	const handleExplicitSave = useCallback(() => {
@@ -1076,6 +1154,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							value={values.complaint || ""}
 							onChange={(e) => handleFieldChange("complaint", e.target.value)}
 							onFocus={handleInputFocus}
+							onBlur={flushDraft}
 							placeholder="Боль при приеме пищи, ночные боли, выпадение пломбы..."
 							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y touch-manipulation"
 							style={{ scrollMarginBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
@@ -1099,6 +1178,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							value={values.anamnesis || ""}
 							onChange={(e) => handleFieldChange("anamnesis", e.target.value)}
 							onFocus={handleInputFocus}
+							onBlur={flushDraft}
 							placeholder="Зуб ранее лечен, боли возникли 2 дня назад. Соматически здоров..."
 							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y touch-manipulation"
 							style={{ scrollMarginBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
@@ -1126,6 +1206,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								handleFieldChange("objectiveStatus", e.target.value)
 							}
 							onFocus={handleInputFocus}
+							onBlur={flushDraft}
 							placeholder="Кариозная полость средней глубины на окклюзионной поверхности, зондирование слабо болезненно..."
 							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y touch-manipulation"
 							style={{ scrollMarginBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
@@ -1152,6 +1233,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								value={values.icd10 || ""}
 								onChange={(e) => handleFieldChange("icd10", e.target.value)}
 								onFocus={handleInputFocus}
+								onBlur={flushDraft}
 								placeholder="K02.1"
 								aria-label="Код МКБ-10"
 								className="w-24 min-h-[44px] sm:min-h-0 sm:h-8 px-2 text-xs font-bold text-[var(--teal,var(--brand-primary))] bg-[var(--paper)] border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--teal)] touch-manipulation"
@@ -1163,6 +1245,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								value={values.diagnosis || ""}
 								onChange={(e) => handleFieldChange("diagnosis", e.target.value)}
 								onFocus={handleInputFocus}
+								onBlur={flushDraft}
 								placeholder="Клинический диагноз: Кариес дентина зуба 16..."
 								className="flex-1 min-h-[44px] sm:min-h-0 sm:h-8 px-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--teal)] touch-manipulation"
 								style={{ scrollMarginBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
@@ -1191,6 +1274,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								handleFieldChange("treatmentPlan", e.target.value)
 							}
 							onFocus={handleInputFocus}
+							onBlur={flushDraft}
 							placeholder="Анестезия sol. Articaini 1:200000 1.8 мл. Препарирование кариозной полости, коффердам..."
 							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y font-mono text-[11px] touch-manipulation"
 							style={{ scrollMarginBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
@@ -1213,6 +1297,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								handleFieldChange("recommendations", e.target.value)
 							}
 							onFocus={handleInputFocus}
+							onBlur={flushDraft}
 							placeholder="Щадящая диета 2 часа, гигиена полости рта, НПВП при боли..."
 							className="w-full p-2 text-xs bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg focus:ring-1 focus:ring-[var(--teal)] focus:outline-none resize-y touch-manipulation"
 							style={{ scrollMarginBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}

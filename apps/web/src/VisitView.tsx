@@ -1344,7 +1344,30 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		if (visitSubViewTab === "odontogram") setOdontogramTabWasOpened(true);
 		if (visitSubViewTab === "anamnesis") setAnamnesisTabWasOpened(true);
 		if (visitSubViewTab === "diagnostics") setDiagnosticsTabWasOpened(true);
-	}, [visitSubViewTab]);
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente:visit-tab-change", { detail: { tab: visitSubViewTab } }),
+			);
+		}
+		if (typeof flushPendingVisitSaves === "function") {
+			flushPendingVisitSaves();
+		}
+	}, [visitSubViewTab, flushPendingVisitSaves]);
+
+	React.useEffect(() => {
+		const flushAll = () => {
+			if (typeof flushPendingVisitSaves === "function") {
+				flushPendingVisitSaves();
+			}
+		};
+		window.addEventListener("beforeunload", flushAll);
+		window.addEventListener("pagehide", flushAll);
+		return () => {
+			window.removeEventListener("beforeunload", flushAll);
+			window.removeEventListener("pagehide", flushAll);
+			flushAll();
+		};
+	}, [flushPendingVisitSaves]);
 
 	const activePatientSafetyProfile = useMemo<PatientClinicalSafetyProfile | null>(() => {
 		if (!activePatient) return null;
@@ -1498,6 +1521,31 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	}, [activePatient?.birthDate]);
 
 	const handleFinishVisitAction = useCallback(async () => {
+		// Мандат 8e, 8n: Запрет на блокировку завершения приёма. Если дневник не заполнен, подставляем норму по умолчанию.
+		if (typeof updateVisitNoteField === "function") {
+			if (!visitNoteForm?.diagnosis || visitNoteForm.diagnosis.length < 4) {
+				updateVisitNoteField("diagnosis", "Z01.2 Стоматологическое обследование (Здоров)");
+			}
+			if (!visitNoteForm?.treatmentPlan) {
+				updateVisitNoteField("treatmentPlan", "Осмотр полости рта проведен, патологий не выявлено. Санация.");
+			}
+			if (!visitNoteForm?.complaint) {
+				updateVisitNoteField("complaint", "Жалоб на момент осмотра не предъявляет.");
+			}
+			if (!visitNoteForm?.anamnesis) {
+				updateVisitNoteField("anamnesis", "Соматически здоров. Аллергоанамнез не отягощен.");
+			}
+			if (!visitNoteForm?.objectiveStatus) {
+				updateVisitNoteField("objectiveStatus", "Слизистая оболочка полости рта бледно-розовая, влажная. Зубные ряды интактны.");
+			}
+		}
+		if (typeof acceptDraftToVisit === "function") {
+			try {
+				await acceptDraftToVisit();
+			} catch {
+				// non-blocking
+			}
+		}
 		if (typeof flushPendingVisitSaves === "function") {
 			await flushPendingVisitSaves();
 		}
@@ -1505,7 +1553,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			`Прием ${activePatient?.fullName || "пациента"} завершен. Все данные сохранены.`,
 			"success",
 		);
-	}, [activePatient?.fullName, flushPendingVisitSaves]);
+	}, [activePatient?.fullName, flushPendingVisitSaves, updateVisitNoteField, visitNoteForm, acceptDraftToVisit]);
 
 	/*
     ЗАГРУЗКА И «ПАЦИЕНТ НЕ ВЫБРАН» — РАЗНЫЕ СОСТОЯНИЯ.

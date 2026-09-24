@@ -219,7 +219,7 @@ function DebouncedEmkTextarea({
 				lastCommittedValueRef.current = nextVal;
 				onCommitRef.current(fieldKey, nextVal);
 			}
-		}, 300);
+		}, 600); // Debounced autosave 500-1000ms (Мандаты 8e, 8n)
 	};
 
 	const handleBlur = () => {
@@ -238,18 +238,22 @@ function DebouncedEmkTextarea({
 		};
 
 		window.addEventListener("pagehide", flushCommit);
+		window.addEventListener("beforeunload", flushCommit);
 		window.addEventListener("blur", flushCommit);
 		document.addEventListener("visibilitychange", handleVisibilityChange);
 		window.addEventListener("dente-telephony-incoming-call", handleTelephony);
+		window.addEventListener("dente:visit-tab-change", flushCommit);
 
 		return () => {
 			window.removeEventListener("pagehide", flushCommit);
+			window.removeEventListener("beforeunload", flushCommit);
 			window.removeEventListener("blur", flushCommit);
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
 			window.removeEventListener(
 				"dente-telephony-incoming-call",
 				handleTelephony,
 			);
+			window.removeEventListener("dente:visit-tab-change", flushCommit);
 			flushCommit();
 		};
 	}, [flushCommit]);
@@ -350,7 +354,7 @@ export function VisitEmkTab() {
 		organizationId: dashboard?.activeVisit?.organizationId,
 		visitNoteForm,
 		isLocked,
-		debounceMs: 300,
+		debounceMs: 600,
 		silent: true,
 	});
 
@@ -401,12 +405,45 @@ export function VisitEmkTab() {
 			"treatmentPlan",
 			"Проведен комплексный профилактический осмотр полости рта, пальпация лимфоузлов, зондирование зубодесневых бороздок. Патологий твердых тканей зубов и пародонта не выявлено. Проведена индивидуальная беседа по гигиене полости рта. Рекомендован плановый контрольный профосмотр через 6 месяцев.",
 		);
+		updateVisitNoteField(
+			"recommendations",
+			"Чистка зубов 2 раза в день выметающими движениями. Использование флосса и ирригатора. Плановый осмотр через 6 месяцев.",
+		);
+		if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+			try {
+				window.dispatchEvent(
+					new CustomEvent("dente-apply-soap-protocol", {
+						detail: {
+							soap: {
+								complaint: "Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).",
+								anamnesis: "Соматически здоров. Аллергоанамнез не отягощен. Вредных привычек нет. Полоскания и гигиенический уход регулярные.",
+								objectiveStatus: "Слизистая оболочка полости рта физиологической окраски, бледно-розовая, умеренно влажная. Десневой край плотный, бледно-розовый, кровоточивость при зондировании отсутствует. Патологических зубодесневых карманов нет (глубина бороздки 1–2 мм). Регионарные лимфоузлы не увеличены, подвижные, безболезненные при пальпации. Зубные ряды интактны / санированы.",
+								diagnosis: "Z01.2 Стоматологическое обследование и гигиена полости рта (Норма)",
+								treatmentPlan: "Проведен комплексный профилактический осмотр полости рта, пальпация лимфоузлов, зондирование зубодесневых бороздок. Патологий твердых тканей зубов и пародонта не выявлено. Проведена индивидуальная беседа по гигиене полости рта. Рекомендован плановый контрольный профосмотр через 6 месяцев.",
+								recommendations: "Чистка зубов 2 раза в день выметающими движениями. Использование флосса и ирригатора. Плановый осмотр через 6 месяцев.",
+								icd10: "Z01.2",
+							},
+							mode: "replace",
+							immediate: true,
+						},
+					}),
+				);
+			} catch {
+				// ignore
+			}
+		}
+		if (flushSoloPendingSave) {
+			flushSoloPendingSave();
+		}
+		if (flushPendingVisitSaves) {
+			flushPendingVisitSaves();
+		}
 		showToast(
 			"Заполнена физиологическая норма: соматически здоров, норма по умолчанию",
 			"success",
 			3000,
 		);
-	}, [updateVisitNoteField, isSignedVisit, isRevisingVisitNote]);
+	}, [updateVisitNoteField, isSignedVisit, isRevisingVisitNote, flushSoloPendingSave, flushPendingVisitSaves]);
 	const [selectedPrescriptionDrugIds, setSelectedPrescriptionDrugIds] =
 		React.useState<string[]>(["amoxiclav_875_125", "nimesulide_100"]);
 	const [isInformedConsentModalOpen, setIsInformedConsentModalOpen] =
