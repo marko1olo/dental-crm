@@ -62,7 +62,7 @@ export interface DentalContraindicationBadge {
 	readonly shortLabel: string;
 	readonly fullLabel: string;
 	readonly title: string;
-	readonly severity: "critical" | "warning";
+	readonly severity: "critical" | "warning" | "healthy";
 	readonly actionHint: string;
 }
 
@@ -72,6 +72,8 @@ export interface DentalContraindicationBadge {
 export interface SomaticProfileInput {
 	readonly hasArticaineAllergy?: boolean | null;
 	readonly hasLidocaineAllergy?: boolean | null;
+	readonly hasNovocaineAllergy?: boolean | null;
+	readonly hasProcaineAllergy?: boolean | null;
 	readonly hasMepivacaineAllergy?: boolean | null;
 	readonly hasPenicillinAllergy?: boolean | null;
 	readonly hasNsaidAllergy?: boolean | null;
@@ -89,6 +91,11 @@ export interface SomaticProfileInput {
 	readonly hasDiabetesMellitus?: boolean | null;
 	readonly diabetesType?: string | null;
 	readonly pregnancyTrimester?: string | null;
+	readonly hasBronchialAsthma?: boolean | null;
+	readonly hasAsthma?: boolean | null;
+	readonly hasEpilepsy?: boolean | null;
+	readonly patientWeightKg?: number | null;
+	readonly patientAgeYears?: number | null;
 	readonly customAllergyNotes?: string | null;
 	readonly customChronicNotes?: string | null;
 }
@@ -155,6 +162,8 @@ export function isNegativeAllergyStatement(text?: string | null): boolean {
 	const hasSpecificAllergen =
 		lower.includes("артикаин") ||
 		lower.includes("ультракаин") ||
+		lower.includes("новокаин") ||
+		lower.includes("прокаин") ||
 		lower.includes("лидокаин") ||
 		lower.includes("мепивакаин") ||
 		lower.includes("скандонест") ||
@@ -251,18 +260,30 @@ export function extractDentalContraindicationBadges(
 
 	// 1. Allergies (only when active allergy present, zero noise when clean per Mandate 8p)
 	if (allergyText && allergyText.trim() && !isNegativeAllergyStatement(allergyText)) {
+		const rawText = allergyText.trim();
+		const isAnestheticOrMedAllergy =
+			/артикаин|новокаин|прокаин|лидокаин|мепивакаин|ультракаин|скандонест|септанест|убистезин|пенициллин|сульфит|анестетик/i.test(
+				rawText,
+			);
+		const fullLabel =
+			isAnestheticOrMedAllergy && !rawText.toLowerCase().includes("запрет")
+				? `АЛЛЕРГИЯ: ${rawText} — запрет анестетика!`
+				: `АЛЛЕРГИЯ: ${rawText}`;
+
 		badges.push({
 			id: "allergy",
 			testId: "visit-focus-allergy-alert",
 			shortLabel: "АЛЛЕРГИЯ",
-			fullLabel: `АЛЛЕРГИЯ: ${allergyText.trim()}`,
-			title: `Критический стоп-фактор / аллергия пациента: ${allergyText.trim()}`,
+			fullLabel,
+			title: `Критический стоп-фактор / аллергия пациента: ${rawText}`,
 			severity: "critical",
-			actionHint: "Исключить аллерген, подготовить антигистаминную/противошоковую укладку",
+			actionHint:
+				"Исключить аллерген, подготовить противошоковую укладку (Адреналин 0.1%, Преднизолон)",
 		});
 	} else if (profile) {
 		const specificAllergies: string[] = [];
 		if (profile.hasArticaineAllergy) specificAllergies.push("Артикаин");
+		if (profile.hasNovocaineAllergy || profile.hasProcaineAllergy) specificAllergies.push("Новокаин");
 		if (profile.hasLidocaineAllergy) specificAllergies.push("Лидокаин");
 		if (profile.hasMepivacaineAllergy) specificAllergies.push("Мепивакаин");
 		if (profile.hasPenicillinAllergy) specificAllergies.push("Пенициллины");
@@ -278,34 +299,60 @@ export function extractDentalContraindicationBadges(
 			!isNegativeAllergyStatement(profile.customAllergyNotes);
 
 		if (specificAllergies.length > 0 || hasCustomAllergy) {
+			let separator = ", ";
+			if (
+				specificAllergies.length === 2 &&
+				specificAllergies.includes("Артикаин") &&
+				specificAllergies.includes("Новокаин")
+			) {
+				separator = " / ";
+			}
 			const label =
 				specificAllergies.length > 0
-					? specificAllergies.join(", ")
+					? specificAllergies.join(separator)
 					: (profile.customAllergyNotes || "");
+
+			const isAnestheticMed =
+				profile.hasArticaineAllergy ||
+				profile.hasNovocaineAllergy ||
+				profile.hasProcaineAllergy ||
+				profile.hasLidocaineAllergy ||
+				profile.hasMepivacaineAllergy ||
+				profile.hasPenicillinAllergy ||
+				profile.hasSulfitesAllergy ||
+				/артикаин|новокаин|лидокаин|мепивакаин|ультракаин|пенициллин|сульфит|анестетик/i.test(label);
+
+			const fullLabel = isAnestheticMed
+				? `АЛЛЕРГИЯ: ${label} — запрет анестетика!`
+				: `АЛЛЕРГИЯ: ${label}`;
+
 			badges.push({
 				id: "allergy",
 				testId: "visit-focus-allergy-alert",
 				shortLabel: "АЛЛЕРГИЯ",
-				fullLabel: `АЛЛЕРГИЯ: ${label}`,
+				fullLabel,
 				title: `Критический стоп-фактор / аллергия пациента: ${label}`,
 				severity: "critical",
-				actionHint: "Исключить аллерген, подготовить антигистаминную/противошоковую укладку",
+				actionHint:
+					"Исключить аллерген, подготовить противошоковую укладку (Адреналин 0.1%, Преднизолон)",
 			});
 		}
 	}
 
 	if (!profile) return badges;
 
-	// 2. Pacemaker (ЭКС) -> Prohibition of ultrasonic scaler
+	// 2. Pacemaker (ЭКС) -> Prohibition of ultrasonic scaler and electrosurgery (Yellow / warning badge)
 	if (profile.hasPacemakerExs) {
 		badges.push({
 			id: "pacemaker",
 			testId: "visit-focus-pacemaker-alert",
 			shortLabel: "ЭКС",
-			fullLabel: "ЭКС: ЗАПРЕТ УЗ",
-			title: "Имплантированный кардиостимулятор (ЭКС): абсолютный запрет УЗ-скейлинга и монополярной электрокоагуляции",
-			severity: "critical",
-			actionHint: "Ручной скейлинг (кюреты Грейси), запрет ультразвуковых генераторов",
+			fullLabel: "Кардиостимулятор: ЗАПРЕТ УЗ-скейлера и электрокоагулятора!",
+			title:
+				"Имплантированный кардиостимулятор (ЭКС): абсолютный запрет УЗ-скейлинга и монополярной электрокоагуляции",
+			severity: "warning",
+			actionHint:
+				"Запрет УЗ-скейлера и электрокоагулятора! Ручной скейлинг (кюреты Грейси)",
 		});
 	}
 
@@ -325,7 +372,10 @@ export function extractDentalContraindicationBadges(
 
 	// 4. Diabetes Mellitus -> Hypoglycemia risk, delayed wound healing
 	if (profile.hasDiabetesMellitus) {
-		const typeLabel = profile.diabetesType && profile.diabetesType !== "unknown" ? ` (${profile.diabetesType})` : "";
+		const typeLabel =
+			profile.diabetesType && profile.diabetesType !== "unknown"
+				? ` (${profile.diabetesType})`
+				: "";
 		badges.push({
 			id: "diabetes",
 			testId: "visit-focus-diabetes-alert",
@@ -333,24 +383,28 @@ export function extractDentalContraindicationBadges(
 			fullLabel: `САХАРНЫЙ ДИАБЕТ${typeLabel}`,
 			title: `Сахарный диабет${typeLabel}: риск гипогликемии, контроль витальных функций, антисептический протокол`,
 			severity: "warning",
-			actionHint: "Короткие утренние приемы, глюкоза/сок при слабости, атравматичный протокол",
+			actionHint:
+				"Короткие утренние приемы, глюкоза/сок при слабости, атравматичный протокол",
 		});
 	}
 
-	// 5. Pregnancy & Lactation -> Gestational limits
+	// 5. Pregnancy & Lactation -> Gestational limits (Yellow / warning badge)
 	if (profile.pregnancyTrimester && profile.pregnancyTrimester !== "none") {
-		const pregLabel =
-			profile.pregnancyTrimester === "lactation"
-				? "ГВ / ЛАКТАЦИЯ"
-				: `БЕРЕМЕННОСТЬ (${profile.pregnancyTrimester === "trimester_1" ? "1 ТРИМ." : profile.pregnancyTrimester === "trimester_3" ? "3 ТРИМ." : "2 ТРИМ."})`;
+		let pregTrimesterText = "I/II/III триместр";
+		if (profile.pregnancyTrimester === "trimester_1") pregTrimesterText = "I триместр (1 ТРИМ.)";
+		else if (profile.pregnancyTrimester === "trimester_2") pregTrimesterText = "II триместр (2 ТРИМ.)";
+		else if (profile.pregnancyTrimester === "trimester_3") pregTrimesterText = "III триместр (3 ТРИМ.)";
+		else if (profile.pregnancyTrimester === "lactation") pregTrimesterText = "ГВ / ЛАКТАЦИЯ";
+
 		badges.push({
 			id: "pregnancy",
 			testId: "visit-focus-pregnancy-alert",
 			shortLabel: "БЕРЕМ.",
-			fullLabel: pregLabel,
-			title: `Период гестации/лактации: ${pregLabel} — ограничения на вазоконстрикторы (адреналин <= 1:200000) и рентген`,
+			fullLabel: `Беременность (${pregTrimesterText}) — ограничение адреналина и рентгена`,
+			title: `Период гестации/лактации: ${pregTrimesterText} — ограничения на вазоконстрикторы (адреналин <= 1:200000) и рентген`,
 			severity: "warning",
-			actionHint: "Анестетик без вазоконстриктора или 1:200000, фартук при рентгене, комфортное положение",
+			actionHint:
+				"Анестетик без вазоконстриктора или 1:200000, фартук при рентгене, комфортное положение",
 		});
 	}
 
@@ -364,9 +418,85 @@ export function extractDentalContraindicationBadges(
 			fullLabel: `БИСФОСФОНАТЫ${drug}`,
 			title: `Прием бисфосфонатов/антирезорбтивных средств${drug}: риск медикаментозного остеонекроза челюсти (MRONJ/БОНЧ)`,
 			severity: "critical",
-			actionHint: "Атравматичное удаление, отказ от костной пластики без консилиума, заживление первичным натяжением",
+			actionHint:
+				"Атравматичное удаление, отказ от костной пластики без консилиума, заживление первичным натяжением",
+		});
+	}
+
+	// 7. Bronchial Asthma -> Bronchospasm risk (Yellow / warning badge)
+	if (profile.hasBronchialAsthma || profile.hasAsthma) {
+		badges.push({
+			id: "asthma",
+			testId: "visit-focus-asthma-alert",
+			shortLabel: "АСТМА",
+			fullLabel: "Бронхиальная астма: риск бронхоспазма, ингалятор наготове",
+			title:
+				"Бронхиальная астма: риск бронхоспазма, ингалятор сальбутамола наготове, исключить аспирин и сульфиты",
+			severity: "warning",
+			actionHint:
+				"Проверить наличие собственного ингалятора (Сальбутамол), избегать аспирина и НПВП",
+		});
+	}
+
+	// 8. Epilepsy -> Seizure risk (Yellow / warning badge)
+	if (profile.hasEpilepsy) {
+		badges.push({
+			id: "epilepsy",
+			testId: "visit-focus-epilepsy-alert",
+			shortLabel: "ЭПИЛЕПСИЯ",
+			fullLabel: "Эпилепсия: противосудорожная готовность, защита от световых триггеров",
+			title:
+				"Эпилепсия: риск судорожного припадка, избегать ярких световых вспышек фотополимеризатора",
+			severity: "warning",
+			actionHint:
+				"Защитные очки при полимеризации, готовность диазепама и фиксации дыхательных путей",
 		});
 	}
 
 	return badges;
 }
+
+/**
+ * Green physiological norm badge when patient has 0 contraindications
+ */
+export const CANONICAL_SOMATIC_NORM_BADGE: DentalContraindicationBadge = Object.freeze({
+	id: "somatic-norm",
+	testId: "visit-somatic-norm-badge",
+	shortLabel: "Норма",
+	fullLabel: CANONICAL_SOMATIC_NORM_SHORT,
+	title: "Соматический статус: физиологическая норма, противопоказаний не выявлено",
+	severity: "healthy" as const,
+	actionHint: "Патологий не выявлено. Врач правит только выявленную патологию.",
+});
+
+export interface PatientSomaticGuardStatus {
+	readonly isHealthyNorm: boolean;
+	readonly badges: readonly DentalContraindicationBadge[];
+	readonly criticalBadges: readonly DentalContraindicationBadge[];
+	readonly warningBadges: readonly DentalContraindicationBadge[];
+	readonly hasCriticalAllergy: boolean;
+	readonly normBadge: DentalContraindicationBadge | null;
+}
+
+/**
+ * Evaluates full chairside allergo-somatic guard status for patient workspace & visit header.
+ */
+export function getPatientSomaticGuardStatus(
+	profile?: SomaticProfileInput | null,
+	allergyText?: string | null,
+): PatientSomaticGuardStatus {
+	const badges = extractDentalContraindicationBadges(profile, allergyText);
+	const criticalBadges = badges.filter((b) => b.severity === "critical");
+	const warningBadges = badges.filter((b) => b.severity === "warning");
+	const isHealthyNorm = badges.length === 0;
+
+	return {
+		isHealthyNorm,
+		badges,
+		criticalBadges,
+		warningBadges,
+		hasCriticalAllergy: criticalBadges.some((b) => b.id === "allergy"),
+		normBadge: isHealthyNorm ? CANONICAL_SOMATIC_NORM_BADGE : null,
+	};
+}
+
