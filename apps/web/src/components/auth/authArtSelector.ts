@@ -19,9 +19,9 @@ export type AuthArtPack =
 
 export interface AuthArtOptions {
 	pack: AuthArtPack | string;
-	slot: string;
-	saveData: boolean;
-	reducedMotion: boolean;
+	slot?: string | undefined;
+	saveData?: boolean | undefined;
+	reducedMotion?: boolean | undefined;
 }
 
 export function selectAuthArt(
@@ -41,7 +41,8 @@ export function selectAuthArt(
 		return null;
 	}
 
-	let eligibleItems = pool.filter((item) => item.slot === options.slot);
+	const slot = options.slot || getCurrentTimeSlot();
+	let eligibleItems = pool.filter((item) => item.slot === slot);
 
 	// If the slot has less than 2 items, expand choice to the entire pool.
 	// This ensures variety, especially for packs like 'dental-epic' or 'abstract'

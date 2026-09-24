@@ -26,6 +26,12 @@ export const DENTE_CLINIC_TOKEN_KEY = "dente_clinic_token";
 /** Токен личного кабинета пациента (OTP session). */
 export const PATIENT_TOKEN_KEY = "patient_token";
 
+/** Настраиваемый таймаут неактивности экрана приватности врача (152-ФЗ) в минутах. */
+export const DENTE_INACTIVITY_TIMEOUT_KEY = "dente_inactivity_timeout_minutes";
+
+/** Состояние блокировки экрана приватности врача (152-ФЗ). */
+export const DENTE_PRIVACY_SHIELD_LOCKED_KEY = "dente_privacy_shield_locked";
+
 let inMemoryStaffToken: string | null = null;
 let inMemoryClinicToken: string | null = null;
 let tokenStorageListenerAttached = false;

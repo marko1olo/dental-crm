@@ -46,6 +46,8 @@ import { resolveClinicMode, staffRoleChoices } from "./lib/clinicCapabilities";
 import { actionFailureToast } from "./lib/panelStateText";
 import {
 	DENTE_CLINIC_TOKEN_KEY,
+	DENTE_INACTIVITY_TIMEOUT_KEY,
+	DENTE_PRIVACY_SHIELD_LOCKED_KEY,
 	DENTE_STAFF_TOKEN_KEY,
 	readDenteClinicToken,
 	readDenteStaffToken,
@@ -53,6 +55,10 @@ import {
 	safeLocalStorageRemoveItem,
 	safeLocalStorageSetItem,
 } from "./lib/safeLocalStorage";
+import {
+	DoctorPrivacyShield,
+	getInactivityTimeoutMs,
+} from "./components/auth/DoctorPrivacyShield";
 import { usePerspectiveStore } from "./store/perspectiveStore";
 import { useAppLogic } from "./useAppLogic";
 import { useOmniPlatform } from "./hooks/useOmniPlatform";
@@ -1015,6 +1021,14 @@ export function App() {
 		return !!readDenteStaffToken();
 	});
 	const [showStaffPinPad, setShowStaffPinPad] = useState<boolean>(false);
+	// 152-FZ Doctor Privacy Shield (Lockscreen)
+	const [isPrivacyShieldActive, setIsPrivacyShieldActive] = useState<boolean>(
+		() => {
+			return (
+				safeLocalStorageGetItem(DENTE_PRIVACY_SHIELD_LOCKED_KEY) === "true"
+			);
+		},
+	);
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [activeStaffUser, setActiveStaffUser] = useState<any>(null);
 	const staffProfileFetchAttemptedRef = useRef<boolean>(false);
@@ -1090,19 +1104,18 @@ export function App() {
 				});
 		}
 	}, [clinicAuthed, dashboard, activeStaffUser]); // Stable dependencies with single-trigger guards
-	// Auto-lock on inactivity (5 minutes)
+	// 152-FZ Doctor Privacy Shield: Auto-lock on inactivity (configurable via localStorage)
 	useEffect(() => {
-		if (!clinicAuthed || !staffAuthed) return;
+		if (!clinicAuthed || !staffAuthed || isPrivacyShieldActive) return;
 		let timer: ReturnType<typeof setTimeout>;
 		const resetTimer = () => {
 			clearTimeout(timer);
 			timer = setTimeout(
 				() => {
-					setStaffAuthed(false);
-					setShowStaffPinPad(true);
-					safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
+					setIsPrivacyShieldActive(true);
+					safeLocalStorageSetItem(DENTE_PRIVACY_SHIELD_LOCKED_KEY, "true");
 				},
-				5 * 60 * 1000,
+				getInactivityTimeoutMs(),
 			);
 		};
 		const events = ["mousemove", "keydown", "pointerdown", "touchstart"];
@@ -1116,18 +1129,29 @@ export function App() {
 				document.removeEventListener(e, resetTimer);
 			});
 		};
-	}, [clinicAuthed, staffAuthed]);
+	}, [clinicAuthed, staffAuthed, isPrivacyShieldActive]);
+
 	const handleClinicLogout = () => {
 		staffProfileFetchAttemptedRef.current = false;
 		safeLocalStorageRemoveItem(DENTE_CLINIC_TOKEN_KEY);
 		safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
+		safeLocalStorageRemoveItem(DENTE_PRIVACY_SHIELD_LOCKED_KEY);
+		setIsPrivacyShieldActive(false);
 		setClinicAuthed(false);
 		setStaffAuthed(false);
 		setShowStaffPinPad(false);
 		setActiveStaffUser(null);
 	};
+
 	const handleLockSession = () => {
+		setIsPrivacyShieldActive(true);
+		safeLocalStorageSetItem(DENTE_PRIVACY_SHIELD_LOCKED_KEY, "true");
+	};
+
+	const handleFullStaffLock = () => {
+		safeLocalStorageRemoveItem(DENTE_PRIVACY_SHIELD_LOCKED_KEY);
 		safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
+		setIsPrivacyShieldActive(false);
 		setStaffAuthed(false);
 		setShowStaffPinPad(true);
 	};
@@ -3546,6 +3570,19 @@ export function App() {
 						<span>Ещё</span>
 					</a>
 				</nav>
+				<DoctorPrivacyShield
+					isOpen={isPrivacyShieldActive}
+					doctor={activeStaffUser}
+					onUnlock={(unlockedUser) => {
+						if (unlockedUser) {
+							setActiveStaffUser(unlockedUser);
+						}
+						setIsPrivacyShieldActive(false);
+						safeLocalStorageRemoveItem(DENTE_PRIVACY_SHIELD_LOCKED_KEY);
+					}}
+					onClinicLogout={handleClinicLogout}
+					onFullLock={handleFullStaffLock}
+				/>
 			</main>
 		</AppLogicProvider>
 	);
