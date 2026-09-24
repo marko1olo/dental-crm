@@ -508,7 +508,10 @@ export function AppointmentModal(props: AppointmentModalProps) {
 			if (m) defaultDoc = m.id;
 		}
 		let defaultChair =
-			appointment.chairId || (chairs.length === 1 ? chairs[0]?.id : "") || "";
+			appointment.chairId ||
+			(isSoloDoctor && chairs[0] ? chairs[0].id : "") ||
+			(chairs.length === 1 ? chairs[0]?.id : "") ||
+			"";
 		if (!defaultChair && defaultDoc) {
 			const chairWithDoc = chairs.find(
 				(c) => (c as any).defaultDoctorId === defaultDoc,
@@ -897,7 +900,10 @@ export function AppointmentModal(props: AppointmentModalProps) {
 			doctors[0]?.id ||
 			(isSoloDoctor ? "doctor-solo" : "doctor-default");
 		let effectiveChairId =
-			chairId || (chairs.length === 1 ? chairs[0]?.id : "") || "";
+			chairId ||
+			(isSoloDoctor && chairs[0] ? chairs[0].id : "") ||
+			(chairs.length === 1 ? chairs[0]?.id : "") ||
+			"";
 		if (!effectiveChairId && effectiveDoctorUserId) {
 			const doc = doctors.find((d) => d.id === effectiveDoctorUserId);
 			if ((doc as any)?.preferredChairId) {

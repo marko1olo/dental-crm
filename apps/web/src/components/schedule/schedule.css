@@ -1,0 +1,179 @@
+/**
+ * DENTE Dental CRM — Schedule & Solo Doctor Ergonomics Styles
+ * Mandates 8c, 8d, 8e, 8n, 8p: Solo Doctor & Reception Autonomy
+ *
+ * Invariants:
+ * 1. ScheduleFilterStrip strictly 1 compact row (32–36px height) per Hick's Law
+ * 2. 5-Second Booking Hot Path: 1-click primary [+ Запись] button, smooth horizontal chips
+ * 3. Status Transition Autonomy: Visit status buttons are NEVER disabled
+ * 4. Scale-Agnostic Density: Solo doctor 1-chair layout without assistant or multi-branch bloat
+ * 5. Strict Design Tokens: var(--paper), var(--paper-soft), var(--ink), var(--teal), var(--line)
+ */
+
+/* ─── 1. SCHEDULE FILTER STRIP (STRICT 1-ROW 32–36PX TOOLBAR) ─── */
+.schedule-filter-strip {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	height: 36px;
+	min-height: 36px;
+	max-height: 36px;
+	box-sizing: border-box;
+	border-bottom: 1px solid var(--line);
+	background: var(--paper);
+	gap: 6px;
+	overflow: hidden;
+	white-space: nowrap;
+	flex-wrap: nowrap;
+	user-select: none;
+}
+
+/* 1-Click Primary Quick Booking Action */
+.schedule-toolbar-primary-quick-booking-btn {
+	height: 28px;
+	min-height: 28px;
+	max-height: 28px;
+	padding: 0 10px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	font-size: 12px;
+	font-weight: 700;
+	border-radius: 8px;
+	background: var(--teal, var(--brand-primary, #0d9488));
+	color: var(--on-teal, #ffffff);
+	border: none;
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.schedule-toolbar-primary-quick-booking-btn:hover {
+	opacity: 0.92;
+}
+
+.schedule-toolbar-primary-quick-booking-btn:active {
+	transform: scale(0.96);
+}
+
+/* Horizontal Filter Chips Strip */
+.schedule-filter-chips {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	overflow-x: auto;
+	white-space: nowrap;
+	flex-wrap: nowrap;
+	scroll-behavior: smooth;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+.schedule-filter-chips::-webkit-scrollbar {
+	display: none;
+}
+
+/* Quick Filter Chips */
+.schedule-filter-strip .quick-chip {
+	height: 28px;
+	min-height: 28px;
+	max-height: 28px;
+	padding: 0 10px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 600;
+	flex-shrink: 0;
+	white-space: nowrap;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	cursor: pointer;
+	transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.schedule-filter-strip .quick-chip:hover {
+	border-color: var(--teal, var(--brand-primary, #0d9488));
+	color: var(--teal, var(--brand-primary, #0d9488));
+}
+
+.schedule-filter-strip .quick-chip.active {
+	background: var(--teal, var(--brand-primary, #0d9488));
+	color: var(--on-teal, #ffffff);
+	border-color: var(--teal, var(--brand-primary, #0d9488));
+	font-weight: 700;
+}
+
+/* Date Picker Stepper */
+.schedule-date-picker-group {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	flex-shrink: 0;
+	height: 28px;
+}
+
+.schedule-date-input {
+	height: 28px;
+	min-height: 28px;
+	max-height: 28px;
+	width: 135px;
+	min-width: 135px;
+	text-align: center;
+	font-size: 12px;
+	font-weight: 700;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	outline: none;
+	box-sizing: border-box;
+}
+
+/* ─── 2. STATUS TRANSITION AUTONOMY (MANDATE 8e) ─── */
+/* Status buttons must NEVER be blocked or disabled */
+.quick-status-btn,
+[data-testid^="quick-status-btn-"],
+[data-testid^="modal-status-btn-"] {
+	pointer-events: auto !important;
+	cursor: pointer !important;
+	user-select: none;
+	transition: transform 0.1s ease, filter 0.15s ease;
+}
+
+[data-testid^="quick-status-btn-"]:hover,
+[data-testid^="modal-status-btn-"]:hover {
+	filter: brightness(1.05);
+}
+
+[data-testid^="quick-status-btn-"]:active,
+[data-testid^="modal-status-btn-"]:active {
+	transform: scale(0.96);
+}
+
+/* ─── 3. SOLO DOCTOR NON-BLOCKING SELECTIONS (MANDATES 8e, 8n) ─── */
+.schedule-solo-doctor-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: 6px;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.1));
+	color: var(--teal-dark, #0f766e);
+	border: 1px solid var(--teal, #0d9488);
+}
+
+/* Optional assistant row hint */
+.schedule-optional-assistant-hint {
+	font-size: 11px;
+	color: var(--muted);
+	margin-top: 2px;
+}
