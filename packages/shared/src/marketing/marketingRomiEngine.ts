@@ -140,32 +140,33 @@ export function calculateChannelRomi(
 
 	// 1. Organic channel (zero spend)
 	if (safeSpent === 0) {
+		const cac = safePatients > 0 ? 0 : null;
 		if (safeRevenue > 0) {
 			return {
 				profitKopecks,
 				romiPercent: null,
-				cacKopecks: 0,
+				cacKopecks: cac,
 				averageCheckKopecks,
 				romiStatus: "organic",
 			};
 		}
 		return {
 			profitKopecks: 0,
-			romiPercent: 0,
-			cacKopecks: 0,
+			romiPercent: null,
+			cacKopecks: cac,
 			averageCheckKopecks,
-			romiStatus: "break_even",
+			romiStatus: safePatients > 0 ? "organic" : "break_even",
 		};
 	}
 
 	// 2. Paid channel with non-zero spend
-	const romi = ((profitKopecks) / safeSpent) * 100;
-	const romiPercent = Number(romi.toFixed(1));
+	const rawRomi = ((profitKopecks) / safeSpent) * 100;
+	const romiPercent = Number.isFinite(rawRomi) ? Number(rawRomi.toFixed(1)) : null;
 
 	let romiStatus: RomiPerformanceStatus = "profitable";
-	if (romiPercent >= 300) {
+	if (romiPercent !== null && romiPercent >= 300) {
 		romiStatus = "super_profitable";
-	} else if (romiPercent > 0) {
+	} else if (romiPercent !== null && romiPercent > 0) {
 		romiStatus = "profitable";
 	} else if (romiPercent === 0) {
 		romiStatus = "break_even";
@@ -305,7 +306,8 @@ export function calculateMarketingRomiSummary(
 
 	let overallRomiPercent: number | null = null;
 	if (totalSpentKopecks > 0) {
-		overallRomiPercent = Number((((totalProfitKopecks) / totalSpentKopecks) * 100).toFixed(1));
+		const raw = ((totalProfitKopecks / totalSpentKopecks) * 100);
+		overallRomiPercent = Number.isFinite(raw) ? Number(raw.toFixed(1)) : null;
 	}
 
 	let overallCacKopecks: number | null = null;

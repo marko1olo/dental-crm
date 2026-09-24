@@ -194,7 +194,7 @@ export function MarketingRomiTable() {
 	const appLogic = useOptionalAppLogicContext();
 	const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
-	// Channels state loaded from safe storage (empty by default to avoid fake procedural data)
+	// Channels state loaded from safe storage (defaulting to standard StomX catalog with zeroed balances)
 	const [channels, setChannels] = useState<AdvertisingChannelInput[]>(() => {
 		try {
 			const saved = safeLocalStorageGetItem(STORAGE_KEY);
@@ -205,10 +205,13 @@ export function MarketingRomiTable() {
 				}
 			}
 		} catch {
-			// Fall back to empty channels list
+			// Fall back to default StomX preset
 		}
-		return [];
+		return [...DEFAULT_STOMX_CHANNELS];
 	});
+
+	// Local draft state for table inputs to avoid forced snapback to 0 while typing
+	const [draftInputs, setDraftInputs] = useState<Record<string, string>>({});
 
 	// New channel creation modal/form state
 	const [isAddingChannel, setIsAddingChannel] = useState(false);
@@ -262,6 +265,43 @@ export function MarketingRomiTable() {
 			return ch;
 		});
 		persistChannels(updated);
+	};
+
+	const getInputValue = (
+		channelId: string,
+		field: "spentRub" | "leads" | "patients" | "revenueRub" | "repeatVisits",
+		defaultValue: string,
+	) => {
+		const key = `${channelId}_${field}`;
+		return draftInputs[key] !== undefined ? draftInputs[key] : defaultValue;
+	};
+
+	const handleInputChange = (
+		channelId: string,
+		field: "spentRub" | "leads" | "patients" | "revenueRub" | "repeatVisits",
+		rawValue: string,
+	) => {
+		const key = `${channelId}_${field}`;
+		setDraftInputs((prev) => ({ ...prev, [key]: rawValue }));
+		if (rawValue.trim() !== "") {
+			handleUpdateField(channelId, field, rawValue);
+		}
+	};
+
+	const handleInputBlur = (
+		channelId: string,
+		field: "spentRub" | "leads" | "patients" | "revenueRub" | "repeatVisits",
+	) => {
+		const key = `${channelId}_${field}`;
+		const rawValue = draftInputs[key];
+		if (rawValue !== undefined) {
+			handleUpdateField(channelId, field, rawValue);
+			setDraftInputs((prev) => {
+				const next = { ...prev };
+				delete next[key];
+				return next;
+			});
+		}
 	};
 
 	// 1-Click quick channel preset creation from canonical StomX
@@ -470,7 +510,11 @@ export function MarketingRomiTable() {
 					<span className="romi-kpi-label">Общий ROMI клиники</span>
 					<strong
 						className={`romi-kpi-value ${
-							(summary.overallRomiPercent ?? 0) >= 0 ? "text-[var(--teal-dark,#0f766e)]" : "text-[var(--danger,#e63946)]"
+							summary.overallRomiPercent === null
+								? "text-[var(--muted,#64748b)]"
+								: summary.overallRomiPercent >= 0
+								  ? "text-[var(--teal-dark,#0f766e)]"
+								  : "text-[var(--danger,#e63946)]"
 						}`}
 					>
 						{summary.overallRomiFormatted}
@@ -684,10 +728,11 @@ export function MarketingRomiTable() {
 												type="number"
 												min="0"
 												step="500"
-												value={spentRub}
+												value={getInputValue(metric.id, "spentRub", spentRub)}
 												onChange={(e) =>
-													handleUpdateField(metric.id, "spentRub", e.target.value)
+													handleInputChange(metric.id, "spentRub", e.target.value)
 												}
+												onBlur={() => handleInputBlur(metric.id, "spentRub")}
 												aria-label={`Затраты на ${metric.nameRu}`}
 												className="romi-table-input text-right"
 											/>
@@ -701,10 +746,11 @@ export function MarketingRomiTable() {
 												type="number"
 												min="0"
 												step="1"
-												value={metric.leadsCount.toString()}
+												value={getInputValue(metric.id, "leads", metric.leadsCount.toString())}
 												onChange={(e) =>
-													handleUpdateField(metric.id, "leads", e.target.value)
+													handleInputChange(metric.id, "leads", e.target.value)
 												}
+												onBlur={() => handleInputBlur(metric.id, "leads")}
 												aria-label={`Лиды ${metric.nameRu}`}
 												className="romi-table-input text-center"
 											/>
@@ -723,10 +769,11 @@ export function MarketingRomiTable() {
 												type="number"
 												min="0"
 												step="1"
-												value={metric.primaryPatientsCount.toString()}
+												value={getInputValue(metric.id, "patients", metric.primaryPatientsCount.toString())}
 												onChange={(e) =>
-													handleUpdateField(metric.id, "patients", e.target.value)
+													handleInputChange(metric.id, "patients", e.target.value)
 												}
+												onBlur={() => handleInputBlur(metric.id, "patients")}
 												aria-label={`Первичные ${metric.nameRu}`}
 												className="romi-table-input text-center"
 											/>
@@ -740,10 +787,11 @@ export function MarketingRomiTable() {
 												type="number"
 												min="0"
 												step="1000"
-												value={revenueRub}
+												value={getInputValue(metric.id, "revenueRub", revenueRub)}
 												onChange={(e) =>
-													handleUpdateField(metric.id, "revenueRub", e.target.value)
+													handleInputChange(metric.id, "revenueRub", e.target.value)
 												}
+												onBlur={() => handleInputBlur(metric.id, "revenueRub")}
 												aria-label={`Выручка ${metric.nameRu}`}
 												className="romi-table-input text-right"
 											/>
@@ -762,10 +810,11 @@ export function MarketingRomiTable() {
 												type="number"
 												min="0"
 												step="1"
-												value={metric.repeatVisitsCount.toString()}
+												value={getInputValue(metric.id, "repeatVisits", metric.repeatVisitsCount.toString())}
 												onChange={(e) =>
-													handleUpdateField(metric.id, "repeatVisits", e.target.value)
+													handleInputChange(metric.id, "repeatVisits", e.target.value)
 												}
+												onBlur={() => handleInputBlur(metric.id, "repeatVisits")}
 												aria-label={`Повторные визиты ${metric.nameRu}`}
 												className="romi-table-input text-center"
 											/>
@@ -858,7 +907,11 @@ export function MarketingRomiTable() {
 							<td className="romi-total-center">
 								<span
 									className={`romi-badge total ${
-										(summary.overallRomiPercent ?? 0) >= 0 ? "positive" : "negative"
+										summary.overallRomiPercent === null
+											? "neutral"
+											: summary.overallRomiPercent >= 0
+											  ? "positive"
+											  : "negative"
 									}`}
 								>
 									{summary.overallRomiFormatted}
