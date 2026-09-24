@@ -99,13 +99,6 @@ export function useFinanceLogic({
 			return;
 		}
 
-		if (!paymentPatientContextReady) {
-			setError(
-				paymentPatientContextMessage ||
-					"Оплата не записана: сначала переключите открытый прием на этого пациента.",
-			);
-			return;
-		}
 		const amountRub = normalizeRubAmountInput(paymentAmount);
 		const amountMissingStep = validateRubAmountInput(paymentAmount);
 		if (amountMissingStep || amountRub === null) {
@@ -162,13 +155,12 @@ export function useFinanceLogic({
 		const administrativePayerDocument = patientIsPayer
 			? (documentPatient.administrativeProfile?.identityDocument?.trim() ?? "")
 			: "";
-		const normalizedPayerInn = taxReadyPaymentRequested
+		const rawPayerInn = taxReadyPaymentRequested
 			? explicitPayerInn
 			: explicitPayerInn || administrativePayerInn;
-		if (normalizedPayerInn && !/^\d{10}$|^\d{12}$/.test(normalizedPayerInn)) {
-			setError("ИНН плательщика должен содержать 10 или 12 цифр");
-			return;
-		}
+		const cleanPayerInn = rawPayerInn.replace(/\D/g, "");
+		// Мандаты 8e, 8n (54-ФЗ): с физлиц ИНН строго опционален и никогда не блокирует кассу
+		const normalizedPayerInn = /^\d{10}$|^\d{12}$/.test(cleanPayerInn) ? cleanPayerInn : null;
 		setIsPaymentSaving(true);
 		try {
 			const documentForPayment =

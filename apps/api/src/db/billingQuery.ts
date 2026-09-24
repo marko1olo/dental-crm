@@ -6,7 +6,7 @@ import {
 	type Payment,
 	sumKopecks,
 } from "@dental/shared";
-import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { chargeLineKopecks, toKopecks } from "../money/patientDebt.js";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
@@ -85,26 +85,35 @@ export async function findPaymentByClientMutationIdInDb(
 	clientMutationId: string | null | undefined,
 ): Promise<Payment | null> {
 	if (!clientMutationId) return null;
-	const [payment] = await db
+	const matchedPayments = await db
 		.select()
 		.from(schema.payments)
 		.where(
 			and(
 				eq(schema.payments.organizationId, organizationId),
-				eq(schema.payments.clientMutationId, clientMutationId),
+				or(
+					eq(schema.payments.clientMutationId, clientMutationId),
+					eq(schema.payments.clientMutationId, `${clientMutationId}:cash`),
+					eq(schema.payments.clientMutationId, `${clientMutationId}:electronic`),
+				),
 			),
-		)
-		.limit(1);
+		);
+	if (matchedPayments.length === 0) return null;
+	const payment = matchedPayments[0];
 	if (!payment) return null;
+	const isSplitMatch = matchedPayments.length > 1 || (payment.clientMutationId?.includes(":") ?? false);
+	const totalAmountRub = isSplitMatch
+		? matchedPayments.reduce((acc, p) => acc + Number(p.amountRub), 0)
+		: payment.amountRub;
 	return {
 		id: payment.id,
 		organizationId: payment.organizationId,
 		patientId: payment.patientId,
 		visitId: payment.visitId,
 		documentId: payment.documentId,
-		amountRub: payment.amountRub,
+		amountRub: totalAmountRub,
 		method: payment.method,
-		clientMutationId: payment.clientMutationId,
+		clientMutationId,
 		fiscalReceiptNumber: payment.fiscalReceiptNumber,
 		fiscalReceiptIssuedAt: payment.fiscalReceiptIssuedAt,
 		fiscalReceiptUrl: payment.fiscalReceiptUrl,
@@ -182,6 +191,37 @@ export async function createPaymentInDb(
 		throw new Error("Сумма оплаты не может быть отрицательной.");
 	}
 
+	const rawCashKop =
+		input.cashAmountKopecks ??
+		(input.cashAmountRub != null ? Math.round(input.cashAmountRub * 100) : 0);
+	const rawElectronicKop =
+		input.electronicAmountKopecks ??
+		(input.electronicAmountRub != null ? Math.round(input.electronicAmountRub * 100) : 0);
+	const isSplit =
+		(rawCashKop > 0 && rawElectronicKop > 0) ||
+		input.method === "split" ||
+		input.method === "mixed";
+
+	let resolvedCashKop = rawCashKop;
+	let resolvedElectronicKop = rawElectronicKop;
+
+	if (isSplit) {
+		if (resolvedCashKop === 0 && resolvedElectronicKop > 0 && resolvedElectronicKop < incomingPaymentKopecks) {
+			resolvedCashKop = incomingPaymentKopecks - resolvedElectronicKop;
+		} else if (resolvedElectronicKop === 0 && resolvedCashKop > 0 && resolvedCashKop < incomingPaymentKopecks) {
+			resolvedElectronicKop = incomingPaymentKopecks - resolvedCashKop;
+		}
+
+		if (resolvedCashKop + resolvedElectronicKop !== incomingPaymentKopecks) {
+			throw new Error(
+				`Сумма частей смешанной оплаты (${formatKopecksRu(resolvedCashKop + resolvedElectronicKop)}) не совпадает с общей суммой (${formatKopecksRu(incomingPaymentKopecks)}).`,
+			);
+		}
+		if (resolvedCashKop < 0 || resolvedElectronicKop < 0) {
+			throw new Error("Части смешанной оплаты не могут быть отрицательными.");
+		}
+	}
+
 	// Мандаты 8e п. 7 и 8n: Свобода скидок и переделок соло-врача (до 100%).
 	// Если скидка 100% (гарантийная переделка, персонал, бесплатный прием), incomingPaymentKopecks === 0
 	// НЕ выбрасывает ошибку, а фиксирует гарантийный платеж / акт со статусом 100% скидки.
@@ -206,16 +246,20 @@ export async function createPaymentInDb(
 			await tx.execute(
 				sql`SELECT pg_advisory_xact_lock(hashtext(${organizationId} || ':payment_mutation:' || ${input.clientMutationId}))`,
 			);
-			const [alreadyCreated] = await tx
+			const alreadyCreatedPayments = await tx
 				.select()
 				.from(schema.payments)
 				.where(
 					and(
 						eq(schema.payments.organizationId, organizationId),
-						eq(schema.payments.clientMutationId, input.clientMutationId),
+						or(
+							eq(schema.payments.clientMutationId, input.clientMutationId),
+							eq(schema.payments.clientMutationId, `${input.clientMutationId}:cash`),
+							eq(schema.payments.clientMutationId, `${input.clientMutationId}:electronic`),
+						),
 					),
-				)
-				.limit(1);
+				);
+			const alreadyCreated = alreadyCreatedPayments[0];
 			if (alreadyCreated) {
 				return {
 					id: alreadyCreated.id,
@@ -223,9 +267,9 @@ export async function createPaymentInDb(
 					patientId: alreadyCreated.patientId,
 					visitId: alreadyCreated.visitId,
 					documentId: alreadyCreated.documentId,
-					amountRub: alreadyCreated.amountRub,
-					method: alreadyCreated.method,
-					clientMutationId: alreadyCreated.clientMutationId,
+					amountRub: input.amountRub,
+					method: (input.method === "split" || input.method === "mixed") ? "card" : alreadyCreated.method,
+					clientMutationId: input.clientMutationId,
 					fiscalReceiptNumber: alreadyCreated.fiscalReceiptNumber,
 					fiscalReceiptIssuedAt: alreadyCreated.fiscalReceiptIssuedAt,
 					fiscalReceiptUrl: alreadyCreated.fiscalReceiptUrl,
@@ -683,33 +727,111 @@ export async function createPaymentInDb(
 			? (input.note || "Гарантийная переделка (скидка 100%)")
 			: (input.note || null);
 
-		const [newPayment] = await tx
-			.insert(schema.payments)
-			.values({
-				organizationId,
-				patientId: input.patientId,
-				visitId: input.visitId || null,
-				documentId: input.documentId || null,
-				amountRub: input.amountRub,
-				method: input.method,
-				fiscalReceiptNumber: input.fiscalReceiptNumber || null,
-				fiscalReceiptIssuedAt: input.fiscalReceiptIssuedAt || null,
-				fiscalReceiptUrl: input.fiscalReceiptUrl || null,
-				fiscalReceipt: input.fiscalReceipt || null,
-				clientMutationId: input.clientMutationId || null,
-				payerFullName: input.payerFullName || null,
-				payerInn: input.payerInn || null,
-				payerBirthDate: input.payerBirthDate || null,
-				payerIdentityDocument: input.payerIdentityDocument || null,
-				payerRelationship: input.payerRelationship || null,
-				taxDeductionCode: input.taxDeductionCode || null,
-				note: effectivePaymentNote,
-				status: "paid",
-			})
-			.returning();
+		let primaryPayment: typeof schema.payments.$inferSelect;
 
-		if (!newPayment) {
-			throw new Error("Не удалось создать запись платежа в базе данных.");
+		if (isSplit && resolvedCashKop > 0 && resolvedElectronicKop > 0) {
+			const cashAmountRub = Number((resolvedCashKop / 100).toFixed(2));
+			const electronicAmountRub = Number((resolvedElectronicKop / 100).toFixed(2));
+
+			const [cashPayment] = await tx
+				.insert(schema.payments)
+				.values({
+					organizationId,
+					patientId: input.patientId,
+					visitId: input.visitId || null,
+					documentId: input.documentId || null,
+					amountRub: cashAmountRub,
+					method: "cash",
+					fiscalReceiptNumber: input.fiscalReceiptNumber || null,
+					fiscalReceiptIssuedAt: input.fiscalReceiptIssuedAt || null,
+					fiscalReceiptUrl: input.fiscalReceiptUrl || null,
+					fiscalReceipt: input.fiscalReceipt || null,
+					clientMutationId: input.clientMutationId
+						? `${input.clientMutationId}:cash`
+						: null,
+					payerFullName: input.payerFullName || null,
+					payerInn: input.payerInn || null,
+					payerBirthDate: input.payerBirthDate || null,
+					payerIdentityDocument: input.payerIdentityDocument || null,
+					payerRelationship: input.payerRelationship || null,
+					taxDeductionCode: input.taxDeductionCode || null,
+					note: effectivePaymentNote
+						? `${effectivePaymentNote} (наличные: ${cashAmountRub} ₽)`
+						: `Смешанная оплата (наличные: ${cashAmountRub} ₽)`,
+					status: "paid",
+				})
+				.returning();
+
+			const [electronicPayment] = await tx
+				.insert(schema.payments)
+				.values({
+					organizationId,
+					patientId: input.patientId,
+					visitId: input.visitId || null,
+					documentId: input.documentId || null,
+					amountRub: electronicAmountRub,
+					method: "card",
+					fiscalReceiptNumber: input.fiscalReceiptNumber || null,
+					fiscalReceiptIssuedAt: input.fiscalReceiptIssuedAt || null,
+					fiscalReceiptUrl: input.fiscalReceiptUrl || null,
+					fiscalReceipt: input.fiscalReceipt || null,
+					clientMutationId: input.clientMutationId
+						? `${input.clientMutationId}:electronic`
+						: null,
+					payerFullName: input.payerFullName || null,
+					payerInn: input.payerInn || null,
+					payerBirthDate: input.payerBirthDate || null,
+					payerIdentityDocument: input.payerIdentityDocument || null,
+					payerRelationship: input.payerRelationship || null,
+					taxDeductionCode: input.taxDeductionCode || null,
+					note: effectivePaymentNote
+						? `${effectivePaymentNote} (безналичные: ${electronicAmountRub} ₽)`
+						: `Смешанная оплата (безналичные: ${electronicAmountRub} ₽)`,
+					status: "paid",
+				})
+				.returning();
+
+			const chosenPrimary = electronicPayment ?? cashPayment;
+			if (!chosenPrimary) {
+				throw new Error("Не удалось создать записи смешанной оплаты в базе данных.");
+			}
+			primaryPayment = chosenPrimary;
+		} else {
+			const effectiveMethod = (input.method === "split" || input.method === "mixed")
+				? "card"
+				: (input.method === "deposit" || (input.method as string) === "family_deposit")
+				? "family_wallet"
+				: input.method;
+
+			const [singlePayment] = await tx
+				.insert(schema.payments)
+				.values({
+					organizationId,
+					patientId: input.patientId,
+					visitId: input.visitId || null,
+					documentId: input.documentId || null,
+					amountRub: input.amountRub,
+					method: effectiveMethod,
+					fiscalReceiptNumber: input.fiscalReceiptNumber || null,
+					fiscalReceiptIssuedAt: input.fiscalReceiptIssuedAt || null,
+					fiscalReceiptUrl: input.fiscalReceiptUrl || null,
+					fiscalReceipt: input.fiscalReceipt || null,
+					clientMutationId: input.clientMutationId || null,
+					payerFullName: input.payerFullName || null,
+					payerInn: input.payerInn || null,
+					payerBirthDate: input.payerBirthDate || null,
+					payerIdentityDocument: input.payerIdentityDocument || null,
+					payerRelationship: input.payerRelationship || null,
+					taxDeductionCode: input.taxDeductionCode || null,
+					note: effectivePaymentNote,
+					status: "paid",
+				})
+				.returning();
+
+			if (!singlePayment) {
+				throw new Error("Не удалось создать запись платежа в базе данных.");
+			}
+			primaryPayment = singlePayment;
 		}
 
 		if (input.documentId) {
@@ -749,15 +871,21 @@ export async function createPaymentInDb(
 		}
 
 		if (input.fiscalReceiptNumber || input.fiscalReceipt) {
+			const cashRubVal = isSplit ? Number((resolvedCashKop / 100).toFixed(2)) : (input.method === "cash" ? input.amountRub : 0);
+			const electronicRubVal = isSplit ? Number((resolvedElectronicKop / 100).toFixed(2)) : (input.method !== "cash" ? input.amountRub : 0);
 			await tx.insert(schema.fiscalReceiptQueue).values({
 				organizationId,
-				paymentId: newPayment.id,
+				paymentId: primaryPayment.id,
 				visitId: input.visitId || null,
 				receiptType: input.fiscalReceipt?.operationType || "income",
 				status: "pending_print",
 				payloadJson: {
 					amountRub: input.amountRub,
-					method: input.method,
+					method: isSplit ? "split" : input.method,
+					cashRub: cashRubVal,
+					electronicRub: electronicRubVal,
+					cashKopecks: isSplit ? resolvedCashKop : (input.method === "cash" ? incomingPaymentKopecks : 0),
+					electronicKopecks: isSplit ? resolvedElectronicKop : (input.method !== "cash" ? incomingPaymentKopecks : 0),
 					fiscalReceiptNumber: input.fiscalReceiptNumber,
 					fiscalReceipt: input.fiscalReceipt,
 					payerFullName: input.payerFullName,
@@ -770,28 +898,28 @@ export async function createPaymentInDb(
 		}
 
 		return {
-			id: newPayment.id,
-			organizationId: newPayment.organizationId,
-			patientId: newPayment.patientId,
-			visitId: newPayment.visitId,
-			documentId: newPayment.documentId,
-			amountRub: newPayment.amountRub,
-			method: newPayment.method,
-			clientMutationId: newPayment.clientMutationId,
-			fiscalReceiptNumber: newPayment.fiscalReceiptNumber,
-			fiscalReceiptIssuedAt: newPayment.fiscalReceiptIssuedAt,
-			fiscalReceiptUrl: newPayment.fiscalReceiptUrl,
-			fiscalReceipt: newPayment.fiscalReceipt,
-			payerFullName: newPayment.payerFullName,
-			payerInn: newPayment.payerInn,
-			payerBirthDate: newPayment.payerBirthDate,
-			payerIdentityDocument: newPayment.payerIdentityDocument,
-			payerRelationship: newPayment.payerRelationship,
-			taxDeductionCode: narrowTaxDeductionCode(newPayment.taxDeductionCode),
-			note: newPayment.note,
-			createdAt: newPayment.createdAt.toISOString(),
-			paidAt: newPayment.paidAt.toISOString(),
-			status: newPayment.status,
+			id: primaryPayment.id,
+			organizationId: primaryPayment.organizationId,
+			patientId: primaryPayment.patientId,
+			visitId: primaryPayment.visitId,
+			documentId: primaryPayment.documentId,
+			amountRub: input.amountRub,
+			method: (input.method === "split" || input.method === "mixed") ? "card" : primaryPayment.method,
+			clientMutationId: input.clientMutationId || primaryPayment.clientMutationId,
+			fiscalReceiptNumber: primaryPayment.fiscalReceiptNumber,
+			fiscalReceiptIssuedAt: primaryPayment.fiscalReceiptIssuedAt,
+			fiscalReceiptUrl: primaryPayment.fiscalReceiptUrl,
+			fiscalReceipt: primaryPayment.fiscalReceipt,
+			payerFullName: primaryPayment.payerFullName,
+			payerInn: primaryPayment.payerInn,
+			payerBirthDate: primaryPayment.payerBirthDate,
+			payerIdentityDocument: primaryPayment.payerIdentityDocument,
+			payerRelationship: primaryPayment.payerRelationship,
+			taxDeductionCode: narrowTaxDeductionCode(primaryPayment.taxDeductionCode),
+			note: primaryPayment.note,
+			createdAt: primaryPayment.createdAt.toISOString(),
+			paidAt: primaryPayment.paidAt.toISOString(),
+			status: primaryPayment.status,
 		};
 	});
 }

@@ -994,7 +994,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			if (effectiveCertificateRub > 0) parts.push(`сертификат ${effectiveCertificateRub} ₽`);
 			if (effectiveBonusRub > 0) parts.push(`бонусы ${effectiveBonusRub} ₽`);
 
-			const primaryMethod = effectiveCashRub > effectiveCardRub ? "cash" : "card";
+			const cashKop = Math.round(effectiveCashRub * 100);
+			const electronicKop = Math.round((effectiveCardRub + effectiveSbpRub) * 100);
+			const isSplitPayment = cashKop > 0 && electronicKop > 0;
+			const primaryMethod = isSplitPayment
+				? "split"
+				: effectiveCashRub > 0 && effectiveCardRub === 0 && effectiveSbpRub === 0
+				? "cash"
+				: effectiveDepositRub > 0 && effectiveCashRub === 0 && effectiveCardRub === 0 && effectiveSbpRub === 0
+				? "family_wallet"
+				: effectiveSbpRub > 0 && effectiveCashRub === 0 && effectiveCardRub === 0
+				? "online"
+				: "card";
 			const innNote = buyerInn.trim() ? ` [ИНН плательщика: ${buyerInn.trim()}]` : "";
 			const stomxNote = ` [ДДС: ${activeCategoryTitle} | Касса: ${activeBoxTitle}]`;
 			const res = await fetch("/api/billing/payments", {
@@ -1003,7 +1014,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 				body: JSON.stringify({
 					patientId,
 					amountRub: totalDueRub,
-					method: primaryMethod,
+					method: isSplitPayment ? "split" : primaryMethod,
+					cashAmountKopecks: cashKop > 0 ? cashKop : undefined,
+					electronicAmountKopecks: electronicKop > 0 ? electronicKop : undefined,
+					cashAmountRub: effectiveCashRub > 0 ? effectiveCashRub : undefined,
+					electronicAmountRub: (effectiveCardRub + effectiveSbpRub) > 0 ? Number((effectiveCardRub + effectiveSbpRub).toFixed(2)) : undefined,
 					cashBoxType: selectedCashBoxType,
 					receiptTypeAlias: selectedReceiptAlias,
 					cashFlowCategory: activeCategoryTitle,
@@ -1060,7 +1075,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			const amountRubNumber = totalDueRub;
 			const clientMutationId = createCompositeIdempotencyKey(
 				`${source}:${Date.now()}-${++paymentMutationSeq}`,
-				{ patientId, amountRub: amountRubNumber, method: source === "family" ? "family_deposit" : "deposit", cashBoxType: selectedCashBoxType }
+				{ patientId, amountRub: amountRubNumber, method: "family_wallet", cashBoxType: selectedCashBoxType }
 			);
 			const headers = denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
@@ -1074,7 +1089,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 				body: JSON.stringify({
 					patientId,
 					amountRub: amountRubNumber,
-					method: source === "family" ? "family_deposit" : "deposit",
+					method: "family_wallet",
 					cashBoxType: selectedCashBoxType,
 					receiptTypeAlias: selectedReceiptAlias,
 					cashFlowCategory: activeCategoryTitle,

@@ -547,6 +547,53 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		});
 		const compositeIdempotencyKey = createFiscalCompositeIdempotencyKey(rawUuid, signature);
 
+		const cashKop = Math.round(effectiveCashRub * 100);
+		const electronicKop = Math.round((effectiveCardRub + effectiveSbpRub) * 100);
+		const isSplitPayment = cashKop > 0 && electronicKop > 0;
+		const primaryMethod = isSplitPayment
+			? "split"
+			: effectiveCashRub > 0 && effectiveCardRub === 0 && effectiveSbpRub === 0
+			? "cash"
+			: effectiveDepositRub > 0 && effectiveCashRub === 0 && effectiveCardRub === 0 && effectiveSbpRub === 0
+			? "family_wallet"
+			: (activeMethod === "sbp_qr" || effectiveSbpRub > 0) && effectiveCashRub === 0 && effectiveCardRub === 0
+			? "online"
+			: activeMethod === "dms_insurance"
+			? "insurance"
+			: "card";
+
+		const recordCrmPayment = async (noteSuffix = "") => {
+			if (!patientId || effectiveTotalRub <= 0) return;
+			try {
+				const headers = denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": compositeIdempotencyKey,
+				});
+
+				if (typeof fetch === "function") {
+					await fetch("/api/billing/payments", {
+						method: "POST",
+						headers,
+						body: JSON.stringify({
+							patientId,
+							amountRub: effectiveTotalRub,
+							method: isSplitPayment ? "split" : primaryMethod,
+							cashAmountKopecks: cashKop > 0 ? cashKop : undefined,
+							electronicAmountKopecks: electronicKop > 0 ? electronicKop : undefined,
+							cashAmountRub: effectiveCashRub > 0 ? effectiveCashRub : undefined,
+							electronicAmountRub: (effectiveCardRub + effectiveSbpRub) > 0 ? Number((effectiveCardRub + effectiveSbpRub).toFixed(2)) : undefined,
+							clientMutationId: compositeIdempotencyKey,
+							note: `Быстрый расчет 54-ФЗ (${effectiveCashierFullName})${noteSuffix}: ${isSplitPayment ? `сплит (нал: ${effectiveCashRub} ₽, безнал: ${(effectiveCardRub + effectiveSbpRub).toFixed(2)} ₽)` : primaryMethod}`,
+						}),
+					}).catch((fetchErr) => {
+						console.warn("[FastCheckoutModal] /api/billing/payments error:", fetchErr);
+					});
+				}
+			} catch (crmErr) {
+				console.warn("[FastCheckoutModal] Failed to record payment in CRM:", crmErr);
+			}
+		};
+
 		const payload = generate54FzFiscalPayload(
 			{
 				orderId,
@@ -619,6 +666,8 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 				"Платёж сохранён в буфер отложенной фискализации 54-ФЗ. Пациент рассчитан, стойка свободна!",
 				"success"
 			);
+
+			await recordCrmPayment(" [отложенная фискализация]");
 
 			if (onPaymentComplete) {
 				onPaymentComplete({ ...payload, offlineBuffered: true });
@@ -699,48 +748,12 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 					showToast("Чек 54-ФЗ успешно пробит на кассовом аппарате!", "success");
 				}
 
-				if (patientId && effectiveTotalRub > 0) {
-					try {
-						const primaryMethod =
-							effectiveCashRub > 0 && effectiveCardRub === 0 && effectiveSbpRub === 0
-								? "cash"
-								: activeMethod === "cash"
-								? "cash"
-								: activeMethod === "sbp_qr"
-								? "online"
-								: activeMethod === "dms_insurance"
-								? "insurance"
-								: "card";
-
-						const headers = denteAdminSecretRequestHeaders({
-							"Content-Type": "application/json",
-							"Idempotency-Key": compositeIdempotencyKey,
-						});
-
-						if (typeof fetch === "function") {
-							await fetch("/api/billing/payments", {
-								method: "POST",
-								headers,
-								body: JSON.stringify({
-									patientId,
-									amountRub: effectiveTotalRub,
-									method: primaryMethod,
-									clientMutationId: compositeIdempotencyKey,
-									note: `Быстрый расчет 54-ФЗ (${effectiveCashierFullName}): ${primaryMethod}`,
-								}),
-							}).catch((fetchErr) => {
-								console.warn("[FastCheckoutModal] /api/billing/payments error:", fetchErr);
-							});
-						}
-					} catch (crmErr) {
-						console.warn("[FastCheckoutModal] Failed to record payment in CRM:", crmErr);
-					}
-				}
-
 				if (onPaymentComplete) {
 					onPaymentComplete(payload);
 				}
 			}
+
+			await recordCrmPayment();
 
 			setTimeout(() => {
 				setIsPrinting(false);
@@ -784,6 +797,8 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 				"ККТ не отвечает: чек сохранен в локальный буфер отложенной фискализации 54-ФЗ. Пациент отпущен!",
 				"warning"
 			);
+
+			await recordCrmPayment(" [аварийный буфер]");
 
 			if (onPaymentComplete) {
 				onPaymentComplete({ ...payload, offlineBuffered: true });
