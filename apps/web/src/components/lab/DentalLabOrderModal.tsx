@@ -43,6 +43,7 @@ import {
 	formatJawScopeLabel,
 	CANONICAL_5_CLINICAL_LAB_STATUSES,
 	mapTo5StageLabStatus,
+	calculateWorkingDaysRemaining,
 } from "./labMath";
 import {
 	rublesToKopecks,
@@ -1040,16 +1041,30 @@ export function DentalLabOrderModal({
 
 							{/* Fitting Trial Dates Box (Eliminate <= 11px micro-fonts) */}
 							<div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 space-y-3">
-								<div className="flex items-center gap-2">
-									<Calendar className="w-4 h-4 text-[var(--teal)]" />
-									<span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-										Даты клинических примерок у пациента
-									</span>
+								<div className="flex items-center justify-between flex-wrap gap-2">
+									<div className="flex items-center gap-2">
+										<Calendar className="w-4 h-4 text-[var(--teal)]" />
+										<span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+											Даты клинических примерок и дедлайн сдачи работы
+										</span>
+									</div>
+									{(() => {
+										const rem = calculateWorkingDaysRemaining(dueDate);
+										if (!rem) return null;
+										return (
+											<span
+												className={`px-2.5 py-0.5 rounded-lg text-xs font-bold border ${rem.badgeClass}`}
+												data-testid="lab-order-due-deadline-badge"
+											>
+												{rem.labelRu}
+											</span>
+										);
+									})()}
 								</div>
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+								<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 									<div className="space-y-1.5">
 										<label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-											1. Примерка каркаса (Framework Try-In)
+											1. Примерка каркаса (Framework)
 										</label>
 										<input
 											type="date"
@@ -1060,12 +1075,23 @@ export function DentalLabOrderModal({
 									</div>
 									<div className="space-y-1.5">
 										<label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-											2. Примерка керамики / Бисквит (Ceramic Try-In)
+											2. Примерка керамики / Бисквит
 										</label>
 										<input
 											type="date"
 											value={ceramicTrialDate}
 											onChange={(e) => setCeramicTrialDate(e.target.value)}
+											className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[var(--teal)]"
+										/>
+									</div>
+									<div className="space-y-1.5">
+										<label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+											3. Срок сдачи (Дедлайн ЗТЛ)
+										</label>
+										<input
+											type="date"
+											value={dueDate}
+											onChange={(e) => setDueDate(e.target.value)}
 											className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[var(--teal)]"
 										/>
 									</div>
@@ -1120,7 +1146,7 @@ export function DentalLabOrderModal({
 												</div>
 												<div className="text-xs font-bold truncate mt-0.5">{item.shortLabelRu}</div>
 												<div className="text-[10px] mt-0.5 opacity-80">
-													{isCurrent ? "● Текущий" : isPassed ? "✓ Пройден" : "Ожидание"}
+													{isCurrent ? "Текущий" : isPassed ? "Пройден" : "Ожидание"}
 												</div>
 											</button>
 										);

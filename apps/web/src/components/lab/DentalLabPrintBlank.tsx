@@ -1,4 +1,4 @@
-import { Printer } from "lucide-react";
+import { Printer, Calendar, Clock, CheckCircle2 } from "lucide-react";
 import { money } from "../../AppHelpers";
 import {
 	CONSTRUCTION_TYPES,
@@ -9,6 +9,8 @@ import {
 	formatJawScopeLabel,
 	CANONICAL_5_CLINICAL_LAB_STATUSES,
 	mapTo5StageLabStatus,
+	calculateWorkingDaysRemaining,
+	formatPatientName152Fz,
 } from "./labMath";
 
 export interface DentalLabPrintBlankProps {
@@ -16,6 +18,7 @@ export interface DentalLabPrintBlankProps {
 	secureToken: string;
 	formPatientName: string;
 	formDoctorName: string;
+	clinicName?: string;
 	selectedTeeth: number[];
 	jawScope?: JawScope | null;
 	constructionType: string;
@@ -36,6 +39,7 @@ export interface DentalLabPrintBlankProps {
 	surfaceTexture?: string;
 	cementGapMicrons?: number;
 	impressionType?: string;
+	impressionDate?: string | null;
 	frameworkTrialDate?: string | null;
 	ceramicTrialDate?: string | null;
 	dueDate?: string | null;
@@ -54,6 +58,7 @@ export function DentalLabPrintBlank({
 	secureToken,
 	formPatientName,
 	formDoctorName,
+	clinicName = "ООО «ДЕНТЕ» · Стоматологическая клиника",
 	selectedTeeth,
 	jawScope,
 	constructionType,
@@ -74,6 +79,7 @@ export function DentalLabPrintBlank({
 	surfaceTexture,
 	cementGapMicrons,
 	impressionType = "a_silicone",
+	impressionDate,
 	frameworkTrialDate,
 	ceramicTrialDate,
 	dueDate,
@@ -97,6 +103,9 @@ export function DentalLabPrintBlank({
 			? shadeBleach
 			: shadeClassical;
 
+	const patientFio = formatPatientName152Fz(formPatientName);
+	const deadlineInfo = calculateWorkingDaysRemaining(dueDate);
+
 	const impressionLabels: Record<string, string> = {
 		a_silicone: "А-силикон (Винилполисилоксан / VPS)",
 		c_silicone: "С-силикон (Конденсационный)",
@@ -108,8 +117,13 @@ export function DentalLabPrintBlank({
 		pvs_silicone: "PVS-силикон",
 	};
 
+	const formattedOrderDate = impressionDate
+		? new Date(impressionDate).toLocaleDateString("ru-RU")
+		: new Date().toLocaleDateString("ru-RU");
+
 	return (
 		<div className="space-y-6">
+			{/* Header Toolbar */}
 			<div className="flex items-center justify-between flex-wrap gap-3">
 				<div>
 					<h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 m-0">
@@ -122,6 +136,7 @@ export function DentalLabPrintBlank({
 				<button
 					type="button"
 					onClick={handlePrint}
+					data-testid="print-blank-action-btn"
 					className="min-h-[36px] h-9 px-4 py-1.5 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer"
 				>
 					<Printer className="w-4 h-4" />
@@ -138,18 +153,31 @@ export function DentalLabPrintBlank({
 				{/* Blank Header */}
 				<div className="flex justify-between items-start border-b-2 border-slate-900 pb-3">
 					<div>
-						<h1 className="text-lg sm:text-xl font-black tracking-wide uppercase m-0">
+						<div className="text-[11px] font-black uppercase tracking-wider text-slate-600">
+							{clinicName}
+						</div>
+						<h1 className="text-lg sm:text-xl font-black tracking-wide uppercase m-0 mt-0.5">
 							Наряд-заказ в зуботехническую лабораторию (Форма № ЗТЛ-1) № {gostOrderNumber}
 						</h1>
 						<p className="text-xs text-slate-600 mt-0.5 m-0 font-medium">
 							Стоматологическая медицинская организация · Отделение ортопедии и цифрового зубопротезирования CAD/CAM
 						</p>
 					</div>
-					<div className="text-right">
-						<span className="text-xs font-bold block">Дата приема: {new Date().toLocaleDateString("ru-RU")}</span>
+					<div className="text-right shrink-0">
+						<span className="text-xs font-bold block">
+							Дата сдачи слепка/скана: <strong>{formattedOrderDate}</strong>
+						</span>
 						{dueDate && (
-							<span className="text-xs font-bold text-rose-600 block">
+							<span className="text-xs font-bold text-rose-600 block mt-0.5">
 								Срок сдачи: {new Date(dueDate).toLocaleDateString("ru-RU")}
+							</span>
+						)}
+						{deadlineInfo && (
+							<span
+								className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold border ${deadlineInfo.badgeClass}`}
+								data-testid="print-blank-deadline-badge"
+							>
+								{deadlineInfo.labelRu}
 							</span>
 						)}
 					</div>
@@ -177,8 +205,15 @@ export function DentalLabPrintBlank({
 				{/* Info Table */}
 				<div className="grid grid-cols-2 gap-4 text-xs">
 					<div className="space-y-1.5">
-						<div><strong>Пациент:</strong> <span className="font-bold">{formPatientName}</span></div>
-						<div><strong>Лечащий врач:</strong> <span className="font-bold">{formDoctorName}</span></div>
+						<div>
+							<strong>Пациент:</strong> <span className="font-bold">{patientFio.fullName}</span>{" "}
+							<span className="text-[11px] text-slate-500 font-normal">
+								(152-ФЗ курьерский: <strong>{patientFio.courierMaskedName}</strong>)
+							</span>
+						</div>
+						<div>
+							<strong>Врач-ортопед:</strong> <span className="font-bold">{formDoctorName}</span>
+						</div>
 						<div>
 							<strong>Зубная формула (FDI):</strong>{" "}
 							<span className="font-bold text-sm bg-slate-100 px-2 py-0.5 rounded">
@@ -189,13 +224,33 @@ export function DentalLabPrintBlank({
 									: "Челюсть целиком / Общечелюстное изделие"}
 							</span>
 						</div>
-						<div><strong>Слепок / Оттискная масса:</strong> <span className="font-bold">{impressionLabels[impressionType] || impressionType}</span></div>
+						<div>
+							<strong>Слепок / Оттискная масса:</strong>{" "}
+							<span className="font-bold">{impressionLabels[impressionType] || impressionType}</span>
+						</div>
 					</div>
 					<div className="space-y-1.5">
-						<div><strong>Вид конструкции:</strong> <span className="font-bold">{CONSTRUCTION_TYPES.find((c) => c.id === constructionType)?.name || constructionType}</span></div>
-						<div><strong>Материал каркаса:</strong> <span className="font-bold">{LAB_MATERIALS.find((m) => m.id === material)?.name || material}</span></div>
-						<div><strong>Основной цвет VITA:</strong> <span className="font-bold">{finalShade}</span> {shadeStump ? `(Цвет культи: ${shadeStump})` : ""}</div>
-						<div><strong>Гарантийный срок:</strong> <span className="font-bold">2 года (ГОСТ Р 51087-97 / Рекомендации СтАР)</span></div>
+						<div>
+							<strong>Вид конструкции:</strong>{" "}
+							<span className="font-bold">
+								{CONSTRUCTION_TYPES.find((c) => c.id === constructionType)?.name || constructionType}
+							</span>
+						</div>
+						<div>
+							<strong>Материал каркаса:</strong>{" "}
+							<span className="font-bold">
+								{LAB_MATERIALS.find((m) => m.id === material)?.name || material}
+							</span>
+						</div>
+						<div>
+							<strong>Основной цвет VITA:</strong>{" "}
+							<span className="font-bold">{finalShade}</span>{" "}
+							{shadeStump ? `(Культя: ${shadeStump})` : ""}
+						</div>
+						<div>
+							<strong>Гарантийный срок:</strong>{" "}
+							<span className="font-bold">2 года (ГОСТ Р 51087-97 / Рекомендации СтАР)</span>
+						</div>
 					</div>
 				</div>
 
@@ -205,21 +260,41 @@ export function DentalLabPrintBlank({
 						Техническое задание зубному технику:
 					</div>
 					<div className="grid grid-cols-2 gap-2 text-xs">
-						<div>• <strong>3-Зонная стратификация:</strong> Пришейка {shadeCervical} / Тело {shadeBody} / Край {shadeIncisal}</div>
-						<div>• <strong>Оптические свойства:</strong> {translucency} {mamelons ? "(Мамелоны)" : ""} {calcifications ? "(Кальцификаты)" : ""}</div>
-						<div>• <strong>Прикус / Окклюзия:</strong> В привычной окклюзии (по силиконовому регистрату / шаблону)</div>
-						<div>• <strong>Анатомия и контакты:</strong> Естественная анатомическая форма, физиологический контакт</div>
+						<div>
+							• <strong>3-Зонная стратификация:</strong> Пришейка {shadeCervical} / Тело {shadeBody} / Край {shadeIncisal}
+						</div>
+						<div>
+							• <strong>Оптические свойства:</strong> {translucency} {mamelons ? "(Мамелоны)" : ""}{" "}
+							{calcifications ? "(Кальцификаты)" : ""}
+						</div>
+						<div>
+							• <strong>Прикус / Окклюзия:</strong> В привычной окклюзии (по силиконовому регистрату / шаблону)
+						</div>
+						<div>
+							• <strong>Анатомия и контакты:</strong> Естественная анатомическая форма, физиологический контакт
+						</div>
 					</div>
-					{frameworkTrialDate && (
-						<div className="text-xs">
-							• <strong>Дата примерки каркаса:</strong> {new Date(frameworkTrialDate).toLocaleDateString("ru-RU")}
+
+					{/* Fitting and Due Dates */}
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 border-t border-slate-200 text-xs">
+						<div>
+							<strong>Примерка каркаса:</strong>{" "}
+							{frameworkTrialDate
+								? new Date(frameworkTrialDate).toLocaleDateString("ru-RU")
+								: "По готовности"}
 						</div>
-					)}
-					{ceramicTrialDate && (
-						<div className="text-xs">
-							• <strong>Дата примерки керамики:</strong> {new Date(ceramicTrialDate).toLocaleDateString("ru-RU")}
+						<div>
+							<strong>Примерка керамики:</strong>{" "}
+							{ceramicTrialDate
+								? new Date(ceramicTrialDate).toLocaleDateString("ru-RU")
+								: "По готовности"}
 						</div>
-					)}
+						<div>
+							<strong>Сдача готовой работы:</strong>{" "}
+							{dueDate ? new Date(dueDate).toLocaleDateString("ru-RU") : "Не назначена"}
+						</div>
+					</div>
+
 					{clinicalNotes && (
 						<div className="pt-1.5 text-xs italic text-slate-800">
 							<strong>Клинические указания:</strong> {clinicalNotes}
@@ -257,7 +332,7 @@ export function DentalLabPrintBlank({
 									</div>
 									<div className="text-xs font-bold mt-0.5 truncate">{item.shortLabelRu}</div>
 									<div className="text-[10px] mt-0.5 opacity-80">
-										{isCurrent ? "● ТЕКУЩИЙ" : isPassed ? "✓ ПРОЙДЕН" : "○ ОЖИДАНИЕ"}
+										{isCurrent ? "ТЕКУЩИЙ" : isPassed ? "ПРОЙДЕН" : "ОЖИДАНИЕ"}
 									</div>
 								</div>
 							);
@@ -266,10 +341,14 @@ export function DentalLabPrintBlank({
 				</div>
 
 				{/* Disinfection & SanPiN Mark */}
-				<div className="p-2.5 border border-dashed border-slate-300 rounded text-xs flex justify-between items-center text-slate-600">
-					<span>[СанПиН 3.3686-21] Оттиски дезинфицированы • [Мандат 8e п. 7] Срок плана лечения (&gt;30 дн.) не блокирует наряды ЗТЛ</span>
+				<div className="p-2.5 border border-dashed border-slate-300 rounded text-xs flex justify-between items-center text-slate-600 flex-wrap gap-2">
+					<span>
+						[СанПиН 3.3686-21] Оттиски дезинфицированы • [Мандат 8e п. 7] Срок плана лечения (&gt;30 дн.) не блокирует наряды ЗТЛ
+					</span>
 					{totalLabPriceRub != null && totalLabPriceRub > 0 && (
-						<span className="font-bold">Стоимость наряда: {money(totalLabPriceRub)}</span>
+						<span className="font-bold text-slate-900">
+							Стоимость наряда: {money(totalLabPriceRub)}
+						</span>
 					)}
 				</div>
 

@@ -406,6 +406,160 @@ export const VITA_3D_MASTER_SHADES = [
 	"5M1", "5M2", "5M3",
 ] as const;
 
+export interface VitaClassicalGroup {
+	readonly id: "A" | "B" | "C" | "D";
+	readonly name: string;
+	readonly toneRu: string;
+	readonly descRu: string;
+	readonly shades: readonly string[];
+}
+
+export const VITA_CLASSICAL_GROUPS: readonly VitaClassicalGroup[] = [
+	{
+		id: "A",
+		name: "Группа A",
+		toneRu: "Красновато-коричневый тон",
+		descRu: "Основной естественный дентинный оттенок (80% клинических случаев)",
+		shades: ["A1", "A2", "A3", "A3.5", "A4"],
+	},
+	{
+		id: "B",
+		name: "Группа B",
+		toneRu: "Красновато-желтый тон",
+		descRu: "Светлые и теплые желтоватые зубы высокой светлоты",
+		shades: ["B1", "B2", "B3", "B4"],
+	},
+	{
+		id: "C",
+		name: "Группа C",
+		toneRu: "Серый тон",
+		descRu: "Холодные сероватые и приглушенные оттенки дентина",
+		shades: ["C1", "C2", "C3", "C4"],
+	},
+	{
+		id: "D",
+		name: "Группа D",
+		toneRu: "Красновато-серый тон",
+		descRu: "Теплый серый тон с красновато-розовым подтоном",
+		shades: ["D2", "D3", "D4"],
+	},
+] as const;
+
+export interface Vita3dMasterGroup {
+	readonly level: number;
+	readonly name: string;
+	readonly descRu: string;
+	readonly shades: readonly string[];
+}
+
+export const VITA_3D_MASTER_GROUPS: readonly Vita3dMasterGroup[] = [
+	{
+		level: 1,
+		name: "Уровень 1 (L1)",
+		descRu: "Ультрасветлые естественные зубы",
+		shades: ["1M1", "1M2"],
+	},
+	{
+		level: 2,
+		name: "Уровень 2 (L2)",
+		descRu: "Светлые зубы (L-желтоватый, M-нейтральный, R-красноватый)",
+		shades: ["2L1.5", "2L2.5", "2M1", "2M2", "2M3", "2R1.5", "2R2.5"],
+	},
+	{
+		level: 3,
+		name: "Уровень 3 (L3)",
+		descRu: "Средняя светлота — золотой клинический стандарт",
+		shades: ["3L1.5", "3L2.5", "3M1", "3M2", "3M3", "3R1.5", "3R2.5"],
+	},
+	{
+		level: 4,
+		name: "Уровень 4 (L4)",
+		descRu: "Зрелый дентин повышенной насыщенности (Chroma)",
+		shades: ["4L1.5", "4L2.5", "4M1", "4M2", "4M3", "4R1.5", "4R2.5"],
+	},
+	{
+		level: 5,
+		name: "Уровень 5 (L5)",
+		descRu: "Максимальная насыщенность и глубина цвета",
+		shades: ["5M1", "5M2", "5M3"],
+	},
+] as const;
+
+export interface BleachShadeItem {
+	readonly id: string;
+	readonly name: string;
+	readonly system: "3d_bleach" | "ivoclar";
+	readonly descRu: string;
+}
+
+export const VITA_BLEACH_SHADES_CLASSIFIED: readonly BleachShadeItem[] = [
+	{ id: "0M1", name: "0M1", system: "3d_bleach", descRu: "VITA 3D Bleach — максимальная белизна" },
+	{ id: "0M2", name: "0M2", system: "3d_bleach", descRu: "VITA 3D Bleach — ультрасветлый оттенок" },
+	{ id: "0M3", name: "0M3", system: "3d_bleach", descRu: "VITA 3D Bleach — мягкий отбеленный" },
+	{ id: "BL1", name: "BL1", system: "ivoclar", descRu: "Ivoclar Bleach BL1 — белоснежный Hollywood" },
+	{ id: "BL2", name: "BL2", system: "ivoclar", descRu: "Ivoclar Bleach BL2 — экстра-светлый отбеленный" },
+	{ id: "BL3", name: "BL3", system: "ivoclar", descRu: "Ivoclar Bleach BL3 — естественный отбеленный" },
+	{ id: "BL4", name: "BL4", system: "ivoclar", descRu: "Ivoclar Bleach BL4 — мягкий осветленный" },
+] as const;
+
+export interface StratificationZones {
+	cervical: string;
+	body: string;
+	incisal: string;
+}
+
+/**
+ * Returns clinical 3-zone shade stratification preset based on primary shade.
+ * Cervical is generally +0.5 to +1 tone darker/warmer,
+ * Body is the primary dentin shade,
+ * Incisal is translucent or 1 tone lighter for enamel halo effect.
+ */
+export function getStratificationPreset(
+	primaryShade: string,
+	mode: "natural" | "monochrome" | "youth_translucent" = "natural",
+): StratificationZones {
+	const shade = (primaryShade || "A2").trim();
+	if (mode === "monochrome") {
+		return { cervical: shade, body: shade, incisal: shade };
+	}
+	if (mode === "youth_translucent") {
+		return {
+			cervical: shade,
+			body: shade,
+			incisal: shade === "A1" || shade === "B1" ? "0M1" : "A1",
+		};
+	}
+	const naturalMap: Record<string, { cervical: string; incisal: string }> = {
+		A1: { cervical: "A2", incisal: "0M2" },
+		A2: { cervical: "A3", incisal: "A1" },
+		A3: { cervical: "A3.5", incisal: "A2" },
+		"A3.5": { cervical: "A4", incisal: "A3" },
+		A4: { cervical: "A4", incisal: "A3.5" },
+		B1: { cervical: "B2", incisal: "0M2" },
+		B2: { cervical: "B3", incisal: "B1" },
+		B3: { cervical: "B4", incisal: "B2" },
+		B4: { cervical: "B4", incisal: "B3" },
+		C1: { cervical: "C2", incisal: "C1" },
+		C2: { cervical: "C3", incisal: "C1" },
+		C3: { cervical: "C4", incisal: "C2" },
+		C4: { cervical: "C4", incisal: "C3" },
+		D2: { cervical: "D3", incisal: "D2" },
+		D3: { cervical: "D4", incisal: "D2" },
+		D4: { cervical: "D4", incisal: "D3" },
+		"0M1": { cervical: "0M2", incisal: "0M1" },
+		"0M2": { cervical: "0M3", incisal: "0M1" },
+		"0M3": { cervical: "1M1", incisal: "0M2" },
+		"1M1": { cervical: "1M2", incisal: "0M1" },
+		"2M2": { cervical: "2M3", incisal: "2M1" },
+		"3M2": { cervical: "3M3", incisal: "3M1" },
+	};
+	const matched = naturalMap[shade];
+	if (matched) {
+		return { cervical: matched.cervical, body: shade, incisal: matched.incisal };
+	}
+	return { cervical: shade, body: shade, incisal: shade };
+}
+
 export interface ShadeSwatchInfo {
 	bg: string;
 	border: string;
@@ -833,6 +987,109 @@ export function addWorkingDays(startDate: Date, workingDays = 7): Date {
 	}
 	return result;
 }
+
+export interface WorkingDaysRemainingInfo {
+	workingDays: number;
+	calendarDays: number;
+	isOverdue: boolean;
+	isUrgent: boolean;
+	badgeClass: string;
+	labelRu: string;
+}
+
+/**
+ * Calculates working business days remaining until dueDate/fitting date (excluding Sat & Sun).
+ * Returns status badge style and clinical text per Mandate 8e item 7.
+ */
+export function calculateWorkingDaysRemaining(
+	targetDate?: string | Date | null,
+	fromDate: string | Date = new Date(),
+): WorkingDaysRemainingInfo | null {
+	if (!targetDate) return null;
+	const due = new Date(targetDate);
+	if (Number.isNaN(due.getTime())) return null;
+
+	const from = new Date(fromDate);
+	// Normalize to start of day (midnight)
+	const dueMidnight = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+	const fromMidnight = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+
+	const diffTime = dueMidnight.getTime() - fromMidnight.getTime();
+	const calendarDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+	let workingDays = 0;
+	if (calendarDays > 0) {
+		const cur = new Date(fromMidnight);
+		while (cur < dueMidnight) {
+			cur.setDate(cur.getDate() + 1);
+			const day = cur.getDay();
+			if (day !== 0 && day !== 6) {
+				workingDays++;
+			}
+		}
+	} else if (calendarDays < 0) {
+		const cur = new Date(dueMidnight);
+		while (cur < fromMidnight) {
+			cur.setDate(cur.getDate() + 1);
+			const day = cur.getDay();
+			if (day !== 0 && day !== 6) {
+				workingDays--;
+			}
+		}
+	}
+
+	const isOverdue = workingDays < 0;
+	const isUrgent = workingDays >= 0 && workingDays <= 2;
+
+	let badgeClass = "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800";
+	let labelRu = `В графике: ${workingDays} раб. дн.`;
+
+	if (isOverdue) {
+		badgeClass = "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800";
+		labelRu = `Дедлайн просрочен на ${Math.abs(workingDays)} раб. дн.`;
+	} else if (workingDays === 0) {
+		badgeClass = "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800";
+		labelRu = "Срок сдачи: сегодня";
+	} else if (isUrgent) {
+		badgeClass = "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800";
+		labelRu = `Срочно: ${workingDays} раб. дн.`;
+	}
+
+	return {
+		workingDays,
+		calendarDays,
+		isOverdue,
+		isUrgent,
+		badgeClass,
+		labelRu,
+	};
+}
+
+/**
+ * 152-FZ patient name formatting for clinical documentation and external courier tags.
+ * Generates both official full name and masked Courier Initials format (e.g. «Иванов И. И.»).
+ */
+export function formatPatientName152Fz(fullName?: string | null): {
+	fullName: string;
+	courierMaskedName: string;
+} {
+	if (!fullName || !fullName.trim()) {
+		return { fullName: "Пациент", courierMaskedName: "Пациент" };
+	}
+	const trimmed = fullName.trim();
+	const parts = trimmed.split(/\s+/).filter(Boolean);
+	if (parts.length === 1) {
+		return { fullName: trimmed, courierMaskedName: trimmed };
+	}
+	const surname = parts[0];
+	const initials = parts
+		.slice(1)
+		.map((p) => (p[0] ? `${p[0].toUpperCase()}.` : ""))
+		.join(" ");
+	const courierMaskedName = `${surname} ${initials}`.trim();
+	return { fullName: trimmed, courierMaskedName };
+}
+
 
 /**
  * Default standard parameters for 1-click lab order creation per Mandate 8e / Section VII:
