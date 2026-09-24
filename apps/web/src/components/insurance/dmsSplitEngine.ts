@@ -18,17 +18,36 @@ export interface DmsGuaranteeLetter {
 	readonly id: string;
 	readonly letterNumber: string;
 	readonly issueDate: string;
+	readonly validFrom?: string | undefined;
 	readonly validUntil: string;
-	readonly maxApprovedAmountKopecks: number;
-	readonly insurerId: string;
+	readonly maxApprovedAmountKopecks?: number | undefined;
+	readonly approvedAmountKopecks?: number | undefined;
+	readonly maxCoverageRub?: number | undefined;
+	readonly maxCoverageKopecks?: number | undefined;
+	readonly usedAmountRub?: number | undefined;
+	readonly usedAmountKopecks?: number | undefined;
+	readonly franchisePct?: number | undefined;
+	readonly franchisePercent?: number | undefined;
+	readonly franchiseType?: "percent" | "fixed_rub" | undefined;
+	readonly franchiseFixedRub?: number | undefined;
+	readonly franchiseFixedKopecks?: number | undefined;
+	readonly insurerId?: string | undefined;
+	readonly insurerKey?: string | undefined;
+	readonly insurerName?: string | undefined;
+	readonly patientId?: string | undefined;
 	readonly patientFullName: string;
+	readonly policyNumber?: string | undefined;
 	readonly patientPolicyNumber?: string | undefined;
-	readonly approvedTeethFdi: readonly string[];
-	readonly approvedServiceCodes804n: readonly string[];
+	readonly approvedTeethFdi?: readonly string[] | undefined;
+	readonly approvedServiceCodes804n?: readonly string[] | undefined;
+	readonly approvedServiceCodes?: readonly string[] | undefined;
+	readonly approvedDiagnosisCodes?: readonly string[] | undefined;
+	readonly programExclusions?: readonly string[] | undefined;
 	readonly diagnosisIcd10?: string | undefined;
 	readonly curatorFullName?: string | undefined;
 	readonly curatorPhone?: string | undefined;
 	readonly notes?: string | undefined;
+	readonly status?: "active" | "expired" | "exhausted" | "cancelled" | undefined;
 }
 
 export interface DmsBillableLineItem {
@@ -43,14 +62,18 @@ export interface DmsBillableLineItem {
 
 export interface DmsSplitLineResult {
 	readonly lineItemId: string;
+	readonly id?: string | undefined;
 	readonly serviceCode: string;
+	readonly serviceCode804n?: string | undefined;
 	readonly serviceName: string;
 	readonly toothNumber?: string | undefined;
 	readonly quantity: number;
 	readonly unitPriceKopecks: number;
 	readonly totalKopecks: number;
 	readonly insuranceCoveredKopecks: number;
+	readonly coveredByDmsKopecks?: number | undefined;
 	readonly patientOutOfPocketKopecks: number;
+	readonly patientTotalKopecks?: number | undefined;
 	readonly insuranceCoveredRubles: number;
 	readonly patientOutOfPocketRubles: number;
 	readonly status: "full_dms" | "co_payment" | "patient_full";
@@ -58,6 +81,9 @@ export interface DmsSplitLineResult {
 	readonly isApprovedByLetter: boolean;
 	readonly isExcludedByPolicy: boolean;
 	readonly franchiseDeductionKopecks: number;
+	readonly copayKopecks?: number | undefined;
+	readonly patientExcludedKopecks?: number | undefined;
+	readonly patientExceededLimitKopecks?: number | undefined;
 }
 
 export type PatientPaymentMethod = "cash" | "card" | "advance" | "mixed";
@@ -78,14 +104,18 @@ export interface PatientPaymentSplit {
 
 export interface DmsSplitCalculationResult {
 	readonly lineItems: readonly DmsSplitLineResult[];
+	readonly lines: readonly DmsSplitLineResult[];
 	readonly totalBillKopecks: number;
 	readonly totalInsuranceCoveredKopecks: number;
+	readonly dmsCoveredKopecks: number;
 	readonly totalPatientOutOfPocketKopecks: number;
+	readonly patientTotalKopecks: number;
 	readonly totalBillRubles: number;
 	readonly totalInsuranceCoveredRubles: number;
 	readonly totalPatientOutOfPocketRubles: number;
 	readonly letterApprovedLimitKopecks: number;
 	readonly letterRemainingLimitKopecks: number;
+	readonly remainingLimitKopecks: number;
 	readonly letterExcessAmountKopecks: number;
 	readonly hasUnapprovedTeeth: boolean;
 	readonly hasExcludedServices: boolean;
@@ -192,7 +222,9 @@ export function isServiceCodeApprovedByLetter(
 	if (!letter.approvedServiceCodes804n || letter.approvedServiceCodes804n.length === 0) return true;
 
 	const cleanCode = serviceCode.trim().toUpperCase();
-	return letter.approvedServiceCodes804n.some((c) => {
+	const codes = letter.approvedServiceCodes804n || letter.approvedServiceCodes;
+	if (!codes || codes.length === 0) return true;
+	return codes.some((c) => {
 		const approved = c.trim().toUpperCase();
 		return cleanCode === approved || cleanCode.startsWith(approved);
 	});
@@ -218,9 +250,15 @@ export function calculateDmsCoPaymentSplit(
 	const previouslyUsed = options.previouslyUsedLetterAmountKopecks ?? 0;
 	const isUrgentCare = Boolean(options.isEmergency || options.hasAcutePain);
 
-	let availableLetterLimitKopecks = guaranteeLetter
-		? Math.max(0, guaranteeLetter.maxApprovedAmountKopecks - previouslyUsed)
+	const letterLimit = guaranteeLetter
+		? (guaranteeLetter.maxApprovedAmountKopecks ??
+			guaranteeLetter.maxCoverageKopecks ??
+			(guaranteeLetter.maxCoverageRub !== undefined
+				? Math.round(guaranteeLetter.maxCoverageRub * 100)
+				: Number.POSITIVE_INFINITY))
 		: Number.POSITIVE_INFINITY;
+
+	let availableLetterLimitKopecks = Math.max(0, letterLimit - previouslyUsed);
 
 	const splitResults: DmsSplitLineResult[] = [];
 	let hasUnapprovedTeeth = false;
@@ -297,14 +335,18 @@ export function calculateDmsCoPaymentSplit(
 
 			splitResults.push({
 				lineItemId: item.id,
+				id: item.id,
 				serviceCode: item.serviceCode,
+				serviceCode804n: item.serviceCode,
 				serviceName: item.serviceName,
 				toothNumber: item.toothNumber,
 				quantity: qty,
 				unitPriceKopecks: item.unitPriceKopecks,
 				totalKopecks: rawLineTotalKopecks,
 				insuranceCoveredKopecks: 0,
+				coveredByDmsKopecks: 0,
 				patientOutOfPocketKopecks: rawLineTotalKopecks,
+				patientTotalKopecks: rawLineTotalKopecks,
 				insuranceCoveredRubles: 0,
 				patientOutOfPocketRubles: kopecksToRubles(rawLineTotalKopecks),
 				status: "patient_full",
@@ -312,6 +354,9 @@ export function calculateDmsCoPaymentSplit(
 				isApprovedByLetter: toothApproved && codeApproved,
 				isExcludedByPolicy: isExcluded,
 				franchiseDeductionKopecks: 0,
+				copayKopecks: 0,
+				patientExcludedKopecks: isExcluded ? rawLineTotalKopecks : 0,
+				patientExceededLimitKopecks: 0,
 			});
 			continue;
 		}
@@ -373,14 +418,18 @@ export function calculateDmsCoPaymentSplit(
 
 		splitResults.push({
 			lineItemId: item.id,
+			id: item.id,
 			serviceCode: item.serviceCode,
+			serviceCode804n: item.serviceCode,
 			serviceName: item.serviceName,
 			toothNumber: item.toothNumber,
 			quantity: qty,
 			unitPriceKopecks: item.unitPriceKopecks,
 			totalKopecks: rawLineTotalKopecks,
 			insuranceCoveredKopecks: actualDmsCoveredKopecks,
+			coveredByDmsKopecks: actualDmsCoveredKopecks,
 			patientOutOfPocketKopecks: patientPaidKopecks,
+			patientTotalKopecks: patientPaidKopecks,
 			insuranceCoveredRubles: kopecksToRubles(actualDmsCoveredKopecks),
 			patientOutOfPocketRubles: kopecksToRubles(patientPaidKopecks),
 			status,
@@ -388,6 +437,14 @@ export function calculateDmsCoPaymentSplit(
 			isApprovedByLetter: true,
 			isExcludedByPolicy: false,
 			franchiseDeductionKopecks,
+			copayKopecks: franchiseDeductionKopecks,
+			patientExcludedKopecks: 0,
+			patientExceededLimitKopecks:
+				status === "co_payment" && franchiseDeductionKopecks === 0
+					? patientPaidKopecks
+					: patientPaidKopecks > franchiseDeductionKopecks
+						? patientPaidKopecks - franchiseDeductionKopecks
+						: 0,
 		});
 	}
 
@@ -396,13 +453,15 @@ export function calculateDmsCoPaymentSplit(
 	const totalInsuranceCoveredKopecks = splitResults.reduce((acc, item) => acc + item.insuranceCoveredKopecks, 0);
 	const totalPatientOutOfPocketKopecks = splitResults.reduce((acc, item) => acc + item.patientOutOfPocketKopecks, 0);
 
-	const letterApprovedLimitKopecks = guaranteeLetter ? guaranteeLetter.maxApprovedAmountKopecks : 0;
+	const letterApprovedLimitKopecks = guaranteeLetter
+		? (guaranteeLetter.maxApprovedAmountKopecks ?? guaranteeLetter.approvedAmountKopecks ?? 0)
+		: 0;
 	const letterRemainingLimitKopecks = Number.isFinite(availableLetterLimitKopecks)
 		? availableLetterLimitKopecks
 		: 0;
 
 	const letterExcessAmountKopecks = guaranteeLetter
-		? Math.max(0, totalBillKopecks - guaranteeLetter.maxApprovedAmountKopecks)
+		? Math.max(0, totalBillKopecks - letterApprovedLimitKopecks)
 		: 0;
 
 	// Математический инвариант целостности
@@ -416,14 +475,18 @@ export function calculateDmsCoPaymentSplit(
 
 	return {
 		lineItems: splitResults,
+		lines: splitResults,
 		totalBillKopecks,
 		totalInsuranceCoveredKopecks,
+		dmsCoveredKopecks: totalInsuranceCoveredKopecks,
 		totalPatientOutOfPocketKopecks,
+		patientTotalKopecks: totalPatientOutOfPocketKopecks,
 		totalBillRubles: kopecksToRubles(totalBillKopecks),
 		totalInsuranceCoveredRubles: kopecksToRubles(totalInsuranceCoveredKopecks),
 		totalPatientOutOfPocketRubles: kopecksToRubles(totalPatientOutOfPocketKopecks),
 		letterApprovedLimitKopecks,
 		letterRemainingLimitKopecks,
+		remainingLimitKopecks: letterRemainingLimitKopecks,
 		letterExcessAmountKopecks,
 		hasUnapprovedTeeth,
 		hasExcludedServices,
@@ -515,23 +578,37 @@ export function calculatePatientPaymentSplit(
  */
 export function calculateDmsCoPaymentSplitWithPayment(
 	lineItems: readonly DmsBillableLineItem[],
-	options: {
-		policy?: DmsPolicy | undefined;
-		guaranteeLetter?: DmsGuaranteeLetter | undefined;
-		previouslyUsedLetterAmountKopecks?: number | undefined;
-		visitDate?: string | undefined;
-		lastHygieneDate?: string | undefined;
-		isEmergency?: boolean | undefined;
-		hasAcutePain?: boolean | undefined;
-		patientPaymentMethod?: PatientPaymentMethod | undefined;
-		patientCashKopecks?: number | undefined;
-		patientCardKopecks?: number | undefined;
-		patientAdvanceKopecks?: number | undefined;
-		patientCashRubles?: number | undefined;
-		patientCardRubles?: number | undefined;
-		patientAdvanceRubles?: number | undefined;
-	} = {},
+	optionsOrLetter?:
+		| {
+				policy?: DmsPolicy | undefined;
+				guaranteeLetter?: DmsGuaranteeLetter | undefined;
+				previouslyUsedLetterAmountKopecks?: number | undefined;
+				visitDate?: string | undefined;
+				lastHygieneDate?: string | undefined;
+				isEmergency?: boolean | undefined;
+				hasAcutePain?: boolean | undefined;
+				patientPaymentMethod?: PatientPaymentMethod | undefined;
+				patientCashKopecks?: number | undefined;
+				patientCardKopecks?: number | undefined;
+				patientAdvanceKopecks?: number | undefined;
+				patientCashRubles?: number | undefined;
+				patientCardRubles?: number | undefined;
+				patientAdvanceRubles?: number | undefined;
+		  }
+		| DmsGuaranteeLetter
+		| undefined,
+	legacyPaymentMethod?: PatientPaymentMethod | undefined,
+	legacyCashKopecks?: number | undefined,
 ): DmsSplitCalculationResult {
+	const options =
+		optionsOrLetter && "letterNumber" in optionsOrLetter
+			? {
+					guaranteeLetter: optionsOrLetter,
+					patientPaymentMethod: legacyPaymentMethod,
+					patientCashKopecks: legacyCashKopecks,
+				}
+			: optionsOrLetter || {};
+
 	const base = calculateDmsCoPaymentSplit(lineItems, options);
 	const paymentSplit = calculatePatientPaymentSplit(
 		base.totalPatientOutOfPocketKopecks,

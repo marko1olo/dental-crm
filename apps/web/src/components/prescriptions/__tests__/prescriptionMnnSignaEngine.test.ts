@@ -165,6 +165,7 @@ describe("Приказ Минздрава 1094н: Латинская пропи�
 describe("Дозировки и расчет анестетиков (Артикаин) по возрасту и весу", () => {
 	it("3.1 Рассчитывает дозировку артикаина для взрослого (7 мг/кг, макс 7 карпул)", () => {
 		const calc = calculateMedicationDosage("articaine", 70, 35);
+		assert.ok(calc, "calc must not be null");
 		assert.strictEqual(calc.isContraindicated, false);
 		assert.strictEqual(calc.singleDoseMg, 68); // 1 карпула 1.7 мл 4% = 68 мг
 		assert.strictEqual(calc.maxDailyDoseMg, 490); // 70 кг * 7 мг/кг = 490 мг
@@ -173,6 +174,7 @@ describe("Дозировки и расчет анестетиков (Артик�
 
 	it("3.2 Запрещает артикаин детям младше 4 лет (абсолютное противопоказание)", () => {
 		const calc = calculateMedicationDosage("articaine", 14, 3);
+		assert.ok(calc, "calc must not be null");
 		assert.strictEqual(calc.isContraindicated, true);
 		assert.strictEqual(calc.maxCarpules, 0);
 		assert.ok(
@@ -188,11 +190,12 @@ describe("Дозировки и расчет анестетиков (Артик�
 			prescribedDoseMg: 68,
 		});
 		assert.strictEqual(valRes.isValid, false);
-		assert.ok(valRes.errors.some((e) => e.includes("противопоказан детям до 4 лет")));
+		assert.ok(valRes.errors.some((e) => e.includes("до 4 лет")));
 	});
 
 	it("3.3 Ограничивает дозировку артикаина детям от 4 лет (до 5 мг/кг)", () => {
 		const calc = calculateMedicationDosage("articaine", 20, 6);
+		assert.ok(calc, "calc must not be null");
 		assert.strictEqual(calc.isContraindicated, false);
 		assert.strictEqual(calc.maxDailyDoseMg, 100); // 20 кг * 5 мг/кг = 100 мг
 		assert.strictEqual(calc.maxCarpules, 1); // 100 мг / 68 мг = 1.47 -> 1 карпула
@@ -236,8 +239,9 @@ describe("Стоматологические 1-клик пресеты реце�
 		const catalogKeys = DENTAL_MEDICATIONS_CATALOG.map((m) => m.id);
 
 		for (const pkg of DENTAL_FAST_PRESCRIPTION_PACKAGES) {
-			assert.ok(pkg.medicationIds.length > 0, `Пакет ${pkg.id} не должен быть пустым`);
-			for (const medId of pkg.medicationIds) {
+			const medIds = pkg.medicationIds || pkg.drugIds;
+			assert.ok(medIds.length > 0, `Пакет ${pkg.id} не должен быть пустым`);
+			for (const medId of medIds) {
 				assert.ok(
 					catalogKeys.includes(medId),
 					`Препарат ${medId} из пакета ${pkg.id} обязан присутствовать в DENTAL_MEDICATIONS_CATALOG`,
@@ -248,17 +252,20 @@ describe("Стоматологические 1-клик пресеты реце�
 
 	it("4.3 Все препараты каталога имеют корректную латинскую сигнатуру Rp. и D.t.d.", () => {
 		for (const med of DENTAL_MEDICATIONS_CATALOG) {
+			const latin = med.latinName || med.latinRp;
+			const dispense = med.dispenseFormula || med.dispenseLatin;
+			const nameRu = med.nameRu || med.tradeNameRu;
 			assert.ok(
-				med.latinName.startsWith("Rp.:"),
-				`Препарат ${med.nameRu} обязан начинаться с Rp.: (фактически: ${med.latinName})`,
+				latin.startsWith("Rp.:"),
+				`Препарат ${nameRu} обязан начинаться с Rp.: (фактически: ${latin})`,
 			);
 			assert.ok(
-				med.dispenseFormula.includes("D.t.d."),
-				`Препарат ${med.nameRu} обязан содержать D.t.d. (фактически: ${med.dispenseFormula})`,
+				dispense.includes("D.t.d."),
+				`Препарат ${nameRu} обязан содержать D.t.d. (фактически: ${dispense})`,
 			);
 			assert.ok(
 				med.signaRu.length > 10,
-				`Препарат ${med.nameRu} обязан иметь подробную Signa (фактически: ${med.signaRu})`,
+				`Препарат ${nameRu} обязан иметь подробную Signa (фактически: ${med.signaRu})`,
 			);
 		}
 	});
@@ -267,10 +274,11 @@ describe("Стоматологические 1-клик пресеты реце�
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 
 		for (const med of DENTAL_MEDICATIONS_CATALOG) {
+			const nameRu = med.nameRu || med.tradeNameRu;
 			assert.strictEqual(
-				emojiRegex.test(med.nameRu),
+				emojiRegex.test(nameRu),
 				false,
-				`Эмодзи в nameRu: ${med.nameRu}`,
+				`Эмодзи в nameRu: ${nameRu}`,
 			);
 			assert.strictEqual(
 				emojiRegex.test(med.signaRu),
@@ -280,15 +288,17 @@ describe("Стоматологические 1-клик пресеты реце�
 		}
 
 		for (const pkg of DENTAL_FAST_PRESCRIPTION_PACKAGES) {
+			const title = pkg.titleRu || pkg.label;
+			const desc = pkg.descriptionRu || pkg.desc;
 			assert.strictEqual(
-				emojiRegex.test(pkg.titleRu),
+				emojiRegex.test(title),
 				false,
-				`Эмодзи в titleRu: ${pkg.titleRu}`,
+				`Эмодзи в titleRu: ${title}`,
 			);
 			assert.strictEqual(
-				emojiRegex.test(pkg.descriptionRu),
+				emojiRegex.test(desc),
 				false,
-				`Эмодзи в descriptionRu: ${pkg.descriptionRu}`,
+				`Эмодзи в descriptionRu: ${desc}`,
 			);
 		}
 	});

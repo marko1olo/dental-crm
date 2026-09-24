@@ -242,24 +242,30 @@ export function DmsGuaranteeLetterModal({
 
 	// Исключения и одобренные услуги
 	const [selectedExclusions, setSelectedExclusions] = useState<string[]>(
-		initialLetter?.programExclusions || [
-			"orthodontics",
-			"implantology",
-			"whitening",
-			"veneers",
-			"prosthetics_precious",
-		],
+		initialLetter?.programExclusions
+			? [...initialLetter.programExclusions]
+			: [
+					"orthodontics",
+					"implantology",
+					"whitening",
+					"veneers",
+					"prosthetics_precious",
+				],
 	);
 	const [approvedServiceCodes, setApprovedServiceCodes] = useState<string[]>(
-		initialLetter?.approvedServiceCodes || [
-			"A16.07.002.001",
-			"A16.07.030.001",
-			"A16.07.008.001",
-			"B01.003.004.001",
-		],
+		initialLetter?.approvedServiceCodes
+			? [...initialLetter.approvedServiceCodes]
+			: [
+					"A16.07.002.001",
+					"A16.07.030.001",
+					"A16.07.008.001",
+					"B01.003.004.001",
+				],
 	);
 	const [approvedDiagnosisCodes, setApprovedDiagnosisCodes] = useState<string[]>(
-		initialLetter?.approvedDiagnosisCodes || ["K02.1", "K04.0"],
+		initialLetter?.approvedDiagnosisCodes
+			? [...initialLetter.approvedDiagnosisCodes]
+			: ["K02.1", "K04.0"],
 	);
 	const [notes, setNotes] = useState<string>(initialLetter?.notes || "");
 	const [status, setStatus] = useState<"active" | "expired" | "exhausted" | "cancelled">(
@@ -280,7 +286,7 @@ export function DmsGuaranteeLetterModal({
 
 	const remainingLimitRub = Math.max(0, maxCoverageRub - usedAmountRub);
 
-	const letterForSplit: DmsGuaranteeLetter = useMemo(
+	const letterForSplit: import("./dmsSplitEngine").DmsGuaranteeLetter = useMemo(
 		() => ({
 			id: initialLetter?.id || "preview-letter",
 			patientId: patient?.id || "preview-patient",

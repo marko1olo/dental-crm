@@ -6,19 +6,22 @@
 export interface DentalMedicationPreset {
 	readonly id: string;
 	readonly tradeNameRu: string;
+	readonly nameRu?: string | undefined;
 	readonly activeSubstanceRu: string;
 	readonly category: "antibiotic" | "nsaid" | "antiseptic" | "dental_gel" | "antihistamine" | "controlled_pku" | "hemostatic" | "gastroprotective" | "preferential_somatic" | "anesthetic" | "other";
 	readonly categoryLabelRu: string;
 	readonly latinRp: string;
+	readonly latinName?: string | undefined;
 	readonly formRu: string;
 	readonly dosageRu: string;
 	readonly quantityLabel: string;
 	readonly dispenseLatin: string;
+	readonly dispenseFormula?: string | undefined;
 	readonly signaRu: string;
 	readonly validityDays: 15 | 30 | 60 | 365;
 }
 
-export const DENTAL_MEDICATIONS_CATALOG: readonly DentalMedicationPreset[] = [
+const DENTAL_MEDICATIONS_BASE: readonly DentalMedicationPreset[] = [
 	{
 		id: "amoxiclav_875_125",
 		tradeNameRu: "Амоксиклав (Аугментин 875+125 мг)",
@@ -329,15 +332,25 @@ export const DENTAL_MEDICATIONS_CATALOG: readonly DentalMedicationPreset[] = [
 	},
 ];
 
+export const DENTAL_MEDICATIONS_CATALOG: readonly DentalMedicationPreset[] = DENTAL_MEDICATIONS_BASE.map((m) => ({
+	...m,
+	nameRu: m.tradeNameRu,
+	latinName: m.latinRp,
+	dispenseFormula: m.dispenseLatin,
+}));
+
 export interface DentalFastPrescriptionPackage {
 	readonly id: string;
 	readonly label: string;
+	readonly titleRu?: string | undefined;
 	readonly desc: string;
+	readonly descriptionRu?: string | undefined;
 	readonly drugIds: readonly string[];
+	readonly medicationIds?: readonly string[] | undefined;
 	readonly badge?: string;
 }
 
-export const DENTAL_FAST_PRESCRIPTION_PACKAGES: readonly DentalFastPrescriptionPackage[] = [
+const DENTAL_FAST_PRESCRIPTION_PACKAGES_BASE: readonly DentalFastPrescriptionPackage[] = [
 	{
 		id: "pulpitis_acute_relief",
 		label: "«Пульпит (купирование острого болевого синдрома и воспаления)»",
@@ -444,3 +457,12 @@ export const DENTAL_FAST_PRESCRIPTION_PACKAGES: readonly DentalFastPrescriptionP
 		badge: "Противоотечное",
 	},
 ];
+
+export const DENTAL_FAST_PRESCRIPTION_PACKAGES: readonly DentalFastPrescriptionPackage[] =
+	DENTAL_FAST_PRESCRIPTION_PACKAGES_BASE.map((p) => ({
+		...p,
+		titleRu: p.label,
+		descriptionRu: p.desc,
+		medicationIds: p.drugIds,
+	}));
+

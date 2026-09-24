@@ -6,6 +6,7 @@ import {
 	DENTAL_PRESCRIPTION_DRUG_CATALOG,
 	calculatePrescriptionExpiration,
 } from "@dental/shared";
+export { calculatePrescriptionExpiration };
 import { DENTAL_MEDICATIONS_CATALOG, type DentalMedicationPreset } from "./prescriptionPresets";
 
 export interface Form107PrescriptionInput {
@@ -187,7 +188,7 @@ export function formatPatientPrescriptionMemo(
 		`Дата назначения: ${dateStr}`,
 		"Назначенные препараты:",
 		...medsList,
-		`Памятка: строго соблюдайте назначенную дозировку и график приёма. Не прекращайте курс антибиотиков раньше указанного срока. При любых признаках непереносимости или аллергии немедленно свяжитесь с клиникой${clinicPhone ? `: ${clinicPhone}` : ""}.`,
+		`Памятка: строго соблюдайте назначенную дозировку и график приёма (Приказ Минздрава 1094н). Не прекращайте курс антибиотиков раньше указанного срока. При любых признаках непереносимости или аллергии немедленно свяжитесь с клиникой${clinicPhone ? `: ${clinicPhone}` : ""}.`,
 	];
 
 	return lines.join("\n");
@@ -438,6 +439,7 @@ export function calculateMedicationDosage(
 
 export interface DentalMnnDefinition {
 	readonly id: string;
+	readonly key?: string;
 	readonly mnnRu: string;
 	readonly mnnLatin: string;
 	readonly aliasesRu: readonly string[];
@@ -451,7 +453,7 @@ export interface DentalMnnDefinition {
 	readonly standardSignaRussianTemplate: string;
 }
 
-export const DENTAL_STATUTORY_MNN_CATALOG: readonly DentalMnnDefinition[] = [
+const DENTAL_STATUTORY_MNN_ARRAY: readonly DentalMnnDefinition[] = [
 	{
 		id: "amoxicillin",
 		mnnRu: "Амоксициллин",
@@ -566,6 +568,11 @@ export const DENTAL_STATUTORY_MNN_CATALOG: readonly DentalMnnDefinition[] = [
 	},
 ];
 
+export const DENTAL_STATUTORY_MNN_CATALOG: readonly DentalMnnDefinition[] & Record<string, DentalMnnDefinition> = Object.assign(
+	DENTAL_STATUTORY_MNN_ARRAY.map((item) => ({ ...item, key: item.id })),
+	Object.fromEntries(DENTAL_STATUTORY_MNN_ARRAY.map((item) => [item.id, { ...item, key: item.id }])),
+);
+
 export interface DentalMnnValidationResult {
 	readonly isValid: boolean;
 	readonly matchedMnn?: DentalMnnDefinition | undefined;
@@ -605,7 +612,7 @@ export function validateDentalMnn(query: string): DentalMnnValidationResult {
 
 		return {
 			isValid: true,
-			matchedMnn: found,
+			matchedMnn: { ...found, key: found.id },
 			normalizedQuery: cleaned,
 			isTradeName,
 			messageRu: `Препарат верифицирован по МНН Минздрава РФ: ${found.mnnRu} (${found.mnnLatin}). Группа: ${found.categoryLabelRu}.`,
@@ -794,6 +801,32 @@ export function validatePrescriptionDosage(
 				errors,
 			};
 		}
+		if (drugId.includes("ketorolac") && params.dailyDoseMg > 40) {
+			return {
+				isValid: errors.length === 0,
+				isPediatric: calc.isPediatric,
+				status: "warning",
+				messageRu: `Суточная доза кеторолака ${params.dailyDoseMg} мг превышает максимальную (40 мг/сут). Высокий риск желудочно-кишечных кровотечений.`,
+				calculatedMaxDoseRu: calc.maxDailyDoseRu,
+				errors,
+			};
+		}
+	}
+
+	if (params.carpulesCount !== undefined && (drugId.includes("articaine") || drugId.includes("ultracain"))) {
+		const weight = params.patientWeightKg && params.patientWeightKg > 0 ? params.patientWeightKg : 70;
+		const maxMg = params.patientAgeYears !== undefined && params.patientAgeYears < 12 ? weight * 5 : Math.min(500, weight * 7);
+		const maxCarp = maxMg / 68;
+		if (params.carpulesCount > maxCarp) {
+			return {
+				isValid: errors.length === 0,
+				isPediatric: calc.isPediatric,
+				status: "warning",
+				messageRu: `Количество карпул артикаина (${params.carpulesCount}) превышает расчетную безопасную дозу (~${maxCarp.toFixed(1)} карп. для массы ${weight} кг).`,
+				calculatedMaxDoseRu: calc.maxDailyDoseRu,
+				errors,
+			};
+		}
 	}
 
 	return {
@@ -805,38 +838,5 @@ export function validatePrescriptionDosage(
 		errors,
 	};
 }
-		if (params.drugIdOrMnn.includes("ketorolac") && params.dailyDoseMg > 40) {
-			return {
-				isValid: true,
-				isPediatric: calc.isPediatric,
-				status: "warning",
-				messageRu: `Суточная доза кеторолака ${params.dailyDoseMg} мг превышает максимальную (40 мг/сут). Высокий риск желудочно-кишечных кровотечений.`,
-				calculatedMaxDoseRu: calc.maxDailyDoseRu,
-			};
-		}
-	}
 
-	if (params.carpulesCount !== undefined && (params.drugIdOrMnn.includes("articaine") || params.drugIdOrMnn.includes("ultracain"))) {
-		const weight = params.patientWeightKg && params.patientWeightKg > 0 ? params.patientWeightKg : 70;
-		const maxMg = params.patientAgeYears !== undefined && params.patientAgeYears < 12 ? weight * 5 : Math.min(500, weight * 7);
-		const maxCarp = maxMg / 68;
-		if (params.carpulesCount > maxCarp) {
-			return {
-				isValid: true,
-				isPediatric: calc.isPediatric,
-				status: "warning",
-				messageRu: `Количество карпул артикаина (${params.carpulesCount}) превышает расчетную безопасную дозу (~${maxCarp.toFixed(1)} карп. для массы ${weight} кг).`,
-				calculatedMaxDoseRu: calc.maxDailyDoseRu,
-			};
-		}
-	}
-
-	return {
-		isValid: true,
-		isPediatric: calc.isPediatric,
-		status: "normal",
-		messageRu: `Дозировка корректна: ${calc.recommendedDosageRu}. Частота: ${calc.standardFrequencyRu}.`,
-		calculatedMaxDoseRu: calc.maxDailyDoseRu,
-	};
-}
 

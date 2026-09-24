@@ -73,6 +73,7 @@ export function DmsBillSplitCalculatorSection({
 	const mappedItems: DmsBillableLineItem[] = useMemo(() => {
 		return billItems.map((item) => ({
 			id: item.id,
+			serviceCode: item.serviceCode804n,
 			serviceCode804n: item.serviceCode804n,
 			serviceName: item.serviceName,
 			toothNumber: item.toothNumber,
@@ -127,8 +128,8 @@ export function DmsBillSplitCalculatorSection({
 					margin: "0 0 12px 0",
 				}}
 			>
-				Автоматическое распределение позиций текущего визита с учетом лимита письма ({formatCurrencyRub(letter.maxCoverageKopecks)}),
-				франшизы ({letter.franchisePercent > 0 ? `${letter.franchisePercent}%` : `${formatCurrencyRub(letter.franchiseFixedKopecks)}`})
+				Автоматическое распределение позиций текущего визита с учетом лимита письма ({formatCurrencyRub(letter.maxCoverageKopecks ?? 0)}),
+				франшизы ({letter.franchisePercent && letter.franchisePercent > 0 ? `${letter.franchisePercent}%` : `${formatCurrencyRub(letter.franchiseFixedKopecks ?? 0)}`})
 				и исключений страховой программы.
 			</p>
 
@@ -321,28 +322,28 @@ export function DmsBillSplitCalculatorSection({
 										{formatCurrencyRub(line.totalKopecks)}
 									</td>
 									<td style={{ fontFamily: "monospace", color: "var(--teal, #0d9488)", fontWeight: 700 }}>
-										{formatCurrencyRub(line.coveredByDmsKopecks)}
+										{formatCurrencyRub(line.coveredByDmsKopecks ?? line.insuranceCoveredKopecks)}
 									</td>
-									<td style={{ fontFamily: "monospace", color: line.patientTotalKopecks > 0 ? "var(--warn-fg, #d97706)" : "inherit", fontWeight: 700 }}>
-										{formatCurrencyRub(line.patientTotalKopecks)}
+									<td style={{ fontFamily: "monospace", color: (line.patientTotalKopecks ?? line.patientOutOfPocketKopecks) > 0 ? "var(--warn-fg, #d97706)" : "inherit", fontWeight: 700 }}>
+										{formatCurrencyRub(line.patientTotalKopecks ?? line.patientOutOfPocketKopecks)}
 									</td>
 									<td>
-										{line.coveredByDmsKopecks > 0 && line.patientTotalKopecks === 0 && (
+										{(line.coveredByDmsKopecks ?? line.insuranceCoveredKopecks) > 0 && (line.patientTotalKopecks ?? line.patientOutOfPocketKopecks) === 0 && (
 											<span className="dms-badge dms-badge-active" style={{ fontSize: "0.6875rem" }}>
 												Одобрено 100%
 											</span>
 										)}
-										{line.copayKopecks > 0 && (
+										{(line.copayKopecks ?? line.franchiseDeductionKopecks) > 0 && (
 											<span className="dms-badge dms-badge-exhausted" style={{ fontSize: "0.6875rem" }}>
 												Франшиза
 											</span>
 										)}
-										{line.patientExcludedKopecks > 0 && (
+										{(line.patientExcludedKopecks ?? 0) > 0 && (
 											<span className="dms-badge dms-badge-expired" style={{ fontSize: "0.6875rem" }}>
 												Исключение ДМС
 											</span>
 										)}
-										{line.patientExceededLimitKopecks > 0 && (
+										{(line.patientExceededLimitKopecks ?? 0) > 0 && (
 											<span className="dms-badge dms-badge-expired" style={{ fontSize: "0.6875rem" }}>
 												Сверх лимита ГП
 											</span>
