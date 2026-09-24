@@ -182,7 +182,10 @@ export function TelephonyFloatingWidget({
 		return () => {
 			clearInterval(interval);
 			if (typeof document !== "undefined") {
-				document.removeEventListener("visibilitychange", handleVisibilityChange);
+				document.removeEventListener(
+					"visibilitychange",
+					handleVisibilityChange,
+				);
 			}
 		};
 	}, [activeCall]);
@@ -350,7 +353,10 @@ export function TelephonyFloatingWidget({
 					.play()
 					.then(() => setIsPlayingAudio(true))
 					.catch((err) => {
-						console.warn("[TelephonyFloatingWidget] Audio seek-play failed:", err);
+						console.warn(
+							"[TelephonyFloatingWidget] Audio seek-play failed:",
+							err,
+						);
 						setIsPlayingAudio(false);
 					});
 			}
@@ -585,7 +591,7 @@ export function TelephonyFloatingWidget({
 
 	const speeds: PlaybackSpeed[] = [1, 1.25, 1.5, 2];
 
-	// Doctor sterile zone immunity: on visit view or for doctor role, telephony never invades chairside
+	// Doctor sterile zone immunity: on visit view or for doctor role, telephony never invades chairside (Mandates 8e, 8n - zero disruption to Form 043/u drafts or autosave)
 	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
 	const isDoctorChairsideMode =
 		selectedWorkspaceRole === "doctor" || crmCurrentView === "visit";
@@ -1114,7 +1120,10 @@ export function TelephonyFloatingWidget({
 													onTimeUpdate={handleAudioTimeUpdate}
 													onEnded={() => setIsPlayingAudio(false)}
 													onError={(e) => {
-														console.warn("[TelephonyFloatingWidget] Audio element error:", e);
+														console.warn(
+															"[TelephonyFloatingWidget] Audio element error:",
+															e,
+														);
 														setIsPlayingAudio(false);
 													}}
 												>
@@ -1649,8 +1658,9 @@ export function TelephonyFloatingWidget({
 											</h4>
 											<p className="text-xs text-[var(--muted,#64748b)] mt-1 max-w-xs mx-auto">
 												Шлюз АТС (UIS / Mango / Zadarma / Asterisk) подключен и
-												ожидает входящих звонков. При поступлении вызова карточка
-												пациента и быстрая запись откроются автоматически.
+												ожидает входящих звонков. При поступлении вызова
+												карточка пациента и быстрая запись откроются
+												автоматически.
 											</p>
 											<div className="mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] border border-[var(--line,#e2e8f0)] text-[11px] font-medium text-[var(--ink,#0f172a)]">
 												<span

@@ -507,7 +507,7 @@ export function IncomingCallPopup() {
 		(s) => s.setNewAppointmentDraft,
 	);
 
-	// Absolute doctor immunity: when treating at chair (visit) or role is doctor, calls stay silent/background
+	// Absolute doctor immunity: when treating at chair (visit) or role is doctor, calls stay silent/background (Mandates 8e, 8n - zero disruption to Form 043/u drafts or autosave)
 	const isDoctorMode =
 		selectedWorkspaceRole === "doctor" || currentView === "visit";
 	const isDndActive = agentState === "dnd";
@@ -605,7 +605,10 @@ export function IncomingCallPopup() {
 		return () => {
 			clearInterval(interval);
 			if (typeof document !== "undefined") {
-				document.removeEventListener("visibilitychange", handleVisibilityChange);
+				document.removeEventListener(
+					"visibilitychange",
+					handleVisibilityChange,
+				);
 			}
 		};
 	}, [activeCall]);
@@ -761,11 +764,15 @@ export function IncomingCallPopup() {
 							Ожидание вебхука АТС UIS/Mango/Zadarma/Asterisk
 						</h3>
 						<p className="text-xs text-[var(--muted,#64748b)] leading-relaxed">
-							Шлюз телефонии (UIS / Mango / Zadarma / Asterisk) подключен и ожидает входящих звонков. При поступлении вызова карточка пациента и быстрая запись откроются автоматически.
+							Шлюз телефонии (UIS / Mango / Zadarma / Asterisk) подключен и
+							ожидает входящих звонков. При поступлении вызова карточка пациента
+							и быстрая запись откроются автоматически.
 						</p>
 					</div>
 					<div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] border border-[var(--line,#e2e8f0)] text-[11px] font-medium text-[var(--ink,#0f172a)]">
-						<span className={`w-2 h-2 rounded-full ${isConnected ? "bg-emerald-500" : "bg-amber-500"}`} />
+						<span
+							className={`w-2 h-2 rounded-full ${isConnected ? "bg-emerald-500" : "bg-amber-500"}`}
+						/>
 						<span>Провайдер: UIS / Mango / Asterisk / Zadarma</span>
 					</div>
 				</div>
@@ -809,7 +816,9 @@ export function IncomingCallPopup() {
 						: "IP-Телефония";
 
 	const isCallAnswered = activeCall
-		? activeCall.status === "answered" || activeCall.status === "connected" || activeCall.status === "ended"
+		? activeCall.status === "answered" ||
+			activeCall.status === "connected" ||
+			activeCall.status === "ended"
 		: true;
 	const isCallEnded = activeCall?.status === "ended";
 
@@ -1210,7 +1219,11 @@ export function IncomingCallPopup() {
 										/>
 									</span>
 									<span className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider truncate">
-										{isCallEnded ? "Завершён" : isCallAnswered ? "Разговор" : "Входящий"}
+										{isCallEnded
+											? "Завершён"
+											: isCallAnswered
+												? "Разговор"
+												: "Входящий"}
 									</span>
 									<span
 										className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] shrink-0"
@@ -1538,7 +1551,11 @@ export function IncomingCallPopup() {
 																className="text-[var(--muted,#64748b)]"
 															/>
 														)}
-														<span>{smsCopied ? "SMS скопировано" : "Скопировать SMS"}</span>
+														<span>
+															{smsCopied
+																? "SMS скопировано"
+																: "Скопировать SMS"}
+														</span>
 													</button>
 												</>
 											)}
@@ -1742,7 +1759,9 @@ export function IncomingCallPopup() {
 															className="text-[var(--muted,#64748b)]"
 														/>
 													)}
-													<span>{smsCopied ? "SMS скопировано" : "Скопировать SMS"}</span>
+													<span>
+														{smsCopied ? "SMS скопировано" : "Скопировать SMS"}
+													</span>
 												</button>
 											</>
 										)}
