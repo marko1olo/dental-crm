@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, ChevronUp, Mic as LucideMic } from "lucide-react";
+import { ChevronDown, ChevronUp, Mic as LucideMic, XCircle } from "lucide-react";
 import { countLabel } from "./AppHelpers";
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
@@ -20,6 +20,8 @@ import { VisitTimer } from "./components/visit/VisitTimer";
 import { DictationHints } from "./DictationHints";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 import { SmartParsePreview } from "./SmartParsePreview";
+import { useAppStore } from "./store/appStore";
+import { usePatientStore } from "./store/patientStore";
 import { useVisitStore } from "./store/visitStore";
 import { getToothConfig, getToothPath } from "./utils/math/toothGeometry";
 // Список разделов роли и их названия берём из реестра разделов, а не переписываем
@@ -300,8 +302,8 @@ import {
 	Sparkles as DefaultSparkles,
 	Stethoscope,
 	Syringe,
-	Wrench,
-	XCircle,
+	CalendarCheck,
+	UserCheck,
 	Zap,
 } from "lucide-react";
 
@@ -675,6 +677,58 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		document.addEventListener("mousedown", handleClickOutside);
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, [isHeaderMoreMenuOpen]);
+
+	const [isQueueLobbyDropdownOpen, setIsQueueLobbyDropdownOpen] = React.useState(false);
+	const queueLobbyDropdownRef = React.useRef<HTMLDivElement>(null);
+
+	React.useEffect(() => {
+		if (!isQueueLobbyDropdownOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (
+				queueLobbyDropdownRef.current &&
+				!queueLobbyDropdownRef.current.contains(e.target as Node)
+			) {
+				setIsQueueLobbyDropdownOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isQueueLobbyDropdownOpen]);
+
+	const shiftDayQueue = React.useMemo(() => {
+		// biome-ignore lint/suspicious/noExplicitAny: dashboard appointments
+		const appointments: any[] = Array.isArray(dashboard?.appointments) ? dashboard.appointments : [];
+		const todayIso = new Date().toISOString().slice(0, 10);
+		let arrived = 0;
+		let inTreatment = 0;
+		let awaitingPayment = 0;
+		const arrivedPatients: Array<{ id: string; patientId: string; name: string; time: string }> = [];
+
+		for (const appt of appointments) {
+			const apptDate = String(appt?.startsAt || appt?.startTime || "").slice(0, 10);
+			if (apptDate && apptDate !== todayIso) continue;
+			if (activeDoctor?.id && appt?.doctorUserId && appt.doctorUserId !== activeDoctor.id) continue;
+
+			const s = String(appt?.status || "").toLowerCase();
+			if (s === "arrived") {
+				arrived++;
+				const pName = appt?.patientName || appt?.patient?.fullName || "Пациент";
+				const t = String(appt?.startsAt || appt?.startTime || "").slice(11, 16);
+				arrivedPatients.push({ id: appt?.id || String(Math.random()), patientId: appt?.patientId || "", name: pName, time: t });
+			} else if (s === "in_treatment" || s === "in_progress") {
+				inTreatment++;
+			} else if (s === "completed") {
+				awaitingPayment++;
+			}
+		}
+
+		return {
+			arrived,
+			inTreatment,
+			awaitingPayment,
+			arrivedPatients,
+		};
+	}, [dashboard?.appointments, activeDoctor?.id]);
 
 	const priceValidatorCatalogList = React.useMemo<readonly CatalogServiceItem[]>(() => {
 		const rawCatalog = (dashboard as { serviceCatalog?: unknown[] } | null)?.serviceCatalog;
@@ -1751,10 +1805,111 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<span className="hidden xl:inline">Аптечка</span>
 							</button>
 
-							{/* Статус приема (клинический статус визита): не конфликтует со статусом сохранения ЭМК */}
-							<span className="!hidden xl:!inline-flex status-pill status-in_treatment shrink-0 text-xs px-2 py-0.5">
-								{isSignedVisit ? "Подписано" : "На приёме"}
-							</span>
+							{/* 3-Стадийная оперативная очередь смены StomX (Ожидает приёма | На приёме | Ожидает оплаты) */}
+							<div
+								className="!hidden xl:!inline-flex items-center gap-0.5 p-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] shrink-0 text-xs font-semibold select-none relative"
+								data-testid="visit-shift-queue-tabs"
+								ref={queueLobbyDropdownRef}
+								role="group"
+								aria-label="Оперативная очередь смены врача"
+							>
+								<button
+									type="button"
+									onClick={() => {
+										if (shiftDayQueue.arrived > 0) {
+											setIsQueueLobbyDropdownOpen((prev) => !prev);
+										} else {
+											showToast("В холле клиники сейчас нет ожидающих пациентов", "info");
+										}
+									}}
+									className={`min-h-[26px] h-[26px] px-2 rounded-md flex items-center gap-1 transition-all cursor-pointer ${
+										shiftDayQueue.arrived > 0
+											? "bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/40 hover:bg-amber-500/25"
+											: "text-[var(--muted)] hover:text-[var(--ink)]"
+									}`}
+									data-testid="visit-queue-tab-arrived"
+									title={`Ожидает приёма: ${shiftDayQueue.arrived} пациентов в холле клиники. 1 клик для вызова`}
+									aria-label={`Ожидает приёма: ${shiftDayQueue.arrived}`}
+								>
+									<UserCheck size={12} className="shrink-0 text-amber-600 dark:text-amber-400" />
+									<span className="text-[11px] whitespace-nowrap">Ожидает</span>
+									<span
+										data-testid="visit-queue-count-arrived"
+										className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white"
+									>
+										{shiftDayQueue.arrived}
+									</span>
+								</button>
+
+								{/* Popover для вызова ожидающего пациента в 1 клик */}
+								{isQueueLobbyDropdownOpen && shiftDayQueue.arrivedPatients.length > 0 && (
+									<div
+										className="absolute left-0 top-full mt-1 w-64 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xl p-2 z-50 space-y-1.5 animate-in fade-in zoom-in-95 duration-100"
+										role="menu"
+									>
+										<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-b border-[var(--line)] pb-1 flex justify-between">
+											<span>Ожидают в холле ({shiftDayQueue.arrived})</span>
+										</div>
+										{shiftDayQueue.arrivedPatients.map((p) => (
+											<button
+												key={p.id}
+												type="button"
+												onClick={() => {
+													setIsQueueLobbyDropdownOpen(false);
+													if (p.patientId) {
+														usePatientStore.getState().setSelectedPatientId(p.patientId);
+													}
+													showToast(`Вызов в кресло: ${p.name}`, "success");
+												}}
+												className="w-full text-left p-1.5 rounded-lg hover:bg-[var(--teal-soft)] border border-transparent hover:border-[var(--teal)]/30 flex items-center justify-between transition-colors cursor-pointer"
+												title="Принять в кресло (1 клик)"
+											>
+												<span className="font-bold text-xs truncate">{p.name}</span>
+												<span className="text-[10px] font-mono text-[var(--muted)] shrink-0">{p.time}</span>
+											</button>
+										))}
+									</div>
+								)}
+
+								<span
+									className="min-h-[26px] h-[26px] px-2 rounded-md flex items-center gap-1 bg-[var(--teal,var(--brand-primary))] text-white font-bold text-[11px] shadow-2xs"
+									data-testid="visit-queue-tab-in-treatment"
+									title="Текущий пациент на приёме в кресле прямо сейчас"
+								>
+									<CalendarCheck size={12} className="shrink-0" />
+									<span>На приёме</span>
+									<span
+										data-testid="visit-queue-count-in-treatment"
+										className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-white/30 text-white"
+									>
+										{shiftDayQueue.inTreatment > 0 ? shiftDayQueue.inTreatment : 1}
+									</span>
+								</span>
+
+								<button
+									type="button"
+									onClick={() => {
+										useAppStore.getState().setCurrentView("finance");
+										showToast("Переход в кассу для оформления чека (54-ФЗ)", "info");
+									}}
+									className={`min-h-[26px] h-[26px] px-2 rounded-md flex items-center gap-1 transition-all cursor-pointer ${
+										shiftDayQueue.awaitingPayment > 0
+											? "bg-slate-500/15 text-slate-800 dark:text-slate-200 border border-slate-500/40 hover:bg-slate-500/25"
+											: "text-[var(--muted)] hover:text-[var(--ink)]"
+									}`}
+									data-testid="visit-queue-tab-completed"
+									title={`Ожидает оплаты: ${shiftDayQueue.awaitingPayment} (приём завершён, готов к кассе 54-ФЗ)`}
+								>
+									<DefaultCheckCircle2 size={12} className="shrink-0 text-slate-600 dark:text-slate-400" />
+									<span className="text-[11px] whitespace-nowrap">Оплата</span>
+									<span
+										data-testid="visit-queue-count-completed"
+										className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-600 text-white"
+									>
+										{shiftDayQueue.awaitingPayment}
+									</span>
+								</button>
+							</div>
 
 							{/* Кнопка «Сохранить» на мобильном в шапке (Мандаты 8d, 8e) */}
 							<button

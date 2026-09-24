@@ -64,8 +64,8 @@
 	width: 2.75rem;
 	height: 2.75rem;
 	border-radius: 12px;
-	background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark, #0284c7) 100%);
-	color: var(--on-teal, #ffffff);
+	background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+	color: var(--on-teal, var(--paper));
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -193,7 +193,7 @@
 .loyalty-tier-hero {
 	border-radius: 20px;
 	padding: 1.5rem;
-	color: #ffffff;
+	color: var(--on-teal, var(--paper));
 	position: relative;
 	overflow: hidden;
 	box-shadow: var(--shadow-2);
@@ -269,7 +269,7 @@
 
 .loyalty-progress-bar-fill {
 	height: 100%;
-	background: #ffffff;
+	background: var(--paper);
 	border-radius: 9999px;
 	transition: width 0.3s ease;
 }
@@ -370,8 +370,8 @@
 
 /* Gift Certificate Card */
 .loyalty-certificate-card-preview {
-	background: linear-gradient(135deg, var(--side-bg, #1e293b) 0%, var(--bg, #0f172a) 100%);
-	color: #ffffff;
+	background: linear-gradient(135deg, var(--paper-strong) 0%, var(--paper) 100%);
+	color: var(--ink);
 	border: 2px solid var(--warn-fg);
 	border-radius: 20px;
 	padding: 1.75rem;

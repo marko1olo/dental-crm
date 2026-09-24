@@ -51,4 +51,24 @@ describe("NetworkStatusIndicator & Offline Mutation Outbox", () => {
 			"Queue viewer should include drain button",
 		);
 	});
+
+	it("4. NetworkStatusIndicator provides accessible role and aria-label", () => {
+		const markup = renderToStaticMarkup(
+			createElement(NetworkStatusIndicator, { compact: false }),
+		);
+
+		assert.ok(
+			markup.includes('role="button"'),
+			"Indicator capsule must have role=button for accessibility",
+		);
+		assert.ok(
+			markup.includes('aria-label="Статус сети:'),
+			"Indicator must provide comprehensive aria-label describing connection status",
+		);
+		assert.ok(
+			markup.includes('tabindex="0"'),
+			"Indicator must be keyboard accessible via tabIndex 0",
+		);
+	});
 });
+

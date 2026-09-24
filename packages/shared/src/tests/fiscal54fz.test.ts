@@ -600,6 +600,43 @@ describe("Shared Fiscal 54-FZ & FFD 1.2 Suite", () => {
 		assert.equal(parsedQr.totalAmountKopecks, params.totalKopecks);
 		assert.equal(parsedQr.operationType, "income");
 	});
+
+	it("1.20 Validates FFD 1.2 Tag 1057 (Agent sign), Tag 1222 (Item agent sign), Tag 1227 (Buyer name), Tag 1228 (Buyer INN)", () => {
+		const payload = {
+			patientId: "d0000000-0000-0000-0000-000000000001",
+			customerContact: "+79991234567",
+			customerName: "ООО «ДентаПроф Партнер»",
+			customerInn: "7701234567",
+			agentSign: "commission_agent" as const,
+			items: [
+				{
+					name: "Изготовление циркониевой коронки (агентская услуга)",
+					priceKopecks: 1200000,
+					quantity: 1,
+					amountKopecks: 1200000,
+					agentSign: "commission_agent" as const,
+					subject: "job" as const,
+					method: "full_payment" as const,
+					vatRate: "vat_none" as const,
+				},
+			],
+			cashKopecks: 0,
+			electronicCardKopecks: 1200000,
+			sbpKopecks: 0,
+			prepaidKopecks: 0,
+			creditKopecks: 0,
+			totalKopecks: 1200000,
+		};
+
+		const parsed = createFiscalReceiptPayloadSchema.safeParse(payload);
+		assert.equal(parsed.success, true);
+		if (parsed.success) {
+			assert.equal(parsed.data.agentSign, "commission_agent");
+			assert.equal(parsed.data.customerName, "ООО «ДентаПроф Партнер»");
+			assert.equal(parsed.data.customerInn, "7701234567");
+			assert.equal(parsed.data.items[0]?.agentSign, "commission_agent");
+		}
+	});
 });
 
 

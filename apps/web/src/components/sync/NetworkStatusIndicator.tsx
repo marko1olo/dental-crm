@@ -9,7 +9,7 @@
  * - Клик по индикатору открывает модальное окно деталей синхронизации (OfflineSyncGuardModal)
  */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	Activity,
 	AlertTriangle,
@@ -33,6 +33,7 @@ export const NetworkStatusIndicator: React.FC<NetworkStatusIndicatorProps> = ({
 	onOpenModal,
 }) => {
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [syncError, setSyncError] = useState<string | null>(null);
 
 	const {
 		isOnline,
@@ -40,10 +41,24 @@ export const NetworkStatusIndicator: React.FC<NetworkStatusIndicatorProps> = ({
 		isSyncing,
 		pendingMutationCount,
 		syncNow,
-		networkState,
+		lastSyncError,
 	} = useOfflineSync({
 		autoSyncOnReconnect: true,
 	});
+
+	// Защита от потери клинических данных врача при закрытии вкладки с неопорожненной очередью
+	useEffect(() => {
+		if (typeof window === "undefined" || pendingMutationCount <= 0) return;
+		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+			e.preventDefault();
+			e.returnValue = "В очереди синхронизации клиники есть неотправленные данные приёма!";
+			return e.returnValue;
+		};
+		window.addEventListener("beforeunload", handleBeforeUnload);
+		return () => {
+			window.removeEventListener("beforeunload", handleBeforeUnload);
+		};
+	}, [pendingMutationCount]);
 
 	const handleClick = useCallback(() => {
 		if (onOpenModal) {
@@ -53,37 +68,81 @@ export const NetworkStatusIndicator: React.FC<NetworkStatusIndicatorProps> = ({
 		}
 	}, [onOpenModal]);
 
+	const handleKeyDown = useCallback(
+		(e: React.KeyboardEvent) => {
+			if (e.key === "Enter" || e.key === " ") {
+				e.preventDefault();
+				handleClick();
+			}
+		},
+		[handleClick],
+	);
+
 	const handleSyncClick = useCallback(
-		(e: React.MouseEvent) => {
+		async (e: React.MouseEvent) => {
 			e.stopPropagation();
 			if (!isSyncing && isOnline) {
-				void syncNow();
+				setSyncError(null);
+				try {
+					await syncNow();
+				} catch (err) {
+					const msg = err instanceof Error ? err.message : "Сбой синхронизации очереди";
+					setSyncError(msg);
+				}
 			}
 		},
 		[isSyncing, isOnline, syncNow],
 	);
 
-	// Determine status visual theme
-	const getStatusConfig = () => {
+	// Determine status visual theme and labels with proper memoization
+	const effectiveError = syncError || lastSyncError;
+
+	const config = useMemo(() => {
 		if (isSyncing) {
 			return {
 				label: "Синхронизация",
 				sublabel: `${pendingMutationCount} в очереди`,
-				bg: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/25",
+				bgStyle: {
+					background: "var(--teal-soft, rgba(14, 165, 233, 0.1))",
+					color: "var(--teal-dark, #0284c7)",
+					borderColor: "var(--teal, rgba(14, 165, 233, 0.3))",
+				},
 				icon: RefreshCw,
 				spin: true,
-				dot: "bg-blue-500 animate-ping",
+				dotStyle: { background: "var(--teal, #0284c7)" },
 			};
 		}
 
 		if (!isOnline) {
 			return {
 				label: "Офлайн-режим",
-				sublabel: pendingMutationCount > 0 ? `${pendingMutationCount} сохранено локально` : "Буферизация активна",
-				bg: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/25",
+				sublabel:
+					pendingMutationCount > 0
+						? `${pendingMutationCount} сохранено локально`
+						: "Буферизация активна",
+				bgStyle: {
+					background: "rgba(239, 68, 68, 0.1)",
+					color: "var(--critical, #dc2626)",
+					borderColor: "rgba(239, 68, 68, 0.3)",
+				},
 				icon: WifiOff,
 				spin: false,
-				dot: "bg-red-500",
+				dotStyle: { background: "var(--critical, #dc2626)" },
+			};
+		}
+
+		if (effectiveError) {
+			return {
+				label: "Ошибка синхронизации",
+				sublabel: effectiveError,
+				bgStyle: {
+					background: "rgba(245, 158, 11, 0.12)",
+					color: "var(--warn, #d97706)",
+					borderColor: "rgba(245, 158, 11, 0.35)",
+				},
+				icon: AlertTriangle,
+				spin: false,
+				dotStyle: { background: "var(--warn, #d97706)" },
 			};
 		}
 
@@ -91,43 +150,61 @@ export const NetworkStatusIndicator: React.FC<NetworkStatusIndicatorProps> = ({
 			return {
 				label: "Локальная сеть (LAN)",
 				sublabel: "Сервер клиники доступен",
-				bg: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25",
+				bgStyle: {
+					background: "rgba(245, 158, 11, 0.1)",
+					color: "var(--warn, #d97706)",
+					borderColor: "rgba(245, 158, 11, 0.3)",
+				},
 				icon: Activity,
 				spin: false,
-				dot: "bg-amber-500",
+				dotStyle: { background: "var(--warn, #d97706)" },
 			};
 		}
 
 		return {
 			label: "Онлайн",
-			sublabel: pendingMutationCount > 0 ? `${pendingMutationCount} на отправку` : "Связь стабильна",
-			bg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25",
+			sublabel:
+				pendingMutationCount > 0
+					? `${pendingMutationCount} на отправку`
+					: "Связь стабильна",
+			bgStyle: {
+				background: "rgba(16, 185, 129, 0.1)",
+				color: "var(--success, #059669)",
+				borderColor: "rgba(16, 185, 129, 0.3)",
+			},
 			icon: Wifi,
 			spin: false,
-			dot: "bg-emerald-500",
+			dotStyle: { background: "var(--success, #059669)" },
 		};
-	};
+	}, [isSyncing, isOnline, effectiveError, isLan, pendingMutationCount]);
 
-	const config = getStatusConfig();
 	const IconComponent = config.icon;
 
 	return (
 		<>
 			<div
-				className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full border transition-all cursor-pointer select-none text-xs h-[32px] ${config.bg} ${className}`}
+				className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full border transition-all cursor-pointer select-none text-xs h-[32px] ${className}`}
+				style={config.bgStyle}
 				onClick={handleClick}
-				role="status"
-				aria-live="polite"
+				onKeyDown={handleKeyDown}
+				tabIndex={0}
+				role="button"
 				aria-label={`Статус сети: ${config.label}. ${config.sublabel}`}
 				data-testid="network-status-indicator"
 				title="Нажмите для открытия панели синхронизации клиники"
 			>
 				{/* Status indicator pulse dot */}
-				<span className="relative flex h-2 w-2">
-					<span className={`relative inline-flex rounded-full h-2 w-2 ${config.dot}`} />
+				<span className="relative flex h-2 w-2" aria-hidden="true">
+					<span
+						className="relative inline-flex rounded-full h-2 w-2"
+						style={config.dotStyle}
+					/>
 				</span>
 
-				<IconComponent className={`w-3.5 h-3.5 ${config.spin ? "animate-spin" : ""}`} />
+				<IconComponent
+					className={`w-3.5 h-3.5 ${config.spin ? "animate-spin" : ""}`}
+					aria-hidden="true"
+				/>
 
 				{!compact && (
 					<span className="font-semibold tracking-tight whitespace-nowrap">
@@ -137,7 +214,11 @@ export const NetworkStatusIndicator: React.FC<NetworkStatusIndicatorProps> = ({
 
 				{pendingMutationCount > 0 && (
 					<span
-						className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-black/10 dark:bg-white/10"
+						className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-bold"
+						style={{
+							background: "var(--paper-soft, rgba(0, 0, 0, 0.08))",
+							color: "inherit",
+						}}
 						data-testid="pending-mutation-badge"
 					>
 						{pendingMutationCount}
@@ -149,7 +230,7 @@ export const NetworkStatusIndicator: React.FC<NetworkStatusIndicatorProps> = ({
 					<button
 						type="button"
 						onClick={handleSyncClick}
-						className="ml-1 p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+						className="ml-1 p-1 rounded-full hover:opacity-80 transition-opacity cursor-pointer border-0 bg-transparent"
 						aria-label="Синхронизировать сейчас"
 						data-testid="quick-sync-button"
 						title="Синхронизировать очередь прямо сейчас"
@@ -171,3 +252,4 @@ export const NetworkStatusIndicator: React.FC<NetworkStatusIndicatorProps> = ({
 };
 
 export default NetworkStatusIndicator;
+

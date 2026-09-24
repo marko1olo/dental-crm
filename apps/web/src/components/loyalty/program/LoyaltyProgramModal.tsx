@@ -505,7 +505,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 							{/* Fast Cashier Redemption Calculator */}
 							<div className="loyalty-cashier-card">
 								<h4 className="loyalty-section-title">
-									<CreditCard size={20} color="var(--teal, #0d9488)" />
+									<CreditCard size={20} color="var(--teal)" />
 									Калькулятор списания бонусов на кассе (54-ФЗ)
 								</h4>
 
@@ -513,8 +513,8 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 									<div
 										style={{
 											background: "rgba(16, 185, 129, 0.1)",
-											border: "1px solid #10b981",
-											color: "#047857",
+											border: "1px solid var(--line)",
+											color: "var(--ok-fg)",
 											padding: "0.75rem 1rem",
 											borderRadius: "0.5rem",
 											marginBottom: "1rem",
@@ -542,7 +542,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 												display: "block",
 												fontSize: "0.8125rem",
 												fontWeight: 600,
-												color: "var(--muted, #64748b)",
+												color: "var(--muted)",
 												marginBottom: "0.375rem",
 											}}
 										>
@@ -558,9 +558,9 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 												width: "100%",
 												padding: "0.625rem 0.875rem",
 												borderRadius: "0.5rem",
-												border: "1px solid var(--line, #cbd5e1)",
-												background: "var(--paper, #fff)",
-												color: "var(--ink, #0f172a)",
+												border: "1px solid var(--line)",
+												background: "var(--paper)",
+												color: "var(--ink)",
 												fontSize: "1rem",
 												fontWeight: 700,
 											}}
@@ -573,7 +573,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 												display: "block",
 												fontSize: "0.8125rem",
 												fontWeight: 600,
-												color: "var(--muted, #64748b)",
+												color: "var(--muted)",
 												marginBottom: "0.375rem",
 											}}
 										>
@@ -589,9 +589,9 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 												width: "100%",
 												padding: "0.625rem 0.875rem",
 												borderRadius: "0.5rem",
-												border: "1px solid var(--line, #cbd5e1)",
-												background: "var(--paper, #fff)",
-												color: "var(--ink, #0f172a)",
+												border: "1px solid var(--line)",
+												background: "var(--paper)",
+												color: "var(--ink)",
 												fontSize: "1rem",
 												fontWeight: 700,
 											}}
@@ -604,7 +604,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 												display: "block",
 												fontSize: "0.8125rem",
 												fontWeight: 600,
-												color: "var(--muted, #64748b)",
+												color: "var(--muted)",
 												marginBottom: "0.375rem",
 											}}
 										>
@@ -620,9 +620,9 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 												width: "100%",
 												padding: "0.625rem 0.875rem",
 												borderRadius: "0.5rem",
-												border: "1px solid var(--teal, #0d9488)",
-												background: "var(--paper, #fff)",
-												color: "var(--teal, #0d9488)",
+												border: "1px solid var(--teal)",
+												background: "var(--paper)",
+												color: "var(--teal)",
 												fontSize: "1rem",
 												fontWeight: 700,
 											}}
@@ -640,8 +640,8 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 										data-testid="loyalty-one-click-redeem-btn"
 										title="Списать максимально разрешенные бонусы в чек в 1 клик (54-ФЗ)"
 										style={{
-											background: "var(--teal, #0d9488)",
-											color: "#ffffff",
+											background: "var(--teal)",
+											color: "var(--on-teal, var(--paper))",
 											fontWeight: 700,
 											display: "inline-flex",
 											alignItems: "center",
@@ -678,9 +678,9 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 										alignItems: "center",
 										gap: "0.5rem",
 										padding: "0.5rem 0.75rem",
-										background: "var(--paper-alt, #f8fafc)",
+										background: "var(--paper-soft)",
 										borderRadius: "0.375rem",
-										border: "1px dashed var(--line, #cbd5e1)",
+										border: "1px dashed var(--line)",
 									}}
 								>
 									<input
@@ -692,7 +692,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 											width: "16px",
 											height: "16px",
 											cursor: "pointer",
-											accentColor: "var(--teal, #0d9488)",
+											accentColor: "var(--teal)",
 										}}
 										data-testid="loyalty-doctor-override-checkbox"
 									/>
@@ -700,7 +700,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 										htmlFor="doctor-override-checkbox"
 										style={{
 											fontSize: "0.8125rem",
-											color: "var(--ink, #0f172a)",
+											color: "var(--ink)",
 											cursor: "pointer",
 											fontWeight: 600,
 											display: "flex",
@@ -708,7 +708,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 											gap: "0.375rem",
 										}}
 									>
-										<ShieldCheck size={15} color="var(--teal, #0d9488)" />
+										<ShieldCheck size={15} color="var(--teal)" />
 										Привилегия врача / Гарантийная переделка (покрытие до 100% счета бонусами)
 									</label>
 								</div>
@@ -720,7 +720,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 											fontWeight: 700,
 											fontSize: "0.875rem",
 											marginBottom: "0.5rem",
-											color: "var(--ink, #0f172a)",
+											color: "var(--ink)",
 										}}
 									>
 										Фискальный сплит чека по 54-ФЗ (ФФД 1.2):
@@ -733,7 +733,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 									</div>
 									<div className="loyalty-fiscal-row">
 										<span>Тег 1215 (Зачет аванса / Бонусные баллы):</span>
-										<strong style={{ color: "var(--teal, #0d9488)" }}>
+										<strong style={{ color: "var(--teal)" }}>
 											-
 											{(
 												redemptionCalc.fiscal54FzSplit.tag1215AdvancePrepaymentBonusKop /
@@ -762,9 +762,9 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 											border: "none",
 											background:
 												redemptionCalc.actualRedeemedPointsRub > 0
-													? "var(--teal, #0d9488)"
-													: "#94a3b8",
-											color: "#ffffff",
+													? "var(--teal)"
+													: "var(--muted)",
+											color: "var(--on-teal, var(--paper))",
 											fontSize: "0.9375rem",
 											fontWeight: 700,
 											cursor:
@@ -789,8 +789,8 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 						<div>
 							<div
 								style={{
-									background: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
-									color: "#ffffff",
+									background: "linear-gradient(135deg, var(--ok-fg) 0%, var(--teal) 100%)",
+									color: "var(--on-teal, var(--paper))",
 									borderRadius: "1rem",
 									padding: "1.5rem",
 									marginBottom: "1.5rem",
@@ -836,38 +836,38 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 											padding: "0.375rem 0.875rem",
 											minHeight: "44px",
 											borderRadius: "0.5rem",
-											border: "1px solid #ffffff",
-											background: isFamilyModeActive ? "#ffffff" : "transparent",
-											color: isFamilyModeActive ? "#047857" : "#ffffff",
+											border: "1px solid var(--on-teal, var(--paper))",
+											background: isFamilyModeActive ? "var(--on-teal, var(--paper))" : "transparent",
+											color: isFamilyModeActive ? "var(--ok-fg, var(--teal))" : "var(--on-teal, var(--paper))",
 											fontSize: "0.8125rem",
 											fontWeight: 700,
 											cursor: "pointer",
 										}}
 									>
-										{isFamilyModeActive ? "✓ Семейный режим включен" : "Включить семейный счет"}
+										{isFamilyModeActive ? "Семейный режим включен" : "Включить семейный счет"}
 									</button>
 								</div>
 							</div>
 
 							{/* Family Members Grid */}
 							<h4 className="loyalty-section-title">
-								<Users size={20} color="var(--teal, #0d9488)" />
+								<Users size={20} color="var(--teal)" />
 								Члены семьи и права списания баллов
 							</h4>
 
 							{familyMembers.length === 0 ? (
 								<div
 									style={{
-										border: "2px dashed var(--line, #cbd5e1)",
+										border: "2px dashed var(--line)",
 										borderRadius: "0.875rem",
 										padding: "2rem",
 										textAlign: "center",
-										color: "var(--muted, #64748b)",
-										background: "var(--paper-muted, #f8fafc)",
+										color: "var(--muted)",
+										background: "var(--paper-soft)",
 									}}
 								>
 									<Users size={36} style={{ margin: "0 auto 8px", opacity: 0.5 }} />
-									<div style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>
+									<div style={{ fontWeight: 600, color: "var(--ink)" }}>
 										Члены семьи не добавлены
 									</div>
 									<p style={{ fontSize: "0.8125rem", marginTop: "4px" }}>
@@ -892,7 +892,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 															fontSize: "0.9375rem",
 															fontWeight: 700,
 															marginTop: "0.25rem",
-															color: "var(--ink, #0f172a)",
+															color: "var(--ink)",
 														}}
 													>
 														{member.fullName}
@@ -900,7 +900,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 												</div>
 											</div>
 
-											<div style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)" }}>
+											<div style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
 												Личные траты: {(member.lifetimeSpentKop / 100).toLocaleString("ru-RU")} ₽
 												<br />
 												Накоплено баллов: {member.individualPointsBalance} ₽
@@ -911,12 +911,12 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 													display: "flex",
 													alignItems: "center",
 													justifyContent: "space-between",
-													borderTop: "1px solid var(--line, #e2e8f0)",
+													borderTop: "1px solid var(--line)",
 													paddingTop: "0.5rem",
 													marginTop: "auto",
 												}}
 											>
-												<span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
+												<span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
 													Списание бонусов:
 												</span>
 												<button
@@ -933,7 +933,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 														background: member.isBonusSpendingAllowed
 															? "rgba(16, 185, 129, 0.15)"
 															: "rgba(239, 68, 68, 0.15)",
-														color: member.isBonusSpendingAllowed ? "#047857" : "#b91c1c",
+														color: member.isBonusSpendingAllowed ? "var(--ok-fg)" : "var(--bad-fg)",
 													}}
 												>
 													{member.isBonusSpendingAllowed ? "Разрешено" : "Заблокировано"}
@@ -947,13 +947,13 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 							{/* Add Member Form */}
 							<div
 								style={{
-									background: "var(--paper, #ffffff)",
-									border: "1px solid var(--line, #e2e8f0)",
-									borderRadius: "0.875rem",
-									padding: "1rem 1.25rem",
-									marginTop: "1.5rem",
+									background: "var(--paper-soft)",
+									border: "1px solid var(--line)",
+									borderRadius: "0.5rem",
+									padding: "0.75rem 1rem",
+									marginTop: "1rem",
 									display: "flex",
-									gap: "1rem",
+									gap: "0.75rem",
 									alignItems: "flex-end",
 									flexWrap: "wrap",
 								}}
@@ -964,7 +964,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 											display: "block",
 											fontSize: "0.8125rem",
 											fontWeight: 600,
-											color: "var(--muted, #64748b)",
+											color: "var(--muted)",
 											marginBottom: "0.25rem",
 										}}
 									>
@@ -979,7 +979,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 											width: "100%",
 											padding: "0.5rem 0.75rem",
 											borderRadius: "0.5rem",
-											border: "1px solid var(--line, #cbd5e1)",
+											border: "1px solid var(--line)",
 											fontSize: "0.875rem",
 										}}
 									/>
@@ -991,7 +991,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 											display: "block",
 											fontSize: "0.8125rem",
 											fontWeight: 600,
-											color: "var(--muted, #64748b)",
+											color: "var(--muted)",
 											marginBottom: "0.25rem",
 										}}
 									>
@@ -1006,9 +1006,9 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 											width: "100%",
 											padding: "0.5rem 0.75rem",
 											borderRadius: "0.5rem",
-											border: "1px solid var(--line, #cbd5e1)",
+											border: "1px solid var(--line)",
 											fontSize: "0.875rem",
-											background: "var(--paper, #fff)",
+											background: "var(--paper)",
 										}}
 									>
 										<option value="Супруг / Супруга">Супруг / Супруга</option>
@@ -1026,8 +1026,8 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 										minHeight: "44px",
 										borderRadius: "0.5rem",
 										border: "none",
-										background: "var(--teal, #0d9488)",
-										color: "#ffffff",
+										background: "var(--teal)",
+										color: "var(--on-teal, var(--paper))",
 										fontWeight: 700,
 										fontSize: "0.875rem",
 										cursor: "pointer",
@@ -1056,7 +1056,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 								{/* Left: Issue / Catalog */}
 								<div>
 									<h4 className="loyalty-section-title">
-										<Gift size={20} color="var(--teal, #0d9488)" />
+										<Gift size={20} color="var(--teal)" />
 										Выпуск подарочного сертификата
 									</h4>
 
@@ -1072,13 +1072,13 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 													borderRadius: "0.5rem",
 													border:
 														certificateNominalRub === preset.nominalRub
-															? "2px solid var(--teal, #0d9488)"
-															: "1px solid var(--line, #cbd5e1)",
+															? "2px solid var(--teal)"
+															: "1px solid var(--line)",
 													background:
 														certificateNominalRub === preset.nominalRub
 															? "rgba(13, 148, 136, 0.1)"
-															: "var(--paper, #ffffff)",
-													color: "var(--ink, #0f172a)",
+															: "var(--paper)",
+													color: "var(--ink)",
 													fontWeight: 700,
 													fontSize: "0.875rem",
 													cursor: "pointer",
@@ -1095,7 +1095,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 												display: "block",
 												fontSize: "0.8125rem",
 												fontWeight: 600,
-												color: "var(--muted, #64748b)",
+												color: "var(--muted)",
 												marginBottom: "0.25rem",
 											}}
 										>
@@ -1109,7 +1109,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 												width: "100%",
 												padding: "0.625rem 0.875rem",
 												borderRadius: "0.5rem",
-												border: "1px solid var(--line, #cbd5e1)",
+												border: "1px solid var(--line)",
 												fontSize: "0.875rem",
 											}}
 										/>
@@ -1125,8 +1125,8 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 												minHeight: "44px",
 												borderRadius: "0.5rem",
 												border: "none",
-												background: "var(--teal, #0d9488)",
-												color: "#ffffff",
+												background: "var(--teal)",
+												color: "var(--on-teal, var(--paper))",
 												fontWeight: 700,
 												fontSize: "0.875rem",
 												cursor: "pointer",
@@ -1147,9 +1147,9 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 												padding: "0.625rem 1rem",
 												minHeight: "44px",
 												borderRadius: "0.5rem",
-												border: "1px solid var(--line, #cbd5e1)",
-												background: "var(--paper, #ffffff)",
-												color: "var(--ink, #0f172a)",
+												border: "1px solid var(--line)",
+												background: "var(--paper)",
+												color: "var(--ink)",
 												fontWeight: 700,
 												fontSize: "0.875rem",
 												cursor: "pointer",
@@ -1166,11 +1166,11 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 									{/* Verification Box */}
 									<div
 										style={{
-											background: "var(--paper, #ffffff)",
-											border: "1px solid var(--line, #e2e8f0)",
-											borderRadius: "0.875rem",
-											padding: "1rem",
-											marginTop: "1.5rem",
+											background: "var(--paper-soft)",
+											border: "1px solid var(--line)",
+											borderRadius: "0.5rem",
+											padding: "0.75rem 1rem",
+											marginTop: "1rem",
 										}}
 									>
 										<h5 style={{ fontSize: "0.875rem", fontWeight: 700, marginBottom: "0.5rem" }}>
@@ -1186,7 +1186,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 													flex: 1,
 													padding: "0.5rem 0.75rem",
 													borderRadius: "0.5rem",
-													border: "1px solid var(--line, #cbd5e1)",
+													border: "1px solid var(--line)",
 													fontSize: "0.875rem",
 													fontFamily: "monospace",
 												}}
@@ -1199,8 +1199,8 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 													minHeight: "44px",
 													borderRadius: "0.5rem",
 													border: "none",
-													background: "#0284c7",
-													color: "#ffffff",
+													background: "var(--teal)",
+													color: "var(--on-teal, var(--paper))",
 													fontWeight: 700,
 													fontSize: "0.8125rem",
 													cursor: "pointer",
@@ -1215,7 +1215,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 													fontSize: "0.8125rem",
 													marginTop: "0.5rem",
 													fontWeight: 600,
-													color: certRedeemFeedback.isSuccess ? "var(--good, #047857)" : "var(--bad, #b91c1c)",
+													color: certRedeemFeedback.isSuccess ? "var(--ok-fg)" : "var(--bad-fg)",
 												}}
 											>
 												{certRedeemFeedback.message}
@@ -1242,7 +1242,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 															fontSize: "0.75rem",
 															textTransform: "uppercase",
 															letterSpacing: "0.1em",
-															color: "#fef08a",
+															color: "var(--warn-fg)",
 														}}
 													>
 														{clinicName}
@@ -1251,7 +1251,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 														ПОДАРОЧНЫЙ СЕРТИФИКАТ
 													</div>
 												</div>
-												<div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#fcd34d" }}>
+												<div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--warn-fg)" }}>
 													{(activeCertificate.nominalKop / 100).toLocaleString("ru-RU")} ₽
 												</div>
 											</div>
@@ -1266,7 +1266,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 												Действителен до: <strong>{activeCertificate.expiresAtIso}</strong>
 												<br />
 												Остаток средств:{" "}
-												<strong style={{ color: "#86efac" }}>
+												<strong style={{ color: "var(--ok-fg)" }}>
 													{(activeCertificate.currentBalanceKop / 100).toLocaleString("ru-RU")} ₽
 												</strong>
 											</div>
@@ -1277,7 +1277,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 													__html: generateCode128Svg(activeCertificate.serialNumber, {
 														height: 38,
 														showText: false,
-														barColor: "#ffffff",
+														barColor: "var(--paper)",
 													}),
 												}}
 											/>
@@ -1285,16 +1285,16 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 									) : (
 										<div
 											style={{
-												border: "2px dashed var(--line, #cbd5e1)",
+												border: "2px dashed var(--line)",
 												borderRadius: "1rem",
 												padding: "3rem 1.5rem",
 												textAlign: "center",
-												color: "var(--muted, #64748b)",
-												background: "var(--paper-muted, #f8fafc)",
+												color: "var(--muted)",
+												background: "var(--paper-soft)",
 											}}
 										>
 											<Gift size={44} style={{ margin: "0 auto 12px", opacity: 0.4 }} />
-											<div style={{ fontWeight: 700, fontSize: "1rem", color: "var(--ink, #0f172a)" }}>
+											<div style={{ fontWeight: 700, fontSize: "1rem", color: "var(--ink)" }}>
 												Сертификат не выбран
 											</div>
 											<p style={{ fontSize: "0.8125rem", marginTop: "6px", maxWidth: "260px", marginInline: "auto" }}>
@@ -1311,7 +1311,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 					{activeTab === "promos" && (
 						<div>
 							<h4 className="loyalty-section-title">
-								<Tag size={20} color="var(--teal, #0d9488)" />
+								<Tag size={20} color="var(--teal)" />
 								Каталог маркетинговых промокодов клиники
 							</h4>
 
@@ -1333,7 +1333,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 												style={{
 													border: "none",
 													background: "rgba(13, 148, 136, 0.12)",
-													color: "var(--teal, #0d9488)",
+													color: "var(--teal)",
 													cursor: "pointer",
 													fontSize: "0.75rem",
 													fontWeight: 700,
@@ -1352,13 +1352,13 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 										<h5 style={{ fontSize: "0.9375rem", fontWeight: 700, margin: "0.25rem 0" }}>
 											{promo.titleRu}
 										</h5>
-										<p style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)" }}>
+										<p style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
 											{promo.descriptionRu}
 										</p>
 										<div
 											style={{
 												fontSize: "0.6875rem",
-												color: "var(--teal, #0d9488)",
+												color: "var(--teal)",
 												marginTop: "0.5rem",
 												fontWeight: 600,
 											}}
@@ -1372,11 +1372,11 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 							{/* Promo Code Interactive Evaluator */}
 							<div
 								style={{
-									background: "var(--paper, #ffffff)",
-									border: "1px solid var(--line, #e2e8f0)",
-									borderRadius: "0.875rem",
-									padding: "1.25rem",
-									marginTop: "1.5rem",
+									background: "var(--paper-soft)",
+									border: "1px solid var(--line)",
+									borderRadius: "0.5rem",
+									padding: "0.75rem 1rem",
+									marginTop: "1rem",
 								}}
 							>
 								<h5 style={{ fontSize: "0.9375rem", fontWeight: 700, marginBottom: "0.75rem" }}>
@@ -1392,7 +1392,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 											width: "260px",
 											padding: "0.5rem 0.75rem",
 											borderRadius: "0.5rem",
-											border: "1px solid var(--line, #cbd5e1)",
+											border: "1px solid var(--line)",
 											fontSize: "0.875rem",
 											fontWeight: 700,
 										}}
@@ -1405,8 +1405,8 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 											minHeight: "44px",
 											borderRadius: "0.5rem",
 											border: "none",
-											background: "var(--teal, #0d9488)",
-											color: "#ffffff",
+											background: "var(--teal)",
+											color: "var(--on-teal, var(--paper))",
 											fontWeight: 700,
 											fontSize: "0.875rem",
 											cursor: "pointer",
@@ -1425,17 +1425,19 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 											background: promoResult.isValid
 												? "rgba(16, 185, 129, 0.1)"
 												: "rgba(239, 68, 68, 0.1)",
-											border: `1px solid ${promoResult.isValid ? "#10b981" : "#ef4444"}`,
+											border: promoResult.isValid
+												? "1px solid var(--ok-fg)"
+												: "1px solid var(--bad-fg)",
 										}}
 									>
 										<div
 											style={{
 												fontWeight: 700,
 												fontSize: "0.875rem",
-												color: promoResult.isValid ? "#047857" : "#b91c1c",
+												color: promoResult.isValid ? "var(--ok-fg)" : "var(--bad-fg)",
 											}}
 										>
-											{promoResult.isValid ? "✓ Промокод применен!" : "✗ Промокод не применен"}
+											{promoResult.isValid ? "Промокод применен!" : "Промокод не применен"}
 										</div>
 										<p style={{ fontSize: "0.8125rem", marginTop: "0.25rem" }}>
 											{promoResult.messageRu}
@@ -1463,7 +1465,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 															});
 														}
 														setRedemptionSuccessMsg(
-															`✓ Промокод «${promoResult.code}» применен: скидка ${discountRub} ₽ добавлена к чеку. К оплате: ${remainingRub.toLocaleString("ru-RU")} ₽`
+															`Промокод «${promoResult.code}» применен: скидка ${discountRub} ₽ добавлена к чеку. К оплате: ${remainingRub.toLocaleString("ru-RU")} ₽`
 														);
 														setActiveTab("balance");
 													}}
@@ -1472,8 +1474,8 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 														minHeight: "44px",
 														borderRadius: "0.5rem",
 														border: "none",
-														background: "var(--teal, #0d9488)",
-														color: "#ffffff",
+														background: "var(--teal)",
+														color: "var(--on-teal, var(--paper))",
 														fontWeight: 700,
 														fontSize: "0.8125rem",
 														cursor: "pointer",
@@ -1497,7 +1499,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 									style={{
 										fontSize: "0.875rem",
 										fontWeight: 700,
-										color: "#b45309",
+										color: "var(--warn-fg)",
 										display: "flex",
 										alignItems: "center",
 										gap: "0.375rem",
@@ -1512,7 +1514,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 										margin: 0,
 										paddingLeft: "1.25rem",
 										fontSize: "0.8125rem",
-										color: "var(--ink, #0f172a)",
+										color: "var(--ink)",
 										lineHeight: 1.6,
 									}}
 								>
@@ -1540,7 +1542,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 								}}
 							>
 								<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-									<Search size={18} color="var(--muted, #64748b)" />
+									<Search size={18} color="var(--muted)" />
 									<input
 										type="text"
 										placeholder="Поиск по операциям..."
@@ -1549,7 +1551,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 										style={{
 											padding: "0.375rem 0.75rem",
 											borderRadius: "0.5rem",
-											border: "1px solid var(--line, #cbd5e1)",
+											border: "1px solid var(--line)",
 											fontSize: "0.8125rem",
 											width: "240px",
 										}}
@@ -1564,8 +1566,8 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 										minHeight: "44px",
 										borderRadius: "0.5rem",
 										border: "none",
-										background: "var(--teal, #0d9488)",
-										color: "#ffffff",
+										background: "var(--teal)",
+										color: "var(--on-teal, var(--paper))",
 										fontWeight: 700,
 										fontSize: "0.8125rem",
 										cursor: "pointer",
@@ -1600,7 +1602,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 													style={{
 														textAlign: "center",
 														padding: "2.5rem 1rem",
-														color: "var(--muted, #64748b)",
+														color: "var(--muted)",
 													}}
 												>
 													История операций с баллами пуста
@@ -1612,7 +1614,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 													<td>{entry.timestampIso}</td>
 													<td>
 														<div style={{ fontWeight: 600 }}>{entry.operationTypeRu}</div>
-														<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
+														<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
 															{entry.noteRu}
 														</div>
 													</td>

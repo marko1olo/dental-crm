@@ -390,6 +390,44 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 	if (!isOpen) return null;
 
+	if (isSelfCheckinOpen) {
+		return (
+			<MobileSelfCheckinModal
+				isOpen={isSelfCheckinOpen}
+				onClose={() => setIsSelfCheckinOpen(false)}
+				patientId={data.patientId}
+				initialPhone={data.phone}
+				patientName={data.fullName}
+				doctorName={data.curatingDoctor}
+				onCheckinSuccess={({ signedConsents, somaticProfile }) => {
+					setIsSelfCheckinOpen(false);
+					setData((prev) => ({
+						...prev,
+						somaticAlerts: somaticProfile.alerts,
+						somaticRiskLevel: somaticProfile.riskLevel,
+						somaticRiskProfile: somaticProfile.profile,
+					}));
+				}}
+			/>
+		);
+	}
+
+	if (isTaxModalOpen) {
+		return (
+			<TaxDeductionCertificateModal
+				isOpen={isTaxModalOpen}
+				onClose={() => setIsTaxModalOpen(false)}
+				patientName={data.fullName}
+				patientBirthDate={data.birthDate}
+				patientInn={data.inn}
+				payments={taxDeductionPayments}
+				selectedYear={selectedTaxYear}
+				clinicName="Стоматология ДЕНТЕ"
+				clinicInn="7701234567"
+			/>
+		);
+	}
+
 	return (
 		<div className="patient-cabinet-backdrop" onClick={onClose} role="dialog" aria-modal="true">
 			<div className="patient-cabinet-modal" onClick={(e) => e.stopPropagation()}>
@@ -677,42 +715,6 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 					appointment={reschedulingApt || null}
 					onSubmit={handleRescheduleSubmit}
 				/>
-
-				{/* 6. Self-Checkin & Somatic Health Questionnaire */}
-				{isSelfCheckinOpen && (
-					<MobileSelfCheckinModal
-						isOpen={isSelfCheckinOpen}
-						onClose={() => setIsSelfCheckinOpen(false)}
-						patientId={data.patientId}
-						initialPhone={data.phone}
-						patientName={data.fullName}
-						doctorName={data.curatingDoctor}
-						onCheckinSuccess={({ signedConsents, somaticProfile }) => {
-							setIsSelfCheckinOpen(false);
-							setData((prev) => ({
-								...prev,
-								somaticAlerts: somaticProfile.alerts,
-								somaticRiskLevel: somaticProfile.riskLevel,
-								somaticRiskProfile: somaticProfile.profile,
-							}));
-						}}
-					/>
-				)}
-
-				{/* 7. Tax Deduction Certificate Modal */}
-				{isTaxModalOpen && (
-					<TaxDeductionCertificateModal
-						isOpen={isTaxModalOpen}
-						onClose={() => setIsTaxModalOpen(false)}
-						patientName={data.fullName}
-						patientBirthDate={data.birthDate}
-						patientInn={data.inn}
-						payments={taxDeductionPayments}
-						selectedYear={selectedTaxYear}
-						clinicName="Стоматология ДЕНТЕ"
-						clinicInn="7701234567"
-					/>
-				)}
 			</div>
 		</div>
 	);

@@ -108,8 +108,10 @@ async function applyCashBoxFiscalReceipt(
 		const chosenBox = allBoxes.find((b: any) => b.id === data.cashBoxId) || mainBox;
 		const totalInflowKop = (data.cashKopecks || 0) + (data.electronicCardKopecks || 0) + (data.sbpKopecks || 0);
 		const amountRub = kopecksToRub(totalInflowKop);
-		const balanceBefore = Number(chosenBox.balanceRub) || 0;
-		const balanceAfter = Math.round((balanceBefore + amountRub) * 100) / 100;
+		const balanceBeforeKop = parseKopecks(chosenBox.balanceRub);
+		const balanceAfterKop = balanceBeforeKop + totalInflowKop;
+		const balanceBefore = kopecksToRub(balanceBeforeKop);
+		const balanceAfter = kopecksToRub(balanceAfterKop);
 
 		await tx
 			.update(cashBoxes)
@@ -173,8 +175,10 @@ async function applyCashBoxFiscalReceipt(
 
 	if (cashKop > 0 || (cashKop === 0 && electronicKop === 0)) {
 		const amountRub = kopecksToRub(cashKop);
-		const balanceBefore = Number(mainBox.balanceRub) || 0;
-		const balanceAfter = Math.round((balanceBefore + amountRub) * 100) / 100;
+		const balanceBeforeKop = parseKopecks(mainBox.balanceRub);
+		const balanceAfterKop = balanceBeforeKop + cashKop;
+		const balanceBefore = kopecksToRub(balanceBeforeKop);
+		const balanceAfter = kopecksToRub(balanceAfterKop);
 
 		await tx
 			.update(cashBoxes)
@@ -229,8 +233,10 @@ async function applyCashBoxFiscalReceipt(
 
 	if (electronicKop > 0) {
 		const amountRub = kopecksToRub(electronicKop);
-		const balanceBefore = Number(cashlessBox.balanceRub) || 0;
-		const balanceAfter = Math.round((balanceBefore + amountRub) * 100) / 100;
+		const balanceBeforeKop = parseKopecks(cashlessBox.balanceRub);
+		const balanceAfterKop = balanceBeforeKop + electronicKop;
+		const balanceBefore = kopecksToRub(balanceBeforeKop);
+		const balanceAfter = kopecksToRub(balanceAfterKop);
 
 		await tx
 			.update(cashBoxes)
@@ -332,8 +338,10 @@ async function applyCashBoxFiscalRefund(
 	const cashKop = data.refundCashKopecks || 0;
 	if (cashKop > 0) {
 		const amountRub = kopecksToRub(cashKop);
-		const balanceBefore = Number(mainBox.balanceRub) || 0;
-		const balanceAfter = Math.round((balanceBefore - amountRub) * 100) / 100;
+		const balanceBeforeKop = parseKopecks(mainBox.balanceRub);
+		const balanceAfterKop = Math.max(0, balanceBeforeKop - cashKop);
+		const balanceBefore = kopecksToRub(balanceBeforeKop);
+		const balanceAfter = kopecksToRub(balanceAfterKop);
 
 		await tx
 			.update(cashBoxes)
@@ -389,8 +397,10 @@ async function applyCashBoxFiscalRefund(
 	const electronicKop = data.refundElectronicKopecks || 0;
 	if (electronicKop > 0) {
 		const amountRub = kopecksToRub(electronicKop);
-		const balanceBefore = Number(cashlessBox.balanceRub) || 0;
-		const balanceAfter = Math.round((balanceBefore - amountRub) * 100) / 100;
+		const balanceBeforeKop = parseKopecks(cashlessBox.balanceRub);
+		const balanceAfterKop = Math.max(0, balanceBeforeKop - electronicKop);
+		const balanceBefore = kopecksToRub(balanceBeforeKop);
+		const balanceAfter = kopecksToRub(balanceAfterKop);
 
 		await tx
 			.update(cashBoxes)
@@ -453,18 +463,31 @@ export async function registerFiscalReceiptRoutes(
 	 * Fast status verification for SBP dynamic QR payments (ГОСТ Р 56042-2014 / НСПК) & Tag 1081.
 	 * Supports auto-receipt generation and manual cashier confirmation per Mandates 8e, 8k.
 	 */
+	const sbpStatusInputSchema = z.object({
+		orderId: z.string().trim().max(128).optional(),
+		qrId: z.string().trim().max(128).optional(),
+		invoiceId: z.string().trim().max(128).optional(),
+		paymentId: z.string().trim().max(128).optional(),
+		clientMutationId: z.string().trim().max(128).optional(),
+		action: z.enum(["check", "confirm_manual"]).optional(),
+		confirm: z.string().trim().optional(),
+	});
+
 	const sbpStatusHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const ctx = await requireClinicalReadContext(request, reply, "sbp status query");
 		if (!ctx) return;
 		const orgId = ctx.organizationId;
 
-		const query = (request.query || {}) as Record<string, unknown>;
-		const body = (request.body || {}) as Record<string, unknown>;
-		const orderId = ((body.orderId || query.orderId) as string | undefined)?.trim();
-		const qrId = ((body.qrId || query.qrId) as string | undefined)?.trim();
-		const invoiceId = ((body.invoiceId || query.invoiceId) as string | undefined)?.trim();
-		const paymentId = ((body.paymentId || query.paymentId) as string | undefined)?.trim();
-		const clientMutationId = ((body.clientMutationId || query.clientMutationId) as string | undefined)?.trim();
+		const parsedQuery = sbpStatusInputSchema.safeParse(request.query || {});
+		const parsedBody = sbpStatusInputSchema.safeParse(request.body || {});
+		const query = parsedQuery.success ? parsedQuery.data : {};
+		const body = parsedBody.success ? parsedBody.data : {};
+
+		const orderId = (body.orderId || query.orderId)?.trim();
+		const qrId = (body.qrId || query.qrId)?.trim();
+		const invoiceId = (body.invoiceId || query.invoiceId)?.trim();
+		const paymentId = (body.paymentId || query.paymentId)?.trim();
+		const clientMutationId = (body.clientMutationId || query.clientMutationId)?.trim();
 		const isConfirmManual =
 			body.action === "confirm_manual" ||
 			query.action === "confirm_manual" ||
@@ -537,7 +560,7 @@ export async function registerFiscalReceiptRoutes(
 					if (p.status === "paid") {
 						isPaid = true;
 						paidAtIso = p.paidAt ? p.paidAt.toISOString() : p.createdAt.toISOString();
-						amountKopecks = Math.round(Number(p.amountRub) * 100);
+						amountKopecks = parseKopecks(p.amountRub);
 						if (p.fiscalReceiptNumber) {
 							resolvedFiscalReceiptId = p.fiscalReceiptNumber;
 						}
@@ -568,7 +591,7 @@ export async function registerFiscalReceiptRoutes(
 					if (inv.status === "paid") {
 						isPaid = true;
 						paidAtIso = inv.paidAt ? inv.paidAt.toISOString() : new Date().toISOString();
-						amountKopecks = Math.round((Number(inv.totalAmountRub) || Number(inv.totalRub) || 0) * 100);
+						amountKopecks = parseKopecks(inv.totalAmountRub || inv.totalRub || 0);
 					} else if (isConfirmManual) {
 						await tx
 							.update(patientInvoices)
@@ -686,9 +709,7 @@ export async function registerFiscalReceiptRoutes(
 				if (item.discountKopecks !== undefined && item.discountKopecks !== null) {
 					discountKop = item.discountKopecks;
 				} else if (item.discountPercent !== undefined && item.discountPercent !== null) {
-					discountKop = Math.trunc(
-						(catalogUnitPriceKop * Math.round(item.discountPercent * 100)) / 10000,
-					);
+					discountKop = Math.round((catalogUnitPriceKop * item.discountPercent) / 100);
 				}
 
 				const expectedUnitPriceKop = Math.max(0, catalogUnitPriceKop - discountKop);
@@ -850,9 +871,7 @@ export async function registerFiscalReceiptRoutes(
 				if (item.discountKopecks !== undefined && item.discountKopecks !== null) {
 					discountKop = item.discountKopecks;
 				} else if (item.discountPercent !== undefined && item.discountPercent !== null) {
-					discountKop = Math.trunc(
-						(catalogUnitPriceKop * Math.round(item.discountPercent * 100)) / 10000,
-					);
+					discountKop = Math.round((catalogUnitPriceKop * item.discountPercent) / 100);
 				}
 
 				const expectedUnitPriceKop = Math.max(0, catalogUnitPriceKop - discountKop);
@@ -1165,7 +1184,7 @@ export async function registerFiscalReceiptRoutes(
 						.limit(1);
 					if (existingPayment) {
 						validPaymentId = existingPayment.id;
-						const origKop = Math.round(Number(existingPayment.amountRub) * 100);
+						const origKop = parseKopecks(existingPayment.amountRub);
 						if (data.totalRefundKopecks >= origKop) {
 							await tx
 								.update(payments)
@@ -1263,7 +1282,7 @@ export async function registerFiscalReceiptRoutes(
 					.limit(1);
 				if (existingPayment) {
 					validPaymentId = existingPayment.id;
-					const origKop = Math.round(Number(existingPayment.amountRub) * 100);
+					const origKop = parseKopecks(existingPayment.amountRub);
 					if (data.totalRefundKopecks >= origKop) {
 						await tx
 							.update(payments)

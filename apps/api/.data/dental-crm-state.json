@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-09-01T19:42:19.379Z",
+  "savedAt": "2026-09-24T21:35:30.104Z",
   "state": {
     "clinicProfile": {
       "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
@@ -36,7 +36,7 @@
       },
       "networkEnabled": false,
       "egiszEnabled": false,
-      "updatedAt": "2026-09-01T19:42:07.752Z",
+      "updatedAt": "2026-09-24T21:35:14.556Z",
       "currency": "₽",
       "themeColor": "teal",
       "logoUrl": null,
@@ -79,8 +79,8 @@
         "canManageMoney": true,
         "canManageImports": true,
         "color": "#1e293b",
-        "createdAt": "2026-09-01T19:42:07.752Z",
-        "updatedAt": "2026-09-01T19:42:07.752Z",
+        "createdAt": "2026-09-24T21:35:14.556Z",
+        "updatedAt": "2026-09-24T21:35:14.556Z",
         "workingHours": [
           {
             "weekday": 0,
@@ -142,8 +142,8 @@
         "canManageMoney": false,
         "canManageImports": false,
         "color": "#0f766e",
-        "createdAt": "2026-09-01T19:42:07.752Z",
-        "updatedAt": "2026-09-01T19:42:07.752Z",
+        "createdAt": "2026-09-24T21:35:14.556Z",
+        "updatedAt": "2026-09-24T21:35:14.556Z",
         "workingHours": [
           {
             "weekday": 0,
@@ -204,8 +204,8 @@
         "canManageMoney": true,
         "canManageImports": true,
         "color": "#b8781f",
-        "createdAt": "2026-09-01T19:42:07.752Z",
-        "updatedAt": "2026-09-01T19:42:07.752Z",
+        "createdAt": "2026-09-24T21:35:14.556Z",
+        "updatedAt": "2026-09-24T21:35:14.556Z",
         "workingHours": [
           {
             "weekday": 0,
@@ -267,8 +267,8 @@
         "canManageMoney": false,
         "canManageImports": false,
         "color": "#a34f32",
-        "createdAt": "2026-09-01T19:42:07.752Z",
-        "updatedAt": "2026-09-01T19:42:07.752Z",
+        "createdAt": "2026-09-24T21:35:14.556Z",
+        "updatedAt": "2026-09-24T21:35:14.556Z",
         "workingHours": [
           {
             "weekday": 0,
@@ -421,13 +421,16 @@
         "status": "active",
         "fullName": "Иванова Марина Сергеевна",
         "birthDate": "1988-04-21",
+        "gender": "female",
         "phone": "+7 927 111-22-33",
         "email": null,
         "notes": "Замок правки существующей карты",
+        "isAnonymous": false,
+        "anonymousCode": null,
         "administrativeProfile": null,
         "balanceRub": 0,
-        "createdAt": "2026-09-01T19:42:07.752Z",
-        "updatedAt": "2026-09-01T19:42:08.154Z"
+        "createdAt": "2026-09-24T21:35:14.556Z",
+        "updatedAt": "2026-09-24T21:35:14.561Z"
       },
       {
         "id": "fe736762-aef9-46c2-94d8-0ba5ea1bd11a",
@@ -435,13 +438,16 @@
         "status": "active",
         "fullName": "Петров Алексей Николаевич",
         "birthDate": "1979-11-03",
+        "gender": "male",
         "phone": "+7 927 555-19-40",
         "email": "petrov@example.com",
         "notes": "Нужны документы для налогового вычета.",
+        "isAnonymous": false,
+        "anonymousCode": null,
         "administrativeProfile": null,
         "balanceRub": 0,
-        "createdAt": "2026-09-01T19:42:07.752Z",
-        "updatedAt": "2026-09-01T19:42:07.752Z"
+        "createdAt": "2026-09-24T21:35:14.556Z",
+        "updatedAt": "2026-09-24T21:35:14.556Z"
       },
       {
         "id": "46c7b2cb-f4db-49e8-ac4e-ad6b1ecdf1ba",
@@ -449,13 +455,16 @@
         "status": "active",
         "fullName": "Садыкова Эльмира Рустамовна",
         "birthDate": null,
+        "gender": "female",
         "phone": "+7 927 900-77-10",
         "email": null,
         "notes": null,
+        "isAnonymous": false,
+        "anonymousCode": null,
         "administrativeProfile": null,
         "balanceRub": 0,
-        "createdAt": "2026-09-01T19:42:07.752Z",
-        "updatedAt": "2026-09-01T19:42:07.752Z"
+        "createdAt": "2026-09-24T21:35:14.556Z",
+        "updatedAt": "2026-09-24T21:35:14.556Z"
       }
     ],
     "documents": [
@@ -502,19 +511,17 @@
         "category": "imaging",
         "specialty": "therapist",
         "action": "add_required_service",
-        "severity": "blocker",
+        "severity": "info",
         "ownerRole": "doctor",
         "triggerServiceIds": [
           "svc-therapy-caries"
         ],
-        "requiredServiceIds": [
-          "svc-imaging-opg"
-        ],
+        "requiredServiceIds": [],
         "requiresCompletedServiceIds": [],
         "blockedServiceIds": [],
-        "condition": "Если в плане есть терапия кариеса, должен быть снимок или подтвержденный отказ врача.",
-        "warningText": "Нельзя закрывать терапию без снимка или клинического основания для отказа.",
-        "patientText": "Снимок нужен, чтобы врач не лечил вслепую и не пропустил воспаление у корня.",
+        "condition": "При глубоком кариесе рекомендуется прицельный снимок или визиография.",
+        "warningText": "Рекомендуется рентген-контроль глубины поражения твердых тканей.",
+        "patientText": "Снимок помогает врачу оценить состояние корня и исключить скрытые очаги.",
         "active": true
       },
       {
@@ -545,8 +552,8 @@
         "title": "Ортопедия только после закрытия активной терапии",
         "category": "prosthetics",
         "specialty": "orthopedist",
-        "action": "block_service",
-        "severity": "blocker",
+        "action": "schedule_followup",
+        "severity": "warning",
         "ownerRole": "doctor",
         "triggerServiceIds": [
           "svc-prosthetics-crown"
@@ -555,11 +562,9 @@
         "requiresCompletedServiceIds": [
           "svc-therapy-caries"
         ],
-        "blockedServiceIds": [
-          "svc-prosthetics-crown"
-        ],
+        "blockedServiceIds": [],
         "condition": "Коронка в плане допустима только после закрытия активного очага и снимка.",
-        "warningText": "Не планируйте коронку как готовую работу, пока терапия не завершена.",
+        "warningText": "Рекомендуется завершить терапию опорного зуба перед постоянным протезированием.",
         "patientText": "Сначала нужно убрать воспаление и восстановить основание, потом защищать зуб коронкой.",
         "active": true
       },
@@ -595,7 +600,7 @@
         "method": "card",
         "status": "paid",
         "paidAt": "2026-05-12T10:05:00+04:00",
-        "createdAt": "2026-09-01T19:42:07.752Z",
+        "createdAt": "2026-09-24T21:35:14.556Z",
         "fiscalReceiptNumber": "FN-2026-000001",
         "fiscalReceiptIssuedAt": "2026-05-12T10:05:00+04:00",
         "fiscalReceiptUrl": "https://example.com/fiscal/FN-2026-000001",
@@ -633,7 +638,7 @@
         "title": "Отправить ссылку на памятку после приема",
         "body": "Памятка после приема готова в защищенном портале клиники. Не включать диагноз, номера зубов, снимки и детали лечения в Telegram.",
         "lastEventAt": null,
-        "createdAt": "2026-09-01T19:42:07.752Z"
+        "createdAt": "2026-09-24T21:35:14.556Z"
       },
       {
         "id": "31ba633f-64e3-4a50-8a10-dc3d44f81a5a",
@@ -651,7 +656,7 @@
         "title": "Закрыть остаток оплаты и документы",
         "body": "Связать оплату с договором/актом, затем подготовить пакет документов.",
         "lastEventAt": null,
-        "createdAt": "2026-09-01T19:42:07.752Z"
+        "createdAt": "2026-09-24T21:35:14.556Z"
       },
       {
         "id": "16f19699-5b11-45fa-a329-5c53567b7f28",
@@ -669,7 +674,7 @@
         "title": "Предупредить о справке для вычета",
         "body": "После оплаты выдать справку КНД 1151156 и проверить ФИО/ИНН.",
         "lastEventAt": null,
-        "createdAt": "2026-09-01T19:42:07.752Z"
+        "createdAt": "2026-09-24T21:35:14.556Z"
       },
       {
         "id": "b896a902-665d-4b33-9851-53822a04c12a",
@@ -687,7 +692,7 @@
         "title": "Подтвердить первичную консультацию",
         "body": "Уточнить жалобу, предупредить взять паспорт и старые снимки.",
         "lastEventAt": null,
-        "createdAt": "2026-09-01T19:42:07.752Z"
+        "createdAt": "2026-09-24T21:35:14.556Z"
       },
       {
         "id": "d144ac6c-c570-4d0c-b6a6-dc0154130cd6",
@@ -705,7 +710,7 @@
         "title": "Обсудить ОПТГ контроль",
         "body": "Пояснить пациенту, что AI-описание не является диагнозом, врач проверяет снимок.",
         "lastEventAt": null,
-        "createdAt": "2026-09-01T19:42:07.752Z"
+        "createdAt": "2026-09-24T21:35:14.556Z"
       }
     ],
     "communicationEvents": [
@@ -797,14 +802,14 @@
     "importBatches": [],
     "auditEvents": [
       {
-        "id": "b9fc522f-a522-4522-b961-44880c01d83a",
+        "id": "4dd05693-f6cc-4bb8-8f5f-e6189ef41a0e",
         "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "actorUserId": null,
         "entityType": "patient",
         "entityId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
         "action": "patient_core_updated",
         "reason": "Core patient identity and contact facts updated for scheduling, documents, tax, and communication.",
-        "createdAt": "2026-09-01T19:42:08.155Z"
+        "createdAt": "2026-09-24T21:35:14.562Z"
       },
       {
         "id": "cdac781e-6a56-4bbb-a4bd-1e2da6efc047",
@@ -814,7 +819,7 @@
         "entityId": "af94df45-a669-4cae-b400-6e4f020f9120",
         "action": "visit_opened",
         "reason": "Смена открыта, карта пациента доступна врачу.",
-        "createdAt": "2026-09-01T19:42:07.752Z"
+        "createdAt": "2026-09-24T21:35:14.556Z"
       },
       {
         "id": "5caa31eb-f50e-4d85-aa5e-c328d8d08229",
@@ -824,7 +829,7 @@
         "entityId": "f9d274b4-3730-4eaa-aeac-20bf5f2f1bc5",
         "action": "document_prepared",
         "reason": "Договор создан как черновик перед приемом.",
-        "createdAt": "2026-09-01T19:42:07.752Z"
+        "createdAt": "2026-09-24T21:35:14.556Z"
       }
     ],
     "aiRecognitionJobs": [],
@@ -885,7 +890,7 @@
       "allowVoiceIntake": false,
       "staffEscalationChannel": null,
       "privacyMode": "no_phi_by_default",
-      "updatedAt": "2026-09-01T19:42:07.752Z"
+      "updatedAt": "2026-09-24T21:35:14.554Z"
     },
     "denteTelegramLinkCodes": [],
     "denteTelegramChatLinks": [],
@@ -905,9 +910,9 @@
       "diagnosis": "K02.1 кариес дентина, предварительно.",
       "treatmentPlan": "Анестезия, изоляция, препарирование, восстановление композитом.",
       "doctorSummary": "AI-диктовка должна попадать сюда как черновик, не как подписанный диагноз.",
-      "createdAt": "2026-09-01T19:42:07.752Z",
-      "updatedAt": "2026-09-01T19:42:07.752Z"
+      "createdAt": "2026-09-24T21:35:14.556Z",
+      "updatedAt": "2026-09-24T21:35:14.556Z"
     }
   },
-  "checksum": "2516a0d09ebb7df66d01bc407ad1cc4e08cf8391da9b19fef75b83ab757ad865"
+  "checksum": "d4046c3d80046075757bdb56db8ac27220384cf843209ad16453e7f460456f45"
 }

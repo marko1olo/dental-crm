@@ -523,8 +523,6 @@ export default defineConfig({
 						return "inventory-components";
 					if (normalizedId.includes("/apps/web/src/components/treatment-plans/"))
 						return "treatment-plans";
-					if (normalizedId.includes("/apps/web/src/components/perspectives/"))
-						return "perspectives";
 					if (normalizedId.includes("/apps/web/src/components/sanpin/"))
 						return "sanpin-components";
 					if (normalizedId.includes("/apps/web/src/components/schedule/"))

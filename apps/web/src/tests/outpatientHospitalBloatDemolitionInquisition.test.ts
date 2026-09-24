@@ -15,7 +15,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 
 import {
 	process100PercentDiscountCheckout,
@@ -167,7 +167,7 @@ describe("Demolition Mandate: Eradication of Hospital & Inpatient Bloat (Mandate
 				"Дневник приёма должен гарантировать автономию врача: поля никогда не блокируются (Мандат 8e)",
 			);
 			assert.ok(
-				diaryContent.includes("дезинфекция 1 клик без комиссии"),
+				diaryContent.includes("списание по FEFO в 1 клик без комиссии"),
 				"Списание карпул медсестрой производится в 1 клик без комиссии по СанПиН 3.3686-21",
 			);
 		});

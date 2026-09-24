@@ -127,4 +127,30 @@ describe("AuthContext — изоляция контекста авторизац
 		);
 		assert.ok(markupWith.includes("есть_контекст"));
 	});
+
+	test("5. AuthProvider сохраняет стабильную ссылку через useMemo при ререндере с тем же значением", () => {
+		let firstCapture: AuthContextType | null = null;
+		let secondCapture: AuthContextType | null = null;
+
+		function Probe1() {
+			firstCapture = useAuthContext();
+			return createElement("span", null, "1");
+		}
+		function Probe2() {
+			secondCapture = useAuthContext();
+			return createElement("span", null, "2");
+		}
+
+		renderToStaticMarkup(
+			createElement(AuthProvider, { value: mockAuthValue, children: createElement(Probe1) }),
+		);
+		renderToStaticMarkup(
+			createElement(AuthProvider, { value: mockAuthValue, children: createElement(Probe2) }),
+		);
+
+		assert.equal(firstCapture, mockAuthValue);
+		assert.equal(secondCapture, mockAuthValue);
+		assert.strictEqual(firstCapture, secondCapture, "Значения контекста должны быть идентичны");
+	});
 });
+

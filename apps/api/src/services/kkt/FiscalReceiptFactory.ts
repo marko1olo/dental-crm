@@ -12,6 +12,9 @@ import { z } from "zod";
 import {
 	buildFfd12Tag2000MarkingPayload,
 	type CreateFiscalReceiptPayloadInput,
+	FFD12_TAG_1057_AGENT_CODES,
+	FFD12_TAG_1222_AGENT_CODES,
+	type Ffd12AgentSign,
 	type Ffd12OperationType,
 	type Ffd12PaymentMethod,
 	type Ffd12PaymentSubject,
@@ -36,6 +39,7 @@ export interface Ffd12ItemPayload {
 	tag1214_paymentMethod: number;
 	tag1199_vatRate: number;
 	tag2108_quantityMeasure: number;
+	tag1222_agentSign?: number | null | undefined;
 	medicalServiceCodeMzk?: string | null | undefined;
 	markingCode?: string | null | undefined;
 	tag2000_markingPayload?: {
@@ -50,11 +54,14 @@ export interface Ffd12ItemPayload {
 export interface Ffd12ReceiptPayload {
 	tag1054_operationType: number;
 	tag1055_taxationSystem: number;
+	tag1057_agentSign?: number | null | undefined;
 	tag1009_paymentAddress?: string | undefined;
 	tag1187_paymentPlace?: string | undefined;
 	tag1021_cashierName: string;
 	tag1203_cashierInn?: string | null | undefined;
 	tag1008_customerContact: string;
+	tag1227_customerName?: string | null | undefined;
+	tag1228_customerInn?: string | null | undefined;
 	tag1020_totalRub: string;
 	totalKopecks: number;
 	payments: {
@@ -213,6 +220,22 @@ export class FiscalReceiptFactory {
 	}
 
 	/**
+	 * Tag 1057: Agent Sign in receipt
+	 */
+	public static resolveTag1057(agentSign?: Ffd12AgentSign | null): number | null {
+		if (!agentSign) return null;
+		return FFD12_TAG_1057_AGENT_CODES[agentSign] ?? null;
+	}
+
+	/**
+	 * Tag 1222: Agent Sign per subject
+	 */
+	public static resolveTag1222(agentSign?: Ffd12AgentSign | null): number | null {
+		if (!agentSign) return null;
+		return FFD12_TAG_1222_AGENT_CODES[agentSign] ?? null;
+	}
+
+	/**
 	 * Constructs structured FFD 1.2 compliant receipt payload.
 	 */
 	public static buildFfd12Receipt(input: CreateFiscalReceiptPayloadInput): Ffd12ReceiptPayload {
@@ -221,6 +244,7 @@ export class FiscalReceiptFactory {
 			const tag1214 = this.resolveTag1214(item.method);
 			const tag1199 = this.resolveTag1199(item.vatRate);
 			const tag2108 = this.resolveTag2108(item.measure);
+			const tag1222 = this.resolveTag1222(item.agentSign);
 
 			let markingPayload: Ffd12ItemPayload["tag2000_markingPayload"] = null;
 			if (item.markingCode && item.markingCode.trim().length > 0) {
@@ -249,6 +273,7 @@ export class FiscalReceiptFactory {
 				tag1214_paymentMethod: tag1214,
 				tag1199_vatRate: tag1199,
 				tag2108_quantityMeasure: tag2108,
+				tag1222_agentSign: tag1222,
 				medicalServiceCodeMzk: item.medicalServiceCode804n ?? null,
 				markingCode: item.markingCode ?? null,
 				tag2000_markingPayload: markingPayload,
@@ -264,9 +289,14 @@ export class FiscalReceiptFactory {
 		return {
 			tag1054_operationType: this.resolveTag1054(input.operationType),
 			tag1055_taxationSystem: this.resolveTag1055(input.taxationSystem),
+			tag1057_agentSign: this.resolveTag1057(input.agentSign),
 			tag1021_cashierName: input.cashierFullName,
 			tag1203_cashierInn: input.cashierInn ?? null,
 			tag1008_customerContact: input.customerContact,
+			tag1227_customerName: input.customerName ?? null,
+			tag1228_customerInn: input.customerInn ?? null,
+			tag1009_paymentAddress: input.paymentAddress ?? undefined,
+			tag1187_paymentPlace: input.paymentPlace ?? undefined,
 			tag1020_totalRub: kopecksToNumericString(input.totalKopecks),
 			totalKopecks: input.totalKopecks,
 			payments: {

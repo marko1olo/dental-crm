@@ -3,4 +3,5 @@ export * from "./CephalometricCanvas";
 export * from "./cephalometricMath";
 export * from "./OrthodonticVisitProtocolWidget";
 export * from "../diagnostics/OrthodonticPhotoProtocolModal";
+export * from "./OrthodonticPerspectiveView";
 

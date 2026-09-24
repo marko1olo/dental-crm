@@ -41,6 +41,8 @@ import {
 } from "lucide-react";
 import { Suspense, useEffect } from "react";
 import { ClinicControlPill } from "./components/Header";
+import { NotificationBell } from "./components/notifications/NotificationBell";
+import { NetworkStatusIndicator } from "./components/sync/NetworkStatusIndicator";
 import { resolveTelephonyWsUrl } from "./components/telephony/IncomingCallPopup";
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
 import { WorkspaceActionsMount } from "./components/workspaceActions/WorkspaceActions";
@@ -866,6 +868,8 @@ export function WorkspaceTopbar({
 					</details>
 					<PerspectiveSwitcher />
 					<RecentPatientHistoryWidget compactDropdown />
+					<NotificationBell />
+					<NetworkStatusIndicator />
 					<ClinicControlPill onLockSession={onLockSession} />
 				</div>
 			</div>

@@ -585,13 +585,82 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 						</div>
 					</div>
 
-					{/* 6. Быстрая смена статуса в Hover HUD */}
+					{/* 6. Оперативная очередь StomX: 1-кликовое перемещение между этапами и главные действия */}
 					{onQuickStatusChange && (
 						<div className="pt-2 border-t border-[var(--line)]">
-							<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
-								Быстрый статус (Apple HIG)
+							<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5 flex items-center justify-between">
+								<span>Очередь смены (StomX 3-Stage Queue)</span>
+								<span className="text-[10px] font-semibold text-[var(--teal,var(--brand-primary))]">
+									{getNormalizedAppointmentStatusLabel(a.status, appointmentLabels)}
+								</span>
 							</div>
-							<div className="grid grid-cols-2 sm:grid-cols-5 gap-1">
+
+							{/* 3-Stage Day Queue: 1-кликовое перемещение между этапами */}
+							<div className="grid grid-cols-3 gap-1 mb-2" data-testid={`hover-queue-stages-${a.id}`}>
+								<button
+									type="button"
+									data-testid={`hover-status-arrived-${a.id}`}
+									onClick={(e) => {
+										e.stopPropagation();
+										onQuickStatusChange(a.id, "arrived");
+										showToast(`Пациент ${pName}: статус «Ожидает приёма»`, "info");
+										onMouseLeave();
+									}}
+									className={`min-h-[30px] px-1.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer select-none ${
+										a.status === "arrived"
+											? "bg-amber-500 text-white border-amber-500 shadow-2xs"
+											: "bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20"
+									}`}
+									title="Пациент в холле клиники — перевести в статус «Ожидает приёма» (1 клик)"
+									aria-label="Ожидает приёма"
+								>
+									<UserCheck size={12} className="shrink-0" />
+									<span className="truncate">Ожидает</span>
+								</button>
+								<button
+									type="button"
+									data-testid={`hover-status-in-treatment-${a.id}`}
+									onClick={(e) => {
+										e.stopPropagation();
+										onQuickStatusChange(a.id, "in_treatment");
+										showToast(`Пациент ${pName}: статус «На приёме»`, "info");
+										onMouseLeave();
+									}}
+									className={`min-h-[30px] px-1.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer select-none ${
+										isAppointmentInChair(a.status)
+											? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal)] shadow-2xs"
+											: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal)]/30 hover:bg-[var(--teal-surface)]"
+									}`}
+									title="Пациент в кабинете — статус «На приёме» (1 клик)"
+									aria-label="На приёме"
+								>
+									<CalendarCheck size={12} className="shrink-0" />
+									<span className="truncate">На приёме</span>
+								</button>
+								<button
+									type="button"
+									data-testid={`hover-status-completed-${a.id}`}
+									onClick={(e) => {
+										e.stopPropagation();
+										onQuickStatusChange(a.id, "completed");
+										showToast(`Пациент ${pName}: статус «Ожидает оплаты»`, "info");
+										onMouseLeave();
+									}}
+									className={`min-h-[30px] px-1.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer select-none ${
+										a.status === "completed"
+											? "bg-slate-700 dark:bg-slate-600 text-white border-slate-700 shadow-2xs"
+											: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30 hover:bg-slate-500/20"
+									}`}
+									title="Приём завершён — перевести в статус «Ожидает оплаты» (1 клик)"
+									aria-label="Ожидает оплаты"
+								>
+									<CheckCircle2 size={12} className="shrink-0" />
+									<span className="truncate">На оплату</span>
+								</button>
+							</div>
+
+							{/* Вторичные статусы: Подтвержден и Не явился */}
+							<div className="grid grid-cols-2 gap-1 mb-2">
 								<button
 									type="button"
 									data-testid={`hover-status-confirmed-${a.id}`}
@@ -600,68 +669,14 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 										onQuickStatusChange(a.id, "confirmed");
 										onMouseLeave();
 									}}
-									className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+									className={`min-h-[26px] px-2 py-0.5 rounded-lg text-[10px] font-medium border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
 										a.status === "confirmed"
-											? "bg-emerald-600 text-white border-emerald-600"
+											? "bg-emerald-600 text-white border-emerald-600 font-bold"
 											: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 border-emerald-500/30 hover:bg-emerald-500/20"
 									}`}
 								>
-									<PhoneCall size={11} />
+									<PhoneCall size={11} className="shrink-0" />
 									<span>Подтвержден</span>
-								</button>
-								<button
-									type="button"
-									data-testid={`hover-status-arrived-${a.id}`}
-									onClick={(e) => {
-										e.stopPropagation();
-										onQuickStatusChange(a.id, "arrived");
-										onMouseLeave();
-									}}
-									className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
-										a.status === "arrived"
-											? "bg-amber-500 text-white border-amber-500"
-											: "bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20"
-									}`}
-									title="Пациент пришёл — перевести в статус «Ожидает приёма»"
-								>
-									<UserCheck size={11} />
-									<span>Ожидает приёма</span>
-								</button>
-								<button
-									type="button"
-									data-testid={`hover-status-in-treatment-${a.id}`}
-									onClick={(e) => {
-										e.stopPropagation();
-										onQuickStatusChange(a.id, "in_treatment");
-										onMouseLeave();
-									}}
-									className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
-										isAppointmentInChair(a.status)
-											? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal)]"
-											: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal)]/30 hover:bg-[var(--teal-surface)]"
-									}`}
-									title="Пациент в кабинете — статус «На приёме»"
-								>
-									<CalendarCheck size={11} />
-									<span>На приёме</span>
-								</button>
-								<button
-									type="button"
-									data-testid={`hover-status-completed-${a.id}`}
-									onClick={(e) => {
-										e.stopPropagation();
-										onQuickStatusChange(a.id, "completed");
-										onMouseLeave();
-									}}
-									className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
-										a.status === "completed"
-											? "bg-slate-600 text-white border-slate-600"
-											: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30 hover:bg-slate-500/20"
-									}`}
-									title="Приём завершён — перевести в статус «Ожидает оплаты»"
-								>
-									<CheckCircle2 size={11} />
-									<span>Ожидает оплаты</span>
 								</button>
 								<button
 									type="button"
@@ -671,34 +686,63 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 										onQuickStatusChange(a.id, "no_show");
 										onMouseLeave();
 									}}
-									className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+									className={`min-h-[26px] px-2 py-0.5 rounded-lg text-[10px] font-medium border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
 										a.status === "no_show"
-											? "bg-rose-500 text-white border-rose-500"
+											? "bg-rose-500 text-white border-rose-500 font-bold"
 											: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20"
 									}`}
 								>
-									<UserX size={11} />
+									<UserX size={11} className="shrink-0" />
 									<span>Не явился</span>
 								</button>
 							</div>
-							<button
-								type="button"
-								data-testid={`hover-pay-54fz-${a.id}`}
-								onClick={(e) => {
-									e.stopPropagation();
-									onMouseLeave();
-									if (patObj?.id) {
-										usePatientStore.getState().setSelectedPatientId(patObj.id);
-									}
-									useAppStore.getState().setCurrentView("finance");
-									showToast(`Касса 54-ФЗ: расчёт ${pName}`, "info");
-								}}
-								className="mt-1.5 w-full py-1 px-2 rounded-lg text-xs font-bold border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-								title="Быстрый переход в кассу 54-ФЗ для расчёта"
-							>
-								<CreditCard size={12} className="text-emerald-600 dark:text-emerald-400" />
-								<span>Касса 54-ФЗ: Оформить оплату</span>
-							</button>
+
+							{/* 1-кликовые главные действия приёма: «Начать приём» и «Быстрый чек 54-ФЗ» (Мандаты 8e, 8n) */}
+							<div className="grid grid-cols-2 gap-1.5 pt-1.5 border-t border-[var(--line)]">
+								<button
+									type="button"
+									data-testid={`hover-start-visit-${a.id}`}
+									onClick={(e) => {
+										e.stopPropagation();
+										onMouseLeave();
+										if (onQuickStatusChange) {
+											onQuickStatusChange(a.id, "in_treatment");
+										}
+										if (patObj?.id) {
+											usePatientStore.getState().setSelectedPatientId(patObj.id);
+										}
+										useAppStore.getState().setCurrentView("visit");
+										showToast(`Приём начат: ${pName} в кресле`, "success");
+									}}
+									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
+									title="Начать приём: перевести в статус «На приёме» и открыть карту приёма 043/у (1 клик)"
+								>
+									<Stethoscope size={13} className="shrink-0" />
+									<span className="whitespace-nowrap">Начать приём</span>
+								</button>
+
+								<button
+									type="button"
+									data-testid={`hover-pay-54fz-${a.id}`}
+									onClick={(e) => {
+										e.stopPropagation();
+										onMouseLeave();
+										if (onQuickStatusChange && a.status === "in_treatment") {
+											onQuickStatusChange(a.id, "completed");
+										}
+										if (patObj?.id) {
+											usePatientStore.getState().setSelectedPatientId(patObj.id);
+										}
+										useAppStore.getState().setCurrentView("finance");
+										showToast(`Быстрый чек 54-ФЗ: расчёт ${pName}`, "info");
+									}}
+									className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-bold border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
+									title="Быстрый чек 54-ФЗ: перейти к кассовому расчёту (1 клик)"
+								>
+									<CreditCard size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+									<span className="whitespace-nowrap">Быстрый чек 54-ФЗ</span>
+								</button>
+							</div>
 						</div>
 					)}
 

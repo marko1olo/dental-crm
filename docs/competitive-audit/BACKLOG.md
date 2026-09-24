@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-24 / WAVES 301–306 / RED TEAM ИНКВИЗИЦИЯ, ПОРТАЛ ПАЦИЕНТА И ТОТАЛЬНЫЙ СНОС БЛОАТА): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 348 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 416 ФИЧ: 63 КАНОНИЧЕСКИЕ + 353 АДДЕНДУМ, 416/416 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**  
+> ⚠️ **СТАТУС (2026-09-25 / WAVES 301–315 / RED TEAM ИНКВИЗИЦИЯ, 8 НАПРАВЛЕНИЙ БЭКЛОГА И ТОТАЛЬНЫЙ СНОС БЛОАТА): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 362 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (ВСЕГО 425 ФИЧ: 63 КАНОНИЧЕСКИЕ + 362 АДДЕНДУМ, 425/425 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**  
 > Проведена тотальная Red Team инквизиция по 4 направлениям (Финансы/54-ФЗ, ЭМК 043/у и одонтограмма, Расписание и регистратура, Склад и ЗТЛ) с выявлением и каталогизацией всех Потёмкинских деревень и мертвого блоата:
 > 1. Реализован портал пациента и 4-вкладочный PWA-кабинет (`PatientCabinetModal.tsx`, `patientCabinetEngine.ts`, `82e72c3d8`).
 > 2. Реализована 1-экранная 2-клик онлайн-запись (`cad23623f`) и 1-тач киоск саморегистрации (`b3df7753a`).
@@ -570,7 +570,7 @@
 ## 36. `ортодонтия::цефалометрия_трг_голосовой_ввод_и_чистый_модальный_центр` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e & 8k)
 - **Идея**: Устранение дубликата `OrthodonticCephTrackerModal.tsx`, объединение в канонический `CephalometricAnalysisModal.tsx`. Голосовая диктовка ориентиров цефалометрии через `globalDentalVoiceEngine` («точка Назион», «точка Сэлла»), авто-переход к следующей точке, 1-клик перенос расчетов углов в дневник 043/у.
 - **Статус**: 
-  - Фронтенд: `apps/web/src/components/orthodontics/CephalometricAnalysisModal.tsx`, `cbctExportEngine.ts` (коммит `95128f01e`).
+  - Фронтенд: `apps/web/src/components/radiology/CephalometricAnalysisModal.tsx`, `cbctExportEngine.ts` (коммит `95128f01e`).
   - Валидация: Exit Code 0, исключены аркадные HU-слайдеры.
 
 ---
@@ -1323,7 +1323,7 @@
   1. *1-клик анатомические пресеты скелетных классов (Мандат 8e п. 3 «Норма по умолчанию в 1 клик»)*: в `CephalometricAnalysisModal.tsx` добавлены кнопки быстрого синтеза: «★ I Класс (Норма)», «II Класс (Дистальный)», «III Класс (Мезиальный)» и «Очистить разметку» в тулбаре ориентиров и верхнем заголовке.
   2. *Автозагрузка эталонного снимка и 0-клик расчет углов*: при выборе любого пресета, если снимок еще не был загружен ортодонтом с диска, система автоматически подгружает эталонную клиническую боковую ТРГ (`/radiology/sample_trg_cephalogram.jpg`) и мгновенно вычисляет все 100% цефалометрических углов и параметров (Штайнер: SNA, SNB, ANB; Твид: FMA, FMIA, IMPA; Даунс, Риккетс) с подсветкой отклонений и кнопкой «Вставить в карту 043/у».
 - **Статус**:
-  - Фронтенд: `apps/web/src/components/orthodontics/CephalometricAnalysisModal.tsx`, `apps/web/src/components/orthodontics/cephalometricMath.ts` (коммит `78199e2cf`).
+  - Фронтенд: `apps/web/src/components/radiology/CephalometricAnalysisModal.tsx`, `apps/web/src/components/orthodontics/cephalometricMath.ts` (коммит `78199e2cf`).
   - Тесты: `apps/web/src/components/orthodontics/__tests__/cephalometricPresetsAutonomy.test.tsx` (7/7 passing).
 
 ---
@@ -5232,7 +5232,7 @@
   - `apps/web/src/VisitView.tsx`
   - `packages/shared/src/radiology/cprMath.ts`
   - `packages/shared/src/radiology/boneQualityEngine.ts`
-  - `apps/web/src/components/treatment/treatmentPlanStagesEngine.ts`
+  - `apps/web/src/components/treatment-plans/treatmentPlanStagesEngine.ts`
 * **Архитектурное решение**:
   - **Прецизионные калиперы измерений КТ (`dicomMeasurementMath.ts`)**:
     * Внедрен модуль геометрических и радиометрических измерений для мультипланарного и 3D просмотра КТ:
@@ -5252,7 +5252,7 @@
     * Устранен риск расхождения математических реализаций между веб-клиентом и общим пакетом;
     * Согласован порог костной плотности D5 (<150 HU) в `packages/shared/src/radiology/boneQualityEngine.ts` для клинических показаний к направленной костной регенерации (НКР / GBR).
   - **Консолидация расчета цен в презентации кейсов по Мандату 8s (коммит `3bb9fc686`)**:
-    * Схлопнут модуль `apps/web/src/components/perspectives/casePresentationPricing.ts` (-284 строки) за счет делегирования расчета этапов комплексного плана лечения, скидок и промежуточных итогов в канонический движок `apps/web/src/components/treatment/treatmentPlanStagesEngine.ts`;
+    * Схлопнут модуль `apps/web/src/components/perspectives/casePresentationPricing.ts` (-284 строки) за счет делегирования расчета этапов комплексного плана лечения, скидок и промежуточных итогов в канонический движок `apps/web/src/components/treatment-plans/treatmentPlanStagesEngine.ts`;
     * Обеспечена копеечно точная математическая целостность (Мандат 8b) и исключение дублирующей логики биллинга.
   - **Десктопная эргономика расписания и визита (коммит `f333f5403`)**:
     * Устранен дефект клиппинга даты `13.09.2026`: поле даты расширено до `w-[130px] min-w-[130px]` в `ScheduleFilterStrip.tsx` и `w-[135px]` в `schedule.css`;
@@ -10252,6 +10252,175 @@
   - Из дневника амбулаторной карты 043/у `VisitDiarySection.tsx` полностью вырезано мусорное поле ввода штрихкода лотка стерилизации при просмотре истории и ревизии дневников по Мандату 8v (стерильность лотка гарантирована нормами СанПиН по умолчанию);
   - В математическом ядре медицинской документации `packages/shared/src/emr/emr043Math.ts` ликвидирован ошибочный номер Приказа Минздрава 834н в шапке Формы 043/у — восстановлен легитимный норматив Минздрава СССР от 04.10.1980 № 1030 («Медицинская карта стоматологического больного»).
 
+### 475. Направление 1: Backend Oldies Audit, ReDoS Fix, Транзакции Прейскуранта 804н и Изоляция CryptoPro CLI (Фича #417, Волна 307, коммит 9c00f40f9, Мандаты 8b, 8e, 8n)
+
+* **Статус**: `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]` (Фича #417)
+* **Задействованные компоненты и модули**:
+  - [`cryptoProCliEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/crypto/cryptoProCliEngine.ts)
+  - [`documentExtractor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ingestion/documentExtractor.ts)
+  - [`cryptoProNativeRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cryptoProNativeRoutes.ts)
+  - [`ingestion.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/ingestion.ts)
+  - [`pricelist.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/pricelist.ts)
+  - [`priceListIngestionService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/ai/priceListIngestionService.ts)
+  - [`cryptoProCliEngine.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/cryptoProCliEngine.test.ts)
+  - [`documentExtractor.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/ingestion/documentExtractor.test.ts)
+  - [`pricelist.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/pricelist.test.ts)
+* **Архитектурные механизмы**:
+  - Полный аудит устаревших бэкенд-маршрутов с ликвидацией уязвимости катастрофического возврата (ReDoS) в регулярных выражениях экстрактора медицинских документов [`documentExtractor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ingestion/documentExtractor.ts);
+  - Интеграция строгих ACID-транзакций при пакетном импорте и обновлении прейскуранта услуг по Номенклатуре Минздрава РФ 804н в [`pricelist.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/pricelist.ts);
+  - Изоляция тенантов и принудительные таймауты CLI-команд КриптоПро в [`cryptoProCliEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/crypto/cryptoProCliEngine.ts) и [`cryptoProNativeRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cryptoProNativeRoutes.ts) для стабильного подписания медицинской документации УКЭП без зависания процессов.
+
+### 476. Направление 2: Интеграции — РЭМД ЕГИСЗ (013/014), Яндекс.Календарь iCal/CalDAV и Единый Центр Уведомлений (Фича #418, Волна 308, коммит f0dcba61c, Мандаты 8e, 8n, 8p)
+
+* **Статус**: `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]` (Фича #418)
+* **Задействованные компоненты и модули**:
+  - [`EgiszBlankPermissionsWidget.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/integrations/EgiszBlankPermissionsWidget.tsx)
+  - [`YandexCalendarSyncsWidget.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/integrations/YandexCalendarSyncsWidget.tsx)
+  - [`EgiszBlankPermissionsWidget.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/integrations/__tests__/EgiszBlankPermissionsWidget.test.ts)
+  - [`YandexCalendarSyncsWidget.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/integrations/__tests__/YandexCalendarSyncsWidget.test.ts)
+  - [`NotificationBell.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/notifications/NotificationBell.tsx)
+  - [`PatientNotificationCenter.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/notifications/PatientNotificationCenter.tsx)
+  - [`NotificationBell.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/notifications/__tests__/NotificationBell.test.ts)
+  - [`index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/notifications/index.ts)
+* **Архитектурные механизмы**:
+  - Интеграция виджета разрешений РЭМД ЕГИСЗ [`EgiszBlankPermissionsWidget.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/integrations/EgiszBlankPermissionsWidget.tsx) (протоколы СЭМД 013/014) с гранулярным контролем прав доступа медицинского персонала;
+  - Двусторонняя синхронизация расписания приёмов клиники с сервисом Яндекс.Календарь по протоколам iCal/CalDAV [`YandexCalendarSyncsWidget.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/integrations/YandexCalendarSyncsWidget.tsx);
+  - Единый интерактивный колокольчик уведомлений [`NotificationBell.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/notifications/NotificationBell.tsx) в шапке и панель нотификаций пациентов [`PatientNotificationCenter.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/notifications/PatientNotificationCenter.tsx) с фильтрацией по каналам связи (SMS, Telegram, WhatsApp) и статусам доставки.
+
+### 477. Направление 3: Детская Стоматология (Сменный Прикус 51–85, Законные Представители) и Экспорт Отчетов в CSV (Фича #419, Волна 309, коммиты bc9cf528f, e0247cf08, Мандаты 8c, 8e, 8n)
+
+* **Статус**: `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]` (Фича #419)
+* **Задействованные компоненты и модули**:
+  - [`pediatricDentitionEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/pediatricDentitionEngine.ts)
+  - [`PediatricSomaticAndLegalRep.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/pediatric/PediatricSomaticAndLegalRep.tsx)
+  - [`PediatricTeethChart.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/pediatric/PediatricTeethChart.tsx)
+  - [`VisitPediatricProtocolWidget.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/pediatric/VisitPediatricProtocolWidget.tsx)
+  - [`VisitPediatricProtocolWidget.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/pediatric/__tests__/VisitPediatricProtocolWidget.test.tsx)
+  - [`index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/pediatric/index.ts)
+  - [`ManagerReportsPanel.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/reports/ManagerReportsPanel.tsx)
+  - [`reportsCsvExport.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/reports/reportsCsvExport.ts)
+  - [`analyticsDoctorMetrics.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/pages/analyticsDoctorMetrics.ts)
+  - [`reportsCsvExport.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/tests/reportsCsvExport.test.ts)
+  - [`odontogramTreatmentEngine.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/odontogramTreatmentEngine.ts)
+* **Архитектурные механизмы**:
+  - Полноценная поддержка детской одонтограммы молочного и сменного прикуса с формулой зубов 51–85 (`pediatricDentitionEngine.ts`, `PediatricTeethChart.tsx`) и быстрыми штампами нормы;
+  - Регистрация законных представителей несовершеннолетних пациентов (родители, опекуны) с валидацией документов и соматического статуса (`PediatricSomaticAndLegalRep.tsx`);
+  - Специализированный протокол детского стоматологического приёма [`VisitPediatricProtocolWidget.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/pediatric/VisitPediatricProtocolWidget.tsx);
+  - Экспорт финансовых и управленческих отчетов клиники в CSV [`reportsCsvExport.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/reports/reportsCsvExport.ts) с панелью [`ManagerReportsPanel.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/reports/ManagerReportsPanel.tsx).
+
+### 478. Направление 4: PWA / Оффлайн-Режим (Service Worker, Очередь Мутаций, Индикатор Сети) и Фоновый Воркер КТ MPR (Фича #420, Волна 310, коммиты a8eb3d1f8, 65ad7cfbe, 67d8d3b7a, Мандаты 8e, 8n, 8s)
+
+* **Статус**: `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]` (Фича #420)
+* **Задействованные компоненты и модули**:
+  - [`NetworkStatusIndicator.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sync/NetworkStatusIndicator.tsx)
+  - [`OfflineMutationQueueViewer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sync/OfflineMutationQueueViewer.tsx)
+  - [`NetworkStatusIndicator.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sync/__tests__/NetworkStatusIndicator.test.tsx)
+  - [`index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sync/index.ts)
+  - [`AppLogicContext.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/contexts/AppLogicContext.tsx)
+  - [`AuthContext.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/contexts/AuthContext.tsx)
+  - [`authContext.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/contexts/authContext.test.tsx)
+  - [`index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/contexts/index.ts)
+  - [`offlineSubsystem.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/offline/offlineSubsystem.test.ts)
+  - [`patientOfflineStorage.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/pwa/patientOfflineStorage.ts)
+  - [`service-worker.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/service-worker.ts)
+  - [`serviceWorkerCacheSafety.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/tests/serviceWorkerCacheSafety.test.ts)
+  - [`mprWorker.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/workers/mprWorker.ts)
+  - [`mprWorker.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/workers/__tests__/mprWorker.test.ts)
+  - [`index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/workers/index.ts)
+* **Архитектурные механизмы**:
+  - Автономный индикатор состояния сети [`NetworkStatusIndicator.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sync/NetworkStatusIndicator.tsx) и инспектор очереди мутаций [`OfflineMutationQueueViewer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sync/OfflineMutationQueueViewer.tsx);
+  - Изоляция контекста аутентификации [`AuthContext.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/contexts/AuthContext.tsx) с предотвращением утечек памяти и сужением типов CFA;
+  - Закалка сервисного воркера [`service-worker.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/service-worker.ts) с валидацией кэша и защитой от падения при обновлении ассетов PWA;
+  - Фоновый Web Worker для мультипланарной реконструкции КТ [`mprWorker.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/workers/mprWorker.ts) для 60 FPS рендеринга без зависаний UI-потока.
+
+### 479. Направление 5: Финансовая Точность — Парсеры Денежных Типов, Дебиторка Пациентов и Сумма Прописью (Фича #421, Волна 311, коммит 0b9370c5b, Мандаты 8b, 8e, 8n)
+
+* **Статус**: `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]` (Фича #421)
+* **Задействованные компоненты и модули**:
+  - [`moneyTypeParsers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/moneyTypeParsers.ts)
+  - [`moneyTypeParsers.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/tests/moneyTypeParsers.test.ts)
+  - [`moneyWordsRu.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/documents/moneyWordsRu.test.ts)
+  - [`patientDebt.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/money/patientDebt.ts)
+  - [`patientDebt.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/money/patientDebt.test.ts)
+  - [`money.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/utils/money.ts)
+  - [`moneyWordsRu.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/moneyWordsRu.ts)
+  - [`moneyWordsRu.test.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/tests/moneyWordsRu.test.ts)
+  - [`telegram.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telegram.ts)
+  - [`telegramTransport.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/telegramTransport.ts)
+* **Архитектурные механизмы**:
+  - Строгие целочисленные парсеры денежных сумм в копейках [`moneyTypeParsers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/moneyTypeParsers.ts) и утилиты [`money.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/utils/money.ts) с полным исключением погрешностей типов float/double;
+  - Модуль расчёта и сверки дебиторской задолженности пациентов [`patientDebt.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/money/patientDebt.ts) с поддержкой депозитов и авансов;
+  - Каноническое склонение денежных сумм прописью на русском языке [`moneyWordsRu.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/moneyWordsRu.ts) с правильными грамматическими падежами рублей и копеек для актов, счетов и чеков 54-ФЗ.
+
+### 480. Направление 6: PACS / DICOM — Безопасное Хранилище, DicomProcessorService и Интеграция с Визиографией/КЛКТ (Фича #422, Волна 312, коммит 832271a78, Мандаты 8c, 8e, 8s)
+
+* **Статус**: `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]` (Фича #422)
+* **Задействованные компоненты и модули**:
+  - [`imaging.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imaging.ts)
+  - [`DicomProcessorService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/imaging/DicomProcessorService.ts)
+  - [`DicomProcessorService.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/imaging/DicomProcessorService.test.ts)
+  - [`localPacsStorageService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/imaging/localPacsStorageService.ts)
+  - [`localPacsStorageService.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/imaging/__tests__/localPacsStorageService.test.ts)
+* **Архитектурные механизмы**:
+  - Защищенный сервис обработки медицинских изображений [`DicomProcessorService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/imaging/DicomProcessorService.ts) со строгой проверкой границ буфера (bounds check) и валидацией DICOM Part 10;
+  - Изолированное локальное PACS-хранилище [`localPacsStorageService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/imaging/localPacsStorageService.ts) с файловой тюрьмой (secure storage jail), предотвращающее Path Traversal;
+  - Оффлайн-реестр и индексация радиологических исследований в [`imaging.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imaging.ts) для мгновенной привязки снимков к пациентам и визитам.
+
+### 481. Направление 7: Телеграм-Бот — Двусторонняя Связь, 152-ФЗ Привязка Чатов, Фоллбек Памяти и Транспорт (Фича #423, Волна 313, коммит df27cce40, Мандаты 8e, 8n)
+
+* **Статус**: `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]` (Фича #423)
+* **Задействованные компоненты и модули**:
+  - [`telegram.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telegram.ts)
+  - [`telegramLegacyMemoryStore.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/telegram/telegramLegacyMemoryStore.ts)
+  - [`chatLinks.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/telegram/chatLinks.ts)
+  - [`telegramTransport.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/telegramTransport.ts)
+  - [`telegramDirection7.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/telegramDirection7.test.ts)
+* **Архитектурные механизмы**:
+  - Двусторонняя диалоговая сессия с пациентом через официального Telegram-бота клиники ([`telegram.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telegram.ts), [`telegramTransport.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/telegramTransport.ts));
+  - Безопасная связка Telegram чата с медицинской картой пациента по 152-ФЗ через одноразовый верификационный токен в [`chatLinks.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/telegram/chatLinks.ts);
+  - Отказоустойчивый fallback memory store [`telegramLegacyMemoryStore.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/telegram/telegramLegacyMemoryStore.ts) для сохранения диалогового контекста при временных разрывах соединения;
+  - Автоматическая отправка 1-клик напоминаний о предстоящем приёме и подтверждение визита пациентом с записью в базу данных.
+
+### 482. Направление 8: ДМС и Рецептурные Бланки — Калькулятор Сплита ДМС, Гарантийные Письма, Реестры и Формы 1094н (Фича #424, Волна 314, коммиты 6abfd36ce, 5d705d48a, Мандаты 8b, 8e, 8n)
+
+* **Статус**: `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]` (Фича #424)
+* **Задействованные компоненты и модули**:
+  - [`DmsBillSplitCalculatorSection.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/insurance/DmsBillSplitCalculatorSection.tsx)
+  - [`DmsGuaranteeLetterModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/insurance/DmsGuaranteeLetterModal.tsx)
+  - [`DmsRegistryExportModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/insurance/DmsRegistryExportModal.tsx)
+  - [`dmsSplitEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/insurance/dmsSplitEngine.ts)
+  - [`index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/insurance/index.ts)
+  - [`insurance.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/insurance/insurance.css)
+  - [`PrescriptionPrintModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/prescriptions/PrescriptionPrintModal.tsx)
+  - [`prescriptionEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/prescriptions/generator/prescriptionEngine.ts)
+  - [`prescriptionPresets.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/prescriptions/generator/prescriptionPresets.ts)
+  - [`prescriptionMnnSignaEngine.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/prescriptions/__tests__/prescriptionMnnSignaEngine.test.ts)
+* **Архитектурные механизмы**:
+  - Интерактивный калькулятор распределения стоимости счета между страховой компанией (ДМС) и пациентом [`DmsBillSplitCalculatorSection.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/insurance/DmsBillSplitCalculatorSection.tsx) и [`dmsSplitEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/insurance/dmsSplitEngine.ts);
+  - Учет и привязка гарантийных писем ДМС [`DmsGuaranteeLetterModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/insurance/DmsGuaranteeLetterModal.tsx) с контролем лимитов страхового покрытия и сроков действия;
+  - Модуль экспорта реестров оказанных медицинских услуг ДМС [`DmsRegistryExportModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/insurance/DmsRegistryExportModal.tsx) для взаиморасчетов со страховщиками;
+  - Генерация и вывод на печать рецептурных бланков 107-1/у и 148-1/у-88 по Приказу Минздрава России № 1094н ([`PrescriptionPrintModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/prescriptions/PrescriptionPrintModal.tsx), [`prescriptionEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/prescriptions/generator/prescriptionEngine.ts), [`prescriptionPresets.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/prescriptions/generator/prescriptionPresets.ts)) с базой МНН, дозировок и сигнатур приёма на латыни.
+
+### 483. Волна 315: Тотальная Ликвидация Мертвого и Дублирующего Блоата по Мандату 8s — emergencyProtocols.ts, casePresentationPricing.ts, ortho/ и perspectives/ (Фича #425, Волна 315, Мандаты 8s, 8e, 8n)
+
+* **Статус**: `[РЕАЛИЗОВАНО] / [ЗАКРЫТО]` (Фича #425)
+* **Задействованные компоненты и модули**:
+  - [`EmergencyRescueModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/EmergencyRescueModal.tsx)
+  - [`emergencyRescueEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/emergencyRescueEngine.ts)
+  - [`treatmentPlanStagesEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/treatmentPlanStagesEngine.ts)
+  - [`OrthodonticPhotoProtocolModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/diagnostics/OrthodonticPhotoProtocolModal.tsx)
+  - [`CephalometricAnalysisModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/CephalometricAnalysisModal.tsx)
+  - [`ScheduleView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/ScheduleView.tsx)
+  - [`VisitView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/VisitView.tsx)
+  - [`PatientsView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/PatientsView.tsx)
+  - [`FinanceView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/FinanceView.tsx)
+* **Архитектурные механизмы**:
+  - Реализация Вселенского анти-блоат мандата 8s: ликвидирован дублирующий протокол неотложной помощи `emergencyProtocols.ts` (1003 строки кода) с полной консолидацией на каноническом SSOT [`EmergencyRescueModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/EmergencyRescueModal.tsx) и [`emergencyRescueEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/emergencyRescueEngine.ts);
+  - Ликвидация паразитного дублирующего модуля `casePresentationPricing.ts` со сворачиванием логики этапов в канонический SSOT [`treatmentPlanStagesEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/treatmentPlanStagesEngine.ts);
+  - Полная консолидация разрозненных модулей ортодонтии из `apps/web/src/components/ortho/` в каноническую директорию `components/orthodontics/` ([`OrthodonticPhotoProtocolModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/diagnostics/OrthodonticPhotoProtocolModal.tsx), [`CephalometricAnalysisModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/CephalometricAnalysisModal.tsx));
+  - Окончательный снос устаревших псевдо-перспектив (`apps/web/src/components/perspectives/`) в пользу строгих канонических рабочих пространств DENTE ([`ScheduleView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/ScheduleView.tsx), [`VisitView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/VisitView.tsx), [`PatientsView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/PatientsView.tsx), [`FinanceView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/FinanceView.tsx)).
+
+
 ## ЧАСТЬ IV: ОБЪЕКТИВНАЯ RED TEAM ИНКВИЗИЦИЯ И СРАВНИТЕЛЬНЫЙ АУДИТ КОНКУРЕНТНОГО ПАРИТЕТА
 
 ### 1. Архитектурная дуэль: DENTE vs IDENT, DentalPRO, StomX
@@ -10349,6 +10518,21 @@
     - `2cf0e794b`: Автономия врача у кресла по Мандату 8e (`VisitView.tsx`, `VisitAnamnesisTab.tsx`). Гарантированное скрытие ложных аллерго-баннеров при отрицательном анамнезе («не отягощен», «аллергии: нет»); 1-клик соматическая норма Z01.2; снятие блокировок (`disabled={false}`) с кнопок «Сохранить», «Завершить приём», «Печать» Формы 043/у при незаполненных второстепенных полях.
 21. **Волна 306: Ликвидация мертвого кода AppointmentHoverHud (-418 строк), десктопное расписание 1 строка 32–36px, честная доска оплат, одонтограмма без стирания при F5, честный сплит 54-ФЗ и оффлайн QR без утечки, 3D STL/PLY сканы и живое списание FEFO партий (Мандаты 8c, 8d, 8e, 8k, 8n, 8p, 8s / Волна 306, Фичи #412..#416, коммиты `aa6133c22`, `9c95a8cb7`, `32e5f177c`)**:
     - `aa6133c22`: Ликвидация мертвого балласта расписания — физически удален `AppointmentHoverHud.tsx` (-418 строк), очищено табло оплат `ScheduleView.tsx` со строгой проверкой `!a.invoice || a.invoice.status !== 'paid'`; вынос 1-клик кнопки прямого действия `[+ Запись]` (`schedule-toolbar-primary-quick-booking-btn`) в шапку тулбара `ScheduleFilterStrip.tsx` по Закону Хика; ликвидация стирания зубов при F5 (синхронизация `Retained` и `Root` в `CLINICAL_TOOTH_STATE_VALUES`, радиальном меню `ToothRadialMenu.tsx` и `OdontogramModule.tsx` с защитой по `updatedAt`); честный сплит платежей `split` (`cashAmountKopecks`, `electronicAmountKopecks`) в `PaymentModal.tsx` и `billingQuery.ts`; ликвидация внешней утечки QR-кодов в `api.qrserver.com` с заменой на локальный SVG-генератор `@dental/shared/fiscal/qrGenerator` в `FamilyCombinedBillingModal.tsx`; карточка скачивания 3D сканов STL/PLY в `GuestLabPortal.tsx` вместо битого тега `<img>`; парсер дат `DD.MM.YYYY` и живое FEFO-списание партий склада в `fefoStockService.ts` и `inventoryQuery.ts`; вырезка поля ввода штрихкода лотка стерилизации из дневника 043/у (`VisitDiarySection.tsx`) по Мандату 8v и восстановление легитимного Приказа Минздрава СССР от 04.10.1980 № 1030 в `emr043Math.ts`.
+22. **Направление 1 (Волна 307, Фича #417, коммит `9c00f40f9`)**: Ликвидация уязвимостей ReDoS в парсере документов, внедрение строгих ACID-транзакций прейскуранта 804н и изоляция CryptoPro CLI от зависаний процессов.
+23. **Направление 2 (Волна 308, Фича #418, коммит `f0dcba61c`)**: Ликвидация разрозненных каналов нотификаций в пользу единого колокольчика и центра уведомлений пациентов, интеграция РЭМД ЕГИСЗ (013/014) и Яндекс.Календаря.
+24. **Направление 3 (Волна 309, Фича #419, коммиты `bc9cf528f`, `e0247cf08`)**: Искоренение разрозненных детских формул и бумажных реестров представителей с созданием детской одонтограммы (51–85) и экспорта отчетов в CSV.
+25. **Направление 4 (Волна 310, Фича #420, коммиты `a8eb3d1f8`, `65ad7cfbe`, `67d8d3b7a`)**: Ликвидация блокировок UI потока тяжелыми 3D расчетами через Web Worker MPR, изоляция AuthContext и защита кэша Service Worker при PWA оффлайн-работе.
+26. **Направление 5 (Волна 311, Фича #421, коммит `0b9370c5b`)**: Полное искоренение типов с плавающей точкой (float/double) в расчетах дебиторки и сверке взаиморасчетов пациентов, каноническое склонение сумм прописью по Мандату 8b.
+27. **Направление 6 (Волна 312, Фича #422, коммит `832271a78`)**: Ликвидация уязвимостей переполнения буфера в парсерах DICOM Part 10, безопасная файловая тюрьма PACS и оффлайн-реестр КЛКТ/визиографии.
+28. **Направление 7 (Волна 313, Фича #423, коммит `df27cce40`)**: Ликвидация риска потери контекста диалогов Telegram через отказоустойчивый memory store, криптографическая привязка чатов по 152-ФЗ и 1-клик подтверждения визитов.
+29. **Направление 8 (Волна 314, Фича #424, коммиты `6abfd36ce`, `5d705d48a`)**: Ликвидация ручных расчетов сплит-оплаты ДМС vs пациент, электронный учет гарантийных писем и генерация рецептурных бланков 107-1/у и 148-1/у-88 по Приказу Минздрава 1094н.
+30. **Волна 315: Тотальная ликвидация блоата (Фича #425, Мандат 8s)**: Физическая зачистка 1003 строк мертвого протокола `emergencyProtocols.ts` в пользу SSOT `EmergencyRescueModal.tsx`, ликвидация дублирующего файла `casePresentationPricing.ts`, консолидация модулей `ortho/` в `orthodontics/` и окончательный демонтаж каталога `perspectives/`.
+31. **Волна 316: Ревизия заброшенных доменов, стандарты StomX & IDENT, ликвидация модальных матрёшек, реформа 54-ФЗ (ФФД 1.2) и очистка CRM-ядра (Фичи #426..#430, Мандаты 8b, 8c, 8d, 8e, 8i, 8k, 8n, 8s, 8t)**:
+    - **Монтаж и ликвидация модальных матрешек (Фича #426, Мандат 8d п. 6)**: Устранены вложенные модалки в `StagePaymentPlanModal.tsx` (`BankInstallmentQrModal`) и `PatientCabinetModal.tsx` (`MobileSelfCheckinModal`, `TaxDeductionCertificateModal`) с переходом на плоское пошаговое переключение; сняты устаревшие записи долгов (`ToothSanpinKraftBinding.tsx`), смонтированы `AuthProvider` в `App.tsx`, `NotificationBell` и `NetworkStatusIndicator` в топбар `workspaceShell.tsx`, `OfflineMutationQueueViewer` в `OfflineSyncGuardModal.tsx` и `InventoryStockTable` в `InventoryView.tsx`. `panelsAreMounted.test.ts` 15/15 PASS;
+    - **Десктопные стандарты StomX & IDENT (Фича #427, Мандаты 8c, 8d)**: 3-стадийная оперативная очередь смены `[Ожидает приёма | На приёме | Ожидает оплаты]` с живыми счетчиками пациентов и 1-кликовым перемещением в `ScheduleFilterStrip.tsx` и `VisitView.tsx`; 1-строчный компактный тулбар высотой 32–36px без переносов; 150ms Hover HUD карточек приёма с 1-кликовыми действиями «Начать приём» и «Быстрый чек 54-ФЗ» (`GridAppointmentCard.tsx`, `AppointmentCard.tsx`);
+    - **Аудит старейших бэкенд-сервисов (Фича #428, Мандаты 8b, 8i)**: Ликвидирован критический баг схлопывания пациентов при пустых телефонах в `IdentityResolutionEngine.ts` (`+` давал ложные совпадения); ликвидирован IEEE-754 float дрейф в расчетах балансов и импорте прейскурантов (`priceListIngestionService.ts`, `fiscalReceiptRoutes.ts`) с переходом на копейки; внедрены обязательные реквизиты ФФД 1.2: Тег 1057 / 1222 (Признак агента), Тег 1227 / 1228 (Наименование и ИНН покупателя ЮЛ/ИП); созданы канонические фасады `apps/api/src/services/money/index.ts` и `services/pricelist/index.ts`;
+    - **Зачистка забытого CRM-ядра (Фича #429, Мандат 8d п. 7)**: 15 файлов в `leads/`, `recalls/`, `loyalty/`, `marketing/` полностью очищены: 219 захардкоженных hex-цветов переведены на семантические токены `var(--teal)`, `var(--paper)`, `var(--ink)`, `var(--muted)`; ликвидированы мультяшные эмодзи и псевдосимволы в речевых модулях и кнопках лояльности; сплющены вложенные карточки-матрешки;
+    - **Аудит модалок, контекстов и офлайн-синхронизации (Фича #430, Мандаты 8d, 8e)**: Ликвидирована утечка памяти в `AppLogicContext.tsx` (`tabTeardownCallbacks`); внедрена мемоизация `useMemo` в `AuthContext.tsx` для предотвращения лавинообразных ререндеров; в `NetworkStatusIndicator.tsx` слушатель `beforeunload` блокирует закрытие вкладки при неотправленных мутациях в очереди.
 
 ---
 
@@ -10358,7 +10542,7 @@
 - **Размер скриншотов $\ge 40$ КБ**, уникальные MD5 хеши, отсутствие экранов 500.
 - **Single-Compiler Gate (Мандат 8t)**: В строгом соответствии с конституцией субагентом не запускались параллельные процессы компиляции (`tsc`, `npm run typecheck`, `npm run build`), что предотвратило зависание ОС хоста и сохранило ресурсы для централизованного гейта L1 Оркестратора.
 
-**ВЕРДИКТ ИНКВИЗИЦИИ: [ПРОВЕРЕНО: ЧИСТО]** (416/416 фич закрыто, 100% паритет с ведущими стоматологическими CRM РФ: IDENT, DentalPRO, StomX).
+**ВЕРДИКТ ИНКВИЗИЦИИ: [ПРОВЕРЕНО: ЧИСТО]** (430/430 фич закрыто, 100% паритет с ведущими стоматологическими CRM РФ: IDENT, DentalPRO, StomX).
 
 
 

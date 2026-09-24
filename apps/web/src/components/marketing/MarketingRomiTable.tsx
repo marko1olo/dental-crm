@@ -417,7 +417,7 @@ export function MarketingRomiTable() {
 			<div className="marketing-romi-header">
 				<div>
 					<div className="marketing-romi-title-row">
-						<BarChart3 className="text-[var(--teal,#0f766e)]" aria-hidden="true" />
+						<BarChart3 className="text-[var(--teal)]" aria-hidden="true" />
 						<h3 className="marketing-romi-title">
 							Эффективность рекламы и окупаемость каналов (ROMI)
 						</h3>
@@ -435,7 +435,7 @@ export function MarketingRomiTable() {
 						title="Синхронизировать показатели с живой базой CRM"
 						data-testid="romi-sync-crm-btn"
 					>
-						<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#0f766e)]" aria-hidden="true" />
+						<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" aria-hidden="true" />
 						Синхронизировать с CRM
 					</button>
 					<button
@@ -461,7 +461,7 @@ export function MarketingRomiTable() {
 			{/* CRM SYNC NOTIFICATION BANNER */}
 			{syncMessage && (
 				<div className="romi-sync-banner" data-testid="romi-sync-banner">
-					<CheckCircle2 className="w-4 h-4 text-[var(--teal,#0f766e)] flex-shrink-0" aria-hidden="true" />
+					<CheckCircle2 className="w-4 h-4 text-[var(--teal)] flex-shrink-0" aria-hidden="true" />
 					<span>{syncMessage}</span>
 				</div>
 			)}
@@ -478,7 +478,7 @@ export function MarketingRomiTable() {
 
 				<div className="romi-kpi-item">
 					<span className="romi-kpi-label">Лиды и доходимость</span>
-					<strong className="romi-kpi-value text-[var(--teal-dark,#0f766e)]">
+					<strong className="romi-kpi-value text-[var(--teal-dark)]">
 						{summary.totalLeadsCount} лидов
 					</strong>
 					<span className="romi-kpi-hint">
@@ -498,7 +498,7 @@ export function MarketingRomiTable() {
 
 				<div className="romi-kpi-item">
 					<span className="romi-kpi-label">LTV и повторные визиты</span>
-					<strong className="romi-kpi-value text-[var(--teal-dark,#0f766e)]">
+					<strong className="romi-kpi-value text-[var(--teal-dark)]">
 						{summary.overallLtvFormatted}
 					</strong>
 					<span className="romi-kpi-hint">
@@ -511,10 +511,10 @@ export function MarketingRomiTable() {
 					<strong
 						className={`romi-kpi-value ${
 							summary.overallRomiPercent === null
-								? "text-[var(--muted,#64748b)]"
+								? "text-[var(--muted)]"
 								: summary.overallRomiPercent >= 0
-								  ? "text-[var(--teal-dark,#0f766e)]"
-								  : "text-[var(--danger,#e63946)]"
+								  ? "text-[var(--teal-dark)]"
+								  : "text-[var(--bad-fg)]"
 						}`}
 					>
 						{summary.overallRomiFormatted}
@@ -531,7 +531,7 @@ export function MarketingRomiTable() {
 					<h4 className="romi-add-title">Добавление рекламного канала</h4>
 
 					<div style={{ marginBottom: "12px" }}>
-						<span style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted, #64748b)", display: "block", marginBottom: "6px" }}>
+						<span style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: "6px" }}>
 							Быстрое добавление типового канала StomX (в 1 клик):
 						</span>
 						<div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -652,7 +652,7 @@ export function MarketingRomiTable() {
 			{channels.length === 0 && !isAddingChannel ? (
 				<div className="romi-empty-container" data-testid="romi-empty-state">
 					<div className="romi-empty-icon-wrap">
-						<BarChart3 className="w-6 h-6 text-[var(--teal,#0f766e)]" aria-hidden="true" />
+						<BarChart3 className="w-6 h-6 text-[var(--teal)]" aria-hidden="true" />
 					</div>
 					<h4 className="romi-empty-title">Нет данных о расходах по рекламным каналам</h4>
 					<p className="romi-empty-desc">
@@ -672,7 +672,7 @@ export function MarketingRomiTable() {
 							className="romi-action-btn secondary"
 							onClick={handleSyncWithCrm}
 						>
-							<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#0f766e)]" aria-hidden="true" />
+							<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" aria-hidden="true" />
 							Загрузить из CRM
 						</button>
 						<button
@@ -758,7 +758,7 @@ export function MarketingRomiTable() {
 									</td>
 
 									{/* Show-up rate (calculated) */}
-									<td className="romi-cell-center font-bold text-[var(--teal-dark,#0f766e)]">
+									<td className="romi-cell-center font-bold text-[var(--teal-dark)]">
 										{metric.showUpRatePercent}%
 									</td>
 
@@ -822,12 +822,12 @@ export function MarketingRomiTable() {
 									</td>
 
 									{/* Repeat rate % */}
-									<td className="romi-cell-center text-[var(--muted,#64748b)]">
+									<td className="romi-cell-center text-[var(--muted)]">
 										{metric.repeatRatePercent}%
 									</td>
 
 									{/* LTV revenue (calculated) */}
-									<td className="romi-cell-num text-right font-semibold text-[var(--teal-dark,#0f766e)]">
+									<td className="romi-cell-num text-right font-semibold text-[var(--teal-dark)]">
 										{metric.ltvFormatted}
 									</td>
 
@@ -850,7 +850,7 @@ export function MarketingRomiTable() {
 									</td>
 
 									{/* CAC */}
-									<td className="romi-cell-num text-right font-medium text-[var(--muted,#64748b)]">
+									<td className="romi-cell-num text-right font-medium text-[var(--muted)]">
 										{metric.cacFormatted}
 									</td>
 
@@ -883,13 +883,13 @@ export function MarketingRomiTable() {
 							<td className="romi-total-num text-center font-bold">
 								{summary.totalLeadsCount} чел.
 							</td>
-							<td className="romi-total-center font-bold text-[var(--teal-dark,#0f766e)]">
+							<td className="romi-total-center font-bold text-[var(--teal-dark)]">
 								{summary.overallShowUpRatePercent}%
 							</td>
 							<td className="romi-total-num text-center font-bold">
 								{summary.totalPrimaryPatientsCount} чел.
 							</td>
-							<td className="romi-total-num text-right font-bold text-[var(--teal-dark,#0f766e)]">
+							<td className="romi-total-num text-right font-bold text-[var(--teal-dark)]">
 								{summary.totalRevenueFormatted}
 							</td>
 							<td className="romi-total-num text-right font-medium">
@@ -898,10 +898,10 @@ export function MarketingRomiTable() {
 							<td className="romi-total-num text-center font-bold">
 								{summary.totalRepeatVisitsCount} чел.
 							</td>
-							<td className="romi-total-center font-bold text-[var(--teal-dark,#0f766e)]">
+							<td className="romi-total-center font-bold text-[var(--teal-dark)]">
 								{summary.overallRepeatRatePercent}%
 							</td>
-							<td className="romi-total-num text-right font-bold text-[var(--teal-dark,#0f766e)]">
+							<td className="romi-total-num text-right font-bold text-[var(--teal-dark)]">
 								{summary.overallLtvFormatted}
 							</td>
 							<td className="romi-total-center">
@@ -929,7 +929,7 @@ export function MarketingRomiTable() {
 
 			{/* EXPLANATORY HINT */}
 			<div className="romi-footer-hint">
-				<HelpCircle className="w-4 h-4 flex-shrink-0 text-[var(--teal,#0f766e)]" aria-hidden="true" />
+				<HelpCircle className="w-4 h-4 flex-shrink-0 text-[var(--teal)]" aria-hidden="true" />
 				<p>
 					<strong>Справочник StomX:</strong> 10 канонических каналов (2GIS, Яндекс Карты, ПроДокторов, Сарафанное радио, СберЗдоровье, ВКонтакте, Наружная реклама, Сайт, Инстаграм, Листовки). Кнопка «Синхронизировать с CRM» автоматически рассчитывает доходимость, первичных и повторных пациентов, выручку и LTV по реальным медицинским картам и чекам оплат клиники.
 				</p>

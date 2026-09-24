@@ -17,7 +17,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 
 import {
 	CANONICAL_FORM043_SOMATIC_NORM,

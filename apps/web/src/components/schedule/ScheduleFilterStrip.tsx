@@ -425,6 +425,116 @@ export function ScheduleFilterStrip({
 				</button>
 			)}
 
+			{/* StomX 3-Stage Day Queue Segmented Tabs [Ожидает приёма | На приёме | Ожидает оплаты] (Mandates 8c, 8d, 8e, 8n) */}
+			{setScheduleStatusFilter && (
+				<div
+					className="schedule-day-queue-segmented-tabs flex items-center p-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] shrink-0 gap-0.5 select-none"
+					data-testid="schedule-day-queue-tabs"
+					data-queue-group="stomx-3-stage"
+					role="group"
+					aria-label="Оперативная очередь смены StomX"
+				>
+					<button
+						type="button"
+						data-testid="schedule-status-filter-arrived"
+						className={`quick-chip schedule-queue-tab-arrived ${
+							scheduleStatusFilter === "arrived"
+								? "active font-bold border-amber-500 bg-amber-500 text-white shadow-2xs"
+								: "border-transparent text-amber-800 dark:text-amber-200 hover:bg-amber-500/15"
+						} min-h-[44px] sm:min-h-0 sm:h-6 min-w-max shrink-0 px-2 sm:px-2.5 text-xs font-semibold cursor-pointer rounded-md inline-flex items-center gap-1 select-none whitespace-nowrap transition-all`}
+						onClick={() =>
+							setScheduleStatusFilter(
+								scheduleStatusFilter === "arrived" ? "all" : "arrived",
+							)
+						}
+						title="Очередь смены: Ожидает приёма (пациент в холле клиники). 1 клик для фильтрации"
+						aria-label="Фильтр: Ожидает приёма"
+						aria-pressed={scheduleStatusFilter === "arrived"}
+					>
+						<UserCheck size={12} className="shrink-0" />
+						<span className="whitespace-nowrap shrink-0">Ожидает приёма</span>
+						{queueCounts?.arrived !== undefined && (
+							<span
+								data-testid="schedule-queue-count-arrived"
+								className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+									scheduleStatusFilter === "arrived"
+										? "bg-white/30 text-white"
+										: "bg-amber-500/25 text-amber-900 dark:text-amber-200"
+								}`}
+							>
+								{queueCounts.arrived}
+							</span>
+						)}
+					</button>
+
+					<button
+						type="button"
+						data-testid="schedule-status-filter-in-treatment"
+						className={`quick-chip schedule-queue-tab-in-treatment ${
+							scheduleStatusFilter === "in_treatment"
+								? "active font-bold border-[var(--teal)] bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
+								: "border-transparent text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-surface)]"
+						} min-h-[44px] sm:min-h-0 sm:h-6 min-w-max shrink-0 px-2 sm:px-2.5 text-xs font-semibold cursor-pointer rounded-md inline-flex items-center gap-1 select-none whitespace-nowrap transition-all`}
+						onClick={() =>
+							setScheduleStatusFilter(
+								scheduleStatusFilter === "in_treatment" ? "all" : "in_treatment",
+							)
+						}
+						title="Очередь смены: На приёме (в кресле прямо сейчас). 1 клик для фильтрации"
+						aria-label="Фильтр: На приёме"
+						aria-pressed={scheduleStatusFilter === "in_treatment"}
+					>
+						<CalendarCheck size={12} className="shrink-0" />
+						<span className="whitespace-nowrap shrink-0">На приёме</span>
+						{queueCounts?.inTreatment !== undefined && (
+							<span
+								data-testid="schedule-queue-count-in-treatment"
+								className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+									scheduleStatusFilter === "in_treatment"
+										? "bg-white/30 text-white"
+										: "bg-[var(--teal)]/20 text-[var(--teal-dark,var(--teal))] dark:text-teal-200"
+								}`}
+							>
+								{queueCounts.inTreatment}
+							</span>
+						)}
+					</button>
+
+					<button
+						type="button"
+						data-testid="schedule-status-filter-completed"
+						className={`quick-chip schedule-queue-tab-completed ${
+							scheduleStatusFilter === "completed"
+								? "active font-bold border-slate-700 bg-slate-700 text-white shadow-2xs"
+								: "border-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-500/15"
+						} min-h-[44px] sm:min-h-0 sm:h-6 min-w-max shrink-0 px-2 sm:px-2.5 text-xs font-semibold cursor-pointer rounded-md inline-flex items-center gap-1 select-none whitespace-nowrap transition-all`}
+						onClick={() =>
+							setScheduleStatusFilter(
+								scheduleStatusFilter === "completed" ? "all" : "completed",
+							)
+						}
+						title="Очередь смены: Ожидает оплаты (приём завершён, готов к кассе 54-ФЗ). 1 клик для фильтрации"
+						aria-label="Фильтр: Ожидает оплаты"
+						aria-pressed={scheduleStatusFilter === "completed"}
+					>
+						<CheckCircle2 size={12} className="shrink-0" />
+						<span className="whitespace-nowrap shrink-0">Ожидает оплаты</span>
+						{queueCounts?.awaitingPayment !== undefined && (
+							<span
+								data-testid="schedule-queue-count-completed"
+								className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+									scheduleStatusFilter === "completed"
+										? "bg-white/30 text-white"
+										: "bg-slate-500/20 text-slate-800 dark:text-slate-200"
+								}`}
+							>
+								{queueCounts.awaitingPayment}
+							</span>
+						)}
+					</button>
+				</div>
+			)}
+
 			{/* Center: 1-line horizontal scrollable doctor & chair filters */}
 			<style>{`
 				.schedule-filter-chips {
@@ -469,96 +579,6 @@ export function ScheduleFilterStrip({
 						</span>
 					)}
 				</button>
-
-				{/* StomX Shift Queue Status Filter Chips with real-time count badges (Mandates 8c, 8d, 8e, 8n) */}
-				{setScheduleStatusFilter && (
-					<>
-						<button
-							type="button"
-							data-testid="schedule-status-filter-arrived"
-							className={`quick-chip ${scheduleStatusFilter === "arrived" ? "active font-bold border-amber-500 bg-amber-500 text-white" : "border-amber-500/30 text-amber-800 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20"} min-h-[44px] sm:min-h-0 sm:h-7 min-w-max shrink-0 flex-shrink-0 px-2 text-xs font-semibold cursor-pointer rounded-lg inline-flex items-center gap-1 select-none whitespace-nowrap`}
-							style={{ whiteSpace: "nowrap", flexShrink: 0 }}
-							onClick={() =>
-								setScheduleStatusFilter(
-									scheduleStatusFilter === "arrived" ? "all" : "arrived",
-								)
-							}
-							title="Очередь смены: Ожидает приёма (пациент в холле клиники)"
-							aria-label="Фильтр: Ожидает приёма"
-						>
-							<UserCheck size={12} className="shrink-0" />
-							<span className="whitespace-nowrap shrink-0 flex-shrink-0">Ожидает приёма</span>
-							{queueCounts?.arrived !== undefined && (
-								<span
-									data-testid="schedule-queue-count-arrived"
-									className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-										scheduleStatusFilter === "arrived"
-											? "bg-white/30 text-white"
-											: "bg-amber-500/25 text-amber-900 dark:text-amber-200"
-									}`}
-								>
-									{queueCounts.arrived}
-								</span>
-							)}
-						</button>
-						<button
-							type="button"
-							data-testid="schedule-status-filter-in-treatment"
-							className={`quick-chip ${scheduleStatusFilter === "in_treatment" ? "active font-bold border-[var(--teal)] bg-[var(--teal,var(--brand-primary))] text-white" : "border-[var(--teal)]/30 text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)]"} min-h-[44px] sm:min-h-0 sm:h-7 min-w-max shrink-0 flex-shrink-0 px-2 text-xs font-semibold cursor-pointer rounded-lg inline-flex items-center gap-1 select-none whitespace-nowrap`}
-							style={{ whiteSpace: "nowrap", flexShrink: 0 }}
-							onClick={() =>
-								setScheduleStatusFilter(
-									scheduleStatusFilter === "in_treatment" ? "all" : "in_treatment",
-								)
-							}
-							title="Очередь смены: На приёме (в кресле прямо сейчас)"
-							aria-label="Фильтр: На приёме"
-						>
-							<CalendarCheck size={12} className="shrink-0" />
-							<span className="whitespace-nowrap shrink-0 flex-shrink-0">На приёме</span>
-							{queueCounts?.inTreatment !== undefined && (
-								<span
-									data-testid="schedule-queue-count-in-treatment"
-									className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-										scheduleStatusFilter === "in_treatment"
-											? "bg-white/30 text-white"
-											: "bg-[var(--teal)]/20 text-[var(--teal-dark,var(--teal))] dark:text-teal-200"
-									}`}
-								>
-									{queueCounts.inTreatment}
-								</span>
-							)}
-						</button>
-						<button
-							type="button"
-							data-testid="schedule-status-filter-completed"
-							className={`quick-chip ${scheduleStatusFilter === "completed" ? "active font-bold border-slate-700 bg-slate-700 text-white" : "border-slate-500/30 text-slate-700 dark:text-slate-300 bg-slate-500/10 hover:bg-slate-500/20"} min-h-[44px] sm:min-h-0 sm:h-7 min-w-max shrink-0 flex-shrink-0 px-2 text-xs font-semibold cursor-pointer rounded-lg inline-flex items-center gap-1 select-none whitespace-nowrap`}
-							style={{ whiteSpace: "nowrap", flexShrink: 0 }}
-							onClick={() =>
-								setScheduleStatusFilter(
-									scheduleStatusFilter === "completed" ? "all" : "completed",
-								)
-							}
-							title="Очередь смены: Ожидает оплаты (приём завершён, готов к кассе 54-ФЗ)"
-							aria-label="Фильтр: Ожидает оплаты"
-						>
-							<CheckCircle2 size={12} className="shrink-0" />
-							<span className="whitespace-nowrap shrink-0 flex-shrink-0">Ожидает оплаты</span>
-							{queueCounts?.awaitingPayment !== undefined && (
-								<span
-									data-testid="schedule-queue-count-completed"
-									className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-										scheduleStatusFilter === "completed"
-											? "bg-white/30 text-white"
-											: "bg-slate-500/20 text-slate-800 dark:text-slate-200"
-									}`}
-								>
-									{queueCounts.awaitingPayment}
-								</span>
-							)}
-						</button>
-					</>
-				)}
 
 				{/* 1-Click Branch Selector: auto-hidden when branches <= 1 (Mandates 8n, 8p) */}
 				{hasMultipleBranches && (

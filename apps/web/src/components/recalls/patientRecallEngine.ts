@@ -905,7 +905,7 @@ const WHATSAPP_TEMPLATES: Record<RecallCycleType, string> = {
 		"Стоматология «{{CLINIC_NAME}}». Ваш лечащий доктор {{DOCTOR_NAME}} напоминает: " +
 		"прошло 6 месяцев с Вашего прошлого визита ({{LAST_VISIT_DATE}}). " +
 		"Подошел срок плановой профгигиены Air-Flow и осмотра для сохранения здоровья зубов и гарантии.\n\n" +
-		"✨ Записаться онлайн в 1 клик:\n{{BOOKING_URL}}\n\n" +
+		"Записаться онлайн в 1 клик:\n{{BOOKING_URL}}\n\n" +
 		"Или просто ответьте на это сообщение, и мы подберем удобный слот!",
 
 	periodontal_maintenance:
@@ -913,48 +913,48 @@ const WHATSAPP_TEMPLATES: Record<RecallCycleType, string> = {
 		"Клиника «{{CLINIC_NAME}}». Доктор {{DOCTOR_NAME}} напоминает: " +
 		"прошло {{INTERVAL_DESC}} с курса пародонтального лечения (визит {{LAST_VISIT_DATE}}). " +
 		"Чтобы закрепить ремиссию и не допустить воспаления десен, важно провести поддерживающую гигиену.\n\n" +
-		"🌿 Запись на прием:\n{{BOOKING_URL}}",
+		"Запись на прием:\n{{BOOKING_URL}}",
 
 	implant_monitoring:
 		"Здравствуйте, {{PATIENT_FIRST_NAME}}! " +
 		"«{{CLINIC_NAME}}» заботится о Вашей улыбке. " +
 		"Подошел срок контрольного рентген-осмотра имплантатов у доктора {{DOCTOR_NAME}} (прошлый визит {{LAST_VISIT_DATE}}). " +
 		"Это необходимо для контроля остеоинтеграции и сохранения гарантийного сертификата.\n\n" +
-		"🦷 Записаться к доктору:\n{{BOOKING_URL}}",
+		"Записаться к доктору:\n{{BOOKING_URL}}",
 
 	orthodontic_braces:
 		"Здравствуйте, {{PATIENT_FIRST_NAME}}! " +
 		"Клиника «{{CLINIC_NAME}}». Ваш ортодонт {{DOCTOR_NAME}} ждет Вас на плановую активацию брекет-системы и смену дуг. " +
 		"Прошло 4 недели с прошлой коррекции ({{LAST_VISIT_DATE}}).\n\n" +
-		"📅 Выбрать слот онлайн:\n{{BOOKING_URL}}",
+		"Выбрать слот онлайн:\n{{BOOKING_URL}}",
 
 	orthodontic_aligners:
 		"Здравствуйте, {{PATIENT_FIRST_NAME}}! " +
 		"Клиника «{{CLINIC_NAME}}». Подошел срок ревизии элайнеров у доктора {{DOCTOR_NAME}} (прошло {{INTERVAL_DESC}}). " +
 		"Доктор оценит трекинг зубов и выдаст следующий комплект капп.\n\n" +
-		"✨ Онлайн-запись:\n{{BOOKING_URL}}",
+		"Онлайн-запись:\n{{BOOKING_URL}}",
 
 	orthodontic_retention:
 		"Здравствуйте, {{PATIENT_FIRST_NAME}}! " +
 		"Клиника «{{CLINIC_NAME}}». Доктор {{DOCTOR_NAME}} приглашает на ретенционный контроль (проверка ретейнеров и капп после визита {{LAST_VISIT_DATE}}).\n\n" +
-		"✨ Записаться онлайн:\n{{BOOKING_URL}}",
+		"Записаться онлайн:\n{{BOOKING_URL}}",
 
 	pediatric_fluoridation:
 		"Здравствуйте! Детская стоматология «{{CLINIC_NAME}}». " +
 		"Прошло {{INTERVAL_DESC}} с последнего осмотра {{PATIENT_FIRST_NAME}} ({{LAST_VISIT_DATE}}). " +
 		"Детский доктор {{DOCTOR_NAME}} приглашает на минерализацию эмали и урок гигиены!\n\n" +
-		"🎈 Запись к детскому доктору:\n{{BOOKING_URL}}",
+		"Запись к детскому доктору:\n{{BOOKING_URL}}",
 
 	caries_high_risk:
 		"Здравствуйте, {{PATIENT_FIRST_NAME}}! " +
 		"Стоматология «{{CLINIC_NAME}}». Прошло 3 месяца с лечения кариеса у доктора {{DOCTOR_NAME}} ({{LAST_VISIT_DATE}}). " +
 		"Для защиты эмали и контроля краевого прилегания пломб рекомендована плановая ремотерапия.\n\n" +
-		"📅 Онлайн-запись:\n{{BOOKING_URL}}",
+		"Онлайн-запись:\n{{BOOKING_URL}}",
 
 	prosthetic_check:
 		"Здравствуйте, {{PATIENT_FIRST_NAME}}! " +
 		"«{{CLINIC_NAME}}». Подошел срок контрольного осмотра ортопедических конструкций у доктора {{DOCTOR_NAME}} для пролонгации гарантии.\n\n" +
-		"🦷 Записаться:\n{{BOOKING_URL}}",
+		"Записаться:\n{{BOOKING_URL}}",
 };
 
 const SMS_TEMPLATES: Record<RecallCycleType, string> = {

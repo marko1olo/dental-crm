@@ -17,6 +17,10 @@ export function registerTabTeardown(callback: () => void): () => void {
 	};
 }
 
+export function clearTabTeardownCallbacks(): void {
+	tabTeardownCallbacks.clear();
+}
+
 export interface AppLogicProviderProps {
 	children?: React.ReactNode;
 	value: AppLogicContextType;
@@ -29,10 +33,12 @@ export function AppLogicProvider({
 	const currentView = (value as { currentView?: string })?.currentView;
 	const prevViewRef = useRef<string | undefined>(currentView);
 
-	// Memory leak guard: when switching tabs/views in the workspace, invoke registered teardown callbacks
+	// Memory leak guard: when switching tabs/views in the workspace, invoke and drain registered teardown callbacks
 	useEffect(() => {
 		if (prevViewRef.current !== undefined && prevViewRef.current !== currentView) {
-			for (const callback of tabTeardownCallbacks) {
+			const callbacksToExecute = Array.from(tabTeardownCallbacks);
+			tabTeardownCallbacks.clear();
+			for (const callback of callbacksToExecute) {
 				try {
 					callback();
 				} catch {
@@ -42,6 +48,13 @@ export function AppLogicProvider({
 		}
 		prevViewRef.current = currentView;
 	}, [currentView]);
+
+	// Clean up global teardown callback registry on provider unmount
+	useEffect(() => {
+		return () => {
+			tabTeardownCallbacks.clear();
+		};
+	}, []);
 
 	return (
 		<AppLogicContext.Provider value={value}>

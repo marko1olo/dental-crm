@@ -3,7 +3,7 @@ import { Camera, FileText } from "lucide-react";
 import { usePatientStore } from "../../store/patientStore";
 import { OrthopedicsChairsidePanel } from "../orthopedics/OrthopedicsChairsidePanel";
 import { OrthodonticPhotoProtocolModal } from "../diagnostics/OrthodonticPhotoProtocolModal";
-import { OrthodonticVisitProtocolWidget } from "../orthodontics/OrthodonticVisitProtocolWidget";
+import { OrthodonticVisitProtocolWidget } from "./OrthodonticVisitProtocolWidget";
 
 /**
  * OrthodonticPerspectiveView — чистый фасад ортодонтического режима.

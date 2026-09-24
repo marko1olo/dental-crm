@@ -9,7 +9,7 @@
  * - Отказ от выдумывания: бросает явное исключение при вызове вне провайдера
  */
 
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useMemo } from "react";
 import { useOptionalAppLogicContext } from "./AppLogicContext";
 import type { AdminSecretUnlockDomain } from "../AppHelpers";
 
@@ -50,7 +50,11 @@ export function AuthProvider({
 	value,
 }: AuthProviderProps) {
 	const appLogic = useOptionalAppLogicContext();
-	const resolvedValue = value ?? (appLogic?.auth as AuthContextType | undefined) ?? null;
+	const appLogicAuth = appLogic?.auth as AuthContextType | undefined;
+	const resolvedValue = useMemo(
+		() => value ?? appLogicAuth ?? null,
+		[value, appLogicAuth],
+	);
 
 	return (
 		<AuthContext.Provider value={resolvedValue}>

@@ -6,6 +6,7 @@
 import { z } from "zod";
 import type { Ffd12OperationType } from "./ffd12Types.js";
 import {
+	ffd12AgentSignSchema,
 	ffd12CorrectionTypeSchema,
 	ffd12OperationTypeSchema,
 	ffd12PaymentMethodSchema,
@@ -44,6 +45,7 @@ export const fiscalReceiptItemSchema = z
 		vatRate: ffd12VatRateSchema.default("vat_none"),
 		measure: ffd12QuantityMeasureSchema.default("piece"),
 		taxDeductionCode: taxDeductionCategorySchema.default("code_1_standard"),
+		agentSign: ffd12AgentSignSchema.optional().nullable(),
 		medicalServiceCode804n: z.string().trim().max(32).optional().nullable(),
 		medicalServiceCodeMzk: z.string().trim().max(32).optional().nullable(),
 		toothFdiNumber: z.number().int().min(11).max(85).optional().nullable(),
@@ -104,11 +106,14 @@ export const createFiscalReceiptPayloadSchema = z
 		patientId: z.string().uuid("Некорректный UUID пациента"),
 		operationType: ffd12OperationTypeSchema.default("income"),
 		taxationSystem: ffd12TaxationSystemSchema.default("usn_income"),
+		agentSign: ffd12AgentSignSchema.optional().nullable(),
 		customerContact: z
 			.string()
 			.trim()
 			.min(5, "Укажите телефон или email для отправки чека")
 			.max(100, "Контакт клиента не может превышать 100 символов"),
+		customerName: z.string().trim().max(256).optional().nullable(),
+		customerInn: z.string().trim().regex(/^(\d{10}|\d{12})$/, "ИНН покупателя должен содержать 10 (для ЮЛ) или 12 (для ИП/ФЛ) цифр").optional().nullable(),
 		cashierFullName: z
 			.string()
 			.trim()

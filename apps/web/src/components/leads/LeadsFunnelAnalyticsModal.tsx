@@ -192,7 +192,7 @@ export function LeadsFunnelAnalyticsModal({
 								height: 40,
 								borderRadius: 10,
 								background: "rgba(15, 118, 110, 0.15)",
-								color: "var(--brand-500, #0f766e)",
+								color: "var(--teal)",
 								display: "flex",
 								alignItems: "center",
 								justifyContent: "center",
@@ -219,8 +219,8 @@ export function LeadsFunnelAnalyticsModal({
 										fontWeight: 700,
 										padding: "2px 8px",
 										borderRadius: 12,
-										background: "var(--brand-500, #0f766e)",
-										color: "var(--on-teal, #ffffff)",
+										background: "var(--teal)",
+										color: "var(--on-teal, var(--paper))",
 										textTransform: "uppercase",
 										letterSpacing: "0.05em",
 									}}
@@ -336,7 +336,7 @@ export function LeadsFunnelAnalyticsModal({
 									borderRadius: 8,
 									border:
 										period === opt.id
-											? "1px solid var(--brand-500, #0f766e)"
+											? "1px solid var(--teal)"
 											: "1px solid var(--line)",
 									background:
 										period === opt.id
@@ -344,7 +344,7 @@ export function LeadsFunnelAnalyticsModal({
 											: "var(--paper-soft)",
 									color:
 										period === opt.id
-											? "var(--brand-500, #0f766e)"
+											? "var(--teal)"
 											: "var(--ink)",
 									cursor: "pointer",
 									transition: "all 0.15s ease",
@@ -372,7 +372,7 @@ export function LeadsFunnelAnalyticsModal({
 									? "rgba(59, 130, 246, 0.1)"
 									: "var(--paper-soft)",
 								color: isBudgetDrawerOpen
-									? "var(--accent, #3b82f6)"
+									? "var(--accent)"
 									: "var(--ink)",
 								cursor: "pointer",
 							}}
@@ -602,7 +602,7 @@ export function LeadsFunnelAnalyticsModal({
 									gap: 4,
 								}}
 							>
-								<CheckCircle2 size={13} color="var(--warning, #f59e0b)" /> Дошли (Show-up)
+								<CheckCircle2 size={13} color="var(--warn-fg)" /> Дошли (Show-up)
 							</div>
 							<div
 								style={{
@@ -619,8 +619,8 @@ export function LeadsFunnelAnalyticsModal({
 									fontWeight: 600,
 									color:
 										summary.showUpRatePercent >= 75
-											? "var(--success, #10b981)"
-											: "var(--warning, #f59e0b)",
+											? "var(--ok-fg)"
+											: "var(--warn-fg)",
 									marginTop: 2,
 								}}
 							>
@@ -648,13 +648,13 @@ export function LeadsFunnelAnalyticsModal({
 									gap: 4,
 								}}
 							>
-								<Award size={13} color="var(--success, #10b981)" /> Оплатили
+								<Award size={13} color="var(--ok-fg)" /> Оплатили
 							</div>
 							<div
 								style={{
 									fontSize: 22,
 									fontWeight: 700,
-									color: "var(--success, #10b981)",
+									color: "var(--ok-fg)",
 								}}
 							>
 								{summary.paidLeads}
@@ -720,7 +720,7 @@ export function LeadsFunnelAnalyticsModal({
 									gap: 4,
 								}}
 							>
-								<TrendingUp size={13} color="var(--indigo, #6366f1)" /> CAC (Стоимость клика)
+								<TrendingUp size={13} color="var(--accent)" /> CAC (Стоимость клика)
 							</div>
 							<div
 								style={{
@@ -756,7 +756,7 @@ export function LeadsFunnelAnalyticsModal({
 									gap: 4,
 								}}
 							>
-								<Flame size={13} color="var(--brand-500, #0f766e)" /> ROMI (Окупаемость)
+								<Flame size={13} color="var(--teal)" /> ROMI (Окупаемость)
 							</div>
 							<div
 								style={{
@@ -764,9 +764,9 @@ export function LeadsFunnelAnalyticsModal({
 									fontWeight: 700,
 									color:
 										summary.romiPercent >= 100
-											? "var(--success, #10b981)"
+											? "var(--ok-fg)"
 											: summary.romiPercent >= 0
-												? "var(--warning, #f59e0b)"
+												? "var(--warn-fg)"
 												: "var(--rust)",
 								}}
 							>
@@ -884,7 +884,7 @@ export function LeadsFunnelAnalyticsModal({
 													style={{
 														fontSize: 11,
 														fontWeight: 600,
-														color: "var(--brand-500, #0f766e)",
+														color: "var(--teal)",
 														background: st.badgeColor,
 														padding: "2px 6px",
 														borderRadius: 6,
@@ -931,7 +931,7 @@ export function LeadsFunnelAnalyticsModal({
 													display: "flex",
 													alignItems: "center",
 													paddingLeft: 8,
-													color: "var(--on-teal, #ffffff)",
+													color: "var(--on-teal, var(--paper))",
 													fontSize: 11,
 													fontWeight: 600,
 												}}
@@ -1080,7 +1080,7 @@ export function LeadsFunnelAnalyticsModal({
 														fontWeight: 700,
 														color:
 															ch.paidCount > 0
-																? "var(--success, #10b981)"
+																? "var(--ok-fg)"
 																: "var(--ink)",
 													}}
 												>
@@ -1101,9 +1101,9 @@ export function LeadsFunnelAnalyticsModal({
 															fontWeight: 700,
 															color:
 																ch.romiPercent >= 100
-																	? "var(--success, #10b981)"
+																	? "var(--ok-fg)"
 																	: ch.romiPercent >= 0
-																		? "var(--warning, #f59e0b)"
+																		? "var(--warn-fg)"
 																		: "var(--rust)",
 														}}
 													>
@@ -1122,7 +1122,7 @@ export function LeadsFunnelAnalyticsModal({
 															<span
 																style={{
 																	background: "rgba(16, 185, 129, 0.15)",
-																	color: "var(--success, #10b981)",
+																	color: "var(--ok-fg)",
 																	padding: "2px 6px",
 																	borderRadius: 4,
 																	fontWeight: 700,
@@ -1135,7 +1135,7 @@ export function LeadsFunnelAnalyticsModal({
 															<span
 																style={{
 																	background: "rgba(59, 130, 246, 0.15)",
-																	color: "var(--accent, #3b82f6)",
+																	color: "var(--accent)",
 																	padding: "2px 6px",
 																	borderRadius: 4,
 																	fontWeight: 600,
@@ -1148,7 +1148,7 @@ export function LeadsFunnelAnalyticsModal({
 															<span
 																style={{
 																	background: "rgba(245, 158, 11, 0.15)",
-																	color: "var(--warning, #f59e0b)",
+																	color: "var(--warn-fg)",
 																	padding: "2px 6px",
 																	borderRadius: 4,
 																	fontWeight: 600,
@@ -1174,7 +1174,7 @@ export function LeadsFunnelAnalyticsModal({
 															<span
 																style={{
 																	background: "rgba(139, 92, 246, 0.15)",
-																	color: "var(--purple, #8b5cf6)",
+																	color: "var(--accent)",
 																	padding: "2px 6px",
 																	borderRadius: 4,
 																	fontWeight: 600,
@@ -1210,9 +1210,9 @@ export function LeadsFunnelAnalyticsModal({
 							gap: 12,
 						}}
 					>
-						<Sparkles size={20} color="var(--brand-500, #0f766e)" style={{ flexShrink: 0, marginTop: 2 }} />
+						<Sparkles size={20} color="var(--teal)" style={{ flexShrink: 0, marginTop: 2 }} />
 						<div style={{ fontSize: 12, lineHeight: 1.5, color: "var(--ink)" }}>
-							<strong style={{ color: "var(--brand-500, #0f766e)", display: "block", marginBottom: 2 }}>
+							<strong style={{ color: "var(--teal)", display: "block", marginBottom: 2 }}>
 								Маркетинговые рекомендации CRM ДЕНТЕ
 							</strong>
 							{summary.showUpRatePercent < 70 ? (

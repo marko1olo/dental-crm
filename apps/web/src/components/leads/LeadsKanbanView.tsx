@@ -685,7 +685,7 @@ export function LeadsKanbanView() {
 				<div className="flex items-center gap-3">
 					<h2 className="m-0 text-2xl font-semibold text-[var(--ink)] flex items-center gap-3">
 						Воронка Пациентов
-						<span className="text-[10px] font-bold px-2 py-0.5 bg-[var(--brand-500,#0f766e)] text-white rounded-full uppercase tracking-wider">
+						<span className="text-[10px] font-bold px-2 py-0.5 bg-[var(--teal)] text-[var(--paper)] rounded-full uppercase tracking-wider">
 							PRO
 						</span>
 					</h2>
@@ -709,7 +709,7 @@ export function LeadsKanbanView() {
 							fontWeight: 600,
 						}}
 					>
-						<BarChart3 size={16} color="var(--brand-500, #0f766e)" /> Аналитика воронки
+						<BarChart3 size={16} color="var(--teal)" /> Аналитика воронки
 					</button>
 					<button
 						className="secondary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
@@ -723,7 +723,7 @@ export function LeadsKanbanView() {
 							fontWeight: 600,
 						}}
 					>
-						<RotateCcw size={16} color="var(--brand-500, #0f766e)" /> Детектор оттока (210 дней)
+						<RotateCcw size={16} color="var(--teal)" /> Детектор оттока (210 дней)
 					</button>
 				</div>
 
@@ -731,14 +731,14 @@ export function LeadsKanbanView() {
 					<div className="relative">
 						<Search
 							size={16}
-							className="text-[var(--muted,#94a3b8)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+							className="text-[var(--muted)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
 						/>
 						<input
 							type="text"
 							placeholder="Поиск по имени или телефону..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="!pl-10 pr-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink)] text-xs focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all w-64"
+							className="!pl-10 pr-3 py-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all w-64"
 							style={{ paddingLeft: "40px" }}
 							aria-label="Поиск по имени или телефону"
 						/>
@@ -939,8 +939,8 @@ export function LeadsKanbanView() {
 											onClick={() => openEditModal(lead)}
 											style={{
 												background: cardBg,
-												padding: "16px",
-												borderRadius: "12px",
+												padding: "12px 14px",
+												borderRadius: "10px",
 												cursor: "grab",
 												border: `1px solid ${borderColor}`,
 												boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
@@ -1077,9 +1077,9 @@ export function LeadsKanbanView() {
 															fontWeight: 600,
 															padding: "3px 8px",
 															borderRadius: 6,
-															background: "rgba(245, 158, 11, 0.12)",
-															color: "#d97706",
-															border: "1px solid rgba(245, 158, 11, 0.3)",
+															background: "var(--warn-bg)",
+															color: "var(--warn-fg)",
+															border: "1px solid var(--line)",
 															cursor: "pointer",
 														}}
 														title="Перевести в статус «В работе» в 1 клик"
@@ -1106,9 +1106,9 @@ export function LeadsKanbanView() {
 															fontWeight: 600,
 															padding: "3px 8px",
 															borderRadius: 6,
-															background: "rgba(16, 185, 129, 0.12)",
-															color: "#059669",
-															border: "1px solid rgba(16, 185, 129, 0.3)",
+															background: "var(--ok-bg)",
+															color: "var(--ok-fg)",
+															border: "1px solid var(--line)",
 															cursor: "pointer",
 														}}
 														title="Перевести в статус «Записаны» в 1 клик"
@@ -1135,9 +1135,9 @@ export function LeadsKanbanView() {
 															fontWeight: 600,
 															padding: "3px 8px",
 															borderRadius: 6,
-															background: "rgba(139, 92, 246, 0.12)",
-															color: "#7c3aed",
-															border: "1px solid rgba(139, 92, 246, 0.3)",
+															background: "var(--paper-soft)",
+															color: "var(--accent)",
+															border: "1px solid var(--line)",
 															cursor: "pointer",
 														}}
 														title="Перевести в статус «Дошел» в 1 клик"
@@ -1154,7 +1154,7 @@ export function LeadsKanbanView() {
 															gap: 4,
 															fontSize: 11,
 															fontWeight: 600,
-															color: "#7c3aed",
+															color: "var(--accent)",
 														}}
 													>
 														<UserCheck size={12} /> Дошел до клиники
@@ -1238,9 +1238,9 @@ export function LeadsKanbanView() {
 													borderRadius: 8,
 													fontSize: 12,
 													fontWeight: 600,
-													background: "rgba(16, 185, 129, 0.12)",
-													color: "#059669",
-													border: "1px solid rgba(16, 185, 129, 0.3)",
+													background: "var(--ok-bg)",
+													color: "var(--ok-fg)",
+													border: "1px solid var(--line)",
 													display: "flex",
 													alignItems: "center",
 													justifyContent: "center",
@@ -1775,8 +1775,8 @@ export function LeadsKanbanView() {
 										title="Создать карту пациента из обращения в 1 клик"
 										style={{
 											justifyContent: "center",
-											color: "#059669",
-											borderColor: "rgba(16, 185, 129, 0.4)",
+											color: "var(--ok-fg)",
+											borderColor: "var(--line)",
 											minHeight: 44,
 											display: "flex",
 											alignItems: "center",

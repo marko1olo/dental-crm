@@ -102,6 +102,40 @@ export const ffd12PaymentSubjectSchema = z.enum([
 export type Ffd12PaymentSubject = z.infer<typeof ffd12PaymentSubjectSchema>;
 
 /**
+ * FFD 1.2 Tag 1057: Agent Sign in Receipt (Признак агента в чеке)
+ * FFD 1.2 Tag 1222: Agent Sign per Subject (Признак агента по предмету расчета)
+ * 1 = Bank paying agent (Банковский платежный агент)
+ * 2 = Bank paying subagent (Банковский платежный субагент)
+ * 3 = Paying agent (Платежный агент)
+ * 4 = Paying subagent (Платежный субагент)
+ * 5 = Attorney (Поверенный)
+ * 6 = Commission agent (Комиссионер)
+ * 7 = Agent (Агент)
+ */
+export const FFD12_TAG_1057_AGENT_CODES = {
+	bank_paying_agent: 1,
+	bank_paying_subagent: 2,
+	paying_agent: 3,
+	paying_subagent: 4,
+	attorney: 5,
+	commission_agent: 6,
+	agent: 7,
+} as const;
+
+export const FFD12_TAG_1222_AGENT_CODES = FFD12_TAG_1057_AGENT_CODES;
+
+export const ffd12AgentSignSchema = z.enum([
+	"bank_paying_agent",
+	"bank_paying_subagent",
+	"paying_agent",
+	"paying_subagent",
+	"attorney",
+	"commission_agent",
+	"agent",
+]);
+export type Ffd12AgentSign = z.infer<typeof ffd12AgentSignSchema>;
+
+/**
  * FFD 1.2 Tag 1055: Taxation System (Применяемая система налогообложения — СНО)
  * 1 = OSN (Общая — ОСН)
  * 2 = USN Income (УСН Доходы)

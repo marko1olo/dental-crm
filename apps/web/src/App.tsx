@@ -40,6 +40,7 @@ import { AppLoadingState, AppUnlockState } from "./AppBootState";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { showToast } from "./components/GlobalToast";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import { useNetworkConnectivity } from "./hooks/useNetworkConnectivity";
 import { useOfflineMutationQueue } from "./hooks/useOfflineMutationQueue";
 import { resolveClinicMode, staffRoleChoices } from "./lib/clinicCapabilities";
@@ -84,7 +85,7 @@ const TreatmentPlanModule = lazyWithRetry(() =>
 	})),
 );
 const OrthodonticPerspectiveView = lazyWithRetry(() =>
-	import("./components/perspectives/OrthodonticPerspectiveView").then(
+	import("./components/orthodontics/OrthodonticPerspectiveView").then(
 		(module) => ({
 			default: module.OrthodonticPerspectiveView,
 		}),
@@ -1714,10 +1715,11 @@ export function App() {
       (AuthHub, StaffPinPad, AppBootState).
     */
 		<AppLogicProvider value={appLogicValue}>
-			<main
-				className="app-shell dente-redesign"
-				data-collapsed={sidebarCollapsed}
-			>
+			<AuthProvider>
+				<main
+					className="app-shell dente-redesign"
+					data-collapsed={sidebarCollapsed}
+				>
 				<a className="skip-link" href="#workspace-content">
 					Перейти к рабочей области
 				</a>
@@ -3584,6 +3586,7 @@ export function App() {
 					onFullLock={handleFullStaffLock}
 				/>
 			</main>
-		</AppLogicProvider>
+		</AuthProvider>
+	</AppLogicProvider>
 	);
 }

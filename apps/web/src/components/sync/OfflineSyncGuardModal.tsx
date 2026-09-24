@@ -41,6 +41,7 @@ import {
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { OfflineMutationQueueViewer } from "./OfflineMutationQueueViewer";
 
 export interface OfflineSyncGuardModalProps {
 	readonly isOpen: boolean;
@@ -59,7 +60,6 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 	const [pendingItems, setPendingItems] = useState<CrdtOutboxQueueItem[]>([]);
 	const [isSyncing, setIsSyncing] = useState(false);
 	const [activeTab, setActiveTab] = useState<"overview" | "queue" | "diagnostics">("overview");
-	const [selectedMutation, setSelectedMutation] = useState<CrdtOutboxQueueItem | null>(null);
 
 	const refreshTelemetry = useCallback(async () => {
 		try {
@@ -210,25 +210,6 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 	}, [status.survivabilityGrade]);
 
 	if (!isOpen) return null;
-
-	const formatEntityKindTitle = (kind: string) => {
-		switch (kind) {
-			case "appointment":
-			case "visit":
-				return "Прием / Расписание";
-			case "odontogram_state":
-				return "Зубная формула (FDI)";
-			case "visit_diary":
-				return "SOAP-дневник (043/у)";
-			case "patient":
-				return "Карта пациента";
-			case "payment":
-			case "patient_invoice":
-				return "Оплата / Счет";
-			default:
-				return kind;
-		}
-	};
 
 	return (
 		<div
@@ -459,70 +440,7 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 
 					{activeTab === "queue" && (
 						<div className="space-y-3">
-							<div className="flex items-center justify-between text-xs text-[var(--muted,#64748b)] dark:text-slate-400">
-								<span>Ожидающие отправки мутации ({pendingItems.length})</span>
-								<span>Сортировка: хронологическая</span>
-							</div>
-
-							{pendingItems.length === 0 ? (
-								<div className="py-12 text-center text-xs text-[var(--muted,#64748b)] dark:text-slate-400">
-									<CheckCircle2 className="w-8 h-8 mx-auto text-emerald-500/60 mb-2" />
-									<p className="font-medium text-slate-700 dark:text-slate-200">Очередь синхронизации пуста</p>
-									<p className="text-[11px] mt-0.5">Все локальные изменения успешно переданы на сервер клиники</p>
-								</div>
-							) : (
-								<div className="divide-y divide-[var(--glass-border,rgba(0,0,0,0.06))] dark:divide-white/5 border border-[var(--glass-border,rgba(0,0,0,0.08))] dark:border-white/10 rounded-lg overflow-hidden max-h-[380px] overflow-y-auto">
-									{pendingItems.map((item) => (
-										<div
-											key={item.id}
-											onClick={() => setSelectedMutation(item)}
-											className="p-3 hover:bg-slate-50 dark:hover:bg-white/[0.02] cursor-pointer transition-colors flex items-center justify-between gap-3 text-xs"
-										>
-											<div className="flex items-center gap-2.5 min-w-0">
-												<div className="p-1.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-mono text-[10px] font-bold">
-													{item.action.toUpperCase()}
-												</div>
-												<div className="min-w-0">
-													<div className="font-semibold text-slate-800 dark:text-slate-200 truncate">
-														{formatEntityKindTitle(item.entityKind)}
-													</div>
-													<div className="text-[11px] text-[var(--muted,#64748b)] dark:text-slate-400 font-mono truncate">
-														ID: {item.entityId} • {new Date(item.createdAtIso).toLocaleTimeString("ru-RU")}
-													</div>
-												</div>
-											</div>
-
-											<div className="flex items-center gap-2 flex-shrink-0">
-												<span className="px-2 py-0.5 text-[10px] font-medium rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-													{item.status}
-												</span>
-												<span className="text-[10px] font-mono text-slate-400">
-													L{item.lamportTime}
-												</span>
-											</div>
-										</div>
-									))}
-								</div>
-							)}
-
-							{/* Payload Inspection Modal / Sheet */}
-							{selectedMutation && (
-								<div className="p-3.5 rounded-lg border border-[var(--glass-border,rgba(0,0,0,0.08))] dark:border-white/10 bg-slate-50 dark:bg-black/40 space-y-2">
-									<div className="flex items-center justify-between text-xs">
-										<span className="font-semibold">Детали полезной нагрузки мутации:</span>
-										<button
-											type="button"
-											onClick={() => setSelectedMutation(null)}
-											className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline"
-										>
-											Скрыть
-										</button>
-									</div>
-									<pre className="text-[10px] font-mono p-2.5 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-white/10 overflow-x-auto max-h-[160px]">
-										{JSON.stringify(selectedMutation.payload, null, 2)}
-									</pre>
-								</div>
-							)}
+							<OfflineMutationQueueViewer maxHeight="380px" />
 						</div>
 					)}
 

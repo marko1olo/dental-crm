@@ -17,13 +17,15 @@ import {
 	DEFAULT_EGISZ_CLINIC_PRESET,
 	DEFAULT_EGISZ_DOCTOR_PRESET,
 	SAMPLE_DENTAL_SEMD_105_PRESET,
-	createMockGostSignature,
-	createMockMoGostSignature,
 	generateEgiszDentalCdaXml,
 	generateEgiszXmlFilename,
 	generateGostSignatureStampHtml,
 	runEgisz043uPreflight,
 } from "../egiszRemdEngine";
+import {
+	createMockGostSignature,
+	createMockMoGostSignature,
+} from "./egiszTestFixtures";
 
 describe("1. EgiszRemdHubModal — UKEP Signing Studio (Order 947n and 63-FZ)", () => {
 	it("1.1 does not render markup when isOpen is false", () => {

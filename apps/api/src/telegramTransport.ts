@@ -357,16 +357,16 @@ export function buildVisitReminderText(params: {
 
 	const lines = [
 		`Здравствуйте! Напоминаем о вашем визите в клинику «${params.clinicName}».`,
-		`📅 Дата и время: ${formattedDate}`,
+		`Дата и время: ${formattedDate}`,
 	];
 	if (params.doctorName?.trim()) {
-		lines.push(`👨‍⚕️ Приём ведёт: ${params.doctorName.trim()}`);
+		lines.push(`Приём ведёт: ${params.doctorName.trim()}`);
 	}
 	if (params.clinicAddress?.trim()) {
-		lines.push(`📍 Адрес: ${params.clinicAddress.trim()}`);
+		lines.push(`Адрес: ${params.clinicAddress.trim()}`);
 	}
 	if (params.clinicPhone?.trim()) {
-		lines.push(`📞 Телефон: ${params.clinicPhone.trim()}`);
+		lines.push(`Телефон: ${params.clinicPhone.trim()}`);
 	}
 	lines.push("Пожалуйста, подтвердите ваш визит кнопкой ниже.");
 	return lines.join("\n");
@@ -445,10 +445,10 @@ export function buildVisitReminderInlineKeyboard(params: {
 
 	return {
 		inline_keyboard: [
-			[{ text: "✅ Подтвердить приём", callback_data: confirmData }],
+			[{ text: "Подтвердить приём", callback_data: confirmData }],
 			[
-				{ text: "📅 Перенести", callback_data: rescheduleData },
-				{ text: "❌ Отменить", callback_data: cancelData },
+				{ text: "Перенести", callback_data: rescheduleData },
+				{ text: "Отменить", callback_data: cancelData },
 			],
 		],
 	};
@@ -539,7 +539,7 @@ export async function sendVisitConfirmationReceipt(
 		: input.appointmentStartsAt;
 
 	const text = [
-		`✅ Спасибо! Ваш визит в клинику «${input.clinicName}» на ${formattedDate} успешно подтверждён.`,
+		`Спасибо! Ваш визит в клинику «${input.clinicName}» на ${formattedDate} успешно подтверждён.`,
 		"Ждём вас на приёме!",
 		input.clinicPhone ? `Контакты клиники: ${input.clinicPhone}` : null,
 	]

@@ -1215,31 +1215,31 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 									margin: "0 24px 16px 24px",
 									padding: "16px",
 									borderRadius: "10px",
-									backgroundColor: "var(--paper-soft, #f8fafc)",
-									border: "1px solid var(--line, #e2e8f0)",
+									backgroundColor: "var(--paper-soft)",
+									border: "1px solid var(--line)",
 									display: "flex",
 									flexDirection: "column",
 									gap: "8px",
 								}}
 							>
 								<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-									<div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
-										<Lightbulb size={18} style={{ color: "var(--primary, #0d9488)" }} />
+									<div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 700, color: "var(--ink)" }}>
+										<Lightbulb size={18} style={{ color: "var(--teal)" }} />
 										<span>Речевой скрипт звонка: {STOMX_TASK_CALL_BY_TYPE[activeTaskCallScriptType]?.titleRu}</span>
 									</div>
 									<button
 										type="button"
 										onClick={() => setActiveTaskCallScriptType(null)}
-										style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--ink-2, #64748b)" }}
+										style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--muted)" }}
 										aria-label="Закрыть скрипт"
 									>
 										<X size={16} />
 									</button>
 								</div>
-								<p style={{ margin: 0, fontSize: "0.875rem", lineHeight: 1.5, color: "var(--ink-2, #334155)", fontStyle: "italic" }}>
+								<p style={{ margin: 0, fontSize: "0.875rem", lineHeight: 1.5, color: "var(--ink)", fontStyle: "italic" }}>
 									{STOMX_TASK_CALL_BY_TYPE[activeTaskCallScriptType]?.defaultScriptRu}
 								</p>
-								<div style={{ fontSize: "0.75rem", color: "var(--ink-2, #64748b)" }}>
+								<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
 									Срок регламентного контакта: {STOMX_TASK_CALL_BY_TYPE[activeTaskCallScriptType]?.defaultDueDays === 0 ? "В день события" : `через ${STOMX_TASK_CALL_BY_TYPE[activeTaskCallScriptType]?.defaultDueDays} дн.`}
 								</div>
 							</div>
@@ -1266,8 +1266,8 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 											style={{
 												padding: "16px",
 												borderRadius: "10px",
-												backgroundColor: "var(--paper, #ffffff)",
-												border: "1px solid var(--line, #e2e8f0)",
+												backgroundColor: "var(--paper)",
+												border: "1px solid var(--line)",
 												display: "grid",
 												gridTemplateColumns: "1fr auto",
 												alignItems: "center",
@@ -1276,13 +1276,13 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 										>
 											<div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
 												<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-													<span style={{ fontWeight: 800, fontSize: "1rem", color: "var(--ink, #0f172a)" }}>
+													<span style={{ fontWeight: 800, fontSize: "1rem", color: "var(--ink)" }}>
 														{candidate.fullName}
 													</span>
 													{candidate.phone ? (
 														<a
 															href={`tel:${candidate.phone.replace(/[^+\d]/g, "")}`}
-															style={{ fontSize: "0.8125rem", color: "var(--primary, #0d9488)", textDecoration: "none", fontWeight: 600 }}
+															style={{ fontSize: "0.8125rem", color: "var(--teal)", textDecoration: "none", fontWeight: 600 }}
 														>
 															{candidate.phone}
 														</a>
@@ -1291,7 +1291,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 														className="recall-badge"
 														style={{
 															backgroundColor: "rgba(13, 148, 136, 0.1)",
-															color: "var(--primary, #0d9488)",
+															color: "var(--teal)",
 															fontWeight: 700,
 														}}
 													>
@@ -1308,7 +1308,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 													)}
 												</div>
 
-												<div style={{ fontSize: "0.8125rem", color: "var(--ink-2, #64748b)" }}>
+												<div style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
 													{candidate.attendingDoctorName ? (
 														<span>Врач: <strong>{candidate.attendingDoctorName}</strong> • </span>
 													) : null}
@@ -1381,7 +1381,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 												<button
 													type="button"
 													className="recall-action-btn"
-													style={{ minHeight: "44px", color: "var(--ok-fg, #047857)" }}
+													style={{ minHeight: "44px", color: "var(--ok-fg)" }}
 													onClick={() => handleStatusUpdate(candidate.id, "scheduled")}
 													data-testid={`btn-call-done-${candidate.id}`}
 													title="Отметить успешный контакт"

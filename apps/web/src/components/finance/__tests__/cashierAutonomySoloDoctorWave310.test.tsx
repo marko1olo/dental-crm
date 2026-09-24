@@ -27,7 +27,6 @@ import {
 	process100PercentDiscountCheckout,
 } from "../cashboxOperations";
 import { FastCheckoutModal } from "../FastCheckoutModal";
-import { CashRegisterModal } from "../CashRegisterModal";
 import { PaymentModal } from "../PaymentModal";
 
 describe("Wave 310: 54-FZ Cashier Autonomy — Zero INN for Physical Persons (Mandate 8e Item 9 & 8n)", () => {
@@ -261,9 +260,9 @@ describe("Wave 310: UI Rendering & Button State Autonomy (Mandates 8e, 8n)", () 
 		assert.ok(html.includes('data-testid="btn-checkout-split-50-50"'));
 	});
 
-	it("3.2 CashRegisterModal facade renders seamlessly and re-exports FastCheckoutModal", () => {
+	it("3.2 FastCheckoutModal renders seamlessly with doctor autonomy and zero INN required", () => {
 		const html = renderToString(
-			React.createElement(CashRegisterModal, {
+			React.createElement(FastCheckoutModal, {
 				isOpen: true,
 				onClose: () => {},
 				totalBillRub: 4200,

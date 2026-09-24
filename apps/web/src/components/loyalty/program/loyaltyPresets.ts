@@ -69,8 +69,8 @@ export const LOYALTY_TIER_PRESETS: readonly LoyaltyTierDefinition[] = [
 			"Срок действия бонусов — 365 дней",
 			"Уведомления о плановой гигиене",
 		],
-		cardGradient: "linear-gradient(135deg, #94a3b8 0%, #cbd5e1 50%, #64748b 100%)",
-		accentColor: "#64748b",
+		cardGradient: "linear-gradient(135deg, var(--muted) 0%, var(--line) 50%, var(--muted) 100%)",
+		accentColor: "var(--muted)",
 	},
 	{
 		id: "gold",
@@ -87,8 +87,8 @@ export const LOYALTY_TIER_PRESETS: readonly LoyaltyTierDefinition[] = [
 			"Приоритетное бронирование времени приема",
 			"Бесплатная консультация смежных специалистов",
 		],
-		cardGradient: "linear-gradient(135deg, #d97706 0%, #fcd34d 50%, #b45309 100%)",
-		accentColor: "#d97706",
+		cardGradient: "linear-gradient(135deg, var(--warn-fg) 0%, var(--warn-bg) 50%, var(--warn-fg) 100%)",
+		accentColor: "var(--warn-fg)",
 	},
 	{
 		id: "platinum",
@@ -106,8 +106,8 @@ export const LOYALTY_TIER_PRESETS: readonly LoyaltyTierDefinition[] = [
 			"Персональный медицинский куратор 24/7",
 			"Выделенная парковка у клиники",
 		],
-		cardGradient: "linear-gradient(135deg, #0ea5e9 0%, #38bdf8 50%, #0369a1 100%)",
-		accentColor: "#0284c7",
+		cardGradient: "linear-gradient(135deg, var(--teal) 0%, var(--teal-surface) 50%, var(--teal-dark) 100%)",
+		accentColor: "var(--teal-dark)",
 	},
 	{
 		id: "family",
@@ -124,8 +124,8 @@ export const LOYALTY_TIER_PRESETS: readonly LoyaltyTierDefinition[] = [
 			"Оплата до 35% стоимости детского и взрослого лечения",
 			"Скидка 10% на детскую ортодонтию при лечении родителей",
 		],
-		cardGradient: "linear-gradient(135deg, #10b981 0%, #6ee7b7 50%, #047857 100%)",
-		accentColor: "#059669",
+		cardGradient: "linear-gradient(135deg, var(--ok-fg) 0%, var(--ok-bg) 50%, var(--ok-fg) 100%)",
+		accentColor: "var(--ok-fg)",
 	},
 ];
 

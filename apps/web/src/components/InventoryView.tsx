@@ -32,6 +32,7 @@ import {
 	getFefoTrafficLight,
 	type FefoTrafficLightInfo,
 } from "./inventory/NurseCarpuleDisposalModal";
+import { InventoryStockTable } from "./inventory/InventoryStockTable";
 
 const MaterialBomsSettingsPanel = lazy(() =>
 	import("./inventory/MaterialBomsSettingsPanel").then((module) => ({
@@ -208,6 +209,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 	const opsMenuRef = React.useRef<HTMLDivElement>(null);
 	const [activeMenuRowId, setActiveMenuRowId] = useState<string | null>(null);
 	const rowMenuRef = React.useRef<HTMLDivElement>(null);
+	const [stockViewMode, setStockViewMode] = useState<"standard" | "fefo">("standard");
 
 	// DOM Virtualization & Chunking for low-spec laptops & HDDs (Mandates 8c, 8n)
 	const [displayLimit, setDisplayLimit] = useState(40);
@@ -358,15 +360,34 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 					<div className="flex items-center gap-1 bg-[var(--paper-soft,#f1f5f9)] p-0.5 rounded-lg border border-[var(--line,#e2e8f0)] shrink-0">
 						<button
 							type="button"
-							onClick={() => setActiveSubTab("inventory")}
+							onClick={() => {
+								setActiveSubTab("inventory");
+								setStockViewMode("standard");
+							}}
 							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 py-1 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-								activeSubTab === "inventory"
+								activeSubTab === "inventory" && stockViewMode === "standard"
 									? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-2xs border border-[var(--line,#e2e8f0)]"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 							data-testid="tab-inventory-items"
 						>
 							<span>Остатки</span>
+							<span className="text-[10px] opacity-70">({items.length})</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setActiveSubTab("inventory");
+								setStockViewMode("fefo");
+							}}
+							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 py-1 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+								activeSubTab === "inventory" && stockViewMode === "fefo"
+									? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-2xs border border-[var(--line,#e2e8f0)]"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="tab-inventory-fefo"
+						>
+							<span>Сводка FEFO</span>
 							<span className="text-[10px] opacity-70">({items.length})</span>
 						</button>
 						<button
@@ -1169,6 +1190,24 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 			>
 				{activeSubTab === "rules" ? (
 					<div style={{ flex: 1, overflowY: "auto" }}>{renderRulesTab()}</div>
+				) : stockViewMode === "fefo" ? (
+					<div style={{ flex: 1, overflowY: "auto" }}>
+						<InventoryStockTable
+							items={items}
+							isLoading={isLoading}
+							onDeductItem={(item, qty) => {
+								setAdjustingItem(item);
+								setAdjustType("out");
+								setAdjustAmount(String(qty));
+							}}
+							onReceiveItem={(item, qty) => {
+								setAdjustingItem(item);
+								setAdjustType("in");
+								setAdjustAmount(String(qty));
+							}}
+							onSelectItem={(item) => openEditModal(item)}
+						/>
+					</div>
 				) : (
 					/* TABLE */
 					<div

@@ -62,11 +62,14 @@ import {
 	calculateEndodonticCompositeTreatment,
 	FFD12_TAG_1054_OPERATION_CODES,
 	FFD12_TAG_1055_TAXATION_CODES,
+	FFD12_TAG_1057_AGENT_CODES,
 	FFD12_TAG_1173_CORRECTION_CODES,
 	FFD12_TAG_1199_VAT_CODES,
 	FFD12_TAG_1212_SUBJECT_CODES,
 	FFD12_TAG_1214_METHOD_CODES,
+	FFD12_TAG_1222_AGENT_CODES,
 	FFD12_TAG_2108_MEASURE_CODES,
+	type Ffd12AgentSign,
 	type Ffd12CorrectionType,
 	type Ffd12MarkingCodeDescriptor,
 	type Ffd12OperationType,
@@ -88,10 +91,12 @@ Decimal.set({ precision: 20, rounding: Decimal.ROUND_HALF_UP });
 export {
 	FFD12_TAG_1054_OPERATION_CODES,
 	FFD12_TAG_1055_TAXATION_CODES,
+	FFD12_TAG_1057_AGENT_CODES,
 	FFD12_TAG_1173_CORRECTION_CODES,
 	FFD12_TAG_1199_VAT_CODES,
 	FFD12_TAG_1212_SUBJECT_CODES,
 	FFD12_TAG_1214_METHOD_CODES,
+	FFD12_TAG_1222_AGENT_CODES,
 	FFD12_TAG_2108_MEASURE_CODES,
 };
 
@@ -102,6 +107,7 @@ export type Ffd12Tag1054Operation = Ffd12OperationType;
 export type Ffd12Tag1199Vat = Ffd12VatRate;
 export type Ffd12Tag2108Measure = Ffd12QuantityMeasure;
 export type Ffd12Tag1173CorrectionType = Ffd12CorrectionType;
+export type Ffd12Tag1057AgentSign = Ffd12AgentSign;
 
 export interface FiscalReceiptPositionInput {
 	readonly name: string;
@@ -111,6 +117,7 @@ export interface FiscalReceiptPositionInput {
 	readonly method?: Ffd12Tag1214Method | undefined;
 	readonly vatRate?: Ffd12Tag1199Vat | undefined;
 	readonly measure?: Ffd12Tag2108Measure | undefined;
+	readonly agentSign?: Ffd12Tag1057AgentSign | undefined; // Tag 1222: Признак агента по предмету расчета
 	readonly medicalServiceCode804n?: string | null | undefined;
 	readonly toothFdiNumber?: number | null | undefined;
 	readonly canalCount?: AnatomicalCanalCount | null | undefined;
@@ -131,6 +138,7 @@ export interface NormalizedFiscalPosition {
 	readonly tag1214_paymentMethod: number;
 	readonly tag1199_vatRate: number;
 	readonly tag2108_quantityMeasure: number;
+	readonly tag1222_agentSign?: number | null | undefined;
 	readonly medicalServiceCode804n: string | null;
 	readonly taxDeductionCategory: "1" | "2";
 	readonly markingCode: string | null;
@@ -176,11 +184,14 @@ export interface NormalizedMultiTenderPayments {
 export interface BuildFiscalReceiptInput {
 	readonly organizationId: string;
 	readonly patientId: string;
-	readonly customerContact: string; // Phone (+79...) or Email
+	readonly customerContact: string; // Phone (+79...) or Email (Tag 1008)
+	readonly customerName?: string | null | undefined; // Buyer Name (Tag 1227)
+	readonly customerInn?: string | null | undefined; // Buyer INN (Tag 1228)
 	readonly cashierFullName: string;
 	readonly cashierInn?: string | null | undefined;
 	readonly operationType?: Ffd12Tag1054Operation | undefined;
 	readonly taxationSystem?: Ffd12Tag1055Taxation | undefined;
+	readonly agentSign?: Ffd12Tag1057AgentSign | undefined; // Tag 1057: Признак агента в чеке
 	readonly paymentAddress?: string | undefined;
 	readonly paymentPlace?: string | undefined;
 	readonly clientMutationId?: string | null | undefined;
@@ -203,9 +214,12 @@ export interface CompiledFiscal54FzReceipt {
 	readonly patientId: string;
 	readonly tag1054_operationType: number;
 	readonly tag1055_taxationSystem: number;
+	readonly tag1057_agentSign?: number | null | undefined;
 	readonly tag1021_cashierName: string;
 	readonly tag1203_cashierInn: string | null;
 	readonly tag1008_customerContact: string;
+	readonly tag1227_customerName?: string | null | undefined;
+	readonly tag1228_customerInn?: string | null | undefined;
 	readonly tag1009_paymentAddress: string | null;
 	readonly tag1187_paymentPlace: string | null;
 	readonly tag1020_totalKopecks: number;
@@ -319,6 +333,22 @@ export class Fiscal54FzService {
 			return FFD12_TAG_1055_TAXATION_CODES.usn_income;
 		}
 		return code;
+	}
+
+	/**
+	 * Resolves Tag 1057: Agent Sign in Receipt (Признак агента в чеке)
+	 */
+	public static resolveTag1057(agentSign?: Ffd12Tag1057AgentSign | null): number | null {
+		if (!agentSign) return null;
+		return FFD12_TAG_1057_AGENT_CODES[agentSign] ?? null;
+	}
+
+	/**
+	 * Resolves Tag 1222: Agent Sign per Subject (Признак агента по предмету расчета)
+	 */
+	public static resolveTag1222(agentSign?: Ffd12Tag1057AgentSign | null): number | null {
+		if (!agentSign) return null;
+		return FFD12_TAG_1222_AGENT_CODES[agentSign] ?? null;
 	}
 
 	/**
@@ -566,6 +596,7 @@ export class Fiscal54FzService {
 				tag1214_paymentMethod: this.resolveTag1214(method),
 				tag1199_vatRate: this.resolveTag1199(vatRate),
 				tag2108_quantityMeasure: this.resolveTag2108(measure),
+				tag1222_agentSign: this.resolveTag1222(pos.agentSign),
 				medicalServiceCode804n: code804n,
 				taxDeductionCategory: taxCat,
 				markingCode: pos.markingCode ?? null,
@@ -593,9 +624,12 @@ export class Fiscal54FzService {
 			patientId: input.patientId,
 			tag1054_operationType: this.resolveTag1054(operationType),
 			tag1055_taxationSystem: this.resolveTag1055(taxationSystem),
+			tag1057_agentSign: this.resolveTag1057(input.agentSign),
 			tag1021_cashierName: input.cashierFullName.trim() || "Кассир-администратор",
 			tag1203_cashierInn: input.cashierInn?.trim() || null,
 			tag1008_customerContact: input.customerContact.trim(),
+			tag1227_customerName: input.customerName?.trim() || null,
+			tag1228_customerInn: input.customerInn?.trim() || null,
 			tag1009_paymentAddress: input.paymentAddress?.trim() || null,
 			tag1187_paymentPlace: input.paymentPlace?.trim() || null,
 			tag1020_totalKopecks: totalItemsKopecks,

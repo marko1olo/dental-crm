@@ -22,8 +22,6 @@ import {
 	SAMPLE_DENTAL_SEMD_105_PRESET,
 	SAMPLE_FNS_TAX_1151156_PRESET,
 	canonicalizeCdaXml,
-	createMockGostSignature,
-	createMockMoGostSignature,
 	escapeXml,
 	formatHl7DateTime,
 	formatKopecksToRubles,
@@ -46,6 +44,10 @@ import {
 	validateRussianSnils,
 	validateXmlStructure,
 } from "../egiszRemdEngine";
+import {
+	createMockGostSignature,
+	createMockMoGostSignature,
+} from "./egiszTestFixtures";
 
 describe("1. Statutory Identifiers & Checksum Validators", () => {
 	it("1.1 Validates Russian SNILS checksum for doctor and patient", () => {

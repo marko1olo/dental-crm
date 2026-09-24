@@ -18,7 +18,7 @@
  */
 
 import { z } from "zod";
-import type { ServiceCatalogItem } from "@dental/shared";
+import { parseKopecks, formatKopecksToRubles, type ServiceCatalogItem } from "@dental/shared";
 
 // =============================================================================
 // 1. SCHEMAS & DATA CONTRACTS
@@ -852,13 +852,17 @@ export function extractPriceAndTitleFromLine(rawLine: string): ExtractedPriceInf
 	// Try Regex 1 (highest precision)
 	const match1 = line.match(endCurrencyKopecksRegex);
 	if (match1 && match1[1]) {
-		const rawDigits = match1[1].replace(/[\s\.]/g, "").replace(",", ".");
-		const parsed = parseFloat(rawDigits);
-		if (Number.isFinite(parsed) && parsed > 0 && parsed <= 10_000_000) {
-			priceRub = Math.round(parsed * 100) / 100;
-			priceKopecks = Math.round(priceRub * 100);
-			rawPriceString = match1[0].trim();
-			cleanTitle = line.slice(0, match1.index).trim();
+		const rawDigits = match1[1].replace(/\s+/g, "").replace("-00", ".00").replace(",", ".");
+		try {
+			const kopecks = parseKopecks(rawDigits);
+			if (kopecks > 0 && kopecks <= 10_000_000 * 100) {
+				priceKopecks = kopecks;
+				priceRub = Number(formatKopecksToRubles(kopecks));
+				rawPriceString = match1[0].trim();
+				cleanTitle = line.slice(0, match1.index).trim();
+			}
+		} catch {
+			// ignore parse failure, proceed to fallback regexes
 		}
 	}
 
@@ -881,13 +885,17 @@ export function extractPriceAndTitleFromLine(rawLine: string): ExtractedPriceInf
 	if (priceRub === 0) {
 		const match3 = line.match(endPlainNumberRegex);
 		if (match3 && match3[1]) {
-			const rawDigits = match3[1].replace(/[\s\.]/g, "").replace(",", ".");
-			const parsed = parseFloat(rawDigits);
-			if (Number.isFinite(parsed) && parsed >= 50 && parsed <= 10_000_000) {
-				priceRub = Math.round(parsed * 100) / 100;
-				priceKopecks = Math.round(priceRub * 100);
-				rawPriceString = match3[1].trim();
-				cleanTitle = line.slice(0, match3.index).trim();
+			const rawDigits = match3[1].replace(/\s+/g, "").replace(",", ".");
+			try {
+				const kopecks = parseKopecks(rawDigits);
+				if (kopecks >= 50 * 100 && kopecks <= 10_000_000 * 100) {
+					priceKopecks = kopecks;
+					priceRub = Number(formatKopecksToRubles(kopecks));
+					rawPriceString = match3[1].trim();
+					cleanTitle = line.slice(0, match3.index).trim();
+				}
+			} catch {
+				// ignore parse failure
 			}
 		}
 	}
@@ -1075,7 +1083,7 @@ export function crossReferenceWithExistingCatalog(
 
 	if (exactMatch) {
 		const existingPrice = exactMatch.basePriceRub ?? 0;
-		const priceMatches = Math.abs(existingPrice - proposalPriceRub) < 0.01;
+		const priceMatches = parseKopecks(existingPrice) === parseKopecks(proposalPriceRub);
 
 		return {
 			matchedExistingServiceId: exactMatch.id,

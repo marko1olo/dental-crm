@@ -312,7 +312,7 @@ export function WhatsAppChatPanel({
 				label: "Схема проезда",
 				category: "navigation",
 				buildText: () =>
-					`Здравствуйте, ${effectiveName}! Схема проезда в клинику ${clinicName}:\n📍 Адрес: ${clinicAddress}.\n🚗 Парковка: Бесплатная гостевая парковка со стороны главного входа (шлагбаум открывается по звонку на ресепшн: ${dashboard?.clinicSettings?.phone || ""}).\n🗺 Навигатор: https://yandex.ru/maps/?text=${encodeURIComponent(`${clinicName} ${clinicAddress}`)}\nБудем рады вас видеть!`,
+					`Здравствуйте, ${effectiveName}! Схема проезда в клинику ${clinicName}:\nАдрес: ${clinicAddress}.\nПарковка: Бесплатная гостевая парковка со стороны главного входа (шлагбаум открывается по звонку на ресепшн: ${dashboard?.clinicSettings?.phone || ""}).\nНавигатор: https://yandex.ru/maps/?text=${encodeURIComponent(`${clinicName} ${clinicAddress}`)}\nБудем рады вас видеть!`,
 			},
 		];
 	}, [dashboard?.clinicSettings, upcomingAppointment, effectiveName, financialSummary]);

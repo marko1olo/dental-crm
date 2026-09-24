@@ -344,6 +344,46 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 		window.print();
 	};
 
+	if (isInstallmentModalOpen && selectedStageForInstallment) {
+		return (
+			<BankInstallmentQrModal
+				isOpen={isInstallmentModalOpen}
+				onClose={() => {
+					setIsInstallmentModalOpen(false);
+					setSelectedStageForInstallment(null);
+				}}
+				stageTitle={`Этап №${selectedStageForInstallment.stageNumber}: ${selectedStageForInstallment.title}`}
+				stageNumber={selectedStageForInstallment.stageNumber}
+				stageAmountKopecks={selectedStageForInstallment.totalKopecks}
+				patientId={patientId}
+				patientName={patientName}
+				clinicName={clinicName}
+				clinicInn={clinicInn}
+				planId={planTitle}
+				onInstallmentApproved={(approval) => {
+					const stageId = selectedStageForInstallment.id;
+					setStages((prev) =>
+						prev.map((s) =>
+							s.id === stageId
+								? {
+										...s,
+										status: "advance_paid",
+										advancePaidKopecks: s.advanceRequiredKopecks,
+										escrowLockedKopecks: s.advanceRequiredKopecks,
+									}
+								: s,
+						),
+					);
+					setStatusMessage(
+						`Рассрочка по этапу №${selectedStageForInstallment.stageNumber} одобрена! Аванс зачислен в эскроу.`,
+					);
+					setIsInstallmentModalOpen(false);
+					setSelectedStageForInstallment(null);
+				}}
+			/>
+		);
+	}
+
 	return (
 		<div className="stage-payment-modal-overlay" role="dialog" aria-modal="true">
 			<div className="stage-payment-modal-container">
@@ -1372,43 +1412,6 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 					)}
 				</main>
 			</div>
-
-			{/* Bank Installment QR Modal */}
-			{isInstallmentModalOpen && selectedStageForInstallment && (
-				<BankInstallmentQrModal
-					isOpen={isInstallmentModalOpen}
-					onClose={() => {
-						setIsInstallmentModalOpen(false);
-						setSelectedStageForInstallment(null);
-					}}
-					stageTitle={`Этап №${selectedStageForInstallment.stageNumber}: ${selectedStageForInstallment.title}`}
-					stageNumber={selectedStageForInstallment.stageNumber}
-					stageAmountKopecks={selectedStageForInstallment.totalKopecks}
-					patientId={patientId}
-					patientName={patientName}
-					clinicName={clinicName}
-					clinicInn={clinicInn}
-					planId={planTitle}
-					onInstallmentApproved={(approval) => {
-						const stageId = selectedStageForInstallment.id;
-						setStages((prev) =>
-							prev.map((s) =>
-								s.id === stageId
-									? {
-											...s,
-											status: "advance_paid",
-											advancePaidKopecks: s.advanceRequiredKopecks,
-											escrowLockedKopecks: s.advanceRequiredKopecks,
-										}
-									: s,
-							),
-						);
-						setStatusMessage(
-							`Рассрочка по этапу №${selectedStageForInstallment.stageNumber} одобрена! Аванс зачислен в эскроу.`,
-						);
-					}}
-				/>
-			)}
 		</div>
 	);
 };

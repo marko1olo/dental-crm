@@ -764,7 +764,7 @@ function classifyMaterial(line: string): MaterialClassification {
  * (1500,50 = 1500,50; 1500,5 = 1500,50). Другого способа развести их в русском
  * прайсе нет, и обе записи в прайсах встречаются.
  */
-function parseMoney(value: string | undefined): number | null {
+export function parseMoney(value: string | undefined): number | null {
 	if (!value) return null;
 	const trimmed = value.trim();
 	const decimalMatch = /[.,](\d{1,2})$/.exec(trimmed);
@@ -774,10 +774,9 @@ function parseMoney(value: string | undefined): number | null {
 		decimalMatch ? trimmed.slice(0, decimalMatch.index) : trimmed
 	).replace(/[^\d]/g, "");
 	if (!rubles) return null;
-	const price = Number(`${rubles}.${kopecks}`);
-	return Number.isFinite(price) && price >= 300 && price <= 2_000_000
-		? Math.round(price * 100) / 100
-		: null;
+	const kopecksTotal = parseKopecks(`${rubles}.${kopecks}`);
+	if (kopecksTotal < 30_000 || kopecksTotal > 200_000_000) return null;
+	return Number(kopecksToNumericString(kopecksTotal));
 }
 
 /**
@@ -2596,9 +2595,16 @@ async function callGroqPricelist(
 					}),
 				},
 			);
-			const payload = (await response
-				.json()
-				.catch(() => ({}))) as GroqChatPayload;
+			let payload: GroqChatPayload = {};
+			try {
+				payload = (await response.json()) as GroqChatPayload;
+			} catch (jsonErr) {
+				payload = {
+					error: {
+						message: `Ошибка чтения JSON ответа Groq: ${jsonErr instanceof Error ? jsonErr.message : String(jsonErr)}`,
+					},
+				};
+			}
 			if (!response.ok) {
 				throw providerHttpError(
 					response.status,
