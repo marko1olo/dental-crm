@@ -36,44 +36,109 @@ import {
 import { verifyWebhookSecret } from "../../security/webhookAuth.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 
-// ─── СЛОВАРИ ДЛЯ YML-ФИДА ПРЕЙСКУРАНТА ─────────────────────────────────────
-
-const DENTAL_CATEGORIES_YML: Record<string, { id: string; name: string }> = {
-	consultation: { id: "consultation", name: "Консультации и первичный осмотр" },
+// ─── СЛОВАРИ ДЛЯ YML-ФИДА ПРЕЙСКУРАНТА (НОМЕНКЛАТУРА 804н) ────────────────
+// Экспортируются строго разрешенные номенклатурные категории (терапия, ортопедия, хирургия, гигиена)
+// без внутренних технических позиций клиники по Мандатам 8b, 8e, 8n.
+const ALLOWED_NOMENCLATURE_CATEGORIES: Record<
+	"therapy" | "prosthetics" | "surgery" | "hygiene",
+	{ id: string; name: string }
+> = {
 	therapy: {
 		id: "therapy",
 		name: "Терапевтическая стоматология (лечение кариеса и пульпита)",
-	},
-	surgery: {
-		id: "surgery",
-		name: "Хирургическая стоматология и имплантация",
 	},
 	prosthetics: {
 		id: "prosthetics",
 		name: "Ортопедическая стоматология (протезирование, коронки)",
 	},
-	orthodontics: {
-		id: "orthodontics",
-		name: "Ортодонтия (брекеты, элайнеры)",
-	},
-	periodontology: {
-		id: "periodontology",
-		name: "Пародонтология (лечение десен)",
+	surgery: {
+		id: "surgery",
+		name: "Хирургическая стоматология и имплантация",
 	},
 	hygiene: {
 		id: "hygiene",
 		name: "Профессиональная гигиена и отбеливание",
 	},
-	imaging: {
-		id: "imaging",
-		name: "Рентгенодиагностика, КЛКТ и ОПТГ",
-	},
-	documents: {
-		id: "documents",
-		name: "Медицинская документация и справки",
-	},
-	other: { id: "other", name: "Прочие стоматологические услуги" },
 };
+
+/**
+ * Фильтр внутренних технических позиций клиники (расходные материалы, технические этапы лаборатории,
+ * залоги, документы, рентген). Агрегаторам ПроДокторов и МедФлекс отдаются только клинические услуги 804н.
+ */
+function isInternalTechnicalPosition(item: {
+	category?: string | null;
+	code?: string | null;
+	title?: string | null;
+}): boolean {
+	if (!item) return true;
+	const cat = item.category || "";
+	if (cat === "other" || cat === "documents" || cat === "imaging") {
+		return true;
+	}
+
+	const code = (item.code || "").trim().toLowerCase();
+	const title = (item.title || "").trim().toLowerCase();
+
+	if (
+		code.startsWith("tech_") ||
+		code.startsWith("mat_") ||
+		code.startsWith("int_") ||
+		code.startsWith("lab_") ||
+		title.includes("расходн") ||
+		title.includes("технический этап") ||
+		title.includes("лабораторный этап") ||
+		title.includes("индивидуальная ложка") ||
+		title.includes("восковое моделирование") ||
+		title.includes("слепок") ||
+		title.includes("ассистирование") ||
+		title.includes("стерилизация") ||
+		title.includes("залог") ||
+		title.includes("внутренн")
+	) {
+		return true;
+	}
+
+	return false;
+}
+
+/**
+ * Сопоставление номенклатурной позиции прейскуранта с разрешенной категорией YML.
+ * Консультации сопоставляются с профилем врача-специалиста (терапия, ортопедия, хирургия, гигиена).
+ */
+function resolveAllowedCategory(item: {
+	category?: string | null;
+	specialty?: string | null;
+}): "therapy" | "prosthetics" | "surgery" | "hygiene" | null {
+	if (!item) return null;
+	const cat = item.category;
+
+	if (cat === "therapy") return "therapy";
+	if (cat === "prosthetics") return "prosthetics";
+	if (cat === "surgery") return "surgery";
+	if (cat === "hygiene") return "hygiene";
+
+	if (cat === "consultation") {
+		if (item.specialty === "surgeon" || item.specialty === "implantologist") {
+			return "surgery";
+		}
+		if (item.specialty === "orthopedist") {
+			return "prosthetics";
+		}
+		if (item.specialty === "hygienist") {
+			return "hygiene";
+		}
+		return "therapy";
+	}
+
+	if (cat === "periodontology") {
+		return "therapy";
+	}
+	if (cat === "orthodontics") {
+		return "prosthetics";
+	}
+
+	return null;
+}
 
 const DENTAL_SPECIALTIES_RU: Record<string, string> = {
 	universal: "Врач-стоматолог общей практики",
@@ -181,6 +246,8 @@ const slotsQuerySchema = z.object({
 		.regex(/^\d{4}-\d{2}-\d{2}$/)
 		.optional(),
 	durationMinutes: z.coerce.number().int().min(15).max(180).default(30),
+	// Технологическая пауза СанПиН 3.3686-21 на дезинфекцию кабинета и установки (10–15 минут)
+	sanpinDisinfectionMinutes: z.coerce.number().int().min(0).max(30).default(10),
 });
 
 const webhookPayloadSchema = z
@@ -188,42 +255,66 @@ const webhookPayloadSchema = z
 		event: z.string().optional().default("booking_created"),
 		action: z.string().optional(),
 		deliveryId: z.string().optional(),
+		delivery_id: z.string().optional(),
 		bookingId: z.string().optional(),
+		booking_id: z.string().optional(),
+		externalId: z.string().optional(),
+		external_id: z.string().optional(),
+		id: z.string().optional(),
 		organizationId: z.string().uuid().optional(),
+		organization_id: z.string().uuid().optional(),
 		// Пациент (вложенный или плоский)
 		patient: z
 			.object({
 				fullName: z.string().optional(),
+				full_name: z.string().optional(),
 				name: z.string().optional(),
 				phone: z.string().optional(),
 				birthDate: z.string().optional().nullable(),
+				birth_date: z.string().optional().nullable(),
 				email: z.string().optional().nullable(),
 				notes: z.string().optional().nullable(),
 			})
 			.optional(),
 		patientName: z.string().optional(),
+		patient_name: z.string().optional(),
 		patientPhone: z.string().optional(),
+		patient_phone: z.string().optional(),
 		patientBirthDate: z.string().optional().nullable(),
+		patient_birth_date: z.string().optional().nullable(),
 		patientEmail: z.string().optional().nullable(),
+		patient_email: z.string().optional().nullable(),
 		// Прием (вложенный или плоский)
 		appointment: z
 			.object({
 				doctorId: z.string().uuid().optional(),
+				doctor_id: z.string().uuid().optional(),
 				doctorUserId: z.string().uuid().optional(),
+				doctor_user_id: z.string().uuid().optional(),
 				chairId: z.string().uuid().optional(),
+				chair_id: z.string().uuid().optional(),
 				startsAt: z.string().optional(),
+				starts_at: z.string().optional(),
 				endsAt: z.string().optional(),
+				ends_at: z.string().optional(),
 				durationMinutes: z.coerce.number().int().positive().optional(),
+				duration_minutes: z.coerce.number().int().positive().optional(),
 				reason: z.string().optional(),
 				comment: z.string().optional(),
 			})
 			.optional(),
 		doctorId: z.string().uuid().optional(),
+		doctor_id: z.string().uuid().optional(),
 		doctorUserId: z.string().uuid().optional(),
+		doctor_user_id: z.string().uuid().optional(),
 		chairId: z.string().uuid().optional(),
+		chair_id: z.string().uuid().optional(),
 		startsAt: z.string().optional(),
+		starts_at: z.string().optional(),
 		endsAt: z.string().optional(),
+		ends_at: z.string().optional(),
 		durationMinutes: z.coerce.number().int().positive().optional(),
+		duration_minutes: z.coerce.number().int().positive().optional(),
 		reason: z.string().optional(),
 		comment: z.string().optional(),
 	})
@@ -276,38 +367,52 @@ export async function registerProdoctorovRoutes(app: FastifyInstance) {
 				.replace(/\..+/, "")
 				.slice(0, 16);
 
-			// Категории
-			const categoriesXml = Object.values(DENTAL_CATEGORIES_YML)
+			// Категории: строго разрешенные номенклатурные категории 804н
+			const categoriesXml = Object.values(ALLOWED_NOMENCLATURE_CATEGORIES)
 				.map(
 					(c) => `      <category id="${c.id}">${escapeXml(c.name)}</category>`,
 				)
 				.join("\n");
 
-			// Позиции прейскуранта
-			const offersXml = catalogItems
-				.map((item) => {
-					const price = Number(
-						item.priceRub || item.basePriceRub || 0,
-					).toFixed(2);
-					const categoryId = item.category || "other";
-					const code804n = item.order804nCode || item.code;
-					const specialtyRu =
-						DENTAL_SPECIALTIES_RU[item.specialty] ||
-						"Врач-стоматолог общей практики";
+			// Позиции прейскуранта: фильтрация внутренних технических позиций и копеечно-точные цены (Мандаты 8b, 8e, 8n)
+			const offersXmlLines: string[] = [];
+			for (const item of catalogItems) {
+				// Отсекаем внутренние расходники, технические этапы лаборатории и документы
+				if (isInternalTechnicalPosition(item)) continue;
 
-					return `      <offer id="${escapeXml(item.id)}" available="true">
+				const targetCategory = resolveAllowedCategory(item);
+				if (!targetCategory) continue;
+
+				const priceNum = Number(item.priceRub ?? item.basePriceRub ?? 0);
+				const priceKopecks = Math.round(priceNum * 100);
+				// Исключаем бесплатные/нулевые внутренние технические заглушки
+				if (priceKopecks <= 0) continue;
+
+				// Целочисленные рубли (например "1500") либо рубли с 2 знаками ("1500.50")
+				const formattedPrice =
+					priceKopecks % 100 === 0
+						? (priceKopecks / 100).toString()
+						: (priceKopecks / 100).toFixed(2);
+
+				const code804n = item.order804nCode || item.code;
+				const specialtyRu =
+					DENTAL_SPECIALTIES_RU[item.specialty] ||
+					"Врач-стоматолог общей практики";
+
+				offersXmlLines.push(`      <offer id="${escapeXml(item.id)}" available="true">
         <name>${escapeXml(item.title)}</name>
-        <price>${price}</price>
+        <price>${formattedPrice}</price>
         <currencyId>RUR</currencyId>
-        <categoryId>${escapeXml(categoryId)}</categoryId>
+        <categoryId>${targetCategory}</categoryId>
         <code>${escapeXml(item.code)}</code>
         <param name="Код 804н">${escapeXml(code804n)}</param>
         <param name="Специальность">${escapeXml(specialtyRu)}</param>
         <param name="Длительность (мин)">${item.durationMinutes || 30}</param>
         <param name="Налоговый вычет">${item.taxDeductible ? "Да" : "Нет"}</param>
-      </offer>`;
-				})
-				.join("\n");
+      </offer>`);
+			}
+
+			const offersXml = offersXmlLines.join("\n");
 
 			const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <yml_catalog date="${dateStr}">

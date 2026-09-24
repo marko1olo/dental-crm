@@ -130,20 +130,28 @@ export function verifyWebhookSecret(
 		if (timingSafeSecretEqual(candidate, expected)) return true;
 
 		// Поддержка HMAC-SHA256 подписи вебхука от агрегаторов (ПроДокторов, МедФлекс, Meta)
-		const rawCandidate = candidate.startsWith("sha256=")
-			? candidate.slice(7)
-			: candidate.startsWith("sha1=")
-				? candidate.slice(5)
-				: candidate;
+		let rawCandidate = candidate.trim();
+		if (rawCandidate.toLowerCase().startsWith("sha256=")) {
+			rawCandidate = rawCandidate.slice(7).trim();
+		} else if (rawCandidate.toLowerCase().startsWith("sha1=")) {
+			rawCandidate = rawCandidate.slice(5).trim();
+		} else if (rawCandidate.toLowerCase().startsWith("hmac-sha256=")) {
+			rawCandidate = rawCandidate.slice(12).trim();
+		}
 
-		if (/^[0-9a-fA-F]{64}$/.test(rawCandidate) && request.body) {
+		if (/^[0-9a-fA-F]{64}$/.test(rawCandidate) && (request.body || (request as unknown as { rawBody?: unknown }).rawBody)) {
 			try {
+				const rawPayload = (request as unknown as { rawBody?: Buffer | string }).rawBody;
 				const bodyString =
-					typeof request.body === "string"
-						? request.body
-						: Buffer.isBuffer(request.body)
-							? request.body.toString("utf8")
-							: JSON.stringify(request.body);
+					typeof rawPayload === "string"
+						? rawPayload
+						: Buffer.isBuffer(rawPayload)
+							? rawPayload.toString("utf8")
+							: typeof request.body === "string"
+								? request.body
+								: Buffer.isBuffer(request.body)
+									? (request.body as Buffer).toString("utf8")
+									: JSON.stringify(request.body ?? {});
 				const computedHmac = createHmac("sha256", expected)
 					.update(bodyString)
 					.digest("hex");
