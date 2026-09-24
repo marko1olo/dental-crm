@@ -5,7 +5,7 @@
  *
  * Ingestion and optimization pipeline for authentication background art:
  * - Reads 2K images from C:\Users\Admin\Downloads\
- * - Semantic pack classification: anime, dental-epic, abstract, nature
+ * - Semantic pack classification: dental-epic, abstract, nature (skips anime/external images)
  * - Time-of-day slot assignment: morning, day, evening, night (with balanced distribution)
  * - Sharp processing:
  *   * Resize max width 1920px (fit: 'inside', withoutEnlargement: true)
@@ -14,7 +14,7 @@
  *   * LQIP: 24x14px base64 WebP (data:image/webp;base64,...)
  *   * Dominant color: mean RGB hex (#rrggbb)
  *   * Output to apps/web/public/auth-art/<pack>/<slot>/<sanitized_name>-<hash8>.<ext>
- * - Updates apps/web/public/auth-art/manifest.json merging new 248 entries with existing 248 (total 496).
+ * - Updates apps/web/public/auth-art/manifest.json.
  */
 
 import { createHash } from "node:crypto";
@@ -58,7 +58,7 @@ function classifyPack(fileName) {
 		return "dental-epic";
 	}
 
-	// 2. Anime
+	// 2. Anime / External Project (explicitly excluded from dental-crm)
 	if (
 		n.startsWith("shinobu_") ||
 		n.startsWith("zero_two_") ||
@@ -84,7 +84,7 @@ function classifyPack(fileName) {
 		n.startsWith("sample_3decae3aa26fd3f0f0f909e59b72145a") ||
 		n.startsWith("photo_15_")
 	) {
-		return "anime";
+		return null; // External project - skip
 	}
 
 	// 3. Abstract
@@ -247,10 +247,11 @@ async function run() {
 		throw new Error("No source images found in Downloads directory!");
 	}
 
-	// 3. Plan pack and slot distribution
-	const byPack = { "dental-epic": [], anime: [], abstract: [], nature: [] };
+	// 3. Plan pack and slot distribution (dental-epic, abstract, nature)
+	const byPack = { "dental-epic": [], abstract: [], nature: [] };
 	for (const file of imageFiles) {
 		const pack = classifyPack(file);
+		if (!pack) continue; // Skip external project files (anime, etc.)
 		byPack[pack].push(file);
 	}
 

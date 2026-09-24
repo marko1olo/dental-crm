@@ -33,7 +33,6 @@ const ART_PACK_LABELS: Record<string, string> = {
 	nature: "Природа",
 	"dental-epic": "Эпичная стоматология",
 	abstract: "Абстракция",
-	anime: "Аниме",
 	all: "Все коллекции (случайно)",
 };
 
@@ -169,7 +168,7 @@ export function SettingsClinicTab({
 	);
 	const [artSettings, setArtSettings] = useState<{
 		enabled: boolean;
-		pack: "nature" | "dental-epic" | "abstract" | "anime" | "all";
+		pack: "nature" | "dental-epic" | "abstract" | "all";
 		dynamicByTimeOfDay: boolean;
 	}>(() => {
 		const saved = safeLocalStorageGetItem("dente_auth_art_settings");
@@ -195,7 +194,7 @@ export function SettingsClinicTab({
 	const updateArtSettings = (
 		partial: Partial<{
 			enabled: boolean;
-			pack: "nature" | "dental-epic" | "abstract" | "anime" | "all";
+			pack: "nature" | "dental-epic" | "abstract" | "all";
 			dynamicByTimeOfDay: boolean;
 		}>,
 	) => {
@@ -766,7 +765,6 @@ export function SettingsClinicTab({
 												| "nature"
 												| "dental-epic"
 												| "abstract"
-												| "anime"
 												| "all";
 											updateArtSettings({ pack: newPack });
 											showToast(
@@ -778,7 +776,6 @@ export function SettingsClinicTab({
 										<option value="nature">Природа</option>
 										<option value="dental-epic">Эпичная стоматология</option>
 										<option value="abstract">Абстракция</option>
-										<option value="anime">Аниме</option>
 										<option value="all">Все коллекции (случайно)</option>
 									</select>
 									<small className="field-note">

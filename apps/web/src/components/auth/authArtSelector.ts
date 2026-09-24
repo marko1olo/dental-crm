@@ -15,7 +15,6 @@ export type AuthArtPack =
 	| "nature"
 	| "dental-epic"
 	| "abstract"
-	| "anime"
 	| "all";
 
 export interface AuthArtOptions {
@@ -45,7 +44,7 @@ export function selectAuthArt(
 	let eligibleItems = pool.filter((item) => item.slot === options.slot);
 
 	// If the slot has less than 2 items, expand choice to the entire pool.
-	// This ensures variety, especially for packs like 'dental-epic', 'abstract', 'anime'
+	// This ensures variety, especially for packs like 'dental-epic' or 'abstract'
 	// where certain time-of-day slots may only have 1 or 2 items, and guarantees
 	// the screen never remains without background art.
 	if (eligibleItems.length < 2) {

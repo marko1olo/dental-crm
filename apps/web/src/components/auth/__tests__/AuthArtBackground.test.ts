@@ -62,26 +62,7 @@ describe("selectAuthArt", () => {
 			width: 1,
 			height: 1,
 		},
-		{
-			pack: "anime",
-			slot: "evening",
-			avif: "a6",
-			webp: "w6",
-			lqip: "",
-			dominantColor: "",
-			width: 1,
-			height: 1,
-		},
-		{
-			pack: "anime",
-			slot: "evening",
-			avif: "a7",
-			webp: "w7",
-			lqip: "",
-			dominantColor: "",
-			width: 1,
-			height: 1,
-		},
+
 	];
 
 	it("ничего не выбирает при включённой экономии трафика", () => {
@@ -190,16 +171,16 @@ describe("selectAuthArt", () => {
 		);
 	});
 
-	it("корректно выбирает пак anime при запросе 'anime'", () => {
+	it("корректно выбирает пак nature при запросе 'nature'", () => {
 		const result = selectAuthArt(mockManifest, {
-			pack: "anime",
-			slot: "evening",
+			pack: "nature",
+			slot: "morning",
 			saveData: false,
 			reducedMotion: false,
 		});
 		assert.notEqual(result, null);
-		assert.equal(result?.pack, "anime");
-		assert.equal(result?.slot, "evening");
+		assert.equal(result?.pack, "nature");
+		assert.equal(result?.slot, "morning");
 	});
 
 	it("мягкий фоллбэк: если в слоте 0 элементов, экран никогда не остаётся пустым", () => {
