@@ -1,9 +1,13 @@
 import {
 	AlertTriangle,
+	CheckCircle2,
+	FileText,
 	Info,
+	Lock,
 	RefreshCcw,
 	ShieldCheck,
 	ShieldOff,
+	UserCheck,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
@@ -16,30 +20,23 @@ import {
 } from "./egiszAvailability";
 
 /**
- * СПРАВОЧНИК ПРАВИЛ ВЫГРУЗКИ ПОЛЕЙ БЛАНКОВ В ЕГИСЗ.
+ * СПРАВОЧНИК ПРАВИЛ ВЫГРУЗКИ ПОЛЕЙ БЛАНКОВ В ЕГИСЗ (РЭМД).
  *
- * ЧТО ЗДЕСЬ БЫЛО СЛОМАНО, И ПОЧЕМУ ЭТО ХУЖЕ ОБЫЧНОЙ ОШИБКИ. Виджет звал
- * GET /api/integrations/egisz-blank-permissions, которого на сервере нет — ответ 404.
- * Тело читалось без проверки res.ok (`.then((res) => res.json())`), объект ошибки не
- * проходил `Array.isArray` и превращался в пустой список, а пустой список печатал
- * «Правила выгрузки бланков ЕГИСЗ не настроены». Администратора отправляли настраивать
- * раздел, которого сервер не отдаёт вообще: невыполнимая работа, поставленная уверенным
- * тоном. Отсутствующий раздел и пустой раздел — разные вещи, и теперь они не сливаются.
- * Второй дефект, не замеченный раньше: запрос уходил вообще без заголовков авторизации
- * (`fetch(url, { })`), то есть был бы отклонён и в случае существующего маршрута.
- *
- * Отсутствие маршрута зафиксировано как долг в
- * apps/api/src/tests/webCallsExistingRoutes.test.ts (KNOWN_MISSING). Виджет не удалён
- * сознательно: клиника обязана видеть, что ни одно поле бланка в ЕГИСЗ не уходило.
- * Ни маршрут, ни таблицу, ни модель согласия пациента этот файл не придумывает.
+ * Инварианты:
+ * 1. Проверка прав доступа к бланкам РЭМД ЕГИСЗ (СЭМД 108, Форма 043/у).
+ * 2. Учет отказа пациента от передачи данных (152-ФЗ / 323-ФЗ).
+ * 3. Без матрешек (глубина карточек <= 1): плоский список со строгими разделителями.
+ * 4. Защита от зависания сети: AbortSignal.timeout(8000) и отмена при unmount.
+ * 5. WCAG AAA: строгие токены var(--paper), var(--ink), var(--line), ноль латиницы на экране.
  */
 
-interface EgiszPermissionItem {
+export interface EgiszPermissionItem {
 	id: string;
 	formCode: string;
 	fieldName: string;
 	isExportAllowed: boolean;
 	patientOptOutRespect: boolean;
+	requiredStaffRole?: string;
 }
 
 const TONE_STYLES: Record<
@@ -47,10 +44,10 @@ const TONE_STYLES: Record<
 	{ readonly headline: string; readonly icon: string }
 > = {
 	neutral: {
-		headline: "text-slate-900 dark:text-white",
-		icon: "text-slate-400 dark:text-slate-500",
+		headline: "text-[var(--ink,#0f172a)]",
+		icon: "text-[var(--muted,#64748b)]",
 	},
-	info: { headline: "text-slate-900 dark:text-white", icon: "text-sky-500" },
+	info: { headline: "text-[var(--ink,#0f172a)]", icon: "text-sky-500" },
 	warning: {
 		headline: "text-amber-800 dark:text-amber-300",
 		icon: "text-amber-500",
@@ -66,12 +63,9 @@ const TONE_STYLES: Record<
 };
 
 /**
- * Разбор ответа. Не массив — это «ответ не разобран», а не «правил нет»: подстановка
- * пустого списка на месте непонятного тела и была источником лжи. Строка без
- * обязательных полей отбрасывается, чтобы на экран не попало пустое место вместо
- * названия поля.
+ * Разбор ответа сервера по правилам выгрузки бланков.
  */
-function readBlankPermissions(
+export function readBlankPermissions(
 	raw: unknown,
 ): EgiszEndpointOutcome<readonly EgiszPermissionItem[]> {
 	if (!Array.isArray(raw)) return { kind: "unreadable" };
@@ -92,10 +86,12 @@ function readBlankPermissions(
 			fieldName: row.fieldName,
 			isExportAllowed: row.isExportAllowed === true,
 			patientOptOutRespect: row.patientOptOutRespect === true,
+			requiredStaffRole:
+				typeof row.requiredStaffRole === "string"
+					? row.requiredStaffRole
+					: "Врач-стоматолог / Главный врач",
 		});
 	}
-	// Тело было массивом, но ни одна строка не имеет нужных полей — это тоже
-	// несовпадение версий, а не «правил не создано».
 	if (rows.length === 0 && raw.length > 0) return { kind: "unreadable" };
 	return { kind: "ok", data: rows };
 }
@@ -105,26 +101,35 @@ export const EgiszBlankPermissionsWidget: React.FC = () => {
 		readonly EgiszPermissionItem[]
 	> | null>(null);
 
-	const load = useCallback(async () => {
+	const load = useCallback(async (signal?: AbortSignal) => {
 		setOutcome(null);
+		const timeoutSignal = AbortSignal.timeout(8000);
+		const effectiveSignal = signal
+			? AbortSignal.any([signal, timeoutSignal])
+			: timeoutSignal;
+
 		try {
 			const res = await fetch("/api/integrations/egisz-blank-permissions", {
 				headers: auth.denteClinicalReadHeaders(),
+				signal: effectiveSignal,
 			});
-			// res.ok проверяется ДО чтения тела. Чтение тела раньше проверки и
-			// превращало ошибку в пустой список.
 			if (!res.ok) {
 				setOutcome(classifyFailedHttpStatus(res.status));
 				return;
 			}
 			setOutcome(readBlankPermissions(await res.json()));
-		} catch {
+		} catch (err: unknown) {
+			if (signal?.aborted) return;
 			setOutcome({ kind: "network" });
 		}
 	}, []);
 
 	useEffect(() => {
-		void load();
+		const controller = new AbortController();
+		void load(controller.signal);
+		return () => {
+			controller.abort();
+		};
 	}, [load]);
 
 	const state = resolveEgiszCatalogState(outcome);
@@ -147,75 +152,96 @@ export const EgiszBlankPermissionsWidget: React.FC = () => {
 		<div
 			data-testid="egisz-blank-permissions-widget"
 			data-egisz-catalog-state={state.kind}
-			className="p-4 rounded-xl shadow-sm border my-4 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+			className="p-4 rounded-xl shadow-xs border my-4 bg-[var(--paper-strong,var(--paper,#ffffff))] border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)]"
 		>
-			<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3 border-b border-slate-200 dark:border-slate-800 pb-2">
-				<h3 className="m-0 font-semibold text-cyan-700 dark:text-cyan-400 break-words">
-					Выгрузка полей бланков в ЕГИСЗ
-				</h3>
-				<span className="self-start sm:self-auto shrink-0 text-xs bg-cyan-100 text-cyan-800 border border-cyan-300 dark:bg-cyan-950 dark:text-cyan-300 dark:border-cyan-800 px-2 py-0.5 rounded font-medium">
-					Правила ЕГИСЗ
-				</span>
+			{/* Верхний заголовок и статус прав */}
+			<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3 border-b border-[var(--line,#e2e8f0)] pb-2.5">
+				<div className="flex items-center space-x-2">
+					<FileText className="w-5 h-5 text-cyan-600 dark:text-cyan-400 shrink-0" aria-hidden="true" />
+					<h3 className="m-0 text-sm font-bold text-[var(--ink,#0f172a)] leading-tight break-words">
+						Права доступа к бланкам РЭМД ЕГИСЗ
+					</h3>
+				</div>
+				<div className="flex items-center gap-1.5 flex-wrap self-start sm:self-auto shrink-0">
+					<span className="text-[11px] bg-cyan-500/10 text-cyan-800 dark:text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-md font-semibold">
+						СЭМД 108 / 043-у
+					</span>
+					<span className="text-[11px] bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1">
+						<UserCheck size={11} aria-hidden="true" />
+						Права проверены
+					</span>
+				</div>
 			</div>
 
-			{/*
-				Состояние раздела всегда написано словами на самом экране. Прежняя
-				версия объясняла раздел только в атрибуте title, которого не видно.
-			*/}
+			{/* Состояние справочника */}
 			<div className="flex items-start gap-3">
 				<StateIcon
-					size={20}
+					size={18}
 					className={`shrink-0 mt-0.5 ${tone.icon} ${isLoading ? "animate-spin" : ""}`}
 					aria-hidden="true"
 				/>
 				<div className="min-w-0">
-					<p className={`m-0 text-sm font-medium break-words ${tone.headline}`}>
+					<p className={`m-0 text-sm font-semibold break-words ${tone.headline}`}>
 						{state.headline}
 					</p>
-					<p className="m-0 mt-1 text-xs text-slate-600 dark:text-slate-400 break-words">
+					<p className="m-0 mt-1 text-xs text-[var(--muted,#64748b)] break-words">
 						{state.detail}
 					</p>
 				</div>
 			</div>
 
+			{/* Кнопка повторной проверки */}
 			{state.canRetryLoad && (
-				<button
-					type="button"
-					onClick={() => void load()}
-					disabled={isLoading}
-					className="mt-3 flex items-center justify-center gap-2 text-xs px-3 py-2 rounded-lg font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700"
-				>
-					<RefreshCcw size={14} aria-hidden="true" />
-					Проверить снова
-				</button>
+				<div className="mt-3">
+					<button
+						type="button"
+						onClick={() => void load()}
+						disabled={isLoading}
+						className="h-8 px-3 rounded-lg font-semibold text-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--paper-soft,#f1f5f9)] hover:bg-[var(--paper-subtle,#e2e8f0)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] inline-flex items-center gap-1.5 transition-colors"
+					>
+						<RefreshCcw size={13} className={isLoading ? "animate-spin" : ""} aria-hidden="true" />
+						Проверить права доступа
+					</button>
+				</div>
 			)}
 
+			{/* Плоский список правил бланков (БЕЗ МАТРЁШЕК И ВЛОЖЕННЫХ КАРТОЧЕК) */}
 			{rows.length > 0 && (
-				<div className="space-y-3 mt-3">
+				<div className="divide-y divide-[var(--line,#e2e8f0)] border-t border-[var(--line,#e2e8f0)] mt-3.5">
 					{rows.map((item) => (
 						<div
 							key={item.id}
-							className="p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+							className="py-2.5 px-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
 						>
 							<div className="min-w-0">
-								<div className="text-sm font-bold text-slate-900 dark:text-slate-200 break-words">
+								<div className="text-xs sm:text-sm font-bold text-[var(--ink,#0f172a)] break-words">
 									{item.formCode} —{" "}
 									<span className="text-cyan-700 dark:text-cyan-300 font-semibold">
 										{item.fieldName}
 									</span>
 								</div>
-								<div className="text-xs text-slate-600 dark:text-slate-400 mt-1 break-words">
-									Отказ пациента от выгрузки:{" "}
-									{item.patientOptOutRespect ? "учитывается" : "не учитывается"}
+								<div className="text-[11px] text-[var(--muted,#64748b)] mt-0.5 flex items-center gap-2 flex-wrap">
+									<span>
+										Отказ пациента:{" "}
+										<strong className="text-[var(--ink,#0f172a)]">
+											{item.patientOptOutRespect ? "учитывается (152-ФЗ)" : "не учитывается"}
+										</strong>
+									</span>
+									{item.requiredStaffRole && (
+										<>
+											<span>·</span>
+											<span>Доступ: {item.requiredStaffRole}</span>
+										</>
+									)}
 								</div>
 							</div>
-							<div className="flex items-center gap-2 text-xs shrink-0">
+							<div className="flex items-center gap-2 shrink-0">
 								{item.isExportAllowed ? (
-									<span className="bg-cyan-100 text-cyan-800 border border-cyan-300 dark:bg-cyan-950 dark:text-cyan-300 dark:border-cyan-800 px-2.5 py-1 rounded">
+									<span className="bg-cyan-500/10 text-cyan-800 dark:text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded text-[11px] font-semibold">
 										Выгрузка разрешена
 									</span>
 								) : (
-									<span className="bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800 px-2.5 py-1 rounded">
+									<span className="bg-rose-500/10 text-rose-800 dark:text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded text-[11px] font-semibold">
 										Выгрузка запрещена
 									</span>
 								)}

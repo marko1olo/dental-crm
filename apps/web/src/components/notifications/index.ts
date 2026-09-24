@@ -4,3 +4,8 @@ export {
 	type PatientNotificationItem,
 	type NotificationCategory,
 } from "./PatientNotificationCenter";
+
+export {
+	NotificationBell,
+	type NotificationBellProps,
+} from "./NotificationBell";
