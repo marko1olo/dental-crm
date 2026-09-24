@@ -32,11 +32,15 @@ export interface MobileSelfCheckinModalProps {
 	clinicName?: string;
 	doctorName?: string;
 	appointmentTime?: string;
+	cabinetName?: string;
+	queueTicket?: string;
 	initialStep?: CheckinStep;
 	onCheckinSuccess?: (result: {
 		patientId: string;
 		signedConsents: string[];
 		somaticProfile: ReturnType<typeof evaluateSomaticRisks>;
+		queueTicket?: string;
+		visitStatus?: string;
 	}) => void;
 }
 
@@ -103,6 +107,8 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 	clinicName = "Стоматологическая клиника ДЕНТЕ",
 	doctorName = "Д-р Воронова Е. С. (Терапевт-микроскопист)",
 	appointmentTime = "Сегодня в 14:30 (Кабинет 3)",
+	cabinetName,
+	queueTicket = "Талон № А-07",
 	initialStep = "phone_auth",
 	onCheckinSuccess,
 }) => {
@@ -127,6 +133,29 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 	const [cardioDetails, setCardioDetails] = useState("");
 	const [coagulationDetails, setCoagulationDetails] = useState("");
 	const [consentNotice, setConsentNotice] = useState<string | null>(null);
+
+	// Specific dental allergy flags (penicillin, lidocaine, aspirin, sulfites)
+	const [quickAllergies, setQuickAllergies] = useState({
+		lidocaine: false,
+		penicillin: false,
+		aspirin: false,
+		sulfites: false,
+	});
+
+	const displayQueueTicket = useMemo(() => {
+		return queueTicket || "Талон № А-07";
+	}, [queueTicket]);
+
+	const doctorWaitMessage = useMemo(() => {
+		const docShort = doctorName.includes("(")
+			? doctorName.split("(")[0].trim()
+			: doctorName;
+		const effectiveDoctor = docShort || "Д-р Смирнова";
+		const cabMatch = appointmentTime.match(/Кабинет\s*(\d+)/i);
+		const cabNum = cabinetName || (cabMatch ? cabMatch[1] : "3");
+		const floorInfo = appointmentTime.includes("этаж") ? "" : " (2 этаж)";
+		return `${effectiveDoctor} ожидает вас в кабинете №${cabNum}${floorInfo}`;
+	}, [doctorName, appointmentTime, cabinetName]);
 
 	const checkinCode = useMemo(() => {
 		const raw = `${patientName || "PATIENT"}-${appointmentTime || "TIME"}`;
@@ -240,7 +269,60 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		setAllergyDetails("");
 		setCardioDetails("");
 		setCoagulationDetails("");
+		setQuickAllergies({
+			lidocaine: false,
+			penicillin: false,
+			aspirin: false,
+			sulfites: false,
+		});
 		setIsNormApplied(true);
+	};
+
+	// Patient customizes only real dental allergies (penicillin, lidocaine, aspirin, sulfites)
+	const handleToggleQuickAllergy = (
+		key: "lidocaine" | "penicillin" | "aspirin" | "sulfites",
+	) => {
+		const nextVal = !quickAllergies[key];
+		const updatedQuick = { ...quickAllergies, [key]: nextVal };
+		setQuickAllergies(updatedQuick);
+
+		const hasAnyAllergy =
+			updatedQuick.lidocaine ||
+			updatedQuick.penicillin ||
+			updatedQuick.aspirin ||
+			updatedQuick.sulfites;
+
+		const allergyNames: string[] = [];
+		if (updatedQuick.penicillin) allergyNames.push("Пенициллин / Антибиотики");
+		if (updatedQuick.lidocaine) allergyNames.push("Лидокаин / Анестетики");
+		if (updatedQuick.aspirin) allergyNames.push("Аспирин / НПВС");
+		if (updatedQuick.sulfites) allergyNames.push("Сульфиты / Консерванты");
+
+		const newDetails = allergyNames.join(", ");
+		setAllergyDetails(newDetails);
+
+		setSomaticData((prev) => ({
+			...prev,
+			allergies: {
+				...prev.allergies,
+				hasAllergies: hasAnyAllergy,
+				localAnestheticsAllergy: updatedQuick.lidocaine,
+				antibioticsAllergy: updatedQuick.penicillin,
+				sulfiteAllergy: updatedQuick.sulfites,
+				details: newDetails,
+			},
+			coagulation: {
+				...prev.coagulation,
+				hasBleedingDisorder: updatedQuick.aspirin
+					? true
+					: prev.coagulation.hasBleedingDisorder,
+				details: updatedQuick.aspirin
+					? prev.coagulation.details
+						? prev.coagulation.details
+						: "Аспирин / НПВС (риск кровотечений)"
+					: prev.coagulation.details,
+			},
+		}));
 	};
 
 	// 1-Click Physiological Norm & Instant 5-Second Completion
@@ -250,6 +332,12 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		setAllergyDetails("");
 		setCardioDetails("");
 		setCoagulationDetails("");
+		setQuickAllergies({
+			lidocaine: false,
+			penicillin: false,
+			aspirin: false,
+			sulfites: false,
+		});
 		setIsNormApplied(true);
 
 		const evaluatedNorm = evaluateSomaticRisks(normData);
@@ -259,6 +347,8 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 			patientId: patientId || "",
 			signedConsents: consents.filter((c) => c.isSigned).map((c) => c.id),
 			somaticProfile: evaluatedNorm,
+			queueTicket: displayQueueTicket,
+			visitStatus: "В холле / Ожидает приёма",
 		});
 	};
 
@@ -286,6 +376,8 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 			patientId: patientId || "",
 			signedConsents: consents.filter((c) => c.isSigned).map((c) => c.id),
 			somaticProfile: riskEvaluation,
+			queueTicket: displayQueueTicket,
+			visitStatus: "В холле / Ожидает приёма",
 		});
 	};
 
@@ -303,6 +395,8 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 			patientId: patientId || "",
 			signedConsents: signed.map((c) => c.id),
 			somaticProfile: riskEvaluation,
+			queueTicket: displayQueueTicket,
+			visitStatus: "В холле / Ожидает приёма",
 		});
 	};
 
@@ -378,6 +472,32 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 							</div>
 
 							<div className="p-4 rounded-xl border border-teal-500/30 bg-teal-500/5 my-3 space-y-3">
+								<button
+									type="button"
+									className="selfcheckin-btn-kiosk-express w-full py-3.5 px-4 text-base font-bold flex items-center justify-center gap-3 cursor-pointer"
+									onClick={() => {
+										handleApplyPhysiologicalNorm();
+										handleOneTouchCheckin();
+									}}
+									disabled={isSubmitting}
+									data-testid="kiosk-express-norm-btn"
+									title="Мгновенный самочекин для киоска: физиологическая норма + получение талона очереди в 1 касание"
+								>
+									<CheckCircle2 size={24} className="selfcheckin-kiosk-check-icon shrink-0" />
+									<div className="selfcheckin-kiosk-text-col text-left">
+										<span className="selfcheckin-kiosk-title block font-extrabold text-base">
+											✓ Чувствую себя хорошо / Соматическая норма
+										</span>
+										<span className="selfcheckin-kiosk-sub block text-xs opacity-90 font-medium">
+											Экспресс-чекин в 1 касание и получение талона очереди
+										</span>
+									</div>
+								</button>
+
+								<div className="selfcheckin-divider-or text-center text-xs font-bold text-slate-400 uppercase tracking-widest my-1">
+									или подтверждение по номеру телефона
+								</div>
+
 								<label className="selfcheckin-label font-bold text-sm block">
 									Последние 4 цифры номера телефона для подтверждения:
 								</label>
@@ -426,7 +546,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								</button>
 								<button
 									type="button"
-									className="w-full py-2 text-xs font-semibold text-teal-700 dark:text-teal-300 hover:underline flex items-center justify-center gap-1.5 cursor-pointer"
+									className="w-full py-2.5 text-xs font-semibold text-teal-700 dark:text-teal-300 hover:underline flex items-center justify-center gap-1.5 cursor-pointer"
 									onClick={handleOneTouchCheckin}
 									disabled={isSubmitting}
 									title={
@@ -436,7 +556,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 									}
 									data-testid="qr-checkin-btn"
 								>
-									<Ticket size={15} />
+									<Ticket size={16} />
 									<span>Быстрый чекин по QR-коду из приглашения</span>
 								</button>
 							</div>
@@ -642,26 +762,26 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								className="selfcheckin-norm-quick-banner"
 								data-testid="somatic-norm-banner"
 							>
-								<div className="selfcheckin-norm-header">
-									<div className="selfcheckin-norm-title-row">
-										<ShieldCheck size={18} className="selfcheckin-norm-icon" />
-										<span className="selfcheckin-norm-title">
-											Физиологическая норма по умолчанию
+								{/* Prominent Dominant Green Button per Mandate 8e #3 */}
+								<button
+									type="button"
+									className="selfcheckin-btn-norm-dominant"
+									onClick={handleApplyPhysiologicalNorm}
+									data-testid="somatic-norm-dominant-btn"
+									title="Заполнить весь опросник (давление, аллергии, соматика) физиологической нормой в 1 клик"
+								>
+									<CheckCircle2 size={26} className="selfcheckin-dominant-check-icon shrink-0" />
+									<div className="selfcheckin-dominant-text-col text-left">
+										<span className="selfcheckin-dominant-title block font-extrabold text-base sm:text-lg">
+											✓ Чувствую себя хорошо / Соматическая норма
+										</span>
+										<span className="selfcheckin-dominant-sub block text-xs sm:text-sm font-normal opacity-95">
+											Давление в норме, хронических патологий нет • Правьте только аллергии ниже
 										</span>
 									</div>
-									{isNormApplied && (
-										<span className="selfcheckin-norm-applied-badge">
-											✓ Норма активна
-										</span>
-									)}
-								</div>
-								<p className="selfcheckin-norm-description">
-									Если у вас нет аллергий на анестезию/лекарства,
-									сердечно-сосудистых патологий и склонности к кровотечениям —
-									заполните анкету нормой в 1 клик и завершите чекин за 5
-									секунд:
-								</p>
-								<div className="selfcheckin-norm-btn-group">
+								</button>
+
+								<div className="selfcheckin-norm-actions-row flex items-center gap-2 flex-wrap pt-1">
 									<button
 										type="button"
 										className="selfcheckin-btn-norm-quick"
@@ -670,10 +790,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 										title="Заполнить анкету физиологической нормой: хронических заболеваний, аллергий и патологий нет"
 									>
 										<Zap size={16} />
-										<span>
-											Соматически здоров (хронических заболеваний, аллергий и
-											патологий нет / норма)
-										</span>
+										<span>Применить норму</span>
 									</button>
 									<button
 										type="button"
@@ -686,6 +803,14 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 										<CheckCircle2 size={16} />
 										<span>Завершить за 5 сек ➔</span>
 									</button>
+									{isNormApplied && (
+										<span
+											className="selfcheckin-norm-applied-badge ml-auto"
+											data-testid="norm-active-pill"
+										>
+											✓ Норма активна
+										</span>
+									)}
 								</div>
 							</div>
 
@@ -727,7 +852,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 
 							<div className="selfcheckin-questions-grid">
 								{/* Allergies Card */}
-								<div className="selfcheckin-question-card">
+								<div className="selfcheckin-question-card" data-testid="allergies-card">
 									<div className="selfcheckin-card-title">
 										<AlertCircle
 											size={16}
@@ -740,67 +865,105 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 										/>
 										1. Аллергологический анамнез
 									</div>
+
+									{/* Quick Allergy Chips for Penicillin, Lidocaine, Aspirin, Sulfites */}
+									<div
+										className="selfcheckin-quick-allergies-block"
+										data-testid="quick-allergies-block"
+									>
+										<div className="selfcheckin-quick-allergies-heading font-semibold text-xs text-slate-700 dark:text-slate-300 mb-1.5">
+											Пациент правит только реальные аллергии (1 касание):
+										</div>
+										<div className="selfcheckin-quick-allergies-grid">
+											<button
+												type="button"
+												className={`selfcheckin-allergy-chip ${quickAllergies.penicillin ? "active" : ""}`}
+												onClick={() => handleToggleQuickAllergy("penicillin")}
+												data-testid="allergy-chip-penicillin"
+												title="Аллергия на пенициллины, амоксициллин, антибиотики"
+											>
+												<span className="selfcheckin-chip-icon">
+													{quickAllergies.penicillin ? "✕" : "+"}
+												</span>
+												<span>Пенициллин / Антибиотики</span>
+											</button>
+											<button
+												type="button"
+												className={`selfcheckin-allergy-chip ${quickAllergies.lidocaine ? "active" : ""}`}
+												onClick={() => handleToggleQuickAllergy("lidocaine")}
+												data-testid="allergy-chip-lidocaine"
+												title="Непереносимость лидокаина, новокаина, местных анестетиков"
+											>
+												<span className="selfcheckin-chip-icon">
+													{quickAllergies.lidocaine ? "✕" : "+"}
+												</span>
+												<span>Лидокаин / Анестетики</span>
+											</button>
+											<button
+												type="button"
+												className={`selfcheckin-allergy-chip ${quickAllergies.aspirin ? "active" : ""}`}
+												onClick={() => handleToggleQuickAllergy("aspirin")}
+												data-testid="allergy-chip-aspirin"
+												title="Аллергия на аспирин, НПВС, склонность к кровоточивости"
+											>
+												<span className="selfcheckin-chip-icon">
+													{quickAllergies.aspirin ? "✕" : "+"}
+												</span>
+												<span>Аспирин / НПВС</span>
+											</button>
+											<button
+												type="button"
+												className={`selfcheckin-allergy-chip ${quickAllergies.sulfites ? "active" : ""}`}
+												onClick={() => handleToggleQuickAllergy("sulfites")}
+												data-testid="allergy-chip-sulfites"
+												title="Аллергия на сульфиты и консерванты в анестетиках"
+											>
+												<span className="selfcheckin-chip-icon">
+													{quickAllergies.sulfites ? "✕" : "+"}
+												</span>
+												<span>Сульфиты / Консерванты</span>
+											</button>
+										</div>
+									</div>
+
 									<label className="selfcheckin-checkbox-label">
 										<input
 											type="checkbox"
 											checked={somaticData.allergies.hasAllergies}
-											onChange={(e) =>
+											onChange={(e) => {
+												const checked = e.target.checked;
 												setSomaticData({
 													...somaticData,
 													allergies: {
 														...somaticData.allergies,
-														hasAllergies: e.target.checked,
+														hasAllergies: checked,
 													},
-												})
-											}
+												});
+												if (!checked) {
+													setQuickAllergies({
+														lidocaine: false,
+														penicillin: false,
+														aspirin: false,
+														sulfites: false,
+													});
+													setAllergyDetails("");
+												}
+											}}
 										/>
 										<span>
-											Имеются аллергические реакции на медикаменты/вещества
+											Имеются другие аллергические реакции на медикаменты/вещества
 										</span>
 									</label>
 
 									{somaticData.allergies.hasAllergies && (
 										<div className="selfcheckin-suboptions">
-											<label className="selfcheckin-checkbox-label">
-												<input
-													type="checkbox"
-													checked={somaticData.allergies.sulfiteAllergy}
-													onChange={(e) =>
-														setSomaticData({
-															...somaticData,
-															allergies: {
-																...somaticData.allergies,
-																sulfiteAllergy: e.target.checked,
-															},
-														})
-													}
-												/>
-												<span>Аллергия на сульфиты / консерванты</span>
-											</label>
-											<label className="selfcheckin-checkbox-label">
-												<input
-													type="checkbox"
-													checked={
-														somaticData.allergies.localAnestheticsAllergy
-													}
-													onChange={(e) =>
-														setSomaticData({
-															...somaticData,
-															allergies: {
-																...somaticData.allergies,
-																localAnestheticsAllergy: e.target.checked,
-															},
-														})
-													}
-												/>
-												<span>Непереносимость местных анестетиков</span>
-											</label>
 											<input
 												type="text"
 												className="selfcheckin-input selfcheckin-input-sm"
 												placeholder="Укажите препараты или симптомы..."
 												value={allergyDetails}
 												onChange={(e) => setAllergyDetails(e.target.value)}
+												data-testid="allergy-details-input"
 											/>
 										</div>
 									)}
@@ -983,83 +1146,100 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 						</div>
 					)}
 
-					{/* STEP 4: Completed Pass */}
+					{/* STEP 4: Completed Pass & Queue Ticket */}
 					{step === "completed" && (
 						<div className="selfcheckin-step-box selfcheckin-completed-box">
+							{/* Green Animated Success Badge */}
 							<div
-								className="selfcheckin-success-badge"
-								style={{
-									display: "flex",
-									justifyContent: "center",
-									marginBottom: "0.75rem",
-								}}
+								className="selfcheckin-animated-success-badge"
+								data-testid="selfcheckin-animated-success-badge"
 							>
-								<CheckCircle2 size={48} color="#059669" />
+								<div className="selfcheckin-success-ring">
+									<CheckCircle2 size={48} className="selfcheckin-success-check-icon" />
+								</div>
 							</div>
+
 							<h3 className="selfcheckin-completed-title">
 								Самочекин успешно завершен!
 							</h3>
 							<p className="selfcheckin-completed-desc">
-								Все согласия подписаны, анкета здоровья передана в электронную
-								карту доктора <strong>{doctorName}</strong>.
+								Все согласия подтверждены, данные переданы лечащему врачу
 							</p>
 
-							<div className="selfcheckin-pass-card">
-								<div className="selfcheckin-pass-patient">{patientName}</div>
-								<div className="selfcheckin-pass-time">
-									Прием: {appointmentTime}
+							{/* Queue Ticket Card */}
+							<div className="selfcheckin-ticket-card" data-testid="queue-ticket-card">
+								<div className="selfcheckin-ticket-header">
+									<Ticket size={20} className="selfcheckin-ticket-icon shrink-0" />
+									<span className="selfcheckin-ticket-header-label">
+										Электронная очередь клиники
+									</span>
 								</div>
-								<div className="selfcheckin-pass-qr">
+
+								{/* Prominent Large Queue Ticket Number */}
+								<div
+									className="selfcheckin-ticket-number-display"
+									data-testid="queue-ticket-number"
+								>
+									{displayQueueTicket}
+								</div>
+
+								<div className="selfcheckin-ticket-divider" />
+
+								<div className="selfcheckin-ticket-details w-full space-y-2">
+									<div className="selfcheckin-ticket-patient-name text-center font-bold text-base text-slate-900 dark:text-slate-100">
+										{patientName}
+									</div>
+									<div className="selfcheckin-ticket-time text-center text-xs text-slate-500 dark:text-slate-400">
+										Время записи: {appointmentTime}
+									</div>
+
+									{/* Doctor & Cabinet Waiting Status */}
 									<div
-										className="selfcheckin-qr-container"
-										style={{
-											display: "flex",
-											justifyContent: "center",
-											padding: "8px 0",
-										}}
-										dangerouslySetInnerHTML={{ __html: checkinQrSvg }}
-									/>
-									<div
-										className="selfcheckin-pass-code-badge"
-										style={{
-											display: "flex",
-											alignItems: "center",
-											justifyContent: "center",
-											gap: "6px",
-											fontSize: "0.85rem",
-											fontWeight: 700,
-											color: "var(--ink, #0f172a)",
-											background: "rgba(13, 148, 136, 0.08)",
-											padding: "0.35rem 0.75rem",
-											borderRadius: "6px",
-											margin: "4px auto 0",
-											maxWidth: "fit-content",
-										}}
+										className="selfcheckin-ticket-doctor-status"
+										data-testid="doctor-wait-status"
 									>
-										<Ticket size={16} color="#0d9488" />
-										<span>Электронный талон чекина: #{checkinCode}</span>
+										<HeartPulse size={20} className="selfcheckin-ticket-doc-icon text-teal-600 dark:text-teal-400 shrink-0" />
+										<span className="selfcheckin-ticket-doc-text font-bold text-sm sm:text-base">
+											{doctorWaitMessage}
+										</span>
 									</div>
 								</div>
+
+								{/* Reception & Assistant Schedule Notification Alert */}
 								<div
-									className="selfcheckin-pass-status"
-									style={{
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-										gap: "6px",
-									}}
+									className="selfcheckin-reception-alert-badge"
+									data-testid="reception-alert-badge"
 								>
-									<CheckCircle2 size={16} color="#059669" />
-									<span>Врач уведомлен о вашем прибытии в клинику</span>
+									<div className="selfcheckin-reception-alert-title flex items-center gap-2 font-bold text-xs sm:text-sm text-teal-800 dark:text-teal-200">
+										<span className="selfcheckin-status-dot-pulse" />
+										<span>
+											Статус визита: <strong>В холле / Ожидает приёма</strong>
+										</span>
+									</div>
+									<div className="selfcheckin-reception-alert-sub text-xs text-teal-700 dark:text-teal-300 mt-1">
+										Оповещение передано на стойку регистрации и ассистенту в кабинет врача
+									</div>
+								</div>
+
+								{/* QR Code Verification for Turnstile / Reception Desk */}
+								<div className="selfcheckin-ticket-qr-section flex flex-col items-center gap-1 pt-2">
+									<div
+										className="selfcheckin-ticket-qr-svg"
+										dangerouslySetInnerHTML={{ __html: checkinQrSvg }}
+									/>
+									<div className="selfcheckin-ticket-qr-caption text-xs font-semibold text-slate-500 dark:text-slate-400">
+										Код талона: #{checkinCode}
+									</div>
 								</div>
 							</div>
 
 							<button
 								type="button"
-								className="selfcheckin-btn-primary"
+								className="selfcheckin-btn-primary w-full py-3.5 text-base font-bold flex items-center justify-center gap-2 cursor-pointer"
 								onClick={onClose}
+								data-testid="selfcheckin-final-close-btn"
 							>
-								Закрыть
+								<span>Готово / Закрыть талон</span>
 							</button>
 						</div>
 					)}

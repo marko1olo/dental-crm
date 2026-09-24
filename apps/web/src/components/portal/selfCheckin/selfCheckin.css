@@ -15,7 +15,7 @@
 
 .selfcheckin-modal-window {
 	width: 100%;
-	max-width: 580px;
+	max-width: 620px;
 	background: var(--paper-strong, #ffffff);
 	color: var(--ink, #0f172a);
 	border-radius: 16px;
@@ -26,6 +26,16 @@
 	max-height: 90vh;
 	overflow: hidden;
 	animation: selfcheckinFadeIn 0.25s ease-out;
+	touch-action: manipulation;
+}
+
+.selfcheckin-modal-window button,
+.selfcheckin-modal-window input,
+.selfcheckin-modal-window select,
+.selfcheckin-modal-window .selfcheckin-checkbox-label,
+.selfcheckin-modal-window .selfcheckin-allergy-chip {
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
 }
 
 @keyframes selfcheckinFadeIn {
@@ -76,9 +86,11 @@
 }
 
 .selfcheckin-close-btn {
-	width: 44px;
-	height: 44px;
-	border-radius: 8px;
+	width: 48px;
+	height: 48px;
+	min-width: 48px;
+	min-height: 48px;
+	border-radius: 10px;
 	border: 1px solid var(--glass-border);
 	background: transparent;
 	color: var(--muted, #64748b);
@@ -88,6 +100,7 @@
 	justify-content: center;
 	cursor: pointer;
 	transition: all 0.2s ease;
+	touch-action: manipulation;
 }
 
 .selfcheckin-close-btn:hover {
@@ -180,15 +193,17 @@
 }
 
 .selfcheckin-input {
-	height: 48px;
+	height: 52px;
+	min-height: 52px;
 	padding: 0 1rem;
 	border-radius: 10px;
 	border: 1.5px solid var(--glass-border);
 	background: var(--paper-strong, #ffffff);
 	color: var(--ink, #0f172a);
-	font-size: 1rem;
+	font-size: 1.0625rem;
 	outline: none;
 	transition: border-color 0.2s ease;
+	touch-action: manipulation;
 }
 
 .selfcheckin-input:focus {
@@ -197,8 +212,10 @@
 }
 
 .selfcheckin-input-sm {
-	height: 42px;
-	font-size: 0.875rem;
+	height: 48px;
+	min-height: 48px;
+	font-size: 0.9375rem;
+	touch-action: manipulation;
 }
 
 .selfcheckin-otp-group {
@@ -213,37 +230,87 @@
 }
 
 .selfcheckin-otp-input {
-	font-size: 1.25rem;
+	font-size: 1.5rem;
 	letter-spacing: 0.25em;
 	text-align: center;
-	font-weight: 700;
+	font-weight: 800;
 	max-width: 160px;
+	min-height: 52px;
+	height: 52px;
+	touch-action: manipulation;
 }
 
 .selfcheckin-otp-hint {
 	font-size: 0.8125rem;
-	color: #64748b;
+	color: var(--muted, #64748b);
+}
+
+/* Kiosk Express Button */
+.selfcheckin-btn-kiosk-express {
+	min-height: 58px;
+	padding: 0.875rem 1.125rem;
+	border-radius: 12px;
+	border: 2px solid #10b981;
+	background: rgba(16, 185, 129, 0.08);
+	color: #065f46;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	transition: all 0.2s ease;
+	touch-action: manipulation;
+}
+
+.selfcheckin-btn-kiosk-express:hover:not(:disabled) {
+	background: rgba(16, 185, 129, 0.15);
+	border-color: #059669;
+	transform: translateY(-1px);
+}
+
+.selfcheckin-btn-kiosk-express:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+.selfcheckin-kiosk-check-icon {
+	color: #059669;
+}
+
+.selfcheckin-kiosk-title {
+	font-size: 1rem;
+	font-weight: 800;
+	color: #065f46;
+}
+
+.selfcheckin-kiosk-sub {
+	font-size: 0.75rem;
+	color: #047857;
+	margin-top: 0.125rem;
 }
 
 /* Buttons */
 .selfcheckin-btn-primary {
-	min-height: 48px;
-	padding: 0.75rem 1.5rem;
-	border-radius: 10px;
+	min-height: 52px;
+	padding: 0.875rem 1.5rem;
+	border-radius: 12px;
 	border: none;
 	background: #0284c7;
 	color: #ffffff;
 	font-size: 1rem;
-	font-weight: 600;
+	font-weight: 700;
 	cursor: pointer;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transition: background 0.2s ease;
+	transition: background 0.2s ease, transform 0.1s ease;
+	touch-action: manipulation;
 }
 
 .selfcheckin-btn-primary:hover:not(:disabled) {
 	background: #0369a1;
+}
+
+.selfcheckin-btn-primary:active:not(:disabled) {
+	transform: scale(0.98);
 }
 
 .selfcheckin-btn-primary:disabled {
@@ -252,23 +319,28 @@
 }
 
 .selfcheckin-btn-accent {
-	min-height: 48px;
-	padding: 0.75rem 1.5rem;
-	border-radius: 10px;
+	min-height: 52px;
+	padding: 0.875rem 1.5rem;
+	border-radius: 12px;
 	border: none;
 	background: #10b981;
 	color: #ffffff;
 	font-size: 1rem;
-	font-weight: 600;
+	font-weight: 700;
 	cursor: pointer;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transition: background 0.2s ease;
+	transition: background 0.2s ease, transform 0.1s ease;
+	touch-action: manipulation;
 }
 
 .selfcheckin-btn-accent:hover {
 	background: #059669;
+}
+
+.selfcheckin-btn-accent:active:not(:disabled) {
+	transform: scale(0.98);
 }
 
 /* Consents UI */
@@ -279,17 +351,18 @@
 }
 
 .selfcheckin-consent-tab {
-	min-height: 44px;
-	padding: 0.5rem 1rem;
-	border-radius: 8px;
+	min-height: 48px;
+	padding: 0.625rem 1.125rem;
+	border-radius: 10px;
 	border: 1px solid var(--glass-border, #cbd5e1);
 	background: var(--paper, #f8fafc);
-	font-size: 0.875rem;
+	font-size: 0.9375rem;
 	font-weight: 600;
 	color: var(--muted, #475569);
 	cursor: pointer;
 	transition: all 0.2s ease;
 	white-space: nowrap;
+	touch-action: manipulation;
 }
 
 .selfcheckin-consent-tab.active {
@@ -586,18 +659,22 @@
 	display: flex;
 	align-items: center;
 	gap: 0.75rem;
-	min-height: 44px;
+	min-height: 48px;
 	cursor: pointer;
-	font-size: 0.875rem;
+	font-size: 0.9375rem;
 	font-weight: 500;
 	color: var(--ink, #334155);
+	touch-action: manipulation;
 }
 
 .selfcheckin-checkbox-label input[type="checkbox"] {
-	width: 22px;
-	height: 22px;
+	width: 24px;
+	height: 24px;
+	min-width: 24px;
+	min-height: 24px;
 	cursor: pointer;
 	accent-color: #0284c7;
+	touch-action: manipulation;
 }
 
 .selfcheckin-suboptions {
@@ -605,7 +682,7 @@
 	flex-direction: column;
 	gap: 0.5rem;
 	padding-left: 2rem;
-	border-left: 2px solid #e2e8f0;
+	border-left: 2px solid var(--glass-border, #e2e8f0);
 }
 
 .selfcheckin-suboptions-row {
@@ -614,15 +691,59 @@
 	flex-wrap: wrap;
 }
 
-/* Completed Step */
+/* Completed Step & Queue Ticket Card (Wave 2) */
 .selfcheckin-completed-box {
 	align-items: center;
 	text-align: center;
-	padding: 1rem 0;
+	padding: 0.5rem 0;
 }
 
-.selfcheckin-success-badge {
-	font-size: 3.5rem;
+.selfcheckin-animated-success-badge {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin-bottom: 0.875rem;
+}
+
+.selfcheckin-success-ring {
+	width: 80px;
+	height: 80px;
+	border-radius: 50%;
+	background: rgba(16, 185, 129, 0.12);
+	border: 3px solid #10b981;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+	animation: selfcheckinPulseSuccess 2.2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.selfcheckin-success-check-icon {
+	color: #059669;
+	animation: selfcheckinScaleCheck 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes selfcheckinPulseSuccess {
+	0% {
+		box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+	}
+	70% {
+		box-shadow: 0 0 0 16px rgba(16, 185, 129, 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+	}
+}
+
+@keyframes selfcheckinScaleCheck {
+	0% {
+		transform: scale(0.3);
+		opacity: 0;
+	}
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
 }
 
 .selfcheckin-completed-title {
@@ -639,56 +760,112 @@
 	max-width: 440px;
 }
 
-.selfcheckin-pass-card {
+.selfcheckin-ticket-card {
 	width: 100%;
-	max-width: 400px;
+	max-width: 440px;
 	background: var(--paper, #f8fafc);
-	border: 2px dashed #0284c7;
-	border-radius: 14px;
-	padding: 1.25rem;
+	border: 2px dashed #059669;
+	border-radius: 16px;
+	padding: 1.375rem;
 	display: flex;
 	flex-direction: column;
-	gap: 0.75rem;
 	align-items: center;
+	gap: 0.875rem;
+	box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
 }
 
-.selfcheckin-pass-patient {
-	font-size: 1.125rem;
+.selfcheckin-ticket-header {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	color: #059669;
 	font-weight: 700;
-	color: var(--ink, #0f172a);
-}
-
-.selfcheckin-pass-time {
 	font-size: 0.875rem;
-	font-weight: 600;
-	color: var(--primary, #0284c7);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
 }
 
-.selfcheckin-pass-qr {
-	padding: 0.75rem;
+.selfcheckin-ticket-icon {
+	color: #059669;
+}
+
+.selfcheckin-ticket-number-display {
+	font-size: 2.25rem;
+	font-weight: 900;
+	color: #047857;
+	letter-spacing: 0.05em;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	padding: 0.5rem 1.25rem;
+	background: rgba(16, 185, 129, 0.08);
+	border-radius: 12px;
+	border: 1.5px solid rgba(16, 185, 129, 0.25);
+	text-align: center;
+	width: 100%;
+}
+
+.selfcheckin-ticket-divider {
+	width: 100%;
+	height: 1px;
+	border-top: 1px dashed var(--glass-border, #cbd5e1);
+	margin: 0.25rem 0;
+}
+
+.selfcheckin-ticket-doctor-status {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.875rem 1rem;
 	background: var(--paper-strong, #ffffff);
 	border: 1px solid var(--glass-border, #e2e8f0);
-	border-radius: 8px;
+	border-radius: 10px;
+	color: var(--ink, #0f172a);
+	text-align: left;
+	width: 100%;
 }
 
-.selfcheckin-qr-mock {
+.selfcheckin-ticket-doc-text {
+	color: var(--ink, #0f172a);
+	line-height: 1.35;
+}
+
+.selfcheckin-reception-alert-badge {
+	width: 100%;
+	padding: 0.875rem 1rem;
+	border-radius: 10px;
+	background: rgba(13, 148, 136, 0.08);
+	border: 1.5px solid rgba(13, 148, 136, 0.3);
+	text-align: left;
+}
+
+.selfcheckin-status-dot-pulse {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: #10b981;
+	display: inline-block;
+	box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+	animation: selfcheckinDotPulse 1.8s infinite;
+	flex-shrink: 0;
+}
+
+@keyframes selfcheckinDotPulse {
+	0% {
+		box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+	}
+	70% {
+		box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+	}
+}
+
+.selfcheckin-ticket-qr-section {
+	width: 100%;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	gap: 0.25rem;
-	font-size: 0.8125rem;
-	font-weight: 700;
-	color: var(--ink, #334155);
-}
-
-.selfcheckin-qr-icon {
-	font-size: 2rem;
-}
-
-.selfcheckin-pass-status {
-	font-size: 0.8125rem;
-	font-weight: 600;
-	color: #16a34a;
 }
 
 .selfcheckin-error-alert {
@@ -701,91 +878,190 @@
 	font-weight: 500;
 }
 
-/* 1-Click Physiological Norm Banner (Mandate 8e) */
+/* 1-Click Physiological Norm Banner & Dominant Button (Mandates 8c, 8e) */
 .selfcheckin-norm-quick-banner {
-	padding: 0.875rem 1rem;
-	border-radius: 12px;
+	padding: 1rem;
+	border-radius: 14px;
 	border: 1.5px solid rgba(16, 185, 129, 0.4);
 	background: rgba(16, 185, 129, 0.08);
 	display: flex;
 	flex-direction: column;
-	gap: 0.625rem;
+	gap: 0.75rem;
 }
 
-.selfcheckin-norm-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 0.5rem;
-}
-
-.selfcheckin-norm-title-row {
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-}
-
-.selfcheckin-norm-icon {
-	color: #059669;
-	flex-shrink: 0;
-}
-
-.selfcheckin-norm-title {
-	font-size: 0.75rem;
-	font-weight: 700;
-	color: #065f46;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-}
-
-.selfcheckin-norm-applied-badge {
-	font-size: 0.6875rem;
-	font-weight: 700;
-	padding: 0.2rem 0.5rem;
-	border-radius: 9999px;
+.selfcheckin-btn-norm-dominant {
+	min-height: 64px;
+	padding: 0.875rem 1.25rem;
+	border-radius: 12px;
+	border: none;
 	background: #059669;
+	color: #ffffff;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 0.875rem;
+	box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.25);
+	transition: all 0.2s ease;
+	touch-action: manipulation;
+}
+
+.selfcheckin-btn-norm-dominant:hover:not(:disabled) {
+	background: #047857;
+	transform: translateY(-1px);
+	box-shadow: 0 6px 10px -1px rgba(5, 150, 105, 0.35);
+}
+
+.selfcheckin-btn-norm-dominant:active:not(:disabled) {
+	transform: scale(0.99);
+}
+
+.selfcheckin-dominant-check-icon {
 	color: #ffffff;
 }
 
-.selfcheckin-norm-description {
-	margin: 0;
-	font-size: 0.8125rem;
-	line-height: 1.4;
-	color: #064e3b;
+.selfcheckin-dominant-title {
+	font-size: 1.0625rem;
+	font-weight: 800;
+	line-height: 1.3;
 }
 
-.selfcheckin-norm-btn-group {
+.selfcheckin-dominant-sub {
+	font-size: 0.8125rem;
+	font-weight: 500;
+	color: rgba(255, 255, 255, 0.9);
+	margin-top: 0.125rem;
+}
+
+.selfcheckin-norm-actions-row {
 	display: flex;
+	align-items: center;
 	gap: 0.5rem;
 	flex-wrap: wrap;
 }
 
 .selfcheckin-btn-norm-quick {
-	flex: 1;
-	min-height: 44px;
+	min-height: 48px;
 	padding: 0.625rem 1rem;
 	border-radius: 10px;
 	border: none;
-	background: #059669;
-	color: #ffffff;
-	font-size: 0.875rem;
+	background: rgba(16, 185, 129, 0.15);
+	color: #065f46;
+	font-size: 0.9375rem;
 	font-weight: 700;
 	cursor: pointer;
-	display: flex;
+	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: 0.5rem;
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-	transition: background 0.2s ease, transform 0.1s ease;
+	transition: all 0.2s ease;
+	touch-action: manipulation;
 }
 
 .selfcheckin-btn-norm-quick:hover {
+	background: rgba(16, 185, 129, 0.25);
+}
+
+.selfcheckin-btn-norm-finish {
+	min-height: 48px;
+	padding: 0.625rem 1.125rem;
+	border-radius: 10px;
+	border: none;
 	background: #047857;
+	color: #ffffff;
+	font-size: 0.9375rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	white-space: nowrap;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	transition: all 0.2s ease, transform 0.1s ease;
+	touch-action: manipulation;
+}
+
+.selfcheckin-btn-norm-finish:hover:not(:disabled) {
+	background: #065f46;
 	transform: translateY(-1px);
 }
 
-.selfcheckin-btn-norm-quick:active {
-	transform: translateY(0);
+.selfcheckin-btn-norm-finish:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.selfcheckin-norm-applied-badge {
+	font-size: 0.75rem;
+	font-weight: 700;
+	padding: 0.35rem 0.75rem;
+	border-radius: 9999px;
+	background: #059669;
+	color: #ffffff;
+}
+
+/* Quick Allergy Chips (Mandate 8e) */
+.selfcheckin-quick-allergies-block {
+	padding: 0.875rem 1rem;
+	background: var(--paper-muted, #f1f5f9);
+	border: 1px solid var(--glass-border, #e2e8f0);
+	border-radius: 12px;
+	margin-bottom: 0.75rem;
+}
+
+.selfcheckin-quick-allergies-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 0.5rem;
+}
+
+.selfcheckin-allergy-chip {
+	min-height: 48px;
+	padding: 0.625rem 0.875rem;
+	border-radius: 10px;
+	border: 1.5px solid var(--glass-border, #cbd5e1);
+	background: var(--paper-strong, #ffffff);
+	color: var(--ink, #334155);
+	font-size: 0.9375rem;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	cursor: pointer;
+	touch-action: manipulation;
+	transition: all 0.2s ease;
+}
+
+.selfcheckin-allergy-chip:hover {
+	border-color: #94a3b8;
+	background: var(--surface-hover, #f8fafc);
+}
+
+.selfcheckin-allergy-chip.active {
+	border-color: #ef4444;
+	background: rgba(239, 68, 68, 0.08);
+	color: #dc2626;
+	box-shadow: 0 0 0 1px #ef4444;
+}
+
+.selfcheckin-chip-icon {
+	font-weight: 700;
+	font-size: 1rem;
+	width: 22px;
+	height: 22px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	background: var(--glass-panel, rgba(0, 0, 0, 0.05));
+	flex-shrink: 0;
+}
+
+.selfcheckin-allergy-chip.active .selfcheckin-chip-icon {
+	background: rgba(239, 68, 68, 0.15);
+	color: #dc2626;
 }
 
 .selfcheckin-btn-norm-finish {
@@ -931,4 +1207,102 @@
 [data-theme="dark"] .selfcheckin-norm-description,
 .dark .selfcheckin-norm-description {
 	color: #a7f3d0;
+}
+
+[data-theme="dark"] .selfcheckin-btn-kiosk-express,
+.dark .selfcheckin-btn-kiosk-express {
+	background: rgba(16, 185, 129, 0.15);
+	border-color: rgba(16, 185, 129, 0.45);
+	color: #34d399;
+}
+
+[data-theme="dark"] .selfcheckin-btn-kiosk-express:hover:not(:disabled),
+.dark .selfcheckin-btn-kiosk-express:hover:not(:disabled) {
+	background: rgba(16, 185, 129, 0.25);
+	border-color: #10b981;
+}
+
+[data-theme="dark"] .selfcheckin-btn-norm-dominant,
+.dark .selfcheckin-btn-norm-dominant {
+	background: #047857;
+	box-shadow: 0 4px 6px -1px rgba(4, 120, 87, 0.4);
+}
+
+[data-theme="dark"] .selfcheckin-btn-norm-dominant:hover:not(:disabled),
+.dark .selfcheckin-btn-norm-dominant:hover:not(:disabled) {
+	background: #065f46;
+}
+
+[data-theme="dark"] .selfcheckin-quick-allergies-block,
+.dark .selfcheckin-quick-allergies-block {
+	background: var(--paper, #1e293b);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .selfcheckin-allergy-chip,
+.dark .selfcheckin-allergy-chip {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.15));
+	color: var(--ink, #e2e8f0);
+}
+
+[data-theme="dark"] .selfcheckin-allergy-chip:hover,
+.dark .selfcheckin-allergy-chip:hover {
+	background: rgba(255, 255, 255, 0.05);
+	border-color: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="dark"] .selfcheckin-allergy-chip.active,
+.dark .selfcheckin-allergy-chip.active {
+	background: rgba(239, 68, 68, 0.15);
+	border-color: #ef4444;
+	color: #f87171;
+}
+
+[data-theme="dark"] .selfcheckin-allergy-chip.active .selfcheckin-chip-icon,
+.dark .selfcheckin-allergy-chip.active .selfcheckin-chip-icon {
+	background: rgba(239, 68, 68, 0.25);
+	color: #f87171;
+}
+
+[data-theme="dark"] .selfcheckin-ticket-card,
+.dark .selfcheckin-ticket-card {
+	background: var(--paper, #1e293b);
+	border-color: #10b981;
+}
+
+[data-theme="dark"] .selfcheckin-ticket-number-display,
+.dark .selfcheckin-ticket-number-display {
+	background: rgba(16, 185, 129, 0.15);
+	border-color: rgba(16, 185, 129, 0.4);
+	color: #34d399;
+}
+
+[data-theme="dark"] .selfcheckin-ticket-doctor-status,
+.dark .selfcheckin-ticket-doctor-status {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--glass-border, rgba(255, 255, 255, 0.12));
+	color: var(--ink, #f1f5f9);
+}
+
+[data-theme="dark"] .selfcheckin-ticket-doc-text,
+.dark .selfcheckin-ticket-doc-text {
+	color: var(--ink, #f1f5f9);
+}
+
+[data-theme="dark"] .selfcheckin-reception-alert-badge,
+.dark .selfcheckin-reception-alert-badge {
+	background: rgba(13, 148, 136, 0.15);
+	border-color: rgba(13, 148, 136, 0.4);
+}
+
+[data-theme="dark"] .selfcheckin-success-ring,
+.dark .selfcheckin-success-ring {
+	background: rgba(16, 185, 129, 0.15);
+	border-color: rgba(16, 185, 129, 0.4);
+}
+
+[data-theme="dark"] .selfcheckin-success-check-icon,
+.dark .selfcheckin-success-check-icon {
+	color: #34d399;
 }

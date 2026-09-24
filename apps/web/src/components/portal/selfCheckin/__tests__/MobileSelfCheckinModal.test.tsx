@@ -125,4 +125,189 @@ describe("MobileSelfCheckinModal Component & 1-Touch Checkin Flow", () => {
 			"No button is disabled without attributes",
 		);
 	});
+
+	it("renders dominant green 1-touch kiosk express button in phone_auth step", () => {
+		const html = renderToStaticMarkup(
+			createElement(MobileSelfCheckinModal, {
+				isOpen: true,
+				onClose: () => {},
+				initialPhone: "+7 (913) 770-41-99",
+				patientName: "Кузнецов Игорь Павлович",
+				doctorName: "Д-р Смирнова А. В.",
+				appointmentTime: "Сегодня в 16:00 (Кабинет 3)",
+				initialStep: "phone_auth",
+			}),
+		);
+
+		assert.ok(
+			html.includes("kiosk-express-norm-btn"),
+			"Kiosk express button is present on phone auth step",
+		);
+		assert.ok(
+			html.includes("✓ Чувствую себя хорошо / Соматическая норма"),
+			"Express button has dominant text '✓ Чувствую себя хорошо / Соматическая норма'",
+		);
+		assert.ok(
+			html.includes("Экспресс-чекин в 1 касание и получение талона очереди"),
+			"Express button explains 1-touch checkin and ticket generation",
+		);
+	});
+
+	it("renders somatic step with dominant physiological norm button and quick allergy chips for penicillin, lidocaine, aspirin, sulfites", () => {
+		const html = renderToStaticMarkup(
+			createElement(MobileSelfCheckinModal, {
+				isOpen: true,
+				onClose: () => {},
+				patientName: "Алексеева Марина Петровна",
+				initialStep: "somatic",
+			}),
+		);
+
+		// Dominant 1-click norm button
+		assert.ok(
+			html.includes("somatic-norm-dominant-btn"),
+			"Dominant norm button is rendered in somatic step",
+		);
+		assert.ok(
+			html.includes("✓ Чувствую себя хорошо / Соматическая норма"),
+			"Dominant button text matches Mandate 8e specification",
+		);
+
+		// Quick allergy chips (Mandate 8e #3: patient customizes only real dental allergies)
+		assert.ok(
+			html.includes("quick-allergies-block"),
+			"Quick allergies container is rendered",
+		);
+		assert.ok(
+			html.includes("allergy-chip-penicillin"),
+			"Penicillin / antibiotics allergy chip is rendered",
+		);
+		assert.ok(
+			html.includes("Пенициллин / Антибиотики"),
+			"Penicillin text is displayed",
+		);
+		assert.ok(
+			html.includes("allergy-chip-lidocaine"),
+			"Lidocaine / local anesthetics chip is rendered",
+		);
+		assert.ok(
+			html.includes("Лидокаин / Анестетики"),
+			"Lidocaine text is displayed",
+		);
+		assert.ok(
+			html.includes("allergy-chip-aspirin"),
+			"Aspirin / NSAID chip is rendered",
+		);
+		assert.ok(
+			html.includes("Аспирин / НПВС"),
+			"Aspirin text is displayed",
+		);
+		assert.ok(
+			html.includes("allergy-chip-sulfites"),
+			"Sulfites / preservatives chip is rendered",
+		);
+		assert.ok(
+			html.includes("Сульфиты / Консерванты"),
+			"Sulfites text is displayed",
+		);
+	});
+
+	it("renders arrival confirmation screen with Queue Ticket, Doctor Waiting Status, Animated Badge, and Reception Schedule Alert", () => {
+		const html = renderToStaticMarkup(
+			createElement(MobileSelfCheckinModal, {
+				isOpen: true,
+				onClose: () => {},
+				patientName: "Иванов Петр Сергеевич",
+				doctorName: "Д-р Смирнова Е. В.",
+				appointmentTime: "Сегодня в 14:30 (Кабинет 3)",
+				queueTicket: "Талон № А-07",
+				initialStep: "completed",
+			}),
+		);
+
+		// 1. Queue Ticket Card & Large Number
+		assert.ok(
+			html.includes("queue-ticket-card"),
+			"Queue ticket card is displayed on completed screen",
+		);
+		assert.ok(
+			html.includes("queue-ticket-number"),
+			"Queue ticket number container is displayed",
+		);
+		assert.ok(
+			html.includes("Талон № А-07"),
+			"Display queue ticket matches 'Талон № А-07'",
+		);
+
+		// 2. Doctor & Cabinet Waiting Status
+		assert.ok(
+			html.includes("doctor-wait-status"),
+			"Doctor wait status container is displayed",
+		);
+		assert.ok(
+			html.includes("Д-р Смирнова Е. В. ожидает вас в кабинете №3 (2 этаж)"),
+			"Doctor waiting status matches 'Д-р Смирнова ожидает вас в кабинете №3 (2 этаж)'",
+		);
+
+		// 3. Animated Green Success Badge
+		assert.ok(
+			html.includes("selfcheckin-animated-success-badge"),
+			"Animated success badge is displayed",
+		);
+		assert.ok(
+			html.includes("selfcheckin-success-ring"),
+			"Success pulse ring is rendered",
+		);
+
+		// 4. Reception and Schedule Alert: «В холле / Ожидает приёма»
+		assert.ok(
+			html.includes("reception-alert-badge"),
+			"Reception alert badge is displayed",
+		);
+		assert.ok(
+			html.includes("В холле / Ожидает приёма"),
+			"Visit status matches 'В холле / Ожидает приёма'",
+		);
+		assert.ok(
+			html.includes("Оповещение передано на стойку регистрации и ассистенту в кабинет врача"),
+			"Explains automated alert sent to reception and assistant",
+		);
+	});
+
+	it("guarantees terminal and touchscreen ergonomics (touch-action: manipulation and touch targets >= 48px)", async () => {
+		const { readFileSync } = await import("node:fs");
+		const { fileURLToPath } = await import("node:url");
+
+		const cssPath = fileURLToPath(new URL("../selfCheckin.css", import.meta.url));
+		const cssContent = readFileSync(cssPath, "utf-8");
+
+		// Touch action manipulation must be present across interactive touch elements
+		assert.ok(
+			cssContent.includes("touch-action: manipulation;"),
+			"selfCheckin.css includes touch-action: manipulation for kiosk touch responsiveness",
+		);
+
+		// Touch target heights >= 48px
+		assert.ok(
+			cssContent.includes(".selfcheckin-close-btn {") &&
+				cssContent.includes("width: 48px;") &&
+				cssContent.includes("height: 48px;"),
+			"Close button has minimum 48x48px touch target",
+		);
+		assert.ok(
+			cssContent.includes(".selfcheckin-allergy-chip {") &&
+				cssContent.includes("min-height: 48px;"),
+			"Allergy chips have minimum 48px touch height",
+		);
+		assert.ok(
+			cssContent.includes(".selfcheckin-btn-kiosk-express {") &&
+				cssContent.includes("min-height: 58px;"),
+			"Kiosk express button has prominent touch height (58px)",
+		);
+		assert.ok(
+			cssContent.includes(".selfcheckin-btn-norm-dominant {") &&
+				cssContent.includes("min-height: 64px;"),
+			"Dominant physiological norm button has dominant touch height (64px)",
+		);
+	});
 });
