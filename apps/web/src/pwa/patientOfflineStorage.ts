@@ -3,7 +3,7 @@
  * (DOMAIN: PATIENT PORTAL AUTONOMY, METRO OFFLINE UPCOMING VISIT, OFFLINE BOOKINGS QUEUE)
  */
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { showToast } from "../components/GlobalToast";
 import { logger } from "../utils/logger";
 import {
@@ -447,6 +447,12 @@ export function useOfflinePatientSync(
 	const [queuedCount, setQueuedCount] = useState<number>(0);
 	const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
+	const isSyncingRef = useRef(false);
+	isSyncingRef.current = isSyncing;
+
+	const onSyncCompletedRef = useRef(onSyncCompleted);
+	onSyncCompletedRef.current = onSyncCompleted;
+
 	const refreshQueueCount = useCallback(async () => {
 		try {
 			const queue = await getQueuedOfflinePatientBookings();
@@ -457,18 +463,20 @@ export function useOfflinePatientSync(
 	}, []);
 
 	const triggerFlush = useCallback(async () => {
-		if (isSyncing || !navigator.onLine) return;
+		if (isSyncingRef.current || (typeof navigator !== "undefined" && !navigator.onLine)) return;
+		isSyncingRef.current = true;
 		setIsSyncing(true);
 		try {
 			const { successCount } = await flushOfflinePatientBookings();
 			await refreshQueueCount();
-			if (successCount > 0 && onSyncCompleted) {
-				onSyncCompleted(successCount);
+			if (successCount > 0 && onSyncCompletedRef.current) {
+				onSyncCompletedRef.current(successCount);
 			}
 		} finally {
+			isSyncingRef.current = false;
 			setIsSyncing(false);
 		}
-	}, [isSyncing, onSyncCompleted, refreshQueueCount]);
+	}, [refreshQueueCount]);
 
 	useEffect(() => {
 		void refreshQueueCount();

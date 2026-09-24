@@ -21,10 +21,25 @@ const ctx = self as DedicatedWorkerGlobalScope;
 ctx.onmessage = (e: MessageEvent<MprWorkerRequest>) => {
 	const req = e.data;
 
+	if (!req || typeof req !== "object") {
+		ctx.postMessage({ success: false, error: "Невалидный запрос к Web Worker" });
+		return;
+	}
+
+	// Branch 0: Liveness & Health Check
+	if ("type" in req && req.type === "ping") {
+		ctx.postMessage({ success: true, type: "pong", timestamp: Date.now() });
+		return;
+	}
+
 	// Branch 1: Orthogonal Cross-Section Reconstruction
 	if ("type" in req && (req.type === "crossSection" || req.type === "cross_section")) {
 		const csReq = req as CrossSectionWorkerRequest;
 		try {
+			if (!csReq.dimensions || !csReq.spacing || !csReq.scalarData || !csReq.controlPoints) {
+				throw new Error("Неполные данные объема для расчета ортогонального среза");
+			}
+
 			const [nx, ny, nz] = csReq.dimensions;
 			const sliceStride = nx * ny;
 			const scalar = csReq.scalarData;
@@ -92,38 +107,54 @@ ctx.onmessage = (e: MessageEvent<MprWorkerRequest>) => {
 	}
 
 	// Branch 2: Panoramic Curved Planar Reformation (OPG unwrap)
-	const panReq = req as PanoramicWorkerRequest;
-	try {
-		const result = generatePanoramicImage(
-			panReq.scalarData,
-			panReq.dimensions,
-			panReq.origin,
-			panReq.direction,
-			panReq.spacing,
-			panReq.splinePoints,
-			panReq.zStartWorld,
-			panReq.zEndWorld,
-			panReq.zStepWorld,
-			panReq.thickness,
-			panReq.blendMode,
-		);
+	if (
+		("type" in req && (req.type === "panoramic" || req.type === "panoramic_opg")) ||
+		"splinePoints" in req
+	) {
+		const panReq = req as PanoramicWorkerRequest;
+		try {
+			if (!panReq.scalarData || !panReq.dimensions || !panReq.spacing || !panReq.splinePoints) {
+				throw new Error("Неполные данные объема для построения панорамной реконструкции ОПТГ");
+			}
 
-		// Zero-copy: transfer the pixel buffer ownership to the main UI thread
-		const ok: PanoramicWorkerResponse = {
-			success: true,
-			type: "panoramic",
-			width: result.width,
-			height: result.height,
-			pixels: result.pixels,
-		};
-		ctx.postMessage(ok, [result.pixels.buffer]);
-	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
-		const fail: PanoramicWorkerResponse = {
-			success: false,
-			type: "panoramic",
-			error: message,
-		};
-		ctx.postMessage(fail);
+			const result = generatePanoramicImage(
+				panReq.scalarData,
+				panReq.dimensions,
+				panReq.origin,
+				panReq.direction,
+				panReq.spacing,
+				panReq.splinePoints,
+				panReq.zStartWorld,
+				panReq.zEndWorld,
+				panReq.zStepWorld,
+				panReq.thickness,
+				panReq.blendMode,
+			);
+
+			// Zero-copy: transfer the pixel buffer ownership to the main UI thread
+			const ok: PanoramicWorkerResponse = {
+				success: true,
+				type: "panoramic",
+				width: result.width,
+				height: result.height,
+				pixels: result.pixels,
+			};
+			ctx.postMessage(ok, [result.pixels.buffer]);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			const fail: PanoramicWorkerResponse = {
+				success: false,
+				type: "panoramic",
+				error: message,
+			};
+			ctx.postMessage(fail);
+		}
+		return;
 	}
+
+	// Unknown message type fallback
+	ctx.postMessage({
+		success: false,
+		error: `Неизвестный тип запроса Web Worker: ${(req as { type?: string }).type ?? "не указан"}`,
+	});
 };

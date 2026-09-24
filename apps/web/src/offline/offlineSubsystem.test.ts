@@ -9,7 +9,60 @@
  * - Mandate 8s: Single source of authority for offline subsystems.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it, beforeEach, afterEach } from "node:test";
+
+function expect<T>(actual: T) {
+	return {
+		toBe(expected: unknown) {
+			assert.equal(actual, expected);
+		},
+		toEqual(expected: unknown) {
+			assert.deepEqual(actual, expected);
+		},
+		not: {
+			toBeNull() {
+				assert.ok(actual !== null, `expected value not to be null, but got: ${actual}`);
+			},
+			toBe(expected: unknown) {
+				assert.notEqual(actual, expected);
+			},
+		},
+		toBeNull() {
+			assert.equal(actual, null);
+		},
+		toBeDefined() {
+			assert.ok(actual !== undefined);
+		},
+		toContain(expected: unknown) {
+			if (typeof actual === "string") {
+				assert.ok(
+					actual.includes(String(expected)),
+					`expected "${actual}" to contain "${expected}"`,
+				);
+			} else if (Array.isArray(actual)) {
+				assert.ok(
+					actual.includes(expected as any),
+					`expected array to contain ${expected}`,
+				);
+			} else {
+				assert.fail("toContain called on unsupported type");
+			}
+		},
+		toHaveLength(expected: number) {
+			assert.equal((actual as any)?.length, expected);
+		},
+		toBeGreaterThan(expected: number) {
+			assert.ok((actual as any) > expected);
+		},
+		toBeGreaterThanOrEqual(expected: number) {
+			assert.ok((actual as any) >= expected);
+		},
+		toBeLessThan(expected: number) {
+			assert.ok((actual as any) < expected);
+		},
+	};
+}
 import {
 	saveVisitDraftDebouncedOffline,
 	saveVisitDraftOffline,

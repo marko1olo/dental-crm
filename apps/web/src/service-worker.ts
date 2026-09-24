@@ -14,7 +14,7 @@
 
 declare const self: ServiceWorkerGlobalScope;
 
-export const SHELL_CACHE = "dental-crm-shell-v7";
+export const SHELL_CACHE = "dental-crm-shell-v8";
 export const SHELL_ASSETS = [
 	"/",
 	"/index.html",
@@ -37,6 +37,55 @@ export function isForbiddenRuntimeResponse(url: URL): boolean {
 	return /\.(?:dcm|dicom|stl|obj|ply|glb|gltf|nii|nrrd|mhd|raw)$/i.test(
 		url.pathname,
 	);
+}
+
+/**
+ * ИСКЛЮЧЕНИЕ КЭШИРОВАНИЯ БИТЫХ СКРИПТОВ И ЧАНКОВ.
+ * В SPA-приложениях (Vite) при сбоях сети или 404 сервер может отдавать index.html (text/html).
+ * Если Service Worker сохранит HTML-страницу как JS-модуль, приложение намертво падает
+ * с "SyntaxError: Unexpected token '<'". Этот фильтр защищает кэш от повреждения.
+ */
+export function isValidShellResponse(
+	request: Request | string,
+	response: Response,
+): boolean {
+	if (!response.ok || response.type === "opaque") return false;
+	if (response.status < 200 || response.status >= 300) return false;
+
+	const urlStr = typeof request === "string" ? request : request.url;
+	let pathname = "";
+	try {
+		pathname = new URL(
+			urlStr,
+			typeof self !== "undefined" && self.location ? self.location.origin : "http://localhost",
+		).pathname;
+	} catch {
+		pathname = urlStr;
+	}
+
+	const contentType = (response.headers.get("content-type") || "").toLowerCase();
+
+	// 1. Script integrity: never cache HTML fallback as JavaScript or Module chunk
+	if (/\.(?:js|mjs)$/i.test(pathname)) {
+		if (contentType.includes("text/html")) return false;
+	}
+
+	// 2. Style integrity: never cache HTML fallback as CSS
+	if (/\.css$/i.test(pathname)) {
+		if (contentType.includes("text/html")) return false;
+	}
+
+	// 3. WebAssembly integrity: wasm must never be text/html
+	if (/\.wasm$/i.test(pathname)) {
+		if (contentType.includes("text/html")) return false;
+	}
+
+	// 4. JSON metadata & manifests: must not be an HTML error page
+	if (/\.(?:json|webmanifest)$/i.test(pathname)) {
+		if (contentType.includes("text/html")) return false;
+	}
+
+	return true;
 }
 
 export function isCacheableShellAsset(url: URL): boolean {
@@ -72,6 +121,9 @@ export function isNetworkFirstShellAsset(url: URL): boolean {
 }
 
 export async function putShellCache(request: Request | string, response: Response): Promise<void> {
+	if (!isValidShellResponse(request, response)) {
+		return;
+	}
 	const cache = await caches.open(SHELL_CACHE);
 	await cache.put(request, response);
 	const keys = await cache.keys();
@@ -105,53 +157,51 @@ export async function recoverShellCacheForClientRefresh(): Promise<void> {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Service Worker Lifecycle Events
-// ─────────────────────────────────────────────────────────────────────────────
+const swScope: ServiceWorkerGlobalScope | null =
+	typeof self !== "undefined" ? (self as unknown as ServiceWorkerGlobalScope) : null;
 
-self.addEventListener("install", (event: ExtendableEvent) => {
-	event.waitUntil(
-		caches
-			.open(SHELL_CACHE)
-			.then((cache) => cache.addAll(SHELL_ASSETS))
-			.then(() => self.skipWaiting()),
-	);
-});
-
-self.addEventListener("activate", (event: ExtendableEvent) => {
-	event.waitUntil(
-		caches
-			.keys()
-			.then((keys) =>
-				Promise.all(
-					keys
-						.filter((key) => key !== SHELL_CACHE)
-						.map((key) => caches.delete(key)),
-				),
-			)
-			.then(() => self.clients.claim()),
-	);
-});
-
-self.addEventListener("message", (event: ExtendableMessageEvent) => {
-	if (event.data?.type === "DENTE_SKIP_WAITING") {
-		self.skipWaiting();
-		return;
-	}
-
-	if (event.data?.type === "DENTE_CLEAR_SHELL_CACHE") {
+if (swScope) {
+	swScope.addEventListener("install", (event: ExtendableEvent) => {
 		event.waitUntil(
-			recoverShellCacheForClientRefresh().then(() => {
-				const source = event.source as Client | null;
-				source?.postMessage?.({ type: "DENTE_SHELL_CACHE_CLEARED" });
-			}),
+			caches
+				.open(SHELL_CACHE)
+				.then((cache) => cache.addAll(SHELL_ASSETS))
+				.then(() => swScope.skipWaiting()),
 		);
-	}
-});
+	});
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Fetch Event Interception & Resilient Offline Caching
-// ─────────────────────────────────────────────────────────────────────────────
+	swScope.addEventListener("activate", (event: ExtendableEvent) => {
+		event.waitUntil(
+			caches
+				.keys()
+				.then((keys) =>
+					Promise.all(
+						keys
+							.filter((key) => key !== SHELL_CACHE)
+							.map((key) => caches.delete(key)),
+					),
+				)
+				.then(() => swScope.clients.claim()),
+		);
+	});
 
-self.addEventListener("fetch", (event: FetchEvent) => {
+	swScope.addEventListener("message", (event: ExtendableMessageEvent) => {
+		if (event.data?.type === "DENTE_SKIP_WAITING") {
+			swScope.skipWaiting();
+			return;
+		}
+
+		if (event.data?.type === "DENTE_CLEAR_SHELL_CACHE") {
+			event.waitUntil(
+				recoverShellCacheForClientRefresh().then(() => {
+					const source = event.source as Client | null;
+					source?.postMessage?.({ type: "DENTE_SHELL_CACHE_CLEARED" });
+				}),
+			);
+		}
+	});
+
+	swScope.addEventListener("fetch", (event: FetchEvent) => {
 	const request = event.request;
 	const url = new URL(request.url);
 
@@ -213,23 +263,28 @@ self.addEventListener("fetch", (event: FetchEvent) => {
 	// 3. Static shell assets (JS/CSS bundles, SVG odontograms, icons)
 	event.respondWith(
 		caches.match(request).then((cached) => {
-			if (cached && !isNetworkFirstShellAsset(url)) {
-				// Cache-first for hashed bundles, styles, fonts, and odontogram SVG assets
-				return cached;
+			if (cached) {
+				if (!isValidShellResponse(request, cached)) {
+					// Purge corrupted cached script/asset immediately (e.g. stale HTML fallback)
+					void caches.open(SHELL_CACHE).then((cache) => cache.delete(request));
+				} else if (!isNetworkFirstShellAsset(url)) {
+					// Cache-first for verified hashed bundles, styles, fonts, and odontogram SVG assets
+					return cached;
+				}
 			}
 
 			const networkFetch = fetch(request)
 				.then((response) => {
-					if (response.ok && response.type !== "opaque") {
+					if (isValidShellResponse(request, response)) {
 						void putShellCache(request, response.clone());
 					}
 					return response;
 				})
-				.catch(() => cached ?? Response.error());
+				.catch(() => (cached && isValidShellResponse(request, cached) ? cached : Response.error()));
 
 			return isNetworkFirstShellAsset(url)
 				? networkFetch
-				: (cached ?? networkFetch);
+				: (cached && isValidShellResponse(request, cached) ? cached : networkFetch);
 		}),
 	);
 });
@@ -238,77 +293,78 @@ self.addEventListener("fetch", (event: FetchEvent) => {
 // Web Push Notifications & Background Sync Engine
 // ─────────────────────────────────────────────────────────────────────────────
 
-self.addEventListener("push", (event: PushEvent) => {
-	let payload = {
-		title: "DENTE CRM",
-		body: "Новое клиническое уведомление",
-		icon: "/icon.svg",
-		badge: "/icon.svg",
-		data: { url: "/" },
-	};
+	swScope.addEventListener("push", (event: PushEvent) => {
+		let payload = {
+			title: "DENTE CRM",
+			body: "Новое клиническое уведомление",
+			icon: "/icon.svg",
+			badge: "/icon.svg",
+			data: { url: "/" },
+		};
 
-	if (event.data) {
-		try {
-			const parsed = event.data.json();
-			payload = { ...payload, ...parsed };
-		} catch {
-			payload.body = event.data.text() || payload.body;
+		if (event.data) {
+			try {
+				const parsed = event.data.json();
+				payload = { ...payload, ...parsed };
+			} catch {
+				payload.body = event.data.text() || payload.body;
+			}
 		}
-	}
 
-	event.waitUntil(
-		self.registration.showNotification(payload.title, {
-			body: payload.body,
-			icon: payload.icon || "/icon.svg",
-			badge: payload.badge || "/icon.svg",
-			data: payload.data,
-			tag: ((payload as Record<string, unknown>).tag as string) || "dente-clinical-alert",
-			...((payload as Record<string, unknown>).renotify ? { renotify: true } : {}),
-		} as NotificationOptions),
-	);
-});
-
-self.addEventListener("notificationclick", (event: NotificationEvent) => {
-	event.notification.close();
-	const targetUrl = event.notification.data?.url || "/";
-
-	event.waitUntil(
-		self.clients
-			.matchAll({ type: "window", includeUncontrolled: true })
-			.then((clientList) => {
-				for (const client of clientList) {
-					if ("focus" in client) {
-						(client as WindowClient).focus();
-						if ("navigate" in client && targetUrl !== "/") {
-							(client as WindowClient).navigate(targetUrl);
-						}
-						return;
-					}
-				}
-				if (self.clients.openWindow) {
-					return self.clients.openWindow(targetUrl);
-				}
-			}),
-	);
-});
-
-self.addEventListener("sync", (event: any) => {
-	if (
-		event.tag === "dente-offline-sync" ||
-		event.tag === "dente-outbox-sync" ||
-		event.tag === "dente-patient-booking-sync"
-	) {
 		event.waitUntil(
-			self.clients
+			swScope.registration.showNotification(payload.title, {
+				body: payload.body,
+				icon: payload.icon || "/icon.svg",
+				badge: payload.badge || "/icon.svg",
+				data: payload.data,
+				tag: ((payload as Record<string, unknown>).tag as string) || "dente-clinical-alert",
+				...((payload as Record<string, unknown>).renotify ? { renotify: true } : {}),
+			} as NotificationOptions),
+		);
+	});
+
+	swScope.addEventListener("notificationclick", (event: NotificationEvent) => {
+		event.notification.close();
+		const targetUrl = event.notification.data?.url || "/";
+
+		event.waitUntil(
+			swScope.clients
 				.matchAll({ type: "window", includeUncontrolled: true })
-				.then((clients) => {
-					for (const client of clients) {
-						client.postMessage({
-							type: "DENTE_BACKGROUND_SYNC_TRIGGER",
-							tag: event.tag,
-						});
+				.then((clientList) => {
+					for (const client of clientList) {
+						if ("focus" in client) {
+							(client as WindowClient).focus();
+							if ("navigate" in client && targetUrl !== "/") {
+								(client as WindowClient).navigate(targetUrl);
+							}
+							return;
+						}
+					}
+					if (swScope.clients.openWindow) {
+						return swScope.clients.openWindow(targetUrl);
 					}
 				}),
 		);
-	}
-});
+	});
+
+	swScope.addEventListener("sync", (event: any) => {
+		if (
+			event.tag === "dente-offline-sync" ||
+			event.tag === "dente-outbox-sync" ||
+			event.tag === "dente-patient-booking-sync"
+		) {
+			event.waitUntil(
+				swScope.clients
+					.matchAll({ type: "window", includeUncontrolled: true })
+					.then((clients) => {
+						for (const client of clients) {
+							client.postMessage({
+								type: "DENTE_BACKGROUND_SYNC_TRIGGER",
+								tag: event.tag,
+							});
+						}
+					}),
+			);
+		}
+	});
+}

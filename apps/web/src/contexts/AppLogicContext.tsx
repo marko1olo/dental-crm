@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useEffect, useRef } from "react";
 import type { useAppLogic } from "../useAppLogic";
 
 // Define the shape of our global AppLogic context
@@ -7,6 +7,16 @@ export type AppLogicContextType = ReturnType<typeof useAppLogic>;
 
 const AppLogicContext = createContext<AppLogicContextType | null>(null);
 
+// Registry for tab teardown callbacks to avoid memory leaks across view switches
+const tabTeardownCallbacks = new Set<() => void>();
+
+export function registerTabTeardown(callback: () => void): () => void {
+	tabTeardownCallbacks.add(callback);
+	return () => {
+		tabTeardownCallbacks.delete(callback);
+	};
+}
+
 export function AppLogicProvider({
 	children,
 	value,
@@ -14,6 +24,23 @@ export function AppLogicProvider({
 	children: React.ReactNode;
 	value: AppLogicContextType;
 }) {
+	const currentView = (value as { currentView?: string })?.currentView;
+	const prevViewRef = useRef<string | undefined>(currentView);
+
+	// Memory leak guard: when switching tabs/views in the workspace, invoke registered teardown callbacks
+	useEffect(() => {
+		if (prevViewRef.current !== undefined && prevViewRef.current !== currentView) {
+			for (const callback of tabTeardownCallbacks) {
+				try {
+					callback();
+				} catch {
+					// Safe teardown: one failing callback must not interrupt others
+				}
+			}
+		}
+		prevViewRef.current = currentView;
+	}, [currentView]);
+
 	return (
 		<AppLogicContext.Provider value={value}>
 			{children}
@@ -69,4 +96,37 @@ export function useAppLogicContext(): AppLogicContextType {
 
 export function useOptionalAppLogicContext(): AppLogicContextType | null {
 	return useContext(AppLogicContext);
+}
+
+/**
+ * Хук для безопасной подписки на изолированную часть глобальной логики.
+ * Предотвращает лавинообразные ре-рендеры дерева при изменении соседних вкладок.
+ */
+export function useAppLogicSelector<T>(
+	selector: (context: AppLogicContextType) => T,
+	isEqual: (prev: T, next: T) => boolean = Object.is,
+): T {
+	const context = useAppLogicContext();
+	const prevRef = useRef<T | undefined>(undefined);
+	const nextVal = selector(context);
+
+	if (prevRef.current !== undefined && isEqual(prevRef.current, nextVal)) {
+		return prevRef.current;
+	}
+	prevRef.current = nextVal;
+	return nextVal;
+}
+
+/**
+ * Хук регистрации очистки ресурсов (ObjectURL, WebGL, таймеры) при уходе с вкладки/экрана.
+ */
+export function useTabTeardown(onTeardown: () => void): void {
+	const callbackRef = useRef(onTeardown);
+	callbackRef.current = onTeardown;
+
+	useEffect(() => {
+		return registerTabTeardown(() => {
+			callbackRef.current();
+		});
+	}, []);
 }
