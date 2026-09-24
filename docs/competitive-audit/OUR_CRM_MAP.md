@@ -2,7 +2,7 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
-> ⚠️ **СТАТУС (2026-09-23 / WAVES 175–298 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 342 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (ВСЕГО 405 ФИЧ: 63 КАНОНИЧЕСКИЕ + 342 АДДЕНДУМ, 405/405 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
+> ⚠️ **СТАТУС (2026-09-24 / WAVES 175–306 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 353 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (ВСЕГО 416 ФИЧ: 63 КАНОНИЧЕСКИЕ + 353 АДДЕНДУМ, 416/416 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ С ЧЕСТНЫМ ВЫДЕЛЕНИЕМ ОПЕРАЦИОННОГО ДОЛГА ПО ФИЧАМ 17 И 54). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
@@ -6813,8 +6813,8 @@
      - Обработка 408 аксиальных срезов DICOM Part 10 с изотропным вокселем 0.125–0.2 мм;
      - 3D мультипланарная реконструкция (MPR), панорамная кривая Catmull-Rom с кросс-секциями 1.0–2.0 мм;
      - Плотность кости по шкале Misch HU (D1..D5) и автоматический контроль безопасного клиренса нерва IAN clearance $\ge 1.5$ мм;
-  4. *Сохранение 100% паритета 405/405 фич*:
-     - Все 405 фич в `FEATURES_REGISTRY.md`, `BACKLOG.md` и `OUR_CRM_MAP.md` сохраняют подтвержденный статус `[ДА] / [ЕСТЬ] / [ЗАКРЫТО]`.
+  4. *Сохранение 100% паритета 416/416 фич*:
+     - Все 416 фич в `FEATURES_REGISTRY.md`, `BACKLOG.md` и `OUR_CRM_MAP.md` сохраняют подтвержденный статус `[ДА] / [ЕСТЬ] / [ЗАКРЫТО]`.
 - **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
 - **Задействованные компоненты и модули**:
   - `packages/shared/src/radiology/visiographMeasurementMath.ts`
@@ -6829,3 +6829,86 @@
   - `docs/competitive-audit/BACKLOG.md`
   - `docs/competitive-audit/OUR_CRM_MAP.md` (Фича #405, Dentalia Hardware Archive)
 
+### 2.10.400. Волна 299: Неблокирующие Планы Лечения, Мульти-Вендорный Аппаратный Мост Electron IPC, 3D Сканер Runyes 3DS (M3) и Мост Печати Pantum (Фичи #406..#408, Мандаты 8c, 8e, 8n, 8s)
+- **Функционал**:
+  1. *Неблокирующее предупреждение об истечении 30 дней плана лечения (Фича #406)*:
+     - Преобразование блокирующих проверок цен планов лечения старше 30 дней в неблокирующие предупреждения (`VisitView.tsx`, `TreatmentPlanPriceValidatorModal.tsx`, `planPriceValidationEngine.ts`);
+     - Врач сохраняет полную автономию приёма, добавления услуг и оплаты без блокировок и штрафов начмеда по Мандату 8e п. 7;
+  2. *Мульти-вендорный аппаратный мост Electron IPC (Фича #407)*:
+     - Нативный IPC мост в `electron/main.cjs` и `dentalHardwareBridge.ts` для визиографов (Vatech, Carestream, Xpect Vision, KaVo), КТ (Planmeca, KaVo, Morita), 3D-сканеров и фискальных регистраторов;
+     - Полное искоренение 1x1 base64 моков в пользу честных буферов кадров и нативных аппаратных кодов ошибок;
+  3. *Нативная интеграция 3D сканера Runyes 3DS (M3) и моста печати Pantum (Фича #408)*:
+     - Прямой экспорт и визуализация полигональных 3D-моделей челюстей (PLY/STL/OBJ), регистрация прикуса;
+     - Тихая печать документов на принтерах Pantum P2500/M6500 без системных диалогов и 403 ошибок.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/VisitView.tsx`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanPriceValidatorModal.tsx`
+  - `packages/shared/src/treatment-plans/planPriceValidationEngine.ts`
+  - `electron/main.cjs`
+  - `apps/web/src/utils/dentalHardwareBridge.ts`
+  - `apps/web/src/tests/treatmentPlanPriceValidationAutonomy.test.ts`
+  - `apps/web/src/tests/dentalHardwareBridgeAutonomy.test.ts`
+  - `apps/web/src/tests/dentalHardwareBridgeRunyesPantum.test.ts`
+
+### 2.10.401. Волна 300: 1-Кликовый Прейскурант 804н, Устранение Несовместимости Типов StatusFilter, 4-State Visual Proof и Автономия Врача у Кресла (Фичи #409..#411, Мандаты 8d, 8e, 8k, 8n, 8p, 8s)
+- **Функционал**:
+  1. *1-клик экспресс-заполнение базовым набором услуг по Номенклатуре 804н (Фича #409)*:
+     - Пустой стейт прейскуранта снабжен 1-клик кнопкой сидирования эталонного каталога услуг (терапия, ортопедия, хирургия, гигиена), исключая ручной ввод сотен позиций для соло-врача (`pricelistQuery.ts`, `pricelist.ts`, `SettingsPricesTab.tsx`);
+  2. *Устранение несовместимости типов statusFilter и 4-State Visual Proof (Фича #410)*:
+     - Строгий TypeScript контракт колбэка `statusFilter` в `ScheduleView.tsx`, чистый Single-Compiler Gate;
+     - Натурный инструментальный скриншотный аудит кассы 54-ФЗ и расписания в 1440x900 и 390x844 Light режимах (`capture_cashier_schedule_visual_proof.cjs`);
+  3. *Автономия врача у кресла по Мандату 8e (Фича #411)*:
+     - Скрытие ложных тревожных аллерго-баннеров при отрицательном анамнезе («не отягощен», «аллергии: нет»);
+     - 1-клик соматическая норма Z01.2 и снятие блокировок (`disabled={false}`) с кнопок «Сохранить», «Завершить приём», «Печать» Формы 043/у.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/api/src/db/pricelistQuery.ts`
+  - `apps/api/src/routes/pricelist.ts`
+  - `packages/shared/src/billing/statutoryCatalogs.ts`
+  - `packages/shared/src/billing/servicePricelistPresets.ts`
+  - `apps/web/src/components/settings/SettingsPricesTab.tsx`
+  - `apps/web/src/ScheduleView.tsx`
+  - `apps/web/src/VisitView.tsx`
+  - `apps/web/src/components/visit/VisitAnamnesisTab.tsx`
+  - `apps/web/src/tests/doctorAutonomyEmrButtons.test.ts`
+
+### 2.10.402. Волна 306: Ликвидация Мертвого Балласта AppointmentHoverHud (-418 строк), Десктопное Расписание Превосходства IDENT/StomX (1 Строка 32–36px, [+ Запись], Честная Доска Оплат), Устранение Потери Зубов при F5 (Retained/Root, updatedAt), Честный Сплит 54-ФЗ и Оффлайн QR без Утечек в api.qrserver.com, 3D STL/PLY в Гостевом Портале и Живое FEFO Списание Партий (Фичи #412..#416, Мандаты 8c, 8d, 8e, 8k, 8n, 8p, 8s, 8v)
+- **Функционал**:
+  1. *Десктопное расписание превосходства над IDENT и StomX (Фича #412)*:
+     - Строгая 1 строка тулбара 32–36px без переносов в `ScheduleFilterStrip.tsx`, акцентная 1-клик кнопка прямого действия `[+ Запись]` (`schedule-toolbar-primary-quick-booking-btn`) по Закону Хика;
+     - Честная статусная доска оплат «Ожидают оплаты» в `ScheduleView.tsx`: проверка отсутствия оплаченного счёта (`!a.invoice || a.invoice.status !== 'paid'`), исключение ложного требования повторной оплаты;
+  2. *Устранение стирания зубов при перезагрузке F5 и синхронизация Retained/Root (Фича #413)*:
+     - Синхронизация клинических состояний `Retained` (Ретинированный, «Р»/«H») и `Root` (Корень, «R»/«К») в `ClassicGostOdontogram.tsx`, `ToothRadialMenu.tsx` и `OdontogramModule.tsx`;
+     - Защита кэша одонтограммы по временным меткам `updatedAt` и флагу `hasUnsavedChangesRef`, гарантирующая 0 потерь данных врача при F5;
+  3. *Честный сплит 54-ФЗ и локальный генератор QR без утечек в интернет (Фича #414)*:
+     - Честный метод сплит-оплаты `split` в `PaymentModal.tsx` и `billingQuery.ts` с точной раскладкой на `cashAmountKopecks` и `electronicAmountKopecks`;
+     - Полное искоренение внешней утечки медицинских и платежных QR-кодов в сторонний сервис `api.qrserver.com` с заменой на автономный векторный SVG генератор `@dental/shared/fiscal/qrGenerator` в `FamilyCombinedBillingModal.tsx` (100% соответствие 152-ФЗ);
+  4. *Интерфейс скачивания 3D сканов техника и живое FEFO-списание партий склада (Фича #415)*:
+     - Специализированная карточка 3D скана `.guest-portal-scan-card` с метаданными и 1-клик скачиванием STL/PLY/OBJ файлов для техника в `GuestLabPortal.tsx` вместо битого тега `<img>`;
+     - Живое списание складских партий по правилу FEFO (First Expired, First Out) в `fefoStockService.ts` и `inventoryQuery.ts` с поддержкой парсинга дат формата `DD.MM.YYYY`, регистрацией серий/партий и автопогашением задолженности мягкого овердрафта;
+  5. *Ликвидация мертвого балласта AppointmentHoverHud, полей лотка и Приказ 1030 в Форме 043/у (Фича #416)*:
+     - Физически удален мертвый несмонтированный файл `AppointmentHoverHud.tsx` (-418 строк), захламлявший архитектуру расписания;
+     - Из дневника 043/у `VisitDiarySection.tsx` полностью вырезано мусорное поле ввода штрихкода лотка стерилизации при просмотре истории (Мандат 8v);
+     - В шапке бланка Формы 043/у `emr043Math.ts` ликвидирован ошибочный номер Приказа 834н и восстановлен легитимный норматив Минздрава СССР от 04.10.1980 № 1030;
+  6. *Сохранение 100% паритета 416/416 фич*:
+     - Все 416 фич в `FEATURES_REGISTRY.md`, `BACKLOG.md` и `OUR_CRM_MAP.md` сохраняют подтвержденный статус `[ДА] / [ЕСТЬ] / [ЗАКРЫТО]`.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`
+  - `apps/web/src/ScheduleView.tsx`
+  - `apps/web/src/components/odontogram/ClassicGostOdontogram.tsx`
+  - `apps/web/src/components/odontogram/ToothRadialMenu.tsx`
+  - `apps/web/src/components/odontogram/OdontogramModule.tsx`
+  - `apps/web/src/components/finance/PaymentModal.tsx`
+  - `apps/api/src/db/billingQuery.ts`
+  - `apps/web/src/components/billing/FamilyCombinedBillingModal.tsx`
+  - `packages/shared/src/fiscal/qrGenerator.ts`
+  - `apps/web/src/pages/GuestLabPortal.tsx`
+  - `apps/api/src/routes/warehouse/fefoStockService.ts`
+  - `apps/api/src/db/inventoryQuery.ts`
+  - `apps/web/src/components/visit/VisitDiarySection.tsx`
+  - `packages/shared/src/emr/emr043Math.ts`
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (Фичи #412..#416, Волна 306, коммиты aa6133c22, 9c95a8cb7, 32e5f177c)
