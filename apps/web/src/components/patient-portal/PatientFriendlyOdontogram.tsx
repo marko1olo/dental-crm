@@ -61,44 +61,44 @@ export interface DentalHealthIndexResult {
 
 export const HUMAN_TOOTH_NAMES: Record<string, string> = {
 	// Upper Right (18..11)
-	"18": "Верхний правый зуб мудрости",
-	"17": "Верхний правый 2-й жевательный зуб",
-	"16": "Верхний правый 1-й жевательный зуб (шестерка)",
-	"15": "Верхний правый 2-й малый жевательный зуб (премоляр)",
-	"14": "Верхний правый 1-й малый жевательный зуб (премоляр)",
-	"13": "Верхний правый клык",
-	"12": "Верхний правый боковой резец",
-	"11": "Верхний правый передний центральный резец",
+	"18": "Восьмерка сверху справа №18 (зуб мудрости)",
+	"17": "Семерка сверху справа №17 (2-й жевательный зуб)",
+	"16": "Шестерка сверху справа №16 (1-й жевательный зуб)",
+	"15": "Пятерка сверху справа №15 (2-й малый жевательный зуб)",
+	"14": "Четверка сверху справа №14 (1-й малый жевательный зуб)",
+	"13": "Тройка сверху справа №13 (клык)",
+	"12": "Двойка сверху справа №12 (боковой резец)",
+	"11": "Единичка сверху справа №11 (передний центральный резец)",
 
 	// Upper Left (21..28)
-	"21": "Верхний левый передний центральный резец",
-	"22": "Верхний левый боковой резец",
-	"23": "Верхний левый клык",
-	"24": "Верхний левый 1-й малый жевательный зуб (премоляр)",
-	"25": "Верхний левый 2-й малый жевательный зуб (премоляр)",
-	"26": "Верхний левый 1-й жевательный зуб (шестерка)",
-	"27": "Верхний левый 2-й жевательный зуб",
-	"28": "Верхний левый зуб мудрости",
+	"21": "Единичка сверху слева №21 (передний центральный резец)",
+	"22": "Двойка сверху слева №22 (боковой резец)",
+	"23": "Тройка сверху слева №23 (клык)",
+	"24": "Четверка сверху слева №24 (1-й малый жевательный зуб)",
+	"25": "Пятерка сверху слева №25 (2-й малый жевательный зуб)",
+	"26": "Шестерка сверху слева №26 (1-й жевательный зуб)",
+	"27": "Семерка сверху слева №27 (2-й жевательный зуб)",
+	"28": "Восьмерка сверху слева №28 (зуб мудрости)",
 
 	// Lower Left (31..38)
-	"31": "Нижний левый передний центральный резец",
-	"32": "Нижний левый боковой резец",
-	"33": "Нижний левый клык",
-	"34": "Нижний левый 1-й малый жевательный зуб (премоляр)",
-	"35": "Нижний левый 2-й малый жевательный зуб (премоляр)",
-	"36": "Нижний левый 1-й жевательный зуб (шестерка)",
-	"37": "Нижний левый 2-й жевательный зуб",
-	"38": "Нижний левый зуб мудрости",
+	"31": "Единичка снизу слева №31 (передний центральный резец)",
+	"32": "Двойка снизу слева №32 (боковой резец)",
+	"33": "Тройка снизу слева №33 (клык)",
+	"34": "Четверка снизу слева №34 (1-й малый жевательный зуб)",
+	"35": "Пятерка снизу слева №35 (2-й малый жевательный зуб)",
+	"36": "Шестерка снизу слева №36 (1-й жевательный зуб)",
+	"37": "Семерка снизу слева №37 (2-й жевательный зуб)",
+	"38": "Восьмерка снизу слева №38 (зуб мудрости)",
 
 	// Lower Right (48..41)
-	"48": "Нижний правый зуб мудрости",
-	"47": "Нижний правый 2-й жевательный зуб",
-	"46": "Нижний правый 1-й жевательный зуб (шестерка)",
-	"45": "Нижний правый 2-й малый жевательный зуб (премоляр)",
-	"44": "Нижний правый 1-й малый жевательный зуб (премоляр)",
-	"43": "Нижний правый клык",
-	"42": "Нижний правый боковой резец",
-	"41": "Нижний правый передний центральный резец",
+	"48": "Восьмерка снизу справа №48 (зуб мудрости)",
+	"47": "Семерка снизу справа №47 (2-й жевательный зуб)",
+	"46": "Шестерка снизу справа №46 (1-й жевательный зуб)",
+	"45": "Пятерка снизу справа №45 (2-й малый жевательный зуб)",
+	"44": "Четверка снизу справа №44 (1-й малый жевательный зуб)",
+	"43": "Тройка снизу справа №43 (клык)",
+	"42": "Двойка снизу справа №42 (боковой резец)",
+	"41": "Единичка снизу справа №41 (передний центральный резец)",
 };
 
 export const ALL_ADULT_FDI_TEETH: readonly string[] = [
@@ -341,13 +341,41 @@ export interface PatientFriendlyOdontogramProps {
 function getPatientToothStatusColor(status: PatientToothStatus) {
 	switch (status) {
 		case "healthy":
-			return { bg: "#10b981", light: "rgba(16, 185, 129, 0.15)", text: "#065f46", border: "#059669" };
+			return {
+				bg: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+				light: "rgba(16, 185, 129, 0.2)",
+				glow: "0 0 14px rgba(16, 185, 129, 0.3), 0 2px 4px rgba(0, 0, 0, 0.25)",
+				text: "#ffffff",
+				border: "#10b981",
+				badgeText: "Здоров / Санирован",
+			};
 		case "in_treatment":
-			return { bg: "#f59e0b", light: "rgba(245, 158, 11, 0.15)", text: "#92400e", border: "#d97706" };
+			return {
+				bg: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+				light: "rgba(245, 158, 11, 0.2)",
+				glow: "0 0 14px rgba(245, 158, 11, 0.3), 0 2px 4px rgba(0, 0, 0, 0.25)",
+				text: "#ffffff",
+				border: "#f59e0b",
+				badgeText: "В процессе лечения",
+			};
 		case "needs_treatment":
-			return { bg: "#ef4444", light: "rgba(239, 68, 68, 0.15)", text: "#991b1b", border: "#dc2626" };
+			return {
+				bg: "linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)",
+				light: "rgba(244, 63, 94, 0.2)",
+				glow: "0 0 14px rgba(244, 63, 94, 0.35), 0 2px 4px rgba(0, 0, 0, 0.25)",
+				text: "#ffffff",
+				border: "#f43f5e",
+				badgeText: "Требует внимания",
+			};
 		case "missing_or_implant":
-			return { bg: "#64748b", light: "rgba(100, 116, 139, 0.15)", text: "#334155", border: "#475569" };
+			return {
+				bg: "linear-gradient(135deg, #64748b 0%, #475569 100%)",
+				light: "rgba(100, 116, 139, 0.2)",
+				glow: "0 0 10px rgba(100, 116, 139, 0.25), 0 2px 4px rgba(0, 0, 0, 0.25)",
+				text: "#ffffff",
+				border: "#64748b",
+				badgeText: "Имплантат / Замещен",
+			};
 	}
 }
 
@@ -372,23 +400,26 @@ const PatientToothButton: React.FC<PatientToothButtonProps> = memo(({
 			type="button"
 			onClick={() => onSelect(tooth)}
 			data-testid={`tooth-btn-${tooth.fdiCode}`}
+			aria-label={`${tooth.fdiCode}: ${tooth.humanNameRu}`}
 			style={{
 				minWidth: "44px",
 				minHeight: "44px",
 				width: "44px",
 				height: "48px",
-				borderRadius: "6px",
+				borderRadius: "8px",
 				border: `2px solid ${isSelected ? "var(--pc-primary, #0d9488)" : color.border}`,
-				backgroundColor: color.bg,
-				color: "#ffffff",
+				background: color.bg,
+				color: color.text,
 				display: "flex",
 				flexDirection: "column",
 				alignItems: "center",
 				justifyContent: "center",
 				cursor: "pointer",
-				padding: "2px",
-				boxShadow: isSelected ? "0 0 0 3px rgba(13, 148, 136, 0.5)" : "0 1px 2px rgba(0, 0, 0, 0.2)",
-				transition: "all 0.2s ease",
+				padding: "3px 2px",
+				boxShadow: isSelected
+					? `0 0 0 3px rgba(13, 148, 136, 0.6), ${color.glow}`
+					: color.glow,
+				transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
 				touchAction: "manipulation",
 				userSelect: "none",
 				flexShrink: 0,
@@ -397,7 +428,9 @@ const PatientToothButton: React.FC<PatientToothButtonProps> = memo(({
 			}}
 			title={`${tooth.fdiCode}: ${tooth.humanNameRu}`}
 		>
-			<span style={{ fontSize: "11px", fontWeight: 800, textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>{tooth.fdiCode}</span>
+			<span style={{ fontSize: "12px", fontWeight: 800, textShadow: "0 1px 2px rgba(0,0,0,0.6)", letterSpacing: "0.2px" }}>
+				{tooth.fdiCode}
+			</span>
 			{tooth.status === "healthy" && <Check size={12} strokeWidth={3} />}
 			{tooth.status === "in_treatment" && <Clock size={11} strokeWidth={2.5} />}
 			{tooth.status === "needs_treatment" && <AlertTriangle size={11} strokeWidth={2.5} />}
@@ -747,13 +780,15 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 						max-width: 320px;
 						background: rgba(255, 255, 255, 0.02);
 						border: 1px solid var(--pc-border, #334155);
-						border-radius: 8px;
+						border-radius: 10px;
 						padding: 8px 6px;
 					}
 					.patient-odontogram-teeth-row {
-						flex-wrap: wrap;
-						max-width: 200px;
-						gap: 4px;
+						display: grid;
+						grid-template-columns: repeat(4, 44px);
+						gap: 6px;
+						justify-content: center;
+						width: 100%;
 					}
 				}
 			`}</style>
@@ -808,52 +843,103 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 			{selectedTooth && (
 				<div
 					data-testid={`selected-tooth-details-${selectedTooth.fdiCode}`}
+					className="pc-card selected-tooth-popup"
 					style={{
-						padding: "14px",
-						borderRadius: "10px",
+						padding: "16px",
+						borderRadius: "12px",
 						backgroundColor: "var(--pc-surface, #1e293b)",
-						border: "1.5px solid var(--pc-primary, #0d9488)",
+						border: `1.5px solid ${getPatientToothStatusColor(selectedTooth.status).border}`,
+						boxShadow: `0 8px 24px -4px rgba(0, 0, 0, 0.4), ${getPatientToothStatusColor(selectedTooth.status).glow}`,
 						display: "flex",
 						flexDirection: "column",
-						gap: "8px",
+						gap: "10px",
 					}}
 				>
-					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
 						<div>
-							<strong style={{ fontSize: "14px", color: "var(--pc-primary, #0d9488)" }}>
-								{selectedTooth.humanNameRu} (№{selectedTooth.fdiCode})
-							</strong>
-							<div style={{ fontSize: "13px", marginTop: "2px", color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
-								<strong>Текущее состояние:</strong> {selectedTooth.clinicalStateRu}
+							<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+								<strong style={{ fontSize: "15px", color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
+									{selectedTooth.humanNameRu}
+								</strong>
+								<span
+									style={{
+										padding: "2px 8px",
+										borderRadius: "12px",
+										fontSize: "11px",
+										fontWeight: 800,
+										backgroundColor: getPatientToothStatusColor(selectedTooth.status).light,
+										color: getPatientToothStatusColor(selectedTooth.status).border,
+										border: `1px solid ${getPatientToothStatusColor(selectedTooth.status).border}`,
+									}}
+								>
+									{getPatientToothStatusColor(selectedTooth.status).badgeText}
+								</span>
+							</div>
+							<div style={{ fontSize: "13px", marginTop: "4px", color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
+								<strong>Клинический статус:</strong> {selectedTooth.clinicalStateRu}
 							</div>
 						</div>
 						<button
 							type="button"
 							onClick={() => setSelectedTooth(null)}
 							aria-label="Закрыть информацию о зубе"
-							style={{ background: "transparent", border: "none", color: "var(--pc-text-muted, #94a3b8)", cursor: "pointer" }}
+							data-testid="close-tooth-details-btn"
+							style={{
+								background: "rgba(255, 255, 255, 0.05)",
+								border: "1px solid var(--pc-border, #334155)",
+								borderRadius: "6px",
+								width: "32px",
+								height: "32px",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								color: "var(--pc-text-muted, #94a3b8)",
+								cursor: "pointer",
+								flexShrink: 0,
+							}}
 						>
-							<X size={18} />
+							<X size={16} />
 						</button>
 					</div>
 
-					{selectedTooth.plannedStageTitleRu && (
-						<div style={{ fontSize: "12px", color: "#f59e0b", marginTop: "2px" }}>
-							<strong>Запланировано в плане лечения:</strong> {selectedTooth.plannedStageTitleRu}
+					{/* Assigned Procedures & Treatment Plan Details */}
+					<div
+						style={{
+							backgroundColor: "var(--pc-bg, #0f172a)",
+							border: "1px solid var(--pc-border, #334155)",
+							borderRadius: "8px",
+							padding: "10px 12px",
+							display: "flex",
+							flexDirection: "column",
+							gap: "4px",
+							fontSize: "12px",
+						}}
+					>
+						<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--pc-primary, #0d9488)", fontWeight: 700 }}>
+							<Zap size={14} />
+							<span>Назначенные процедуры и план лечения:</span>
 						</div>
-					)}
+						<div style={{ color: "var(--pc-text-main, var(--ink, #0f172a))", lineHeight: "1.4" }}>
+							{selectedTooth.plannedStageTitleRu ||
+								selectedTooth.procedureDescriptionRu ||
+								(selectedTooth.status === "healthy"
+									? "Контрольный осмотр и поддержание профессиональной гигиены (патологий не выявлено)"
+									: "Плановый лечебный этап по согласованному плану")}
+						</div>
+					</div>
 
 					{selectedTooth.warrantyActive && (
-						<div style={{ fontSize: "12px", color: "#10b981", display: "flex", alignItems: "center", gap: "4px" }}>
-							<Sparkles size={14} />
-							<span>Действует гарантийный сертификат качества клиники DENTE</span>
+						<div style={{ fontSize: "12px", color: "var(--pc-success, #10b981)", display: "flex", alignItems: "center", gap: "6px" }}>
+							<ShieldCheck size={16} />
+							<span>Действует официальный гарантийный сертификат качества клиники DENTE</span>
 						</div>
 					)}
 
 					{/* Anti-anxiety reassurance note */}
 					<div
 						style={{
-							backgroundColor: "var(--pc-bg, #0f172a)",
+							backgroundColor: "rgba(13, 148, 136, 0.08)",
+							border: "1px solid rgba(13, 148, 136, 0.2)",
 							borderRadius: "6px",
 							padding: "8px 10px",
 							fontSize: "11px",

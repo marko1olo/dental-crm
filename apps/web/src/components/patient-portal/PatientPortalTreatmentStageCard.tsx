@@ -264,13 +264,49 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 
 				{/* Price & Payment Action */}
 				<div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", justifyContent: "flex-end" }}>
-					<div style={{ textAlign: "right" }}>
-						<span style={{ fontSize: "17px", fontWeight: 800, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
-							{formatRubles(stage.costRub)}
+					<div style={{ textAlign: "right", display: "flex", flexDirection: "column", gap: "2px" }}>
+						{isCompleted ? (
+							<div
+								data-testid={`stage-paid-plate-${stage.id}`}
+								style={{
+									backgroundColor: "rgba(16, 185, 129, 0.15)",
+									border: "1.5px solid var(--pc-success, #10b981)",
+									borderRadius: "8px",
+									padding: "4px 10px",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "6px",
+									color: "var(--pc-success, #10b981)",
+									fontWeight: 800,
+									fontSize: "13px",
+								}}
+							>
+								<CheckCircle2 size={16} />
+								<span>Оплачено: {formatRubles(stage.costRub)}</span>
+							</div>
+						) : (
+							<div
+								data-testid={`stage-due-plate-${stage.id}`}
+								style={{
+									backgroundColor: isInProgress ? "rgba(245, 158, 11, 0.15)" : "rgba(13, 148, 136, 0.12)",
+									border: `1.5px solid ${isInProgress ? "var(--pc-warning, #f59e0b)" : "var(--pc-border, #334155)"}`,
+									borderRadius: "8px",
+									padding: "4px 10px",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "6px",
+									color: isInProgress ? "var(--pc-warning, #f59e0b)" : "var(--pc-text-main, var(--ink, #0f172a))",
+									fontWeight: 800,
+									fontSize: "13px",
+								}}
+							>
+								<Clock size={15} />
+								<span>К оплате за этап: {formatRubles(stage.costRub)}</span>
+							</div>
+						)}
+						<span style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", textAlign: "right" }}>
+							Фиксированная смета «Под ключ» &bull; СБП 0%
 						</span>
-						<div style={{ fontSize: "11px", color: "var(--pc-success, #10b981)", fontWeight: 600 }}>
-							Фиксированная цена
-						</div>
 					</div>
 
 					{!isCompleted && onPaySbp && (
@@ -279,24 +315,25 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 							onClick={onPaySbp}
 							data-testid={`pay-stage-btn-${stage.id}`}
 							style={{
-								padding: "10px 16px",
+								padding: "10px 18px",
 								minHeight: "44px",
 								borderRadius: "8px",
 								border: "none",
-								backgroundColor: "var(--pc-primary, #0d9488)",
+								background: "linear-gradient(135deg, var(--pc-primary, #0d9488) 0%, #0f766e 100%)",
 								color: "var(--on-teal, #ffffff)",
 								fontSize: "13px",
-								fontWeight: 700,
+								fontWeight: 800,
 								cursor: "pointer",
-								display: "flex",
+								display: "inline-flex",
 								alignItems: "center",
-								gap: "6px",
+								gap: "8px",
 								touchAction: "manipulation",
-								boxShadow: "0 2px 6px rgba(13, 148, 136, 0.3)",
+								boxShadow: "0 2px 8px rgba(13, 148, 136, 0.35)",
+								transition: "transform 0.15s ease, box-shadow 0.15s ease",
 							}}
 						>
 							<CreditCard size={16} />
-							<span>Оплатить СБП</span>
+							<span>Оплатить этап через СБП</span>
 						</button>
 					)}
 				</div>

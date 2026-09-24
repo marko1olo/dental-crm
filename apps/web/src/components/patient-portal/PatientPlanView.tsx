@@ -166,27 +166,31 @@ export const POST_TREATMENT_TRIAGE_FAQ = [
 export const PATIENT_COMFORT_STANDARDS = [
 	{
 		id: "no_needle_pain",
-		titleRu: "Анестезия без боли от иглы",
+		titleRu: "Охлаждающий обезболивающий гель перед уколом (0 боли)",
 		descriptionRu: "Перед уколом десна обрабатывается охлаждающим гелем со вкусом вишни или мяты. Момент укола совершенно не чувствуется.",
 		iconColor: "var(--ok-fg, #10b981)",
+		detailRu: "0 боли: деликатная аппликационная премедикация зоны вкола за 60 секунд.",
+	},
+	{
+		id: "septanest_depth",
+		titleRu: "Анестезия Septanest 100% глубина",
+		descriptionRu: "Премиальный французский анестетик глубокого действия. Полное отключение болевых рецепторов зуба за 90 секунд.",
+		iconColor: "var(--info-fg, #6366f1)",
+		detailRu: "100% глубина обезболивания с индивидуальным расчетом дозировки по весу.",
 	},
 	{
 		id: "total_control",
-		titleRu: "Полный контроль пациента (Стоп-сигнал)",
+		titleRu: "Стоп-сигнал левой рукой в любой момент",
 		descriptionRu: "Если вы хотите передохнуть, прополоскать рот или задать вопрос — просто поднимите левую руку. Врач сразу же остановит работу.",
 		iconColor: "var(--teal, #0d9488)",
+		detailRu: "Полный контроль процесса в ваших руках. Никаких неожиданных действий.",
 	},
 	{
 		id: "cofferdam_safety",
-		titleRu: "Изоляция коффердамом",
-		descriptionRu: "Латексная завеса изолирует зуб: растворы не попадают на язык и в горло, вам не нужно держать рот напряженным, можно спокойно сглатывать слюну.",
-		iconColor: "var(--info-fg, #6366f1)",
-	},
-	{
-		id: "microscope_precision",
-		titleRu: "Лечение под микроскопом",
-		descriptionRu: "30-кратное увеличение позволяет врачу удалять только пораженные ткани, сохраняя максимум живой структуры вашего зуба.",
+		titleRu: "Изоляция зуба коффердамом и микроскоп 30x",
+		descriptionRu: "Латексная завеса изолирует зуб: растворы не попадают на язык и в горло, вам не нужно держать рот напряженным, можно спокойно сглатывать слюну, а оптика 30x сохраняет живую структуру зуба.",
 		iconColor: "var(--warn-fg, #f59e0b)",
+		detailRu: "30-кратный микроскоп и защита коффердамом для максимальной безопасности.",
 	},
 ] as const;
 
@@ -216,6 +220,17 @@ export const DEFAULT_PATIENT_SCANS: readonly PatientDiagnosticScan[] = [
 			"Каналы запломбированы до физиологической верхушки, деструкции костной ткани не выявлено.",
 	},
 	{
+		id: "scan-optg",
+		titleRu: "Панорамный снимок зубных рядов (ОПТГ)",
+		modality: "optg",
+		modalityRu: "Панорама ОПТГ",
+		dateRu: "15.08.2026",
+		doseMicroSv: 14.0,
+		previewUrl: "/radiology/sample_trg_cephalogram.jpg",
+		conclusionRu:
+			"Панорамная томография (ОПТГ): костная ткань челюстей стабильна, анатомические ориентиры без патологических очагов, корни зубов интактны.",
+	},
+	{
 		id: "scan-2",
 		titleRu: "Телерентгенография черепа (ТРГ)",
 		modality: "trg",
@@ -227,6 +242,159 @@ export const DEFAULT_PATIENT_SCANS: readonly PatientDiagnosticScan[] = [
 			"Телерентгенограмма в боковой проекции: анатомические ориентиры стабильны, соотношение челюстей нормогнатическое, угол ANB 2.5°.",
 	},
 ];
+
+export const DEFAULT_THREE_TIER_PLAN_MODEL: ThreeTierTreatmentPlanModel = {
+	selectedTier: "standard",
+	tiers: [
+		{
+			tierId: "basic",
+			tierNameRu: "Базовый",
+			subtitleRu: "Стандартная терапия и светоотверждаемый композит Filtek",
+			totalCostRub: 58000,
+			warrantyMonths: 12,
+			durationWeeks: 2,
+			benefits: [
+				"Светоотверждаемый наногибридный композит Filtek Z250 (3M ESPE)",
+				"Официальная гарантия клиники 1 год (12 месяцев)",
+				"Стандартная анестезия Septanest без боли",
+				"Эффективное устранение кариозных очагов и санация полости рта",
+			],
+			stages: [
+				{
+					id: "tier-basic-st1",
+					orderIndex: 1,
+					titleRu: "Этап 1: Комплексная профгигиена и снятие налета",
+					categoryRu: "Гигиена",
+					teethFdi: ["11-48"],
+					costRub: 8000,
+					status: "completed",
+					procedures: ["Ультразвуковой скейлинг и полировка пастой"],
+					targetDateRu: "Выполнен",
+				},
+				{
+					id: "tier-basic-st2",
+					orderIndex: 2,
+					titleRu: "Этап 2: Терапевтическое лечение кариеса композитом Filtek",
+					categoryRu: "Терапия",
+					teethFdi: ["1.6", "2.5", "4.6"],
+					costRub: 50000,
+					status: "in_progress",
+					procedures: ["Лечение кариеса и нанокомпозитная реставрация Filtek Z250"],
+					targetDateRu: "В процессе",
+				},
+			],
+		},
+		{
+			tierId: "standard",
+			tierNameRu: "Оптимум (Выбор врача)",
+			subtitleRu: "Премиальная эстетика, микроскоп 30x и диоксид циркония",
+			totalCostRub: 135000,
+			warrantyMonths: 36,
+			durationWeeks: 4,
+			benefits: [
+				"Субмикрофильный японский нанокомпозит Estelite Asteria (эффект хамелеона)",
+				"Монолитные коронки из диоксида циркония Katana HTML (Япония)",
+				"Лечение каналов под дентальным микроскопом 30x",
+				"Расширенная гарантия клиники 3 года (36 месяцев)",
+				"Изоляция коффердамом и бестеневая оптика",
+			],
+			stages: [
+				{
+					id: "tier-std-st1",
+					orderIndex: 1,
+					titleRu: "Этап 1: Комплексная гигиена и реминерализация",
+					categoryRu: "Гигиена",
+					teethFdi: ["11-48"],
+					costRub: 12000,
+					status: "completed",
+					procedures: ["Комплексная гигиена (УЗ + Air-Flow + реминерализация)"],
+					targetDateRu: "Выполнен",
+				},
+				{
+					id: "tier-std-st2",
+					orderIndex: 2,
+					titleRu: "Этап 2: Лечение каналов под микроскопом 30x и пломба Estelite",
+					categoryRu: "Терапия",
+					teethFdi: ["1.6", "2.5"],
+					costRub: 55000,
+					status: "in_progress",
+					procedures: [
+						"Лечение корневых каналов под микроскопом",
+						"Лечение кариеса и светоотверждаемая пломба",
+					],
+					targetDateRu: "В процессе",
+				},
+				{
+					id: "tier-std-st3",
+					orderIndex: 3,
+					titleRu: "Этап 3: Ортопедическое восстановление циркониевой коронкой",
+					categoryRu: "Ортопедия",
+					teethFdi: ["4.6"],
+					costRub: 68000,
+					status: "planned",
+					procedures: ["Установка эстетической коронки (диоксид циркония / E.max)"],
+					targetDateRu: "15.10.2026",
+				},
+			],
+		},
+		{
+			tierId: "premium",
+			tierNameRu: "Премиум",
+			subtitleRu: "Керамика IPS e.max, имплантация Straumann и гарантия 5 лет",
+			totalCostRub: 285000,
+			warrantyMonths: 60,
+			durationWeeks: 6,
+			benefits: [
+				"Ультратонкие цельнокерамические виниры и коронки IPS e.max CAD (Ivoclar)",
+				"Премиальные швейцарские имплантаты Straumann BLX с гидрофильной поверхностью SLActive",
+				"Максимальная официальная гарантия 5 лет + пожизненно на титановые имплантаты",
+				"Индивидуальный персональный менеджер заботы 24/7",
+				"Фотопротокол и цифровое моделирование улыбки Digital Smile Design",
+			],
+			stages: [
+				{
+					id: "tier-prem-st1",
+					orderIndex: 1,
+					titleRu: "Этап 1: SPA-профгигиена и отбеливание Flash",
+					categoryRu: "Гигиена",
+					teethFdi: ["11-48"],
+					costRub: 25000,
+					status: "completed",
+					procedures: ["Комплексная гигиена (УЗ + Air-Flow + реминерализация)"],
+					targetDateRu: "Выполнен",
+				},
+				{
+					id: "tier-prem-st2",
+					orderIndex: 2,
+					titleRu: "Этап 2: Эндодонтия 3D под микроскопом и виниры IPS e.max",
+					categoryRu: "Терапия",
+					teethFdi: ["1.6", "2.5"],
+					costRub: 110000,
+					status: "in_progress",
+					procedures: [
+						"Лечение корневых каналов под микроскопом",
+						"Керамический винир E.max (индивидуальная эстетика)",
+					],
+					targetDateRu: "В процессе",
+				},
+				{
+					id: "tier-prem-st3",
+					orderIndex: 3,
+					titleRu: "Этап 3: Дентальная имплантация Straumann под ключ с коронкой E.max",
+					categoryRu: "Хирургия",
+					teethFdi: ["4.6"],
+					costRub: 150000,
+					status: "planned",
+					procedures: [
+						"Установка дентального имплантата под ключ",
+						"Установка эстетической коронки (диоксид циркония / E.max)",
+					],
+					targetDateRu: "25.10.2026",
+				},
+			],
+		},
+	],
+};
 
 export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 	plan,
@@ -254,9 +422,79 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 	const [scanZoom, setScanZoom] = useState<number>(1);
 	const [scanInvert, setScanInvert] = useState<boolean>(false);
 
+	// Effective 3-tier model: user prop, or synthesized from plan, or clinical default
+	const effectiveThreeTierModel: ThreeTierTreatmentPlanModel = useMemo(() => {
+		if (threeTierModel && threeTierModel.tiers.length > 0) {
+			return threeTierModel;
+		}
+		if (plan && plan.stages.length > 0) {
+			const stdCost = plan.totalCostRub || plan.stages.reduce((sum, s) => sum + s.costRub, 0);
+			const baseCost = Math.round(stdCost * 0.75);
+			const premCost = Math.round(stdCost * 1.55);
+			return {
+				selectedTier: "standard",
+				tiers: [
+					{
+						tierId: "basic",
+						tierNameRu: "Базовый",
+						subtitleRu: "Стандартная терапия и композит Filtek Z250",
+						totalCostRub: baseCost,
+						warrantyMonths: 12,
+						durationWeeks: 3,
+						benefits: [
+							"Светоотверждаемый наногибридный композит Filtek Z250 (3M ESPE)",
+							"Официальная гарантия клиники 1 год (12 месяцев)",
+							"Стандартная анестезия Septanest без боли",
+							"Эффективная санация и устранение кариозных очагов",
+						],
+						stages: plan.stages.map((st) => ({
+							...st,
+							costRub: Math.round(st.costRub * 0.75),
+						})),
+					},
+					{
+						tierId: "standard",
+						tierNameRu: "Оптимум (Выбор врача)",
+						subtitleRu: "Премиальная эстетика, микроскоп 30x и диоксид циркония",
+						totalCostRub: stdCost,
+						warrantyMonths: 36,
+						durationWeeks: 4,
+						benefits: [
+							"Субмикрофильный японский нанокомпозит Estelite Asteria (эффект хамелеона)",
+							"Монолитный диоксид циркония Katana HTML (Япония)",
+							"Лечение каналов под дентальным микроскопом 30x",
+							"Расширенная гарантия клиники 3 года (36 месяцев)",
+							"Изоляция коффердамом и бестеневая оптика",
+						],
+						stages: plan.stages,
+					},
+					{
+						tierId: "premium",
+						tierNameRu: "Премиум",
+						subtitleRu: "Керамика IPS e.max CAD, имплантация Straumann",
+						totalCostRub: premCost,
+						warrantyMonths: 60,
+						durationWeeks: 5,
+						benefits: [
+							"Ультратонкие цельнокерамические виниры и коронки IPS e.max CAD",
+							"Премиальные швейцарские имплантаты Straumann BLX SLActive",
+							"Максимальная официальная гарантия 5 лет + пожизненно на титан",
+							"Цифровое моделирование улыбки DSD и персональный менеджер заботы 24/7",
+						],
+						stages: plan.stages.map((st) => ({
+							...st,
+							costRub: Math.round(st.costRub * 1.55),
+						})),
+					},
+				],
+			};
+		}
+		return DEFAULT_THREE_TIER_PLAN_MODEL;
+	}, [threeTierModel, plan]);
+
 	// Selected Tier Tab (Basic / Standard / Premium)
 	const [selectedTierId, setSelectedTierId] = useState<"basic" | "standard" | "premium">(
-		threeTierModel?.selectedTier || "standard",
+		threeTierModel?.selectedTier || effectiveThreeTierModel.selectedTier || "standard",
 	);
 
 	// FAQ Accordion expansion
@@ -264,17 +502,15 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 
 	// Active treatment stages derived from 3-Tier model or direct plan
 	const activeStages: readonly TreatmentPlanStage[] = useMemo(() => {
-		if (threeTierModel) {
-			const tier = threeTierModel.tiers.find((t) => t.tierId === selectedTierId);
-			if (tier?.stages && tier.stages.length > 0) {
-				return tier.stages;
-			}
+		const tier = effectiveThreeTierModel.tiers.find((t) => t.tierId === selectedTierId);
+		if (tier?.stages && tier.stages.length > 0) {
+			return tier.stages;
 		}
 		if (plan?.stages && plan.stages.length > 0) {
 			return plan.stages;
 		}
 		return [];
-	}, [threeTierModel, selectedTierId, plan]);
+	}, [effectiveThreeTierModel, selectedTierId, plan]);
 
 	// Total and Paid calculations
 	const stagesCount = activeStages.length;
@@ -282,13 +518,11 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 	const inProgressStagesCount = activeStages.filter((s) => s.status === "in_progress").length;
 
 	const totalCostRub = useMemo(() => {
-		if (threeTierModel) {
-			const tier = threeTierModel.tiers.find((t) => t.tierId === selectedTierId);
-			if (tier) return tier.totalCostRub;
-		}
+		const tier = effectiveThreeTierModel.tiers.find((t) => t.tierId === selectedTierId);
+		if (tier) return tier.totalCostRub;
 		if (plan?.totalCostRub) return plan.totalCostRub;
 		return activeStages.reduce((sum, s) => sum + s.costRub, 0);
-	}, [threeTierModel, selectedTierId, plan, activeStages]);
+	}, [effectiveThreeTierModel, selectedTierId, plan, activeStages]);
 
 	const paidCostRub = useMemo(() => {
 		if (plan?.paidCostRub !== undefined) return plan.paidCostRub;
@@ -802,8 +1036,8 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 				</div>
 			)}
 
-			{/* 3. 3-TIER COMPARISON TABS (IF AVAILABLE) */}
-			{threeTierModel && threeTierModel.tiers.length > 0 && (
+			{/* 3. 3-TIER COMPARISON TABS (THREE-TIER TREATMENT PLAN SELECTOR) */}
+			{effectiveThreeTierModel && effectiveThreeTierModel.tiers.length > 0 && (
 				<div
 					className="pc-card three-tier-selector-card"
 					data-testid="three-tier-selector"
@@ -814,23 +1048,30 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 						padding: "16px",
 						display: "flex",
 						flexDirection: "column",
-						gap: "12px",
+						gap: "14px",
 					}}
 				>
 					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
 						<div>
-							<h4 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
-								3 Варианта плана реабилитации (Выбор материалов)
+							<h4 style={{ margin: 0, fontSize: "15px", fontWeight: 800, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
+								3 Варианта плана реабилитации (Сравнение материалов и гарантии)
 							</h4>
 							<p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
-								Сравните уровень эстетики, гарантии и используемых материалов:
+								Выберите подходящий уровень эстетики, биосовместимости и срока гарантийных обязательств:
 							</p>
 						</div>
 					</div>
 
-					<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "8px" }}>
-						{threeTierModel.tiers.map((tier) => {
+					{/* 3-Tier Switcher Buttons: [Базовый] | [Оптимум (Выбор врача)] | [Премиум] */}
+					<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "10px" }}>
+						{effectiveThreeTierModel.tiers.map((tier) => {
 							const isSelected = selectedTierId === tier.tierId;
+							const isDoctorChoice = tier.tierId === "standard";
+							const tierDisplayName =
+								tier.tierId === "standard" && !tier.tierNameRu.includes("Оптимум")
+									? "Оптимум (Выбор врача)"
+									: tier.tierNameRu;
+
 							return (
 								<button
 									key={tier.tierId}
@@ -838,31 +1079,78 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 									onClick={() => setSelectedTierId(tier.tierId)}
 									data-testid={`plan-tier-btn-${tier.tierId}`}
 									style={{
-										padding: "12px",
-										minHeight: "44px",
+										padding: "12px 14px",
+										minHeight: "52px",
 										borderRadius: "10px",
-										border: `2px solid ${isSelected ? "var(--pc-primary, #0d9488)" : "var(--pc-border, #334155)"}`,
-										backgroundColor: isSelected ? "var(--pc-primary-light, rgba(13, 148, 136, 0.15))" : "var(--pc-bg, #0f172a)",
+										border: `2px solid ${
+											isSelected
+												? "var(--pc-primary, #0d9488)"
+												: isDoctorChoice
+													? "rgba(13, 148, 136, 0.4)"
+													: "var(--pc-border, #334155)"
+										}`,
+										backgroundColor: isSelected
+											? "var(--pc-primary-light, rgba(13, 148, 136, 0.15))"
+											: "var(--pc-bg, #0f172a)",
 										color: "var(--pc-text-main, var(--ink, #0f172a))",
 										textAlign: "left",
 										cursor: "pointer",
 										display: "flex",
 										flexDirection: "column",
 										gap: "4px",
-										transition: "all 0.15s ease",
+										transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
 										touchAction: "manipulation",
+										position: "relative",
+										boxShadow: isSelected ? "0 0 12px rgba(13, 148, 136, 0.3)" : "none",
+										transform: isSelected ? "scale(1.02)" : "scale(1)",
 									}}
 								>
+									{isDoctorChoice && (
+										<span
+											style={{
+												position: "absolute",
+												top: "-9px",
+												right: "8px",
+												backgroundColor: "var(--pc-primary, #0d9488)",
+												color: "var(--on-teal, #ffffff)",
+												fontSize: "10px",
+												fontWeight: 800,
+												padding: "1px 6px",
+												borderRadius: "8px",
+												display: "inline-flex",
+												alignItems: "center",
+												gap: "3px",
+												boxShadow: "0 2px 4px rgba(0, 0, 0, 0.25)",
+											}}
+										>
+											<Sparkles size={10} />
+											<span>Выбор врача</span>
+										</span>
+									)}
+
 									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-										<strong style={{ fontSize: "13px", color: isSelected ? "var(--pc-primary, #0d9488)" : "inherit" }}>
-											{tier.tierNameRu}
+										<strong
+											style={{
+												fontSize: "13px",
+												color: isSelected ? "var(--pc-primary, #0d9488)" : "inherit",
+											}}
+										>
+											{tierDisplayName}
 										</strong>
-										{isSelected && <Check size={14} style={{ color: "var(--pc-primary, #0d9488)" }} />}
+										{isSelected && <Check size={16} strokeWidth={3} style={{ color: "var(--pc-primary, #0d9488)" }} />}
 									</div>
-									<span style={{ fontSize: "15px", fontWeight: 800 }}>
+
+									<span style={{ fontSize: "16px", fontWeight: 800, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 										{formatRubles(tier.totalCostRub)}
 									</span>
-									<span style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)" }}>
+
+									<span
+										style={{
+											fontSize: "11px",
+											color: isSelected ? "var(--pc-success, #10b981)" : "var(--pc-text-muted, #94a3b8)",
+											fontWeight: 700,
+										}}
+									>
 										Гарантия: {tier.warrantyMonths} мес.
 									</span>
 								</button>
@@ -870,9 +1158,62 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 						})}
 					</div>
 
+					{/* 3-Tier Materials & Warranty Comparison Matrix */}
+					<div
+						className="three-tier-comparison-matrix"
+						data-testid="three-tier-materials-comparison"
+						style={{
+							backgroundColor: "var(--pc-bg, #0f172a)",
+							border: "1px solid var(--pc-border, #334155)",
+							borderRadius: "10px",
+							padding: "12px 14px",
+							display: "flex",
+							flexDirection: "column",
+							gap: "10px",
+						}}
+					>
+						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
+							<strong style={{ fontSize: "13px", color: "var(--pc-primary, #0d9488)" }}>
+								Сравнение используемых материалов и гарантии (Текущий выбор):
+							</strong>
+							<span style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)" }}>
+								Закон РФ № 2300-1 &bull; Положение СтАР
+							</span>
+						</div>
+
+						<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px", fontSize: "12px" }}>
+							<div style={{ padding: "8px 10px", borderRadius: "6px", backgroundColor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--pc-border, #334155)" }}>
+								<div style={{ color: "var(--pc-text-muted, #94a3b8)", fontSize: "11px" }}>Материалы пломб / реставраций:</div>
+								<strong style={{ color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
+									{selectedTierId === "basic" && "Нанокомпозит Filtek Z250 (3M ESPE)"}
+									{selectedTierId === "standard" && "Субмикрофил Estelite Asteria (Tokuyama, Япония)"}
+									{selectedTierId === "premium" && "Ультратонкие керамические виниры IPS e.max CAD"}
+								</strong>
+							</div>
+
+							<div style={{ padding: "8px 10px", borderRadius: "6px", backgroundColor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--pc-border, #334155)" }}>
+								<div style={{ color: "var(--pc-text-muted, #94a3b8)", fontSize: "11px" }}>Официальный срок гарантии:</div>
+								<strong style={{ color: "var(--pc-success, #10b981)" }}>
+									{selectedTierId === "basic" && "1 год (12 месяцев)"}
+									{selectedTierId === "standard" && "3 года (36 месяцев)"}
+									{selectedTierId === "premium" && "5 лет на ортопедию + пожизненно на титан"}
+								</strong>
+							</div>
+
+							<div style={{ padding: "8px 10px", borderRadius: "6px", backgroundColor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--pc-border, #334155)" }}>
+								<div style={{ color: "var(--pc-text-muted, #94a3b8)", fontSize: "11px" }}>Ортопедические конструкции:</div>
+								<strong style={{ color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
+									{selectedTierId === "basic" && "Металлокерамика на Co-Cr каркасе"}
+									{selectedTierId === "standard" && "Монолитный диоксид циркония Katana HTML"}
+									{selectedTierId === "premium" && "Бескаркасная керамика E.max CAD / Straumann"}
+								</strong>
+							</div>
+						</div>
+					</div>
+
 					{/* Tier Highlights */}
 					{(() => {
-						const curTier = threeTierModel.tiers.find((t) => t.tierId === selectedTierId);
+						const curTier = effectiveThreeTierModel.tiers.find((t) => t.tierId === selectedTierId);
 						if (!curTier) return null;
 						return (
 							<div
@@ -885,9 +1226,9 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 								}}
 							>
 								<strong style={{ color: "var(--pc-primary, #0d9488)", display: "block", marginBottom: "4px" }}>
-									Преимущества уровня {curTier.tierNameRu}:
+									Ключевые преимущества плана ({curTier.tierNameRu}):
 								</strong>
-								<ul style={{ margin: 0, paddingLeft: "18px", color: "var(--pc-text-main, var(--ink, #0f172a))", display: "flex", flexDirection: "column", gap: "2px" }}>
+								<ul style={{ margin: 0, paddingLeft: "18px", color: "var(--pc-text-main, var(--ink, #0f172a))", display: "flex", flexDirection: "column", gap: "3px" }}>
 									{curTier.benefits.map((b, bIdx) => (
 										<li key={bIdx}>{b}</li>
 									))}
@@ -1420,6 +1761,54 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 							</button>
 						</div>
 
+						{/* Quick Scan Switcher Bar (RVG tooth 1.6, Panoramic OPTG, TRG) */}
+						{activeScans.length > 1 && (
+							<div
+								data-testid="scan-switcher-bar"
+								style={{
+									display: "flex",
+									gap: "6px",
+									padding: "8px 16px",
+									backgroundColor: "var(--pc-bg, #0f172a)",
+									borderBottom: "1px solid var(--pc-border, #334155)",
+									overflowX: "auto",
+								}}
+							>
+								{activeScans.map((scan) => {
+									const isActive = scan.id === selectedDiagnosticScan.id;
+									return (
+										<button
+											key={scan.id}
+											type="button"
+											data-testid={`switch-scan-btn-${scan.id}`}
+											onClick={() => {
+												setSelectedDiagnosticScan(scan);
+												setScanZoom(1);
+												setScanInvert(false);
+											}}
+											style={{
+												padding: "6px 10px",
+												borderRadius: "6px",
+												border: `1px solid ${isActive ? "var(--pc-primary, #0d9488)" : "var(--pc-border, #334155)"}`,
+												backgroundColor: isActive ? "rgba(13, 148, 136, 0.2)" : "var(--pc-surface, #1e293b)",
+												color: isActive ? "var(--pc-primary, #0d9488)" : "var(--pc-text-muted, #94a3b8)",
+												fontSize: "11px",
+												fontWeight: isActive ? 700 : 500,
+												cursor: "pointer",
+												whiteSpace: "nowrap",
+												display: "flex",
+												alignItems: "center",
+												gap: "4px",
+											}}
+										>
+											<Scan size={12} />
+											<span>{scan.modalityRu || scan.titleRu}</span>
+										</button>
+									);
+								})}
+							</div>
+						)}
+
 						{/* Quick Toolbar */}
 						<div
 							style={{
@@ -1429,11 +1818,14 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 								padding: "8px 16px",
 								backgroundColor: "var(--pc-bg, #0f172a)",
 								borderBottom: "1px solid var(--pc-border, #334155)",
+								flexWrap: "wrap",
+								gap: "6px",
 							}}
 						>
-							<div style={{ display: "flex", gap: "6px" }}>
+							<div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
 								<button
 									type="button"
+									data-testid="scan-zoom-in-btn"
 									onClick={() => setScanZoom((z) => Math.min(2.5, z + 0.25))}
 									style={{
 										padding: "4px 8px",
@@ -1448,12 +1840,15 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 										alignItems: "center",
 										gap: "4px",
 									}}
-									title="Увеличить"
+									title="Увеличить +"
+									aria-label="Увеличить +"
 								>
 									<ZoomIn size={14} />
+									<span>Увеличить +</span>
 								</button>
 								<button
 									type="button"
+									data-testid="scan-zoom-out-btn"
 									onClick={() => setScanZoom((z) => Math.max(0.75, z - 0.25))}
 									style={{
 										padding: "4px 8px",
@@ -1468,18 +1863,21 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 										alignItems: "center",
 										gap: "4px",
 									}}
-									title="Уменьшить"
+									title="Уменьшить -"
+									aria-label="Уменьшить -"
 								>
 									<ZoomOut size={14} />
+									<span>Уменьшить -</span>
 								</button>
 								<button
 									type="button"
+									data-testid="scan-invert-btn"
 									onClick={() => setScanInvert((inv) => !inv)}
 									style={{
 										padding: "4px 8px",
 										minHeight: "36px",
 										borderRadius: "6px",
-										border: "1px solid var(--pc-border, #334155)",
+										border: `1px solid ${scanInvert ? "var(--pc-primary, #0d9488)" : "var(--pc-border, #334155)"}`,
 										backgroundColor: scanInvert ? "var(--pc-primary, #0d9488)" : "var(--pc-surface, #1e293b)",
 										color: scanInvert ? "#fff" : "var(--pc-text-main, var(--ink, #0f172a))",
 										fontSize: "12px",
@@ -1488,15 +1886,17 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 										alignItems: "center",
 										gap: "4px",
 									}}
-									title="Инвертировать негатив/позитив"
+									title="Инвертировать негатив"
+									aria-label="Инвертировать негатив"
 								>
 									<Contrast size={14} />
-									<span>Инверсия</span>
+									<span>Инвертировать негатив</span>
 								</button>
 							</div>
 
 							<button
 								type="button"
+								data-testid="scan-reset-btn"
 								onClick={() => {
 									setScanZoom(1);
 									setScanInvert(false);
@@ -1508,7 +1908,8 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 									border: "none",
 									backgroundColor: "transparent",
 									color: "var(--pc-text-muted, #94a3b8)",
-									fontSize: "11px",
+									fontSize: "12px",
+									fontWeight: 600,
 									cursor: "pointer",
 								}}
 							>
