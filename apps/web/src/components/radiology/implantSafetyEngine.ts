@@ -64,6 +64,11 @@ import {
 } from "./cbctMprMath";
 import { soundFeedback } from "../../services/audio/SoundFeedbackService";
 
+/**
+ * Mandate 8e & Misch CE standard: IAN nerve danger threshold.
+ * Clearance >= 1.5 mm is required for safety corridor; below 1.5 mm triggers critical warning & sound alert.
+ * Purely advisory HUD telemetry: clear clinical warning, never blocks surgeon autonomy or save operations.
+ */
 export const MANDIBULAR_NERVE_DANGER_THRESHOLD_MM = 1.5;
 
 export const MIN_BUCCAL_BONE_WALL_MM = 1.5;
