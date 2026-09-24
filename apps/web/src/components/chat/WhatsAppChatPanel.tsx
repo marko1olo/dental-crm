@@ -257,6 +257,16 @@ export function WhatsAppChatPanel({
 						: `Здравствуйте, ${effectiveName}! Напоминаем о вашей записи в стоматологию ${clinicName}. Пожалуйста, подтвердите визит ответным сообщением ДА.`,
 			},
 			{
+				id: "appt_confirmed",
+				icon: <CheckCheck size={14} className="text-emerald-400" />,
+				label: "Запись подтверждена",
+				category: "appointment",
+				buildText: () =>
+					upcomingAppointment
+						? `Здравствуйте, ${effectiveName}! Ваша запись на приём подтверждена: ${upcomingAppointment.formattedDate} в ${upcomingAppointment.formattedTime} к врачу ${upcomingAppointment.doctorName || "специалисту"}. Стоматология ${clinicName} (${clinicAddress}). Будем рады вас видеть!`
+						: `Здравствуйте, ${effectiveName}! Ваша запись в стоматологическую клинику ${clinicName} подтверждена. Ждём вас по адресу: ${clinicAddress}.`,
+			},
+			{
 				id: "hygiene_memo",
 				icon: <Sparkles size={14} className="text-cyan-400" />,
 				label: "Памятка: Профгигиена / Air Flow",
@@ -299,10 +309,10 @@ export function WhatsAppChatPanel({
 			{
 				id: "address_parking",
 				icon: <MapPin size={14} className="text-orange-400" />,
-				label: "Адрес и парковка",
+				label: "Схема проезда",
 				category: "navigation",
 				buildText: () =>
-					`Здравствуйте, ${effectiveName}! Наш адрес: ${clinicAddress}. Для пациентов клиники ${clinicName} доступна бесплатная гостевая парковка (шлагбаум открывается по звонку на ресепшн).`,
+					`Здравствуйте, ${effectiveName}! Схема проезда в клинику ${clinicName}:\n📍 Адрес: ${clinicAddress}.\n🚗 Парковка: Бесплатная гостевая парковка со стороны главного входа (шлагбаум открывается по звонку на ресепшн: ${dashboard?.clinicSettings?.phone || ""}).\n🗺 Навигатор: https://yandex.ru/maps/?text=${encodeURIComponent(`${clinicName} ${clinicAddress}`)}\nБудем рады вас видеть!`,
 			},
 		];
 	}, [dashboard?.clinicSettings, upcomingAppointment, effectiveName, financialSummary]);
@@ -315,6 +325,47 @@ export function WhatsAppChatPanel({
 		setSelectedChipTemplate(tmpl.id);
 		textareaRef.current?.focus();
 		showToast("Шаблон подготовлен к отправке", "info");
+	};
+
+	// 1-Click direct send template without double-clicking (Mandates 8e, 8k)
+	const handleDirectSendTemplate = async (tmpl?: (typeof quickTemplates)[0]) => {
+		if (!tmpl || isSending) return;
+		const text = tmpl.buildText();
+		const newMsgId = `msg-${Date.now()}-${++chatMsgSeq}`;
+		const newMsg: ChatMessage = {
+			id: newMsgId,
+			sender: "clinic",
+			senderName: "DENTE Администратор",
+			text,
+			timestamp: new Date().toISOString(),
+			status: "sent",
+		};
+
+		setMessages((prev) => [...prev, newMsg]);
+		setInputText("");
+		setSelectedChipTemplate(null);
+		setIsSending(true);
+
+		try {
+			if (effectivePatientId) {
+				await fetch("/api/communications/send", {
+					method: "POST",
+					headers: {
+						...denteAdminSecretRequestHeaders(),
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						patientId: effectivePatientId,
+						channel: "whatsapp",
+						message: text,
+						recipientPhone: effectivePhone,
+					}),
+				}).catch(() => null);
+			}
+			showToast(`Шаблон «${tmpl.label}» отправлен в WhatsApp`, "success");
+		} finally {
+			setIsSending(false);
+		}
 	};
 
 	// Send message handler (Strict Mandate 8k: Real status 'sent', zero procedural simulation)
@@ -590,20 +641,35 @@ export function WhatsAppChatPanel({
 				</div>
 				<div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
 					{quickTemplates.map((tmpl) => (
-						<button
+						<div
 							key={tmpl.id}
-							type="button"
-							onClick={() => handleApplyTemplate(tmpl)}
-							className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border inline-flex items-center gap-1.5 flex-shrink-0 active:scale-95 shadow-xs ${
+							className={`min-h-[44px] rounded-xl border text-xs font-semibold whitespace-nowrap transition-all inline-flex items-stretch flex-shrink-0 shadow-xs overflow-hidden ${
 								selectedChipTemplate === tmpl.id
 									? "bg-teal-600 text-white border-teal-400 shadow-md ring-2 ring-teal-400/30"
-									: "bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--paper-strong)] text-[var(--ink,#f8fafc)] border-[var(--line,#334155)] hover:border-teal-500/50"
+									: "bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] border-[var(--line,#334155)] hover:border-teal-500/50"
 							}`}
-							title={`Вставить: ${tmpl.label}`}
 						>
-							<span>{tmpl.icon}</span>
-							<span>{tmpl.label}</span>
-						</button>
+							<button
+								type="button"
+								onClick={() => handleApplyTemplate(tmpl)}
+								className="min-h-[44px] px-3 py-2 flex items-center gap-1.5 hover:opacity-90 active:scale-95 text-left focus:outline-none"
+								title={`Вставить: ${tmpl.label}`}
+							>
+								<span>{tmpl.icon}</span>
+								<span>{tmpl.label}</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => void handleDirectSendTemplate(tmpl)}
+								disabled={isSending}
+								className="min-h-[44px] min-w-[36px] px-2 border-l border-[var(--line,#334155)] hover:bg-teal-700/60 dark:hover:bg-teal-500/30 text-teal-400 hover:text-white transition-colors flex items-center justify-center disabled:opacity-40"
+								title={`Отправить сразу: ${tmpl.label}`}
+								aria-label={`Отправить сразу: ${tmpl.label}`}
+								data-testid={`quick-send-${tmpl.id}`}
+							>
+								<Send size={12} />
+							</button>
+						</div>
 					))}
 				</div>
 			</div>
