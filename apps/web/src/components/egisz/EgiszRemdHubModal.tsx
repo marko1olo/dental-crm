@@ -566,23 +566,82 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 		}
 	};
 
+	// Detached organization signature (.sig / .p7s) file upload handler
+	const handleUploadDetachedMoSig = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		const reader = new FileReader();
+		reader.onload = () => {
+			const buf = reader.result as ArrayBuffer;
+			const bytes = new Uint8Array(buf);
+			let binary = "";
+			for (let i = 0; i < bytes.byteLength; i++) {
+				binary += String.fromCharCode(bytes[i]!);
+			}
+			const base64 = btoa(binary);
+			const sigInfo: GostSignatureInfo = {
+				signatureBase64: base64,
+				certificateSerialNumber: `MO-SIG-${file.name.slice(0, 14)}`,
+				certificateSubject: clinic.clinicName || "Медицинская организация (открепленная подпись)",
+				certificateIssuer: "Открепленная подпись организации (.sig / .p7s)",
+				signedAt: new Date().toISOString(),
+				algorithmOid: "1.2.643.7.1.1.1.1",
+				digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+				signatureValueHex: file.name,
+			};
+			setMoSig(sigInfo);
+			showToast(`Открепленная УКЭП организации загружена: ${file.name}`, "success");
+		};
+		reader.readAsArrayBuffer(file);
+	};
+
 	// Sign with MO Organization UKEP handler
 	const handleSignMoDocument = async () => {
+		if (!selectedCert && availableCerts.length === 0) {
+			showToast(
+				"Плагин КриптоПро CSP не установлен / Сертификат не выбран. Выберите сертификат или загрузите открепленный файл .sig / .p7s",
+				"error",
+			);
+			return;
+		}
+
 		const certToUse = selectedCert || availableCerts[0];
-		const newMoSig: GostSignatureInfo = {
-			signatureBase64: "U0VNRF8xMDVfTU9fU0lHTkFUVVJFCg==",
-			certificateSerialNumber: certToUse ? certToUse.thumbprint.slice(0, 16).toUpperCase() : "00B17F9A11577461",
-			certificateSubject: clinic.clinicName,
-			certificateIssuer: "CN=Федеральное Казначейство, C=RU",
-			validFrom: new Date().toISOString(),
-			validTo: new Date(Date.now() + 365 * 86400000).toISOString(),
-			signedAt: new Date().toISOString(),
-			algorithmOid: "1.2.643.7.1.1.1.1",
-			digestAlgorithmOid: "1.2.643.7.1.1.2.2",
-			signatureValueHex: "00B17F9A11577461",
-		};
-		setMoSig(newMoSig);
-		showToast(`Документ успешно подписан УКЭП организации (${newMoSig.certificateSerialNumber})`, "success");
+		if (!certToUse) {
+			showToast("Сертификат организации для подписания не выбран", "error");
+			return;
+		}
+
+		setIsSigning(true);
+		try {
+			const xmlToSign = canonicalizeCdaXml(generatedXml);
+			const { signatureBase64 } = await signatureService.signData(
+				certToUse.thumbprint,
+				xmlToSign,
+				undefined,
+				certToUse.deviceId,
+			);
+
+			const newMoSig: GostSignatureInfo = {
+				signatureBase64,
+				certificateSerialNumber: certToUse.thumbprint.slice(0, 16).toUpperCase(),
+				certificateSubject: clinic.clinicName || certToUse.name,
+				certificateIssuer: certToUse.issuer,
+				validFrom: certToUse.validFrom,
+				validTo: certToUse.validTo,
+				signedAt: new Date().toISOString(),
+				algorithmOid: "1.2.643.7.1.1.1.1",
+				digestAlgorithmOid: "1.2.643.7.1.1.2.2",
+				signatureValueHex: certToUse.thumbprint.toUpperCase(),
+			};
+
+			setMoSig(newMoSig);
+			showToast(`Документ успешно подписан УКЭП организации (${newMoSig.certificateSerialNumber})`, "success");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : String(err);
+			showToast(`Ошибка при наложении подписи организации: ${msg}`, "error");
+		} finally {
+			setIsSigning(false);
+		}
 	};
 
 	// 1-Click ZIP Export for single document
@@ -2081,12 +2140,57 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 												}}
 											>
 												<FileCode2 size={14} />
-												Загрузить .sig / .p7s
+												Загрузить .sig / .p7s (врач)
 												<input
 													type="file"
 													accept=".sig,.p7s,.sgn,.bin"
 													style={{ display: "none" }}
 													onChange={handleUploadDetachedSig}
+												/>
+											</label>
+											<button
+												type="button"
+												onClick={handleSignMoDocument}
+												className="egisz-btn sm"
+												style={{
+													display: "flex",
+													alignItems: "center",
+													gap: "0.4rem",
+													padding: "0.55rem 0.9rem",
+													fontSize: "0.8125rem",
+													fontWeight: 600,
+													borderRadius: "6px",
+													border: "1px solid var(--line)",
+													background: "var(--paper)",
+													color: "var(--ink)",
+													cursor: isSigning ? "wait" : "pointer",
+												}}
+											>
+												<Building2 size={14} />
+												{isSigning ? "Подписание МО..." : "Подписать УКЭП МО"}
+											</button>
+											<label
+												style={{
+													display: "flex",
+													alignItems: "center",
+													gap: "0.4rem",
+													padding: "0.55rem 0.9rem",
+													fontSize: "0.8125rem",
+													fontWeight: 600,
+													borderRadius: "6px",
+													border: "1px solid var(--line)",
+													background: "var(--paper)",
+													color: "var(--ink)",
+													cursor: "pointer",
+												}}
+											>
+												<Building2 size={14} />
+												Загрузить .sig (МО)
+												<input
+													type="file"
+													accept=".sig,.p7s,.sgn,.bin"
+													style={{ display: "none" }}
+													onChange={handleUploadDetachedMoSig}
 												/>
 											</label>
 										</div>
@@ -2095,37 +2199,49 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 							</div>
 
 							{/* Stamp Visualization */}
-							{doctorSig && (
-								<div className="gost-stamps-wrapper" style={{ border: "1px solid var(--line)", borderRadius: "8px", padding: "1rem", background: "var(--paper)" }}>
-									<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink)", marginBottom: "0.75rem" }}>
+							{(doctorSig || moSig) && (
+								<div className="gost-stamps-wrapper" style={{ border: "1px solid var(--line)", borderRadius: "8px", padding: "1rem", background: "var(--paper)", display: "flex", flexDirection: "column", gap: "1rem" }}>
+									<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink)" }}>
 										Визуальный штамп электронной подписи (ГОСТ Р 7.0.97-2016)
 									</div>
-									<div className="gost-stamp-blue" style={{ border: "2px solid #0056b3", padding: "0.875rem", borderRadius: "6px", maxWidth: "420px", background: "rgba(0, 86, 179, 0.04)" }}>
-										<div style={{ fontWeight: 700, color: "#0056b3", fontSize: "0.8125rem", textTransform: "uppercase", marginBottom: "0.25rem" }}>
-											ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ
-										</div>
-										<div style={{ fontSize: "0.75rem", color: "var(--ink)", marginTop: "0.2rem" }}>
-											Сертификат: <b>{doctorSig.certificateSerialNumber}</b>
-										</div>
-										<div style={{ fontSize: "0.75rem", color: "var(--ink)" }}>
-											Владелец: <b>{doctor.doctorFullName}</b>
-										</div>
-										<div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.25rem" }}>
-											ГОСТ Р 34.10-2012
-										</div>
+									<div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+										{doctorSig && (
+											<div style={{ flex: "1 1 320px", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+												<div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--muted)" }}>
+													Подпись лечащего врача (УКЭП):
+												</div>
+												<div
+													dangerouslySetInnerHTML={{
+														__html: generateGostSignatureStampHtml({
+															signerName: doctor.doctorFullName,
+															certificateNumber: doctorSig.certificateSerialNumber,
+															validFrom: doctorSig.validFrom || new Date().toISOString(),
+															validTo: doctorSig.validTo || new Date().toISOString(),
+															orgName: clinic.clinicName,
+														}),
+													}}
+												/>
+											</div>
+										)}
+										{moSig && (
+											<div style={{ flex: "1 1 320px", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+												<div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--muted)" }}>
+													Подпись медицинской организации (УКЭП МО):
+												</div>
+												<div
+													dangerouslySetInnerHTML={{
+														__html: generateGostSignatureStampHtml({
+															signerName: clinic.clinicName,
+															certificateNumber: moSig.certificateSerialNumber,
+															validFrom: moSig.validFrom || new Date().toISOString(),
+															validTo: moSig.validTo || new Date().toISOString(),
+															orgName: clinic.clinicName,
+														}),
+													}}
+												/>
+											</div>
+										)}
 									</div>
-									<div
-										style={{ marginTop: "1rem" }}
-										dangerouslySetInnerHTML={{
-											__html: generateGostSignatureStampHtml({
-												signerName: doctor.doctorFullName,
-												certificateNumber: doctorSig.certificateSerialNumber,
-												validFrom: doctorSig.validFrom || new Date().toISOString(),
-												validTo: doctorSig.validTo || new Date().toISOString(),
-												orgName: clinic.clinicName,
-											}),
-										}}
-									/>
 								</div>
 							)}
 						</div>

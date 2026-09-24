@@ -46,10 +46,13 @@ export function parseRublesToKopecks(rublesInput: string | number): number {
 
 /**
  * Canonicalizes XML string to deterministic UTF-8 C14N representation.
+ * Strictly adheres to Russian Ministry of Health & FZ-63 standards:
+ * rejects forbidden enveloped XML-DSig transforms (disallowEnvelopedSignature: true),
+ * enforcing detached CAdES-BES PKCS#7 (.sig / .p7s) signatures.
  */
 export function canonicalizeCdaXml(xml: string): string {
 	if (!xml || typeof xml !== "string") return "";
-	return sharedCanonicalizeCdaXml(xml, { disallowEnvelopedSignature: false });
+	return sharedCanonicalizeCdaXml(xml, { disallowEnvelopedSignature: true });
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -697,7 +700,6 @@ export function generateGostXmlSignatureBlock(sig: GostSignatureInfo, documentRe
 		<ds:SignatureMethod Algorithm="urn:ietf:params:xml:ns:cpxmlsec:algorithms:gostr34102012-256"/>
 		<ds:Reference URI="${escapeXml(documentRef)}">
 			<ds:Transforms>
-				<ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
 				<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
 			</ds:Transforms>
 			<ds:DigestMethod Algorithm="urn:ietf:params:xml:ns:cpxmlsec:algorithms:gostr34112012-256"/>

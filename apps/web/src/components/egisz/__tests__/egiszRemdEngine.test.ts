@@ -130,7 +130,7 @@ describe("3. HL7 CDA R2 Dental SEMD XML Generation (Вид 105 / 302 / 303 / 043
 		assert.ok(xml.includes('<realmCode code="RU"/>'));
 		assert.ok(xml.includes('<typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>'));
 		assert.ok(xml.includes(`templateId root="${EGISZ_DENTAL_SEMD_TYPES["105"].templateRoot}"`));
-		assert.ok(xml.includes('code code="105" codeSystem="1.2.643.5.1.13.13.11.1005"'));
+		assert.ok(xml.includes('code code="105" codeSystem="1.2.643.5.1.13.13.11.1522"'));
 
 		// Patient info
 		assert.ok(xml.includes('<family>Соколова</family>'));
@@ -215,6 +215,13 @@ describe("3. HL7 CDA R2 Dental SEMD XML Generation (Вид 105 / 302 / 303 / 043
 		assert.equal(DENTAL_SURFACES.length, 6);
 		assert.ok(DENTAL_TOOTH_STATUS_DICTIONARY.Caries?.egiszCode === "1");
 		assert.ok(DENTAL_TOOTH_STATUS_DICTIONARY.Pulpitis?.egiszCode === "2");
+	});
+
+	it("3.6 Deterministic C14N strictly rejects forbidden enveloped XML-DSig transforms per Minzdrav 63-FZ standard", () => {
+		const xmlWithEnvelopedSig = '<ClinicalDocument xmlns="urn:hl7-org:v3"><realmCode code="RU"/><ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:SignedInfo><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></ds:Transforms></ds:SignedInfo></ds:Signature></ClinicalDocument>';
+		assert.throws(() => {
+			canonicalizeCdaXml(xmlWithEnvelopedSig);
+		}, /Enveloped XML-DSig.*запрещено/i);
 	});
 });
 
@@ -347,13 +354,14 @@ describe("7. UKEP Electronic Signatures & Visual Stamps (63-ФЗ / ГОСТ Р 7
 		assert.ok(moSig.certificateSerialNumber.startsWith("00B17F9A"));
 	});
 
-	it("7.2 Generates XMLDSig signature block", () => {
+	it("7.2 Generates XMLDSig signature block without forbidden enveloped transform", () => {
 		const docSig = createMockGostSignature("Иванов С.П.", "123-456-789 64", "Клиника");
 		const xmlSig = generateGostXmlSignatureBlock(docSig, "DOC-123");
 
 		assert.ok(xmlSig.includes('<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#"'));
 		assert.ok(xmlSig.includes('<ds:SignatureMethod Algorithm="urn:ietf:params:xml:ns:cpxmlsec:algorithms:gostr34102012-256"/>'));
 		assert.ok(xmlSig.includes(`<ds:SignatureValue>${escapeXml(docSig.signatureBase64)}</ds:SignatureValue>`));
+		assert.ok(!xmlSig.includes("enveloped-signature"));
 	});
 
 	it("7.3 Generates GOST R 7.0.97-2016 visual signature stamp (HTML & SVG)", () => {
