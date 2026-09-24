@@ -265,6 +265,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 					isOpen={isCabinetModalOpen}
 					onClose={() => setIsCabinetModalOpen(false)}
 					initialData={patientData}
+					token={portalToken || undefined}
 				/>
 			)}
 		</div>

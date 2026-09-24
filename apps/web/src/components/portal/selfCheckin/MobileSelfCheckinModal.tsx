@@ -26,6 +26,7 @@ import "./selfCheckin.css";
 export interface MobileSelfCheckinModalProps {
 	isOpen: boolean;
 	onClose: () => void;
+	patientId?: string;
 	initialPhone?: string;
 	patientName?: string;
 	clinicName?: string;
@@ -96,6 +97,7 @@ const DEFAULT_CONSENTS: StatutoryConsentItem[] = [
 export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 	isOpen,
 	onClose,
+	patientId = "",
 	initialPhone = "+7 (913) 770-41-99",
 	patientName = "Смирнова Анна Викторовна",
 	clinicName = "Стоматологическая клиника ДЕНТЕ",
@@ -164,7 +166,6 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		setAuthError(null);
 		setIsSubmitting(false);
 		setIsOtpSent(true);
-		setOtpCode("4290"); // Developer/Test OTP fallback
 	};
 
 	// OTP Verify
@@ -255,7 +256,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		setIsSubmitting(false);
 		setStep("completed");
 		onCheckinSuccess?.({
-			patientId: "patient-selfcheckin-001",
+			patientId: patientId || "",
 			signedConsents: consents.filter((c) => c.isSigned).map((c) => c.id),
 			somaticProfile: evaluatedNorm,
 		});
@@ -282,7 +283,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		setIsSubmitting(false);
 		setStep("completed");
 		onCheckinSuccess?.({
-			patientId: "patient-selfcheckin-001",
+			patientId: patientId || "",
 			signedConsents: consents.filter((c) => c.isSigned).map((c) => c.id),
 			somaticProfile: riskEvaluation,
 		});
@@ -299,7 +300,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		setConsents(signed);
 		setStep("completed");
 		onCheckinSuccess?.({
-			patientId: "patient-selfcheckin-001",
+			patientId: patientId || "",
 			signedConsents: signed.map((c) => c.id),
 			somaticProfile: riskEvaluation,
 		});
