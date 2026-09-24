@@ -90,6 +90,7 @@ export function metricToneClass(tone: MetricTone): string {
  * после запятой и русские сокращения. 1 400 ₽ становится «1,4 тыс. ₽».
  */
 export function formatRub(value: number): string {
+	if (typeof value !== "number" || !Number.isFinite(value)) return UNKNOWN_METRIC_TEXT;
 	const sign = value < 0 ? "−" : "";
 	const abs = Math.abs(value);
 	const short = (divided: number) =>

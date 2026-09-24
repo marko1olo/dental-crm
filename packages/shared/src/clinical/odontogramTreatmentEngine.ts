@@ -56,8 +56,8 @@ export const DECIDUOUS_TEETH_QUADRANT_8 = [85, 84, 83, 82, 81] as const;
 export const DECIDUOUS_TEETH = [
 	...DECIDUOUS_TEETH_QUADRANT_5,
 	...DECIDUOUS_TEETH_QUADRANT_6,
-	...DECIDUOUS_TEETH_QUADRANT_7,
 	...DECIDUOUS_TEETH_QUADRANT_8,
+	...DECIDUOUS_TEETH_QUADRANT_7,
 ] as const;
 
 /** Total 52 teeth tracked across permanent and deciduous dentition */

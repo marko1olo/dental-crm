@@ -8,6 +8,7 @@ import {
 	PEDIATRIC_SURFACE_PRESETS,
 	QUICK_PEDIATRIC_TEETH,
 	VisitPediatricProtocolWidget,
+	isValidFdiTooth,
 } from "../VisitPediatricProtocolWidget";
 import { FranklBehaviorBadge } from "../FranklBehaviorBadge";
 
@@ -325,5 +326,88 @@ describe("VisitPediatricProtocolWidget (Chairside 30-Second Pediatric Dental Wor
 		assert.ok(html.includes("frankl-toolbar-btn-2"), "Toolbar has button 2");
 		assert.ok(html.includes("frankl-toolbar-btn-3"), "Toolbar has button 3");
 		assert.ok(html.includes("frankl-toolbar-btn-4"), "Toolbar has button 4");
+	});
+
+	it("verifies isValidFdiTooth rejects invalid FDI tooth numbers (Defect 5)", () => {
+		// Valid permanent: 11..18, 21..28, 31..38, 41..48
+		assert.strictEqual(isValidFdiTooth(11), true, "11 is valid permanent tooth");
+		assert.strictEqual(isValidFdiTooth(18), true, "18 is valid permanent tooth");
+		assert.strictEqual(isValidFdiTooth(46), true, "46 is valid permanent tooth");
+
+		// Valid primary: 51..55, 61..65, 71..75, 81..85
+		assert.strictEqual(isValidFdiTooth(51), true, "51 is valid primary tooth");
+		assert.strictEqual(isValidFdiTooth(55), true, "55 is valid primary tooth");
+		assert.strictEqual(isValidFdiTooth(74), true, "74 is valid primary tooth");
+		assert.strictEqual(isValidFdiTooth(85), true, "85 is valid primary tooth");
+
+		// Invalid deciduous numbers: 56..60, 66..70, 76..80
+		assert.strictEqual(isValidFdiTooth(56), false, "56 is invalid (primary quadrant 5 has max 5 teeth)");
+		assert.strictEqual(isValidFdiTooth(58), false, "58 is invalid");
+		assert.strictEqual(isValidFdiTooth(60), false, "60 is invalid");
+		assert.strictEqual(isValidFdiTooth(66), false, "66 is invalid");
+		assert.strictEqual(isValidFdiTooth(70), false, "70 is invalid");
+		assert.strictEqual(isValidFdiTooth(76), false, "76 is invalid");
+		assert.strictEqual(isValidFdiTooth(80), false, "80 is invalid");
+
+		// Invalid permanent numbers
+		assert.strictEqual(isValidFdiTooth(19), false, "19 is invalid");
+		assert.strictEqual(isValidFdiTooth(20), false, "20 is invalid");
+		assert.strictEqual(isValidFdiTooth(99), false, "99 is invalid");
+		assert.strictEqual(isValidFdiTooth(0), false, "0 is invalid");
+	});
+
+	it("sanitizes invalid tooth numbers to default 54 without throwing (Defect 5)", () => {
+		const html = renderToStaticMarkup(
+			createElement(VisitPediatricProtocolWidget, {
+				activeTooth: 58 as any, // Invalid tooth number
+				initialFranklRating: 3,
+			}),
+		);
+
+		// Should safely fallback to default tooth 54
+		assert.ok(
+			html.includes("Зуб 54"),
+			"Sanitizes invalid tooth 58 to default primary molar 54",
+		);
+		assert.ok(
+			html.includes("Верхний правый первый моляр"),
+			"Displays anatomical name for fallback tooth 54",
+		);
+	});
+
+	it("auto-substitutes legal representative and somatic norm into Form 043/u preview", () => {
+		const html = renderToStaticMarkup(
+			createElement(VisitPediatricProtocolWidget, {
+				activeTooth: 54,
+				initialFranklRating: 3,
+				representativeFullName: "Иванова Анна Сергеевна",
+				representativePhone: "+7 (999) 123-45-67",
+				representativeRole: "Мать",
+			}),
+		);
+
+		// Contains legal representative section
+		assert.ok(
+			html.includes("Законный представитель"),
+			"Form 043/u contains legal representative section",
+		);
+		assert.ok(
+			html.includes("Иванова Анна Сергеевна"),
+			"Auto-substitutes mother's name without forcing extra fields",
+		);
+		assert.ok(
+			html.includes("ст. 64 СК РФ"),
+			"Contains Art. 64 Family Code RF legal representative reference",
+		);
+
+		// Contains pediatric teeth chart and somatic norm
+		assert.ok(
+			html.includes("pediatric-teeth-chart"),
+			"Renders pediatric teeth chart container",
+		);
+		assert.ok(
+			html.includes("pediatric-somatic-legal-rep"),
+			"Renders pediatric somatic and legal rep container",
+		);
 	});
 });

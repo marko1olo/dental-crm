@@ -30,6 +30,32 @@ import { useVisitStore } from "../../store/visitStore";
 import { showToast } from "../GlobalToast";
 import type { FranklRating } from "../odontogram/pediatricDentitionEngine";
 import { PediatricParentMemoModal } from "./PediatricParentMemoModal";
+import {
+	PediatricTeethChart,
+	type PediatricDentitionMode,
+	type ToothClinicalFinding,
+} from "./PediatricTeethChart";
+import {
+	PediatricSomaticAndLegalRep,
+	DEFAULT_PEDIATRIC_SOMATIC_NORM,
+	DEFAULT_LEGAL_REPRESENTATIVE,
+	type PediatricSomaticStatus,
+	type LegalRepresentativeData,
+} from "./PediatricSomaticAndLegalRep";
+
+/**
+ * Валидация номера зуба по стандарту FDI (ISO 3950):
+ * - Постоянные зубы: квадранты 1..4, позиции 1..8
+ * - Временные (молочные) зубы: квадранты 5..8, позиции 1..5
+ */
+export const isValidFdiTooth = (num: number): boolean => {
+	if (!Number.isInteger(num)) return false;
+	const q = Math.floor(num / 10);
+	const p = num % 10;
+	if (q >= 1 && q <= 4) return p >= 1 && p <= 8;
+	if (q >= 5 && q <= 8) return p >= 1 && p <= 5;
+	return false;
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1-CLICK PHYSIOLOGICAL NORM (MANDATE 8e: DECIDUOUS DENTITION NORM)
@@ -415,6 +441,12 @@ export interface VisitPediatricProtocolWidgetProps {
 	readonly doctorName?: string | undefined;
 	/** Название клиники */
 	readonly clinicName?: string | undefined;
+	/** Данные законного представителя (ФИО) для автоподстановки в 043/у */
+	readonly representativeFullName?: string | undefined;
+	/** Телефон законного представителя */
+	readonly representativePhone?: string | undefined;
+	/** Роль представителя ("Мать" | "Отец" | "Опекун" ...) */
+	readonly representativeRole?: string | undefined;
 	/** Дополнительный CSS-класс контейнера */
 	readonly className?: string;
 }
@@ -434,11 +466,14 @@ export const VisitPediatricProtocolWidget: React.FC<
 	patientAgeYears = 6,
 	doctorName = "Детский врач-стоматолог",
 	clinicName = "Детское отделение DENTE",
+	representativeFullName,
+	representativePhone,
+	representativeRole,
 	className = "",
 }) => {
-	// 1. Санитизация активного зуба (по умолчанию 54)
+	// 1. Санитизация активного зуба (по умолчанию 54) с проверкой квадрантов FDI
 	const effectiveTooth = useMemo<number>(() => {
-		if (activeTooth && activeTooth >= 11 && activeTooth <= 85)
+		if (activeTooth && isValidFdiTooth(activeTooth))
 			return activeTooth;
 		return 54;
 	}, [activeTooth]);
@@ -453,6 +488,33 @@ export const VisitPediatricProtocolWidget: React.FC<
 	useEffect(() => {
 		setCurrentTooth(effectiveTooth);
 	}, [effectiveTooth]);
+
+	// 2.1 Режим прикуса: молочный (20 зубов) или сменный (с постоянными молярами 16, 26, 36, 46)
+	const [dentitionMode, setDentitionMode] = useState<PediatricDentitionMode>(
+		patientAgeYears >= 6 ? "mixed" : "primary",
+	);
+
+	// 2.2 Состояния зубов на карте
+	const [toothFindings, setToothFindings] = useState<
+		Record<number, ToothClinicalFinding>
+	>({});
+
+	// 2.3 Соматический статус (1-клик физиологическая норма Мандат 8e)
+	const [somaticStatus, setSomaticStatus] = useState<PediatricSomaticStatus>(
+		DEFAULT_PEDIATRIC_SOMATIC_NORM,
+	);
+	const [somaticText, setSomaticText] = useState<string>("");
+
+	// 2.4 Законный представитель (автоподстановка без принуждения к лишним полям)
+	const [representative, setRepresentative] = useState<LegalRepresentativeData>(
+		() => ({
+			...DEFAULT_LEGAL_REPRESENTATIVE,
+			fullName: representativeFullName || "",
+			phone: representativePhone || patientPhone || "",
+			...(representativeRole ? { role: representativeRole as any } : {}),
+		}),
+	);
+	const [representativeText, setRepresentativeText] = useState<string>("");
 
 	// 3. Активный пресет клинического протокола
 	const [activePresetId, setActivePresetId] =
@@ -636,29 +698,43 @@ export const VisitPediatricProtocolWidget: React.FC<
 			}
 		}
 
+		const repLine = representativeText
+			? representativeText
+			: `Законный представитель несовершеннолетнего: ${representative.role} — ${representative.fullName || "Родитель (присутствует на приёме)"}${representative.phone ? `, тел: ${representative.phone}` : ""}, ${representative.statutoryDocument}${representative.consentSigned ? ", ИДС подписано" : ""}.`;
+
+		const somaticLine = somaticText
+			? somaticText
+			: `Соматический статус ребенка: физиологическая норма (соматически здоров).\n   • Физическое развитие: ${somaticStatus.physicalDevelopmentRu}.\n   • Аллергологический анамнез: ${somaticStatus.allergiesRu}.\n   • Хронические заболевания: ${somaticStatus.chronicDiseasesRu}.`;
+
 		const fullProtocolText043 = [
 			"ПРОТОКОЛ ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ПРИЁМА (ФОРМА 043/у)",
 			"────────────────────────────────────────────────────────────",
-			`1. Психоэмоциональный статус (Шкала Франкла): Рейтинг ${activeFrankl.rating} (${activeFrankl.symbol}) — ${activeFrankl.titleRu}`,
+			`1. Законный представитель:`,
+			`   ${repLine}`,
+			"",
+			`2. Психоэмоциональный статус (Шкала Франкла): Рейтинг ${activeFrankl.rating} (${activeFrankl.symbol}) — ${activeFrankl.titleRu}`,
 			`   Поведение: ${activeFrankl.descriptionRu}`,
 			`   Тактика адаптации: ${activeFrankl.clinicalTacticRu}`,
 			"",
-			"2. Первичный осмотр и ортодонтический скрининг:",
+			`3. Соматический статус ребенка:`,
+			`   ${somaticLine}`,
+			"",
+			"4. Первичный осмотр и ортодонтический скрининг:",
 			`   • Уздечки губ и языка: ${orthoFrenulumNormal ? "норма (анатомически правильное прикрепление)" : "патология прикрепления (требуется консультация ортодонта/хирурга)"}`,
 			`   • Носовое дыхание: ${orthoNasalBreathing ? "сохранено (свободное через нос)" : "нарушено (ротовое дыхание)"}`,
 			`   • Вредные привычки: ${orthoNoHarmfulHabits ? "отсутствуют" : "выявлены (сосание пальца/губы/предметов, инфантильное глотание)"}`,
 			"",
-			`3. Объект вмешательства: Зуб #${currentTooth} (${PEDIATRIC_TEETH_NAMES[currentTooth] ?? `Зуб ${currentTooth}`})`,
+			`5. Объект вмешательства: Зуб #${currentTooth} (${PEDIATRIC_TEETH_NAMES[currentTooth] ?? `Зуб ${currentTooth}`})`,
 			`   Диагноз (МКБ-10): ${diagnosisIcd10} — ${diagnosisNameRu}`,
 			`   Услуги (Номенклатура 804н): ${services.map((s) => `${s.code} ${s.nameRu}`).join("; ")}`,
 			"",
-			"4. Status localis:",
+			"6. Status localis:",
 			`   ${statusLocalis}`,
 			"",
-			"5. Протокол вмешательства и манипуляции:",
+			"7. Протокол вмешательства и манипуляции:",
 			`   ${treatmentDescription}`,
 			"",
-			"6. Назначения и рекомендации родителям:",
+			"8. Назначения и рекомендации родителям:",
 			`   ${recommendations}`,
 			"────────────────────────────────────────────────────────────",
 			"Документ оформлен в соответствии с Приказами МЗ РФ №804н и №834н.",
@@ -684,6 +760,10 @@ export const VisitPediatricProtocolWidget: React.FC<
 		orthoFrenulumNormal,
 		orthoNasalBreathing,
 		orthoNoHarmfulHabits,
+		representative,
+		representativeText,
+		somaticStatus,
+		somaticText,
 	]);
 
 	// 10. Внесение в Форму 043/у (Двойной диспатч: useVisitStore + CustomEvent dente-apply-soap-protocol)
@@ -1082,6 +1162,30 @@ export const VisitPediatricProtocolWidget: React.FC<
 			</div>
 
 			{/* ═════════════════════════════════════════════════════════════════════ */}
+			{/* ДЕТСКАЯ КАРТА ЗУБОВ: МОЛОЧНЫЙ / СМЕННЫЙ ПРИКУС (FDI 51-55, 61-65, 71-75, 81-85 & 16, 26, 36, 46) */}
+			{/* ═════════════════════════════════════════════════════════════════════ */}
+			<div className="mb-4">
+				<PediatricTeethChart
+					activeTooth={currentTooth}
+					onSelectTooth={(t) => {
+						setCurrentTooth(t);
+						showToast(
+							`Выбран зуб #${t} (${PEDIATRIC_TEETH_NAMES[t] ?? t})`,
+							"info",
+							1500,
+						);
+					}}
+					mode={dentitionMode}
+					onModeChange={setDentitionMode}
+					toothFindings={toothFindings}
+					onSetAllHealthy={() => {
+						setToothFindings({});
+						showToast("Все молочные зубы отмечены как интактные", "success", 2000);
+					}}
+				/>
+			</div>
+
+			{/* ═════════════════════════════════════════════════════════════════════ */}
 			{/* 6 КАНОНИЧЕСКИХ 1-КЛИК ПРОТОКОЛОВ (ФОРМА 043/у + НОМЕНКЛАТУРА 804н) */}
 			{/* ═════════════════════════════════════════════════════════════════════ */}
 			<div className="mb-4">
@@ -1211,6 +1315,25 @@ export const VisitPediatricProtocolWidget: React.FC<
 						)}
 					</button>
 				</div>
+			</div>
+
+			{/* ═════════════════════════════════════════════════════════════════════ */}
+			{/* СОМАТИЧЕСКАЯ НОРМА И ЗАКОННЫЙ ПРЕДСТАВИТЕЛЬ (1-КЛИК, БЕЗ ПРИНУЖДЕНИЯ) */}
+			{/* ═════════════════════════════════════════════════════════════════════ */}
+			<div className="mb-4">
+				<PediatricSomaticAndLegalRep
+					defaultRepresentativeFullName={representativeFullName}
+					defaultRepresentativePhone={representativePhone || patientPhone}
+					defaultRepresentativeRole={representativeRole}
+					onSomaticChange={(status, text) => {
+						setSomaticStatus(status);
+						setSomaticText(text);
+					}}
+					onRepresentativeChange={(rep, text) => {
+						setRepresentative(rep);
+						setRepresentativeText(text);
+					}}
+				/>
 			</div>
 
 			{/* ═════════════════════════════════════════════════════════════════════ */}

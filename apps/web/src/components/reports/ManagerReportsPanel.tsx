@@ -44,6 +44,21 @@ import { type ClinicMode, hasCapability } from "../../lib/clinicCapabilities";
 import { formatRub as shortRub } from "../../pages/analyticsDoctorMetrics.js";
 import { DoctorPayoutDashboard } from "../../pages/DoctorPayoutDashboard.js";
 import { logger } from "../../utils/logger";
+import {
+	safeDivide,
+	safePercentWidth,
+	generateManagerReportsCsv,
+	triggerCsvDownload,
+} from "./reportsCsvExport";
+
+export type ReportSectionTab =
+	| "all"
+	| "revenue"
+	| "doctors"
+	| "chairs"
+	| "services"
+	| "schedule"
+	| "receivables";
 
 type RevenuePoint = {
 	bucket: string;
@@ -195,12 +210,14 @@ const weekdayNames = ["", "пн", "вт", "ср", "чт", "пт", "сб", "вс"
  * деньги на экране аналитики выглядели иначе — два формата в одном продукте.
  */
 
-function formatPercent(value: number | null): string {
-	// Прочерк, а не «0 %»: отсутствие данных и ноль — разные утверждения.
-	return value === null ? "—" : `${Math.round(value * 100)} %`;
+function formatPercent(value: number | null | undefined): string {
+	return value === null || value === undefined || !Number.isFinite(value)
+		? "—"
+		: `${Math.round(value * 100)} %`;
 }
 
 function formatHours(minutes: number): string {
+	if (!Number.isFinite(minutes) || minutes < 0) return "0 ч";
 	const hours = Math.floor(minutes / 60);
 	const rest = Math.round(minutes % 60);
 	return rest > 0 ? `${hours} ч ${rest} мин` : `${hours} ч`;
@@ -535,6 +552,7 @@ export function ManagerReportsPanel({
 		useState<ReportSlice<ReceivablesDetail>>(pendingSlice);
 	const [scheduleLoad, setScheduleLoad] =
 		useState<ReportSlice<ScheduleLoadReport>>(pendingSlice);
+	const [activeSection, setActiveSection] = useState<ReportSectionTab>("all");
 
 	const load = useCallback(async () => {
 		setLoading(true);
@@ -682,6 +700,17 @@ export function ManagerReportsPanel({
 		};
 	}, [scheduleLoad.data]);
 
+	const handleExportCsv = useCallback(() => {
+		const csv = generateManagerReportsCsv({
+			period: { from, to },
+			summary,
+			services: services.data,
+			receivables: debtors.data,
+			scheduleLoad: scheduleLoad.data,
+		});
+		triggerCsvDownload(csv, `dente_report_${from}_${to}.csv`);
+	}, [from, to, summary, services.data, debtors.data, scheduleLoad.data]);
+
 	return (
 		<section className="panel ops-panel" data-testid="manager-reports-panel">
 			<div className="panel-heading">
@@ -729,6 +758,40 @@ export function ManagerReportsPanel({
 				>
 					{loading ? "Считаю…" : "Обновить"}
 				</button>
+				<button
+					className="secondary-button"
+					type="button"
+					onClick={handleExportCsv}
+					title="Экспорт всех отчётов за выбранный период в файл CSV (RFC 4180 с UTF-8 BOM для Excel)"
+					data-testid="reports-export-csv-btn"
+				>
+					Экспорт в CSV
+				</button>
+			</div>
+
+			{/* Вкладки разделов для предотвращения визуальной перегрузки (1440x900 viewport) */}
+			<div className="ops-section-tabs mb-3 flex flex-wrap gap-1.5" role="tablist" aria-label="Разделы отчёта">
+				{[
+					{ id: "all", label: "Все разделы" },
+					{ id: "revenue", label: "Выручка" },
+					{ id: "doctors", label: "Врачи" },
+					{ id: "chairs", label: "Кресла" },
+					{ id: "services", label: "Услуги" },
+					{ id: "schedule", label: "Загрузка" },
+					{ id: "receivables", label: "Должники" },
+				].map((tab) => (
+					<button
+						key={tab.id}
+						type="button"
+						role="tab"
+						aria-selected={activeSection === tab.id}
+						className={`secondary-button ${activeSection === tab.id ? "ops-tab-active font-bold" : ""}`}
+						onClick={() => setActiveSection(tab.id as ReportSectionTab)}
+						data-testid={`reports-tab-${tab.id}`}
+					>
+						{tab.label}
+					</button>
+				))}
 			</div>
 
 			{error ? (
@@ -853,7 +916,7 @@ export function ManagerReportsPanel({
 											<span
 												className="ops-bar__fill"
 												style={{
-													width: `${maxRevenue > 0 ? Math.max(2, Math.round(((point?.revenueRub ?? 0) / maxRevenue) * 100)) : 2}%`,
+													width: `${safePercentWidth(point?.revenueRub, maxRevenue, 2)}%`,
 												}}
 											/>
 										</span>
@@ -1074,10 +1137,11 @@ export function ManagerReportsPanel({
 											.filter(([, count]) => count > 0)
 											.sort((a, b) => b[1] - a[1])
 											.map(([status, count]) => {
-												const share =
-													(summary?.appointments?.total ?? 0) > 0
-														? count / (summary?.appointments?.total ?? 1)
-														: null;
+												const share = safeDivide(
+													count,
+													summary?.appointments?.total,
+													null,
+												);
 												return (
 													<tr key={status}>
 														<td className="ops-strong" data-label="Статус">
@@ -1280,7 +1344,7 @@ export function ManagerReportsPanel({
 												<span
 													className="ops-bar__fill"
 													style={{
-														width: `${Math.max(2, Math.round((amount / (summary?.receivables?.totalDebtRub || 1)) * 100))}%`,
+														width: `${safePercentWidth(amount, summary?.receivables?.totalDebtRub, 2)}%`,
 													}}
 												/>
 											</span>
@@ -1478,7 +1542,7 @@ export function ManagerReportsPanel({
 											<span
 												className="ops-bar__fill"
 												style={{
-													width: `${(row?.minutes ?? 0) > 0 && (scheduleMargins?.peakWeekdayMinutes ?? 0) > 0 ? Math.max(2, Math.round(((row?.minutes ?? 0) / scheduleMargins.peakWeekdayMinutes) * 100)) : 0}%`,
+													width: `${safePercentWidth(row?.minutes, scheduleMargins?.peakWeekdayMinutes, 2)}%`,
 												}}
 											/>
 										</span>
@@ -1499,7 +1563,7 @@ export function ManagerReportsPanel({
 											<span
 												className="ops-bar__fill"
 												style={{
-													width: `${row.minutes > 0 && (scheduleMargins?.peakHourMinutes ?? 0) > 0 ? Math.max(2, Math.round((row.minutes / scheduleMargins.peakHourMinutes) * 100)) : 0}%`,
+													width: `${safePercentWidth(row.minutes, scheduleMargins?.peakHourMinutes, 2)}%`,
 												}}
 											/>
 										</span>

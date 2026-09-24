@@ -535,7 +535,77 @@ export function calculatePediatricPhysiologicalNorm(
 		};
 	}
 
-	// early_mixed / mixed (9 years)
+	if (mode === "early_mixed") {
+		const teeth: readonly number[] = [
+			16, 55, 54, 53, 52, 11, 21, 62, 63, 64, 65, 26,
+			46, 85, 84, 83, 82, 41, 31, 72, 73, 74, 75, 36,
+		];
+		const teethStates = teeth.reduce(
+			(acc, t) => {
+				acc[t] = "Healthy";
+				return acc;
+			},
+			{} as Record<number, "Healthy">,
+		);
+		const resorptionStages: Record<number, ResorptionStagePercent> = {
+			51: 100,
+			61: 100,
+			71: 100,
+			81: 100,
+			52: 50,
+			62: 50,
+			72: 75,
+			82: 75,
+			53: 25,
+			63: 25,
+			73: 25,
+			83: 25,
+			54: 50,
+			64: 50,
+			74: 50,
+			84: 50,
+			55: 25,
+			65: 25,
+			75: 25,
+			85: 25,
+		};
+
+		const statusLocalisRu =
+			"Ранний сменный прикус (7 лет) — смена резцов. Постоянные первые моляры (16, 26, 36, 46) и центральные резцы (11, 21, 31, 41) прорезались, интактны. Временные центральные резцы (51, 61, 71, 81) выпали (резорбция 100%). Нижние боковые резцы на стадии смены (резорбция 72, 82 — 75%). Временные клыки и моляры интактны, устойчивы. Десна бледно-розовая, без воспаления.";
+
+		const treatmentDescriptionRu =
+			"Профилактический осмотр. Контролируемая гигиена детской пастой. Неинвазивная герметизация фиссур постоянных моляров (16, 26, 36, 46). Обучение чистке зубов. Плановый осмотр через 6 месяцев.";
+
+		const diaryEntryRu = [
+			"ПРОТОКОЛ ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ОСМОТРА (ФОРМА 043/у)",
+			"────────────────────────────────────────────────────────────",
+			"Диагноз: Z01.2 (Стоматологическое обследование и наблюдение)",
+			`Status localis: ${statusLocalisRu}`,
+			`План лечения и манипуляции: ${treatmentDescriptionRu}`,
+			"Исход: Ранний сменный прикус / смена резцов протекает физиологично, полость рта санирована.",
+		].join("\n");
+
+		return {
+			mode: "early_mixed",
+			labelRu: "7 лет: Ранний сменный прикус — смена резцов (16..46, резцы 11..41)",
+			nameRu: "Ранний сменный прикус / смена резцов (16..46, резцы 11..41)",
+			targetAgeYears: 7.0,
+			teethNumbers: teeth,
+			teethStates,
+			resorptionStages,
+			diagnosisIcd10: "Z01.2",
+			order804nCode: "B01.064.003",
+			statusLocalisRu,
+			statusLocalis: statusLocalisRu,
+			treatmentDescriptionRu,
+			treatmentDescription: treatmentDescriptionRu,
+			diaryEntryRu,
+			diaryText: diaryEntryRu,
+			summaryRu: "Ранний сменный прикус / смена резцов (16..46, резцы 11..41)",
+		};
+	}
+
+	// mixed (9 years)
 	const teeth: readonly number[] = [
 		16, 55, 54, 53, 12, 11, 21, 22, 63, 64, 65, 26,
 		46, 85, 84, 83, 42, 41, 31, 32, 73, 74, 75, 36,
@@ -586,7 +656,7 @@ export function calculatePediatricPhysiologicalNorm(
 	].join("\n");
 
 	return {
-		mode: mode === "mixed" ? "mixed" : "early_mixed",
+		mode: "mixed",
 		labelRu: "9 лет: Сменный прикус — норма (резцы 11..42, моляры 16..46, молочные 53..85)",
 		nameRu: "Сменный прикус — норма (резцы 11..42, моляры 16..46, молочные 53..85)",
 		targetAgeYears: 9.0,
