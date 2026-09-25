@@ -29,6 +29,7 @@ import {
 	calculateCollageDimensions,
 	CollageFormatType,
 } from './photoProtocolMath';
+import { exportCollageAsPdf } from './photoProtocolEngine';
 import { IncisalAlignmentGuideOverlay, GuideOverlayType } from './IncisalAlignmentGuideOverlay';
 import { VitaShadeSelector } from './VitaShadeSelector';
 
@@ -367,6 +368,23 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 			renderImages();
 		}
 	}, [exportFormat, clinicName, patientName, patientCardNumber, doctorName, beforeShade, afterShade, beforeSlotRecord.imageUrl, afterSlotRecord.imageUrl, beforeSlotId, afterSlotId]);
+
+	const exportCollageToPdfHandler = useCallback(() => {
+		exportCollageAsPdf({
+			clinicName,
+			patientName,
+			patientCardNumber,
+			doctorName,
+			beforeTitle: getSlotDefinitionById(beforeSlotId)?.shortLabelRu || 'До',
+			afterTitle: getSlotDefinitionById(afterSlotId)?.shortLabelRu || 'После',
+			beforeImageUrl: beforeSlotRecord.imageUrl,
+			afterImageUrl: afterSlotRecord.imageUrl,
+			beforeShade,
+			afterShade,
+			format: exportFormat,
+		});
+		setShowExportModal(false);
+	}, [clinicName, patientName, patientCardNumber, doctorName, beforeSlotId, afterSlotId, beforeSlotRecord.imageUrl, afterSlotRecord.imageUrl, beforeShade, afterShade, exportFormat]);
 
 	return (
 		<div className="ba-comparison-view" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', alignItems: 'center' }}>
@@ -1189,6 +1207,17 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 								style={{ minHeight: '44px', minWidth: '44px' }}
 							>
 								Отмена
+							</button>
+
+							<button
+								type="button"
+								className="photo-touch-btn"
+								onClick={exportCollageToPdfHandler}
+								style={{ minHeight: '44px', minWidth: '44px', padding: '8px 16px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+								title="1-клик печать или экспорт листа сравнения в PDF"
+							>
+								<Printer size={16} />
+								Печать в PDF
 							</button>
 
 							<button

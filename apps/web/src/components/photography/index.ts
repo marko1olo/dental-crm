@@ -12,4 +12,5 @@ export * from './BeforeAfterComparisonView';
 export * from './PhotoCalibrationDrawer';
 export * from './PhotoCollageExportSheet';
 export * from './ClinicalPhotoProtocolModal';
+export * from './photoProtocolEngine';
 

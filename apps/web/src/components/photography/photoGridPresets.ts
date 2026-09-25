@@ -593,6 +593,9 @@ export const CLINICAL_PROTOCOLS_REGISTRY: PhotoProtocolPreset[] = [
 ];
 
 export function getPresetById(id: string): PhotoProtocolPreset {
+	if (id === 'standard_8_clinical' || id === 'standard_8_ortho' || id === 'ortho_8_slot') {
+		return STANDARD_8_SLOT_PROTOCOL;
+	}
 	const found = CLINICAL_PROTOCOLS_REGISTRY.find(p => p.id === id);
 	return found || STANDARD_12_SLOT_PROTOCOL;
 }
