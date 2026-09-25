@@ -1,39 +1,10 @@
 import {
-	POPULAR_STERILIZER_BRAND_PRESETS,
 	type CreateSterilizerEquipmentDto,
 	type PopularSterilizerBrandPreset,
 	type SterilizerEquipment,
 	type SterilizerEquipmentStatus,
 } from "@dental/shared";
-import {
-	AlertCircle,
-	AlertTriangle,
-	Archive,
-	Award,
-	Calendar,
-	Check,
-	CheckCircle2,
-	Clock,
-	Edit3,
-	FileBadge,
-	Flame,
-	Gauge,
-	HelpCircle,
-	Info,
-	Layers,
-	Plus,
-	RefreshCw,
-	RotateCcw,
-	Search,
-	ShieldAlert,
-	ShieldCheck,
-	Sparkles,
-	Tag,
-	Trash2,
-	Wrench,
-	X,
-	XCircle,
-} from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import {
@@ -43,12 +14,22 @@ import {
 	safeLocalStorageSetItem,
 } from "../../lib/safeLocalStorage";
 import { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
+import { SterilizerFleetToolbar } from "./SterilizerFleetToolbar";
+import { SterilizerFleetOnboarding } from "./SterilizerFleetOnboarding";
+import { SterilizerFleetCard } from "./SterilizerFleetCard";
+import { SterilizerDecommissionModal } from "./SterilizerDecommissionModal";
+
+// Re-export subcomponents for modular usage and zero-downtime contracts
+export { SterilizerFleetToolbar } from "./SterilizerFleetToolbar";
+export { SterilizerFleetOnboarding } from "./SterilizerFleetOnboarding";
+export { SterilizerFleetCard } from "./SterilizerFleetCard";
+export { SterilizerDecommissionModal } from "./SterilizerDecommissionModal";
 
 const LOCAL_STORAGE_KEY = "dente_sterilizer_equipments";
 
 export interface SterilizerFleetManagerProps {
-	onEquipmentsChange?: (equipments: SterilizerEquipment[]) => void;
-	compactMode?: boolean;
+	readonly onEquipmentsChange?: (equipments: SterilizerEquipment[]) => void;
+	readonly compactMode?: boolean;
 }
 
 export function SterilizerFleetManager({
@@ -260,7 +241,7 @@ export function SterilizerFleetManager({
 					body: JSON.stringify({ action: "recommission" }),
 				}).catch(() => null);
 
-			if (res && res.ok) {
+				if (res && res.ok) {
 					showToast(`Аппарат «${item.name}» восстановлен в эксплуатации`, "success");
 					fetchEquipments();
 				} else {
@@ -404,158 +385,19 @@ export function SterilizerFleetManager({
 	return (
 		<div className="sanpin-fleet-container" style={{ display: "flex", flexDirection: "column", gap: "0.75rem", width: "100%" }}>
 			{/* Top Control Bar */}
-			<div
-				className="sanpin-fleet-toolbar"
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					gap: "0.5rem",
-					flexWrap: "wrap",
-					padding: "0.5rem 0.75rem",
-					background: "var(--paper-soft, #f8fafc)",
-					border: "1px solid var(--line, #e2e8f0)",
-					borderRadius: "8px",
+			<SterilizerFleetToolbar
+				searchQuery={searchQuery}
+				setSearchQuery={setSearchQuery}
+				statusFilter={statusFilter}
+				setStatusFilter={setStatusFilter}
+				stats={stats}
+				onAddNew={() => {
+					setEditingItem(null);
+					setIsModalOpen(true);
 				}}
-			>
-				{/* Search & Filter */}
-				<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", flex: "1 1 auto" }}>
-					<div style={{ position: "relative", minWidth: "200px", maxWidth: "340px", flex: "1 1 auto" }}>
-						<Search size={14} style={{ position: "absolute", left: "0.6rem", top: "50%", transform: "translateY(-50%)", color: "var(--muted, #94a3b8)" }} />
-						<input
-							type="text"
-							placeholder="Поиск по марке, названию, серийному №..."
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							className="sanpin-input"
-							style={{ paddingLeft: "1.9rem", height: "34px", fontSize: "0.8rem", width: "100%", borderRadius: "6px" }}
-						/>
-					</div>
-
-					<div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-						<button
-							type="button"
-							onClick={() => setStatusFilter("all")}
-							className="sanpin-btn touch-manipulation"
-							style={{
-								minHeight: "32px",
-								padding: "0.2rem 0.55rem",
-								fontSize: "0.775rem",
-								fontWeight: statusFilter === "all" ? 700 : 500,
-								background: statusFilter === "all" ? "var(--teal)" : "transparent",
-								color: statusFilter === "all" ? "var(--on-teal, #ffffff)" : "var(--ink, #0f172a)",
-								border: "1px solid var(--line, #e2e8f0)",
-								borderRadius: "6px",
-								cursor: "pointer",
-							}}
-						>
-							Все ({stats.total})
-						</button>
-
-						<button
-							type="button"
-							onClick={() => setStatusFilter("active")}
-							className="sanpin-btn touch-manipulation"
-							style={{
-								minHeight: "32px",
-								padding: "0.2rem 0.55rem",
-								fontSize: "0.775rem",
-								fontWeight: statusFilter === "active" ? 700 : 500,
-								background: statusFilter === "active" ? "var(--ok-fg)" : "transparent",
-								color: statusFilter === "active" ? "var(--on-teal, #ffffff)" : "var(--ink, #0f172a)",
-								border: "1px solid var(--line, #e2e8f0)",
-								borderRadius: "6px",
-								cursor: "pointer",
-							}}
-						>
-							<CheckCircle2 size={13} style={{ display: "inline-block", verticalAlign: "middle", marginRight: "0.25rem" }} />
-							В работе ({stats.active})
-						</button>
-
-						<button
-							type="button"
-							onClick={() => setStatusFilter("in_maintenance")}
-							className="sanpin-btn touch-manipulation"
-							style={{
-								minHeight: "32px",
-								padding: "0.2rem 0.55rem",
-								fontSize: "0.775rem",
-								fontWeight: statusFilter === "in_maintenance" ? 700 : 500,
-								background: statusFilter === "in_maintenance" ? "var(--warn-fg)" : "transparent",
-								color: statusFilter === "in_maintenance" ? "var(--on-teal, #ffffff)" : "var(--ink, #0f172a)",
-								border: "1px solid var(--line, #e2e8f0)",
-								borderRadius: "6px",
-								cursor: "pointer",
-							}}
-						>
-							<Wrench size={13} style={{ display: "inline-block", verticalAlign: "middle", marginRight: "0.25rem" }} />
-							На ТО ({stats.inMaint})
-						</button>
-
-						{stats.decom > 0 && (
-							<button
-								type="button"
-								onClick={() => setStatusFilter("decommissioned")}
-								className="sanpin-btn touch-manipulation"
-								style={{
-									minHeight: "32px",
-									padding: "0.2rem 0.55rem",
-									fontSize: "0.775rem",
-									fontWeight: statusFilter === "decommissioned" ? 700 : 500,
-									background: statusFilter === "decommissioned" ? "var(--bad-fg)" : "transparent",
-									color: statusFilter === "decommissioned" ? "var(--on-teal, #ffffff)" : "var(--ink, #0f172a)",
-									border: "1px solid var(--line, #e2e8f0)",
-									borderRadius: "6px",
-									cursor: "pointer",
-								}}
-							>
-								<Archive size={13} style={{ display: "inline-block", verticalAlign: "middle", marginRight: "0.25rem" }} />
-								Списанные ({stats.decom})
-							</button>
-						)}
-					</div>
-				</div>
-
-				{/* Primary Action Button */}
-				<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexShrink: 0 }}>
-					<button
-						type="button"
-						onClick={() => {
-							setEditingItem(null);
-							setIsModalOpen(true);
-						}}
-						className="sanpin-btn sanpin-btn-primary touch-manipulation"
-						style={{
-							minHeight: "34px",
-							padding: "0.3rem 0.85rem",
-							fontSize: "0.8rem",
-							fontWeight: 700,
-							background: "var(--teal)",
-							color: "var(--on-teal, #ffffff)",
-							border: "none",
-							borderRadius: "6px",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "0.3rem",
-						}}
-						data-testid="add-sterilizer-btn"
-					>
-						<Plus size={15} />
-						<span>Добавить аппарат в парк</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={fetchEquipments}
-						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
-						style={{ minHeight: "34px", width: "34px", padding: 0, borderRadius: "6px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
-						title="Обновить реестр оборудования"
-					>
-						<RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-					</button>
-				</div>
-			</div>
+				onRefresh={fetchEquipments}
+				loading={loading}
+			/>
 
 			{/* Warnings Banner if any verifications are expired or due soon */}
 			{stats.expiredVerification > 0 && (
@@ -582,110 +424,13 @@ export function SterilizerFleetManager({
 
 			{/* CLEAN ONBOARDING ZERO STATE (When clinic has 0 sterilizers) */}
 			{!loading && equipments.length === 0 && (
-				<div
-					className="sanpin-onboarding-card"
-					style={{
-						padding: "2.5rem 1.5rem",
-						borderRadius: "12px",
-						background: "var(--paper-soft, #f8fafc)",
-						border: "1.5px dashed var(--line, #cbd5e1)",
-						textAlign: "center",
-						display: "flex",
-						flexDirection: "column",
-						alignItems: "center",
-						gap: "1.25rem",
+				<SterilizerFleetOnboarding
+					onQuickAddPreset={handleQuickAddPreset}
+					onAddNew={() => {
+						setEditingItem(null);
+						setIsModalOpen(true);
 					}}
-					data-testid="sterilizer-fleet-onboarding"
-				>
-					<div
-						style={{
-							width: "60px",
-							height: "60px",
-							borderRadius: "16px",
-							background: "rgba(13, 148, 136, 0.12)",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							color: "var(--teal-600, #0d9488)",
-						}}
-					>
-						<Flame size={32} />
-					</div>
-
-					<div style={{ maxWidth: "560px" }}>
-						<h3 style={{ margin: "0 0 0.4rem 0", fontSize: "1.2rem", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
-							Парк стерилизаторов клиники не настроен
-						</h3>
-						<p style={{ margin: 0, fontSize: "0.875rem", color: "var(--muted, #64748b)", lineHeight: 1.45 }}>
-							Для регистрации циклов по Форме № 257/у, автоматической генерации DataMatrix-этикеток крафт-пакетов и прохождения проверок Роспотребнадзора зарегистрируйте автоклавы и сухожары клиники.
-						</p>
-					</div>
-
-					{/* 1-Click Quick Preset Setup Buttons */}
-					<div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
-						<span style={{ fontSize: "0.775rem", fontWeight: 700, color: "var(--muted, #64748b)" }}>
-							Быстрое добавление популярного аппарата (1 клик):
-						</span>
-						<div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "0.4rem", maxWidth: "650px" }}>
-							{POPULAR_STERILIZER_BRAND_PRESETS.slice(0, 6).map((preset) => (
-								<button
-									key={preset.id}
-									type="button"
-									onClick={() => handleQuickAddPreset(preset)}
-									className="sanpin-btn touch-manipulation"
-									style={{
-										minHeight: "36px",
-										padding: "0.35rem 0.75rem",
-										fontSize: "0.8rem",
-										fontWeight: 600,
-										background: "var(--paper, #ffffff)",
-										color: "var(--ink, #0f172a)",
-										border: "1px solid var(--line, #cbd5e1)",
-										borderRadius: "6px",
-										cursor: "pointer",
-										display: "inline-flex",
-										alignItems: "center",
-										gap: "0.35rem",
-										boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-									}}
-									title={`Добавить ${preset.brandModel} (${preset.chamberVolumeLiters} л)`}
-								>
-									<Sparkles size={13} color="var(--teal)" />
-									<span>{preset.brandModel}</span>
-									<span style={{ fontSize: "0.7rem", opacity: 0.75 }}>({preset.chamberVolumeLiters} л)</span>
-								</button>
-							))}
-						</div>
-					</div>
-
-					<div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
-						<button
-							type="button"
-							onClick={() => {
-								setEditingItem(null);
-								setIsModalOpen(true);
-							}}
-							className="sanpin-btn sanpin-btn-primary touch-manipulation"
-							style={{
-								minHeight: "42px",
-								padding: "0.5rem 1.5rem",
-								fontSize: "0.875rem",
-								fontWeight: 700,
-								background: "var(--teal)",
-								color: "var(--on-teal, #ffffff)",
-								border: "none",
-								borderRadius: "8px",
-								cursor: "pointer",
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "0.4rem",
-							}}
-						>
-							<Plus size={16} />
-							<span>Добавить аппарат вручную</span>
-						</button>
-					</div>
-				</div>
+				/>
 			)}
 
 			{/* Equipment Cards Grid */}
@@ -697,251 +442,21 @@ export function SterilizerFleetManager({
 						gap: "0.75rem",
 					}}
 				>
-					{filteredEquipments.map((item) => {
-						const isVerificationExpired = Boolean(item.verificationExpiryDate && item.verificationExpiryDate < todayStr);
-						const isVerificationDueSoon = Boolean(
-							item.verificationExpiryDate && item.verificationExpiryDate >= todayStr && item.verificationExpiryDate <= in30Days,
-						);
-
-						return (
-							<div
-								key={item.id}
-								className="sanpin-fleet-card"
-								style={{
-									background: "var(--paper-strong, #ffffff)",
-									border: `1px solid ${
-										item.status === "in_maintenance"
-											? "rgba(217, 119, 6, 0.4)"
-											: item.status === "decommissioned"
-												? "rgba(220, 38, 38, 0.4)"
-												: isVerificationExpired
-													? "rgba(220, 38, 38, 0.4)"
-													: "var(--line, #e2e8f0)"
-									}`,
-									borderRadius: "8px",
-									padding: "0.85rem",
-									display: "flex",
-									flexDirection: "column",
-									gap: "0.6rem",
-									boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-									opacity: item.status === "decommissioned" ? 0.75 : 1,
-								}}
-							>
-								{/* Card Header */}
-								<div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
-									<div style={{ flex: 1, minWidth: 0 }}>
-										<div style={{ display: "flex", alignItems: "center", gap: "0.35rem", flexWrap: "wrap", marginBottom: "0.2rem" }}>
-											<span
-												className="sanpin-tag"
-												style={{
-													fontSize: "0.7rem",
-													padding: "0.1rem 0.4rem",
-													background: item.deviceType === "dry_heat" ? "rgba(234, 88, 12, 0.1)" : "rgba(13, 148, 136, 0.1)",
-													color: item.deviceType === "dry_heat" ? "var(--warn-fg)" : "var(--teal)",
-													fontWeight: 700,
-												}}
-											>
-												{item.deviceType === "dry_heat" ? "Сухожар 180°C" : item.deviceClass === "autoclave_class_s" ? "B/S-Класс" : "B-Класс 134°C"}
-											</span>
-
-											<span
-												className="sanpin-tag"
-												style={{
-													fontSize: "0.7rem",
-													padding: "0.1rem 0.4rem",
-													background: "rgba(0,0,0,0.05)",
-													color: "var(--ink, #0f172a)",
-													fontWeight: 600,
-												}}
-											>
-												{item.chamberVolumeLiters} л
-											</span>
-
-											{item.status === "active" && (
-												<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.7rem", padding: "0.1rem 0.4rem" }}>
-													<CheckCircle2 size={11} /> В работе
-												</span>
-											)}
-
-											{item.status === "in_maintenance" && (
-												<span className="sanpin-tag sanpin-tag-warning" style={{ fontSize: "0.7rem", padding: "0.1rem 0.4rem" }}>
-													<Wrench size={11} /> На ТО
-												</span>
-											)}
-
-											{item.status === "decommissioned" && (
-												<span className="sanpin-tag sanpin-tag-danger" style={{ fontSize: "0.7rem", padding: "0.1rem 0.4rem" }}>
-													<Archive size={11} /> Списан
-												</span>
-											)}
-										</div>
-
-										<h4
-											style={{
-												margin: 0,
-												fontSize: "0.925rem",
-												fontWeight: 700,
-												color: "var(--ink, #0f172a)",
-												overflow: "hidden",
-												textOverflow: "ellipsis",
-												whiteSpace: "nowrap",
-											}}
-											title={item.name}
-										>
-											{item.name}
-										</h4>
-										<span style={{ fontSize: "0.775rem", color: "var(--muted, #64748b)", display: "block" }}>
-											{item.brandModel}
-										</span>
-									</div>
-
-									{/* Quick Action Button: Edit */}
-									<button
-										type="button"
-										onClick={() => {
-											setEditingItem(item);
-											setIsModalOpen(true);
-										}}
-										className="sanpin-btn-icon"
-										style={{ minHeight: "30px", minWidth: "30px" }}
-										title="Редактировать параметры аппарата"
-									>
-										<Edit3 size={14} />
-									</button>
-								</div>
-
-								{/* Tech details grid */}
-								<div
-									style={{
-										display: "grid",
-										gridTemplateColumns: "1fr 1fr",
-										gap: "0.35rem 0.6rem",
-										fontSize: "0.775rem",
-										background: "var(--paper-soft, #f8fafc)",
-										padding: "0.5rem",
-										borderRadius: "6px",
-									}}
-								>
-									<div>
-										<span style={{ color: "var(--muted, #64748b)", display: "block", fontSize: "0.7rem" }}>Серийный номер:</span>
-										<span style={{ fontWeight: 600, fontFamily: "monospace", color: "var(--ink, #0f172a)" }}>
-											{item.serialNumber}
-										</span>
-									</div>
-
-									<div>
-										<span style={{ color: "var(--muted, #64748b)", display: "block", fontSize: "0.7rem" }}>Инвентарный №:</span>
-										<span style={{ fontWeight: 600, fontFamily: "monospace", color: "var(--ink, #0f172a)" }}>
-											{item.inventoryNumber || "—"}
-										</span>
-									</div>
-
-									<div style={{ gridColumn: "1 / -1" }}>
-										<span style={{ color: "var(--muted, #64748b)", display: "block", fontSize: "0.7rem" }}>Помещение:</span>
-										<span style={{ fontWeight: 500, color: "var(--ink, #0f172a)" }}>
-											{item.locationRoom || "ЦСО (Стерилизационная)"}
-										</span>
-									</div>
-
-									<div>
-										<span style={{ color: "var(--muted, #64748b)", display: "block", fontSize: "0.7rem" }}>Поверка годна до:</span>
-										{item.verificationExpiryDate ? (
-											<span
-												style={{
-													fontWeight: 700,
-													color: isVerificationExpired ? "var(--bad-fg)" : isVerificationDueSoon ? "var(--warn-fg)" : "var(--ok-fg)",
-													display: "inline-flex",
-													alignItems: "center",
-													gap: "0.2rem",
-												}}
-											>
-												{isVerificationExpired && <AlertTriangle size={11} />}
-												{new Date(item.verificationExpiryDate).toLocaleDateString("ru-RU")}
-											</span>
-										) : (
-											<span style={{ color: "var(--muted, #64748b)" }}>Не указана</span>
-										)}
-									</div>
-
-									<div>
-										<span style={{ color: "var(--muted, #64748b)", display: "block", fontSize: "0.7rem" }}>Следующее ТО:</span>
-										<span style={{ fontWeight: 500, color: "var(--ink, #0f172a)" }}>
-											{item.nextMaintenanceDate ? new Date(item.nextMaintenanceDate).toLocaleDateString("ru-RU") : "По графику"}
-										</span>
-									</div>
-								</div>
-
-								{item.notes && (
-									<div style={{ fontSize: "0.725rem", color: "var(--muted, #64748b)", fontStyle: "italic" }}>
-										{item.notes}
-									</div>
-								)}
-
-								{/* Bottom Action Buttons */}
-								<div
-									style={{
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "space-between",
-										gap: "0.35rem",
-										marginTop: "auto",
-										paddingTop: "0.4rem",
-										borderTop: "1px solid var(--line, #e2e8f0)",
-									}}
-								>
-									<div style={{ display: "flex", gap: "0.3rem" }}>
-										{item.status !== "decommissioned" ? (
-											<button
-												type="button"
-												onClick={() => handleToggleMaintenance(item)}
-												className="sanpin-btn sanpin-btn-secondary touch-manipulation"
-												style={{
-													minHeight: "28px",
-													height: "28px",
-													padding: "0.1rem 0.5rem",
-													fontSize: "0.725rem",
-													fontWeight: 600,
-													color: item.status === "in_maintenance" ? "#059669" : "#d97706",
-												}}
-												title={item.status === "in_maintenance" ? "Вернуть аппарат в строй" : "Отправить на техобслуживание (ТО)"}
-											>
-												{item.status === "in_maintenance" ? <CheckCircle2 size={12} /> : <Wrench size={12} />}
-												<span>{item.status === "in_maintenance" ? "В строй" : "На ТО"}</span>
-											</button>
-										) : null}
-
-										<button
-											type="button"
-											onClick={() => handleDecommission(item)}
-											className="sanpin-btn sanpin-btn-secondary touch-manipulation"
-											style={{
-												minHeight: "28px",
-												height: "28px",
-												padding: "0.1rem 0.5rem",
-												fontSize: "0.725rem",
-												fontWeight: 600,
-												color: item.status === "decommissioned" ? "#2563eb" : "#dc2626",
-											}}
-											title={item.status === "decommissioned" ? "Восстановить аппарат" : "Списать аппарат с баланса"}
-										>
-											{item.status === "decommissioned" ? <RotateCcw size={12} /> : <Archive size={12} />}
-											<span>{item.status === "decommissioned" ? "Восстановить" : "Списать"}</span>
-										</button>
-									</div>
-
-									<button
-										type="button"
-										onClick={() => handleDelete(item)}
-										className="sanpin-btn-icon"
-										style={{ minHeight: "28px", minWidth: "28px", color: "var(--muted, #94a3b8)" }}
-										title="Удалить из реестра"
-									>
-										<Trash2 size={13} />
-									</button>
-								</div>
-							</div>
-						);
-					})}
+					{filteredEquipments.map((item) => (
+						<SterilizerFleetCard
+							key={item.id}
+							item={item}
+							onEdit={(it) => {
+								setEditingItem(it);
+								setIsModalOpen(true);
+							}}
+							onToggleMaintenance={handleToggleMaintenance}
+							onDecommission={handleDecommission}
+							onDelete={handleDelete}
+							todayStr={todayStr}
+							in30Days={in30Days}
+						/>
+					))}
 				</div>
 			)}
 
@@ -957,92 +472,14 @@ export function SterilizerFleetManager({
 			/>
 
 			{/* Inline confirmation modal for Decommission (eliminates window.prompt) */}
-			{decommissionTarget && (
-				<div
-					style={{
-						position: "fixed",
-						inset: 0,
-						backgroundColor: "rgba(15, 23, 42, 0.6)",
-						backdropFilter: "blur(4px)",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						zIndex: 9999,
-						padding: "1rem",
-					}}
-				>
-					<div
-						style={{
-							background: "var(--paper-strong, #ffffff)",
-							borderRadius: "12px",
-							boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)",
-							maxWidth: "480px",
-							width: "100%",
-							padding: "1.25rem",
-							display: "flex",
-							flexDirection: "column",
-							gap: "1rem",
-							border: "1px solid var(--line, #e2e8f0)",
-						}}
-					>
-						<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#dc2626" }}>
-							<Archive size={20} />
-							<h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
-								Списание аппарата с баланса
-							</h3>
-						</div>
-
-						<p style={{ margin: 0, fontSize: "0.85rem", color: "var(--muted, #64748b)", lineHeight: 1.4 }}>
-							Подтверждаете списание аппарата <strong>«{decommissionTarget.name}»</strong>? Он будет выведен из эксплуатации и исключен из текущего цикла стерилизации.
-						</p>
-
-						<div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-							<label style={{ fontSize: "0.775rem", fontWeight: 600, color: "var(--ink, #0f172a)" }}>
-								Основание списания (Акт дефектации, износ, замена):
-							</label>
-							<input
-								type="text"
-								value={decommissionReason}
-								onChange={(e) => setDecommissionReason(e.target.value)}
-								placeholder="Акт технической экспертизы и дефектации № "
-								className="sanpin-input"
-								style={{ minHeight: "36px", fontSize: "0.85rem" }}
-								autoFocus
-							/>
-						</div>
-
-						<div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", marginTop: "0.25rem" }}>
-							<button
-								type="button"
-								onClick={() => setDecommissionTarget(null)}
-								aria-busy={decommissionSubmitting}
-								className="sanpin-btn sanpin-btn-secondary touch-manipulation"
-								style={{ minHeight: "34px", padding: "0.3rem 0.8rem", fontSize: "0.8rem" }}
-							>
-								Отмена
-							</button>
-							<button
-								type="button"
-								onClick={() => void handleConfirmDecommission()}
-								aria-busy={decommissionSubmitting}
-								className="sanpin-btn touch-manipulation"
-								style={{
-									minHeight: "34px",
-									padding: "0.3rem 1rem",
-									background: "#dc2626",
-									color: "#ffffff",
-									fontSize: "0.8rem",
-									fontWeight: 700,
-									border: "none",
-									borderRadius: "6px",
-								}}
-							>
-								{decommissionSubmitting ? "Списание..." : "Подтвердить списание"}
-							</button>
-						</div>
-					</div>
-				</div>
-			)}
+			<SterilizerDecommissionModal
+				target={decommissionTarget}
+				reason={decommissionReason}
+				setReason={setDecommissionReason}
+				submitting={decommissionSubmitting}
+				onConfirm={() => void handleConfirmDecommission()}
+				onCancel={() => setDecommissionTarget(null)}
+			/>
 		</div>
 	);
 }

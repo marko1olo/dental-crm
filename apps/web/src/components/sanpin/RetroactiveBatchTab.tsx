@@ -7,52 +7,22 @@
  */
 
 import {
-	AlertTriangle,
-	Award,
-	Calendar,
-	Check,
-	CheckCircle2,
-	ChevronRight,
-	Clock,
 	Download,
-	Edit3,
-	FileBadge,
-	FileSpreadsheet,
-	FileText,
-	Filter,
-	Flame,
-	FlaskConical,
-	Layers,
-	Plus,
 	Printer,
-	RefreshCw,
-	Rocket,
-	RotateCcw,
 	Save,
 	Search,
-	ShieldAlert,
-	ShieldCheck,
-	Sparkles,
-	Trash2,
-	UserCheck,
-	Wind,
-	X,
-	XCircle,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast.js";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage.js";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import {
-	AUTOCLAVE_REGIME_PRESETS,
 	STATUTORY_CLINIC_CABINETS,
 	calculatePeriodDateRange,
 	calculateRetroactiveBatchStats,
 	exportRetroactiveBatchToCsv,
 	generateRetroactiveDossierPrintHtml,
 	generateRetroactiveSanpinDays,
-	type AutoclaveRegimeConfig,
-	type CabinetOption,
 	type PeriodPreset,
 	type RetroactiveDayRecord,
 	type RetroactiveGenerationOptions,
@@ -60,6 +30,8 @@ import {
 import { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
 import { POPULAR_STERILIZER_BRAND_PRESETS, type SterilizerEquipment } from "@dental/shared";
 import { loadSavedClinicAutoclaves } from "./AutoclaveEquipmentModal";
+import { RetroactiveBatchHeroBanner } from "./RetroactiveBatchHeroBanner";
+import { RetroactiveBatchTable } from "./RetroactiveBatchTable";
 
 export interface RetroactiveBatchTabProps {
 	readonly initialPreset?: PeriodPreset | undefined;
@@ -166,6 +138,7 @@ export function RetroactiveBatchTab({
 	// Inline editing state
 	const [editingDayId, setEditingDayId] = useState<string | null>(null);
 	const [editFormData, setEditFormData] = useState<Partial<RetroactiveDayRecord>>({});
+	const [pendingDeleteDayId, setPendingDeleteDayId] = useState<string | null>(null);
 
 	// Quick Period Bounds preview
 	const currentPeriodBounds = useMemo(() => {
@@ -198,9 +171,9 @@ export function RetroactiveBatchTab({
 		setIsGenerated(true);
 		setEditingDayId(null);
 
-		const stats = calculateRetroactiveBatchStats(days);
+		const batchStats = calculateRetroactiveBatchStats(days);
 		showToast(
-			`Журналы СанПиН рассчитаны за период: ${days.length} смен (${stats.workingDaysCount} рабочих), ${stats.totalTraysProcessed} лотков, ${stats.totalPsoSamplesTested} проб ПСО, ${stats.totalAutoclaveCycles} циклов автоклава.`,
+			`Журналы СанПиН рассчитаны за период: ${days.length} смен (${batchStats.workingDaysCount} рабочих), ${batchStats.totalTraysProcessed} лотков, ${batchStats.totalPsoSamplesTested} проб ПСО, ${batchStats.totalAutoclaveCycles} циклов автоклава.`,
 			"success",
 		);
 	};
@@ -251,7 +224,7 @@ export function RetroactiveBatchTab({
 			});
 
 			// Perform real API call to batch save or autofill
-			const res = await fetch("/api/registers/autofill-shift", {
+			await fetch("/api/registers/autofill-shift", {
 				method: "POST",
 				headers,
 				body: JSON.stringify({
@@ -350,8 +323,6 @@ export function RetroactiveBatchTab({
 		showToast("Параметры смены успешно обновлены", "success");
 	};
 
-	const [pendingDeleteDayId, setPendingDeleteDayId] = useState<string | null>(null);
-
 	const cancelEditing = () => {
 		setEditingDayId(null);
 		setEditFormData({});
@@ -374,334 +345,26 @@ export function RetroactiveBatchTab({
 	return (
 		<div className="sanpin-tab-content" style={{ gap: "1.25rem" }}>
 			{/* Top Hero Banner & Presets */}
-			<div
-				style={{
-					background: "linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%)",
-					border: "1px solid rgba(37, 99, 235, 0.2)",
-					borderRadius: "0.75rem",
-					padding: "1.25rem 1.5rem",
-					display: "flex",
-					flexDirection: "column",
-					gap: "1rem",
-				}}
-			>
-				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.75rem" }}>
-					<div>
-						<h2
-							style={{
-								margin: 0,
-								fontSize: "1.2rem",
-								fontWeight: 800,
-								display: "flex",
-								alignItems: "center",
-								gap: "0.5rem",
-								color: "var(--ink, #0f172a)",
-							}}
-						>
-							<Rocket size={24} color="var(--teal)" />
-							Пакетное заполнение журналов СанПиН за период (1 клик)
-						</h2>
-						<div style={{ fontSize: "0.875rem", color: "var(--muted, #64748b)", marginTop: "0.25rem" }}>
-							Моментальное оформление журналов 257/у (Автоклавы), 366/у (ПСО Азопирам), бактерицидных ламп, уборок, медотходов и готовности кабинетов.
-						</div>
-					</div>
-
-					<span
-						style={{
-							background: "rgba(5, 150, 105, 0.12)",
-							color: "var(--ok-fg)",
-							border: "1px solid rgba(5, 150, 105, 0.3)",
-							borderRadius: "9999px",
-							padding: "0.35rem 0.75rem",
-							fontSize: "0.82rem",
-							fontWeight: 700,
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "0.35rem",
-						}}
-					>
-						<CheckCircle2 size={16} /> 100% Норма Роспотребнадзора
-					</span>
-				</div>
-
-				{/* 1. Quick Period Selection Buttons (Крупные кнопки быстрого выбора) */}
-				<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-					<span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--muted, #475569)", textTransform: "uppercase", letterSpacing: "0.03em" }}>
-						1. Выберите период отчета:
-					</span>
-					<div
-						style={{
-							display: "flex",
-							flexWrap: "wrap",
-							gap: "0.5rem",
-							alignItems: "center",
-						}}
-					>
-						<button
-							type="button"
-							onClick={() => setPeriodPreset("last_week")}
-							className={`sanpin-btn ${periodPreset === "last_week" ? "sanpin-btn-primary" : "sanpin-btn-secondary"}`}
-							style={{ minHeight: "46px", padding: "0.6rem 1.1rem", fontSize: "0.9rem", fontWeight: 700 }}
-							data-testid="period-last-week-btn"
-						>
-							<Calendar size={18} /> За последнюю неделю
-						</button>
-
-						<button
-							type="button"
-							onClick={() => setPeriodPreset("current_month")}
-							className={`sanpin-btn ${periodPreset === "current_month" ? "sanpin-btn-primary" : "sanpin-btn-secondary"}`}
-							style={{ minHeight: "46px", padding: "0.6rem 1.1rem", fontSize: "0.9rem", fontWeight: 700 }}
-							data-testid="period-current-month-btn"
-						>
-							<Calendar size={18} /> За текущий месяц
-						</button>
-
-						<button
-							type="button"
-							onClick={() => setPeriodPreset("previous_month")}
-							className={`sanpin-btn ${periodPreset === "previous_month" ? "sanpin-btn-primary" : "sanpin-btn-secondary"}`}
-							style={{ minHeight: "46px", padding: "0.6rem 1.1rem", fontSize: "0.9rem", fontWeight: 700 }}
-							data-testid="period-previous-month-btn"
-						>
-							<Calendar size={18} /> За прошлый месяц
-						</button>
-
-						<button
-							type="button"
-							onClick={() => setPeriodPreset("current_quarter")}
-							className={`sanpin-btn ${periodPreset === "current_quarter" ? "sanpin-btn-primary" : "sanpin-btn-secondary"}`}
-							style={{ minHeight: "46px", padding: "0.6rem 1.1rem", fontSize: "0.9rem", fontWeight: 700 }}
-							data-testid="period-current-quarter-btn"
-						>
-							<Calendar size={18} /> За квартал
-						</button>
-
-						<button
-							type="button"
-							onClick={() => setPeriodPreset("custom")}
-							className={`sanpin-btn ${periodPreset === "custom" ? "sanpin-btn-primary" : "sanpin-btn-secondary"}`}
-							style={{ minHeight: "46px", padding: "0.6rem 1.1rem", fontSize: "0.9rem", fontWeight: 700 }}
-							data-testid="period-custom-dates-btn"
-						>
-							<Calendar size={18} /> Выбрать даты
-						</button>
-					</div>
-
-					{/* Custom date range inputs */}
-					{periodPreset === "custom" && (
-						<div
-							style={{
-								display: "flex",
-								flexWrap: "wrap",
-								alignItems: "center",
-								gap: "0.75rem",
-								marginTop: "0.5rem",
-								padding: "0.75rem 1rem",
-								background: "var(--paper, #ffffff)",
-								borderRadius: "0.5rem",
-								border: "1px solid var(--line, #cbd5e1)",
-							}}
-						>
-							<div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-								<span style={{ fontSize: "0.85rem", fontWeight: 600 }}>C:</span>
-								<input
-									type="date"
-									value={customStartDate}
-									onChange={(e) => setCustomStartDate(e.target.value)}
-									className="sanpin-input"
-									style={{ minHeight: "40px", padding: "0.35rem 0.65rem" }}
-								/>
-							</div>
-							<div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-								<span style={{ fontSize: "0.85rem", fontWeight: 600 }}>По:</span>
-								<input
-									type="date"
-									value={customEndDate}
-									onChange={(e) => setCustomEndDate(e.target.value)}
-									className="sanpin-input"
-									style={{ minHeight: "40px", padding: "0.35rem 0.65rem" }}
-								/>
-							</div>
-							<span style={{ fontSize: "0.82rem", color: "var(--muted, #64748b)" }}>
-								Активный диапазон: <strong>{customStartDate}</strong> — <strong>{customEndDate}</strong>
-							</span>
-						</div>
-					)}
-				</div>
-
-				{/* 2. Generation Settings (Настройки генерации) */}
-				<div
-					style={{
-						display: "grid",
-						gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-						gap: "1rem",
-						paddingTop: "0.75rem",
-						borderTop: "1px solid rgba(148, 163, 184, 0.2)",
-					}}
-				>
-					{/* Cabinets Selection */}
-					<div className="sanpin-form-group">
-						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-							<label className="sanpin-form-label" style={{ fontWeight: 700 }}>
-								Кабинеты клиники ({selectedCabinetIds.length}/{STATUTORY_CLINIC_CABINETS.length}):
-							</label>
-							<button
-								type="button"
-								onClick={selectAllCabinets}
-								style={{
-									background: "none",
-									border: "none",
-									color: "var(--brand-primary, #2563eb)",
-									fontSize: "0.75rem",
-									cursor: "pointer",
-									padding: 0,
-									textDecoration: "underline",
-								}}
-							>
-								Выбрать все
-							</button>
-						</div>
-						<div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-							{STATUTORY_CLINIC_CABINETS.map((cab) => {
-								const isSelected = selectedCabinetIds.includes(cab.id);
-								return (
-									<button
-										key={cab.id}
-										type="button"
-										onClick={() => toggleCabinet(cab.id)}
-										style={{
-											padding: "0.4rem 0.7rem",
-											borderRadius: "0.375rem",
-											fontSize: "0.82rem",
-											fontWeight: isSelected ? 700 : 500,
-											border: isSelected ? "1px solid var(--teal)" : "1px solid var(--line, #cbd5e1)",
-											background: isSelected ? "var(--teal-surface, rgba(13, 148, 136, 0.12))" : "var(--paper, #ffffff)",
-											color: isSelected ? "var(--teal)" : "var(--ink, #334155)",
-											cursor: "pointer",
-											display: "flex",
-											alignItems: "center",
-											gap: "0.35rem",
-											transition: "all 0.15s ease",
-										}}
-									>
-										{isSelected && <Check size={14} color="var(--teal)" />}
-										{cab.shortName}
-									</button>
-								);
-							})}
-						</div>
-					</div>
-
-					{/* Duty Nurse Selection */}
-					<div className="sanpin-form-group">
-						<label className="sanpin-form-label" style={{ fontWeight: 700 }}>
-							Дежурная медсестра ЦСО (ФИО):
-						</label>
-						<select
-							value={nurseFullName}
-							onChange={(e) => setNurseFullName(e.target.value)}
-							className="sanpin-select"
-							style={{ minHeight: "44px" }}
-						>
-							<option value="Медсестра ЦСО">Медсестра ЦСО</option>
-							<option value="Главная медсестра">Главная медсестра</option>
-							<option value="Оператор стерилизационной">Оператор стерилизационной</option>
-							<option value="Ассистент стоматолога">Ассистент стоматолога</option>
-						</select>
-					</div>
-
-					{/* Sterilizer Apparatus Selection */}
-					<div className="sanpin-form-group">
-						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-							<label className="sanpin-form-label" style={{ fontWeight: 700 }}>
-								Аппарат стерилизатора клиники:
-							</label>
-							<button
-								type="button"
-								onClick={() => setIsEquipmentModalOpen(true)}
-								style={{
-									background: "none",
-									border: "none",
-									color: "var(--brand-primary, #2563eb)",
-									fontSize: "0.75rem",
-									cursor: "pointer",
-									padding: 0,
-									textDecoration: "underline",
-									display: "inline-flex",
-									alignItems: "center",
-									gap: "0.2rem",
-								}}
-							>
-								<Plus size={12} /> Добавить аппарат
-							</button>
-						</div>
-						<select
-							value={sterilizerModel}
-							onChange={(e) => setSterilizerModel(e.target.value)}
-							className="sanpin-select"
-							style={{ minHeight: "44px" }}
-						>
-							{availableSterilizers.map((s) => (
-								<option key={s.id} value={s.modelName}>
-									{s.label}
-								</option>
-							))}
-						</select>
-					</div>
-
-					{/* Autoclave Regime Selection */}
-					<div className="sanpin-form-group">
-						<label className="sanpin-form-label" style={{ fontWeight: 700 }}>
-							Режим автоклавирования (Форма 257/у):
-						</label>
-						<select
-							value={autoclaveRegimeId}
-							onChange={(e) => setAutoclaveRegimeId(e.target.value as any)}
-							className="sanpin-select"
-							style={{ minHeight: "44px" }}
-						>
-							{AUTOCLAVE_REGIME_PRESETS.map((r) => (
-								<option key={r.id} value={r.id}>
-									{r.nameRu}
-								</option>
-							))}
-						</select>
-					</div>
-				</div>
-
-				{/* 3. PROMINENT 1-CLICK GENERATION BUTTON (Кнопка >= 52px, контрастный акцентный цвет) */}
-				<div style={{ display: "flex", justifyContent: "stretch", marginTop: "0.25rem" }}>
-					<button
-						type="button"
-						onClick={handleGenerateBatch}
-						style={{
-							width: "100%",
-							minHeight: "56px",
-							padding: "0.85rem 1.5rem",
-							fontSize: "1.05rem",
-							fontWeight: 900,
-							letterSpacing: "0.02em",
-							background: "var(--ok-fg)",
-							borderColor: "var(--ok-fg)",
-							color: "var(--on-teal, #ffffff)",
-							borderRadius: "0.5rem",
-							cursor: "pointer",
-							boxShadow: "0 4px 14px rgba(5, 150, 105, 0.4)",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "0.75rem",
-							border: "none",
-							transition: "all 0.2s ease",
-						}}
-						data-testid="execute-sanpin-batch-1click-btn"
-					>
-						<Rocket size={22} color="var(--on-teal, #ffffff)" />
-						<span>Заполнить все журналы СанПиН за период в 1 клик</span>
-					</button>
-				</div>
-			</div>
+			<RetroactiveBatchHeroBanner
+				periodPreset={periodPreset}
+				setPeriodPreset={setPeriodPreset}
+				customStartDate={customStartDate}
+				setCustomStartDate={setCustomStartDate}
+				customEndDate={customEndDate}
+				setCustomEndDate={setCustomEndDate}
+				selectedCabinetIds={selectedCabinetIds}
+				toggleCabinet={toggleCabinet}
+				selectAllCabinets={selectAllCabinets}
+				nurseFullName={nurseFullName}
+				setNurseFullName={setNurseFullName}
+				sterilizerModel={sterilizerModel}
+				setSterilizerModel={setSterilizerModel}
+				availableSterilizers={availableSterilizers}
+				onOpenEquipmentModal={() => setIsEquipmentModalOpen(true)}
+				autoclaveRegimeId={autoclaveRegimeId}
+				setAutoclaveRegimeId={setAutoclaveRegimeId}
+				onGenerateBatch={handleGenerateBatch}
+			/>
 
 			{/* KPI Summary Cards for the Batch */}
 			{isGenerated && (
@@ -847,369 +510,21 @@ export function RetroactiveBatchTab({
 				</div>
 			)}
 
-			{/* 4. PREVIEW TABLE OF GENERATED DAYS WITH INLINE EDITING */}
+			{/* Preview Table of Generated Days with Inline Editing */}
 			{isGenerated && (
-				<div className="sanpin-table-wrapper">
-					<table className="sanpin-table">
-						<thead>
-							<tr>
-								<th style={{ width: "40px" }}>№</th>
-								<th style={{ minWidth: "110px" }}>Дата / День</th>
-								<th style={{ minWidth: "140px" }}>Кабинеты</th>
-								<th style={{ minWidth: "110px" }}>Лотков / Приемов</th>
-								<th style={{ minWidth: "120px" }}>ПСО (366/у)</th>
-								<th style={{ minWidth: "150px" }}>Автоклав (257/у)</th>
-								<th style={{ minWidth: "120px" }}>Рециркуляторы</th>
-								<th style={{ minWidth: "130px" }}>Уборка</th>
-								<th style={{ minWidth: "100px" }}>Статус</th>
-								<th style={{ minWidth: "120px" }}>Штамп ЭЦП</th>
-								<th style={{ minWidth: "80px", textAlign: "center" }}>Действия</th>
-							</tr>
-						</thead>
-						<tbody>
-							{filteredDays.length === 0 ? (
-								<tr>
-									<td colSpan={11} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
-										Записи не найдены. Нажмите «Заполнить все журналы СанПиН за период» для расчета.
-									</td>
-								</tr>
-							) : (
-								filteredDays.map((day, idx) => {
-									const isEditing = editingDayId === day.id;
-
-									if (isEditing) {
-										return (
-											<tr key={day.id} style={{ background: "rgba(37, 99, 235, 0.06)" }}>
-												<td style={{ textAlign: "center" }}>{idx + 1}</td>
-												<td>
-													<input
-														type="date"
-														value={editFormData.date || day.date}
-														onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
-														className="sanpin-input"
-														style={{ minHeight: "36px", fontSize: "0.8rem", width: "100%" }}
-													/>
-												</td>
-												<td>
-													<input
-														type="text"
-														value={editFormData.cabinetsListRu ?? day.cabinetsListRu}
-														onChange={(e) => setEditFormData({ ...editFormData, cabinetsListRu: e.target.value })}
-														className="sanpin-input"
-														style={{ minHeight: "36px", fontSize: "0.8rem", width: "100%" }}
-													/>
-												</td>
-												<td>
-													<div style={{ display: "flex", gap: "0.25rem" }}>
-														<input
-															type="number"
-															value={editFormData.traysProcessedCount ?? day.traysProcessedCount}
-															onChange={(e) =>
-																setEditFormData({
-																	...editFormData,
-																	traysProcessedCount: Number(e.target.value),
-																})
-															}
-															className="sanpin-input"
-															style={{ minHeight: "36px", fontSize: "0.8rem", width: "65px" }}
-															title="Лотков"
-														/>
-														<input
-															type="number"
-															value={editFormData.visitsCount ?? day.visitsCount}
-															onChange={(e) =>
-																setEditFormData({
-																	...editFormData,
-																	visitsCount: Number(e.target.value),
-																})
-															}
-															className="sanpin-input"
-															style={{ minHeight: "36px", fontSize: "0.8rem", width: "65px" }}
-															title="Приемов"
-														/>
-													</div>
-												</td>
-												<td>
-													<div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-														<label style={{ fontSize: "0.75rem" }}>
-															Выборка:
-															<input
-																type="number"
-																value={editFormData.psoSampleCount ?? day.psoSampleCount}
-																onChange={(e) =>
-																	setEditFormData({
-																		...editFormData,
-																		psoSampleCount: Number(e.target.value),
-																	})
-																}
-																className="sanpin-input"
-																style={{ minHeight: "32px", fontSize: "0.8rem", width: "50px", marginLeft: "4px" }}
-															/>
-														</label>
-														<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.72rem" }}>
-															Азопирам отр.
-														</span>
-													</div>
-												</td>
-												<td>
-													<div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-														<label style={{ fontSize: "0.75rem" }}>
-															Циклов:
-															<input
-																type="number"
-																value={editFormData.autoclaveCyclesCount ?? day.autoclaveCyclesCount}
-																onChange={(e) =>
-																	setEditFormData({
-																		...editFormData,
-																		autoclaveCyclesCount: Number(e.target.value),
-																	})
-																}
-																className="sanpin-input"
-																style={{ minHeight: "32px", fontSize: "0.8rem", width: "50px", marginLeft: "4px" }}
-															/>
-														</label>
-														<span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-															134°C / 5 точек ОК
-														</span>
-													</div>
-												</td>
-												<td>
-													<input
-														type="number"
-														step="0.5"
-														value={editFormData.recirculatorOperatingHours ?? day.recirculatorOperatingHours}
-														onChange={(e) =>
-															setEditFormData({
-																...editFormData,
-																recirculatorOperatingHours: Number(e.target.value),
-															})
-														}
-														className="sanpin-input"
-														style={{ minHeight: "36px", fontSize: "0.8rem", width: "70px" }}
-													/>
-												</td>
-												<td>
-													<input
-														type="text"
-														value={editFormData.cleaningTypeRu ?? day.cleaningTypeRu}
-														onChange={(e) => setEditFormData({ ...editFormData, cleaningTypeRu: e.target.value })}
-														className="sanpin-input"
-														style={{ minHeight: "36px", fontSize: "0.8rem", width: "100%" }}
-													/>
-												</td>
-												<td>
-													<span className="sanpin-tag sanpin-tag-success"><Check size={12} /> Норма</span>
-												</td>
-												<td>
-													<input
-														type="text"
-														value={editFormData.nurseFullName ?? day.nurseFullName}
-														onChange={(e) => setEditFormData({ ...editFormData, nurseFullName: e.target.value })}
-														className="sanpin-input"
-														style={{ minHeight: "36px", fontSize: "0.8rem", width: "100%" }}
-													/>
-												</td>
-												<td style={{ textAlign: "center" }}>
-													<div style={{ display: "flex", gap: "0.3rem", justifyContent: "center" }}>
-														<button
-															type="button"
-															onClick={() => saveEditing(day.id)}
-															className="sanpin-btn sanpin-btn-primary"
-															style={{ minHeight: "32px", padding: "0.25rem 0.5rem" }}
-															title="Сохранить правку"
-														>
-															<Check size={14} />
-														</button>
-														<button
-															type="button"
-															onClick={cancelEditing}
-															className="sanpin-btn sanpin-btn-secondary"
-															style={{ minHeight: "32px", padding: "0.25rem 0.5rem" }}
-															title="Отмена"
-														>
-															<X size={14} />
-														</button>
-													</div>
-												</td>
-											</tr>
-										);
-									}
-
-									return (
-										<tr
-											key={day.id}
-											className="sanpin-log-row"
-											style={{
-												minHeight: "44px",
-												contentVisibility: "auto",
-												containIntrinsicSize: "1px 44px",
-												contain: "content",
-												opacity: day.isWorkingDay ? 1 : 0.65,
-												background: day.isSavedToDb ? "rgba(16, 185, 129, 0.03)" : undefined,
-											}}
-										>
-											<td style={{ textAlign: "center", color: "var(--muted)", fontFeatureSettings: "tnum" }}>
-												{idx + 1}
-											</td>
-											<td>
-												<strong>{day.date}</strong>
-												<div style={{ fontSize: "0.75rem", color: day.isWorkingDay ? "var(--muted)" : "var(--bad-fg)" }}>
-													{day.dayOfWeekRu} {!day.isWorkingDay && "(Выходной)"}
-												</div>
-											</td>
-											<td>
-												<span style={{ fontSize: "0.82rem" }}>{day.cabinetsListRu}</span>
-											</td>
-											<td>
-												{day.isWorkingDay ? (
-													<div>
-														<strong>{day.traysProcessedCount}</strong> лотков
-														<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-															{day.visitsCount} приемов
-														</div>
-													</div>
-												) : (
-													<span style={{ color: "var(--muted)" }}>—</span>
-												)}
-											</td>
-											<td>
-												{day.isWorkingDay ? (
-													<div>
-														<span className="sanpin-tag sanpin-tag-success" style={{ fontSize: "0.75rem" }}>
-															{day.psoSampleCount} проб (Отр.)
-														</span>
-														<div style={{ fontSize: "0.72rem", color: "var(--muted)", marginTop: "2px" }}>
-															{day.psoDetergent}
-														</div>
-													</div>
-												) : (
-													<span style={{ color: "var(--muted)" }}>—</span>
-												)}
-											</td>
-											<td>
-												{day.isWorkingDay ? (
-													<div>
-														<strong>{day.autoclaveCyclesCount}</strong> циклов
-														<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-															134°C (5 точек ОК)
-														</div>
-													</div>
-												) : (
-													<span style={{ color: "var(--muted)" }}>Консервация</span>
-												)}
-											</td>
-											<td>
-												{day.isWorkingDay ? (
-													<span>{day.recirculatorOperatingHours} ч</span>
-												) : (
-													<span style={{ color: "var(--muted)" }}>0 ч</span>
-												)}
-											</td>
-											<td>
-												<div style={{ fontSize: "0.82rem" }}>{day.cleaningTypeRu}</div>
-												{day.isGeneralCleaningDay && (
-													<span
-														style={{
-															fontSize: "0.72rem",
-															background: "var(--teal-surface, rgba(13, 148, 136, 0.12))",
-															color: "var(--teal)",
-															padding: "0.1rem 0.35rem",
-															borderRadius: "4px",
-															fontWeight: 700,
-														}}
-													>
-														Генеральная
-													</span>
-												)}
-											</td>
-											<td>
-												{day.sanpinCompliance100 ? (
-													<span className="sanpin-tag sanpin-tag-success" title="Все тесты соответствуют нормам">
-														<Check size={12} /> 100% Норма
-													</span>
-												) : (
-													<span className="sanpin-tag sanpin-tag-danger">Замечание</span>
-												)}
-											</td>
-											<td>
-												<div style={{ fontSize: "0.8rem", fontWeight: 600 }}>{day.nurseFullName}</div>
-												<div
-													style={{
-														fontSize: "0.68rem",
-														fontFamily: "monospace",
-														color: "var(--muted)",
-														overflow: "hidden",
-														textOverflow: "ellipsis",
-														maxWidth: "110px",
-													}}
-													title={day.electronicStampHash}
-												>
-													{day.electronicStampHash.slice(0, 18)}...
-												</div>
-											</td>
-											<td style={{ textAlign: "center" }}>
-												{pendingDeleteDayId === day.id ? (
-													<div style={{ display: "flex", alignItems: "center", gap: "0.3rem", justifyContent: "center" }}>
-														<span style={{ fontSize: "0.75rem", color: "var(--bad-fg)", fontWeight: 700 }}>Удалить?</span>
-														<button
-															type="button"
-															onClick={() => confirmDeleteDay(day.id)}
-															className="sanpin-btn sanpin-btn-primary"
-															style={{ minHeight: "28px", padding: "0.15rem 0.45rem", fontSize: "0.75rem", background: "var(--bad-fg)", fontWeight: 700 }}
-															title="Подтвердить удаление смены"
-														>
-															Да
-														</button>
-														<button
-															type="button"
-															onClick={cancelDeleteDay}
-															className="sanpin-btn sanpin-btn-secondary"
-															style={{ minHeight: "28px", padding: "0.15rem 0.45rem", fontSize: "0.75rem" }}
-															title="Отмена"
-														>
-															Нет
-														</button>
-													</div>
-												) : (
-													<div style={{ display: "flex", gap: "0.3rem", justifyContent: "center" }}>
-														<button
-															type="button"
-															onClick={() => startEditing(day)}
-															style={{
-																background: "none",
-																border: "none",
-																cursor: "pointer",
-																color: "var(--teal)",
-																padding: "0.25rem",
-															}}
-															title="Редактировать смену"
-														>
-															<Edit3 size={15} />
-														</button>
-														<button
-															type="button"
-															onClick={() => requestDeleteDay(day.id)}
-															style={{
-																background: "none",
-																border: "none",
-																cursor: "pointer",
-																color: "var(--bad-fg)",
-																padding: "0.25rem",
-															}}
-															title="Удалить смену (с подтверждением)"
-														>
-															<Trash2 size={15} />
-														</button>
-													</div>
-												)}
-											</td>
-										</tr>
-									);
-								})
-							)}
-						</tbody>
-					</table>
-				</div>
+				<RetroactiveBatchTable
+					filteredDays={filteredDays}
+					editingDayId={editingDayId}
+					editFormData={editFormData}
+					setEditFormData={setEditFormData}
+					onStartEditing={startEditing}
+					onSaveEditing={saveEditing}
+					onCancelEditing={cancelEditing}
+					onRequestDeleteDay={requestDeleteDay}
+					onConfirmDeleteDay={confirmDeleteDay}
+					onCancelDeleteDay={cancelDeleteDay}
+					pendingDeleteDayId={pendingDeleteDayId}
+				/>
 			)}
 
 			<SterilizerEquipmentModal
@@ -1223,3 +538,6 @@ export function RetroactiveBatchTab({
 		</div>
 	);
 }
+
+export * from "./RetroactiveBatchHeroBanner";
+export * from "./RetroactiveBatchTable";
