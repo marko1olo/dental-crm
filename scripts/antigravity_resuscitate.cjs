@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * ============================================================================
- * ANTIGRAVITY MASTER SUBAGENT RESUSCITATION ENGINE (V3.0 DUAL-GATE)
+ * ANTIGRAVITY MASTER SUBAGENT RESUSCITATION ENGINE (V3.2 DUAL-GATE & SMART ESCALATION)
  * ============================================================================
  * 
  * Универсальный автоматизированный инструмент для L1 Orchestrator и любых нейросетей.
@@ -9,14 +9,16 @@
  * после рестартов language_server.exe, тайм-аутов или засыпания.
  *
  * Команды:
- *   node scripts/antigravity_resuscitate.cjs <conversationId>   -- подготовить и проверить субагента к пробуждению
- *   node scripts/antigravity_resuscitate.cjs --check            -- проверить бинарник и систему
- *   node scripts/antigravity_resuscitate.cjs --all              -- автоматически синхронизировать всех недавних субагентов
+ *   node scripts/antigravity_resuscitate.cjs <conversationId>           -- подготовить и проверить субагента к пробуждению
+ *   node scripts/antigravity_resuscitate.cjs <conversationId> --relay  -- выполнить эстафету контекста (Ступень 3)
+ *   node scripts/antigravity_resuscitate.cjs --check                    -- проверить бинарник и систему
+ *   node scripts/antigravity_resuscitate.cjs --all                      -- автоматически синхронизировать всех недавних субагентов
  *
  * Принцип работы (Железная лестница пробуждения):
  * 1. Проверяет бинарник language_server.exe (Gate 1 NOP + Gate 2 NumGeneratorMetadatas).
  * 2. Синхронизирует SQLite-базу субагента (дублирует gen_metadata до NumSteps - 1).
- * 3. Проверяет, не был ли субагент убит через manage_subagents kill (Anti-Premature-Kill Guard).
+ * 3. Оценивает размер контекста: если >350 шагов или есть ошибки pre-invocation hook,
+ *    рекомендует Ступень 3 (Transcript Relay) во избежание 429 при context summarization.
  * 4. Очищает зависшие маркеры в messages/undelivered/ при необходимости.
  * 5. Выдает готовый payload для send_message или запускает Ступень 3 (Transcript Relay).
  */
@@ -99,43 +101,63 @@ function syncSubagentSqlite(cid) {
   }
 }
 
-// 3. Проверка транскрипта на фатальные маркеры (429 квота)
+// 3. Проверка транскрипта и SQLite на фатальные маркеры
 function checkTranscript(cid) {
   const tPath = path.join(BRAIN_DIR, cid, ".system_generated", "logs", "transcript.jsonl");
-  if (!fs.existsSync(tPath)) {
-    return { exists: false };
+  const dbPath = path.join(CONVERSATIONS_DIR, `${cid}.db`);
+  let totalLines = 0;
+  let hasQuotaError = false;
+  let quotaResetTime = null;
+  let lastStep = null;
+
+  if (fs.existsSync(tPath)) {
+    try {
+      const content = fs.readFileSync(tPath, "utf8");
+      const lines = content.trim().split("\n");
+      totalLines = lines.length;
+
+      for (let i = lines.length - 1; i >= Math.max(0, lines.length - 15); i--) {
+        try {
+          const d = JSON.parse(lines[i]);
+          if (!lastStep && d.type) lastStep = d;
+          if ((d.error && typeof d.error === "string" && d.error.includes("RESOURCE_EXHAUSTED")) ||
+              (d.content && typeof d.content === "string" && d.content.includes("RESOURCE_EXHAUSTED"))) {
+            hasQuotaError = true;
+            const match = /Resets in ([^\.]+)/.exec(d.error || d.content);
+            if (match) quotaResetTime = match[1];
+          }
+        } catch {}
+      }
+    } catch {}
   }
 
-  try {
-    const content = fs.readFileSync(tPath, "utf8");
-    const lines = content.trim().split("\n");
-    let hasQuotaError = false;
-    let quotaResetTime = null;
-    let lastStep = null;
-
-    for (let i = lines.length - 1; i >= Math.max(0, lines.length - 15); i--) {
-      try {
-        const d = JSON.parse(lines[i]);
-        if (!lastStep && d.type) lastStep = d;
-        if (d.error && typeof d.error === "string" && d.error.includes("RESOURCE_EXHAUSTED")) {
-          hasQuotaError = true;
-          const match = /Resets in ([^\.]+)/.exec(d.error);
-          if (match) quotaResetTime = match[1];
+  // Also inspect SQLite steps table for unflushed error
+  let sqliteTotalSteps = totalLines;
+  if (fs.existsSync(dbPath)) {
+    try {
+      const db = new DatabaseSync(dbPath);
+      const row = db.prepare("SELECT idx, step_payload, status FROM steps ORDER BY cast(idx as integer) DESC LIMIT 1").get();
+      if (row) {
+        sqliteTotalSteps = Number(row.idx) + 1;
+        if (row.step_payload) {
+          const pStr = Buffer.from(row.step_payload).toString("utf8");
+          if (pStr.includes("RESOURCE_EXHAUSTED") || pStr.includes("code 429")) {
+            hasQuotaError = true;
+          }
         }
-      } catch {}
-    }
-
-    return {
-      exists: true,
-      totalLines: lines.length,
-      hasQuotaError,
-      quotaResetTime,
-      lastStepType: lastStep?.type,
-      lastStepStatus: lastStep?.status
-    };
-  } catch (err) {
-    return { exists: false, error: err.message };
+      }
+      db.close();
+    } catch {}
   }
+
+  return {
+    exists: fs.existsSync(tPath) || fs.existsSync(dbPath),
+    totalLines: Math.max(totalLines, sqliteTotalSteps),
+    hasQuotaError,
+    quotaResetTime,
+    lastStepType: lastStep?.type,
+    lastStepStatus: lastStep?.status
+  };
 }
 
 // 4. Проверка папки сообщений
@@ -160,14 +182,21 @@ function resuscitateSubagent(cid) {
   const binStatus = checkBinary();
   console.log(`[1/5] Language Server Binary Check: ${binStatus.ok ? "PASS (Dual-Gate Patched)" : "WARN (Check patcher)"}`);
 
-  // Шаг 2: Транскрипт и квота
+  // Шаг 2: Транскрипт, шаги и контекст
   const tInfo = checkTranscript(cid);
+  const isBloatedContext = tInfo.totalLines > 350;
+
+  console.log(`[2/5] Trajectory Size: ${tInfo.totalLines} recorded steps.`);
+  if (isBloatedContext) {
+    console.log(`      [ВНИМАНИЕ] Контекст превышает 350 шагов!`);
+    console.log(`      Внутреннее ядро Antigravity при получении send_message принудительно запустит`);
+    console.log(`      'pre-invocation hook: context summarization', что часто вызывает повторный 429`);
+    console.log(`      или переводит субагента в состояние 'errored'.`);
+  }
+
   if (tInfo.hasQuotaError) {
-    console.log(`[2/5] Quota History: Historical 429 detected from previous session.`);
-    console.log(`      ACCOUNT SWITCH INVARIANT: User restarted Antigravity under a NEW Google account.`);
-    console.log(`      Quota is RESET A PRIORI! Historical 429 is IGNORED. DO NOT USE STEP 3! Slot is 100% ready for in-place revival.`);
-  } else {
-    console.log(`[2/5] Quota History: Clean (no 429 errors recorded in last steps).`);
+    console.log(`      Quota History: Зафиксирован 429 (RESOURCE_EXHAUSTED).`);
+    console.log(`      Если Antigravity перезапущен под новым аккаунтом — квота сброшена.`);
   }
 
   // Шаг 3: Синхронизация SQLite базы
@@ -187,21 +216,32 @@ function resuscitateSubagent(cid) {
   const qInfo = checkMessageQueues(cid);
   console.log(`[4/5] Message Queue: ${qInfo.undeliveredCount} pending undelivered messages`);
 
-  // Шаг 5: Финальный вердикт и инструкция для нейросети
+  // Шаг 5: Финальный вердикт и рекомендация
   console.log(`[5/5] RESUSCITATION PREPARATION COMPLETE.`);
-  console.log(`\n>>> ИНСТРУКЦИЯ ДЛЯ НЕЙРОСЕТИ (L1 ORCHESTRATOR) <<<`);
-  console.log(`Субагент готов к мгновенному пробуждению в том же теле!`);
-  console.log(`Вызовите инструмент send_message со следующими параметрами:`);
-  console.log(`  Recipient: "${cid}"`);
-  console.log(`  Message:   "[ПРЕФЛАЙТ ВОЗРОЖДЕНИЯ] Продолжайте выполнение вашей задачи..."`);
-  console.log(`\nВАЖНО: После вызова send_message ОБЯЗАТЕЛЬНО завершите свой ход (End Turn),`);
-  console.log(`чтобы цикл событий Antigravity передал управление субагенту!`);
+
+  if (isBloatedContext) {
+    console.log(`\n>>> РЕКОМЕНДАЦИЯ ЭСКАЛАЦИИ К СТУПЕНИ 3 (TRANSCRIPT RELAY) <<<`);
+    console.log(`Из-за огромного контекста (>350 шагов) попытка пробуждения in-place (Ступень 2)`);
+    console.log(`сопряжена с риском ошибки pre-invocation hook или мгновенного исчерпания квоты.`);
+    console.log(`Рекомендуется передать эстафету свежему раннеру:`);
+    console.log(`  node scripts/antigravity_transcript_relay.cjs ${cid}`);
+    console.log(`Либо вызвать:`);
+    console.log(`  node scripts/antigravity_resuscitate.cjs ${cid} --relay\n`);
+  } else {
+    console.log(`\n>>> ИНСТРУКЦИЯ ДЛЯ НЕЙРОСЕТИ (L1 ORCHESTRATOR) <<<`);
+    console.log(`Субагент готов к мгновенному пробуждению в том же теле!`);
+    console.log(`Вызовите инструмент send_message со следующими параметрами:`);
+    console.log(`  Recipient: "${cid}"`);
+    console.log(`  Message:   "[ПРЕФЛАЙТ ВОЗРОЖДЕНИЯ] Продолжайте выполнение вашей задачи..."`);
+    console.log(`\nВАЖНО: После вызова send_message ОБЯЗАТЕЛЬНО завершите свой ход (End Turn)!`);
+    console.log(`Если статус остался 'idle' или стал 'errored' — немедленно переходите к Ступени 3!`);
+  }
   console.log(`============================================================\n`);
 
   return {
-    status: "READY",
+    status: isBloatedContext ? "READY_WITH_RELAY_RECOMMENDED" : "READY",
     cid,
-    instruction: `send_message(Recipient: "${cid}") -> then yield turn.`
+    totalSteps: tInfo.totalLines,
   };
 }
 
@@ -234,10 +274,22 @@ if (args.includes("--check")) {
 } else if (args.includes("--all")) {
   syncAllRecent();
 } else if (args.length > 0 && !args[0].startsWith("--")) {
-  resuscitateSubagent(args[0]);
+  const cid = args[0];
+  if (args.includes("--relay")) {
+    const relayScript = path.join(__dirname, "antigravity_transcript_relay.cjs");
+    const relayArgs = args.filter(a => a !== "--relay").slice(1).join(" ");
+    try {
+      execSync(`node "${relayScript}" "${cid}" ${relayArgs}`, { stdio: "inherit" });
+    } catch (err) {
+      process.exit(1);
+    }
+  } else {
+    resuscitateSubagent(cid);
+  }
 } else {
   console.log(`Usage:`);
-  console.log(`  node scripts/antigravity_resuscitate.cjs <conversationId>   -- подготовить субагента к пробуждению`);
-  console.log(`  node scripts/antigravity_resuscitate.cjs --check            -- проверить статус бинарника`);
-  console.log(`  node scripts/antigravity_resuscitate.cjs --all              -- пакетная синхронизация баз всех субагентов`);
+  console.log(`  node scripts/antigravity_resuscitate.cjs <conversationId>           -- подготовить субагента к пробуждению`);
+  console.log(`  node scripts/antigravity_resuscitate.cjs <conversationId> --relay   -- выполнить эстафету контекста (Ступень 3)`);
+  console.log(`  node scripts/antigravity_resuscitate.cjs --check                     -- проверить статус бинарника`);
+  console.log(`  node scripts/antigravity_resuscitate.cjs --all                       -- пакетная синхронизация баз всех субагентов`);
 }
