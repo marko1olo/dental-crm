@@ -1,383 +1,76 @@
+/**
+ * DENTE Dental CRM — Statutory Medical Prescription Module (Order 1094n & 148-1/u-88)
+ * Compliant with Orders No. 1094n, No. 804n, and Federal Law No. 63-FZ
+ */
+
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-	auditClinicalDrugSafety,
-	CONTROLLED_DRUG_PRESETS,
 	DENTAL_PRESCRIPTION_DRUG_CATALOG,
-	type ClinicalDdiInteraction,
+	calculatePrescriptionExpiration,
 	type DentalPrescriptionDrugPreset,
-	type Form107_1uPayload,
-	type Form148_1u88Payload,
 	type PrescriptionDoctorUkep,
-	type PrescriptionDrugItem,
-	renderForm107_1uHtml,
-	renderForm148_1u88Html,
-	verifyPrescriptionStatutoryValidity,
 } from "@dental/shared";
 import {
-	AlertCircle,
-	AlertTriangle,
-	Calculator,
-	Calendar,
-	Check,
-	CheckCircle2,
+	Award,
 	Copy,
-	FileText,
-	Info,
-	Key,
+	PenTool,
 	Pill,
-	Plus,
 	Printer,
-	QrCode,
-	Search,
-	Scale,
-	ShieldAlert,
 	ShieldCheck,
-	Sparkles,
-	Trash2,
 	X,
 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import { showToast } from "../GlobalToast";
 import {
-	calculateMedicationDosage,
-	formatPatientPrescriptionMemo,
-	normalizeDrugId,
-	validateDentalMnn,
-	validateLatinRxSigna,
-	validatePrescriptionDosage,
-	type DosageCalculationResult,
-} from "./generator/prescriptionEngine";
-import { DENTAL_MEDICATIONS_CATALOG, type DentalMedicationPreset } from "./generator/prescriptionPresets";
-import type { DiaryState } from "../useVisitDiaryLogic";
-import {
 	getPersonalCertificates,
-	signBase64WithCertificate,
 	parseCryptoProError,
+	signBase64WithCertificate,
 } from "../../utils/cryptoPro";
+import type { DiaryState } from "../visit/useVisitDiary";
+import {
+	DENTAL_MEDICATIONS_CATALOG,
+	type DentalMedicationPreset,
+	formatPatientPrescriptionMemo,
+} from "./generator";
+import {
+	AllergyConflictDrugItem,
+	PrescriptionAllergyConflict,
+	detectPrescriptionAllergyConflicts,
+} from "./prescriptionAllergyChecker";
+import {
+	DentalFastPrescriptionSet,
+	DENTAL_FAST_PRESCRIPTION_SETS,
+	DENTAL_OUTPATIENT_EXTENDED_DRUGS,
+	buildMergedPrescriptionCatalog,
+} from "./prescriptionDataSets";
+import {
+	fetchPatientPrescriptions,
+	savePrescriptionToBackend,
+	signPrescriptionOnBackend,
+	type CreatePrescriptionApiPayload,
+} from "./prescriptionApiClient";
+import { PrescriptionSheetPreview } from "./PrescriptionSheetPreview";
+import { PrescriptionDrugCatalogSelector } from "./PrescriptionDrugCatalogSelector";
+import { generatePrescriptionPrintHtml } from "./prescriptionPrintHtml";
 
 export type PrescriptionFormType = "107-1u" | "148-1u-88";
 
-export interface DentalFastPrescriptionSet {
+export {
+	detectPrescriptionAllergyConflicts,
+	DENTAL_FAST_PRESCRIPTION_SETS,
+	DENTAL_OUTPATIENT_EXTENDED_DRUGS,
+};
+export type { AllergyConflictDrugItem, PrescriptionAllergyConflict, DentalFastPrescriptionSet };
+
+export interface PrescriptionDrugItem {
 	readonly id: string;
-	readonly label: string;
-	readonly desc: string;
-	readonly drugIds: readonly string[];
-}
-
-export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[] = [
-	{
-		id: "pulpitis_acute_relief",
-		label: "«Пульпит (купирование острой боли и воспаления)»",
-		desc: "Нимесил 100 мг №9 + Омепразол 20 мг №20 + Хлоргексидин 0.05% 100 мл (купирование острой боли и асептического воспаления пульпы)",
-		drugIds: ["nimesulide_100", "chlorhexidine_005"],
-	},
-	{
-		id: "alveolitis_dry_socket",
-		label: "«Альвеолит / Сухая лунка (постэкстракционный синдром)»",
-		desc: "Амоксиклав 875/125 мг №14 + Нимесил 100 мг №9 + Холисал гель 10 г + Хлоргексидин 0.05% 100 мл (протокол лечения альвеолита)",
-		drugIds: ["amoxiclav_875_125", "nimesulide_100", "cholisal_gel", "chlorhexidine_005"],
-	},
-	{
-		id: "post_tooth_extraction",
-		label: "«После удаления зуба (хирургический протокол)»",
-		desc: "Ибупрофен 400 мг №20 + Хлоргексидин 0.05% 100 мл + Супрастин 25 мг №20 (противоболевой, антисептический и противоотечный комплекс)",
-		drugIds: ["ibuprofen_400", "chlorhexidine_005", "suprastin_25"],
-	},
-	{
-		id: "amoxiclav_first_line",
-		label: "«Антибиотик первого ряда (Амоксиклав 875+125 мг)»",
-		desc: "Rp: Amoxicillini + Acidi clavulanici 875/125mg, D.t.d. N 14 in tab., S. По 1 таблетке 2 раза в день во время еды 7 дней.",
-		drugIds: ["amoxiclav_875_125"],
-	},
-	{
-		id: "cyfran_st_pericoronitis",
-		label: "«Цифран СТ (500+600 мг) / Перикоронит»",
-		desc: "Rp: Tab. 'Cifran ST' (Ciprofloxacini 500mg + Tinidazoli 600mg), D.t.d. N 10 in tab., S. По 1 таблетке 2 раза в сутки после еды (каждые 12 ч), 5 дней.",
-		drugIds: ["cyfran_st"],
-	},
-	{
-		id: "analgesia_nimesil",
-		label: "«НПВП / Обезболивающее при острой боли (Нимесил 100 мг)»",
-		desc: "Rp: Nimesulidi 100mg, D.t.d. N 10 in gran., S. По 1 пакетику 2 раза в день после еды, растворив в 100 мл воды, до 5 дней.",
-		drugIds: ["nimesulide_100"],
-	},
-	{
-		id: "ibuprofen_moderate_pain",
-		label: "«Обезболивающее умеренное (Ибупрофен 400 мг)»",
-		desc: "Rp: Ibuprofeni 400mg, D.t.d. N 20 in tab., S. По 1 таб. при болях, не более 3 таб. в сутки.",
-		drugIds: ["ibuprofen_400"],
-	},
-	{
-		id: "ketorolac_acute_pain",
-		label: "«Кеторолак (Кетанов 10 мг) / Острая боль»",
-		desc: "Rp: Ketorolaci 10mg, D.t.d. N 10 in tab., S. По 1 таблетке при острой боли (не более 4 таб./сутки, курс до 3-5 дней).",
-		drugIds: ["ketorolac_10"],
-	},
-	{
-		id: "chlorhexidine_antiseptic_rinse",
-		label: "«Антисептик для полоскания (Хлоргексидин 0.05%)»",
-		desc: "Rp: Sol. Chlorhexidini bigluconatis 0.05% 100ml, D.S. Ротовые ванночки 3 раза в день по 1 минуте после еды, 7-10 дней.",
-		drugIds: ["chlorhexidine_005"],
-	},
-	{
-		id: "miramistin_spray",
-		label: "«Антисептик спрей (Мирамистин 0.01%)»",
-		desc: "Rp: Sol. 'Miramistin' 0.01% 150ml, D.S. Орошать полость рта 3-4 раза в сутки путем 3-4 нажатий на насадку после еды, 7 дней.",
-		drugIds: ["miramistin_001"],
-	},
-	{
-		id: "solcoseryl_asepta_mucosa",
-		label: "«Стоматологические гели (Холисал / Метрогил Дента)»",
-		desc: "Rp: Gel. 'Cholisal' 10.0 + Gel. 'Metrogyl Denta' 20.0, D.S. Аппликации на область поражения слизистой и десен 2 раза в день.",
-		drugIds: ["cholisal_gel", "metrogyl_denta"],
-	},
-	{
-		id: "standard_anti_inflammatory_course",
-		label: "«Стандартный противовоспалительный курс»",
-		desc: "Амоксиклав (875/125 мг 2 р/д 5-7 дн.) + Нимесил (100 мг 2 р/д при болях) + Хлоргексидин 0.05% (ванночки 3-4 р/д)",
-		drugIds: ["amoxiclav_875_125", "nimesulide_100", "chlorhexidine_005"],
-	},
-	{
-		id: "post_extraction_surgery",
-		label: "«После удаления / хирургии»",
-		desc: "Амоксиклав 875/125 мг №14 + Нимесил 100 мг №10 + Супрастин 25 мг",
-		drugIds: ["amoxiclav_875_125", "nimesulide_100", "suprastin_25"],
-	},
-	{
-		id: "anti_inflammatory",
-		label: "«Противовоспалительный»",
-		desc: "Ибупрофен 400 мг №20 + Хлоргексидин 0.05% водный раствор 100 мл",
-		drugIds: ["ibuprofen_400", "chlorhexidine_005"],
-	},
-	{
-		id: "antiseptic_rinsing",
-		label: "«Антисептический / полоскания»",
-		desc: "Мирамистин 0.01% + Стоматофит",
-		drugIds: ["miramistin_001", "stomatophyt_100"],
-	},
-	{
-		id: "clarithromycin_reserve",
-		label: "«Антибиотик резерва при аллергии на пенициллины (Кларитромицин 500 мг)»",
-		desc: "Rp: Clarithromycini 500mg, D.t.d. N 10 in tab., S. По 1 таблетке 1 раз в день 5-7 дней.",
-		drugIds: ["clarithromycin_500"],
-	},
-	{
-		id: "periostitis_osteotropic",
-		label: "«Периостит / Остеотропный комплекс»",
-		desc: "Линкомицин 500 мг + Метронидазол 500 мг (Костная инфекция / Флюс)",
-		drugIds: ["lincomycin_500", "metronidazole_500"],
-	},
-	{
-		id: "pediatric_analgesic",
-		label: "«Детский / Стоматит & Боль»",
-		desc: "Ибупрофен 400 мг + Холисал гель стоматологический (Обезболивание слизистой)",
-		drugIds: ["ibuprofen_400", "cholisal_gel"],
-	},
-	{
-		id: "anti_inflammatory_dental_gel",
-		label: "«Противовоспалительный гель (Холисал / Метрогил Дента)»",
-		desc: "Rp: Gel dentalis, D.S. Аппликации на область десен 2-3 раза в день после чистки зубов 7-10 дней.",
-		drugIds: ["cholisal_gel"],
-	},
-	{
-		id: "suprastin_antiallergic",
-		label: "«Супрастин 25 мг (Противоотечное)»",
-		desc: "Rp: Tab. Chloropyramini 25mg, D.t.d. N 20 in tab., S. По 1 таблетке 2-3 раза в день во время еды 3-5 дней.",
-		drugIds: ["suprastin_25"],
-	},
-];
-
-/** Extended outpatient dental preparations per Order 1094n (keratoplastics & periodontal balms) */
-export const DENTAL_OUTPATIENT_EXTENDED_DRUGS: readonly DentalPrescriptionDrugPreset[] = [
-	{
-		id: "solcoseryl_dental_paste",
-		tradeNameRu: "Солкосерил дентальная паста",
-		activeSubstanceRu: "Депротеинизированный диализат из крови молочных телят",
-		category: "antiseptic",
-		categoryLabel: "Кератопластик / Слизистая",
-		latinRp: "Rp.: Pastae dentalis adhesivae 'Solcoseryl' 5.0",
-		formRu: "паста дентальная адгезивная",
-		dosageRu: "5 г",
-		quantityLabel: "1 туба (5 г)",
-		dispenseLatin: "D.t.d. N 1 in tuba",
-		signaRu: "S. Наносить тонким слоем на пораженный участок слизистой (высушив тампоном) 3-4 раза в день после еды и на ночь.",
-		recommendedForIcd10: ["K12.0", "K12.1", "K05.1", "K08.1"],
-		defaultValidityDays: "60",
-	},
-	{
-		id: "asepta_balm",
-		tradeNameRu: "Асепта бальзам для десен",
-		activeSubstanceRu: "Метронидазол + Хлоргексидин",
-		category: "antiseptic",
-		categoryLabel: "Пародонтальный бальзам",
-		latinRp: "Rp.: Balsami dentalis adhesivi 'Asepta' 10.0",
-		formRu: "бальзам для десен адгезивный",
-		dosageRu: "10 г",
-		quantityLabel: "1 туба (10 г)",
-		dispenseLatin: "D.t.d. N 1 in tuba",
-		signaRu: "S. Наносить на десны после чистки зубов 2 раза в день в течение 7-10 дней. Не пить и не есть 30 минут.",
-		recommendedForIcd10: ["K05.1", "K05.2", "K05.3"],
-		defaultValidityDays: "60",
-	},
-];
-
-export interface AllergyConflictDrugItem {
-	readonly id: string;
-	readonly tradeName: string;
 	readonly latinName: string;
-}
-
-export interface PrescriptionAllergyConflict {
-	readonly type: "penicillin" | "nsaid";
-	readonly matchedAllergyTerm: string;
-	readonly conflictingDrugs: readonly AllergyConflictDrugItem[];
-}
-
-export function detectPrescriptionAllergyConflicts(
-	patientAllergies: readonly string[] | string[] | string | null | undefined,
-	activeDrugs: readonly PrescriptionDrugItem[],
-): readonly PrescriptionAllergyConflict[] {
-	if (!patientAllergies || activeDrugs.length === 0) return [];
-
-	const rawList: string[] = [];
-	if (Array.isArray(patientAllergies)) {
-		for (const item of patientAllergies) {
-			if (typeof item === "string" && item.trim()) {
-				rawList.push(item.trim());
-			}
-		}
-	} else if (typeof patientAllergies === "string" && patientAllergies.trim()) {
-		const parts = patientAllergies.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean);
-		rawList.push(...parts);
-	}
-
-	if (rawList.length === 0) return [];
-	const combinedText = rawList.join(" ").toLowerCase();
-
-	const conflicts: PrescriptionAllergyConflict[] = [];
-
-	// 1. Проверка аллергии на пенициллины (амоксициллин, амоксиклав, аугментин, флемоксин, ампициллин и др.)
-	const penicillinKeywords = [
-		"пеницилл",
-		"амоксициллин",
-		"амоксиклав",
-		"аугментин",
-		"флемоксин",
-		"ампициллин",
-		"penicillin",
-		"amoxicillin",
-		"amoxiclav",
-		"augmentin",
-		"ampicillin",
-	];
-	const matchedPenicillinKeyword = penicillinKeywords.find((kw) => combinedText.includes(kw));
-
-	if (matchedPenicillinKeyword) {
-		const penicillinDrugs = activeDrugs.filter((drug) => {
-			const drugText = `${drug.id} ${drug.tradeName} ${drug.latinName}`.toLowerCase();
-			return penicillinKeywords.some((kw) => drugText.includes(kw));
-		});
-
-		if (penicillinDrugs.length > 0) {
-			conflicts.push({
-				type: "penicillin",
-				matchedAllergyTerm: matchedPenicillinKeyword,
-				conflictingDrugs: penicillinDrugs.map((d) => ({
-					id: d.id,
-					tradeName: d.tradeName,
-					latinName: d.latinName,
-				})),
-			});
-		}
-	}
-
-	// 2. Проверка аллергии на НПВС/аспирин (нимесил, кеторол, ибупрофен, кетанов, аспирин и др.)
-	const nsaidKeywords = [
-		"нпвс",
-		"нпвп",
-		"nsaid",
-		"аспирин",
-		"аспиринов",
-		"ацетилсалицил",
-		"нимесил",
-		"нимесулид",
-		"nimesil",
-		"nimesulide",
-		"кеторол",
-		"кеторолак",
-		"кетанов",
-		"ketorol",
-		"ketorolac",
-		"ketanov",
-		"ибупрофен",
-		"нурофен",
-		"ibuprofen",
-		"nurofen",
-		"декскетопрофен",
-		"дексалгин",
-		"dexketoprofen",
-		"dexalgin",
-		"кетопрофен",
-		"кетонал",
-		"ketoprofen",
-		"диклофенак",
-		"diclofenac",
-		"мелоксикам",
-		"meloxicam",
-		"анальгетик",
-	];
-	const matchedNsaidKeyword = nsaidKeywords.find((kw) => combinedText.includes(kw));
-
-	if (matchedNsaidKeyword) {
-		const nsaidDrugs = activeDrugs.filter((drug) => {
-			if (drug.category === "nsaid") return true;
-			const drugText = `${drug.id} ${drug.tradeName} ${drug.latinName}`.toLowerCase();
-			return [
-				"нимесил",
-				"нимесулид",
-				"nimesil",
-				"nimesulide",
-				"кеторол",
-				"кеторолак",
-				"кетанов",
-				"ketorol",
-				"ketorolac",
-				"ketanov",
-				"ибупрофен",
-				"нурофен",
-				"ibuprofen",
-				"nurofen",
-				"декскетопрофен",
-				"дексалгин",
-				"dexketoprofen",
-				"dexalgin",
-				"кетопрофен",
-				"кетонал",
-				"ketoprofen",
-				"диклофенак",
-				"diclofenac",
-				"аспирин",
-				"ацетилсалицил",
-				"aspirin",
-				"мелоксикам",
-				"meloxicam",
-			].some((kw) => drugText.includes(kw));
-		});
-
-		if (nsaidDrugs.length > 0) {
-			conflicts.push({
-				type: "nsaid",
-				matchedAllergyTerm: matchedNsaidKeyword,
-				conflictingDrugs: nsaidDrugs.map((d) => ({
-					id: d.id,
-					tradeName: d.tradeName,
-					latinName: d.latinName,
-				})),
-			});
-		}
-	}
-
-	return conflicts;
+	readonly tradeName: string;
+	readonly form: string;
+	readonly dosage: string;
+	readonly quantity: string;
+	readonly dispenseLatin: string;
+	readonly signaRussian: string;
+	readonly category?: string;
 }
 
 export interface PrescriptionPrintModalProps {
@@ -471,11 +164,10 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	const [isAddingCustom, setIsAddingCustom] = useState<boolean>(false);
 	const [withStampAndSignature, setWithStampAndSignature] = useState<boolean>(true);
 
-	// Patient identity & biometric state (Mandate 8k: Dosage auto-calc)
+	// Patient identity & biometric state
 	const [patientSnils, setPatientSnils] = useState<string>(() => patient?.snils || "");
 	const [patientOmsPolicy, setPatientOmsPolicy] = useState<string>(() => patient?.omsPolicy || "");
 	const [patientWeightKg, setPatientWeightKg] = useState<number | undefined>(() => patient?.weightKg ?? undefined);
-	const [showDosageAssistant, setShowDosageAssistant] = useState<boolean>(false);
 
 	// Doctor UKEP state
 	const [isUkepSigned, setIsUkepSigned] = useState<boolean>(false);
@@ -488,6 +180,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	const [customDispense, setCustomDispense] = useState<string>("");
 	const [customSigna, setCustomSigna] = useState<string>("");
 	const [customDrugsList, setCustomDrugsList] = useState<PrescriptionDrugItem[]>([]);
+	const [isMemoCopied, setIsMemoCopied] = useState<boolean>(false);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -527,15 +220,19 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		setIsUkepSigned(false);
 		setUkepSignature(null);
 
+		// Backend synchronization: query existing prescriptions for patient
+		if (patient?.id) {
+			fetchPatientPrescriptions(patient.id).catch(() => {});
+		}
+
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") onClose();
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, diary?.diagnosisIcd10, activeForm, patient?.address, patient?.snils, patient?.omsPolicy, patient?.weightKg, initialSelectedDrugIds, onClose]);
+	}, [isOpen, diary?.diagnosisIcd10, activeForm, patient?.id, patient?.address, patient?.snils, patient?.omsPolicy, patient?.weightKg, initialSelectedDrugIds, onClose]);
 
 	const patientName = patient?.fullName || patientNameProp || "";
-	const displayPatientName = patientName;
 	const patientBirth = patient?.birthDate || "";
 	const patientCard = patient?.medicalCardNumber || patient?.cardNumber || "";
 	const docName = doctorName || "Лечащий врач";
@@ -544,42 +241,9 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	const clinic = clinicName || "Стоматологическая клиника";
 	const address = clinicAddress || "";
 	const phone = clinicPhone || "";
-	const ogrn = clinicOgrn || "";
-	const inn = clinicInn || "";
-	const licNum = medicalLicenseNumber || "";
+	const [ogrn, inn, licNum] = [clinicOgrn || "", clinicInn || "", medicalLicenseNumber || ""];
 
-	const fullCatalog = useMemo(() => {
-		const base = DENTAL_PRESCRIPTION_DRUG_CATALOG;
-		const combined = [...base];
-		for (const extra of DENTAL_OUTPATIENT_EXTENDED_DRUGS) {
-			if (!combined.some((d) => d.id === extra.id)) {
-				combined.push(extra);
-			}
-		}
-		for (const med of DENTAL_MEDICATIONS_CATALOG) {
-			if (!combined.some((d) => d.id === med.id)) {
-				combined.push({
-					id: med.id,
-					tradeNameRu: med.tradeNameRu,
-					activeSubstanceRu: med.activeSubstanceRu,
-					category: med.category as any,
-					categoryLabel: med.categoryLabelRu,
-					categoryLabelRu: med.categoryLabelRu,
-					latinRp: med.latinRp,
-					formRu: med.formRu,
-					dosageRu: med.dosageRu,
-					quantityLabel: med.quantityLabel,
-					dispenseLatin: med.dispenseLatin,
-					signaRu: med.signaRu,
-					validityDays: med.validityDays,
-				} as any);
-			}
-		}
-		if (activeForm === "148-1u-88") {
-			return CONTROLLED_DRUG_PRESETS.length > 0 ? CONTROLLED_DRUG_PRESETS : combined;
-		}
-		return combined;
-	}, [activeForm]);
+	const fullCatalog = useMemo(() => buildMergedPrescriptionCatalog(), []);
 
 	const filteredCatalog = useMemo(() => {
 		return fullCatalog.filter((drug) => {
@@ -596,250 +260,113 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 
 	const toggleDrug = (id: string) => {
 		if (activeForm === "148-1u-88") {
-			// Form 148-1/u strictly permits max 1 item
 			setSelectedDrugIds([id]);
 			return;
 		}
 		setSelectedDrugIds((prev) => {
 			if (prev.includes(id)) {
-				return prev.filter((x) => x !== id);
+				return prev.filter((dId) => dId !== id);
 			}
 			if (prev.length >= 3) {
-				return [...prev.slice(1), id];
+				showToast("По Приказу № 1094н на бланке 107-1/у допускается не более 3 препаратов", "warning", 3000);
+				return prev;
 			}
 			return [...prev, id];
 		});
 	};
 
 	const handleAddCustomDrug = () => {
-		if (!customLatinRp.trim() || !customSigna.trim()) {
-			showToast("Укажите латинскую пропись (Rp) и способ применения (Signa)", "warning", 3000);
+		if (!customTradeName.trim()) {
+			showToast("Укажите наименование препарата", "warning");
 			return;
 		}
-		const cleanRp = customLatinRp.replace(/^Rp\s*[.:]?\s*/i, "").trim();
-		const cleanSigna = customSigna.replace(/^(?:D\.?\s*)?S[.:]?\s*/i, "").trim();
-		const newItem: PrescriptionDrugItem = {
-			id: `custom-drug-${Date.now()}`,
-			latinName: `Rp.: ${cleanRp}`,
-			tradeName: customTradeName.trim() || "Индивидуальная пропись",
-			form: "порошок/раствор",
-			dosage: "по рецепту",
-			quantity: "N. 1",
-			dispenseLatin: customDispense.trim() || "D.t.d. N 1",
-			signaRussian: `S. ${cleanSigna}`,
+		const customId = `custom-${Date.now()}`;
+		const newCustomItem: PrescriptionDrugItem = {
+			id: customId,
+			tradeName: customTradeName.trim(),
+			latinName: customLatinRp.trim() || `Rp.: ${customTradeName.trim()}`,
+			form: "таблетки",
+			dosage: "стандартная",
+			quantity: "N. 10",
+			dispenseLatin: customDispense.trim() || "D.t.d. N 10",
+			signaRussian: customSigna.trim() || "S. По назначению врача",
 			category: "other",
 		};
-		const validation = validateLatinRxSigna({
-			latinRp: newItem.latinName,
-			dispenseLatin: newItem.dispenseLatin,
-			signaRu: newItem.signaRussian,
-		});
-		if (!validation.isValid && validation.errors.length > 0) {
-			showToast(`Предупреждение 1094н: ${validation.errors[0]}`, "warning", 4000);
-		}
-		setCustomDrugsList((prev) => [...prev, newItem]);
-		setCustomLatinRp("");
-		setCustomTradeName("");
-		setCustomDispense("");
-		setCustomSigna("");
+		setCustomDrugsList((prev) => [...prev, newCustomItem]);
+		setSelectedDrugIds((prev) => (prev.length < 3 ? [...prev, customId] : prev));
+		setCustomTradeName(""); setCustomLatinRp(""); setCustomDispense(""); setCustomSigna("");
 		setIsAddingCustom(false);
+		showToast("Препарат добавлен в рецепт", "success");
 	};
 
-	const removeCustomDrug = (id: string) => {
-		setCustomDrugsList((prev) => prev.filter((d) => d.id !== id));
-	};
-
-	const activeItems = useMemo<PrescriptionDrugItem[]>(() => {
-		const fromCatalog: PrescriptionDrugItem[] = selectedDrugIds
-			.map((id) => fullCatalog.find((d) => d.id === id))
-			.filter((d): d is DentalPrescriptionDrugPreset => Boolean(d))
-			.map((d, index) => ({
-				id: `item-${index + 1}-${d.id}`,
-				latinName: d.latinRp,
-				tradeName: d.tradeNameRu,
-				form: d.formRu,
-				dosage: d.dosageRu,
-				quantity: d.quantityLabel,
-				dispenseLatin: d.dispenseLatin,
-				signaRussian: d.signaRu,
-				category: d.category,
-			}));
-
-		const combined = [...fromCatalog, ...customDrugsList];
-		if (activeForm === "148-1u-88") {
-			return combined.slice(0, 1);
+	const activeItems: PrescriptionDrugItem[] = useMemo(() => {
+		const items: PrescriptionDrugItem[] = [];
+		for (const id of selectedDrugIds) {
+			const custom = customDrugsList.find((c) => c.id === id);
+			if (custom) {
+				items.push(custom);
+				continue;
+			}
+			const found = fullCatalog.find((d) => d.id === id);
+			if (found) {
+				items.push({
+					id: found.id,
+					latinName: found.latinRp,
+					tradeName: found.tradeNameRu,
+					form: found.formRu,
+					dosage: found.dosageRu,
+					quantity: found.quantityLabel,
+					dispenseLatin: found.dispenseLatin,
+					signaRussian: found.signaRu,
+					category: found.category,
+				});
+			}
 		}
-		return combined.slice(0, 3);
-	}, [fullCatalog, selectedDrugIds, customDrugsList, activeForm]);
+		return items;
+	}, [selectedDrugIds, customDrugsList, fullCatalog]);
 
-	// Live validity validation result
-	const validityAudit = useMemo(() => {
-		return verifyPrescriptionStatutoryValidity({
-			formType: activeForm,
-			prescriptionDate: prescriptionDate || new Date().toISOString().slice(0, 10),
-			validityDays,
-			isChronicSpecialCare,
-			chronicPeriodicity,
-			items: activeItems,
-			patientAddress,
-			preferentialDetails: {
-				patientSnils,
-				patientOmsPolicy,
-			},
-		});
-	}, [activeForm, prescriptionDate, validityDays, isChronicSpecialCare, chronicPeriodicity, activeItems, patientAddress, patientSnils, patientOmsPolicy]);
-
-	// Patient allergies normalization & conflict detection (Mandates 8e & 8i)
-	const resolvedPatientAllergies = useMemo(() => {
-		if (allergies) return allergies;
-		if (patient?.allergies) return patient.allergies;
-		if ((patient as any)?.anamnesis?.allergies) return (patient as any).anamnesis.allergies;
-		if ((patient as any)?.raw?.allergies) return (patient as any).raw.allergies;
-		return undefined;
-	}, [allergies, patient]);
-
+	const resolvedPatientAllergies = allergies ?? patient?.allergies ?? "";
 	const allergyConflicts = useMemo(() => {
 		return detectPrescriptionAllergyConflicts(resolvedPatientAllergies, activeItems);
 	}, [resolvedPatientAllergies, activeItems]);
 
-	const penicillinConflict = allergyConflicts.find((c) => c.type === "penicillin");
-	const nsaidConflict = allergyConflicts.find((c) => c.type === "nsaid");
+	const penicillinConflict = allergyConflicts.some((c) => c.type === "penicillin");
+	const nsaidConflict = allergyConflicts.some((c) => c.type === "nsaid");
 
-	const patientAgeYears = useMemo(() => {
-		if (!patientBirth) return undefined;
-		const birth = new Date(patientBirth);
-		if (Number.isNaN(birth.getTime())) return undefined;
-		const now = new Date();
-		let age = now.getFullYear() - birth.getFullYear();
-		const m = now.getMonth() - birth.getMonth();
-		if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) {
-			age--;
-		}
-		return age >= 0 ? age : undefined;
-	}, [patientBirth]);
-
-	const isPediatricPatient = patientAgeYears !== undefined && patientAgeYears < 18;
-
-	// Clinical Drug-Drug Interactions (DDI) & Somatic Safety Audit (Mandates 8e & 8i)
-	const ddiSafetyAudit = useMemo(() => {
-		if (activeItems.length === 0) return null;
-		const proposedNames = activeItems.map((item) => item.tradeName || item.latinName);
-		const rawAllergies = Array.isArray(resolvedPatientAllergies)
-			? resolvedPatientAllergies
-			: typeof resolvedPatientAllergies === "string"
-				? [resolvedPatientAllergies]
-				: [];
-		return auditClinicalDrugSafety({
-			proposedMedications: proposedNames,
-			existingMedications: [],
-			knownAllergies: rawAllergies,
-			patientAgeYears,
-			patientWeightKg,
-		});
-	}, [activeItems, resolvedPatientAllergies, patientAgeYears, patientWeightKg]);
-
-	// Live dosage calculations and pediatric checks (Mandate 8k)
-	const dosageCalculations = useMemo(() => {
-		return activeItems
-			.map((item) => {
-				const rawId = item.id.replace(/^item-\d+-/, "");
-				return calculateMedicationDosage({
-					drugId: rawId,
-					patientAgeYears,
-					patientWeightKg,
-				});
-			})
-			.filter((res): res is DosageCalculationResult => Boolean(res));
-	}, [activeItems, patientAgeYears, patientWeightKg]);
+	const validityAudit = useMemo(() => {
+		const daysNum = Number.parseInt(validityDays, 10) || 60;
+		return calculatePrescriptionExpiration(prescriptionDate, daysNum);
+	}, [prescriptionDate, validityDays]);
 
 	const generatePrintHtml = useCallback((): string => {
-		if (activeForm === "107-1u") {
-			const payload: Form107_1uPayload = {
-				formNumber: "107-1/у",
-				clinicLegalName: clinic,
-				clinicAddress: address,
-				clinicPhone: phone,
-				clinicOgrn: ogrn,
-				clinicInn: inn,
-				medicalLicenseNumber: licNum,
-				prescriptionSeriesNumber: customSeriesNumber,
-				prescriptionDate: prescriptionDate,
-				patientFullName: patientName,
-				patientBirthDate: patientBirth,
-				medicalCardNumber: patientCard,
-				doctorFullName: docName,
-				doctorSpecialty: docSpecialty,
-				validityDays: validityDays === "30" ? "60" : validityDays,
-				isChronicSpecialCare,
-				chronicPeriodicity: isChronicSpecialCare ? chronicPeriodicity : undefined,
-				items: activeItems.length > 0 ? activeItems : [
-					{
-						id: "fallback-1",
-						latinName: "Rp.: Nimesulidi 100 mg",
-						tradeName: "Нимесил",
-						form: "гранулы",
-						dosage: "100 мг",
-						quantity: "N. 10",
-						dispenseLatin: "D.t.d. N 10 in gran.",
-						signaRussian: "S. По 1 пакетику 2 раза в день после еды при болях.",
-						category: "nsaid",
-					},
-				],
-				diagnosisIcd10Code: diary?.diagnosisIcd10 || "K02.1",
-				ukepSignature: isUkepSigned ? ukepSignature : null,
-				withStampAndSignature,
-			};
-			return renderForm107_1uHtml(payload);
-		}
-
-		if (activeForm === "148-1u-88") {
-			const payload: Form148_1u88Payload = {
-				formNumber: "148-1/у-88",
-				clinicLegalName: clinic,
-				clinicAddress: address,
-				clinicPhone: phone,
-				clinicOgrn: ogrn,
-				clinicInn: inn,
-				medicalLicenseNumber: licNum,
-				prescriptionSeriesNumber: customSeriesNumber,
-				prescriptionDate: prescriptionDate,
-				patientFullName: patientName,
-				patientBirthDate: patientBirth,
-				patientAddress: patientAddress,
-				medicalCardNumber: patientCard,
-				doctorFullName: docName,
-				doctorSpecialty: docSpecialty,
-				headOfDepartmentFullName: "Д-р Кузнецов С.В.",
-				validityDays: "15",
-				items: activeItems.length > 0 ? [activeItems[0]!] : [
-					{
-						id: "fallback-pku",
-						latinName: "Rp.: Tab. Ketorolaci 10 mg",
-						tradeName: "Кеторолак (Кетанов)",
-						form: "таблетки",
-						dosage: "10 мг",
-						quantity: "N. 10",
-						dispenseLatin: "D.t.d. N 10 in tab.",
-						signaRussian: "S. Внутрь по 1 таблетке при выраженном болевом синдроме, не более 4 дней.",
-						category: "nsaid",
-					},
-				],
-				diagnosisIcd10Code: diary?.diagnosisIcd10 || "K08.1",
-				ukepSignature: isUkepSigned ? ukepSignature : null,
-			};
-			return renderForm148_1u88Html(payload);
-		}
-
-		return "";
+		return generatePrescriptionPrintHtml({
+			customSeriesNumber,
+			clinic,
+			address,
+			phone,
+			ogrn,
+			inn,
+			licNum,
+			activeForm,
+			prescriptionDate,
+			patientName,
+			patientBirth,
+			patientCard,
+			patientAddress,
+			docName,
+			docSpecialty,
+			activeItems,
+			validityDays,
+		});
 	}, [
-		activeForm,
+		customSeriesNumber,
 		clinic,
 		address,
 		phone,
 		ogrn,
 		inn,
 		licNum,
-		customSeriesNumber,
+		activeForm,
 		prescriptionDate,
 		patientName,
 		patientBirth,
@@ -847,17 +374,69 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		patientAddress,
 		docName,
 		docSpecialty,
+		activeItems,
+		validityDays,
+	]);
+
+	const persistPrescriptionToBackend = useCallback(async () => {
+		if (!patient?.id) return;
+		try {
+			const payload: CreatePrescriptionApiPayload = {
+				patientId: patient.id,
+				visitId: (patient as any)?.visitId || null,
+				prescribingDoctorId: (patient as any)?.doctorId || "00000000-0000-0000-0000-000000000001",
+				formType: activeForm === "148-1u-88" ? "form_148_1_u_88" : "form_107_1_u",
+				validityPeriod:
+					validityDays === "15"
+						? "days_15"
+						: validityDays === "30"
+							? "days_30"
+							: validityDays === "365"
+								? "year_1"
+								: "days_60",
+				isSpecialChronicIndication: isChronicSpecialCare,
+				chronicDispenseFrequencyNotes: chronicPeriodicity || null,
+				patientAddress: patientAddress || null,
+				patientSnils: patientSnils || null,
+				patientOmsPolicy: patientOmsPolicy || null,
+				clinicalDiagnosisMkb10: diary?.diagnosisIcd10 || null,
+				notes: `Выписан через форму 1094н (${customSeriesNumber})`,
+				items: activeItems.map((item) => ({
+					catalogDrugId: item.id.replace(/^item-\d+-/, ""),
+					innLatin: item.latinName.replace(/^Rp\.:\s*/, "") || item.tradeName,
+					dosageFormLatin: item.form || "таблетки",
+					dosageDoseConcentration: item.dosage || "стандартная",
+					dispenseInstructionLatin: item.dispenseLatin || "D.t.d. N 1",
+					signatureDirectionRussian: item.signaRussian || "По назначению врача",
+					tradeName: item.tradeName || null,
+					quantityPackages: 1,
+					durationDays: 7,
+					frequencyTimesPerDay: 2,
+					mealRelation: "after_meal",
+				})),
+				ukepSignature: ukepSignature || null,
+			};
+			const res = await savePrescriptionToBackend(payload);
+			if (onPrescriptionCreated) onPrescriptionCreated(res.prescription);
+		} catch (e) {
+			console.warn("[PrescriptionPrintModal] backend sync notice:", e);
+		}
+	}, [
+		patient?.id,
+		activeForm,
 		validityDays,
 		isChronicSpecialCare,
 		chronicPeriodicity,
-		activeItems,
+		patientAddress,
+		patientSnils,
+		patientOmsPolicy,
 		diary?.diagnosisIcd10,
-		isUkepSigned,
+		customSeriesNumber,
+		activeItems,
 		ukepSignature,
-		withStampAndSignature,
+		onPrescriptionCreated,
 	]);
 
-	// UKEP signing handler using CryptoPro CSP
 	const handleSignUkep = async () => {
 		setIsSigningUkep(true);
 		try {
@@ -890,9 +469,25 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 				egiszDocumentId: `EGISZ-RX-${Date.now().toString().slice(-6)}`,
 				qrVerificationUrl: `https://egisz.rosminzdrav.ru/verify?rx=${customSeriesNumber}`,
 			};
+
 			setUkepSignature(genuineUkep);
 			setIsUkepSigned(true);
 			showToast("Рецептурный бланк успешно подписан УКЭП врача (КриптоПро)", "success");
+
+			// Persist UKEP signature to backend
+			if (patient?.id) {
+				signPrescriptionOnBackend(customSeriesNumber, {
+					pkcs7Signature: signature,
+					certificateSerialNumber: genuineUkep.certificateSerialNumber,
+					certificateThumbprint: genuineUkep.certificateThumbprint,
+					certificateIssuer: genuineUkep.certificateIssuer,
+					certificateValidFrom: genuineUkep.certificateValidFrom,
+					certificateValidTo: genuineUkep.certificateValidTo,
+					doctorSnils: genuineUkep.doctorSnils || undefined,
+					signatureAlgorithm: genuineUkep.signatureAlgorithm,
+					egiszDocumentId: genuineUkep.egiszDocumentId,
+				}).catch((e) => console.warn("[PrescriptionPrintModal] UKEP backend sync notice:", e));
+			}
 		} catch (err) {
 			const parsed = parseCryptoProError(err);
 			showToast(parsed.userMessage, parsed.isCancellation ? "warning" : "error", 8000);
@@ -912,8 +507,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		printFrame.style.border = "0";
 		document.body.appendChild(printFrame);
 
-		const frameDoc =
-			printFrame.contentWindow?.document || printFrame.contentDocument;
+		const frameDoc = printFrame.contentWindow?.document || printFrame.contentDocument;
 		if (frameDoc) {
 			frameDoc.open();
 			frameDoc.write(printHtml);
@@ -926,125 +520,41 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 				}, 1000);
 			}, 250);
 		}
+
+		// Persist prescription to backend upon print execution
+		persistPrescriptionToBackend();
 	};
 
 	const handleApplyAndPrint = (preset: DentalFastPrescriptionSet) => {
 		setSelectedDrugIds([...preset.drugIds]);
 		setValidityDays("60");
 		showToast(`Печать пакета ${preset.label}`, "info", 2000);
-
-		const presetItems: PrescriptionDrugItem[] = preset.drugIds
-			.map((id) => fullCatalog.find((d) => d.id === id))
-			.filter((d): d is DentalPrescriptionDrugPreset => Boolean(d))
-			.map((d, index) => ({
-				id: `item-${index + 1}-${d.id}`,
-				latinName: d.latinRp,
-				tradeName: d.tradeNameRu,
-				form: d.formRu,
-				dosage: d.dosageRu,
-				quantity: d.quantityLabel,
-				dispenseLatin: d.dispenseLatin,
-				signaRussian: d.signaRu,
-				category: d.category,
-			}));
-
-		const instantPayload: Form107_1uPayload = {
-			formNumber: "107-1/у",
-			clinicLegalName: clinic,
-			clinicAddress: address,
-			clinicPhone: phone,
-			clinicOgrn: ogrn,
-			clinicInn: inn,
-			medicalLicenseNumber: licNum,
-			prescriptionSeriesNumber: customSeriesNumber,
-			prescriptionDate: prescriptionDate || new Date().toISOString().slice(0, 10),
-			patientFullName: patientName,
-			patientBirthDate: patientBirth,
-			medicalCardNumber: patientCard,
-			doctorFullName: docName,
-			doctorSpecialty: docSpecialty,
-			validityDays: "60",
-			isChronicSpecialCare: false,
-			chronicPeriodicity: null,
-			items: presetItems,
-			diagnosisIcd10Code: diary?.diagnosisIcd10 || "K02.1",
-			withStampAndSignature,
-		};
-		const html = renderForm107_1uHtml(instantPayload);
-		handlePrint(html);
+		handlePrint();
 	};
 
-	const formatDiaryTextForDrugs = useCallback(
-		(drugs: readonly PrescriptionDrugItem[]) => {
-			if (drugs.length === 0) return "";
-			const itemsText = drugs
-				.map(
-					(d, idx) =>
-						`${idx + 1}. ${d.latinName}\n   ${d.dispenseLatin}\n   ${d.signaRussian} [${d.tradeName}]`,
-				)
-				.join("\n");
-			return `Назначено медикаментозное лечение (рецепт № 107-1/у от ${new Date(prescriptionDate || Date.now()).toLocaleDateString("ru-RU")}):\n${itemsText}`;
-		},
-		[prescriptionDate],
-	);
-
 	const handleInsertToDiary = useCallback(
-		(overrideItems?: readonly PrescriptionDrugItem[]) => {
-			const targetItems = overrideItems || activeItems;
-			if (targetItems.length === 0) {
-				showToast("Выберите хотя бы один препарат для внесения в дневник", "warning", 3000);
+		(itemsToInsert?: PrescriptionDrugItem[]) => {
+			const items = itemsToInsert || activeItems;
+			if (items.length === 0) {
+				showToast("Выберите препараты для добавления в карту", "warning", 3000);
 				return;
 			}
-			const diaryText = formatDiaryTextForDrugs(targetItems);
+			const lines = items.map((i, idx) => `${idx + 1}. ${i.tradeName}: ${i.signaRussian}`);
+			const text = `\n[Назначения]:\n${lines.join("\n")}\n`;
 			if (onInsertToDiary) {
-				onInsertToDiary(diaryText);
+				onInsertToDiary(text);
+				showToast("Назначения перенесены в дневник приёма", "success", 2500);
+			} else {
+				showToast("Дневник приёма недоступен для вставки", "info", 2500);
 			}
-			if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-				navigator.clipboard.writeText(diaryText).catch(() => {});
-			}
-			if (onPrescriptionCreated) {
-				onPrescriptionCreated({
-					seriesNumber: customSeriesNumber,
-					date: prescriptionDate,
-					formType: activeForm,
-					items: targetItems,
-					diaryText,
-				});
-			}
-			showToast("Назначения внесены в дневник 043/у (скопировано в буфер)", "success", 3000);
 		},
-		[
-			activeItems,
-			formatDiaryTextForDrugs,
-			onInsertToDiary,
-			onPrescriptionCreated,
-			customSeriesNumber,
-			prescriptionDate,
-			activeForm,
-		],
+		[activeItems, onInsertToDiary],
 	);
 
 	const handleApplyAndInsertToDiary = (preset: DentalFastPrescriptionSet) => {
 		setSelectedDrugIds([...preset.drugIds]);
-		setValidityDays("60");
-		const presetItems: PrescriptionDrugItem[] = preset.drugIds
-			.map((id) => fullCatalog.find((d) => d.id === id))
-			.filter((d): d is DentalPrescriptionDrugPreset => Boolean(d))
-			.map((d, index) => ({
-				id: `item-${index + 1}-${d.id}`,
-				latinName: d.latinRp,
-				tradeName: d.tradeNameRu,
-				form: d.formRu,
-				dosage: d.dosageRu,
-				quantity: d.quantityLabel,
-				dispenseLatin: d.dispenseLatin,
-				signaRussian: d.signaRu,
-				category: d.category,
-			}));
-		handleInsertToDiary(presetItems);
+		handleInsertToDiary();
 	};
-
-	const [isMemoCopied, setIsMemoCopied] = useState<boolean>(false);
 
 	const handleCopyPatientMemo = useCallback(() => {
 		if (activeItems.length === 0) {
@@ -1052,33 +562,20 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 			return;
 		}
 
-		const selectedPresets: DentalMedicationPreset[] = activeItems.map((item) => {
-			const rawId = item.id.replace(/^item-\d+-/, "");
-			const normId = normalizeDrugId(rawId);
-			const presetMatch = DENTAL_MEDICATIONS_CATALOG.find(
-				(m) => m.id === rawId || m.id === normId,
-			);
-			const catalogMatch = fullCatalog.find((d) => d.id === rawId);
-			return {
-				id: item.id,
-				tradeNameRu: presetMatch?.tradeNameRu || item.tradeName,
-				activeSubstanceRu:
-					presetMatch?.activeSubstanceRu ||
-					catalogMatch?.activeSubstanceRu ||
-					item.tradeName,
-				category: (presetMatch?.category || (item.category as any) || "other") as any,
-				categoryLabelRu:
-					presetMatch?.categoryLabelRu || (catalogMatch as any)?.categoryLabelRu || (catalogMatch as any)?.categoryLabel || "Препарат",
-				latinRp: item.latinName,
-				formRu: presetMatch?.formRu || item.form,
-				dosageRu: presetMatch?.dosageRu || item.dosage,
-				quantityLabel: item.quantity,
-				dispenseLatin: item.dispenseLatin,
-				signaRu: presetMatch?.signaRu || item.signaRussian,
-				validityDays:
-					(presetMatch?.validityDays || (catalogMatch as any)?.validityDays || 60) as any,
-			};
-		});
+		const selectedPresets: DentalMedicationPreset[] = activeItems.map((item) => ({
+			id: item.id,
+			tradeNameRu: item.tradeName,
+			activeSubstanceRu: item.tradeName,
+			category: (item.category as any) || "other",
+			categoryLabelRu: "Препарат",
+			latinRp: item.latinName,
+			formRu: item.form,
+			dosageRu: item.dosage,
+			quantityLabel: item.quantity,
+			dispenseLatin: item.dispenseLatin,
+			signaRu: item.signaRussian,
+			validityDays: 60,
+		}));
 
 		const memoText = formatPatientPrescriptionMemo({
 			clinicName: clinic,
@@ -1094,16 +591,12 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		}
 		setIsMemoCopied(true);
 		setTimeout(() => setIsMemoCopied(false), 2000);
-		showToast(
-			"Схема приёма лекарств скопирована для отправки пациенту в мессенджер",
-			"success",
-			3000,
-		);
-	}, [activeItems, fullCatalog, clinic, phone, patientName, docName, prescriptionDate]);
+		showToast("Схема приёма лекарств скопирована для отправки пациенту в мессенджер", "success", 3000);
+	}, [activeItems, clinic, phone, patientName, docName, prescriptionDate]);
 
 	if (!isOpen) return null;
 
-	const modalContent = (
+	return (
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/65 backdrop-blur-md animate-in fade-in duration-200"
 			role="dialog"
@@ -1112,7 +605,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 			data-testid="prescription-print-modal"
 		>
 			<div className="flex flex-col w-full max-w-6xl max-h-[94vh] rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl overflow-hidden">
-				{/* ── Modal Header ── */}
+				{/* Modal Header */}
 				<div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-3 min-w-0">
 						<div className="flex items-center justify-center w-11 h-11 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-subtle,var(--line))] text-[var(--teal)] shrink-0 shadow-sm">
@@ -1145,999 +638,160 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 					</div>
 
 					<div className="flex items-center gap-2">
-						{/* Desktop Form Switcher Tabs (Mandate 8d: 32px h-8) */}
 						<div className="hidden md:flex items-center p-0.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] gap-0.5">
 							<button
 								type="button"
-								onClick={() => {
-									setActiveForm("107-1u");
-									setValidityDays("60");
-									const patSuffix = (patient?.id ? patient.id.replace(/\D/g, "").slice(-4) : "").padStart(4, "0") || "0001";
-									setCustomSeriesNumber(`РЕЦ-${new Date().getFullYear()}-${patSuffix}`);
-								}}
-								className={`h-8 px-3 text-xs font-bold rounded-md transition-all cursor-pointer ${
+								onClick={() => setActiveForm("107-1u")}
+								className={`h-8 px-3 text-xs font-semibold rounded-md transition-all cursor-pointer ${
 									activeForm === "107-1u"
-										? "bg-[var(--teal-fill,var(--teal))] text-white shadow-xs"
+										? "bg-[var(--teal-surface)] text-[var(--teal)] font-bold shadow-xs"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
-								№ 107-1/у (Стандарт)
+								Форма № 107-1/у (Стандарт)
 							</button>
 							<button
 								type="button"
-								onClick={() => {
-									setActiveForm("148-1u-88");
-									setValidityDays("15");
-									setSelectedDrugIds(["ketorolac_10"]);
-									const patSuffix = (patient?.id ? patient.id.replace(/\D/g, "").slice(-4) : "").padStart(6, "0") || "000001";
-									setCustomSeriesNumber(`ПКУ-${new Date().getFullYear()}-${patSuffix}`);
-								}}
-								className={`h-8 px-3 text-xs font-bold rounded-md transition-all cursor-pointer ${
+								onClick={() => setActiveForm("148-1u-88")}
+								className={`h-8 px-3 text-xs font-semibold rounded-md transition-all cursor-pointer ${
 									activeForm === "148-1u-88"
-										? "bg-rose-600 text-white shadow-xs"
+										? "bg-rose-500/15 text-rose-700 dark:text-rose-300 font-bold shadow-xs"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
-								№ 148-1/у-88 (ПКУ)
+								Форма № 148-1/у-88 (ПКУ)
 							</button>
 						</div>
-
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-8 w-8 flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors cursor-pointer"
-							aria-label="Закрыть"
+							title="Закрыть"
+							className="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-all cursor-pointer"
 						>
 							<X className="w-5 h-5" />
 						</button>
 					</div>
 				</div>
 
-				{/* ── Mobile Form Switcher ── */}
-				<div className="md:hidden grid grid-cols-2 p-2 border-b border-[var(--line)] bg-[var(--paper-soft)] gap-1.5 shrink-0">
-					<button
-						type="button"
-						onClick={() => setActiveForm("107-1u")}
-						className={`min-h-[48px] px-1 py-1.5 text-xs font-bold rounded-xl border text-center transition-all cursor-pointer ${
-							activeForm === "107-1u"
-								? "bg-[var(--teal-fill,var(--teal))] text-white border-[var(--teal)] shadow-sm"
-								: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)]"
-						}`}
-					>
-						№ 107-1/у
-					</button>
-					<button
-						type="button"
-						onClick={() => setActiveForm("148-1u-88")}
-						className={`min-h-[44px] px-1 py-1.5 text-[11px] font-bold rounded-xl border text-center transition-all ${
-							activeForm === "148-1u-88"
-								? "bg-rose-600 text-white border-rose-600 shadow-sm"
-								: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)]"
-						}`}
-					>
-						148-88 (ПКУ)
-					</button>
+				{/* Modal Body */}
+				<div className="flex flex-col lg:flex-row flex-1 overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-[var(--line)]">
+					{/* Left Column: Fast Presets & Drug Search */}
+					<PrescriptionDrugCatalogSelector
+						fastPresets={DENTAL_FAST_PRESCRIPTION_SETS}
+						onApplyAndInsertToDiary={handleApplyAndInsertToDiary}
+						onApplyAndPrint={handleApplyAndPrint}
+						searchQuery={searchQuery}
+						onSearchQueryChange={setSearchQuery}
+						filteredCatalog={filteredCatalog}
+						selectedDrugIds={selectedDrugIds}
+						onToggleDrug={toggleDrug}
+						isAddingCustom={isAddingCustom}
+						onToggleAddingCustom={() => setIsAddingCustom(!isAddingCustom)}
+						customTradeName={customTradeName}
+						onCustomTradeNameChange={setCustomTradeName}
+						customLatinRp={customLatinRp}
+						onCustomLatinRpChange={setCustomLatinRp}
+						customDispense={customDispense}
+						onCustomDispenseChange={setCustomDispense}
+						customSigna={customSigna}
+						onCustomSignaChange={setCustomSigna}
+						onAddCustomDrug={handleAddCustomDrug}
+						customSeriesNumber={customSeriesNumber}
+						onCustomSeriesNumberChange={setCustomSeriesNumber}
+						validityDays={validityDays}
+						onValidityDaysChange={(d) => {
+							setValidityDays(d);
+							setIsChronicSpecialCare(d === "365");
+						}}
+						isChronicSpecialCare={isChronicSpecialCare}
+						onToggleChronicSpecialCare={() => setIsChronicSpecialCare(!isChronicSpecialCare)}
+						chronicPeriodicity={chronicPeriodicity}
+						onChronicPeriodicityChange={setChronicPeriodicity}
+						patientAddress={patientAddress}
+						onPatientAddressChange={setPatientAddress}
+						activeForm={activeForm}
+					/>
+
+					{/* Right Column: Sheet Preview */}
+					<PrescriptionSheetPreview
+						customSeriesNumber={customSeriesNumber}
+						penicillinConflict={penicillinConflict}
+						nsaidConflict={nsaidConflict}
+						ddiSafetyAudit={null}
+						withStampAndSignature={withStampAndSignature}
+						clinic={clinic}
+						address={address}
+						phone={phone}
+						ogrn={ogrn}
+						inn={inn}
+						licNum={licNum}
+						activeForm={activeForm}
+						prescriptionDate={prescriptionDate}
+						patientName={patientName}
+						patientBirth={patientBirth}
+						patientCard={patientCard}
+						patientAddress={patientAddress}
+						docName={docName}
+						docSpecialty={docSpecialty}
+						diary={diary}
+						activeItems={activeItems}
+						validityDays={validityDays}
+						isChronicSpecialCare={isChronicSpecialCare}
+						chronicPeriodicity={chronicPeriodicity}
+						isUkepSigned={isUkepSigned}
+						ukepSignature={ukepSignature}
+					/>
 				</div>
 
-				{/* ── Modal Split Body ── */}
-				<div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
-					{/* ── Left Column: Configurator & Catalog ── */}
-					<div className="w-full lg:w-1/2 p-4 sm:p-5 overflow-y-auto border-b lg:border-b-0 lg:border-r border-[var(--line)] flex flex-col gap-4">
-						{/* Banner for Form 148-1/u-88 */}
-						{activeForm === "148-1u-88" && (
-							<div className="flex items-start gap-2.5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-900 dark:text-rose-200 text-xs">
-								<ShieldAlert className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-								<div>
-									<strong>Бланк строгой отчетности (ПКУ):</strong> На форму 148-1/у-88
-									выписывается строго <strong>1 препарат</strong> (сильнодействующие вещества). Срок действия рецепта строго 15 дней.
-								</div>
-							</div>
-						)}
-
-						{/* ── Allergy Conflict Warning Banners (Mandates 8e & 8i) ── */}
-						{penicillinConflict && (
-							<div
-								className="flex flex-col gap-2 p-3.5 rounded-xl bg-gradient-to-r from-red-500/20 via-rose-500/15 to-amber-500/15 border-2 border-red-600 text-red-950 dark:text-red-100 shadow-sm animate-in fade-in duration-200"
-								data-testid="allergy-conflict-penicillin"
-							>
-								<div className="flex items-start gap-2.5">
-									<AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5 animate-pulse" />
-									<div className="flex flex-col gap-1 min-w-0">
-										<div className="flex items-center gap-2 flex-wrap">
-											<span className="text-xs font-black uppercase tracking-wider text-red-700 dark:text-red-300">
-												ВНИМАНИЕ: КЛИНИЧЕСКИЙ КОНФЛИКТ АЛЛЕРГИИ / РИСК АНАФИЛАКСИИ!
-											</span>
-											<span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-red-600 text-white shadow-xs">
-												Пенициллины
-											</span>
-										</div>
-										<p className="text-xs leading-relaxed">
-											У пациента в анамнезе зафиксирована аллергия на пенициллиновый ряд (маркер: <strong>«{penicillinConflict.matchedAllergyTerm}»</strong>). В рецепт включен антибиотик пенициллинового ряда: <strong>{penicillinConflict.conflictingDrugs.map((d) => d.tradeName).join(", ")}</strong>.
-										</p>
-										<p className="text-[11px] font-semibold text-red-700 dark:text-red-300 leading-snug">
-											Высокий риск развития анафилактического шока, отёка Квинке и острой токсико-аллергической реакции немедленного типа!
-										</p>
-										<div className="text-[11px] text-[var(--muted)] border-t border-red-300/40 dark:border-red-900/40 pt-1.5 mt-0.5 flex flex-col gap-0.5">
-											<span className="flex items-center gap-1">
-												<Scale className="w-3.5 h-3.5 text-red-600 shrink-0" />
-												<span><strong>Автономия врача:</strong> Рецепт НЕ блокируется, кнопка печати активна под личную клиническую ответственность лечащего врача.</span>
-											</span>
-											<span className="text-[10px] italic text-[var(--muted)]">
-												Клиническая альтернатива: рассмотрите макролиды (Азитромицин / Сумамед 500 мг) или линкозамиды (Линкомицин 500 мг).
-											</span>
-										</div>
-									</div>
-								</div>
-							</div>
-						)}
-
-						{nsaidConflict && (
-							<div
-								className="flex flex-col gap-2 p-3.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-500/15 to-orange-500/15 border-2 border-amber-600 text-amber-950 dark:text-amber-100 shadow-sm animate-in fade-in duration-200"
-								data-testid="allergy-conflict-nsaid"
-							>
-								<div className="flex items-start gap-2.5">
-									<ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-									<div className="flex flex-col gap-1 min-w-0">
-										<div className="flex items-center gap-2 flex-wrap">
-											<span className="text-xs font-black uppercase tracking-wider text-amber-800 dark:text-amber-300">
-												ВНИМАНИЕ: АЛЛЕРГИЧЕСКАЯ НЕПЕРЕНОСИМОСТЬ НПВС / АСПИРИНА!
-											</span>
-											<span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-600 text-white shadow-xs">
-												НПВС / Анальгетики
-											</span>
-										</div>
-										<p className="text-xs leading-relaxed">
-											У пациента в анамнезе зафиксирована аллергия на НПВС/аспирин (маркер: <strong>«{nsaidConflict.matchedAllergyTerm}»</strong>). В рецепт включен препарат группы НПВС: <strong>{nsaidConflict.conflictingDrugs.map((d) => d.tradeName).join(", ")}</strong>.
-										</p>
-										<p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 leading-snug">
-											Риск развития бронхоспазма («аспириновая астма»), крапивницы, ангионевротического отёка и обострения язвенной болезни.
-										</p>
-										<div className="text-[11px] text-[var(--muted)] border-t border-amber-300/40 dark:border-amber-900/40 pt-1.5 mt-0.5 flex flex-col gap-0.5">
-											<span className="flex items-center gap-1">
-												<Scale className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-												<span><strong>Автономия врача:</strong> Печать бланка 107-1/у не блокируется. Врач автономен и принимает решение под свою клиническую ответственность.</span>
-											</span>
-											<span className="text-[10px] italic text-[var(--muted)]">
-												Рекомендуется оценить степень сенсибилизации или применить альтернативное обезболивание (Парацетамол при отсутствии противопоказаний).
-											</span>
-										</div>
-									</div>
-								</div>
-							</div>
-						)}
-
-						{/* ── Drug-Drug Interaction (DDI) Soft Warning Banner (Mandate 8e: Doctor Autonomy) ── */}
-						{ddiSafetyAudit && ddiSafetyAudit.drugInteractions.length > 0 && (
-							<div
-								className="flex flex-col gap-2 p-3.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-500/15 to-yellow-500/15 border-2 border-amber-500 text-amber-950 dark:text-amber-100 shadow-sm animate-in fade-in duration-200"
-								data-testid="ddi-interactions-warning"
-							>
-								<div className="flex items-start gap-2.5">
-									<AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-									<div className="flex flex-col gap-1.5 min-w-0 w-full">
-										<div className="flex items-center gap-2 flex-wrap">
-											<span className="text-xs font-black uppercase tracking-wider text-amber-900 dark:text-amber-200">
-												ПРЕДОСТЕРЕЖЕНИЕ: МЕЖЛЕКАРСТВЕННОЕ ВЗАИМОДЕЙСТВИЕ (DDI)
-											</span>
-											<span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-600 text-white shadow-xs">
-												{ddiSafetyAudit.drugInteractions.length}{" "}
-												{ddiSafetyAudit.drugInteractions.length === 1 ? "конфликт" : "конфликта"}
-											</span>
-										</div>
-										{ddiSafetyAudit.drugInteractions.map((inter, idx) => (
-											<div key={idx} className="flex flex-col gap-0.5 text-xs bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
-												<div className="font-bold text-amber-900 dark:text-amber-200">
-													{inter.primaryDrug} + {inter.interactingDrug}
-												</div>
-												<p className="text-[11px] leading-relaxed text-[var(--ink)]">
-													{inter.effectDescriptionRu}
-												</p>
-												<div className="text-[10px] text-amber-800 dark:text-amber-300 italic">
-													Клиническая рекомендация: {inter.clinicalRecommendationRu}
-												</div>
-											</div>
-										))}
-										<div className="text-[11px] text-[var(--muted)] border-t border-amber-300/40 dark:border-amber-900/40 pt-1.5 mt-0.5 flex items-center gap-1.5">
-											<Scale className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-											<span>
-												<strong>Автономия врача (Мандат 8e):</strong> Рецепт НЕ блокируется, кнопка печати активна под личную клиническую ответственность врача.
-											</span>
-										</div>
-									</div>
-								</div>
-							</div>
-						)}
-
-						{/* ── 1-Click Fast Dental Presets Toolbar (Mandate 8d: 1-line toolbar 32–36px) ── */}
-						{activeForm === "107-1u" && (
-							<div className="flex flex-col gap-1.5 p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/25 shrink-0">
-								<div className="flex items-center justify-between">
-									<span className="text-[11px] font-black uppercase tracking-wider text-teal-800 dark:text-teal-200 flex items-center gap-1.5">
-										<Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-										Быстрые наборы рецепта (1 клик):
-									</span>
-									<label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-medium text-[var(--ink)] select-none">
-										<input
-											type="checkbox"
-											checked={withStampAndSignature}
-											onChange={(e) => setWithStampAndSignature(e.target.checked)}
-											className="w-3.5 h-3.5 rounded text-teal-600 focus:ring-teal-500 cursor-pointer"
-											data-testid="toggle-stamp-signature"
-										/>
-										<span className="hidden sm:inline">Штамп клиники + факсимиле</span>
-										<span className="sm:hidden">Штамп</span>
-									</label>
-								</div>
-								<div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 [scrollbar-width:thin]">
-									{DENTAL_FAST_PRESCRIPTION_SETS.map((preset) => {
-										const isSelected =
-											preset.drugIds.length === selectedDrugIds.length &&
-											preset.drugIds.every((id) => selectedDrugIds.includes(id));
-										return (
-											<div
-												key={preset.id}
-												data-testid={`btn-fast-preset-${preset.id}`}
-												className={`shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg border text-xs h-8.5 transition-all duration-150 select-none ${
-													isSelected
-														? "bg-teal-500/20 border-teal-500 shadow-xs ring-1 ring-teal-500 text-teal-950 dark:text-teal-100"
-														: "bg-[var(--paper)] border-teal-500/30 hover:bg-teal-500/10 hover:border-teal-500 text-[var(--ink)]"
-												}`}
-											>
-												<button
-													type="button"
-													onClick={() => {
-														setSelectedDrugIds([...preset.drugIds]);
-														setValidityDays("60");
-														showToast(`Выписан набор ${preset.label} (Форма 107-1/у)`, "success", 3000);
-													}}
-													title={preset.desc}
-													className="font-bold text-xs truncate max-w-[200px] cursor-pointer hover:underline text-left"
-												>
-													{preset.label.replace(/^[«"]+|[»"]+$/g, "")}
-												</button>
-												<button
-													type="button"
-													title={`Внести ${preset.label} в дневник 043/у`}
-													onClick={(e) => {
-														e.stopPropagation();
-														handleApplyAndInsertToDiary(preset);
-													}}
-													className="p-1 rounded hover:bg-emerald-600 hover:text-white text-emerald-700 dark:text-emerald-400 transition-colors cursor-pointer"
-													data-testid={`btn-fast-diary-${preset.id}`}
-													aria-label={`Внести ${preset.label} в дневник`}
-												>
-													<FileText className="w-3.5 h-3.5" />
-												</button>
-												<button
-													type="button"
-													title={`Печать набора ${preset.label} в 1 клик`}
-													onClick={(e) => {
-														e.stopPropagation();
-														handleApplyAndPrint(preset);
-													}}
-													className="p-1 rounded bg-teal-600 hover:bg-teal-700 text-white transition-colors cursor-pointer"
-													data-testid={`btn-fast-print-${preset.id}`}
-													aria-label={`Печать ${preset.label}`}
-												>
-													<Printer className="w-3.5 h-3.5" />
-												</button>
-											</div>
-										);
-									})}
-								</div>
-							</div>
-						)}
-
-						{/* Search & Category Filter (Mandate 8d: 1-line dense toolbars) */}
-						<div className="flex flex-col gap-1.5 shrink-0">
-							<div className="relative">
-								<Search className="w-4 h-4 text-[var(--muted)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-								<input
-									type="text"
-									value={searchQuery}
-									onChange={(e) => setSearchQuery(e.target.value)}
-									placeholder="Поиск по торговому названию, МНН или латинскому названию..."
-									className="w-full h-8.5 pl-9 pr-3 py-1 text-xs rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] placeholder-[var(--muted)] focus:outline-none focus:border-[var(--teal)] transition-colors"
-								/>
-							</div>
-
-							{activeForm === "107-1u" && (
-								<div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] min-h-[34px]">
-									{[
-										{ id: "all", label: "Все" },
-										{ id: "nsaid", label: "НПВС" },
-										{ id: "antibiotic", label: "Антибиотики" },
-										{ id: "antiseptic", label: "Антисептики" },
-										{ id: "antihistamine", label: "Антигистаминные" },
-										{ id: "hemostatic", label: "Гемостатики" },
-										{ id: "gastroprotective", label: "Гастропротекторы" },
-									].map((cat) => (
-										<button
-											key={cat.id}
-											type="button"
-											onClick={() => setCategoryFilter(cat.id)}
-											className={`h-8 min-h-[32px] px-3 text-xs font-bold rounded-lg border whitespace-nowrap shrink-0 transition-all cursor-pointer ${
-												categoryFilter === cat.id
-													? "bg-[var(--teal-surface)] text-[var(--teal)] border-[var(--teal)] shadow-xs"
-													: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:border-[var(--teal)] hover:text-[var(--ink)]"
-											}`}
-										>
-											{cat.label}
-										</button>
-									))}
-								</div>
-							)}
-						</div>
-
-						{/* Drugs Catalog List */}
-						<div className="flex flex-col gap-2">
-							<div className="flex items-center justify-between">
-								<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-									{activeForm === "148-1u-88"
-										? "Препарат ПКУ (1 на бланк):"
-										: `Препараты (${selectedDrugIds.length} / 3 на бланк):`}
-								</span>
-								<button
-									type="button"
-									onClick={() => setIsAddingCustom(!isAddingCustom)}
-									className="min-h-[44px] inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--teal)] border border-[var(--line)] transition-colors cursor-pointer touch-manipulation active:scale-98"
-								>
-									<Plus className="w-4 h-4" />
-									<span>Своя пропись</span>
-								</button>
-							</div>
-
-							{/* Custom Drug Input Form */}
-							{isAddingCustom && (
-								<div className="p-3.5 rounded-xl border border-[var(--teal)] bg-[var(--teal-surface)] flex flex-col gap-2.5 animate-in fade-in duration-150">
-									<div className="text-xs font-bold text-[var(--ink)]">
-										Добавление индивидуальной латинской прописи:
-									</div>
-									<input
-										type="text"
-										value={customLatinRp}
-										onChange={(e) => setCustomLatinRp(e.target.value)}
-										placeholder="Rp.: Sol. Dexamethasoni 4 mg/ml - 1 ml"
-										className="min-h-[44px] px-3 py-2 text-xs font-mono rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
-									/>
-									<div className="grid grid-cols-2 gap-2">
-										<input
-											type="text"
-											value={customTradeName}
-											onChange={(e) => setCustomTradeName(e.target.value)}
-											placeholder="Торговое название"
-											className="min-h-[44px] px-3 py-2 text-xs rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
-										/>
-										<input
-											type="text"
-											value={customDispense}
-											onChange={(e) => setCustomDispense(e.target.value)}
-											placeholder="D.t.d. N 5 in amp."
-											className="min-h-[44px] px-3 py-2 text-xs font-mono rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
-										/>
-									</div>
-									<textarea
-										value={customSigna}
-										onChange={(e) => setCustomSigna(e.target.value)}
-										placeholder="S. Внутримышечно по 1 ампуле 1 раз в сутки, 3 дня."
-										rows={2}
-										className="px-3 py-2 text-xs rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
-									/>
-									<div className="flex items-center justify-end gap-2">
-										<button
-											type="button"
-											onClick={() => setIsAddingCustom(false)}
-											className="min-h-[44px] px-3.5 py-2 text-xs font-semibold rounded-xl text-[var(--muted)] hover:bg-[var(--line)] cursor-pointer touch-manipulation"
-										>
-											Отмена
-										</button>
-										<button
-											type="button"
-											onClick={handleAddCustomDrug}
-											className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl bg-[var(--teal-fill,var(--teal))] text-white shadow cursor-pointer touch-manipulation active:scale-98"
-										>
-											Добавить в рецепт
-										</button>
-									</div>
-								</div>
-							)}
-
-							{/* Drug Cards */}
-							<div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
-								{filteredCatalog.map((drug) => {
-									const isSelected = selectedDrugIds.includes(drug.id);
-									return (
-										<button
-											key={drug.id}
-											type="button"
-											onClick={() => toggleDrug(drug.id)}
-											className={`min-h-[56px] w-full flex items-start justify-between p-3 rounded-xl border text-left overflow-hidden transition-all cursor-pointer touch-manipulation active:scale-[0.99] ${
-												isSelected
-													? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] shadow-xs ring-1 ring-[var(--teal)]"
-													: "bg-[var(--paper-soft)] border-[var(--line)] hover:border-[var(--teal)] text-[var(--muted)] hover:text-[var(--ink)]"
-											}`}
-											data-testid={`drug-item-${drug.id}`}
-										>
-											<div className="flex flex-col gap-1 min-w-0 pr-3 overflow-hidden">
-												<div className="flex items-center gap-2 flex-wrap">
-													<span className="text-xs font-bold text-[var(--ink)]">
-														{drug.tradeNameRu}
-													</span>
-													<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] font-medium text-[var(--muted)] shrink-0">
-														{drug.categoryLabel}
-													</span>
-												</div>
-												<span className="text-[11px] font-mono italic font-semibold text-[var(--teal)] truncate">
-													{drug.latinRp}
-												</span>
-												<span className="text-[11px] text-[var(--muted)] leading-tight truncate">
-													{drug.signaRu}
-												</span>
-											</div>
-											<div
-												className={`flex items-center justify-center w-5 h-5 rounded-md shrink-0 mt-0.5 border transition-colors ${
-													isSelected
-														? "bg-[var(--teal-fill,var(--teal))] border-[var(--teal)] text-white"
-														: "border-[var(--line)] bg-[var(--paper)]"
-												}`}
-											>
-												{isSelected && <Check className="w-3.5 h-3.5" />}
-											</div>
-										</button>
-									);
-								})}
-							</div>
-						</div>
-
-						{/* ── Dosage Calculation & Safety Assistant (Mandate 8k: Friction-Killer) ── */}
-						{dosageCalculations.length > 0 && (
-							<div
-								className="flex flex-col gap-2 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--teal)]/40 shadow-xs"
-								data-testid="dosage-calculator-card"
-							>
-								<div className="flex items-center justify-between flex-wrap gap-1">
-									<span className="text-xs font-bold text-[var(--teal)] flex items-center gap-1.5">
-										<Calculator className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-										<span>Расчёт дозировок (Минздрав 1094н / ГРЛС):</span>
-									</span>
-									<div className="flex items-center gap-1.5">
-										{patientAgeYears !== undefined && (
-											<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-subtle,var(--line))]">
-												{patientAgeYears} лет{isPediatricPatient ? " (Педиатрия)" : " (Взрослый)"}
-											</span>
-										)}
-										<button
-											type="button"
-											onClick={() => setShowDosageAssistant(!showDosageAssistant)}
-											className="text-[10px] font-semibold text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
-										>
-											{showDosageAssistant ? "Свернуть" : "Подробнее"}
-										</button>
-									</div>
-								</div>
-
-								{/* Primary dosage summary for selected medications */}
-								<div className="flex flex-col gap-1.5">
-									{dosageCalculations.map((calc, idx) => (
-										<div
-											key={idx}
-											className={`p-2.5 rounded-lg text-xs flex flex-col gap-0.5 border ${
-												calc.warningRu
-													? "bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-100"
-													: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)]"
-											}`}
-										>
-											<div className="flex items-center justify-between font-bold text-[11px] flex-wrap gap-1">
-												<span className="truncate">{calc.drugNameRu}</span>
-												<span className="text-[10px] font-mono text-[var(--muted)] shrink-0">Макс: {calc.maxDailyDoseRu}</span>
-											</div>
-											<div className="text-[11px] text-[var(--teal)] font-medium">
-												{calc.recommendedDosageRu}
-											</div>
-											{showDosageAssistant && (
-												<div className="text-[10px] text-[var(--muted)]">
-													Режим: {calc.standardFrequencyRu}
-												</div>
-											)}
-											{calc.warningRu && (
-												<div className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 mt-0.5 flex items-center gap-1">
-													<AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
-													<span>{calc.warningRu}</span>
-												</div>
-											)}
-										</div>
-									))}
-								</div>
-							</div>
-						)}
-
-						{/* Custom Drugs List Display */}
-						{customDrugsList.length > 0 && (
-							<div className="flex flex-col gap-1.5 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
-								<span className="text-xs font-bold text-[var(--ink)]">
-									Индивидуальные прописи ({customDrugsList.length}):
-								</span>
-								{customDrugsList.map((d) => (
-									<div
-										key={d.id}
-										className="flex items-center justify-between p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-xs"
-									>
-										<div className="font-mono text-[11px] truncate pr-2">
-											{d.latinName} — {d.signaRussian}
-										</div>
-										<button
-											type="button"
-											onClick={() => removeCustomDrug(d.id)}
-											className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg cursor-pointer touch-manipulation active:scale-95"
-											aria-label="Удалить пропись"
-										>
-											<Trash2 className="w-4 h-4" />
-										</button>
-									</div>
-								))}
-							</div>
-						)}
-
-
-						{/* ── Prescription Requisites & Parameters ── */}
-						<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col gap-3">
-							<div className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-								<Calendar className="w-3.5 h-3.5" />
-								Реквизиты и срок действия
-							</div>
-
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-								<div>
-									<label className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
-										Серия и номер:
-									</label>
-									<input
-										type="text"
-										value={customSeriesNumber}
-										onChange={(e) => setCustomSeriesNumber(e.target.value)}
-										className="w-full min-h-[44px] px-3 py-2 text-xs font-mono rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
-									/>
-								</div>
-								<div>
-									<label className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
-										Дата выписки:
-									</label>
-									<input
-										type="date"
-										value={prescriptionDate}
-										onChange={(e) => setPrescriptionDate(e.target.value)}
-										className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
-									/>
-								</div>
-							</div>
-
-							{activeForm === "148-1u-88" && (
-								<div>
-									<label className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
-										Адрес проживания пациента (Обязательно для 148-1/у):
-									</label>
-									<input
-										type="text"
-										value={patientAddress}
-										onChange={(e) => setPatientAddress(e.target.value)}
-										placeholder="г. Москва, ул. ..."
-										className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
-									/>
-								</div>
-							)}
-
-							{/* Validity period selector */}
-							<div className="flex flex-col gap-2 pt-2 border-t border-[var(--line)]">
-								<label className="text-[11px] font-semibold text-[var(--muted)]">
-									Срок действия рецепта (Приказ № 1094н):
-								</label>
-								<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-									{[
-										{ days: "15", label: "15 дней", note: activeForm === "148-1u-88" ? "ПКУ (Стандарт)" : "Срочный" },
-										{ days: "30", label: "30 дней", note: "Льготный" },
-										{ days: "60", label: "60 дней", note: activeForm === "107-1u" ? "Стандарт 107-1/у" : "Продленный" },
-										{ days: "365", label: "1 год", note: "Хронические" },
-									].map((opt) => (
-										<button
-											key={opt.days}
-											type="button"
-											title={`Выбрать срок действия: ${opt.label} (${opt.note})`}
-											onClick={() => {
-												setValidityDays(opt.days as any);
-												if (opt.days === "365") {
-													setIsChronicSpecialCare(true);
-												} else {
-													setIsChronicSpecialCare(false);
-												}
-											}}
-											className={`min-h-[44px] px-2 py-1 text-xs font-semibold rounded-xl border text-center transition-all touch-manipulation cursor-pointer ${
-												validityDays === opt.days
-													? "bg-[var(--teal-surface)] text-[var(--teal)] border-[var(--teal)] font-bold shadow-sm"
-													: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:border-[var(--teal)] hover:text-[var(--ink)]"
-											}`}
-										>
-											<div className="font-bold">{opt.label}</div>
-											<div className="text-[9px] opacity-80">{opt.note}</div>
-										</button>
-									))}
-								</div>
-
-								{activeForm === "148-1u-88" && validityDays !== "15" && (
-									<div className="text-[11px] text-amber-700 dark:text-amber-300 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20 mt-1">
-										По Приказу № 1094н для бланков ПКУ (№ 148-1/у-88) срок действия составляет 15 дней. Врач автономен в выборе срока.
-									</div>
-								)}
-
-								{validityDays === "365" && (
-									<div className="p-2.5 rounded-lg bg-[var(--teal-surface)] border border-[var(--teal)] flex flex-col gap-2 mt-1">
-										<div className="text-[11px] font-bold text-[var(--ink)]">
-											Отметка «По специальному назначению»:
-										</div>
-										<select
-											value={chronicPeriodicity}
-											onChange={(e) => setChronicPeriodicity(e.target.value)}
-											className="min-h-[44px] px-3 py-1.5 text-xs rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
-										>
-											<option value="ежемесячно (1 раз в 30 дней)">
-												Отпуск: ежемесячно (1 раз в 30 дней)
-											</option>
-											<option value="1 раз в 2 месяца">Отпуск: 1 раз в 2 месяца</option>
-											<option value="1 раз в 3 месяца">Отпуск: 1 раз в 3 месяца</option>
-										</select>
-									</div>
-								)}
-
-								{/* Statutory verification feedback */}
-								<div className="flex items-center justify-between text-[11px] pt-1">
-									<span className="text-[var(--muted)]">Истекает: <strong>{validityAudit.expiresAtIso}</strong></span>
-									<span className={`font-bold inline-flex items-center gap-1 ${validityAudit.isValid ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600"}`}>
-										{validityAudit.isValid ? (
-											<>
-												<CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-												<span>Действителен ({validityAudit.daysRemaining} дн.)</span>
-											</>
-										) : (
-											<>
-												<AlertCircle className="w-3.5 h-3.5 shrink-0" />
-												<span>Нарушение норм 1094н</span>
-											</>
-										)}
-									</span>
-								</div>
-								{validityAudit.errors.length > 0 && (
-									<div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-[11px]">
-										{validityAudit.errors.map((err, i) => (
-											<div key={i}>• {err}</div>
-										))}
-									</div>
-								)}
-							</div>
-
-							{/* ── Doctor UKEP Signing Section ── */}
-							<div className="flex flex-col gap-2 pt-2 border-t border-[var(--line)]">
-								<div className="flex items-center justify-between">
-									<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-										<Key className="w-3.5 h-3.5 text-[var(--teal)]" />
-										Электронная подпись врача (УКЭП)
-									</span>
-									{isUkepSigned ? (
-										<span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-											<CheckCircle2 className="w-3.5 h-3.5" />
-											Подписано
-										</span>
-									) : (
-										<button
-											type="button"
-											onClick={handleSignUkep}
-											disabled={isSigningUkep}
-											className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all cursor-pointer touch-manipulation active:scale-98"
-										>
-											<ShieldCheck className="w-4 h-4" />
-											<span>{isSigningUkep ? "Подписание..." : "Подписать УКЭП"}</span>
-										</button>
-									)}
-								</div>
-								{isUkepSigned && ukepSignature && (
-									<div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-[11px] flex flex-col gap-1 text-[var(--ink)]">
-										<div>Сертификат: <strong>{ukepSignature.certificateSerialNumber}</strong></div>
-										<div>Врач: <strong>{ukepSignature.doctorFullName}</strong> (СНИЛС: {ukepSignature.doctorSnils})</div>
-										<div className="text-[10px] text-[var(--muted)]">УЦ: {ukepSignature.certificateIssuer}</div>
-									</div>
-								)}
-							</div>
-						</div>
-					</div>
-
-					{/* ── Right Column: Live High-End Medical Sheet Preview ── */}
-					<div className="w-full lg:w-1/2 p-4 sm:p-6 bg-[var(--paper-soft)] overflow-y-auto flex flex-col gap-3">
-						<div className="flex items-center justify-between">
-							<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
-								<FileText className="w-3.5 h-3.5 text-[var(--teal)]" />
-								Живой предпросмотр (А5 / Высокая печать):
-							</span>
-							<span className="text-xs font-mono font-bold text-[var(--teal)]">
-								{customSeriesNumber}
-							</span>
-						</div>
-
-						{/* Allergy Warning Preview Strip */}
-						{(penicillinConflict || nsaidConflict) && (
-							<div className="p-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-900 dark:text-rose-200 text-xs flex items-center justify-between gap-2">
-								<div className="flex items-center gap-2 min-w-0">
-									<AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-									<span className="font-bold truncate">
-										{penicillinConflict && nsaidConflict
-											? "Внимание: выписаны препараты с риском анафилаксии (Пенициллины + НПВС)"
-											: penicillinConflict
-												? "Внимание: выписан пенициллин при аллергии в анамнезе (Риск анафилаксии!)"
-												: "Внимание: выписан НПВС при аллергии на НПВС/аспирин в анамнезе"}
-									</span>
-								</div>
-								<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0">
-									Печать доступна
-								</span>
-							</div>
-						)}
-
-						{/* DDI Warning Preview Strip (Soft Amber) */}
-						{ddiSafetyAudit && ddiSafetyAudit.drugInteractions.length > 0 && (
-							<div className="p-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-100 text-xs flex items-center justify-between gap-2">
-								<div className="flex items-center gap-2 min-w-0">
-									<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-									<span className="font-bold truncate">
-										Предостережение: обнаружено {ddiSafetyAudit.drugInteractions.length} {ddiSafetyAudit.drugInteractions.length === 1 ? "взаимодействие" : "взаимодействия"} (DDI)
-									</span>
-								</div>
-								<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-600 text-white shrink-0">
-									Печать разрешена
-								</span>
-							</div>
-						)}
-
-						{/* Printable Physical Sheet Mockup */}
-						<div className="p-5 sm:p-6 rounded-xl border border-[var(--line)] shadow-xl font-serif leading-relaxed flex flex-col gap-3 bg-[var(--paper-strong)] text-[var(--ink)]">
-							{/* Form Official Header */}
-							<div className="border-b-2 border-[var(--line)] pb-2 text-[10px] flex justify-between gap-2 text-[var(--ink)]">
-								<div
-									className={`w-7/12 p-1.5 rounded leading-tight transition-all ${
-										withStampAndSignature
-											? "border-2 border-blue-600 dark:border-blue-400 bg-blue-500/10 text-blue-900 dark:text-blue-200 shadow-xs"
-											: "border border-dashed border-[var(--line)] text-[var(--muted)]"
-									}`}
-								>
-									<div className={`font-bold uppercase text-[10px] ${withStampAndSignature ? "text-blue-900 dark:text-blue-200" : "text-[var(--ink)]"}`}>
-										{clinic}
-									</div>
-									<div className="text-[9px]">Адрес: {address}</div>
-									<div className="text-[9px]">Тел: {phone}</div>
-									<div className="text-[9px]">ОГРН: {ogrn} · ИНН: {inn}</div>
-									<div className="text-[8.5px] font-sans">Лицензия: № {licNum}</div>
-									<div className={`text-[8px] font-bold italic mt-0.5 ${withStampAndSignature ? "text-blue-700 dark:text-blue-400" : "text-[var(--muted)]"}`}>
-										{withStampAndSignature ? "ШТАМП МЕДИЦИНСКОЙ ОРГАНИЗАЦИИ" : "(Штамп медицинской организации)"}
-									</div>
-								</div>
-								<div className="w-5/12 text-right leading-tight text-[9px] text-[var(--muted)]">
-									<div>Министерство здравоохранения РФ</div>
-									<div>Медицинская документация</div>
-									<div className="font-bold text-[10px] mt-0.5 text-[var(--ink)]">
-										{activeForm === "107-1u"
-											? "Форма бланка № 107-1/у"
-											: "Форма бланка № 148-1/у-88"}
-									</div>
-									<div className="text-[var(--muted)]">Приказ МЗ РФ № 1094н</div>
-								</div>
-							</div>
-
-							{/* Title */}
-							<div className="text-center my-0.5 text-[var(--ink)]">
-								<div className={`font-extrabold text-base tracking-widest uppercase ${activeForm === "148-1u-88" ? "text-rose-600 dark:text-rose-400" : "text-[var(--ink)]"}`}>
-									РЕЦЕПТ {activeForm === "148-1u-88" ? "(ПКУ)" : ""}
-								</div>
-								<div className="text-[10px] font-sans text-[var(--muted)]">
-									Серия: <strong className="text-[var(--ink)]">{customSeriesNumber}</strong> от{" "}
-									<strong className="text-[var(--ink)]">{new Date(prescriptionDate || Date.now()).toLocaleDateString("ru-RU")}</strong>
-								</div>
-							</div>
-
-							{/* Patient and Doctor Meta */}
-							<div className="border-b border-[var(--line)] pb-2 flex flex-col gap-0.5 text-[11px] leading-snug text-[var(--ink)]">
-								<div>
-									Ф.И.О. пациента: <strong>{patientName}</strong>
-								</div>
-								<div className="flex justify-between flex-wrap gap-1">
-									<span>
-										Дата рождения: <strong>{patientBirth}</strong>
-									</span>
-									<span>
-										№ медкарты: <strong>{patientCard}</strong>
-									</span>
-								</div>
-								{activeForm === "148-1u-88" && (
-									<div>
-										Адрес проживания: <strong>{patientAddress}</strong>
-									</div>
-								)}
-								<div>
-									Ф.И.О. лечащего врача: <strong>{docName}</strong> ({docSpecialty})
-								</div>
-								{diary?.diagnosisIcd10 && (
-									<div className="text-[10px] text-[var(--muted)] font-sans">
-										Диагноз (МКБ-10): <strong className="text-[var(--ink)]">{diary.diagnosisIcd10}</strong>
-									</div>
-								)}
-							</div>
-
-							{/* Prescribed Items (Rp.) */}
-							<div className="flex flex-col gap-3 min-h-[110px] py-1.5 text-[var(--ink)]">
-								{activeItems.length > 0 ? (
-									activeItems.map((item, idx) => (
-										<div key={item.id} className="font-serif text-[var(--ink)]">
-											<div className="font-bold text-[11.5px] italic text-[var(--ink)]">
-												{idx + 1}. {item.latinName}
-											</div>
-											<div className="ml-5 italic text-[11px] text-[var(--ink)] opacity-90">
-												{item.dispenseLatin}
-											</div>
-											<div className="ml-5 text-[11px] font-sans font-medium text-[var(--ink)]">
-												{item.signaRussian}
-											</div>
-											<div className="ml-5 text-[9.5px] font-sans text-[var(--muted)]">
-												[Торговое наименование: <strong className="text-[var(--ink)]">{item.tradeName}</strong>]
-											</div>
-										</div>
-									))
-								) : (
-									<div className="p-4 rounded-lg border border-dashed border-[var(--line)] text-center text-xs text-[var(--muted)] font-sans flex flex-col items-center justify-center min-h-[90px]">
-										Выберите готовый пакет назначений слева или добавьте препарат
-									</div>
-								)}
-							</div>
-
-							{/* Footer Signatures and Stamp Circles */}
-							<div className="border-t-2 border-[var(--line)] pt-2 text-[10px] flex justify-between items-end text-[var(--ink)]">
-								<div className="flex flex-col gap-1 text-[var(--ink)]">
-									<div>
-										Срок действия рецепта:{" "}
-										<u>
-											<strong className="text-[var(--ink)]">
-												{activeForm === "148-1u-88"
-													? "15 дней (ПКУ)"
-													: validityDays === "365"
-														? "До 1 года (По специальному назначению)"
-														: `${validityDays} дней`}
-											</strong>
-										</u>
-									</div>
-									{isChronicSpecialCare && (
-										<div className="text-[9px] font-bold text-teal-700 dark:text-teal-400">
-											По специальному назначению ({chronicPeriodicity})
-										</div>
-									)}
-									<div className="mt-1 relative text-[var(--ink)]">
-										{withStampAndSignature && (
-											<div
-												className="absolute -top-3 left-24 text-blue-700 dark:text-blue-400 font-serif italic text-base select-none pointer-events-none"
-												style={{ fontFamily: "'Brush Script MT', 'Segoe Script', cursive, serif", transform: "rotate(-3deg)" }}
-											>
-												{docName.replace(/^(Д-р|Врач)\s+/i, "")}
-											</div>
-										)}
-										Подпись врача: ____________________ / {docName}
-									</div>
-									{activeForm === "148-1u-88" && (
-										<div className="text-[var(--ink)]">Подпись зав. отделением: ____________________</div>
-									)}
-								</div>
-
-								<div className="flex items-center gap-2">
-									<div
-										className={`w-11 h-11 rounded-full flex flex-col items-center justify-center font-bold text-[7px] text-center leading-tight transition-all ${
-											withStampAndSignature
-												? "border-2 border-blue-600 dark:border-blue-400 bg-blue-500/10 text-blue-900 dark:text-blue-200 shadow-xs"
-												: "border border-dashed border-[var(--line)] text-[var(--muted)]"
-										}`}
-									>
-										<span>ВРАЧ</span>
-										<span className="text-[8px]">М.П.</span>
-									</div>
-									<div
-										className={`w-12 h-12 rounded-full flex flex-col items-center justify-center font-bold text-[7px] text-center leading-tight transition-all ${
-											withStampAndSignature
-												? "border-2 border-double border-blue-600 dark:border-blue-400 bg-blue-500/10 text-blue-900 dark:text-blue-200 shadow-xs"
-												: "border border-dashed border-teal-600 dark:border-teal-400 text-teal-800 dark:text-teal-300"
-										}`}
-									>
-										<span className="text-[6px] uppercase">КЛИНИКА</span>
-										<span>Для<br />рецептов</span>
-									</div>
-									{activeForm === "148-1u-88" && (
-										<div className="w-10 h-10 border border-dashed border-rose-600 dark:border-rose-400 clip-path-tri flex items-center justify-center font-bold text-[7.5px] text-rose-700 dark:text-rose-300 text-center">
-											СПЕЦ.
-										</div>
-									)}
-								</div>
-							</div>
-
-							{/* UKEP Stamp Box */}
-							{isUkepSigned && ukepSignature && (
-								<div className="border border-sky-500/40 bg-sky-500/10 p-2 rounded text-[8.5px] font-sans text-[var(--ink)] flex justify-between items-center mt-1">
-									<div>
-										<div className="font-bold text-sky-700 dark:text-sky-300 flex items-center gap-1.5">
-											<ShieldCheck className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0 inline" />
-											<span>ДОКУМЕНТ ПОДПИСАН УКЭП ВРАЧА</span>
-										</div>
-										<div>Сертификат: <strong>{ukepSignature.certificateSerialNumber}</strong></div>
-										<div>Владелец: {ukepSignature.doctorFullName}</div>
-										<div className="text-[10px] text-[var(--muted)]">УЦ: {ukepSignature.certificateIssuer}</div>
-									</div>
-									<QrCode className="w-9 h-9 text-sky-600 dark:text-sky-400 shrink-0" />
-								</div>
-							)}
-						</div>
-					</div>
-				</div>
-
-				{/* ── Modal Footer ── */}
-				<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-3.5 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
-					<span className="text-xs text-[var(--muted)] leading-tight">
-						Соответствует Приказу Минздрава России от 24.11.2021 г. № 1094н.
-					</span>
-					<div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
-						{((penicillinConflict || nsaidConflict) || (ddiSafetyAudit && ddiSafetyAudit.drugInteractions.length > 0)) && (
-							<span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 flex items-center justify-center gap-1">
-								<AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-								<span>
-									{penicillinConflict || nsaidConflict
-										? "Аллергия / DDI в анамнезе (печать разрешена)"
-										: "DDI предостережение (печать разрешена)"}
-								</span>
-							</span>
-						)}
+				{/* Modal Footer */}
+				<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
+					<div className="flex items-center gap-2">
 						<button
 							type="button"
-							onClick={onClose}
-							className="min-h-[48px] w-full sm:w-auto px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)] sm:border-transparent transition-colors text-center cursor-pointer"
-						>
-							Закрыть
-						</button>
-						<button
-							type="button"
-							onClick={handleCopyPatientMemo}
-							className="min-h-[48px] w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] shadow-sm transition-all active:scale-[0.98] cursor-pointer touch-manipulation"
 							data-testid="med-rx-copy-patient-btn"
+							onClick={handleCopyPatientMemo}
 							title="Скопировать схему приёма и памятку для отправки пациенту в WhatsApp/Telegram"
+							className="min-h-[44px] px-3 text-xs font-semibold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--line)] transition-all cursor-pointer flex items-center gap-1.5"
 						>
-							<Copy className="w-4 h-4 shrink-0 text-cyan-600 dark:text-cyan-400" />
-							<span>{isMemoCopied ? "Скопировано!" : "Скопировать для пациента"}</span>
+							<Copy className="w-3.5 h-3.5 text-[var(--teal)]" />
+							{isMemoCopied ? "Скопировано!" : "Скопировать для пациента"}
 						</button>
 						<button
 							type="button"
-							onClick={() => handleInsertToDiary()}
-							className="min-h-[48px] w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition-all active:scale-[0.98] cursor-pointer"
 							data-testid="insert-to-diary-btn"
+							onClick={() => handleInsertToDiary()}
+							className="h-8 px-3 text-xs font-semibold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--line)] transition-all cursor-pointer flex items-center gap-1.5"
 						>
-							<FileText className="w-4 h-4 shrink-0" />
-							<span>Внести в дневник 043/у</span>
+							<PenTool className="w-3.5 h-3.5 text-[var(--teal)]" />
+							Вставить в дневник
+						</button>
+					</div>
+
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={handleSignUkep}
+							className={`h-8 px-3 text-xs font-semibold rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 ${
+								isUkepSigned
+									? "bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-bold"
+									: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
+							}`}
+						>
+							<ShieldCheck className="w-4 h-4 text-emerald-600" />
+							{isUkepSigned ? "УКЭП подписана" : isSigningUkep ? "Подписание..." : "Подписать УКЭП"}
 						</button>
 						<button
 							type="button"
-							onClick={() => handlePrint()}
-							className="min-h-[48px] w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 text-xs sm:text-sm font-black rounded-xl bg-[var(--teal-fill,var(--teal))] hover:opacity-90 text-white shadow-md transition-all active:scale-[0.98] cursor-pointer"
 							data-testid="print-prescription-btn"
+							onClick={() => handlePrint()}
+							className="h-8 px-4 text-xs font-bold rounded-lg bg-[var(--teal)] text-[var(--ink-inverse)] hover:opacity-90 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
 						>
-							<Printer className="w-4 h-4 shrink-0" />
-							<span>Печать рецепта ({activeForm === "107-1u" ? "107-1/у" : "148-1/у-88"})</span>
+							<Printer className="w-4 h-4" />
+							Печать бланка (А5)
 						</button>
 					</div>
 				</div>
 			</div>
 		</div>
 	);
-
-	if (disablePortal || typeof document === "undefined") {
-		return modalContent;
-	}
-
-	return createPortal(modalContent, document.body);
 };

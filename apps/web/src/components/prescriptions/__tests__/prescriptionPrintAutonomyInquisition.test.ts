@@ -498,10 +498,13 @@ describe("Red Team Inquisition: Zero Cartoon Emojis (Mandate 8d pt 7)", () => {
 
 describe("Red Team Inquisition: CSS Tokens & Dark Mode Theme Hygiene (WCAG AAA)", () => {
 	it("6.1 PrescriptionPrintModal.tsx has 0 hardcoded static hex colors", () => {
-		const filePath = path.resolve(
+		const rawPath = path.resolve(
 			process.cwd(),
 			"apps/web/src/components/prescriptions/PrescriptionPrintModal.tsx",
 		);
+		const filePath = fs.existsSync(rawPath)
+			? rawPath
+			: path.resolve(process.cwd(), "src/components/prescriptions/PrescriptionPrintModal.tsx");
 		const content = fs.readFileSync(filePath, "utf8");
 		const hexRegex = /#[0-9a-fA-F]{3,8}\b/g;
 		const matches = content.match(hexRegex) || [];

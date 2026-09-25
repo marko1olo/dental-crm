@@ -10,6 +10,7 @@ import { z } from "zod";
 export const ddiSeveritySchema = z.enum([
 	"critical", // Абсолютное противопоказание (смертельный риск, кровотечение, анафилаксия)
 	"major", // Тяжелое взаимодействие (требуется отмена или замена препарата)
+	"high", // Синоним для тяжелого взаимодействия
 	"moderate", // Умеренное взаимодействие (требуется коррекция дозы/интервала)
 	"minor", // Незначительное клиническое влияние
 ]);
@@ -52,7 +53,8 @@ export interface ClinicalDdiInteraction {
 	readonly interactingDrug: string;
 	readonly severity: DdiSeverity;
 	readonly effectDescriptionRu: string;
-	readonly clinicalActionRu: string;
+	readonly clinicalActionRu?: string;
+	readonly clinicalRecommendationRu?: string;
 }
 
 export interface ClinicalConditionContraindication {

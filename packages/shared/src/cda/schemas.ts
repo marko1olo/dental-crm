@@ -372,7 +372,7 @@ export const detachedSignatureSchema = z.object({
 });
 
 export const egiszRemdPackageSchema = z.object({
-	documentId: z.string().min(1),
+	documentId: z.string().uuid(),
 	documentVersion: z.number().int().positive(),
 	docTypeNsiCode: z.string().optional(),
 	xmlCanonicalPayload: z.string().min(1),

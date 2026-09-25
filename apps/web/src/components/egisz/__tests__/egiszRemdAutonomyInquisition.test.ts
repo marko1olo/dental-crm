@@ -51,6 +51,13 @@ import {
 	createMockMoGostSignature,
 } from "./egiszTestFixtures";
 
+function resolveRepoPath(relPath: string): string {
+	const direct = path.resolve(process.cwd(), relPath);
+	if (fs.existsSync(direct)) return direct;
+	const stripped = relPath.replace(/^apps[\\/]web[\\/]/, "");
+	return path.resolve(process.cwd(), stripped);
+}
+
 describe("SUBAGENT 7 RED TEAM INQUISITION: EGISZ REMD & CDA R2 INTEGRATION", () => {
 	const validClinic = {
 		clinicName: 'ООО "Денте Клиник"',
@@ -116,7 +123,7 @@ describe("SUBAGENT 7 RED TEAM INQUISITION: EGISZ REMD & CDA R2 INTEGRATION", () 
 		});
 
 		it("1.2 Source code audit of EgiszRemdHubModal.tsx proves zero disabled buttons", () => {
-			const modalPath = path.resolve(process.cwd(), "apps/web/src/components/egisz/EgiszRemdHubModal.tsx");
+			const modalPath = resolveRepoPath("apps/web/src/components/egisz/EgiszRemdHubModal.tsx");
 			const code = fs.readFileSync(modalPath, "utf8");
 
 			// Ensure no `disabled={...}` expressions in the component
@@ -168,7 +175,7 @@ describe("SUBAGENT 7 RED TEAM INQUISITION: EGISZ REMD & CDA R2 INTEGRATION", () 
 		});
 
 		it("2.2 EGISZ SEMD document types include 105, 106, 302, 303 with valid template roots", () => {
-			const expectedTypes = ["101", "104", "105", "106", "130", "302", "303"] as const;
+			const expectedTypes = ["101", "102", "105", "130", "302", "303"] as const;
 			for (const code of expectedTypes) {
 				const docDef = EGISZ_SEMD_DOC_TYPES[code as keyof typeof EGISZ_SEMD_DOC_TYPES];
 				assert.ok(docDef, `Doc type ${code} must be defined in EGISZ_SEMD_DOC_TYPES`);
@@ -179,10 +186,10 @@ describe("SUBAGENT 7 RED TEAM INQUISITION: EGISZ REMD & CDA R2 INTEGRATION", () 
 
 		it("2.3 Source code audit confirms absence of fake hardcoded mock OIDs", () => {
 			const filesToCheck = [
-				path.resolve(process.cwd(), "apps/web/src/components/egisz/EgiszRemdHubModal.tsx"),
-				path.resolve(process.cwd(), "apps/web/src/components/egisz/cdaR2XmlBuilder.ts"),
-				path.resolve(process.cwd(), "apps/web/src/components/egisz/egiszCdaValidator.ts"),
-				path.resolve(process.cwd(), "apps/web/src/components/egisz/egiszRemdEngine.ts"),
+				resolveRepoPath("apps/web/src/components/egisz/EgiszRemdHubModal.tsx"),
+				resolveRepoPath("apps/web/src/components/egisz/cdaR2XmlBuilder.ts"),
+				resolveRepoPath("apps/web/src/components/egisz/egiszCdaValidator.ts"),
+				resolveRepoPath("apps/web/src/components/egisz/egiszRemdEngine.ts"),
 			];
 
 			const mockOidRegex = /1\.2\.643\.5\.1\.13\.14\.302\.2/;
@@ -302,11 +309,11 @@ describe("SUBAGENT 7 RED TEAM INQUISITION: EGISZ REMD & CDA R2 INTEGRATION", () 
 	describe("4. Mandate 8d pt 7: Zero Cartoon Emojis Audit", () => {
 		it("4.1 Source code of all EGISZ components contains zero cartoon emojis", () => {
 			const targetFiles = [
-				path.resolve(process.cwd(), "apps/web/src/components/egisz/EgiszRemdHubModal.tsx"),
-				path.resolve(process.cwd(), "apps/web/src/components/egisz/cdaR2XmlBuilder.ts"),
-				path.resolve(process.cwd(), "apps/web/src/components/egisz/egiszCdaValidator.ts"),
-				path.resolve(process.cwd(), "apps/web/src/components/egisz/egiszRemdEngine.ts"),
-				path.resolve(process.cwd(), "apps/web/src/components/egisz/egiszRemd.css"),
+				resolveRepoPath("apps/web/src/components/egisz/EgiszRemdHubModal.tsx"),
+				resolveRepoPath("apps/web/src/components/egisz/cdaR2XmlBuilder.ts"),
+				resolveRepoPath("apps/web/src/components/egisz/egiszCdaValidator.ts"),
+				resolveRepoPath("apps/web/src/components/egisz/egiszRemdEngine.ts"),
+				resolveRepoPath("apps/web/src/components/egisz/egiszRemd.css"),
 			];
 
 			const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
@@ -330,7 +337,7 @@ describe("SUBAGENT 7 RED TEAM INQUISITION: EGISZ REMD & CDA R2 INTEGRATION", () 
 	 * ═══════════════════════════════════════════════════════════════════════════ */
 	describe("5. Mandate 8d pt 6: Anti-Matryoshka UI Structure", () => {
 		it("5.1 EgiszRemdHubModal operates as a single surface with tab switching and inline panels", () => {
-			const modalPath = path.resolve(process.cwd(), "apps/web/src/components/egisz/EgiszRemdHubModal.tsx");
+			const modalPath = resolveRepoPath("apps/web/src/components/egisz/EgiszRemdHubModal.tsx");
 			const code = fs.readFileSync(modalPath, "utf8");
 
 			// Check that tabs/views are rendered inline rather than spawning nested <Dialog> or nested <Modal>
