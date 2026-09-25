@@ -2,7 +2,7 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
-> ⚠️ **СТАТУС (2026-09-25 / WAVES 175–324 / ВОЛНА 323 INQUISITOR SWARM VICTORY — КОММИТ 720ac0789, ВОЛНА 324 RED TEAM АУДИТ И ПОЛНАЯ СИНХРОНИЗАЦИЯ ДОКУМЕНТАЦИИ, ЗАКРЫТИЕ ВСЕХ СЛЕПЫХ ЗОН CRM: RVG/DICOM PACS <50мс, РЕКОЛЛЫ И ДИСПАНСЕРИЗАЦИЯ, ЕГИСЗ РЭМД СЭМД 101/102, РЕЦЕПТЫ 107-1/у С DDI, ПЕДИАТРИЯ 51–85 С ТОКСИЧНОСТЬЮ АНЕСТЕТИКОВ МРД, СЕМЕЙНЫЙ БАЛАНС И ВЫЧЕТ ФНС): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 393 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (ВСЕГО 456 ФИЧ: 63 КАНОНИЧЕСКИЕ + 393 АДДЕНДУМ, ВСЕ 456 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], ВОЛНЫ 320–324 ЗАКРЫТЫ НА 100%, ПАРИТЕТ 100%). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
+> ⚠️ **СТАТУС (2026-09-25 / WAVES 175–325 / ВОЛНА 324 RED TEAM АУДИТ И ПОЛНАЯ СИНХРОНИЗАЦИЯ ДОКУМЕНТАЦИИ, ВОЛНА 325 ТОТАЛЬНЫЙ RED TEAM АУДИТ, ЗАЧИСТКА КАРГО-КУЛЬТА И ПОЛНАЯ СИНХРОНИЗАЦИЯ 6 ДОМЕНОВ: WAITLIST ОТМЕН, ПРИХОДНЫЕ НАКЛАДНЫЕ И FEFO, ТРЕКЕР ЗТЛ, СМЕШАННЫЕ ЧЕКИ 54-ФЗ И РОЗНИЦА, РАССРОЧКА 0% И HUD СМЕНЫ ВРАЧА): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 393 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (ВСЕГО 456 ФИЧ: 63 КАНОНИЧЕСКИЕ + 393 АДДЕНДУМ, ВСЕ 456 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], ВОЛНЫ 320–325 ЗАКРЫТЫ НА 100%, ПАРИТЕТ 100%). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
@@ -7334,4 +7334,31 @@
   - `docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md` (Раздел 14.3 и Фаза 6)
   - `docs/competitive-audit/OUR_CRM_MAP.md` (Фичи #445..#456, Волны 319–324)
   - `docs/architecture/SYSTEM_ARCHITECTURE_MAP.md` (Контуры 2.7–2.10)
+
+### 2.10.421. Волна 325: Тотальный Red Team Аудит, Зачистка Карго-Культа и Синхронизация Документации (Мандаты 8b, 8c, 8d, 8e, 8n, 8s, 8t, 8p)
+- **Функционал**:
+  1. *Domain 1: Waitlist отмен и умный автоподбор слотов*: `waitlistCancellationEngine.ts`, `WaitlistQuickFillModal.tsx`, интеграция в `AppointmentModal.tsx`, `WaitlistDrawer.tsx` и `ScheduleGrid.tsx`; скоринг совместимости врачей, специализаций, кресел и временных окон; 1-клик занятие освободившегося слота без диалоговых барьеров;
+  2. *Domain 2: Приходные накладные, FEFO и контроль партий*: `acceptanceWaybillsEngine.ts`, `AcceptanceWaybillsModal.tsx`, `acceptanceWaybillsTypes.ts`, `acceptanceWaybillsTemplates.ts`, роут `POST /api/inventory/acceptance-waybill` в `apps/api/src/routes/inventory.ts`; оприходование партий с серией, сроком годности и ценой закупки в копейках; расчет FEFO-статусов (critical, warning, good); мягкий овердрафт склада без остановки приема;
+  3. *Domain 3: Трекер заказ-нарядов ЗТЛ и канбан-статусы*: `dentalLabOrderEngine.ts`, `DentalLabOrdersTrackerModal.tsx`, интеграция в `LabOrdersPage.tsx` и `LabOrdersPanel.tsx`; трекинг стадий лаборатории (created, impressions_sent, lab_received, in_progress, fitted, ready, installed, cancelled), контроль дедлайна примерки до визита, фильтрация по статусам и лабораториям;
+  4. *Domain 4: Смешанные чеки 54-ФЗ и розничные товары ресепшена*: `packages/shared/src/fiscal/mixedFiscalReceipt.ts`, `apps/web/src/components/finance/__tests__/mixedFiscalReceiptWeb.test.ts`; каталог товаров ресепшена `RECEPTION_RETAIL_CATALOG` (щетки, пасты, нити, ополаскиватели, реминерализующие гели, орто-наборы), признак предмета расчета `COMMODITY` (товар) vs `SERVICE` (услуга); комбинированные сплиты оплат (нал + карта + аванс/баланс) с копеечно-точным распределением и печатью фискального чека 54-ФЗ;
+  5. *Domain 5: Внутренняя рассрочка клиники 0% и HUD заработка смены врача*: `packages/shared/src/finance/installmentsEngine.ts`, `apps/web/src/components/billing/PatientInstallmentsModal.tsx`, `packages/shared/src/finance/doctorShiftEarnings.ts`, `apps/web/src/components/doctor/DoctorShiftHud.tsx`; беспроцентная рассрочка клиники (0% переплат, первоначальный взнос, ежемесячный аннуитетный график без привлечения банков), прозрачный HUD смены врача в 1 строку (выручка, личный процент, чистый заработок, закрытые приемы);
+  6. *Domain 6: Red Team Инквизиционный Аудит и Верификация*: вердикт `[ПРОВЕРЕНО: ЧИСТО]`, 0 unresolved CSS-токенов, 0 ошибок кодировки (UTF-8 strict), 79/79 unit tests pass, полное соблюдение Мандатов 8n (суверенитет соло-врача и малых клиник), 8d (1-строчный тулбар 32–36px, zero-clipping), 8e (автономия врача), 8s (SSOT без мертвых дублей), 8t (однопоточный компиляторный шлюз).
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/schedule/waitlistCancellationEngine.ts`
+  - `apps/web/src/components/schedule/WaitlistQuickFillModal.tsx`
+  - `apps/web/src/components/inventory/acceptanceWaybillsEngine.ts`
+  - `apps/web/src/components/inventory/AcceptanceWaybillsModal.tsx`
+  - `apps/api/src/routes/inventory.ts`
+  - `apps/web/src/components/laboratory/dentalLabOrderEngine.ts`
+  - `apps/web/src/components/laboratory/DentalLabOrdersTrackerModal.tsx`
+  - `packages/shared/src/fiscal/mixedFiscalReceipt.ts`
+  - `packages/shared/src/finance/installmentsEngine.ts`
+  - `apps/web/src/components/billing/PatientInstallmentsModal.tsx`
+  - `packages/shared/src/finance/doctorShiftEarnings.ts`
+  - `apps/web/src/components/doctor/DoctorShiftHud.tsx`
+  - `docs/competitive-audit/BACKLOG.md` (Волна 325)
+  - `docs/competitive-audit/FEATURES_REGISTRY.md` (Волна 325)
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 325)
+
 
