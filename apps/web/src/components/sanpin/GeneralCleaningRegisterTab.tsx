@@ -1,32 +1,25 @@
 import {
-	type CleaningApplicationMethod,
-	type CleaningStatus,
-	type CleaningType,
 	type CreateGeneralCleaningLogDto,
 	type GeneralCleaningLog,
-	type GeneralCleaningJournalRecord,
-	generateGeneralCleaningJournalPrintHtml,
 } from "@dental/shared";
 import {
-	Calendar,
-	CheckCircle2,
-	Clock,
-	FileCheck,
 	Download,
-	Filter,
 	MoreHorizontal,
 	Plus,
 	Printer,
 	Search,
-	ShieldCheck,
 	Sparkles,
-	UserCheck,
-	X,
 } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { showToast } from "../GlobalToast";
-import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
+import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { showToast } from "../GlobalToast";
+import { GeneralCleaningAddLogModal } from "./GeneralCleaningAddLogModal";
+import { GeneralCleaningLogTable } from "./GeneralCleaningLogTable";
+import {
+	exportGeneralCleaningLogsCsv,
+	printGeneralCleaningJournal,
+} from "./generalCleaningPrintHelpers";
 import { GeneralCleaningSchedule } from "./GeneralCleaningSchedule";
 
 export function GeneralCleaningRegisterTab() {
@@ -39,6 +32,7 @@ export function GeneralCleaningRegisterTab() {
 	const [viewMode, setViewMode] = useState<"table" | "schedule">("table");
 	const [isAutopilotLoading, setIsAutopilotLoading] = useState(false);
 	const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
+	const [submitting, setSubmitting] = useState(false);
 	const optionsMenuRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -52,6 +46,32 @@ export function GeneralCleaningRegisterTab() {
 		}
 		return () => document.removeEventListener("mousedown", handleOptionsClickOutside);
 	}, [isOptionsMenuOpen]);
+
+	const fetchLogs = async () => {
+		try {
+			setLoading(true);
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+			const res = await fetch("/api/registers/cleaning", {
+				headers: {
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				},
+			});
+			if (res.ok) {
+				const data = await res.json();
+				setLogs(data);
+			}
+		} catch (err) {
+			console.error("Failed to load cleaning logs", err);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		fetchLogs();
+	}, []);
 
 	// 1-Клик автопилот графика генеральных уборок на месяц (по СанПиН каждые 7 дней)
 	const handleAutopilotMonth = async () => {
@@ -86,48 +106,6 @@ export function GeneralCleaningRegisterTab() {
 			setIsAutopilotLoading(false);
 		}
 	};
-
-	// New cleaning form state
-	const [formCleaningType, setFormCleaningType] = useState<CleaningType>("general");
-	const [formScheduledDate, setFormScheduledDate] = useState(new Date().toISOString().slice(0, 10));
-	const [formActualDateTime, setFormActualDateTime] = useState(new Date().toISOString().slice(0, 16));
-	const [formRoomName, setFormRoomName] = useState("Операционная / Хирургический кабинет");
-	const [formAreaM2, setFormAreaM2] = useState<number>(32.5);
-	const [formDisinfectant, setFormDisinfectant] = useState("Аламинол 1.5%");
-	const [formActiveIngredient, setFormActiveIngredient] = useState("ЧАС (алкилдиметилбензиламмоний хлорид) + Глутаровый альдегид");
-	const [formConcentration, setFormConcentration] = useState<number>(1.5);
-	const [formAppMethod, setFormAppMethod] = useState<CleaningApplicationMethod>("wiping");
-	const [formExposureMin, setFormExposureMin] = useState<number>(60);
-	const [formUvMin, setFormUvMin] = useState<number>(60);
-	const [formVentilationMin, setFormVentilationMin] = useState<number>(15);
-	const [formNotes, setFormNotes] = useState("");
-	const [submitting, setSubmitting] = useState(false);
-
-	const fetchLogs = async () => {
-		try {
-			setLoading(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
-			const res = await fetch("/api/registers/cleaning", {
-				headers: {
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
-			});
-			if (res.ok) {
-				const data = await res.json();
-				setLogs(data);
-			}
-		} catch (err) {
-			console.error("Failed to load cleaning logs", err);
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	useEffect(() => {
-		fetchLogs();
-	}, []);
 
 	// 1-Клик фиксация генеральной уборки по норме СанПиН (Мандаты 8e, 8k)
 	const handleQuickRecordNormCleaning = async () => {
@@ -180,127 +158,6 @@ export function GeneralCleaningRegisterTab() {
 		}
 	};
 
-	// Официальная печатная форма журнала СанПиН 3.3686-21
-	const handlePrintJournal = () => {
-		const mappedRecords: GeneralCleaningJournalRecord[] = logs.map((log) => ({
-			id: log.id,
-			roomType: "surgical",
-			roomName: log.roomName,
-			scheduledDate: log.scheduledDate,
-			actualDateTime: log.actualDateTime,
-			treatedAreaM2: Number(log.treatedAreaM2) || 30,
-			disinfectantName: log.disinfectantName,
-			activeIngredient: log.activeIngredient || "ЧАС + Альдегиды",
-			solutionConcentrationPercent: Number(log.solutionConcentrationPercent) || 1.5,
-			applicationMethodRu: log.applicationMethod === "spraying" ? "Орошение" : "Двукратное протирание",
-			exposureTimeMinutes: Number(log.exposureTimeMinutes) || 60,
-			uvIrradiationMinutes: Number(log.uvIrradiationMinutes) || 60,
-			ventilationMinutes: Number(log.ventilationMinutes) || 15,
-			operatorStaffFullName:
-				log.operatorName ||
-				(appLogic as any)?.activeDoctor?.fullName ||
-				(appLogic as any)?.activeDoctor?.name ||
-				"Ассистент стоматолога",
-			inspectorStaffFullName: log.inspectorName || undefined,
-			isInspectorVerified: Boolean(log.inspectorName || log.status === "verified_by_inspector"),
-			status: (log.status as any) || "completed",
-			notes: log.notes || undefined,
-		}));
-
-		const html = generateGeneralCleaningJournalPrintHtml({
-			records: mappedRecords,
-			clinicInfo: {
-				name: appLogic?.clinicName || "Стоматологическая клиника",
-				inn: appLogic?.clinic?.inn || "",
-				ogrn: appLogic?.clinic?.ogrn || "",
-				address: appLogic?.clinic?.address || "",
-				licenseNumber: (appLogic?.clinic as any)?.licenseNumber || "",
-				chiefDoctor: "Главный врач",
-				headNurse: "Главная медсестра",
-			},
-		});
-
-		const printWindow = window.open("", "_blank");
-		if (printWindow) {
-			printWindow.document.write(html);
-			printWindow.document.close();
-			printWindow.focus();
-			setTimeout(() => {
-				printWindow.print();
-			}, 250);
-		} else {
-			const iframe = document.createElement("iframe");
-			iframe.style.position = "fixed";
-			iframe.style.right = "0";
-			iframe.style.bottom = "0";
-			iframe.style.width = "0";
-			iframe.style.height = "0";
-			iframe.style.border = "none";
-			document.body.appendChild(iframe);
-			const doc = iframe.contentWindow?.document;
-			if (doc) {
-				doc.open();
-				doc.write(html);
-				doc.close();
-				iframe.contentWindow?.focus();
-				setTimeout(() => {
-					iframe.contentWindow?.print();
-					setTimeout(() => document.body.removeChild(iframe), 1000);
-				}, 300);
-			}
-		}
-	};
-
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (submitting) return;
-		try {
-			setSubmitting(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
-
-			const payload: CreateGeneralCleaningLogDto = {
-				cleaningType: formCleaningType,
-				scheduledDate: formScheduledDate,
-				actualDateTime: new Date(formActualDateTime).toISOString(),
-				roomName: formRoomName,
-				treatedAreaM2: Number(formAreaM2),
-				disinfectantName: formDisinfectant,
-				activeIngredient: formActiveIngredient || undefined,
-				solutionConcentrationPercent: Number(formConcentration),
-				applicationMethod: formAppMethod,
-				exposureTimeMinutes: Number(formExposureMin),
-				uvIrradiationMinutes: Number(formUvMin),
-				ventilationMinutes: Number(formVentilationMin),
-				status: "completed",
-				notes: formNotes || undefined,
-			};
-
-			const res = await fetch("/api/registers/cleaning", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
-				body: JSON.stringify(payload),
-			});
-
-			if (res.ok) {
-				showToast("Генеральная уборка успешно внесена в журнал", "success");
-				setIsModalOpen(false);
-				fetchLogs();
-			} else {
-				const err = await res.json();
-				showToast(err.message || "Ошибка при сохранении", "error");
-			}
-		} catch (err) {
-			showToast("Сетевая ошибка при сохранении", "error");
-		} finally {
-			setSubmitting(false);
-		}
-	};
-
 	const handleVerify = async (id: string) => {
 		try {
 			const clinicToken = readDenteClinicToken();
@@ -335,44 +192,6 @@ export function GeneralCleaningRegisterTab() {
 			return matchSearch && matchType;
 		});
 	}, [logs, searchQuery, typeFilter]);
-
-	const handleExportCsv = () => {
-		if (!filteredLogs || filteredLogs.length === 0) {
-			showToast("Нет записей для экспорта", "error");
-			return;
-		}
-		const headers = [
-			"Дата плана",
-			"Дата факта",
-			"Кабинет",
-			"Тип уборки",
-			"Дезсредство",
-			"Концентрация %",
-			"Экспозиция мин",
-			"Облучение мин",
-			"Исполнитель",
-		];
-		const rows = filteredLogs.map((l) => [
-			l.scheduledDate || "",
-			l.actualDateTime || "",
-			l.roomName || "",
-			l.cleaningType === "general" ? "Генеральная" : "Текущая",
-			l.disinfectantName || "",
-			l.solutionConcentrationPercent ?? "",
-			l.exposureTimeMinutes ?? "",
-			l.uvIrradiationMinutes ?? "",
-			l.operatorName || "",
-		]);
-		const csvContent = [headers.join(";"), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))].join("\r\n");
-		const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = `General_Cleaning_Journal_${new Date().toISOString().slice(0, 10)}.csv`;
-		a.click();
-		URL.revokeObjectURL(url);
-		showToast("Журнал генеральных уборок выгружен в CSV", "success");
-	};
 
 	return (
 		<div className="sanpin-tab-content">
@@ -547,7 +366,7 @@ export function GeneralCleaningRegisterTab() {
 									type="button"
 									onClick={() => {
 										setIsOptionsMenuOpen(false);
-										handleExportCsv();
+										exportGeneralCleaningLogsCsv(filteredLogs);
 									}}
 									style={{
 										display: "flex",
@@ -571,7 +390,7 @@ export function GeneralCleaningRegisterTab() {
 									type="button"
 									onClick={() => {
 										setIsOptionsMenuOpen(false);
-										handlePrintJournal();
+										printGeneralCleaningJournal(logs, appLogic);
 									}}
 									style={{
 										display: "flex",
@@ -601,277 +420,22 @@ export function GeneralCleaningRegisterTab() {
 			{viewMode === "schedule" ? (
 				<GeneralCleaningSchedule logs={logs} onScheduleUpdated={fetchLogs} />
 			) : (
-				<div className="sanpin-table-wrapper">
-				<table className="sanpin-table">
-					<thead>
-						<tr>
-							<th>План / Факт дата</th>
-							<th>Помещение</th>
-							<th>Площадь (м²)</th>
-							<th>Дезсредство / Концентрация</th>
-							<th>Экспозиция (мин)</th>
-							<th>УФ-обеззараживание</th>
-							<th>Проветривание</th>
-							<th>Исполнитель</th>
-							<th>Контроль / Подпись</th>
-						</tr>
-					</thead>
-					<tbody>
-						{loading ? (
-							<tr>
-								<td colSpan={9} style={{ textAlign: "center", padding: "2rem" }}>
-									Загрузка журнала генеральных уборок...
-								</td>
-							</tr>
-						) : filteredLogs.length === 0 ? (
-							<tr>
-								<td colSpan={9} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
-									Записи генеральных уборок не найдены.
-								</td>
-							</tr>
-						) : (
-							filteredLogs.map((log) => (
-								<tr
-									key={log.id}
-									className="sanpin-log-row"
-									style={{
-										minHeight: "44px",
-										contentVisibility: "auto",
-										containIntrinsicSize: "1px 44px",
-										contain: "content",
-									}}
-								>
-									<td>
-										<div style={{ fontWeight: 600 }}>{log.scheduledDate}</div>
-										<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-											Факт: {new Date(log.actualDateTime).toLocaleDateString("ru-RU")}
-										</div>
-									</td>
-									<td>
-										<div style={{ fontWeight: 600 }}>{log.roomName}</div>
-										<span className="sanpin-tag sanpin-tag-neutral">
-											{log.cleaningType === "general" ? "Генеральная" : "Текущая"}
-										</span>
-									</td>
-									<td>{log.treatedAreaM2} м²</td>
-									<td>
-										<div style={{ fontWeight: 500 }}>{log.disinfectantName}</div>
-										<div style={{ fontSize: "0.725rem", color: "var(--muted)" }}>
-											Концентрация: {log.solutionConcentrationPercent}%
-										</div>
-									</td>
-									<td>{log.exposureTimeMinutes} мин</td>
-									<td>
-										<span style={{ fontWeight: 600, color: "var(--brand-primary)" }}>
-											{log.uvIrradiationMinutes} мин
-										</span>
-									</td>
-									<td>{log.ventilationMinutes} мин</td>
-									<td style={{ fontSize: "0.8rem" }}>{log.operatorName || "Санитарка / Медсестра"}</td>
-									<td>
-										{log.status === "verified_by_inspector" ? (
-											<span className="sanpin-tag sanpin-tag-success">
-												<CheckCircle2 size={12} /> Проверено
-											</span>
-										) : (
-											<button
-												type="button"
-												onClick={() => handleVerify(log.id)}
-												style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem" }}
-												className="sanpin-btn sanpin-btn-secondary"
-											>
-												<UserCheck size={12} /> Заверить
-											</button>
-										)}
-									</td>
-								</tr>
-							))
-						)}
-					</tbody>
-				</table>
-			</div>
+				<GeneralCleaningLogTable
+					logs={filteredLogs}
+					loading={loading}
+					onVerify={handleVerify}
+				/>
 			)}
 
-			{/* Modal for new Cleaning Entry */}
-			{isModalOpen && (
-				<div className="sanpin-modal-overlay">
-					<div className="sanpin-modal">
-						<div className="sanpin-modal-header">
-							<h3>Проведение генеральной уборки (СанПиН 3.3686-21)</h3>
-							<button type="button" onClick={() => setIsModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--muted)" }} aria-label="Закрыть"><X size={18} /></button>
-						</div>
-						<form onSubmit={handleSubmit}>
-							<div className="sanpin-modal-body">
-								<div style={{ marginBottom: "0.75rem", display: "flex", justifyContent: "flex-end" }}>
-									<button
-										type="button"
-										onClick={() => {
-											setFormCleaningType("general");
-											setFormScheduledDate(new Date().toISOString().slice(0, 10));
-											setFormActualDateTime(new Date().toISOString().slice(0, 16));
-											setFormRoomName("Операционная / Хирургический кабинет №1");
-											setFormAreaM2(32.5);
-											setFormDisinfectant("Аламинол 5%");
-											setFormActiveIngredient("ЧАС + Глутаровый альдегид");
-											setFormConcentration(5.0);
-											setFormAppMethod("wiping");
-											setFormExposureMin(60);
-											setFormUvMin(120);
-											setFormVentilationMin(15);
-											setFormNotes("Уборка по графику выполнена: Дезсредство Аламинол 5%, экспозиция 60 мин, УФ 120 мин, проветривание 15 мин.");
-										}}
-										className="sanpin-btn sanpin-btn-secondary"
-										style={{ fontSize: "0.78rem", padding: "0.3rem 0.6rem" }}
-									>
-										<Sparkles size={13} /> Заполнить норму СанПиН (Аламинол 5%, УФ 120 мин)
-									</button>
-								</div>
-								<div className="sanpin-form-row">
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Вид уборки</label>
-										<select
-											value={formCleaningType}
-											onChange={(e) => setFormCleaningType(e.target.value as CleaningType)}
-											className="sanpin-select"
-										>
-											<option value="general">Генеральная уборка (по графику, 1 раз в 7 дней)</option>
-											<option value="current_routine">Текущая заключительная дезинфекция</option>
-										</select>
-									</div>
-
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Помещение / Кабинет</label>
-										<input
-											type="text"
-											required
-											value={formRoomName}
-											onChange={(e) => setFormRoomName(e.target.value)}
-											className="sanpin-input"
-											placeholder="Операционная / Кабинет терапии / ЦСО"
-										/>
-									</div>
-								</div>
-
-								<div className="sanpin-form-row">
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Плановая дата</label>
-										<input
-											type="date"
-											required
-											value={formScheduledDate}
-											onChange={(e) => setFormScheduledDate(e.target.value)}
-											className="sanpin-input"
-										/>
-									</div>
-
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Фактическая дата и время</label>
-										<input
-											type="datetime-local"
-											required
-											value={formActualDateTime}
-											onChange={(e) => setFormActualDateTime(e.target.value)}
-											className="sanpin-input"
-										/>
-									</div>
-								</div>
-
-								<div className="sanpin-form-row">
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Обработанная площадь (м²)</label>
-										<input
-											type="number"
-											step="0.1"
-											required
-											value={formAreaM2}
-											onChange={(e) => setFormAreaM2(parseFloat(e.target.value) || 0)}
-											className="sanpin-input"
-										/>
-									</div>
-
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Способ применения</label>
-										<select
-											value={formAppMethod}
-											onChange={(e) => setFormAppMethod(e.target.value as CleaningApplicationMethod)}
-											className="sanpin-select"
-										>
-											<option value="wiping">Двукратное протирание ветошью</option>
-											<option value="spraying">Орошение (распыление)</option>
-											<option value="combined">Комбинированный</option>
-										</select>
-									</div>
-								</div>
-
-								<div className="sanpin-form-row">
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Торговое наименование дезсредства</label>
-										<input
-											type="text"
-											required
-											value={formDisinfectant}
-											onChange={(e) => setFormDisinfectant(e.target.value)}
-											className="sanpin-input"
-											placeholder="Аламинол / Септолит / Бриллиант"
-										/>
-									</div>
-
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Концентрация раствора (%)</label>
-										<input
-											type="number"
-											step="0.1"
-											required
-											value={formConcentration}
-											onChange={(e) => setFormConcentration(parseFloat(e.target.value) || 0)}
-											className="sanpin-input"
-										/>
-									</div>
-								</div>
-
-								<div className="sanpin-form-row">
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Экспозиция (мин)</label>
-										<input
-											type="number"
-											required
-											value={formExposureMin}
-											onChange={(e) => setFormExposureMin(parseInt(e.target.value) || 0)}
-											className="sanpin-input"
-										/>
-									</div>
-
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">УФ-облучение (мин)</label>
-										<input
-											type="number"
-											required
-											value={formUvMin}
-											onChange={(e) => setFormUvMin(parseInt(e.target.value) || 0)}
-											className="sanpin-input"
-										/>
-									</div>
-
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Проветривание (мин)</label>
-										<input
-											type="number"
-											required
-											value={formVentilationMin}
-											onChange={(e) => setFormVentilationMin(parseInt(e.target.value) || 0)}
-											className="sanpin-input"
-										/>
-									</div>
-								</div>
-							</div>
-							<div className="sanpin-modal-footer">
-								<button type="button" onClick={() => setIsModalOpen(false)} className="sanpin-btn sanpin-btn-secondary">Отмена</button>
-								<button type="submit" aria-busy={submitting} style={{ opacity: submitting ? 0.7 : 1 }} className="sanpin-btn sanpin-btn-primary">Зафиксировать уборку</button>
-							</div>
-						</form>
-					</div>
-				</div>
-			)}
+			<GeneralCleaningAddLogModal
+				isOpen={isModalOpen}
+				onClose={() => setIsModalOpen(false)}
+				onSuccess={fetchLogs}
+			/>
 		</div>
 	);
 }
+
+export * from "./GeneralCleaningAddLogModal";
+export * from "./GeneralCleaningLogTable";
+export * from "./generalCleaningPrintHelpers";

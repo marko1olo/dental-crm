@@ -7,43 +7,20 @@
  */
 
 import {
-	AlertCircle,
-	AlertTriangle,
-	ArrowRight,
-	Barcode,
-	Calendar,
-	Check,
-	CheckCircle2,
-	Clock,
-	Copy,
-	Download,
-	FileSpreadsheet,
 	FileText,
-	Filter,
-	Flame,
 	Plus,
-	Printer,
-	QrCode,
-	RefreshCw,
-	Scale,
 	ShieldAlert,
-	ShieldCheck,
-	Snowflake,
 	Sparkles,
-	Thermometer,
-	Trash2,
 	Truck,
-	User,
 	X,
 } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../../GlobalToast.js";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage.js";
 import {
 	calculateWasteWeights,
-	exportWasteJournalToCsv,
 	generateMedicalWasteTransferAct,
 	generateWasteBarcode,
 	generateWasteSealNumber,
@@ -51,23 +28,18 @@ import {
 	generateWasteThermalStickerHtml,
 	type MedicalWasteJournalRecord,
 	type MedicalWasteTransferAct,
-	validateStorageDuration,
 } from "./medicalWasteEngine.js";
 import "./medicalWaste.css";
 import {
-	getDecontaminationMethod,
 	getMedicalWasteClass,
-	getMedicalWastePackaging,
-	getWasteStorageLocation,
-	SANPIN_DECONTAMINATION_METHODS,
-	SANPIN_MEDICAL_WASTE_CLASSES,
-	SANPIN_WASTE_PACKAGING_TYPES,
-	SANPIN_STORAGE_LOCATIONS,
 	type DecontaminationMethodType,
 	type MedicalWasteClassId,
 	type MedicalWastePackagingTypeId,
 	type WasteStorageLocationId,
 } from "./medicalWastePresets.js";
+import { MedicalWasteAccumulateTab } from "./MedicalWasteAccumulateTab";
+import { MedicalWasteJournalTableTab } from "./MedicalWasteJournalTableTab";
+import { MedicalWasteTransferActTab } from "./MedicalWasteTransferActTab";
 
 export interface MedicalWasteJournalModalProps {
 	readonly isOpen: boolean;
@@ -226,7 +198,6 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 				notes: "1-клик сдача острых отходов смены в желтом непрокалываемом контейнере (карпулы, иглы, скальпели) по СанПиН 2.1.3684-21",
 			};
 
-			// Вызов API бэкенда
 			try {
 				await fetch("/api/registers/medical-waste/quick-shift-bundle", {
 					method: "POST",
@@ -260,7 +231,8 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 	};
 
 	// Экспорт журнала в CSV
-	const handleExportCsv = () => {
+	const handleExportCsv = async () => {
+		const { exportWasteJournalToCsv } = await import("./medicalWasteEngine.js");
 		const csv = exportWasteJournalToCsv(records);
 		const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
 		const url = URL.createObjectURL(blob);
@@ -336,8 +308,9 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 					<div className="waste-header-title" id="waste-modal-title">
 						<ShieldAlert size={24} className="text-[var(--teal,#0d9488)]" />
 						<div>
-							<div className="font-bold text-lg leading-tight">
-								Учет и Обезвреживание Медицинских Отходов
+							<div className="font-bold text-lg leading-tight flex items-center gap-1.5">
+								<Sparkles size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
+								<span>Учет и Обезвреживание Медицинских Отходов</span>
 							</div>
 							<div className="text-xs font-normal text-muted">
 								СанПиН 2.1.3684-21 • Классы А, Б, Г • Весовой контроль • Акты приема-передачи
@@ -398,468 +371,54 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 				<div className="waste-modal-body">
 					{/* Вкладка 1: Фиксация накопления */}
 					{activeTab === "accumulate" && (
-						<div className="flex flex-col gap-4">
-							{/* Dominant 1-Click Shift Preset */}
-							<div
-								style={{
-									display: "flex",
-									flexDirection: "column",
-									gap: "0.6rem",
-									padding: "1rem",
-									borderRadius: "12px",
-									background: "var(--teal-soft, #f0fdfa)",
-									border: "2px solid var(--teal, #0d9488)",
-									boxShadow: "0 4px 12px rgba(13, 148, 136, 0.15)",
-								}}
-							>
-								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem" }}>
-									<div>
-										<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontWeight: 800, fontSize: "0.95rem", color: "var(--ink, #0f172a)" }}>
-											<Sparkles size={18} color="var(--teal, #0d9488)" />
-											<span>Нормативный экспресс-учет смены (СанПиН 2.1.3684-21)</span>
-										</div>
-										<div style={{ fontSize: "0.775rem", color: "var(--muted, #64748b)", marginTop: "2px" }}>
-											1-клик автоматическое формирование двух записей: мягкие отходы (желтый пакет 2.5 кг) + острые отходы (контейнер игл 0.8 кг)
-										</div>
-									</div>
-
-									<button
-										type="button"
-										onClick={handleQuickShiftWaste}
-										aria-busy={isSubmittingQuickShift}
-										className="touch-manipulation"
-										style={{
-											minHeight: "44px",
-											padding: "0.6rem 1.25rem",
-											fontSize: "0.925rem",
-											fontWeight: 800,
-											borderRadius: "8px",
-											background: "var(--teal, #0d9488)",
-											color: "#ffffff",
-											border: "none",
-											cursor: "pointer",
-											display: "inline-flex",
-											alignItems: "center",
-											gap: "0.5rem",
-											boxShadow: "0 2px 8px rgba(13, 148, 136, 0.35)",
-											whiteSpace: "nowrap",
-										}}
-										title="1-Клик сдать отходы смены (Класс Б: пакет 2.5 кг + контейнер игл 0.8 кг) по СанПиН 2.1.3684-21"
-										data-testid="waste-quick-shift-btn"
-									>
-										<Sparkles size={18} />
-										<span>{isSubmittingQuickShift ? "Оформление смены..." : "1-Клик сдать отходы смены (Класс Б: пакет 2.5 кг + контейнер игл 0.8 кг)"}</span>
-									</button>
-								</div>
-							</div>
-
-							{/* 1. Выбор класса отходов */}
-							<div>
-								<div className="text-xs font-bold uppercase text-muted mb-2">
-									1. Класс медицинских отходов (СанПиН 2.1.3684-21)
-								</div>
-								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-									{SANPIN_MEDICAL_WASTE_CLASSES.map((cls) => {
-										const isSelected = selectedClass === cls.id;
-										return (
-											<div
-												key={cls.id}
-												className={`waste-class-card ${
-													cls.id === "class_A" && isSelected
-														? "selected-class-a"
-														: cls.id === "class_B" && isSelected
-														? "selected-class-b"
-														: cls.id === "class_V" && isSelected
-														? "selected-class-v"
-														: isSelected
-														? "selected-class-g"
-														: ""
-												}`}
-												onClick={() => handleClassChange(cls.id)}
-											>
-												<div className="flex items-center justify-between">
-													<span
-														className="text-xs font-black px-2.5 py-1 rounded-full uppercase"
-														style={{
-															backgroundColor: cls.colorTheme.hexBadgeBg,
-															color: cls.colorTheme.hexBadgeFg,
-															border: `1px solid ${cls.colorTheme.hexBorder}`,
-														}}
-													>
-														Класс {cls.letterCode}
-													</span>
-													{isSelected && <CheckCircle2 size={18} className="text-[var(--teal,#0d9488)]" />}
-												</div>
-												<div className="font-bold text-sm text-ink">{cls.nameRu}</div>
-												<div className="text-xs text-muted leading-tight">
-													{cls.dentalSpecificItemsRu[0]}
-												</div>
-											</div>
-										);
-									})}
-								</div>
-							</div>
-
-							{/* 2. Тара, весы и количество */}
-							<div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-xl border border-line bg-paper-soft">
-								{/* Тара */}
-								<div>
-									<label htmlFor="waste-packaging-select" className="text-xs font-semibold text-muted block mb-1">
-										Тип тары / Упаковки
-									</label>
-									<select
-										id="waste-packaging-select"
-										value={selectedPackaging}
-										onChange={(e) => setSelectedPackaging(e.target.value as MedicalWastePackagingTypeId)}
-										className="w-full h-10 px-3 rounded-lg border border-line bg-paper text-ink text-sm font-medium focus:outline-none focus:ring-2 focus:ring-focus-ring"
-									>
-										{SANPIN_WASTE_PACKAGING_TYPES.filter((p) => p.wasteClass === selectedClass).map((pkg) => (
-											<option key={pkg.id} value={pkg.id}>
-												{pkg.nameRu} (тара {pkg.defaultTareWeightKg} кг)
-											</option>
-										))}
-									</select>
-								</div>
-
-								{/* Количество упаковок */}
-								<div>
-									<label htmlFor="waste-package-count" className="text-xs font-semibold text-muted block mb-1">
-										Количество мест (пакетов/баков)
-									</label>
-									<input
-										id="waste-package-count"
-										type="number"
-										min={1}
-										max={50}
-										value={packageCount}
-										onChange={(e) => setPackageCount(Number(e.target.value))}
-										className="w-full h-10 px-3 rounded-lg border border-line bg-paper text-ink text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-focus-ring"
-									/>
-								</div>
-
-								{/* Вес брутто */}
-								<div>
-									<label htmlFor="waste-gross-weight" className="text-xs font-semibold text-muted block mb-1">
-										Вес брутто по весам (кг)
-									</label>
-									<div className="flex items-center gap-2">
-										<Scale size={20} className="text-[var(--teal,#0d9488)]" />
-										<input
-											id="waste-gross-weight"
-											type="number"
-											step="0.01"
-											min="0.01"
-											value={grossWeightInput}
-											onChange={(e) => setGrossWeightInput(Number(e.target.value))}
-											className="flex-1 h-10 px-3 rounded-lg border border-line bg-paper text-ink text-base font-extrabold focus:outline-none focus:ring-2 focus:ring-focus-ring"
-										/>
-									</div>
-								</div>
-							</div>
-
-							{/* 3. Дисплей весового баланса */}
-							<div className="waste-weight-display">
-								<div className="waste-weight-metric">
-									<span className="waste-weight-lbl">Брутто (с тарой)</span>
-									<span className="waste-weight-val">{currentWeights.grossKg.toFixed(2)} кг</span>
-								</div>
-								<div className="waste-weight-metric">
-									<span className="waste-weight-lbl">Тара (пакет/контейнер)</span>
-									<span className="waste-weight-val text-muted">{currentWeights.tareKg.toFixed(2)} кг</span>
-								</div>
-								<div className="waste-weight-metric">
-									<span className="waste-weight-lbl">Чистый вес нетто</span>
-									<span className="waste-weight-net-val">{currentWeights.netKg.toFixed(2)} кг</span>
-								</div>
-							</div>
-
-							{/* 4. Обеззараживание, пломба и место хранения */}
-							<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-								{/* Обеззараживание */}
-								<div>
-									<label htmlFor="waste-decontam-select" className="text-xs font-semibold text-muted block mb-1">
-										Метод обеззараживания
-									</label>
-									<select
-										id="waste-decontam-select"
-										value={decontamMethod}
-										onChange={(e) => setDecontamMethod(e.target.value as DecontaminationMethodType)}
-										className="w-full h-10 px-3 rounded-lg border border-line bg-paper text-ink text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring"
-									>
-										{SANPIN_DECONTAMINATION_METHODS.map((m) => (
-											<option key={m.id} value={m.id}>
-												{m.nameRu}
-											</option>
-										))}
-									</select>
-								</div>
-
-								{/* Место хранения */}
-								<div>
-									<label htmlFor="waste-storage-select" className="text-xs font-semibold text-muted block mb-1">
-										Режим накопления / Хранилище
-									</label>
-									<select
-										id="waste-storage-select"
-										value={storageLocation}
-										onChange={(e) => setStorageLocation(e.target.value as WasteStorageLocationId)}
-										className="w-full h-10 px-3 rounded-lg border border-line bg-paper text-ink text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring"
-									>
-										{SANPIN_STORAGE_LOCATIONS.map((loc) => (
-											<option key={loc.id} value={loc.id}>
-												{loc.nameRu} ({loc.temperatureRangeRu})
-											</option>
-										))}
-									</select>
-								</div>
-
-								{/* Номер пломбы */}
-								<div>
-									<label htmlFor="waste-seal-number" className="text-xs font-semibold text-muted block mb-1">
-										Номер бирки / Пломбы-стяжки
-									</label>
-									<input
-										id="waste-seal-number"
-										type="text"
-										value={sealNumber}
-										onChange={(e) => setSealNumber(e.target.value)}
-										className="w-full h-10 px-3 rounded-lg border border-line bg-paper text-ink text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-focus-ring"
-									/>
-								</div>
-							</div>
-
-							{/* Штрихкод и кнопка фиксации */}
-							<div className="p-4 rounded-xl border border-line bg-paper-soft flex items-center justify-between flex-wrap gap-3">
-								<div className="flex items-center gap-3">
-									<Barcode size={28} className="text-[var(--teal,#0d9488)]" />
-									<div>
-										<div className="text-xs text-muted">Сгенерированный штрихкод СанПиН</div>
-										<div className="font-mono font-bold text-ink text-sm">{barcode}</div>
-									</div>
-								</div>
-
-								<button
-									type="button"
-									onClick={handleAddRecord}
-									className="waste-btn waste-btn-primary"
-								>
-									<CheckCircle2 size={18} /> Зафиксировать в журнале
-								</button>
-							</div>
-						</div>
+						<MedicalWasteAccumulateTab
+							selectedClass={selectedClass}
+							handleClassChange={handleClassChange}
+							selectedPackaging={selectedPackaging}
+							setSelectedPackaging={setSelectedPackaging}
+							packageCount={packageCount}
+							setPackageCount={setPackageCount}
+							grossWeightInput={grossWeightInput}
+							setGrossWeightInput={setGrossWeightInput}
+							currentWeights={currentWeights}
+							decontamMethod={decontamMethod}
+							setDecontamMethod={setDecontamMethod}
+							storageLocation={storageLocation}
+							setStorageLocation={setStorageLocation}
+							sealNumber={sealNumber}
+							setSealNumber={setSealNumber}
+							barcode={barcode}
+							handleAddRecord={handleAddRecord}
+							handleQuickShiftWaste={handleQuickShiftWaste}
+							isSubmittingQuickShift={isSubmittingQuickShift}
+						/>
 					)}
 
 					{/* Вкладка 2: Технологический журнал */}
 					{activeTab === "journal" && (
-						<div className="flex flex-col gap-3">
-							<div className="flex items-center justify-between">
-								<div className="font-bold text-sm text-ink">
-									Записи технологического журнала отходов подразделения
-								</div>
-								<button
-									type="button"
-									onClick={handleExportCsv}
-									className="waste-btn waste-btn-secondary h-9 text-xs"
-								>
-									<FileSpreadsheet size={16} /> Экспорт журнала (CSV)
-								</button>
-							</div>
-
-							<div className="waste-table-wrapper">
-								<table className="waste-table">
-									<thead>
-										<tr>
-											<th>Дата / Время</th>
-											<th>Класс</th>
-											<th>Тара</th>
-											<th className="text-center">Мест</th>
-											<th className="text-right">Нетто (кг)</th>
-											<th>Пломба</th>
-											<th>Метод обеззараживания</th>
-											<th>Хранение / Срок</th>
-											<th>Статус</th>
-											<th className="text-center">Этикетка</th>
-										</tr>
-									</thead>
-									<tbody>
-										{records.length === 0 ? (
-											<tr>
-												<td colSpan={10} className="text-center py-8 text-muted">
-													<div className="flex flex-col items-center gap-2">
-														<ShieldCheck size={32} className="text-muted opacity-50" />
-														<div className="font-semibold text-ink text-sm">В журнале пока нет записей медотходов</div>
-														<div className="text-xs text-muted max-w-sm">Зафиксируйте первый пакет или емкость с отходами классов А, Б, В или Г на вкладке «Фиксация отходов».</div>
-													</div>
-												</td>
-											</tr>
-										) : (
-											records.map((r) => {
-											const classDef = getMedicalWasteClass(r.wasteClass);
-											const storageCheck = validateStorageDuration(r.timestamp, r.storageLocation);
-
-											return (
-												<tr
-													key={r.id}
-													className="sanpin-log-row"
-													style={{
-														minHeight: "44px",
-														contentVisibility: "auto",
-														containIntrinsicSize: "1px 44px",
-														contain: "content",
-													}}
-												>
-													<td className="whitespace-nowrap font-medium">{r.timestamp}</td>
-													<td>
-														<span
-															className="waste-badge"
-															style={{
-																backgroundColor: classDef.colorTheme.hexBadgeBg,
-																color: classDef.colorTheme.hexBadgeFg,
-																border: `1px solid ${classDef.colorTheme.hexBorder}`,
-															}}
-														>
-															Класс {classDef.letterCode}
-														</span>
-													</td>
-													<td className="text-xs">{getMedicalWastePackaging(r.packageType).nameRu}</td>
-													<td className="text-center font-bold">{r.packageCount}</td>
-													<td className="text-right font-black text-ink">{r.netWeightKg.toFixed(2)}</td>
-													<td className="font-mono text-xs font-semibold text-muted">{r.sealNumber || "—"}</td>
-													<td className="text-xs">{getDecontaminationMethod(r.decontaminationMethod).nameRu}</td>
-													<td>
-														{storageCheck.isExpired ? (
-															<span className="text-xs font-bold text-bad-fg flex items-center gap-1">
-																<AlertTriangle size={14} /> Истек ({Math.abs(storageCheck.hoursRemaining)} ч)
-															</span>
-														) : (
-															<span className="text-xs font-semibold text-ok-fg flex items-center gap-1">
-																<Clock size={14} /> {storageCheck.hoursRemaining} ч
-															</span>
-														)}
-													</td>
-													<td>
-														{r.status === "accumulating" ? (
-															<span className="text-xs font-bold text-amber bg-amber-soft px-2 py-0.5 rounded-full">
-																Накопление
-															</span>
-														) : (
-															<span className="text-xs font-bold text-ok-fg bg-ok-bg px-2 py-0.5 rounded-full">
-																Вывезено ({r.transferActNumber})
-															</span>
-														)}
-													</td>
-													<td className="text-center">
-														<button
-															type="button"
-															onClick={() => handlePrintThermalSticker(r)}
-															className="waste-btn waste-btn-secondary min-h-[38px] px-2.5 py-1 text-xs font-bold whitespace-nowrap cursor-pointer hover:border-[var(--teal,#0d9488)]"
-															title="Печать термоэтикетки со штрихкодом 58x40 мм для бака/пакета"
-															data-testid={`print-sticker-${r.id}`}
-														>
-															<Printer size={13} className="text-[var(--teal,#0d9488)]" />
-															<span>58×40 мм</span>
-														</button>
-													</td>
-												</tr>
-											);
-										})
-									)}
-									</tbody>
-								</table>
-							</div>
-						</div>
+						<MedicalWasteJournalTableTab
+							records={records}
+							onExportCsv={handleExportCsv}
+							onPrintThermalSticker={handlePrintThermalSticker}
+						/>
 					)}
 
 					{/* Вкладка 3: Акт передачи спецоператору */}
 					{activeTab === "transfer_act" && (
-						<div className="flex flex-col gap-4">
-							<div className="p-4 rounded-xl border border-line bg-paper-soft grid grid-cols-1 md:grid-cols-2 gap-3">
-								<div>
-									<label htmlFor="waste-act-number" className="text-xs font-semibold text-muted block mb-1">
-										Номер Акта приема-передачи
-									</label>
-									<input
-										id="waste-act-number"
-										type="text"
-										value={actNumber}
-										onChange={(e) => setActNumber(e.target.value)}
-										className="w-full h-10 px-3 rounded-lg border border-line bg-paper text-ink text-sm font-bold focus:outline-none focus:ring-2 focus:ring-focus-ring"
-									/>
-								</div>
-
-								<div>
-									<label htmlFor="waste-disposal-company" className="text-xs font-semibold text-muted block mb-1">
-										Лицензированный Спецоператор по вывозу
-									</label>
-									<input
-										id="waste-disposal-company"
-										type="text"
-										value={disposalCompanyName}
-										onChange={(e) => setDisposalCompanyName(e.target.value)}
-										className="w-full h-10 px-3 rounded-lg border border-line bg-paper text-ink text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring"
-									/>
-								</div>
-
-								<div>
-									<label htmlFor="waste-contract-number" className="text-xs font-semibold text-muted block mb-1">
-										Номер Договора
-									</label>
-									<input
-										id="waste-contract-number"
-										type="text"
-										value={disposalContractNo}
-										onChange={(e) => setDisposalContractNo(e.target.value)}
-										className="w-full h-10 px-3 rounded-lg border border-line bg-paper text-ink text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring"
-									/>
-								</div>
-
-								<div>
-									<label htmlFor="waste-driver-name" className="text-xs font-semibold text-muted block mb-1">
-										ФИО водителя / ГРЗ спецавтотранспорта
-									</label>
-									<div className="flex gap-2">
-										<input
-											id="waste-driver-name"
-											type="text"
-											placeholder="Водитель"
-											value={driverName}
-											onChange={(e) => setDriverName(e.target.value)}
-											className="flex-1 h-10 px-3 rounded-lg border border-line bg-paper text-ink text-sm focus:outline-none focus:ring-2 focus:ring-focus-ring"
-										/>
-										<input
-											type="text"
-											placeholder="ГРЗ авто"
-											value={vehiclePlate}
-											onChange={(e) => setVehiclePlate(e.target.value)}
-											className="w-32 h-10 px-2 rounded-lg border border-line bg-paper text-ink text-sm text-center font-mono focus:outline-none focus:ring-2 focus:ring-focus-ring"
-										/>
-									</div>
-								</div>
-							</div>
-
-							{/* Сводка партии */}
-							<div className="p-4 rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,#f0fdfa)] flex items-center justify-between">
-								<div>
-									<div className="text-xs font-semibold text-muted uppercase">Партия к передаче</div>
-									<div className="text-lg font-black text-ink">
-										{records.filter((r) => r.status === "accumulating").length} мест • Масса нетто:{" "}
-										{records
-											.filter((r) => r.status === "accumulating")
-											.reduce((acc, r) => acc + r.netWeightKg, 0)
-											.toFixed(2)}{" "}
-										кг
-									</div>
-								</div>
-
-								<button
-									type="button"
-									onClick={handleCreateAndPrintAct}
-									className="waste-btn waste-btn-primary"
-								>
-									<Printer size={18} /> Сформировать и Распечатать Акт (А4)
-								</button>
-							</div>
-						</div>
+						<MedicalWasteTransferActTab
+							actNumber={actNumber}
+							setActNumber={setActNumber}
+							disposalCompanyName={disposalCompanyName}
+							setDisposalCompanyName={setDisposalCompanyName}
+							disposalContractNo={disposalContractNo}
+							setDisposalContractNo={setDisposalContractNo}
+							driverName={driverName}
+							setDriverName={setDriverName}
+							vehiclePlate={vehiclePlate}
+							setVehiclePlate={setVehiclePlate}
+							records={records}
+							onCreateAndPrintAct={handleCreateAndPrintAct}
+						/>
 					)}
 				</div>
 
@@ -883,3 +442,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 
 	return createPortal(modalContent, document.body);
 };
+
+export * from "./MedicalWasteAccumulateTab";
+export * from "./MedicalWasteJournalTableTab";
+export * from "./MedicalWasteTransferActTab";

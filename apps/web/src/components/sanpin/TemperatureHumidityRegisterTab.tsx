@@ -3,30 +3,21 @@ import {
 	type CreateTemperatureHumidityEquipmentDto,
 	type CreateTemperatureHumidityLogDto,
 	type TemperatureEquipmentType,
-	type TemperatureHumidityEquipment,
-	type TemperatureHumidityLog,
 	type TemperatureMeasurementPeriod,
 } from "@dental/shared";
 import {
-	AlertTriangle,
-	CheckCircle2,
-	Clock,
-	Droplets,
 	Plus,
 	Printer,
-	Search,
-	ShieldCheck,
 	Sparkles,
-	Sun,
 	Thermometer,
-	ThermometerSnowflake,
 	ThermometerSun,
-	X,
-	XCircle,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { TemperatureAddEquipmentModal } from "./TemperatureAddEquipmentModal";
+import { TemperatureAddLogModal } from "./TemperatureAddLogModal";
+import { TemperatureMeasurementTable } from "./TemperatureMeasurementTable";
 
 export const CANONICAL_TEMPERATURE_EQUIPMENT_PRESETS: CreateTemperatureHumidityEquipmentDto[] = [
 	{
@@ -239,7 +230,6 @@ export function TemperatureHumidityRegisterTab() {
 				);
 				await fetchAll();
 			} else {
-				// Fallback: log for each equipment sequentially
 				let logged = 0;
 				for (const eq of currentEquips) {
 					const isFridge = eq.equipmentType?.includes("refrigerator");
@@ -574,346 +564,60 @@ export function TemperatureHumidityRegisterTab() {
 			</div>
 
 			{/* Table of Measurements */}
-			<div className="sanpin-table-wrapper">
-				<table className="sanpin-table">
-					<thead>
-						<tr>
-							<th>Дата замера</th>
-							<th>Время суток</th>
-							<th>Объект контроля</th>
-							<th>Фактическая T° (°C)</th>
-							<th>Влажность (%)</th>
-							<th>Норматив</th>
-							<th>Статус соответствия</th>
-							<th>Ответственный</th>
-						</tr>
-					</thead>
-					<tbody>
-						{loading ? (
-							<tr>
-								<td colSpan={8} style={{ textAlign: "center", padding: "2rem" }}>
-									Загрузка журнала температурного режима...
-								</td>
-							</tr>
-						) : filteredLogs.length === 0 ? (
-							<tr>
-								<td colSpan={8} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
-									Замеры температуры и влажности не найдены.
-								</td>
-							</tr>
-						) : (
-							filteredLogs.map((log) => (
-								<tr
-									key={log.id}
-									className="sanpin-log-row"
-									style={{
-										minHeight: "44px",
-										contentVisibility: "auto",
-										containIntrinsicSize: "1px 44px",
-										contain: "content",
-									}}
-								>
-									<td style={{ fontWeight: 600 }}>{log.measurementDate}</td>
-									<td>
-										<span className="sanpin-tag sanpin-tag-neutral">
-											{log.measurementPeriod === "morning" ? "Утро (09:00)" : "Вечер (18:00)"}
-										</span>
-									</td>
-									<td>
-										<div style={{ fontWeight: 500 }}>{log.equipmentName}</div>
-										<div style={{ fontSize: "0.725rem", color: "var(--muted)" }}>{log.location}</div>
-									</td>
-									<td>
-										<span
-											style={{
-												fontWeight: 700,
-												fontSize: "0.95rem",
-												color: log.isWithinNorm ? "var(--ink)" : "#dc2626",
-											}}
-										>
-											{log.temperatureCelsius}°C
-										</span>
-									</td>
-									<td>
-										{log.relativeHumidityPercent ? `${log.relativeHumidityPercent}%` : "—"}
-									</td>
-									<td style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-										[{log.targetTempMin}°C .. {log.targetTempMax}°C]
-									</td>
-									<td>
-										{log.isWithinNorm ? (
-											<span className="sanpin-tag sanpin-tag-success">
-												<CheckCircle2 size={12} /> В норме
-											</span>
-										) : (
-											<span
-												className="sanpin-tag sanpin-tag-danger"
-												title={log.deviationReason || "Отклонение от нормы"}
-											>
-												<AlertTriangle size={12} /> ОТКЛОНЕНИЕ
-											</span>
-										)}
-									</td>
-									<td style={{ fontSize: "0.8rem" }}>{log.operatorName || "Ответственная медсестра"}</td>
-								</tr>
-							))
-						)}
-					</tbody>
-				</table>
-			</div>
+			<TemperatureMeasurementTable
+				loading={loading}
+				filteredLogs={filteredLogs}
+			/>
 
 			{/* Modal: Add Equipment */}
-			{isEquipModalOpen && (
-				<div className="sanpin-modal-overlay">
-					<div className="sanpin-modal">
-						<div className="sanpin-modal-header">
-							<h3>Регистрация холодильника / зоны хранения ЛС</h3>
-							<button type="button" onClick={() => setIsEquipModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--muted)" }} aria-label="Закрыть"><X size={18} /></button>
-						</div>
-						<form onSubmit={handleAddEquipment}>
-							<div className="sanpin-modal-body">
-								<div className="sanpin-form-group">
-									<label className="sanpin-form-label">Тип объекта</label>
-									<select
-										value={equipType}
-										onChange={(e) => {
-											const t = e.target.value as TemperatureEquipmentType;
-											setEquipType(t);
-											if (t === "refrigerator_cold") {
-												setTargetMinTemp(2.0);
-												setTargetMaxTemp(8.0);
-												setEquipName("Фармацевтический холодильник Pozis ХФ-250");
-											} else if (t === "storage_room") {
-												setTargetMinTemp(15.0);
-												setTargetMaxTemp(25.0);
-												setTargetMinHumidity(30);
-												setTargetMaxHumidity(65);
-												setEquipName("Комната хранения лекарственных препаратов");
-											} else if (t === "refrigerator_cool") {
-												setTargetMinTemp(8.0);
-												setTargetMaxTemp(15.0);
-												setEquipName("Прохладный шкаф для анестетиков");
-											}
-										}}
-										className="sanpin-select"
-									>
-										<option value="refrigerator_cold">Холодильник фармацевтический (+2..+8 °C)</option>
-										<option value="storage_room">Помещение хранения ЛС (+15..+25 °C, влажность 30..65%)</option>
-										<option value="refrigerator_cool">Шкаф/холодильник прохладного хранения (+8..+15 °C)</option>
-										<option value="freezer">Морозильник (&lt; -18 °C)</option>
-									</select>
-								</div>
-
-								<div className="sanpin-form-group">
-									<label className="sanpin-form-label">Наименование объекта</label>
-									<input
-										type="text"
-										required
-										value={equipName}
-										onChange={(e) => setEquipName(e.target.value)}
-										className="sanpin-input"
-									/>
-								</div>
-
-								<div className="sanpin-form-group">
-									<label className="sanpin-form-label">Место установки (кабинет)</label>
-									<input
-										type="text"
-										required
-										value={equipLocation}
-										onChange={(e) => setEquipLocation(e.target.value)}
-										className="sanpin-input"
-									/>
-								</div>
-
-								<div className="sanpin-form-row">
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Марка прибора учета (термометра)</label>
-										<input
-											type="text"
-											required
-											value={meterName}
-											onChange={(e) => setMeterName(e.target.value)}
-											className="sanpin-input"
-										/>
-									</div>
-
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Заводской номер прибора</label>
-										<input
-											type="text"
-											value={meterSerial}
-											onChange={(e) => setMeterSerial(e.target.value)}
-											className="sanpin-input"
-										/>
-									</div>
-								</div>
-
-								<div className="sanpin-form-row">
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Минимальная T° (°C)</label>
-										<input
-											type="number"
-											step="0.1"
-											required
-											value={targetMinTemp}
-											onChange={(e) => setTargetMinTemp(parseFloat(e.target.value) || 0)}
-											className="sanpin-input"
-										/>
-									</div>
-
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Максимальная T° (°C)</label>
-										<input
-											type="number"
-											step="0.1"
-											required
-											value={targetMaxTemp}
-											onChange={(e) => setTargetMaxTemp(parseFloat(e.target.value) || 0)}
-											className="sanpin-input"
-										/>
-									</div>
-								</div>
-							</div>
-							<div className="sanpin-modal-footer">
-								<button type="button" onClick={() => setIsEquipModalOpen(false)} className="sanpin-btn sanpin-btn-secondary">Отмена</button>
-								<button type="submit" aria-busy={submitting} className="sanpin-btn sanpin-btn-primary">Зарегистрировать</button>
-							</div>
-						</form>
-					</div>
-				</div>
-			)}
+			<TemperatureAddEquipmentModal
+				isOpen={isEquipModalOpen}
+				onClose={() => setIsEquipModalOpen(false)}
+				equipType={equipType}
+				setEquipType={setEquipType}
+				equipName={equipName}
+				setEquipName={setEquipName}
+				equipLocation={equipLocation}
+				setEquipLocation={setEquipLocation}
+				meterName={meterName}
+				setMeterName={setMeterName}
+				meterSerial={meterSerial}
+				setMeterSerial={setMeterSerial}
+				targetMinTemp={targetMinTemp}
+				setTargetMinTemp={setTargetMinTemp}
+				targetMaxTemp={targetMaxTemp}
+				setTargetMaxTemp={setTargetMaxTemp}
+				setTargetMinHumidity={setTargetMinHumidity}
+				setTargetMaxHumidity={setTargetMaxHumidity}
+				onSubmit={handleAddEquipment}
+				submitting={submitting}
+			/>
 
 			{/* Modal: Add Log Measurement */}
-			{isLogModalOpen && (
-				<div className="sanpin-modal-overlay">
-					<div className="sanpin-modal">
-						<div className="sanpin-modal-header">
-							<h3>Фиксация замера температуры и влажности (Приказ 706н)</h3>
-							<button type="button" onClick={() => setIsLogModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--muted)" }} aria-label="Закрыть"><X size={18} /></button>
-						</div>
-						<form onSubmit={handleAddLog}>
-							<div className="sanpin-modal-body">
-								<div className="sanpin-form-group">
-									<label className="sanpin-form-label">Объект контроля</label>
-									<select
-										required
-										value={logEquipId}
-										onChange={(e) => setLogEquipId(e.target.value)}
-										className="sanpin-select"
-									>
-										{equipments.map((eq) => (
-											<option key={eq.id} value={eq.id}>
-												{eq.name} ({eq.targetTempMinCelsius}°C .. {eq.targetTempMaxCelsius}°C)
-											</option>
-										))}
-									</select>
-								</div>
-
-								<div className="sanpin-form-row">
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Дата замера</label>
-										<input
-											type="date"
-											required
-											value={logDate}
-											onChange={(e) => setLogDate(e.target.value)}
-											className="sanpin-input"
-										/>
-									</div>
-
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Период замера</label>
-										<select
-											value={logPeriod}
-											onChange={(e) => setLogPeriod(e.target.value as TemperatureMeasurementPeriod)}
-											className="sanpin-select"
-										>
-											<option value="morning">Утренний замер (09:00)</option>
-											<option value="evening">Вечерний замер (18:00)</option>
-										</select>
-									</div>
-								</div>
-
-								<div className="sanpin-form-row">
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Температура по термометру (°C)</label>
-										<input
-											type="number"
-											step="0.1"
-											required
-											value={logTemp}
-											onChange={(e) => setLogTemp(parseFloat(e.target.value) || 0)}
-											className="sanpin-input"
-										/>
-									</div>
-
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Относительная влажность (%)</label>
-										<input
-											type="number"
-											step="0.1"
-											placeholder="Например: 45"
-											value={logHumidity || ""}
-											onChange={(e) => setLogHumidity(e.target.value ? parseFloat(e.target.value) : undefined)}
-											className="sanpin-input"
-										/>
-									</div>
-								</div>
-
-								{/* Live status check */}
-								<div
-									style={{
-										padding: "0.75rem",
-										borderRadius: "0.375rem",
-										background: liveEval.isWithinNorm ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)",
-										border: `1px solid ${liveEval.isWithinNorm ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
-										display: "flex",
-										alignItems: "flex-start",
-										gap: "0.5rem",
-									}}
-								>
-									{liveEval.isWithinNorm ? (
-										<CheckCircle2 size={18} color="#059669" style={{ flexShrink: 0, marginTop: "2px" }} />
-									) : (
-										<AlertTriangle size={18} color="#dc2626" style={{ flexShrink: 0, marginTop: "2px" }} />
-									)}
-									<div style={{ fontSize: "0.8rem" }}>
-										<div style={{ fontWeight: 600, color: liveEval.isWithinNorm ? "#059669" : "#dc2626" }}>
-											{liveEval.isWithinNorm
-												? "Показатели соответствуют требованиям Приказа 706н"
-												: "ОТКЛОНЕНИЕ ОТ НОРМЫ ХРАНЕНИЯ ЛС!"}
-										</div>
-										{liveEval.deviationMessage && (
-											<div style={{ marginTop: "0.25rem", color: "#dc2626" }}>
-												{liveEval.deviationMessage}
-											</div>
-										)}
-									</div>
-								</div>
-
-								{!liveEval.isWithinNorm && (
-									<div className="sanpin-form-group">
-										<label className="sanpin-form-label">Причина отклонения и принятые меры</label>
-										<input
-											type="text"
-											required
-											value={logCorrectiveAction}
-											onChange={(e) => setLogCorrectiveAction(e.target.value)}
-											className="sanpin-input"
-											placeholder="Например: Препараты временно перемещены в резервный холодильник Pozis №2"
-										/>
-									</div>
-								)}
-							</div>
-							<div className="sanpin-modal-footer">
-								<button type="button" onClick={() => setIsLogModalOpen(false)} className="sanpin-btn sanpin-btn-secondary">Отмена</button>
-								<button type="submit" aria-busy={submitting} className="sanpin-btn sanpin-btn-primary">Зафиксировать замер</button>
-							</div>
-						</form>
-					</div>
-				</div>
-			)}
+			<TemperatureAddLogModal
+				isOpen={isLogModalOpen}
+				onClose={() => setIsLogModalOpen(false)}
+				equipments={equipments}
+				logEquipId={logEquipId}
+				setLogEquipId={setLogEquipId}
+				logDate={logDate}
+				setLogDate={setLogDate}
+				logPeriod={logPeriod}
+				setLogPeriod={setLogPeriod}
+				logTemp={logTemp}
+				setLogTemp={setLogTemp}
+				logHumidity={logHumidity}
+				setLogHumidity={setLogHumidity}
+				liveEval={liveEval}
+				logCorrectiveAction={logCorrectiveAction}
+				setLogCorrectiveAction={setLogCorrectiveAction}
+				onSubmit={handleAddLog}
+				submitting={submitting}
+			/>
 		</div>
 	);
 }
+
+export * from "./TemperatureAddEquipmentModal";
+export * from "./TemperatureAddLogModal";
+export * from "./TemperatureMeasurementTable";
