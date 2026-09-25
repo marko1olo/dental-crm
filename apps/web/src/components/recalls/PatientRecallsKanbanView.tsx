@@ -9,6 +9,7 @@ import {
 	type PatientRecallRecord,
 	type RecallContactStatus,
 } from "./patientRecallEngine";
+import "./recallsKanban.css";
 
 export interface PatientRecallsKanbanViewProps {
 	readonly kanbanGroups: Record<CanonicalRecallWorkflowStatus, readonly PatientRecallRecord[]>;

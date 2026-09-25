@@ -219,7 +219,7 @@ export const PatientRecallsPreviewModals: React.FC<PatientRecallsPreviewModalsPr
 
 									{previewChannel === "telegram" ? (
 										<a
-											href={buildTelegramUrl(tgText, candidate.phone || undefined)}
+											href={buildTelegramUrl(candidate.phone || undefined, tgText)}
 											target="_blank"
 											rel="noopener noreferrer"
 											className="recall-action-btn recall-action-btn--telegram"

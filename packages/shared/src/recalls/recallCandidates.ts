@@ -56,3 +56,25 @@ export const recallReportSchema = z.object({
 	note: z.string(),
 });
 export type RecallReport = z.infer<typeof recallReportSchema>;
+
+/**
+ * Запрос на отправку приглашения на диспансеризацию/осмотр.
+ */
+export const recallInviteSchema = z.object({
+	patientId: z.string().min(1),
+	channel: z.string().min(2).max(30),
+	/** Текст готовит вызывающий: подстановка переменных уже выполнена. */
+	body: z.string().trim().min(5).max(2000),
+});
+export type RecallInviteRequest = z.infer<typeof recallInviteSchema>;
+
+/**
+ * Ответ сервера на отправку приглашения.
+ */
+export const recallInviteResultSchema = z.object({
+	ok: z.boolean(),
+	outboxId: z.string().optional(),
+	duplicate: z.boolean().optional(),
+	message: z.string(),
+});
+export type RecallInviteResponse = z.infer<typeof recallInviteResultSchema>;

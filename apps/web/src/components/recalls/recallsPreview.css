@@ -1,0 +1,256 @@
+/* ==========================================================================
+   Patient Recalls - Preview Drawer, Script Drawer, & Presets Styles
+   Extracted for Anti-Monolith Modularization (<=800 lines ceiling)
+   ========================================================================== */
+
+/* Objection Script Helper Modal / Drawer */
+.recall-script-drawer {
+	margin-top: 16px;
+	border: 1.5px solid var(--rm-primary);
+	border-radius: var(--rm-radius-md);
+	background: var(--rm-surface);
+	padding: 16px;
+}
+
+.recall-script-drawer-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.recall-script-title {
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--rm-text-main);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.recall-script-tabs {
+	display: flex;
+	gap: 8px;
+	overflow-x: auto;
+	margin-bottom: 12px;
+	padding-bottom: 4px;
+}
+
+.recall-script-tab-btn {
+	min-height: 44px;
+	padding: 6px 12px;
+	border-radius: var(--rm-radius-sm);
+	border: 1px solid var(--rm-border);
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	white-space: nowrap;
+	touch-action: manipulation;
+}
+
+.recall-script-tab-btn.active {
+	background: var(--rm-primary);
+	border-color: var(--rm-primary);
+	color: var(--paper-strong);
+}
+
+.recall-script-content-box {
+	background: var(--rm-bg);
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-sm);
+	padding: 14px;
+	font-size: 0.875rem;
+	line-height: 1.5;
+}
+
+.recall-script-suggested-text {
+	background: var(--rm-primary-light);
+	border-left: 3px solid var(--rm-primary);
+	padding: 10px 12px;
+	border-radius: 4px;
+	margin-top: 8px;
+	font-weight: 500;
+	color: var(--rm-text-main);
+}
+
+.recall-script-tip {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+	font-size: 0.75rem;
+	color: var(--rm-text-muted);
+	margin-top: 6px;
+	font-style: italic;
+}
+
+.recall-tip-icon {
+	color: var(--warn-fg);
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+/* Solo Doctor 1-Click Cycle Presets (Mandates 8e, 8s) */
+.recall-solo-presets {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.recall-preset-btn {
+	min-height: 38px;
+	padding: 6px 12px;
+	border-radius: var(--rm-radius-sm);
+	border: 1px dashed var(--rm-border-focus);
+	background: var(--rm-primary-light);
+	color: var(--rm-primary);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.recall-preset-btn:hover {
+	background: var(--rm-primary);
+	color: var(--paper-strong);
+	border-style: solid;
+}
+
+.recall-preset-btn.active {
+	background: var(--rm-primary);
+	color: var(--paper-strong);
+	border-style: solid;
+}
+
+/* Real SMS / WhatsApp / Telegram Template Preview Drawer (Mandate 8i Anti-Simulator) */
+.recall-preview-drawer {
+	margin-top: 16px;
+	border: 1.5px solid var(--teal);
+	border-radius: var(--rm-radius-md);
+	background: var(--rm-surface);
+	padding: 16px;
+}
+
+.recall-preview-drawer-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.recall-preview-title {
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--rm-text-main);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.recall-preview-tabs {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.recall-preview-tab-btn {
+	min-height: 36px;
+	padding: 6px 12px;
+	border-radius: var(--rm-radius-sm);
+	border: 1px solid var(--rm-border);
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	touch-action: manipulation;
+	transition: all 0.15s ease;
+}
+
+.recall-preview-tab-btn.active {
+	background: var(--rm-primary);
+	border-color: var(--rm-primary);
+	color: var(--paper-strong);
+}
+
+.recall-preview-content-box {
+	background: var(--rm-bg);
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-sm);
+	padding: 14px;
+	font-size: 0.875rem;
+	line-height: 1.5;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.recall-preview-rendered-text {
+	white-space: pre-wrap;
+	word-break: break-word;
+	padding: 12px;
+	background: var(--rm-surface);
+	border-radius: var(--rm-radius-sm);
+	border: 1px solid var(--line-subtle, var(--rm-border));
+	color: var(--rm-text-main);
+	font-family: inherit;
+	line-height: 1.6;
+}
+
+.recall-preview-calc-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+	gap: 8px;
+	padding: 10px;
+	background: var(--rm-surface);
+	border-radius: var(--rm-radius-sm);
+	border: 1px solid var(--rm-border);
+}
+
+.recall-preview-calc-card {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.recall-preview-calc-label {
+	font-size: 0.6875rem;
+	font-weight: 600;
+	color: var(--rm-text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.recall-preview-calc-value {
+	font-size: 0.9375rem;
+	font-weight: 800;
+	color: var(--rm-text-main);
+}
+
+.recall-preview-actions-bar {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 8px;
+	flex-wrap: wrap;
+	padding-top: 4px;
+}
+
+/* Contact dropdown menu */
+.recall-contact-dropdown-menu {
+	background: var(--rm-surface);
+	border: 1px solid var(--rm-border);
+	border-radius: 8px;
+	box-shadow: var(--shadow-3);
+}

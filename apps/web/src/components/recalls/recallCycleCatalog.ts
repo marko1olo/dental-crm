@@ -369,7 +369,11 @@ export interface PatientRecallRecord {
 	readonly attendingDoctorName?: string | undefined;
 	readonly implantSurgeryDate?: string | undefined;
 	readonly implantMilestoneMonth?: number | undefined; // 1, 3, 6, 12
+	readonly implantsCount?: number | undefined;
 	readonly orthoDeviceType?: ("braces" | "aligners" | "retainer") | undefined;
+	readonly hasBraces?: boolean | undefined;
+	readonly isChildUnder14?: boolean | undefined;
+	readonly treatmentPlanTitle?: string | undefined;
 	readonly periodontalPocketMaxMm?: number | undefined;
 	readonly decayedTeethCount?: number | undefined;
 	readonly lastProcedures?: readonly string[] | undefined;

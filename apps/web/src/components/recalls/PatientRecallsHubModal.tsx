@@ -38,13 +38,16 @@ import { useScheduleStore } from "../../store/scheduleStore";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 import {
+	addCalendarMonthsSafe,
 	buildTelegramUrl,
 	buildWhatsAppUrl,
 	calculateCohortRetention,
 	calculateRecallMetrics,
 	determineTaskCallTypeForCandidate,
 	filterAndSortRecallCandidates,
+	formatIsoDateOnly,
 	generatePdnProtectedRecallMessage,
+	sendRecallCandidateInvite,
 	toCanonicalRecallStatus,
 	type CanonicalRecallWorkflowStatus,
 	type ClinicalRecallTriggerType,
@@ -62,6 +65,7 @@ import { PatientRecallsTableView } from "./PatientRecallsTableView";
 import { PatientRecallsKanbanView } from "./PatientRecallsKanbanView";
 import { PatientRecallsToolbar } from "./PatientRecallsToolbar";
 import "./recalls.css";
+import "./recallsKanban.css";
 
 /**
  * Адаптер: канонический RecallCandidate из PostgreSQL -> PatientRecallRecord для хаба
@@ -81,15 +85,14 @@ export function mapRecallCandidateToRecord(
 		urgencyStatus = "due_now";
 	}
 
-	const lastVisitDate =
-		(candidate.lastCompletedAt
-			? new Date(candidate.lastCompletedAt).toISOString().split("T")[0]
-			: new Date(Date.now() - months * 30 * 86400000).toISOString().split("T")[0]) ?? "";
+	const lastVisitDate = candidate.lastCompletedAt
+		? formatIsoDateOnly(new Date(candidate.lastCompletedAt))
+		: formatIsoDateOnly(addCalendarMonthsSafe(new Date(), -months));
 
 	const dueDateTime = candidate.lastCompletedAt
-		? new Date(new Date(candidate.lastCompletedAt).getTime() + 180 * 86400000)
+		? addCalendarMonthsSafe(new Date(candidate.lastCompletedAt), 6)
 		: new Date();
-	const dueDate = dueDateTime.toISOString().split("T")[0] ?? "";
+	const dueDate = formatIsoDateOnly(dueDateTime);
 
 	return {
 		id: candidate.patientId,
@@ -311,6 +314,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 
 	// 1-Click WhatsApp (152-ФЗ PDn Protected, Mandate 8e Doctor Autonomy: zero disabled buttons)
 	const handleWhatsApp = async (candidate: PatientRecallRecord) => {
+		const message = generatePdnProtectedRecallMessage(candidate, { clinicName });
 		if (!candidate.phone || !candidate.phone.trim()) {
 			showToast(
 				"У пациента не указан номер телефона. Открыт предпросмотр сообщения для отправки",
@@ -321,7 +325,6 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 			setActiveScriptCandidate(null);
 			return;
 		}
-		const message = generatePdnProtectedRecallMessage(candidate, { clinicName });
 		if (onSendWhatsApp) {
 			await onSendWhatsApp(candidate, message);
 		} else {
@@ -329,12 +332,27 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 			window.open(url, "_blank", "noopener,noreferrer");
 		}
 		handleStatusUpdate(candidate.id, "invited", "whatsapp");
-		setStatusNotice(`WhatsApp сообщение (152-ФЗ) для «${candidate.fullName}» готово.`);
-		setTimeout(() => setStatusNotice(null), 3000);
+
+		try {
+			const res = await sendRecallCandidateInvite(
+				{
+					patientId: candidate.patientId,
+					channel: "whatsapp",
+					body: message,
+				},
+				auth ? auth.denteClinicalMutationHeaders() : undefined,
+			);
+			setStatusNotice(res.message);
+		} catch (inviteErr) {
+			const errMsg = inviteErr instanceof Error ? inviteErr.message : String(inviteErr);
+			setStatusNotice(`WhatsApp открыт. Ответ сервера: ${errMsg}`);
+		}
+		setTimeout(() => setStatusNotice(null), 3500);
 	};
 
 	// 1-Click Telegram (152-ФЗ PDn Protected, Mandate 8e Doctor Autonomy: zero disabled buttons)
 	const handleTelegram = async (candidate: PatientRecallRecord) => {
+		const message = generatePdnProtectedRecallMessage(candidate, { clinicName });
 		if (!candidate.phone || !candidate.phone.trim()) {
 			showToast(
 				"У пациента не указан номер телефона. Открыт предпросмотр сообщения для отправки",
@@ -345,7 +363,6 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 			setActiveScriptCandidate(null);
 			return;
 		}
-		const message = generatePdnProtectedRecallMessage(candidate, { clinicName });
 		if (onSendTelegram) {
 			await onSendTelegram(candidate, message);
 		} else {
@@ -353,12 +370,26 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 			window.open(url, "_blank", "noopener,noreferrer");
 		}
 		handleStatusUpdate(candidate.id, "invited", "telegram");
-		setStatusNotice(`Telegram сообщение (152-ФЗ) для «${candidate.fullName}» отправлено.`);
-		setTimeout(() => setStatusNotice(null), 3000);
+
+		try {
+			const res = await sendRecallCandidateInvite(
+				{
+					patientId: candidate.patientId,
+					channel: "telegram",
+					body: message,
+				},
+				auth ? auth.denteClinicalMutationHeaders() : undefined,
+			);
+			setStatusNotice(res.message);
+		} catch (inviteErr) {
+			const errMsg = inviteErr instanceof Error ? inviteErr.message : String(inviteErr);
+			setStatusNotice(`Telegram открыт. Ответ сервера: ${errMsg}`);
+		}
+		setTimeout(() => setStatusNotice(null), 3500);
 	};
 
 	// Копирование SMS (152-ФЗ PDn Protected, Mandate 8e: zero disabled buttons, 1-Click dispatch)
-	const handleCopySms = (candidate: PatientRecallRecord) => {
+	const handleCopySms = async (candidate: PatientRecallRecord) => {
 		const smsText = generatePdnProtectedRecallMessage(candidate, { clinicName });
 		navigator.clipboard.writeText(smsText).catch(() => {});
 		setCopiedCandidateId(candidate.id);
@@ -366,7 +397,25 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 		if (!candidate.phone || !candidate.phone.trim()) {
 			showToast("152-ФЗ SMS текст скопирован (номер телефона не указан в карте)", "info");
 		}
-		setTimeout(() => setCopiedCandidateId(null), 2500);
+
+		try {
+			const res = await sendRecallCandidateInvite(
+				{
+					patientId: candidate.patientId,
+					channel: "sms",
+					body: smsText,
+				},
+				auth ? auth.denteClinicalMutationHeaders() : undefined,
+			);
+			setStatusNotice(res.message);
+		} catch (inviteErr) {
+			const errMsg = inviteErr instanceof Error ? inviteErr.message : String(inviteErr);
+			setStatusNotice(`SMS скопировано. Ответ сервера: ${errMsg}`);
+		}
+		setTimeout(() => {
+			setCopiedCandidateId(null);
+			setStatusNotice(null);
+		}, 3000);
 	};
 
 	// 1-Click Запись в расписание

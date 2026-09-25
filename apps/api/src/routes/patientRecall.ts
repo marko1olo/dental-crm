@@ -17,8 +17,12 @@ import {
 	recallBandSchema,
 	recallCandidateSchema,
 	recallReportSchema,
+	recallInviteSchema,
+	recallInviteResultSchema,
 	type RecallBand,
 	type RecallReport,
+	type RecallInviteRequest,
+	type RecallInviteResponse,
 } from "@dental/shared/recalls";
 import {
 	requireClinicalMutationContext,
@@ -37,8 +41,12 @@ export {
 	recallBandSchema,
 	recallCandidateSchema,
 	recallReportSchema,
+	recallInviteSchema,
+	recallInviteResultSchema,
 	type RecallBand,
 	type RecallReport,
+	type RecallInviteRequest,
+	type RecallInviteResponse,
 };
 
 const listQuerySchema = z.object({
@@ -52,12 +60,7 @@ const listQuerySchema = z.object({
 		.transform((value) => (value === undefined ? undefined : value === "true")),
 });
 
-const inviteSchema = z.object({
-	patientId: z.string().min(1),
-	channel: z.string().min(2).max(20),
-	/** Текст готовит вызывающий: подстановка переменных уже выполнена. */
-	body: z.string().trim().min(5).max(2000),
-});
+const inviteSchema = recallInviteSchema;
 
 function badRequest(reply: FastifyReply, message: string) {
 	return reply.code(400).send({ error: "RecallValidationError", message });

@@ -7,7 +7,9 @@ import { RECALL_CYCLE_CATALOG } from "./recallCycleCatalog";
 
 export interface SmsSegmentCalculation {
 	readonly characterCount: number;
+	readonly charCount: number;
 	readonly encoding: "GSM-7" | "UCS-2";
+	readonly isUnicode: boolean;
 	readonly segmentCount: number;
 	readonly charsPerSegment: number;
 	readonly maxCharsInCurrentSegment: number;
@@ -24,7 +26,9 @@ export function calculateSmsSegments(text: string): SmsSegmentCalculation {
 	if (characterCount === 0) {
 		return {
 			characterCount: 0,
+			charCount: 0,
 			encoding: "GSM-7",
+			isUnicode: false,
 			segmentCount: 0,
 			charsPerSegment: 160,
 			maxCharsInCurrentSegment: 160,
@@ -37,6 +41,7 @@ export function calculateSmsSegments(text: string): SmsSegmentCalculation {
 	const gsm7Regex = /^[@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ\x1BÆæßÉ !"#¤%&'()*+,\-./0-9:;<=>?¡A-ZÄÖÑÜ§¿a-zäöñüà^{}\\[~\]|€]*$/;
 	const isGsm7 = gsm7Regex.test(text);
 	const encoding: "GSM-7" | "UCS-2" = isGsm7 ? "GSM-7" : "UCS-2";
+	const isUnicode = !isGsm7;
 
 	const singleLimit = isGsm7 ? 160 : 70;
 	const multiLimit = isGsm7 ? 153 : 67;
@@ -44,7 +49,9 @@ export function calculateSmsSegments(text: string): SmsSegmentCalculation {
 	if (characterCount <= singleLimit) {
 		return {
 			characterCount,
+			charCount: characterCount,
 			encoding,
+			isUnicode,
 			segmentCount: 1,
 			charsPerSegment: singleLimit,
 			maxCharsInCurrentSegment: singleLimit,
@@ -59,7 +66,9 @@ export function calculateSmsSegments(text: string): SmsSegmentCalculation {
 
 	return {
 		characterCount,
+		charCount: characterCount,
 		encoding,
+		isUnicode,
 		segmentCount,
 		charsPerSegment: multiLimit,
 		maxCharsInCurrentSegment: totalCapacity,
@@ -361,4 +370,56 @@ export function generateSmsRecallMessage(
 	};
 
 	return interpolateRecallTemplate(template, vars);
+}
+
+import type { RecallInviteRequest, RecallInviteResponse } from "@dental/shared/recalls";
+export type { RecallInviteRequest, RecallInviteResponse };
+
+/**
+ * Отправка реального приглашения пациенту через эндпоинт Fastify:
+ * POST /api/patients/recall-candidates/invite
+ *
+ * Сообщение встает в очередь communication_outbox клиники под областью marketing (ФЗ-38 «О рекламе» ст. 18 ч. 1)
+ * с дедупликацией по ключу recall:{patientId}:{YYYY-MM}.
+ */
+export async function sendRecallCandidateInvite(
+	params: RecallInviteRequest,
+	headers?: Record<string, string>,
+): Promise<RecallInviteResponse> {
+	const response = await fetch("/api/patients/recall-candidates/invite", {
+		method: "POST",
+		headers: {
+			...(headers ?? {}),
+			"content-type": "application/json",
+			Accept: "application/json",
+		},
+		body: JSON.stringify({
+			patientId: params.patientId,
+			channel: params.channel,
+			body: params.body,
+		}),
+	});
+
+	const payload = (await response.json().catch(() => ({}))) as {
+		ok?: boolean;
+		outboxId?: string;
+		duplicate?: boolean;
+		message?: string;
+		error?: string;
+	};
+
+	if (!response.ok) {
+		throw new Error(payload.message || `Сервер ответил ошибкой ${response.status}`);
+	}
+
+	return {
+		ok: Boolean(payload.ok),
+		outboxId: payload.outboxId,
+		duplicate: payload.duplicate,
+		message:
+			payload.message ||
+			(payload.duplicate
+				? "Этого пациента уже приглашали в этом месяце — повторное сообщение не отправлено."
+				: "Приглашение поставлено в очередь."),
+	};
 }

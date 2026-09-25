@@ -24,6 +24,7 @@ const __dirname = path.dirname(__filename);
 
 import {
 	PatientRecallsHubModal,
+	mapRecallCandidateToRecord,
 } from "../PatientRecallsHubModal";
 import {
 	DEFAULT_RECALL_CANDIDATES,
@@ -33,6 +34,7 @@ import {
 	generateSmsRecallMessage,
 	generateTelegramRecallMessage,
 	generateWhatsAppRecallMessage,
+	sendRecallCandidateInvite,
 	type PatientRecallRecord,
 	type RecallCycleType,
 } from "../patientRecallEngine";
@@ -429,4 +431,116 @@ describe("Subagent 6: Patient Recalls & Clinical Retention Autonomy Inquisition"
 			);
 		});
 	});
+
+	// =========================================================================
+	// 6. Connected Backend & Frontend Fastify Protocol (Mandate 8c, 8e)
+	// =========================================================================
+	describe("6. Connected Backend & Frontend Fastify Protocol", () => {
+		it("verifies zero hardcoded hex colors in recallsKanban.css", () => {
+			const cssPath = fs.existsSync(path.resolve(__dirname, "../recallsKanban.css"))
+				? path.resolve(__dirname, "../recallsKanban.css")
+				: path.resolve(process.cwd(), "apps/web/src/components/recalls/recallsKanban.css");
+			const cssContent = fs.readFileSync(cssPath, "utf8");
+
+			const hexMatches = cssContent.match(/#[0-9a-fA-F]{3,8}\b/g);
+			assert.strictEqual(
+				hexMatches,
+				null,
+				`Hardcoded hex colors found in recallsKanban.css: ${hexMatches?.join(", ")}`,
+			);
+		});
+
+		it("enforces strict file size ceiling (<=800 lines) across all recalls domain files", () => {
+			const recallsDir = path.resolve(__dirname, "..");
+			const files = fs.readdirSync(recallsDir).filter((f) => {
+				const full = path.join(recallsDir, f);
+				return fs.statSync(full).isFile();
+			});
+
+			const violations: string[] = [];
+			for (const file of files) {
+				const fullPath = path.join(recallsDir, file);
+				const lineCount = fs.readFileSync(fullPath, "utf8").split("\n").length;
+				if (lineCount > 800) {
+					violations.push(`${file}: ${lineCount} lines (exceeds 800 lines limit)`);
+				}
+			}
+
+			assert.deepStrictEqual(
+				violations,
+				[],
+				`Files exceeding 800 lines in recalls domain: ${violations.join("; ")}`,
+			);
+		});
+
+		it("mapRecallCandidateToRecord correctly maps PostgreSQL 18 RecallCandidate to PatientRecallRecord", () => {
+			const candidate = {
+				patientId: "pat-sql-99",
+				fullName: "Смирнов Алексей Викторович",
+				phone: "+79161234567",
+				email: "smirnov@example.com",
+				lastCompletedAt: "2026-03-01T10:00:00.000Z",
+				monthsSinceLastVisit: 6,
+				band: "due" as const,
+				reason: "Полгода без осмотра — пора на профилактику.",
+			};
+
+			const record = mapRecallCandidateToRecord(candidate);
+			assert.strictEqual(record.id, "pat-sql-99");
+			assert.strictEqual(record.patientId, "pat-sql-99");
+			assert.strictEqual(record.fullName, "Смирнов Алексей Викторович");
+			assert.strictEqual(record.lastVisitDate, "2026-03-01");
+			assert.strictEqual(record.dueDate, "2026-09-01");
+			assert.strictEqual(record.urgencyStatus, "due_now");
+			assert.strictEqual(record.status, "due_now");
+			assert.strictEqual(record.clinicalNotes, "Полгода без осмотра — пора на профилактику.");
+		});
+
+		it("sendRecallCandidateInvite function is exported and connects to Fastify endpoint", async () => {
+			assert.strictEqual(typeof sendRecallCandidateInvite, "function");
+
+			const originalFetch = globalThis.fetch;
+			let calledUrl = "";
+			let calledMethod = "";
+			let calledBody: any = null;
+
+			globalThis.fetch = (async (url: any, init: any) => {
+				calledUrl = String(url);
+				calledMethod = init?.method ?? "GET";
+				calledBody = JSON.parse(init?.body as string);
+				return {
+					ok: true,
+					status: 200,
+					json: async () => ({
+						ok: true,
+						outboxId: "outbox-test-123",
+						duplicate: false,
+						message: "Приглашение поставлено в очередь.",
+					}),
+				} as any;
+			}) as any;
+
+			try {
+				const result = await sendRecallCandidateInvite(
+					{
+						patientId: "pat-test-uuid",
+						channel: "whatsapp",
+						body: "Здравствуйте! Пора на плановый осмотр.",
+					},
+					{ "x-organization-id": "org-test-uuid" },
+				);
+
+				assert.strictEqual(calledUrl, "/api/patients/recall-candidates/invite");
+				assert.strictEqual(calledMethod, "POST");
+				assert.strictEqual(calledBody.patientId, "pat-test-uuid");
+				assert.strictEqual(calledBody.channel, "whatsapp");
+				assert.strictEqual(result.ok, true);
+				assert.strictEqual(result.outboxId, "outbox-test-123");
+				assert.strictEqual(result.duplicate, false);
+			} finally {
+				globalThis.fetch = originalFetch;
+			}
+		});
+	});
 });
+

@@ -98,7 +98,7 @@ export function filterDueRecalls(
 	overdueOnly = false,
 ): RecallItem[] {
 	const targetIso = targetDate.toISOString().slice(0, 10);
-	const activeStatuses: Set<RecallStatus> = new Set(["pending", "contacted_no_answer", "snoozed"]);
+	const activeStatuses = new Set<RecallStatus>(["pending", "contacted_no_answer", "snoozed"]);
 
 	return recalls.filter((item) => {
 		if (!activeStatuses.has(item.status)) return false;
