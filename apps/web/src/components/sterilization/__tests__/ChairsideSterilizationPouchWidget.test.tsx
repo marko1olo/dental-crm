@@ -1,8 +1,9 @@
 /**
  * ============================================================================
- * TEST: CHAIRSIDE STERILIZATION POUCH WIDGET & DOCTOR SCREEN PURITY
- * Проверка эргономики виджета стерилизации у кресла (28-32px), чистоты экрана
- * врача (VisitView.tsx и VisitSoapEditor.tsx свободны от карго-культа) и ликвидации дубликата.
+ * TEST: CHAIRSIDE STERILIZATION POUCH WIDGET ELIMINATION & DOCTOR PURITY
+ * Проверка физической ликвидации ChairsideSterilizationPouchWidget (Мандаты 8e, 8v, 8s),
+ * чистоты экрана врача (VisitView.tsx, VisitSoapEditor.tsx свободны от карго-культа)
+ * и отсутствия экспорта в components/sterilization/index.ts.
  * ============================================================================
  */
 
@@ -11,13 +12,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import React from "react";
-import { renderToString } from "react-dom/server";
 import {
-	ChairsideSterilizationPouchWidget,
-} from "../ChairsideSterilizationPouchWidget.js";
-import {
-	generateChairsidePouchCode,
 	insertPouchIntoDiaryText,
 	formatPouch043StatutorySnippet,
 } from "@dental/shared";
@@ -26,37 +21,34 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const webSrcRoot = path.resolve(__dirname, "../../..");
 
-describe("ChairsideSterilizationPouchWidget & VisitView Integration (СанПиН 3.3686-21)", () => {
-	it("1. рендерит компактный эргономичный виджет высотой 28-32px (Мандат 8e / HIG)", () => {
-		const html = renderToString(
-			<ChairsideSterilizationPouchWidget
-				defaultPouchCode="КП-0925-14"
-			/>,
+describe("ChairsideSterilizationPouchWidget Elimination & Doctor Screen Purity (СанПиН 3.3686-21, Мандаты 8e, 8v, 8s)", () => {
+	it("1. подтверждает физическую ликвидацию ChairsideSterilizationPouchWidget.tsx из компонентов стерилизации", () => {
+		const widgetPath = path.join(
+			webSrcRoot,
+			"components/sterilization/ChairsideSterilizationPouchWidget.tsx",
 		);
-
-		assert.ok(html.includes("data-testid=\"btn-chairside-pouch-widget\""));
-		assert.ok(html.includes("min-h-[28px]"));
-		assert.ok(html.includes("h-7 sm:h-8"));
-		assert.ok(html.includes("КП-0925-14"));
-		assert.ok(html.includes("Стерильно"));
+		assert.equal(
+			fs.existsSync(widgetPath),
+			false,
+			"ChairsideSterilizationPouchWidget.tsx обязан быть физически удален (Мандаты 8v, 8s, 8e)",
+		);
 	});
 
-	it("2. отображает бейдж «043/у», когда крафт-пакет зафиксирован в тексте дневника", () => {
-		const code = "КП-0925-14";
-		const diaryText = `Стерильный лоток №${code} вскрыт в присутствии пациента, индикатор 5 класса сработал.\n\nЛечение зуба 16.`;
-
-		const html = renderToString(
-			<ChairsideSterilizationPouchWidget
-				defaultPouchCode={code}
-				currentDiaryText={diaryText}
-			/>,
+	it("2. подтверждает отсутствие экспорта ChairsideSterilizationPouchWidget в components/sterilization/index.ts", () => {
+		const indexPath = path.join(
+			webSrcRoot,
+			"components/sterilization/index.ts",
 		);
+		assert.ok(fs.existsSync(indexPath), "components/sterilization/index.ts должен существовать");
+		const indexContent = fs.readFileSync(indexPath, "utf8");
 
-		assert.ok(html.includes("043/у"), "Должен отображать зеленый бейдж 043/у при привязке к дневнику");
-		assert.ok(html.includes("bg-emerald-600"), "Бейдж 043/у должен иметь зеленый статус");
+		assert.ok(
+			!indexContent.includes("ChairsideSterilizationPouchWidget"),
+			"components/sterilization/index.ts не должен экспортировать удаленный ChairsideSterilizationPouchWidget",
+		);
 	});
 
-	it("3. вставляет регламентную запись в дневник без дублирования при повторном вызове", () => {
+	it("3. вставляет регламентную запись в дневник без дублирования при повторном вызове (дедупликация SSOT)", () => {
 		const snippet = formatPouch043StatutorySnippet({ pouchCode: "КП-0925-14" });
 		const existingDiary = "Анестезия Убистезин 1.7 мл. Препарирование полости.";
 
@@ -113,7 +105,7 @@ describe("ChairsideSterilizationPouchWidget & VisitView Integration (СанПи�
 		}
 	});
 
-	it("5. проверяет ликвидацию зеркального файла apps/web/.../sterilizationPouchEngine.ts", () => {
+	it("5. проверяет ликвидацию зеркального файла apps/web/.../sterilizationPouchEngine.ts (SSOT в @dental/shared)", () => {
 		const duplicatePath = path.join(
 			webSrcRoot,
 			"components/sterilization/sterilizationPouchEngine.ts",
@@ -135,20 +127,17 @@ describe("ChairsideSterilizationPouchWidget & VisitView Integration (СанПи�
 		);
 	});
 
-	it("6. проверяет нулевой уровень шума и отсутствие обязательного сканирования (Мандат 8v)", () => {
-		const widgetPath = path.join(
-			webSrcRoot,
-			"components/sterilization/ChairsideSterilizationPouchWidget.tsx",
-		);
-		const widgetContent = fs.readFileSync(widgetPath, "utf8");
+	it("6. подтверждает отсутствие обязательного сканирования лотков врачом у кресла (Мандат 8v)", () => {
+		const visitViewPath = path.join(webSrcRoot, "VisitView.tsx");
+		const visitViewContent = fs.readFileSync(visitViewPath, "utf8");
 
 		assert.ok(
-			!widgetContent.toLowerCase().includes("сканировать лоток"),
-			"Виджет не должен требовать обязательного сканирования лотков",
+			!visitViewContent.toLowerCase().includes("сканировать лоток"),
+			"Экран визита врача не должен требовать обязательного сканирования лотков",
 		);
 		assert.ok(
-			!widgetContent.toLowerCase().includes("сканировать крафт"),
-			"Виджет не должен требовать обязательного сканирования крафт-пакетов",
+			!visitViewContent.toLowerCase().includes("сканировать крафт"),
+			"Экран визита врача не должен требовать обязательного сканирования крафт-пакетов",
 		);
 	});
 });

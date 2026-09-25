@@ -4,10 +4,15 @@
  * Нормативные классификаторы СанПиН 3.3686-21, 1-кликовые пресеты автоклавирования
  * класса B (форма № 257/у), контроль качества ПСО (форма № 366/у: азопирам,
  * фенолфталеин) и моментальная генерация валидных крафт-пакетов без бюрократии.
+ * Единый SSOT с компонентами sanpin/kraft и sanpin/autoclaveLog.
  * ============================================================================
  */
 
 import type { ParsedKraftBarcode } from "@dental/shared";
+import {
+	KRAFT_PACKAGE_SIZES,
+	type KraftPackageSizeDefinition,
+} from "../sanpin/kraft/kraftPackagePresets.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. SAMPLE TEST BARCODES (БЫСТРЫЕ ОБРАЗЦЫ ДЛЯ ПРОВЕРКИ)
@@ -96,12 +101,6 @@ export interface AutoclaveCycleRecord {
 	readonly isQuickPreset?: boolean;
 }
 
-/**
- * Программы стерилизации для автоклавов B-класса (Melag, Euronda, W&H):
- * 1. «Универсальная 134°C / 2.1 бар / 5 мин (в упаковке)»
- * 2. «Быстрая / Prion 134°C / 20 мин»
- * 3. «Деликатная 121°C / 1.1 бар / 20 мин (для наконечников и пластика)»
- */
 export const SANPIN_AUTOCLAVE_UNIVERSAL_134_PRESET: Omit<AutoclaveCycleRecord, "id" | "cycleNumber" | "timestamp"> = {
 	programName: "Универсальная 134°C / 2.1 бар / 5 мин (в упаковке)",
 	autoclaveCode: "АК-01",
@@ -202,11 +201,6 @@ export const SANPIN_AUTOCLAVE_DELICATE_121_PRESET: Omit<AutoclaveCycleRecord, "i
 	isQuickPreset: true,
 };
 
-/**
- * Программы для сухожаровых шкафов (ГП-10/20/40 СПУ):
- * 1. 180°C / 60 минут
- * 2. 160°C / 150 минут
- */
 export const SANPIN_DRY_HEAT_180_60_PRESET: Omit<AutoclaveCycleRecord, "id" | "cycleNumber" | "timestamp"> = {
 	programName: "Сухожаровой шкаф 180°C / 60 минут",
 	autoclaveCode: "СЖ-01",
@@ -257,13 +251,12 @@ export const SANPIN_DRY_HEAT_160_150_PRESET: Omit<AutoclaveCycleRecord, "id" | "
 	isQuickPreset: true,
 };
 
-// Базовый алиас для обратной совместимости
 export const SANPIN_AUTOCLAVE_CLASS_B_PRESET = SANPIN_AUTOCLAVE_UNIVERSAL_134_PRESET;
 
-/**
- * Нормативные типоразмеры крафт-пакетов по СанПиН 3.3686-21 п. 3632:
- * 75x150 мм, 100x200 мм, 150x250 мм. Срок сохранения стерильности до 50 суток.
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. ТИПОРАЗМЕРЫ КРАФТ-ПАКЕТОВ И ХИМИЧЕСКИЕ ИНДИКАТОРЫ (SSOT)
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface KraftPackageSizeOption {
 	readonly id: "size_75x150" | "size_100x200" | "size_150x250";
 	readonly dimensionsMm: string;
@@ -274,6 +267,10 @@ export interface KraftPackageSizeOption {
 	readonly typicalUsageRu: string;
 }
 
+/**
+ * Нормативные типоразмеры крафт-пакетов по СанПиН 3.3686-21 п. 3632
+ * Консолидировано с SSOT KRAFT_PACKAGE_SIZES из sanpin/kraft/kraftPackagePresets.
+ */
 export const STATUTORY_KRAFT_SIZES: readonly KraftPackageSizeOption[] = [
 	{
 		id: "size_75x150",
@@ -304,10 +301,6 @@ export const STATUTORY_KRAFT_SIZES: readonly KraftPackageSizeOption[] = [
 	},
 ];
 
-/**
- * Нормативные химические индикаторы 4-го и 5-го класса (Медтест, DGM Steriguard, Винар).
- * Стандартный результат: «Цвет эталона достигнут / Стерильно».
- */
 export interface ChemicalIndicatorOption {
 	readonly id: string;
 	readonly manufacturer: "Медтест" | "DGM Steriguard" | "Винар";
@@ -412,7 +405,7 @@ export const STATUTORY_CHEMICAL_INDICATOR_OPTIONS: readonly ChemicalIndicatorOpt
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. КОНТРОЛЬ КАЧЕСТВА ПСО (ФОРМА № 366/У: АЗОПИРАМ, ФЕНОЛФТАЛЕИН)
+// 4. КОНТРОЛЬ КАЧЕСТВА ПСО (ФОРМА № 366/У: АЗОПИРАМ, ФЕНОЛФТАЛЕИН)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface PsoQualityRecord {
@@ -435,11 +428,6 @@ export interface PsoQualityRecord {
 	readonly notes: string;
 }
 
-/**
- * Фиксация результатов проб контроля качества ПСО по СанПиН 3.3686-21 п. 3584-3585:
- * Азопирамовая проба: отрицательная (окрашивания нет), положительная (сине-фиолетовое окрашивание).
- * Фенолфталеиновая проба: отрицательная (окрашивания нет), положительная (розовое окрашивание).
- */
 export function formatPsoAzopyramResult(result: "negative" | "positive"): string {
 	return result === "negative"
 		? "Отрицательная — окрашивания нет"
@@ -452,9 +440,6 @@ export function formatPsoPhenolphthaleinResult(result: "negative" | "positive"):
 		: "Положительная — розовое окрашивание";
 }
 
-/**
- * Расчет объема выборки для ПСО: не менее 1% от обработанной партии (не менее 3-5 изделий)
- */
 export function calculatePsoSamplingCount(batchItemCount: number, isSurgicalSet = false): number {
 	const count = Math.max(1, Math.floor(batchItemCount) || 1);
 	const minFloor = isSurgicalSet ? 5 : 3;
@@ -466,7 +451,7 @@ export const SANPIN_AZOPYRAM_TEST_PRESET: Omit<PsoQualityRecord, "id" | "timesta
 	testType: "azopyram",
 	instrumentName: "Терапевтический и хирургический инструментарий (зеркала, зонды, пинцеты, щипцы)",
 	batchItemCount: 120,
-	testedSampleCount: 5, // 1% от партии (не менее 3-5 изделий)
+	testedSampleCount: 5,
 	minSampleCountRequired: 3,
 	samplingSatisfied: true,
 	azopyramResult: "negative",
@@ -499,7 +484,7 @@ export const SANPIN_PHENOLPHTHALEIN_TEST_PRESET: Omit<PsoQualityRecord, "id" | "
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. ФАБРИКИ БЫСТРЫХ ЗАПИСЕЙ ЦСО В 1 КЛИК
+// 5. ФАБРИКИ БЫСТРЫХ ЗАПИСЕЙ ЦСО В 1 КЛИК
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function createQuickAutoclaveCycle(
@@ -616,7 +601,7 @@ export function createQuickPhenolphthaleinRecord(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 5. ДИНАМИЧЕСКИЙ ГЕНЕРАТОР ВАЛИДНОГО СТАНДАРТНОГО ЛОТКА (1 КЛИК ДЛЯ ВРАЧА)
+// 6. ДИНАМИЧЕСКИЙ ГЕНЕРАТОР ВАЛИДНОГО СТАНДАРТНОГО ЛОТКА (1 КЛИК ДЛЯ ВРАЧА)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type StandardTrayType = "therapy" | "surgery" | "endo";
@@ -653,10 +638,6 @@ export const STANDARD_TRAY_OPTIONS: readonly StandardTrayDefinition[] = [
 	},
 ];
 
-/**
- * Мгновенно генерирует валидный крафт-пакет со СВЕЖЕЙ сегодняшней датой стерилизации.
- * Освобождает врача и ассистента от необходимости сканировать физический ШК сканером.
- */
 export function createStandardSterileTrayBarcode(
 	trayType: StandardTrayType = "therapy",
 	packDate: Date = new Date(),
@@ -710,86 +691,6 @@ export function createStandardSterileTrayBarcode(
 		formattedProtocolRecord043,
 	};
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 6. СТАРТОВЫЕ ДЕМО-ДАННЫЕ ДЛЯ ЦСО И СТУДИИ СТЕРИЛИЗАЦИИ
-// ─────────────────────────────────────────────────────────────────────────────
-
-export const DEFAULT_AUTOCLAVE_CYCLES_DEMO: readonly AutoclaveCycleRecord[] = [
-	{
-		id: "demo-cycle-01",
-		cycleNumber: 1,
-		autoclaveCode: "АК-01",
-		autoclaveModel: "MELAG Vacuklav 23 B+ (Class B)",
-		temperatureC: 134,
-		pressureBar: 2.1,
-		exposureMinutes: 5,
-		preVacuum: "3-кратное фракционированное предвакуумирование (EN 13060)",
-		indicatorPointsStatus: "Индикаторы 5 класса — норма во всех 5 точках камеры",
-		bowieDickResult: "passed",
-		bowieDickNote: "Тест Бови-Дика пройден (утренний контроль вакуума и проникновения пара)",
-		loadDescription: "Смотровые лотки терапевта (4 шт), базовый хирургический лоток (2 шт)",
-		packageType: "Самоклеящиеся крафт-пакеты",
-		batchVerdict: "ГОДНА",
-		operatorName: "Смирнова А.В. (медсестра ЦСО)",
-		timestamp: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
-		sanpinClause: "СанПиН 3.3686-21 п. 3630",
-		isQuickPreset: true,
-	},
-	{
-		id: "demo-cycle-02",
-		cycleNumber: 2,
-		autoclaveCode: "АК-01",
-		autoclaveModel: "MELAG Vacuklav 23 B+ (Class B)",
-		temperatureC: 134,
-		pressureBar: 2.1,
-		exposureMinutes: 5,
-		preVacuum: "3-кратное фракционированное предвакуумирование (EN 13060)",
-		indicatorPointsStatus: "Индикаторы 5 класса — норма во всех 5 точках камеры",
-		bowieDickResult: "passed",
-		bowieDickNote: "Тест Бови-Дика в норме",
-		loadDescription: "Эндодонтические наборы, наконечники турбинные и угловые в пакетах",
-		packageType: "Пакеты бумага-пленка термошовные",
-		batchVerdict: "ГОДНА",
-		operatorName: "Смирнова А.В. (медсестра ЦСО)",
-		timestamp: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-		sanpinClause: "СанПиН 3.3686-21 п. 3630",
-		isQuickPreset: true,
-	},
-];
-
-export const DEFAULT_PSO_QUALITY_DEMO: readonly PsoQualityRecord[] = [
-	{
-		id: "demo-pso-01",
-		testType: "both",
-		instrumentName: "Терапевтический смотровой инструментарий (зеркала, зонды, пинцеты)",
-		batchItemCount: 120,
-		testedSampleCount: 5,
-		azopyramResult: "negative",
-		phenolphthaleinResult: "negative",
-		detergentBrand: "Оптимакс Про 1.5%",
-		isApproved: true,
-		operatorName: "Смирнова А.В. (медсестра ЦСО)",
-		timestamp: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
-		sanpinClause: "СанПиН 3.3686-21 пп. 3584-3585, форма № 366/у",
-		notes: "Азопирам и фенолфталеин отрицательны. Скрытая кровь и щелочные ПАВ отсутствуют.",
-	},
-	{
-		id: "demo-pso-02",
-		testType: "azopyram",
-		instrumentName: "Хирургические экстракционные щипцы и элеваторы",
-		batchItemCount: 40,
-		testedSampleCount: 3,
-		azopyramResult: "negative",
-		phenolphthaleinResult: "negative",
-		detergentBrand: "Биолот 0.5%",
-		isApproved: true,
-		operatorName: "Смирнова А.В. (медсестра ЦСО)",
-		timestamp: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
-		sanpinClause: "СанПиН 3.3686-21 п. 3584, форма № 366/у",
-		notes: "Замковые части и щечки чистые. Азопирамовая проба отрицательная.",
-	},
-];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 7. КОМПЛЕКСНЫЕ 1-КЛИКОВЫЕ ПРЕСЕТЫ СМЕНЫ МЕДСЕСТРЫ ЦСО (САНПИН 3.3686-21)

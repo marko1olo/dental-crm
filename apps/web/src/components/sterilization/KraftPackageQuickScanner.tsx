@@ -4,12 +4,13 @@
  * Врач на приеме лечит людей, а не работает сканером крафт-пакетов со штрихкодами!
  * Медсестры в частной клинике не сидят за компьютером и не тыкают CRM.
  * Инструменты стерильны по умолчанию (дефолтный стерильный лоток по СанПиН).
- * Компонент превращен в чистый безопасный фасад без навязывания врачу.
+ * Компонент сведен к единому SSOT с SeniorNurseKraftUnsealModal.
  * ============================================================================
  */
 
 import type React from "react";
 import type { ParsedKraftBarcode } from "@dental/shared";
+import { SeniorNurseKraftUnsealModal } from "../sanpin/kraft/SeniorNurseKraftUnsealModal.js";
 
 export interface KraftPackageQuickScannerProps {
 	readonly isOpen: boolean;
@@ -20,12 +21,13 @@ export interface KraftPackageQuickScannerProps {
 }
 
 /**
- * Безопасный фасад без навязывания врачу и без процедурного блоата (Мандаты 8e, 8v, 8s, 8k).
+ * Безопасный фасад-делегат без навязывания врачу и без процедурного блоата (Мандаты 8e, 8v, 8s, 8k).
+ * Сведен к единому SSOT (SeniorNurseKraftUnsealModal).
  */
 export function KraftPackageQuickScanner(
-	_props: KraftPackageQuickScannerProps,
+	props: KraftPackageQuickScannerProps,
 ): React.ReactElement | null {
-	return null;
+	return SeniorNurseKraftUnsealModal(props as any);
 }
 
 export default KraftPackageQuickScanner;
