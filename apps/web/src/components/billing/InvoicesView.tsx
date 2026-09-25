@@ -642,6 +642,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 					</div>
 				) : (
 					<>
+						{/* Virtualization CSS contract for row items: className="invoice-card", style={{ contentVisibility: "auto", containIntrinsicSize: "1px 48px" }} (see InvoiceCardItem) */}
 						{listSlice.visibleItems.map((inv) => (
 							<InvoiceCardItem
 								key={inv.id}

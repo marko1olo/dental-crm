@@ -363,7 +363,7 @@ export function OrthopedicsChairsidePanel({
 							Ортопедия у кресла (043/у · Этап 3 · ЗТЛ)
 						</h3>
 						<p className="text-xs text-slate-600 dark:text-slate-300">
-							1-клик протоколы · Приказ 804н · Автономия врача
+							1-клик протоколы · Приказ 804н · Автономия врача (Мандат 8e)
 						</p>
 					</div>
 				</div>

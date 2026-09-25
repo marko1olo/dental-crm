@@ -12,8 +12,6 @@
 
 import type { TemperatureHumidityLog } from "./sanpinSchemas.js";
 import {
-	type CabinetReadinessPreset,
-	DENTAL_INSTRUMENT_CATEGORIES,
 	GENERAL_CLEANING_PRESETS,
 	type GeneralCleaningPresetDefinition,
 	UV_RECIRCULATOR_MODELS,
@@ -31,238 +29,30 @@ import {
 	generatePsoRecordId,
 	type BactericidalEquipmentRecord,
 	type BactericidalSessionRecord,
-	type ChamberPointEvaluation,
 	type ClinicLegalInfo,
 	type Form257Record,
 	type GeneralCleaningJournalRecord,
 	type PsoJournalRecord,
-	STATUTORY_STERILIZATION_REGIMES,
 } from "./sanpinRegistryEngine.js";
+import {
+	type RetroactiveSanpinCabinetConfig,
+	type RetroactiveSanpinBatchOptions,
+	type RetroactiveDailySummary,
+	type RetroactiveBatchStatistics,
+	type RetroactiveSanpinBatch,
+	DeterministicRng,
+	toDateString,
+	parseDateUtc,
+	getDayOfWeekUtc,
+	enumerateDateRange,
+	DEFAULT_CABINETS,
+} from "./retroactiveSanpinBatchTypes.js";
+
+export * from "./retroactiveSanpinBatchTypes.js";
+export * from "./retroactiveSanpinBatchSummary.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. CONFIGURATION & CONTRACT INTERFACES
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface RetroactiveSanpinCabinetConfig {
-	readonly id: string;
-	readonly name: string;
-	readonly roomType: "therapeutic" | "surgical" | "cso_sterile" | "xray" | "utility";
-	readonly roomVolumeM3: number;
-	readonly dezarModelId: string;
-	readonly dezarSerialNumber: string;
-}
-
-export interface RetroactiveSanpinBatchOptions {
-	readonly startDate: string | Date;
-	readonly endDate: string | Date;
-	readonly organizationId?: string;
-	readonly clinicLegalInfo?: Partial<ClinicLegalInfo>;
-	readonly workingDaysOfWeek?: readonly number[]; // 0=Вс, 1=Пн, ..., 6=Сб (по умолч. 1..6)
-	readonly holidays?: readonly string[]; // ISO YYYY-MM-DD
-	readonly dutyDays?: readonly string[]; // дежурные дни с пониженной нагрузкой
-	readonly cabinets?: readonly RetroactiveSanpinCabinetConfig[];
-	readonly cabinetsCount?: number;
-	readonly averagePatientsPerCabinet?: number; // средний поток (по умолч. 12)
-	readonly patientsVariationMin?: number; // мин пациентов (по умолч. 8)
-	readonly patientsVariationMax?: number; // макс пациентов (по умолч. 20)
-	readonly customDailyPatientCounts?: Readonly<Record<string, number>>;
-	readonly nurseFullName?: string; // ФИО медсестры (по умолч. 'Иванова М. П.')
-	readonly nursePosition?: string; // по умолч. 'Медсестра ЦСО'
-	readonly headNurseFullName?: string; // ФИО старшей/главной медсестры (по умолч. 'Смирнова Е. В.')
-	readonly chiefDoctorFullName?: string; // ФИО главврача (по умолч. 'Смирнов А. В.')
-	readonly autoclaveCode?: string; // по умолч. 'АК-01'
-	readonly autoclaveModel?: string; // по умолч. 'Melag Vacuklav 23B+'
-	readonly autoclaveSerialNumber?: string; // по умолч. 'VK-2024-8841'
-	readonly initialLampHours?: Readonly<Record<string, number>> | number;
-	readonly maxLampHours?: number; // по умолч. 8000 ч
-	readonly generalCleaningDayOfWeek?: number; // по умолч. 6 (Суббота)
-	readonly generalCleaningDisinfectant?: string; // по умолч. 'Оптимакс 2.0%'
-	readonly psoDetergentBrand?: string; // по умолч. 'Оптимакс Про 1.0%'
-	readonly seed?: number; // для детерминированной генерации в тестах
-}
-
-export interface RetroactiveDailySummary {
-	readonly date: string; // YYYY-MM-DD
-	readonly dayOfWeek: number; // 0=Вс..6=Сб
-	readonly isWorkingDay: boolean;
-	readonly isDutyDay: boolean;
-	readonly isGeneralCleaningDay: boolean;
-	readonly totalPatients: number;
-	readonly psoBatchCount: number;
-	readonly psoSampleTestedCount: number;
-	readonly autoclaveCyclesCount: number;
-	readonly autoclavePacksCount: number;
-	readonly bactericidalHoursLogged: number;
-	readonly morningTempCelsius: number;
-	readonly eveningTempCelsius: number;
-	readonly notes?: string;
-}
-
-export interface RetroactiveBatchStatistics {
-	readonly totalCalendarDays: number;
-	readonly totalWorkingDays: number;
-	readonly totalWeekendDays: number;
-	readonly totalPatientsTreated: number;
-	readonly totalPsoItemsProcessed: number;
-	readonly totalPsoSamplesTested: number;
-	readonly totalAutoclaveCycles: number;
-	readonly totalAutoclavePacksSterilized: number;
-	readonly totalBactericidalSessions: number;
-	readonly totalBactericidalHoursAdded: number;
-	readonly totalGeneralCleaningsConducted: number;
-	readonly totalTemperatureMeasurements: number;
-	readonly allChecksCompliant: boolean;
-	readonly validationIssues: readonly string[];
-}
-
-export interface RetroactiveSanpinBatch {
-	readonly period: {
-		readonly startDate: string;
-		readonly endDate: string;
-		readonly totalCalendarDays: number;
-		readonly totalWorkingDays: number;
-		readonly totalWeekendDays: number;
-	};
-	readonly psoRecords: readonly PsoJournalRecord[];
-	readonly autoclaveRecords: readonly Form257Record[];
-	readonly bactericidalSessions: readonly BactericidalSessionRecord[];
-	readonly bactericidalEquipments: readonly BactericidalEquipmentRecord[];
-	readonly generalCleaningRecords: readonly GeneralCleaningJournalRecord[];
-	readonly refrigeratorRecords: readonly TemperatureHumidityLog[];
-	readonly dailySummaries: readonly RetroactiveDailySummary[];
-	readonly statistics: RetroactiveBatchStatistics;
-	readonly clinicInfo: ClinicLegalInfo;
-}
-
-export interface SanpinBatchSummaryReport {
-	readonly isValid: boolean;
-	readonly summaryMarkdown: string;
-	readonly statistics: RetroactiveBatchStatistics;
-	readonly complianceAudit: {
-		readonly psoSamplingCompliant: boolean;
-		readonly psoChemicalTestsNegative: boolean;
-		readonly autoclaveParametersCompliant: boolean;
-		readonly autoclave5PointsPassed: boolean;
-		readonly bactericidalNoOverflow: boolean;
-		readonly generalCleaningCadenceCompliant: boolean;
-		readonly refrigeratorTempWithinGost: boolean;
-		readonly zeroMissingDates: boolean;
-	};
-	readonly registryTotals: {
-		readonly form366uRecordCount: number;
-		readonly form257uRecordCount: number;
-		readonly dezarSessionCount: number;
-		readonly generalCleaningCount: number;
-		readonly refrigeratorLogCount: number;
-	};
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 2. DETERMINISTIC PSEUDO-RANDOM NUMBER GENERATOR (LCG)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class DeterministicRng {
-	private state: number;
-
-	constructor(seed = 42) {
-		this.state = Math.abs(seed) % 2147483647 || 1;
-	}
-
-	nextFloat(): number {
-		this.state = (this.state * 16807) % 2147483647;
-		return (this.state - 1) / 2147483646;
-	}
-
-	nextInt(min: number, max: number): number {
-		return Math.floor(this.nextFloat() * (max - min + 1)) + min;
-	}
-
-	nextDecimal(min: number, max: number, decimals = 1): number {
-		const factor = 10 ** decimals;
-		const val = this.nextFloat() * (max - min) + min;
-		return Math.round(val * factor) / factor;
-	}
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 3. DATE UTILITIES
-// ─────────────────────────────────────────────────────────────────────────────
-
-function toDateString(val: string | Date): string {
-	if (typeof val === "string") {
-		const match = val.match(/^\d{4}-\d{2}-\d{2}/);
-		if (match) return match[0];
-		const parsed = new Date(val);
-		if (!Number.isNaN(parsed.getTime())) {
-			return parsed.toISOString().slice(0, 10);
-		}
-		return val;
-	}
-	const y = val.getUTCFullYear();
-	const m = String(val.getUTCMonth() + 1).padStart(2, "0");
-	const d = String(val.getUTCDate()).padStart(2, "0");
-	return `${y}-${m}-${d}`;
-}
-
-function parseDateUtc(dateStr: string): Date {
-	const [year, month, day] = dateStr.split("-").map(Number);
-	return new Date(Date.UTC(year!, month! - 1, day!));
-}
-
-function addDaysUtc(dateStr: string, days: number): string {
-	const dt = parseDateUtc(dateStr);
-	dt.setUTCDate(dt.getUTCDate() + days);
-	return dt.toISOString().slice(0, 10);
-}
-
-function getDayOfWeekUtc(dateStr: string): number {
-	const dt = parseDateUtc(dateStr);
-	return dt.getUTCDay();
-}
-
-function enumerateDateRange(startStr: string, endStr: string): string[] {
-	const dates: string[] = [];
-	let current = startStr;
-	while (current <= endStr) {
-		dates.push(current);
-		current = addDaysUtc(current, 1);
-	}
-	return dates;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 4. DEFAULT CLINIC EQUIPMENT INFRASTRUCTURE
-// ─────────────────────────────────────────────────────────────────────────────
-
-const DEFAULT_CABINETS: readonly RetroactiveSanpinCabinetConfig[] = [
-	{
-		id: "cab-01",
-		name: "Кабинет №1 (Терапевтическая стоматология)",
-		roomType: "therapeutic",
-		roomVolumeM3: 48,
-		dezarModelId: "dezar_4",
-		dezarSerialNumber: "DZ4-1042",
-	},
-	{
-		id: "cab-02",
-		name: "Кабинет №2 (Хирургическая стоматология)",
-		roomType: "surgical",
-		roomVolumeM3: 52,
-		dezarModelId: "dezar_4",
-		dezarSerialNumber: "DZ4-1043",
-	},
-	{
-		id: "cso-01",
-		name: "Центральное стерилизационное отделение (ЦСО)",
-		roomType: "cso_sterile",
-		roomVolumeM3: 65,
-		dezarModelId: "dezar_7",
-		dezarSerialNumber: "DZ7-0518",
-	},
-];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 5. MAIN RETROACTIVE GENERATOR IMPLEMENTATION
+// MAIN RETROACTIVE GENERATOR IMPLEMENTATION
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -446,7 +236,6 @@ export function generateRetroactiveSanpinBatch(
 		// 3. ПСО и Автоклавы (проводятся в рабочие дни при наличии пациентов)
 		if (isWorking && totalDayPatients > 0) {
 			// ─── 3.1. ПСО (Форма № 366/у) ──────────────────────────────────────────
-			// Расчет объема инструментов по категориям
 			const trayItemsCount = totalDayPatients * 5; // зеркало, зонд, пинцет, гладилка, экскаватор
 			const handpiecesCount = totalDayPatients * 2; // наконечники
 			const rotaryBursCount = totalDayPatients * 4; // боры и фрезы
@@ -522,7 +311,6 @@ export function generateRetroactiveSanpinBatch(
 			}
 
 			// ─── 3.2. Автоклавы (Форма № 257/у) ────────────────────────────────────
-			// Определение количества циклов (1-3 цикла в день в зависимости от потока)
 			let cyclesForDay = 1;
 			if (totalDayPatients >= 22) {
 				cyclesForDay = 3;
@@ -637,7 +425,6 @@ export function generateRetroactiveSanpinBatch(
 					};
 					bactericidalSessions.push(sessionRecord);
 
-					// Обновление состояния оборудования
 					equipmentMap.set(cab.id, {
 						...eq,
 						totalOperatingHours: calc.cumulativeHoursAfterSession,
@@ -735,14 +522,12 @@ export function generateRetroactiveSanpinBatch(
 
 	const validationIssues: string[] = [];
 
-	// Проверка 1: Отсутствие пустых дат
 	if (refrigeratorRecords.length !== totalCalendarDays * 2) {
 		validationIssues.push(
 			`Неполный температурный журнал: зафиксировано ${refrigeratorRecords.length} записей из ${totalCalendarDays * 2} требуемых`,
 		);
 	}
 
-	// Проверка 2: Лимиты температур (+2..+8°C)
 	const badTemp = refrigeratorRecords.some(
 		(r) => r.temperatureCelsius < 2.0 || r.temperatureCelsius > 8.0,
 	);
@@ -750,7 +535,6 @@ export function generateRetroactiveSanpinBatch(
 		validationIssues.push("Обнаружены замеры температуры холодильника вне ГОСТ +2..+8°C");
 	}
 
-	// Проверка 3: Соблюдение выборки ПСО
 	const badPso = psoRecords.some((r) => {
 		const req = calculatePsoSampleRequirements(r.batchItemCount);
 		return r.testedSampleCount < req.minSampleCount || !r.isBatchApproved;
@@ -759,7 +543,6 @@ export function generateRetroactiveSanpinBatch(
 		validationIssues.push("Обнаружены несоответствия в объеме выборки ПСО или бракованные пробы");
 	}
 
-	// Проверка 4: Ресурс ламп Дезар (<= 8000 ч)
 	const badLamp = Array.from(equipmentMap.values()).some(
 		(eq) => eq.totalOperatingHours > eq.maxLampHours,
 	);
@@ -803,132 +586,5 @@ export function generateRetroactiveSanpinBatch(
 		dailySummaries,
 		statistics,
 		clinicInfo,
-	};
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 6. EXPORT SUMMARY & STATUTORY VALIDATION REPORT
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Валидирует сгенерированный ретроспективный пакет и строит сводный отчет
- * о санитарно-эпидемиологическом соответствии для надзорных органов (Роспотребнадзор).
- */
-export function exportBatchToSanpinSummary(
-	batch: RetroactiveSanpinBatch,
-): SanpinBatchSummaryReport {
-	const stats = batch.statistics;
-
-	// Аудит соблюдения требований СанПиН 3.3686-21:
-	const psoSamplingCompliant = batch.psoRecords.every((r) => {
-		const req = calculatePsoSampleRequirements(r.batchItemCount);
-		return r.testedSampleCount >= req.minSampleCount;
-	});
-
-	const psoChemicalTestsNegative = batch.psoRecords.every(
-		(r) => r.isAzopyramNegative && r.isPhenolphthaleinNegative && r.isBatchApproved,
-	);
-
-	const autoclaveParametersCompliant = batch.autoclaveRecords.every(
-		(r) =>
-			r.actualTemperatureCelsius >= 134 &&
-			r.actualPressureBar >= 2.0 &&
-			r.actualExposureMinutes >= 5 &&
-			r.isCyclePassed,
-	);
-
-	const autoclave5PointsPassed = batch.autoclaveRecords.every(
-		(r) => r.areAllPointsPassed && r.chamberPoints.length === 5,
-	);
-
-	const bactericidalNoOverflow = batch.bactericidalEquipments.every(
-		(eq) => eq.totalOperatingHours <= eq.maxLampHours,
-	);
-
-	// Проверка интервалов генеральных уборок (максимум 7 дней между уборками)
-	const cleaningDates = Array.from(
-		new Set(batch.generalCleaningRecords.map((r) => r.scheduledDate)),
-	).sort();
-	let generalCleaningCadenceCompliant = cleaningDates.length > 0;
-	for (let i = 1; i < cleaningDates.length; i++) {
-		const d1 = parseDateUtc(cleaningDates[i - 1]!).getTime();
-		const d2 = parseDateUtc(cleaningDates[i]!).getTime();
-		const gap = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
-		if (gap > 7) {
-			generalCleaningCadenceCompliant = false;
-			break;
-		}
-	}
-
-	const refrigeratorTempWithinGost = batch.refrigeratorRecords.every(
-		(r) => r.temperatureCelsius >= 2.0 && r.temperatureCelsius <= 8.0 && r.isWithinNorm,
-	);
-
-	const zeroMissingDates =
-		batch.refrigeratorRecords.length === batch.period.totalCalendarDays * 2;
-
-	const isValid =
-		psoSamplingCompliant &&
-		psoChemicalTestsNegative &&
-		autoclaveParametersCompliant &&
-		autoclave5PointsPassed &&
-		bactericidalNoOverflow &&
-		generalCleaningCadenceCompliant &&
-		refrigeratorTempWithinGost &&
-		zeroMissingDates;
-
-	const summaryMarkdown = `
-# СВОДНЫЙ ОТЧЕТ РЕТРОСПЕКТИВНОГО ПАКЕТА САНПИН 3.3686-21
-**Клиника**: ${batch.clinicInfo.name} (ИНН: ${batch.clinicInfo.inn})
-**Ответственные лица**: Главный врач — ${batch.clinicInfo.chiefDoctor}, Главная медсестра — ${batch.clinicInfo.headNurse}
-**Период генерации**: с ${batch.period.startDate} по ${batch.period.endDate} (${batch.period.totalCalendarDays} календ. дн. / ${batch.period.totalWorkingDays} рабочих дн.)
-
----
-
-## 1. Сводные метрики санитарных журналов
-
-| Санитарный журнал | Нормативный документ | Записей | Ключевые показатели | Статус СанПиН |
-| :--- | :--- | :---: | :--- | :---: |
-| **ПСО (Форма № 366/у)** | СанПиН 3.3686-21 п. 3584 | ${batch.psoRecords.length} | ${stats.totalPsoItemsProcessed} изд. обработано, ${stats.totalPsoSamplesTested} проб (1%) | 100% норма |
-| **Автоклавы (Форма № 257/у)** | СанПиН 3.3686-21 п. 3624 | ${batch.autoclaveRecords.length} | ${stats.totalAutoclaveCycles} циклов B-класса (134°C/2.1 атм), ${stats.totalAutoclavePacksSterilized} пакетов | 100% стерильно |
-| **Дезар / Рециркуляторы** | Руководство Р 3.5.1904-04 | ${batch.bactericidalSessions.length} | +${stats.totalBactericidalHoursAdded} ч наработки (ресурс до 8000 ч в норме) | 100% норма |
-| **Генеральные уборки** | СанПиН 3.3686-21 разд. IV | ${batch.generalCleaningRecords.length} | ${stats.totalGeneralCleaningsConducted} уборок (интервал строго <= 7 дней) | 100% соблюдено |
-| **Холодильник (+2..+8°C)** | Приказы Минздрава 706н/646н | ${batch.refrigeratorRecords.length} | ${stats.totalTemperatureMeasurements} замеров (утро +3.5..+4.8°C / вечер +4.0..+5.2°C) | 100% в ГОСТ |
-
----
-
-## 2. Результаты санитарно-эпидемиологического аудита
-
-- [x] **Выборочный контроль ПСО**: 1% от партии (не менее 3–5 шт. каждого наименования) соблюден.
-- [x] **Химические пробы ПСО**: Азопирам (отрицат. — кровь отсутствует), Фенолфталеин (отрицат. — щелочь смыта).
-- [x] **Режимы стерилизации**: 134°C / 2.0–2.2 атм / 5 мин (B-класс), все 5 контрольных точек камеры перешли в темно-коричневый цвет эталона.
-- [x] **Бактерицидный флот**: наработка ламп зафиксирована с нарастающим итогом, перерасхода лимита 8000 ч нет.
-- [x] **График генеральных уборок**: кратность 1 раз в 7 дней выдержана без просрочек.
-- [x] **Термометрия холодильников**: утро и вечер зафиксированы для каждого календарного дня без пропусков.
-
-**ИТОГОВЫЙ СТАТУС**: ${isValid ? "ПАКЕТ ПОЛНОСТЬЮ ВАЛИДЕН И ГОТОВ К ПРОВЕРКЕ РОСПОТРЕБНАДЗОРА" : "ОБНАРУЖЕНЫ НАРУШЕНИЯ"}
-`.trim();
-
-	return {
-		isValid,
-		summaryMarkdown,
-		statistics: stats,
-		complianceAudit: {
-			psoSamplingCompliant,
-			psoChemicalTestsNegative,
-			autoclaveParametersCompliant,
-			autoclave5PointsPassed,
-			bactericidalNoOverflow,
-			generalCleaningCadenceCompliant,
-			refrigeratorTempWithinGost,
-			zeroMissingDates,
-		},
-		registryTotals: {
-			form366uRecordCount: batch.psoRecords.length,
-			form257uRecordCount: batch.autoclaveRecords.length,
-			dezarSessionCount: batch.bactericidalSessions.length,
-			generalCleaningCount: batch.generalCleaningRecords.length,
-			refrigeratorLogCount: batch.refrigeratorRecords.length,
-		},
 	};
 }

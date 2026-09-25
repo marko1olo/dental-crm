@@ -361,7 +361,7 @@ export function createDoctorClinicalOverride(options?: {
 		timestampIso: new Date().toISOString(),
 		mandate8e: true,
 		notice:
-			"Клинический оверрайд врача применён: наряд ЗТЛ отправлен в лабораторию без задержек и согласований.",
+			"Клинический оверрайд врача применён (Мандат 8e): наряд ЗТЛ отправлен в лабораторию без задержек и согласований.",
 	};
 }
 

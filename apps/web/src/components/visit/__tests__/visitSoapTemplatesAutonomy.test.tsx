@@ -8,7 +8,7 @@
  */
 
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -60,7 +60,8 @@ test("VisitEmkTab: nested card matryoshka is eliminated per Anti-Matryoshka law"
 
 test("WhatsAppChatPanel: WCAG AAA Light Mode contrast tokens are strictly applied", () => {
 	const chatPath = path.join(webSrcRoot, "components/chat/WhatsAppChatPanel.tsx");
-	const code = readFileSync(chatPath, "utf8");
+	const presetsPath = path.join(webSrcRoot, "components/chat/WhatsAppEmptyStatePresets.tsx");
+	const code = readFileSync(chatPath, "utf8") + "\n" + (existsSync(presetsPath) ? readFileSync(presetsPath, "utf8") : "");
 
 	// 1. Upcoming appointment banner contrast
 	assert.ok(
