@@ -1,65 +1,40 @@
 import React, { useState, useMemo, useEffect } from "react";
 import {
 	Award,
-	Gift,
-	Users,
-	Tag,
-	FileSpreadsheet,
-	Sparkles,
-	CheckCircle2,
-	AlertCircle,
-	Printer,
-	Download,
-	Search,
-	Plus,
-	Percent,
 	Coins,
-	CreditCard,
+	Gift,
+	Sparkles,
+	Tag,
+	Users,
 	X,
-	ShieldCheck,
-	ArrowRight,
-	TrendingUp,
-	Check,
-	Copy,
-	UserPlus,
 } from "lucide-react";
 import {
-	calculateLoyaltyAccrual,
+	calculateFamilyPoolBalance,
 	calculateLoyaltyRedemption,
 	calculateTierProgression,
-	generateGiftCertificateSerial,
-	validateGiftCertificateSerial,
-	redeemGiftCertificate,
-	calculateFamilyPoolBalance,
-	debitFamilySharedBalance,
-	creditFamilySharedBalance,
-	evaluatePromoCode,
-	exportLoyaltyLedgerToCsv,
-	calculateReferralReward,
 	creditReferralBonus,
-	type LoyaltyRedemptionResult,
+	debitFamilySharedBalance,
+	exportLoyaltyLedgerToCsv,
 	type Fiscal54FzSplitResult,
-	type GiftCertificate,
-	type FamilyMember,
 	type LoyaltyLedgerEntry,
+	type LoyaltyRedemptionResult,
 	type PatientReferralRecord,
 } from "./loyaltyEngine";
 import {
-	LOYALTY_TIER_PRESETS,
-	GIFT_CERTIFICATE_CATALOG,
-	PROMO_CODE_PRESETS,
-	LOYALTY_EXCLUSION_RULES,
-	QUICK_REDEMPTION_PRESETS_RUB,
-	DEFAULT_REFERRAL_PRESET,
 	REFERRAL_HYGIENE_1000_PRESET,
-	REFERRAL_PROGRAM_PRESETS,
-	DENTAL_LOYALTY_STANDARDS,
-	type LoyaltyTierId,
 	type ReferralRewardPreset,
 } from "./loyaltyPresets";
-import { generateCode128Svg } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { LoyaltyBalanceTab } from "./LoyaltyBalanceTab";
+import { LoyaltyFamilyTab } from "./LoyaltyFamilyTab";
+import { LoyaltyReferralsTab } from "./LoyaltyReferralsTab";
+import { LoyaltyCertificatesTab } from "./LoyaltyCertificatesTab";
+import { LoyaltyPromosTab } from "./LoyaltyPromosTab";
+import { LoyaltyLedgerTab } from "./LoyaltyLedgerTab";
+import { useLoyaltyCertificates } from "./useLoyaltyCertificates";
+import { useLoyaltyPromos } from "./useLoyaltyPromos";
+import { useLoyaltyFamily } from "./useLoyaltyFamily";
 import "./loyaltyProgram.css";
 
 export interface LoyaltyProgramModalProps {
@@ -80,7 +55,6 @@ export interface LoyaltyProgramModalProps {
 
 type TabType = "balance" | "family" | "referrals" | "certificates" | "promos" | "ledger";
 
-const EMPTY_FAMILY_MEMBERS: readonly FamilyMember[] = [];
 const EMPTY_LEDGER: readonly LoyaltyLedgerEntry[] = [];
 
 export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
@@ -106,16 +80,12 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 	const [activePointsBalance, setActivePointsBalance] = useState<number>(initialPointsBalance);
 	const [redemptionSuccessMsg, setRedemptionSuccessMsg] = useState<string | null>(null);
 
-	// Family Group State
-	const [familyMembers, setFamilyMembers] = useState<readonly FamilyMember[]>(EMPTY_FAMILY_MEMBERS);
-	const [isFamilyModeActive, setIsFamilyModeActive] = useState<boolean>(false);
-	const [selectedFamilyMemberId, setSelectedFamilyMemberId] = useState<string>("");
-	const [familyDepositAmountRub, setFamilyDepositAmountRub] = useState<number>(5000);
-	const [newMemberName, setNewMemberName] = useState<string>("");
-	const [newMemberRole, setNewMemberRole] = useState<FamilyMember["roleRu"]>("Супруг / Супруга");
-
 	// Doctor Autonomy / Warranty override state (Mandates 8e, 8s)
 	const [isDoctorOverride, setIsDoctorOverride] = useState<boolean>(false);
+
+	// Ledger State
+	const [ledgerEntries, setLedgerEntries] = useState<readonly LoyaltyLedgerEntry[]>(EMPTY_LEDGER);
+	const [ledgerSearch, setLedgerSearch] = useState<string>("");
 
 	// Referral Program State ("Привёл друга / семью" - Mandates 8i, 8s, 8b)
 	const [referrals, setReferrals] = useState<readonly PatientReferralRecord[]>([]);
@@ -126,26 +96,44 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 	const [newReferralPhone, setNewReferralPhone] = useState<string>("");
 	const [newReferralNote, setNewReferralNote] = useState<string>("");
 
-	// Certificate State
-	const [certificateNominalRub, setCertificateNominalRub] = useState<number>(5000);
-	const [recipientName, setRecipientName] = useState<string>("");
-	const [activeCertificate, setActiveCertificate] = useState<GiftCertificate | null>(null);
-	const [certVerifyInput, setCertVerifyInput] = useState<string>("");
-	const [certRedeemFeedback, setCertRedeemFeedback] = useState<{
-		isSuccess: boolean;
-		message: string;
-	} | null>(null);
+	// Family Pool Calculation
+	const familyPool = useMemo(() => {
+		return calculateFamilyPoolBalance(`fam-${patientId || "group"}`, `Семья (${patientName})`, []);
+	}, [patientId, patientName]);
 
-	// Promo State
-	const [promoInput, setPromoInput] = useState<string>("");
-	const [promoResult, setPromoResult] = useState<ReturnType<typeof evaluatePromoCode> | null>(null);
-	const [copiedPromo, setCopiedPromo] = useState<string | null>(null);
+	// Extracted Custom Hooks for Sub-domains
+	const familyState = useLoyaltyFamily({
+		patientId,
+		patientName,
+		familyPool,
+		setActivePointsBalance,
+		setLedgerEntries,
+	});
 
-	// Ledger State
-	const [ledgerEntries, setLedgerEntries] = useState<readonly LoyaltyLedgerEntry[]>(EMPTY_LEDGER);
-	const [ledgerSearch, setLedgerSearch] = useState<string>("");
+	const certState = useLoyaltyCertificates({
+		patientName,
+		invoiceAmountRub,
+	});
 
-	const isFamilyActiveEffective = isFamilyModeActive || Boolean(selectedFamilyMemberId);
+	const promoState = useLoyaltyPromos({
+		invoiceAmountRub,
+		setInvoiceAmountRub,
+		onRedeemSuccess,
+		setRedemptionSuccessMsg,
+		setActiveTab,
+	});
+
+	const isFamilyActiveEffective =
+		familyState.isFamilyModeActive || Boolean(familyState.selectedFamilyMemberId);
+
+	// Recalculate family pool with live members
+	const computedFamilyPool = useMemo(() => {
+		return calculateFamilyPoolBalance(
+			`fam-${patientId || "group"}`,
+			`Семья (${patientName})`,
+			familyState.familyMembers
+		);
+	}, [patientId, patientName, familyState.familyMembers]);
 
 	// Tier Progression
 	const tierProgression = useMemo(() => {
@@ -154,13 +142,8 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 
 	const currentTier = tierProgression.currentTier;
 
-	// Family Pool Calculation
-	const familyPool = useMemo(() => {
-		return calculateFamilyPoolBalance(`fam-${patientId || "group"}`, `Семья (${patientName})`, familyMembers);
-	}, [patientId, patientName, familyMembers]);
-
 	const effectiveBalanceRub = isFamilyActiveEffective
-		? familyPool.totalPooledPoints
+		? computedFamilyPool.totalPooledPoints
 		: activePointsBalance;
 
 	// Real-time Redemption Calculation
@@ -215,7 +198,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 						setLedgerEntries(mappedTx);
 					}
 				}
-			} catch (e) {
+			} catch {
 				// Silently fail on network/mock offline mode
 			}
 		}
@@ -250,18 +233,20 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 		}
 
 		// Mandate 8i, 8n: One wallet per family — parent pays for child/spouse directly
-		const selectedTargetMember = familyMembers.find((m) => m.patientId === selectedFamilyMemberId);
+		const selectedTargetMember = familyState.familyMembers.find(
+			(m) => m.patientId === familyState.selectedFamilyMemberId
+		);
 		if (selectedTargetMember) {
 			const famResult = debitFamilySharedBalance({
 				familyGroupId: `fam-${patientId || "group"}`,
-				familyName: familyPool.familyName,
+				familyName: computedFamilyPool.familyName,
 				sponsorPatientId: patientId,
 				sponsorFullName: patientName,
 				targetPatientId: selectedTargetMember.patientId,
 				targetPatientName: selectedTargetMember.fullName,
 				targetRoleRu: selectedTargetMember.roleRu,
 				invoiceAmountKop: Math.round(invoiceAmountRub * 100),
-				availableFamilyPointsRub: familyPool.totalPooledPoints,
+				availableFamilyPointsRub: computedFamilyPool.totalPooledPoints,
 				requestedPointsRub: redemptionCalc.actualRedeemedPointsRub,
 				allowFullCoverage: isDoctorOverride,
 				staffNameRu: "Администратор (Касса)",
@@ -357,18 +342,20 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 		}
 
 		// Mandate 8i, 8n: One wallet per family — parent pays for child/spouse in 1-click
-		const selectedTargetMember = familyMembers.find((m) => m.patientId === selectedFamilyMemberId);
+		const selectedTargetMember = familyState.familyMembers.find(
+			(m) => m.patientId === familyState.selectedFamilyMemberId
+		);
 		if (selectedTargetMember) {
 			const famResult = debitFamilySharedBalance({
 				familyGroupId: `fam-${patientId || "group"}`,
-				familyName: familyPool.familyName,
+				familyName: computedFamilyPool.familyName,
 				sponsorPatientId: patientId,
 				sponsorFullName: patientName,
 				targetPatientId: selectedTargetMember.patientId,
 				targetPatientName: selectedTargetMember.fullName,
 				targetRoleRu: selectedTargetMember.roleRu,
 				invoiceAmountKop: Math.round(invoiceAmountRub * 100),
-				availableFamilyPointsRub: familyPool.totalPooledPoints,
+				availableFamilyPointsRub: computedFamilyPool.totalPooledPoints,
 				requestedPointsRub: targetCalc.actualRedeemedPointsRub,
 				allowFullCoverage: isDoctorOverride,
 				staffNameRu: "Администратор / Касса",
@@ -500,148 +487,6 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 		}
 	};
 
-	const handleGenerateNewCertificate = () => {
-		const newSerial = generateGiftCertificateSerial();
-		const nominalKop = Math.round(certificateNominalRub * 100);
-		const targetRecipient = recipientName.trim() || patientName;
-		const cert: GiftCertificate = {
-			id: `cert-${Date.now()}`,
-			serialNumber: newSerial,
-			nominalKop,
-			initialBalanceKop: nominalKop,
-			currentBalanceKop: nominalKop,
-			status: "active",
-			issuedAtIso: new Date().toISOString().slice(0, 10),
-			expiresAtIso: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString().slice(0, 10),
-			recipientName: targetRecipient,
-			buyerPatientName: patientName,
-			note: `Подарочный сертификат на сумму ${certificateNominalRub.toLocaleString("ru-RU")} ₽`,
-		};
-		setActiveCertificate(cert);
-		setCertVerifyInput(newSerial);
-		setCertRedeemFeedback({
-			isSuccess: true,
-			message: `Выпущен новый сертификат ${newSerial} на ${certificateNominalRub} ₽`,
-		});
-	};
-
-	const handleVerifyAndRedeemCert = () => {
-		if (!certVerifyInput) return;
-		const isCodeValid = validateGiftCertificateSerial(certVerifyInput);
-		if (!isCodeValid) {
-			setCertRedeemFeedback({
-				isSuccess: false,
-				message: "Неверный 16-значный номер сертификата (ошибка контрольной суммы Luhn)",
-			});
-			return;
-		}
-		if (!activeCertificate) {
-			setCertRedeemFeedback({
-				isSuccess: false,
-				message: "Нет активного сертификата для списания",
-			});
-			return;
-		}
-		const res = redeemGiftCertificate(
-			activeCertificate,
-			Math.round(invoiceAmountRub * 100)
-		);
-		if (res.success) {
-			setActiveCertificate((prev) =>
-				prev
-					? {
-							...prev,
-							currentBalanceKop: res.newBalanceKop,
-							status: res.newStatus,
-						}
-					: null,
-			);
-			setCertRedeemFeedback({
-				isSuccess: true,
-				message: `Успешно списано ${(res.redeemedAmountKop / 100).toLocaleString("ru-RU")} ₽ с сертификата. Остаток на карте: ${(res.newBalanceKop / 100).toLocaleString("ru-RU")} ₽`,
-			});
-		} else {
-			setCertRedeemFeedback({
-				isSuccess: false,
-				message: `Ошибка: ${res.errorMessageRu}`,
-			});
-		}
-	};
-
-	const handleCreditFamilyBalance = (amountRub: number) => {
-		if (amountRub <= 0) {
-			showToast("Укажите сумму для пополнения семейного баланса", "warning");
-			return;
-		}
-		const creditResult = creditFamilySharedBalance({
-			familyGroupId: `fam-${patientId || "group"}`,
-			familyName: familyPool.familyName,
-			payerPatientId: patientId,
-			payerFullName: patientName,
-			currentFamilyBalanceRub: familyPool.totalPooledPoints,
-			amountToAddRub: amountRub,
-			reasonRu: `Пополнение семейного счета «${familyPool.familyName}» (Плательщик: ${patientName})`,
-			staffNameRu: "Администратор / Касса",
-		});
-
-		setActivePointsBalance((prev) => prev + creditResult.creditedPointsRub);
-		setLedgerEntries((prev) => [creditResult.ledgerEntry, ...prev]);
-		showToast(creditResult.messageRu, "success");
-	};
-
-	const handleAddFamilyMember = () => {
-		if (!newMemberName.trim()) {
-			showToast("Укажите ФИО родственника для добавления в семейный пул", "warning");
-			return;
-		}
-		const member: FamilyMember = {
-			patientId: `pat-${Date.now().toString().slice(-4)}`,
-			fullName: newMemberName.trim(),
-			roleRu: newMemberRole,
-			individualPointsBalance: 500,
-			lifetimeSpentKop: 0,
-			isBonusSpendingAllowed: true,
-		};
-		setFamilyMembers((prev) => [...prev, member]);
-		setNewMemberName("");
-		showToast(`Член семьи «${member.fullName}» успешно добавлен в семейный пул`, "success");
-	};
-
-	const handleToggleMemberPermission = (pId: string) => {
-		setFamilyMembers((prev) =>
-			prev.map((m) =>
-				m.patientId === pId ? { ...m, isBonusSpendingAllowed: !m.isBonusSpendingAllowed } : m
-			)
-		);
-	};
-
-	const handleEvaluatePromo = () => {
-		const res = evaluatePromoCode(
-			promoInput,
-			Math.round(invoiceAmountRub * 100),
-			["hygiene", "therapy"],
-			[]
-		);
-		setPromoResult(res);
-	};
-
-	const handleCopyPromo = (code: string) => {
-		setPromoInput(code);
-		setCopiedPromo(code);
-		setTimeout(() => setCopiedPromo(null), 2000);
-	};
-
-	const handleApplyPromoDirectly = (code: string) => {
-		setPromoInput(code);
-		const res = evaluatePromoCode(
-			code,
-			Math.round(invoiceAmountRub * 100),
-			["hygiene", "therapy"],
-			[]
-		);
-		setPromoResult(res);
-	};
-
 	const handleExportLedger = () => {
 		const csvContent = exportLoyaltyLedgerToCsv(ledgerEntries);
 		const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -679,1747 +524,186 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 								Студия лояльности и бонусов • {clinicName}
 							</h2>
 							<p className="loyalty-modal-subtitle">
-								Пациент: <strong>{patientName}</strong> (Медкарта: {medicalCardNumber})
+								Пациент: <strong>{patientName}</strong> (карта № {medicalCardNumber || "—"}) •
+								Программа лояльности без пирамид и криптотокенов
 							</p>
 						</div>
 					</div>
+
 					<button
-						className="loyalty-close-btn"
+						type="button"
 						onClick={onClose}
-						aria-label="Закрыть модальное окно"
+						className="loyalty-close-btn"
+						aria-label="Закрыть окно программы лояльности"
 					>
 						<X size={20} />
 					</button>
 				</header>
 
 				{/* Navigation Tabs */}
-				<nav className="loyalty-nav-tabs" aria-label="Разделы программы лояльности">
+				<nav className="loyalty-tabs-nav" aria-label="Разделы программы лояльности">
 					<button
+						type="button"
 						className={`loyalty-tab-btn ${activeTab === "balance" ? "active" : ""}`}
 						onClick={() => setActiveTab("balance")}
 					>
-						<Coins size={18} />
+						<Award size={16} />
 						Баланс и касса
 					</button>
 					<button
+						type="button"
 						className={`loyalty-tab-btn ${activeTab === "family" ? "active" : ""}`}
 						onClick={() => setActiveTab("family")}
 					>
-						<Users size={18} />
-						Семейный счет ({familyMembers.length})
+						<Users size={16} />
+						Семейный кошелек
 					</button>
 					<button
+						type="button"
 						className={`loyalty-tab-btn ${activeTab === "referrals" ? "active" : ""}`}
 						onClick={() => setActiveTab("referrals")}
 						data-testid="loyalty-referrals-tab-btn"
 					>
-						<Users size={18} />
-						Привёл друга ({referrals.length})
+						<Sparkles size={16} />
+						Приведи друга
 					</button>
 					<button
+						type="button"
 						className={`loyalty-tab-btn ${activeTab === "certificates" ? "active" : ""}`}
 						onClick={() => setActiveTab("certificates")}
 					>
-						<Gift size={18} />
-						Подарочные сертификаты
+						<Gift size={16} />
+						Сертификаты
 					</button>
 					<button
+						type="button"
 						className={`loyalty-tab-btn ${activeTab === "promos" ? "active" : ""}`}
 						onClick={() => setActiveTab("promos")}
 					>
-						<Tag size={18} />
-						Промокоды и акции
+						<Tag size={16} />
+						Промокоды
 					</button>
 					<button
+						type="button"
 						className={`loyalty-tab-btn ${activeTab === "ledger" ? "active" : ""}`}
 						onClick={() => setActiveTab("ledger")}
 					>
-						<FileSpreadsheet size={18} />
-						Выписка операций ({ledgerEntries.length})
+						<Coins size={16} />
+						История операций
 					</button>
 				</nav>
 
-				{/* Modal Body */}
-				<main className="loyalty-modal-body">
-					{/* TAB 1: BALANCE & CASHIER */}
+				{/* Tab Panels */}
+				<main className="loyalty-tab-content">
 					{activeTab === "balance" && (
-						<div>
-							{/* Tier Hero Card */}
-							<div
-								className="loyalty-tier-hero"
-								style={{ background: currentTier.cardGradient }}
-							>
-								<div className="loyalty-tier-hero-bg-accent" />
-								<div className="loyalty-tier-hero-top">
-									<div>
-										<span className="loyalty-tier-hero-badge">
-											<Award size={16} />
-											{currentTier.badgeLabelRu}
-										</span>
-										<h3 style={{ fontSize: "1.5rem", fontWeight: 700, marginTop: "0.5rem" }}>
-											{patientName}
-										</h3>
-									</div>
-									<div style={{ textAlign: "right" }}>
-										<div style={{ fontSize: "0.8125rem", opacity: 0.9 }}>Кэшбэк бонусами</div>
-										<div style={{ fontSize: "1.75rem", fontWeight: 800 }}>
-											{currentTier.cashbackPercent}%
-										</div>
-									</div>
-								</div>
-
-								<div className="loyalty-points-display">
-									<div className="loyalty-points-value">
-										{effectiveBalanceRub.toLocaleString("ru-RU")}
-										<span className="loyalty-points-label">бонусных ₽</span>
-									</div>
-									<p style={{ fontSize: "0.875rem", opacity: 0.95 }}>
-										1 бонус = 1 рубль • Оплата до {currentTier.maxInvoiceCoveragePercent}% счета
-									</p>
-								</div>
-
-								{/* Progress to next tier */}
-								{tierProgression.nextTier && (
-									<div className="loyalty-tier-progress-wrap">
-										<div className="loyalty-progress-bar-track">
-											<div
-												className="loyalty-progress-bar-fill"
-												style={{ width: `${tierProgression.progressPercent}%` }}
-											/>
-										</div>
-										<div className="loyalty-progress-info">
-											<span>
-												Накоплено: {tierProgression.lifetimeSpentRub.toLocaleString("ru-RU")} ₽
-											</span>
-											<span>
-												До уровня {tierProgression.nextTier.nameRu}:{" "}
-												{tierProgression.remainingToNextTierRub.toLocaleString("ru-RU")} ₽
-											</span>
-										</div>
-									</div>
-								)}
-							</div>
-
-							{/* Fast Cashier Redemption Calculator */}
-							<div className="loyalty-cashier-card">
-								<h4 className="loyalty-section-title">
-									<CreditCard size={20} color="var(--teal)" />
-									Калькулятор списания бонусов на кассе (54-ФЗ)
-								</h4>
-
-								{redemptionSuccessMsg && (
-									<div
-										style={{
-											background: "rgba(16, 185, 129, 0.1)",
-											border: "1px solid var(--line)",
-											color: "var(--ok-fg)",
-											padding: "0.75rem 1rem",
-											borderRadius: "0.5rem",
-											marginBottom: "1rem",
-											display: "flex",
-											alignItems: "center",
-											gap: "0.5rem",
-											fontWeight: 600,
-										}}
-									>
-										<CheckCircle2 size={18} />
-										{redemptionSuccessMsg}
-									</div>
-								)}
-
-								{familyMembers.length > 0 && (
-									<div
-										style={{
-											marginBottom: "1rem",
-											padding: "0.75rem",
-											borderRadius: "0.5rem",
-											background: selectedFamilyMemberId ? "rgba(13, 148, 136, 0.08)" : "var(--paper-soft)",
-											border: selectedFamilyMemberId ? "1px solid var(--teal)" : "1px dashed var(--line)",
-										}}
-									>
-										<label
-											style={{
-												display: "flex",
-												alignItems: "center",
-												gap: "0.5rem",
-												fontSize: "0.8125rem",
-												fontWeight: 700,
-												color: "var(--ink)",
-												marginBottom: "0.375rem",
-											}}
-										>
-											<Users size={16} color="var(--teal)" />
-											Оплата за члена семьи (Ребенок / Супруг) из единого кошелька:
-										</label>
-										<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
-											<select
-												value={selectedFamilyMemberId}
-												onChange={(e) => {
-													setSelectedFamilyMemberId(e.target.value);
-													if (e.target.value) {
-														setIsFamilyModeActive(true);
-													}
-												}}
-												style={{
-													flex: 1,
-													minWidth: "220px",
-													padding: "0.5rem 0.75rem",
-													borderRadius: "0.5rem",
-													border: "1px solid var(--line)",
-													background: "var(--paper)",
-													color: "var(--ink)",
-													fontSize: "0.875rem",
-													fontWeight: 600,
-												}}
-											>
-												<option value="">Оплата за себя ({patientName}) — личный баланс {activePointsBalance.toLocaleString("ru-RU")} ₽</option>
-												{familyMembers.map((m) => (
-													<option key={m.patientId} value={m.patientId}>
-														{m.fullName} ({m.roleRu}) — из общего баланса семьи ({familyPool.totalPooledPoints.toLocaleString("ru-RU")} ₽)
-													</option>
-												))}
-											</select>
-											{selectedFamilyMemberId && (
-												<span
-													style={{
-														fontSize: "0.75rem",
-														color: "var(--ok-fg)",
-														fontWeight: 700,
-														padding: "4px 8px",
-														borderRadius: "4px",
-														background: "rgba(16, 185, 129, 0.1)",
-													}}
-												>
-													Единый кошелек (без комиссии и ручных переводов)
-												</span>
-											)}
-										</div>
-									</div>
-								)}
-
-								<div
-									style={{
-										display: "grid",
-										gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-										gap: "1rem",
-									}}
-								>
-									<div>
-										<label
-											style={{
-												display: "block",
-												fontSize: "0.8125rem",
-												fontWeight: 600,
-												color: "var(--muted)",
-												marginBottom: "0.375rem",
-											}}
-										>
-											Сумма счета (₽)
-										</label>
-										<input
-											type="number"
-											min={0}
-											step={100}
-											value={invoiceAmountRub}
-											onChange={(e) => setInvoiceAmountRub(Number(e.target.value))}
-											style={{
-												width: "100%",
-												padding: "0.625rem 0.875rem",
-												borderRadius: "0.5rem",
-												border: "1px solid var(--line)",
-												background: "var(--paper)",
-												color: "var(--ink)",
-												fontSize: "1rem",
-												fontWeight: 700,
-											}}
-										/>
-									</div>
-
-									<div>
-										<label
-											style={{
-												display: "block",
-												fontSize: "0.8125rem",
-												fontWeight: 600,
-												color: "var(--muted)",
-												marginBottom: "0.375rem",
-											}}
-										>
-											Исключения (лаборатория CAD/CAM, импланты ₽)
-										</label>
-										<input
-											type="number"
-											min={0}
-											step={100}
-											value={excludedAmountRub}
-											onChange={(e) => setExcludedAmountRub(Number(e.target.value))}
-											style={{
-												width: "100%",
-												padding: "0.625rem 0.875rem",
-												borderRadius: "0.5rem",
-												border: "1px solid var(--line)",
-												background: "var(--paper)",
-												color: "var(--ink)",
-												fontSize: "1rem",
-												fontWeight: 700,
-											}}
-										/>
-									</div>
-
-									<div>
-										<label
-											style={{
-												display: "block",
-												fontSize: "0.8125rem",
-												fontWeight: 600,
-												color: "var(--muted)",
-												marginBottom: "0.375rem",
-											}}
-										>
-											Списать бонусов (₽)
-										</label>
-										<input
-											type="number"
-											min={0}
-											max={effectiveBalanceRub}
-											value={requestedPointsRub}
-											onChange={(e) => setRequestedPointsRub(Number(e.target.value))}
-											style={{
-												width: "100%",
-												padding: "0.625rem 0.875rem",
-												borderRadius: "0.5rem",
-												border: "1px solid var(--teal)",
-												background: "var(--paper)",
-												color: "var(--teal)",
-												fontSize: "1rem",
-												fontWeight: 700,
-											}}
-										/>
-									</div>
-								</div>
-
-								{/* Quick Buttons */}
-								<div className="loyalty-quick-actions-row">
-									<button
-										type="button"
-										className="loyalty-quick-btn one-click-btn"
-										onClick={handleOneClickRedeemToInvoice}
-										data-testid="loyalty-one-click-redeem-btn"
-										title="Списать максимально разрешенные бонусы в чек в 1 клик (54-ФЗ)"
-										style={{
-											background: "var(--teal)",
-											color: "var(--on-teal, var(--paper))",
-											fontWeight: 700,
-											display: "inline-flex",
-											alignItems: "center",
-											gap: "0.375rem",
-											cursor: "pointer",
-										}}
-									>
-										<Sparkles size={14} />
-										1-клик списать в чек ({redemptionCalc.maxAllowedRedemptionRub} ₽)
-									</button>
-									{QUICK_REDEMPTION_PRESETS_RUB.map((preset) => (
-										<button
-											key={preset}
-											type="button"
-											className="loyalty-quick-btn"
-											onClick={() => handleApplyQuickPoints(preset)}
-										>
-											Списать {preset.toLocaleString("ru-RU")} ₽
-										</button>
-									))}
-									<button
-										type="button"
-										className="loyalty-quick-btn max-btn"
-										onClick={handleApplyMaxPoints}
-									>
-										Списать максимум ({redemptionCalc.maxAllowedRedemptionRub} ₽)
-									</button>
-								</div>
-
-								{/* Doctor Autonomy / Warranty override (Mandates 8e, 8s) */}
-								<div
-									style={{
-										marginTop: "0.75rem",
-										display: "flex",
-										alignItems: "center",
-										gap: "0.5rem",
-										padding: "0.5rem 0.75rem",
-										background: "var(--paper-soft)",
-										borderRadius: "0.375rem",
-										border: "1px dashed var(--line)",
-									}}
-								>
-									<input
-										type="checkbox"
-										id="doctor-override-checkbox"
-										checked={isDoctorOverride}
-										onChange={(e) => setIsDoctorOverride(e.target.checked)}
-										style={{
-											width: "16px",
-											height: "16px",
-											cursor: "pointer",
-											accentColor: "var(--teal)",
-										}}
-										data-testid="loyalty-doctor-override-checkbox"
-									/>
-									<label
-										htmlFor="doctor-override-checkbox"
-										style={{
-											fontSize: "0.8125rem",
-											color: "var(--ink)",
-											cursor: "pointer",
-											fontWeight: 600,
-											display: "flex",
-											alignItems: "center",
-											gap: "0.375rem",
-										}}
-									>
-										<ShieldCheck size={15} color="var(--teal)" />
-										Привилегия врача / Гарантийная переделка (покрытие до 100% счета бонусами)
-									</label>
-								</div>
-
-								{/* 54-FZ Fiscal Breakdown */}
-								<div className="loyalty-fiscal-box">
-									<div
-										style={{
-											fontWeight: 700,
-											fontSize: "0.875rem",
-											marginBottom: "0.5rem",
-											color: "var(--ink)",
-										}}
-									>
-										Фискальный сплит чека по 54-ФЗ (ФФД 1.2):
-									</div>
-									<div className="loyalty-fiscal-row">
-										<span>База, доступная для оплаты бонусами:</span>
-										<strong>
-											{(redemptionCalc.redeemableBaseKop / 100).toLocaleString("ru-RU")} ₽
-										</strong>
-									</div>
-									<div className="loyalty-fiscal-row">
-										<span>Тег 1215 (Зачет аванса / Бонусные баллы):</span>
-										<strong style={{ color: "var(--teal)" }}>
-											-
-											{(
-												redemptionCalc.fiscal54FzSplit.tag1215AdvancePrepaymentBonusKop /
-												100
-											).toLocaleString("ru-RU")}{" "}
-											₽
-										</strong>
-									</div>
-									<div className="loyalty-fiscal-row highlight">
-										<span>Тег 1081 / 1031 (Итого к доплате пациентом):</span>
-										<span style={{ fontSize: "1.125rem", fontWeight: 800 }}>
-											{redemptionCalc.remainingPayableRub.toLocaleString("ru-RU")} ₽
-										</span>
-									</div>
-								</div>
-
-								<div style={{ marginTop: "1rem", textAlign: "right" }}>
-									<button
-										type="button"
-										onClick={handleExecuteRedemption}
-										data-testid="loyalty-execute-redemption-btn"
-										style={{
-											padding: "0.75rem 1.75rem",
-											minHeight: "44px",
-											borderRadius: "0.625rem",
-											border: "none",
-											background: "var(--teal)",
-											color: "var(--on-teal, var(--paper))",
-											fontSize: "0.9375rem",
-											fontWeight: 700,
-											cursor: "pointer",
-											display: "inline-flex",
-											alignItems: "center",
-											gap: "0.5rem",
-										}}
-									>
-										<Check size={18} />
-										Применить списание бонусов ({redemptionCalc.actualRedeemedPointsRub} ₽)
-									</button>
-								</div>
-							</div>
-						</div>
+						<LoyaltyBalanceTab
+							patientName={patientName}
+							currentTier={currentTier}
+							effectiveBalanceRub={effectiveBalanceRub}
+							tierProgression={tierProgression}
+							redemptionSuccessMsg={redemptionSuccessMsg}
+							familyMembers={familyState.familyMembers}
+							selectedFamilyMemberId={familyState.selectedFamilyMemberId}
+							onSelectFamilyMemberId={(id) => {
+								familyState.setSelectedFamilyMemberId(id);
+								if (id) {
+									familyState.setIsFamilyModeActive(true);
+								}
+							}}
+							activePointsBalance={activePointsBalance}
+							familyPool={computedFamilyPool}
+							invoiceAmountRub={invoiceAmountRub}
+							onInvoiceAmountChange={setInvoiceAmountRub}
+							excludedAmountRub={excludedAmountRub}
+							onExcludedAmountChange={setExcludedAmountRub}
+							requestedPointsRub={requestedPointsRub}
+							onRequestedPointsChange={setRequestedPointsRub}
+							redemptionCalc={redemptionCalc}
+							onOneClickRedeem={handleOneClickRedeemToInvoice}
+							onApplyQuickPoints={handleApplyQuickPoints}
+							onApplyMaxPoints={handleApplyMaxPoints}
+							isDoctorOverride={isDoctorOverride}
+							onDoctorOverrideChange={setIsDoctorOverride}
+							onExecuteRedemption={handleExecuteRedemption}
+						/>
 					)}
 
-					{/* TAB 2: FAMILY POOL */}
 					{activeTab === "family" && (
-						<div>
-							<div
-								style={{
-									background: "linear-gradient(135deg, var(--ok-fg) 0%, var(--teal) 100%)",
-									color: "var(--on-teal, var(--paper))",
-									borderRadius: "1rem",
-									padding: "1.5rem",
-									marginBottom: "1.5rem",
-									display: "flex",
-									justifyContent: "space-between",
-									alignItems: "center",
-								}}
-							>
-								<div>
-									<div
-										style={{
-											display: "inline-flex",
-											alignItems: "center",
-											gap: "0.375rem",
-											background: "rgba(255, 255, 255, 0.2)",
-											padding: "0.25rem 0.625rem",
-											borderRadius: "9999px",
-											fontSize: "0.75rem",
-											fontWeight: 700,
-										}}
-									>
-										<Users size={14} />
-										{familyPool.effectiveTier.badgeLabelRu}
-									</div>
-									<h3 style={{ fontSize: "1.375rem", fontWeight: 700, marginTop: "0.375rem" }}>
-										{familyPool.familyName}
-									</h3>
-									<p style={{ fontSize: "0.8125rem", opacity: 0.9 }}>
-										Единый счет: повышенный кэшбэк {familyPool.effectiveTier.cashbackPercent}% за
-										визиты всех членов семьи.
-									</p>
-								</div>
-								<div style={{ textAlign: "right" }}>
-									<div style={{ fontSize: "0.8125rem", opacity: 0.9 }}>Общий баланс семьи</div>
-									<div style={{ fontSize: "2.25rem", fontWeight: 800 }}>
-										{familyPool.totalPooledPoints.toLocaleString("ru-RU")} ₽
-									</div>
-									<button
-										type="button"
-										onClick={() => setIsFamilyModeActive(!isFamilyModeActive)}
-										style={{
-											marginTop: "0.5rem",
-											padding: "0.375rem 0.875rem",
-											minHeight: "44px",
-											borderRadius: "0.5rem",
-											border: "1px solid var(--on-teal, var(--paper))",
-											background: isFamilyModeActive ? "var(--on-teal, var(--paper))" : "transparent",
-											color: isFamilyModeActive ? "var(--ok-fg, var(--teal))" : "var(--on-teal, var(--paper))",
-											fontSize: "0.8125rem",
-											fontWeight: 700,
-											cursor: "pointer",
-										}}
-									>
-										{isFamilyModeActive ? "Семейный режим включен" : "Включить семейный счет"}
-									</button>
-								</div>
-							</div>
-
-							{/* Пополнение общего семейного кошелька */}
-							<div
-								style={{
-									background: "var(--paper-soft)",
-									border: "1px solid var(--line)",
-									borderRadius: "0.75rem",
-									padding: "1rem",
-									marginBottom: "1.5rem",
-									display: "flex",
-									justifyContent: "space-between",
-									alignItems: "center",
-									flexWrap: "wrap",
-									gap: "0.75rem",
-								}}
-							>
-								<div>
-									<div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--ink)", display: "flex", alignItems: "center", gap: "0.375rem" }}>
-										<Coins size={16} color="var(--teal)" />
-										Пополнение общего семейного кошелька:
-									</div>
-									<p style={{ margin: "0.25rem 0 0 0", fontSize: "0.75rem", color: "var(--muted)" }}>
-										Единый кошелек: родители пополняют баланс, дети и супруг оплачивают приёмы без комиссий и ручных переводов
-									</p>
-								</div>
-								<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-									{[1000, 3000, 5000, 10000].map((amt) => (
-										<button
-											key={amt}
-											type="button"
-											onClick={() => handleCreditFamilyBalance(amt)}
-											style={{
-												padding: "0.375rem 0.625rem",
-												minHeight: "36px",
-												borderRadius: "0.375rem",
-												border: "1px solid var(--line)",
-												background: "var(--paper)",
-												color: "var(--ink)",
-												fontSize: "0.75rem",
-												fontWeight: 600,
-												cursor: "pointer",
-											}}
-										>
-											+{amt.toLocaleString("ru-RU")} ₽
-										</button>
-									))}
-								</div>
-							</div>
-
-							{/* Family Members Grid */}
-							<h4 className="loyalty-section-title">
-								<Users size={20} color="var(--teal)" />
-								Члены семьи и права списания баллов
-							</h4>
-
-							{familyMembers.length === 0 ? (
-								<div
-									style={{
-										border: "2px dashed var(--line)",
-										borderRadius: "0.875rem",
-										padding: "2rem",
-										textAlign: "center",
-										color: "var(--muted)",
-										background: "var(--paper-soft)",
-									}}
-								>
-									<Users size={36} style={{ margin: "0 auto 8px", opacity: 0.5 }} />
-									<div style={{ fontWeight: 600, color: "var(--ink)" }}>
-										Члены семьи не добавлены
-									</div>
-									<p style={{ fontSize: "0.8125rem", marginTop: "4px" }}>
-										Добавьте родственников через форму ниже для объединения бонусного счета семьи.
-									</p>
-								</div>
-							) : (
-								<div className="loyalty-family-grid">
-									{familyMembers.map((member) => (
-										<div key={member.patientId} className="loyalty-family-member-card">
-											<div
-												style={{
-													display: "flex",
-													justifyContent: "space-between",
-													alignItems: "flex-start",
-												}}
-											>
-												<div>
-													<span className="loyalty-member-role-badge">{member.roleRu}</span>
-													<h5
-														style={{
-															fontSize: "0.9375rem",
-															fontWeight: 700,
-															marginTop: "0.25rem",
-															color: "var(--ink)",
-														}}
-													>
-														{member.fullName}
-													</h5>
-												</div>
-											</div>
-
-											<div style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
-												Личные траты: {(member.lifetimeSpentKop / 100).toLocaleString("ru-RU")} ₽
-												<br />
-												Накоплено баллов: {member.individualPointsBalance} ₽
-											</div>
-
-											<button
-												type="button"
-												onClick={() => {
-													setSelectedFamilyMemberId(member.patientId);
-													setIsFamilyModeActive(true);
-													setActiveTab("balance");
-												}}
-												style={{
-													marginTop: "0.5rem",
-													marginBottom: "0.5rem",
-													width: "100%",
-													padding: "0.375rem 0.5rem",
-													minHeight: "36px",
-													borderRadius: "0.375rem",
-													border: "1px solid var(--teal)",
-													background: "transparent",
-													color: "var(--teal)",
-													fontSize: "0.75rem",
-													fontWeight: 700,
-													cursor: "pointer",
-													display: "flex",
-													alignItems: "center",
-													justifyContent: "center",
-													gap: "0.25rem",
-												}}
-											>
-												<CreditCard size={14} />
-												Оплатить лечение из семейного счета
-											</button>
-
-											<div
-												style={{
-													display: "flex",
-													alignItems: "center",
-													justifyContent: "space-between",
-													borderTop: "1px solid var(--line)",
-													paddingTop: "0.5rem",
-													marginTop: "auto",
-												}}
-											>
-												<span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-													Списание бонусов:
-												</span>
-												<button
-													type="button"
-													onClick={() => handleToggleMemberPermission(member.patientId)}
-													style={{
-														fontSize: "0.75rem",
-														fontWeight: 700,
-														minHeight: "44px",
-														padding: "0.25rem 0.625rem",
-														borderRadius: "0.375rem",
-														border: "none",
-														cursor: "pointer",
-														background: member.isBonusSpendingAllowed
-															? "rgba(16, 185, 129, 0.15)"
-															: "rgba(239, 68, 68, 0.15)",
-														color: member.isBonusSpendingAllowed ? "var(--ok-fg)" : "var(--bad-fg)",
-													}}
-												>
-													{member.isBonusSpendingAllowed ? "Разрешено" : "Заблокировано"}
-												</button>
-											</div>
-										</div>
-									))}
-								</div>
-							)}
-
-							{/* Add Member Form */}
-							<div
-								style={{
-									background: "var(--paper-soft)",
-									border: "1px solid var(--line)",
-									borderRadius: "0.5rem",
-									padding: "0.75rem 1rem",
-									marginTop: "1rem",
-									display: "flex",
-									gap: "0.75rem",
-									alignItems: "flex-end",
-									flexWrap: "wrap",
-								}}
-							>
-								<div style={{ flex: 2, minWidth: "200px" }}>
-									<label
-										style={{
-											display: "block",
-											fontSize: "0.8125rem",
-											fontWeight: 600,
-											color: "var(--muted)",
-											marginBottom: "0.25rem",
-										}}
-									>
-										ФИО родственника
-									</label>
-									<input
-										type="text"
-										placeholder="Например: Воронова Анна Михайловна"
-										value={newMemberName}
-										onChange={(e) => setNewMemberName(e.target.value)}
-										style={{
-											width: "100%",
-											padding: "0.5rem 0.75rem",
-											borderRadius: "0.5rem",
-											border: "1px solid var(--line)",
-											fontSize: "0.875rem",
-										}}
-									/>
-								</div>
-
-								<div style={{ flex: 1, minWidth: "160px" }}>
-									<label
-										style={{
-											display: "block",
-											fontSize: "0.8125rem",
-											fontWeight: 600,
-											color: "var(--muted)",
-											marginBottom: "0.25rem",
-										}}
-									>
-										Роль в семье
-									</label>
-									<select
-										value={newMemberRole}
-										onChange={(e) =>
-											setNewMemberRole(e.target.value as FamilyMember["roleRu"])
-										}
-										style={{
-											width: "100%",
-											padding: "0.5rem 0.75rem",
-											borderRadius: "0.5rem",
-											border: "1px solid var(--line)",
-											fontSize: "0.875rem",
-											background: "var(--paper)",
-										}}
-									>
-										<option value="Супруг / Супруга">Супруг / Супруга</option>
-										<option value="Ребенок">Ребенок</option>
-										<option value="Родитель">Родитель</option>
-										<option value="Родственник">Родственник</option>
-									</select>
-								</div>
-
-								<button
-									type="button"
-									onClick={handleAddFamilyMember}
-									style={{
-										padding: "0.5rem 1.25rem",
-										minHeight: "44px",
-										borderRadius: "0.5rem",
-										border: "none",
-										background: "var(--teal)",
-										color: "var(--on-teal, var(--paper))",
-										fontWeight: 700,
-										fontSize: "0.875rem",
-										cursor: "pointer",
-										display: "inline-flex",
-										alignItems: "center",
-										gap: "0.375rem",
-									}}
-								>
-									<Plus size={16} />
-									Добавить в семейный пул
-								</button>
-							</div>
-						</div>
+						<LoyaltyFamilyTab
+							familyPool={computedFamilyPool}
+							familyMembers={familyState.familyMembers}
+							isFamilyModeActive={familyState.isFamilyModeActive}
+							onToggleFamilyMode={() => familyState.setIsFamilyModeActive(!familyState.isFamilyModeActive)}
+							onCreditFamilyBalance={familyState.handleCreditFamilyBalance}
+							onSelectMemberForPayment={(memberId) => {
+								familyState.setSelectedFamilyMemberId(memberId);
+								familyState.setIsFamilyModeActive(true);
+								setActiveTab("balance");
+							}}
+							onToggleMemberPermission={familyState.handleToggleMemberPermission}
+							newMemberName={familyState.newMemberName}
+							onNewMemberNameChange={familyState.setNewMemberName}
+							newMemberRole={familyState.newMemberRole}
+							onNewMemberRoleChange={familyState.setNewMemberRole}
+							onAddFamilyMember={familyState.handleAddFamilyMember}
+						/>
 					)}
 
-					{/* TAB: REFERRALS ("Привёл друга / семью" - Mandates 8i, 8s, 8b) */}
 					{activeTab === "referrals" && (
-						<div>
-							{/* Referral Program Preset Selector */}
-							<div
-								style={{
-									display: "flex",
-									gap: "8px",
-									flexWrap: "wrap",
-									marginBottom: "1rem",
-								}}
-							>
-								{REFERRAL_PROGRAM_PRESETS.map((preset) => {
-									const isSelected = selectedReferralPreset.id === preset.id;
-									return (
-										<button
-											key={preset.id}
-											type="button"
-											onClick={() => setSelectedReferralPreset(preset)}
-											style={{
-												padding: "0.5rem 0.875rem",
-												borderRadius: "0.5rem",
-												border: isSelected ? "2px solid var(--teal)" : "1px solid var(--line)",
-												background: isSelected ? "rgba(13, 148, 136, 0.1)" : "var(--paper)",
-												color: isSelected ? "var(--teal)" : "var(--ink)",
-												fontWeight: isSelected ? 700 : 500,
-												fontSize: "0.8125rem",
-												cursor: "pointer",
-												display: "flex",
-												alignItems: "center",
-												gap: "0.375rem",
-											}}
-										>
-											<Sparkles size={13} color="var(--teal)" />
-											<span>{preset.titleRu}</span>
-										</button>
-									);
-								})}
-							</div>
-
-							{/* Referral Program Hero Banner */}
-							<div className="loyalty-referral-banner">
-								<div>
-									<div
-										style={{
-											display: "inline-flex",
-											alignItems: "center",
-											gap: "0.375rem",
-											background: "rgba(255, 255, 255, 0.2)",
-											padding: "0.25rem 0.625rem",
-											borderRadius: "9999px",
-											fontSize: "0.75rem",
-											fontWeight: 700,
-											marginBottom: "0.5rem",
-										}}
-									>
-										<Sparkles size={14} />
-										Программа рекомендаций без корпоративных пирамид
-									</div>
-									<h3 style={{ fontSize: "1.25rem", fontWeight: 700, margin: "0 0 0.5rem 0" }}>
-										{selectedReferralPreset.titleRu}
-									</h3>
-									<p style={{ fontSize: "0.8125rem", opacity: 0.95, margin: 0, lineHeight: 1.5 }}>
-										{selectedReferralPreset.descriptionRu} (порог первого визита: {(((selectedReferralPreset.minFriendSpendKop ?? selectedReferralPreset.minInvoiceSpendKop) ?? 250000) / 100).toLocaleString("ru-RU")} ₽)
-									</p>
-								</div>
-								<div style={{ textAlign: "right" }}>
-									<div style={{ fontSize: "0.8125rem", opacity: 0.9 }}>Зарегистрировано</div>
-									<div style={{ fontSize: "2rem", fontWeight: 800 }}>
-										{referrals.length} чел.
-									</div>
-									<div style={{ fontSize: "0.75rem", opacity: 0.9 }}>
-										Начислено: {referrals.filter((r) => r.isRewardCredited).length * selectedReferralPreset.referrerRewardRub} ₽
-									</div>
-								</div>
-							</div>
-
-							{/* Referral Registration Form */}
-							<h4 className="loyalty-section-title">
-								<UserPlus size={20} color="var(--teal)" />
-								Регистрация новой рекомендации
-							</h4>
-
-							<div
-								style={{
-									background: "var(--paper-soft)",
-									border: "1px solid var(--line)",
-									borderRadius: "0.5rem",
-									padding: "1rem",
-									marginBottom: "1.5rem",
-									display: "grid",
-									gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-									gap: "0.75rem",
-									alignItems: "flex-end",
-								}}
-							>
-								<div>
-									<label
-										style={{
-											display: "block",
-											fontSize: "0.8125rem",
-											fontWeight: 600,
-											color: "var(--muted)",
-											marginBottom: "0.25rem",
-										}}
-									>
-										ФИО приглашенного друга / родственника *
-									</label>
-									<input
-										type="text"
-										placeholder="Например: Смирнов Алексей"
-										value={newReferralName}
-										onChange={(e) => setNewReferralName(e.target.value)}
-										data-testid="referral-name-input"
-										style={{
-											width: "100%",
-											padding: "0.5rem 0.75rem",
-											borderRadius: "0.5rem",
-											border: "1px solid var(--line)",
-											fontSize: "0.875rem",
-											background: "var(--paper)",
-											color: "var(--ink)",
-										}}
-									/>
-								</div>
-
-								<div>
-									<label
-										style={{
-											display: "block",
-											fontSize: "0.8125rem",
-											fontWeight: 600,
-											color: "var(--muted)",
-											marginBottom: "0.25rem",
-										}}
-									>
-										Телефон (для сопоставления)
-									</label>
-									<input
-										type="tel"
-										placeholder="+7 (999) 000-00-00"
-										value={newReferralPhone}
-										onChange={(e) => setNewReferralPhone(e.target.value)}
-										data-testid="referral-phone-input"
-										style={{
-											width: "100%",
-											padding: "0.5rem 0.75rem",
-											borderRadius: "0.5rem",
-											border: "1px solid var(--line)",
-											fontSize: "0.875rem",
-											background: "var(--paper)",
-											color: "var(--ink)",
-										}}
-									/>
-								</div>
-
-								<div>
-									<label
-										style={{
-											display: "block",
-											fontSize: "0.8125rem",
-											fontWeight: 600,
-											color: "var(--muted)",
-											marginBottom: "0.25rem",
-										}}
-									>
-										Заметка / Причина обращения
-									</label>
-									<input
-										type="text"
-										placeholder="Например: Профгигиена / острая боль"
-										value={newReferralNote}
-										onChange={(e) => setNewReferralNote(e.target.value)}
-										data-testid="referral-note-input"
-										style={{
-											width: "100%",
-											padding: "0.5rem 0.75rem",
-											borderRadius: "0.5rem",
-											border: "1px solid var(--line)",
-											fontSize: "0.875rem",
-											background: "var(--paper)",
-											color: "var(--ink)",
-										}}
-									/>
-								</div>
-
-								<div>
-									<button
-										type="button"
-										onClick={handleAddReferral}
-										data-testid="add-referral-btn"
-										style={{
-											width: "100%",
-											padding: "0.5rem 1rem",
-											minHeight: "40px",
-											borderRadius: "0.5rem",
-											border: "none",
-											background: "var(--teal)",
-											color: "var(--on-teal, var(--paper))",
-											fontWeight: 700,
-											fontSize: "0.875rem",
-											cursor: "pointer",
-											display: "inline-flex",
-											alignItems: "center",
-											justifyContent: "center",
-											gap: "0.375rem",
-										}}
-									>
-										<UserPlus size={16} />
-										Зафиксировать рекомендацию
-									</button>
-								</div>
-							</div>
-
-							{/* Referrals List */}
-							<h4 className="loyalty-section-title">
-								<Users size={20} color="var(--teal)" />
-								Список рекомендаций пациента ({referrals.length})
-							</h4>
-
-							{referrals.length === 0 ? (
-								<div
-									style={{
-										border: "2px dashed var(--line)",
-										borderRadius: "0.875rem",
-										padding: "2rem",
-										textAlign: "center",
-										color: "var(--muted)",
-										background: "var(--paper-soft)",
-									}}
-								>
-									<Users size={36} style={{ margin: "0 auto 8px", opacity: 0.5 }} />
-									<div style={{ fontWeight: 600, color: "var(--ink)" }}>
-										Рекомендации пока не зарегистрированы
-									</div>
-									<p style={{ fontSize: "0.8125rem", marginTop: "4px" }}>
-										Зарегистрируйте первого приглашенного пациента через форму выше.
-										При первом визите и чеке от 2 500 ₽ вы сможете начислить рекомендателю 500 ₽ бонусов в 1 клик.
-									</p>
-								</div>
-							) : (
-								<div className="loyalty-referral-grid">
-									{referrals.map((ref) => (
-										<div key={ref.id} className="loyalty-referral-card" data-testid={`referral-card-${ref.id}`}>
-											<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-												<div>
-													<span
-														className={`loyalty-referral-status-badge ${ref.isRewardCredited ? "credited" : "registered"}`}
-													>
-														{ref.isRewardCredited ? "Бонус начислен (500 ₽)" : "Зарегистрирован"}
-													</span>
-													<h5
-														style={{
-															fontSize: "0.9375rem",
-															fontWeight: 700,
-															marginTop: "0.375rem",
-															color: "var(--ink)",
-														}}
-													>
-														{ref.invitedPatientName}
-													</h5>
-													{ref.invitedPatientPhone && (
-														<div style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
-															тел. {ref.invitedPatientPhone}
-														</div>
-													)}
-												</div>
-											</div>
-
-											<div style={{ fontSize: "0.8125rem", color: "var(--muted)", marginTop: "0.5rem" }}>
-												{ref.noteRu || "Рекомендация пациента"}
-											</div>
-
-											<div
-												style={{
-													display: "flex",
-													alignItems: "center",
-													justifyContent: "space-between",
-													borderTop: "1px solid var(--line)",
-													paddingTop: "0.625rem",
-													marginTop: "0.75rem",
-												}}
-											>
-												<span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-													Вознаграждение:
-												</span>
-												{ref.isRewardCredited ? (
-													<span
-														style={{
-															fontSize: "0.75rem",
-															fontWeight: 700,
-															color: "var(--ok-fg)",
-															display: "inline-flex",
-															alignItems: "center",
-															gap: "0.25rem",
-														}}
-													>
-														<CheckCircle2 size={14} />
-														+500 ₽ зачислено
-													</span>
-												) : (
-													<button
-														type="button"
-														onClick={() => handleCreditReferral(ref.id)}
-														data-testid={`credit-referral-btn-${ref.id}`}
-														style={{
-															padding: "0.375rem 0.75rem",
-															minHeight: "36px",
-															borderRadius: "0.375rem",
-															border: "none",
-															background: "var(--teal)",
-															color: "var(--on-teal, var(--paper))",
-															fontSize: "0.75rem",
-															fontWeight: 700,
-															cursor: "pointer",
-															display: "inline-flex",
-															alignItems: "center",
-															gap: "0.25rem",
-														}}
-													>
-														<Sparkles size={13} />
-														Начислить 500 ₽ бонусов
-													</button>
-												)}
-											</div>
-										</div>
-									))}
-								</div>
-							)}
-						</div>
+						<LoyaltyReferralsTab
+							referrals={referrals}
+							selectedReferralPreset={selectedReferralPreset}
+							onSelectReferralPreset={setSelectedReferralPreset}
+							newReferralName={newReferralName}
+							onNewReferralNameChange={setNewReferralName}
+							newReferralPhone={newReferralPhone}
+							onNewReferralPhoneChange={setNewReferralPhone}
+							newReferralNote={newReferralNote}
+							onNewReferralNoteChange={setNewReferralNote}
+							onAddReferral={handleAddReferral}
+							onCreditReferral={handleCreditReferral}
+						/>
 					)}
 
-					{/* TAB 3: GIFT CERTIFICATES */}
 					{activeTab === "certificates" && (
-						<div>
-							<div
-								style={{
-									display: "grid",
-									gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-									gap: "1.5rem",
-								}}
-							>
-								{/* Left: Issue / Catalog */}
-								<div>
-									<h4 className="loyalty-section-title">
-										<Gift size={20} color="var(--teal)" />
-										Выпуск подарочного сертификата
-									</h4>
-
-									<div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1rem" }}>
-										{GIFT_CERTIFICATE_CATALOG.filter((c) => !c.isCustomNominal).map((preset) => (
-											<button
-												key={preset.id}
-												type="button"
-												onClick={() => setCertificateNominalRub(preset.nominalRub)}
-												style={{
-													padding: "0.5rem 0.875rem",
-													minHeight: "44px",
-													borderRadius: "0.5rem",
-													border:
-														certificateNominalRub === preset.nominalRub
-															? "2px solid var(--teal)"
-															: "1px solid var(--line)",
-													background:
-														certificateNominalRub === preset.nominalRub
-															? "rgba(13, 148, 136, 0.1)"
-															: "var(--paper)",
-													color: "var(--ink)",
-													fontWeight: 700,
-													fontSize: "0.875rem",
-													cursor: "pointer",
-												}}
-											>
-												{preset.nominalRub.toLocaleString("ru-RU")} ₽
-											</button>
-										))}
-									</div>
-
-									<div style={{ marginBottom: "1rem" }}>
-										<label
-											style={{
-												display: "block",
-												fontSize: "0.8125rem",
-												fontWeight: 600,
-												color: "var(--muted)",
-												marginBottom: "0.25rem",
-											}}
-										>
-											ФИО Получателя сертификата:
-										</label>
-										<input
-											type="text"
-											value={recipientName}
-											onChange={(e) => setRecipientName(e.target.value)}
-											style={{
-												width: "100%",
-												padding: "0.625rem 0.875rem",
-												borderRadius: "0.5rem",
-												border: "1px solid var(--line)",
-												fontSize: "0.875rem",
-											}}
-										/>
-									</div>
-
-									<div style={{ display: "flex", gap: "0.75rem" }}>
-										<button
-											type="button"
-											onClick={handleGenerateNewCertificate}
-											style={{
-												flex: 1,
-												padding: "0.625rem 1rem",
-												minHeight: "44px",
-												borderRadius: "0.5rem",
-												border: "none",
-												background: "var(--teal)",
-												color: "var(--on-teal, var(--paper))",
-												fontWeight: 700,
-												fontSize: "0.875rem",
-												cursor: "pointer",
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-												gap: "0.375rem",
-											}}
-										>
-											<Sparkles size={16} />
-											Сгенерировать сертификат
-										</button>
-
-										<button
-											type="button"
-											onClick={() => window.print()}
-											style={{
-												padding: "0.625rem 1rem",
-												minHeight: "44px",
-												borderRadius: "0.5rem",
-												border: "1px solid var(--line)",
-												background: "var(--paper)",
-												color: "var(--ink)",
-												fontWeight: 700,
-												fontSize: "0.875rem",
-												cursor: "pointer",
-												display: "flex",
-												alignItems: "center",
-												gap: "0.375rem",
-											}}
-										>
-											<Printer size={16} />
-											Печать A5/A6
-										</button>
-									</div>
-
-									{/* Verification Box */}
-									<div
-										style={{
-											background: "var(--paper-soft)",
-											border: "1px solid var(--line)",
-											borderRadius: "0.5rem",
-											padding: "0.75rem 1rem",
-											marginTop: "1rem",
-										}}
-									>
-										<h5 style={{ fontSize: "0.875rem", fontWeight: 700, marginBottom: "0.5rem" }}>
-											Проверка и погашение сертификата
-										</h5>
-										<div style={{ display: "flex", gap: "0.5rem" }}>
-											<input
-												type="text"
-												placeholder="7701-XXXX-XXXX-XXXX"
-												value={certVerifyInput}
-												onChange={(e) => setCertVerifyInput(e.target.value)}
-												style={{
-													flex: 1,
-													padding: "0.5rem 0.75rem",
-													borderRadius: "0.5rem",
-													border: "1px solid var(--line)",
-													fontSize: "0.875rem",
-													fontFamily: "monospace",
-												}}
-											/>
-											<button
-												type="button"
-												onClick={handleVerifyAndRedeemCert}
-												style={{
-													padding: "0.5rem 1rem",
-													minHeight: "44px",
-													borderRadius: "0.5rem",
-													border: "none",
-													background: "var(--teal)",
-													color: "var(--on-teal, var(--paper))",
-													fontWeight: 700,
-													fontSize: "0.8125rem",
-													cursor: "pointer",
-												}}
-											>
-												Списать
-											</button>
-										</div>
-										{certRedeemFeedback && (
-											<div
-												style={{
-													fontSize: "0.8125rem",
-													marginTop: "0.5rem",
-													fontWeight: 600,
-													color: certRedeemFeedback.isSuccess ? "var(--ok-fg)" : "var(--bad-fg)",
-												}}
-											>
-												{certRedeemFeedback.message}
-											</div>
-										)}
-									</div>
-								</div>
-
-								{/* Right: Live Visual Certificate Card */}
-								<div className="loyalty-certificate-printable">
-									{activeCertificate ? (
-										<div className="loyalty-certificate-card-preview">
-											<div className="loyalty-cert-gold-foil" />
-											<div
-												style={{
-													display: "flex",
-													justifyContent: "space-between",
-													alignItems: "flex-start",
-												}}
-											>
-												<div>
-													<div
-														style={{
-															fontSize: "0.75rem",
-															textTransform: "uppercase",
-															letterSpacing: "0.1em",
-															color: "var(--warn-fg)",
-														}}
-													>
-														{clinicName}
-													</div>
-													<div style={{ fontSize: "1.25rem", fontWeight: 800, marginTop: "0.25rem" }}>
-														ПОДАРОЧНЫЙ СЕРТИФИКАТ
-													</div>
-												</div>
-												<div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--warn-fg)" }}>
-													{(activeCertificate.nominalKop / 100).toLocaleString("ru-RU")} ₽
-												</div>
-											</div>
-
-											<div className="loyalty-cert-serial-code">
-												{activeCertificate.serialNumber}
-											</div>
-
-											<div style={{ fontSize: "0.8125rem", lineHeight: 1.5, opacity: 0.9 }}>
-												Получатель: <strong>{activeCertificate.recipientName ?? recipientName}</strong>
-												<br />
-												Действителен до: <strong>{activeCertificate.expiresAtIso}</strong>
-												<br />
-												Остаток средств:{" "}
-												<strong style={{ color: "var(--ok-fg)" }}>
-													{(activeCertificate.currentBalanceKop / 100).toLocaleString("ru-RU")} ₽
-												</strong>
-											</div>
-
-											<div
-												className="loyalty-barcode-svg-container"
-												dangerouslySetInnerHTML={{
-													__html: generateCode128Svg(activeCertificate.serialNumber, {
-														height: 38,
-														showText: false,
-														barColor: "var(--paper)",
-													}),
-												}}
-											/>
-										</div>
-									) : (
-										<div
-											style={{
-												border: "2px dashed var(--line)",
-												borderRadius: "1rem",
-												padding: "3rem 1.5rem",
-												textAlign: "center",
-												color: "var(--muted)",
-												background: "var(--paper-soft)",
-											}}
-										>
-											<Gift size={44} style={{ margin: "0 auto 12px", opacity: 0.4 }} />
-											<div style={{ fontWeight: 700, fontSize: "1rem", color: "var(--ink)" }}>
-												Сертификат не выбран
-											</div>
-											<p style={{ fontSize: "0.8125rem", marginTop: "6px", maxWidth: "260px", marginInline: "auto" }}>
-												Укажите номинал и нажмите «Сгенерировать сертификат» слева
-											</p>
-										</div>
-									)}
-								</div>
-							</div>
-						</div>
+						<LoyaltyCertificatesTab
+							certificateNominalRub={certState.certificateNominalRub}
+							onNominalChange={certState.setCertificateNominalRub}
+							recipientName={certState.recipientName}
+							onRecipientNameChange={certState.setRecipientName}
+							activeCertificate={certState.activeCertificate}
+							certVerifyInput={certState.certVerifyInput}
+							onCertVerifyInputChange={certState.setCertVerifyInput}
+							certRedeemFeedback={certState.certRedeemFeedback}
+							onGenerateNewCertificate={certState.handleGenerateNewCertificate}
+							onVerifyAndRedeemCert={certState.handleVerifyAndRedeemCert}
+							clinicName={clinicName}
+						/>
 					)}
 
-					{/* TAB 4: PROMOS & EXCLUSIONS */}
 					{activeTab === "promos" && (
-						<div>
-							<h4 className="loyalty-section-title">
-								<Tag size={20} color="var(--teal)" />
-								Каталог маркетинговых промокодов клиники
-							</h4>
-
-							<div className="loyalty-promo-grid">
-								{PROMO_CODE_PRESETS.map((promo) => (
-									<div key={promo.code} className="loyalty-promo-card">
-										<div
-											style={{
-												display: "flex",
-												justifyContent: "space-between",
-												alignItems: "flex-start",
-												marginBottom: "0.5rem",
-											}}
-										>
-											<span className="loyalty-promo-code-chip">{promo.code}</span>
-											<button
-												type="button"
-												onClick={() => handleApplyPromoDirectly(promo.code)}
-												style={{
-													border: "none",
-													background: "rgba(13, 148, 136, 0.12)",
-													color: "var(--teal)",
-													cursor: "pointer",
-													fontSize: "0.75rem",
-													fontWeight: 700,
-													display: "inline-flex",
-													alignItems: "center",
-													gap: "0.25rem",
-													padding: "0.25rem 0.625rem",
-													borderRadius: "0.375rem",
-													minHeight: "44px",
-												}}
-												title="Рассчитать и применить промокод к чеку"
-											>
-												<Check size={14} /> Применить к чеку
-											</button>
-										</div>
-										<h5 style={{ fontSize: "0.9375rem", fontWeight: 700, margin: "0.25rem 0" }}>
-											{promo.titleRu}
-										</h5>
-										<p style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
-											{promo.descriptionRu}
-										</p>
-										<div
-											style={{
-												fontSize: "0.6875rem",
-												color: "var(--teal)",
-												marginTop: "0.5rem",
-												fontWeight: 600,
-											}}
-										>
-											{promo.validityLabelRu}
-										</div>
-									</div>
-								))}
-							</div>
-
-							{/* Promo Code Interactive Evaluator */}
-							<div
-								style={{
-									background: "var(--paper-soft)",
-									border: "1px solid var(--line)",
-									borderRadius: "0.5rem",
-									padding: "0.75rem 1rem",
-									marginTop: "1rem",
-								}}
-							>
-								<h5 style={{ fontSize: "0.9375rem", fontWeight: 700, marginBottom: "0.75rem" }}>
-									Проверка промокода к текущему счету
-								</h5>
-								<div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-									<input
-										type="text"
-										placeholder="Введите промокод (например: FIRST20)"
-										value={promoInput}
-										onChange={(e) => setPromoInput(e.target.value)}
-										style={{
-											width: "260px",
-											padding: "0.5rem 0.75rem",
-											borderRadius: "0.5rem",
-											border: "1px solid var(--line)",
-											fontSize: "0.875rem",
-											fontWeight: 700,
-										}}
-									/>
-									<button
-										type="button"
-										onClick={handleEvaluatePromo}
-										style={{
-											padding: "0.5rem 1.25rem",
-											minHeight: "44px",
-											borderRadius: "0.5rem",
-											border: "none",
-											background: "var(--teal)",
-											color: "var(--on-teal, var(--paper))",
-											fontWeight: 700,
-											fontSize: "0.875rem",
-											cursor: "pointer",
-										}}
-									>
-										Рассчитать скидку
-									</button>
-								</div>
-
-								{promoResult && (
-									<div
-										style={{
-											marginTop: "1rem",
-											padding: "0.875rem",
-											borderRadius: "0.5rem",
-											background: promoResult.isValid
-												? "rgba(16, 185, 129, 0.1)"
-												: "rgba(239, 68, 68, 0.1)",
-											border: promoResult.isValid
-												? "1px solid var(--ok-fg)"
-												: "1px solid var(--bad-fg)",
-										}}
-									>
-										<div
-											style={{
-												fontWeight: 700,
-												fontSize: "0.875rem",
-												color: promoResult.isValid ? "var(--ok-fg)" : "var(--bad-fg)",
-											}}
-										>
-											{promoResult.isValid ? "Промокод применен!" : "Промокод не применен"}
-										</div>
-										<p style={{ fontSize: "0.8125rem", marginTop: "0.25rem" }}>
-											{promoResult.messageRu}
-										</p>
-										{promoResult.isValid && (
-											<div style={{ marginTop: "0.75rem", display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
-												<div style={{ fontSize: "0.875rem", fontWeight: 700 }}>
-													Скидка: {promoResult.discountRub.toLocaleString("ru-RU")} ₽ • К оплате:{" "}
-													{(promoResult.finalPayableKop / 100).toLocaleString("ru-RU")} ₽
-												</div>
-												<button
-													type="button"
-													onClick={() => {
-														const discountRub = promoResult.discountRub;
-														const remainingRub = promoResult.finalPayableKop / 100;
-														setInvoiceAmountRub(remainingRub);
-														if (onRedeemSuccess) {
-															onRedeemSuccess(discountRub, {
-																tag1031CashKop: 0,
-																tag1081ElectronicCardKop: promoResult.finalPayableKop,
-																tag1215AdvancePrepaymentBonusKop: discountRub * 100,
-																tag1043DiscountKop: discountRub * 100,
-																totalGrossKop: Math.round(invoiceAmountRub * 100),
-																totalNetPayableKop: promoResult.finalPayableKop,
-															});
-														}
-														setRedemptionSuccessMsg(
-															`Промокод «${promoResult.code}» применен: скидка ${discountRub} ₽ добавлена к чеку. К оплате: ${remainingRub.toLocaleString("ru-RU")} ₽`
-														);
-														setActiveTab("balance");
-													}}
-													style={{
-														padding: "0.5rem 1rem",
-														minHeight: "44px",
-														borderRadius: "0.5rem",
-														border: "none",
-														background: "var(--teal)",
-														color: "var(--on-teal, var(--paper))",
-														fontWeight: 700,
-														fontSize: "0.8125rem",
-														cursor: "pointer",
-														display: "inline-flex",
-														alignItems: "center",
-														gap: "0.375rem",
-													}}
-												>
-													<Check size={16} />
-													Применить скидку {promoResult.discountRub} ₽ к чеку
-												</button>
-											</div>
-										)}
-									</div>
-								)}
-							</div>
-
-							{/* Statutory Exclusion Rules Callout */}
-							<div className="loyalty-exclusion-callout">
-								<h5
-									style={{
-										fontSize: "0.875rem",
-										fontWeight: 700,
-										color: "var(--warn-fg)",
-										display: "flex",
-										alignItems: "center",
-										gap: "0.375rem",
-										marginBottom: "0.5rem",
-									}}
-								>
-									<ShieldCheck size={18} />
-									Официальные правила исключений из бонусной программы
-								</h5>
-								<ul
-									style={{
-										margin: 0,
-										paddingLeft: "1.25rem",
-										fontSize: "0.8125rem",
-										color: "var(--ink)",
-										lineHeight: 1.6,
-									}}
-								>
-									{LOYALTY_EXCLUSION_RULES.map((rule) => (
-										<li key={rule.id}>
-											<strong>{rule.categoryNameRu}:</strong> {rule.reasonRu}
-										</li>
-									))}
-								</ul>
-							</div>
-						</div>
+						<LoyaltyPromosTab
+							promoInput={promoState.promoInput}
+							onPromoInputChange={promoState.setPromoInput}
+							promoResult={promoState.promoResult}
+							onEvaluatePromo={promoState.handleEvaluatePromo}
+							onApplyPromoDirectly={promoState.handleApplyPromoDirectly}
+							onApplyPromoResultToInvoice={promoState.handleApplyPromoResultToInvoice}
+						/>
 					)}
 
-					{/* TAB 5: LEDGER & RFC 4180 CSV */}
 					{activeTab === "ledger" && (
-						<div>
-							<div
-								style={{
-									display: "flex",
-									justifyContent: "space-between",
-									alignItems: "center",
-									marginBottom: "1rem",
-									flexWrap: "wrap",
-									gap: "0.75rem",
-								}}
-							>
-								<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-									<Search size={18} color="var(--muted)" />
-									<input
-										type="text"
-										placeholder="Поиск по операциям..."
-										value={ledgerSearch}
-										onChange={(e) => setLedgerSearch(e.target.value)}
-										style={{
-											padding: "0.375rem 0.75rem",
-											borderRadius: "0.5rem",
-											border: "1px solid var(--line)",
-											fontSize: "0.8125rem",
-											width: "240px",
-										}}
-									/>
-								</div>
-
-								<button
-									type="button"
-									onClick={handleExportLedger}
-									style={{
-										padding: "0.5rem 1rem",
-										minHeight: "44px",
-										borderRadius: "0.5rem",
-										border: "none",
-										background: "var(--teal)",
-										color: "var(--on-teal, var(--paper))",
-										fontWeight: 700,
-										fontSize: "0.8125rem",
-										cursor: "pointer",
-										display: "inline-flex",
-										alignItems: "center",
-										gap: "0.375rem",
-									}}
-								>
-									<Download size={16} />
-									Экспорт CSV (RFC 4180 / UTF-8 BOM)
-								</button>
-							</div>
-
-							<div className="loyalty-ledger-table-wrap">
-								<table className="loyalty-ledger-table">
-									<thead>
-										<tr>
-											<th>Дата / Время</th>
-											<th>Операция</th>
-											<th>Счет (₽)</th>
-											<th>Баллы (+/-)</th>
-											<th>Баланс</th>
-											<th>Кассир / Врач</th>
-											<th>Чек 54-ФЗ</th>
-										</tr>
-									</thead>
-									<tbody>
-										{filteredLedger.length === 0 ? (
-											<tr>
-												<td
-													colSpan={7}
-													style={{
-														textAlign: "center",
-														padding: "2.5rem 1rem",
-														color: "var(--muted)",
-													}}
-												>
-													История операций с баллами пуста
-												</td>
-											</tr>
-										) : (
-											filteredLedger.map((entry) => (
-												<tr key={entry.id}>
-													<td>{entry.timestampIso}</td>
-													<td>
-														<div style={{ fontWeight: 600 }}>{entry.operationTypeRu}</div>
-														<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-															{entry.noteRu}
-														</div>
-													</td>
-													<td>{(entry.invoiceAmountKop / 100).toLocaleString("ru-RU")} ₽</td>
-													<td>
-														<span
-															className={`loyalty-delta-badge ${
-																entry.pointsDeltaRub > 0 ? "positive" : "negative"
-															}`}
-														>
-															{entry.pointsDeltaRub > 0
-																? `+${entry.pointsDeltaRub}`
-																: entry.pointsDeltaRub}{" "}
-															₽
-														</span>
-													</td>
-													<td style={{ fontWeight: 700 }}>
-														{entry.balanceAfterRub.toLocaleString("ru-RU")} ₽
-													</td>
-													<td>{entry.staffNameRu}</td>
-													<td style={{ fontFamily: "monospace" }}>
-														{entry.fiscalReceiptNumber ?? "—"}
-													</td>
-												</tr>
-											))
-										)}
-									</tbody>
-								</table>
-							</div>
-						</div>
+						<LoyaltyLedgerTab
+							ledgerSearch={ledgerSearch}
+							onLedgerSearchChange={setLedgerSearch}
+							filteredLedger={filteredLedger}
+							onExportLedger={handleExportLedger}
+						/>
 					)}
 				</main>
 			</div>
 		</div>
 	);
 };
+
+export default LoyaltyProgramModal;

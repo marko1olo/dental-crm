@@ -79,6 +79,13 @@ export {
 	default,
 } from "./PatientRecallsHubModal";
 
+export * from "./PatientRecallsCohortsTab";
+export * from "./PatientRecallsTaskCallsTab";
+export * from "./PatientRecallsPreviewModals";
+export * from "./PatientRecallsTableView";
+export * from "./PatientRecallsKanbanView";
+export * from "./PatientRecallsToolbar";
+
 export {
 	DEFAULT_RECALL_CANDIDATES,
 	buildRecallMessageContent,

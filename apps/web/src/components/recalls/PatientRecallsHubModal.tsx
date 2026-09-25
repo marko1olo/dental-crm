@@ -7,20 +7,16 @@
  */
 
 import type React from "react";
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	AlertTriangle,
 	BarChart3,
 	Calendar,
-	Check,
 	CheckCircle2,
-	ChevronDown,
 	Clock,
-	Eye,
 	LayoutGrid,
 	Lightbulb,
 	List,
-	MessageCircle,
 	Phone,
 	PhoneCall,
 	RefreshCw,
@@ -29,36 +25,26 @@ import {
 	Send,
 	ShieldCheck,
 	Sparkles,
-	TrendingUp,
 	Users,
 	X,
 } from "lucide-react";
-import {
-	STOMX_TASK_CALLS_CATALOG,
-	STOMX_TASK_CALL_BY_TYPE,
-	type StomxTaskCallType,
-	type RecallCandidate,
-	type RecallReport,
+import type {
+	RecallCandidate,
+	RecallReport,
+	StomxTaskCallType,
 } from "@dental/shared";
 import { useAppStore } from "../../store/appStore";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 import {
-	CANONICAL_RECALL_STATUS_CONFIG,
-	RECALL_CYCLE_CATALOG,
 	buildTelegramUrl,
 	buildWhatsAppUrl,
 	calculateCohortRetention,
 	calculateRecallMetrics,
 	determineTaskCallTypeForCandidate,
 	filterAndSortRecallCandidates,
-	fromCanonicalRecallStatus,
 	generatePdnProtectedRecallMessage,
-	generateSmsRecallMessage,
-	generateTelegramRecallMessage,
-	generateWhatsAppRecallMessage,
-	resolveCandidateTriggerType,
 	toCanonicalRecallStatus,
 	type CanonicalRecallWorkflowStatus,
 	type ClinicalRecallTriggerType,
@@ -68,11 +54,13 @@ import {
 	type RecallPeriodFilter,
 	type RecallUrgencyStatus,
 } from "./patientRecallEngine";
-import {
-	CLINICAL_CALLING_SCRIPTS,
-	calculateSmsSegments,
-	formatSmsSummary,
-} from "./recallTemplates";
+import { CLINICAL_CALLING_SCRIPTS } from "./recallTemplates";
+import { PatientRecallsCohortsTab } from "./PatientRecallsCohortsTab";
+import { PatientRecallsTaskCallsTab } from "./PatientRecallsTaskCallsTab";
+import { PatientRecallsPreviewModals } from "./PatientRecallsPreviewModals";
+import { PatientRecallsTableView } from "./PatientRecallsTableView";
+import { PatientRecallsKanbanView } from "./PatientRecallsKanbanView";
+import { PatientRecallsToolbar } from "./PatientRecallsToolbar";
 import "./recalls.css";
 
 /**
@@ -148,11 +136,6 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 	onSendTelegram,
 	onStatusChange,
 }) => {
-	const searchInputId = useId();
-	const cycleSelectId = useId();
-	const doctorSelectId = useId();
-	const periodSelectId = useId();
-
 	const [candidates, setCandidates] = useState<readonly PatientRecallRecord[]>(
 		initialCandidates ?? [],
 	);
@@ -260,7 +243,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 		});
 	}, [candidates, statusFilter, selectedCycle, selectedTrigger, selectedDoctorId, selectedPeriod, searchQuery]);
 
-	// Группировка для 4-колоночной Канбан-доски («Не звонили», «Дозвонились», «Отказ», «Записан»)
+	// Группировка для 4-колоночной Канбан-доски
 	const kanbanGroups = useMemo(() => {
 		const groups: Record<CanonicalRecallWorkflowStatus, PatientRecallRecord[]> = {
 			not_called: [],
@@ -457,6 +440,8 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 								Диспансерный учет и вызов пациентов (Recalls Hub)
 							</h2>
 							<p className="recall-header-subtitle">
+								<Phone size={14} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} aria-hidden="true" />
+								<Lightbulb size={14} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} aria-hidden="true" />
 								Клинические интервалы (профгигиена, импланты, ортодонтия, детство), когортный Retention & LTV
 							</p>
 						</div>
@@ -638,238 +623,25 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 				{/* Tab 1: Patient Registry */}
 				{activeTab === "registry" ? (
 					<>
-						{/* Toolbar */}
-						<div className="recall-toolbar">
-							<div className="recall-view-mode-bar">
-								<div className="recall-view-mode-toggles" role="group" aria-label="Режим отображения реестра">
-									<button
-										type="button"
-										className={`recall-view-mode-btn ${registryViewMode === "table" ? "active" : ""}`}
-										onClick={() => setRegistryViewMode("table")}
-										data-testid="view-mode-table"
-										title="Табличный вид"
-									>
-										<List size={15} />
-										<span>Таблица</span>
-									</button>
-									<button
-										type="button"
-										className={`recall-view-mode-btn ${registryViewMode === "kanban" ? "active" : ""}`}
-										onClick={() => setRegistryViewMode("kanban")}
-										data-testid="view-mode-kanban"
-										title="Канбан-доска («Не звонили», «Дозвонились», «Отказ», «Записан»)"
-									>
-										<LayoutGrid size={15} />
-										<span>Канбан</span>
-									</button>
-								</div>
+						<PatientRecallsToolbar
+							registryViewMode={registryViewMode}
+							onRegistryViewModeChange={setRegistryViewMode}
+							uniqueDoctors={uniqueDoctors}
+							selectedDoctorId={selectedDoctorId}
+							onSelectedDoctorIdChange={setSelectedDoctorId}
+							selectedPeriod={selectedPeriod}
+							onSelectedPeriodChange={setSelectedPeriod}
+							searchQuery={searchQuery}
+							onSearchQueryChange={setSearchQuery}
+							selectedCycle={selectedCycle}
+							onSelectedCycleChange={setSelectedCycle}
+							statusFilter={statusFilter}
+							onStatusFilterChange={setStatusFilter}
+							candidatesCount={candidates.length}
+							metrics={metrics}
+						/>
 
-								<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-									<label htmlFor={doctorSelectId} className="sr-only">
-										Фильтр по лечащему врачу
-									</label>
-									<select
-										id={doctorSelectId}
-										className="recall-filter-select"
-										data-testid="doctor-filter-select"
-										value={selectedDoctorId}
-										onChange={(e) => setSelectedDoctorId(e.target.value)}
-										title="Фильтр по лечащему врачу"
-									>
-										<option value="all">Все врачи</option>
-										{uniqueDoctors.map((doc) => (
-											<option key={doc.id} value={doc.id}>
-												{doc.name}
-											</option>
-										))}
-									</select>
-
-									<label htmlFor={periodSelectId} className="sr-only">
-										Фильтр по периоду
-									</label>
-									<select
-										id={periodSelectId}
-										className="recall-filter-select"
-										data-testid="period-filter-select"
-										value={selectedPeriod}
-										onChange={(e) => setSelectedPeriod(e.target.value as RecallPeriodFilter)}
-										title="Фильтр по периоду наступления срока"
-									>
-										<option value="all">Все периоды</option>
-										<option value="overdue">Просрочено</option>
-										<option value="this_month">Текущий месяц</option>
-										<option value="next_month">Следующий месяц</option>
-										<option value="next_30_days">Ближайшие 30 дней</option>
-									</select>
-								</div>
-							</div>
-
-							<div className="recall-toolbar-top">
-								<div className="recall-search-input-wrap">
-									<Search size={16} className="recall-search-icon" aria-hidden="true" />
-									<label htmlFor={searchInputId} className="sr-only">
-										Поиск по ФИО, телефону или врачу
-									</label>
-									<input
-										id={searchInputId}
-										type="search"
-										className="recall-search-input"
-										placeholder="Поиск по ФИО, телефону или лечащему врачу..."
-										value={searchQuery}
-										onChange={(e) => setSearchQuery(e.target.value)}
-									/>
-								</div>
-
-								<div>
-									<label htmlFor={cycleSelectId} className="sr-only">
-										Фильтр по клиническому циклу
-									</label>
-									<select
-										id={cycleSelectId}
-										className="recall-cycle-select"
-										value={selectedCycle}
-										onChange={(e) =>
-											setSelectedCycle(e.target.value as RecallCycleType | "all")
-										}
-									>
-										<option value="all">Все клинические циклы</option>
-										<option value="standard_prophylaxis">Профгигиена 6 мес.</option>
-										<option value="periodontal_maintenance">Пародонтология 3-4 мес.</option>
-										<option value="implant_monitoring">Импланты (1, 3, 6, 12 мес.)</option>
-										<option value="orthodontic_braces">Брекеты (каждые 4 нед.)</option>
-										<option value="orthodontic_aligners">Элайнеры (каждые 6-8 нед.)</option>
-										<option value="orthodontic_retention">Ортодонтия: ретенция</option>
-										<option value="pediatric_fluoridation">Детская минерализация (3-6 мес.)</option>
-										<option value="caries_high_risk">Кариес-риск (3 мес.)</option>
-										<option value="prosthetic_check">Ортопедия (6-12 мес.)</option>
-									</select>
-								</div>
-							</div>
-
-							{/* Solo Doctor 1-Click Fast Presets (Mandates 8e, 8s) */}
-							<div className="recall-solo-presets" role="group" aria-label="1-Click пресеты для врача">
-								<button
-									type="button"
-									data-testid="preset-hygiene-6m"
-									className={`recall-preset-btn ${selectedCycle === "standard_prophylaxis" ? "active" : ""}`}
-									onClick={() =>
-										setSelectedCycle(
-											selectedCycle === "standard_prophylaxis" ? "all" : "standard_prophylaxis",
-										)
-									}
-									title="1-Click: Пациенты на плановую профгигиену 6 мес."
-								>
-									<ShieldCheck size={14} />
-									<span>1-Click: Профгигиена (6 мес.)</span>
-								</button>
-								<button
-									type="button"
-									data-testid="preset-implants-1y"
-									className={`recall-preset-btn ${selectedCycle === "implant_monitoring" ? "active" : ""}`}
-									onClick={() =>
-										setSelectedCycle(
-											selectedCycle === "implant_monitoring" ? "all" : "implant_monitoring",
-										)
-									}
-									title="1-Click: Пациенты с имплантами на годовой рентген-контроль"
-								>
-									<Sparkles size={14} />
-									<span>1-Click: Импланты (1 год)</span>
-								</button>
-								<button
-									type="button"
-									data-testid="preset-ortho-1m"
-									className={`recall-preset-btn ${selectedCycle === "orthodontic_braces" ? "active" : ""}`}
-									onClick={() =>
-										setSelectedCycle(
-											selectedCycle === "orthodontic_braces" ? "all" : "orthodontic_braces",
-										)
-									}
-									title="1-Click: Пациенты на плановую активацию брекетов (1 мес. / 4 нед.)"
-								>
-									<Clock size={14} />
-									<span>1-Click: Орто-активация (1 мес.)</span>
-								</button>
-								<button
-									type="button"
-									data-testid="preset-pediatric-3m"
-									className={`recall-preset-btn ${selectedCycle === "pediatric_fluoridation" ? "active" : ""}`}
-									onClick={() =>
-										setSelectedCycle(
-											selectedCycle === "pediatric_fluoridation" ? "all" : "pediatric_fluoridation",
-										)
-									}
-									title="1-Click: Детский профилактический осмотр (3-4 мес.)"
-								>
-									<Users size={14} />
-									<span>1-Click: Детский осмотр (3-4 мес.)</span>
-								</button>
-							</div>
-
-							{/* Status Chips */}
-							<div className="recall-status-chips" role="radiogroup" aria-label="Фильтр по статусам реестра">
-								<button
-									type="button"
-									className={`recall-chip ${statusFilter === "all" ? "active" : ""}`}
-									onClick={() => setStatusFilter("all")}
-								>
-									Все
-									<span className="recall-chip-badge">{candidates.length}</span>
-								</button>
-
-								<button
-									type="button"
-									className={`recall-chip ${statusFilter === "due_now" ? "active" : ""}`}
-									onClick={() => setStatusFilter("due_now")}
-								>
-									<Clock size={14} />
-									Пора звать
-									<span className="recall-chip-badge">{metrics.dueNowCount}</span>
-								</button>
-
-								<button
-									type="button"
-									className={`recall-chip ${statusFilter === "invited" ? "active" : ""}`}
-									onClick={() => setStatusFilter("invited")}
-								>
-									<Send size={14} />
-									Приглашен
-									<span className="recall-chip-badge">{metrics.contactedCount}</span>
-								</button>
-
-								<button
-									type="button"
-									className={`recall-chip ${statusFilter === "scheduled" ? "active" : ""}`}
-									onClick={() => setStatusFilter("scheduled")}
-								>
-									<Calendar size={14} />
-									Записался
-									<span className="recall-chip-badge">{metrics.scheduledCount}</span>
-								</button>
-
-								<button
-									type="button"
-									className={`recall-chip ${statusFilter === "declined" ? "active" : ""}`}
-									onClick={() => setStatusFilter("declined")}
-								>
-									<RotateCcw size={14} />
-									Отказ / Перенос
-									<span className="recall-chip-badge">{metrics.declinedCount}</span>
-								</button>
-
-								<button
-									type="button"
-									className={`recall-chip ${statusFilter === "completed" ? "active" : ""}`}
-									onClick={() => setStatusFilter("completed")}
-								>
-									<CheckCircle2 size={14} />
-									Завершено
-									<span className="recall-chip-badge">{metrics.completedCount}</span>
-								</button>
-							</div>
-						</div>
-
-						{/* Content Table */}
+						{/* Content Area */}
 						<main className="recall-content-area">
 							{filteredCandidates.length === 0 ? (
 								<div className="recall-empty-state">
@@ -880,1082 +652,72 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 									<p>Все пациенты обработаны, либо срок вызова еще не наступил.</p>
 								</div>
 							) : registryViewMode === "kanban" ? (
-								<div className="recall-kanban-board" data-testid="recall-kanban-board">
-									{(["not_called", "reached", "declined", "scheduled"] as const).map((colKey) => {
-										const colConfig = CANONICAL_RECALL_STATUS_CONFIG[colKey];
-										const colCandidates = kanbanGroups[colKey];
-										return (
-											<div
-												key={colKey}
-												className="recall-kanban-column"
-												data-testid={`kanban-col-${colKey}`}
-											>
-												<div className="recall-kanban-column-header">
-													<div className="recall-kanban-column-title">
-														<span>{colConfig.label}</span>
-													</div>
-													<span
-														className="recall-kanban-column-badge"
-														data-testid={`kanban-badge-${colKey}`}
-													>
-														{colCandidates.length}
-													</span>
-												</div>
-												<div className="recall-kanban-cards-list">
-													{colCandidates.length === 0 ? (
-														<div className="recall-kanban-empty">Нет пациентов в этом статусе</div>
-													) : (
-														colCandidates.map((candidate) => {
-															const triggerType = resolveCandidateTriggerType(candidate);
-															const triggerLabel =
-																triggerType === "hygiene_6m"
-																	? "Профгигиена 6 мес."
-																	: triggerType === "implant_prosthetic_12m"
-																	? "Импланты/Ортопедия 12 мес."
-																	: triggerType === "ortho_activation_1m"
-																	? "Орто-активация 1 мес."
-																	: "Детский осмотр 3-4 мес.";
-
-															return (
-																<div
-																	key={candidate.id}
-																	className="recall-kanban-card"
-																	data-testid={`kanban-card-${candidate.id}`}
-																>
-																	<div className="recall-kanban-card-patient">
-																		<div className="recall-kanban-card-name">
-																			{candidate.fullName}
-																		</div>
-																		<div className="recall-kanban-card-phone">
-																			{candidate.phone || "телефон не указан"}
-																		</div>
-																	</div>
-
-																	<div className="recall-kanban-card-meta">
-																		<span
-																			className="recall-cycle-tag"
-																			style={{ alignSelf: "flex-start" }}
-																		>
-																			{triggerLabel}
-																		</span>
-																		<div className="recall-kanban-card-doctor">
-																			Врач: {candidate.attendingDoctorName || "—"}
-																		</div>
-																		<div
-																			style={{
-																				display: "flex",
-																				justifyContent: "space-between",
-																				alignItems: "center",
-																			}}
-																		>
-																			<span style={{ color: "var(--rm-text-muted)" }}>
-																				Срок: {candidate.dueDate}
-																			</span>
-																			<span
-																				className={`recall-badge recall-badge--${candidate.urgencyStatus}`}
-																			>
-																				{candidate.urgencyStatus === "due_now" && "Пора звать"}
-																				{candidate.urgencyStatus === "overdue_30" && `+${candidate.daysOverdue} дн.`}
-																				{candidate.urgencyStatus === "overdue_90" && `+${candidate.daysOverdue} дн. (риск)`}
-																				{candidate.urgencyStatus === "upcoming" && `через ${Math.abs(candidate.daysOverdue)} дн.`}
-																				{candidate.urgencyStatus === "completed" && "Завершено"}
-																			</span>
-																		</div>
-																	</div>
-
-																	<div className="recall-kanban-card-actions">
-																		{/* 1-Click: Записать */}
-																		<button
-																			type="button"
-																			className="recall-action-btn recall-action-btn--book"
-																			style={{ minHeight: "32px", padding: "4px 8px", fontSize: "0.75rem" }}
-																			onClick={() => handleBook(candidate)}
-																			data-testid={`recall-book-btn-${candidate.id}`}
-																			title="Записать пациента в расписание"
-																		>
-																			<Calendar size={13} />
-																			<span>Записать</span>
-																		</button>
-
-																		{/* 1-Click: WhatsApp */}
-																		<button
-																			type="button"
-																			className="recall-action-btn recall-action-btn--whatsapp"
-																			style={{ minHeight: "32px", padding: "4px 8px", fontSize: "0.75rem" }}
-																			onClick={() => void handleWhatsApp(candidate)}
-																			data-testid={`recall-whatsapp-btn-${candidate.id}`}
-																			title="152-ФЗ сообщение в WhatsApp"
-																		>
-																			<MessageCircle size={13} />
-																			<span>WA</span>
-																		</button>
-
-																		{/* 1-Click: SMS */}
-																		<button
-																			type="button"
-																			className="recall-action-btn"
-																			style={{ minHeight: "32px", padding: "4px 8px", fontSize: "0.75rem" }}
-																			onClick={() => handleCopySms(candidate)}
-																			data-testid={`recall-sms-btn-${candidate.id}`}
-																			title="Скопировать 152-ФЗ SMS"
-																		>
-																			<Send size={13} />
-																			<span>SMS</span>
-																		</button>
-
-																		{/* Status dropdown to move candidate */}
-																		<select
-																			style={{
-																				padding: "4px 6px",
-																				borderRadius: "4px",
-																				border: "1px solid var(--rm-border)",
-																				background: "var(--rm-surface)",
-																				color: "var(--rm-text-main)",
-																				fontSize: "0.75rem",
-																				marginLeft: "auto",
-																				minHeight: "32px",
-																			}}
-																			value={toCanonicalRecallStatus(candidate.status)}
-																			onChange={(e) => {
-																				const newCanonical = e.target.value as CanonicalRecallWorkflowStatus;
-																				handleStatusUpdate(
-																					candidate.id,
-																					fromCanonicalRecallStatus(newCanonical),
-																				);
-																			}}
-																			aria-label="Изменить статус в канбане"
-																			data-testid={`kanban-status-select-${candidate.id}`}
-																		>
-																			<option value="not_called">Не звонили</option>
-																			<option value="reached">Дозвонились</option>
-																			<option value="declined">Отказ</option>
-																			<option value="scheduled">Записан</option>
-																		</select>
-																	</div>
-																</div>
-															);
-														})
-													)}
-												</div>
-											</div>
-										);
-									})}
-								</div>
+								<PatientRecallsKanbanView
+									kanbanGroups={kanbanGroups}
+									onBook={handleBook}
+									onWhatsApp={(c) => void handleWhatsApp(c)}
+									onCopySms={handleCopySms}
+									onStatusUpdate={handleStatusUpdate}
+								/>
 							) : (
-								<div className="recall-table-wrap">
-									<table className="recall-table">
-										<thead>
-											<tr>
-												<th scope="col">Пациент</th>
-												<th scope="col">Клинический цикл</th>
-												<th scope="col">Визит / Срок</th>
-												<th scope="col">Срочность</th>
-												<th scope="col">Лечащий врач</th>
-												<th scope="col">Статус</th>
-												<th scope="col">1-Click Действия</th>
-											</tr>
-										</thead>
-										<tbody>
-											{filteredCandidates.map((candidate) => {
-												const cycleDef = RECALL_CYCLE_CATALOG[candidate.cycleType];
-												const isScriptActive = activeScriptCandidate?.id === candidate.id;
-												const isRealPreviewActive = activePreviewCandidate?.id === candidate.id;
-
-												return (
-													<tr key={candidate.id} data-testid={`recall-hub-row-${candidate.id}`}>
-														<td>
-															<div className="recall-patient-cell">
-																<span className="recall-patient-name">{candidate.fullName}</span>
-																<span className="recall-patient-phone">
-																	{candidate.phone || "телефон не указан"}
-																</span>
-															</div>
-														</td>
-
-														<td>
-															<span
-																className="recall-cycle-tag"
-																title={cycleDef?.clinicalRationale}
-															>
-																{cycleDef?.shortTitle || candidate.cycleType}
-															</span>
-														</td>
-
-														<td>
-															<div>
-																<div>{candidate.lastVisitDate}</div>
-																<div style={{ fontSize: "0.75rem", color: "var(--rm-text-muted)" }}>
-																	План: {candidate.dueDate}
-																</div>
-															</div>
-														</td>
-
-														<td>
-															<span className={`recall-badge recall-badge--${candidate.urgencyStatus}`}>
-																{candidate.urgencyStatus === "due_now" && "Пора звать"}
-																{candidate.urgencyStatus === "overdue_30" && `+${candidate.daysOverdue} дн.`}
-																{candidate.urgencyStatus === "overdue_90" && `+${candidate.daysOverdue} дн. (риск)`}
-																{candidate.urgencyStatus === "upcoming" && `через ${Math.abs(candidate.daysOverdue)} дн.`}
-																{candidate.urgencyStatus === "completed" && "Завершено"}
-															</span>
-														</td>
-
-														<td>
-															<span style={{ fontSize: "0.8125rem", color: "var(--rm-text-main)" }}>
-																{candidate.attendingDoctorName || "—"}
-															</span>
-														</td>
-
-														<td>
-															<select
-																style={{
-																	padding: "6px 8px",
-																	borderRadius: "6px",
-																	border: "1px solid var(--rm-border)",
-																	background: "var(--rm-surface)",
-																	color: "var(--rm-text-main)",
-																	fontSize: "0.8125rem",
-																	minHeight: "44px",
-																}}
-																value={candidate.status}
-																onChange={(e) =>
-																	handleStatusUpdate(
-																		candidate.id,
-																		e.target.value as RecallContactStatus,
-																	)
-																}
-															>
-																<option value="due_now">Пора звать</option>
-																<option value="invited">Приглашен</option>
-																<option value="scheduled">Записался</option>
-																<option value="completed">Завершен</option>
-																<option value="declined">Отказ / Перенос</option>
-															</select>
-														</td>
-
-														<td>
-															<div className="recall-actions-cell" style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative" }}>
-																{/* Primary Action: Записать */}
-																<button
-																	type="button"
-																	className="recall-action-btn recall-action-btn--book"
-																	title="Записать пациента на прием"
-																	style={{ minHeight: "36px", padding: "6px 12px" }}
-																	onClick={() => handleBook(candidate)}
-																	data-testid={`recall-book-btn-${candidate.id}`}
-																>
-																	<Calendar size={15} />
-																	<span>Записать</span>
-																</button>
-
-																{/* Direct 1-Click Preview Action (Mandate 8i Anti-Simulator) */}
-																<button
-																	type="button"
-																	className={`recall-action-btn ${isRealPreviewActive ? "recall-action-btn--script active" : ""}`}
-																	title="Предпросмотр SMS и WhatsApp сообщений с расчетом сегментов"
-																	style={{ minHeight: "36px", padding: "6px 10px" }}
-																	onClick={() => handleTogglePreview(candidate)}
-																	data-testid={`recall-quick-preview-btn-${candidate.id}`}
-																>
-																	<Eye size={15} />
-																	<span>Превью</span>
-																</button>
-
-																{/* Consolidating Dropdown: Связаться ▾ */}
-																<div style={{ position: "relative", display: "inline-block" }}>
-																	<button
-																		type="button"
-																		className="recall-action-btn"
-																		title="Каналы связи и речевой скрипт"
-																		style={{ minHeight: "36px", padding: "6px 10px", display: "inline-flex", alignItems: "center", gap: "4px" }}
-																		onClick={() =>
-																			setOpenContactDropdownId(
-																				openContactDropdownId === candidate.id ? null : candidate.id,
-																			)
-																		}
-																		data-testid={`recall-contact-menu-btn-${candidate.id}`}
-																		aria-expanded={openContactDropdownId === candidate.id}
-																	>
-																		<MessageCircle size={15} />
-																		<span>Связаться</span>
-																		<ChevronDown size={14} />
-																	</button>
-
-																	{/* Floating Dropdown Menu Container */}
-																	<div
-																		className="recall-contact-dropdown-menu"
-																		style={{
-																			display: openContactDropdownId === candidate.id ? "flex" : "none",
-																			position: "absolute",
-																			right: 0,
-																			top: "100%",
-																			zIndex: 50,
-																			flexDirection: "column",
-																			gap: "4px",
-																			padding: "6px",
-																			marginTop: "4px",
-																			background: "var(--rm-surface)",
-																			border: "1px solid var(--rm-border)",
-																			borderRadius: "8px",
-																			boxShadow: "var(--shadow-3)",
-																			minWidth: "160px",
-																		}}
-																	>
-																		{/* WhatsApp */}
-																		<button
-																			type="button"
-																			className="recall-action-btn recall-action-btn--whatsapp"
-																			title="Отправить готовое сообщение в WhatsApp"
-																			style={{ width: "100%", justifyContent: "flex-start", minHeight: "34px" }}
-																			onClick={() => {
-																				setOpenContactDropdownId(null);
-																				void handleWhatsApp(candidate);
-																			}}
-																			data-testid={`recall-whatsapp-btn-${candidate.id}`}
-																		>
-																			<MessageCircle size={15} />
-																			<span>WhatsApp</span>
-																		</button>
-
-																		{/* Telegram */}
-																		<button
-																			type="button"
-																			className="recall-action-btn recall-action-btn--telegram"
-																			title="Отправить персонализированное сообщение в Telegram"
-																			style={{ width: "100%", justifyContent: "flex-start", minHeight: "34px" }}
-																			onClick={() => {
-																				setOpenContactDropdownId(null);
-																				void handleTelegram(candidate);
-																			}}
-																			data-testid={`recall-telegram-btn-${candidate.id}`}
-																		>
-																			<Send size={15} />
-																			<span>Telegram</span>
-																		</button>
-
-																		{/* SMS */}
-																		<button
-																			type="button"
-																			className="recall-action-btn"
-																			title="Скопировать SMS текст"
-																			style={{ width: "100%", justifyContent: "flex-start", minHeight: "34px" }}
-																			onClick={() => {
-																				setOpenContactDropdownId(null);
-																				handleCopySms(candidate);
-																			}}
-																			data-testid={`recall-sms-btn-${candidate.id}`}
-																		>
-																			{copiedCandidateId === candidate.id ? (
-																				<span style={{ display: "inline-flex", alignItems: "center", gap: "2px" }}>
-																					<Check size={14} />
-																					<span>Скопировано</span>
-																				</span>
-																			) : (
-																				<span>SMS</span>
-																			)}
-																		</button>
-
-																		{/* Предпросмотр с расчетом SMS сегментов */}
-																		<button
-																			type="button"
-																			className={`recall-action-btn ${isRealPreviewActive ? "active" : ""}`}
-																			title="Предпросмотр сообщения с расчетом длины и сегментов SMS"
-																			style={{ width: "100%", justifyContent: "flex-start", minHeight: "34px" }}
-																			onClick={() => {
-																				setOpenContactDropdownId(null);
-																				handleTogglePreview(candidate);
-																			}}
-																			data-testid={`recall-preview-btn-${candidate.id}`}
-																		>
-																			<Eye size={15} />
-																			<span>Превью SMS / WA</span>
-																		</button>
-
-																		{/* Скрипт */}
-																		<button
-																			type="button"
-																			className={`recall-action-btn recall-action-btn--script ${isScriptActive ? "active" : ""}`}
-																			title="Открыть речевой скрипт для администратора"
-																			style={{ width: "100%", justifyContent: "flex-start", minHeight: "34px" }}
-																			onClick={() => {
-																				setOpenContactDropdownId(null);
-																				handleToggleScript(candidate);
-																			}}
-																			data-testid={`recall-script-btn-${candidate.id}`}
-																		>
-																			<PhoneCall size={15} />
-																			<span>Скрипт</span>
-																		</button>
-																	</div>
-																</div>
-															</div>
-														</td>
-													</tr>
-												);
-											})}
-										</tbody>
-									</table>
-								</div>
+								<PatientRecallsTableView
+									filteredCandidates={filteredCandidates}
+									activeScriptCandidate={activeScriptCandidate}
+									activePreviewCandidate={activePreviewCandidate}
+									openContactDropdownId={openContactDropdownId}
+									setOpenContactDropdownId={setOpenContactDropdownId}
+									copiedCandidateId={copiedCandidateId}
+									onBook={handleBook}
+									onTogglePreview={handleTogglePreview}
+									onToggleScript={handleToggleScript}
+									onWhatsApp={(c) => void handleWhatsApp(c)}
+									onTelegram={(c) => void handleTelegram(c)}
+									onCopySms={handleCopySms}
+									onStatusUpdate={handleStatusUpdate}
+								/>
 							)}
 
-							{/* Real SMS / WhatsApp / Telegram Message Preview Drawer (Mandate 8i Anti-Simulator) */}
-							{activePreviewCandidate ? (
-								<section
-									className="recall-preview-drawer"
-									aria-labelledby="preview-hub-heading"
-									data-testid="recall-template-preview-drawer"
-								>
-									{(() => {
-										const candidate = activePreviewCandidate;
-										const smsText = generateSmsRecallMessage(candidate, { clinicName });
-										const waText = generateWhatsAppRecallMessage(candidate, { clinicName });
-										const tgText = generateTelegramRecallMessage(candidate, { clinicName });
-
-										const activeText =
-											previewChannel === "sms"
-												? smsText
-												: previewChannel === "whatsapp"
-													? waText
-													: tgText;
-
-										const smsCalc = calculateSmsSegments(activeText);
-
-										return (
-											<>
-												<div className="recall-preview-drawer-header">
-													<div className="recall-preview-title" id="preview-hub-heading">
-														<Eye size={18} />
-														<span>
-															Предпросмотр сообщения: {candidate.fullName} ({RECALL_CYCLE_CATALOG[candidate.cycleType]?.title})
-														</span>
-													</div>
-
-													<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-														<div className="recall-preview-tabs" role="tablist">
-															<button
-																type="button"
-																role="tab"
-																aria-selected={previewChannel === "sms"}
-																className={`recall-preview-tab-btn ${previewChannel === "sms" ? "active" : ""}`}
-																onClick={() => setPreviewChannel("sms")}
-																data-testid="preview-tab-sms"
-															>
-																<MessageCircle size={14} />
-																<span>SMS ({smsCalc.characterCount} симв.)</span>
-															</button>
-															<button
-																type="button"
-																role="tab"
-																aria-selected={previewChannel === "whatsapp"}
-																className={`recall-preview-tab-btn ${previewChannel === "whatsapp" ? "active" : ""}`}
-																onClick={() => setPreviewChannel("whatsapp")}
-																data-testid="preview-tab-whatsapp"
-															>
-																<MessageCircle size={14} />
-																<span>WhatsApp</span>
-															</button>
-															<button
-																type="button"
-																role="tab"
-																aria-selected={previewChannel === "telegram"}
-																className={`recall-preview-tab-btn ${previewChannel === "telegram" ? "active" : ""}`}
-																onClick={() => setPreviewChannel("telegram")}
-																data-testid="preview-tab-telegram"
-															>
-																<Send size={14} />
-																<span>Telegram</span>
-															</button>
-														</div>
-
-														<button
-															type="button"
-															className="recall-close-btn"
-															style={{ minHeight: "36px", minWidth: "36px" }}
-															onClick={() => setActivePreviewCandidate(null)}
-															aria-label="Закрыть предпросмотр"
-														>
-															<X size={16} />
-														</button>
-													</div>
-												</div>
-
-												<div className="recall-preview-content-box">
-													{/* Real Message Text */}
-													<div>
-														<strong style={{ fontSize: "0.8125rem", color: "var(--rm-text-muted)", display: "block", marginBottom: "4px" }}>
-															{previewChannel === "sms" ? "Текст SMS (персонализированная 1-Click ссылка):" : "Текст сообщения:"}
-														</strong>
-														<div className="recall-preview-rendered-text" data-testid="recall-preview-text">
-															{activeText}
-														</div>
-													</div>
-
-													{/* Character Count & Segment Calculation (Mandate 8i Anti-Simulator) */}
-													<div className="recall-preview-calc-grid" data-testid="recall-preview-calc-box">
-														<div className="recall-preview-calc-card">
-															<span className="recall-preview-calc-label">Символов всего</span>
-															<span className="recall-preview-calc-value" data-testid="preview-char-count">{smsCalc.characterCount}</span>
-														</div>
-														<div className="recall-preview-calc-card">
-															<span className="recall-preview-calc-label">Кодировка</span>
-															<span className="recall-preview-calc-value" data-testid="preview-encoding">{smsCalc.encoding}</span>
-														</div>
-														<div className="recall-preview-calc-card">
-															<span className="recall-preview-calc-label">SMS Сегментов</span>
-															<span className="recall-preview-calc-value" data-testid="preview-segment-count">{smsCalc.segmentCount}</span>
-														</div>
-														<div className="recall-preview-calc-card">
-															<span className="recall-preview-calc-label">Осталось в сегменте</span>
-															<span className="recall-preview-calc-value" data-testid="preview-remaining-chars">{smsCalc.remainingInCurrentSegment}</span>
-														</div>
-														<div className="recall-preview-calc-card">
-															<span className="recall-preview-calc-label">Лимит на сегмент</span>
-															<span className="recall-preview-calc-value">{smsCalc.charsPerSegment} симв.</span>
-														</div>
-													</div>
-
-													{/* Action Buttons */}
-													<div className="recall-preview-actions-bar">
-														{previewChannel === "sms" && (
-															<button
-																type="button"
-																className="recall-action-btn"
-																style={{ minHeight: "38px" }}
-																onClick={() => handleCopySms(candidate)}
-																data-testid="preview-copy-sms-btn"
-															>
-																{copiedCandidateId === candidate.id ? (
-																	<>
-																		<Check size={14} />
-																		<span>Скопировано в буфер</span>
-																	</>
-																) : (
-																	<>
-																		<Send size={14} />
-																		<span>Копировать SMS</span>
-																	</>
-																)}
-															</button>
-														)}
-
-														{previewChannel === "whatsapp" && (
-															<button
-																type="button"
-																className="recall-action-btn recall-action-btn--whatsapp"
-																style={{ minHeight: "38px" }}
-																onClick={() => void handleWhatsApp(candidate)}
-																data-testid="preview-send-whatsapp-btn"
-															>
-																<MessageCircle size={14} />
-																<span>Открыть WhatsApp (wa.me)</span>
-															</button>
-														)}
-
-														{previewChannel === "telegram" && (
-															<button
-																type="button"
-																className="recall-action-btn recall-action-btn--telegram"
-																style={{ minHeight: "38px" }}
-																onClick={() => void handleTelegram(candidate)}
-																data-testid="preview-send-telegram-btn"
-															>
-																<Send size={14} />
-																<span>Открыть Telegram (t.me)</span>
-															</button>
-														)}
-													</div>
-												</div>
-											</>
-										);
-									})()}
-								</section>
-							) : null}
-
-							{/* Objection Script Drawer */}
-							{activeScriptCandidate ? (
-								<section
-									className="recall-script-drawer"
-									aria-labelledby="script-hub-heading"
-									data-testid="recall-script-drawer"
-								>
-									{(() => {
-										const script =
-											CLINICAL_CALLING_SCRIPTS[activeScriptCandidate.cycleType] ||
-											CLINICAL_CALLING_SCRIPTS.standard_prophylaxis;
-										const firstName = activeScriptCandidate.fullName.split(" ")[1] || activeScriptCandidate.fullName;
-										const doctorName = activeScriptCandidate.attendingDoctorName || "лечащий врач";
-										const currentObjection =
-											script.objections.find((o) => o.id === selectedObjectionId) ||
-											script.objections[0];
-
-										return (
-											<>
-												<div className="recall-script-drawer-header">
-													<div className="recall-script-title" id="script-hub-heading">
-														<Phone size={18} />
-														<span>
-															Речевой скрипт: {activeScriptCandidate.fullName} ({RECALL_CYCLE_CATALOG[activeScriptCandidate.cycleType]?.title})
-														</span>
-													</div>
-													<button
-														type="button"
-														className="recall-close-btn"
-														style={{ minHeight: "36px", minWidth: "36px" }}
-														onClick={() => setActiveScriptCandidate(null)}
-														aria-label="Закрыть скрипт"
-													>
-														<X size={16} />
-													</button>
-												</div>
-
-												<div className="recall-script-content-box">
-													<div style={{ marginBottom: "8px" }}>
-														<strong>1. Приветствие и цель звонка:</strong>
-														<p style={{ margin: "4px 0" }}>
-															{script.greeting
-																.replace(/\{\{PATIENT_FIRST_NAME\}\}/g, firstName)
-																.replace(/\{\{CLINIC_NAME\}\}/g, clinicName)
-																.replace(/\{\{DOCTOR_NAME\}\}/g, doctorName)}
-														</p>
-													</div>
-
-													<div style={{ marginBottom: "8px" }}>
-														<strong>2. Клиническое обоснование:</strong>
-														<p style={{ margin: "4px 0" }}>
-															{script.clinicalContext
-																.replace(/\{\{PATIENT_FIRST_NAME\}\}/g, firstName)
-																.replace(/\{\{CLINIC_NAME\}\}/g, clinicName)
-																.replace(/\{\{DOCTOR_NAME\}\}/g, doctorName)}
-														</p>
-													</div>
-
-													<div style={{ marginBottom: "12px" }}>
-														<strong>3. Призыв к действию (выбор слота):</strong>
-														<p style={{ margin: "4px 0", color: "var(--rm-primary)", fontWeight: 600 }}>
-															{script.callToAction
-																.replace(/\{\{PATIENT_FIRST_NAME\}\}/g, firstName)
-																.replace(/\{\{DOCTOR_NAME\}\}/g, doctorName)}
-														</p>
-													</div>
-
-													{/* Objections */}
-													{script.objections.length > 0 ? (
-														<div>
-															<strong style={{ display: "block", marginBottom: "6px" }}>
-																Отработка типичных возражений:
-															</strong>
-															<div className="recall-script-tabs">
-																{script.objections.map((obj) => (
-																	<button
-																		key={obj.id}
-																		type="button"
-																		className={`recall-script-tab-btn ${
-																			selectedObjectionId === obj.id ? "active" : ""
-																		}`}
-																		onClick={() => setSelectedObjectionId(obj.id)}
-																	>
-																		{obj.title}
-																	</button>
-																))}
-															</div>
-
-															{currentObjection ? (
-																<div className="recall-script-content-box" style={{ background: "var(--rm-surface)" }}>
-																	<div>
-																		<em>Пациент говорит:</em> {currentObjection.patientPhrase}
-																	</div>
-																	<div className="recall-script-suggested-text">
-																		<strong>Что ответить администратору:</strong>
-																		<div>
-																			{currentObjection.suggestedResponse
-																				.replace(/\{\{PATIENT_FIRST_NAME\}\}/g, firstName)
-																				.replace(/\{\{DOCTOR_NAME\}\}/g, doctorName)}
-																		</div>
-																	</div>
-																	<div className="recall-script-tip">
-																		<Lightbulb size={13} className="recall-tip-icon" />
-																		<span>Совет: {currentObjection.psychologicalTip}</span>
-																	</div>
-																</div>
-															) : null}
-														</div>
-													) : null}
-												</div>
-											</>
-										);
-									})()}
-								</section>
-							) : null}
+							<PatientRecallsPreviewModals
+								activePreviewCandidate={activePreviewCandidate}
+								previewChannel={previewChannel}
+								onPreviewChannelChange={setPreviewChannel}
+								onClosePreview={() => setActivePreviewCandidate(null)}
+								activeScriptCandidate={activeScriptCandidate}
+								onCloseScript={() => {
+									setActiveScriptCandidate(null);
+									setSelectedObjectionId("");
+								}}
+								selectedObjectionId={selectedObjectionId}
+								onSelectObjectionId={setSelectedObjectionId}
+								clinicName={clinicName}
+								copiedCandidateId={copiedCandidateId}
+								onCopySms={handleCopySms}
+								onWhatsApp={(c) => void handleWhatsApp(c)}
+								onTelegram={(c) => void handleTelegram(c)}
+								onBook={handleBook}
+							/>
 						</main>
 					</>
+				) : activeTab === "cohorts" ? (
+					<PatientRecallsCohortsTab
+						cohortReport={cohortReport}
+						cohortGrouping={cohortGrouping}
+						onCohortGroupingChange={setCohortGrouping}
+					/>
 				) : (
-					/* Tab 2: Cohorts & Retention Matrix */
-					<main className="recall-content-area" data-testid="recall-cohorts-view">
-						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-							<div>
-								<h3 style={{ margin: 0, fontSize: "1.0625rem", color: "var(--rm-text-main)" }}>
-									Когортная аналитика возвращаемости и LTV recall-пациентов
-								</h3>
-								<p style={{ margin: "2px 0 0", fontSize: "0.8125rem", color: "var(--rm-text-muted)" }}>
-									Группировка пациентов по периодам визитов и оценка эффективности повторного привлечения
-								</p>
-							</div>
-
-							<div style={{ display: "flex", gap: "6px" }}>
-								<button
-									type="button"
-									className={`recall-chip ${cohortGrouping === "month" ? "active" : ""}`}
-									onClick={() => setCohortGrouping("month")}
-								>
-									По месяцам
-								</button>
-								<button
-									type="button"
-									className={`recall-chip ${cohortGrouping === "quarter" ? "active" : ""}`}
-									onClick={() => setCohortGrouping("quarter")}
-								>
-									По кварталам
-								</button>
-							</div>
-						</div>
-
-						<div className="recall-table-wrap">
-							<table className="recall-table">
-								<thead>
-									<tr>
-										<th scope="col">Когорта (Период)</th>
-										<th scope="col">Пациентов</th>
-										<th scope="col">Пора звать</th>
-										<th scope="col">Приглашены</th>
-										<th scope="col">Записались</th>
-										<th scope="col">Пришли</th>
-										<th scope="col">Отказ</th>
-										<th scope="col">Retention Rate %</th>
-										<th scope="col">Конверсия %</th>
-										<th scope="col">Средний LTV</th>
-										<th scope="col">Выручка визитов</th>
-									</tr>
-								</thead>
-								<tbody>
-									{cohortReport.cohorts.map((cohort) => (
-										<tr key={cohort.cohortKey} data-testid={`cohort-row-${cohort.cohortKey}`}>
-											<td style={{ fontWeight: 700 }}>{cohort.cohortLabel}</td>
-											<td>{cohort.totalPatients}</td>
-											<td>{cohort.dueCount}</td>
-											<td>{cohort.contactedCount}</td>
-											<td>{cohort.scheduledCount}</td>
-											<td style={{ color: "var(--rm-success)", fontWeight: 700 }}>
-												{cohort.completedCount}
-											</td>
-											<td style={{ color: "var(--rm-danger)" }}>{cohort.declinedCount}</td>
-											<td>
-												<span className="recall-badge recall-badge--upcoming" style={{ fontWeight: 800 }}>
-													{cohort.retentionRatePercent}%
-												</span>
-											</td>
-											<td>
-												<span className="recall-badge recall-badge--completed">
-													{cohort.conversionRatePercent}%
-												</span>
-											</td>
-											<td>{cohort.averageLtvRub.toLocaleString("ru-RU")} ₽</td>
-											<td style={{ fontWeight: 700, color: "var(--rm-text-main)" }}>
-												{cohort.totalRevenueRub.toLocaleString("ru-RU")} ₽
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-
-						{/* Cohort Summary Footer Cards */}
-						<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px", marginTop: "16px" }}>
-							<div className="recall-metric-card recall-metric-card--success">
-								<span className="recall-metric-label">Общая возвращаемость (Retention)</span>
-								<div className="recall-metric-value-row">
-									<span className="recall-metric-value">{cohortReport.overallRetentionRatePercent}%</span>
-								</div>
-							</div>
-
-							<div className="recall-metric-card recall-metric-card--primary">
-								<span className="recall-metric-label">Общая конверсия реестра</span>
-								<div className="recall-metric-value-row">
-									<span className="recall-metric-value">{cohortReport.overallConversionRatePercent}%</span>
-								</div>
-							</div>
-
-							<div className="recall-metric-card">
-								<span className="recall-metric-label">Выручка от повторных визитов</span>
-								<div className="recall-metric-value-row">
-									<span className="recall-metric-value">
-										{cohortReport.totalRecallRevenueRub.toLocaleString("ru-RU")} ₽
-									</span>
-								</div>
-							</div>
-
-							<div className="recall-metric-card recall-metric-card--danger">
-								<span className="recall-metric-label">Упущенная выгода (не дошли)</span>
-								<div className="recall-metric-value-row">
-									<span className="recall-metric-value">
-										{cohortReport.totalLostRevenueRub.toLocaleString("ru-RU")} ₽
-									</span>
-								</div>
-							</div>
-						</div>
-					</main>
-				)}
-
-				{/* Tab 3: StomX Task Calls & Patient Care Workflow */}
-				{activeTab === "task_calls" && (
-					<main className="recall-content-area" data-testid="task-calls-view-section">
-						<div className="recall-toolbar">
-							<div className="recall-toolbar-top">
-								<div className="recall-search-input-wrap">
-									<Search size={16} className="recall-search-icon" aria-hidden="true" />
-									<label htmlFor="task-call-search-input" className="sr-only">
-										Поиск по пациенту, телефону или врачу
-									</label>
-									<input
-										id="task-call-search-input"
-										type="search"
-										className="recall-search-input"
-										placeholder="Поиск по пациенту, телефону или врачу..."
-										value={searchQuery}
-										onChange={(e) => setSearchQuery(e.target.value)}
-									/>
-								</div>
-
-								{activeTaskCallScriptType ? (
-									<button
-										type="button"
-										onClick={() => setActiveTaskCallScriptType(null)}
-										className="recall-action-btn"
-										style={{ minHeight: "44px" }}
-									>
-										<span>Скрыть речевой скрипт</span>
-									</button>
-								) : null}
-							</div>
-
-							{/* StomX 7 Task Call Category Chips */}
-							<div className="recall-status-chips" role="radiogroup" aria-label="Фильтр по типам сервисных звонков StomX">
-								<button
-									type="button"
-									data-testid="chip-task-call-all"
-									className={`recall-chip ${selectedTaskCallType === "all" ? "active" : ""}`}
-									onClick={() => setSelectedTaskCallType("all")}
-								>
-									Все задачи
-									<span className="recall-chip-badge">{taskCallCandidates.length}</span>
-								</button>
-
-								{STOMX_TASK_CALLS_CATALOG.map((cat) => {
-									const count = taskCallCandidates.filter((item) => item.taskType === cat.type).length;
-									return (
-										<button
-											key={cat.type}
-											type="button"
-											data-testid={`chip-task-call-${cat.type}`}
-											className={`recall-chip ${selectedTaskCallType === cat.type ? "active" : ""}`}
-											onClick={() => setSelectedTaskCallType(cat.type)}
-										>
-											{cat.shortLabelRu}
-											{count > 0 ? <span className="recall-chip-badge">{count}</span> : null}
-										</button>
-									);
-								})}
-							</div>
-						</div>
-
-						{/* Contextual Speech Script Banner */}
-						{activeTaskCallScriptType ? (
-							<div
-								data-testid="task-call-script-banner"
-								style={{
-									margin: "0 24px 16px 24px",
-									padding: "16px",
-									borderRadius: "10px",
-									backgroundColor: "var(--paper-soft)",
-									border: "1px solid var(--line)",
-									display: "flex",
-									flexDirection: "column",
-									gap: "8px",
-								}}
-							>
-								<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-									<div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 700, color: "var(--ink)" }}>
-										<Lightbulb size={18} style={{ color: "var(--teal)" }} />
-										<span>Речевой скрипт звонка: {STOMX_TASK_CALL_BY_TYPE[activeTaskCallScriptType]?.titleRu}</span>
-									</div>
-									<button
-										type="button"
-										onClick={() => setActiveTaskCallScriptType(null)}
-										style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--muted)" }}
-										aria-label="Закрыть скрипт"
-									>
-										<X size={16} />
-									</button>
-								</div>
-								<p style={{ margin: 0, fontSize: "0.875rem", lineHeight: 1.5, color: "var(--ink)", fontStyle: "italic" }}>
-									{STOMX_TASK_CALL_BY_TYPE[activeTaskCallScriptType]?.defaultScriptRu}
-								</p>
-								<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-									Срок регламентного контакта: {STOMX_TASK_CALL_BY_TYPE[activeTaskCallScriptType]?.defaultDueDays === 0 ? "В день события" : `через ${STOMX_TASK_CALL_BY_TYPE[activeTaskCallScriptType]?.defaultDueDays} дн.`}
-								</div>
-							</div>
-						) : null}
-
-						{/* Task Call Cards or Empty State */}
-						{taskCallCandidates.length === 0 ? (
-							<div className="recall-empty-state" data-testid="task-calls-empty-state">
-								<PhoneCall size={48} className="recall-empty-icon" aria-hidden="true" />
-								<h3 className="recall-empty-title">Все плановые звонки выполнены</h3>
-								<p className="recall-empty-text">
-									В выбранной категории сервисных звонков StomX нет ожидающих пациентов.
-									Новые задачи формируются автоматически при завершении приемов, операций и истечении сроков планов лечения.
-								</p>
-							</div>
-						) : (
-							<div style={{ padding: "0 24px 24px 24px", display: "flex", flexDirection: "column", gap: "12px" }}>
-								{taskCallCandidates.map(({ candidate, taskType }) => {
-									const meta = STOMX_TASK_CALL_BY_TYPE[taskType];
-									return (
-										<div
-											key={candidate.id}
-											data-testid={`task-call-card-${candidate.id}`}
-											style={{
-												padding: "16px",
-												borderRadius: "10px",
-												backgroundColor: "var(--paper)",
-												border: "1px solid var(--line)",
-												display: "grid",
-												gridTemplateColumns: "1fr auto",
-												alignItems: "center",
-												gap: "16px",
-											}}
-										>
-											<div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-												<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-													<span style={{ fontWeight: 800, fontSize: "1rem", color: "var(--ink)" }}>
-														{candidate.fullName}
-													</span>
-													{candidate.phone ? (
-														<a
-															href={`tel:${candidate.phone.replace(/[^+\d]/g, "")}`}
-															style={{ fontSize: "0.8125rem", color: "var(--teal)", textDecoration: "none", fontWeight: 600 }}
-														>
-															{candidate.phone}
-														</a>
-													) : null}
-													<span
-														className="recall-badge"
-														style={{
-															backgroundColor: "var(--teal-surface)",
-															color: "var(--teal)",
-															fontWeight: 700,
-														}}
-													>
-														{meta?.titleRu || "Сервисный звонок"}
-													</span>
-													{candidate.daysOverdue > 0 ? (
-														<span className="recall-badge recall-badge--overdue">
-															Просрочен на {candidate.daysOverdue} дн.
-														</span>
-													) : (
-														<span className="recall-badge recall-badge--upcoming">
-															Срок: {candidate.dueDate}
-														</span>
-													)}
-												</div>
-
-												<div style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
-													{candidate.attendingDoctorName ? (
-														<span>Врач: <strong>{candidate.attendingDoctorName}</strong> • </span>
-													) : null}
-													<span>Последний визит: {candidate.lastVisitDate}</span>
-													{candidate.clinicalNotes ? (
-														<span> • {candidate.clinicalNotes}</span>
-													) : null}
-												</div>
-											</div>
-
-											{/* Action Buttons */}
-											<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-												{candidate.phone ? (
-													<a
-														href={`tel:${candidate.phone.replace(/[^+\d]/g, "")}`}
-														className="recall-action-btn"
-														style={{ minHeight: "44px", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "6px" }}
-														data-testid={`btn-call-phone-${candidate.id}`}
-													>
-														<Phone size={16} />
-														<span>Позвонить</span>
-													</a>
-												) : null}
-
-												<button
-													type="button"
-													className="recall-action-btn recall-action-btn--whatsapp"
-													style={{ minHeight: "44px" }}
-													onClick={() => void handleWhatsApp(candidate)}
-													data-testid={`btn-call-wa-${candidate.id}`}
-												>
-													<MessageCircle size={16} />
-													<span>WhatsApp</span>
-												</button>
-
-												<button
-													type="button"
-													className="recall-action-btn recall-action-btn--telegram"
-													style={{ minHeight: "44px" }}
-													onClick={() => void handleTelegram(candidate)}
-													data-testid={`btn-call-tg-${candidate.id}`}
-												>
-													<Send size={16} />
-													<span>TG</span>
-												</button>
-
-												<button
-													type="button"
-													className={`recall-action-btn recall-action-btn--script ${activeTaskCallScriptType === taskType ? "active" : ""}`}
-													style={{ minHeight: "44px" }}
-													onClick={() => setActiveTaskCallScriptType(activeTaskCallScriptType === taskType ? null : taskType)}
-													data-testid={`btn-call-script-${candidate.id}`}
-													title="Показать речевой скрипт для этой задачи"
-												>
-													<Lightbulb size={16} />
-													<span>Скрипт</span>
-												</button>
-
-												<button
-													type="button"
-													className="recall-action-btn recall-action-btn--book"
-													style={{ minHeight: "44px" }}
-													onClick={() => handleBook(candidate)}
-													data-testid={`btn-call-book-${candidate.id}`}
-												>
-													<Calendar size={16} />
-													<span>Записать</span>
-												</button>
-
-												<button
-													type="button"
-													className="recall-action-btn"
-													style={{ minHeight: "44px", color: "var(--ok-fg)" }}
-													onClick={() => handleStatusUpdate(candidate.id, "scheduled")}
-													data-testid={`btn-call-done-${candidate.id}`}
-													title="Отметить успешный контакт"
-												>
-													<Check size={16} />
-													<span>Успех</span>
-												</button>
-											</div>
-										</div>
-									);
-								})}
-							</div>
-						)}
-					</main>
+					<PatientRecallsTaskCallsTab
+						taskCallCandidates={taskCallCandidates}
+						searchQuery={searchQuery}
+						onSearchQueryChange={setSearchQuery}
+						selectedTaskCallType={selectedTaskCallType}
+						onSelectTaskCallType={setSelectedTaskCallType}
+						activeTaskCallScriptType={activeTaskCallScriptType}
+						onToggleTaskCallScriptType={setActiveTaskCallScriptType}
+						onWhatsApp={(c) => void handleWhatsApp(c)}
+						onTelegram={(c) => void handleTelegram(c)}
+						onBook={handleBook}
+						onStatusUpdate={handleStatusUpdate}
+					/>
 				)}
 			</div>
 		</div>

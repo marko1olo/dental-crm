@@ -9,11 +9,28 @@ import {
 	RECALL_CYCLE_CATALOG,
 	extractPolitePatientName,
 	generatePdnProtectedRecallMessage,
+	extractFirstName,
+	sanitizePhoneNumber,
+	calculateSmsSegments,
+	formatSmsSummary,
+	buildWhatsAppUrl,
+	buildTelegramUrl,
 	type PatientRecallCandidate,
 	type RecallCycleType,
+	type SmsSegmentCalculation,
 } from "./patientRecallEngine";
 
-export { extractPolitePatientName, generatePdnProtectedRecallMessage };
+export {
+	extractPolitePatientName,
+	generatePdnProtectedRecallMessage,
+	extractFirstName,
+	sanitizePhoneNumber,
+	calculateSmsSegments,
+	formatSmsSummary,
+	buildWhatsAppUrl,
+	buildTelegramUrl,
+	type SmsSegmentCalculation,
+};
 
 export interface RecallTemplateVariables {
 	readonly patientFirstName: string;
@@ -44,11 +61,6 @@ export interface RecallCallingScript {
 	readonly callToAction: string;
 	readonly objections: readonly RecallScriptObjection[];
 }
-
-export {
-	extractFirstName,
-	sanitizePhoneNumber,
-} from "./patientRecallEngine";
 
 /**
  * Генерация 1-Click ссылки для онлайн-записи пациента на профилактику.
@@ -100,12 +112,6 @@ export function interpolateRecallTemplate(
 		.replace(/\{\{DUE_DATE\}\}/g, variables.dueDateFormatted)
 		.replace(/\{\{PHONE\}\}/g, variables.phone);
 }
-
-export {
-	calculateSmsSegments,
-	formatSmsSummary,
-	type SmsSegmentCalculation,
-} from "./patientRecallEngine";
 
 /**
  * Базовые шаблоны сообщений по клиническим циклам для WhatsApp.
@@ -294,11 +300,6 @@ export function generateSmsRecallMessage(
 
 	return interpolateRecallTemplate(template || "", vars);
 }
-
-export {
-	buildWhatsAppUrl,
-	buildTelegramUrl,
-} from "./patientRecallEngine";
 
 /**
  * Каталог клинических скриптов обзвона для администратора с разбором частых возражений.
