@@ -35,6 +35,9 @@ const DentalLabOrderModal = lazy(() =>
 const DentalLabOrdersHubModal = lazy(() =>
 	import("../lab/DentalLabOrdersHubModal").then((m) => ({ default: m.DentalLabOrdersHubModal }))
 );
+const DentalLabOrdersTrackerModal = lazy(() =>
+	import("../laboratory/DentalLabOrdersTrackerModal").then((m) => ({ default: m.DentalLabOrdersTrackerModal }))
+);
 const LabTrackingDrawer = lazy(() =>
 	import("../lab/LabTrackingDrawer").then((m) => ({ default: m.LabTrackingDrawer }))
 );
@@ -118,6 +121,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 	// Modals & Drawer state
 	const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 	const [isLabHubOpen, setIsLabHubOpen] = useState(false);
+	const [isTrackerModalOpen, setIsTrackerModalOpen] = useState(false);
 	const [selectedOrderForEdit, setSelectedOrderForEdit] = useState<DentalLabOrderData | null>(null);
 	const [isTrackingDrawerOpen, setIsTrackingDrawerOpen] = useState(false);
 	const [selectedOrderForTracking, setSelectedOrderForTracking] = useState<DentalLabOrderData | null>(null);
@@ -881,6 +885,17 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 
 					<button
 						type="button"
+						onClick={() => setIsTrackerModalOpen(true)}
+						className="lab-btn-32 bg-teal-500/10 text-teal-800 dark:text-teal-200 border-teal-500/30 hover:bg-teal-500/20 font-bold"
+						title="Трекер нарядов и дедлайнов ЗТЛ"
+						data-testid="lab-orders-tracker-trigger"
+					>
+						<Clock className="w-3.5 h-3.5 text-teal-500" />
+						<span>Трекер ЗТЛ</span>
+					</button>
+
+					<button
+						type="button"
 						onClick={() => setIsLabHubOpen(true)}
 						className="lab-btn-32 bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 border-indigo-500/30 hover:bg-indigo-500/20 font-bold"
 						title="Реестр нарядов ЗТЛ"
@@ -1608,6 +1623,21 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						currentPatientName={orders[0]?.patientName}
 						currentDoctorName={appLogic?.activeDoctor?.fullName || appLogic?.activeDoctor?.name}
 						onSaveOrder={() => {
+							void fetchOrders();
+						}}
+					/>
+				</Suspense>
+			)}
+
+			{isTrackerModalOpen && (
+				<Suspense fallback={null}>
+					<DentalLabOrdersTrackerModal
+						isOpen={isTrackerModalOpen}
+						onClose={() => setIsTrackerModalOpen(false)}
+						currentPatientId={patientId}
+						currentPatientName={orders[0]?.patientName}
+						currentDoctorName={appLogic?.activeDoctor?.fullName || appLogic?.activeDoctor?.name}
+						onOrderSaved={() => {
 							void fetchOrders();
 						}}
 					/>

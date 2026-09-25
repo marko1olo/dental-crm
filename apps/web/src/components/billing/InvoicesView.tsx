@@ -30,6 +30,7 @@ import {
 	Search,
 	ShieldCheck,
 	Sparkles,
+	Wallet,
 	X,
 } from "lucide-react";
 import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
@@ -44,6 +45,7 @@ import {
 const PaymentModal = lazy(() =>
 	import("../finance/PaymentModal.js").then((m) => ({ default: m.PaymentModal })),
 );
+import { PatientInstallmentsModal } from "./PatientInstallmentsModal.js";
 import { showToast } from "../GlobalToast.js";
 import {
 	safeLocalStorageGetJson,
@@ -128,6 +130,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 		null,
 	);
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+	const [isInstallmentsModalOpen, setIsInstallmentsModalOpen] = useState<boolean>(false);
 
 	// Memory leak protection & DOM virtualization (Wave 252-Perf2 / Low-RAM Laptop Protection)
 	const memoryGuard = useMemoryLeakGuard({ debugName: "InvoicesView" });
@@ -758,6 +761,17 @@ th { background: #f8fafc; font-weight: 700; }
 
 					<button
 						type="button"
+						onClick={() => setIsInstallmentsModalOpen(true)}
+						className="min-h-[44px] h-11 sm:h-7 sm:min-h-[28px] px-3 rounded-lg border border-teal-500/40 bg-teal-50 dark:bg-teal-950/30 text-teal-800 dark:text-teal-200 hover:bg-teal-100 dark:hover:bg-teal-900/40 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98 shrink-0 whitespace-nowrap"
+						data-testid="btn-installments-modal-open"
+						title="Внутренняя беспроцентная рассрочка клиники (0%)"
+					>
+						<Wallet size={14} className="text-teal-600 dark:text-teal-400" />
+						<span className="hidden md:inline">Рассрочка 0%</span>
+					</button>
+
+					<button
+						type="button"
 						onClick={() => setIsCreateModalOpen(true)}
 						className="min-h-[44px] h-11 sm:h-7 sm:min-h-[28px] px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-98 shrink-0 whitespace-nowrap"
 						data-testid="btn-create-invoice-open"
@@ -1351,6 +1365,16 @@ th { background: #f8fafc; font-weight: 700; }
 						</form>
 					</div>
 				</div>
+			)}
+
+			{isInstallmentsModalOpen && (
+				<PatientInstallmentsModal
+					isOpen={isInstallmentsModalOpen}
+					onClose={() => setIsInstallmentsModalOpen(false)}
+					patientId={patientId}
+					patientName={patientName}
+					clinicName={clinicLegalName}
+				/>
 			)}
 		</div>
 	);

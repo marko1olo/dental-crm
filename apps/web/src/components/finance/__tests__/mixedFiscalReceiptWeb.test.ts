@@ -92,7 +92,7 @@ describe("Web 54-FZ Mixed Fiscal Receipts & Gift Certificates Suite", () => {
 		assert.equal(result.vatNoneKopecks, 500000);
 		assert.equal(result.taxRateKopecks, 0);
 
-		const item = result.items[0];
+		const item = result.items[0]!;
 		assert.equal(item.vatRate, "vat_none");
 		assert.equal(item.taxRateKopecks, 0);
 		assert.equal(item.paymentSubject, "service");
@@ -108,7 +108,7 @@ describe("Web 54-FZ Mixed Fiscal Receipts & Gift Certificates Suite", () => {
 		assert.equal(result.vat20Rub, 200);
 		assert.equal(result.vatNoneKopecks, 0);
 
-		const item = result.items[0];
+		const item = result.items[0]!;
 		assert.equal(item.vatRate, "vat_20");
 		assert.equal(item.taxRateKopecks, 20000);
 		assert.equal(item.paymentSubject, "commodity");
@@ -134,10 +134,10 @@ describe("Web 54-FZ Mixed Fiscal Receipts & Gift Certificates Suite", () => {
 
 		// Items check
 		assert.equal(result.items.length, 2);
-		assert.equal(result.items[0].paymentSubject, "service");
-		assert.equal(result.items[0].vatRate, "vat_none");
-		assert.equal(result.items[1].paymentSubject, "commodity");
-		assert.equal(result.items[1].vatRate, "vat_20");
+		assert.equal(result.items[0]!.paymentSubject, "service");
+		assert.equal(result.items[0]!.vatRate, "vat_none");
+		assert.equal(result.items[1]!.paymentSubject, "commodity");
+		assert.equal(result.items[1]!.vatRate, "vat_20");
 	});
 
 	it("4. Medical tax deduction (Art. 219 NK RF): Strictly excludes retail commodities", () => {
@@ -162,7 +162,7 @@ describe("Web 54-FZ Mixed Fiscal Receipts & Gift Certificates Suite", () => {
 		assert.equal(result.vat20Kopecks, 0);
 		assert.equal(result.vatNoneKopecks, 500000);
 
-		const item = result.items[0];
+		const item = result.items[0]!;
 		assert.equal(item.paymentSubject, "payment"); // Tag 1212 = 10
 		assert.equal(item.vatRate, "vat_none");
 		assert.equal(item.code804n, "CERTIFICATE");

@@ -1,0 +1,400 @@
+/**
+ * ============================================================================
+ * ACCEPTANCE WAYBILLS MODAL STYLES (FEFO BATCHES & DENTAL ERGONOMICS)
+ * Десктопная эргономика 32-36px, чистые дизайн-токены var(--paper), var(--ink)
+ * ============================================================================
+ */
+
+.acceptance-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	background: rgba(0, 0, 0, 0.65);
+	backdrop-filter: blur(3px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.acceptance-modal-window {
+	width: 100%;
+	max-width: 1280px;
+	max-height: 94vh;
+	display: flex;
+	flex-direction: column;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+	border-radius: 12px;
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .acceptance-modal-window {
+	background: var(--paper, #111827);
+	color: var(--ink, #f9fafb);
+	border-color: var(--line, rgba(255, 255, 255, 0.1));
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* Header */
+.acceptance-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	border-bottom: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+	background: var(--paper-soft, rgba(0, 0, 0, 0.02));
+	min-height: 52px;
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .acceptance-modal-header {
+	background: var(--paper-soft, rgba(255, 255, 255, 0.03));
+	border-bottom-color: var(--line, rgba(255, 255, 255, 0.08));
+}
+
+.acceptance-modal-title {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	margin: 0;
+}
+
+[data-theme="dark"] .acceptance-modal-title {
+	color: var(--ink, #f9fafb);
+}
+
+/* Meta Bar (Supplier, Doc number, Date, Warehouse) */
+.acceptance-meta-bar {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 12px;
+	padding: 12px 20px;
+	background: var(--paper-soft, rgba(0, 0, 0, 0.015));
+	border-bottom: 1px solid var(--line, rgba(0, 0, 0, 0.06));
+}
+
+[data-theme="dark"] .acceptance-meta-bar {
+	background: var(--paper-soft, rgba(255, 255, 255, 0.02));
+	border-bottom-color: var(--line, rgba(255, 255, 255, 0.06));
+}
+
+.acceptance-meta-field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.acceptance-meta-label {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.acceptance-input,
+.acceptance-select {
+	height: 34px;
+	padding: 0 10px;
+	border-radius: 6px;
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.15));
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 13px;
+	box-sizing: border-box;
+	outline: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-theme="dark"] .acceptance-input,
+[data-theme="dark"] .acceptance-select {
+	background: var(--paper-strong, #1f2937);
+	border-color: var(--line, rgba(255, 255, 255, 0.15));
+	color: var(--ink, #f9fafb);
+}
+
+.acceptance-input:focus,
+.acceptance-select:focus {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+}
+
+/* Presets Toolbar (Canonical Dental Materials) */
+.acceptance-presets-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 20px;
+	border-bottom: 1px solid var(--line, rgba(0, 0, 0, 0.06));
+	background: var(--paper, #ffffff);
+	overflow-x: auto;
+	white-space: nowrap;
+}
+
+[data-theme="dark"] .acceptance-presets-toolbar {
+	background: var(--paper, #111827);
+	border-bottom-color: var(--line, rgba(255, 255, 255, 0.06));
+}
+
+.acceptance-preset-chip {
+	height: 30px;
+	padding: 0 10px;
+	border-radius: 6px;
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+	background: var(--paper-soft, rgba(0, 0, 0, 0.03));
+	color: var(--ink, #0f172a);
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	transition: background 0.15s ease, border-color 0.15s ease;
+	flex-shrink: 0;
+}
+
+[data-theme="dark"] .acceptance-preset-chip {
+	background: var(--paper-soft, rgba(255, 255, 255, 0.05));
+	border-color: var(--line, rgba(255, 255, 255, 0.12));
+	color: var(--ink, #f9fafb);
+}
+
+.acceptance-preset-chip:hover {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+}
+
+/* Table Body */
+.acceptance-table-container {
+	flex: 1;
+	overflow-y: auto;
+	min-height: 240px;
+	background: var(--paper, #ffffff);
+}
+
+[data-theme="dark"] .acceptance-table-container {
+	background: var(--paper, #111827);
+}
+
+.acceptance-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+	text-align: left;
+}
+
+.acceptance-table th {
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	height: 34px;
+	padding: 0 8px;
+	background: var(--paper-soft, #f8fafc);
+	color: var(--muted, #64748b);
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	border-bottom: 1px solid var(--line, rgba(0, 0, 0, 0.1));
+	white-space: nowrap;
+}
+
+[data-theme="dark"] .acceptance-table th {
+	background: var(--paper-soft, #1f2937);
+	color: var(--muted, #94a3b8);
+	border-bottom-color: var(--line, rgba(255, 255, 255, 0.1));
+}
+
+.acceptance-table td {
+	height: 40px;
+	padding: 4px 8px;
+	border-bottom: 1px solid var(--line, rgba(0, 0, 0, 0.06));
+	color: var(--ink, #0f172a);
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .acceptance-table td {
+	border-bottom-color: var(--line, rgba(255, 255, 255, 0.06));
+	color: var(--ink, #f9fafb);
+}
+
+.acceptance-table tr:hover td {
+	background: var(--paper-soft, rgba(0, 0, 0, 0.015));
+}
+
+[data-theme="dark"] .acceptance-table tr:hover td {
+	background: var(--paper-soft, rgba(255, 255, 255, 0.02));
+}
+
+.acceptance-table-input {
+	height: 28px;
+	padding: 0 6px;
+	font-size: 12px;
+	border-radius: 4px;
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.15));
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	box-sizing: border-box;
+	outline: none;
+	width: 100%;
+}
+
+[data-theme="dark"] .acceptance-table-input {
+	background: var(--paper-strong, #1f2937);
+	border-color: var(--line, rgba(255, 255, 255, 0.15));
+	color: var(--ink, #f9fafb);
+}
+
+.acceptance-table-input:focus {
+	border-color: var(--teal, #0d9488);
+}
+
+/* FEFO Badges */
+.fefo-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 7px;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+/* Footer / Action Bar */
+.acceptance-modal-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	border-top: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+	background: var(--paper-soft, rgba(0, 0, 0, 0.02));
+	min-height: 56px;
+	box-sizing: border-box;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+[data-theme="dark"] .acceptance-modal-footer {
+	background: var(--paper-soft, rgba(255, 255, 255, 0.03));
+	border-top-color: var(--line, rgba(255, 255, 255, 0.08));
+}
+
+.acceptance-summary-block {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	font-size: 13px;
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .acceptance-summary-block {
+	color: var(--ink, #f9fafb);
+}
+
+.acceptance-summary-item {
+	display: flex;
+	flex-direction: column;
+}
+
+.acceptance-summary-label {
+	font-size: 10px;
+	color: var(--muted, #64748b);
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.acceptance-summary-value {
+	font-weight: 700;
+	font-size: 14px;
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .acceptance-summary-value {
+	color: var(--ink, #f9fafb);
+}
+
+.acceptance-btn-primary {
+	height: 36px;
+	padding: 0 18px;
+	border-radius: 6px;
+	background: var(--teal, #0d9488);
+	color: var(--on-teal, #ffffff);
+	font-size: 13px;
+	font-weight: 700;
+	border: none;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.acceptance-btn-primary:hover:not(:disabled) {
+	opacity: 0.92;
+	transform: translateY(-1px);
+}
+
+.acceptance-btn-primary:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.acceptance-btn-secondary {
+	height: 36px;
+	padding: 0 14px;
+	border-radius: 6px;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 13px;
+	font-weight: 600;
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.15));
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	transition: background 0.15s ease;
+}
+
+[data-theme="dark"] .acceptance-btn-secondary {
+	background: var(--paper-strong, #1f2937);
+	border-color: var(--line, rgba(255, 255, 255, 0.15));
+	color: var(--ink, #f9fafb);
+}
+
+.acceptance-btn-secondary:hover {
+	background: var(--paper-soft, rgba(0, 0, 0, 0.04));
+}
+
+[data-theme="dark"] .acceptance-btn-secondary:hover {
+	background: var(--paper-soft, rgba(255, 255, 255, 0.06));
+}
+
+.acceptance-btn-danger {
+	height: 28px;
+	width: 28px;
+	border-radius: 4px;
+	background: transparent;
+	color: var(--muted, #64748b);
+	border: none;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	transition: color 0.15s ease, background 0.15s ease;
+}
+
+.acceptance-btn-danger:hover {
+	background: rgba(239, 68, 68, 0.12);
+	color: var(--red, #ef4444);
+}

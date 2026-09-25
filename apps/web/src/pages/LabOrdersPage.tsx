@@ -43,6 +43,11 @@ const DentalLabOrderModal = lazy(() =>
 		default: module.DentalLabOrderModal,
 	})),
 );
+const DentalLabOrdersTrackerModal = lazy(() =>
+	import("../components/laboratory/DentalLabOrdersTrackerModal").then((module) => ({
+		default: module.DentalLabOrdersTrackerModal,
+	})),
+);
 const LabTrackingDrawer = lazy(() =>
 	import("../components/lab/LabTrackingDrawer").then((module) => ({
 		default: module.LabTrackingDrawer,
@@ -598,6 +603,7 @@ export function LabOrdersPage() {
 
 	// Modal State
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [isTrackerModalOpen, setIsTrackerModalOpen] = useState(false);
 	const [selectedOrderForEdit, setSelectedOrderForEdit] = useState<DentalLabOrderData | null>(null);
 	const [modalInitialTab, setModalInitialTab] = useState<"main" | "shades" | "stages" | "print">("main");
 
@@ -986,6 +992,17 @@ export function LabOrdersPage() {
 
 					<button
 						type="button"
+						onClick={() => setIsTrackerModalOpen(true)}
+						className="h-7.5 min-h-[30px] px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] text-xs font-bold shadow-2xs inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap"
+						title="Десктопный трекер нарядов ЗТЛ (дедлайны, VITA, себестоимость)"
+						data-testid="lab-orders-open-tracker-btn"
+					>
+						<Layers className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+						<span>Трекер ЗТЛ</span>
+					</button>
+
+					<button
+						type="button"
 						onClick={handleOpenNewOrder}
 						className="h-7.5 min-h-[30px] px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-bold shadow-2xs inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap"
 						data-testid="lab-orders-new-order-btn"
@@ -1306,6 +1323,17 @@ export function LabOrdersPage() {
 				initialType={scanAttachType}
 				onSave={handleSaveAttachedFile}
 			/>
+
+			{/* Dedicated Desktop ZTL Orders Tracker Modal */}
+			{isTrackerModalOpen && (
+				<Suspense fallback={null}>
+					<DentalLabOrdersTrackerModal
+						isOpen={isTrackerModalOpen}
+						onClose={() => setIsTrackerModalOpen(false)}
+						onOrderSaved={() => fetchOrders()}
+					/>
+				</Suspense>
+			)}
 		</div>
 	);
 }

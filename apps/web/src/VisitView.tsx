@@ -12,6 +12,7 @@ import { VisitMainTabs, type VisitSubViewTab } from "./components/visit/VisitMai
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
 import { VisitSpecialtyFocus } from "./components/visit/VisitSpecialtyFocus";
 import { VisitTimer } from "./components/visit/VisitTimer";
+import { DoctorShiftEarningsWidget } from "./components/doctor/DoctorShiftEarningsWidget";
 import { DictationHints } from "./DictationHints";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 import { SmartParsePreview } from "./SmartParsePreview";
@@ -1741,6 +1742,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							)}
 							<span className="hidden sm:inline-flex shrink-0">
 								<VisitTimer createdAt={activeAppointment?.startTime || activeAppointment?.startAt || activeAppointment?.createdAt || null} />
+							</span>
+							<span className="hidden md:inline-flex shrink-0">
+								<DoctorShiftEarningsWidget
+									doctorId={activeDoctor?.id || activeDoctor?.userId || "doc-1"}
+									doctorName={activeDoctor?.fullName || activeDoctor?.name || "Лечащий врач"}
+								/>
 							</span>
 							{/* Бейджи аллергий и критических соматических рисков в Tier 1 (Мандаты 8e, 8i) */}
 							{activePatientCriticalBadges.map((badge) => (

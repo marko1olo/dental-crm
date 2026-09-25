@@ -64,17 +64,8 @@ export interface WaitlistPatientEntry {
 	alreadyBooked?: boolean;
 }
 
-export interface TargetSlotInfo {
-	appointmentId?: string;
-	startsAt: string; // ISO
-	endsAt: string; // ISO
-	doctorUserId?: string | null;
-	doctorName?: string | null;
-	chairId?: string | null;
-	chairName?: string | null;
-	treatmentCategory?: string | null;
-	freedBecause?: string | null;
-}
+import type { TargetSlotInfo } from "./waitlistCancellationEngine";
+export type { TargetSlotInfo };
 
 export interface MatchScoringResult {
 	score: number; // 0 to 100

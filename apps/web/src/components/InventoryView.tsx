@@ -4,6 +4,7 @@ import {
 	ArrowUpFromLine,
 	ChevronDown,
 	Edit2,
+	FileText,
 	MoreHorizontal,
 	Package,
 	PackageCheck,
@@ -77,6 +78,11 @@ const MdlpScanningModal = lazy(() =>
 const NurseCarpuleDisposalModal = lazy(() =>
 	import("./inventory/NurseCarpuleDisposalModal").then((module) => ({
 		default: module.NurseCarpuleDisposalModal,
+	})),
+);
+const AcceptanceWaybillsModal = lazy(() =>
+	import("./inventory/AcceptanceWaybillsModal").then((module) => ({
+		default: module.AcceptanceWaybillsModal,
 	})),
 );
 
@@ -204,6 +210,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 	const [isWarehouseManagerOpen, setIsWarehouseManagerOpen] = useState(false);
 	const [isMdlpScanningOpen, setIsMdlpScanningOpen] = useState(false);
 	const [isNurseCarpuleModalOpen, setIsNurseCarpuleModalOpen] = useState(false);
+	const [isAcceptanceWaybillsOpen, setIsAcceptanceWaybillsOpen] = useState(false);
 	const [isOpsMenuOpen, setIsOpsMenuOpen] = useState(false);
 	const [isQuickPackagesOpen, setIsQuickPackagesOpen] = useState(false);
 	const opsMenuRef = React.useRef<HTMLDivElement>(null);
@@ -577,6 +584,36 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 										}}
 										role="menu"
 									>
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="acceptance-waybills-trigger"
+											onClick={() => {
+												setIsAcceptanceWaybillsOpen(true);
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 600,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+											}}
+											title="Приходная накладная от поставщика (Стомторг, KaVo, ВладМиВа): партии FEFO, оприходование и ТОРГ-12"
+											role="menuitem"
+										>
+											<FileText size={16} className="text-teal-600 shrink-0" />
+											<span>Приходная накладная (FEFO)</span>
+										</button>
+
 										<button
 											type="button"
 											className="secondary-button"
@@ -1094,6 +1131,32 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 								)}
 							</div>
 
+					{/* Quick Acceptance Waybills Button */}
+					<button
+						type="button"
+						className="secondary-button min-h-[44px] sm:min-h-[28px] sm:h-7 shrink-0 whitespace-nowrap"
+						onClick={() => setIsAcceptanceWaybillsOpen(true)}
+						style={{
+							display: "inline-flex",
+							alignItems: "center",
+							gap: 5,
+							padding: "4px 9px",
+							borderRadius: 6,
+							fontWeight: 600,
+							fontSize: 12,
+							whiteSpace: "nowrap",
+							cursor: "pointer",
+							background: paperSoftBg,
+							border: `1px solid ${borderColor}`,
+							color: "var(--ink)",
+						}}
+						title="Приходная накладная поставщика (FEFO партии, ТОРГ-12, погашение овердрафта)"
+						data-testid="btn-acceptance-waybills"
+					>
+						<FileText size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<span className="hidden sm:inline">Приход (FEFO)</span>
+					</button>
+
 					{/* Add Inventory Item Button */}
 					<button
 						type="button"
@@ -1439,31 +1502,53 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 													<span style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1.5 }} className="w-full break-words text-center">
 														Оформите первую приходную накладную для оприходования медикаментов, анестетиков, пломбировочных материалов и расходников.
 													</span>
-													<button
-														type="button"
-														onClick={() => openAddModal()}
-														style={{
-															minHeight: "44px",
-															padding: "10px 24px",
-															borderRadius: 10,
-															background: "var(--teal, #0d9488)",
-															color: "var(--on-teal, #ffffff)",
-															fontWeight: 700,
-															fontSize: 14,
-															border: "none",
-															boxShadow: "var(--shadow-1)",
-															cursor: "pointer",
-															display: "inline-flex",
-															alignItems: "center",
-															gap: 8,
-															marginTop: 6,
-														}}
-														data-testid="empty-state-add-first-material-btn"
-													>
-														<Plus size={16} />
-														<span className="hidden sm:inline">Приходная накладная</span>
-														<span className="sm:hidden">Приход</span>
-													</button>
+													<div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+														<button
+															type="button"
+															onClick={() => setIsAcceptanceWaybillsOpen(true)}
+															style={{
+																minHeight: "40px",
+																padding: "8px 20px",
+																borderRadius: 8,
+																background: "var(--teal, #0d9488)",
+																color: "var(--on-teal, #ffffff)",
+																fontWeight: 700,
+																fontSize: 14,
+																border: "none",
+																boxShadow: "var(--shadow-1)",
+																cursor: "pointer",
+																display: "inline-flex",
+																alignItems: "center",
+																gap: 8,
+															}}
+															data-testid="empty-state-acceptance-waybills-btn"
+														>
+															<FileText size={16} />
+															<span>Оформить приходную накладную (FEFO)</span>
+														</button>
+														<button
+															type="button"
+															onClick={() => openAddModal()}
+															style={{
+																minHeight: "40px",
+																padding: "8px 16px",
+																borderRadius: 8,
+																background: "transparent",
+																color: "var(--ink)",
+																fontWeight: 600,
+																fontSize: 13,
+																border: "1px solid var(--line, #e2e8f0)",
+																cursor: "pointer",
+																display: "inline-flex",
+																alignItems: "center",
+																gap: 6,
+															}}
+															data-testid="empty-state-add-first-material-btn"
+														>
+															<Plus size={14} />
+															<span>Создать карточку вручную</span>
+														</button>
+													</div>
 												</div>
 											)}
 										</td>
@@ -2788,6 +2873,26 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 								drugName: details.drugName,
 							});
 							setIsNurseCarpuleModalOpen(false);
+							fetchItems();
+						}}
+					/>
+				</Suspense>
+			)}
+
+			{isAcceptanceWaybillsOpen && (
+				<Suspense fallback={null}>
+					<AcceptanceWaybillsModal
+						isOpen={isAcceptanceWaybillsOpen}
+						onClose={() => setIsAcceptanceWaybillsOpen(false)}
+						organizationId={organizationId}
+						inventoryItems={items.map((it) => ({
+							id: it.id,
+							name: it.name,
+							stockQuantity: Number(it.stockQuantity) || 0,
+							unitCostRub: it.unitCostRub != null ? String(it.unitCostRub) : undefined,
+							unit: it.unit || "уп",
+						}))}
+						onWaybillPosted={async () => {
 							fetchItems();
 						}}
 					/>
