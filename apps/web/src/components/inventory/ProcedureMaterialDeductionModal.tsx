@@ -12,43 +12,33 @@
 
 import {
 	AlertTriangle,
-	Check,
-	CheckCircle2,
-	Copy,
 	Package,
-	Plus,
-	Printer,
 	Search,
 	ShieldAlert,
 	ShieldCheck,
 	ShoppingCart,
-	Trash2,
 	X,
-	Zap,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { showToast } from "../GlobalToast";
+import { showToast } from "../GlobalToast.js";
 import {
-	ALL_PROCEDURE_TECH_MAPS,
-	CLINICAL_PROCEDURE_PACKAGES,
 	type DeductionLineItem,
 	type DeductionSummary,
 	type SupplierPurchaseOrderView,
-	TECH_MAP_CATEGORY_COLORS,
 	TECH_MAP_CATEGORY_LABELS,
 	type TechMapCategory,
 	calculateDeductionSummary,
-	calculateLineCostKopecks,
 	createDeductionLinesFromTechMaps,
 	createQuickCustomLineItem,
 	createSupplierPurchaseOrderFromLines,
-	evaluateStockStatus,
-	formatQuantityWithUnitRu,
 	formatSupplierPurchaseOrderTextRu,
-	formatUnitPriceUnitRu,
-} from "./inventoryMath";
-import type { InventoryItem } from "./useInventoryLogic";
+} from "./inventoryMath.js";
+import { ProcedureMaterialAddCustomBar } from "./ProcedureMaterialAddCustomBar.js";
+import { ProcedureMaterialPackagesBar } from "./ProcedureMaterialPackagesBar.js";
+import { ProcedureMaterialPoModal } from "./ProcedureMaterialPoModal.js";
+import { ProcedureMaterialTable } from "./ProcedureMaterialTable.js";
+import type { InventoryItem } from "./useInventoryLogic.js";
 import "./inventoryDeduction.css";
 
 export const STANDARD_CONSUMABLE_PRESET_NAME =
@@ -411,192 +401,15 @@ export function ProcedureMaterialDeductionModal({
 
 	// Anti-Matryoshka (Mandate 8d Sin 6): Render PO sequentially at modal depth strictly 1
 	if (showPoModal && generatedPurchaseOrder) {
-		const poContent = (
-			<div
-				className="inventory-deduction-backdrop"
-				onClick={(e) => e.target === e.currentTarget && setShowPoModal(false)}
-			>
-				<div
-					className="inventory-deduction-modal inventory-po-dialog"
-					style={{ maxWidth: "880px" }}
-					role="dialog"
-					aria-modal="true"
-					aria-label="Заказ поставщику расходных материалов"
-				>
-					<div className="inventory-po-header">
-						<div>
-							<h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
-								Заказ поставщику {generatedPurchaseOrder.orderNumber}
-							</h3>
-							<div
-								style={{
-									fontSize: 12,
-									color: "var(--muted)",
-									marginTop: 2,
-								}}
-							>
-								Основание:{" "}
-								{generatedPurchaseOrder.reason === "stock_deficit"
-									? "Ликвидация дефицита материалов"
-									: "Критический остаток"}{" "}
-								• {generatedPurchaseOrder.orderDate}
-							</div>
-						</div>
-						<button
-							type="button"
-							className="inventory-deduction-close-btn"
-							onClick={() => setShowPoModal(false)}
-							aria-label="Закрыть"
-						>
-							<X size={18} />
-						</button>
-					</div>
-
-					<div className="inventory-po-body">
-						<div
-							style={{
-								fontSize: 13,
-								color: "var(--muted)",
-								marginBottom: 12,
-							}}
-						>
-							Автоматически рассчитанная спецификация к заказу для восстановления неснижаемого складского запаса:
-						</div>
-
-						<table className="inventory-po-table">
-							<thead>
-								<tr>
-									<th>Артикул</th>
-									<th>Наименование материала</th>
-									<th>Ед.</th>
-									<th style={{ textAlign: "right" }}>Остаток</th>
-									<th style={{ textAlign: "right" }}>Дефицит</th>
-									<th style={{ textAlign: "right" }}>К заказу</th>
-									<th style={{ textAlign: "right" }}>Цена</th>
-									<th style={{ textAlign: "right" }}>Сумма</th>
-								</tr>
-							</thead>
-							<tbody>
-								{generatedPurchaseOrder.items.map((item) => (
-									<tr key={item.sku}>
-										<td style={{ fontFamily: "monospace", fontSize: 11 }}>
-											{item.sku}
-										</td>
-										<td style={{ fontWeight: 600 }}>{item.materialName}</td>
-										<td>{item.unit}</td>
-										<td style={{ textAlign: "right" }}>
-											{item.currentStock}
-										</td>
-										<td
-											style={{
-												textAlign: "right",
-												color:
-													item.shortfall > 0
-														? "var(--rust)"
-														: "inherit",
-												fontWeight: 700,
-											}}
-										>
-											{item.shortfall > 0 ? item.shortfall : "—"}
-										</td>
-										<td
-											style={{
-												textAlign: "right",
-												fontWeight: 700,
-												color: "var(--teal-dark)",
-											}}
-										>
-											{item.suggestedOrderQuantity}
-										</td>
-										<td style={{ textAlign: "right" }}>
-											{item.unitCostFormatted}
-										</td>
-										<td
-											style={{
-												textAlign: "right",
-												fontWeight: 700,
-											}}
-										>
-											{item.totalCostFormatted}
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-
-						<div
-							style={{
-								marginTop: 16,
-								display: "flex",
-								justifyContent: "flex-end",
-								gap: 24,
-								fontSize: 14,
-							}}
-						>
-							<div>
-								Позиций: <strong>{generatedPurchaseOrder.totalItemsCount}</strong>
-							</div>
-							<div>
-								Итого к заказу:{" "}
-								<strong
-									style={{
-										color: "var(--teal-dark)",
-										fontSize: 16,
-									}}
-								>
-									{generatedPurchaseOrder.totalCostFormatted}
-								</strong>
-							</div>
-						</div>
-					</div>
-
-					<div className="inventory-po-footer">
-						<div style={{ display: "flex", gap: 10 }}>
-							<button
-								type="button"
-								className="inventory-cancel-btn"
-								onClick={handleCopyPurchaseOrder}
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: 6,
-									minHeight: "34px",
-								}}
-							>
-								{copiedPo ? <Check size={16} /> : <Copy size={16} />}
-								{copiedPo ? "Скопировано!" : "Копировать текст"}
-							</button>
-							<button
-								type="button"
-								className="inventory-cancel-btn"
-								onClick={handlePrintPurchaseOrder}
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: 6,
-									minHeight: "34px",
-								}}
-							>
-								<Printer size={16} />
-								Печать
-							</button>
-						</div>
-						<button
-							type="button"
-							className="inventory-confirm-deduct-btn"
-							onClick={() => setShowPoModal(false)}
-							style={{ minHeight: "34px" }}
-						>
-							← Вернуться к списанию
-						</button>
-					</div>
-				</div>
-			</div>
+		return (
+			<ProcedureMaterialPoModal
+				generatedPurchaseOrder={generatedPurchaseOrder}
+				onClose={() => setShowPoModal(false)}
+				onCopy={handleCopyPurchaseOrder}
+				onPrint={handlePrintPurchaseOrder}
+				copiedPo={copiedPo}
+			/>
 		);
-
-		return typeof document !== "undefined"
-			? createPortal(poContent, document.body)
-			: poContent;
 	}
 
 	const modalContent = (
@@ -643,120 +456,12 @@ export function ProcedureMaterialDeductionModal({
 					</button>
 				</header>
 
-				{/* 1-CLICK CLINICAL PACKAGES BAR (MANDATE 8e / 8k / 8n) */}
-				<div className="inventory-clinical-packages-bar" data-testid="clinical-packages-bar">
-					<div className="inventory-clinical-packages-header">
-						<span className="inventory-clinical-packages-label">
-							<Zap size={14} className="shrink-0" />
-							Клинические пакеты (1 клик):
-						</span>
-						<span className="inventory-clinical-packages-hint">
-							СИЗ + Крафт + анестезия + протокол лечения (1 клик)
-						</span>
-					</div>
-					<div className="inventory-packages-chips">
-						{/* Экспресс-пресеты медсестры и врача (Мандат 8e п. 10, Мандат 8k, Мандат 8n) */}
-						<button
-							type="button"
-							className={`inventory-package-btn btn-writeoff-anesthesia-packet ${
-								selectedMapCodes.includes("A16.07.004") && !selectedMapCodes.includes("A16.07.002.001") && !selectedMapCodes.includes("A16.07.051")
-									? "active"
-									: ""
-							}`}
-							data-testid="preset-btn-anesthesia"
-							data-testid-alt="btn-dispense-standard-anesthesia-kit"
-							data-testid-package="btn-writeoff-anesthesia-packet"
-							onClick={() => handleApplyPackage(["SANPIN_PPE", "A16.07.004"])}
-							title="Стандартный набор: анестезия 1.7 мл + карпульная игла + валики"
-						>
-							<Zap size={14} className="shrink-0 text-amber-500" />
-							<span>Стандартная анестезия 1.7 мл + карпульная игла + валики</span>
-						</button>
-
-						<button
-							type="button"
-							className={`inventory-package-btn ${
-								selectedMapCodes.includes("A16.07.002.001") ? "active" : ""
-							}`}
-							data-testid="preset-btn-caries"
-							onClick={() =>
-								handleApplyPackage([
-									"SANPIN_PPE",
-									"SANPIN_KRAFT",
-									"A16.07.004",
-									"A16.07.002.001",
-								])
-							}
-							title="Терапевтический набор (пломбирование зуба): СИЗ + Крафт + Анестезия + Композит/Адгезив"
-						>
-							<Package size={14} className="shrink-0" />
-							<span>Терапевтический набор / Пломбирование зуба</span>
-						</button>
-
-						<button
-							type="button"
-							className={`inventory-package-btn btn-writeoff-hygiene-packet ${
-								selectedMapCodes.includes("A16.07.051") ? "active" : ""
-							}`}
-							data-testid="preset-btn-hygiene"
-							data-testid-package="btn-writeoff-hygiene-packet"
-							onClick={() =>
-								handleApplyPackage(["SANPIN_PPE", "SANPIN_KRAFT", "A16.07.051"])
-							}
-							title="Профгигиена: СИЗ + Крафт + Air-Flow + Паста + Оптрагейт"
-						>
-							<Package size={14} className="shrink-0" />
-							<span>Профгигиена</span>
-						</button>
-
-						{CLINICAL_PROCEDURE_PACKAGES.map((pkg) => {
-							const isPackageActive = pkg.codes.every((c) =>
-								selectedMapCodes.includes(c),
-							);
-							return (
-								<button
-									key={pkg.id}
-									type="button"
-									className={`inventory-package-btn ${isPackageActive ? "active" : ""}`}
-									data-testid={`package-btn-${pkg.id}`}
-									onClick={() => handleApplyPackage(pkg.codes)}
-									title={`${pkg.title}: ${pkg.description}`}
-								>
-									{isPackageActive ? (
-										<CheckCircle2 size={15} className="shrink-0" />
-									) : (
-										<Package size={14} className="shrink-0 opacity-70" />
-									)}
-									<span>{pkg.title}</span>
-								</button>
-							);
-						})}
-					</div>
-				</div>
-
-				{/* TECH MAP SELECTOR BAR */}
-				<div className="inventory-tech-maps-bar">
-					<div className="inventory-tech-maps-label">
-						Технологические карты процедур:
-					</div>
-					<div className="inventory-tech-maps-chips" style={{ display: "flex", flexWrap: "nowrap", overflowX: "auto", scrollbarWidth: "none", gap: "8px", paddingBottom: "4px" }}>
-						{ALL_PROCEDURE_TECH_MAPS.map((tm) => {
-							const isActive = selectedMapCodes.includes(tm.code);
-							return (
-								<button
-									key={tm.id}
-									type="button"
-									className={`inventory-tech-map-chip ${isActive ? "active" : ""}`}
-									style={{ flexShrink: 0, whiteSpace: "nowrap", minWidth: "max-content" }}
-									onClick={() => handleToggleTechMap(tm.code)}
-								>
-									{isActive && <CheckCircle2 size={16} />}
-									{tm.title}
-								</button>
-							);
-						})}
-					</div>
-				</div>
+				{/* 1-CLICK CLINICAL PACKAGES BAR & TECH MAP SELECTOR BAR */}
+				<ProcedureMaterialPackagesBar
+					selectedMapCodes={selectedMapCodes}
+					onApplyPackage={handleApplyPackage}
+					onToggleTechMap={handleToggleTechMap}
+				/>
 
 				{/* CRITICAL THRESHOLD & DEFICIT ALERT BAR (RESPONSIVE 390px LAYOUT) */}
 				{(summary.hasDeficit || summary.warningCount > 0) && (
@@ -846,329 +551,43 @@ export function ProcedureMaterialDeductionModal({
 
 				{/* MATERIALS LIST TABLE */}
 				<div className="inventory-materials-body">
-					{filteredLines.length === 0 ? (
-						<div
-							style={{
-								padding: "48px 24px",
-								textAlign: "center",
-								color: "var(--muted)",
-								fontSize: 15,
-								fontWeight: 600,
-							}}
-						>
-							<div>
-								Материалы не найдены. Выберите техкарту выше или добавьте позицию со
-								склада.
-							</div>
-							<button
-								type="button"
-								className="inventory-add-btn"
-								onClick={() => {
-									const preset = createStandardConsumablePresetItem(warehouseItems);
-									setLines([preset]);
-									showToast(
-										"Добавлен стандартный клинический расходный набор (Клинический регламент)",
-										"info",
-									);
-								}}
-								style={{
-									marginTop: 16,
-									display: "inline-flex",
-									alignItems: "center",
-									gap: 6,
-									minHeight: "34px",
-									padding: "0 16px",
-									fontSize: 13,
-									fontWeight: 700,
-								}}
-								data-testid="auto-populate-standard-preset-btn"
-							>
-								<Plus size={16} />
-								Добавить стандартный расходный набор в 1 клик
-							</button>
-						</div>
-					) : (
-						<div className="inventory-table-container">
-							<table className="inventory-dense-table">
-								<thead>
-									<tr>
-										<th>Материал / Категория</th>
-										<th>Норма</th>
-										<th>Остаток склада</th>
-										<th style={{ textAlign: "center" }}>Списание (кол-во)</th>
-										<th style={{ textAlign: "right" }}>Себестоимость</th>
-										<th style={{ width: "32px" }}></th>
-									</tr>
-								</thead>
-								<tbody>
-									{filteredLines.map((line) => {
-										const stockStatus = evaluateStockStatus(
-											line.stockQuantity,
-											line.quantity,
-											line.criticalThreshold,
-											line.unit,
-										);
-										const lineCostKopecks = calculateLineCostKopecks(
-											line.unitCostKopecks,
-											line.quantity,
-										);
-										const catColor =
-											TECH_MAP_CATEGORY_COLORS[line.category] ??
-											TECH_MAP_CATEGORY_COLORS.other;
-
-										return (
-											<tr
-												key={line.id}
-												className={`inventory-table-row ${
-													stockStatus.severity === "critical"
-														? "has-deficit"
-														: stockStatus.severity === "warning"
-															? "has-warning"
-															: ""
-												}`}
-												style={{ height: "38px" }}
-											>
-												{/* Name & Category */}
-												<td className="inventory-td-name">
-													<div className="inventory-name-cell" style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "nowrap" }}>
-														<span
-															className="inventory-material-name truncate max-w-[220px]"
-															style={{
-																fontSize: "12px",
-																fontWeight: 700,
-																overflow: "hidden",
-																textOverflow: "ellipsis",
-																whiteSpace: "nowrap",
-															}}
-															title={line.materialName}
-														>
-															{line.materialName}
-														</span>
-														<span
-															className="inventory-category-badge"
-															style={{
-																padding: "1px 5px",
-																fontSize: "9px",
-																fontWeight: 700,
-																background: catColor.bg,
-																color: catColor.text,
-																border: `1px solid ${catColor.border}`,
-																flexShrink: 0,
-																whiteSpace: "nowrap",
-															}}
-														>
-															{TECH_MAP_CATEGORY_LABELS[line.category]}
-														</span>
-														{line.lotNumber && (
-															<span className="inventory-lot-tag" style={{ fontSize: "10px", color: "var(--muted)", flexShrink: 0 }}>
-																п. {line.lotNumber}
-															</span>
-														)}
-														{line.expirationDate && (
-															<span className="inventory-exp-tag" style={{ fontSize: "10px", color: "var(--muted)", flexShrink: 0 }}>
-																до {line.expirationDate}
-															</span>
-														)}
-													</div>
-												</td>
-
-												{/* Standard Norm */}
-												<td className="inventory-td-norm" style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)", whiteSpace: "nowrap" }}>
-													{formatQuantityWithUnitRu(line.standardQuantity, line.unit)}
-												</td>
-
-												{/* Stock Status */}
-												<td className="inventory-td-stock" style={{ whiteSpace: "nowrap" }}>
-													{stockStatus.severity === "critical" ? (
-														<span className="inventory-deficit-badge" style={{ fontSize: "10px", padding: "1px 5px" }}>
-															<AlertTriangle size={11} />
-															Дефицит {formatQuantityWithUnitRu(stockStatus.deficit, line.unit)} (склад: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)})
-														</span>
-													) : stockStatus.severity === "warning" ? (
-														<span className="inventory-stock-pill stock-warning" style={{ fontSize: "10px", padding: "1px 5px" }}>
-															<AlertTriangle size={11} />
-															Остаток: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)}
-														</span>
-													) : (
-														<span className="inventory-stock-pill stock-ok" style={{ fontSize: "10px", padding: "1px 5px" }}>
-															Остаток: {formatQuantityWithUnitRu(line.stockQuantity, line.unit)}
-														</span>
-													)}
-												</td>
-
-												{/* Stepper / Input */}
-												<td className="inventory-td-stepper" style={{ whiteSpace: "nowrap" }}>
-													<div className="inventory-compact-stepper-wrap" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-														<div className="inventory-stepper-group">
-															<button
-																type="button"
-																className="inventory-stepper-btn"
-																onClick={() => handleStepQuantity(line.id, -1)}
-																disabled={false}
-																aria-label="Уменьшить количество"
-															>
-																−
-															</button>
-															<input
-																type="text"
-																className="inventory-stepper-input"
-																value={line.quantity}
-																onChange={(e) =>
-																	handleDirectQuantityChange(line.id, e.target.value)
-																}
-															/>
-															<button
-																type="button"
-																className="inventory-stepper-btn"
-																onClick={() => handleStepQuantity(line.id, 1)}
-																aria-label="Увеличить количество"
-															>
-																+
-															</button>
-														</div>
-														<button
-															type="button"
-															className="inventory-quick-chip"
-															style={{ height: "26px", padding: "0 6px", fontSize: "10px" }}
-															onClick={() => handleResetToStandard(line.id)}
-															title="Вернуть стандартную норму"
-														>
-															Норма
-														</button>
-													</div>
-												</td>
-
-												{/* Cost */}
-												<td className="inventory-td-cost" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-													<div className="inventory-cost-cell" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0" }}>
-														<span className="inventory-cost-val" style={{ fontSize: "12px", fontWeight: 700 }}>
-															{(lineCostKopecks / 100).toLocaleString("ru-RU", {
-																minimumFractionDigits: 2,
-																maximumFractionDigits: 2,
-															})}{" "}
-															₽
-														</span>
-														<span className="inventory-unit-price" style={{ fontSize: "9px" }}>
-															{(line.unitCostKopecks / 100).toLocaleString("ru-RU", {
-																minimumFractionDigits: 2,
-																maximumFractionDigits: 2,
-															})}{" "}
-															₽ / {formatUnitPriceUnitRu(line.unit)}
-														</span>
-													</div>
-												</td>
-
-												{/* Delete Action */}
-												<td className="inventory-td-action" style={{ textAlign: "center" }}>
-													<button
-														type="button"
-														className="inventory-remove-line-btn"
-														style={{ width: "26px", height: "26px" }}
-														onClick={() => handleRemoveLine(line.id)}
-														aria-label="Удалить позицию"
-													>
-														<Trash2 size={13} />
-													</button>
-												</td>
-											</tr>
-										);
-									})}
-								</tbody>
-							</table>
-						</div>
-					)}
+					<ProcedureMaterialTable
+						filteredLines={filteredLines}
+						warehouseItems={warehouseItems}
+						onAddStandardPreset={() => {
+							const preset = createStandardConsumablePresetItem(warehouseItems);
+							setLines([preset]);
+							showToast(
+								"Добавлен стандартный клинический расходный набор (Клинический регламент)",
+								"info",
+							);
+						}}
+						onStepQuantity={handleStepQuantity}
+						onDirectQuantityChange={handleDirectQuantityChange}
+						onResetToStandard={handleResetToStandard}
+						onRemoveLine={handleRemoveLine}
+					/>
 				</div>
 
 				{/* ADD CUSTOM MATERIAL: WAREHOUSE CATALOG & QUICK ADD (SOLO DOCTOR RESILIENCE) */}
-				<div className="inventory-add-custom-bar" data-testid="inventory-add-custom-bar">
-					<div className="inventory-add-custom-inputs">
-						<span
-							style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)", whiteSpace: "nowrap" }}
-						>
-							Добавить расходник:
-						</span>
-
-						{warehouseItems.length > 0 && (
-							<div style={{ display: "flex", alignItems: "center", gap: "8px", flex: "1 1 300px", minWidth: "220px" }}>
-								<select
-									className="inventory-add-select"
-									value={selectedCustomId}
-									onChange={(e) => {
-										setSelectedCustomId(e.target.value);
-										if (e.target.value) setHighlightSelect(false);
-									}}
-									aria-label="Выбрать материал из каталога склада"
-									data-testid="warehouse-select-custom"
-									style={{
-										minHeight: "34px",
-										borderColor: highlightSelect ? "var(--warn-fg, #b45309)" : undefined,
-										boxShadow: highlightSelect ? "0 0 0 2px rgba(217, 119, 6, 0.25)" : undefined,
-									}}
-								>
-									<option value="">-- Выберите из каталога склада --</option>
-									{warehouseItems.map((item) => (
-										<option key={item.id} value={item.id}>
-											{item.name} (остаток: {item.stockQuantity} шт.)
-										</option>
-									))}
-								</select>
-								<button
-									type="button"
-									className="inventory-add-btn"
-									onClick={handleAddCustomMaterial}
-									disabled={isDeducting}
-									data-testid="warehouse-add-custom-btn"
-									title="Добавить выбранный из каталога материал"
-									style={{ minHeight: "34px" }}
-								>
-									<Plus size={16} />
-									Добавить со склада
-								</button>
-								<span style={{ fontSize: 12, color: "var(--muted)", padding: "0 4px", whiteSpace: "nowrap" }}>или</span>
-							</div>
-						)}
-
-						{/* Quick text input for Solo Doctor & Empty Catalog Resilience */}
-						<div style={{ display: "flex", alignItems: "center", gap: "6px", flex: "1 1 260px", minWidth: "220px" }}>
-							<input
-								type="text"
-								className="inventory-quick-custom-input"
-								placeholder="Или введите название расходника..."
-								aria-label="Или введите название расходника"
-								data-testid="quick-custom-material-input"
-								value={customMaterialName}
-								onChange={(e) => {
-									setCustomMaterialName(e.target.value);
-									if (e.target.value.trim()) setHighlightCustomInput(false);
-								}}
-								onKeyDown={(e) => {
-									if (e.key === "Enter") {
-										e.preventDefault();
-										handleAddQuickCustomMaterial();
-									}
-								}}
-								style={{
-									flex: 1,
-									minHeight: "34px",
-									borderColor: highlightCustomInput ? "var(--warn-fg, #b45309)" : undefined,
-									boxShadow: highlightCustomInput ? "0 0 0 2px rgba(217, 119, 6, 0.25)" : undefined,
-								}}
-							/>
-							<button
-								type="button"
-								className="inventory-add-btn"
-								onClick={handleAddQuickCustomMaterial}
-								disabled={isDeducting}
-								data-testid="quick-custom-material-add-btn"
-								title="Добавить расходник без каталога склада"
-								style={{ minHeight: "34px" }}
-							>
-								<Plus size={16} />
-								Добавить
-							</button>
-						</div>
-					</div>
-				</div>
+				<ProcedureMaterialAddCustomBar
+					warehouseItems={warehouseItems}
+					selectedCustomId={selectedCustomId}
+					onSelectCustomId={(val) => {
+						setSelectedCustomId(val);
+						if (val) setHighlightSelect(false);
+					}}
+					highlightSelect={highlightSelect}
+					onAddCustomMaterial={handleAddCustomMaterial}
+					isDeducting={isDeducting}
+					customMaterialName={customMaterialName}
+					onChangeCustomMaterialName={(val) => {
+						setCustomMaterialName(val);
+						if (val.trim()) setHighlightCustomInput(false);
+					}}
+					highlightCustomInput={highlightCustomInput}
+					onAddQuickCustomMaterial={handleAddQuickCustomMaterial}
+				/>
 
 				{/* FOOTER & ACTIONS */}
 				<footer className="inventory-deduction-footer">

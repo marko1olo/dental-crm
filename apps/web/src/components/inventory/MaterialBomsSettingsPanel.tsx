@@ -27,7 +27,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
-import type { InventoryItem } from "./useInventoryLogic";
+import type { InventoryItem } from "./useInventoryLogic.js";
+import { MaterialBomsDeleteModal } from "./MaterialBomsDeleteModal.js";
 import "./MaterialBomsSettingsPanel.css";
 
 export interface ProcedureMaterialRuleViewItem {
@@ -780,44 +781,11 @@ export function MaterialBomsSettingsPanel({
 			)}
 
 			{/* CONFIRM DELETE MODAL */}
-			{confirmDeleteId && (
-				<div className="material-boms-modal-backdrop">
-					<div className="material-boms-modal" style={{ maxWidth: 420 }}>
-						<div className="material-boms-modal-header">
-							<h3 className="material-boms-modal-title">Удалить норму расхода?</h3>
-							<button
-								type="button"
-								style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}
-								onClick={() => setConfirmDeleteId(null)}
-							>
-								<X size={20} />
-							</button>
-						</div>
-						<div className="material-boms-modal-body">
-							<p style={{ margin: 0, fontSize: 14, color: "var(--ink)" }}>
-								Вы уверены, что хотите удалить эту норму списания? При закрытии приёма данный материал больше не будет автоматически списываться со склада.
-							</p>
-						</div>
-						<div className="material-boms-modal-footer">
-							<button
-								type="button"
-								className="material-boms-btn material-boms-btn-secondary"
-								onClick={() => setConfirmDeleteId(null)}
-							>
-								Отмена
-							</button>
-							<button
-								type="button"
-								className="material-boms-btn material-boms-btn-primary"
-								style={{ background: "var(--bad-fg, #dc2626)" }}
-								onClick={() => handleDeleteRule(confirmDeleteId)}
-							>
-								Удалить
-							</button>
-						</div>
-					</div>
-				</div>
-			)}
+			<MaterialBomsDeleteModal
+				confirmDeleteId={confirmDeleteId}
+				onClose={() => setConfirmDeleteId(null)}
+				onConfirm={handleDeleteRule}
+			/>
 		</div>
 	);
 }

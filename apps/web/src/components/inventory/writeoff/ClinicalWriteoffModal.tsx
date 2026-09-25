@@ -8,7 +8,6 @@
 
 import {
 	AlertTriangle,
-	Check,
 	Clock,
 	Download,
 	FileText,
@@ -18,11 +17,7 @@ import {
 	Printer,
 	RefreshCw,
 	ShieldAlert,
-	ShieldCheck,
-	Sparkles,
-	Trash2,
 	X,
-	Zap,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -41,7 +36,6 @@ import {
 	generateAct0504230Html,
 	generateFormM11Html,
 	generateTorg16Html,
-	kopecksToRubles,
 	updateLineActualQuantity,
 	validateWriteoffDocument,
 } from "./clinicalWriteoffEngine.js";
@@ -49,9 +43,10 @@ import {
 	type CabinetStockBatch,
 	DEFAULT_CLINIC_LEGAL_INFO,
 	DENTAL_CABINET_STOCK_PRESETS,
-	DISCREPANCY_REASONS,
 	type DiscrepancyReasonCode,
 } from "./clinicalWriteoffPresets.js";
+import { ClinicalWriteoffQuickStrip } from "./ClinicalWriteoffQuickStrip.js";
+import { ClinicalWriteoffServiceTable } from "./ClinicalWriteoffServiceTable.js";
 
 export interface ClinicalWriteoffModalProps {
 	readonly isOpen: boolean;
@@ -109,7 +104,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 	);
 	const [actDate, setActDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
 	const [selectedCabinetId, setSelectedCabinetId] = useState<string>(cabinetId);
-	const [statutoryFormType, setStatutoryFormType] = useState<"0504230" | "M11" | "TORG16">(defaultFormType);
+	const [statutoryFormType] = useState<"0504230" | "M11" | "TORG16">(defaultFormType);
 	const [notes, setNotes] = useState<string>("");
 	const [isSingleSigner, setIsSingleSigner] = useState<boolean>(true);
 	const [showExtraForms, setShowExtraForms] = useState<boolean>(false);
@@ -455,67 +450,13 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 						</div>
 					</div>
 
-					{/* РЕЖИМ СПИСАНИЯ: ЕДИНОЛИЧНОЕ УТВЕРЖДЕНИЕ ВРАЧОМ / МЕДСЕСТРОЙ (Мандат 8e, Мандат 8n) */}
-					<div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-line bg-paper text-xs">
-						<div className="flex items-center gap-2 text-ink">
-							<ShieldCheck size={18} className="text-teal-600 shrink-0" />
-							<span className="font-bold">
-								Единоличное списание лечащим врачом / ответственной медсестрой (без комиссии из 3 человек)
-							</span>
-						</div>
-						<span className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 inline-flex items-center gap-1">
-							<Check size={12} className="text-teal-600" aria-hidden="true" />
-							<span>Форма 0504230 / ТОРГ-16: без созыва комиссии</span>
-						</span>
-					</div>
-
-					{/* 1-Клик Экспресс-Списание (Мандат 8e п. 10: медсестра списывает в 1 клик без комиссий) */}
-					<div className="flex flex-wrap items-center gap-2 p-3 rounded-xl border border-teal-500/30 bg-teal-500/5 text-xs" data-testid="quick-writeoff-strip">
-						<span className="font-bold text-teal-800 dark:text-teal-300 flex items-center gap-1">
-							<Zap size={14} className="text-teal-600" />
-							<span>1-Клик Экспресс-списание:</span>
-						</span>
-						<button
-							type="button"
-							onClick={handleQuickCarpuleWriteoff}
-							className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-teal-500/40 text-teal-800 dark:text-teal-200 hover:bg-teal-500/10 transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
-							data-testid="btn-quick-carpule-writeoff"
-							title="Списать 1 использованную карпулу анестетика (Артикаин) без комиссии"
-						>
-							<PackageCheck size={16} className="text-teal-600 shrink-0" />
-							<span>Карпула анестетика (1 шт.)</span>
-						</button>
-						<button
-							type="button"
-							onClick={handleQuickAnesthesiaPackageWriteoff}
-							className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-teal-500/60 text-teal-900 dark:text-teal-100 hover:bg-teal-500/10 transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
-							data-testid="btn-quick-anesthesia-package-writeoff"
-							title="Списать стандартный пакет анестезии (карпула 1.7 мл + игла 30G + антисептик) без комиссии"
-						>
-							<PackageCheck size={16} className="text-teal-600 shrink-0" />
-							<span>Пакет анестезии (карпула + игла + антисептик)</span>
-						</button>
-						<button
-							type="button"
-							onClick={handleQuickTherapyWriteoff}
-							className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-blue-500/40 text-blue-800 dark:text-blue-200 hover:bg-blue-500/10 transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
-							data-testid="btn-quick-therapy-writeoff"
-							title="Пакетное списание расходников терапии (анестезия + композит + расходники)"
-						>
-							<Layers size={16} className="text-blue-600 shrink-0" />
-							<span>Пакет «Терапия»</span>
-						</button>
-						<button
-							type="button"
-							onClick={handleQuickSurgeryWriteoff}
-							className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-purple-500/40 text-purple-800 dark:text-purple-200 hover:bg-purple-500/10 transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
-							data-testid="btn-quick-surgery-writeoff"
-							title="Пакетное списание расходников хирургии (анестезия + скальпель + шовный материал)"
-						>
-							<Sparkles size={16} className="text-purple-600 shrink-0" />
-							<span>Пакет «Хирургия»</span>
-						</button>
-					</div>
+					{/* 1-Клик Экспресс-Списание и Единоличное списание */}
+					<ClinicalWriteoffQuickStrip
+						onQuickCarpuleWriteoff={handleQuickCarpuleWriteoff}
+						onQuickAnesthesiaPackageWriteoff={handleQuickAnesthesiaPackageWriteoff}
+						onQuickTherapyWriteoff={handleQuickTherapyWriteoff}
+						onQuickSurgeryWriteoff={handleQuickSurgeryWriteoff}
+					/>
 
 					{/* Предупреждения: Сроки годности или дефицит */}
 					{totals.hasExpiredLots && (
@@ -600,254 +541,14 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 									</div>
 
 									{/* Таблица материалов услуги */}
-									<div className="cw-table-wrap">
-										<table className="cw-table">
-											<thead>
-												<tr>
-													<th>Материал / SKU</th>
-													<th>Партия (LOT)</th>
-													<th>Срок годности</th>
-													<th className="text-center">Норма (804н)</th>
-													<th className="text-center">Факт расход</th>
-													<th className="text-center">Отклонение</th>
-													<th>Причина расхождения</th>
-													<th className="text-right">Цена, ₽</th>
-													<th className="text-right">Сумма, ₽</th>
-													<th></th>
-												</tr>
-											</thead>
-											<tbody>
-												{serviceLines.map((line) => {
-													const unitRub = kopecksToRubles(line.unitCostKopecks);
-													const totalRub = kopecksToRubles(line.totalCostKopecks);
-													const isFractional = line.unit === "г" || line.unit === "мл";
-													const stepVal = isFractional ? 0.1 : 1;
-
-													return (
-														<tr key={line.id}>
-															<td className="min-w-0 max-w-xs">
-																<div className="font-semibold text-ink leading-snug truncate" title={line.nameRu}>
-																	{line.nameRu}
-																</div>
-																<div className="text-xs text-muted font-mono truncate">{line.sku}</div>
-																{line.requiresSerialNumber && (
-																	<div className="mt-1 flex items-center gap-1">
-																		<span className="text-[11px] font-bold text-teal-dark">SN:</span>
-																		<input
-																			type="text"
-																			placeholder="Введите серийный номер (МДЛП)"
-																			value={line.serialNumber || ""}
-																			onChange={(e) =>
-																				handleSerialNumberChange(line.id, e.target.value)
-																			}
-																			className="min-h-[44px] px-2 rounded border border-line bg-paper text-xs font-mono w-48"
-																		/>
-																	</div>
-																)}
-															</td>
-
-															<td>
-																<span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-paper-soft border border-line">
-																	{line.lotNumber || "БЕЗ ПАРТИИ"}
-																</span>
-															</td>
-
-															<td>
-																{line.expirationDate ? (
-																	<span
-																		className={`text-xs font-semibold px-2 py-0.5 rounded ${
-																			line.isExpired
-																				? "bg-bad-bg text-bad-fg font-bold"
-																				: line.isExpiringSoon
-																					? "bg-amber-100 text-amber-900 font-bold"
-																					: "text-muted"
-																		}`}
-																	>
-																		{line.expirationDate}
-																		{line.isExpiringSoon && " (≤30 дн)"}
-																		{line.isExpired && " (ПРОСРОЧЕНО)"}
-																	</span>
-																) : (
-																	<span className="text-xs text-muted">—</span>
-																)}
-															</td>
-
-															<td className="text-center font-semibold text-muted">
-																{line.standardQuantity} {line.unit}
-															</td>
-
-															<td className="text-center">
-																<div className="flex items-center justify-center gap-1">
-																	<div className="cw-stepper-control">
-																		<button
-																			type="button"
-																			className="cw-stepper-btn"
-																			onClick={() =>
-																				handleQuantityChange(
-																					line.id,
-																					Math.max(0, line.actualQuantity - stepVal),
-																				)
-																			}
-																			title="Уменьшить"
-																		>
-																			-
-																		</button>
-																		<input
-																			type="number"
-																			step={stepVal}
-																			min={0}
-																			value={line.actualQuantity}
-																			onChange={(e) =>
-																				handleQuantityChange(line.id, Number(e.target.value))
-																			}
-																			className="cw-stepper-input"
-																		/>
-																		<button
-																			type="button"
-																			className="cw-stepper-btn"
-																			onClick={() =>
-																				handleQuantityChange(
-																					line.id,
-																					line.actualQuantity + stepVal,
-																				)
-																			}
-																			title="Увеличить"
-																		>
-																			+
-																		</button>
-																	</div>
-																</div>
-
-																{/* Быстрые чипы приращения */}
-																<div className="flex items-center justify-center gap-1 mt-1">
-																	{isFractional ? (
-																		<>
-																			<button
-																				type="button"
-																				className="cw-chip-btn"
-																				onClick={() =>
-																					handleQuantityChange(
-																						line.id,
-																						Number((line.actualQuantity + 0.1).toFixed(2)),
-																					)
-																				}
-																			>
-																				+0.1
-																			</button>
-																			<button
-																				type="button"
-																				className="cw-chip-btn"
-																				onClick={() =>
-																					handleQuantityChange(
-																						line.id,
-																						Number((line.actualQuantity + 0.2).toFixed(2)),
-																					)
-																				}
-																			>
-																				+0.2
-																			</button>
-																		</>
-																	) : (
-																		<>
-																			<button
-																				type="button"
-																				className="cw-chip-btn"
-																				onClick={() =>
-																					handleQuantityChange(line.id, line.actualQuantity + 1)
-																				}
-																			>
-																				+1
-																			</button>
-																			<button
-																				type="button"
-																				className="cw-chip-btn"
-																				onClick={() =>
-																					handleQuantityChange(line.id, line.actualQuantity + 2)
-																				}
-																			>
-																				+2
-																			</button>
-																		</>
-																	)}
-																	{line.discrepancyQuantity !== 0 && (
-																		<button
-																			type="button"
-																			className="cw-chip-btn text-teal-dark font-bold"
-																			onClick={() => handleResetToNorm(line.id)}
-																			title="Сбросить к норме 804н"
-																		>
-																			Норма
-																		</button>
-																	)}
-																</div>
-															</td>
-
-															<td className="text-center">
-																{line.discrepancyQuantity !== 0 ? (
-																	<span
-																		className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-																			line.discrepancyQuantity > 0
-																				? "bg-amber-100 text-amber-900"
-																				: "bg-teal-100 text-teal-900"
-																		}`}
-																	>
-																		{line.discrepancyQuantity > 0
-																			? `+${line.discrepancyQuantity}`
-																			: `${line.discrepancyQuantity}`}{" "}
-																		{line.unit}
-																	</span>
-																) : (
-																	<span className="text-xs font-semibold text-ok-fg">Норма</span>
-																)}
-															</td>
-
-															<td>
-																{line.discrepancyQuantity !== 0 ? (
-																	<select
-																		value={line.discrepancyReasonCode}
-																		onChange={(e) =>
-																			handleReasonChange(
-																				line.id,
-																				e.target.value as DiscrepancyReasonCode,
-																			)
-																		}
-																		className="min-h-[44px] px-2 rounded border border-line bg-paper text-ink text-xs max-w-[180px]"
-																	>
-																		{DISCREPANCY_REASONS.map((r) => (
-																			<option key={r.code} value={r.code}>
-																				{r.labelRu}
-																			</option>
-																		))}
-																	</select>
-																) : (
-																	<span className="text-xs text-muted">—</span>
-																)}
-															</td>
-
-															<td className="text-right font-medium text-muted">
-																{unitRub.toFixed(2)}
-															</td>
-
-															<td className="text-right font-black text-ink">
-																{totalRub.toFixed(2)}
-															</td>
-
-															<td className="text-center">
-																<button
-																	type="button"
-																	onClick={() => handleRemoveLine(line.id)}
-																	className="text-muted hover:text-bad-fg p-1.5 rounded transition-colors"
-																	title="Удалить позицию"
-																>
-																	<Trash2 size={16} />
-																</button>
-															</td>
-														</tr>
-													);
-												})}
-											</tbody>
-										</table>
-									</div>
+									<ClinicalWriteoffServiceTable
+										serviceLines={serviceLines}
+										onQuantityChange={handleQuantityChange}
+										onReasonChange={handleReasonChange}
+										onSerialNumberChange={handleSerialNumberChange}
+										onResetToNorm={handleResetToNorm}
+										onRemoveLine={handleRemoveLine}
+									/>
 								</div>
 							);
 						})}

@@ -36,6 +36,7 @@ import {
 	type WarehouseTransferDocument,
 	type WarehouseTransferLineItem,
 } from "./warehouseTransferEngine.js";
+import { WarehouseTransferFooter } from "./WarehouseTransferFooter.js";
 import "./warehouseTransfer.css";
 import {
 	getWarehouseItemCatalogPreset,
@@ -753,54 +754,14 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 				</div>
 
 				{/* Footer */}
-				<footer className="wh-transfer-footer !py-2.5">
-					<button
-						type="button"
-						className="wh-btn wh-btn-secondary !min-h-[36px] sm:min-h-[36px] h-9 sm:h-9 py-1.5 px-3 text-xs"
-						onClick={handlePrintTorg13}
-						title="Печать официальной накладной ТОРГ-13"
-					>
-						<Printer size={15} /> Накладная ТОРГ-13 (А4)
-					</button>
-
-					{totals.hasDiscrepancy && (
-						<button
-							type="button"
-							className="wh-btn wh-btn-secondary text-bad-fg !min-h-[36px] sm:min-h-[36px] h-9 sm:h-9 py-1.5 px-3 text-xs"
-							onClick={handlePrintTorg2}
-							title="Печать акта об установленном расхождении ТОРГ-2"
-						>
-							<FileText size={15} /> Акт расхождений ТОРГ-2
-						</button>
-					)}
-
-					<button
-						type="button"
-						className="wh-btn wh-btn-secondary text-teal-800 dark:text-teal-200 border-teal-500/30 hover:bg-teal-500/10 !min-h-[36px] sm:min-h-[36px] h-9 sm:h-9 py-1.5 px-3 text-xs font-semibold"
-						onClick={handleOneClickWriteOff}
-						title="Списать ТМЦ в 1 клик"
-						data-testid="btn-one-click-warehouse-writeoff"
-					>
-						<Zap size={15} className="text-teal-600 shrink-0" />
-						<span>1-Клик списание</span>
-					</button>
-
-					<button
-						type="button"
-						className="wh-btn wh-btn-secondary !min-h-[36px] sm:min-h-[36px] h-9 sm:h-9 py-1.5 px-3 text-xs"
-						onClick={onClose}
-					>
-						Отмена
-					</button>
-
-					<button
-						type="button"
-						className="wh-btn wh-btn-primary !min-h-[36px] sm:min-h-[36px] h-9 sm:h-9 py-1.5 px-4 text-xs font-bold"
-						onClick={() => handleSaveDocument()}
-					>
-						<PackageCheck size={16} /> Сохранить перемещение
-					</button>
-				</footer>
+				<WarehouseTransferFooter
+					hasDiscrepancy={totals.hasDiscrepancy}
+					onPrintTorg13={handlePrintTorg13}
+					onPrintTorg2={handlePrintTorg2}
+					onOneClickWriteOff={handleOneClickWriteOff}
+					onClose={onClose}
+					onSaveDocument={() => handleSaveDocument()}
+				/>
 			</div>
 		</div>
 	);
