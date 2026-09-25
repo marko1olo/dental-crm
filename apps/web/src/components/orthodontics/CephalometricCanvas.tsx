@@ -1,17 +1,4 @@
-import {
-	Crosshair,
-	Eye,
-	Layers,
-	RotateCcw,
-	Ruler,
-	Sliders,
-	Sparkles,
-	Trash2,
-	UploadCloud,
-	X,
-	ZoomIn,
-	ZoomOut,
-} from "lucide-react";
+import { UploadCloud } from "lucide-react";
 import React, {
 	useCallback,
 	useEffect,
@@ -23,11 +10,15 @@ import {
 	type LandmarkKey,
 	type LandmarkMap,
 	type Point2D,
-	projectPointOntoLine,
 } from "./cephalometricMath";
 import { showToast } from "../GlobalToast";
+import {
+	CephalometricHudStrip,
+	type XrayFilterMode,
+} from "./CephalometricHudStrip";
+import { CephalometricSvgOverlay } from "./CephalometricSvgOverlay";
 
-export type XrayFilterMode = "normal" | "invert" | "bone" | "edge";
+export { CephalometricHudStrip, CephalometricSvgOverlay, type XrayFilterMode };
 
 export const SAMPLE_TRG_CEPHALOGRAM_URL = "/radiology/sample_trg_cephalogram.jpg";
 
@@ -321,41 +312,6 @@ export function CephalometricCanvas({
 		};
 	};
 
-	// ─── Geometric Line Calculations for SVG Overlay ──────────────────────────
-
-	const S = landmarks.S;
-	const N = landmarks.N;
-	const Or = landmarks.Or;
-	const Po = landmarks.Po;
-	const A = landmarks.A;
-	const B = landmarks.B;
-	const Pog = landmarks.Pog;
-	const Gn = landmarks.Gn ?? landmarks.Me;
-	const Me = landmarks.Me ?? landmarks.Gn;
-	const Go = landmarks.Go;
-	const ANS = landmarks.ANS;
-	const PNS = landmarks.PNS;
-	const U1t = landmarks.U1t;
-	const U1a = landmarks.U1a;
-	const L1t = landmarks.L1t;
-	const L1a = landmarks.L1a;
-
-	// Occlusal Plane points
-	const opAnt: Point2D | null = U1t && L1t
-		? { x: (U1t.x + L1t.x) / 2, y: (U1t.y + L1t.y) / 2 }
-		: ANS && Me
-			? { x: (ANS.x + Me.x) / 2, y: (ANS.y + Me.y) / 2 }
-			: null;
-
-	const opPost: Point2D | null = PNS && Go
-		? { x: (PNS.x + Go.x) / 2, y: (PNS.y + Go.y) / 2 }
-		: opAnt
-			? { x: opAnt.x - 160, y: opAnt.y - 12 }
-			: null;
-
-	// Wits projections
-	const projA = A && opPost && opAnt ? projectPointOntoLine(A, opPost, opAnt) : null;
-	const projB = B && opPost && opAnt ? projectPointOntoLine(B, opPost, opAnt) : null;
 	const placedLandmarksCount = CEPHALOMETRIC_LANDMARKS.filter((l) => landmarks[l.key] !== undefined).length;
 	const isAllLandmarksPlaced = placedLandmarksCount >= CEPHALOMETRIC_LANDMARKS.length;
 
@@ -383,229 +339,34 @@ export function CephalometricCanvas({
 				cursor: isPanning ? "grabbing" : (activeTargetKey && imageUrl) ? "crosshair" : "default",
 			}}
 		>
-			{/* ── UNIFIED 36PX CEPH HUD STRIP: [Пресеты WW/WL] | [Зум/Сброс] | [Скрыть плоскости/полигон] | [Статус] | [Действия] ── */}
-			<div
-				data-testid="ceph-unified-hud-strip"
-				className="absolute top-2 sm:top-2.5 left-2 sm:left-3 right-2 sm:right-3 z-30 flex items-center gap-1 sm:gap-1.5 bg-slate-900/95 border border-slate-700/80 rounded-xl p-1 shadow-2xl backdrop-blur-md min-h-[36px] h-9 select-none overflow-x-auto flex-nowrap whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pointer-events-auto max-w-full"
-			>
-				{/* 1. [Пресеты WW/WL] */}
-				<div className="flex items-center gap-0.5 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0 flex-nowrap">
-					{(
-						[
-							{ id: "normal", label: "Стандарт" },
-							{ id: "invert", label: "Инверсия" },
-							{ id: "bone", label: "Костный (Bone+)" },
-							{ id: "edge", label: "Контуры" },
-						] as const
-					).map((flt) => (
-						<button
-							key={flt.id}
-							type="button"
-							onClick={() => onFilterModeChange?.(flt.id)}
-							className={`h-7 px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap shrink-0 ${
-								filterMode === flt.id
-									? "bg-teal-950/80 border border-teal-400 text-teal-200 shadow-xs"
-									: "bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700"
-							}`}
-							title={`Фильтр рентгенограммы: ${flt.label}`}
-						>
-							{flt.label}
-						</button>
-					))}
-				</div>
-
-				<div className="w-[1px] h-5 bg-slate-700 shrink-0 mx-0.5" />
-
-				{/* 2. [Зум/Сброс] */}
-				<div className="flex items-center gap-0.5 sm:gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0 flex-nowrap">
-					<button
-						type="button"
-						disabled={false}
-						onClick={() => ensureCephImage(() => setZoom((prev) => Math.max(0.4, Number((prev - 0.2).toFixed(1)))))}
-						className="min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer"
-						title="Отдалить (Масштаб -)"
-						aria-label="Отдалить масштаб"
-					>
-						<ZoomOut size={14} />
-					</button>
-					<span className="text-xs font-mono font-bold text-teal-300 px-1 min-w-[36px] text-center">
-						{Math.round(zoom * 100)}%
-					</span>
-					<button
-						type="button"
-						disabled={false}
-						onClick={() => ensureCephImage(() => setZoom((prev) => Math.min(3.5, Number((prev + 0.2).toFixed(1)))))}
-						className="min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer"
-						title="Приблизить (Масштаб +)"
-						aria-label="Приблизить масштаб"
-					>
-						<ZoomIn size={14} />
-					</button>
-					<button
-						type="button"
-						disabled={false}
-						onClick={() => ensureCephImage(handleResetView)}
-						className="min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer"
-						title="Сбросить масштаб и положение (0)"
-						aria-label="Сбросить масштаб"
-					>
-						<RotateCcw size={13} />
-					</button>
-					<button
-						type="button"
-						disabled={false}
-						onClick={() => ensureCephImage(() => {
-							setIsCalibrating((prev) => !prev);
-							setCalibrationPoints([]);
-						})}
-						className={`min-h-[32px] sm:min-h-[36px] min-w-[96px] px-2.5 rounded-md flex items-center gap-1.5 text-xs font-bold shrink-0 whitespace-nowrap transition-colors cursor-pointer ${
-							isCalibrating
-								? "bg-amber-500 text-slate-950 font-black border border-amber-300 shadow-sm"
-								: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 shadow-sm"
-						}`}
-						style={{ minWidth: "96px", flexShrink: 0, whiteSpace: "nowrap" }}
-						title="Калибровка масштаба по линейке (мм/px)"
-						aria-label="Калибровка масштаба"
-					>
-						<Ruler size={13} className="shrink-0 text-teal-400" />
-						<span style={{ whiteSpace: "nowrap", flexShrink: 0, fontWeight: 700 }}>Линейка</span>
-					</button>
-				</div>
-
-				<div className="w-[1px] h-5 bg-slate-700 shrink-0 mx-0.5" />
-
-				{/* 3. [Скрыть плоскости/полигон] */}
-				<div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0 flex-nowrap">
-					<button
-						type="button"
-						onClick={onTogglePolygon}
-						className={`h-7 min-w-max px-2 rounded-md text-xs font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-							showPolygon
-								? "bg-teal-950/80 border border-teal-400 text-teal-200 shadow-xs"
-								: "bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700"
-						}`}
-						title="Включить / отключить цефалометрический полигон"
-					>
-						<Layers size={13} />
-						<span>Полигон</span>
-					</button>
-					<button
-						type="button"
-						onClick={onTogglePlanes}
-						className={`h-7 min-w-max px-2 rounded-md text-xs font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-							showPlanes
-								? "bg-teal-950/80 border border-teal-400 text-teal-200 shadow-xs"
-								: "bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700"
-						}`}
-						title="Включить / отключить плоскости (SN, FH, MP, OP)"
-					>
-						<Sliders size={13} />
-						<span>Плоскости</span>
-					</button>
-					<button
-						type="button"
-						onClick={onToggleLabels}
-						className={`h-7 min-w-max px-2 rounded-md text-xs font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-							showLabels
-								? "bg-teal-950/80 border border-teal-400 text-teal-200 shadow-xs"
-								: "bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700"
-						}`}
-						title="Включить / отключить подписи анатомических точек"
-					>
-						<Eye size={13} />
-						<span>Подписи</span>
-					</button>
-				</div>
-
-				<div className="w-[1px] h-5 bg-slate-700 shrink-0 mx-0.5" />
-
-				{/* 4. [Статус] */}
-				<div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 text-xs font-bold text-slate-100 shrink-0 min-w-0 max-w-[280px]">
-					<Crosshair size={14} className="text-teal-400 animate-pulse shrink-0" />
-					<div className="text-xs font-bold text-slate-100 min-w-0 truncate">
-						{!imageUrl ? (
-							<span className="text-slate-300 font-medium">
-								Ожидание загрузки ТРГ
-							</span>
-						) : isAllLandmarksPlaced ? (
-							<span className="text-emerald-300 font-bold">
-								Все 16 точек заданы. Расчет углов готов
-							</span>
-						) : activeTargetKey ? (
-							<span className="flex items-center gap-1">
-								<span className="text-slate-400 font-normal mr-1">
-									{landmarks[activeTargetKey] ? "Точка задана:" : "Установите точку:"}
-								</span>
-								<span className="text-teal-300 font-extrabold uppercase">
-									{CEPHALOMETRIC_LANDMARKS.find((l) => l.key === activeTargetKey)?.nameRu}
-								</span>
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										onSelectTargetKey(null);
-									}}
-									className="p-0.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer ml-1"
-									title="Отменить выбор ориентира (Esc)"
-									aria-label="Отменить выбор ориентира"
-								>
-									<X size={12} />
-								</button>
-							</span>
-						) : (
-							<span className="text-slate-300 font-medium">
-								16 ориентиров ТРГ
-							</span>
-						)}
-					</div>
-				</div>
-
-				<div className="w-[1px] h-5 bg-slate-700 shrink-0 mx-0.5" />
-
-				{/* 5. [Действия (Загрузить, Эталон, Сбросить)] */}
-				<div className="flex items-center gap-1 shrink-0 flex-nowrap">
-					<label
-						className="h-7 min-w-max px-2 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors border border-slate-600 shadow-sm whitespace-nowrap shrink-0"
-						title="Загрузить пользовательский снимок ТРГ"
-					>
-						<UploadCloud size={13} />
-						<span>Загрузить снимок ТРГ</span>
-						<input
-							type="file"
-							accept="image/*,.dcm"
-							className="hidden"
-							onChange={(e) => {
-								const file = e.target.files?.[0];
-								if (file) {
-									handleFileProcess(file);
-								}
-							}}
-						/>
-					</label>
-					{onLoadPreset && (
-						<button
-							type="button"
-							onClick={onLoadPreset}
-							className="h-7 min-w-max px-2 rounded-md bg-teal-900/80 hover:bg-teal-800 text-teal-200 text-xs font-bold flex items-center gap-1 transition-colors border border-teal-500 cursor-pointer shadow-sm whitespace-nowrap shrink-0"
-							title="Загрузить эталонную анатомическую разметку со снимком"
-						>
-							<Sparkles size={13} />
-							<span>Эталонная разметка</span>
-						</button>
-					)}
-					{onResetLandmarks && (
-						<button
-							type="button"
-							onClick={onResetLandmarks}
-							className="h-7 min-w-max px-2 rounded-md bg-rose-950/80 hover:bg-rose-900 text-rose-200 text-xs font-bold flex items-center gap-1 transition-colors border border-rose-700 cursor-pointer shadow-sm whitespace-nowrap shrink-0"
-							title="Сбросить все точки"
-						>
-							<Trash2 size={12} />
-							<span>Сбросить</span>
-						</button>
-					)}
-				</div>
-			</div>
+			{/* UNIFIED 36PX CEPH HUD STRIP */}
+			<CephalometricHudStrip
+				filterMode={filterMode}
+				onFilterModeChange={onFilterModeChange}
+				zoom={zoom}
+				onZoomIn={() => ensureCephImage(() => setZoom((prev) => Math.min(3.5, Number((prev + 0.2).toFixed(1)))))}
+				onZoomOut={() => ensureCephImage(() => setZoom((prev) => Math.max(0.4, Number((prev - 0.2).toFixed(1)))))}
+				onResetView={() => ensureCephImage(handleResetView)}
+				isCalibrating={isCalibrating}
+				onToggleCalibrating={() => ensureCephImage(() => {
+					setIsCalibrating((prev) => !prev);
+					setCalibrationPoints([]);
+				})}
+				showPolygon={showPolygon}
+				onTogglePolygon={onTogglePolygon}
+				showPlanes={showPlanes}
+				onTogglePlanes={onTogglePlanes}
+				showLabels={showLabels}
+				onToggleLabels={onToggleLabels}
+				imageUrl={imageUrl}
+				isAllLandmarksPlaced={isAllLandmarksPlaced}
+				activeTargetKey={activeTargetKey}
+				landmarks={landmarks}
+				onSelectTargetKey={onSelectTargetKey}
+				onFileProcess={handleFileProcess}
+				onLoadPreset={onLoadPreset}
+				onResetLandmarks={onResetLandmarks}
+			/>
 
 			{!imageUrl ? (
 				/* Strict Medical Radiology Dropzone (Drag & Drop ТРГ / DICOM / JPG / PNG) */
@@ -698,435 +459,52 @@ export function CephalometricCanvas({
 						</div>
 
 						{/* 2. Interactive Cephalometric SVG Overlay (Polygons, Angles, Points) */}
-						<svg
-							ref={svgRef}
-							viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
-							className="absolute inset-0 w-full h-full overflow-visible pointer-events-auto"
-						>
-					{/* Planes and Guides */}
-					{showPlanes && (
-						<g className="planes-layer opacity-75">
-							{/* S-N Line (Cranial Base) */}
-							{S && N && (
-								<line
-									x1={S.x}
-									y1={S.y}
-									x2={N.x}
-									y2={N.y}
-									stroke="#06b6d4"
-									strokeWidth="2.5"
-									strokeDasharray="6 3"
-								/>
-							)}
-
-							{/* Frankfort Horizontal Plane (Po - Or) */}
-							{Po && Or && (
-								<line
-									x1={Po.x - 30}
-									y1={Po.y}
-									x2={Or.x + 60}
-									y2={Or.y}
-									stroke="#0284c7"
-									strokeWidth="2"
-									strokeDasharray="5 2.5"
-								/>
-							)}
-
-							{/* Palatal Plane (PNS-ANS) */}
-							{PNS && ANS && (
-								<line
-									x1={PNS.x}
-									y1={PNS.y}
-									x2={ANS.x}
-									y2={ANS.y}
-									stroke="#10b981"
-									strokeWidth="2"
-									strokeDasharray="4 2"
-								/>
-							)}
-
-							{/* Mandibular Plane (Go-Me / Go-Gn) */}
-							{Go && (Me || Gn) && (
-								<line
-									x1={Go.x}
-									y1={Go.y}
-									x2={(Me ?? Gn)!.x}
-									y2={(Me ?? Gn)!.y}
-									stroke="#f59e0b"
-									strokeWidth="2.5"
-									strokeDasharray="5 2.5"
-								/>
-							)}
-
-							{/* Functional Occlusal Plane */}
-							{opPost && opAnt && (
-								<line
-									x1={opPost.x}
-									y1={opPost.y}
-									x2={opAnt.x + 30}
-									y2={opAnt.y}
-									stroke="#a855f7"
-									strokeWidth="1.8"
-									strokeDasharray="3 3"
-								/>
-							)}
-
-							{/* Downs Y-Axis Growth Line (S -> Gn) */}
-							{S && (Gn || Me) && (
-								<line
-									x1={S.x}
-									y1={S.y}
-									x2={(Gn ?? Me)!.x}
-									y2={(Gn ?? Me)!.y}
-									stroke="#eab308"
-									strokeWidth="1.5"
-									strokeDasharray="4 2"
-								/>
-							)}
-
-							{/* Wits Perpendicular Projection Drop Lines */}
-							{projA && A && (
-								<line
-									x1={A.x}
-									y1={A.y}
-									x2={projA.x}
-									y2={projA.y}
-									stroke="#ec4899"
-									strokeWidth="1.5"
-									strokeDasharray="2 2"
-								/>
-							)}
-							{projB && B && (
-								<line
-									x1={B.x}
-									y1={B.y}
-									x2={projB.x}
-									y2={projB.y}
-									stroke="#ec4899"
-									strokeWidth="1.5"
-									strokeDasharray="2 2"
-								/>
-							)}
-						</g>
-					)}
-
-					{/* Cephalometric Polygon Lines (Steiner / Tweed / Downs Polygon) */}
-					{showPolygon && (
-						<g className="polygon-layer">
-							{/* N-A Line */}
-							{N && A && (
-								<line
-									x1={N.x}
-									y1={N.y}
-									x2={A.x}
-									y2={A.y}
-									stroke="#10b981"
-									strokeWidth="2"
-								/>
-							)}
-
-							{/* N-B Line */}
-							{N && B && (
-								<line
-									x1={N.x}
-									y1={N.y}
-									x2={B.x}
-									y2={B.y}
-									stroke="#f59e0b"
-									strokeWidth="2"
-								/>
-							)}
-
-							{/* N-Pog Line (Downs Facial Plane) */}
-							{N && Pog && (
-								<line
-									x1={N.x}
-									y1={N.y}
-									x2={Pog.x}
-									y2={Pog.y}
-									stroke="#e2e8f0"
-									strokeWidth="1.8"
-									strokeDasharray="4 2"
-								/>
-							)}
-
-							{/* A-Pog Line (Downs Angle of Convexity segment) */}
-							{A && Pog && (
-								<line
-									x1={A.x}
-									y1={A.y}
-									x2={Pog.x}
-									y2={Pog.y}
-									stroke="#34d399"
-									strokeWidth="1.5"
-									strokeDasharray="3 3"
-								/>
-							)}
-
-							{/* A-B Line */}
-							{A && B && (
-								<line
-									x1={A.x}
-									y1={A.y}
-									x2={B.x}
-									y2={B.y}
-									stroke="#f43f5e"
-									strokeWidth="1.5"
-									strokeDasharray="3 2"
-								/>
-							)}
-
-							{/* S-Go Line (Posterior Face Height) */}
-							{S && Go && (
-								<line
-									x1={S.x}
-									y1={S.y}
-									x2={Go.x}
-									y2={Go.y}
-									stroke="#06b6d4"
-									strokeWidth="1.8"
-								/>
-							)}
-
-							{/* Upper Incisor Axis (U1a - U1t) */}
-							{U1a && U1t && (
-								<line
-									x1={U1a.x - (U1t.x - U1a.x) * 0.4}
-									y1={U1a.y - (U1t.y - U1a.y) * 0.4}
-									x2={U1t.x + (U1t.x - U1a.x) * 0.4}
-									y2={U1t.y + (U1t.y - U1a.y) * 0.4}
-									stroke="#ec4899"
-									strokeWidth="2.5"
-								/>
-							)}
-
-							{/* Lower Incisor Axis (L1a - L1t) */}
-							{L1a && L1t && (
-								<line
-									x1={L1a.x - (L1t.x - L1a.x) * 0.4}
-									y1={L1a.y - (L1t.y - L1a.y) * 0.4}
-									x2={L1t.x + (L1t.x - L1a.x) * 0.4}
-									y2={L1t.y + (L1t.y - L1a.y) * 0.4}
-									stroke="#8b5cf6"
-									strokeWidth="2.5"
-								/>
-							)}
-						</g>
-					)}
-
-					{/* Calibration Line Rendering */}
-					{calibrationPoints.map((pt, idx) => (
-						<circle
-							key={idx}
-							cx={pt.x}
-							cy={pt.y}
-							r="6"
-							fill="#f59e0b"
-							stroke="#ffffff"
-							strokeWidth="2"
+						<CephalometricSvgOverlay
+							landmarks={landmarks}
+							showPlanes={showPlanes}
+							showPolygon={showPolygon}
+							showLabels={showLabels}
+							calibrationPoints={calibrationPoints}
+							activeTargetKey={activeTargetKey}
+							hoveredKey={hoveredKey}
+							draggingKey={draggingKey}
+							onHoverKey={setHoveredKey}
+							onStartDrag={(key) => setDraggingKey(key)}
+							onSelectTargetKey={onSelectTargetKey}
+							onRemoveLandmark={onRemoveLandmark}
+							viewBoxWidth={VIEWBOX_WIDTH}
+							viewBoxHeight={VIEWBOX_HEIGHT}
+							svgRef={svgRef}
 						/>
-					))}
-					{calibrationPoints.length === 2 && calibrationPoints[0] && calibrationPoints[1] && (
-						<line
-							x1={calibrationPoints[0].x}
-							y1={calibrationPoints[0].y}
-							x2={calibrationPoints[1].x}
-							y2={calibrationPoints[1].y}
-							stroke="#f59e0b"
-							strokeWidth="3"
-						/>
-					)}
+					</div>
 
-					{/* Interactive Landmark Handles & Touch Pins (Target Area >= 44x44px) */}
-					{CEPHALOMETRIC_LANDMARKS.map((lm) => {
-						const pt = landmarks[lm.key];
-						if (!pt) return null;
-
-						const isActive = activeTargetKey === lm.key;
-						const isHovered = hoveredKey === lm.key;
-						const isDragging = draggingKey === lm.key;
-
-						// Smart directional offsets to prevent label collision on chin (L1-tip, Pog, Gn, Me, L1-apex, B) and cranial base
-						const offsets: Record<string, { dx: number; dy: number; align?: "start" | "middle" | "end" }> = {
-							S: { dx: -30, dy: -14, align: "end" },
-							N: { dx: 18, dy: -10, align: "start" },
-							Or: { dx: 18, dy: 16, align: "start" },
-							Po: { dx: -34, dy: -12, align: "end" },
-							ANS: { dx: 18, dy: -6, align: "start" },
-							PNS: { dx: -40, dy: -4, align: "end" },
-							A: { dx: 18, dy: 2, align: "start" },
-							B: { dx: 18, dy: 0, align: "start" },
-							Pog: { dx: 26, dy: -6, align: "start" },
-							Gn: { dx: 26, dy: 18, align: "start" },
-							Me: { dx: -6, dy: 30, align: "middle" },
-							Go: { dx: -34, dy: 18, align: "end" },
-							U1t: { dx: -42, dy: -16, align: "end" },
-							U1a: { dx: -54, dy: -4, align: "end" },
-							L1t: { dx: 26, dy: 14, align: "start" },
-							L1a: { dx: -54, dy: 4, align: "end" },
-						};
-
-						const offset = offsets[lm.key] ?? { dx: 16, dy: 4, align: "start" };
-						const targetX = pt.x + offset.dx;
-						const targetY = pt.y + offset.dy;
-						const codeLength = lm.code.length;
-						const badgeWidth = Math.max(22, codeLength * 7.5 + 8);
-						const badgeHeight = 18;
-						const badgeX =
-							offset.align === "end"
-								? targetX - badgeWidth
-								: offset.align === "middle"
-									? targetX - badgeWidth / 2
-									: targetX;
-						const badgeY = targetY - badgeHeight / 2;
-						const textAnchorX = badgeX + badgeWidth / 2;
-						const textAnchorY = targetY + 0.5;
-
-						// Leader line anchor calculation
-						const hasLeader = Math.hypot(offset.dx, offset.dy) > 16;
-						const leaderEndX =
-							offset.align === "end"
-								? badgeX + badgeWidth
-								: offset.align === "middle"
-									? targetX
-									: badgeX;
-						const leaderEndY = targetY;
-
-						return (
-							<g
-								key={lm.key}
-								className="landmark-handle cursor-pointer"
-								onMouseEnter={() => setHoveredKey(lm.key)}
-								onMouseLeave={() => setHoveredKey(null)}
-								onMouseDown={(e) => {
-									e.stopPropagation();
-									setDraggingKey(lm.key);
-									onSelectTargetKey(lm.key);
-								}}
-								onContextMenu={(e) => {
-									e.preventDefault();
-									e.stopPropagation();
-									onRemoveLandmark?.(lm.key);
+					{/* Precision Magnifier Loupe (Zoom Window during point drag or hovering) */}
+					{(draggingKey || hoveredKey) && cursorImgPos && (
+						<div className="absolute bottom-4 right-4 z-40 w-36 h-36 rounded-full overflow-hidden border-2 border-[var(--teal,#0d9488)] bg-slate-950 shadow-2xl pointer-events-none flex items-center justify-center">
+							<div
+								className="relative w-full h-full"
+								style={{
+									transform: `scale(2.4) translate(${-cursorImgPos.x + 72}px, ${-cursorImgPos.y + 72}px)`,
+									transformOrigin: "top left",
 								}}
 							>
-								{/* Leader Line to avoid label collision */}
-								{showLabels && hasLeader && (
-									<line
-										x1={pt.x}
-										y1={pt.y}
-										x2={leaderEndX}
-										y2={leaderEndY}
-										stroke={lm.color}
-										strokeWidth="1.2"
-										strokeDasharray="2 2"
-										opacity="0.85"
-										pointerEvents="none"
-									/>
-								)}
-
-								{/* Invisible Touch Hit Area Circle: Radius 22px = 44px touch diameter (WCAG 2.1) */}
-								<circle
-									cx={pt.x}
-									cy={pt.y}
-									r={22}
-									fill="transparent"
-									className="touch-hit-area"
+								{/* Replicated vector crosshair in magnifier */}
+								<div
+									className="absolute w-2.5 h-2.5 rounded-full bg-[var(--teal,#0d9488)] border border-white"
+									style={{ left: cursorImgPos.x - 5, top: cursorImgPos.y - 5 }}
 								/>
-
-								{/* Pulsing Target Glow for active / hovered point */}
-								{(isActive || isHovered || isDragging) && (
-									<circle
-										cx={pt.x}
-										cy={pt.y}
-										r={isDragging ? 20 : 16}
-										fill="none"
-										stroke={lm.color}
-										strokeWidth="2.5"
-										className="animate-ping opacity-75"
-									/>
-								)}
-
-								{/* Outer Ring */}
-								<circle
-									cx={pt.x}
-									cy={pt.y}
-									r={isHovered || isDragging ? 10 : 8}
-									fill={lm.color}
-									fillOpacity="0.3"
-									stroke={lm.color}
-									strokeWidth="2"
-								/>
-
-								{/* Core Dot */}
-								<circle
-									cx={pt.x}
-									cy={pt.y}
-									r={isHovered || isDragging ? 5 : 4}
-									fill={lm.color}
-									stroke="#ffffff"
-									strokeWidth="2"
-								/>
-
-								{/* Landmark Pill Badge with High-Contrast Text */}
-								{showLabels && (
-									<g className="landmark-label-badge pointer-events-none select-none">
-										<rect
-											x={badgeX}
-											y={badgeY}
-											width={badgeWidth}
-											height={badgeHeight}
-											rx={4}
-											fill="rgba(15, 23, 42, 0.88)"
-											stroke={isActive || isHovered || isDragging ? lm.color : "rgba(255, 255, 255, 0.3)"}
-											strokeWidth={isActive || isHovered || isDragging ? "1.6" : "0.8"}
-										/>
-										<text
-											x={textAnchorX}
-											y={textAnchorY}
-											fill={isActive || isHovered || isDragging ? "#38bdf8" : "#ffffff"}
-											fontSize={isHovered || isActive ? "12" : "11"}
-											fontWeight="bold"
-											fontFamily="ui-monospace, monospace"
-											textAnchor="middle"
-											dominantBaseline="central"
-										>
-											{lm.code}
-										</text>
-									</g>
-								)}
-							</g>
-						);
-					})}
-				</svg>
-			</div>
-
-			{/* Precision Magnifier Loupe (Zoom Window during point drag or hovering) */}
-			{(draggingKey || hoveredKey) && cursorImgPos && (
-				<div className="absolute bottom-4 right-4 z-40 w-36 h-36 rounded-full overflow-hidden border-2 border-[var(--teal,#0d9488)] bg-slate-950 shadow-2xl pointer-events-none flex items-center justify-center">
-					<div
-						className="relative w-full h-full"
-						style={{
-							transform: `scale(2.4) translate(${-cursorImgPos.x + 72}px, ${-cursorImgPos.y + 72}px)`,
-							transformOrigin: "top left",
-						}}
-					>
-						{/* Replicated vector crosshair in magnifier */}
-						<div
-							className="absolute w-2.5 h-2.5 rounded-full bg-[var(--teal,#0d9488)] border border-white"
-							style={{ left: cursorImgPos.x - 5, top: cursorImgPos.y - 5 }}
-						/>
-					</div>
-					{/* Fixed Center Crosshair */}
-					<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-						<div className="w-full h-[1px] bg-[var(--teal-soft,rgba(13,148,136,0.3))]" />
-						<div className="h-full w-[1px] bg-[var(--teal-soft,rgba(13,148,136,0.3))] absolute" />
-						<div className="w-4 h-4 rounded-full border border-[var(--teal,#0d9488)]" />
-					</div>
-					<div className="absolute bottom-1.5 bg-slate-900/95 text-xs text-[var(--teal,#0d9488)] px-2.5 py-0.5 rounded-full font-mono font-bold border border-[var(--teal-soft,rgba(13,148,136,0.3))]">
-						{draggingKey ?? hoveredKey} ({Math.round(cursorImgPos.x)}, {Math.round(cursorImgPos.y)})
-					</div>
-				</div>
-			)}
+							</div>
+							{/* Fixed Center Crosshair */}
+							<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+								<div className="w-full h-[1px] bg-[var(--teal-soft,rgba(13,148,136,0.3))]" />
+								<div className="h-full w-[1px] bg-[var(--teal-soft,rgba(13,148,136,0.3))] absolute" />
+								<div className="w-4 h-4 rounded-full border border-[var(--teal,#0d9488)]" />
+							</div>
+							<div className="absolute bottom-1.5 bg-slate-900/95 text-xs text-[var(--teal,#0d9488)] px-2.5 py-0.5 rounded-full font-mono font-bold border border-[var(--teal-soft,rgba(13,148,136,0.3))]">
+								{draggingKey ?? hoveredKey} ({Math.round(cursorImgPos.x)}, {Math.round(cursorImgPos.y)})
+							</div>
+						</div>
+					)}
 				</>
 			)}
 		</div>
