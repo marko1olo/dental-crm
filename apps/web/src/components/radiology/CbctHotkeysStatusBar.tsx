@@ -160,7 +160,8 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 							data-testid="cbct-status-bar-maximize-btn"
 						>
 							<strong className="text-cyan-400 font-semibold">Space</strong>
-							<span>{isMaximized ? "⛶ 2x2" : "⛶ 100%"}</span>
+							<Maximize2 className="w-2.5 h-2.5 text-zinc-400" />
+							<span>{isMaximized ? "2x2" : "100%"}</span>
 						</button>
 					)}
 

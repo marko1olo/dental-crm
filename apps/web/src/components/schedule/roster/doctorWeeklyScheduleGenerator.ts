@@ -26,6 +26,10 @@ import {
 } from "./doctorShiftRosterPresets";
 import type { DoctorShift } from "./doctorShiftRosterEngine";
 
+export * from "./rosterWeekCopyAndRotate";
+export * from "./rosterChairWeeklyTemplates";
+export * from "./rosterDateRangeBinding";
+
 /**
  * Weekly doctor-to-chair shift allocation engine with 1-click presets (Mandates 8e, 8k, 8n)
  */
@@ -148,16 +152,15 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 					const mornDoc = mornDocs[j]!;
 					const mornChair = allocateChairForDoctor(mornDoc, usedMornChairs, j);
 					if (!mornChair) break;
-
-					const mornAsst = allocateAssistantForDoctor(mornDoc, usedMornAssistants);
+					const asst = allocateAssistantForDoctor(mornDoc, usedMornAssistants);
 
 					shifts.push({
 						id: `shift-${dateIso}-${mornChair.chairId}-${mornDoc.id}-morn`,
 						doctorId: mornDoc.id,
 						doctorName: mornDoc.shortName || mornDoc.fullName,
 						doctorRole: mornDoc.role,
-						assistantId: mornAsst ? mornAsst.id : null,
-						assistantName: mornAsst ? mornAsst.shortName || mornAsst.fullName : null,
+						assistantId: asst ? asst.id : null,
+						assistantName: asst ? asst.shortName || asst.fullName : null,
 						cabinetId: mornChair.cabinetId,
 						chairId: mornChair.chairId,
 						dateIso,
@@ -179,16 +182,15 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 					const eveDoc = eveDocs[j]!;
 					const eveChair = allocateChairForDoctor(eveDoc, usedEveChairs, j);
 					if (!eveChair) break;
-
-					const eveAsst = allocateAssistantForDoctor(eveDoc, usedEveAssistants);
+					const asst = allocateAssistantForDoctor(eveDoc, usedEveAssistants);
 
 					shifts.push({
 						id: `shift-${dateIso}-${eveChair.chairId}-${eveDoc.id}-eve`,
 						doctorId: eveDoc.id,
 						doctorName: eveDoc.shortName || eveDoc.fullName,
 						doctorRole: eveDoc.role,
-						assistantId: eveAsst ? eveAsst.id : null,
-						assistantName: eveAsst ? eveAsst.shortName || eveAsst.fullName : null,
+						assistantId: asst ? asst.id : null,
+						assistantName: asst ? asst.shortName || asst.fullName : null,
 						cabinetId: eveChair.cabinetId,
 						chairId: eveChair.chairId,
 						dateIso,
@@ -202,126 +204,42 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 						status: "scheduled",
 					});
 				}
-			} else if (dayOfWeek === 6 && effectiveDoctors.length > 1) {
-				const chair = allChairs[0]!;
-				const doc = effectiveDoctors[d % effectiveDoctors.length]!;
+			}
+		} else if (preset === "two_two") {
+			// 2/2 rolling schedule across week
+			const usedChairs = new Set<string>();
+			const usedAssistants = new Set<string>();
+			const activeCount = Math.min(allChairs.length, effectiveDoctors.length);
+
+			for (let i = 0; i < activeCount; i++) {
+				const isPairAWorking = (d % 4 === 0 || d % 4 === 1);
+				const doctorPairIndex = isPairAWorking ? i : (i + activeCount) % effectiveDoctors.length;
+				const doc = effectiveDoctors[doctorPairIndex] || effectiveDoctors[i % effectiveDoctors.length]!;
+
+				const chair = allocateChairForDoctor(doc, usedChairs, i);
+				if (!chair) break;
+				const asst = allocateAssistantForDoctor(doc, usedAssistants);
+
 				shifts.push({
-					id: `shift-${dateIso}-${chair.chairId}-${doc.id}-sat`,
+					id: `shift-${dateIso}-${chair.chairId}-${doc.id}-twotwo`,
 					doctorId: doc.id,
 					doctorName: doc.shortName || doc.fullName,
 					doctorRole: doc.role,
-					assistantId: null,
-					assistantName: null,
+					assistantId: asst ? asst.id : null,
+					assistantName: asst ? asst.shortName || asst.fullName : null,
 					cabinetId: chair.cabinetId,
 					chairId: chair.chairId,
 					dateIso,
-					archetypeId: "saturday_shift",
+					archetypeId: "morning_shift",
 					startTime: "09:00",
-					endTime: "17:00",
-					durationHours: 7.0,
+					endTime: "21:00",
+					durationHours: 11.0,
 					breakMinutes: 60,
 					isNight: false,
 					nightHours: 0,
 					status: "scheduled",
+					customNotes: "Сменный график 2/2",
 				});
-			}
-		} else if (preset === "two_two") {
-			const numDocs = effectiveDoctors.length;
-			const numChairs = allChairs.length;
-
-			if (numDocs === 1) {
-				if (d % 4 < 2) {
-					const doc = effectiveDoctors[0]!;
-					const chair = allChairs[0]!;
-					const asst = allocateAssistantForDoctor(doc, new Set<string>());
-					shifts.push({
-						id: `shift-${dateIso}-${chair.chairId}-${doc.id}-2-2`,
-						doctorId: doc.id,
-						doctorName: doc.shortName || doc.fullName,
-						doctorRole: doc.role,
-						assistantId: asst ? asst.id : null,
-						assistantName: asst ? asst.shortName || asst.fullName : null,
-						cabinetId: chair.cabinetId,
-						chairId: chair.chairId,
-						dateIso,
-						archetypeId: "morning_shift",
-						startTime: "09:00",
-						endTime: "21:00",
-						durationHours: 11.0,
-						breakMinutes: 60,
-						isNight: false,
-						nightHours: 0,
-						status: "scheduled",
-						customNotes: "Сменный график 2/2",
-					});
-				}
-			} else if (numChairs >= numDocs) {
-				const usedChairs = new Set<string>();
-				const usedAssistants = new Set<string>();
-				effectiveDoctors.forEach((doc, docIdx) => {
-					const isWorkDay = (d + (docIdx % 2) * 2) % 4 < 2;
-					if (isWorkDay) {
-						const chair = allocateChairForDoctor(doc, usedChairs, docIdx);
-						if (chair) {
-							const asst = allocateAssistantForDoctor(doc, usedAssistants);
-							shifts.push({
-								id: `shift-${dateIso}-${chair.chairId}-${doc.id}-2-2`,
-								doctorId: doc.id,
-								doctorName: doc.shortName || doc.fullName,
-								doctorRole: doc.role,
-								assistantId: asst ? asst.id : null,
-								assistantName: asst ? asst.shortName || asst.fullName : null,
-								cabinetId: chair.cabinetId,
-								chairId: chair.chairId,
-								dateIso,
-								archetypeId: "morning_shift",
-								startTime: "09:00",
-								endTime: "21:00",
-								durationHours: 11.0,
-								breakMinutes: 60,
-								isNight: false,
-								nightHours: 0,
-								status: "scheduled",
-								customNotes: "Сменный график 2/2",
-							});
-						}
-					}
-				});
-			} else {
-				const usedChairs = new Set<string>();
-				const usedAssistants = new Set<string>();
-				for (let c = 0; c < numChairs; c++) {
-					const docTeam1 = effectiveDoctors[(2 * c) % numDocs];
-					const docTeam2 = (2 * c + 1 < numDocs) ? effectiveDoctors[2 * c + 1] : null;
-
-					const activeDoc = (d % 4 < 2) ? docTeam1 : docTeam2;
-					if (activeDoc) {
-						const chair = allocateChairForDoctor(activeDoc, usedChairs, c);
-						if (chair) {
-							const asst = allocateAssistantForDoctor(activeDoc, usedAssistants);
-							shifts.push({
-								id: `shift-${dateIso}-${chair.chairId}-${activeDoc.id}-2-2`,
-								doctorId: activeDoc.id,
-								doctorName: activeDoc.shortName || activeDoc.fullName,
-								doctorRole: activeDoc.role,
-								assistantId: asst ? asst.id : null,
-								assistantName: asst ? asst.shortName || asst.fullName : null,
-								cabinetId: chair.cabinetId,
-								chairId: chair.chairId,
-								dateIso,
-								archetypeId: "morning_shift",
-								startTime: "09:00",
-								endTime: "21:00",
-								durationHours: 11.0,
-								breakMinutes: 60,
-								isNight: false,
-								nightHours: 0,
-								status: "scheduled",
-								customNotes: "Сменный график 2/2",
-							});
-						}
-					}
-				}
 			}
 		} else if (preset === "morning") {
 			if (dayOfWeek !== 0) {
@@ -335,7 +253,7 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 					const asst = allocateAssistantForDoctor(doc, usedAssistants);
 
 					shifts.push({
-						id: `shift-${dateIso}-${chair.chairId}-${doc.id}-morn-fixed`,
+						id: `shift-${dateIso}-${chair.chairId}-${doc.id}-mornall`,
 						doctorId: doc.id,
 						doctorName: doc.shortName || doc.fullName,
 						doctorRole: doc.role,
@@ -367,7 +285,7 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 					const asst = allocateAssistantForDoctor(doc, usedAssistants);
 
 					shifts.push({
-						id: `shift-${dateIso}-${chair.chairId}-${doc.id}-eve-fixed`,
+						id: `shift-${dateIso}-${chair.chairId}-${doc.id}-eveall`,
 						doctorId: doc.id,
 						doctorName: doc.shortName || doc.fullName,
 						doctorRole: doc.role,
@@ -425,645 +343,3 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 
 	return shifts;
 }
-
-/**
- * 1-Click Doctor-to-Chair Weekly Shift Template Application (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
- *
- * Templates:
- * - "mon_wed_fri_morning": Mon/Wed/Fri (08:00–14:00)
- * - "tue_thu_sat_evening": Tue/Thu/Sat (14:00–20:00)
- * - "two_two_full": 2/2 rolling full days (08:00–20:00)
- * - "five_day_standard": Mon-Fri (09:00–18:00)
- */
-export function applyDoctorChairWeeklyTemplate(
-	currentShifts: DoctorShift[],
-	params: {
-		weekStartDateIso: string;
-		templateId: DoctorChairRosterTemplateId;
-		doctorId: string;
-		doctorBId?: string | undefined;
-		chairId: string;
-		cabinetId?: string | undefined;
-		staffList?: StaffMember[] | undefined;
-		cabinets?: CabinetDefinition[] | undefined;
-	},
-): DoctorShift[] {
-	const {
-		weekStartDateIso,
-		templateId,
-		doctorId,
-		doctorBId,
-		chairId,
-		cabinetId,
-		staffList = DEFAULT_CLINIC_STAFF,
-		cabinets = CLINIC_CABINETS_CATALOG,
-	} = params;
-
-	const normalizedId =
-		templateId === "two_two_full_day"
-			? "two_two_full"
-			: templateId === "five_day_week"
-				? "five_day_standard"
-				: templateId;
-
-	const template =
-		DOCTOR_CHAIR_ROSTER_TEMPLATES.find(
-			(t) => t.id === templateId || t.id === normalizedId,
-		) || DOCTOR_CHAIR_ROSTER_TEMPLATES[0]!;
-
-	const doc =
-		staffList.find((s) => s.id === doctorId) ||
-		DEFAULT_CLINIC_STAFF.find((s) => s.id === doctorId) ||
-		staffList[0] ||
-		DEFAULT_CLINIC_STAFF[0]!;
-
-	const asstId = doc.preferredAssistantId || (doc as any).defaultAssistantId;
-	const asst = asstId
-		? staffList.find((s) => s.id === asstId) || null
-		: staffList.find((s) => s.role === "assistant") || null;
-
-	let targetCabId = cabinetId;
-	if (!targetCabId) {
-		const cabWithChair = cabinets.find(
-			(c) => Array.isArray(c.chairs) && c.chairs.some((ch) => ch.id === chairId),
-		);
-		targetCabId = cabWithChair?.id || cabinets[0]?.id || "cab-1";
-	}
-
-	const parts = (weekStartDateIso || "").split("-").map(Number);
-	const startYear = parts[0] || 2026;
-	const startMonth = parts[1] || 8;
-	const startDay = parts[2] || 24;
-
-	const otherDoc =
-		(doctorBId ? staffList.find((s) => s.id === doctorBId) : undefined) ||
-		staffList.find((s) => s.isDoctor && s.id !== doc.id) ||
-		DEFAULT_CLINIC_STAFF.find((s) => s.isDoctor && s.id !== doc.id) ||
-		doc;
-
-	// Determine dates belonging to the active template
-	const templateDates = new Set<string>();
-	const newShiftsByDate = new Map<string, DoctorShift>();
-
-	for (const dayIdx of template.daysOfWeekIndices) {
-		const curDate = new Date(Date.UTC(startYear, startMonth - 1, startDay + dayIdx));
-		const dateIso = curDate.toISOString().substring(0, 10);
-		const dayOfMonth = curDate.getUTCDate();
-		const isEven = dayOfMonth % 2 === 0;
-
-		if (template.dayOfMonthFilter === "even" && !isEven) {
-			continue;
-		}
-		if (template.dayOfMonthFilter === "odd" && isEven) {
-			continue;
-		}
-
-		templateDates.add(dateIso);
-
-		if (template.dayOfMonthFilter === "even_odd_split") {
-			// Doctor A — even days 1st shift (08:00–14:00)
-			// Doctor B — odd days 2nd shift (14:00–20:00)
-			if (isEven) {
-				newShiftsByDate.set(`${dateIso}-morn`, {
-					id: `shift-${dateIso}-${chairId}-${doc.id}-even-morn`,
-					doctorId: doc.id,
-					doctorName: doc.shortName || doc.fullName,
-					doctorRole: doc.role,
-					assistantId: asst ? asst.id : null,
-					assistantName: asst ? asst.shortName || asst.fullName : null,
-					cabinetId: targetCabId,
-					chairId,
-					dateIso,
-					archetypeId: "morning_shift",
-					startTime: "08:00",
-					endTime: "14:00",
-					durationHours: 6.0,
-					breakMinutes: 0,
-					isNight: false,
-					nightHours: 0,
-					status: "scheduled",
-					customNotes: "Чётное число: 1-я смена (08:00–14:00)",
-				});
-			} else {
-				const asstBId =
-					otherDoc.preferredAssistantId || (otherDoc as any).defaultAssistantId;
-				const asstB = asstBId
-					? staffList.find((s) => s.id === asstBId) || null
-					: staffList.find((s) => s.role === "assistant") || null;
-				newShiftsByDate.set(`${dateIso}-eve`, {
-					id: `shift-${dateIso}-${chairId}-${otherDoc.id}-odd-eve`,
-					doctorId: otherDoc.id,
-					doctorName: otherDoc.shortName || otherDoc.fullName,
-					doctorRole: otherDoc.role,
-					assistantId: asstB ? asstB.id : null,
-					assistantName: asstB ? asstB.shortName || asstB.fullName : null,
-					cabinetId: targetCabId,
-					chairId,
-					dateIso,
-					archetypeId: "evening_shift",
-					startTime: "14:00",
-					endTime: "20:00",
-					durationHours: 6.0,
-					breakMinutes: 0,
-					isNight: false,
-					nightHours: 0,
-					status: "scheduled",
-					customNotes: "Нечётное число: 2-я смена (14:00–20:00)",
-				});
-			}
-		} else {
-			newShiftsByDate.set(dateIso, {
-				id: `shift-${dateIso}-${chairId}-${doc.id}-${template.id}`,
-				doctorId: doc.id,
-				doctorName: doc.shortName || doc.fullName,
-				doctorRole: doc.role,
-				assistantId: asst ? asst.id : null,
-				assistantName: asst ? asst.shortName || asst.fullName : null,
-				cabinetId: targetCabId,
-				chairId,
-				dateIso,
-				archetypeId: template.archetypeId,
-				startTime: template.startTime,
-				endTime: template.endTime,
-				durationHours: template.durationHours,
-				breakMinutes: template.breakMinutes,
-				isNight: false,
-				nightHours: 0,
-				status: "scheduled",
-				customNotes: template.title,
-			});
-		}
-	}
-
-	// Filter currentShifts:
-	// For dates in this week on this chair:
-	// If a date is one of templateDates:
-	//   - if even_odd_split, remove conflicting shifts on even/odd slots
-	//   - if template is full coverage (>= 8h), remove all shifts on that chair for that date
-	//   - if template is morning (08:00-14:00), remove existing morning/full_day shifts on that chair for that date
-	//   - if template is evening (14:00-20:00), remove existing evening/full_day shifts on that chair for that date
-	//   - always remove any shift for the same doctor on that chair/date to avoid self-collision
-	const filtered = currentShifts.filter((s) => {
-		if (s.chairId !== chairId || !templateDates.has(s.dateIso)) {
-			return true;
-		}
-		if (template.dayOfMonthFilter === "even_odd_split") {
-			const dayOfMonth = Number.parseInt(s.dateIso.slice(8, 10), 10);
-			const isEven = dayOfMonth % 2 === 0;
-			if (isEven && (s.startTime < "14:00" || s.doctorId === doc.id)) {
-				return false;
-			}
-			if (!isEven && (s.startTime >= "14:00" || s.doctorId === otherDoc.id)) {
-				return false;
-			}
-			return true;
-		}
-		if (s.doctorId === doc.id) {
-			return false;
-		}
-		const isFullCoverage = template.durationHours >= 8.0;
-		if (isFullCoverage) {
-			return false;
-		}
-		if (
-			template.startTime < "14:00" &&
-			(s.startTime < "14:00" || s.archetypeId === "morning_shift")
-		) {
-			return false;
-		}
-		if (
-			template.startTime >= "14:00" &&
-			(s.startTime >= "14:00" || s.archetypeId === "evening_shift")
-		) {
-			return false;
-		}
-		return true;
-	});
-
-	return [...filtered, ...Array.from(newShiftsByDate.values())];
-}
-
-/**
- * 1-Click Generate Weekly Shifts for Doctor and Chair from Template (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
- */
-export function generateWeeklyDoctorSchedule(params: {
-	weekStartDateIso: string;
-	templateId: DoctorChairRosterTemplateId;
-	doctorId: string;
-	doctorBId?: string | undefined;
-	chairId: string;
-	cabinetId?: string | undefined;
-	staffList?: StaffMember[] | undefined;
-	cabinets?: CabinetDefinition[] | undefined;
-}): DoctorShift[] {
-	return applyDoctorChairWeeklyTemplate([], params);
-}
-
-/**
- * Add days to YYYY-MM-DD date string using UTC arithmetic (timezone-safe)
- */
-export function addDaysToDateIso(dateIso: string, daysToAdd: number): string {
-	const parts = (dateIso || "").split("-").map(Number);
-	const y = parts[0] || 2026;
-	const m = parts[1] || 8;
-	const d = parts[2] || 24;
-	const target = new Date(Date.UTC(y, m - 1, d + daysToAdd));
-	return target.toISOString().substring(0, 10);
-}
-
-/**
- * Get 7 days (Monday to Sunday) of the week as ISO date strings
- */
-export function getWeekDaysIso(weekStartDateIso: string): string[] {
-	const days: string[] = [];
-	for (let i = 0; i < 7; i++) {
-		days.push(addDaysToDateIso(weekStartDateIso, i));
-	}
-	return days;
-}
-
-/**
- * 1-Click Copy Week Shifts to Target Week (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
- *
- * Copies all shifts of source week to target week (+7 days or arbitrary target week Monday).
- * Preserves doctorId, doctorName, doctorRole, assistantId, assistantName,
- * cabinetId, chairId, archetypeId, startTime, endTime, durationHours, breakMinutes,
- * isNight, nightHours, customNotes.
- *
- * Replaces existing shifts on target week dates to prevent duplicate overlaps.
- */
-export function copyWeekShiftsToTargetWeek(
-	currentShifts: DoctorShift[],
-	sourceWeekStartDateIso: string,
-	targetWeekStartDateIso: string,
-): DoctorShift[] {
-	const sourceDays = getWeekDaysIso(sourceWeekStartDateIso);
-	const targetDays = getWeekDaysIso(targetWeekStartDateIso);
-	const targetDaysSet = new Set(targetDays);
-
-	const getShiftDate = (s: DoctorShift): string =>
-		s.dateIso || (s as unknown as { date?: string }).date || "";
-
-	const sourceShifts = currentShifts.filter(
-		(s) => sourceDays.includes(getShiftDate(s)) && s.status !== "cancelled",
-	);
-
-	if (sourceShifts.length === 0) {
-		return currentShifts;
-	}
-
-	// Filter out existing shifts in the target week
-	const remainingShifts = currentShifts.filter(
-		(s) => !targetDaysSet.has(getShiftDate(s)),
-	);
-
-	// Generate copied shifts for the target week
-	const newShifts: DoctorShift[] = sourceShifts.map((s, idx) => {
-		const shiftDate = getShiftDate(s);
-		const dayIdx = sourceDays.indexOf(shiftDate);
-		const targetDateIso = targetDays[dayIdx] || targetDays[0]!;
-		return {
-			...s,
-			id: `shift-${targetDateIso}-${s.chairId}-${s.doctorId}-${s.startTime.replace(":", "")}-${s.endTime.replace(":", "")}-${idx}`,
-			dateIso: targetDateIso,
-			status: "scheduled",
-		};
-	});
-
-	return [...remainingShifts, ...newShifts];
-}
-
-/**
- * 1-Click Copy Week Shifts to Next 4 Weeks / Month (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
- *
- * Iteratively copies the source week shifts across the next `weeksCount` (default: 4) weeks.
- */
-export function copyWeekShiftsToMonth(
-	currentShifts: DoctorShift[],
-	sourceWeekStartDateIso: string,
-	weeksCount = 4,
-): DoctorShift[] {
-	let accumulated = currentShifts;
-	for (let w = 1; w <= weeksCount; w++) {
-		const targetMonday = addDaysToDateIso(sourceWeekStartDateIso, w * 7);
-		accumulated = copyWeekShiftsToTargetWeek(
-			accumulated,
-			sourceWeekStartDateIso,
-			targetMonday,
-		);
-	}
-	return accumulated;
-}
-
-/**
- * 1-Click Clear Week Shifts (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
- *
- * Removes all shifts in the specified week, returning a clean slate for the week.
- */
-export function clearWeekShifts(
-	currentShifts: DoctorShift[],
-	weekStartDateIso: string,
-): DoctorShift[] {
-	const weekDays = getWeekDaysIso(weekStartDateIso);
-	const weekDaysSet = new Set(weekDays);
-	const getShiftDate = (s: DoctorShift): string =>
-		s.dateIso || (s as unknown as { date?: string }).date || "";
-	return currentShifts.filter((s) => !weekDaysSet.has(getShiftDate(s)));
-}
-
-/**
- * 1-Click Shift Rotation (Утро ⇄ Вечер) (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
- *
- * Rotates morning shifts to evening shifts, and evening shifts to morning shifts
- * for the specified week (and optionally restricted to a specific chairId).
- * Morning (08:00–14:00, "morning_shift") ⇄ Evening (14:00–20:00, "evening_shift").
- */
-export function rotateWeekShifts(
-	currentShifts: DoctorShift[],
-	weekStartDateIso: string,
-	options?: { chairId?: string },
-): DoctorShift[] {
-	const weekDays = getWeekDaysIso(weekStartDateIso);
-	const weekDaysSet = new Set(weekDays);
-	const getShiftDate = (s: DoctorShift): string =>
-		s.dateIso || (s as unknown as { date?: string }).date || "";
-
-	return currentShifts.map((s) => {
-		const shiftDate = getShiftDate(s);
-		if (!weekDaysSet.has(shiftDate) || s.status === "cancelled") {
-			return s;
-		}
-		if (options?.chairId && s.chairId !== options.chairId) {
-			return s;
-		}
-
-		const isMorning =
-			s.archetypeId === "morning_shift" ||
-			(s.startTime < "13:00" && s.endTime <= "16:00");
-		const isEvening =
-			s.archetypeId === "evening_shift" ||
-			(s.startTime >= "13:00" && s.endTime > "16:00");
-
-		if (isMorning) {
-			return {
-				...s,
-				startTime: "14:00",
-				endTime: "20:00",
-				durationHours: 6.0,
-				breakMinutes: 0,
-				archetypeId: "evening_shift",
-				customNotes:
-					(s.customNotes || "").replace(/Утро.*?(?=[•,;]|$)/i, "Вечер 14:00–20:00") ||
-					"Вечер 14:00–20:00",
-			};
-		}
-		if (isEvening) {
-			return {
-				...s,
-				startTime: "08:00",
-				endTime: "14:00",
-				durationHours: 6.0,
-				breakMinutes: 0,
-				archetypeId: "morning_shift",
-				customNotes:
-					(s.customNotes || "").replace(/Вечер.*?(?=[•,;]|$)/i, "Утро 08:00–14:00") ||
-					"Утро 08:00–14:00",
-			};
-		}
-		return s;
-	});
-}
-
-/**
- * Supported shift presets for multi-day date range shift binding (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
- */
-export type DateRangeShiftPreset =
-	| "morning"
-	| "morning_9"
-	| "evening"
-	| "evening_15"
-	| "full"
-	| "two_two"
-	| "five_day";
-
-export interface DateRangeShiftBindingParams {
-	startDateIso: string;
-	endDateIso: string;
-	doctorId: string;
-	chairId: string;
-	cabinetId?: string | undefined;
-	shiftPreset: DateRangeShiftPreset;
-	startTime?: string | undefined;
-	endTime?: string | undefined;
-	staffList?: StaffMember[] | undefined;
-	cabinets?: CabinetDefinition[] | undefined;
-	includeWeekends?: boolean | undefined;
-}
-
-/**
- * 1-Click Fast Multi-Day Date Range Doctor-to-Chair Shift Binding (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
- *
- * Automatically generates daily shift records across the chosen date range [startDateIso, endDateIso]
- * with seamless conflict replacement and support for 1st shift (08-14 / 09-15), 2nd shift (14-20 / 15-21),
- * full day (08-20), 2/2 rolling and 5/2 standard workweeks.
- */
-export function applyDoctorChairDateRange(
-	currentShifts: DoctorShift[],
-	params: DateRangeShiftBindingParams,
-): DoctorShift[] {
-	const {
-		startDateIso,
-		endDateIso,
-		doctorId,
-		chairId,
-		cabinetId,
-		shiftPreset,
-		startTime: customStart,
-		endTime: customEnd,
-		staffList = DEFAULT_CLINIC_STAFF,
-		cabinets = CLINIC_CABINETS_CATALOG,
-		includeWeekends = true,
-	} = params;
-
-	if (!startDateIso || !endDateIso || !doctorId || !chairId) {
-		return currentShifts;
-	}
-
-	let startIso = startDateIso;
-	let endIso = endDateIso;
-	if (endIso < startIso) {
-		const tmp = startIso;
-		startIso = endIso;
-		endIso = tmp;
-	}
-
-	const foundDoc =
-		staffList.find((s) => s.id === doctorId) ||
-		DEFAULT_CLINIC_STAFF.find((s) => s.id === doctorId);
-	const doc =
-		foundDoc || {
-			id: doctorId,
-			fullName: `Врач ${doctorId}`,
-			shortName: `Врач ${doctorId}`,
-			role: "therapist" as MedicalStaffRole,
-			tabNumber: "001",
-			isDoctor: true,
-			isAssistant: false,
-			weeklyHourLimit: 33,
-			avatarColor: "#2563eb",
-		};
-
-	const asstId = (doc as any).preferredAssistantId || (doc as any).defaultAssistantId;
-	const asst = asstId
-		? staffList.find((s) => s.id === asstId) || null
-		: staffList.find((s) => s.role === "assistant") || null;
-
-	let targetCabId = cabinetId;
-	if (!targetCabId) {
-		const cabWithChair = cabinets.find(
-			(c) => Array.isArray(c.chairs) && c.chairs.some((ch) => ch.id === chairId),
-		);
-		targetCabId = cabWithChair?.id || cabinets[0]?.id || "cab-1";
-	}
-
-	// Preset defaults
-	let defStart = "08:00";
-	let defEnd = "14:00";
-	let defDuration = 6.0;
-	let defBreak = 0;
-	let defArchetype: "morning_shift" | "evening_shift" = "morning_shift";
-	let defLabel = "1 смена (08:00–14:00)";
-
-	if (shiftPreset === "morning_9") {
-		defStart = "09:00";
-		defEnd = "15:00";
-		defDuration = 6.0;
-		defArchetype = "morning_shift";
-		defLabel = "1 смена (09:00–15:00)";
-	} else if (shiftPreset === "evening") {
-		defStart = "14:00";
-		defEnd = "20:00";
-		defDuration = 6.0;
-		defArchetype = "evening_shift";
-		defLabel = "2 смена (14:00–20:00)";
-	} else if (shiftPreset === "evening_15") {
-		defStart = "15:00";
-		defEnd = "21:00";
-		defDuration = 6.0;
-		defArchetype = "evening_shift";
-		defLabel = "2 смена (15:00–21:00)";
-	} else if (shiftPreset === "full") {
-		defStart = "08:00";
-		defEnd = "20:00";
-		defDuration = 11.0;
-		defBreak = 60;
-		defArchetype = "morning_shift";
-		defLabel = "Весь день (08:00–20:00)";
-	} else if (shiftPreset === "two_two") {
-		defStart = "08:00";
-		defEnd = "20:00";
-		defDuration = 11.0;
-		defBreak = 60;
-		defArchetype = "morning_shift";
-		defLabel = "2/2 Полный день (08:00–20:00)";
-	} else if (shiftPreset === "five_day") {
-		defStart = "09:00";
-		defEnd = "18:00";
-		defDuration = 8.0;
-		defBreak = 60;
-		defArchetype = "morning_shift";
-		defLabel = "Пятидневка (09:00–18:00)";
-	}
-
-	const finalStart = customStart || defStart;
-	const finalEnd = customEnd || defEnd;
-
-	const newShifts: DoctorShift[] = [];
-	const coveredDates = new Set<string>();
-
-	// Iterate through dates up to 180 days max
-	let currentIso = startIso;
-	let dayCounter = 0;
-	while (currentIso <= endIso && dayCounter < 180) {
-		const parts = currentIso.split("-").map(Number);
-		const curDate = new Date(Date.UTC(parts[0]!, parts[1]! - 1, parts[2]!));
-		const dayOfWeek = curDate.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-
-		let shouldInclude = true;
-		if (shiftPreset === "five_day") {
-			// Mon-Fri only
-			if (dayOfWeek === 0 || dayOfWeek === 6) {
-				shouldInclude = false;
-			}
-		} else if (shiftPreset === "two_two") {
-			// 2 on, 2 off from startIso
-			if (dayCounter % 4 >= 2) {
-				shouldInclude = false;
-			}
-		} else if (!includeWeekends) {
-			if (dayOfWeek === 0 || dayOfWeek === 6) {
-				shouldInclude = false;
-			}
-		}
-
-		if (shouldInclude) {
-			coveredDates.add(currentIso);
-			newShifts.push({
-				id: `shift-${currentIso}-${chairId}-${doc.id}-${shiftPreset}-${dayCounter}`,
-				doctorId: doc.id,
-				doctorName: doc.shortName || doc.fullName,
-				doctorRole: doc.role,
-				assistantId: asst ? asst.id : null,
-				assistantName: asst ? asst.shortName || asst.fullName : null,
-				cabinetId: targetCabId,
-				chairId,
-				dateIso: currentIso,
-				archetypeId: defArchetype,
-				startTime: finalStart,
-				endTime: finalEnd,
-				durationHours: defDuration,
-				breakMinutes: defBreak,
-				isNight: false,
-				nightHours: 0,
-				status: "scheduled",
-				customNotes: defLabel,
-			});
-		}
-
-		dayCounter++;
-		currentIso = addDaysToDateIso(startIso, dayCounter);
-	}
-
-	// Filter out conflicting shifts on the affected chair & dates
-	const isFullOrHeavy =
-		defDuration >= 8.0 ||
-		shiftPreset === "full" ||
-		shiftPreset === "two_two" ||
-		shiftPreset === "five_day";
-	const isMorningShift = finalStart < "14:00" && finalEnd <= "15:00";
-	const isEveningShift = finalStart >= "14:00";
-
-	const remaining = currentShifts.filter((s) => {
-		if (s.chairId !== chairId || !coveredDates.has(s.dateIso)) {
-			return true;
-		}
-		if (s.doctorId === doc.id) {
-			return false; // Replace own shifts
-		}
-		if (isFullOrHeavy) {
-			return false; // Full day covers entire chair
-		}
-		if (isMorningShift && (s.startTime < "14:00" || s.durationHours >= 8.0)) {
-			return false;
-		}
-		if (isEveningShift && (s.startTime >= "14:00" || s.durationHours >= 8.0)) {
-			return false;
-		}
-		return true;
-	});
-
-	return [...remaining, ...newShifts];
-}
-
-
-

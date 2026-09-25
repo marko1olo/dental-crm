@@ -4,21 +4,20 @@
  *
  * Capabilities:
  * 1. 3D Axis Oblique Rotation: Axial Angle (yaw), Coronal Tilt (pitch), Sagittal Tilt (roll).
- * 2. Orthonormal Basis Vector Calculation for arbitrary oblique slicing planes.
- * 3. High-Precision Sub-Voxel Trilinear & Bilinear HU Interpolation.
- * 4. Oblique Slab Thickness Projections (MIP, MinIP, Average IP).
- * 5. Interactive Mouse W/L (Right-click drag), Cursor-anchored Zoom (0.5x–5.0x), and Pan.
- * 6. Interactive Canvas Rotation Handles & Hit-testing for in-plane crosshair rotation.
+ * 2. Interactive Mouse W/L (Right-click drag), Cursor-anchored Zoom (0.5x–5.0x), and Pan.
+ * 3. Interactive Canvas Rotation Handles & Hit-testing for in-plane crosshair rotation.
+ * 4. Canvas Oblique Crosshair, Reticle & Rotation Handles Rendering.
+ * 5. Mouse Wheel Slice Navigation & Full Viewport Clinical Reset Math.
+ *
+ * Decomposed under 800 lines per Mandate 8s / 8l:
+ * - Matrix, Vector & Projection math: ./cbctObliqueMatrixMath.ts
+ * - Sub-voxel Trilinear Sampling & Slice Extraction: ./cbctObliqueSliceMath.ts
  */
 
 import {
 	type CbctVoxelVolume,
 	type MprPlane,
-	type MprSliceExtractionResult,
 	type Point3D,
-	type SlabProjectionMode,
-	type SliceRenderOptions,
-	type VolumeSpacingMm,
 	ROMEXIS_COLORS,
 	clampCoordinateToVolume,
 	createEmptyCbctVolume,
@@ -30,21 +29,31 @@ import {
 	clearLutCache,
 } from "./cbctMprMath";
 
-export { createEmptyCbctVolume, sampleVoxelHU, clampCoordinateToVolume, generate16BitLut, get16BitLut, applyLutToHU, clearLutCache };
+import {
+	type ObliqueRotationAngles,
+	type ViewportTransform,
+	DEFAULT_OBLIQUE_ROTATION,
+	DEFAULT_VIEWPORT_TRANSFORM,
+	degToRad,
+	radToDeg,
+	computeObliquePlaneBasis,
+} from "./cbctObliqueMatrixMath";
 
-// ─── 1. OBLIQUE ROTATION & VIEWPORT TYPES ────────────────────────────────────
+// ─── TRANSPARENT RE-EXPORTS (ZERO-DOWNTIME CONTRACT) ─────────────────────────
+export * from "./cbctObliqueMatrixMath";
+export * from "./cbctObliqueSliceMath";
+export {
+	createEmptyCbctVolume,
+	sampleVoxelHU,
+	clampCoordinateToVolume,
+	generate16BitLut,
+	get16BitLut,
+	applyLutToHU,
+	clearLutCache,
+	huToGrayscale,
+};
 
-export interface ObliqueRotationAngles {
-	readonly axialAngleDeg: number; // In-plane rotation around Z axis (Axial viewport)
-	readonly coronalTiltDeg: number; // Tilt angle around Y axis (Coronal viewport)
-	readonly sagittalTiltDeg: number; // Tilt angle around X axis (Sagittal viewport)
-}
-
-export const DEFAULT_OBLIQUE_ROTATION: ObliqueRotationAngles = Object.freeze({
-	axialAngleDeg: 0,
-	coronalTiltDeg: 0,
-	sagittalTiltDeg: 0,
-});
+// ─── 1. OBLIQUE ROTATION & CLINICAL LABELS ───────────────────────────────────
 
 /**
  * Returns clinical localized rotation label for the given plane.
@@ -88,25 +97,6 @@ export function resetPlaneObliqueAngle(
 	}
 }
 
-export interface ViewportTransform {
-	readonly zoom: number; // 0.5 .. 5.0
-	readonly panX: number; // Pixel horizontal pan offset
-	readonly panY: number; // Pixel vertical pan offset
-}
-
-export const DEFAULT_VIEWPORT_TRANSFORM: ViewportTransform = Object.freeze({
-	zoom: 1.0,
-	panX: 0,
-	panY: 0,
-});
-
-export interface ObliquePlaneBasis {
-	readonly u: Point3D; // Unit vector along slice horizontal (X_slice) in world space (mm)
-	readonly v: Point3D; // Unit vector along slice vertical (Y_slice) in world space (mm)
-	readonly normal: Point3D; // Unit normal vector perpendicular to slice (Z_slice) in world space (mm)
-	readonly centerMm: Point3D; // 3D world center (crosshair location) in mm
-}
-
 export type RotationHandlePosition = "u_pos" | "u_neg" | "v_pos" | "v_neg";
 
 export interface RotationHandleInfo {
@@ -132,555 +122,7 @@ export interface ObliqueCrosshairDrawOptions {
 	readonly invertColors?: boolean;
 }
 
-// ─── 2. 3D VECTOR & ROTATION MATRIX MATH ─────────────────────────────────────
-
-export function degToRad(deg: number): number {
-	if (!Number.isFinite(deg)) return 0;
-	return (deg * Math.PI) / 180.0;
-}
-
-export function radToDeg(rad: number): number {
-	if (!Number.isFinite(rad)) return 0;
-	return (rad * 180.0) / Math.PI;
-}
-
-export function normalizeVector3D(v: Point3D): Point3D {
-	const len = Math.hypot(v.x, v.y, v.z);
-	if (len < 1e-9 || !Number.isFinite(len)) return { x: 0, y: 0, z: 1 };
-	return {
-		x: v.x / len,
-		y: v.y / len,
-		z: v.z / len,
-	};
-}
-
-export function dotProduct3D(a: Point3D, b: Point3D): number {
-	return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
-export function crossProduct3D(a: Point3D, b: Point3D): Point3D {
-	return {
-		x: a.y * b.z - a.z * b.y,
-		y: a.z * b.x - a.x * b.z,
-		z: a.x * b.y - a.y * b.x,
-	};
-}
-
-/**
- * Computes a 3x3 rotation matrix using Z-Y-X Euler angle composition:
- * R = R_z(axialAngle) * R_y(coronalTilt) * R_x(sagittalTilt)
- */
-export function computeObliqueRotationMatrix(angles: ObliqueRotationAngles): number[][] {
-	const rz = degToRad(Number.isFinite(angles?.axialAngleDeg) ? angles.axialAngleDeg : 0);
-	const ry = degToRad(Number.isFinite(angles?.coronalTiltDeg) ? angles.coronalTiltDeg : 0);
-	const rx = degToRad(Number.isFinite(angles?.sagittalTiltDeg) ? angles.sagittalTiltDeg : 0);
-
-	const cz = Math.cos(rz);
-	const sz = Math.sin(rz);
-	const cy = Math.cos(ry);
-	const sy = Math.sin(ry);
-	const cx = Math.cos(rx);
-	const sx = Math.sin(rx);
-
-	return [
-		[cz * cy, cz * sy * sx - sz * cx, cz * sy * cx + sz * sx],
-		[sz * cy, sz * sy * sx + cz * cx, sz * sy * cx - cz * sx],
-		[-sy, cy * sx, cy * cx],
-	];
-}
-
-/**
- * Multiplies a 3x3 matrix by a 3D vector.
- */
-export function transformVector3D(matrix: number[][], v: Point3D): Point3D {
-	const m0 = matrix[0] ?? [1, 0, 0];
-	const m1 = matrix[1] ?? [0, 1, 0];
-	const m2 = matrix[2] ?? [0, 0, 1];
-
-	return {
-		x: (m0[0] ?? 0) * v.x + (m0[1] ?? 0) * v.y + (m0[2] ?? 0) * v.z,
-		y: (m1[0] ?? 0) * v.x + (m1[1] ?? 0) * v.y + (m1[2] ?? 0) * v.z,
-		z: (m2[0] ?? 0) * v.x + (m2[1] ?? 0) * v.y + (m2[2] ?? 0) * v.z,
-	};
-}
-
-/**
- * Computes the orthonormal basis vectors (u, v, normal) for an oblique slice plane
- * given the crosshair center and 3D rotation angles.
- */
-export function computeObliquePlaneBasis(
-	plane: MprPlane,
-	crosshairMm: Point3D,
-	angles: ObliqueRotationAngles,
-): ObliquePlaneBasis {
-	const rotMat = computeObliqueRotationMatrix(angles);
-
-	let baseU: Point3D;
-	let baseV: Point3D;
-	let baseNormal: Point3D;
-
-	switch (plane) {
-		case "axial":
-			baseU = { x: 1, y: 0, z: 0 };
-			baseV = { x: 0, y: 1, z: 0 };
-			baseNormal = { x: 0, y: 0, z: 1 };
-			break;
-		case "coronal":
-			baseU = { x: 1, y: 0, z: 0 };
-			baseV = { x: 0, y: 0, z: -1 };
-			baseNormal = { x: 0, y: 1, z: 0 };
-			break;
-		case "sagittal":
-			baseU = { x: 0, y: 1, z: 0 };
-			baseV = { x: 0, y: 0, z: -1 };
-			baseNormal = { x: 1, y: 0, z: 0 };
-			break;
-	}
-
-	const rotatedU = normalizeVector3D(transformVector3D(rotMat, baseU));
-	const rotatedV = normalizeVector3D(transformVector3D(rotMat, baseV));
-	const rotatedNormal = normalizeVector3D(transformVector3D(rotMat, baseNormal));
-
-	return {
-		u: rotatedU,
-		v: rotatedV,
-		normal: rotatedNormal,
-		centerMm: crosshairMm,
-	};
-}
-
-// ─── 3. SUB-VOXEL TRILINEAR INTERPOLATION ────────────────────────────────────
-
-/**
- * Evaluates continuous Hounsfield Unit (HU) at non-integer voxel coordinates
- * using 3D Trilinear Interpolation for artifact-free oblique rendering.
- */
-export function sampleVoxelHUTrilinear(
-	volume: CbctVoxelVolume,
-	vx: number,
-	vy: number,
-	vz: number,
-): number {
-	if (!volume || !volume.data || volume.isDisposed) return -1000;
-
-	const { width, height, depth } = volume.dimensions;
-
-	// Robust boundary check handling NaN, Infinity, and out-of-volume bounds
-	if (!(vx >= 0 && vx <= width - 1 && vy >= 0 && vy <= height - 1 && vz >= 0 && vz <= depth - 1)) {
-		return -1000;
-	}
-
-	const x0 = Math.floor(vx);
-	const y0 = Math.floor(vy);
-	const z0 = Math.floor(vz);
-
-	const x1 = Math.min(width - 1, x0 + 1);
-	const y1 = Math.min(height - 1, y0 + 1);
-	const z1 = Math.min(depth - 1, z0 + 1);
-
-	const tx = vx - x0;
-	const ty = vy - y0;
-	const tz = vz - z0;
-
-	const data = volume.data;
-	const sliceStride = width * height;
-
-	const row00 = z0 * sliceStride + y0 * width;
-	const row10 = z0 * sliceStride + y1 * width;
-	const row01 = z1 * sliceStride + y0 * width;
-	const row11 = z1 * sliceStride + y1 * width;
-
-	const c000 = data[row00 + x0] ?? -1000;
-	const c100 = data[row00 + x1] ?? -1000;
-	const c010 = data[row10 + x0] ?? -1000;
-	const c110 = data[row10 + x1] ?? -1000;
-	const c001 = data[row01 + x0] ?? -1000;
-	const c101 = data[row01 + x1] ?? -1000;
-	const c011 = data[row11 + x0] ?? -1000;
-	const c111 = data[row11 + x1] ?? -1000;
-
-	const c00 = c000 * (1.0 - tx) + c100 * tx;
-	const c10 = c010 * (1.0 - tx) + c110 * tx;
-	const c01 = c001 * (1.0 - tx) + c101 * tx;
-	const c11 = c011 * (1.0 - tx) + c111 * tx;
-
-	const c0 = c00 * (1.0 - ty) + c10 * ty;
-	const c1 = c01 * (1.0 - ty) + c11 * ty;
-
-	const rawHu = c0 * (1.0 - tz) + c1 * tz;
-	const slope = volume.rescaleSlope ?? 1.0;
-	const intercept = volume.rescaleIntercept ?? 0.0;
-	const hu = (slope !== 1.0 || intercept !== 0.0) ? rawHu * slope + intercept : rawHu;
-
-	return Math.max(-1000, Math.min(3071, Math.round(hu)));
-}
-
-/**
- * Continuous sub-voxel trilinear HU sampling alias supporting standard (x, y, z, volume) parameter ordering.
- */
-export function sampleVoxelTrilinearHU(
-	x: number,
-	y: number,
-	z: number,
-	volume: CbctVoxelVolume,
-): number {
-	return sampleVoxelHUTrilinear(volume, x, y, z);
-}
-
-// ─── 4. OBLIQUE SLICE EXTRACTION ENGINE ──────────────────────────────────────
-
-export interface ObliqueSliceRenderOptions extends SliceRenderOptions {
-	readonly interpolation?: "nearest" | "trilinear";
-}
-
-/**
- * Extracts a 2D slice at an arbitrary 3D oblique orientation from the CBCT volume.
- * Supports Trilinear Interpolation and Slab Thickness MIP / MinIP / Average modes.
- */
-export function extractObliqueMprSlice(
-	volume: CbctVoxelVolume,
-	plane: MprPlane,
-	crosshairMm: Point3D,
-	angles: ObliqueRotationAngles = DEFAULT_OBLIQUE_ROTATION,
-	options?: ObliqueSliceRenderOptions,
-): MprSliceExtractionResult {
-	const {
-		windowWidth = 4400,
-		windowLevel = 1300,
-		invert = false,
-		slabMode = "single",
-		slabThicknessMm = 2.0,
-		interpolation = "trilinear",
-	} = options ?? {};
-
-	const dim = volume.dimensions;
-	const sp = volume.spacingMm;
-	const origin = volume.originMm;
-
-	let widthPx = 0;
-	let heightPx = 0;
-	let pixelSpacingX = 0;
-	let pixelSpacingY = 0;
-	let maxSliceIndex = 0;
-	let physicalPosMm = 0;
-
-	switch (plane) {
-		case "axial":
-			widthPx = dim.width;
-			heightPx = dim.height;
-			pixelSpacingX = sp.x;
-			pixelSpacingY = sp.y;
-			maxSliceIndex = dim.depth - 1;
-			physicalPosMm = crosshairMm.z;
-			break;
-		case "coronal":
-			widthPx = dim.width;
-			heightPx = Math.max(1, Math.round((dim.depth * sp.z) / (sp.x || 1.0)));
-			pixelSpacingX = sp.x;
-			pixelSpacingY = sp.z;
-			maxSliceIndex = dim.height - 1;
-			physicalPosMm = crosshairMm.y;
-			break;
-		case "sagittal":
-			widthPx = dim.height;
-			heightPx = Math.max(1, Math.round((dim.depth * sp.z) / (sp.y || 1.0)));
-			pixelSpacingX = sp.y;
-			pixelSpacingY = sp.z;
-			maxSliceIndex = dim.width - 1;
-			physicalPosMm = crosshairMm.x;
-			break;
-	}
-
-	// Anchor oblique rotation pivot directly to crosshairMm (patient anatomy / target tooth)
-	// so rotating axes does not cause the anatomical structure under investigation to drift off screen.
-	const sliceCenterMm: Point3D = {
-		x: crosshairMm.x,
-		y: crosshairMm.y,
-		z: crosshairMm.z,
-	};
-
-	const basis = computeObliquePlaneBasis(plane, crosshairMm, angles);
-	const totalPixels = widthPx * heightPx;
-	const pixelBuffer = new Uint8ClampedArray(totalPixels * 4);
-
-	// Pre-cached 16-bit Window/Level Look-Up Table (LUT)
-	const lut = get16BitLut(windowWidth, windowLevel, invert);
-
-	const halfW = widthPx / 2.0;
-	const halfH = heightPx / 2.0;
-
-	const normalStepMm = Math.min(sp.x, Math.min(sp.y, sp.z));
-	const isSlabActive = slabMode !== "single" && slabThicknessMm > normalStepMm;
-	const halfSlabMm = isSlabActive ? slabThicknessMm / 2.0 : 0;
-	const slabSteps = isSlabActive ? Math.max(1, Math.round(slabThicknessMm / normalStepMm)) : 1;
-	const stepMm = isSlabActive ? slabThicknessMm / slabSteps : 0;
-
-	const uX = basis.u.x * pixelSpacingX;
-	const uY = basis.u.y * pixelSpacingX;
-	const uZ = basis.u.z * pixelSpacingX;
-
-	const vX = basis.v.x * pixelSpacingY;
-	const vY = basis.v.y * pixelSpacingY;
-	const vZ = basis.v.z * pixelSpacingY;
-
-	const nX = basis.normal.x;
-	const nY = basis.normal.y;
-	const nZ = basis.normal.z;
-
-	const invSpX = 1.0 / sp.x;
-	const invSpY = 1.0 / sp.y;
-	const invSpZ = 1.0 / sp.z;
-	if (!volume.data || volume.isDisposed) {
-		return {
-			data: pixelBuffer,
-			metadata: {
-				plane,
-				sliceIndex: 0,
-				maxSliceIndex,
-				physicalPositionMm: Number(physicalPosMm.toFixed(2)),
-				widthPx,
-				heightPx,
-				pixelSpacingX,
-				pixelSpacingY,
-				slabThicknessMm: slabMode === "single" ? sp.x : slabThicknessMm,
-			},
-		};
-	}
-	const volData: Int16Array = volume.data;
-
-	const volW = dim.width;
-	const volH = dim.height;
-	const volD = dim.depth;
-	const volStride = volW * volH;
-	const maxX = volW - 1;
-	const maxY = volH - 1;
-	const maxD = volD - 1;
-
-	const stepVx = uX * invSpX;
-	const stepVy = uY * invSpY;
-	const stepVz = uZ * invSpZ;
-
-	if (!isSlabActive) {
-		for (let row = 0; row < heightPx; row++) {
-			const offsetRow = row - halfH;
-			const baseRowWorldX = sliceCenterMm.x + offsetRow * vX;
-			const baseRowWorldY = sliceCenterMm.y + offsetRow * vY;
-			const baseRowWorldZ = sliceCenterMm.z + offsetRow * vZ;
-
-			let pIdx = row * widthPx * 4;
-
-			let vx = (baseRowWorldX - halfW * uX - origin.x) * invSpX;
-			let vy = (baseRowWorldY - halfW * uY - origin.y) * invSpY;
-			let vz = (baseRowWorldZ - halfW * uZ - origin.z) * invSpZ;
-
-			for (let col = 0; col < widthPx; col++) {
-				let hu: number;
-				if (interpolation === "trilinear" && volData) {
-					if (vx >= 0 && vx <= maxX && vy >= 0 && vy <= maxY && vz >= 0 && vz <= maxD) {
-						const x0 = Math.floor(vx);
-						const y0 = Math.floor(vy);
-						const z0 = Math.floor(vz);
-
-						const x1 = x0 < maxX ? x0 + 1 : x0;
-						const y1 = y0 < maxY ? y0 + 1 : y0;
-						const z1 = z0 < maxD ? z0 + 1 : z0;
-
-						const tx = vx - x0;
-						const ty = vy - y0;
-						const tz = vz - z0;
-
-						const row00 = z0 * volStride + y0 * volW;
-						const row10 = z0 * volStride + y1 * volW;
-						const row01 = z1 * volStride + y0 * volW;
-						const row11 = z1 * volStride + y1 * volW;
-
-						const c000 = volData[row00 + x0] ?? -1000;
-						const c100 = volData[row00 + x1] ?? -1000;
-						const c010 = volData[row10 + x0] ?? -1000;
-						const c110 = volData[row10 + x1] ?? -1000;
-						const c001 = volData[row01 + x0] ?? -1000;
-						const c101 = volData[row01 + x1] ?? -1000;
-						const c011 = volData[row11 + x0] ?? -1000;
-						const c111 = volData[row11 + x1] ?? -1000;
-
-						const c00 = c000 * (1.0 - tx) + c100 * tx;
-						const c10 = c010 * (1.0 - tx) + c110 * tx;
-						const c01 = c001 * (1.0 - tx) + c101 * tx;
-						const c11 = c011 * (1.0 - tx) + c111 * tx;
-
-						const c0 = c00 * (1.0 - ty) + c10 * ty;
-						const c1 = c01 * (1.0 - ty) + c11 * ty;
-
-						const rawHu = c0 * (1.0 - tz) + c1 * tz;
-						const slope = volume.rescaleSlope ?? 1.0;
-						const intercept = volume.rescaleIntercept ?? 0.0;
-						const huVal = (slope !== 1.0 || intercept !== 0.0) ? rawHu * slope + intercept : rawHu;
-						hu = Math.max(-1000, Math.min(3071, Math.round(huVal)));
-					} else {
-						hu = -1000;
-					}
-				} else {
-					hu = sampleVoxelHU(Math.round(vx), Math.round(vy), Math.round(vz), volume);
-				}
-
-				const gray = lut[(hu + 32768) & 0xffff]!;
-
-				pixelBuffer[pIdx] = gray;
-				pixelBuffer[pIdx + 1] = gray;
-				pixelBuffer[pIdx + 2] = gray;
-				pixelBuffer[pIdx + 3] = 255;
-				pIdx += 4;
-
-				vx += stepVx;
-				vy += stepVy;
-				vz += stepVz;
-			}
-		}
-	} else {
-		for (let row = 0; row < heightPx; row++) {
-			const offsetRow = row - halfH;
-			const baseRowWorldX = sliceCenterMm.x + offsetRow * vX;
-			const baseRowWorldY = sliceCenterMm.y + offsetRow * vY;
-			const baseRowWorldZ = sliceCenterMm.z + offsetRow * vZ;
-
-			let pIdx = row * widthPx * 4;
-
-			for (let col = 0; col < widthPx; col++) {
-				const offsetCol = col - halfW;
-				const baseWorldX = baseRowWorldX + offsetCol * uX;
-				const baseWorldY = baseRowWorldY + offsetCol * uY;
-				const baseWorldZ = baseRowWorldZ + offsetCol * uZ;
-
-				let maxHU = -32768;
-				let minHU = 32767;
-				let sumHU = 0;
-				let count = 0;
-
-				for (let s = 0; s <= slabSteps; s++) {
-					const normDist = -halfSlabMm + s * stepMm;
-					const worldX = baseWorldX + normDist * nX;
-					const worldY = baseWorldY + normDist * nY;
-					const worldZ = baseWorldZ + normDist * nZ;
-
-					const vx = (worldX - origin.x) * invSpX;
-					const vy = (worldY - origin.y) * invSpY;
-					const vz = (worldZ - origin.z) * invSpZ;
-
-					let hu: number;
-					if (interpolation === "trilinear" && volData) {
-						if (vx >= 0 && vx <= maxX && vy >= 0 && vy <= maxY && vz >= 0 && vz <= maxD) {
-							const x0 = Math.floor(vx);
-							const y0 = Math.floor(vy);
-							const z0 = Math.floor(vz);
-
-							const x1 = x0 < maxX ? x0 + 1 : x0;
-							const y1 = y0 < maxY ? y0 + 1 : y0;
-							const z1 = z0 < maxD ? z0 + 1 : z0;
-
-							const tx = vx - x0;
-							const ty = vy - y0;
-							const tz = vz - z0;
-
-							const row00 = z0 * volStride + y0 * volW;
-							const row10 = z0 * volStride + y1 * volW;
-							const row01 = z1 * volStride + y0 * volW;
-							const row11 = z1 * volStride + y1 * volW;
-
-							const c000 = volData[row00 + x0] ?? -1000;
-							const c100 = volData[row00 + x1] ?? -1000;
-							const c010 = volData[row10 + x0] ?? -1000;
-							const c110 = volData[row10 + x1] ?? -1000;
-							const c001 = volData[row01 + x0] ?? -1000;
-							const c101 = volData[row01 + x1] ?? -1000;
-							const c011 = volData[row11 + x0] ?? -1000;
-							const c111 = volData[row11 + x1] ?? -1000;
-
-							const c00 = c000 * (1.0 - tx) + c100 * tx;
-							const c10 = c010 * (1.0 - tx) + c110 * tx;
-							const c01 = c001 * (1.0 - tx) + c101 * tx;
-							const c11 = c011 * (1.0 - tx) + c111 * tx;
-
-							const c0 = c00 * (1.0 - ty) + c10 * ty;
-							const c1 = c01 * (1.0 - ty) + c11 * ty;
-
-							const rawHu = c0 * (1.0 - tz) + c1 * tz;
-							const slope = volume.rescaleSlope ?? 1.0;
-							const intercept = volume.rescaleIntercept ?? 0.0;
-							const huVal = (slope !== 1.0 || intercept !== 0.0) ? rawHu * slope + intercept : rawHu;
-							hu = Math.max(-1000, Math.min(3071, Math.round(huVal)));
-						} else {
-							hu = -1000;
-						}
-					} else {
-						hu = sampleVoxelHU(Math.round(vx), Math.round(vy), Math.round(vz), volume);
-					}
-
-					if (hu > maxHU) maxHU = hu;
-					if (hu < minHU) minHU = hu;
-					sumHU += hu;
-					count++;
-				}
-
-				let finalHU = maxHU;
-				if (slabMode === "minip") finalHU = minHU;
-				else if (slabMode === "average") finalHU = count > 0 ? Math.round(sumHU / count) : minHU;
-
-				const gray = lut[(finalHU + 32768) & 0xffff]!;
-
-				pixelBuffer[pIdx] = gray;
-				pixelBuffer[pIdx + 1] = gray;
-				pixelBuffer[pIdx + 2] = gray;
-				pixelBuffer[pIdx + 3] = 255;
-				pIdx += 4;
-			}
-		}
-	}
-
-	return {
-		data: pixelBuffer,
-		metadata: {
-			plane,
-			sliceIndex: 0,
-			maxSliceIndex,
-			physicalPositionMm: Number(physicalPosMm.toFixed(2)),
-			widthPx,
-			heightPx,
-			pixelSpacingX,
-			pixelSpacingY,
-			slabThicknessMm: isSlabActive ? slabThicknessMm : pixelSpacingX,
-		},
-	};
-}
-
-/**
- * Reslices all 3 orthogonal planes synchronously at the given crosshair position and oblique angles.
- */
-export function resliceObliqueMprSynchronized(
-	volume: CbctVoxelVolume,
-	crosshairMm: Point3D,
-	angles: ObliqueRotationAngles,
-	windowWidth: number,
-	windowLevel: number,
-	slabMode: SlabProjectionMode = "single",
-	slabThicknessMm = 2.0,
-	interpolation: "trilinear" | "nearest" = "trilinear",
-): Record<MprPlane, MprSliceExtractionResult> {
-	const renderOptions: ObliqueSliceRenderOptions = {
-		windowWidth,
-		windowLevel,
-		slabMode,
-		slabThicknessMm,
-		interpolation,
-	};
-
-	return {
-		axial: extractObliqueMprSlice(volume, "axial", crosshairMm, angles, renderOptions),
-		coronal: extractObliqueMprSlice(volume, "coronal", crosshairMm, angles, renderOptions),
-		sagittal: extractObliqueMprSlice(volume, "sagittal", crosshairMm, angles, renderOptions),
-	};
-}
-
-// ─── 5. INTERACTIVE WINDOW / LEVEL & ZOOM / PAN MATH ─────────────────────────
+// ─── 2. INTERACTIVE WINDOW / LEVEL & ZOOM / PAN MATH ─────────────────────────
 
 /**
  * Calculates updated Window Width and Level from mouse drag deltas (Right Click Drag).
@@ -775,7 +217,7 @@ export function resetViewportTransform(): ViewportTransform {
 	return { ...DEFAULT_VIEWPORT_TRANSFORM };
 }
 
-// ─── 6. INTERACTIVE CANVAS ROTATION HANDLES & HIT-TESTING ───────────────────
+// ─── 3. INTERACTIVE CANVAS ROTATION HANDLES & HIT-TESTING ───────────────────
 
 /**
  * Computes the 4 rotation handle positions in canvas pixel space relative to the crosshair center.
@@ -911,7 +353,7 @@ export function hitTestCrosshairCenter(
 	return dist <= hitTolerancePx;
 }
 
-// ─── 7. CANVAS OBLIQUE CROSSHAIR & ROTATION HANDLES RENDERER ────────────────
+// ─── 4. CANVAS OBLIQUE CROSSHAIR & ROTATION HANDLES RENDERER ────────────────
 
 /**
  * Draws rotated crosshair reticles, tick marks, circular sector arc, rotation handles, and angle badges onto the canvas.
@@ -1098,79 +540,10 @@ export function drawObliqueCrosshairWithRotationHandles(
 	}
 
 	// 5. Rotation Angle HUD Badge: Delegated strictly to the interactive HTML HUD button in CbctViewportHud.tsx (DEF-04).
-	// Canvas text rendering is omitted to eliminate text ghosting and overlapping duplicate badges.
-
 	ctx.restore();
 }
 
-/**
- * Maps pointer coordinates from a transformed canvas (with zoom & pan) to 3D physical world millimeters,
- * taking into account the oblique plane orientation angles and rotated orthonormal basis vectors (u, v).
- */
-export function mapCanvasPointerToWorldMmWithTransform(
-	pointerPx: { readonly x: number; readonly y: number },
-	canvasSize: { readonly width: number; readonly height: number },
-	plane: MprPlane,
-	crosshairMm: Point3D,
-	angles: ObliqueRotationAngles,
-	transform: ViewportTransform,
-	volume: CbctVoxelVolume,
-): Point3D {
-	if (!volume || volume.isDisposed || !volume.physicalSizeMm || !volume.dimensions || !volume.spacingMm) {
-		return crosshairMm ?? { x: 0, y: 0, z: 0 };
-	}
-
-	const zoom = Number.isFinite(transform?.zoom) && transform.zoom > 0 ? transform.zoom : 1.0;
-	const panX = Number.isFinite(transform?.panX) ? transform.panX : 0;
-	const panY = Number.isFinite(transform?.panY) ? transform.panY : 0;
-
-	const cWidth = canvasSize?.width > 0 ? canvasSize.width : 100;
-	const cHeight = canvasSize?.height > 0 ? canvasSize.height : 100;
-
-	// Invert viewport pan & zoom to get coordinates in slice pixel space
-	const untransformedPxX = (pointerPx.x - panX) / zoom;
-	const untransformedPxY = (pointerPx.y - panY) / zoom;
-
-	// Physical millimeter spacing per canvas pixel for each MPR plane
-	const sp = volume.spacingMm;
-	let pixelSpacingX = sp.x;
-	let pixelSpacingY = sp.y;
-
-	switch (plane) {
-		case "axial":
-			pixelSpacingX = sp.x;
-			pixelSpacingY = sp.y;
-			break;
-		case "coronal":
-			pixelSpacingX = sp.x;
-			pixelSpacingY = sp.z;
-			break;
-		case "sagittal":
-			pixelSpacingX = sp.y;
-			pixelSpacingY = sp.z;
-			break;
-	}
-
-	// Offset from slice center in pixels
-	const offsetColPx = untransformedPxX - cWidth / 2.0;
-	const offsetRowPx = untransformedPxY - cHeight / 2.0;
-
-	// Offset in physical millimeters along slice U and V axes
-	const offsetMmU = offsetColPx * pixelSpacingX;
-	const offsetMmV = offsetRowPx * pixelSpacingY;
-
-	// Compute rotated orthonormal basis vectors for the oblique plane
-	const basis = computeObliquePlaneBasis(plane, crosshairMm, angles ?? DEFAULT_OBLIQUE_ROTATION);
-
-	// Map 2D slice offset to 3D physical world space using basis vectors u and v
-	const worldX = crosshairMm.x + offsetMmU * basis.u.x + offsetMmV * basis.v.x;
-	const worldY = crosshairMm.y + offsetMmU * basis.u.y + offsetMmV * basis.v.y;
-	const worldZ = crosshairMm.z + offsetMmU * basis.u.z + offsetMmV * basis.v.z;
-
-	return clampCoordinateToVolume({ x: worldX, y: worldY, z: worldZ }, volume);
-}
-
-// ─── 8. MOUSE WHEEL SLICE NAVIGATION & FULL VIEWPORT RESET MATH ──────────────
+// ─── 5. MOUSE WHEEL SLICE NAVIGATION & FULL VIEWPORT RESET MATH ──────────────
 
 export type CbctWheelAction = "slice_scroll" | "zoom";
 

@@ -3,16 +3,6 @@ import {
 	type Point2,
 	type VolumeSamplingData,
 } from "@dental/shared";
-import {
-	Activity,
-	Camera,
-	ChevronLeft,
-	ChevronRight,
-	Download,
-	Loader2,
-	Sparkles,
-	X,
-} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Rnd } from "react-rnd";
 import type {
@@ -30,7 +20,6 @@ import {
 } from "../visiograph/VisiographExportService";
 import {
 	huToGrayscale,
-	VISIOGRAPH_PRESETS_LIST,
 	VISIOGRAPH_WINDOW_PRESETS,
 	type VisiographPresetId,
 	type VisiographWindowPreset,
@@ -44,7 +33,14 @@ import {
 	generateCatmullRomArch,
 	generateCrossSectionSlicePlanes,
 } from "./panoramicMprMath";
+import { PanoramicHeader } from "./PanoramicHeader";
+import { PanoramicToolbar } from "./PanoramicToolbar";
+import { PanoramicDensityHud } from "./PanoramicDensityHud";
 import "./panoramicMpr.css";
+
+export * from "./PanoramicHeader";
+export * from "./PanoramicToolbar";
+export * from "./PanoramicDensityHud";
 
 export interface PanoramicVolumeInput {
 	scalarData: Float32Array | Uint16Array;
@@ -668,159 +664,28 @@ export function PanoramicRendererWindow({
 			className="mpr-container shadow-2xl rounded-2xl border border-[var(--line-strong)] overflow-hidden flex flex-col z-50 text-white"
 			style={{ background: "var(--paper, #09090b)" }}
 		>
-			{/* CLINICAL HEADER */}
-			<div className="mpr-toolbar bg-neutral-900 border-b border-neutral-800 px-3 pr-2 sm:pr-3 py-1.5 flex flex-nowrap justify-between items-center cursor-move handle gap-2 overflow-x-auto no-scrollbar min-h-[36px]">
-				<div className="flex items-center gap-2 shrink-0 min-w-0">
-					<div className="flex items-center gap-1.5 min-w-0">
-						<Activity className="w-4 h-4 text-[var(--teal)] shrink-0" />
-						<h3 className="text-white font-bold text-xs sm:text-sm tracking-tight truncate max-w-[180px] sm:max-w-none min-w-0">
-							3D MPR & ОПТГ
-						</h3>
-					</div>
-					<span className="text-[11px] font-bold text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded-lg border border-neutral-700 whitespace-nowrap hidden sm:inline-flex shrink-0">
-						{sliceThicknessMm > 0
-							? `Слой: ${sliceThicknessMm} мм (${blendMode.toUpperCase()})`
-							: "Тонкий луч (Ray)"}
-					</span>
-				</div>
-
-				{/* ACTIONS */}
-				<div className="flex items-center gap-1.5 shrink-0 pr-2">
-					<button
-						type="button"
-						onClick={handleAutoDetectArch}
-						disabled={loading}
-						aria-label="Автоматическое определение зубной дуги"
-						className="mpr-btn-touch text-xs font-bold bg-indigo-600/80 hover:bg-indigo-600 text-white px-2.5 py-1 rounded-lg border border-indigo-500/50 flex items-center gap-1 transition-all shadow-sm active:scale-95 whitespace-nowrap min-h-[32px]"
-						title="Автоматическое определение зубной дуги по MIP срезу КЛКТ"
-					>
-						<Sparkles className="w-3.5 h-3.5 text-amber-300" />
-						<span className="hidden sm:inline">Авто-дуга</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={handleExportTo043}
-						disabled={loading || isExporting}
-						aria-label="Экспорт в форму 043/у"
-						className="mpr-btn-touch mpr-btn-success text-xs font-bold px-2.5 py-1 whitespace-nowrap min-h-[32px] flex items-center gap-1"
-						title="Прикрепить снимок к амбулаторной карте 043/у"
-					>
-						{isExporting ? (
-							<Loader2 className="w-3.5 h-3.5 animate-spin" />
-						) : (
-							<Camera className="w-3.5 h-3.5" />
-						)}
-						<span className="hidden sm:inline">В карту 043/у</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={handleLocalDownload}
-						disabled={loading}
-						aria-label="Скачать снимок"
-						className="mpr-btn-touch text-xs font-medium px-2 py-1 min-h-[32px] min-w-[32px]"
-						title="Скачать JPG"
-					>
-						<Download className="w-3.5 h-3.5" />
-					</button>
-
-					<button
-						type="button"
-						onClick={onClose}
-						data-testid="panoramic-close-btn"
-						aria-label="Закрыть окно панорамы"
-						className="text-neutral-400 hover:text-white min-h-[32px] min-w-[32px] inline-flex items-center justify-center p-1 rounded-lg text-base font-bold transition-colors hover:bg-neutral-800"
-					>
-						<X className="w-4 h-4" />
-					</button>
-				</div>
-			</div>
+			{/* CLINICAL HEADER (PanoramicHeader: Авто-дуга, экспорт в карту 043/у, локальная загрузка) */}
+			<PanoramicHeader
+				sliceThicknessMm={sliceThicknessMm}
+				blendMode={blendMode}
+				loading={loading}
+				isExporting={isExporting}
+				onAutoDetectArch={handleAutoDetectArch}
+				onExportTo043={handleExportTo043}
+				onLocalDownload={handleLocalDownload}
+				onClose={onClose}
+			/>
 
 			{/* SECONDARY TOOLBAR: HU PRESETS & CROSS-SECTION NAVIGATOR */}
-			<div className="bg-neutral-950/90 px-3 py-1.5 flex flex-nowrap items-center justify-between gap-2 border-b border-neutral-800 text-xs overflow-x-auto no-scrollbar min-h-[36px]">
-				{/* HU Presets */}
-				<div className="flex items-center gap-1.5 shrink-0 overflow-x-auto">
-					<span className="text-neutral-400 font-medium whitespace-nowrap text-[11px]">
-						HU:
-					</span>
-					<div className="flex gap-1">
-						{VISIOGRAPH_PRESETS_LIST.map((preset) => (
-							<button
-								key={preset.id}
-								type="button"
-								onClick={() => setActivePreset(preset.id)}
-								className={`px-2.5 py-1 rounded-lg text-[11px] font-bold min-h-[30px] transition-all whitespace-nowrap ${
-									activePreset === preset.id
-										? "bg-blue-600 text-white shadow-md"
-										: "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
-								}`}
-								title={preset.description}
-							>
-								{preset.shortLabel}
-							</button>
-						))}
-					</div>
-				</div>
-
-				{/* Cross-Section Stepper (Step 1.0 - 2.0 mm) */}
-				{crossSections.length > 0 && (
-					<div className="flex items-center gap-1.5 shrink-0 mpr-slice-stepper">
-						<span className="text-neutral-400 font-bold text-[11px] hidden sm:inline">
-							Кросс-срез:
-						</span>
-						<button
-							type="button"
-							onClick={() =>
-								setActiveCrossSectionIdx((prev) => Math.max(0, prev - 1))
-							}
-							disabled={activeCrossSectionIdx <= 0}
-							className="mpr-btn-touch min-h-[30px] min-w-[30px] p-1 rounded-md"
-							title="Предыдущий срез (шаг 1.5мм)"
-						>
-							<ChevronLeft className="w-3.5 h-3.5" />
-						</button>
-
-						<span className="text-[11px] font-extrabold text-blue-400 min-w-[65px] text-center">
-							#{activeCrossSectionIdx + 1} / {crossSections.length} (
-							{activeSlice?.arcLengthMm.toFixed(1)} мм)
-						</span>
-
-						<button
-							type="button"
-							onClick={() =>
-								setActiveCrossSectionIdx((prev) =>
-									Math.min(crossSections.length - 1, prev + 1),
-								)
-							}
-							disabled={activeCrossSectionIdx >= crossSections.length - 1}
-							className="mpr-btn-touch min-h-[30px] min-w-[30px] p-1 rounded-md"
-							title="Следующий срез (шаг 1.5мм)"
-						>
-							<ChevronRight className="w-3.5 h-3.5" />
-						</button>
-					</div>
-				)}
-
-				{/* Slice Thickness Slider */}
-				<div className="flex items-center gap-1.5 shrink-0">
-					<span className="text-neutral-400 font-medium text-[11px] hidden sm:inline">
-						Толщина:
-					</span>
-					<input
-						type="range"
-						min="0.5"
-						max="20"
-						step="0.5"
-						value={sliceThicknessMm}
-						onChange={(e) => setSliceThicknessMm(Number(e.target.value))}
-						className="mpr-slider-touch w-16 sm:w-20"
-					/>
-					<span className="text-[11px] font-bold text-[var(--teal)] w-10 text-right">
-						{sliceThicknessMm.toFixed(1)} мм
-					</span>
-				</div>
-			</div>
+			<PanoramicToolbar
+				activePreset={activePreset}
+				onSelectPreset={setActivePreset}
+				crossSections={crossSections}
+				activeCrossSectionIdx={activeCrossSectionIdx}
+				onSelectCrossSectionIdx={setActiveCrossSectionIdx}
+				sliceThicknessMm={sliceThicknessMm}
+				onChangeSliceThicknessMm={setSliceThicknessMm}
+			/>
 
 			{/* MAIN VIEWPORT BODY */}
 			<div className="flex-1 relative bg-black flex flex-col sm:flex-row items-center justify-center p-2 min-h-0 overflow-hidden">
@@ -873,50 +738,10 @@ export function PanoramicRendererWindow({
 				</div>
 
 				{/* REAL-TIME MISCH BONE QUALITY DENSITY METER (HUD) */}
-				{boneRecommendation && (
-					<div className="mpr-density-hud">
-						<div className="flex items-center justify-between gap-2">
-							<div className="flex items-center gap-2">
-								<span
-									className={`mpr-density-badge ${
-										boneRecommendation.mischClass === "D1"
-											? "mpr-badge-d1"
-											: boneRecommendation.mischClass === "D2"
-												? "mpr-badge-d2"
-												: boneRecommendation.mischClass === "D3"
-													? "mpr-badge-d3"
-													: boneRecommendation.mischClass === "D4"
-														? "mpr-badge-d4"
-														: "mpr-badge-d5"
-									}`}
-								>
-									{boneRecommendation.mischClass}
-								</span>
-								<span className="text-xs font-bold text-white">
-									{boneRecommendation.label}
-								</span>
-							</div>
-							<span className="text-sm font-black text-[var(--teal)]">
-								{probedHU} HU
-							</span>
-						</div>
-
-						<p className="text-[12px] text-neutral-300 leading-snug">
-							{boneRecommendation.clinicalAdvice}
-						</p>
-
-						<div className="flex items-center justify-between text-[11px] font-bold text-neutral-400 border-t border-neutral-800 pt-1.5">
-							<span>Обороты: {boneRecommendation.drillingRpm}</span>
-							<span>Торк: {boneRecommendation.torqueNcm}</span>
-							{boneRecommendation.corticalTap && (
-								<span className="text-red-400">МЕТЧИК ОБЯЗАТЕЛЕН</span>
-							)}
-							{boneRecommendation.underDrilling && (
-								<span className="text-amber-400">НЕДОПРЕПАРИРОВАНИЕ</span>
-							)}
-						</div>
-					</div>
-				)}
+				<PanoramicDensityHud
+					boneRecommendation={boneRecommendation}
+					probedHU={probedHU}
+				/>
 
 				{/* HUD Crosshair Indicator */}
 				{cursorPos && (
