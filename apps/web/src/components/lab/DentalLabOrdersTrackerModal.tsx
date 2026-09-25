@@ -400,7 +400,7 @@ export function DentalLabOrdersTrackerModal({
 								<>
 									<span className="text-[var(--muted)]">•</span>
 									<span className="text-rose-600 font-bold animate-pulse">
-										⚠️ Алерты: {metrics.criticalAlertsCount}
+										Алерты: {metrics.criticalAlertsCount}
 									</span>
 								</>
 							)}
@@ -427,7 +427,7 @@ export function DentalLabOrdersTrackerModal({
 						<div className="flex items-center gap-2 min-w-0">
 							<AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 animate-bounce" />
 							<span className="font-bold truncate">
-								⚠️ Внимание: {metrics.criticalAlertsCount} наряд(а) еще не поступил(и) из ЗТЛ, хотя у пациентов назначен визит на сегодня!
+								Внимание: {metrics.criticalAlertsCount} наряд(а) еще не поступил(и) из ЗТЛ, хотя у пациентов назначен визит на сегодня!
 							</span>
 						</div>
 						<button

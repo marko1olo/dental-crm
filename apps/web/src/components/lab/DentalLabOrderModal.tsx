@@ -1,10 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React from "react";
 import { createPortal } from "react-dom";
 import {
-	Calendar,
-	Check,
 	CheckCircle2,
-	Clock,
 	Copy,
 	FlaskConical,
 	Loader2,
@@ -16,768 +13,48 @@ import {
 	Sparkles,
 	X,
 	Zap,
+	Clock,
 } from "lucide-react";
-import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
-import { showToast } from "../GlobalToast";
-import { normalizeRubAmountInput } from "../../rubAmountInput";
 import "./labOrders.css";
 import {
-	type DentalLabOrderData,
 	type DentalLabOrderModalProps,
-	type LabOrderStageKey,
-	CONSTRUCTION_TYPES,
-	LAB_MATERIALS,
-	VITA_BLEACH_SHADES,
-	VITA_3D_MASTER_SHADES,
-	LAB_ORDER_STAGES,
-	calculateLabFinancialSplit,
-	formatGostOrderNumber,
-	addWorkingDays,
-	ONE_CLICK_LAB_DEFAULTS,
-	EXPRESS_LAB_PRESETS,
-	EXPRESS_PRESET_ZIRCONIA_CROWN,
-	EXPRESS_PRESET_PFM_DUCERAM,
-	EXPRESS_PRESET_PMMA_TEMPORARY,
-	type ExpressLabPreset,
-	type JawScope,
 	formatJawScopeLabel,
-	CANONICAL_5_CLINICAL_LAB_STATUSES,
-	mapTo5StageLabStatus,
-	calculateWorkingDaysRemaining,
 } from "./labMath";
-import {
-	rublesToKopecks,
-	formatLabOrderFormZtl1A4Protocol,
-} from "@dental/shared";
-import {
-	checkDentalLabFinancialGate,
-	createDoctorClinicalOverride,
-} from "./dentalLabFinancialGateEngine";
 import { DentalLabRestorationTab } from "./DentalLabRestorationTab";
 import { DentalLabShadeSelector } from "./DentalLabShadeSelector";
 import { DentalLabPrintBlank } from "./DentalLabPrintBlank";
+import { DentalLabStagesTab } from "./DentalLabStagesTab";
+import {
+	MODAL_EXPRESS_LAB_PRESETS,
+	buildLabOrderMessengerSummary,
+	type LabOrderMessengerParams,
+	EXPRESS_PRESET_EMAX_CROWN,
+	EXPRESS_PRESET_BRIDGE_ZIRCONIA,
+	EXPRESS_PRESET_EMAX_INLAY,
+} from "./dentalLabModalPresets";
+import {
+	useDentalLabOrderForm,
+	type LabModalTabKey,
+} from "./useDentalLabOrderForm";
 
 // Re-export all types and constants for backwards compatibility with tests and callers
 export * from "./labMath";
-
-export const EXPRESS_PRESET_EMAX_CROWN: ExpressLabPreset = {
-	id: "emax_crown_express",
-	title: "Коронка E.max CAD / Press",
-	shortDesc: "Дисиликат лития E.max, цвет VITA A2, зазор 30 мкм, срок 5 раб. дней (22 000 ₽ / 6 500 ₽)",
-	constructionType: "single_crown",
-	materialId: "emax_lithium_disilicate",
-	colorVita: "A2",
-	workingDays: 5,
-	priceRub: 22000,
-	labCostRub: 6500,
-	patientPriceRub: 22000,
-	patientPriceKopecks: 2200000,
-	labCostKopecks: 650000,
-	occlusalScheme: "mutually_protected",
-	contactTightness: "normal",
-	surfaceTexture: "natural_anatomy",
-	cementGapMicrons: 30,
-	impressionType: "a_silicone",
-	badge: "E.max (5 дн.)",
-};
-
-export const EXPRESS_PRESET_BRIDGE_ZIRCONIA: ExpressLabPreset = {
-	id: "bridge_zirconia_express",
-	title: "Мостовидный протез ZrO2",
-	shortDesc: "Диоксид циркония Multi-Layer, цвет VITA A2, зазор 30 мкм, срок 7 раб. дней (48 000 ₽ / 15 000 ₽)",
-	constructionType: "bridge",
-	materialId: "zirconia_multilayer",
-	colorVita: "A2",
-	workingDays: 7,
-	priceRub: 48000,
-	labCostRub: 15000,
-	patientPriceRub: 48000,
-	patientPriceKopecks: 4800000,
-	labCostKopecks: 1500000,
-	occlusalScheme: "mutually_protected",
-	contactTightness: "normal",
-	surfaceTexture: "natural_anatomy",
-	cementGapMicrons: 30,
-	impressionType: "a_silicone",
-	badge: "Мост ZrO2 (7 дн.)",
-};
-
-export const EXPRESS_PRESET_EMAX_INLAY: ExpressLabPreset = {
-	id: "emax_inlay_express",
-	title: "Вкладка E.max (Inlay/Onlay)",
-	shortDesc: "Дисиликат лития IPS e.max Press, цвет VITA A2, зазор 20 мкм, срок 5 раб. дней (18 000 ₽ / 5 500 ₽)",
-	constructionType: "inlay_onlay",
-	materialId: "emax_lithium_disilicate",
-	colorVita: "A2",
-	workingDays: 5,
-	priceRub: 18000,
-	labCostRub: 5500,
-	patientPriceRub: 18000,
-	patientPriceKopecks: 1800000,
-	labCostKopecks: 550000,
-	occlusalScheme: "mutually_protected",
-	contactTightness: "normal",
-	surfaceTexture: "natural_anatomy",
-	cementGapMicrons: 20,
-	impressionType: "a_silicone",
-	badge: "Вкладка E.max (5 дн.)",
-};
-
-export const MODAL_EXPRESS_LAB_PRESETS: readonly ExpressLabPreset[] = [
-	EXPRESS_PRESET_ZIRCONIA_CROWN,
+export {
+	MODAL_EXPRESS_LAB_PRESETS,
+	buildLabOrderMessengerSummary,
+	type LabOrderMessengerParams,
+	EXPRESS_PRESET_EMAX_CROWN,
 	EXPRESS_PRESET_BRIDGE_ZIRCONIA,
 	EXPRESS_PRESET_EMAX_INLAY,
-	EXPRESS_PRESET_EMAX_CROWN,
-	EXPRESS_PRESET_PFM_DUCERAM,
-	EXPRESS_PRESET_PMMA_TEMPORARY,
-	...EXPRESS_LAB_PRESETS.filter(
-		(p) =>
-			p.id !== "zirconia_crown_express" &&
-			p.id !== "bridge_zirconia_express" &&
-			p.id !== "emax_inlay_express" &&
-			p.id !== "pfm_duceram_express" &&
-			p.id !== "pmma_temporary_express" &&
-			p.id !== "emax_crown_express",
-	),
-];
+};
+export { DentalLabStagesTab };
+export { useDentalLabOrderForm, type LabModalTabKey };
 
-declare module "./labMath" {
-	interface DentalLabOrderModalProps {
-		readonly clinicName?: string | undefined;
-		readonly clinicPhone?: string | undefined;
-		readonly initialTeeth?: readonly (number | string)[] | undefined;
-		readonly patientChartNumber?: string | undefined;
-		readonly onSaveOrder?: ((order: any) => void) | undefined;
-		readonly [key: string]: any;
-	}
-}
-
-export interface LabOrderMessengerParams {
-	clinicName: string;
-	clinicPhone?: string | undefined;
-	gostOrderNumber: string;
-	patientName: string;
-	doctorName: string;
-	teethOrJaw: string;
-	constructionTypeTitle: string;
-	materialTitle: string;
-	shade: string;
-	dueDate: string;
-	frameworkTrialDate?: string | undefined;
-	ceramicTrialDate?: string | undefined;
-	clinicalNotes?: string | undefined;
-}
-
-export function buildLabOrderMessengerSummary(params: LabOrderMessengerParams): string {
-	const lines: string[] = [
-		`Заказ-наряд в зуботехническую лабораторию (клиника «${params.clinicName}»):`,
-		`Наряд: ${params.gostOrderNumber}`,
-		`Пациент: ${params.patientName}`,
-		`Лечащий врач: ${params.doctorName}`,
-		`Область: ${params.teethOrJaw}`,
-		`Конструкция: ${params.constructionTypeTitle}`,
-		`Материал: ${params.materialTitle}`,
-		`Цвет: ${params.shade}`,
-		`Срок сдачи (Due date): ${params.dueDate}`,
-	];
-
-	if (params.frameworkTrialDate && params.frameworkTrialDate.trim()) {
-		lines.push(`Примерка каркаса: ${params.frameworkTrialDate.trim()}`);
-	}
-	if (params.ceramicTrialDate && params.ceramicTrialDate.trim()) {
-		lines.push(`Примерка керамики: ${params.ceramicTrialDate.trim()}`);
-	}
-
-	const notes = params.clinicalNotes?.trim() || "Без особенностей";
-	lines.push(`Особые указания: ${notes}`);
-	lines.push(`Курьерская доставка / Связь с клиникой: ${params.clinicPhone?.trim() || "не указан"}.`);
-
-	return lines.join("\n");
-}
-
-type TabKey = "main" | "shades" | "stages" | "print";
-
-export function DentalLabOrderModal({
-	isOpen,
-	onClose,
-	initialOrder,
-	patientId,
-	patientName,
-	doctorId,
-	doctorName,
-	initialToothFdi,
-	initialTeeth,
-	patientChartNumber,
-	patientDepositRub,
-	stageTotalRub,
-	stagePaidRub,
-	chiefDoctorName,
-	skipFinancialGate,
-	treatmentPlanAgeDays,
-	isPlanExpired,
-	onOrderSaved,
-	onSaveOrder,
-	clinicPhone = "",
-	clinicName = "Денте",
-	initialTab = "main",
-}: DentalLabOrderModalProps) {
-	const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
-
-	useEffect(() => {
-		if (isOpen && initialTab) {
-			setActiveTab(initialTab);
-		}
-	}, [isOpen, initialTab]);
-
-	// Doctor Clinical Override State (Mandates 8d, 8e)
-	const [gateOverride, setGateOverride] = useState<{
-		authorized: boolean;
-		doctorName: string;
-		timestampIso: string;
-		reason: string;
-	} | null>(null);
-
-	// Form State
-	const [formPatientId, setFormPatientId] = useState(patientId || initialOrder?.patientId || "");
-	const [formPatientName, setFormPatientName] = useState(patientName || initialOrder?.patientName || "Пациент");
-	const [formDoctorId, setFormDoctorId] = useState(doctorId || initialOrder?.doctorId || "");
-	const [formDoctorName, setFormDoctorName] = useState(doctorName || initialOrder?.doctorName || "Лечащий врач");
-
-	// Tooth & Jaw Selection
-	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
-	const [jawScope, setJawScope] = useState<JawScope | null>(initialOrder?.jawScope || null);
-	const [constructionType, setConstructionType] = useState<string>("single_crown");
-	const [material, setMaterial] = useState<string>("zirconia_multilayer");
-	const [impressionType, setImpressionType] = useState<string>("a_silicone");
-
-	// VITA Shade Selection
-	const [shadeSystem, setShadeSystem] = useState<"classical" | "3d_master" | "bleach">("classical");
-	const [shadeClassical, setShadeClassical] = useState<string>("A2");
-	const [shade3dMaster, setShade3dMaster] = useState<string>("2M2");
-	const [shadeBleach, setShadeBleach] = useState<string>("BL2");
-	const [shadeCervical, setShadeCervical] = useState<string>("A3");
-	const [shadeBody, setShadeBody] = useState<string>("A2");
-	const [shadeIncisal, setShadeIncisal] = useState<string>("A1");
-	const [shadeStump, setShadeStump] = useState<string>("");
-	const [translucency, setTranslucency] = useState<string>("HT");
-	const [mamelons, setMamelons] = useState<boolean>(false);
-	const [calcifications, setCalcifications] = useState<boolean>(false);
-
-	// Occlusal Specs
-	const [occlusalScheme, setOcclusalScheme] = useState<string>("mutually_protected");
-	const [contactTightness, setContactTightness] = useState<string>("normal");
-	const [surfaceTexture, setSurfaceTexture] = useState<string>("natural_anatomy");
-	const [cementGapMicrons, setCementGapMicrons] = useState<number>(30);
-
-	// Stages & Deadlines
-	const [currentStage, setCurrentStage] = useState<LabOrderStageKey>("sent_to_lab");
-	const [dueDate, setDueDate] = useState<string>("");
-	const [frameworkTrialDate, setFrameworkTrialDate] = useState<string>("");
-	const [ceramicTrialDate, setCeramicTrialDate] = useState<string>("");
-	const [clinicalNotes, setClinicalNotes] = useState<string>("");
-	const [secureToken, setSecureToken] = useState<string>("");
-
-	// Financials (Копеечно точный расчет)
-	const [priceRubInput, setPriceRubInput] = useState<string>("15000");
-	const [clinicSharePct, setClinicSharePct] = useState<number>(50);
-	const [doctorSharePct, setDoctorSharePct] = useState<number>(50);
-
-	// Loading & Status
-	const [isSubmitting, setIsSubmitting] = useState(false);
-
-	// ─── INITIALIZATION EFFECT ─────────────────────────────────────────────────
-	useEffect(() => {
-		if (!isOpen) return;
-
-		if (initialOrder) {
-			setFormPatientId(initialOrder.patientId || patientId || "");
-			setFormPatientName(initialOrder.patientName || patientName || "Пациент");
-			setFormDoctorId(initialOrder.doctorId || doctorId || "");
-			setFormDoctorName(initialOrder.doctorName || doctorName || "Лечащий врач");
-			if (initialOrder.selectedTeeth && initialOrder.selectedTeeth.length > 0) {
-				setSelectedTeeth(initialOrder.selectedTeeth);
-			} else if (initialTeeth && initialTeeth.length > 0) {
-				const parsed = initialTeeth
-					.map((t) => (typeof t === "number" ? t : Number.parseInt(String(t), 10)))
-					.filter((n) => !Number.isNaN(n) && n >= 11 && n <= 85);
-				setSelectedTeeth(parsed);
-			} else if (initialOrder.toothFdi) {
-				const parsed = initialOrder.toothFdi
-					.split(/[\s,;-]+/)
-					.map((t) => Number.parseInt(t, 10))
-					.filter((n) => !Number.isNaN(n) && n >= 11 && n <= 85);
-				setSelectedTeeth(parsed);
-			} else {
-				setSelectedTeeth([]);
-			}
-			if (initialOrder.jawScope) {
-				setJawScope(initialOrder.jawScope);
-			} else if (initialOrder.toothFdi) {
-				const tf = initialOrder.toothFdi.toLowerCase();
-				if (tf.includes("обе челюсти") || tf.includes("both") || tf.includes("в/ч + н/ч")) {
-					setJawScope("both");
-				} else if (tf.includes("верхн") || tf.includes("в/ч") || tf.includes("upper")) {
-					setJawScope("upper");
-				} else if (tf.includes("нижн") || tf.includes("н/ч") || tf.includes("lower")) {
-					setJawScope("lower");
-				} else {
-					setJawScope(null);
-				}
-			} else {
-				setJawScope(null);
-			}
-			setConstructionType(initialOrder.constructionType || "single_crown");
-			setMaterial(initialOrder.material || "zirconia_multilayer");
-			setImpressionType(initialOrder.impressionType || "a_silicone");
-			if (initialOrder.colorVita) {
-				if (VITA_3D_MASTER_SHADES.includes(initialOrder.colorVita as any)) {
-					setShadeSystem("3d_master");
-					setShade3dMaster(initialOrder.colorVita);
-				} else if (VITA_BLEACH_SHADES.includes(initialOrder.colorVita as any)) {
-					setShadeSystem("bleach");
-					setShadeBleach(initialOrder.colorVita);
-				} else {
-					setShadeSystem("classical");
-					setShadeClassical(initialOrder.colorVita);
-				}
-				setShadeBody(initialOrder.colorVita);
-			}
-			setShadeCervical(initialOrder.shadeCervical || "A3");
-			setShadeBody(initialOrder.shadeBody || initialOrder.colorVita || "A2");
-			setShadeIncisal(initialOrder.shadeIncisal || "A1");
-			setShadeStump(initialOrder.shadeStump || "");
-			setTranslucency(initialOrder.translucency || "HT");
-			setMamelons(Boolean(initialOrder.mamelons));
-			setCalcifications(Boolean(initialOrder.calcifications));
-			setOcclusalScheme(initialOrder.occlusalScheme || "mutually_protected");
-			setContactTightness(initialOrder.contactTightness || "normal");
-			setSurfaceTexture(initialOrder.surfaceTexture || "natural_anatomy");
-			setCementGapMicrons(initialOrder.cementGapMicrons ?? 30);
-			setCurrentStage(initialOrder.currentStage || "sent_to_lab");
-			setDueDate(initialOrder.dueDate ? initialOrder.dueDate.slice(0, 10) : "");
-			setFrameworkTrialDate(initialOrder.frameworkTrialDate ? initialOrder.frameworkTrialDate.slice(0, 10) : "");
-			setCeramicTrialDate(initialOrder.ceramicTrialDate ? initialOrder.ceramicTrialDate.slice(0, 10) : "");
-			setClinicalNotes(initialOrder.clinicalNotes || "");
-			setPriceRubInput(initialOrder.priceRub != null ? String(initialOrder.priceRub) : "15000");
-			setClinicSharePct(initialOrder.clinicSharePct ?? 50);
-			setDoctorSharePct(initialOrder.doctorSharePct ?? 50);
-			setSecureToken(initialOrder.secureToken || crypto.randomUUID());
-		} else {
-			setFormPatientId(patientId || "");
-			setFormPatientName(patientName || "Пациент");
-			setFormDoctorId(doctorId || "");
-			setFormDoctorName(doctorName || "Лечащий врач");
-			if (initialTeeth && initialTeeth.length > 0) {
-				const parsed = initialTeeth
-					.map((t) => (typeof t === "number" ? t : Number.parseInt(String(t), 10)))
-					.filter((n) => !Number.isNaN(n) && n >= 11 && n <= 85);
-				setSelectedTeeth(parsed);
-			} else if (initialToothFdi) {
-				const toothNum = typeof initialToothFdi === "number" ? initialToothFdi : Number.parseInt(String(initialToothFdi), 10);
-				if (!Number.isNaN(toothNum)) {
-					setSelectedTeeth([toothNum]);
-				}
-			} else {
-				setSelectedTeeth([]);
-			}
-			setSecureToken(crypto.randomUUID());
-			const d = new Date();
-			d.setDate(d.getDate() + 7);
-			setDueDate(d.toISOString().slice(0, 10));
-
-			const dTrial = new Date();
-			dTrial.setDate(dTrial.getDate() + 3);
-			setFrameworkTrialDate(dTrial.toISOString().slice(0, 10));
-
-			const dCeramic = new Date();
-			dCeramic.setDate(dCeramic.getDate() + 5);
-			setCeramicTrialDate(dCeramic.toISOString().slice(0, 10));
-		}
-	}, [isOpen, initialOrder, patientId, patientName, doctorId, doctorName, initialToothFdi, initialTeeth]);
-
-	// ─── TOOTH PICKER HELPERS ──────────────────────────────────────────────────
-	const toggleTooth = (tooth: number) => {
-		setSelectedTeeth((prev) =>
-			prev.includes(tooth) ? prev.filter((t) => t !== tooth) : [...prev, tooth].sort((a, b) => a - b),
-		);
-	};
-
-	const selectQuadrant = (teeth: number[]) => {
-		setSelectedTeeth((prev) => {
-			const allSelected = teeth.every((t) => prev.includes(t));
-			if (allSelected) {
-				return prev.filter((t) => !teeth.includes(t));
-			}
-			return Array.from(new Set([...prev, ...teeth])).sort((a, b) => a - b);
-		});
-	};
-
-	// ─── FINANCIAL CALCULATIONS (KOPECK EXACT) ──────────────────────────────────
-	const totalLabPriceRub = useMemo(() => {
-		const parsed = normalizeRubAmountInput(priceRubInput);
-		return parsed != null && parsed >= 0 ? parsed : 0;
-	}, [priceRubInput]);
-
-	const { doctorAmountRub } = useMemo(() => {
-		return calculateLabFinancialSplit(totalLabPriceRub, doctorSharePct);
-	}, [totalLabPriceRub, doctorSharePct]);
-
-	const handleApplyOneClickDefaults = () => {
-		setConstructionType(ONE_CLICK_LAB_DEFAULTS.restorationTypeSingle);
-		setMaterial(ONE_CLICK_LAB_DEFAULTS.materialId);
-		setShadeSystem(ONE_CLICK_LAB_DEFAULTS.shadeSystem);
-		setShadeClassical(ONE_CLICK_LAB_DEFAULTS.colorVita);
-		setShadeBody(ONE_CLICK_LAB_DEFAULTS.colorVita);
-		setSurfaceTexture(ONE_CLICK_LAB_DEFAULTS.surfaceTexture);
-		setCementGapMicrons(ONE_CLICK_LAB_DEFAULTS.cementGapMicrons);
-		setTranslucency(ONE_CLICK_LAB_DEFAULTS.translucency);
-		const due = addWorkingDays(new Date(), ONE_CLICK_LAB_DEFAULTS.workingDays);
-		setDueDate(due.toISOString().slice(0, 10));
-		showToast(
-			`Применен 1-клик пресет: «Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней» (до ${due.toLocaleDateString("ru-RU")})`,
-			"success",
-			4000,
-		);
-	};
-
-	const handleApplyExpressPreset = (preset: ExpressLabPreset) => {
-		setConstructionType(preset.constructionType);
-		setMaterial(preset.materialId);
-		setShadeSystem("classical");
-		setShadeClassical(preset.colorVita);
-		setShadeBody(preset.colorVita);
-		setOcclusalScheme(preset.occlusalScheme);
-		setContactTightness(preset.contactTightness);
-		setSurfaceTexture(preset.surfaceTexture);
-		setCementGapMicrons(preset.cementGapMicrons);
-		if (preset.impressionType) {
-			setImpressionType(preset.impressionType);
-		}
-		if (preset.isFullArchOrJaw && preset.toothFdi) {
-			setJawScope("both");
-		}
-		const due = addWorkingDays(new Date(), preset.workingDays);
-		setDueDate(due.toISOString().slice(0, 10));
-		setPriceRubInput(String(preset.priceRub));
-		showToast(
-			`Пресет применен: ${preset.title} (${preset.shortDesc})`,
-			"success",
-			4000,
-		);
-	};
-
-	// ─── DENTAL LAB FINANCIAL GATE ──────────────────────────────────────────────
-	const financialGateResult = useMemo(() => {
-		const stageTotalKopecks = rublesToKopecks(stageTotalRub ?? totalLabPriceRub);
-		const paidKopecks = rublesToKopecks(stagePaidRub ?? 0);
-		const depositKopecks = rublesToKopecks(patientDepositRub ?? 0);
-		const orderPriceKopecks = rublesToKopecks(totalLabPriceRub);
-
-		return checkDentalLabFinancialGate({
-			stageTotalKopecks,
-			paidKopecks,
-			availableDepositKopecks: depositKopecks,
-			labOrderPriceKopecks: orderPriceKopecks,
-			minAdvancePercent: 50,
-			chiefDoctorOverride: gateOverride ?? undefined,
-			doctorOverride: gateOverride ?? undefined,
-			treatmentPlanAgeDays,
-			isPlanExpired,
-		});
-	}, [stageTotalRub, totalLabPriceRub, stagePaidRub, patientDepositRub, gateOverride, treatmentPlanAgeDays, isPlanExpired]);
-
-	// ─── SUBMIT HANDLER ────────────────────────────────────────────────────────
-	const handleSaveOrder = async (e?: React.FormEvent, forceSaveWithOverride = false) => {
-		if (e) e.preventDefault();
-
-		// Мандат 8n (Соло-врач): создание наряда ЗТЛ в 1 клик без блокирующих валидаций
-		const effectivePatientId = formPatientId.trim() || (patientId ? patientId.trim() : `pat-solo-${Date.now()}`);
-
-		// Проверка финансового шлюза (50% аванс за этап)
-		// Автономия врача (Мандат 8e): не блокировать гарантийные переделки (0 ₽) и работы без оплаты.
-		// Если аванс < 50%, автоматически фиксируется клиническое решение лечащего врача без модальных барьеров (Anti-Matryoshka).
-		const isWarrantyOrder = Boolean(initialOrder?.isWarrantyRework || totalLabPriceRub === 0 || Number(priceRubInput) === 0);
-		let effectiveOverride = gateOverride;
-		if (!skipFinancialGate && !forceSaveWithOverride && !financialGateResult.isGatePassed && !isWarrantyOrder && !effectiveOverride) {
-			effectiveOverride = createDoctorClinicalOverride(
-				formDoctorName || chiefDoctorName || "Лечащий врач",
-				"Отправка наряда в ЗТЛ — клиническое решение лечащего врача (Автономия врача)",
-			);
-			setGateOverride(effectiveOverride);
-		}
-
-		setIsSubmitting(true);
-		try {
-			let toothFdiStr: string;
-			if (jawScope) {
-				toothFdiStr = formatJawScopeLabel(jawScope);
-			} else if (selectedTeeth.length > 0) {
-				toothFdiStr = selectedTeeth.join(", ");
-			} else {
-				toothFdiStr = "Общий наряд / Челюсть целиком";
-			}
-			const finalShade =
-				shadeSystem === "3d_master"
-					? shade3dMaster
-					: shadeSystem === "bleach"
-					? shadeBleach
-					: shadeClassical;
-
-			const comprehensiveNotes = [
-				initialOrder?.isWarrantyRework ? "ГАРАНТИЙНАЯ ПЕРЕДЕЛКА (0 ₽ ДЛЯ ПАЦИЕНТА)" : null,
-				initialOrder?.reworkReason ? `Причина рекламации: ${initialOrder.reworkReason}` : null,
-				initialOrder?.originalOrderNumber ? `Исходный наряд ЗТЛ: № ${initialOrder.originalOrderNumber}` : null,
-				patientChartNumber ? `№ Медкарты: ${patientChartNumber}` : null,
-				jawScope ? `Наряд на челюсть: ${formatJawScopeLabel(jawScope)}` : null,
-				clinicalNotes.trim(),
-				`Оттискная масса / Скан: ${impressionType}`,
-				`Конструкция: ${CONSTRUCTION_TYPES.find((c) => c.id === constructionType)?.name || constructionType}`,
-				`Цветовые зоны: Пришейка ${shadeCervical}, Тело ${shadeBody}, Режущий край ${shadeIncisal}`,
-				shadeStump ? `Культя: ${shadeStump}` : null,
-				`Транслюцентность: ${translucency}`,
-				mamelons ? "Эффект мамелонов" : null,
-				"Окклюзия / Прикус: В привычной окклюзии (по силиконовому регистрату / шаблону)",
-				"Анатомия: Естественная анатомическая форма зуба",
-				frameworkTrialDate ? `Примерка каркаса: ${frameworkTrialDate}` : null,
-				ceramicTrialDate ? `Примерка керамики: ${ceramicTrialDate}` : null,
-				effectiveOverride?.authorized
-					? `Клиническое решение лечащего врача: отправка наряда в ЗТЛ согласована (${effectiveOverride.doctorName})`
-					: null,
-			]
-				.filter(Boolean)
-				.join("\n• ");
-
-			const payload = {
-				patientId: effectivePatientId,
-				doctorId: formDoctorId || null,
-				toothFdi: toothFdiStr,
-				jawScope: jawScope || undefined,
-				material: LAB_MATERIALS.find((m) => m.id === material)?.name || material,
-				colorVita: finalShade,
-				dueDate: dueDate ? new Date(dueDate).toISOString() : null,
-				clinicalNotes: `• ${comprehensiveNotes}`,
-				priceRub: totalLabPriceRub,
-			};
-
-			const url = initialOrder?.id
-				? `/api/clinical/lab-orders/${initialOrder.id}`
-				: "/api/clinical/lab-orders";
-			const method = initialOrder?.id ? "PUT" : "POST";
-
-			const res = await fetch(url, {
-				method,
-				headers: {
-					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
-				body: JSON.stringify(payload),
-			});
-
-			if (!res.ok) {
-				const errData = await res.json().catch(() => ({}));
-				throw new Error(errData.message || "Не удалось сохранить заказ ЗТЛ");
-			}
-
-			const savedOrder = await res.json();
-
-			if (method === "POST" && savedOrder?.id && selectedTeeth.length > 0) {
-				const itemErrors: number[] = [];
-				for (const tooth of selectedTeeth) {
-					try {
-						const itemRes = await fetch(
-							`/api/clinical/lab-orders/${savedOrder.id}/items`,
-							{
-								method: "POST",
-								headers: {
-									"Content-Type": "application/json",
-									...denteAdminSecretRequestHeaders(),
-								},
-								body: JSON.stringify({
-									toothFdi: tooth,
-									restorationType: constructionType,
-									material,
-									shadeFinal: finalShade,
-									shadeStump: shadeStump || null,
-									translucencyLevel: translucency,
-									cementGapMicrons,
-									priceRub: totalLabPriceRub / selectedTeeth.length,
-								}),
-							},
-						);
-						if (!itemRes.ok) {
-							itemErrors.push(tooth);
-						}
-					} catch {
-						itemErrors.push(tooth);
-					}
-				}
-				if (itemErrors.length > 0) {
-					showToast(
-						`Внимание: часть позиций не удалось привязать (зубы ${itemErrors.join(", ")})`,
-						"warning",
-					);
-				}
-			}
-
-			showToast(
-				initialOrder?.id
-					? "Наряд ЗТЛ успешно обновлен"
-					: "Наряд-заказ в зуботехническую лабораторию успешно оформлен!",
-				"success",
-			);
-
-			const resultData: DentalLabOrderData = {
-				...savedOrder,
-				selectedTeeth,
-				jawScope,
-				constructionType,
-				material,
-				impressionType,
-				colorVita: finalShade,
-				shadeSystem,
-				shadeCervical,
-				shadeBody,
-				shadeIncisal,
-				shadeStump,
-				translucency,
-				mamelons,
-				calcifications,
-				occlusalScheme,
-				contactTightness,
-				surfaceTexture,
-				cementGapMicrons,
-				currentStage,
-				frameworkTrialDate,
-				ceramicTrialDate,
-				dueDate,
-				clinicSharePct,
-				doctorSharePct,
-				doctorDeductionRub: doctorAmountRub,
-			};
-
-			if (onOrderSaved) {
-				onOrderSaved(resultData);
-			}
-			if (onSaveOrder) {
-				onSaveOrder(resultData);
-			}
-
-			onClose();
-		} catch (err: any) {
-			showToast(err.message || "Ошибка сохранения наряда ЗТЛ", "error");
-		} finally {
-			setIsSubmitting(false);
-		}
-	};
-
-	const handlePrint = () => {
-		window.print();
-	};
-
-	const gostOrderNumber = formatGostOrderNumber(secureToken);
-
-	const handleCopyZtl1Protocol = () => {
-		try {
-			const safeWorkType = (constructionType as any) || "single_crown";
-			const safeMaterial = (material as any) || "zirconia_multilayer";
-			const synthOrder: any = {
-				id: gostOrderNumber,
-				clinicId: "clinic-default",
-				patientId: patientId || "pat-default",
-				patientFullName: formPatientName || "Пациент",
-				doctorId: doctorId || "doc-default",
-				doctorFullName: formDoctorName || "Лечащий врач-ортопед",
-				labId: "lab-primary",
-				labName: "Зуботехническая лаборатория DENTE",
-				workType: safeWorkType,
-				material: safeMaterial,
-				shade: (shadeClassical || shade3dMaster || shadeBleach || "A2") as any,
-				toothNumbers: selectedTeeth && selectedTeeth.length > 0 ? selectedTeeth : [11],
-				antagonistInfo: "В центральной окклюзии",
-				impressionType: (impressionType as any) || "digital_intraoral_scan",
-				sentDate: new Date().toISOString().split("T")[0]!,
-				expectedDate: dueDate || new Date(Date.now() + 5 * 86400000).toISOString().split("T")[0]!,
-				status: (currentStage as any) || "sent_to_lab",
-				stages: [],
-				labCostKopecks: rublesToKopecks(totalLabPriceRub || 0),
-				isWarrantyRework: currentStage === "correction_remake",
-				warrantyMonths: 12,
-				notes: clinicalNotes || undefined,
-				createdAt: new Date().toISOString(),
-				updatedAt: new Date().toISOString(),
-			};
-			const protocolText = formatLabOrderFormZtl1A4Protocol(synthOrder, "Стоматологическая клиника DENTE");
-			navigator.clipboard.writeText(protocolText);
-			showToast("Протокол ЗТЛ-1 (Форма 043/у) скопирован в буфер", "success");
-		} catch (_e) {
-			showToast("Не удалось скопировать протокол ЗТЛ-1", "error");
-		}
-	};
-
-	const handleCopyMessengerSummary = async () => {
-		const finalShade =
-			shadeSystem === "3d_master"
-				? shade3dMaster
-				: shadeSystem === "bleach"
-				? shadeBleach
-				: shadeClassical;
-
-		let teethOrJaw: string;
-		if (jawScope) {
-			teethOrJaw = formatJawScopeLabel(jawScope);
-		} else if (selectedTeeth.length > 0) {
-			teethOrJaw = selectedTeeth.join(", ");
-		} else {
-			teethOrJaw = "Общий наряд / Челюсть целиком";
-		}
-
-		const constructionTypeTitle =
-			CONSTRUCTION_TYPES.find((c) => c.id === constructionType)?.name || constructionType;
-		const materialTitle =
-			LAB_MATERIALS.find((m) => m.id === material)?.name || material;
-
-		const formatDisplayDate = (dStr?: string | null) => {
-			if (!dStr) return "";
-			try {
-				const parsed = new Date(dStr);
-				if (!Number.isNaN(parsed.getTime())) {
-					return parsed.toLocaleDateString("ru-RU");
-				}
-			} catch (err: unknown) {
-				console.warn("[DentalLabOrderModal] Failed to format date:", dStr, err);
-			}
-			return dStr;
-		};
-
-		const text = buildLabOrderMessengerSummary({
-			clinicName: clinicName || "Денте",
-			clinicPhone: clinicPhone || "",
-			gostOrderNumber,
-			patientName: formPatientName,
-			doctorName: formDoctorName,
-			teethOrJaw,
-			constructionTypeTitle,
-			materialTitle,
-			shade: finalShade,
-			dueDate: dueDate ? formatDisplayDate(dueDate) : "Не указан",
-			frameworkTrialDate: frameworkTrialDate ? formatDisplayDate(frameworkTrialDate) : undefined,
-			ceramicTrialDate: ceramicTrialDate ? formatDisplayDate(ceramicTrialDate) : undefined,
-			clinicalNotes: clinicalNotes.trim() || undefined,
-		});
-
-		try {
-			if (typeof navigator !== "undefined" && navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
-				await navigator.clipboard.writeText(text);
-			}
-			showToast("Выжимка наряда скопирована для отправки курьеру/технику в мессенджер", "success");
-		} catch {
-			showToast("Не удалось скопировать выжимку наряда в буфер", "error");
-		}
-	};
+export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
+	const { isOpen, onClose, patientChartNumber, initialOrder } = props;
+	const form = useDentalLabOrderForm(props);
 
 	if (!isOpen) return null;
-
-	const portalUrl = `${typeof window !== "undefined" ? (window.location?.origin || "") : ""}/#/portal/lab-order/${secureToken}`;
 
 	const modalContent = (
 		<div
@@ -807,7 +84,7 @@ export function DentalLabOrderModal({
 								</span>
 							</div>
 							<p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5 truncate">
-								Пациент: <span className="font-bold text-slate-800 dark:text-slate-200">{formPatientName}</span>{patientChartNumber ? ` (${patientChartNumber})` : ""} · Врач: <span className="font-bold text-slate-800 dark:text-slate-200">{formDoctorName}</span>
+								Пациент: <span className="font-bold text-slate-800 dark:text-slate-200">{form.formPatientName}</span>{patientChartNumber ? ` (${patientChartNumber})` : ""} · Врач: <span className="font-bold text-slate-800 dark:text-slate-200">{form.formDoctorName}</span>
 							</p>
 						</div>
 					</div>
@@ -815,7 +92,7 @@ export function DentalLabOrderModal({
 					<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
 						<button
 							type="button"
-							onClick={handleApplyOneClickDefaults}
+							onClick={form.handleApplyOneClickDefaults}
 							className="min-h-[44px] sm:min-h-8 sm:h-8 inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-0 text-xs font-bold rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 transition-colors shadow-xs shrink-0"
 							title="1-клик пресет: Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней"
 							data-testid="lab-order-apply-defaults-btn"
@@ -825,7 +102,7 @@ export function DentalLabOrderModal({
 						</button>
 						<button
 							type="button"
-							onClick={handlePrint}
+							onClick={form.handlePrint}
 							className="min-h-[44px] sm:min-h-8 sm:h-8 inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-0 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shadow-sm shrink-0"
 							title="Печать наряда (ГОСТ)"
 						>
@@ -853,12 +130,12 @@ export function DentalLabOrderModal({
 						{ id: "print", label: "4. Бланк ГОСТ", icon: QrCode, fullTitle: "4. Бланк наряда (ГОСТ) и QR" },
 					].map((tab) => {
 						const Icon = tab.icon;
-						const isActive = activeTab === tab.id;
+						const isActive = form.activeTab === tab.id;
 						return (
 							<button
 								key={tab.id}
 								type="button"
-								onClick={() => setActiveTab(tab.id as TabKey)}
+								onClick={() => form.setActiveTab(tab.id as LabModalTabKey)}
 								className={`lab-modal-tab-btn min-h-[34px] h-[34px] sm:h-8.5 whitespace-nowrap flex-shrink-0 ${isActive ? "is-active" : ""}`}
 								title={tab.fullTitle}
 							>
@@ -873,7 +150,7 @@ export function DentalLabOrderModal({
 				<div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-6">
 
 					{/* ─── DOCTOR CLINICAL AUTONOMY OVERRIDE BANNER (Mandate 8e) ─── */}
-					{!financialGateResult.isGatePassed && !gateOverride && (
+					{!form.financialGateResult.isGatePassed && !form.gateOverride && (
 						<div
 							className="p-3.5 rounded-2xl bg-teal-500/15 border-2 border-teal-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
 							data-testid="lab-order-clinical-autonomy-banner"
@@ -882,15 +159,15 @@ export function DentalLabOrderModal({
 								<Sparkles size={18} className="text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
 								<div>
 									<div className="font-extrabold text-teal-950 dark:text-teal-100 text-xs">
-										Финансовый контроль ЗТЛ: Внесено {financialGateResult.paidPercent}% (порог аванса 50%)
+										Финансовый контроль ЗТЛ: Внесено {form.financialGateResult.paidPercent}% (порог аванса 50%)
 									</div>
 									<div className="text-[11px] text-teal-900/80 dark:text-teal-300/80 mt-0.5">
 										Экстренное показание (временная PMMA, примерка моста). Врач может отправить наряд в 1 клик.
 									</div>
-									{financialGateResult.isPlanExpiredNotice && (
+									{form.financialGateResult.isPlanExpiredNotice && (
 										<div className="text-[11px] text-teal-700 dark:text-teal-300 font-bold mt-1 flex items-center gap-1">
 											<CheckCircle2 size={12} className="shrink-0" />
-											<span>{financialGateResult.isPlanExpiredNotice}</span>
+											<span>{form.financialGateResult.isPlanExpiredNotice}</span>
 										</div>
 									)}
 								</div>
@@ -899,13 +176,13 @@ export function DentalLabOrderModal({
 							<button
 								type="button"
 								onClick={() => {
-									const override = createDoctorClinicalOverride(
-										formDoctorName || chiefDoctorName || "Лечащий врач",
-										"Отправить наряд в ЗТЛ — клиническое решение лечащего врача",
-									);
-									setGateOverride(override);
-									showToast(`Наряд ЗТЛ отправлен: клиническое решение лечащего врача (${override.doctorName})`, "success");
-									handleSaveOrder(undefined, true);
+									form.setGateOverride({
+										authorized: true,
+										doctorName: form.formDoctorName || "Лечащий врач",
+										timestampIso: new Date().toISOString(),
+										reason: "Отправить наряд в ЗТЛ — клиническое решение лечащего врача",
+									});
+									form.handleSaveOrder(undefined, true);
 								}}
 								className="min-h-[40px] px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer shrink-0"
 								data-testid="btn-lab-override-financial-gate"
@@ -918,18 +195,18 @@ export function DentalLabOrderModal({
 					)}
 
 					{/* ─── TREATMENT PLAN AGE SOFT NOTICE (Mandate 8e / 8n: Never blocks) ─── */}
-					{(financialGateResult.isGatePassed || Boolean(gateOverride)) && financialGateResult.isPlanExpiredNotice && (
+					{(form.financialGateResult.isGatePassed || Boolean(form.gateOverride)) && form.financialGateResult.isPlanExpiredNotice && (
 						<div
 							className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center gap-2.5 text-xs text-teal-800 dark:text-teal-200"
 							data-testid="lab-order-plan-expired-soft-notice"
 						>
 							<CheckCircle2 size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-							<span>{financialGateResult.isPlanExpiredNotice} (отправка наряда ЗТЛ не блокируется)</span>
+							<span>{form.financialGateResult.isPlanExpiredNotice} (отправка наряда ЗТЛ не блокируется)</span>
 						</div>
 					)}
 
 					{/* ═══ TAB 1: MAIN SPECS & ODONTOGRAM ═══════════════════════════ */}
-					{activeTab === "main" && (
+					{form.activeTab === "main" && (
 						<div className="space-y-4">
 							{/* 1-Click Express Presets Bar (Integrated inside Tab 1) */}
 							<div className="flex items-center justify-between gap-2 p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex-wrap">
@@ -942,7 +219,7 @@ export function DentalLabOrderModal({
 										<button
 											key={preset.id}
 											type="button"
-											onClick={() => handleApplyExpressPreset(preset)}
+											onClick={() => form.handleApplyExpressPreset(preset)}
 											className="min-h-[36px] px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-amber-500/20 text-amber-900 dark:text-amber-100 border border-amber-500/30 text-xs font-bold transition-all shadow-2xs hover:scale-102 active:scale-95 cursor-pointer flex items-center gap-1.5 touch-manipulation min-w-0"
 											title={preset.shortDesc}
 											data-testid={`lab-preset-btn-${preset.id}`}
@@ -959,252 +236,90 @@ export function DentalLabOrderModal({
 							</div>
 
 							<DentalLabRestorationTab
-							jawScope={jawScope}
-							setJawScope={setJawScope}
-							selectedTeeth={selectedTeeth}
-							setSelectedTeeth={setSelectedTeeth}
-							toggleTooth={toggleTooth}
-							selectQuadrant={selectQuadrant}
-							constructionType={constructionType}
-							setConstructionType={setConstructionType}
-							material={material}
-							setMaterial={setMaterial}
-							impressionType={impressionType}
-							setImpressionType={setImpressionType}
-							dueDate={dueDate}
-							setDueDate={setDueDate}
-							clinicalNotes={clinicalNotes}
-							setClinicalNotes={setClinicalNotes}
-							shadeSystem={shadeSystem}
-							setShadeSystem={setShadeSystem}
-							shadeClassical={shadeClassical}
-							setShadeClassical={(s) => {
-								setShadeClassical(s);
-								setShadeBody(s);
-							}}
-							shade3dMaster={shade3dMaster}
-							setShade3dMaster={(s) => {
-								setShade3dMaster(s);
-								setShadeBody(s);
-							}}
-							shadeBleach={shadeBleach}
-							setShadeBleach={(s) => {
-								setShadeBleach(s);
-								setShadeBody(s);
-							}}
-							shadeBody={shadeBody}
-							setShadeBody={setShadeBody}
-							onOpenAdvancedShades={() => setActiveTab("shades")}
-						/>
+								jawScope={form.jawScope}
+								setJawScope={form.setJawScope}
+								selectedTeeth={form.selectedTeeth}
+								setSelectedTeeth={form.setSelectedTeeth}
+								toggleTooth={form.toggleTooth}
+								selectQuadrant={form.selectQuadrant}
+								constructionType={form.constructionType}
+								setConstructionType={form.setConstructionType}
+								material={form.material}
+								setMaterial={form.setMaterial}
+								impressionType={form.impressionType}
+								setImpressionType={form.setImpressionType}
+								dueDate={form.dueDate}
+								setDueDate={form.setDueDate}
+								clinicalNotes={form.clinicalNotes}
+								setClinicalNotes={form.setClinicalNotes}
+								shadeSystem={form.shadeSystem}
+								setShadeSystem={form.setShadeSystem}
+								shadeClassical={form.shadeClassical}
+								setShadeClassical={(s) => {
+									form.setShadeClassical(s);
+									form.setShadeBody(s);
+								}}
+								shade3dMaster={form.shade3dMaster}
+								setShade3dMaster={(s) => {
+									form.setShade3dMaster(s);
+									form.setShadeBody(s);
+								}}
+								shadeBleach={form.shadeBleach}
+								setShadeBleach={(s) => {
+									form.setShadeBleach(s);
+									form.setShadeBody(s);
+								}}
+								shadeBody={form.shadeBody}
+								setShadeBody={form.setShadeBody}
+								onOpenAdvancedShades={() => form.setActiveTab("shades")}
+							/>
 						</div>
 					)}
 
 					{/* ═══ TAB 2: VITA SHADES & STUMP PREPARATION ════════════════════ */}
-					{activeTab === "shades" && (
+					{form.activeTab === "shades" && (
 						<DentalLabShadeSelector
-							shadeSystem={shadeSystem}
-							setShadeSystem={setShadeSystem}
-							shadeClassical={shadeClassical}
-							setShadeClassical={setShadeClassical}
-							shade3dMaster={shade3dMaster}
-							setShade3dMaster={setShade3dMaster}
-							shadeBleach={shadeBleach}
-							setShadeBleach={setShadeBleach}
-							shadeCervical={shadeCervical}
-							setShadeCervical={setShadeCervical}
-							shadeBody={shadeBody}
-							setShadeBody={setShadeBody}
-							shadeIncisal={shadeIncisal}
-							setShadeIncisal={setShadeIncisal}
-							shadeStump={shadeStump}
-							setShadeStump={setShadeStump}
-							translucency={translucency}
-							setTranslucency={setTranslucency}
-							mamelons={mamelons}
-							setMamelons={setMamelons}
-							calcifications={calcifications}
-							setCalcifications={setCalcifications}
+							shadeSystem={form.shadeSystem}
+							setShadeSystem={form.setShadeSystem}
+							shadeClassical={form.shadeClassical}
+							setShadeClassical={form.setShadeClassical}
+							shade3dMaster={form.shade3dMaster}
+							setShade3dMaster={form.setShade3dMaster}
+							shadeBleach={form.shadeBleach}
+							setShadeBleach={form.setShadeBleach}
+							shadeCervical={form.shadeCervical}
+							setShadeCervical={form.setShadeCervical}
+							shadeBody={form.shadeBody}
+							setShadeBody={form.setShadeBody}
+							shadeIncisal={form.shadeIncisal}
+							setShadeIncisal={form.setShadeIncisal}
+							shadeStump={form.shadeStump}
+							setShadeStump={form.setShadeStump}
+							translucency={form.translucency}
+							setTranslucency={form.setTranslucency}
+							mamelons={form.mamelons}
+							setMamelons={form.setMamelons}
+							calcifications={form.calcifications}
+							setCalcifications={form.setCalcifications}
 						/>
 					)}
 
 					{/* ═══ TAB 3: LAB STAGES & TRIAL FITTINGS TRACKER ═══════════════ */}
-					{activeTab === "stages" && (
-						<div className="space-y-6">
-							<div>
-								<h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 m-0">
-									Жизненный цикл, трекинг ЗТЛ и даты примерок
-								</h3>
-								<p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-									Пошаговый трекер технологических этапов от передачи оттисков до фиксации в полости рта.
-								</p>
-							</div>
-
-							{/* Fitting Trial Dates Box (Eliminate <= 11px micro-fonts) */}
-							<div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 space-y-3">
-								<div className="flex items-center justify-between flex-wrap gap-2">
-									<div className="flex items-center gap-2">
-										<Calendar className="w-4 h-4 text-[var(--teal)]" />
-										<span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-											Даты клинических примерок и дедлайн сдачи работы
-										</span>
-									</div>
-									{(() => {
-										const rem = calculateWorkingDaysRemaining(dueDate);
-										if (!rem) return null;
-										return (
-											<span
-												className={`px-2.5 py-0.5 rounded-lg text-xs font-bold border ${rem.badgeClass}`}
-												data-testid="lab-order-due-deadline-badge"
-											>
-												{rem.labelRu}
-											</span>
-										);
-									})()}
-								</div>
-								<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-									<div className="space-y-1.5">
-										<label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-											1. Примерка каркаса (Framework)
-										</label>
-										<input
-											type="date"
-											value={frameworkTrialDate}
-											onChange={(e) => setFrameworkTrialDate(e.target.value)}
-											className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[var(--teal)]"
-										/>
-									</div>
-									<div className="space-y-1.5">
-										<label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-											2. Примерка керамики / Бисквит
-										</label>
-										<input
-											type="date"
-											value={ceramicTrialDate}
-											onChange={(e) => setCeramicTrialDate(e.target.value)}
-											className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[var(--teal)]"
-										/>
-									</div>
-									<div className="space-y-1.5">
-										<label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-											3. Срок сдачи (Дедлайн ЗТЛ)
-										</label>
-										<input
-											type="date"
-											value={dueDate}
-											onChange={(e) => setDueDate(e.target.value)}
-											className="w-full h-11 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[var(--teal)]"
-										/>
-									</div>
-								</div>
-							</div>
-
-							{/* Canonical 5-Stage Clinical Pipeline Tracker (Mandates 8e, 8s, 8k / ГОСТ Р 51087-97) */}
-							<div
-								className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 space-y-3"
-								data-testid="lab-order-5stage-pipeline-tracker"
-							>
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-2">
-										<Sparkles className="w-4 h-4 text-[var(--teal)]" />
-										<span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-											Канонический 5-этапный клинический трекер (ГОСТ Р 51087-97)
-										</span>
-									</div>
-									<span className="text-xs text-slate-500 font-medium">1 клик для переключения</span>
-								</div>
-
-								<div className="grid grid-cols-5 gap-2">
-									{CANONICAL_5_CLINICAL_LAB_STATUSES.map((item) => {
-										const mappedCurrent = mapTo5StageLabStatus(currentStage);
-										const isCurrent = mappedCurrent === item.id;
-										const currentStep = CANONICAL_5_CLINICAL_LAB_STATUSES.find((s) => s.id === mappedCurrent)?.step ?? 1;
-										const isPassed = currentStep >= item.step;
-
-										return (
-											<button
-												key={item.id}
-												type="button"
-												onClick={() => {
-													if (item.id === "sent") setCurrentStage("sent_to_lab");
-													else if (item.id === "in_progress") setCurrentStage("in_progress");
-													else if (item.id === "fitting") setCurrentStage("fitting_scheduled");
-													else if (item.id === "ready") setCurrentStage("delivered_to_clinic");
-													else if (item.id === "completed") setCurrentStage("completed");
-												}}
-												className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer min-h-[44px] ${
-													isCurrent
-														? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold shadow-md ring-2 ring-[var(--teal)]/40"
-														: isPassed
-														? "bg-teal-50 dark:bg-teal-950/40 border-teal-300 dark:border-teal-700 text-teal-900 dark:text-teal-200 font-semibold"
-														: "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-400"
-												}`}
-												data-testid={`lab-order-5stage-btn-${item.id}`}
-												title={item.descRu}
-											>
-												<div className="text-[10px] uppercase font-bold tracking-wider opacity-85">
-													Этап {item.step}
-												</div>
-												<div className="text-xs font-bold truncate mt-0.5">{item.shortLabelRu}</div>
-												<div className="text-[10px] mt-0.5 opacity-80">
-													{isCurrent ? "Текущий" : isPassed ? "Пройден" : "Ожидание"}
-												</div>
-											</button>
-										);
-									})}
-								</div>
-							</div>
-
-							<div className="space-y-3">
-								{LAB_ORDER_STAGES.map((stage, idx) => {
-									const isCurrent = currentStage === stage.id;
-									const isPassed = LAB_ORDER_STAGES.findIndex((s) => s.id === currentStage) > idx;
-
-									return (
-										<div
-											key={stage.id}
-											onClick={() => setCurrentStage(stage.id)}
-											className={`min-h-[52px] p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
-												isCurrent
-													? `${stage.color} ring-2 ring-[var(--teal-soft)] shadow-md font-bold`
-													: isPassed
-													? "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 opacity-85"
-													: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 opacity-50 hover:opacity-100"
-											}`}
-										>
-											<div className="flex items-center gap-3">
-												<div
-													className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-														isPassed || isCurrent
-															? "bg-[var(--teal)] text-white"
-															: "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
-													}`}
-												>
-													{isPassed ? <Check className="w-4 h-4" /> : stage.step}
-												</div>
-												<div>
-													<div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100">
-														{stage.name}
-													</div>
-													<div className="text-xs text-slate-500 dark:text-slate-400">
-														{stage.desc}
-													</div>
-												</div>
-											</div>
-
-											{isCurrent && (
-												<span className="px-3 py-1 text-xs font-bold rounded-lg bg-[var(--teal)] text-white shadow-sm flex-shrink-0">
-													Текущий этап
-												</span>
-											)}
-										</div>
-									);
-								})}
-							</div>
-						</div>
+					{form.activeTab === "stages" && (
+						<DentalLabStagesTab
+							dueDate={form.dueDate}
+							setDueDate={form.setDueDate}
+							frameworkTrialDate={form.frameworkTrialDate}
+							setFrameworkTrialDate={form.setFrameworkTrialDate}
+							ceramicTrialDate={form.ceramicTrialDate}
+							setCeramicTrialDate={form.setCeramicTrialDate}
+							currentStage={form.currentStage}
+							setCurrentStage={form.setCurrentStage}
+						/>
 					)}
 
 					{/* ═══ TAB 4: PRINTABLE BLANK (GOST) & QR CODE ══════════════════ */}
-					{activeTab === "print" && (
+					{form.activeTab === "print" && (
 						<div className="flex flex-col gap-3">
 							<div className="flex items-center justify-between gap-2 px-2 py-1 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800">
 								<div className="text-xs font-semibold text-slate-500">
@@ -1212,7 +327,7 @@ export function DentalLabOrderModal({
 								</div>
 								<button
 									type="button"
-									onClick={handleCopyZtl1Protocol}
+									onClick={form.handleCopyZtl1Protocol}
 									className="px-3 py-1.5 rounded-lg border border-teal-500 text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 text-xs font-bold hover:bg-teal-100 dark:hover:bg-teal-900/40 transition-colors flex items-center gap-1.5 min-h-[36px]"
 									title="Скопировать текстовый протокол наряда ЗТЛ-1 для вставки в карту 043/у"
 								>
@@ -1221,34 +336,34 @@ export function DentalLabOrderModal({
 								</button>
 							</div>
 							<DentalLabPrintBlank
-								gostOrderNumber={gostOrderNumber}
-								secureToken={secureToken}
-								formPatientName={formPatientName}
-								formDoctorName={formDoctorName}
-								selectedTeeth={selectedTeeth}
-								jawScope={jawScope}
-								constructionType={constructionType}
-								material={material}
-								shadeSystem={shadeSystem}
-								shadeClassical={shadeClassical}
-								shade3dMaster={shade3dMaster}
-								shadeBleach={shadeBleach}
-								shadeCervical={shadeCervical}
-								shadeBody={shadeBody}
-								shadeIncisal={shadeIncisal}
-								shadeStump={shadeStump}
-								translucency={translucency}
-								mamelons={mamelons}
-								calcifications={calcifications}
-								impressionType={impressionType}
-								frameworkTrialDate={frameworkTrialDate}
-								ceramicTrialDate={ceramicTrialDate}
-								dueDate={dueDate}
-								clinicalNotes={clinicalNotes}
-								totalLabPriceRub={totalLabPriceRub}
-								portalUrl={portalUrl}
-								handlePrint={handlePrint}
-								currentStage={currentStage}
+								gostOrderNumber={form.gostOrderNumber}
+								secureToken={form.secureToken}
+								formPatientName={form.formPatientName}
+								formDoctorName={form.formDoctorName}
+								selectedTeeth={form.selectedTeeth}
+								jawScope={form.jawScope}
+								constructionType={form.constructionType}
+								material={form.material}
+								shadeSystem={form.shadeSystem}
+								shadeClassical={form.shadeClassical}
+								shade3dMaster={form.shade3dMaster}
+								shadeBleach={form.shadeBleach}
+								shadeCervical={form.shadeCervical}
+								shadeBody={form.shadeBody}
+								shadeIncisal={form.shadeIncisal}
+								shadeStump={form.shadeStump}
+								translucency={form.translucency}
+								mamelons={form.mamelons}
+								calcifications={form.calcifications}
+								impressionType={form.impressionType}
+								frameworkTrialDate={form.frameworkTrialDate}
+								ceramicTrialDate={form.ceramicTrialDate}
+								dueDate={form.dueDate}
+								clinicalNotes={form.clinicalNotes}
+								totalLabPriceRub={form.totalLabPriceRub}
+								portalUrl={form.portalUrl}
+								handlePrint={form.handlePrint}
+								currentStage={form.currentStage}
 							/>
 						</div>
 					)}
@@ -1257,13 +372,13 @@ export function DentalLabOrderModal({
 				{/* ─── MODAL FOOTER WITH SAVE / SUBMIT ───────────────────────────── */}
 				<div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3.5 sm:py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shrink-0">
 					<div className="text-xs text-slate-500 dark:text-slate-400 font-bold min-w-0 flex-1 sm:flex-initial">
-						{jawScope ? (
+						{form.jawScope ? (
 							<span className="break-words">
-								Наряд на челюсть: <strong className="text-emerald-700 dark:text-emerald-300 text-sm font-extrabold">{formatJawScopeLabel(jawScope)}</strong>
+								Наряд на челюсть: <strong className="text-emerald-700 dark:text-emerald-300 text-sm font-extrabold">{formatJawScopeLabel(form.jawScope)}</strong>
 							</span>
-						) : selectedTeeth.length > 0 ? (
+						) : form.selectedTeeth.length > 0 ? (
 							<span className="break-words">
-								Зубы FDI: <strong className="text-slate-800 dark:text-slate-200 text-sm">{selectedTeeth.join(", ")}</strong>
+								Зубы FDI: <strong className="text-slate-800 dark:text-slate-200 text-sm">{form.selectedTeeth.join(", ")}</strong>
 							</span>
 						) : (
 							<span>Зубы FDI: <strong className="text-slate-800 dark:text-slate-200 text-sm">Общий наряд / Челюсть</strong></span>
@@ -1273,7 +388,7 @@ export function DentalLabOrderModal({
 					<div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0 ml-auto">
 						<button
 							type="button"
-							onClick={handleCopyMessengerSummary}
+							onClick={form.handleCopyMessengerSummary}
 							data-testid="lab-order-copy-messenger-btn"
 							className="min-h-[44px] sm:min-h-9 sm:h-9 px-3.5 sm:px-4 py-2 sm:py-0 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
 							title="Скопировать выжимку наряда для отправки курьеру или зубному технику в WhatsApp/Telegram"
@@ -1284,7 +399,7 @@ export function DentalLabOrderModal({
 						</button>
 						<button
 							type="button"
-							onClick={handlePrint}
+							onClick={form.handlePrint}
 							data-testid="lab-order-footer-print-btn"
 							className="min-h-[44px] sm:min-h-9 sm:h-9 px-3.5 sm:px-4 py-2 sm:py-0 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
 							title="Распечатать наряд-заказ ГОСТ (А4)"
@@ -1296,19 +411,19 @@ export function DentalLabOrderModal({
 						<button
 							type="button"
 							onClick={onClose}
-							disabled={isSubmitting}
+							disabled={form.isSubmitting}
 							className="min-h-[44px] sm:min-h-9 sm:h-9 px-4 py-2 sm:py-0 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer select-none inline-flex items-center justify-center"
 						>
 							Отмена
 						</button>
 						<button
 							type="button"
-							onClick={() => handleSaveOrder()}
-							disabled={isSubmitting}
+							onClick={() => form.handleSaveOrder()}
+							disabled={form.isSubmitting}
 							className="min-h-[44px] sm:min-h-9 sm:h-9 px-4 sm:px-5 py-2.5 sm:py-0 text-xs font-bold rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white shadow-md shadow-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all inline-flex items-center justify-center gap-2 cursor-pointer select-none"
 							data-testid="submit-lab-order-btn"
 						>
-							{isSubmitting ? (
+							{form.isSubmitting ? (
 								<>
 									<Loader2 className="w-4 h-4 animate-spin" />
 									Сохранение наряда...
@@ -1333,4 +448,3 @@ export function DentalLabOrderModal({
 }
 
 export { DentalLabOrderModal as DentalLabWorkOrderModal };
-

@@ -40,7 +40,7 @@
  * АЛЕРТ ДЕДЛАЙНА (КЛИНИЧЕСКИЙ ТРИГГЕР):
  * • Если у пациента на сегодня назначен визит на сдачу/примерку коронки,
  *   а статус наряда в ЗТЛ еще «В работе» или «Отправлен в ЗТЛ» — выставляется алерт:
- *   «⚠️ Работа из ЗТЛ еще не поступила в клинику!»
+ *   «Работа из ЗТЛ еще не поступила в клинику!»
  */
 
 import {
@@ -501,7 +501,7 @@ export function formatRuDate(iso: string): string {
 
 /**
  * Проверяет дедлайн наряда ЗТЛ и выявляет критический алерт:
- * «⚠️ Работа из ЗТЛ еще не поступила в клинику!», если у пациента назначен визит на сегодня,
+ * «Работа из ЗТЛ еще не поступила в клинику!», если у пациента назначен визит на сегодня,
  * а статус все еще «В работе» или «Отправлен в ЗТЛ».
  */
 export function detectLabDeadlineAlert(params: CheckLabOrderAlertParams): LabDeadlineAlertResult {
@@ -573,8 +573,8 @@ export function detectLabDeadlineAlert(params: CheckLabOrderAlertParams): LabDea
 			hasAlert: true,
 			isDelayedAlert: true,
 			severity: "CRITICAL_TODAY",
-			badgeTextRu: "⚠️ Работа еще не поступила в клинику!",
-			messageRu: `⚠️ Работа из ЗТЛ еще не поступила в клинику! У пациента ${params.patientName || ""}${toothLabel} назначен прием на ${formatRuDate(visitIso)}, а статус в ЗТЛ еще «${DENTAL_LAB_STATUSES[params.status].labelRu}».`,
+			badgeTextRu: "Работа еще не поступила в клинику!",
+			messageRu: `Работа из ЗТЛ еще не поступила в клинику! У пациента ${params.patientName || ""}${toothLabel} назначен прием на ${formatRuDate(visitIso)}, а статус в ЗТЛ еще «${DENTAL_LAB_STATUSES[params.status].labelRu}».`,
 			actionRu: "Срочно связаться с лабораторией/курьером или предупредить врача и регистратора!",
 			daysUntilDeadline,
 		};

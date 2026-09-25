@@ -251,7 +251,7 @@ describe("dentalLabOrderEngine: Стоматологический трекер 
 			assert.ok(alert.isDelayedAlert);
 			assert.equal(alert.severity, "CRITICAL_TODAY");
 			assert.ok(alert.badgeTextRu.includes("Работа еще не поступила в клинику"));
-			assert.ok(alert.messageRu.includes("⚠️ Работа из ЗТЛ еще не поступила в клинику!"));
+			assert.ok(alert.messageRu.includes("Работа из ЗТЛ еще не поступила в клинику!"));
 			assert.ok(alert.messageRu.includes("Барабаш С.В."));
 			assert.ok(alert.messageRu.includes("16"));
 		});
