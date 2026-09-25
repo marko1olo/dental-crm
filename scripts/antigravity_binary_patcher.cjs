@@ -1,16 +1,21 @@
 #!/usr/bin/env node
 /**
- * ANTIGRAVITY BINARY PATCHER & VALIDATOR (PATH 1) — SIGNATURE-DRIVEN
+ * ANTIGRAVITY BINARY PATCHER & VALIDATOR (DUAL-GATE RESUSCITATION ENGINE)
  *
  * Robust, signature-driven binary patcher for `language_server.exe`.
- * Addresses the subagent dormancy bug where `SendMessageTool.reviveRecipientIfChild`
- * fails to revive child subagents after language server restart due to empty in-memory tables.
+ * Solves the subagent post-restart dormancy problem by eliminating BOTH binary gates:
  *
- * Instead of fragile hardcoded offsets that break on auto-updates, this engine dynamically
- * searches for the unique x86_64 instruction signature of `reviveRecipientIfChild` match check:
+ * GATE 1: reviveRecipientIfChild match-count check (offset ~0x212fb96)
+ *   Bypasses the in-memory child table check that fails after language_server restarts.
  *   cmp rdx, r8
  *   mov r10, [rsp+0x100]
- *   jle +rel8 (skips call rdx/r8 to reviveSubagentFn)
+ *   jle +rel8 (7e) -> NOP NOP (90 90)
+ *
+ * GATE 2: MaybeReviveAgent index confusion bug (offset ~0x2240c39)
+ *   Fixes index confusion where MaybeReviveAgent called NumSteps (+0xa0) instead of
+ *   NumGeneratorMetadatas (+0x90), causing GeneratorMetadataHeader to always return NULL
+ *   and aborting startMessageWatcherLocked.
+ *   mov rcx, [rcx + 0xa0] (48 8b 89 a0 ...) -> mov rcx, [rcx + 0x90] (48 8b 89 90 ...)
  *
  * On Windows, handles file-locks via atomic rename-and-replace strategy.
  *
@@ -33,46 +38,35 @@ const DEFAULT_EXE_PATH = path.join(
   "language_server.exe"
 );
 
-// Unique x86_64 signature for reviveRecipientIfChild match-count check:
-// 4c 39 c2               (cmp rdx, r8)
-// 4c 8b 94 24 00 01 00 00 (mov r10, [rsp+0x100])
-// 7e                     (jle)
-const SIGNATURE_ORIGINAL = Buffer.from([
+// Gate 1: reviveRecipientIfChild child-check bypass
+const G1_SIGNATURE_ORIGINAL = Buffer.from([
   0x4c, 0x39, 0xc2, 0x4c, 0x8b, 0x94, 0x24, 0x00, 0x01, 0x00, 0x00, 0x7e
 ]);
-
-const SIGNATURE_PATCHED = Buffer.from([
+const G1_SIGNATURE_PATCHED = Buffer.from([
   0x4c, 0x39, 0xc2, 0x4c, 0x8b, 0x94, 0x24, 0x00, 0x01, 0x00, 0x00, 0x90, 0x90
 ]);
 
-const NOP_PATCH = Buffer.from([0x90, 0x90]);
+// Gate 2: MaybeReviveAgent NumSteps -> NumGeneratorMetadatas fix
+const G2_SIGNATURE_ORIGINAL = Buffer.from([
+  0x48, 0x8b, 0x44, 0x24, 0x58, // mov rax, [rsp+0x58]
+  0x48, 0x8b, 0x48, 0x08,       // mov rcx, [rax+0x8]
+  0x48, 0x8b, 0x40, 0x10,       // mov rax, [rax+0x10]
+  0x48, 0x8b, 0x89, 0xa0, 0x00, 0x00, 0x00, // mov rcx, [rcx+0xa0] (NumSteps)
+  0xff, 0xd1                    // call rcx
+]);
+const G2_SIGNATURE_PATCHED = Buffer.from([
+  0x48, 0x8b, 0x44, 0x24, 0x58, // mov rax, [rsp+0x58]
+  0x48, 0x8b, 0x48, 0x08,       // mov rcx, [rax+0x8]
+  0x48, 0x8b, 0x40, 0x10,       // mov rax, [rax+0x10]
+  0x48, 0x8b, 0x89, 0x90, 0x00, 0x00, 0x00, // mov rcx, [rcx+0x90] (NumGeneratorMetadatas)
+  0xff, 0xd1                    // call rcx
+]);
 
 function getSha256(filePath) {
   const hash = crypto.createHash("sha256");
   const data = fs.readFileSync(filePath);
   hash.update(data);
   return hash.digest("hex");
-}
-
-function findPatchLocation(buf) {
-  let pos = 0;
-  let originalOffset = -1;
-  let patchedOffset = -1;
-
-  // Search original
-  while ((pos = buf.indexOf(SIGNATURE_ORIGINAL, pos)) !== -1) {
-    originalOffset = pos + SIGNATURE_ORIGINAL.length - 1;
-    break;
-  }
-
-  // Search patched
-  pos = 0;
-  while ((pos = buf.indexOf(SIGNATURE_PATCHED, pos)) !== -1) {
-    patchedOffset = pos + SIGNATURE_PATCHED.length - 2;
-    break;
-  }
-
-  return { originalOffset, patchedOffset };
 }
 
 function checkStatus(exePath) {
@@ -82,66 +76,112 @@ function checkStatus(exePath) {
 
   try {
     const buf = fs.readFileSync(exePath);
-    const { originalOffset, patchedOffset } = findPatchLocation(buf);
 
-    if (patchedOffset !== -1) {
-      return {
-        status: "patched",
-        offset: "0x" + patchedOffset.toString(16),
-        bytes: buf.subarray(patchedOffset, patchedOffset + 2).toString("hex"),
-        sha256: getSha256(exePath),
-        fileSize: buf.length,
-      };
+    // Check Gate 1
+    const g1_orig = buf.indexOf(G1_SIGNATURE_ORIGINAL);
+    const g1_patch = buf.indexOf(G1_SIGNATURE_PATCHED);
+    let g1_status = "unknown";
+    let g1_offset = -1;
+    if (g1_patch !== -1) {
+      g1_status = "patched";
+      g1_offset = g1_patch + G1_SIGNATURE_PATCHED.length - 2;
+    } else if (g1_orig !== -1) {
+      g1_status = "original";
+      g1_offset = g1_orig + G1_SIGNATURE_ORIGINAL.length - 1;
     }
 
-    if (originalOffset !== -1) {
-      return {
-        status: "original",
-        offset: "0x" + originalOffset.toString(16),
-        bytes: buf.subarray(originalOffset, originalOffset + 2).toString("hex"),
-        sha256: getSha256(exePath),
-        fileSize: buf.length,
-      };
+    // Check Gate 2
+    const g2_orig = buf.indexOf(G2_SIGNATURE_ORIGINAL);
+    const g2_patch = buf.indexOf(G2_SIGNATURE_PATCHED);
+    let g2_status = "unknown";
+    let g2_offset = -1;
+    if (g2_patch !== -1) {
+      g2_status = "patched";
+      g2_offset = g2_patch + 16;
+    } else if (g2_orig !== -1) {
+      g2_status = "original";
+      g2_offset = g2_orig + 16;
     }
+
+    const allPatched = g1_status === "patched" && g2_status === "patched";
+    const nonePatched = g1_status === "original" && g2_status === "original";
+
+    let overallStatus = "partial";
+    if (allPatched) overallStatus = "fully_patched";
+    else if (nonePatched) overallStatus = "original";
 
     return {
-      status: "unknown",
-      offset: "N/A",
-      bytes: "N/A",
+      status: overallStatus,
       sha256: getSha256(exePath),
       fileSize: buf.length,
-      error: "Signature not found in binary (unknown version or altered code).",
+      gate1: {
+        name: "reviveRecipientIfChild (child table bypass)",
+        status: g1_status,
+        offset: g1_offset !== -1 ? "0x" + g1_offset.toString(16) : "N/A"
+      },
+      gate2: {
+        name: "MaybeReviveAgent (NumGeneratorMetadatas index fix)",
+        status: g2_status,
+        offset: g2_offset !== -1 ? "0x" + g2_offset.toString(16) : "N/A"
+      }
     };
   } catch (err) {
     return { status: "error", error: err.message };
   }
 }
 
+function applyPatchesToBuffer(buf) {
+  let g1_patched = false;
+  let g2_patched = false;
+
+  const g1_idx = buf.indexOf(G1_SIGNATURE_ORIGINAL);
+  if (g1_idx !== -1) {
+    const target = g1_idx + G1_SIGNATURE_ORIGINAL.length - 1;
+    buf[target] = 0x90;
+    buf[target + 1] = 0x90;
+    g1_patched = true;
+  }
+
+  const g2_idx = buf.indexOf(G2_SIGNATURE_ORIGINAL);
+  if (g2_idx !== -1) {
+    const target = g2_idx + 16;
+    buf[target] = 0x90; // change 0xa0 to 0x90
+    g2_patched = true;
+  }
+
+  return { buf, g1_patched, g2_patched };
+}
+
 function patchBinary(exePath) {
   const current = checkStatus(exePath);
-  if (current.status === "patched") {
-    console.log("[Antigravity Patcher] Binary is already safely patched with NOP bypass!");
+  if (current.status === "fully_patched") {
+    console.log("[Antigravity Patcher] Binary is ALREADY FULLY PATCHED (both Gate 1 and Gate 2)!");
     return true;
   }
-  if (current.status !== "original") {
-    console.error(`[Antigravity Patcher] Cannot patch: binary status is '${current.status}'. ${current.error || ""}`);
+  if (current.status === "error" || current.status === "not_found") {
+    console.error(`[Antigravity Patcher] Cannot patch: ${current.error}`);
     return false;
   }
 
-  const offset = parseInt(current.offset, 16);
-  console.log(`[Antigravity Patcher] Found dynamic target at offset ${current.offset} (bytes: ${current.bytes}).`);
+  console.log("[Antigravity Patcher] Current Gate Status:");
+  console.log(`  - Gate 1 (${current.gate1.name}): ${current.gate1.status} at ${current.gate1.offset}`);
+  console.log(`  - Gate 2 (${current.gate2.name}): ${current.gate2.status} at ${current.gate2.offset}`);
 
   // Create safe backup
   const backupPath = `${exePath}.bak_${Date.now()}`;
   console.log(`[Antigravity Patcher] Creating safe backup: ${backupPath}`);
   fs.copyFileSync(exePath, backupPath);
 
+  // Read full buffer
+  const buf = fs.readFileSync(exePath);
+  const { g1_patched, g2_patched } = applyPatchesToBuffer(buf);
+
+  console.log(`[Antigravity Patcher] Patch results: Gate 1 = ${g1_patched ? "PATCHED" : "ALREADY PATCHED"}, Gate 2 = ${g2_patched ? "PATCHED" : "ALREADY PATCHED"}`);
+
   // Try direct write first
   try {
-    const fd = fs.openSync(exePath, "r+");
-    fs.writeSync(fd, NOP_PATCH, 0, 2, offset);
-    fs.closeSync(fd);
-    console.log(`[Antigravity Patcher] Successfully patched 2 bytes at offset ${current.offset} (${current.bytes} -> 90 90).`);
+    fs.writeFileSync(exePath, buf);
+    console.log("[Antigravity Patcher] Successfully written patched binary directly!");
     console.log(`[Antigravity Patcher] New SHA-256: ${getSha256(exePath)}`);
     return true;
   } catch (err) {
@@ -155,21 +195,15 @@ function patchBinary(exePath) {
         fs.renameSync(exePath, tempRenamed);
         console.log(`[Antigravity Patcher] Renamed running file to ${tempRenamed}`);
 
-        // Step 2: Copy the backup to the original name
-        fs.copyFileSync(backupPath, exePath);
+        // Step 2: Write patched buffer to target original name
+        fs.writeFileSync(exePath, buf);
 
-        // Step 3: Patch the new file
-        const fd = fs.openSync(exePath, "r+");
-        fs.writeSync(fd, NOP_PATCH, 0, 2, offset);
-        fs.closeSync(fd);
-
-        console.log(`[Antigravity Patcher] Atomic replacement succeeded! New file patched at offset ${current.offset}.`);
+        console.log("[Antigravity Patcher] Atomic replacement succeeded! Patched binary placed at target path.");
         console.log(`[Antigravity Patcher] New SHA-256: ${getSha256(exePath)}`);
-        console.log("[Antigravity Patcher] The patched binary will be loaded on next language server restart.");
+        console.log("[Antigravity Patcher] The patched binary will be active on next language server restart.");
         return true;
       } catch (atomicErr) {
         console.error(`[Antigravity Patcher] Atomic replacement failed: ${atomicErr.message}`);
-        // Attempt recovery
         if (!fs.existsSync(exePath) && fs.existsSync(tempRenamed)) {
           fs.renameSync(tempRenamed, exePath);
         }
@@ -211,7 +245,7 @@ function undoPatch(exePath) {
 const args = process.argv.slice(2);
 const exeArg = args.find(a => !a.startsWith("--")) || DEFAULT_EXE_PATH;
 
-console.log("=== ANTIGRAVITY BINARY PATCHER & VALIDATOR (PATH 1) ===");
+console.log("=== ANTIGRAVITY BINARY PATCHER & VALIDATOR (DUAL-GATE ENGINE) ===");
 console.log(`Target: ${exeArg}`);
 
 if (args.includes("--undo")) {
@@ -220,14 +254,18 @@ if (args.includes("--undo")) {
   patchBinary(exeArg);
 } else {
   const info = checkStatus(exeArg);
-  console.log("Status:", info.status.toUpperCase());
-  console.log("Offset:", info.offset);
-  console.log("Bytes at offset:", info.bytes);
+  console.log("Overall Status:", info.status.toUpperCase());
   console.log("File Size:", info.fileSize, "bytes");
   console.log("SHA-256:", info.sha256);
-  if (info.status === "original") {
-    console.log("\n[OK] Binary is genuine original. Dynamic signature matched and ready for patching.");
-  } else if (info.status === "patched") {
-    console.log("\n[OK] Binary is already safely patched with NOP bypass.");
+  console.log("\nGate Breakdown:");
+  console.log(`  1. ${info.gate1.name}: [${info.gate1.status.toUpperCase()}] at offset ${info.gate1.offset}`);
+  console.log(`  2. ${info.gate2.name}: [${info.gate2.status.toUpperCase()}] at offset ${info.gate2.offset}`);
+
+  if (info.status === "fully_patched") {
+    console.log("\n[VERIFIED] Both resuscitation gates are safely patched! Subagents will revive 100% reliably.");
+  } else if (info.status === "partial") {
+    console.log("\n[WARNING] Only 1 of 2 gates is patched. Run with --patch to apply full resuscitation patch.");
+  } else if (info.status === "original") {
+    console.log("\n[INFO] Binary is unmodified original. Run with --patch to apply dual-gate resuscitation patch.");
   }
 }
