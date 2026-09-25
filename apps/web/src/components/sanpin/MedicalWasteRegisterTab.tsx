@@ -293,7 +293,7 @@ export function MedicalWasteRegisterTab() {
 					<button
 						type="button"
 						onClick={handleQuickShiftWaste}
-						disabled={isQuickShiftLoading}
+						aria-busy={isQuickShiftLoading}
 						className="sanpin-btn touch-manipulation"
 						style={{
 							minHeight: "44px",
@@ -609,7 +609,7 @@ export function MedicalWasteRegisterTab() {
 							</div>
 							<div className="sanpin-modal-footer">
 								<button type="button" onClick={() => setIsModalOpen(false)} className="sanpin-btn sanpin-btn-secondary">Отмена</button>
-								<button type="submit" disabled={submitting} className="sanpin-btn sanpin-btn-primary">Зафиксировать в журнале</button>
+								<button type="submit" aria-busy={submitting} className="sanpin-btn sanpin-btn-primary">Зафиксировать в журнале</button>
 							</div>
 						</form>
 					</div>

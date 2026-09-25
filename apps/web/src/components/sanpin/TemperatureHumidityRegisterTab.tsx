@@ -377,7 +377,7 @@ export function TemperatureHumidityRegisterTab() {
 					<button
 						type="button"
 						onClick={() => handleShiftAutopilot("morning")}
-						disabled={isLoggingShift}
+						aria-busy={isLoggingShift}
 						className="sanpin-btn sanpin-btn-primary touch-manipulation"
 						style={{
 							minHeight: "44px",
@@ -466,7 +466,7 @@ export function TemperatureHumidityRegisterTab() {
 					<button
 						type="button"
 						onClick={() => handleProvisionCanonicalEquipment(true)}
-						disabled={submitting || isLoggingShift}
+						aria-busy={submitting || isLoggingShift}
 						className="sanpin-btn touch-manipulation"
 						style={{
 							minHeight: "44px",
@@ -777,7 +777,7 @@ export function TemperatureHumidityRegisterTab() {
 							</div>
 							<div className="sanpin-modal-footer">
 								<button type="button" onClick={() => setIsEquipModalOpen(false)} className="sanpin-btn sanpin-btn-secondary">Отмена</button>
-								<button type="submit" disabled={submitting} className="sanpin-btn sanpin-btn-primary">Зарегистрировать</button>
+								<button type="submit" aria-busy={submitting} className="sanpin-btn sanpin-btn-primary">Зарегистрировать</button>
 							</div>
 						</form>
 					</div>
@@ -908,7 +908,7 @@ export function TemperatureHumidityRegisterTab() {
 							</div>
 							<div className="sanpin-modal-footer">
 								<button type="button" onClick={() => setIsLogModalOpen(false)} className="sanpin-btn sanpin-btn-secondary">Отмена</button>
-								<button type="submit" disabled={submitting} className="sanpin-btn sanpin-btn-primary">Зафиксировать замер</button>
+								<button type="submit" aria-busy={submitting} className="sanpin-btn sanpin-btn-primary">Зафиксировать замер</button>
 							</div>
 						</form>
 					</div>

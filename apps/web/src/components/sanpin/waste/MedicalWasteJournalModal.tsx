@@ -426,7 +426,7 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 									<button
 										type="button"
 										onClick={handleQuickShiftWaste}
-										disabled={isSubmittingQuickShift}
+										aria-busy={isSubmittingQuickShift}
 										className="touch-manipulation"
 										style={{
 											minHeight: "44px",

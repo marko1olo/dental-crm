@@ -1296,3 +1296,9 @@ export function generateRegulatorySanpinInspectionHtml(
 	`;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 10. RE-EXPORT 1-CLICK SHIFT AUTO-CLOSER & BATCH ENGINE
+// ─────────────────────────────────────────────────────────────────────────────
+
+export * from "./shiftAutoCloserEngine.js";
+

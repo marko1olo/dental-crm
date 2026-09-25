@@ -283,7 +283,7 @@ export function useSanpinScheduleSyncLogic(props: UseSanpinScheduleSyncLogicProp
 		(targetDay?: SanpinDailyLoad | null) => {
 			const day = targetDay || activeDayLoad;
 			if (!day || !day.isWorkingDay || day.totalPatientsCount === 0) {
-				showToast("⚠️ На выбранную дату нет состоявшихся приёмов пациентов в расписании", "error");
+				showToast("На выбранную дату нет состоявшихся приёмов пациентов в расписании", "error");
 				return;
 			}
 
@@ -296,7 +296,7 @@ export function useSanpinScheduleSyncLogic(props: UseSanpinScheduleSyncLogicProp
 			if (props.onSaveKraftPackages) props.onSaveKraftPackages(kraftPacks);
 
 			showToast(
-				`🟢 Сформированы записи за ${day.date}: ПСО (${psoRecords.length} партий, ${day.totalInstrumentsCount} изд.), Автоклав (${autoRecords.length} циклов, ${day.totalKraftPackagesCount} крафт-пакетов).`,
+				`Сформированы записи за ${day.date}: ПСО (${psoRecords.length} партий, ${day.totalInstrumentsCount} изд.), Автоклав (${autoRecords.length} циклов, ${day.totalKraftPackagesCount} крафт-пакетов).`,
 				"success",
 			);
 		},

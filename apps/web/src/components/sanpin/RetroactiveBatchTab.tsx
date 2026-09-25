@@ -799,7 +799,7 @@ export function RetroactiveBatchTab({
 						<button
 							type="button"
 							onClick={handleSaveToRegisters}
-							disabled={isSaving}
+							aria-busy={isSaving}
 							className="sanpin-btn sanpin-btn-primary"
 							style={{
 								minHeight: "46px",

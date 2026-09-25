@@ -684,7 +684,7 @@ export function SterilizerEquipmentModal({
 									<button
 										type="button"
 										onClick={handleQuickMaintenance}
-										disabled={submitting}
+										aria-busy={submitting}
 										className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 										style={{ minHeight: "36px", padding: "0.3rem 0.75rem", fontSize: "0.8rem", fontWeight: 600, color: "#d97706" }}
 									>
@@ -696,7 +696,7 @@ export function SterilizerEquipmentModal({
 									<button
 										type="button"
 										onClick={handleQuickReturnToService}
-										disabled={submitting}
+										aria-busy={submitting}
 										className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 										style={{ minHeight: "36px", padding: "0.3rem 0.75rem", fontSize: "0.8rem", fontWeight: 600, color: "#059669" }}
 									>
@@ -720,7 +720,7 @@ export function SterilizerEquipmentModal({
 												<button
 													type="button"
 													onClick={() => void handleQuickDecommission(decommissionReason)}
-													disabled={submitting}
+													aria-busy={submitting}
 													className="sanpin-btn touch-manipulation"
 													style={{ minHeight: "30px", padding: "0.2rem 0.6rem", background: "#dc2626", color: "#fff", fontSize: "0.75rem", fontWeight: 700, border: "none", borderRadius: "4px" }}
 												>
@@ -729,7 +729,7 @@ export function SterilizerEquipmentModal({
 												<button
 													type="button"
 													onClick={() => setShowDecommissionConfirm(false)}
-													disabled={submitting}
+													aria-busy={submitting}
 													className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 													style={{ minHeight: "30px", padding: "0.2rem 0.6rem", fontSize: "0.75rem" }}
 												>
@@ -741,7 +741,7 @@ export function SterilizerEquipmentModal({
 										<button
 											type="button"
 											onClick={() => setShowDecommissionConfirm(true)}
-											disabled={submitting}
+											aria-busy={submitting}
 											className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 											style={{ minHeight: "36px", padding: "0.3rem 0.75rem", fontSize: "0.8rem", fontWeight: 600, color: "#dc2626" }}
 										>
@@ -754,7 +754,7 @@ export function SterilizerEquipmentModal({
 									<button
 										type="button"
 										onClick={handleQuickReturnToService}
-										disabled={submitting}
+										aria-busy={submitting}
 										className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 										style={{ minHeight: "36px", padding: "0.3rem 0.75rem", fontSize: "0.8rem", fontWeight: 600, color: "#2563eb" }}
 									>
@@ -780,7 +780,7 @@ export function SterilizerEquipmentModal({
 						<button
 							type="button"
 							onClick={onClose}
-							disabled={submitting}
+							aria-busy={submitting}
 							className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 							style={{ minHeight: "40px", padding: "0.4rem 1rem", fontSize: "0.85rem" }}
 						>
@@ -789,7 +789,7 @@ export function SterilizerEquipmentModal({
 
 						<button
 							type="submit"
-							disabled={submitting}
+							aria-busy={submitting}
 							className="sanpin-btn sanpin-btn-primary touch-manipulation"
 							style={{
 								minHeight: "40px",

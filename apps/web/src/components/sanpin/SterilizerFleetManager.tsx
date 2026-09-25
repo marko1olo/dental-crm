@@ -1015,7 +1015,7 @@ export function SterilizerFleetManager({
 							<button
 								type="button"
 								onClick={() => setDecommissionTarget(null)}
-								disabled={decommissionSubmitting}
+								aria-busy={decommissionSubmitting}
 								className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 								style={{ minHeight: "34px", padding: "0.3rem 0.8rem", fontSize: "0.8rem" }}
 							>
@@ -1024,7 +1024,7 @@ export function SterilizerFleetManager({
 							<button
 								type="button"
 								onClick={() => void handleConfirmDecommission()}
-								disabled={decommissionSubmitting}
+								aria-busy={decommissionSubmitting}
 								className="sanpin-btn touch-manipulation"
 								style={{
 									minHeight: "34px",

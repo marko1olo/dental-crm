@@ -73,7 +73,7 @@ export function GeneralCleaningSchedule({
 		});
 	}, [logs, selectedYear, selectedMonth, roomFilter]);
 
-	// ⚡ 1-Клик генерация графика генеральных уборок на месяц (каждые 7 дней)
+	// 1-Клик генерация графика генеральных уборок на месяц (каждые 7 дней)
 	const handleGenerateMonthlySchedule = async () => {
 		try {
 			setIsAutopilotLoading(true);
@@ -207,7 +207,7 @@ export function GeneralCleaningSchedule({
 				<button
 					type="button"
 					onClick={handleGenerateMonthlySchedule}
-					disabled={isAutopilotLoading}
+					aria-busy={isAutopilotLoading}
 					className="touch-manipulation"
 					style={{
 						minHeight: "44px",
