@@ -5,18 +5,8 @@ import {
 	X,
 	Grid,
 	FileText,
-	RotateCw,
-	FlipHorizontal,
-	ZoomIn,
-	ZoomOut,
-	Trash2,
 	Eye,
-	Sliders,
 	Printer,
-	ChevronDown,
-	ChevronUp,
-	UploadCloud,
-	MoreVertical,
 	Sparkles,
 	Copy,
 } from "lucide-react";
@@ -673,360 +663,42 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 					<div className="ortho-8-grid">
 						{filteredAngles.map((angle) => {
 							const slot = session.slots[angle.id];
-							const hasPhoto = Boolean(slot && slot.imageUrl);
 							const isDragOver = dragOverSlotId === angle.id;
-							const showGuides = globalGuidelinesEnabled && (slot?.guidelineOverlayEnabled ?? true);
 
 							return (
-								<div
+								<OrthoPhotoSlotCard
 									key={angle.id}
-									className={`ortho-slot-card ${hasPhoto ? "has-photo" : ""} ${isDragOver ? "drag-over" : ""} ${
-										openMenuSlotId === angle.id ? "!overflow-visible z-20" : ""
-									}`}
+									angle={angle}
+									slot={slot}
+									globalGuidelinesEnabled={globalGuidelinesEnabled}
+									isDragOver={isDragOver}
+									isMenuOpen={openMenuSlotId === angle.id}
+									onToggleMenu={() =>
+										setOpenMenuSlotId((prev) => (prev === angle.id ? null : angle.id))
+									}
 									onDragOver={(e) => handleDragOver(e, angle.id)}
 									onDragLeave={handleDragLeave}
 									onDrop={(e) => handleDrop(e, angle.id)}
-									data-testid={`photo-slot-${angle.id}`}
-								>
-									{/* Slot Header */}
-									<div className="ortho-slot-header">
-										<div className="ortho-slot-title-wrap">
-											<span className="ortho-slot-num">{angle.sequenceNumber}</span>
-											<span className="ortho-slot-title" title={angle.titleRu}>
-												{angle.titleRu}
-											</span>
-										</div>
-										<span className="ortho-slot-category-badge">
-											{angle.category === "intraoral" ? "Зубы" : "Лицо"}
-										</span>
-									</div>
-
-									{/* Slot Viewport */}
-									<div
-										className="ortho-slot-viewport"
-										onClick={() => {
-											if (!hasPhoto) triggerUploadForAngle(angle.id);
-										}}
-									>
-										{hasPhoto && slot?.imageUrl ? (
-											<>
-												<img
-													src={slot.imageUrl}
-													alt={angle.titleRu}
-													loading="lazy"
-													decoding="async"
-													className="ortho-slot-img"
-													style={{
-														transform: `rotate(${slot.rotationDegrees || 0}deg) scale(${slot.zoom || 1}) ${
-															slot.flipHorizontal ? "scaleX(-1)" : ""
-														} ${slot.flipVertical ? "scaleY(-1)" : ""}`,
-														filter: `brightness(${(slot.brightness || 0) + 100}%) contrast(${
-															(slot.contrast || 0) + 100
-														}%)`,
-													}}
-												/>
-
-												{/* Clinical Guidelines Overlay */}
-												{showGuides && (
-													<div className="ortho-guide-overlay">
-														{/* Vertical Facial/Dental Midline */}
-														<div className="ortho-guide-midline" />
-														{/* Horizontal Occlusal Plane */}
-														<div className="ortho-guide-occlusal" />
-														{/* Thirds guide */}
-														<div className="ortho-guide-thirds-h1" />
-														<div className="ortho-guide-thirds-h2" />
-													</div>
-												)}
-											</>
-										) : (
-											<div className="ortho-dropzone-empty">
-												<UploadCloud className="ortho-dropzone-icon" />
-												<span className="ortho-dropzone-label">Загрузить фото</span>
-												<span className="ortho-dropzone-hint">{angle.shortLabelRu}</span>
-											</div>
-										)}
-									</div>
-
-									{/* Slot Controls Bar — Miller's Law: 1-2 buttons max, desktop density (28px) */}
-									<div className="ortho-slot-controls flex items-center justify-between gap-1.5 px-3 py-1.5 min-h-[38px] relative">
-										<button
-											type="button"
-											onClick={() => triggerUploadForAngle(angle.id)}
-											className="ortho-slot-btn h-7 px-2.5 inline-flex items-center gap-1.5 text-[11px] font-semibold rounded-md border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-subtle,#f8fafc)] hover:border-[var(--teal,#0d9488)] hover:text-[var(--teal,#0d9488)] transition-all cursor-pointer shrink-0"
-											title={hasPhoto ? "Заменить снимок" : "Загрузить снимок"}
-											data-testid={`upload-btn-${angle.id}`}
-										>
-											<UploadCloud size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
-											<span>{hasPhoto ? "Заменить" : "Загрузить"}</span>
-										</button>
-
-										{hasPhoto ? (
-											<div className="relative">
-												<button
-													type="button"
-													onClick={(e) => {
-														e.stopPropagation();
-														setOpenMenuSlotId((prev) => (prev === angle.id ? null : angle.id));
-													}}
-													className={`ortho-slot-btn w-7 h-7 inline-flex items-center justify-center rounded-md border transition-all cursor-pointer ${
-														openMenuSlotId === angle.id
-															? "border-[var(--teal,#0d9488)] bg-[var(--teal-surface,#f0fdfa)] text-[var(--teal,#0d9488)]"
-															: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-subtle,#f8fafc)] hover:border-[var(--teal,#0d9488)]"
-													}`}
-													title="Действия со снимком"
-													aria-label="Действия со снимком"
-													aria-expanded={openMenuSlotId === angle.id}
-													data-testid={`slot-menu-btn-${angle.id}`}
-												>
-													<MoreVertical size={14} />
-												</button>
-
-												{openMenuSlotId === angle.id && (
-													<div
-														className="absolute right-0 bottom-full mb-1.5 z-40 w-52 p-1 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-lg shadow-xl animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-0.5"
-														role="menu"
-														onClick={(e) => e.stopPropagation()}
-													>
-														<button
-															type="button"
-															onClick={(e) => handleRotateSlot(angle.id, e)}
-															className="w-full text-left px-2.5 py-1.5 rounded-md text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--paper-subtle,#f8fafc)] hover:text-[var(--teal,#0d9488)] transition-colors flex items-center gap-2 cursor-pointer"
-															role="menuitem"
-															title="Повернуть на 90°"
-														>
-															<RotateCw size={13} className="text-[var(--muted,#64748b)] shrink-0" />
-															<span className="flex-1">Повернуть на 90°</span>
-															{slot?.rotationDegrees ? (
-																<span className="text-[10px] text-[var(--muted,#64748b)] font-mono">
-																	{slot.rotationDegrees}°
-																</span>
-															) : null}
-														</button>
-
-														<button
-															type="button"
-															onClick={(e) => handleFlipHorizontal(angle.id, e)}
-															className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-2 cursor-pointer ${
-																slot?.flipHorizontal
-																	? "bg-[var(--teal-surface,#f0fdfa)] text-[var(--teal,#0d9488)]"
-																	: "text-[var(--ink,#0f172a)] hover:bg-[var(--paper-subtle,#f8fafc)] hover:text-[var(--teal,#0d9488)]"
-															}`}
-															role="menuitem"
-															title="Отразить по горизонтали"
-														>
-															<FlipHorizontal size={13} className="text-[var(--muted,#64748b)] shrink-0" />
-															<span className="flex-1">Отразить по горизонтали</span>
-															{slot?.flipHorizontal ? (
-																<span className="text-[10px] font-bold text-[var(--teal,#0d9488)]">Вкл</span>
-															) : null}
-														</button>
-
-														<button
-															type="button"
-															onClick={(e) => handleZoomChange(angle.id, 0.2, e)}
-															className="w-full text-left px-2.5 py-1.5 rounded-md text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--paper-subtle,#f8fafc)] hover:text-[var(--teal,#0d9488)] transition-colors flex items-center gap-2 cursor-pointer"
-															role="menuitem"
-															title="Увеличить (+20%)"
-														>
-															<ZoomIn size={13} className="text-[var(--muted,#64748b)] shrink-0" />
-															<span className="flex-1">Увеличить (+20%)</span>
-															<span className="text-[10px] text-[var(--muted,#64748b)] font-mono">
-																{Math.round((slot?.zoom || 1) * 100)}%
-															</span>
-														</button>
-
-														<button
-															type="button"
-															onClick={(e) => handleZoomChange(angle.id, -0.2, e)}
-															className="w-full text-left px-2.5 py-1.5 rounded-md text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--paper-subtle,#f8fafc)] hover:text-[var(--teal,#0d9488)] transition-colors flex items-center gap-2 cursor-pointer"
-															role="menuitem"
-															title="Уменьшить (-20%)"
-														>
-															<ZoomOut size={13} className="text-[var(--muted,#64748b)] shrink-0" />
-															<span className="flex-1">Уменьшить (-20%)</span>
-														</button>
-
-														<div className="my-1 border-t border-[var(--line,#e2e8f0)]" />
-
-														<button
-															type="button"
-															onClick={(e) => {
-																setOpenMenuSlotId(null);
-																handleDeletePhoto(angle.id, e);
-															}}
-															className="w-full text-left px-2.5 py-1.5 rounded-md text-xs font-medium text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors flex items-center gap-2 cursor-pointer"
-															role="menuitem"
-															title="Удалить снимок"
-															data-testid={`delete-btn-${angle.id}`}
-														>
-															<Trash2 size={13} className="text-rose-500 shrink-0" />
-															<span>Удалить снимок</span>
-														</button>
-													</div>
-												)}
-											</div>
-										) : (
-											<span
-												className="text-[10px] text-[var(--muted,#64748b)] truncate max-w-[140px]"
-												title={angle.requiredEquipmentRu}
-											>
-												{angle.requiredEquipmentRu.slice(0, 24)}...
-											</span>
-										)}
-									</div>
-								</div>
+									onTriggerUpload={() => triggerUploadForAngle(angle.id)}
+									onRotate={(e) => handleRotateSlot(angle.id, e)}
+									onFlipHorizontal={(e) => handleFlipHorizontal(angle.id, e)}
+									onZoomChange={(delta, e) => handleZoomChange(angle.id, delta, e)}
+									onDelete={(e) => {
+										setOpenMenuSlotId(null);
+										handleDeletePhoto(angle.id, e);
+									}}
+								/>
 							);
 						})}
 					</div>
 
 					{/* 4. Clinical Findings & Diagnostic Parameters */}
-					<div className="ortho-findings-section">
-						<div
-							className="ortho-findings-header"
-							onClick={() => setShowFindingsAccordion(!showFindingsAccordion)}
-						>
-							<div className="ortho-findings-title">
-								<Sliders size={16} className="text-[var(--teal)]" />
-								<span>Клиническая диагностика и окклюзионные параметры</span>
-							</div>
-							{showFindingsAccordion ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-						</div>
-
-						{showFindingsAccordion && (
-							<div className="ortho-findings-body">
-								{/* Molar relationship */}
-								<div className="ortho-field-group">
-									<label className="ortho-field-label">Класс моляров (справа / слева)</label>
-									<div className="grid grid-cols-2 gap-2">
-										<select
-											value={session.findings.angleClassMolarRight}
-											onChange={(e) =>
-												handleFindingsChange("angleClassMolarRight", e.target.value as AngleClass)
-											}
-											className="ortho-select"
-										>
-											<option value="class_1">Пр: I класс</option>
-											<option value="class_2_div_1">Пр: II/1 класс</option>
-											<option value="class_2_div_2">Пр: II/2 класс</option>
-											<option value="class_3">Пр: III класс</option>
-										</select>
-										<select
-											value={session.findings.angleClassMolarLeft}
-											onChange={(e) =>
-												handleFindingsChange("angleClassMolarLeft", e.target.value as AngleClass)
-											}
-											className="ortho-select"
-										>
-											<option value="class_1">Лев: I класс</option>
-											<option value="class_2_div_1">Лев: II/1 класс</option>
-											<option value="class_2_div_2">Лев: II/2 класс</option>
-											<option value="class_3">Лев: III класс</option>
-										</select>
-									</div>
-								</div>
-
-								{/* Overjet & Overbite */}
-								<div className="ortho-field-group">
-									<label className="ortho-field-label">Сагиттальная щель (Overjet) & Перекрытие (Overbite)</label>
-									<div className="grid grid-cols-2 gap-2">
-										<div className="ortho-input-unit">
-											<input
-												type="number"
-												step="0.5"
-												value={session.findings.overjetMm}
-												onChange={(e) =>
-													handleFindingsChange("overjetMm", Number.parseFloat(e.target.value) || 0)
-												}
-												className="ortho-input w-full"
-												placeholder="Overjet"
-											/>
-											<span className="text-xs text-[var(--muted)]">мм</span>
-										</div>
-										<div className="ortho-input-unit">
-											<input
-												type="number"
-												step="0.5"
-												value={session.findings.overbiteMm}
-												onChange={(e) =>
-													handleFindingsChange("overbiteMm", Number.parseFloat(e.target.value) || 0)
-												}
-												className="ortho-input w-full"
-												placeholder="Overbite"
-											/>
-											<span className="text-xs text-[var(--muted)]">мм</span>
-										</div>
-									</div>
-								</div>
-
-								{/* Smile Arc */}
-								<div className="ortho-field-group">
-									<label className="ortho-field-label">Дуга улыбки (Smile Arc)</label>
-									<select
-										value={session.findings.smileArc}
-										onChange={(e) =>
-											handleFindingsChange("smileArc", e.target.value as SmileArcType)
-										}
-										className="ortho-select"
-									>
-										<option value="consonant">Консонантная (эстетический идеал)</option>
-										<option value="flat">Уплощенная (прямая линия)</option>
-										<option value="reverse">Реверсивная (инвертированная)</option>
-									</select>
-								</div>
-
-								{/* Midline Shifts */}
-								<div className="ortho-field-group">
-									<label className="ortho-field-label">Смещение средней линии В/Ч</label>
-									<div className="grid grid-cols-2 gap-2">
-										<select
-											value={session.findings.midlineShiftUpperDirection}
-											onChange={(e) =>
-												handleFindingsChange(
-													"midlineShiftUpperDirection",
-													e.target.value as MidlineShiftDirection,
-												)
-											}
-											className="ortho-select"
-										>
-											<option value="none">В норме</option>
-											<option value="left">Влево</option>
-											<option value="right">Вправо</option>
-										</select>
-										<div className="ortho-input-unit">
-											<input
-												type="number"
-												step="0.5"
-												value={session.findings.midlineShiftUpperMm}
-												onChange={(e) =>
-													handleFindingsChange(
-														"midlineShiftUpperMm",
-														Number.parseFloat(e.target.value) || 0,
-													)
-												}
-												className="ortho-input w-full"
-											/>
-											<span className="text-xs text-[var(--muted)]">мм</span>
-										</div>
-									</div>
-								</div>
-
-								{/* Clinical Diagnosis & Plan */}
-								<div className="ortho-field-group col-span-2">
-									<label className="ortho-field-label">Клинический диагноз и рекомендации</label>
-									<input
-										type="text"
-										value={session.findings.clinicalDiagnosisRu}
-										onChange={(e) =>
-											handleFindingsChange("clinicalDiagnosisRu", e.target.value)
-										}
-										className="ortho-input w-full"
-										placeholder="Диагноз по МКБ / СтАР"
-									/>
-								</div>
-							</div>
-						)}
-					</div>
+					<OrthoFindingsAccordion
+						session={session}
+						showFindingsAccordion={showFindingsAccordion}
+						onToggleAccordion={() => setShowFindingsAccordion((prev) => !prev)}
+						onFindingsChange={(field, value) => handleFindingsChange(field as any, value as any)}
+					/>
 				</div>
 
 				{/* 5. Modal Footer */}
