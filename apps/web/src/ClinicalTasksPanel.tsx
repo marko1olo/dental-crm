@@ -766,7 +766,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 						className="secondary-button"
 						type="button"
 						onClick={() => void load()}
-						disabled={loading}
+						disabled={false}
 					>
 						{loading ? "Загружаю…" : "Попробовать снова"}
 					</button>
@@ -871,7 +871,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 							className="primary-button"
 							type="button"
 							title={option.hint}
-							disabled={submittingPhase === option.code}
+							disabled={false}
 							onClick={() => void completePhase(option.code)}
 						>
 							{submittingPhase === option.code
@@ -885,7 +885,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 							className="secondary-button"
 							type="button"
 							title={type.typeLabel}
-							disabled={submittingPhase === type.typeCode}
+							disabled={false}
 							style={{ borderColor: type.colorHex, color: type.colorHex }}
 							onClick={() =>
 								void completePhase(type.typeCode as ClinicalPhaseCode)
@@ -1081,7 +1081,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 												<button
 													type="button"
 													className="primary-button"
-													disabled={completingTaskId === task.id}
+													disabled={false}
 													onClick={() =>
 														void handleCompleteTask(task.id)
 													}

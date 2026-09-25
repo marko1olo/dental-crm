@@ -53,7 +53,7 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 	background: var(--paper-strong, var(--paper, #ffffff));
 	color: var(--ink, #0f172a);
 	border: 1px solid var(--line-strong, var(--line, #cbd5e1));
-	box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.25), 0 0 16px 2px rgba(13, 148, 136, 0.2);
+	box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.25), 0 0 16px 2px var(--teal-soft, rgba(13, 148, 136, 0.2));
 	backdrop-filter: blur(20px);
 	-webkit-backdrop-filter: blur(20px);
 	animation: dnt-badge-drop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -71,7 +71,7 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 	background: var(--paper-strong, var(--paper, #ffffff));
 	color: var(--ink, #0f172a);
 	border: 1px solid var(--line-strong, var(--line, #cbd5e1));
-	box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.25), 0 0 20px 2px rgba(13, 148, 136, 0.18);
+	box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.25), 0 0 20px 2px var(--teal-soft, rgba(13, 148, 136, 0.18));
 	backdrop-filter: blur(20px);
 	-webkit-backdrop-filter: blur(20px);
 	animation: dnt-badge-drop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -105,7 +105,7 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 	background: var(--paper-strong, var(--paper, #ffffff));
 	color: var(--ink, #0f172a);
 	border-left: 1px solid var(--line-strong, var(--line, #e2e8f0));
-	box-shadow: -12px 0 36px -4px rgba(0, 0, 0, 0.3), 0 0 24px 2px rgba(13, 148, 136, 0.15);
+	box-shadow: -12px 0 36px -4px rgba(0, 0, 0, 0.3), 0 0 24px 2px var(--teal-soft, rgba(13, 148, 136, 0.15));
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
@@ -161,7 +161,7 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 	background: var(--paper-strong, var(--paper, #ffffff));
 	color: var(--ink, #0f172a);
 	border: 1px solid var(--line-strong, var(--line, #cbd5e1));
-	box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.25), 0 0 20px 2px rgba(13, 148, 136, 0.2);
+	box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.25), 0 0 20px 2px var(--teal-soft, rgba(13, 148, 136, 0.2));
 	backdrop-filter: blur(20px);
 	-webkit-backdrop-filter: blur(20px);
 	animation: dnt-island-drop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -188,7 +188,7 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 	color: var(--ink, #0f172a);
 	border-radius: 24px;
 	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
-	box-shadow: 0 28px 56px -12px rgba(0, 0, 0, 0.4), 0 0 30px 4px rgba(13, 148, 136, 0.22);
+	box-shadow: 0 28px 56px -12px rgba(0, 0, 0, 0.4), 0 0 30px 4px var(--teal-soft, rgba(13, 148, 136, 0.22));
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
@@ -240,22 +240,48 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 	visibility: hidden !important;
 }
 
-/* Touch Targets Strict Minimum >= 44x44px */
+/* Desktop Clinical Density (32-36px, Anti-Mobile Bloat per Mandates 8c, 8d, 8e) */
 .dnt-telephony-card button,
 .dnt-telephony-island-pill button,
 .dnt-telephony-island-expanded button,
-.dnt-incoming-call-popup button {
-	min-height: 44px;
+.dnt-incoming-call-popup button,
+.dnt-incoming-call-capsule button {
+	min-height: 32px;
+}
+
+/* Touchscreens and mobile viewports adapt touch targets for gloved fingers (Mandate 8c) */
+@media (pointer: coarse) {
+	.dnt-telephony-card button,
+	.dnt-telephony-island-pill button,
+	.dnt-telephony-island-expanded button,
+	.dnt-incoming-call-popup button,
+	.dnt-incoming-call-capsule button {
+		min-height: 44px;
+	}
 }
 
 .min-touch-btn {
+	min-height: 36px;
+	min-width: 36px;
+}
+
+@media (pointer: coarse) {
+	.min-touch-btn {
+		min-height: 44px;
+		min-width: 44px;
+	}
+}
+
+.large-touch-btn {
 	min-height: 44px;
 	min-width: 44px;
 }
 
-.large-touch-btn {
-	min-height: 48px;
-	min-width: 48px;
+@media (pointer: coarse) {
+	.large-touch-btn {
+		min-height: 48px;
+		min-width: 48px;
+	}
 }
 
 /* Expanded Softphone Card */

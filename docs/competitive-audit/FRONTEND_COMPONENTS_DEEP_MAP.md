@@ -3,13 +3,13 @@
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)  
 > ⚠️ **Высшая Конституция:** [THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) | [Системная Конституция (.agents/AGENTS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)  
 > 📐 **Стандарты Эргономики и UI:** [UI_STANDARDS.md](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md) | [FRONTEND_VIEWS_MAP.md](file:///C:/Clinic_MVP/dental-crm/.agents/FRONTEND_VIEWS_MAP.md) | [CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)  
-> **Стек клиентской части:** React `19.2.7`, TypeScript, Vite, Tailwind CSS + CSS Variables (`var(--paper)`, `var(--ink)`), Lucide Icons, Web Workers (3D DICOM MPR).
+> **Стек клиентской части:** React `19.2.7`, TypeScript, Vite, CSS Variables (`var(--paper)`, `var(--ink)`, `var(--glass-panel)`), Lucide Icons, Web Workers (3D DICOM MPR), 800 модулей компонентов в [`apps/web/src/components/`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/).
 
 ---
 
 ## 🏛️ 1. Архитектурный Каркас и 3-Уровневая Модель (3-Tier Interaction Architecture)
 
-Интерфейс веб-клиента DENTE (`apps/web/src/`) строго спроектирован по канонам **Universal 3-Tier Interaction Doctrine** и **Studio Clinical HIG** (десктопная плотность панели пилота для 80% рабочих станций, мобильная эргономика для 10% планшетов у кресла и 10% пациентского портала):
+Интерфейс веб-клиента DENTE (`apps/web/src/`) строго спроектирован по канонам **Universal 3-Tier Interaction Doctrine** и **Studio Clinical HIG** (десктопная плотность панели пилота 28–36px для рабочих мест врачей, тач-таргеты $\ge 44\times 44\text{px}$ для мобильных устройств и планшетов у кресла):
 
 ```mermaid
 graph TD
@@ -21,39 +21,26 @@ graph TD
         T1_5["Красные флаги: аллергии, противопоказания, острая боль"]
     end
 
-    subgraph TIER_2["🟡 TIER 2: WARM CONTEXT (1 Click / Drawers & Accordions)"]
+    subgraph TIER_2["🟡 TIER 2: WARM CONTEXT (1 Click / Drawers & Sheets)"]
         T2_1["macOS Hover HUD (150ms всплывающий контекст карточки)"]
         T2_2["Шторки быстрой записи и подтверждений (QuickBookingDrawer)"]
         T2_3["Калькулятор безопасной дозы анестетика по весу (Мандат 8e)"]
-        T2_4["Панель клинических правил (Мягкие рекомендации без блокировок)"]
-        T2_5["Пресеты и шаблоны дневников по МКБ-10"]
+        T2_4["Шкалы оттенков VITA Classical и 3D-Master (VitaShadeSelector)"]
+        T2_5["Шторки пациентского кабинета (CareMemo, SbpPayment, Consent)"]
     end
 
-    subgraph TIER_3["🔵 TIER 3: COLD BACKOFFICE (Dedicated Fullscreen / Studio)"]
-        T3_1["3D DICOM MPR Viewer (КЛКТ томограммы, аксиал/сагиттал/коронал)"]
-        T3_2["ЕГИСЗ РЭМД CDA R3 + подписание личной УКЭП врача"]
+    subgraph TIER_3["🔵 TIER 3: COLD BACKOFFICE (Dedicated Fullscreen / Studios)"]
+        T3_1["3D DICOM MPR Studio (КЛКТ томограммы, аксиал/сагиттал/коронал)"]
+        T3_2["ЕГИСЗ РЭМД CDA R3 + подписание личной УКЭП КриптоПро"]
         T3_3["Справка НДФЛ 13% КНД 1151156 (XML выгрузка в ФНС)"]
         T3_4["Зарплатные ведомости Т-51 Net Revenue и табель Т-13"]
-        T3_5["Инвентаризация склада, МДЛП Честный Знак и СанПиН 3.3686-21"]
+        T3_5["Инвентаризация склада, МДЛП Честный ЗНАК и СанПиН 3.3686-21"]
+        T3_6["Экстренный протокол реанимации 786н и Гарантийный паспорт"]
     end
 
     TIER_1 -->|1 клик на сущность| TIER_2
     TIER_1 -->|Явный переход в студию| TIER_3
 ```
-
-### Принципы уровней:
-1. **🟢 TIER 1 (Hot Path / В потоке):**
-   - Рабочий холст доминирует на экране (сетка расписания, зубная одонтограмма $\ge 140\text{--}160\text{px}$, активная карта визита).
-   - 0-клик доступ к ключевым действиям.
-   - **Абсолютный запрет на всплывающие блокирующие модальные окна** и опросники на основном пути врача.
-   - Тач-таргеты строго $\ge 44\times 44\text{px}$ для работы в медицинских перчатках.
-2. **🟡 TIER 2 (Warm Context / Контекстные шторки и аккордеоны):**
-   - Выкатные боковые панели (Side Drawers $\le 420\text{px}$) и встроенные раскрывающиеся списки.
-   - Открываются строго по 1 клику пользователя на выбранную сущность (зуб, слот расписания, услугу).
-   - **Закон Анти-Матрёшки:** максимальная глубина модальных слоев — строго 1. Запрещено открывать модалку поверх модалки.
-3. **🔵 TIER 3 (Cold Backoffice / Кабинетный режим и специализированные студии):**
-   - Тяжелые аналитические, диагностические и регуляторные операции.
-   - Вынесены в изолированные полноэкранные режимы (`ImagingView`, студия CDA/УКЭП, кассовая инкассация, складские ревизии), чтобы не утяжелять hot-path рендеринга.
 
 ---
 
@@ -78,72 +65,91 @@ graph TD
 | 13 | `settings` | `#settings` | **Настройки** | [`SettingsView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/SettingsView.tsx) | Администрирование клиники: справочники прейскуранта 804н, роли персонала (RBAC), графики сменности, интеграции API. |
 | 14 | `marketing` | `#marketing` | **Маркетинг** | [`MarketingView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/MarketingView.tsx) | Управление промо-акциями, рассылками напоминаний о профосмотрах, бонусными программами и сегментацией пациентской базы. |
 
-### Дополнительные специализированные модули и порталы:
-- **`components/portal/selfCheckin/MobileSelfCheckinModal.tsx`** — Мобильный портал саморегистрации пациента по QR-коду на ресепшене.
-- **`components/patient-portal/PublicEstimatePortal.tsx`** — Интерактивная 3-уровневая смета для пациента («Эконом», «Оптимум», «Премиум»).
-- **`components/telephony/IncomingCallPopup.tsx`** — Фоновый ненавязчивый индикатор входящего звонка (для врача полностью беззвучен).
+---
+
+## 🧩 3. Полный Каталог Специализированных Подсистем и Модулей (`apps/web/src/components/`)
+
+### 3.1. Клиническая Фотография и Каталог Оттенков VITA (`components/photography/`)
+* **[`ClinicalPhotoProtocolModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx)** — Полноэкранная студия дентального фотопротокола (12 стандартных проекций: анфас, профиль, окклюзия в/ч и н/ч, 1:1 макро).
+* **[`VitaShadeSelector.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/VitaShadeSelector.tsx)** — Интерактивный селектор расцветки зубов с предпросмотром эмали.
+* **[`vitaShadesCatalog.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/vitaShadesCatalog.ts)** — Полный классификатор шкал VITA:
+  - **VITA Classical:** A1, A2, A3, A3.5, A4, B1, B2, B3, B4, C1, C2, C3, C4, D2, D3, D4.
+  - **VITA 3D-Master:** 29 градаций светлоты, насыщенности и цветового тона (L, M, R).
+  - **Bleach Shades:** 0M1, 0M2, 0M3 для эстетической реставрации и виниров.
+* **[`BeforeAfterComparisonView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/BeforeAfterComparisonView.tsx)** — Двухканальный слайдер сравнения «До / После» лечения с привязкой зубов FDI.
+* **[`IncisalAlignmentGuideOverlay.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/IncisalAlignmentGuideOverlay.tsx)** — Калибровочные направляющие окклюзионной и режущей плоскости, зрачковой линии и средней линии лица.
+* **[`PhotoCalibrationDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/PhotoCalibrationDrawer.tsx)** — Точная подгонка баланса белого и масштабирование по эталонному маркеру.
+* **[`PhotoCollageExportSheet.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/PhotoCollageExportSheet.tsx)** — Экспорт клинических коллажей для презентации пациенту и передачи в ЗТЛ.
+
+### 3.2. Экстренная Помощь 786н и Гарантийный Паспорт (`components/emergency/`, `components/warranty/`)
+* **[`EmergencyRescueModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/EmergencyRescueModal.tsx)** — Экспресс-протокол оказания неотложной помощи по Приказу Минздрава России 786н:
+  - Анафилактический шок (дозировка эпинефрина 0.1% по массе тела, мониторинг АД/ЧСС).
+  - Коллапс и обморок (положение Тренделенбурга, ингаляция кислорода).
+  - Гипертонический криз и острый коронарный синдром.
+  - Токсическая реакция на местный анестетик (протокол липидной реанимации Intralipid 20%).
+* **[`emergencyRescueEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/emergencyRescueEngine.ts)** & **[`emergencyRescuePresets.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/emergencyRescuePresets.ts)** — Автоматические калькуляторы реанимационных дозировок, состав аптечки «АнтиШок».
+* **[`WarrantyPassportModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warranty/WarrantyPassportModal.tsx)** — Электронный гарантийный паспорт пациента:
+  - Паспорт дентальных имплантов (бренд, диаметр, длина, номер партии, серийный номер, ISQ торк).
+  - Гарантийные обязательства на ортопедические конструкции ЗТЛ и терапевтические реставрации.
+  - Динамический QR-код для верификации подлинности паспорта со смартфона пациента.
+
+### 3.3. Пациентский Портал, Кабинет и Self-Checkin (`components/portal/`, `components/patient-portal/`)
+* **[`PatientCabinetModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/patientCabinet/PatientCabinetModal.tsx)** — PWA кабинет пациента с бесшовной авторизацией:
+  - **[`TreatmentPlanTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/patientCabinet/tabs/TreatmentPlanTab.tsx)** — 3-уровневый интерактивный план лечения (Эконом / Оптимум / Премиум) с переключением опций.
+  - **[`CareMemoSheet.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/patientCabinet/sheets/CareMemoSheet.tsx)** — Памятки после приема (после удаления зуба, после анестезии, после установки импланта).
+  - **[`ConsentSigningSheet.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/patientCabinet/sheets/ConsentSigningSheet.tsx)** — Электронное подписание ИДС пальцем/стилусом со смартфона пациента.
+  - **[`SbpPaymentSheet.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/patientCabinet/sheets/SbpPaymentSheet.tsx)** — 1-клик оплата счетов через мобильный банк по СБП QR.
+  - **[`RescheduleSheet.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/patientCabinet/sheets/RescheduleSheet.tsx)** — Запрос переноса визита без звонка в регистратуру.
+  - **[`ReceptionQrSheet.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/patientCabinet/sheets/ReceptionQrSheet.tsx)** — Персональный QR-код для экспресс-идентификации на ресепшене.
+* **[`MobileSelfCheckinModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/selfCheckin/MobileSelfCheckinModal.tsx)** — Мобильный терминал саморегистрации пациента на планшете клиники:
+  - 0-клик подтверждение явки («Я пришёл на приём»).
+  - **[`SomaticQuestionnaireEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/selfCheckin/SomaticQuestionnaireEngine.ts)** — Быстрая соматическая анкета с пресетом «Соматически здоров» (Мандат 8e).
+* **[`PatientBudgetSignView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/PatientBudgetSignView.tsx)** — Просмотр и утверждение финансового плана лечения.
+
+### 3.4. 3D DICOM MPR Viewer, Радиология и Визиография (`components/radiology/`, `components/dicom/`, `components/visiograph/`)
+* **[`CbctMprImplantStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx)** — Полнофункциональная 3D студия КЛКТ:
+  - Одновременный 3-проекционный рендеринг: Аксиальная, Сагиттальная, Корональная плоскости.
+  - Панорамная кривая зубной дуги ([`dentalCurveEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/dentalCurveEngine.ts)) и вычисление срезов Cross-Section.
+  - Трассировка нижнечелюстного канала нерва ([`cbctCaliperNerveMath.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/cbctCaliperNerveMath.ts)) с предупреждением об опасной зоне < 2 мм.
+  - Денситометрия кости Хаунсфилда по шкале Миша ([`boneDensityMischMath.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/boneDensityMischMath.ts)): D1 (>1250 HU), D2 (850–1250 HU), D3 (350–850 HU), D4 (150–350 HU).
+* **[`CbctViewportHud.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/CbctViewportHud.tsx)** & **[`CbctLeftToolDock.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/CbctLeftToolDock.tsx)** — Инструменты калибровки, линейка, транспортир, плотность HU, пресеты окон (Bone, Tooth, Soft Tissue).
+* **[`DirectRvgCaptureModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/DirectRvgCaptureModal.tsx)** & **[`VisiographStudioCanvas.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visiograph/VisiographStudioCanvas.tsx)** — Прямой захват 16-битных прицельных снимков с датчиков радиовизиографа с инверсией, фильтрами резкости и юридическим водяным знаком клиники.
+
+### 3.5. Голосовой Ввод и Звуковой Шлюз (`components/audio/`, `components/voice/`)
+* **[`AudioStreamManager.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/audio/AudioStreamManager.ts)** — Потоковый захват микрофона через AudioWorklet без блокировки UI-потока.
+* **[`CanvasWaveform.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/audio/CanvasWaveform.tsx)** — 60 FPS аппаратная визуализация звуковой волны речи врача.
+* **[`VoiceDictationAssistantModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/voice/VoiceDictationAssistantModal.tsx)** — Голосовой ассистент с распознаванием терминов («кариес 36 пломба 45 удаление 18») и мгновенным автозаполнением дневника 043/у.
+
+### 3.6. СанПиН 3.3686-21, Стерилизация и Медотходы (`components/sanpin/`)
+* **[`SanpinRegisters.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanpinRegisters.tsx)** — Единый пульт контроля санитарно-эпидемиологических журналов:
+  - **`AutoclaveRegisterTab.tsx`** — Журнал стерилизации автоклавов класса B (контроль режима 134°C / 5 мин и 121°C / 20 мин, хим. индикаторы).
+  - **`PsoRegisterTab.tsx`** — Журнал предстерилизационной очистки (ПСО, азопирамовая и фенолфталеиновая проба — пресет «Норма» в 1 клик).
+  - **`BactericidalRegisterTab.tsx`** — Журнал наработки часов бактерицидных облучателей и рециркуляторов воздуха.
+  - **`GeneralCleaningRegisterTab.tsx`** — График и фиксация генеральных уборок помещений.
+  - **`MedicalWasteRegisterTab.tsx`** — Журнал образования и передачи на утилизацию медицинских отходов класса Б (пакеты, бирки, вес в кг).
+  - **`RetroactiveSanpinBatchModal.tsx`** — Массовое закрытие рутинных записей журналов задним числом в 1 клик без бюрократии.
+
+### 3.7. Касса 54-ФЗ, СБП, Эквайринг и Зарплата Т-13/Т-51 (`components/payments/`, `components/payroll/`)
+* **[`SberPosTerminalModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/sberPos/SberPosTerminalModal.tsx)** — Интеграция со смарт-терминалами Сбербанк POS: отправка команды оплаты, чтение карт МИР/Mastercard/Visa.
+* **[`BankInstallmentQrModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/BankInstallmentQrModal.tsx)** — Оформление банковской рассрочки по QR-коду за 2 минуты у кресла.
+* **[`checkout/fastCheckoutEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/checkout/fastCheckoutEngine.ts)** — Быстрый кассовый расчет: комбинированная оплата (нал + карта + аванс) без требования ИНН у физлиц (Мандат 8e).
+* **[`TimesheetT13Modal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payroll/TimesheetT13Modal.tsx)** — Табель учета рабочего времени формы Т-13: отработанные смены, ночные часы, больничные и праздничные.
+* **[`staffPayrollEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payroll/staffPayrollEngine.ts)** — Расчет сдельной зарплаты врачей Т-51 Net Revenue за вычетом расходников BOM и лаборатории.
+
+### 3.8. Комплексные 3-Уровневые Планы Лечения (`components/treatment-plans/`)
+* **[`TreatmentPlan3TierComparison.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlan3TierComparison.tsx)** — 3-колоночный интерактивный виджет («Эконом», «★ Оптимум», «Премиум»).
+* **[`TreatmentPlanPresenterModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx)** — Презентационный режим для демонстрации плана на большом настенном мониторе в кабинете врача.
+* **[`TreatmentPlanPhased4StageView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanPhased4StageView.tsx)** — Поэтапная дорожная карта лечения (1. Неотложная санация -> 2. Терапия -> 3. Хирургия/Имплантация -> 4. Ортопедия).
+* **[`TreatmentPlanSignatureModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanSignatureModal.tsx)** — Подписание согласованной сметы пациентом с формированием юридического акта.
 
 ---
 
-## 🛑 3. Соблюдение Мандата 8e: Полная Автономия Врача и Персонала (Doctor Autonomy)
+## ⚙️ 4. Управление Состоянием и Предотвращение Деградации
 
-В соответствии с **Высшей Конституцией (Раздел VII)** и **Мандатом 8e** любые бюрократические преграды, парализующие работу врача у стоматологического кресла, категорически ликвидированы:
-
-### 1. Ликвидация блокировок на приёме:
-- **`ClinicalRulePanel.tsx` — Мягкие предупреждения вместо блокировок:**
-  - *Было (устаревшее):* Блокировка сохранения визита и завершения приема при несовпадении протокола или отсутствии согласий.
-  - *Стало (Мандат 8e):* Панель клинических правил формирует **исключительно информационные рекомендации и мягкие предупреждения** (warning/advisory). Врач видит предупреждение, но сохранение визита, назначение услуг и печать документов **НИКОГДА НЕ БЛОКИРУЮТСЯ**.
-- **Никаких заблокированных кнопок без причины:** Кнопки «Сохранить», «Завершить приём», «Добавить услугу», «Печать» **НИКОГДА не бывают неактивными (`disabled`)** из-за незаполненных второстепенных полей (пульс, температура, соматическая анкета на 50 пунктов).
-- **Физиологическая норма в 1 клик:** Кнопка «Соматически здоров / норма» моментально заполняет весь осмотр и анамнез физиологической нормой. Врач правит исключительно патологию.
-- **Debounced Autosave в IndexedDB:** Любой текст дневника приёма сохраняется на лету при каждом нажатии клавиши. Смена вкладки, сбой сети или открытие снимка никогда не уничтожают набранный текст.
-- **Печать в любой момент:** Форма 043/у печатается на любом этапе: если приём не закрыт — с водяным знаком «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ».
-- **Свобода скидок:** Врач имеет право выставить скидку до 100% (гарантийная переделка, персонал) без вызова администратора с мастер-паролем.
-
-### 2. Регистратура и расписание без помех:
-- **Создание записи без ассистента:** Поле выбора ассистента строго опционально.
-- **Печать договора до осмотра:** Регистратор может распечатать бланк договора с 0 ₽ и строками `_______` для ручного заполнения без 403-ошибок.
-- **Тихий софтфон:** Для роли врача входящие звонки скрыты и беззвучны, чтобы не отвлекать от препарирования зуба.
-
-### 3. Касса 54-ФЗ и склад:
-- **Оплата без ИНН для физлиц:** Запрещено требовать ИНН с физических лиц при оплате картой или наличными (по 54-ФЗ ИНН обязателен только для юрлиц/ИП).
-- **Комбинированная оплата в 1 клик:** Касса моментально принимает разделение суммы (нал + карта + аванс/семейный кошелек).
-- **Списание пустых карпул анестетика медсестрой в 1 клик** без комиссии из трех человек.
-- **Мягкий овердрафт склада:** Задержка оприходования накладной не блокирует операцию, формируя мягкое предупреждение с минусовым остатком партии.
-
----
-
-## 🧩 4. Ключевые Подсистемы, Модальные Окна и Шторки
-
-### 4.1. Клинический контур и ЭМК 043/у
-- **`components/odontogram/ToothChart.tsx`** — Интерактивная векторная одонтограмма (32 постоянных зуба FDI 11–48 + 20 молочных 51–85, выбор поверхностей: окклюзионная, вестибулярная, оральная, медиальная, дистальная).
-- **`components/odontogram/EndoCanalMatrixModal.tsx`** — Анатомическая эндодонтическая карта: рабочая длина корневых каналов, апекслокатор, размеры мастер-файлов и тип обтурации.
-- **`components/visit/anesthesia/AnesthesiaAspirationJournalModal.tsx`** — Журнал местной анестезии: выбор препарата (Артикаин, Мепивакаин), автоматический расчет предельной дозы по массе тела пациента, фиксация аспирационной пробы.
-- **`components/visit/VisitSoapTemplatesModal.tsx`** — Каталог клинических шаблонов жалоб, анамнеза и дневников по МКБ-10 (K02 кариес, K04 пульпит/периодонтит, K05 гингивит/пародонтит).
-- **`components/SmartMicrophoneButton.tsx` & `PriceDictationBar.tsx`** — Голосовая диктовка протокола через микрофон с фоновым распознаванием терминов и автодобавлением услуг в наряд.
-
-### 4.2. Рентгенология и КЛКТ 3D
-- **`components/imaging/DicomMprCanvas.tsx`** — Высокопроизводительный WebGL/2D Canvas рендерер срезов КТ из Web Worker (`mprWorker.ts`).
-- **`components/imaging/CtPlanningToolbar.tsx`** — Панель виртуального планирования имплантации: позиционирование 3D-импланта, расчет расстояния до нижнечелюстного канала и гайморовой пазухи.
-- **`components/imaging/HounsfieldHistogramWidget.tsx`** — График распределения рентгеновской плотности костной ткани по шкале Хаунсфилда (HU) в зоне остеотомии.
-
-### 4.3. Финансы, Платежи и Смета
-- **`components/finance/PaymentCaptureModal.tsx`** — Модальное окно кассы 54-ФЗ: выбор способа оплаты, фискализация через ККМ-сервер, печать электронного чека ОФД.
-- **`components/finance/FamilyWalletModal.tsx`** — Управление общим семейным балансом: распределение депозита между родственниками.
-- **`components/treatment-plans/TreatmentPlanModal.tsx`** — Интерактивный конструктор 3-уровневой сметы (Эконом / Оптимум / Премиум) с расчетом этапов и автоподбором ИДС.
-
-### 4.4. Документооборот и Регуляторика РФ
-- **`components/documents/DocumentPreviewModal.tsx`** — Двухколоночный предпросмотр типографских форм бланков (043/у, ИДС, договоры, справки НДФЛ).
-- **`components/egisz/EgiszRemdSigningModal.tsx`** — Студия формирования медицинских электронных документов CDA R3 и подписания личной УКЭП врача через Cadesplugin (КриптоПро).
-- **`components/documents/NdflCalculatorModal.tsx`** — Калькулятор справки об оплате медицинских услуг для налогового вычета 13% НДФЛ по форме ФНС КНД 1151156.
-
----
-
-## ⚙️ 5. Управление Состоянием и Предотвращение Деградации
-
-- **`apps/web/src/useAppLogic.tsx`** — Центральный реактивный State-контекст веб-приложения:
+- **[`apps/web/src/useAppLogic.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/useAppLogic.tsx)** — Центральный реактивный State-контекст веб-приложения:
   - Декомпозирован на независимые доменные хуки (`useScheduleQueries`, `usePatientQueries`, `useClinicalVisitLogic`, `useImagingQueries`, `useFinanceQueries`).
-  - Покрыт жестким прекоммит-гейтом `scripts/check-applogic-stub-overrides.mjs`, предотвращающим затирание живых методов пустыми заглушками.
-- **`apps/web/src/contexts/AppLogicContext.tsx`** — Поставщик данных (Context Provider) для глубоких дочерних компонентов интерфейса.
+  - Защищен жестким прекоммит-гейтом `scripts/check-applogic-stub-overrides.mjs`, предотвращающим случайное перекрытие живых методов пустыми заглушками.
+- **[`apps/web/src/contexts/AppLogicContext.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/contexts/AppLogicContext.tsx)** — Контекстный провайдер React для глубоких дочерних компонентов.
 - **Хранилища Zustand (`apps/web/src/store/`)**:
   - `appStore.ts` — текущая активная смена, выбранный пациент, состояние модалок.
   - `themeStore.ts` — поддержка тем оформления (Light, Dark, Calm Teal, Night, Ocean) с токенами `var(--paper)`.
@@ -154,7 +160,7 @@ graph TD
 ## 🔗 Перекрестные Ссылки
 - 🗺️ [Главный Навигационный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
 - 📚 [Портал Технической Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
-- 📐 [Стандарты Вёрстки и Экранов (FRONTEND_VIEWS_MAP.md)](file:///C:/Clinic_MVP/dental-crm/.agents/FRONTEND_VIEWS_MAP.md)
-- 🧪 [Справочник Скриптов и Гейтов (SCRIPTS_AND_CLI_DEEP_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/SCRIPTS_AND_CLI_DEEP_MAP.md)
+- 🛣️ [Карта Маршрутов API (API_ROUTES_DEEP_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/API_ROUTES_DEEP_MAP.md)
+- 🗄️ [Карта Базы Данных (DATABASE_DEEP_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/DATABASE_DEEP_MAP.md)
 - 🧮 [Алгоритмы и Пакет @dental/shared (ALGORITHMS_AND_SHARED_DEEP_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/ALGORITHMS_AND_SHARED_DEEP_MAP.md)
-
+- 🧪 [Справочник Скриптов и Гейтов (SCRIPTS_AND_CLI_DEEP_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/SCRIPTS_AND_CLI_DEEP_MAP.md)

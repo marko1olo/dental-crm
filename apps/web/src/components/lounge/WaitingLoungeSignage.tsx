@@ -138,6 +138,15 @@ function playCallingChime(): void {
 		gain2.connect(ctx.destination);
 		osc2.start(now + 0.25);
 		osc2.stop(now + 0.85);
+
+		// Автоматически закрываем AudioContext после завершения звука (защита от утечки AudioContext в браузере)
+		setTimeout(() => {
+			try {
+				void ctx.close();
+			} catch {
+				// ignore
+			}
+		}, 1200);
 	} catch {
 		// AudioContext may be blocked before first user gesture
 	}
@@ -165,6 +174,23 @@ export function WaitingLoungeSignage({
 	const [isFading, setIsFading] = useState(false);
 	const [timeSlot, setTimeSlot] = useState<string>(() => getCurrentTimeSlot());
 
+	const fadeTimeoutRef = useRef<NodeJS.Timeout | number | null>(null);
+	const activePreloadImgRef = useRef<HTMLImageElement | null>(null);
+
+	// Очистка таймеров растворения фона при размонтировании
+	useEffect(() => {
+		return () => {
+			if (fadeTimeoutRef.current) {
+				clearTimeout(fadeTimeoutRef.current);
+			}
+			if (activePreloadImgRef.current) {
+				activePreloadImgRef.current.onload = null;
+				activePreloadImgRef.current.onerror = null;
+				activePreloadImgRef.current = null;
+			}
+		};
+	}, []);
+
 	// Таймер часов
 	useEffect(() => {
 		const timer = setInterval(() => {
@@ -183,19 +209,24 @@ export function WaitingLoungeSignage({
 
 	// Загрузка манифеста Auth Art
 	useEffect(() => {
+		let isMounted = true;
 		fetch("/auth-art/manifest.json")
 			.then((res) => {
 				if (!res.ok) throw new Error(`HTTP ${res.status}`);
 				return res.json();
 			})
 			.then((data) => {
-				if (Array.isArray(data) && data.length > 0) {
+				if (isMounted && Array.isArray(data) && data.length > 0) {
 					setManifest(data);
 				}
 			})
 			.catch(() => {
 				// При недоступности манифеста фоновый цвет и градиент страхуют Zero-CLS
 			});
+
+		return () => {
+			isMounted = false;
+		};
 	}, []);
 
 	// Выбор арта и плавный кроссфейд при смене слота времени суток
@@ -223,20 +254,44 @@ export function WaitingLoungeSignage({
 		}
 
 		// Предзагрузка новой картинки перед началом растворения
+		if (activePreloadImgRef.current) {
+			activePreloadImgRef.current.onload = null;
+			activePreloadImgRef.current.onerror = null;
+		}
+
 		const preloadImg = new Image();
+		activePreloadImgRef.current = preloadImg;
 		const imgSrc = `/auth-art/${selected.webp || selected.avif}`;
 		preloadImg.src = imgSrc;
 		preloadImg.onload = () => {
+			activePreloadImgRef.current = null;
 			setPreviousArt(currentArt);
 			setCurrentArt(selected);
 			setIsFading(true);
 
-			const fadeTimeout = setTimeout(() => {
+			if (fadeTimeoutRef.current) {
+				clearTimeout(fadeTimeoutRef.current);
+			}
+			fadeTimeoutRef.current = setTimeout(() => {
 				setPreviousArt(null);
 				setIsFading(false);
+				fadeTimeoutRef.current = null;
 			}, 1900);
+		};
+		preloadImg.onerror = () => {
+			activePreloadImgRef.current = null;
+		};
 
-			return () => clearTimeout(fadeTimeout);
+		return () => {
+			if (fadeTimeoutRef.current) {
+				clearTimeout(fadeTimeoutRef.current);
+				fadeTimeoutRef.current = null;
+			}
+			if (activePreloadImgRef.current) {
+				activePreloadImgRef.current.onload = null;
+				activePreloadImgRef.current.onerror = null;
+				activePreloadImgRef.current = null;
+			}
 		};
 	}, [manifest, timeSlot, currentArt]);
 
@@ -399,7 +454,33 @@ export function WaitingLoungeSignage({
 	return (
 		<div className="lounge-signage-root" data-testid="waiting-lounge-signage">
 			{/* ФОНОВЫЕ СЛОИ С ПЛАВНЫМ КРОССФЕЙДОМ (ZERO-CLS) */}
-			<div className="lounge-bg-container" aria-hidden="true">
+			<div
+				className="lounge-bg-container"
+				aria-hidden="true"
+				style={{
+					backgroundColor: currentArt?.dominantColor || "var(--background, #0b1120)",
+				}}
+			>
+				{/* LQIP Blur-up слой для мгновенного плавного рендера фона без рывков */}
+				{currentArt?.lqip && (
+					<div
+						style={{
+							position: "absolute",
+							top: "-10px",
+							left: "-10px",
+							right: "-10px",
+							bottom: "-10px",
+							backgroundImage: `url(${currentArt.lqip})`,
+							backgroundSize: "cover",
+							backgroundPosition: "center",
+							filter: "blur(20px)",
+							transform: "scale(1.05)",
+							opacity: 0.65,
+							pointerEvents: "none",
+						}}
+					/>
+				)}
+
 				{previousArt && (
 					<picture>
 						{previousArt.avif && (
@@ -411,6 +492,8 @@ export function WaitingLoungeSignage({
 						<img
 							src={`/auth-art/${previousArt.webp || previousArt.avif}`}
 							alt=""
+							loading="lazy"
+							decoding="async"
 							className={`lounge-bg-layer ${isFading ? "lounge-bg-layer--hidden" : "lounge-bg-layer--visible"}`}
 						/>
 					</picture>
@@ -427,6 +510,8 @@ export function WaitingLoungeSignage({
 						<img
 							src={`/auth-art/${currentArt.webp || currentArt.avif}`}
 							alt=""
+							loading="lazy"
+							decoding="async"
 							className={`lounge-bg-layer ${isFading ? "lounge-bg-layer--visible" : "lounge-bg-layer--visible"}`}
 						/>
 					</picture>

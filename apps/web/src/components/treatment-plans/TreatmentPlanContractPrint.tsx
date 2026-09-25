@@ -24,6 +24,7 @@ import type {
 	TreatmentPlanStage,
 	TreatmentPlanTier,
 } from "./types";
+import { type Kopecks, parseKopecks } from "@dental/shared";
 import { TreatmentPlanQrCode } from "./qr/TreatmentPlanQrCode";
 import { generatePlanVerificationQrPayload } from "./qr/treatmentPlanQrEngine";
 import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
@@ -79,12 +80,20 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 	if (!isOpen) return null;
 
 	const allItems = stages.flatMap((s) => s.items);
-	const grossTotalRub = allItems.reduce(
-		(acc, it) => acc + it.unitPriceRub * it.quantity,
-		0,
+	const grossTotalKopecks = allItems.reduce(
+		(acc, it) => (acc + parseKopecks(it.unitPriceRub || 0) * (it.quantity || 1)) as Kopecks,
+		0 as Kopecks,
 	);
-	const discountTotalRub = allItems.reduce((acc, it) => acc + it.discountRub, 0);
-	const finalTotalRub = Math.max(0, tier.totalRub - bonusPointsDeductedRub);
+	const grossTotalRub = Math.round(grossTotalKopecks / 100);
+	const discountTotalKopecks = allItems.reduce(
+		(acc, it) => (acc + parseKopecks(it.discountRub || 0)) as Kopecks,
+		0 as Kopecks,
+	);
+	const discountTotalRub = Math.round(discountTotalKopecks / 100);
+	const bonusPointsKopecks = parseKopecks(bonusPointsDeductedRub || 0);
+	const tierTotalKopecks = tier.totalKopecks || parseKopecks(tier.totalRub);
+	const finalTotalKopecks = Math.max(0, tierTotalKopecks - bonusPointsKopecks) as Kopecks;
+	const finalTotalRub = Math.round(finalTotalKopecks / 100);
 	const todayRu = new Date().toLocaleDateString("ru-RU", {
 		day: "numeric",
 		month: "long",
@@ -133,7 +142,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 				{/* Modal Actions Header (Hidden on print) */}
 				<div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 print:hidden shrink-0">
 					<div className="flex items-center gap-2">
-						<div className="p-1.5 rounded-lg bg-[var(--teal-soft,#ccfbf1)] text-[var(--teal-dark,#0f766e)]">
+						<div className="p-1.5 rounded-lg bg-[var(--teal-soft)] text-[var(--teal-dark)]">
 							<FileText size={18} />
 						</div>
 						<div>
@@ -150,7 +159,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 						<button
 							type="button"
 							onClick={() => window.print()}
-							className="px-3.5 py-1.5 rounded-xl bg-[var(--teal-dark,#0f766e)] hover:bg-[var(--teal,#0d9488)] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+							className="px-3.5 py-1.5 rounded-xl bg-[var(--teal-dark)] hover:bg-[var(--teal)] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
 							data-testid="contract-print-btn"
 						>
 							<Printer size={15} />

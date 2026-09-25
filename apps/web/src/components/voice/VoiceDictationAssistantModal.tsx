@@ -102,6 +102,9 @@ export function VoiceDictationAssistantModal({
 		if (!isOpen) {
 			cleanupAudio();
 		}
+		return () => {
+			cleanupAudio();
+		};
 	}, [isOpen, cleanupAudio]);
 
 	// Старт прослушивания микрофона
@@ -210,26 +213,36 @@ export function VoiceDictationAssistantModal({
 		});
 	};
 
-	// Применение всех команд
+	// Применение всех команд (Мандаты 8e, 8s: автономия соло-врача без блокировок)
 	const handleApplyAll = () => {
-		if (!parseResult || parseResult.commands.length === 0) {
+		const rawText = (transcript || finalText || manualInput).trim();
+		if ((!parseResult || parseResult.commands.length === 0) && !rawText) {
 			showToast(
 				"Произнесите диагноз или статус зуба в микрофон или выберите клинический шаблон ниже",
 				"info",
 			);
 			return;
 		}
-		onApplyAllCommands?.(parseResult.commands);
+
+		if (parseResult && parseResult.commands.length > 0) {
+			onApplyAllCommands?.(parseResult.commands);
+			for (const cmd of parseResult.commands) {
+				setAppliedCommandIds((prev) => new Set(prev).add(cmd.id));
+			}
+		}
+
 		if (
-			parseResult.soapNote &&
+			parseResult?.soapNote &&
 			Object.keys(parseResult.soapNote).length > 0 &&
 			onApplySoapNote
 		) {
 			onApplySoapNote(parseResult.soapNote);
+		} else if (rawText && onApplySoapNote) {
+			// Соло-врач (1 кресло): свободная диктовка дневника визита 043/у без бюрократических барьеров
+			onApplySoapNote({ plan: rawText });
 		}
-		for (const cmd of parseResult.commands) {
-			setAppliedCommandIds((prev) => new Set(prev).add(cmd.id));
-		}
+
+		showToast("Клиническая запись и команды применены", "success");
 		onClose();
 	};
 
@@ -292,9 +305,9 @@ export function VoiceDictationAssistantModal({
 							style={{
 								padding: "12px 16px",
 								borderRadius: "10px",
-								background: "var(--bad-bg, #ef444420)",
-								border: "1px solid var(--bad-fg, #ef4444)",
-								color: "var(--bad-fg, #ef4444)",
+								background: "var(--bad-bg)",
+								border: "1px solid var(--bad-fg)",
+								color: "var(--bad-fg)",
 								display: "flex",
 								alignItems: "center",
 								gap: "10px",
@@ -400,7 +413,10 @@ export function VoiceDictationAssistantModal({
 										<span>{finalText || transcript}</span>
 									)}
 									{interimText && (
-										<span className="text-blue-600 dark:text-blue-400 font-bold italic animate-pulse">
+										<span
+											className="font-bold italic animate-pulse"
+											style={{ color: "var(--info-fg)" }}
+										>
 											{finalText || transcript ? ` ${interimText}` : interimText}
 										</span>
 									)}
@@ -483,7 +499,7 @@ export function VoiceDictationAssistantModal({
 															display: "flex",
 															alignItems: "center",
 															gap: "4px",
-															color: "var(--good-fg, #10b981)",
+															color: "var(--ok-fg, var(--teal))",
 															fontSize: "13px",
 															fontWeight: 600,
 														}}

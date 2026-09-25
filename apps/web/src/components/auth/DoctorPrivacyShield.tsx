@@ -7,7 +7,7 @@ import {
 	ShieldCheck,
 	UserCheck,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	DENTE_CLINIC_TOKEN_KEY,
 	DENTE_INACTIVITY_TIMEOUT_KEY,
@@ -119,10 +119,28 @@ export function DoctorPrivacyShield({
 	const [manifest, setManifest] = useState<AuthArtItem[]>([]);
 	const [selectedArt, setSelectedArt] = useState<AuthArtItem | null>(null);
 	const [artLoaded, setArtLoaded] = useState(false);
+	const [artError, setArtError] = useState(false);
 	const [pin, setPin] = useState("");
 	const [errorShake, setErrorShake] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [errorText, setErrorText] = useState<string | null>(null);
+
+	const shakeTimeoutRef = useRef<NodeJS.Timeout | number | null>(null);
+
+	// Очистка таймеров при размонтировании
+	useEffect(() => {
+		return () => {
+			if (shakeTimeoutRef.current) {
+				clearTimeout(shakeTimeoutRef.current);
+			}
+		};
+	}, []);
+
+	// Сброс состояний загрузки арта при смене выбранного фона
+	useEffect(() => {
+		setArtLoaded(false);
+		setArtError(false);
+	}, [selectedArt]);
 
 	// Загрузка манифеста арт-фонов
 	useEffect(() => {
@@ -175,7 +193,10 @@ export function DoctorPrivacyShield({
 		setErrorText(message);
 		setErrorShake(true);
 		setPin("");
-		setTimeout(() => setErrorShake(false), 500);
+		if (shakeTimeoutRef.current) {
+			clearTimeout(shakeTimeoutRef.current);
+		}
+		shakeTimeoutRef.current = setTimeout(() => setErrorShake(false), 500);
 	}, []);
 
 	const submitPin = useCallback(
@@ -368,7 +389,7 @@ export function DoctorPrivacyShield({
 					bottom: 0,
 					zIndex: 0,
 					overflow: "hidden",
-					backgroundColor: selectedArt?.dominantColor || "#090d16",
+					backgroundColor: selectedArt?.dominantColor || "var(--paper-strong, #090d16)",
 					pointerEvents: "none",
 				}}
 			>
@@ -376,13 +397,17 @@ export function DoctorPrivacyShield({
 					<div
 						style={{
 							position: "absolute",
-							top: 0,
-							left: 0,
-							right: 0,
-							bottom: 0,
+							top: "-10px",
+							left: "-10px",
+							right: "-10px",
+							bottom: "-10px",
 							backgroundImage: `url(${selectedArt.lqip})`,
 							backgroundSize: "cover",
 							backgroundPosition: "center",
+							filter: "blur(20px)",
+							transform: "scale(1.05)",
+							opacity: artLoaded && !artError ? 0.35 : 0.85,
+							transition: "opacity 0.8s ease-in-out",
 						}}
 					/>
 				)}
@@ -416,12 +441,13 @@ export function DoctorPrivacyShield({
 							loading="lazy"
 							decoding="async"
 							onLoad={() => setArtLoaded(true)}
+							onError={() => setArtError(true)}
 							style={{
 								width: "100%",
 								height: "100%",
 								objectFit: "cover",
 								objectPosition: "center",
-								opacity: artLoaded ? 0.45 : 0,
+								opacity: artLoaded && !artError ? 0.45 : 0,
 								transition: "opacity 0.8s ease-in-out",
 								display: "block",
 							}}
@@ -797,7 +823,7 @@ export function DoctorPrivacyShield({
 							style={{
 								background: "none",
 								border: "none",
-								color: "rgba(255, 255, 255, 0.55)",
+								color: "rgba(255, 255, 255, 0.75)",
 								fontSize: "11px",
 								display: "inline-flex",
 								alignItems: "center",

@@ -425,7 +425,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 									padding: '4px 8px',
 									borderRadius: '6px',
 									background: 'rgba(34, 197, 94, 0.15)',
-									color: '#16a34a',
+									color: 'var(--green, #16a34a)',
 								}}
 							>
 								<LinkIcon size={12} /> Спарено (DentalPin)
@@ -734,7 +734,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 						width: '100%',
 						maxWidth: '1100px',
 						height: '540px',
-						background: '#020617',
+						background: 'var(--paper-strong, #020617)',
 						borderRadius: '16px',
 						overflow: 'hidden',
 						cursor: 'col-resize',
@@ -771,7 +771,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 								alignItems: 'center',
 								justifyContent: 'center',
 								height: '100%',
-								color: '#64748b',
+								color: 'var(--muted, #64748b)',
 								gap: '8px',
 							}}
 						>
@@ -819,7 +819,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 								bottom: 0,
 								left: `${splitPercent}%`,
 								width: '3px',
-								background: '#ffffff',
+								background: 'var(--paper, #ffffff)',
 								boxShadow: '0 0 10px rgba(0,0,0,0.7)',
 								pointerEvents: 'none',
 								zIndex: 30,
@@ -834,8 +834,8 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 									width: '44px',
 									height: '44px',
 									borderRadius: '50%',
-									background: '#ffffff',
-									color: '#0f172a',
+									background: 'var(--paper, #ffffff)',
+									color: 'var(--ink, #0f172a)',
 									display: 'flex',
 									alignItems: 'center',
 									justifyContent: 'center',
@@ -855,7 +855,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 								right: 0,
 								top: `${splitPercent}%`,
 								height: '3px',
-								background: '#ffffff',
+								background: 'var(--paper, #ffffff)',
 								boxShadow: '0 0 10px rgba(0,0,0,0.7)',
 								pointerEvents: 'none',
 								zIndex: 30,
@@ -870,8 +870,8 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 									width: '44px',
 									height: '44px',
 									borderRadius: '50%',
-									background: '#ffffff',
-									color: '#0f172a',
+									background: 'var(--paper, #ffffff)',
+									color: 'var(--ink, #0f172a)',
 									display: 'flex',
 									alignItems: 'center',
 									justifyContent: 'center',
@@ -892,7 +892,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 							bottom: '16px',
 							left: '16px',
 							background: 'rgba(15, 23, 42, 0.85)',
-							color: '#38bdf8',
+							color: 'var(--teal-light, #38bdf8)',
 							padding: '6px 12px',
 							borderRadius: '20px',
 							fontSize: '12px',
@@ -910,7 +910,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 							bottom: '16px',
 							right: '16px',
 							background: 'rgba(15, 23, 42, 0.85)',
-							color: '#4ade80',
+							color: 'var(--green, #4ade80)',
 							padding: '6px 12px',
 							borderRadius: '20px',
 							fontSize: '12px',
@@ -931,7 +931,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 						<button
 							type="button"
 							className="photo-touch-btn"
-							style={{ minHeight: '36px', minWidth: '36px', padding: '6px', background: 'rgba(15, 23, 42, 0.85)', color: '#ffffff', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)' }}
+							style={{ minHeight: '36px', minWidth: '36px', padding: '6px', background: 'rgba(15, 23, 42, 0.85)', color: 'var(--paper, #ffffff)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)' }}
 							onClick={() => setZoomScale(prev => Math.min(2.5, +(prev + 0.2).toFixed(1)))}
 							title="Синхронно увеличить (Zoom In)"
 						>
@@ -940,7 +940,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 						<button
 							type="button"
 							className="photo-touch-btn"
-							style={{ minHeight: '36px', minWidth: '36px', padding: '6px', background: 'rgba(15, 23, 42, 0.85)', color: '#ffffff', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)' }}
+							style={{ minHeight: '36px', minWidth: '36px', padding: '6px', background: 'rgba(15, 23, 42, 0.85)', color: 'var(--paper, #ffffff)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)' }}
 							onClick={() => setZoomScale(prev => Math.max(1.0, +(prev - 0.2).toFixed(1)))}
 							title="Синхронно уменьшить (Zoom Out)"
 						>
@@ -949,7 +949,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 						<button
 							type="button"
 							className="photo-touch-btn"
-							style={{ minHeight: '36px', minWidth: '36px', padding: '6px', background: 'rgba(15, 23, 42, 0.85)', color: '#ffffff', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)' }}
+							style={{ minHeight: '36px', minWidth: '36px', padding: '6px', background: 'rgba(15, 23, 42, 0.85)', color: 'var(--paper, #ffffff)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)' }}
 							onClick={resetAlignment}
 							title="Сбросить масштаб 1:1"
 						>
@@ -964,7 +964,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 						width: '100%',
 						height: '520px',
 					}}>
-						<div style={{ background: '#020617', borderRadius: '16px', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+						<div style={{ background: 'var(--paper-strong, #020617)', borderRadius: '16px', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 							{beforeSlotRecord.imageUrl ? (
 								<img
 									src={beforeSlotRecord.imageUrl}
@@ -989,19 +989,19 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 										alignItems: 'center',
 										justifyContent: 'center',
 										gap: '8px',
-										color: '#64748b',
+										color: 'var(--muted, #64748b)',
 									}}
 								>
 									<Camera size={32} style={{ opacity: 0.5 }} />
 									<span style={{ fontSize: '12px', fontWeight: 600 }}>Нет кадра «До»</span>
 								</div>
 							)}
-							<div className="ba-pill-tag before" style={{ position: 'absolute', bottom: '12px', left: '12px', background: 'rgba(15, 23, 42, 0.85)', color: '#38bdf8', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 800 }}>
+							<div className="ba-pill-tag before" style={{ position: 'absolute', bottom: '12px', left: '12px', background: 'rgba(15, 23, 42, 0.85)', color: 'var(--teal-light, #38bdf8)', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 800 }}>
 								ДО: {getSlotDefinitionById(beforeSlotId)?.shortLabelRu || 'До'} ({beforeShade})
 							</div>
 						</div>
 
-						<div style={{ background: '#020617', borderRadius: '16px', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+						<div style={{ background: 'var(--paper-strong, #020617)', borderRadius: '16px', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 							{afterSlotRecord.imageUrl ? (
 								<img
 									src={afterSlotRecord.imageUrl}
@@ -1026,14 +1026,14 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 										alignItems: 'center',
 										justifyContent: 'center',
 										gap: '8px',
-										color: '#64748b',
+										color: 'var(--muted, #64748b)',
 									}}
 								>
 									<Camera size={32} style={{ opacity: 0.5 }} />
 									<span style={{ fontSize: '12px', fontWeight: 600 }}>Нет кадра «После»</span>
 								</div>
 							)}
-							<div className="ba-pill-tag after" style={{ position: 'absolute', bottom: '12px', right: '12px', background: 'rgba(15, 23, 42, 0.85)', color: '#4ade80', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 800 }}>
+							<div className="ba-pill-tag after" style={{ position: 'absolute', bottom: '12px', right: '12px', background: 'rgba(15, 23, 42, 0.85)', color: 'var(--green, #4ade80)', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 800 }}>
 								ПОСЛЕ: {getSlotDefinitionById(afterSlotId)?.shortLabelRu || 'После'} ({afterShade})
 							</div>
 						</div>
@@ -1058,7 +1058,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 						<span style={{ fontSize: '13px', fontWeight: 700 }}>{Math.round(blendOpacity * 100)}%</span>
 					</div>
 
-					<div style={{ position: 'relative', width: '100%', height: '520px', background: '#020617', borderRadius: '16px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+					<div style={{ position: 'relative', width: '100%', height: '520px', background: 'var(--paper-strong, #020617)', borderRadius: '16px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 						{beforeSlotRecord.imageUrl && (
 							<img src={beforeSlotRecord.imageUrl} alt="До" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
 						)}
@@ -1074,7 +1074,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 									alignItems: 'center',
 									justifyContent: 'center',
 									gap: '8px',
-									color: '#64748b',
+									color: 'var(--muted, #64748b)',
 								}}
 							>
 								<Camera size={36} style={{ opacity: 0.5 }} />
@@ -1085,15 +1085,15 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 				</div>
 			)}
 
-			{/* 5. 1-Click Export Modal */}
+			{/* 5. 1-Click Export Modal (Anti-Matryoshka: constrained inside workspace) */}
 			{showExportModal && (
 				<div
 					style={{
-						position: 'fixed',
+						position: 'absolute',
 						inset: 0,
 						background: 'rgba(15, 23, 42, 0.8)',
 						backdropFilter: 'blur(6px)',
-						zIndex: 99999,
+						zIndex: 50,
 						display: 'flex',
 						alignItems: 'center',
 						justifyContent: 'center',

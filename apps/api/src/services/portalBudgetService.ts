@@ -491,7 +491,13 @@ export class PortalBudgetService {
 						organizationId: treatmentPlans.organizationId,
 					})
 					.from(treatmentPlans)
-					.where(eq(treatmentPlans.id, options.planId))
+					.where(
+						and(
+							eq(treatmentPlans.id, options.planId),
+							eq(treatmentPlans.organizationId, options.organizationId),
+							eq(treatmentPlans.patientId, options.patientId),
+						),
+					)
 					.limit(1);
 
 				if (planRow) {
@@ -502,7 +508,7 @@ export class PortalBudgetService {
 						computedDiscount = Number(planRow.planDiscountRub) || computedDiscount;
 					}
 
-					// Fetch patient
+					// Fetch patient (strictly tenant-isolated)
 					const [patientRow] = await db
 						.select({
 							id: patients.id,
@@ -511,7 +517,12 @@ export class PortalBudgetService {
 							birthDate: patients.birthDate,
 						})
 						.from(patients)
-						.where(eq(patients.id, planRow.patientId))
+						.where(
+							and(
+								eq(patients.id, planRow.patientId),
+								eq(patients.organizationId, options.organizationId),
+							),
+						)
 						.limit(1);
 
 					if (patientRow) {
@@ -522,7 +533,7 @@ export class PortalBudgetService {
 						}
 					}
 
-					// Fetch organization
+					// Fetch organization (strictly tenant-isolated)
 					const [orgRow] = await db
 						.select({
 							id: organizations.id,
@@ -530,7 +541,7 @@ export class PortalBudgetService {
 							legalAddress: organizations.legalAddress,
 						})
 						.from(organizations)
-						.where(eq(organizations.id, planRow.organizationId))
+						.where(eq(organizations.id, options.organizationId))
 						.limit(1);
 
 					if (orgRow) {
@@ -572,14 +583,17 @@ export class PortalBudgetService {
 							const priceVal = Number(it.price) || 0;
 							const discVal = Number(it.discount) || 0;
 							const qty = it.quantity || 1;
+							const priceKop = Math.round(priceVal * 100);
+							const discKop = Math.round(discVal * 100);
+							const totalKop = Math.max(0, qty * priceKop - discKop);
 							return {
 								id: it.id,
 								title: it.priceId || `Медицинская услуга #${idx + 1}`,
 								toothNumber: it.toothNumber,
 								quantity: qty,
-								priceRub: priceVal,
-								discountRub: discVal,
-								totalRub: Math.max(0, qty * priceVal - discVal),
+								priceRub: priceKop / 100,
+								discountRub: discKop / 100,
+								totalRub: totalKop / 100,
 							};
 						});
 					}
@@ -589,31 +603,35 @@ export class PortalBudgetService {
 			}
 		}
 
-		// 2. If explicit items were passed, use them
+		// 2. If explicit items were passed, use them with kopeck-exact integer arithmetic
 		if (options.items && options.items.length > 0) {
 			loadedItems = options.items.map((it, idx) => {
 				const qty = it.quantity || 1;
-				const priceVal = it.priceRub;
-				const discVal = it.discountRub || 0;
+				const priceKop = Math.round(it.priceRub * 100);
+				const discKop = Math.round((it.discountRub || 0) * 100);
+				const totalKop = Math.max(0, qty * priceKop - discKop);
 				return {
 					id: it.id || `item-${idx + 1}`,
 					title: it.title,
 					toothNumber: it.toothNumber ?? null,
 					quantity: qty,
-					priceRub: priceVal,
-					discountRub: discVal,
-					totalRub: Math.max(0, qty * priceVal - discVal),
+					priceRub: priceKop / 100,
+					discountRub: discKop / 100,
+					totalRub: totalKop / 100,
 				};
 			});
 		}
 
 		if (loadedItems.length > 0) {
-			computedTotal = loadedItems.reduce((acc, it) => acc + it.quantity * it.priceRub, 0);
-			computedDiscount = loadedItems.reduce((acc, it) => acc + it.discountRub, 0);
+			const totalKop = loadedItems.reduce((acc, it) => acc + Math.round(it.quantity * it.priceRub * 100), 0);
+			const discKop = loadedItems.reduce((acc, it) => acc + Math.round(it.discountRub * 100), 0);
+			computedTotal = totalKop / 100;
+			computedDiscount = discKop / 100;
 		}
 
 		const resolvedMethod = options.authMethod || resolveAuthMethod({ phone: patientPhone, birthDate: patientBirthDate });
-		const netTotal = Math.max(0, computedTotal - computedDiscount);
+		const netTotalKop = Math.max(0, Math.round(computedTotal * 100) - Math.round(computedDiscount * 100));
+		const netTotal = netTotalKop / 100;
 
 		const stored: StoredPortalBudget = {
 			token,
@@ -932,7 +950,13 @@ export class PortalBudgetService {
 						approvedAt: new Date(),
 						updatedAt: new Date(),
 					})
-					.where(eq(treatmentPlans.id, budget.planId));
+					.where(
+						and(
+							eq(treatmentPlans.id, budget.planId),
+							eq(treatmentPlans.organizationId, budget.organizationId),
+							eq(treatmentPlans.patientId, budget.patientId),
+						),
+					);
 			} catch (err) {
 				// Database sync failure logged
 			}

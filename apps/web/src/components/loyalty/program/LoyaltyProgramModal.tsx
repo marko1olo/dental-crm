@@ -21,6 +21,7 @@ import {
 	TrendingUp,
 	Check,
 	Copy,
+	UserPlus,
 } from "lucide-react";
 import {
 	calculateLoyaltyAccrual,
@@ -32,11 +33,14 @@ import {
 	calculateFamilyPoolBalance,
 	evaluatePromoCode,
 	exportLoyaltyLedgerToCsv,
+	calculateReferralReward,
+	creditReferralBonus,
 	type LoyaltyRedemptionResult,
 	type Fiscal54FzSplitResult,
 	type GiftCertificate,
 	type FamilyMember,
 	type LoyaltyLedgerEntry,
+	type PatientReferralRecord,
 } from "./loyaltyEngine";
 import {
 	LOYALTY_TIER_PRESETS,
@@ -44,9 +48,12 @@ import {
 	PROMO_CODE_PRESETS,
 	LOYALTY_EXCLUSION_RULES,
 	QUICK_REDEMPTION_PRESETS_RUB,
+	DEFAULT_REFERRAL_PRESET,
 	type LoyaltyTierId,
+	type ReferralRewardPreset,
 } from "./loyaltyPresets";
 import { generateCode128Svg } from "@dental/shared";
+import { showToast } from "../../GlobalToast";
 import "./loyaltyProgram.css";
 
 export interface LoyaltyProgramModalProps {
@@ -65,7 +72,7 @@ export interface LoyaltyProgramModalProps {
 	) => void;
 }
 
-type TabType = "balance" | "family" | "certificates" | "promos" | "ledger";
+type TabType = "balance" | "family" | "referrals" | "certificates" | "promos" | "ledger";
 
 const EMPTY_FAMILY_MEMBERS: readonly FamilyMember[] = [];
 const EMPTY_LEDGER: readonly LoyaltyLedgerEntry[] = [];
@@ -101,6 +108,12 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 
 	// Doctor Autonomy / Warranty override state (Mandates 8e, 8s)
 	const [isDoctorOverride, setIsDoctorOverride] = useState<boolean>(false);
+
+	// Referral Program State ("Привёл друга / семью" - Mandates 8i, 8s, 8b)
+	const [referrals, setReferrals] = useState<readonly PatientReferralRecord[]>([]);
+	const [newReferralName, setNewReferralName] = useState<string>("");
+	const [newReferralPhone, setNewReferralPhone] = useState<string>("");
+	const [newReferralNote, setNewReferralNote] = useState<string>("");
 
 	// Certificate State
 	const [certificateNominalRub, setCertificateNominalRub] = useState<number>(5000);
@@ -162,7 +175,16 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 	};
 
 	const handleExecuteRedemption = () => {
-		if (redemptionCalc.actualRedeemedPointsRub <= 0) return;
+		if (redemptionCalc.actualRedeemedPointsRub <= 0) {
+			if (invoiceAmountRub <= 0) {
+				showToast("Сумма счета не указана. Введите сумму к оплате", "warning");
+			} else if (effectiveBalanceRub <= 0 && !isDoctorOverride) {
+				showToast("На балансе нет бонусов. Включите «Привилегия врача» для гарантийного 100% покрытия", "info");
+			} else {
+				showToast("Укажите сумму бонусов для списания", "warning");
+			}
+			return;
+		}
 
 		setActivePointsBalance((prev) => prev - redemptionCalc.actualRedeemedPointsRub);
 		const newLedgerItem: LoyaltyLedgerEntry = {
@@ -172,35 +194,52 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 			patientName,
 			medicalCardNumber,
 			operationType: "redemption",
-			operationTypeRu: `Списание бонусов (${currentTier.nameRu})`,
+			operationTypeRu: isDoctorOverride
+				? `Списание бонусов: Привилегия врача 100% (${currentTier.nameRu})`
+				: `Списание бонусов (${currentTier.nameRu})`,
 			invoiceAmountKop: Math.round(invoiceAmountRub * 100),
 			pointsDeltaRub: -redemptionCalc.actualRedeemedPointsRub,
 			balanceAfterRub: effectiveBalanceRub - redemptionCalc.actualRedeemedPointsRub,
 			paymentMethodRu: "Бонусы + Касса",
 			staffNameRu: "Администратор (Касса)",
-			noteRu: `Оплата бонусами ${redemptionCalc.actualRedeemedPointsRub} ₽ по счету`,
+			noteRu: isDoctorOverride
+				? `Гарантийное покрытие врача: списание бонусов ${redemptionCalc.actualRedeemedPointsRub} ₽ по счету`
+				: `Оплата бонусами ${redemptionCalc.actualRedeemedPointsRub} ₽ по счету`,
 		};
 		setLedgerEntries((prev) => [newLedgerItem, ...prev]);
 		setRedemptionSuccessMsg(
 			`Успешно списано ${redemptionCalc.actualRedeemedPointsRub} бонусов. К оплате: ${redemptionCalc.remainingPayableRub.toLocaleString("ru-RU")} ₽`
 		);
+		showToast(`Успешно списано ${redemptionCalc.actualRedeemedPointsRub} бонусов в чек`, "success");
 		if (onRedeemSuccess) {
 			onRedeemSuccess(redemptionCalc.actualRedeemedPointsRub, redemptionCalc.fiscal54FzSplit);
 		}
 	};
 
 	const handleOneClickRedeemToInvoice = () => {
+		if (invoiceAmountRub <= 0) {
+			showToast("Сумма счета не указана для 1-клик списания", "warning");
+			return;
+		}
+		if (effectiveBalanceRub <= 0 && !isDoctorOverride) {
+			showToast("На балансе нет бонусов. Включите «Привилегия врача» для 100% покрытия", "info");
+			return;
+		}
+
 		const targetCalc = calculateLoyaltyRedemption({
 			grossInvoiceKop: Math.round(invoiceAmountRub * 100),
 			discountKop: 0,
 			excludedFromRedemptionKop: Math.round(excludedAmountRub * 100),
 			availablePointsBalanceRub: effectiveBalanceRub,
-			requestedPointsRub: effectiveBalanceRub,
+			requestedPointsRub: isDoctorOverride ? Math.round(invoiceAmountRub) : effectiveBalanceRub,
 			tierId: currentTier.id,
 			isDoctorOverride,
 		});
 
-		if (targetCalc.actualRedeemedPointsRub <= 0) return;
+		if (targetCalc.actualRedeemedPointsRub <= 0) {
+			showToast("Нет доступных бонусов для списания по текущему чеку", "warning");
+			return;
+		}
 
 		setRequestedPointsRub(targetCalc.actualRedeemedPointsRub);
 		setActivePointsBalance((prev) => prev - targetCalc.actualRedeemedPointsRub);
@@ -229,10 +268,50 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 		setRedemptionSuccessMsg(
 			`1-клик списание: Успешно списано ${targetCalc.actualRedeemedPointsRub} бонусов. К доплате: ${targetCalc.remainingPayableRub.toLocaleString("ru-RU")} ₽`
 		);
+		showToast(`1-клик: Списано ${targetCalc.actualRedeemedPointsRub} бонусов в чек`, "success");
 
 		if (onRedeemSuccess) {
 			onRedeemSuccess(targetCalc.actualRedeemedPointsRub, targetCalc.fiscal54FzSplit);
 		}
+	};
+
+	const handleAddReferral = () => {
+		if (!newReferralName.trim()) {
+			showToast("Укажите ФИО или имя приглашенного друга/родственника", "warning");
+			return;
+		}
+		const newRecord: PatientReferralRecord = {
+			id: `ref-${Date.now().toString().slice(-4)}`,
+			referrerPatientId: patientId || "pat-current",
+			referrerPatientName: patientName,
+			invitedPatientName: newReferralName.trim(),
+			invitedPatientPhone: newReferralPhone.trim() || undefined,
+			createdAtIso: new Date().toISOString(),
+			status: "registered",
+			rewardPreset: DEFAULT_REFERRAL_PRESET,
+			isRewardCredited: false,
+			noteRu: newReferralNote.trim() || "Рекомендация пациента",
+		};
+		setReferrals((prev) => [newRecord, ...prev]);
+		setNewReferralName("");
+		setNewReferralPhone("");
+		setNewReferralNote("");
+		showToast(`Рекомендация «${newRecord.invitedPatientName}» успешно зарегистрирована`, "success");
+	};
+
+	const handleCreditReferral = (refId: string) => {
+		const targetRef = referrals.find((r) => r.id === refId);
+		if (!targetRef) return;
+		if (targetRef.isRewardCredited) {
+			showToast("Вознаграждение за эту рекомендацию уже начислено", "info");
+			return;
+		}
+
+		const credited = creditReferralBonus(targetRef, effectiveBalanceRub);
+		setReferrals((prev) => prev.map((r) => (r.id === refId ? credited.updatedReferral : r)));
+		setActivePointsBalance((prev) => prev + credited.bonusRub);
+		setLedgerEntries((prev) => [credited.ledgerEntry, ...prev]);
+		showToast(`Начислено ${credited.bonusRub} ₽ бонусов за рекомендацию «${targetRef.invitedPatientName}»!`, "success");
 	};
 
 	const handleGenerateNewCertificate = () => {
@@ -304,7 +383,10 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 	};
 
 	const handleAddFamilyMember = () => {
-		if (!newMemberName.trim()) return;
+		if (!newMemberName.trim()) {
+			showToast("Укажите ФИО родственника для добавления в семейный пул", "warning");
+			return;
+		}
 		const member: FamilyMember = {
 			patientId: `pat-${Date.now().toString().slice(-4)}`,
 			fullName: newMemberName.trim(),
@@ -315,6 +397,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 		};
 		setFamilyMembers((prev) => [...prev, member]);
 		setNewMemberName("");
+		showToast(`Член семьи «${member.fullName}» успешно добавлен в семейный пул`, "success");
 	};
 
 	const handleToggleMemberPermission = (pId: string) => {
@@ -417,6 +500,14 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 					>
 						<Users size={18} />
 						Семейный счет ({familyMembers.length})
+					</button>
+					<button
+						className={`loyalty-tab-btn ${activeTab === "referrals" ? "active" : ""}`}
+						onClick={() => setActiveTab("referrals")}
+						data-testid="loyalty-referrals-tab-btn"
+					>
+						<Users size={18} />
+						Привёл друга ({referrals.length})
 					</button>
 					<button
 						className={`loyalty-tab-btn ${activeTab === "certificates" ? "active" : ""}`}
@@ -636,7 +727,6 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 										type="button"
 										className="loyalty-quick-btn one-click-btn"
 										onClick={handleOneClickRedeemToInvoice}
-										disabled={effectiveBalanceRub <= 0 || invoiceAmountRub <= 0}
 										data-testid="loyalty-one-click-redeem-btn"
 										title="Списать максимально разрешенные бонусы в чек в 1 клик (54-ФЗ)"
 										style={{
@@ -646,6 +736,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 											display: "inline-flex",
 											alignItems: "center",
 											gap: "0.375rem",
+											cursor: "pointer",
 										}}
 									>
 										<Sparkles size={14} />
@@ -754,23 +845,17 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 									<button
 										type="button"
 										onClick={handleExecuteRedemption}
-										disabled={redemptionCalc.actualRedeemedPointsRub <= 0}
+										data-testid="loyalty-execute-redemption-btn"
 										style={{
 											padding: "0.75rem 1.75rem",
 											minHeight: "44px",
 											borderRadius: "0.625rem",
 											border: "none",
-											background:
-												redemptionCalc.actualRedeemedPointsRub > 0
-													? "var(--teal)"
-													: "var(--muted)",
+											background: "var(--teal)",
 											color: "var(--on-teal, var(--paper))",
 											fontSize: "0.9375rem",
 											fontWeight: 700,
-											cursor:
-												redemptionCalc.actualRedeemedPointsRub > 0
-													? "pointer"
-													: "not-allowed",
+											cursor: "pointer",
 											display: "inline-flex",
 											alignItems: "center",
 											gap: "0.5rem",
@@ -1040,6 +1125,304 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 									Добавить в семейный пул
 								</button>
 							</div>
+						</div>
+					)}
+
+					{/* TAB: REFERRALS ("Привёл друга / семью" - Mandates 8i, 8s, 8b) */}
+					{activeTab === "referrals" && (
+						<div>
+							{/* Referral Program Hero Banner */}
+							<div className="loyalty-referral-banner">
+								<div>
+									<div
+										style={{
+											display: "inline-flex",
+											alignItems: "center",
+											gap: "0.375rem",
+											background: "rgba(255, 255, 255, 0.2)",
+											padding: "0.25rem 0.625rem",
+											borderRadius: "9999px",
+											fontSize: "0.75rem",
+											fontWeight: 700,
+											marginBottom: "0.5rem",
+										}}
+									>
+										<Sparkles size={14} />
+										Программа рекомендаций без корпоративных пирамид
+									</div>
+									<h3 style={{ fontSize: "1.25rem", fontWeight: 700, margin: "0 0 0.5rem 0" }}>
+										Приведи друга или семью • Бонус 500 ₽ каждому
+									</h3>
+									<p style={{ fontSize: "0.8125rem", opacity: 0.95, margin: 0, lineHeight: 1.5 }}>
+										Честная программа удержания для врача и клиники: при рекомендации и первом визите
+										на сумму от {(DEFAULT_REFERRAL_PRESET.minInvoiceSpendKop / 100).toLocaleString("ru-RU")} ₽
+										рекомендатель получает {(DEFAULT_REFERRAL_PRESET.referrerBonusKop / 100).toLocaleString("ru-RU")} ₽ бонусов на счет,
+										а новый пациент — скидку {(DEFAULT_REFERRAL_PRESET.invitedDiscountKop / 100).toLocaleString("ru-RU")} ₽.
+									</p>
+								</div>
+								<div style={{ textAlign: "right" }}>
+									<div style={{ fontSize: "0.8125rem", opacity: 0.9 }}>Зарегистрировано</div>
+									<div style={{ fontSize: "2rem", fontWeight: 800 }}>
+										{referrals.length} чел.
+									</div>
+									<div style={{ fontSize: "0.75rem", opacity: 0.9 }}>
+										Начислено: {referrals.filter((r) => r.isRewardCredited).length * (DEFAULT_REFERRAL_PRESET.referrerBonusKop / 100)} ₽
+									</div>
+								</div>
+							</div>
+
+							{/* Referral Registration Form */}
+							<h4 className="loyalty-section-title">
+								<UserPlus size={20} color="var(--teal)" />
+								Регистрация новой рекомендации
+							</h4>
+
+							<div
+								style={{
+									background: "var(--paper-soft)",
+									border: "1px solid var(--line)",
+									borderRadius: "0.5rem",
+									padding: "1rem",
+									marginBottom: "1.5rem",
+									display: "grid",
+									gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+									gap: "0.75rem",
+									alignItems: "flex-end",
+								}}
+							>
+								<div>
+									<label
+										style={{
+											display: "block",
+											fontSize: "0.8125rem",
+											fontWeight: 600,
+											color: "var(--muted)",
+											marginBottom: "0.25rem",
+										}}
+									>
+										ФИО приглашенного друга / родственника *
+									</label>
+									<input
+										type="text"
+										placeholder="Например: Смирнов Алексей"
+										value={newReferralName}
+										onChange={(e) => setNewReferralName(e.target.value)}
+										data-testid="referral-name-input"
+										style={{
+											width: "100%",
+											padding: "0.5rem 0.75rem",
+											borderRadius: "0.5rem",
+											border: "1px solid var(--line)",
+											fontSize: "0.875rem",
+											background: "var(--paper)",
+											color: "var(--ink)",
+										}}
+									/>
+								</div>
+
+								<div>
+									<label
+										style={{
+											display: "block",
+											fontSize: "0.8125rem",
+											fontWeight: 600,
+											color: "var(--muted)",
+											marginBottom: "0.25rem",
+										}}
+									>
+										Телефон (для сопоставления)
+									</label>
+									<input
+										type="tel"
+										placeholder="+7 (999) 000-00-00"
+										value={newReferralPhone}
+										onChange={(e) => setNewReferralPhone(e.target.value)}
+										data-testid="referral-phone-input"
+										style={{
+											width: "100%",
+											padding: "0.5rem 0.75rem",
+											borderRadius: "0.5rem",
+											border: "1px solid var(--line)",
+											fontSize: "0.875rem",
+											background: "var(--paper)",
+											color: "var(--ink)",
+										}}
+									/>
+								</div>
+
+								<div>
+									<label
+										style={{
+											display: "block",
+											fontSize: "0.8125rem",
+											fontWeight: 600,
+											color: "var(--muted)",
+											marginBottom: "0.25rem",
+										}}
+									>
+										Заметка / Причина обращения
+									</label>
+									<input
+										type="text"
+										placeholder="Например: Профгигиена / острая боль"
+										value={newReferralNote}
+										onChange={(e) => setNewReferralNote(e.target.value)}
+										data-testid="referral-note-input"
+										style={{
+											width: "100%",
+											padding: "0.5rem 0.75rem",
+											borderRadius: "0.5rem",
+											border: "1px solid var(--line)",
+											fontSize: "0.875rem",
+											background: "var(--paper)",
+											color: "var(--ink)",
+										}}
+									/>
+								</div>
+
+								<div>
+									<button
+										type="button"
+										onClick={handleAddReferral}
+										data-testid="add-referral-btn"
+										style={{
+											width: "100%",
+											padding: "0.5rem 1rem",
+											minHeight: "40px",
+											borderRadius: "0.5rem",
+											border: "none",
+											background: "var(--teal)",
+											color: "var(--on-teal, var(--paper))",
+											fontWeight: 700,
+											fontSize: "0.875rem",
+											cursor: "pointer",
+											display: "inline-flex",
+											alignItems: "center",
+											justifyContent: "center",
+											gap: "0.375rem",
+										}}
+									>
+										<UserPlus size={16} />
+										Зафиксировать рекомендацию
+									</button>
+								</div>
+							</div>
+
+							{/* Referrals List */}
+							<h4 className="loyalty-section-title">
+								<Users size={20} color="var(--teal)" />
+								Список рекомендаций пациента ({referrals.length})
+							</h4>
+
+							{referrals.length === 0 ? (
+								<div
+									style={{
+										border: "2px dashed var(--line)",
+										borderRadius: "0.875rem",
+										padding: "2rem",
+										textAlign: "center",
+										color: "var(--muted)",
+										background: "var(--paper-soft)",
+									}}
+								>
+									<Users size={36} style={{ margin: "0 auto 8px", opacity: 0.5 }} />
+									<div style={{ fontWeight: 600, color: "var(--ink)" }}>
+										Рекомендации пока не зарегистрированы
+									</div>
+									<p style={{ fontSize: "0.8125rem", marginTop: "4px" }}>
+										Зарегистрируйте первого приглашенного пациента через форму выше.
+										При первом визите и чеке от 2 500 ₽ вы сможете начислить рекомендателю 500 ₽ бонусов в 1 клик.
+									</p>
+								</div>
+							) : (
+								<div className="loyalty-referral-grid">
+									{referrals.map((ref) => (
+										<div key={ref.id} className="loyalty-referral-card" data-testid={`referral-card-${ref.id}`}>
+											<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+												<div>
+													<span
+														className={`loyalty-referral-status-badge ${ref.isRewardCredited ? "credited" : "registered"}`}
+													>
+														{ref.isRewardCredited ? "Бонус начислен (500 ₽)" : "Зарегистрирован"}
+													</span>
+													<h5
+														style={{
+															fontSize: "0.9375rem",
+															fontWeight: 700,
+															marginTop: "0.375rem",
+															color: "var(--ink)",
+														}}
+													>
+														{ref.invitedPatientName}
+													</h5>
+													{ref.invitedPatientPhone && (
+														<div style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
+															тел. {ref.invitedPatientPhone}
+														</div>
+													)}
+												</div>
+											</div>
+
+											<div style={{ fontSize: "0.8125rem", color: "var(--muted)", marginTop: "0.5rem" }}>
+												{ref.noteRu || "Рекомендация пациента"}
+											</div>
+
+											<div
+												style={{
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "space-between",
+													borderTop: "1px solid var(--line)",
+													paddingTop: "0.625rem",
+													marginTop: "0.75rem",
+												}}
+											>
+												<span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+													Вознаграждение:
+												</span>
+												{ref.isRewardCredited ? (
+													<span
+														style={{
+															fontSize: "0.75rem",
+															fontWeight: 700,
+															color: "var(--ok-fg)",
+															display: "inline-flex",
+															alignItems: "center",
+															gap: "0.25rem",
+														}}
+													>
+														<CheckCircle2 size={14} />
+														+500 ₽ зачислено
+													</span>
+												) : (
+													<button
+														type="button"
+														onClick={() => handleCreditReferral(ref.id)}
+														data-testid={`credit-referral-btn-${ref.id}`}
+														style={{
+															padding: "0.375rem 0.75rem",
+															minHeight: "36px",
+															borderRadius: "0.375rem",
+															border: "none",
+															background: "var(--teal)",
+															color: "var(--on-teal, var(--paper))",
+															fontSize: "0.75rem",
+															fontWeight: 700,
+															cursor: "pointer",
+															display: "inline-flex",
+															alignItems: "center",
+															gap: "0.25rem",
+														}}
+													>
+														<Sparkles size={13} />
+														Начислить 500 ₽ бонусов
+													</button>
+												)}
+											</div>
+										</div>
+									))}
+								</div>
+							)}
 						</div>
 					)}
 

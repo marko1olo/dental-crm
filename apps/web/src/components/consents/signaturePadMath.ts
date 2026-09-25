@@ -264,6 +264,38 @@ export function isSignatureEmpty(strokes: SignatureStroke[], minPointsThreshold 
 }
 
 /**
+ * Построение сглаженного SVG path (d-атрибута) квадратичными кривыми Безье через средние точки.
+ * Обеспечивает непрерывность кривизны G1 от первой до последней точки росчерка.
+ */
+export function renderStrokeToSvgPath(points: SignaturePoint[]): string {
+	if (!points || points.length === 0) return "";
+	const first = points[0];
+	if (!first) return "";
+	if (points.length === 1) {
+		return `M ${first.x.toFixed(2)} ${first.y.toFixed(2)}`;
+	}
+	if (points.length === 2) {
+		const second = points[1];
+		if (!second) return `M ${first.x.toFixed(2)} ${first.y.toFixed(2)}`;
+		return `M ${first.x.toFixed(2)} ${first.y.toFixed(2)} L ${second.x.toFixed(2)} ${second.y.toFixed(2)}`;
+	}
+
+	let path = `M ${first.x.toFixed(2)} ${first.y.toFixed(2)}`;
+	for (let i = 1; i < points.length - 1; i++) {
+		const current = points[i];
+		const next = points[i + 1];
+		if (!current || !next) continue;
+		const mid = computeMidpoint(current, next);
+		path += ` Q ${current.x.toFixed(2)} ${current.y.toFixed(2)}, ${mid.x.toFixed(2)} ${mid.y.toFixed(2)}`;
+	}
+	const last = points[points.length - 1];
+	if (last) {
+		path += ` L ${last.x.toFixed(2)} ${last.y.toFixed(2)}`;
+	}
+	return path;
+}
+
+/**
  * Экспорт подписи в векторный формат SVG с кривыми Безье
  */
 export function exportSignatureToSvg(
@@ -303,19 +335,7 @@ export function exportSignatureToSvg(
 			continue;
 		}
 
-		let pathData = `M ${first.x.toFixed(2)} ${first.y.toFixed(2)}`;
-		for (let i = 1; i < points.length - 1; i++) {
-			const current = points[i];
-			const next = points[i + 1];
-			if (!current || !next) continue;
-			const mid = computeMidpoint(current, next);
-			pathData += ` Q ${current.x.toFixed(2)} ${current.y.toFixed(2)}, ${mid.x.toFixed(2)} ${mid.y.toFixed(2)}`;
-		}
-		const last = points[points.length - 1];
-		if (last) {
-			pathData += ` L ${last.x.toFixed(2)} ${last.y.toFixed(2)}`;
-		}
-
+		const pathData = renderStrokeToSvgPath(points);
 		const sw = stroke.width || options.strokeWidth || 2.2;
 		pathStrings.push(
 			`<path d="${pathData}" stroke="${strokeColor}" stroke-width="${sw.toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
@@ -325,6 +345,227 @@ export function exportSignatureToSvg(
 	const vb = options.viewBox || `0 0 ${width} ${height}`;
 
 	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${width}" height="${height}">\n  ${bg}\n  ${pathStrings.join("\n  ")}\n</svg>`;
+}
+
+/**
+ * Настройка холста HTMLCanvasElement для экранов с высокой плотностью пикселей (Retina / High-DPI).
+ * Масштабирует внутренний буфер отрисовки с учетом devicePixelRatio, предотвращая размытие линий.
+ */
+export function setupCanvasHighDpi(
+	canvas: HTMLCanvasElement,
+	width: number,
+	height: number,
+	dpr?: number,
+): CanvasRenderingContext2D | null {
+	if (!canvas) return null;
+	const ratio = dpr ?? (typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1);
+	canvas.width = Math.round(width * ratio);
+	canvas.height = Math.round(height * ratio);
+	if (canvas.style) {
+		canvas.style.width = `${width}px`;
+		canvas.style.height = `${height}px`;
+	}
+	const ctx = canvas.getContext("2d");
+	if (ctx) {
+		ctx.scale(ratio, ratio);
+		ctx.imageSmoothingEnabled = true;
+	}
+	return ctx;
+}
+
+/**
+ * Извлечение нормализованных координат пера/пальца относительно элемента (Canvas или SVG).
+ * Корректно учитывает getBoundingClientRect, скролл и координаты касаний/стилуса.
+ */
+export function getPointerCoordinates(
+	event: { clientX: number; clientY: number; timeStamp?: number; pressure?: number },
+	targetElement?: { getBoundingClientRect: () => { left: number; top: number; width?: number; height?: number } },
+): SignaturePoint {
+	const rect = targetElement?.getBoundingClientRect() ?? { left: 0, top: 0, width: 0, height: 0 };
+	const rawX = event.clientX - rect.left;
+	const rawY = event.clientY - rect.top;
+	const x = rect.width > 0 ? Math.min(Math.max(rawX, 0), rect.width) : rawX;
+	const y = rect.height > 0 ? Math.min(Math.max(rawY, 0), rect.height) : rawY;
+	const time = typeof event.timeStamp === "number" && event.timeStamp > 0 ? event.timeStamp : Date.now();
+	const pressure = typeof event.pressure === "number" && event.pressure > 0 ? event.pressure : undefined;
+	return { x, y, time, pressure };
+}
+
+/**
+ * Отрисовка сглаженного штриха на контексте 2D холста (CanvasRenderingContext2D).
+ */
+export function drawSmoothStrokeOnContext(
+	ctx: CanvasRenderingContext2D,
+	stroke: SignatureStroke,
+	options: StrokeWidthOptions & { defaultColor?: string | undefined } = {},
+): void {
+	const points = stroke.points;
+	if (!points || points.length === 0) return;
+
+	const first = points[0];
+	if (!first) return;
+
+	ctx.strokeStyle = stroke.color || options.defaultColor || "#0f172a";
+	ctx.fillStyle = stroke.color || options.defaultColor || "#0f172a";
+	ctx.lineCap = "round";
+	ctx.lineJoin = "round";
+
+	// Одиночная точка (клик / точка)
+	if (points.length === 1 || stroke.isDot) {
+		const radius = (options.maxWidth ?? DEFAULT_MAX_WIDTH) / 2;
+		ctx.beginPath();
+		ctx.arc(first.x, first.y, radius, 0, Math.PI * 2, true);
+		ctx.fill();
+		return;
+	}
+
+	// 2 точки — прямой отрезок
+	if (points.length === 2) {
+		const second = points[1];
+		if (!second) return;
+		ctx.lineWidth = stroke.width || (options.minWidth ?? DEFAULT_MIN_WIDTH);
+		ctx.beginPath();
+		ctx.moveTo(first.x, first.y);
+		ctx.lineTo(second.x, second.y);
+		ctx.stroke();
+		return;
+	}
+
+	// 3+ точек — сглаженная кривая Безье
+	ctx.lineWidth = stroke.width || 2.2;
+	ctx.beginPath();
+	ctx.moveTo(first.x, first.y);
+	for (let i = 1; i < points.length - 1; i++) {
+		const current = points[i];
+		const next = points[i + 1];
+		if (!current || !next) continue;
+		const mid = computeMidpoint(current, next);
+		ctx.quadraticCurveTo(current.x, current.y, mid.x, mid.y);
+	}
+	const last = points[points.length - 1];
+	if (last) {
+		ctx.lineTo(last.x, last.y);
+	}
+	ctx.stroke();
+}
+
+/**
+ * Отрисовка всех штрихов на HTMLCanvasElement с заполнением фоновым цветом и поддержкой High-DPI.
+ */
+export function drawAllStrokesOnCanvas(
+	canvas: HTMLCanvasElement,
+	strokes: SignatureStroke[],
+	options: {
+		backgroundColor?: string | undefined;
+		defaultColor?: string | undefined;
+		dpr?: number | undefined;
+		width?: number | undefined;
+		height?: number | undefined;
+	} = {},
+): void {
+	if (!canvas) return;
+	const w = options.width ?? (canvas.clientWidth || canvas.width || 400);
+	const h = options.height ?? (canvas.clientHeight || canvas.height || 140);
+	const ctx = setupCanvasHighDpi(canvas, w, h, options.dpr);
+	if (!ctx) return;
+
+	const bgColor = options.backgroundColor ?? "#ffffff";
+	ctx.fillStyle = bgColor;
+	ctx.fillRect(0, 0, w, h);
+
+	for (const stroke of strokes) {
+		drawSmoothStrokeOnContext(ctx, stroke, options);
+	}
+}
+
+export interface SignatureStrokeTracker {
+	startStroke: (point: SignaturePoint) => void;
+	addPoint: (point: SignaturePoint) => SignaturePoint;
+	endStroke: () => SignatureStroke | null;
+	getStrokes: () => SignatureStroke[];
+	getCurrentPoints: () => SignaturePoint[];
+	clear: () => void;
+	dispose: () => void;
+}
+
+/**
+ * Менеджер сбора штрихов подписи без утечек памяти (Zero Memory Leaks).
+ * Гарантирует очистку ссылок и предотвращение бесконечного роста буфера.
+ */
+export function createStrokeTracker(options: { maxPointsPerStroke?: number; defaultColor?: string } = {}): SignatureStrokeTracker {
+	const maxPoints = options.maxPointsPerStroke ?? 2000;
+	let strokes: SignatureStroke[] = [];
+	let currentPoints: SignaturePoint[] = [];
+
+	return {
+		startStroke(point: SignaturePoint) {
+			currentPoints = [point];
+		},
+		addPoint(point: SignaturePoint): SignaturePoint {
+			if (currentPoints.length < maxPoints) {
+				currentPoints.push(point);
+			}
+			return point;
+		},
+		endStroke(): SignatureStroke | null {
+			if (currentPoints.length === 0) return null;
+			const newStroke: SignatureStroke = {
+				points: currentPoints,
+				color: options.defaultColor || "#0f172a",
+				isDot: currentPoints.length === 1,
+			};
+			strokes.push(newStroke);
+			currentPoints = [];
+			return newStroke;
+		},
+		getStrokes() {
+			return [...strokes];
+		},
+		getCurrentPoints() {
+			return [...currentPoints];
+		},
+		clear() {
+			strokes = [];
+			currentPoints = [];
+		},
+		dispose() {
+			strokes.length = 0;
+			currentPoints.length = 0;
+			strokes = [];
+			currentPoints = [];
+		},
+	};
+}
+
+/**
+ * Экспорт подписи в формат PNG Base64 Data URL через внутренний холст.
+ */
+export function exportSignatureToPng(
+	strokes: SignatureStroke[],
+	width = 400,
+	height = 140,
+	options: {
+		backgroundColor?: string | undefined;
+		strokeColor?: string | undefined;
+		dpr?: number | undefined;
+	} = {},
+): string {
+	if (typeof document === "undefined") {
+		return PAPER_SIGNATURE_FALLBACK_PNG;
+	}
+	try {
+		const canvas = document.createElement("canvas");
+		drawAllStrokesOnCanvas(canvas, strokes, {
+			backgroundColor: options.backgroundColor ?? "#ffffff",
+			defaultColor: options.strokeColor ?? "#0f172a",
+			dpr: options.dpr ?? 1,
+			width,
+			height,
+		});
+		return canvas.toDataURL("image/png");
+	} catch {
+		return PAPER_SIGNATURE_FALLBACK_PNG;
+	}
 }
 
 /**

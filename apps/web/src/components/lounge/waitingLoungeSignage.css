@@ -97,7 +97,7 @@
 	height: 48px;
 	border-radius: 14px;
 	background: var(--brand, var(--teal));
-	color: #ffffff;
+	color: var(--on-teal, #ffffff);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -508,9 +508,9 @@
 }
 
 .lounge-status-badge--treatment {
-	background: rgba(56, 189, 248, 0.2);
-	color: #38bdf8;
-	border: 1px solid rgba(56, 189, 248, 0.4);
+	background: var(--info-bg, rgba(56, 189, 248, 0.2));
+	color: var(--info-fg, #38bdf8);
+	border: 1px solid var(--info-border, var(--info-fg, rgba(56, 189, 248, 0.4)));
 }
 
 .lounge-status-badge--waiting {

@@ -237,7 +237,9 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 									data-testid={`btn-tier-${tierKey}`}
 								>
 									<span className="pc-tier-name">
-										{tierKey === "standard" && "★ "}
+										{tierKey === "standard" && (
+											<Sparkles size={14} className="pc-icon-primary inline-block mr-1" />
+										)}
 										{tierObj?.titleRu ||
 											tierObj?.nameRu ||
 											tierObj?.tierNameRu ||

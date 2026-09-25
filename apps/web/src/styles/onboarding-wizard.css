@@ -28,7 +28,12 @@
 			rgba(13, 148, 136, 0.18),
 			transparent 50%
 		),
-		linear-gradient(135deg, #0f766e 0%, #0b1a18 60%, #060d0c 100%);
+		linear-gradient(
+			135deg,
+			var(--teal-dark, #0f766e) 0%,
+			var(--paper-strong, #0b1a18) 60%,
+			var(--dark-bg, #060d0c) 100%
+		);
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
@@ -264,7 +269,7 @@
 .wizard-role-chip[aria-pressed="true"] {
 	background: var(--teal);
 	border-color: var(--teal);
-	color: var(--on-teal, #fff);
+	color: var(--on-teal, var(--paper-strong, #ffffff));
 }
 
 /* ---------- Сводка последнего шага ---------- */

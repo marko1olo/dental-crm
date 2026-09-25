@@ -152,6 +152,7 @@ export function AutoclaveRegisterTab() {
 	const [isLoggingBatch, setIsLoggingBatch] = useState(false);
 
 	const handleQuickShiftBatch = async () => {
+		if (isLoggingBatch) return;
 		setIsLoggingBatch(true);
 		try {
 			const clinicToken = readDenteClinicToken();
@@ -501,7 +502,7 @@ export function AutoclaveRegisterTab() {
 					<button
 						type="button"
 						onClick={handleQuickShiftBatch}
-						disabled={isLoggingBatch}
+						aria-busy={isLoggingBatch}
 						className="sanpin-btn touch-manipulation h-8 px-3 text-xs font-bold rounded-md bg-[var(--primary,#0284c7)] text-white hover:bg-sky-600 inline-flex items-center justify-center gap-1.5 cursor-pointer border-0 shadow-sm w-full sm:w-auto shrink-0 whitespace-nowrap"
 						data-testid="banner-autoclave-quick-shift-btn"
 						title="Запустить типовой цикл автоклава (134°C, 2.1 бар, 5 мин) и внести в Форму 257/у"
@@ -577,7 +578,7 @@ export function AutoclaveRegisterTab() {
 							<ShieldCheck size={15} color="#2563eb" className="shrink-0" /> <span className="shrink-0 whitespace-nowrap">Оборудование ({clinicDevices.length})</span>
 						</button>
 
-						{/* Action: ⚡ 1-Клик печать наклеек (10 шт. / 30 дн.) без модалок */}
+						{/* Action: 1-Клик печать наклеек (10 шт. / 30 дн.) без модалок */}
 						<button
 							type="button"
 							onClick={() => {
@@ -615,7 +616,7 @@ export function AutoclaveRegisterTab() {
 						<button
 							type="button"
 							onClick={handleQuickShiftBatch}
-							disabled={isLoggingBatch}
+							aria-busy={isLoggingBatch}
 							className="sanpin-btn sanpin-btn-secondary touch-manipulation shrink-0 whitespace-nowrap"
 							style={{
 								minHeight: "36px",

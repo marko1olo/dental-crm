@@ -118,6 +118,80 @@ export function interpolateRecallTemplate(
 		.replace(/\{\{PHONE\}\}/g, variables.phone);
 }
 
+export interface SmsSegmentCalculation {
+	readonly characterCount: number;
+	readonly encoding: "GSM-7" | "UCS-2";
+	readonly segmentCount: number;
+	readonly charsPerSegment: number;
+	readonly maxCharsInCurrentSegment: number;
+	readonly remainingInCurrentSegment: number;
+	readonly isMultipart: boolean;
+}
+
+/**
+ * Расчет сегментов SMS в соответствии со стандартами 3GPP TS 23.038 / GSM 03.38.
+ * Поддерживает GSM 7-bit (160 / 153 символа) и UCS-2 Unicode (70 / 67 символов).
+ */
+export function calculateSmsSegments(text: string): SmsSegmentCalculation {
+	const characterCount = text.length;
+	if (characterCount === 0) {
+		return {
+			characterCount: 0,
+			encoding: "GSM-7",
+			segmentCount: 0,
+			charsPerSegment: 160,
+			maxCharsInCurrentSegment: 160,
+			remainingInCurrentSegment: 160,
+			isMultipart: false,
+		};
+	}
+
+	// Базовый GSM 7-bit набор символов
+	const gsm7Regex = /^[@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ\x1BÆæßÉ !"#¤%&'()*+,\-./0-9:;<=>?¡A-ZÄÖÑÜ§¿a-zäöñüà^{}\\[~\]|€]*$/;
+	const isGsm7 = gsm7Regex.test(text);
+	const encoding: "GSM-7" | "UCS-2" = isGsm7 ? "GSM-7" : "UCS-2";
+
+	const singleLimit = isGsm7 ? 160 : 70;
+	const multiLimit = isGsm7 ? 153 : 67;
+
+	if (characterCount <= singleLimit) {
+		return {
+			characterCount,
+			encoding,
+			segmentCount: 1,
+			charsPerSegment: singleLimit,
+			maxCharsInCurrentSegment: singleLimit,
+			remainingInCurrentSegment: singleLimit - characterCount,
+			isMultipart: false,
+		};
+	}
+
+	const segmentCount = Math.ceil(characterCount / multiLimit);
+	const totalCapacity = segmentCount * multiLimit;
+	const remainingInCurrentSegment = totalCapacity - characterCount;
+
+	return {
+		characterCount,
+		encoding,
+		segmentCount,
+		charsPerSegment: multiLimit,
+		maxCharsInCurrentSegment: totalCapacity,
+		remainingInCurrentSegment,
+		isMultipart: true,
+	};
+}
+
+/**
+ * Краткая сводка длины и тарификации SMS для интерфейса врача и администратора.
+ */
+export function formatSmsSummary(calc: SmsSegmentCalculation): string {
+	if (calc.characterCount === 0) {
+		return "0 символов • 0 SMS";
+	}
+	const segWord = calc.segmentCount === 1 ? "сегмент" : calc.segmentCount < 5 ? "сегмента" : "сегментов";
+	return `${calc.characterCount} симв. • ${calc.segmentCount} SMS (${segWord}, ${calc.encoding}) • остаток: ${calc.remainingInCurrentSegment}`;
+}
+
 /**
  * Базовые шаблоны сообщений по клиническим циклам для WhatsApp.
  */
@@ -151,6 +225,17 @@ const WHATSAPP_TEMPLATES: Partial<Record<RecallCycleType, string>> = {
 		"Это необходимо для идеального сохранения ровного положения зубов и правильного прикуса.\n\n" +
 		"Онлайн-запись:\n{{BOOKING_URL}}",
 
+	orthodontic_braces:
+		"Здравствуйте, {{PATIENT_FIRST_NAME}}! " +
+		"Клиника «{{CLINIC_NAME}}». Ваш ортодонт {{DOCTOR_NAME}} ждет Вас на плановую активацию брекет-системы и смену дуг (прошло 4 нед.). " +
+		"Это необходимо для непрерывного и правильного перемещения зубов.\n\n" +
+		"Запись онлайн:\n{{BOOKING_URL}}",
+
+	orthodontic_aligners:
+		"Добрый день, {{PATIENT_FIRST_NAME}}! " +
+		"Стоматология «{{CLINIC_NAME}}». Ортодонт {{DOCTOR_NAME}} приглашает на контрольный чекап трекинга элайнеров и выдачу следующего сета капп.\n\n" +
+		"Онлайн-запись:\n{{BOOKING_URL}}",
+
 	standard_prophylaxis:
 		"Здравствуйте, {{PATIENT_FIRST_NAME}}! " +
 		"Прошло 6 месяцев с Вашего последнего визита в клинику «{{CLINIC_NAME}}». " +
@@ -161,8 +246,14 @@ const WHATSAPP_TEMPLATES: Partial<Record<RecallCycleType, string>> = {
 	pediatric_fluoridation:
 		"Здравствуйте! Стоматология «{{CLINIC_NAME}}». " +
 		"Прошло 3 месяца с последнего осмотра маленького пациента {{PATIENT_FIRST_NAME}}. " +
-		"Детский доктор {{DOCTOR_NAME}} приглашает на минерализацию эмали и веселый урок гигиены, чтобы зубки оставались крепкими и здоровыми!\n\n" +
+		"Детский доктор {{DOCTOR_NAME}} приглашает на минерализацию эмали и урок гигиены, чтобы зубки оставались крепкими и здоровыми!\n\n" +
 		"Записаться онлайн:\n{{BOOKING_URL}}",
+
+	prosthetic_check:
+		"Здравствуйте, {{PATIENT_FIRST_NAME}}! " +
+		"«{{CLINIC_NAME}}» напоминает о плановом гарантийном осмотре коронок и виниров у доктора {{DOCTOR_NAME}} (прошел 1 год). " +
+		"Контроль краевого прилегания и окклюзии необходим для продления официальной гарантии.\n\n" +
+		"Запись в 1 клик:\n{{BOOKING_URL}}",
 };
 
 /**
@@ -177,10 +268,16 @@ const SMS_TEMPLATES: Partial<Record<RecallCycleType, string>> = {
 		"{{PATIENT_FIRST_NAME}}, приглашаем на плановый рентген-контроль имплантов и гарантийный осмотр. {{CLINIC_NAME}}: {{BOOKING_URL}}",
 	orthodontic_retention:
 		"{{PATIENT_FIRST_NAME}}, подошел срок проверки ретейнеров у ортодонта {{DOCTOR_NAME}}. Запись: {{BOOKING_URL}}",
+	orthodontic_braces:
+		"{{PATIENT_FIRST_NAME}}, подошел срок активации брекетов у доктора {{DOCTOR_NAME}}. {{CLINIC_NAME}}: {{BOOKING_URL}}",
+	orthodontic_aligners:
+		"{{PATIENT_FIRST_NAME}}, подошел срок контроля элайнеров у доктора {{DOCTOR_NAME}}. {{CLINIC_NAME}}: {{BOOKING_URL}}",
 	standard_prophylaxis:
 		"{{PATIENT_FIRST_NAME}}, прошло полгода с осмотра в {{CLINIC_NAME}}. Пора на профгигиену для сохранения гарантии: {{BOOKING_URL}}",
 	pediatric_fluoridation:
 		"Осмотр и фторирование зубов для {{PATIENT_FIRST_NAME}} в {{CLINIC_NAME}}. Запись: {{BOOKING_URL}}",
+	prosthetic_check:
+		"{{PATIENT_FIRST_NAME}}, подошел срок гарантийного осмотра коронок в {{CLINIC_NAME}}. Запись: {{BOOKING_URL}}",
 };
 
 /**
@@ -236,7 +333,7 @@ export function generateTelegramRecallMessage(
 		readonly baseUrl?: string | undefined;
 	} = {},
 ): string {
-	// WhatsApp и Telegram используют насыщенный текст с эмодзи
+	// WhatsApp и Telegram используют структурированный текст без эмодзи (Mandate 8d pt 7)
 	return generateWhatsAppRecallMessage(candidate, options);
 }
 

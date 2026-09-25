@@ -1270,7 +1270,7 @@ export function LeadsKanbanView() {
 														setConvertingLeadId(lead.id);
 														setIsConvertOpen(true);
 													}}
-													className="mt-2 w-full py-1.5 px-2.5 rounded-lg text-xs font-bold bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-500/30 flex items-center justify-center gap-1.5 transition-colors"
+													className="mt-2 w-full py-1.5 px-2.5 rounded-lg text-xs font-bold bg-[var(--teal-soft)] hover:bg-[var(--teal-soft)] text-[var(--teal-dark)] border border-[var(--teal)] flex items-center justify-center gap-1.5 transition-colors"
 													data-testid={`schedule-lead-btn-${lead.id}`}
 												>
 													<Calendar size={13} />

@@ -9,6 +9,7 @@
 
 import {
 	Activity,
+	AlertCircle,
 	Baby,
 	Check,
 	ChevronDown,
@@ -28,7 +29,10 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useVisitStore } from "../../store/visitStore";
 import { showToast } from "../GlobalToast";
-import type { FranklRating } from "../odontogram/pediatricDentitionEngine";
+import type {
+	FranklRating,
+	ResorptionStagePercent,
+} from "../odontogram/pediatricDentitionEngine";
 import { PediatricParentMemoModal } from "./PediatricParentMemoModal";
 import {
 	PediatricTeethChart,
@@ -499,6 +503,11 @@ export const VisitPediatricProtocolWidget: React.FC<
 		Record<number, ToothClinicalFinding>
 	>({});
 
+	// 2.2b Стадии физиологической резорбции корней молочных зубов (0%, 25%, 50%, 75%, 100%)
+	const [resorptionStages, setResorptionStages] = useState<
+		Record<number, ResorptionStagePercent>
+	>({});
+
 	// 2.3 Соматический статус (1-клик физиологическая норма Мандат 8e)
 	const [somaticStatus, setSomaticStatus] = useState<PediatricSomaticStatus>(
 		DEFAULT_PEDIATRIC_SOMATIC_NORM,
@@ -519,6 +528,11 @@ export const VisitPediatricProtocolWidget: React.FC<
 	// 3. Активный пресет клинического протокола
 	const [activePresetId, setActivePresetId] =
 		useState<PediatricProtocolId>("caries_primary");
+
+	// Проверка на инвазивность вмешательства (ст. 20 323-ФЗ: обязательное подтверждение ИДС законного представителя)
+	const isInvasiveProtocol = useMemo<boolean>(() => {
+		return ["caries_primary", "pulpotomy_primary", "extraction_primary_exfoliation", "standard_crown"].includes(activePresetId);
+	}, [activePresetId]);
 
 	const activePreset = useMemo<PediatricProtocolDefinition>(() => {
 		return (
@@ -773,7 +787,19 @@ export const VisitPediatricProtocolWidget: React.FC<
 		// 1. Прямой коллбек родителя
 		onApplyProtocolText?.(textToApply);
 
-		// 2. Хранилище useVisitStore
+		// 2. Немедленное обновление карты зубов (Mandate 8e: немедленная интерактивная обратная связь)
+		setToothFindings((prev) => ({
+			...prev,
+			[currentTooth]: clinicalCalculation.toothFindingState,
+		}));
+		if (activePresetId === "extraction_primary_exfoliation") {
+			setResorptionStages((prev) => ({
+				...prev,
+				[currentTooth]: 100,
+			}));
+		}
+
+		// 3. Хранилище useVisitStore
 		try {
 			useVisitStore.getState().setVisitNoteForm((prev) => {
 				const existing = prev.objectiveStatus?.trim() || "";
@@ -788,7 +814,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 			console.warn("useVisitStore update fallback:", err);
 		}
 
-		// 3. Глобальный CustomEvent dente-apply-soap-protocol
+		// 4. Глобальный CustomEvent dente-apply-soap-protocol
 		try {
 			window.dispatchEvent(
 				new CustomEvent("dente-apply-soap-protocol", {
@@ -813,16 +839,27 @@ export const VisitPediatricProtocolWidget: React.FC<
 			console.warn("dente-apply-soap-protocol dispatch fallback:", err);
 		}
 
-		showToast(
-			`Детский протокол зуба ${currentTooth} внесен в Форму 043/у`,
-			"success",
-			3000,
-		);
+		if (isInvasiveProtocol && !representative.consentSigned) {
+			showToast(
+				`Детский протокол зуба ${currentTooth} внесен в 043/у (напоминание: требуется ИДС по 323-ФЗ)`,
+				"info",
+				3500,
+			);
+		} else {
+			showToast(
+				`Детский протокол зуба ${currentTooth} внесен в Форму 043/у`,
+				"success",
+				3000,
+			);
+		}
 	}, [
+		activePresetId,
 		clinicalCalculation,
 		currentTooth,
-		selectedSurfaces,
+		isInvasiveProtocol,
 		onApplyProtocolText,
+		representative.consentSigned,
+		selectedSurfaces,
 	]);
 
 	// 11. Добавление услуг в смету (CustomEvent dente-add-services-to-invoice)
@@ -926,6 +963,9 @@ export const VisitPediatricProtocolWidget: React.FC<
 			console.warn("dente-apply-soap-protocol dispatch fallback:", err);
 		}
 
+		setToothFindings({});
+		setResorptionStages({});
+
 		showToast(
 			"1-клик: Физиологическая норма временного прикуса (интактен, тремы, диастемы) внесена в 043/у!",
 			"success",
@@ -1017,6 +1057,30 @@ export const VisitPediatricProtocolWidget: React.FC<
 		);
 	}, [currentTooth, onApplyProtocolText, onFranklChange]);
 
+	// 12c. 1-Клик сменный прикус (постоянные моляры 16..46 прорезались, физиологическая смена резцов 71, 81)
+	const handleApplyMixedDentitionPreset = useCallback(() => {
+		setDentitionMode("mixed");
+		setToothFindings((prev) => ({
+			...prev,
+			16: "Healthy",
+			26: "Healthy",
+			36: "Healthy",
+			46: "Healthy",
+			71: "Extracted",
+			81: "Extracted",
+		}));
+		setResorptionStages((prev) => ({
+			...prev,
+			71: 100,
+			81: 100,
+		}));
+		showToast(
+			"1-клик: Сменный прикус применён (постоянные моляры 16, 26, 36, 46 интактны, смена резцов 71, 81)",
+			"success",
+			3000,
+		);
+	}, []);
+
 	return (
 		<section
 			aria-label="Канонический протокол детского приема 043/у"
@@ -1102,6 +1166,39 @@ export const VisitPediatricProtocolWidget: React.FC<
 			</div>
 
 			{/* ═════════════════════════════════════════════════════════════════════ */}
+			{/* ПРОВЕРКА ЗАКОННОГО ПРЕДСТАВИТЕЛЯ (323-ФЗ СТ. 20): АНТИ-ТУПИК БЕЗ БЛОКИРОВОК */}
+			{/* ═════════════════════════════════════════════════════════════════════ */}
+			{isInvasiveProtocol && !representative.consentSigned && (
+				<div
+					className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-2.5 text-xs text-amber-900 dark:text-amber-200"
+					data-testid="pediatric-323fz-alert-banner"
+				>
+					<div className="flex items-center gap-2 min-w-0">
+						<AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+						<span className="font-semibold truncate">
+							323-ФЗ ст. 20: Выбрано инвазивное вмешательство. Требуется подтверждение ИДС законного представителя.
+						</span>
+					</div>
+					<button
+						type="button"
+						onClick={() => {
+							const updated: LegalRepresentativeData = {
+								...representative,
+								consentSigned: true,
+								statutoryDocument: "ст. 20 323-ФЗ, ст. 64 СК РФ (законный представитель)",
+							};
+							setRepresentative(updated);
+							showToast("ИДС законного представителя подтверждено (ст. 20 323-ФЗ)", "success", 2500);
+						}}
+						className="min-h-[32px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shrink-0 cursor-pointer transition active:scale-95"
+						data-testid="pediatric-btn-sign-consent-323fz"
+					>
+						1-клик: ИДС оформлено
+					</button>
+				</div>
+			)}
+
+			{/* ═════════════════════════════════════════════════════════════════════ */}
 			{/* ЭКСПРЕСС-СЕЛЕКТОР ШКАЛЫ ФРАНКЛА (1..4) (ЗАКОН ХИКА: 1 СТРОКА ТУЛБАРА 32–36px) */}
 			{/* ═════════════════════════════════════════════════════════════════════ */}
 			<div className="mb-4">
@@ -1178,10 +1275,21 @@ export const VisitPediatricProtocolWidget: React.FC<
 					mode={dentitionMode}
 					onModeChange={setDentitionMode}
 					toothFindings={toothFindings}
+					resorptionStages={resorptionStages}
+					onResorptionChange={(t, stage) => {
+						setResorptionStages((prev) => ({ ...prev, [t]: stage }));
+						showToast(`Зуб ${t}: стадия резорбции корня ${stage}%`, "info", 1500);
+					}}
+					onToothFindingChange={(t, finding) => {
+						setToothFindings((prev) => ({ ...prev, [t]: finding }));
+						showToast(`Зуб ${t}: статус изменен на «${finding}»`, "info", 1500);
+					}}
 					onSetAllHealthy={() => {
 						setToothFindings({});
+						setResorptionStages({});
 						showToast("Все молочные зубы отмечены как интактные", "success", 2000);
 					}}
+					onApplyMixedDentitionPreset={handleApplyMixedDentitionPreset}
 				/>
 			</div>
 

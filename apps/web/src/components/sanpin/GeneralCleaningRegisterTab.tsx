@@ -53,8 +53,9 @@ export function GeneralCleaningRegisterTab() {
 		return () => document.removeEventListener("mousedown", handleOptionsClickOutside);
 	}, [isOptionsMenuOpen]);
 
-	// ⚡ 1-Клик автопилот графика генеральных уборок на месяц (по СанПиН каждые 7 дней)
+	// 1-Клик автопилот графика генеральных уборок на месяц (по СанПиН каждые 7 дней)
 	const handleAutopilotMonth = async () => {
+		if (isAutopilotLoading) return;
 		try {
 			setIsAutopilotLoading(true);
 			const clinicToken = readDenteClinicToken();
@@ -71,7 +72,7 @@ export function GeneralCleaningRegisterTab() {
 			if (res.ok) {
 				const data = await res.json().catch(() => ({}));
 				showToast(
-					`⚡ График генеральных уборок на месяц успешно заполнен (${data.count || 20} уборок по СанПиН 3.3686-21, интервал 7 дней)`,
+					`График генеральных уборок на месяц успешно заполнен (${data.count || 20} уборок по СанПиН 3.3686-21, интервал 7 дней)`,
 					"success",
 				);
 				await fetchLogs();
@@ -128,8 +129,9 @@ export function GeneralCleaningRegisterTab() {
 		fetchLogs();
 	}, []);
 
-	// ⚡ 1-Клик фиксация генеральной уборки по норме СанПиН (Мандаты 8e, 8k)
+	// 1-Клик фиксация генеральной уборки по норме СанПиН (Мандаты 8e, 8k)
 	const handleQuickRecordNormCleaning = async () => {
+		if (submitting) return;
 		try {
 			setSubmitting(true);
 			const clinicToken = readDenteClinicToken();
@@ -178,7 +180,7 @@ export function GeneralCleaningRegisterTab() {
 		}
 	};
 
-	// 🖨️ Официальная печатная форма журнала СанПиН 3.3686-21
+	// Официальная печатная форма журнала СанПиН 3.3686-21
 	const handlePrintJournal = () => {
 		const mappedRecords: GeneralCleaningJournalRecord[] = logs.map((log) => ({
 			id: log.id,
@@ -251,6 +253,7 @@ export function GeneralCleaningRegisterTab() {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (submitting) return;
 		try {
 			setSubmitting(true);
 			const clinicToken = readDenteClinicToken();
@@ -487,7 +490,7 @@ export function GeneralCleaningRegisterTab() {
 										setIsOptionsMenuOpen(false);
 										handleAutopilotMonth();
 									}}
-									disabled={isAutopilotLoading}
+									aria-busy={isAutopilotLoading}
 									style={{
 										display: "flex",
 										alignItems: "center",
@@ -501,6 +504,7 @@ export function GeneralCleaningRegisterTab() {
 										cursor: "pointer",
 										color: "var(--teal, #0d9488)",
 										fontWeight: 700,
+										opacity: isAutopilotLoading ? 0.7 : 1,
 									}}
 									className="hover:bg-[var(--paper-soft,#f1f5f9)]"
 									data-testid="nurse-cleaning-monthly-autopilot-btn"
@@ -518,7 +522,7 @@ export function GeneralCleaningRegisterTab() {
 										setIsOptionsMenuOpen(false);
 										handleQuickRecordNormCleaning();
 									}}
-									disabled={submitting}
+									aria-busy={submitting}
 									style={{
 										display: "flex",
 										alignItems: "center",
@@ -531,6 +535,7 @@ export function GeneralCleaningRegisterTab() {
 										borderRadius: "4px",
 										cursor: "pointer",
 										color: "var(--ink)",
+										opacity: submitting ? 0.7 : 1,
 									}}
 									className="hover:bg-[var(--paper-soft,#f1f5f9)]"
 									data-testid="nurse-1click-norm-cleaning-btn"
@@ -861,7 +866,7 @@ export function GeneralCleaningRegisterTab() {
 							</div>
 							<div className="sanpin-modal-footer">
 								<button type="button" onClick={() => setIsModalOpen(false)} className="sanpin-btn sanpin-btn-secondary">Отмена</button>
-								<button type="submit" disabled={submitting} className="sanpin-btn sanpin-btn-primary">Зафиксировать уборку</button>
+								<button type="submit" aria-busy={submitting} style={{ opacity: submitting ? 0.7 : 1 }} className="sanpin-btn sanpin-btn-primary">Зафиксировать уборку</button>
 							</div>
 						</form>
 					</div>

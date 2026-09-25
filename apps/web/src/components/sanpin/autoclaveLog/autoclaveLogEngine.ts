@@ -92,6 +92,7 @@ export interface Form257Record {
 	readonly actualExposureMinutes: number;
 	readonly itemsDescriptionRu: string;
 	readonly packsCount: number;
+	readonly bixNumber?: string | undefined;
 	readonly packagingType: PackagingTypeId;
 	readonly packagingNameRu: string;
 	readonly shelfLifeDays: number;
@@ -359,6 +360,7 @@ export interface CreateForm257RecordParams {
 	readonly sensors: PhysicalSensorsData;
 	readonly itemsDescriptionRu: string;
 	readonly packsCount: number;
+	readonly bixNumber?: string | undefined;
 	readonly packagingType: PackagingTypeId;
 	readonly chamberPoints: readonly ChamberPointEvaluation[];
 	readonly operatorStaffFullName: string;
@@ -422,6 +424,7 @@ export function createForm257Record(params: CreateForm257RecordParams): Form257R
 		actualExposureMinutes: params.sensors.actualExposureMinutes,
 		itemsDescriptionRu: params.itemsDescriptionRu,
 		packsCount: params.packsCount,
+		bixNumber: params.bixNumber?.trim() || undefined,
 		packagingType: packaging?.id ?? "kraft_pouch_sealed",
 		packagingNameRu: packaging?.nameRu ?? "",
 		shelfLifeDays: packaging?.shelfLifeDays ?? 30,
@@ -664,6 +667,7 @@ export function exportForm257ToCsv(records: readonly Form257Record[]): string {
 		"Время выдержки (мин)",
 		"Наименование изделий",
 		"Кол-во упаковок",
+		"Номер бикса / упаковки",
 		"Тип упаковки",
 		"Срок годности (дней)",
 		"Хим. индикатор",
@@ -705,6 +709,7 @@ export function exportForm257ToCsv(records: readonly Form257Record[]): string {
 			rec.actualExposureMinutes,
 			rec.itemsDescriptionRu,
 			rec.packsCount,
+			rec.bixNumber ?? "",
 			rec.packagingNameRu,
 			rec.shelfLifeDays,
 			rec.chemicalIndicatorNameRu,
@@ -782,6 +787,7 @@ export function generateForm257PrintHtml(
 					<td style="text-align:center;">
 						${rec.packsCount}<br/>
 						<span style="font-size:7.5pt; color:#64748b;">${rec.packagingNameRu}</span>
+						${rec.bixNumber ? `<br/><span style="font-size:7.5pt; font-weight:600; color:#0f172a;">${rec.bixNumber}</span>` : ""}
 					</td>
 					<td style="text-align:center; white-space:nowrap;">
 						${rec.actualTemperatureCelsius}°C / ${rec.actualPressureBar} бар<br/>

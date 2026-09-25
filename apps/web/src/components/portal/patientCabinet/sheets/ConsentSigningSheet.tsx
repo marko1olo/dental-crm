@@ -82,7 +82,7 @@ export const ConsentSigningSheet: React.FC<ConsentSigningSheetProps> = ({
 					<button
 						type="button"
 						className={`pc-btn-secondary ${consentSignMode === "sms_otp" ? "active" : ""}`}
-						style={{ flex: 1, minHeight: "44px", fontWeight: consentSignMode === "sms_otp" ? 700 : 500 }}
+						style={{ flex: 1, fontWeight: consentSignMode === "sms_otp" ? 700 : 500 }}
 						onClick={() => onSetConsentSignMode("sms_otp")}
 					>
 						<Smartphone size={14} />
@@ -91,7 +91,7 @@ export const ConsentSigningSheet: React.FC<ConsentSigningSheetProps> = ({
 					<button
 						type="button"
 						className={`pc-btn-secondary ${consentSignMode === "cabinet_pep" ? "active" : ""}`}
-						style={{ flex: 1, minHeight: "44px", fontWeight: consentSignMode === "cabinet_pep" ? 700 : 500 }}
+						style={{ flex: 1, fontWeight: consentSignMode === "cabinet_pep" ? 700 : 500 }}
 						onClick={() => onSetConsentSignMode("cabinet_pep")}
 					>
 						<FileCheck size={14} />
@@ -134,12 +134,17 @@ export const ConsentSigningSheet: React.FC<ConsentSigningSheetProps> = ({
 								type="button"
 								className="pc-btn-secondary"
 								onClick={onResendOtp}
-								disabled={otpCountdown > 0}
-								style={{ minHeight: "44px" }}
+								title={
+									otpCountdown > 0
+										? `Код отправлен на ${phone}. Вы можете запросить повторный код или подождать ${otpCountdown} сек.`
+										: "Отправить SMS-код повторно"
+								}
 							>
 								<RefreshCw size={14} className={otpCountdown > 0 ? "animate-spin" : ""} />
 								<span>
-									{otpCountdown > 0 ? `Повтор через ${otpCountdown} сек.` : "Отправить код повторно"}
+									{otpCountdown > 0
+										? `Отправить повторно (${otpCountdown} сек.)`
+										: "Отправить код повторно"}
 								</span>
 							</button>
 						</div>
@@ -148,7 +153,7 @@ export const ConsentSigningSheet: React.FC<ConsentSigningSheetProps> = ({
 							<button
 								type="button"
 								className="pc-btn-primary"
-								style={{ flex: 1, minHeight: "44px" }}
+								style={{ flex: 1 }}
 								onClick={onConfirmOtp}
 								data-testid="verify-otp-btn"
 							>
@@ -174,7 +179,6 @@ export const ConsentSigningSheet: React.FC<ConsentSigningSheetProps> = ({
 							type="button"
 							className="pc-btn-primary"
 							onClick={onSignCabinetPep}
-							style={{ minHeight: "44px" }}
 							data-testid="confirm-touch-signature-btn"
 						>
 							<CheckCircle2 size={16} />

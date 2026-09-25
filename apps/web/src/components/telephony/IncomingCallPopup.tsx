@@ -83,7 +83,7 @@ export function resolveTelephonyWsUrl(): string {
  */
 export function CallAudioPlayer({
 	recordingUrl,
-	durationSeconds = 45,
+	durationSeconds = 0,
 	seed,
 	transcript,
 }: {
@@ -127,6 +127,17 @@ export function CallAudioPlayer({
 			audioRef.current.volume = volumeLevel;
 		}
 	}, [isMuted, volumeLevel]);
+
+	// Audio cleanup on unmount to prevent audio leaks
+	useEffect(() => {
+		return () => {
+			if (audioRef.current) {
+				audioRef.current.pause();
+				audioRef.current.src = "";
+				audioRef.current.load();
+			}
+		};
+	}, []);
 
 	const togglePlay = () => {
 		if (!audioRef.current) return;
@@ -1135,7 +1146,7 @@ export function IncomingCallPopup() {
 										<button
 											type="button"
 											onClick={handleAnswerCall}
-											className="px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all inline-flex items-center gap-1 min-h-[44px] shadow-xs cursor-pointer active:scale-95"
+											className="px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all inline-flex items-center gap-1 min-h-[32px] sm:min-h-[34px] shadow-xs cursor-pointer active:scale-95"
 											title="Принять вызов"
 											data-testid="capsule-answer-call-btn"
 										>
@@ -1145,7 +1156,7 @@ export function IncomingCallPopup() {
 										<button
 											type="button"
 											onClick={handleReject}
-											className="px-2.5 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 dark:text-rose-300 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-xs font-bold transition-all inline-flex items-center gap-1 min-h-[44px] cursor-pointer active:scale-95"
+											className="px-2.5 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 dark:text-rose-300 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-xs font-bold transition-all inline-flex items-center gap-1 min-h-[32px] sm:min-h-[34px] cursor-pointer active:scale-95"
 											title="Сбросить вызов"
 											data-testid="capsule-reject-call-btn"
 										>
@@ -1157,7 +1168,7 @@ export function IncomingCallPopup() {
 									<button
 										type="button"
 										onClick={dismissCall}
-										className="px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all inline-flex items-center gap-1 min-h-[44px] shadow-xs cursor-pointer active:scale-95"
+										className="px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all inline-flex items-center gap-1 min-h-[32px] sm:min-h-[34px] shadow-xs cursor-pointer active:scale-95"
 										title="Закрыть уведомление о завершённом звонке"
 										data-testid="capsule-close-ended-btn"
 									>
@@ -1168,7 +1179,7 @@ export function IncomingCallPopup() {
 									<button
 										type="button"
 										onClick={handleEndCall}
-										className="px-3 py-1 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all inline-flex items-center gap-1 min-h-[44px] shadow-xs cursor-pointer active:scale-95"
+										className="px-3 py-1 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all inline-flex items-center gap-1 min-h-[32px] sm:min-h-[34px] shadow-xs cursor-pointer active:scale-95"
 										title="Завершить разговор"
 										data-testid="capsule-hangup-call-btn"
 									>
@@ -1179,7 +1190,7 @@ export function IncomingCallPopup() {
 								<button
 									type="button"
 									onClick={() => setIsExpanded(true)}
-									className="min-h-[44px] min-w-[44px] rounded-full hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-colors cursor-pointer"
+									className="min-h-[32px] min-w-[32px] sm:min-h-[34px] sm:min-w-[34px] p-1 rounded-full hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-colors cursor-pointer"
 									title="Развернуть карточку звонка с клиническими данными"
 									aria-label="Развернуть звонок"
 									data-testid="capsule-expand-btn"
@@ -1189,7 +1200,7 @@ export function IncomingCallPopup() {
 								<button
 									type="button"
 									onClick={dismissCall}
-									className="min-h-[44px] min-w-[44px] rounded-full hover:bg-rose-50 dark:hover:bg-rose-950 text-[var(--muted,#64748b)] hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
+									className="min-h-[32px] min-w-[32px] sm:min-h-[34px] sm:min-w-[34px] p-1 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950 text-[var(--muted,#64748b)] hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
 									title="Скрыть бейдж"
 									aria-label="Скрыть звонок"
 								>
@@ -2184,7 +2195,7 @@ export function IncomingCallPopup() {
 						{currentCall.recordingUrl && (
 							<CallAudioPlayer
 								recordingUrl={currentCall.recordingUrl}
-								durationSeconds={currentCall.durationSeconds || 45}
+								durationSeconds={currentCall.durationSeconds || 0}
 								seed={currentCall.callId || currentCall.phone}
 								transcript={currentCall.transcript}
 							/>

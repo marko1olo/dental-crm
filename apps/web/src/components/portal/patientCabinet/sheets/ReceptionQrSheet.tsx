@@ -71,10 +71,10 @@ export const ReceptionQrSheet: React.FC<ReceptionQrSheetProps> = ({
 				{/* High-Contrast Pure White & Black QR Matrix */}
 				<div
 					style={{
-						background: "#ffffff",
+						background: "var(--pc-bg, #ffffff)",
 						padding: "16px",
 						borderRadius: "16px",
-						border: "3px solid #0f172a",
+						border: "2px solid var(--pc-border)",
 						boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
 						display: "flex",
 						justifyContent: "center",
@@ -132,8 +132,7 @@ export const ReceptionQrSheet: React.FC<ReceptionQrSheetProps> = ({
 					className="pc-btn-primary"
 					style={{
 						width: "100%",
-						minHeight: "48px",
-						fontSize: "1rem",
+						fontSize: "0.9375rem",
 						fontWeight: 800,
 						marginTop: "4px",
 					}}

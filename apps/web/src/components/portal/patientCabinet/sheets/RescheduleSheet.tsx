@@ -97,7 +97,6 @@ export const RescheduleSheet: React.FC<RescheduleSheetProps> = ({
 							required
 							style={{
 								width: "100%",
-								minHeight: "44px",
 								borderRadius: "var(--pc-radius-sm)",
 								border: "1px solid var(--pc-border)",
 								background: "var(--pc-surface)",
@@ -120,7 +119,6 @@ export const RescheduleSheet: React.FC<RescheduleSheetProps> = ({
 							onChange={(e) => setNewTime(e.target.value)}
 							style={{
 								width: "100%",
-								minHeight: "44px",
 								borderRadius: "var(--pc-radius-sm)",
 								border: "1px solid var(--pc-border)",
 								background: "var(--pc-surface)",
@@ -161,14 +159,14 @@ export const RescheduleSheet: React.FC<RescheduleSheetProps> = ({
 							type="button"
 							className="pc-btn-secondary"
 							onClick={onClose}
-							style={{ flex: 1, minHeight: "44px" }}
+							style={{ flex: 1 }}
 						>
 							Отмена
 						</button>
 						<button
 							type="submit"
 							className="pc-btn-primary"
-							style={{ flex: 2, minHeight: "44px" }}
+							style={{ flex: 2 }}
 						>
 							<Send size={15} />
 							<span>Отправить администратору</span>

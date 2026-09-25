@@ -476,15 +476,17 @@ describe("Направление 7: Telegram Integration & Bot Core Invariants",
 			const rows = keyboard.inline_keyboard as Array<Array<{ text: string; callback_data: string }>>;
 			assert.equal(rows.length, 2);
 
-			const confirmBtn = rows[0][0];
+			const row0 = rows[0]!;
+			const row1 = rows[1]!;
+			const confirmBtn = row0[0]!;
 			assert.ok(confirmBtn.text.includes("Подтвердить"));
 			assert.ok(confirmBtn.callback_data.startsWith("d1.c."));
 
-			const rescheduleBtn = rows[1][0];
+			const rescheduleBtn = row1[0]!;
 			assert.ok(rescheduleBtn.text.includes("Перенести"));
 			assert.ok(rescheduleBtn.callback_data.startsWith("d1.r."));
 
-			const cancelBtn = rows[1][1];
+			const cancelBtn = row1[1]!;
 			assert.ok(cancelBtn.text.includes("Отменить"));
 			assert.ok(cancelBtn.callback_data.startsWith("d1.p."));
 		});
@@ -505,7 +507,7 @@ describe("Направление 7: Telegram Integration & Bot Core Invariants",
 
 			assert.equal(result.ok, true);
 			assert.equal(fetchCalls.length, 1);
-			const call = fetchCalls[0];
+			const call = fetchCalls[0]!;
 			assert.ok(call.url.includes("/sendMessage"));
 			assert.equal(call.body.chat_id, PATIENT_CHAT_ID);
 			assert.ok(String(call.body.text).includes("ДентаЛюкс"));

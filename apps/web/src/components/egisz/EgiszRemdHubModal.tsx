@@ -659,6 +659,10 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 			if (record.doctorSignature?.signatureBase64) {
 				zipData[`${filenamePrefix}_doctor.p7s`] = strToU8(record.doctorSignature.signatureBase64);
 			}
+			const moSigBase64 = record.clinicSignature?.signatureBase64 || record.moSignature?.signatureBase64;
+			if (moSigBase64) {
+				zipData[`${filenamePrefix}_clinic.p7s`] = strToU8(moSigBase64);
+			}
 			if (record.registrationInfo) {
 				zipData[`${filenamePrefix}_receipt.json`] = strToU8(
 					JSON.stringify(record.registrationInfo, null, 2),
@@ -695,6 +699,10 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 				if (record.doctorSignature?.signatureBase64) {
 					zipData[`${filenamePrefix}_doctor.p7s`] = strToU8(record.doctorSignature.signatureBase64);
 				}
+				const moSigBase64 = record.clinicSignature?.signatureBase64 || record.moSignature?.signatureBase64;
+				if (moSigBase64) {
+					zipData[`${filenamePrefix}_clinic.p7s`] = strToU8(moSigBase64);
+				}
 				if (record.registrationInfo) {
 					zipData[`${filenamePrefix}_receipt.json`] = strToU8(
 						JSON.stringify(record.registrationInfo, null, 2),
@@ -714,6 +722,39 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 			showToast("Пакетный ZIP-архив сформирован", "success");
 		} catch (e: unknown) {
 			showToast(`Ошибка формирования пакетного ZIP: ${e instanceof Error ? e.message : String(e)}`, "error");
+		}
+	};
+
+	// Mandate 8k: 1-Click ZIP Export for currently active document
+	const handleExportCurrentPackageZip = () => {
+		try {
+			const filenamePrefix = (activeDocType === "cda_semd"
+				? generateEgiszXmlFilename(semdPayload)
+				: generateFnsTaxXmlFilename(fnsPayload)
+			).replace(".xml", "");
+
+			const zipData: Record<string, Uint8Array> = {
+				[`${filenamePrefix}.xml`]: strToU8(generatedXml),
+			};
+			if (doctorSig?.signatureBase64) {
+				zipData[`${filenamePrefix}_doctor.p7s`] = strToU8(doctorSig.signatureBase64);
+			}
+			if (moSig?.signatureBase64) {
+				zipData[`${filenamePrefix}_clinic.p7s`] = strToU8(moSig.signatureBase64);
+			}
+			const zipped = zipSync(zipData);
+			const blob = new Blob([zipped], { type: "application/zip" });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `${filenamePrefix}_package.zip`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+			showToast(`Пакетный архив ${filenamePrefix}_package.zip сохранен`, "success");
+		} catch (e: unknown) {
+			showToast(`Ошибка формирования архива: ${e instanceof Error ? e.message : String(e)}`, "error");
 		}
 	};
 
@@ -1084,11 +1125,11 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 						<Key size={16} />
 						Подписание УКЭП
 						{doctorSig ? (
-							<span className="egisz-tab-badge" style={{ background: "rgba(16, 185, 129, 0.15)", color: "#10b981" }}>
+							<span className="egisz-tab-badge" style={{ background: "rgba(16, 185, 129, 0.15)", color: "var(--success, #10b981)" }}>
 								Подписан
 							</span>
 						) : (
-							<span className="egisz-tab-badge" style={{ background: "rgba(245, 158, 11, 0.15)", color: "#d97706" }}>
+							<span className="egisz-tab-badge" style={{ background: "rgba(245, 158, 11, 0.15)", color: "var(--warning, #d97706)" }}>
 								Не подписан
 							</span>
 						)}
@@ -1715,11 +1756,11 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 									padding: "1rem",
 									borderRadius: "8px",
 									background: activePreflight.isValid ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)",
-									border: `1px solid ${activePreflight.isValid ? "#10b981" : "#ef4444"}`,
+									border: `1px solid ${activePreflight.isValid ? "var(--success, #10b981)" : "var(--danger, #ef4444)"}`,
 								}}
 							>
 								<div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-									{activePreflight.isValid ? <CheckCircle2 size={28} color="#10b981" /> : <AlertCircle size={28} color="#ef4444" />}
+									{activePreflight.isValid ? <CheckCircle2 size={28} color="var(--success, #10b981)" /> : <AlertCircle size={28} color="var(--danger, #ef4444)" />}
 									<div>
 										<div style={{ fontSize: "1rem", fontWeight: 700 }}>
 											{activePreflight.isValid ? "Документ полностью готов к передаче" : "Обнаружены блокирующие ошибки валидации"}
@@ -1729,7 +1770,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 										</div>
 									</div>
 								</div>
-								<div style={{ fontSize: "1.5rem", fontWeight: 800, color: activePreflight.isValid ? "#10b981" : "#ef4444" }}>
+								<div style={{ fontSize: "1.5rem", fontWeight: 800, color: activePreflight.isValid ? "var(--success, #10b981)" : "var(--danger, #ef4444)" }}>
 									{activePreflight.scorePercent}%
 								</div>
 							</div>
@@ -1748,9 +1789,9 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 											border: "1px solid var(--line)",
 										}}
 									>
-										{chk.status === "passed" && <CheckCircle2 size={18} color="#10b981" style={{ marginTop: "2px", flexShrink: 0 }} />}
-										{chk.status === "failed" && <AlertCircle size={18} color="#ef4444" style={{ marginTop: "2px", flexShrink: 0 }} />}
-										{chk.status === "warning" && <AlertTriangle size={18} color="#f59e0b" style={{ marginTop: "2px", flexShrink: 0 }} />}
+										{chk.status === "passed" && <CheckCircle2 size={18} color="var(--success, #10b981)" style={{ marginTop: "2px", flexShrink: 0 }} />}
+										{chk.status === "failed" && <AlertCircle size={18} color="var(--danger, #ef4444)" style={{ marginTop: "2px", flexShrink: 0 }} />}
+										{chk.status === "warning" && <AlertTriangle size={18} color="var(--warning, #f59e0b)" style={{ marginTop: "2px", flexShrink: 0 }} />}
 										<div style={{ flex: 1 }}>
 											<div style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--ink)" }}>
 												{chk.title}
@@ -1774,7 +1815,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 									<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink)" }}>
 										Подписание СЭМД УКЭП (Приказ Минздрава № 947н, 63-ФЗ)
 									</div>
-									<span style={{ fontSize: "0.75rem", fontWeight: 600, padding: "0.2rem 0.5rem", borderRadius: "4px", background: "rgba(0, 86, 179, 0.1)", color: "#0056b3" }}>
+									<span style={{ fontSize: "0.75rem", fontWeight: 600, padding: "0.2rem 0.5rem", borderRadius: "4px", background: "rgba(0, 86, 179, 0.1)", color: "var(--primary-strong, #0056b3)" }}>
 										КриптоПро CSP
 									</span>
 								</div>
@@ -2300,6 +2341,28 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 									</button>
 									<button
 										type="button"
+										onClick={handleExportCurrentPackageZip}
+										data-testid="btn-export-current-zip"
+										className="egisz-btn sm"
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "0.35rem",
+											padding: "0.4rem 0.75rem",
+											fontSize: "0.8125rem",
+											fontWeight: 600,
+											borderRadius: "6px",
+											border: "1px solid var(--line)",
+											background: "var(--paper)",
+											color: "var(--ink)",
+											cursor: "pointer",
+										}}
+									>
+										<FileArchive size={14} />
+										<span>1-Клик ZIP (XML + ЭЦП)</span>
+									</button>
+									<button
+										type="button"
 										onClick={handleSendToRegistry}
 										data-testid="btn-submit-egisz-remd"
 										className="egisz-btn egisz-btn-primary sm"
@@ -2358,8 +2421,8 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 									{!collapsedSections.header && (
 										<div style={{ padding: "0.75rem", fontFamily: "monospace", fontSize: "0.75rem", background: "var(--paper)" }}>
 											<div>&lt;<span style={{ color: "var(--primary)" }}>realmCode</span> code="RU"/&gt;</div>
-											<div>&lt;templateId root="1.2.643.5.1.13.13.14.302.2"/&gt;</div>
-											<div>&lt;id root="{clinic.clinicOid || '1.2.643.5.1.13.13.12.2'}" extension="{semdPayload.documentUuid}"/&gt;</div>
+											<div>&lt;templateId root="{EGISZ_DENTAL_SEMD_TYPES[semdDocCode]?.templateRoot || '1.2.643.5.1.13.13.11.1527'}"/&gt;</div>
+											<div>&lt;id root="{clinic.clinicOid || '1.2.643.5.1.13.13.12.2'}.100.1.1" extension="{semdPayload.documentUuid}"/&gt;</div>
 										</div>
 									)}
 								</div>
@@ -2378,7 +2441,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 										<div style={{ padding: "0.75rem", fontFamily: "monospace", fontSize: "0.75rem", background: "var(--paper)" }}>
 											<div>&lt;representedOrganization&gt;</div>
 											<div style={{ paddingLeft: "1rem" }}>&lt;id root="1.2.643.5.1.13.13.12.2" extension="{clinic.clinicOid || '1.2.643.5.1.13.13.12.2'}"/&gt;</div>
-											<div style={{ paddingLeft: "1rem" }}>&lt;id root="1.2.643.100.1" extension="{clinic.clinicOgrn || '1027700132195'}"/&gt;</div>
+											<div style={{ paddingLeft: "1rem" }}>&lt;id root="1.2.643.100.1" extension="{clinic.clinicOgrn || ''}"/&gt;</div>
 											<div style={{ paddingLeft: "1rem" }}>&lt;name&gt;{clinic.clinicName}&lt;/name&gt;</div>
 											<div>&lt;/representedOrganization&gt;</div>
 										</div>
@@ -2398,7 +2461,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 									{!collapsedSections.doctor && (
 										<div style={{ padding: "0.75rem", fontFamily: "monospace", fontSize: "0.75rem", background: "var(--paper)" }}>
 											<div>&lt;assignedAuthor&gt;</div>
-											<div style={{ paddingLeft: "1rem" }}>&lt;id root="1.2.643.100.3" extension="{doctor.doctorSnils || '112-233-445 95'}"/&gt;</div>
+											<div style={{ paddingLeft: "1rem" }}>&lt;id root="1.2.643.100.3" extension="{doctor.doctorSnils || ''}"/&gt;</div>
 											<div style={{ paddingLeft: "1rem" }}>&lt;assignedPerson&gt;&lt;name&gt;{doctor.doctorFullName}&lt;/name&gt;&lt;/assignedPerson&gt;</div>
 											<div>&lt;/assignedAuthor&gt;</div>
 										</div>
@@ -2418,7 +2481,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 									{!collapsedSections.patient && (
 										<div style={{ padding: "0.75rem", fontFamily: "monospace", fontSize: "0.75rem", background: "var(--paper)" }}>
 											<div>&lt;patientRole&gt;</div>
-											<div style={{ paddingLeft: "1rem" }}>&lt;id root="1.2.643.100.3" extension="{patient.patientSnils || '112-233-445 95'}"/&gt;</div>
+											<div style={{ paddingLeft: "1rem" }}>&lt;id root="1.2.643.100.3" extension="{patient.patientSnils || ''}"/&gt;</div>
 											<div style={{ paddingLeft: "1rem" }}>&lt;patient&gt;&lt;name&gt;{patient.patientFullName}&lt;/name&gt;&lt;/patient&gt;</div>
 											<div>&lt;/patientRole&gt;</div>
 										</div>
@@ -2659,10 +2722,10 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 																		: "rgba(245, 158, 11, 0.15)",
 																color:
 																	rec.status === "registered"
-																		? "#10b981"
+																		? "var(--success, #10b981)"
 																		: rec.status === "error"
-																		? "#ef4444"
-																		: "#d97706",
+																		? "var(--danger, #ef4444)"
+																		: "var(--warning, #d97706)",
 															}}
 														>
 															{rec.status === "registered"
@@ -2716,7 +2779,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 																	fontWeight: 600,
 																	borderRadius: "4px",
 																	background: "var(--teal, #0d9488)",
-																	color: "#ffffff",
+																	color: "var(--paper, #ffffff)",
 																	border: "none",
 																	cursor: "pointer",
 																}}
@@ -2870,7 +2933,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 								fontWeight: 700,
 								borderRadius: "6px",
 								background: "var(--primary, #0ea5e9)",
-								color: "#ffffff",
+								color: "var(--paper, #ffffff)",
 								border: "none",
 								cursor: isSending ? "wait" : "pointer",
 							}}

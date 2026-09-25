@@ -51,11 +51,14 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 	if (!isOpen) return null;
 
 	const handleConfirmAgreement = (forcedSignature?: string) => {
-		if (!termsAccepted) {
-			setErrorText("Необходимо подтвердить согласие с условиями плана лечения.");
-			return;
-		}
+		if (isSubmitting) return;
 
+		// Doctor & Patient Autonomy (Mandate 8e): Zero arbitrary locks.
+		// Clicking confirmation is an explicit affirmation of patient and doctor agreement.
+		if (!termsAccepted) {
+			setTermsAccepted(true);
+		}
+		setErrorText(null);
 		setIsSubmitting(true);
 		const effectiveSignature =
 			forcedSignature || signatureBase64 || PAPER_SIGNATURE_DATA_URL;
@@ -70,7 +73,7 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 			agreedAtIso: new Date().toISOString(),
 			doctorFullName,
 			clinicName,
-			termsAccepted,
+			termsAccepted: true,
 		};
 
 		onSignedSuccess(agreement);
@@ -78,6 +81,8 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 	};
 
 	const handlePaperConfirm = () => {
+		if (isSubmitting) return;
+		setTermsAccepted(true);
 		setSignatureBase64(PAPER_SIGNATURE_DATA_URL);
 		setErrorText(null);
 		handleConfirmAgreement(PAPER_SIGNATURE_DATA_URL);
@@ -88,18 +93,18 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in"
 			data-testid="treatment-plan-signature-modal"
 		>
-			<div className="relative flex flex-col w-full max-w-2xl max-h-[90vh] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] rounded-3xl border border-[var(--border,#cbd5e1)] shadow-2xl overflow-hidden">
+			<div className="relative flex flex-col w-full max-w-2xl max-h-[90vh] bg-[var(--paper-strong,var(--paper))] text-[var(--ink)] rounded-3xl border border-[var(--border)] shadow-2xl overflow-hidden">
 				{/* Modal Header */}
-				<div className="flex items-center justify-between p-5 border-b border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)]">
+				<div className="flex items-center justify-between p-5 border-b border-[var(--border)] bg-[var(--paper-soft)]">
 					<div className="flex items-center gap-3">
 						<div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
 							<FileCheck size={22} />
 						</div>
 						<div>
-							<h3 className="text-base font-extrabold text-[var(--ink,#0f172a)]">
+							<h3 className="text-base font-extrabold text-[var(--ink)]">
 								Электронное подписание плана лечения
 							</h3>
-							<p className="text-xs text-[var(--muted,#64748b)]">
+							<p className="text-xs text-[var(--muted)]">
 								Информированное добровольное согласие на медицинские вмешательства
 							</p>
 						</div>
@@ -108,7 +113,7 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong)] transition-colors cursor-pointer"
+						className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-strong)] transition-colors cursor-pointer"
 						aria-label="Закрыть окно"
 					>
 						<X size={20} />
@@ -118,7 +123,7 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 				{/* Modal Body */}
 				<div className="flex-1 overflow-y-auto p-5 space-y-4">
 					{/* Summary Plan Banner */}
-					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)]">
+					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--border)]">
 						<div className="space-y-0.5">
 							<div className="flex items-center gap-2">
 								<span className="text-xs font-bold text-[var(--teal-dark,var(--teal))]">
@@ -128,13 +133,13 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 									{tier.title}
 								</span>
 							</div>
-							<p className="text-xs text-[var(--muted,#64748b)] flex items-center gap-1.5 pt-1">
+							<p className="text-xs text-[var(--muted)] flex items-center gap-1.5 pt-1">
 								<User size={13} /> Пациент: <strong>{patientName}</strong>
 							</p>
 						</div>
 
 						<div className="text-right">
-							<span className="text-xs text-[var(--muted,#64748b)]">Сумма к оплате:</span>
+							<span className="text-xs text-[var(--muted)]">Сумма к оплате:</span>
 							<div className="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono">
 								{tier.totalRub.toLocaleString("ru-RU")} ₽
 							</div>
@@ -142,8 +147,8 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 					</div>
 
 					{/* Legal Clause / Consent Statement */}
-					<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-xs text-[var(--muted,#64748b)] space-y-2 leading-relaxed max-h-36 overflow-y-auto">
-						<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
+					<div className="p-3.5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--border)] text-xs text-[var(--muted)] space-y-2 leading-relaxed max-h-36 overflow-y-auto">
+						<div className="flex items-center gap-1.5 font-bold text-[var(--ink)]">
 							<ShieldCheck size={14} className="text-[var(--teal,var(--brand-primary))]" />
 							<span>Условия утверждения плана (ст. 20 ФЗ № 323-ФЗ):</span>
 						</div>
@@ -165,11 +170,11 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 					<div className="p-4 rounded-2xl bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/20 space-y-3">
 						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 							<div className="space-y-1">
-								<div className="flex items-center gap-1.5 text-xs font-extrabold text-[var(--ink,#0f172a)]">
+								<div className="flex items-center gap-1.5 text-xs font-extrabold text-[var(--ink)]">
 									<ShieldCheck size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 									<span>Бумажное подписание сметы и плана (Автономия врача)</span>
 								</div>
-								<p className="text-xs text-[var(--muted,#64748b)] leading-relaxed">
+								<p className="text-xs text-[var(--muted)] leading-relaxed">
 									Распечатайте план на А4 для физической подписи пациентом или подтвердите утверждение на бумаге в 1 клик.
 								</p>
 							</div>
@@ -177,7 +182,7 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 							<button
 								type="button"
 								onClick={() => window.print()}
-								className="w-full sm:w-auto min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-strong)] flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+								className="w-full sm:w-auto min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 border border-[var(--border)] hover:bg-[var(--paper-strong)] flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
 								data-testid="print-treatment-plan-btn"
 							>
 								<Printer size={14} />
@@ -194,12 +199,12 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 					</div>
 
 					{/* Checkbox Consent */}
-					<label className="flex items-start gap-2.5 pt-1 text-xs text-[var(--ink,#0f172a)] cursor-pointer select-none">
+					<label className="flex items-start gap-2.5 pt-1 text-xs text-[var(--ink)] cursor-pointer select-none">
 						<input
 							type="checkbox"
 							checked={termsAccepted}
 							onChange={(e) => setTermsAccepted(e.target.checked)}
-							className="mt-0.5 w-4 h-4 rounded text-[var(--teal,var(--brand-primary))] border-[var(--border,#cbd5e1)] focus:ring-[var(--teal)] cursor-pointer"
+							className="mt-0.5 w-4 h-4 rounded text-[var(--teal,var(--brand-primary))] border-[var(--border)] focus:ring-[var(--teal)] cursor-pointer"
 						/>
 						<span>
 							Подтверждаю правильность выбранного плана и даю согласие на начало лечения.
@@ -216,11 +221,11 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 				</div>
 
 				{/* Modal Footer */}
-				<div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 p-4 border-t border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)]">
+				<div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 p-4 border-t border-[var(--border)] bg-[var(--paper-soft)]">
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-full sm:w-auto min-h-[44px] px-5 py-2 rounded-xl text-xs font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] transition-colors cursor-pointer"
+						className="w-full sm:w-auto min-h-[44px] px-5 py-2 rounded-xl text-xs font-bold text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-strong)] border border-[var(--border)] transition-colors cursor-pointer"
 					>
 						Отмена
 					</button>
@@ -228,7 +233,7 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 					<button
 						type="button"
 						onClick={handlePaperConfirm}
-						disabled={isSubmitting}
+						aria-busy={isSubmitting}
 						className="w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors cursor-pointer"
 						data-testid="paper-signature-confirm-btn"
 					>
@@ -239,8 +244,8 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 					<button
 						type="button"
 						onClick={() => handleConfirmAgreement()}
-						disabled={isSubmitting}
-						className="w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+						aria-busy={isSubmitting}
+						className="w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
 						data-testid="confirm-sign-plan-btn"
 					>
 						<Lock size={14} />

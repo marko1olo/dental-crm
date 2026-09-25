@@ -48,7 +48,8 @@ import {
 	type SignaturePoint,
 	calculateBoundingBox,
 	exportSignatureToSvg,
-	smoothStrokeToBezierCurves,
+	renderStrokeToSvgPath,
+	getPointerCoordinates,
 	generatePdfA1bDocument,
 	downloadConsentPdfA,
 } from "./signaturePadMath.js";
@@ -392,20 +393,16 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
 		e.preventDefault();
 		(e.target as Element).setPointerCapture?.(e.pointerId);
-		const rect = e.currentTarget.getBoundingClientRect();
-		const x = e.clientX - rect.left;
-		const y = e.clientY - rect.top;
-		setCurrentPoints([{ x, y, time: Date.now() }]);
+		const pt = getPointerCoordinates(e, e.currentTarget);
+		setCurrentPoints([pt]);
 		setIsDrawing(true);
 	};
 
 	const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
 		if (!isDrawing) return;
 		e.preventDefault();
-		const rect = e.currentTarget.getBoundingClientRect();
-		const x = e.clientX - rect.left;
-		const y = e.clientY - rect.top;
-		setCurrentPoints((prev) => [...prev, { x, y, time: Date.now() }]);
+		const pt = getPointerCoordinates(e, e.currentTarget);
+		setCurrentPoints((prev) => [...prev, pt]);
 	};
 
 	const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -416,7 +413,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 		} catch {}
 		setIsDrawing(false);
 		if (currentPoints.length > 0) {
-			setStrokes((prev) => [...prev, { points: currentPoints, color: "#0f172a" }]);
+			setStrokes((prev) => [...prev, { points: currentPoints, color: "var(--ink)" }]);
 			setCurrentPoints([]);
 		}
 	};
@@ -1224,7 +1221,6 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 											type="button"
 											className="consent-tool-btn py-1 px-2 text-xs"
 											onClick={handleClearStrokes}
-											disabled={strokes.length === 0 && currentPoints.length === 0}
 											data-testid="btn-clear-vector-strokes"
 											title="Очистить поле подписи"
 										>
@@ -1280,28 +1276,19 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 											</text>
 										)}
 										{strokes.map((stroke, sIdx) => {
-											const curves = smoothStrokeToBezierCurves(stroke.points);
-											if (curves.length === 0) {
-												if (stroke.points.length === 1 && stroke.points[0]) {
-													return (
-														<circle
-															key={sIdx}
-															cx={stroke.points[0].x}
-															cy={stroke.points[0].y}
-															r={1.5}
-															fill={stroke.color || "var(--ink, #0f172a)"}
-														/>
-													);
-												}
-												return null;
+											if (stroke.points.length === 1 && stroke.points[0]) {
+												return (
+													<circle
+														key={sIdx}
+														cx={stroke.points[0].x}
+														cy={stroke.points[0].y}
+														r={1.5}
+														fill={stroke.color || "var(--ink, #0f172a)"}
+													/>
+												);
 											}
-											const d = curves
-												.map((c, cIdx) =>
-													cIdx === 0
-														? `M ${c.startPoint.x.toFixed(1)} ${c.startPoint.y.toFixed(1)} C ${c.control1.x.toFixed(1)} ${c.control1.y.toFixed(1)}, ${c.control2.x.toFixed(1)} ${c.control2.y.toFixed(1)}, ${c.endPoint.x.toFixed(1)} ${c.endPoint.y.toFixed(1)}`
-														: `C ${c.control1.x.toFixed(1)} ${c.control1.y.toFixed(1)}, ${c.control2.x.toFixed(1)} ${c.control2.y.toFixed(1)}, ${c.endPoint.x.toFixed(1)} ${c.endPoint.y.toFixed(1)}`
-												)
-												.join(" ");
+											const d = renderStrokeToSvgPath(stroke.points);
+											if (!d) return null;
 											return (
 												<path
 													key={sIdx}
@@ -1316,9 +1303,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 										})}
 										{currentPoints.length > 1 && (
 											<path
-												d={`M ${currentPoints[0]?.x.toFixed(1)} ${currentPoints[0]?.y.toFixed(1)} ` +
-													currentPoints.slice(1).map((p) => `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ")
-												}
+												d={renderStrokeToSvgPath(currentPoints)}
 												fill="none"
 												stroke="var(--teal, #0d9488)"
 												strokeWidth={2}

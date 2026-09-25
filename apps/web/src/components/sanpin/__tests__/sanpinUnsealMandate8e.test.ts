@@ -110,7 +110,7 @@ describe("SanPiN & Sterilization without Bureaucracy (Mandates 8e, 8k, 8n)", () 
 		it("permits nurse to unseal tray and clear emergency package without a 3-person commission", () => {
 			const record = createStandardTrayKraftPackageRecord("therapy", "Иванова О.С. (медсестра ЦСО)");
 			assert.equal(record.operatorName, "Иванова О.С. (медсестра ЦСО)");
-			assert.equal(record.operatorId, "NURSE-01");
+			assert.equal(record.operatorId, "STAFF-01");
 			// Verification that no multi-person commission is required to complete operation
 			assert.ok(!JSON.stringify(record).includes("commission"));
 			assert.ok(!JSON.stringify(record).includes("комиссия"));

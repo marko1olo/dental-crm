@@ -76,6 +76,10 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 	const [isUploading, setIsUploading] = useState(false);
 	const [rotationDeg, setRotationDeg] = useState(0);
 
+	// Hardware Camera / Document Scanner device selection (Real Hardware Integration)
+	const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
+	const [selectedCameraId, setSelectedCameraId] = useState<string>("");
+
 	// Document capture status state
 	const [ocrSummary, setOcrSummary] = useState<string | null>(null);
 	const [isDragOver, setIsDragOver] = useState(false);
@@ -92,6 +96,23 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 	isCapturingRef.current = isCapturing;
 
 	const preset = DOCUMENT_PRESETS[selectedDocType] || DOCUMENT_PRESETS.passport_rf;
+
+	// Enumerate physical hardware video input devices
+	const enumerateCameras = useCallback(async () => {
+		try {
+			if (navigator?.mediaDevices?.enumerateDevices) {
+				const devices = await navigator.mediaDevices.enumerateDevices();
+				const videoInputs = devices.filter((d) => d.kind === "videoinput");
+				setAvailableCameras(videoInputs);
+				if (videoInputs.length > 0 && !selectedCameraId) {
+					const firstCam = videoInputs[0];
+					if (firstCam?.deviceId) setSelectedCameraId(firstCam.deviceId);
+				}
+			}
+		} catch {
+			// Safe fallback if device enumeration is not permitted
+		}
+	}, [selectedCameraId]);
 
 	// Stop camera stream safely and reliably (cleans up stream ref, state, and video.srcObject tracks)
 	const stopCamera = useCallback(() => {
@@ -128,7 +149,7 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 		}
 	}, [cameraStream]);
 
-	// Start camera stream
+	// Start camera stream with hardware deviceId selection
 	const startCamera = useCallback(async () => {
 		setCameraError(null);
 		try {
@@ -146,12 +167,20 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 				cameraStreamRef.current = null;
 			}
 
+			const videoConstraints: MediaTrackConstraints = selectedCameraId
+				? {
+						deviceId: { exact: selectedCameraId },
+						width: { ideal: 1920, min: 640 },
+						height: { ideal: 1080, min: 480 },
+					}
+				: {
+						facingMode: { ideal: "environment" },
+						width: { ideal: 1920, min: 640 },
+						height: { ideal: 1080, min: 480 },
+					};
+
 			const stream = await navigator.mediaDevices.getUserMedia({
-				video: {
-					facingMode: { ideal: "environment" },
-					width: { ideal: 1920, min: 640 },
-					height: { ideal: 1080, min: 480 },
-				},
+				video: videoConstraints,
 				audio: false,
 			});
 
@@ -171,6 +200,9 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 				videoRef.current.srcObject = stream;
 				await videoRef.current.play().catch(() => {});
 			}
+
+			// Populate device list after permission is granted
+			void enumerateCameras();
 		} catch (err: unknown) {
 			const msg =
 				err instanceof Error
@@ -178,7 +210,7 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 					: "Не удалось получить доступ к камере. Используйте загрузку файла.";
 			setCameraError(msg);
 		}
-	}, []);
+	}, [enumerateCameras, selectedCameraId]);
 
 	// Stream lifecycle effects
 	useEffect(() => {
@@ -379,10 +411,13 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 		[processFile],
 	);
 
-	// Rotate image by 90 degrees
+	// Rotate image by 90 degrees (Doctor Autonomy: non-blocking feedback)
 	const handleRotate = useCallback(() => {
 		const canvas = canvasRef.current;
-		if (!canvas || !capturedDataUrl) return;
+		if (!canvas || !capturedDataUrl) {
+			showToast("Сначала сделайте снимок или выберите файл документа для поворота", "info");
+			return;
+		}
 
 		const img = new Image();
 		img.onload = () => {
@@ -413,9 +448,23 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 		img.src = capturedDataUrl;
 	}, [capturedDataUrl]);
 
-	// Upload as patient attachment
+	// Upload as patient attachment (Mandate 8e: Doctor Autonomy without blocking)
 	const handleSaveAttachment = useCallback(async () => {
-		if (!capturedBlob || !patientId) return;
+		if (isUploading) return;
+		if (!capturedBlob) {
+			if (isCapturing && videoRef.current) {
+				handleCapture();
+				showToast("Кадр зафиксирован. Нажмите ещё раз для отправки в карту.", "info");
+			} else {
+				showToast("Сделайте снимок или выберите файл с диска для сохранения", "info");
+				fileInputRef.current?.click();
+			}
+			return;
+		}
+		if (!patientId) {
+			showToast("Не указан идентификатор пациента", "error");
+			return;
+		}
 
 		setIsUploading(true);
 		try {
@@ -490,23 +539,43 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 					</button>
 				</div>
 
-				{/* Preset Selector */}
-				<div className="flex gap-1.5 overflow-x-auto border-b border-[var(--line)] p-2 bg-[var(--paper)]">
-					{DOCUMENT_PRESETS_LIST.map((p) => (
-						<button
-							key={p.id}
-							type="button"
-							onClick={() => setSelectedDocType(p.id)}
-							className={`inline-flex items-center gap-1.5 min-h-[44px] rounded-xl px-3 py-2 text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-								selectedDocType === p.id
-									? "bg-[var(--teal)] text-white shadow-sm"
-									: "bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)]"
-							}`}
-						>
-							{renderPresetIcon(p.icon, 14, "shrink-0")}
-							<span>{p.shortTitle}</span>
-						</button>
-					))}
+				{/* Preset Selector & Camera Hardware Selector */}
+				<div className="flex items-center justify-between gap-1.5 overflow-x-auto border-b border-[var(--line)] p-2 bg-[var(--paper)]">
+					<div className="flex gap-1.5 overflow-x-auto">
+						{DOCUMENT_PRESETS_LIST.map((p) => (
+							<button
+								key={p.id}
+								type="button"
+								onClick={() => setSelectedDocType(p.id)}
+								className={`inline-flex items-center gap-1.5 min-h-[44px] rounded-xl px-3 py-2 text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+									selectedDocType === p.id
+										? "bg-[var(--teal)] text-white shadow-sm"
+										: "bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)]"
+								}`}
+							>
+								{renderPresetIcon(p.icon, 14, "shrink-0")}
+								<span>{p.shortTitle}</span>
+							</button>
+						))}
+					</div>
+					{availableCameras.length > 1 && (
+						<div className="flex items-center gap-1.5 pl-2 border-l border-[var(--line)] shrink-0">
+							<Camera size={14} className="text-[var(--muted)]" />
+							<select
+								value={selectedCameraId}
+								onChange={(e) => setSelectedCameraId(e.target.value)}
+								className="min-h-[36px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] px-2 py-1 text-xs text-[var(--ink)] cursor-pointer"
+								title="Выбор камеры / TWAIN / UVC сканера"
+								aria-label="Выбор камеры оборудования"
+							>
+								{availableCameras.map((cam, idx) => (
+									<option key={cam.deviceId || idx} value={cam.deviceId}>
+										{cam.label || `Камера ${idx + 1}`}
+									</option>
+								))}
+							</select>
+						</div>
+					)}
 				</div>
 
 				{/* Viewport & Camera Stage */}
@@ -672,9 +741,8 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 							<>
 								<button
 									type="button"
-									disabled={!capturedDataUrl}
 									onClick={handleRotate}
-									className="min-h-[44px] min-w-[44px] inline-flex items-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] disabled:opacity-40 cursor-pointer"
+									className="min-h-[44px] min-w-[44px] inline-flex items-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer"
 									title="Повернуть на 90 градусов"
 								>
 									<RotateCw size={14} className="shrink-0" />
@@ -690,9 +758,8 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 								<button
 									type="button"
 									data-testid="scanner-save-attachment-button"
-									disabled={isUploading || !capturedBlob}
 									onClick={() => void handleSaveAttachment()}
-									className="min-h-[44px] min-w-[44px] inline-flex items-center gap-2 rounded-xl bg-[var(--teal)] px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-[var(--teal-dark)] disabled:opacity-50 cursor-pointer"
+									className="min-h-[44px] min-w-[44px] inline-flex items-center gap-2 rounded-xl bg-[var(--teal)] px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-[var(--teal-dark)] cursor-pointer"
 								>
 									{isUploading ? (
 										"Сохраняю…"

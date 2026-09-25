@@ -47,11 +47,14 @@ export type {
 
 export {
 	CLINICAL_CALLING_SCRIPTS,
+	calculateSmsSegments,
+	formatSmsSummary,
 } from "./recallTemplates";
 
 export type {
 	RecallCallingScript,
 	RecallScriptObjection,
+	SmsSegmentCalculation,
 } from "./recallTemplates";
 
 export {

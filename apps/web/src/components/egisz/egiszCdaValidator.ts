@@ -35,6 +35,24 @@ export const EGISZ_SEMD_DOC_TYPES = {
 		loincDisplayName: "Стоматологический эпикриз",
 		templateRoot: "1.2.643.5.1.13.13.11.104",
 	},
+	"105": {
+		code: "105",
+		nsiCode: "105",
+		title: "Протокол консультации врача-специалиста (стоматолога)",
+		description: "Первичный или повторный консультативный прием врача-стоматолога (ф. 043/у)",
+		loincCode: "74208-1",
+		loincDisplayName: "Протокол стоматологического осмотра",
+		templateRoot: "1.2.643.5.1.13.13.11.1527",
+	},
+	"106": {
+		code: "106",
+		nsiCode: "106",
+		title: "Выписной эпикриз в амбулаторной стоматологической практике",
+		description: "Итоговый этапный или заключительный эпикриз по курсу комплексного стоматологического лечения",
+		loincCode: "42344-2",
+		loincDisplayName: "Стоматологический эпикриз",
+		templateRoot: "1.2.643.5.1.13.13.11.1527",
+	},
 	"130": {
 		code: "130",
 		nsiCode: "130",
@@ -171,12 +189,12 @@ export function buildCdaXml(data: CdaExportData): string {
 	const docId = data.visitId ? `${data.visitId}-v${data.documentVersion || 1}` : `DOC-${Date.now()}`;
 	const docRoot = data.clinicOid || EGISZ_STANDARD_OIDS.FRMO_MO_ROOT;
 
-	const patientParts = data.patientFullName.trim().split(/\s+/);
+	const patientParts = (data.patientFullName || "Пациент").trim().split(/\s+/);
 	const patientLast = patientParts[0] || "Пациент";
 	const patientFirst = patientParts[1] || "";
 	const patientMiddle = patientParts[2] || "";
 
-	const doctorParts = data.doctorFullName.trim().split(/\s+/);
+	const doctorParts = (data.doctorFullName || "Врач").trim().split(/\s+/);
 	const doctorLast = doctorParts[0] || "Врач";
 	const doctorFirst = doctorParts[1] || "";
 	const doctorMiddle = doctorParts[2] || "";
@@ -507,14 +525,17 @@ export function validateCdaSemanticRules(
 
 	// 8. ICD-10 Diagnosis code
 	const icd10Regex = /^[A-TV-Z]\d{2}(\.\d{1,4})?$/i;
-	const isIcd10Valid = Boolean(data.icd10Code && icd10Regex.test(data.icd10Code.trim()));
+	const effectiveIcd10 =
+		(data.icd10Code || "").trim() ||
+		(xml.match(/codeSystem="1\.2\.643\.5\.1\.13\.13\.11\.1005"[^>]*?code="([^"]+)"/)?.[1] || "");
+	const isIcd10Valid = Boolean(effectiveIcd10 && icd10Regex.test(effectiveIcd10));
 	rules.push({
 		id: "RULE_ICD10_DIAGNOSIS",
 		name: "Основной диагноз по справочнику МКБ-10",
 		category: "clinical",
 		status: isIcd10Valid ? "passed" : "failed",
 		message: isIcd10Valid
-			? `Код МКБ-10: ${data.icd10Code?.toUpperCase()} (${data.diagnosisText || "Диагноз указан"})`
+			? `Код МКБ-10: ${effectiveIcd10.toUpperCase()} (${data.diagnosisText || "Диагноз указан"})`
 			: "Диагноз должен содержать валидный код МКБ-10 (например, K02.1, K04.0, K05.3).",
 		details: "МКБ-10 OID: 1.2.643.5.1.13.13.11.1005",
 		xpathOrOid: 'structuredBody//observation/value[@codeSystem="1.2.643.5.1.13.13.11.1005"]',

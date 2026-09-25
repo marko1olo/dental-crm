@@ -1224,9 +1224,8 @@ export function LeadsFunnelAnalyticsModal({
 									• <strong>Высокая доходимость ({summary.showUpRatePercent}%):</strong> Регистратура эффективно подтверждает записи.
 								</div>
 							)}
-							{summary.planAcceptanceRatePercent < 60 ? (
 								<div>
-									• <strong>Согласование планов ({summary.planAcceptanceRatePercent}%):</strong> Рекомендуется внедрить демонстрацию 3D/КЛКТ визуализации на консультациях куратора лечения.
+									• <strong>Согласование планов ({summary.planAcceptanceRatePercent}%):</strong> Рекомендуется демонстрация снимков радиовизиографа и интраоральной камеры на консультации врача у кресла.
 								</div>
 							) : (
 								<div>

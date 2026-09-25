@@ -413,6 +413,11 @@ export function AutoclaveJournal257Tab({
 										<td>
 											<div style={{ fontWeight: 600 }}>{rec.packsCount} упак.</div>
 											<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>{rec.packagingNameRu}</div>
+											{rec.bixNumber && (
+												<div style={{ fontSize: "0.7rem", fontWeight: 600, color: "var(--teal, #0d9488)" }}>
+													{rec.bixNumber}
+												</div>
+											)}
 										</td>
 
 										<td>

@@ -827,10 +827,10 @@ export function VisiographStudioCanvas({
 		}, 250);
 	};
 
-	// Perform Export
+	// Perform Export (Mandate 8e: Doctor Autonomy without blocking)
 	const handleExecuteExport = async () => {
 		const canvas = canvasRef.current;
-		if (!canvas) return;
+		if (!canvas || isSaving) return;
 
 		setIsSaving(true);
 		try {
@@ -1263,7 +1263,7 @@ export function VisiographStudioCanvas({
 							}}
 							title="1-клик калибровка по стандартным датчикам RVG / ОПТГ"
 						>
-							<option value="" disabled>
+							<option value="">
 								Калибровка датчика...
 							</option>
 							{STANDARD_SENSOR_PRESETS.map((p) => (
@@ -1423,7 +1423,7 @@ export function VisiographStudioCanvas({
 						style={{
 							height: "30px",
 							background: "var(--teal, #0d9488)",
-							color: "#ffffff",
+							color: "var(--paper, #ffffff)",
 							border: "none",
 							borderRadius: "5px",
 							padding: "2px 10px",
@@ -1448,7 +1448,7 @@ export function VisiographStudioCanvas({
 						style={{
 							height: "30px",
 							background: "var(--success, #238636)",
-							color: "#ffffff",
+							color: "var(--paper, #ffffff)",
 							border: "none",
 							borderRadius: "5px",
 							padding: "2px 10px",
@@ -1748,7 +1748,7 @@ export function VisiographStudioCanvas({
 				<div
 					style={{
 						flex: 1,
-						background: "#010409",
+						background: "var(--dark-bg, #010409)",
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "center",
@@ -1989,7 +1989,7 @@ export function VisiographStudioCanvas({
 								style={{
 									padding: "8px 14px",
 									background: "var(--teal, #0d9488)",
-									color: "#ffffff",
+									color: "var(--paper, #ffffff)",
 									border: "none",
 									borderRadius: "6px",
 									fontWeight: 600,
@@ -2004,12 +2004,11 @@ export function VisiographStudioCanvas({
 							</button>
 							<button
 								type="button"
-								disabled={isSaving}
 								onClick={handleExecuteExport}
 								style={{
 									padding: "8px 16px",
 									background: "var(--success, #238636)",
-									color: "#ffffff",
+									color: "var(--paper, #ffffff)",
 									border: "none",
 									borderRadius: "6px",
 									fontWeight: 600,

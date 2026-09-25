@@ -41,7 +41,7 @@ export const DEFAULT_LEGAL_REPRESENTATIVE: LegalRepresentativeData = {
 	role: "Мать",
 	fullName: "",
 	phone: "",
-	statutoryDocument: "ст. 64 СК РФ (законный представитель)",
+	statutoryDocument: "ст. 20 323-ФЗ, ст. 64 СК РФ (законный представитель)",
 	consentSigned: true,
 };
 
@@ -125,7 +125,7 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 		role: resolvedRole,
 		fullName: initialRepresentative?.fullName || defaultRepresentativeFullName || "",
 		phone: initialRepresentative?.phone || defaultRepresentativePhone || "",
-		statutoryDocument: initialRepresentative?.statutoryDocument || "ст. 64 СК РФ (законный представитель)",
+		statutoryDocument: initialRepresentative?.statutoryDocument || "ст. 20 323-ФЗ, ст. 64 СК РФ (законный представитель)",
 		consentSigned: initialRepresentative?.consentSigned ?? true,
 	});
 
@@ -133,7 +133,9 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 		const repName = rep.fullName.trim() ? rep.fullName.trim() : "Родитель (присутствует на приёме)";
 		const phonePart = rep.phone.trim() ? `, тел: ${rep.phone.trim()}` : "";
 		const docPart = rep.statutoryDocument.trim() ? ` [${rep.statutoryDocument.trim()}]` : "";
-		const consentPart = rep.consentSigned ? ", ИДС подписано" : "";
+		const consentPart = rep.consentSigned
+			? ", ИДС на медицинское вмешательство оформлено (ст. 20 323-ФЗ)"
+			: ", ВНИМАНИЕ: требуется подписание ИДС родителем перед инвазивным вмешательством (ст. 20 323-ФЗ)";
 
 		return `Законный представитель несовершеннолетнего: ${rep.role} — ${repName}${phonePart}${docPart}${consentPart}.`;
 	}, []);
@@ -151,7 +153,7 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 		const updated: LegalRepresentativeData = {
 			...representative,
 			consentSigned: true,
-			statutoryDocument: "ст. 64 СК РФ (законный представитель)",
+			statutoryDocument: "ст. 20 323-ФЗ, ст. 64 СК РФ (законный представитель)",
 		};
 		setRepresentative(updated);
 		onRepresentativeChange?.(updated, formatRepresentativeText(updated));
@@ -211,7 +213,7 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 					<div className="flex items-center gap-2">
 						<UserCheck className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
 						<span className="text-xs font-black uppercase tracking-wider text-[var(--ink,#0f172a)]">
-							Законный представитель (Форма 043/у, ст. 64 СК РФ):
+							Законный представитель (Форма 043/у, ст. 20 323-ФЗ, ст. 64 СК РФ):
 						</span>
 					</div>
 
@@ -219,7 +221,7 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 						type="button"
 						onClick={handle1ClickParentPresent}
 						className="min-h-[32px] sm:h-7 px-2 rounded-lg border border-teal-500/30 bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-300 hover:bg-teal-100 text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0"
-						title="1-клик: Родитель присутствует, согласие оформлено без принуждения к заполнению лишних полей"
+						title="1-клик: Родитель присутствует, согласие оформлено без принуждения к заполнению лишних полей (ст. 20 323-ФЗ)"
 						data-testid="btn-parent-present-norm"
 					>
 						<Check className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
@@ -302,9 +304,28 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 							className="rounded border-[var(--line,#e2e8f0)] text-teal-600 focus:ring-teal-500"
 							data-testid="checkbox-rep-consent"
 						/>
-						<span>ИДС подписано законным представителем</span>
+						<span>ИДС оформлено (ст. 20 323-ФЗ)</span>
 					</label>
 				</div>
+
+				{!representative.consentSigned && (
+					<div className="mt-2 flex items-center justify-between gap-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs" data-testid="rep-consent-warning-banner">
+						<div className="flex items-center gap-1.5 min-w-0">
+							<AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+							<span className="truncate">
+								323-ФЗ ст. 20: требуется подписание ИДС родителем перед инвазивным вмешательством
+							</span>
+						</div>
+						<button
+							type="button"
+							onClick={handle1ClickParentPresent}
+							className="min-h-[28px] px-2 py-0.5 rounded bg-teal-600 hover:bg-teal-700 text-white font-bold text-[11px] shrink-0 cursor-pointer transition active:scale-95"
+							data-testid="btn-one-click-sign-consent"
+						>
+							1-клик: Подписать
+						</button>
+					</div>
+				)}
 			</div>
 		</div>
 	);

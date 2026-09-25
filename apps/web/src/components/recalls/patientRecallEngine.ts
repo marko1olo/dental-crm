@@ -6,6 +6,11 @@
  * протоколам периодонтологии (EFP/AAP), этапам остеоинтеграции имплантатов и стандартам ортодонтии.
  */
 import type { StomxTaskCallType } from "@dental/shared";
+export {
+	calculateSmsSegments,
+	formatSmsSummary,
+	type SmsSegmentCalculation,
+} from "./recallTemplates";
 
 export type RecallCycleType =
 	| "standard_prophylaxis"

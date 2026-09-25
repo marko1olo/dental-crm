@@ -28,6 +28,7 @@ import {
 	Copy,
 	CreditCard,
 	FileCheck2,
+	FileSignature,
 	FileText,
 	Layers,
 	Maximize2,
@@ -46,6 +47,7 @@ import {
 import {
 	type Kopecks,
 	parseKopecks,
+	percentageOfKopecks,
 	sumKopecks,
 	calculatePlanTaxDeductionBreakdown,
 	calculateStaged304030Schedule,
@@ -167,6 +169,7 @@ export interface TreatmentPlanPresenterModalProps {
 	readonly onSelectPlan?: ((tier: TreatmentPlanTier) => void) | undefined;
 	readonly onConfirmSelection?: ((tier: TreatmentPlanTier) => void) | undefined;
 	readonly onPrintContract?: ((tier: TreatmentPlanTier) => void) | undefined;
+	readonly onApproveAndSign?: ((tier: TreatmentPlanTier) => void) | undefined;
 	readonly onUpdateItemPrice?: ((itemId: string, newPriceRub: number) => void) | undefined;
 	readonly planCreatedAtIso?: string | undefined;
 	readonly isClosed?: boolean | undefined;
@@ -221,6 +224,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	onSelectPlan,
 	onConfirmSelection,
 	onPrintContract,
+	onApproveAndSign,
 	onUpdateItemPrice: onUpdateItemPriceProp,
 	planCreatedAtIso,
 	isClosed,
@@ -244,7 +248,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	const effectiveWatermark =
 		watermarkText ||
 		(!isDraft && isClosedOrSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
-	const stampColor = !isDraft && isClosedOrSigned ? "#059669" : "#64748b";
+	const stampColor = !isDraft && isClosedOrSigned ? "var(--ok-fg, #059669)" : "var(--muted, #64748b)";
 
 	const planAgeDays = useMemo(() => {
 		if (!planCreatedAtIso) return 0;
@@ -341,6 +345,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	};
 
 	const handleRunAiAudit = async () => {
+		if (isAiAuditing) return;
 		setIsAiAuditing(true);
 		setAiAuditError(null);
 		try {
@@ -452,9 +457,13 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 						if (it.id === itemId) {
 							tierModified = true;
 							stageModified = true;
+							const qty = Math.max(1, it.quantity || 1);
+							const unitKop = parseKopecks(newPriceRub);
+							const discKop = parseKopecks(it.discountRub || 0);
+							const lineTotalKop = Math.max(0, unitKop * qty - discKop) as Kopecks;
 							return {
 								...it,
-								priceRub: newPriceRub,
+								priceRub: Math.round(lineTotalKop / 100),
 								unitPriceRub: newPriceRub,
 								requiresManualPricing: false,
 							};
@@ -464,8 +473,8 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 
 					if (!stageModified) return st;
 
-					const stTotalRub = updatedItems.reduce((acc, it) => acc + it.priceRub, 0);
-					const stTotalKopecks = parseKopecks(stTotalRub);
+					const stTotalKopecks = sumKopecks(updatedItems.map((it) => parseKopecks(it.priceRub)));
+					const stTotalRub = Math.round(stTotalKopecks / 100);
 					return {
 						...st,
 						items: updatedItems,
@@ -490,6 +499,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	};
 
 	const handleExecuteCopilot = (cmdOrText: CopilotCommandType | string) => {
+		if (isCopilotExecuting) return;
 		setIsCopilotExecuting(true);
 		try {
 			const res = applyCopilotCommandToPlan(selectedTier.stages, cmdOrText);
@@ -538,23 +548,32 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 										(it.priceRub + (it.discountRub || 0)) /
 											Math.max(1, it.quantity || 1),
 									);
-						const discountPerUnit =
-							validPct > 0 ? Math.round((baseUnitPrice * validPct) / 100) : 0;
-						const finalUnitPrice = Math.max(0, baseUnitPrice - discountPerUnit);
-						const finalTotalRub = finalUnitPrice * Math.max(1, it.quantity || 1);
+						const baseUnitPriceKop = parseKopecks(baseUnitPrice);
+						const discountKopPerUnit =
+							validPct > 0
+								? percentageOfKopecks(baseUnitPriceKop, validPct * 100)
+								: (0 as Kopecks);
+						const finalUnitPriceKop = Math.max(
+							0,
+							baseUnitPriceKop - discountKopPerUnit,
+						) as Kopecks;
+						const qty = Math.max(1, it.quantity || 1);
+						const lineTotalKop = (finalUnitPriceKop * qty) as Kopecks;
+						const lineDiscountKop = (discountKopPerUnit * qty) as Kopecks;
 						return {
 							...it,
 							unitPriceRub: baseUnitPrice,
-							discountRub: discountPerUnit * Math.max(1, it.quantity || 1),
-							priceRub: finalTotalRub,
+							discountRub: Math.round(lineDiscountKop / 100),
+							priceRub: Math.round(lineTotalKop / 100),
 						};
 					});
-					const stTotalRub = updatedItems.reduce((acc, it) => acc + it.priceRub, 0);
+					const stTotalKopecks = sumKopecks(updatedItems.map((it) => parseKopecks(it.priceRub)));
+					const stTotalRub = Math.round(stTotalKopecks / 100);
 					return {
 						...st,
 						items: updatedItems,
 						totalRub: stTotalRub,
-						totalKopecks: parseKopecks(stTotalRub),
+						totalKopecks: stTotalKopecks,
 					};
 				});
 
@@ -580,12 +599,13 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		setTimeout(() => setConfirmedNotice(null), 4000);
 	};
 
-	const handleConfirmPatientChoice = () => {
+	const handleConfirmPatientChoice = (targetTier?: TreatmentPlanTier) => {
+		const effectiveTier = targetTier ?? selectedTier;
 		setSelectionConfirmed(true);
-		const variantTitle = getTierLetter(selectedTier.tierId);
-		const message = "Выбор зафиксирован: Пациент выбрал " + variantTitle + " на сумму " + formatRubles(selectedTier.totalRub);
+		const variantTitle = getTierLetter(effectiveTier.tierId);
+		const message = "Выбор зафиксирован: Пациент выбрал " + variantTitle + " на сумму " + formatRubles(effectiveTier.totalRub);
 		setConfirmedNotice(message);
-		onConfirmSelection?.(selectedTier);
+		onConfirmSelection?.(effectiveTier);
 	};
 
 	const handlePrintAppendix = () => {
@@ -857,9 +877,9 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 							<button
 								key={act.id}
 								type="button"
-								disabled={isCopilotExecuting}
+								aria-busy={isCopilotExecuting}
 								onClick={() => handleExecuteCopilot(act.id)}
-								className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--tp-surface)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] hover:text-[var(--tp-primary)] border border-[var(--tp-border)] cursor-pointer transition-colors disabled:opacity-50"
+								className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--tp-surface)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] hover:text-[var(--tp-primary)] border border-[var(--tp-border)] cursor-pointer transition-colors"
 								title={isCopilotExecuting ? "AI Copilot выполняет команду..." : act.description}
 								data-testid={`presenter-copilot-btn-${act.id}`}
 							>
@@ -890,7 +910,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 						/>
 						<button
 							type="button"
-							disabled={isCopilotExecuting}
+							aria-busy={isCopilotExecuting}
 							onClick={() => {
 								if (customPrompt.trim()) {
 									handleExecuteCopilot(customPrompt.trim());
@@ -899,7 +919,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 									setCopilotFeedback("Введите команду или выберите готовый сценарий презентации («бюджет 120к», «без имплантации»)");
 								}
 							}}
-							className="p-2 min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] flex items-center justify-center rounded-lg bg-[var(--tp-primary)] text-white hover:bg-[var(--tp-primary-hover)] disabled:opacity-40 cursor-pointer touch-manipulation"
+							className="p-2 min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] flex items-center justify-center rounded-lg bg-[var(--tp-primary)] text-white hover:bg-[var(--tp-primary-hover)] cursor-pointer touch-manipulation"
 							title={isCopilotExecuting ? "Выполняется команда ассистента..." : "Отправить команду"}
 							data-testid="presenter-copilot-send-btn"
 						>
@@ -1179,7 +1199,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 													onClick={(e) => {
 														e.stopPropagation();
 														handleSelectTier(tier);
-														handleConfirmPatientChoice();
+														handleConfirmPatientChoice(tier);
 													}}
 													className="treatment-tier-select-btn w-full cursor-pointer m-0"
 													data-testid={"apply-tier-btn-" + tier.tierId}
@@ -1367,7 +1387,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 																					))
 																				)}
 																				{microConsumables.length > 0 && (
-																					<tr className="bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900/40 border-t border-[var(--border,#cbd5e1)]">
+																					<tr className="bg-[var(--paper-soft)] border-t border-[var(--border)]">
 																						<td colSpan={7} className="py-2.5 px-3 text-xs text-[var(--tp-text-muted)]">
 																							<div className="flex items-center justify-between flex-wrap gap-2">
 																								<span className="flex items-center gap-1.5 font-medium">
@@ -1376,7 +1396,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 																								<button
 																									type="button"
 																									onClick={() => setShowMicroConsumables((prev) => !prev)}
-																									className="text-[var(--teal,#0d9488)] hover:underline font-bold text-xs cursor-pointer ml-auto"
+																									className="text-[var(--teal)] hover:underline font-bold text-xs cursor-pointer ml-auto"
 																								>
 																									{showMicroConsumables ? "Скрыть микро-расходники" : "Показать список"}
 																								</button>
@@ -1532,7 +1552,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 																		))
 																	)}
 																	{microConsumables.length > 0 && (
-																		<tr className="bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900/40 border-t border-[var(--border,#cbd5e1)]">
+																		<tr className="bg-[var(--paper-soft)] border-t border-[var(--border)]">
 																			<td colSpan={7} className="py-2.5 px-3 text-xs text-[var(--tp-text-muted)]">
 																				<div className="flex items-center justify-between flex-wrap gap-2">
 																					<span className="flex items-center gap-1.5 font-medium">
@@ -1541,7 +1561,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 																					<button
 																						type="button"
 																						onClick={() => setShowMicroConsumables((prev) => !prev)}
-																						className="text-[var(--teal,#0d9488)] hover:underline font-bold text-xs cursor-pointer ml-auto"
+																						className="text-[var(--teal)] hover:underline font-bold text-xs cursor-pointer ml-auto"
 																					>
 																						{showMicroConsumables ? "Скрыть микро-расходники" : "Показать список"}
 																					</button>
@@ -1727,7 +1747,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 										<button
 											type="button"
 											onClick={() => setShowMicroConsumables(!showMicroConsumables)}
-											className="min-h-[38px] px-3 py-1.5 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 text-xs font-semibold text-[var(--ink,#0f172a)] dark:text-slate-200 bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-700 cursor-pointer transition-colors inline-flex items-center justify-center"
+											className="min-h-[38px] px-3 py-1.5 rounded-lg border border-[var(--line)] text-xs font-semibold text-[var(--ink)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors inline-flex items-center justify-center"
 											title="Скрывать мелкие расходные материалы (салфетки, валики, слюноотсосы) для чистоты сметы"
 										>
 											{showMicroConsumables ? "Скрыть микро-расходники" : "Детализировать микро-расходники"}
@@ -2106,7 +2126,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 
 												return (
 													<React.Fragment key={stage.stageNumber}>
-														<tr style={{ background: "var(--line, #e2e8f0)", fontWeight: "bold" }}>
+														<tr style={{ background: "var(--paper-soft, var(--line))", fontWeight: "bold" }}>
 															<td colSpan={7}>
 																{stage.title} (Срок: {stage.estimatedWeeks} нед., {stage.estimatedVisits} визитов)
 															</td>
@@ -2122,7 +2142,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 																<td>
 																	<div>{it.name}</div>
 																	{it.materials && (
-																		<div style={{ fontSize: "8pt", color: "var(--muted, #475569)" }}>
+																		<div style={{ fontSize: "8pt", color: "var(--muted)" }}>
 																			Материал: {it.materials}
 																		</div>
 																	)}
@@ -2136,7 +2156,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 															</tr>
 														))}
 														{!showMicroConsumables && microConsumablesCount > 0 && (
-															<tr style={{ background: "var(--paper-soft, #f8fafc)", fontStyle: "italic", fontSize: "8pt", color: "var(--muted, #64748b)" }}>
+															<tr style={{ background: "var(--paper-soft, var(--paper))", fontStyle: "italic", fontSize: "8pt", color: "var(--muted)" }}>
 																<td style={{ textAlign: "center" }}>•</td>
 																<td colSpan={6}>
 																	Индивидуальный гигиенический и асептический комплект (салфетки, валики, слюноотсос, перчатки — {microConsumablesCount} поз., включено в стоимость этапа)
@@ -2240,8 +2260,8 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 									<button
 										type="button"
 										onClick={handleRunAiAudit}
-										disabled={isAiAuditing}
-										className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--tp-primary)] text-white hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
+										aria-busy={isAiAuditing}
+										className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--tp-primary)] text-white hover:opacity-90 transition-opacity cursor-pointer"
 										title={isAiAuditing ? "Идёт клинический анализ плана лечения..." : (aiAuditResult ? "Обновить анализ" : "Запустить ИИ-аудит")}
 										data-testid="refresh-ai-audit-btn"
 									>
@@ -2502,7 +2522,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 						{/* Fixate Patient Choice Action */}
 						<button
 							type="button"
-							onClick={handleConfirmPatientChoice}
+							onClick={() => handleConfirmPatientChoice(selectedTier)}
 							className="btn-treatment-action btn-patient-choice cursor-pointer"
 							data-testid="confirm-patient-choice-btn"
 						>
@@ -2518,6 +2538,19 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 								</>
 							)}
 						</button>
+
+						{/* Quick Direct Sign Action (Doctor & Patient Autonomy / Mandate 8e) */}
+						{onApproveAndSign && (
+							<button
+								type="button"
+								onClick={() => onApproveAndSign(selectedTier)}
+								className="btn-treatment-action btn-treatment-sign cursor-pointer"
+								data-testid="approve-and-sign-btn"
+							>
+								<FileSignature size={18} />
+								<span>Подписать план лечения</span>
+							</button>
+						)}
 					</div>
 				</footer>
 			</div>

@@ -37,11 +37,11 @@ export const PhotoCollageExportSheet: React.FC<PhotoCollageExportSheetProps> = (
 				<div className="photo-collage-header">
 					<div>
 						<h1 style={{ fontSize: '20px', fontWeight: 800, margin: 0 }}>{clinicName}</h1>
-						<div style={{ fontSize: '14px', color: '#475569', marginTop: '4px' }}>
+						<div style={{ fontSize: '14px', color: 'var(--muted, #475569)', marginTop: '4px' }}>
 							Клинический фотопротокол ортодонтического / эстетического лечения
 						</div>
 					</div>
-					<div style={{ textAlign: 'right', fontSize: '12px', color: '#475569' }}>
+					<div style={{ textAlign: 'right', fontSize: '12px', color: 'var(--muted, #475569)' }}>
 						<div><strong>Пациент:</strong> {patientName}</div>
 						<div><strong>Карта:</strong> {patientCardNumber} • <strong>Дата:</strong> {new Date().toLocaleDateString('ru-RU')}</div>
 						<div><strong>Лечащий врач:</strong> {doctorName}</div>
@@ -57,7 +57,7 @@ export const PhotoCollageExportSheet: React.FC<PhotoCollageExportSheetProps> = (
 								{rec.imageUrl ? (
 									<img src={rec.imageUrl} alt={slotDef.titleRu} loading="lazy" decoding="async" className="photo-collage-thumb" />
 								) : (
-									<div className="photo-collage-thumb" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#94a3b8' }}>
+									<div className="photo-collage-thumb" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'var(--muted, #94a3b8)' }}>
 										Кадр отсутствует
 									</div>
 								)}

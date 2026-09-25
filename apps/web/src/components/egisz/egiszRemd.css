@@ -113,7 +113,7 @@
 
 .egisz-header-icon-badge.amber {
 	background: rgba(245, 158, 11, 0.15);
-	color: #d97706;
+	color: var(--amber-800, var(--warning, #d97706));
 }
 
 .egisz-header-title-group,
@@ -139,7 +139,7 @@
 .dark .egisz-modal-title,
 [data-theme="dark"] .egisz-header-title,
 .dark .egisz-header-title {
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-modal-subtitle,
@@ -180,7 +180,7 @@
 [data-theme="dark"] .egisz-btn-icon:hover,
 .dark .egisz-btn-icon:hover {
 	background: rgba(255, 255, 255, 0.1);
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 /* CryptoPro Plugin Detection Status Strip */
@@ -199,25 +199,25 @@
 .egisz-plugin-status-bar.connected {
 	background: rgba(16, 185, 129, 0.08);
 	border-bottom-color: rgba(16, 185, 129, 0.25);
-	color: #065f46;
+	color: var(--emerald-text, var(--success, #065f46));
 }
 
 [data-theme="dark"] .egisz-plugin-status-bar.connected,
 .dark .egisz-plugin-status-bar.connected {
 	background: rgba(16, 185, 129, 0.12);
-	color: #34d399;
+	color: var(--emerald-400, var(--success, #34d399));
 }
 
 .egisz-plugin-status-bar.warning {
 	background: rgba(245, 158, 11, 0.08);
 	border-bottom-color: rgba(245, 158, 11, 0.25);
-	color: #92400e;
+	color: var(--amber-800, var(--warning, #92400e));
 }
 
 [data-theme="dark"] .egisz-plugin-status-bar.warning,
 .dark .egisz-plugin-status-bar.warning {
 	background: rgba(245, 158, 11, 0.12);
-	color: #fbbf24;
+	color: var(--amber, var(--warning, #fbbf24));
 }
 
 .egisz-plugin-status-left {
@@ -235,12 +235,12 @@
 }
 
 .egisz-status-dot.green {
-	background: #10b981;
+	background: var(--emerald, #10b981);
 	box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
 }
 
 .egisz-status-dot.amber {
-	background: #f59e0b;
+	background: var(--warning, #f59e0b);
 	box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
 }
 
@@ -346,7 +346,7 @@
 [data-theme="dark"] .egisz-cert-card.selected,
 .dark .egisz-cert-card.selected {
 	background: rgba(14, 165, 233, 0.15);
-	border-color: #38bdf8;
+	border-color: var(--primary, #38bdf8);
 }
 
 .egisz-cert-head {
@@ -365,7 +365,7 @@
 
 [data-theme="dark"] .egisz-cert-owner,
 .dark .egisz-cert-owner {
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-cert-badge {
@@ -379,12 +379,12 @@
 
 .egisz-cert-badge.active {
 	background: rgba(16, 185, 129, 0.15);
-	color: #059669;
+	color: var(--emerald-text, var(--success, #059669));
 }
 
 .egisz-cert-badge.expired {
 	background: rgba(239, 68, 68, 0.15);
-	color: #dc2626;
+	color: var(--red-700, var(--danger, #dc2626));
 }
 
 .egisz-cert-snils,
@@ -442,13 +442,13 @@
 .dark .egisz-doc-tab-btn.active {
 	background: rgba(30, 41, 59, 0.8);
 	border-color: var(--line, #334155);
-	color: #38bdf8;
+	color: var(--primary, #38bdf8);
 }
 
 .egisz-paper-sheet {
-	background: #ffffff;
-	color: #000000;
-	border: 1px solid #cbd5e1;
+	background: var(--doc-paper, #ffffff);
+	color: var(--doc-ink, #000000);
+	border: 1px solid var(--doc-border, #cbd5e1);
 	border-radius: 8px;
 	padding: 1.5rem;
 	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -462,7 +462,7 @@
 
 .egisz-paper-header {
 	text-align: center;
-	border-bottom: 2px solid #000000;
+	border-bottom: 2px solid var(--doc-ink, #000000);
 	padding-bottom: 0.75rem;
 	margin-bottom: 0.5rem;
 }
@@ -475,7 +475,7 @@
 
 .egisz-paper-mo-sub {
 	font-size: 11px;
-	color: #333333;
+	color: var(--doc-muted, #333333);
 }
 
 .egisz-paper-doc-title {
@@ -487,22 +487,22 @@
 .egisz-paper-semd-code {
 	font-size: 11px;
 	font-family: monospace;
-	color: #555555;
+	color: var(--doc-muted, #555555);
 }
 
 .egisz-paper-section-title {
 	font-size: 13px;
 	font-weight: bold;
-	border-bottom: 1px solid #777777;
+	border-bottom: 1px solid var(--doc-border, #777777);
 	padding-bottom: 2px;
 	margin-top: 6px;
 }
 
 /* BLUE ELECTRONIC SIGNATURE STAMP (ШТАМП ЭП МИНЗДРАВ № 947н / ГОСТ Р 7.0.97-2016) */
 :root {
-	--egisz-stamp-border: #0056b3;
-	--egisz-stamp-color: #0056b3;
-	--egisz-stamp-bg: #f0f7ff;
+	--egisz-stamp-border: var(--primary-strong, #0056b3);
+	--egisz-stamp-color: var(--primary-strong, #0056b3);
+	--egisz-stamp-bg: var(--paper-subtle, #f0f7ff);
 }
 
 [data-theme="dark"],
@@ -518,7 +518,7 @@
 	gap: 1rem;
 	margin-top: 1rem;
 	padding-top: 1rem;
-	border-top: 1px dashed #94a3b8;
+	border-top: 1px dashed var(--line, #94a3b8);
 }
 
 .gost-stamp-blue,
@@ -612,11 +612,11 @@
 }
 
 .gost-stamp-pending-box {
-	border: 2px dashed #94a3b8;
+	border: 2px dashed var(--line, #94a3b8);
 	border-radius: 8px;
 	padding: 14px;
 	background: rgba(148, 163, 184, 0.06);
-	color: #64748b;
+	color: var(--muted, #64748b);
 	font-family: sans-serif;
 	font-size: 12px;
 	display: flex;
@@ -631,8 +631,8 @@
 
 /* XML Preview Code Block */
 .egisz-code-box {
-	background: #0f172a;
-	color: #e2e8f0;
+	background: var(--code-bg, #0f172a);
+	color: var(--ink, #e2e8f0);
 	border-radius: 8px;
 	padding: 1rem;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -641,7 +641,7 @@
 	max-height: 480px;
 	overflow: auto;
 	white-space: pre;
-	border: 1px solid #334155;
+	border: 1px solid var(--line, #334155);
 	user-select: text;
 }
 
@@ -694,7 +694,7 @@
 .dark .egisz-btn {
 	background: rgba(30, 41, 59, 0.7);
 	border-color: var(--line, #334155);
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-btn:hover:not(:disabled) {
@@ -714,35 +714,35 @@
 
 .egisz-btn.primary {
 	background: var(--primary, #0ea5e9);
-	color: #ffffff;
+	color: var(--paper, #ffffff);
 	border-color: var(--primary, #0ea5e9);
 }
 
 .egisz-btn.primary:hover:not(:disabled) {
-	background: #0284c7;
-	border-color: #0284c7;
+	background: var(--primary-hover, #0284c7);
+	border-color: var(--sky-700, var(--primary, #0284c7));
 }
 
 .egisz-btn.teal {
 	background: var(--teal, #0d9488);
-	color: #ffffff;
+	color: var(--paper, #ffffff);
 	border-color: var(--teal, #0d9488);
 }
 
 .egisz-btn.teal:hover:not(:disabled) {
-	background: #0f766e;
-	border-color: #0f766e;
+	background: var(--color-teal-700, #0f766e);
+	border-color: var(--color-teal-700, #0f766e);
 }
 
 .egisz-btn.emerald {
-	background: #10b981;
-	color: #ffffff;
-	border-color: #10b981;
+	background: var(--emerald, #10b981);
+	color: var(--paper, #ffffff);
+	border-color: var(--emerald, #10b981);
 }
 
 .egisz-btn.emerald:hover:not(:disabled) {
-	background: #059669;
-	border-color: #059669;
+	background: var(--emerald-700, #059669);
+	border-color: var(--emerald-text, var(--success, #059669));
 }
 
 .egisz-btn.sm {
@@ -809,19 +809,19 @@
 
 [data-theme="dark"] .egisz-stat-val,
 .dark .egisz-stat-val {
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-stat-val.green {
-	color: #10b981;
+	color: var(--success, #10b981);
 }
 
 .egisz-stat-val.amber {
-	color: #f59e0b;
+	color: var(--warning, #f59e0b);
 }
 
 .egisz-stat-val.red {
-	color: #ef4444;
+	color: var(--danger, #ef4444);
 }
 
 .egisz-stat-val.blue {
@@ -871,7 +871,7 @@
 .dark .egisz-search-input {
 	background: rgba(15, 23, 42, 0.7);
 	border-color: var(--line, #334155);
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-search-input:focus {
@@ -904,7 +904,7 @@
 .dark .egisz-filter-select {
 	background: rgba(15, 23, 42, 0.7);
 	border-color: var(--line, #334155);
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 /* Journal Status Tabs */
@@ -948,7 +948,7 @@
 .dark .egisz-status-tab-chip.active {
 	background: rgba(30, 41, 59, 0.8);
 	border-color: var(--line, #334155);
-	color: #38bdf8;
+	color: var(--primary, #38bdf8);
 }
 
 /* Journal Main Table */
@@ -989,7 +989,7 @@
 .dark .egisz-journal-table th {
 	background: var(--paper-strong, #131d31);
 	border-bottom-color: var(--line, #1e293b);
-	color: #94a3b8;
+	color: var(--muted, #94a3b8);
 }
 
 .egisz-journal-table td {
@@ -1002,7 +1002,7 @@
 [data-theme="dark"] .egisz-journal-table td,
 .dark .egisz-journal-table td {
 	border-bottom-color: rgba(30, 41, 59, 0.5);
-	color: #e2e8f0;
+	color: var(--ink, #e2e8f0);
 }
 
 .egisz-journal-table tr:hover td {
@@ -1037,62 +1037,62 @@
 
 .egisz-badge.registered {
 	background: rgba(16, 185, 129, 0.12);
-	color: #059669;
+	color: var(--emerald-text, var(--success, #059669));
 	border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 [data-theme="dark"] .egisz-badge.registered,
 .dark .egisz-badge.registered {
 	background: rgba(16, 185, 129, 0.18);
-	color: #34d399;
+	color: var(--emerald-400, var(--success, #34d399));
 }
 
 .egisz-badge.sent {
 	background: rgba(245, 158, 11, 0.12);
-	color: #d97706;
+	color: var(--amber-800, var(--warning, #d97706));
 	border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
 [data-theme="dark"] .egisz-badge.sent,
 .dark .egisz-badge.sent {
 	background: rgba(245, 158, 11, 0.18);
-	color: #fbbf24;
+	color: var(--amber, var(--warning, #fbbf24));
 }
 
 .egisz-badge.signed {
 	background: rgba(14, 165, 233, 0.12);
-	color: #0284c7;
+	color: var(--sky-700, var(--primary, #0284c7));
 	border: 1px solid rgba(14, 165, 233, 0.25);
 }
 
 [data-theme="dark"] .egisz-badge.signed,
 .dark .egisz-badge.signed {
 	background: rgba(14, 165, 233, 0.18);
-	color: #38bdf8;
+	color: var(--primary, #38bdf8);
 }
 
 .egisz-badge.error {
 	background: rgba(239, 68, 68, 0.12);
-	color: #dc2626;
+	color: var(--red-700, var(--danger, #dc2626));
 	border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 [data-theme="dark"] .egisz-badge.error,
 .dark .egisz-badge.error {
 	background: rgba(239, 68, 68, 0.18);
-	color: #f87171;
+	color: var(--red-400, var(--danger, #f87171));
 }
 
 .egisz-badge.draft {
 	background: rgba(100, 116, 139, 0.12);
-	color: #64748b;
+	color: var(--muted, #64748b);
 	border: 1px solid rgba(100, 116, 139, 0.2);
 }
 
 [data-theme="dark"] .egisz-badge.draft,
 .dark .egisz-badge.draft {
 	background: rgba(148, 163, 184, 0.15);
-	color: #94a3b8;
+	color: var(--muted, #94a3b8);
 }
 
 /* Inspection Drawer / Details Pane in Journal */
@@ -1117,7 +1117,7 @@
 /* Error Remediation Card */
 .egisz-error-card {
 	border: 1px solid rgba(239, 68, 68, 0.35);
-	border-left: 4px solid #ef4444;
+	border-left: 4px solid var(--danger, #ef4444);
 	border-radius: 8px;
 	padding: 0.85rem 1rem;
 	background: rgba(239, 68, 68, 0.06);
@@ -1133,7 +1133,7 @@
 
 .egisz-error-title {
 	font-weight: 700;
-	color: #b91c1c;
+	color: var(--red-700, var(--danger, #b91c1c));
 	font-size: 0.875rem;
 	display: flex;
 	align-items: center;
@@ -1142,7 +1142,7 @@
 
 [data-theme="dark"] .egisz-error-title,
 .dark .egisz-error-title {
-	color: #f87171;
+	color: var(--red-400, var(--danger, #f87171));
 }
 
 .egisz-hint-box {
@@ -1158,7 +1158,7 @@
 [data-theme="dark"] .egisz-hint-box,
 .dark .egisz-hint-box {
 	background: rgba(15, 23, 42, 0.6);
-	color: #e2e8f0;
+	color: var(--ink, #e2e8f0);
 	border-color: rgba(239, 68, 68, 0.3);
 }
 
@@ -1231,20 +1231,20 @@
 
 [data-theme="dark"] .egisz-mode-btn:hover,
 .dark .egisz-mode-btn:hover {
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 	background: rgba(255, 255, 255, 0.08);
 }
 
 .egisz-mode-btn.active {
 	background: var(--primary, #0ea5e9);
-	color: #ffffff;
+	color: var(--paper, #ffffff);
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 [data-theme="dark"] .egisz-mode-btn.active,
 .dark .egisz-mode-btn.active {
 	background: var(--primary, #3b82f6);
-	color: #ffffff;
+	color: var(--paper, #ffffff);
 }
 
 /* Master-Detail Body Layout */
@@ -1308,7 +1308,7 @@
 
 [data-theme="dark"] .egisz-search-box .egisz-search-input,
 .dark .egisz-search-box .egisz-search-input {
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-doc-items-list {
@@ -1379,7 +1379,7 @@
 
 [data-theme="dark"] .egisz-doc-number,
 .dark .egisz-doc-number {
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-doc-patient-name {
@@ -1391,7 +1391,7 @@
 
 [data-theme="dark"] .egisz-doc-patient-name,
 .dark .egisz-doc-patient-name {
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-doc-meta {
@@ -1413,20 +1413,20 @@
 
 .egisz-status-pill.draft {
 	background: rgba(100, 116, 139, 0.12);
-	color: #64748b;
+	color: var(--muted, #64748b);
 	border: 1px solid rgba(100, 116, 139, 0.2);
 }
 
 [data-theme="dark"] .egisz-status-pill.draft,
 .dark .egisz-status-pill.draft {
 	background: rgba(148, 163, 184, 0.15);
-	color: #94a3b8;
+	color: var(--muted, #94a3b8);
 }
 
 .egisz-status-pill.signed_doctor,
 .egisz-status-pill.signed_clinic {
 	background: rgba(14, 165, 233, 0.12);
-	color: #0284c7;
+	color: var(--sky-700, var(--primary, #0284c7));
 	border: 1px solid rgba(14, 165, 233, 0.25);
 }
 
@@ -1435,25 +1435,25 @@
 [data-theme="dark"] .egisz-status-pill.signed_clinic,
 .dark .egisz-status-pill.signed_clinic {
 	background: rgba(14, 165, 233, 0.18);
-	color: #38bdf8;
+	color: var(--primary, #38bdf8);
 }
 
 .egisz-status-pill.registered_remd {
 	background: rgba(16, 185, 129, 0.12);
-	color: #059669;
+	color: var(--emerald-text, var(--success, #059669));
 	border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 [data-theme="dark"] .egisz-status-pill.registered_remd,
 .dark .egisz-status-pill.registered_remd {
 	background: rgba(16, 185, 129, 0.18);
-	color: #34d399;
+	color: var(--emerald-400, var(--success, #34d399));
 }
 
 .egisz-status-pill.sent_to_remd,
 .egisz-status-pill.queued_remd {
 	background: rgba(245, 158, 11, 0.12);
-	color: #d97706;
+	color: var(--amber-800, var(--warning, #d97706));
 	border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
@@ -1462,7 +1462,7 @@
 [data-theme="dark"] .egisz-status-pill.queued_remd,
 .dark .egisz-status-pill.queued_remd {
 	background: rgba(245, 158, 11, 0.18);
-	color: #fbbf24;
+	color: var(--amber, var(--warning, #fbbf24));
 }
 
 /* Main Workspace Area */
@@ -1515,7 +1515,7 @@
 
 [data-theme="dark"] .egisz-card-title,
 .dark .egisz-card-title {
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-grid-2col {
@@ -1545,7 +1545,7 @@
 
 [data-theme="dark"] .egisz-field-val,
 .dark .egisz-field-val {
-	color: #f1f5f9;
+	color: var(--ink, #f1f5f9);
 }
 
 .egisz-code-chip {
@@ -1572,13 +1572,13 @@
 	border-radius: 8px;
 	background: rgba(245, 158, 11, 0.1);
 	border: 1px solid rgba(245, 158, 11, 0.3);
-	color: #92400e;
+	color: var(--amber-800, var(--warning, #92400e));
 }
 
 [data-theme="dark"] .egisz-warning-banner,
 .dark .egisz-warning-banner {
 	background: rgba(245, 158, 11, 0.15);
-	color: #fbbf24;
+	color: var(--amber, var(--warning, #fbbf24));
 	border-color: rgba(245, 158, 11, 0.35);
 }
 
@@ -1599,7 +1599,7 @@
 .dark .egisz-cert-select {
 	background: rgba(15, 23, 42, 0.7);
 	border-color: var(--line, #334155);
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 /* Clean certificate preview without matryoshka box */
@@ -1614,7 +1614,7 @@
 
 [data-theme="dark"] .egisz-cert-preview,
 .dark .egisz-cert-preview {
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-signing-actions-row {
@@ -1635,7 +1635,7 @@
 	border-radius: 8px;
 	border: none;
 	background: var(--primary, #0ea5e9);
-	color: #ffffff;
+	color: var(--paper, #ffffff);
 	font-size: 14px;
 	font-weight: 600;
 	cursor: pointer;
@@ -1643,7 +1643,7 @@
 }
 
 .egisz-primary-btn:hover:not(:disabled) {
-	background: #0284c7;
+	background: var(--primary-hover, #0284c7);
 	transform: translateY(-1px);
 }
 
@@ -1660,7 +1660,7 @@
 	padding: 8px 14px;
 	border-radius: 8px;
 	background: rgba(16, 185, 129, 0.12);
-	color: #059669;
+	color: var(--emerald-text, var(--success, #059669));
 	font-size: 13px;
 	font-weight: 600;
 }
@@ -1668,7 +1668,7 @@
 [data-theme="dark"] .egisz-signed-badge,
 .dark .egisz-signed-badge {
 	background: rgba(16, 185, 129, 0.18);
-	color: #34d399;
+	color: var(--emerald-400, var(--success, #34d399));
 }
 
 .egisz-status-badge {
@@ -1684,13 +1684,13 @@
 
 .egisz-status-badge.success {
 	background: rgba(16, 185, 129, 0.12);
-	color: #059669;
+	color: var(--emerald-text, var(--success, #059669));
 }
 
 [data-theme="dark"] .egisz-status-badge.success,
 .dark .egisz-status-badge.success {
 	background: rgba(16, 185, 129, 0.18);
-	color: #34d399;
+	color: var(--emerald-400, var(--success, #34d399));
 }
 
 .egisz-stamp-container {
@@ -1734,7 +1734,7 @@
 
 [data-theme="dark"] .egisz-xml-filename,
 .dark .egisz-xml-filename {
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-btn-secondary {
@@ -1761,7 +1761,7 @@
 .dark .egisz-btn-secondary {
 	background: rgba(30, 41, 59, 0.7);
 	border-color: var(--line, #334155);
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 [data-theme="dark"] .egisz-btn-secondary:hover,
@@ -1771,8 +1771,8 @@
 
 .egisz-xml-code-block {
 	flex: 1;
-	background: #0f172a;
-	color: #34d399;
+	background: var(--code-bg, #0f172a);
+	color: var(--emerald-400, var(--success, #34d399));
 	border-radius: 8px;
 	padding: 16px;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -1781,7 +1781,7 @@
 	overflow: auto;
 	max-height: 540px;
 	white-space: pre;
-	border: 1px solid #334155;
+	border: 1px solid var(--line, #334155);
 	user-select: text;
 }
 
@@ -1840,7 +1840,7 @@
 .dark .egisz-modal-container {
 	background: var(--paper-strong, #0f172a);
 	border-color: var(--line, #1e293b);
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-modal-header {
@@ -1886,7 +1886,7 @@
 
 [data-theme="dark"] .egisz-main-title,
 .dark .egisz-main-title {
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-sub-title {
@@ -1918,7 +1918,7 @@
 [data-theme="dark"] .egisz-close-btn:hover,
 .dark .egisz-close-btn:hover {
 	background: var(--line, #1e293b);
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 /* Tabs Navigation */
@@ -1960,7 +1960,7 @@
 
 [data-theme="dark"] .egisz-tab-btn:hover,
 .dark .egisz-tab-btn:hover {
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-tab-btn.active {
@@ -1972,8 +1972,8 @@
 [data-theme="dark"] .egisz-tab-btn.active,
 .dark .egisz-tab-btn.active {
 	background: var(--paper, #1e293b);
-	color: #38bdf8;
-	border-bottom-color: #38bdf8;
+	color: var(--primary, #38bdf8);
+	border-bottom-color: var(--primary, #38bdf8);
 }
 
 .egisz-tab-badge {
@@ -2071,16 +2071,16 @@
 }
 
 .egisz-check-card.passed {
-	border-left: 4px solid #10b981;
+	border-left: 4px solid var(--success, #10b981);
 }
 
 .egisz-check-card.failed {
-	border-left: 4px solid #ef4444;
+	border-left: 4px solid var(--danger, #ef4444);
 	background: var(--rose-muted, rgba(239, 68, 68, 0.05));
 }
 
 .egisz-check-card.warning {
-	border-left: 4px solid #f59e0b;
+	border-left: 4px solid var(--warning, #f59e0b);
 	background: var(--amber-muted, rgba(245, 158, 11, 0.05));
 }
 
@@ -2099,7 +2099,7 @@
 
 [data-theme="dark"] .egisz-check-title,
 .dark .egisz-check-title {
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-check-badge {
@@ -2112,17 +2112,17 @@
 
 .egisz-check-badge.passed {
 	background: rgba(16, 185, 129, 0.15);
-	color: #059669;
+	color: var(--emerald-text, var(--success, #059669));
 }
 
 .egisz-check-badge.failed {
 	background: rgba(239, 68, 68, 0.15);
-	color: #dc2626;
+	color: var(--red-700, var(--danger, #dc2626));
 }
 
 .egisz-check-badge.warning {
 	background: rgba(245, 158, 11, 0.15);
-	color: #d97706;
+	color: var(--amber-800, var(--warning, #d97706));
 }
 
 .egisz-check-desc {
@@ -2263,7 +2263,7 @@
 
 [data-theme="dark"] .egisz-ukep-header,
 .dark .egisz-ukep-header {
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-ukep-details {
@@ -2291,7 +2291,7 @@
 
 [data-theme="dark"] .egisz-ukep-value,
 .dark .egisz-ukep-value {
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 /* Modal Footer & Actions */
@@ -2349,7 +2349,7 @@
 .dark .egisz-btn {
 	background: var(--paper-strong, #1e293b);
 	border-color: var(--line, #334155);
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-btn:hover:not(:disabled) {
@@ -2370,7 +2370,7 @@
 
 .egisz-btn-primary {
 	background: var(--primary, #0ea5e9);
-	color: #ffffff;
+	color: var(--paper, #ffffff);
 	border-color: var(--primary, #0ea5e9);
 }
 
@@ -2380,14 +2380,14 @@
 }
 
 .egisz-btn-success {
-	background: #10b981;
-	color: #ffffff;
-	border-color: #10b981;
+	background: var(--emerald, #10b981);
+	color: var(--paper, #ffffff);
+	border-color: var(--emerald, #10b981);
 }
 
 .egisz-btn-success:hover:not(:disabled) {
-	background: #059669;
-	border-color: #059669;
+	background: var(--emerald-700, #059669);
+	border-color: var(--emerald-text, var(--success, #059669));
 }
 
 /* Compact Button modifier for deterministicVision (32-38px) */
@@ -2438,7 +2438,7 @@
 
 [data-theme="dark"] .egisz-doc-filter-btn:hover,
 .dark .egisz-doc-filter-btn:hover {
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 .egisz-doc-filter-btn.active {
@@ -2475,7 +2475,7 @@
 [data-theme="dark"] .egisz-badge-teal,
 .dark .egisz-badge-teal {
 	background: rgba(45, 212, 191, 0.15);
-	color: #2dd4bf;
+	color: var(--teal, #2dd4bf);
 }
 
 @media (max-width: 768px) {

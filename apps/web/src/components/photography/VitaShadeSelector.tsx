@@ -158,7 +158,7 @@ export const VitaShadeSelector: React.FC<VitaShadeSelectorProps> = ({
 							padding: '2px 8px',
 							borderRadius: '12px',
 							background: deltaResult.isLighter ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-							color: deltaResult.isLighter ? '#15803d' : '#b91c1c',
+							color: deltaResult.isLighter ? 'var(--green, #15803d)' : 'var(--rust, #b91c1c)',
 						}}>
 							{deltaResult.deltaL >= 0 ? `+${deltaResult.deltaL}` : deltaResult.deltaL} ΔL*
 						</span>
@@ -168,7 +168,7 @@ export const VitaShadeSelector: React.FC<VitaShadeSelectorProps> = ({
 							padding: '2px 8px',
 							borderRadius: '12px',
 							background: 'rgba(37, 99, 235, 0.12)',
-							color: '#1d4ed8',
+							color: 'var(--teal-dark, #1d4ed8)',
 						}}>
 							ΔE₀₀ = {deltaResult.deltaE00}
 						</span>
@@ -262,7 +262,7 @@ export const VitaShadeSelector: React.FC<VitaShadeSelectorProps> = ({
 								border: isCurrentActiveSelection
 									? '2px solid var(--brand-500, #2563eb)'
 									: (isSelectedBefore || isSelectedAfter)
-									? '2px dashed #94a3b8'
+									? '2px dashed var(--muted, #94a3b8)'
 									: '1px solid var(--line, #cbd5e1)',
 								background: isCurrentActiveSelection ? 'rgba(37, 99, 235, 0.08)' : 'var(--paper, #ffffff)',
 								cursor: 'pointer',
@@ -289,7 +289,7 @@ export const VitaShadeSelector: React.FC<VitaShadeSelectorProps> = ({
 									top: '-4px',
 									right: '-4px',
 									background: 'var(--brand-500, #2563eb)',
-									color: '#ffffff',
+									color: 'var(--paper, #ffffff)',
 									borderRadius: '50%',
 									width: '14px',
 									height: '14px',

@@ -8,6 +8,11 @@
 
 import React, { useMemo } from "react";
 import { Check, ShieldCheck, Sparkles, RefreshCw, Scissors } from "lucide-react";
+import {
+	type ResorptionStagePercent,
+	RESORPTION_STAGE_DEFINITIONS,
+	isPrimaryTooth,
+} from "../odontogram/pediatricDentitionEngine";
 
 export type PediatricDentitionMode = "primary" | "mixed";
 
@@ -84,6 +89,12 @@ export interface PediatricTeethChartProps {
 	readonly onModeChange?: (mode: PediatricDentitionMode) => void;
 	/** Словарь состояний зубов: toothNumber -> finding state */
 	readonly toothFindings?: Readonly<Record<number, ToothClinicalFinding>>;
+	/** Стадии резорбции корней временных зубов: toothNumber -> ResorptionStagePercent (0, 25, 50, 75, 100) */
+	readonly resorptionStages?: Readonly<Record<number, ResorptionStagePercent>> | undefined;
+	/** Обработчик изменения стадии резорбции зуба */
+	readonly onResorptionChange?: ((toothNumber: number, stage: ResorptionStagePercent) => void) | undefined;
+	/** Обработчик быстрого изменения клинического состояния зуба (Mandate 8e: автономия врача в 1 клик) */
+	readonly onToothFindingChange?: ((toothNumber: number, finding: ToothClinicalFinding) => void) | undefined;
 	/** Пакетный обработчик установки всех молочных в здоровые */
 	readonly onSetAllHealthy?: () => void;
 	/** Пакетный обработчик физиологической смены прикуса */
@@ -98,6 +109,9 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 	mode = "primary",
 	onModeChange,
 	toothFindings = {},
+	resorptionStages = {},
+	onResorptionChange,
+	onToothFindingChange,
 	onSetAllHealthy,
 	onApplyMixedDentitionPreset,
 	className = "",
@@ -121,6 +135,8 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 	const renderToothButton = (tooth: PediatricToothItem) => {
 		const isSelected = activeTooth === tooth.toothNumber;
 		const finding = toothFindings[tooth.toothNumber] ?? "Healthy";
+		const isPrimary = tooth.isPrimary;
+		const resorption = isPrimary && resorptionStages ? resorptionStages[tooth.toothNumber] : undefined;
 
 		// Semantic color according to clinical finding
 		let findingBadge = "";
@@ -156,7 +172,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 						? "border-teal-600 bg-teal-50/90 text-teal-950 shadow-sm ring-2 ring-teal-500/40 dark:border-teal-400 dark:bg-teal-950/70 dark:text-teal-100 font-extrabold z-10"
 						: `${findingClass} hover:border-teal-400 hover:bg-[var(--paper-soft,#f8fafc)]`
 				} ${!tooth.isPrimary ? "ring-1 ring-sky-500/30" : ""}`}
-				title={`${tooth.toothNumber} — ${tooth.anatomicalNameRu}${findingBadge ? ` (${findingBadge})` : ""}`}
+				title={`${tooth.toothNumber} — ${tooth.anatomicalNameRu}${findingBadge ? ` (${findingBadge})` : ""}${typeof resorption === "number" && resorption > 0 ? ` [Резорбция: ${resorption}%]` : ""}`}
 				data-testid={`pediatric-tooth-btn-${tooth.toothNumber}`}
 			>
 				{/* Permanent molar indicator badge */}
@@ -177,6 +193,22 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 				{findingBadge && finding !== "Healthy" && (
 					<span className="mt-0.5 rounded px-1 text-[8px] font-bold bg-black/5 dark:bg-white/10 truncate max-w-full">
 						{findingBadge}
+					</span>
+				)}
+
+				{/* Root resorption stage indicator badge for milk teeth */}
+				{isPrimary && typeof resorption === "number" && resorption > 0 && (
+					<span
+						className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded px-1 text-[8px] font-mono font-black tracking-tight"
+						style={{
+							backgroundColor: RESORPTION_STAGE_DEFINITIONS[resorption]?.badgeBg ?? "rgba(239, 68, 68, 0.15)",
+							color: RESORPTION_STAGE_DEFINITIONS[resorption]?.badgeColor ?? "#ef4444",
+							border: `1px solid ${RESORPTION_STAGE_DEFINITIONS[resorption]?.badgeBorder ?? "rgba(239, 68, 68, 0.35)"}`,
+						}}
+						title={`Резорбция корня: ${resorption}% (${RESORPTION_STAGE_DEFINITIONS[resorption]?.descriptionRu})`}
+						data-testid={`tooth-resorption-badge-${tooth.toothNumber}`}
+					>
+						{`R${resorption}%`}
 					</span>
 				)}
 			</button>
@@ -316,6 +348,82 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 					<span>Левый низ (Квадрант 7 / 3)</span>
 				</div>
 			</div>
+
+			{/* ═════════════════════════════════════════════════════════════════ */}
+			{/* БЫСТРАЯ СМЕНА СТАТУСА И РЕЗОРБЦИИ АКТИВНОГО ЗУБА (МАНДАТ 8e В 1 КЛИК) */}
+			{/* ═════════════════════════════════════════════════════════════════ */}
+			{activeTooth && (onToothFindingChange || onResorptionChange) && (
+				<div
+					className="mt-3 pt-2.5 border-t border-[var(--line,#e2e8f0)] flex flex-wrap items-center justify-between gap-2"
+					data-testid="pediatric-active-tooth-toolbar"
+				>
+					<div className="flex flex-wrap items-center gap-1.5 min-w-0">
+						<span className="text-[11px] font-black uppercase text-[var(--muted,#64748b)]">
+							Зуб {activeTooth}:
+						</span>
+						{onToothFindingChange && (
+							<div className="flex flex-wrap items-center gap-1" data-testid="active-tooth-findings-group">
+								{(
+									[
+										{ id: "Healthy", label: "Здоров" },
+										{ id: "Caries", label: "Кариес" },
+										{ id: "Filled", label: "Пломба" },
+										{ id: "EndoTreated", label: "Пульпотомия" },
+										{ id: "Watch", label: "Фтор" },
+										{ id: "Crown", label: "Коронка" },
+										{ id: "Extracted", label: "Удалён" },
+									] as const
+								).map((st) => {
+									const isCurrent = (toothFindings[activeTooth] ?? "Healthy") === st.id;
+									return (
+										<button
+											key={st.id}
+											type="button"
+											onClick={() => onToothFindingChange(activeTooth, st.id)}
+											className={`min-h-[28px] sm:min-h-0 sm:h-6 px-1.5 rounded text-[10px] font-bold border transition cursor-pointer select-none active:scale-95 ${
+												isCurrent
+													? "bg-teal-600 text-white border-teal-600 shadow-xs"
+													: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
+											}`}
+											data-testid={`active-tooth-finding-${st.id}`}
+										>
+											{st.label}
+										</button>
+									);
+								})}
+							</div>
+						)}
+					</div>
+
+					{isPrimaryTooth(activeTooth) && onResorptionChange && (
+						<div className="flex items-center gap-1 shrink-0" data-testid="active-tooth-resorption-group">
+							<span className="text-[10px] font-black uppercase text-[var(--muted,#64748b)] mr-0.5">
+								Резорбция:
+							</span>
+							{([0, 25, 50, 75, 100] as const).map((r) => {
+								const currentRes = resorptionStages?.[activeTooth] ?? 0;
+								const isCurrent = currentRes === r;
+								return (
+									<button
+										key={r}
+										type="button"
+										onClick={() => onResorptionChange(activeTooth, r)}
+										className={`min-h-[28px] sm:min-h-0 sm:h-6 px-1.5 rounded text-[10px] font-mono font-bold border transition cursor-pointer select-none active:scale-95 ${
+											isCurrent
+												? "bg-rose-600 text-white border-rose-600 shadow-xs"
+												: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
+										}`}
+										title={`Резорбция ${r}%: ${RESORPTION_STAGE_DEFINITIONS[r]?.descriptionRu}`}
+										data-testid={`active-tooth-resorption-${r}`}
+									>
+										{r}%
+									</button>
+								);
+							})}
+						</div>
+					)}
+				</div>
+			)}
 		</div>
 	);
 };

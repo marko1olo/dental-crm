@@ -383,7 +383,7 @@
 .loyalty-cert-gold-foil {
 	position: absolute;
 	inset: 0;
-	background: radial-gradient(circle at top right, rgba(251, 191, 36, 0.15), transparent 70%);
+	background: radial-gradient(circle at top right, var(--warn-bg), transparent 70%);
 	pointer-events: none;
 }
 
@@ -393,12 +393,12 @@
 	font-weight: 700;
 	letter-spacing: 0.18em;
 	color: var(--warn-fg);
-	text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+	text-shadow: 0 2px 4px var(--shadow-2);
 	margin: 1.25rem 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: rgba(0, 0, 0, 0.4);
+	background: var(--paper-soft);
 	padding: 0.625rem 1rem;
 	border-radius: 8px;
 	border: 1px dashed var(--warn-fg);
@@ -411,7 +411,7 @@
 	justify-content: center;
 	margin-top: 1rem;
 	opacity: 0.95;
-	background: rgba(255, 255, 255, 0.1);
+	background: var(--paper-soft);
 	border-radius: 4px;
 	padding: 4px 8px;
 }
@@ -555,6 +555,56 @@
 	border-radius: 14px;
 	padding: 1rem 1.25rem;
 	margin-top: 1.5rem;
+	color: var(--warn-fg);
+}
+
+/* Patient Referral Program («Привёл друга / семью») */
+.loyalty-referral-banner {
+	background: linear-gradient(135deg, var(--teal-soft) 0%, var(--paper-soft) 100%);
+	border: 1px solid var(--teal);
+	border-radius: 16px;
+	padding: 1.25rem 1.5rem;
+	margin-bottom: 1.5rem;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 1rem;
+}
+
+.loyalty-referral-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 1rem;
+	margin-top: 1rem;
+}
+
+.loyalty-referral-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	box-shadow: var(--shadow-1);
+}
+
+.loyalty-referral-status-badge {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	padding: 0.25rem 0.5rem;
+	border-radius: 6px;
+	display: inline-block;
+}
+
+.loyalty-referral-status-badge.rewarded {
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+}
+
+.loyalty-referral-status-badge.pending {
+	background: var(--warn-bg);
 	color: var(--warn-fg);
 }
 

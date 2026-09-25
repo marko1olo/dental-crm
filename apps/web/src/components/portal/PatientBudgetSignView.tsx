@@ -13,7 +13,9 @@ import {
 	FileText,
 	Lock,
 	Printer,
+	RotateCcw,
 	ShieldCheck,
+	Sparkles,
 } from "lucide-react";
 import type { PublicAuthMethod } from "@dental/shared";
 import "./patientBudgetSign.css";
@@ -110,10 +112,12 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 
 	// Signature Canvas state
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
+	const [isDrawing, setIsDrawing] = useState<boolean>(false);
 	const [hasStrokes, setHasStrokes] = useState<boolean>(false);
 	const [signerName, setSignerName] = useState<string>("");
 	const [isSubmittingSign, setIsSubmittingSign] = useState<boolean>(false);
 	const [signError, setSignError] = useState<string | null>(null);
+	const [legalConsent152Fz, setLegalConsent152Fz] = useState<boolean>(true);
 
 	// Fetch budget details from backend
 	const fetchBudget = useCallback(
@@ -163,7 +167,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 						// non-blocking tracking
 					});
 				}
-			} catch (err) {
+			} catch {
 				setFetchError("Не удалось соединиться с сервером. Проверьте подключение.");
 			} finally {
 				setIsLoading(false);
@@ -180,7 +184,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 		}
 	}, [activeToken, fetchBudget]);
 
-	// Setup canvas resolution and coordinate scaling for PEP stamp generation
+	// Setup canvas resolution and coordinate scaling for touch signature pad & PEP stamp
 	const setupCanvas = useCallback(() => {
 		const canvas = canvasRef.current;
 		if (!canvas) return;
@@ -198,8 +202,8 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 			ctx.scale(dpr, dpr);
 			ctx.lineCap = "round";
 			ctx.lineJoin = "round";
-			ctx.strokeStyle = "#059669";
-			ctx.lineWidth = 2;
+			ctx.strokeStyle = "#0d9488";
+			ctx.lineWidth = 2.5;
 		}
 	}, []);
 
@@ -212,10 +216,61 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 		}
 	}, [budget, setupCanvas]);
 
-	// Handle 2FA verification submit
+	// Interactive touch / pointer signature handlers
+	const startDrawing = (e: React.PointerEvent<HTMLCanvasElement>) => {
+		const canvas = canvasRef.current;
+		if (!canvas) return;
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return;
+		const rect = canvas.getBoundingClientRect();
+		const x = e.clientX - rect.left;
+		const y = e.clientY - rect.top;
+		ctx.beginPath();
+		ctx.moveTo(x, y);
+		setIsDrawing(true);
+		setHasStrokes(true);
+	};
+
+	const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+		if (!isDrawing) return;
+		const canvas = canvasRef.current;
+		if (!canvas) return;
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return;
+		const rect = canvas.getBoundingClientRect();
+		const x = e.clientX - rect.left;
+		const y = e.clientY - rect.top;
+		ctx.lineTo(x, y);
+		ctx.stroke();
+	};
+
+	const stopDrawing = () => {
+		setIsDrawing(false);
+	};
+
+	const clearCanvas = () => {
+		const canvas = canvasRef.current;
+		if (!canvas) return;
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return;
+		const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+		ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+		setHasStrokes(false);
+	};
+
+	// Handle 2FA verification submit (0 disabled buttons — accessible validation)
 	const handleVerifySubmit = async (e?: React.FormEvent) => {
 		if (e) e.preventDefault();
-		if (!activeToken || !verifyFactor.trim()) return;
+		if (!activeToken) return;
+
+		if (!verifyFactor.trim()) {
+			setVerifyError(
+				budget?.authMethod === "phone_last4"
+					? "Пожалуйста, введите последние 4 цифры вашего номера телефона."
+					: "Пожалуйста, укажите дату рождения в формате ДД.ММ.ГГГГ.",
+			);
+			return;
+		}
 
 		setIsVerifying(true);
 		setVerifyError(null);
@@ -244,7 +299,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 				await fetchBudget(activeToken);
 			}
 		} catch {
-			setVerifyError("Ошибка сети проверке кода.");
+			setVerifyError("Ошибка сети при проверке кода.");
 		} finally {
 			setIsVerifying(false);
 		}
@@ -264,21 +319,21 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 		ctx.clearRect(0, 0, w, h);
 
 		// Draw border badge
-		ctx.fillStyle = "#f8fafc";
+		ctx.fillStyle = "rgba(13, 148, 136, 0.08)";
 		ctx.fillRect(8, 8, w - 16, h - 16);
-		ctx.strokeStyle = "#059669";
+		ctx.strokeStyle = "#0d9488";
 		ctx.lineWidth = 2;
 		ctx.strokeRect(8, 8, w - 16, h - 16);
 
 		// Draw official PEP text
-		ctx.fillStyle = "#047857";
+		ctx.fillStyle = "#0f766e";
 		ctx.font = "bold 13px -apple-system, BlinkMacSystemFont, sans-serif";
 		ctx.textAlign = "center";
 		ctx.fillText("ПОДПИСАНО В ПОРТАЛЕ ПАЦИЕНТА", w / 2, h / 2 - 14);
 
-		ctx.fillStyle = "#065f46";
+		ctx.fillStyle = "#115e59";
 		ctx.font = "11px -apple-system, BlinkMacSystemFont, sans-serif";
-		ctx.fillText("ПЭП 63-ФЗ ст. 5 • Подтверждено пациентом", w / 2, h / 2 + 6);
+		ctx.fillText("ПЭП 63-ФЗ ст. 5 • 152-ФЗ • Подтверждено пациентом", w / 2, h / 2 + 6);
 
 		const dateStr = new Date().toLocaleString("ru-RU");
 		ctx.fillStyle = "#64748b";
@@ -288,12 +343,17 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 		setHasStrokes(true);
 	}, [signerName, budget?.patientFirstName]);
 
-	// Submit signed budget in 1-click via 63-FZ PEP (Mandates 8e, 8k, 8n)
+	// Submit signed budget in 1-click via 63-FZ PEP with 152-FZ consent (Mandates 8e, 8k, 8n)
 	const handleSignSubmit = async () => {
 		if (!activeToken) return;
 
-		// Automatically ensure official 1-click PEP stamp is rendered onto canvas
-		if (canvasRef.current) {
+		if (!legalConsent152Fz) {
+			setSignError("Необходимо подтвердить согласие на обработку персональных данных (152-ФЗ) и утверждение сметы.");
+			return;
+		}
+
+		// If patient has not drawn on canvas, automatically render official 1-click PEP stamp
+		if (!hasStrokes && canvasRef.current) {
 			handleOneClickPep();
 		}
 
@@ -352,7 +412,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 	if (isLoading) {
 		return (
 			<div className={`patient-budget-container ${className}`}>
-				<div style={{ textAlign: "center", padding: "3rem 1rem", color: "var(--muted, #64748b)" }}>
+				<div style={{ textAlign: "center", padding: "3rem 1rem", color: "var(--muted)" }}>
 					<Clock size={32} style={{ margin: "0 auto 1rem", display: "block" }} />
 					<p>Загрузка данных сметы...</p>
 				</div>
@@ -364,11 +424,11 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 		return (
 			<div className={`patient-budget-container ${className}`}>
 				<div className="patient-budget-card" style={{ textAlign: "center", padding: "2rem 1rem" }}>
-					<AlertCircle size={40} color="#dc2626" style={{ margin: "0 auto 0.75rem", display: "block" }} />
-					<h3 style={{ fontSize: "1rem", fontWeight: 700, margin: "0 0 0.5rem" }}>
+					<AlertCircle size={40} style={{ margin: "0 auto 0.75rem", display: "block", color: "var(--bad-fg, var(--rust))" }} />
+					<h3 style={{ fontSize: "1rem", fontWeight: 700, margin: "0 0 0.5rem", color: "var(--ink)" }}>
 						Ошибка доступа
 					</h3>
-					<p style={{ fontSize: "0.875rem", color: "var(--muted, #64748b)", margin: 0 }}>
+					<p style={{ fontSize: "0.875rem", color: "var(--muted)", margin: 0 }}>
 						{fetchError || "Смета не найдена."}
 					</p>
 				</div>
@@ -415,7 +475,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 						<Lock size={16} />
 						Подтверждение доступа
 					</div>
-					<p style={{ fontSize: "0.8125rem", color: "#64748b", margin: "0 0 0.5rem" }}>
+					<p style={{ fontSize: "0.8125rem", color: "var(--muted)", margin: "0 0 0.5rem" }}>
 						{budget.authMethod === "phone_last4"
 							? "Для просмотра полного плана лечения введите последние 4 цифры вашего номера телефона:"
 							: "Укажите дату рождения (ДД.ММ.ГГГГ):"}
@@ -435,15 +495,15 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 							<button
 								type="submit"
 								className="patient-budget-verify-btn"
-								disabled={isVerifying || !verifyFactor.trim()}
+								data-testid="patient-budget-verify-submit-btn"
 							>
 								<ShieldCheck size={16} />
-								{isVerifying ? "..." : "Войти"}
+								{isVerifying ? "Проверка..." : "Войти"}
 							</button>
 						</div>
 					</form>
 					{verifyError && (
-						<div className="patient-budget-error-msg">
+						<div className="patient-budget-error-msg" data-testid="patient-budget-verify-error">
 							<AlertCircle size={14} />
 							{verifyError}
 						</div>
@@ -459,7 +519,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 				</div>
 
 				{budget.items.length === 0 ? (
-					<p style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)" }}>
+					<p style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
 						Список услуг уточняется.
 					</p>
 				) : (
@@ -491,7 +551,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 								<span>Сумма по прайсу:</span>
 								<span>{formatRub(budget.totalPriceRub)}</span>
 							</div>
-							<div className="patient-budget-total-line" style={{ color: "#059669" }}>
+							<div className="patient-budget-total-line" style={{ color: "var(--teal)" }}>
 								<span>Скидка клиники:</span>
 								<span>-{formatRub(budget.discountRub)}</span>
 							</div>
@@ -507,7 +567,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 			{/* Accepted Card (post-signing state) */}
 			{isAccepted ? (
 				<div className="patient-budget-accepted-card">
-					<CheckCircle2 size={40} color="#166534" style={{ margin: "0 auto" }} />
+					<CheckCircle2 size={40} style={{ margin: "0 auto", color: "var(--teal)" }} />
 					<div className="patient-budget-accepted-title">
 						Смета успешно согласована
 					</div>
@@ -522,7 +582,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 					)}
 					{budget.documentHash && (
 						<div className="patient-budget-hash-box">
-							<strong>SHA-256 целостности:</strong>
+							<strong>SHA-256 целостности документа:</strong>
 							<br />
 							{budget.documentHash}
 						</div>
@@ -537,47 +597,63 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 					</button>
 				</div>
 			) : budget.isVerified ? (
-				/* 63-FZ PEP Electronic Agreement Card */
+				/* 63-FZ PEP Electronic Agreement Card with Interactive Touch Signature Pad */
 				<div className="patient-budget-card" data-testid="patient-budget-sign-card">
 					<div className="patient-budget-card-title">
-						<ShieldCheck size={18} color="#059669" />
-						Электронное согласование сметы (ПЭП 63-ФЗ)
+						<ShieldCheck size={18} style={{ color: "var(--teal)" }} />
+						Электронное согласование сметы (ПЭП 63-ФЗ / 152-ФЗ)
 					</div>
-					<p style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)", margin: "0 0 0.75rem" }}>
-						Согласование выполняется в 1 клик с формированием юридически значимого штампа простой электронной подписи:
+					<p style={{ fontSize: "0.8125rem", color: "var(--muted)", margin: "0 0 0.75rem" }}>
+						Распишитесь пальцем/стилусом или согласуйте в 1 клик с формированием юридически значимого штампа простой электронной подписи:
 					</p>
 
-					{/* 63-FZ PEP Official Stamp Preview */}
-					<div
-						className="patient-budget-pep-stamp-preview"
-						style={{
-							padding: "1rem",
-							border: "2px solid #059669",
-							borderRadius: "0.5rem",
-							background: "#f0fdf4",
-							textAlign: "center",
-							marginBottom: "0.75rem",
-						}}
-					>
-						<div style={{ color: "#047857", fontWeight: 700, fontSize: "0.875rem", letterSpacing: "0.025em" }}>
-							ДОКУМЕНТ ПОДПИСЫВАЕТСЯ В ПОРТАЛЕ ПАЦИЕНТА
+					{/* Interactive Touch / Mobile Canvas for Signature or 1-Click PEP Stamp */}
+					<div className="patient-budget-signature-section">
+						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+							<span style={{ fontSize: "12px", fontWeight: 600, color: "var(--ink)" }}>
+								Подпись пациента:
+							</span>
+							<div style={{ display: "flex", gap: "6px" }}>
+								{hasStrokes && (
+									<button
+										type="button"
+										onClick={clearCanvas}
+										className="patient-budget-clear-btn"
+										data-testid="patient-budget-clear-canvas-btn"
+									>
+										<RotateCcw size={12} />
+										Очистить
+									</button>
+								)}
+								<button
+									type="button"
+									onClick={handleOneClickPep}
+									className="patient-budget-stamp-btn"
+									data-testid="patient-budget-generate-pep-stamp-btn"
+								>
+									<Sparkles size={12} />
+									Штамп ПЭП (1 клик)
+								</button>
+							</div>
 						</div>
-						<div style={{ color: "#065f46", fontSize: "0.75rem", marginTop: "0.25rem" }}>
-							Простая электронная подпись (ПЭП) по ст. 5 Федерального закона № 63-ФЗ
-						</div>
-						<div style={{ color: "#64748b", fontSize: "0.6875rem", marginTop: "0.375rem" }}>
-							Подписант: <strong style={{ color: "#0f172a" }}>{signerName.trim() || budget.signerName || budget.patientFirstName || "Пациент"}</strong>
+
+						<div className="patient-budget-canvas-wrapper">
+							<canvas
+								ref={canvasRef}
+								className="patient-budget-canvas"
+								data-testid="patient-budget-signature-canvas"
+								onPointerDown={startDrawing}
+								onPointerMove={draw}
+								onPointerUp={stopDrawing}
+								onPointerLeave={stopDrawing}
+							/>
+							{!hasStrokes && (
+								<div className="patient-budget-canvas-placeholder">
+									Распишитесь пальцем/стилусом в поле выше или нажмите «Согласовать в 1 клик»
+								</div>
+							)}
 						</div>
 					</div>
-
-					{/* Canvas for generating high-resolution PEP cryptographic PNG stamp */}
-					<canvas
-						ref={canvasRef}
-						className="patient-budget-canvas"
-						style={{ display: "none" }}
-						width={400}
-						height={140}
-					/>
 
 					<input
 						type="text"
@@ -588,12 +664,26 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 						data-testid="patient-budget-signer-input"
 					/>
 
+					{/* 152-FZ Consent Checkbox */}
+					<label className="patient-budget-consent-label" data-testid="patient-budget-152fz-consent-label">
+						<input
+							type="checkbox"
+							checked={legalConsent152Fz}
+							onChange={(e) => setLegalConsent152Fz(e.target.checked)}
+							data-testid="patient-budget-152fz-checkbox"
+							style={{ width: "18px", height: "18px", cursor: "pointer", accentColor: "var(--teal)" }}
+						/>
+						<span>
+							Я подтверждаю согласие на обработку персональных данных в соответствии с 152-ФЗ и согласен с планом лечения и сметой (ПЭП 63-ФЗ)
+						</span>
+					</label>
+
 					<div className="patient-budget-legal-text">
-						Настоящим я подтверждаю согласие с предложенным планом лечения и его стоимостью. В соответствии с ФЗ №63-ФЗ «Об электронной подписи» простая электронная подпись (ПЭП) признаётся равнозначной собственноручной подписи.
+						В соответствии с Федеральным законом № 152-ФЗ «О персональных данных» и Федеральным законом № 63-ФЗ «Об электронной подписи» простая электронная подпись (ПЭП) признаётся равнозначной собственноручной подписи на бумажном носителе.
 					</div>
 
 					{signError && (
-						<div className="patient-budget-error-msg" style={{ marginBottom: "0.75rem" }}>
+						<div className="patient-budget-error-msg" style={{ marginBottom: "0.75rem" }} data-testid="patient-budget-sign-error">
 							<AlertCircle size={14} />
 							{signError}
 						</div>
@@ -602,7 +692,6 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 					<button
 						type="button"
 						className="patient-budget-submit-btn"
-						disabled={isSubmittingSign}
 						onClick={handleSignSubmit}
 						data-testid="patient-budget-agree-oneclick-btn"
 					>

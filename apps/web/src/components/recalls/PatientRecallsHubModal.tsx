@@ -16,6 +16,7 @@ import {
 	CheckCircle2,
 	ChevronDown,
 	Clock,
+	Eye,
 	Lightbulb,
 	MessageCircle,
 	Phone,
@@ -25,6 +26,7 @@ import {
 	Search,
 	Send,
 	ShieldCheck,
+	Sparkles,
 	TrendingUp,
 	Users,
 	X,
@@ -56,7 +58,11 @@ import {
 	type RecallCycleType,
 	type RecallUrgencyStatus,
 } from "./patientRecallEngine";
-import { CLINICAL_CALLING_SCRIPTS } from "./recallTemplates";
+import {
+	CLINICAL_CALLING_SCRIPTS,
+	calculateSmsSegments,
+	formatSmsSummary,
+} from "./recallTemplates";
 import "./recalls.css";
 
 /**
@@ -196,6 +202,9 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 
 	const [activeScriptCandidate, setActiveScriptCandidate] =
 		useState<PatientRecallRecord | null>(null);
+	const [activePreviewCandidate, setActivePreviewCandidate] =
+		useState<PatientRecallRecord | null>(null);
+	const [previewChannel, setPreviewChannel] = useState<"sms" | "whatsapp" | "telegram">("sms");
 	const [selectedObjectionId, setSelectedObjectionId] = useState<string>("");
 	const [copiedCandidateId, setCopiedCandidateId] = useState<string | null>(null);
 	const [statusNotice, setStatusNotice] = useState<string | null>(null);
@@ -272,13 +281,16 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 		}
 	};
 
-	// 1-Click WhatsApp
+	// 1-Click WhatsApp (Mandate 8e Doctor Autonomy: zero disabled buttons, open preview if phone empty)
 	const handleWhatsApp = async (candidate: PatientRecallRecord) => {
 		if (!candidate.phone || !candidate.phone.trim()) {
 			showToast(
-				"У пациента не указан номер телефона. Укажите номер в карточке пациента",
+				"У пациента не указан номер телефона. Открыт предпросмотр сообщения для отправки",
 				"warning",
 			);
+			setActivePreviewCandidate(candidate);
+			setPreviewChannel("whatsapp");
+			setActiveScriptCandidate(null);
 			return;
 		}
 		const message = generateWhatsAppRecallMessage(candidate, { clinicName });
@@ -293,13 +305,16 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 		setTimeout(() => setStatusNotice(null), 3000);
 	};
 
-	// 1-Click Telegram
+	// 1-Click Telegram (Mandate 8e Doctor Autonomy: zero disabled buttons, open preview if phone empty)
 	const handleTelegram = async (candidate: PatientRecallRecord) => {
 		if (!candidate.phone || !candidate.phone.trim()) {
 			showToast(
-				"У пациента не указан номер телефона. Укажите номер в карточке пациента",
+				"У пациента не указан номер телефона. Открыт предпросмотр сообщения для отправки",
 				"warning",
 			);
+			setActivePreviewCandidate(candidate);
+			setPreviewChannel("telegram");
+			setActiveScriptCandidate(null);
 			return;
 		}
 		const message = generateTelegramRecallMessage(candidate, { clinicName });
@@ -314,19 +329,15 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 		setTimeout(() => setStatusNotice(null), 3000);
 	};
 
-	// Копирование SMS
+	// Копирование SMS (Mandate 8e: zero disabled buttons, 1-Click dispatch)
 	const handleCopySms = (candidate: PatientRecallRecord) => {
-		if (!candidate.phone || !candidate.phone.trim()) {
-			showToast(
-				"У пациента не указан номер телефона. Укажите номер в карточке пациента",
-				"warning",
-			);
-			return;
-		}
 		const smsText = generateSmsRecallMessage(candidate, { clinicName });
 		navigator.clipboard.writeText(smsText).catch(() => {});
 		setCopiedCandidateId(candidate.id);
 		handleStatusUpdate(candidate.id, "invited", "sms");
+		if (!candidate.phone || !candidate.phone.trim()) {
+			showToast("SMS текст скопирован (номер телефона не указан в карте)", "info");
+		}
 		setTimeout(() => setCopiedCandidateId(null), 2500);
 	};
 
@@ -353,6 +364,20 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 		}
 	};
 
+	// Открытие предпросмотра шаблона (Mandate 8i Anti-Simulator)
+	const handleTogglePreview = (
+		candidate: PatientRecallRecord,
+		channel: "sms" | "whatsapp" | "telegram" = "sms",
+	) => {
+		if (activePreviewCandidate?.id === candidate.id && previewChannel === channel) {
+			setActivePreviewCandidate(null);
+		} else {
+			setActivePreviewCandidate(candidate);
+			setPreviewChannel(channel);
+			setActiveScriptCandidate(null);
+		}
+	};
+
 	// Открытие скрипта обзвона
 	const handleToggleScript = (candidate: PatientRecallRecord) => {
 		if (activeScriptCandidate?.id === candidate.id) {
@@ -360,6 +385,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 			setSelectedObjectionId("");
 		} else {
 			setActiveScriptCandidate(candidate);
+			setActivePreviewCandidate(null);
 			const script = CLINICAL_CALLING_SCRIPTS[candidate.cycleType] || CLINICAL_CALLING_SCRIPTS.standard_prophylaxis;
 			setSelectedObjectionId(script.objections[0]?.id || "");
 		}
@@ -520,8 +546,8 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 					<div
 						style={{
 							padding: "10px 24px",
-							background: "rgba(239, 68, 68, 0.1)",
-							color: "var(--rm-danger)",
+							background: "var(--bad-bg)",
+							color: "var(--bad-fg)",
 							fontSize: "0.875rem",
 							display: "flex",
 							alignItems: "center",
@@ -611,6 +637,38 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 								</div>
 							</div>
 
+							{/* Solo Doctor 1-Click Fast Presets (Mandates 8e, 8s) */}
+							<div className="recall-solo-presets" role="group" aria-label="1-Click пресеты для врача">
+								<button
+									type="button"
+									data-testid="preset-hygiene-6m"
+									className={`recall-preset-btn ${selectedCycle === "standard_prophylaxis" ? "active" : ""}`}
+									onClick={() =>
+										setSelectedCycle(
+											selectedCycle === "standard_prophylaxis" ? "all" : "standard_prophylaxis",
+										)
+									}
+									title="1-Click: Пациенты на плановую профгигиену 6 мес."
+								>
+									<ShieldCheck size={14} />
+									<span>1-Click: Профгигиена (6 мес.)</span>
+								</button>
+								<button
+									type="button"
+									data-testid="preset-implants-1y"
+									className={`recall-preset-btn ${selectedCycle === "implant_monitoring" ? "active" : ""}`}
+									onClick={() =>
+										setSelectedCycle(
+											selectedCycle === "implant_monitoring" ? "all" : "implant_monitoring",
+										)
+									}
+									title="1-Click: Пациенты с имплантами на годовой рентген-контроль"
+								>
+									<Sparkles size={14} />
+									<span>1-Click: Импланты (1 год)</span>
+								</button>
+							</div>
+
 							{/* Status Chips */}
 							<div className="recall-status-chips" role="radiogroup" aria-label="Фильтр по статусам реестра">
 								<button
@@ -679,7 +737,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 							{filteredCandidates.length === 0 ? (
 								<div className="recall-empty-state">
 									<div className="recall-empty-icon">
-										<CheckCircle2 size={36} className="text-teal-500 mx-auto" />
+										<CheckCircle2 size={36} className="recall-empty-check-icon" />
 									</div>
 									<h3>Нет пациентов по выбранному фильтру</h3>
 									<p>Все пациенты обработаны, либо срок вызова еще не наступил.</p>
@@ -702,6 +760,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 											{filteredCandidates.map((candidate) => {
 												const cycleDef = RECALL_CYCLE_CATALOG[candidate.cycleType];
 												const isScriptActive = activeScriptCandidate?.id === candidate.id;
+												const isRealPreviewActive = activePreviewCandidate?.id === candidate.id;
 
 												return (
 													<tr key={candidate.id} data-testid={`recall-hub-row-${candidate.id}`}>
@@ -790,6 +849,19 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 																	<span>Записать</span>
 																</button>
 
+																{/* Direct 1-Click Preview Action (Mandate 8i Anti-Simulator) */}
+																<button
+																	type="button"
+																	className={`recall-action-btn ${isRealPreviewActive ? "recall-action-btn--script active" : ""}`}
+																	title="Предпросмотр SMS и WhatsApp сообщений с расчетом сегментов"
+																	style={{ minHeight: "36px", padding: "6px 10px" }}
+																	onClick={() => handleTogglePreview(candidate)}
+																	data-testid={`recall-quick-preview-btn-${candidate.id}`}
+																>
+																	<Eye size={15} />
+																	<span>Превью</span>
+																</button>
+
 																{/* Consolidating Dropdown: Связаться ▾ */}
 																<div style={{ position: "relative", display: "inline-block" }}>
 																	<button
@@ -826,7 +898,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 																			background: "var(--rm-surface)",
 																			border: "1px solid var(--rm-border)",
 																			borderRadius: "8px",
-																			boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+																			boxShadow: "var(--shadow-3)",
 																			minWidth: "160px",
 																		}}
 																	>
@@ -884,6 +956,22 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 																			)}
 																		</button>
 
+																		{/* Предпросмотр с расчетом SMS сегментов */}
+																		<button
+																			type="button"
+																			className={`recall-action-btn ${isRealPreviewActive ? "active" : ""}`}
+																			title="Предпросмотр сообщения с расчетом длины и сегментов SMS"
+																			style={{ width: "100%", justifyContent: "flex-start", minHeight: "34px" }}
+																			onClick={() => {
+																				setOpenContactDropdownId(null);
+																				handleTogglePreview(candidate);
+																			}}
+																			data-testid={`recall-preview-btn-${candidate.id}`}
+																		>
+																			<Eye size={15} />
+																			<span>Превью SMS / WA</span>
+																		</button>
+
 																		{/* Скрипт */}
 																		<button
 																			type="button"
@@ -910,6 +998,179 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 									</table>
 								</div>
 							)}
+
+							{/* Real SMS / WhatsApp / Telegram Message Preview Drawer (Mandate 8i Anti-Simulator) */}
+							{activePreviewCandidate ? (
+								<section
+									className="recall-preview-drawer"
+									aria-labelledby="preview-hub-heading"
+									data-testid="recall-template-preview-drawer"
+								>
+									{(() => {
+										const candidate = activePreviewCandidate;
+										const smsText = generateSmsRecallMessage(candidate, { clinicName });
+										const waText = generateWhatsAppRecallMessage(candidate, { clinicName });
+										const tgText = generateTelegramRecallMessage(candidate, { clinicName });
+
+										const activeText =
+											previewChannel === "sms"
+												? smsText
+												: previewChannel === "whatsapp"
+													? waText
+													: tgText;
+
+										const smsCalc = calculateSmsSegments(activeText);
+
+										return (
+											<>
+												<div className="recall-preview-drawer-header">
+													<div className="recall-preview-title" id="preview-hub-heading">
+														<Eye size={18} />
+														<span>
+															Предпросмотр сообщения: {candidate.fullName} ({RECALL_CYCLE_CATALOG[candidate.cycleType]?.title})
+														</span>
+													</div>
+
+													<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+														<div className="recall-preview-tabs" role="tablist">
+															<button
+																type="button"
+																role="tab"
+																aria-selected={previewChannel === "sms"}
+																className={`recall-preview-tab-btn ${previewChannel === "sms" ? "active" : ""}`}
+																onClick={() => setPreviewChannel("sms")}
+																data-testid="preview-tab-sms"
+															>
+																<MessageCircle size={14} />
+																<span>SMS ({smsCalc.characterCount} симв.)</span>
+															</button>
+															<button
+																type="button"
+																role="tab"
+																aria-selected={previewChannel === "whatsapp"}
+																className={`recall-preview-tab-btn ${previewChannel === "whatsapp" ? "active" : ""}`}
+																onClick={() => setPreviewChannel("whatsapp")}
+																data-testid="preview-tab-whatsapp"
+															>
+																<MessageCircle size={14} />
+																<span>WhatsApp</span>
+															</button>
+															<button
+																type="button"
+																role="tab"
+																aria-selected={previewChannel === "telegram"}
+																className={`recall-preview-tab-btn ${previewChannel === "telegram" ? "active" : ""}`}
+																onClick={() => setPreviewChannel("telegram")}
+																data-testid="preview-tab-telegram"
+															>
+																<Send size={14} />
+																<span>Telegram</span>
+															</button>
+														</div>
+
+														<button
+															type="button"
+															className="recall-close-btn"
+															style={{ minHeight: "36px", minWidth: "36px" }}
+															onClick={() => setActivePreviewCandidate(null)}
+															aria-label="Закрыть предпросмотр"
+														>
+															<X size={16} />
+														</button>
+													</div>
+												</div>
+
+												<div className="recall-preview-content-box">
+													{/* Real Message Text */}
+													<div>
+														<strong style={{ fontSize: "0.8125rem", color: "var(--rm-text-muted)", display: "block", marginBottom: "4px" }}>
+															{previewChannel === "sms" ? "Текст SMS (персонализированная 1-Click ссылка):" : "Текст сообщения:"}
+														</strong>
+														<div className="recall-preview-rendered-text" data-testid="recall-preview-text">
+															{activeText}
+														</div>
+													</div>
+
+													{/* Character Count & Segment Calculation (Mandate 8i Anti-Simulator) */}
+													<div className="recall-preview-calc-grid" data-testid="recall-preview-calc-box">
+														<div className="recall-preview-calc-card">
+															<span className="recall-preview-calc-label">Символов всего</span>
+															<span className="recall-preview-calc-value" data-testid="preview-char-count">{smsCalc.characterCount}</span>
+														</div>
+														<div className="recall-preview-calc-card">
+															<span className="recall-preview-calc-label">Кодировка</span>
+															<span className="recall-preview-calc-value" data-testid="preview-encoding">{smsCalc.encoding}</span>
+														</div>
+														<div className="recall-preview-calc-card">
+															<span className="recall-preview-calc-label">SMS Сегментов</span>
+															<span className="recall-preview-calc-value" data-testid="preview-segment-count">{smsCalc.segmentCount}</span>
+														</div>
+														<div className="recall-preview-calc-card">
+															<span className="recall-preview-calc-label">Осталось в сегменте</span>
+															<span className="recall-preview-calc-value" data-testid="preview-remaining-chars">{smsCalc.remainingInCurrentSegment}</span>
+														</div>
+														<div className="recall-preview-calc-card">
+															<span className="recall-preview-calc-label">Лимит на сегмент</span>
+															<span className="recall-preview-calc-value">{smsCalc.charsPerSegment} симв.</span>
+														</div>
+													</div>
+
+													{/* Action Buttons */}
+													<div className="recall-preview-actions-bar">
+														{previewChannel === "sms" && (
+															<button
+																type="button"
+																className="recall-action-btn"
+																style={{ minHeight: "38px" }}
+																onClick={() => handleCopySms(candidate)}
+																data-testid="preview-copy-sms-btn"
+															>
+																{copiedCandidateId === candidate.id ? (
+																	<>
+																		<Check size={14} />
+																		<span>Скопировано в буфер</span>
+																	</>
+																) : (
+																	<>
+																		<Send size={14} />
+																		<span>Копировать SMS</span>
+																	</>
+																)}
+															</button>
+														)}
+
+														{previewChannel === "whatsapp" && (
+															<button
+																type="button"
+																className="recall-action-btn recall-action-btn--whatsapp"
+																style={{ minHeight: "38px" }}
+																onClick={() => void handleWhatsApp(candidate)}
+																data-testid="preview-send-whatsapp-btn"
+															>
+																<MessageCircle size={14} />
+																<span>Открыть WhatsApp (wa.me)</span>
+															</button>
+														)}
+
+														{previewChannel === "telegram" && (
+															<button
+																type="button"
+																className="recall-action-btn recall-action-btn--telegram"
+																style={{ minHeight: "38px" }}
+																onClick={() => void handleTelegram(candidate)}
+																data-testid="preview-send-telegram-btn"
+															>
+																<Send size={14} />
+																<span>Открыть Telegram (t.me)</span>
+															</button>
+														)}
+													</div>
+												</div>
+											</>
+										);
+									})()}
+								</section>
+							) : null}
 
 							{/* Objection Script Drawer */}
 							{activeScriptCandidate ? (
@@ -1012,8 +1273,8 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 																				.replace(/\{\{DOCTOR_NAME\}\}/g, doctorName)}
 																		</div>
 																	</div>
-																	<div className="recall-script-tip flex items-start gap-1.5">
-																		<Lightbulb size={13} className="text-amber-500 shrink-0 mt-0.5" />
+																	<div className="recall-script-tip">
+																		<Lightbulb size={13} className="recall-tip-icon" />
 																		<span>Совет: {currentObjection.psychologicalTip}</span>
 																	</div>
 																</div>
@@ -1290,7 +1551,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 													<span
 														className="recall-badge"
 														style={{
-															backgroundColor: "rgba(13, 148, 136, 0.1)",
+															backgroundColor: "var(--teal-surface)",
 															color: "var(--teal)",
 															fontWeight: 700,
 														}}

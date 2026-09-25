@@ -9,13 +9,13 @@
 	max-width: 480px;
 	margin: 0 auto;
 	min-height: 100vh;
-	background-color: var(--paper, #ffffff);
-	color: var(--ink, #0f172a);
+	background-color: var(--paper);
+	color: var(--ink);
 	display: flex;
 	flex-direction: column;
 	padding: 1rem;
 	box-sizing: border-box;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	font-family: inherit;
 }
 
 /* Header */
@@ -25,7 +25,7 @@
 	justify-content: space-between;
 	gap: 0.75rem;
 	padding-bottom: 1rem;
-	border-bottom: 1px solid var(--border, #e2e8f0);
+	border-bottom: 1px solid var(--line);
 	margin-bottom: 1rem;
 	flex-wrap: wrap;
 }
@@ -33,13 +33,13 @@
 .patient-budget-clinic-title {
 	font-size: 1.125rem;
 	font-weight: 700;
-	color: var(--ink, #0f172a);
+	color: var(--ink);
 	line-height: 1.3;
 }
 
 .patient-budget-doctor-name {
 	font-size: 0.8125rem;
-	color: var(--muted, #64748b);
+	color: var(--muted);
 	margin-top: 0.25rem;
 }
 
@@ -56,19 +56,21 @@
 }
 
 .patient-budget-status-chip.pending {
-	background-color: #fef3c7;
-	color: #92400e;
+	background-color: var(--amber-soft);
+	color: var(--text-primary, var(--ink));
+	border: 1px solid var(--amber);
 }
 
 .patient-budget-status-chip.accepted {
-	background-color: #dcfce7;
-	color: #166534;
+	background-color: var(--teal-soft);
+	color: var(--text-primary, var(--ink));
+	border: 1px solid var(--teal);
 }
 
 /* Items List Card */
 .patient-budget-card {
-	background: var(--paper-strong, #f8fafc);
-	border: 1px solid var(--border, #e2e8f0);
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
 	border-radius: 0.75rem;
 	padding: 1rem;
 	margin-bottom: 1rem;
@@ -77,7 +79,7 @@
 .patient-budget-card-title {
 	font-size: 0.9375rem;
 	font-weight: 600;
-	color: var(--ink, #0f172a);
+	color: var(--ink);
 	margin-bottom: 0.75rem;
 	display: flex;
 	align-items: center;
@@ -90,7 +92,7 @@
 	justify-content: space-between;
 	gap: 0.75rem;
 	padding: 0.625rem 0;
-	border-bottom: 1px dashed var(--border, #e2e8f0);
+	border-bottom: 1px dashed var(--line);
 }
 
 .patient-budget-item-row:last-child {
@@ -109,8 +111,9 @@
 .patient-budget-tooth-badge {
 	font-size: 0.6875rem;
 	font-weight: 700;
-	background-color: #e0f2fe;
-	color: #0369a1;
+	background-color: var(--teal-soft);
+	color: var(--teal);
+	border: 1px solid var(--teal);
 	padding: 0.125rem 0.375rem;
 	border-radius: 0.25rem;
 	display: inline-block;
@@ -119,20 +122,20 @@
 
 .patient-budget-item-title {
 	font-size: 0.8125rem;
-	color: var(--ink, #0f172a);
+	color: var(--ink);
 	line-height: 1.35;
 	word-break: break-word;
 }
 
 .patient-budget-item-qty {
 	font-size: 0.75rem;
-	color: var(--muted, #64748b);
+	color: var(--muted);
 }
 
 .patient-budget-item-price {
 	font-size: 0.875rem;
 	font-weight: 600;
-	color: var(--ink, #0f172a);
+	color: var(--ink);
 	text-align: right;
 	white-space: nowrap;
 }
@@ -141,7 +144,7 @@
 .patient-budget-totals {
 	margin-top: 0.75rem;
 	padding-top: 0.75rem;
-	border-top: 2px solid var(--border, #e2e8f0);
+	border-top: 2px solid var(--line);
 	display: flex;
 	flex-direction: column;
 	gap: 0.375rem;
@@ -151,7 +154,7 @@
 	display: flex;
 	justify-content: space-between;
 	font-size: 0.8125rem;
-	color: var(--muted, #64748b);
+	color: var(--muted);
 }
 
 .patient-budget-grand-total {
@@ -161,12 +164,12 @@
 	margin-top: 0.25rem;
 	font-size: 1.125rem;
 	font-weight: 800;
-	color: var(--ink, #0f172a);
+	color: var(--ink);
 	gap: 0.5rem;
 }
 
 .patient-budget-grand-price {
-	color: #059669;
+	color: var(--teal);
 	font-size: 1.25rem;
 	white-space: nowrap;
 	flex-shrink: 0;
@@ -174,8 +177,8 @@
 
 /* 2FA Verification Box */
 .patient-budget-verify-box {
-	background-color: #f8fafc;
-	border: 1px solid #cbd5e1;
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line);
 	border-radius: 0.75rem;
 	padding: 1rem;
 	margin-bottom: 1rem;
@@ -191,13 +194,13 @@
 	flex: 1;
 	min-height: 44px;
 	padding: 0.5rem 0.75rem;
-	border: 1px solid #94a3b8;
+	border: 1px solid var(--line-strong);
 	border-radius: 0.5rem;
 	font-size: 1.25rem;
 	text-align: center;
 	letter-spacing: 0.35rem;
-	background: #ffffff;
-	color: #0f172a;
+	background: var(--paper);
+	color: var(--ink);
 	box-sizing: border-box;
 }
 
@@ -205,8 +208,8 @@
 	min-height: 44px;
 	min-width: 100px;
 	padding: 0 1rem;
-	background-color: #0284c7;
-	color: #ffffff;
+	background-color: var(--teal);
+	color: var(--on-teal, var(--paper));
 	border: none;
 	border-radius: 0.5rem;
 	font-weight: 600;
@@ -216,22 +219,17 @@
 	align-items: center;
 	justify-content: center;
 	gap: 0.375rem;
-	transition: background-color 0.2s;
+	transition: opacity 0.2s;
 }
 
-.patient-budget-verify-btn:hover:not(:disabled) {
-	background-color: #0369a1;
-}
-
-.patient-budget-verify-btn:disabled {
-	opacity: 0.6;
-	cursor: not-allowed;
+.patient-budget-verify-btn:hover {
+	opacity: 0.9;
 }
 
 .patient-budget-error-msg {
 	margin-top: 0.5rem;
 	font-size: 0.75rem;
-	color: #dc2626;
+	color: var(--bad-fg, var(--rust));
 	display: flex;
 	align-items: center;
 	gap: 0.375rem;
@@ -241,22 +239,100 @@
 	min-height: 44px;
 	width: 100%;
 	padding: 0.5rem 0.75rem;
-	border: 1px solid #cbd5e1;
+	border: 1px solid var(--line);
 	border-radius: 0.5rem;
 	font-size: 0.875rem;
-	background: #ffffff;
-	color: #0f172a;
+	background: var(--paper);
+	color: var(--ink);
 	margin-top: 0.5rem;
 	box-sizing: border-box;
 }
 
-/* Legal Disclaimer */
+/* 152-FZ Legal Consent */
+.patient-budget-consent-label {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5rem;
+	font-size: 0.75rem;
+	color: var(--ink);
+	line-height: 1.35;
+	margin: 0.75rem 0;
+	cursor: pointer;
+	user-select: none;
+}
+
 .patient-budget-legal-text {
 	font-size: 0.6875rem;
-	color: #64748b;
+	color: var(--muted);
 	line-height: 1.4;
-	margin: 0.75rem 0;
+	margin: 0.5rem 0 0.75rem;
 	text-align: justify;
+}
+
+/* Interactive Touch / Mobile Canvas */
+.patient-budget-signature-section {
+	margin: 0.75rem 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+}
+
+.patient-budget-canvas-wrapper {
+	position: relative;
+	width: 100%;
+	height: 140px;
+	border: 1.5px dashed var(--teal);
+	border-radius: 0.5rem;
+	background: var(--paper);
+	overflow: hidden;
+	touch-action: none;
+}
+
+.patient-budget-canvas {
+	width: 100%;
+	height: 100%;
+	display: block;
+	cursor: crosshair;
+	touch-action: none;
+}
+
+.patient-budget-canvas-placeholder {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	font-size: 0.75rem;
+	color: var(--muted);
+	pointer-events: none;
+	text-align: center;
+	width: 90%;
+}
+
+.patient-budget-clear-btn,
+.patient-budget-stamp-btn {
+	min-height: 32px;
+	padding: 4px 10px;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	transition: background 0.15s ease;
+}
+
+.patient-budget-clear-btn:hover,
+.patient-budget-stamp-btn:hover {
+	background: var(--teal-soft);
+}
+
+.patient-budget-stamp-btn {
+	border-color: var(--teal);
+	color: var(--teal);
 }
 
 /* Action Button */
@@ -264,8 +340,8 @@
 	min-height: 48px;
 	width: 100%;
 	padding: 0.75rem 1.25rem;
-	background-color: #059669;
-	color: #ffffff;
+	background-color: var(--teal);
+	color: var(--on-teal, var(--paper));
 	border: none;
 	border-radius: 0.5rem;
 	font-size: 1rem;
@@ -275,38 +351,32 @@
 	align-items: center;
 	justify-content: center;
 	gap: 0.5rem;
-	box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.2);
-	transition: background-color 0.2s, transform 0.1s;
+	box-shadow: 0 4px 6px -1px var(--teal-glow, rgba(13, 148, 136, 0.25));
+	transition: opacity 0.2s, transform 0.1s;
 }
 
-.patient-budget-submit-btn:hover:not(:disabled) {
-	background-color: #047857;
+.patient-budget-submit-btn:hover {
+	opacity: 0.95;
 }
 
-.patient-budget-submit-btn:active:not(:disabled) {
+.patient-budget-submit-btn:active {
 	transform: scale(0.99);
-}
-
-.patient-budget-submit-btn:disabled {
-	opacity: 0.5;
-	cursor: not-allowed;
-	box-shadow: none;
 }
 
 /* 63-FZ PEP Stamp Preview */
 .patient-budget-pep-stamp-preview {
-	background-color: #f0fdf4;
-	border: 2px solid #059669;
+	background-color: var(--teal-surface);
+	border: 2px solid var(--teal);
 	border-radius: 0.5rem;
-	padding: 1rem;
+	padding: 0.75rem;
 	text-align: center;
 	margin-bottom: 0.75rem;
 }
 
 /* Accepted Card */
 .patient-budget-accepted-card {
-	background-color: #f0fdf4;
-	border: 1px solid #bbf7d0;
+	background-color: var(--teal-surface);
+	border: 1px solid var(--teal-soft);
 	border-radius: 0.75rem;
 	padding: 1.25rem;
 	text-align: center;
@@ -316,31 +386,31 @@
 .patient-budget-accepted-title {
 	font-size: 1.125rem;
 	font-weight: 700;
-	color: #166534;
+	color: var(--teal-dark, var(--teal));
 	margin-top: 0.5rem;
 	margin-bottom: 0.25rem;
 }
 
 .patient-budget-accepted-desc {
 	font-size: 0.8125rem;
-	color: #166534;
+	color: var(--ink);
 	margin: 0 0 0.5rem;
 }
 
 .patient-budget-accepted-date {
 	font-size: 0.75rem;
-	color: #15803d;
+	color: var(--teal);
 	margin: 0 0 0.5rem;
 }
 
 .patient-budget-hash-box {
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 	font-size: 0.6875rem;
-	color: #64748b;
-	background: #ffffff;
+	color: var(--muted);
+	background: var(--paper);
 	padding: 0.5rem;
 	border-radius: 0.375rem;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--line);
 	margin: 0.75rem 0;
 	word-break: break-all;
 }
@@ -349,12 +419,12 @@
 	min-height: 44px;
 	width: 100%;
 	padding: 0.5rem 1rem;
-	background: #ffffff;
-	border: 1px solid #cbd5e1;
+	background: var(--paper);
+	border: 1px solid var(--line);
 	border-radius: 0.5rem;
 	font-size: 0.875rem;
 	font-weight: 600;
-	color: #0f172a;
+	color: var(--ink);
 	cursor: pointer;
 	display: flex;
 	align-items: center;
@@ -364,7 +434,7 @@
 }
 
 .patient-budget-print-btn:hover {
-	background: #f8fafc;
+	background: var(--paper-soft);
 }
 
 /* Desktop responsive elevation & centering */
@@ -373,174 +443,9 @@
 		max-width: 520px;
 		margin: 2rem auto;
 		min-height: auto;
-		border: 1px solid var(--border, #e2e8f0);
+		border: 1px solid var(--line);
 		border-radius: 1rem;
 		box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
 		padding: 1.5rem;
-	}
-}
-
-/* Dark mode theme token & component overrides */
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-container {
-	background-color: var(--paper, #0f172a);
-	color: var(--ink, #f8fafc);
-	border-color: #334155;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-header {
-	border-bottom-color: #334155;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-clinic-title {
-	color: #f8fafc;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-doctor-name {
-	color: #94a3b8;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-status-chip.pending {
-	background-color: #78350f;
-	color: #fde68a;
-	border: 1px solid #92400e;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-status-chip.accepted {
-	background-color: #064e3b;
-	color: #a7f3d0;
-	border: 1px solid #059669;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-card {
-	background-color: #1e293b;
-	border-color: #334155;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-card-title {
-	color: #f8fafc;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-item-row {
-	border-bottom-color: #334155;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-tooth-badge {
-	background-color: #0c4a6e;
-	color: #7dd3fc;
-	border: 1px solid #0284c7;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-item-title {
-	color: #f8fafc;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-item-price {
-	color: #f8fafc;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-totals {
-	border-top-color: #334155;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-total-line {
-	color: #94a3b8;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-grand-total {
-	color: #f8fafc;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-grand-price {
-	color: #34d399;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-verify-box {
-	background-color: #1e293b;
-	border-color: #334155;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-verify-input {
-	background-color: #0f172a;
-	color: #f8fafc;
-	border-color: #475569;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-signer-input {
-	background-color: #0f172a;
-	color: #f8fafc;
-	border-color: #475569;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-legal-text {
-	color: #94a3b8;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-accepted-card {
-	background-color: #064e3b;
-	border-color: #047857;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-accepted-title {
-	color: #ecfdf5;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-accepted-desc {
-	color: #a7f3d0;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-accepted-date {
-	color: #6ee7b7;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-hash-box {
-	background-color: #0f172a;
-	color: #94a3b8;
-	border-color: #334155;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-print-btn {
-	background-color: #1e293b;
-	border-color: #475569;
-	color: #f8fafc;
-}
-
-:is([data-theme="dark"], [data-theme="night"], .dark) .patient-budget-print-btn:hover {
-	background-color: #334155;
-}
-
-/* Media query fallback for OS-level dark theme */
-@media (prefers-color-scheme: dark) {
-	:root:not([data-theme="light"]) .patient-budget-container {
-		background-color: var(--paper, #0f172a);
-		color: var(--ink, #f8fafc);
-		border-color: #334155;
-	}
-	:root:not([data-theme="light"]) .patient-budget-card,
-	:root:not([data-theme="light"]) .patient-budget-verify-box {
-		background-color: #1e293b;
-		border-color: #334155;
-	}
-	:root:not([data-theme="light"]) .patient-budget-accepted-card {
-		background-color: #064e3b;
-		border-color: #047857;
-	}
-	:root:not([data-theme="light"]) .patient-budget-accepted-title {
-		color: #ecfdf5;
-	}
-	:root:not([data-theme="light"]) .patient-budget-accepted-desc {
-		color: #a7f3d0;
-	}
-	:root:not([data-theme="light"]) .patient-budget-accepted-date {
-		color: #6ee7b7;
-	}
-	:root:not([data-theme="light"]) .patient-budget-hash-box {
-		background-color: #0f172a;
-		color: #94a3b8;
-		border-color: #334155;
-	}
-	:root:not([data-theme="light"]) .patient-budget-print-btn {
-		background-color: #1e293b;
-		border-color: #475569;
-		color: #f8fafc;
 	}
 }

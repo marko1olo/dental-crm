@@ -3,12 +3,16 @@ import {
 	Activity,
 	AlertCircle,
 	AlertTriangle,
+	ArrowRight,
+	Check,
 	CheckCircle2,
 	Droplets,
 	HeartPulse,
+	Plus,
 	ShieldAlert,
 	ShieldCheck,
 	Ticket,
+	X,
 	Zap,
 } from "lucide-react";
 import type React from "react";
@@ -429,7 +433,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 						onClick={onClose}
 						aria-label="Закрыть окно самочекина"
 					>
-						✕
+						<X size={20} />
 					</button>
 				</header>
 
@@ -479,7 +483,6 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 										handleApplyPhysiologicalNorm();
 										handleOneTouchCheckin();
 									}}
-									disabled={isSubmitting}
 									data-testid="kiosk-express-norm-btn"
 									title="Мгновенный самочекин для киоска: физиологическая норма + получение талона очереди в 1 касание"
 								>
@@ -527,7 +530,6 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 										}
 										handleOneTouchCheckin();
 									}}
-									disabled={isSubmitting}
 									title={
 										isSubmitting
 											? "Регистрация прибытия в клинику..."
@@ -548,7 +550,6 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 									type="button"
 									className="w-full py-2.5 text-xs font-semibold text-teal-700 dark:text-teal-300 hover:underline flex items-center justify-center gap-1.5 cursor-pointer"
 									onClick={handleOneTouchCheckin}
-									disabled={isSubmitting}
 									title={
 										isSubmitting
 											? "Регистрация прибытия..."
@@ -630,12 +631,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 									type="button"
 									className="w-full py-2.5 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
 									onClick={handleSignAllConsentsWithPep}
-									disabled={isSubmitting}
-									title={
-										isSubmitting
-											? "Регистрация подписей..."
-											: "Подписать все 3 согласия (ИДС и ПДН) простой электронной подписью 63-ФЗ в 1 клик"
-									}
+									title="Подписать все 3 согласия (ИДС и ПДН) простой электронной подписью 63-ФЗ в 1 клик"
 									data-testid="sign-all-consents-pep-btn"
 								>
 									<ShieldCheck size={16} />
@@ -656,7 +652,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 											setConsentNotice(null);
 										}}
 									>
-										{item.isSigned ? "✓ " : ""}
+										{item.isSigned && <Check size={12} className="inline mr-1" />}
 										{item.code}
 									</button>
 								))}
@@ -685,8 +681,9 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								{/* Signature Area */}
 								{currentConsent.isSigned ? (
 									<div className="selfcheckin-signed-badge-box">
-										<div className="selfcheckin-signed-success">
-											✓ Документ подтвержден и подписан
+										<div className="selfcheckin-signed-success flex items-center justify-center gap-1.5">
+											<CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+											<span>Документ подтвержден и подписан</span>
 										</div>
 										<div className="selfcheckin-signed-meta">
 											Время:{" "}
@@ -717,7 +714,6 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 												type="button"
 												className="selfcheckin-btn-primary w-full py-3 text-sm font-bold flex items-center justify-center gap-2"
 												onClick={handleSignCurrentConsent}
-												disabled={isSubmitting}
 												data-testid="consent-sign-pep-single-btn"
 											>
 												<ShieldCheck size={18} />
@@ -727,7 +723,6 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 												type="button"
 												className="w-full py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:underline flex items-center justify-center gap-1.5 cursor-pointer"
 												onClick={handleSignCurrentConsentWithPaper}
-												disabled={isSubmitting}
 												data-testid="consent-sign-paper-desk-btn"
 											>
 												<span>Оформить на бумаге на стойке регистрации</span>
@@ -748,7 +743,10 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 									className="selfcheckin-btn-accent"
 									onClick={() => setStep("somatic")}
 								>
-									Перейти к анкете здоровья ➔
+									<span className="flex items-center justify-center gap-1.5">
+										<span>Перейти к анкете здоровья</span>
+										<ArrowRight size={16} />
+									</span>
 								</button>
 							)}
 						</div>
@@ -796,19 +794,22 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 										type="button"
 										className="selfcheckin-btn-norm-finish"
 										onClick={handleApplyPhysiologicalNormAndFinish}
-										disabled={isSubmitting}
 										data-testid="somatic-norm-instant-finish-btn"
 										title="Заполнить нормой и сразу завершить чекин за 5 секунд"
 									>
 										<CheckCircle2 size={16} />
-										<span>Завершить за 5 сек ➔</span>
+										<span className="flex items-center gap-1">
+											<span>Завершить за 5 сек</span>
+											<ArrowRight size={14} />
+										</span>
 									</button>
 									{isNormApplied && (
 										<span
-											className="selfcheckin-norm-applied-badge ml-auto"
+											className="selfcheckin-norm-applied-badge ml-auto flex items-center gap-1"
 											data-testid="norm-active-pill"
 										>
-											✓ Норма активна
+											<Check size={12} />
+											<span>Норма активна</span>
 										</span>
 									)}
 								</div>
@@ -883,7 +884,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 												title="Аллергия на пенициллины, амоксициллин, антибиотики"
 											>
 												<span className="selfcheckin-chip-icon">
-													{quickAllergies.penicillin ? "✕" : "+"}
+													{quickAllergies.penicillin ? <X size={14} /> : <Plus size={14} />}
 												</span>
 												<span>Пенициллин / Антибиотики</span>
 											</button>
@@ -895,7 +896,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 												title="Непереносимость лидокаина, новокаина, местных анестетиков"
 											>
 												<span className="selfcheckin-chip-icon">
-													{quickAllergies.lidocaine ? "✕" : "+"}
+													{quickAllergies.lidocaine ? <X size={14} /> : <Plus size={14} />}
 												</span>
 												<span>Лидокаин / Анестетики</span>
 											</button>
@@ -907,7 +908,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 												title="Аллергия на аспирин, НПВС, склонность к кровоточивости"
 											>
 												<span className="selfcheckin-chip-icon">
-													{quickAllergies.aspirin ? "✕" : "+"}
+													{quickAllergies.aspirin ? <X size={14} /> : <Plus size={14} />}
 												</span>
 												<span>Аспирин / НПВС</span>
 											</button>
@@ -919,7 +920,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 												title="Аллергия на сульфиты и консерванты в анестетиках"
 											>
 												<span className="selfcheckin-chip-icon">
-													{quickAllergies.sulfites ? "✕" : "+"}
+													{quickAllergies.sulfites ? <X size={14} /> : <Plus size={14} />}
 												</span>
 												<span>Сульфиты / Консерванты</span>
 											</button>
@@ -1127,7 +1128,6 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								type="button"
 								className={`selfcheckin-btn-primary selfcheckin-btn-submit ${isNormApplied ? "selfcheckin-btn-accent" : ""}`}
 								onClick={handleCompleteCheckin}
-								disabled={isSubmitting}
 								title={
 									isSubmitting
 										? "Сохранение анкеты здоровья..."
@@ -1137,11 +1137,16 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								}
 								data-testid="somatic-complete-checkin-btn"
 							>
-								{isSubmitting
-									? "Сохранение..."
-									: isNormApplied
-										? "Завершить самочекин (Физиологическая норма) за 5 секунд ➔"
-										: "Завершить самочекин и передать врачу"}
+								{isSubmitting ? (
+									"Сохранение..."
+								) : isNormApplied ? (
+									<span className="flex items-center justify-center gap-1.5">
+										<span>Завершить самочекин (Физиологическая норма) за 5 секунд</span>
+										<ArrowRight size={16} />
+									</span>
+								) : (
+									"Завершить самочекин и передать врачу"
+								)}
 							</button>
 						</div>
 					)}

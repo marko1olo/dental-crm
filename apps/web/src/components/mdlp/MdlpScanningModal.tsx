@@ -211,7 +211,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 		setXmlDocType(null);
 	};
 
-	// 1-клик действие «⚡ Отложенное списание МДЛП (офлайн-буфер)» — лекарство выдается врачу немедленно, пакет выбытия встает в фоновую очередь на отправку в ЦРПТ
+	// 1-клик действие «Отложенное списание МДЛП (офлайн-буфер)» — лекарство выдается врачу немедленно, пакет выбытия встает в фоновую очередь на отправку в ЦРПТ
 	const handleDeferredDisposal = () => {
 		let itemsToQueue = scannedItems;
 		if (itemsToQueue.length === 0) {
@@ -244,7 +244,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 		}
 
 		showToast(
-			`⚡ Отложенное списание МДЛП: лекарство выдано врачу немедленно! Пакет #${pkgId} (${itemsToQueue.length} поз.) поставлен в фоновую очередь на отправку в ЦРПТ.`,
+			`Отложенное списание МДЛП: лекарство выдано врачу немедленно! Пакет #${pkgId} (${itemsToQueue.length} поз.) поставлен в фоновую очередь на отправку в ЦРПТ.`,
 			"success",
 		);
 	};
@@ -487,7 +487,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 								title="Групповое списание 10 карпул Артикаина 1:100 000 по журналу приёма в 1 клик"
 							>
 								<Zap className="w-3.5 h-3.5 text-amber-300" />
-								<span>⚡ Списать 10 карпул за смену (по журналу)</span>
+								<span>Списать 10 карпул за смену (по журналу)</span>
 							</button>
 							<button
 								type="button"
@@ -497,7 +497,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 								title="Лекарство выдается врачу немедленно, пакет выбытия встает в фоновую очередь на отправку в ЦРПТ"
 							>
 								<Clock className="w-3.5 h-3.5 text-cyan-300" />
-								<span>⚡ Отложенное списание МДЛП (офлайн-буфер)</span>
+								<span>Отложенное списание МДЛП (офлайн-буфер)</span>
 							</button>
 						</div>
 					</div>
@@ -604,7 +604,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 										</div>
 										<div className="text-right">
 											<div className="text-xs font-bold text-teal-400">{pkg.itemsCount} поз.</div>
-											<div className="text-[10px] text-[var(--muted)]">{pkg.totalCostRub} ₽ · {pkg.status === "synced" ? "✓ Отправлен" : "В очереди"}</div>
+											<div className="text-[10px] text-[var(--muted)]">{pkg.totalCostRub} ₽ · {pkg.status === "synced" ? "Отправлен" : "В очереди"}</div>
 										</div>
 									</div>
 								))}
@@ -895,14 +895,14 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = ({
 							title="Лекарство выдается врачу немедленно, пакет выбытия встает в фоновую очередь на отправку в ЦРПТ"
 						>
 							<Clock className="w-3.5 h-3.5 text-cyan-400" />
-							<span>⚡ Отложенное списание (офлайн-буфер)</span>
+							<span>Отложенное списание (офлайн-буфер)</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={() => {
 								if (scannedItems.length === 0) {
-									showToast("Добавьте упаковки сканером или нажмите «⚡ Списать 10 карпул за смену»", "warning");
+									showToast("Добавьте упаковки сканером или нажмите «Списать 10 карпул за смену»", "warning");
 									return;
 								}
 								handleGenerateXml();

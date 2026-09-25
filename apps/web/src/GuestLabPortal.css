@@ -4,19 +4,19 @@
 	flex-direction: column;
 	align-items: center;
 	padding: 24px;
-	background: var(--bg-default, #f8fafc);
-	color: var(--text-primary, #0f172a);
+	background: var(--bg-default, var(--paper-soft));
+	color: var(--text-primary, var(--ink));
 	font-family: inherit;
 }
 
 .guest-portal-card {
-	background: var(--paper, #ffffff);
-	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper);
+	border: 1px solid var(--line);
 	border-radius: 16px;
 	padding: 32px;
 	max-width: 600px;
 	width: 100%;
-	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+	box-shadow: var(--shadow, 0 10px 25px rgba(0, 0, 0, 0.05));
 	text-align: center;
 }
 
@@ -28,26 +28,27 @@
 	align-items: center;
 	justify-content: center;
 	margin: 0 auto 16px;
-	background: var(--error-bg, #fee2e2);
-	color: var(--error-text, #ef4444);
-	border: 1px solid rgba(239, 68, 68, 0.2);
+	background: var(--bad-bg, var(--rust-soft));
+	color: var(--bad-fg, var(--rust));
+	border: 1px solid var(--line);
 }
 
 .guest-portal-title {
 	font-size: 24px;
 	font-weight: 700;
 	margin-bottom: 8px;
+	color: var(--text-primary, var(--ink));
 }
 
 .guest-portal-subtitle {
-	color: var(--text-secondary, #64748b);
+	color: var(--text-secondary, var(--muted));
 	font-size: 15px;
 	margin-bottom: 24px;
 }
 
 .guest-portal-spinner {
 	animation: spin 1s linear infinite;
-	color: var(--primary, #2563eb);
+	color: var(--teal);
 }
 
 @keyframes spin {
@@ -75,14 +76,14 @@
 	align-items: center;
 	gap: 6px;
 	font-size: 13px;
-	color: var(--text-secondary, #64748b);
+	color: var(--text-secondary, var(--muted));
 	font-weight: 500;
 }
 
 .guest-portal-field-value {
 	font-size: 15px;
 	font-weight: 600;
-	color: var(--text-primary, #0f172a);
+	color: var(--text-primary, var(--ink));
 }
 
 .guest-portal-status-badge {
@@ -96,44 +97,27 @@
 	border: 1px solid;
 }
 
-/*
- * Плашка статуса. Прежняя редакция зашивала светлые пастельные цвета
- * (#fef3c7 / #d1fae5 / …), а страница следует теме ПОСЕТИТЕЛЯ, не клиники
- * (main.tsx): на тёмной подложке это были яркие пятна. Все имена ниже объявлены
- * для всех трёх тем в styles/main.css, поэтому оттенок сохраняется, а
- * светлота идёт за темой.
- *
- * Правил ровно столько, сколько статусов у заказа в базе (schema.ts labOrders):
- * зуботехник видит и те, что ставит клиника, — без правила на draft/sent/received
- * плашка оставалась без фона, а рамку брала от currentColor.
- *
- * Цвет ТЕКСТА у всех один — --text-primary. Цветной текст на цветной подложке
- * здесь не проходит по контрасту: --amber на --amber-soft в светлой теме даёт
- * 2,9:1 при требуемых 4,5:1 (WCAG 1.4.3, размер 14px полужирный — не «крупный
- * текст»). Статус различается подложкой, рамкой, значком и русской подписью, то
- * есть не одним цветом.
- */
 .guest-portal-status-badge.draft,
 .guest-portal-status-badge.sent {
 	background: var(--teal-surface);
-	color: var(--text-primary);
+	color: var(--text-primary, var(--ink));
 	border-color: var(--teal-soft);
 }
 .guest-portal-status-badge.in_progress {
 	background: var(--amber-soft);
-	color: var(--text-primary);
+	color: var(--text-primary, var(--ink));
 	border-color: var(--amber);
 }
 .guest-portal-status-badge.refitting {
 	background: var(--rust-soft);
-	color: var(--text-primary);
+	color: var(--text-primary, var(--ink));
 	border-color: var(--rust);
 }
 .guest-portal-status-badge.shipped,
 .guest-portal-status-badge.received,
 .guest-portal-status-badge.completed {
 	background: var(--teal-soft);
-	color: var(--text-primary);
+	color: var(--text-primary, var(--ink));
 	border-color: var(--teal);
 }
 
@@ -143,13 +127,13 @@
 	gap: 12px;
 	margin-top: 32px;
 	padding-top: 24px;
-	border-top: 1px solid var(--line, #e2e8f0);
+	border-top: 1px solid var(--line);
 }
 
 .guest-portal-actions .secondary-button.active {
-	background: var(--teal, #0d9488);
-	color: #ffffff;
-	border-color: var(--teal, #0d9488);
+	background: var(--teal);
+	color: var(--on-teal, var(--paper));
+	border-color: var(--teal);
 	font-weight: 700;
 }
 
@@ -158,7 +142,7 @@
 	height: auto;
 	border-radius: 12px;
 	margin-top: 16px;
-	border: 1px solid var(--line, #e2e8f0);
+	border: 1px solid var(--line);
 }
 
 .guest-portal-scan-card {
@@ -166,9 +150,9 @@
 	flex-direction: column;
 	gap: 14px;
 	padding: 18px 20px;
-	border: 1px solid var(--line, #e2e8f0);
+	border: 1px solid var(--line);
 	border-radius: 12px;
-	background: var(--paper, #ffffff);
+	background: var(--paper);
 	margin-top: 8px;
 	text-align: left;
 }
@@ -183,13 +167,13 @@
 	width: 44px;
 	height: 44px;
 	border-radius: 10px;
-	background: var(--teal-surface, rgba(13, 148, 136, 0.12));
-	color: var(--teal, #0d9488);
+	background: var(--teal-surface);
+	color: var(--teal);
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	flex-shrink: 0;
-	border: 1px solid var(--teal-soft, rgba(13, 148, 136, 0.25));
+	border: 1px solid var(--teal-soft);
 }
 
 .guest-portal-scan-meta {
@@ -200,7 +184,7 @@
 .guest-portal-scan-filename {
 	font-size: 15px;
 	font-weight: 600;
-	color: var(--text-primary, #0f172a);
+	color: var(--text-primary, var(--ink));
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -208,7 +192,7 @@
 
 .guest-portal-scan-subtext {
 	font-size: 12px;
-	color: var(--text-secondary, #64748b);
+	color: var(--text-secondary, var(--muted));
 	display: flex;
 	align-items: center;
 	gap: 6px;
@@ -223,8 +207,8 @@
 	font-size: 10px;
 	font-weight: 700;
 	letter-spacing: 0.5px;
-	background: var(--teal-soft, rgba(13, 148, 136, 0.2));
-	color: var(--teal, #0d9488);
+	background: var(--teal-soft);
+	color: var(--teal);
 }
 
 .guest-portal-scan-actions {
@@ -244,9 +228,9 @@
 	font-weight: 600;
 	border-radius: 8px;
 	text-decoration: none;
-	background: var(--teal, #0d9488);
-	color: #ffffff !important;
-	border: 1px solid var(--teal, #0d9488);
+	background: var(--teal);
+	color: var(--on-teal, var(--paper)) !important;
+	border: 1px solid var(--teal);
 	cursor: pointer;
 	min-height: 36px;
 	transition: opacity 0.15s ease;
@@ -267,22 +251,31 @@
 	border-radius: 8px;
 	text-decoration: none;
 	background: transparent;
-	color: var(--text-primary, #0f172a);
-	border: 1px solid var(--line, #e2e8f0);
+	color: var(--text-primary, var(--ink));
+	border: 1px solid var(--line);
 	min-height: 36px;
 	transition: background-color 0.15s ease;
 }
 
 .guest-portal-open-link-btn:hover {
-	background: var(--teal-surface, rgba(13, 148, 136, 0.08));
+	background: var(--teal-surface);
+}
+
+.guest-portal-code-plate {
+	color: var(--ink);
+	background: var(--paper);
+	padding: 8px 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	display: inline-block;
 }
 
 .guest-portal-select {
 	padding: 12px 16px;
 	border-radius: 8px;
-	border: 1px solid var(--line, #e2e8f0);
-	background: var(--bg-default, #f8fafc);
-	color: var(--text-primary, #0f172a);
+	border: 1px solid var(--line);
+	background: var(--bg-default, var(--paper-soft));
+	color: var(--text-primary, var(--ink));
 	font-size: 15px;
 	width: 100%;
 	margin-bottom: 12px;

@@ -122,7 +122,7 @@ export function SmartMicrophoneButton({
 						? "var(--bad-fg)"
 						: isProcessing
 							? "var(--info-fg)"
-							: "var(--brand-500)",
+							: "var(--teal, var(--brand-500))",
 					border: "none",
 					cursor: isProcessing ? "wait" : "pointer",
 					display: "flex",
@@ -135,7 +135,7 @@ export function SmartMicrophoneButton({
 					minHeight: "44px",
 					borderRadius: "50%",
 					transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-					boxShadow: isRecording ? "0 0 0 4px rgba(239, 68, 68, 0.15)" : "none",
+					boxShadow: isRecording ? "0 0 0 4px var(--bad-glow, rgba(239, 68, 68, 0.15))" : "none",
 					transform: isRecording ? "scale(1.05)" : "scale(1)",
 					...appearance,
 				}}
@@ -170,8 +170,11 @@ export function SmartMicrophoneButton({
 						zIndex: 110,
 						whiteSpace: "nowrap",
 						pointerEvents: "none",
+						background: "var(--info-bg)",
+						border: "1px solid var(--info-border, var(--line))",
+						color: "var(--info-fg)",
 					}}
-					className="px-2.5 py-1 rounded-lg bg-blue-500/15 border border-blue-500/30 text-blue-700 dark:text-blue-300 text-xs font-semibold italic animate-pulse shadow-md"
+					className="px-2.5 py-1 rounded-lg text-xs font-semibold italic animate-pulse shadow-md"
 				>
 					«{interimText}»
 				</div>

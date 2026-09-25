@@ -517,7 +517,7 @@
 .signature-pad-btn-outline {
 	border: 1px solid rgba(239, 68, 68, 0.35);
 	background: rgba(239, 68, 68, 0.08);
-	color: #ef4444;
+	color: var(--danger, #ef4444);
 }
 
 .signature-pad-btn-outline:hover:not(:disabled) {
@@ -540,7 +540,7 @@
 }
 
 .signature-status-valid {
-	color: #16a34a;
+	color: var(--success, #16a34a);
 }
 
 .selfcheckin-signed-badge-box {
@@ -553,7 +553,7 @@
 
 .selfcheckin-signed-success {
 	font-weight: 700;
-	color: #16a34a;
+	color: var(--success, #16a34a);
 	font-size: 0.9375rem;
 }
 
@@ -595,7 +595,7 @@
 .selfcheckin-alerts-header {
 	font-size: 0.875rem;
 	font-weight: 700;
-	color: #ea580c;
+	color: var(--warning, #ea580c);
 }
 
 .selfcheckin-alert-badge {
@@ -608,19 +608,19 @@
 .selfcheckin-alert-badge.alert-danger {
 	background: rgba(239, 68, 68, 0.08);
 	border: 1px solid rgba(239, 68, 68, 0.3);
-	color: #dc2626;
+	color: var(--danger, #dc2626);
 }
 
 .selfcheckin-alert-badge.alert-warning {
 	background: rgba(245, 158, 11, 0.08);
 	border: 1px solid rgba(245, 158, 11, 0.3);
-	color: #d97706;
+	color: var(--warning, #d97706);
 }
 
 .selfcheckin-alert-badge.alert-caution {
 	background: rgba(16, 185, 129, 0.08);
 	border: 1px solid rgba(16, 185, 129, 0.3);
-	color: #059669;
+	color: var(--teal, var(--success, #059669));
 }
 
 .selfcheckin-alert-title {
@@ -710,7 +710,7 @@
 	height: 80px;
 	border-radius: 50%;
 	background: rgba(16, 185, 129, 0.12);
-	border: 3px solid #10b981;
+	border: 3px solid var(--teal, var(--success, #10b981));
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -719,7 +719,7 @@
 }
 
 .selfcheckin-success-check-icon {
-	color: #059669;
+	color: var(--teal, var(--success, #059669));
 	animation: selfcheckinScaleCheck 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -764,7 +764,7 @@
 	width: 100%;
 	max-width: 440px;
 	background: var(--paper, #f8fafc);
-	border: 2px dashed #059669;
+	border: 2px dashed var(--teal, var(--success, #059669));
 	border-radius: 16px;
 	padding: 1.375rem;
 	display: flex;
@@ -778,7 +778,7 @@
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
-	color: #059669;
+	color: var(--teal, var(--success, #059669));
 	font-weight: 700;
 	font-size: 0.875rem;
 	text-transform: uppercase;
@@ -786,13 +786,13 @@
 }
 
 .selfcheckin-ticket-icon {
-	color: #059669;
+	color: var(--teal, var(--success, #059669));
 }
 
 .selfcheckin-ticket-number-display {
 	font-size: 2.25rem;
 	font-weight: 900;
-	color: #047857;
+	color: var(--teal-hover, var(--primary-hover, #047857));
 	letter-spacing: 0.05em;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 	padding: 0.5rem 1.25rem;
@@ -873,7 +873,7 @@
 	border-radius: 8px;
 	background: rgba(239, 68, 68, 0.08);
 	border: 1px solid rgba(239, 68, 68, 0.3);
-	color: #dc2626;
+	color: var(--danger, #dc2626);
 	font-size: 0.875rem;
 	font-weight: 500;
 }
@@ -894,8 +894,8 @@
 	padding: 0.875rem 1.25rem;
 	border-radius: 12px;
 	border: none;
-	background: #059669;
-	color: #ffffff;
+	background: var(--teal, var(--success, #059669));
+	color: var(--paper-strong, #ffffff);
 	font-weight: 700;
 	cursor: pointer;
 	display: flex;
@@ -907,7 +907,7 @@
 }
 
 .selfcheckin-btn-norm-dominant:hover:not(:disabled) {
-	background: #047857;
+	background: var(--teal-hover, var(--primary-hover, #047857));
 	transform: translateY(-1px);
 	box-shadow: 0 6px 10px -1px rgba(5, 150, 105, 0.35);
 }
@@ -917,7 +917,7 @@
 }
 
 .selfcheckin-dominant-check-icon {
-	color: #ffffff;
+	color: var(--paper-strong, #ffffff);
 }
 
 .selfcheckin-dominant-title {
@@ -946,7 +946,7 @@
 	border-radius: 10px;
 	border: none;
 	background: rgba(16, 185, 129, 0.15);
-	color: #065f46;
+	color: var(--teal, #065f46);
 	font-size: 0.9375rem;
 	font-weight: 700;
 	cursor: pointer;
@@ -967,8 +967,8 @@
 	padding: 0.625rem 1.125rem;
 	border-radius: 10px;
 	border: none;
-	background: #047857;
-	color: #ffffff;
+	background: var(--teal-hover, var(--primary-hover, #047857));
+	color: var(--paper-strong, #ffffff);
 	font-size: 0.9375rem;
 	font-weight: 700;
 	cursor: pointer;
@@ -983,7 +983,7 @@
 }
 
 .selfcheckin-btn-norm-finish:hover:not(:disabled) {
-	background: #065f46;
+	background: var(--teal, #065f46);
 	transform: translateY(-1px);
 }
 
@@ -997,8 +997,8 @@
 	font-weight: 700;
 	padding: 0.35rem 0.75rem;
 	border-radius: 9999px;
-	background: #059669;
-	color: #ffffff;
+	background: var(--teal, var(--success, #059669));
+	color: var(--paper-strong, #ffffff);
 }
 
 /* Quick Allergy Chips (Mandate 8e) */
@@ -1035,15 +1035,15 @@
 }
 
 .selfcheckin-allergy-chip:hover {
-	border-color: #94a3b8;
+	border-color: var(--border, #94a3b8);
 	background: var(--surface-hover, #f8fafc);
 }
 
 .selfcheckin-allergy-chip.active {
-	border-color: #ef4444;
+	border-color: var(--danger, #ef4444);
 	background: rgba(239, 68, 68, 0.08);
-	color: #dc2626;
-	box-shadow: 0 0 0 1px #ef4444;
+	color: var(--danger, #dc2626);
+	box-shadow: 0 0 0 1px var(--danger, #ef4444);
 }
 
 .selfcheckin-chip-icon {

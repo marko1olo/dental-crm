@@ -22,6 +22,23 @@ export interface AuthArtBackgroundProps {
 	readonly className?: string | undefined;
 }
 
+export function calculateAdaptiveScrimAlpha(dominantColor?: string | null, baseAlpha = 0.25): number {
+	if (!dominantColor) return Math.max(baseAlpha, 0.35);
+	try {
+		const clean = dominantColor.replace("#", "").trim();
+		const r = parseInt(clean.slice(0, 2), 16);
+		const g = parseInt(clean.slice(2, 4), 16);
+		const b = parseInt(clean.slice(4, 6), 16);
+		const lum = 0.2126 * (r / 255) + 0.7152 * (g / 255) + 0.0722 * (b / 255);
+		if (lum > 0.35) {
+			return Math.max(baseAlpha, 0.55);
+		}
+		return Math.max(baseAlpha, 0.35);
+	} catch {
+		return Math.max(baseAlpha, 0.35);
+	}
+}
+
 export function AuthArtBackground({
 	settings: propSettings,
 	overlayAlpha = 0.25,
@@ -35,8 +52,11 @@ export function AuthArtBackground({
 		dynamicByTimeOfDay: true,
 	});
 	const [loaded, setLoaded] = useState(false);
+	const [imgError, setImgError] = useState(false);
 
 	useEffect(() => {
+		let isMounted = true;
+
 		// Read settings from localStorage to handle unauthenticated state
 		const saved = safeLocalStorageGetItem("dente_auth_art_settings");
 		if (saved) {
@@ -62,10 +82,12 @@ export function AuthArtBackground({
 			if (e.key === "dente_auth_art_settings" && e.newValue) {
 				try {
 					const parsed = JSON.parse(e.newValue);
-					setArtSettings((prev) => ({
-						...prev,
-						...parsed,
-					}));
+					if (isMounted) {
+						setArtSettings((prev) => ({
+							...prev,
+							...parsed,
+						}));
+					}
 				} catch {
 					// ignore
 				}
@@ -89,11 +111,14 @@ export function AuthArtBackground({
 				if (!Array.isArray(data)) {
 					throw new Error("Манифест оформления не является списком");
 				}
-				setManifest(data);
+				if (isMounted) {
+					setManifest(data);
+				}
 			})
 			.catch((e) => logger.error("Failed to load auth art manifest", e));
 
 		return () => {
+			isMounted = false;
 			window.removeEventListener("storage", handleStorage);
 		};
 	}, []);
@@ -112,28 +137,46 @@ export function AuthArtBackground({
 			return;
 		}
 
-		const slot = effectiveSettings.dynamicByTimeOfDay
-			? getCurrentTimeSlot()
-			: "day";
-		const isReducedMotion = window.matchMedia(
-			"(prefers-reduced-motion: reduce)",
-		).matches;
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const nav = navigator as any;
-		const isSaveData =
-			nav.connection?.saveData || nav.connection?.effectiveType?.includes("2g");
+		const pickArt = () => {
+			const slot = effectiveSettings.dynamicByTimeOfDay
+				? getCurrentTimeSlot()
+				: "day";
+			const isReducedMotion =
+				typeof window !== "undefined" &&
+				window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+			const nav = (typeof navigator !== "undefined" ? navigator : {}) as any;
+			const isSaveData =
+				nav.connection?.saveData || nav.connection?.effectiveType?.includes("2g");
 
-		const art = selectAuthArt(manifest, {
-			pack: effectiveSettings.pack,
-			slot,
-			saveData: !!isSaveData,
-			reducedMotion: isReducedMotion,
-		});
-		setSelectedArt(art);
+			const art = selectAuthArt(manifest, {
+				pack: effectiveSettings.pack,
+				slot,
+				saveData: !!isSaveData,
+				reducedMotion: isReducedMotion,
+			});
+			setSelectedArt(art);
+		};
+
+		pickArt();
+
+		if (effectiveSettings.dynamicByTimeOfDay) {
+			const interval = setInterval(pickArt, 60_000);
+			return () => clearInterval(interval);
+		}
 	}, [manifest, effectiveSettings]);
 
-	if (!effectiveSettings.enabled || !selectedArt) {
-		return null; // Let the fallback mesh gradient handle the background
+	useEffect(() => {
+		setLoaded(false);
+		setImgError(false);
+	}, [selectedArt]);
+
+	const effectiveScrimAlpha = useMemo(() => {
+		return calculateAdaptiveScrimAlpha(selectedArt?.dominantColor, overlayAlpha);
+	}, [selectedArt?.dominantColor, overlayAlpha]);
+
+	if (!effectiveSettings.enabled) {
+		return null; // User explicitly disabled auth art
 	}
 
 	return (
@@ -148,56 +191,66 @@ export function AuthArtBackground({
 				bottom: 0,
 				zIndex: -1,
 				overflow: "hidden",
-				backgroundColor: selectedArt.dominantColor,
+				backgroundColor: selectedArt?.dominantColor || "var(--background, var(--paper, #0b1311))",
 				pointerEvents: "none",
 			}}
 		>
-			<div
-				style={{
-					position: "absolute",
-					top: 0,
-					left: 0,
-					right: 0,
-					bottom: 0,
-					backgroundImage: `url(${selectedArt.lqip})`,
-					backgroundSize: "cover",
-					backgroundPosition: "center",
-				}}
-			/>
-			<picture
-				style={{
-					position: "absolute",
-					top: 0,
-					left: 0,
-					right: 0,
-					bottom: 0,
-					display: "block",
-				}}
-			>
-				{selectedArt.avif && (
-					<source srcSet={`/auth-art/${selectedArt.avif}`} type="image/avif" />
-				)}
-				{selectedArt.webp && (
-					<source srcSet={`/auth-art/${selectedArt.webp}`} type="image/webp" />
-				)}
-				<img
-					src={`/auth-art/${selectedArt.webp || selectedArt.avif}`}
-					alt=""
-					loading="lazy"
-					decoding="async"
-					onLoad={() => setLoaded(true)}
+			{/* LQIP Blur-up Background Layer */}
+			{selectedArt?.lqip && (
+				<div
 					style={{
-						width: "100%",
-						height: "100%",
-						objectFit: "cover",
-						objectPosition: "center",
-						opacity: loaded ? 1 : 0,
+						position: "absolute",
+						top: "-10px",
+						left: "-10px",
+						right: "-10px",
+						bottom: "-10px",
+						backgroundImage: `url(${selectedArt.lqip})`,
+						backgroundSize: "cover",
+						backgroundPosition: "center",
+						filter: "blur(20px)",
+						transform: "scale(1.05)",
+						opacity: loaded && !imgError ? 0.35 : 0.95,
 						transition: "opacity 0.8s ease-in-out",
-						display: "block",
 					}}
 				/>
-			</picture>
-			{/* Scrim layer for readability */}
+			)}
+			{selectedArt && (
+				<picture
+					style={{
+						position: "absolute",
+						top: 0,
+						left: 0,
+						right: 0,
+						bottom: 0,
+						display: "block",
+					}}
+				>
+					{selectedArt.avif && (
+						<source srcSet={`/auth-art/${selectedArt.avif}`} type="image/avif" />
+					)}
+					{selectedArt.webp && (
+						<source srcSet={`/auth-art/${selectedArt.webp}`} type="image/webp" />
+					)}
+					<img
+						src={`/auth-art/${selectedArt.webp || selectedArt.avif}`}
+						alt=""
+						loading="lazy"
+						decoding="async"
+						onLoad={() => setLoaded(true)}
+						onError={() => setImgError(true)}
+						style={{
+							width: "100%",
+							height: "100%",
+							objectFit: "cover",
+							objectPosition: "center",
+							opacity: loaded && !imgError ? 1 : 0,
+							transition: "opacity 0.8s ease-in-out",
+							display: "block",
+						}}
+					/>
+				</picture>
+			)}
+			{/* Scrim layer with vertical gradient for WCAG AA readability across themes */}
 			<div
 				style={{
 					position: "absolute",
@@ -205,7 +258,7 @@ export function AuthArtBackground({
 					left: 0,
 					right: 0,
 					bottom: 0,
-					backgroundColor: `rgba(0,0,0,${overlayAlpha})`,
+					background: `linear-gradient(180deg, rgba(0,0,0,${effectiveScrimAlpha * 0.75}) 0%, rgba(0,0,0,${effectiveScrimAlpha * 1.25}) 100%)`,
 				}}
 			/>
 		</div>

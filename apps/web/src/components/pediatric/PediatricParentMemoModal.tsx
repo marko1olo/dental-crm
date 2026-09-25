@@ -23,6 +23,7 @@ import {
 	getFranklDefinition,
 } from "../odontogram/pediatricDentitionEngine";
 import { showToast } from "../GlobalToast";
+import { getFranklVectorIcon } from "./FranklBehaviorBadge";
 
 export interface PediatricParentMemoModalProps {
 	isOpen: boolean;
@@ -405,6 +406,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 							{([1, 2, 3, 4] as const).map((r) => {
 								const def = FRANKL_SCALE_DEFINITIONS[r];
 								const isSel = frankl === r;
+								const RatingIcon = getFranklVectorIcon(r);
 								return (
 									<button
 										key={r}
@@ -413,10 +415,10 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 											setFrankl(r);
 											onApplyFrankl?.(r);
 										}}
-										className={`min-h-[44px] px-3 py-2 rounded-xl border-2 flex items-center justify-center gap-1.5 font-bold text-xs sm:text-sm cursor-pointer transition-all ${
+										className={`min-h-[44px] px-3 py-2 rounded-xl border-2 flex items-center justify-center gap-1.5 font-bold text-xs sm:text-sm cursor-pointer transition-all active:scale-95 ${
 											isSel
 												? "ring-2 shadow-xs scale-[1.01]"
-												: "opacity-80 hover:opacity-100 bg-[var(--paper,#ffffff)]"
+												: "opacity-80 hover:opacity-100 bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)]"
 										}`}
 										style={{
 											backgroundColor: isSel ? def.badgeBg : undefined,
@@ -424,7 +426,9 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 											color: isSel ? def.badgeColor : "var(--ink,#0f172a)",
 										}}
 										title={def.descriptionRu}
+										data-testid={`memo-frankl-btn-${r}`}
 									>
+										<RatingIcon className="w-4 h-4 shrink-0" />
 										<span className="font-mono font-black text-xs px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10">
 											[{def.symbol}]
 										</span>
@@ -441,7 +445,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 						<label
 							className={`flex items-start gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
 								hasAnesthesia
-									? "border-amber-500 bg-amber-500/10 shadow-xs"
+									? "border-amber-500 bg-amber-500/10 dark:bg-amber-950/40 shadow-xs"
 									: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]"
 							}`}
 						>
@@ -464,7 +468,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 						<label
 							className={`flex items-start gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
 								hasPulpotomy
-									? "border-rose-500 bg-rose-500/10 shadow-xs"
+									? "border-rose-500 bg-rose-500/10 dark:bg-rose-950/40 shadow-xs"
 									: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]"
 							}`}
 						>
@@ -487,7 +491,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 						<label
 							className={`flex items-start gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
 								hasFissureSealing
-									? "border-teal-500 bg-teal-500/10 shadow-xs"
+									? "border-teal-500 bg-teal-500/10 dark:bg-teal-950/40 shadow-xs"
 									: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]"
 							}`}
 						>
@@ -510,7 +514,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 						<label
 							className={`flex items-start gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
 								hasSilvering
-									? "border-amber-500 bg-amber-500/10 shadow-xs"
+									? "border-amber-500 bg-amber-500/10 dark:bg-amber-950/40 shadow-xs"
 									: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]"
 							}`}
 						>
@@ -542,7 +546,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 									type="number"
 									value={pulpotomyTooth}
 									onChange={(e) => setPulpotomyTooth(Number(e.target.value))}
-									className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-sm font-bold font-mono"
+									className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] text-sm font-bold font-mono focus:border-teal-500 focus:outline-hidden"
 								/>
 							</div>
 						)}
@@ -556,7 +560,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 									type="text"
 									value={fissureTeeth}
 									onChange={(e) => setFissureTeeth(e.target.value)}
-									className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-sm font-bold font-mono"
+									className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] text-sm font-bold font-mono focus:border-teal-500 focus:outline-hidden"
 								/>
 							</div>
 						)}
@@ -570,7 +574,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 									type="text"
 									value={silveringTeeth}
 									onChange={(e) => setSilveringTeeth(e.target.value)}
-									className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-sm font-bold font-mono"
+									className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] text-sm font-bold font-mono focus:border-teal-500 focus:outline-hidden"
 								/>
 							</div>
 						)}
@@ -586,7 +590,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 							value={customNotes}
 							onChange={(e) => setCustomNotes(e.target.value)}
 							placeholder="Например: Адаптация успешна, лечение без удержания. Ребенок спокоен."
-							className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-xs sm:text-sm font-medium"
+							className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] text-xs sm:text-sm font-medium focus:border-teal-500 focus:outline-hidden"
 						/>
 					</div>
 

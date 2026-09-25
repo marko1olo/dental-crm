@@ -199,13 +199,13 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 			style={{
 				padding: "16px",
 				borderRadius: "12px",
-				backgroundColor: "var(--pc-surface, #1e293b)",
-				border: `1.5px solid ${isCompleted ? "var(--pc-success, #10b981)" : isInProgress ? "var(--pc-warning, #f59e0b)" : "var(--pc-border, #334155)"}`,
+				backgroundColor: "var(--pc-surface, var(--paper-strong))",
+				border: `1.5px solid ${isCompleted ? "var(--pc-success, var(--teal))" : isInProgress ? "var(--pc-warning, var(--amber))" : "var(--pc-border, var(--line))"}`,
 				display: "flex",
 				flexDirection: "column",
 				gap: "12px",
 				transition: "all 0.2s ease",
-				boxShadow: isInProgress ? "0 4px 12px rgba(245, 158, 11, 0.15)" : "none",
+				boxShadow: isInProgress ? "0 4px 12px var(--amber-soft)" : "none",
 			}}
 		>
 			{/* Stage Header */}
@@ -217,14 +217,14 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 							height: "30px",
 							minWidth: "30px",
 							borderRadius: "50%",
-							backgroundColor: isCompleted ? "var(--pc-success, #10b981)" : isInProgress ? "var(--pc-warning, #f59e0b)" : "var(--muted, #475569)",
-							color: "var(--on-teal, #ffffff)",
+							backgroundColor: isCompleted ? "var(--pc-success, var(--teal))" : isInProgress ? "var(--pc-warning, var(--amber))" : "var(--muted)",
+							color: "var(--on-teal, var(--paper))",
 							fontWeight: 800,
 							fontSize: "13px",
 							display: "flex",
 							alignItems: "center",
 							justifyContent: "center",
-							boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+							boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
 						}}
 					>
 						{isCompleted ? <Check size={16} strokeWidth={3} /> : stage.orderIndex}
@@ -232,7 +232,7 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 
 					<div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
 						<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-							<strong style={{ fontSize: "15px", color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
+							<strong style={{ fontSize: "15px", color: "var(--pc-text-main, var(--ink))" }}>
 								{stage.titleRu}
 							</strong>
 							<span
@@ -244,16 +244,16 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 						</div>
 
 						{stage.teethFdi.length > 0 && (
-							<div style={{ fontSize: "12px", color: "var(--pc-primary, #0d9488)", fontWeight: 600 }}>
+							<div style={{ fontSize: "12px", color: "var(--pc-primary, var(--teal))", fontWeight: 600 }}>
 								Область лечения: зубы № {stage.teethFdi.join(", ")}
 							</div>
 						)}
 
-						<div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)" }}>
+						<div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", fontSize: "11px", color: "var(--pc-text-muted, var(--muted))" }}>
 							{stage.targetDateRu && (
 								<span>Ориентировочный срок: <strong>{stage.targetDateRu}</strong></span>
 							)}
-							<span>&bull;</span>
+							<span>·</span>
 							<span style={{ display: "flex", alignItems: "center", gap: "3px" }}>
 								<Clock size={12} />
 								<span>Время в кресле: ~{estimatedDuration} мин</span>
@@ -269,14 +269,14 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 							<div
 								data-testid={`stage-paid-plate-${stage.id}`}
 								style={{
-									backgroundColor: "rgba(16, 185, 129, 0.15)",
-									border: "1.5px solid var(--pc-success, #10b981)",
+									backgroundColor: "var(--teal-soft)",
+									border: "1.5px solid var(--pc-success, var(--teal))",
 									borderRadius: "8px",
 									padding: "4px 10px",
 									display: "inline-flex",
 									alignItems: "center",
 									gap: "6px",
-									color: "var(--pc-success, #10b981)",
+									color: "var(--pc-success, var(--teal))",
 									fontWeight: 800,
 									fontSize: "13px",
 								}}
@@ -288,14 +288,14 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 							<div
 								data-testid={`stage-due-plate-${stage.id}`}
 								style={{
-									backgroundColor: isInProgress ? "rgba(245, 158, 11, 0.15)" : "rgba(13, 148, 136, 0.12)",
-									border: `1.5px solid ${isInProgress ? "var(--pc-warning, #f59e0b)" : "var(--pc-border, #334155)"}`,
+									backgroundColor: isInProgress ? "var(--amber-soft)" : "var(--teal-surface)",
+									border: `1.5px solid ${isInProgress ? "var(--pc-warning, var(--amber))" : "var(--pc-border, var(--line))"}`,
 									borderRadius: "8px",
 									padding: "4px 10px",
 									display: "inline-flex",
 									alignItems: "center",
 									gap: "6px",
-									color: isInProgress ? "var(--pc-warning, #f59e0b)" : "var(--pc-text-main, var(--ink, #0f172a))",
+									color: isInProgress ? "var(--pc-warning, var(--amber))" : "var(--pc-text-main, var(--ink))",
 									fontWeight: 800,
 									fontSize: "13px",
 								}}
@@ -304,8 +304,8 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 								<span>К оплате за этап: {formatRubles(stage.costRub)}</span>
 							</div>
 						)}
-						<span style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", textAlign: "right" }}>
-							Фиксированная смета «Под ключ» &bull; СБП 0%
+						<span style={{ fontSize: "11px", color: "var(--pc-text-muted, var(--muted))", textAlign: "right" }}>
+							Фиксированная смета «Под ключ» · СБП 0%
 						</span>
 					</div>
 
@@ -319,8 +319,8 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 								minHeight: "44px",
 								borderRadius: "8px",
 								border: "none",
-								background: "linear-gradient(135deg, var(--pc-primary, #0d9488) 0%, #0f766e 100%)",
-								color: "var(--on-teal, #ffffff)",
+								background: "linear-gradient(135deg, var(--pc-primary, var(--teal)) 0%, var(--teal-dark) 100%)",
+								color: "var(--on-teal, var(--paper))",
 								fontSize: "13px",
 								fontWeight: 800,
 								cursor: "pointer",
@@ -328,7 +328,7 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 								alignItems: "center",
 								gap: "8px",
 								touchAction: "manipulation",
-								boxShadow: "0 2px 8px rgba(13, 148, 136, 0.35)",
+								boxShadow: "0 2px 8px var(--teal-soft)",
 								transition: "transform 0.15s ease, box-shadow 0.15s ease",
 							}}
 						>
@@ -345,32 +345,32 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 					display: "flex",
 					flexDirection: "column",
 					gap: "6px",
-					backgroundColor: "rgba(13, 148, 136, 0.08)",
-					border: "1px solid rgba(13, 148, 136, 0.25)",
+					backgroundColor: "var(--teal-surface)",
+					border: "1px solid var(--teal-soft)",
 					borderRadius: "8px",
 					padding: "8px 12px",
 					fontSize: "12px",
-					color: "var(--pc-text-main, var(--ink, #0f172a))",
+					color: "var(--pc-text-main, var(--ink))",
 				}}
 			>
 				<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "6px" }}>
-					<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--pc-primary, #0d9488)", fontWeight: 700 }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--pc-primary, var(--teal))", fontWeight: 700 }}>
 						<ShieldCheck size={16} />
 						<span>Всё включено (без доплат на кассе):</span>
 					</div>
 
-					<div style={{ display: "flex", alignItems: "center", gap: "4px", color: "var(--pc-success, #10b981)", fontWeight: 700, fontSize: "11px" }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "4px", color: "var(--pc-success, var(--teal))", fontWeight: 700, fontSize: "11px" }}>
 						<Sparkles size={13} />
 						<span>{warrantyText}</span>
 					</div>
 				</div>
 
-				<div style={{ display: "flex", flexWrap: "wrap", gap: "10px", fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)" }}>
-					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} className="text-emerald-500 shrink-0" /> Аппликационный гель (0% боли от укола)</span>
-					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} className="text-emerald-500 shrink-0" /> Анестезия Septanest (0 ₽ • включено)</span>
-					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} className="text-emerald-500 shrink-0" /> Снимки визиографа RVG (0 ₽ • включено)</span>
-					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} className="text-emerald-500 shrink-0" /> Изоляция коффердамом (0 ₽ • включено)</span>
-					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} className="text-emerald-500 shrink-0" /> Шлифовка и полировка (0 ₽ • включено)</span>
+				<div style={{ display: "flex", flexWrap: "wrap", gap: "10px", fontSize: "11px", color: "var(--pc-text-muted, var(--muted))" }}>
+					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} style={{ color: "var(--teal)", flexShrink: 0 }} /> Аппликационный гель (0% боли от укола)</span>
+					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} style={{ color: "var(--teal)", flexShrink: 0 }} /> Анестезия Septanest (0 ₽ · включено)</span>
+					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} style={{ color: "var(--teal)", flexShrink: 0 }} /> Снимки визиографа RVG (0 ₽ · включено)</span>
+					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} style={{ color: "var(--teal)", flexShrink: 0 }} /> Изоляция коффердамом (0 ₽ · включено)</span>
+					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} style={{ color: "var(--teal)", flexShrink: 0 }} /> Шлифовка и полировка (0 ₽ · включено)</span>
 				</div>
 			</div>
 
@@ -384,21 +384,21 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 								key={pIdx}
 								style={{
 									padding: "10px 12px",
-									backgroundColor: "var(--pc-bg, #0f172a)",
+									backgroundColor: "var(--pc-bg, var(--paper))",
 									borderRadius: "8px",
-									border: "1px solid var(--pc-border, #334155)",
+									border: "1px solid var(--pc-border, var(--line))",
 									display: "flex",
 									flexDirection: "column",
 									gap: "4px",
 								}}
 							>
 								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-									<div style={{ fontSize: "13px", fontWeight: 700, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
+									<div style={{ fontSize: "13px", fontWeight: 700, color: "var(--pc-text-main, var(--ink))" }}>
 										{dual.humanTitleRu}
 									</div>
 								</div>
 
-								<div style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", lineHeight: "1.4" }}>
+								<div style={{ fontSize: "11px", color: "var(--pc-text-muted, var(--muted))", lineHeight: "1.4" }}>
 									{dual.explanationRu}
 								</div>
 
@@ -407,7 +407,7 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 									<div
 										style={{
 											fontSize: "11px",
-											color: "var(--pc-primary, #0d9488)",
+											color: "var(--pc-primary, var(--teal))",
 											display: "flex",
 											alignItems: "center",
 											gap: "4px",
@@ -420,7 +420,7 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 								)}
 
 								{proc && proc !== dual.humanTitleRu && (
-									<div style={{ fontSize: "11px", color: "var(--pc-text-muted, #64748b)", marginTop: "2px" }}>
+									<div style={{ fontSize: "11px", color: "var(--pc-text-muted, var(--muted))", marginTop: "2px" }}>
 										{proc}
 									</div>
 								)}

@@ -43,28 +43,32 @@ export interface FnsTaxCertificateSummary {
 }
 
 /**
- * Calculates complete financial metrics for personal cabinet
+ * Calculates complete financial metrics for personal cabinet using kopeck-exact integer arithmetic
  */
 export function calculateFinancialSummary(
 	profile: PatientPortalProfile,
 	invoices: PortalInvoiceItem[],
 ): PortalFinancialSummary {
-	let totalInvoicedRub = 0;
-	let totalPaidRub = 0;
-	let totalRemainingRub = 0;
+	let totalInvoicedKop = 0;
+	let totalPaidKop = 0;
+	let totalRemainingKop = 0;
 	let paidCount = 0;
 	let unpaidCount = 0;
 
 	for (const inv of invoices) {
-		totalInvoicedRub += inv.totalAmountRub;
-		totalPaidRub += inv.paidAmountRub;
-		totalRemainingRub += inv.remainingAmountRub;
+		totalInvoicedKop += Math.round((inv.totalAmountRub || 0) * 100);
+		totalPaidKop += Math.round((inv.paidAmountRub || 0) * 100);
+		totalRemainingKop += Math.round((inv.remainingAmountRub || 0) * 100);
 		if (inv.status === "paid") {
 			paidCount++;
 		} else {
 			unpaidCount++;
 		}
 	}
+
+	const totalInvoicedRub = totalInvoicedKop / 100;
+	const totalPaidRub = totalPaidKop / 100;
+	const totalRemainingRub = totalRemainingKop / 100;
 
 	return {
 		totalInvoicedRub,
@@ -94,6 +98,7 @@ export function generateSbpPaymentQrPayload(
 }
 
 /**
+ * @deprecated Client-side OTP generation is strictly for offline mockup/storybook tests. Production OTP issuance is server-authoritative via /api/portal/auth/send-code.
  * Generates deterministic or pseudo-random 4-digit SMS OTP code
  */
 export function generateSmsOtpCode(phone: string, fixedCode = "7788"): { code: string; expiresAtIso: string } {
@@ -246,10 +251,11 @@ export function generateFnsTaxCertificateData(
 	year = 2026,
 	clinic?: { name?: string; inn?: string; kpp?: string },
 ): FnsTaxCertificateSummary {
-	const paidThisYear = invoices
+	const paidThisYearKop = invoices
 		.filter((inv) => inv.status === "paid" && (inv.paidAtIso || inv.issueDateIso).startsWith(String(year)))
-		.reduce((sum, inv) => sum + inv.paidAmountRub, 0);
+		.reduce((sum, inv) => sum + Math.round((inv.paidAmountRub || 0) * 100), 0);
 
+	const paidThisYear = paidThisYearKop / 100;
 	// Social tax deduction limit in РФ: 150 000 руб (с 2024 г.), возврат 13%
 	const eligibleSum = Math.min(paidThisYear, 150000);
 	const refund13Pct = Math.round(eligibleSum * 0.13);

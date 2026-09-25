@@ -412,7 +412,7 @@ html.dark .consent-document-sheet .consent-document-subtitle {
 	font-weight: 800;
 	text-align: center;
 	text-transform: uppercase;
-	color: #0f172a;
+	color: var(--ink);
 	margin-bottom: 0.25rem;
 }
 

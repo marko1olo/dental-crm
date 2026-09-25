@@ -46,6 +46,7 @@ export const EXPRESS_CYCLE_DEFAULTS = {
 	itemsDescription:
 		"Наконечники турбинные и угловые, смотровые лотки (зеркала, зонды, пинцеты), хирургический инструмент",
 	defaultPacksCount: 14,
+	defaultBixNumber: "Бикс № 1 (КСКФ-3) / Пакеты № 1-14",
 	packagingType: "kraft_pouch_sealed" as const,
 	defaultOperatorName: "Сотрудник клиники",
 	fallbackOperatorName: "Дежурный ассистент",
@@ -60,6 +61,7 @@ export interface ExpressCycleFillState {
 	readonly actualTime: number;
 	readonly itemsDescription: string;
 	readonly packsCount: number;
+	readonly bixNumber: string;
 	readonly packagingType: PackagingTypeId;
 	readonly operatorFullName: string;
 	readonly chamberPoints: ChamberPointEvaluation[];
@@ -67,6 +69,7 @@ export interface ExpressCycleFillState {
 
 export function computeExpressStandardCycleValues(params: {
 	currentPacksCount?: number;
+	currentBixNumber?: string;
 	currentOperatorName?: string;
 	defaultOperatorName?: string;
 	selectedIndicatorId?: string;
@@ -87,6 +90,7 @@ export function computeExpressStandardCycleValues(params: {
 		actualTime: EXPRESS_CYCLE_DEFAULTS.targetExposureMinutes,
 		itemsDescription: EXPRESS_CYCLE_DEFAULTS.itemsDescription,
 		packsCount: packs,
+		bixNumber: params.currentBixNumber?.trim() || EXPRESS_CYCLE_DEFAULTS.defaultBixNumber,
 		packagingType: EXPRESS_CYCLE_DEFAULTS.packagingType,
 		operatorFullName: operator,
 		chamberPoints: createDefault5ChamberPoints(params.selectedIndicatorId ?? "intetest_v_134_5", true),
@@ -144,6 +148,7 @@ export function AutoclaveNewCycleTab({
 		"Наконечники турбинные и угловые, смотровые лотки (зеркала, зонды, пинцеты), хирургический инструмент",
 	);
 	const [packsCount, setPacksCount] = useState<number>(14);
+	const [bixNumber, setBixNumber] = useState<string>("Бикс № 1 (КСКФ-3)");
 	const [packagingType, setPackagingType] = useState<PackagingTypeId>("kraft_pouch_sealed");
 	const [selectedIndicatorId, setSelectedIndicatorId] = useState<string>("intetest_v_134_5");
 	const [operatorFullName, setOperatorFullName] = useState<string>(defaultOperatorName);
@@ -217,6 +222,7 @@ export function AutoclaveNewCycleTab({
 	const handleExpressStandardCycle = () => {
 		const filled = computeExpressStandardCycleValues({
 			currentPacksCount: packsCount,
+			currentBixNumber: bixNumber,
 			currentOperatorName: operatorFullName,
 			defaultOperatorName,
 			selectedIndicatorId,
@@ -227,6 +233,7 @@ export function AutoclaveNewCycleTab({
 		setActualTime(filled.actualTime);
 		setItemsDescription(filled.itemsDescription);
 		setPacksCount(filled.packsCount);
+		setBixNumber(filled.bixNumber);
 		setPackagingType(filled.packagingType);
 		setOperatorFullName(filled.operatorFullName);
 		setChamberPoints([...filled.chamberPoints]);
@@ -255,6 +262,7 @@ export function AutoclaveNewCycleTab({
 			},
 			itemsDescriptionRu,
 			packsCount: resolvedPacksCount,
+			bixNumber: bixNumber.trim() || undefined,
 			packagingType,
 			chamberPoints,
 			operatorStaffFullName,
@@ -432,6 +440,20 @@ export function AutoclaveNewCycleTab({
 						placeholder="14"
 					/>
 				</div>
+
+				<div className="autoclave-form-group">
+					<label className="autoclave-form-label" htmlFor="bix-number">
+						Номер бикса / упаковки (СанПиН 3.3686-21)
+					</label>
+					<input
+						id="bix-number"
+						type="text"
+						className="autoclave-input"
+						value={bixNumber}
+						onChange={(e) => setBixNumber(e.target.value)}
+						placeholder="Бикс № 1 (КСКФ-3) / Пакеты № 1-14"
+					/>
+				</div>
 			</div>
 
 			{/* 3. Физические параметры датчиков (T°, P, время) */}
@@ -486,7 +508,8 @@ export function AutoclaveNewCycleTab({
 							className="autoclave-input"
 							value={actualPressure}
 							onChange={(e) => setActualPressure(Number(e.target.value))}
-							disabled={currentRegime?.methodType === "dry_heat_air"}
+							readOnly={currentRegime?.methodType === "dry_heat_air"}
+							title={currentRegime?.methodType === "dry_heat_air" ? "Сухожаровой шкаф работает при атмосферном давлении (0 бар)" : "Давление пара в камере автоклава"}
 						/>
 					</div>
 

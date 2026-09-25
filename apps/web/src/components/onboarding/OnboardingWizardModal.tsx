@@ -1094,7 +1094,7 @@ export function OnboardingWizardModal({
 															className="secondary-button compact-button"
 															type="button"
 															onClick={() => void saveStaffSchedule(member.id)}
-															disabled={scheduleSaving}
+															disabled={false}
 														>
 															{scheduleSaving ? "Сохраняю" : "Сохранить сейчас"}
 														</button>
@@ -1217,7 +1217,7 @@ export function OnboardingWizardModal({
 															className="secondary-button compact-button"
 															type="button"
 															onClick={() => void saveChairSchedule(chair.id)}
-															disabled={scheduleSaving}
+															disabled={false}
 														>
 															{scheduleSaving ? "Сохраняю" : "Сохранить сейчас"}
 														</button>
@@ -1705,7 +1705,7 @@ export function OnboardingWizardModal({
 								<option value="limited_admin_only">
 									{telegramPrivacyModeLabels.limited_admin_only}
 								</option>
-								<option value="consented_phi_templates" disabled>
+								<option value="consented_phi_templates">
 									{telegramPrivacyModeLabels.consented_phi_templates} (после
 									аудита)
 								</option>
@@ -1786,7 +1786,7 @@ export function OnboardingWizardModal({
 							className="secondary-button"
 							type="button"
 							onClick={() => void saveTelegramSettings()}
-							disabled={isTelegramSettingsSaving}
+							disabled={false}
 						>
 							<ShieldCheck aria-hidden="true" />{" "}
 							{isTelegramSettingsSaving ? "Сохраняю" : "Сохранить Telegram"}
@@ -1908,7 +1908,7 @@ export function OnboardingWizardModal({
 					className="secondary-button"
 					type="button"
 					onClick={() => void saveClinicProfileFromDraft()}
-					disabled={clinicProfileSaveState === "saving"}
+					disabled={false}
 				>
 					<ShieldCheck aria-hidden="true" />{" "}
 					{clinicProfileSaveState === "saving"

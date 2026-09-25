@@ -53,7 +53,7 @@ export const CareMemoSheet: React.FC<CareMemoSheetProps> = ({
 								type="button"
 								className="pc-btn-primary"
 								onClick={onPrint}
-								style={{ padding: "8px 16px", fontSize: "0.8125rem", fontWeight: 800, minHeight: "44px" }}
+								style={{ padding: "6px 14px", fontSize: "0.8125rem", fontWeight: 800 }}
 								data-testid="btn-print-from-preview"
 							>
 								<Printer size={14} />
@@ -70,17 +70,17 @@ export const CareMemoSheet: React.FC<CareMemoSheetProps> = ({
 						</div>
 					</div>
 
-					<div style={{ flex: 1, overflowY: "auto", padding: "16px", background: "#f8fafc", borderRadius: "12px" }}>
+					<div style={{ flex: 1, overflowY: "auto", padding: "16px", background: "var(--pc-surface)", borderRadius: "12px" }}>
 						<div
 							className="pc-a4-preview-container"
 							style={{
-								background: "#ffffff",
+								background: "var(--pc-bg, #ffffff)",
 								maxWidth: "700px",
 								margin: "0 auto",
 								padding: "24px",
 								boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
 								borderRadius: "8px",
-								color: "#0f172a",
+								color: "var(--pc-text-main, #0f172a)",
 							}}
 							dangerouslySetInnerHTML={{ __html: careMemo.printHtml }}
 						/>
@@ -135,10 +135,10 @@ export const CareMemoSheet: React.FC<CareMemoSheetProps> = ({
 
 				<div
 					style={{
-						background: "#ffffff",
+						background: "var(--pc-bg, #ffffff)",
 						padding: "16px",
 						borderRadius: "16px",
-						border: "3px solid #0f172a",
+						border: "2px solid var(--pc-border)",
 						boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
 						display: "flex",
 						justifyContent: "center",
@@ -159,13 +159,12 @@ export const CareMemoSheet: React.FC<CareMemoSheetProps> = ({
 					<button
 						type="button"
 						onClick={onSendWhatsApp}
+						className="pc-btn-primary"
 						style={{
 							flex: 1,
-							minHeight: "44px",
-							backgroundColor: "#25d366",
-							color: "#ffffff",
+							backgroundColor: "var(--success, #16a34a)",
+							color: "var(--paper-strong, #ffffff)",
 							border: "none",
-							borderRadius: "12px",
 							fontSize: "0.9375rem",
 							fontWeight: 800,
 							cursor: "pointer",
@@ -173,7 +172,7 @@ export const CareMemoSheet: React.FC<CareMemoSheetProps> = ({
 							alignItems: "center",
 							justifyContent: "center",
 							gap: "6px",
-							boxShadow: "0 4px 14px rgba(37, 211, 102, 0.3)",
+							boxShadow: "0 4px 14px rgba(22, 163, 74, 0.3)",
 							touchAction: "manipulation",
 						}}
 					>
@@ -183,10 +182,9 @@ export const CareMemoSheet: React.FC<CareMemoSheetProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="pc-btn-primary"
+						className="pc-btn-secondary"
 						style={{
 							flex: 1,
-							minHeight: "44px",
 							fontSize: "0.9375rem",
 							fontWeight: 800,
 						}}

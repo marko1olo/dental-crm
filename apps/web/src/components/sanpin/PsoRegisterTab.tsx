@@ -92,6 +92,7 @@ export function PsoRegisterTab() {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (submitting) return;
 		try {
 			setSubmitting(true);
 			const clinicToken = readDenteClinicToken();
@@ -134,6 +135,7 @@ export function PsoRegisterTab() {
 	};
 
 	const handleQuickMarkBatchNorm = async () => {
+		if (submitting) return;
 		try {
 			setSubmitting(true);
 			const clinicToken = readDenteClinicToken();
@@ -344,7 +346,7 @@ export function PsoRegisterTab() {
 						<button
 							type="button"
 							onClick={handleQuickMarkBatchNorm}
-							disabled={submitting}
+							aria-busy={submitting}
 							className="sanpin-btn touch-manipulation shrink-0 whitespace-nowrap"
 							style={{
 								minHeight: "36px",
@@ -431,7 +433,7 @@ export function PsoRegisterTab() {
 											<button
 												type="button"
 												onClick={handleQuickMarkBatchNorm}
-												disabled={submitting}
+												aria-busy={submitting}
 												className="sanpin-btn sanpin-btn-primary touch-manipulation"
 												style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 												title="1-клик отметка всей партии инструментов по норме СанПиН 3.3686-21"
@@ -805,7 +807,7 @@ export function PsoRegisterTab() {
 								</button>
 								<button
 									type="submit"
-									disabled={submitting}
+									aria-busy={submitting}
 									className="sanpin-btn sanpin-btn-primary"
 									style={{ minHeight: "44px", padding: "0.6rem 1.5rem", fontSize: "0.95rem", fontWeight: 700 }}
 								>

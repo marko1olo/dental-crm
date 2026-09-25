@@ -338,7 +338,7 @@ export const PhotoCalibrationDrawer: React.FC<PhotoCalibrationDrawerProps> = ({
 												alignItems: 'center',
 												justifyContent: 'center',
 												background: isSelected ? 'var(--primary, #0d9488)' : 'var(--paper-soft, #f8fafc)',
-												color: isSelected ? '#ffffff' : 'var(--ink, #0f172a)',
+												color: isSelected ? 'var(--paper, #ffffff)' : 'var(--ink, #0f172a)',
 												border: isSelected ? '2px solid var(--primary-strong, #0f766e)' : '1px solid var(--line, #e2e8f0)',
 												borderRadius: '6px',
 												position: 'relative',

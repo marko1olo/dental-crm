@@ -895,7 +895,13 @@ export function generateCareMemo(input: GenerateCareMemoInput): PatientCareMemo 
 
 	// Генерация QR-кода со ссылкой на памятку
 	const qrPayload = `https://dente.ru/memo/${memoId}?patient=${encodeURIComponent(input.patientName)}&tooth=${toothFdi}&phone=${cleanPhone}`;
-	const qrCodeSvg = generateQrCodeSvg(qrPayload, { size: 200 });
+	let qrCodeSvg = "";
+	try {
+		qrCodeSvg = generateQrCodeSvg(qrPayload, { size: 200 });
+	} catch {
+		// Fallback to compact memo URL if Cyrillic query params exceed QR capacity
+		qrCodeSvg = generateQrCodeSvg(`https://dente.ru/m/${memoId}`, { size: 200 });
+	}
 
 	// Генерация печатного листа А4
 	const memoObjPartial = {

@@ -138,6 +138,7 @@ export function BactericidalRegisterTab() {
 
 	const handleAddEquipment = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (submitting) return;
 		try {
 			setSubmitting(true);
 			const clinicToken = readDenteClinicToken();
@@ -179,6 +180,7 @@ export function BactericidalRegisterTab() {
 
 	const handleAddSession = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (submitting) return;
 		try {
 			setSubmitting(true);
 			const clinicToken = readDenteClinicToken();
@@ -281,12 +283,13 @@ export function BactericidalRegisterTab() {
 	};
 
 	const handleProvisionCanonicalEquipment = async (showSuccessToast = true): Promise<any[]> => {
+		if (submitting) return [];
 		try {
 			setSubmitting(true);
 			const created = await provisionCanonicalBactericidalEquipment();
 			if (created) {
 				if (showSuccessToast) {
-					showToast("⚡ Типовой рециркулятор (Дезар-4, Кабинет №1) успешно подключен!", "success");
+					showToast("Типовой рециркулятор (Дезар-4, Кабинет №1) успешно подключен!", "success");
 				}
 				await fetchAll();
 				setLogEquipId(created.id);
@@ -336,7 +339,7 @@ export function BactericidalRegisterTab() {
 		if (res.ok) {
 			const data = await res.json();
 			showToast(
-				`⚡ Автоматический учет смены (${durationHours} ч) выполнен для всех ${data.results?.length ?? currentEquips.length} аппаратов!`,
+				`Автоматический учет смены (${durationHours} ч) выполнен для всех ${data.results?.length ?? currentEquips.length} аппаратов!`,
 				"success",
 			);
 			await fetchAll();
@@ -447,6 +450,7 @@ export function BactericidalRegisterTab() {
 	};
 
 	const handlePreShift30Min = async (equipmentId?: string) => {
+		if (submitting) return;
 		try {
 			setSubmitting(true);
 			let currentEquips = equipments;
@@ -467,6 +471,7 @@ export function BactericidalRegisterTab() {
 	};
 
 	const handleOpenMorningShift = async (equipmentId?: string) => {
+		if (submitting) return;
 		try {
 			setSubmitting(true);
 			const clinicToken = readDenteClinicToken();
@@ -501,7 +506,7 @@ export function BactericidalRegisterTab() {
 				const data = await res.json();
 				showToast(
 					data.message ||
-						"⚡ Утренняя смена открыта: бактерицидная обработка 30 мин + норма зафиксированы!",
+						"Утренняя смена открыта: бактерицидная обработка 30 мин + норма зафиксированы!",
 					"success",
 				);
 				await fetchAll();
@@ -517,6 +522,7 @@ export function BactericidalRegisterTab() {
 	};
 
 	const handleCloseEveningShift = async (equipmentId?: string) => {
+		if (submitting) return;
 		try {
 			setSubmitting(true);
 			const clinicToken = readDenteClinicToken();
@@ -552,7 +558,7 @@ export function BactericidalRegisterTab() {
 				const data = await res.json();
 				showToast(
 					data.message ||
-						"⚡ Вечерняя смена закрыта: финальная дезинфекция и наработка ламп зафиксированы!",
+						"Вечерняя смена закрыта: финальная дезинфекция и наработка ламп зафиксированы!",
 					"success",
 				);
 				await fetchAll();
@@ -709,7 +715,7 @@ export function BactericidalRegisterTab() {
 					<button
 						type="button"
 						onClick={() => handleOpenMorningShift()}
-						disabled={submitting}
+						aria-busy={submitting}
 						className="sanpin-btn touch-manipulation"
 						style={{
 							minHeight: "44px",
@@ -726,6 +732,7 @@ export function BactericidalRegisterTab() {
 							color: "#ffffff",
 							border: "none",
 							boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)",
+							opacity: submitting ? 0.7 : 1,
 						}}
 						data-testid="bactericidal-open-morning-shift-btn"
 						title="Открыть утреннюю смену (бактерицидная обработка 30 мин + норма): зафиксировать предсменное обеззараживание воздуха по СанПиН 3.3686-21 для всех аппаратов"
@@ -737,7 +744,7 @@ export function BactericidalRegisterTab() {
 					<button
 						type="button"
 						onClick={() => handleCloseEveningShift()}
-						disabled={submitting}
+						aria-busy={submitting}
 						className="sanpin-btn touch-manipulation"
 						style={{
 							minHeight: "44px",
@@ -754,6 +761,7 @@ export function BactericidalRegisterTab() {
 							color: "#ffffff",
 							border: "none",
 							boxShadow: "0 2px 8px rgba(2, 132, 199, 0.3)",
+							opacity: submitting ? 0.7 : 1,
 						}}
 						data-testid="bactericidal-close-evening-shift-btn"
 						title="Закрыть вечернюю смену (финальная дезинфекция): фиксирует дневную смену 6 ч + заключительное обеззараживание 30 мин без ручного счета"
@@ -782,9 +790,9 @@ export function BactericidalRegisterTab() {
 					<button
 						type="button"
 						onClick={handleOpenLogModal}
-						disabled={submitting}
+						aria-busy={submitting}
 						className="sanpin-btn sanpin-btn-primary touch-manipulation"
-						style={{ minHeight: "44px" }}
+						style={{ minHeight: "44px", opacity: submitting ? 0.7 : 1 }}
 						data-testid="bactericidal-manual-session-btn"
 					>
 						<Clock size={15} /> Внести сеанс облучения
@@ -841,7 +849,7 @@ export function BactericidalRegisterTab() {
 					<button
 						type="button"
 						onClick={() => handleProvisionCanonicalEquipment(true)}
-						disabled={submitting}
+						aria-busy={submitting}
 						className="sanpin-btn touch-manipulation"
 						style={{
 							minHeight: "44px",
@@ -855,6 +863,7 @@ export function BactericidalRegisterTab() {
 							gap: "0.45rem",
 							borderRadius: "8px",
 							background: "var(--teal, #0d9488)",
+							opacity: submitting ? 0.7 : 1,
 							color: "#ffffff",
 							border: "none",
 							boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)",
@@ -934,7 +943,7 @@ export function BactericidalRegisterTab() {
 								<button
 									type="button"
 									onClick={() => handlePreShift30Min(eq.id)}
-									disabled={submitting}
+									aria-busy={submitting}
 									style={{
 										minHeight: "44px",
 										fontSize: "0.85rem",
@@ -945,6 +954,7 @@ export function BactericidalRegisterTab() {
 										color: "var(--teal, #0d9488)",
 										borderColor: "var(--teal, #0d9488)",
 										fontWeight: 600,
+										opacity: submitting ? 0.7 : 1,
 									}}
 									className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 									title="Включить этот аппарат на 30 мин перед сменой (предоперационная подготовка по СанПиН)"
@@ -1183,7 +1193,7 @@ export function BactericidalRegisterTab() {
 							</div>
 							<div className="sanpin-modal-footer">
 								<button type="button" onClick={() => setIsEquipModalOpen(false)} className="sanpin-btn sanpin-btn-secondary">Отмена</button>
-								<button type="submit" disabled={submitting} className="sanpin-btn sanpin-btn-primary">Поставить на учет</button>
+								<button type="submit" aria-busy={submitting} style={{ opacity: submitting ? 0.7 : 1 }} className="sanpin-btn sanpin-btn-primary">Поставить на учет</button>
 							</div>
 						</form>
 					</div>
@@ -1385,7 +1395,7 @@ export function BactericidalRegisterTab() {
 							</div>
 							<div className="sanpin-modal-footer">
 								<button type="button" onClick={() => setIsLogModalOpen(false)} className="sanpin-btn sanpin-btn-secondary">Отмена</button>
-								<button type="submit" disabled={submitting} className="sanpin-btn sanpin-btn-primary">Зафиксировать сеанс</button>
+								<button type="submit" aria-busy={submitting} style={{ opacity: submitting ? 0.7 : 1 }} className="sanpin-btn sanpin-btn-primary">Зафиксировать сеанс</button>
 							</div>
 						</form>
 					</div>

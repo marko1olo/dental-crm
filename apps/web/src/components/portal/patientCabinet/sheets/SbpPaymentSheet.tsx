@@ -128,9 +128,13 @@ export const SbpPaymentSheet: React.FC<SbpPaymentSheetProps> = ({
 					<button
 						type="button"
 						className="pc-btn-primary"
-						style={{ flex: 1, minHeight: "44px" }}
+						style={{ flex: 1 }}
 						onClick={onCheckStatus}
-						disabled={isCheckingStatus}
+						title={
+							isCheckingStatus
+								? "Запрос подтверждения транзакции в шлюзе НСПК..."
+								: "Проверить зачисление платежа через СБП"
+						}
 						data-testid="confirm-sbp-payment-btn"
 					>
 						{isCheckingStatus ? (

@@ -13,6 +13,7 @@ import {
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
 	generatedDocuments,
+	organizations,
 	patientConsents,
 	patientDrugAllergies,
 	patientInvoices,
@@ -991,21 +992,37 @@ export const portalRoutes: FastifyPluginAsync = async (
 			const visits = await db
 				.select()
 				.from(visitDiaries)
-				.where(eq(visitDiaries.patientId, patient.id));
+				.where(
+					and(
+						eq(visitDiaries.patientId, patient.id),
+						eq(visitDiaries.organizationId, organizationId),
+					),
+				);
 			const plans = await db
 				.select()
 				.from(treatmentPlans)
-				.where(eq(treatmentPlans.patientId, patient.id));
+				.where(
+					and(
+						eq(treatmentPlans.patientId, patient.id),
+						eq(treatmentPlans.organizationId, organizationId),
+					),
+				);
 			const invoices = await db
 				.select()
 				.from(patientInvoices)
-				.where(eq(patientInvoices.patientId, patient.id));
+				.where(
+					and(
+						eq(patientInvoices.patientId, patient.id),
+						eq(patientInvoices.organizationId, organizationId),
+					),
+				);
 			const documents = await db
 				.select()
 				.from(generatedDocuments)
 				.where(
 					and(
 						eq(generatedDocuments.patientId, patient.id),
+						eq(generatedDocuments.organizationId, organizationId),
 						eq(generatedDocuments.status, "issued"),
 					),
 				);
@@ -2044,6 +2061,12 @@ export const portalRoutes: FastifyPluginAsync = async (
 			return { error: "Unauthorized" };
 		}
 
+		const planId = request.params.planId?.trim();
+		if (!planId) {
+			reply.status(400);
+			return { error: "PlanIdRequired", message: "Идентификатор плана обязателен." };
+		}
+
 		const tierId =
 			typeof request.body?.tierId === "string" ? request.body.tierId.trim() : "";
 		if (tierId !== "basic" && tierId !== "standard" && tierId !== "premium") {
@@ -2055,6 +2078,23 @@ export const portalRoutes: FastifyPluginAsync = async (
 		}
 
 		return withTenantCtx(auth.organizationId, async () => {
+			const [planRow] = await db
+				.select({ id: treatmentPlans.id })
+				.from(treatmentPlans)
+				.where(
+					and(
+						eq(treatmentPlans.id, planId),
+						eq(treatmentPlans.organizationId, auth.organizationId),
+						eq(treatmentPlans.patientId, auth.patientId),
+					),
+				)
+				.limit(1);
+
+			if (!planRow) {
+				reply.status(404);
+				return { error: "PlanNotFound", message: "План лечения не найден или не принадлежит пациенту." };
+			}
+
 			const [patientRow] = await db
 				.select()
 				.from(patients)
@@ -2093,7 +2133,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 
 			return {
 				success: true,
-				planId: request.params.planId,
+				planId,
 				selectedTier: tierId,
 			};
 		});
@@ -2124,8 +2164,8 @@ export const portalRoutes: FastifyPluginAsync = async (
 				: undefined;
 
 		return withTenantCtx(auth.organizationId, async () => {
-			let amountRub = explicitAmount || 35000;
-			let invoiceNumber = "СЧ-2026/089";
+			let amountRub = explicitAmount || 0;
+			let invoiceNumber = `СЧ-${Date.now().toString().slice(-6)}`;
 
 			if (invoiceId) {
 				const [inv] = await db
@@ -2140,11 +2180,42 @@ export const portalRoutes: FastifyPluginAsync = async (
 					)
 					.limit(1);
 
-				if (inv) {
-					invoiceNumber = `СЧ-${inv.id.slice(0, 8).toUpperCase()}`;
-					amountRub = Number(inv.totalRub) || Number(inv.totalAmountRub) || amountRub;
+				if (!inv) {
+					reply.status(404);
+					return {
+						error: "InvoiceNotFound",
+						message: "Счёт на оплату не найден в клинике или не принадлежит пациенту.",
+					};
 				}
+
+				invoiceNumber = `СЧ-${inv.id.slice(0, 8).toUpperCase()}`;
+				const invAmt = Number(inv.totalRub) || Number(inv.totalAmountRub) || 0;
+				amountRub = explicitAmount !== undefined ? explicitAmount : invAmt;
 			}
+
+			if (amountRub <= 0) {
+				reply.status(400);
+				return {
+					error: "InvalidAmount",
+					message: "Сумма к оплате должна быть положительным числом.",
+				};
+			}
+
+			const [org] = await db
+				.select({
+					name: organizations.name,
+					inn: organizations.inn,
+					kpp: organizations.kpp,
+					ogrn: organizations.ogrn,
+				})
+				.from(organizations)
+				.where(eq(organizations.id, auth.organizationId))
+				.limit(1);
+
+			const recipientLegalName = org?.name || "ООО «Стоматологическая клиника ДЕНТЕ»";
+			const recipientInn = org?.inn || "7704123456";
+			const recipientAccount = "40702810938000123456";
+			const bankBic = "044525225";
 
 			const amountKopecks = Math.round(amountRub * 100);
 			const qrId = `SBPA${Date.now().toString(36).toUpperCase()}${invoiceNumber.replace(/\D/g, "")}`;
@@ -2169,10 +2240,10 @@ export const portalRoutes: FastifyPluginAsync = async (
 				invoiceNumber,
 				amountRub,
 				amountKopecks,
-				recipientLegalName: "ООО «Стоматологическая клиника ДЕНТЕ»",
-				recipientInn: "7704123456",
-				recipientAccount: "40702810938000123456",
-				bankBic: "044525225",
+				recipientLegalName,
+				recipientInn,
+				recipientAccount,
+				bankBic,
 				paymentPurpose: `Оплата стоматологических услуг по счету № ${invoiceNumber} (НДС не облагается)`,
 				sbpNspkPayloadString,
 				qrSvg,
@@ -2289,24 +2360,23 @@ export const portalRoutes: FastifyPluginAsync = async (
 				});
 			}
 
-			const invoiceTotal =
-				Number(inv.totalRub) || Number(inv.totalAmountRub) || 0;
+			const invoiceTotalKop = Math.round((Number(inv.totalRub) || Number(inv.totalAmountRub) || 0) * 100);
 
-			if (invoiceTotal <= 0) {
+			if (invoiceTotalKop <= 0) {
 				return reply.code(400).send({
 					error: "InvalidInvoiceAmount",
 					message: "Сумма счёта должна быть больше нуля.",
 				});
 			}
 
-			if (explicitAmount !== undefined && Math.abs(explicitAmount - invoiceTotal) > 0.01) {
+			if (explicitAmount !== undefined && Math.round(explicitAmount * 100) !== invoiceTotalKop) {
 				return reply.code(400).send({
 					error: "AmountMismatch",
 					message: "Сумма в запросе не совпадает с суммой счёта.",
 				});
 			}
 
-			const totalAmount = invoiceTotal;
+			const totalAmount = invoiceTotalKop / 100;
 
 			// If already paid, return idempotent success
 			if (inv.status === "paid") {

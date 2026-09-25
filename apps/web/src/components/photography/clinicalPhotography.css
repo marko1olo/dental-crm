@@ -19,6 +19,7 @@
 }
 
 .photo-protocol-modal {
+	position: relative;
 	background: var(--paper, #ffffff);
 	color: var(--ink, #0f172a);
 	border: 1px solid var(--line, #e2e8f0);
@@ -114,7 +115,7 @@
 
 [data-theme="dark"] .photo-protocol-tab-btn:hover,
 .dark .photo-protocol-tab-btn:hover {
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 	background: rgba(255, 255, 255, 0.06);
 }
 
@@ -488,11 +489,11 @@
 	right: 16px;
 }
 
-/* Calibration & Adjustment HUD Drawer / Submodal */
+/* Calibration & Adjustment HUD Drawer / Submodal (Anti-Matryoshka: constrained inside modal) */
 .photo-editor-overlay {
-	position: fixed;
+	position: absolute;
 	inset: 0;
-	z-index: 10000;
+	z-index: 50;
 	background: rgba(0, 0, 0, 0.85);
 	backdrop-filter: blur(10px);
 	display: flex;

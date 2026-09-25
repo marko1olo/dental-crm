@@ -84,10 +84,17 @@ export const PUBLIC_BOOKING_PORTAL_PATH = "/portal/booking/";
  */
 function decodeSegment(rawSegment: string): string {
 	try {
-		return decodeURIComponent(rawSegment).trim();
+		return decodeURIComponent(rawSegment).replace(/\0/g, "").trim();
 	} catch {
-		return rawSegment.trim();
+		return rawSegment.replace(/\0/g, "").trim();
 	}
+}
+
+/**
+ * Проверяет, относится ли данный адрес к публичному контуру (гостевой портал или запись).
+ */
+export function isPublicPortalRoute(hash: string): boolean {
+	return publicPortalRouteFromHash(hash) !== null;
 }
 
 /**
@@ -104,6 +111,7 @@ function decodeSegment(rawSegment: string): string {
 export function publicPortalRouteFromHash(
 	hash: string,
 ): PublicPortalRoute | null {
+	if (typeof hash !== "string" || !hash) return null;
 	const path = hash.startsWith("#") ? hash.slice(1) : hash;
 
 	/*

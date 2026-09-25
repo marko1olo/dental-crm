@@ -42,9 +42,9 @@ describe("MDLP / Chestny Znak Scanning Modal (Mandate 8e Invariants)", () => {
 
 		// 1-click actions: shift carpules & deferred disposal
 		assert.ok(html.includes("data-testid=\"mdlp-shift-carpules-batch-btn\""));
-		assert.ok(html.includes("⚡ Списать 10 карпул за смену (по журналу)"));
+		assert.ok(html.includes("Списать 10 карпул за смену (по журналу)"));
 		assert.ok(html.includes("data-testid=\"mdlp-deferred-disposal-btn\""));
-		assert.ok(html.includes("⚡ Отложенное списание МДЛП (офлайн-буфер)"));
+		assert.ok(html.includes("Отложенное списание МДЛП (офлайн-буфер)"));
 
 		// CRPT server status and broken-scanner bypass button
 		assert.ok(html.includes("data-testid=\"mdlp-crpt-status-strip\""));

@@ -248,6 +248,11 @@ export function generateEgiszDentalCdaXml(payload: EgiszDentalCdaPayload): strin
 	const cleanDocSnils = (payload.doctor.doctorSnils || "").replace(/\D/g, "");
 	const cleanPatSnils = (payload.patient.patientSnils || "").replace(/\D/g, "");
 
+	const chiefParts = (payload.clinic.chiefDoctorName || "").trim().split(/\s+/);
+	const chiefFamily = chiefParts[0] || docFamily;
+	const chiefGiven = chiefParts[1] || docGiven;
+	const chiefPatronymic = chiefParts[2] || docPatronymic;
+
 	// 1. Complaints
 	const complaintsText = payload.complaints || "Жалобы отсутствуют (профилактический осмотр)";
 	const complaintsSection = `
@@ -414,7 +419,7 @@ ${proceduresEntriesXml}
 	<recordTarget>
 		<patientRole>
 			${cleanPatSnils ? `<id root="${EGISZ_REMD_OIDS.SNILS}" extension="${escapeXml(cleanPatSnils)}"/>` : ""}
-			<id root="${escapeXml(clinicOid)}.100.2" extension="${escapeXml(payload.patient.cardNumber || payload.patient.patientId)}"/>
+			<id root="${escapeXml(clinicOid)}.100.2" extension="${escapeXml(payload.patient.cardNumber || payload.patient.patientId || docUuid)}"/>
 			${payload.patient.patientPolisOms ? `<id root="${EGISZ_REMD_OIDS.POLIS_OMS}" extension="${escapeXml(payload.patient.patientPolisOms.replace(/\s+/g, ""))}"/>` : ""}
 			${payload.patient.patientPassport ? `<id root="${EGISZ_REMD_OIDS.IDENTITY_DOC_TYPE}" extension="${escapeXml(payload.patient.patientPassport)}"/>` : ""}
 			<addr><streetAddressLine>${escapeXml(payload.patient.patientAddress || payload.clinic.clinicAddress)}</streetAddressLine></addr>
@@ -476,9 +481,9 @@ ${proceduresEntriesXml}
 			<code code="15" codeSystem="${EGISZ_REMD_OIDS.MEDICAL_POSITIONS}" displayName="Главный врач"/>
 			<assignedPerson>
 				<name>
-					<family>${escapeXml(payload.clinic.chiefDoctorName ? payload.clinic.chiefDoctorName.split(" ")[0] : docFamily)}</family>
-					<given>${escapeXml(payload.clinic.chiefDoctorName ? payload.clinic.chiefDoctorName.split(" ")[1] || "" : docGiven)}</given>
-					<identity:Patronymic>${escapeXml(payload.clinic.chiefDoctorName ? payload.clinic.chiefDoctorName.split(" ")[2] || "" : docPatronymic)}</identity:Patronymic>
+					<family>${escapeXml(chiefFamily)}</family>
+					<given>${escapeXml(chiefGiven)}</given>
+					${chiefPatronymic ? `<identity:Patronymic>${escapeXml(chiefPatronymic)}</identity:Patronymic>` : ""}
 				</name>
 			</assignedPerson>
 			<representedOrganization>
@@ -615,7 +620,7 @@ export function validateXmlStructure(xml: string): XmlStructureValidationResult 
 		warnings.push('Отсутствует стандартный XML-пролог <?xml version="1.0" encoding="UTF-8"?>');
 	}
 
-	const tagRegex = /<\/?([a-zA-Z0-9_:-]+)(?:\s+[^>]*?)?(\/?)>/g;
+	const tagRegex = /<\/?([a-zA-Z0-9_:\u0400-\u04FF.-]+)(?:\s+[^>]*?)?(\/?)>/gu;
 	const tagStack: string[] = [];
 	let match: RegExpExecArray | null = null;
 	let tagCount = 0;
@@ -693,16 +698,26 @@ export function validateXmlStructure(xml: string): XmlStructureValidationResult 
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 export function generateGostXmlSignatureBlock(sig: GostSignatureInfo, documentRef = ""): string {
+	const is512 =
+		sig.algorithmOid === "1.2.643.7.1.1.1.2" ||
+		sig.algorithmOid === EGISZ_REMD_OIDS.GOST_3410_2012_512;
+	const sigMethod = is512
+		? "urn:ietf:params:xml:ns:cpxmlsec:algorithms:gostr34102012-512"
+		: "urn:ietf:params:xml:ns:cpxmlsec:algorithms:gostr34102012-256";
+	const digestMethod = is512
+		? "urn:ietf:params:xml:ns:cpxmlsec:algorithms:gostr34112012-512"
+		: "urn:ietf:params:xml:ns:cpxmlsec:algorithms:gostr34112012-256";
+
 	return `
 <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
 	<ds:SignedInfo>
 		<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
-		<ds:SignatureMethod Algorithm="urn:ietf:params:xml:ns:cpxmlsec:algorithms:gostr34102012-256"/>
+		<ds:SignatureMethod Algorithm="${sigMethod}"/>
 		<ds:Reference URI="${escapeXml(documentRef)}">
 			<ds:Transforms>
 				<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
 			</ds:Transforms>
-			<ds:DigestMethod Algorithm="urn:ietf:params:xml:ns:cpxmlsec:algorithms:gostr34112012-256"/>
+			<ds:DigestMethod Algorithm="${digestMethod}"/>
 			<ds:DigestValue>${escapeXml(sig.signatureBase64 ? sig.signatureBase64.slice(0, 44) : "")}</ds:DigestValue>
 		</ds:Reference>
 	</ds:SignedInfo>

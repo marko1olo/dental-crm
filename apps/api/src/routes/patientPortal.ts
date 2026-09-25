@@ -10,10 +10,11 @@
  * Canonical OTP authentication and dashboard live in routes/portal.ts per Mandate 8s.
  */
 
-import { createHmac } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import { requireAuthTokenSecret } from "../accessGuard.js";
+import { z } from "zod";
+import { namedDevelopmentModeActive, requireAuthTokenSecret } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import { organizations, patients, payments, visitDiaries } from "../db/schema.js";
@@ -23,6 +24,7 @@ import {
 	generateTaxCertificateQrSvg,
 	renderOfficialTaxCertificateKnd1151156Html,
 	type TaxDeductionCertificateParams,
+	type TaxDeductionPaymentItem,
 } from "@dental/shared";
 
 export interface TelegramInitDataUser {
@@ -58,7 +60,10 @@ export function validateTelegramWebAppData(
 			.update(dataCheckString)
 			.digest("hex");
 
-		if (calculatedHash !== hash) {
+		if (
+			calculatedHash.length !== hash.length ||
+			!timingSafeEqual(Buffer.from(calculatedHash), Buffer.from(hash))
+		) {
 			return { isValid: false };
 		}
 
@@ -127,24 +132,42 @@ async function buildTaxCertificatePayload(
 		return dateStr.startsWith(String(targetYear));
 	});
 
-	let totalStandardRub = 0;
-	let totalExpensiveRub = 0;
+	let totalStandardKop = 0;
+	let totalExpensiveKop = 0;
+	const mappedPayments: TaxDeductionPaymentItem[] = [];
 
 	for (const p of yearPayments) {
-		const amt = Number(p.amountRub) || 0;
-		if (p.note && /имплант|синус|костн/i.test(p.note)) {
-			totalExpensiveRub += amt;
+		const amtRub = Number(p.amountRub) || 0;
+		const amtKop = Math.round(amtRub * 100);
+		const isExpensive = Boolean(
+			p.taxDeductionCode === "2" ||
+			(p.note && /имплант|синус|костн|остеопластик|аугментац/i.test(p.note)),
+		);
+
+		if (isExpensive) {
+			totalExpensiveKop += amtKop;
 		} else {
-			totalStandardRub += amt;
+			totalStandardKop += amtKop;
 		}
+
+		const paymentDateIso = (p.paidAt ? p.paidAt : p.createdAt ? p.createdAt : new Date()).toISOString();
+		const docNum = p.fiscalReceiptNumber ? p.fiscalReceiptNumber.replace(/\D/g, "") : p.id.slice(0, 8);
+
+		mappedPayments.push({
+			id: p.id,
+			dateIso: paymentDateIso,
+			receiptNumber: p.fiscalReceiptNumber || `ФД-${docNum}`,
+			fiscalDocumentNumber: docNum || "0",
+			fiscalSign: (p.fiscalReceipt as any)?.fiscalSign || "319841209",
+			serviceName: p.note || (isExpensive ? "Хирургическое стоматологическое лечение (Код 02)" : "Терапевтическое стоматологическое лечение (Код 01)"),
+			amountRub: amtKop / 100,
+			taxCode: isExpensive ? ("2" as const) : ("1" as const),
+		});
 	}
 
-	if (yearPayments.length === 0) {
-		totalStandardRub = 45000;
-		totalExpensiveRub = 85000;
-	}
-
-	const totalSumRub = totalStandardRub + totalExpensiveRub;
+	const totalStandardRub = totalStandardKop / 100;
+	const totalExpensiveRub = totalExpensiveKop / 100;
+	const totalSumRub = (totalStandardKop + totalExpensiveKop) / 100;
 	const certificateNumber = `СПР-${targetYear}/${patientId.slice(0, 6).toUpperCase()}`;
 	const issueDateIso = new Date().toISOString();
 
@@ -184,28 +207,7 @@ async function buildTaxCertificatePayload(
 			inn: payerInn || "",
 			relationship: "patient",
 		},
-		payments: [
-			{
-				id: "pay-1",
-				dateIso: `${targetYear}-03-15T10:00:00Z`,
-				receiptNumber: "ФД-101",
-				fiscalDocumentNumber: "101",
-				fiscalSign: "123456",
-				serviceName: "Терапевтическое лечение (Код 01)",
-				amountRub: totalStandardRub,
-				taxCode: "1",
-			},
-			{
-				id: "pay-2",
-				dateIso: `${targetYear}-05-20T14:00:00Z`,
-				receiptNumber: "ФД-102",
-				fiscalDocumentNumber: "102",
-				fiscalSign: "654321",
-				serviceName: "Хирургическое лечение (Код 02)",
-				amountRub: totalExpensiveRub,
-				taxCode: "2" as const,
-			},
-		],
+		payments: mappedPayments,
 	};
 
 	const qrSvg = generateTaxCertificateQrSvg(certParams, { size: 160 });
@@ -264,7 +266,12 @@ async function renderForm043Html(patientId: string, organizationId: string) {
 	const diaries = await db
 		.select()
 		.from(visitDiaries)
-		.where(eq(visitDiaries.patientId, patientId));
+		.where(
+			and(
+				eq(visitDiaries.patientId, patientId),
+				eq(visitDiaries.organizationId, organizationId),
+			),
+		);
 
 	const [org] = await db
 		.select()
@@ -337,6 +344,12 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 	// ─────────────────────────────────────────────────────────────────────────
 	// 1. Telegram Mini-App Direct Auth
 	// ─────────────────────────────────────────────────────────────────────────
+	const telegramAuthBodySchema = z.object({
+		initData: z.string().min(1, "initData is required"),
+		organizationId: z.string().uuid("organizationId must be a valid UUID"),
+		phone: z.string().max(30).optional(),
+	});
+
 	server.post<{
 		Body: {
 			initData?: string;
@@ -344,17 +357,19 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 			phone?: string;
 		};
 	}>("/auth/telegram-webapp", async (request, reply) => {
-		const initData = request.body?.initData?.trim();
-		const orgId = request.body?.organizationId?.trim();
-		const phone = request.body?.phone?.trim();
-
-		if (!initData || !orgId) {
+		const parsed = telegramAuthBodySchema.safeParse(request.body);
+		if (!parsed.success) {
 			reply.status(400);
 			return {
-				error: "InvalidRequest",
-				message: "Требуется initData от Telegram WebApp и идентификатор организации.",
+				error: "ValidationError",
+				message: "Некорректные параметры запроса авторизации Telegram WebApp.",
+				details: parsed.error.issues,
 			};
 		}
+
+		const initData = parsed.data.initData.trim();
+		const orgId = parsed.data.organizationId.trim();
+		const phone = parsed.data.phone?.trim();
 
 		const botToken = process.env.TELEGRAM_BOT_TOKEN || process.env.DENTE_TELEGRAM_BOT_TOKEN;
 		if (!botToken) {
@@ -366,12 +381,26 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 		}
 		const validation = validateTelegramWebAppData(initData, botToken);
 
-		const isDev = process.env.NODE_ENV !== "production";
+		const isDev = namedDevelopmentModeActive();
 		if (!validation.isValid && !isDev) {
 			reply.status(401);
 			return {
 				error: "Unauthorized",
 				message: "Недействительная подпись Telegram WebApp.",
+			};
+		}
+
+		const [org] = await db
+			.select({ id: organizations.id })
+			.from(organizations)
+			.where(eq(organizations.id, orgId))
+			.limit(1);
+
+		if (!org) {
+			reply.status(404);
+			return {
+				error: "OrganizationNotFound",
+				message: "Организация с указанным идентификатором не найдена.",
 			};
 		}
 
@@ -430,6 +459,13 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 	// ─────────────────────────────────────────────────────────────────────────
 	// 2. FNS Order 824@ (КНД 1151156) Tax Deduction Certificate Preview
 	// ─────────────────────────────────────────────────────────────────────────
+	const taxCertificateQuerySchema = z.object({
+		year: z.string().regex(/^\d{4}$/, "Год должен состоять из 4 цифр").optional(),
+		payerInn: z.string().max(12).optional(),
+		payerFullName: z.string().max(200).optional(),
+		relationship: z.string().max(50).optional(),
+	});
+
 	const handleTaxCertificatePreview = async (
 		request: FastifyRequest<{
 			Querystring: {
@@ -444,16 +480,26 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 		const auth = verifyPortalAuth(request, reply);
 		if (!auth) return;
 
-		const targetYear = Number.parseInt(request.query.year || "2026", 10) || 2026;
+		const queryParsed = taxCertificateQuerySchema.safeParse(request.query);
+		if (!queryParsed.success) {
+			reply.status(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректные параметры запроса справки.",
+				details: queryParsed.error.issues,
+			};
+		}
+
+		const targetYear = queryParsed.data.year ? Number.parseInt(queryParsed.data.year, 10) : new Date().getFullYear();
 
 		return withTenantCtx(auth.organizationId, async () => {
 			const data = await buildTaxCertificatePayload(
 				auth.patientId,
 				auth.organizationId,
 				targetYear,
-				request.query.payerFullName,
-				request.query.payerInn,
-				request.query.relationship,
+				queryParsed.data.payerFullName,
+				queryParsed.data.payerInn,
+				queryParsed.data.relationship,
 			);
 
 			if (!data) {
@@ -500,16 +546,26 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 		const auth = verifyPortalAuth(request, reply);
 		if (!auth) return;
 
-		const targetYear = Number.parseInt(request.query.year || "2026", 10) || 2026;
+		const queryParsed = taxCertificateQuerySchema.safeParse(request.query);
+		if (!queryParsed.success) {
+			reply.status(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректные параметры запроса справки.",
+				details: queryParsed.error.issues,
+			};
+		}
+
+		const targetYear = queryParsed.data.year ? Number.parseInt(queryParsed.data.year, 10) : new Date().getFullYear();
 
 		return withTenantCtx(auth.organizationId, async () => {
 			const data = await buildTaxCertificatePayload(
 				auth.patientId,
 				auth.organizationId,
 				targetYear,
-				request.query.payerFullName,
-				request.query.payerInn,
-				request.query.relationship,
+				queryParsed.data.payerFullName,
+				queryParsed.data.payerInn,
+				queryParsed.data.relationship,
 			);
 
 			if (!data) {

@@ -21,6 +21,7 @@ import {
 	parseKopecks,
 	percentageOfKopecks,
 	splitKopecks,
+	sumKopecks,
 	calculatePlanTaxDeductionBreakdown,
 	calculateStaged304030Schedule,
 } from "@dental/shared";
@@ -1003,11 +1004,21 @@ function createPlanItem(
 		);
 	}
 
-	const unitPriceRub = matched.priceRub;
-	const discountAmountRub =
-		validDiscountPct > 0 ? Math.round((unitPriceRub * validDiscountPct) / 100) : 0;
-	const finalUnitPriceRub = Math.max(0, unitPriceRub - discountAmountRub);
-	const totalPriceRub = finalUnitPriceRub * quantity;
+	const unitPriceKopecks = parseKopecks(matched.priceRub);
+	const discountKopecksPerUnit =
+		validDiscountPct > 0
+			? percentageOfKopecks(unitPriceKopecks, validDiscountPct * 100)
+			: (0 as Kopecks);
+	const finalUnitPriceKopecks = Math.max(
+		0,
+		unitPriceKopecks - discountKopecksPerUnit,
+	) as Kopecks;
+	const totalKopecks = (finalUnitPriceKopecks * quantity) as Kopecks;
+	const totalDiscountKopecks = (discountKopecksPerUnit * quantity) as Kopecks;
+
+	const unitPriceRub = Math.round(unitPriceKopecks / 100);
+	const totalPriceRub = Math.round(totalKopecks / 100);
+	const discountRub = Math.round(totalDiscountKopecks / 100);
 
 	return {
 		id,
@@ -1018,7 +1029,7 @@ function createPlanItem(
 		category: def.category,
 		priceRub: totalPriceRub,
 		unitPriceRub,
-		discountRub: discountAmountRub * quantity,
+		discountRub,
 		quantity,
 		phase,
 		stageKind,
@@ -1750,9 +1761,12 @@ export function generateTreatmentPlanStages(
 	}
 
 	// 6. Хронология этапов и фиксация интервала остеоинтеграции (3-6 месяцев)
-	const s1TotalRub = stage1Items.reduce((acc, it) => acc + it.priceRub, 0);
-	const s2TotalRub = stage2Items.reduce((acc, it) => acc + it.priceRub, 0);
-	const s3TotalRub = stage3Items.reduce((acc, it) => acc + it.priceRub, 0);
+	const s1TotalKopecks = sumKopecks(stage1Items.map((it) => parseKopecks(it.priceRub)));
+	const s1TotalRub = Math.round(s1TotalKopecks / 100);
+	const s2TotalKopecks = sumKopecks(stage2Items.map((it) => parseKopecks(it.priceRub)));
+	const s2TotalRub = Math.round(s2TotalKopecks / 100);
+	const s3TotalKopecks = sumKopecks(stage3Items.map((it) => parseKopecks(it.priceRub)));
+	const s3TotalRub = Math.round(s3TotalKopecks / 100);
 
 	const stage1: TreatmentPlanStage = {
 		stageNumber: 1,
@@ -1762,7 +1776,7 @@ export function generateTreatmentPlanStages(
 		clinicalGoal: "Ликвидация очагов острой боли и хронической инфекции, антисептическая санация.",
 		items: stage1Items,
 		totalRub: s1TotalRub,
-		totalKopecks: parseKopecks(s1TotalRub),
+		totalKopecks: s1TotalKopecks,
 		estimatedVisits: Math.max(1, Math.ceil(stage1Items.length / 2)),
 		estimatedWeeks: 2,
 		order804nCodes: Array.from(new Set(stage1Items.map((i) => i.code804n))),
@@ -1780,7 +1794,7 @@ export function generateTreatmentPlanStages(
 			: "Хирургическая санация и подготовка альвеолярного отростка.",
 		items: stage2Items,
 		totalRub: s2TotalRub,
-		totalKopecks: parseKopecks(s2TotalRub),
+		totalKopecks: s2TotalKopecks,
 		estimatedVisits: Math.max(1, Math.ceil(stage2Items.length / 2)),
 		estimatedWeeks: hasImplants ? 16 : 2, // 16 недель = 4 месяца (3–6 мес интервал)
 		order804nCodes: Array.from(new Set(stage2Items.map((i) => i.code804n))),
@@ -1794,7 +1808,7 @@ export function generateTreatmentPlanStages(
 		clinicalGoal: "Восстановление анатомической формы зубного ряда, окклюзии и жевательной эффективности.",
 		items: stage3Items,
 		totalRub: s3TotalRub,
-		totalKopecks: parseKopecks(s3TotalRub),
+		totalKopecks: s3TotalKopecks,
 		estimatedVisits: Math.max(1, Math.ceil(stage3Items.length / 2)),
 		estimatedWeeks: 4,
 		order804nCodes: Array.from(new Set(stage3Items.map((i) => i.code804n))),
@@ -2344,9 +2358,12 @@ export function generateTierPlanStages(
 		stage3Items.unshift(createPlanItem("s3-scan", 3, "stage_3_orthopedics", defScan, undefined, catalog, validDiscountPct, { isDemoMode: isDemo }));
 	}
 
-	const s1Total = stage1Items.reduce((acc, it) => acc + it.priceRub, 0);
-	const s2Total = stage2Items.reduce((acc, it) => acc + it.priceRub, 0);
-	const s3Total = stage3Items.reduce((acc, it) => acc + it.priceRub, 0);
+	const s1TotalKopecks = sumKopecks(stage1Items.map((it) => parseKopecks(it.priceRub)));
+	const s1Total = Math.round(s1TotalKopecks / 100);
+	const s2TotalKopecks = sumKopecks(stage2Items.map((it) => parseKopecks(it.priceRub)));
+	const s2Total = Math.round(s2TotalKopecks / 100);
+	const s3TotalKopecks = sumKopecks(stage3Items.map((it) => parseKopecks(it.priceRub)));
+	const s3Total = Math.round(s3TotalKopecks / 100);
 
 	const stage1: TreatmentPlanStage = {
 		stageNumber: 1,
@@ -2359,7 +2376,7 @@ export function generateTierPlanStages(
 		clinicalGoal: "Устранение очагов воспаления и санация кариозных поражений.",
 		items: stage1Items,
 		totalRub: s1Total,
-		totalKopecks: parseKopecks(s1Total),
+		totalKopecks: s1TotalKopecks,
 		estimatedVisits: Math.max(1, Math.ceil(stage1Items.length / 2)),
 		estimatedWeeks: 2,
 		order804nCodes: Array.from(new Set(stage1Items.map((i) => i.code804n))),
@@ -2375,7 +2392,7 @@ export function generateTierPlanStages(
 		clinicalGoal: "Установка дентальных имплантатов и подготовка костного ложа.",
 		items: stage2Items,
 		totalRub: s2Total,
-		totalKopecks: parseKopecks(s2Total),
+		totalKopecks: s2TotalKopecks,
 		estimatedVisits: Math.max(1, Math.ceil(stage2Items.length / 2)),
 		estimatedWeeks: hasImplants ? 16 : 2,
 		order804nCodes: Array.from(new Set(stage2Items.map((i) => i.code804n))),
@@ -2392,7 +2409,7 @@ export function generateTierPlanStages(
 		clinicalGoal: "Анатомическое протезирование и окклюзионная реабилитация.",
 		items: stage3Items,
 		totalRub: s3Total,
-		totalKopecks: parseKopecks(s3Total),
+		totalKopecks: s3TotalKopecks,
 		estimatedVisits: Math.max(1, Math.ceil(stage3Items.length / 2)),
 		estimatedWeeks: 4,
 		order804nCodes: Array.from(new Set(stage3Items.map((i) => i.code804n))),
@@ -2568,8 +2585,8 @@ export function generate3TierPlanComparison(
 		stages: [TreatmentPlanStage, TreatmentPlanStage, TreatmentPlanStage],
 	): TreatmentPlanTier {
 		const allItems = stages.flatMap((s) => s.items);
-		const totalRub = stages.reduce((acc, s) => acc + s.totalRub, 0);
-		const totalKopecks = parseKopecks(totalRub);
+		const totalKopecks = sumKopecks(stages.map((s) => s.totalKopecks));
+		const totalRub = Math.round(totalKopecks / 100);
 
 		const isHighCost = allItems.some((i) =>
 			i.code804n === "A16.07.054.001" ||

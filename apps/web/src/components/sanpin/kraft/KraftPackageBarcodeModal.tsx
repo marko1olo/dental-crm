@@ -254,12 +254,13 @@ export function KraftPackageBarcodeModal({
 	const handleAttachScannedTo043 = async () => {
 		if (!parsedScanned) return;
 		if (parsedScanned.isExpired) {
-			showToast("Нельзя привязать просроченный крафт-пакет (СанПиН 3.3686-21)", "error");
-			return;
+			showToast("Внимание: крафт-пакет просрочен по СанПиН 3.3686-21! Привязан к протоколу 043/у с предупреждением.", "warning");
 		}
 		if (onAttachToProtocol) {
 			await onAttachToProtocol(parsedScanned);
-			showToast("Пакет успешно привязан к протоколу приема (Форма № 043/у)", "success");
+			if (!parsedScanned.isExpired) {
+				showToast("Пакет успешно привязан к протоколу приема (Форма № 043/у)", "success");
+			}
 			onClose();
 		} else {
 			showToast("Протокол для привязки не передан", "warning");
@@ -507,7 +508,7 @@ export function KraftPackageBarcodeModal({
 		}
 
 		showToast(
-			`⚡ Сформирована и отправлена на печать пачка из ${count} крафт-пакетов (срок 30 суток по СанПиН 3.3686-21)`,
+			`Сформирована и отправлена на печать пачка из ${count} крафт-пакетов (срок 30 суток по СанПиН 3.3686-21)`,
 			"success",
 		);
 		setActiveTab("register");
@@ -1266,13 +1267,12 @@ export function KraftPackageBarcodeModal({
 									<button
 										type="button"
 										onClick={handleAttachScannedTo043}
-										disabled={parsedScanned.isExpired}
 										className="kraft-btn kraft-btn-primary"
 										style={{
 											minHeight: "48px",
 											fontSize: "0.95rem",
 											fontWeight: 800,
-											background: parsedScanned.isExpired ? "var(--muted)" : "var(--ok-fg, #059669)",
+											background: parsedScanned.isExpired ? "var(--warning-surface, #d97706)" : "var(--ok-fg, #059669)",
 											color: "#ffffff",
 											display: "flex",
 											alignItems: "center",

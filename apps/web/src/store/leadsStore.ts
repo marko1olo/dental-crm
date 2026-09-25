@@ -45,7 +45,7 @@ interface LeadsState {
 	wsUpdate: (lead: Lead) => void;
 }
 
-const API_URL = import.meta.env.VITE_API_URL ?? "/api";
+const API_URL = (import.meta as unknown as { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL ?? "/api";
 
 /**
  * MESSAGE-FIRST: prefer Cyrillic `payload.message` from API ValidationError

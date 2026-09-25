@@ -123,7 +123,7 @@ export function TelephonyFloatingWidget({
 	const [elapsedSeconds, setElapsedSeconds] = useState(0);
 	const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 	const [audioCurrentTime, setAudioCurrentTime] = useState(0);
-	const [audioDuration, setAudioDuration] = useState(45);
+	const [audioDuration, setAudioDuration] = useState(0);
 	const [whatsappSent, setWhatsappSent] = useState(false);
 	const [showTranscript, setShowTranscript] = useState(false);
 	const [copiedTranscript, setCopiedTranscript] = useState(false);
@@ -204,6 +204,17 @@ export function TelephonyFloatingWidget({
 			audioRef.current.volume = volumeLevel;
 		}
 	}, [isMuted, volumeLevel]);
+
+	// Audio cleanup on unmount to prevent audio leaks
+	useEffect(() => {
+		return () => {
+			if (audioRef.current) {
+				audioRef.current.pause();
+				audioRef.current.src = "";
+				audioRef.current.load();
+			}
+		};
+	}, []);
 
 	// Resolve Patient Info
 	const resolvedPatient = useMemo(() => {
@@ -657,7 +668,7 @@ export function TelephonyFloatingWidget({
 									answerCall();
 									showToast("Вызов принят", "success");
 								}}
-								className="min-h-[44px] px-3 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-sm"
+								className="min-h-[32px] sm:min-h-[34px] px-3 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all inline-flex items-center gap-1 shadow-sm"
 								title="Ответить на звонок"
 							>
 								<PhoneCall size={13} className="animate-pulse" />
@@ -672,7 +683,7 @@ export function TelephonyFloatingWidget({
 									rejectCall();
 									showToast("Вызов завершен", "info");
 								}}
-								className="min-h-[44px] px-2.5 rounded-full bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-bold transition-all inline-flex items-center gap-1"
+								className="min-h-[32px] sm:min-h-[34px] px-2.5 rounded-full bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-bold transition-all inline-flex items-center gap-1"
 								title="Сбросить вызов"
 							>
 								<PhoneOff size={13} />
@@ -680,18 +691,18 @@ export function TelephonyFloatingWidget({
 							</button>
 						)}
 
-						{/* Expand / Details Toggle button >= 44x44px */}
+						{/* Expand / Details Toggle button */}
 						<button
 							type="button"
 							onClick={() => setIsExpanded(true)}
-							className="min-h-[44px] min-w-[44px] p-2 rounded-full text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.06))] transition-colors inline-flex items-center justify-center cursor-pointer"
+							className="min-h-[32px] min-w-[32px] sm:min-h-[34px] sm:min-w-[34px] p-1.5 rounded-full text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.06))] transition-colors inline-flex items-center justify-center cursor-pointer"
 							title="Развернуть детали вызова"
 							aria-label="Развернуть детали вызова"
 						>
 							<ChevronDown size={16} />
 						</button>
 
-						{/* Close / Dismiss pill button >= 44x44px */}
+						{/* Close / Dismiss pill button */}
 						<button
 							type="button"
 							onClick={() => {
@@ -701,7 +712,7 @@ export function TelephonyFloatingWidget({
 								setIsOpen(false);
 								setIsExpanded(false);
 							}}
-							className="min-h-[44px] min-w-[44px] p-2 rounded-full text-[var(--muted,#64748b)] hover:text-rose-500 hover:bg-[var(--paper-soft,rgba(0,0,0,0.06))] transition-colors inline-flex items-center justify-center cursor-pointer"
+							className="min-h-[32px] min-w-[32px] sm:min-h-[34px] sm:min-w-[34px] p-1.5 rounded-full text-[var(--muted,#64748b)] hover:text-rose-500 hover:bg-[var(--paper-soft,rgba(0,0,0,0.06))] transition-colors inline-flex items-center justify-center cursor-pointer"
 							title="Закрыть уведомление"
 							aria-label="Закрыть уведомление"
 						>
@@ -1118,6 +1129,7 @@ export function TelephonyFloatingWidget({
 													ref={audioRef}
 													src={activeCall.recordingUrl}
 													onTimeUpdate={handleAudioTimeUpdate}
+													onLoadedMetadata={handleAudioTimeUpdate}
 													onEnded={() => setIsPlayingAudio(false)}
 													onError={(e) => {
 														console.warn(

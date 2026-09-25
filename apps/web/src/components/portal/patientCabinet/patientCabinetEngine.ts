@@ -575,8 +575,10 @@ export function signConsentWithPep(
 export function calculateCabinetSummary(data: PatientPersonalCabinetData): PatientCabinetSummary {
 	const totalInvoices = data.invoices.length;
 	const unpaidInvoices = data.invoices.filter((inv) => inv.status === "unpaid" || inv.status === "partially_paid");
-	const totalUnpaidAmountRub = unpaidInvoices.reduce((sum, inv) => sum + inv.remainingAmountRub, 0);
-	const totalPaidAmountRub = data.invoices.reduce((sum, inv) => sum + inv.paidAmountRub, 0);
+	const totalUnpaidKop = unpaidInvoices.reduce((sum, inv) => sum + Math.round((inv.remainingAmountRub || 0) * 100), 0);
+	const totalPaidKop = data.invoices.reduce((sum, inv) => sum + Math.round((inv.paidAmountRub || 0) * 100), 0);
+	const totalUnpaidAmountRub = totalUnpaidKop / 100;
+	const totalPaidAmountRub = totalPaidKop / 100;
 
 	const nowIso = new Date().toISOString();
 	const upcomingAppointments = data.appointments.filter(

@@ -42,10 +42,10 @@ export const IncisalAlignmentGuideOverlay: React.FC<IncisalAlignmentGuideOverlay
 			{/* 1. Rule of Thirds Grid */}
 			{activeGuides.thirds && (
 				<g opacity="0.45">
-					<line x1="333.3" y1="0" x2="333.3" y2="1000" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="4 4" />
-					<line x1="666.6" y1="0" x2="666.6" y2="1000" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="4 4" />
-					<line x1="0" y1="333.3" x2="1000" y2="333.3" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="4 4" />
-					<line x1="0" y1="666.6" x2="1000" y2="666.6" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="4 4" />
+					<line x1="333.3" y1="0" x2="333.3" y2="1000" stroke="var(--paper, #ffffff)" strokeWidth="1.5" strokeDasharray="4 4" />
+					<line x1="666.6" y1="0" x2="666.6" y2="1000" stroke="var(--paper, #ffffff)" strokeWidth="1.5" strokeDasharray="4 4" />
+					<line x1="0" y1="333.3" x2="1000" y2="333.3" stroke="var(--paper, #ffffff)" strokeWidth="1.5" strokeDasharray="4 4" />
+					<line x1="0" y1="666.6" x2="1000" y2="666.6" stroke="var(--paper, #ffffff)" strokeWidth="1.5" strokeDasharray="4 4" />
 				</g>
 			)}
 
@@ -57,20 +57,20 @@ export const IncisalAlignmentGuideOverlay: React.FC<IncisalAlignmentGuideOverlay
 						y1="0"
 						x2="500"
 						y2="1000"
-						stroke="#38bdf8"
+						stroke="var(--teal-light, #38bdf8)"
 						strokeWidth="2.5"
 						strokeDasharray="8 6"
 					/>
 					{/* Millimeter ticks along midline */}
 					{[200, 300, 400, 500, 600, 700, 800].map((y) => (
-						<line key={y} x1="490" y1={y} x2="510" y2={y} stroke="#38bdf8" strokeWidth="1.5" />
+						<line key={y} x1="490" y1={y} x2="510" y2={y} stroke="var(--teal-light, #38bdf8)" strokeWidth="1.5" />
 					))}
 					<rect x="420" y="20" width="160" height="24" rx="4" fill="rgba(15, 23, 42, 0.75)" />
 					<text
 						x="500"
 						y="36"
 						textAnchor="middle"
-						fill="#38bdf8"
+						fill="var(--teal-light, #38bdf8)"
 						fontSize="12"
 						fontWeight="700"
 						fontFamily="sans-serif"
@@ -88,21 +88,21 @@ export const IncisalAlignmentGuideOverlay: React.FC<IncisalAlignmentGuideOverlay
 						y1="380"
 						x2="950"
 						y2="380"
-						stroke="#06b6d4"
+						stroke="var(--teal, #06b6d4)"
 						strokeWidth="3"
 					/>
 					{/* Eye pupil crosshairs */}
-					<circle cx="320" cy="380" r="16" stroke="#06b6d4" strokeWidth="2" fill="none" />
-					<circle cx="320" cy="380" r="3" fill="#06b6d4" />
-					<circle cx="680" cy="380" r="16" stroke="#06b6d4" strokeWidth="2" fill="none" />
-					<circle cx="680" cy="380" r="3" fill="#06b6d4" />
+					<circle cx="320" cy="380" r="16" stroke="var(--teal, #06b6d4)" strokeWidth="2" fill="none" />
+					<circle cx="320" cy="380" r="3" fill="var(--teal, #06b6d4)" />
+					<circle cx="680" cy="380" r="16" stroke="var(--teal, #06b6d4)" strokeWidth="2" fill="none" />
+					<circle cx="680" cy="380" r="3" fill="var(--teal, #06b6d4)" />
 
 					<rect x="360" y="340" width="280" height="24" rx="4" fill="rgba(15, 23, 42, 0.85)" />
 					<text
 						x="500"
 						y="356"
 						textAnchor="middle"
-						fill="#06b6d4"
+						fill="var(--teal, #06b6d4)"
 						fontSize="12"
 						fontWeight="700"
 						fontFamily="sans-serif"
@@ -120,23 +120,23 @@ export const IncisalAlignmentGuideOverlay: React.FC<IncisalAlignmentGuideOverlay
 						y1="640"
 						x2="900"
 						y2="640"
-						stroke="#10b981"
+						stroke="var(--green, #10b981)"
 						strokeWidth="3"
 					/>
 					{/* Central incisors contact point marker */}
-					<polygon points="500,626 492,640 508,640" fill="#10b981" />
-					<polygon points="500,654 492,640 508,640" fill="#10b981" />
+					<polygon points="500,626 492,640 508,640" fill="var(--green, #10b981)" />
+					<polygon points="500,654 492,640 508,640" fill="var(--green, #10b981)" />
 
 					{/* Lateral canting indicators */}
-					<line x1="250" y1="625" x2="250" y2="655" stroke="#10b981" strokeWidth="2" />
-					<line x1="750" y1="625" x2="750" y2="655" stroke="#10b981" strokeWidth="2" />
+					<line x1="250" y1="625" x2="250" y2="655" stroke="var(--green, #10b981)" strokeWidth="2" />
+					<line x1="750" y1="625" x2="750" y2="655" stroke="var(--green, #10b981)" strokeWidth="2" />
 
 					<rect x="350" y="660" width="300" height="24" rx="4" fill="rgba(15, 23, 42, 0.85)" />
 					<text
 						x="500"
 						y="676"
 						textAnchor="middle"
-						fill="#10b981"
+						fill="var(--green, #10b981)"
 						fontSize="12"
 						fontWeight="700"
 						fontFamily="sans-serif"

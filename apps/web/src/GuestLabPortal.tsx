@@ -2,6 +2,7 @@ import {
 	AlignLeft,
 	Beaker,
 	Box,
+	Calendar,
 	CheckCircle2,
 	Clock,
 	Download,
@@ -34,6 +35,7 @@ interface LabOrderData {
 	status: string;
 	clinicalNotes: string | null;
 	attachedImageUrl: string | null;
+	dueDate?: string | null;
 	createdAt: string;
 }
 
@@ -403,7 +405,7 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 								className="guest-portal-field-label"
 								style={{ marginBottom: "12px" }}
 							>
-								<CheckCircle2 size={16} /> Технические параметры
+								<CheckCircle2 size={16} /> Технические параметры и задание
 							</h3>
 							<div
 								className="guest-portal-field"
@@ -424,8 +426,14 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 									}}
 								>
 									<span className="guest-portal-field-label">Зуб (FDI):</span>
-									<span className="guest-portal-field-value">
-										{order.toothFdi || "—"}
+									<span className="guest-portal-field-value" data-testid="guest-portal-tooth-fdi">
+										{order.toothFdi ? (
+											<span className="guest-portal-scan-badge" style={{ fontSize: "13px", padding: "2px 8px" }}>
+												№ {order.toothFdi}
+											</span>
+										) : (
+											"—"
+										)}
 									</span>
 								</div>
 								<div
@@ -454,11 +462,34 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 										justifyContent: "space-between",
 										alignItems: "center",
 										gap: "12px",
+										marginBottom: "8px",
 									}}
 								>
 									<span className="guest-portal-field-label">Цвет (Vita):</span>
 									<span className="guest-portal-field-value">
 										{order.colorVita || "—"}
+									</span>
+								</div>
+								<div
+									style={{
+										display: "flex",
+										justifyContent: "space-between",
+										alignItems: "center",
+										gap: "12px",
+										borderTop: "1px dashed var(--line)",
+										paddingTop: "8px",
+										marginTop: "4px",
+									}}
+								>
+									<span className="guest-portal-field-label" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+										<Clock size={14} /> Срок сдачи (дедлайн):
+									</span>
+									<span
+										className="guest-portal-field-value"
+										data-testid="guest-portal-due-date"
+										style={{ color: "var(--teal)", fontWeight: 700 }}
+									>
+										{order.dueDate ? new Date(order.dueDate).toLocaleDateString("ru-RU") : "По согласованию"}
 									</span>
 								</div>
 							</div>
@@ -468,7 +499,7 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 								className="guest-portal-field-label"
 								style={{ marginBottom: "12px" }}
 							>
-								<AlignLeft size={16} /> Клинические заметки
+								<AlignLeft size={16} /> Клинические заметки и указания врача
 							</h3>
 							{/*
 								Было три зашитых цвета (#fef9c3 / #854d0e / #fef08a). Страница
@@ -773,14 +804,7 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 										</div>
 										<div
 											data-testid="courier-waybill-barcode"
-											style={{
-												color: "var(--ink)",
-												background: "#ffffff",
-												padding: "6px 10px",
-												borderRadius: "6px",
-												border: "1px solid var(--line)",
-												display: "inline-block",
-											}}
+											className="guest-portal-code-plate"
 											dangerouslySetInnerHTML={{
 												__html: generateBarcodeSvg(formatGostOrderNumber(order.id)),
 											}}
@@ -793,14 +817,7 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 										</div>
 										<div
 											data-testid="courier-waybill-qr"
-											style={{
-												color: "var(--ink)",
-												background: "#ffffff",
-												padding: "6px",
-												borderRadius: "6px",
-												border: "1px solid var(--line)",
-												display: "inline-block",
-											}}
+											className="guest-portal-code-plate"
 											dangerouslySetInnerHTML={{
 												__html: generateQrCodeSvg(
 													`DENTE-ZTL-ORDER:${order.id}:${order.patientFullName || ""}:${order.toothFdi || ""}`,
@@ -811,8 +828,8 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 								</div>
 
 								<div style={{ fontSize: "12px", color: "var(--text-secondary)", borderTop: "1px solid var(--line)", paddingTop: "10px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
-									<div>Зуб: <strong>{order.toothFdi || "—"}</strong> · Материал: <strong>{order.material ? (MATERIAL_LABELS[order.material] ?? order.material) : "—"}</strong> · Цвет: <strong>{order.colorVita || "—"}</strong></div>
-									<div>Дата создания: {order.createdAt ? new Date(order.createdAt).toLocaleDateString("ru-RU") : "—"}</div>
+									<div>Зуб (FDI): <strong>{order.toothFdi || "—"}</strong> · Материал: <strong>{order.material ? (MATERIAL_LABELS[order.material] ?? order.material) : "—"}</strong> · Цвет: <strong>{order.colorVita || "—"}</strong></div>
+									<div>Срок сдачи: <strong>{order.dueDate ? new Date(order.dueDate).toLocaleDateString("ru-RU") : "По согласованию"}</strong> · Создан: {order.createdAt ? new Date(order.createdAt).toLocaleDateString("ru-RU") : "—"}</div>
 								</div>
 							</div>
 						)}

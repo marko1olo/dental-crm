@@ -900,6 +900,21 @@
 	background: var(--tp-border);
 }
 
+.btn-treatment-sign {
+	background: var(--teal-dark);
+	color: var(--paper-strong);
+	border: 1px solid var(--teal);
+	padding: 0 18px;
+	font-size: 13px;
+	box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3);
+}
+
+.btn-treatment-sign:hover {
+	background: var(--teal);
+	transform: translateY(-1px);
+	box-shadow: 0 6px 16px rgba(15, 118, 110, 0.4);
+}
+
 /* ==========================================================================
    OFFICIAL CONTRACT APPENDIX #1 PRINT STYLES (PP RF № 736 & Order 804n)
    ========================================================================== */

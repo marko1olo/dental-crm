@@ -78,7 +78,7 @@ describe("RED TEAM INQUISITION: Frozen Services Integrity Audit", () => {
 			const total100Kop = parseKopecks(100);
 			const splits = splitKopecks(total100Kop, 3);
 			assert.equal(splits.length, 3);
-			assert.equal(splits[0] + splits[1] + splits[2], 10000);
+			assert.equal(splits[0]! + splits[1]! + splits[2]!, 10000);
 			assert.equal(splits[0], 3334); // largest remainder allocation
 			assert.equal(splits[1], 3333);
 			assert.equal(splits[2], 3333);
@@ -114,7 +114,7 @@ describe("RED TEAM INQUISITION: Frozen Services Integrity Audit", () => {
 				"A16.07.002",
 				"Кариес эмали",
 				4500.5,
-				existing,
+				existing as any,
 			);
 			assert.equal(xref.suggestedAction, "identical");
 			assert.equal(xref.matchedExistingServiceId, "srv-1");
@@ -213,7 +213,7 @@ describe("RED TEAM INQUISITION: Frozen Services Integrity Audit", () => {
 			assert.equal(parsed.agentSign, "paying_agent");
 			assert.equal(parsed.customerName, "ООО 'Дента Страхование'");
 			assert.equal(parsed.customerInn, "7701234567");
-			assert.equal(parsed.items[0].agentSign, "agent");
+			assert.equal(parsed.items[0]!.agentSign, "agent");
 		});
 
 		it("rejects invalid customer INN that violates Russian statutory format (must be 10 or 12 digits)", () => {
@@ -274,7 +274,7 @@ describe("RED TEAM INQUISITION: Frozen Services Integrity Audit", () => {
 			assert.equal(compiled.tag1057_agentSign, 3);
 			assert.equal(compiled.tag1227_customerName, "АО Страховая Группа");
 			assert.equal(compiled.tag1228_customerInn, "7705123456");
-			assert.equal(compiled.items[0].tag1222_agentSign, 6);
+			assert.equal(compiled.items[0]!.tag1222_agentSign, 6);
 
 			const ffd12 = FiscalReceiptFactory.buildFfd12Receipt({
 				patientId: "00000000-0000-0000-0000-000000000001",
@@ -294,7 +294,7 @@ describe("RED TEAM INQUISITION: Frozen Services Integrity Audit", () => {
 						vatRate: "vat_none",
 						agentSign: "commission_agent",
 					},
-				],
+				] as any,
 				electronicCardKopecks: 350000,
 				totalKopecks: 350000,
 			});
@@ -302,7 +302,7 @@ describe("RED TEAM INQUISITION: Frozen Services Integrity Audit", () => {
 			assert.equal(ffd12.tag1057_agentSign, 3);
 			assert.equal(ffd12.tag1227_customerName, "АО Страховая Группа");
 			assert.equal(ffd12.tag1228_customerInn, "7705123456");
-			assert.equal(ffd12.items[0].tag1222_agentSign, 6);
+			assert.equal(ffd12.items[0]!.tag1222_agentSign, 6);
 		});
 	});
 

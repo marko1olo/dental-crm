@@ -18,6 +18,9 @@ import {
   recalculateTreatmentPlanTotals,
   type TreatmentPlanStageCategory,
   type StageCategoryMetadata,
+  type Kopecks,
+  parseKopecks,
+  sumKopecks,
 } from '@dental/shared';
 import type { TreatmentPlanStage } from './types';
 import { isMicroConsumable } from './TreatmentPlanPresenterModal';
@@ -158,12 +161,12 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
       }
 
       const qty = it.quantity || 1;
-      const unitPriceKop = Math.round((it.unitPriceRub || 0) * 100);
-      const discountKop = Math.round((it.discountRub || 0) * 100);
-      const lineTotalKop = Math.max(0, unitPriceKop * qty - discountKop);
-      const unitPrice = it.unitPriceRub || 0;
-      const discount = it.discountRub || 0;
-      const total = lineTotalKop / 100;
+      const unitPriceKop = parseKopecks(it.unitPriceRub || 0);
+      const discountKop = parseKopecks(it.discountRub || 0);
+      const lineTotalKop = Math.max(0, unitPriceKop * qty - discountKop) as Kopecks;
+      const unitPrice = Math.round(unitPriceKop / 100);
+      const discount = Math.round(discountKop / 100);
+      const total = Math.round(lineTotalKop / 100);
 
       groups[targetCat].push({
         id: it.id,
@@ -187,13 +190,13 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
         nameRu: it.name,
         toothNumber: it.toothNumber || null,
         quantity: it.quantity,
-        unitPriceKopecks: Math.round(it.unitPriceRub * 100),
-        discountKopecks: Math.round((it.discountRub || 0) * 100),
-        totalPriceKopecks: Math.round(it.totalPriceRub * 100),
+        unitPriceKopecks: parseKopecks(it.unitPriceRub),
+        discountKopecks: parseKopecks(it.discountRub || 0),
+        totalPriceKopecks: parseKopecks(it.totalPriceRub),
         status: 'pending' as const,
       }));
 
-      const subtotalKop = stageItemsKop.reduce((acc, x) => acc + x.totalPriceKopecks, 0);
+      const subtotalKop = sumKopecks(stageItemsKop.map((x) => x.totalPriceKopecks));
 
       return {
         id: `stage-${idx + 1}`,
@@ -203,10 +206,10 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
         titleRu: STAGE_CATEGORY_META[cat].defaultTitleRu,
         items: stageItemsKop,
         subtotalKopecks: subtotalKop,
-        discountKopecks: 0,
+        discountKopecks: 0 as Kopecks,
         totalPriceKopecks: subtotalKop,
         allocatedPaymentKopecks: subtotalKop,
-        paidAmountKopecks: 0,
+        paidAmountKopecks: 0 as Kopecks,
       };
     });
 
@@ -219,22 +222,22 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
     };
   }, [stages]);
 
-  const grandTotalRub = (categorizedData.pennySummary?.grandTotalKopecks || 0) / 100;
+  const grandTotalRub = Math.round((categorizedData.pennySummary?.grandTotalKopecks || 0) / 100);
 
   return (
     <div
-      className={`treatment-plan-phased-view flex flex-col gap-4 text-[var(--ink,#0f172a)] pb-60 sm:pb-36 ${className}`.trim()}
+      className={`treatment-plan-phased-view flex flex-col gap-4 text-[var(--ink)] pb-60 sm:pb-36 ${className}`.trim()}
       style={{ scrollPaddingBottom: '240px' }}
       data-testid="treatment-plan-phased-4stage-view"
     >
       {/* Overview Banner */}
-      <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-purple-500/10 border border-[var(--border,#cbd5e1)] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-purple-500/10 border border-[var(--border)] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-[var(--teal,#0d9488)] text-white shadow-xs whitespace-nowrap">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-[var(--teal)] text-white shadow-xs whitespace-nowrap">
               4 клинических этапа
             </span>
-            <span className="font-bold text-sm sm:text-base text-[var(--ink,#0f172a)] break-words">
+            <span className="font-bold text-sm sm:text-base text-[var(--ink)] break-words">
               {planTierTitle}
             </span>
             {effectivePlanAgeDays > 30 && (
@@ -248,14 +251,14 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
               </span>
             )}
           </div>
-          <p className="text-xs text-[var(--muted,#64748b)] mt-1 m-0 break-words">
+          <p className="text-xs text-[var(--muted)] mt-1 m-0 break-words">
             Последовательный клинический протокол DENTE и Минздрава РФ с точной финансовой разбивкой по этапам.
           </p>
         </div>
 
         <div className="text-left sm:text-right shrink-0">
-          <div className="text-xs text-[var(--muted,#64748b)]">Полная стоимость плана:</div>
-          <div className="text-xl sm:text-2xl font-black text-[var(--teal,#0d9488)] font-mono whitespace-nowrap">
+          <div className="text-xs text-[var(--muted)]">Полная стоимость плана:</div>
+          <div className="text-xl sm:text-2xl font-black text-[var(--teal)] font-mono whitespace-nowrap">
             {(grandTotalRub || 0).toLocaleString('ru-RU')} ₽
           </div>
         </div>
@@ -263,9 +266,9 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
 
       {/* Honest Empty State Banner if no procedures in plan */}
       {categorizedData.totalItemsCount === 0 && (
-        <div className="p-6 rounded-2xl border border-dashed border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-center text-xs text-[var(--muted,#64748b)]">
-          <ShieldCheck className="w-8 h-8 mx-auto text-[var(--muted,#64748b)] mb-2 opacity-50" />
-          <div className="font-bold text-sm text-[var(--ink,#0f172a)] mb-1">
+        <div className="p-6 rounded-2xl border border-dashed border-[var(--border)] bg-[var(--paper-soft)] text-center text-xs text-[var(--muted)]">
+          <ShieldCheck className="w-8 h-8 mx-auto text-[var(--muted)] mb-2 opacity-50" />
+          <div className="font-bold text-sm text-[var(--ink)] mb-1">
             В плане лечения пока нет назначенных медицинских процедур
           </div>
           <div>
@@ -280,19 +283,20 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
           const meta: StageCategoryMetadata = STAGE_CATEGORY_META[cat];
           const items = categorizedData.groups[cat];
           const isExpanded = expandedCategories[cat];
-          const stageTotalRub = items.reduce((acc, x) => acc + Math.round((x.totalPriceRub || 0) * 100), 0) / 100;
+          const stageTotalKopecks = sumKopecks(items.map((x) => parseKopecks(x.totalPriceRub || 0)));
+          const stageTotalRub = Math.round(stageTotalKopecks / 100);
           const percentOfPlan = grandTotalRub > 0 ? Math.round((stageTotalRub / grandTotalRub) * 100) : 0;
 
           return (
             <div
               key={cat}
-              className="rounded-2xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] shadow-sm overflow-hidden transition-all duration-200"
+              className="rounded-2xl border border-[var(--border)] bg-[var(--paper-strong,var(--paper))] shadow-sm overflow-hidden transition-all duration-200"
               data-testid={`phased-stage-card-${cat}`}
             >
               {/* Header */}
               <div
                 onClick={() => toggleCategory(cat)}
-                className="flex items-center justify-between p-3.5 sm:p-4 cursor-pointer select-none hover:bg-[var(--paper-soft,#f8fafc)] transition-colors border-b border-[var(--border,#cbd5e1)]/50 gap-2"
+                className="flex items-center justify-between p-3.5 sm:p-4 cursor-pointer select-none hover:bg-[var(--paper-soft)] transition-colors border-b border-[var(--border)]/50 gap-2"
                 role="button"
                 tabIndex={0}
                 aria-expanded={isExpanded}
@@ -307,10 +311,10 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                      <span className="font-mono text-xs font-bold text-[var(--muted,#64748b)] whitespace-nowrap">
+                      <span className="font-mono text-xs font-bold text-[var(--muted)] whitespace-nowrap">
                         Этап {idx + 1}
                       </span>
-                      <h4 className="font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)] m-0 break-words">
+                      <h4 className="font-extrabold text-sm sm:text-base text-[var(--ink)] m-0 break-words">
                         {meta.shortLabelRu}
                       </h4>
                       <span
@@ -320,7 +324,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                         {items.length} {items.length === 1 ? 'услуга' : items.length >= 2 && items.length <= 4 ? 'услуги' : 'услуг'}
                       </span>
                     </div>
-                    <p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5 break-words max-w-xl">
+                    <p className="text-xs text-[var(--muted)] m-0 mt-0.5 break-words max-w-xl">
                       {meta.descriptionRu}
                     </p>
                   </div>
@@ -328,15 +332,15 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
 
                 <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-2">
                   <div className="text-right">
-                    <div className="font-mono font-extrabold text-sm sm:text-base text-[var(--ink,#0f172a)] whitespace-nowrap">
+                    <div className="font-mono font-extrabold text-sm sm:text-base text-[var(--ink)] whitespace-nowrap">
                       {(stageTotalRub || 0).toLocaleString('ru-RU')} ₽
                     </div>
-                    <div className="text-[10px] font-semibold text-[var(--muted,#64748b)] whitespace-nowrap">
+                    <div className="text-[10px] font-semibold text-[var(--muted)] whitespace-nowrap">
                       {percentOfPlan}% плана
                     </div>
                   </div>
 
-                  <div className="p-1 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]">
+                  <div className="p-1 rounded-lg text-[var(--muted)] hover:text-[var(--ink)]">
                     {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                   </div>
                 </div>
@@ -344,11 +348,11 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
 
               {/* Items Body: Flat list directly on stage surface without inner card box */}
               {isExpanded && (
-                <div className="p-3 sm:p-3.5 space-y-2.5 bg-[var(--paper,#ffffff)] border-t border-[var(--border,#cbd5e1)]/50">
+                <div className="p-3 sm:p-3.5 space-y-2.5 bg-[var(--paper)] border-t border-[var(--border)]/50">
                   {items.length === 0 ? (
-                    <div className="py-3 text-center text-xs text-[var(--muted,#64748b)]">
+                    <div className="py-3 text-center text-xs text-[var(--muted)]">
                       <span>На данном этапе нет назначенных процедур (санация не требуется).</span>
-                      <div className="mt-0.5 text-[11px] text-[var(--muted,#64748b)]">
+                      <div className="mt-0.5 text-[11px] text-[var(--muted)]">
                         Типичные услуги этапа: {meta.typicalServicesRu.join(', ')}.
                       </div>
                     </div>
@@ -364,23 +368,23 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                           {displayItems.map((it, itemIdx) => (
                             <div
                               key={it.id || itemIdx}
-                              className="py-2.5 px-1 flex items-center justify-between gap-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors border-b border-slate-100 dark:border-slate-800 last:border-b-0"
+                              className="py-2.5 px-1 flex items-center justify-between gap-3 hover:bg-[var(--paper-soft)] transition-colors border-b border-slate-100 dark:border-slate-800 last:border-b-0"
                             >
                               <div className="flex items-start gap-2 min-w-0">
-                                <span className="font-mono text-[10px] text-[var(--muted,#64748b)] mt-0.5 shrink-0">
+                                <span className="font-mono text-[10px] text-[var(--muted)] mt-0.5 shrink-0">
                                   {itemIdx + 1}.
                                 </span>
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                                    <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[var(--muted,#64748b)] border border-[var(--line,#e2e8f0)] whitespace-nowrap">
+                                    <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[var(--muted)] border border-[var(--line)] whitespace-nowrap">
                                       {it.code804n}
                                     </span>
                                     {it.toothNumber && (
-                                      <span className="font-bold text-[11px] px-1.5 py-0.5 rounded bg-[var(--teal-soft,#ccfbf1)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 whitespace-nowrap">
+                                      <span className="font-bold text-[11px] px-1.5 py-0.5 rounded bg-[var(--teal-soft)] text-[var(--teal)] border border-[var(--teal)]/30 whitespace-nowrap">
                                         Зуб №{it.toothNumber}
                                       </span>
                                     )}
-                                    <span className="font-semibold text-[var(--ink,#0f172a)] text-xs leading-snug break-words">
+                                    <span className="font-semibold text-[var(--ink)] text-xs leading-snug break-words">
                                       {it.name}
                                     </span>
                                   </div>
@@ -388,11 +392,11 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                               </div>
 
                               <div className="text-right shrink-0 font-mono">
-                                <div className="font-bold text-xs sm:text-sm text-[var(--ink,#0f172a)] whitespace-nowrap">
+                                <div className="font-bold text-xs sm:text-sm text-[var(--ink)] whitespace-nowrap">
                                   {(it.totalPriceRub || 0).toLocaleString('ru-RU')} ₽
                                 </div>
                                 {it.quantity > 1 && (
-                                  <div className="text-[10px] text-[var(--muted,#64748b)] whitespace-nowrap">
+                                  <div className="text-[10px] text-[var(--muted)] whitespace-nowrap">
                                     {it.quantity} шт. &times; {(it.unitPriceRub || 0).toLocaleString('ru-RU')} ₽
                                   </div>
                                 )}
@@ -402,7 +406,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                         </div>
 
                         {microCount > 0 && (
-                          <div className="flex items-center justify-between text-[11px] text-[var(--muted,#64748b)] bg-[var(--paper-soft,#f8fafc)] p-2 rounded-xl border border-[var(--border,#cbd5e1)]/40">
+                          <div className="flex items-center justify-between text-[11px] text-[var(--muted)] bg-[var(--paper-soft)] p-2 rounded-xl border border-[var(--border)]/40">
                             <span>
                               {showMicroConsumables
                                 ? `Показаны микро-расходники (${microCount} поз.)`
@@ -411,7 +415,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                             <button
                               type="button"
                               onClick={() => setShowMicroConsumables(!showMicroConsumables)}
-                              className="min-h-[44px] sm:min-h-0 py-1.5 px-2.5 flex items-center font-bold text-[var(--teal,#0d9488)] hover:underline cursor-pointer"
+                              className="min-h-[44px] sm:min-h-0 py-1.5 px-2.5 flex items-center font-bold text-[var(--teal)] hover:underline cursor-pointer"
                             >
                               {showMicroConsumables ? "Скрыть" : "Показать"}
                             </button>
@@ -422,9 +426,9 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                   })()}
 
                   {/* Stage Action Controls with Touch-Friendly Buttons */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--border,#cbd5e1)]/50 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--border)]/50 text-xs">
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-[var(--muted,#64748b)]">
+                      <span className="text-[11px] text-[var(--muted)]">
                         Срок реализации: ~{idx === 0 ? '1-3 дня' : idx === 1 ? '1-2 нед.' : idx === 2 ? '2-3 мес.' : '3-4 нед.'}
                       </span>
                     </div>
@@ -434,7 +438,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                         <button
                           type="button"
                           onClick={() => onExecuteStage(cat)}
-                          className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg font-bold text-xs bg-[var(--paper-soft)] hover:bg-[var(--teal-soft,#ccfbf1)] text-[var(--ink)] hover:text-[var(--teal,#0d9488)] border border-[var(--border,#cbd5e1)] transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap min-w-0"
+                          className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg font-bold text-xs bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] text-[var(--ink)] hover:text-[var(--teal)] border border-[var(--border)] transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap min-w-0"
                         >
                           <span className="truncate min-w-0">Приступить к этапу</span>
                           <ArrowRight className="w-3.5 h-3.5 shrink-0" />
@@ -450,17 +454,17 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
       </div>
 
       {/* Sticky Pinned Estimate Footer: Grand Totals & Actions */}
-      <div className="sticky bottom-0 bg-[var(--paper-soft,var(--paper,#ffffff))] border-t border-[var(--border,#cbd5e1)] p-3.5 sm:p-4 pb-5 sm:pb-4 rounded-2xl shadow-lg z-20 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 backdrop-blur-md mt-2">
+      <div className="sticky bottom-0 bg-[var(--paper-soft,var(--paper))] border-t border-[var(--border)] p-3.5 sm:p-4 pb-5 sm:pb-4 rounded-2xl shadow-lg z-20 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 backdrop-blur-md mt-2">
         <div className="flex items-center gap-3">
           <div>
-            <div className="text-xs text-[var(--muted,#64748b)]">
+            <div className="text-xs text-[var(--muted)]">
               Итоговая смета по 4 этапам:
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="font-mono text-lg sm:text-xl font-black text-[var(--teal,#0d9488)] whitespace-nowrap">
+              <span className="font-mono text-lg sm:text-xl font-black text-[var(--teal)] whitespace-nowrap">
                 {(grandTotalRub || 0).toLocaleString('ru-RU')} ₽
               </span>
-              <span className="text-xs text-[var(--muted,#64748b)] font-semibold hidden md:inline">
+              <span className="text-xs text-[var(--muted)] font-semibold hidden md:inline">
                 (Приказ 804н / СтАР)
               </span>
             </div>
@@ -473,10 +477,10 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
             <button
               type="button"
               onClick={onOpenInstallment}
-              className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg text-xs font-bold border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-xs w-full sm:w-auto whitespace-nowrap min-w-0"
+              className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg text-xs font-bold border border-[var(--border)] bg-[var(--paper-strong,var(--paper))] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-xs w-full sm:w-auto whitespace-nowrap min-w-0"
               title="Оформить рассрочку 0% на этапы лечения"
             >
-              <CreditCard size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
+              <CreditCard size={14} className="text-[var(--teal)] shrink-0" />
               <span className="truncate min-w-0">Рассрочка</span>
             </button>
           )}
@@ -485,7 +489,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
             <button
               type="button"
               onClick={onOpenStagePayment}
-              className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg text-xs font-bold border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-xs w-full sm:w-auto whitespace-nowrap min-w-0"
+              className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg text-xs font-bold border border-[var(--border)] bg-[var(--paper-strong,var(--paper))] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-xs w-full sm:w-auto whitespace-nowrap min-w-0"
               title="Студия поэтапной оплаты и эскроу"
             >
               <Coins size={14} className="text-amber-500 shrink-0" />
@@ -497,7 +501,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
             <button
               type="button"
               onClick={onPrintContract}
-              className="col-span-2 sm:col-span-1 min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg text-xs font-bold border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-xs w-full sm:w-auto whitespace-nowrap min-w-0"
+              className="col-span-2 sm:col-span-1 min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg text-xs font-bold border border-[var(--border)] bg-[var(--paper-strong,var(--paper))] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-xs w-full sm:w-auto whitespace-nowrap min-w-0"
               title="Печать договора и сметы"
             >
               <Printer size={14} className="shrink-0" />
