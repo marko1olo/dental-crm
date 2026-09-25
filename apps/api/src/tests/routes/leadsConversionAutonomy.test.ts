@@ -229,4 +229,44 @@ test("LEADS CONVERSION SOLO DOCTOR & FALLBACK AUTONOMY (MANDATES 8e & 8n)", asyn
 			});
 		},
 	);
+
+	await suite.test(
+		"PATCH /api/leads/:id partially updates lead fields and status in PostgreSQL",
+		async () => {
+			const response = await app.inject({
+				method: "PATCH",
+				url: `/api/leads/${LEAD_1_ID}`,
+				headers: {
+					"content-type": "application/json",
+					[CLINIC_TOKEN_HEADER]: clinicToken,
+					[STAFF_TOKEN_HEADER]: staffToken,
+				},
+				payload: {
+					name: "Иван Смирнов (Обновлен)",
+					expectedRevenue: "45000.00",
+					status: "showed_up",
+					notes: "Пациент явился на консультацию",
+				},
+			});
+
+			assert.equal(response.statusCode, 200, response.body);
+			const result = JSON.parse(response.body);
+			assert.equal(result.name, "Иван Смирнов (Обновлен)");
+			assert.equal(result.status, "showed_up");
+			assert.equal(Number(result.expectedRevenue), 45000);
+			assert.equal(result.notes, "Пациент явился на консультацию");
+
+			// Verify in PostgreSQL
+			await withFixtureTenant(ORG_ID, async (tx) => {
+				const [updatedLead] = await tx
+					.select()
+					.from(crmLeads)
+					.where(eq(crmLeads.id, LEAD_1_ID))
+					.limit(1);
+				assert.equal(updatedLead?.name, "Иван Смирнов (Обновлен)");
+				assert.equal(updatedLead?.status, "showed_up");
+				assert.equal(Number(updatedLead?.expectedRevenue), 45000);
+			});
+		},
+	);
 });

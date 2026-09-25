@@ -1,27 +1,29 @@
 /**
- * cashbox.test.ts — Comprehensive Integration Tests for Cash Box, Installments, 12 Expense Reasons & Installed Locks.
+ * apps/api/src/tests/routes/cashbox.test.ts
+ *
+ * Comprehensive Integration Tests for Cash Box, Installments, 12 Expense Reasons & Installed Locks.
  */
 
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
-import { db } from "../db/client.js";
+import { db } from "../../db/client.js";
 import {
 	cashBoxes,
 	labOrders,
 	organizations,
 	patients,
 	users,
-} from "../db/schema.js";
-import { authTokenSecret } from "../security/authSecret.js";
-import { signToken } from "../utils/cryptoHelper.js";
-import { registerCashboxRoutes } from "./cashbox.js";
-import { registerLabRoutes } from "./lab.js";
+} from "../../db/schema.js";
+import { authTokenSecret } from "../../security/authSecret.js";
+import { signToken } from "../../utils/cryptoHelper.js";
+import { registerCashboxRoutes } from "../../routes/cashbox.js";
+import { registerLabRoutes } from "../../routes/lab.js";
 import {
 	fixtureUuid,
 	withFixtureTenant,
 	purgeFixtureOrganizations,
-} from "../tests/support/fixtureOrganizations.js";
-import { createTenantTestApp } from "../tests/support/tenantTestApp.js";
+} from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 async function buildTestApp() {
 	process.env.NODE_ENV = "test";

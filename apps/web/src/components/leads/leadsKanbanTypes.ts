@@ -13,7 +13,8 @@ import {
 	Trash2,
 	UserCheck,
 } from "lucide-react";
-import type { Lead } from "../../store/leadsStore";
+import type { Lead, LeadStatus } from "../../store/leadsStore";
+export type { Lead, LeadStatus };
 
 export type BookableDoctor = {
 	id: string;
@@ -118,7 +119,7 @@ export async function bookingFailureMessage(response: Response): Promise<string>
 }
 
 export const COLUMNS: {
-	id: Lead["status"];
+	id: LeadStatus;
 	label: string;
 	color: string;
 	icon: React.ReactNode;

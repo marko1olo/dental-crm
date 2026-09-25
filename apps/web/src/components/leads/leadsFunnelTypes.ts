@@ -4,6 +4,9 @@
  * Extracted per Mandate 8s (Anti-Bloat & Modular Architecture)
  */
 
+import type { Lead, LeadStatus } from "../../store/leadsStore";
+export type { Lead, LeadStatus };
+
 // ---------------------------------------------------------------------------
 // 1. ТИПЫ И КЛЮЧИ ЭТАПОВ ВОРОНКИ
 // ---------------------------------------------------------------------------
@@ -250,12 +253,12 @@ export function getMarketingChannelLabel(
 // 3. ВХОДНЫЕ ДАННЫЕ ЛИДА ДЛЯ ВОРОНКИ
 // ---------------------------------------------------------------------------
 
-export interface FunnelLead {
+export interface FunnelLead extends Partial<Lead> {
 	id: string;
 	name: string;
 	phone?: string;
 	source?: string;
-	status: "new" | "contacted" | "consult_booked" | "no_answer" | "trash" | string;
+	status: LeadStatus | string;
 	expectedRevenue?: string | number | null;
 	createdAt?: string | Date | null;
 	showedUp?: boolean;

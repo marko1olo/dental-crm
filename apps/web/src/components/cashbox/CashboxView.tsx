@@ -8,9 +8,10 @@
  * - Mandate 8e, Item 7: Doctor autonomy on discounts up to 100% (warranty reworks & staff) with NO admin password.
  * - Mandate 8n: Scale sovereignty — solo doctor on chair rental & small clinic prioritization.
  * - Mandate 8c: Tier 1 Hot Path layout (clear totals, 1-click presets, dense clinical desktop ergonomics).
+ * - Mandate 8b: Integer kopeck precision without IEEE-754 float drift.
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
 	Banknote,
 	CreditCard,
@@ -18,10 +19,17 @@ import {
 	ShieldCheck,
 	Sparkles,
 	Tag,
-	UserCheck,
+	RotateCcw,
+	CheckCircle2,
+	Plus,
 } from "lucide-react";
+import {
+	createCompositeIdempotencyKey,
+	kopecksToRub,
+	rubToKopecks,
+} from "@dental/shared";
 import { CashShiftWidget } from "../finance/CashShiftWidget.js";
-import { PaymentModal } from "../finance/PaymentModal.js";
+import { PaymentModal, type PaymentMethodTab } from "../finance/PaymentModal.js";
 import {
 	validateBuyerInn54Fz,
 	process100PercentDiscountCheckout,
@@ -30,6 +38,10 @@ import {
 	type MultiTenderStateRub,
 	allocateRemainderToTender,
 } from "../finance/cashboxOperations.js";
+import { showToast } from "../GlobalToast.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
+
+let zeroReceiptMutationSeq = 0;
 
 export interface CashboxViewProps {
 	readonly initialShiftOpen?: boolean;
@@ -37,7 +49,22 @@ export interface CashboxViewProps {
 	readonly cashierInn?: string;
 	readonly clinicName?: string;
 	readonly clinicInn?: string;
+	readonly initialAmountRub?: number;
+	readonly patientId?: string;
+	readonly patientName?: string;
+	readonly patientPhone?: string;
+	readonly visitId?: string;
+	readonly invoiceId?: string;
+	readonly documentId?: string;
 	readonly onPaymentComplete?: (receipt: any) => void;
+}
+
+interface CashBoxSummary {
+	readonly id: string;
+	readonly type: string;
+	readonly name: string;
+	readonly balanceRub: number;
+	readonly isShiftOpen?: boolean;
 }
 
 export function CashboxView({
@@ -46,16 +73,30 @@ export function CashboxView({
 	cashierInn,
 	clinicName = "Стоматологическая клиника",
 	clinicInn,
+	initialAmountRub = 0,
+	patientId,
+	patientName,
+	patientPhone,
+	visitId,
+	invoiceId,
+	documentId,
 	onPaymentComplete,
 }: CashboxViewProps) {
+	// Cash Boxes & Shift State from backend
+	const [cashBoxes, setCashBoxes] = useState<readonly CashBoxSummary[]>([]);
+	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(initialShiftOpen);
+	const [mainCashBoxId, setMainCashBoxId] = useState<string | null>(null);
+
 	// Payer & 54-FZ State
 	const [payerType, setPayerType] = useState<PayerLegalType>("physical_person");
 	const [buyerInn, setBuyerInn] = useState("");
-	const [grossAmountRub, setGrossAmountRub] = useState<number>(0);
+	const [grossAmountRub, setGrossAmountRub] = useState<number>(initialAmountRub);
 	const [discountPercent, setDiscountPercent] = useState<number>(0);
 	const [isWarranty, setIsWarranty] = useState<boolean>(false);
 	const [isStaffColleague, setIsStaffColleague] = useState<boolean>(false);
 	const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
+	const [activePaymentMethod, setActivePaymentMethod] = useState<PaymentMethodTab>("card_terminal");
+	const [isSubmittingZeroReceipt, setIsSubmittingZeroReceipt] = useState<boolean>(false);
 
 	// Tender Allocations
 	const [tenders, setTenders] = useState<MultiTenderStateRub>({
@@ -65,6 +106,117 @@ export function CashboxView({
 		depositRub: 0,
 		familyRub: 0,
 	});
+
+	// Load 6 Cash Boxes and live shift state from backend
+	const loadCashBoxes = useCallback(async () => {
+		try {
+			const res = await fetch("/api/cash/cash-box", {
+				headers: denteAdminSecretRequestHeaders(),
+			});
+			if (res.ok) {
+				const json = await res.json();
+				if (Array.isArray(json.data)) {
+					setCashBoxes(json.data);
+					const main = json.data.find((b: { type: string }) => b.type === "main");
+					if (main) {
+						setMainCashBoxId(main.id);
+						if (typeof main.isShiftOpen === "boolean") {
+							setIsShiftOpen(main.isShiftOpen);
+						}
+					}
+				}
+			}
+		} catch {
+			// Soft fallback if network unreachable
+		}
+	}, []);
+
+	useEffect(() => {
+		void loadCashBoxes();
+	}, [loadCashBoxes]);
+
+	// Shift Management Handlers connected to backend /api/cash/*
+	const handleOpenShift = async () => {
+		const res = await fetch("/api/cash/cash-box-all-open", {
+			method: "POST",
+			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+			body: JSON.stringify({ cashierFullName: cashierName }),
+		});
+		if (!res.ok) {
+			const err = await res.json().catch(() => ({}));
+			throw new Error(err.message || "Ошибка открытия смены");
+		}
+		setIsShiftOpen(true);
+		void loadCashBoxes();
+	};
+
+	const handleCloseShift = async () => {
+		const res = await fetch("/api/cash/cash-box-all-closing", {
+			method: "POST",
+			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+			body: JSON.stringify({ zReportNumber: `Z-DAILY-${Date.now()}` }),
+		});
+		if (!res.ok) {
+			const err = await res.json().catch(() => ({}));
+			throw new Error(err.message || "Ошибка закрытия смены");
+		}
+		setIsShiftOpen(false);
+		void loadCashBoxes();
+	};
+
+	const handlePrintXReport = async () => {
+		const res = await fetch("/api/cash/x-report", {
+			method: "POST",
+			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+		});
+		if (!res.ok) {
+			const err = await res.json().catch(() => ({}));
+			throw new Error(err.message || "Ошибка печати X-отчета");
+		}
+	};
+
+	const handleCashIn = async (amountRub: number, basis: string) => {
+		if (!mainCashBoxId) {
+			showToast("Основная касса не определена", "error");
+			return;
+		}
+		const res = await fetch("/api/cash/cash-introduction", {
+			method: "POST",
+			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+			body: JSON.stringify({
+				cashBoxId: mainCashBoxId,
+				amountRub,
+				reasonText: basis,
+			}),
+		});
+		if (!res.ok) {
+			const err = await res.json().catch(() => ({}));
+			throw new Error(err.message || "Ошибка внесения наличных");
+		}
+		void loadCashBoxes();
+	};
+
+	const handleCashOut = async (amountRub: number, basis: string, recipientFio?: string) => {
+		if (!mainCashBoxId) {
+			showToast("Основная касса не определена", "error");
+			return;
+		}
+		const res = await fetch("/api/cash/cash-withdrawal", {
+			method: "POST",
+			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+			body: JSON.stringify({
+				cashBoxId: mainCashBoxId,
+				amountRub,
+				reasonText: basis,
+				recipientFio,
+			}),
+		});
+		if (!res.ok) {
+			const err = await res.json().catch(() => ({}));
+			throw new Error(err.message || "Ошибка инкассации / изъятия наличных");
+		}
+		void loadCashBoxes();
+	};
 
 	// INN Validation (54-FZ Tag 1228: Physical person never blocked)
 	const innValidation = validateBuyerInn54Fz({
@@ -89,16 +241,82 @@ export function CashboxView({
 		setTenders(updated);
 	};
 
+	const handleOpenPaymentWithMethod = (method: PaymentMethodTab) => {
+		setActivePaymentMethod(method);
+		setIsPaymentModalOpen(true);
+	};
+
+	// Process 100% Discount Checkout (0 ₽ receipt) via real billing endpoint with idempotency key
+	const handleProcessZeroDiscountCheckout = async () => {
+		if (isSubmittingZeroReceipt) return;
+		setIsSubmittingZeroReceipt(true);
+		try {
+			const idempotencyKey = createCompositeIdempotencyKey(
+				"cashbox-0-receipt",
+				patientId || "walkin",
+				String(Date.now()),
+				zeroReceiptMutationSeq++,
+			);
+
+			const notesReason = isWarranty
+				? "100% скидка: Гарантийная переделка"
+				: isStaffColleague
+					? "100% скидка: Лечение коллеги / персонала"
+					: `Скидка врача ${discountPercent}%`;
+
+			const res = await fetch("/api/billing/payments", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": idempotencyKey,
+				}),
+				body: JSON.stringify({
+					patientId: patientId || undefined,
+					visitId: visitId || undefined,
+					documentId: documentId || undefined,
+					amountRub: 0,
+					method: "cash",
+					clientMutationId: idempotencyKey,
+					notes: notesReason,
+				}),
+			});
+
+			if (res.ok) {
+				const receiptData = await res.json();
+				showToast("Чек 0 ₽ (100% скидка) успешно зафиксирован в системе", "success");
+				onPaymentComplete?.(receiptData);
+			} else {
+				const err = await res.json().catch(() => ({}));
+				showToast(err.message || "Ошибка фискализации чека 0 ₽", "error");
+			}
+		} catch {
+			showToast("Ошибка сети при проведении 100% чека", "error");
+		} finally {
+			setIsSubmittingZeroReceipt(false);
+		}
+	};
+
+	const handleAddAmountPreset = (rub: number) => {
+		const currentKop = rubToKopecks(grossAmountRub);
+		const addKop = rubToKopecks(rub);
+		setGrossAmountRub(kopecksToRub(currentKop + addKop));
+	};
+
 	return (
 		<div className="cashbox-view flex flex-col gap-4 p-4 max-w-6xl mx-auto">
-			{/* Cash Shift Banner / Management */}
+			{/* Cash Shift Banner / Management Connected to Real Cashbox Endpoints */}
 			<section aria-label="Управление кассовой сменой">
 				<CashShiftWidget
-					initialIsOpen={initialShiftOpen}
+					initialIsOpen={isShiftOpen}
 					cashierName={cashierName}
 					cashierInn={cashierInn}
 					clinicName={clinicName}
 					clinicInn={clinicInn}
+					onOpenShift={handleOpenShift}
+					onCloseShift={handleCloseShift}
+					onPrintXReport={handlePrintXReport}
+					onCashIn={handleCashIn}
+					onCashOut={handleCashOut}
 				/>
 			</section>
 
@@ -117,6 +335,59 @@ export function CashboxView({
 							<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
 							<span>54-ФЗ: без барьеров</span>
 						</span>
+					</div>
+				</div>
+
+				{/* Amount Entry & Quick Presets Row */}
+				<div className="mb-3 p-3 bg-[var(--paper-soft,#f8fafc)] rounded-lg border border-[var(--line)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+					<div className="flex-1 min-w-[200px]">
+						<label htmlFor="gross-amount-input" className="block text-xs font-semibold text-[var(--ink)] mb-1">
+							Сумма к расчету (брутто):
+						</label>
+						<div className="relative">
+							<input
+								id="gross-amount-input"
+								type="number"
+								min="0"
+								step="1"
+								value={grossAmountRub || ""}
+								onChange={(e) => {
+									const val = parseFloat(e.target.value);
+									setGrossAmountRub(isNaN(val) ? 0 : Math.max(0, val));
+								}}
+								placeholder="Введите сумму в рублях"
+								className="w-full text-base font-bold font-mono px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal,var(--brand-primary))]"
+							/>
+							<span className="absolute right-3 top-2 text-xs font-bold text-[var(--muted)]">₽</span>
+						</div>
+					</div>
+
+					{/* Fast Amount Preset Chips */}
+					<div className="flex items-center gap-1.5 flex-wrap">
+						{[1000, 3000, 5000, 10000].map((preset) => (
+							<button
+								key={preset}
+								type="button"
+								onClick={() => handleAddAmountPreset(preset)}
+								className="h-7 px-2.5 rounded-md text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer inline-flex items-center gap-0.5"
+								title={`Добавить +${preset.toLocaleString("ru-RU")} ₽`}
+							>
+								<Plus className="w-3 h-3 text-[var(--teal,var(--brand-primary))]" />
+								<span>{preset.toLocaleString("ru-RU")}</span>
+							</button>
+						))}
+
+						{grossAmountRub > 0 && (
+							<button
+								type="button"
+								onClick={() => setGrossAmountRub(0)}
+								className="h-7 px-2 rounded-md text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer inline-flex items-center gap-1"
+								title="Очистить сумму"
+							>
+								<RotateCcw className="w-3 h-3" />
+								<span>Сброс</span>
+							</button>
+						)}
 					</div>
 				</div>
 
@@ -256,15 +527,29 @@ export function CashboxView({
 					</div>
 
 					{checkoutResult.isZeroDue ? (
-						<div className="p-2 rounded-lg bg-[var(--ok-bg,rgba(16,185,129,0.1))] border border-[var(--ok-fg,rgba(16,185,129,0.2))] text-xs text-[var(--ok-fg,#10b981)] font-medium text-center">
-							{checkoutResult.statusBannerText}
+						<div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-2.5 rounded-lg bg-[var(--ok-bg,rgba(16,185,129,0.1))] border border-[var(--ok-fg,rgba(16,185,129,0.2))]">
+							<div className="text-xs text-[var(--ok-fg,#10b981)] font-medium">
+								{checkoutResult.statusBannerText}
+							</div>
+							<button
+								type="button"
+								onClick={handleProcessZeroDiscountCheckout}
+								disabled={isSubmittingZeroReceipt}
+								className="w-full sm:w-auto px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+							>
+								<CheckCircle2 className="w-4 h-4" />
+								<span>{isSubmittingZeroReceipt ? "Оформление..." : "Оформить чек 0 ₽ (54-ФЗ)"}</span>
+							</button>
 						</div>
 					) : (
 						<div className="flex flex-wrap gap-2">
 							<button
 								type="button"
 								className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[var(--teal,var(--brand-primary))] text-white text-xs font-semibold shadow-xs hover:opacity-95 transition-opacity cursor-pointer"
-								onClick={() => handleAllocateAll("card")}
+								onClick={() => {
+									handleAllocateAll("card");
+									handleOpenPaymentWithMethod("card_terminal");
+								}}
 							>
 								<CreditCard className="w-3.5 h-3.5" />
 								Всё картой
@@ -273,7 +558,10 @@ export function CashboxView({
 							<button
 								type="button"
 								className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white text-xs font-semibold shadow-xs hover:opacity-95 transition-opacity cursor-pointer"
-								onClick={() => handleAllocateAll("cash")}
+								onClick={() => {
+									handleAllocateAll("cash");
+									handleOpenPaymentWithMethod("cash");
+								}}
 							>
 								<Banknote className="w-3.5 h-3.5" />
 								Всё наличными
@@ -282,7 +570,10 @@ export function CashboxView({
 							<button
 								type="button"
 								className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white text-xs font-semibold shadow-xs hover:opacity-95 transition-opacity cursor-pointer"
-								onClick={() => handleAllocateAll("sbp")}
+								onClick={() => {
+									handleAllocateAll("sbp");
+									handleOpenPaymentWithMethod("sbp_qr");
+								}}
 							>
 								<QrCode className="w-3.5 h-3.5" />
 								Всё по СБП
@@ -291,7 +582,7 @@ export function CashboxView({
 							<button
 								type="button"
 								className="flex-1 min-w-[140px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-								onClick={() => setIsPaymentModalOpen(true)}
+								onClick={() => handleOpenPaymentWithMethod("split")}
 								data-testid="btn-open-payment-modal"
 								title="Универсальное окно сплит-оплаты и терминала Сбербанка (54-ФЗ)"
 							>
@@ -307,8 +598,15 @@ export function CashboxView({
 				<PaymentModal
 					isOpen={isPaymentModalOpen}
 					amountRub={checkoutResult.totalNetRub}
+					patientId={patientId}
+					patientName={patientName}
+					patientPhone={patientPhone}
+					visitId={visitId}
+					invoiceId={invoiceId}
+					documentId={documentId}
 					cashierName={cashierName}
 					clinicLegalName={clinicName}
+					defaultMethod={activePaymentMethod}
 					onClose={() => setIsPaymentModalOpen(false)}
 					onSuccess={(receipt) => {
 						setIsPaymentModalOpen(false);

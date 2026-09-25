@@ -17,11 +17,34 @@ import {
 import { normalizePatientAdministrativeProfile } from "../utils/patientAdministrativeProfile.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
+export const leadStatusEnum = z.enum([
+	"new",
+	"contacted",
+	"consult_booked",
+	"showed_up",
+	"no_answer",
+	"trash",
+]);
+
 const leadSchema = z.object({
 	name: z.string().min(1),
-	phone: z.string().optional(),
-	source: z.string().optional(),
-	expectedRevenue: z.string().optional(),
+	patientName: z.string().optional().nullable(),
+	phone: z.string().optional().nullable(),
+	source: z.string().optional().nullable(),
+	expectedRevenue: z.string().optional().nullable(),
+	notes: z.string().optional().nullable(),
+	assignedDoctorId: z.string().uuid().optional().nullable(),
+});
+
+const patchLeadSchema = z.object({
+	name: z.string().min(1).optional(),
+	patientName: z.string().optional().nullable(),
+	phone: z.string().optional().nullable(),
+	source: z.string().optional().nullable(),
+	expectedRevenue: z.string().optional().nullable(),
+	status: leadStatusEnum.optional(),
+	notes: z.string().optional().nullable(),
+	assignedDoctorId: z.string().uuid().optional().nullable(),
 });
 
 const convertLeadSchema = z.object({
@@ -87,14 +110,7 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 		const { id } = req.params as { id: string };
 		const statusParsed = z
 			.object({
-				status: z.enum([
-					"new",
-					"contacted",
-					"consult_booked",
-					"showed_up",
-					"no_answer",
-					"trash",
-				]),
+				status: leadStatusEnum,
 			})
 			.safeParse(req.body);
 		if (!statusParsed.success) {
@@ -108,6 +124,45 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 		const [lead] = await db
 			.update(crmLeads)
 			.set({ status })
+			.where(
+				and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
+			)
+			.returning();
+		if (!lead) return reply.code(404).send({ error: "LeadNotFound" });
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "LEAD_UPDATED",
+			payload: lead,
+		});
+		return lead;
+	});
+
+	app.patch("/api/leads/:id", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"lead update",
+		);
+		if (!organizationId) return;
+
+		const { id } = req.params as { id: string };
+		const parsed = patchLeadSchema.safeParse(req.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Проверьте поля лида: переданы некорректные данные.",
+			});
+		}
+		const data = parsed.data;
+		if (Object.keys(data).length === 0) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Нет данных для обновления лида.",
+			});
+		}
+
+		const [lead] = await db
+			.update(crmLeads)
+			.set(data)
 			.where(
 				and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
 			)

@@ -270,6 +270,7 @@ export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
 					<button
 						type="submit"
 						className="primary-button"
+						data-testid="lead-convert-submit-btn"
 						disabled={isLeadBookingDisabled(isBooking)}
 						title={
 							isBooking

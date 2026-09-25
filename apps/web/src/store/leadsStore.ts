@@ -5,19 +5,48 @@ import {
 } from "../lib/safeLocalStorage";
 import { logger } from "../utils/logger";
 
+export type LeadStatus =
+	| "new"
+	| "contacted"
+	| "consult_booked"
+	| "showed_up"
+	| "no_answer"
+	| "trash";
+
+export const LEAD_STATUS_VALUES: readonly LeadStatus[] = [
+	"new",
+	"contacted",
+	"consult_booked",
+	"showed_up",
+	"no_answer",
+	"trash",
+] as const;
+
 export interface Lead {
 	id: string;
+	organizationId?: string;
 	name: string;
+	patientName?: string | null;
 	phone?: string;
 	source?: string;
-	status:
-		| "new"
-		| "contacted"
-		| "consult_booked"
-		| "showed_up"
-		| "no_answer"
-		| "trash";
+	status: LeadStatus;
+	assignedDoctorId?: string | null;
+	notes?: string | null;
 	expectedRevenue?: string;
+	createdAt?: string | Date | null;
+}
+
+export interface ConvertLeadToAppointmentPayload {
+	appointmentStart: string;
+	appointmentEnd: string;
+	chairId?: string | null;
+	doctorId?: string | null;
+	organizationId?: string;
+}
+
+export interface ConvertLeadResult {
+	patient: unknown;
+	appointment: unknown;
 }
 
 interface LeadsState {
@@ -25,7 +54,7 @@ interface LeadsState {
 	isLoading: boolean;
 	error: string | null;
 	fetchLeads: () => Promise<void>;
-	updateLeadStatus: (id: string, status: Lead["status"]) => Promise<void>;
+	updateLeadStatus: (id: string, status: LeadStatus) => Promise<void>;
 	updateLeadDetails: (
 		id: string,
 		details: Partial<Omit<Lead, "id">>,
@@ -33,6 +62,11 @@ interface LeadsState {
 	addLead: (lead: Omit<Lead, "id" | "status">) => Promise<void>;
 	/** Permanent remove via DELETE /api/leads/:id — not the trash column. */
 	deleteLead: (id: string) => Promise<void>;
+	/** Converts lead into patient and appointment in <= 2 clicks without blocking */
+	convertLeadToAppointment: (
+		id: string,
+		payload: ConvertLeadToAppointmentPayload,
+	) => Promise<ConvertLeadResult>;
 	/** 1-click action: create patient from lead without appointment or bureaucratic barriers */
 	createPatientFromLead: (
 		id: string,
@@ -182,7 +216,7 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 	updateLeadDetails: async (id, details) => {
 		try {
 			const res = await fetch(`${API_URL}/leads/${id}`, {
-				method: "PUT",
+				method: "PATCH",
 				headers: authHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify(details),
 			});
@@ -204,6 +238,34 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 			logger.error("updateLeadDetails Error:", e);
 			if (e instanceof Error) throw e;
 			throw new Error("Лид не сохранён: нет связи с сервером.");
+		}
+	},
+	convertLeadToAppointment: async (id, payload) => {
+		try {
+			const res = await fetch(`${API_URL}/leads/${id}/convert`, {
+				method: "POST",
+				headers: authHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify(payload),
+			});
+			if (!res.ok) {
+				throw new Error(
+					await leadsFailureMessage(
+						res,
+						"Запись не создана: сервер не принял запрос.",
+					),
+				);
+			}
+			const result = (await res.json()) as ConvertLeadResult;
+			set({
+				leads: get().leads.map((l) =>
+					l.id === id ? { ...l, status: "consult_booked" } : l,
+				),
+			});
+			return result;
+		} catch (e: unknown) {
+			logger.error("convertLeadToAppointment Error:", e);
+			if (e instanceof Error) throw e;
+			throw new Error("Не удалось записать лида: нет связи с сервером.");
 		}
 	},
 	/*

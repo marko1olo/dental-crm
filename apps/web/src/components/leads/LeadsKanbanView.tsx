@@ -61,6 +61,7 @@ export function LeadsKanbanView() {
 		updateLeadDetails,
 		addLead,
 		deleteLead,
+		convertLeadToAppointment,
 		createPatientFromLead,
 		isLoading,
 		error: loadError,
@@ -269,30 +270,19 @@ export function LeadsKanbanView() {
 
 		setIsBooking(true);
 		try {
-			const res = await fetch(`/api/leads/${convertingLeadId}/convert`, {
-				method: "POST",
-				headers: auth.denteClinicalReadHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					appointmentStart: startDateTime.toISOString(),
-					appointmentEnd: endDateTime.toISOString(),
-					chairId: chairIdToBook,
-					doctorId: doctorIdToBook,
-				}),
+			await convertLeadToAppointment(convertingLeadId, {
+				appointmentStart: startDateTime.toISOString(),
+				appointmentEnd: endDateTime.toISOString(),
+				chairId: chairIdToBook,
+				doctorId: doctorIdToBook,
 			});
 
-			if (!res.ok) {
-				showToast(await bookingFailureMessage(res), "error");
-				return;
-			}
 			showToast(
 				"Обращение записано на прием, карточка пациента создана",
 				"success",
 			);
 			setIsConvertOpen(false);
 			setConvertingLeadId(null);
-			updateLeadStatus(convertingLeadId, "consult_booked");
 			fetchLeads();
 
 			try {
@@ -306,9 +296,13 @@ export function LeadsKanbanView() {
 			} catch {
 				// Store fallback
 			}
-		} catch (e) {
+		} catch (e: unknown) {
 			logger.error(e);
-			showToast("Нет связи с сервером: запись не создана", "error");
+			const text =
+				e instanceof Error && e.message.trim()
+					? e.message
+					: "Нет связи с сервером: запись не создана";
+			showToast(text, "error");
 		} finally {
 			setIsBooking(false);
 		}
@@ -353,13 +347,10 @@ export function LeadsKanbanView() {
 				await addLead(payload);
 				showToast("Новый лид добавлен", "success");
 			} else if (editingLeadId) {
-				await updateLeadDetails(editingLeadId, payload);
-				if (editForm.status) {
-					const currentLead = leads.find((l) => l.id === editingLeadId);
-					if (currentLead && currentLead.status !== editForm.status) {
-						await updateLeadStatus(editingLeadId, editForm.status);
-					}
-				}
+				await updateLeadDetails(editingLeadId, {
+					...payload,
+					...(editForm.status ? { status: editForm.status } : {}),
+				});
 				showToast("Лид обновлен", "success");
 			}
 			setIsEditOpen(false);
