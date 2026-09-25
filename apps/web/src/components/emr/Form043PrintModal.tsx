@@ -35,10 +35,22 @@ import {
 	calculateDmftIndex,
 	calculateCpitnIndex,
 } from "./emr043Math";
+import {
+	DEFAULT_043_DATA,
+	resolveClinicRequisites,
+	applyForm043PhysiologicalNorm,
+} from "./emr043DefaultData";
+import {
+	Form043PassportTab,
+	Form043AnamnesisTab,
+	Form043OdontogramTab,
+	Form043DiariesTab,
+	Form043EpicrisisTab,
+} from "./Form043TabSections";
 import { EmrProtocolGeneratorModal } from "./protocolGenerator/EmrProtocolGeneratorModal";
-import { toothStatusCodeShortMap, dentalBiteTypeLabels } from "@dental/shared";
 import "./emr043Styles.css";
 
+export { DEFAULT_043_DATA } from "./emr043DefaultData";
 
 export interface Form043PrintModalProps {
 	isOpen: boolean;
@@ -51,149 +63,6 @@ export interface Form043PrintModalProps {
 	isDraft?: boolean;
 	status?: "draft" | "signed" | "completed" | "voided" | string;
 }
-
-export const DEFAULT_043_DATA: MedicalCardForm043uData = {
-	formNumber: "043/у",
-	formOrderName: "Приказ Минздрава СССР от 04.10.1980 № 1030" as unknown as MedicalCardForm043uData["formOrderName"],
-	clinic: {
-		clinicName: "Стоматологическая клиника «ДЕНТЕ»",
-		clinicLegalName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-		clinicAddress: "",
-		clinicPhone: "",
-		clinicOgrn: "",
-		clinicInn: "",
-		clinicKpp: "",
-		licenseNumber: "",
-		licenseDate: "",
-		licenseIssuer: "",
-		chiefDoctorFullName: "",
-	},
-	passport: {
-		medicalCardNumber: "",
-		cardOpenedDate: "",
-		patientFullName: "",
-		patientBirthDate: "",
-		patientSex: "male",
-		patientPhone: "",
-		patientEmail: "",
-		patientAddressRegistration: "",
-		patientAddressResidence: "",
-		patientIdentityDocument: "",
-		patientSnils: "",
-		patientInsurancePolicy: "",
-		patientInsuranceCompany: "",
-		patientPrivilegeCategory: "Нет льгот",
-		primaryDiagnosisText: "",
-		primaryDiagnosisIcd10: "",
-		attendingDoctorFullName: "",
-		attendingDoctorSpecialty: "",
-		attendingDoctorSnils: "",
-	},
-	anamnesis: {
-		chiefComplaint: "",
-		historyOfPresentIllness: "",
-		medicalHistoryVitae: "",
-		allergologicalHistory: "",
-		concomitantSomaticDiseases: "",
-		currentSystemicMedications: "",
-		pregnancyLactationStatus: "",
-		pastDentalInterventions: "",
-		occupationalHazardsAndHabits: "",
-	},
-	dentalStatus: {
-		odontogramTeeth: [
-			{ toothNumber: 18, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 17, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 16, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 15, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 14, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 13, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 12, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 11, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 21, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 22, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 23, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 24, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 25, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 26, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 27, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 28, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 48, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 47, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 46, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 45, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 44, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 43, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 42, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 41, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 31, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 32, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 33, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 34, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 35, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 36, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 37, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-			{ toothNumber: 38, statusCode: "healthy", surfaces: [], mobility: "none", furcationInvolvement: "none" },
-		],
-		dmftIndex: {
-			decayed: 0,
-			filled: 0,
-			missing: 0,
-			totalDmft: 0,
-			decayedSurfaces: 0,
-			filledSurfaces: 0,
-			totalDmfs: 0,
-			deciduousDecayed: 0,
-			deciduousFilled: 0,
-			deciduousExtracted: 0,
-			totalDft: 0,
-			intensityLevel: "very_low",
-		},
-		cpitnIndex: {
-			sextant18_14: "0_healthy",
-			sextant13_23: "0_healthy",
-			sextant24_28: "0_healthy",
-			sextant48_44: "0_healthy",
-			sextant43_33: "0_healthy",
-			sextant34_38: "0_healthy",
-			treatmentNeedCategory: "0_none",
-		},
-		hygieneIndexOhiS: {
-			debrisScore: 0,
-			calculusScore: 0,
-			totalScore: 0,
-			ratingText: "OHI-S = 0 (Хороший уровень гигиены)",
-		},
-		biteType: "orthognathic",
-		biteDescription: "Прикус ортогнатический, смыкание моляров и клыков по I классу Энгля, резцовое перекрытие в пределах 1/3 высоты коронки.",
-		oralMucosaStatus: {
-			color: "pale_pink_normal",
-			moisture: "normal",
-			pathologicalElements: null,
-			gingivalPapillae: "normal_pointed",
-			bleedingPBI: "grade_0",
-			tongueStatus: "Язык чистый, влажный, сосочковый слой выражен умеренно, налета нет.",
-			regionalLymphNodes: "Подчелюстные, шейные, подбородочные лимфатические узлы не пальпируются, безболезненные.",
-			tmjFunction: "Открывание рта свободное, в полном объеме, движений девиации и крепитации/щелчков в суставах нет.",
-		},
-		xrayFindingsDescription: "",
-		xrayRadiationDoseMsv: 0,
-	},
-	generalTreatmentPlan: "",
-	visitDiaries: [],
-	epicrisis: {
-		treatmentSummary: "",
-		treatmentOutcome: "treatment_in_progress",
-		treatmentOutcomeLabel: "Лечение продолжается",
-		dispensaryGroup: "D_I_healthy",
-		dispensaryGroupLabel: "Д-I (Здоров)",
-		plannedRecallIntervalMonths: 6,
-		preventivePlanRecommendations: "",
-		dateCompleted: "",
-		headOfDepartmentFullName: "",
-		attendingDoctorFullName: "",
-	},
-};
 
 export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 	function Form043PrintModal({
@@ -220,65 +89,9 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 			!(isLocked || initialData?.isLocked || status === "signed" || (initialData as any)?.status === "signed"),
 		);
 
-		const resolvedChiefDoctor =
-			staff?.find(
-				(s) =>
-					s.role === "owner" ||
-					(s.specialties &&
-						s.specialties.some((sp) => sp.toLowerCase().includes("глав"))),
-			)?.fullName ||
-			profile?.signatoryName ||
-			"";
-
 		const resolvedClinic = useMemo(
-			() => ({
-				clinicName:
-					initialData?.clinic?.clinicName ||
-					profile?.clinicName ||
-					DEFAULT_043_DATA.clinic.clinicName,
-				clinicLegalName:
-					initialData?.clinic?.clinicLegalName ||
-					profile?.legalName ||
-					profile?.clinicName ||
-					DEFAULT_043_DATA.clinic.clinicLegalName,
-				clinicAddress:
-					initialData?.clinic?.clinicAddress ||
-					profile?.address ||
-					"",
-				clinicPhone:
-					initialData?.clinic?.clinicPhone ||
-					profile?.phone ||
-					"",
-				clinicOgrn:
-					initialData?.clinic?.clinicOgrn ||
-					profile?.ogrn ||
-					"",
-				clinicInn:
-					initialData?.clinic?.clinicInn ||
-					profile?.inn ||
-					"",
-				clinicKpp:
-					initialData?.clinic?.clinicKpp ||
-					profile?.kpp ||
-					"",
-				licenseNumber:
-					initialData?.clinic?.licenseNumber ||
-					profile?.medicalLicenseNumber ||
-					"",
-				licenseDate:
-					initialData?.clinic?.licenseDate ||
-					profile?.medicalLicenseIssuedAt ||
-					"",
-				licenseIssuer:
-					initialData?.clinic?.licenseIssuer ||
-					profile?.medicalLicenseIssuer ||
-					"",
-				chiefDoctorFullName:
-					initialData?.clinic?.chiefDoctorFullName ||
-					resolvedChiefDoctor ||
-					"",
-			}),
-			[initialData?.clinic, profile, resolvedChiefDoctor],
+			() => resolveClinicRequisites(initialData?.clinic, profile, staff),
+			[initialData?.clinic, profile, staff],
 		);
 
 		const [formData, setFormData] = useState<MedicalCardForm043uData>(() => {
@@ -399,59 +212,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 		// Мандат 8e: Заполнение незаполненных полей анамнеза и статуса физиологической нормой в 1 клик
 		const handleApplyNorm043 = useCallback(() => {
 			setFormData((prev) => {
-				const updated: MedicalCardForm043uData = {
-					...prev,
-					anamnesis: {
-						...prev.anamnesis,
-						chiefComplaint: prev.anamnesis?.chiefComplaint?.trim()
-							? prev.anamnesis.chiefComplaint
-							: "Плановый профилактический осмотр, санация полости рта.",
-						historyOfPresentIllness: prev.anamnesis?.historyOfPresentIllness?.trim()
-							? prev.anamnesis.historyOfPresentIllness
-							: "Обратился для планового профилактического осмотра и оценки гигиенического состояния полости рта.",
-						medicalHistoryVitae: prev.anamnesis?.medicalHistoryVitae?.trim()
-							? prev.anamnesis.medicalHistoryVitae
-							: "Рос и развивался соответственно возрасту. Туберкулез, гепатиты, ВИЧ, сифилис отрицает. Наследственный анамнез не отягощен.",
-						allergologicalHistory: prev.anamnesis?.allergologicalHistory?.trim()
-							? prev.anamnesis.allergologicalHistory
-							: "Аллергологический анамнез не отягощен. Непереносимости местных анестетиков артикаинового ряда и лекарственных средств не отмечает.",
-						concomitantSomaticDiseases: prev.anamnesis?.concomitantSomaticDiseases?.trim()
-							? prev.anamnesis.concomitantSomaticDiseases
-							: "Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания со слов отрицает. Физиологическая норма.",
-						currentSystemicMedications: prev.anamnesis?.currentSystemicMedications?.trim()
-							? prev.anamnesis.currentSystemicMedications
-							: "Постоянный прием лекарственных препаратов отрицает.",
-						pastDentalInterventions: prev.anamnesis?.pastDentalInterventions?.trim()
-							? prev.anamnesis.pastDentalInterventions
-							: "Ранее проводившиеся стоматологические вмешательства и местную анестезию переносил удовлетворительно.",
-						occupationalHazardsAndHabits: prev.anamnesis?.occupationalHazardsAndHabits?.trim()
-							? prev.anamnesis.occupationalHazardsAndHabits
-							: "Вредных производственных факторов и вредных привычек не отмечает.",
-					},
-					dentalStatus: {
-						...prev.dentalStatus,
-						biteType: prev.dentalStatus?.biteType || "orthognathic",
-						biteDescription:
-							prev.dentalStatus?.biteDescription ||
-							"Прикус ортогнатический, смыкание моляров и клыков по I классу Энгля, резцовое перекрытие в пределах 1/3 высоты коронки.",
-						oralMucosaStatus: {
-							color: prev.dentalStatus?.oralMucosaStatus?.color || "pale_pink_normal",
-							moisture: prev.dentalStatus?.oralMucosaStatus?.moisture || "normal",
-							pathologicalElements: prev.dentalStatus?.oralMucosaStatus?.pathologicalElements ?? null,
-							gingivalPapillae: prev.dentalStatus?.oralMucosaStatus?.gingivalPapillae || "normal_pointed",
-							bleedingPBI: prev.dentalStatus?.oralMucosaStatus?.bleedingPBI || "grade_0",
-							tongueStatus:
-								prev.dentalStatus?.oralMucosaStatus?.tongueStatus ||
-								"Язык чистый, влажный, сосочковый слой выражен умеренно, налета нет.",
-							regionalLymphNodes:
-								prev.dentalStatus?.oralMucosaStatus?.regionalLymphNodes ||
-								"Подчелюстные, шейные, подбородочные лимфатические узлы не пальпируются, безболезненные.",
-							tmjFunction:
-								prev.dentalStatus?.oralMucosaStatus?.tmjFunction ||
-								"Открывание рта свободное, в полном объеме, движений девиации и крепитации/щелчков в суставах нет.",
-						},
-					},
-				};
+				const updated = applyForm043PhysiologicalNorm(prev);
 				onSave?.(updated);
 				return updated;
 			});
@@ -920,370 +681,40 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 
 						{/* Вкладка 2: Паспортная часть */}
 						{activeTab === "passport" && (
-							<div>
-								<div className="emr043-section-card">
-									<h3 className="emr043-section-card-title">
-										<User className="w-4 h-4 text-sky-600" />
-										1. Паспортная часть и регистрационные данные (Приказ Минздрава СССР от 04.10.1980 № 1030)
-									</h3>
-									<div className="emr043-grid-2">
-										<div>
-											<div className="emr043-field-label">ФИО Пациента:</div>
-											<div className="emr043-field-value">{formData.passport.patientFullName}</div>
-										</div>
-										<div>
-											<div className="emr043-field-label">Пол и Дата рождения:</div>
-											<div className="emr043-field-value">
-												{formData.passport.patientSex === "male" ? "Мужской" : "Женский"}, {formData.passport.patientBirthDate} ({ageText})
-											</div>
-										</div>
-										<div>
-											<div className="emr043-field-label">Номер медицинской карты:</div>
-											<div className="emr043-field-value font-bold text-sky-700">{formData.passport.medicalCardNumber}</div>
-										</div>
-										<div>
-											<div className="emr043-field-label">Дата открытия карты:</div>
-											<div className="emr043-field-value">{formData.passport.cardOpenedDate}</div>
-										</div>
-										<div>
-											<div className="emr043-field-label">Документ, удостоверяющий личность:</div>
-											<div className="emr043-field-value">{formData.passport.patientIdentityDocument}</div>
-										</div>
-										<div>
-											<div className="emr043-field-label">СНИЛС пациента:</div>
-											<div className="emr043-field-value">{formData.passport.patientSnils || "—"}</div>
-										</div>
-										<div>
-											<div className="emr043-field-label">Полис ОМС / ДМС:</div>
-											<div className="emr043-field-value">
-												{formData.passport.patientInsurancePolicy || "—"}{" "}
-												{formData.passport.patientInsuranceCompany ? `(${formData.passport.patientInsuranceCompany})` : ""}
-											</div>
-										</div>
-										<div>
-											<div className="emr043-field-label">Контактный телефон:</div>
-											<div className="emr043-field-value">{formData.passport.patientPhone || "—"}</div>
-										</div>
-										<div style={{ gridColumn: "1 / -1" }}>
-											<div className="emr043-field-label">Адрес регистрации и фактического проживания:</div>
-											<div className="emr043-field-value">{formData.passport.patientAddressRegistration}</div>
-										</div>
-										<div style={{ gridColumn: "1 / -1" }}>
-											<div className="emr043-field-label">Диагноз при первичном обращении:</div>
-											<div className="emr043-field-value font-bold text-sky-800">
-												{formData.passport.primaryDiagnosisText} [МКБ-10: {formData.passport.primaryDiagnosisIcd10}]
-											</div>
-										</div>
-										<div>
-											<div className="emr043-field-label">Лечащий врач:</div>
-											<div className="emr043-field-value font-semibold">
-												{formData.passport.attendingDoctorFullName} ({formData.passport.attendingDoctorSpecialty})
-											</div>
-										</div>
-										<div>
-											<div className="emr043-field-label">СНИЛС лечащего врача:</div>
-											<div className="emr043-field-value">{formData.passport.attendingDoctorSnils || "—"}</div>
-										</div>
-									</div>
-								</div>
-							</div>
+							<Form043PassportTab formData={formData} ageText={ageText} />
 						)}
 
 						{/* Вкладка 3: Анамнез */}
 						{activeTab === "anamnesis" && (
-							<div>
-								<div className="emr043-section-card">
-									<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "8px" }}>
-										<h3 className="emr043-section-card-title" style={{ margin: 0 }}>
-											<HeartPulse className="w-4 h-4 text-sky-600" />
-											2. Анамнез жизни и заболевания (Anamnesis vitae et morbi)
-										</h3>
-										<button
-											type="button"
-											onClick={handleApplyNorm043}
-											disabled={false}
-											data-testid="btn-043-anamnesis-norm"
-											className="emr043-btn emr043-btn-secondary"
-											style={{ fontSize: "11px", padding: "4px 8px", height: "28px" }}
-											title="Заполнить незаполненные графы анамнеза нормой (Мандат 8e)"
-										>
-											<Sparkles className="w-3.5 h-3.5 text-amber-500" />
-											<span>Норма анамнеза</span>
-										</button>
-									</div>
-									<div className="emr043-grid-2">
-										<div style={{ gridColumn: "1 / -1" }}>
-											<div className="emr043-field-label">Жалобы при обращении:</div>
-											<div className="emr043-field-value">{formData.anamnesis.chiefComplaint}</div>
-										</div>
-										<div style={{ gridColumn: "1 / -1" }}>
-											<div className="emr043-field-label">Анамнез развития настоящего заболевания (Anamnesis morbi):</div>
-											<div className="emr043-field-value">{formData.anamnesis.historyOfPresentIllness}</div>
-										</div>
-										<div style={{ gridColumn: "1 / -1" }}>
-											<div className="emr043-field-label">Анамнез жизни (Anamnesis vitae):</div>
-											<div className="emr043-field-value">{formData.anamnesis.medicalHistoryVitae}</div>
-										</div>
-										<div>
-											<div className="emr043-field-label">Аллергологический статус:</div>
-											<div className="emr043-field-value">{formData.anamnesis.allergologicalHistory}</div>
-										</div>
-										<div>
-											<div className="emr043-field-label">Сопутствующие соматические патологии:</div>
-											<div className="emr043-field-value">{formData.anamnesis.concomitantSomaticDiseases}</div>
-										</div>
-										<div>
-											<div className="emr043-field-label">Постоянный прием медикаментов:</div>
-											<div className="emr043-field-value">{formData.anamnesis.currentSystemicMedications}</div>
-										</div>
-										<div>
-											<div className="emr043-field-label">Переносимость анестезии и стоматологических вмешательств:</div>
-											<div className="emr043-field-value">{formData.anamnesis.pastDentalInterventions}</div>
-										</div>
-									</div>
-								</div>
-							</div>
+							<Form043AnamnesisTab formData={formData} onApplyNorm={handleApplyNorm043} />
 						)}
 
 						{/* Вкладка 4: Зубная формула и индексы */}
 						{activeTab === "odontogram" && (
-							<div>
-								<div className="emr043-section-card">
-									<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "8px" }}>
-										<h3 className="emr043-section-card-title" style={{ margin: 0 }}>
-											<Activity className="w-4 h-4 text-sky-600" />
-											3. Стоматологический статус, зубная формула FDI и клинические индексы
-										</h3>
-										<button
-											type="button"
-											onClick={handleApplyNorm043}
-											disabled={false}
-											data-testid="btn-043-status-norm"
-											className="emr043-btn emr043-btn-secondary"
-											style={{ fontSize: "11px", padding: "4px 8px", height: "28px" }}
-											title="Зафиксировать физиологическую норму СОПР и прикуса (Мандат 8e)"
-										>
-											<Sparkles className="w-3.5 h-3.5 text-amber-500" />
-											<span>Норма статуса</span>
-										</button>
-									</div>
-
-									<div style={{ fontWeight: 700, fontSize: "13px", marginBottom: "8px" }}>
-										Зубная формула постоянного прикуса (FDI 11–48):
-									</div>
-									<div className="emr043-formula-matrix">
-										{formData.dentalStatus.odontogramTeeth.slice(0, 16).map((t) => {
-											const isPath = t.statusCode !== "healthy" && t.statusCode !== "filled_satisfactory";
-											const isFilled = t.statusCode === "filled_satisfactory";
-											return (
-												<div
-													key={t.toothNumber}
-													className={`emr043-tooth-cell ${isPath ? "pathology" : isFilled ? "filled" : ""}`}
-												>
-													<div style={{ fontWeight: "bold" }}>{t.toothNumber}</div>
-													<div style={{ fontSize: "10px", marginTop: "2px" }}>
-														{(t.statusCode && t.statusCode in toothStatusCodeShortMap
-															? toothStatusCodeShortMap[t.statusCode as keyof typeof toothStatusCodeShortMap]
-															: null) || "Norm"}
-													</div>
-												</div>
-											);
-										})}
-									</div>
-									<div className="emr043-formula-matrix">
-										{formData.dentalStatus.odontogramTeeth.slice(16, 32).map((t) => {
-											const isPath = t.statusCode !== "healthy" && t.statusCode !== "filled_satisfactory";
-											const isFilled = t.statusCode === "filled_satisfactory";
-											return (
-												<div
-													key={t.toothNumber}
-													className={`emr043-tooth-cell ${isPath ? "pathology" : isFilled ? "filled" : ""}`}
-												>
-													<div style={{ fontWeight: "bold" }}>{t.toothNumber}</div>
-													<div style={{ fontSize: "10px", marginTop: "2px" }}>
-														{(t.statusCode && t.statusCode in toothStatusCodeShortMap
-															? toothStatusCodeShortMap[t.statusCode as keyof typeof toothStatusCodeShortMap]
-															: null) || "Norm"}
-													</div>
-												</div>
-											);
-										})}
-									</div>
-
-									<div className="emr043-grid-3" style={{ marginTop: "16px" }}>
-										<div className="emr043-section-card" style={{ padding: "12px" }}>
-											<div className="emr043-field-label">Индекс интенсивности КПУ(з):</div>
-											<div style={{ fontSize: "18px", fontWeight: 800, color: "var(--teal)" }}>
-												КПУ = {dmft.totalDmft}
-											</div>
-											<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
-												К = {dmft.decayed}, П = {dmft.filled}, У = {dmft.missing}
-												<br />Уровень: <strong>{dmft.intensityLevelLabel}</strong>
-											</div>
-										</div>
-
-										<div className="emr043-section-card" style={{ padding: "12px" }}>
-											<div className="emr043-field-label">Пародонтальный статус (CPITN):</div>
-											<div style={{ fontSize: "14px", fontWeight: 700 }}>{cpitn.treatmentNeedLabel}</div>
-											<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
-												{cpitn.treatmentRecommendations}
-											</div>
-										</div>
-
-										<div className="emr043-section-card" style={{ padding: "12px" }}>
-											<div className="emr043-field-label">Индекс гигиены и прикус:</div>
-											<div style={{ fontSize: "13px", fontWeight: 600 }}>{formData.dentalStatus.hygieneIndexOhiS.ratingText}</div>
-											<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
-												Прикус: {dentalBiteTypeLabels[formData.dentalStatus.biteType]}
-											</div>
-										</div>
-									</div>
-
-									<div style={{ marginTop: "14px" }}>
-										<div className="emr043-field-label">Состояние СОПР, лимфоузлов и ВНЧС:</div>
-										<div className="emr043-field-value">
-											Слизистая оболочка полости рта: {formData.dentalStatus.oralMucosaStatus.color === "pale_pink_normal" ? "бледно-розовая, умеренно влажная" : "гиперемирована"}.
-											Язык: {formData.dentalStatus.oralMucosaStatus.tongueStatus}.
-											Лимфатические узлы: {formData.dentalStatus.oralMucosaStatus.regionalLymphNodes}.
-											ВНЧС: {formData.dentalStatus.oralMucosaStatus.tmjFunction}.
-										</div>
-									</div>
-
-									<div style={{ marginTop: "14px" }}>
-										<div className="emr043-field-label">Рентгенологическое обследование:</div>
-										<div className="emr043-field-value">
-											{formData.dentalStatus.xrayFindingsDescription}
-											{formData.dentalStatus.xrayRadiationDoseMsv ? ` (Лучевая нагрузка: ${formData.dentalStatus.xrayRadiationDoseMsv} мЗв)` : ""}
-										</div>
-									</div>
-								</div>
-							</div>
+							<Form043OdontogramTab
+								formData={formData}
+								dmft={dmft}
+								cpitn={cpitn}
+								onApplyNorm={handleApplyNorm043}
+							/>
 						)}
 
 						{/* Вкладка 5: Дневники визитов (Форма 043/у) */}
 						{activeTab === "diaries" && (
-							<div>
-								<div className="emr043-section-card">
-									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", flexWrap: "wrap", gap: "8px" }}>
-										<h3 className="emr043-section-card-title" style={{ margin: 0 }}>
-											<Calendar className="w-4 h-4 text-sky-600" />
-											4. Дневники клинических приёмов (Форма 043/у)
-										</h3>
-										<div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-											<button
-												type="button"
-												className="emr043-btn emr043-btn-primary touch-manipulation"
-												style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.85rem", background: "linear-gradient(135deg, #0d9488 0%, #059669 100%)", color: "white", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
-												onClick={() => {
-													if (onOpenProtocolGenerator) {
-														onClose();
-														onOpenProtocolGenerator();
-													} else {
-														setIsProtocolGeneratorOpen(true);
-													}
-												}}
-												data-testid="form043-synthesize-diary-btn"
-												title="Сформировать дневник 043/у по МКБ-10 и формуле зубов"
-											>
-												<Sparkles className="w-4 h-4" />
-												<span>Сформировать дневник 043/у по МКБ-10 и формуле</span>
-											</button>
-										</div>
-									</div>
-
-
-									{formData.visitDiaries.map((diary, index) => (
-										<div key={diary.id || index} className="emr043-soap-card">
-											<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", borderBottom: "1px solid var(--glass-border, #e2e8f0)", paddingBottom: "6px" }}>
-												<div>
-													<span className="emr043-soap-badge">Визит #{index + 1}</span>
-													<strong>{diary.entryDate}</strong> {diary.entryTime ? `в ${diary.entryTime}` : ""}
-													{diary.toothNumber && <span style={{ marginLeft: "8px", fontWeight: 600, color: "var(--teal)" }}>• Зуб FDI № {diary.toothNumber}</span>}
-												</div>
-												<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
-													Врач: <strong>{diary.doctorFullName}</strong>
-												</div>
-											</div>
-
-											<div style={{ marginBottom: "6px" }}>
-												<span style={{ fontWeight: 700, color: "var(--teal)" }}>S (Subjective):</span> {diary.subjectiveComplaints}
-											</div>
-											<div style={{ marginBottom: "6px" }}>
-												<span style={{ fontWeight: 700, color: "var(--teal)" }}>O (Objective):</span> {diary.objectiveStatusLocalis}
-												{diary.eodMicroamperes ? ` [ЭОД: ${diary.eodMicroamperes} мкА]` : ""}
-											</div>
-											<div style={{ marginBottom: "6px" }}>
-												<span style={{ fontWeight: 700, color: "var(--teal)" }}>A (Assessment):</span> <strong>{diary.assessmentDiagnosisText}</strong> [{diary.assessmentIcd10Code}]
-											</div>
-											<div style={{ marginBottom: "6px" }}>
-												<span style={{ fontWeight: 700, color: "var(--teal)" }}>P (Plan & Protocol):</span> {diary.procedureProtocol}
-											</div>
-											{diary.anesthesiaDetails && (
-												<div style={{ fontSize: "12px", color: "var(--muted, #64748b)", marginBottom: "4px" }}>
-													• Анестезия: {diary.anesthesiaDetails}
-												</div>
-											)}
-											{diary.appliedMaterials && (
-												<div style={{ fontSize: "12px", color: "var(--muted, #64748b)", marginBottom: "4px" }}>
-													• Материалы: {diary.appliedMaterials}
-												</div>
-											)}
-											{diary.digitalSignatureHash && (
-												<div style={{ marginTop: "8px", fontSize: "11px", color: "var(--ok-fg)", display: "flex", alignItems: "center", gap: "4px" }}>
-													<ShieldCheck className="w-3.5 h-3.5" />
-													<span>Заверено УКЭП (ГОСТ Р 34.10): {diary.digitalSignatureHash.slice(0, 20)}…</span>
-												</div>
-											)}
-										</div>
-									))}
-								</div>
-							</div>
+							<Form043DiariesTab
+								formData={formData}
+								onOpenProtocolGenerator={onOpenProtocolGenerator}
+								onOpenInternalProtocolGenerator={() => setIsProtocolGeneratorOpen(true)}
+							/>
 						)}
 
 						{/* Вкладка 6: Эпикриз и диспансеризация */}
 						{activeTab === "epicrisis" && (
-							<div>
-								<div className="emr043-section-card">
-									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", flexWrap: "wrap", gap: "8px" }}>
-										<h3 className="emr043-section-card-title" style={{ margin: 0 }}>
-											<Award className="w-4 h-4 text-sky-600" />
-											5. Эпикриз, результаты лечения и план диспансерного наблюдения
-										</h3>
-									</div>
-									<div className="emr043-grid-2">
-										<div style={{ gridColumn: "1 / -1" }}>
-											<div className="emr043-field-label">Сводка проведенного лечения (Эпикриз):</div>
-											<div className="emr043-field-value">{formData.epicrisis.treatmentSummary}</div>
-										</div>
-										<div>
-											<div className="emr043-field-label">Исход лечения:</div>
-											<div className="emr043-field-value font-bold text-[var(--ok-fg,#059669)]">{formData.epicrisis.treatmentOutcomeLabel}</div>
-										</div>
-										<div>
-											<div className="emr043-field-label">Диспансерная группа:</div>
-											<div className="emr043-field-value font-bold text-sky-700">{formData.epicrisis.dispensaryGroupLabel}</div>
-										</div>
-										<div>
-											<div className="emr043-field-label">Сроки планового контрольного осмотра:</div>
-											<div className="emr043-field-value">Через {formData.epicrisis.plannedRecallIntervalMonths} месяцев</div>
-										</div>
-										<div>
-											<div className="emr043-field-label">Дата завершения курса лечения:</div>
-											<div className="emr043-field-value">{formData.epicrisis.dateCompleted}</div>
-										</div>
-										<div style={{ gridColumn: "1 / -1" }}>
-											<div className="emr043-field-label">План профилактических мероприятий и вторичной профилактики:</div>
-											<div className="emr043-field-value">{formData.epicrisis.preventivePlanRecommendations}</div>
-										</div>
-									</div>
-								</div>
-
-							</div>
+							<Form043EpicrisisTab formData={formData} />
 						)}
 					</main>
 				</div>
 			</div>
 		);
-
 	},
 );

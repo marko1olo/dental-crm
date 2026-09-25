@@ -1,0 +1,635 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * EMR FORM 043/U PRINTABLE HTML & FDI FORMULA TABLE RENDERER
+ * Order of the Ministry of Health of Russia № 834n / GOST R 7.0.97-2016
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+
+import type {
+	MedicalCardForm043uData,
+	Form043PrintConfig,
+} from "./emr043Types";
+import {
+	type FdiToothRecord,
+	toothStatusCodeShortMap,
+	dentalBiteTypeLabels,
+} from "@dental/shared";
+import {
+	escapeHtml,
+	formatPatientAge,
+	calculateDmftIndex,
+	calculateCpitnIndex,
+} from "./emr043Math";
+
+/** Рендерер таблицы зубной формулы FDI (все 32 постоянных зуба + расшифровка) */
+export function renderFdiFormulaTableHtml(odontogramTeeth: FdiToothRecord[]): string {
+	const upperTeeth = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
+	const lowerTeeth = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
+
+	const teethMap = new Map<number, FdiToothRecord>();
+	for (const t of odontogramTeeth) {
+		teethMap.set(t.toothNumber, t);
+	}
+
+	const renderCell = (num: number, isRightBoundary: boolean) => {
+		const rec = teethMap.get(num);
+		const code = rec?.statusCode || "healthy";
+		const shortCode = toothStatusCodeShortMap[code] || "Norm";
+		const isPathology = code !== "healthy" && code !== "filled_satisfactory";
+		const isExtracted = code === "extracted_absent";
+		const isFilled = code === "filled_satisfactory";
+		const isProsthetic = code.startsWith("crown") || code === "implant" || code.startsWith("bridge");
+
+		let color = "#0f172a";
+		let bg = "#ffffff";
+		if (isExtracted) {
+			color = "#94a3b8";
+			bg = "#f8fafc";
+		} else if (isPathology) {
+			color = "#b91c1c";
+			bg = "#fef2f2";
+		} else if (isFilled) {
+			color = "#047857";
+			bg = "#f0fdf4";
+		} else if (isProsthetic) {
+			color = "#1d4ed8";
+			bg = "#eff6ff";
+		}
+
+		const borderRight = isRightBoundary ? "border-right: 2px solid #0f172a;" : "border-right: 0.5pt solid #cbd5e1;";
+
+		return `
+      <td style="text-align:center; padding:3px 2px; font-size:7.5pt; background:${bg}; ${borderRight}">
+        <div style="font-weight:bold; color:#0f172a; font-size:8pt;">${num}</div>
+        <div style="font-weight:800; color:${color}; font-size:7.5pt; margin-top:1px;">${escapeHtml(shortCode)}</div>
+      </td>
+    `;
+	};
+
+	const upperCells = upperTeeth.map((t, idx) => renderCell(t, idx === 7)).join("");
+	const lowerCells = lowerTeeth.map((t, idx) => renderCell(t, idx === 7)).join("");
+
+	return `
+    <table class="data-table-dense" style="width:100%; border:1pt solid #0f172a; margin:4px 0 6px 0;">
+      <thead>
+        <tr>
+          <th colspan="8" style="background:#e2e8f0; font-weight:bold; border-right:2px solid #0f172a; text-align:center;">
+            Верхняя челюсть справа (18–11)
+          </th>
+          <th colspan="8" style="background:#e2e8f0; font-weight:bold; text-align:center;">
+            Верхняя челюсть слева (21–28)
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>${upperCells}</tr>
+        <tr style="border-top:2px solid #0f172a;">${lowerCells}</tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="8" style="background:#e2e8f0; font-weight:bold; border-right:2px solid #0f172a; text-align:center;">
+            Нижняя челюсть справа (48–41)
+          </th>
+          <th colspan="8" style="background:#e2e8f0; font-weight:bold; text-align:center;">
+            Нижняя челюсть слева (31–38)
+          </th>
+        </tr>
+      </tfoot>
+    </table>
+    <div style="font-size:7pt; color:#475569; margin-bottom:6px; line-height:1.2;">
+      <strong>Условные обозначения формулы:</strong> <strong>Norm</strong> — интактный, <strong>C0–C3</strong> — кариес, <strong>P/Pch</strong> — пульпит, <strong>Pt/Ptch</strong> — периодонтит, <strong>Pl</strong> — пломба, <strong>K(мк/zr/em)</strong> — коронка, <strong>Импл</strong> — имплантат, <strong>Отс(A)</strong> — отсутствует, <strong>R(кор)</strong> — корень.
+    </div>
+  `;
+}
+
+/** Генератор полноценного HTML документа для печати на листах А4 по ГОСТ Р 7.0.97-2016 */
+export function generatePrintableHtml043(data: MedicalCardForm043uData, config?: Partial<Form043PrintConfig>): string {
+	const cfg: Form043PrintConfig = {
+		activeTab: "overview",
+		pageOrientation: "portrait",
+		includeClinicLogo: true,
+		includeClinicRequisites: true,
+		includeUkepStamp: true,
+		includeDoctorStampSeal: true,
+		includePatientSignatureBlock: true,
+		includeXrayThumbnails: true,
+		includeFullSoapDiaries: true,
+		fontSizePt: 8.5,
+		scaleRatio: 1.0,
+		themeMode: "light",
+		...config,
+	};
+
+	const clinic = data.clinic;
+	const passport = data.passport;
+	const anamnesis = data.anamnesis;
+	const dental = data.dentalStatus;
+	const epicrisis = data.epicrisis;
+
+	const isDocDraft = Boolean(
+		cfg.isDraft ||
+		cfg.status === "draft" ||
+		cfg.isLocked === false ||
+		(data as any).isDraft ||
+		(data as any).status === "draft" ||
+		(data as any).isLocked === false,
+	);
+
+	const ageFormatted = formatPatientAge(passport.patientBirthDate, passport.cardOpenedDate);
+	const dmft = calculateDmftIndex(dental.odontogramTeeth);
+	const cpitn = calculateCpitnIndex(dental.cpitnIndex);
+
+	const diariesToRender = (data.visitDiaries || []).filter((d) => {
+		if (!cfg.selectedDiaryIds || cfg.selectedDiaryIds.length === 0) return true;
+		return cfg.selectedDiaryIds.includes(d.id);
+	});
+
+	const diariesHtml = diariesToRender.length > 0
+		? diariesToRender.map((d, idx) => `
+        <div class="soap-diary-card" style="border: 0.75pt solid #cbd5e1; border-radius: 4px; padding: 6px 8px; margin-bottom: 8px; page-break-inside: avoid; break-inside: avoid; background:#ffffff;">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 0.5pt solid #e2e8f0; padding-bottom: 3px; margin-bottom: 4px;">
+            <div style="font-weight:800; font-size:8.5pt; color:#0f172a;">
+              Запись посещения № ${idx + 1} от ${escapeHtml(d.entryDate)} ${d.entryTime ? `в ${escapeHtml(d.entryTime)}` : ""}
+              ${d.toothNumber ? `<span style="background:#e0f2fe; color:#0369a1; padding:1px 5px; border-radius:3px; margin-left:6px;">Зуб FDI: ${escapeHtml(d.toothNumber)}</span>` : ""}
+            </div>
+            <div style="font-size:7.5pt; color:#475569;">
+              Врач: <strong>${escapeHtml(d.doctorFullName)}</strong> ${d.doctorSpecialty ? `(${escapeHtml(d.doctorSpecialty)})` : ""}
+            </div>
+          </div>
+          <table style="width:100%; border-collapse:collapse; font-size:8pt; line-height:1.25;">
+            <tr>
+              <td style="width:22%; font-weight:bold; color:#0369a1; vertical-align:top;">I. Жалобы и анамнез:</td>
+              <td style="width:78%; vertical-align:top;">${escapeHtml(d.subjectiveComplaints || "Жалоб на момент осмотра активно не предъявляет.")}</td>
+            </tr>
+            <tr>
+              <td style="font-weight:bold; color:#0369a1; vertical-align:top;">II. Status localis:</td>
+              <td style="vertical-align:top;">
+                ${escapeHtml(d.objectiveStatusLocalis)}
+                ${d.eodMicroamperes !== null && d.eodMicroamperes !== undefined ? `<br/><em>ЭОД: ${d.eodMicroamperes} мкА.</em>` : ""}
+                ${d.percussionVertical && d.percussionVertical !== "negative" ? `<em> Перкуссия верт.: ${d.percussionVertical === "positive_mild" ? "слабо болезненна" : "резко болезненна"}.</em>` : ""}
+              </td>
+            </tr>
+            <tr>
+              <td style="font-weight:bold; color:#0369a1; vertical-align:top;">III. Диагноз по МКБ-10:</td>
+              <td style="vertical-align:top;">
+                <span style="font-weight:800; color:#0f172a;">${escapeHtml(d.assessmentDiagnosisText)}</span>
+                <span style="background:#f1f5f9; border:0.5pt solid #94a3b8; border-radius:3px; padding:0 4px; font-weight:bold; font-size:7.5pt; margin-left:4px;">
+                  [${escapeHtml(d.assessmentIcd10Code)}]
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td style="font-weight:bold; color:#0369a1; vertical-align:top;">IV. Дневник лечения:</td>
+              <td style="vertical-align:top;">
+                ${escapeHtml(d.procedureProtocol)}
+                ${d.anesthesiaDetails ? `<br/><strong>Анестезия:</strong> ${escapeHtml(d.anesthesiaDetails)}` : ""}
+                ${d.appliedMaterials ? `<br/><strong>Использованные материалы:</strong> ${escapeHtml(d.appliedMaterials)}` : ""}
+                ${d.homeCareRecommendations ? `<br/><strong>Рекомендации / Назначения:</strong> ${escapeHtml(d.homeCareRecommendations)}` : ""}
+                ${d.nextVisitDate ? `<br/><strong>Дата следующего визита:</strong> ${escapeHtml(d.nextVisitDate)}` : ""}
+              </td>
+            </tr>
+          </table>
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:5px; padding-top:3px; border-top:0.5pt dashed #cbd5e1; font-size:7pt; color:#64748b;">
+            <div>
+              ${d.isSignedWithUkep ? `<span style="color:#059669; font-weight:bold;">[УКЭП] Подписано УКЭП (ГОСТ Р 34.10)</span> • Хэш: ${escapeHtml((d.digitalSignatureHash || "").slice(0, 18))}…` : "Подпись не заверена УКЭП"}
+            </div>
+            <div>
+              Подпись лечащего врача: ___________________ / ${escapeHtml(d.doctorFullName)} /
+            </div>
+          </div>
+        </div>
+      `).join("")
+		: `
+        <div style="border: 0.75pt dashed #cbd5e1; padding: 10px; text-align: center; color: #64748b; font-style: italic;">
+          Дневниковые записи клинических приемов отсутствуют.
+        </div>
+      `;
+
+	return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <title>Медицинская карта № ${escapeHtml(passport.medicalCardNumber)} (Форма 043/у)</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 12mm 10mm 12mm 15mm;
+      @bottom-right {
+        content: "Стр. " counter(page);
+        font-family: "PT Astra Sans", Arial, sans-serif;
+        font-size: 7.5pt;
+        color: #64748b;
+      }
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: "PT Astra Serif", "Times New Roman", "PT Astra Sans", Arial, serif;
+      font-size: ${cfg.fontSizePt}pt;
+      line-height: 1.25;
+      color: #0f172a;
+      background: #ffffff;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .doc-container {
+      width: 100%;
+      max-width: 185mm;
+      margin: 0 auto;
+      padding: 0;
+    }
+    .header-grid {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+      border-bottom: 1.5pt solid #0f172a;
+      padding-bottom: 4px;
+    }
+    .clinic-info {
+      width: 58%;
+      font-family: "PT Astra Sans", Arial, sans-serif;
+      font-size: 7pt;
+      line-height: 1.2;
+      color: #334155;
+    }
+    .clinic-title {
+      font-weight: 800;
+      font-size: 10pt;
+      text-transform: uppercase;
+      color: #0f172a;
+      margin-bottom: 2px;
+      letter-spacing: 0.02em;
+    }
+    .doc-requisites {
+      width: 40%;
+      text-align: right;
+      font-family: "PT Astra Sans", Arial, sans-serif;
+      font-size: 7pt;
+      line-height: 1.2;
+      color: #334155;
+    }
+    .form-badge {
+      display: inline-block;
+      font-weight: 800;
+      font-size: 8pt;
+      text-transform: uppercase;
+      color: #0f172a;
+      border: 1pt solid #0f172a;
+      padding: 1pt 4pt;
+      margin-bottom: 2pt;
+      background: #f8fafc;
+    }
+    .doc-title-block {
+      text-align: center;
+      margin: 6px 0 6px 0;
+    }
+    .doc-main-title {
+      font-family: "PT Astra Sans", Arial, sans-serif;
+      font-size: 11pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: #0f172a;
+      margin: 0;
+      line-height: 1.2;
+    }
+    .doc-sub-title {
+      font-size: 7.5pt;
+      margin: 2px 0 0 0;
+      font-style: italic;
+      color: #475569;
+    }
+    .section-title {
+      font-family: "PT Astra Sans", Arial, sans-serif;
+      font-weight: 700;
+      font-size: 8.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      margin-top: 6px;
+      margin-bottom: 3px;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 2px 5px;
+      border-left: 3.5px solid #0284c7;
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 2px 0 5px 0;
+      font-size: 7.5pt;
+      line-height: 1.2;
+    }
+    table.data-table th, table.data-table td {
+      border: 0.5pt solid #94a3b8;
+      padding: 2.5pt 3.5pt;
+      vertical-align: top;
+    }
+    table.data-table th {
+      background: #f1f5f9;
+      color: #0f172a;
+      font-family: "PT Astra Sans", Arial, sans-serif;
+      font-weight: 700;
+      text-align: center;
+    }
+    table.data-table tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+    .signature-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .sig-box {
+      width: 48%;
+    }
+    .sig-line {
+      border-bottom: 0.75pt solid #0f172a;
+      width: 100%;
+      height: 14px;
+      margin-bottom: 2px;
+    }
+    .sig-caption {
+      font-family: "PT Astra Sans", Arial, sans-serif;
+      font-size: 6.5pt;
+      color: #64748b;
+      text-align: center;
+    }
+    .stamp-seal {
+      display: inline-block;
+      width: 38px;
+      height: 38px;
+      border: 1.5px dashed #0284c7;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 36px;
+      font-size: 7pt;
+      color: #0284c7;
+      font-weight: 700;
+      float: right;
+      margin-top: -12px;
+    }
+    .ukep-stamp-card {
+      border: 1.5pt solid #0284c7;
+      background: #f0f9ff;
+      border-radius: 4px;
+      padding: 4pt 6pt;
+      margin-top: 8px;
+      font-size: 6.5pt;
+      color: #0369a1;
+      line-height: 1.2;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .watermark-draft {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-32deg);
+      font-size: 76pt;
+      font-weight: 900;
+      color: rgba(220, 38, 38, 0.06);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      pointer-events: none;
+      z-index: 9999;
+      white-space: nowrap;
+      user-select: none;
+    }
+    @media print {
+      body { font-size: ${cfg.fontSizePt}pt; color: #000 !important; background: #fff !important; }
+      .watermark-draft { color: rgba(0, 0, 0, 0.08) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .section-title { background: #f1f5f9 !important; color: #0f172a !important; border-left-color: #0f172a !important; page-break-after: avoid; break-after: avoid; }
+      table.data-table th, table.data-table-dense th { background: #f1f5f9 !important; color: #0f172a !important; }
+      table.data-table td, table.data-table th, table.data-table-dense td, table.data-table-dense th { border-color: #000 !important; color: #000 !important; }
+      table.data-table tr:nth-child(even) td, table.data-table-dense tr:nth-child(even) td { background: transparent !important; }
+      .header-grid { border-bottom-color: #000 !important; }
+      .sig-line { border-bottom-color: #000 !important; }
+      .form-badge { border-color: #000 !important; color: #000 !important; background: #fff !important; }
+      .soap-diary-card { border-color: #000 !important; background: #fff !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .signature-row, .sig-box, .ukep-stamp-card, .stamp-seal { page-break-inside: avoid !important; break-inside: avoid !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="doc-container">
+  ${
+		isDocDraft
+			? '<div class="watermark-draft" aria-hidden="true">ЧЕРНОВИК</div>'
+			: '<div class="watermark-draft watermark-signed" aria-hidden="true" style="color: rgba(5, 150, 105, 0.06);">ПОДПИСАНО ВРАЧОМ</div>'
+	}
+
+  <!-- Реквизиты клиники и форма Минздрава -->
+  <div class="header-grid">
+    <div class="clinic-info">
+      <div class="clinic-title">${escapeHtml(clinic.clinicLegalName || clinic.clinicName)}</div>
+      <div>${escapeHtml(clinic.clinicAddress)}</div>
+      <div>ОГРН: ${escapeHtml(clinic.clinicOgrn)} | ИНН: ${escapeHtml(clinic.clinicInn)}${clinic.clinicKpp ? ` | КПП: ${escapeHtml(clinic.clinicKpp)}` : ""}</div>
+      <div>Лицензия: № ${escapeHtml(clinic.licenseNumber)} от ${escapeHtml(clinic.licenseDate)} (${escapeHtml(clinic.licenseIssuer)})</div>
+    </div>
+    <div class="doc-requisites">
+      <div class="form-badge">МИНЗДРАВ РОССИИ</div>
+      <div>Медицинская документация</div>
+      <div><strong>ФОРМА № 043/у</strong></div>
+      <div>Код формы по ОКУД: 3108805</div>
+      <div>${escapeHtml(data.formOrderName || "Приказ Минздрава СССР от 04.10.1980 № 1030")}</div>
+    </div>
+  </div>
+
+  <!-- Заголовок карты -->
+  <div class="doc-title-block">
+    <h1 class="doc-main-title">МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА № ${escapeHtml(passport.medicalCardNumber)}</h1>
+    <div style="margin: 3px 0 2px 0;">
+      ${
+				isDocDraft
+					? '<span style="display:inline-block; border: 1pt dashed #d97706; background: #fffbeb; color: #b45309; font-weight: 800; font-size: 7.5pt; padding: 1.5pt 5pt; border-radius: 3pt; text-transform: uppercase; letter-spacing: 0.04em;">ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)</span>'
+					: ((data as any).revisionCount ?? cfg.revisionCount ?? 0) > 0
+						? `<span style="display:inline-block; border: 1pt solid #059669; background: #ecfdf5; color: #065f46; font-weight: 800; font-size: 7.5pt; padding: 1.5pt 5pt; border-radius: 3pt; text-transform: uppercase; letter-spacing: 0.04em;">ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ ${((data as any).revisionCount ?? cfg.revisionCount ?? 0) + 1})</span>`
+						: '<span style="display:inline-block; border: 1pt solid #059669; background: #ecfdf5; color: #065f46; font-weight: 800; font-size: 7.5pt; padding: 1.5pt 5pt; border-radius: 3pt; text-transform: uppercase; letter-spacing: 0.04em;">ПОДПИСАНО ВРАЧОМ</span>'
+			}
+    </div>
+    <p class="doc-sub-title">Дата заведения карты: <strong>${escapeHtml(passport.cardOpenedDate)}</strong> | Лечащий врач: <strong>${escapeHtml(passport.attendingDoctorFullName)}</strong> (${escapeHtml(passport.attendingDoctorSpecialty)})</p>
+  </div>
+
+  <!-- 1. Паспортная часть -->
+  <div class="section-title">1. Паспортная часть (Титульный лист)</div>
+  <table class="data-table">
+    <tr>
+      <td style="width:20%;"><strong>Пациент (ФИО):</strong></td>
+      <td style="width:45%;"><strong>${escapeHtml(passport.patientFullName)}</strong></td>
+      <td style="width:15%;"><strong>Пол / Возраст:</strong></td>
+      <td style="width:20%;">${passport.patientSex === "male" ? "Мужской" : "Женский"} / ${escapeHtml(ageFormatted)} (${escapeHtml(passport.patientBirthDate)})</td>
+    </tr>
+    <tr>
+      <td><strong>Документ (Паспорт):</strong></td>
+      <td>${escapeHtml(passport.patientIdentityDocument || "Паспорт гражданина РФ")}</td>
+      <td><strong>СНИЛС:</strong></td>
+      <td>${escapeHtml(passport.patientSnils || "—")}</td>
+    </tr>
+    <tr>
+      <td><strong>Полис ОМС / ДМС:</strong></td>
+      <td>${escapeHtml(passport.patientInsurancePolicy || "—")} ${passport.patientInsuranceCompany ? `(${escapeHtml(passport.patientInsuranceCompany)})` : ""}</td>
+      <td><strong>Телефон:</strong></td>
+      <td>${escapeHtml(passport.patientPhone || "—")}</td>
+    </tr>
+    <tr>
+      <td><strong>Адрес регистрации:</strong></td>
+      <td colspan="3">${escapeHtml(passport.patientAddressRegistration)} ${passport.patientAddressResidence ? `(Проживание: ${escapeHtml(passport.patientAddressResidence)})` : ""}</td>
+    </tr>
+    <tr>
+      <td><strong>Диагноз при обращении:</strong></td>
+      <td colspan="3">
+        <strong style="color:#0369a1;">${escapeHtml(passport.primaryDiagnosisText)}</strong>
+        <span style="background:#f1f5f9; border:0.5pt solid #cbd5e1; padding:1px 4px; border-radius:3px; font-weight:bold; font-size:7pt; margin-left:4px;">
+          [МКБ-10: ${escapeHtml(passport.primaryDiagnosisIcd10)}]
+        </span>
+      </td>
+    </tr>
+  </table>
+
+  <!-- 2. Анамнез жизни и заболевания -->
+  <div class="section-title">2. Анамнез жизни и настоящего заболевания (Anamnesis vitae et morbi)</div>
+  <table class="data-table">
+    <tr>
+      <td style="width:25%;"><strong>Жалобы при обращении:</strong></td>
+      <td colspan="3">${escapeHtml(anamnesis.chiefComplaint)}</td>
+    </tr>
+    <tr>
+      <td><strong>Анамнез заболевания (Morbi):</strong></td>
+      <td colspan="3">${escapeHtml(anamnesis.historyOfPresentIllness)}</td>
+    </tr>
+    <tr>
+      <td><strong>Анамнез жизни (Vitae):</strong></td>
+      <td colspan="3">${escapeHtml(anamnesis.medicalHistoryVitae)}</td>
+    </tr>
+    <tr>
+      <td><strong>Аллергологический статус:</strong></td>
+      <td>${escapeHtml(anamnesis.allergologicalHistory)}</td>
+      <td style="width:18%;"><strong>Соматический статус:</strong></td>
+      <td>${escapeHtml(anamnesis.concomitantSomaticDiseases)}</td>
+    </tr>
+    <tr>
+      <td><strong>Постоянный прием препаратов:</strong></td>
+      <td>${escapeHtml(anamnesis.currentSystemicMedications)}</td>
+      <td><strong>Беременность / лактация:</strong></td>
+      <td>${escapeHtml(anamnesis.pregnancyLactationStatus)}</td>
+    </tr>
+    <tr>
+      <td><strong>Переносимость анестезии:</strong></td>
+      <td colspan="3">${escapeHtml(anamnesis.pastDentalInterventions)}</td>
+    </tr>
+  </table>
+
+  <!-- 3. Стоматологический статус и зубная формула -->
+  <div class="section-title">3. Стоматологический статус, зубная формула FDI и клинические индексы</div>
+  ${renderFdiFormulaTableHtml(dental.odontogramTeeth)}
+
+  <table class="data-table">
+    <tr>
+      <td style="width:33%;">
+        <strong>Индекс КПУ(з): </strong>
+        <span style="font-size:9.5pt; font-weight:800; color:#0369a1;">${dmft.totalDmft}</span> (К=${dmft.decayed}, П=${dmft.filled}, У=${dmft.missing})
+        <br/><span style="font-size:7pt; color:#64748b;">Интенсивность: <strong>${escapeHtml(dmft.intensityLevelLabel)}</strong></span>
+      </td>
+      <td style="width:34%;">
+        <strong>Пародонтальный индекс CPITN: </strong>
+        <br/><span style="font-weight:700;">${escapeHtml(cpitn.treatmentNeedLabel)}</span>
+        <br/><span style="font-size:7pt; color:#64748b;">${escapeHtml(cpitn.maxCodeText)}</span>
+      </td>
+      <td style="width:33%;">
+        <strong>Индекс гигиены: </strong>
+        <br/><span>${escapeHtml(dental.hygieneIndexOhiS?.ratingText || "OHI-S = 0.8 (удовл.)")}</span>
+        <br/><strong>Прикус: </strong><span>${escapeHtml(dentalBiteTypeLabels[dental.biteType] || dental.biteDescription || "Ортогнатический")}</span>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="3">
+        <strong>Состояние СОПР, десен и пародонта:</strong>
+        Слизистая ${dental.oralMucosaStatus?.color === "pale_pink_normal" ? "бледно-розовая, умеренно увлажнена" : "гиперемирована"}, патологических элементов ${dental.oralMucosaStatus?.pathologicalElements || "нет"}.
+        Десневые сосочки ${dental.oralMucosaStatus?.gingivalPapillae === "normal_pointed" ? "остроконечные, плотно прилежат к шейкам зубов" : "гипертрофированы"}.
+        Язык: ${escapeHtml(dental.oralMucosaStatus?.tongueStatus || "чистый, влажный")}.
+        Лимфоузлы: ${escapeHtml(dental.oralMucosaStatus?.regionalLymphNodes || "не увеличены, безболезненны")}.
+        ВНЧС: ${escapeHtml(dental.oralMucosaStatus?.tmjFunction || "открывание рта свободное, в полном объеме, движений девиации и крепитации/щелчков в суставах нет.")}.
+      </td>
+    </tr>
+    <tr>
+      <td colspan="3">
+        <strong>Рентгенологическое обследование (ОПТГ / КЛКТ):</strong>
+        ${escapeHtml(dental.xrayFindingsDescription)}
+        ${dental.xrayRadiationDoseMsv ? ` <em>(Суммарная лучевая нагрузка: ${dental.xrayRadiationDoseMsv} мЗв)</em>` : ""}
+      </td>
+    </tr>
+  </table>
+
+  <!-- Общий план лечения -->
+  <div class="section-title">План обследования и комплексного лечения</div>
+  <div style="border: 0.5pt solid #94a3b8; padding: 4px 6px; font-size: 7.5pt; line-height: 1.25; background: #ffffff; margin-bottom: 5px;">
+    ${escapeHtml(data.generalTreatmentPlan)}
+  </div>
+
+  <!-- 4. Дневники приемов -->
+  <div class="section-title">4. Дневник посещений и протоколы лечения</div>
+  ${diariesHtml}
+
+  <!-- 5. Эпикриз и диспансеризация -->
+  <div class="section-title">5. Эпикриз, результаты лечения и план диспансерного наблюдения</div>
+  <table class="data-table">
+    <tr>
+      <td style="width:25%;"><strong>Сводка лечения (Эпикриз):</strong></td>
+      <td colspan="3">${escapeHtml(epicrisis.treatmentSummary)}</td>
+    </tr>
+    <tr>
+      <td><strong>Исход лечения:</strong></td>
+      <td><strong>${escapeHtml(epicrisis.treatmentOutcomeLabel || "Полное выздоровление / стойкая ремиссия")}</strong></td>
+      <td style="width:20%;"><strong>Диспансерная группа:</strong></td>
+      <td><strong>${escapeHtml(epicrisis.dispensaryGroupLabel || "Д-I (Практически здоров)")}</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Контрольный осмотр через:</strong></td>
+      <td><strong>${epicrisis.plannedRecallIntervalMonths} мес.</strong></td>
+      <td><strong>Дата завершения:</strong></td>
+      <td>${escapeHtml(epicrisis.dateCompleted || passport.cardOpenedDate)}</td>
+    </tr>
+    <tr>
+      <td><strong>Профилактический план:</strong></td>
+      <td colspan="3">${escapeHtml(epicrisis.preventivePlanRecommendations)}</td>
+    </tr>
+  </table>
+
+  <!-- Электронная цифровая подпись УКЭП / ЕГИСЗ отметка -->
+  ${cfg.includeUkepStamp ? `
+    <div class="ukep-stamp-card">
+      <div style="font-weight:800; text-transform:uppercase; letter-spacing:0.02em; margin-bottom:2px;">
+        ДОКУМЕНТ ПОДПИСАН УСИЛЕННОЙ КВАЛИФИЦИРОВАННОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (УКЭП)
+      </div>
+      <div>Сертификат: <strong>00E103503B8F2026DENTE043U834N</strong> | Владелец: <strong>${escapeHtml(passport.attendingDoctorFullName)}</strong></div>
+      <div>Действителен: с 01.01.2026 по 01.01.2027 | Аккредитованный УЦ: АО «ИнфоТеКС» / Федеральное казначейство РФ</div>
+    </div>
+  ` : ""}
+
+  <!-- Блок подписей сторон -->
+  <div class="signature-row">
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-caption">
+        Лечащий врач: <strong>${escapeHtml(passport.attendingDoctorFullName)}</strong>
+        ${cfg.includeDoctorStampSeal ? `<span class="stamp-seal">М.П.</span>` : ""}
+      </div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-caption">
+        Пациент: <strong>${escapeHtml(passport.patientFullName)}</strong> (с планом и лечением ознакомлен)
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>`;
+}
