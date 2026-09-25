@@ -1,13 +1,8 @@
 import {
 	Activity,
 	ArrowRight,
-	Award,
-	Coins,
-	PlusCircle,
 	ShieldCheck,
 	Sparkles,
-	User,
-	UserCheck,
 	Users,
 	Wallet,
 } from "lucide-react";
@@ -16,7 +11,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
 import { useCountUp } from "../../hooks/useCountUp";
 import { useWebsocket } from "../../hooks/useWebsocket";
-import type { PanelSubject } from "../../lib/panelStateText";
 import { actionFailureToast } from "../../lib/panelStateText";
 /*
  * Разбор набранной суммы — тот же, что в форме приёма оплаты. Второй разбор
@@ -24,7 +18,6 @@ import { actionFailureToast } from "../../lib/panelStateText";
  * по-разному.
  */
 import { normalizeRubAmountInput } from "../../rubAmountInput";
-import { paymentMethodLabels } from "../../workspaceUiLabels";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 import {
@@ -34,101 +27,31 @@ import {
 	type MutationTicket,
 } from "./familyWalletMutationKey";
 import { FamilyCombinedBillingModal } from "./FamilyCombinedBillingModal";
+import {
+	type FamilyGroup,
+	type FamilyMember,
+	type FamilyTopupMethod,
+	FAMILY_TOPUP_METHODS,
+	PATIENT_ID_PATTERN,
+	refusalToast,
+	WALLET_PANEL_SUBJECT,
+} from "./familyWalletHelpers";
+import { FamilyMembersList } from "./FamilyMembersList";
+import { FamilyBonusSection } from "./FamilyBonusSection";
+import { FamilyTopupSection } from "./FamilyTopupSection";
 import "./FamilyWalletPanel.css";
 import { logger } from "../../utils/logger";
 
-interface FamilyMember {
-	id: string;
-	fullName: string;
-	phone: string;
-}
-
-interface FamilyGroup {
-	id: string;
-	/**
-	 * Название может отсутствовать: колонка family_groups.name объявлена
-	 * без NOT NULL (db/schema.ts), обязателен только group_name. Тип был
-	 * `string`, и любое обращение к методам строки уронило бы панель.
-	 */
-	name: string | null;
-	balance: string;
-	members: FamilyMember[];
-}
-
-/**
- * Как называть содержимое панели в сообщении об отказе.
- *
- * Отказ называется целой согласованной строкой. Раньше здесь стояло название
- * («Данные семейного кошелька»), а слова «не загружены» дописывал общий модуль —
- * и согласование держалось на том, что название случайно оказалось во
- * множественном числе. Теперь согласование живёт рядом с существительным.
- */
-const WALLET_PANEL_SUBJECT: PanelSubject = {
-	notLoadedTitle: "Данные семейного кошелька не загружены",
-	accusative: "семейный кошелёк",
-	emptyTitle: "Пациент не входит в семью",
-	emptyHint:
-		"Семейный счёт появится, когда пациента добавят в семейную группу.",
-	failureConsequence:
-		"Не считайте, что семейного счёта нет: баланс не прочитан. Пока он не загрузился, списывать с него нельзя — примите оплату обычным способом или повторите загрузку.",
+export type { FamilyMember, FamilyGroup, FamilyTopupMethod };
+export {
+	WALLET_PANEL_SUBJECT,
+	refusalToast,
+	PATIENT_ID_PATTERN,
+	FAMILY_TOPUP_METHODS,
 };
-
-/**
- * ОТКАЗ СЕРВЕРА ЧЕЛОВЕЧЕСКИМИ СЛОВАМИ.
- *
- * БЫЛО: `showToast(err.message || "Ошибка оплаты", "error")` — сообщение сервера
- * выводилось в кассу как есть. Маршрут семейного счёта на любой внутренней
- * ошибке отвечает `message: err.message || "Internal Server Error"`
- * (apps/api/src/routes/finance_family.ts, ветки catch у /family/pay и
- * /family/topup), то есть администратору всплывало английское «Internal Server
- * Error» или текст ошибки драйвера базы. Ни что случилось с деньгами, ни что
- * делать дальше из такого сообщения не узнать, а списание с семейного счёта —
- * это оплата лечения: не поняв отказ, администратор берёт ту же сумму второй раз
- * другим способом или не берёт вовсе.
- *
- * Своё сообщение сервера показываем ТОЛЬКО когда в нём есть русские буквы: такие
- * фразы написаны нашим же маршрутом по делу, и «Недостаточно средств на семейном
- * балансе» (402) полезнее любой общей формулировки. Всё остальное — английский
- * текст исключения — заменяем подсказкой по коду ответа, той же, что показывают
- * панели загрузки: она всегда говорит, что делать.
- */
-function refusalToast(
-	action: string,
-	status: number,
-	message: unknown,
-): string {
-	const serverText = typeof message === "string" ? message.trim() : "";
-	return /[а-яё]/i.test(serverText)
-		? serverText
-		: actionFailureToast(action, status);
-}
-
-/**
- * Идентификатор пациента в базе — uuid (patients.id). Когда пациент не выбран,
- * FinanceView передаёт пустую строку; раньше там стояла строка-заглушка «pat-1»,
- * остаток удалённых демо-данных. Ни на то, ни на другое запрос не может ответить
- * ничем, кроме ошибки приведения типа в базе (500), и после того как отказы стали
- * видимыми, на экране финансов без выбранного пациента появилась бы ложная
- * тревога «баланс не прочитан». Такой запрос не отправляем вовсе.
- */
-const PATIENT_ID_PATTERN =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/*
- * Чем можно внести аванс на семейный счёт.
- *
- * Список сужен намеренно. Сервер принимает ещё «online» и «other»
- * (familyTopupSchema, routes/finance_family.ts), но у стойки маленькой клиники
- * аванс вносят наличными, картой или переводом; лишние кнопки на кассе — это
- * лишний повод выбрать не то. Подписи берём из общего словаря экрана, чтобы
- * способ назывался одинаково здесь, в форме приёма оплаты и в истории оплат.
- */
-type FamilyTopupMethod = "cash" | "card" | "bank_transfer";
-const FAMILY_TOPUP_METHODS: readonly FamilyTopupMethod[] = [
-	"cash",
-	"card",
-	"bank_transfer",
-];
+export { FamilyMembersList } from "./FamilyMembersList";
+export { FamilyBonusSection } from "./FamilyBonusSection";
+export { FamilyTopupSection } from "./FamilyTopupSection";
 
 interface FamilyWalletPanelProps {
 	patientId: string;
@@ -262,18 +185,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 
 	/**
 	 * Одна загрузка на все случаи: первый показ, кнопка «Повторить» и обновление
-	 * после оплаты. БЫЛО две почти одинаковые копии, и у той, которая обновляла
-	 * панель после списания, не было ни защиты от гонки, ни разбора кода ответа.
-	 *
-	 * ПОЧЕМУ 404 — НЕ ОШИБКА, А ВСЁ ОСТАЛЬНОЕ ОШИБКА. Сервер отвечает 404,
-	 * когда пациент действительно не состоит в семье («Patient has no family
-	 * group», routes/finance_family.ts). Это штатный случай: панель не нужна.
-	 * БЫЛО: `setFamily(res.ok ? await res.json() : null)` — любой другой отказ
-	 * (нет доступа у смены, 500, обрыв связи) давал ровно тот же результат, и
-	 * панель молча исчезала. Кассир не мог отличить «семейного счёта нет» от
-	 * «баланс не прочитан»: деньги на счёте были, а он брал всю сумму другим
-	 * способом. Ни текста, ни кнопки повтора при этом не было, а для отказа по
-	 * HTTP не вызывался даже logger.error.
+	 * после оплаты.
 	 */
 	const loadFamily = useCallback(async () => {
 		const generation = requestGenerationRef.current + 1;
@@ -307,8 +219,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				"error",
 			);
 			if (isStale()) return;
-			// Текст исключения английский и наружу не идёт: пользователю сообщение
-			// собирает panelStateText по коду, здесь — «сервер не ответил».
 			logger.error("[family wallet] не удалось прочитать семейный кошелёк:", e);
 			setFamily(null);
 			setLoadFailure({ status: null });
@@ -318,27 +228,17 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	}, [patientId]);
 
 	useEffect(() => {
-		// Кто на экране — записывается ДО начала загрузки: на это значение смотрит
-		// isStale, решая, можно ли применить пришедший ответ.
 		selectedPatientIdRef.current = patientId;
-		// БЫЛО: без защиты от гонки. Ответ по пациенту А мог прийти позже ответа
-		// по Б, и списание уходило в семью А со ссылкой на пациента Б.
 		setFamily(null);
 		setLoadFailure(null);
-		// Обе денежные суммы гасим при смене пациента: набранное для прежнего
-		// человека к новому не относится, а поле с чужой суммой выглядит как
-		// только что набранное.
 		setAmountInput("");
 		setTopupInput("");
 		if (!isPatientDatabaseId) {
-			// Пациент не выбран — грузить нечего, и висящая «Загрузка…» здесь
-			// была бы обещанием, которое ничем не закончится.
 			setIsLoading(false);
 			return;
 		}
 		void loadFamily();
 		return () => {
-			// Ответ по прежнему пациенту применять уже нельзя.
 			requestGenerationRef.current += 1;
 		};
 	}, [isPatientDatabaseId, loadFamily, patientId]);
@@ -367,10 +267,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 		}
 	}, [lastMessage]);
 
-	// Number() обязателен: колонка balance объявлена numeric без mode "number",
-	// драйвер отдаёт её строкой («150.50»). Нечисловое значение считаем нулём:
-	// NaN в сравнении `amount > balanceVal` даёт false и молча РАЗРЕШИЛ бы
-	// списание с баланса, которого мы не прочитали.
 	const parsedBalance = Number(family?.balance ?? 0);
 	const balanceVal = Number.isFinite(parsedBalance) ? parsedBalance : 0;
 	const animatedBalance = useCountUp(balanceVal, 1000);
@@ -381,23 +277,12 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 		setTargetPatientId(patientId);
 	}, [patientId]);
 
-	/*
-	 * ЗА КОГО СПИСЫВАЮТ — ИМЕНЕМ, А НЕ ТОЛЬКО НАЗВАНИЕМ СЕМЬИ.
-	 *
-	 * Имя берём из уже полученного списка членов группы по выбранному targetPatientId
-	 * (по умолчанию текущий пациент, но кассир может переключить на любого члена семьи).
-	 */
 	const payerName =
 		(family?.members ?? []).find((member) => member.id === targetPatientId)
 			?.fullName?.trim() ||
 		(family?.members ?? []).find((member) => member.id === patientId)
 			?.fullName?.trim();
 
-	/*
-	 * Разбор набранного. null означает «набрано не число» — это НЕ ноль: нулём
-	 * его считать нельзя, иначе непонятная запись выглядела бы как пустое поле.
-	 * Для сравнений с балансом берём 0, а человеку отдельно говорим, что не так.
-	 */
 	const parsedAmount = normalizeRubAmountInput(amountInput);
 	const amount = parsedAmount ?? 0;
 	const amountInvalid = Boolean(amountInput.trim()) && parsedAmount === null;
@@ -405,17 +290,10 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	const topupAmount = parsedTopup ?? 0;
 	const topupInvalid = Boolean(topupInput.trim()) && parsedTopup === null;
 
-	/*
-	 * Сколько предложить списать одним нажатием.
-	 * Долг учитывается с копейками (billingSummary.totalDueRub) с округлением до сотых.
-	 */
 	const debtSuggestionRub = Number.isFinite(remainingDebtRub)
 		? Math.max(0, Math.round(remainingDebtRub * 100) / 100)
 		: 0;
 
-	/*
-	 * Почему кнопка «Списать с баланса» погасла.
-	 */
 	const payBlockReason = amountInvalid
 		? "Впишите сумму цифрами, копейки после запятой: 1500,50"
 		: amount > 0 && Math.abs(Math.round(amount * 100) - amount * 100) > 1e-4
@@ -424,9 +302,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				? `На семейном счету только ${money(balanceVal)}. Спишите не больше этой суммы, остальное примите обычной оплатой или пополните счёт.`
 				: null;
 
-	/*
-	 * То же самое для пополнения.
-	 */
 	const topupBlockReason = topupInvalid
 		? "Впишите сумму цифрами, копейки после запятой: 1500,50"
 		: topupAmount > 0 && Math.abs(Math.round(topupAmount * 100) - topupAmount * 100) > 1e-4
@@ -482,7 +357,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				);
 				return;
 			}
-			// Списание прошло — следующее получит новый ключ.
 			payMutationRef.current = null;
 			const payResult = (await res.json().catch(() => null)) as {
 				duplicate?: boolean;
@@ -711,165 +585,32 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			)}
 
 			{/* Бонусные баллы & Быстрый выбор суммы */}
-			<div className="family-bonus-section">
-				<div className="family-bonus-header">
-					<h4 className="family-bonus-title">
-						<Sparkles size={16} className="text-amber-500" />
-						Бонусные баллы & Быстрое списание
-					</h4>
-					<span className="text-xs font-semibold text-[var(--muted,#64748b)]">
-						Баланс:{" "}
-						<strong className="text-[var(--ink,#0f172a)]">
-							{money(balanceVal)}
-						</strong>
-					</span>
-				</div>
-				<div
-					className="family-bonus-chips-row"
-					role="toolbar"
-					aria-label="Быстрый выбор суммы списания"
-				>
-					{[500, 1000, 2000, 5000].map((bonusVal) => (
-						<button
-							key={bonusVal}
-							type="button"
-							className={`family-bonus-chip ${amount === bonusVal ? "active" : ""}`}
-							onClick={() => setAmountInput(String(bonusVal))}
-							disabled={isPaying}
-						>
-							<Coins size={14} className="text-amber-500 shrink-0" />
-							<span>{bonusVal.toLocaleString("ru-RU")} бонусов</span>
-						</button>
-					))}
-					{balanceVal > 0 && (
-						<button
-							type="button"
-							className={`family-bonus-chip ${amount === balanceVal ? "active" : ""}`}
-							onClick={() => setAmountInput(String(balanceVal))}
-							disabled={isPaying}
-						>
-							<Award size={14} className="text-teal-500 shrink-0" />
-							<span>Весь баланс ({money(balanceVal)})</span>
-						</button>
-					)}
-				</div>
-			</div>
+			<FamilyBonusSection
+				balanceVal={balanceVal}
+				amount={amount}
+				isPaying={isPaying}
+				onSelectAmount={(val) => setAmountInput(String(val))}
+			/>
 
 			{/* Список членов семейной группы и перевод */}
-			{(family.members ?? []).length > 0 && (
-				<div className="family-members-section">
-					<h4 className="family-members-title">
-						<Users size={16} />
-						Члены семьи и доступные счета ({(family.members ?? []).length} чел.)
-					</h4>
-					<div className="family-members-grid">
-						{(family.members ?? []).map((member) => {
-							const isCurrent = member.id === targetPatientId;
-							const isSelf = member.id === patientId;
-							return (
-								<div
-									key={member.id}
-									className={`family-member-card ${isCurrent ? "is-current" : ""}`}
-								>
-									<div className="family-member-card-header">
-										<div className="family-member-avatar">
-											{isCurrent ? (
-												<UserCheck size={20} />
-											) : (
-												<User size={20} />
-											)}
-										</div>
-										<div className="family-member-info">
-											<h5
-												className="family-member-name"
-												title={member.fullName}
-											>
-												{member.fullName || "Без имени"}
-											</h5>
-											<p className="family-member-phone">
-												{member.phone || "—"}
-											</p>
-											<span className="family-member-badge">
-												{isSelf ? "Текущий пациент" : "Член семьи"}
-											</span>
-										</div>
-									</div>
-									<button
-										type="button"
-										onClick={() => setTargetPatientId(member.id)}
-										className={`family-member-transfer-btn ${isCurrent ? "active" : ""}`}
-										disabled={isPaying}
-									>
-										{isCurrent ? "Выбран для оплаты" : "Выбрать для списания"}
-									</button>
-								</div>
-							);
-						})}
-					</div>
-				</div>
-			)}
+			<FamilyMembersList
+				members={family.members ?? []}
+				targetPatientId={targetPatientId}
+				patientId={patientId}
+				isPaying={isPaying}
+				onSelectTargetPatient={setTargetPatientId}
+			/>
 
 			{/* Пополнение семейного кошелька */}
-			<div className="family-wallet-actions">
-				<div className="family-wallet-input-group">
-					<label
-						htmlFor="family-topup-amount"
-						className="family-wallet-input-label"
-					>
-						Пополнить счёт (₽)
-					</label>
-					<input
-						id="family-topup-amount"
-						type="text"
-						inputMode="decimal"
-						autoComplete="off"
-						className="family-wallet-input"
-						value={topupInput}
-						onChange={(e) => setTopupInput(e.target.value)}
-						placeholder="0"
-						disabled={isToppingUp}
-						aria-invalid={topupBlockReason ? true : undefined}
-						aria-describedby={
-							topupBlockReason ? "family-topup-hint" : undefined
-						}
-					/>
-					<div
-						role="toolbar"
-						className="quick-chips-row"
-						aria-label="Чем внесли аванс"
-					>
-						{FAMILY_TOPUP_METHODS.map((methodKey) => (
-							<button
-								key={methodKey}
-								type="button"
-								className={`quick-chip quick-chip--sm ${topupMethod === methodKey ? "active" : ""}`}
-								aria-pressed={topupMethod === methodKey}
-								onClick={() => setTopupMethod(methodKey)}
-								disabled={isToppingUp}
-							>
-								{paymentMethodLabels[methodKey]}
-							</button>
-						))}
-					</div>
-				</div>
-				<div className="family-wallet-btn-container">
-					<button
-						type="button"
-						onClick={handleTopup}
-						disabled={isToppingUp}
-						title={isToppingUp ? "Идет зачисление средств на семейный счет..." : undefined}
-						className="family-wallet-btn"
-					>
-						{isToppingUp ? "Зачисление..." : "Пополнить"}{" "}
-						<PlusCircle size={16} />
-					</button>
-				</div>
-			</div>
-			{topupBlockReason && (
-				<p className="family-wallet-hint" id="family-topup-hint" role="status">
-					{topupBlockReason}
-				</p>
-			)}
+			<FamilyTopupSection
+				topupInput={topupInput}
+				setTopupInput={setTopupInput}
+				topupMethod={topupMethod}
+				setTopupMethod={setTopupMethod}
+				topupBlockReason={topupBlockReason}
+				isToppingUp={isToppingUp}
+				onTopup={handleTopup}
+			/>
 
 			{/* Модальное окно объединенного расчета семьи и сплит-оплаты */}
 			<FamilyCombinedBillingModal

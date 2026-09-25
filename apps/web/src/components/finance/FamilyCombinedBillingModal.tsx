@@ -6,24 +6,13 @@
 
 import React, { useMemo, useState } from "react";
 import {
-	ArrowRight,
 	Award,
-	Banknote,
-	Check,
-	CheckCircle2,
-	ChevronRight,
-	Copy,
-	CreditCard,
-	FileSpreadsheet,
-	FileText,
 	Layers,
 	Printer,
 	QrCode,
 	ShieldCheck,
 	Sparkles,
-	User,
 	Users,
-	Wallet,
 	X,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
@@ -32,15 +21,14 @@ import {
 	type CombinedFamilyBillingResult,
 	type FamilyBillingPayerProfile,
 	type FamilyMemberBillingItem,
-	type FamilyRelationshipType,
 	FAMILY_RELATIONSHIP_RU,
 	compileFamilyBillingDraft,
-	generateDynamicSbpQrPayload,
-	calculateSbpMultiTenderSplit,
-	resolveDentalTaxDeductionCategory,
 } from "@dental/shared";
-import { generateQrCodeSvg } from "@dental/shared/fiscal/qrGenerator";
-import { TreatmentPlanQrCode } from "../treatment-plans/qr/TreatmentPlanQrCode";
+import { FamilyBillingPaymentTab } from "./FamilyBillingPaymentTab";
+import { printSbpQrReceipt, printTaxCertificates } from "./familyBillingPrint";
+
+export { FamilyBillingPaymentTab } from "./FamilyBillingPaymentTab";
+export { printSbpQrReceipt, printTaxCertificates } from "./familyBillingPrint";
 
 export interface FamilyCombinedBillingModalProps {
 	readonly isOpen: boolean;
@@ -58,7 +46,7 @@ export interface FamilyCombinedBillingModalProps {
 export function FamilyCombinedBillingModal({
 	isOpen,
 	onClose,
-	familyGroupId,
+	familyGroupId: _familyGroupId,
 	familyGroupName = "Семейная группа",
 	availableFamilyWalletRub = 0,
 	initialPayer = {
@@ -78,7 +66,7 @@ export function FamilyCombinedBillingModal({
 		() => new Set(initialItems.map((i) => i.id)),
 	);
 	const [useFamilyWallet, setUseFamilyWallet] = useState<boolean>(true);
-	const [customWalletOffsetRub, setCustomWalletOffsetRub] = useState<number>(availableFamilyWalletRub);
+	const [customWalletOffsetRub] = useState<number>(availableFamilyWalletRub);
 	const [additionalPaymentMethod, setAdditionalPaymentMethod] = useState<"sbp" | "card" | "cash">("sbp");
 	const [cashReceivedRub, setCashReceivedRub] = useState<number>(0);
 	const [isCopiedSbpLink, setIsCopiedSbpLink] = useState(false);
@@ -137,172 +125,23 @@ export function FamilyCombinedBillingModal({
 		}
 	};
 
-	const handlePrintSbpQrReceipt = () => {
+	const handlePrintSbpReceipt = () => {
 		const sbp = billingResult.defaultSplit.sbpQr;
 		if (!sbp) return;
-
-		const qrSvg = generateQrCodeSvg(sbp.nspkUrl, {
-			size: 180,
-			margin: 1,
-			title: "QR-код СБП",
+		printSbpQrReceipt({
+			sbp,
+			clinicName,
+			payerFullName: initialPayer.payerFullName,
+			familyGroupName,
 		});
-
-		const html = `
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-	<meta charset="utf-8">
-	<title>QR-код СБП — ${clinicName}</title>
-	<style>
-		body { font-family: monospace; padding: 20px; text-align: center; max-width: 300px; margin: 0 auto; }
-		.qr { margin: 15px auto; display: flex; justify-content: center; }
-		.qr svg { display: block; margin: 0 auto; }
-		.sum { font-size: 20px; font-weight: bold; margin: 10px 0; }
-		.meta { font-size: 11px; color: #555; margin: 5px 0; }
-	</style>
-</head>
-<body>
-	<h3>${clinicName}</h3>
-	<p class="meta">Оплата по СБП (Система Быстрых Платежей)</p>
-	<hr style="border: 0.5px dashed #999;">
-	<div class="sum">${sbp.sumFormattedRu}</div>
-	<p class="meta">Плательщик: ${initialPayer.payerFullName}</p>
-	<p class="meta">Семья: ${familyGroupName}</p>
-	<div class="qr">
-		${qrSvg}
-	</div>
-	<p class="meta" style="word-break: break-all; font-size: 9px;">${sbp.nspkUrl}</p>
-	<p class="meta">Наведите камеру смартфона или отсканируйте в приложении любого банка</p>
-	<script>window.print();</script>
-</body>
-</html>
-		`;
-
-		const w = window.open("", "_blank");
-		if (w) {
-			w.document.write(html);
-			w.document.close();
-		}
 	};
 
-	const handlePrintTaxCertificates = () => {
-		const certs = billingResult.taxDeductionCertificates;
-		if (!certs.length) return;
-
-		const html = `
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-	<meta charset="utf-8">
-	<title>Справки об оплате медицинских услуг для ИФНС (КНД 1151156)</title>
-	<style>
-		@page { size: A4; margin: 15mm; }
-		body { font-family: "Times New Roman", Times, serif; font-size: 13px; line-height: 1.3; color: #000; }
-		.cert { page-break-after: always; padding-bottom: 20px; }
-		.cert:last-child { page-break-after: avoid; }
-		.header { text-align: right; font-size: 11px; margin-bottom: 15px; }
-		.title { text-align: center; font-size: 15px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase; }
-		.section { margin-bottom: 12px; }
-		.field-label { font-size: 11px; color: #444; }
-		.field-val { font-weight: bold; border-bottom: 1px solid #000; min-height: 18px; display: inline-block; width: 100%; }
-		.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-		table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-		th, td { border: 1px solid #000; padding: 6px 8px; text-align: left; font-size: 12px; }
-		th { background: #f2f2f2; text-align: center; }
-		.signatures { margin-top: 30px; display: flex; justify-content: space-between; }
-		.stamp-box { border: 1px dashed #777; width: 120px; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #777; }
-	</style>
-</head>
-<body>
-${certs
-	.map(
-		(cert) => `
-	<div class="cert">
-		<div class="header">
-			Форма по КНД 1151156<br>
-			Приложение № 1 к приказу ФНС России от 08.11.2023 № ЕД-7-11/824@
-		</div>
-		<div class="title">
-			СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ<br>
-			ДЛЯ ПРЕДСТАВЛЕНИЯ В НАЛОГОВЫЙ ОРГАН № ${cert.certificateNumber}
-		</div>
-		<div class="section">
-			<div class="field-label">1. Медицинская организация:</div>
-			<div class="field-val">${clinicName}, ИНН: ${clinicInn}</div>
-		</div>
-		<div class="section grid">
-			<div>
-				<div class="field-label">2. Налогоплательщик (плательщик):</div>
-				<div class="field-val">${cert.payerFullName}</div>
-			</div>
-			<div>
-				<div class="field-label">ИНН налогоплательщика:</div>
-				<div class="field-val">${cert.payerInn || "—"}</div>
-			</div>
-		</div>
-		<div class="section grid">
-			<div>
-				<div class="field-label">3. Пациент:</div>
-				<div class="field-val">${cert.patientFullName}</div>
-			</div>
-			<div>
-				<div class="field-label">Код родства с налогоплательщиком:</div>
-				<div class="field-val">${cert.patientFnsCode} (${cert.patientRelationshipRu})</div>
-			</div>
-		</div>
-		<div class="section">
-			<div class="field-label">4. Стоимость оказанных медицинских услуг за ${cert.taxYear} год:</div>
-			<table>
-				<thead>
-					<tr>
-						<th>Код услуги</th>
-						<th>Наименование категории</th>
-						<th>Сумма (руб.)</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td style="text-align: center; font-weight: bold;">01</td>
-						<td>Услуги по лечению (за исключением дорогостоящего лечения)</td>
-						<td style="text-align: right; font-weight: bold;">${cert.code01TotalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })}</td>
-					</tr>
-					<tr>
-						<td style="text-align: center; font-weight: bold;">02</td>
-						<td>Дорогостоящие виды лечения (хирургия, дентальная имплантация, костная пластика)</td>
-						<td style="text-align: right; font-weight: bold;">${cert.code02TotalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })}</td>
-					</tr>
-					<tr style="background: #f9f9f9;">
-						<td colspan="2" style="font-weight: bold; text-align: right;">ИТОГО:</td>
-						<td style="text-align: right; font-weight: bold;">${cert.grandTotalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })}</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-		<div class="section" style="margin-top: 15px; font-size: 11px; color: #555;">
-			Дата выдачи справки: ${new Date().toLocaleDateString("ru-RU")}. Справка выдана для получения социального налогового вычета по НДФЛ (ст. 219 НК РФ).
-		</div>
-		<div class="signatures">
-			<div>
-				Руководитель клиники: __________________ / _______________ /
-				<br><br>
-				Ответственное лицо (кассир): ___________ / _______________ /
-			</div>
-			<div class="stamp-box">М.П.</div>
-		</div>
-	</div>
-`,
-	)
-	.join("")}
-	<script>window.print();</script>
-</body>
-</html>
-		`;
-
-		const w = window.open("", "_blank");
-		if (w) {
-			w.document.write(html);
-			w.document.close();
-		}
+	const handlePrintAllTaxCerts = () => {
+		printTaxCertificates({
+			certs: billingResult.taxDeductionCertificates,
+			clinicName,
+			clinicInn,
+		});
 	};
 
 	const handleExecuteFiscalization = () => {
@@ -444,7 +283,7 @@ ${certs
 								</div>
 							</div>
 
-							{/* Список позиций по членам семьи — Монолитный плоский список */}
+							{/* Список позиций по членам семьи */}
 							<div className="rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] overflow-hidden shadow-xs divide-y divide-[var(--line,#e2e8f0)]">
 								{initialItems.length === 0 ? (
 									<div className="p-8 text-center text-xs text-[var(--muted,#64748b)]">
@@ -454,65 +293,65 @@ ${certs
 									initialItems.map((item) => {
 										const isSelected = selectedItemIds.has(item.id);
 										return (
-										<div
-											key={item.id}
-											onClick={() => handleToggleItem(item.id)}
-											className={`p-3.5 sm:p-4 transition-colors cursor-pointer flex items-start justify-between gap-3 ${
-												isSelected
-													? "bg-teal-50/40 dark:bg-teal-950/20"
-													: "bg-[var(--paper,#ffffff)] opacity-60 hover:opacity-100 hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
-											}`}
-										>
-											<div className="flex items-start gap-3 min-w-0 flex-1">
-												<input
-													type="checkbox"
-													checked={isSelected}
-													onChange={() => handleToggleItem(item.id)}
-													className="mt-1 w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer shrink-0"
-												/>
-												<div className="min-w-0 flex-1">
-													<div className="flex items-center gap-2 flex-wrap">
-														<span className="font-extrabold text-xs sm:text-sm text-[var(--ink,#0f172a)]">
-															{item.patientFullName}
-														</span>
-														<span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-[var(--muted,#64748b)]">
-															{FAMILY_RELATIONSHIP_RU[item.relationship] || "Семья"}
-														</span>
-														{item.toothNumber && (
-															<span className="px-2 py-0.5 rounded-md text-[11px] font-bold font-mono bg-teal-500/10 text-teal-700 dark:text-teal-300">
-																Зуб {item.toothNumber}
+											<div
+												key={item.id}
+												onClick={() => handleToggleItem(item.id)}
+												className={`p-3.5 sm:p-4 transition-colors cursor-pointer flex items-start justify-between gap-3 ${
+													isSelected
+														? "bg-teal-50/40 dark:bg-teal-950/20"
+														: "bg-[var(--paper,#ffffff)] opacity-60 hover:opacity-100 hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
+												}`}
+											>
+												<div className="flex items-start gap-3 min-w-0 flex-1">
+													<input
+														type="checkbox"
+														checked={isSelected}
+														onChange={() => handleToggleItem(item.id)}
+														className="mt-1 w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer shrink-0"
+													/>
+													<div className="min-w-0 flex-1">
+														<div className="flex items-center gap-2 flex-wrap">
+															<span className="font-extrabold text-xs sm:text-sm text-[var(--ink,#0f172a)]">
+																{item.patientFullName}
+															</span>
+															<span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-[var(--muted,#64748b)]">
+																{FAMILY_RELATIONSHIP_RU[item.relationship] || "Семья"}
+															</span>
+															{item.toothNumber && (
+																<span className="px-2 py-0.5 rounded-md text-[11px] font-bold font-mono bg-teal-500/10 text-teal-700 dark:text-teal-300">
+																	Зуб {item.toothNumber}
+																</span>
+															)}
+															<span className="px-2 py-0.5 rounded-md text-[10px] font-mono text-[var(--muted,#64748b)] bg-slate-50 dark:bg-slate-900 border border-[var(--line,#e2e8f0)]">
+																{item.code804n}
+															</span>
+														</div>
+														<div className="text-xs text-[var(--ink,#0f172a)] font-medium mt-1 truncate min-w-0" title={item.serviceName}>
+															{item.serviceName}
+														</div>
+													</div>
+												</div>
+
+												<div className="text-right shrink-0">
+													<div className="font-mono font-black text-sm sm:text-base text-[var(--ink,#0f172a)]">
+														{(item.priceRub * item.quantity).toLocaleString("ru-RU")} ₽
+													</div>
+													<div className="mt-1">
+														{item.taxDeductionCategory === "2" ? (
+															<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30">
+																<Award size={10} /> Код 02 (Дорогостоящее)
+															</span>
+														) : (
+															<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+																Код 01 (Стандарт)
 															</span>
 														)}
-														<span className="px-2 py-0.5 rounded-md text-[10px] font-mono text-[var(--muted,#64748b)] bg-slate-50 dark:bg-slate-900 border border-[var(--line,#e2e8f0)]">
-															{item.code804n}
-														</span>
-													</div>
-													<div className="text-xs text-[var(--ink,#0f172a)] font-medium mt-1 truncate min-w-0" title={item.serviceName}>
-														{item.serviceName}
 													</div>
 												</div>
 											</div>
-
-											<div className="text-right shrink-0">
-												<div className="font-mono font-black text-sm sm:text-base text-[var(--ink,#0f172a)]">
-													{(item.priceRub * item.quantity).toLocaleString("ru-RU")} ₽
-												</div>
-												<div className="mt-1">
-													{item.taxDeductionCategory === "2" ? (
-														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30">
-															<Award size={10} /> Код 02 (Дорогостоящее)
-														</span>
-													) : (
-														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
-															Код 01 (Стандарт)
-														</span>
-													)}
-												</div>
-											</div>
-										</div>
-									);
-								})
-							)}
+										);
+									})
+								)}
 							</div>
 
 							{/* Сводка по категориям вычета */}
@@ -543,277 +382,19 @@ ${certs
 
 					{/* ВКЛАДКА 2: Сплит-оплата и Динамический QR-код СБП */}
 					{activeTab === "payment" && (
-						<div className="space-y-4">
-							{/* Блок списания с депозита семьи */}
-							<div className="p-4 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-3">
-								<div className="flex items-center justify-between">
-									<label className="flex items-center gap-2.5 cursor-pointer font-extrabold text-sm text-[var(--ink,#0f172a)]">
-										<input
-											type="checkbox"
-											checked={useFamilyWallet}
-											onChange={(e) => setUseFamilyWallet(e.target.checked)}
-											className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer"
-										/>
-										<span className="flex items-center gap-1.5">
-											<Wallet size={16} className="text-emerald-500" />
-											Списать с семейного баланса (Тег 1215: Зачет аванса)
-										</span>
-									</label>
-									<span className="font-mono text-xs font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
-										Доступно: {availableFamilyWalletRub.toLocaleString("ru-RU")} ₽
-									</span>
-								</div>
-
-								{useFamilyWallet && (
-									<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[var(--line,#e2e8f0)]">
-										<div>
-											<span className="text-xs text-[var(--muted,#64748b)]">Сумма списания с депозита:</span>
-											<div className="text-lg font-mono font-bold text-emerald-600 mt-0.5">
-												−{billingResult.defaultSplit.familyWalletOffsetRub.toLocaleString("ru-RU")} ₽
-											</div>
-										</div>
-										<div>
-											<span className="text-xs text-[var(--muted,#64748b)]">Остаток к доплате:</span>
-											<div className="text-xl font-mono font-black text-rose-600 dark:text-rose-400 mt-0.5">
-												{billingResult.defaultSplit.remainingDueRub.toLocaleString("ru-RU")} ₽
-											</div>
-										</div>
-									</div>
-								)}
-							</div>
-
-							{/* Выбор метода доплаты и рендеринг соответствующего контроллера */}
-							{billingResult.defaultSplit.remainingDueRub > 0 ? (
-								<div className="space-y-4">
-									{/* Панель переключения метода доплаты */}
-									<div className="flex items-center gap-2 p-1.5 bg-[var(--paper,#ffffff)] rounded-xl border border-[var(--line,#e2e8f0)]">
-										<button
-											type="button"
-											onClick={() => setAdditionalPaymentMethod("sbp")}
-											className={`flex-1 min-h-[44px] px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-												additionalPaymentMethod === "sbp"
-													? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30"
-													: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-											}`}
-										>
-											<QrCode size={16} className="text-teal-600" />
-											<span>СБП QR (0.7%)</span>
-										</button>
-										<button
-											type="button"
-											onClick={() => setAdditionalPaymentMethod("card")}
-											className={`flex-1 min-h-[44px] px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-												additionalPaymentMethod === "card"
-													? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30"
-													: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-											}`}
-										>
-											<CreditCard size={16} className="text-blue-600" />
-											<span>Банковская карта</span>
-										</button>
-										<button
-											type="button"
-											onClick={() => setAdditionalPaymentMethod("cash")}
-											className={`flex-1 min-h-[44px] px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-												additionalPaymentMethod === "cash"
-													? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
-													: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-											}`}
-										>
-											<Banknote size={16} className="text-emerald-600" />
-											<span>Наличные</span>
-										</button>
-									</div>
-
-									{/* 1. СБП QR */}
-									{additionalPaymentMethod === "sbp" && (
-										<div className="p-4 sm:p-5 rounded-xl bg-[var(--paper,#ffffff)] border border-teal-500/30 space-y-4">
-											<div className="flex items-center justify-between flex-wrap gap-2">
-												<div className="flex items-center gap-2">
-													<QrCode size={20} className="text-teal-600" />
-													<h4 className="font-extrabold text-sm sm:text-base m-0 text-[var(--ink,#0f172a)]">
-														Динамический QR-код СБП на доплату ({billingResult.defaultSplit.remainingDueRub.toLocaleString("ru-RU")} ₽)
-													</h4>
-												</div>
-												<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30">
-													НСПК СБП (0.7% комиссия)
-												</span>
-											</div>
-
-											<div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-												{/* Векторный QR код */}
-												<div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-900 rounded-xl border border-[var(--line,#e2e8f0)] shadow-xs">
-													{billingResult.defaultSplit.sbpQr ? (
-														<div className="p-2 bg-white rounded-lg">
-															<TreatmentPlanQrCode
-																value={billingResult.defaultSplit.sbpQr.nspkUrl}
-																size={160}
-																fgColor="#0f172a"
-																title="QR-код оплаты через СБП"
-															/>
-														</div>
-													) : (
-														<div className="w-40 h-40 flex items-center justify-center text-xs text-[var(--muted,#64748b)]">
-															QR-код формируется...
-														</div>
-													)}
-													<span className="text-[11px] font-bold text-[var(--muted,#64748b)] mt-2">
-														Отсканируйте камерой смартфона
-													</span>
-												</div>
-
-												{/* Метаданные платежа и быстрые действия */}
-												<div className="space-y-3">
-													<div className="space-y-1 text-xs">
-														<div className="flex justify-between py-1 border-b border-[var(--line,#e2e8f0)]">
-															<span className="text-[var(--muted,#64748b)]">Сумма доплаты:</span>
-															<strong className="font-mono text-sm text-[var(--ink,#0f172a)]">
-																{billingResult.defaultSplit.remainingDueRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
-															</strong>
-														</div>
-														<div className="flex justify-between py-1 border-b border-[var(--line,#e2e8f0)]">
-															<span className="text-[var(--muted,#64748b)]">Назначение платежа:</span>
-															<span className="font-medium text-right text-[11px] text-[var(--ink,#0f172a)] max-w-[200px] truncate">
-																{billingResult.defaultSplit.sbpQr?.purpose}
-															</span>
-														</div>
-														<div className="flex justify-between py-1 border-b border-[var(--line,#e2e8f0)]">
-															<span className="text-[var(--muted,#64748b)]">Контрольная сумма CRC16:</span>
-															<span className="font-mono font-bold text-teal-600">
-																{billingResult.defaultSplit.sbpQr?.crc16Hex}
-															</span>
-														</div>
-													</div>
-
-													<div className="flex flex-wrap gap-2 pt-1">
-														<button
-															type="button"
-															onClick={handleCopySbpUrl}
-															className="min-h-[44px] px-3.5 rounded-xl border border-[var(--line,#cbd5e1)] text-xs font-bold flex items-center gap-1.5 hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer"
-														>
-															{isCopiedSbpLink ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-															<span>{isCopiedSbpLink ? "Скопировано!" : "Копировать ссылку"}</span>
-														</button>
-
-														<button
-															type="button"
-															onClick={handlePrintSbpQrReceipt}
-															className="min-h-[44px] px-3.5 rounded-xl border border-teal-500/40 bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-														>
-															<Printer size={14} />
-															<span>Печать QR-памятки</span>
-														</button>
-													</div>
-												</div>
-											</div>
-										</div>
-									)}
-
-									{/* 2. Банковская карта */}
-									{additionalPaymentMethod === "card" && (
-										<div className="p-4 sm:p-5 rounded-xl bg-[var(--paper,#ffffff)] border border-blue-500/30 space-y-4">
-											<div className="flex items-center justify-between flex-wrap gap-2">
-												<div className="flex items-center gap-2">
-													<CreditCard size={20} className="text-blue-600" />
-													<h4 className="font-extrabold text-sm sm:text-base m-0 text-[var(--ink,#0f172a)]">
-														Оплата банковской картой ({billingResult.defaultSplit.remainingDueRub.toLocaleString("ru-RU")} ₽)
-													</h4>
-												</div>
-												<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/30">
-													54-ФЗ: Тег 1081 (Безналичными)
-												</span>
-											</div>
-
-											<div className="p-4 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 text-xs text-blue-950 dark:text-blue-200 flex items-center gap-3">
-												<CreditCard size={28} className="text-blue-600 shrink-0" />
-												<div>
-													<div className="font-bold text-sm">Приложите карту к банковскому POS-терминалу</div>
-													<div className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">
-														Принимаются карты МИР, Visa, Mastercard, Maestro. При подтверждении эквайринга единый чек регистрирует безналичную оплату.
-													</div>
-												</div>
-											</div>
-										</div>
-									)}
-
-									{/* 3. Наличные с калькулятором сдачи */}
-									{additionalPaymentMethod === "cash" && (
-										<div className="p-4 sm:p-5 rounded-xl bg-[var(--paper,#ffffff)] border border-emerald-500/30 space-y-4">
-											<div className="flex items-center justify-between flex-wrap gap-2">
-												<div className="flex items-center gap-2">
-													<Banknote size={20} className="text-emerald-600" />
-													<h4 className="font-extrabold text-sm sm:text-base m-0 text-[var(--ink,#0f172a)]">
-														Оплата наличными ({billingResult.defaultSplit.remainingDueRub.toLocaleString("ru-RU")} ₽)
-													</h4>
-												</div>
-												<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-													54-ФЗ: Тег 1031 (Наличными)
-												</span>
-											</div>
-
-											<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-												<div>
-													<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1">
-														Получено от пациента (руб.):
-													</label>
-													<input
-														type="number"
-														min="0"
-														step="10"
-														value={cashReceivedRub || ""}
-														placeholder={billingResult.defaultSplit.remainingDueRub.toString()}
-														onChange={(e) => setCashReceivedRub(Math.max(0, Number(e.target.value) || 0))}
-														className="w-full h-11 px-3.5 rounded-xl border border-[var(--line,#cbd5e1)] font-mono font-bold text-base bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-emerald-500"
-													/>
-													<div className="flex gap-1.5 mt-2 flex-wrap">
-														<button
-															type="button"
-															onClick={() => setCashReceivedRub(billingResult.defaultSplit.remainingDueRub)}
-															className="min-h-[44px] inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] cursor-pointer"
-														>
-															Без сдачи ({billingResult.defaultSplit.remainingDueRub} ₽)
-														</button>
-														{[500, 1000, 2000, 5000].map((preset) => (
-															<button
-																key={preset}
-																type="button"
-																onClick={() => setCashReceivedRub(preset)}
-																className="min-h-[44px] inline-flex items-center px-2 py-1 rounded-lg text-xs font-mono font-semibold border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] cursor-pointer"
-															>
-																{preset.toLocaleString("ru-RU")} ₽
-															</button>
-														))}
-													</div>
-												</div>
-
-												<div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-[var(--line,#e2e8f0)] flex flex-col justify-center">
-													<span className="text-xs text-[var(--muted,#64748b)] font-bold">Расчет сдачи:</span>
-													<div className={`text-2xl font-mono font-black mt-1 ${
-														cashReceivedRub >= billingResult.defaultSplit.remainingDueRub
-															? "text-emerald-600 dark:text-emerald-400"
-															: "text-amber-600 dark:text-amber-400"
-													}`}>
-														{cashReceivedRub >= billingResult.defaultSplit.remainingDueRub
-															? `${(cashReceivedRub - billingResult.defaultSplit.remainingDueRub).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽`
-															: `Недостает ${(billingResult.defaultSplit.remainingDueRub - (cashReceivedRub || 0)).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽`}
-													</div>
-													<div className="text-[11px] text-[var(--muted,#64748b)] mt-1">
-														Сдача рассчитывается автоматически в чеке 54-ФЗ
-													</div>
-												</div>
-											</div>
-										</div>
-									)}
-								</div>
-							) : (
-								<div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-3 text-emerald-800 dark:text-emerald-300">
-									<CheckCircle2 size={24} className="shrink-0 text-emerald-600" />
-									<div className="text-xs sm:text-sm font-bold">
-										Сумма счета ({billingResult.totalAmountFormattedRu}) полностью покрывается семейным депозитом! Доплата не требуется.
-									</div>
-								</div>
-							)}
-						</div>
+						<FamilyBillingPaymentTab
+							useFamilyWallet={useFamilyWallet}
+							setUseFamilyWallet={setUseFamilyWallet}
+							availableFamilyWalletRub={availableFamilyWalletRub}
+							billingResult={billingResult}
+							additionalPaymentMethod={additionalPaymentMethod}
+							setAdditionalPaymentMethod={setAdditionalPaymentMethod}
+							cashReceivedRub={cashReceivedRub}
+							setCashReceivedRub={setCashReceivedRub}
+							isCopiedSbpLink={isCopiedSbpLink}
+							onCopySbpUrl={handleCopySbpUrl}
+							onPrintSbpQrReceipt={handlePrintSbpReceipt}
+						/>
 					)}
 
 					{/* ВКЛАДКА 3: Справки для налоговой (ИФНС) */}
@@ -833,7 +414,7 @@ ${certs
 
 								<button
 									type="button"
-									onClick={handlePrintTaxCertificates}
+									onClick={handlePrintAllTaxCerts}
 									className="min-h-[44px] px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-95 transition-all"
 									data-testid="btn-print-tax-certificates"
 								>
