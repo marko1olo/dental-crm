@@ -45,6 +45,8 @@ import {
 	SeniorNurseDisposalActModal,
 	executeSeniorNurseDisposalActInBackground,
 } from "./SeniorNurseDisposalActModal.js";
+import { MdlpDisposalQueueTable } from "./MdlpDisposalQueueTable.js";
+import { MdlpScannerCard } from "./MdlpScannerCard.js";
 import "./mdlpInventory.css";
 
 export interface MdlpDisposalQueueModalProps {
@@ -598,150 +600,19 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 					)}
 
 					{/* Блок сканирования DataMatrix и выбора операции МДЛП */}
-					<div className="mdlp-scanner-card">
-						{/* Переключатель кода операции МДЛП: 332 (Медпомощь) vs 331 (Списание / уничтожение / брак) */}
-						<div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-line/60">
-							<div className="flex items-center gap-2">
-								<span className="text-xs font-bold text-ink">Операция МДЛП:</span>
-								<div className="inline-flex rounded-lg border border-line bg-paper-soft p-0.5">
-									<button
-										type="button"
-										className={`text-xs px-2.5 py-1 rounded-md font-semibold transition-all ${
-											operationCode === MDLP_OPERATION_CODES.DISPOSAL_MEDICAL_CARE
-												? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
-												: "text-muted hover:text-ink"
-										}`}
-										onClick={() => handleSelectOperationCode(MDLP_OPERATION_CODES.DISPOSAL_MEDICAL_CARE)}
-										data-testid="op-code-332-btn"
-										title="Код 332: Производственное использование анестетиков в лечебных целях у стоматологического кресла (Схема 10560)"
-									>
-										Код 332 (Медпомощь)
-									</button>
-									<button
-										type="button"
-										className={`text-xs px-2.5 py-1 rounded-md font-semibold transition-all ${
-											operationCode === MDLP_OPERATION_CODES.DISPOSAL_WRITE_OFF_OR_DEFECT
-												? "bg-[var(--bad-fg,#dc2626)] text-white shadow-sm"
-												: "text-muted hover:text-ink"
-										}`}
-										onClick={() => handleSelectOperationCode(MDLP_OPERATION_CODES.DISPOSAL_WRITE_OFF_OR_DEFECT)}
-										data-testid="op-code-331-btn"
-										title="Код 331: Выбытие по причине боя, нарушения герметичности, брака или истечения срока годности (Схема 10560)"
-									>
-										Код 331 (Бой / брак / утиль)
-									</button>
-								</div>
-							</div>
-
-							<div className="flex items-center gap-2 text-xs text-muted">
-								<label className="flex items-center gap-1.5 cursor-pointer select-none text-[11px]">
-									<input
-										type="checkbox"
-										checked={scannerAutoMode}
-										onChange={(e) => setScannerAutoMode(e.target.checked)}
-										className="rounded text-teal-600 focus:ring-teal-500 cursor-pointer"
-									/>
-									<span className="font-medium text-ink">Авторазбор 2D</span>
-								</label>
-								<span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium">
-									<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-									2D-сканер активен
-								</span>
-							</div>
-						</div>
-
-						{/* Заголовок секции сканирования */}
-						<div className="flex flex-wrap items-center justify-between gap-2 mt-2">
-							<span className="text-xs font-bold text-ink flex items-center gap-1.5">
-								<QrCode size={18} className="text-teal-600" />
-								<span>Сканирование 2D DataMatrix (Честный ЗНАК / GS1):</span>
-							</span>
-						</div>
-
-						{/* Поле прямого ввода со сканера 2D штрихкодов с поддержкой горячего ввода на лету */}
-						<div className="mdlp-input-group">
-							<input
-								ref={scannerInputRef}
-								type="text"
-								placeholder="Отсканируйте 2D DataMatrix пистолетом-сканером или вставьте строку маркировки..."
-								value={barcodeInput}
-								onChange={handleScannerInputChange}
-								onPaste={handleScannerPaste}
-								onKeyDown={handleBarcodeInputKeyDown}
-								className="mdlp-scanner-input"
-								autoFocus
-							/>
-							<button
-								type="button"
-								className="mdlp-btn mdlp-btn-primary min-h-[44px]"
-								style={{ minHeight: "44px" }}
-								onClick={() => handleAddBarcode(barcodeInput)}
-								disabled={false}
-								data-testid="add-barcode-btn"
-							>
-								<Plus size={16} /> Добавить
-							</button>
-						</div>
-
-						{/* Карточка последнего распознанного препарата */}
-						{lastScanned && (
-							<div
-								className={`p-3 rounded-lg border text-xs flex flex-col gap-1.5 ${
-									lastScanned.isValid
-										? "bg-teal-50/70 border-teal-200 text-teal-950"
-										: "bg-red-50 border-red-200 text-red-950"
-								}`}
-							>
-								<div className="flex items-center justify-between font-bold">
-									<div className="flex items-center gap-2">
-										{lastScanned.isValid ? (
-											<ShieldCheck size={16} className="text-teal-600" />
-										) : (
-											<AlertTriangle size={16} className="text-bad-fg" />
-										)}
-										<span>
-											{lastScanned.recognizedDrug?.tradeName ??
-												(lastScanned.isValid
-													? "Медикамент опознан"
-													: "Ошибка структуры штрихкода")}
-										</span>
-									</div>
-									<div className="font-mono text-[11px] text-muted">
-										GTIN: {lastScanned.gtin || "—"} • SN:{" "}
-										{lastScanned.serialNumber || "—"}
-									</div>
-								</div>
-
-								{lastScanned.recognizedDrug && (
-									<div className="mdlp-drug-badges mt-1">
-										<span className="mdlp-badge mdlp-badge-teal">
-											{lastScanned.recognizedDrug.inn}
-										</span>
-										<span className="mdlp-badge mdlp-badge-blue">
-											Концентрация:{" "}
-											{lastScanned.recognizedDrug.concentrationPct}%
-										</span>
-										<span className="mdlp-badge mdlp-badge-teal">
-											Вазоконстриктор:{" "}
-											{lastScanned.recognizedDrug.vasoconstrictorName}
-										</span>
-										<span className="mdlp-badge mdlp-badge-blue">
-											{lastScanned.recognizedDrug.dosageForm}
-										</span>
-										<span className="mdlp-badge mdlp-badge-teal">
-											{lastScanned.recognizedDrug.manufacturer}
-										</span>
-									</div>
-								)}
-
-								{lastScanned.errors.length > 0 && (
-									<div className="text-bad-fg font-semibold mt-1">
-										{lastScanned.errors.join("; ")}
-									</div>
-								)}
-							</div>
-						)}
-					</div>
+					<MdlpScannerCard
+						operationCode={operationCode}
+						onSelectOperationCode={handleSelectOperationCode}
+						scannerAutoMode={scannerAutoMode}
+						onToggleScannerAutoMode={setScannerAutoMode}
+						barcodeInput={barcodeInput}
+						onScannerInputChange={handleScannerInputChange}
+						onScannerPaste={handleScannerPaste}
+						onBarcodeInputKeyDown={handleBarcodeInputKeyDown}
+						onAddBarcode={handleAddBarcode}
+						scannerInputRef={scannerInputRef}
+						lastScanned={lastScanned}
+					/>
 
 					{/* 1-Клик Пакетное списание пустых карпул смены медсестры по СанПиН 3.3686-21 */}
 					<div
@@ -829,150 +700,12 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 					)}
 
 					{/* Очередь списания карпул */}
-					<div className="flex flex-col gap-2">
-						<div className="flex items-center justify-between">
-							<div className="font-bold text-sm flex items-center gap-2">
-								<Layers size={18} className="text-teal-600" />
-								<span>Очередь карпул на списание ({items.length})</span>
-							</div>
-							<div className="flex items-center gap-2">
-								<button
-									type="button"
-									className="mdlp-btn mdlp-btn-secondary min-h-[44px] text-xs px-2.5"
-									style={{ minHeight: "44px" }}
-									onClick={handleSortFefo}
-									title="Сортировать по сроку годности (FEFO)"
-									data-testid="sort-fefo-btn"
-								>
-									<ArrowUpDown size={14} /> Сортировка FEFO
-								</button>
-								<button
-									type="button"
-									className="mdlp-btn mdlp-btn-ghost min-h-[44px] text-xs px-2 text-bad-fg hover:bg-red-50"
-									style={{ minHeight: "44px" }}
-									onClick={handleClearQueue}
-									title="Очистить всю очередь"
-									data-testid="clear-queue-btn"
-								>
-									<Trash2 size={14} /> Очистить
-								</button>
-							</div>
-						</div>
-
-						<div className="mdlp-table-wrap">
-							<table className="mdlp-table">
-								<thead>
-									<tr>
-										<th style={{ width: "30px" }}>№</th>
-										<th>Препарат / МНН</th>
-										<th>Серия (LOT)</th>
-										<th>Срок годности</th>
-										<th>SGTIN (Маркировка)</th>
-										<th style={{ textAlign: "right" }}>Цена, ₽</th>
-										<th>Пациент / Визит</th>
-										<th style={{ width: "40px" }}></th>
-									</tr>
-								</thead>
-								<tbody>
-									{items.length === 0 ? (
-										<tr>
-											<td
-												colSpan={8}
-												style={{
-													textAlign: "center",
-													padding: "2rem",
-													color: "var(--muted)",
-												}}
-											>
-												Очередь списания пуста. Отсканируйте DataMatrix код
-												карпулы 2D-сканером.
-											</td>
-										</tr>
-									) : (
-										items.map((it, idx) => (
-											<tr key={it.id}>
-												<td
-													style={{
-														textAlign: "center",
-														color: "var(--muted)",
-													}}
-												>
-													{idx + 1}
-												</td>
-												<td className="min-w-0 max-w-xs">
-													<div className="font-bold text-ink truncate" title={it.drugInfo?.tradeName ?? it.gtin}>
-														{it.drugInfo?.tradeName ?? it.gtin}
-													</div>
-													<div className="text-[11px] text-muted truncate">
-														{it.drugInfo?.inn ?? "Анестетик"}
-													</div>
-												</td>
-												<td>
-													<span className="font-mono text-xs font-semibold px-1.5 py-0.5 rounded bg-paper-soft border border-line">
-														{it.series ?? "—"}
-													</span>
-												</td>
-												<td>
-													{it.expirationDate ? (
-														<span
-															className={`text-xs font-semibold px-2 py-0.5 rounded ${
-																it.isExpired
-																	? "bg-[var(--bad-bg,#fee2e2)] text-[var(--bad-fg,#dc2626)] font-bold"
-																	: it.isExpiringSoon
-																		? "bg-[var(--warn-bg,#fef3c7)] text-[var(--warn-fg,#d97706)] font-bold"
-																		: "text-muted"
-															}`}
-														>
-															{it.expirationDate}
-															{it.isExpiringSoon && " (≤90дн)"}
-															{it.isExpired && " (ПРОСРОЧЕНО)"}
-														</span>
-													) : (
-														<span className="text-muted">—</span>
-													)}
-												</td>
-												<td>
-													<span className="font-mono text-[11px] text-ink">
-														{it.sgtin}
-													</span>
-												</td>
-												<td
-													style={{
-														textAlign: "right",
-														fontWeight: "bold",
-													}}
-												>
-													{it.costRub?.toFixed(2) ?? "0.00"}
-												</td>
-												<td className="text-xs text-muted">
-													{it.patientName ? (
-														<div>{it.patientName}</div>
-													) : (
-														<div>—</div>
-													)}
-													{it.doctorName && (
-														<div className="text-[11px]">
-															{it.doctorName}
-														</div>
-													)}
-												</td>
-												<td style={{ textAlign: "center" }}>
-													<button
-														type="button"
-														className="text-muted hover:text-bad-fg p-1 rounded"
-														onClick={() => handleRemoveItem(it.id)}
-														title="Удалить из очереди"
-													>
-														<Trash2 size={15} />
-													</button>
-												</td>
-											</tr>
-										))
-									)}
-								</tbody>
-							</table>
-						</div>
-					</div>
+					<MdlpDisposalQueueTable
+						items={items}
+						onSortFefo={handleSortFefo}
+						onClearQueue={handleClearQueue}
+						onRemoveItem={handleRemoveItem}
+					/>
 
 					{/* Сводная плашка себестоимости */}
 					<div className="mdlp-summary-bar">

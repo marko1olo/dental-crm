@@ -193,6 +193,11 @@ function currentMonthValue(now = new Date()): string {
 	return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
+/** Текущая дата в виде YYYY-MM-DD без вызова toISOString. */
+function todayCalendarDateValue(now = new Date()): string {
+	return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
 /**
  * ГРАНИЦЫ ЗАРПЛАТНОГО МЕСЯЦА — КАЛЕНДАРНЫМИ ДАТАМИ, БЕЗ ЕДИНОГО МГНОВЕНИЯ.
  *
@@ -1516,7 +1521,7 @@ function doctorServicesForPayrollModal(
 		if (row.labOrders && row.labOrders.length > 0) {
 			return row.labOrders.map((lo) => ({
 				id: `lab-${lo.id}`,
-				dateIso: lo.completedAt ? lo.completedAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
+				dateIso: lo.completedAt ? lo.completedAt.slice(0, 10) : todayCalendarDateValue(),
 				patientName: lo.patientName,
 				medicalCardNumber: "",
 				serviceNameRu: `Зуботехническая работа: ${lo.restorationType} (наряд № ${lo.orderNumber})`,
@@ -1627,7 +1632,7 @@ function doctorServicesForPayrollModal(
 	for (const lo of availableLabOrders) {
 		items.push({
 			id: `lab-${lo.id}`,
-			dateIso: lo.completedAt ? lo.completedAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
+			dateIso: lo.completedAt ? lo.completedAt.slice(0, 10) : todayCalendarDateValue(),
 			patientName: lo.patientName,
 			medicalCardNumber: "",
 			serviceNameRu: `Зуботехническая лаборатория: ${lo.restorationType} (наряд № ${lo.orderNumber})`,

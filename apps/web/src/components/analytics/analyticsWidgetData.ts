@@ -365,7 +365,7 @@ export function classifyChurnRisk(
 			bandLabel: "Критический отток (>2 лет)",
 			badgeTone: "bad",
 			recommendedService:
-				"Комплексный перезапуск лечения и профосмотр главврача",
+				"Комплексный перезапуск лечения и профосмотр ведущего стоматолога",
 		};
 	}
 	if (days >= 365) {

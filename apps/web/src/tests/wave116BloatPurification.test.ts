@@ -4,17 +4,17 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { dentalMedicalCard043uPayloadSchema } from "@dental/shared";
-import { generateForm036uEntry } from "../../documents/sickLeave/sickLeaveElnEngine.js";
+import { generateForm036uEntry } from "../components/documents/sickLeave/sickLeaveElnEngine.js";
 
 describe("Wave 116: Hospital Bloat & Commission Purification (Mandates 8a–8q)", () => {
 	const __filename = fileURLToPath(import.meta.url);
 	const __dirname = path.dirname(__filename);
-	const repoRoot = path.resolve(__dirname, "../../../../../..");
+	const repoRoot = path.resolve(__dirname, "../../../..");
 
 	it("1. CmoQualityAuditModal: ликвидирован госпитальный блоат комиссий ВК 785н (файл отсутствует)", () => {
 		const modalPath = path.join(

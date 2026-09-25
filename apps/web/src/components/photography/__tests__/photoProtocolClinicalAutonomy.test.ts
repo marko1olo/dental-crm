@@ -23,6 +23,13 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const photographyDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src/components/photography"))
+	? path.resolve(process.cwd(), "apps/web/src/components/photography")
+	: path.resolve(__dirname, "..");
 
 import {
 	STANDARD_12_SLOT_PROTOCOL,
@@ -56,7 +63,6 @@ import {
 describe("Dental Photography, Calibration & VITA Shade Purity (Mandates 8e, 8k, 8d)", () => {
 	describe("1. Doctor Autonomy (Mandate 8e) & 0 Disabled Buttons", () => {
 		it("proves 0 disabled buttons across all photography component source files", () => {
-			const photographyDir = path.resolve(process.cwd(), "apps/web/src/components/photography");
 			const targetComponentFiles = [
 				"BeforeAfterComparisonView.tsx",
 				"ClinicalPhotoProtocolModal.tsx",
@@ -150,7 +156,6 @@ describe("Dental Photography, Calibration & VITA Shade Purity (Mandates 8e, 8k, 
 
 	describe("2. Zero Cartoon Emojis (Mandate 8d pt 7)", () => {
 		it("verifies 0 cartoon emojis in all dental photography components and styles", () => {
-			const photographyDir = path.resolve(process.cwd(), "apps/web/src/components/photography");
 			const filesToCheck = [
 				"BeforeAfterComparisonView.tsx",
 				"ClinicalPhotoProtocolModal.tsx",
@@ -380,7 +385,7 @@ describe("Dental Photography, Calibration & VITA Shade Purity (Mandates 8e, 8k, 
 
 	describe("5. CSS Tokens Compliance", () => {
 		it("proves clinicalPhotography.css uses design system CSS tokens", () => {
-			const cssPath = path.resolve(process.cwd(), "apps/web/src/components/photography/clinicalPhotography.css");
+			const cssPath = path.resolve(photographyDir, "clinicalPhotography.css");
 			const css = fs.readFileSync(cssPath, "utf8");
 
 			assert.ok(css.includes("var(--paper"), "Must use var(--paper)");

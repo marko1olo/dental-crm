@@ -3,21 +3,18 @@ import {
 	MoveHorizontal,
 	MoveVertical,
 	Camera,
-	Eye,
 	Sliders,
 	RotateCw,
 	RotateCcw,
 	ZoomIn,
 	ZoomOut,
 	Sparkles,
-	Printer,
 	Download,
 	Layers,
 	FileText,
 	Check,
 	Maximize2,
 	Link as LinkIcon,
-	X,
 } from 'lucide-react';
 import { PhotoProtocolPreset, PhotoSlotRecord, getSlotDefinitionById } from './photoGridPresets';
 import {
@@ -30,6 +27,10 @@ import {
 import { exportCollageAsPdf, exportCollageAsPng } from './photoProtocolEngine';
 import { IncisalAlignmentGuideOverlay, GuideOverlayType } from './IncisalAlignmentGuideOverlay';
 import { VitaShadeSelector } from './VitaShadeSelector';
+import { BeforeAfterExportModal } from './BeforeAfterExportModal';
+import { BeforeAfterFineTunePanel } from './BeforeAfterFineTunePanel';
+import { BeforeAfterSideBySideView } from './BeforeAfterSideBySideView';
+import { BeforeAfterBlendView } from './BeforeAfterBlendView';
 
 export interface BeforeAfterComparisonViewProps {
 	preset: PhotoProtocolPreset;
@@ -510,124 +511,18 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 			)}
 
 			{/* 3. Incisal & Bipupillary Alignment Toolbar */}
-			{showFineTune && (
-				<div style={{
-					display: 'flex',
-					flexDirection: 'column',
-					gap: '12px',
-					width: '100%',
-					maxWidth: '1100px',
-					background: 'var(--surface, #f8fafc)',
-					border: '1px solid var(--line, #e2e8f0)',
-					borderRadius: '12px',
-					padding: '12px 16px',
-				}}>
-					<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-						<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-							<Eye size={16} style={{ color: 'var(--brand-500, #2563eb)' }} />
-							<span style={{ fontSize: '13px', fontWeight: 700 }}>
-								Ориентиры и направляющие сетки (Aesthetic Guides):
-							</span>
-						</div>
-
-						<button
-							type="button"
-							className="photo-touch-btn"
-							onClick={resetAlignment}
-							style={{ fontSize: '12px', minHeight: '34px', minWidth: '44px', padding: '4px 10px' }}
-						>
-							Сбросить выравнивание
-						</button>
-					</div>
-
-					{/* Guide Toggles */}
-					<div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-						<button
-							type="button"
-							className={`photo-touch-btn ${activeGuides.bipupillary ? 'primary' : ''}`}
-							onClick={() => toggleGuide('bipupillary')}
-							style={{ minHeight: '44px', minWidth: '44px', fontSize: '12px' }}
-						>
-							Межзрачковая линия
-						</button>
-						<button
-							type="button"
-							className={`photo-touch-btn ${activeGuides.incisal ? 'primary' : ''}`}
-							onClick={() => toggleGuide('incisal')}
-							style={{ minHeight: '44px', minWidth: '44px', fontSize: '12px' }}
-						>
-							Резцовый край
-						</button>
-						<button
-							type="button"
-							className={`photo-touch-btn ${activeGuides.midline ? 'primary' : ''}`}
-							onClick={() => toggleGuide('midline')}
-							style={{ minHeight: '44px', minWidth: '44px', fontSize: '12px' }}
-						>
-							Срединная линия
-						</button>
-						<button
-							type="button"
-							className={`photo-touch-btn ${activeGuides.thirds ? 'primary' : ''}`}
-							onClick={() => toggleGuide('thirds')}
-							style={{ minHeight: '44px', minWidth: '44px', fontSize: '12px' }}
-						>
-							Сетка третей
-						</button>
-					</div>
-
-					{/* Angle & Scale Sliders */}
-					<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginTop: '4px' }}>
-						<div>
-							<div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 600 }}>
-								<span>Крен зрачковой линии:</span>
-								<span>{bipupillaryTilt > 0 ? `+${bipupillaryTilt}°` : `${bipupillaryTilt}°`}</span>
-							</div>
-							<input
-								type="range"
-								min="-15"
-								max="15"
-								step="0.5"
-								value={bipupillaryTilt}
-								onChange={(e) => setBipupillaryTilt(parseFloat(e.target.value))}
-								style={{ width: '100%' }}
-							/>
-						</div>
-
-						<div>
-							<div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 600 }}>
-								<span>Крен резцовой линии:</span>
-								<span>{incisalCanting > 0 ? `+${incisalCanting}°` : `${incisalCanting}°`}</span>
-							</div>
-							<input
-								type="range"
-								min="-15"
-								max="15"
-								step="0.5"
-								value={incisalCanting}
-								onChange={(e) => setIncisalCanting(parseFloat(e.target.value))}
-								style={{ width: '100%' }}
-							/>
-						</div>
-
-						<div>
-							<div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 600 }}>
-								<span>Масштаб (Zoom):</span>
-								<span>{Math.round(zoomScale * 100)}%</span>
-							</div>
-							<input
-								type="range"
-								min="1.0"
-								max="2.5"
-								step="0.05"
-								value={zoomScale}
-								onChange={(e) => setZoomScale(parseFloat(e.target.value))}
-								style={{ width: '100%' }}
-							/>
-						</div>
-					</div>
-				</div>
-			)}
+			<BeforeAfterFineTunePanel
+				isOpen={showFineTune}
+				activeGuides={activeGuides}
+				onToggleGuide={toggleGuide}
+				bipupillaryTilt={bipupillaryTilt}
+				onBipupillaryTiltChange={setBipupillaryTilt}
+				incisalCanting={incisalCanting}
+				onIncisalCantingChange={setIncisalCanting}
+				zoomScale={zoomScale}
+				onZoomScaleChange={setZoomScale}
+				onResetAlignment={resetAlignment}
+			/>
 
 			{/* 4. Interactive Viewport Area */}
 
@@ -838,296 +733,46 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 
 			{/* Mode B: Side by Side (Synchronous Pair View) */}
 			{comparisonType === 'side_by_side' && (
-				<div style={{ position: 'relative', width: '100%', maxWidth: '1100px' }}>
-					{/* Synchronous Zoom / Pan Float Bar */}
-					<div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '6px', zIndex: 30 }}>
-						<button
-							type="button"
-							className="photo-touch-btn"
-							style={{ minHeight: '36px', minWidth: '36px', padding: '6px', background: 'rgba(15, 23, 42, 0.85)', color: 'var(--paper, #ffffff)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)' }}
-							onClick={() => setZoomScale(prev => Math.min(2.5, +(prev + 0.2).toFixed(1)))}
-							title="Синхронно увеличить (Zoom In)"
-						>
-							<ZoomIn size={16} />
-						</button>
-						<button
-							type="button"
-							className="photo-touch-btn"
-							style={{ minHeight: '36px', minWidth: '36px', padding: '6px', background: 'rgba(15, 23, 42, 0.85)', color: 'var(--paper, #ffffff)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)' }}
-							onClick={() => setZoomScale(prev => Math.max(1.0, +(prev - 0.2).toFixed(1)))}
-							title="Синхронно уменьшить (Zoom Out)"
-						>
-							<ZoomOut size={16} />
-						</button>
-						<button
-							type="button"
-							className="photo-touch-btn"
-							style={{ minHeight: '36px', minWidth: '36px', padding: '6px', background: 'rgba(15, 23, 42, 0.85)', color: 'var(--paper, #ffffff)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)' }}
-							onClick={resetAlignment}
-							title="Сбросить масштаб 1:1"
-						>
-							<RotateCcw size={16} />
-						</button>
-					</div>
-
-					<div style={{
-						display: 'grid',
-						gridTemplateColumns: '1fr 1fr',
-						gap: '16px',
-						width: '100%',
-						height: '520px',
-					}}>
-						<div style={{ background: 'var(--paper-strong, #020617)', borderRadius: '16px', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-							{beforeSlotRecord.imageUrl ? (
-								<img
-									src={beforeSlotRecord.imageUrl}
-									alt="До лечения"
-									loading="lazy"
-									decoding="async"
-									style={{
-										width: '100%',
-										height: '100%',
-										objectFit: 'contain',
-										transform: `scale(${zoomScale}) rotate(${beforeRotation}deg) translate(${panOffset.x}px, ${panOffset.y}px)`,
-										transformOrigin: 'center center',
-										transition: 'transform 0.05s linear',
-									}}
-								/>
-							) : (
-								<div
-									data-testid="side-by-side-before-placeholder"
-									style={{
-										display: 'flex',
-										flexDirection: 'column',
-										alignItems: 'center',
-										justifyContent: 'center',
-										gap: '8px',
-										color: 'var(--muted, #64748b)',
-									}}
-								>
-									<Camera size={32} style={{ opacity: 0.5 }} />
-									<span style={{ fontSize: '12px', fontWeight: 600 }}>Нет кадра «До»</span>
-								</div>
-							)}
-							<div className="ba-pill-tag before" style={{ position: 'absolute', bottom: '12px', left: '12px', background: 'rgba(15, 23, 42, 0.85)', color: 'var(--teal-light, #38bdf8)', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 800 }}>
-								ДО: {getSlotDefinitionById(beforeSlotId)?.shortLabelRu || 'До'} ({beforeShade})
-							</div>
-						</div>
-
-						<div style={{ background: 'var(--paper-strong, #020617)', borderRadius: '16px', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-							{afterSlotRecord.imageUrl ? (
-								<img
-									src={afterSlotRecord.imageUrl}
-									alt="После лечения"
-									loading="lazy"
-									decoding="async"
-									style={{
-										width: '100%',
-										height: '100%',
-										objectFit: 'contain',
-										transform: `scale(${zoomScale}) rotate(${afterRotation}deg) translate(${panOffset.x}px, ${panOffset.y}px)`,
-										transformOrigin: 'center center',
-										transition: 'transform 0.05s linear',
-									}}
-								/>
-							) : (
-								<div
-									data-testid="side-by-side-after-placeholder"
-									style={{
-										display: 'flex',
-										flexDirection: 'column',
-										alignItems: 'center',
-										justifyContent: 'center',
-										gap: '8px',
-										color: 'var(--muted, #64748b)',
-									}}
-								>
-									<Camera size={32} style={{ opacity: 0.5 }} />
-									<span style={{ fontSize: '12px', fontWeight: 600 }}>Нет кадра «После»</span>
-								</div>
-							)}
-							<div className="ba-pill-tag after" style={{ position: 'absolute', bottom: '12px', right: '12px', background: 'rgba(15, 23, 42, 0.85)', color: 'var(--green, #4ade80)', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 800 }}>
-								ПОСЛЕ: {getSlotDefinitionById(afterSlotId)?.shortLabelRu || 'После'} ({afterShade})
-							</div>
-						</div>
-					</div>
-				</div>
+				<BeforeAfterSideBySideView
+					beforeSlotRecord={beforeSlotRecord}
+					afterSlotRecord={afterSlotRecord}
+					beforeSlotId={beforeSlotId}
+					afterSlotId={afterSlotId}
+					beforeShade={beforeShade}
+					afterShade={afterShade}
+					zoomScale={zoomScale}
+					beforeRotation={beforeRotation}
+					afterRotation={afterRotation}
+					panOffset={panOffset}
+					onZoomIn={() => setZoomScale(prev => Math.min(2.5, +(prev + 0.2).toFixed(1)))}
+					onZoomOut={() => setZoomScale(prev => Math.max(1.0, +(prev - 0.2).toFixed(1)))}
+					onResetAlignment={resetAlignment}
+				/>
 			)}
 
 			{/* Mode C: Blend Overlay */}
 			{comparisonType === 'blend' && (
-				<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', width: '100%', maxWidth: '1100px' }}>
-					<div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-						<span style={{ fontSize: '13px', fontWeight: 600 }}>Прозрачность наложения:</span>
-						<input
-							type="range"
-							min="0"
-							max="1"
-							step="0.05"
-							value={blendOpacity}
-							onChange={(e) => setBlendOpacity(parseFloat(e.target.value))}
-							style={{ flex: 1 }}
-						/>
-						<span style={{ fontSize: '13px', fontWeight: 700 }}>{Math.round(blendOpacity * 100)}%</span>
-					</div>
-
-					<div style={{ position: 'relative', width: '100%', height: '520px', background: 'var(--paper-strong, #020617)', borderRadius: '16px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-						{beforeSlotRecord.imageUrl && (
-							<img src={beforeSlotRecord.imageUrl} alt="До" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
-						)}
-						{afterSlotRecord.imageUrl && (
-							<img src={afterSlotRecord.imageUrl} alt="После" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', opacity: blendOpacity }} />
-						)}
-						{!beforeSlotRecord.imageUrl && !afterSlotRecord.imageUrl && (
-							<div
-								data-testid="blend-empty-placeholder"
-								style={{
-									display: 'flex',
-									flexDirection: 'column',
-									alignItems: 'center',
-									justifyContent: 'center',
-									gap: '8px',
-									color: 'var(--muted, #64748b)',
-								}}
-							>
-								<Camera size={36} style={{ opacity: 0.5 }} />
-								<span style={{ fontSize: '13px', fontWeight: 600 }}>Кадры «До» и «После» не загружены</span>
-							</div>
-						)}
-					</div>
-				</div>
+				<BeforeAfterBlendView
+					beforeSlotRecord={beforeSlotRecord}
+					afterSlotRecord={afterSlotRecord}
+					blendOpacity={blendOpacity}
+					onBlendOpacityChange={setBlendOpacity}
+				/>
 			)}
 
 			{/* 5. 1-Click Export Modal (Anti-Matryoshka: constrained inside workspace) */}
-			{showExportModal && (
-				<div
-					style={{
-						position: 'absolute',
-						inset: 0,
-						background: 'rgba(15, 23, 42, 0.8)',
-						backdropFilter: 'blur(6px)',
-						zIndex: 50,
-						display: 'flex',
-						alignItems: 'center',
-						justifyContent: 'center',
-						padding: '20px',
-					}}
-					role="dialog"
-					aria-modal="true"
-					onClick={(e) => {
-						if (e.target === e.currentTarget) setShowExportModal(false);
-					}}
-				>
-					<div style={{
-						background: 'var(--paper, #ffffff)',
-						color: 'var(--ink, #0f172a)',
-						borderRadius: '16px',
-						border: '1px solid var(--line, #e2e8f0)',
-						width: '100%',
-						maxWidth: '560px',
-						padding: '24px',
-						display: 'flex',
-						flexDirection: 'column',
-						gap: '18px',
-						boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
-					}}>
-						<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-							<div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-								<Download size={20} style={{ color: 'var(--brand-500, #2563eb)' }} />
-								<h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>
-									Экспорт клинического коллажа
-								</h3>
-							</div>
-							<button
-								type="button"
-								className="photo-touch-btn"
-								onClick={() => setShowExportModal(false)}
-								aria-label="Закрыть окно экспорта (Esc)"
-								style={{ minHeight: '36px', minWidth: '44px', padding: '4px 8px' }}
-							>
-								<X size={18} />
-							</button>
-						</div>
-
-						<p style={{ fontSize: '13px', color: 'var(--muted, #64748b)', margin: 0 }}>
-							Генерация презентационного листа с водяным знаком клиники, ФИО пациента ({patientName}), датой и сопоставлением оттенков VITA ({beforeShade} → {afterShade}).
-						</p>
-
-						{/* Format Selection */}
-						<div>
-							<label style={{ fontSize: '12px', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
-								Формат экспорта:
-							</label>
-							<div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-								{[
-									{ id: '16_9_hd', label: 'Презентация 16:9 Full HD (1920x1080) — Идеально для экрана и ТВ' },
-									{ id: 'A4_landscape', label: 'Лист A4 Альбомный (297x210 мм, 300 DPI) — Для печати' },
-									{ id: 'A4_portrait', label: 'Лист A4 Портретный (210x297 мм, 300 DPI) — Для истории болезни 043/у' },
-								].map((fmt) => (
-									<label
-										key={fmt.id}
-										style={{
-											display: 'flex',
-											alignItems: 'center',
-											gap: '10px',
-											padding: '10px 14px',
-											borderRadius: '8px',
-											border: exportFormat === fmt.id ? '2px solid var(--brand-500, #2563eb)' : '1px solid var(--line, #cbd5e1)',
-											background: exportFormat === fmt.id ? 'rgba(37, 99, 235, 0.06)' : 'var(--paper, #ffffff)',
-											cursor: 'pointer',
-											fontSize: '13px',
-											fontWeight: 600,
-											minHeight: '44px',
-										}}
-									>
-										<input
-											type="radio"
-											name="exportFormat"
-											value={fmt.id}
-											checked={exportFormat === fmt.id}
-											onChange={() => setExportFormat(fmt.id as CollageFormatType)}
-										/>
-										<span>{fmt.label}</span>
-									</label>
-								))}
-							</div>
-						</div>
-
-						{/* Actions */}
-						<div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
-							<button
-								type="button"
-								className="photo-touch-btn"
-								onClick={() => setShowExportModal(false)}
-								style={{ minHeight: '44px', minWidth: '44px' }}
-							>
-								Отмена
-							</button>
-
-							<button
-								type="button"
-								className="photo-touch-btn"
-								onClick={exportCollageToPdfHandler}
-								style={{ minHeight: '44px', minWidth: '44px', padding: '8px 16px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-								title="1-клик печать или экспорт листа сравнения в PDF"
-							>
-								<Printer size={16} />
-								Печать в PDF
-							</button>
-
-							<button
-								type="button"
-								className="photo-touch-btn primary"
-								onClick={exportCollageToPng}
-								style={{ minHeight: '44px', minWidth: '44px', padding: '8px 20px', fontWeight: 700 }}
-							>
-								<Download size={16} />
-								{isExporting ? 'Экспорт...' : 'Скачать PNG'}
-							</button>
-						</div>
-					</div>
-				</div>
-			)}
+			<BeforeAfterExportModal
+				isOpen={showExportModal}
+				onClose={() => setShowExportModal(false)}
+				patientName={patientName}
+				beforeShade={beforeShade}
+				afterShade={afterShade}
+				exportFormat={exportFormat}
+				onExportFormatChange={setExportFormat}
+				onExportPdf={exportCollageToPdfHandler}
+				onExportPng={exportCollageToPng}
+				isExporting={isExporting}
+			/>
 		</div>
 	);
 };

@@ -11,11 +11,9 @@ import { describe, it } from "node:test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-
 describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
-	const __filename = fileURLToPath(import.meta.url);
-	const __dirname = path.dirname(__filename);
-	const repoRoot = path.resolve(__dirname, "../../../../../..");
+	const __dirname = path.dirname(fileURLToPath(import.meta.url));
+	const repoRoot = path.resolve(__dirname, "../../../..");
 
 	const RAW_EMOJI_REGEX = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA70}-\u{1FAFF}]|⚡|🦷|⚠️|❌|✅|🚨|🔥|✓/u;
 

@@ -567,8 +567,19 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 								<ToothRvgThumbnail
 									toothNumber={toothNumber}
 									patientId={patient?.id}
+									scanImageUrl={(toothData?.clinicalData as { rvgScanUrl?: string } | undefined)?.rvgScanUrl}
 									onOpenFullRadiology={onOpenFullRadiology}
 									onInsertToProtocol={onInsertToProtocol}
+									onAttachScan={(file) => {
+										const objectUrl = URL.createObjectURL(file);
+										onUpdateTooth?.(toothNumber, {
+											clinicalData: {
+												...(toothData?.clinicalData as Record<string, unknown> | undefined),
+												rvgScanUrl: objectUrl,
+												updatedAt: new Date().toISOString(),
+											},
+										});
+									}}
 								/>
 							</div>
 						)}

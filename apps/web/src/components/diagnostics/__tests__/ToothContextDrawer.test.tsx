@@ -137,6 +137,8 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.ok(html.includes("dente-rvg-viewport-frame"), "200x200 frame should be rendered");
 		assert.ok(html.includes("Негатив"), "Invert filter button should be available");
 		assert.ok(html.includes("Зум апекса"), "Apex zoom button should be available");
+		assert.ok(html.includes("attach-rvg-scan-btn"), "1-click RVG scan attachment button should be present");
+		assert.ok(html.includes("rvg-file-input"), "Hidden RVG file input should be present");
 	});
 
 	it("ToothFamilyLoyaltyAccordion calculates family deposit split and loyalty cashback bonus", () => {

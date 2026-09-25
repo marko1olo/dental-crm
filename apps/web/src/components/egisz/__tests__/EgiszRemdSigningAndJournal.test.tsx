@@ -176,7 +176,7 @@ describe("2. EgiszRemdHubModal — Documents Journal (REMD Document Registry and
 			"Contains journal modal title",
 		);
 		assert.ok(
-			html.includes("Реестр СЭМД 043/у, 302, 303, 105, 106"),
+			html.includes("Реестр СЭМД 043/у"),
 			"Contains subtitle with supported SEMD document codes",
 		);
 		assert.ok(

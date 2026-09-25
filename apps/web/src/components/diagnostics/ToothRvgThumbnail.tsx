@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef } from "react";
 import {
 	Contrast,
 	Maximize2,
+	Paperclip,
 	RefreshCw,
 	Scan,
 	Sun,
@@ -19,6 +20,7 @@ export interface ToothRvgThumbnailProps {
 	capturedAtIso?: string | undefined;
 	onOpenFullRadiology?: ((toothNumber: number) => void) | undefined;
 	onInsertToProtocol?: ((text: string) => void) | undefined;
+	onAttachScan?: ((file: File) => void) | undefined;
 }
 
 export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
@@ -30,12 +32,13 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 	capturedAtIso,
 	onOpenFullRadiology,
 	onInsertToProtocol,
+	onAttachScan,
 }) => {
 	const [isInverted, setIsInverted] = useState<boolean>(false);
 	const [contrast, setContrast] = useState<number>(100);
 	const [brightness, setBrightness] = useState<number>(100);
 	const [isZoomedApex, setIsZoomedApex] = useState<boolean>(false);
-	const canvasRef = useRef<HTMLCanvasElement | null>(null);
+	const fileInputRef = useRef<HTMLInputElement | null>(null);
 
 	const rawSource = scanImageBlob ?? scanImageUrl;
 	const resolvedImageUrl = useSafeObjectUrl(rawSource, {
@@ -84,7 +87,38 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 			{/* 200x200 Visual Display Workspace */}
 			<div className="dente-rvg-display-row">
 				{/* 200x200 Fixed Dimension Viewport (No CLS shift) */}
-				<div className="dente-rvg-viewport-frame" style={{ backgroundColor: "var(--ink, #0f172a)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+				<div
+					className="dente-rvg-viewport-frame"
+					style={{ backgroundColor: "var(--ink, #0f172a)", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}
+					onDragOver={(e) => {
+						e.preventDefault();
+						e.stopPropagation();
+					}}
+					onDrop={(e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						const file = e.dataTransfer.files?.[0];
+						if (file) {
+							onAttachScan?.(file);
+							showToast(`Снимок прикреплен к зубу #${toothNumber}`, "success");
+						}
+					}}
+				>
+					<input
+						ref={fileInputRef}
+						type="file"
+						accept="image/*,.dcm"
+						data-testid="rvg-file-input"
+						style={{ display: "none" }}
+						onChange={(e) => {
+							const file = e.target.files?.[0];
+							if (file) {
+								onAttachScan?.(file);
+								showToast(`Снимок прикреплен к зубу #${toothNumber}`, "success");
+							}
+						}}
+					/>
+
 					{hasImage ? (
 						<>
 							<img
@@ -116,15 +150,15 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 								textAlign: "center",
 								cursor: "pointer",
 							}}
-							onClick={() => onOpenFullRadiology?.(toothNumber)}
-							title="Нажмите, чтобы открыть радиологию"
+							onClick={() => fileInputRef.current?.click()}
+							title="Нажмите, чтобы прикрепить снимок (1 клик)"
 						>
 							<Scan size={28} color="var(--teal)" />
 							<span style={{ fontSize: "11px", fontWeight: 600, color: "var(--paper-soft, #e2e8f0)" }}>
 								RVG #{toothNumber}
 							</span>
 							<span style={{ fontSize: "10px", color: "var(--muted)" }}>
-								Снимок не загружен
+								Нажмите для прикрепления снимка
 							</span>
 						</div>
 					)}
@@ -195,6 +229,18 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 
 					{/* Quick Launchers */}
 					<div className="dente-rvg-actions-row">
+						<button
+							type="button"
+							onClick={() => fileInputRef.current?.click()}
+							className="dente-primary-action-btn"
+							data-testid="attach-rvg-scan-btn"
+							style={{ fontSize: 11, minHeight: 36, gap: 4 }}
+							title="Прикрепить прицельный снимок или рентген к зубу в 1 клик"
+						>
+							<Paperclip size={13} />
+							<span>Прикрепить снимок</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={handleCopyXrayReport}
