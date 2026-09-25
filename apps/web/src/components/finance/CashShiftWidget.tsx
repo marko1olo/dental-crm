@@ -511,6 +511,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 	const netBankDepositRub = Math.max(0, cardSumRub + sbpSumRub - acquiringFeeRub);
 
 	const handleToggleShift = async () => {
+		if (isProcessing) return;
 		setIsProcessing(true);
 		try {
 			if (isShiftOpen) {
@@ -534,6 +535,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 	};
 
 	const handleXReport = async () => {
+		if (isProcessing) return;
 		if (!isShiftOpen) {
 			showToast("Смена закрыта. Для снятия промежуточного отчета откройте смену", "info", 4000);
 			return;
@@ -731,7 +733,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					<button
 						type="button"
 						onClick={isShiftOpen ? handleOpenZReportModal : handleToggleShift}
-						disabled={isProcessing}
+						aria-busy={isProcessing}
 						data-testid="cash-shift-toggle-btn"
 						className={`min-h-[44px] px-2.5 py-1 text-xs font-bold rounded-lg flex items-center gap-1 shrink-0 cursor-pointer transition-all ${
 							isShiftOpen
@@ -777,7 +779,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 									setIsReportsMenuOpen(false);
 									handleXReport();
 								}}
-								disabled={isProcessing}
+								aria-busy={isProcessing}
 								data-testid="btn-print-x-report"
 								className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[var(--ink)]"
 								title="Печать X-отчета (без гашения)"
@@ -917,7 +919,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 					<button
 						type="button"
 						onClick={isShiftOpen ? handleOpenZReportModal : handleToggleShift}
-						disabled={isProcessing}
+						aria-busy={isProcessing}
 						className={`cash-shift-btn min-h-[48px] px-5 text-sm font-bold shadow-md cursor-pointer ${
 							isShiftOpen ? "cash-shift-btn-open" : "cash-shift-btn-closed"
 						}`}
@@ -1074,7 +1076,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 								setIsBottomActionsMenuOpen(false);
 								handleXReport();
 							}}
-							disabled={isProcessing}
+							aria-busy={isProcessing}
 							className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2.5 cursor-pointer text-[var(--ink)] transition-colors"
 							title="Распечатать промежуточный X-отчет без гашения"
 							data-testid="btn-print-x-report"

@@ -154,6 +154,7 @@ export function TomorrowRemindersModal({
 	}, [summary?.reminders, summary?.totalAppointmentsCount]);
 
 	const handleBatchDispatch = useCallback(async () => {
+		if (isDispatching) return;
 		if ((summary?.reminders ?? []).length === 0) {
 			showToast("Нет записей для рассылки", "info");
 			return;
@@ -291,9 +292,10 @@ export function TomorrowRemindersModal({
 						<button
 							type="button"
 							onClick={handleBatchDispatch}
-							disabled={isDispatching}
-							className="min-h-[44px] px-4 rounded-xl bg-[var(--teal,var(--brand-primary))] text-white font-black hover:bg-[var(--teal-dark,var(--brand-primary))] transition-all cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+							aria-busy={isDispatching}
+							className="min-h-[44px] px-4 rounded-xl bg-[var(--teal,var(--brand-primary))] text-white font-black hover:bg-[var(--teal-dark,var(--brand-primary))] transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
 							title="Запустить умную рассылку по доступным каналам"
+							data-testid="btn-cascade-dispatch-all"
 						>
 							<Zap size={14} className={isDispatching ? "animate-spin" : ""} />
 							<span>{isDispatching ? "Рассылка..." : "Разослать все (Каскад)"}</span>

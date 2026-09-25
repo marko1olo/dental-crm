@@ -2151,9 +2151,9 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 									</button>
 									<button
 										type="submit"
-										disabled={isCreatingPatient}
+										aria-busy={isCreatingPatient}
 										data-testid="quick-booking-create-inline-patient-btn"
-										className="flex-1 min-h-[44px] py-2 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+										className="flex-1 min-h-[44px] py-2 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
 									>
 										<Check size={14} />
 										<span>
@@ -2623,9 +2623,9 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 					<button
 						type="button"
 						onClick={() => void handleSubmitBooking()}
-						disabled={isSubmitting}
+						aria-busy={isSubmitting}
 						data-testid="quick-drawer-save-btn"
-						className={`w-full min-h-[44px] px-4 font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+						className={`w-full min-h-[44px] px-4 font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer ${
 							collision.hasCollision
 								? "bg-amber-600 hover:bg-amber-700 text-white"
 								: "bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)]"
@@ -2645,9 +2645,9 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 						<button
 							type="button"
 							onClick={handleRequestClose}
-							disabled={isSubmitting}
+							aria-busy={isSubmitting}
 							data-testid="quick-booking-cancel-btn"
-							className="min-h-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center"
+							className="min-h-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center"
 						>
 							Отмена (Esc)
 						</button>
@@ -2656,8 +2656,8 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 								<button
 									type="button"
 									onClick={handleDiscardDraftAndClose}
-									disabled={isSubmitting}
-									className="min-h-[40px] px-3 rounded-xl border border-[var(--line)] text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
+									aria-busy={isSubmitting}
+									className="min-h-[40px] px-3 rounded-xl border border-[var(--line)] text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 text-xs font-semibold transition-colors cursor-pointer"
 									title="Сбросить все введенные данные без сохранения черновика"
 									data-testid="quick-booking-discard-draft-btn"
 								>

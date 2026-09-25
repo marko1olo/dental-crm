@@ -175,6 +175,7 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 	};
 
 	const handleConfirmClose = async () => {
+		if (isSubmitting) return;
 		setIsSubmitting(true);
 		try {
 			if (onConfirmCloseShift) {
@@ -583,8 +584,9 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 						<button
 							type="button"
 							onClick={handleConfirmClose}
-							disabled={isSubmitting}
-							className="min-h-[44px] px-5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer shadow-md active:scale-95 disabled:opacity-50"
+							aria-busy={isSubmitting}
+							className="min-h-[44px] px-5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer shadow-md active:scale-95"
+							data-testid="btn-confirm-close-shift-zreport"
 						>
 							<Lock size={16} />
 							<span>{isSubmitting ? "Отправка в ОФД..." : "Закрыть смену и отправить Z-отчет в ОФД"}</span>
