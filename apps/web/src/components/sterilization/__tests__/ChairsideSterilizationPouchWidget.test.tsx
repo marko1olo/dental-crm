@@ -98,6 +98,19 @@ describe("ChairsideSterilizationPouchWidget & VisitView Integration (СанПи�
 			!visitSoapContent.includes("<ChairsideSterilizationPouchWidget"),
 			"VisitSoapEditor.tsx не должен монтировать ChairsideSterilizationPouchWidget",
 		);
+
+		// OdontogramModule.tsx не должен содержать виджет стерилизации (зубная формула чиста)
+		const odontogramPath = path.join(
+			webSrcRoot,
+			"components/odontogram/OdontogramModule.tsx",
+		);
+		if (fs.existsSync(odontogramPath)) {
+			const odontogramContent = fs.readFileSync(odontogramPath, "utf8");
+			assert.ok(
+				!odontogramContent.includes("ChairsideSterilizationPouchWidget"),
+				"OdontogramModule.tsx не должен содержать ChairsideSterilizationPouchWidget (зубная формула чиста, Мандат 8e/8v)",
+			);
+		}
 	});
 
 	it("5. проверяет ликвидацию зеркального файла apps/web/.../sterilizationPouchEngine.ts", () => {

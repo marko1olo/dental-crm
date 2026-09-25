@@ -212,6 +212,14 @@ export function AutoclaveLog257Modal({
 		setBioRecords((prev) => [newBio, ...prev]);
 	};
 
+	const handleBatchAddRecords = (newRecords: Form257Record[]) => {
+		setRecords((prev) => {
+			const existingIds = new Set(prev.map((r) => r.id));
+			const toAdd = newRecords.filter((r) => !existingIds.has(r.id));
+			return [...toAdd, ...prev];
+		});
+	};
+
 	return (
 		<div className="autoclave-log-modal-overlay" onClick={onClose}>
 			<div className="autoclave-log-modal-container" onClick={(e) => e.stopPropagation()}>
@@ -274,6 +282,7 @@ export function AutoclaveLog257Modal({
 							records={records}
 							onDeleteRecord={handleDeleteRecord}
 							onVerifyRecord={handleVerifyRecord}
+							onBatchAddRecords={handleBatchAddRecords}
 							clinicInfo={clinicInfo}
 						/>
 					)}

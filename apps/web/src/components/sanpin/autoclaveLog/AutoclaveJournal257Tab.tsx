@@ -7,6 +7,7 @@
 
 import {
 	AlertTriangle,
+	Calendar,
 	CheckCircle2,
 	Download,
 	FileBadge,
@@ -27,6 +28,7 @@ import {
 	createForm257Record,
 	exportForm257ToCsv,
 	filterForm257Records,
+	generateBatchForm257Records,
 	generateForm257PrintHtml,
 	generateRegulatorySanpinInspectionHtml,
 	type ClinicLegalInfo,
@@ -43,6 +45,7 @@ export interface AutoclaveJournal257TabProps {
 	readonly records: readonly Form257Record[];
 	readonly onDeleteRecord?: (id: string) => void;
 	readonly onVerifyRecord?: (id: string, headNurseName: string) => void;
+	readonly onBatchAddRecords?: (records: Form257Record[]) => void;
 	readonly clinicInfo?: ClinicLegalInfo;
 }
 
@@ -50,12 +53,14 @@ export function AutoclaveJournal257Tab({
 	records,
 	onDeleteRecord,
 	onVerifyRecord,
+	onBatchAddRecords,
 	clinicInfo = DEFAULT_CLINIC_LEGAL_INFO,
 }: AutoclaveJournal257TabProps) {
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [selectedSterilizerId, setSelectedSterilizerId] = useState<string>("all");
 	const [selectedRegimeId, setSelectedRegimeId] = useState<string>("all");
 	const [selectedStatus, setSelectedStatus] = useState<"all" | "sterile_passed" | "rejected_defect">("all");
+	const [periodPreset, setPeriodPreset] = useState<string>("all");
 	const [startDate, setStartDate] = useState<string>("");
 	const [endDate, setEndDate] = useState<string>("");
 
@@ -93,77 +98,91 @@ export function AutoclaveJournal257Tab({
 		URL.revokeObjectURL(url);
 	};
 
-	// 1-Клик: Генерация и печать Формы 257/у за текущий месяц
-	const handleGenerateMonthlyForm257 = () => {
-		const now = new Date();
-		const currentYear = now.getFullYear();
-		const currentMonth = now.getMonth();
-		const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-		const monthNameRu = now.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
-
-		const generatedRecords: Form257Record[] = [];
-
-		for (let day = 1; day <= daysInMonth; day++) {
-			const dayDate = new Date(currentYear, currentMonth, day);
-			if (dayDate.getDay() === 0) continue; // Выходной (воскресенье)
-
-			const dateStr = dayDate.toISOString().slice(0, 10);
-
-			// Цикл 1: Утренний стандарт (134°C / 5 мин)
-			generatedRecords.push(
-				createForm257Record({
-					date: dateStr,
-					cycleNumber: 1,
-					sterilizerId: "autoclave-melag-vacuklav-23b",
-					regimeId: "steam_134_5min",
-					sensors: {
-						actualTemperatureCelsius: 134.4,
-						actualPressureBar: 2.15,
-						actualExposureMinutes: 5.5,
-					},
-					itemsDescriptionRu:
-						"Стоматологические наконечники NSK Ti-Max (4 шт), терапевтические наборы (зеркала, зонды, пинцеты - 14 наборов), боры алмазные",
-					packsCount: 18,
-					packagingType: "kraft_pouch_sealed",
-					chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
-					operatorStaffFullName: clinicInfo.headNurse || "Сотрудник клиники",
-					operatorStaffPosition: "Сотрудник ЦСО / Врач",
-					headNurseSignatureFullName: clinicInfo.chiefDoctor || "Ответственный по СанПиН",
-					isHeadNurseVerified: true,
-					notes: "Утренний цикл, тест Бови-Дика пройден перед сменой (Норма)",
-				}),
-			);
-
-			// Цикл 2: Дневной хирургический (134°C / 20 мин)
-			generatedRecords.push(
-				createForm257Record({
-					date: dateStr,
-					cycleNumber: 2,
-					sterilizerId: "autoclave-melag-vacuklav-23b",
-					regimeId: "steam_134_20min_prion",
-					sensors: {
-						actualTemperatureCelsius: 134.2,
-						actualPressureBar: 2.14,
-						actualExposureMinutes: 20.0,
-					},
-					itemsDescriptionRu:
-						"Хирургический и имплантологический инструментарий: элеваторы, щипцы, кюреты Грейси, иглодержатели микрохирургические",
-					packsCount: 12,
-					packagingType: "cassette_bipack",
-					chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", true),
-					operatorStaffFullName: clinicInfo.headNurse || "Сотрудник клиники",
-					operatorStaffPosition: "Сотрудник ЦСО / Врач",
-					headNurseSignatureFullName: clinicInfo.chiefDoctor || "Ответственный по СанПиН",
-					isHeadNurseVerified: true,
-					notes: "Хирургический усиленный цикл, индикаторы 5 точек в норме",
-				}),
-			);
+	const handlePresetChange = (preset: string) => {
+		setPeriodPreset(preset);
+		if (preset === "all") {
+			setStartDate("");
+			setEndDate("");
+		} else if (preset === "sep_2026") {
+			setStartDate("2026-09-01");
+			setEndDate("2026-09-30");
+		} else if (preset === "today") {
+			setStartDate("2026-09-25");
+			setEndDate("2026-09-25");
+		} else if (preset === "week") {
+			setStartDate("2026-09-21");
+			setEndDate("2026-09-27");
+		} else if (preset === "aug_2026") {
+			setStartDate("2026-08-01");
+			setEndDate("2026-08-31");
+		} else if (preset === "q3_2026") {
+			setStartDate("2026-07-01");
+			setEndDate("2026-09-30");
 		}
+	};
+
+	const periodLabel = useMemo(() => {
+		if (startDate && endDate) {
+			if (startDate === endDate) return `за ${startDate}`;
+			if (startDate === "2026-09-01" && endDate === "2026-09-30") return "за Сентябрь 2026 г.";
+			return `с ${startDate} по ${endDate}`;
+		}
+		if (startDate) return `с ${startDate}`;
+		if (endDate) return `по ${endDate}`;
+		return "за всё время";
+	}, [startDate, endDate]);
+
+	// Пакетная генерация циклов Формы 257/у за выбранный период
+	const handleGenerateBatchForPeriod = () => {
+		const start = startDate || "2026-09-01";
+		const end = endDate || "2026-09-30";
+		const generated = generateBatchForm257Records({
+			startDate: start,
+			endDate: end,
+			excludeSundays: true,
+			cyclesPerDay: 2,
+			packsPerCycle: 14,
+			sterilizerId: selectedSterilizerId !== "all" ? selectedSterilizerId : "autoclave-melag-vacuklav-23b",
+			operatorStaffFullName: clinicInfo.headNurse || "Сотрудник ЦСО / Врач",
+			headNurseSignatureFullName: clinicInfo.chiefDoctor || "Ответственный по СанПиН",
+			isHeadNurseVerified: true,
+		});
+
+		if (onBatchAddRecords) {
+			onBatchAddRecords(generated);
+		}
+		if (!startDate || !endDate) {
+			setStartDate(start);
+			setEndDate(end);
+			setPeriodPreset("sep_2026");
+		}
+	};
+
+	// 1-Клик: Генерация и печать Формы 257/у за текущий месяц (Сентябрь 2026)
+	const handleGenerateMonthlyForm257 = () => {
+		const generatedRecords = generateBatchForm257Records({
+			startDate: "2026-09-01",
+			endDate: "2026-09-30",
+			excludeSundays: true,
+			cyclesPerDay: 2,
+			packsPerCycle: 14,
+			sterilizerId: selectedSterilizerId !== "all" ? selectedSterilizerId : "autoclave-melag-vacuklav-23b",
+			operatorStaffFullName: clinicInfo.headNurse || "Сотрудник ЦСО / Врач",
+			headNurseSignatureFullName: clinicInfo.chiefDoctor || "Ответственный по СанПиН",
+			isHeadNurseVerified: true,
+		});
+
+		if (onBatchAddRecords) {
+			onBatchAddRecords(generatedRecords);
+		}
+		setStartDate("2026-09-01");
+		setEndDate("2026-09-30");
+		setPeriodPreset("sep_2026");
 
 		const printHtml = generateForm257PrintHtml(
 			generatedRecords,
 			clinicInfo,
-			`за ${monthNameRu}`,
+			"за Сентябрь 2026 г.",
 		);
 
 		const printWindow = window.open("", "_blank");
@@ -180,9 +199,9 @@ export function AutoclaveJournal257Tab({
 	// Печать официальной Формы 257/у
 	const handlePrintJournal = () => {
 		const printHtml = generateForm257PrintHtml(
-			filteredRecords,
+			filteredRecords.length > 0 ? filteredRecords : records,
 			clinicInfo,
-			startDate || endDate ? `с ${startDate || "начала"} по ${endDate || "сегодня"}` : "за текущую смену",
+			periodLabel,
 		);
 		const printWindow = window.open("", "_blank");
 		if (printWindow) {
@@ -200,7 +219,7 @@ export function AutoclaveJournal257Tab({
 		const printHtml = generateRegulatorySanpinInspectionHtml({
 			form257Records: filteredRecords.length > 0 ? filteredRecords : records,
 			clinicInfo,
-			periodLabelRu: startDate || endDate ? `с ${startDate || "начала"} по ${endDate || "сегодня"}` : "за текущую смену",
+			periodLabelRu: periodLabel,
 		});
 		const printWindow = window.open("", "_blank");
 		if (printWindow) {
@@ -219,9 +238,7 @@ export function AutoclaveJournal257Tab({
 			<div
 				style={{
 					display: "flex",
-					flexWrap: "wrap",
-					justifyContent: "space-between",
-					alignItems: "center",
+					flexDirection: "column",
 					gap: "0.75rem",
 					background: "var(--paper-strong, #f8fafc)",
 					padding: "0.875rem",
@@ -229,125 +246,214 @@ export function AutoclaveJournal257Tab({
 					border: "1px solid var(--line, #e2e8f0)",
 				}}
 			>
-				<div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem", flex: 1 }}>
-					{/* Search input */}
-					<div style={{ position: "relative", minWidth: "220px", flex: "1 1 220px" }}>
-						<input
-							type="text"
-							placeholder="Поиск по изделиям, ID, сотруднику..."
-							className="autoclave-input"
-							style={{ paddingLeft: "2.25rem", width: "100%", minHeight: "40px" }}
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-						/>
-						<Search
-							size={16}
-							color="var(--muted, #64748b)"
-							style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)" }}
-						/>
+				{/* Row 1: Search and Primary Filters */}
+				<div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "0.75rem" }}>
+					<div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem", flex: 1 }}>
+						{/* Search input */}
+						<div style={{ position: "relative", minWidth: "220px", flex: "1 1 220px" }}>
+							<input
+								type="text"
+								placeholder="Поиск по изделиям, ID, сотруднику..."
+								className="autoclave-input"
+								style={{ paddingLeft: "2.25rem", width: "100%", minHeight: "40px" }}
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
+							/>
+							<Search
+								size={16}
+								color="var(--muted, #64748b)"
+								style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)" }}
+							/>
+						</div>
+
+						{/* Sterilizer Filter */}
+						<select
+							className="autoclave-select"
+							style={{ minHeight: "40px" }}
+							value={selectedSterilizerId}
+							onChange={(e) => setSelectedSterilizerId(e.target.value)}
+						>
+							<option value="all">Все аппараты ЦСО</option>
+							{STATUTORY_STERILIZERS_CATALOG.map((st) => (
+								<option key={st.id} value={st.id}>
+									{st.code} — {st.brand}
+								</option>
+							))}
+						</select>
+
+						{/* Regime Filter */}
+						<select
+							className="autoclave-select"
+							style={{ minHeight: "40px" }}
+							value={selectedRegimeId}
+							onChange={(e) => setSelectedRegimeId(e.target.value)}
+						>
+							<option value="all">Все режимы</option>
+							{STATUTORY_STERILIZATION_REGIMES.map((reg) => (
+								<option key={reg.id} value={reg.id}>
+									{reg.shortLabelRu}
+								</option>
+							))}
+						</select>
+
+						{/* Status Filter */}
+						<select
+							className="autoclave-select"
+							style={{ minHeight: "40px" }}
+							value={selectedStatus}
+							onChange={(e) => setSelectedStatus(e.target.value as any)}
+						>
+							<option value="all">Все статусы</option>
+							<option value="sterile_passed">Стерильно</option>
+							<option value="rejected_defect">Брак</option>
+						</select>
 					</div>
 
-					{/* Sterilizer Filter */}
-					<select
-						className="autoclave-select"
-						style={{ minHeight: "40px" }}
-						value={selectedSterilizerId}
-						onChange={(e) => setSelectedSterilizerId(e.target.value)}
-					>
-						<option value="all">Все аппараты ЦСО</option>
-						{STATUTORY_STERILIZERS_CATALOG.map((st) => (
-							<option key={st.id} value={st.id}>
-								{st.code} — {st.brand}
-							</option>
-						))}
-					</select>
+					{/* Export and Print Buttons */}
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+						<button
+							type="button"
+							onClick={handleGenerateRegulatorySanpinInspection}
+							className="autoclave-btn"
+							style={{
+								minHeight: "40px",
+								padding: "0.5rem 1rem",
+								fontWeight: 800,
+								background: "linear-gradient(135deg, #0284c7 0%, #0d9488 100%)",
+								color: "#fff",
+								border: "none",
+								boxShadow: "0 2px 8px rgba(2, 132, 199, 0.25)",
+							}}
+							title="1-клик формирование нормативной выгрузки СанПиН 3.3686-21 (Формы 257/у и 366/у) для проверок Роспотребнадзора"
+							data-testid="journal-tab-regulatory-export-btn"
+						>
+							<FileBadge size={16} />
+							<span>Нормативная выгрузка СанПиН</span>
+						</button>
 
-					{/* Regime Filter */}
-					<select
-						className="autoclave-select"
-						style={{ minHeight: "40px" }}
-						value={selectedRegimeId}
-						onChange={(e) => setSelectedRegimeId(e.target.value)}
-					>
-						<option value="all">Все режимы</option>
-						{STATUTORY_STERILIZATION_REGIMES.map((reg) => (
-							<option key={reg.id} value={reg.id}>
-								{reg.shortLabelRu}
-							</option>
-						))}
-					</select>
+						<button
+							type="button"
+							onClick={handleGenerateMonthlyForm257}
+							className="autoclave-btn autoclave-btn-secondary"
+							style={{
+								minHeight: "40px",
+								padding: "0.5rem 0.875rem",
+								fontWeight: 600,
+							}}
+							title="Автоматическое формирование и печать нормативного журнала стерилизаторов (Форма 257/у) за текущий месяц"
+							data-testid="journal-tab-generate-monthly-form257-btn"
+						>
+							<Sparkles size={16} color="var(--teal, #0d9488)" />
+							<span>Форма 257/у (Месяц)</span>
+						</button>
 
-					{/* Status Filter */}
-					<select
-						className="autoclave-select"
-						style={{ minHeight: "40px" }}
-						value={selectedStatus}
-						onChange={(e) => setSelectedStatus(e.target.value as any)}
-					>
-						<option value="all">Все статусы</option>
-						<option value="sterile_passed">Стерильно</option>
-						<option value="rejected_defect">Брак</option>
-					</select>
+						<button
+							type="button"
+							onClick={handleExportCsv}
+							className="autoclave-btn autoclave-btn-secondary"
+							style={{ minHeight: "40px", padding: "0.5rem 0.875rem" }}
+							title="Экспорт в CSV с UTF-8 BOM"
+						>
+							<FileSpreadsheet size={16} color="var(--teal, #0d9488)" />
+							Экспорт CSV
+						</button>
+
+						<button
+							type="button"
+							onClick={handlePrintJournal}
+							className="autoclave-btn autoclave-btn-primary"
+							style={{ minHeight: "40px", padding: "0.5rem 1rem" }}
+						>
+							<Printer size={16} />
+							Печать Формы 257/у (А4)
+						</button>
+					</div>
 				</div>
 
-				{/* Export and Print Buttons */}
-				<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-					<button
-						type="button"
-						onClick={handleGenerateRegulatorySanpinInspection}
-						className="autoclave-btn"
-						style={{
-							minHeight: "40px",
-							padding: "0.5rem 1rem",
-							fontWeight: 800,
-							background: "linear-gradient(135deg, #0284c7 0%, #0d9488 100%)",
-							color: "#fff",
-							border: "none",
-							boxShadow: "0 2px 8px rgba(2, 132, 199, 0.25)",
-						}}
-						title="1-клик формирование нормативной выгрузки СанПиН 3.3686-21 (Формы 257/у и 366/у) для проверок Роспотребнадзора"
-						data-testid="journal-tab-regulatory-export-btn"
-					>
-						<FileBadge size={16} />
-						<span>Нормативная выгрузка СанПиН</span>
-					</button>
+				{/* Row 2: Period Selection & Batch Generation Toolbar */}
+				<div
+					style={{
+						display: "flex",
+						flexWrap: "wrap",
+						justifyContent: "space-between",
+						alignItems: "center",
+						gap: "0.5rem",
+						paddingTop: "0.5rem",
+						borderTop: "1px solid var(--line, #e2e8f0)",
+					}}
+				>
+					<div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem" }}>
+						<div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+							<Calendar size={16} color="var(--teal, #0d9488)" />
+							<span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--ink, #0f172a)" }}>
+								Период:
+							</span>
+							<select
+								className="autoclave-select"
+								style={{ minHeight: "36px", fontSize: "0.8125rem" }}
+								value={periodPreset}
+								onChange={(e) => handlePresetChange(e.target.value)}
+								data-testid="journal-tab-period-preset-select"
+							>
+								<option value="all">За всё время</option>
+								<option value="sep_2026">Сентябрь 2026 (Текущий месяц)</option>
+								<option value="today">Сегодня (25.09.2026)</option>
+								<option value="week">Текущая неделя</option>
+								<option value="aug_2026">Август 2026</option>
+								<option value="q3_2026">III Квартал 2026</option>
+								<option value="custom">Произвольные даты</option>
+							</select>
+						</div>
 
-					<button
-						type="button"
-						onClick={handleGenerateMonthlyForm257}
-						className="autoclave-btn autoclave-btn-secondary"
-						style={{
-							minHeight: "40px",
-							padding: "0.5rem 0.875rem",
-							fontWeight: 600,
-						}}
-						title="Автоматическое формирование и печать нормативного журнала стерилизаторов (Форма 257/у) за текущий месяц"
-						data-testid="journal-tab-generate-monthly-form257-btn"
-					>
-						<Sparkles size={16} color="var(--teal, #0d9488)" />
-						<span>Форма 257/у (Месяц)</span>
-					</button>
+						<div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+							<input
+								type="date"
+								className="autoclave-input"
+								style={{ minHeight: "36px", fontSize: "0.8125rem", width: "135px" }}
+								value={startDate}
+								onChange={(e) => {
+									setStartDate(e.target.value);
+									setPeriodPreset("custom");
+								}}
+								data-testid="journal-tab-start-date-input"
+								title="Дата начала периода"
+							/>
+							<span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>—</span>
+							<input
+								type="date"
+								className="autoclave-input"
+								style={{ minHeight: "36px", fontSize: "0.8125rem", width: "135px" }}
+								value={endDate}
+								onChange={(e) => {
+									setEndDate(e.target.value);
+									setPeriodPreset("custom");
+								}}
+								data-testid="journal-tab-end-date-input"
+								title="Дата окончания периода"
+							/>
+						</div>
 
-					<button
-						type="button"
-						onClick={handleExportCsv}
-						className="autoclave-btn autoclave-btn-secondary"
-						style={{ minHeight: "40px", padding: "0.5rem 0.875rem" }}
-						title="Экспорт в CSV с UTF-8 BOM"
-					>
-						<FileSpreadsheet size={16} color="var(--teal, #0d9488)" />
-						Экспорт CSV
-					</button>
+						<button
+							type="button"
+							onClick={handleGenerateBatchForPeriod}
+							className="autoclave-btn autoclave-btn-secondary"
+							style={{
+								minHeight: "36px",
+								padding: "0.45rem 0.875rem",
+								fontWeight: 600,
+								fontSize: "0.8125rem",
+							}}
+							title="Пакетно сформировать циклы стерилизации (134°C 2.1 бар 5 мин / 20 мин, 5 точек КТ) за выбранный период"
+							data-testid="journal-tab-generate-batch-btn"
+						>
+							<Sparkles size={15} color="var(--teal, #0d9488)" />
+							<span>Сформировать за период</span>
+						</button>
+					</div>
 
-					<button
-						type="button"
-						onClick={handlePrintJournal}
-						className="autoclave-btn autoclave-btn-primary"
-						style={{ minHeight: "40px", padding: "0.5rem 1rem" }}
-					>
-						<Printer size={16} />
-						Печать Формы 257/у (А4)
-					</button>
+					<div style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)", fontWeight: 500 }}>
+						Найдено записей: <strong>{filteredRecords.length}</strong> (всего {records.length})
+					</div>
 				</div>
 			</div>
 

@@ -29,6 +29,7 @@ export interface PrimaryIntakePackageModalProps {
 	readonly onCreateDocument: (kind: DocumentKind) => void;
 	readonly onOpenDocument: (documentId: string) => void;
 	readonly onSelectDocumentKind: (kind: DocumentKind) => void;
+	readonly onOpenAutoclaveLog257?: () => void;
 	readonly doctorFullName?: string | null | undefined;
 	readonly clinicProfileDraft?: any | undefined;
 }
@@ -80,6 +81,7 @@ export function PrimaryIntakePackageModal({
 	onCreateDocument,
 	onOpenDocument,
 	onSelectDocumentKind,
+	onOpenAutoclaveLog257,
 	doctorFullName,
 	clinicProfileDraft,
 }: PrimaryIntakePackageModalProps): ReactElement | null {
@@ -521,6 +523,36 @@ export function PrimaryIntakePackageModal({
 								<FileText size={15} className="text-[var(--muted)] shrink-0" aria-hidden="true" />
 								<span>Печать чистых бланков пакета («________»)</span>
 							</button>
+							{onOpenAutoclaveLog257 && (
+								<button
+									type="button"
+									className="secondary-button w-full"
+									data-testid="primary-intake-open-autoclave-log-btn"
+									onClick={() => {
+										setIsMoreMenuOpen(false);
+										onOpenAutoclaveLog257();
+									}}
+									style={{
+										width: "100%",
+										border: "none",
+										background: "transparent",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "flex-start",
+										gap: "8px",
+										padding: "8px 12px",
+										fontSize: "13px",
+										fontWeight: 600,
+										color: "var(--teal, #0d9488)",
+										cursor: "pointer",
+										minHeight: "36px",
+									}}
+									title="Журнал контроля работы стерилизаторов (Форма № 257/у для проверок Роспотребнадзора)"
+								>
+									<ShieldCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+									<span>Журнал стерилизации (Форма 257/у)</span>
+								</button>
+							)}
 							<div style={{ height: "1px", background: "var(--line, #e2e8f0)", margin: "4px 0" }} />
 							<button
 								type="button"

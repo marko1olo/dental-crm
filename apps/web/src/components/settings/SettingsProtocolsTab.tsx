@@ -1,5 +1,5 @@
 import type { ProtocolTemplate } from "@dental/shared";
-import { ClipboardCheck, Edit2, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ClipboardCheck, Edit2, Plus, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
@@ -9,6 +9,7 @@ import {
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { EmptyState } from "../EmptyState";
 import { showToast } from "../GlobalToast";
+import { AutoclaveLog257Modal } from "../sanpin/autoclaveLog/AutoclaveLog257Modal.js";
 import "./SettingsProtocolsTab.css";
 import { logger } from "../../utils/logger";
 
@@ -74,6 +75,7 @@ export function SettingsProtocolsTab() {
 	const [editForm, setEditForm] = useState<Partial<ProtocolTemplate>>({});
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [isAutoclaveModalOpen, setIsAutoclaveModalOpen] = useState<boolean>(false);
 
 	const handleCreateNew = () => {
 		setEditingId(null);
@@ -492,6 +494,17 @@ export function SettingsProtocolsTab() {
 					</button>
 					<button
 						type="button"
+						className="secondary-button"
+						style={{ display: "flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
+						onClick={() => setIsAutoclaveModalOpen(true)}
+						title="Журнал контроля работы стерилизаторов (Форма № 257/у СанПиН 3.3686-21)"
+						data-testid="protocols-open-autoclave-log-btn"
+					>
+						<ShieldCheck size={16} style={{ color: "var(--teal)" }} />
+						<span>Журнал стерилизации (Форма 257/у)</span>
+					</button>
+					<button
+						type="button"
 						className="primary-button"
 						style={{ display: "flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 						onClick={handleCreateNew}
@@ -659,6 +672,12 @@ export function SettingsProtocolsTab() {
 					))}
 				</div>
 			)}
+
+			<AutoclaveLog257Modal
+				isOpen={isAutoclaveModalOpen}
+				onClose={() => setIsAutoclaveModalOpen(false)}
+				initialTab="journal_257"
+			/>
 		</section>
 	);
 }

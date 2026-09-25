@@ -1784,6 +1784,46 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 					</span>
 				</div>
 
+				{activeCategoryTab === "certificates_sanpin" && (
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "space-between",
+							background: "var(--paper-strong, #f8fafc)",
+							border: "1px solid var(--line, #e2e8f0)",
+							borderRadius: "8px",
+							padding: "10px 14px",
+							gap: "12px",
+							margin: "8px 0",
+						}}
+					>
+						<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+							<Shield size={20} style={{ color: "var(--teal, #0d9488)", flexShrink: 0 }} />
+							<span style={{ fontSize: "13px", color: "var(--ink, #0f172a)" }}>
+								<strong>СанПиН 3.3686-21:</strong> Журнал контроля работы стерилизаторов (Форма № 257/у) и ПСО для проверок Роспотребнадзора.
+							</span>
+						</div>
+						<button
+							type="button"
+							className="primary-button"
+							style={{
+								minHeight: "36px",
+								background: "var(--teal, #0d9488)",
+								whiteSpace: "nowrap",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "6px",
+							}}
+							onClick={() => setIsAutoclaveLogOpen(true)}
+							data-testid="documents-open-autoclave-log-257-btn"
+						>
+							<FileCheck size={16} />
+							<span>Журнал стерилизации (Форма 257/у)</span>
+						</button>
+					</div>
+				)}
+
 				{selectedDocumentUsesTaxPaymentSelection ? (
 					<>
 						<label className="document-factory-tax-year">
@@ -6308,6 +6348,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 						onCreateDocument={(kind) => void createDocument(kind)}
 						onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
 						onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
+						onOpenAutoclaveLog257={() => setIsAutoclaveLogOpen(true)}
 					/>
 				)}
 

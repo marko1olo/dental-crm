@@ -1300,6 +1300,129 @@ export function generateRegulatorySanpinInspectionHtml(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 9.1 BATCH FORM 257 RECORDS GENERATION FOR AUDITS & INSPECTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface GenerateBatchForm257Options {
+	readonly startDate: string; // YYYY-MM-DD
+	readonly endDate: string; // YYYY-MM-DD
+	readonly excludeSundays?: boolean | undefined; // default true
+	readonly cyclesPerDay?: number | undefined; // default 2
+	readonly packsPerCycle?: number | undefined; // default 14
+	readonly sterilizerId?: string | undefined;
+	readonly sterilizerCode?: string | undefined;
+	readonly sterilizerBrandModel?: string | undefined;
+	readonly sterilizerSerialNumber?: string | undefined;
+	readonly operatorStaffFullName?: string | undefined;
+	readonly operatorStaffPosition?: string | undefined;
+	readonly headNurseSignatureFullName?: string | undefined;
+	readonly isHeadNurseVerified?: boolean | undefined;
+}
+
+/**
+ * Пакетная генерация записей журнала работы стерилизаторов (Форма № 257/у)
+ * за указанный период (день, неделя, месяц, квартал) для проверок Роспотребнадзора (СанПиН 3.3686-21).
+ */
+export function generateBatchForm257Records(
+	options: GenerateBatchForm257Options,
+): Form257Record[] {
+	const {
+		startDate,
+		endDate,
+		excludeSundays = true,
+		cyclesPerDay = 2,
+		packsPerCycle = 14,
+		sterilizerId = "autoclave-melag-vacuklav-23b",
+		operatorStaffFullName = "Сотрудник ЦСО / Медсестра",
+		operatorStaffPosition = "Сотрудник ЦСО / Медсестра",
+		headNurseSignatureFullName = "Главная медсестра / Ответственный по СанПиН",
+		isHeadNurseVerified = true,
+	} = options;
+
+	const [startY, startM, startD] = startDate.split("-").map(Number);
+	const [endY, endM, endD] = endDate.split("-").map(Number);
+
+	if (!startY || !startM || !startD || !endY || !endM || !endD) {
+		return [];
+	}
+
+	const startUtc = Date.UTC(startY, startM - 1, startD);
+	const endUtc = Date.UTC(endY, endM - 1, endD);
+
+	if (startUtc > endUtc) {
+		return [];
+	}
+
+	const records: Form257Record[] = [];
+	const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+	for (let time = startUtc; time <= endUtc; time += MS_PER_DAY) {
+		const curDate = new Date(time);
+		const dayOfWeek = curDate.getUTCDay(); // 0 is Sunday
+
+		if (excludeSundays && dayOfWeek === 0) {
+			continue;
+		}
+
+		const yyyy = curDate.getUTCFullYear();
+		const mm = String(curDate.getUTCMonth() + 1).padStart(2, "0");
+		const dd = String(curDate.getUTCDate()).padStart(2, "0");
+		const dateStr = `${yyyy}-${mm}-${dd}`;
+
+		const count = Math.max(1, cyclesPerDay);
+
+		for (let cycleNum = 1; cycleNum <= count; cycleNum++) {
+			const isSurgical = cycleNum === 2 && count > 1;
+			const regimeId: SterilizationRegimeId = isSurgical
+				? "steam_134_20min_prion"
+				: "steam_134_5min";
+			const exposureTime = isSurgical ? 20.0 : 5.5;
+			const actualTemp = Number((134.2 + cycleNum * 0.1).toFixed(1));
+			const actualPressure = 2.15;
+			const currentCyclePacks = isSurgical
+				? Math.max(4, Math.round(packsPerCycle * 0.7))
+				: packsPerCycle;
+
+			const itemsDescriptionRu = isSurgical
+				? `Хирургический и имплантологический инструментарий: элеваторы, кюреты Грейси, щипцы (${currentCyclePacks} упак.)`
+				: `Терапевтические наборы (зеркала, зонды, пинцеты), наконечники турбинные NSK Ti-Max (${currentCyclePacks} упак.)`;
+
+			const chamberPoints = createDefault5ChamberPoints("intetest_v_134_5", true);
+
+			const rec = createForm257Record({
+				date: dateStr,
+				cycleNumber: cycleNum,
+				sterilizerId,
+				sterilizerCode: options.sterilizerCode,
+				sterilizerBrandModel: options.sterilizerBrandModel,
+				sterilizerSerialNumber: options.sterilizerSerialNumber,
+				regimeId,
+				sensors: {
+					actualTemperatureCelsius: actualTemp,
+					actualPressureBar: actualPressure,
+					actualExposureMinutes: exposureTime,
+				},
+				itemsDescriptionRu,
+				packsCount: currentCyclePacks,
+				packagingType: isSurgical ? "cassette_bipack" : "kraft_pouch_sealed",
+				chamberPoints,
+				operatorStaffFullName,
+				operatorStaffPosition,
+				headNurseSignatureFullName,
+				isHeadNurseVerified,
+				notes: isSurgical
+					? "Хирургический усиленный цикл (20 мин), тест индикаторов 5 точек КТ в норме."
+					: "Утренний плановый цикл, тест Бови-Дика пройден перед сменой (Норма).",
+			});
+
+			records.push(rec);
+		}
+	}
+
+	return records;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 10. RE-EXPORT 1-CLICK SHIFT AUTO-CLOSER & BATCH ENGINE
 // ─────────────────────────────────────────────────────────────────────────────
 
