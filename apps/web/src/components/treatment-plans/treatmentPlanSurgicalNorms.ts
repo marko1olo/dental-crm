@@ -1,0 +1,326 @@
+/**
+ * treatmentPlanSurgicalNorms.ts — Эталонные нормы расхода стоматологических материалов
+ * по Номенклатуре Минздрава РФ № 804н для хирургических, имплантологических и ортопедических процедур.
+ */
+
+import type { ProcedureMaterialNorm } from "./types";
+
+export const SURGICAL_MATERIAL_NORMS: Record<string, readonly ProcedureMaterialNorm[]> = {
+	// A16.07.001.001: Атравматичное удаление зуба
+	"A16.07.001.001": [
+		{
+			id: "norm-ext-sponge",
+			materialName: "Гемостатическая коллагеновая губка Alveostim / Parasorb Cone",
+			category: "Хирургия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 310,
+			mandatory: true,
+		},
+		{
+			id: "norm-ext-suture",
+			materialName: "Шовный материал нерассасывающийся PTFE / Пролен 4-0 с колющей иглой",
+			category: "Хирургия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 290,
+			mandatory: true,
+		},
+		{
+			id: "norm-ext-anesthesia",
+			materialName: "Анестетик артикаиновый 4% 1:100000",
+			category: "Анестезия",
+			quantityPerProcedure: 2,
+			unitOfMeasure: "карп.",
+			defaultUnitCostRub: 195,
+			mandatory: true,
+			lotTrackingRequired: true,
+		},
+		{
+			id: "norm-ext-drape",
+			materialName: "Стерильный комплект хирургического покрытия пациента",
+			category: "Хирургия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "компл.",
+			defaultUnitCostRub: 350,
+			mandatory: true,
+		},
+	],
+
+	// A16.07.001.002: Сложное хирургическое удаление ретенированного зуба
+	"A16.07.001.002": [
+		{
+			id: "norm-cplx-ext-blade",
+			materialName: "Микрохирургическое лезвие Swann-Morton № 15C стерильное",
+			category: "Хирургия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 85,
+			mandatory: true,
+		},
+		{
+			id: "norm-cplx-ext-bur",
+			materialName: "Твердосплавный трепанационный бор Lindemann Lind-01",
+			category: "Хирургия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 420,
+			mandatory: true,
+		},
+		{
+			id: "norm-cplx-ext-sponge",
+			materialName: "Коллагеновый конус с ионами серебра Parasorb Cone",
+			category: "Хирургия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 480,
+			mandatory: true,
+		},
+		{
+			id: "norm-cplx-ext-suture",
+			materialName: "Шовный материал полигликолид PGA 4-0 рассасывающийся",
+			category: "Хирургия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 340,
+			mandatory: true,
+		},
+		{
+			id: "norm-cplx-ext-anesthesia",
+			materialName: "Анестетик артикаиновый 4% 1:100000",
+			category: "Анестезия",
+			quantityPerProcedure: 3,
+			unitOfMeasure: "карп.",
+			defaultUnitCostRub: 195,
+			mandatory: true,
+			lotTrackingRequired: true,
+		},
+	],
+
+	// A16.07.041: Костная пластика / синус-лифтинг
+	"A16.07.041": [
+		{
+			id: "norm-graft-bone",
+			materialName: "Ксеногенный натуральный костный графт Geistlich Bio-Oss (гранулы 0.5cc)",
+			category: "Хирургия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "упак.",
+			defaultUnitCostRub: 8900,
+			mandatory: true,
+			lotTrackingRequired: true,
+		},
+		{
+			id: "norm-graft-membrane",
+			materialName: "Резорбируемая двухслойная коллагеновая мембрана Geistlich Bio-Gide 25x25мм",
+			category: "Хирургия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 11500,
+			mandatory: true,
+			lotTrackingRequired: true,
+		},
+		{
+			id: "norm-graft-pins",
+			materialName: "Титановые пины для фиксации мембраны Frios / Meisinger",
+			category: "Хирургия",
+			quantityPerProcedure: 2,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 650,
+			mandatory: true,
+		},
+		{
+			id: "norm-graft-suture",
+			materialName: "Шовный материал монофиламентный PTFE Seralene 5-0",
+			category: "Хирургия",
+			quantityPerProcedure: 2,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 420,
+			mandatory: true,
+		},
+	],
+
+	// A16.07.054: Хирургический 3D-шаблон
+	"A16.07.054": [
+		{
+			id: "norm-guide-photopolymer",
+			materialName: "Биосовместимый полимер для 3D-печати Formlabs Dental SG / NextDent",
+			category: "Лаборатория",
+			quantityPerProcedure: 30,
+			unitOfMeasure: "мл",
+			defaultUnitCostRub: 65, // 1950 ₽
+			mandatory: true,
+		},
+		{
+			id: "norm-guide-sleeves",
+			materialName: "Титановые направляющие втулки (Sleeves) для навигационной хирургии",
+			category: "Хирургия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 750,
+			mandatory: true,
+		},
+	],
+
+	// A16.07.054.001: Дентальная имплантация + формирователь десны
+	"A16.07.054.001": [
+		{
+			id: "norm-implant-fixture",
+			materialName: "Дентальный титановый имплантат с микрошероховатой поверхностью (SLA/SLActive)",
+			category: "Имплантаты",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 11800,
+			mandatory: true,
+			lotTrackingRequired: true,
+		},
+		{
+			id: "norm-implant-abutment",
+			materialName: "Титановый формирователь десны (Healing Abutment)",
+			category: "Имплантаты",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 2200,
+			mandatory: true,
+			lotTrackingRequired: true,
+		},
+		{
+			id: "norm-implant-drapes",
+			materialName: "Стерильное операционное белье хирургического протокола",
+			category: "Хирургия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "компл.",
+			defaultUnitCostRub: 550,
+			mandatory: true,
+		},
+		{
+			id: "norm-implant-saline",
+			materialName: "Стерильный физиологический раствор NaCl 0.9% 500мл для физиодиспенсера",
+			category: "Расходные материалы",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 180,
+			mandatory: true,
+		},
+		{
+			id: "norm-implant-suture",
+			materialName: "Шовный материал полиамидный монофиламент Dafilon 5-0",
+			category: "Хирургия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 310,
+			mandatory: true,
+		},
+	],
+
+	// A16.07.004.001: Коронка из диоксида циркония
+	"A16.07.004.001": [
+		{
+			id: "norm-crown-silicone",
+			materialName: "Слепочная масса А-силикон прецизионная (Honigum / Express XT)",
+			category: "Ортопедия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "порц.",
+			defaultUnitCostRub: 850,
+			mandatory: true,
+		},
+		{
+			id: "norm-crown-retraction-cord",
+			materialName: "Ретракционная нить вязаная с пропиткой UltraPak #00",
+			category: "Ортопедия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 120,
+			mandatory: true,
+		},
+		{
+			id: "norm-crown-temp-cement",
+			materialName: "Цемент временный безэвгенольный Temp-Bond NE",
+			category: "Ортопедия",
+			quantityPerProcedure: 0.5,
+			unitOfMeasure: "г",
+			defaultUnitCostRub: 160,
+			mandatory: true,
+		},
+		{
+			id: "norm-crown-perm-cement",
+			materialName: "Самоадгезивный композитный цемент двойного отверждения RelyX U200 / Maxcem",
+			category: "Ортопедия",
+			quantityPerProcedure: 0.5,
+			unitOfMeasure: "г",
+			defaultUnitCostRub: 520,
+			mandatory: true,
+		},
+	],
+
+	// A16.07.006: Протезирование на имплантате (абатмент + коронка)
+	"A16.07.006": [
+		{
+			id: "norm-impcrown-scanbody",
+			materialName: "Скан-боди / трансфер оттискной для открытой ложки",
+			category: "Ортопедия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 950,
+			mandatory: true,
+		},
+		{
+			id: "norm-impcrown-screw",
+			materialName: "Клинический титановый винт фиксации абатмента (Torque 30 Ncm)",
+			category: "Имплантаты",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 1400,
+			mandatory: true,
+			lotTrackingRequired: true,
+		},
+		{
+			id: "norm-impcrown-teflon",
+			materialName: "Лента тефлоновая стерильная для шахты винта",
+			category: "Ортопедия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 45,
+			mandatory: true,
+		},
+		{
+			id: "norm-impcrown-composite",
+			materialName: "Текучий композит светоотверждаемый для герметизации шахты",
+			category: "Терапия",
+			quantityPerProcedure: 0.2,
+			unitOfMeasure: "г",
+			defaultUnitCostRub: 220,
+			mandatory: true,
+		},
+	],
+
+	// A16.07.003: Вкладка керамическая Inlay/Onlay
+	"A16.07.003": [
+		{
+			id: "norm-inlay-adhesive-system",
+			materialName: "Адгезивная система Variolink Esthetic DC / Panavia V5",
+			category: "Ортопедия",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "компл.",
+			defaultUnitCostRub: 1200,
+			mandatory: true,
+		},
+		{
+			id: "norm-inlay-silane",
+			materialName: "Силан праймер для керамики Monobond Plus",
+			category: "Ортопедия",
+			quantityPerProcedure: 0.1,
+			unitOfMeasure: "мл",
+			defaultUnitCostRub: 450,
+			mandatory: true,
+		},
+		{
+			id: "norm-inlay-rubberdam",
+			materialName: "Коффердам сверхэластичный плотный",
+			category: "Изоляция",
+			quantityPerProcedure: 1,
+			unitOfMeasure: "шт.",
+			defaultUnitCostRub: 120,
+			mandatory: true,
+		},
+	],
+};

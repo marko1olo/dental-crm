@@ -1,0 +1,196 @@
+/**
+ * TreatmentPlanStageItemRow.tsx — Строка процедуры этапа плана лечения
+ * с индикацией зуба, кода 804н, кнопками наряда в ЗТЛ, регулировкой количества и алертом отсутствующей цены.
+ */
+
+import React from "react";
+import { FlaskConical, Trash2, Zap } from "lucide-react";
+import type { TreatmentPlanItem } from "./types";
+import { MissingPriceAlert } from "./MissingPriceAlert";
+
+export interface TreatmentPlanStageItemRowProps {
+	readonly item: TreatmentPlanItem;
+	readonly onOpenLabOrder?: ((teeth?: number[]) => void) | undefined;
+	readonly onOneClickLabOrder?: ((teeth?: number[]) => void) | undefined;
+	readonly onUpdateItemQuantity?: ((itemId: string, newQty: number) => void) | undefined;
+	readonly onUpdateItemPrice?: ((itemId: string, newPriceRub: number) => void) | undefined;
+	readonly onUpdateItem?: ((updatedItem: TreatmentPlanItem) => void) | undefined;
+	readonly onRemoveItem?: ((itemId: string) => void) | undefined;
+}
+
+export const TreatmentPlanStageItemRow: React.FC<TreatmentPlanStageItemRowProps> = ({
+	item,
+	onOpenLabOrder,
+	onOneClickLabOrder,
+	onUpdateItemQuantity,
+	onUpdateItemPrice,
+	onUpdateItem,
+	onRemoveItem,
+}) => {
+	const isLabOrderEligible =
+		item.category === "Ортопедия" ||
+		item.category === "Детская ортопедия" ||
+		item.stageKind === "stage_3_orthopedics" ||
+		/коронк|мост|протез|винир|вкладк|абатмент|бюгел|all-on|onlay|inlay/i.test(item.name) ||
+		item.code804n.startsWith("A16.07.003") ||
+		item.code804n.startsWith("A16.07.004") ||
+		item.code804n.startsWith("A16.07.005") ||
+		item.code804n.startsWith("A16.07.006");
+
+	return (
+		<div className="flex flex-col gap-2 px-4 py-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors">
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+				<div className="flex flex-col gap-0.5 min-w-0 flex-1">
+					<div className="flex items-center gap-1.5 flex-wrap">
+						{item.toothNumber && (
+							<span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 whitespace-nowrap">
+								#{item.toothNumber}
+							</span>
+						)}
+						<span className="text-[10px] font-mono text-[var(--muted,#64748b)] px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-soft)] border border-[var(--line,#e2e8f0)] whitespace-nowrap">
+							{item.code804n}
+						</span>
+						<span className="text-[10px] text-[var(--muted,#64748b)] font-medium">
+							{item.category}
+						</span>
+					</div>
+
+					<span
+						className="text-xs font-semibold text-[var(--ink,#0f172a)] leading-snug truncate min-w-0 block"
+						title={item.name}
+					>
+						{item.name}
+					</span>
+
+					{item.materials && (
+						<p
+							className="text-[11px] text-[var(--muted,#64748b)] italic m-0 truncate min-w-0"
+							title={item.materials}
+						>
+							Материал: {item.materials}
+						</p>
+					)}
+				</div>
+
+				<div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0 pt-1 sm:pt-0 flex-wrap sm:flex-nowrap">
+					{onOpenLabOrder && isLabOrderEligible && (
+						<div className="flex items-center gap-1.5">
+							<button
+								type="button"
+								onClick={() =>
+									onOpenLabOrder(
+										item.toothNumber ? [item.toothNumber] : undefined,
+									)
+								}
+								className="h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2.5 py-1 rounded-md text-[11px] font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal)]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0 touch-manipulation flex items-center gap-1.5"
+								title={`Оформить наряд-заказ в зуботехническую лабораторию для ${item.name}`}
+								data-testid={`item-lab-order-btn-${item.id}`}
+							>
+								<FlaskConical size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+								<span>Наряд в ЗТЛ</span>
+							</button>
+							{onOneClickLabOrder && (
+								<button
+									type="button"
+									onClick={() =>
+										onOneClickLabOrder(
+											item.toothNumber ? [item.toothNumber] : undefined,
+										)
+									}
+									className="h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2 py-1 rounded-md text-[11px] font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 cursor-pointer transition-colors shrink-0 touch-manipulation shadow-2xs flex items-center gap-1"
+									title={`1-клик наряд ЗТЛ: Коронка цирконий VITA A2 (+7 раб. дн.) для ${item.name}`}
+									data-testid={`item-lab-order-one-click-btn-${item.id}`}
+								>
+									<Zap size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
+									<span>1-клик</span>
+								</button>
+							)}
+						</div>
+					)}
+
+					{/* Quantity Controls (Mandate 8e: Doctor Autonomy) */}
+					{onUpdateItemQuantity ? (
+						<div className="flex items-center border border-[var(--line,#e2e8f0)] rounded-lg bg-[var(--paper-soft,#f8fafc)] p-0.5">
+							<button
+								type="button"
+								onClick={() =>
+									onUpdateItemQuantity(
+										item.id,
+										Math.max(1, (item.quantity || 1) - 1),
+									)
+								}
+								className="w-5 h-5 flex items-center justify-center rounded text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#ffffff)] cursor-pointer text-xs font-bold transition-colors"
+								title="Уменьшить количество"
+								data-testid={`dec-qty-${item.id}`}
+							>
+								-
+							</button>
+							<span className="text-[11px] font-mono font-bold px-1.5 text-[var(--ink,#0f172a)] min-w-[18px] text-center">
+								{item.quantity || 1}
+							</span>
+							<button
+								type="button"
+								onClick={() =>
+									onUpdateItemQuantity(
+										item.id,
+										(item.quantity || 1) + 1,
+									)
+								}
+								className="w-5 h-5 flex items-center justify-center rounded text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#ffffff)] cursor-pointer text-xs font-bold transition-colors"
+								title="Увеличить количество"
+								data-testid={`inc-qty-${item.id}`}
+							>
+								+
+							</button>
+						</div>
+					) : (item.quantity || 1) > 1 ? (
+						<span className="text-[11px] font-mono font-bold text-[var(--muted,#64748b)] px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
+							×{item.quantity}
+						</span>
+					) : null}
+
+					<div className="text-right">
+						<span
+							className={`text-xs font-bold font-mono ${
+								item.requiresManualPricing || (item.priceRub || 0) === 0
+									? "text-amber-600 dark:text-amber-400"
+									: "text-[var(--ink,#0f172a)]"
+							}`}
+						>
+							{(item.priceRub || 0).toLocaleString("ru-RU")} ₽
+						</span>
+						{(item.discountRub || 0) > 0 && (
+							<div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">
+								Скидка: −{(item.discountRub || 0).toLocaleString("ru-RU")} ₽
+							</div>
+						)}
+					</div>
+
+					{/* Remove Item Action (Mandate 8e: Doctor Autonomy) */}
+					{onRemoveItem && (
+						<button
+							type="button"
+							onClick={() => onRemoveItem(item.id)}
+							className="h-7 w-7 min-h-[28px] min-w-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11 flex items-center justify-center p-1 rounded-md text-[var(--muted,#64748b)] hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0"
+							title={`Удалить процедуру «${item.name}» из этапа`}
+							data-testid={`remove-item-${item.id}`}
+						>
+							<Trash2 size={13} />
+						</button>
+					)}
+				</div>
+			</div>
+
+			{/* Missing Price Alert Banner */}
+			{(item.requiresManualPricing || item.priceRub === 0) && (
+				<MissingPriceAlert
+					item={item}
+					onUpdatePrice={onUpdateItemPrice}
+					onUpdateItem={onUpdateItem}
+					variant="full"
+					className="mt-1"
+				/>
+			)}
+		</div>
+	);
+};
