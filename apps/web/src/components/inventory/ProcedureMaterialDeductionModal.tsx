@@ -1004,7 +1004,7 @@ export function ProcedureMaterialDeductionModal({
 																type="button"
 																className="inventory-stepper-btn"
 																onClick={() => handleStepQuantity(line.id, -1)}
-																disabled={line.quantity <= 0}
+																disabled={false}
 																aria-label="Уменьшить количество"
 															>
 																−

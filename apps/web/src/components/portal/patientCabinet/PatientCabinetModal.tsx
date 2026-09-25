@@ -144,6 +144,15 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
 	const [selectedTaxYear, setSelectedTaxYear] = useState<number>(2026);
 	const [showClinicalPlanDetail, setShowClinicalPlanDetail] = useState(false);
+	const [cabinetToastMessage, setCabinetToastMessage] = useState<string | null>(null);
+
+	const handleShowCabinetToast = useCallback((msg: string) => {
+		setCabinetToastMessage(msg);
+		const timer = setTimeout(() => {
+			setCabinetToastMessage(null);
+		}, 3500);
+		return () => clearTimeout(timer);
+	}, []);
 
 	const summary: PatientCabinetSummary = useMemo(() => calculateCabinetSummary(data), [data]);
 	const healthIndex: DentalHealthIndexResult = useMemo(
@@ -572,7 +581,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 						<InvoicesTab
 							data={data}
 							onOpenSbpForInvoice={handleStartSbpPayment}
-							onShowToast={(msg) => alert(msg)}
+							onShowToast={handleShowCabinetToast}
 						/>
 					)}
 
@@ -585,7 +594,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 							onStartConsentSigning={(consent) => handleStartConsentSign(consent, "sms_otp")}
 							onOpenTaxCertificateSheet={() => setIsTaxModalOpen(true)}
 							onDownloadTaxCertificateDirect={handleDownloadTaxCertificate}
-							onShowToast={(msg) => alert(msg)}
+							onShowToast={handleShowCabinetToast}
 						/>
 					)}
 
@@ -715,6 +724,33 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 					appointment={reschedulingApt || null}
 					onSubmit={handleRescheduleSubmit}
 				/>
+
+				{/* Non-blocking toast notification banner (Zero blocking alerts - Mandate 8e) */}
+				{cabinetToastMessage && (
+					<div
+						className="pc-toast-banner"
+						role="status"
+						style={{
+							position: "fixed",
+							bottom: "24px",
+							left: "50%",
+							transform: "translateX(-50%)",
+							background: "var(--pc-surface, #1e293b)",
+							color: "var(--pc-text, #ffffff)",
+							padding: "10px 18px",
+							borderRadius: "10px",
+							border: "1px solid var(--pc-border, #334155)",
+							boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+							fontSize: "0.875rem",
+							fontWeight: 600,
+							zIndex: 9999,
+							maxWidth: "90%",
+							textAlign: "center",
+						}}
+					>
+						{cabinetToastMessage}
+					</div>
+				)}
 			</div>
 		</div>
 	);

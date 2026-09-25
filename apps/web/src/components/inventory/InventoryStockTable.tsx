@@ -448,7 +448,7 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 													title="Остаток 0: списание разрешено в мягкий овердрафт без блокировки врача (Мандат 8n)"
 												>
 													<ShieldAlert size={10} />
-													<span>Овердрафт (0-блокировка)</span>
+													<span>Мягкий овердрафт</span>
 												</div>
 											)}
 										</td>
@@ -458,9 +458,9 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 											<div className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] shadow-2xs">
 												<button
 													type="button"
-													disabled={traffic.isBlocked}
+													disabled={false}
 													onClick={() => handleStepQuantity(item.id, -1)}
-													className="w-7 h-7 flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] disabled:opacity-40 cursor-pointer"
+													className="w-7 h-7 flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
 													aria-label={`Уменьшить количество ${item.name}`}
 												>
 													<Minus size={12} />
@@ -470,9 +470,9 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 												</span>
 												<button
 													type="button"
-													disabled={traffic.isBlocked}
+													disabled={false}
 													onClick={() => handleStepQuantity(item.id, 1)}
-													className="w-7 h-7 flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] disabled:opacity-40 cursor-pointer"
+													className="w-7 h-7 flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
 													aria-label={`Увеличить количество ${item.name}`}
 												>
 													<Plus size={12} />
