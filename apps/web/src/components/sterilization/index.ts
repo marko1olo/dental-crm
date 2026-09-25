@@ -8,6 +8,7 @@
 
 export * from "./KraftPackageQuickScanner";
 export * from "./sterilizationPresets";
+export * from "./ChairsideSterilizationPouchWidget";
 
 // Re-exports from SanPiN autoclave and kraft domains
 export { AutoclaveRegisterTab } from "../sanpin/AutoclaveRegisterTab";
@@ -21,4 +22,27 @@ export {
 	parseAndValidateKraftBarcode,
 	attachKraftPackageTo043Diary,
 	type ParsedKraftBarcode,
+	type ChairsidePouchRecord,
+	type ChemicalIndicatorClass,
+	type IndicatorColorTransitionId,
+	type IndicatorColorTransitionDef,
+	type ChairsideAutoclaveParams,
+	type ChairsideIndicatorState,
+	type Form257LinkRef,
+	type ChairsideTrayKind,
+	type ChairsideTrayPreset,
+	type CreateChairsidePouchOptions,
+	STATUTORY_INDICATOR_TRANSITIONS,
+	DEFAULT_CHAIRSIDE_AUTOCLAVE_PARAMS,
+	DEFAULT_CHAIRSIDE_INDICATOR_STATE,
+	CHAIRSIDE_TRAY_PRESETS,
+	generateChairsidePouchCode,
+	normalizeChairsidePouchCode,
+	parseChairsidePouchInput,
+	createForm257Link,
+	formatPouch043StatutorySnippet,
+	formatPouch043FullDiaryText,
+	insertPouchIntoDiaryText,
+	createChairsidePouchRecord,
+	exportChairsidePouchToForm257Record,
 } from "@dental/shared";
