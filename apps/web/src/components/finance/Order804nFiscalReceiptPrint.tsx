@@ -144,8 +144,14 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 								</span>
 							</div>
 							<div className="flex justify-between text-xs text-[var(--muted,#64748b)]">
-								<span>НДС: БЕЗ НДС (ст. 149 НК)</span>
-								<span className="font-semibold text-[var(--brand-primary,#0d9488)]">ВЫЧЕТ: КОД 0{it.taxDeductionCategory}</span>
+								<span>
+									{it.isRetail || it.vatRate === "vat_20"
+										? `НДС 20% (ст. 164 НК, Тег 1199 = 1) = ${((it.taxRateKopecks || 0) / 100).toFixed(2)} ₽`
+										: "НДС: БЕЗ НДС (ст. 149 НК, Тег 1199 = 6)"}
+								</span>
+								<span className={it.isRetail ? "text-[var(--muted,#64748b)]" : "font-semibold text-[var(--brand-primary,#0d9488)]"}>
+									{it.isRetail ? "БЕЗ ВЫЧЕТА (ст. 219)" : `ВЫЧЕТ: КОД 0${it.taxDeductionCategory}`}
+								</span>
 							</div>
 						</div>
 					))}
@@ -223,6 +229,29 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 							<span className="text-[var(--muted,#64748b)]">СЕРТИФИКАТ (Тег 1215):</span>
 							<span className="font-bold text-amber-700 dark:text-amber-300">{receipt.payments.certificateRub.toLocaleString("ru-RU")} ₽</span>
 						</div>
+					)}
+					{receipt.hasMixedItems ? (
+						<div className="pt-2 border-t border-dotted border-[var(--border,#cbd5e1)] text-[11px] space-y-1">
+							<div className="flex justify-between text-[var(--muted,#64748b)]">
+								<span>МЕДУСЛУГИ (БЕЗ НДС, ст. 149):</span>
+								<span className="font-semibold text-[var(--ink,#0f172a)]">{((receipt.medicalTotalKopecks || receipt.vatNoneKopecks || 0) / 100).toLocaleString("ru-RU")} ₽</span>
+							</div>
+							<div className="flex justify-between text-[var(--muted,#64748b)]">
+								<span>ТОВАРЫ РОЗНИЦЫ (НДС 20%, ст. 164):</span>
+								<span className="font-semibold text-[var(--ink,#0f172a)]">{((receipt.retailTotalKopecks || 0) / 100).toLocaleString("ru-RU")} ₽</span>
+							</div>
+							<div className="flex justify-between font-bold text-[var(--ink,#0f172a)]">
+								<span>В Т.Ч. СУММА НДС 20%:</span>
+								<span className="font-mono">{((receipt.vat20Kopecks || 0) / 100).toFixed(2)} ₽</span>
+							</div>
+						</div>
+					) : (
+						receipt.vat20Rub !== undefined && receipt.vat20Rub > 0 && (
+							<div className="flex justify-between text-xs font-bold pt-1 border-t border-dotted border-[var(--border,#cbd5e1)]">
+								<span>В Т.Ч. СУММА НДС 20%:</span>
+								<span className="font-mono">{receipt.vat20Rub.toFixed(2)} ₽</span>
+							</div>
+						)
 					)}
 				</div>
 			</div>

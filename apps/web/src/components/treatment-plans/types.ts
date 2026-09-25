@@ -2,7 +2,12 @@
  * types.ts — строго типизированные контракты и структуры данных планов лечения и смет DENTE CRM.
  */
 
-import type { Kopecks, StagedPaymentScheduleBreakdown } from "@dental/shared";
+import type {
+	Ffd12PaymentSubject,
+	Ffd12VatRate,
+	Kopecks,
+	StagedPaymentScheduleBreakdown,
+} from "@dental/shared";
 
 export type TreatmentPlanStageKind =
 	| "stage_1_therapy" // Этап 1: Неотложная помощь и терапевтическая санация
@@ -47,6 +52,11 @@ export interface TreatmentPlanItem {
 	readonly isWarranty?: boolean | undefined;
 	readonly warrantyDiscountPercent?: number | undefined;
 	readonly warrantyPriceRub?: number | undefined;
+	readonly vatRate?: Ffd12VatRate | undefined;
+	readonly paymentSubject?: Ffd12PaymentSubject | undefined;
+	readonly barcode?: string | undefined;
+	readonly sku?: string | undefined;
+	readonly isRetail?: boolean | undefined;
 }
 
 export type TreatmentPlanStageStatus = "draft" | "agreed" | "in_progress" | "completed";

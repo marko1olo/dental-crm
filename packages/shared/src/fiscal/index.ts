@@ -17,3 +17,4 @@ export * from "./barcodeGenerator.js";
 export * from "./familyTaxBatchEngine.js";
 export * from "./idempotency.js";
 export * from "./sberPosTypes.js";
+export * from "./mixedFiscalReceipt.js";

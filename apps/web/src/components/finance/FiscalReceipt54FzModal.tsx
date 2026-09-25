@@ -22,6 +22,7 @@ import {
 	MoreHorizontal,
 	ChevronDown,
 	Settings2,
+	ShoppingBag,
 	Printer,
 	QrCode,
 	Receipt,
@@ -48,9 +49,12 @@ import {
 	type StomxCashBoxType,
 	type StomxReceiptTypeAlias,
 	type StomxExpenseTypeAlias,
+	RECEPTION_RETAIL_CATALOG,
+	type RetailProductItem,
 } from "@dental/shared";
 import type { TreatmentPlanItem, TreatmentPlanStageKind } from "../treatment-plans/types";
 import { showToast } from "../GlobalToast";
+import { RetailProductsModal } from "../billing/RetailProductsModal";
 import {
 	calculateSplitPaymentAllocation,
 	calculateTaxDeductionBreakdown,
@@ -92,6 +96,11 @@ export type FlexibleFiscalItem =
 			category?: string | undefined;
 			stageKind?: string | undefined;
 			phase?: number | undefined;
+			vatRate?: any;
+			paymentSubject?: any;
+			barcode?: string | undefined;
+			sku?: string | undefined;
+			isRetail?: boolean | undefined;
 	  };
 
 export type FiscalModalTab =
@@ -253,17 +262,23 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		0,
 		(propTotalDueRub ?? propAmountRub ?? totalBillRub ?? (totalBillKop ? totalBillKop / 100 : undefined)) ?? 0,
 	);
+
+	const [additionalRetailItems, setAdditionalRetailItems] = useState<TreatmentPlanItem[]>([]);
+	const [isRetailModalOpen, setIsRetailModalOpen] = useState<boolean>(false);
+
 	const items: readonly TreatmentPlanItem[] = useMemo(() => {
+		const baseItems: TreatmentPlanItem[] = [];
 		if (propItems && propItems.length > 0) {
-			return propItems.map((item, idx) => {
+			for (let idx = 0; idx < propItems.length; idx++) {
+				const item = propItems[idx];
 				const candidate = item as Partial<FiscalItemDraft> & Partial<TreatmentPlanItem>;
 				const qty = candidate.quantity ?? 1;
 				const price = candidate.priceRub ?? candidate.unitPriceRub ?? 0;
 				const unitPrice = candidate.unitPriceRub ?? (qty > 0 ? price / qty : price);
-				return {
+				baseItems.push({
 					id: candidate.id || `item-${idx + 1}`,
 					name: candidate.name || "Стоматологическая медицинская услуга",
-					code804n: candidate.code804n || "A16.07.002",
+					code804n: candidate.code804n || (candidate.isRetail ? "RETAIL" : "A16.07.002"),
 					toothNumber: candidate.toothFdiNumber ?? candidate.toothNumber ?? undefined,
 					quantity: qty,
 					unitPriceRub: unitPrice,
@@ -275,27 +290,57 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 						candidate.stageKind && candidate.stageKind !== ("all" as string)
 							? (candidate.stageKind as TreatmentPlanStageKind)
 							: "stage_1_therapy",
-				};
+					vatRate: candidate.vatRate,
+					paymentSubject: candidate.paymentSubject,
+					barcode: candidate.barcode,
+					sku: candidate.sku,
+					isRetail: candidate.isRetail,
+				});
+			}
+		} else if (fallbackAmount > 0) {
+			baseItems.push({
+				id: "synthetic-804n-fallback-item",
+				code804n: "A16.07.002",
+				name: "Стоматологические медицинские услуги (клинический прием)",
+				category: "therapy",
+				unitPriceRub: fallbackAmount,
+				priceRub: fallbackAmount,
+				quantity: 1,
+				discountRub: 0,
+				phase: 1,
+				stageKind: "stage_1_therapy",
 			});
 		}
-		if (fallbackAmount > 0) {
-			return [
-				{
-					id: "synthetic-804n-fallback-item",
-					code804n: "A16.07.002",
-					name: "Стоматологические медицинские услуги (клинический прием)",
-					category: "therapy",
-					unitPriceRub: fallbackAmount,
-					priceRub: fallbackAmount,
-					quantity: 1,
-					discountRub: 0,
-					phase: 1,
-					stageKind: "stage_1_therapy",
-				},
-			];
-		}
-		return [];
-	}, [propItems, fallbackAmount]);
+		return [...baseItems, ...additionalRetailItems];
+	}, [propItems, fallbackAmount, additionalRetailItems]);
+
+	const handleAddRetailProduct = (product: RetailProductItem, quantity: number) => {
+		const isCert = product.category === "certificates";
+		const newItem: TreatmentPlanItem = {
+			id: `retail-${product.id}-${Date.now()}`,
+			name: product.name,
+			code804n: isCert ? "CERTIFICATE" : "RETAIL",
+			unitPriceRub: product.priceRub,
+			priceRub: product.priceRub * quantity,
+			quantity,
+			discountRub: 0,
+			category: product.category,
+			phase: 1,
+			stageKind: "stage_1_therapy",
+			vatRate: product.vatRate,
+			paymentSubject: product.paymentSubject,
+			barcode: product.barcode,
+			sku: product.sku,
+			isRetail: true,
+		};
+		setAdditionalRetailItems((prev) => [...prev, newItem]);
+		showToast(`Добавлено в чек: ${product.name} (${quantity} шт.)`, "success", 2000);
+	};
+
+	const handleRemoveRetailItem = (itemId: string) => {
+		setAdditionalRetailItems((prev) => prev.filter((it) => it.id !== itemId));
+		showToast("Товар витрины удален из чека", "info", 1500);
+	};
 
 	const effectiveInitialTab: FiscalModalTab =
 		initialTab || (initialOperationType === "income_return" ? "refund" : "payment");
@@ -512,7 +557,8 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			receivedCashRub: receivedCashRub > 0 ? receivedCashRub : cashAmount,
 			cardRub: cardAmount,
 			sbpRub: sbpAmount,
-			depositRub: depositAmount + certificateAmount,
+			depositRub: depositAmount,
+			certificateRub: certificateAmount,
 			insuranceRub: insuranceAmount,
 			...(guaranteeLetterNumber.trim() ? { guaranteeLetterNumber: guaranteeLetterNumber.trim() } : {}),
 		}),
@@ -1807,6 +1853,113 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									)}
 								</div>
 
+								{/* Reception Retail Showcase & Gift Certificates Button */}
+								<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-2.5" data-testid="reception-retail-showcase-bar">
+									<div className="flex items-center justify-between gap-2 flex-wrap">
+										<div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)]">
+											<ShoppingBag size={14} className="text-teal-600 dark:text-teal-400" />
+											<span>Витрина ресепшена (54-ФЗ НДС 20%):</span>
+										</div>
+										<button
+											type="button"
+											onClick={() => setIsRetailModalOpen(true)}
+											className="h-7 px-3 rounded-lg text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white cursor-pointer transition-all active:scale-95 flex items-center gap-1.5 shadow-2xs"
+											data-testid="btn-open-retail-showcase"
+										>
+											<ShoppingBag size={13} />
+											<span>+ Добавить товар / сертификат</span>
+										</button>
+									</div>
+
+									{/* Quick-add chips for most popular items */}
+									<div className="flex items-center gap-1.5 flex-wrap">
+										<span className="text-[11px] text-[var(--muted,#64748b)] font-semibold mr-0.5">Быстро:</span>
+										<button
+											type="button"
+											onClick={() => {
+												const item = RECEPTION_RETAIL_CATALOG.find((p) => p.id === "curaprox-cs-5460");
+												if (item) handleAddRetailProduct(item, 1);
+											}}
+											className="h-6 px-2 rounded-md text-[11px] font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-teal-500/30 text-teal-800 dark:text-teal-200 hover:bg-teal-50 dark:hover:bg-teal-950/60 cursor-pointer transition-all"
+											title="Curaprox CS 5460 (1200 ₽, НДС 20%)"
+											data-testid="btn-quick-add-curaprox"
+										>
+											+ Curaprox 5460 (1200 ₽)
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												const item = RECEPTION_RETAIL_CATALOG.find((p) => p.id === "marvis-mint-85");
+												if (item) handleAddRetailProduct(item, 1);
+											}}
+											className="h-6 px-2 rounded-md text-[11px] font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-teal-500/30 text-teal-800 dark:text-teal-200 hover:bg-teal-50 dark:hover:bg-teal-950/60 cursor-pointer transition-all"
+											title="Marvis Mint 85ml (1150 ₽, НДС 20%)"
+											data-testid="btn-quick-add-marvis"
+										>
+											+ Marvis Mint (1150 ₽)
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												const item = RECEPTION_RETAIL_CATALOG.find((p) => p.id === "biorepair-total-75");
+												if (item) handleAddRetailProduct(item, 1);
+											}}
+											className="h-6 px-2 rounded-md text-[11px] font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-teal-500/30 text-teal-800 dark:text-teal-200 hover:bg-teal-50 dark:hover:bg-teal-950/60 cursor-pointer transition-all"
+											title="Biorepair Total 75ml (950 ₽, НДС 20%)"
+											data-testid="btn-quick-add-biorepair"
+										>
+											+ Biorepair (950 ₽)
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												const item = RECEPTION_RETAIL_CATALOG.find((p) => p.id === "gift-cert-5000");
+												if (item) handleAddRetailProduct(item, 1);
+											}}
+											className="h-6 px-2 rounded-md text-[11px] font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-amber-500/30 text-amber-800 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/60 cursor-pointer transition-all"
+											title="Подарочный сертификат 5000 ₽ (Аванс, Без НДС)"
+											data-testid="btn-quick-add-cert-5000"
+										>
+											+ Сертификат 5000 ₽
+										</button>
+									</div>
+
+									{/* List of added retail items with delete buttons */}
+									{additionalRetailItems.length > 0 && (
+										<div className="pt-2 border-t border-[var(--border,#cbd5e1)] space-y-1">
+											<div className="text-[11px] font-semibold text-[var(--muted,#64748b)]">
+												Добавлено в текущий чек с витрины ({additionalRetailItems.length}):
+											</div>
+											<div className="space-y-1">
+												{additionalRetailItems.map((rItem) => (
+													<div
+														key={rItem.id}
+														className="flex items-center justify-between text-xs p-1.5 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)]"
+													>
+														<span className="truncate pr-2 font-medium">
+															{rItem.name} ({rItem.quantity} шт. × {rItem.unitPriceRub} ₽)
+														</span>
+														<div className="flex items-center gap-2 shrink-0">
+															<span className="font-bold font-mono">
+																{formatMoneyRu(rItem.priceRub)}
+															</span>
+															<button
+																type="button"
+																onClick={() => handleRemoveRetailItem(rItem.id)}
+																className="text-rose-500 hover:text-rose-700 cursor-pointer p-0.5"
+																title="Удалить из чека"
+																data-testid={`btn-remove-retail-${rItem.id}`}
+															>
+																<X size={14} />
+															</button>
+														</div>
+													</div>
+												))}
+											</div>
+										</div>
+									)}
+								</div>
+
 								{/* Stage Filter Chips */}
 								{availableStages.length > 0 && (
 									<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-2">
@@ -2621,6 +2774,72 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 													/>
 												</div>
 											</div>
+
+											{/* Gift Certificate Row (Tag 1215) */}
+											<div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-2" data-testid="split-certificate-row">
+												<div className="flex items-center justify-between gap-3">
+													<div className="flex items-center gap-2.5">
+														<Gift size={16} className="text-amber-600 shrink-0" />
+														<div>
+															<span className="text-xs font-bold block text-[var(--ink,#0f172a)]">
+																Подарочный сертификат (Тег 1215)
+															</span>
+															<span className="text-[11px] text-[var(--muted,#64748b)]">
+																Зачет аванса по 54-ФЗ
+															</span>
+														</div>
+													</div>
+													<div className="flex items-center gap-1.5">
+														<input
+															type="number"
+															min={0}
+															max={totalSumRub}
+															value={certificateAmount || ""}
+															onChange={(e) => setCertificateAmount(Math.max(0, Number(e.target.value) || 0))}
+															placeholder="0"
+															className="h-8 w-28 px-2.5 text-xs font-mono font-bold rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
+															data-testid="input-certificate-amount"
+														/>
+														{remainingRub > 0 && (
+															<button
+																type="button"
+																onClick={() => handleFillRemaining("certificate")}
+																className="h-8 px-2.5 text-xs font-bold rounded-lg bg-amber-600 hover:bg-amber-700 text-white cursor-pointer transition-all active:scale-95"
+																data-testid="btn-fill-remaining-cert"
+															>
+																+Остаток
+															</button>
+														)}
+													</div>
+												</div>
+
+												{/* Nominal quick-select chips (3000 / 5000 / 10000 ₽) */}
+												<div className="flex items-center gap-1.5 pt-1 border-t border-[var(--border,#cbd5e1)]">
+													<span className="text-[11px] text-[var(--muted,#64748b)] font-semibold">
+														Номиналы:
+													</span>
+													{[3000, 5000, 10000].map((nom) => (
+														<button
+															key={nom}
+															type="button"
+															onClick={() => setCertificateAmount((prev) => Math.min(totalSumRub, prev + nom))}
+															className="h-6 px-2 rounded-md text-[11px] font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/60 cursor-pointer transition-all"
+															data-testid={`btn-cert-nominal-${nom}`}
+														>
+															+{nom.toLocaleString("ru-RU")} ₽
+														</button>
+													))}
+													{certificateAmount > 0 && (
+														<button
+															type="button"
+															onClick={() => setCertificateAmount(0)}
+															className="h-6 px-2 rounded-md text-[11px] font-bold text-rose-600 hover:bg-rose-50 cursor-pointer ml-auto"
+														>
+															Сброс
+														</button>
+													)}
+												</div>
+											</div>
 										</div>
 									)}
 								</div>
@@ -2882,10 +3101,32 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												<strong className="font-mono text-[var(--ink,#0f172a)]">{formatMoneyRu(depositAmount)}</strong>
 											</div>
 										)}
+										{certificateAmount > 0 && (
+											<div className="flex justify-between">
+												<span>Сертификат (Тег 1215):</span>
+												<strong className="font-mono text-[var(--ink,#0f172a)]">{formatMoneyRu(certificateAmount)}</strong>
+											</div>
+										)}
 										{insuranceAmount > 0 && (
 											<div className="flex justify-between">
 												<span>ДМС:</span>
 												<strong className="font-mono text-[var(--ink,#0f172a)]">{formatMoneyRu(insuranceAmount)}</strong>
+											</div>
+										)}
+										{fiscalData.hasMixedItems && (
+											<div className="pt-2 border-t border-[var(--border,#cbd5e1)] text-[11px] space-y-0.5" data-testid="mixed-fiscal-summary-card">
+												<div className="flex justify-between text-emerald-700 dark:text-emerald-400 font-bold">
+													<span>Медуслуги (Без НДС, ст. 149):</span>
+													<span className="font-mono">{formatMoneyRu(kopecksToRub(fiscalData.vatNoneKopecks))}</span>
+												</div>
+												<div className="flex justify-between text-blue-700 dark:text-blue-400 font-bold">
+													<span>Товары витрины (НДС 20%, ст. 164):</span>
+													<span className="font-mono">{formatMoneyRu(kopecksToRub(fiscalData.retailTotalKopecks || 0))}</span>
+												</div>
+												<div className="flex justify-between text-[var(--muted,#64748b)]">
+													<span>В т.ч. сумма НДС 20%:</span>
+													<span className="font-mono">{formatMoneyRu(fiscalData.vat20Rub)}</span>
+												</div>
 											</div>
 										)}
 									</div>
@@ -4155,6 +4396,14 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 					)}
 				</div>
 			</div>
+
+			{/* Reception Retail Showcase Modal */}
+			<RetailProductsModal
+				isOpen={isRetailModalOpen}
+				onClose={() => setIsRetailModalOpen(false)}
+				onAddProduct={handleAddRetailProduct}
+				patientName={patientName}
+			/>
 		</div>
 	);
 };

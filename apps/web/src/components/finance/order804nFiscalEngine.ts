@@ -20,6 +20,8 @@ import {
 	sumKopecks,
 	calculateProportionalMultiTenderRefund,
 	kopecksToRubles,
+	calculateVatKopecks,
+	isRetailCommodityItem,
 } from "@dental/shared";
 import type { TreatmentPlanItem } from "../treatment-plans/types";
 
@@ -38,7 +40,7 @@ export interface Order804nFiscalReceiptItem {
 	readonly amountRub: number;
 	readonly amountKopecks: Kopecks;
 	readonly vatRate: Ffd12VatRate;
-	readonly taxRateKopecks: Kopecks; // Ставка / сумма НДС в копейках (0 для льготных медицинских услуг по ст. 149 НК РФ)
+	readonly taxRateKopecks: Kopecks; // Ставка / сумма НДС в копейках (0 для льготных медицинских услуг по ст. 149 НК РФ, 20/120 для товаров по ст. 164 НК РФ)
 	readonly paymentSubject: Ffd12PaymentSubject;
 	readonly paymentMethod: Ffd12PaymentMethod;
 	readonly quantityMeasure: Ffd12QuantityMeasure;
@@ -48,6 +50,9 @@ export interface Order804nFiscalReceiptItem {
 	readonly markingCode?: string | undefined;
 	readonly isMarkedItem?: boolean | undefined;
 	readonly matchedTradeName?: string | undefined;
+	readonly isRetail?: boolean | undefined;
+	readonly barcode?: string | undefined;
+	readonly sku?: string | undefined;
 }
 
 export interface SplitPaymentInput {
@@ -124,6 +129,13 @@ export interface FiscalReceipt54FzResult {
 	readonly grossRub: number;
 	readonly grossKopecks: Kopecks;
 	readonly taxRateKopecks: Kopecks;
+	readonly vat20Kopecks?: Kopecks | undefined;
+	readonly vat20Rub?: number | undefined;
+	readonly vatNoneKopecks?: Kopecks | undefined;
+	readonly vatNoneRub?: number | undefined;
+	readonly hasMixedItems?: boolean | undefined;
+	readonly retailTotalKopecks?: Kopecks | undefined;
+	readonly medicalTotalKopecks?: Kopecks | undefined;
 	readonly insuranceCoveredRub?: number | undefined;
 	readonly guaranteeLetterNumber?: string | undefined;
 	readonly patientCoPayRub?: number | undefined;
@@ -282,6 +294,18 @@ export function calculateTaxDeductionBreakdown(
 	let code02Count = 0;
 
 	for (const item of items) {
+		const isRetail = isRetailCommodityItem({
+			name: (item as { name?: string }).name,
+			category: (item as { category?: string }).category,
+			paymentSubject: (item as { paymentSubject?: Ffd12PaymentSubject }).paymentSubject,
+			vatRate: (item as { vatRate?: Ffd12VatRate }).vatRate,
+			isRetail: (item as { isRetail?: boolean }).isRetail,
+		});
+		if (isRetail) {
+			// Розничные товары стойки ресепшена и сертификаты исключаются из социального вычета на лечение (ст. 219 НК РФ)
+			continue;
+		}
+
 		const code804n = (item as { code804n?: string }).code804n || "";
 		const serviceName = (item as { name?: string }).name || "";
 		const cat =
@@ -494,10 +518,21 @@ export function mapTreatmentItemsToFiscalReceipt(
 	grossKopecks: Kopecks;
 	grossRub: number;
 	taxRateKopecks: Kopecks;
+	vat20Kopecks: Kopecks;
+	vat20Rub: number;
+	vatNoneKopecks: Kopecks;
+	vatNoneRub: number;
+	hasMixedItems: boolean;
+	retailTotalKopecks: Kopecks;
+	medicalTotalKopecks: Kopecks;
 	hasExpensiveTreatment: boolean;
 	taxDeductionSummaryCode: "1" | "2";
 } {
 	const resultItems: Order804nFiscalReceiptItem[] = [];
+	let vat20Kopecks = 0 as Kopecks;
+	let vatNoneKopecks = 0 as Kopecks;
+	let retailTotalKopecks = 0 as Kopecks;
+	let medicalTotalKopecks = 0 as Kopecks;
 
 	for (const it of items) {
 		const qty = Math.max(1, it.quantity || 1);
@@ -514,7 +549,15 @@ export function mapTreatmentItemsToFiscalReceipt(
 		) as Kopecks;
 		const amountRub = kopecksToRubles(netAmountKopecks);
 
-		const taxCat = resolveTaxDeductionCategory(it.code804n, it.name);
+		const isRetail = isRetailCommodityItem({
+			name: it.name,
+			category: it.category,
+			paymentSubject: it.paymentSubject,
+			vatRate: it.vatRate,
+			isRetail: it.isRetail,
+		});
+
+		const taxCat = isRetail ? "1" : resolveTaxDeductionCategory(it.code804n, it.name);
 		const fiscalName = formatFiscalItemName(it.name, it.code804n, it.toothNumber);
 
 		// Check if item is MDLP marked (anesthetics, implants, bone materials)
@@ -532,10 +575,39 @@ export function mapTreatmentItemsToFiscalReceipt(
 			lowerMat.includes("имплантат") ||
 			lowerMat.includes("анестетик");
 
+		let vatRate: Ffd12VatRate;
+		let taxRateKopecks: Kopecks;
+		let paymentSubject: Ffd12PaymentSubject;
+
+		if (isRetail) {
+			vatRate = it.vatRate || "vat_20";
+			paymentSubject =
+				it.paymentSubject ||
+				(it.category === "certificates" ? "payment" : "commodity");
+			taxRateKopecks =
+				vatRate === "vat_none"
+					? (0 as Kopecks)
+					: (calculateVatKopecks(netAmountKopecks, "vat_20") as Kopecks);
+
+			retailTotalKopecks = (retailTotalKopecks + netAmountKopecks) as Kopecks;
+			if (vatRate === "vat_20") {
+				vat20Kopecks = (vat20Kopecks + taxRateKopecks) as Kopecks;
+			} else {
+				vatNoneKopecks = (vatNoneKopecks + netAmountKopecks) as Kopecks;
+			}
+		} else {
+			vatRate = "vat_none"; // Медицинские стоматологические услуги освобождены от НДС (ст. 149 НК РФ)
+			taxRateKopecks = 0 as Kopecks;
+			paymentSubject = isMarked ? "goods_with_marking" : "service"; // Тег 1212 = 32 (Маркированный товар) / 4 (Услуга)
+
+			medicalTotalKopecks = (medicalTotalKopecks + netAmountKopecks) as Kopecks;
+			vatNoneKopecks = (vatNoneKopecks + netAmountKopecks) as Kopecks;
+		}
+
 		resultItems.push({
 			id: it.id,
 			name: fiscalName,
-			code804n: it.code804n,
+			code804n: it.code804n || (isRetail ? "RETAIL" : "A16.07.002"),
 			...(it.toothNumber !== undefined ? { toothNumber: it.toothNumber } : {}),
 			quantity: qty,
 			unitPriceRub,
@@ -546,19 +618,22 @@ export function mapTreatmentItemsToFiscalReceipt(
 			grossKopecks: grossAmountKopecks,
 			amountRub,
 			amountKopecks: netAmountKopecks,
-			vatRate: "vat_none", // Медицинские стоматологические услуги освобождены от НДС (ст. 149 НК РФ)
-			taxRateKopecks: 0 as Kopecks,
-			paymentSubject: isMarked ? "goods_with_marking" : "service", // Тег 1212 = 32 (Маркированный товар) / 4 (Услуга)
-			paymentMethod, // Тег 1214 = 4 (Полный расчет)
-			quantityMeasure: "piece", // Тег 2108 = 0 (Штука/ед.)
+			vatRate,
+			taxRateKopecks,
+			paymentSubject,
+			paymentMethod,
+			quantityMeasure: "piece",
 			taxDeductionCategory: taxCat,
 			stageKind: it.stageKind,
 			stageCategoryTitle:
 				(it.stageKind ? TREATMENT_STAGE_LABELS[it.stageKind] : undefined) ||
 				it.category ||
-				"Стоматологическое лечение",
+				(isRetail ? "Витрина ресепшена (гигиена)" : "Стоматологическое лечение"),
 			isMarkedItem: isMarked,
 			matchedTradeName: isMarked ? it.name : undefined,
+			isRetail,
+			barcode: it.barcode,
+			sku: it.sku,
 		});
 	}
 
@@ -569,7 +644,7 @@ export function mapTreatmentItemsToFiscalReceipt(
 	const taxRateKopecks = sumKopecks(resultItems.map((i) => i.taxRateKopecks));
 
 	const hasExpensiveTreatment = resultItems.some(
-		(i) => i.taxDeductionCategory === "2",
+		(i) => !i.isRetail && i.taxDeductionCategory === "2",
 	);
 
 	return {
@@ -579,6 +654,13 @@ export function mapTreatmentItemsToFiscalReceipt(
 		grossKopecks,
 		grossRub,
 		taxRateKopecks,
+		vat20Kopecks,
+		vat20Rub: kopecksToRubles(vat20Kopecks),
+		vatNoneKopecks,
+		vatNoneRub: kopecksToRubles(vatNoneKopecks),
+		hasMixedItems: vat20Kopecks > 0 && vatNoneKopecks > 0,
+		retailTotalKopecks,
+		medicalTotalKopecks,
 		hasExpensiveTreatment,
 		taxDeductionSummaryCode: hasExpensiveTreatment ? "2" : "1",
 	};
@@ -627,9 +709,10 @@ export function calculateSplitPaymentAllocation(
 	const remainingKopecks = (totalKopecks - allocatedKopecks) as Kopecks;
 	const patientCoPayKopecks = Math.max(0, totalKopecks - insuranceKopecks) as Kopecks;
 
-	// В 54-ФЗ (ФФД 1.2): Списание с депозита/аванса фискализируется в Тег 1215 (Зачет аванса)
-	const advanceOffsetKopecks = depositKopecks;
-	const advanceOffsetRub = kopecksToRubles(depositKopecks);
+	// В 54-ФЗ (ФФД 1.2): Списание с депозита/аванса фискализируется в Тег 1215 (Зачет аванса).
+	// Подарочные сертификаты также являются зачетом аванса (Тег 1215), внесенного при их покупке.
+	const advanceOffsetKopecks = (depositKopecks + certificateKopecks) as Kopecks;
+	const advanceOffsetRub = kopecksToRubles(advanceOffsetKopecks);
 
 	return {
 		cashRub: kopecksToRubles(cashKopecks),
@@ -869,6 +952,13 @@ export function generateFiscalReceipt54Fz(params: {
 		grossRub: fiscalItemsData.grossRub,
 		grossKopecks: fiscalItemsData.grossKopecks,
 		taxRateKopecks: fiscalItemsData.taxRateKopecks,
+		vat20Kopecks: fiscalItemsData.vat20Kopecks,
+		vat20Rub: fiscalItemsData.vat20Rub,
+		vatNoneKopecks: fiscalItemsData.vatNoneKopecks,
+		vatNoneRub: fiscalItemsData.vatNoneRub,
+		hasMixedItems: fiscalItemsData.hasMixedItems,
+		retailTotalKopecks: fiscalItemsData.retailTotalKopecks,
+		medicalTotalKopecks: fiscalItemsData.medicalTotalKopecks,
 		insuranceCoveredRub: payments.insuranceRub,
 		...(splitPayment.guaranteeLetterNumber ? { guaranteeLetterNumber: splitPayment.guaranteeLetterNumber } : {}),
 		patientCoPayRub: payments.patientCoPayRub,

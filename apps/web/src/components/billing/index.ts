@@ -6,4 +6,7 @@ export * from "./cashShiftClosingEngine";
 export { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
 export type { BankInstallmentQrModalProps } from "../payments/BankInstallmentQrModal";
 export * from "./InvoicesView";
+export * from "./installmentsEngine";
+export * from "./PatientInstallmentsModal";
+export * from "./RetailProductsModal";
 
