@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
+import { buildRfc4180Csv, triggerCsvDownload } from "../reports/reportsCsvExport";
 import "./financialAnalytics.css";
 
 export interface FinancialAnalyticsModalProps {
@@ -189,20 +190,10 @@ export function FinancialAnalyticsModal({
 				["Рентабельность (%)", `${netMarginPercent}%`],
 			];
 
-			const csvContent =
-				"\uFEFF" + rows.map((r) => r.join(";")).join("\n");
-			const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-			const url = URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = url;
-			link.setAttribute(
-				"download",
-				`Dente_Financial_PnL_${period}_${new Date().toISOString().slice(0, 10)}.csv`,
-			);
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
-			URL.revokeObjectURL(url);
+			const now = new Date();
+			const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+			const csvContent = buildRfc4180Csv(rows, ";");
+			triggerCsvDownload(csvContent, `Dente_Financial_PnL_${period}_${todayDate}.csv`);
 			showToast("Финансовый отчет выгружен в CSV (Excel)", "success");
 		} catch {
 			showToast("Не удалось экспортировать отчет", "error");
