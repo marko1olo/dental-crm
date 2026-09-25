@@ -28,7 +28,12 @@ describe("Leads & Executive Reports Visual Overhaul — Constitutional Inquisiti
 		test("LeadsFunnelAnalyticsModal implements collapsible panels for Waterfall and Channels Table", () => {
 			const filePath = path.join(leadsDir, "LeadsFunnelAnalyticsModal.tsx");
 			assert.ok(fs.existsSync(filePath), "LeadsFunnelAnalyticsModal.tsx must exist");
-			const content = fs.readFileSync(filePath, "utf8");
+			const waterfallPath = path.join(leadsDir, "FunnelWaterfallSection.tsx");
+			const channelsPath = path.join(leadsDir, "FunnelChannelsTableSection.tsx");
+			const content =
+				fs.readFileSync(filePath, "utf8") +
+				(fs.existsSync(waterfallPath) ? fs.readFileSync(waterfallPath, "utf8") : "") +
+				(fs.existsSync(channelsPath) ? fs.readFileSync(channelsPath, "utf8") : "");
 
 			// Waterfall toggle button and compact strip
 			assert.ok(
