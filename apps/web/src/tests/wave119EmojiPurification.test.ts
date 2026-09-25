@@ -135,16 +135,12 @@ describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
 		assert.ok(content.includes("<Sparkles"), "SanpinRegisters must render Lucide Sparkles vector icon");
 	});
 
-	it("10. SanpinCycleModal: zero raw emojis, uses Lucide Sparkles vector icon", () => {
+	it("10. SanpinCycleModal: eradicated per Mandate 8s (no dead dummy stub in repo)", () => {
 		const filePath = path.join(
 			repoRoot,
 			"apps/web/src/components/sanpin/SanpinCycleModal.tsx",
 		);
-		const content = fs.readFileSync(filePath, "utf-8");
-
-		assert.ok(!content.includes("⚡"), "SanpinCycleModal must not contain raw ⚡ emoji");
-		assert.ok(!RAW_EMOJI_REGEX.test(content), "SanpinCycleModal must be free of raw emojis");
-		assert.ok(content.includes("<Sparkles"), "SanpinCycleModal must render Lucide Sparkles vector icon");
+		assert.ok(!fs.existsSync(filePath), "SanpinCycleModal.tsx must be eradicated per Mandate 8s");
 	});
 
 	it("11. SeniorNurseKraftUnsealModal: zero raw emojis (Mandate 8s)", () => {

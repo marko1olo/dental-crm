@@ -6,7 +6,6 @@
  */
 
 export * from "./SanpinRegisters";
-export * from "./SanpinCycleModal";
 export * from "./RetroactiveBatchTab";
 export * from "./RetroactiveSanpinBatchModal";
 export * from "./retroactiveSanpinEngine";

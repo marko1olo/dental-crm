@@ -258,12 +258,9 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Чеклист предполетной подготовки ассистента и стерильности кабинета перед приемом пациента по стандартам СанПиН (components/chairside/ChairsidePreFlightChecklist.tsx:128). Вызывается из мобильного ассистентского терминала.",
 	},
-	{
-		file: "components/sanpin/SanpinCycleModal.tsx",
-		name: "SanpinCycleModal",
-		reason:
-			"Фасад модального окна цикла автоклавирования СанПиН (Форма 257/у). Интерактивный процедурный симулятор демонтирован per Mandates 8k, 8s в пользу 1-кликовых нормативных пресетов журналов производственного контроля ЦСО (SanpinRegisters).",
-	},
+	/*
+	 * SanpinCycleModal УДАЛЁН per Mandate 8s (бутафорский фасад-заглушка с display: none; канонические журналы: SanpinRegisters).
+	 */
 	/*
 	 * EgiszSigningCabinetModal УДАЛЁН per Mandate 8s (канонический SSOT: EgiszRemdHubModal.tsx).
 	 */

@@ -31,13 +31,8 @@ export {
 	TOOTH_ANATOMICAL_NAMES,
 	calculatePhysicalDistanceMm as calculateViewer2DDistanceMm,
 } from "./dentalViewerMath";
-export * from "./DentalToothFdiSelector";
-export * from "./Dental2DRadiologyViewer";
-export * from "./Dental2DRadiologyModal";
 
 // Convenient aliases for UI modules
 export { CephalometricAnalysisModal as TrgCephalometricsModal, CephalometricAnalysisModal } from "./CephalometricAnalysisModal";
 export { DirectRvgCaptureModal as RvgDirectCaptureModal } from "./DirectRvgCaptureModal";
 export { HotFolderIntakeModal as RadiologyHotFolderModal } from "./HotFolderIntakeModal";
-export { Dental2DRadiologyViewer as DentalXRayViewer } from "./Dental2DRadiologyViewer";
-export { Dental2DRadiologyModal as DentalXRayModal } from "./Dental2DRadiologyModal";
