@@ -2,7 +2,7 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
-> ⚠️ **СТАТУС (2026-09-25 / WAVES 175–326 / ВОЛНА 324 RED TEAM АУДИТ, ВОЛНА 325 ТОТАЛЬНЫЙ RED TEAM АУДИТ, ВОЛНА 326 СИНХРОНИЗАЦИЯ: ТАБЛО ОЧЕРЕДИ СМЕНЫ STOMX PARITY, КОМПЛЕКСНЫЕ ПАКЕТЫ 804Н «ВСЕ ВКЛЮЧЕНО», СОМАТИЧЕСКАЯ БЕЗОПАСНОСТЬ 0-КЛИК НОРМА, ФОТОПРОТОКОЛ «ДО/ПОСЛЕ», УСТРАНЕНИЕ БЛОАТА СТЕРИЛИЗАЦИИ У КРЕСЛА И ДЕКОМПОЗИЦИЯ МОНОЛИТОВ <800 СТРОК): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 399 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 462 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 399 АДДЕНДУМ, ВСЕ 462 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], ВОЛНЫ 320–326 ЗАКРЫТЫ НА 100%, ПАРИТЕТ 100%). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
+> ⚠️ **СТАТУС (2026-09-25 / WAVES 175–326 / ВОЛНА 324 RED TEAM АУДИТ, ВОЛНА 325 ТОТАЛЬНЫЙ RED TEAM АУДИТ, ВОЛНА 326 СИНХРОНИЗАЦИЯ: ТАБЛО ОЧЕРЕДИ СМЕНЫ STOMX PARITY, КОМПЛЕКСНЫЕ ПАКЕТЫ 804Н «ВСЕ ВКЛЮЧЕНО», СОМАТИЧЕСКАЯ БЕЗОПАСНОСТЬ 0-КЛИК НОРМА, ФОТОПРОТОКОЛ «ДО/ПОСЛЕ», УСТРАНЕНИЕ БЛОАТА СТЕРИЛИЗАЦИИ У КРЕСЛА, ПАКЕТНАЯ ФОРМА 257/У, КОПЕЕЧНЫЙ БИЛЛИНГ И SSOT СКИДОК, СНОС ДУБЛИКАТОВ ЗТЛ И ДЕКОМПОЗИЦИЯ МОНОЛИТОВ <800 СТРОК): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 403 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (ВСЕГО 466 ФИЧ: 63 КАНОНИЧЕСКИЕ + 403 АДДЕНДУМ, ВСЕ 466 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], ВОЛНЫ 320–326 ЗАКРЫТЫ НА 100%, ПАРИТЕТ 100%). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
@@ -7369,7 +7369,11 @@
   3. *Соматическая безопасность 0-клик норма (Somatic Safety 0-Click Norm & Red Emergency Guard)*: `SomaticSafetyAlertWidget.tsx`, `somaticSafetyEngine.ts`, `somaticSafetyTypes.ts`, тесты `somaticSafetyEngine.test.ts`, `SomaticSafetyAlertWidget.test.tsx`, `patientSomaticGuardWave308.test.ts`, `somaticNorm.test.ts`; автоматический 0-клик коридор нормы («Соматически здоров / норма»), мгновенная детекция критических рисков: аллергия на анестетики/пенициллин/латекс, артериальная гипертензия / криз, кардиостимулятор, антикоагулянты (риск кровотечения), диабет, беременность I и III триместры; рекомендации по подбору анестетика (мепивакаин без вазоконстриктора) без блокировки приёма врача (Мандат 8e);
   4. *Фотопротокол «До / После» (Dental Photography Protocol Parity)*: `BeforeAfterComparisonView.tsx`, тесты `photoProtocolEngine.test.ts` и `photoProtocolHardware.test.ts`; интерактивный Before/After сплит-слайдер для наглядного сравнения результатов лечения; 12 стандартных ракурсов дентального фотопротокола, калибровка зуммирования и выравнивания; устранение блоата и избыточного кода (-149 строк);
   5. *Устранение блоата стерилизации у кресла (Presumption of Tray Sterility & Anti-Nurse Bloat)*: `VisitSoapEditor.tsx`, тесты `outpatientHospitalBloatDemolitionInquisition.test.ts` (15/15 pass); презумпция стерильности лотка по умолчанию (Мандат 8v); ведение дневника 043/у, назначение услуг и SOAP не блокируются журналом автоклавирования; фоновое списание лотков и автозаполнение журналов СанПиН 3.3686-21 без отвлечения врача;
-  6. *Очистка дубликатов и декомпозиция монолитов <800 строк (Single Authority & Anti-Monolith)*: ликвидация монолита `clinicalServiceBundlesEngine.ts` (953 строки) с декомпозицией на `treatmentPlanBundlesEngine.ts` (429 строк) и `treatmentPlanBundlesPresets.ts` (339 строк); очистка дубликатов в `TreatmentPlanModule.tsx` и `VisitSoapEditor.tsx`; чистый diff: -689 удалений, +558 добавлений; все новые файлы строго <800 строк; 0 ошибок `check:encoding` (5239 файлов) и `check:css-tokens` (124 CSS файла); соблюдение Single-Compiler Gate (Мандат 8t).
+  6. *Очистка дубликатов и декомпозиция монолитов <800 строк (Single Authority & Anti-Monolith)*: ликвидация монолита `clinicalServiceBundlesEngine.ts` (953 строки) с декомпозицией на `treatmentPlanBundlesEngine.ts` (429 строк) и `treatmentPlanBundlesPresets.ts` (339 строк); очистка дубликатов в `TreatmentPlanModule.tsx` и `VisitSoapEditor.tsx`; чистый diff: -689 удалений, +558 добавлений; все новые файлы строго <800 строк; 0 ошибок `check:encoding` (5239 файлов) и `check:css-tokens` (124 CSS файла); соблюдение Single-Compiler Gate (Мандат 8t);
+  7. *Пакетная генерация журнала автоклавирования Формы 257/у для проверок Роспотребнадзора (коммит `f410941e0`, Мандаты 8e, 8v, 8s)*: реализована функция `generateBatchForm257Records` в `autoclaveLogEngine.ts` с точными режимами 134°C 2.1 бар 5 мин / 20 мин и контрольными тестами 5 класса химических индикаторов; селектор периодов (сентябрь 2026, сегодня, неделя, квартал, произвольный диапазон дат) в `AutoclaveJournal257Tab.tsx` (631 строка); интеграция 1-клик пакетного формирования в `AutoclaveLog257Modal.tsx` (294 строки), `DocumentsView.tsx` (вкладка сертификатов/СанПиН) и `PrimaryIntakePackageModal.tsx` (590 строк); полное отсутствие навязчивых виджетов стерилизации у кресла врача; 100% тест в `sterilizationForm257BatchReporting.test.ts` (226 строк);
+  8. *Копеечно-точная финансовая математика, SSOT расчета скидок и модули кассы <800 строк (коммит `318a6e9dd`, Мандаты 8j, 8n)*: канонический расчет валовой и чистой стоимости со скидкой сведен к единому SSOT `calculateGrossAndNetServiceAmounts` в `@dental/shared/finance/expensesEngine.ts` (156 строк); ликвидированы рассинхроны при расчете сумм и скидок в кассе `cashboxOperations.ts` (782 строки), `PaymentModal.tsx` и `RefundServiceModal.tsx` (774 строки); оптимизированы кассовые компоненты под лимит <800 строк (`CashRegisterModal.tsx` 521 строка, `DentalLabOrdersTrackerModal.tsx` 732 строки, `dentalLabOrderEngine.ts` 749 строк, `DentalLabOrderDrawer.tsx` 467 строк);
+  9. *Ликвидация паразитной дублирующей папки ЗТЛ `components/laboratory/` и консолидация на `components/lab/` (коммит `f61415235`, Мандат 8s)*: физически ликвидирована дублирующая директория `apps/web/src/components/laboratory/` (-2154 строки), включая 1148-строчный монолит `DentalLabOrdersTrackerModal.tsx`; полная консолидация на каноническом домене `apps/web/src/components/lab/` с файлами строго <800 строк (`DentalLabOrdersTrackerModal.tsx` 732 строки, `dentalLabOrderEngine.ts` 749 строк, `DentalLabOrderDrawer.tsx` 467 строк, `LabTrackingDrawer.tsx` 524 строки); все внешние импорты и страницы (`LabOrdersPanel.tsx`, `LabOrdersPage.tsx`, `TelephonyFloatingWidget.tsx`) переведены на единый SSOT;
+  10. *Декомпозиция монолита шаблонов дневника ЭМК и искоренение мультяшных эмодзи (коммит `30345ce61`, Мандаты 8d, 8s, 8j)*: монолит движка шаблонов дневников `clinicalDiaryTemplatesEngine.ts` (952 строки) успешно декомпозирован до компактных 310 строк за счет выделения структурированного справочника клинических пресетов `clinicalDiaryTemplatesCatalogData.ts` (644 строки); оба файла строго соответствуют нормативу <800 строк; ликвидированы мультяшные эмодзи в протоколах ЭМК, дневниках 043/у и одонтограмме (`ToothContextDrawer.tsx` 665 строк, `VisitAnamnesisTab.tsx` 486 строк, `PediatricAnesthesiaCalculator.tsx` 479 строк) с заменой на векторные иконки Lucide по канонам официальной медицинской документации РФ.
 - **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
 - **Задействованные компоненты и модули**:
   - `apps/web/src/components/schedule/TodayQueueBoard.tsx`
@@ -7383,6 +7387,23 @@
   - `packages/shared/src/clinical/somaticSafetyTypes.ts`
   - `apps/web/src/components/photography/BeforeAfterComparisonView.tsx`
   - `apps/web/src/components/visit/VisitSoapEditor.tsx`
+  - `apps/web/src/components/sanpin/autoclaveLog/AutoclaveJournal257Tab.tsx`
+  - `apps/web/src/components/sanpin/autoclaveLog/AutoclaveLog257Modal.tsx`
+  - `apps/web/src/components/sanpin/autoclaveLog/autoclaveLogEngine.ts`
+  - `apps/web/src/tests/sterilizationForm257BatchReporting.test.ts`
+  - `packages/shared/src/finance/expensesEngine.ts`
+  - `apps/web/src/components/finance/cashboxOperations.ts`
+  - `apps/web/src/components/finance/refunds/RefundServiceModal.tsx`
+  - `apps/web/src/components/finance/CashRegisterModal.tsx`
+  - `apps/web/src/components/lab/DentalLabOrdersTrackerModal.tsx`
+  - `apps/web/src/components/lab/dentalLabOrderEngine.ts`
+  - `apps/web/src/components/lab/DentalLabOrderDrawer.tsx`
+  - `apps/web/src/components/lab/LabTrackingDrawer.tsx`
+  - `apps/web/src/components/emr/templates/clinicalDiaryTemplatesEngine.ts`
+  - `apps/web/src/components/emr/templates/clinicalDiaryTemplatesCatalogData.ts`
+  - `apps/web/src/components/diagnostics/ToothContextDrawer.tsx`
+  - `apps/web/src/components/visit/VisitAnamnesisTab.tsx`
+  - `apps/web/src/components/pediatric/PediatricAnesthesiaCalculator.tsx`
   - `docs/competitive-audit/BACKLOG.md` (Волна 326)
   - `docs/competitive-audit/FEATURES_REGISTRY.md` (Волна 326)
   - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 326)
