@@ -265,8 +265,7 @@ import { VoiceDictationAssistantModal, type DictationCommand } from "./component
 import { WarrantyPassportModal } from "./components/warranty/WarrantyPassportModal";
 import { InformedConsentModal } from "./components/consents/InformedConsentModal";
 import { generateInformedConsent1051nHtml } from "./lib/clinicalProtocols043";
-import { renderForm043uHtml, insertPouchIntoDiaryText } from "@dental/shared";
-import { ChairsideSterilizationPouchWidget } from "./components/sterilization/ChairsideSterilizationPouchWidget";
+import { renderForm043uHtml } from "@dental/shared";
 import {
 	Activity,
 	AlertCircle,
@@ -1782,31 +1781,6 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<span className="sm:hidden">Норма</span>
 							</button>
 
-							{/* Крафт-пакет стерилизации СанПиН 3.3686-21 у кресла (1-клик фиксация в дневнике 043/у, Мандаты 8e, 8v) */}
-							<ChairsideSterilizationPouchWidget
-								currentDiaryText={
-									visitNoteForm?.treatmentPlan ||
-									(visitNoteForm as any)?.treatment ||
-									""
-								}
-								onInsertToDiary={(snippet, record) => {
-									const cur =
-										visitNoteForm?.treatmentPlan ||
-										(visitNoteForm as any)?.treatment ||
-										"";
-									const updated = insertPouchIntoDiaryText(cur, snippet, record.pouchCode);
-									if (typeof updateVisitNoteField === "function") {
-										updateVisitNoteField("treatmentPlan", updated);
-										if ((visitNoteForm as any)?.treatment !== undefined) {
-											updateVisitNoteField("treatment", updated);
-										}
-									}
-									if (typeof appendToTranscript === "function") {
-										appendToTranscript(`\n\n${snippet}`);
-									}
-									showToast(`Крафт-пакет ${record.pouchCode} зафиксирован в карте 043/у`, "success");
-								}}
-							/>
 
 							{/* Печать Формы 043/у (Мандат 8e) — на десктопе (на одонтограмме скрыта в пользу канонической кнопки дневника diary-print-043) */}
 							<button

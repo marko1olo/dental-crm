@@ -1,8 +1,8 @@
 /**
  * ============================================================================
- * TEST: CHAIRSIDE STERILIZATION POUCH WIDGET & VISITVIEW INTEGRATION
- * Проверка эргономики виджета стерилизации у кресла (28-32px), 1-клик фиксации
- * крафт-пакета в карте 043/у, интеграции в VisitView.tsx и ликвидации дубликата.
+ * TEST: CHAIRSIDE STERILIZATION POUCH WIDGET & DOCTOR SCREEN PURITY
+ * Проверка эргономики виджета стерилизации у кресла (28-32px), чистоты экрана
+ * врача (VisitView.tsx и VisitSoapEditor.tsx свободны от карго-культа) и ликвидации дубликата.
  * ============================================================================
  */
 
@@ -69,33 +69,34 @@ describe("ChairsideSterilizationPouchWidget & VisitView Integration (СанПи�
 		assert.equal(deduplicated, updated, "Не должно быть дублирования записи в дневнике");
 	});
 
-	it("4. подтверждает интеграцию ChairsideSterilizationPouchWidget в VisitView.tsx", () => {
+	it("4. подтверждает отсутствие ChairsideSterilizationPouchWidget на экранах врача (VisitView.tsx и VisitSoapEditor.tsx чисты, Мандаты 8e, 8n, 8v)", () => {
 		const visitViewPath = path.join(webSrcRoot, "VisitView.tsx");
+		const visitSoapPath = path.join(webSrcRoot, "components/visit/VisitSoapEditor.tsx");
+
 		assert.ok(fs.existsSync(visitViewPath), "VisitView.tsx должен существовать");
-		const content = fs.readFileSync(visitViewPath, "utf8");
+		assert.ok(fs.existsSync(visitSoapPath), "VisitSoapEditor.tsx должен существовать");
 
-		// Проверяем импорт виджета
+		const visitViewContent = fs.readFileSync(visitViewPath, "utf8");
+		const visitSoapContent = fs.readFileSync(visitSoapPath, "utf8");
+
+		// VisitView.tsx не должен импортировать или монтировать виджет стерилизации в тулбаре врача
 		assert.ok(
-			content.includes("ChairsideSterilizationPouchWidget"),
-			"VisitView.tsx обязан импортировать ChairsideSterilizationPouchWidget",
+			!visitViewContent.includes("ChairsideSterilizationPouchWidget"),
+			"VisitView.tsx не должен содержать импорт или использование ChairsideSterilizationPouchWidget (экран врача чист, Мандат 8e/8v)",
+		);
+		assert.ok(
+			!visitViewContent.includes("<ChairsideSterilizationPouchWidget"),
+			"VisitView.tsx не должен монтировать ChairsideSterilizationPouchWidget",
 		);
 
-		// Проверяем импорт функции insertPouchIntoDiaryText из @dental/shared
+		// VisitSoapEditor.tsx не должен содержать виджет стерилизации в тулбаре дневника лечения
 		assert.ok(
-			content.includes("insertPouchIntoDiaryText"),
-			"VisitView.tsx обязан импортировать insertPouchIntoDiaryText из @dental/shared",
+			!visitSoapContent.includes("ChairsideSterilizationPouchWidget"),
+			"VisitSoapEditor.tsx не должен содержать ChairsideSterilizationPouchWidget (экран врача чист, Мандат 8e/8v)",
 		);
-
-		// Проверяем монтирование виджета в шапке рядом с кнопкой нормы
 		assert.ok(
-			content.includes("<ChairsideSterilizationPouchWidget"),
-			"VisitView.tsx обязан монтировать ChairsideSterilizationPouchWidget",
-		);
-
-		// Проверяем привязку к 043/у через updateVisitNoteField и toast
-		assert.ok(
-			content.includes("updateVisitNoteField(\"treatmentPlan\", updated)"),
-			"VisitView.tsx обязан обновлять treatmentPlan при фиксации крафт-пакета",
+			!visitSoapContent.includes("<ChairsideSterilizationPouchWidget"),
+			"VisitSoapEditor.tsx не должен монтировать ChairsideSterilizationPouchWidget",
 		);
 	});
 
