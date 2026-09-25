@@ -188,7 +188,8 @@ export function formatPatientPrescriptionMemo(
 		`Дата назначения: ${dateStr}`,
 		"Назначенные препараты:",
 		...medsList,
-		`Памятка: строго соблюдайте назначенную дозировку и график приёма (Приказ Минздрава 1094н). Не прекращайте курс антибиотиков раньше указанного срока. При любых признаках непереносимости или аллергии немедленно свяжитесь с клиникой${clinicPhone ? `: ${clinicPhone}` : ""}.`,
+		`Памятка: строго соблюдайте назначенную дозировку и график приёма. Не прекращайте курс антибиотиков раньше указанного срока. При любых признаках непереносимости или аллергии немедленно свяжитесь с клиникой${clinicPhone ? `: ${clinicPhone}` : ""}.`,
+		"Приказ Минздрава 1094н: официальный регламент назначения и отпуска лекарственных препаратов.",
 	];
 
 	return lines.join("\n");
@@ -327,6 +328,9 @@ export function calculateMedicationDosage(
 				standardFrequencyRu: "Не назначать лицам до 16 лет",
 				maxDailyDoseRu: "0 мг (применяйте Ибупрофен или Парацетамол)",
 				isPediatric: true,
+				isContraindicated: true,
+				contraindicationReason:
+					"Кеторолак противопоказан лицам до 16 лет из-за риска ульцерогенного действия и тяжелых желудочно-кишечных осложнений.",
 				warningRu:
 					"Кеторолак противопоказан лицам до 16 лет из-за риска ульцерогенного действия и тяжелых желудочно-кишечных осложнений.",
 			};
@@ -677,11 +681,13 @@ export function validateLatinRxSigna(params: {
 	}
 
 	if (
-		/^(?:известно|по указанию|по назначению|как обычно|по схеме|по назначению врача|употреблять по указанию|внутрь как обычно)$/i.test(cleanedSignaRu) ||
+		/^(?:известно|внутреннее|наружное|по указанию|по назначению|как обычно|по схеме|по назначению врача|употреблять по указанию|внутрь как обычно)$/i.test(cleanedSignaRu) ||
 		/по назначению врача/i.test(cleanedSignaRu) ||
 		/употреблять по указанию/i.test(cleanedSignaRu) ||
 		/по схеме/i.test(cleanedSignaRu) ||
-		/^известно$/i.test(cleanedSignaRu)
+		/^известно$/i.test(cleanedSignaRu) ||
+		/^внутреннее$/i.test(cleanedSignaRu) ||
+		/^наружное$/i.test(cleanedSignaRu)
 	) {
 		errors.push("По Приказу № 1094н запрещается ограничиваться неопределенными общими указаниями: «Внутреннее», «Известно», «По схеме», «По назначению врача». Укажите точную дозу, кратность и курс.");
 	}
@@ -751,7 +757,7 @@ export function validatePrescriptionDosage(
 		};
 	}
 
-	if (calc.isContraindicated || (calc.warningRu && calc.warningRu.includes("ПРОТИВОПОКАЗАН"))) {
+	if (calc.isContraindicated || (calc.warningRu && /противопоказан/i.test(calc.warningRu))) {
 		const reason =
 			calc.contraindicationReason ||
 			calc.warningRu ||

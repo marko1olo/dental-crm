@@ -443,22 +443,38 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	onInsertToDiary,
 }) => {
 	const [activeForm, setActiveForm] = useState<PrescriptionFormType>("107-1u");
-	const [selectedDrugIds, setSelectedDrugIds] = useState<string[]>([]);
-	const [customSeriesNumber, setCustomSeriesNumber] = useState<string>("");
-	const [prescriptionDate, setPrescriptionDate] = useState<string>("");
+	const [selectedDrugIds, setSelectedDrugIds] = useState<string[]>(() => {
+		if (initialSelectedDrugIds !== undefined) {
+			return [...initialSelectedDrugIds];
+		}
+		const icd = (diary?.diagnosisIcd10 || "K02.1").toUpperCase();
+		const matching = DENTAL_PRESCRIPTION_DRUG_CATALOG.filter((d) =>
+			d.recommendedForIcd10.some((code) => icd.startsWith(code)),
+		);
+		if (matching.length > 0) {
+			return matching.slice(0, 2).map((d) => d.id);
+		}
+		return ["nimesulide_100"];
+	});
+	const [customSeriesNumber, setCustomSeriesNumber] = useState<string>(() => {
+		const year = new Date().getFullYear();
+		const patSuffix = (patient?.id ? patient.id.replace(/\D/g, "").slice(-4) : "").padStart(4, "0") || "0001";
+		return `РЕЦ-${year}-${patSuffix}`;
+	});
+	const [prescriptionDate, setPrescriptionDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
 	const [validityDays, setValidityDays] = useState<"15" | "30" | "60" | "365">("60");
 	const [isChronicSpecialCare, setIsChronicSpecialCare] = useState<boolean>(false);
 	const [chronicPeriodicity, setChronicPeriodicity] = useState<string>("ежемесячно (1 раз в 30 дней)");
-	const [patientAddress, setPatientAddress] = useState<string>("");
+	const [patientAddress, setPatientAddress] = useState<string>(() => patient?.address || "");
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [categoryFilter, setCategoryFilter] = useState<string>("all");
 	const [isAddingCustom, setIsAddingCustom] = useState<boolean>(false);
 	const [withStampAndSignature, setWithStampAndSignature] = useState<boolean>(true);
 
 	// Patient identity & biometric state (Mandate 8k: Dosage auto-calc)
-	const [patientSnils, setPatientSnils] = useState<string>("");
-	const [patientOmsPolicy, setPatientOmsPolicy] = useState<string>("");
-	const [patientWeightKg, setPatientWeightKg] = useState<number | undefined>(undefined);
+	const [patientSnils, setPatientSnils] = useState<string>(() => patient?.snils || "");
+	const [patientOmsPolicy, setPatientOmsPolicy] = useState<string>(() => patient?.omsPolicy || "");
+	const [patientWeightKg, setPatientWeightKg] = useState<number | undefined>(() => patient?.weightKg ?? undefined);
 	const [showDosageAssistant, setShowDosageAssistant] = useState<boolean>(false);
 
 	// Doctor UKEP state
@@ -595,18 +611,31 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	};
 
 	const handleAddCustomDrug = () => {
-		if (!customLatinRp.trim() || !customSigna.trim()) return;
+		if (!customLatinRp.trim() || !customSigna.trim()) {
+			showToast("Укажите латинскую пропись (Rp) и способ применения (Signa)", "warning", 3000);
+			return;
+		}
+		const cleanRp = customLatinRp.replace(/^Rp\s*[.:]?\s*/i, "").trim();
+		const cleanSigna = customSigna.replace(/^(?:D\.?\s*)?S[.:]?\s*/i, "").trim();
 		const newItem: PrescriptionDrugItem = {
 			id: `custom-drug-${Date.now()}`,
-			latinName: customLatinRp.startsWith("Rp.:") ? customLatinRp : `Rp.: ${customLatinRp}`,
+			latinName: `Rp.: ${cleanRp}`,
 			tradeName: customTradeName.trim() || "Индивидуальная пропись",
 			form: "порошок/раствор",
 			dosage: "по рецепту",
 			quantity: "N. 1",
 			dispenseLatin: customDispense.trim() || "D.t.d. N 1",
-			signaRussian: customSigna.startsWith("S.") ? customSigna : `S. ${customSigna}`,
+			signaRussian: `S. ${cleanSigna}`,
 			category: "other",
 		};
+		const validation = validateLatinRxSigna({
+			latinRp: newItem.latinName,
+			dispenseLatin: newItem.dispenseLatin,
+			signaRu: newItem.signaRussian,
+		});
+		if (!validation.isValid && validation.errors.length > 0) {
+			showToast(`Предупреждение 1094н: ${validation.errors[0]}`, "warning", 4000);
+		}
 		setCustomDrugsList((prev) => [...prev, newItem]);
 		setCustomLatinRp("");
 		setCustomTradeName("");
@@ -1866,56 +1895,52 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						)}
 
 						{/* Printable Physical Sheet Mockup */}
-						<div
-							className="p-5 sm:p-6 rounded-xl border border-slate-300 shadow-xl font-serif leading-relaxed flex flex-col gap-3 selection:bg-teal-100"
-							style={{ backgroundColor: "var(--paper-strong, #ffffff)", color: "var(--ink, #0f172a)" }}
-						>
+						<div className="p-5 sm:p-6 rounded-xl border border-[var(--line)] shadow-xl font-serif leading-relaxed flex flex-col gap-3 bg-[var(--paper-strong)] text-[var(--ink)]">
 							{/* Form Official Header */}
-							<div className="border-b-2 border-slate-900 pb-2 text-[10px] flex justify-between gap-2" style={{ color: "#0f172a" }}>
+							<div className="border-b-2 border-[var(--line)] pb-2 text-[10px] flex justify-between gap-2 text-[var(--ink)]">
 								<div
 									className={`w-7/12 p-1.5 rounded leading-tight transition-all ${
 										withStampAndSignature
-											? "border-2 border-blue-900 bg-blue-50/40 text-blue-950 shadow-xs"
-											: "border border-dashed border-slate-400"
+											? "border-2 border-blue-600 dark:border-blue-400 bg-blue-500/10 text-blue-900 dark:text-blue-200 shadow-xs"
+											: "border border-dashed border-[var(--line)] text-[var(--muted)]"
 									}`}
-									style={{ color: withStampAndSignature ? "#1e3a8a" : "#0f172a" }}
 								>
-									<div className="font-bold uppercase text-[10px]" style={{ color: withStampAndSignature ? "#1e3a8a" : "#000000" }}>
+									<div className={`font-bold uppercase text-[10px] ${withStampAndSignature ? "text-blue-900 dark:text-blue-200" : "text-[var(--ink)]"}`}>
 										{clinic}
 									</div>
 									<div className="text-[9px]">Адрес: {address}</div>
 									<div className="text-[9px]">Тел: {phone}</div>
 									<div className="text-[9px]">ОГРН: {ogrn} · ИНН: {inn}</div>
 									<div className="text-[8.5px] font-sans">Лицензия: № {licNum}</div>
-									<div className="text-[8px] font-bold italic mt-0.5" style={{ color: withStampAndSignature ? "#2563eb" : "#64748b" }}>
+									<div className={`text-[8px] font-bold italic mt-0.5 ${withStampAndSignature ? "text-blue-700 dark:text-blue-400" : "text-[var(--muted)]"}`}>
 										{withStampAndSignature ? "ШТАМП МЕДИЦИНСКОЙ ОРГАНИЗАЦИИ" : "(Штамп медицинской организации)"}
 									</div>
 								</div>
-								<div className="w-5/12 text-right leading-tight text-[9px]" style={{ color: "#1e293b" }}>
+								<div className="w-5/12 text-right leading-tight text-[9px] text-[var(--muted)]">
 									<div>Министерство здравоохранения РФ</div>
 									<div>Медицинская документация</div>
-									<div className="font-bold text-[10px] mt-0.5" style={{ color: "#000000" }}>
+									<div className="font-bold text-[10px] mt-0.5 text-[var(--ink)]">
 										{activeForm === "107-1u"
 											? "Форма бланка № 107-1/у"
 											: "Форма бланка № 148-1/у-88"}
 									</div>
-									<div style={{ color: "#475569" }}>Приказ МЗ РФ № 1094н</div>
+									<div className="text-[var(--muted)]">Приказ МЗ РФ № 1094н</div>
 								</div>
 							</div>
 
 							{/* Title */}
-							<div className="text-center my-0.5" style={{ color: "#0f172a" }}>
-								<div className={`font-extrabold text-base tracking-widest uppercase ${activeForm === "148-1u-88" ? "text-rose-700" : "text-slate-950"}`} style={{ color: activeForm === "148-1u-88" ? "#be123c" : "#000000" }}>
+							<div className="text-center my-0.5 text-[var(--ink)]">
+								<div className={`font-extrabold text-base tracking-widest uppercase ${activeForm === "148-1u-88" ? "text-rose-600 dark:text-rose-400" : "text-[var(--ink)]"}`}>
 									РЕЦЕПТ {activeForm === "148-1u-88" ? "(ПКУ)" : ""}
 								</div>
-								<div className="text-[10px] font-sans" style={{ color: "#334155" }}>
-									Серия: <strong style={{ color: "#000000" }}>{customSeriesNumber}</strong> от{" "}
-									<strong style={{ color: "#000000" }}>{new Date(prescriptionDate || Date.now()).toLocaleDateString("ru-RU")}</strong>
+								<div className="text-[10px] font-sans text-[var(--muted)]">
+									Серия: <strong className="text-[var(--ink)]">{customSeriesNumber}</strong> от{" "}
+									<strong className="text-[var(--ink)]">{new Date(prescriptionDate || Date.now()).toLocaleDateString("ru-RU")}</strong>
 								</div>
 							</div>
 
 							{/* Patient and Doctor Meta */}
-							<div className="border-b border-slate-300 pb-2 flex flex-col gap-0.5 text-[11px] leading-snug">
+							<div className="border-b border-[var(--line)] pb-2 flex flex-col gap-0.5 text-[11px] leading-snug text-[var(--ink)]">
 								<div>
 									Ф.И.О. пациента: <strong>{patientName}</strong>
 								</div>
@@ -1936,45 +1961,45 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 									Ф.И.О. лечащего врача: <strong>{docName}</strong> ({docSpecialty})
 								</div>
 								{diary?.diagnosisIcd10 && (
-									<div className="text-[10px] text-slate-600 font-sans">
-										Диагноз (МКБ-10): <strong>{diary.diagnosisIcd10}</strong>
+									<div className="text-[10px] text-[var(--muted)] font-sans">
+										Диагноз (МКБ-10): <strong className="text-[var(--ink)]">{diary.diagnosisIcd10}</strong>
 									</div>
 								)}
 							</div>
 
 							{/* Prescribed Items (Rp.) */}
-							<div className="flex flex-col gap-3 min-h-[110px] py-1.5" style={{ color: "#0f172a" }}>
+							<div className="flex flex-col gap-3 min-h-[110px] py-1.5 text-[var(--ink)]">
 								{activeItems.length > 0 ? (
 									activeItems.map((item, idx) => (
-										<div key={item.id} className="font-serif" style={{ color: "#0f172a" }}>
-											<div className="font-bold text-[11.5px] italic" style={{ color: "#000000" }}>
+										<div key={item.id} className="font-serif text-[var(--ink)]">
+											<div className="font-bold text-[11.5px] italic text-[var(--ink)]">
 												{idx + 1}. {item.latinName}
 											</div>
-											<div className="ml-5 italic text-[11px]" style={{ color: "#1e293b" }}>
+											<div className="ml-5 italic text-[11px] text-[var(--ink)] opacity-90">
 												{item.dispenseLatin}
 											</div>
-											<div className="ml-5 text-[11px] font-sans font-medium" style={{ color: "#0f172a" }}>
+											<div className="ml-5 text-[11px] font-sans font-medium text-[var(--ink)]">
 												{item.signaRussian}
 											</div>
-											<div className="ml-5 text-[9.5px] font-sans" style={{ color: "#475569" }}>
-												[Торговое наименование: <strong style={{ color: "#0f172a" }}>{item.tradeName}</strong>]
+											<div className="ml-5 text-[9.5px] font-sans text-[var(--muted)]">
+												[Торговое наименование: <strong className="text-[var(--ink)]">{item.tradeName}</strong>]
 											</div>
 										</div>
 									))
 								) : (
-									<div className="p-4 rounded-lg border border-dashed border-slate-300 text-center text-xs text-slate-500 font-sans flex flex-col items-center justify-center min-h-[90px]">
+									<div className="p-4 rounded-lg border border-dashed border-[var(--line)] text-center text-xs text-[var(--muted)] font-sans flex flex-col items-center justify-center min-h-[90px]">
 										Выберите готовый пакет назначений слева или добавьте препарат
 									</div>
 								)}
 							</div>
 
 							{/* Footer Signatures and Stamp Circles */}
-							<div className="border-t-2 border-slate-900 pt-2 text-[10px] flex justify-between items-end" style={{ color: "#0f172a" }}>
-								<div className="flex flex-col gap-1" style={{ color: "#0f172a" }}>
+							<div className="border-t-2 border-[var(--line)] pt-2 text-[10px] flex justify-between items-end text-[var(--ink)]">
+								<div className="flex flex-col gap-1 text-[var(--ink)]">
 									<div>
 										Срок действия рецепта:{" "}
 										<u>
-											<strong style={{ color: "#000000" }}>
+											<strong className="text-[var(--ink)]">
 												{activeForm === "148-1u-88"
 													? "15 дней (ПКУ)"
 													: validityDays === "365"
@@ -1984,14 +2009,14 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 										</u>
 									</div>
 									{isChronicSpecialCare && (
-										<div className="text-[9px] font-bold text-teal-800" style={{ color: "#115e59" }}>
+										<div className="text-[9px] font-bold text-teal-700 dark:text-teal-400">
 											По специальному назначению ({chronicPeriodicity})
 										</div>
 									)}
-									<div className="mt-1 relative" style={{ color: "#0f172a" }}>
+									<div className="mt-1 relative text-[var(--ink)]">
 										{withStampAndSignature && (
 											<div
-												className="absolute -top-3 left-24 text-blue-700 font-serif italic text-base select-none pointer-events-none"
+												className="absolute -top-3 left-24 text-blue-700 dark:text-blue-400 font-serif italic text-base select-none pointer-events-none"
 												style={{ fontFamily: "'Brush Script MT', 'Segoe Script', cursive, serif", transform: "rotate(-3deg)" }}
 											>
 												{docName.replace(/^(Д-р|Врач)\s+/i, "")}
@@ -2000,7 +2025,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 										Подпись врача: ____________________ / {docName}
 									</div>
 									{activeForm === "148-1u-88" && (
-										<div style={{ color: "#0f172a" }}>Подпись зав. отделением: ____________________</div>
+										<div className="text-[var(--ink)]">Подпись зав. отделением: ____________________</div>
 									)}
 								</div>
 
@@ -2008,8 +2033,8 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 									<div
 										className={`w-11 h-11 rounded-full flex flex-col items-center justify-center font-bold text-[7px] text-center leading-tight transition-all ${
 											withStampAndSignature
-												? "border-2 border-blue-700 bg-blue-50 text-blue-900 shadow-xs"
-												: "border border-dashed border-slate-500 text-slate-600"
+												? "border-2 border-blue-600 dark:border-blue-400 bg-blue-500/10 text-blue-900 dark:text-blue-200 shadow-xs"
+												: "border border-dashed border-[var(--line)] text-[var(--muted)]"
 										}`}
 									>
 										<span>ВРАЧ</span>
@@ -2018,15 +2043,15 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 									<div
 										className={`w-12 h-12 rounded-full flex flex-col items-center justify-center font-bold text-[7px] text-center leading-tight transition-all ${
 											withStampAndSignature
-												? "border-2 border-double border-blue-700 bg-blue-50 text-blue-900 shadow-xs"
-												: "border border-dashed border-teal-700 text-teal-900"
+												? "border-2 border-double border-blue-600 dark:border-blue-400 bg-blue-500/10 text-blue-900 dark:text-blue-200 shadow-xs"
+												: "border border-dashed border-teal-600 dark:border-teal-400 text-teal-800 dark:text-teal-300"
 										}`}
 									>
 										<span className="text-[6px] uppercase">КЛИНИКА</span>
 										<span>Для<br />рецептов</span>
 									</div>
 									{activeForm === "148-1u-88" && (
-										<div className="w-10 h-10 border border-dashed border-rose-700 clip-path-tri flex items-center justify-center font-bold text-[7.5px] text-rose-800 text-center">
+										<div className="w-10 h-10 border border-dashed border-rose-600 dark:border-rose-400 clip-path-tri flex items-center justify-center font-bold text-[7.5px] text-rose-700 dark:text-rose-300 text-center">
 											СПЕЦ.
 										</div>
 									)}
@@ -2035,17 +2060,17 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 
 							{/* UKEP Stamp Box */}
 							{isUkepSigned && ukepSignature && (
-								<div className="border border-sky-600 bg-sky-50/90 p-2 rounded text-[8.5px] font-sans text-sky-950 flex justify-between items-center mt-1">
+								<div className="border border-sky-500/40 bg-sky-500/10 p-2 rounded text-[8.5px] font-sans text-[var(--ink)] flex justify-between items-center mt-1">
 									<div>
-										<div className="font-bold text-sky-900 flex items-center gap-1.5">
-											<ShieldCheck className="w-3.5 h-3.5 text-sky-700 shrink-0 inline" />
+										<div className="font-bold text-sky-700 dark:text-sky-300 flex items-center gap-1.5">
+											<ShieldCheck className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0 inline" />
 											<span>ДОКУМЕНТ ПОДПИСАН УКЭП ВРАЧА</span>
 										</div>
 										<div>Сертификат: <strong>{ukepSignature.certificateSerialNumber}</strong></div>
 										<div>Владелец: {ukepSignature.doctorFullName}</div>
-										<div>УЦ: {ukepSignature.certificateIssuer}</div>
+										<div className="text-[10px] text-[var(--muted)]">УЦ: {ukepSignature.certificateIssuer}</div>
 									</div>
-									<QrCode className="w-9 h-9 text-sky-800 shrink-0" />
+									<QrCode className="w-9 h-9 text-sky-600 dark:text-sky-400 shrink-0" />
 								</div>
 							)}
 						</div>
