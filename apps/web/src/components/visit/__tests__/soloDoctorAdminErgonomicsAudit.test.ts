@@ -32,8 +32,9 @@ import {
 	performAutoVisitBomDeduction,
 } from "../../inventory/autoBomDeductionEngine.js";
 
-const REPO_ROOT = path.resolve(process.cwd());
-const WEB_SRC = path.join(REPO_ROOT, "apps/web/src");
+const CWD = process.cwd();
+const REPO_ROOT = fs.existsSync(path.join(CWD, "apps/web/src")) ? CWD : path.resolve(CWD, "../..");
+const WEB_SRC = fs.existsSync(path.join(CWD, "src")) ? path.join(CWD, "src") : path.join(REPO_ROOT, "apps/web/src");
 
 function getFilesInDirectory(dir: string, extensionRegex = /\.(tsx?|jsx?)$/): string[] {
 	const results: string[] = [];
