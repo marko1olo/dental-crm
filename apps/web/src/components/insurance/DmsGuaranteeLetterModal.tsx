@@ -20,13 +20,15 @@ import { createPortal } from "react-dom";
 import { showToast } from "../GlobalToast";
 import "./insurance.css";
 import {
-	DMS_STANDARD_EXCLUSIONS,
 	formatRubKopecks,
 	RUSSIAN_DMS_INSURERS,
-	search804nServices,
 	type DmsGuaranteeLetter,
 } from "./insuranceMath";
 import { DmsBillSplitCalculatorSection } from "./DmsBillSplitCalculatorSection";
+import { DmsExclusionsSelectorCard } from "./DmsExclusionsSelectorCard";
+import { DmsNomenclatureSelectorCard } from "./DmsNomenclatureSelectorCard";
+import { DmsLimitsAndFranchiseSection } from "./DmsLimitsAndFranchiseSection";
+import { DmsQuickActionBanners } from "./DmsQuickActionBanners";
 
 import {
 	type PatientGuaranteeLetter,
@@ -115,13 +117,8 @@ export function DmsGuaranteeLetterModal({
 	const issueDateInputId = useId();
 	const validFromInputId = useId();
 	const validUntilInputId = useId();
-	const maxCoverageInputId = useId();
-	const usedAmountInputId = useId();
-	const franchiseTypeSelectId = useId();
-	const franchiseValueInputId = useId();
-	const statusSelectId = useId();
-	const serviceSearchInputId = useId();
 	const notesTextareaId = useId();
+
 
 	const todayStr = useMemo(() => new Date().toISOString().split("T")[0] ?? "2026-08-22", []);
 	const nextMonthStr = useMemo(() => {
@@ -145,6 +142,7 @@ export function DmsGuaranteeLetterModal({
 		initialLetter?.letterNumber || `ГП-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`,
 	);
 	const [isEmergencyCare, setIsEmergencyCare] = useState<boolean>(false);
+	const [isDeferredScan, setIsDeferredScan] = useState<boolean>(false);
 	const [issueDate, setIssueDate] = useState<string>(
 		initialLetter?.issueDate ?? todayStr ?? "",
 	);
@@ -204,10 +202,6 @@ export function DmsGuaranteeLetterModal({
 		initialLetter?.status || "active",
 	);
 
-	// Поиск услуг 804н
-	const [searchQuery, setSearchQuery] = useState<string>("");
-	const [selectedCategoryTab, setSelectedCategoryTab] = useState<string>("all");
-
 	if (!isOpen) return null;
 
 	const activeInsurer = RUSSIAN_DMS_INSURERS.find((i) => i.key === insurerKey);
@@ -266,11 +260,6 @@ export function DmsGuaranteeLetterModal({
 		],
 	);
 
-	// Фильтрация каталога 804н
-	const filteredCatalog = search804nServices(searchQuery).filter((item) => {
-		if (selectedCategoryTab === "all") return true;
-		return item.category === selectedCategoryTab;
-	});
 
 	// Переключение исключения
 	const toggleExclusion = (exclusionKey: string) => {
@@ -351,17 +340,27 @@ export function DmsGuaranteeLetterModal({
 	};
 
 	const handleSave = () => {
-		// Мандат 8e: если пациент пришел с острой болью, программа НЕ блокирует врача и не требует обязательного номера письма!
+		// Мандат 8e: если пациент пришел с острой болью или скан отложен (гарантия в пути), программа НЕ блокирует врача и не требует обязательного наличия скана!
 		const resolvedPolicy =
 			policyNumber.trim() ||
 			patient?.policyNumber ||
-			(isEmergencyCare ? "ЭКСТРЕННЫЙ-ДМС-ОСТРАЯ-БОЛЬ" : "ПОЛИС-ДМС-БЕЗ-НОМЕРА");
+			(isEmergencyCare
+				? "ЭКСТРЕННЫЙ-ДМС-ОСТРАЯ-БОЛЬ"
+				: isDeferredScan
+				? "ДМС-ДОСЫЛКА-СКАНА"
+				: "ПОЛИС-ДМС-БЕЗ-НОМЕРА");
 		const resolvedLetterNum =
 			letterNumber.trim() ||
 			(isEmergencyCare
 				? `ГП-ЭКСТРЕННО-${Date.now().toString().slice(-6)} (ДОСЫЛКА)`
+				: isDeferredScan
+				? `ГП-В-ПУТИ-${Date.now().toString().slice(-6)} (ДОСЫЛКА)`
 				: `ГП-ДМС-${Date.now().toString().slice(-6)}`);
 		const resolvedCoverage = maxCoverageRub > 0 ? maxCoverageRub : 50000;
+		const resolvedNotes =
+			isDeferredScan && !notes.includes("досылка")
+				? `${notes.trim() ? notes.trim() + " • " : ""}Отложенный ввод скана (гарантия в пути / устное подтверждение куратора)`.trim()
+				: notes.trim();
 
 		const letter: DmsGuaranteeLetter = {
 			id: initialLetter?.id || `letter-${Date.now()}`,
@@ -384,7 +383,7 @@ export function DmsGuaranteeLetterModal({
 			programExclusions: selectedExclusions,
 			approvedServiceCodes,
 			approvedDiagnosisCodes,
-			notes: notes.trim(),
+			notes: resolvedNotes,
 			status,
 		};
 
@@ -394,6 +393,8 @@ export function DmsGuaranteeLetterModal({
 		showToast(
 			isEmergencyCare
 				? `Временное согласование по острой боли № ${letter.letterNumber} сохранено. Приём и касса разблокированы!`
+				: isDeferredScan
+				? `Гарантийное письмо № ${letter.letterNumber} сохранено с отложенным сканом (приём разблокирован)`
 				: `Гарантийное письмо № ${letter.letterNumber} (${letter.insurerName}) успешно сохранено`,
 			"success",
 		);
@@ -444,124 +445,13 @@ export function DmsGuaranteeLetterModal({
 						</div>
 					)}
 
-					{/* 1-Клик Режим: Экстренная помощь по острой боли (письмо будет дослано страховой) */}
-					<div
-						style={{
-							padding: "12px 16px",
-							borderRadius: "14px",
-							background: isEmergencyCare
-								? "linear-gradient(135deg, var(--warn-bg, rgba(245, 158, 11, 0.18)), var(--ok-bg, rgba(16, 185, 129, 0.12)))"
-								: "var(--warn-bg, rgba(245, 158, 11, 0.08))",
-							border: isEmergencyCare ? "2px solid var(--warn-fg, #f59e0b)" : "1px solid var(--line, rgba(245, 158, 11, 0.35))",
-							display: "flex",
-							justifyContent: "space-between",
-							alignItems: "center",
-							flexWrap: "wrap",
-							gap: "12px",
-							marginBottom: "14px",
-							boxShadow: isEmergencyCare ? "0 4px 16px rgba(245, 158, 11, 0.15)" : "none",
-						}}
-					>
-						<div style={{ flex: 1, minWidth: "260px" }}>
-							<div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-								<Zap size={18} className="text-amber-600" />
-								<strong style={{ fontSize: "0.875rem", color: "var(--ink, #0f172a)" }}>
-									Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)
-								</strong>
-								{isEmergencyCare && (
-									<span
-										style={{
-											fontSize: "0.6875rem",
-											fontWeight: 800,
-											padding: "2px 8px",
-											borderRadius: "6px",
-											background: "var(--ok-fg, #10b981)",
-											color: "#ffffff",
-										}}
-									>
-										АКТИВНО
-									</span>
-								)}
-							</div>
-							<p style={{ margin: 0, fontSize: "0.75rem", color: "var(--muted, #64748b)", lineHeight: 1.4 }}>
-								Если пациент пришел с острой болью, а письмо еще не пришло на почту — программа не блокирует врача и не требует номер письма! Временное согласование на неотложные манипуляции (депульпирование, анестезия, вскрытие абсцесса).
-							</p>
-						</div>
+					<DmsQuickActionBanners
+						isEmergencyCare={isEmergencyCare}
+						onActivateEmergency={handleActivateEmergencyPainMode}
+						onApplyExpressPreset={handleApplyExpressPreset}
+						presets={EXPRESS_GUARANTEE_LETTER_PRESETS}
+					/>
 
-						<button
-							type="button"
-							onClick={handleActivateEmergencyPainMode}
-							style={{
-								minHeight: "44px",
-								padding: "8px 16px",
-								borderRadius: "10px",
-								border: "none",
-								background: isEmergencyCare ? "var(--ok-fg, #10b981)" : "var(--warn-fg, #f59e0b)",
-								color: "#ffffff",
-								fontWeight: 700,
-								fontSize: "0.8125rem",
-								cursor: "pointer",
-								display: "flex",
-								alignItems: "center",
-								gap: "8px",
-								boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-							}}
-							title="1-клик: Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)"
-						>
-							<Zap size={16} />
-							<span>
-								{isEmergencyCare
-									? "Экстренный приём активен"
-									: "1-клик: Экстренный приём / Гарантия в пути"}
-							</span>
-						</button>
-					</div>
-
-					{/* 1-Клик Экспресс-прикрепление гарантийного письма */}
-					<div
-						style={{
-							padding: "10px 14px",
-							borderRadius: "12px",
-							background: "var(--paper-strong, #ffffff)",
-							border: "1px solid var(--line, #e2e8f0)",
-							marginBottom: "14px",
-						}}
-					>
-						<div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
-							<Zap size={16} className="text-sky-600" />
-							<span style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
-								Экспресс-прикрепление гарантийного письма в 1 клик:
-							</span>
-							<span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
-								(моментальное заполнение страховщика, лимитов и услуг 804н)
-							</span>
-						</div>
-						<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-							{EXPRESS_GUARANTEE_LETTER_PRESETS.map((preset) => (
-								<button
-									key={preset.id}
-									type="button"
-									onClick={() => handleApplyExpressPreset(preset)}
-									className="dms-btn dms-btn-secondary"
-									style={{
-										fontSize: "0.75rem",
-										padding: "6px 12px",
-										borderRadius: "8px",
-										display: "flex",
-										alignItems: "center",
-										gap: "6px",
-										background: "var(--paper, #f8fafc)",
-										border: "1px solid var(--line, #cbd5e1)",
-										cursor: "pointer",
-									}}
-									title={preset.noteRu}
-								>
-									<CheckCircle2 size={13} className="text-sky-600" />
-									<span style={{ fontWeight: 600 }}>{preset.labelRu}</span>
-								</button>
-							))}
-						</div>
-					</div>
 
 					{/* 1. Блок страховщика и реквизитов письма */}
 					<div className="dms-card">
@@ -571,30 +461,58 @@ export function DmsGuaranteeLetterModal({
 								1. Страховая компания и реквизиты гарантийного письма
 							</h3>
 
-							<label
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: "6px",
-									cursor: "pointer",
-									padding: "4px 8px",
-									borderRadius: "6px",
-									background: isEmergencyCare ? "rgba(245, 158, 11, 0.15)" : "transparent",
-									border: isEmergencyCare ? "1px solid var(--warn-fg, #d97706)" : "1px solid var(--line, #e2e8f0)",
-									fontSize: "0.8125rem",
-									fontWeight: 600,
-								}}
-							>
-								<input
-									type="checkbox"
-									checked={isEmergencyCare}
-									onChange={(e) => setIsEmergencyCare(e.target.checked)}
-									style={{ width: "15px", height: "15px", cursor: "pointer" }}
-								/>
-								<span style={{ color: isEmergencyCare ? "var(--warn-fg, #d97706)" : "inherit" }}>
-									<AlertTriangle size={14} className="inline mr-1 text-amber-500" /> Острая боль / Экстренная помощь
-								</span>
-							</label>
+							<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+								<label
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "6px",
+										cursor: "pointer",
+										padding: "4px 8px",
+										borderRadius: "6px",
+										background: isEmergencyCare ? "rgba(245, 158, 11, 0.15)" : "transparent",
+										border: isEmergencyCare ? "1px solid var(--warn-fg, #d97706)" : "1px solid var(--line, #e2e8f0)",
+										fontSize: "0.8125rem",
+										fontWeight: 600,
+									}}
+								>
+									<input
+										type="checkbox"
+										checked={isEmergencyCare}
+										onChange={(e) => setIsEmergencyCare(e.target.checked)}
+										style={{ width: "15px", height: "15px", cursor: "pointer" }}
+									/>
+									<span style={{ color: isEmergencyCare ? "var(--warn-fg, #d97706)" : "inherit" }}>
+										<AlertTriangle size={14} className="inline mr-1 text-amber-500" /> Острая боль / Экстренная помощь
+									</span>
+								</label>
+
+								<label
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "6px",
+										cursor: "pointer",
+										padding: "4px 8px",
+										borderRadius: "6px",
+										background: isDeferredScan ? "rgba(16, 185, 129, 0.15)" : "transparent",
+										border: isDeferredScan ? "1px solid var(--ok-fg, #10b981)" : "1px solid var(--line, #e2e8f0)",
+										fontSize: "0.8125rem",
+										fontWeight: 600,
+									}}
+									title="Отложенный ввод скана: отсутствие файла в базе не блокирует прием пациента и расчет счетов"
+								>
+									<input
+										type="checkbox"
+										checked={isDeferredScan}
+										onChange={(e) => setIsDeferredScan(e.target.checked)}
+										style={{ width: "15px", height: "15px", cursor: "pointer" }}
+									/>
+									<span style={{ color: isDeferredScan ? "var(--ok-fg, #059669)" : "inherit" }}>
+										<CheckCircle2 size={14} className="inline mr-1 text-emerald-600" /> Отложенный ввод скана (досылка)
+									</span>
+								</label>
+							</div>
 						</div>
 
 						{isEmergencyCare && (
@@ -615,6 +533,28 @@ export function DmsGuaranteeLetterModal({
 								<AlertTriangle size={16} />
 								<span>
 									Задержка гарантийного письма ДМС или превышение франшизы не блокирует приём врача. Требуется досылка гарантийного письма ДМС.
+								</span>
+							</div>
+						)}
+
+						{isDeferredScan && !isEmergencyCare && (
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									gap: "8px",
+									padding: "8px 12px",
+									borderRadius: "8px",
+									background: "rgba(16, 185, 129, 0.1)",
+									color: "var(--ok-fg, #059669)",
+									fontSize: "0.8125rem",
+									fontWeight: 600,
+									marginBottom: "12px",
+								}}
+							>
+								<CheckCircle2 size={16} />
+								<span>
+									Режим досылки активен: отсутствие скана гарантийного письма не блокирует приём врача и оформление визита.
 								</span>
 							</div>
 						)}
@@ -745,251 +685,37 @@ export function DmsGuaranteeLetterModal({
 					</div>
 
 					{/* 2. Лимиты покрытия и франшиза (софинансирование) */}
-					<div className="dms-card">
-						<h3 className="dms-card-title">
-							<Calculator size={18} className="text-emerald-600" />
-							2. Лимиты страхового покрытия и франшиза (Copay)
-						</h3>
+					<DmsLimitsAndFranchiseSection
+						maxCoverageRub={maxCoverageRub}
+						usedAmountRub={usedAmountRub}
+						remainingLimitRub={remainingLimitRub}
+						franchiseType={franchiseType}
+						franchisePct={franchisePct}
+						franchiseFixedRub={franchiseFixedRub}
+						status={status}
+						onMaxCoverageChange={setMaxCoverageRub}
+						onUsedAmountChange={setUsedAmountRub}
+						onFranchiseTypeChange={setFranchiseType}
+						onFranchisePctChange={setFranchisePct}
+						onFranchiseFixedRubChange={setFranchiseFixedRub}
+						onStatusChange={setStatus}
+					/>
 
-						<div className="dms-grid-3">
-							<div className="dms-field-group">
-								<label htmlFor={maxCoverageInputId} className="dms-label">Согласованный лимит ГП (₽) *</label>
-								<input
-									id={maxCoverageInputId}
-									type="number"
-									min="0"
-									step="500"
-									value={maxCoverageRub}
-									onChange={(e) => setMaxCoverageRub(Number(e.target.value) || 0)}
-									className="dms-input font-mono font-bold"
-								/>
-							</div>
-
-							<div className="dms-field-group">
-								<label htmlFor={usedAmountInputId} className="dms-label">Израсходовано по ГП (₽)</label>
-								<input
-									id={usedAmountInputId}
-									type="number"
-									min="0"
-									step="100"
-									value={usedAmountRub}
-									onChange={(e) => setUsedAmountRub(Number(e.target.value) || 0)}
-									className="dms-input font-mono"
-								/>
-							</div>
-
-							<div className="dms-field-group">
-								<span className="dms-label">Остаток лимита</span>
-								<div className="dms-input font-mono font-bold flex items-center bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-									{formatRubKopecks(remainingLimitRub)}
-								</div>
-							</div>
-						</div>
-
-						{/* Франшиза */}
-						<div className="dms-grid-3" style={{ marginTop: "14px" }}>
-							<div className="dms-field-group">
-								<label htmlFor={franchiseTypeSelectId} className="dms-label">Тип франшизы / доплаты</label>
-								<select
-									id={franchiseTypeSelectId}
-									value={franchiseType}
-									onChange={(e) => setFranchiseType(e.target.value as "percent" | "fixed_rub")}
-									className="dms-select"
-								>
-									<option value="percent">Процентная франшиза (% доплаты пациента)</option>
-									<option value="fixed_rub">Фиксированная франшиза (₽ за визит)</option>
-								</select>
-							</div>
-
-							{franchiseType === "percent" ? (
-								<div className="dms-field-group">
-									<label htmlFor={franchiseValueInputId} className="dms-label">Размер франшизы (%)</label>
-									<input
-										id={franchiseValueInputId}
-										type="number"
-										min="0"
-										max="100"
-										value={franchisePct}
-										onChange={(e) => setFranchisePct(Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
-										className="dms-input font-mono"
-										placeholder="0 — 100%"
-									/>
-								</div>
-							) : (
-								<div className="dms-field-group">
-									<label htmlFor={franchiseValueInputId} className="dms-label">Сумма франшизы (₽)</label>
-									<input
-										id={franchiseValueInputId}
-										type="number"
-										min="0"
-										step="100"
-										value={franchiseFixedRub}
-										onChange={(e) => setFranchiseFixedRub(Number(e.target.value) || 0)}
-										className="dms-input font-mono"
-									/>
-								</div>
-							)}
-
-							<div className="dms-field-group">
-								<label htmlFor={statusSelectId} className="dms-label">Статус гарантийного письма</label>
-								<select
-									id={statusSelectId}
-									value={status}
-									onChange={(e) => setStatus(e.target.value as "active" | "expired" | "exhausted" | "cancelled")}
-									className="dms-select"
-								>
-									<option value="active">Активно (в работе)</option>
-									<option value="exhausted">Исчерпан лимит</option>
-									<option value="expired">Истек срок действия</option>
-									<option value="cancelled">Отозвано / Аннулировано</option>
-								</select>
-							</div>
-						</div>
-					</div>
 
 					{/* 3. Исключения страховой программы */}
-					<div className="dms-card">
-						<h3 className="dms-card-title">
-							<AlertTriangle size={18} className="text-[var(--warn-fg,#d97706)]" />
-							3. Исключения из программы ДМС (100% доплата пациента)
-						</h3>
-						<p style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)", margin: "0 0 12px 0" }}>
-							Услуги из отмеченных категорий не покрываются страховщиком и автоматически выставляются в счет пациенту.
-						</p>
-
-						<div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-							{DMS_STANDARD_EXCLUSIONS.map((ex) => {
-								const isChecked = selectedExclusions.includes(ex.key);
-								return (
-									<label
-										key={ex.key}
-										className={`dms-checkbox-pill ${isChecked ? "active" : ""}`}
-										title={ex.description}
-									>
-										<input
-											type="checkbox"
-											checked={isChecked}
-											onChange={() => toggleExclusion(ex.key)}
-										/>
-										<span>{ex.title}</span>
-									</label>
-								);
-							})}
-						</div>
-					</div>
+					<DmsExclusionsSelectorCard
+						selectedExclusions={selectedExclusions}
+						onToggleExclusion={toggleExclusion}
+					/>
 
 					{/* 4. Согласованные услуги Номенклатуры 804н и диагнозы МКБ-10 */}
-					<div className="dms-card">
-						<h3 className="dms-card-title">
-							<CheckCircle2 size={18} className="text-[var(--brand-primary,#0d9488)]" />
-							4. Номенклатура Минздрава 804н: Согласованные услуги и диагнозы МКБ-10
-						</h3>
+					<DmsNomenclatureSelectorCard
+						approvedServiceCodes={approvedServiceCodes}
+						approvedDiagnosisCodes={approvedDiagnosisCodes}
+						onToggleApprovedService={toggleApprovedService}
+						onToggleDiagnosis={toggleDiagnosis}
+					/>
 
-						{/* Диагнозы МКБ-10 */}
-						<div style={{ marginBottom: "16px" }}>
-							<div className="dms-label" style={{ marginBottom: "8px" }}>Разрешенные диагнозы (МКБ-10):</div>
-							<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-								{COMMON_DENTAL_ICD10_DIAGNOSES.map((diag) => {
-									const isApproved = approvedDiagnosisCodes.includes(diag.code);
-									return (
-										<button
-											key={diag.code}
-											type="button"
-											className={`dms-btn ${isApproved ? "dms-btn-primary" : "dms-btn-secondary"}`}
-											onClick={() => toggleDiagnosis(diag.code)}
-											style={{ padding: "6px 12px", fontSize: "0.75rem", minHeight: "36px" }}
-										>
-											{isApproved && <Check size={14} />}
-											<strong>{diag.code}</strong> — {diag.name}
-										</button>
-									);
-								})}
-							</div>
-						</div>
-
-						{/* Быстрые фильтры категорий 804н (Закон Хика, 32–36px) */}
-						<div className="dms-quick-toolbar" style={{ marginBottom: "10px" }}>
-							{[
-								{ key: "all", label: "Все категории" },
-								{ key: "therapy", label: "Терапия" },
-								{ key: "surgery", label: "Хирургия" },
-								{ key: "diagnostics", label: "Диагностика" },
-								{ key: "hygiene", label: "Профгигиена" },
-								{ key: "xray", label: "Рентген" },
-							].map((cat) => (
-								<button
-									key={cat.key}
-									type="button"
-									className={`dms-quick-chip ${selectedCategoryTab === cat.key ? "active" : ""}`}
-									onClick={() => setSelectedCategoryTab(cat.key)}
-								>
-									{cat.label}
-								</button>
-							))}
-						</div>
-
-						{/* Поиск услуг 804н */}
-						<div className="dms-field-group" style={{ marginBottom: "12px" }}>
-							<label htmlFor={serviceSearchInputId} className="dms-label">Поиск номенклатурных услуг 804н для добавления в ГП</label>
-							<div style={{ position: "relative" }}>
-								<Search size={18} style={{ position: "absolute", left: "14px", top: "13px", color: "var(--muted, #64748b)" }} />
-								<input
-									id={serviceSearchInputId}
-									type="text"
-									placeholder="Поиск по коду (A16.07...) или названию (пломба, эндодонтия, удаление)..."
-									value={searchQuery}
-									onChange={(e) => setSearchQuery(e.target.value)}
-									className="dms-input"
-									style={{ paddingLeft: "42px" }}
-								/>
-							</div>
-						</div>
-
-						{/* Список услуг */}
-						<div style={{ maxHeight: "240px", overflowY: "auto", border: "1px solid var(--line, #e2e8f0)", borderRadius: "12px", padding: "8px" }}>
-							{filteredCatalog.map((item) => {
-								const isSelected = approvedServiceCodes.includes(item.code);
-								return (
-									<div
-										key={item.code}
-										className={`dms-service-item ${isSelected ? "selected" : ""}`}
-									>
-										<div style={{ display: "flex", flexDirection: "column", gap: "2px", flex: 1, minWidth: 0, paddingRight: "12px" }}>
-											<div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-												<span style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--primary, #0284c7)" }} className="shrink-0">
-													{item.code}
-												</span>
-												<span className="dms-badge dms-badge-active truncate" style={{ fontSize: "0.6875rem", padding: "2px 8px" }}>
-													{item.categoryTitleRu}
-												</span>
-											</div>
-											<div style={{ fontSize: "0.8125rem", fontWeight: 500 }} className="truncate" title={item.name}>{item.name}</div>
-											<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
-												Тариф: {formatRubKopecks(item.defaultPriceRub)} {item.uet ? `(${item.uet} УЕТ)` : ""}
-											</div>
-										</div>
-
-										<button
-											type="button"
-											className={`dms-btn ${isSelected ? "dms-btn-primary" : "dms-btn-secondary"}`}
-											onClick={() => toggleApprovedService(item.code)}
-											style={{ minWidth: "115px" }}
-										>
-											{isSelected ? (
-												<>
-													<Check size={16} /> Согласовано
-												</>
-											) : (
-												<>
-													<Plus size={16} /> Согласовать
-												</>
-											)}
-										</button>
-									</div>
-								);
-							})}
-						</div>
-					</div>
 
 					{/* 5. Интерактивный калькулятор распределения счета визита (ДМС / Пациент) */}
 					<DmsBillSplitCalculatorSection

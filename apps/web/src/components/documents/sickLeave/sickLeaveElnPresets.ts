@@ -55,7 +55,7 @@ export const INCAPACITY_REASON_CODES: Record<IncapacityReasonCode, IncapacityRea
 	'08': {
 		code: '08',
 		titleRu: '08 - Долечивание в санаторно-курортных организациях',
-		descriptionRu: 'Направление на долечивание непосредственно после стационарного лечения',
+		descriptionRu: 'Направление на долечивание в санаторно-курортных организациях (не применяется в амбулаторной стоматологии)',
 		isDentalCommon: false
 	},
 	'09': {
