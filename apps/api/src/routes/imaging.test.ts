@@ -146,6 +146,15 @@ describe("commitImagingImport", () => {
 	});
 
 	it("не пишет в базу, если готовых строк нет", async () => {
+		mock.method(db, "select", () => ({
+			from: () => ({
+				where: () =>
+					Object.assign(Promise.resolve([testPatientRow]), {
+						limit: () => Promise.resolve([testPatientRow]),
+					}),
+			}),
+		}));
+
 		let insertCalls = 0;
 		mock.method(db, "insert", () => {
 			insertCalls += 1;

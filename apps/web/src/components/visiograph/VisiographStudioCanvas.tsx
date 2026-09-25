@@ -41,6 +41,7 @@ import {
 	exportCanvasToPng,
 	triggerBinaryDownload,
 } from "./VisiographDicomExporter";
+import { exportSnapshotToClinicalRecord } from "./VisiographExportService";
 import {
 	DEFAULT_VISIOGRAPH_IMAGE_PARAMS,
 	VisiographImageProcessor,
@@ -898,6 +899,17 @@ export function VisiographStudioCanvas({
 					angles,
 					lesions,
 					scaleMmPerPx: calibration.scaleMmPerPixel,
+				});
+			} else if (patientId && patientId !== "pat_unknown") {
+				const finalDataUri = exportCanvasToJpeg(outputCanvas, 0.92);
+				await exportSnapshotToClinicalRecord({
+					patientId,
+					imageDataUri: finalDataUri,
+					toothCode: toothCode || undefined,
+					clinicalNote: `Экспорт визиографа (зуб ${toothCode || "н/д"})`,
+					viewKind: "periapical_2d",
+				}).catch((err) => {
+					console.warn("[VisiographStudioCanvas] Auto-export to clinical record failed:", err);
 				});
 			}
 

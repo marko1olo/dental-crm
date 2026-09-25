@@ -21,6 +21,7 @@ import {
 	createDicomSecondaryCaptureFile,
 	triggerBinaryDownload,
 } from "../visiograph/VisiographDicomExporter";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	RvgFiltersToolbar,
 	DEFAULT_RVG_FILTERS,
@@ -310,6 +311,15 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 		const currentSensor = SENSOR_MODELS.find((s) => s.id === selectedSensorModel);
 		const currentIso = new Date().toISOString();
 
+		const metadata = {
+			kv: voltageKv,
+			ma: currentMa,
+			exposureSec,
+			pixelSpacingMm: currentSensor?.pixelSpacing || 0.035,
+			apparatusModel: currentSensor?.name || "Vatech EzSensor HD",
+			sensorType: "CMOS Active Pixel",
+		};
+
 		const studyRecord: RadiologyStudy = {
 			id: `study-rvg-${Date.now()}`,
 			patientId,
@@ -330,19 +340,48 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 			status: "completed",
 			diagnosisIcd10: "K04.0",
 			diagnosticNotes: clinicalNotes,
-			metadata: {
-				kv: voltageKv,
-				ma: currentMa,
-				exposureSec,
-				pixelSpacingMm: currentSensor?.pixelSpacing || 0.035,
-				apparatusModel: currentSensor?.name || "Vatech EzSensor HD",
-				sensorType: "CMOS Active Pixel",
-			},
+			metadata,
 			tags: ["RVG", "043/у", `Зуб_${selectedTeeth.join("_")}`],
 		};
 
 		if (onSaveToEmr) {
 			onSaveToEmr(studyRecord);
+		}
+
+		if (patientId && capturedImage && (capturedImage.startsWith("data:image/") || capturedImage.startsWith("blob:"))) {
+			void (async () => {
+				try {
+					let imageBase64 = capturedImage;
+					if (capturedImage.startsWith("blob:")) {
+						const blob = await fetch(capturedImage).then((r) => r.blob());
+						imageBase64 = await new Promise<string>((resolve) => {
+							const reader = new FileReader();
+							reader.onloadend = () => resolve(reader.result as string);
+							reader.readAsDataURL(blob);
+						});
+					}
+					await fetch("/api/xray/scans", {
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({
+							"Content-Type": "application/json",
+						}),
+						body: JSON.stringify({
+							patientId,
+							imageBase64,
+							originalFilename: `rvg_tooth_${selectedTeeth.join("_")}_${Date.now()}.jpg`,
+							mimeType: "image/jpeg",
+							kind: "periapical",
+							toothCode: selectedTeeth[0] || null,
+							notes: clinicalNotes,
+							status: "done",
+						}),
+					}).catch((err) => {
+						console.warn("[DirectRvgCaptureModal] Failed to persist scan to server:", err);
+					});
+				} catch (err) {
+					console.warn("[DirectRvgCaptureModal] Server save error:", err);
+				}
+			})();
 		}
 
 		showToast(`Снимок зуба ${selectedTeeth.join(", ")} сохранён в медицинскую карту ${patientCardNumber}`, "success");
@@ -372,13 +411,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 			doctorName,
 			status: "completed",
 			diagnosticNotes: clinicalNotes,
-			metadata: {
-				kv: voltageKv,
-				ma: currentMa,
-				exposureSec,
-				pixelSpacingMm: currentSensor?.pixelSpacing || 0.035,
-				apparatusModel: currentSensor?.name || "Vatech EzSensor HD",
-			},
+			metadata: { kv: voltageKv, ma: currentMa, exposureSec, pixelSpacingMm: currentSensor?.pixelSpacing || 0.035, apparatusModel: currentSensor?.name || "Vatech EzSensor HD" },
 		};
 
 		if (onSendToLab) {
@@ -694,10 +727,8 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 					<div className="rvg-controls-dock" data-testid="rvg-controls-dock">
 						{/* 1. FDI Tooth Selector Matrix */}
 						<DirectRvgFdiSelector
-							selectedTeeth={selectedTeeth}
-							onToothToggle={handleToothToggle}
-							primaryTooth={primaryTooth}
-							primaryToothName={primaryToothName}
+							selectedTeeth={selectedTeeth} onToothToggle={handleToothToggle}
+							primaryTooth={primaryTooth} primaryToothName={primaryToothName}
 						/>
 
 						{/* 2. Projection Angle & Exposure */}
@@ -707,12 +738,9 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 								setProjectionType(projId);
 								setExposureSec(typicalExp);
 							}}
-							voltageKv={voltageKv}
-							onChangeVoltageKv={setVoltageKv}
-							currentMa={currentMa}
-							onChangeCurrentMa={setCurrentMa}
-							exposureSec={exposureSec}
-							onChangeExposureSec={setExposureSec}
+							voltageKv={voltageKv} onChangeVoltageKv={setVoltageKv}
+							currentMa={currentMa} onChangeCurrentMa={setCurrentMa}
+							exposureSec={exposureSec} onChangeExposureSec={setExposureSec}
 						/>
 
 						{/* 3. Real-Time Filters Toolbar */}
@@ -725,10 +753,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 								isSplitCompare={isSplitCompare}
 								onToggleSplitCompare={setIsSplitCompare}
 								onRotate={() => setRotation((prev) => (prev + 90) % 360)}
-								onReset={() => {
-									setFilters(DEFAULT_RVG_FILTERS);
-									setActivePresetId("standard");
-								}}
+								onReset={() => { setFilters(DEFAULT_RVG_FILTERS); setActivePresetId("standard"); }}
 							/>
 						</div>
 

@@ -303,6 +303,7 @@ function createImagingRequestAbortSignal(request: FastifyRequest): AbortSignal {
 	const controller = new AbortController();
 	request.raw.once("close", () => {
 		if (
+			request.raw.aborted ||
 			request.raw.destroyed ||
 			request.raw.errored ||
 			!request.raw.readableEnded
@@ -2987,12 +2988,7 @@ async function readExactFileRange(
 	const buffer = Buffer.alloc(length);
 	let bytesRead = 0;
 	while (bytesRead < length) {
-		const { bytesRead: chunk } = await fileHandle.read(
-			buffer,
-			bytesRead,
-			length - bytesRead,
-			position + bytesRead,
-		);
+		const { bytesRead: chunk } = await fileHandle.read(buffer, bytesRead, length - bytesRead, position + bytesRead);
 		if (chunk <= 0) break;
 		bytesRead += chunk;
 	}

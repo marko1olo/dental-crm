@@ -7,9 +7,29 @@ import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 
-interface DicomArchiveUploaderProps {
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+
+export interface DicomArchiveUploaderProps {
 	onImagesLoaded: (imageIds: string[]) => void;
 	className?: string;
+	uploadToServer?: boolean;
+}
+
+export async function uploadDicomFileToStow(file: File | Blob): Promise<boolean> {
+	try {
+		const arrayBuf = await file.arrayBuffer();
+		const res = await fetch("/api/dicomweb/studies", {
+			method: "POST",
+			headers: denteAdminSecretRequestHeaders({
+				"Content-Type": "application/dicom",
+			}),
+			body: arrayBuf,
+		});
+		return res.ok;
+	} catch (err) {
+		logger.warn("[DicomArchiveUploader] STOW-RS upload failed:", err);
+		return false;
+	}
 }
 
 const MAX_SAFE_FILE_SIZE_BYTES = 1.5 * 1024 * 1024 * 1024; // 1.5 GB
@@ -29,10 +49,10 @@ import {
 
 export { filterDicomArchiveEntries, isDicomEntry, isDicomdirEntry, sortDicomEntries };
 
-
 export function DicomArchiveUploader({
 	onImagesLoaded,
 	className,
+	uploadToServer = false,
 }: DicomArchiveUploaderProps) {
 	const [isDragging, setIsDragging] = useState(false);
 	const [loading, setLoading] = useState(false);
@@ -166,6 +186,9 @@ export function DicomArchiveUploader({
 								const imageId =
 									cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
 								imageIds.push(imageId);
+								if (uploadToServer) {
+									void uploadDicomFileToStow(file);
+								}
 							}
 							// Zero-leak GC: immediately free this slice's uncompressed Uint8Array buffer
 							delete unzipped[filename];
@@ -273,7 +296,12 @@ export function DicomArchiveUploader({
 						if (f) {
 							if (isDicomdirEntry(f.name)) continue;
 							const imageId = await processFile(f);
-							if (imageId) validImageIds.push(imageId);
+							if (imageId) {
+								validImageIds.push(imageId);
+								if (uploadToServer) {
+									void uploadDicomFileToStow(f);
+								}
+							}
 						}
 					}
 				}

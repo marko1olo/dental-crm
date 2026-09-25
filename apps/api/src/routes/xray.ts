@@ -54,305 +54,33 @@ import {
 import { auditMedicalAccessFromRequest } from "../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 
-// Schemas
+export {
+	createXrayScanSchema,
+	_xrayScanResponseSchema,
+	xrayIntFromEnv,
+	xrayAnalysisDeadlineMs,
+	xrayAnalysisStaleMs,
+	XrayAnalysisDeadlineError,
+	type XrayAnalysisJob,
+	type XrayAnalysisPatch,
+	persistXrayAnalysisOutcome,
+	analyzeWithDeadline,
+	executeXrayAnalysisJob,
+	startDetachedXrayAnalysis,
+	scanToResponse,
+	extractSummary,
+} from "./xraySchemas.js";
 
-const createXrayScanSchema = z.object({
-	patientId: z.string().uuid(),
-	visitId: z.string().uuid().optional(),
-	imageBase64: z.string().min(100), // data:image/... base64 string or raw base64
-	originalFilename: z.string().optional(),
-	mimeType: z.string().optional().default("image/jpeg"),
-	kind: z
-		.enum(["periapical", "bitewing", "opg", "other"])
-		.optional()
-		.default("periapical"),
-	toothCode: z.string().optional(), // e.g. "46"
-	notes: z.string().optional(),
-	organizationId: z.string().uuid().optional(), // resolved from session context
-	/*
-	 * БЫЛО: create принимал только картинку+notes → status всегда "pending".
-	 * VisiographAnalyzer после синхронного /api/imaging/visiograph-ai делал
-	 * POST (снимок без заключения) + PUT (текст). Если PUT отваливался
-	 * (сеть, 403, рестарт), в карте оставался «голый» снимок без aiReport —
-	 * врач видел заключение на экране, F5 — пусто.
-	 * СТАЛО: опциональные AI-поля на create; при наличии отчёта статус "done"
-	 * в одной транзакции insert. PUT остаётся для ручной правки позже.
-	 */
-	aiReport: z.string().max(50000).nullable().optional(),
-	aiSummary: z.string().max(2000).nullable().optional(),
-	aiToothStates: z.record(z.string(), z.string()).nullable().optional(),
-	status: z.enum(["pending", "analyzing", "done", "error"]).optional(),
-});
-
-const _xrayScanResponseSchema = z.object({
-	id: z.string(),
-	patientId: z.string(),
-	visitId: z.string().nullable().optional(),
-	status: z.string(),
-	kind: z.string(),
-	toothCode: z.string().nullable().optional(),
-	originalFilename: z.string().nullable().optional(),
-	aiReport: z.string().nullable().optional(),
-	aiSummary: z.string().nullable().optional(),
-	aiToothStates: z.record(z.string()).nullable().optional(),
-	aiModelName: z.string().nullable().optional(),
-	aiAnalyzedAt: z.string().nullable().optional(),
-	aiError: z.string().nullable().optional(),
-	notes: z.string().nullable().optional(),
-	capturedAt: z.string(),
-	createdAt: z.string(),
-	// We do NOT return imageDataUri in list to keep payloads small
-	hasImage: z.boolean(),
-});
-
-// Helpers
-
-/**
- * БЫЛО: организация бралась из request.session (никогда не заполняется) либо из
- * DEFAULT_ORGANIZATION_ID, иначе — жёстко зашитый UUID. В сочетании с запросами
- * без фильтра по organizationId это позволяло читать и удалять рентген-снимки
- * ЛЮБОЙ клиники простым перебором id. Теперь организация только из токена, и
- * каждый запрос к БД дополнительно фильтруется по organizationId.
- */
-
-/*
- * ФОНОВЫЙ РАЗБОР СНИМКА — СВОЯ ТРАНЗАКЦИЯ, А НЕ ЧУЖАЯ ЗАКРЫТАЯ.
- *
- * БЫЛО. Тело колбэка `setImmediate` жило прямо в обработчике и писало результат
- * через общий `db`. `db` — это Proxy (db/client.ts:50), который подставляет
- * активную транзакцию из `transactionStorage` (AsyncLocalStorage). Колбэк
- * `setImmediate` НАСЛЕДУЕТ асинхронный контекст обработчика, поэтому его
- * `db.update` уходили по дескриптору транзакции, которую хук `onRoute`
- * (server.ts:420) уже закоммитил, отдав ответ. Замерено на этом хосте, Node
- * v24.13.0: внутри `setImmediate` `getStore()` возвращает store обработчика, и
- * возвращает его же после каждого последующего `await`.
- *
- * ЧЕМ ЭТО КОНЧАЛОСЬ. Ни один результат разбора не доходил до базы — ни удачный
- * (`status = "done"`, отчёт, состояния зубов), ни аварийный (`status = "error"`).
- * Снимок навсегда оставался в состоянии `analyzing`, а повторный запуск разбора
- * был невозможен: ветка 409 «Анализ уже выполняется» видела то же `analyzing` и
- * отказывала. Один вызов маршрута выводил снимок из строя необратимо.
- *
- * ПОЧЕМУ ОДНОГО `withTenantCtx` В КОЛБЭКЕ НЕ ХВАТИЛО БЫ. `withTenantCtx`
- * реентерабелен (db/rls.ts:108): найдя транзакцию в `transactionStorage`, он
- * ПЕРЕИСПОЛЬЗУЕТ её, а не открывает свою. Унаследованный store — это ровно та
- * закрытая транзакция, поэтому наивная обёртка починила бы только вид кода.
- * Контекст обработчика нужно сначала ПОКИНУТЬ: `transactionStorage.exit()`
- * (штатный приём Node именно для отделяемой фоновой работы) убирает store и в
- * самом колбэке, и во всех созданных внутри него продолжениях — проверено на
- * этом хосте. Только после этого `withTenantCtx` открывает СВОЮ транзакцию со
- * своим `app.current_tenant`.
- *
- * ПОЧЕМУ НЕ ОБХОД. `withSuperuserBypass` дал бы «работает» ценой утечки: в
- * WITH CHECK политики `xray_scans` дизъюнкта обхода нет (проверено запросом к
- * pg_policies), а на чтении обход показывает строки чужих клиник. Клиника
- * задания известна из обработчика и захватывается в замыкание ДО ответа.
- *
- * ПОЧЕМУ ЗАПРОС К ИИ ВНЕ ТРАНЗАКЦИИ. Соединений в пуле десять (db/client.ts:43,
- * `max` не задан). Держать транзакцию открытой все секунды похода к ИИ значит
- * повторить аварию, описанную в server.ts:394: десять параллельных разборов
- * забирают пул целиком, и любой другой запрос к базе не получает соединения.
- * Поэтому порядок такой: сначала ИИ без единого соединения, потом короткая
- * транзакция ровно на один UPDATE.
- */
-
-/** Целое из окружения с зажимом в границы. Ноль хардкода сроков в коде. */
-function xrayIntFromEnv(
-	name: string,
-	fallback: number,
-	min: number,
-	max: number,
-): number {
-	const parsed = Number.parseInt(process.env[name]?.trim() ?? "", 10);
-	if (!Number.isFinite(parsed)) return fallback;
-	return Math.max(min, Math.min(max, parsed));
-}
-
-/**
- * Общий предельный срок одного разбора. Отдельный запрос к провайдеру уже
- * ограничен 45 секундами (ai/visiograph.ts:70), но провайдеров два, ключей у
- * каждого может быть несколько, и суммарного потолка не было вовсе: при
- * молчащих провайдерах снимок висел бы в `analyzing` минутами. По истечении
- * срока пишется осмысленная ошибка, а не вечное «анализируется».
- */
-function xrayAnalysisDeadlineMs(): number {
-	return xrayIntFromEnv(
-		"DENTE_XRAY_ANALYSIS_DEADLINE_MS",
-		120_000,
-		10_000,
-		600_000,
-	);
-}
-
-/**
- * Через сколько состояние `analyzing` считается брошенным и разбор можно
- * запустить заново. Нужно для сироты после перезапуска процесса: фоновая работа
- * живёт только в памяти, и снимок, разбор которого прервал рестарт, иначе
- * остался бы в `analyzing` навсегда — повторный запуск отбивала бы ветка 409.
- */
-function xrayAnalysisStaleMs(): number {
-	return xrayIntFromEnv(
-		"DENTE_XRAY_ANALYSIS_STALE_MS",
-		900_000,
-		60_000,
-		24 * 60 * 60_000,
-	);
-}
-
-/** Отдельный тип, чтобы отличить срыв срока от отказа самого провайдера. */
-class XrayAnalysisDeadlineError extends Error {
-	constructor(deadlineMs: number) {
-		super(`Разбор снимка не уложился в ${Math.round(deadlineMs / 1000)} с.`);
-		this.name = "XrayAnalysisDeadlineError";
-	}
-}
-
-/** Всё, что фоновому заданию нужно знать. Захватывается ДО отправки ответа. */
-type XrayAnalysisJob = {
-	readonly scanId: string;
-	readonly organizationId: string;
-	readonly imageDataUri: string;
-};
-
-type XrayAnalysisPatch = Partial<typeof xrayScans.$inferInsert>;
-
-/**
- * Единственная точка записи результата. Своя транзакция со своим тенант-
- * контекстом; фильтр по organizationId оставлен вдобавок к политике RLS —
- * защита в два слоя дешевле разбора того, какой из них не сработал.
- */
-async function persistXrayAnalysisOutcome(
-	job: XrayAnalysisJob,
-	patch: XrayAnalysisPatch,
-): Promise<void> {
-	await withTenantCtx(job.organizationId, async (tx) => {
-		await tx
-			.update(xrayScans)
-			.set({ ...patch, updatedAt: new Date() })
-			.where(
-				and(
-					eq(xrayScans.id, job.scanId),
-					eq(xrayScans.organizationId, job.organizationId),
-				),
-			);
-	});
-}
-
-/**
- * Разбор с предельным сроком. `Promise.race` подписывается на ОБА промиса,
- * поэтому опоздавший отказ провайдера остаётся обработанным и не превращается в
- * unhandledRejection. Опоздавший УСПЕХ просто отбрасывается: состояние уже
- * записано как ошибка срока, и переписывать его задним числом нельзя.
- */
-async function analyzeWithDeadline(imageDataUri: string, deadlineMs: number) {
-	let timer: ReturnType<typeof setTimeout> | null = null;
-	try {
-		return await Promise.race([
-			analyzeVisiographImage(imageDataUri),
-			new Promise<never>((_resolve, reject) => {
-				timer = setTimeout(
-					() => reject(new XrayAnalysisDeadlineError(deadlineMs)),
-					deadlineMs,
-				);
-				timer.unref?.();
-			}),
-		]);
-	} finally {
-		if (timer) clearTimeout(timer);
-	}
-}
-
-/**
- * Тело фонового задания. Из него НЕ ДОЛЖНО вылетать ничего: обработчика
- * `unhandledRejection` в приложении нет (проверено поиском по apps/api/src), а
- * с Node 15 несвязанный отказ роняет процесс целиком — то есть весь API клиники
- * из-за одного снимка.
- */
-async function executeXrayAnalysisJob(job: XrayAnalysisJob): Promise<void> {
-	try {
-		const result = await analyzeWithDeadline(
-			job.imageDataUri,
-			xrayAnalysisDeadlineMs(),
-		);
-		await persistXrayAnalysisOutcome(job, {
-			status: "done",
-			aiReport: result.report,
-			aiSummary: extractSummary(result.report),
-			aiToothStates: result.toothStates,
-			aiAnalyzedAt: new Date(),
-			aiError: result.warnings.length > 0 ? result.warnings.join("; ") : null,
-		});
-	} catch (error) {
-		const reason = error instanceof Error ? error.message : String(error);
-		console.error("[XRay AI] Разбор снимка не выполнен", job.scanId, reason);
-		try {
-			await persistXrayAnalysisOutcome(job, {
-				status: "error",
-				aiError:
-					error instanceof XrayAnalysisDeadlineError
-						? `${reason} Повторите разбор снимка.`
-						: "Не удалось выполнить AI-анализ снимка.",
-			});
-		} catch (persistError) {
-			// База недоступна и на записи ошибки. Снимок остаётся в `analyzing`, но
-			// не навсегда: следующий запуск разбора подберёт его по сроку из
-			// xrayAnalysisStaleMs. Молчать здесь нельзя — иначе причина исчезает.
-			console.error(
-				"[XRay AI] Состояние разбора не записано",
-				job.scanId,
-				persistError instanceof Error
-					? persistError.message
-					: String(persistError),
-			);
-		}
-	}
-}
-
-/**
- * Ставит задание за пределами обработчика И за пределами его асинхронного
- * контекста. `exit` выполняется синхронно, поэтому store снимается ровно на то
- * время, пока создаётся промис задания, — дальше он живёт уже без него.
- */
-function startDetachedXrayAnalysis(job: XrayAnalysisJob): void {
-	setImmediate(() => {
-		transactionStorage.exit(() => {
-			void executeXrayAnalysisJob(job).catch((err) => {
-				console.error(`[XrayAI] Detached analysis job failed for scan ${job.scanId}:`, err);
-			});
-		});
-	});
-}
-
-function scanToResponse(
-	scan: typeof xrayScans.$inferSelect,
-	includeImage = false,
-) {
-	return {
-		id: scan.id,
-		patientId: scan.patientId,
-		visitId: scan.visitId ?? null,
-		status: scan.status,
-		kind: scan.kind,
-		toothCode: scan.toothCode ?? null,
-		originalFilename: scan.originalFilename ?? null,
-		aiReport: scan.aiReport ?? null,
-		aiSummary: scan.aiSummary ?? null,
-		aiToothStates: (scan.aiToothStates ?? null) as Record<
-			string,
-			string
-		> | null,
-		aiModelName: scan.aiModelName ?? null,
-		aiAnalyzedAt: scan.aiAnalyzedAt?.toISOString() ?? null,
-		aiError: scan.aiError ?? null,
-		notes: scan.notes ?? null,
-		capturedAt: scan.capturedAt.toISOString(),
-		createdAt: scan.createdAt.toISOString(),
-		hasImage: !!(scan.imageDataUri || scan.storagePath),
-		...(includeImage ? { imageDataUri: scan.imageDataUri ?? null } : {}),
-	};
-}
+import {
+	createXrayScanSchema,
+	xrayAnalysisStaleMs,
+	startDetachedXrayAnalysis,
+	scanToResponse,
+	extractSummary,
+} from "./xraySchemas.js";
 
 // Route registration
+
 
 export async function registerXrayRoutes(app: FastifyInstance) {
 	app.post("/api/xray/scans", async (request, reply) => {
@@ -869,27 +597,3 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 	});
 }
 
-// Helpers
-
-/**
- * Extracts a short summary from the AI markdown report.
- * Uses the "Заключение:" section if present, otherwise first 2 sentences.
- */
-function extractSummary(report: string): string | null {
-	if (!report) return null;
-
-	// Try to find the "Заключение:" section
-	const conclusionMatch = report.match(
-		/\*\*Заключение:\*\*\s*\n([\s\S]*?)(?:\n\n|\*\*|$)/i,
-	);
-	if (conclusionMatch?.[1]) {
-		return conclusionMatch[1]
-			.replace(/^[-*\s]+/gm, "")
-			.trim()
-			.substring(0, 500);
-	}
-
-	// Fallback: first 2 sentences
-	const sentences = report.replace(/[#*`]/g, "").split(/(?<=[.!?])\s+/);
-	return sentences.slice(0, 2).join(" ").trim().substring(0, 500) || null;
-}

@@ -172,9 +172,15 @@ async function buildApp(): Promise<ReturnType<typeof Fastify>> {
 
 function clinicHeaders(
 	organizationId: string = ORGANIZATION_ID,
+	role: string = "doctor",
 ): Record<string, string> {
+	const secret = authTokenSecret();
 	return {
-		"x-dente-clinic-token": signToken({ organizationId }, authTokenSecret()),
+		"x-dente-clinic-token": signToken({ organizationId }, secret),
+		"x-dente-staff-token": signToken(
+			{ organizationId, userId: "doc-1", role },
+			secret,
+		),
 	};
 }
 
@@ -695,4 +701,22 @@ test("QIDO-RS search returns DICOM JSON list for clinic", async (t) => {
 
 	await app.close();
 });
+
+test("QIDO-RS search blocks non-clinical role with 403 PermissionDenied (152-FZ / 323-FZ)", async (t) => {
+	mockDb(t, { organizations: existingOrganization() });
+	const app = await buildApp();
+
+	const response = await app.inject({
+		method: "GET",
+		url: "/api/dicomweb/studies",
+		headers: clinicHeaders(ORGANIZATION_ID, "marketer"),
+	});
+
+	assert.strictEqual(response.statusCode, 403);
+	assert.strictEqual(response.json().error, "PermissionDenied");
+	assert.strictEqual(response.json().permission, "clinical.dicom.read");
+
+	await app.close();
+});
+
 
