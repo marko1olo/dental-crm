@@ -166,7 +166,7 @@ describe("1C:Enterprise CommerceML 2.09 & EnterpriseData 1.13 Engine", () => {
 
 			assert.ok(xml.includes("<ХозяйственнаяОперация>Отражение зарплаты в бухучете</ХозяйственнаяОперация>"));
 			assert.ok(xml.includes("<ТабельныйНомер>ВР-001</ТабельныйНомер>"));
-			assert.ok(xml.includes("<ФИО>Барабаш С.В.</ФИО>"));
+			assert.ok(xml.includes("<ФИО>Морозов А.В.</ФИО>"));
 			assert.ok(xml.includes("<ТабельныйНомер>ВР-002</ТабельныйНомер>"));
 			assert.ok(xml.includes("<ФИО>Васильев Д.М.</ФИО>"));
 			assert.ok(xml.includes("<СчетКредитаЗарплата>70</СчетКредитаЗарплата>"));
@@ -218,7 +218,7 @@ describe("1C:Enterprise CommerceML 2.09 & EnterpriseData 1.13 Engine", () => {
 			assert.ok(csv.includes("НомерДокумента;Дата;Касса;Склад;Код804н;Номенклатура;Зуб;ЕдИзм;Количество;Цена;Скидка;Сумма;СтавкаНДС;ВрачФИО;СчетУчета;НоменклатурнаяГруппа"));
 			assert.ok(csv.includes("A16.07.002.001"));
 			assert.ok(csv.includes("A16.07.054.001"));
-			assert.ok(csv.includes("Барабаш С.В."));
+			assert.ok(csv.includes("Морозов А.В."));
 		});
 
 		it("generates valid Material Writeoff CSV with batch numbers and accounts", () => {
@@ -237,7 +237,7 @@ describe("1C:Enterprise CommerceML 2.09 & EnterpriseData 1.13 Engine", () => {
 			assert.ok(csv.startsWith("\uFEFF"));
 			assert.ok(csv.includes("НомерДокумента;Дата;Период;ТабельныйНомер;Сотрудник;Должность;Специальность;ВидНачисления;СуммаНачислено;НДФЛ13;СтраховыеВзносы;КВыплате;СчетДт;СчетКт;СтатьяЗатрат"));
 			assert.ok(csv.includes("ВР-001"));
-			assert.ok(csv.includes("Барабаш С.В."));
+			assert.ok(csv.includes("Морозов А.В."));
 			assert.ok(csv.includes("3625.00"));
 			assert.ok(csv.includes("471.25"));
 		});
