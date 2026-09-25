@@ -18,272 +18,28 @@
  * - 100% покрытие типов TypeScript без loose any.
  */
 
-// ---------------------------------------------------------------------------
-// 1. ТИПЫ И КЛЮЧИ ЭТАПОВ ВОРОНКИ
-// ---------------------------------------------------------------------------
+// Re-export all types, constants and export utilities (SSOT & Backward Compatibility)
+export * from "./leadsFunnelTypes";
+export * from "./leadsFunnelExport";
 
-export type LeadFunnelStageKey =
-	| "new"
-	| "contacted"
-	| "consult_booked"
-	| "showed_up"
-	| "treatment_plan_accepted"
-	| "paid";
-
-export interface FunnelStageConfig {
-	readonly key: LeadFunnelStageKey;
-	readonly index: number;
-	readonly label: string;
-	readonly shortLabel: string;
-	readonly description: string;
-	readonly color: string;
-	readonly badgeColor: string;
-}
-
-export const FUNNEL_STAGES: readonly FunnelStageConfig[] = [
-	{
-		key: "new",
-		index: 0,
-		label: "1. Новые обращения",
-		shortLabel: "Лид получен",
-		description: "Входящие заявки со всех каналов маркетинга",
-		color: "var(--teal)",
-		badgeColor: "rgba(15, 118, 110, 0.15)",
-	},
-	{
-		key: "contacted",
-		index: 1,
-		label: "2. В работе / Квалифицированы",
-		shortLabel: "Квалифицирован",
-		description: "Установлен контакт, выявлена потребность",
-		color: "var(--accent)",
-		badgeColor: "rgba(59, 130, 246, 0.15)",
-	},
-	{
-		key: "consult_booked",
-		index: 2,
-		label: "3. Записаны на прием",
-		shortLabel: "Записан",
-		description: "Назначено время в расписании и кресло врача",
-		color: "var(--accent)",
-		badgeColor: "rgba(99, 102, 241, 0.15)",
-	},
-	{
-		key: "showed_up",
-		index: 3,
-		label: "4. Дошли до клиники (Show-up)",
-		shortLabel: "Дошел (Show-up)",
-		description: "Пациент явился на консультацию / осмотр",
-		color: "var(--warn-fg)",
-		badgeColor: "rgba(245, 158, 11, 0.15)",
-	},
-	{
-		key: "treatment_plan_accepted",
-		index: 4,
-		label: "5. Согласован план лечения",
-		shortLabel: "План принят",
-		description: "Смета и план лечения утверждены пациентом",
-		color: "var(--accent)",
-		badgeColor: "rgba(139, 92, 246, 0.15)",
-	},
-	{
-		key: "paid",
-		index: 5,
-		label: "6. Оплачено в кассу",
-		shortLabel: "Оплачено",
-		description: "Внесена оплата / первичный чек пробит через 54-ФЗ",
-		color: "var(--ok-fg)",
-		badgeColor: "rgba(16, 185, 129, 0.15)",
-	},
-] as const;
+import {
+	type CanonicalMarketingChannelKey,
+	type ChannelFunnelMetric,
+	type ChannelSpendMap,
+	type ChannelEfficiencyRating,
+	FUNNEL_STAGES,
+	type FunnelAnalysisResult,
+	type FunnelLead,
+	type FunnelStageMetric,
+	type FunnelTimePeriod,
+	type LeadFunnelStageKey,
+	MARKETING_CHANNELS,
+	type MarketingMetricsSummary,
+	normalizeMarketingChannel,
+} from "./leadsFunnelTypes";
 
 // ---------------------------------------------------------------------------
-// 2. МАРКЕТИНГОВЫЕ КАНАЛЫ
-// ---------------------------------------------------------------------------
-
-export type CanonicalMarketingChannelKey =
-	| "yandex_direct"
-	| "gis_2"
-	| "prodoctorov"
-	| "napopravku"
-	| "site_seo"
-	| "recommendations"
-	| "social_media"
-	| "other";
-
-export interface MarketingChannelMeta {
-	readonly key: CanonicalMarketingChannelKey;
-	readonly label: string;
-	readonly defaultSpendRub: number;
-	readonly color: string;
-	readonly iconType: string;
-}
-
-export const MARKETING_CHANNELS: readonly MarketingChannelMeta[] = [
-	{
-		key: "yandex_direct",
-		label: "Яндекс.Директ",
-		defaultSpendRub: 75000,
-		color: "var(--bad-fg)",
-		iconType: "yandex",
-	},
-	{
-		key: "gis_2",
-		label: "2ГИС Карты",
-		defaultSpendRub: 35000,
-		color: "var(--ok-fg)",
-		iconType: "map",
-	},
-	{
-		key: "prodoctorov",
-		label: "ПроДокторов",
-		defaultSpendRub: 30000,
-		color: "var(--info-fg)",
-		iconType: "award",
-	},
-	{
-		key: "napopravku",
-		label: "НаПоправку",
-		defaultSpendRub: 15000,
-		color: "var(--warn-fg)",
-		iconType: "heart",
-	},
-	{
-		key: "site_seo",
-		label: "Сайт / SEO",
-		defaultSpendRub: 40000,
-		color: "var(--ok-fg)",
-		iconType: "globe",
-	},
-	{
-		key: "recommendations",
-		label: "Рекомендации / Сарафан",
-		defaultSpendRub: 0,
-		color: "var(--accent)",
-		iconType: "users",
-	},
-	{
-		key: "social_media",
-		label: "Соцсети / VK / TG",
-		defaultSpendRub: 25000,
-		color: "var(--primary)",
-		iconType: "message",
-	},
-	{
-		key: "other",
-		label: "Прочие / Прямой звонок",
-		defaultSpendRub: 5000,
-		color: "var(--muted)",
-		iconType: "phone",
-	},
-] as const;
-
-/**
- * Нормализация строкового названия источника лида в канонический ключ рекламного канала.
- */
-export function normalizeMarketingChannel(
-	rawSource?: string | null,
-): CanonicalMarketingChannelKey {
-	if (!rawSource || typeof rawSource !== "string") {
-		return "other";
-	}
-	const s = rawSource.trim().toLowerCase();
-	if (!s) return "other";
-
-	if (
-		s.includes("директ") ||
-		s.includes("direct") ||
-		s.includes("яндекс") ||
-		s.includes("yandex") ||
-		s.includes("рся")
-	) {
-		return "yandex_direct";
-	}
-	if (
-		s.includes("2gis") ||
-		s.includes("2гис") ||
-		s.includes("2 гис") ||
-		s.includes("двойс") ||
-		s.includes("дубльгис")
-	) {
-		return "gis_2";
-	}
-	if (s.includes("продокторов") || s.includes("prodoctorov")) {
-		return "prodoctorov";
-	}
-	if (s.includes("напоправку") || s.includes("napopravku")) {
-		return "napopravku";
-	}
-	if (
-		s.includes("сайт") ||
-		s.includes("site") ||
-		s.includes("seo") ||
-		s.includes("органика") ||
-		s.includes("organic") ||
-		s.includes("веб") ||
-		s.includes("лендинг") ||
-		s.includes("google") ||
-		s.includes("гугл")
-	) {
-		return "site_seo";
-	}
-	if (
-		s.includes("сарафан") ||
-		s.includes("рекомендац") ||
-		s.includes("друг") ||
-		s.includes("знаком") ||
-		s.includes("совет") ||
-		s.includes("пациент")
-	) {
-		return "recommendations";
-	}
-	if (
-		/\b(vk|tg|smm|instagram)\b/i.test(s) ||
-		s.includes("вконтакте") ||
-		s.includes("телеграм") ||
-		s.includes("telegram") ||
-		s.includes("инстаграм") ||
-		s.includes("инста") ||
-		/(?:^|\s)(?:вк|тг)(?:\s|$)/i.test(s)
-	) {
-		return "social_media";
-	}
-
-	return "other";
-}
-
-/** Получение читаемой метки рекламного канала */
-export function getMarketingChannelLabel(
-	channelKey: CanonicalMarketingChannelKey,
-): string {
-	const match = MARKETING_CHANNELS.find((c) => c.key === channelKey);
-	return match ? match.label : "Прочие";
-}
-
-// ---------------------------------------------------------------------------
-// 3. ВХОДНЫЕ ДАННЫЕ ЛИДА ДЛЯ ВОРОНКИ
-// ---------------------------------------------------------------------------
-
-export interface FunnelLead {
-	id: string;
-	name: string;
-	phone?: string;
-	source?: string;
-	status: "new" | "contacted" | "consult_booked" | "no_answer" | "trash" | string;
-	expectedRevenue?: string | number | null;
-	createdAt?: string | Date | null;
-	// Дополнительные параметры клинического трекинга
-	showedUp?: boolean;
-	treatmentPlanAgreed?: boolean;
-	isPaid?: boolean;
-	paidAmountRub?: number;
-	paidAmountKopecks?: number;
-	actualRevenueRub?: number;
-	stageReached?: LeadFunnelStageKey;
-}
-
-// ---------------------------------------------------------------------------
-// 4. ОПРЕДЕЛЕНИЕ ДОСТИГНУТОГО ЭТАПА
+// 1. ОПРЕДЕЛЕНИЕ ДОСТИГНУТОГО ЭТАПА
 // ---------------------------------------------------------------------------
 
 /**
@@ -340,29 +96,8 @@ export function hasLeadPassedStage(
 }
 
 // ---------------------------------------------------------------------------
-// 5. ВРЕМЕННЫЕ ПЕРИОДЫ
+// 2. ФИЛЬТРАЦИЯ ПО ПЕРИОДУ
 // ---------------------------------------------------------------------------
-
-export type FunnelTimePeriod =
-	| "today"
-	| "week"
-	| "month"
-	| "quarter"
-	| "year"
-	| "all";
-
-export const FUNNEL_PERIOD_OPTIONS: readonly {
-	id: FunnelTimePeriod;
-	label: string;
-	days: number;
-}[] = [
-	{ id: "today", label: "Сегодня", days: 1 },
-	{ id: "week", label: "7 дней", days: 7 },
-	{ id: "month", label: "Месяц (30 дн.)", days: 30 },
-	{ id: "quarter", label: "Квартал (90 дн.)", days: 90 },
-	{ id: "year", label: "Год", days: 365 },
-	{ id: "all", label: "Все время", days: 0 },
-] as const;
 
 /**
  * Фильтрация массива лидов по выбранному периоду.
@@ -411,93 +146,7 @@ export function filterLeadsByPeriod(
 }
 
 // ---------------------------------------------------------------------------
-// 6. СТРУКТУРЫ РЕЗУЛЬТАТОВ РАСЧЕТА
-// ---------------------------------------------------------------------------
-
-export interface FunnelStageMetric {
-	readonly key: LeadFunnelStageKey;
-	readonly index: number;
-	readonly label: string;
-	readonly shortLabel: string;
-	readonly color: string;
-	readonly badgeColor: string;
-	readonly count: number;
-	readonly dropCount: number;
-	readonly dropRatePercent: number;
-	readonly conversionFromFirstPercent: number;
-	readonly conversionFromPrevPercent: number;
-}
-
-export interface MarketingMetricsSummary {
-	readonly totalLeads: number;
-	readonly contactedLeads: number;
-	readonly bookedLeads: number;
-	readonly showUpLeads: number;
-	readonly agreedPlanLeads: number;
-	readonly paidLeads: number;
-	// Конверсии
-	readonly showUpRatePercent: number;
-	readonly bookingRatePercent: number;
-	readonly planAcceptanceRatePercent: number;
-	readonly overallConversionPercent: number;
-	// Финансы
-	readonly totalMarketingSpendRub: number;
-	readonly totalRevenueRub: number;
-	readonly totalRevenueKopecks: number;
-	readonly avgBillRub: number;
-	readonly netMarketingProfitRub: number;
-	// Маркетинговые юнит-метрики
-	readonly cplRub: number; // Cost Per Lead
-	readonly cpsRub: number; // Cost Per Show-up
-	readonly cacRub: number; // Customer Acquisition Cost
-	readonly romiPercent: number; // Return on Marketing Investment %
-	readonly ltvEstimatedRub: number; // Фактический LTV на основе реальных оплат пациентов
-	readonly ltvToCacRatio: number; // Отношение LTV / CAC
-}
-
-export type ChannelEfficiencyRating =
-	| "excellent"
-	| "good"
-	| "warning"
-	| "critical"
-	| "organic";
-
-export interface ChannelFunnelMetric {
-	readonly channelKey: CanonicalMarketingChannelKey;
-	readonly channelLabel: string;
-	readonly color: string;
-	readonly spendRub: number;
-	readonly leadsCount: number;
-	readonly bookedCount: number;
-	readonly showUpCount: number;
-	readonly agreedCount: number;
-	readonly paidCount: number;
-	// Показатели
-	readonly conversionRatePercent: number;
-	readonly showUpRatePercent: number;
-	readonly revenueRub: number;
-	readonly avgBillRub: number;
-	readonly cplRub: number;
-	readonly cacRub: number;
-	readonly romiPercent: number;
-	readonly efficiencyRating: ChannelEfficiencyRating;
-	readonly recommendation: string;
-}
-
-export interface FunnelAnalysisResult {
-	readonly period: FunnelTimePeriod;
-	readonly filteredLeadsCount: number;
-	readonly stages: readonly FunnelStageMetric[];
-	readonly summary: MarketingMetricsSummary;
-	readonly channels: readonly ChannelFunnelMetric[];
-}
-
-export type ChannelSpendMap = Partial<
-	Record<CanonicalMarketingChannelKey | string, number>
->;
-
-// ---------------------------------------------------------------------------
-// 7. ОСНОВНОЙ ДВИЖОК РАСЧЕТА
+// 3. БЮДЖЕТЫ И МАТЕМАТИКА
 // ---------------------------------------------------------------------------
 
 /**
@@ -623,6 +272,10 @@ export function evaluateChannelEfficiency(
 		recommendation: "Отрицательный ROMI. Пересмотреть посадочные страницы или снизить ставки.",
 	};
 }
+
+// ---------------------------------------------------------------------------
+// 4. ОСНОВНОЙ ДВИЖОК РАСЧЕТА ВОРОНКИ
+// ---------------------------------------------------------------------------
 
 /**
  * Комплексный расчет сквозной воронки лидов и маркетинговой аналитики
@@ -836,92 +489,4 @@ export function calculateFunnelAnalysis(
 		summary,
 		channels,
 	};
-}
-
-// ---------------------------------------------------------------------------
-// 8. ЭКСПОРТ ОТЧЕТОВ (CSV И ТЕКСТ)
-// ---------------------------------------------------------------------------
-
-/**
- * Экспорт результатов сквозной воронки в CSV (BOM \uFEFF для корректного открытия в Excel РФ)
- */
-export function exportFunnelReportCsv(result: FunnelAnalysisResult): string {
-	const lines: string[] = [];
-
-	// BOM для UTF-8
-	const bom = "\uFEFF";
-
-	lines.push("ОТЧЕТ СКВОЗНОЙ ВОРОНКИ И МАРКЕТИНГОВОЙ АНАЛИТИКИ CRM ДЕНТЕ");
-	lines.push(`Период:;${result.period};Всего обращений в выборке:;${result.filteredLeadsCount}`);
-	lines.push("");
-
-	// 1. Сводные метрики
-	lines.push("1. КЛЮЧЕВЫЕ ПОКАЗАТЕЛИ МАРКЕТИНГА И ПРОДАЖ");
-	lines.push("Показатель;Значение;Единица измерения");
-	lines.push(`Всего обращений (Leads);${result.summary.totalLeads};шт.`);
-	lines.push(`Записано на консультацию;${result.summary.bookedLeads};шт.`);
-	lines.push(`Конверсия в запись;${result.summary.bookingRatePercent}%;%`);
-	lines.push(`Дошли до клиники (Show-up);${result.summary.showUpLeads};шт.`);
-	lines.push(`Доходимость (Show-up rate);${result.summary.showUpRatePercent}%;%`);
-	lines.push(`Согласован план лечения;${result.summary.agreedPlanLeads};шт.`);
-	lines.push(`Принятие плана лечения;${result.summary.planAcceptanceRatePercent}%;%`);
-	lines.push(`Оплатившие клиенты;${result.summary.paidLeads};пациентов`);
-	lines.push(`Итоговая конверсия в оплату;${result.summary.overallConversionPercent}%;%`);
-	lines.push(`Рекламный бюджет (Маркетинг);${result.summary.totalMarketingSpendRub};руб.`);
-	lines.push(`Фактическая выручка;${result.summary.totalRevenueRub};руб.`);
-	lines.push(`Чистая прибыль от маркетинга;${result.summary.netMarketingProfitRub};руб.`);
-	lines.push(`Средний чек первичного пациента;${result.summary.avgBillRub};руб.`);
-	lines.push(`Стоимость лида (CPL);${result.summary.cplRub};руб.`);
-	lines.push(`Стоимость дошедшего (CPS);${result.summary.cpsRub};руб.`);
-	lines.push(`Стоимость привлечения клиента (CAC);${result.summary.cacRub};руб.`);
-	lines.push(`Возврат инвестиций (ROMI);${result.summary.romiPercent}%;%`);
-	lines.push(`Фактический LTV;${result.summary.ltvEstimatedRub};руб.`);
-	lines.push(`Отношение LTV / CAC;${result.summary.ltvToCacRatio};x`);
-	lines.push("");
-
-	// 2. Этапы воронки
-	lines.push("2. ЭТАПЫ СКВОЗНОЙ ВОРОНКИ ПАЦИЕНТОВ");
-	lines.push("Этап;Количество;Конверсия от входа (%);Пошаговая конверсия (%);Отвал (Drop-off шт);Отвал (%)");
-	for (const st of result.stages) {
-		lines.push(
-			`"${st.label}";${st.count};${st.conversionFromFirstPercent}%;${st.conversionFromPrevPercent}%;${st.dropCount};${st.dropRatePercent}%`,
-		);
-	}
-	lines.push("");
-
-	// 3. Маркетинговые каналы
-	lines.push("3. ЭФФЕКТИВНОСТЬ РЕКЛАМНЫХ КАНАЛОВ");
-	lines.push(
-		"Рекламный канал;Расход (руб);Лидов;Записей;Дошли;Оплатили;Конверсия (%);Выручка (руб);Ср. чек (руб);CPL (руб);CAC (руб);ROMI (%);Оценка;Рекомендация",
-	);
-	for (const ch of result.channels) {
-		lines.push(
-			`"${ch.channelLabel}";${ch.spendRub};${ch.leadsCount};${ch.bookedCount};${ch.showUpCount};${ch.paidCount};${ch.conversionRatePercent}%;${ch.revenueRub};${ch.avgBillRub};${ch.cplRub};${ch.cacRub};${ch.romiPercent}%;"${ch.efficiencyRating}";"${ch.recommendation}"`,
-		);
-	}
-
-	return bom + lines.join("\r\n");
-}
-
-/**
- * Текстовый дайджест для руководства клиники / маркетолога
- */
-export function exportFunnelReportSummaryText(
-	result: FunnelAnalysisResult,
-): string {
-	const s = result.summary;
-	return [
-		`ДАЙДЖЕСТ ВОРОНКИ ПАЦИЕНТОВ CRM ДЕНТЕ (Период: ${result.period})`,
-		"--------------------------------------------------",
-		`Лидов получено: ${s.totalLeads} | Записано: ${s.bookedLeads} (${s.bookingRatePercent}%)`,
-		`Дошли до клиники: ${s.showUpLeads} (Show-up: ${s.showUpRatePercent}%)`,
-		`Оплатили лечение: ${s.paidLeads} (Итоговая конверсия: ${s.overallConversionPercent}%)`,
-		"--------------------------------------------------",
-		`Расходы на рекламу: ${s.totalMarketingSpendRub.toLocaleString("ru-RU")} ₽`,
-		`Выручка: ${s.totalRevenueRub.toLocaleString("ru-RU")} ₽`,
-		`ROMI: ${s.romiPercent}% | Чистая выгода: ${s.netMarketingProfitRub.toLocaleString("ru-RU")} ₽`,
-		`Ср. чек: ${s.avgBillRub.toLocaleString("ru-RU")} ₽ | CAC: ${s.cacRub.toLocaleString("ru-RU")} ₽ | CPL: ${s.cplRub.toLocaleString("ru-RU")} ₽`,
-		`Фактический LTV: ${s.ltvEstimatedRub.toLocaleString("ru-RU")} ₽ (LTV/CAC: ${s.ltvToCacRatio}x)`,
-		"--------------------------------------------------",
-	].join("\n");
 }

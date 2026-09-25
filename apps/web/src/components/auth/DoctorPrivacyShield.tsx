@@ -1,6 +1,5 @@
 import {
 	CheckCircle2,
-	Delete,
 	Lock,
 	LogOut,
 	Pause,
@@ -25,78 +24,15 @@ import {
 	selectAuthArt,
 } from "./authArtSelector";
 
-export {
-	DENTE_INACTIVITY_TIMEOUT_KEY,
-	DENTE_PRIVACY_SHIELD_LOCKED_KEY,
-};
-
-export interface DoctorProfile {
-	id?: string | number | undefined;
-	fullName?: string | undefined;
-	name?: string | undefined;
-	role?: string | undefined;
-	avatarUrl?: string | undefined;
-	pinCode?: string | undefined;
-	[key: string]: unknown;
-}
-
-export interface DoctorPrivacyShieldProps {
-	readonly isOpen: boolean;
-	readonly doctor?: DoctorProfile | null | undefined;
-	readonly onUnlock: (user?: unknown) => void;
-	readonly onClinicLogout?: (() => void) | undefined;
-	readonly onFullLock?: (() => void) | undefined;
-	readonly className?: string | undefined;
-}
-
-export function getDoctorInitials(name?: string | null): string {
-	if (!name || !name.trim()) return "ВР";
-	const parts = name.trim().split(/\s+/);
-	if (parts.length >= 2) {
-		const first = parts[0]?.[0] || "";
-		const second = parts[1]?.[0] || "";
-		return `${first}${second}`.toUpperCase();
-	}
-	return (parts[0]?.slice(0, 2) || "ВР").toUpperCase();
-}
-
-export function formatDoctorRole(role?: string | null): string {
-	switch (role) {
-		case "doctor":
-			return "Врач-стоматолог";
-		case "assistant":
-			return "Ассистент врача";
-		case "admin":
-			return "Администратор клиники";
-		case "director":
-		case "owner":
-			return "Главный врач / Руководитель";
-		default:
-			return role || "Клинический специалист";
-	}
-}
-
-/**
- * Получает таймаут неактивности в миллисекундах из localStorage.
- * Настраивается ключом `dente_inactivity_timeout_minutes` (по умолчанию: 5 минут).
- */
-export function getInactivityTimeoutMs(): number {
-	const raw = safeLocalStorageGetItem(DENTE_INACTIVITY_TIMEOUT_KEY);
-	if (raw) {
-		const val = Number.parseFloat(raw);
-		if (!Number.isNaN(val) && val > 0) {
-			return val * 60 * 1000;
-		}
-	}
-	return 5 * 60 * 1000; // default 5 minutes
-}
-
-const PIN_KEYS = [
-	["1", "2", "3"],
-	["4", "5", "6"],
-	["7", "8", "9"],
-	["C", "0", "BACKSPACE"],
-] as const;
+import { DoctorPrivacyShieldPinPad } from "./DoctorPrivacyShieldPinPad";
+export * from "./doctorPrivacyShieldHelpers";
+import {
+	type DoctorProfile,
+	type DoctorPrivacyShieldProps,
+	getDoctorInitials,
+	formatDoctorRole,
+	PIN_KEYS,
+} from "./doctorPrivacyShieldHelpers";
 
 /**
  * Экран приватности врача (152-ФЗ / Защита врачебной тайны)
@@ -696,107 +632,14 @@ export function DoctorPrivacyShield({
 					</div>
 				)}
 
-				{/* Цифровой PIN-пад (4 ряда кнопок) */}
-				<div
-					style={{
-						display: "grid",
-						gridTemplateColumns: "repeat(3, 1fr)",
-						gap: "10px",
-						width: "100%",
-						maxWidth: "230px",
-						marginBottom: "16px",
-					}}
-				>
-					{PIN_KEYS.flat().map((key) => {
-						if (key === "C") {
-							return (
-								<button
-									key="clear"
-									type="button"
-									onClick={handleClear}
-									disabled={loading || pin.length === 0}
-									style={{
-										width: "56px",
-										height: "56px",
-										borderRadius: "50%",
-										border: "1px solid rgba(255, 255, 255, 0.08)",
-										backgroundColor: "rgba(255, 255, 255, 0.04)",
-										color: "rgba(255, 255, 255, 0.65)",
-										fontSize: "14px",
-										fontWeight: 600,
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-										cursor: loading || pin.length === 0 ? "default" : "pointer",
-										opacity: loading || pin.length === 0 ? 0.4 : 1,
-										transition: "all 0.15s ease",
-									}}
-									title="Очистить PIN-код (Esc)"
-									aria-label="Очистить ввод"
-								>
-									C
-								</button>
-							);
-						}
-
-						if (key === "BACKSPACE") {
-							return (
-								<button
-									key="backspace"
-									type="button"
-									onClick={handleBackspace}
-									disabled={loading || pin.length === 0}
-									style={{
-										width: "56px",
-										height: "56px",
-										borderRadius: "50%",
-										border: "1px solid rgba(255, 255, 255, 0.08)",
-										backgroundColor: "rgba(255, 255, 255, 0.04)",
-										color: "rgba(255, 255, 255, 0.75)",
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-										cursor: loading || pin.length === 0 ? "default" : "pointer",
-										opacity: loading || pin.length === 0 ? 0.4 : 1,
-										transition: "all 0.15s ease",
-									}}
-									title="Стереть последнюю цифру (Backspace)"
-									aria-label="Стереть последнюю цифру"
-								>
-									<Delete size={18} />
-								</button>
-							);
-						}
-
-						return (
-							<button
-								key={key}
-								type="button"
-								onClick={() => handleKeyPress(key)}
-								disabled={loading || pin.length >= 4}
-								style={{
-									width: "56px",
-									height: "56px",
-									borderRadius: "50%",
-									border: "1px solid rgba(255, 255, 255, 0.09)",
-									backgroundColor: "rgba(255, 255, 255, 0.06)",
-									color: "#ffffff",
-									fontSize: "20px",
-									fontWeight: 600,
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-									cursor: loading || pin.length >= 4 ? "default" : "pointer",
-									opacity: loading || pin.length >= 4 ? 0.5 : 1,
-									transition: "all 0.15s ease",
-								}}
-								aria-label={`Цифра ${key}`}
-							>
-								{key}
-							</button>
-						);
-					})}
-				</div>
+				{/* Цифровой PIN-пад */}
+				<DoctorPrivacyShieldPinPad
+					pin={pin}
+					loading={loading}
+					onKeyPress={handleKeyPress}
+					onClear={handleClear}
+					onBackspace={handleBackspace}
+				/>
 
 				{/* Дополнительные действия: завершение смены / смена сотрудника */}
 				<div

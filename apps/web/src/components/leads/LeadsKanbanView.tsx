@@ -1,23 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
-import {
-	BarChart3,
-	Calendar,
-	CalendarClock,
-	ChevronRight,
-	DollarSign,
-	Edit2,
-	Filter,
-	Globe,
-	Handshake,
-	Phone,
-	Plus,
-	RotateCcw,
-	Search,
-	Trash2,
-	UserCheck,
-	UserPlus,
-	X,
-} from "lucide-react";
+import { AnimatePresence } from "framer-motion";
+import { DollarSign } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { dateInputValuePlusDays } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -27,6 +9,38 @@ import { type Lead, useLeadsStore } from "../../store/leadsStore";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
+import { LeadCard } from "./LeadCard";
+import { LeadConvertModal } from "./LeadConvertModal";
+import { LeadFormModal } from "./LeadFormModal";
+import { LeadsKanbanHeader } from "./LeadsKanbanHeader";
+import {
+	bookingFailureMessage,
+	COLUMNS,
+	DEFAULT_LEAD_VISIT_MINUTES,
+	FALLBACK_DEFAULT_CHAIR,
+	FALLBACK_SOLO_DOCTOR,
+	isLeadBookingDisabled,
+	resolveLeadBookingChairs,
+	resolveLeadBookingStaff,
+	resolveLeadVisitMinutes,
+	type BookableChair,
+	type BookableDoctor,
+} from "./leadsKanbanTypes";
+
+// Transparent re-exports for backwards compatibility and test imports
+export {
+	DEFAULT_LEAD_VISIT_MINUTES,
+	FALLBACK_DEFAULT_CHAIR,
+	FALLBACK_SOLO_DOCTOR,
+	isLeadBookingDisabled,
+	resolveLeadBookingChairs,
+	resolveLeadBookingStaff,
+	resolveLeadVisitMinutes,
+	type BookableChair,
+	type BookableDoctor,
+	COLUMNS,
+	bookingFailureMessage,
+};
 
 const LeadsFunnelAnalyticsModal = lazy(() =>
 	import("./LeadsFunnelAnalyticsModal").then((module) => ({
@@ -38,162 +52,6 @@ const CrmLeakDetectorModal = lazy(() =>
 		default: module.CrmLeakDetectorModal,
 	})),
 );
-
-/*
- * Врач и кресло берутся из настроек клиники, а не из отдельного справочника:
- * запись из воронки идёт тем же путём, что запись из расписания, и сервер
- * проверяет и врача, и кресло по своей организации (routes/leads.ts, ветка
- * convert). Поля объявлены ровно те, что читает разметка.
- */
-export type BookableDoctor = {
-	id: string;
-	fullName?: string;
-	name?: string;
-	role?: string;
-	active?: boolean;
-};
-export type BookableChair = { id: string; name: string };
-
-export const FALLBACK_SOLO_DOCTOR: BookableDoctor = {
-	id: "default-doctor",
-	fullName: "Дежурный врач (соло-практика)",
-	name: "Дежурный врач (соло-практика)",
-	role: "doctor",
-	active: true,
-};
-
-export const FALLBACK_DEFAULT_CHAIR: BookableChair = {
-	id: "default-chair",
-	name: "Кресло №1 (Основное)",
-};
-
-export const DEFAULT_LEAD_VISIT_MINUTES = 30;
-
-/**
- * Разрешает список доступных врачей для записи лида.
- * Если список врачей пуст (соло-практика или начальная настройка клиники),
- * возвращает дежурного врача-одиночку согласно Мандатам 8e и 8n.
- */
-export function resolveLeadBookingStaff(
-	staff: BookableDoctor[] | null | undefined,
-): BookableDoctor[] {
-	return staff && staff.length > 0 ? staff : [FALLBACK_SOLO_DOCTOR];
-}
-
-/**
- * Разрешает список доступных кресел для записи лида.
- * Если список кресел пуст, возвращает основное кресло согласно Мандатам 8e и 8n.
- */
-export function resolveLeadBookingChairs(
-	chairs: BookableChair[] | null | undefined,
-): BookableChair[] {
-	return chairs && chairs.length > 0 ? chairs : [FALLBACK_DEFAULT_CHAIR];
-}
-
-/**
- * Разрешает длительность приема для записи лида.
- * Если профиль клиники еще не загружен или defaultVisitMinutes не задан,
- * возвращает дефолтное значение 30 минут согласно Мандатам 8e и 8n.
- */
-export function resolveLeadVisitMinutes(
-	visitMinutes: number | null | undefined,
-): number {
-	return visitMinutes && visitMinutes > 0
-		? visitMinutes
-		: DEFAULT_LEAD_VISIT_MINUTES;
-}
-
-/**
- * Проверяет, заблокирована ли кнопка создания записи из лида.
- * Согласно Мандатам 8e и 8n, отсутствие врачей или кресел в базе клиники НЕ должно
- * блокировать конвертацию лида (применяются умные дефолты соло-практики).
- * Блокировка допустима только во время активного запроса бронирования (isBooking).
- */
-export function isLeadBookingDisabled(isBooking: boolean): boolean {
-	return isBooking;
-}
-
-/**
- * Причина отказа сервера человеческими словами.
- *
- * Сервер уже отвечает по-русски там, где проверяет расписание («Кресло уже занято
- * другой записью в это время»), — эту строку и показываем. Остальные ответы это
- * короткие коды, у них перевод здесь. Общего «Ошибка записи» не остаётся ни в
- * одной ветке: администратор должен понять, что именно исправить.
- */
-async function bookingFailureMessage(response: Response): Promise<string> {
-	let payload: { error?: unknown; message?: unknown } = {};
-	try {
-		payload = (await response.json()) as typeof payload;
-	} catch {
-		// Тело не разобралось — остаётся код ответа, он и уйдёт в текст ниже.
-	}
-	if (
-		typeof payload.message === "string" &&
-		payload.message.trim() &&
-		payload.message !== "Internal Server Error"
-	) {
-		return payload.message;
-	}
-	const code = typeof payload.error === "string" ? payload.error : "";
-	if (code === "DoctorNotFound") {
-		return "Выбранный врач больше не работает в клинике: выберите другого в списке.";
-	}
-	if (code === "ChairNotFound") {
-		return "Выбранное кресло удалено из настроек клиники: выберите другое.";
-	}
-	if (code === "Lead not found" || response.status === 404) {
-		return "Обращение уже удалено или записано кем-то другим: обновите доску.";
-	}
-	if (response.status === 401 || response.status === 403) {
-		return "Нет прав на запись пациентов: войдите под сотрудником с доступом к расписанию.";
-	}
-	return `Запись не создана, сервер ответил кодом ${response.status}. Обращение осталось в прежнем столбце.`;
-}
-
-const COLUMNS: {
-	id: Lead["status"];
-	label: string;
-	color: string;
-	icon: React.ReactNode;
-}[] = [
-	{
-		id: "new",
-		label: "Новые",
-		color: "rgba(59, 130, 246, 0.2)",
-		icon: <Plus size={16} />,
-	},
-	{
-		id: "contacted",
-		label: "В работе",
-		color: "rgba(245, 158, 11, 0.2)",
-		icon: <Phone size={16} />,
-	},
-	{
-		id: "consult_booked",
-		label: "Записаны",
-		color: "rgba(16, 185, 129, 0.2)",
-		icon: <CalendarClock size={16} />,
-	},
-	{
-		id: "showed_up",
-		label: "Дошел",
-		color: "rgba(139, 92, 246, 0.2)",
-		icon: <UserCheck size={16} />,
-	},
-	{
-		id: "no_answer",
-		label: "Недозвон",
-		color: "rgba(107, 114, 128, 0.2)",
-		icon: <Handshake size={16} />,
-	},
-	{
-		id: "trash",
-		label: "Отказ",
-		color: "rgba(239, 68, 68, 0.2)",
-		icon: <Trash2 size={16} />,
-	},
-];
 
 export function LeadsKanbanView() {
 	const {
@@ -270,7 +128,7 @@ export function LeadsKanbanView() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [sourceFilter, setSourceFilter] = useState("");
 
-	// Analytics Funnel Modal State
+	// Modals State
 	const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
 	const [isLeakDetectorOpen, setIsLeakDetectorOpen] = useState(false);
 
@@ -295,28 +153,8 @@ export function LeadsKanbanView() {
 		expectedRevenue: "",
 	});
 
-	/*
-	 * Длительность приёма берётся из настроек клиники, а не из зашитого часа:
-	 * defaultVisitMinutes — обязательное поле профиля (clinicProfileSchema), по
-	 * нему же считает длительность форма записи. Запись из воронки не должна
-	 * назначать час там, где клиника работает по тридцать минут.
-	 *
-	 * Пока настройки не пришли, значение неизвестно — и подставлять вместо него
-	 * шестьдесят нельзя: это выдуманное число попало бы в реальную запись
-	 * расписания. Запись в таком состоянии не отправляется, причина сказана.
-	 */
 	const visitMinutes =
 		dashboard?.clinicSettings?.profile?.defaultVisitMinutes ?? null;
-	const effectiveVisitMinutes = resolveLeadVisitMinutes(visitMinutes);
-	const effectiveStaff = resolveLeadBookingStaff(staff);
-	const effectiveChairs = resolveLeadBookingChairs(chairs);
-
-	/*
-	 * Пояс клиники для расчёта дня по умолчанию. К моменту подстановки настройки
-	 * могут ещё не прийти — тогда день считается по поясу рабочей машины, и это
-	 * честный ответ: рабочая станция регистратуры стоит в клинике. Неверным он не
-	 * бывает никогда только в одном случае — если это не UTC.
-	 */
 	const clinicTimeZone = dashboard?.clinicSettings?.profile?.timezone ?? null;
 
 	const { lastMessage } = useWebsocket(
@@ -335,48 +173,9 @@ export function LeadsKanbanView() {
 
 	useEffect(() => {
 		fetchLeads();
-
-		/*
-		 * ДЕНЬ ПО УМОЛЧАНИЮ — ЗАВТРА, И ЭТО НАДО СЧИТАТЬ КАЛЕНДАРНО.
-		 *
-		 * Стояло: setDate(getDate() + 1), а затем toISOString().split("T")[0].
-		 * Шаг был верен, а toISOString его отменял — он отдаёт день по Гринвичу.
-		 * У всех российских поясов смещение положительное (Москва +3, Самара +4,
-		 * Камчатка +12), поэтому день по UTC отстаёт от местного каждую ночь: в
-		 * Москве с 00:00 до 03:00, в Самаре до 04:00, на Камчатке половину суток.
-		 * В этот промежуток «завтра» отдавало СЕГОДНЯШНЕЕ число.
-		 *
-		 * Для клиники это значит, что обращение с сайта записывают на сегодня
-		 * вместо завтра. Первичный пациент приходит в день, когда его не ждут, —
-		 * или не приходит вовсе, а в воронке лид уже отмечен записанным.
-		 *
-		 * dateInputValuePlusDays считает сдвиг календарно (Date.UTC) и в поясе
-		 * клиники, поэтому и переход через конец месяца, и сутки длиной 25 часов
-		 * ему безразличны.
-		 */
 		setAppointmentDate(dateInputValuePlusDays(1, clinicTimeZone));
 	}, [fetchLeads, clinicTimeZone]);
 
-	/*
-	 * ВРАЧИ И КРЕСЛА БЕРУТСЯ ИЗ УЖЕ ЗАГРУЖЕННЫХ НАСТРОЕК, А НЕ ДВУМЯ СВОИМИ
-	 * ЗАПРОСАМИ.
-	 *
-	 * Здесь стоял отдельный вызов /api/dashboard — второй полный ответ дашборда
-	 * ради двух списков, которые лежат в общем контексте с момента входа, — и
-	 * вызов /api/auth/user/me, из которого брался organizationId только для того,
-	 * чтобы положить его в тело запроса записи. Сервер это поле игнорирует: он
-	 * определяет организацию по токену (routes/leads.ts, requireResolved…), а при
-	 * неудаче обоих запросов в тело уходил выдуманный
-	 * "00000000-0000-0000-0000-000000000000". Подставленный нулевой UUID — это
-	 * ровно тот случай, когда неизвестное значение выдаётся за известное.
-	 *
-	 * Отбор врачей — тот же, что в расписании и в форме записи (8 мест в проекте):
-	 * активный сотрудник с ролью «врач» или «владелец». Прежний фильтр сравнивал
-	 * роль со строками "Врач" и "admin", которых в перечислении ролей нет вообще
-	 * (owner | doctor | administrator | assistant | manager), и не смотрел на
-	 * признак активности: уволенный врач оставался в списке, а сервер отвечал на
-	 * него DoctorNotFound — «Ошибка записи лида» без объяснения.
-	 */
 	useEffect(() => {
 		const clinicStaff = (dashboard?.clinicSettings?.staff ??
 			[]) as BookableDoctor[];
@@ -417,12 +216,6 @@ export function LeadsKanbanView() {
 		e.preventDefault();
 		const id = e.dataTransfer.getData("leadId");
 		if (id && draggedLeadId === id) {
-			/*
-			 * Свободное перемещение карточки обращения: смена статуса не блокируется
-			 * принудительной модалкой и карточка не отскакивает назад.
-			 * При переносе в consult_booked статус сохраняется немедленно; если оператор
-			 * захочет закрепить прием в сетке расписания, на карточке есть кнопка «В расписание».
-			 */
 			void updateLeadStatus(id, status)
 				.then(() => {
 					if (status === "consult_booked") {
@@ -476,11 +269,6 @@ export function LeadsKanbanView() {
 
 		setIsBooking(true);
 		try {
-			/*
-			 * organizationId в теле не отправляется: сервер определяет организацию
-			 * по токену кабинета и присланное поле игнорирует. Отправлять его — значит
-			 * делать вид, что клиент решает, в какой клинике создать пациента.
-			 */
 			const res = await fetch(`/api/leads/${convertingLeadId}/convert`, {
 				method: "POST",
 				headers: auth.denteClinicalReadHeaders({
@@ -495,12 +283,6 @@ export function LeadsKanbanView() {
 			});
 
 			if (!res.ok) {
-				/*
-				 * БЫЛО: любая неудача превращалась в «Ошибка записи лида». Сервер при
-				 * этом называет причину — занятое кресло, уволенный врач, чужая
-				 * организация, — и администратору нужна именно она, иначе он жмет
-				 * кнопку повторно до потери доверия к разделу.
-				 */
 				showToast(await bookingFailureMessage(res), "error");
 				return;
 			}
@@ -582,10 +364,6 @@ export function LeadsKanbanView() {
 			}
 			setIsEditOpen(false);
 		} catch (e: unknown) {
-			/*
-			 * Store throws RU ValidationError message (leadsFailureMessage).
-			 * Generic «Ошибка сохранения» hid «Проверьте поля лида: нужно непустое имя.»
-			 */
 			const text =
 				e instanceof Error && e.message.trim()
 					? e.message
@@ -594,11 +372,6 @@ export function LeadsKanbanView() {
 		}
 	};
 
-	/*
-	 * Permanent delete (DELETE /api/leads/:id) — not drag-to-«Отказ».
-	 * Trash column keeps the card for review; this removes the row from the DB.
-	 * Confirm first so a misclick does not erase a live inquiry.
-	 */
 	const handleDeleteLead = async () => {
 		if (!editingLeadId || editingLeadId === "new" || isDeleting) return;
 		setIsDeleting(true);
@@ -672,125 +445,24 @@ export function LeadsKanbanView() {
 			}}
 		>
 			{/* HEADER & FILTERS */}
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					marginBottom: 24,
-					flexWrap: "wrap",
-					gap: 16,
-				}}
-			>
-				<div className="flex items-center gap-3">
-					<h2 className="m-0 text-2xl font-semibold text-[var(--ink)] flex items-center gap-3">
-						Воронка Пациентов
-						<span className="text-[10px] font-bold px-2 py-0.5 bg-[var(--teal)] text-[var(--paper)] rounded-full uppercase tracking-wider">
-							PRO
-						</span>
-					</h2>
-					<button
-						className="primary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
-						onClick={() => openEditModal()}
-						type="button"
-						aria-label="Создать новый лид"
-					>
-						<Plus size={16} /> Новый лид
-					</button>
-					<button
-						className="secondary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
-						onClick={() => setIsAnalyticsOpen(true)}
-						type="button"
-						aria-label="Открыть сквозную аналитику воронки"
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: 6,
-							fontWeight: 600,
-						}}
-					>
-						<BarChart3 size={16} color="var(--teal)" /> Аналитика воронки
-					</button>
-					<button
-						className="secondary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
-						onClick={() => setIsLeakDetectorOpen(true)}
-						type="button"
-						aria-label="Открыть детектор оттока пациентов (210 дней)"
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: 6,
-							fontWeight: 600,
-						}}
-					>
-						<RotateCcw size={16} color="var(--teal)" /> Детектор оттока (210 дней)
-					</button>
-				</div>
+			<LeadsKanbanHeader
+				searchQuery={searchQuery}
+				setSearchQuery={setSearchQuery}
+				sourceFilter={sourceFilter}
+				setSourceFilter={setSourceFilter}
+				uniqueSources={uniqueSources}
+				onNewLead={() => openEditModal()}
+				onOpenAnalytics={() => setIsAnalyticsOpen(true)}
+				onOpenLeakDetector={() => setIsLeakDetectorOpen(true)}
+				borderColor={borderColor}
+				colBg={colBg}
+			/>
 
-				<div className="flex items-center gap-3">
-					<div className="relative">
-						<Search
-							size={16}
-							className="text-[var(--muted)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-						/>
-						<input
-							type="text"
-							placeholder="Поиск по имени или телефону..."
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							className="!pl-10 pr-3 py-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all w-64"
-							style={{ paddingLeft: "40px" }}
-							aria-label="Поиск по имени или телефону"
-						/>
-					</div>
-					<div style={{ position: "relative" }}>
-						<Filter
-							size={16}
-							color="var(--muted)"
-							style={{ position: "absolute", left: 10, top: 10 }}
-						/>
-						<select
-							value={sourceFilter}
-							onChange={(e) => setSourceFilter(e.target.value)}
-							style={{
-								padding: "8px 12px 8px 36px",
-								borderRadius: 8,
-								border: `1px solid ${borderColor}`,
-								background: colBg,
-								color: "var(--ink)",
-								appearance: "none",
-								minWidth: 140,
-							}}
-						>
-							<option value="">Все источники</option>
-							{uniqueSources.map((s) => (
-								<option key={s} value={s}>
-									{s}
-								</option>
-							))}
-						</select>
-					</div>
-				</div>
-			</div>
-
-			{/*
-				СБОЙ ЗАГРУЗКИ БОЛЬШЕ НЕ ВЫГЛЯДИТ КАК ПУСТАЯ ВОРОНКА.
-
-				Хранилище (store/leadsStore.ts) записывает причину в error, но доска
-				её не показывала: при недоступном сервере или истёкшем токене все пять
-				столбцов оставались пустыми с подписью «Перетащите сюда». Это читается
-				как «обращений нет» — администратор закрывает раздел и не звонит
-				никому, хотя заявки на месте.
-			*/}
 			{loadError ? (
 				<div
 					role="alert"
 					className="mb-4 rounded-xl border border-[var(--rust)] bg-[var(--rust-soft)] px-4 py-3 text-[0.8125rem] leading-relaxed text-[var(--rust)]"
 				>
-					{/*
-					 * Store already carries RU message-first text (leadsFailureMessage).
-					 * Generic banner alone hid server detail — operator must see it.
-					 */}
 					<strong>Обращения не загружены.</strong> {loadError} Показанные
 					столбцы неполные — не считайте их пустыми.
 					<button
@@ -927,357 +599,22 @@ export function LeadsKanbanView() {
 							>
 								<AnimatePresence>
 									{columnLeads.map((lead) => (
-										<motion.div
-											layout
-											initial={{ opacity: 0, y: 10 }}
-											animate={{ opacity: 1, y: 0 }}
-											exit={{ opacity: 0, scale: 0.95 }}
+										<LeadCard
 											key={lead.id}
-											draggable
-											// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-											onDragStart={(e: any) => handleDragStart(e, lead.id)}
-											onClick={() => openEditModal(lead)}
-											style={{
-												background: cardBg,
-												padding: "12px 14px",
-												borderRadius: "10px",
-												cursor: "grab",
-												border: `1px solid ${borderColor}`,
-												boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-												opacity: draggedLeadId === lead.id ? 0.5 : 1,
-												transform:
-													draggedLeadId === lead.id
-														? "scale(0.98)"
-														: "scale(1)",
-												transition: "box-shadow 0.2s",
+											lead={lead}
+											isDragged={draggedLeadId === lead.id}
+											creatingPatientLeadId={creatingPatientLeadId}
+											borderColor={borderColor}
+											cardBg={cardBg}
+											onDragStart={handleDragStart}
+											onEdit={openEditModal}
+											onStatusChange={handleQuickStatusChange}
+											onCreatePatient={handleCreatePatientFromLead}
+											onSchedule={(leadId) => {
+												setConvertingLeadId(leadId);
+												setIsConvertOpen(true);
 											}}
-											whileHover={{
-												y: -2,
-												boxShadow: "0 8px 16px rgba(0,0,0,0.08)",
-											}}
-										>
-											<div
-												style={{
-													display: "flex",
-													justifyContent: "space-between",
-													alignItems: "flex-start",
-													marginBottom: "8px",
-												}}
-											>
-												<strong
-													style={{
-														fontSize: 15,
-														color: "var(--ink)",
-														display: "flex",
-														alignItems: "center",
-														gap: 6,
-													}}
-												>
-													{lead.name}
-												</strong>
-												<Edit2
-													size={14}
-													color="var(--muted)"
-													style={{ opacity: 0.5 }}
-												/>
-											</div>
-
-											{lead.phone && (
-												<div
-													style={{
-														display: "flex",
-														alignItems: "center",
-														gap: 6,
-														fontSize: 13,
-														color: "var(--muted)",
-														marginBottom: 4,
-													}}
-												>
-													<Phone size={12} />
-													<a
-														href={`tel:${lead.phone}`}
-														onClick={(e) => e.stopPropagation()}
-														style={{
-															color: "inherit",
-															textDecoration: "none",
-														}}
-														title="Позвонить контакту"
-													>
-														{lead.phone}
-													</a>
-												</div>
-											)}
-
-											<div
-												style={{
-													display: "flex",
-													alignItems: "center",
-													justifyContent: "space-between",
-													marginTop: "8px",
-												}}
-											>
-												{lead.source ? (
-													<div
-														style={{
-															display: "flex",
-															alignItems: "center",
-															gap: 4,
-															fontSize: 11,
-															color: "var(--teal)",
-															background: "rgba(59, 130, 246, 0.1)",
-															padding: "2px 6px",
-															borderRadius: 4,
-														}}
-													>
-														<Globe size={10} /> {lead.source}
-													</div>
-												) : (
-													<div />
-												)}
-												{lead.expectedRevenue ? (
-													<div
-														style={{
-															fontSize: 12,
-															fontWeight: 600,
-															color: "var(--ink)",
-															background: "var(--paper-soft)",
-															padding: "2px 6px",
-															borderRadius: 4,
-														}}
-													>
-														{lead.expectedRevenue} ₽
-													</div>
-												) : null}
-											</div>
-
-											{/* Быстрый перевод статуса в 1 клик без drag-and-drop */}
-											<div
-												style={{
-													display: "flex",
-													alignItems: "center",
-													justifyContent: "space-between",
-													gap: 6,
-													marginTop: "10px",
-													paddingTop: "8px",
-													borderTop: `1px solid ${borderColor}`,
-												}}
-												onClick={(e) => e.stopPropagation()}
-											>
-												{lead.status === "new" && (
-													<button
-														type="button"
-														onClick={(e) =>
-															handleQuickStatusChange(e, lead.id, "contacted")
-														}
-														style={{
-															display: "flex",
-															alignItems: "center",
-															gap: 4,
-															fontSize: 11,
-															fontWeight: 600,
-															padding: "3px 8px",
-															borderRadius: 6,
-															background: "var(--warn-bg)",
-															color: "var(--warn-fg)",
-															border: "1px solid var(--line)",
-															cursor: "pointer",
-														}}
-														title="Перевести в статус «В работе» в 1 клик"
-													>
-														<Phone size={11} /> В работу{" "}
-														<ChevronRight size={11} />
-													</button>
-												)}
-												{lead.status === "contacted" && (
-													<button
-														type="button"
-														onClick={(e) =>
-															handleQuickStatusChange(
-																e,
-																lead.id,
-																"consult_booked",
-															)
-														}
-														style={{
-															display: "flex",
-															alignItems: "center",
-															gap: 4,
-															fontSize: 11,
-															fontWeight: 600,
-															padding: "3px 8px",
-															borderRadius: 6,
-															background: "var(--ok-bg)",
-															color: "var(--ok-fg)",
-															border: "1px solid var(--line)",
-															cursor: "pointer",
-														}}
-														title="Перевести в статус «Записаны» в 1 клик"
-													>
-														<CalendarClock size={11} /> Записан{" "}
-														<ChevronRight size={11} />
-													</button>
-												)}
-												{lead.status === "consult_booked" && (
-													<button
-														type="button"
-														onClick={(e) =>
-															handleQuickStatusChange(
-																e,
-																lead.id,
-																"showed_up",
-															)
-														}
-														style={{
-															display: "flex",
-															alignItems: "center",
-															gap: 4,
-															fontSize: 11,
-															fontWeight: 600,
-															padding: "3px 8px",
-															borderRadius: 6,
-															background: "var(--paper-soft)",
-															color: "var(--accent)",
-															border: "1px solid var(--line)",
-															cursor: "pointer",
-														}}
-														title="Перевести в статус «Дошел» в 1 клик"
-													>
-														<UserCheck size={11} /> Дошел{" "}
-														<ChevronRight size={11} />
-													</button>
-												)}
-												{lead.status === "showed_up" && (
-													<span
-														style={{
-															display: "flex",
-															alignItems: "center",
-															gap: 4,
-															fontSize: 11,
-															fontWeight: 600,
-															color: "var(--accent)",
-														}}
-													>
-														<UserCheck size={12} /> Дошел до клиники
-													</span>
-												)}
-												{(lead.status === "no_answer" ||
-													lead.status === "trash") && (
-													<button
-														type="button"
-														onClick={(e) =>
-															handleQuickStatusChange(
-																e,
-																lead.id,
-																"contacted",
-															)
-														}
-														style={{
-															display: "flex",
-															alignItems: "center",
-															gap: 4,
-															fontSize: 11,
-															fontWeight: 600,
-															padding: "3px 8px",
-															borderRadius: 6,
-															background: "rgba(59, 130, 246, 0.1)",
-															color: "var(--teal)",
-															border: "1px solid rgba(59, 130, 246, 0.25)",
-															cursor: "pointer",
-														}}
-														title="Вернуть в работу в 1 клик"
-													>
-														<RotateCcw size={11} /> Вернуть
-													</button>
-												)}
-
-												<select
-													value={lead.status}
-													onClick={(e) => e.stopPropagation()}
-													onChange={(e) =>
-														handleQuickStatusChange(
-															e,
-															lead.id,
-															e.target.value as Lead["status"],
-														)
-													}
-													style={{
-														fontSize: 11,
-														padding: "2px 6px",
-														borderRadius: 6,
-														border: `1px solid ${borderColor}`,
-														background: "var(--paper-soft)",
-														color: "var(--ink)",
-														cursor: "pointer",
-														outline: "none",
-														marginLeft: "auto",
-													}}
-													title="Сменить статус в 1 клик"
-													aria-label="Выбрать статус обращения"
-												>
-													<option value="new">Новые</option>
-													<option value="contacted">В работе</option>
-													<option value="consult_booked">Записаны</option>
-													<option value="showed_up">Дошел</option>
-													<option value="no_answer">Недозвон</option>
-													<option value="trash">Отказ</option>
-												</select>
-											</div>
-
-											{/* 1-клик действие «Создать пациента из лида» */}
-											<button
-												type="button"
-												onClick={(e) => {
-													e.stopPropagation();
-													void handleCreatePatientFromLead(lead);
-												}}
-												disabled={creatingPatientLeadId === lead.id}
-												style={{
-													marginTop: "8px",
-													width: "100%",
-													padding: "6px 10px",
-													borderRadius: 8,
-													fontSize: 12,
-													fontWeight: 600,
-													background: "var(--ok-bg)",
-													color: "var(--ok-fg)",
-													border: "1px solid var(--line)",
-													display: "flex",
-													alignItems: "center",
-													justifyContent: "center",
-													gap: 6,
-													cursor:
-														creatingPatientLeadId === lead.id
-															? "wait"
-															: "pointer",
-													transition: "background 0.2s",
-												}}
-												data-testid={`create-patient-btn-${lead.id}`}
-												title="Создать карту пациента из обращения в 1 клик"
-											>
-												<UserPlus size={13} />
-												<span>
-													{creatingPatientLeadId === lead.id
-														? "Создаём карту…"
-														: "Создать пациента в 1 клик"}
-												</span>
-											</button>
-
-											{lead.status !== "trash" && (
-												<button
-													type="button"
-													onClick={(e) => {
-														e.stopPropagation();
-														setConvertingLeadId(lead.id);
-														setIsConvertOpen(true);
-													}}
-													className="mt-2 w-full py-1.5 px-2.5 rounded-lg text-xs font-bold bg-[var(--teal-soft)] hover:bg-[var(--teal-soft)] text-[var(--teal-dark)] border border-[var(--teal)] flex items-center justify-center gap-1.5 transition-colors"
-													data-testid={`schedule-lead-btn-${lead.id}`}
-												>
-													<Calendar size={13} />
-													<span>Записать в сетку расписания</span>
-												</button>
-											)}
-										</motion.div>
+										/>
 									))}
 								</AnimatePresence>
 
@@ -1302,524 +639,45 @@ export function LeadsKanbanView() {
 			</div>
 
 			{/* CONVERT MODAL */}
-			{isConvertOpen && (
-				<div
-					style={{
-						position: "fixed",
-						inset: 0,
-						zIndex: 100,
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						background: "rgba(0,0,0,0.5)",
-						backdropFilter: "blur(4px)",
-					}}
-				>
-					<motion.div
-						initial={{ opacity: 0, scale: 0.95 }}
-						animate={{ opacity: 1, scale: 1 }}
-						style={{
-							background: cardBg,
-							borderRadius: 16,
-							padding: 24,
-							width: 400,
-							maxWidth: "90%",
-							border: `1px solid ${borderColor}`,
-							boxShadow: "0 24px 48px rgba(0,0,0,0.2)",
-						}}
-					>
-						<div
-							style={{
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "space-between",
-								marginBottom: 20,
-							}}
-						>
-							<h3
-								style={{
-									margin: 0,
-									fontSize: 18,
-									fontWeight: 600,
-									color: "var(--ink)",
-									display: "flex",
-									alignItems: "center",
-									gap: 8,
-								}}
-							>
-								<Calendar size={20} color="var(--teal)" /> Записать лида
-							</h3>
-							<button
-								type="button"
-								onClick={() => setIsConvertOpen(false)}
-								style={{
-									background: "none",
-									border: "none",
-									color: "var(--muted)",
-									cursor: "pointer",
-								}}
-							>
-								<X size={20} />
-							</button>
-						</div>
-
-						<form
-							onSubmit={handleConvertSubmit}
-							style={{ display: "flex", flexDirection: "column", gap: 16 }}
-						>
-							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label
-									htmlFor="convert-lead-doctor"
-									style={{ fontSize: 13, color: "var(--muted)" }}
-								>
-									Врач
-								</label>
-								<select
-									id="convert-lead-doctor"
-									value={
-										selectedDoctorId ||
-										effectiveStaff[0]?.id ||
-										FALLBACK_SOLO_DOCTOR.id
-									}
-									onChange={(e) => setSelectedDoctorId(e.target.value)}
-									style={{
-										padding: 10,
-										borderRadius: 8,
-										border: `1px solid ${borderColor}`,
-										background: colBg,
-										color: "var(--ink)",
-									}}
-									required
-								>
-									{effectiveStaff.map((s) => (
-										<option key={s.id} value={s.id}>
-											{s.fullName || s.name}
-										</option>
-									))}
-								</select>
-								{/*
-									Мандаты 8e и 8n: если врачи в клинике не заведены,
-									автоматически подключается дежурный врач для соло-практики.
-									Никаких блокировок создания пациента и записи.
-								*/}
-								{staff.length === 0 ||
-								(staff.length === 1 &&
-									staff[0]?.id === FALLBACK_SOLO_DOCTOR.id) ? (
-									<p className="m-0 text-xs leading-relaxed text-[var(--muted)]">
-										В клинике пока не настроен список врачей. Автоматически назначен дежурный врач для соло-практики (Режим соло-практики).
-									</p>
-								) : null}
-							</div>
-
-							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label
-									htmlFor="convert-lead-chair"
-									style={{ fontSize: 13, color: "var(--muted)" }}
-								>
-									Кресло
-								</label>
-								<select
-									id="convert-lead-chair"
-									value={
-										selectedChairId ||
-										effectiveChairs[0]?.id ||
-										FALLBACK_DEFAULT_CHAIR.id
-									}
-									onChange={(e) => setSelectedChairId(e.target.value)}
-									style={{
-										padding: 10,
-										borderRadius: 8,
-										border: `1px solid ${borderColor}`,
-										background: colBg,
-										color: "var(--ink)",
-									}}
-									required
-								>
-									{effectiveChairs.map((c) => (
-										<option key={c.id} value={c.id}>
-											{c.name}
-										</option>
-									))}
-								</select>
-								{chairs.length === 0 ||
-								(chairs.length === 1 &&
-									chairs[0]?.id === FALLBACK_DEFAULT_CHAIR.id) ? (
-									<p className="m-0 text-xs leading-relaxed text-[var(--muted)]">
-										В клинике пока не настроены кресла. Автоматически выбрано основное кресло №1 (Режим соло-практики).
-									</p>
-								) : null}
-							</div>
-
-							<div style={{ display: "flex", gap: 12 }}>
-								<div
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										gap: 6,
-										flex: 1,
-									}}
-								>
-									<label
-										htmlFor="convert-lead-date"
-										style={{ fontSize: 13, color: "var(--muted)" }}
-									>
-										Дата
-									</label>
-									<input
-										id="convert-lead-date"
-										type="date"
-										value={appointmentDate}
-										onChange={(e) => setAppointmentDate(e.target.value)}
-										style={{
-											padding: 10,
-											borderRadius: 8,
-											border: `1px solid ${borderColor}`,
-											background: colBg,
-											color: "var(--ink)",
-										}}
-										required
-									/>
-								</div>
-								<div
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										gap: 6,
-										flex: 1,
-									}}
-								>
-									<label
-										htmlFor="convert-lead-time"
-										style={{ fontSize: 13, color: "var(--muted)" }}
-									>
-										Время
-									</label>
-									<input
-										id="convert-lead-time"
-										type="time"
-										value={appointmentTime}
-										onChange={(e) => setAppointmentTime(e.target.value)}
-										style={{
-											padding: 10,
-											borderRadius: 8,
-											border: `1px solid ${borderColor}`,
-											background: colBg,
-											color: "var(--ink)",
-										}}
-										required
-									/>
-								</div>
-							</div>
-
-							<button
-								type="submit"
-								className="primary-button"
-								disabled={isLeadBookingDisabled(isBooking)}
-								title={
-									isBooking
-										? "Записываем..."
-										: "Создать пациента и запись в расписании"
-								}
-								style={{
-									marginTop: 8,
-									width: "100%",
-									justifyContent: "center",
-								}}
-							>
-								{isBooking ? "Записываем..." : "Подтвердить запись"}
-							</button>
-						</form>
-					</motion.div>
-				</div>
-			)}
+			<LeadConvertModal
+				isOpen={isConvertOpen}
+				onClose={() => setIsConvertOpen(false)}
+				onSubmit={handleConvertSubmit}
+				staff={staff}
+				chairs={chairs}
+				effectiveStaff={resolveLeadBookingStaff(staff)}
+				effectiveChairs={resolveLeadBookingChairs(chairs)}
+				selectedDoctorId={selectedDoctorId}
+				setSelectedDoctorId={setSelectedDoctorId}
+				selectedChairId={selectedChairId}
+				setSelectedChairId={setSelectedChairId}
+				appointmentDate={appointmentDate}
+				setAppointmentDate={setAppointmentDate}
+				appointmentTime={appointmentTime}
+				setAppointmentTime={setAppointmentTime}
+				isBooking={isBooking}
+				cardBg={cardBg}
+				colBg={colBg}
+				borderColor={borderColor}
+			/>
 
 			{/* EDIT / ADD MODAL */}
-			{isEditOpen && (
-				<div
-					style={{
-						position: "fixed",
-						inset: 0,
-						zIndex: 100,
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						background: "rgba(0,0,0,0.5)",
-						backdropFilter: "blur(4px)",
-					}}
-				>
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						style={{
-							background: cardBg,
-							borderRadius: 16,
-							padding: 24,
-							width: 400,
-							maxWidth: "90%",
-							border: `1px solid ${borderColor}`,
-							boxShadow: "0 24px 48px rgba(0,0,0,0.2)",
-						}}
-					>
-						<div
-							style={{
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "space-between",
-								marginBottom: 20,
-							}}
-						>
-							<h3
-								style={{
-									margin: 0,
-									fontSize: 18,
-									fontWeight: 600,
-									color: "var(--ink)",
-									display: "flex",
-									alignItems: "center",
-									gap: 8,
-								}}
-							>
-								<Edit2 size={20} color="var(--teal)" />
-								{editingLeadId === "new"
-									? "Добавить лида"
-									: "Редактировать лида"}
-							</h3>
-							<button
-								type="button"
-								onClick={() => setIsEditOpen(false)}
-								style={{
-									background: "none",
-									border: "none",
-									color: "var(--muted)",
-									cursor: "pointer",
-								}}
-							>
-								<X size={20} />
-							</button>
-						</div>
-
-						<form
-							onSubmit={handleEditSubmit}
-							style={{ display: "flex", flexDirection: "column", gap: 16 }}
-						>
-							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label
-									htmlFor="edit-lead-name"
-									style={{ fontSize: 13, color: "var(--muted)" }}
-								>
-									Имя пациента / лида
-								</label>
-								<input
-									id="edit-lead-name"
-									type="text"
-									value={editForm.name}
-									onChange={(e) =>
-										setEditForm({ ...editForm, name: e.target.value })
-									}
-									placeholder="Иван Иванов"
-									style={{
-										padding: 10,
-										borderRadius: 8,
-										border: `1px solid ${borderColor}`,
-										background: colBg,
-										color: "var(--ink)",
-									}}
-									required
-								/>
-							</div>
-
-							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label
-									htmlFor="edit-lead-phone"
-									style={{ fontSize: 13, color: "var(--muted)" }}
-								>
-									Телефон
-								</label>
-								<input
-									id="edit-lead-phone"
-									type="tel"
-									value={editForm.phone}
-									onChange={(e) =>
-										setEditForm({ ...editForm, phone: e.target.value })
-									}
-									placeholder="+7 (999) 123-45-67"
-									style={{
-										padding: 10,
-										borderRadius: 8,
-										border: `1px solid ${borderColor}`,
-										background: colBg,
-										color: "var(--ink)",
-									}}
-								/>
-							</div>
-
-							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label
-									htmlFor="edit-lead-source"
-									style={{ fontSize: 13, color: "var(--muted)" }}
-								>
-									Источник (Откуда пришел)
-								</label>
-								<input
-									id="edit-lead-source"
-									type="text"
-									value={editForm.source}
-									onChange={(e) =>
-										setEditForm({ ...editForm, source: e.target.value })
-									}
-									placeholder="Instagram, Сайт, Рекомендация..."
-									style={{
-										padding: 10,
-										borderRadius: 8,
-										border: `1px solid ${borderColor}`,
-										background: colBg,
-										color: "var(--ink)",
-									}}
-								/>
-							</div>
-
-							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label
-									htmlFor="edit-lead-revenue"
-									style={{ fontSize: 13, color: "var(--muted)" }}
-								>
-									Ожидаемая выручка (₽)
-								</label>
-								<input
-									id="edit-lead-revenue"
-									type="text"
-									value={editForm.expectedRevenue}
-									onChange={(e) =>
-										setEditForm({
-											...editForm,
-											expectedRevenue: e.target.value,
-										})
-									}
-									placeholder="15000"
-									style={{
-										padding: 10,
-										borderRadius: 8,
-										border: `1px solid ${borderColor}`,
-										background: colBg,
-										color: "var(--ink)",
-									}}
-								/>
-							</div>
-
-							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label
-									htmlFor="edit-lead-status"
-									style={{ fontSize: 13, color: "var(--muted)" }}
-								>
-									Статус в воронке
-								</label>
-								<select
-									id="edit-lead-status"
-									value={editForm.status || "new"}
-									onChange={(e) =>
-										setEditForm({
-											...editForm,
-											status: e.target.value as Lead["status"],
-										})
-									}
-									style={{
-										padding: 10,
-										borderRadius: 8,
-										border: `1px solid ${borderColor}`,
-										background: colBg,
-										color: "var(--ink)",
-										cursor: "pointer",
-									}}
-								>
-									<option value="new">Новые</option>
-									<option value="contacted">В работе</option>
-									<option value="consult_booked">Записаны</option>
-									<option value="showed_up">Дошел</option>
-									<option value="no_answer">Недозвон</option>
-									<option value="trash">Отказ</option>
-								</select>
-							</div>
-
-							<div
-								style={{
-									display: "flex",
-									gap: 10,
-									marginTop: 8,
-									alignItems: "stretch",
-								}}
-							>
-								<button
-									type="submit"
-									className="primary-button"
-									disabled={isDeleting}
-									style={{
-										flex: 1,
-										justifyContent: "center",
-									}}
-								>
-									Сохранить
-								</button>
-								{/*
-								 * 1-клик действие «Создать пациента из лида» в модалке
-								 */}
-								{editingLeadId && editingLeadId !== "new" ? (
-									<button
-										type="button"
-										className="secondary-button"
-										data-testid="lead-create-patient-modal-btn"
-										disabled={isDeleting || creatingPatientLeadId === editingLeadId}
-										onClick={() => {
-											const lead = leads.find((l) => l.id === editingLeadId);
-											if (lead) void handleCreatePatientFromLead(lead);
-										}}
-										title="Создать карту пациента из обращения в 1 клик"
-										style={{
-											justifyContent: "center",
-											color: "var(--ok-fg)",
-											borderColor: "var(--line)",
-											minHeight: 44,
-											display: "flex",
-											alignItems: "center",
-											gap: 6,
-										}}
-									>
-										<UserPlus size={16} />
-										{creatingPatientLeadId === editingLeadId
-											? "Создаём…"
-											: "Создать пациента"}
-									</button>
-								) : null}
-								{/*
-								 * Permanent DELETE — not drag-to-«Отказ».
-								 * Shown only when editing an existing lead (not «new»).
-								 * Confirm dialog explains trash vs hard-delete.
-								 */}
-								{editingLeadId && editingLeadId !== "new" ? (
-									<button
-										type="button"
-										className="secondary-button"
-										data-testid="lead-delete-permanent"
-										disabled={isDeleting}
-										onClick={() => void handleDeleteLead()}
-										title="Удалить обращение из базы навсегда"
-										aria-label="Удалить обращение навсегда"
-										style={{
-											justifyContent: "center",
-											color: "var(--rust)",
-											borderColor: "var(--rust)",
-											minWidth: 44,
-											minHeight: 44,
-										}}
-									>
-										<Trash2 size={16} />
-										{isDeleting ? " Удаляем…" : " Удалить"}
-									</button>
-								) : null}
-							</div>
-						</form>
-					</motion.div>
-				</div>
-			)}
+			<LeadFormModal
+				isOpen={isEditOpen}
+				onClose={() => setIsEditOpen(false)}
+				editingLeadId={editingLeadId}
+				editForm={editForm}
+				setEditForm={setEditForm}
+				onSubmit={handleEditSubmit}
+				isDeleting={isDeleting}
+				onDelete={() => void handleDeleteLead()}
+				creatingPatientLeadId={creatingPatientLeadId}
+				onCreatePatient={(lead) => void handleCreatePatientFromLead(lead)}
+				leads={leads}
+				cardBg={cardBg}
+				colBg={colBg}
+				borderColor={borderColor}
+			/>
 
 			{/* ANALYTICS FUNNEL MODAL */}
 			{isAnalyticsOpen && (
