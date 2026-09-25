@@ -4,20 +4,10 @@ import {
 	Check,
 	Clock,
 	Download,
-	Eye,
-	FlipHorizontal,
 	FolderSync,
-	HardDrive,
-	Image as ImageIcon,
-	Minus,
-	Plus,
 	RefreshCw,
-	RotateCw,
 	Scan,
 	Send,
-	ShieldCheck,
-	Sparkles,
-	Sun,
 	UploadCloud,
 	Wifi,
 	X,
@@ -29,284 +19,22 @@ import {
 	FDI_TOOTH_NAMES,
 	formatRadiationDose,
 } from "./radiologyMath";
-import { SAMPLE_PATIENT_RVG_URL, type RadiologyStudy } from "./types";
+import type { RadiologyStudy } from "./types";
+import {
+	CLINICAL_PURPOSES,
+	FILTER_PRESETS,
+	INITIAL_HOT_FOLDER_ITEMS,
+	type FilterPresetKey,
+	type HotFolderItem,
+	type HotFolderIntakeModalProps,
+	type HotFolderSource,
+} from "./hotFolderTypes";
+import { HotFolderFdiSelector } from "./HotFolderFdiSelector";
+import { HotFolderImageCanvas } from "./HotFolderImageCanvas";
 import "./hotFolderIntake.css";
 
-export type HotFolderSource =
-	| "all"
-	| "ezdent"
-	| "romexis"
-	| "sidexis"
-	| "carestream"
-	| "cliniview"
-	| "dicom_network";
-
-export interface HotFolderItem {
-	id: string;
-	filename: string;
-	source: Exclude<HotFolderSource, "all">;
-	sourceLabel: string;
-	folderPath: string;
-	detectedModality: "intraoral_rvg" | "optg_panoramic" | "cbct_3d" | "bitewing";
-	modalityLabel: string;
-	detectedTeeth: string[];
-	sizeBytes: number;
-	sizeFormatted: string;
-	timestampIso: string;
-	relativeTime: string;
-	imageUrl: string;
-	status: "new" | "processing" | "imported";
-	patientMatch?: {
-		patientName: string;
-		cardNumber: string;
-		confidence: number;
-	};
-	metadata: {
-		kv: number;
-		ma: number;
-		exposureSec: number;
-		pixelSpacingMm: number;
-		apparatusModel: string;
-		sensorResolution?: string;
-	};
-}
-
-export interface HotFolderIntakeModalProps {
-	isOpen: boolean;
-	onClose: () => void;
-	patientId?: string;
-	patientName?: string;
-	patientCardNumber?: string;
-	patientBirthDate?: string;
-	doctorName?: string;
-	onAttachToEmr?: (result: {
-		study: RadiologyStudy;
-		teethFdi: string[];
-		protocolNote: string;
-		clinicalPurpose: string;
-		doseMicrosv: number;
-	}) => void;
-	onExportDicom?: (item: HotFolderItem) => void;
-	onSendToLab?: (item: HotFolderItem, note: string) => void;
-}
-
-export const INITIAL_HOT_FOLDER_ITEMS: HotFolderItem[] = [
-	{
-		id: "hf-01",
-		filename: "RVG_Tooth16_20260828_114210.dcm",
-		source: "ezdent",
-		sourceLabel: "Vatech EzDent-i",
-		folderPath: "\\\\XRAY-SERVER\\EzDent-i\\Export\\AutoIntake",
-		detectedModality: "intraoral_rvg",
-		modalityLabel: "Прицельный RVG",
-		detectedTeeth: ["16"],
-		sizeBytes: 1468006,
-		sizeFormatted: "1.4 МБ",
-		timestampIso: "2026-08-28T11:42:10.000Z",
-		relativeTime: "1 мин назад",
-		imageUrl: SAMPLE_PATIENT_RVG_URL,
-		status: "new",
-		patientMatch: {
-			patientName: "Пациент",
-			cardNumber: "043/у-2026/891",
-			confidence: 98,
-		},
-		metadata: {
-			kv: 65,
-			ma: 7.0,
-			exposureSec: 0.08,
-			pixelSpacingMm: 0.035,
-			apparatusModel: "Vatech EzSensor HD",
-			sensorResolution: "29.2 lp/mm",
-		},
-	},
-	{
-		id: "hf-02",
-		filename: "Romexis_OPTG_Panoramic_20260828_113000.png",
-		source: "romexis",
-		sourceLabel: "Planmeca Romexis",
-		folderPath: "\\\\ROMEXIS-SRV\\Exchange\\2D_Panoramic",
-		detectedModality: "optg_panoramic",
-		modalityLabel: "ОПТГ Панорама",
-		detectedTeeth: [
-			"18", "17", "16", "15", "14", "13", "12", "11",
-			"21", "22", "23", "24", "25", "26", "27", "28",
-			"48", "47", "46", "45", "44", "43", "42", "41",
-			"31", "32", "33", "34", "35", "36", "37", "38",
-		],
-		sizeBytes: 8598322,
-		sizeFormatted: "8.2 МБ",
-		timestampIso: "2026-08-28T11:30:00.000Z",
-		relativeTime: "12 мин назад",
-		imageUrl: SAMPLE_PATIENT_RVG_URL,
-		status: "new",
-		patientMatch: {
-			patientName: "Пациент",
-			cardNumber: "043/у-2026/891",
-			confidence: 95,
-		},
-		metadata: {
-			kv: 68,
-			ma: 10.0,
-			exposureSec: 14.2,
-			pixelSpacingMm: 0.096,
-			apparatusModel: "Planmeca ProMax 2D",
-			sensorResolution: "16.0 lp/mm",
-		},
-	},
-	{
-		id: "hf-03",
-		filename: "Sidexis_Bitewing_Q1Q4_20260828_105512.jpg",
-		source: "sidexis",
-		sourceLabel: "Dentsply Sirona Sidexis",
-		folderPath: "\\\\SIDEXIS-SRV\\PDATA\\Incoming_Captures",
-		detectedModality: "bitewing",
-		modalityLabel: "Bite-wing",
-		detectedTeeth: ["17", "16", "15", "14", "47", "46", "45", "44"],
-		sizeBytes: 2202009,
-		sizeFormatted: "2.1 МБ",
-		timestampIso: "2026-08-28T10:55:12.000Z",
-		relativeTime: "45 мин назад",
-		imageUrl: SAMPLE_PATIENT_RVG_URL,
-		status: "new",
-		patientMatch: {
-			patientName: "Пациент",
-			cardNumber: "043/у-2026/891",
-			confidence: 92,
-		},
-		metadata: {
-			kv: 60,
-			ma: 7.0,
-			exposureSec: 0.10,
-			pixelSpacingMm: 0.040,
-			apparatusModel: "Sirona XIOS XG Supreme",
-			sensorResolution: "33.3 lp/mm",
-		},
-	},
-	{
-		id: "hf-04",
-		filename: "EzDent_Periapical_21_20260828_091522.dcm",
-		source: "ezdent",
-		sourceLabel: "Vatech EzDent-i",
-		folderPath: "\\\\XRAY-SERVER\\EzDent-i\\Export\\AutoIntake",
-		detectedModality: "intraoral_rvg",
-		modalityLabel: "Прицельный RVG",
-		detectedTeeth: ["21"],
-		sizeBytes: 1363148,
-		sizeFormatted: "1.3 МБ",
-		timestampIso: "2026-08-28T09:15:22.000Z",
-		relativeTime: "2 ч назад",
-		imageUrl: SAMPLE_PATIENT_RVG_URL,
-		status: "new",
-		patientMatch: {
-			patientName: "Пациент",
-			cardNumber: "043/у-2026/891",
-			confidence: 90,
-		},
-		metadata: {
-			kv: 65,
-			ma: 7.0,
-			exposureSec: 0.08,
-			pixelSpacingMm: 0.035,
-			apparatusModel: "Vatech EzSensor HD",
-			sensorResolution: "29.2 lp/mm",
-		},
-	},
-	{
-		id: "hf-05",
-		filename: "Carestream_EndoControl_46_20260828_084011.tif",
-		source: "carestream",
-		sourceLabel: "Carestream CS Imaging",
-		folderPath: "C:\\ProgramData\\Carestream\\Captures\\Inbox",
-		detectedModality: "intraoral_rvg",
-		modalityLabel: "Прицельный RVG",
-		detectedTeeth: ["46"],
-		sizeBytes: 1887436,
-		sizeFormatted: "1.8 МБ",
-		timestampIso: "2026-08-28T08:40:11.000Z",
-		relativeTime: "3 ч назад",
-		imageUrl: SAMPLE_PATIENT_RVG_URL,
-		status: "imported",
-		patientMatch: {
-			patientName: "Пациент клиники",
-			cardNumber: "043/у-2026/042",
-			confidence: 94,
-		},
-		metadata: {
-			kv: 65,
-			ma: 7.0,
-			exposureSec: 0.09,
-			pixelSpacingMm: 0.042,
-			apparatusModel: "Carestream RVG 6200",
-			sensorResolution: "24.0 lp/mm",
-		},
-	},
-];
-
-export const CLINICAL_PURPOSES = [
-	{ id: "endo_control", label: "Контроль эндодонтического лечения (обтурация каналов)" },
-	{ id: "primary_caries", label: "Первичная диагностика кариеса / пульпита" },
-	{ id: "implant_check", label: "Контроль остеоинтеграции имплантата / костной пластики" },
-	{ id: "periapical_check", label: "Оценка периапикального очага / периодонтита" },
-	{ id: "orthopantomogram", label: "Обзорное исследование зубных рядов (ОПТГ)" },
-	{ id: "marginal_fit", label: "Контроль краевого прилегания ортопедической конструкции" },
-] as const;
-
-export type FilterPresetKey = "standard" | "endo" | "bone" | "caries" | "sharpen" | "negative";
-
-export const FILTER_PRESETS: Record<
-	FilterPresetKey,
-	{
-		label: string;
-		brightness: number;
-		contrast: number;
-		invert: boolean;
-		description: string;
-	}
-> = {
-	standard: {
-		label: "Стандарт",
-		brightness: 100,
-		contrast: 100,
-		invert: false,
-		description: "Сбалансированная яркость и контрастность",
-	},
-	endo: {
-		label: "Эндодонтия / Апекс",
-		brightness: 105,
-		contrast: 165,
-		invert: false,
-		description: "Высокий контраст для верхушек корней и гуттаперчи",
-	},
-	bone: {
-		label: "Кость / Трабекулы",
-		brightness: 95,
-		contrast: 145,
-		invert: false,
-		description: "Четкая визуализация кортикальной пластинки и трабекул",
-	},
-	caries: {
-		label: "Скрытый кариес",
-		brightness: 110,
-		contrast: 180,
-		invert: true,
-		description: "Негатив с контрастом для зон деминерализации эмали",
-	},
-	sharpen: {
-		label: "Резкость (Шарп)",
-		brightness: 100,
-		contrast: 135,
-		invert: false,
-		description: "Подчеркивание краевого прилегания пломб и вкладок",
-	},
-	negative: {
-		label: "Негатив",
-		brightness: 100,
-		contrast: 100,
-		invert: true,
-		description: "Инверсия монохромного спектра",
-	},
-};
+// Transparent re-exports for complete backward compatibility and test parity
+export * from "./hotFolderTypes";
 
 export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 	isOpen,
@@ -803,350 +531,42 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 					</aside>
 
 					{/* ─── 2. CENTER PANEL: DARK RADIOLOGY CANVAS & CONTROLS ───── */}
-					<main className="hfi-center-panel" data-testid="hfi-center-canvas">
-						{/* Top HUD overlay */}
-						<div className="hfi-canvas-top-hud">
-							<div className="hfi-hud-chip">
-								<HardDrive className="w-3.5 h-3.5 text-teal-400" />
-								<span>
-									{activeItem?.metadata.apparatusModel ?? "Vatech EzSensor HD"}
-									{activeItem?.metadata.sensorResolution ? ` · ${activeItem.metadata.sensorResolution}` : ""}
-								</span>
-							</div>
-
-							<div className="flex items-center gap-2">
-								<div className="hfi-hud-chip">
-									<Zap className="w-3.5 h-3.5 text-amber-400" />
-									<span>
-										{activeItem?.metadata.kv ?? 65} kV · {activeItem?.metadata.ma ?? 7.0} mA · {activeItem?.metadata.exposureSec ?? 0.08} s
-									</span>
-								</div>
-
-								<div className={`hfi-hud-chip border ${doseInfo.badgeClass}`}>
-									<ShieldCheck className="w-3.5 h-3.5" />
-									<span>{doseInfo.microsvText} (СанПиН ОК)</span>
-								</div>
-							</div>
-						</div>
-
-						{/* Dark Viewport Canvas Stage */}
-						<div
-							className="hfi-viewport-area"
-							data-testid="hfi-viewport-area"
-							onMouseDown={handleMouseDownCanvas}
-						>
-							<div
-								className="hfi-image-stage"
-								style={{
-									transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100}) rotate(${rotation}deg) scaleX(${flipH ? -1 : 1})`,
-									filter: `brightness(${brightness}%) contrast(${contrast}%) ${invert ? "invert(100%)" : ""}`,
-								}}
-							>
-								{activeItem ? (
-									<img
-										src={activeItem.imageUrl}
-										alt={activeItem.filename}
-										loading="lazy"
-										decoding="async"
-										className="hfi-radiology-image"
-										data-testid="hfi-active-radiology-image"
-										draggable={false}
-									/>
-								) : (
-									<div className="flex flex-col items-center justify-center p-12 text-slate-500">
-										<ImageIcon className="w-16 h-16 mb-2 opacity-40" />
-										<p className="text-sm">Нет выбранного снимка</p>
-									</div>
-								)}
-							</div>
-						</div>
-
-						{/* Bottom Floating Control Dock */}
-						<div className="hfi-bottom-dock">
-							{/* Presets row */}
-							<div className="hfi-dock-pill">
-								<div className="hfi-presets-strip">
-									{(Object.keys(FILTER_PRESETS) as FilterPresetKey[]).map((key) => {
-										const p = FILTER_PRESETS[key];
-										const isSelected = activePreset === key;
-										return (
-											<button
-												key={key}
-												type="button"
-												onClick={() => handleApplyPreset(key)}
-												className={`hfi-preset-chip ${isSelected ? "active" : ""}`}
-												data-testid={`hfi-preset-chip-${key}`}
-												title={p.description}
-											>
-												{p.label}
-											</button>
-										);
-									})}
-								</div>
-							</div>
-
-							{/* Sliders & Tools row */}
-							<div className="hfi-dock-pill">
-								{/* Brightness Slider */}
-								<div className="hfi-slider-group">
-									<span className="hfi-slider-label">
-										<Sun className="w-3.5 h-3.5 text-amber-400" />
-										<span>Яркость</span>
-									</span>
-									<input
-										type="range"
-										min="20"
-										max="200"
-										value={brightness}
-										onChange={(e) => setBrightness(Number(e.target.value))}
-										className="hfi-dock-slider"
-										data-testid="hfi-brightness-slider"
-										aria-label="Регулировка яркости"
-									/>
-									<span className="font-mono text-[10px] w-7 text-right">{brightness}%</span>
-								</div>
-
-								<div className="w-[1px] h-4 bg-slate-700" />
-
-								{/* Contrast Slider */}
-								<div className="hfi-slider-group">
-									<span className="hfi-slider-label">
-										<Eye className="w-3.5 h-3.5 text-teal-400" />
-										<span>Контраст</span>
-									</span>
-									<input
-										type="range"
-										min="50"
-										max="300"
-										value={contrast}
-										onChange={(e) => setContrast(Number(e.target.value))}
-										className="hfi-dock-slider"
-										data-testid="hfi-contrast-slider"
-										aria-label="Регулировка контрастности"
-									/>
-									<span className="font-mono text-[10px] w-7 text-right">{contrast}%</span>
-								</div>
-
-								<div className="w-[1px] h-4 bg-slate-700" />
-
-								{/* Invert Button */}
-								<button
-									type="button"
-									onClick={() => setInvert((prev) => !prev)}
-									className={`hfi-dock-btn ${invert ? "active" : ""}`}
-									data-testid="hfi-invert-btn"
-									title="Инвертировать ч/б (Негатив)"
-								>
-									<span>Негатив</span>
-								</button>
-
-								{/* Rotation */}
-								<button
-									type="button"
-									onClick={() => setRotation((prev) => (prev + 90) % 360)}
-									className="hfi-dock-btn"
-									data-testid="hfi-rotate-btn"
-									title="Повернуть на 90° по часовой"
-								>
-									<RotateCw className="w-3.5 h-3.5" />
-									<span>{rotation}°</span>
-								</button>
-
-								{/* Flip Horizontal */}
-								<button
-									type="button"
-									onClick={() => setFlipH((prev) => !prev)}
-									className={`hfi-dock-btn ${flipH ? "active" : ""}`}
-									data-testid="hfi-flip-btn"
-									title="Зеркальное отражение по горизонтали"
-								>
-									<FlipHorizontal className="w-3.5 h-3.5" />
-								</button>
-
-								<div className="w-[1px] h-4 bg-slate-700" />
-
-								{/* Zoom Controls */}
-								<button
-									type="button"
-									onClick={() => setZoom((prev) => Math.max(50, prev - 25))}
-									className="hfi-dock-btn"
-									data-testid="hfi-zoom-out-btn"
-									title="Уменьшить масштаб"
-								>
-									<Minus className="w-3.5 h-3.5" />
-								</button>
-								<span className="font-mono text-[10px] text-gray-300 w-8 text-center">{zoom}%</span>
-								<button
-									type="button"
-									onClick={() => setZoom((prev) => Math.min(400, prev + 25))}
-									className="hfi-dock-btn"
-									data-testid="hfi-zoom-in-btn"
-									title="Увеличить масштаб"
-								>
-									<Plus className="w-3.5 h-3.5" />
-								</button>
-
-								{/* Reset */}
-								<button
-									type="button"
-									onClick={handleResetView}
-									className="hfi-dock-btn text-gray-400 hover:text-white"
-									data-testid="hfi-reset-view-btn"
-									title="Сбросить масштаб и положение"
-								>
-									<span>Сброс</span>
-								</button>
-							</div>
-						</div>
-					</main>
+					<HotFolderImageCanvas
+						activeItem={activeItem}
+						doseInfo={doseInfo}
+						pan={pan}
+						zoom={zoom}
+						rotation={rotation}
+						flipH={flipH}
+						brightness={brightness}
+						contrast={contrast}
+						invert={invert}
+						activePreset={activePreset}
+						onMouseDownCanvas={handleMouseDownCanvas}
+						onApplyPreset={handleApplyPreset}
+						setBrightness={setBrightness}
+						setContrast={setContrast}
+						setInvert={setInvert}
+						setRotation={setRotation}
+						setFlipH={setFlipH}
+						setZoom={setZoom}
+						onResetView={handleResetView}
+					/>
 
 					{/* ─── 3. RIGHT PANEL: FDI FORMULA & 043/У PROTOCOL ─────────── */}
 					<aside className="hfi-right-panel" data-testid="hfi-right-panel">
 						<div className="hfi-right-content">
 							{/* Section: FDI Dental Formula */}
-							<div className="space-y-2">
-								<h3 className="hfi-section-title">
-									<Sparkles className="w-4 h-4 text-teal-400" />
-									<span>Зубная формула FDI (11–48)</span>
-								</h3>
-
-								<div className="hfi-fdi-box">
-									<div className="hfi-fdi-quick-presets">
-										<button
-											type="button"
-											onClick={handleSelectAllTeeth}
-											className="hfi-fdi-quick-chip"
-											data-testid="hfi-fdi-all-btn"
-										>
-											Все (ОПТГ)
-										</button>
-										<button
-											type="button"
-											onClick={handleSelectUpperArch}
-											className="hfi-fdi-quick-chip"
-											data-testid="hfi-fdi-upper-btn"
-										>
-											Верхняя (18-28)
-										</button>
-										<button
-											type="button"
-											onClick={handleSelectLowerArch}
-											className="hfi-fdi-quick-chip"
-											data-testid="hfi-fdi-lower-btn"
-										>
-											Нижняя (48-38)
-										</button>
-										<button
-											type="button"
-											onClick={handleSelectFrontal}
-											className="hfi-fdi-quick-chip"
-											data-testid="hfi-fdi-frontal-btn"
-										>
-											Фронтальный
-										</button>
-										<button
-											type="button"
-											onClick={handleSelectRightMolar}
-											className="hfi-fdi-quick-chip"
-											data-testid="hfi-fdi-right-molar-btn"
-										>
-											Прав. жеват.
-										</button>
-										<button
-											type="button"
-											onClick={handleSelectLeftMolar}
-											className="hfi-fdi-quick-chip"
-											data-testid="hfi-fdi-left-molar-btn"
-										>
-											Лев. жеват.
-										</button>
-									</div>
-
-									{/* 4-Quadrant FDI Grid */}
-									<div className="hfi-fdi-grid-container" data-testid="hfi-fdi-grid">
-										{/* Upper Arch (Q1: 18..11 | Q2: 21..28) */}
-										<div className="hfi-fdi-arch-row">
-											{ADULT_FDI_TEETH.quadrant1.map((tooth) => {
-												const isSelected = selectedTeeth.includes(tooth);
-												return (
-													<button
-														key={tooth}
-														type="button"
-														onClick={() => handleToggleTooth(tooth)}
-														className={`hfi-tooth-btn ${isSelected ? "selected" : ""}`}
-														data-testid={`hfi-tooth-btn-${tooth}`}
-														title={`${tooth}: ${FDI_TOOTH_NAMES[tooth] ?? ""}`}
-													>
-														{tooth}
-													</button>
-												);
-											})}
-											<div className="w-1.5 h-6 bg-slate-700/80 mx-0.5 rounded-full" />
-											{ADULT_FDI_TEETH.quadrant2.map((tooth) => {
-												const isSelected = selectedTeeth.includes(tooth);
-												return (
-													<button
-														key={tooth}
-														type="button"
-														onClick={() => handleToggleTooth(tooth)}
-														className={`hfi-tooth-btn ${isSelected ? "selected" : ""}`}
-														data-testid={`hfi-tooth-btn-${tooth}`}
-														title={`${tooth}: ${FDI_TOOTH_NAMES[tooth] ?? ""}`}
-													>
-														{tooth}
-													</button>
-												);
-											})}
-										</div>
-
-										<div className="hfi-fdi-divider" />
-
-										{/* Lower Arch (Q4: 48..41 | Q3: 31..38) */}
-										<div className="hfi-fdi-arch-row">
-											{ADULT_FDI_TEETH.quadrant4.map((tooth) => {
-												const isSelected = selectedTeeth.includes(tooth);
-												return (
-													<button
-														key={tooth}
-														type="button"
-														onClick={() => handleToggleTooth(tooth)}
-														className={`hfi-tooth-btn ${isSelected ? "selected" : ""}`}
-														data-testid={`hfi-tooth-btn-${tooth}`}
-														title={`${tooth}: ${FDI_TOOTH_NAMES[tooth] ?? ""}`}
-													>
-														{tooth}
-													</button>
-												);
-											})}
-											<div className="w-1.5 h-6 bg-slate-700/80 mx-0.5 rounded-full" />
-											{ADULT_FDI_TEETH.quadrant3.map((tooth) => {
-												const isSelected = selectedTeeth.includes(tooth);
-												return (
-													<button
-														key={tooth}
-														type="button"
-														onClick={() => handleToggleTooth(tooth)}
-														className={`hfi-tooth-btn ${isSelected ? "selected" : ""}`}
-														data-testid={`hfi-tooth-btn-${tooth}`}
-														title={`${tooth}: ${FDI_TOOTH_NAMES[tooth] ?? ""}`}
-													>
-														{tooth}
-													</button>
-												);
-											})}
-										</div>
-									</div>
-
-									<p className="hfi-selected-teeth-summary">
-										Выбрано: <strong className="text-teal-300">{selectedTeeth.join(", ")}</strong>
-										{selectedTeeth.length === 1 && selectedTeeth[0] && FDI_TOOTH_NAMES[selectedTeeth[0]] && (
-											<span className="block text-[10px] text-gray-400 mt-0.5">
-												{FDI_TOOTH_NAMES[selectedTeeth[0]]}
-											</span>
-										)}
-									</p>
-								</div>
-							</div>
+							<HotFolderFdiSelector
+								selectedTeeth={selectedTeeth}
+								onToggleTooth={handleToggleTooth}
+								onSelectAllTeeth={handleSelectAllTeeth}
+								onSelectUpperArch={handleSelectUpperArch}
+								onSelectLowerArch={handleSelectLowerArch}
+								onSelectFrontal={handleSelectFrontal}
+								onSelectRightMolar={handleSelectRightMolar}
+								onSelectLeftMolar={handleSelectLeftMolar}
+							/>
 
 							{/* Section: Clinical Purpose */}
 							<div className="hfi-field-group">

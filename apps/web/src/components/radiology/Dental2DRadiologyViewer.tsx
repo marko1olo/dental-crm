@@ -6,30 +6,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import {
-	Activity,
-	Check,
-	CheckCircle2,
-	Contrast,
-	Download,
-	Eye,
-	FileText,
-	FlipHorizontal,
-	Hand,
-	Maximize2,
-	Minimize2,
-	Minus,
-	Monitor,
-	Plus,
-	RotateCcw,
-	RotateCw,
-	Ruler,
-	Sliders,
-	Sparkles,
-	UploadCloud,
-	X,
-	Zap,
-} from "lucide-react";
+import { Minimize2, UploadCloud } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import {
 	CLINICAL_2D_WL_PRESETS,
@@ -41,6 +18,9 @@ import {
 	type ViewerRulerMeasurement,
 } from "./dentalViewerMath";
 import { DentalToothFdiSelector } from "./DentalToothFdiSelector";
+import { Dental2DRadiologyToolbar } from "./Dental2DRadiologyToolbar";
+import { Dental2DRadiologySubToolbar } from "./Dental2DRadiologySubToolbar";
+import { Dental2DRadiologyRulerOverlay } from "./Dental2DRadiologyRulerOverlay";
 import type { RadiologyModality, RadiologyStudy } from "./types";
 
 export interface Dental2DRadiologyViewerProps {
@@ -353,389 +333,30 @@ export const Dental2DRadiologyViewer: React.FC<Dental2DRadiologyViewerProps> = (
 			/>
 
 			{/* Clinical 1-Row Toolbar (32-36px Desktop Dense - Mandate 8d) */}
-			<div
-				style={{
-					minHeight: "36px",
-					height: "36px",
-					backgroundColor: "#0f172a",
-					borderBottom: "1px solid #1e293b",
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					padding: "0 10px",
-					gap: "6px",
-					flexShrink: 0,
-				}}
-			>
-				{/* Left: Study info + FDI tooth badge */}
-				<div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-					<Activity size={16} color="#14b8a6" style={{ flexShrink: 0 }} />
-					<span style={{ fontWeight: 700, fontSize: "12px", whiteSpace: "nowrap" }}>
-						{title}
-					</span>
-					<span
-						style={{
-							fontSize: "11px",
-							color: "#94a3b8",
-							padding: "1px 6px",
-							borderRadius: "4px",
-							backgroundColor: "#1e293b",
-							border: "1px solid #334155",
-							whiteSpace: "nowrap",
-						}}
-					>
-						{modalityLabel}
-					</span>
-
-					{/* 1-Click FDI Tooth Trigger Button */}
-					<button
-						type="button"
-						data-testid="btn-toggle-fdi-selector"
-						onClick={() => setShowToothSelector((v) => !v)}
-						style={{
-							height: "26px",
-							padding: "0 8px",
-							fontSize: "11px",
-							fontWeight: 700,
-							fontFamily: "monospace",
-							borderRadius: "5px",
-							border: activeToothFdi ? "1px solid #14b8a6" : "1px solid #334155",
-							backgroundColor: activeToothFdi ? "#134e4a" : "#1e293b",
-							color: activeToothFdi ? "#5eead4" : "#94a3b8",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "4px",
-						}}
-						title="1-клик выбор зуба по формуле FDI (11..48)"
-					>
-						<span>{activeToothFdi ? `Зуб #${activeToothFdi}` : "Выбрать зуб FDI"}</span>
-					</button>
-				</div>
-
-				{/* Center: Tools (Pan, Ruler, Invert, Zoom, Presets) */}
-				<div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-					{/* Pan tool */}
-					<button
-						type="button"
-						data-testid="btn-tool-pan"
-						onClick={() => setActiveTool("pan")}
-						style={{
-							height: "28px",
-							padding: "0 8px",
-							fontSize: "11px",
-							borderRadius: "5px",
-							border: activeTool === "pan" ? "1px solid #14b8a6" : "1px solid #334155",
-							backgroundColor: activeTool === "pan" ? "#134e4a" : "#1e293b",
-							color: activeTool === "pan" ? "#5eead4" : "#cbd5e1",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "4px",
-							fontWeight: 600,
-						}}
-						title="Панорамирование (перемещение снимка мышью)"
-					>
-						<Hand size={13} />
-						<span className="hidden sm:inline">Панорама</span>
-					</button>
-
-					{/* Calibrated Ruler Tool */}
-					<button
-						type="button"
-						data-testid="btn-tool-ruler"
-						onClick={() => setActiveTool("ruler")}
-						style={{
-							height: "28px",
-							padding: "0 8px",
-							fontSize: "11px",
-							borderRadius: "5px",
-							border: activeTool === "ruler" ? "1px solid #0284c7" : "1px solid #334155",
-							backgroundColor: activeTool === "ruler" ? "#0369a1" : "#1e293b",
-							color: activeTool === "ruler" ? "#bae6fd" : "#cbd5e1",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "4px",
-							fontWeight: 600,
-						}}
-						title="Калиброванная линейка (мм): кликните две точки для измерения длины канала / импланта"
-					>
-						<Ruler size={13} />
-						<span className="hidden sm:inline">Линейка (мм)</span>
-					</button>
-
-					{/* Negative Invert Toggle */}
-					<button
-						type="button"
-						data-testid="btn-toggle-invert"
-						onClick={() => setInvert((v) => !v)}
-						style={{
-							height: "28px",
-							padding: "0 8px",
-							fontSize: "11px",
-							borderRadius: "5px",
-							border: invert ? "1px solid #a855f7" : "1px solid #334155",
-							backgroundColor: invert ? "#6b21a8" : "#1e293b",
-							color: invert ? "#f3e8ff" : "#cbd5e1",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "4px",
-							fontWeight: 600,
-						}}
-						title="Негатив / Инверсия: выявление микротрещин и рентгенопрозрачных деструкций"
-					>
-						<Contrast size={13} />
-						<span>{invert ? "Негатив ВКЛ" : "Негатив"}</span>
-					</button>
-
-					{/* Zoom Controls */}
-					<div
-						style={{
-							display: "inline-flex",
-							alignItems: "center",
-							backgroundColor: "#1e293b",
-							borderRadius: "5px",
-							border: "1px solid #334155",
-							height: "28px",
-							padding: "0 2px",
-						}}
-					>
-						<button
-							type="button"
-							onClick={() => setZoom((z) => Math.max(0.4, z - 0.25))}
-							style={{
-								width: "24px",
-								height: "24px",
-								background: "transparent",
-								border: "none",
-								color: "#cbd5e1",
-								cursor: "pointer",
-							}}
-							title="Уменьшить"
-						>
-							<Minus size={12} />
-						</button>
-						<button
-							type="button"
-							onClick={() => setZoom(1.0)}
-							style={{
-								minWidth: "36px",
-								height: "24px",
-								background: "transparent",
-								border: "none",
-								color: "#e2e8f0",
-								fontSize: "10px",
-								fontFamily: "monospace",
-								cursor: "pointer",
-							}}
-							title="100%"
-						>
-							{Math.round(zoom * 100)}%
-						</button>
-						<button
-							type="button"
-							onClick={() => setZoom((z) => Math.min(5.0, z + 0.25))}
-							style={{
-								width: "24px",
-								height: "24px",
-								background: "transparent",
-								border: "none",
-								color: "#cbd5e1",
-								cursor: "pointer",
-							}}
-							title="Увеличить"
-						>
-							<Plus size={12} />
-						</button>
-					</div>
-
-					{/* Rotate 90° */}
-					<button
-						type="button"
-						onClick={() => setRotationDeg((r) => (r + 90) % 360)}
-						style={{
-							height: "28px",
-							width: "28px",
-							borderRadius: "5px",
-							border: "1px solid #334155",
-							backgroundColor: "#1e293b",
-							color: "#cbd5e1",
-							cursor: "pointer",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-						}}
-						title="Повернуть на 90°"
-					>
-						<RotateCw size={13} />
-					</button>
-
-					{/* Flip Horizontal */}
-					<button
-						type="button"
-						onClick={() => setFlipHorizontal((f) => !f)}
-						style={{
-							height: "28px",
-							width: "28px",
-							borderRadius: "5px",
-							border: flipHorizontal ? "1px solid #14b8a6" : "1px solid #334155",
-							backgroundColor: flipHorizontal ? "#134e4a" : "#1e293b",
-							color: flipHorizontal ? "#5eead4" : "#cbd5e1",
-							cursor: "pointer",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-						}}
-						title="Отразить по горизонтали"
-					>
-						<FlipHorizontal size={13} />
-					</button>
-				</div>
-
-				{/* Right: Presets, Patient Presentation Mode, 1-Click Norma, Export, Close */}
-				<div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-					{/* 1-Click Norma Button (Mandate 8e) */}
-					<button
-						type="button"
-						data-testid="btn-viewer-norma-043"
-						onClick={handleApplyNorma}
-						style={{
-							height: "28px",
-							padding: "0 8px",
-							fontSize: "11px",
-							fontWeight: 600,
-							borderRadius: "5px",
-							border: "1px solid #10b981",
-							backgroundColor: "#064e3b",
-							color: "#a7f3d0",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "4px",
-						}}
-						title="1-клик заключение: норма на снимке (в дневник 043/у)"
-					>
-						<Zap size={12} color="#34d399" />
-						<span className="hidden md:inline">Норма (043/у)</span>
-					</button>
-
-					{/* 1-Click Chairside Patient Presentation Mode */}
-					<button
-						type="button"
-						data-testid="btn-chairside-presentation"
-						onClick={() => setIsPresentationMode((v) => !v)}
-						style={{
-							height: "28px",
-							padding: "0 8px",
-							fontSize: "11px",
-							fontWeight: 700,
-							borderRadius: "5px",
-							border: isPresentationMode ? "1.5px solid #f59e0b" : "1px solid #0d9488",
-							backgroundColor: isPresentationMode ? "#78350f" : "#134e4a",
-							color: isPresentationMode ? "#fef3c7" : "#5eead4",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "4px",
-						}}
-						title="Режим презентации для пациента на мониторе кресла (без лишних кнопок)"
-					>
-						<Monitor size={13} />
-						<span>{isPresentationMode ? "Выход из презентации" : "Пациенту"}</span>
-					</button>
-
-					{/* Export PNG */}
-					<button
-						type="button"
-						onClick={handleExportImage}
-						style={{
-							height: "28px",
-							padding: "0 8px",
-							fontSize: "11px",
-							fontWeight: 600,
-							borderRadius: "5px",
-							border: "1px solid #334155",
-							backgroundColor: "#1e293b",
-							color: "#e2e8f0",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "4px",
-						}}
-						title="Экспорт снимка с линейкой в PNG"
-					>
-						<Download size={13} />
-						<span className="hidden lg:inline">Экспорт</span>
-					</button>
-
-					{/* Upload / replace file */}
-					<button
-						type="button"
-						onClick={() => fileInputRef.current?.click()}
-						style={{
-							height: "28px",
-							width: "28px",
-							borderRadius: "5px",
-							border: "1px solid #334155",
-							backgroundColor: "#1e293b",
-							color: "#cbd5e1",
-							cursor: "pointer",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-						}}
-						title="Загрузить локальный снимок (RVG/ОПТГ/DICOM)"
-					>
-						<UploadCloud size={13} />
-					</button>
-
-					{/* Reset */}
-					<button
-						type="button"
-						onClick={handleResetView}
-						style={{
-							height: "28px",
-							width: "28px",
-							borderRadius: "5px",
-							border: "1px solid #334155",
-							backgroundColor: "#1e293b",
-							color: "#cbd5e1",
-							cursor: "pointer",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-						}}
-						title="Сбросить все настройки"
-					>
-						<RotateCcw size={13} />
-					</button>
-
-					{/* Close */}
-					{onClose && (
-						<button
-							type="button"
-							onClick={onClose}
-							style={{
-								height: "28px",
-								width: "28px",
-								borderRadius: "5px",
-								border: "1px solid #334155",
-								background: "transparent",
-								color: "#94a3b8",
-								cursor: "pointer",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-							}}
-							title="Закрыть просмотрщик"
-						>
-							<X size={15} />
-						</button>
-					)}
-				</div>
-			</div>
+			<Dental2DRadiologyToolbar
+				title={title}
+				modalityLabel={modalityLabel}
+				activeToothFdi={activeToothFdi}
+				onToggleToothSelector={() => setShowToothSelector((v) => !v)}
+				activeTool={activeTool}
+				onSelectTool={setActiveTool}
+				invert={invert}
+				onToggleInvert={() => setInvert((v) => !v)}
+				zoom={zoom}
+				onZoomIn={() => setZoom((z) => Math.min(5.0, z + 0.25))}
+				onZoomOut={() => setZoom((z) => Math.max(0.4, z - 0.25))}
+				onZoomReset={() => setZoom(1.0)}
+				onRotate={() => setRotationDeg((r) => (r + 90) % 360)}
+				flipHorizontal={flipHorizontal}
+				onToggleFlipHorizontal={() => setFlipHorizontal((f) => !f)}
+				onApplyNorma={handleApplyNorma}
+				isPresentationMode={isPresentationMode}
+				onTogglePresentationMode={() => setIsPresentationMode((v) => !v)}
+				onExportImage={handleExportImage}
+				onTriggerUpload={() => fileInputRef.current?.click()}
+				onResetView={handleResetView}
+				onClose={onClose}
+			/>
 
 			{/* Collapsible FDI 11..48 Quick Selector Drawer */}
 			{showToothSelector && (
@@ -750,97 +371,16 @@ export const Dental2DRadiologyViewer: React.FC<Dental2DRadiologyViewerProps> = (
 
 			{/* Sub-toolbar: Preset Pills & Brightness/Contrast Sliders (hidden in Presentation Mode) */}
 			{!isPresentationMode && (
-				<div
-					style={{
-						height: "32px",
-						minHeight: "32px",
-						backgroundColor: "#090d16",
-						borderBottom: "1px solid #1e293b",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "space-between",
-						padding: "0 10px",
-						fontSize: "11px",
-						color: "#94a3b8",
-						gap: "10px",
-						overflowX: "auto",
-					}}
-				>
-					{/* Presets */}
-					<div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-						<span style={{ fontWeight: 600, color: "#64748b" }}>Пресеты:</span>
-						{CLINICAL_2D_WL_PRESETS.map((preset) => (
-							<button
-								key={preset.id}
-								type="button"
-								onClick={() => handleApplyPreset(preset)}
-								style={{
-									height: "22px",
-									padding: "0 6px",
-									fontSize: "10px",
-									fontWeight: activePresetId === preset.id ? 700 : 500,
-									borderRadius: "4px",
-									border: activePresetId === preset.id ? "1px solid #14b8a6" : "1px solid #334155",
-									backgroundColor: activePresetId === preset.id ? "#134e4a" : "#1e293b",
-									color: activePresetId === preset.id ? "#5eead4" : "#cbd5e1",
-									cursor: "pointer",
-								}}
-								title={preset.description}
-							>
-								{preset.shortLabel}
-							</button>
-						))}
-					</div>
-
-					{/* Sliders: Brightness & Contrast */}
-					<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-						<label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-							<span>Яркость:</span>
-							<input
-								type="range"
-								min="20"
-								max="200"
-								value={brightness}
-								onChange={(e) => setBrightness(Number(e.target.value))}
-								style={{ width: "70px", accentColor: "#14b8a6" }}
-							/>
-							<span style={{ fontFamily: "monospace", width: "28px" }}>{brightness}%</span>
-						</label>
-
-						<label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-							<span>Контраст:</span>
-							<input
-								type="range"
-								min="30"
-								max="300"
-								value={contrast}
-								onChange={(e) => setContrast(Number(e.target.value))}
-								style={{ width: "70px", accentColor: "#14b8a6" }}
-							/>
-							<span style={{ fontFamily: "monospace", width: "28px" }}>{contrast}%</span>
-						</label>
-
-						{measurements.length > 0 && (
-							<button
-								type="button"
-								onClick={() => setMeasurements([])}
-								style={{
-									height: "20px",
-									padding: "0 6px",
-									fontSize: "10px",
-									borderRadius: "3px",
-									border: "1px solid #475569",
-									background: "transparent",
-									color: "#94a3b8",
-									cursor: "pointer",
-								}}
-								title="Удалить все нарисованные линейки"
-							>
-								Очистить линейки ({measurements.length})
-							</button>
-						)}
-					</div>
-				</div>
+				<Dental2DRadiologySubToolbar
+					activePresetId={activePresetId}
+					onApplyPreset={handleApplyPreset}
+					brightness={brightness}
+					onChangeBrightness={setBrightness}
+					contrast={contrast}
+					onChangeContrast={setContrast}
+					measurementsCount={measurements.length}
+					onClearMeasurements={() => setMeasurements([])}
+				/>
 			)}
 
 			{/* Main Canvas Viewport Area */}
@@ -918,84 +458,12 @@ export const Dental2DRadiologyViewer: React.FC<Dental2DRadiologyViewerProps> = (
 				)}
 
 				{/* Overlaid Rulers SVG Layer */}
-				<svg
-					style={{
-						position: "absolute",
-						inset: 0,
-						width: "100%",
-						height: "100%",
-						pointerEvents: "none",
-					}}
-				>
-					{/* Saved Measurements */}
-					{measurements.map((m) => {
-						const midX = (m.startX + m.endX) / 2;
-						const midY = (m.startY + m.endY) / 2;
-						return (
-							<g key={m.id}>
-								<line
-									x1={m.startX}
-									y1={m.startY}
-									x2={m.endX}
-									y2={m.endY}
-									stroke="#0d9488"
-									strokeWidth="2.5"
-									strokeLinecap="round"
-								/>
-								<circle cx={m.startX} cy={m.startY} r="4" fill="#14b8a6" />
-								<circle cx={m.endX} cy={m.endY} r="4" fill="#14b8a6" />
-								<rect
-									x={midX - 28}
-									y={midY - 12}
-									width="56"
-									height="18"
-									rx="4"
-									fill="rgba(15, 23, 42, 0.9)"
-									stroke="#14b8a6"
-									strokeWidth="1"
-								/>
-								<text
-									x={midX}
-									y={midY + 2}
-									textAnchor="middle"
-									fill="#5eead4"
-									fontSize="11"
-									fontWeight="bold"
-									fontFamily="monospace"
-								>
-									{m.lengthMm.toFixed(1)} мм
-								</text>
-							</g>
-						);
-					})}
-
-					{/* Active In-Progress Ruler Drawing */}
-					{rulerStart && currentRulerEnd && (
-						<g>
-							<line
-								x1={rulerStart.x}
-								y1={rulerStart.y}
-								x2={currentRulerEnd.x}
-								y2={currentRulerEnd.y}
-								stroke="#f59e0b"
-								strokeWidth="2"
-								strokeDasharray="4 4"
-							/>
-							<circle cx={rulerStart.x} cy={rulerStart.y} r="4" fill="#f59e0b" />
-							<circle cx={currentRulerEnd.x} cy={currentRulerEnd.y} r="4" fill="#f59e0b" />
-							<text
-								x={(rulerStart.x + currentRulerEnd.x) / 2 + 8}
-								y={(rulerStart.y + currentRulerEnd.y) / 2 - 8}
-								fill="#fbbf24"
-								fontSize="11"
-								fontWeight="bold"
-								fontFamily="monospace"
-							>
-								{calculatePhysicalDistanceMm(rulerStart, currentRulerEnd, mmPerPixel).toFixed(1)} мм
-							</text>
-						</g>
-					)}
-				</svg>
+				<Dental2DRadiologyRulerOverlay
+					measurements={measurements}
+					rulerStart={rulerStart}
+					currentRulerEnd={currentRulerEnd}
+					mmPerPixel={mmPerPixel}
+				/>
 
 				{/* Chairside Presentation HUD Overlay: clean, patient-friendly annotations */}
 				{isPresentationMode && (
@@ -1072,3 +540,4 @@ export const Dental2DRadiologyViewer: React.FC<Dental2DRadiologyViewerProps> = (
 		</div>
 	);
 };
+export default Dental2DRadiologyViewer;

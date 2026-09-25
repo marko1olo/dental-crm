@@ -3,28 +3,16 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom";
 import {
 	Camera,
-	CheckCircle2,
-	Download,
-	Eye,
 	FileText,
-	FlipHorizontal,
 	HardDrive,
-	Layers,
-	Maximize2,
-	Minus,
-	Plus,
-	RotateCw,
 	Scan,
 	ShieldCheck,
-	Sparkles,
-	Truck,
 	UploadCloud,
 	X,
 	Zap,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import {
-	ADULT_FDI_TEETH,
 	FDI_TOOTH_NAMES,
 	formatRadiationDose,
 } from "./radiologyMath";
@@ -39,147 +27,26 @@ import {
 	type RvgFilterValues,
 } from "./RvgFiltersToolbar";
 import type { RadiologyStudy } from "./types";
+import {
+	PROJECTION_TYPES,
+	SENSOR_MODELS,
+	type DirectRvgCaptureModalProps,
+	type ProjectionAngleType,
+	type SensorCaptureStatus,
+} from "./directRvgTypes";
+import {
+	getDirectRvgExportFileName,
+	validateRadiologyUploadFile,
+} from "./directRvgFileValidation";
+import { DirectRvgFdiSelector } from "./DirectRvgFdiSelector";
+import { DirectRvgProjectionSelector } from "./DirectRvgProjectionSelector";
+import { DirectRvgViewportToolbar } from "./DirectRvgViewportToolbar";
+import { DirectRvgFooter } from "./DirectRvgFooter";
 import "./rvgCapture.css";
 
-/**
- * Pure validator for local radiology files uploaded by the doctor.
- * Supports Part 10 DICOM (.dcm, .dicom), TIFF (.tif, .tiff), PNG (.png), JPG/JPEG (.jpg, .jpeg), WebP (.webp).
- */
-export function validateRadiologyUploadFile(file: { name: string; type?: string }): {
-	isValid: boolean;
-	format: "dicom" | "tiff" | "image" | "unsupported";
-} {
-	const lowerName = file.name.toLowerCase();
-	const isDicom = lowerName.endsWith(".dcm") || lowerName.endsWith(".dicom");
-	const isTiff = lowerName.endsWith(".tif") || lowerName.endsWith(".tiff");
-	const isImage =
-		lowerName.endsWith(".png") ||
-		lowerName.endsWith(".jpg") ||
-		lowerName.endsWith(".jpeg") ||
-		lowerName.endsWith(".webp") ||
-		(file.type?.startsWith("image/") ?? false);
-
-	if (isDicom) return { isValid: true, format: "dicom" };
-	if (isTiff) return { isValid: true, format: "tiff" };
-	if (isImage) return { isValid: true, format: "image" };
-	return { isValid: false, format: "unsupported" };
-}
-
-/**
- * Computes exact file name and MIME type for export without extension spoofing.
- * Prevents downloading JPEG with .dcm extension when DICOM buffer is unavailable.
- */
-export function getDirectRvgExportFileName(
-	teeth: string[],
-	cardNumber: string,
-	hasDicomBuffer: boolean,
-	imageUrl: string,
-): { filename: string; mimeType: string; isDicom: boolean } {
-	const sanitizedCard = (cardNumber || "043-u").replace(/[/\\?%*:|"<>]/g, "-");
-	const toothTag = teeth.length > 0 ? teeth.join("_") : "16";
-
-	if (hasDicomBuffer) {
-		return {
-			filename: `RVG_Tooth_${toothTag}_${sanitizedCard}.dcm`,
-			mimeType: "application/dicom",
-			isDicom: true,
-		};
-	}
-
-	const isPng = imageUrl.startsWith("data:image/png");
-	const ext = isPng ? "png" : "jpg";
-	const mime = isPng ? "image/png" : "image/jpeg";
-	return {
-		filename: `RVG_Tooth_${toothTag}_${sanitizedCard}.${ext}`,
-		mimeType: mime,
-		isDicom: false,
-	};
-}
-
-export type SensorCaptureStatus = "ready" | "acquiring" | "captured";
-
-export type ProjectionAngleType = "periapical" | "bitewing" | "occlusal";
-
-export interface DirectRvgCaptureModalProps {
-	isOpen: boolean;
-	onClose: () => void;
-	patientId?: string | undefined;
-	patientName?: string | undefined;
-	patientCardNumber?: string | undefined;
-	doctorName?: string | undefined;
-	initialToothFdi?: string | undefined;
-	initialImageUrl?: string | undefined;
-	onSaveToEmr?: ((study: RadiologyStudy) => void) | undefined;
-	onSendToLab?: ((orderData: {
-		study: RadiologyStudy;
-		toothFdi: string;
-		note: string;
-	}) => void) | undefined;
-	onExportDicom?: ((study: RadiologyStudy) => void) | undefined;
-}
-
-export const SENSOR_MODELS = [
-	{
-		id: "vatech_ezsensor_hd",
-		name: "Vatech EzSensor HD",
-		resolution: "29.2 lp/mm (CMOS)",
-		pixelSpacing: 0.035,
-	},
-	{
-		id: "kavo_gxs_700",
-		name: "KaVo Gendex GXS-700",
-		resolution: "25.0 lp/mm (Direct USB)",
-		pixelSpacing: 0.04,
-	},
-	{
-		id: "planmeca_prosensor",
-		name: "Planmeca ProSensor HD",
-		resolution: "33.7 lp/mm (Fiber-Optic)",
-		pixelSpacing: 0.03,
-	},
-	{
-		id: "carestream_rvg_6200",
-		name: "Carestream RVG 6200",
-		resolution: "24.0 lp/mm (True Res)",
-		pixelSpacing: 0.042,
-	},
-	{
-		id: "fona_cdrelite",
-		name: "FONA CDRelite / Schick",
-		resolution: "28.0 lp/mm (Active CMOS)",
-		pixelSpacing: 0.038,
-	},
-] as const;
-
-export const PROJECTION_TYPES: Array<{
-	id: ProjectionAngleType;
-	label: string;
-	shortLabel: string;
-	description: string;
-	typicalExposureSec: number;
-}> = [
-	{
-		id: "periapical",
-		label: "Интраоральный прицельный (Периапикальный)",
-		shortLabel: "Прицельный",
-		description: "Отображение верхушки корня, периодонта и периапикальной кости",
-		typicalExposureSec: 0.08,
-	},
-	{
-		id: "bitewing",
-		label: "Интерпроксимальный (Bite-wing)",
-		shortLabel: "Bite-wing",
-		description: "Коронковые части верхних и нижних зубов для скрытого кариеса",
-		typicalExposureSec: 0.09,
-	},
-	{
-		id: "occlusal",
-		label: "Окклюзионный (Аксиальный)",
-		shortLabel: "Окклюзионный",
-		description: "Поперечный срез альвеолярного отростка и свода челюсти",
-		typicalExposureSec: 0.12,
-	},
-];
+// Transparent re-exports
+export * from "./directRvgTypes";
+export { getDirectRvgExportFileName, validateRadiologyUploadFile } from "./directRvgFileValidation";
 
 export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 	isOpen,
@@ -233,9 +100,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 
 	// Calculated effective dose in µSv
 	const calculatedDoseMicrosv = useMemo(() => {
-		// RVG empirical dose calculation: kV * mA * exposureSec * constant
-		// e.g. 65 * 7 * 0.08 * 0.0825 ≈ 3.0 µSv
-		const dose = (voltageKv * currentMa * exposureSec * 0.0825);
+		const dose = voltageKv * currentMa * exposureSec * 0.0825;
 		return Number(dose.toFixed(1));
 	}, [voltageKv, currentMa, exposureSec]);
 
@@ -755,67 +620,16 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 					{/* LEFT: CANVASES & VIEWPORT */}
 					<div className="rvg-viewport-pane" data-testid="rvg-viewport-pane">
 						{/* Top Float Toolbar */}
-						<div className="rvg-viewport-top-toolbar">
-							<div className="rvg-toolbar-glass-cluster">
-								<button
-									type="button"
-									onClick={() => setZoom((prev) => Math.min(prev + 0.25, 4.0))}
-									className="rvg-tool-btn"
-									title="Увеличить (+)"
-									data-testid="rvg-zoom-in-btn"
-								>
-									<Plus className="w-4 h-4" />
-								</button>
-								<button
-									type="button"
-									onClick={() => setZoom((prev) => Math.max(prev - 0.25, 0.5))}
-									className="rvg-tool-btn"
-									title="Уменьшить (-)"
-									data-testid="rvg-zoom-out-btn"
-								>
-									<Minus className="w-4 h-4" />
-								</button>
-								<span className="text-[11px] font-mono font-bold text-slate-300 px-1">
-									{Math.round(zoom * 100)}%
-								</span>
-								<div className="w-[1px] h-4 bg-slate-700 mx-0.5" />
-								<button
-									type="button"
-									onClick={() => setRotation((prev) => (prev + 90) % 360)}
-									className="rvg-tool-btn"
-									title="Повернуть на 90° (R)"
-									data-testid="rvg-rotate-btn"
-								>
-									<RotateCw className="w-4 h-4" />
-								</button>
-								<button
-									type="button"
-									onClick={() => setFlipH((prev) => !prev)}
-									className={`rvg-tool-btn ${flipH ? "active" : ""}`}
-									title="Отразить по горизонтали"
-									data-testid="rvg-flip-btn"
-								>
-									<FlipHorizontal className="w-4 h-4" />
-								</button>
-								<button
-									type="button"
-									onClick={handleResetTransform}
-									className="rvg-tool-btn"
-									title="Сбросить масштаб и положение (0)"
-									data-testid="rvg-reset-transform-btn"
-								>
-									<Maximize2 className="w-4 h-4" />
-								</button>
-							</div>
-
-							{/* Split compare indicator */}
-							{isSplitCompare && (
-								<div className="rvg-toolbar-glass-cluster text-xs font-semibold text-cyan-300">
-									<Eye className="w-3.5 h-3.5" />
-									<span>Режим сравнения (Оригинал / Фильтр)</span>
-								</div>
-							)}
-						</div>
+						<DirectRvgViewportToolbar
+							zoom={zoom}
+							flipH={flipH}
+							isSplitCompare={isSplitCompare}
+							onZoomIn={() => setZoom((prev) => Math.min(prev + 0.25, 4.0))}
+							onZoomOut={() => setZoom((prev) => Math.max(prev - 0.25, 0.5))}
+							onRotate={() => setRotation((prev) => (prev + 90) % 360)}
+							onToggleFlipH={() => setFlipH((prev) => !prev)}
+							onResetTransform={handleResetTransform}
+						/>
 
 						{/* Acquiring Animation Overlay (for external streaming / hardware transfer) */}
 						{sensorStatus === "acquiring" && (
@@ -879,175 +693,27 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 					{/* RIGHT: CLINICAL CONTROL DOCK */}
 					<div className="rvg-controls-dock" data-testid="rvg-controls-dock">
 						{/* 1. FDI Tooth Selector Matrix */}
-						<div className="rvg-dock-section">
-							<div className="rvg-section-header">
-								<span className="rvg-section-header-title">
-									<Sparkles className="w-3.5 h-3.5" />
-									Зубная формула (FDI 11–48)
-								</span>
-								<span className="font-mono text-teal-400 font-bold">
-									{selectedTeeth.join(", ")}
-								</span>
-							</div>
-
-							<div className="rvg-fdi-selector-panel" data-testid="rvg-fdi-selector-panel">
-								{/* Upper Jaw: Quadrant 1 (18-11) | Quadrant 2 (21-28) */}
-								<div className="rvg-fdi-jaw-row">
-									<div className="rvg-fdi-quadrant">
-										{ADULT_FDI_TEETH.quadrant1.map((tooth) => (
-											<button
-												key={tooth}
-												type="button"
-												onClick={() => handleToothToggle(tooth)}
-												className={`rvg-tooth-btn ${selectedTeeth.includes(tooth) ? "selected" : ""}`}
-												title={FDI_TOOTH_NAMES[tooth]}
-												data-testid={`rvg-tooth-${tooth}`}
-											>
-												{tooth}
-											</button>
-										))}
-									</div>
-									<div className="rvg-fdi-quadrant">
-										{ADULT_FDI_TEETH.quadrant2.map((tooth) => (
-											<button
-												key={tooth}
-												type="button"
-												onClick={() => handleToothToggle(tooth)}
-												className={`rvg-tooth-btn ${selectedTeeth.includes(tooth) ? "selected" : ""}`}
-												title={FDI_TOOTH_NAMES[tooth]}
-												data-testid={`rvg-tooth-${tooth}`}
-											>
-												{tooth}
-											</button>
-										))}
-									</div>
-								</div>
-
-								{/* Lower Jaw: Quadrant 4 (48-41) | Quadrant 3 (31-38) */}
-								<div className="rvg-fdi-jaw-row">
-									<div className="rvg-fdi-quadrant">
-										{ADULT_FDI_TEETH.quadrant4.map((tooth) => (
-											<button
-												key={tooth}
-												type="button"
-												onClick={() => handleToothToggle(tooth)}
-												className={`rvg-tooth-btn ${selectedTeeth.includes(tooth) ? "selected" : ""}`}
-												title={FDI_TOOTH_NAMES[tooth]}
-												data-testid={`rvg-tooth-${tooth}`}
-											>
-												{tooth}
-											</button>
-										))}
-									</div>
-									<div className="rvg-fdi-quadrant">
-										{ADULT_FDI_TEETH.quadrant3.map((tooth) => (
-											<button
-												key={tooth}
-												type="button"
-												onClick={() => handleToothToggle(tooth)}
-												className={`rvg-tooth-btn ${selectedTeeth.includes(tooth) ? "selected" : ""}`}
-												title={FDI_TOOTH_NAMES[tooth]}
-												data-testid={`rvg-tooth-${tooth}`}
-											>
-												{tooth}
-											</button>
-										))}
-									</div>
-								</div>
-
-								{/* Selected Tooth Description */}
-								<div className="rvg-selected-tooth-badge min-w-0">
-									<span className="truncate">{primaryToothName}</span>
-									<span className="font-mono text-[11px] opacity-80 shrink-0">
-										FDI #{primaryTooth}
-									</span>
-								</div>
-							</div>
-						</div>
+						<DirectRvgFdiSelector
+							selectedTeeth={selectedTeeth}
+							onToothToggle={handleToothToggle}
+							primaryTooth={primaryTooth}
+							primaryToothName={primaryToothName}
+						/>
 
 						{/* 2. Projection Angle & Exposure */}
-						<div className="rvg-dock-section">
-							<div className="rvg-section-header">
-								<span className="rvg-section-header-title">
-									<Layers className="w-3.5 h-3.5" />
-									Угол проекции и экспозиция
-								</span>
-							</div>
-
-							<div className="rvg-projection-chips" data-testid="rvg-projection-chips">
-								{PROJECTION_TYPES.map((proj) => {
-									const isActive = projectionType === proj.id;
-									return (
-										<button
-											key={proj.id}
-											type="button"
-											onClick={() => {
-												setProjectionType(proj.id);
-												setExposureSec(proj.typicalExposureSec);
-											}}
-											className={`rvg-projection-btn ${isActive ? "active" : ""}`}
-											data-testid={`rvg-projection-${proj.id}`}
-										>
-											<div className="flex flex-col min-w-0 flex-1 text-left">
-												<span className="text-xs font-bold text-slate-100 truncate">
-													{proj.label}
-												</span>
-												<span className="text-[11px] text-slate-400 font-normal truncate">
-													{proj.description}
-												</span>
-											</div>
-											<span className="text-[11px] font-mono text-teal-400 shrink-0 ml-2">
-												{proj.typicalExposureSec} с
-											</span>
-										</button>
-									);
-								})}
-							</div>
-
-							{/* Tube Voltage & Current Fine Steppers */}
-							<div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-700/60">
-								<div>
-									<span className="text-[11px] text-slate-400 block mb-1">Напряжение</span>
-									<select
-										value={voltageKv}
-										onChange={(e) => setVoltageKv(Number(e.target.value))}
-										className="w-full h-8 px-2 rounded-lg bg-slate-800 text-xs text-slate-200 border border-slate-700 outline-none font-mono"
-										data-testid="rvg-voltage-select"
-									>
-										<option value={60}>60 кВ</option>
-										<option value={65}>65 кВ</option>
-										<option value={70}>70 кВ</option>
-									</select>
-								</div>
-								<div>
-									<span className="text-[11px] text-slate-400 block mb-1">Ток трубки</span>
-									<select
-										value={currentMa}
-										onChange={(e) => setCurrentMa(Number(e.target.value))}
-										className="w-full h-8 px-2 rounded-lg bg-slate-800 text-xs text-slate-200 border border-slate-700 outline-none font-mono"
-										data-testid="rvg-current-select"
-									>
-										<option value={6.0}>6.0 мА</option>
-										<option value={7.0}>7.0 мА</option>
-										<option value={8.0}>8.0 мА</option>
-									</select>
-								</div>
-								<div>
-									<span className="text-[11px] text-slate-400 block mb-1">Экспозиция</span>
-									<select
-										value={exposureSec}
-										onChange={(e) => setExposureSec(Number(e.target.value))}
-										className="w-full h-8 px-2 rounded-lg bg-slate-800 text-xs text-slate-200 border border-slate-700 outline-none font-mono"
-										data-testid="rvg-exposure-select"
-									>
-										<option value={0.06}>0.06 с</option>
-										<option value={0.08}>0.08 с</option>
-										<option value={0.10}>0.10 с</option>
-										<option value={0.12}>0.12 с</option>
-									</select>
-								</div>
-							</div>
-						</div>
+						<DirectRvgProjectionSelector
+							projectionType={projectionType}
+							onSelectProjectionType={(projId, typicalExp) => {
+								setProjectionType(projId);
+								setExposureSec(typicalExp);
+							}}
+							voltageKv={voltageKv}
+							onChangeVoltageKv={setVoltageKv}
+							currentMa={currentMa}
+							onChangeCurrentMa={setCurrentMa}
+							exposureSec={exposureSec}
+							onChangeExposureSec={setExposureSec}
+						/>
 
 						{/* 3. Real-Time Filters Toolbar */}
 						<div className="rvg-dock-section">
@@ -1087,56 +753,14 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 				</div>
 
 				{/* ─── MODAL FOOTER WITH 1-CLICK WORKFLOWS ─── */}
-				<div className="rvg-capture-footer">
-					<div className="rvg-footer-left-info">
-						<span className="font-mono">
-							Стандарт СанПиН 2.6.1.1192-03 · FDI #{selectedTeeth.join(", ")} · {calculatedDoseMicrosv} мкЗв
-						</span>
-					</div>
-
-					<div className="rvg-footer-actions-group">
-						{/* Action 1: Export DICOM */}
-						<button
-							type="button"
-							onClick={handleExportDicom}
-							className="rvg-action-btn-secondary"
-							title="Экспортировать снимок в DICOM 3.0 / TIFF высокой четкости"
-							data-testid="rvg-export-dicom-btn"
-						>
-							<Download className="w-4 h-4 text-teal-400" />
-							<span>Экспорт DICOM</span>
-						</button>
-
-						{/* Action 2: Send to Dental Lab */}
-						<button
-							type="button"
-							onClick={handleSendToLab}
-							className="rvg-action-btn-secondary"
-							title="Прикрепить снимок к текущему заказу зуботехнической лаборатории"
-							data-testid="rvg-send-lab-btn"
-						>
-							<Truck className="w-4 h-4 text-teal-400" />
-							<span>Отправить в ЗТЛ</span>
-						</button>
-
-						{/* Action 3: Save to EMR 043/u (Primary) */}
-						<button
-							type="button"
-							onClick={handleSaveToEmr}
-							disabled={isSaving}
-							className="rvg-action-btn-primary"
-							title={
-								isSaving
-									? "Сохранение снимка и протокола исследования в карту 043/у..."
-									: "Сохранить исследование в медицинскую карту пациента 043/у"
-							}
-							data-testid="rvg-save-emr-btn"
-						>
-							<CheckCircle2 className="w-4 h-4" />
-							<span>{isSaving ? "Сохранение..." : "Сохранить в карту 043/у"}</span>
-						</button>
-					</div>
-				</div>
+				<DirectRvgFooter
+					selectedTeeth={selectedTeeth}
+					calculatedDoseMicrosv={calculatedDoseMicrosv}
+					isSaving={isSaving}
+					onExportDicom={handleExportDicom}
+					onSendToLab={handleSendToLab}
+					onSaveToEmr={handleSaveToEmr}
+				/>
 			</div>
 		</div>
 	);

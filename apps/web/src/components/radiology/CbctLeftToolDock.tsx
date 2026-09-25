@@ -14,14 +14,12 @@
 
 import {
 	Activity,
-	Check,
 	CircleDot,
 	Compass,
 	Contrast,
 	Crosshair,
 	Eye,
 	EyeOff,
-	FileArchive,
 	FolderOpen,
 	Hand,
 	Layers,
@@ -31,16 +29,14 @@ import {
 	Sliders,
 	Spline,
 	SunMoon,
-	X,
 	Zap,
 	ZoomIn,
 } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
-	CBCT_HOUNSFIELD_PRESETS,
-	type HounsfieldPreset,
-	type SlabProjectionMode,
-} from "./cbctMprMath";
+import type { SlabProjectionMode } from "./cbctMprMath";
+import { CbctSlabFlyout } from "./CbctSlabFlyout";
+import { CbctHuFlyout } from "./CbctHuFlyout";
+import { CbctDicomFlyout } from "./CbctDicomFlyout";
 
 /** Active Cursor / Mouse Tool Modes */
 export type CbctToolMode =
@@ -603,130 +599,13 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 
 					{/* Flyout Popover for Slab Thickness & Projection Mode */}
 					{openMenu === "slab" && (
-						<div
-							role="dialog"
-							aria-label="Настройки толщины среза и проекции MIP"
-							data-testid="cbct-slab-flyout"
-							className="absolute left-full ml-2 top-0 max-sm:top-auto max-sm:bottom-0 z-50 w-64 bg-[var(--paper-strong,#09090b)] border border-[var(--line,#27272a)] shadow-2xl rounded-xl p-3 text-[var(--ink,#f4f4f5)] max-sm:max-h-[calc(100vh-120px)] max-sm:overflow-y-auto"
-						>
-							<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#27272a)] mb-2.5">
-								<div className="flex items-center gap-1.5">
-									<Layers className="w-4 h-4 text-cyan-400" />
-									<span className="text-xs font-bold text-[var(--ink,#f4f4f5)]">
-										Толщина среза & MIP
-									</span>
-								</div>
-								<button
-									type="button"
-									onClick={() => setOpenMenu("none")}
-									className="w-7 h-7 min-w-[28px] min-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center rounded-md text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] transition-colors cursor-pointer"
-									aria-label="Закрыть меню"
-								>
-									<X className="w-4 h-4" />
-								</button>
-							</div>
-
-							{/* Projection Modes */}
-							<div className="space-y-1.5 mb-3">
-								<span className="text-[10px] text-[var(--muted,#a1a1aa)] uppercase font-mono tracking-wider font-semibold">
-									Режим проекции
-								</span>
-								<div className="grid grid-cols-2 gap-1">
-									<button
-										type="button"
-										onClick={() => handleSlabModeSelect("single")}
-										className={`px-2 py-1.5 [@media(pointer:coarse)]:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
-											normalizedSlabMode === "single"
-												? "bg-[var(--paper-soft,#18181b)] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 font-bold"
-												: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)]"
-										}`}
-										data-testid="cbct-slab-mode-single"
-									>
-										Срез 1 мм
-									</button>
-									<button
-										type="button"
-										onClick={() => handleSlabModeSelect("mip")}
-										className={`px-2 py-1.5 [@media(pointer:coarse)]:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
-											normalizedSlabMode === "mip"
-												? "bg-[var(--paper-soft,#18181b)] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 font-bold"
-												: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)]"
-										}`}
-										data-testid="cbct-slab-mode-mip"
-									>
-										Slab MIP
-									</button>
-									<button
-										type="button"
-										onClick={() => handleSlabModeSelect("average")}
-										className={`px-2 py-1.5 [@media(pointer:coarse)]:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
-											normalizedSlabMode === "average"
-												? "bg-[var(--paper-soft,#18181b)] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 font-bold"
-												: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)]"
-										}`}
-										data-testid="cbct-slab-mode-average"
-									>
-										Avg IP
-									</button>
-									<button
-										type="button"
-										onClick={() => handleSlabModeSelect("minip")}
-										className={`px-2 py-1.5 [@media(pointer:coarse)]:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
-											normalizedSlabMode === "minip"
-												? "bg-[var(--paper-soft,#18181b)] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 font-bold"
-												: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)]"
-										}`}
-										data-testid="cbct-slab-mode-minip"
-									>
-										Min IP
-									</button>
-								</div>
-							</div>
-
-							{/* Slab Thickness Presets & Continuous Range Slider */}
-							<div className="space-y-2">
-								<div className="flex items-center justify-between text-xs">
-									<span className="text-[10px] text-[var(--muted,#a1a1aa)] uppercase font-mono tracking-wider font-semibold">
-										Толщина сляба
-									</span>
-									<span className="font-mono text-cyan-300 font-bold text-xs bg-[var(--paper-soft,#18181b)] px-1.5 py-0.5 rounded border border-[var(--line,#27272a)]">
-										{slabThicknessMm.toFixed(1)} мм
-									</span>
-								</div>
-
-								{/* Quick millimeter presets */}
-								<div className="flex items-center gap-1 overflow-x-auto pb-1">
-									{[1, 2, 3, 5, 10, 15, 30].map((t) => (
-										<button
-											key={t}
-											type="button"
-											onClick={() => onChangeSlabThicknessMm?.(t)}
-											data-testid={t === 15 ? "cbct-tool-slab-15mm" : `cbct-slab-thickness-${t}`}
-											className={`px-2 py-0.5 [@media(pointer:coarse)]:py-1 rounded text-[11px] font-mono transition-colors shrink-0 ${
-												Math.abs(slabThicknessMm - t) < 0.2
-													? "bg-[var(--paper-soft,#18181b)] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 font-bold"
-													: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)]"
-											}`}
-										>
-											<span data-testid={`cbct-slab-thickness-${t}`}>{t}мм</span>
-										</button>
-									))}
-								</div>
-
-								<input
-									type="range"
-									min={1.0}
-									max={30.0}
-									step={0.5}
-									value={slabThicknessMm}
-									onChange={(e) =>
-										onChangeSlabThicknessMm?.(Number.parseFloat(e.target.value))
-									}
-									className="w-full accent-cyan-400 min-h-[32px] cursor-pointer bg-transparent"
-									data-testid="cbct-slab-thickness-slider"
-								/>
-							</div>
-						</div>
+						<CbctSlabFlyout
+							normalizedSlabMode={normalizedSlabMode}
+							slabThicknessMm={slabThicknessMm}
+							onSelectSlabMode={handleSlabModeSelect}
+							onChangeSlabThicknessMm={onChangeSlabThicknessMm}
+							onClose={() => setOpenMenu("none")}
+						/>
 					)}
 				</div>
 
@@ -753,60 +632,11 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 
 					{/* Flyout Popover for HU Window/Level Presets */}
 					{openMenu === "hu" && (
-						<div
-							role="dialog"
-							aria-label="Клинические пресеты плотности HU"
-							data-testid="cbct-hu-flyout"
-							className="absolute left-full ml-2 top-0 max-sm:top-auto max-sm:bottom-0 z-50 w-72 bg-[var(--paper-strong,#09090b)] border border-[var(--line,#27272a)] shadow-2xl rounded-xl p-3 text-[var(--ink,#f4f4f5)] max-sm:max-h-[calc(100vh-120px)] max-sm:overflow-y-auto"
-						>
-							<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#27272a)] mb-2">
-								<div className="flex items-center gap-1.5">
-									<Sliders className="w-4 h-4 text-cyan-400" />
-									<span className="text-xs font-bold text-[var(--ink,#f4f4f5)]">
-										Пресеты контраста (HU)
-									</span>
-								</div>
-								<button
-									type="button"
-									onClick={() => setOpenMenu("none")}
-									className="w-7 h-7 min-w-[28px] min-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center rounded-md text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] transition-colors cursor-pointer"
-									aria-label="Закрыть меню"
-								>
-									<X className="w-4 h-4" />
-								</button>
-							</div>
-
-							<div className="space-y-1">
-								{CBCT_HOUNSFIELD_PRESETS.map((p: HounsfieldPreset) => {
-									const isActive = activePresetId === p.id;
-									return (
-										<button
-											key={p.id}
-											type="button"
-											onClick={() => handlePresetSelect(p.id)}
-											className={`w-full px-2.5 py-1.5 [@media(pointer:coarse)]:py-2 rounded-lg text-left transition-colors flex items-center justify-between gap-2 border ${
-												isActive
-													? "bg-[var(--paper-soft,#18181b)] text-cyan-300 border-cyan-500/60 shadow-xs"
-													: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border-[var(--line,#27272a)]"
-											}`}
-											data-testid={`cbct-hu-preset-option-${p.id}`}
-										>
-											<div className="flex flex-col min-w-0">
-												<span className="text-xs font-semibold truncate text-[var(--ink,#f4f4f5)]">
-													{p.label}
-												</span>
-												<span className="text-[10px] text-[var(--muted,#a1a1aa)] font-mono truncate">
-													W: {p.windowWidth} / L: {p.windowLevel}
-												</span>
-											</div>
-											{isActive && (
-												<Check className="w-4 h-4 text-cyan-400 shrink-0" />
-											)}
-										</button>
-									);
-								})}
-							</div>
-						</div>
+						<CbctHuFlyout
+							activePresetId={activePresetId}
+							onSelectPreset={handlePresetSelect}
+							onClose={() => setOpenMenu("none")}
+						/>
 					)}
 				</div>
 			</div>
@@ -846,32 +676,34 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 				)}
 
 				{/* 11. Invert LUT (Negative/Positive toggle) */}
-				<div className="relative group flex items-center justify-center">
-					<button
-						type="button"
-						onClick={onToggleInvertColors}
-						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
-							invertColors
-								? "bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-xs shadow-amber-950/40"
-								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-white hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-cyan-500/40"
-						}`}
-						title="Инвертировать цвета (Негатив/Позитив) [I]"
-						aria-label="Инвертировать цвета"
-						data-testid="cbct-tool-invert-lut"
-					>
-						<SunMoon className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
-					</button>
-					<div
-						role="tooltip"
-						className="pointer-events-none absolute left-full ml-2 bottom-10 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
-					>
-						<span className="font-semibold">Инверсия LUT</span>
-						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">{invertColors ? "Негатив активен" : "Позитив (Romexis)"}</span>
-						<kbd className="text-[10px] bg-[var(--paper-soft,#18181b)] text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
-							I
-						</kbd>
+				{onToggleInvertColors && (
+					<div className="relative group flex items-center justify-center">
+						<button
+							type="button"
+							onClick={onToggleInvertColors}
+							className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
+								invertColors
+									? "bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-xs shadow-amber-950/40"
+									: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-white hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)] hover:border-cyan-500/40"
+							}`}
+							title="Инвертировать цвета (Негатив/Позитив) [I]"
+							aria-label="Инвертировать цвета"
+							data-testid="cbct-tool-invert-lut"
+						>
+							<SunMoon className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
+						</button>
+						<div
+							role="tooltip"
+							className="pointer-events-none absolute left-full ml-2 bottom-10 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
+						>
+							<span className="font-semibold">Инверсия LUT</span>
+							<span className="text-[var(--muted,#a1a1aa)] text-[11px]">{invertColors ? "Негатив активен" : "Позитив (Romexis)"}</span>
+							<kbd className="text-[10px] bg-[var(--paper-soft,#18181b)] text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
+								I
+							</kbd>
+						</div>
 					</div>
-				</div>
+				)}
 			</div>
 
 			{/* ─── DIVIDER ─────────────────────────────────────────────────── */}
@@ -900,7 +732,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					</div>
 				</div>
 
-				{/* 12. Load Real CBCT / DICOM */}
+				{/* 13. Load Real CBCT / DICOM */}
 				<div className="relative flex items-center justify-center">
 					<button
 						type="button"
@@ -920,59 +752,11 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 
 					{/* DICOM Ingestion Flyout Menu */}
 					{openMenu === "dicom" && (
-						<div
-							role="dialog"
-							aria-label="Загрузка файлов DICOM"
-							data-testid="cbct-dicom-flyout"
-							className="absolute left-full ml-2 bottom-0 z-50 w-60 bg-[var(--paper-strong,#09090b)] border border-[var(--line,#27272a)] shadow-2xl rounded-xl p-3 text-[var(--ink,#f4f4f5)] max-sm:max-h-[calc(100vh-120px)] max-sm:overflow-y-auto"
-						>
-							<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#27272a)] mb-2">
-								<span className="text-xs font-bold text-[var(--ink,#f4f4f5)] flex items-center gap-1.5">
-									<FolderOpen className="w-4 h-4 text-cyan-400" />
-									Загрузить КТ / DICOM
-								</span>
-								<button
-									type="button"
-									onClick={() => setOpenMenu("none")}
-									className="w-7 h-7 min-w-[28px] min-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center rounded-md text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] transition-colors cursor-pointer"
-									aria-label="Закрыть меню"
-								>
-									<X className="w-4 h-4" />
-								</button>
-							</div>
-
-							<div className="space-y-1.5">
-								<button
-									type="button"
-									onClick={handleFolderUploadClick}
-									className="w-full px-3 py-2 [@media(pointer:coarse)]:py-2.5 rounded-lg bg-[var(--paper-strong,#09090b)] hover:bg-[var(--paper-soft,#18181b)] text-[var(--ink,#f4f4f5)] border border-[var(--line,#27272a)] text-xs font-semibold flex items-center gap-2.5 transition-colors shadow-xs cursor-pointer"
-									data-testid="cbct-dicom-folder-opt"
-								>
-									<FolderOpen className="w-4 h-4 text-cyan-400 shrink-0" />
-									<div className="flex flex-col text-left min-w-0">
-										<span className="font-bold truncate text-[var(--ink,#f4f4f5)]">Папка DICOM</span>
-										<span className="text-[10px] text-[var(--muted,#a1a1aa)] truncate">
-											Серия срезов .dcm
-										</span>
-									</div>
-								</button>
-
-								<button
-									type="button"
-									onClick={handleZipUploadClick}
-									className="w-full px-3 py-2 [@media(pointer:coarse)]:py-2.5 rounded-lg bg-[var(--paper-strong,#09090b)] hover:bg-[var(--paper-soft,#18181b)] text-[var(--ink,#f4f4f5)] border border-[var(--line,#27272a)] text-xs font-semibold flex items-center gap-2.5 transition-colors shadow-xs cursor-pointer"
-									data-testid="cbct-dicom-zip-opt"
-								>
-									<FileArchive className="w-4 h-4 text-amber-400 shrink-0" />
-									<div className="flex flex-col text-left min-w-0">
-										<span className="font-bold truncate text-[var(--ink,#f4f4f5)]">ZIP-архив КТ</span>
-										<span className="text-[10px] text-[var(--muted,#a1a1aa)] truncate">
-											Архив исследования .zip
-										</span>
-									</div>
-								</button>
-							</div>
-						</div>
+						<CbctDicomFlyout
+							onFolderUploadClick={handleFolderUploadClick}
+							onZipUploadClick={handleZipUploadClick}
+							onClose={() => setOpenMenu("none")}
+						/>
 					)}
 				</div>
 			</div>
