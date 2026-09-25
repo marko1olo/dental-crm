@@ -37,18 +37,18 @@ export const DentalToothFdiSelector: React.FC<DentalToothFdiSelectorProps> = ({
 					fontWeight: isSelected ? 800 : 600,
 					borderRadius: "5px",
 					border: isSelected
-						? "1.5px solid #14b8a6"
-						: "1px solid var(--line, #334155)",
+						? "1.5px solid var(--primary, #0d9488)"
+						: "1px solid var(--line)",
 					backgroundColor: isSelected
-						? "#0f766e"
-						: "var(--paper, #1e293b)",
-					color: isSelected ? "#ffffff" : "var(--ink, #cbd5e1)",
+						? "var(--primary-hover, #0f766e)"
+						: "var(--paper)",
+					color: isSelected ? "var(--paper-contrast, #ffffff)" : "var(--ink)",
 					cursor: "pointer",
 					transition: "all 0.12s ease",
 					display: "inline-flex",
 					alignItems: "center",
 					justifyContent: "center",
-					boxShadow: isSelected ? "0 0 8px rgba(20, 184, 166, 0.4)" : "none",
+					boxShadow: isSelected ? "0 0 8px var(--shadow-primary, rgba(13, 148, 136, 0.35))" : "none",
 				}}
 			>
 				{code}
@@ -62,8 +62,8 @@ export const DentalToothFdiSelector: React.FC<DentalToothFdiSelectorProps> = ({
 				display: "flex",
 				flexDirection: "column",
 				gap: "6px",
-				backgroundColor: "var(--paper-strong, #0f172a)",
-				border: "1px solid var(--line, #334155)",
+				backgroundColor: "var(--paper-strong)",
+				border: "1px solid var(--line)",
 				borderRadius: "8px",
 				padding: "8px 10px",
 				userSelect: "none",
@@ -76,12 +76,12 @@ export const DentalToothFdiSelector: React.FC<DentalToothFdiSelectorProps> = ({
 					alignItems: "center",
 					justifyContent: "space-between",
 					fontSize: "11px",
-					color: "var(--muted, #94a3b8)",
+					color: "var(--muted)",
 					gap: "8px",
 				}}
 			>
 				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-					<span style={{ fontWeight: 700, color: "var(--ink, #f8fafc)" }}>
+					<span style={{ fontWeight: 700, color: "var(--ink)" }}>
 						ФОРМУЛА FDI (11..48):
 					</span>
 					{selectedToothFdi ? (
@@ -89,8 +89,8 @@ export const DentalToothFdiSelector: React.FC<DentalToothFdiSelectorProps> = ({
 							style={{
 								padding: "1px 6px",
 								borderRadius: "4px",
-								backgroundColor: "#0d9488",
-								color: "#ffffff",
+								backgroundColor: "var(--primary, #0d9488)",
+								color: "var(--paper-contrast, #ffffff)",
 								fontWeight: 700,
 								fontFamily: "monospace",
 								fontSize: "11px",
@@ -99,7 +99,7 @@ export const DentalToothFdiSelector: React.FC<DentalToothFdiSelectorProps> = ({
 							Зуб #{selectedToothFdi}
 						</span>
 					) : (
-						<span style={{ color: "var(--muted, #64748b)" }}>
+						<span style={{ color: "var(--muted)" }}>
 							(снимок не привязан)
 						</span>
 					)}
@@ -115,9 +115,9 @@ export const DentalToothFdiSelector: React.FC<DentalToothFdiSelectorProps> = ({
 							fontSize: "10px",
 							fontWeight: 700,
 							borderRadius: "4px",
-							border: selectedToothFdi === "OPG" ? "1px solid #14b8a6" : "1px solid #334155",
-							backgroundColor: selectedToothFdi === "OPG" ? "#134e4a" : "#1e293b",
-							color: selectedToothFdi === "OPG" ? "#5eead4" : "#94a3b8",
+							border: selectedToothFdi === "OPG" ? "1px solid var(--primary, #0d9488)" : "1px solid var(--line)",
+							backgroundColor: selectedToothFdi === "OPG" ? "var(--teal-surface, var(--paper-soft))" : "var(--paper)",
+							color: selectedToothFdi === "OPG" ? "var(--primary, #0d9488)" : "var(--muted)",
 							cursor: "pointer",
 						}}
 						title="Привязать снимок ко всей челюсти (ОПТГ)"
@@ -133,9 +133,9 @@ export const DentalToothFdiSelector: React.FC<DentalToothFdiSelectorProps> = ({
 								padding: "0 6px",
 								fontSize: "10px",
 								borderRadius: "4px",
-								border: "1px solid #334155",
+								border: "1px solid var(--line)",
 								background: "transparent",
-								color: "#94a3b8",
+								color: "var(--muted)",
 								cursor: "pointer",
 							}}
 							title="Сбросить привязку зуба"
@@ -155,7 +155,7 @@ export const DentalToothFdiSelector: React.FC<DentalToothFdiSelectorProps> = ({
 				<div
 					style={{
 						width: "1px",
-						backgroundColor: "var(--line, #334155)",
+						backgroundColor: "var(--line)",
 						margin: "0 2px",
 					}}
 				/>
@@ -174,7 +174,7 @@ export const DentalToothFdiSelector: React.FC<DentalToothFdiSelectorProps> = ({
 				<div
 					style={{
 						width: "1px",
-						backgroundColor: "var(--line, #334155)",
+						backgroundColor: "var(--line)",
 						margin: "0 2px",
 					}}
 				/>

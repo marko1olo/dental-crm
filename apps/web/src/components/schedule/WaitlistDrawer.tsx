@@ -19,7 +19,7 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import type { PanelSubject } from "../../lib/panelStateText";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
@@ -124,7 +124,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
     auth: propAuth,
   } = props;
 
-  const ctx = useAppLogicContext();
+  const ctx = useOptionalAppLogicContext();
   const dashboard = propDashboard || ctx?.dashboard;
   const auth = propAuth || ctx?.auth;
 

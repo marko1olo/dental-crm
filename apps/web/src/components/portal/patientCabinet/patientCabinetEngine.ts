@@ -22,7 +22,7 @@ import {
 	type DentalHealthIndexResult,
 	type PatientToothInfo,
 	DEFAULT_PATIENT_TEETH,
-} from "../../patient-portal/PatientFriendlyOdontogram.js";
+} from "../PatientFriendlyOdontogram.js";
 
 export {
 	calculateDentalHealthIndex,

@@ -426,86 +426,11 @@ export function applyQuickCheckoutPreset(params: {
 	}
 }
 
-export type FastCheckoutDiscountPreset =
-	| "none"
-	| "round_hundreds"
-	| "discount_3"
-	| "discount_5"
-	| "discount_10"
-	| "warranty_100"
-	| "colleague_100"
-	| "manual_percent";
-
-export interface FastCheckoutDiscountResult {
-	readonly grossKop: number;
-	readonly discountKop: number;
-	readonly netKop: number;
-	readonly discountRub: number;
-	readonly netRub: number;
-	readonly savingsText: string;
-	readonly effectivePercent: number;
-}
-
-/**
- * Calculates doctor discounts and 100% warranty rework with exact integer kopecks (Mandate 8e: Doctor Autonomy).
- * - round_hundreds: rounds bill down to hundreds of rubles in favor of the patient
- * - warranty_100: 100% warranty rework discount (due 0 ₽) without admin passwords
- * - colleague_100: 100% staff / doctor treatment (due 0 ₽)
- */
-export function calculateFastCheckoutDiscount(params: {
-	readonly grossKop: number;
-	readonly preset: FastCheckoutDiscountPreset;
-	readonly customPercent?: number | undefined;
-}): FastCheckoutDiscountResult {
-	const gross = Math.max(0, params.grossKop);
-	if (gross === 0 || params.preset === "none") {
-		return {
-			grossKop: gross,
-			discountKop: 0,
-			netKop: gross,
-			discountRub: 0,
-			netRub: gross / 100,
-			savingsText: "0.00 ₽",
-			effectivePercent: 0,
-		};
-	}
-
-	let discountKop = 0;
-	if (params.preset === "round_hundreds") {
-		if (gross >= 10000) {
-			const roundedKop = Math.floor(gross / 10000) * 10000;
-			discountKop = gross - roundedKop;
-		} else {
-			const roundedKop = Math.floor(gross / 100) * 100;
-			discountKop = gross - roundedKop;
-		}
-	} else if (params.preset === "discount_3") {
-		discountKop = Math.round((gross * 3) / 100);
-	} else if (params.preset === "discount_5") {
-		discountKop = Math.round((gross * 5) / 100);
-	} else if (params.preset === "discount_10") {
-		discountKop = Math.round((gross * 10) / 100);
-	} else if (params.preset === "warranty_100" || params.preset === "colleague_100") {
-		discountKop = gross;
-	} else if (params.preset === "manual_percent") {
-		const pct = Math.max(0, Math.min(100, params.customPercent ?? 0));
-		discountKop = Math.round((gross * pct) / 100);
-	}
-
-	discountKop = Math.max(0, Math.min(gross, discountKop));
-	const netKop = gross - discountKop;
-	const effectivePercent = gross > 0 ? Math.round((discountKop / gross) * 100) : 0;
-
-	return {
-		grossKop: gross,
-		discountKop,
-		netKop,
-		discountRub: discountKop / 100,
-		netRub: netKop / 100,
-		savingsText: `${(discountKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽`,
-		effectivePercent,
-	};
-}
+export {
+	calculateFastCheckoutDiscount,
+	type FastCheckoutDiscountPreset,
+	type FastCheckoutDiscountResult,
+} from "../../finance/cashboxOperations.js";
 
 export interface FastCheckoutValidationResult {
 	readonly isValid: boolean;
@@ -827,39 +752,7 @@ export function generate54FzFiscalPayload(
 	};
 }
 
-export interface OfflineFiscalBufferItem {
-	readonly orderId: string;
-	readonly totalRub: number;
-	readonly totalKop: number;
-	readonly paymentsDistribution: Ffd12FiscalPayload["paymentsDistribution"];
-	readonly customerContact: string;
-	readonly isElectronicReceiptOnly: boolean;
-	readonly idempotencyKey: string;
-	readonly clientType: ClientLegalType;
-	readonly buyerInn?: string | undefined;
-	readonly queuedAt: string;
-	readonly reason: string;
-}
-
-/**
- * Creates an offline fiscal buffer record when KKT hardware is offline,
- * ensuring zero patient wait time at the reception counter (Mandate 8e).
- */
-export function createOfflineFiscalBufferItem(
-	payload: Ffd12FiscalPayload,
-	reason = "ККТ временно недоступна (автосохранение в буфер отложенной фискализации)",
-): OfflineFiscalBufferItem {
-	return {
-		orderId: payload.orderId,
-		totalRub: payload.totalSumKop / 100,
-		totalKop: payload.totalSumKop,
-		paymentsDistribution: payload.paymentsDistribution,
-		customerContact: payload.clientContact || "",
-		isElectronicReceiptOnly: payload.isElectronicReceiptOnly,
-		idempotencyKey: payload.idempotencyKey || `offline-${Date.now()}`,
-		clientType: payload.clientType,
-		buyerInn: payload.buyerInn,
-		queuedAt: new Date().toISOString(),
-		reason,
-	};
-}
+export {
+	createOfflineFiscalBufferItem,
+	type OfflineFiscalBufferItem,
+} from "./offlineFiscalBuffer.js";

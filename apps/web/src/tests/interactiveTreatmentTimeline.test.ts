@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 import assert from "node:assert/strict";
-import type { PatientTreatmentPlanStage } from "../components/patient-portal/patientWebappEngine";
+import type { PatientTreatmentPlanStage } from "../components/portal/patientWebappEngine";
 
 describe("Patient PWA Portal: Interactive Treatment Timeline & Statutory 323-FZ Suite", () => {
 	it("Treatment roadmap contains all 4 canonical stages (Therapy -> Surgery -> Orthopedics -> Hygiene)", () => {

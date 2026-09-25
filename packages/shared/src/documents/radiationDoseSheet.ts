@@ -106,7 +106,7 @@ export function calculateAnnualRadiationDose(
 		safetyZone = "red_warning";
 		riskCategory = "moderate"; // moderate risk of exceeding standard preventive diagnostic limit
 		safetyZoneLabel = "Красная зона (≥ 1.0 мЗв/год) — Достигнут рекомендуемый годовой диагностический порог.";
-		safetyRecommendation = "Внимание: годовая эффективная доза превысила 1.0 мЗв (СанПиН 2.6.1.2523-09 НРБ-99/2009). Все последующие исследования требуют строгого клинического консилиума и альтернативных методов контроля.";
+		safetyRecommendation = "Внимание: годовая эффективная доза превысила 1.0 мЗв (СанПиН 2.6.1.2523-09 НРБ-99/2009). Все последующие исследования проводятся по обоснованным клиническим показаниям с записью в медицинской карте (форма 043/у) без блокировки съемки (Мандаты 8e, 8i).";
 	} else if (totalMsv >= 0.5) {
 		safetyZone = "yellow_moderate";
 		riskCategory = "moderate";

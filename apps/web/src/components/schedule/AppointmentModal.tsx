@@ -2304,45 +2304,47 @@ export function AppointmentModal(props: AppointmentModalProps) {
               )}
 
               {(status === "cancelled" || status === "no_show") && (
-                <div
-                  className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 space-y-1.5 mt-1.5"
-                  data-testid="appointment-refusal-reasons-block"
-                >
-                  <div className="flex items-center justify-between text-xs font-bold text-rose-800 dark:text-rose-200">
-                    <span className="flex items-center gap-1.5">
-                      <UserX
-                        size={13}
-                        className="text-rose-600 dark:text-rose-400"
-                      />
-                      Причина отмены / неявки (StomX 1 клик):
-                    </span>
-                    <span className="text-[10px] text-[var(--muted)] font-normal">
-                      Фиксируется в комментарии и таймлайне
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 flex-wrap">
-                    {STOMX_REFUSE_REASONS_CATALOG.map((refuse) => {
-                      const isSelected = comment.includes(
-                        `[Отмена: ${refuse.nameRu}]`,
-                      );
-                      return (
-                        <button
-                          key={refuse.id}
-                          type="button"
-                          onClick={() =>
-                            handleApplyRefusalReason(refuse.nameRu)
-                          }
-                          className={`h-7 px-2 py-0.5 rounded-md text-xs font-semibold border transition-all cursor-pointer select-none ${
-                            isSelected
-                              ? "bg-rose-600 text-white border-rose-600 shadow-xs"
-                              : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-rose-400 dark:hover:border-rose-500"
-                          }`}
-                          title={`${refuse.nameRu} (${refuse.responsibility === "clinic" ? "Клиника" : refuse.responsibility === "patient" ? "Пациент" : "Система"})`}
-                        >
-                          {refuse.nameRu}
-                        </button>
-                      );
-                    })}
+                <>
+                  <div
+                    className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 space-y-1.5 mt-1.5"
+                    data-testid="appointment-refusal-reasons-block"
+                  >
+                    <div className="flex items-center justify-between text-xs font-bold text-rose-800 dark:text-rose-200">
+                      <span className="flex items-center gap-1.5">
+                        <UserX
+                          size={13}
+                          className="text-rose-600 dark:text-rose-400"
+                        />
+                        Причина отмены / неявки (StomX 1 клик):
+                      </span>
+                      <span className="text-[10px] text-[var(--muted)] font-normal">
+                        Фиксируется в комментарии и таймлайне
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {STOMX_REFUSE_REASONS_CATALOG.map((refuse) => {
+                        const isSelected = comment.includes(
+                          `[Отмена: ${refuse.nameRu}]`,
+                        );
+                        return (
+                          <button
+                            key={refuse.id}
+                            type="button"
+                            onClick={() =>
+                              handleApplyRefusalReason(refuse.nameRu)
+                            }
+                            className={`h-7 px-2 py-0.5 rounded-md text-xs font-semibold border transition-all cursor-pointer select-none ${
+                              isSelected
+                                ? "bg-rose-600 text-white border-rose-600 shadow-xs"
+                                : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-rose-400 dark:hover:border-rose-500"
+                            }`}
+                            title={`${refuse.nameRu} (${refuse.responsibility === "clinic" ? "Клиника" : refuse.responsibility === "patient" ? "Пациент" : "Система"})`}
+                          >
+                            {refuse.nameRu}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* StomX 1-Click Waitlist Auto-Fill Banner */}
@@ -2368,7 +2370,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
                       <span>Подобрать из листа ожидания</span>
                     </button>
                   </div>
-                </div>
+                </>
               )}
             </div>
 

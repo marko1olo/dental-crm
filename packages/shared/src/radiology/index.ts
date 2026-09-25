@@ -16,11 +16,13 @@ export {
 	dot3,
 	sub3,
 	distPointToSegment3,
+	distPointToPolyline3,
 	distSegmentToSegment3,
 	distSegmentToPolyline3,
 	type Vec3,
 } from "./implantSafetyClearance.js";
 export * from "./implantSafetyClearance.js";
+export * from "./ctPlanningSafety.js";
 export * from "./nerveCanalSpline.js";
 
 // Wave 120: CBCT Bone Quality & CPR Math Adapter

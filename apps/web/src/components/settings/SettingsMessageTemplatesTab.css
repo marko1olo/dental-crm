@@ -734,35 +734,3 @@
 	border-color: var(--teal, #0d9488);
 	color: var(--teal, #0d9488);
 }
-
-.emoji-bar {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
-	padding-top: 8px;
-	border-top: 1px dashed var(--line);
-}
-
-.emoji-quick-btn {
-	min-width: 44px;
-	min-height: 44px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	background: var(--paper);
-	border: 1px solid var(--line);
-	border-radius: 8px;
-	font-size: 18px;
-	cursor: pointer;
-	transition: transform 0.15s ease, background-color 0.15s ease;
-}
-
-.emoji-quick-btn:hover {
-	transform: scale(1.1);
-	background: var(--paper-soft, rgba(125, 125, 125, 0.08));
-}
-
-[data-theme="dark"] .emoji-quick-btn:hover,
-.dark .emoji-quick-btn:hover {
-	background: rgba(255, 255, 255, 0.08);
-}

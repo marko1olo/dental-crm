@@ -11,20 +11,20 @@ import {
 	formatDualServiceName,
 	PatientPortalTreatmentStageCard,
 	type DualServiceFormatResult,
-} from "../components/patient-portal/PatientPortalTreatmentStageCard.js";
+} from "../components/portal/PatientPortalTreatmentStageCard.js";
 import {
 	CLINIC_GUARANTEE_ITEMS,
 	PATIENT_COMFORT_STANDARDS,
 	POST_TREATMENT_TRIAGE_FAQ,
 	PatientPlanView,
-} from "../components/patient-portal/PatientPlanView.js";
+} from "../components/portal/PatientPlanView.js";
 import {
 	calculateDentalHealthIndex,
 	computePatientTeethFromStages,
 	DEFAULT_PATIENT_TEETH,
 	PatientFriendlyOdontogram,
 	type PatientToothInfo,
-} from "../components/patient-portal/PatientFriendlyOdontogram.js";
+} from "../components/portal/PatientFriendlyOdontogram.js";
 import {
 	DEMO_PATIENT_CABINET,
 	PATIENT_CABINET_PRESET_ALEXEY,

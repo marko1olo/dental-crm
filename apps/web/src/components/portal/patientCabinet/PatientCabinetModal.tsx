@@ -74,7 +74,7 @@ import {
 	type TaxDeductionPaymentItem,
 } from "../../finance/taxDeductionEngine";
 import { MobileSelfCheckinModal } from "../selfCheckin";
-import { PatientPlanView } from "../../patient-portal/PatientPlanView";
+import { PatientPlanView } from "../PatientPlanView.js";
 import { DEMO_PATIENT_CABINET } from "./patientCabinetPresets";
 import {
 	OverviewTab,

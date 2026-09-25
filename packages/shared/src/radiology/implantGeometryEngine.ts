@@ -134,6 +134,23 @@ export function distSegmentToPolyline3(a: Vec3, b: Vec3, poly: readonly Vec3[] |
 	return min;
 }
 
+/** Shortest distance between 3D point p and a polyline (>= 1 points). */
+export function distPointToPolyline3(p: Vec3, poly: readonly Vec3[] | Vec3[]): number {
+	if (poly.length === 0) return Number.POSITIVE_INFINITY;
+	const first = poly[0];
+	if (poly.length === 1 && first) return Math.hypot(p[0] - first[0], p[1] - first[1], p[2] - first[2]);
+	let min = Number.POSITIVE_INFINITY;
+	for (let i = 0; i < poly.length - 1; i++) {
+		const pStart = poly[i];
+		const pEnd = poly[i + 1];
+		if (!pStart || !pEnd) continue;
+		const d = distPointToSegment3(p, pStart, pEnd);
+		if (d < min) min = d;
+	}
+	return min;
+}
+
+
 // ── Data Interfaces ────────────────────────────────────────────
 
 export interface ImplantDimensions {

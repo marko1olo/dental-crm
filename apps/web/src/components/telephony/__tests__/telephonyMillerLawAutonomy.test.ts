@@ -147,4 +147,33 @@ test("Telephony Miller's Law & Doctor Autonomy Suite (Mandates 8d, 8e, 8n, 8p)",
 			);
 		},
 	);
+
+	await t.test(
+		"8. Odontogram Working Zone Protection & Doctor Immunity (Mandates 8e, 8p)",
+		() => {
+			// workspaceShell prevents mounting telephony during doctor mode / visit
+			const shellPath = path.resolve(srcDir, "workspaceShell.tsx");
+			const shellSource = fs.readFileSync(shellPath, "utf-8");
+			assert.ok(
+				shellSource.includes("!isDoctorMode ? ("),
+				"workspaceShell must strictly guard telephony widget mounting with !isDoctorMode",
+			);
+
+			// CSS non-occlusion invariant: top centered with pointer-events: none
+			const cssPath = path.resolve(
+				srcDir,
+				"components/telephony/telephonyFloatingWidget.css",
+			);
+			const cssSource = fs.readFileSync(cssPath, "utf-8");
+			assert.ok(
+				cssSource.includes("pointer-events: none;"),
+				"telephonyFloatingWidget.css container must have pointer-events: none so odontogram clicks pass through",
+			);
+			assert.ok(
+				cssSource.includes("top: 12px;"),
+				"telephony container must be anchored at top: 12px, far away from central odontogram arch",
+			);
+		},
+	);
 });
+

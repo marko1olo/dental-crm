@@ -19,7 +19,7 @@ import {
 import {
 	formatDualServiceName,
 	type DualServiceFormatResult,
-} from "../../patient-portal/PatientPortalTreatmentStageCard.js";
+} from "../PatientPortalTreatmentStageCard.js";
 import {
 	SAMPLE_PORTAL_PROFILE,
 	SAMPLE_PORTAL_TREATMENT_PLAN,
@@ -181,7 +181,7 @@ describe("Red Team Inquisition: Doctor Autonomy (Mandate 8e) & Patient Digital S
 
 describe("Red Team Inquisition: Treatment Stage Cards & Zero Cartoon Emojis (Mandate 8d pt 7)", () => {
 	it("PatientPortalTreatmentStageCard.tsx eliminates dark fallbacks and uses semantic theme variables", () => {
-		const source = readSource("components/patient-portal/PatientPortalTreatmentStageCard.tsx");
+		const source = readSource("components/portal/PatientPortalTreatmentStageCard.tsx");
 
 		// Mixed-theme dark fallback checks
 		assert.ok(

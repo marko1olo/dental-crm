@@ -9,7 +9,10 @@ import {
 	type UpdateMessageTemplateInput,
 } from "@dental/shared";
 import {
+	Battery,
+	Building2,
 	Check,
+	CheckCheck,
 	Edit3,
 	Mail,
 	MessageCircle,
@@ -75,8 +78,6 @@ const CHANNEL_BADGES: Record<
 		bubbleClass: "phone-bubble-email",
 	},
 };
-
-const EMOJI_LIST = ["🦷", "📅", "⏰", "📍", "📞", "💳", "✅", "🩺", "💬", "🪥", "👋", "✨"];
 
 export function SettingsMessageTemplatesTab() {
 	const appLogic = useAppLogicContext();
@@ -215,7 +216,7 @@ export function SettingsMessageTemplatesTab() {
 		setDraftChannel("telegram");
 		setDraftScenario("appointment_reminder_24h");
 		setDraftText(
-			"Здравствуйте, {patient_name}! 🦷 Напоминаем о вашей записи {appointment_date} в {appointment_time} к врачу {doctor_name}. Клиника «{clinic_name}». Подтвердите визит: {portal_link}",
+			"Здравствуйте, {patient_name}!\nНапоминаем о вашей записи {appointment_date} в {appointment_time} к врачу {doctor_name}. Клиника «{clinic_name}». Подтвердите визит: {portal_link}",
 		);
 		setDraftIsActive(true);
 		setIsEditorOpen(true);
@@ -344,29 +345,6 @@ export function SettingsMessageTemplatesTab() {
 			textarea.setSelectionRange(
 				start + tagText.length,
 				start + tagText.length,
-			);
-		}, 0);
-	};
-
-	// Insert emoji at cursor
-	const insertEmojiAtCursor = (emoji: string) => {
-		const textarea = textareaRef.current;
-		if (!textarea) {
-			setDraftText((prev) => prev + emoji);
-			return;
-		}
-
-		const start = textarea.selectionStart;
-		const end = textarea.selectionEnd;
-		const nextText =
-			draftText.substring(0, start) + emoji + draftText.substring(end);
-		setDraftText(nextText);
-
-		setTimeout(() => {
-			textarea.focus();
-			textarea.setSelectionRange(
-				start + emoji.length,
-				start + emoji.length,
 			);
 		}, 0);
 	};
@@ -550,20 +528,6 @@ export function SettingsMessageTemplatesTab() {
 										</button>
 									))}
 								</div>
-
-								<div className="emoji-bar">
-									{EMOJI_LIST.map((emoji) => (
-										<button
-											key={emoji}
-											type="button"
-											className="emoji-quick-btn"
-											onClick={() => insertEmojiAtCursor(emoji)}
-											title="Вставить эмодзи"
-										>
-											{emoji}
-										</button>
-									))}
-								</div>
 							</div>
 
 							<div className="editor-form-group">
@@ -733,7 +697,7 @@ export function SettingsMessageTemplatesTab() {
 							<div className="phone-status-bar">
 								<span>09:41</span>
 								<div className="phone-notch" />
-								<span>100% 🔋</span>
+								<span className="inline-flex items-center gap-1 font-mono">100% <Battery size={13} aria-hidden="true" /></span>
 							</div>
 
 							{/* Channel-Specific Header */}
@@ -741,7 +705,7 @@ export function SettingsMessageTemplatesTab() {
 								<div
 									className={`phone-chat-header ${CHANNEL_BADGES[(activeTemplate.channel as MessageTemplateChannel) || "telegram"].headerClass}`}
 								>
-									<div className="phone-avatar">🦷</div>
+									<div className="phone-avatar"><Building2 size={16} aria-hidden="true" /></div>
 									<div className="phone-header-info">
 										<div className="phone-header-title">Клиника ДЕНТЕ</div>
 										<div className="phone-header-subtitle">
@@ -766,7 +730,7 @@ export function SettingsMessageTemplatesTab() {
 										<div>{previewResult.text}</div>
 										<div className="bubble-meta-row">
 											<span>09:41</span>
-											{activeTemplate.channel !== "sms" && <span>✓✓</span>}
+											{activeTemplate.channel !== "sms" && <CheckCheck size={13} className="text-teal-500" aria-hidden="true" />}
 										</div>
 
 										{/* Interactive Confirmation Button Preview for 24h reminders */}
@@ -774,7 +738,10 @@ export function SettingsMessageTemplatesTab() {
 											(activeTemplate.channel === "telegram" ||
 												activeTemplate.channel === "max") && (
 												<div className="phone-inline-action-btn">
-													✅ Подтвердить визит
+													<span className="inline-flex items-center gap-1.5">
+														<Check size={14} aria-hidden="true" />
+														Подтвердить визит
+													</span>
 												</div>
 											)}
 									</div>

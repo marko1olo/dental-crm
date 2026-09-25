@@ -12,6 +12,7 @@ import {
 	sub3,
 	norm3,
 	distPointToSegment3,
+	distPointToPolyline3,
 	distSegmentToSegment3,
 	distSegmentToPolyline3,
 } from "./implantGeometryEngine.js";
@@ -22,6 +23,7 @@ export {
 	sub3,
 	norm3,
 	distPointToSegment3,
+	distPointToPolyline3,
 	distSegmentToSegment3,
 	distSegmentToPolyline3,
 };
