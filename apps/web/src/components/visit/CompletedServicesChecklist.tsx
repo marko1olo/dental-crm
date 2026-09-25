@@ -1,20 +1,11 @@
 import React from "react";
 import {
-	Camera,
 	Check,
 	ChevronDown,
 	ChevronUp,
-	Clock,
 	Plus,
 	Receipt,
-	Scissors,
 	Search,
-	Shield,
-	Sparkles,
-	Stethoscope,
-	Syringe,
-	Target,
-	Trash2,
 	X,
 	Zap,
 } from "lucide-react";
@@ -23,11 +14,7 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { countLabel } from "../../lib/russianPlural";
 import { showToast } from "../GlobalToast";
 import {
-	ALL_FDI_TEETH,
-	CHAIRSIDE_EXPRESS_SERVICES,
 	type ChairsideExpressService,
-	FDI_LOWER_TEETH,
-	FDI_UPPER_TEETH,
 	type FilteredCatalogService,
 	PRICE_UNKNOWN_TEXT,
 	calculateCompletedServicesSummary,
@@ -36,79 +23,19 @@ import {
 	parseCompletedServiceLine,
 	planLineQuantity,
 	planLineTotalRub,
-	roundToKopecks,
 	visitOwnedPlanItems,
 } from "./completedServicesPlan";
 import { realVisitFieldId } from "./visitIdentity";
+import {
+	CLINICAL_SERVICE_BUNDLES,
+	type ClinicalServiceBundle,
+} from "./clinicalServiceBundles";
+import { ChairsideToothSelector } from "./ChairsideToothSelector";
+import { ChairsideExpressGrid } from "./ChairsideExpressGrid";
+import { CompletedServicesList } from "./CompletedServicesList";
 
-export interface ClinicalServiceBundle {
-	id: string;
-	title: string;
-	shortLabel: string;
-	badge: string;
-	totalPriceRub: number;
-	services: Array<{
-		code804n: string;
-		title: string;
-		priceRub: number;
-	}>;
-}
+export { CLINICAL_SERVICE_BUNDLES, type ClinicalServiceBundle } from "./clinicalServiceBundles";
 
-export const CLINICAL_SERVICE_BUNDLES: readonly ClinicalServiceBundle[] = [
-	{
-		id: "caries",
-		title: "Лечение кариеса",
-		shortLabel: "Пакет: Лечение кариеса",
-		badge: "Анестезия + Коффердам + Пломба",
-		totalPriceRub: 7500,
-		services: [
-			{ code804n: "A25.07.001", title: "Местная анестезия (инфильтрационная/проводниковая)", priceRub: 1200 },
-			{ code804n: "A16.07.051", title: "Изоляция рабочего поля (Коффердам/Раббердам)", priceRub: 800 },
-			{ code804n: "A16.07.002.010", title: "Препарирование и медикаментозная обработка кариозной полости", priceRub: 1000 },
-			{ code804n: "A16.07.002.011", title: "Восстановление зуба пломбой светового отверждения (композит)", priceRub: 4000 },
-			{ code804n: "A16.07.002.012", title: "Шлифовка и полировка пломбы", priceRub: 500 },
-		],
-	},
-	{
-		id: "endo_1",
-		title: "Эндодонтия (1-й этап)",
-		shortLabel: "Пакет: Эндодонтия (1-й этап)",
-		badge: "Анестезия + Коффердам + Экстирпация + Каналы + Временная пломба",
-		totalPriceRub: 8800,
-		services: [
-			{ code804n: "A25.07.001", title: "Местная анестезия", priceRub: 1200 },
-			{ code804n: "A16.07.051", title: "Изоляция рабочего поля (Коффердам)", priceRub: 800 },
-			{ code804n: "A16.07.030.001", title: "Экстирпация пульпы (депульпирование)", priceRub: 2000 },
-			{ code804n: "A16.07.030.002", title: "Механическая и медикаментозная обработка корневых каналов", priceRub: 3300 },
-			{ code804n: "A16.07.030.004", title: "Временная обтурация каналов лечебной пастой / Временная пломба", priceRub: 1500 },
-		],
-	},
-	{
-		id: "hygiene",
-		title: "Профгигиена",
-		shortLabel: "Пакет: Профгигиена",
-		badge: "УЗ-скейлинг + AirFlow + Полировка + Фторирование",
-		totalPriceRub: 6500,
-		services: [
-			{ code804n: "A16.07.050.001", title: "Ультразвуковое удаление зубных отложений (скейлинг)", priceRub: 2500 },
-			{ code804n: "A16.07.050.002", title: "Удаление пигментированного налета аппаратом Air-Flow", priceRub: 2200 },
-			{ code804n: "A16.07.050.003", title: "Полировка всех зубов профессиональными абразивными пастами", priceRub: 800 },
-			{ code804n: "A11.07.012", title: "Глубокое фторирование эмали (реминерализация)", priceRub: 1000 },
-		],
-	},
-	{
-		id: "surgery_extraction",
-		title: "Удаление зуба",
-		shortLabel: "Пакет: Удаление зуба",
-		badge: "Анестезия + Удаление + Гемостаз",
-		totalPriceRub: 5500,
-		services: [
-			{ code804n: "A25.07.001", title: "Местная анестезия", priceRub: 1200 },
-			{ code804n: "A16.07.001.001", title: "Удаление постоянного зуба", priceRub: 3500 },
-			{ code804n: "A16.07.001.002", title: "Остановка луночного кровотечения / местный гемостаз", priceRub: 800 },
-		],
-	},
-];
 
 /*
   ОТМЕТКА ВЫПОЛНЕННЫХ УСЛУГ. ЧТО ЗДЕСЬ БЫЛО СЛОМАНО — ВСЁ СРАЗУ.
@@ -200,29 +127,7 @@ function completedLineOf(item: any): string {
 	return `Выполнено: ${serviceTitleOf(item)}${toothSuffixOf(item)}${quantityPart} — ${priceText}`;
 }
 
-function getExpressIcon(id: string) {
-	switch (id) {
-		case "intraoral_xray":
-			return <Camera className="w-4 h-4 text-sky-500 shrink-0" />;
-		case "local_anesthesia_articaine":
-		case "conduction_anesthesia":
-			return <Syringe className="w-4 h-4 text-teal-500 shrink-0" />;
-		case "consultation_inspection":
-			return <Stethoscope className="w-4 h-4 text-indigo-500 shrink-0" />;
-		case "cofferdam_isolation":
-			return <Shield className="w-4 h-4 text-blue-500 shrink-0" />;
-		case "suture_removal":
-			return <Scissors className="w-4 h-4 text-amber-500 shrink-0" />;
-		case "temp_filling":
-			return <Clock className="w-4 h-4 text-orange-500 shrink-0" />;
-		case "dental_deposits_removal_1_tooth":
-			return <Sparkles className="w-4 h-4 text-emerald-500 shrink-0" />;
-		case "optg_panoramic":
-			return <Camera className="w-4 h-4 text-purple-500 shrink-0" />;
-		default:
-			return <Zap className="w-4 h-4 text-amber-500 shrink-0" />;
-	}
-}
+
 
 export interface CompletedServicesChecklistProps {
 	/** Прямая передача прейскуранта клиники (удобно для модульных тестов и изоляции) */
@@ -571,177 +476,19 @@ export const CompletedServicesChecklist: React.FC<
 			</p>
 
 			{/* 1. БЫСТРЫЙ ВЫБОР ЗУБА ДЛЯ ПРИВЯЗКИ (FDI 11..48, «Без зуба») */}
-			<div className="mb-3 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80">
-				<div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-					<div className="flex items-center gap-2">
-						<span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-							<Target className="w-3.5 h-3.5 text-indigo-500" />
-							Привязка к зубу:
-						</span>
-						{selectedTooth ? (
-							<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700">
-								Зуб {selectedTooth}
-								<button
-									type="button"
-									onClick={() => setSelectedTooth(null)}
-									className="hover:text-indigo-950 dark:hover:text-white p-0.5 rounded-full focus:outline-none"
-									title="Сбросить (Без зуба)"
-									aria-label="Сбросить привязку к зубу"
-								>
-									<X className="w-3 h-3" />
-								</button>
-							</span>
-						) : (
-							<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-								Без зуба (общая услуга)
-							</span>
-						)}
-					</div>
-					<button
-						type="button"
-						onClick={() => setIsToothGridOpen(!isToothGridOpen)}
-						className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium flex items-center gap-1 min-h-[36px] py-1 px-2 rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
-					>
-						{isToothGridOpen ? (
-							<>
-								Скрыть формулу <ChevronUp className="w-3.5 h-3.5" />
-							</>
-						) : (
-							<>
-								Все 32 зуба (FDI 11–48) <ChevronDown className="w-3.5 h-3.5" />
-							</>
-						)}
-					</button>
-				</div>
-
-				{/* 1-tap quick tooth chips */}
-				<div className="flex flex-wrap items-center gap-1.5">
-					<button
-						type="button"
-						onClick={() => setSelectedTooth(null)}
-						className={`min-h-[44px] px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
-							!selectedTooth
-								? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-								: "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
-						}`}
-					>
-						Без зуба
-					</button>
-					{[11, 16, 21, 26, 31, 36, 41, 46].map((t) => {
-						const active = selectedTooth === String(t);
-						return (
-							<button
-								key={t}
-								type="button"
-								onClick={() => setSelectedTooth(active ? null : String(t))}
-								className={`min-w-[44px] min-h-[44px] px-2.5 py-1.5 rounded-md text-xs font-mono font-semibold border transition-colors ${
-									active
-										? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-										: "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
-								}`}
-							>
-								{t}
-							</button>
-						);
-					})}
-				</div>
-
-				{/* Разворачиваемая зубная формула FDI */}
-				{isToothGridOpen && (
-					<div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-700/80 space-y-2">
-						<div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-							Верхняя челюсть (18–11, 21–28):
-						</div>
-						<div className="flex flex-wrap gap-1">
-							{FDI_UPPER_TEETH.map((t) => {
-								const active = selectedTooth === String(t);
-								return (
-									<button
-										key={t}
-										type="button"
-										onClick={() => setSelectedTooth(active ? null : String(t))}
-										className={`min-w-[44px] min-h-[44px] p-1 rounded text-xs font-mono font-bold border transition-colors ${
-											active
-												? "bg-indigo-600 text-white border-indigo-600"
-												: "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
-										}`}
-									>
-										{t}
-									</button>
-								);
-							})}
-						</div>
-						<div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium pt-1">
-							Нижняя челюсть (48–41, 31–38):
-						</div>
-						<div className="flex flex-wrap gap-1">
-							{FDI_LOWER_TEETH.map((t) => {
-								const active = selectedTooth === String(t);
-								return (
-									<button
-										key={t}
-										type="button"
-										onClick={() => setSelectedTooth(active ? null : String(t))}
-										className={`min-w-[44px] min-h-[44px] p-1 rounded text-xs font-mono font-bold border transition-colors ${
-											active
-												? "bg-indigo-600 text-white border-indigo-600"
-												: "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
-										}`}
-									>
-										{t}
-									</button>
-								);
-							})}
-						</div>
-					</div>
-				)}
-			</div>
+			<ChairsideToothSelector
+				selectedTooth={selectedTooth}
+				onSelectTooth={setSelectedTooth}
+				isToothGridOpen={isToothGridOpen}
+				onToggleToothGrid={() => setIsToothGridOpen(!isToothGridOpen)}
+			/>
 
 			{/* 2. 9 ЭКСПРЕСС-УСЛУГ У КРЕСЛА (1 КЛИК, 804н) */}
-			<div className="mb-3 p-2.5 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/70 dark:border-emerald-800/50">
-				<div className="flex items-center justify-between gap-2 mb-2">
-					<span className="text-xs font-semibold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
-						<Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-						Экспресс-услуги у кресла (1 клик, 804н):
-					</span>
-					<span className="text-[11px] text-slate-500 dark:text-slate-400">
-						{selectedTooth
-							? `привязка к зубу ${selectedTooth}`
-							: "без привязки к зубу"}
-					</span>
-				</div>
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
-					{CHAIRSIDE_EXPRESS_SERVICES.map((s) => (
-						<button
-							key={s.id}
-							type="button"
-							onClick={() => handleAddExpressService(s)}
-							className="flex flex-col justify-between p-2 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-emerald-400 hover:bg-emerald-50/40 dark:hover:bg-emerald-900/30 transition-all text-left group min-h-[48px]"
-							title={`[${s.code804n}] ${s.title} (${money(s.priceRub)})${selectedTooth ? ` (зуб ${selectedTooth})` : ""}`}
-						>
-							<div className="w-full flex items-start justify-between gap-1.5">
-								<div className="flex items-center gap-1.5 flex-1 min-w-0">
-									{getExpressIcon(s.id)}
-									<span className="text-xs font-medium text-slate-900 dark:text-slate-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 truncate">
-										{s.title}
-									</span>
-								</div>
-								<span className="text-xs font-bold text-slate-900 dark:text-slate-200 font-mono shrink-0">
-									{money(s.priceRub)}
-								</span>
-							</div>
-							<div className="w-full flex items-center justify-between mt-1 text-[10px] text-slate-500 dark:text-slate-400">
-								<span className="font-mono">{s.code804n}</span>
-								{selectedTooth && (
-									<span className="text-indigo-600 dark:text-indigo-400 font-medium">
-										+ зуб {selectedTooth}
-									</span>
-								)}
-							</div>
-						</button>
-					))}
-				</div>
-			</div>
+			<ChairsideExpressGrid
+				selectedTooth={selectedTooth}
+				onAddExpressService={handleAddExpressService}
+			/>
+
 
 			{/* 3. БЫСТРЫЙ ИНЛАЙН-ПОИСК ПО ПРЕЙСКУРАНТУ КЛИНИКИ */}
 			<div className="mb-3 relative">
@@ -920,67 +667,12 @@ export const CompletedServicesChecklist: React.FC<
 			)}
 
 			{/* 6. СПИСОК ВСЕХ ВЫПОЛНЕННЫХ УСЛУГ В ЭТОМ ПРИЁМЕ С 1-TAP УДАЛЕНИЕМ */}
-			{completedLinesList.length > 0 && (
-				<div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-800">
-					<div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
-						<span>
-							Выполнено в этом приёме ({completedLinesList.length}):
-						</span>
-						<span className="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
-							Итого: {money(summary.totalRub)}
-						</span>
-					</div>
-					<div className="flex flex-col gap-1 max-h-48 overflow-y-auto">
-						{completedLinesList.map((entry, idx) => {
-							if (!entry) return null;
-							return (
-								<div
-									key={`${entry.rawLine}-${idx}`}
-									className="flex items-center justify-between gap-2 p-1.5 rounded-md bg-slate-50 dark:bg-slate-800/40 text-xs border border-slate-100 dark:border-slate-800"
-								>
-									<div className="flex items-center gap-1.5 flex-1 min-w-0">
-										<Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-										<span className="truncate">
-											{entry.code804n && (
-												<span className="font-mono text-slate-400 mr-1">
-													[{entry.code804n}]
-												</span>
-											)}
-											{entry.title}
-											{entry.toothCode && (
-												<span className="text-indigo-600 dark:text-indigo-400 font-medium ml-1">
-													(зуб {entry.toothCode})
-												</span>
-											)}
-											{entry.quantity > 1 && (
-												<span className="text-slate-500 ml-1">
-													× {entry.quantity} шт.
-												</span>
-											)}
-										</span>
-									</div>
-									<div className="flex items-center gap-2 shrink-0">
-										<span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
-											{entry.priceRub === null
-												? PRICE_UNKNOWN_TEXT
-												: money(entry.priceRub)}
-										</span>
-										<button
-											type="button"
-											onClick={() => handleRemoveCompletedLine(entry.rawLine)}
-											className="min-w-[36px] min-h-[36px] flex items-center justify-center text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded-md transition-colors"
-											title="Удалить из выполненного"
-											aria-label="Удалить выполненную услугу"
-										>
-											<Trash2 className="w-3.5 h-3.5" />
-										</button>
-									</div>
-								</div>
-							);
-						})}
-					</div>
-				</div>
-			)}
+			<CompletedServicesList
+				completedLinesList={completedLinesList}
+				totalRub={summary.totalRub}
+				onRemoveCompletedLine={handleRemoveCompletedLine}
+			/>
+
 
 			{/* 7. ИТОГ И 1-КЛИК «ВНЕСТИ ВСЁ В КАССОВЫЙ СЧЁТ» */}
 			<div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">

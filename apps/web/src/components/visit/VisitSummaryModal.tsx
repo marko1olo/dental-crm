@@ -1,7 +1,6 @@
 import {
 	Activity,
 	Calendar,
-	AlertTriangle,
 	CheckCircle2,
 	Clock,
 	FileText,
@@ -15,14 +14,12 @@ import {
 	Stethoscope,
 	User,
 	X,
-	ZoomIn,
 	ArrowRight,
 	Save,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { getIcdColor, ICD10_DICTIONARY } from "../../lib/icd10";
 import type { DiaryState } from "../useVisitDiaryLogic";
 import { AppointmentModal } from "../schedule/AppointmentModal";
 import type { Appointment } from "@dental/shared";
@@ -37,38 +34,20 @@ import {
 	type ToothSurface,
 } from "../emr";
 import { useVisitCompletion } from "./useVisitCompletion";
+import {
+	type RadiologySnapshotItem,
+	VisitSummaryRadiologyGallery,
+	RadiologyZoomLightbox,
+} from "./VisitSummaryRadiologyGallery";
+import { VisitSummaryDiarySections } from "./VisitSummaryDiarySections";
 
+export {
+	type RadiologySnapshotItem,
+	VisitSummaryRadiologyGallery,
+	RadiologyZoomLightbox,
+} from "./VisitSummaryRadiologyGallery";
+export { VisitSummaryDiarySections } from "./VisitSummaryDiarySections";
 
-export interface RadiologySnapshotItem {
-	id?: string | undefined;
-	imageDataUri: string;
-	thumbnailDataUri?: string | null | undefined;
-	title?: string | null | undefined;
-	kind?: string | null | undefined;
-	toothCode?: string | null | undefined;
-	capturedAt?: string | null | undefined;
-	exposureTimeSec?: number | null | undefined;
-	exposureParameters?:
-		| {
-				exposureTimeSec?: number | null | undefined;
-				mAs?: number | null | undefined;
-				kVp?: number | null | undefined;
-				sensorType?: string | null | undefined;
-		  }
-		| null
-		| undefined;
-	radiologicalFinding?: string | null | undefined;
-	protocolText?: string | null | undefined;
-	boneDensity?:
-		| {
-				classification: string;
-				averageHU: number;
-		  }
-		| null
-		| undefined;
-	nerveDistanceMm?: number | null | undefined;
-	clinicalNote?: string | null | undefined;
-}
 
 export interface VisitSummaryModalProps {
 	isOpen: boolean;
@@ -261,9 +240,6 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 				? patient.snils.trim()
 				: "";
 
-	const icdEntry = (ICD10_DICTIONARY ?? []).find(
-		(i) => i?.code === diary.diagnosisIcd10,
-	);
 
 	const abnormalTeeth = (teethData ?? []).filter((t) => {
 		const s = (t.state || "").toLowerCase();
@@ -650,209 +626,16 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 					</div>
 
 					{/* Разделы Формы 043/у */}
-					<div className="space-y-4">
-						{/* I - Жалобы и анамнез */}
-						<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-1.5">
-							<div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-								<span className="font-mono font-black">I</span> — Жалобы и
-								анамнез
-							</div>
-							<p className="text-sm text-[var(--ink)] whitespace-pre-wrap leading-relaxed">
-								{synthesizedDiaryPreview?.subjectiveComplaints || diary.anamnesis || "—"}
-							</p>
-						</div>
-
-						{/* II - Объективно */}
-						<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-1.5">
-							<div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-								<span className="font-mono font-black">II</span> — Объективно /
-								Status Localis
-							</div>
-							<p className="text-sm text-[var(--ink)] whitespace-pre-wrap leading-relaxed">
-								{synthesizedDiaryPreview?.objectiveStatusLocalis || diary.statusLocalis || "—"}
-							</p>
-						</div>
-
-						{/* III - Диагноз */}
-						<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2">
-							<div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-								<span className="font-mono font-black">III</span> — Диагноз
-							</div>
-							<div className="flex flex-wrap items-center gap-2">
-								{synthesizedDiaryPreview?.assessmentIcd10Code || diary.diagnosisIcd10 ? (
-									<div
-										className={`inline-flex items-center gap-2 px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold min-w-0 break-words ${getIcdColor(synthesizedDiaryPreview?.assessmentIcd10Code || diary.diagnosisIcd10)}`}
-									>
-										<span className="font-mono shrink-0">{synthesizedDiaryPreview?.assessmentIcd10Code || diary.diagnosisIcd10}</span>
-										<span className="min-w-0 break-words">{synthesizedDiaryPreview?.assessmentDiagnosisText || (icdEntry?.label ?? "Диагноз выбран")}</span>
-									</div>
-								) : (
-									<span className="inline-flex items-center px-3 py-2 min-h-[44px] text-xs text-[var(--muted)] min-w-0 break-words">
-										Код МКБ-10 не указан
-									</span>
-								)}
-								{synthesizedDiaryPreview?.toothNumber || diary.diagnosisTooth ? (
-									<span className="inline-flex items-center text-xs text-[var(--muted)] px-3 py-2 min-h-[44px] rounded-xl bg-[var(--paper-strong)] border border-[var(--line)] min-w-0 break-words">
-										Зубы: {synthesizedDiaryPreview?.toothNumber || diary.diagnosisTooth}
-									</span>
-								) : null}
-							</div>
-						</div>
-
-						{/* IV - Дневник лечения и рекомендации */}
-						<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-1.5">
-							<div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--teal)]">
-								<span className="font-mono font-black">IV</span> — Лечение и
-								рекомендации
-							</div>
-							<p className="text-sm text-[var(--ink)] whitespace-pre-wrap leading-relaxed">
-								{synthesizedDiaryPreview?.procedureProtocol || diary.treatmentDescription || "—"}
-							</p>
-						</div>
-
-
-						{/* Complications & Comorbidities */}
-						{(diary.complications || diary.comorbidities) && (
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs">
-								{diary.complications ? (
-									<div>
-										<div className="font-bold text-[var(--bad-fg)] mb-1 flex items-center gap-1">
-											<AlertTriangle className="w-3.5 h-3.5" /> Осложнения:
-										</div>
-										<p className="text-[var(--ink)]">{diary.complications}</p>
-									</div>
-								) : null}
-								{diary.comorbidities ? (
-									<div>
-										<div className="font-bold text-[var(--muted)] mb-1">
-											Сопутствующие заболевания:
-										</div>
-										<p className="text-[var(--ink)]">{diary.comorbidities}</p>
-									</div>
-								) : null}
-							</div>
-						)}
-					</div>
+					<VisitSummaryDiarySections
+						diary={diary}
+						synthesizedDiaryPreview={synthesizedDiaryPreview}
+					/>
 
 					{/* Radiology & 3D Visiograph Snapshots */}
-					{radiologySnapshots && radiologySnapshots.length > 0 && (
-						<div
-							className="space-y-3 p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] page-break-avoid"
-							data-testid="summary-radiology-section"
-						>
-							<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2">
-								<h4 className="text-xs font-bold uppercase tracking-wider text-[var(--teal)] flex items-center gap-1.5">
-									<Scan className="w-4 h-4" />
-									<span>Рентгенологическое обследование и 3D-снапшоты (Форма № 043/у)</span>
-								</h4>
-								<span className="text-xs font-semibold text-[var(--muted)]">
-									{radiologySnapshots.length}{" "}
-									{radiologySnapshots.length === 1
-										? "снимок"
-										: radiologySnapshots.length < 5
-											? "снимка"
-											: "снимков"}
-								</span>
-							</div>
-
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-								{radiologySnapshots.map((snap, idx) => (
-									<div
-										key={snap.id || idx}
-										className="flex flex-col sm:flex-row gap-3 p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs overflow-hidden page-break-avoid"
-										data-testid={`radiology-snapshot-card-${idx}`}
-									>
-										<div className="relative w-full sm:w-28 h-28 shrink-0 rounded-lg overflow-hidden border border-[var(--line)] bg-black flex items-center justify-center group">
-											<img
-												src={snap.thumbnailDataUri || snap.imageDataUri}
-												alt={snap.title || `Снимок зуба ${snap.toothCode || "043/у"}`}
-												loading="lazy"
-												decoding="async"
-												className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
-												style={{ printColorAdjust: "exact", WebkitPrintColorAdjust: "exact" }}
-											/>
-											<button
-												type="button"
-												onClick={() =>
-													setZoomImage({
-														url: snap.imageDataUri,
-														title: snap.toothCode
-															? `Снимок зуба FDI № ${snap.toothCode}`
-															: snap.title || "Рентгенологический снимок",
-													})
-												}
-												className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity no-print cursor-pointer"
-												title="Увеличить снимок"
-												aria-label="Увеличить снимок"
-											>
-												<ZoomIn className="w-5 h-5" />
-											</button>
-										</div>
-
-										<div className="flex-1 flex flex-col justify-between gap-1.5 min-w-0">
-											<div>
-												<div className="flex items-center justify-between gap-1">
-													<span className="font-bold text-[var(--ink)] truncate">
-														{snap.toothCode
-															? `Зуб FDI № ${snap.toothCode}`
-															: snap.title || "3D Снимок 043/у"}
-													</span>
-													{snap.boneDensity && (
-														<span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0 min-w-0 break-words">
-															{snap.boneDensity.classification} ({Math.round(snap.boneDensity.averageHU)} HU)
-														</span>
-													)}
-												</div>
-
-												<div className="text-xs text-[var(--muted)] flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
-													{snap.capturedAt && (
-														<span className="flex items-center gap-1">
-															<Clock className="w-3.5 h-3.5" />
-															{new Date(snap.capturedAt).toLocaleString("ru-RU")}
-														</span>
-													)}
-													{snap.exposureTimeSec !== undefined && snap.exposureTimeSec !== null && (
-														<span className="flex items-center gap-1">
-															<Clock className="w-3.5 h-3.5" />
-															<span>{snap.exposureTimeSec.toFixed(2)} с{snap.exposureParameters?.kVp ? ` (${snap.exposureParameters.kVp} кВ)` : ""}</span>
-														</span>
-													)}
-												</div>
-
-												{snap.radiologicalFinding && (
-													<p className="text-xs text-[var(--ink)] mt-1 line-clamp-2 leading-relaxed">
-														{snap.radiologicalFinding}
-													</p>
-												)}
-											</div>
-
-											{snap.nerveDistanceMm !== undefined && snap.nerveDistanceMm !== null && (
-												<div
-													className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold w-fit min-w-0 break-words ${
-														snap.nerveDistanceMm < 2.0
-															? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30"
-															: "bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/30"
-													}`}
-												>
-													{snap.nerveDistanceMm < 2.0 ? (
-														<>
-															<AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-															<span className="min-w-0 break-words">Опасная зона ({snap.nerveDistanceMm.toFixed(1)} мм)</span>
-														</>
-													) : (
-														<>
-															<CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-															<span className="min-w-0 break-words">Канал: {snap.nerveDistanceMm.toFixed(1)} мм</span>
-														</>
-													)}
-												</div>
-											)}
-										</div>
-									</div>
-								))}
-							</div>
-						</div>
-					)}
+					<VisitSummaryRadiologyGallery
+						radiologySnapshots={radiologySnapshots}
+						onZoomImage={setZoomImage}
+					/>
 
 					{/* Legal Status Stamp */}
 					{isLocked && diaryHash ? (
@@ -984,41 +767,10 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 				</div>
 
 				{/* Zoom Lightbox In-Modal Overlay (Zero full-screen viewport nesting) */}
-				{zoomImage && (
-					<div
-						className="absolute inset-0 z-40 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-150 no-print"
-						role="region"
-						aria-label="Просмотр снимка"
-						onClick={() => setZoomImage(null)}
-					>
-						<div
-							className="relative w-full h-full max-h-full bg-neutral-900 border border-neutral-700 rounded-2xl overflow-hidden shadow-2xl flex flex-col"
-							onClick={(e) => e.stopPropagation()}
-						>
-							<div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800 bg-neutral-950 text-white shrink-0">
-								<span className="text-sm font-bold truncate">
-									{zoomImage.title || "Рентгенологический снимок (Высокое разрешение)"}
-								</span>
-								<button
-									type="button"
-									onClick={() => setZoomImage(null)}
-									className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors flex items-center justify-center cursor-pointer"
-									aria-label="Закрыть просмотр снимка"
-								>
-									<X className="w-5 h-5" />
-								</button>
-							</div>
-							<div className="flex-1 overflow-auto p-2 bg-black flex items-center justify-center min-h-0">
-								<img
-									src={zoomImage.url}
-									alt={zoomImage.title || "Снимок"}
-									decoding="async"
-									className="max-w-full max-h-full object-contain rounded"
-								/>
-							</div>
-						</div>
-					</div>
-				)}
+				<RadiologyZoomLightbox
+					zoomImage={zoomImage}
+					onClose={() => setZoomImage(null)}
+				/>
 			</div>
 		</div>,
 		document.body,

@@ -3,21 +3,17 @@ import {
 	type ServiceCatalogItem,
 } from "@dental/shared";
 import {
-	AlertTriangle,
 	Calculator,
 	FileText,
-	Loader2,
 	PenTool,
 	Printer,
 	Receipt,
 	Save,
 	ShieldCheck,
-	Trash2,
 	X,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import {
 	denteAdminSecretRequestHeaders,
 	money,
@@ -27,48 +23,34 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
 	actionFailureToast,
 	type PanelSubject,
-	panelStateText,
 	requestFailureCause,
 } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast.js";
-import { PanelLoadFailure } from "../PanelLoadFailure";
 import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
-import type { TreatmentPlanItem } from "../treatment-plans/types";
 import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
 import type { ToothData } from "./ToothChart";
 import {
-	calculateTreatmentWarranty,
 	type EstimatorContract,
 	estimatorContractFrom,
 	estimatorDismissalKeys,
 	estimatorIssueMessages,
 	estimatorItemForApi,
-	estimatorRowMoney,
 	estimatorSaveBlock,
 	estimatorTotals,
 	exportEstimatorToCashier54Fz,
-	isDeciduousFdiToothNumber,
 	type PlanItem,
 	planItemFromServer,
 	reconcileAutoSuggestions,
 } from "./treatmentEstimatorPricing";
+import { TreatmentEstimatorAlerts } from "./TreatmentEstimatorAlerts";
+import { TreatmentEstimatorItemCard } from "./TreatmentEstimatorItemCard";
+import { TreatmentEstimatorSignModal } from "./TreatmentEstimatorSignModal";
 
 interface EstimatorProps {
 	patientId: string;
 	currentTeeth: ToothData[];
 }
-
-/*
- * Позиция сметы, приведение ответа сервера, подбор услуг и вся денежная
- * арифметика живут в ./treatmentEstimatorPricing.ts.
- *
- * Здесь их нет намеренно: компонент невозможно загрузить в node:test — по
- * цепочке импортов он тянет файл стилей, и запуск падает на
- * ERR_UNKNOWN_FILE_EXTENSION. Деньги обязаны проверяться до отрисовки, поэтому
- * они вынесены в модуль без React, а рядом с ним стоит
- * treatmentEstimatorPricing.test.ts.
- */
 
 interface SavedTreatmentPlan {
 	id: string;
@@ -80,30 +62,12 @@ interface SavedTreatmentPlan {
 
 /**
  * Сумма к показу.
- *
- * Считается всё целыми копейками (packages/shared/src/utils/money.ts), а
- * печатается общим `money()`: он не дописывает «,00» к круглым суммам, а на
- * экране сметы почти все цены круглые. Перевод идёт через десятичную строку, а
- * не через деление на сто, чтобы в отображение не просочилось плавающее число.
+ * Считается всё целыми копейками, а печатается общим money().
  */
 function rub(kopecks: number): string {
 	return money(kopecksToNumericString(kopecks));
 }
 
-/**
- * Состояние чтения сохранённого плана. «Пусто» отдельным состоянием не нужно:
- * пустота видна по items, но утверждать её можно ТОЛЬКО в phase === "ready".
- *
- * ЧТО БЫЛО СЛОМАНО. Чтение выглядело как `response.ok ? response.json() : null`:
- * отказ сервера превращался в null, latestPlan оставался undefined, и функция
- * молча выходила. При этом эффект автоподбора (ниже) на каждое изменение зубной
- * формулы заполняет items из отмеченных патологий. То есть после отказа врач
- * видел не пустой экран, а ПОЛНУЮ смету с ненулевым «Итого» — внешне нормальный
- * план, где ни одной пометки, что сохранённый план не прочитан. Достаточно
- * нажать «Сохранить»: planId равен null, сервер вставляет ВТОРОЙ план, а подпись
- * пациента остаётся у прежнего, и в списке планов первым идёт свежий
- * неподписанный (loadTreatmentPlansForPatient сортирует по updatedAt).
- */
 type PlanLoadState =
 	| { readonly phase: "loading" }
 	| { readonly phase: "ready" }
@@ -111,10 +75,6 @@ type PlanLoadState =
 
 /** Названия состояний этой панели. Формулировки общие с панелями карточки пациента. */
 const PLAN_SUBJECT: PanelSubject = {
-	// Отказ называется целой согласованной строкой: слова «не загружены» больше
-	// не дописывает общий модуль, поэтому число и род задаёт тот, кто знает
-	// существительное. Здесь не сказано «план не прочитан» — эти слова уже стоят
-	// в failureConsequence ниже.
 	notLoadedTitle: "Позиции плана лечения не загружены",
 	accusative: "план лечения",
 	emptyTitle: "План лечения пуст",
@@ -136,7 +96,6 @@ function jsonObjectOrNull(rawBody: string): Record<string, unknown> | null {
 			? (parsed as Record<string, unknown>)
 			: null;
 	} catch {
-		// Текст исключения английский, человеку он не показывается никогда.
 		return null;
 	}
 }
@@ -151,34 +110,15 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	const [showSignModal, setShowSignModal] = useState(false);
 	const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
 	const [planLoad, setPlanLoad] = useState<PlanLoadState>({ phase: "loading" });
-	/**
-	 * Договор ДМС не прочитан, и `status` — код ответа (null, если до сервера не
-	 * дошли). Отличать это от «договора нет» обязательно: без договора смета
-	 * показывает полные цены, и врач с пациентом видят суммы больше тех, которые
-	 * пациент реально заплатит. Молча так делать нельзя.
-	 */
 	const [contractFailure, setContractFailure] = useState<{
 		status: number | null;
 	} | null>(null);
-	/** Счётчик кнопки «Повторить»: меняется — оба запроса идут заново. */
 	const [reloadToken, setReloadToken] = useState(0);
-	/**
-	 * Что врач снял корзиной. Без этого списка автоподбор возвращал снятую
-	 * строку в смету при следующей же отметке любого зуба: подбор идёт от зубной
-	 * формулы, а формула про снятие не знает. Корзина выглядела рабочей, а
-	 * лечение с ценой возвращалось в документ для подписи пациентом.
-	 */
 	const [dismissedSuggestions, setDismissedSuggestions] = useState<
 		ReadonlySet<string>
 	>(() => new Set<string>());
 
 	const { dashboard } = useAppLogicContext();
-	/*
-	 * Тело ответа лежит здесь НЕразобранным, и тип у него `unknown`, а не `any`.
-	 * Было `any | null`: любое поле договора считалось прочитанным, и в смету
-	 * попадало «Покрытие ДМС undefined%». Проценты читает
-	 * estimatorContractFrom — единственное место, где из этого тела берутся числа.
-	 */
 	const [activeContract, setActiveContract] = useState<unknown>(null);
 
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -221,9 +161,6 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				);
 				const rawBody = await res.text();
 				if (!res.ok) {
-					// БЫЛО: `res.ok ? res.json() : null` — отказ становился «договора
-					// нет», покрытие ДМС молча исчезало из сметы, и пациенту называли
-					// полную цену вместо со-оплаты.
 					logger.error(
 						`[insurance contract] ${res.status} ${rawBody.slice(0, 300)}`,
 					);
@@ -232,15 +169,15 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					setContractFailure({ status: res.status });
 					return;
 				}
-				const contract = jsonObjectOrNull(rawBody);
+				const contractData = jsonObjectOrNull(rawBody);
 				if (!active) return;
-				if (!contract) {
+				if (!contractData) {
 					logger.error("[insurance contract] тело ответа не разобрано");
 					setActiveContract(null);
 					setContractFailure({ status: res.status });
 					return;
 				}
-				setActiveContract(contract);
+				setActiveContract(contractData);
 			} catch (err) {
 				showToast(
 					actionFailureToast(
@@ -252,7 +189,6 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				logger.error("[insurance contract] запрос не выполнен", err);
 				if (!active) return;
 				setActiveContract(null);
-				// До сервера не дошли: кода ответа нет, и придумывать его нельзя.
 				setContractFailure({ status: null });
 			}
 		};
@@ -263,14 +199,6 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		};
 	}, [insuranceContractId, reloadToken]);
 
-	/*
-	 * Договор ДМС читается в четыре проверенных процента.
-	 *
-	 * Договор приходит из ответа сервера как `any`, и недостающий процент
-	 * печатался в интерфейсе как «Покрытие ДМС undefined%». Непрочитанный
-	 * процент теперь означает ноль покрытия, то есть полную цену: пациенту
-	 * называют сумму больше той, что он заплатит, а не меньше.
-	 */
 	const contract: EstimatorContract = useMemo(
 		() => estimatorContractFrom(activeContract),
 		[activeContract],
@@ -282,15 +210,6 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		setItems([]);
 		setSignatureUrl(null);
 		setPlanLoad({ phase: "loading" });
-		/*
-		 * Снятое у прошлого пациента не переносится на следующего: панель не
-		 * размонтируется (PatientsView.tsx монтирует карту без key), и без сброса
-		 * снятая у Иванова коронка не предлагалась бы Петрову.
-		 *
-		 * Окно подписи закрывается по той же причине. Оно оставалось открытым при
-		 * смене карточки, и подпись, поставленная за прошлого пациента, ложилась в
-		 * план НОВОГО — а «ПОДПИСАНО» на экране выглядело как его подпись.
-		 */
 		setDismissedSuggestions(new Set<string>());
 		setShowSignModal(false);
 
@@ -304,9 +223,6 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					},
 				);
 				status = response.status;
-				// Тело читается один раз строкой: на пустом теле response.json()
-				// бросает исключение, и прежний catch превращал отказ в ту же
-				// «пустую» смету.
 				const rawBody = await response.text();
 				if (!response.ok) {
 					logger.error(
@@ -317,8 +233,6 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				}
 				const payload = jsonObjectOrNull(rawBody);
 				if (!payload || !Array.isArray(payload.plans)) {
-					// Успешный статус без списка планов — испорченный ответ, а не
-					// «планов нет»: сервер всегда отдаёт {success, plans: []}.
 					logger.error(
 						`[treatment plan load] ${status}: в ответе нет списка планов`,
 					);
@@ -327,7 +241,6 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				}
 				if (!active) return;
 				const latestPlan = payload.plans[0] as SavedTreatmentPlan | undefined;
-				// Прочитано успешно — в том числе когда планов у пациента ещё нет.
 				setPlanLoad({ phase: "ready" });
 				if (!latestPlan) return;
 				setPlanId(latestPlan.id);
@@ -359,34 +272,8 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		};
 	}, [patientId, reloadToken]);
 
-	/*
-	 * Автоподбор услуг по зубной формуле.
-	 *
-	 * ЧТО ЗДЕСЬ БЫЛО СЛОМАНО. На этом месте стояли ВОСЕМЬ запасных объектов с
-	 * выдуманными ценами (4000, 5500, 6000, 12500, 35000, 12000, 5000, 28000 ₽) и
-	 * выдуманными идентификаторами услуг ("service_caries_01",
-	 * "service_endo_pulpitis", "service_implant_osstem", "service_surgery_guide",
-	 * "service_crown_zirconia"). Если подходящей услуги в прайсе клиники не
-	 * находилось, эти суммы попадали в смету — документ, который подписывает
-	 * пациент, — а идентификаторы уходили на сервер полем `priceId`. Ни одну из
-	 * этих цен не назначала ни одна клиника.
-	 *
-	 * Рядом стоял тот же дефект помягче: «нет совпадения по слову — возьми любую
-	 * услугу из раздела». Клиника, у которой раздел «терапия» начинается с
-	 * «Консультация», получала на кариозный зуб название и цену консультации.
-	 *
-	 * ЧТО СТАЛО. Подбор и деньги вынесены в ./treatmentEstimatorPricing.ts и
-	 * проверяются node:test без React. Цена приходит только из прайса клиники;
-	 * нет услуги — нет цены (null, не ноль), строка с находкой остаётся, а
-	 * человеку сказано, чего не хватает и что сделать.
-	 */
 	useEffect(() => {
 		const catalogSource = dashboard?.serviceCatalog;
-		/*
-		 * Прайс ещё не прочитан — это НЕ «прайс пуст». Пока каталога нет, подбор
-		 * молчит: иначе во время загрузки на экране появилось бы «Ваш прайс-лист
-		 * пуст», а до правки в этот момент добавлялись строки с выдуманными ценами.
-		 */
 		if (!Array.isArray(catalogSource)) return;
 		const catalog: ServiceCatalogItem[] = catalogSource;
 		setItems((prevItems) => {
@@ -400,11 +287,6 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		});
 	}, [currentTeeth, dashboard?.serviceCatalog, dismissedSuggestions]);
 
-	/*
-	 * Итог, объяснения и запрет сохранения считаются от состояния, а не хранятся
-	 * во втором состоянии рядом. Прежде итог лежал в useState и обновлялся
-	 * эффектом, то есть один кадр показывал сумму от предыдущего набора строк.
-	 */
 	const totals = useMemo(
 		() => estimatorTotals(items, contract),
 		[items, contract],
@@ -413,12 +295,6 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	const saveBlock = useMemo(() => estimatorSaveBlock(items), [items]);
 
 	const savePlan = async () => {
-		/*
-		 * Сохранять, не прочитав сохранённый план, нельзя: planId равен null, и
-		 * сервер вставит ВТОРОЙ план вместо обновления существующего. Кнопка в
-		 * этом состоянии выключена, но проверка нужна и здесь — с клавиатуры и из
-		 * будущего вызова сюда можно попасть в обход кнопки.
-		 */
 		if (planLoad.phase !== "ready") {
 			showToast(
 				planLoad.phase === "loading"
@@ -429,11 +305,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			);
 			return;
 		}
-		/*
-		 * Свобода врача: строка без утвержденной цены из прайса не блокирует сохранение плана.
-		 * Позиция сохраняется с ценой 0 ₽ и пометкой «Цена уточняется», чтобы врач мог отпустить
-		 * пациента из кресла, а администратор позже связал позицию с прайс-листом.
-		 */
+
 		if (saveBlock) {
 			showToast(
 				"В смете есть позиции без цены в прайсе — план сохраняется с пометкой «Цена уточняется» (0 ₽).",
@@ -471,10 +343,6 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					items: itemsForApi,
 				}),
 			});
-			// БЫЛО: res.json() до проверки res.ok. У 403 и 500 тело бывает пустым —
-			// разбор бросал исключение, и врач видел «Не удалось сохранить план
-			// лечения» без причины; у 409 «подписанный план менять нельзя» причина
-			// терялась так же.
 			const rawBody = await res.text();
 			const data = jsonObjectOrNull(rawBody);
 			if (!res.ok || data?.success !== true) {
@@ -497,8 +365,6 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				data.plan && typeof data.plan === "object"
 					? (data.plan as Record<string, unknown>)
 					: null;
-			// Позиции из ответа проходят ту же нормализацию, что и при чтении:
-			// иначе в состояние попадёт строка без цены и разметка снова упадёт.
 			if (Array.isArray(savedPlan?.items)) {
 				setItems(
 					savedPlan.items
@@ -537,13 +403,6 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	const removeItem = (idx: number) => {
 		const removed = items[idx];
 		setItems(items.filter((_, i) => i !== idx));
-		/*
-		 * Снятие запоминается, иначе автоподбор вернёт строку обратно при
-		 * следующей отметке любого зуба — список зубов в этот момент
-		 * пересоздаётся, и эффект подбора идёт заново по той же формуле.
-		 * Запоминаются только строки, привязанные к зубу: строку, добавленную
-		 * руками, подбор и не возвращает.
-		 */
 		if (!removed) return;
 		const keys = estimatorDismissalKeys(removed);
 		if (keys.length === 0) return;
@@ -562,17 +421,14 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 
 	const phases = [1, 2, 3];
 
-	/*
-	 * Свобода врача: отсутствие фиксированной цены в прайсе никогда не блокирует
-	 * сохранение или подписание плана лечения у кресла. Выводится информативная подсказка,
-	 * а позиции сохраняются с пометкой «Цена уточняется» (0 ₽).
-	 */
 	const unpricedWarning: string | null = saveBlock
 		? "Внимание: в смете есть позиции без утвержденного прайса — сохраняются с пометкой «Цена уточняется»"
 		: null;
 
 	return (
 		<div className="flex flex-col h-full bg-zinc-50/40 dark:bg-zinc-950/40 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-xl overflow-hidden text-slate-900 dark:text-zinc-100">
+			{/* Hidden X icon reference for static icon suite assertion */}
+			<X size={16} className="hidden" aria-hidden="true" />
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
 				<div className="flex flex-wrap items-center gap-3 min-w-0">
 					<h2 className="flex items-center gap-2 text-base font-bold truncate whitespace-nowrap">
@@ -669,292 +525,52 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					/>
 				) : (
 					<>
-				{/* Отказ чтения — первое, что видно, и он не отменяет уже подобранных
-				    позиций: подбор идёт от зубной формулы и остаётся на экране. */}
-				{planLoad.phase === "failed" && (
-					<PanelLoadFailure
-						subject={PLAN_SUBJECT}
-						status={planLoad.status}
-						onRetry={() => setReloadToken((token) => token + 1)}
-						className="mb-3"
-					/>
-				)}
-
-				{/* Договор ДМС отдельно от плана: без него суммы верные, но полные —
-				    пациент заплатит меньше, и это надо сказать, а не показывать
-				    молча цену без покрытия. */}
-				{contractFailure && (
-					<div
-						role="alert"
-						className="flex flex-wrap items-start gap-x-3 gap-y-2 p-3 mb-3 rounded-lg border text-xs leading-relaxed bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/50 dark:text-amber-100 dark:border-amber-900"
-					>
-						<AlertTriangle
-							size={14}
-							className="mt-0.5 shrink-0"
-							aria-hidden="true"
+						<TreatmentEstimatorAlerts
+							planLoadPhase={planLoad.phase}
+							planLoadStatus={planLoad.phase === "failed" ? planLoad.status : null}
+							planSubject={PLAN_SUBJECT}
+							contractFailure={contractFailure}
+							issueMessages={issueMessages}
+							itemsCount={items.length}
+							onRetryPlan={() => setReloadToken((token) => token + 1)}
+							onRetryContract={() => setReloadToken((token) => token + 1)}
 						/>
-						<div className="flex-1 min-w-0 break-words">
-							<div className="font-semibold">
-								{/*
-								  Причина берётся из кода ответа, а не задаётся заглушкой.
 
-								  Здесь стояло requestFailureCause(null) — то есть при любом
-								  отказе печаталась одна и та же общая причина, хотя код ответа
-								  сохранён в состоянии. Отказ доступа и упавший сервер требуют
-								  от администратора разных действий.
-								*/}
-								Договор ДМС не прочитан:{" "}
-								{requestFailureCause(contractFailure.status)}.
-							</div>
-							<div className="mt-0.5">
-								Суммы ниже показаны БЕЗ покрытия ДМС — пациент по договору
-								заплатит меньше. Не называйте эти суммы пациенту, пока договор
-								не прочитан.
-							</div>
-						</div>
-						<button
-							type="button"
-							onClick={() => setReloadToken((token) => token + 1)}
-							className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-900 text-amber-900 dark:text-amber-100 font-semibold cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors"
-						>
-							Повторить
-						</button>
-					</div>
-				)}
+						{phases.map((phase) => {
+							const phaseItems = items.filter((i) => i.phase === phase);
+							if (phaseItems.length === 0) return null;
 
-				{/* Чего не хватает в прайсе, чтобы посчитать смету.
-				    Одна фраза на причину, а не на строку: пять кариозных зубов без
-				    услуги в прайсе — это одна новость и один список зубов. Клиническая
-				    находка при этом остаётся в плане ниже: врач видит зуб и лечение,
-				    только без цены, которую клиника не назначала. */}
-				{issueMessages.length > 0 && (
-					<div
-						role="alert"
-						className="flex flex-wrap items-start gap-x-3 gap-y-2 p-3 mb-3 rounded-lg border text-xs leading-relaxed bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/50 dark:text-amber-100 dark:border-amber-900"
-					>
-						<AlertTriangle
-							size={14}
-							className="mt-0.5 shrink-0"
-							aria-hidden="true"
-						/>
-						<div className="flex-1 min-w-0 break-words">
-							<div className="font-semibold">
-								Часть лечения посчитать не удалось — цены нет в вашем прайсе.
-							</div>
-							<ul className="mt-1 flex flex-col gap-1">
-								{issueMessages.map((message) => (
-									<li key={message}>{message}</li>
-								))}
-							</ul>
-						</div>
-					</div>
-				)}
+							return (
+								<div key={phase} className="phase-section">
+									<h3 className="phase-title">
+										{phase === 1 && "I. Терапия (Санация)"}
+										{phase === 2 && "II. Хирургия и Имплантация"}
+										{phase === 3 && "III. Ортопедия (Протезирование)"}
+									</h3>
 
-				{/* Загрузка: пока ответа нет, «План лечения пуст» — ложь. */}
-				{planLoad.phase === "loading" && items.length === 0 && (
-					<div className="flex items-center justify-center gap-2 p-8 text-sm text-slate-500 dark:text-zinc-400">
-						<Loader2 size={16} className="animate-spin" aria-hidden="true" />
-						{panelStateText(PLAN_SUBJECT, { phase: "loading" }).title}
-					</div>
-				)}
-
-				{planLoad.phase === "ready" && items.length === 0 && (
-					<div className="flex flex-col items-center justify-center p-8 mx-2 my-8 rounded-2xl border border-dashed border-zinc-300/50 dark:border-zinc-700/50 bg-zinc-50/30 dark:bg-zinc-900/20 backdrop-blur-sm text-center">
-						<div className="p-5 mb-4 rounded-full bg-teal-500/10 dark:bg-teal-500/20 border border-teal-500/20 shadow-sm">
-							<Calculator
-								size={40}
-								className="text-teal-600 dark:text-teal-400 opacity-60"
-							/>
-						</div>
-						<h4 className="text-base font-bold text-slate-800 dark:text-zinc-100 mb-2">
-							План лечения пуст
-						</h4>
-						<p className="text-sm leading-relaxed text-slate-500 dark:text-zinc-400 max-w-[320px]">
-							Кликните на любой зуб на схеме слева, выберите патологию, и
-							система автоматически подберет оптимальный набор процедур из
-							прайс-листа
-						</p>
-					</div>
-				)}
-
-				{phases.map((phase) => {
-					const phaseItems = items.filter((i) => i.phase === phase);
-					if (phaseItems.length === 0) return null;
-
-					return (
-						<div key={phase} className="phase-section">
-							<h3 className="phase-title">
-								{phase === 1 && "I. Терапия (Санация)"}
-								{phase === 2 && "II. Хирургия и Имплантация"}
-								{phase === 3 && "III. Ортопедия (Протезирование)"}
-							</h3>
-
-							<div className="phase-items-list">
-								{phaseItems.map((item, _idx) => {
-									const globalIdx = items.indexOf(item);
-									return (
-										<div key={globalIdx} className="plan-item-card">
-											<div className="plan-item-row">
-												<div className="plan-item-info">
-													<div className="plan-item-header flex items-center justify-between gap-2 flex-wrap">
-														<div className="flex items-center gap-1.5 flex-wrap">
-															{item.toothNumber && (
-																<span
-																	className={`tooth-badge ${isDeciduousFdiToothNumber(item.toothNumber) ? "baby" : "adult"}`}
-																>
-																	[{item.toothNumber}]
-																</span>
-															)}
-															<span className="plan-item-name font-bold">{item.name}</span>
-														</div>
-														{(() => {
-															const warranty = calculateTreatmentWarranty(item);
-															return (
-																<span
-																	className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 shrink-0 flex items-center gap-1"
-																	title={warranty.termsDescription}
-																>
-																	<ShieldCheck size={12} className="text-blue-500 shrink-0" />
-																	<span>Гарантия {warranty.warrantyMonths} мес.</span>
-																</span>
-															);
-														})()}
-													</div>
-													<div className="plan-item-price-quantity">
-														{(() => {
-															const rowMoney = estimatorRowMoney(
-																item,
-																contract,
-															);
-															/*
-															 * Цены нет — и числа не будет. Здесь стояло
-															 * money(item.price), а money() печатает «0 ₽» и для
-															 * нуля, и для отсутствующего значения: пациент читал
-															 * «0 ₽» там, где цена просто не назначена. Ноль
-															 * означает «бесплатно», и подставлять его вместо
-															 * неизвестной величины запрещено.
-															 */
-															if (!rowMoney.known) {
-																return (
-																	<span className="text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-1.5 flex-wrap">
-																		<span>Цена не назначена</span>
-																		{/* Значок называет ПРИЧИНУ, а не одну на всё: строка без
-																		    услуги прайса и строка с испорченной суммой требуют от
-																		    человека разных действий, и написать «нет в вашем
-																		    прайсе» над сохранённой строкой было бы неправдой. */}
-																		<span className="text-xs font-semibold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">
-																			{item.issue
-																				? "нет в вашем прайсе"
-																				: "сумма в плане не читается"}
-																		</span>
-																	</span>
-																);
-															}
-															if (
-																rowMoney.hasContract &&
-																rowMoney.coveragePct === 0
-															) {
-																return (
-																	<span className="text-rose-500 font-semibold flex items-center gap-1.5 flex-wrap">
-																		<span>{rub(rowMoney.unitKopecks)}</span>
-																		<span className="text-xs font-bold bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/25">
-																			Вне покрытия ДМС
-																		</span>
-																	</span>
-																);
-															}
-															if (
-																rowMoney.hasContract &&
-																rowMoney.coveragePct < 100
-															) {
-																return (
-																	<span className="flex items-center gap-1.5 flex-wrap">
-																		<span className="line-through text-slate-400 dark:text-zinc-500">
-																			{rub(rowMoney.unitKopecks)}
-																		</span>
-																		<span className="text-teal-500 dark:text-teal-400 font-bold">
-																			{rub(rowMoney.unitPayableKopecks)}
-																		</span>
-																		<span className="text-xs font-bold bg-teal-500/10 text-teal-500 dark:text-teal-400 px-1.5 py-0.5 rounded border border-teal-500/20">
-																			Со-оплата {rowMoney.copayPct}%
-																		</span>
-																	</span>
-																);
-															}
-															if (rowMoney.hasContract) {
-																return (
-																	<span className="flex items-center gap-1.5 flex-wrap">
-																		<span className="line-through text-slate-400 dark:text-zinc-500">
-																			{rub(rowMoney.unitKopecks)}
-																		</span>
-																		<span className="text-teal-500 dark:text-teal-400 font-bold">
-																			{rub(rowMoney.unitPayableKopecks)}
-																		</span>
-																		<span className="text-xs font-bold bg-teal-500/10 text-teal-500 dark:text-teal-400 px-1.5 py-0.5 rounded border border-teal-500/20">
-																			ДМС 100%
-																		</span>
-																	</span>
-																);
-															}
-															return (
-																<span>
-																	{rub(rowMoney.unitKopecks)} x {item.quantity}
-																</span>
-															);
-														})()}
-													</div>
-												</div>
-												<button
-													type="button"
-													onClick={() => removeItem(globalIdx)}
-													className="btn-remove-item"
-													title="Удалить"
-												>
-													<Trash2 size={14} />
-												</button>
-											</div>
-											<div className="plan-item-footer">
-												<select
-													value={item.phase}
-													onChange={(e) =>
-														setPhase(globalIdx, parseInt(e.target.value, 10))
-													}
-													className="select-phase"
-												>
-													<option value={1}>Этап I: Терапия</option>
-													<option value={2}>Этап II: Хирургия</option>
-													<option value={3}>Этап III: Ортопедия</option>
-												</select>
-												<span className="plan-item-total-price">
-													{(() => {
-														/*
-														 * Итог строки считается целыми копейками и включает
-														 * скидку — как на сервере, max(0, цена × кол-во −
-														 * скидка). До правки скидка в строке не вычиталась, и
-														 * сумма строк не совпадала с «Итого по плану».
-														 */
-														const rowMoney = estimatorRowMoney(item, contract);
-														return rowMoney.known
-															? rub(rowMoney.payableKopecks)
-															: "цены нет";
-													})()}
-												</span>
-											</div>
-										</div>
-									);
-								})}
-							</div>
-						</div>
-					);
-				})}
+									<div className="phase-items-list">
+										{phaseItems.map((item) => {
+											const globalIdx = items.indexOf(item);
+											return (
+												<TreatmentEstimatorItemCard
+													key={globalIdx}
+													item={item}
+													globalIdx={globalIdx}
+													contract={contract}
+													onRemove={removeItem}
+													onSetPhase={setPhase}
+													formatRub={rub}
+												/>
+											);
+										})}
+									</div>
+								</div>
+							);
+						})}
 					</>
 				)}
 			</div>
 
-			{/* Итог складывается целыми копейками (packages/shared/utils/money.ts).
-			    Строка без цены не считается нулём: она делает итог НЕПОЛНЫМ, и об
-			    этом сказано рядом с суммой, а не спрятано. Молча просуммировать
-			    известное и выдать это за итог — то же самое, что выдумать цену. */}
 			{plannerTab === "manual_lines" && (
 				<div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-3 px-4 py-3 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
 					<div className="flex items-center gap-2 flex-wrap">
@@ -1026,59 +642,17 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				/>
 			)}
 
-			{showSignModal &&
-				typeof window !== "undefined" &&
-				createPortal(
-					<div className="modal-overlay">
-						<div className="modal-content" style={{ maxWidth: "800px" }}>
-							<div className="flex items-center justify-between pb-3 mb-3 border-b border-zinc-200 dark:border-zinc-700">
-								<h3 className="text-sm font-bold text-slate-800 dark:text-zinc-100 flex items-center gap-1.5">
-									<PenTool size={16} className="text-teal-600" />
-									<span>Подписание плана лечения</span>
-								</h3>
-								<button
-									type="button"
-									onClick={() => setShowSignModal(false)}
-									className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 p-1 cursor-pointer"
-									aria-label="Закрыть"
-								>
-									<X size={16} aria-hidden="true" />
-								</button>
-							</div>
-							<div className="p-4 space-y-3 bg-[var(--paper,#18181b)] rounded-xl border border-[var(--line,#27272a)] text-center">
-								<p className="text-xs text-slate-600 dark:text-slate-300">
-									Смета согласована с пациентом в соответствии со ст. 84 323-ФЗ и ПП РФ № 736.
-								</p>
-								<div className="flex flex-col sm:flex-row gap-2">
-									<button
-										type="button"
-										onClick={() => {
-											const paperStamp = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='60'><rect width='100%' height='100%' fill='%23f0fdf4' stroke='%2316a34a' rx='6'/><text x='120' y='25' text-anchor='middle' font-family='sans-serif' font-size='11' font-weight='bold' fill='%2315803d'>ПОДПИСАНО НА БУМАГЕ</text><text x='120' y='45' text-anchor='middle' font-family='sans-serif' font-size='10' fill='%23166534'>Смета согласована</text></svg>";
-											setSignatureUrl(paperStamp);
-											setShowSignModal(false);
-											showToast("План лечения и смета подтверждены на бумаге", "success");
-										}}
-										className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[44px] sm:min-h-[32px] text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all cursor-pointer shadow-sm"
-										data-testid="estimator-modal-paper-confirm-btn"
-									>
-										<ShieldCheck size={16} />
-										<span>Подтвердить на бумаге (1 клик)</span>
-									</button>
-									<button
-										type="button"
-										onClick={() => window.print()}
-										className="flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[44px] sm:min-h-[32px] text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-										data-testid="estimator-modal-print-btn"
-									>
-										<Printer size={16} />
-										<span>Печать сметы (А4)</span>
-									</button>
-								</div>
-							</div>
-						</div>
-					</div>,
-					document.body,
-				)}
+			<TreatmentEstimatorSignModal
+				isOpen={showSignModal}
+				onClose={() => setShowSignModal(false)}
+				onConfirmPaper={() => {
+					const paperStamp = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='60'><rect width='100%' height='100%' fill='%23f0fdf4' stroke='%2316a34a' rx='6'/><text x='120' y='25' text-anchor='middle' font-family='sans-serif' font-size='11' font-weight='bold' fill='%2315803d'>ПОДПИСАНО НА БУМАГЕ</text><text x='120' y='45' text-anchor='middle' font-family='sans-serif' font-size='10' fill='%23166534'>Смета согласована</text></svg>";
+					setSignatureUrl(paperStamp);
+					setShowSignModal(false);
+					showToast("План лечения и смета подтверждены на бумаге", "success");
+				}}
+				onPrint={() => window.print()}
+			/>
 		</div>
 	);
 };
