@@ -76,6 +76,8 @@ import type {
 	SbpPaymentInvoice,
 	TemplateCategory,
 } from "./omnichannelTypes.js";
+import { OmnichannelNpsTab } from "./OmnichannelNpsTab.js";
+import { OmnichannelTemplatesTab } from "./OmnichannelTemplatesTab.js";
 import "./omnichannelHub.css";
 
 export type OmnichannelTab = "chat" | "templates" | "nps";
@@ -711,269 +713,26 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 
 					{/* ТАБ 2: КЛИНИЧЕСКИЕ ШАБЛОНЫ */}
 					{activeTab === "templates" && (
-						<div className="hub-templates-workspace">
-							<div className="hub-templates-header">
-								<div>
-									<h3 className="hub-templates-title">Библиотека стандартизированных шаблонов</h3>
-									<p className="hub-templates-sub">
-										1-кликовая отправка с авто-подстановкой ФИО, дат визитов, смет и ссылок на оплату
-									</p>
-								</div>
-							</div>
-
-							<div className="hub-templates-grid">
-								{DEFAULT_TEMPLATES.map((tpl) => (
-									<div key={tpl.id} className="hub-template-card">
-										<div className="hub-tpl-card-top">
-											<div className="hub-tpl-badge-category">
-												{tpl.category === "visit_reminder" && (
-													<span className="inline-flex items-center gap-1"><Calendar size={13} /> Напоминание</span>
-												)}
-												{tpl.category === "appointment_confirmation" && (
-													<span className="inline-flex items-center gap-1"><CheckCircle2 size={13} /> Подтверждение</span>
-												)}
-												{tpl.category === "treatment_plan" && (
-													<span className="inline-flex items-center gap-1"><Activity size={13} /> План лечения</span>
-												)}
-												{tpl.category === "nps_survey" && (
-													<span className="inline-flex items-center gap-1"><Star size={13} /> Опрос NPS</span>
-												)}
-												{tpl.category === "sbp_payment" && (
-													<span className="inline-flex items-center gap-1"><Zap size={13} /> Оплата СБП</span>
-												)}
-												{tpl.category === "custom" && (
-													<span className="inline-flex items-center gap-1"><FileText size={13} /> Шаблон</span>
-												)}
-											</div>
-											<span className="hub-tpl-channel-tag">{tpl.channel.toUpperCase()}</span>
-										</div>
-
-										<h4 className="hub-tpl-name">{tpl.name}</h4>
-										<p className="hub-tpl-desc">{tpl.description}</p>
-
-										<div className="hub-tpl-preview-box">
-											{tpl.templateText}
-										</div>
-
-										<div className="hub-tpl-variables-row">
-											<span className="hub-tpl-vars-label">Переменные:</span>
-											{tpl.variables.map((v) => (
-												<span key={v} className="hub-tpl-var-chip">
-													{v}
-												</span>
-											))}
-										</div>
-
-										<button
-											type="button"
-											className="hub-btn-apply-template min-h-[44px]"
-											style={{ minHeight: "44px" }}
-											onClick={() => handleApplyTemplate(tpl)}
-										>
-											<ArrowUpRight size={15} /> Применить в диалог с {selectedContact.fullName}
-										</button>
-									</div>
-								))}
-							</div>
-						</div>
+						<OmnichannelTemplatesTab
+							templates={DEFAULT_TEMPLATES}
+							selectedContactName={selectedContact.fullName}
+							onApplyTemplate={handleApplyTemplate}
+						/>
 					)}
 
 					{/* ТАБ 3: ДАШБОРД NPS И ОТЗЫВОВ */}
 					{activeTab === "nps" && (
-						<div className="hub-nps-workspace">
-							{/* Метрики лояльности */}
-							<div className="hub-nps-metrics-row">
-								<div className="hub-nps-metric-card hero">
-									<span className="metric-title">Индекс NPS клиники</span>
-									<div className="metric-hero-value">
-										<span className="score-sign">+{npsMetrics.npsScore}%</span>
-										<span className="score-badge-label">Отличный результат</span>
-									</div>
-									<p className="metric-hint">
-										Средний балл: <strong>{npsMetrics.averageScore} / 10</strong> на основе {npsMetrics.totalReviews} отзывов
-									</p>
-								</div>
-
-								{/* Промоутеры */}
-								<div className="hub-nps-metric-card promoter">
-									<div className="metric-card-top">
-										<span className="metric-title">Промоутеры (9–10)</span>
-										<ThumbsUp size={16} className="text-ok" />
-									</div>
-									<div className="metric-val-num text-ok">
-										{npsMetrics.promotersPct}% <span className="metric-count">({npsMetrics.promotersCount})</span>
-									</div>
-									<div className="metric-bar-track">
-										<div className="metric-bar-fill bar-promoter" style={{ width: `${npsMetrics.promotersPct}%` }} />
-									</div>
-									<p className="metric-hint">Лояльные клиенты, рекомендуют клинику</p>
-								</div>
-
-								{/* Нейтралы */}
-								<div className="hub-nps-metric-card neutral">
-									<div className="metric-card-top">
-										<span className="metric-title">Нейтралы (7–8)</span>
-										<Users size={16} className="text-amber" />
-									</div>
-									<div className="metric-val-num text-amber">
-										{npsMetrics.neutralsPct}% <span className="metric-count">({npsMetrics.neutralsCount})</span>
-									</div>
-									<div className="metric-bar-track">
-										<div className="metric-bar-fill bar-neutral" style={{ width: `${npsMetrics.neutralsPct}%` }} />
-									</div>
-									<p className="metric-hint">Удовлетворены, но уязвимы к конкурентам</p>
-								</div>
-
-								{/* Детракторы */}
-								<div className="hub-nps-metric-card detractor">
-									<div className="metric-card-top">
-										<span className="metric-title">Детракторы (0–6)</span>
-										<ThumbsDown size={16} className="text-bad" />
-									</div>
-									<div className="metric-val-num text-bad">
-										{npsMetrics.detractorsPct}% <span className="metric-count">({npsMetrics.detractorsCount})</span>
-									</div>
-									<div className="metric-bar-track">
-										<div className="metric-bar-fill bar-detractor" style={{ width: `${npsMetrics.detractorsPct}%` }} />
-									</div>
-									<p className="metric-hint">
-										{npsMetrics.criticalPendingCount > 0 ? (
-											<span className="text-bad font-semibold inline-flex items-center gap-1">
-												<AlertTriangle size={13} className="text-bad" /> {npsMetrics.criticalPendingCount} требуют звонка главврача!
-											</span>
-										) : (
-											"Критических инцидентов нет"
-										)}
-									</p>
-								</div>
-							</div>
-
-							{/* Таблица последних отзывов и инцидентов */}
-							<div className="hub-nps-table-container">
-								<div className="hub-nps-table-toolbar">
-									<h4 className="hub-nps-table-heading">
-										<History size={16} /> Лента отзывов пациентов и триаж инцидентов
-									</h4>
-
-									<div className="hub-nps-filters">
-										<div className="nps-filter-item">
-											<span>Категория:</span>
-											<select
-												className="hub-nps-select"
-												value={npsFilterUrgency}
-												onChange={(e) => setNpsFilterUrgency(e.target.value)}
-											>
-												<option value="all">Все отзывы ({npsReviews.length})</option>
-												<option value="critical">Критические (≤4)</option>
-												<option value="detractor">Все детракторы (0-6)</option>
-												<option value="neutral">Нейтралы (7-8)</option>
-												<option value="promoter">Промоутеры (9-10)</option>
-											</select>
-										</div>
-
-										<div className="nps-filter-item">
-											<span>Статус:</span>
-											<select
-												className="hub-nps-select"
-												value={npsFilterStatus}
-												onChange={(e) => setNpsFilterStatus(e.target.value)}
-											>
-												<option value="all">Все статусы</option>
-												<option value="pending">Ожидает ответа</option>
-												<option value="in_progress">В работе</option>
-												<option value="resolved">Урегулирован</option>
-												<option value="thanked">Поблагодарили</option>
-											</select>
-										</div>
-									</div>
-								</div>
-
-								<div className="hub-nps-table-wrapper">
-									<table className="hub-nps-table">
-										<thead>
-											<tr>
-												<th>Дата</th>
-												<th>Пациент</th>
-												<th>Оценка</th>
-												<th>Срочность / Бейдж</th>
-												<th>Комментарий пациента</th>
-												<th>Врач и услуга</th>
-												<th>Статус</th>
-												<th>Действие</th>
-											</tr>
-										</thead>
-										<tbody>
-											{filteredNpsReviews.map((rev) => {
-												const urgencyInfo = getNpsUrgency(rev.score);
-												return (
-													<tr key={rev.id} className={`nps-row-${rev.urgency}`}>
-														<td className="cell-date">
-															{new Date(rev.createdAt).toLocaleDateString("ru-RU", {
-																day: "2-digit",
-																month: "2-digit",
-																hour: "2-digit",
-																minute: "2-digit",
-															})}
-														</td>
-														<td className="cell-patient">
-															<span className="patient-name">{rev.patientName}</span>
-															<span className="patient-phone">{formatRussianPhone(rev.phone)}</span>
-														</td>
-														<td className="cell-score">
-															<span className={`nps-score-badge score-${rev.score} inline-flex items-center gap-1`}>
-																<Star size={11} className="text-amber-500 fill-amber-500 inline" />
-																<span>{rev.score}</span>
-															</span>
-														</td>
-														<td className="cell-urgency">
-															<span className={`nps-urgency-pill ${urgencyInfo.colorClass}`}>
-																{urgencyInfo.badgeText}
-															</span>
-														</td>
-														<td className="cell-comment">
-															<p className="comment-text">{rev.comment}</p>
-															{rev.resolutionNote && (
-																<p className="resolution-note">
-																	<strong>Решение:</strong> {rev.resolutionNote}
-																</p>
-															)}
-														</td>
-														<td className="cell-doctor">
-															<span className="doctor-name">{rev.doctorName}</span>
-															<span className="service-name">{rev.serviceName}</span>
-														</td>
-														<td className="cell-status">
-															<select
-																className={`status-select status-${rev.status}`}
-																value={rev.status}
-																onChange={(e) =>
-																	handleUpdateNpsStatus(rev.id, e.target.value as NpsReviewStatus)
-																}
-															>
-																<option value="pending">Не отвечен</option>
-																<option value="in_progress">В работе</option>
-																<option value="resolved">Урегулирован</option>
-																<option value="thanked">Поблагодарили</option>
-															</select>
-														</td>
-														<td className="cell-action">
-															<button
-																type="button"
-																className="hub-table-btn-chat"
-																onClick={() => handleOpenChatFromNps(rev.patientId)}
-																title="Открыть чат с пациентом"
-															>
-																<MessageCircle size={14} /> Чат
-															</button>
-														</td>
-													</tr>
-												);
-											})}
-										</tbody>
-									</table>
-								</div>
-							</div>
-						</div>
+						<OmnichannelNpsTab
+							npsMetrics={npsMetrics}
+							npsReviews={npsReviews}
+							filteredNpsReviews={filteredNpsReviews}
+							npsFilterUrgency={npsFilterUrgency}
+							setNpsFilterUrgency={setNpsFilterUrgency}
+							npsFilterStatus={npsFilterStatus}
+							setNpsFilterStatus={setNpsFilterStatus}
+							onUpdateNpsStatus={handleUpdateNpsStatus}
+							onOpenChatFromNps={handleOpenChatFromNps}
+						/>
 					)}
 				</div>
 

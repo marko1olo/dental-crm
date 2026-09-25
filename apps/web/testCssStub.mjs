@@ -87,6 +87,7 @@ registerHooks({
 							f.mockClear = () => { f.mock.calls = []; return f; };
 							return f;
 						},
+						mock: () => {},
 						restoreAllMocks: () => {},
 						clearAllMocks: () => {},
 						resetAllMocks: () => {},

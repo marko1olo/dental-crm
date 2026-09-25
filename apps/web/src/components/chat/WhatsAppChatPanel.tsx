@@ -3,12 +3,7 @@ import {
 	ArrowLeft,
 	Calendar,
 	CalendarCheck,
-	Check,
-	CheckCheck,
 	CreditCard,
-	FileCheck,
-	FileText,
-	MapPin,
 	MessageSquare,
 	Phone,
 	RefreshCw,
@@ -16,7 +11,6 @@ import {
 	Send,
 	Shield,
 	Sparkles,
-	Stethoscope,
 	User,
 	UserCheck,
 	X,
@@ -38,8 +32,11 @@ import {
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import {
-	generateAppointmentWhatsAppMessage,
-} from "../schedule/generateAppointmentWhatsAppMessage";
+	buildQuickTemplates,
+	type QuickTemplateItem,
+} from "./whatsAppChatTemplates";
+import { WhatsAppMessageBubble } from "./WhatsAppMessageBubble";
+import { WhatsAppEmptyStatePresets } from "./WhatsAppEmptyStatePresets";
 
 let chatMsgSeq = 0;
 
@@ -215,110 +212,21 @@ export function WhatsAppChatPanel({
 	}, [fetchThread]);
 
 	// Quick Clinical & Administrative WhatsApp Templates (Studio Clinical HIG: Vector icons, zero emojis)
+	// Quick Clinical & Administrative WhatsApp Templates (Studio Clinical HIG: Vector icons, zero emojis)
 	const quickTemplates = useMemo(() => {
-		const clinicName = dashboard?.clinicSettings?.name || "клинику DENTE";
-		const clinicAddress =
-			dashboard?.clinicSettings?.address || "г. Москва, ул. Клиническая, 10";
-
-		return [
-			{
-				id: "appt_reminder",
-				icon: <Calendar size={14} className="text-teal-400" />,
-				label: "Напоминание о приёме",
-				category: "appointment",
-				buildText: () =>
-					upcomingAppointment
-						? `Здравствуйте, ${effectiveName}! Напоминаем о вашей записи на приём в стоматологию ${clinicName}: ${upcomingAppointment.formattedDate} в ${upcomingAppointment.formattedTime} к врачу ${upcomingAppointment.doctorName || "специалисту"}. Ждём вас!`
-						: `Здравствуйте, ${effectiveName}! Напоминаем о запланированном визите в стоматологическую клинику ${clinicName}. Пожалуйста, сообщите, если вам потребуется скорректировать время приёма.`,
-			},
-			{
-				id: "surgery_memo",
-				icon: <FileText size={14} className="text-amber-400" />,
-				label: "Рекомендации после удаления",
-				category: "clinical",
-				buildText: () =>
-					`Здравствуйте, ${effectiveName}! Рекомендации после хирургического вмешательства / удаления в клинике ${clinicName}:\n1. Не принимать пищу 2 часа до окончания действия анестезии.\n2. Не полоскать полость рта в первые сутки (сохраняйте кровяной сгусток!).\n3. Исключить горячую пищу, бани, сауны и физические нагрузки на 3–5 дней.\n4. При возникновении вопросов звоните нам в клинику: ${dashboard?.clinicSettings?.phone || ""}. До скорой встречи!`,
-			},
-			{
-				id: "appt_confirm",
-				icon: <CalendarCheck size={14} className="text-emerald-400" />,
-				label: "Подтверждение визита",
-				category: "appointment",
-				buildText: () =>
-					upcomingAppointment
-						? generateAppointmentWhatsAppMessage({
-								patientName: effectiveName,
-								doctorName: upcomingAppointment.doctorName,
-								appointmentStartsAt: upcomingAppointment.startsAt,
-								clinicName: clinicName,
-								clinicAddress: clinicAddress,
-								treatmentReason: upcomingAppointment.reason,
-							})
-						: `Здравствуйте, ${effectiveName}! Напоминаем о вашей записи в стоматологию ${clinicName}. Пожалуйста, подтвердите визит ответным сообщением ДА.`,
-			},
-			{
-				id: "appt_confirmed",
-				icon: <CheckCheck size={14} className="text-emerald-400" />,
-				label: "Запись подтверждена",
-				category: "appointment",
-				buildText: () =>
-					upcomingAppointment
-						? `Здравствуйте, ${effectiveName}! Ваша запись на приём подтверждена: ${upcomingAppointment.formattedDate} в ${upcomingAppointment.formattedTime} к врачу ${upcomingAppointment.doctorName || "специалисту"}. Стоматология ${clinicName} (${clinicAddress}). Будем рады вас видеть!`
-						: `Здравствуйте, ${effectiveName}! Ваша запись в стоматологическую клинику ${clinicName} подтверждена. Ждём вас по адресу: ${clinicAddress}.`,
-			},
-			{
-				id: "hygiene_memo",
-				icon: <Sparkles size={14} className="text-cyan-400" />,
-				label: "Памятка: Профгигиена / Air Flow",
-				category: "clinical",
-				buildText: () =>
-					`Здравствуйте, ${effectiveName}! Памятка к процедуре профессиональной гигиены в ${clinicName}:\nПожалуйста, воздержитесь от кофе, крепкого чая, ягод и красящих продуктов за 2 часа до и после чистки. Ждём вас!`,
-			},
-			{
-				id: "ortho_memo",
-				icon: <Stethoscope size={14} className="text-indigo-400" />,
-				label: "Памятка: Ортодонтия / Каппы",
-				category: "clinical",
-				buildText: () =>
-					`Здравствуйте, ${effectiveName}! Напоминание перед визитом к ортодонту в ${clinicName}:\nПожалуйста, обязательно возьмите с собой текущие каппы/элайнеры, защитный кейс и почистите зубы перед приёмом.`,
-			},
-			{
-				id: "therapy_memo",
-				icon: <Shield size={14} className="text-blue-400" />,
-				label: "Памятка: Лечение кариеса",
-				category: "clinical",
-				buildText: () =>
-					`Здравствуйте, ${effectiveName}! Рекомендуем легко перекусить за 1 час до лечения кариеса, так как после местной анестезии прием пищи будет ограничен на 2 часа. До встречи в ${clinicName}!`,
-			},
-			{
-				id: "debt_reminder",
-				icon: <CreditCard size={14} className="text-rose-400" />,
-				label: "Оплата / Баланс",
-				category: "financial",
-				buildText: () =>
-					`Здравствуйте, ${effectiveName}! Напоминаем, что по вашей карте в клинике ${clinicName} числится остаток к оплате ${financialSummary.formattedDebt}. Оплатить можно в клинике или по безналичному расчету. Спасибо!`,
-			},
-			{
-				id: "docs_ready",
-				icon: <FileCheck size={14} className="text-purple-400" />,
-				label: "Справка для налоговой",
-				category: "administrative",
-				buildText: () =>
-					`Здравствуйте, ${effectiveName}! Ваша справка для налогового вычета (со всеми чеками и лицензией клиники ${clinicName}) готова. Вы можете забрать её на ресепшн или запросить скан в ответном сообщении.`,
-			},
-			{
-				id: "address_parking",
-				icon: <MapPin size={14} className="text-orange-400" />,
-				label: "Схема проезда",
-				category: "navigation",
-				buildText: () =>
-					`Здравствуйте, ${effectiveName}! Схема проезда в клинику ${clinicName}:\nАдрес: ${clinicAddress}.\nПарковка: Бесплатная гостевая парковка со стороны главного входа (шлагбаум открывается по звонку на ресепшн: ${dashboard?.clinicSettings?.phone || ""}).\nНавигатор: https://yandex.ru/maps/?text=${encodeURIComponent(`${clinicName} ${clinicAddress}`)}\nБудем рады вас видеть!`,
-			},
-		];
+		return buildQuickTemplates({
+			clinicName: dashboard?.clinicSettings?.name || "клинику DENTE",
+			clinicAddress:
+				dashboard?.clinicSettings?.address || "г. Москва, ул. Клиническая, 10",
+			clinicPhone: dashboard?.clinicSettings?.phone,
+			effectiveName,
+			upcomingAppointment,
+			financialSummary,
+		});
 	}, [dashboard?.clinicSettings, upcomingAppointment, effectiveName, financialSummary]);
 
 	// Apply Quick Template into Input Textarea
-	const handleApplyTemplate = (tmpl?: (typeof quickTemplates)[0]) => {
+	const handleApplyTemplate = (tmpl?: QuickTemplateItem) => {
 		if (!tmpl) return;
 		const text = tmpl.buildText();
 		setInputText(text);
@@ -328,7 +236,7 @@ export function WhatsAppChatPanel({
 	};
 
 	// 1-Click direct send template without double-clicking (Mandates 8e, 8k)
-	const handleDirectSendTemplate = async (tmpl?: (typeof quickTemplates)[0]) => {
+	const handleDirectSendTemplate = async (tmpl?: QuickTemplateItem) => {
 		if (!tmpl || isSending) return;
 		const text = tmpl.buildText();
 		const newMsgId = `msg-${Date.now()}-${++chatMsgSeq}`;
@@ -696,138 +604,16 @@ export function WhatsAppChatPanel({
 							</button>
 						</div>
 					) : (
-						/* Clean Empty State with Quick Medical Presets (Mandate 8k & 8e) */
-						<div className="my-auto flex flex-col items-center justify-center text-center p-4 sm:p-6 max-w-md mx-auto w-full animate-fade-in">
-							<div className="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-3 shadow-inner">
-								<MessageSquare size={26} />
-							</div>
-							<h4 className="text-sm sm:text-base font-bold text-[var(--ink,#f8fafc)] mb-1">
-								История переписки пуста
-							</h4>
-							<p className="text-xs text-[var(--muted,#94a3b8)] leading-relaxed mb-4">
-								Здесь будут отображаться реальные сообщения диалога с пациентом {effectiveName}. Выберите быстрый клинический шаблон для начала общения:
-							</p>
-							<div className="flex flex-col gap-2 w-full">
-								{/* Preset 1: Напоминание о приёме */}
-								<button
-									type="button"
-									onClick={() => handleApplyTemplate(quickTemplates[0])}
-									className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-teal-50 dark:hover:bg-teal-950/40 text-[var(--ink)] hover:text-teal-700 dark:hover:text-teal-300 border border-[var(--line,#334155)] hover:border-teal-500/50 text-xs font-semibold flex items-center gap-2.5 transition-all text-left group active:scale-[0.99]"
-								>
-									<span className="p-1.5 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 group-hover:bg-teal-500/20">
-										<Calendar size={16} />
-									</span>
-									<div className="min-w-0 flex-1">
-										<div className="font-bold">Напоминание о приёме</div>
-										<div className="text-[11px] text-[var(--muted,#94a3b8)] truncate font-normal">
-											Напоминание о запланированном визите и времени
-										</div>
-									</div>
-								</button>
-
-								{/* Preset 2: Рекомендации после удаления */}
-								<button
-									type="button"
-									onClick={() => handleApplyTemplate(quickTemplates[1])}
-									className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-amber-50 dark:hover:bg-amber-950/40 text-[var(--ink)] hover:text-amber-700 dark:hover:text-amber-300 border border-[var(--line,#334155)] hover:border-amber-500/50 text-xs font-semibold flex items-center gap-2.5 transition-all text-left group active:scale-[0.99]"
-								>
-									<span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-500/20">
-										<FileText size={16} />
-									</span>
-									<div className="min-w-0 flex-1">
-										<div className="font-bold">Рекомендации после удаления</div>
-										<div className="text-[11px] text-[var(--muted,#94a3b8)] truncate font-normal">
-											Послеоперационный режим, гемостаз и уход
-										</div>
-									</div>
-								</button>
-
-								{/* Preset 3: Подтверждение визита */}
-								<button
-									type="button"
-									onClick={() => handleApplyTemplate(quickTemplates[2])}
-									className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-[var(--ink)] hover:text-emerald-700 dark:hover:text-emerald-300 border border-[var(--line,#334155)] hover:border-emerald-500/50 text-xs font-semibold flex items-center gap-2.5 transition-all text-left group active:scale-[0.99]"
-								>
-									<span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500/20">
-										<CalendarCheck size={16} />
-									</span>
-									<div className="min-w-0 flex-1">
-										<div className="font-bold">Подтверждение визита</div>
-										<div className="text-[11px] text-[var(--muted,#94a3b8)] truncate font-normal">
-											Запрос подтверждения записи ответным сообщением
-										</div>
-									</div>
-								</button>
-							</div>
-						</div>
+						<WhatsAppEmptyStatePresets
+							effectiveName={effectiveName}
+							quickTemplates={quickTemplates}
+							onApplyTemplate={handleApplyTemplate}
+						/>
 					)
 				) : (
-					filteredMessages.map((msg) => {
-						const isClinic = msg.sender === "clinic";
-						const timeStr = new Date(msg.timestamp).toLocaleTimeString("ru-RU", {
-							hour: "2-digit",
-							minute: "2-digit",
-						});
-
-						return (
-							<div
-								key={msg.id}
-								className={`flex flex-col ${isClinic ? "items-end" : "items-start"} max-w-full`}
-							>
-								{/* Bubble Container: min-w-0 break-words to protect 390px mobile viewports */}
-								<div
-									className={`min-w-0 break-words max-w-[85%] sm:max-w-[75%] px-4 py-2.5 rounded-2xl shadow-sm text-xs sm:text-sm font-normal leading-relaxed ${
-										isClinic
-											? "bg-gradient-to-br from-teal-700 to-teal-800 text-white rounded-tr-xs border border-teal-600/40"
-											: "bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] rounded-tl-xs border border-[var(--line,#334155)]"
-									}`}
-								>
-									{/* Sender name on incoming message */}
-									{!isClinic && msg.senderName && (
-										<div className="font-bold text-[10px] uppercase tracking-wider text-teal-400 mb-1">
-											{msg.senderName}
-										</div>
-									)}
-
-									{/* Message Body Text */}
-									<div className="whitespace-pre-wrap select-text">{msg.text}</div>
-
-									{/* Timestamp & Status Icon */}
-									<div
-										className={`flex items-center justify-end gap-1 mt-1 text-[10px] font-mono ${
-											isClinic ? "text-teal-200/80" : "text-[var(--muted,#94a3b8)]"
-										}`}
-									>
-										<span>{timeStr}</span>
-										{isClinic && (
-											<span
-												className="inline-flex items-center"
-												title={
-													msg.status === "read"
-														? "Прочитано"
-														: msg.status === "delivered"
-															? "Доставлено"
-															: msg.status === "failed"
-																? "Ошибка доставки"
-																: "Отправлено"
-												}
-											>
-												{msg.status === "read" ? (
-													<CheckCheck size={13} className="text-cyan-300" />
-												) : msg.status === "delivered" ? (
-													<CheckCheck size={13} className="opacity-70" />
-												) : msg.status === "failed" ? (
-													<AlertCircle size={13} className="text-rose-400" />
-												) : (
-													<Check size={13} className="opacity-70" />
-												)}
-											</span>
-										)}
-									</div>
-								</div>
-							</div>
-						);
-					})
+					filteredMessages.map((msg) => (
+						<WhatsAppMessageBubble key={msg.id} msg={msg} />
+					))
 				)}
 				<div ref={messagesEndRef} />
 			</div>

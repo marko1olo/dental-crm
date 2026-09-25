@@ -246,13 +246,11 @@ function setupMockDom() {
 	g.HTMLOptionElement = win.HTMLOptionElement;
 	g.IS_REACT_ACT_ENVIRONMENT = true;
 
-	if (!g.fetch) {
-		g.fetch = vi.fn().mockResolvedValue({
-			ok: true,
-			status: 200,
-			json: async () => ({}),
-		});
-	}
+	g.fetch = vi.fn().mockResolvedValue({
+		ok: true,
+		status: 200,
+		json: async () => ({}),
+	});
 
 	return { doc, win };
 }
