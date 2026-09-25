@@ -48,8 +48,10 @@ import {
 import {
 	allocateRemainderToTender,
 	calculateCashChange,
+	calculatePaymentDiscount,
 	validate54FzBuyerInn,
 	type PayerType,
+	type PaymentDiscountCalculation,
 	type TenderAllocationTarget,
 } from "./cashboxOperations.js";
 import {
@@ -107,84 +109,10 @@ export interface PaymentModalProps {
 	}) => void) | undefined;
 }
 
-export interface PaymentDiscountCalculation {
-	readonly rawTotalDueRub: number;
-	readonly discountRub: number;
-	readonly discountKopecks: number;
-	readonly totalDueRub: number;
-	readonly totalDueKopecks: number;
-	readonly effectiveDiscountPercent: number;
-	readonly discountPercent: number;
-	readonly isWarranty100: boolean;
-}
-
-/**
- * Wave 66 (Feature 255): Doctor Autonomy & Multi-Tier Discounts calculation (Mandates 8b, 8e п. 7, 8k, 8n).
- * Guarantees penny-exact integer kopeck calculations without IEEE-754 float drift.
- */
-export function calculatePaymentDiscount(
-	rawTotalDueRub: number,
-	options: {
-		isWarranty100?: boolean;
-		customDiscountRub?: number;
-		discountPercent?: number;
-	} = {},
-): PaymentDiscountCalculation {
-	const rawKop = rubToKopecks(rawTotalDueRub);
-	if (options.isWarranty100) {
-		return {
-			rawTotalDueRub,
-			discountRub: rawTotalDueRub,
-			discountKopecks: rawKop,
-			totalDueRub: 0,
-			totalDueKopecks: 0,
-			effectiveDiscountPercent: 100,
-			discountPercent: 100,
-			isWarranty100: true,
-		};
-	}
-	if (options.customDiscountRub !== undefined && options.customDiscountRub > 0) {
-		const customKop = rubToKopecks(options.customDiscountRub);
-		const cappedDiscountKop = Math.min(rawKop, customKop);
-		const dueKop = Math.max(0, rawKop - cappedDiscountKop);
-		const effPercent = rawKop > 0 ? Number(((cappedDiscountKop / rawKop) * 100).toFixed(2)) : 0;
-		return {
-			rawTotalDueRub,
-			discountRub: kopecksToRub(cappedDiscountKop),
-			discountKopecks: cappedDiscountKop,
-			totalDueRub: kopecksToRub(dueKop),
-			totalDueKopecks: dueKop,
-			effectiveDiscountPercent: effPercent,
-			discountPercent: effPercent,
-			isWarranty100: false,
-		};
-	}
-	if (options.discountPercent !== undefined && options.discountPercent > 0) {
-		const discountKop = Math.round((rawKop * options.discountPercent) / 100);
-		const cappedDiscountKop = Math.min(rawKop, discountKop);
-		const dueKop = Math.max(0, rawKop - cappedDiscountKop);
-		return {
-			rawTotalDueRub,
-			discountRub: kopecksToRub(cappedDiscountKop),
-			discountKopecks: cappedDiscountKop,
-			totalDueRub: kopecksToRub(dueKop),
-			totalDueKopecks: dueKop,
-			effectiveDiscountPercent: options.discountPercent,
-			discountPercent: options.discountPercent,
-			isWarranty100: false,
-		};
-	}
-	return {
-		rawTotalDueRub,
-		discountRub: 0,
-		discountKopecks: 0,
-		totalDueRub: rawTotalDueRub,
-		totalDueKopecks: rawKop,
-		effectiveDiscountPercent: 0,
-		discountPercent: 0,
-		isWarranty100: false,
-	};
-}
+export {
+	calculatePaymentDiscount,
+	type PaymentDiscountCalculation,
+};
 
 export function generateInvoicePrintHtml(params: {
 	invoiceNumber: string;

@@ -44,7 +44,7 @@ const DentalLabOrderModal = lazy(() =>
 	})),
 );
 const DentalLabOrdersTrackerModal = lazy(() =>
-	import("../components/laboratory/DentalLabOrdersTrackerModal").then((module) => ({
+	import("../components/lab/DentalLabOrdersTrackerModal").then((module) => ({
 		default: module.DentalLabOrdersTrackerModal,
 	})),
 );

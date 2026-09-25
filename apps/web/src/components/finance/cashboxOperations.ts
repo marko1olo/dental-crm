@@ -154,6 +154,57 @@ export interface ZeroDiscountCheckoutResult {
 	readonly receiptDocNumber: number;
 }
 
+export interface PaymentDiscountCalculation {
+	readonly rawTotalDueRub: number;
+	readonly discountRub: number;
+	readonly discountKopecks: number;
+	readonly totalDueRub: number;
+	readonly totalDueKopecks: number;
+	readonly effectiveDiscountPercent: number;
+	readonly discountPercent: number;
+	readonly isWarranty100: boolean;
+}
+
+/**
+ * Wave 66 (Feature 255): Doctor Autonomy & Multi-Tier Discounts calculation (Mandates 8b, 8e п. 7, 8k, 8n).
+ * Guarantees penny-exact integer kopeck calculations without IEEE-754 float drift.
+ */
+export function calculatePaymentDiscount(
+	rawTotalDueRub: number,
+	options: {
+		isWarranty100?: boolean;
+		customDiscountRub?: number;
+		discountPercent?: number;
+	} = {},
+): PaymentDiscountCalculation {
+	const rawKop = rubToKopecks(rawTotalDueRub);
+	if (options.isWarranty100) {
+		return { rawTotalDueRub, discountRub: rawTotalDueRub, discountKopecks: rawKop, totalDueRub: 0, totalDueKopecks: 0, effectiveDiscountPercent: 100, discountPercent: 100, isWarranty100: true };
+	}
+	let cappedDiscountKop = 0;
+	let effPercent = 0;
+	if (options.customDiscountRub !== undefined && options.customDiscountRub > 0) {
+		const customKop = rubToKopecks(options.customDiscountRub);
+		cappedDiscountKop = Math.min(rawKop, customKop);
+		effPercent = rawKop > 0 ? Number(((cappedDiscountKop / rawKop) * 100).toFixed(2)) : 0;
+	} else if (options.discountPercent !== undefined && options.discountPercent > 0) {
+		const discountKop = Math.round((rawKop * options.discountPercent) / 100);
+		cappedDiscountKop = Math.min(rawKop, discountKop);
+		effPercent = options.discountPercent;
+	}
+	const dueKop = Math.max(0, rawKop - cappedDiscountKop);
+	return {
+		rawTotalDueRub,
+		discountRub: kopecksToRub(cappedDiscountKop),
+		discountKopecks: cappedDiscountKop,
+		totalDueRub: kopecksToRub(dueKop),
+		totalDueKopecks: dueKop,
+		effectiveDiscountPercent: effPercent,
+		discountPercent: effPercent,
+		isWarranty100: false,
+	};
+}
+
 /**
  * Мандат 8e, п. 7: Свобода скидок и гарантийных переделок.
  * Если итог к оплате после 100% скидки равен 0 ₽:
@@ -168,24 +219,20 @@ export function process100PercentDiscountCheckout(params: {
 	readonly isStaffColleague?: boolean | undefined;
 	readonly customDiscountRub?: number | undefined;
 }): ZeroDiscountCheckoutResult {
-	const grossKop = rubToKopecks(params.totalGrossRub);
-
 	const is100Percent =
 		Boolean(params.isWarrantyRework) ||
 		Boolean(params.isStaffColleague) ||
 		(typeof params.discountPercent === "number" && params.discountPercent >= 100);
 
-	let discountKop = 0;
-	if (is100Percent) {
-		discountKop = grossKop;
-	} else if (typeof params.customDiscountRub === "number" && params.customDiscountRub > 0) {
-		discountKop = Math.min(grossKop, rubToKopecks(params.customDiscountRub));
-	} else if (typeof params.discountPercent === "number" && params.discountPercent > 0) {
-		const pct = Math.min(100, Math.max(0, params.discountPercent));
-		discountKop = Math.round((grossKop * pct) / 100);
-	}
+	const calc = calculatePaymentDiscount(params.totalGrossRub, {
+		isWarranty100: is100Percent,
+		customDiscountRub: params.customDiscountRub,
+		discountPercent: params.discountPercent,
+	});
 
-	const netKop = Math.max(0, grossKop - discountKop);
+	const grossKop = rubToKopecks(calc.rawTotalDueRub);
+	const discountKop = calc.discountKopecks;
+	const netKop = calc.totalDueKopecks;
 	const isZeroDue = netKop === 0;
 
 	if (isZeroDue) {

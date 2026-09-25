@@ -395,7 +395,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 
 	const cashInDrawerRub = Math.max(
 		0,
-		Math.round(((cashDayTotals?.cashRub ?? 0) + manualCashDeltaRub) * 100) / 100,
+		(Math.round((cashDayTotals?.cashRub ?? 0) * 100) + Math.round(manualCashDeltaRub * 100)) / 100,
 	);
 	const cardSumRub = cashDayTotals?.cardRub ?? 0;
 	const sbpSumRub = cashDayTotals?.sbpRub ?? 0;
@@ -462,7 +462,8 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				);
 			}
 			setManualCashDeltaRub((prev) => {
-				const next = Math.round((prev + amountRub) * 100) / 100;
+				const nextKop = Math.round(prev * 100) + Math.round(amountRub * 100);
+				const next = nextKop / 100;
 				safeLocalStorageSetItem("dente_cash_shift_delta", String(next));
 				return next;
 			});
@@ -498,7 +499,8 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				);
 			}
 			setManualCashDeltaRub((prev) => {
-				const next = Math.round((prev - amountRub) * 100) / 100;
+				const nextKop = Math.round(prev * 100) - Math.round(amountRub * 100);
+				const next = nextKop / 100;
 				safeLocalStorageSetItem("dente_cash_shift_delta", String(next));
 				return next;
 			});

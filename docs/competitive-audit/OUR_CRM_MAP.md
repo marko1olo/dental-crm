@@ -7350,8 +7350,9 @@
   - `apps/web/src/components/inventory/acceptanceWaybillsEngine.ts`
   - `apps/web/src/components/inventory/AcceptanceWaybillsModal.tsx`
   - `apps/api/src/routes/inventory.ts`
-  - `apps/web/src/components/laboratory/dentalLabOrderEngine.ts`
-  - `apps/web/src/components/laboratory/DentalLabOrdersTrackerModal.tsx`
+  - `apps/web/src/components/lab/dentalLabOrderEngine.ts`
+  - `apps/web/src/components/lab/DentalLabOrdersTrackerModal.tsx`
+  - `apps/web/src/components/lab/DentalLabOrderDrawer.tsx`
   - `packages/shared/src/fiscal/mixedFiscalReceipt.ts`
   - `packages/shared/src/finance/installmentsEngine.ts`
   - `apps/web/src/components/billing/PatientInstallmentsModal.tsx`

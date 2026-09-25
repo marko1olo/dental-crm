@@ -539,9 +539,12 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 	// Total turnover across all fiscal tenders
 	const totalTurnoverRub = cashInDrawerRub + cardSumRub + sbpSumRub + advanceOffsetRub;
 
-	// Acquiring fee calculation (standard 1.5% commission rate)
-	const acquiringFeeRub = Math.round((cardSumRub + sbpSumRub) * 0.015 * 100) / 100;
-	const netBankDepositRub = Math.max(0, cardSumRub + sbpSumRub - acquiringFeeRub);
+	// Acquiring fee calculation (standard 1.5% commission rate in integer kopecks without float drift — Mandate 8b)
+	const cashlessKopecks = Math.round((cardSumRub + sbpSumRub) * 100);
+	const acquiringFeeKopecks = Math.round((cashlessKopecks * 15) / 1000);
+	const netBankDepositKopecks = Math.max(0, cashlessKopecks - acquiringFeeKopecks);
+	const acquiringFeeRub = acquiringFeeKopecks / 100;
+	const netBankDepositRub = netBankDepositKopecks / 100;
 
 	const handleToggleShift = async () => {
 		if (isProcessing) return;

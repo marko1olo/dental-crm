@@ -112,8 +112,11 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 	const netRevenueKopecks = cashInDrawerKopecks + electronicKopecks + advanceOffsetKopecks;
 
 	const netRevenueRub = netRevenueKopecks / 100;
-	const acquiringFeeRub = Math.round((cardSumRub + sbpSumRub) * 0.015 * 100) / 100;
-	const netBankDepositRub = Math.max(0, cardSumRub + sbpSumRub - acquiringFeeRub);
+	// Acquiring fee: standard 1.5% in integer kopecks without float drift (Mandate 8b)
+	const acquiringFeeKopecks = Math.round((electronicKopecks * 15) / 1000);
+	const netBankDepositKopecks = Math.max(0, electronicKopecks - acquiringFeeKopecks);
+	const acquiringFeeRub = acquiringFeeKopecks / 100;
+	const netBankDepositRub = netBankDepositKopecks / 100;
 
 	// Compiled 54-FZ Z-Report Summary
 	const reportSummary: Ffd12ShiftCloseZReportSummary = useMemo(() => {

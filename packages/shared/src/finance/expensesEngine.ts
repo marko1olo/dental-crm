@@ -131,14 +131,18 @@ export function calculateMonthlyExpensesSummary(
 
 /**
  * Calculates Net Profit (Revenue - Expenses) and Net Profit Margin Percentage.
+ * Governed by Mandate 8b: exact integer kopeck math without IEEE-754 float drift.
  */
 export function calculateNetProfitAndMargin(
 	revenueRub: number,
 	expensesRub: number,
 ): NetProfitSummary {
-	const netProfitRub = Math.round((revenueRub - expensesRub) * 100) / 100;
-	const profitMarginPercent = revenueRub > 0
-		? Math.round((netProfitRub / revenueRub) * 10000) / 100
+	const revKopecks = rubToKopecks(revenueRub);
+	const expKopecks = rubToKopecks(expensesRub);
+	const netProfitKopecks = revKopecks - expKopecks;
+	const netProfitRub = kopecksToRub(netProfitKopecks);
+	const profitMarginPercent = revKopecks > 0
+		? Math.round((netProfitKopecks / revKopecks) * 10000) / 100
 		: 0;
 
 	return {
@@ -146,6 +150,6 @@ export function calculateNetProfitAndMargin(
 		expensesRub,
 		netProfitRub,
 		profitMarginPercent,
-		isProfitable: netProfitRub >= 0,
+		isProfitable: netProfitKopecks >= 0,
 	};
 }

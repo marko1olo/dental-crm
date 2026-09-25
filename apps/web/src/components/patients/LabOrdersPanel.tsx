@@ -36,7 +36,7 @@ const DentalLabOrdersHubModal = lazy(() =>
 	import("../lab/DentalLabOrdersHubModal").then((m) => ({ default: m.DentalLabOrdersHubModal }))
 );
 const DentalLabOrdersTrackerModal = lazy(() =>
-	import("../laboratory/DentalLabOrdersTrackerModal").then((m) => ({ default: m.DentalLabOrdersTrackerModal }))
+	import("../lab/DentalLabOrdersTrackerModal").then((m) => ({ default: m.DentalLabOrdersTrackerModal }))
 );
 const LabTrackingDrawer = lazy(() =>
 	import("../lab/LabTrackingDrawer").then((m) => ({ default: m.LabTrackingDrawer }))

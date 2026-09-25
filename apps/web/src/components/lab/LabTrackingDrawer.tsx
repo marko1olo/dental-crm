@@ -284,7 +284,7 @@ export function LabTrackingDrawer({
 												if (item.id === "sent") handleAdvanceStage("sent_to_lab");
 												else if (item.id === "in_progress") handleAdvanceStage("in_progress");
 												else if (item.id === "fitting") handleAdvanceStage("fitting_scheduled");
-												else if (item.id === "ready") handleAdvanceStage("delivered_completed");
+												else if (item.id === "ready") handleAdvanceStage("delivered_to_clinic");
 												else if (item.id === "completed") handleAdvanceStage("delivered_completed");
 											}}
 											className={`p-1.5 rounded-lg border text-center transition-all cursor-pointer min-h-[38px] ${
