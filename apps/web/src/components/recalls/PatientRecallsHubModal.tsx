@@ -17,7 +17,9 @@ import {
 	ChevronDown,
 	Clock,
 	Eye,
+	LayoutGrid,
 	Lightbulb,
+	List,
 	MessageCircle,
 	Phone,
 	PhoneCall,
@@ -43,6 +45,7 @@ import { useScheduleStore } from "../../store/scheduleStore";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 import {
+	CANONICAL_RECALL_STATUS_CONFIG,
 	RECALL_CYCLE_CATALOG,
 	buildTelegramUrl,
 	buildWhatsAppUrl,
@@ -50,12 +53,19 @@ import {
 	calculateRecallMetrics,
 	determineTaskCallTypeForCandidate,
 	filterAndSortRecallCandidates,
+	fromCanonicalRecallStatus,
+	generatePdnProtectedRecallMessage,
 	generateSmsRecallMessage,
 	generateTelegramRecallMessage,
 	generateWhatsAppRecallMessage,
+	resolveCandidateTriggerType,
+	toCanonicalRecallStatus,
+	type CanonicalRecallWorkflowStatus,
+	type ClinicalRecallTriggerType,
 	type PatientRecallRecord,
 	type RecallContactStatus,
 	type RecallCycleType,
+	type RecallPeriodFilter,
 	type RecallUrgencyStatus,
 } from "./patientRecallEngine";
 import {
@@ -140,6 +150,8 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 }) => {
 	const searchInputId = useId();
 	const cycleSelectId = useId();
+	const doctorSelectId = useId();
+	const periodSelectId = useId();
 
 	const [candidates, setCandidates] = useState<readonly PatientRecallRecord[]>(
 		initialCandidates ?? [],
@@ -191,10 +203,14 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 	}, [isOpen, loadCandidates]);
 
 	const [activeTab, setActiveTab] = useState<"registry" | "cohorts" | "task_calls">("registry");
+	const [registryViewMode, setRegistryViewMode] = useState<"table" | "kanban">("table");
 	const [statusFilter, setStatusFilter] = useState<
 		"all" | "due_now" | "invited" | "scheduled" | "declined" | "completed"
 	>("all");
 	const [selectedCycle, setSelectedCycle] = useState<RecallCycleType | "all">("all");
+	const [selectedTrigger, setSelectedTrigger] = useState<ClinicalRecallTriggerType | "all">("all");
+	const [selectedDoctorId, setSelectedDoctorId] = useState<string | "all">("all");
+	const [selectedPeriod, setSelectedPeriod] = useState<RecallPeriodFilter>("all");
 	const [selectedTaskCallType, setSelectedTaskCallType] = useState<StomxTaskCallType | "all">("all");
 	const [activeTaskCallScriptType, setActiveTaskCallScriptType] = useState<StomxTaskCallType | null>(null);
 	const [searchQuery, setSearchQuery] = useState<string>("");
@@ -219,16 +235,45 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 		return calculateCohortRetention(candidates, { grouping: cohortGrouping });
 	}, [candidates, cohortGrouping]);
 
+	// Список уникальных врачей для селектора
+	const uniqueDoctors = useMemo(() => {
+		const docMap = new Map<string, string>();
+		for (const c of candidates) {
+			if (c.attendingDoctorId && c.attendingDoctorName) {
+				docMap.set(c.attendingDoctorId, c.attendingDoctorName);
+			}
+		}
+		return Array.from(docMap.entries()).map(([id, name]) => ({ id, name }));
+	}, [candidates]);
+
 	// Фильтрация кандидатов по клиническому реестру
 	const filteredCandidates = useMemo(() => {
 		return filterAndSortRecallCandidates(candidates, {
 			status: statusFilter,
 			cycleType: selectedCycle,
+			triggerType: selectedTrigger,
+			doctorId: selectedDoctorId,
+			period: selectedPeriod,
 			searchQuery,
 			sortBy: "daysOverdue",
 			sortDirection: "desc",
 		});
-	}, [candidates, statusFilter, selectedCycle, searchQuery]);
+	}, [candidates, statusFilter, selectedCycle, selectedTrigger, selectedDoctorId, selectedPeriod, searchQuery]);
+
+	// Группировка для 4-колоночной Канбан-доски («Не звонили», «Дозвонились», «Отказ», «Записан»)
+	const kanbanGroups = useMemo(() => {
+		const groups: Record<CanonicalRecallWorkflowStatus, PatientRecallRecord[]> = {
+			not_called: [],
+			reached: [],
+			declined: [],
+			scheduled: [],
+		};
+		for (const candidate of filteredCandidates) {
+			const canonical = toCanonicalRecallStatus(candidate.status);
+			groups[canonical].push(candidate);
+		}
+		return groups;
+	}, [filteredCandidates]);
 
 	// Фильтрация кандидатов по сервисным звонкам StomX
 	const taskCallCandidates = useMemo(() => {
@@ -281,7 +326,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 		}
 	};
 
-	// 1-Click WhatsApp (Mandate 8e Doctor Autonomy: zero disabled buttons, open preview if phone empty)
+	// 1-Click WhatsApp (152-ФЗ PDn Protected, Mandate 8e Doctor Autonomy: zero disabled buttons)
 	const handleWhatsApp = async (candidate: PatientRecallRecord) => {
 		if (!candidate.phone || !candidate.phone.trim()) {
 			showToast(
@@ -293,7 +338,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 			setActiveScriptCandidate(null);
 			return;
 		}
-		const message = generateWhatsAppRecallMessage(candidate, { clinicName });
+		const message = generatePdnProtectedRecallMessage(candidate, { clinicName });
 		if (onSendWhatsApp) {
 			await onSendWhatsApp(candidate, message);
 		} else {
@@ -301,11 +346,11 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 			window.open(url, "_blank", "noopener,noreferrer");
 		}
 		handleStatusUpdate(candidate.id, "invited", "whatsapp");
-		setStatusNotice(`WhatsApp сообщение для «${candidate.fullName}» готово.`);
+		setStatusNotice(`WhatsApp сообщение (152-ФЗ) для «${candidate.fullName}» готово.`);
 		setTimeout(() => setStatusNotice(null), 3000);
 	};
 
-	// 1-Click Telegram (Mandate 8e Doctor Autonomy: zero disabled buttons, open preview if phone empty)
+	// 1-Click Telegram (152-ФЗ PDn Protected, Mandate 8e Doctor Autonomy: zero disabled buttons)
 	const handleTelegram = async (candidate: PatientRecallRecord) => {
 		if (!candidate.phone || !candidate.phone.trim()) {
 			showToast(
@@ -317,7 +362,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 			setActiveScriptCandidate(null);
 			return;
 		}
-		const message = generateTelegramRecallMessage(candidate, { clinicName });
+		const message = generatePdnProtectedRecallMessage(candidate, { clinicName });
 		if (onSendTelegram) {
 			await onSendTelegram(candidate, message);
 		} else {
@@ -325,18 +370,18 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 			window.open(url, "_blank", "noopener,noreferrer");
 		}
 		handleStatusUpdate(candidate.id, "invited", "telegram");
-		setStatusNotice(`Telegram сообщение для «${candidate.fullName}» отправлено.`);
+		setStatusNotice(`Telegram сообщение (152-ФЗ) для «${candidate.fullName}» отправлено.`);
 		setTimeout(() => setStatusNotice(null), 3000);
 	};
 
-	// Копирование SMS (Mandate 8e: zero disabled buttons, 1-Click dispatch)
+	// Копирование SMS (152-ФЗ PDn Protected, Mandate 8e: zero disabled buttons, 1-Click dispatch)
 	const handleCopySms = (candidate: PatientRecallRecord) => {
-		const smsText = generateSmsRecallMessage(candidate, { clinicName });
+		const smsText = generatePdnProtectedRecallMessage(candidate, { clinicName });
 		navigator.clipboard.writeText(smsText).catch(() => {});
 		setCopiedCandidateId(candidate.id);
 		handleStatusUpdate(candidate.id, "invited", "sms");
 		if (!candidate.phone || !candidate.phone.trim()) {
-			showToast("SMS текст скопирован (номер телефона не указан в карте)", "info");
+			showToast("152-ФЗ SMS текст скопирован (номер телефона не указан в карте)", "info");
 		}
 		setTimeout(() => setCopiedCandidateId(null), 2500);
 	};
@@ -595,6 +640,70 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 					<>
 						{/* Toolbar */}
 						<div className="recall-toolbar">
+							<div className="recall-view-mode-bar">
+								<div className="recall-view-mode-toggles" role="group" aria-label="Режим отображения реестра">
+									<button
+										type="button"
+										className={`recall-view-mode-btn ${registryViewMode === "table" ? "active" : ""}`}
+										onClick={() => setRegistryViewMode("table")}
+										data-testid="view-mode-table"
+										title="Табличный вид"
+									>
+										<List size={15} />
+										<span>Таблица</span>
+									</button>
+									<button
+										type="button"
+										className={`recall-view-mode-btn ${registryViewMode === "kanban" ? "active" : ""}`}
+										onClick={() => setRegistryViewMode("kanban")}
+										data-testid="view-mode-kanban"
+										title="Канбан-доска («Не звонили», «Дозвонились», «Отказ», «Записан»)"
+									>
+										<LayoutGrid size={15} />
+										<span>Канбан</span>
+									</button>
+								</div>
+
+								<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+									<label htmlFor={doctorSelectId} className="sr-only">
+										Фильтр по лечащему врачу
+									</label>
+									<select
+										id={doctorSelectId}
+										className="recall-filter-select"
+										data-testid="doctor-filter-select"
+										value={selectedDoctorId}
+										onChange={(e) => setSelectedDoctorId(e.target.value)}
+										title="Фильтр по лечащему врачу"
+									>
+										<option value="all">Все врачи</option>
+										{uniqueDoctors.map((doc) => (
+											<option key={doc.id} value={doc.id}>
+												{doc.name}
+											</option>
+										))}
+									</select>
+
+									<label htmlFor={periodSelectId} className="sr-only">
+										Фильтр по периоду
+									</label>
+									<select
+										id={periodSelectId}
+										className="recall-filter-select"
+										data-testid="period-filter-select"
+										value={selectedPeriod}
+										onChange={(e) => setSelectedPeriod(e.target.value as RecallPeriodFilter)}
+										title="Фильтр по периоду наступления срока"
+									>
+										<option value="all">Все периоды</option>
+										<option value="overdue">Просрочено</option>
+										<option value="this_month">Текущий месяц</option>
+										<option value="next_month">Следующий месяц</option>
+										<option value="next_30_days">Ближайшие 30 дней</option>
+									</select>
+								</div>
+							</div>
+
 							<div className="recall-toolbar-top">
 								<div className="recall-search-input-wrap">
 									<Search size={16} className="recall-search-icon" aria-hidden="true" />
@@ -666,6 +775,34 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 								>
 									<Sparkles size={14} />
 									<span>1-Click: Импланты (1 год)</span>
+								</button>
+								<button
+									type="button"
+									data-testid="preset-ortho-1m"
+									className={`recall-preset-btn ${selectedCycle === "orthodontic_braces" ? "active" : ""}`}
+									onClick={() =>
+										setSelectedCycle(
+											selectedCycle === "orthodontic_braces" ? "all" : "orthodontic_braces",
+										)
+									}
+									title="1-Click: Пациенты на плановую активацию брекетов (1 мес. / 4 нед.)"
+								>
+									<Clock size={14} />
+									<span>1-Click: Орто-активация (1 мес.)</span>
+								</button>
+								<button
+									type="button"
+									data-testid="preset-pediatric-3m"
+									className={`recall-preset-btn ${selectedCycle === "pediatric_fluoridation" ? "active" : ""}`}
+									onClick={() =>
+										setSelectedCycle(
+											selectedCycle === "pediatric_fluoridation" ? "all" : "pediatric_fluoridation",
+										)
+									}
+									title="1-Click: Детский профилактический осмотр (3-4 мес.)"
+								>
+									<Users size={14} />
+									<span>1-Click: Детский осмотр (3-4 мес.)</span>
 								</button>
 							</div>
 
@@ -741,6 +878,168 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 									</div>
 									<h3>Нет пациентов по выбранному фильтру</h3>
 									<p>Все пациенты обработаны, либо срок вызова еще не наступил.</p>
+								</div>
+							) : registryViewMode === "kanban" ? (
+								<div className="recall-kanban-board" data-testid="recall-kanban-board">
+									{(["not_called", "reached", "declined", "scheduled"] as const).map((colKey) => {
+										const colConfig = CANONICAL_RECALL_STATUS_CONFIG[colKey];
+										const colCandidates = kanbanGroups[colKey];
+										return (
+											<div
+												key={colKey}
+												className="recall-kanban-column"
+												data-testid={`kanban-col-${colKey}`}
+											>
+												<div className="recall-kanban-column-header">
+													<div className="recall-kanban-column-title">
+														<span>{colConfig.label}</span>
+													</div>
+													<span
+														className="recall-kanban-column-badge"
+														data-testid={`kanban-badge-${colKey}`}
+													>
+														{colCandidates.length}
+													</span>
+												</div>
+												<div className="recall-kanban-cards-list">
+													{colCandidates.length === 0 ? (
+														<div className="recall-kanban-empty">Нет пациентов в этом статусе</div>
+													) : (
+														colCandidates.map((candidate) => {
+															const triggerType = resolveCandidateTriggerType(candidate);
+															const triggerLabel =
+																triggerType === "hygiene_6m"
+																	? "Профгигиена 6 мес."
+																	: triggerType === "implant_prosthetic_12m"
+																	? "Импланты/Ортопедия 12 мес."
+																	: triggerType === "ortho_activation_1m"
+																	? "Орто-активация 1 мес."
+																	: "Детский осмотр 3-4 мес.";
+
+															return (
+																<div
+																	key={candidate.id}
+																	className="recall-kanban-card"
+																	data-testid={`kanban-card-${candidate.id}`}
+																>
+																	<div className="recall-kanban-card-patient">
+																		<div className="recall-kanban-card-name">
+																			{candidate.fullName}
+																		</div>
+																		<div className="recall-kanban-card-phone">
+																			{candidate.phone || "телефон не указан"}
+																		</div>
+																	</div>
+
+																	<div className="recall-kanban-card-meta">
+																		<span
+																			className="recall-cycle-tag"
+																			style={{ alignSelf: "flex-start" }}
+																		>
+																			{triggerLabel}
+																		</span>
+																		<div className="recall-kanban-card-doctor">
+																			Врач: {candidate.attendingDoctorName || "—"}
+																		</div>
+																		<div
+																			style={{
+																				display: "flex",
+																				justifyContent: "space-between",
+																				alignItems: "center",
+																			}}
+																		>
+																			<span style={{ color: "var(--rm-text-muted)" }}>
+																				Срок: {candidate.dueDate}
+																			</span>
+																			<span
+																				className={`recall-badge recall-badge--${candidate.urgencyStatus}`}
+																			>
+																				{candidate.urgencyStatus === "due_now" && "Пора звать"}
+																				{candidate.urgencyStatus === "overdue_30" && `+${candidate.daysOverdue} дн.`}
+																				{candidate.urgencyStatus === "overdue_90" && `+${candidate.daysOverdue} дн. (риск)`}
+																				{candidate.urgencyStatus === "upcoming" && `через ${Math.abs(candidate.daysOverdue)} дн.`}
+																				{candidate.urgencyStatus === "completed" && "Завершено"}
+																			</span>
+																		</div>
+																	</div>
+
+																	<div className="recall-kanban-card-actions">
+																		{/* 1-Click: Записать */}
+																		<button
+																			type="button"
+																			className="recall-action-btn recall-action-btn--book"
+																			style={{ minHeight: "32px", padding: "4px 8px", fontSize: "0.75rem" }}
+																			onClick={() => handleBook(candidate)}
+																			data-testid={`recall-book-btn-${candidate.id}`}
+																			title="Записать пациента в расписание"
+																		>
+																			<Calendar size={13} />
+																			<span>Записать</span>
+																		</button>
+
+																		{/* 1-Click: WhatsApp */}
+																		<button
+																			type="button"
+																			className="recall-action-btn recall-action-btn--whatsapp"
+																			style={{ minHeight: "32px", padding: "4px 8px", fontSize: "0.75rem" }}
+																			onClick={() => void handleWhatsApp(candidate)}
+																			data-testid={`recall-whatsapp-btn-${candidate.id}`}
+																			title="152-ФЗ сообщение в WhatsApp"
+																		>
+																			<MessageCircle size={13} />
+																			<span>WA</span>
+																		</button>
+
+																		{/* 1-Click: SMS */}
+																		<button
+																			type="button"
+																			className="recall-action-btn"
+																			style={{ minHeight: "32px", padding: "4px 8px", fontSize: "0.75rem" }}
+																			onClick={() => handleCopySms(candidate)}
+																			data-testid={`recall-sms-btn-${candidate.id}`}
+																			title="Скопировать 152-ФЗ SMS"
+																		>
+																			<Send size={13} />
+																			<span>SMS</span>
+																		</button>
+
+																		{/* Status dropdown to move candidate */}
+																		<select
+																			style={{
+																				padding: "4px 6px",
+																				borderRadius: "4px",
+																				border: "1px solid var(--rm-border)",
+																				background: "var(--rm-surface)",
+																				color: "var(--rm-text-main)",
+																				fontSize: "0.75rem",
+																				marginLeft: "auto",
+																				minHeight: "32px",
+																			}}
+																			value={toCanonicalRecallStatus(candidate.status)}
+																			onChange={(e) => {
+																				const newCanonical = e.target.value as CanonicalRecallWorkflowStatus;
+																				handleStatusUpdate(
+																					candidate.id,
+																					fromCanonicalRecallStatus(newCanonical),
+																				);
+																			}}
+																			aria-label="Изменить статус в канбане"
+																			data-testid={`kanban-status-select-${candidate.id}`}
+																		>
+																			<option value="not_called">Не звонили</option>
+																			<option value="reached">Дозвонились</option>
+																			<option value="declined">Отказ</option>
+																			<option value="scheduled">Записан</option>
+																		</select>
+																	</div>
+																</div>
+															);
+														})
+													)}
+												</div>
+											</div>
+										);
+									})}
 								</div>
 							) : (
 								<div className="recall-table-wrap">

@@ -12,6 +12,7 @@ import {
 	AlertCircle,
 	Baby,
 	Check,
+	Award,
 	ChevronDown,
 	ChevronUp,
 	Coins,
@@ -21,6 +22,7 @@ import {
 	Meh,
 	Printer,
 	Scissors,
+	ShieldAlert,
 	ShieldCheck,
 	Smile,
 	Sparkles,
@@ -42,10 +44,16 @@ import {
 import {
 	PediatricSomaticAndLegalRep,
 	DEFAULT_PEDIATRIC_SOMATIC_NORM,
+	PEDIATRIC_SOMATIC_NORM_SUMMARY,
 	DEFAULT_LEGAL_REPRESENTATIVE,
 	type PediatricSomaticStatus,
 	type LegalRepresentativeData,
 } from "./PediatricSomaticAndLegalRep";
+import {
+	PediatricAnesthesiaCalculator,
+	type PediatricAnesthesiaCalculationResult,
+} from "./PediatricAnesthesiaCalculator";
+import { PediatricBraveryDiplomaModal } from "./PediatricBraveryDiplomaModal";
 
 /**
  * Валидация номера зуба по стандарту FDI (ISO 3950):
@@ -441,6 +449,8 @@ export interface VisitPediatricProtocolWidgetProps {
 	readonly patientPhone?: string | undefined;
 	/** Возраст пациента в годах */
 	readonly patientAgeYears?: number | undefined;
+	/** Вес ребенка в килограммах для расчета безопасности анестезии */
+	readonly patientWeightKg?: number | undefined;
 	/** ФИО врача */
 	readonly doctorName?: string | undefined;
 	/** Название клиники */
@@ -468,6 +478,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 	patientName = "Юный пациент",
 	patientPhone,
 	patientAgeYears = 6,
+	patientWeightKg = 20,
 	doctorName = "Детский врач-стоматолог",
 	clinicName = "Детское отделение DENTE",
 	representativeFullName,
@@ -524,6 +535,14 @@ export const VisitPediatricProtocolWidget: React.FC<
 		}),
 	);
 	const [representativeText, setRepresentativeText] = useState<string>("");
+
+	// 2.5 Калькулятор безопасности анестетика по весу ребенка (кг)
+	const [anesthesiaCalculation, setAnesthesiaCalculation] =
+		useState<PediatricAnesthesiaCalculationResult | null>(null);
+	const [anesthesiaText, setAnesthesiaText] = useState<string>("");
+
+	// 2.6 Модалка «Диплом за храбрость» (1-клик печать маленькому пациенту)
+	const [isDiplomaModalOpen, setIsDiplomaModalOpen] = useState<boolean>(false);
 
 	// 3. Активный пресет клинического протокола
 	const [activePresetId, setActivePresetId] =
@@ -712,6 +731,16 @@ export const VisitPediatricProtocolWidget: React.FC<
 			}
 		}
 
+		if (anesthesiaCalculation && anesthesiaCalculation.carpulesAdministered > 0) {
+			services.push({
+				code: "B01.003.004.004",
+				nameRu: `Местная анестезия (${anesthesiaCalculation.drug.nameRu}): ${anesthesiaCalculation.carpulesAdministered} карп. (${anesthesiaCalculation.totalDoseAdministeredMg} мг)`,
+			});
+			treatmentDescription += `\nМестная анестезия: ${anesthesiaCalculation.formattedText043}`;
+		} else if (anesthesiaText) {
+			treatmentDescription += `\nМестная анестезия: ${anesthesiaText}`;
+		}
+
 		const repLine = representativeText
 			? representativeText
 			: `Законный представитель несовершеннолетнего: ${representative.role} — ${representative.fullName || "Родитель (присутствует на приёме)"}${representative.phone ? `, тел: ${representative.phone}` : ""}, ${representative.statutoryDocument}${representative.consentSigned ? ", ИДС подписано" : ""}.`;
@@ -767,6 +796,8 @@ export const VisitPediatricProtocolWidget: React.FC<
 	}, [
 		activePreset,
 		activePresetId,
+		anesthesiaCalculation,
+		anesthesiaText,
 		currentTooth,
 		selectedSurfaces,
 		selectedMaterial,
@@ -782,6 +813,16 @@ export const VisitPediatricProtocolWidget: React.FC<
 
 	// 10. Внесение в Форму 043/у (Двойной диспатч: useVisitStore + CustomEvent dente-apply-soap-protocol)
 	const handleInsertToForm043 = useCallback(() => {
+		// Блокировка токсической передозировки (Mandate 8e & 8n: абсолютная безопасность ребенка)
+		if (anesthesiaCalculation?.isOverdose) {
+			showToast(
+				`БЛОКИРОВКА ПЕРЕДОЗИРОВКИ: доза анестетика (${anesthesiaCalculation.totalDoseAdministeredMg} мг) превышает безопасный предел МРД (${anesthesiaCalculation.maxAllowedTotalDoseMg} мг) для веса ${anesthesiaCalculation.patientWeightKg} кг! Снизьте количество карпул.`,
+				"error",
+				6000,
+			);
+			return;
+		}
+
 		const textToApply = clinicalCalculation.fullProtocolText043;
 
 		// 1. Прямой коллбек родителя
@@ -854,6 +895,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 		}
 	}, [
 		activePresetId,
+		anesthesiaCalculation,
 		clinicalCalculation,
 		currentTooth,
 		isInvasiveProtocol,
@@ -1445,6 +1487,21 @@ export const VisitPediatricProtocolWidget: React.FC<
 			</div>
 
 			{/* ═════════════════════════════════════════════════════════════════════ */}
+			{/* КАЛЬКУЛЯТОР АНЕСТЕЗИИ ПО ВЕСУ (КГ) С БЛОКИРОВКОЙ ТОКСИЧЕСКОЙ ДОЗЫ   */}
+			{/* ═════════════════════════════════════════════════════════════════════ */}
+			<div className="mb-4">
+				<PediatricAnesthesiaCalculator
+					initialWeightKg={patientWeightKg || 20}
+					patientAgeYears={patientAgeYears}
+					onCalculationChange={setAnesthesiaCalculation}
+					onApplyToProtocol={(text) => {
+						setAnesthesiaText(text);
+						showToast("Расчет анестезии применен к протоколу", "success", 2000);
+					}}
+				/>
+			</div>
+
+			{/* ═════════════════════════════════════════════════════════════════════ */}
 			{/* ПОВЕРХНОСТИ ЗУБА (ДЛЯ КАРИЕСА И ПУЛЬПОТОМИИ, ТАЧ-ТАРГЕТЫ >= 48px) */}
 			{/* ═════════════════════════════════════════════════════════════════════ */}
 			{activePreset.allowsSurfaces && (
@@ -1640,6 +1697,17 @@ export const VisitPediatricProtocolWidget: React.FC<
 						<Printer className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
 						<span>Памятка родителям</span>
 					</button>
+
+					{/* Кнопка «Диплом за храбрость» (1-клик, печать грамоты маленькому пациенту) */}
+					<button
+						type="button"
+						onClick={() => setIsDiplomaModalOpen(true)}
+						className="inline-flex min-h-[48px] sm:min-h-0 sm:h-9 items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50/80 px-3.5 py-2 text-xs sm:text-sm font-extrabold text-amber-900 transition hover:bg-amber-100 active:scale-95 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/60 cursor-pointer touch-manipulation"
+						data-testid="pediatric-btn-open-diploma"
+					>
+						<Award className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+						<span>Диплом за храбрость</span>
+					</button>
 				</div>
 
 				<div className="text-right min-w-0">
@@ -1682,6 +1750,20 @@ export const VisitPediatricProtocolWidget: React.FC<
 							: undefined
 					}
 					onApplyFrankl={(rating) => setFranklRating(rating)}
+				/>
+			)}
+
+			{/* ═════════════════════════════════════════════════════════════════════ */}
+			{/* МОДАЛКА ДИПЛОМА ЗА ХРАБРОСТЬ (АНТИ-МАТРЁШКА: ГЛУБИНА СТРОГО 1 ЧЕРЕЗ ПОРТАЛ) */}
+			{/* ═════════════════════════════════════════════════════════════════════ */}
+			{isDiplomaModalOpen && (
+				<PediatricBraveryDiplomaModal
+					isOpen={isDiplomaModalOpen}
+					onClose={() => setIsDiplomaModalOpen(false)}
+					patientName={patientName}
+					patientAgeYears={patientAgeYears}
+					doctorName={doctorName}
+					clinicName={clinicName}
 				/>
 			)}
 		</section>

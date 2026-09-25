@@ -813,6 +813,187 @@
 	margin: 0 auto;
 }
 
+/* ==========================================================================
+   Kanban Board & Sub-View Switcher (Таблица vs Канбан)
+   ========================================================================== */
+
+.recall-view-mode-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	padding: 8px 0;
+}
+
+.recall-view-mode-toggles {
+	display: inline-flex;
+	align-items: center;
+	background: var(--rm-surface);
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-sm);
+	padding: 2px;
+	gap: 2px;
+}
+
+.recall-view-mode-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	min-height: 32px;
+	border-radius: 4px;
+	border: none;
+	background: transparent;
+	color: var(--rm-text-muted);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease-in-out;
+}
+
+.recall-view-mode-btn:hover {
+	color: var(--rm-text-main);
+	background: var(--rm-surface-hover);
+}
+
+.recall-view-mode-btn.active {
+	background: var(--rm-primary-light);
+	color: var(--rm-primary);
+}
+
+.recall-filter-select {
+	padding: 6px 10px;
+	border-radius: var(--rm-radius-sm);
+	border: 1px solid var(--rm-border);
+	background: var(--rm-surface);
+	color: var(--rm-text-main);
+	font-size: 0.8125rem;
+	min-height: 36px;
+}
+
+.recall-filter-select:focus {
+	outline: none;
+	border-color: var(--rm-border-focus);
+}
+
+.recall-kanban-board {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(250px, 1fr));
+	gap: 14px;
+	padding: 14px;
+	overflow-x: auto;
+	box-sizing: border-box;
+	align-items: start;
+}
+
+.recall-kanban-column {
+	display: flex;
+	flex-direction: column;
+	background: var(--rm-surface);
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-md);
+	overflow: hidden;
+	min-height: 320px;
+}
+
+.recall-kanban-column-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 14px;
+	border-bottom: 1px solid var(--rm-border);
+	background: var(--rm-surface-hover);
+}
+
+.recall-kanban-column-title {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--rm-text-main);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.recall-kanban-column-badge {
+	font-size: 0.75rem;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: 12px;
+	background: var(--rm-bg);
+	color: var(--rm-text-muted);
+	border: 1px solid var(--rm-border);
+}
+
+.recall-kanban-cards-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 10px;
+	overflow-y: auto;
+	max-height: 60vh;
+}
+
+.recall-kanban-card {
+	background: var(--rm-bg);
+	border: 1px solid var(--rm-border);
+	border-radius: var(--rm-radius-sm);
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.recall-kanban-card:hover {
+	border-color: var(--rm-border-focus);
+	box-shadow: var(--shadow-2);
+}
+
+.recall-kanban-card-patient {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.recall-kanban-card-name {
+	font-weight: 700;
+	font-size: 0.875rem;
+	color: var(--rm-text-main);
+}
+
+.recall-kanban-card-phone {
+	font-size: 0.75rem;
+	color: var(--rm-text-muted);
+}
+
+.recall-kanban-card-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 0.75rem;
+}
+
+.recall-kanban-card-doctor {
+	color: var(--rm-text-muted);
+}
+
+.recall-kanban-card-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	padding-top: 8px;
+	border-top: 1px solid var(--rm-border);
+}
+
+.recall-kanban-empty {
+	padding: 24px 12px;
+	text-align: center;
+	font-size: 0.8125rem;
+	color: var(--rm-text-muted);
+}
+
 /* Responsive Styles for Mobile Viewports */
 @media (max-width: 768px) {
 	.recall-manager-container {
@@ -823,6 +1004,11 @@
 	.recall-metrics-grid {
 		grid-template-columns: repeat(2, 1fr);
 		padding: 12px;
+	}
+
+	.recall-kanban-board {
+		grid-template-columns: 1fr;
+		padding: 8px;
 	}
 
 	.recall-table thead {

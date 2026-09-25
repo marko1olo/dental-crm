@@ -67,10 +67,12 @@ function mapImagingStudy(
 		 * прочего заглушка остаётся: она честно говорит, что предпросмотра нет, и
 		 * это лучше сломанной картинки.
 		 */
-		previewUrl: browserRenderableImageMimeType(record.storagePath ?? "")
-			? `/api/imaging/studies/${record.id}/file`
+		previewUrl: record.storagePath
+			? (browserRenderableImageMimeType(record.storagePath)
+				? `/api/imaging/studies/${record.id}/file`
+				: `/api/imaging/studies/${record.id}/preview.svg`)
 			: `/api/imaging/studies/${record.id}/preview.svg`,
-		viewerUrl: browserRenderableImageMimeType(record.storagePath ?? "")
+		viewerUrl: record.storagePath
 			? `/api/imaging/studies/${record.id}/file`
 			: `/api/imaging/studies/${record.id}/preview.svg`,
 	};
@@ -288,6 +290,35 @@ export async function updateImagingStudyAiSummaryInDb(
 	}
 
 	return mapImagingStudy(record);
+}
+
+export async function updateImagingStudyInDb(
+	organizationId: string,
+	id: string,
+	updates: {
+		visitId?: string | null | undefined;
+		kind?: typeof schema.imagingStudies.$inferInsert["kind"] | undefined;
+		title?: string | undefined;
+		toothCode?: string | null | undefined;
+		region?: string | null | undefined;
+		status?: typeof schema.imagingStudies.$inferInsert["status"] | undefined;
+		aiSummary?: string | null | undefined;
+		storagePath?: string | null | undefined;
+	},
+	targetDb: typeof db = db,
+): Promise<ImagingStudy | null> {
+	const [record] = await targetDb
+		.update(schema.imagingStudies)
+		.set(updates)
+		.where(
+			and(
+				eq(schema.imagingStudies.organizationId, organizationId),
+				eq(schema.imagingStudies.id, id),
+			),
+		)
+		.returning();
+
+	return record ? mapImagingStudy(record) : null;
 }
 
 async function _getDefaultOrganizationId(): Promise<string | null> {

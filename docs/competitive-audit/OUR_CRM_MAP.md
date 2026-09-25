@@ -2,7 +2,7 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
-> ⚠️ **СТАТУС (2026-09-25 / WAVES 175–322 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ ЗАБРОШЕННЫХ ДОМЕНОВ CRM, ЗАКОН NO-NURSE-CLICKING, ЭРГОНОМИКА СОЛО-ВРАЧА, 4-СТАДИЙНЫЕ ПЛАНЫ И PWA-ПОРТАЛ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 393 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (ВСЕГО 456 ФИЧ: 63 КАНОНИЧЕСКИЕ + 393 АДДЕНДУМ, ВСЕ 456 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], ВОЛНЫ 320–322 ЗАКРЫТЫ НА 100%, ПАРИТЕТ 100%). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
+> ⚠️ **СТАТУС (2026-09-25 / WAVES 175–324 / ВОЛНА 323 INQUISITOR SWARM VICTORY — КОММИТ 720ac0789, ВОЛНА 324 RED TEAM АУДИТ И ПОЛНАЯ СИНХРОНИЗАЦИЯ ДОКУМЕНТАЦИИ, ЗАКРЫТИЕ ВСЕХ СЛЕПЫХ ЗОН CRM: RVG/DICOM PACS <50мс, РЕКОЛЛЫ И ДИСПАНСЕРИЗАЦИЯ, ЕГИСЗ РЭМД СЭМД 101/102, РЕЦЕПТЫ 107-1/у С DDI, ПЕДИАТРИЯ 51–85 С ТОКСИЧНОСТЬЮ АНЕСТЕТИКОВ МРД, СЕМЕЙНЫЙ БАЛАНС И ВЫЧЕТ ФНС): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 393 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (ВСЕГО 456 ФИЧ: 63 КАНОНИЧЕСКИЕ + 393 АДДЕНДУМ, ВСЕ 456 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], ВОЛНЫ 320–324 ЗАКРЫТЫ НА 100%, ПАРИТЕТ 100%). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
@@ -7298,4 +7298,40 @@
   - `docs/competitive-audit/FEATURES_REGISTRY.md`
   - `docs/competitive-audit/BACKLOG.md`
   - `docs/competitive-audit/OUR_CRM_MAP.md` (Фичи #445..#456, Волны 319–322)
+
+### 2.10.419. Волна 323: Inquisitor Swarm Victory — Десктопное Превосходство над StomX, Очистка от Карго-Культа, Каталог Педиатрического SOAP и Фоновое BOM-Списание (Мандаты 8c, 8d, 8e, 8n, 8p, 8s, 8v, коммит `720ac0789`)
+- **Функционал**:
+  1. *Канонический каталог SOAP по 6 специальностям*: `soapMasterCatalog.ts`, `soapTherapyProtocols.ts`, `soapSurgeryProtocols.ts`, `soapPediatricProtocols.ts`, `soapOrthopedicsProtocols.ts`, `soapPeriodontProtocols.ts`, `soapHygieneProtocols.ts` (1888 строк типизированных протоколов Формы 043/у);
+  2. *Фоновое автоматическое BOM-списание 804н*: `autoVisitBomEngine.ts` и `default804nBomCatalog.ts` (746 строк типизированных технологических карт материалов по Номенклатуре 804н);
+  3. *Пакетное закрытие регламентных журналов СанПиН 3.3686-21*: `shiftAutoCloserEngine.ts` (автоклав 257/у, ПСО 366/у, азопирам, медотходы класса Б) за 3 секунды в 1 клик;
+  4. *Детерминированная математика ротации кресел*: `chairRosterMath.ts` (184 строки математики занятости без коллизий);
+  5. *4-стадийный интерактивный презентер планов лечения*: `TreatmentPlanPhased4StageView.tsx`, сравнение «Эконом / Стандарт / Премиум», гарантии СТАР;
+  6. *Мобильный PWA-кабинет и 5-секундная экспресс-запись*: `PatientCabinetModal.tsx`, `BookingSheet.tsx`, `QuickBookingDrawer.tsx`;
+  7. *16 натурных скриншотов Playwright*: 4-State Visual Proof (Desktop/Mobile Light/Dark).
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
+- **Задействованные компоненты и модули**:
+  - `packages/shared/src/clinical/soap/soapMasterCatalog.ts`
+  - `packages/shared/src/clinical/soap/soapPediatricProtocols.ts`
+  - `packages/shared/src/warehouse/autoVisitBomEngine.ts`
+  - `packages/shared/src/warehouse/default804nBomCatalog.ts`
+  - `apps/web/src/components/sanpin/autoclaveLog/shiftAutoCloserEngine.ts`
+  - `apps/web/src/components/schedule/chairRosterMath.ts`
+  - `apps/web/src/components/treatment-plans/TreatmentPlanPhased4StageView.tsx`
+  - `apps/web/src/components/portal/patientCabinet/PatientCabinetModal.tsx`
+
+### 2.10.420. Волна 324: Red Team Инквизиция, Закрытие 6 Фундаментальных Слепых Зон и Синхронизация Документации (Мандаты 8b, 8c, 8e, 8i, 8k, 8n, 8s, 8t)
+- **Функционал**:
+  1. *Рентгенология, RVG <50мс и 3D MPR PACS*: `DirectRvgCaptureModal.tsx`, `VisiographStudioCanvas.tsx`, `CbctMprImplantStudioModal.tsx`, `DicomViewerModal.tsx`, `VisiographDicomExporter.ts`, `cprMath.ts`, `boneQualityEngine.ts`, безопасный клиренс IAN $\ge 1.5$ мм;
+  2. *Профилактический учет и реколлы (3/6/12 мес)*: `PatientRecallsHubModal.tsx`, `recallCandidates.ts`, каскадная отправка Telegram/WhatsApp/SMS, 1-клик запись;
+  3. *Амбулаторный РЭМД ЕГИСЗ (СЭМД 101/102)*: `generator101.ts`, `generator.ts`, `schemas.ts`, `validator.ts`, `EgiszRemdHubModal.tsx`, `cryptoProCliEngine.ts`, искоренение стационарного СЭМД 106 по Мандату 8i;
+  4. *Рецептурные бланки 107-1/у и DDI-валидация*: `forms107_1u.ts`, `PrescriptionPrintModal.tsx`, `prescriptionEngine.ts`, `ddiInteractions.ts`, печать А5 по Приказу 1094н;
+  5. *Детская одонтограмма 51–85 и токсикология анестетиков*: `PediatricTeethChart.tsx`, `PediatricMixedDentitionModal.tsx`, `soapPediatricProtocols.ts`, `anesthesiaMrdMath.ts`, `safety.ts`, `anestheticDosageTool.ts`, `PediatricAnesthesiaCalculator.tsx`;
+  6. *Семейный баланс и налоговый вычет ФНС*: `FamilyCombinedBillingModal.tsx`, `FamilyWalletPanel.tsx`, `finance_family.ts`, `fnsTaxDeductionEngine.ts`, `taxDeduction.ts`, `TaxDeductionCertificateModal.tsx` (форма КНД 1151156, коды 01 и 02).
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
+- **Задействованные компоненты и модули**:
+  - `docs/competitive-audit/FEATURES_REGISTRY.md` (456/456 фич подтверждены, 0 слепых зон)
+  - `docs/competitive-audit/BACKLOG.md` (Волны 320–324 закрыты на 100%)
+  - `docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md` (Раздел 14.3 и Фаза 6)
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (Фичи #445..#456, Волны 319–324)
+  - `docs/architecture/SYSTEM_ARCHITECTURE_MAP.md` (Контуры 2.7–2.10)
 

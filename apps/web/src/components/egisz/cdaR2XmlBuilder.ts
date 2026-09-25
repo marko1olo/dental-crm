@@ -128,7 +128,7 @@ export interface GostSignatureInfo {
 }
 
 export interface EgiszDentalCdaPayload {
-	docTypeCode: EgiszDentalSemdCode | "105" | "106" | "302" | "303" | "108" | "101" | "104" | "130";
+	docTypeCode: EgiszDentalSemdCode | "101" | "102" | "105" | "302" | "303" | "108" | "130";
 	documentUuid?: string | undefined;
 	documentVersion?: number | undefined;
 	encounterDate?: string | Date | undefined;
@@ -197,7 +197,7 @@ export interface FnsTaxCertificatePayload {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * 1. DENTAL CDA R2 XML GENERATOR (СЭМД 105 / 106 / 302 / 303 / 043/У)
+ * 1. DENTAL CDA R2 XML GENERATOR (СЭМД 101 / 102 / 105 / 302 / 303 / 043/У)
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 export function generateEgiszDentalCdaXml(payload: EgiszDentalCdaPayload): string {

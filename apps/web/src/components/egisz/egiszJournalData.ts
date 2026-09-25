@@ -311,9 +311,9 @@ export const SAMPLE_REMD_JOURNAL_RECORDS: RemdDocumentRecord[] = [
 	},
 	{
 		id: "REMD-REC-005",
-		documentUuid: "DOC-106-2026-08431",
-		docTypeCode: "106",
-		docTypeName: "Выписной эпикриз (СЭМД 106)",
+		documentUuid: "DOC-102-2026-08431",
+		docTypeCode: "102",
+		docTypeName: "Амбулаторный стоматологический протокол (СЭМД 102)",
 		createdAt: "2026-08-28T14:10:00+03:00",
 		updatedAt: "2026-08-28T14:10:00+03:00",
 		encounterDate: "2026-08-28",
@@ -340,8 +340,8 @@ export const SAMPLE_REMD_JOURNAL_RECORDS: RemdDocumentRecord[] = [
 		status: "draft",
 		cdaPayload: {
 			...SAMPLE_DENTAL_SEMD_105_PRESET,
-			docTypeCode: "106",
-			documentUuid: "DOC-106-2026-08431",
+			docTypeCode: "102",
+			documentUuid: "DOC-102-2026-08431",
 			patient: {
 				...SAMPLE_043U_PATIENT_PRESET,
 				patientFullName: "Васильев Дмитрий Андреевич",

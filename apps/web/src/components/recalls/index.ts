@@ -28,9 +28,24 @@ export {
 	interpolateRecallTemplate,
 	resolveUrgencyStatus,
 	sanitizePhoneNumber,
+	calculateHygieneRecallTrigger,
+	calculateImplantProstheticRecallTrigger,
+	calculateOrthoActivationRecallTrigger,
+	calculatePediatricRecallTrigger,
+	evaluateClinicalRecallTrigger,
+	resolveCandidateTriggerType,
+	isDateInPeriod,
+	extractPolitePatientName,
+	generatePdnProtectedRecallMessage,
+	toCanonicalRecallStatus,
+	fromCanonicalRecallStatus,
+	CANONICAL_RECALL_STATUS_CONFIG,
 } from "./patientRecallEngine";
 
 export type {
+	CanonicalRecallWorkflowStatus,
+	ClinicalRecallTriggerInfo,
+	ClinicalRecallTriggerType,
 	CohortRetentionGroup,
 	CohortRetentionReport,
 	PatientRecallCandidate,
@@ -41,6 +56,7 @@ export type {
 	RecallCycleType,
 	RecallFilterOptions,
 	RecallMetrics,
+	RecallPeriodFilter,
 	RecallTemplateVariables,
 	RecallUrgencyStatus,
 } from "./patientRecallEngine";

@@ -12,6 +12,7 @@ import { Check, Heart, ShieldCheck, UserCheck, AlertCircle, Sparkles } from "luc
 
 export interface PediatricSomaticStatus {
 	readonly isNormal: boolean;
+	readonly summaryRu: string;
 	readonly physicalDevelopmentRu: string;
 	readonly allergiesRu: string;
 	readonly infectionsRu: string;
@@ -19,8 +20,11 @@ export interface PediatricSomaticStatus {
 	readonly notesRu?: string;
 }
 
+export const PEDIATRIC_SOMATIC_NORM_SUMMARY = "Ребенок соматически здоров, контактен. Аллергии нет";
+
 export const DEFAULT_PEDIATRIC_SOMATIC_NORM: PediatricSomaticStatus = {
 	isNormal: true,
+	summaryRu: PEDIATRIC_SOMATIC_NORM_SUMMARY,
 	physicalDevelopmentRu: "Физическое развитие соответствует возрасту",
 	allergiesRu: "Аллергологический анамнез не отягощен (аллергия на местные анестетики отсутствует)",
 	infectionsRu: "Детские инфекции без осложнений, контакт с инфекционными больными в течение 21 дня отрицает",
@@ -84,8 +88,9 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 
 	const formatSomaticText = useCallback((status: PediatricSomaticStatus): string => {
 		if (status.isNormal) {
+			const summary = status.summaryRu || PEDIATRIC_SOMATIC_NORM_SUMMARY;
 			return [
-				"Соматический статус ребенка: физиологическая норма (соматически здоров).",
+				`Соматический статус ребенка: ${summary}.`,
 				`• Физическое развитие: ${status.physicalDevelopmentRu}.`,
 				`• Аллергологический анамнез: ${status.allergiesRu}.`,
 				`• Инфекционный анамнез: ${status.infectionsRu}.`,
@@ -192,9 +197,12 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 				{/* Индикатор нормы */}
 				<div className="flex items-center gap-2 text-xs">
 					{somaticStatus.isNormal ? (
-						<div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 px-2.5 py-1 rounded-lg w-full">
+						<div
+							className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 px-2.5 py-1 rounded-lg w-full"
+							data-testid="pediatric-somatic-norm-indicator"
+						>
 							<ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-							<span>Физиологическая норма: развитие по возрасту, аллергии нет, соматически здоров</span>
+							<span>{somaticStatus.summaryRu || PEDIATRIC_SOMATIC_NORM_SUMMARY}</span>
 						</div>
 					) : (
 						<div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 font-bold bg-amber-50 dark:bg-amber-950/40 border border-amber-500/20 px-2.5 py-1 rounded-lg w-full">

@@ -29,7 +29,8 @@ import {
 	COMMON_DENTAL_ICD10_DIAGNOSES,
 	FDI_ADULT_TEETH_UPPER,
 	FDI_ADULT_TEETH_LOWER,
-} from "./DmsGuaranteeLetterModal.js";
+	EXPRESS_GUARANTEE_LETTER_PRESETS,
+} from "./dmsInsurancePresets.js";
 
 describe("DmsClaimRegistryExport — Statutory Insurance Contracts Catalog", () => {
 	it("1.1 Contains top Russian insurance companies with contract numbers and franchise rates", () => {
@@ -260,5 +261,30 @@ describe("DmsGuaranteeLetterModal — Guarantee Letters, FDI Formula & Diagnoses
 		assert.equal(DEFAULT_BILL_ITEMS_TO_SPLIT[0]?.serviceCode804n, "A16.07.002.001");
 		assert.equal(DEFAULT_BILL_ITEMS_TO_SPLIT[1]?.serviceCode804n, "A11.07.010");
 		assert.equal(DEFAULT_BILL_ITEMS_TO_SPLIT[2]?.serviceCode804n, "A16.07.050"); // Zoom bleaching
+	});
+
+	it("3.5 Validates 1-click Express Guarantee Letter Presets (Mandates 8e, 8n)", () => {
+		assert.ok(EXPRESS_GUARANTEE_LETTER_PRESETS.length >= 4);
+
+		for (const preset of EXPRESS_GUARANTEE_LETTER_PRESETS) {
+			assert.ok(preset.id.startsWith("express_"));
+			assert.ok(preset.maxCoverageRub >= 25000);
+			assert.ok(preset.approvedServiceCodes804n.length >= 3);
+			assert.ok(preset.approvedDiagnosisMkb10.length >= 1);
+			assert.ok(preset.labelRu.length > 5);
+			assert.ok(preset.noteRu.length > 10);
+		}
+
+		// СОГАЗ therapy preset
+		const sogazPreset = EXPRESS_GUARANTEE_LETTER_PRESETS.find((p) => p.insurerKey === "sogaz");
+		assert.ok(sogazPreset);
+		assert.equal(sogazPreset.maxCoverageRub, 50000);
+		assert.equal(sogazPreset.franchisePct, 0);
+
+		// Ингосстрах acute surgery preset
+		const ingosPreset = EXPRESS_GUARANTEE_LETTER_PRESETS.find((p) => p.insurerKey === "ingosstrakh");
+		assert.ok(ingosPreset);
+		assert.equal(ingosPreset.maxCoverageRub, 35000);
+		assert.equal(ingosPreset.franchisePct, 15);
 	});
 });

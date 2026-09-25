@@ -39,6 +39,84 @@ export type RecallContactStatus =
 	| "pending"
 	| "contacted";
 
+export type CanonicalRecallWorkflowStatus =
+	| "not_called"
+	| "reached"
+	| "declined"
+	| "scheduled";
+
+export const CANONICAL_RECALL_STATUS_CONFIG: Readonly<
+	Record<
+		CanonicalRecallWorkflowStatus,
+		{
+			readonly id: CanonicalRecallWorkflowStatus;
+			readonly label: string;
+			readonly badgeColorToken: string;
+		}
+	>
+> = {
+	not_called: { id: "not_called", label: "Не звонили", badgeColorToken: "warning" },
+	reached: { id: "reached", label: "Дозвонились", badgeColorToken: "info" },
+	declined: { id: "declined", label: "Отказ", badgeColorToken: "danger" },
+	scheduled: { id: "scheduled", label: "Записан", badgeColorToken: "success" },
+};
+
+export function toCanonicalRecallStatus(status: RecallContactStatus): CanonicalRecallWorkflowStatus {
+	switch (status) {
+		case "due_now":
+		case "pending":
+			return "not_called";
+		case "invited":
+		case "contacted":
+			return "reached";
+		case "declined":
+			return "declined";
+		case "scheduled":
+		case "completed":
+			return "scheduled";
+		default:
+			return "not_called";
+	}
+}
+
+export function fromCanonicalRecallStatus(canonical: CanonicalRecallWorkflowStatus): RecallContactStatus {
+	switch (canonical) {
+		case "not_called":
+			return "due_now";
+		case "reached":
+			return "contacted";
+		case "declined":
+			return "declined";
+		case "scheduled":
+			return "scheduled";
+	}
+}
+
+export type ClinicalRecallTriggerType =
+	| "hygiene_6m"
+	| "implant_prosthetic_12m"
+	| "ortho_activation_1m"
+	| "pediatric_3_4m";
+
+export interface ClinicalRecallTriggerInfo {
+	readonly triggerType: ClinicalRecallTriggerType;
+	readonly title: string;
+	readonly shortTitle: string;
+	readonly intervalMonths: number;
+	readonly intervalWeeks?: number | undefined;
+	readonly nextDueDate: Date;
+	readonly formattedDueDate: string;
+	readonly clinicalRationale: string;
+	readonly mappedCycleType: RecallCycleType;
+}
+
+export type RecallPeriodFilter =
+	| "all"
+	| "overdue"
+	| "this_month"
+	| "next_month"
+	| "next_30_days";
+
 export type RecallChannel = "whatsapp" | "telegram" | "sms" | "phone";
 
 export interface RecallCycleDefinition {
@@ -292,6 +370,7 @@ export interface PatientRecallRecord {
 	readonly birthDate?: string | null | undefined;
 	readonly age?: number | undefined;
 	readonly cycleType: RecallCycleType;
+	readonly clinicalTriggerType?: ClinicalRecallTriggerType | undefined;
 	readonly customIntervalValue?: number | undefined;
 	readonly lastVisitDate: string; // ISO YYYY-MM-DD
 	readonly dueDate: string; // ISO YYYY-MM-DD
@@ -402,9 +481,13 @@ export interface CohortRetentionReport {
 
 export interface RecallFilterOptions {
 	readonly status?: (RecallContactStatus | "all") | undefined;
+	readonly canonicalStatus?: (CanonicalRecallWorkflowStatus | "all") | undefined;
 	readonly urgencyStatus?: (RecallUrgencyStatus | "all") | undefined;
 	readonly cycleType?: (RecallCycleType | "all") | undefined;
+	readonly triggerType?: (ClinicalRecallTriggerType | "all") | undefined;
 	readonly doctorId?: (string | "all") | undefined;
+	readonly period?: (RecallPeriodFilter) | undefined;
+	readonly referenceDate?: (Date | string) | undefined;
 	readonly searchQuery?: string | undefined;
 	readonly sortBy?: ("daysOverdue" | "dueDate" | "fullName" | "lastVisitDate" | "ltv") | undefined;
 	readonly sortDirection?: ("asc" | "desc") | undefined;
@@ -634,6 +717,226 @@ export function calculatePediatricRecallDate(
 	};
 }
 
+/* ==========================================================================
+   2.1. КАНОНИЧЕСКИЕ АВТОМАТИЧЕСКИЕ КЛИНИЧЕСКИЕ ТРИГГЕРЫ ВОЗВРАТА (STOMX/IDENT)
+   ========================================================================== */
+
+/**
+ * Триггер 1: Профгигиена — 6 месяцев после последней чистки.
+ * Золотой стандарт профилактики и сохранения гарантийных обязательств клиники.
+ */
+export function calculateHygieneRecallTrigger(
+	lastCleaningDate: Date | string,
+	customMonths = 6,
+): ClinicalRecallTriggerInfo {
+	const months = customMonths > 0 ? customMonths : 6;
+	const nextDueDate = addCalendarMonthsSafe(lastCleaningDate, months);
+	return {
+		triggerType: "hygiene_6m",
+		title: "Плановый осмотр и профессиональная гигиена полости рта",
+		shortTitle: "Профгигиена 6 мес.",
+		intervalMonths: months,
+		nextDueDate,
+		formattedDueDate: formatIsoDateOnly(nextDueDate),
+		clinicalRationale:
+			"Золотой стандарт стоматологической профилактики. Снятие зубных отложений (Air-Flow + УЗ), " +
+			"онкоскрининг слизистой и сохранение гарантийных обязательств через 6 месяцев после последней чистки.",
+		mappedCycleType: "standard_prophylaxis",
+	};
+}
+
+/**
+ * Триггер 2: Осмотр после имплантации / протезирования — 12 месяцев.
+ * Годовой рентген-контроль остеоинтеграции и краевого прилегания ортопедии.
+ */
+export function calculateImplantProstheticRecallTrigger(
+	lastProcedureDate: Date | string,
+	customMonths = 12,
+): ClinicalRecallTriggerInfo {
+	const months = customMonths > 0 ? customMonths : 12;
+	const nextDueDate = addCalendarMonthsSafe(lastProcedureDate, months);
+	return {
+		triggerType: "implant_prosthetic_12m",
+		title: "Контрольный осмотр после имплантации и протезирования",
+		shortTitle: "Импланты/Ортопедия 12 мес.",
+		intervalMonths: months,
+		nextDueDate,
+		formattedDueDate: formatIsoDateOnly(nextDueDate),
+		clinicalRationale:
+			"Годовой рентген-контроль остеоинтеграции имплантатов по протоколу СтАР/ITI, ревизия окклюзионного баланса " +
+			"и краевого прилегания ортопедических конструкций для сохранения гарантий.",
+		mappedCycleType: "implant_monitoring",
+	};
+}
+
+/**
+ * Триггер 3: Ортодонтическая активация — 1 месяц (строго 4 недели / 28 дней).
+ * Плановая смена и активация дуг, замена лигатур и эластиков.
+ */
+export function calculateOrthoActivationRecallTrigger(
+	lastActivationDate: Date | string,
+	customWeeks = 4,
+): ClinicalRecallTriggerInfo {
+	const weeks = customWeeks > 0 ? customWeeks : 4;
+	const nextDueDate = addWeeksSafe(lastActivationDate, weeks);
+	return {
+		triggerType: "ortho_activation_1m",
+		title: "Ортодонтический контроль: плановая активация и замена дуг",
+		shortTitle: "Орто-активация 1 мес.",
+		intervalMonths: 1,
+		intervalWeeks: weeks,
+		nextDueDate,
+		formattedDueDate: formatIsoDateOnly(nextDueDate),
+		clinicalRationale:
+			"Плановая замена и активация ортодонтических дуг (NiTi / TMA / SS), смена лигатур и эластиков " +
+			"строго каждые 4 недели (28 дней) для непрерывного и прогнозируемого перемещения зубов.",
+		mappedCycleType: "orthodontic_braces",
+	};
+}
+
+/**
+ * Триггер 4: Детский осмотр — 3–4 месяца.
+ * Контроль формирующегося прикуса, ремотерапия незрелой эмали и герметизация фиссур.
+ */
+export function calculatePediatricRecallTrigger(
+	lastVisitDate: Date | string,
+	intervalMonths: 3 | 4 = 3,
+): ClinicalRecallTriggerInfo {
+	const months = intervalMonths === 4 ? 4 : 3;
+	const nextDueDate = addCalendarMonthsSafe(lastVisitDate, months);
+	return {
+		triggerType: "pediatric_3_4m",
+		title: `Детский профилактический осмотр и минерализация эмали (${months} мес.)`,
+		shortTitle: `Детский осмотр ${months} мес.`,
+		intervalMonths: months,
+		nextDueDate,
+		formattedDueDate: formatIsoDateOnly(nextDueDate),
+		clinicalRationale:
+			"Высокая скорость деминерализации незрелой эмали временных и сменных зубов у детей требует " +
+			"диспансерного контроля гигиены, фторирования и герметизации фиссур каждые 3–4 месяца.",
+		mappedCycleType: "pediatric_fluoridation",
+	};
+}
+
+/**
+ * Единый автоматический классификатор клинического триггера возврата.
+ */
+export function evaluateClinicalRecallTrigger(clinicalData: {
+	readonly lastVisitDate?: (Date | string) | undefined;
+	readonly isChildUnder14?: boolean | undefined;
+	readonly hasBraces?: boolean | undefined;
+	readonly hasOrthodonticAppliance?: boolean | undefined;
+	readonly hasImplants?: boolean | undefined;
+	readonly hasCrownsOrVeneers?: boolean | undefined;
+	readonly hasProsthetics?: boolean | undefined;
+	readonly maxPocketDepthMm?: number | undefined;
+	readonly hasBleedingOnProbing?: boolean | undefined;
+	readonly customIntervalMonths?: number | undefined;
+}): ClinicalRecallTriggerInfo {
+	const lastDate = clinicalData.lastVisitDate ?? new Date();
+
+	if (clinicalData.isChildUnder14) {
+		const interval = clinicalData.customIntervalMonths === 4 ? 4 : 3;
+		return calculatePediatricRecallTrigger(lastDate, interval);
+	}
+
+	if (clinicalData.hasBraces || clinicalData.hasOrthodonticAppliance) {
+		return calculateOrthoActivationRecallTrigger(lastDate, 4);
+	}
+
+	if (
+		clinicalData.hasImplants ||
+		clinicalData.hasCrownsOrVeneers ||
+		clinicalData.hasProsthetics
+	) {
+		return calculateImplantProstheticRecallTrigger(
+			lastDate,
+			clinicalData.customIntervalMonths ?? 12,
+		);
+	}
+
+	return calculateHygieneRecallTrigger(
+		lastDate,
+		clinicalData.customIntervalMonths ?? 6,
+	);
+}
+
+/**
+ * Автоматическое сопоставление карточки кандидата с клиническим триггером.
+ */
+export function resolveCandidateTriggerType(candidate: PatientRecallRecord): ClinicalRecallTriggerType {
+	if (candidate.clinicalTriggerType) {
+		return candidate.clinicalTriggerType;
+	}
+	if (
+		candidate.cycleType === "pediatric_fluoridation" ||
+		(candidate.age !== undefined && candidate.age < 14)
+	) {
+		return "pediatric_3_4m";
+	}
+	if (
+		candidate.cycleType === "orthodontic_braces" ||
+		candidate.orthoDeviceType === "braces"
+	) {
+		return "ortho_activation_1m";
+	}
+	if (
+		candidate.cycleType === "implant_monitoring" ||
+		candidate.cycleType === "prosthetic_check" ||
+		Boolean(candidate.implantSurgeryDate)
+	) {
+		return "implant_prosthetic_12m";
+	}
+	return "hygiene_6m";
+}
+
+/**
+ * Проверка вхождения даты срока в выбранный период.
+ */
+export function isDateInPeriod(
+	dueDateStr: string,
+	period: RecallPeriodFilter,
+	referenceDate: Date | string = new Date(),
+): boolean {
+	if (period === "all") return true;
+
+	const ref =
+		typeof referenceDate === "string"
+			? new Date(referenceDate)
+			: new Date(referenceDate.getTime());
+	const due = new Date(dueDateStr);
+	if (Number.isNaN(due.getTime()) || Number.isNaN(ref.getTime())) return true;
+
+	const dueUtc = Date.UTC(due.getFullYear(), due.getMonth(), due.getDate());
+	const refUtc = Date.UTC(ref.getFullYear(), ref.getMonth(), ref.getDate());
+	const diffDays = Math.floor((refUtc - dueUtc) / (1000 * 60 * 60 * 24)); // >0 = overdue, <0 = future
+
+	if (period === "overdue") {
+		return diffDays > 0;
+	}
+
+	if (period === "this_month") {
+		return (
+			due.getFullYear() === ref.getFullYear() &&
+			due.getMonth() === ref.getMonth()
+		);
+	}
+
+	if (period === "next_month") {
+		const nextMonth = new Date(ref.getFullYear(), ref.getMonth() + 1, 1);
+		return (
+			due.getFullYear() === nextMonth.getFullYear() &&
+			due.getMonth() === nextMonth.getMonth()
+		);
+	}
+
+	if (period === "next_30_days") {
+		return diffDays <= 0 && diffDays >= -30;
+	}
+
+	return true;
+}
+
 export function calculateRecallProfile(params: {
 	readonly lastVisitDate: Date | string;
 	readonly cycleType: RecallCycleType;
@@ -831,6 +1134,48 @@ export function extractFirstName(fullName: string): string {
 		return parts[1];
 	}
 	return parts[0] || "Пациент";
+}
+
+/**
+ * Извлечение уважительного обращения по имени и отчеству («Иванов Иван Иванович» -> «Иван Иванович»).
+ * Если отчества нет — берется имя («Иван»). Если имя не распознано — нейтральное «Пациент».
+ * Соответствует 152-ФЗ и правилам медицинской этики.
+ */
+export function extractPolitePatientName(fullName: string): string {
+	const trimmed = fullName.trim();
+	if (!trimmed) return "Пациент";
+	const parts = trimmed.split(/\s+/);
+	// В русской традиции «Фамилия Имя Отчество»
+	if (parts.length >= 3 && parts[1] && parts[2]) {
+		return `${parts[1]} ${parts[2]}`;
+	}
+	if (parts.length === 2 && parts[1]) {
+		return parts[1];
+	}
+	return parts[0] || "Пациент";
+}
+
+/**
+ * 152-ФЗ / 323-ФЗ Защищенный генератор напоминаний (SMS / WhatsApp).
+ * КАТЕГОРИЧЕСКИ запрещено упоминать диагнозы на экране блокировки смартфона пациента (кариес, пародонтит, удаление).
+ * Формат золотого стандарта:
+ * «Иван Иванович, подошел срок контрольного осмотра в клинике «Стоматология ДЕНТЕ». Записаться: [ссылка]»
+ */
+export function generatePdnProtectedRecallMessage(
+	candidate: PatientRecallRecord,
+	options: { readonly clinicName?: string | undefined; readonly baseUrl?: string | undefined } = {},
+): string {
+	const clinicName = options.clinicName || "Стоматология ДЕНТЕ";
+	const politeName = extractPolitePatientName(candidate.fullName);
+	const bookingUrl = generate1ClickBookingLink({
+		baseUrl: options.baseUrl,
+		patientId: candidate.patientId,
+		doctorId: candidate.attendingDoctorId,
+		cycleType: candidate.cycleType,
+		source: "recall_pdn_152fz",
+	});
+
+	return `${politeName}, подошел срок контрольного осмотра в клинике «${clinicName}». Записаться: ${bookingUrl}`;
 }
 
 export function sanitizePhoneNumber(phone: string | null | undefined): string {
@@ -1365,6 +1710,18 @@ export function filterAndSortRecallCandidates(
 			}
 		}
 
+		if (options.canonicalStatus && options.canonicalStatus !== "all") {
+			if (toCanonicalRecallStatus(c.status) !== options.canonicalStatus) {
+				return false;
+			}
+		}
+
+		if (options.triggerType && options.triggerType !== "all") {
+			if (resolveCandidateTriggerType(c) !== options.triggerType) {
+				return false;
+			}
+		}
+
 		if (options.cycleType && options.cycleType !== "all") {
 			if (c.cycleType !== options.cycleType) {
 				return false;
@@ -1373,6 +1730,12 @@ export function filterAndSortRecallCandidates(
 
 		if (options.doctorId && options.doctorId !== "all") {
 			if (c.attendingDoctorId !== options.doctorId) {
+				return false;
+			}
+		}
+
+		if (options.period && options.period !== "all") {
+			if (!isDateInPeriod(c.dueDate, options.period, options.referenceDate)) {
 				return false;
 			}
 		}

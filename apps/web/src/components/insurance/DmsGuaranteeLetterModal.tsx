@@ -28,6 +28,26 @@ import {
 } from "./insuranceMath";
 import { DmsBillSplitCalculatorSection } from "./DmsBillSplitCalculatorSection";
 
+import {
+	type PatientGuaranteeLetter,
+	type BillItemToSplit,
+	type ExpressDmsGuaranteePreset,
+	COMMON_DENTAL_ICD10_DIAGNOSES,
+	FDI_ADULT_TEETH_UPPER,
+	FDI_ADULT_TEETH_LOWER,
+	DEFAULT_BILL_ITEMS_TO_SPLIT,
+	EXPRESS_GUARANTEE_LETTER_PRESETS,
+} from "./dmsInsurancePresets";
+
+export type { PatientGuaranteeLetter, BillItemToSplit, ExpressDmsGuaranteePreset };
+export {
+	COMMON_DENTAL_ICD10_DIAGNOSES,
+	FDI_ADULT_TEETH_UPPER,
+	FDI_ADULT_TEETH_LOWER,
+	DEFAULT_BILL_ITEMS_TO_SPLIT,
+	EXPRESS_GUARANTEE_LETTER_PRESETS,
+};
+
 export interface PatientDmsProfile {
 	readonly id: string;
 	readonly fullName: string;
@@ -37,42 +57,6 @@ export interface PatientDmsProfile {
 	readonly phone?: string | undefined;
 }
 
-export interface PatientGuaranteeLetter {
-	readonly id: string;
-	readonly letterNumber: string;
-	readonly insurerKey: string;
-	readonly insurerName: string;
-	readonly patientId: string;
-	readonly patientFullName: string;
-	readonly policyNumber: string;
-	readonly issueDate: string; // YYYY-MM-DD
-	readonly validFrom: string; // YYYY-MM-DD
-	readonly validUntil: string; // YYYY-MM-DD
-	readonly maxCoverageKopecks: number;
-	readonly usedAmountKopecks: number;
-	readonly franchisePct: number; // 0..100%
-	readonly franchiseType: "percent" | "fixed_kopecks";
-	readonly franchiseFixedKopecks: number;
-	readonly approvedTeethFdi: readonly string[];
-	readonly approvedServiceCodes804n: readonly string[];
-	readonly approvedDiagnosisMkb10: readonly string[];
-	readonly curatorFullName: string;
-	readonly curatorPhone: string;
-	readonly curatorEmail?: string | undefined;
-	readonly notes?: string | undefined;
-	readonly status: "active" | "exhausted" | "expired" | "cancelled";
-}
-
-export interface BillItemToSplit {
-	readonly id: string;
-	readonly serviceCode804n: string;
-	readonly serviceName: string;
-	readonly toothNumber?: string | undefined;
-	readonly quantity: number;
-	readonly unitPriceKopecks: number;
-	readonly discountPercent?: number | undefined;
-}
-
 export interface DmsGuaranteeLetterModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -80,58 +64,6 @@ export interface DmsGuaranteeLetterModalProps {
 	readonly initialLetter?: DmsGuaranteeLetter | null | undefined;
 	readonly onSave?: ((letter: DmsGuaranteeLetter) => void) | undefined;
 }
-
-/** Типовые диагнозы МКБ-10 в стоматологии */
-export const COMMON_DENTAL_ICD10_DIAGNOSES = [
-	{ code: "K02.1", title: "Кариес дентина", name: "Кариес дентина" },
-	{ code: "K02.2", title: "Кариес цемента", name: "Кариес цемента" },
-	{ code: "K04.0", title: "Пульпит (острый/хронический)", name: "Пульпит (острый/хронический)" },
-	{ code: "K04.4", title: "Острый апикальный периодонтит", name: "Острый апикальный периодонтит" },
-	{ code: "K04.5", title: "Хронический апикальный периодонтит", name: "Хронический апикальный периодонтит" },
-	{ code: "K05.1", title: "Хронический гингивит", name: "Хронический гингивит" },
-	{ code: "K05.3", title: "Хронический пародонтит", name: "Хронический пародонтит" },
-	{ code: "K01.1", title: "Дистопия/ретенция зуба мудрости", name: "Дистопия/ретенция зуба мудрости" },
-	{ code: "K08.1", title: "Потеря зубов вследствие удаления/травмы", name: "Потеря зубов вследствие удаления/травмы" },
-];
-
-/** Зубная формула FDI: Взрослый прикус 18..11, 21..28 (верхняя челюсть), 48..41, 31..38 (нижняя челюсть) */
-export const FDI_ADULT_TEETH_UPPER = [
-	"1.8", "1.7", "1.6", "1.5", "1.4", "1.3", "1.2", "1.1",
-	"2.1", "2.2", "2.3", "2.4", "2.5", "2.6", "2.7", "2.8",
-];
-
-export const FDI_ADULT_TEETH_LOWER = [
-	"4.8", "4.7", "4.6", "4.5", "4.4", "4.3", "4.2", "4.1",
-	"3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "3.8",
-];
-
-/** Демо-позиции визита для сплит-калькулятора */
-export const DEFAULT_BILL_ITEMS_TO_SPLIT: readonly BillItemToSplit[] = [
-	{
-		id: "bill-1",
-		serviceCode804n: "A16.07.002.001",
-		serviceName: "Восстановление зуба пломбой световой (I класс)",
-		toothNumber: "1.6",
-		quantity: 1,
-		unitPriceKopecks: 450000,
-	},
-	{
-		id: "bill-2",
-		serviceCode804n: "A11.07.010",
-		serviceName: "Инфильтрационная анестезия",
-		toothNumber: "1.6",
-		quantity: 1,
-		unitPriceKopecks: 95000,
-	},
-	{
-		id: "bill-3",
-		serviceCode804n: "A16.07.050",
-		serviceName: "Клиническое отбеливание зубов Zoom 4",
-		toothNumber: undefined,
-		quantity: 1,
-		unitPriceKopecks: 2600000,
-	},
-];
 
 /** Преобразование ответа бэкенда в модель интерфейса гарантийного письма */
 export function mapBackendLetterToPatientGuaranteeLetter(item: any): PatientGuaranteeLetter {
@@ -396,6 +328,28 @@ export function DmsGuaranteeLetterModal({
 		);
 	};
 
+	const handleApplyExpressPreset = (preset: ExpressDmsGuaranteePreset) => {
+		setInsurerKey(preset.insurerKey);
+		setCustomInsurerName(preset.insurerNameRu);
+		setMaxCoverageRub(preset.maxCoverageRub);
+		setFranchisePct(preset.franchisePct);
+		setFranchiseType("percent");
+		setApprovedServiceCodes([...preset.approvedServiceCodes804n]);
+		setApprovedDiagnosisCodes([...preset.approvedDiagnosisMkb10]);
+		setNotes(preset.noteRu);
+		if (!letterNumber || letterNumber.startsWith("ГП-") || letterNumber.startsWith("ГП-ЭКСТРЕННО-")) {
+			const prefixMap: Record<string, string> = {
+				sogaz: "СОГАЗ-ГП",
+				ingosstrakh: "ИНГОС-ГП",
+				alfastrakhovanie: "АЛЬФА-ГП",
+				reso_garantiya: "РЕСО-ГП",
+			};
+			const pfx = prefixMap[preset.insurerKey] ?? "ГП";
+			setLetterNumber(`${pfx}-${new Date().getFullYear()}-${Date.now().toString().slice(-5)}`);
+		}
+		showToast(`Экспресс-шаблон «${preset.labelRu}» применен в 1 клик`, "info");
+	};
+
 	const handleSave = () => {
 		// Мандат 8e: если пациент пришел с острой болью, программа НЕ блокирует врача и не требует обязательного номера письма!
 		const resolvedPolicy =
@@ -561,6 +515,52 @@ export function DmsGuaranteeLetterModal({
 									: "1-клик: Экстренный приём / Гарантия в пути"}
 							</span>
 						</button>
+					</div>
+
+					{/* 1-Клик Экспресс-прикрепление гарантийного письма */}
+					<div
+						style={{
+							padding: "10px 14px",
+							borderRadius: "12px",
+							background: "var(--paper-strong, #ffffff)",
+							border: "1px solid var(--line, #e2e8f0)",
+							marginBottom: "14px",
+						}}
+					>
+						<div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+							<Zap size={16} className="text-sky-600" />
+							<span style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
+								Экспресс-прикрепление гарантийного письма в 1 клик:
+							</span>
+							<span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
+								(моментальное заполнение страховщика, лимитов и услуг 804н)
+							</span>
+						</div>
+						<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+							{EXPRESS_GUARANTEE_LETTER_PRESETS.map((preset) => (
+								<button
+									key={preset.id}
+									type="button"
+									onClick={() => handleApplyExpressPreset(preset)}
+									className="dms-btn dms-btn-secondary"
+									style={{
+										fontSize: "0.75rem",
+										padding: "6px 12px",
+										borderRadius: "8px",
+										display: "flex",
+										alignItems: "center",
+										gap: "6px",
+										background: "var(--paper, #f8fafc)",
+										border: "1px solid var(--line, #cbd5e1)",
+										cursor: "pointer",
+									}}
+									title={preset.noteRu}
+								>
+									<CheckCircle2 size={13} className="text-sky-600" />
+									<span style={{ fontWeight: 600 }}>{preset.labelRu}</span>
+								</button>
+							))}
+						</div>
 					</div>
 
 					{/* 1. Блок страховщика и реквизитов письма */}

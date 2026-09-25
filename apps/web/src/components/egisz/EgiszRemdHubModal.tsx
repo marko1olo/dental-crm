@@ -2576,7 +2576,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 										Журнал медицинских документов РЭМД ЕГИСЗ
 									</h3>
 									<p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--muted)", marginTop: "0.2rem" }}>
-										Реестр СЭМД 043/у, 302, 303, 105, 106 &bull; Приказ 947н Минздрава РФ
+										Реестр СЭМД 043/у, 101, 102, 302, 303, 105 &bull; Приказ 947н Минздрава РФ
 									</p>
 								</div>
 								<div style={{ display: "flex", gap: "0.5rem" }}>

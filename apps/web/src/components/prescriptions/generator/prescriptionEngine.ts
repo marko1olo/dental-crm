@@ -320,10 +320,10 @@ export function calculateMedicationDosage(
 		};
 	}
 
-	if (drugId.includes("ketorolac") || drugId.includes("ketanov")) {
+	if (drugId.includes("ketorolac") || drugId.includes("ketanov") || drugId.includes("ketorol")) {
 		if (isChild || isAdolescent) {
 			return {
-				drugNameRu: "Кеторолак (Кетанов 10 мг)",
+				drugNameRu: "Кеторолак (Кеторол / Кетанов 10 мг)",
 				recommendedDosageRu: "ПРОТИВОПОКАЗАН детям и подросткам до 16 лет",
 				standardFrequencyRu: "Не назначать лицам до 16 лет",
 				maxDailyDoseRu: "0 мг (применяйте Ибупрофен или Парацетамол)",
@@ -336,12 +336,80 @@ export function calculateMedicationDosage(
 			};
 		}
 		return {
-			drugNameRu: "Кеторолак (Кетанов 10 мг)",
+			drugNameRu: "Кеторолак (Кеторол 10 мг)",
 			recommendedDosageRu: "1 таблетка (10 мг) при острой боли",
 			standardFrequencyRu:
 				"При выраженном болевом синдроме с интервалом не менее 4–6 часов (курс до 3–5 дней)",
 			maxDailyDoseRu: "40 мг в сутки (4 таблетки)",
 			isPediatric: false,
+		};
+	}
+
+	if (
+		drugId.includes("ciprofloxacin") ||
+		drugId.includes("ciprolet") ||
+		drugId.includes("cifran")
+	) {
+		const isUnder18 = patientAgeYears !== undefined && patientAgeYears < 18;
+		if (isUnder18) {
+			return {
+				drugNameRu: "Ципролет (Ципрофлоксацин 500 мг)",
+				recommendedDosageRu: "ПРОТИВОПОКАЗАН детям и подросткам до 18 лет (ГРЛС Минздрава РФ)",
+				standardFrequencyRu: "Не назначать лицам младше 18 лет",
+				maxDailyDoseRu: "0 мг (применяйте Амоксиклав или Кларитромицин)",
+				isPediatric: true,
+				isContraindicated: true,
+				contraindicationReason:
+					"Ципрофлоксацин противопоказан детям и подросткам до 18 лет из-за риска артропатий и поражения суставного хряща.",
+				warningRu:
+					"Ципрофлоксацин противопоказан детям и подросткам до 18 лет из-за риска артропатий и поражения суставного хряща.",
+			};
+		}
+		return {
+			drugNameRu: "Ципролет 500 мг (Ципрофлоксацин)",
+			recommendedDosageRu: "1 таблетка (500 мг) 2 раза в сутки за 30 мин до еды",
+			standardFrequencyRu: "Каждые 12 часов до еды, запивая водой (курс 5–7 дней)",
+			maxDailyDoseRu: "1000 мг в сутки (2 таблетки)",
+			isPediatric: false,
+		};
+	}
+
+	if (drugId.includes("holisal") || drugId.includes("cholisal")) {
+		if (patientAgeYears !== undefined && patientAgeYears < 1) {
+			return {
+				drugNameRu: "Холисал гель",
+				recommendedDosageRu: "С осторожностью / по согласованию с педиатром (до 1 года)",
+				standardFrequencyRu: "Не применять у детей младше 1 года без назначения педиатра",
+				maxDailyDoseRu: "Местно, минимальное количество",
+				isPediatric: true,
+				warningRu: "Применение у детей первого года жизни только по жизненным показаниям под контролем врача.",
+			};
+		}
+		if (isChild) {
+			return {
+				drugNameRu: "Холисал гель (детская дозировка)",
+				recommendedDosageRu: "Полоска геля 0.5 см на пораженную область десны",
+				standardFrequencyRu: "2–3 раза в день чистым пальцем за 15 минут до еды",
+				maxDailyDoseRu: "Местно, до 3 раз в день",
+				isPediatric: true,
+			};
+		}
+		return {
+			drugNameRu: "Холисал гель",
+			recommendedDosageRu: "Полоска геля 1 см на пораженную область десны/слизистой",
+			standardFrequencyRu: "2–3 раза в день чистым пальцем за 15 минут до еды или на ночь",
+			maxDailyDoseRu: "Местно, полоска 1 см 2–3 раза в день",
+			isPediatric: false,
+		};
+	}
+
+	if (drugId.includes("solcoseryl")) {
+		return {
+			drugNameRu: "Солкосерил дентальная адгезивная паста 5 г",
+			recommendedDosageRu: "Полоска пасты около 0.5 см тонким слоем на высушенный дефект слизистой",
+			standardFrequencyRu: "3–5 раз в сутки после еды и перед сном (не втирать!)",
+			maxDailyDoseRu: "Местно, полоска 0.5 см 3–5 раз в сутки",
+			isPediatric: isChild,
 		};
 	}
 
@@ -569,6 +637,48 @@ const DENTAL_STATUTORY_MNN_ARRAY: readonly DentalMnnDefinition[] = [
 		pediatricNotesRu: "Детям: от 1 до 6 лет по 1/4 таб. 2-3 р/д; от 6 до 14 лет по 1/2 таб. 2-3 р/д.",
 		standardSignaLatinPrefix: "Rp.: Tab. Chloropyramini 25 mg",
 		standardSignaRussianTemplate: "Внутрь по 1 таблетке (25 мг) 2–3 раза в день во время еды, курс 3–5 дней.",
+	},
+	{
+		id: "ciprofloxacin",
+		mnnRu: "Ципрофлоксацин",
+		mnnLatin: "Ciprofloxacinum",
+		aliasesRu: ["ципрофлоксацин", "ципролет", "цифран", "ципромед", "ciprofloxacin", "ciprolet"],
+		category: "antibiotic",
+		categoryLabelRu: "Антибиотик фторхинолонового ряда",
+		standardDosages: ["250 мг", "500 мг"],
+		maxSingleDoseRu: "500 мг (1 таблетка)",
+		maxDailyDoseRu: "1000 мг (2 таблетки в сутки)",
+		pediatricNotesRu: "Противопоказан детям и подросткам до 18 лет.",
+		standardSignaLatinPrefix: "Rp.: Tab. Ciprofloxacini 500 mg",
+		standardSignaRussianTemplate: "Внутрь по 1 таблетке (500 мг) 2 раза в день за 30 мин до еды, курс 5–7 дней.",
+	},
+	{
+		id: "cholisal",
+		mnnRu: "Холина салицилат + Цеталкония хлорид",
+		mnnLatin: "Cholini salicylas + Cetalkonii chloridum",
+		aliasesRu: ["холисал", "холина салицилат", "cholisal", "холисал гель"],
+		category: "dental_gel",
+		categoryLabelRu: "Стоматологический гель противовоспалительный/анальгезирующий",
+		standardDosages: ["10 г", "15 г"],
+		maxSingleDoseRu: "Полоска 1 см геля",
+		maxDailyDoseRu: "Местно 2–3 раза в сутки",
+		pediatricNotesRu: "Детям старше 1 года с осторожностью (полоска 0.5 см).",
+		standardSignaLatinPrefix: "Rp.: Gel. 'Cholisal' 10.0",
+		standardSignaRussianTemplate: "Наносить на десну чистым пальцем полоской 1 см 2–3 раза в день за 15 минут до еды.",
+	},
+	{
+		id: "solcoseryl",
+		mnnRu: "Депротеинизированный диализат из крови телят + Полидоканол",
+		mnnLatin: "Solcoseryl pasta dentalis adhesiva",
+		aliasesRu: ["солкосерил", "солкосерил дентальная", "солкосерил паста", "solcoseryl"],
+		category: "dental_gel",
+		categoryLabelRu: "Стоматологическая адгезивная регенерирующая паста",
+		standardDosages: ["5 г"],
+		maxSingleDoseRu: "Полоска пасты около 0.5 см",
+		maxDailyDoseRu: "Местно 3–5 раз в сутки после еды",
+		pediatricNotesRu: "Применять по назначению врача без строгих возрастных ограничений.",
+		standardSignaLatinPrefix: "Rp.: Pastae Solcoseryl dentalis adhesivae 5.0",
+		standardSignaRussianTemplate: "Наносить на высушенный дефект слизистой оболочки рта тонким слоем 3–5 раз в сутки после еды и перед сном.",
 	},
 ];
 

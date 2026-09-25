@@ -177,15 +177,24 @@ describe("3. HL7 CDA R2 Dental SEMD XML Generation (Вид 105 / 302 / 303 / 043
 		assert.ok(xml.includes("&quot;стреляющие&quot;"));
 	});
 
-	it("3.3 Generates complete CDA R2 XML for SEMD 106 Epicrisis and SEMD 303 Procedure Protocol", () => {
-		// SEMD 106 Epicrisis
-		const epicrisisPayload = {
+	it("3.3 Generates complete CDA R2 XML for SEMD 101/102 Dental Protocols and SEMD 303 Procedure Protocol", () => {
+		// SEMD 101 Consultation Protocol
+		const semd101Payload = {
 			...SAMPLE_DENTAL_SEMD_105_PRESET,
-			docTypeCode: "106" as const,
+			docTypeCode: "101" as const,
 		};
-		const xml106 = generateEgiszDentalCdaXml(epicrisisPayload);
-		assert.ok(xml106.includes('code code="106"'));
-		assert.ok(xml106.includes("Выписной эпикриз"));
+		const xml101 = generateEgiszDentalCdaXml(semd101Payload);
+		assert.ok(xml101.includes('code code="101"'));
+		assert.ok(xml101.includes("Протокол консультации стоматолога"));
+
+		// SEMD 102 Outpatient Dental Protocol
+		const semd102Payload = {
+			...SAMPLE_DENTAL_SEMD_105_PRESET,
+			docTypeCode: "102" as const,
+		};
+		const xml102 = generateEgiszDentalCdaXml(semd102Payload);
+		assert.ok(xml102.includes('code code="102"'));
+		assert.ok(xml102.includes("Амбулаторный стоматологический протокол"));
 
 		// SEMD 303 Dental Procedure Protocol
 		const procPayload = {

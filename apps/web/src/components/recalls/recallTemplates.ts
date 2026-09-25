@@ -7,9 +7,13 @@
 
 import {
 	RECALL_CYCLE_CATALOG,
+	extractPolitePatientName,
+	generatePdnProtectedRecallMessage,
 	type PatientRecallCandidate,
 	type RecallCycleType,
 } from "./patientRecallEngine";
+
+export { extractPolitePatientName, generatePdnProtectedRecallMessage };
 
 export interface RecallTemplateVariables {
 	readonly patientFirstName: string;

@@ -293,6 +293,20 @@ export interface ReferralRewardPreset {
 	readonly invitedDiscountKop?: number | undefined;
 }
 
+export const REFERRAL_HYGIENE_1000_PRESET: ReferralRewardPreset = {
+	id: "ref_friend_hygiene_1000",
+	titleRu: "Приведи друга — обоим по 1000 бонусов на чистку",
+	referrerRewardKop: 100000, // 1 000 ₽
+	referrerRewardRub: 1000,
+	referrerBonusKop: 100000,
+	referredFriendDiscountKop: 100000, // 1 000 ₽
+	referredFriendDiscountRub: 1000,
+	invitedDiscountKop: 100000,
+	minFriendSpendKop: 250000, // чек от 2 500 ₽ (профгигиена / терапия)
+	minInvoiceSpendKop: 250000,
+	descriptionRu: "«Приведи друга — обоим по 1000 бонусов на чистку»: начисление 1 000 бонусов рекомендателю и 1 000 бонусов приглашенному другу на комплексную гигиену полости рта.",
+};
+
 export const DEFAULT_REFERRAL_PRESET: ReferralRewardPreset = {
 	id: "ref_friend_standard",
 	titleRu: "Привёл друга / Члена семьи",
@@ -308,6 +322,7 @@ export const DEFAULT_REFERRAL_PRESET: ReferralRewardPreset = {
 };
 
 export const REFERRAL_PROGRAM_PRESETS: readonly ReferralRewardPreset[] = [
+	REFERRAL_HYGIENE_1000_PRESET,
 	DEFAULT_REFERRAL_PRESET,
 	{
 		id: "ref_family_premium",
@@ -320,3 +335,17 @@ export const REFERRAL_PROGRAM_PRESETS: readonly ReferralRewardPreset[] = [
 		descriptionRu: "Премиальное вознаграждение 1 500 бонусов при рекомендации комплексного хирургического или ортопедического лечения.",
 	},
 ];
+
+/**
+ * Clean statutory dental loyalty bounds (Mandate 8i, 8n):
+ * Simple cashback: 3% (base) to 5% (regular/family), point redemption up to 30% of invoice.
+ * Zero MLM pyramids, zero crypto-tokens.
+ */
+export const DENTAL_LOYALTY_STANDARDS = {
+	cashbackPercentBase: 3,
+	cashbackPercentPremium: 5,
+	maxInvoiceCoveragePercent: 30,
+	pointRateRub: 1.0, // 1 бонус = 1 рубль
+	descriptionRu: "Простая стоматологическая бонусная программа: кэшбэк 3–5% бонусами, оплата баллами до 30% суммы чека.",
+} as const;
+

@@ -31,6 +31,8 @@ import {
 	validateGiftCertificateSerial,
 	redeemGiftCertificate,
 	calculateFamilyPoolBalance,
+	debitFamilySharedBalance,
+	creditFamilySharedBalance,
 	evaluatePromoCode,
 	exportLoyaltyLedgerToCsv,
 	calculateReferralReward,
@@ -49,6 +51,9 @@ import {
 	LOYALTY_EXCLUSION_RULES,
 	QUICK_REDEMPTION_PRESETS_RUB,
 	DEFAULT_REFERRAL_PRESET,
+	REFERRAL_HYGIENE_1000_PRESET,
+	REFERRAL_PROGRAM_PRESETS,
+	DENTAL_LOYALTY_STANDARDS,
 	type LoyaltyTierId,
 	type ReferralRewardPreset,
 } from "./loyaltyPresets";
@@ -104,6 +109,8 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 	// Family Group State
 	const [familyMembers, setFamilyMembers] = useState<readonly FamilyMember[]>(EMPTY_FAMILY_MEMBERS);
 	const [isFamilyModeActive, setIsFamilyModeActive] = useState<boolean>(false);
+	const [selectedFamilyMemberId, setSelectedFamilyMemberId] = useState<string>("");
+	const [familyDepositAmountRub, setFamilyDepositAmountRub] = useState<number>(5000);
 	const [newMemberName, setNewMemberName] = useState<string>("");
 	const [newMemberRole, setNewMemberRole] = useState<FamilyMember["roleRu"]>("Супруг / Супруга");
 
@@ -112,6 +119,9 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 
 	// Referral Program State ("Привёл друга / семью" - Mandates 8i, 8s, 8b)
 	const [referrals, setReferrals] = useState<readonly PatientReferralRecord[]>([]);
+	const [selectedReferralPreset, setSelectedReferralPreset] = useState<ReferralRewardPreset>(
+		REFERRAL_HYGIENE_1000_PRESET
+	);
 	const [newReferralName, setNewReferralName] = useState<string>("");
 	const [newReferralPhone, setNewReferralPhone] = useState<string>("");
 	const [newReferralNote, setNewReferralNote] = useState<string>("");
@@ -135,10 +145,12 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 	const [ledgerEntries, setLedgerEntries] = useState<readonly LoyaltyLedgerEntry[]>(EMPTY_LEDGER);
 	const [ledgerSearch, setLedgerSearch] = useState<string>("");
 
+	const isFamilyActiveEffective = isFamilyModeActive || Boolean(selectedFamilyMemberId);
+
 	// Tier Progression
 	const tierProgression = useMemo(() => {
-		return calculateTierProgression(initialLifetimeSpentKop, isFamilyModeActive);
-	}, [initialLifetimeSpentKop, isFamilyModeActive]);
+		return calculateTierProgression(initialLifetimeSpentKop, isFamilyActiveEffective);
+	}, [initialLifetimeSpentKop, isFamilyActiveEffective]);
 
 	const currentTier = tierProgression.currentTier;
 
@@ -147,7 +159,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 		return calculateFamilyPoolBalance(`fam-${patientId || "group"}`, `Семья (${patientName})`, familyMembers);
 	}, [patientId, patientName, familyMembers]);
 
-	const effectiveBalanceRub = isFamilyModeActive
+	const effectiveBalanceRub = isFamilyActiveEffective
 		? familyPool.totalPooledPoints
 		: activePointsBalance;
 
@@ -237,6 +249,35 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 			return;
 		}
 
+		// Mandate 8i, 8n: One wallet per family — parent pays for child/spouse directly
+		const selectedTargetMember = familyMembers.find((m) => m.patientId === selectedFamilyMemberId);
+		if (selectedTargetMember) {
+			const famResult = debitFamilySharedBalance({
+				familyGroupId: `fam-${patientId || "group"}`,
+				familyName: familyPool.familyName,
+				sponsorPatientId: patientId,
+				sponsorFullName: patientName,
+				targetPatientId: selectedTargetMember.patientId,
+				targetPatientName: selectedTargetMember.fullName,
+				targetRoleRu: selectedTargetMember.roleRu,
+				invoiceAmountKop: Math.round(invoiceAmountRub * 100),
+				availableFamilyPointsRub: familyPool.totalPooledPoints,
+				requestedPointsRub: redemptionCalc.actualRedeemedPointsRub,
+				allowFullCoverage: isDoctorOverride,
+				staffNameRu: "Администратор (Касса)",
+			});
+
+			setActivePointsBalance(famResult.remainingFamilyBalanceRub);
+			setLedgerEntries((prev) => [famResult.ledgerEntry, ...prev]);
+			setRedemptionSuccessMsg(famResult.messageRu);
+			showToast(famResult.messageRu, "success");
+
+			if (onRedeemSuccess) {
+				onRedeemSuccess(famResult.debitedPointsRub, famResult.fiscal54FzSplit);
+			}
+			return;
+		}
+
 		setActivePointsBalance((prev) => prev - redemptionCalc.actualRedeemedPointsRub);
 		const newLedgerItem: LoyaltyLedgerEntry = {
 			id: `tx-${Date.now().toString().slice(-4)}`,
@@ -315,6 +356,36 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 			return;
 		}
 
+		// Mandate 8i, 8n: One wallet per family — parent pays for child/spouse in 1-click
+		const selectedTargetMember = familyMembers.find((m) => m.patientId === selectedFamilyMemberId);
+		if (selectedTargetMember) {
+			const famResult = debitFamilySharedBalance({
+				familyGroupId: `fam-${patientId || "group"}`,
+				familyName: familyPool.familyName,
+				sponsorPatientId: patientId,
+				sponsorFullName: patientName,
+				targetPatientId: selectedTargetMember.patientId,
+				targetPatientName: selectedTargetMember.fullName,
+				targetRoleRu: selectedTargetMember.roleRu,
+				invoiceAmountKop: Math.round(invoiceAmountRub * 100),
+				availableFamilyPointsRub: familyPool.totalPooledPoints,
+				requestedPointsRub: targetCalc.actualRedeemedPointsRub,
+				allowFullCoverage: isDoctorOverride,
+				staffNameRu: "Администратор / Касса",
+			});
+
+			setRequestedPointsRub(famResult.debitedPointsRub);
+			setActivePointsBalance(famResult.remainingFamilyBalanceRub);
+			setLedgerEntries((prev) => [famResult.ledgerEntry, ...prev]);
+			setRedemptionSuccessMsg(famResult.messageRu);
+			showToast(famResult.messageRu, "success");
+
+			if (onRedeemSuccess) {
+				onRedeemSuccess(famResult.debitedPointsRub, famResult.fiscal54FzSplit);
+			}
+			return;
+		}
+
 		setRequestedPointsRub(targetCalc.actualRedeemedPointsRub);
 		setActivePointsBalance((prev) => prev - targetCalc.actualRedeemedPointsRub);
 
@@ -384,15 +455,16 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 			invitedPatientPhone: newReferralPhone.trim() || undefined,
 			createdAtIso: new Date().toISOString(),
 			status: "registered",
-			rewardPreset: DEFAULT_REFERRAL_PRESET,
+			rewardPreset: selectedReferralPreset,
+			rewardRub: selectedReferralPreset.referrerRewardRub,
 			isRewardCredited: false,
-			noteRu: newReferralNote.trim() || "Рекомендация пациента",
+			noteRu: newReferralNote.trim() || selectedReferralPreset.descriptionRu,
 		};
 		setReferrals((prev) => [newRecord, ...prev]);
 		setNewReferralName("");
 		setNewReferralPhone("");
 		setNewReferralNote("");
-		showToast(`Рекомендация «${newRecord.invitedPatientName}» успешно зарегистрирована`, "success");
+		showToast(`Рекомендация «${newRecord.invitedPatientName}» успешно зарегистрирована (${selectedReferralPreset.titleRu})`, "success");
 	};
 
 	const handleCreditReferral = (refId: string) => {
@@ -494,6 +566,27 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 				message: `Ошибка: ${res.errorMessageRu}`,
 			});
 		}
+	};
+
+	const handleCreditFamilyBalance = (amountRub: number) => {
+		if (amountRub <= 0) {
+			showToast("Укажите сумму для пополнения семейного баланса", "warning");
+			return;
+		}
+		const creditResult = creditFamilySharedBalance({
+			familyGroupId: `fam-${patientId || "group"}`,
+			familyName: familyPool.familyName,
+			payerPatientId: patientId,
+			payerFullName: patientName,
+			currentFamilyBalanceRub: familyPool.totalPooledPoints,
+			amountToAddRub: amountRub,
+			reasonRu: `Пополнение семейного счета «${familyPool.familyName}» (Плательщик: ${patientName})`,
+			staffNameRu: "Администратор / Касса",
+		});
+
+		setActivePointsBalance((prev) => prev + creditResult.creditedPointsRub);
+		setLedgerEntries((prev) => [creditResult.ledgerEntry, ...prev]);
+		showToast(creditResult.messageRu, "success");
 	};
 
 	const handleAddFamilyMember = () => {
@@ -731,6 +824,76 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 									>
 										<CheckCircle2 size={18} />
 										{redemptionSuccessMsg}
+									</div>
+								)}
+
+								{familyMembers.length > 0 && (
+									<div
+										style={{
+											marginBottom: "1rem",
+											padding: "0.75rem",
+											borderRadius: "0.5rem",
+											background: selectedFamilyMemberId ? "rgba(13, 148, 136, 0.08)" : "var(--paper-soft)",
+											border: selectedFamilyMemberId ? "1px solid var(--teal)" : "1px dashed var(--line)",
+										}}
+									>
+										<label
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: "0.5rem",
+												fontSize: "0.8125rem",
+												fontWeight: 700,
+												color: "var(--ink)",
+												marginBottom: "0.375rem",
+											}}
+										>
+											<Users size={16} color="var(--teal)" />
+											Оплата за члена семьи (Ребенок / Супруг) из единого кошелька:
+										</label>
+										<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
+											<select
+												value={selectedFamilyMemberId}
+												onChange={(e) => {
+													setSelectedFamilyMemberId(e.target.value);
+													if (e.target.value) {
+														setIsFamilyModeActive(true);
+													}
+												}}
+												style={{
+													flex: 1,
+													minWidth: "220px",
+													padding: "0.5rem 0.75rem",
+													borderRadius: "0.5rem",
+													border: "1px solid var(--line)",
+													background: "var(--paper)",
+													color: "var(--ink)",
+													fontSize: "0.875rem",
+													fontWeight: 600,
+												}}
+											>
+												<option value="">Оплата за себя ({patientName}) — личный баланс {activePointsBalance.toLocaleString("ru-RU")} ₽</option>
+												{familyMembers.map((m) => (
+													<option key={m.patientId} value={m.patientId}>
+														{m.fullName} ({m.roleRu}) — из общего баланса семьи ({familyPool.totalPooledPoints.toLocaleString("ru-RU")} ₽)
+													</option>
+												))}
+											</select>
+											{selectedFamilyMemberId && (
+												<span
+													style={{
+														fontSize: "0.75rem",
+														color: "var(--ok-fg)",
+														fontWeight: 700,
+														padding: "4px 8px",
+														borderRadius: "4px",
+														background: "rgba(16, 185, 129, 0.1)",
+													}}
+												>
+													Единый кошелек (без комиссии и ручных переводов)
+												</span>
+											)}
+										</div>
 									</div>
 								)}
 
@@ -1048,6 +1211,54 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 								</div>
 							</div>
 
+							{/* Пополнение общего семейного кошелька */}
+							<div
+								style={{
+									background: "var(--paper-soft)",
+									border: "1px solid var(--line)",
+									borderRadius: "0.75rem",
+									padding: "1rem",
+									marginBottom: "1.5rem",
+									display: "flex",
+									justifyContent: "space-between",
+									alignItems: "center",
+									flexWrap: "wrap",
+									gap: "0.75rem",
+								}}
+							>
+								<div>
+									<div style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--ink)", display: "flex", alignItems: "center", gap: "0.375rem" }}>
+										<Coins size={16} color="var(--teal)" />
+										Пополнение общего семейного кошелька:
+									</div>
+									<p style={{ margin: "0.25rem 0 0 0", fontSize: "0.75rem", color: "var(--muted)" }}>
+										Единый кошелек: родители пополняют баланс, дети и супруг оплачивают приёмы без комиссий и ручных переводов
+									</p>
+								</div>
+								<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+									{[1000, 3000, 5000, 10000].map((amt) => (
+										<button
+											key={amt}
+											type="button"
+											onClick={() => handleCreditFamilyBalance(amt)}
+											style={{
+												padding: "0.375rem 0.625rem",
+												minHeight: "36px",
+												borderRadius: "0.375rem",
+												border: "1px solid var(--line)",
+												background: "var(--paper)",
+												color: "var(--ink)",
+												fontSize: "0.75rem",
+												fontWeight: 600,
+												cursor: "pointer",
+											}}
+										>
+											+{amt.toLocaleString("ru-RU")} ₽
+										</button>
+									))}
+								</div>
+							</div>
+
 							{/* Family Members Grid */}
 							<h4 className="loyalty-section-title">
 								<Users size={20} color="var(--teal)" />
@@ -1104,6 +1315,36 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 												<br />
 												Накоплено баллов: {member.individualPointsBalance} ₽
 											</div>
+
+											<button
+												type="button"
+												onClick={() => {
+													setSelectedFamilyMemberId(member.patientId);
+													setIsFamilyModeActive(true);
+													setActiveTab("balance");
+												}}
+												style={{
+													marginTop: "0.5rem",
+													marginBottom: "0.5rem",
+													width: "100%",
+													padding: "0.375rem 0.5rem",
+													minHeight: "36px",
+													borderRadius: "0.375rem",
+													border: "1px solid var(--teal)",
+													background: "transparent",
+													color: "var(--teal)",
+													fontSize: "0.75rem",
+													fontWeight: 700,
+													cursor: "pointer",
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													gap: "0.25rem",
+												}}
+											>
+												<CreditCard size={14} />
+												Оплатить лечение из семейного счета
+											</button>
 
 											<div
 												style={{
@@ -1245,6 +1486,43 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 					{/* TAB: REFERRALS ("Привёл друга / семью" - Mandates 8i, 8s, 8b) */}
 					{activeTab === "referrals" && (
 						<div>
+							{/* Referral Program Preset Selector */}
+							<div
+								style={{
+									display: "flex",
+									gap: "8px",
+									flexWrap: "wrap",
+									marginBottom: "1rem",
+								}}
+							>
+								{REFERRAL_PROGRAM_PRESETS.map((preset) => {
+									const isSelected = selectedReferralPreset.id === preset.id;
+									return (
+										<button
+											key={preset.id}
+											type="button"
+											onClick={() => setSelectedReferralPreset(preset)}
+											style={{
+												padding: "0.5rem 0.875rem",
+												borderRadius: "0.5rem",
+												border: isSelected ? "2px solid var(--teal)" : "1px solid var(--line)",
+												background: isSelected ? "rgba(13, 148, 136, 0.1)" : "var(--paper)",
+												color: isSelected ? "var(--teal)" : "var(--ink)",
+												fontWeight: isSelected ? 700 : 500,
+												fontSize: "0.8125rem",
+												cursor: "pointer",
+												display: "flex",
+												alignItems: "center",
+												gap: "0.375rem",
+											}}
+										>
+											<Sparkles size={13} color="var(--teal)" />
+											<span>{preset.titleRu}</span>
+										</button>
+									);
+								})}
+							</div>
+
 							{/* Referral Program Hero Banner */}
 							<div className="loyalty-referral-banner">
 								<div>
@@ -1265,13 +1543,10 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 										Программа рекомендаций без корпоративных пирамид
 									</div>
 									<h3 style={{ fontSize: "1.25rem", fontWeight: 700, margin: "0 0 0.5rem 0" }}>
-										Приведи друга или семью • Бонус 500 ₽ каждому
+										{selectedReferralPreset.titleRu}
 									</h3>
 									<p style={{ fontSize: "0.8125rem", opacity: 0.95, margin: 0, lineHeight: 1.5 }}>
-										Честная программа удержания для врача и клиники: при рекомендации и первом визите
-										на сумму от {(DEFAULT_REFERRAL_PRESET.minFriendSpendKop / 100).toLocaleString("ru-RU")} ₽
-										рекомендатель получает {(DEFAULT_REFERRAL_PRESET.referrerRewardRub).toLocaleString("ru-RU")} ₽ бонусов на счет,
-										а новый пациент — скидку {(DEFAULT_REFERRAL_PRESET.referredFriendDiscountRub).toLocaleString("ru-RU")} ₽.
+										{selectedReferralPreset.descriptionRu} (порог первого визита: {(((selectedReferralPreset.minFriendSpendKop ?? selectedReferralPreset.minInvoiceSpendKop) ?? 250000) / 100).toLocaleString("ru-RU")} ₽)
 									</p>
 								</div>
 								<div style={{ textAlign: "right" }}>
@@ -1280,7 +1555,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 										{referrals.length} чел.
 									</div>
 									<div style={{ fontSize: "0.75rem", opacity: 0.9 }}>
-										Начислено: {referrals.filter((r) => r.isRewardCredited).length * DEFAULT_REFERRAL_PRESET.referrerRewardRub} ₽
+										Начислено: {referrals.filter((r) => r.isRewardCredited).length * selectedReferralPreset.referrerRewardRub} ₽
 									</div>
 								</div>
 							</div>
