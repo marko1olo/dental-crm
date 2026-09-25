@@ -6,11 +6,6 @@
  * протоколам периодонтологии (EFP/AAP), этапам остеоинтеграции имплантатов и стандартам ортодонтии.
  */
 import type { StomxTaskCallType } from "@dental/shared";
-export {
-	calculateSmsSegments,
-	formatSmsSummary,
-	type SmsSegmentCalculation,
-} from "./recallTemplates";
 
 export type RecallCycleType =
 	| "standard_prophylaxis"
@@ -1125,6 +1120,80 @@ export function evaluateClinicalCycleSuggestion(clinicalData: {
 /* ==========================================================================
    3. ГЕНЕРАТОР ПЕРСОНАЛИЗИРОВАННЫХ СООБЩЕНИЙ (WHATSAPP / TELEGRAM / SMS)
    ========================================================================== */
+
+export interface SmsSegmentCalculation {
+	readonly characterCount: number;
+	readonly encoding: "GSM-7" | "UCS-2";
+	readonly segmentCount: number;
+	readonly charsPerSegment: number;
+	readonly maxCharsInCurrentSegment: number;
+	readonly remainingInCurrentSegment: number;
+	readonly isMultipart: boolean;
+}
+
+/**
+ * Расчет сегментов SMS в соответствии со стандартами 3GPP TS 23.038 / GSM 03.38.
+ * Поддерживает GSM 7-bit (160 / 153 символа) и UCS-2 Unicode (70 / 67 символов).
+ */
+export function calculateSmsSegments(text: string): SmsSegmentCalculation {
+	const characterCount = text.length;
+	if (characterCount === 0) {
+		return {
+			characterCount: 0,
+			encoding: "GSM-7",
+			segmentCount: 0,
+			charsPerSegment: 160,
+			maxCharsInCurrentSegment: 160,
+			remainingInCurrentSegment: 160,
+			isMultipart: false,
+		};
+	}
+
+	// Базовый GSM 7-bit набор символов
+	const gsm7Regex = /^[@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ\x1BÆæßÉ !"#¤%&'()*+,\-./0-9:;<=>?¡A-ZÄÖÑÜ§¿a-zäöñüà^{}\\[~\]|€]*$/;
+	const isGsm7 = gsm7Regex.test(text);
+	const encoding: "GSM-7" | "UCS-2" = isGsm7 ? "GSM-7" : "UCS-2";
+
+	const singleLimit = isGsm7 ? 160 : 70;
+	const multiLimit = isGsm7 ? 153 : 67;
+
+	if (characterCount <= singleLimit) {
+		return {
+			characterCount,
+			encoding,
+			segmentCount: 1,
+			charsPerSegment: singleLimit,
+			maxCharsInCurrentSegment: singleLimit,
+			remainingInCurrentSegment: singleLimit - characterCount,
+			isMultipart: false,
+		};
+	}
+
+	const segmentCount = Math.ceil(characterCount / multiLimit);
+	const totalCapacity = segmentCount * multiLimit;
+	const remainingInCurrentSegment = totalCapacity - characterCount;
+
+	return {
+		characterCount,
+		encoding,
+		segmentCount,
+		charsPerSegment: multiLimit,
+		maxCharsInCurrentSegment: totalCapacity,
+		remainingInCurrentSegment,
+		isMultipart: true,
+	};
+}
+
+/**
+ * Краткая сводка длины и тарификации SMS для интерфейса врача и администратора.
+ */
+export function formatSmsSummary(calc: SmsSegmentCalculation): string {
+	if (calc.characterCount === 0) {
+		return "0 символов • 0 SMS";
+	}
+	const segWord = calc.segmentCount === 1 ? "сегмент" : calc.segmentCount < 5 ? "сегмента" : "сегментов";
+	return `${calc.characterCount} симв. • ${calc.segmentCount} SMS (${segWord}, ${calc.encoding}) • остаток: ${calc.remainingInCurrentSegment}`;
+}
 
 export function extractFirstName(fullName: string): string {
 	const trimmed = fullName.trim();

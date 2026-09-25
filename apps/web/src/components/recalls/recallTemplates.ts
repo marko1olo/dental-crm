@@ -45,31 +45,10 @@ export interface RecallCallingScript {
 	readonly objections: readonly RecallScriptObjection[];
 }
 
-/**
- * Извлечение имени пациента из полного ФИО («Иванов Иван Иванович» -> «Иван»).
- */
-export function extractFirstName(fullName: string): string {
-	const trimmed = fullName.trim();
-	if (!trimmed) return "Пациент";
-	const parts = trimmed.split(/\s+/);
-	// В русской традиции обычно «Фамилия Имя Отчество», берем Имя (индекс 1)
-	if (parts.length >= 2 && parts[1]) {
-		return parts[1];
-	}
-	return parts[0] || "Пациент";
-}
-
-/**
- * Очистка номера телефона от пробелов, скобок и дефисов для ссылки wa.me / tel.
- */
-export function sanitizePhoneNumber(phone: string | null | undefined): string {
-	if (!phone) return "";
-	const digits = phone.replace(/\D/g, "");
-	if (digits.startsWith("8") && digits.length === 11) {
-		return `7${digits.slice(1)}`;
-	}
-	return digits;
-}
+export {
+	extractFirstName,
+	sanitizePhoneNumber,
+} from "./patientRecallEngine";
 
 /**
  * Генерация 1-Click ссылки для онлайн-записи пациента на профилактику.
@@ -122,79 +101,11 @@ export function interpolateRecallTemplate(
 		.replace(/\{\{PHONE\}\}/g, variables.phone);
 }
 
-export interface SmsSegmentCalculation {
-	readonly characterCount: number;
-	readonly encoding: "GSM-7" | "UCS-2";
-	readonly segmentCount: number;
-	readonly charsPerSegment: number;
-	readonly maxCharsInCurrentSegment: number;
-	readonly remainingInCurrentSegment: number;
-	readonly isMultipart: boolean;
-}
-
-/**
- * Расчет сегментов SMS в соответствии со стандартами 3GPP TS 23.038 / GSM 03.38.
- * Поддерживает GSM 7-bit (160 / 153 символа) и UCS-2 Unicode (70 / 67 символов).
- */
-export function calculateSmsSegments(text: string): SmsSegmentCalculation {
-	const characterCount = text.length;
-	if (characterCount === 0) {
-		return {
-			characterCount: 0,
-			encoding: "GSM-7",
-			segmentCount: 0,
-			charsPerSegment: 160,
-			maxCharsInCurrentSegment: 160,
-			remainingInCurrentSegment: 160,
-			isMultipart: false,
-		};
-	}
-
-	// Базовый GSM 7-bit набор символов
-	const gsm7Regex = /^[@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ\x1BÆæßÉ !"#¤%&'()*+,\-./0-9:;<=>?¡A-ZÄÖÑÜ§¿a-zäöñüà^{}\\[~\]|€]*$/;
-	const isGsm7 = gsm7Regex.test(text);
-	const encoding: "GSM-7" | "UCS-2" = isGsm7 ? "GSM-7" : "UCS-2";
-
-	const singleLimit = isGsm7 ? 160 : 70;
-	const multiLimit = isGsm7 ? 153 : 67;
-
-	if (characterCount <= singleLimit) {
-		return {
-			characterCount,
-			encoding,
-			segmentCount: 1,
-			charsPerSegment: singleLimit,
-			maxCharsInCurrentSegment: singleLimit,
-			remainingInCurrentSegment: singleLimit - characterCount,
-			isMultipart: false,
-		};
-	}
-
-	const segmentCount = Math.ceil(characterCount / multiLimit);
-	const totalCapacity = segmentCount * multiLimit;
-	const remainingInCurrentSegment = totalCapacity - characterCount;
-
-	return {
-		characterCount,
-		encoding,
-		segmentCount,
-		charsPerSegment: multiLimit,
-		maxCharsInCurrentSegment: totalCapacity,
-		remainingInCurrentSegment,
-		isMultipart: true,
-	};
-}
-
-/**
- * Краткая сводка длины и тарификации SMS для интерфейса врача и администратора.
- */
-export function formatSmsSummary(calc: SmsSegmentCalculation): string {
-	if (calc.characterCount === 0) {
-		return "0 символов • 0 SMS";
-	}
-	const segWord = calc.segmentCount === 1 ? "сегмент" : calc.segmentCount < 5 ? "сегмента" : "сегментов";
-	return `${calc.characterCount} симв. • ${calc.segmentCount} SMS (${segWord}, ${calc.encoding}) • остаток: ${calc.remainingInCurrentSegment}`;
-}
+export {
+	calculateSmsSegments,
+	formatSmsSummary,
+	type SmsSegmentCalculation,
+} from "./patientRecallEngine";
 
 /**
  * Базовые шаблоны сообщений по клиническим циклам для WhatsApp.
@@ -384,27 +295,10 @@ export function generateSmsRecallMessage(
 	return interpolateRecallTemplate(template || "", vars);
 }
 
-/**
- * Построение прямой ссылки wa.me для отправки в 1 клик.
- */
-export function buildWhatsAppUrl(phone: string | null | undefined, text: string): string {
-	const cleanPhone = sanitizePhoneNumber(phone);
-	const encodedText = encodeURIComponent(text);
-	return cleanPhone
-		? `https://wa.me/${cleanPhone}?text=${encodedText}`
-		: `https://wa.me/?text=${encodedText}`;
-}
-
-/**
- * Построение прямой ссылки t.me для отправки в 1 клик.
- */
-export function buildTelegramUrl(phone: string | null | undefined, text: string): string {
-	const cleanPhone = sanitizePhoneNumber(phone);
-	const encodedText = encodeURIComponent(text);
-	return cleanPhone
-		? `https://t.me/+${cleanPhone}?text=${encodedText}`
-		: `https://t.me/share/url?url=&text=${encodedText}`;
-}
+export {
+	buildWhatsAppUrl,
+	buildTelegramUrl,
+} from "./patientRecallEngine";
 
 /**
  * Каталог клинических скриптов обзвона для администратора с разбором частых возражений.

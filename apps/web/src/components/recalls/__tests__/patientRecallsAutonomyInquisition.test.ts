@@ -17,6 +17,10 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import {
 	PatientRecallsHubModal,
@@ -388,10 +392,9 @@ describe("Subagent 6: Patient Recalls & Clinical Retention Autonomy Inquisition"
 	// =========================================================================
 	describe("5. CSS Tokens Audit (recalls.css)", () => {
 		it("verifies zero hardcoded hex colors in recalls.css", () => {
-			const cssPath = path.resolve(
-				process.cwd(),
-				"apps/web/src/components/recalls/recalls.css",
-			);
+			const cssPath = fs.existsSync(path.resolve(__dirname, "../recalls.css"))
+				? path.resolve(__dirname, "../recalls.css")
+				: path.resolve(process.cwd(), "apps/web/src/components/recalls/recalls.css");
 			const cssContent = fs.readFileSync(cssPath, "utf8");
 
 			const hexMatches = cssContent.match(/#[0-9a-fA-F]{3,8}\b/g);
@@ -403,10 +406,9 @@ describe("Subagent 6: Patient Recalls & Clinical Retention Autonomy Inquisition"
 		});
 
 		it("verifies zero untokenized rgba/rgb backgrounds or borders in recalls.css", () => {
-			const cssPath = path.resolve(
-				process.cwd(),
-				"apps/web/src/components/recalls/recalls.css",
-			);
+			const cssPath = fs.existsSync(path.resolve(__dirname, "../recalls.css"))
+				? path.resolve(__dirname, "../recalls.css")
+				: path.resolve(process.cwd(), "apps/web/src/components/recalls/recalls.css");
 			const cssContent = fs.readFileSync(cssPath, "utf8");
 			const lines = cssContent.split("\n");
 
