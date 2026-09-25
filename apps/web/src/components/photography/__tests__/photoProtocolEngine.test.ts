@@ -29,6 +29,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import {
+	type Point2D,
 	STANDARD_8_CLINICAL_ANGLES,
 	STANDARD_8_ANGLES_MAP,
 	getStandard8Angle,

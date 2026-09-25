@@ -166,7 +166,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 						<div className="flex items-center gap-2">
 							<Megaphone className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 							<span className="font-bold text-xs text-[var(--ink,#1e293b)] dark:text-slate-100">
-								Канал привлечения пациента:
+								Канал привлечения пациента (Маркетинг / StomX):
 							</span>
 						</div>
 						{patient?.acquisitionSource && (

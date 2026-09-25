@@ -2,7 +2,7 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
-> ⚠️ **СТАТУС (2026-09-25 / WAVES 175–325 / ВОЛНА 324 RED TEAM АУДИТ И ПОЛНАЯ СИНХРОНИЗАЦИЯ ДОКУМЕНТАЦИИ, ВОЛНА 325 ТОТАЛЬНЫЙ RED TEAM АУДИТ, ЗАЧИСТКА КАРГО-КУЛЬТА И ПОЛНАЯ СИНХРОНИЗАЦИЯ 6 ДОМЕНОВ: WAITLIST ОТМЕН, ПРИХОДНЫЕ НАКЛАДНЫЕ И FEFO, ТРЕКЕР ЗТЛ, СМЕШАННЫЕ ЧЕКИ 54-ФЗ И РОЗНИЦА, РАССРОЧКА 0% И HUD СМЕНЫ ВРАЧА): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 393 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (ВСЕГО 456 ФИЧ: 63 КАНОНИЧЕСКИЕ + 393 АДДЕНДУМ, ВСЕ 456 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], ВОЛНЫ 320–325 ЗАКРЫТЫ НА 100%, ПАРИТЕТ 100%). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
+> ⚠️ **СТАТУС (2026-09-25 / WAVES 175–326 / ВОЛНА 324 RED TEAM АУДИТ, ВОЛНА 325 ТОТАЛЬНЫЙ RED TEAM АУДИТ, ВОЛНА 326 СИНХРОНИЗАЦИЯ: ТАБЛО ОЧЕРЕДИ СМЕНЫ STOMX PARITY, КОМПЛЕКСНЫЕ ПАКЕТЫ 804Н «ВСЕ ВКЛЮЧЕНО», СОМАТИЧЕСКАЯ БЕЗОПАСНОСТЬ 0-КЛИК НОРМА, ФОТОПРОТОКОЛ «ДО/ПОСЛЕ», УСТРАНЕНИЕ БЛОАТА СТЕРИЛИЗАЦИИ У КРЕСЛА И ДЕКОМПОЗИЦИЯ МОНОЛИТОВ <800 СТРОК): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 399 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 462 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 399 АДДЕНДУМ, ВСЕ 462 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], ВОЛНЫ 320–326 ЗАКРЫТЫ НА 100%, ПАРИТЕТ 100%). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
@@ -7360,5 +7360,31 @@
   - `docs/competitive-audit/BACKLOG.md` (Волна 325)
   - `docs/competitive-audit/FEATURES_REGISTRY.md` (Волна 325)
   - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 325)
+
+### 2.10.422. Волна 326: Устранение блоата стерилизации у кресла, очистка дубликатов, табло очереди смены StomX parity, пакеты 804н «Все включено», соматическая безопасность 0-клик норма, фотопротокол (Мандаты 8b, 8c, 8d, 8e, 8n, 8s, 8t, 8v, 8p)
+- **Функционал**:
+  1. *Табло очереди смены StomX parity (Patient Shift Queue Board & Engine)*: `TodayQueueBoard.tsx`, `patientShiftQueueEngine.ts`, `patientShiftQueueTypes.ts`, тесты `todayQueueBoard.test.tsx` и `patientShiftQueueEngine.test.ts`; визуализация оперативного потока смены («Ожидают в холле», «Приглашены / В кресле», «Ожидают расчет», «Приём завершен», «Не явились»), контроль времени ожидания (пороги warning/critical), фильтрация по креслам и врачам, 1-клик вызов в кресло и переход в кассу 54-ФЗ без диалоговых барьеров;
+  2. *Комплексные пакеты услуг 804н «Все включено» (All-Inclusive Treatment Plan Bundles)*: `ClinicalServiceBundlesModal.tsx`, `treatmentPlanBundlesPresets.ts`, `treatmentPlanBundlesEngine.ts`, `TreatmentPlanModule.tsx`, тесты `treatmentPlanBundlesEngine.test.ts` и `clinicalServiceBundlesModal.test.tsx`; готовые пакеты услуг 804н «под ключ» (профгигиена комплексная A16.07.051, эндодонтия 1-2-3-канального зуба A16.07.008, имплантация под ключ A16.07.054, коронка ZrO2 A16.07.004, пломбирование кариеса световой композит A16.07.002); автоматическая раскладка этапов плана, пересчет в копейках, автономия скидок врача до 100% без паролей начмеда, 0 disabled кнопок;
+  3. *Соматическая безопасность 0-клик норма (Somatic Safety 0-Click Norm & Red Emergency Guard)*: `SomaticSafetyAlertWidget.tsx`, `somaticSafetyEngine.ts`, `somaticSafetyTypes.ts`, тесты `somaticSafetyEngine.test.ts`, `SomaticSafetyAlertWidget.test.tsx`, `patientSomaticGuardWave308.test.ts`, `somaticNorm.test.ts`; автоматический 0-клик коридор нормы («Соматически здоров / норма»), мгновенная детекция критических рисков: аллергия на анестетики/пенициллин/латекс, артериальная гипертензия / криз, кардиостимулятор, антикоагулянты (риск кровотечения), диабет, беременность I и III триместры; рекомендации по подбору анестетика (мепивакаин без вазоконстриктора) без блокировки приёма врача (Мандат 8e);
+  4. *Фотопротокол «До / После» (Dental Photography Protocol Parity)*: `BeforeAfterComparisonView.tsx`, тесты `photoProtocolEngine.test.ts` и `photoProtocolHardware.test.ts`; интерактивный Before/After сплит-слайдер для наглядного сравнения результатов лечения; 12 стандартных ракурсов дентального фотопротокола, калибровка зуммирования и выравнивания; устранение блоата и избыточного кода (-149 строк);
+  5. *Устранение блоата стерилизации у кресла (Presumption of Tray Sterility & Anti-Nurse Bloat)*: `VisitSoapEditor.tsx`, тесты `outpatientHospitalBloatDemolitionInquisition.test.ts` (15/15 pass); презумпция стерильности лотка по умолчанию (Мандат 8v); ведение дневника 043/у, назначение услуг и SOAP не блокируются журналом автоклавирования; фоновое списание лотков и автозаполнение журналов СанПиН 3.3686-21 без отвлечения врача;
+  6. *Очистка дубликатов и декомпозиция монолитов <800 строк (Single Authority & Anti-Monolith)*: ликвидация монолита `clinicalServiceBundlesEngine.ts` (953 строки) с декомпозицией на `treatmentPlanBundlesEngine.ts` (429 строк) и `treatmentPlanBundlesPresets.ts` (339 строк); очистка дубликатов в `TreatmentPlanModule.tsx` и `VisitSoapEditor.tsx`; чистый diff: -689 удалений, +558 добавлений; все новые файлы строго <800 строк; 0 ошибок `check:encoding` (5239 файлов) и `check:css-tokens` (124 CSS файла); соблюдение Single-Compiler Gate (Мандат 8t).
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
+- **Задействованные компоненты и модули**:
+  - `apps/web/src/components/schedule/TodayQueueBoard.tsx`
+  - `packages/shared/src/schedule/patientShiftQueueEngine.ts`
+  - `packages/shared/src/schedule/patientShiftQueueTypes.ts`
+  - `apps/web/src/components/treatment-plans/ClinicalServiceBundlesModal.tsx`
+  - `apps/web/src/components/treatment-plans/treatmentPlanBundlesPresets.ts`
+  - `apps/web/src/components/treatment-plans/treatmentPlanBundlesEngine.ts`
+  - `apps/web/src/components/clinical/SomaticSafetyAlertWidget.tsx`
+  - `packages/shared/src/clinical/somaticSafetyEngine.ts`
+  - `packages/shared/src/clinical/somaticSafetyTypes.ts`
+  - `apps/web/src/components/photography/BeforeAfterComparisonView.tsx`
+  - `apps/web/src/components/visit/VisitSoapEditor.tsx`
+  - `docs/competitive-audit/BACKLOG.md` (Волна 326)
+  - `docs/competitive-audit/FEATURES_REGISTRY.md` (Волна 326)
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 326)
+
 
 

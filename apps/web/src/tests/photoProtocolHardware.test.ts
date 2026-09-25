@@ -640,7 +640,7 @@ describe("Offline PWA, Capacitor Camera & Hardware Telemetry Suite", () => {
 		});
 
 		it("parses SanPiN 3.3686-21 sterilization package barcodes (autoclave ID, cycle, pack/exp date)", () => {
-			const sanpin2D = "BATCH-042#15|MELAG-PRO|CYC108|2026-08-20|2026-09-20|DR-SMIRNOVA|KIT-SURGERY-1";
+			const sanpin2D = "BATCH-042#15|MELAG-PRO|CYC108|2026-08-20|2026-11-20|DR-SMIRNOVA|KIT-SURGERY-1";
 			const parsed = parseUniversalBarcode(sanpin2D);
 
 			assert.strictEqual(parsed.classification, "sanpin_sterilization");
@@ -651,7 +651,7 @@ describe("Offline PWA, Capacitor Camera & Hardware Telemetry Suite", () => {
 			assert.strictEqual(parsed.sanpin?.autoclaveId, "MELAG-PRO");
 			assert.strictEqual(parsed.sanpin?.cycleNumber, 108);
 			assert.strictEqual(parsed.sanpin?.packDate, "2026-08-20");
-			assert.strictEqual(parsed.sanpin?.expDate, "2026-09-20");
+			assert.strictEqual(parsed.sanpin?.expDate, "2026-11-20");
 			assert.strictEqual(parsed.sanpin?.operatorId, "DR-SMIRNOVA");
 			assert.strictEqual(parsed.sanpin?.toolSetId, "KIT-SURGERY-1");
 			assert.strictEqual(parsed.sanpin?.isExpired, false);

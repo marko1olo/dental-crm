@@ -25,11 +25,9 @@ import {
 	clamp,
 	calculateWiperWheelDelta,
 	calculateKeyboardWiperDelta,
-	generateCollageWatermarkText,
-	calculateCollageDimensions,
 	CollageFormatType,
 } from './photoProtocolMath';
-import { exportCollageAsPdf } from './photoProtocolEngine';
+import { exportCollageAsPdf, exportCollageAsPng } from './photoProtocolEngine';
 import { IncisalAlignmentGuideOverlay, GuideOverlayType } from './IncisalAlignmentGuideOverlay';
 import { VitaShadeSelector } from './VitaShadeSelector';
 
@@ -240,134 +238,31 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 		setIncisalCanting(0);
 	};
 
-	// 1-Click High-Res Canvas Export
-	const exportCollageToPng = useCallback(() => {
+	// 1-Click High-Res Canvas Export (delegated to canonical photoProtocolEngine)
+	const exportCollageToPng = useCallback(async () => {
 		if (isExporting) return;
 		setIsExporting(true);
-		const dimensions = calculateCollageDimensions(exportFormat);
-		const canvas = document.createElement('canvas');
-		canvas.width = dimensions.widthPx;
-		canvas.height = dimensions.heightPx;
-		const ctx = canvas.getContext('2d');
-		if (!ctx) {
+		try {
+			await exportCollageAsPng({
+				clinicName,
+				patientName,
+				patientCardNumber,
+				doctorName,
+				beforeTitle: getSlotDefinitionById(beforeSlotId)?.shortLabelRu || 'До',
+				afterTitle: getSlotDefinitionById(afterSlotId)?.shortLabelRu || 'После',
+				beforeImageUrl: beforeSlotRecord.imageUrl,
+				afterImageUrl: afterSlotRecord.imageUrl,
+				beforeShade,
+				afterShade,
+				format: exportFormat,
+			});
+			setShowExportModal(false);
+		} catch (err) {
+			console.error('Failed to export collage as PNG', err);
+		} finally {
 			setIsExporting(false);
-			return;
 		}
-
-		// Background
-		ctx.fillStyle = '#0f172a';
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-		// Header area with Watermark
-		const headerHeight = Math.round(canvas.height * 0.12);
-		ctx.fillStyle = '#1e293b';
-		ctx.fillRect(0, 0, canvas.width, headerHeight);
-
-		ctx.fillStyle = '#ffffff';
-		ctx.font = 'bold 36px sans-serif';
-		ctx.fillText(clinicName, 40, 55);
-
-		ctx.font = '22px sans-serif';
-		ctx.fillStyle = '#94a3b8';
-		ctx.fillText('Клинический протокол До / После (AACD / DSD стандарт)', 40, 95);
-
-		// Patient watermark details on top right
-		ctx.font = 'bold 20px sans-serif';
-		ctx.fillStyle = '#f8fafc';
-		ctx.textAlign = 'right';
-		ctx.fillText(`Пациент: ${patientName} (${patientCardNumber})`, canvas.width - 40, 50);
-		ctx.font = '18px sans-serif';
-		ctx.fillStyle = '#94a3b8';
-		ctx.fillText(`Врач: ${doctorName} • ${new Date().toLocaleDateString('ru-RU')}`, canvas.width - 40, 85);
-		ctx.fillText(`Оттенки VITA: ДО ${beforeShade} -> ПОСЛЕ ${afterShade}`, canvas.width - 40, 115);
-		ctx.textAlign = 'left';
-
-		// Draw Image Layers side by side
-		const contentY = headerHeight + 30;
-		const contentHeight = canvas.height - contentY - 60;
-		const colWidth = (canvas.width - 90) / 2;
-
-		const imgBefore = new Image();
-		imgBefore.crossOrigin = 'anonymous';
-		const imgAfter = new Image();
-		imgAfter.crossOrigin = 'anonymous';
-
-		let loadedCount = 0;
-		const renderImages = () => {
-			loadedCount++;
-			if (loadedCount >= 2) {
-				// Draw Before Image
-				if (beforeSlotRecord.imageUrl && imgBefore.width > 0) {
-					ctx.drawImage(imgBefore, 30, contentY, colWidth, contentHeight);
-					ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
-					ctx.fillRect(40, contentY + 20, 220, 40);
-					ctx.fillStyle = '#38bdf8';
-					ctx.font = 'bold 22px sans-serif';
-					ctx.fillText(`ДО: ${getSlotDefinitionById(beforeSlotId)?.shortLabelRu || 'До'} (${beforeShade})`, 50, contentY + 48);
-				} else {
-					ctx.fillStyle = '#1e293b';
-					ctx.fillRect(30, contentY, colWidth, contentHeight);
-					ctx.fillStyle = '#64748b';
-					ctx.font = 'bold 20px sans-serif';
-					ctx.textAlign = 'center';
-					ctx.fillText(`Кадр «До» не загружен (${getSlotDefinitionById(beforeSlotId)?.shortLabelRu || 'До'})`, 30 + colWidth / 2, contentY + contentHeight / 2);
-					ctx.textAlign = 'left';
-				}
-
-				// Draw After Image
-				if (afterSlotRecord.imageUrl && imgAfter.width > 0) {
-					ctx.drawImage(imgAfter, 30 + colWidth + 30, contentY, colWidth, contentHeight);
-					ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
-					ctx.fillRect(30 + colWidth + 40, contentY + 20, 240, 40);
-					ctx.fillStyle = '#4ade80';
-					ctx.font = 'bold 22px sans-serif';
-					ctx.fillText(`ПОСЛЕ: ${getSlotDefinitionById(afterSlotId)?.shortLabelRu || 'После'} (${afterShade})`, 30 + colWidth + 50, contentY + 48);
-				} else {
-					ctx.fillStyle = '#1e293b';
-					ctx.fillRect(30 + colWidth + 30, contentY, colWidth, contentHeight);
-					ctx.fillStyle = '#64748b';
-					ctx.font = 'bold 20px sans-serif';
-					ctx.textAlign = 'center';
-					ctx.fillText(`Кадр «После» не загружен (${getSlotDefinitionById(afterSlotId)?.shortLabelRu || 'После'})`, 30 + colWidth + 30 + colWidth / 2, contentY + contentHeight / 2);
-					ctx.textAlign = 'left';
-				}
-
-				// Bottom Watermark bar
-				const watermarkText = generateCollageWatermarkText(clinicName, patientName, patientCardNumber, doctorName);
-				ctx.fillStyle = '#090d16';
-				ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
-				ctx.fillStyle = '#64748b';
-				ctx.font = '15px sans-serif';
-				ctx.fillText(watermarkText, 40, canvas.height - 15);
-
-				// Trigger download
-				const dataUrl = canvas.toDataURL('image/png');
-				const link = document.createElement('a');
-				link.download = `PhotoProtocol_${patientName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.png`;
-				link.href = dataUrl;
-				link.click();
-				setIsExporting(false);
-				setShowExportModal(false);
-			}
-		};
-
-		imgBefore.onload = renderImages;
-		imgBefore.onerror = renderImages;
-		imgAfter.onload = renderImages;
-		imgAfter.onerror = renderImages;
-
-		if (beforeSlotRecord.imageUrl) {
-			imgBefore.src = beforeSlotRecord.imageUrl;
-		} else {
-			renderImages();
-		}
-
-		if (afterSlotRecord.imageUrl) {
-			imgAfter.src = afterSlotRecord.imageUrl;
-		} else {
-			renderImages();
-		}
-	}, [exportFormat, clinicName, patientName, patientCardNumber, doctorName, beforeShade, afterShade, beforeSlotRecord.imageUrl, afterSlotRecord.imageUrl, beforeSlotId, afterSlotId]);
+	}, [exportFormat, clinicName, patientName, patientCardNumber, doctorName, beforeShade, afterShade, beforeSlotRecord.imageUrl, afterSlotRecord.imageUrl, beforeSlotId, afterSlotId, isExporting]);
 
 	const exportCollageToPdfHandler = useCallback(() => {
 		exportCollageAsPdf({

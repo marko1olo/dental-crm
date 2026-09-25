@@ -12,7 +12,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import {
 	CANONICAL_FORM043_SOMATIC_NORM,
 	CANONICAL_SOMATIC_HEALTHY_NORM_TEXT,

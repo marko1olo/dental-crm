@@ -4,7 +4,6 @@
  */
 
 import assert from "node:assert/strict";
-
 import { describe, it as test } from "node:test";
 import { parseKopecks, sumKopecks } from "@dental/shared";
 import {
@@ -12,14 +11,17 @@ import {
 	type ClinicalBundleId,
 	applyClinicalBundleToStages,
 	applyClinicalBundleToTier,
+	calculateBundlePrice,
+	createBundleInvoiceExport,
+	createBundleInvoiceItems,
 	createBundlePlanItems,
 	getClinicalBundleById,
 } from "../treatmentPlanBundlesEngine";
 import type { TreatmentPlanStage, TreatmentPlanTier } from "../types";
 
-describe("treatmentPlanBundlesEngine — 8 эталонных клинических пакетов «под ключ»", () => {
-	test("реестр содержит ровно 8 канонических пакетов", () => {
-		assert.equal(CLINICAL_BUNDLES.length, 8);
+describe("treatmentPlanBundlesEngine — 10 эталонных клинических пакетов «под ключ»", () => {
+	test("реестр содержит ровно 10 канонических пакетов", () => {
+		assert.equal(CLINICAL_BUNDLES.length, 10);
 		const bundleIds = CLINICAL_BUNDLES.map((b) => b.id);
 		const expectedIds: ClinicalBundleId[] = [
 			"caries_turnkey",
@@ -27,9 +29,11 @@ describe("treatmentPlanBundlesEngine — 8 эталонных клиническ
 			"endo_3canal_turnkey",
 			"hygiene_turnkey",
 			"extraction_turnkey",
+			"complex_extraction",
 			"implant_turnkey",
 			"crown_metalloceramic_turnkey",
 			"crown_zirconia_turnkey",
+			"impression_asilicone_2jaws",
 		];
 		assert.deepEqual(bundleIds, expectedIds);
 	});
@@ -97,6 +101,11 @@ describe("treatmentPlanBundlesEngine — 8 эталонных клиническ
 		assert.equal(ext.stageNumber, 2);
 		assert.equal(ext.stageKind, "stage_2_surgery");
 
+		const complexExt = getClinicalBundleById("complex_extraction")!;
+		assert.equal(complexExt.stageNumber, 2);
+		assert.equal(complexExt.stageKind, "stage_2_surgery");
+		assert.equal(complexExt.requiresTooth, true);
+
 		const imp = getClinicalBundleById("implant_turnkey")!;
 		assert.equal(imp.stageNumber, 2);
 		assert.equal(imp.stageKind, "stage_2_surgery");
@@ -108,6 +117,39 @@ describe("treatmentPlanBundlesEngine — 8 эталонных клиническ
 		const zr = getClinicalBundleById("crown_zirconia_turnkey")!;
 		assert.equal(zr.stageNumber, 3);
 		assert.equal(zr.stageKind, "stage_3_orthopedics");
+
+		const asilicone = getClinicalBundleById("impression_asilicone_2jaws")!;
+		assert.equal(asilicone.stageNumber, 3);
+		assert.equal(asilicone.stageKind, "stage_3_orthopedics");
+		assert.equal(asilicone.requiresTooth, false);
+	});
+});
+
+describe("treatmentPlanBundlesEngine — гибкий расчет цены calculateBundlePrice", () => {
+	test("при полном составе цена равна базовой стоимости пакета", () => {
+		const breakdown = calculateBundlePrice("caries_turnkey");
+		assert.equal(breakdown.totalRub, 7500);
+		assert.equal(breakdown.totalKopecks, parseKopecks(7500));
+		assert.equal(breakdown.savingsRub, 0);
+		assert.equal(breakdown.isFullySelected, true);
+		assert.equal(breakdown.selectedItems.length, 4);
+		assert.equal(breakdown.excludedItems.length, 0);
+	});
+
+	test("при исключении опциональной анестезии цена уменьшается на 900 руб.", () => {
+		const breakdown = calculateBundlePrice("caries_turnkey", [
+			"rubberdam",
+			"restoration",
+			"polishing",
+		]);
+		assert.equal(breakdown.totalRub, 6600);
+		assert.equal(breakdown.totalKopecks, parseKopecks(6600));
+		assert.equal(breakdown.savingsRub, 900);
+		assert.equal(breakdown.savingsKopecks, parseKopecks(900));
+		assert.equal(breakdown.isFullySelected, false);
+		assert.equal(breakdown.selectedItems.length, 3);
+		assert.equal(breakdown.excludedItems.length, 1);
+		assert.equal(breakdown.excludedItems[0]?.id, "anesthesia");
 	});
 });
 
@@ -129,6 +171,20 @@ describe("treatmentPlanBundlesEngine — создание позиций createB
 		}
 	});
 
+	test("поддерживает объект параметров с фильтрацией позиций и кастомными ценами", () => {
+		const items = createBundlePlanItems("complex_extraction", {
+			toothNumber: 48,
+			selectedItemIds: ["root_separation", "deep_curettage", "vicryl_suturing"],
+			customPriceMap: { vicryl_suturing: 1500 },
+		});
+
+		assert.equal(items.length, 3);
+		const sutureItem = items.find((it) => it.code804n === "A16.07.097");
+		assert.ok(sutureItem);
+		assert.equal(sutureItem?.priceRub, 1500);
+		assert.equal(sutureItem?.toothNumber, 48);
+	});
+
 	test("использует defaultTooth, если номер зуба не передан для зубозависимого пакета", () => {
 		const bundle = getClinicalBundleById("implant_turnkey")!;
 		const items = createBundlePlanItems("implant_turnkey");
@@ -139,10 +195,17 @@ describe("treatmentPlanBundlesEngine — создание позиций createB
 		}
 	});
 
-	test("для профгигиены (hygiene_turnkey) номер зуба не добавляется", () => {
+	test("для профгигиены (hygiene_turnkey) и слепков (impression_asilicone_2jaws) номер зуба не добавляется", () => {
 		const items = createBundlePlanItems("hygiene_turnkey");
 		assert.equal(items.length, 4);
 		for (const it of items) {
+			assert.equal(it.toothNumber, undefined);
+			assert.ok(!it.name.startsWith("[Зуб "));
+		}
+
+		const impressionItems = createBundlePlanItems("impression_asilicone_2jaws");
+		assert.equal(impressionItems.length, 4);
+		for (const it of impressionItems) {
 			assert.equal(it.toothNumber, undefined);
 			assert.ok(!it.name.startsWith("[Зуб "));
 		}
@@ -316,5 +379,36 @@ describe("treatmentPlanBundlesEngine — применение пакета к т
 			sched.stage3OrthopedicsKopecks;
 		assert.equal(sumKopecksSched, updatedTier.totalKopecks);
 		assert.equal(sched.totalKopecks, updatedTier.totalKopecks);
+	});
+});
+
+describe("treatmentPlanBundlesEngine — экспорт в кассу 54-ФЗ и счета", () => {
+	test("createBundleInvoiceItems формирует валидные элементы счета с корректными категориями", () => {
+		const items = createBundleInvoiceItems("extraction_turnkey", { toothNumber: 38 });
+		assert.equal(items.length, 5);
+		for (const it of items) {
+			assert.equal(it.category, "surgery");
+			assert.equal(it.toothNumber, 38);
+			assert.ok(it.priceRub > 0);
+			assert.ok(it.code804n.startsWith("A"));
+		}
+	});
+
+	test("createBundleInvoiceExport формирует полный пакет данных кассы 54-ФЗ с учетом скидки", () => {
+		const invoice = createBundleInvoiceExport("caries_turnkey", {
+			toothNumber: 16,
+			patientId: "pat-123",
+			patientName: "Сидоров С.С.",
+			discountPercent: 10,
+		});
+
+		assert.equal(invoice.patientId, "pat-123");
+		assert.equal(invoice.patientName, "Сидоров С.С.");
+		assert.equal(invoice.grossTotalRub, 7500);
+		assert.equal(invoice.discountRub, 750);
+		assert.equal(invoice.netTotalRub, 6750);
+		assert.equal(invoice.netTotalKopecks, parseKopecks(6750));
+		assert.ok(invoice.items.length === 4);
+		assert.ok(invoice.invoiceNumber.startsWith("ПАКЕТ-"));
 	});
 });

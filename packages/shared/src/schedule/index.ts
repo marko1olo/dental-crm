@@ -5,4 +5,7 @@
 export * from "./shiftCollisionEngine.js";
 export * from "./calDavTypes.js";
 export * from "./iCalGenerator.js";
+export * from "./patientShiftQueueTypes.js";
+export * from "./patientShiftQueueEngine.js";
 export * from "../types/schedule.js";
+

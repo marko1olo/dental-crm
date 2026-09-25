@@ -14,6 +14,7 @@ import {
 	FlaskConical,
 	Layers,
 	MoreVertical,
+	PackageCheck,
 	PenTool,
 	Percent,
 	Receipt,
@@ -24,6 +25,7 @@ import {
 	UserCheck,
 	Zap,
 } from "lucide-react";
+import { type Kopecks, type TreatmentPlanItem, parseKopecks } from "@dental/shared";
 import {
 	type BillingInvoice,
 	loadStoredInvoices,
@@ -90,10 +92,18 @@ const TreatmentPlanPresenterModal = lazy(() =>
 );
 import { ClinicalBundlesPanel } from "./ClinicalBundlesPanel";
 import {
+	CLINICAL_BUNDLES,
 	applyClinicalBundleToStages,
 	getClinicalBundleById,
+	type ClinicalBundleDefinition,
 	type ClinicalBundleId,
+	createBundlePlanItems,
 } from "./treatmentPlanBundlesEngine";
+const ClinicalServiceBundlesModal = lazy(() =>
+	import("./ClinicalServiceBundlesModal").then((module) => ({
+		default: module.ClinicalServiceBundlesModal,
+	})),
+);
 const FiscalReceipt54FzModal = lazy(() =>
 	import("../finance/FiscalReceipt54FzModal").then((module) => ({
 		default: module.FiscalReceipt54FzModal,
@@ -203,6 +213,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState<boolean>(false);
 	const [selectedInstallmentStage, setSelectedInstallmentStage] = useState<TreatmentPlanStage | null>(null);
 	const [isCuratorModalOpen, setIsCuratorModalOpen] = useState<boolean>(false);
+	const [isChairsideBundlesModalOpen, setIsChairsideBundlesModalOpen] = useState<boolean>(false);
 	const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState<boolean>(initialOptionsMenuOpen);
 	const optionsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -313,6 +324,95 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		setCustomStages(updated);
 		const toothDesc = bundle?.requiresTooth ? ` (зуб ${toothNumber ?? bundle?.defaultTooth})` : "";
 		showToast(`Пакет «${bundle?.shortTitle || bundleId}» успешно добавлен в план${toothDesc}!`, "success", 4000);
+	};
+
+	const handleApplyChairsideBundlePlan = (
+		items: TreatmentPlanItem[],
+		bundle: ClinicalBundleDefinition,
+		toothNumber?: number,
+	) => {
+		const targetStageExists = stages.some(
+			(st) => st.stageKind === bundle.stageKind || st.stageNumber === bundle.stageNumber,
+		);
+		let updated: TreatmentPlanStage[];
+		if (!targetStageExists) {
+			const stageTitles: Record<1 | 2 | 3, { title: string; subtitle: string; goal: string }> = {
+				1: {
+					title: "Этап 1: Неотложная помощь и терапевтическая санация",
+					subtitle: "Санация",
+					goal: "Санация полости рта",
+				},
+				2: {
+					title: "Этап 2: Хирургический этап и дентальная имплантация",
+					subtitle: "Хирургия",
+					goal: "Хирургическая санация",
+				},
+				3: {
+					title: "Этап 3: Ортопедический этап и протезирование",
+					subtitle: "Ортопедия",
+					goal: "Ортопедическое восстановление",
+				},
+			};
+			const meta = stageTitles[bundle.stageNumber];
+			const stageTotalRub = items.reduce((acc, it) => acc + it.priceRub, 0);
+			const newStage: TreatmentPlanStage = {
+				stageNumber: bundle.stageNumber,
+				stageKind: bundle.stageKind,
+				title: meta.title,
+				subtitle: meta.subtitle,
+				clinicalGoal: meta.goal,
+				items,
+				totalRub: stageTotalRub,
+				totalKopecks: parseKopecks(stageTotalRub),
+				estimatedVisits: Math.max(1, Math.ceil(items.length / 2)),
+				estimatedWeeks: 2,
+				order804nCodes: items.map((it) => it.code804n),
+			};
+			updated = [...stages, newStage].sort((a, b) => a.stageNumber - b.stageNumber);
+		} else {
+			updated = stages.map((st) => {
+				if (st.stageKind !== bundle.stageKind && st.stageNumber !== bundle.stageNumber) return st;
+				const updatedItems = [...st.items, ...items];
+				const totalRub = updatedItems.reduce((acc, it) => acc + it.priceRub, 0);
+				return {
+					...st,
+					items: updatedItems,
+					totalRub,
+					totalKopecks: parseKopecks(totalRub),
+					order804nCodes: Array.from(new Set([...st.order804nCodes, ...items.map((it) => it.code804n)])),
+				};
+			});
+		}
+		setCustomStages(updated);
+		setIsChairsideBundlesModalOpen(false);
+	};
+
+	const handleApplyChairsideBundleInvoice = (
+		invoiceItems: unknown[],
+		bundle: ClinicalBundleDefinition,
+		toothNumber?: number,
+	) => {
+		if (onExportToCashier) {
+			const planItems = createBundlePlanItems(bundle.id, { toothNumber });
+			const grossRub = planItems.reduce((acc, it) => acc + it.priceRub, 0);
+			const exportData: CashierInvoiceExportData = {
+				patientId,
+				patientName,
+				invoiceId: `inv-chairside-${bundle.id}-${Date.now()}`,
+				invoiceNumber: `ПАКЕТ-${Date.now().toString().slice(-6)}`,
+				items: planItems,
+				grossTotalRub: grossRub,
+				discountRub: 0,
+				bonusPointsUsedRub: 0,
+				bonusPointsUsedKopecks: 0 as Kopecks,
+				netTotalRub: grossRub,
+				netTotalKopecks: parseKopecks(grossRub),
+				notes: `Клинический пакет «${bundle.shortTitle}» у кресла`,
+				createdAtIso: new Date().toISOString(),
+			};
+			onExportToCashier(exportData);
+		}
+		setIsChairsideBundlesModalOpen(false);
 	};
 
 	const totalItemsCount = useMemo(() => {
@@ -1307,11 +1407,26 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				</details>
 
 				{/* Turnkey Clinical Packages 1-Click Panel (Mandate 8e, 8p) */}
+				<div className="flex items-center justify-between gap-2 p-1">
+					<button
+						type="button"
+						onClick={() => setIsChairsideBundlesModalOpen(true)}
+						className="h-8 px-3.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+						title="Открыть клинические пакеты 804н у кресла («Все включено»)"
+						data-testid="open-chairside-bundles-modal-btn"
+					>
+						<PackageCheck size={15} />
+						<span>Пакеты 804н у кресла («Все включено»)</span>
+						<span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-white/20 text-white ml-1">
+							{CLINICAL_BUNDLES.length} пакетов
+						</span>
+					</button>
+				</div>
 				<details className="group rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] text-xs overflow-hidden transition-all">
 					<summary className="cursor-pointer text-xs font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] py-2 px-3.5 flex items-center justify-between gap-2 select-none list-none [&::-webkit-details-marker]:hidden">
 						<div className="flex items-center gap-2">
 							<Layers size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-							<span>Готовые клинические пакеты «под ключ» (8 пакетов)</span>
+							<span>Готовые клинические пакеты «под ключ» ({CLINICAL_BUNDLES.length} пакетов)</span>
 							<span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">
 								1 клик
 							</span>
@@ -1811,6 +1926,22 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						onAssigned={(assigned) => {
 							showToast(`Куратор ${assigned.curatorFullName} успешно закреплен!`, "success");
 						}}
+					/>
+				</Suspense>
+			)}
+
+			{/* Chairside Clinical Service Bundles 804n Modal */}
+			{isChairsideBundlesModalOpen && (
+				<Suspense fallback={null}>
+					<ClinicalServiceBundlesModal
+						isOpen={isChairsideBundlesModalOpen}
+						onClose={() => setIsChairsideBundlesModalOpen(false)}
+						initialToothNumber={orthopedicTeeth[0] || 16}
+						patientId={patientId}
+						patientName={patientName}
+						onApplyToPlan={handleApplyChairsideBundlePlan}
+						onApplyToInvoice={handleApplyChairsideBundleInvoice}
+						targetMode="both"
 					/>
 				</Suspense>
 			)}

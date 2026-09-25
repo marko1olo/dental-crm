@@ -2136,7 +2136,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											: undefined
 									}
 									disabled={patientAdministrativeProfileSaveState === "saving"}
-									style={{ minHeight: "44px" }}
+									style={{ minHeight: "36px" }}
 									data-testid="patient-admin-save-btn"
 								>
 									<ShieldCheck size={16} aria-hidden="true" /> Сохранить

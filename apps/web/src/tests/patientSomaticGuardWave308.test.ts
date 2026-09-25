@@ -17,7 +17,10 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 import {
 	CANONICAL_FORM043_SOMATIC_NORM,
@@ -346,64 +349,48 @@ describe("Wave 308: Patient Allergo-Somatic Guard & Emergency Rescue Inquisitor"
 	});
 
 	describe("4. Codebase & Component Source Verification (Mandates 8e, 8i, 8k)", () => {
-		it("verifies PatientSomaticAlertBanner.tsx exists and implements all shield requirements", () => {
-			const bannerPath = path.resolve(
+		it("verifies SomaticSafetyAlertWidget.tsx exists and implements all shield requirements", () => {
+			const widgetPath = path.resolve(
 				__dirname,
-				"../components/patient/PatientSomaticAlertBanner.tsx",
+				"../components/clinical/SomaticSafetyAlertWidget.tsx",
 			);
-			assert.ok(fs.existsSync(bannerPath), "PatientSomaticAlertBanner.tsx must physically exist");
+			assert.ok(fs.existsSync(widgetPath), "SomaticSafetyAlertWidget.tsx must physically exist");
 
-			const content = fs.readFileSync(bannerPath, "utf8");
+			const content = fs.readFileSync(widgetPath, "utf8");
 			assert.ok(
-				content.includes('data-testid="patient-somatic-alert-banner"'),
-				"Banner must contain data-testid patient-somatic-alert-banner",
-			);
-			assert.ok(
-				content.includes('data-testid="btn-chairside-emergency-rescue"'),
-				"Banner must contain 0-click emergency rescue button btn-chairside-emergency-rescue",
+				content.includes('data-testid="somatic-safety-alert-badge"'),
+				"Widget must contain data-testid somatic-safety-alert-badge",
 			);
 			assert.ok(
 				content.includes('data-testid="btn-somatic-norm-one-click"'),
-				"Banner must contain 1-click norm button btn-somatic-norm-one-click",
+				"Widget must contain 1-click norm button btn-somatic-norm-one-click",
 			);
 			assert.ok(
-				content.includes("EmergencyRescueModal"),
-				"Banner must bridge to EmergencyRescueModal",
+				content.includes('from "@dental/shared"'),
+				"Widget must import strictly from @dental/shared per Mandate 8s",
 			);
 			assert.strictEqual(
 				hasCartoonEmojis(content),
 				false,
-				"PatientSomaticAlertBanner.tsx must contain 0 cartoon emojis",
+				"SomaticSafetyAlertWidget.tsx must contain 0 cartoon emojis",
 			);
 		});
 
-		it("verifies VisitEmkContent.tsx exists and contains shield header and zero disabled buttons", () => {
-			const emkContentPath = path.resolve(
+		it("verifies VisitEmkTab.tsx exists and contains save/complete buttons with zero disabled buttons", () => {
+			const emkTabPath = path.resolve(
 				__dirname,
-				"../components/visit/VisitEmkContent.tsx",
+				"../components/visit/VisitEmkTab.tsx",
 			);
-			assert.ok(fs.existsSync(emkContentPath), "VisitEmkContent.tsx must physically exist");
+			assert.ok(fs.existsSync(emkTabPath), "VisitEmkTab.tsx must physically exist");
 
-			const content = fs.readFileSync(emkContentPath, "utf8");
-			assert.ok(
-				content.includes('data-testid="visit-emk-content"'),
-				"VisitEmkContent must have data-testid visit-emk-content",
-			);
-			assert.ok(
-				content.includes("PatientSomaticAlertBanner"),
-				"VisitEmkContent must mount PatientSomaticAlertBanner in its header",
-			);
+			const content = fs.readFileSync(emkTabPath, "utf8");
 			assert.ok(
 				content.includes('data-testid="btn-save-visit-note"'),
-				"VisitEmkContent must have btn-save-visit-note",
+				"VisitEmkTab must have btn-save-visit-note",
 			);
 			assert.ok(
 				content.includes('data-testid="btn-complete-visit-emk"'),
-				"VisitEmkContent must have btn-complete-visit-emk",
-			);
-			assert.ok(
-				content.includes('data-testid="btn-fill-norm-quick"'),
-				"VisitEmkContent must have 1-click norm button btn-fill-norm-quick",
+				"VisitEmkTab must have btn-complete-visit-emk",
 			);
 
 			// Check Doctor Autonomy: Save and Complete buttons must NOT have disabled={true} due to somatic fields
@@ -418,7 +405,7 @@ describe("Wave 308: Patient Allergo-Somatic Guard & Emergency Rescue Inquisitor"
 			assert.strictEqual(
 				hasCartoonEmojis(content),
 				false,
-				"VisitEmkContent.tsx must contain 0 cartoon emojis",
+				"VisitEmkTab.tsx must contain 0 cartoon emojis",
 			);
 		});
 

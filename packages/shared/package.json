@@ -11,6 +11,11 @@
 			"import": "./dist/index.js",
 			"default": "./dist/index.js"
 		},
+		"./schedule": {
+			"types": "./dist/schedule/index.d.ts",
+			"import": "./dist/schedule/index.js",
+			"default": "./dist/schedule/index.js"
+		},
 		"./finance": {
 			"types": "./dist/finance/index.d.ts",
 			"import": "./dist/finance/index.js",

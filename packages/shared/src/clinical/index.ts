@@ -79,4 +79,5 @@ export * from "../warehouse/default804nBomCatalog.js";
 export * from "../warehouse/autoVisitBomEngine.js";
 export * from "./photoProtocol.js";
 export * from "./soap/index.js";
+export * from "./somaticSafetyEngine.js";
 
