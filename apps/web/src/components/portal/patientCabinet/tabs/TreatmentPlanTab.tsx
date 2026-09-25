@@ -123,6 +123,8 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 								cx="65"
 								cy="65"
 								r={radius}
+								fill="none"
+								stroke="var(--pc-border, #e2e8f0)"
 								strokeWidth="11"
 							/>
 							<circle
@@ -130,6 +132,9 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 								cx="65"
 								cy="65"
 								r={radius}
+								fill="none"
+								stroke="var(--pc-primary, #0d9488)"
+								strokeLinecap="round"
 								strokeWidth="11"
 								strokeDasharray={circumference}
 								strokeDashoffset={strokeDashoffset}

@@ -5,7 +5,10 @@ import { renderToString } from "react-dom/server";
 import {
 	FAST_IMPLANT_SYSTEM_PRESETS,
 	createDefaultPassportRecord,
+	parseImplantBarcode,
+	getBoneDensityByToothFdi,
 } from "../implantQuickPresets";
+import { IMPLANT_TORQUE_SPECS } from "../implantTorqueCatalog";
 import { ImplantPassportCard } from "../ImplantPassportCard";
 import { ImplantPassportModal } from "../ImplantPassportModal";
 
@@ -224,5 +227,102 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 		assert.equal(record.doctorId, "DOC-IMPL-007");
 		assert.equal(record.catalogArticle, "FX4010");
 		assert.equal(record.toothFdi, 14);
+	});
+
+	it("13. Ankylos system preset and torque specifications are canonical and accurate", () => {
+		const ankylos = FAST_IMPLANT_SYSTEM_PRESETS.find((p) => p.brand === "Ankylos");
+		assert.ok(ankylos, "Ankylos must be present in FAST_IMPLANT_SYSTEM_PRESETS");
+		assert.equal(ankylos.model, "C/X TissueCare");
+		assert.equal(ankylos.defaultDiameterMm, 4.5);
+		assert.equal(ankylos.defaultLengthMm, 11.0);
+		assert.equal(ankylos.defaultTorqueNcm, 35);
+
+		const torqueSpec = IMPLANT_TORQUE_SPECS.ankylos;
+		assert.ok(torqueSpec, "Ankylos must have factory torque specification in IMPLANT_TORQUE_SPECS");
+		assert.ok(torqueSpec.screwdriverDefault.includes("Hex 1.0 mm"));
+		assert.equal(torqueSpec.torqueFinalScrewNcm, 15);
+		assert.ok(torqueSpec.connectionSafetyNotes.includes("конус Морзе 5.7°"));
+		assert.ok(torqueSpec.connectionSafetyNotes.includes("холодной сварки"));
+	});
+
+	it("14. parseImplantBarcode parses GS1 DataMatrix (01/10/21) and delimited barcodes", () => {
+		const gs1 = parseImplantBarcode("(01)04012345678901(10)LOT-2026-AK(21)SN-998877");
+		assert.equal(gs1.article, "REF-678901");
+		assert.equal(gs1.lot, "LOT-2026-AK");
+		assert.equal(gs1.serial, "SN-998877");
+
+		const slash = parseImplantBarcode("A-B110-CX / LOT-ANK-001 / SN-1234");
+		assert.equal(slash.article, "A-B110-CX");
+		assert.equal(slash.lot, "LOT-ANK-001");
+		assert.equal(slash.serial, "SN-1234");
+
+		const empty = parseImplantBarcode("");
+		assert.equal(empty.rawBarcode, "");
+		assert.equal(empty.article, undefined);
+	});
+
+	it("15. getBoneDensityByToothFdi determines anatomical Misch bone density (D1..D4)", () => {
+		assert.equal(getBoneDensityByToothFdi(41), "D1", "Lower anterior teeth must be D1 dense bone");
+		assert.equal(getBoneDensityByToothFdi(46), "D2", "Lower posterior teeth must be D2");
+		assert.equal(getBoneDensityByToothFdi(21), "D3", "Upper anterior/premolar teeth must be D3");
+		assert.equal(getBoneDensityByToothFdi(17), "D4", "Upper tuberosity/second molar must be D4 soft bone");
+		assert.equal(getBoneDensityByToothFdi(28), "D4", "Upper third molar must be D4");
+	});
+
+	it("16. ImplantPassportModal renders interactive tooth selector, barcode scanner, and Ankylos", () => {
+		const html = renderToString(
+			<ImplantPassportModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+			/>,
+		);
+
+		assert.ok(html.includes("btn-system-Ankylos"), "Must render Ankylos system button");
+		assert.ok(html.includes("select-tooth-fdi"), "Must render FDI tooth dropdown");
+		assert.ok(html.includes("input-tooth-fdi"), "Must render FDI tooth number input");
+		assert.ok(html.includes("btn-quick-tooth-16"), "Must render quick tooth button #16");
+		assert.ok(html.includes("btn-quick-tooth-46"), "Must render quick tooth button #46");
+		assert.ok(html.includes("input-barcode-scanner"), "Must render packaging barcode scanner input");
+		assert.ok(html.includes("btn-scan-barcode"), "Must render barcode scan button");
+	});
+
+	it("17. ImplantPassportModal renders interactive ISQ controls and clinical interpretation", () => {
+		const html = renderToString(
+			<ImplantPassportModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+				initialTab="isq"
+			/>,
+		);
+
+		assert.ok(html.includes("input-isq-day0"), "Must render numeric ISQ Day 0 input");
+		assert.ok(html.includes("slider-isq-day0"), "Must render ISQ range slider");
+		assert.ok(html.includes("btn-isq-preset-55"), "Must render ISQ 55 preset button");
+		assert.ok(html.includes("btn-isq-preset-68"), "Must render ISQ 68 preset button");
+		assert.ok(html.includes("btn-isq-preset-75"), "Must render ISQ 75 preset button");
+		assert.ok(html.includes("isq-interpretation-badge"), "Must render clinical interpretation badge");
+	});
+
+	it("18. ImplantPassportCard renders printable patient warranty certificate with barcode and blister sticker area", () => {
+		const record = createDefaultPassportRecord({
+			toothFdi: 36,
+			brand: "Ankylos",
+			patientName: "Кузнецов П. В.",
+			patientId: "PAT-0099",
+			doctorName: "Др. Васильев",
+			catalogArticle: "A-B110-CX",
+		});
+
+		const html = renderToString(<ImplantPassportCard data={record} />);
+
+		assert.ok(html.includes("passport-barcode-svg"), "Must render vector SVG barcode");
+		assert.ok(html.includes("Место для наклейки со стерильной упаковки"), "Must render dedicated blister sticker frame");
+		assert.ok(html.includes("Гарантийные обязательства клиники"), "Must render official warranty clause");
+		assert.ok(html.includes("Подпись хирурга-имплантолога"), "Must render surgeon signature block");
+		assert.ok(html.includes("Подпись пациента"), "Must render patient signature block");
+		assert.ok(html.includes("М.П."), "Must render clinic official stamp placeholder");
+		assert.ok(html.includes("36 — Первый моляр нижней челюсти слева"), "Must render anatomical tooth description");
 	});
 });

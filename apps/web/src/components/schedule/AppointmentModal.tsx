@@ -2316,7 +2316,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 											type="button"
 											data-testid={`chip-reason-${(preset as any).shortLabel || preset.label}`}
 											onClick={() => handleApplyReasonPreset(preset)}
-											className={`h-7 sm:h-8 px-2.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+											className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
 												preset.tone === "emergency"
 													? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20 shadow-xs"
 													: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
@@ -2351,7 +2351,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 											type="button"
 											data-testid={`chip-block-${(preset as any).shortLabel || preset.label}`}
 											onClick={() => handleApplyTechnicalBreakPreset(preset)}
-											className="h-7 sm:h-8 px-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5"
+											className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5"
 											title={preset.comment}
 										>
 											<Clock

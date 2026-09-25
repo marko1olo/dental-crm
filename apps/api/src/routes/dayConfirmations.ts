@@ -18,7 +18,7 @@
  */
 
 import { and, asc, eq, gte, inArray, like, lte, or } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireClinicalReadContext } from "../accessGuard.js";
 import { db } from "../db/client.js";
@@ -471,6 +471,208 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 			isEmpty: false,
 		};
 	});
+
+	const batchDispatchSchema = z.object({
+		date: z
+			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/, "дата должна быть в виде ГГГГ-ММ-ДД")
+			.optional(),
+		channelOverride: z.enum(["auto", "telegram", "whatsapp", "sms"]).optional(),
+		allowQuietHoursOverride: z.boolean().default(false).optional(),
+		appointmentIds: z.array(z.string().uuid()).optional(),
+	});
+
+	const handleDispatchBatchReminders = async (request: FastifyRequest, reply: FastifyReply) => {
+		const context = await requireClinicalReadContext(
+			request,
+			reply,
+			"batch dispatch reminders",
+		);
+		if (!context) return;
+		const { organizationId } = context;
+
+		const body = batchDispatchSchema.safeParse(request.body ?? {});
+		if (!body.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: body.error.errors[0]?.message ?? "Неверные параметры запроса",
+			});
+		}
+
+		const parsed = body.data;
+		try {
+			const clinicList = await db
+			.select({ id: clinics.id, timezone: clinics.timezone, address: clinics.address, name: clinics.name })
+			.from(clinics)
+			.where(eq(clinics.organizationId, organizationId));
+		const clinic = clinicList[0];
+		const timeZone = clinic?.timezone?.trim() || "Europe/Moscow";
+
+		const date = parsed.date ?? tomorrowInTimeZone(timeZone);
+		const bounds = dayBoundsInTimeZone(date, timeZone);
+		if (!bounds) {
+			return reply.status(400).send({
+				error: "InvalidDate",
+				message: "Не удалось определить границы дня в часовом поясе клиники",
+			});
+		}
+
+		// Quiet hours policy: 21:00 to 08:00 in clinic timezone per 38-FZ / 152-FZ
+		const nowInTz = new Intl.DateTimeFormat("en-US", {
+			timeZone,
+			hour: "numeric",
+			hour12: false,
+		}).format(new Date());
+		const currentHour = Number.parseInt(nowInTz, 10);
+		const isQuietHours = currentHour >= 21 || currentHour < 8;
+
+		const apptConditions = [
+			eq(appointments.organizationId, organizationId),
+			gte(appointments.startsAt, bounds.from),
+			lte(appointments.startsAt, bounds.to),
+			inArray(appointments.status, ["planned", "confirmed"]),
+		];
+		if (parsed.appointmentIds && parsed.appointmentIds.length > 0) {
+			apptConditions.push(inArray(appointments.id, parsed.appointmentIds));
+		}
+
+		const targetAppointments = await db
+			.select()
+			.from(appointments)
+			.where(and(...apptConditions))
+			.orderBy(asc(appointments.startsAt));
+
+		const patientIds = targetAppointments
+			.map((a) => a.patientId)
+			.filter((id): id is string => typeof id === "string");
+
+		const patientMap = new Map<string, typeof patients.$inferSelect>();
+		if (patientIds.length > 0) {
+			const foundPatients = await db
+				.select()
+				.from(patients)
+				.where(and(eq(patients.organizationId, organizationId), inArray(patients.id, patientIds)));
+			for (const p of foundPatients) patientMap.set(p.id, p);
+		}
+
+		let dispatched = 0;
+		let skippedQuietHours = 0;
+		let skippedNoContact = 0;
+		const results: Array<{
+			appointmentId: string;
+			patientName: string;
+			channel: string;
+			status: "dispatched" | "skipped_quiet_hours" | "skipped_no_contact" | "already_queued";
+			details?: string;
+		}> = [];
+
+		const outboxInserts: Array<typeof communicationOutbox.$inferInsert> = [];
+
+		for (const appt of targetAppointments) {
+			const pat = appt.patientId ? patientMap.get(appt.patientId) : null;
+			const patName = pat?.fullName || "Пациент";
+			const phone = pat?.phone?.trim() || null;
+			const telegram = (pat as any)?.telegramUsername || (pat as any)?.telegramHandle || null;
+
+			if (!phone && !telegram) {
+				skippedNoContact++;
+				results.push({
+					appointmentId: appt.id,
+					patientName: patName,
+					channel: "none",
+					status: "skipped_no_contact",
+					details: "У пациента нет номера телефона или Telegram",
+				});
+				continue;
+			}
+
+			if (isQuietHours && !parsed.allowQuietHoursOverride) {
+				skippedQuietHours++;
+				results.push({
+					appointmentId: appt.id,
+					patientName: patName,
+					channel: telegram ? "telegram" : "whatsapp",
+					status: "skipped_quiet_hours",
+					details: "Тихий час (21:00–08:00 по 38-ФЗ). Отправка отложена.",
+				});
+				continue;
+			}
+
+			let preferredChannel: "telegram" | "whatsapp" | "sms" = "whatsapp";
+			if (parsed.channelOverride && parsed.channelOverride !== "auto") {
+				preferredChannel = parsed.channelOverride;
+			} else if (telegram) {
+				preferredChannel = "telegram";
+			} else if (phone) {
+				preferredChannel = "whatsapp";
+			}
+
+			const dedupeKey = `reminder:${appt.id}:${date}:${preferredChannel}`;
+			const recipientAddress = preferredChannel === "telegram" ? `@${telegram}` : (phone || "");
+
+			const timeStr = appt.startsAt.toLocaleTimeString("ru-RU", {
+				timeZone,
+				hour: "2-digit",
+				minute: "2-digit",
+			});
+
+			const bodyText = `Здравствуйте, ${patName}! Напоминаем о вашей записи в клинику на завтра (${date}) в ${timeStr}. Ждём вас!`;
+
+			outboxInserts.push({
+				organizationId,
+				clinicId: clinic?.id ?? null,
+				patientId: pat?.id ?? null,
+				channel: preferredChannel === "telegram" ? "telegram" : preferredChannel === "sms" ? "sms" : "whatsapp",
+				intent: "appointment_confirmation",
+				scope: "service",
+				recipientAddress,
+				subject: "Напоминание о приёме на завтра",
+				body: bodyText,
+				status: "queued",
+				dedupeKey,
+				scheduledAt: new Date(),
+				nextAttemptAt: new Date(),
+			});
+
+			dispatched++;
+			results.push({
+				appointmentId: appt.id,
+				patientName: patName,
+				channel: preferredChannel,
+				status: "dispatched",
+			});
+		}
+
+		if (outboxInserts.length > 0) {
+			await db
+				.insert(communicationOutbox)
+				.values(outboxInserts)
+				.onConflictDoNothing({ target: [communicationOutbox.organizationId, communicationOutbox.dedupeKey] });
+		}
+
+		return reply.send({
+			success: true,
+			date,
+			timeZone,
+			totalAppointments: targetAppointments.length,
+			dispatched,
+			skippedQuietHours,
+			skippedNoContact,
+			isQuietHours,
+			results,
+			message: `Пакетная обработка напоминаний завершена: отправлено/в очереди ${dispatched}, пропущено тихих часов ${skippedQuietHours}, без контакта ${skippedNoContact}.`,
+		});
+	} catch (err: any) {
+		request.log.error(err, "Ошибка пакетной отправки напоминаний на завтра");
+		return reply.status(500).send({
+			error: "BatchDispatchError",
+			message: err?.message ?? "Внутренняя ошибка пакетной рассылки",
+		});
+	}
+	};
+
+	app.post("/api/schedule/day-confirmations/dispatch", handleDispatchBatchReminders);
+	app.post("/api/schedule/tomorrow-reminders/dispatch", handleDispatchBatchReminders);
 }
 
 /**

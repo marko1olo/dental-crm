@@ -690,7 +690,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 						style={{
 							backgroundColor: "var(--pc-danger, #ef4444)",
 							color: "var(--on-teal, #ffffff)",
-							fontSize: "11px",
+							fontSize: "12px",
 							fontWeight: 800,
 							padding: "3px 8px",
 							borderRadius: "12px",
@@ -816,7 +816,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 						flexWrap: "wrap",
 						gap: "10px",
 						padding: "12px",
-						backgroundColor: "var(--pc-bg, #0f172a)",
+						backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))",
 						border: "1px solid var(--pc-border, #334155)",
 						borderRadius: "10px",
 					}}
@@ -852,7 +852,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 						/>
 					</div>
 
-					<div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)" }}>
+					<div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
 						<span>0% (Старт)</span>
 						<span>Итоговая стоимость плана: <strong>{formatRubles(totalCostRub)}</strong></span>
 						<span>100% (Финал)</span>
@@ -1091,7 +1091,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 										}`,
 										backgroundColor: isSelected
 											? "var(--pc-primary-light, rgba(13, 148, 136, 0.15))"
-											: "var(--pc-bg, #0f172a)",
+											: "var(--pc-surface, var(--paper-strong, #ffffff))",
 										color: "var(--pc-text-main, var(--ink, #0f172a))",
 										textAlign: "left",
 										cursor: "pointer",
@@ -1113,7 +1113,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 												right: "8px",
 												backgroundColor: "var(--pc-primary, #0d9488)",
 												color: "var(--on-teal, #ffffff)",
-												fontSize: "10px",
+												fontSize: "12px",
 												fontWeight: 800,
 												padding: "1px 6px",
 												borderRadius: "8px",
@@ -1146,7 +1146,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 
 									<span
 										style={{
-											fontSize: "11px",
+											fontSize: "12px",
 											color: isSelected ? "var(--pc-success, #10b981)" : "var(--pc-text-muted, #94a3b8)",
 											fontWeight: 700,
 										}}
@@ -1163,7 +1163,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 						className="three-tier-comparison-matrix"
 						data-testid="three-tier-materials-comparison"
 						style={{
-							backgroundColor: "var(--pc-bg, #0f172a)",
+							backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))",
 							border: "1px solid var(--pc-border, #334155)",
 							borderRadius: "10px",
 							padding: "12px 14px",
@@ -1176,14 +1176,14 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 							<strong style={{ fontSize: "13px", color: "var(--pc-primary, #0d9488)" }}>
 								Сравнение используемых материалов и гарантии (Текущий выбор):
 							</strong>
-							<span style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)" }}>
+							<span style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
 								Закон РФ № 2300-1 &bull; Положение СтАР
 							</span>
 						</div>
 
 						<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px", fontSize: "12px" }}>
 							<div style={{ padding: "8px 10px", borderRadius: "6px", backgroundColor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--pc-border, #334155)" }}>
-								<div style={{ color: "var(--pc-text-muted, #94a3b8)", fontSize: "11px" }}>Материалы пломб / реставраций:</div>
+								<div style={{ color: "var(--pc-text-muted, #94a3b8)", fontSize: "12px" }}>Материалы пломб / реставраций:</div>
 								<strong style={{ color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 									{selectedTierId === "basic" && "Нанокомпозит Filtek Z250 (3M ESPE)"}
 									{selectedTierId === "standard" && "Субмикрофил Estelite Asteria (Tokuyama, Япония)"}
@@ -1192,7 +1192,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 							</div>
 
 							<div style={{ padding: "8px 10px", borderRadius: "6px", backgroundColor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--pc-border, #334155)" }}>
-								<div style={{ color: "var(--pc-text-muted, #94a3b8)", fontSize: "11px" }}>Официальный срок гарантии:</div>
+								<div style={{ color: "var(--pc-text-muted, #94a3b8)", fontSize: "12px" }}>Официальный срок гарантии:</div>
 								<strong style={{ color: "var(--pc-success, #10b981)" }}>
 									{selectedTierId === "basic" && "1 год (12 месяцев)"}
 									{selectedTierId === "standard" && "3 года (36 месяцев)"}
@@ -1201,7 +1201,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 							</div>
 
 							<div style={{ padding: "8px 10px", borderRadius: "6px", backgroundColor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--pc-border, #334155)" }}>
-								<div style={{ color: "var(--pc-text-muted, #94a3b8)", fontSize: "11px" }}>Ортопедические конструкции:</div>
+								<div style={{ color: "var(--pc-text-muted, #94a3b8)", fontSize: "12px" }}>Ортопедические конструкции:</div>
 								<strong style={{ color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 									{selectedTierId === "basic" && "Металлокерамика на Co-Cr каркасе"}
 									{selectedTierId === "standard" && "Монолитный диоксид циркония Katana HTML"}
@@ -1218,7 +1218,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 						return (
 							<div
 								style={{
-									backgroundColor: "var(--pc-bg, #0f172a)",
+									backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))",
 									border: "1px solid var(--pc-border, #334155)",
 									borderRadius: "8px",
 									padding: "10px 14px",
@@ -1298,7 +1298,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 						<div
 							key={std.id}
 							style={{
-								backgroundColor: "var(--pc-bg, #0f172a)",
+								backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))",
 								border: "1px solid var(--pc-border, #334155)",
 								borderRadius: "8px",
 								padding: "10px 12px",
@@ -1310,7 +1310,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 							<strong style={{ fontSize: "13px", color: std.iconColor }}>
 								{std.titleRu}
 							</strong>
-							<p style={{ margin: 0, fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", lineHeight: "1.4" }}>
+							<p style={{ margin: 0, fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)", lineHeight: "1.4" }}>
 								{std.descriptionRu}
 							</p>
 						</div>
@@ -1346,7 +1346,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 					</div>
 					<span
 						style={{
-							fontSize: "11px",
+							fontSize: "12px",
 							fontWeight: 700,
 							color: "var(--pc-primary, #0d9488)",
 							backgroundColor: "rgba(13, 148, 136, 0.15)",
@@ -1365,7 +1365,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 						style={{
 							padding: "32px 16px",
 							textAlign: "center",
-							backgroundColor: "var(--pc-bg, #0f172a)",
+							backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))",
 							border: "1px dashed var(--pc-border, #334155)",
 							borderRadius: "10px",
 							display: "flex",
@@ -1379,7 +1379,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 						<div style={{ fontSize: "13px", fontWeight: 700, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 							Диагностические снимки не прикреплены
 						</div>
-						<p style={{ margin: 0, fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", maxWidth: "340px", lineHeight: "1.4" }}>
+						<p style={{ margin: 0, fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)", maxWidth: "340px", lineHeight: "1.4" }}>
 							В карте пациента пока нет загруженных радиовизиографических или томографических снимков. Снимки появятся здесь сразу после проведения рентген-диагностики.
 						</p>
 					</div>
@@ -1389,7 +1389,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 							<div
 								key={scan.id}
 								style={{
-									backgroundColor: "var(--pc-bg, #0f172a)",
+									backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))",
 									border: "1px solid var(--pc-border, #334155)",
 									borderRadius: "10px",
 									overflow: "hidden",
@@ -1442,7 +1442,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 											}}
 										>
 											<Camera size={28} style={{ opacity: 0.7 }} />
-											<span style={{ fontSize: "11px", fontWeight: 600 }}>Снимок обрабатывается</span>
+											<span style={{ fontSize: "12px", fontWeight: 600 }}>Снимок обрабатывается</span>
 										</div>
 									)}
 								<span
@@ -1453,7 +1453,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 										backgroundColor: "rgba(15, 23, 42, 0.85)",
 										border: "1px solid rgba(255, 255, 255, 0.15)",
 										color: "#38bdf8",
-										fontSize: "10px",
+										fontSize: "12px",
 										fontWeight: 800,
 										padding: "2px 6px",
 										borderRadius: "4px",
@@ -1464,14 +1464,14 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 							</div>
 
 							<div style={{ padding: "12px", display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
-								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)" }}>
+								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
 									<span style={{ fontWeight: 700, color: "var(--pc-primary, #0d9488)" }}>{scan.modalityRu}</span>
 									<span>{scan.dateRu}</span>
 								</div>
 								<strong style={{ fontSize: "13px", color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 									{scan.titleRu}
 								</strong>
-								<p style={{ margin: 0, fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", lineHeight: "1.4" }}>
+								<p style={{ margin: 0, fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)", lineHeight: "1.4" }}>
 									{scan.conclusionRu}
 								</p>
 
@@ -1550,7 +1550,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 							Официальные гарантийные обязательства клиники DENTE
 						</h4>
 					</div>
-					<span style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)" }}>
+					<span style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
 						Закон РФ № 2300-1 • Положение СтАР
 					</span>
 				</div>
@@ -1560,7 +1560,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 						<div
 							key={item.id}
 							style={{
-								backgroundColor: "var(--pc-bg, #0f172a)",
+								backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))",
 								border: "1px solid var(--pc-border, #334155)",
 								borderRadius: "10px",
 								padding: "12px 14px",
@@ -1580,7 +1580,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 										border: `1px solid ${item.badgeColor}`,
 										padding: "2px 8px",
 										borderRadius: "10px",
-										fontSize: "11px",
+										fontSize: "12px",
 										fontWeight: 800,
 										whiteSpace: "nowrap",
 									}}
@@ -1589,11 +1589,11 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 								</span>
 							</div>
 
-							<div style={{ fontSize: "11px", color: "var(--pc-primary, #0d9488)" }}>
+							<div style={{ fontSize: "12px", color: "var(--pc-primary, #0d9488)" }}>
 								Материалы: {item.materialsRu}
 							</div>
 
-							<div style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", lineHeight: "1.4" }}>
+							<div style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)", lineHeight: "1.4" }}>
 								{item.termsRu}
 							</div>
 						</div>
@@ -1603,7 +1603,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 				{/* Warranty Terms Preservation Callout */}
 				<div
 					style={{
-						backgroundColor: "var(--pc-bg, #0f172a)",
+						backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))",
 						borderRadius: "8px",
 						padding: "10px 14px",
 						fontSize: "12px",
@@ -1645,7 +1645,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 							<div
 								key={faq.id}
 								style={{
-									backgroundColor: "var(--pc-bg, #0f172a)",
+									backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))",
 									border: `1px solid ${faq.isEmergency ? "rgba(239, 68, 68, 0.4)" : "var(--pc-border, #334155)"}`,
 									borderRadius: "8px",
 									overflow: "hidden",
@@ -1735,7 +1735,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 								<h3 style={{ margin: 0, fontSize: "14px", fontWeight: 800, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
 									{selectedDiagnosticScan.titleRu}
 								</h3>
-								<span style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)" }}>
+								<span style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
 									{selectedDiagnosticScan.modalityRu} &bull; {selectedDiagnosticScan.dateRu} &bull; Доза: {selectedDiagnosticScan.doseMicroSv} мкЗв
 								</span>
 							</div>
@@ -1769,7 +1769,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 									display: "flex",
 									gap: "6px",
 									padding: "8px 16px",
-									backgroundColor: "var(--pc-bg, #0f172a)",
+									backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))",
 									borderBottom: "1px solid var(--pc-border, #334155)",
 									overflowX: "auto",
 								}}
@@ -1792,7 +1792,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 												border: `1px solid ${isActive ? "var(--pc-primary, #0d9488)" : "var(--pc-border, #334155)"}`,
 												backgroundColor: isActive ? "rgba(13, 148, 136, 0.2)" : "var(--pc-surface, #1e293b)",
 												color: isActive ? "var(--pc-primary, #0d9488)" : "var(--pc-text-muted, #94a3b8)",
-												fontSize: "11px",
+												fontSize: "12px",
 												fontWeight: isActive ? 700 : 500,
 												cursor: "pointer",
 												whiteSpace: "nowrap",
@@ -1816,7 +1816,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 								alignItems: "center",
 								justifyContent: "space-between",
 								padding: "8px 16px",
-								backgroundColor: "var(--pc-bg, #0f172a)",
+								backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))",
 								borderBottom: "1px solid var(--pc-border, #334155)",
 								flexWrap: "wrap",
 								gap: "6px",
@@ -1965,7 +1965,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 						<div
 							style={{
 								padding: "12px 16px",
-								backgroundColor: "var(--pc-bg, #0f172a)",
+								backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))",
 								borderTop: "1px solid var(--pc-border, #334155)",
 								fontSize: "12px",
 							}}

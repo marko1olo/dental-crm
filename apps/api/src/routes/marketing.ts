@@ -25,6 +25,7 @@ import {
 	requireClinicalMutationAccess,
 	requireResolvedOrganizationId,
 } from "../accessGuard.js";
+import { formatInitialsOnly, maskRussianPhone } from "@dental/shared";
 
 const patientFieldRequirementsInputSchema = z.object({
 	requirePhone: z.boolean().default(true),
@@ -69,9 +70,11 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 				db.select().from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
 				db.select({
 					id: patients.id,
+					fullName: patients.fullName,
 					phone: patients.phone,
 					notes: patients.notes,
 					administrativeProfile: patients.administrativeProfile,
+					createdAt: patients.createdAt,
 				}).from(patients).where(eq(patients.organizationId, orgId)),
 				db.select({
 					id: communicationEvents.id,
@@ -283,10 +286,58 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 				? Math.round((totalOnlineBookings / grandTotalBookings) * 100)
 				: 0;
 
+			const channelNamesRuMap: Record<string, string> = {
+				website_widget: "Сайт клиники",
+				yandex_maps: "Яндекс Карты",
+				gis_2: "2ГИС Карты",
+				prodoctorov: "ПроДокторов",
+				tg_bot: "Telegram-бот",
+				wa_bot: "WhatsApp-чатбот",
+				telephony: "Телефония / Звонок",
+			};
+
+			// Build real patient attributions list respecting 152-ФЗ and ст. 13 323-ФЗ
+			const attributions: Record<string, unknown>[] = [];
+			for (const p of allPatients) {
+				const chKey = patientToChannel.get(p.id) || "telephony";
+				const chName = channelNamesRuMap[chKey] || "Телефония / Звонок";
+				const categoryRu = chKey === "telephony" ? "Коллтрекинг" : "Самозапись";
+				const rev = patientRevenueKop.get(p.id) || 0;
+				const pAppts = allAppts.filter((a) => a.patientId === p.id);
+				const hasAttended = pAppts.some(
+					(a) => a.status === "completed" || a.status === "arrived" || a.status === "in_treatment",
+				);
+				const currentStage = rev > 0 ? "paid_plan" : hasAttended ? "attended" : pAppts.length > 0 ? "booked" : "call";
+
+				// Strict 152-ФЗ / 323-ФЗ ст. 13: initials only, masked phone, sanitized neutral treatment title
+				attributions.push({
+					id: `attr-${p.id}`,
+					patientId: p.id,
+					patientFullName: formatInitialsOnly(p.fullName) || `Пациент #${p.id.slice(0, 6)}`,
+					phone: maskRussianPhone(p.phone),
+					createdAtIso: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString(),
+					channelKey: chKey,
+					channelNameRu: chName,
+					categoryRu,
+					utm: {
+						utm_source: chKey,
+						utm_campaign: "clinic_marketing",
+					},
+					externalIds: {},
+					currentStage,
+					totalPaidKopecks: rev,
+					treatmentPlanTitle: rev > 0 ? "Комплексный план лечения" : "Амбулаторный прием",
+					notes: "Сквозная атрибуция (ПДн защищены по 152-ФЗ / 323-ФЗ)",
+				});
+
+				if (attributions.length >= 50) break;
+			}
+
 			return reply.code(200).send({
 				organizationId: orgId,
 				selfBookingChannels,
 				telephonyAdminFunnel,
+				attributions,
 				summary: {
 					totalOnlineBookings,
 					totalOnlineAttended,

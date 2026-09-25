@@ -128,7 +128,7 @@ export function DoctorShiftDrawer({
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-800 transition-colors"
+						className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] flex items-center justify-center rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-800 transition-colors"
 						aria-label="Закрыть панель"
 					>
 						<X size={20} />
@@ -141,7 +141,7 @@ export function DoctorShiftDrawer({
 						Врач
 					</label>
 					<select
-						className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
+						className="w-full min-h-[44px] sm:min-h-[36px] px-3 py-2 sm:py-1.5 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 						value={editingShift.doctorId || ""}
 						onChange={(e) => {
 							const doc = staffList.find((s) => s.id === e.target.value);
@@ -174,7 +174,7 @@ export function DoctorShiftDrawer({
 						Ассистент / Медсестра
 					</label>
 					<select
-						className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
+						className="w-full min-h-[44px] sm:min-h-[36px] px-3 py-2 sm:py-1.5 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 						value={editingShift.assistantId || ""}
 						onChange={(e) => {
 							const asst = staffList.find((s) => s.id === e.target.value);
@@ -203,7 +203,7 @@ export function DoctorShiftDrawer({
 							Кабинет
 						</label>
 						<select
-							className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
+							className="w-full min-h-[44px] sm:min-h-[36px] px-3 py-2 sm:py-1.5 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 							value={editingShift.cabinetId || "cab-1"}
 							onChange={(e) => {
 								const cab = cabinets.find((c) => c.id === e.target.value);
@@ -226,7 +226,7 @@ export function DoctorShiftDrawer({
 							Кресло
 						</label>
 						<select
-							className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
+							className="w-full min-h-[44px] sm:min-h-[36px] px-3 py-2 sm:py-1.5 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 							value={editingShift.chairId || "chair-1a"}
 							onChange={(e) =>
 								onChangeEditingShift((prev) => ({
@@ -254,7 +254,7 @@ export function DoctorShiftDrawer({
 						</label>
 						<input
 							type="date"
-							className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
+							className="w-full min-h-[44px] sm:min-h-[36px] px-3 py-2 sm:py-1.5 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 							value={editingShift.dateIso || ""}
 							onChange={(e) =>
 								onChangeEditingShift((prev) => ({
@@ -269,7 +269,7 @@ export function DoctorShiftDrawer({
 							Шаблон
 						</label>
 						<select
-							className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
+							className="w-full min-h-[44px] sm:min-h-[36px] px-3 py-2 sm:py-1.5 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 							value={editingShift.archetypeId || "morning_shift"}
 							onChange={(e) => {
 								const archId = e.target.value as ShiftArchetypeId;
@@ -303,7 +303,7 @@ export function DoctorShiftDrawer({
 						</label>
 						<input
 							type="time"
-							className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
+							className="w-full min-h-[44px] sm:min-h-[36px] px-3 py-2 sm:py-1.5 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 							value={editingShift.startTime || "08:30"}
 							onChange={(e) =>
 								onChangeEditingShift((prev) => ({
@@ -319,7 +319,7 @@ export function DoctorShiftDrawer({
 						</label>
 						<input
 							type="time"
-							className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
+							className="w-full min-h-[44px] sm:min-h-[36px] px-3 py-2 sm:py-1.5 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 							value={editingShift.endTime || "14:30"}
 							onChange={(e) =>
 								onChangeEditingShift((prev) => ({
@@ -339,7 +339,7 @@ export function DoctorShiftDrawer({
 					<input
 						type="text"
 						placeholder="например, только консультации или сложная хирургия"
-						className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 placeholder-[var(--muted,#94a3b8)] dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
+						className="w-full min-h-[44px] sm:min-h-[36px] px-3 py-2 sm:py-1.5 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 placeholder-[var(--muted,#94a3b8)] dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 						value={editingShift.customNotes || ""}
 						onChange={(e) =>
 							onChangeEditingShift((prev) => ({

@@ -9,6 +9,7 @@
  * 5. Idempotent execution, multi-tenant isolation, and deadlock-free locking (FOR UPDATE in sorted key order).
  */
 
+import crypto from "node:crypto";
 import {
 	type ConsumableLinkCreate,
 	type ConsumableLinkDetailed,
@@ -28,6 +29,14 @@ import {
 	categorizeInventoryExpiry,
 	isDeductibleQuantity,
 } from "@dental/shared";
+
+function toValidUuid(str: string): string {
+	if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)) {
+		return str;
+	}
+	const hash = crypto.createHash("md5").update(str).digest("hex");
+	return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
+}
 import { and, eq, ilike, inArray, isNull, like, ne, or, sql } from "drizzle-orm";
 import type { db } from "../db/client.js";
 import type { TenantDb } from "../db/rls.js";
@@ -662,6 +671,8 @@ export class TreatmentConsumablesService {
 			clientMutationId = null,
 		} = params;
 
+		const safeVisitId = toValidUuid(visitId);
+
 		// 0. Acquire transactional advisory lock per (organization, visit) to serialize concurrent requests
 		await tx.execute(
 			sql`SELECT pg_advisory_xact_lock(hashtext(${organizationId} || ':visit_deduct:' || ${visitId}))`,
@@ -675,7 +686,7 @@ export class TreatmentConsumablesService {
 				.where(
 					and(
 						eq(inventoryTransactions.organizationId, organizationId),
-						eq(inventoryTransactions.visitId, visitId),
+						eq(inventoryTransactions.visitId, safeVisitId),
 						like(inventoryTransactions.notes, `%[mutation:${clientMutationId}]%`),
 					),
 				);
@@ -713,7 +724,7 @@ export class TreatmentConsumablesService {
 				.where(
 					and(
 						eq(inventoryTransactions.organizationId, organizationId),
-						eq(inventoryTransactions.visitId, visitId),
+						eq(inventoryTransactions.visitId, safeVisitId),
 						inArray(inventoryTransactions.transactionType, ["auto_deduct", "emergency_overdraft"]),
 					),
 				);
@@ -750,7 +761,7 @@ export class TreatmentConsumablesService {
 			.from(treatmentItems)
 			.where(
 				and(
-					eq(treatmentItems.visitId, visitId),
+					eq(treatmentItems.visitId, safeVisitId),
 					eq(treatmentItems.organizationId, organizationId),
 					ne(treatmentItems.status, "completed"),
 				),
@@ -763,7 +774,7 @@ export class TreatmentConsumablesService {
 				.from(inventoryTransactions)
 				.where(
 					and(
-						eq(inventoryTransactions.visitId, visitId),
+						eq(inventoryTransactions.visitId, safeVisitId),
 						eq(inventoryTransactions.organizationId, organizationId),
 					),
 				)
@@ -775,7 +786,7 @@ export class TreatmentConsumablesService {
 					.from(treatmentItems)
 					.where(
 						and(
-							eq(treatmentItems.visitId, visitId),
+							eq(treatmentItems.visitId, safeVisitId),
 							eq(treatmentItems.organizationId, organizationId),
 							ne(treatmentItems.status, "cancelled"),
 						),
@@ -791,7 +802,7 @@ export class TreatmentConsumablesService {
 				.set({ status: "completed" })
 				.where(
 					and(
-						eq(treatmentItems.visitId, visitId),
+						eq(treatmentItems.visitId, safeVisitId),
 						eq(treatmentItems.organizationId, organizationId),
 						inArray(
 							treatmentItems.id,
@@ -1028,7 +1039,7 @@ export class TreatmentConsumablesService {
 			const isOverdraft = newStock < 0;
 			transactionsToInsert.push({
 				organizationId,
-				visitId,
+				visitId: safeVisitId,
 				itemId: inv.id,
 				inventoryItemId: inv.id,
 				quantityChanged,

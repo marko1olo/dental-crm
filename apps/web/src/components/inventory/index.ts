@@ -12,3 +12,4 @@ export * from "./WarehouseManagerModal.js";
 export * from "./NurseCarpuleDisposalModal.js";
 export * from "./WarehousePackageWriteOffBar.js";
 export * from "./warehousePackageWriteOffEngine.js";
+export * from "./autoBomDeductionEngine.js";

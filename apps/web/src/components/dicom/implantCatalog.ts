@@ -505,13 +505,71 @@ export const MIS_SYSTEM: ImplantSystemSpec = {
 	lengths: [8.0, 10.0, 11.5, 13.0, 16.0],
 };
 
+export const ANKYLOS_SYSTEM: ImplantSystemSpec = {
+	id: "ankylos-cx",
+	brand: "Ankylos",
+	line: "C/X",
+	country: "Германия (Dentsply Sirona)",
+	descriptionRu:
+		"Конический имплантат с уникальным соединением TissueCare Connection (конус Морзе 5.7°). Идеальное сохранение маргинальной кости и стабильность мягких тканей.",
+	sleeveDiameterMm: 5.0,
+	sleeveHeightMm: 5.0,
+	drillOffsetDefaultMm: 9.0,
+	primaryStabilityDesign: "Прогрессивная резьба с конусом Морзе 5.7° без микроподвижности",
+	sizes: [
+		{
+			diameterMm: 3.5,
+			lengthsMm: [6.6, 8.0, 9.5, 11.0, 14.0, 17.0],
+			platform: {
+				code: "A",
+				labelRu: "Платформа A (Ø3.5)",
+				hexColor: "#059669",
+				cssToken: "var(--emerald-600, #059669)",
+			},
+		},
+		{
+			diameterMm: 4.5,
+			lengthsMm: [6.6, 8.0, 9.5, 11.0, 14.0, 17.0],
+			platform: {
+				code: "B",
+				labelRu: "Платформа B (Ø4.5)",
+				hexColor: "#2563eb",
+				cssToken: "var(--blue, #2563eb)",
+			},
+		},
+		{
+			diameterMm: 5.5,
+			lengthsMm: [6.6, 8.0, 9.5, 11.0, 14.0],
+			platform: {
+				code: "C",
+				labelRu: "Платформа C (Ø5.5)",
+				hexColor: "#f59e0b",
+				cssToken: "var(--amber, #f59e0b)",
+			},
+		},
+		{
+			diameterMm: 7.0,
+			lengthsMm: [8.0, 9.5, 11.0],
+			platform: {
+				code: "D",
+				labelRu: "Платформа D (Ø7.0)",
+				hexColor: "#e11d48",
+				cssToken: "var(--red, #e11d48)",
+			},
+		},
+	],
+	diameters: [3.5, 4.5, 5.5, 7.0],
+	lengths: [6.6, 8.0, 9.5, 11.0, 14.0, 17.0],
+};
+
 export const CANONICAL_IMPLANT_SYSTEMS: ImplantSystemSpec[] = [
 	OSSTEM_SYSTEM,
 	STRAUMANN_SYSTEM,
 	NOBEL_BIOCARE_SYSTEM,
 	DENTIUM_SYSTEM,
-	MIS_SYSTEM,
+	ANKYLOS_SYSTEM,
 	ASTRA_TECH_SYSTEM,
+	MIS_SYSTEM,
 	GENERIC_STANDARD_SYSTEM,
 ];
 
@@ -527,8 +585,9 @@ export const DENTAL_IMPLANT_BRANDS = CANONICAL_IMPLANT_SYSTEMS;
  * "straumann" | "straumann-blx"
  * "nobel" | "nobel_biocare" | "nobel-active"
  * "dentium" | "dentium-superline"
- * "mis" | "mis-implants" | "mis-seven"
+ * "ankylos" | "ankylos-cx"
  * "astra" | "astra_tech" | "astra-tech-ev"
+ * "mis" | "mis-implants" | "mis-seven"
  */
 export function normalizeSystemId(rawId: string | undefined | null): string {
 	if (!rawId) return "osstem-ts3";
@@ -537,8 +596,9 @@ export function normalizeSystemId(rawId: string | undefined | null): string {
 	if (lower.includes("straumann")) return "straumann-blx";
 	if (lower.includes("nobel")) return "nobel-active";
 	if (lower.includes("dentium")) return "dentium-superline";
-	if (lower.includes("mis")) return "mis-implants";
+	if (lower.includes("ankylos")) return "ankylos-cx";
 	if (lower.includes("astra")) return "astra-tech-ev";
+	if (lower.includes("mis")) return "mis-implants";
 	return "generic";
 }
 

@@ -560,7 +560,7 @@ export function ProcedureMaterialDeductionModal({
 									display: "inline-flex",
 									alignItems: "center",
 									gap: 6,
-									minHeight: "44px",
+									minHeight: "34px",
 								}}
 							>
 								{copiedPo ? <Check size={16} /> : <Copy size={16} />}
@@ -574,7 +574,7 @@ export function ProcedureMaterialDeductionModal({
 									display: "inline-flex",
 									alignItems: "center",
 									gap: 6,
-									minHeight: "44px",
+									minHeight: "34px",
 								}}
 							>
 								<Printer size={16} />
@@ -585,7 +585,7 @@ export function ProcedureMaterialDeductionModal({
 							type="button"
 							className="inventory-confirm-deduct-btn"
 							onClick={() => setShowPoModal(false)}
-							style={{ minHeight: "44px" }}
+							style={{ minHeight: "34px" }}
 						>
 							← Вернуться к списанию
 						</button>
@@ -876,7 +876,7 @@ export function ProcedureMaterialDeductionModal({
 									display: "inline-flex",
 									alignItems: "center",
 									gap: 6,
-									minHeight: "44px",
+									minHeight: "34px",
 									padding: "0 16px",
 									fontSize: 13,
 									fontWeight: 700,
@@ -1100,7 +1100,7 @@ export function ProcedureMaterialDeductionModal({
 									aria-label="Выбрать материал из каталога склада"
 									data-testid="warehouse-select-custom"
 									style={{
-										minHeight: "44px",
+										minHeight: "34px",
 										borderColor: highlightSelect ? "var(--warn-fg, #b45309)" : undefined,
 										boxShadow: highlightSelect ? "0 0 0 2px rgba(217, 119, 6, 0.25)" : undefined,
 									}}
@@ -1119,7 +1119,7 @@ export function ProcedureMaterialDeductionModal({
 									disabled={isDeducting}
 									data-testid="warehouse-add-custom-btn"
 									title="Добавить выбранный из каталога материал"
-									style={{ minHeight: "44px" }}
+									style={{ minHeight: "34px" }}
 								>
 									<Plus size={16} />
 									Добавить со склада
@@ -1149,7 +1149,7 @@ export function ProcedureMaterialDeductionModal({
 								}}
 								style={{
 									flex: 1,
-									minHeight: "44px",
+									minHeight: "34px",
 									borderColor: highlightCustomInput ? "var(--warn-fg, #b45309)" : undefined,
 									boxShadow: highlightCustomInput ? "0 0 0 2px rgba(217, 119, 6, 0.25)" : undefined,
 								}}
@@ -1161,7 +1161,7 @@ export function ProcedureMaterialDeductionModal({
 								disabled={isDeducting}
 								data-testid="quick-custom-material-add-btn"
 								title="Добавить расходник без каталога склада"
-								style={{ minHeight: "44px" }}
+								style={{ minHeight: "34px" }}
 							>
 								<Plus size={16} />
 								Добавить
@@ -1215,7 +1215,7 @@ export function ProcedureMaterialDeductionModal({
 						<label
 							className="inventory-guard-toggle"
 							title="Автоматически формирует заявку поставщику при выявлении дефицита материалов"
-							style={{ minHeight: "44px", display: "inline-flex", alignItems: "center" }}
+							style={{ minHeight: "34px", display: "inline-flex", alignItems: "center" }}
 						>
 							<input
 								type="checkbox"
@@ -1230,7 +1230,7 @@ export function ProcedureMaterialDeductionModal({
 							className="inventory-cancel-btn"
 							onClick={onClose}
 							disabled={isDeducting}
-							style={{ minHeight: "44px" }}
+							style={{ minHeight: "34px" }}
 							data-testid="inventory-cancel-btn"
 						>
 							Отмена
@@ -1270,7 +1270,7 @@ export function ProcedureMaterialDeductionModal({
 								}
 							}}
 							disabled={isDeducting}
-							style={{ minHeight: "44px" }}
+							style={{ minHeight: "36px" }}
 							title={
 								summary.hasDeficit
 									? `Остаток 0, списано в овердрафт: задержка оприходования накладной не блокирует операцию, спасение зуба или закрытие приёма врача: дефицит ${summary.criticalCount} поз.`

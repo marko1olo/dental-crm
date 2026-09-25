@@ -237,7 +237,7 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 							</strong>
 							<span
 								className={`pc-status-badge ${isCompleted ? "paid" : isInProgress ? "unpaid" : ""}`}
-								style={{ fontSize: "11px", padding: "2px 8px" }}
+								style={{ fontSize: "12px", padding: "2px 8px" }}
 							>
 								{isCompleted ? "Завершен" : isInProgress ? "В процессе лечения" : "Запланирован"}
 							</span>
@@ -249,7 +249,7 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 							</div>
 						)}
 
-						<div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", fontSize: "11px", color: "var(--pc-text-muted, var(--muted))" }}>
+						<div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", fontSize: "12px", color: "var(--pc-text-muted, var(--muted))" }}>
 							{stage.targetDateRu && (
 								<span>Ориентировочный срок: <strong>{stage.targetDateRu}</strong></span>
 							)}
@@ -304,7 +304,7 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 								<span>К оплате за этап: {formatRubles(stage.costRub)}</span>
 							</div>
 						)}
-						<span style={{ fontSize: "11px", color: "var(--pc-text-muted, var(--muted))", textAlign: "right" }}>
+						<span style={{ fontSize: "12px", color: "var(--pc-text-muted, var(--muted))", textAlign: "right" }}>
 							Фиксированная смета «Под ключ» · СБП 0%
 						</span>
 					</div>
@@ -359,13 +359,13 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 						<span>Всё включено (без доплат на кассе):</span>
 					</div>
 
-					<div style={{ display: "flex", alignItems: "center", gap: "4px", color: "var(--pc-success, var(--teal))", fontWeight: 700, fontSize: "11px" }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "4px", color: "var(--pc-success, var(--teal))", fontWeight: 700, fontSize: "12px" }}>
 						<Sparkles size={13} />
 						<span>{warrantyText}</span>
 					</div>
 				</div>
 
-				<div style={{ display: "flex", flexWrap: "wrap", gap: "10px", fontSize: "11px", color: "var(--pc-text-muted, var(--muted))" }}>
+				<div style={{ display: "flex", flexWrap: "wrap", gap: "10px", fontSize: "12px", color: "var(--pc-text-muted, var(--muted))" }}>
 					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} style={{ color: "var(--teal)", flexShrink: 0 }} /> Аппликационный гель (0% боли от укола)</span>
 					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} style={{ color: "var(--teal)", flexShrink: 0 }} /> Анестезия Septanest (0 ₽ · включено)</span>
 					<span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={12} style={{ color: "var(--teal)", flexShrink: 0 }} /> Снимки визиографа RVG (0 ₽ · включено)</span>
@@ -398,7 +398,7 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 									</div>
 								</div>
 
-								<div style={{ fontSize: "11px", color: "var(--pc-text-muted, var(--muted))", lineHeight: "1.4" }}>
+								<div style={{ fontSize: "12px", color: "var(--pc-text-muted, var(--muted))", lineHeight: "1.4" }}>
 									{dual.explanationRu}
 								</div>
 
@@ -406,7 +406,7 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 								{dual.sensationRu && (
 									<div
 										style={{
-											fontSize: "11px",
+											fontSize: "12px",
 											color: "var(--pc-primary, var(--teal))",
 											display: "flex",
 											alignItems: "center",
@@ -420,7 +420,7 @@ export const PatientPortalTreatmentStageCard: React.FC<PatientTreatmentStageProp
 								)}
 
 								{proc && proc !== dual.humanTitleRu && (
-									<div style={{ fontSize: "11px", color: "var(--pc-text-muted, var(--muted))", marginTop: "2px" }}>
+									<div style={{ fontSize: "12px", color: "var(--pc-text-muted, var(--muted))", marginTop: "2px" }}>
 										{proc}
 									</div>
 								)}

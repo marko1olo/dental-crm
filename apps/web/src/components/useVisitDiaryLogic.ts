@@ -20,6 +20,10 @@ import {
 import {
 	CLINICAL_SOAP_PRESETS,
 	CANONICAL_SOAP_TEMPLATES,
+	DOCTOR_AUTOPILOT_PRESETS_MAP,
+	apply1ClickClinicalAutopilot,
+	type DoctorAutopilotPreset,
+	type Apply1ClickAutopilotResult,
 	type Template,
 } from "./visit/clinicalSoapPresets";
 import { useVisitStore } from "../store/visitStore";
@@ -1566,8 +1570,15 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	const applyAnesthesiaPreset = useCallback(
 		(anestheticText: string) => {
 			if (isLocked && !isRevising) {
-				showToast("Дневник подписан — изменения заблокированы.", "info");
-				return;
+				setIsRevising(true);
+				setReviseSnapshot({ ...diaryRef.current });
+				setReviseTraySnapshot(trayBarcodeRef.current);
+				setRevisionReason("Исправленному верить (добавление анестезии)");
+				showToast(
+					"Дневник визита открыт для внесения исправлений (анестезия внесена)",
+					"warning",
+					4000,
+				);
 			}
 			setDiary((prev) => appendAnesthesiaToSoap(prev, anestheticText));
 			scheduleDebouncedSave();
@@ -1576,13 +1587,49 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		[isLocked, isRevising, scheduleDebouncedSave],
 	);
 
-	// ── Fast Clinical Presets
+	// ── Fast Clinical Presets & 1-Click Protocol Autopilot
 	const applyClinicalPreset = useCallback(
-		(presetId: string) => {
+		(
+			presetId: string,
+			options?: {
+				toothNumber?: number | null;
+				surfaces?: string;
+				mode?: "clean_replace" | "smart_append";
+			},
+		) => {
 			if (isLocked && !isRevising) {
-				showToast("Дневник подписан — изменения заблокированы.", "info");
-				return;
+				setIsRevising(true);
+				setReviseSnapshot({ ...diaryRef.current });
+				setReviseTraySnapshot(trayBarcodeRef.current);
+				setRevisionReason("Исправленному верить (применение клинического протокола)");
+				showToast(
+					"Дневник визита открыт для внесения исправлений (протокол применён)",
+					"warning",
+					4000,
+				);
 			}
+
+			// 1. Проверяем автопилот 1-клик из DOCTOR_AUTOPILOT_PRESETS_MAP
+			if (DOCTOR_AUTOPILOT_PRESETS_MAP[presetId]) {
+				const autoRes = apply1ClickClinicalAutopilot(presetId, {
+					toothNumber: options?.toothNumber,
+					surfaces: options?.surfaces,
+					currentDiary: diaryRef.current,
+					mode: options?.mode ?? "smart_append",
+				});
+				setDiary(autoRes.diary);
+				if (autoRes.preset.icd10) {
+					setIcdSearch(autoRes.preset.icd10);
+				}
+				scheduleDebouncedSave();
+				showToast(
+					`1-клик автопилот «${autoRes.preset.shortBadge}» применён`,
+					"success",
+					4000,
+				);
+				return autoRes;
+			}
+
 			const fastFound = CLINICAL_FAST_PRESETS.find((p) => p.id === presetId);
 			if (fastFound) {
 				const target = fastFound;
@@ -1602,7 +1649,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					mergeSoapDiaryState(
 						prev,
 						incomingPayload,
-						{ strategy: "smart_append" },
+						{ strategy: options?.mode === "clean_replace" ? "replace" : "smart_append" },
 					),
 				);
 				if (target.defaultIcd10) {
@@ -1636,7 +1683,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					mergeSoapDiaryState(
 						prev,
 						incomingPayload,
-						{ strategy: "smart_append" },
+						{ strategy: options?.mode === "clean_replace" ? "replace" : "smart_append" },
 					),
 				);
 				if (soapFound.icd10) {
@@ -1672,7 +1719,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					mergeSoapDiaryState(
 						prev,
 						incomingPayload,
-						{ strategy: "smart_append" },
+						{ strategy: options?.mode === "clean_replace" ? "replace" : "smart_append" },
 					),
 				);
 				if (canonicalMatch.defaultIcd10) {
@@ -1685,6 +1732,51 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					4000,
 				);
 			}
+		},
+		[isLocked, isRevising, scheduleDebouncedSave],
+	);
+
+	/**
+	 * 1-клик клинический автопилот врача у кресла (Mandate 8e, 8n).
+	 * Мгновенно применяет комплексный протокол (Форма 043/у, списание, 804н, ИДС).
+	 */
+	const apply1ClickAutopilot = useCallback(
+		(
+			presetId: string,
+			options?: {
+				toothNumber?: number | null;
+				surfaces?: string;
+				mode?: "clean_replace" | "smart_append";
+			},
+		) => {
+			if (isLocked && !isRevising) {
+				setIsRevising(true);
+				setReviseSnapshot({ ...diaryRef.current });
+				setReviseTraySnapshot(trayBarcodeRef.current);
+				setRevisionReason("Исправленному верить (1-клик автопилот)");
+				showToast(
+					"Дневник визита открыт для внесения исправлений (1-клик автопилот применён)",
+					"warning",
+					4000,
+				);
+			}
+			const result = apply1ClickClinicalAutopilot(presetId, {
+				toothNumber: options?.toothNumber,
+				surfaces: options?.surfaces,
+				currentDiary: diaryRef.current,
+				mode: options?.mode ?? "clean_replace",
+			});
+			setDiary(result.diary);
+			if (result.preset.icd10) {
+				setIcdSearch(result.preset.icd10);
+			}
+			scheduleDebouncedSave();
+			showToast(
+				`1-клик автопилот «${result.preset.shortBadge}» применён`,
+				"success",
+				4000,
+			);
+			return result;
 		},
 		[isLocked, isRevising, scheduleDebouncedSave],
 	);
@@ -2606,6 +2698,8 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		populateFromOdontogram,
 		applyAnesthesiaPreset,
 		applyClinicalPreset,
+		apply1ClickAutopilot,
 		applySomaticNorm,
 	};
 }
+

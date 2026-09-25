@@ -249,8 +249,13 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 
 	// 2. Generate granular 3 clinical stages (auto or AI-customized)
 	const autoStages = useMemo(() => {
-		return generateTreatmentPlanStages(teethData, catalog, discountPercent);
-	}, [teethData, catalog, discountPercent]);
+		const generated = generateTreatmentPlanStages(teethData, catalog, discountPercent);
+		const hasItems = generated.some((s) => s.items && s.items.length > 0);
+		if (!hasItems && currentTier?.stages && currentTier.stages.length > 0) {
+			return currentTier.stages;
+		}
+		return generated;
+	}, [teethData, catalog, discountPercent, currentTier]);
 
 	const stages = customStages ?? autoStages;
 
@@ -989,6 +994,19 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 								<button
 									type="button"
 									onClick={() => {
+										setIsPresenterModalOpen(true);
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-amber-900 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+									role="menuitem"
+									data-testid="options-menu-presenter-btn"
+								>
+									<Bot size={14} className="text-amber-500 shrink-0" />
+									<span>Презентация пациенту (2-й экран & ИИ)</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
 										setIsComparatorModalOpen(true);
 										setIsOptionsMenuOpen(false);
 									}}
@@ -1347,6 +1365,38 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					patientName={patientName}
 					planAgeDays={planAgeDays}
 					planCreatedAtIso={planCreatedAtIso}
+					onExecuteStage={(category) => {
+						const matchingStage =
+							stages.find((s) => {
+								if (category === "hygiene_sanitation" || category === "endo_therapy") {
+									return s.stageKind === "stage_1_therapy";
+								}
+								if (category === "surgery_implant") {
+									return s.stageKind === "stage_2_surgery";
+								}
+								if (category === "ortho_prosthetics") {
+									return s.stageKind === "stage_3_orthopedics";
+								}
+								return false;
+							}) || stages[0];
+						if (matchingStage) {
+							handleExecuteWriteOffStage(matchingStage);
+						}
+					}}
+					onBookStageToVisit={(_category, items) => {
+						showToast(
+							`Запись на приём: сформирован визит для этапа (${items.length} услуг)`,
+							"info",
+							3000,
+						);
+						if (typeof window !== "undefined") {
+							window.dispatchEvent(
+								new CustomEvent("dente-book-stage-appointment", {
+									detail: { patientId, patientName, items },
+								}),
+							);
+						}
+					}}
 					onOpenStagePayment={() => {
 						if (stages.length > 0) {
 							setSelectedInstallmentStage(stages[0]!);

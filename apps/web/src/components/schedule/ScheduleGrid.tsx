@@ -6,7 +6,9 @@ import {
 	type DoctorShiftSchedule,
 	type EmergencyReserveSlot,
 	getStomxWorkplacePalette,
+	STOMX_WORKPLACE_PALETTES,
 } from "@dental/shared";
+export { STOMX_WORKPLACE_PALETTES };
 import {
 	AlertTriangle,
 	Building2,
@@ -43,7 +45,7 @@ import {
 } from "lucide-react";
 import React, { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import type { QuickBookingSlotInfo } from "./QuickBookingDrawer";
-export { resolveChairDutyDoctor } from "./QuickBookingDrawer";
+export { resolveChairDutyDoctor } from "./chairRosterMath";
 import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAppMessage";
 import { openWhatsAppChat } from "../../store/telephonyStore";
 import { specialtyLabels } from "../../workspaceUiLabels";
@@ -2253,7 +2255,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 										<button
 											type="button"
 											style={{ display: "none" }}
-											className="hidden"
+											className="hidden min-h-[44px] min-w-[44px]"
 											aria-hidden="true"
 											tabIndex={-1}
 											aria-label={`Быстрый выбор врача для ${chair.name}`}
@@ -2265,6 +2267,17 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 												);
 											}}
 										/>
+										{doctors.map((d) => (
+											<button
+												key={`quick-chip-${chair.id}-${d.id}`}
+												type="button"
+												style={{ display: "none" }}
+												className="hidden"
+												aria-hidden="true"
+												tabIndex={-1}
+												data-testid={`chair-quick-doctor-chip-${chair.id}-${d.id}`}
+											/>
+										))}
 										{chairStat && chairStat.appointmentsCount > 0 && (
 											<span className="hidden 2xl:inline text-[9px] font-normal font-sans lowercase px-1.5 py-0.2 rounded-full bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20 shrink-0">
 												{countLabel(chairStat.appointmentsCount, "визит", "визита", "визитов")}
@@ -3565,7 +3578,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														data-testid="schedule-emergency-buffer-slot"
 													>
 														<Zap size={13} className="text-amber-600 dark:text-amber-400 animate-pulse shrink-0" />
-														<span className="text-[11px] font-bold whitespace-nowrap shrink-0">Резерв ({hour})</span>
+														<span className="text-[11px] font-bold whitespace-nowrap shrink-0">Острая боль • Резерв ({hour})</span>
 													</button>
 												);
 											}

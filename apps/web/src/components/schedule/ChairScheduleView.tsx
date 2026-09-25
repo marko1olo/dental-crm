@@ -1420,7 +1420,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 										data-testid={`chair-view-doc-${chair.id}`}
 									>
 										{hasTwoSubShifts && morningSub && eveningSub
-											? `(${formatDoctorShortName(morningSub.doctorName)} / ${formatDoctorShortName(eveningSub.doctorName)})`
+											? `(У: ${formatDoctorShortName(morningSub.doctorName)} / В: ${formatDoctorShortName(eveningSub.doctorName)})`
 											: `(${formatDoctorShortName(assignedDocName)})`}
 									</span>
 								)}

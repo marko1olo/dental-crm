@@ -349,7 +349,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 		}
 		hoverTimeoutRef.current = setTimeout(() => {
 			setIsHoverPreviewOpen(true);
-		}, 150);
+		}, 80);
 	};
 
 	const handleCardMouseLeave = () => {

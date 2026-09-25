@@ -183,7 +183,7 @@ export const NetworkStatusIndicator: React.FC<NetworkStatusIndicatorProps> = ({
 	return (
 		<>
 			<div
-				className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full border transition-all cursor-pointer select-none text-xs h-[32px] ${className}`}
+				className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full border transition-all cursor-pointer select-none text-xs h-[32px] shrink-0 flex-shrink-0 whitespace-nowrap ${className}`}
 				style={config.bgStyle}
 				onClick={handleClick}
 				onKeyDown={handleKeyDown}
@@ -194,7 +194,7 @@ export const NetworkStatusIndicator: React.FC<NetworkStatusIndicatorProps> = ({
 				title="Нажмите для открытия панели синхронизации клиники"
 			>
 				{/* Status indicator pulse dot */}
-				<span className="relative flex h-2 w-2" aria-hidden="true">
+				<span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
 					<span
 						className="relative inline-flex rounded-full h-2 w-2"
 						style={config.dotStyle}
@@ -202,12 +202,12 @@ export const NetworkStatusIndicator: React.FC<NetworkStatusIndicatorProps> = ({
 				</span>
 
 				<IconComponent
-					className={`w-3.5 h-3.5 ${config.spin ? "animate-spin" : ""}`}
+					className={`w-3.5 h-3.5 shrink-0 ${config.spin ? "animate-spin" : ""}`}
 					aria-hidden="true"
 				/>
 
 				{!compact && (
-					<span className="font-semibold tracking-tight whitespace-nowrap">
+					<span className="font-semibold tracking-tight whitespace-nowrap shrink-0">
 						{config.label}
 					</span>
 				)}

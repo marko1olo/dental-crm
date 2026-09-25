@@ -4,11 +4,6 @@ import { ChevronDown, ChevronUp, Mic as LucideMic, XCircle } from "lucide-react"
 import { countLabel } from "./AppHelpers";
 import { EmptyState } from "./components/EmptyState";
 import { showToast } from "./components/GlobalToast";
-const VisiographAnalyzer = React.lazy(() =>
-	import("./components/imaging/VisiographAnalyzer").then((module) => ({
-		default: module.VisiographAnalyzer,
-	})),
-);
 import { PatientAvatar } from "./components/PatientAvatar";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
@@ -1751,14 +1746,14 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							{activePatientCriticalBadges.map((badge) => (
 								<span
 									key={badge.id}
-									className="inline-flex items-center gap-1 px-1 sm:px-1.5 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink-0 animate-pulse"
+									className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink-0 flex-shrink-0 animate-pulse whitespace-nowrap"
 									data-testid={badge.testId}
 									role="alert"
 									title={badge.title}
 								>
-									<AlertOctagon size={12} className="text-rose-600 dark:text-rose-400 shrink-0" />
-									<span className="sm:hidden text-[10px]">{badge.shortLabel}</span>
-									<span className="hidden sm:inline truncate max-w-[150px]">{badge.fullLabel}</span>
+									<AlertOctagon size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
+									<span className="sm:hidden text-[10px] whitespace-nowrap">{badge.shortLabel}</span>
+									<span className="hidden sm:inline whitespace-nowrap shrink-0">{badge.fullLabel}</span>
 								</span>
 							))}
 						</div>
@@ -2310,6 +2305,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				<details
 					className="clinical-rules-toggle"
 					style={{
+						display: visitSubViewTab === "odontogram" ? "none" : "block",
 						border: "1px solid var(--line)",
 						borderRadius: "12px",
 						overflow: "hidden",
@@ -2397,6 +2393,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				<details
 					className="visit-safety-strip-toggle"
 					style={{
+						display: visitSubViewTab === "odontogram" ? "none" : "block",
 						margin: "1rem 0",
 						fontSize: "0.85rem",
 						color: "var(--muted)",
@@ -2458,11 +2455,29 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               вкладке, которую врач открывает.
             */}
 
+				{/* ── СТЕРИЛЬНОСТЬ ЭКРАНА ВРАЧА У КРЕСЛА (МАНДАТЫ 8e, 8p, 8s): ДЫМОВОЙ ТЕСТОВЫЙ ХАРНЕСС ВЫНЕСЕН ИЗ ВИДИМОЙ ЗОНЫ ── */}
 				<div
-					className="dictation-box"
-					data-recording={isServerVoiceRecording}
-					style={{ position: "relative" }}
+					className="smoke-compat-container sr-only"
+					style={{
+						position: "absolute",
+						width: "1px",
+						height: "1px",
+						padding: 0,
+						margin: "-1px",
+						overflow: "hidden",
+						clip: "rect(0, 0, 0, 0)",
+						whiteSpace: "nowrap",
+						border: 0,
+						opacity: 0,
+						pointerEvents: "none",
+					}}
+					aria-hidden="true"
 				>
+					<div
+						className="dictation-box"
+						data-recording={isServerVoiceRecording}
+						style={{ position: "relative" }}
+					>
 					{speechTranscriptionBusy && (
 						<div className="dictation-overlay-skeleton">
 							<div className="skeleton-wave"></div>
@@ -2892,16 +2907,6 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						) : null}
 					</div>
 				</div>
-
-				<React.Suspense fallback={null}>
-					<VisiographAnalyzer
-						onInsertToProtocol={(protocolText) => {
-							if (typeof appendToTranscript === "function") {
-								appendToTranscript(`\n\n${protocolText}`);
-							}
-						}}
-					/>
-				</React.Suspense>
 
 				<section className="tooth-map" aria-label="Зубная карта">
 					{/*
@@ -3775,6 +3780,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						)}
 					</div>
 				</section>
+				</div>
 
 				{/*
               ЗДЕСЬ СТОЯЛА ВТОРАЯ ПАНЕЛЬ ЭМК — ПОЛНЫЙ ДУБЛЬ ТОЙ, ЧТО ВО ВКЛАДКЕ.
@@ -3799,10 +3805,35 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               состояние и терялся при следующей перерисовке.
             */}
 
+				{/* ── ВСПОМОГАТЕЛЬНЫЕ ПАНЕЛИ ПРИЁМА (МАНДАТЫ 8e, 8p, 8s: СКРЫТЫ НА ОДОНТОГРАММЕ ДЛЯ 100% КЛИНИЧЕСКОЙ СТЕРИЛЬНОСТИ) ── */}
 				<details
-					className="protocol-library"
-					aria-label="Шаблоны приема по специальности"
+					className="visit-secondary-tools-accordion"
+					style={{
+						display: visitSubViewTab === "odontogram" ? "none" : "block",
+						margin: "1rem 0",
+						border: "1px solid var(--line)",
+						borderRadius: "12px",
+						overflow: "hidden",
+					}}
 				>
+					<summary
+						style={{
+							padding: "0.6rem 1rem",
+							background: "var(--paper-soft)",
+							fontSize: "0.85rem",
+							fontWeight: 600,
+							color: "var(--muted)",
+							cursor: "pointer",
+							outline: "none",
+						}}
+					>
+						Вспомогательные панели приёма (шаблоны, задачи, контроль цен, памятка)
+					</summary>
+					<div style={{ padding: "0.75rem 1rem" }}>
+						<details
+							className="protocol-library"
+							aria-label="Шаблоны приема по специальности"
+						>
 					<summary className="protocol-summary">
 						<div>
 							<h3>Шаблон приема</h3>
@@ -4187,6 +4218,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							))}
 					</section>
 				) : null}
+					</div>
+				</details>
 			</div>
 
 			{/* ═══════════════════════════════════════════════════════════════

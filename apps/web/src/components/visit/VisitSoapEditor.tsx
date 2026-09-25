@@ -12,6 +12,7 @@ import {
 	type StomxOutpatientTemplateMetadata,
 } from "@dental/shared";
 import {
+	BookOpen,
 	Check,
 	Copy,
 	Crown,
@@ -35,6 +36,7 @@ import {
 } from "../../lib/safeLocalStorage";
 import { sliceDomList } from "../../utils/domVirtualizationHelper";
 import { getOptimizedTiming } from "../../utils/lowSpecHddOptimizer";
+import { Icd10ClinicalSelector } from "../diagnostics/Icd10ClinicalSelector";
 
 export interface VisitSoapNoteValues {
 	complaint?: string | undefined;
@@ -188,6 +190,39 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 	const [previewProtocol, setPreviewProtocol] =
 		useState<OutpatientProtocolTemplate | null>(null);
 	const [templatesLimit, setTemplatesLimit] = useState<number>(30);
+	const [apiTemplates, setApiTemplates] = useState<StomxOutpatientTemplateMetadata[] | null>(null);
+	const [isIcd10SelectorOpen, setIsIcd10SelectorOpen] = useState<boolean>(false);
+
+	// Загрузка шаблонов из реального API бэкенда (таблица outpatient_templates в PostgreSQL 18)
+	// с надежным офлайн-фоллбэком на локальный кэш и встроенные пресеты (Мандаты 8e, 8s, 8t)
+	useEffect(() => {
+		let isMounted = true;
+		const fetchTemplates = async () => {
+			try {
+				const res = await fetch("/api/clinical/outpatient-templates?limit=500");
+				if (res.ok) {
+					const data = await res.json();
+					if (isMounted && data?.templates && Array.isArray(data.templates) && data.templates.length > 0) {
+						const formatted: StomxOutpatientTemplateMetadata[] = data.templates.map((t: any) => ({
+							id: Number(t.id),
+							categoryId: Number(t.categoryId),
+							categoryName: t.categoryName || "Клинический протокол",
+							specialty: (t.categorySpecialty as OutpatientSpecialty) || "therapy",
+							name: t.name || "",
+							mkbCode: t.mkbCode || "K02",
+						}));
+						setApiTemplates(formatted);
+					}
+				}
+			} catch {
+				// Офлайн-режим: тихий фоллбэк на локальный кэш/статику без блокировки UI
+			}
+		};
+		void fetchTemplates();
+		return () => {
+			isMounted = false;
+		};
+	}, []);
 
 	// Low-Spec memory guard: сброс лимита видимых шаблонов при смене фильтра/поиска
 	useEffect(() => {
@@ -471,12 +506,25 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		[isLocked, isCorrectionMode, soapStorageKey],
 	);
 
-	// Фильтрация протоколов StomX среди всех 448 шаблонов
+	// Фильтрация протоколов StomX среди 448 шаблонов (реальный API бэкенда с офлайн-фоллбэком)
 	const filteredProtocols = useMemo(() => {
 		const specFilter = activeSpecialty === "all" ? undefined : activeSpecialty;
+		if (apiTemplates && apiTemplates.length > 0) {
+			const q = searchQuery.toLowerCase().trim();
+			const matched = apiTemplates.filter((t) => {
+				if (specFilter && t.specialty !== specFilter) return false;
+				if (!q) return true;
+				return (
+					t.name.toLowerCase().includes(q) ||
+					t.mkbCode.toLowerCase().includes(q) ||
+					t.categoryName.toLowerCase().includes(q)
+				);
+			});
+			return matched.map(resolveProtocolFromTemplate);
+		}
 		const matchingTemplates = searchAll448Templates(searchQuery, specFilter);
 		return matchingTemplates.map(resolveProtocolFromTemplate);
-	}, [searchQuery, activeSpecialty]);
+	}, [apiTemplates, searchQuery, activeSpecialty]);
 
 	// Чанкинг и виртуализация шаблонов (Мандаты 8c, 8n: DOM budget <= 30-50 узлов)
 	const templatesSlice = useMemo(() => {
@@ -979,7 +1027,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								>
 									{SPECIALTY_ICONS[spec.id]}
 									<span>{spec.shortLabel}</span>
-									<span className="text-[10px] opacity-75">({count})</span>
+									<span className="text-xs opacity-75">({count})</span>
 								</button>
 							);
 						})}
@@ -1011,18 +1059,18 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								<div>
 									<div className="flex items-center justify-between gap-1 mb-1">
 										<span
-											className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${SPECIALTY_BADGE_COLORS[protocol.specialty]}`}
+											className={`text-xs font-bold px-1.5 py-0.5 rounded border ${SPECIALTY_BADGE_COLORS[protocol.specialty]}`}
 										>
 											{protocol.mkbCode}
 										</span>
-										<span className="text-[10px] text-slate-500">
+										<span className="text-xs text-slate-500">
 											{protocol.subcategory}
 										</span>
 									</div>
 									<div className="text-xs font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
 										{protocol.name}
 									</div>
-									<div className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5">
+									<div className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5">
 										{protocol.complaint}
 									</div>
 								</div>
@@ -1030,7 +1078,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 									<button
 										type="button"
 										onClick={() => handleApplyProtocol(protocol, "replace")}
-										className="flex-1 min-h-[44px] sm:min-h-0 sm:h-6 text-[11px] font-bold bg-teal-600 hover:bg-teal-700 text-white rounded cursor-pointer transition-colors flex items-center justify-center touch-manipulation"
+										className="flex-1 min-h-[44px] sm:min-h-[32px] sm:h-8 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white rounded cursor-pointer transition-colors flex items-center justify-center touch-manipulation"
 										title="Заменить текущий дневник этим протоколом в 1 клик"
 									>
 										Заполнить (1 клик)
@@ -1038,7 +1086,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 									<button
 										type="button"
 										onClick={() => setPreviewProtocol(protocol)}
-										className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-6 sm:px-1.5 text-[11px] text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 rounded flex items-center justify-center touch-manipulation"
+										className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 sm:px-2 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 rounded flex items-center justify-center touch-manipulation"
 										title="Предпросмотр протокола"
 									>
 										<Eye className="w-3.5 h-3.5" />
@@ -1046,7 +1094,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 									<button
 										type="button"
 										onClick={() => handleApplyProtocol(protocol, "append")}
-										className="min-h-[44px] sm:min-h-0 sm:h-6 px-2 text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded cursor-pointer flex items-center justify-center touch-manipulation"
+										className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 text-xs font-semibold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded cursor-pointer flex items-center justify-center touch-manipulation"
 										title="Дописать протокол к текущему тексту"
 									>
 										+ Добавить
@@ -1239,6 +1287,20 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								className="w-24 min-h-[44px] sm:min-h-0 sm:h-8 px-2 text-xs font-bold text-[var(--teal,var(--brand-primary))] bg-[var(--paper)] border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--teal)] touch-manipulation"
 								style={{ scrollMarginBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
 							/>
+							<button
+								type="button"
+								onClick={() => setIsIcd10SelectorOpen((prev) => !prev)}
+								data-testid="btn-open-icd10-selector"
+								className={`min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-semibold rounded-lg border transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 ${
+									isIcd10SelectorOpen
+										? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal,var(--brand-primary))]"
+										: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,var(--brand-primary))]"
+								}`}
+								title="Клинический классификатор МКБ-10 (K00–K14, 1-click пресеты)"
+							>
+								<BookOpen className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))] shrink-0" />
+								<span className="hidden sm:inline">Справочник</span>
+							</button>
 							<input
 								id="soap-diagnosis"
 								type="text"
@@ -1251,6 +1313,44 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								style={{ scrollMarginBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
 							/>
 						</div>
+						{isIcd10SelectorOpen && (
+							<div className="mt-2 p-2 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg">
+								<div className="flex items-center justify-between pb-2 mb-2 border-b border-[var(--line)]">
+									<div className="flex items-center gap-2">
+										<BookOpen className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
+										<span className="text-xs font-bold text-[var(--ink)]">
+											Клинический классификатор МКБ-10 (Стоматология K00–K14)
+										</span>
+									</div>
+									<button
+										type="button"
+										onClick={() => setIsIcd10SelectorOpen(false)}
+										className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-1 text-[var(--muted)] hover:text-[var(--ink)] rounded-lg cursor-pointer flex items-center justify-center"
+										aria-label="Закрыть классификатор"
+									>
+										<X className="w-4 h-4" />
+									</button>
+								</div>
+								<Icd10ClinicalSelector
+									selectedCode={values.icd10}
+									selectedTooth={selectedTooth}
+									onSelect={(item, toothNumber) => {
+										handleFieldChange("icd10", item.code);
+										const targetTooth = toothNumber ?? selectedTooth;
+										const toothPart = targetTooth ? ` зуба ${targetTooth}` : "";
+										handleFieldChange(
+											"diagnosis",
+											`${item.code} ${item.titleRu}${toothPart}`.trim(),
+										);
+										setIsIcd10SelectorOpen(false);
+									}}
+									onClear={() => {
+										handleFieldChange("icd10", "");
+										setIsIcd10SelectorOpen(false);
+									}}
+								/>
+							</div>
+						)}
 					</div>
 
 					{/* P1: Протокол лечения (Plan / Treatment) */}

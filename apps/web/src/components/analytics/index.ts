@@ -1,4 +1,5 @@
 export * from "./MarketingRoiModal.js";
+export * from "./FinancialAnalyticsModal.js";
 export * from "./LostPatientsPanel.js";
 export * from "./analyticsWidgetData.js";
 export * from "./CuratorDashboard.js";

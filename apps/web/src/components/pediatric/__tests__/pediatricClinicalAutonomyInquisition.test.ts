@@ -81,7 +81,7 @@ describe("Red Team Inquisition: Pediatric Dentistry & Frankl Behavior Protocols"
 				61, 62, 63, 64, 65, // Quadrant 6: Upper left
 				71, 72, 73, 74, 75, // Quadrant 7: Lower left
 				81, 82, 83, 84, 85, // Quadrant 8: Lower right
-			];
+			] as const;
 
 			for (const tooth of expectedPrimary) {
 				assert.ok(ALL_PRIMARY_TEETH.includes(tooth), `ALL_PRIMARY_TEETH must include tooth ${tooth}`);
@@ -255,7 +255,7 @@ describe("Red Team Inquisition: Pediatric Dentistry & Frankl Behavior Protocols"
 			const ratings: FranklRating[] = [1, 2, 3, 4];
 			for (const r of ratings) {
 				const IconComponent = getFranklVectorIcon(r);
-				assert.strictEqual(typeof IconComponent, "object" || "function", `Icon for rating ${r} must be valid component`);
+				assert.ok(typeof IconComponent === "object" || typeof IconComponent === "function", `Icon for rating ${r} must be valid component`);
 				const rendered = renderToString(createElement(IconComponent, { className: "w-4 h-4" }));
 				assert.ok(rendered.includes("<svg"), `Icon for rating ${r} must render SVG`);
 				assert.ok(!EMOJI_REGEX.test(rendered), `Rendered icon for rating ${r} must NOT contain emojis`);

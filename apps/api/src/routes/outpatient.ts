@@ -190,7 +190,7 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 	// =========================================================================
 	// 4. ШАБЛОНЫ АМБУЛАТОРНОЙ КАРТЫ 043/У (448 ПРОТОКОЛОВ, 33 РУБРИКИ)
 	// =========================================================================
-	app.get("/api/outpatient/templates", async (request: FastifyRequest, reply: FastifyReply) => {
+	const handleGetOutpatientTemplates = async (request: FastifyRequest, reply: FastifyReply) => {
 		const parsed = outpatientTemplatesFilterSchema.safeParse(request.query);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -252,7 +252,10 @@ export async function registerOutpatientRoutes(app: FastifyInstance): Promise<vo
 			categories,
 			templates,
 		});
-	});
+	};
+
+	app.get("/api/outpatient/templates", handleGetOutpatientTemplates);
+	app.get("/api/clinical/outpatient-templates", handleGetOutpatientTemplates);
 
 	// =========================================================================
 	// 5. АКТИВНАЯ ОДОНТОГРАММА ПАЦИЕНТА: ДЕФЕКТЫ ЗУБОВ И ЧЕЛЮСТЕЙ

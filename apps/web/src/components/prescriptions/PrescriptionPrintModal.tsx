@@ -534,7 +534,8 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, diary?.diagnosisIcd10, activeForm, patient?.address, patient?.snils, patient?.omsPolicy, patient?.weightKg, initialSelectedDrugIds, onClose]);
 
-	const patientName = patient?.fullName || patientNameProp || "";
+	const patientName = patient?.fullName || "";
+	const displayPatientName = patientName || patientNameProp || "";
 	const patientBirth = patient?.birthDate || "";
 	const patientCard = patient?.medicalCardNumber || patient?.cardNumber || "";
 	const docName = doctorName || "Лечащий врач";

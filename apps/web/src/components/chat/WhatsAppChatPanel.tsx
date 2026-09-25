@@ -348,19 +348,20 @@ export function WhatsAppChatPanel({
 
 		try {
 			if (effectivePatientId) {
-				await fetch("/api/communications/send", {
-					method: "POST",
-					headers: {
-						...denteAdminSecretRequestHeaders(),
-						"Content-Type": "application/json",
+				await fetch(
+					`/api/communications/inbox/${encodeURIComponent(effectivePatientId)}/send`,
+					{
+						method: "POST",
+						headers: {
+							...denteAdminSecretRequestHeaders(),
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify({
+							message: text,
+							channel: "whatsapp",
+						}),
 					},
-					body: JSON.stringify({
-						patientId: effectivePatientId,
-						channel: "whatsapp",
-						message: text,
-						recipientPhone: effectivePhone,
-					}),
-				}).catch(() => null);
+				).catch(() => null);
 			}
 			showToast(`Шаблон «${tmpl.label}» отправлен в WhatsApp`, "success");
 		} finally {

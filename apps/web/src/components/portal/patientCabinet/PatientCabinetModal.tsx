@@ -88,6 +88,7 @@ import {
 	ReceptionQrSheet,
 	CareMemoSheet,
 	RescheduleSheet,
+	BookingSheet,
 } from "./sheets";
 import "./patientCabinet.css";
 
@@ -140,6 +141,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	const [isCareMemoQrOpen, setIsCareMemoQrOpen] = useState(false);
 	const [isPrintMemoPreviewOpen, setIsPrintMemoPreviewOpen] = useState(false);
 	const [reschedulingApt, setReschedulingApt] = useState<PatientAppointment | null>(null);
+	const [isBookingOpen, setIsBookingOpen] = useState(false);
 	const [isSelfCheckinOpen, setIsSelfCheckinOpen] = useState(false);
 	const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
 	const [selectedTaxYear, setSelectedTaxYear] = useState<number>(2026);
@@ -353,6 +355,17 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 		});
 	}, [onAppointmentBooked]);
 
+	// Online Booking Submit (Mandate: 1-Tap Booking without repetitive entry)
+	const handleBookingSubmit = useCallback((req: { goalId: string; doctorId: string; date: string; time: string; comment: string }) => {
+		setIsBookingOpen(false);
+		handleShowCabinetToast(`Запись оформлена на ${req.date} в ${req.time}! СМС-подтверждение отправлено.`);
+		onAppointmentBooked?.({
+			specialty: req.goalId,
+			preferredDate: `${req.date} ${req.time}`,
+			note: req.comment,
+		});
+	}, [handleShowCabinetToast, onAppointmentBooked]);
+
 	// Downloads & Prints
 	const handleDownloadReceipt = useCallback((invoice: PatientInvoiceItem) => {
 		downloadDetailedReceipt(invoice, data);
@@ -565,6 +578,8 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 							onOpenCareMemo={() => setIsCareMemoQrOpen(true)}
 							onOpenSbpForInvoice={handleStartSbpPayment}
 							onOpenSelfCheckin={() => setIsSelfCheckinOpen(true)}
+							onOpenBooking={() => setIsBookingOpen(true)}
+							onOpenReschedule={() => setReschedulingApt(summary.nextAppointment || data.appointments[0] || null)}
 						/>
 					)}
 
@@ -725,6 +740,14 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 					onSubmit={handleRescheduleSubmit}
 				/>
 
+				{/* 6. 1-Tap Online Booking Bottom Sheet */}
+				<BookingSheet
+					isOpen={isBookingOpen}
+					onClose={() => setIsBookingOpen(false)}
+					data={data}
+					onSubmit={handleBookingSubmit}
+				/>
+
 				{/* Non-blocking toast notification banner (Zero blocking alerts - Mandate 8e) */}
 				{cabinetToastMessage && (
 					<div
@@ -735,12 +758,12 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 							bottom: "24px",
 							left: "50%",
 							transform: "translateX(-50%)",
-							background: "var(--pc-surface, #1e293b)",
-							color: "var(--pc-text, #ffffff)",
+							background: "var(--pc-surface, var(--paper-strong, #ffffff))",
+							color: "var(--pc-text-main, var(--ink, #0f172a))",
 							padding: "10px 18px",
 							borderRadius: "10px",
-							border: "1px solid var(--pc-border, #334155)",
-							boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+							border: "1px solid var(--pc-border, var(--glass-border, #e2e8f0))",
+							boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
 							fontSize: "0.875rem",
 							fontWeight: 600,
 							zIndex: 9999,

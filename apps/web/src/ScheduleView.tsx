@@ -1375,8 +1375,22 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			}
 		};
 
+		const handleOpenQuickBookingEvent = () => {
+			setQuickBookingSlot({
+				dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
+				doctorUserId: scheduleDoctorFilterId || null,
+				chairId: scheduleChairFilterId || null,
+				durationMinutes: 30,
+			});
+			setQuickBookingOpen(true);
+		};
+
 		window.addEventListener("keydown", handleGlobalKeyDown);
-		return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+		window.addEventListener("dente-open-quick-booking", handleOpenQuickBookingEvent);
+		return () => {
+			window.removeEventListener("keydown", handleGlobalKeyDown);
+			window.removeEventListener("dente-open-quick-booking", handleOpenQuickBookingEvent);
+		};
 	}, [
 		isPatientSearchOpen,
 		quickBookingOpen,

@@ -146,6 +146,8 @@ export async function getOrLoadClinical043Templates<T = unknown>(): Promise<T[]>
 	}
 
 	const apiCached =
+		getCachedApiResponse<T[]>("/api/clinical/outpatient-templates") ||
+		getCachedApiResponse<T[]>("/api/outpatient/templates") ||
 		getCachedApiResponse<T[]>("/api/emr/templates") ||
 		getCachedApiResponse<T[]>("/api/templates");
 	if (apiCached?.data && Array.isArray(apiCached.data) && apiCached.data.length > 0) {
@@ -157,6 +159,7 @@ export async function getOrLoadClinical043Templates<T = unknown>(): Promise<T[]>
 		const idbCached = await getCachedStatutoryCatalog<T[]>("catalog_templates");
 		if (idbCached && Array.isArray(idbCached) && idbCached.length > 0) {
 			ramTemplatesCache = idbCached;
+			setCachedApiResponse("/api/clinical/outpatient-templates", idbCached, { ttlMs: 24 * 60 * 60 * 1000 });
 			setCachedApiResponse("/api/emr/templates", idbCached, { ttlMs: 24 * 60 * 60 * 1000 });
 			return idbCached;
 		}
@@ -166,10 +169,13 @@ export async function getOrLoadClinical043Templates<T = unknown>(): Promise<T[]>
 
 	try {
 		const persistentApi =
+			(await readCatalogFromPersistentStorage<T[]>("/api/clinical/outpatient-templates")) ||
+			(await readCatalogFromPersistentStorage<T[]>("/api/outpatient/templates")) ||
 			(await readCatalogFromPersistentStorage<T[]>("/api/emr/templates")) ||
 			(await readCatalogFromPersistentStorage<T[]>("/api/templates"));
 		if (persistentApi?.data && Array.isArray(persistentApi.data) && persistentApi.data.length > 0) {
 			ramTemplatesCache = persistentApi.data;
+			setCachedApiResponse("/api/clinical/outpatient-templates", persistentApi.data, { ttlMs: 24 * 60 * 60 * 1000 });
 			setCachedApiResponse("/api/emr/templates", persistentApi.data, { ttlMs: 24 * 60 * 60 * 1000 });
 			void cacheStatutoryCatalog("catalog_templates", persistentApi.data).catch(() => {});
 			return persistentApi.data;
@@ -305,6 +311,8 @@ export function getCachedTemplatesSync<T = unknown>(): T[] | null {
 		return ramTemplatesCache as T[];
 	}
 	const apiCached =
+		getCachedApiResponse<T[]>("/api/clinical/outpatient-templates") ||
+		getCachedApiResponse<T[]>("/api/outpatient/templates") ||
 		getCachedApiResponse<T[]>("/api/emr/templates") ||
 		getCachedApiResponse<T[]>("/api/templates");
 	if (apiCached?.data && Array.isArray(apiCached.data) && apiCached.data.length > 0) {

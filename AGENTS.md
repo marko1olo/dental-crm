@@ -3,6 +3,10 @@
 > ⚠️ **ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW):** **[`C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** (и его зеркало `MASTER_PROMPT.md`) — абсолютный непреложный закон. Обязателен к прочтению от первого до последнего символа перед началом любых действий!
 >
 > **СИСТЕМНАЯ КОНСТИТУЦИЯ:** **[`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)**. Этот корневой файл — discoverable standard entry point (конвенция AGENTS.md для Codex, Copilot, Cursor, Windsurf, Claude). Он индексирует документацию и фиксирует главные нерушимые правила.
+>
+> 🛑 **СТРОГИЙ ЗАКОН ПОЛНОГО ЧТЕНИЯ КОНСТИТУЦИИ (FULL-FILE COMPREHENSION LAW — 800 СТРОК):** Категорически ЗАПРЕЩЕНО читать Конституцию (`THE_HAMMER_MASTER_PROMPT.md`, `AGENTS.md`, правила и мандаты) и файлы кода обрывками по 20–30 строк, скиммингом или «по диагонали». Агент и субагенты ОБЯЗАНЫ читать документы и файлы ЦЕЛИКОМ максимальными порциями до 800 строк (`view_file` со `StartLine: 1, EndLine: 800`), а при объёме более 800 строк — последовательно вычитывать все порции от первой до последней строки.
+>    *Рабочий протокол Разведчика и модификации файлов:* Агент-разведчик (или утилиты `rg`, `fd`, AST) локализует границы проблемы в кодовой базе. Но когда конкретный файл назначен непосредственной целью модификации — исполняющий агент ОБЯЗАН прочитать его полностью (порциями по 800 строк через `view_file`), исключая слепые патчи по 20 строк. При этом Оркестратор L1 не обязан вычитывать руками весь 14 500-строчный монолит `useAppLogic.tsx`, если правится изолированная модалка.
+>    *Точечная автономия Оркестратора L1:* Оркестратор не пишет крупные фичи и архитектурные пласты в соло — это задача роя субагентов. Однако Оркестратор обладает законным правом на точечные атомарные фиксы архитектурных стыков, сломанных импортов, опечаток и тривиальных синтаксических правок (<50 строк) без запуска тяжелого цикла делегирования.
 
 ## 📖 AGENT DOCUMENTATION INDEX
 Before starting any development or refactoring, you MUST load and read the following modular directories:
@@ -32,7 +36,7 @@ Availability verified on this host 2026-07-27: on PATH -> rg, fd, jq, tokei, sem
 3. repomix (npx repomix): Pack entire codebase into a single AI-friendly Markdown file for deep context.
 4. semgrep (semgrep scan): Deep bug hunting and static analysis.
 5. biome (npx @biomejs/biome check --write .): Instant JS/TS formatting. Matches the invocation in .cursorrules.
-6. madge (npx madge --circular .): Find circular dependencies before refactoring.
+6. madge (npx madge --ts-config tsconfig.base.json --circular --extensions ts,tsx apps/api/src apps/web/src): Find circular dependencies before refactoring (обязателен флаг --ts-config для корректного резолва алиасов @dental/shared).
 7. fd / jq / tokei: Fast file discovery, JSON parsing, codebase statistics.
 8. SKILLS: on Gemini/Antigravity hosts, reconnaissance, decomposer and find-skills live in C:\Users\Admin\.gemini\config\skills\ - read reconnaissance\SKILL.md for exact usage. On any other harness use its own skill/subagent equivalent; a missing skill tree is not a blocker and not an excuse to skip reconnaissance.
 BE PROACTIVE. EXECUTE.

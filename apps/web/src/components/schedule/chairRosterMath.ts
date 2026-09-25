@@ -9,6 +9,7 @@
  */
 
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { safeLocalStorageGetJson } from "../../lib/safeLocalStorage";
 import {
 	DEFAULT_CLINIC_STAFF,
 	CLINIC_CABINETS_CATALOG,
@@ -191,6 +192,189 @@ export function formatDoctorShortName(fullName: string): string {
 	const firstInitial = parts[1]?.[0] ? `${parts[1][0].toUpperCase()}.` : "";
 	const middleInitial = parts[2]?.[0] ? `${parts[2][0].toUpperCase()}.` : "";
 	return `${lastName} ${firstInitial}${middleInitial}`.trim();
+}
+
+/**
+ * Resolves which doctor is on duty for a given chair at a specific time/slot.
+ * Resilient multi-tier fallback:
+ * 1. Active chair doctor shift assignment for the date (morning vs evening vs custom sub-shifts vs presets).
+ * 2. In-memory safeLocalStorage assignment.
+ * 3. Initial slot doctor.
+ * 4. Default doctor fallback for chair.
+ * 5. Default doctor from chair settings stored in safeLocalStorage.
+ */
+export function resolveChairDutyDoctor(
+	chairId: string | null | undefined,
+	startsAtIsoOrLocal: string | null | undefined,
+	chairDoctorAssignments?: Record<string, ChairDoctorShiftAssignment> | undefined,
+	dateKeyFallback?: string | undefined,
+	initialSlotDoctorId?: string | null | undefined,
+	defaultDoctorIdFallback?: string | null | undefined,
+): { doctorId: string | null; shiftHours: string } {
+	if (!chairId) {
+		return { doctorId: initialSlotDoctorId || defaultDoctorIdFallback || null, shiftHours: "08:00–20:00" };
+	}
+
+	// 1. Check passed chairDoctorAssignments
+	let assignment = chairDoctorAssignments?.[chairId];
+
+	// 2. Fallback to in-memory safeLocalStorage
+	const targetDateKey =
+		startsAtIsoOrLocal && startsAtIsoOrLocal.length >= 10
+			? startsAtIsoOrLocal.slice(0, 10)
+			: (dateKeyFallback || "");
+	if (!assignment && targetDateKey) {
+		const parsed = safeLocalStorageGetJson<Record<string, ChairDoctorShiftAssignment> | null>(
+			`dente_chair_doctor_assignments_${targetDateKey}`,
+			null,
+		);
+		if (parsed?.[chairId]) {
+			assignment = parsed[chairId];
+		}
+	}
+
+	if (assignment && (assignment.doctorId || (assignment.subShifts && assignment.subShifts.length > 0))) {
+		let hourNum = NaN;
+		if (startsAtIsoOrLocal) {
+			if (startsAtIsoOrLocal.length >= 13) {
+				hourNum = Number.parseInt(startsAtIsoOrLocal.slice(11, 13), 10);
+			} else if (/^\d{2}:\d{2}/.test(startsAtIsoOrLocal)) {
+				hourNum = Number.parseInt(startsAtIsoOrLocal.slice(0, 2), 10);
+			}
+		}
+
+		// 1. Two-shift chair handling: morning (< 14:00) vs evening (>= 14:00)
+		if (
+			(assignment.subShifts && assignment.subShifts.length > 1) ||
+			assignment.shiftPreset === "two_shifts"
+		) {
+			const mornSub = assignment.subShifts?.[0] || {
+				doctorId: assignment.doctorId,
+				doctorName: assignment.doctorName,
+				startHour: 8,
+				endHour: 14,
+				shiftHours: "08:00–14:00",
+			};
+			const eveSub = assignment.subShifts?.[1] || {
+				doctorId: assignment.doctorId,
+				doctorName: assignment.doctorName,
+				startHour: 14,
+				endHour: 20,
+				shiftHours: "14:00–20:00",
+			};
+
+			const mornStart = mornSub.startHour ?? 8;
+			const eveEnd = eveSub.endHour ?? 20;
+
+			if (!Number.isNaN(hourNum)) {
+				if (hourNum < mornStart || (hourNum >= eveEnd && (eveEnd < 20 || hourNum > 20))) {
+					return { doctorId: null, shiftHours: assignment.shiftHours || "08:00–20:00" };
+				}
+				if (hourNum < 14) {
+					return {
+						doctorId: mornSub.doctorId || assignment.doctorId || null,
+						shiftHours: mornSub.shiftHours || "08:00–14:00",
+					};
+				}
+				return {
+					doctorId: eveSub.doctorId || mornSub.doctorId || assignment.doctorId || null,
+					shiftHours: eveSub.shiftHours || "14:00–20:00",
+				};
+			}
+			return {
+				doctorId: assignment.doctorId,
+				shiftHours: assignment.shiftHours || "08:00–20:00",
+			};
+		}
+
+		// 2. Custom sub-shifts array
+		if (assignment.subShifts && assignment.subShifts.length > 0) {
+			if (!Number.isNaN(hourNum)) {
+				const matchingSub = assignment.subShifts.find(
+					(s) =>
+						hourNum >= s.startHour &&
+						(hourNum < s.endHour || (s.endHour >= 20 && hourNum <= 20)),
+				);
+				if (matchingSub) {
+					return {
+						doctorId: matchingSub.doctorId,
+						shiftHours:
+							matchingSub.shiftHours ||
+							`${String(matchingSub.startHour).padStart(2, "0")}:00–${String(matchingSub.endHour).padStart(2, "0")}:00`,
+					};
+				}
+				return { doctorId: null, shiftHours: assignment.shiftHours || "08:00–20:00" };
+			}
+			return {
+				doctorId: assignment.doctorId,
+				shiftHours: assignment.shiftHours || "08:00–20:00",
+			};
+		}
+
+		// 3. Preset bounds: morning only vs evening only
+		if (assignment.shiftPreset === "morning") {
+			if (!Number.isNaN(hourNum) && hourNum >= 14) {
+				return { doctorId: null, shiftHours: "08:00–14:00" };
+			}
+			return { doctorId: assignment.doctorId, shiftHours: "08:00–14:00" };
+		}
+		if (assignment.shiftPreset === "evening") {
+			if (!Number.isNaN(hourNum) && (hourNum < 14 || hourNum > 20)) {
+				return { doctorId: null, shiftHours: "14:00–20:00" };
+			}
+			return { doctorId: assignment.doctorId, shiftHours: "14:00–20:00" };
+		}
+
+		// 4. Start/End hour limits
+		const sHour = assignment.startHour ?? 8;
+		const eHour = assignment.endHour ?? 20;
+		if (!Number.isNaN(hourNum)) {
+			if (hourNum >= sHour && (hourNum < eHour || (eHour >= 20 && hourNum <= 20))) {
+				return {
+					doctorId: assignment.doctorId,
+					shiftHours:
+						assignment.shiftHours ||
+						`${String(sHour).padStart(2, "0")}:00–${String(eHour).padStart(2, "0")}:00`,
+				};
+			}
+			return {
+				doctorId: null,
+				shiftHours:
+					assignment.shiftHours ||
+					`${String(sHour).padStart(2, "0")}:00–${String(eHour).padStart(2, "0")}:00`,
+			};
+		}
+
+		return {
+			doctorId: assignment.doctorId,
+			shiftHours: assignment.shiftHours || "08:00–20:00",
+		};
+	}
+
+	// 3. Fallback: if slot was explicitly booked for this chair with a doctor
+	if (initialSlotDoctorId) {
+		return { doctorId: initialSlotDoctorId, shiftHours: "08:00–20:00" };
+	}
+
+	// 4. Fallback: explicit defaultDoctorIdFallback (e.g. from chair.defaultDoctorId or solo doctor)
+	if (defaultDoctorIdFallback) {
+		return { doctorId: defaultDoctorIdFallback, shiftHours: "08:00–20:00" };
+	}
+
+	// 5. Fallback: check stored default doctor for chair in localStorage
+	if (chairId) {
+		try {
+			const storedChairDef = safeLocalStorageGetJson<Record<string, string>>(
+				"dente_chair_default_doctors",
+				{},
+			);
+			if (storedChairDef?.[chairId]) {
+				return { doctorId: storedChairDef[chairId], shiftHours: "08:00–20:00" };
+			}
+		} catch {}
+	}
+
+	return { doctorId: null, shiftHours: "08:00–20:00" };
 }
 
 /**

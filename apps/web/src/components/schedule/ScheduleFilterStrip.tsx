@@ -415,7 +415,7 @@ export function ScheduleFilterStrip({
 				<button
 					type="button"
 					onClick={onQuickBooking}
-					className="schedule-toolbar-primary-quick-booking-btn min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 rounded-lg text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1 shrink-0 cursor-pointer shadow-2xs whitespace-nowrap"
+					className="schedule-toolbar-primary-quick-booking-btn sm:hidden min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 rounded-lg text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1 shrink-0 cursor-pointer shadow-2xs whitespace-nowrap"
 					data-testid="schedule-toolbar-primary-quick-booking-btn"
 					title="Быстрая запись (N) / Новая запись пациента на прием"
 					aria-label="Быстрая запись (Запись)"
@@ -695,7 +695,7 @@ export function ScheduleFilterStrip({
 						type="button"
 						onClick={handleOpenAddChair}
 						className="schedule-add-chair-chip-btn min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 shrink-0 flex-shrink-0 px-2.5 mr-2 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-[var(--paper)] text-[var(--teal-dark)] dark:text-[var(--teal)] dark:bg-[var(--teal-soft)] text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 select-none whitespace-nowrap"
-						style={{ whiteSpace: "nowrap", flexShrink: 0, flex: "0 0 auto" }}
+						style={{ whiteSpace: "nowrap", flexShrink: 0, flex: "0 0 auto", minHeight: "44px", minWidth: "44px" }}
 						title="Быстрое добавление кресла или кабинета в расписание (1 клик)"
 						aria-label="Добавить кресло в расписание"
 						data-testid="schedule-add-chair-btn"
@@ -765,18 +765,19 @@ export function ScheduleFilterStrip({
 				)}
 
 				{/* Secondary Actions Overflow Dropdown Menu */}
-				<div className="relative inline-flex items-center" ref={optionsMenuRef}>
+				<div className="relative inline-flex items-center shrink-0 flex-shrink-0 min-w-fit" ref={optionsMenuRef} style={{ flexShrink: 0, minWidth: "fit-content" }}>
 					<button
 						type="button"
 						onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
-						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 sm:min-w-0 px-1.5 sm:px-2.5 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 shrink-0"
+						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-7 px-1.5 sm:px-2.5 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 flex-shrink-0 min-w-fit whitespace-nowrap"
+						style={{ flexShrink: 0, minWidth: "fit-content", whiteSpace: "nowrap" }}
 						title="Дополнительные режимы и списки расписания"
 						aria-label="Опции расписания"
 						aria-expanded={isOptionsMenuOpen}
 						data-testid="schedule-toolbar-options-btn"
 					>
-						<MoreVertical size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-						<span className="hidden sm:inline">Опции</span>
+						<MoreVertical size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0 flex-shrink-0" style={{ flexShrink: 0 }} />
+						<span className="hidden sm:inline whitespace-nowrap shrink-0 flex-shrink-0 font-bold min-w-fit" style={{ whiteSpace: "nowrap", flexShrink: 0, minWidth: "fit-content" }}>Опции</span>
 					</button>
 
 					<div

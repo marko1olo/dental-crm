@@ -351,7 +351,7 @@ export const PEDIATRIC_PROTOCOL_PRESETS: readonly PediatricProtocolDefinition[] 
 // ANATOMICAL FDI NAMES & FAST PRESET COMBINATIONS
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PEDIATRIC_TEETH_NAMES: Readonly<Record<number, string>> = {
+export const PEDIATRIC_TEETH_NAMES: Readonly<Record<number, string>> = {
 	51: "Верхний правый центральный резец",
 	52: "Верхний правый боковой резец",
 	53: "Верхний правый клык",

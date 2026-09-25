@@ -353,38 +353,39 @@ export async function flushOfflinePatientBookings(
 				isSuccess = false;
 			}
 		} else {
-			// Real API fetch attempt: send to /api/portal/booking with /api/public-booking/book fallback
+			// Real API fetch attempt: send directly to canonical /api/public/booking/:orgId/book
 			try {
-				const bookingPayload = {
-					branchId: booking.branchId,
+				const [hhStr, mmStr] = (booking.timeRu || "10:00").split(":");
+				const hours = Number(hhStr) || 10;
+				const minutes = Number(mmStr) || 0;
+				const dateParts = booking.dateIso ? booking.dateIso.split("-").map(Number) : [];
+				let startDt: Date;
+				if (dateParts.length === 3 && dateParts[0] && dateParts[1] && dateParts[2]) {
+					startDt = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], hours, minutes, 0);
+				} else {
+					startDt = new Date();
+				}
+				const endDt = new Date(startDt.getTime() + 30 * 60_000);
+
+				const canonicalPayload = {
 					doctorId: booking.doctorId,
-					serviceId: booking.serviceId,
-					dateIso: booking.dateIso,
-					slotId: booking.slotId,
-					timeRu: booking.timeRu,
-					patientFullName: booking.patientFullName,
-					patientPhone: booking.patientPhone,
-					patientComment: booking.patientComment,
-					consentPersonalData152Fz: booking.consentPersonalData152Fz,
+					patientId: booking.patientId || undefined,
+					startsAt: startDt.toISOString(),
+					endsAt: endDt.toISOString(),
+					patientName: booking.patientFullName.trim(),
+					patientPhone: booking.patientPhone.trim(),
+					comment: booking.patientComment?.trim() || undefined,
 				};
 
-				let response = await fetch("/api/portal/booking", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(bookingPayload),
-				});
-
-				if (!response.ok && response.status === 404) {
-					const bookingOrgId = booking.branchId || "default";
-					response = await fetch(
-						`/api/public/booking/${encodeURIComponent(bookingOrgId)}/book`,
-						{
-							method: "POST",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify(bookingPayload),
-						},
-					);
-				}
+				const bookingOrgId = booking.branchId || "default";
+				const response = await fetch(
+					`/api/public/booking/${encodeURIComponent(bookingOrgId)}/book`,
+					{
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify(canonicalPayload),
+					},
+				);
 
 				isSuccess = response.ok;
 			} catch (err) {

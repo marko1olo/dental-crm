@@ -126,4 +126,61 @@ describe('TreatmentPlanPhased4StageView Component', () => {
     assert.ok(html.includes('Straumann'));
     assert.ok(html.includes('диоксида циркония'));
   });
+
+  it('renders 1-click stage-to-visit booking button and execute stage button (Mandate 8e Doctor Autonomy)', () => {
+    const mockStages: TreatmentPlanStage[] = [
+      {
+        stageNumber: 1,
+        title: 'Терапия и гигиена',
+        stageKind: 'stage_1_therapy',
+        subtitle: 'Санация и гигиена',
+        clinicalGoal: 'Ликвидация очагов инфекции',
+        totalRub: 15000,
+        totalKopecks: 1500000 as any,
+        estimatedVisits: 2,
+        estimatedWeeks: 1,
+        order804nCodes: ['A16.07.051'],
+        items: [
+          {
+            id: 'it-1',
+            name: 'Профгигиена',
+            code804n: 'A16.07.051',
+            category: 'hygiene',
+            priceRub: 5000,
+            stageKind: 'stage_1_therapy',
+            phase: 1,
+            quantity: 1,
+            unitPriceRub: 5000,
+            discountRub: 0,
+            isAuto: true,
+          },
+        ],
+      },
+    ];
+
+    const html = renderToString(
+      <TreatmentPlanPhased4StageView
+        stages={mockStages}
+        planTierTitle="Тест план"
+        patientName="Петров П.П."
+        onBookStageToVisit={() => {}}
+        onExecuteStage={() => {}}
+        onToggleStage={() => {}}
+      />
+    );
+
+    // Verify stage-to-appointment booking button is present
+    assert.ok(html.includes('data-testid="phased-book-stage-hygiene_sanitation"'), "Must render 1-click book stage button");
+    assert.ok(html.includes("Записать на приём"), "Button text must indicate booking");
+    assert.ok(html.includes("Приступить к этапу"), "Must render execute stage button");
+
+    // Verify ZERO disabled buttons in TreatmentPlanPhased4StageView
+    assert.ok(!html.includes('disabled=""'), "Must not have any hard-disabled buttons in Phased4StageView (Mandate 8e)");
+    assert.ok(!html.includes(' disabled '), "Must not have any disabled attribute in Phased4StageView");
+
+    // Verify ZERO cartoon emojis (Mandate 8d)
+    const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+    assert.ok(!emojiRegex.test(html), "Rendered output must not contain cartoon emojis");
+  });
 });
+

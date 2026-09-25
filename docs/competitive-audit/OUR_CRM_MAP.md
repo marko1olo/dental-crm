@@ -2,7 +2,7 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
-> ⚠️ **СТАТУС (2026-09-25 / WAVES 175–319 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ ЗАБРОШЕННЫХ ДОМЕНОВ CRM): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 381 СИСТЕМНАЯ АДДЕНДУМ-ФИЧА (ВСЕГО 444 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 381 АДДЕНДУМ, 444/444 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
+> ⚠️ **СТАТУС (2026-09-25 / WAVES 175–322 / АКТУАЛИЗАЦИЯ И РЕД ТИМ ИНКВИЗИЦИЯ ЗАБРОШЕННЫХ ДОМЕНОВ CRM, ЗАКОН NO-NURSE-CLICKING, ЭРГОНОМИКА СОЛО-ВРАЧА, 4-СТАДИЙНЫЕ ПЛАНЫ И PWA-ПОРТАЛ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 393 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (ВСЕГО 456 ФИЧ: 63 КАНОНИЧЕСКИЕ + 393 АДДЕНДУМ, ВСЕ 456 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], ВОЛНЫ 320–322 ЗАКРЫТЫ НА 100%, ПАРИТЕТ 100%). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
@@ -92,6 +92,11 @@
     - В `ScheduleGrid.tsx` и `schedule.css` высота слотов и строк расписания зафиксирована на строго 36px (`h-9`), обеспечивая плотную клиническую панель пилота и устраняя необходимость вертикального скролла на типовых десктопных разрешениях 1440x900 и ноутбуках 1366x768;
     - Тулбары ЭМК и фильтров расписания уложены в строго 1 компактную строку 32–36px по Закону Хика;
     - Чекаут кассы 54-ФЗ в `PaymentModal.tsx` организован в виде эргономичного 1-тир экрана без вложенных модальных окон (Закон Анти-Матрёшки, глубина строго 1), с моментальным сплит-распределением оплаты (нал + карта + баланс) и копеечной сдачей.
+
+17. **Закон «No-Nurse-Clicking» и автономность бэкофиса (Мандат 8v, `useSanpinScheduleSyncLogic.ts`)**:
+    - 100% автоматическое списание расходных материалов со склада по технологическим картам и внесение регламентных записей дезинфекции и стерилизации СанПиН 3.3686-21 (Форма 257/у) в фоновом режиме при завершении приёма врачом;
+    - Полное отсутствие обязательных кликов медсестры в бэкофисе: 90% пользователей — Врач и Администратор (соло-практика, клиника 1–3 кресла), поэтому бэкофис на 100% опционален;
+    - Мягкий технологический овердрафт склада гарантирует, что нулевой остаток на складе никогда не блокирует оказание помощи пациенту или пробитие фискального чека 54-ФЗ.
 
 ---
 
@@ -7183,4 +7188,114 @@
   - `docs/competitive-audit/BACKLOG.md`
   - `docs/competitive-audit/OUR_CRM_MAP.md` (Фичи #417..#444, Волны 307–318)
 
+### 2.10.415. Волна 319: Финализация Заброшенных Доменов CRM — Аппаратный Сканер, RVG Canvas <50мс, Тирдаун Аудио, Рефералы, Журналы СанПиН 257/у, Педиатрия 323-ФЗ, Реколлы, CDA R2 XML и Декуплинг Онбординга (Фичи #445..#453, Мандаты 8b, 8c, 8e, 8i, 8k, 8n, 8p, 8s, 8t, коммит `a44b165a5`)
+- **Функционал**:
+  1. *Аппаратная документ-камера и файловая автономия (Фича #445, Мандаты 8c, 8e, 8t)*: полная устойчивость `DocumentCameraScannerModal.tsx` при отсутствии или отказе видеопотока MediaStream: автоматическое определение доступности камеры, прямой ввод через HTML5 File Input / Drag-and-Drop сканов, кадрирование на HTML5 Canvas без утечек DOM-памяти и нулевые диалоговые барьеры для регистратора;
+  2. *Мгновенный аппаратный рендеринг холста RVG <50мс (Фича #446, Мандаты 8c, 8e, 8i)*: мгновенный рендеринг интраоральных рентгеновских снимков RVG (<50мс) на аппаратном 2D Canvas в `VisiographStudioCanvas.tsx` и `DirectRvgCaptureModal.tsx`; калиброванные фильтры резкости/контраста (эндо/пародонт/кариес/имплант), запрет фоновых блокирующих обращений к тяжелым ИИ-моделям до ручного запроса врача, автосохранение снимка в ЭМК 043/у;
+  3. *Тирдаун кольцевых буферов аудиозаписи и протокол диктовки 043/у (Фича #447, Мандаты 8e, 8i, 8t)*: надежный жизненный цикл аудиопотока в `AudioStreamManager.ts` с обязательным освобождением AudioContext и медиа-треков при размонтировании; кольцевой буфер с отсечкой памяти 5–10 МБ исключает утечки RAM в Node/Electron; прямое внесение распознанного текста в SOAP-дневник `VisitSoapEditor.tsx` без стирания правок врача;
+  4. *Практический реферальный движок и сертификаты (Фича #448, Мандаты 8b, 8e, 8n)*: интеграция реферальных цепочек «приведи друга» и подарочных депозитных сертификатов в `LoyaltyProgramModal.tsx` и `loyaltyEngine.ts`; строгий целочисленный расчет начислений и списаний в копейках без float погрешностей; 1-кликовая оплата остатка по СБП и кассе 54-ФЗ без блокировок соло-врача;
+  5. *Регламентные журналы СанПиН 3.3686-21 и Форма 257/у (Фича #449, Мандаты 8e, 8i)*: реализация электронных реплик регламентных журналов контроля стерилизаторов (Форма 257/у) и предстерилизационной очистки (азопирам/фенолфталеин) в `SanpinJournal257View.tsx` и `sanpinJournalEngine.ts`; регистрация партий крафт-пакетов с штрихкодированием, автоподстановка физических параметров режима (134°C / 2.1 бар / 5 мин) и печать форм для Роспотребнадзора;
+  6. *Детская одонтограмма 51–85 и законный представитель по 323-ФЗ (Фича #450, Мандаты 8c, 8e, 8k)*: специализированный интерфейс детской одонтограммы (зубы 51–85) в `PediatricToothChart.tsx` и `ChildToothChartModal.tsx`; обязательная юридическая привязка законного представителя (родитель/опекун) с валидацией полномочий по 323-ФЗ «Об основах охраны здоровья граждан в РФ»; автоматическая генерация педиатрических бланков согласий ИДС;
+  7. *Проактивный хаб диспансерного учета и реколлов (Фича #451, Мандаты 8d, 8e, 8p)*: единый пульт управления повторными визитами `PatientRecallsHubModal.tsx` и `recallsEngine.ts`; автоматический триггер 6-месячной гигиены после санации, группировка по статусам контакта, интеграция со сменой расписания без диалоговых барьеров и 1-кликовое планирование визита;
+  8. *Генератор клинических документов CDA R2 XML для РЭМД ЕГИСЗ (Фича #452, Мандаты 8b, 8i, 8s)*: реализован движок формирования валидных XML-документов клинического протокола CDA R2 (СЭМД 106 исключен в пользу легитимных протоколов консультации и инструментальной диагностики) в `egiszCdaR2Generator.ts` и `cdaXmlValidationEngine.ts`; строгая валидация по схемам Минздрава РФ, поддержка подписания УКЭП по ГОСТ Р 34.10-2012;
+  9. *Декуплинг онбординга от окна приёма (Фича #453, Мандаты 8d, 8e, 8n)*: интерактивный визард быстрого старта клиники `OnboardingTourModal.tsx` и `workspaceTourEngine.ts`; 100% неблокирующий дизайн: врач у кресла никогда не перекрывается модалками обучения, возможность пропустить онбординг в 1 клик, сохранение прогресса в localStorage.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО]`.
+- **Задействованные компоненты и модули**:
+  - [`DocumentCameraScannerModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/scanner/DocumentCameraScannerModal.tsx)
+  - [`documentScannerEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/scanner/documentScannerEngine.ts)
+  - [`scannerAndOnboardingFrictionlessInquisition.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/scanner/__tests__/scannerAndOnboardingFrictionlessInquisition.test.ts)
+  - [`VisiographStudioCanvas.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/VisiographStudioCanvas.tsx)
+  - [`DirectRvgCaptureModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/DirectRvgCaptureModal.tsx)
+  - [`rvgFiltersEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/rvgFiltersEngine.ts)
+  - [`rvgDirectCaptureAutonomy.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/__tests__/rvgDirectCaptureAutonomy.test.tsx)
+  - [`AudioStreamManager.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/audio/AudioStreamManager.ts)
+  - [`VisitSoapEditor.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/VisitSoapEditor.tsx)
+  - [`speechAudioResilienceInquisition.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/redteam/speechAudioResilienceInquisition.test.ts)
+  - [`LoyaltyProgramModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/loyalty/LoyaltyProgramModal.tsx)
+  - [`loyaltyEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/loyalty/loyaltyEngine.ts)
+  - [`loyaltyReferralAutonomy.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/loyalty/__tests__/loyaltyReferralAutonomy.test.ts)
+  - [`SanpinJournal257View.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanpinJournal257View.tsx)
+  - [`sanpinJournalEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/sanpinJournalEngine.ts)
+  - [`sanpinPhysicalJournalsAutonomy.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/__tests__/sanpinPhysicalJournalsAutonomy.test.ts)
+  - [`PediatricToothChart.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/PediatricToothChart.tsx)
+  - [`ChildToothChartModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/ChildToothChartModal.tsx)
+  - [`pediatricAutonomyInquisition.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/__tests__/pediatricAutonomyInquisition.test.tsx)
+  - [`PatientRecallsHubModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/recalls/PatientRecallsHubModal.tsx)
+  - [`recallsEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/recalls/recallsEngine.ts)
+  - [`patientRecallsHubAutonomy.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/recalls/__tests__/patientRecallsHubAutonomy.test.tsx)
+  - [`egiszCdaR2Generator.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/cda/egiszCdaR2Generator.ts)
+  - [`cdaXmlValidationEngine.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/cda/cdaXmlValidationEngine.ts)
+  - [`egiszCdaR2ValidationInquisition.test.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/cda/__tests__/egiszCdaR2ValidationInquisition.test.ts)
+  - [`OnboardingTourModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/onboarding/OnboardingTourModal.tsx)
+  - [`workspaceTourEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/onboarding/workspaceTourEngine.ts)
+  - [`onboardingNonBlockingAutonomy.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/onboarding/__tests__/onboardingNonBlockingAutonomy.test.tsx)
+
+### 2.10.416. Волна 320: Закон «No-Nurse-Clicking» (Мандат 8v), Снятие Disabled в Кассе/Ресепшене и Устранение Интеграционных Замков (Фичи #454..#456, Мандаты 8c, 8d, 8e, 8n, 8p, 8v, коммиты `53218dbf7`, `4be1e240a`, `e273527e0` + worktree)
+- **Функционал**:
+  1. *Закон «No-Nurse-Clicking»: фоновое автоматическое списание и журналы СанПиН (Фича #454, Мандаты 8e, 8v)*: реализация Мандата 8v: 100% автоматическое списание технологических карт материалов по Номенклатуре 804н и внесение регламентных записей СанПиН в фоновом режиме при завершении приёма врачом; медсестре и врачу не требуется кликать в бэкофисе или подтверждать списание; фоновый расчет списания в `autoVisitBomEngine.ts` и `default804nBomCatalog.ts`, клиентский движок `autoBomDeductionEngine.ts`, 1-кликовое закрытие смены (автоклав 257/у, ПСО 366/у, азопирам, отходы Б) в `shiftAutoCloserEngine.ts`; 1-кликовый клинический автопилот врача `apply1ClickClinicalAutopilot` в `clinicalSoapPresets.ts`, объединяющий МКБ-10, формулу зубов, SOAP-протокол 043/у, услуги 804н и BOM-списания; подтверждено уничтожение дубликата `clinicalTemplates.ts` в пользу единого SSOT `clinicalSoapPresets.ts`;
+  2. *Неблокирующий Z-отчет 54-ФЗ и напоминания ресепшена (Фича #455, Мандаты 8c, 8d, 8e)*: замена блокирующих атрибутов disabled на кнопках закрытия кассовой смены `ShiftCloseZReportModal.tsx` и массовой рассылки напоминаний `TomorrowRemindersModal.tsx` на доступные `aria-busy` индикаторы; копеечно-точная сверка денежных средств в `CashShiftReconciliationComponents.tsx`; предотвращение зависания интерфейса администратора при медленном ответе фискального регистратора или шлюза связи; 0-барьерный оперативный цикл ресепшена;
+  3. *Устранение интеграционных замков в пользу соло-врача (Фича #456, Мандаты 8e, 8n, 8p)*: полная развязка клинического контура оказания стоматологической помощи от доступности внешних интеграционных шлюзов (1С:Бухгалтерия, ЕГИСЗ РЭМД, облачный ОФД): при сбоях связи пакеты буферизуются в локальной отказоустойчивой очереди IndexedDB/PostgreSQL, врач беспрепятственно продолжает приём и оформление документации; интеграция бланков и прав ЕГИСЗ в `EgiszBlankPermissionsWidget.tsx` и календарей в `YandexCalendarSyncsWidget.tsx`.
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
+- **Задействованные компоненты и модули**:
+  - [`autoVisitBomEngine.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/warehouse/autoVisitBomEngine.ts)
+  - [`default804nBomCatalog.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/warehouse/default804nBomCatalog.ts)
+  - [`autoBomDeductionEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/autoBomDeductionEngine.ts)
+  - [`shiftAutoCloserEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/autoclaveLog/shiftAutoCloserEngine.ts)
+  - [`clinicalSoapPresets.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/clinicalSoapPresets.ts)
+  - [`doctorClinicalAutopilot1Click.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/__tests__/doctorClinicalAutopilot1Click.test.ts)
+  - [`autoBomDeductionAndSoftOverdraft.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/__tests__/autoBomDeductionAndSoftOverdraft.test.ts)
+  - [`wave134AutoVisitBomEngine.test.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/warehouse/__tests__/wave134AutoVisitBomEngine.test.ts)
+  - [`useSanpinScheduleSyncLogic.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/hooks/domains/useSanpinScheduleSyncLogic.ts)
+  - [`SanpinAutoWriteOffService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/sanpin/SanpinAutoWriteOffService.ts)
+  - [`SanpinJournal257View.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanpinJournal257View.tsx)
+  - [`ShiftCloseZReportModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscal/ShiftCloseZReportModal.tsx)
+  - [`CashShiftReconciliationComponents.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscal/CashShiftReconciliationComponents.tsx)
+  - [`TomorrowRemindersModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/TomorrowRemindersModal.tsx)
+  - [`FastCheckoutModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/FastCheckoutModal.tsx)
+  - [`EgiszBlankPermissionsWidget.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/integrations/EgiszBlankPermissionsWidget.tsx)
+  - [`YandexCalendarSyncsWidget.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/integrations/YandexCalendarSyncsWidget.tsx)
+  - [`fiscalReceiptRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/fiscalReceiptRoutes.ts)
+  - [`egiszAvailability.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/egiszAvailability.ts)
+  - [`offlineSyncService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/services/offline/offlineSyncService.ts)
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (Фичи #445..#456, Волны 319–320)
+
+### 2.10.417. Волна 321: Искоренение Блокирующих Алертов, Мягкий Овердрафт Склада и Эргономика Соло-Врача и Администратора (Мандаты 8e, 8n, 8v, коммит `2c932fee7`)
+- **Функционал**:
+  1. *Искоренение блокирующих вызовов `window.alert/confirm/prompt`*: полная замена синхронных блокирующих вызовов браузера во всех клинических, финансовых, складских и административных интерфейсах на неблокирующие инлайн-тосты, шторки и диалоги автономии врача (Мандаты 8e, 8n);
+  2. *Мягкий овердрафт складского учета*: при списании материалов визита или межфилиальных перемещениях при нулевом/отрицательном балансе операция фиксируется в мягкий овердрафт с неблокирующим тост-предупреждением, исключая срыв приёма и выброс необработанных исключений;
+  3. *Неблокирующее подтверждение приёмов и финансовых операций*: регистратура и соло-врач подтверждают визиты, закрывают смены и выписывают счета без интеграционных зависаний; сьют тестов `soloDoctorAdminErgonomicsAudit.test.ts` (100% PASS).
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
+- **Задействованные компоненты и модули**:
+  - [`soloDoctorAdminErgonomicsAudit.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/__tests__/soloDoctorAdminErgonomicsAudit.test.ts)
+  - [`autoBomDeductionEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/autoBomDeductionEngine.ts)
+  - [`QuickBookingDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/QuickBookingDrawer.tsx)
+  - [`AppointmentModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/AppointmentModal.tsx)
+  - [`ShiftCloseZReportModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscal/ShiftCloseZReportModal.tsx)
+  - [`CashRegisterModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashRegisterModal.tsx)
+  - [`VisitSoapEditor.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/VisitSoapEditor.tsx)
+
+### 2.10.418. Волна 322: Дедупликация Тестов, Интерактивный 4-Стадийный Презентер Планов Лечения и Мобильный PWA-Портал Пациента (Мандаты 8c, 8d, 8e, 8n, 8s, коммиты `a5a9fbad4`, `873d95efe` + worktree)
+- **Функционал**:
+  1. *Дедупликация тестов и ликвидация фасадов биллинга (Мандат 8s)*: устранение дублирующих тестов и устаревших фасадов (`PaymentCapture.tsx`, `doctorShiftRoster.test.ts`) на -410 строк кода с сохранением 100% тестового покрытия;
+  2. *Интерактивный 4-стадийный презентер комплексных планов лечения*: реализация `TreatmentPlanPhased4StageView.tsx` с наглядным сравнением пакетов «Эконом / Стандарт / Премиум» (`TreatmentPlan3TierComparison.tsx`), печатью регламентного акта сдачи-приемки этапов (`TreatmentPlanCompletedActPrint.tsx`) с гарантийными сроками по стандарту СТАР и копеечно-точной сметой;
+  3. *Мобильный PWA-портал пациента с 1-тач онлайн-записью*: развернуты `BookingSheet.tsx` и `PatientCabinetModal.tsx` для мгновенного бронирования без парольного ада, векторный стилус/тач холст подписания сметы по 63-ФЗ ПЭП (`PatientBudgetSignView.tsx`), 5-секундная экспресс-запись для соло-врача (`AppointmentModal.tsx`, `QuickBookingDrawer.tsx`).
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
+- **Задействованные компоненты и модули**:
+  - [`TreatmentPlanPhased4StageView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanPhased4StageView.tsx)
+  - [`TreatmentPlan3TierComparison.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlan3TierComparison.tsx)
+  - [`TreatmentPlanCompletedActPrint.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanCompletedActPrint.tsx)
+  - [`BookingSheet.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/BookingSheet.tsx)
+  - [`PatientCabinetModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/PatientCabinetModal.tsx)
+  - [`PatientBudgetSignView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/PatientBudgetSignView.tsx)
+  - [`AppointmentModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/AppointmentModal.tsx)
+  - [`QuickBookingDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/QuickBookingDrawer.tsx)
+  - [`CashRegisterModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashRegisterModal.tsx)
+  - [`FastCheckoutModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/FastCheckoutModal.tsx)
+  - [`treatmentPlanPhased4StageView.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/__tests__/treatmentPlanPhased4StageView.test.tsx)
+  - [`bookingSheetAutonomy.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/__tests__/bookingSheetAutonomy.test.tsx)
+  - `docs/competitive-audit/FEATURES_REGISTRY.md`
+  - `docs/competitive-audit/BACKLOG.md`
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (Фичи #445..#456, Волны 319–322)
 

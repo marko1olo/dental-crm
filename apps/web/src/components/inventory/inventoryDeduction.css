@@ -829,14 +829,15 @@
 }
 
 .inventory-cancel-btn {
-	min-height: 48px;
-	min-width: 100px;
-	padding: 0 22px;
-	border-radius: 12px;
+	min-height: 34px;
+	height: 34px;
+	min-width: 90px;
+	padding: 0 16px;
+	border-radius: 8px;
 	border: 1px solid var(--line);
 	background: var(--paper);
 	color: var(--ink);
-	font-size: 14px;
+	font-size: 13px;
 	font-weight: 700;
 	white-space: nowrap;
 	text-align: center;
@@ -849,19 +850,20 @@
 }
 
 .inventory-confirm-deduct-btn {
-	min-height: 48px;
-	padding: 0 24px;
-	border-radius: 12px;
+	min-height: 36px;
+	height: 36px;
+	padding: 0 18px;
+	border-radius: 8px;
 	border: none;
 	background: var(--teal);
 	color: #ffffff;
-	font-size: 15px;
+	font-size: 13px;
 	font-weight: 700;
 	display: inline-flex;
 	align-items: center;
-	gap: 10px;
+	gap: 8px;
 	cursor: pointer;
-	box-shadow: 0 4px 14px var(--teal-glow);
+	box-shadow: 0 2px 8px var(--teal-glow);
 	transition: background 0.15s ease, transform 0.1s ease;
 }
 
@@ -889,17 +891,18 @@
 
 /* 1-Click Purchase Order Button & Guard Toggle */
 .inventory-purchase-order-btn {
-	min-height: 44px;
-	padding: 0 16px;
-	border-radius: 10px;
+	min-height: 34px;
+	height: 34px;
+	padding: 0 14px;
+	border-radius: 8px;
 	border: 1px solid var(--rust);
 	background: var(--rust-soft);
 	color: var(--rust);
-	font-size: 13px;
+	font-size: 12px;
 	font-weight: 700;
 	display: inline-flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 	cursor: pointer;
 	transition: background 0.15s ease, transform 0.1s ease;
 }

@@ -105,9 +105,10 @@ export const EGISZ_STANDARD_OIDS = {
 
 export interface CdaExportData {
 	docTypeCode: EgiszSemdDocTypeCode;
-	visitId: string;
+	visitId?: string | undefined;
+	documentId?: string | undefined;
 	patientId: string;
-	patientFullName: string;
+	patientFullName?: string | undefined;
 	patientSnils?: string | undefined;
 	patientBirthDate?: string | undefined;
 	patientGender?: "male" | "female" | "other" | string | undefined;
@@ -186,7 +187,7 @@ export function buildCdaXml(data: CdaExportData): string {
 	const genderCode = data.patientGender === "male" ? "1" : data.patientGender === "female" ? "2" : "0";
 	const genderLabel = genderCode === "1" ? "Мужской" : genderCode === "2" ? "Женский" : "Не указан";
 
-	const docId = data.visitId ? `${data.visitId}-v${data.documentVersion || 1}` : `DOC-${Date.now()}`;
+	const docId = data.documentId || (data.visitId ? `${data.visitId}-v${data.documentVersion || 1}` : `DOC-${Date.now()}`);
 	const docRoot = data.clinicOid || EGISZ_STANDARD_OIDS.FRMO_MO_ROOT;
 
 	const patientParts = (data.patientFullName || "Пациент").trim().split(/\s+/);

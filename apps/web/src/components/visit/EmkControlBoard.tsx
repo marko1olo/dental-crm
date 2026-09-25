@@ -441,7 +441,7 @@ function RejectionModal({
 							borderRadius: "6px",
 							border: "none",
 							background: "var(--bad, #ef4444)",
-							color: "#ffffff",
+							color: "var(--paper-strong, #ffffff)",
 							cursor: isSubmitting ? "not-allowed" : "pointer",
 							display: "flex",
 							alignItems: "center",
@@ -727,7 +727,7 @@ export function EmkControlBoard({ dashboard }: EmkControlBoardProps) {
 						disabled={batchSubmitting}
 						style={{
 							background: "var(--teal, #0d9488)",
-							color: "#ffffff",
+							color: "var(--paper-strong, #ffffff)",
 							border: "none",
 							padding: "10px 18px",
 							borderRadius: "8px",
@@ -904,7 +904,7 @@ export function EmkControlBoard({ dashboard }: EmkControlBoardProps) {
 								selectedTab === "pending"
 									? "var(--teal, #0d9488)"
 									: "var(--paper-strong, #f1f5f9)",
-							color: selectedTab === "pending" ? "#ffffff" : "var(--ink, #0f172a)",
+							color: selectedTab === "pending" ? "var(--paper-strong, #ffffff)" : "var(--ink, #0f172a)",
 						}}
 					>
 						На проверке ({metrics.pendingReviewCount})
@@ -926,7 +926,7 @@ export function EmkControlBoard({ dashboard }: EmkControlBoardProps) {
 									: "var(--paper-strong, #f1f5f9)",
 							color:
 								selectedTab === "needs_correction"
-									? "#ffffff"
+									? "var(--paper-strong, #ffffff)"
 									: "var(--ink, #0f172a)",
 						}}
 					>
@@ -948,7 +948,7 @@ export function EmkControlBoard({ dashboard }: EmkControlBoardProps) {
 									? "var(--good, #10b981)"
 									: "var(--paper-strong, #f1f5f9)",
 							color:
-								selectedTab === "approved" ? "#ffffff" : "var(--ink, #0f172a)",
+								selectedTab === "approved" ? "var(--paper-strong, #ffffff)" : "var(--ink, #0f172a)",
 						}}
 					>
 						Утверждено ({metrics.approvedCount})
@@ -968,7 +968,7 @@ export function EmkControlBoard({ dashboard }: EmkControlBoardProps) {
 								selectedTab === "all"
 									? "var(--ink, #0f172a)"
 									: "var(--paper-strong, #f1f5f9)",
-							color: selectedTab === "all" ? "#ffffff" : "var(--ink, #0f172a)",
+							color: selectedTab === "all" ? "var(--paper-strong, #ffffff)" : "var(--ink, #0f172a)",
 						}}
 					>
 						Все карты ({metrics.totalVisitsCount})
@@ -1213,7 +1213,7 @@ export function EmkControlBoard({ dashboard }: EmkControlBoardProps) {
 												disabled={submittingId === visit.id}
 												style={{
 													background: "var(--teal, #0d9488)",
-													color: "#ffffff",
+													color: "var(--paper-strong, #ffffff)",
 													border: "none",
 													padding: "8px 14px",
 													borderRadius: "6px",

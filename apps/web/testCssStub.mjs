@@ -15,6 +15,8 @@ import { registerHooks } from "node:module";
 import "tsx";
 import React from "react";
 
+process.env.NODE_ENV = process.env.NODE_ENV || "test";
+
 globalThis.React = React;
 
 registerHooks({

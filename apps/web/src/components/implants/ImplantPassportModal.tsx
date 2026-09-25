@@ -12,6 +12,7 @@ import {
 	Zap,
 	Layers,
 	TrendingUp,
+	Scan,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import {
@@ -20,12 +21,55 @@ import {
 	STANDARD_LENGTHS,
 	QUICK_TORQUE_OPTIONS,
 	MISCH_DENSITY_NOTES,
+	getBoneDensityByToothFdi,
+	parseImplantBarcode,
 	type FastImplantPassportData,
 	type MischDensity,
 	type ImplantCapType,
 } from "./implantQuickPresets";
 import { ImplantPassportCard } from "./ImplantPassportCard";
 import "./implants.css";
+
+const FREQUENT_IMPLANT_SITES: readonly number[] = [16, 14, 11, 21, 24, 26, 36, 46];
+
+const PERMANENT_TEETH_OPTIONS: readonly { readonly fdi: number; readonly label: string }[] = [
+	// В/ч справа (Q1)
+	{ fdi: 18, label: "18 — Третий моляр в/ч спр." },
+	{ fdi: 17, label: "17 — Второй моляр в/ч спр." },
+	{ fdi: 16, label: "16 — Первый моляр в/ч спр." },
+	{ fdi: 15, label: "15 — Второй премоляр в/ч спр." },
+	{ fdi: 14, label: "14 — Первый премоляр в/ч спр." },
+	{ fdi: 13, label: "13 — Клык в/ч спр." },
+	{ fdi: 12, label: "12 — Боковой резец в/ч спр." },
+	{ fdi: 11, label: "11 — Центральный резец в/ч спр." },
+	// В/ч слева (Q2)
+	{ fdi: 21, label: "21 — Центральный резец в/ч сл." },
+	{ fdi: 22, label: "22 — Боковой резец в/ч сл." },
+	{ fdi: 23, label: "23 — Клык в/ч сл." },
+	{ fdi: 24, label: "24 — Первый премоляр в/ч сл." },
+	{ fdi: 25, label: "25 — Второй премоляр в/ч сл." },
+	{ fdi: 26, label: "26 — Первый моляр в/ч сл." },
+	{ fdi: 27, label: "27 — Второй моляр в/ч сл." },
+	{ fdi: 28, label: "28 — Третий моляр в/ч сл." },
+	// Н/ч слева (Q3)
+	{ fdi: 38, label: "38 — Третий моляр н/ч сл." },
+	{ fdi: 37, label: "37 — Второй моляр н/ч сл." },
+	{ fdi: 36, label: "36 — Первый моляр н/ч сл." },
+	{ fdi: 35, label: "35 — Второй премоляр н/ч сл." },
+	{ fdi: 34, label: "34 — Первый премоляр н/ч сл." },
+	{ fdi: 33, label: "33 — Клык н/ч сл." },
+	{ fdi: 32, label: "32 — Боковой резец н/ч сл." },
+	{ fdi: 31, label: "31 — Центральный резец н/ч сл." },
+	// Н/ч справа (Q4)
+	{ fdi: 41, label: "41 — Центральный резец н/ч спр." },
+	{ fdi: 42, label: "42 — Боковой резец н/ч спр." },
+	{ fdi: 43, label: "43 — Клык н/ч спр." },
+	{ fdi: 44, label: "44 — Первый премоляр н/ч спр." },
+	{ fdi: 45, label: "45 — Второй премоляр н/ч спр." },
+	{ fdi: 46, label: "46 — Первый моляр н/ч спр." },
+	{ fdi: 47, label: "47 — Второй моляр н/ч спр." },
+	{ fdi: 48, label: "48 — Третий моляр н/ч спр." },
+];
 
 export interface ImplantPassportModalProps {
 	readonly isOpen: boolean;
@@ -35,6 +79,7 @@ export interface ImplantPassportModalProps {
 	readonly doctorName?: string;
 	readonly doctorId?: string;
 	readonly initialTooth?: number;
+	readonly initialTab?: "protocol" | "isq" | "diary" | "passport";
 	readonly inventoryOverdraftActive?: boolean;
 	readonly onSavePassport?: (data: FastImplantPassportData) => void;
 	readonly onInsertIntoDiary?: (diaryText: string) => void;
@@ -49,6 +94,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 	doctorName = "Хирург-имплантолог",
 	doctorId = "DOC-01",
 	initialTooth = 46,
+	initialTab = "protocol",
 	inventoryOverdraftActive = false,
 	onSavePassport,
 	onInsertIntoDiary,
@@ -59,14 +105,16 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 	const [diameterMm, setDiameterMm] = useState<number>(4.0);
 	const [lengthMm, setLengthMm] = useState<number>(10.0);
 	const [torqueNcm, setTorqueNcm] = useState<number>(35); // 35 Н·см по умолчанию
-	const [boneDensity, setBoneDensity] = useState<MischDensity>("D2");
+	const [boneDensity, setBoneDensity] = useState<MischDensity>(() => getBoneDensityByToothFdi(initialTooth));
+	const [isqValue, setIsqValue] = useState<number>(72);
 	const [capType, setCapType] = useState<ImplantCapType>("fdm");
 	const [catalogArticle, setCatalogArticle] = useState<string>("TS3S4010S");
 	const [lotNumber, setLotNumber] = useState<string>("LOT-2026-OSS-8842");
 	const [serialNumber, setSerialNumber] = useState<string>("SN-991428");
+	const [scannedBarcode, setScannedBarcode] = useState<string>("");
 	const [isOverdraftDismissed, setIsOverdraftDismissed] = useState<boolean>(false);
 	const isOverdraftActive = Boolean(inventoryOverdraftActive);
-	const [activeTab, setActiveTab] = useState<"protocol" | "isq" | "diary" | "passport">("protocol");
+	const [activeTab, setActiveTab] = useState<"protocol" | "isq" | "diary" | "passport">(initialTab);
 	const [isGbrPerformed, setIsGbrPerformed] = useState<boolean>(false);
 	const [isIsqEnabled, setIsIsqEnabled] = useState<boolean>(false);
 	const titleId = useId();
@@ -87,7 +135,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 		lotNumber: lotNumber.trim() || `LOT-${selectedSystem.brand.slice(0, 3)}-AUTO`,
 		serialNumber: serialNumber.trim() || `SN-${Date.now().toString().slice(-4)}`,
 		boneDensity,
-		isqDay0: 72,
+		isqDay0: isIsqEnabled ? isqValue : 72,
 		capType,
 		patientName,
 		patientId,
@@ -95,6 +143,11 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 		doctorId,
 		dateIso: new Date().toISOString(),
 		isWarehouseOverdraft: isOverdraftActive,
+	};
+
+	const handleToothSelect = (tooth: number) => {
+		setToothFdi(tooth);
+		setBoneDensity(getBoneDensityByToothFdi(tooth));
 	};
 
 	const handleBrandSelect = (brand: string) => {
@@ -111,8 +164,41 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 						? "FX4010"
 						: brand === "Straumann"
 							? "021.2310"
-							: `${brand.slice(0, 3).toUpperCase()}-4010`,
+							: brand === "Ankylos"
+								? "A-B110-CX"
+								: brand === "Astra Tech"
+									? "EV-42110"
+									: brand === "Nobel Biocare"
+										? "NP-35115"
+										: `${brand.slice(0, 3).toUpperCase()}-4010`,
 			);
+		}
+	};
+
+	const handleApplyBarcode = (customBarcode?: string) => {
+		const raw = (customBarcode !== undefined ? customBarcode : scannedBarcode).trim();
+		if (!raw) return;
+		const parsed = parseImplantBarcode(raw);
+		let updatedCount = 0;
+		if (parsed.article) {
+			setCatalogArticle(parsed.article);
+			updatedCount++;
+		}
+		if (parsed.lot) {
+			setLotNumber(parsed.lot);
+			updatedCount++;
+		}
+		if (parsed.serial) {
+			setSerialNumber(parsed.serial);
+			updatedCount++;
+		}
+		if (updatedCount > 0) {
+			showToast(
+				`Штрихкод упаковки распознан: ${parsed.article ? `REF ${parsed.article} ` : ""}${parsed.lot ? `LOT ${parsed.lot}` : ""}`,
+				"success",
+			);
+		} else {
+			showToast("Штрихкод не содержит стандартных тегов GS1 (01/10/21)", "info");
 		}
 	};
 
@@ -122,7 +208,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 			: "Костная пластика не проводилась (стандартный протокол без аугментации).";
 
 		const stabilityText = isIsqEnabled
-			? `RFA магнитно-резонансная стабилометрия: 72 ISQ. Первичный торк: ${assembledData.torqueNcm} Н·см.`
+			? `RFA магнитно-резонансная стабилометрия: ${isqValue} ISQ. Первичный торк: ${assembledData.torqueNcm} Н·см.`
 			: `Механическая первичная стабильность: ${assembledData.torqueNcm} Н·см.`;
 
 		const capText =
@@ -133,7 +219,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 		return (
 			`ПАСПОРТ ИМПЛАНТАТА (Зуб FDI #${toothFdi}):\n` +
 			`Установлен имплантат: ${assembledData.brand} ${assembledData.model} Ø ${assembledData.diameterMm} x ${assembledData.lengthMm} мм.\n` +
-			`Торк первичной стабильности: ${assembledData.torqueNcm} Н·см. Плотность кости: ${assembledData.boneDensity}.\n` +
+			`Торк первичной стабильности: ${assembledData.torqueNcm} Н·см. Плотность кости по Misch: ${assembledData.boneDensity}.\n` +
 			`${stabilityText}\n` +
 			`${capText}\n` +
 			`Аугментация: ${gbrText}\n` +
@@ -157,7 +243,15 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 					detail: {
 						soap: {
 							treatmentDescription: diaryEntry,
+							objectiveStatus: `Зуб FDI #${toothFdi}: дефект зубного ряда (К08.1). Альвеолярный гребень достаточного объема, плотность кости по Misch: ${boneDensity}.`,
+							assessment: `Частичное отсутствие зубов (К08.1). Состояние после дентальной имплантации зуба #${toothFdi}.`,
+							plan: `Динамическое наблюдение остеоинтеграции #${toothFdi}. Снятие швов через 7-10 дней. Контрольная радиовизиография.`,
+							diagnosisIcd10: "K08.1",
 						},
+						finding: {
+							toothNumber: toothFdi,
+						},
+						immediate: true,
 						mode: "smart_append",
 					},
 				}),
@@ -277,7 +371,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 						}`}
 						data-testid="implant-tab-isq"
 					>
-						2. Стабильность ({torqueNcm} Н·см{isIsqEnabled ? " · 72 ISQ" : " · Ключ"})
+						2. Стабильность ({torqueNcm} Н·см{isIsqEnabled ? ` · ${isqValue} ISQ` : " · Ключ"})
 					</button>
 					<button
 						type="button"
@@ -346,7 +440,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 										</div>
 										<div className="text-xs text-[var(--muted)] truncate">
 											Первичная стабильность: {torqueNcm} Н·см · {torqueNcm >= 35 ? "Высокая (оптимум 35 Н·см)" : "Стандартная"}
-											{isIsqEnabled ? " · ISQ День 0: 72 (Остеоинтеграция стабильна)" : ""}
+											{isIsqEnabled ? ` · ISQ День 0: ${isqValue} (${isqValue >= 70 ? "Высокая" : isqValue >= 60 ? "Стандартная" : "Низкая"})` : ""}
 										</div>
 									</div>
 								</div>
@@ -356,8 +450,127 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 									</div>
 									{isIsqEnabled && (
 										<div className="text-xs font-bold text-[var(--muted)]">
-											72 ISQ
+											{isqValue} ISQ
 										</div>
+									)}
+								</div>
+							</div>
+
+							{/* Interactive ISQ Controls (Osstell / Penguin RFA) */}
+							<div className="p-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-3">
+								<div className="flex items-center justify-between">
+									<span className="text-xs font-black uppercase text-[var(--muted)] tracking-wider flex items-center gap-1.5">
+										<TrendingUp size={15} className="text-[var(--teal,#0d9488)]" />
+										<span>Показатель стабилометрии ISQ День 0 (Osstell / Penguin RFA):</span>
+									</span>
+									<span className="text-sm font-mono font-black text-[var(--teal,#0d9488)]">
+										{isqValue} ISQ
+									</span>
+								</div>
+
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+									<div className="flex flex-col gap-1">
+										<label htmlFor="input-isq-day0" className="text-xs font-bold text-[var(--ink)]">
+											Числовое значение ISQ (шкала 35–85):
+										</label>
+										<input
+											id="input-isq-day0"
+											type="number"
+											min="35"
+											max="85"
+											value={isqValue}
+											onChange={(e) => {
+												const val = Number(e.target.value);
+												if (!isNaN(val)) setIsqValue(val);
+											}}
+											className="min-h-[48px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-mono font-bold text-[var(--ink)]"
+											data-testid="input-isq-day0"
+											aria-label="Числовое значение ISQ День 0"
+										/>
+									</div>
+
+									<div className="flex flex-col gap-1">
+										<label htmlFor="slider-isq-day0" className="text-xs font-bold text-[var(--ink)]">
+											Ползунок стабилометрии:
+										</label>
+										<input
+											id="slider-isq-day0"
+											type="range"
+											min="35"
+											max="85"
+											step="1"
+											value={isqValue}
+											onChange={(e) => setIsqValue(Number(e.target.value))}
+											className="w-full h-3 bg-[var(--line)] rounded-lg appearance-none cursor-pointer accent-[var(--teal,#0d9488)] mt-2"
+											data-testid="slider-isq-day0"
+											aria-label="Ползунок шкалы ISQ"
+										/>
+									</div>
+								</div>
+
+								{/* Quick ISQ Presets */}
+								<div className="flex flex-wrap gap-2 pt-1">
+									<button
+										type="button"
+										onClick={() => {
+											setIsqValue(55);
+											setIsIsqEnabled(true);
+										}}
+										className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] cursor-pointer touch-manipulation"
+										data-testid="btn-isq-preset-55"
+									>
+										ISQ 55 (&lt; 60: Низкая)
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											setIsqValue(68);
+											setIsIsqEnabled(true);
+										}}
+										className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] cursor-pointer touch-manipulation"
+										data-testid="btn-isq-preset-68"
+									>
+										ISQ 68 (60–70: Стандарт)
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											setIsqValue(75);
+											setIsIsqEnabled(true);
+										}}
+										className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] cursor-pointer touch-manipulation"
+										data-testid="btn-isq-preset-75"
+									>
+										ISQ 75 (&gt; 70: Высокая)
+									</button>
+								</div>
+
+								{/* Clinical Interpretation Badge */}
+								<div
+									className={`p-3 rounded-xl border text-xs font-medium leading-relaxed ${
+										isqValue < 60
+											? "bg-[var(--amber-surface,rgba(245,158,11,0.1))] border-[var(--amber,#f59e0b)] text-[var(--ink)]"
+											: isqValue < 70
+												? "bg-[var(--teal-surface,rgba(13,148,136,0.1))] border-[var(--teal,#0d9488)] text-[var(--ink)]"
+												: "bg-[var(--teal-surface,rgba(13,148,136,0.15))] border-[var(--teal,#0d9488)] text-[var(--ink)] font-bold"
+									}`}
+									data-testid="isq-interpretation-badge"
+								>
+									{isqValue < 60 ? (
+										<span>
+											<strong>Низкая первичная стабильность (ISQ &lt; 60): </strong>
+											Показан двухэтапный протокол с винтом-заглушкой и ушиванием раны наглухо. Ранняя нагрузка противопоказана. Срок остеоинтеграции 12–16 недель.
+										</span>
+									) : isqValue < 70 ? (
+										<span>
+											<strong>Умеренная/стандартная стабильность (ISQ 60–70): </strong>
+											Стандартный протокол остеоинтеграции. Допустима установка ФДМ. Срок остеоинтеграции 8–12 недель.
+										</span>
+									) : (
+										<span>
+											<strong>Высокая первичная стабильность (ISQ &gt; 70): </strong>
+											Оптимальная первичная фиксация. Клинически обоснована установка ФДМ или ранняя / немедленная функциональная нагрузка (при соблюдении окклюзионных условий).
+										</span>
 									)}
 								</div>
 							</div>
@@ -366,7 +579,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 								<strong className="text-[var(--ink)] block mb-1">
 									Клинический регламент и протокол (Автономия врача):
 								</strong>
-								CRM не симулирует микро-замеры 16 точек анизотропии в перчатках у кресла. Зафиксирован надежный первичный торк {torqueNcm} Н·см, ISQ {assembledData.isqDay0 ?? 72} и плотность кости {boneDensity}. Данные автоматически экспортируются в карту 043/у.
+								CRM не симулирует микро-замеры 16 точек анизотропии в перчатках у кресла. Зафиксирован надежный первичный торк {torqueNcm} Н·см, ISQ {isqValue} и плотность кости {boneDensity}. Данные автоматически экспортируются в карту 043/у.
 							</div>
 						</div>
 					) : activeTab === "diary" ? (
@@ -399,6 +612,119 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 						</div>
 					) : (
 						<div className="space-y-4" data-testid="tab-content-protocol">
+							{/* Выбор зуба FDI и плотность кости (Анатомическая локализация) */}
+							<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2">
+								<div className="flex items-center justify-between flex-wrap gap-2">
+									<div className="text-xs font-black uppercase text-[var(--muted)] tracking-wider">
+										Локализация имплантата (Зубная формула FDI 11–48):
+									</div>
+									<div className="text-xs font-mono font-bold text-[var(--teal,#0d9488)]">
+										Плотность кости: {boneDensity} ({MISCH_DENSITY_NOTES[boneDensity].title})
+									</div>
+								</div>
+
+								{/* Quick FDI sites */}
+								<div className="flex items-center gap-1.5 flex-wrap" role="toolbar" aria-label="Быстрый выбор причинного зуба">
+									<span className="text-[11px] font-bold text-[var(--muted)] mr-1">Частые:</span>
+									{FREQUENT_IMPLANT_SITES.map((site) => {
+										const isSel = toothFdi === site;
+										return (
+											<button
+												key={site}
+												type="button"
+												onClick={() => handleToothSelect(site)}
+												className={`h-8 px-2.5 rounded-lg text-xs font-mono font-black border cursor-pointer transition-all ${
+													isSel
+														? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal,#0d9488)] shadow-xs"
+														: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+												}`}
+												data-testid={`btn-quick-tooth-${site}`}
+												title={`Выбрать зуб #${site}`}
+											>
+												#{site}
+											</button>
+										);
+									})}
+								</div>
+
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+									<div className="flex flex-col gap-1">
+										<label htmlFor="passport-tooth-fdi" className="text-xs font-bold text-[var(--ink)]">
+											Полный список зубов постоянного прикуса:
+										</label>
+										<select
+											id="passport-tooth-fdi"
+											value={toothFdi}
+											onChange={(e) => handleToothSelect(Number(e.target.value))}
+											className="min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)]"
+											data-testid="select-tooth-fdi"
+										>
+											{PERMANENT_TEETH_OPTIONS.map((t) => (
+												<option key={t.fdi} value={t.fdi}>
+													{t.label}
+												</option>
+											))}
+										</select>
+									</div>
+
+									<div className="flex flex-col gap-1">
+										<label htmlFor="input-tooth-fdi" className="text-xs font-bold text-[var(--ink)]">
+											Номер зуба FDI (число):
+										</label>
+										<input
+											id="input-tooth-fdi"
+											type="number"
+											min="11"
+											max="48"
+											value={toothFdi}
+											onChange={(e) => {
+												const val = Number(e.target.value);
+												if (!isNaN(val) && val >= 11 && val <= 48) {
+													handleToothSelect(val);
+												}
+											}}
+											className="min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-mono font-bold text-[var(--ink)]"
+											data-testid="input-tooth-fdi"
+											aria-label="Номер зуба FDI"
+										/>
+									</div>
+								</div>
+							</div>
+
+							{/* 2D Сканер блистера упаковки (GS1 DataMatrix / Штрихкод) */}
+							<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2">
+								<div className="text-xs font-black uppercase text-[var(--muted)] tracking-wider flex items-center gap-1.5">
+									<Scan size={15} className="text-[var(--teal,#0d9488)]" />
+									<span>Сканирование блистера упаковки (GS1 DataMatrix / 2D сканер):</span>
+								</div>
+								<div className="flex items-center gap-2">
+									<input
+										id="passport-barcode-scan"
+										type="text"
+										value={scannedBarcode}
+										onChange={(e) => {
+											setScannedBarcode(e.target.value);
+											handleApplyBarcode(e.target.value);
+										}}
+										onKeyDown={(e) => {
+											if (e.key === "Enter") handleApplyBarcode();
+										}}
+										placeholder="(01)GTIN(10)LOT(21)SN или сканируйте 2D сканером..."
+										className="flex-1 min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-mono text-[var(--ink)]"
+										data-testid="input-barcode-scanner"
+									/>
+									<button
+										type="button"
+										onClick={() => handleApplyBarcode()}
+										className="min-h-[44px] px-4 rounded-xl text-xs font-bold bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] hover:filter hover:brightness-105 cursor-pointer touch-manipulation shrink-0"
+										data-testid="btn-scan-barcode"
+										title="Распознать артикул, серию и лот из штрихкода"
+									>
+										Применить
+									</button>
+								</div>
+							</div>
+
 							{/* 1-Click Clinical Presets (Standard vs GBR) */}
 							<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2">
 								<div className="text-xs font-black uppercase text-[var(--muted)] tracking-wider">

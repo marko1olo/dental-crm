@@ -181,4 +181,55 @@ describe("patientOfflineStorage — Subway Offline Storage & Booking Queue", () 
 		assert.equal(resultToast?.text, "Заявка синхронизирована");
 		assert.equal(resultToast?.type, "success");
 	});
+
+	it("5. Dispatches canonical booking DTO to /api/public/booking/:orgId/book without syncFn", async () => {
+		const capturedCalls: { url: string; method: string; body: any }[] = [];
+		const originalFetch = globalThis.fetch;
+		globalThis.fetch = (async (url: any, opts: any) => {
+			capturedCalls.push({
+				url: String(url),
+				method: opts?.method,
+				body: opts?.body ? JSON.parse(opts.body) : null,
+			});
+			return { ok: true, status: 200 } as any;
+		}) as any;
+
+		try {
+			const bookingReq: OfflinePatientBookingRequest = {
+				id: "offline-book-fetch-01",
+				patientFullName: "Соколова Анна",
+				patientPhone: "+7 (999) 111-22-33",
+				branchId: "org-uuid-12345",
+				doctorId: "doc-uuid-67890",
+				doctorName: "Д-р Сидоров В. И.",
+				serviceId: "srv-hygiene",
+				serviceTitle: "Профгигиена",
+				dateIso: "2026-10-01",
+				slotId: "slot-1500",
+				timeRu: "15:00",
+				patientComment: "Первичный осмотр",
+				consentPersonalData152Fz: true,
+				status: "queued",
+				createdAtIso: new Date().toISOString(),
+				retryCount: 0,
+			};
+
+			await enqueueOfflinePatientBooking(bookingReq);
+			const result = await flushOfflinePatientBookings();
+
+			assert.equal(result.successCount, 1);
+			assert.equal(result.failedCount, 0);
+			assert.equal(capturedCalls.length, 1);
+			assert.equal(capturedCalls[0]!.url, "/api/public/booking/org-uuid-12345/book");
+			assert.equal(capturedCalls[0]!.method, "POST");
+			assert.equal(capturedCalls[0]!.body.doctorId, "doc-uuid-67890");
+			assert.equal(capturedCalls[0]!.body.patientName, "Соколова Анна");
+			assert.equal(capturedCalls[0]!.body.patientPhone, "+7 (999) 111-22-33");
+			assert.equal(capturedCalls[0]!.body.comment, "Первичный осмотр");
+			assert.ok(capturedCalls[0]!.body.startsAt.startsWith("2026-10-01T"));
+			assert.ok(capturedCalls[0]!.body.endsAt.startsWith("2026-10-01T"));
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
+	});
 });

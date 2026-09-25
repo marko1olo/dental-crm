@@ -1,5 +1,5 @@
 import React from "react";
-import { ShieldCheck, Copy, Printer, AlertTriangle, QrCode } from "lucide-react";
+import { ShieldCheck, Copy, Printer, AlertTriangle, QrCode, Award, CheckCircle } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import type { FastImplantPassportData } from "./implantQuickPresets";
 import "./implants.css";
@@ -11,25 +11,54 @@ export interface ImplantPassportCardProps {
 	readonly onPrint?: () => void;
 }
 
+function getToothAnatomicalDescription(toothFdi: number): string {
+	if (!toothFdi || toothFdi < 11 || toothFdi > 48) return "Область дентальной имплантации";
+	const quadrant = Math.floor(toothFdi / 10);
+	const num = toothFdi % 10;
+
+	const names: Record<number, string> = {
+		1: "Центральный резец",
+		2: "Боковой резец",
+		3: "Клык",
+		4: "Первый премоляр",
+		5: "Второй премоляр",
+		6: "Первый моляр",
+		7: "Второй моляр",
+		8: "Третий моляр",
+	};
+
+	const jaw = quadrant === 1 || quadrant === 2 ? "верхней челюсти" : "нижней челюсти";
+	const side = quadrant === 1 || quadrant === 4 ? "справа" : "слева";
+	const toothName = names[num] || `Зуб #${num}`;
+
+	return `${toothName} ${jaw} ${side}`;
+}
+
 export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 	data,
 	className = "",
 	onCopySummary,
 	onPrint,
 }) => {
-	const formattedDate = data.dateIso ? new Date(data.dateIso).toLocaleDateString("ru-RU") : "«____» ____________ 20___ г.";
+	const formattedDate = data.dateIso
+		? new Date(data.dateIso).toLocaleDateString("ru-RU")
+		: "«____» ____________ 20___ г.";
 	const displayPatientName = data.patientName?.trim() || "____________________________________";
 	const displayLot = data.lotNumber?.trim() || "____________________";
 	const displaySn = data.serialNumber?.trim() || "____________________";
 	const displayDoctor = data.doctorName?.trim() || "________________________";
+	const toothAnatomy = getToothAnatomicalDescription(data.toothFdi);
 	const capTypeRu =
 		data.capType === "plug"
 			? "Винт-заглушка (двухэтапный протокол с ушиванием наглухо)"
 			: "ФДМ (формирователь десны, одноэтапный протокол)";
 
+	const barcodeSummary = `(01)${data.catalogArticle || "REF"}(10)${displayLot}(21)${displaySn}`;
+
 	const handleCopy = () => {
 		const text =
 			`ПАСПОРТ ИМПЛАНТАТА (FDI #${data.toothFdi || "___"})\n` +
+			`Анатомическая позиция: ${toothAnatomy}\n` +
 			`Пациент: ${displayPatientName} (${data.patientId || "______"})\n` +
 			`Система: ${data.brand} ${data.model}\n` +
 			`Размер: Ø ${data.diameterMm} x ${data.lengthMm} мм\n` +
@@ -37,7 +66,7 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 			`ISQ: ${data.isqDay0 ?? 72} (RFA магнитно-резонансный анализ)\n` +
 			`Формирователь / Заглушка: ${capTypeRu}\n` +
 			`Плотность кости: ${data.boneDensity}\n` +
-			`LOT: ${displayLot} | SN: ${displaySn}\n` +
+			`REF: ${data.catalogArticle || "REF-BLANK"} | LOT: ${displayLot} | SN: ${displaySn}\n` +
 			`Дата операции: ${formattedDate} · Врач: ${displayDoctor}`;
 
 		navigator.clipboard?.writeText(text);
@@ -63,17 +92,18 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 			className={`implant-passport-display-card space-y-4 ${className}`.trim()}
 			data-testid="implant-passport-card"
 		>
-			<div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
-				<div className="flex items-center gap-2 min-w-0">
-					<div className="w-8 h-8 rounded-lg bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0">
-						<ShieldCheck size={20} />
+			{/* Шапка паспорта имплантата / гарантийного сертификата */}
+			<div className="flex items-center justify-between border-b border-[var(--line)] pb-3 flex-wrap gap-2">
+				<div className="flex items-center gap-2.5 min-w-0">
+					<div className="w-9 h-9 rounded-xl bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0 border border-[var(--teal-soft,rgba(13,148,136,0.3))]">
+						<ShieldCheck size={22} />
 					</div>
 					<div className="min-w-0">
-						<h4 className="text-sm font-black text-[var(--ink)] truncate">
-							Паспорт имплантата DENTE
+						<h4 className="text-sm font-black text-[var(--ink)] tracking-tight truncate">
+							Паспорт имплантата DENTE · Гарантийный сертификат
 						</h4>
 						<span className="text-[11px] font-mono text-[var(--muted)] truncate block">
-							{data.passportId || "IMP-PASSPORT-BLANK"}
+							{data.passportId || "IMP-PASSPORT-BLANK"} · Форма 043/у Минздрав РФ
 						</span>
 					</div>
 				</div>
@@ -104,15 +134,38 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 				</div>
 			</div>
 
+			{/* Анатомическая позиция зуба */}
+			<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs flex items-center justify-between flex-wrap gap-2">
+				<div className="flex items-center gap-2 min-w-0">
+					<Award size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
+					<span className="text-[var(--muted)]">Анатомическая локализация:</span>
+					<strong className="text-[var(--ink)] font-extrabold truncate" title={toothAnatomy}>
+						{`${data.toothFdi ? `${data.toothFdi} — ` : ""}${toothAnatomy}`} (FDI #{data.toothFdi || "__"})
+					</strong>
+				</div>
+				<span className="text-[11px] font-mono text-[var(--muted)] shrink-0">
+					Постоянный прикус
+				</span>
+			</div>
+
+			{/* Основные клинические данные */}
 			<div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
 				<div className="min-w-0">
 					<span className="text-[11px] text-[var(--muted)] block">Пациент:</span>
-					<strong className="font-extrabold text-[var(--ink)] block truncate" title={displayPatientName}>{displayPatientName}</strong>
+					<strong
+						className="font-extrabold text-[var(--ink)] block truncate"
+						title={displayPatientName}
+					>
+						{displayPatientName}
+					</strong>
 				</div>
 
 				<div className="min-w-0">
 					<span className="text-[11px] text-[var(--muted)] block">Имплантационная система:</span>
-					<strong className="font-extrabold text-[var(--teal,#0d9488)] block truncate" title={`${data.brand} ${data.model}`}>
+					<strong
+						className="font-extrabold text-[var(--teal,#0d9488)] block truncate"
+						title={`${data.brand} ${data.model}`}
+					>
 						{data.brand} {data.model}
 					</strong>
 				</div>
@@ -133,25 +186,38 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 				</div>
 			</div>
 
+			{/* Технические идентификаторы и протокол ушивания */}
 			<div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs pt-2 border-t border-[var(--line)]">
 				<div className="min-w-0">
 					<span className="text-[11px] text-[var(--muted)] block">REF / Артикул:</span>
-					<span className="font-mono font-bold text-[var(--ink)] block truncate" data-testid="passport-catalog-article">{data.catalogArticle || "TS3S4010S"}</span>
+					<span
+						className="font-mono font-bold text-[var(--ink)] block truncate"
+						data-testid="passport-catalog-article"
+					>
+						{data.catalogArticle || "TS3S4010S"}
+					</span>
 				</div>
 
 				<div className="min-w-0">
 					<span className="text-[11px] text-[var(--muted)] block">LOT / Партия:</span>
-					<span className="font-mono font-bold text-[var(--ink)] block truncate" title={displayLot}>{displayLot}</span>
+					<span className="font-mono font-bold text-[var(--ink)] block truncate" title={displayLot}>
+						{displayLot}
+					</span>
 				</div>
 
 				<div className="min-w-0">
 					<span className="text-[11px] text-[var(--muted)] block">Серийный номер:</span>
-					<span className="font-mono font-bold text-[var(--ink)] block truncate" title={displaySn}>{displaySn}</span>
+					<span className="font-mono font-bold text-[var(--ink)] block truncate" title={displaySn}>
+						{displaySn}
+					</span>
 				</div>
 
 				<div className="min-w-0">
 					<span className="text-[11px] text-[var(--muted)] block">Формирователь / Заглушка:</span>
-					<span className="font-bold text-[var(--ink)] block truncate" title={data.capType === "plug" ? "Винт-заглушка (2 этапа)" : "ФДМ (формирователь десны)"}>
+					<span
+						className="font-bold text-[var(--ink)] block truncate"
+						title={data.capType === "plug" ? "Винт-заглушка (2 этапа)" : "ФДМ (формирователь десны)"}
+					>
 						{data.capType === "plug" ? "Винт-заглушка (2 этапа)" : "ФДМ (формирователь десны)"}
 					</span>
 				</div>
@@ -160,6 +226,69 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 					<span className="text-[11px] text-[var(--muted)] block">Дата операции:</span>
 					<span className="font-bold text-[var(--ink)] block truncate">{formattedDate}</span>
 				</div>
+			</div>
+
+			{/* Штрихкод и Зона оригинальной наклейки с упаковки имплантата */}
+			<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+				<div className="flex flex-col justify-between space-y-1">
+					<span className="text-[11px] font-black uppercase tracking-wider text-[var(--muted)]">
+						Штрихкод идентификации изделия (GS1 / REF):
+					</span>
+					<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-mono text-center">
+						<svg
+							className="passport-barcode-svg w-full h-8 text-[var(--ink)]"
+							data-testid="passport-barcode-svg"
+							viewBox="0 0 100 24"
+							preserveAspectRatio="none"
+							aria-hidden="true"
+						>
+							{[
+								true, false, true, true, false, true, false, true, true, false,
+								true, true, true, false, true, false, false, true, true, false,
+								true, false, true, true, false, true, false, true, true, false,
+								true, true, false, false, true, true, true, false, true, false,
+								true, false, true, true, true, false, true, false,
+							].map((isBar, idx) =>
+								isBar ? (
+									<rect
+										key={idx}
+										x={idx * 2 + 2}
+										y="0"
+										width={idx % 5 === 0 ? "1.6" : "1.0"}
+										height="24"
+										fill="currentColor"
+									/>
+								) : null,
+							)}
+						</svg>
+						<span className="text-[10px] tracking-widest text-[var(--muted)] block mt-0.5 truncate">
+							{barcodeSummary}
+						</span>
+					</div>
+				</div>
+
+				{/* Место для вклейки физического стикера из блистера */}
+				<div className="border-2 border-dashed border-[var(--line-strong,#94a3b8)] rounded-xl p-3 flex flex-col items-center justify-center text-center bg-[var(--paper)]">
+					<span className="text-[10px] font-black uppercase text-[var(--muted)] tracking-wider">
+						Место для наклейки со стерильной упаковки
+					</span>
+					<span className="text-[9px] text-[var(--muted)] mt-1">
+						Вклейте оригинальный клейкий стикер производителя (REF, LOT, SN)
+					</span>
+				</div>
+			</div>
+
+			{/* Гарантийные обязательства клиники и производителя */}
+			<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[11px] leading-relaxed text-[var(--muted)]">
+				<strong className="text-[var(--ink)] font-black block mb-1">
+					Гарантийные обязательства клиники и производителя:
+				</strong>
+				<span>
+					Производитель гарантирует остеоинтеграцию и пожизненную структурную целостность титанового
+					имплантата при условии соблюдения регламента профилактических осмотров (1 раз в 6 месяцев) и
+					правил индивидуальной гигиены полости рта. Клиника обеспечивает гарантийное сопровождение в
+					соответствии с договором оказания медицинских услуг.
+				</span>
 			</div>
 
 			{/* Врач, подпись и QR-код верификации для сертификата А4 */}
@@ -174,7 +303,10 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 						<strong className="text-[var(--ink)]">{data.boneDensity || "D2"} (Misch)</strong>
 					</div>
 					<div>
-						<span>Подпись: ______________________ </span>
+						<span>Подпись хирурга-имплантолога: ______________________ </span>
+					</div>
+					<div>
+						<span>Подпись пациента: ______________________ </span>
 						<span className="font-bold text-[var(--ink)] ml-2">М.П.</span>
 					</div>
 				</div>
@@ -187,7 +319,9 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 					<QrCode size={26} className="text-[var(--teal,#0d9488)] shrink-0" />
 					<div className="text-[10px] leading-tight font-mono">
 						<span className="font-bold text-[var(--ink)] block">QR VERIFIED</span>
-						<span className="text-[var(--muted)] truncate block max-w-[120px]">{data.passportId || "PASSPORT"}</span>
+						<span className="text-[var(--muted)] truncate block max-w-[120px]">
+							{data.passportId || "PASSPORT"}
+						</span>
 					</div>
 				</div>
 			</div>

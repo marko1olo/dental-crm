@@ -96,12 +96,10 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 	/*
 	 * PaidMedicalContractModal УДАЛЁН per Mandate 8s (канонический SSOT: PaidServiceContractForm.tsx).
 	 */
-	{
-		file: "components/diagnostics/Icd10ClinicalSelector.tsx",
-		name: "Icd10ClinicalSelector",
-		reason:
-			"Автономный клинический классификатор и селектор диагнозов МКБ-10 (K00–K14) с нечетким многословным поиском, 1-click пресетами и валидацией номеров зубов FDI. Предоставляется как изолированный клинический микровиджет для интеграции в дневник 043/у, ЕГИСЗ СЭМД и радиальное меню зубной формулы.",
-	},
+	/*
+	 * Icd10ClinicalSelector СМОНТИРОВАН в VisitSoapEditor.tsx (секция клинического диагноза 043/у)
+	 * и доступен по 1-клик кнопке «Справочник МКБ-10».
+	 */
 	/*
 	 * SberbankTerminalPaymentModal УДАЛЁН per Mandate 8s (Wave 175) как несмонтированный 501-стаб.
 	 * В приложении смонтирована аппаратная POS-интеграция SberPosTerminalModal (Pilot-NT / Arcus-D).

@@ -701,7 +701,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 										key={preset.id}
 										type="button"
 										onClick={() => handleSelectPreset(preset)}
-										className={`ortho-preset-pill min-h-[44px] px-3.5 py-2 inline-flex items-center gap-2 ${isSelected ? "active" : ""}`}
+										className={`ortho-preset-pill min-h-[44px] sm:min-h-[32px] sm:h-8 sm:py-1 px-3.5 py-2 inline-flex items-center gap-2 ${isSelected ? "active" : ""}`}
 										title={preset.label}
 										data-testid={`ortho-preset-${preset.id}`}
 									>
@@ -714,7 +714,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 							<button
 								type="button"
 								onClick={() => setShowPresetPreview(!showPresetPreview)}
-								className="ortho-preset-preview-toggle min-h-[44px] px-3 py-2 inline-flex items-center gap-1.5"
+								className="ortho-preset-preview-toggle min-h-[44px] sm:min-h-[32px] sm:h-8 sm:py-1 px-3 py-2 inline-flex items-center gap-1.5"
 								title={showPresetPreview ? "Скрыть предпросмотр протокола" : "Показать предпросмотр текста для 043/у"}
 								data-testid="toggle-preset-preview-btn"
 							>
@@ -724,7 +724,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 							<button
 								type="button"
 								onClick={handleCopyProtocolToClipboard}
-								className="ortho-preset-copy-btn min-h-[44px] px-3 py-2 inline-flex items-center gap-1.5"
+								className="ortho-preset-copy-btn min-h-[44px] sm:min-h-[32px] sm:h-8 sm:py-1 px-3 py-2 inline-flex items-center gap-1.5"
 								title="Скопировать структурированный протокол в буфер обмена"
 								data-testid="copy-ortho-protocol-btn"
 							>
@@ -1129,7 +1129,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 						<button
 							type="button"
 							onClick={() => handleInsertProtocol043()}
-							className="ortho-btn-insert-043 min-h-[44px] px-4 py-2.5 inline-flex items-center gap-2"
+							className="ortho-btn-insert-043 min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 py-2.5 sm:py-1.5 inline-flex items-center gap-2"
 							title="Вставить структурированный протокол ортодонтии в дневник Формы 043/у"
 							data-testid="insert-ortho-protocol-043-btn"
 						>
@@ -1139,14 +1139,14 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 						<button
 							type="button"
 							onClick={onClose}
-							className="ortho-btn-secondary min-h-[44px] px-4 py-2.5 inline-flex items-center justify-center"
+							className="ortho-btn-secondary min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 py-2.5 sm:py-1.5 inline-flex items-center justify-center"
 						>
 							Отмена
 						</button>
 						<button
 							type="button"
 							onClick={handleSave}
-							className="ortho-btn-primary min-h-[44px] px-4 py-2.5 inline-flex items-center gap-2"
+							className="ortho-btn-primary min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 py-2.5 sm:py-1.5 inline-flex items-center gap-2"
 							data-testid="save-ortho-protocol-btn"
 						>
 							<CheckCircle size={16} />

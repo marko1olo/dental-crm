@@ -40,6 +40,7 @@ import {
 	PriceListMappingDiffView,
 	type IngestedMappingItem,
 } from '../../pricing/PriceListMappingDiffView';
+import { denteAdminSecretRequestHeaders } from '../../../lib/denteRequestHeaders';
 import {
 	applyBatchPriceMarkup,
 	calculateServiceProfitability,
@@ -82,6 +83,7 @@ export interface ServicePricelistManagerModalProps {
 	readonly clinicPhone?: string;
 	readonly clinicLicense?: string;
 	readonly chiefDoctorName?: string;
+	readonly adminSecret?: string;
 }
 
 export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModalProps> = ({
@@ -94,6 +96,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 	clinicPhone = '',
 	clinicLicense = 'ЛО-77-01-012345 от 12.04.2021',
 	chiefDoctorName = 'Петров А. В.',
+	adminSecret,
 }) => {
 	const [items, setItems] = useState<readonly ServicePricelistItem[]>(initialItems);
 	const [selectedCategory, setSelectedCategory] = useState<Order804nCategory | 'all'>('all');
@@ -391,7 +394,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 		try {
 			const res = await fetch('/api/pricelist/ingest', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: denteAdminSecretRequestHeaders({ 'Content-Type': 'application/json' }, adminSecret),
 				body: JSON.stringify({
 					rawContent: text,
 					sourceType,

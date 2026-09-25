@@ -1,26 +1,7 @@
 /**
- * treatmentConsumablesEngine.ts — Treatment Consumables Auto-Deduction Engine.
- *
- * Wave 122 — Bill of Materials (BOM) & Treatment Consumables Consumption Engine.
- *
- * Adapted from reference implementation (DentalPin):
- * - backend/app/modules/treatment_consumables/service.py
- * - backend/app/modules/treatment_consumables/events.py
- *
- * CLINICAL & ARCHITECTURAL INVARIANTS:
- * 1. Mandates 8e & 8n (Doctor Autonomy & Scale Sovereignty):
- *    - Soft overdraft by default (`allowOverdraft = true`): warehouse stock shortages
- *      never block doctor from saving a visit or treating a patient in acute pain.
- *    - Strict overdraft check available (`allowOverdraft = false`) for rigid backoffice audits.
- * 2. Mandate 8k (CRM != Simulator):
- *    - Automatic consumption triggered by performed services (e.g. 1 carpal of anesthetic,
- *      1 compule of composite, 1 microbrush per filling).
- *    - 1-click batch deduction across multiple procedures of a visit without manual nurse input.
- * 3. Mandate 8d (Studio Clinical HIG / 7 Deadly Sins):
- *    - Official deduction acts for warehouse/nurse contain ZERO cartoon emojis (no 🎉, 🚀, 💡, 🦷).
- * 4. Exact Mathematical Consistency:
- *    - Deterministic fractional rounding avoiding IEEE-754 floating point artifacts.
- *    - Complete Zod runtime contracts for inter-module integration.
+ * treatmentConsumablesEngine.ts — Treatment Consumables Auto-Deduction & BOM SSOT Engine.
+ * Waves 122 & 134: Soft Overdraft (Mandates 8e, 8n, 8s), 804n link maps, exact kopecks (Mandate 8k),
+ * Class B waste tracking (SanPiN 2.1.3684-21), and zero cartoon emojis (Mandate 8d).
  */
 
 import { z } from "zod";
@@ -120,12 +101,8 @@ function formatDateTimeRu(isoString: string): string {
 	try {
 		const d = new Date(isoString);
 		if (Number.isNaN(d.getTime())) return isoString;
-		const day = String(d.getDate()).padStart(2, "0");
-		const month = String(d.getMonth() + 1).padStart(2, "0");
-		const year = d.getFullYear();
-		const hours = String(d.getHours()).padStart(2, "0");
-		const minutes = String(d.getMinutes()).padStart(2, "0");
-		return `${day}.${month}.${year} ${hours}:${minutes}`;
+		const pad = (n: number) => String(n).padStart(2, "0");
+		return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 	} catch {
 		return isoString;
 	}
@@ -134,21 +111,8 @@ function formatDateTimeRu(isoString: string): string {
 // ─── 3. CORE CONSUMPTION ENGINE FUNCTIONS ──────────────────────────────────────
 
 /**
- * Calculates consumable materials deduction for a single performed treatment service.
- *
- * Rules:
- * 1. Matches all links in `links` where `catalogItemId === event.catalogItemId`.
- * 2. Multiplies `quantityPerService * (event.serviceQuantity ?? 1)`.
- * 3. Computes `resultingStock = currentStock - deductedQuantity`.
- * 4. If `resultingStock < 0` and `!allowOverdraft`, throws an Error.
- * 5. If `allowOverdraft = true`, marks `isOverdraft = true` and `hasOverdraft = true`
- *    without throwing, upholding Mandates 8e/8n (Doctor Autonomy & Zero Dead-Ends).
- *
- * @param event - The performed clinical treatment event.
- * @param links - Active treatment consumable link recipes.
- * @param currentStocks - Current warehouse inventory stocks keyed by `inventoryItemId`.
- * @param allowOverdraft - Whether soft overdraft is permitted (default: true).
- * @returns TreatmentDeductionResult
+ * Calculates consumable materials deduction for a single performed treatment service (Wave 122).
+ * Soft overdraft by default (allowOverdraft = true) per Mandates 8e/8n.
  */
 export function calculateConsumablesForTreatment(
 	event: TreatmentPerformedEvent,
@@ -218,15 +182,6 @@ export function calculateConsumablesForTreatment(
 /**
  * Calculates batch consumable deductions across a series of performed treatment services
  * for a dental visit or multi-procedure appointment.
- *
- * Progressively updates warehouse stock at each step, accumulating total deducted quantities
- * per item and returning all deduction results.
- *
- * @param events - List of performed treatment events.
- * @param links - Active treatment consumable link recipes.
- * @param initialStocks - Starting warehouse stocks keyed by `inventoryItemId`.
- * @param allowOverdraft - Whether soft overdraft is permitted (default: true).
- * @returns BatchTreatmentConsumablesResult
  */
 export function calculateBatchTreatmentConsumables(
 	events: TreatmentPerformedEvent[],
@@ -239,14 +194,8 @@ export function calculateBatchTreatmentConsumables(
 	const results: TreatmentDeductionResult[] = [];
 
 	for (const event of events) {
-		const result = calculateConsumablesForTreatment(
-			event,
-			links,
-			runningStocks,
-			allowOverdraft,
-		);
+		const result = calculateConsumablesForTreatment(event, links, runningStocks, allowOverdraft);
 		results.push(result);
-
 		for (const item of result.items) {
 			runningStocks[item.inventoryItemId] = item.resultingStock;
 			totalDeductedByItem[item.inventoryItemId] = roundQuantity(
@@ -255,11 +204,7 @@ export function calculateBatchTreatmentConsumables(
 		}
 	}
 
-	return {
-		results,
-		finalStocks: runningStocks,
-		totalDeductedByItem,
-	};
+	return { results, finalStocks: runningStocks, totalDeductedByItem };
 }
 
 // ─── 4. STATUTORY ACT / RECEIPT FORMATTING ────────────────────────────────────
@@ -323,16 +268,16 @@ export function formatConsumablesDeductionReceipt(
 		});
 	}
 
-	lines.push(sectionSep);
-	lines.push(`Всего позиций: ${result.items.length}`);
 	lines.push(
+		sectionSep,
+		`Всего позиций: ${result.items.length}`,
 		`Наличие дефицита / овердрафта: ${result.hasOverdraft ? "ДА (требуется пополнение запасов)" : "НЕТ"}`,
+		"",
+		"ОТВЕТСТВЕННЫЕ ЛИЦА:",
+		"Отпустил (медсестра / склад):  _________________ / ________________________",
+		`Списано в приеме (врач):       _________________ / ${doctorName || "________________________"}`,
+		headerSep,
 	);
-	lines.push("");
-	lines.push("ОТВЕТСТВЕННЫЕ ЛИЦА:");
-	lines.push("Отпустил (медсестра / склад):  _________________ / ________________________");
-	lines.push(`Списано в приеме (врач):       _________________ / ${doctorName || "________________________"}`);
-	lines.push(headerSep);
 
 	return lines.join("\n");
 }
@@ -355,14 +300,10 @@ export const consumableCategorySchema = z.enum([
 export type ConsumableCategory = z.infer<typeof consumableCategorySchema>;
 
 export const CONSUMABLE_CATEGORY_LABELS: Record<ConsumableCategory, string> = {
-	anesthetic: "Анестетики (карпулы / ампулы)",
-	composite: "Композиты и пломбировочные материалы",
-	suture: "Шовный материал",
-	endo_file: "Эндодонтические файлы и гуттаперча",
-	bur: "Боры и полировочные диски",
-	rubber_dam: "Коффердам / раббердам",
-	hygiene_paste: "Пасты и порошки для профгигиены",
-	disinfectant: "Дезинфектанты и антисептики",
+	anesthetic: "Анестетики (карпулы / ампулы)", composite: "Композиты и пломбировочные материалы",
+	suture: "Шовный материал", endo_file: "Эндодонтические файлы и гуттаперча",
+	bur: "Боры и полировочные диски", rubber_dam: "Коффердам / раббердам",
+	hygiene_paste: "Пасты и порошки для профгигиены", disinfectant: "Дезинфектанты и антисептики",
 	other: "Прочие расходные материалы",
 };
 
@@ -374,21 +315,43 @@ import {
 export { consumableUnitSchema, type ConsumableUnit };
 
 export const CONSUMABLE_UNIT_LABELS: Record<ConsumableUnit, string> = {
-	карпула: "карпула",
-	шприц_гр: "шприц (г)",
-	ампула: "ампула",
-	шт: "шт.",
-	метр: "м",
-	упак: "упак.",
-	pcs: "шт.",
-	carpule: "карпула",
-	gram: "г",
-	ml: "мл",
-	pack: "упак.",
-	tube: "туба",
-	dose: "доза",
-	cm: "см",
+	карпула: "карпула", шприц_гр: "шприц (г)", ампула: "ампула", шт: "шт.", метр: "м",
+	упак: "упак.", pcs: "шт.", carpule: "карпула", gram: "г", ml: "мл",
+	pack: "упак.", tube: "туба", dose: "доза", cm: "см",
 };
+
+// ─── CANONICAL CLASS B MEDICAL WASTE WEIGHT ESTIMATES (САНПИН 2.1.3684-21) ───
+
+/**
+ * Standard weight factors per unit for dental Class B medical waste according to SanPiN 2.1.3684-21.
+ * Glass carpules ~0.005 kg, sharps/needles/blades ~0.002 kg, contaminated PPE/swabs ~0.015 kg,
+ * standard yellow puncture-resistant sharps container tare ~0.15 kg.
+ */
+export const CLASS_B_WEIGHT_ESTIMATES = {
+	carpuleGlassKg: 0.005,
+	sharpsNeedleKg: 0.002,
+	contaminatedPpeKg: 0.015,
+	standardPunctureContainerTareKg: 0.15,
+} as const;
+
+/**
+ * Deterministically computes estimated Class B waste weight in kg according to SanPiN standards.
+ */
+export function calculateClassBWasteWeightKg(
+	carpulesCount: number,
+	sharpsCount: number,
+	contaminatedCount: number,
+): number {
+	const safeCarpules = Math.max(0, carpulesCount);
+	const safeSharps = Math.max(0, sharpsCount);
+	const safeContaminated = Math.max(0, contaminatedCount);
+
+	const carpulesWeight = safeCarpules * CLASS_B_WEIGHT_ESTIMATES.carpuleGlassKg;
+	const sharpsWeight = safeSharps * CLASS_B_WEIGHT_ESTIMATES.sharpsNeedleKg;
+	const contaminatedWeight = Math.max(0.05, safeContaminated * CLASS_B_WEIGHT_ESTIMATES.contaminatedPpeKg);
+
+	return roundQuantity(carpulesWeight + sharpsWeight + contaminatedWeight, 3);
+}
 
 /**
  * Link between a statutory 804n service and an inventory item BOM.
@@ -500,12 +463,21 @@ export function calculateServiceConsumables(
 		const toothNumber = service.toothNumber ?? null;
 
 		// Match links by service804nCode
-		const matchedLinks = links.filter((l) => l.service804nCode === service.serviceCode);
+		let matchedLinks = links.filter((l) => l.service804nCode === service.serviceCode);
+
+		// If no exact match and serviceCode has sub-codes (e.g. A16.07.002.001 -> A16.07.002)
+		if (matchedLinks.length === 0 && service.serviceCode.includes(".")) {
+			const parts = service.serviceCode.split(".");
+			if (parts.length > 3) {
+				const baseCode = parts.slice(0, 3).join(".");
+				matchedLinks = links.filter((l) => l.service804nCode === baseCode);
+			}
+		}
 
 		for (const link of matchedLinks) {
 			const rawQty = link.quantityPerService * serviceQuantity;
 			// Round quantity deterministically to 4 decimal places avoiding IEEE-754 quirks
-			const requiredQuantity = Math.round(rawQty * 10000) / 10000;
+			const requiredQuantity = roundQuantity(rawQty, 4);
 			const totalCostKopecks = Math.round(link.costPriceKopecks * requiredQuantity);
 
 			planned.push({
@@ -529,21 +501,46 @@ export function calculateServiceConsumables(
 }
 
 /**
- * Executes batch deduction of consumables against current warehouse stock.
- * Mandate 8e: By default (`allowOverdraft = true`), stock shortages never throw
- * or block patient care; soft overdraft warnings are captured.
+ * Options configuring stock deduction processing.
  */
-export function executeBatchConsumablesDeduction(
-	request: ConsumableDeductionRequest,
-	links: ConsumableItemLink[],
-): ConsumableDeductionResult {
-	const allowOverdraft = request.allowOverdraft !== false;
-	const plannedConsumables = calculateServiceConsumables(request.renderedServices, links);
+export interface ProcessStockDeductionOptions {
+	readonly allowOverdraft?: boolean | undefined;
+	readonly overdraftMessagePrefix?: string | undefined;
+}
 
-	// Running stock tracker
+/**
+ * Core result returned by processConsumablesStockDeduction.
+ */
+export interface ProcessStockDeductionResult {
+	readonly deductedItems: ConsumableDeductedItem[];
+	readonly softOverdrafts: string[];
+	readonly totalCostPriceKopecks: number;
+	readonly hasOverdraft: boolean;
+	readonly runningStocks: Record<string, number>;
+}
+
+/**
+ * Canonical SSOT deduction processor: executes stock deduction for planned consumables,
+ * tracks running stocks by ID and lowercase item name, detects soft overdrafts,
+ * formats warnings, and computes exact integer kopeck valuation.
+ */
+export function processConsumablesStockDeduction(
+	plannedConsumables: readonly PlannedServiceConsumable[],
+	currentStockMap: Record<string, number> | Map<string, number> = {},
+	options: ProcessStockDeductionOptions = {},
+): ProcessStockDeductionResult {
+	const allowOverdraft = options.allowOverdraft !== false;
+	const prefix = options.overdraftMessagePrefix ?? "Мандат 8e/8n: Мягкий овердрафт";
+
 	const stockTracker = new Map<string, number>();
-	for (const [itemId, qty] of Object.entries(request.currentStockMap)) {
-		stockTracker.set(itemId, qty);
+	if (currentStockMap instanceof Map) {
+		for (const [k, v] of currentStockMap.entries()) {
+			stockTracker.set(k, v);
+		}
+	} else if (currentStockMap) {
+		for (const [itemId, qty] of Object.entries(currentStockMap)) {
+			stockTracker.set(itemId, qty);
+		}
 	}
 
 	const deductedItems: ConsumableDeductedItem[] = [];
@@ -552,9 +549,14 @@ export function executeBatchConsumablesDeduction(
 	let hasOverdraft = false;
 
 	for (const planned of plannedConsumables) {
-		const currentStock = stockTracker.get(planned.inventoryItemId) ?? 0;
+		// Look up stock by inventoryItemId first, then fallback to normalized item name
+		const currentStock =
+			stockTracker.get(planned.inventoryItemId) ??
+			stockTracker.get(planned.itemName.toLowerCase().trim()) ??
+			0;
+
 		const rawRemaining = currentStock - planned.requiredQuantity;
-		const remainingQty = Math.round(rawRemaining * 10000) / 10000;
+		const remainingQty = roundQuantity(rawRemaining, 4);
 		stockTracker.set(planned.inventoryItemId, remainingQty);
 
 		const isOverdraftItem = remainingQty < 0;
@@ -562,7 +564,10 @@ export function executeBatchConsumablesDeduction(
 
 		if (isOverdraftItem) {
 			hasOverdraft = true;
-			const warningMsg = `Мандат 8e: Складской овердрафт позиции «${planned.itemName}» (ID: ${planned.inventoryItemId}): списано ${planned.requiredQuantity} ${planned.unit}, остаток ${remainingQty} ${planned.unit}. Операция не блокируется.`;
+			const suffix = prefix.includes("8n")
+				? "Накладная в пути. Лечение не блокируется."
+				: "Операция не блокируется.";
+			const warningMsg = `${prefix} позиции «${planned.itemName}» (ID: ${planned.inventoryItemId}): списано ${planned.requiredQuantity} ${planned.unit}, остаток ${remainingQty} ${planned.unit}. ${suffix}`;
 
 			if (!allowOverdraft) {
 				throw new Error(
@@ -593,16 +598,91 @@ export function executeBatchConsumablesDeduction(
 		});
 	}
 
+	const runningStocks: Record<string, number> = {};
+	for (const [k, v] of stockTracker.entries()) {
+		runningStocks[k] = v;
+	}
+
+	return {
+		deductedItems,
+		softOverdrafts,
+		totalCostPriceKopecks,
+		hasOverdraft,
+		runningStocks,
+	};
+}
+
+/**
+ * Adapter: converts legacy Wave 122 TreatmentConsumableLink to canonical ConsumableItemLink.
+ */
+export function toConsumableItemLink(
+	legacy: TreatmentConsumableLink,
+	defaultCategory: ConsumableCategory = "other",
+	costPriceKopecks = 0,
+): ConsumableItemLink {
+	return {
+		id: legacy.id,
+		service804nCode: legacy.catalogItemId,
+		serviceTitle: legacy.catalogItemName || legacy.catalogItemId,
+		inventoryItemId: legacy.inventoryItemId,
+		itemName: legacy.inventoryItemName,
+		category: defaultCategory,
+		unit: (legacy.unit in CONSUMABLE_UNIT_LABELS ? legacy.unit : "шт") as ConsumableUnit,
+		quantityPerService: legacy.quantityPerService,
+		isMandatory: true,
+		costPriceKopecks,
+		notes: legacy.note ?? null,
+	};
+}
+
+/**
+ * Adapter: converts canonical ConsumableItemLink to legacy Wave 122 TreatmentConsumableLink.
+ */
+export function toTreatmentConsumableLink(
+	link: ConsumableItemLink,
+): TreatmentConsumableLink {
+	return {
+		id: link.id,
+		catalogItemId: link.service804nCode,
+		catalogItemName: link.serviceTitle,
+		inventoryItemId: link.inventoryItemId,
+		inventoryItemName: link.itemName,
+		unit: link.unit,
+		quantityPerService: link.quantityPerService,
+		note: link.notes ?? undefined,
+	};
+}
+
+/**
+ * Executes batch deduction of consumables against current warehouse stock.
+ * Mandate 8e: By default (`allowOverdraft = true`), stock shortages never throw
+ * or block patient care; soft overdraft warnings are captured.
+ */
+export function executeBatchConsumablesDeduction(
+	request: ConsumableDeductionRequest,
+	links: ConsumableItemLink[],
+): ConsumableDeductionResult {
+	const plannedConsumables = calculateServiceConsumables(request.renderedServices, links);
+
+	const deduction = processConsumablesStockDeduction(
+		plannedConsumables,
+		request.currentStockMap,
+		{
+			allowOverdraft: request.allowOverdraft !== false,
+			overdraftMessagePrefix: "Мандат 8e: Складской овердрафт",
+		},
+	);
+
 	return {
 		visitId: request.visitId,
 		patientId: request.patientId,
 		doctorId: request.doctorId,
-		totalDeductedItems: deductedItems.length,
-		totalCostPriceKopecks,
-		totalCostPriceRub: formatKopecksRu(totalCostPriceKopecks),
-		items: deductedItems,
-		softOverdrafts,
-		hasOverdraft,
+		totalDeductedItems: deduction.deductedItems.length,
+		totalCostPriceKopecks: deduction.totalCostPriceKopecks,
+		totalCostPriceRub: formatKopecksRu(deduction.totalCostPriceKopecks),
+		items: deduction.deductedItems,
+		softOverdrafts: deduction.softOverdrafts,
+		hasOverdraft: deduction.hasOverdraft,
 	};
 }
 
@@ -632,21 +712,20 @@ export function formatConsumablesWriteOffA4Report(
 
 	const divider = "=".repeat(78);
 	const subDivider = "-".repeat(78);
-	const lines: string[] = [];
-
-	lines.push(divider);
-	lines.push("МИНИСТЕРСТВО ЗДРАВООХРАНЕНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ");
-	lines.push("МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО БОЛЬНОГО: ФОРМА N 043/У");
-	lines.push("УЧЕТ МЕДИЦИНСКИХ ИЗДЕЛИЙ, МАТЕРИАЛОВ И ДЕЗИНФЕКТАНТОВ ПО САНПИН");
-	lines.push(`АКТ СПИСАНИЯ РАСХОДНЫХ МАТЕРИАЛОВ N ${actNum}`);
-	lines.push(divider);
-	lines.push(`Организация: ${clinic}`);
-	lines.push(`Пациент: ${patient} | Карта 043/у: ${card}`);
-	lines.push(`Лечащий врач: ${doctor} | Визит: ${result.visitId}`);
-	lines.push(`Дата списания: ${date}`);
-	lines.push(subDivider);
-
-	lines.push("1. ВЕДОМОСТЬ СПИСАННЫХ МАТЕРИАЛОВ ПО ОКАЗАННЫМ УСЛУГАМ 804Н:");
+	const lines: string[] = [
+		divider,
+		"МИНИСТЕРСТВО ЗДРАВООХРАНЕНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ",
+		"МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО БОЛЬНОГО: ФОРМА N 043/У",
+		"УЧЕТ МЕДИЦИНСКИХ ИЗДЕЛИЙ, МАТЕРИАЛОВ И ДЕЗИНФЕКТАНТОВ ПО САНПИН",
+		`АКТ СПИСАНИЯ РАСХОДНЫХ МАТЕРИАЛОВ N ${actNum}`,
+		divider,
+		`Организация: ${clinic}`,
+		`Пациент: ${patient} | Карта 043/у: ${card}`,
+		`Лечащий врач: ${doctor} | Визит: ${result.visitId}`,
+		`Дата списания: ${date}`,
+		subDivider,
+		"1. ВЕДОМОСТЬ СПИСАННЫХ МАТЕРИАЛОВ ПО ОКАЗАННЫМ УСЛУГАМ 804Н:",
+	];
 
 	if (result.items.length === 0) {
 		lines.push("   (Списанные материалы отсутствуют — услуги без нормативного расхода)");
@@ -663,31 +742,30 @@ export function formatConsumablesWriteOffA4Report(
 			);
 		}
 	}
-	lines.push(subDivider);
-
-	lines.push("2. ИТОГОВЫЕ ПОКАЗАТЕЛИ СЕБЕСТОИМОСТИ МАТЕРИАЛОВ ВИЗИТА:");
-	lines.push(`   Всего списано позиций номенклатуры: ${result.totalDeductedItems}`);
-	lines.push(`   Общая себестоимость списанных материалов: ${result.totalCostPriceRub}`);
-	lines.push(subDivider);
-
-	lines.push("3. СКЛАДСКОЙ КОНТРОЛЬ И САНПИН РЕГЛАМЕНТ (МАНДАТ 8E):");
-	if (result.hasOverdraft) {
-		lines.push("   [!] ВНИМАНИЕ: Зафиксирован мягкий овердрафт складских позиций.");
-		for (const warning of result.softOverdrafts) {
-			lines.push(`       - ${warning}`);
-		}
-		lines.push("   Мандат 8e: Проведение лечения и спасение пациента не блокируются.");
-		lines.push("   Уведомление направлено в отдел снабжения для планового пополнения.");
-	} else {
-		lines.push("   [OK] Складской баланс в норме, дефицит материалов отсутствует.");
-		lines.push("   Нормы СанПиН по учету анестетиков и дезинфектантов соблюдены.");
-	}
-	lines.push(subDivider);
-
-	lines.push("Подписи ответственных лиц:");
-	lines.push(`Врач-стоматолог: ____________________ / ${doctor} /`);
-	lines.push("Старшая медицинская сестра / зав. складом: ____________________ /                        /");
-	lines.push(divider);
+	lines.push(
+		subDivider,
+		"2. ИТОГОВЫЕ ПОКАЗАТЕЛИ СЕБЕСТОИМОСТИ МАТЕРИАЛОВ ВИЗИТА:",
+		`   Всего списано позиций номенклатуры: ${result.totalDeductedItems}`,
+		`   Общая себестоимость списанных материалов: ${result.totalCostPriceRub}`,
+		subDivider,
+		"3. СКЛАДСКОЙ КОНТРОЛЬ И САНПИН РЕГЛАМЕНТ (МАНДАТ 8E):",
+		...(result.hasOverdraft
+			? [
+					"   [!] ВНИМАНИЕ: Зафиксирован мягкий овердрафт складских позиций.",
+					...result.softOverdrafts.map((w) => `       - ${w}`),
+					"   Мандат 8e: Проведение лечения и спасение пациента не блокируются.",
+					"   Уведомление направлено в отдел снабжения для планового пополнения.",
+				]
+			: [
+					"   [OK] Складской баланс в норме, дефицит материалов отсутствует.",
+					"   Нормы СанПиН по учету анестетиков и дезинфектантов соблюдены.",
+				]),
+		subDivider,
+		"Подписи ответственных лиц:",
+		`Врач-стоматолог: ____________________ / ${doctor} /`,
+		"Старшая медицинская сестра / зав. складом: ____________________ /                        /",
+		divider,
+	);
 
 	return lines.join("\n");
 }
@@ -705,5 +783,10 @@ export const treatmentConsumablesEngine = {
 	consumableDeductionResultSchema,
 	CONSUMABLE_CATEGORY_LABELS,
 	CONSUMABLE_UNIT_LABELS,
+	CLASS_B_WEIGHT_ESTIMATES,
+	calculateClassBWasteWeightKg,
+	processConsumablesStockDeduction,
+	toConsumableItemLink,
+	toTreatmentConsumableLink,
 } as const;
 

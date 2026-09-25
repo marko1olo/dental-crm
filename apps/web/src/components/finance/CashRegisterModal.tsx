@@ -35,6 +35,11 @@ import {
 	type FiscalTapeWidth,
 	generate54FzZReportReceiptTapeText,
 } from "./fiscal/fiscal54fzEngine";
+import {
+	CashShiftKpiCards,
+	CashDrawerReconciliationPanel,
+	FiscalReceiptTapeViewer,
+} from "./fiscal/CashShiftReconciliationComponents";
 
 export interface CashRegisterModalProps {
 	readonly isOpen: boolean;
@@ -407,74 +412,13 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 							{activeTab === "reconciliation" && (
 								<div className="space-y-5">
 									{/* Top 4 KPI Metrics */}
-									<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-										{/* Card 1: Net Revenue */}
-										<div className="p-4 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex flex-col justify-between space-y-1">
-											<div className="flex items-center justify-between text-xs text-teal-800 dark:text-teal-300 font-bold uppercase tracking-wider">
-												<span className="flex items-center gap-1.5">
-													<ShieldCheck className="w-4 h-4 text-teal-600" />
-													Выручка 54-ФЗ
-												</span>
-											</div>
-											<div className="text-2xl font-black font-mono text-teal-700 dark:text-teal-300" data-testid="kpi-net-revenue">
-												{netRevenueRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
-											</div>
-											<div className="text-[11px] text-[var(--muted)]">
-												Все типы оплат за смену
-											</div>
-										</div>
-
-										{/* Card 2: Cash in Drawer */}
-										<div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col justify-between space-y-1">
-											<div className="flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300 font-bold uppercase tracking-wider">
-												<span className="flex items-center gap-1.5">
-													<Banknote className="w-4 h-4 text-emerald-600" />
-													Наличные (Ящик)
-												</span>
-												<span className="font-mono text-[10px]">Тег 1031</span>
-											</div>
-											<div className="text-2xl font-black font-mono text-emerald-700 dark:text-emerald-300" data-testid="kpi-cash-in-drawer">
-												{cashInDrawerRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
-											</div>
-											<div className="text-[11px] text-[var(--muted)]">
-												В кассовом ящике
-											</div>
-										</div>
-
-										{/* Card 3: POS & SBP */}
-										<div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 flex flex-col justify-between space-y-1">
-											<div className="flex items-center justify-between text-xs text-blue-800 dark:text-blue-300 font-bold uppercase tracking-wider">
-												<span className="flex items-center gap-1.5">
-													<CreditCard className="w-4 h-4 text-blue-600" />
-													Безналичные & СБП
-												</span>
-												<span className="font-mono text-[10px]">Тег 1081</span>
-											</div>
-											<div className="text-2xl font-black font-mono text-blue-700 dark:text-blue-300" data-testid="kpi-electronic">
-												{(cardSumRub + sbpSumRub).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
-											</div>
-											<div className="text-[11px] text-[var(--muted)]">
-												Терминал: {cardSumRub.toLocaleString("ru-RU")} ₽ · СБП: {sbpSumRub.toLocaleString("ru-RU")} ₽
-											</div>
-										</div>
-
-										{/* Card 4: Advance Offset */}
-										<div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col justify-between space-y-1">
-											<div className="flex items-center justify-between text-xs text-amber-800 dark:text-amber-300 font-bold uppercase tracking-wider">
-												<span className="flex items-center gap-1.5">
-													<Wallet className="w-4 h-4 text-amber-600" />
-													Зачет авансов
-												</span>
-												<span className="font-mono text-[10px]">Тег 1215</span>
-											</div>
-											<div className="text-2xl font-black font-mono text-amber-700 dark:text-amber-300" data-testid="kpi-advance-offset">
-												{advanceOffsetRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
-											</div>
-											<div className="text-[11px] text-[var(--muted)]">
-												Депозиты пациентов
-											</div>
-										</div>
-									</div>
+									<CashShiftKpiCards
+										netRevenueRub={netRevenueRub}
+										cashInDrawerRub={cashInDrawerRub}
+										cardSumRub={cardSumRub}
+										sbpSumRub={sbpSumRub}
+										advanceOffsetRub={advanceOffsetRub}
+									/>
 
 									{/* Bank Settlement & Acquiring Fee Breakdown */}
 									<div className="p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-3 text-xs">
@@ -497,159 +441,26 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 							)}
 
 							{activeTab === "drawer" && (
-								<div className="space-y-5">
-									{/* Cash in Drawer Overview */}
-									<div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between flex-wrap gap-3">
-										<div className="flex items-center gap-3">
-											<div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold">
-												<Banknote className="w-5 h-5" />
-											</div>
-											<div>
-												<h4 className="text-sm font-bold text-emerald-950 dark:text-emerald-100 m-0">
-													Расчетный остаток наличных в кассовом ящике
-												</h4>
-												<p className="text-xs text-[var(--muted)] m-0">
-													По данным фискальных операций 54-ФЗ за смену №{shiftNumber}
-												</p>
-											</div>
-										</div>
-										<div className="text-2xl font-black font-mono text-emerald-700 dark:text-emerald-300">
-											{cashInDrawerRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
-										</div>
-									</div>
-
-									{/* 1-Click Cash Drawer Matcher */}
-									<div className="p-5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-4">
-										<div>
-											<label
-												htmlFor="cash-register-drawer-actual"
-												className="block text-xs font-bold text-[var(--muted)] uppercase tracking-wider mb-1"
-											>
-												Фактическая сумма наличных в ящике (₽):
-											</label>
-											<div className="flex items-center gap-2 flex-wrap">
-												<input
-													id="cash-register-drawer-actual"
-													type="text"
-													inputMode="decimal"
-													value={countedCashInput}
-													onChange={(e) => setCountedCashInput(e.target.value)}
-													placeholder={cashInDrawerRub.toString()}
-													className="min-h-[44px] px-3.5 py-2 font-mono text-sm font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none w-56"
-													data-testid="input-actual-drawer-cash"
-												/>
-												<button
-													type="button"
-													onClick={() => setCountedCashInput(cashInDrawerRub.toString())}
-													className="min-h-[44px] px-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-													title="Подставить расчетную сумму кассы 54-ФЗ"
-													data-testid="btn-match-drawer-cash"
-												>
-													<Check size={14} className="text-emerald-600" />
-													<span>Совпадает с кассой ({cashInDrawerRub.toLocaleString("ru-RU")} ₽)</span>
-												</button>
-											</div>
-										</div>
-
-										{/* Reconciliation Status */}
-										<div>
-											{differenceRub === null ? (
-												<div className="text-xs text-[var(--muted)] flex items-center gap-1.5">
-													<span>Введите сумму в денежном ящике или нажмите «Совпадает с кассой»</span>
-												</div>
-											) : differenceRub === 0 ? (
-												<div
-													className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2"
-													data-testid="msg-drawer-match"
-												>
-													<CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-													<span>Сверка успешна: фактическая сумма в ящике сходится копейка в копейку с данными 54-ФЗ ({cashInDrawerRub.toLocaleString("ru-RU")} ₽)</span>
-												</div>
-											) : differenceRub > 0 ? (
-												<div
-													className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-800 dark:text-teal-300 text-xs font-bold flex items-center gap-2"
-													data-testid="msg-drawer-surplus"
-												>
-													<AlertTriangle className="w-4 h-4 text-teal-600 shrink-0" />
-													<span>Обнаружен излишек в ящике: +{differenceRub.toLocaleString("ru-RU")} ₽</span>
-												</div>
-											) : (
-												<div
-													className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-300 text-xs font-bold flex items-center gap-2"
-													data-testid="msg-drawer-deficit"
-												>
-													<AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-													<span>Обнаружена недостача в ящике: −{Math.abs(differenceRub).toLocaleString("ru-RU")} ₽</span>
-												</div>
-											)}
-										</div>
-									</div>
-								</div>
+								<CashDrawerReconciliationPanel
+									shiftNumber={shiftNumber}
+									expectedCashRub={cashInDrawerRub}
+									countedCashInput={countedCashInput}
+									onCountedCashChange={setCountedCashInput}
+									differenceRub={differenceRub}
+									onMatchClick={() => setCountedCashInput(cashInDrawerRub.toString())}
+									variant="standard"
+								/>
 							)}
 
 							{activeTab === "tape" && (
-								<div className="space-y-4">
-									{/* Tape Width Controls & Actions */}
-									<div className="flex items-center justify-between flex-wrap gap-2.5 p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)]">
-										<div className="flex items-center gap-2">
-											<span className="text-xs font-bold text-[var(--muted)]">Ширина ленты:</span>
-											<div className="flex bg-[var(--paper)] border border-[var(--line)] p-0.5 rounded-lg">
-												<button
-													type="button"
-													onClick={() => setTapeWidth("58mm")}
-													className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
-														tapeWidth === "58mm"
-															? "bg-[var(--teal)] text-white shadow-xs"
-															: "text-[var(--muted)] hover:text-[var(--ink)]"
-													}`}
-												>
-													58 мм (Узкая)
-												</button>
-												<button
-													type="button"
-													onClick={() => setTapeWidth("80mm")}
-													className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
-														tapeWidth === "80mm"
-															? "bg-[var(--teal)] text-white shadow-xs"
-															: "text-[var(--muted)] hover:text-[var(--ink)]"
-													}`}
-												>
-													80 мм (Широкая)
-												</button>
-											</div>
-										</div>
-
-										<div className="flex items-center gap-2">
-											<button
-												type="button"
-												onClick={handleCopyTape}
-												className="min-h-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-bold flex items-center gap-1.5 hover:bg-[var(--paper-soft)] transition-all cursor-pointer"
-											>
-												{isCopied ? <CheckCheck size={16} className="text-emerald-600" /> : <Copy size={16} />}
-												<span>{isCopied ? "Скопировано!" : "Скопировать текст"}</span>
-											</button>
-											<button
-												type="button"
-												onClick={handlePrintTape}
-												className="min-h-[44px] px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
-											>
-												<Printer size={16} />
-												<span>Печать на ККТ ({tapeWidth})</span>
-											</button>
-										</div>
-									</div>
-
-									{/* Monospaced Receipt Tape Viewer */}
-									<div className="flex justify-center p-4 bg-[var(--paper-soft)] rounded-2xl overflow-x-auto">
-										<div
-											className={`p-4 bg-white text-black font-mono text-[11px] leading-relaxed shadow-xl border border-[var(--line)] rounded-xs whitespace-pre ${
-												tapeWidth === "80mm" ? "w-[380px]" : "w-[290px]"
-											}`}
-										>
-											{receiptTapeText}
-										</div>
-									</div>
-								</div>
+								<FiscalReceiptTapeViewer
+									receiptTapeText={receiptTapeText}
+									tapeWidth={tapeWidth}
+									onTapeWidthChange={setTapeWidth}
+									onCopy={handleCopyTape}
+									onPrint={handlePrintTape}
+									isCopied={isCopied}
+								/>
 							)}
 						</>
 					)}

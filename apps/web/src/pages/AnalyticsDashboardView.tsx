@@ -42,6 +42,11 @@ const MarketingRoiModal = lazy(() =>
 		default: module.MarketingRoiModal,
 	})),
 );
+const FinancialAnalyticsModal = lazy(() =>
+	import("../components/analytics/FinancialAnalyticsModal").then((module) => ({
+		default: module.FinancialAnalyticsModal,
+	})),
+);
 import { MarketingAttributionDashboard } from "../components/analytics/MarketingAttributionDashboard";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import {
@@ -132,6 +137,7 @@ export function AnalyticsDashboardView() {
 		"executive" | "operational" | "curators" | "lost_patients" | "freed_slots" | "marketing"
 	>("executive");
 	const [isMarketingRoiOpen, setIsMarketingRoiOpen] = useState(false);
+	const [isFinancialAnalyticsOpen, setIsFinancialAnalyticsOpen] = useState(false);
 	const [isSectionMoreOpen, setIsSectionMoreOpen] = useState(false);
 	const [isDateMoreOpen, setIsDateMoreOpen] = useState(false);
 	const sectionMoreRef = useRef<HTMLDivElement>(null);
@@ -570,6 +576,21 @@ export function AnalyticsDashboardView() {
 							>
 								<TrendingUp size={14} className="text-emerald-600 dark:text-emerald-400" />
 								<span>ROI маркетинговых кампаний</span>
+							</button>
+
+							<button
+								type="button"
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-colors flex items-center gap-2 cursor-pointer"
+								role="menuitem"
+								onClick={() => {
+									setIsFinancialAnalyticsOpen(true);
+									setIsSectionMoreOpen(false);
+								}}
+								data-testid="btn-open-financial-analytics-modal"
+								title="Открыть финансовую аналитику P&L и кассовые остатки"
+							>
+								<DollarSign size={14} className="text-teal-600 dark:text-teal-400" />
+								<span>Финансовая аналитика P&L</span>
 							</button>
 						</div>
 					)}
@@ -1103,6 +1124,22 @@ export function AnalyticsDashboardView() {
 					<MarketingRoiModal
 						isOpen={isMarketingRoiOpen}
 						onClose={() => setIsMarketingRoiOpen(false)}
+					/>
+				</Suspense>
+			)}
+
+			{isFinancialAnalyticsOpen && (
+				<Suspense fallback={null}>
+					<FinancialAnalyticsModal
+						isOpen={isFinancialAnalyticsOpen}
+						onClose={() => setIsFinancialAnalyticsOpen(false)}
+						initialPeriod={
+							dateRange === "quarter"
+								? "quarter"
+								: dateRange === "year"
+									? "year"
+									: "month"
+						}
 					/>
 				</Suspense>
 			)}

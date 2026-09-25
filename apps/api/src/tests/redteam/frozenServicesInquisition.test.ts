@@ -285,6 +285,15 @@ describe("RED TEAM INQUISITION: Frozen Services Integrity Audit", () => {
 				customerName: "АО Страховая Группа",
 				customerInn: "7705123456",
 				cashierFullName: "Иванов И.И.",
+				cashKopecks: 0,
+				electronicCardKopecks: 350000,
+				sbpKopecks: 0,
+				prepaidKopecks: 0,
+				creditKopecks: 0,
+				totalKopecks: 350000,
+				taxDeductionSummaryCode: "code_1_standard",
+				isCorrection: false,
+				addendumConfirmed: false,
 				items: [
 					{
 						name: "Лечение поверхностного кариеса",
@@ -295,8 +304,6 @@ describe("RED TEAM INQUISITION: Frozen Services Integrity Audit", () => {
 						agentSign: "commission_agent",
 					},
 				] as any,
-				electronicCardKopecks: 350000,
-				totalKopecks: 350000,
 			});
 
 			assert.equal(ffd12.tag1057_agentSign, 3);

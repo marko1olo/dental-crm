@@ -49,6 +49,8 @@ export interface OverviewTabProps {
 	readonly onOpenCareMemo: () => void;
 	readonly onOpenSbpForInvoice: (inv: PatientInvoiceItem) => void;
 	readonly onOpenSelfCheckin: () => void;
+	readonly onOpenBooking?: () => void;
+	readonly onOpenReschedule?: () => void;
 }
 
 export const OverviewTab: React.FC<OverviewTabProps> = ({
@@ -61,6 +63,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 	onOpenCareMemo,
 	onOpenSbpForInvoice,
 	onOpenSelfCheckin,
+	onOpenBooking,
+	onOpenReschedule,
 }) => {
 	const firstUnpaid = data.invoices.find(
 		(i) => i.status === "unpaid" || i.status === "partially_paid",
@@ -123,6 +127,16 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 				<button
 					type="button"
 					className="pc-quick-action-btn primary"
+					onClick={onOpenBooking}
+					data-testid="quick-action-book"
+				>
+					<CalendarPlus size={18} />
+					<span>Записаться онлайн</span>
+				</button>
+
+				<button
+					type="button"
+					className="pc-quick-action-btn secondary"
 					onClick={() => {
 						if (firstUnpaid) {
 							onOpenSbpForInvoice(firstUnpaid);
@@ -234,6 +248,16 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
 					{/* Кнопки коммуникации и навигации */}
 					<div className="pc-appt-actions-row">
+						<button
+							type="button"
+							className="pc-btn-secondary pc-appt-action-btn"
+							onClick={onOpenReschedule}
+							data-testid="btn-reschedule-appointment"
+						>
+							<Clock size={16} className="pc-icon-warning" />
+							<span>Перенести приём</span>
+						</button>
+
 						<a
 							href={yandexMapsUrl}
 							target="_blank"

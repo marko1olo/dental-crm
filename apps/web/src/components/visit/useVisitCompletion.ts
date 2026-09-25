@@ -23,6 +23,8 @@ import { useAppStore } from "../../store/appStore";
 import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
 import { fetchWithHandling } from "../../utils/networkUtils";
+import { performAutoVisitBomDeduction } from "../inventory/autoBomDeductionEngine";
+import type { AutoVisitBomDeductionResult } from "@dental/shared";
 
 export interface UseVisitCompletionOptions {
 	visitId?: string | null | undefined;
@@ -148,6 +150,30 @@ export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisi
 					discountPercent: effectiveDiscountPercent,
 				});
 
+				// Фоновое автоматическое списание расходных материалов по технологическим картам 804н (Мандат 8e / 8k / 8n)
+				let materialsDeduction: AutoVisitBomDeductionResult | undefined;
+				try {
+					materialsDeduction = await performAutoVisitBomDeduction({
+						visitId: effectiveVisitId,
+						patientId: effectivePatientId,
+						patientFullName: effectivePatientName,
+						doctorId: effectiveDoctorName,
+						doctorFullName: effectiveDoctorName,
+						renderedServices: result.items,
+						allowOverdraft: true, // Мягкий овердрафт: дефицит склада никогда не блокирует приём (Мандат 8e, 8n)
+						includeStandardPpe: true,
+						organizationId: activeVisit?.organizationId || (dashboard as any)?.clinicSettings?.profile?.organizationId || "org-default",
+						fetchFn: fetchWithHandling as unknown as typeof fetch,
+					});
+				} catch (deductionErr) {
+					logger.warn("[useVisitCompletion] Фоновое списание материалов выполнено в локальном режиме:", deductionErr);
+				}
+
+				const finalResult: ClinicalVisitCompletionResult = {
+					...result,
+					...(materialsDeduction ? { materialsDeduction } : {}),
+				};
+
 				// Опциональная синхронизация с бэкендом (если визит зарегистрирован в БД)
 				if (activeVisit?.id && activeVisit.id !== "no-active-visit") {
 					try {
@@ -169,11 +195,11 @@ export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisi
 					}
 				}
 
-				setCompletionResult(result);
-				showToast(`Приём завершён! ${result.statusBannerText}`, "success", 4500);
-				options?.onCompleteSuccess?.(result);
+				setCompletionResult(finalResult);
+				showToast(`Приём завершён! ${finalResult.statusBannerText}`, "success", 4500);
+				options?.onCompleteSuccess?.(finalResult);
 
-				return result;
+				return finalResult;
 			} catch (error) {
 				logger.error("[useVisitCompletion] Ошибка при завершении визита:", error);
 				showToast("Ошибка при формировании сметы и чека визита", "error", 4000);

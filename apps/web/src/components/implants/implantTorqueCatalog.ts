@@ -18,6 +18,7 @@ export type ImplantTorqueBrand =
 	| "nobel_biocare"
 	| "osstem"
 	| "dentium"
+	| "ankylos"
 	| "astra_tech"
 	| "megagen"
 	| "mis";
@@ -135,6 +136,22 @@ export const IMPLANT_TORQUE_SPECS: Record<ImplantTorqueBrand, BrandTorqueSpec> =
 		torqueLabScrewNcm: 10,
 		connectionSafetyNotes:
 			"SuperLine и SimpleLine II: винт абатмента фиксируется моментом 30 N·cm шестигранником 1.27 мм. Винты протезных колпачков 15 N·cm.",
+	},
+	ankylos: {
+		brand: "ankylos",
+		brandName: "Ankylos (C/X)",
+		countryRu: "Германия (Dentsply Sirona)",
+		screwdriverDefault: "Hex 1.0 mm (Ankylos Screwdriver)",
+		screwdriverAsc: "Ankylos Smart Driver",
+		torqueFinalScrewNcm: 15,
+		torqueNarrowScrewNcm: 15,
+		torqueMultiUnitAbutmentNcm: 25,
+		torqueMultiUnitBridgeScrewNcm: 15,
+		torqueLocatorNcm: 25,
+		torqueHealingCapNcm: 10,
+		torqueLabScrewNcm: 10,
+		connectionSafetyNotes:
+			"TissueCare Connection (конус Морзе 5.7°): стандартная затяжка винта фиксации 15 N·cm отверткой 1.0 мм (для Balance Posterior — 25 N·cm). Эффект холодной сварки обеспечивает бактериальную герметичность и сохранение кости.",
 	},
 	astra_tech: {
 		brand: "astra_tech",
@@ -507,6 +524,42 @@ export const TI_BASE_CATALOG: readonly TiBaseCatalogItem[] = [
 		recommendedTorqueNcm: 30,
 		screwdriverType: "Hex 1.27 mm",
 		priceKopecks: 420000,
+	},
+
+	// ANKYLOS (Dentsply Sirona)
+	{
+		id: "ak-tb-cx-01",
+		brand: "ankylos",
+		brandName: "Ankylos",
+		lineName: "Ankylos Ti-Base C/X Standard",
+		article: "31022510",
+		nameRu: "Ti-Base Ankylos C/X десна 1.5 мм (индексированный конус Морзе 5.7°)",
+		platformName: "TissueCare C/X",
+		platformDiameterMm: 3.5,
+		gingivalCuffHeightMm: 1.5,
+		chimneyPostHeightMm: 5.0,
+		engagement: "engaging",
+		maxAscAngleDeg: 20,
+		recommendedTorqueNcm: 15,
+		screwdriverType: "Hex 1.0 mm",
+		priceKopecks: 720000,
+	},
+	{
+		id: "ak-tb-cx-02",
+		brand: "ankylos",
+		brandName: "Ankylos",
+		lineName: "Ankylos Ti-Base C/X High Cuff",
+		article: "31022520",
+		nameRu: "Ti-Base Ankylos C/X десна 3.0 мм (индексированный конус Морзе 5.7°)",
+		platformName: "TissueCare C/X",
+		platformDiameterMm: 4.5,
+		gingivalCuffHeightMm: 3.0,
+		chimneyPostHeightMm: 5.0,
+		engagement: "engaging",
+		maxAscAngleDeg: 25,
+		recommendedTorqueNcm: 15,
+		screwdriverType: "Hex 1.0 mm",
+		priceKopecks: 740000,
 	},
 ];
 

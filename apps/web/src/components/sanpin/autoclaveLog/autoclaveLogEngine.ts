@@ -356,6 +356,9 @@ export interface CreateForm257RecordParams {
 	readonly date: string;
 	readonly cycleNumber: number;
 	readonly sterilizerId: string;
+	readonly sterilizerCode?: string | undefined;
+	readonly sterilizerBrandModel?: string | undefined;
+	readonly sterilizerSerialNumber?: string | undefined;
 	readonly regimeId: SterilizationRegimeId;
 	readonly sensors: PhysicalSensorsData;
 	readonly itemsDescriptionRu: string;
@@ -396,7 +399,7 @@ export function createForm257Record(params: CreateForm257RecordParams): Form257R
 		id,
 		date: params.date,
 		cycleNumber: params.cycleNumber,
-		sterilizerCode: sterilizer?.code ?? "АК-01",
+		sterilizerCode: params.sterilizerCode ?? sterilizer?.code ?? "АК-01",
 		actualTemp: params.sensors.actualTemperatureCelsius,
 		actualPressure: params.sensors.actualPressureBar,
 		actualTime: params.sensors.actualExposureMinutes,
@@ -410,10 +413,10 @@ export function createForm257Record(params: CreateForm257RecordParams): Form257R
 		id,
 		date: params.date,
 		cycleNumber: params.cycleNumber,
-		sterilizerId: sterilizer?.id ?? "autoclave-melag-vacuklav-23b",
-		sterilizerCode: sterilizer?.code ?? "АК-01",
-		sterilizerBrandModel: `${sterilizer?.brand ?? ""} ${sterilizer?.model ?? ""}`.trim(),
-		sterilizerSerialNumber: sterilizer?.serialNumber ?? "",
+		sterilizerId: sterilizer?.id ?? params.sterilizerId ?? "autoclave-melag-vacuklav-23b",
+		sterilizerCode: params.sterilizerCode ?? sterilizer?.code ?? "АК-01",
+		sterilizerBrandModel: params.sterilizerBrandModel ?? `${sterilizer?.brand ?? ""} ${sterilizer?.model ?? ""}`.trim(),
+		sterilizerSerialNumber: params.sterilizerSerialNumber ?? sterilizer?.serialNumber ?? "",
 		regimeId: regime?.id ?? "steam_134_5min",
 		regimeNameRu: regime?.nameRu ?? "",
 		targetTemperatureCelsius: regime?.targetTemperatureCelsius ?? 134,

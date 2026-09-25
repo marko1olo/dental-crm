@@ -18,12 +18,12 @@ import {
 	CheckCircle2,
 	Clock,
 	CreditCard,
-	DollarSign,
 	Download,
 	ExternalLink,
 	Eye,
 	FileCheck,
 	FileText,
+	ReceiptText,
 	ShieldCheck,
 	Smartphone,
 } from "lucide-react";
@@ -93,7 +93,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 
 				{/* Баннер суммы возврата */}
 				<div className="pc-tax-banner-pill" data-testid="tax-refund-header-banner">
-					<DollarSign size={18} />
+					<ReceiptText size={18} />
 					<span>{taxDeductionCalc.headerBannerTextRu}</span>
 				</div>
 

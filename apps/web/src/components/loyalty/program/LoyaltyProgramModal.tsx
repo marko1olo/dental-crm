@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
 	Award,
 	Gift,
@@ -54,6 +54,7 @@ import {
 } from "./loyaltyPresets";
 import { generateCode128Svg } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import "./loyaltyProgram.css";
 
 export interface LoyaltyProgramModalProps {
@@ -163,6 +164,56 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 		});
 	}, [invoiceAmountRub, excludedAmountRub, effectiveBalanceRub, requestedPointsRub, currentTier.id, isDoctorOverride]);
 
+	// Live synchronization with PostgreSQL 18 loyalty endpoints (Mandates 8e, 8b, 8n)
+	useEffect(() => {
+		if (!isOpen || !patientId) return;
+		let cancelled = false;
+
+		async function loadLoyaltyData() {
+			try {
+				const headers = denteAdminSecretRequestHeaders();
+				// 1. Fetch live balance & tier
+				const balRes = await fetch(`/api/loyalty/balance/${encodeURIComponent(patientId)}`, { headers });
+				if (balRes.ok) {
+					const data = await balRes.json();
+					if (!cancelled && typeof data.activePoints === "number") {
+						setActivePointsBalance(data.activePoints);
+					}
+				}
+				// 2. Fetch live transaction ledger
+				const txRes = await fetch(`/api/loyalty/transactions/${encodeURIComponent(patientId)}`, { headers });
+				if (txRes.ok) {
+					const data = await txRes.json();
+					if (!cancelled && Array.isArray(data.transactions) && data.transactions.length > 0) {
+						const mappedTx: LoyaltyLedgerEntry[] = data.transactions.map((t: any) => ({
+							id: t.id || `tx-${Date.now()}`,
+							timestampIso: t.createdAt ? new Date(t.createdAt).toLocaleString("ru-RU") : new Date().toLocaleString("ru-RU"),
+							patientId,
+							patientName,
+							medicalCardNumber,
+							operationType: t.type?.includes("accrual") ? "accrual" : "redemption",
+							operationTypeRu: t.type?.includes("accrual") ? "Начисление бонусов" : "Списание бонусов",
+							invoiceAmountKop: 0,
+							pointsDeltaRub: Number(t.amountPoints) || 0,
+							balanceAfterRub: Number(t.balanceAfterPoints) || 0,
+							paymentMethodRu: "Бонусный счет",
+							staffNameRu: "Система лояльности",
+							noteRu: t.description || "Операция с баллами",
+						}));
+						setLedgerEntries(mappedTx);
+					}
+				}
+			} catch (e) {
+				// Silently fail on network/mock offline mode
+			}
+		}
+
+		void loadLoyaltyData();
+		return () => {
+			cancelled = true;
+		};
+	}, [isOpen, patientId, patientName, medicalCardNumber]);
+
 	if (!isOpen) return null;
 
 	// Handlers
@@ -211,6 +262,29 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 			`Успешно списано ${redemptionCalc.actualRedeemedPointsRub} бонусов. К оплате: ${redemptionCalc.remainingPayableRub.toLocaleString("ru-RU")} ₽`
 		);
 		showToast(`Успешно списано ${redemptionCalc.actualRedeemedPointsRub} бонусов в чек`, "success");
+
+		// Persist redemption to PostgreSQL 18 ACID endpoint (Mandates 8e, 8b, 8n)
+		if (patientId) {
+			fetch("/api/loyalty/redeem", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					patientId,
+					invoiceAmountRub,
+					pointsToRedeem: redemptionCalc.actualRedeemedPointsRub,
+					allowFullCoverage: isDoctorOverride,
+					description: isDoctorOverride
+						? `Гарантийное покрытие врача: списание бонусов ${redemptionCalc.actualRedeemedPointsRub} ₽ по счету`
+						: `Списание бонусов ${redemptionCalc.actualRedeemedPointsRub} ₽ по счету`,
+				}),
+			}).catch((err) => {
+				console.warn("[Loyalty] Redemption backend sync error:", err);
+			});
+		}
+
 		if (onRedeemSuccess) {
 			onRedeemSuccess(redemptionCalc.actualRedeemedPointsRub, redemptionCalc.fiscal54FzSplit);
 		}
@@ -270,6 +344,28 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 		);
 		showToast(`1-клик: Списано ${targetCalc.actualRedeemedPointsRub} бонусов в чек`, "success");
 
+		// Persist 1-click redemption to PostgreSQL 18 ACID endpoint (Mandates 8e, 8b, 8n)
+		if (patientId) {
+			fetch("/api/loyalty/redeem", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					patientId,
+					invoiceAmountRub,
+					pointsToRedeem: targetCalc.actualRedeemedPointsRub,
+					allowFullCoverage: isDoctorOverride,
+					description: isDoctorOverride
+						? `1-клик: Гарантийное/автономное покрытие счета бонусами ${targetCalc.actualRedeemedPointsRub} ₽`
+						: `1-клик: Списание бонусов ${targetCalc.actualRedeemedPointsRub} ₽ в чек`,
+				}),
+			}).catch((err) => {
+				console.warn("[Loyalty] 1-click redemption backend sync error:", err);
+			});
+		}
+
 		if (onRedeemSuccess) {
 			onRedeemSuccess(targetCalc.actualRedeemedPointsRub, targetCalc.fiscal54FzSplit);
 		}
@@ -312,6 +408,24 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 		setActivePointsBalance((prev) => prev + credited.bonusRub);
 		setLedgerEntries((prev) => [credited.ledgerEntry, ...prev]);
 		showToast(`Начислено ${credited.bonusRub} ₽ бонусов за рекомендацию «${targetRef.invitedPatientName}»!`, "success");
+
+		// Persist referral accrual to PostgreSQL 18 ACID endpoint (Mandates 8e, 8b, 8n)
+		if (patientId) {
+			fetch("/api/loyalty/accrue", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					patientId,
+					amountPoints: credited.bonusRub,
+					description: `Бонус за рекомендацию: ${targetRef.invitedPatientName}`,
+				}),
+			}).catch((err) => {
+				console.warn("[Loyalty] Referral accrual backend sync error:", err);
+			});
+		}
 	};
 
 	const handleGenerateNewCertificate = () => {
@@ -1155,9 +1269,9 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 									</h3>
 									<p style={{ fontSize: "0.8125rem", opacity: 0.95, margin: 0, lineHeight: 1.5 }}>
 										Честная программа удержания для врача и клиники: при рекомендации и первом визите
-										на сумму от {(DEFAULT_REFERRAL_PRESET.minInvoiceSpendKop / 100).toLocaleString("ru-RU")} ₽
-										рекомендатель получает {(DEFAULT_REFERRAL_PRESET.referrerBonusKop / 100).toLocaleString("ru-RU")} ₽ бонусов на счет,
-										а новый пациент — скидку {(DEFAULT_REFERRAL_PRESET.invitedDiscountKop / 100).toLocaleString("ru-RU")} ₽.
+										на сумму от {(DEFAULT_REFERRAL_PRESET.minFriendSpendKop / 100).toLocaleString("ru-RU")} ₽
+										рекомендатель получает {(DEFAULT_REFERRAL_PRESET.referrerRewardRub).toLocaleString("ru-RU")} ₽ бонусов на счет,
+										а новый пациент — скидку {(DEFAULT_REFERRAL_PRESET.referredFriendDiscountRub).toLocaleString("ru-RU")} ₽.
 									</p>
 								</div>
 								<div style={{ textAlign: "right" }}>
@@ -1166,7 +1280,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 										{referrals.length} чел.
 									</div>
 									<div style={{ fontSize: "0.75rem", opacity: 0.9 }}>
-										Начислено: {referrals.filter((r) => r.isRewardCredited).length * (DEFAULT_REFERRAL_PRESET.referrerBonusKop / 100)} ₽
+										Начислено: {referrals.filter((r) => r.isRewardCredited).length * DEFAULT_REFERRAL_PRESET.referrerRewardRub} ₽
 									</div>
 								</div>
 							</div>

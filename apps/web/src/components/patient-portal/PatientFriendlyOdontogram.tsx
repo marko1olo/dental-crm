@@ -434,7 +434,7 @@ const PatientToothButton: React.FC<PatientToothButtonProps> = memo(({
 			{tooth.status === "healthy" && <Check size={12} strokeWidth={3} />}
 			{tooth.status === "in_treatment" && <Clock size={11} strokeWidth={2.5} />}
 			{tooth.status === "needs_treatment" && <AlertTriangle size={11} strokeWidth={2.5} />}
-			{tooth.status === "missing_or_implant" && <span style={{ fontSize: "10px", fontWeight: 800 }}>—</span>}
+			{tooth.status === "missing_or_implant" && <span style={{ fontSize: "12px", fontWeight: 800 }}>—</span>}
 		</button>
 	);
 });
@@ -549,7 +549,7 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 							{healthIndex.inTreatmentCount > 0 ? ` • В процессе ${healthIndex.inTreatmentCount}` : ""}
 						</span>
 
-						<span style={{ fontSize: "11px", color: "var(--pc-success, #10b981)", fontWeight: 600 }}>
+						<span style={{ fontSize: "12px", color: "var(--pc-success, #10b981)", fontWeight: 600 }}>
 							Цель: 100% санация
 						</span>
 					</div>
@@ -566,7 +566,7 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 								}}
 							/>
 						</div>
-						<div style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", lineHeight: "1.3" }}>
+						<div style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)", lineHeight: "1.3" }}>
 							{healthIndex.encouragingNoteRu}
 						</div>
 					</div>
@@ -724,7 +724,7 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 					align-items: center;
 				}
 				.patient-odontogram-jaw-title {
-					font-size: 11px;
+					font-size: 12px;
 					color: var(--pc-text-muted, #94a3b8);
 					text-align: center;
 					margin-bottom: 6px;
@@ -748,7 +748,7 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 					box-sizing: border-box;
 				}
 				.patient-odontogram-quadrant-title {
-					font-size: 11px;
+					font-size: 12px;
 					font-weight: 700;
 					color: var(--pc-text-muted, #94a3b8);
 					text-align: center;
@@ -865,7 +865,7 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 									style={{
 										padding: "2px 8px",
 										borderRadius: "12px",
-										fontSize: "11px",
+										fontSize: "12px",
 										fontWeight: 800,
 										backgroundColor: getPatientToothStatusColor(selectedTooth.status).light,
 										color: getPatientToothStatusColor(selectedTooth.status).border,
@@ -905,8 +905,8 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 					{/* Assigned Procedures & Treatment Plan Details */}
 					<div
 						style={{
-							backgroundColor: "var(--pc-bg, #0f172a)",
-							border: "1px solid var(--pc-border, #334155)",
+							backgroundColor: "var(--pc-surface, var(--paper-strong, #ffffff))",
+							border: "1px solid var(--pc-border, var(--glass-border, #e2e8f0))",
 							borderRadius: "8px",
 							padding: "10px 12px",
 							display: "flex",
@@ -942,7 +942,7 @@ export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps>
 							border: "1px solid rgba(13, 148, 136, 0.2)",
 							borderRadius: "6px",
 							padding: "8px 10px",
-							fontSize: "11px",
+							fontSize: "12px",
 							color: "var(--pc-text-muted, #94a3b8)",
 							display: "flex",
 							alignItems: "center",

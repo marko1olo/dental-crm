@@ -214,8 +214,8 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 					className="flex-1 sm:overflow-y-auto min-h-0 pr-1 space-y-2 sm:space-y-2.5 my-2 sm:my-3 sm:overscroll-contain sm:max-h-[560px] pb-4 sm:pb-12"
 					style={{ scrollPaddingBottom: "240px" }}
 				>
-					{/* Monolithic Pricing Section */}
-					<div className="p-2.5 sm:p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] space-y-1 sm:space-y-1.5 border border-[var(--border,#cbd5e1)]/40">
+					{/* Monolithic Pricing Section: Flat tonal underlay (Anti-Matryoshka Law) */}
+					<div className="p-2.5 sm:p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] space-y-1 sm:space-y-1.5">
 						<div className="flex items-baseline justify-between gap-2">
 							<span className="text-xs text-[var(--muted,#64748b)] font-medium">
 								Полная стоимость:
@@ -227,7 +227,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 						{/* Mode 1: Installment 0% */}
 						{activePaymentMode === "installment" && (
-							<div className="flex items-center justify-between text-xs pt-1.5 border-t border-[var(--border,#cbd5e1)]/40 gap-2">
+							<div className="flex items-center justify-between text-xs pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))]/30 gap-2">
 								<span className="text-[var(--muted,#64748b)] flex items-center gap-1">
 									<Percent size={12} className="text-[var(--teal,var(--brand-primary))]" />
 									Рассрочка {installmentMonths} мес:
@@ -240,7 +240,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 						{/* Mode 2: Staged Payment (30/40/30) */}
 						{activePaymentMode === "staged" && (
-							<div className="space-y-1 text-[11px] pt-1.5 border-t border-[var(--border,#cbd5e1)]/40">
+							<div className="space-y-1 text-[11px] pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))]/30">
 								<div className="flex justify-between text-[var(--muted,#64748b)] gap-2">
 									<span>1. Аванс/Санация (30%):</span>
 									<strong className="font-mono text-[var(--ink,#0f172a)] whitespace-nowrap">
@@ -264,7 +264,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 						{/* Mode 3: 5% Single Payment Discount */}
 						{activePaymentMode === "discount" && (
-							<div className="space-y-1 text-[11px] pt-1.5 border-t border-[var(--border,#cbd5e1)]/40">
+							<div className="space-y-1 text-[11px] pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))]/30">
 								<div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold gap-2">
 									<span>Скидка 5% за 100% оплату:</span>
 									<span className="font-mono whitespace-nowrap">
@@ -283,7 +283,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						{/* NDFL Deduction box */}
 						{showNdflBreakdown && tier.ndflRefundRub > 0 && (
 							<div
-								className="pt-1.5 border-t border-[var(--border,#cbd5e1)]/40 text-[11px] text-emerald-800 dark:text-emerald-300 space-y-0.5"
+								className="pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))]/30 text-[11px] text-emerald-800 dark:text-emerald-300 space-y-0.5"
 								title={tier.ndflDetails?.codeDescription || "Налоговый вычет по НК РФ"}
 							>
 								<div className="flex items-center justify-between font-semibold gap-2">
@@ -487,7 +487,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 			)}
 
 			{/* Top Control Bar: Installments, Modes & Studio Triggers (Hick's Law: 1 Compact 32-36px Row) */}
-			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 sm:p-3.5 rounded-3xl bg-[var(--paper-soft,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] text-xs text-[var(--ink,#0f172a)] shadow-xs">
+			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 sm:p-3.5 rounded-2xl bg-[var(--paper-soft,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] text-xs text-[var(--ink,#0f172a)]">
 				<div className="flex items-center gap-2.5 min-w-0">
 					<div className="p-2 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/20 shrink-0">
 						<Sparkles size={16} />
@@ -501,7 +501,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 								СтАР / 804н
 							</span>
 						</div>
-						<p className="text-[11px] text-[var(--muted,#64748b)] m-0 mt-0.5 truncate max-w-xl">
+						<p className="text-[11px] text-[var(--muted,#64748b)] m-0 mt-0.5 leading-relaxed break-words">
 							Интерактивное сравнение клинических этапов, сроков, гарантий и программ оплаты 0%
 						</p>
 					</div>
@@ -687,7 +687,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						</span>
 					</div>
 
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--line,var(--border,#cbd5e1))] rounded-2xl border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-strong,var(--paper,#ffffff))] overflow-hidden shadow-xs">
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--line,var(--border,#cbd5e1))] rounded-2xl border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] overflow-hidden">
 						{activeTier.stages.map((stg) => (
 							<div key={stg.stageNumber} className="p-3 sm:p-3.5 space-y-2 min-w-0">
 								<div className="flex items-center justify-between gap-2 min-w-0">

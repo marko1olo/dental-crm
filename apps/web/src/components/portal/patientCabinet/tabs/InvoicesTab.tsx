@@ -22,6 +22,7 @@ import {
 	FileText,
 	Layers,
 	Pill,
+	Printer,
 	QrCode,
 	Scan,
 	ShieldCheck,
@@ -37,6 +38,8 @@ import {
 	filterInvoices,
 	formatRussianDateIso,
 	formatRubles,
+	generateDetailedReceiptHtml,
+	openPrintWindow,
 } from "../patientCabinetEngine";
 import { groupServicesIntoFriendlyBlocks } from "../patientCareInstructionsEngine";
 
@@ -303,7 +306,19 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
 												}}
 											>
 												<Download size={15} />
-												<span>Детализированный чек (54-ФЗ)</span>
+												<span>Чек (54-ФЗ)</span>
+											</button>
+
+											<button
+												type="button"
+												className="pc-btn-secondary pc-receipt-print-btn"
+												data-testid={`print-receipt-btn-${inv.id}`}
+												onClick={() => {
+													openPrintWindow(generateDetailedReceiptHtml(inv, data));
+												}}
+											>
+												<Printer size={15} />
+												<span>Печать с QR ФНС</span>
 											</button>
 
 											{inv.fiscalReceiptUrl && (

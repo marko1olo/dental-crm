@@ -442,11 +442,12 @@
 }
 
 .marketing-roi-action-btn {
-	min-height: 40px;
-	padding: 8px 16px;
-	border-radius: 10px;
+	height: 34px;
+	min-height: 34px;
+	padding: 6px 14px;
+	border-radius: 8px;
 	font-size: 0.8rem;
-	font-weight: 700;
+	font-weight: 600;
 	cursor: pointer;
 	display: inline-flex;
 	align-items: center;
@@ -455,6 +456,14 @@
 	background-color: var(--paper-strong, #334155);
 	color: var(--ink, #f8fafc);
 	transition: all 0.15s ease-in-out;
+}
+
+@media (pointer: coarse), (max-width: 640px) {
+	.marketing-roi-action-btn {
+		min-height: 44px;
+		height: auto;
+		padding: 8px 16px;
+	}
 }
 
 .marketing-roi-action-btn:hover {
@@ -471,3 +480,48 @@
 .marketing-roi-action-btn.primary:hover {
 	opacity: 0.9;
 }
+
+/* Collapsible Funnel Controls (Frontend Rule 3.1 & Mandate 8d) */
+.marketing-roi-toggle-btn {
+	height: 32px;
+	min-height: 32px;
+	padding: 0 10px;
+	border-radius: 8px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	border: 1px solid var(--line, rgba(204, 251, 241, 0.2));
+	background-color: var(--paper-soft, #0f172a);
+	color: var(--teal, #14b8a6);
+	transition: all 0.15s ease-in-out;
+}
+
+@media (pointer: coarse), (max-width: 640px) {
+	.marketing-roi-toggle-btn {
+		min-height: 44px;
+		height: auto;
+		padding: 8px 12px;
+	}
+}
+
+.marketing-roi-toggle-btn:hover {
+	background-color: var(--paper-strong, #334155);
+	border-color: var(--teal, #0d9488);
+	color: var(--ink, #f8fafc);
+}
+
+.marketing-roi-funnel-compact-strip {
+	margin-top: 4px;
+	margin-bottom: 4px;
+}
+
+.marketing-roi-privacy-banner {
+	background: rgba(15, 118, 110, 0.08);
+	border: 1px solid rgba(15, 118, 110, 0.25);
+	border-radius: 12px;
+	padding: 12px 14px;
+}
+

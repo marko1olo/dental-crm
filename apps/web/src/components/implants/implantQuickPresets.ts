@@ -46,10 +46,10 @@ export const FAST_IMPLANT_SYSTEM_PRESETS: readonly FastImplantSystemPreset[] = [
 		recommendedDrillRpm: 800,
 	},
 	{
-		brand: "MegaGen",
-		model: "AnyRidge Xpeed",
+		brand: "Ankylos",
+		model: "C/X TissueCare",
 		defaultDiameterMm: 4.5,
-		defaultLengthMm: 10.0,
+		defaultLengthMm: 11.0,
 		defaultTorqueNcm: 35,
 		recommendedDrillRpm: 800,
 	},
@@ -58,6 +58,14 @@ export const FAST_IMPLANT_SYSTEM_PRESETS: readonly FastImplantSystemPreset[] = [
 		model: "OsseoSpeed EV",
 		defaultDiameterMm: 4.2,
 		defaultLengthMm: 11.0,
+		defaultTorqueNcm: 35,
+		recommendedDrillRpm: 800,
+	},
+	{
+		brand: "MegaGen",
+		model: "AnyRidge Xpeed",
+		defaultDiameterMm: 4.5,
+		defaultLengthMm: 10.0,
 		defaultTorqueNcm: 35,
 		recommendedDrillRpm: 800,
 	},
@@ -79,8 +87,8 @@ export const FAST_IMPLANT_SYSTEM_PRESETS: readonly FastImplantSystemPreset[] = [
 	},
 ];
 
-export const STANDARD_DIAMETERS = [3.0, 3.5, 4.0, 4.3, 4.5, 5.0];
-export const STANDARD_LENGTHS = [7.0, 8.5, 10.0, 11.5, 13.0, 15.0];
+export const STANDARD_DIAMETERS = [3.0, 3.3, 3.5, 3.6, 3.75, 4.0, 4.2, 4.3, 4.5, 4.8, 5.0, 5.5];
+export const STANDARD_LENGTHS = [6.6, 7.0, 8.0, 8.5, 9.5, 10.0, 11.0, 11.5, 13.0, 14.0, 15.0];
 export const QUICK_TORQUE_OPTIONS = [25, 30, 35, 40, 45, 50];
 
 export type MischDensity = "D1" | "D2" | "D3" | "D4";
@@ -104,6 +112,73 @@ export const MISCH_DENSITY_NOTES: Record<MischDensity, { title: string; hint: st
 	D3: { title: "D3 — Тонкая кортикальная", hint: "Дистальный отдел в/ч (350–850 HU). Недопрепарирование ложа." },
 	D4: { title: "D4 — Мягкая губчатая", hint: "Бугор верхней челюсти (<350 HU). Остеотомы Саммерса." },
 };
+
+/**
+ * Анатомическое определение плотности кости по формуле зубов FDI (11..48).
+ */
+export function getBoneDensityByToothFdi(toothFdi: number): MischDensity {
+	if (toothFdi >= 11 && toothFdi <= 28) {
+		if ([17, 18, 27, 28].includes(toothFdi)) return "D4";
+		return "D3";
+	}
+	if (toothFdi >= 31 && toothFdi <= 48) {
+		if ([31, 32, 33, 41, 42, 43].includes(toothFdi)) return "D1";
+		if ([37, 38, 47, 48].includes(toothFdi)) return "D3";
+		return "D2";
+	}
+	return "D2";
+}
+
+export interface ParsedImplantBarcode {
+	readonly rawBarcode: string;
+	readonly article?: string | undefined;
+	readonly lot?: string | undefined;
+	readonly serial?: string | undefined;
+}
+
+/**
+ * Парсер штрихкода упаковки имплантата (GS1 DataMatrix / 2D / серийный формат).
+ */
+export function parseImplantBarcode(barcode: string): ParsedImplantBarcode {
+	const raw = barcode.trim();
+	if (!raw) return { rawBarcode: "" };
+
+	let article: string | undefined;
+	let lot: string | undefined;
+	let serial: string | undefined;
+
+	const ai01 = raw.match(/\(01\)(\d+)/) || raw.match(/01(\d{14})/);
+	const ai10 = raw.match(/\(10\)([A-Za-z0-9-_]+)/) || raw.match(/10([A-Za-z0-9-_]{4,16})/);
+	const ai21 = raw.match(/\(21\)([A-Za-z0-9-_]+)/) || raw.match(/21([A-Za-z0-9-_]{4,16})/);
+	const ai240 = raw.match(/\(240\)([A-Za-z0-9-_]+)/);
+
+	if (ai01 || ai10 || ai21 || ai240) {
+		if (ai240?.[1]) article = ai240[1];
+		else if (ai01?.[1]) article = `REF-${ai01[1].slice(-6)}`;
+		if (ai10?.[1]) lot = ai10[1];
+		if (ai21?.[1]) serial = ai21[1];
+	} else if (raw.includes("/") || raw.includes(";") || raw.includes("|")) {
+		const parts = raw.split(/[/;|]/).map((p) => p.trim());
+		if (parts.length >= 3) {
+			article = parts[0];
+			lot = parts[1];
+			serial = parts[2];
+		} else if (parts.length === 2) {
+			lot = parts[0];
+			serial = parts[1];
+		}
+	} else if (raw.startsWith("LOT-") || raw.startsWith("SN-")) {
+		if (raw.startsWith("LOT-")) lot = raw;
+		else serial = raw;
+	}
+
+	return {
+		rawBarcode: raw,
+		...(article ? { article } : {}),
+		...(lot ? { lot } : {}),
+		...(serial ? { serial } : {}),
+	};
+}
 
 export interface FastImplantPassportData {
 	readonly passportId: string;
@@ -161,13 +236,19 @@ export function createDefaultPassportRecord(params: {
 					? "FX4010"
 					: preset.brand === "Straumann"
 						? "021.2310"
-						: "TS3S4010S"),
+						: preset.brand === "Ankylos"
+							? "A-B110-CX"
+							: preset.brand === "Astra Tech"
+								? "EV-42110"
+								: preset.brand === "Nobel Biocare"
+									? "NP-35115"
+									: "TS3S4010S"),
 		diameterMm: params.diameterMm ?? preset.defaultDiameterMm,
 		lengthMm: params.lengthMm ?? preset.defaultLengthMm,
 		torqueNcm: params.torqueNcm ?? 35, // 35 Н·см по умолчанию
 		lotNumber: `LOT-${new Date().getFullYear()}-${preset.brand.slice(0, 3).toUpperCase()}-${timestampSuffix}`,
 		serialNumber: `SN-${timestampSuffix}`,
-		boneDensity: tooth > 30 && tooth < 49 ? "D2" : "D3",
+		boneDensity: getBoneDensityByToothFdi(tooth),
 		isqDay0: params.isqDay0 ?? 72, // 72 ISQ каноническая первичная фиксация (RFA)
 		capType: params.capType ?? "fdm", // ФДМ по умолчанию
 		patientName: params.patientName ?? "Пациент",

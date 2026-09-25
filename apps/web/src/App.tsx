@@ -1441,7 +1441,11 @@ export function App() {
 						clinicName={dashboard.clinicName}
 						onGoToDictation={goToVisitDictation}
 						onGoToSchedule={() => {
-							window.location.hash = "schedule";
+							if (window.location.hash === "#schedule" || window.location.hash === "schedule") {
+								window.dispatchEvent(new CustomEvent("dente-open-quick-booking"));
+							} else {
+								window.location.hash = "schedule";
+							}
 						}}
 						onGoToVisit={() => {
 							window.location.hash = "visit";

@@ -473,7 +473,9 @@ export const SeniorNurseDisposalActModal: React.FC<
 						<FileText size={24} className="text-[var(--teal,#0d9488)] shrink-0" />
 						<div className="min-w-0">
 							<div className="font-bold text-lg leading-tight truncate">
-								Акт списания медикаментов и анестетиков (1 клик)
+								{approverRole === "senior_nurse"
+									? "Акт списания медикаментов и анестетиков (Старшая медсестра)"
+									: "Акт списания медикаментов и анестетиков (1 клик)"}
 							</div>
 							<div className="text-xs text-muted mt-0.5 truncate">
 								СанПиН 3.3686-21 • Честный ЗНАК (Схема 10560) •

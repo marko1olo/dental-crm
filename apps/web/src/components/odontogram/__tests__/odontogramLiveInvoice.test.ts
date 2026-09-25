@@ -29,7 +29,7 @@ describe("OdontogramLiveInvoice — Order 804n Nomenclature & Endodontic Anatomi
 			EndoUnsealing: "A16.07.082",
 			Implant: "A16.07.054.001",
 			Planned_Implant: "A16.07.054.001",
-			Missing: "A16.07.001.001",
+			Missing: "A16.07.054.001",
 			BoneGrafting: "A16.07.041",
 			ImplantProsthetics: "A16.07.006",
 			PeriodontalScaling: "A16.07.051",
@@ -189,7 +189,7 @@ describe("OdontogramLiveInvoice — Order 804n Nomenclature & Endodontic Anatomi
 		const pedTeeth: ToothData[] = [
 			{ toothNumber: 54, state: "Caries" },
 			{ toothNumber: 65, state: "Pulpitis" },
-			{ toothNumber: 75, state: "Missing" },
+			{ toothNumber: 75, state: "Periodontitis" },
 		];
 
 		const items = calculateLiveInvoiceItems(pedTeeth);

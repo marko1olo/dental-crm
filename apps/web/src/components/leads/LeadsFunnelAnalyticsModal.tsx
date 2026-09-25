@@ -27,6 +27,7 @@ import {
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	type CanonicalMarketingChannelKey,
 	type ChannelSpendMap,
@@ -59,6 +60,57 @@ export function LeadsFunnelAnalyticsModal({
 		getDefaultChannelSpendMap(),
 	);
 	const [isBudgetDrawerOpen, setIsBudgetDrawerOpen] = useState(false);
+
+	// Collapsible analytics panels (Frontend Rule 3.1 & Mandate 8d)
+	const [isWaterfallOpen, setIsWaterfallOpen] = useState(false);
+	const [isChannelsTableOpen, setIsChannelsTableOpen] = useState(false);
+
+	// Fetch live marketing attribution spends
+	useEffect(() => {
+		if (!isOpen) return;
+		let cancelled = false;
+
+		async function fetchLiveSpends() {
+			try {
+				const res = await fetch("/api/marketing/attribution", {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (!res.ok) return;
+				const data = await res.json();
+				if (cancelled || !data) return;
+
+				const liveSpends: Partial<ChannelSpendMap> = {};
+				if (Array.isArray(data.selfBookingChannels)) {
+					for (const ch of data.selfBookingChannels) {
+						const rub = Math.round((ch.spentKopecks || 0) / 100);
+						if (ch.key === "gis_2") liveSpends.gis_2 = rub;
+						else if (ch.key === "prodoctorov") liveSpends.prodoctorov = rub;
+						else if (ch.key === "website_widget") liveSpends.site_seo = rub;
+						else if (ch.key === "tg_bot" || ch.key === "wa_bot") {
+							liveSpends.social_media = (liveSpends.social_media || 0) + rub;
+						}
+					}
+				}
+				if (data.telephonyAdminFunnel) {
+					liveSpends.other = Math.round((data.telephonyAdminFunnel.spentKopecks || 0) / 100);
+				}
+
+				if (!cancelled && Object.keys(liveSpends).length > 0) {
+					setCustomSpends((prev) => ({
+						...prev,
+						...liveSpends,
+					}));
+				}
+			} catch {
+				// Silently fallback to defaults
+			}
+		}
+
+		fetchLiveSpends();
+		return () => {
+			cancelled = true;
+		};
+	}, [isOpen]);
 
 	// Keyboard ESC listener
 	useEffect(() => {
@@ -795,6 +847,8 @@ export function LeadsFunnelAnalyticsModal({
 								alignItems: "center",
 								justifyContent: "space-between",
 								marginBottom: 16,
+								flexWrap: "wrap",
+								gap: 8,
 							}}
 						>
 							<div>
@@ -816,22 +870,95 @@ export function LeadsFunnelAnalyticsModal({
 									Абсолютное количество и пошаговая конверсия между этапами
 								</p>
 							</div>
-							<div
-								style={{
-									fontSize: 12,
-									fontWeight: 600,
-									color: "var(--muted)",
-									background: "var(--paper-soft)",
-									padding: "4px 10px",
-									borderRadius: 8,
-									border: "1px solid var(--line)",
-								}}
-							>
-								Выборка: {summary.totalLeads} обращений
+							<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+								<div
+									style={{
+										fontSize: 12,
+										fontWeight: 600,
+										color: "var(--muted)",
+										background: "var(--paper-soft)",
+										padding: "4px 10px",
+										borderRadius: 8,
+										border: "1px solid var(--line)",
+									}}
+								>
+									Выборка: {summary.totalLeads} обращений
+								</div>
+								<button
+									type="button"
+									onClick={() => setIsWaterfallOpen(!isWaterfallOpen)}
+									style={{
+										height: 32,
+										padding: "0 10px",
+										borderRadius: 8,
+										fontSize: 12,
+										fontWeight: 600,
+										border: "1px solid var(--line)",
+										background: isWaterfallOpen
+											? "rgba(15, 118, 110, 0.15)"
+											: "var(--paper-soft)",
+										color: isWaterfallOpen ? "var(--teal)" : "var(--ink)",
+										cursor: "pointer",
+										display: "flex",
+										alignItems: "center",
+										gap: 6,
+									}}
+									aria-expanded={isWaterfallOpen}
+									data-testid="toggle-leads-waterfall-btn"
+								>
+									{isWaterfallOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+									{isWaterfallOpen ? "Скрыть детализацию" : "Показать расширенную аналитику"}
+								</button>
 							</div>
 						</div>
 
-						<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+						{/* Compact Funnel Strip (Frontend Rule 3.1 & Mandate 8d) */}
+						{!isWaterfallOpen && (
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "space-between",
+									fontSize: 12,
+									padding: "10px 14px",
+									background: "var(--paper-soft)",
+									borderRadius: 10,
+									border: "1px solid var(--line)",
+									flexWrap: "wrap",
+									gap: 8,
+								}}
+								data-testid="leads-waterfall-compact-strip"
+							>
+								<span style={{ color: "var(--muted)" }}>
+									6 клинических этапов: <strong style={{ color: "var(--ink)" }}>{stages[0]?.count ?? 0}</strong> лидов → <strong style={{ color: "var(--teal)" }}>{stages[2]?.count ?? 0}</strong> записей → <strong style={{ color: "var(--warn-fg)" }}>{stages[3]?.count ?? 0}</strong> явок (Show-up) → <strong style={{ color: "var(--ok-fg)" }}>{stages[5]?.count ?? 0}</strong> оплат в кассу.
+								</span>
+								<button
+									type="button"
+									onClick={() => setIsWaterfallOpen(true)}
+									style={{
+										background: "none",
+										border: "none",
+										color: "var(--teal)",
+										fontWeight: 600,
+										cursor: "pointer",
+										fontSize: 12,
+										display: "inline-flex",
+										alignItems: "center",
+										gap: 4,
+									}}
+								>
+									<span>Развернуть воронку</span>
+									<ChevronDown size={13} />
+								</button>
+							</div>
+						)}
+
+						{/* Expanded Waterfall Breakdown */}
+						{isWaterfallOpen && (
+						<div
+							style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+							data-testid="leads-waterfall-expanded"
+						>
 							{stages.map((st, idx) => {
 								const maxCount = summary.totalLeads > 0 ? summary.totalLeads : 1;
 								const barWidthPercent = Math.max(
@@ -958,6 +1085,7 @@ export function LeadsFunnelAnalyticsModal({
 								);
 							})}
 						</div>
+						)}
 					</div>
 
 					{/* ------------------------------------------------------------ */}
@@ -1000,9 +1128,95 @@ export function LeadsFunnelAnalyticsModal({
 									Сравнение CPL, CAC, среднего чека и окупаемости инвестиций (ROMI)
 								</p>
 							</div>
+							<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+								<div
+									style={{
+										fontSize: 12,
+										fontWeight: 600,
+										color: "var(--muted)",
+										background: "var(--paper-soft)",
+										padding: "4px 10px",
+										borderRadius: 8,
+										border: "1px solid var(--line)",
+									}}
+								>
+									Каналов: {channels.length}
+								</div>
+								<button
+									type="button"
+									onClick={() => setIsChannelsTableOpen(!isChannelsTableOpen)}
+									style={{
+										height: 32,
+										padding: "0 10px",
+										borderRadius: 8,
+										fontSize: 12,
+										fontWeight: 600,
+										border: "1px solid var(--line)",
+										background: isChannelsTableOpen
+											? "rgba(15, 118, 110, 0.15)"
+											: "var(--paper-soft)",
+										color: isChannelsTableOpen ? "var(--teal)" : "var(--ink)",
+										cursor: "pointer",
+										display: "flex",
+										alignItems: "center",
+										gap: 6,
+									}}
+									aria-expanded={isChannelsTableOpen}
+									data-testid="toggle-channels-table-btn"
+								>
+									{isChannelsTableOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+									{isChannelsTableOpen ? "Скрыть таблицу" : "Показать аналитику по каналам"}
+								</button>
+							</div>
 						</div>
 
-						<div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+						{/* Compact Channels Strip (Frontend Rule 3.1 & Mandate 8d) */}
+						{!isChannelsTableOpen && (
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "space-between",
+									fontSize: 12,
+									padding: "10px 14px",
+									background: "var(--paper-soft)",
+									borderRadius: 10,
+									border: "1px solid var(--line)",
+									flexWrap: "wrap",
+									gap: 8,
+								}}
+								data-testid="channels-compact-strip"
+							>
+								<span style={{ color: "var(--muted)" }}>
+									Рекламных каналов: <strong style={{ color: "var(--ink)" }}>{channels.length}</strong> • Бюджет: <strong style={{ color: "var(--ink)" }}>{summary.totalMarketingSpendRub.toLocaleString("ru-RU")} ₽</strong> • CAC: <strong style={{ color: "var(--accent)" }}>{summary.cacRub.toLocaleString("ru-RU")} ₽</strong> • Выручка: <strong style={{ color: "var(--ok-fg)" }}>{summary.totalRevenueRub.toLocaleString("ru-RU")} ₽</strong>
+								</span>
+								<button
+									type="button"
+									onClick={() => setIsChannelsTableOpen(true)}
+									style={{
+										background: "none",
+										border: "none",
+										color: "var(--teal)",
+										fontWeight: 600,
+										cursor: "pointer",
+										fontSize: 12,
+										display: "inline-flex",
+										alignItems: "center",
+										gap: 4,
+									}}
+								>
+									<span>Развернуть таблицу каналов</span>
+									<ChevronDown size={13} />
+								</button>
+							</div>
+						)}
+
+						{/* Expanded Channels Table */}
+						{isChannelsTableOpen && (
+						<div
+							style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}
+							data-testid="channels-table-expanded"
+						>
 							<table
 								style={{
 									width: "100%",
@@ -1194,6 +1408,7 @@ export function LeadsFunnelAnalyticsModal({
 								</tbody>
 							</table>
 						</div>
+						)}
 					</div>
 
 					{/* ------------------------------------------------------------ */}
@@ -1224,6 +1439,7 @@ export function LeadsFunnelAnalyticsModal({
 									• <strong>Высокая доходимость ({summary.showUpRatePercent}%):</strong> Регистратура эффективно подтверждает записи.
 								</div>
 							)}
+							{summary.planAcceptanceRatePercent < 60 ? (
 								<div>
 									• <strong>Согласование планов ({summary.planAcceptanceRatePercent}%):</strong> Рекомендуется демонстрация снимков радиовизиографа и интраоральной камеры на консультации врача у кресла.
 								</div>

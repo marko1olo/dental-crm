@@ -1,6 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
-import type { FastifyInstance, FastifyPluginAsync } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import { visitStockDeductionRequestSchema } from "@dental/shared";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -1809,6 +1810,172 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		}
 
 		return handleDeductRequest(targetOrgId, request.body, request, reply);
+	});
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// POST /:organizationId/deduct/visit — Автосписание расходников по визиту (Мандаты 8e, 8k, 8s)
+	// ─────────────────────────────────────────────────────────────────────────
+	const handleDeductVisitRequest = async (
+		organizationId: string,
+		rawBody: unknown,
+		request: FastifyRequest,
+		reply: FastifyReply,
+	) => {
+		let normalizedBody = rawBody;
+		if (rawBody && typeof rawBody === "object") {
+			const b = rawBody as Record<string, any>;
+			const rawVisitId = b.visitId ?? b.treatment_reference_id ?? b.visit_id;
+			const rawItems = b.items ?? b.materials;
+			let items: any[] | undefined = undefined;
+			if (Array.isArray(rawItems)) {
+				const uuidRegex =
+					/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+				for (const it of rawItems) {
+					const id = it.inventoryItemId ?? it.inventory_item_id ?? it.id;
+					if (id && !uuidRegex.test(id)) {
+						return reply.status(400).send({
+							error: "ValidationError",
+							message: "ID материала должен быть валидным UUID",
+						});
+					}
+				}
+				items = rawItems.map((it) => ({
+					inventoryItemId: it.inventoryItemId ?? it.inventory_item_id ?? it.id,
+					quantity: it.quantity,
+					reason: it.reason ?? it.notes ?? b.notes,
+				}));
+			}
+			normalizedBody = {
+				...b,
+				visitId: rawVisitId,
+				items,
+				allowOverdraft:
+					b.allowOverdraft ?? b.allowSoftOverdraft ?? b.clamp_at_zero ?? true,
+			};
+		}
+
+		const parsedBody = visitStockDeductionRequestSchema.safeParse(normalizedBody);
+		if (!parsedBody.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: parsedBody.error.errors[0]?.message ?? "Неверные параметры запроса списания",
+			});
+		}
+
+		try {
+			const result = await db.transaction(async (tx) => {
+				return TreatmentConsumablesService.deductForVisit(tx, {
+					organizationId,
+					visitId: parsedBody.data.visitId,
+					clientMutationId:
+						parsedBody.data.clientMutationId ??
+						(request.headers["idempotency-key"] as string | undefined) ??
+						null,
+					...(parsedBody.data.userId !== undefined
+						? { userId: parsedBody.data.userId }
+						: { userId: (request.user as any)?.id ?? null }),
+					...(parsedBody.data.transactionType !== undefined
+						? { transactionType: parsedBody.data.transactionType }
+						: {}),
+					...(parsedBody.data.services !== undefined
+						? { services: parsedBody.data.services }
+						: {}),
+					...(parsedBody.data.items !== undefined ? { items: parsedBody.data.items } : {}),
+					...(parsedBody.data.carpulesCount !== undefined
+						? { carpulesCount: parsedBody.data.carpulesCount }
+						: {}),
+					...(parsedBody.data.drugName !== undefined
+						? { drugName: parsedBody.data.drugName }
+						: {}),
+					...(parsedBody.data.paperJournalAcknowledged !== undefined
+						? { paperJournalAcknowledged: parsedBody.data.paperJournalAcknowledged }
+						: {}),
+					...(parsedBody.data.allowOverdraft !== undefined
+						? { allowOverdraft: parsedBody.data.allowOverdraft }
+						: {}),
+				});
+			});
+			return reply.send({
+				success: true,
+				...result,
+				is_overdraft: Boolean(result.isOverdraft),
+			});
+		} catch (err: unknown) {
+			const isInsufficientStock =
+				err instanceof InsufficientStockError ||
+				(err as any)?.error === "InsufficientStock" ||
+				(err as any)?.name === "InsufficientStockError" ||
+				(err as any)?.code === "InsufficientStock";
+
+			if (isInsufficientStock) {
+				const itemErr = err as any;
+				const invItemId = itemErr.inventoryItemId ?? "unknown";
+				const invItemName = itemErr.inventoryItemName ?? "Материал";
+				const avail = Number(itemErr.availableStock ?? 0);
+				const req = Number(itemErr.requiredStock ?? 1);
+				return reply.status(200).send({
+					success: true,
+					isOverdraft: true,
+					is_overdraft: true,
+					warning: `Мягкий овердрафт склада: зафиксирован дефицит по материалу «${invItemName}» (в наличии ${avail}, требовалось ${req}). Приём проведён без блокировки.`,
+					inventoryItemId: invItemId,
+					inventoryItemName: invItemName,
+					availableStock: avail,
+					requiredStock: req,
+					deductions: [],
+					warnings: [
+						{
+							type: "out_of_stock",
+							itemId: invItemId,
+							itemName: invItemName,
+							message: `Мягкий овердрафт склада: зафиксирован дефицит по материалу «${invItemName}» (в наличии ${avail}, требовалось ${req}).`,
+							currentStock: avail - req,
+							criticalThreshold: 0,
+						},
+					],
+				});
+			}
+			request.log.error(err, "Failed to deduct visit inventory");
+			return reply.code(500).send({
+				error: "InternalServerError",
+				message: err instanceof Error ? err.message : "Не удалось выполнить списание расходников по визиту",
+			});
+		}
+	};
+
+	server.post<{
+		Params: { organizationId: string };
+	}>("/:organizationId/deduct/visit", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory deduct visit",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		return handleDeductVisitRequest(organizationId, request.body, request, reply);
+	});
+
+	server.post("/deduct/visit", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory deduct visit",
+		);
+		if (!resolvedOrgId) return;
+
+		const body = (request.body as { organizationId?: string } | undefined) ?? {};
+		const targetOrgId = body.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		return handleDeductVisitRequest(targetOrgId, request.body, request, reply);
 	});
 };
 

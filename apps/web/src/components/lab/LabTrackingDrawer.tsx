@@ -65,6 +65,28 @@ export function LabTrackingDrawer({
 
 	if (!isOpen || !order) return null;
 
+	// Anti-Matryoshka Law (Mandate 8d, Sin 6): Modal depth strictly 1.
+	// Dedicated secondary cabinet renders sequentially rather than nested inside drawer overlay.
+	if (isInstallmentModalOpen) {
+		return (
+			<BankInstallmentQrModal
+				isOpen={isInstallmentModalOpen}
+				onClose={() => setIsInstallmentModalOpen(false)}
+				stageTitle={`Наряд ЗТЛ (${order.constructionType || "Протезирование"})`}
+				stageAmountKopecks={rublesToKopecks(order.priceRub || 0)}
+				patientId={order.patientId}
+				patientName={order.patientName || "Пациент"}
+				onInstallmentApproved={() => {
+					showToast(
+						`Рассрочка на сумму ${(order.priceRub || 0).toLocaleString("ru-RU")} ₽ одобрена банком!`,
+						"success",
+					);
+					handleAdvanceStage();
+				}}
+			/>
+		);
+	}
+
 	const financialSplit = calculateLabFinancialSplit(
 		order.priceRub || 0,
 		order.doctorSharePct ?? 50,
@@ -354,7 +376,7 @@ export function LabTrackingDrawer({
 									type="date"
 									value={frameworkTrialDate}
 									onChange={(e) => setFrameworkTrialDate(e.target.value)}
-									className="w-full h-11 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm font-bold text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)]"
+									className="w-full h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)]"
 								/>
 							</div>
 
@@ -366,7 +388,7 @@ export function LabTrackingDrawer({
 									type="date"
 									value={ceramicTrialDate}
 									onChange={(e) => setCeramicTrialDate(e.target.value)}
-									className="w-full h-11 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm font-bold text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)]"
+									className="w-full h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)]"
 								/>
 							</div>
 
@@ -378,7 +400,7 @@ export function LabTrackingDrawer({
 									type="date"
 									value={deliveryDate}
 									onChange={(e) => setDeliveryDate(e.target.value)}
-									className="w-full h-11 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm font-bold text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)]"
+									className="w-full h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal)]"
 								/>
 							</div>
 						</div>
@@ -496,24 +518,6 @@ export function LabTrackingDrawer({
 				</div>
 			</div>
 
-			{/* ─── BANK INSTALLMENT QR MODAL ─────────────────────────────── */}
-			{isInstallmentModalOpen && (
-				<BankInstallmentQrModal
-					isOpen={isInstallmentModalOpen}
-					onClose={() => setIsInstallmentModalOpen(false)}
-					stageTitle={`Наряд ЗТЛ (${order.constructionType || "Протезирование"})`}
-					stageAmountKopecks={rublesToKopecks(order.priceRub || 0)}
-					patientId={order.patientId}
-					patientName={order.patientName || "Пациент"}
-					onInstallmentApproved={() => {
-						showToast(
-							`Рассрочка на сумму ${(order.priceRub || 0).toLocaleString("ru-RU")} ₽ одобрена банком!`,
-							"success",
-						);
-						handleAdvanceStage();
-					}}
-				/>
-			)}
 		</div>
 	);
 }

@@ -238,7 +238,7 @@ describe("Red Team Inquisition: Treatment Stage Cards & Zero Cartoon Emojis (Man
 		for (const stage of SAMPLE_PORTAL_TREATMENT_PLAN.stages) {
 			assert.ok(stage.teethFdi.length > 0, `Stage ${stage.id} must define tooth FDI`);
 			assert.equal(stage.titleRu.match(emojiRegex), null, `Stage ${stage.id} title has emojis`);
-			assert.equal(stage.descriptionRu.match(emojiRegex), null, `Stage ${stage.id} description has emojis`);
+			assert.equal(stage.descriptionRu ? stage.descriptionRu.match(emojiRegex) : null, null, `Stage ${stage.id} description has emojis`);
 		}
 	});
 });

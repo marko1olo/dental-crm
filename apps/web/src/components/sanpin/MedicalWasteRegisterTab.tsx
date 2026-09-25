@@ -296,8 +296,9 @@ export function MedicalWasteRegisterTab() {
 						aria-busy={isQuickShiftLoading}
 						className="sanpin-btn touch-manipulation"
 						style={{
-							minHeight: "44px",
-							padding: "0.5rem 1.15rem",
+							minHeight: "34px",
+							height: "34px",
+							padding: "0 1.15rem",
 							fontSize: "0.875rem",
 							fontWeight: 800,
 							background: "var(--teal, #0d9488)",
@@ -322,7 +323,7 @@ export function MedicalWasteRegisterTab() {
 						type="button"
 						onClick={() => setIsWasteJournalModalOpen(true)}
 						className="sanpin-btn sanpin-btn-primary"
-						style={{ minHeight: "44px", padding: "0.5rem 1.1rem", fontSize: "0.92rem", fontWeight: 800, background: "#0d9488" }}
+						style={{ minHeight: "34px", height: "34px", padding: "0 1.1rem", fontSize: "0.875rem", fontWeight: 700, background: "#0d9488" }}
 						title="Интерактивный технологический журнал учета отходов СанПиН 2.1.3684-21 и печать термоэтикеток"
 						data-testid="open-waste-journal-modal-btn"
 					>
@@ -377,9 +378,9 @@ export function MedicalWasteRegisterTab() {
 									key={log.id}
 									className="sanpin-log-row"
 									style={{
-										minHeight: "44px",
+										minHeight: "36px",
 										contentVisibility: "auto",
-										containIntrinsicSize: "1px 44px",
+										containIntrinsicSize: "1px 36px",
 										contain: "content",
 									}}
 								>
@@ -448,7 +449,7 @@ export function MedicalWasteRegisterTab() {
 											type="button"
 											onClick={() => handlePrintStickerForLog(log)}
 											className="sanpin-btn sanpin-btn-secondary touch-manipulation"
-											style={{ minHeight: "44px", padding: "0.45rem 0.85rem", fontSize: "0.85rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+											style={{ minHeight: "32px", height: "32px", padding: "0 0.75rem", fontSize: "0.8rem", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 											title="Печать термоэтикетки 58x40 мм со штрихкодом"
 											data-testid={`print-waste-sticker-${log.id}`}
 										>

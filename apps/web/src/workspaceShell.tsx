@@ -869,7 +869,7 @@ export function WorkspaceTopbar({
 					<PerspectiveSwitcher />
 					<RecentPatientHistoryWidget compactDropdown />
 					<NotificationBell />
-					<NetworkStatusIndicator />
+					<NetworkStatusIndicator className="shrink-0 flex-shrink-0" />
 					<ClinicControlPill onLockSession={onLockSession} />
 				</div>
 			</div>

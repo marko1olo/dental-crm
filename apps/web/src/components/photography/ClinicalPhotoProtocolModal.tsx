@@ -234,6 +234,19 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 
 	if (!isOpen) return null;
 
+	// Anti-Matryoshka Law (Mandate 8d, Sin 6): Modal depth strictly 1.
+	// Render calibration drawer sequentially rather than nesting inside parent modal overlay.
+	if (selectedSlotForEdit && selectedSlotDef && selectedSlotRec) {
+		return (
+			<PhotoCalibrationDrawer
+				slotDef={selectedSlotDef}
+				record={selectedSlotRec}
+				onClose={() => setSelectedSlotForEdit(null)}
+				onUpdateRecord={(updates) => updateSlotRecord(selectedSlotForEdit, updates)}
+			/>
+		);
+	}
+
 	return (
 		<div className="photo-protocol-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="photo-protocol-title">
 			<input
@@ -513,15 +526,6 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 				</div>
 			</div>
 
-			{/* Submodal Calibration Drawer */}
-			{selectedSlotForEdit && selectedSlotDef && selectedSlotRec && (
-				<PhotoCalibrationDrawer
-					slotDef={selectedSlotDef}
-					record={selectedSlotRec}
-					onClose={() => setSelectedSlotForEdit(null)}
-					onUpdateRecord={(updates) => updateSlotRecord(selectedSlotForEdit, updates)}
-				/>
-			)}
 		</div>
 	);
 };

@@ -220,6 +220,15 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 			zReportNumber: z.string().trim().optional(),
 			shiftNumber: z.number().int().optional(),
 			closedAt: z.string().optional(),
+			countedCashRub: z.number().optional(),
+			incomeCashRub: z.number().optional(),
+			incomeElectronicRub: z.number().optional(),
+			incomeSbpRub: z.number().optional(),
+			advanceOffsetRub: z.number().optional(),
+			netRevenueRub: z.number().optional(),
+			differenceRub: z.number().optional(),
+			isBalanced: z.boolean().optional(),
+			reconciliation: z.record(z.any()).optional(),
 		});
 		const parsed = bodySchema.safeParse(request.body || {});
 		let effectiveUserId: string | null =
@@ -284,10 +293,20 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 						zReportNumber: zNumber,
 						zReportData: {
 							closedAtIso: now.toISOString(),
+							cashierFullName: parsed.success ? parsed.data.cashierFullName ?? null : null,
 							startingBalanceRub: shift.startBalanceRub,
 							finalBalanceRub: finalBalance,
 							incomeTotalRub: shift.incomeTotalRub,
 							expenseTotalRub: shift.expenseTotalRub,
+							countedCashRub: parsed.success && parsed.data.countedCashRub !== undefined ? parsed.data.countedCashRub : finalBalance,
+							incomeCashRub: parsed.success ? parsed.data.incomeCashRub ?? null : null,
+							incomeElectronicRub: parsed.success ? parsed.data.incomeElectronicRub ?? null : null,
+							incomeSbpRub: parsed.success ? parsed.data.incomeSbpRub ?? null : null,
+							advanceOffsetRub: parsed.success ? parsed.data.advanceOffsetRub ?? null : null,
+							netRevenueRub: parsed.success ? parsed.data.netRevenueRub ?? null : null,
+							differenceRub: parsed.success && parsed.data.differenceRub !== undefined ? parsed.data.differenceRub : 0,
+							isBalanced: parsed.success && parsed.data.isBalanced !== undefined ? parsed.data.isBalanced : true,
+							reconciliation: parsed.success ? parsed.data.reconciliation ?? null : null,
 						},
 						updatedAt: now,
 					})
@@ -307,6 +326,16 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 			message: `Все открытые кассовые смены успешно закрыты со снятием Z-отчетов (${closedShifts.length}).`,
 			closedShiftsCount: closedShifts.length,
 			shifts: closedShifts,
+			reconciliation: parsed.success
+				? {
+						countedCashRub: parsed.data.countedCashRub ?? null,
+						incomeCashRub: parsed.data.incomeCashRub ?? null,
+						incomeElectronicRub: parsed.data.incomeElectronicRub ?? null,
+						incomeSbpRub: parsed.data.incomeSbpRub ?? null,
+						differenceRub: parsed.data.differenceRub ?? 0,
+						isBalanced: parsed.data.isBalanced ?? true,
+					}
+				: undefined,
 		});
 	};
 

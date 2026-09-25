@@ -15,7 +15,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import assert from "node:assert/strict";
-import { describe, it, beforeEach } from "vitest";
+import { describe, it, beforeEach } from "node:test";
 
 type MockFn = {
 	(...args: any[]): any;

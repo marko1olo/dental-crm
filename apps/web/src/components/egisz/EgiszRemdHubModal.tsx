@@ -45,6 +45,7 @@ import {
 	DEFAULT_EGISZ_CLINIC_PRESET,
 	DEFAULT_EGISZ_DOCTOR_PRESET,
 	DENTAL_TOOTH_STATUS_DICTIONARY,
+	EGISZ_DENTAL_SEMD_TYPES,
 	type EgiszClinicInfo,
 	type EgiszDentalCdaPayload,
 	type EgiszDentalSemdCode,

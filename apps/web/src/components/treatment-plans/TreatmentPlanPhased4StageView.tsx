@@ -12,6 +12,7 @@ import {
   Printer,
   PenTool,
   ArrowRight,
+  Calendar,
 } from 'lucide-react';
 import {
   STAGE_CATEGORY_META,
@@ -45,10 +46,12 @@ export interface TreatmentPlanPhased4StageViewProps {
   planAgeDays?: number | undefined;
   planCreatedAtIso?: string | undefined;
   onExecuteStage?: ((category: TreatmentPlanStageCategory) => void) | undefined;
+  onBookStageToVisit?: ((category: TreatmentPlanStageCategory, items: PhasedStageItem[]) => void) | undefined;
   onOpenStagePayment?: (() => void) | undefined;
   onOpenInstallment?: (() => void) | undefined;
   onApproveAndSign?: (() => void) | undefined;
   onPrintContract?: (() => void) | undefined;
+  onToggleStage?: ((stageId?: string) => void) | undefined;
   className?: string | undefined;
 }
 
@@ -73,10 +76,12 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
   planAgeDays,
   planCreatedAtIso,
   onExecuteStage,
+  onBookStageToVisit,
   onOpenStagePayment,
   onOpenInstallment,
   onApproveAndSign,
   onPrintContract,
+  onToggleStage,
   className = '',
 }) => {
   const effectivePlanAgeDays =
@@ -95,6 +100,9 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
 
   const toggleCategory = (cat: TreatmentPlanStageCategory) => {
     setExpandedCategories((prev) => ({ ...prev, [cat]: !prev[cat] }));
+    if (onToggleStage) {
+      onToggleStage(cat);
+    }
   };
 
   // Group raw items from stages into the 4 statutory clinical phases
@@ -434,7 +442,19 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {onExecuteStage && items.length > 0 && (
+                      {onBookStageToVisit && (
+                        <button
+                          type="button"
+                          onClick={() => onBookStageToVisit(cat, items)}
+                          className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg font-bold text-xs bg-[var(--teal-soft)] text-[var(--teal)] hover:bg-[var(--teal)] hover:text-white border border-[var(--teal)]/30 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap min-w-0"
+                          title="Записать пациента на прием по данному этапу (Мандат 8e)"
+                          data-testid={`phased-book-stage-${cat}`}
+                        >
+                          <Calendar className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate min-w-0">Записать на приём</span>
+                        </button>
+                      )}
+                      {onExecuteStage && (
                         <button
                           type="button"
                           onClick={() => onExecuteStage(cat)}

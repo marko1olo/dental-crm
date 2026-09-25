@@ -58,6 +58,13 @@
 	transform: scale(0.96);
 }
 
+@media (min-width: 640px) {
+	/* Avoid duplicate [+ Запись] button on desktop (topbar already provides the single primary [+ Запись] button) */
+	.schedule-toolbar-primary-quick-booking-btn {
+		display: none !important;
+	}
+}
+
 /* Horizontal Filter Chips Strip */
 .schedule-filter-chips {
 	display: flex;

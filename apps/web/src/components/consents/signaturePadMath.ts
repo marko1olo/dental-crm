@@ -382,10 +382,12 @@ export function getPointerCoordinates(
 	targetElement?: { getBoundingClientRect: () => { left: number; top: number; width?: number; height?: number } },
 ): SignaturePoint {
 	const rect = targetElement?.getBoundingClientRect() ?? { left: 0, top: 0, width: 0, height: 0 };
+	const rectWidth = rect.width ?? 0;
+	const rectHeight = rect.height ?? 0;
 	const rawX = event.clientX - rect.left;
 	const rawY = event.clientY - rect.top;
-	const x = rect.width > 0 ? Math.min(Math.max(rawX, 0), rect.width) : rawX;
-	const y = rect.height > 0 ? Math.min(Math.max(rawY, 0), rect.height) : rawY;
+	const x = rectWidth > 0 ? Math.min(Math.max(rawX, 0), rectWidth) : rawX;
+	const y = rectHeight > 0 ? Math.min(Math.max(rawY, 0), rectHeight) : rawY;
 	const time = typeof event.timeStamp === "number" && event.timeStamp > 0 ? event.timeStamp : Date.now();
 	const pressure = typeof event.pressure === "number" && event.pressure > 0 ? event.pressure : undefined;
 	return { x, y, time, pressure };

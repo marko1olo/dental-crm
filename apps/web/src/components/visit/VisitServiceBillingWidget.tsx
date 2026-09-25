@@ -634,12 +634,12 @@ th { background: #f8fafc; font-weight: 700; padding: 10px 12px; border-bottom: 2
 												{item.title}
 											</span>
 											{item.toothCode && (
-												<span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300">
+												<span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300">
 													зуб {item.toothCode}
 												</span>
 											)}
 											{item.code804n && (
-												<span className="text-[10px] font-mono text-[var(--muted,#64748b)]">
+												<span className="text-xs font-mono text-[var(--muted,#64748b)]">
 													{item.code804n}
 												</span>
 											)}
@@ -651,7 +651,7 @@ th { background: #f8fafc; font-weight: 700; padding: 10px 12px; border-bottom: 2
 												type="button"
 												onClick={() => handleToggleWarranty(item.id)}
 												title="Оформить данную услугу по 100% гарантии (0 ₽)"
-												className={`h-6 px-2 rounded-md text-[11px] font-bold cursor-pointer transition-all flex items-center gap-1 ${
+												className={`min-h-[28px] sm:h-7 px-2.5 rounded-md text-xs font-bold cursor-pointer transition-all flex items-center gap-1 ${
 													item.isWarranty
 														? "bg-emerald-600 text-white shadow-2xs"
 														: "bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] hover:border-emerald-400 text-emerald-700 dark:text-emerald-300"
@@ -735,7 +735,7 @@ th { background: #f8fafc; font-weight: 700; padding: 10px 12px; border-bottom: 2
 											{item.isWarranty || totals.isWarranty100 ? (
 												<div className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">
 													0 ₽
-													<div className="text-[10px] font-normal text-emerald-700 dark:text-emerald-500">
+													<div className="text-xs font-normal text-emerald-700 dark:text-emerald-500">
 														Гарантия
 													</div>
 												</div>
@@ -787,7 +787,7 @@ th { background: #f8fafc; font-weight: 700; padding: 10px 12px; border-bottom: 2
 					</div>
 
 					<div className="text-right">
-						<div className="text-[11px] text-[var(--muted,#64748b)] uppercase tracking-wider font-semibold">
+						<div className="text-xs text-[var(--muted,#64748b)] uppercase tracking-wider font-semibold">
 							Итого к оплате:
 						</div>
 						<div

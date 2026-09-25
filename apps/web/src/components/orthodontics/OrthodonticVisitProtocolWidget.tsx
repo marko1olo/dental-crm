@@ -33,6 +33,7 @@ import {
 } from "@dental/shared";
 import { OrthodonticPhotoProtocolModal } from "../diagnostics/OrthodonticPhotoProtocolModal";
 import { CephalometricAnalysisModal } from "../radiology/CephalometricAnalysisModal";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export { ANB_CLASS_OPTIONS, ANGLE_CLASS_OPTIONS, WORKHORSE_ARCHWIRES };
 export type { AnbClass, AnbClassOption, AngleClass, AngleClassOption, WorkhorseArchwireOption };
@@ -515,7 +516,7 @@ ${apparatusDetails}${elasticsBlock}Памятка пациенту:
 export function OrthodonticVisitProtocolWidget({
 	isOpen,
 	onClose,
-	patientId: _patientId,
+	patientId,
 	patientName = "Пациент",
 	clinicName = "Стоматологическая клиника DENTE",
 	clinicPhone = "",
@@ -646,6 +647,51 @@ export function OrthodonticVisitProtocolWidget({
 			setAlignerTotalLower(totalAlignersLower);
 		}
 	}, [totalAlignersLower]);
+
+	// Live synchronization with PostgreSQL 18 orthodontic progress (Mandates 8e, 8k, 8n)
+	useEffect(() => {
+		if (!isOpen || !patientId) return;
+		const activePid = patientId;
+		let cancelled = false;
+
+		async function loadOrthoProgress() {
+			try {
+				const res = await fetch(`/api/orthodontics/${encodeURIComponent(activePid)}/progress`, {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (!res.ok) return;
+				const data = await res.json();
+				if (cancelled || !data) return;
+
+				if (typeof data.currentAligner === "number" && data.currentAligner > 0) {
+					setAlignerStep(data.currentAligner);
+					setAlignerStepUpper(data.currentAligner);
+					setAlignerStepLower(data.currentAligner);
+				}
+				if (typeof data.totalAligners === "number" && data.totalAligners > 0) {
+					setAlignerTotal(data.totalAligners);
+					setAlignerTotalUpper(data.totalAligners);
+					setAlignerTotalLower(data.totalAligners);
+				}
+				if (typeof data.wearDaysPerAligner === "number" && data.wearDaysPerAligner > 0) {
+					setAlignerDaysPerStep(data.wearDaysPerAligner);
+				}
+				if (data.archwire && typeof data.archwire === "string") {
+					if (data.archwire.includes("NiTi")) setArchwireMaterial("NiTi");
+					else if (data.archwire.includes("CuNiTi")) setArchwireMaterial("CuNiTi");
+					else if (data.archwire.includes("SS")) setArchwireMaterial("SS");
+					else if (data.archwire.includes("TMA")) setArchwireMaterial("TMA");
+				}
+			} catch (e) {
+				// Silently fall back to props/presets
+			}
+		}
+
+		void loadOrthoProgress();
+		return () => {
+			cancelled = true;
+		};
+	}, [isOpen, patientId]);
 
 	const handleSelectBracketSystem = useCallback(
 		(newSystem: string) => {
@@ -1039,6 +1085,25 @@ export function OrthodonticVisitProtocolWidget({
 		setAlignerSetIssued({ count, days });
 		setAlignerStep((prev) => Math.min(alignerTotal, prev + count));
 		onIssueAlignerSet?.(count, days);
+
+		// Persist aligner issuance to PostgreSQL 18 backend (Mandates 8e, 8k, 8n)
+		if (patientId) {
+			fetch(`/api/orthodontics/${encodeURIComponent(patientId)}/aligners/issue-set`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					alignerCount: count,
+					wearDaysPerAligner: days,
+					totalAligners: alignerTotal,
+				}),
+			}).catch((err) => {
+				console.warn("[Orthodontics] Aligner set issuance backend sync error:", err);
+			});
+		}
+
 		const issueSummary = `Сдан сет элайнеров (${count} каппы на ${days} дн., режим 22 ч/сутки)`;
 		showToast(`${issueSummary}`, "success");
 	};
@@ -1395,6 +1460,42 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 					: "Ортодонтический протокол сохранен в карту 043/у!",
 				"success",
 			);
+
+			// Persist clinical actions to PostgreSQL 18 (Mandates 8e, 8k, 8n)
+			if (patientId) {
+				const headers = {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				};
+				if (selectedActions.includes("wire_change")) {
+					fetch(`/api/orthodontics/${encodeURIComponent(patientId)}/archwire-change`, {
+						method: "POST",
+						headers,
+						body: JSON.stringify({
+							material: archwireMaterial,
+							section: archwireSection,
+							arch: targetArch,
+							note: notes,
+						}),
+					}).catch((err) => {
+						console.warn("[Orthodontics] Archwire change backend sync error:", err);
+					});
+				}
+				if (selectedActions.includes("ligature_change")) {
+					fetch(`/api/orthodontics/${encodeURIComponent(patientId)}/ligatures-activate`, {
+						method: "POST",
+						headers,
+						body: JSON.stringify({
+							powerChain: powerChainType === "short",
+							powerChainSpan,
+							note: notes,
+						}),
+					}).catch((err) => {
+						console.warn("[Orthodontics] Ligatures activation backend sync error:", err);
+					});
+				}
+			}
+
 			onClose();
 		} catch (_err) {
 			showToast("Протокол скопирован в буфер обмена", "info");
@@ -3026,7 +3127,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 				<OrthodonticPhotoProtocolModal
 					isOpen={isPhotoProtocolOpen}
 					onClose={() => setIsPhotoProtocolOpen(false)}
-					patientId={_patientId || ""}
+					patientId={patientId || ""}
 					patientName={patientName}
 					doctorName={doctorName}
 					clinicName={clinicName}
@@ -3041,7 +3142,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 				<CephalometricAnalysisModal
 					isOpen={isCephModalOpen}
 					onClose={() => setIsCephModalOpen(false)}
-					patientId={_patientId || ""}
+					patientId={patientId || ""}
 					patientName={patientName}
 					onInsertToProtocol={(protocolText) => {
 						setNotes((prev) => (prev ? `${prev}\n\n${protocolText}` : protocolText));

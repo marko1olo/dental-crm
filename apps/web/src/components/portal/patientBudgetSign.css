@@ -109,7 +109,7 @@
 }
 
 .patient-budget-tooth-badge {
-	font-size: 0.6875rem;
+	font-size: 0.75rem;
 	font-weight: 700;
 	background-color: var(--teal-soft);
 	color: var(--teal);
@@ -262,7 +262,7 @@
 }
 
 .patient-budget-legal-text {
-	font-size: 0.6875rem;
+	font-size: 0.75rem;
 	color: var(--muted);
 	line-height: 1.4;
 	margin: 0.5rem 0 0.75rem;
@@ -405,7 +405,7 @@
 
 .patient-budget-hash-box {
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-	font-size: 0.6875rem;
+	font-size: 0.75rem;
 	color: var(--muted);
 	background: var(--paper);
 	padding: 0.5rem;

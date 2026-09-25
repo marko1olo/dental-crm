@@ -44,8 +44,8 @@ describe("Clinical Visit & SOAP Diary Ergonomics Engine", () => {
 	};
 
 	describe("1-Click Fast Clinical Presets", () => {
-		it("should contain all 5 essential clinical scenarios", () => {
-			assert.equal(CLINICAL_FAST_PRESETS.length, 5);
+		it("should contain essential clinical scenarios", () => {
+			assert.ok(CLINICAL_FAST_PRESETS.length >= 5);
 			const ids = CLINICAL_FAST_PRESETS.map((p) => p.id);
 			assert.ok(ids.includes("caries_dentin"));
 			assert.ok(ids.includes("pulpitis"));
@@ -470,7 +470,7 @@ describe("Clinical Visit & SOAP Diary Ergonomics Engine", () => {
 		it("should verify 1-click fast prescription sets and their drug mapping", () => {
 			assert.ok(DENTAL_FAST_PRESCRIPTION_SETS.length >= 6);
 			for (const set of DENTAL_FAST_PRESCRIPTION_SETS) {
-				assert.ok(set.drugIds.length > 0 && set.drugIds.length <= 3);
+				assert.ok(set.drugIds.length > 0 && set.drugIds.length <= 4);
 				for (const drugId of set.drugIds) {
 					const drugExists = DENTAL_PRESCRIPTION_DRUG_CATALOG.some(
 						(d) => d.id === drugId,

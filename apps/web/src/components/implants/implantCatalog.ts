@@ -21,6 +21,7 @@ export type ImplantBrand =
 	| "nobel_biocare"
 	| "osstem"
 	| "dentium"
+	| "ankylos"
 	| "astra_tech"
 	| "mis";
 
@@ -112,6 +113,14 @@ export const IMPLANT_BRANDS_METADATA: Record<ImplantBrand, BrandMetadata> = {
 		popularLines: ["SuperLine", "SimpleLine II"],
 		defaultHexColor: "#f59e0b",
 	},
+	ankylos: {
+		id: "ankylos",
+		name: "Ankylos",
+		country: "Германия (Dentsply Sirona)",
+		countryCode: "DE",
+		popularLines: ["C/X", "TissueCare"],
+		defaultHexColor: "#059669",
+	},
 	astra_tech: {
 		id: "astra_tech",
 		name: "Astra Tech",
@@ -135,6 +144,7 @@ const BRAND_KEY_MAP: Record<string, ImplantBrand> = {
 	Straumann: "straumann",
 	Osstem: "osstem",
 	Dentium: "dentium",
+	Ankylos: "ankylos",
 	"Astra Tech": "astra_tech",
 	"MIS Implants": "mis",
 	MIS: "mis",
@@ -145,6 +155,7 @@ const BASE_PRICES: Record<ImplantBrand, { fixture: number; cap: number; transfer
 	nobel_biocare: { fixture: 3500000, cap: 500000, transfer: 420000, abutment: 900000, sleeve: 250000 },
 	osstem: { fixture: 1250000, cap: 220000, transfer: 200000, abutment: 450000, sleeve: 180000 },
 	dentium: { fixture: 1450000, cap: 250000, transfer: 220000, abutment: 480000, sleeve: 180000 },
+	ankylos: { fixture: 3300000, cap: 480000, transfer: 390000, abutment: 870000, sleeve: 250000 },
 	astra_tech: { fixture: 3100000, cap: 460000, transfer: 400000, abutment: 880000, sleeve: 250000 },
 	mis: { fixture: 1550000, cap: 240000, transfer: 210000, abutment: 460000, sleeve: 190000 },
 };

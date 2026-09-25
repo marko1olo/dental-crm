@@ -155,15 +155,19 @@ describe("CLIN-05: 3-Tier Architecture & Elimination of Giant Checkout Ribbon (M
 			__dirname,
 			"../../../../src/components/odontogram/OdontogramModule.tsx",
 		);
-		const content = fs.readFileSync(modulePath, "utf-8");
+		const containerPath = path.resolve(
+			__dirname,
+			"../../../../src/components/odontogram/OdontogramViewContainer.tsx",
+		);
+		const content = fs.readFileSync(modulePath, "utf-8") + fs.readFileSync(containerPath, "utf-8");
 
 		assert.ok(
 			content.includes("data-testid=\"odontogram-compact-bill-badge\""),
-			"OdontogramModule.tsx must contain compact bill badge in header",
+			"OdontogramViewContainer.tsx must contain compact bill badge in header",
 		);
 		assert.ok(
 			content.includes("data-testid=\"btn-open-fast-checkout\""),
-			"OdontogramModule.tsx must contain 1-click modal checkout button",
+			"OdontogramViewContainer.tsx must contain 1-click modal checkout button",
 		);
 	});
 });
@@ -219,3 +223,120 @@ describe("CLIN-06: WCAG AAA High Contrast & Zero Emojis", () => {
 		}
 	});
 });
+
+describe("CLIN-07: Fast Hover HUD (150ms) and Quick Action Presets (Mandates 8d, 8e)", () => {
+	it("verifies AnatomicalSvgOdontogram includes Periodontitis & Implant in Hover and Touch HUD with 150ms transition", () => {
+		const svgOdontogramPath = path.resolve(
+			__dirname,
+			"../../../../src/components/odontogram/AnatomicalSvgOdontogram.tsx",
+		);
+		const content = fs.readFileSync(svgOdontogramPath, "utf-8");
+
+		// 150ms Hover HUD transition
+		assert.ok(
+			content.includes("tooth-hover-quick-hud absolute"),
+			"Must render tooth-hover-quick-hud",
+		);
+		assert.ok(
+			content.includes("transition-all duration-150"),
+			"Hover HUD transition must be 150ms",
+		);
+
+		// Hover HUD statuses
+		assert.ok(content.includes('title="Кариес"'), "Must include Caries in hover HUD");
+		assert.ok(content.includes('title="Пломба"'), "Must include Filled in hover HUD");
+		assert.ok(content.includes('title="Пульпит"'), "Must include Pulpitis in hover HUD");
+		assert.ok(content.includes('title="Периодонтит"'), "Must include Periodontitis in hover HUD");
+		assert.ok(content.includes('title="Коронка"'), "Must include Crown in hover HUD");
+		assert.ok(content.includes('title="Имплантат"'), "Must include Implant in hover HUD");
+		assert.ok(content.includes('title="Удален"'), "Must include Missing in hover HUD");
+		assert.ok(content.includes('title="Здоров"'), "Must include Healthy in hover HUD");
+
+		// Touch HUD statuses
+		assert.ok(content.includes('data-testid={`touch-quick-periodontitis-${number}`}'), "Must include Periodontitis in touch HUD");
+		assert.ok(content.includes('data-testid={`touch-quick-implant-${number}`}'), "Must include Implant in touch HUD");
+	});
+
+	it("verifies odontogram.css enforces Studio Mac HIG 32px desktop density with coarse pointer fallback", () => {
+		const cssPath = path.resolve(
+			__dirname,
+			"../../../../src/components/odontogram/odontogram.css",
+		);
+		const content = fs.readFileSync(cssPath, "utf-8");
+
+		assert.ok(
+			content.includes(".tooth-hover-quick-hud button {\n\tmin-height: 32px;\n\theight: 32px;\n\tfont-size: 12px;"),
+			"Hover HUD buttons must have 32px min-height on desktop",
+		);
+		assert.ok(
+			content.includes("@media (pointer: coarse) {\n\t.tooth-hover-quick-hud button {\n\t\tmin-height: 44px;"),
+			"Hover HUD buttons must adapt to 44px on coarse pointer touch devices",
+		);
+	});
+});
+
+describe("CLIN-08: Form 043/u Templates and Studio Mac HIG Density (Mandates 8d, 8e)", () => {
+	it("verifies VisitSoapEditor template cards have 32px buttons and no microfonts on actions", () => {
+		const soapEditorPath = path.resolve(
+			__dirname,
+			"../../../../src/components/visit/VisitSoapEditor.tsx",
+		);
+		const content = fs.readFileSync(soapEditorPath, "utf-8");
+
+		assert.ok(
+			content.includes("sm:min-h-[32px] sm:h-8 text-xs font-bold"),
+			"Template card buttons must be sm:h-8 (32px) on desktop",
+		);
+	});
+
+	it("verifies ToothChart quadrant switcher has 32px height on desktop", () => {
+		const chartPath = path.resolve(
+			__dirname,
+			"../../../../src/components/odontogram/ToothChart.tsx",
+		);
+		const content = fs.readFileSync(chartPath, "utf-8");
+
+		assert.ok(
+			content.includes("odontogram-quadrant-bar mb-1 select-none min-h-[32px] h-8 sm:h-9"),
+			"Quadrant bar must be min-h-[32px]",
+		);
+	});
+});
+
+describe("CLIN-09: 0-Click Somatic Norm Default & Cargo Cult Eradication (Mandates 8e, 8k)", () => {
+	it("verifies VisitView.tsx provides 0-click somatic norm default upon completion", () => {
+		const visitViewPath = path.resolve(
+			__dirname,
+			"../../../../src/VisitView.tsx",
+		);
+		const content = fs.readFileSync(visitViewPath, "utf-8");
+
+		assert.ok(
+			content.includes('updateVisitNoteField("anamnesis", "Соматически здоров. Аллергоанамнез не отягощен.");'),
+			"Must default empty anamnesis to somatic norm",
+		);
+		assert.ok(
+			content.includes('updateVisitNoteField("complaint", "Жалоб на момент осмотра не предъявляет.");'),
+			"Must default empty complaint",
+		);
+		assert.ok(
+			content.includes('updateVisitNoteField("objectiveStatus", "Слизистая оболочка полости рта бледно-розовая, влажная. Зубные ряды интактны.");'),
+			"Must default empty objective status",
+		);
+	});
+
+	it("verifies hospital cargo cult is completely eradicated from VisitView and Odontogram", () => {
+		const visitViewPath = path.resolve(__dirname, "../../../../src/VisitView.tsx");
+		const content = fs.readFileSync(visitViewPath, "utf-8");
+
+		const cargoCultKeywords = ["койко-день", "койко-дни", "трансфузи", "025/у", "стационарный больной"];
+		for (const keyword of cargoCultKeywords) {
+			assert.strictEqual(
+				content.toLowerCase().includes(keyword),
+				false,
+				`VisitView must not contain hospital cargo-cult keyword: ${keyword}`,
+			);
+		}
+	});
+});
+

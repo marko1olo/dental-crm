@@ -489,7 +489,7 @@ export function PatientCreationModal({
 								size={18}
 								style={{
 									flexShrink: 0,
-									color: isEmergencyOrPrimary ? "#f43f5e" : "var(--muted)",
+									color: isEmergencyOrPrimary ? "var(--bad-fg, #f43f5e)" : "var(--muted)",
 								}}
 							/>
 							<div style={{ fontSize: "12px" }}>
@@ -509,8 +509,8 @@ export function PatientCreationModal({
 												fontWeight: "bold",
 												padding: "1px 6px",
 												borderRadius: "4px",
-												backgroundColor: "#f43f5e",
-												color: "#ffffff",
+												backgroundColor: "var(--bad-fg, #f43f5e)",
+												color: "var(--paper-strong, #ffffff)",
 											}}
 										>
 											АКТИВЕН
@@ -534,9 +534,9 @@ export function PatientCreationModal({
 								cursor: "pointer",
 								flexShrink: 0,
 								backgroundColor: isEmergencyOrPrimary
-									? "#f43f5e"
+									? "var(--bad-fg, #f43f5e)"
 									: "var(--paper-strong)",
-								color: isEmergencyOrPrimary ? "#ffffff" : "var(--ink)",
+								color: isEmergencyOrPrimary ? "var(--paper-strong, #ffffff)" : "var(--ink)",
 								border: "1px solid var(--glass-border)",
 								minHeight: "36px",
 							}}
@@ -578,7 +578,7 @@ export function PatientCreationModal({
 								style={{
 									flexShrink: 0,
 									color: patientAdministrativeProfileDraft.isAnonymous
-										? "#f59e0b"
+										? "var(--warning-fg, #f59e0b)"
 										: "var(--muted)",
 								}}
 							/>
@@ -599,8 +599,8 @@ export function PatientCreationModal({
 												fontWeight: "bold",
 												padding: "1px 6px",
 												borderRadius: "4px",
-												backgroundColor: "#b45309",
-												color: "#ffffff",
+												backgroundColor: "var(--warning-fg, #b45309)",
+												color: "var(--paper-strong, #ffffff)",
 											}}
 										>
 											АКТИВЕН
@@ -624,10 +624,10 @@ export function PatientCreationModal({
 								cursor: "pointer",
 								flexShrink: 0,
 								backgroundColor: patientAdministrativeProfileDraft.isAnonymous
-									? "#b45309"
+									? "var(--warning-fg, #b45309)"
 									: "var(--paper-strong)",
 								color: patientAdministrativeProfileDraft.isAnonymous
-									? "#ffffff"
+									? "var(--paper-strong, #ffffff)"
 									: "var(--ink)",
 								border: "1px solid var(--glass-border)",
 								minHeight: "36px",

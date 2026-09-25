@@ -327,17 +327,17 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 
 		// Draw official PEP text
 		ctx.fillStyle = "#0f766e";
-		ctx.font = "bold 13px -apple-system, BlinkMacSystemFont, sans-serif";
+		ctx.font = "bold 14px -apple-system, BlinkMacSystemFont, sans-serif";
 		ctx.textAlign = "center";
-		ctx.fillText("ПОДПИСАНО В ПОРТАЛЕ ПАЦИЕНТА", w / 2, h / 2 - 14);
+		ctx.fillText("ПОДПИСАНО В ПОРТАЛЕ ПАЦИЕНТА", w / 2, h / 2 - 16);
 
 		ctx.fillStyle = "#115e59";
-		ctx.font = "11px -apple-system, BlinkMacSystemFont, sans-serif";
+		ctx.font = "12px -apple-system, BlinkMacSystemFont, sans-serif";
 		ctx.fillText("ПЭП 63-ФЗ ст. 5 • 152-ФЗ • Подтверждено пациентом", w / 2, h / 2 + 6);
 
 		const dateStr = new Date().toLocaleString("ru-RU");
 		ctx.fillStyle = "#64748b";
-		ctx.font = "10px -apple-system, BlinkMacSystemFont, sans-serif";
+		ctx.font = "12px -apple-system, BlinkMacSystemFont, sans-serif";
 		ctx.fillText(`${signerName.trim() || budget?.patientFirstName || "Пациент"} • ${dateStr}`, w / 2, h / 2 + 24);
 
 		setHasStrokes(true);

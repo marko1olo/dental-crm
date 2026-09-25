@@ -204,20 +204,16 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 			"success",
 		);
 
-		// Verify that VisitView contains the 1-click somatic norm block with proper testids
-		expect(visitViewSource).toContain('data-testid="visit-somatic-status-block"');
+		// Verify that VisitView contains the 1-click somatic norm button in the header toolbar per Mandates 8e, 8p
 		expect(visitViewSource).toContain('data-testid="btn-somatic-norm-one-click"');
 		expect(visitViewSource).toContain("Соматически здоров / норма (1-клик)");
+		// Mandate 8p: No duplicate somatic status banner in the visit body when button is in the header
+		expect(visitViewSource).not.toContain("visit-somatic-status-block");
 	});
 
 	it("5. primary action buttons and somatic block meet touch target ergonomics (>= 44px on primary, >= 36px on toolbar)", () => {
-		// Verify somatic block and somatic button testid
-		expect(visitViewSource).toContain(
-			'className="visit-somatic-status-block flex items-center justify-between gap-3 px-3 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs flex-wrap min-h-[36px]"',
-		);
-		expect(visitViewSource).toContain(
-			'data-testid="btn-somatic-norm-one-click"',
-		);
+		// Verify somatic norm button is present in the toolbar
+		expect(visitViewSource).toContain('data-testid="btn-somatic-norm-one-click"');
 		// Verify min-h-[44px] on polish button
 		expect(visitViewSource).toContain(
 			'className="secondary-button min-h-[44px] px-3 py-2"',
@@ -284,5 +280,24 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 			'<button\n\t\t\t\t\t\t\t\t\tclassName="primary-button visit-primary-action min-h-[44px] px-3 py-2"\n\t\t\t\t\t\t\t\t\ttype="button"\n\t\t\t\t\t\t\t\t\tonClick={safeVisitPrimaryAction.onClick}\n\t\t\t\t\t\t\t\t\tdisabled={false}',
 		);
 	});
+
+	it("12. critical allergy badges never clip allergen substance names with truncate or max-w-[150px] (Mandates 8e, 8i)", () => {
+		// Allergen substance names must be 100% visible to doctor (zero ellipsis / max-w-[150px] clipping)
+		expect(visitViewSource).not.toContain("truncate max-w-[150px]");
+		expect(visitViewSource).toContain(
+			'<span className="hidden sm:inline whitespace-nowrap shrink-0">{badge.fullLabel}</span>',
+		);
+	});
+
+	it("13. topbar LAN network status indicator enforces shrink-0 and whitespace-nowrap against text collapse (Mandate 8d)", () => {
+		const workspaceShellPath = path.resolve(__dirname, "../../../workspaceShell.tsx");
+		const workspaceShellSource = fs.readFileSync(workspaceShellPath, "utf8");
+		const networkIndicatorPath = path.resolve(__dirname, "../../sync/NetworkStatusIndicator.tsx");
+		const networkIndicatorSource = fs.readFileSync(networkIndicatorPath, "utf8");
+
+		expect(workspaceShellSource).toContain('<NetworkStatusIndicator className="shrink-0 flex-shrink-0" />');
+		expect(networkIndicatorSource).toContain("shrink-0 flex-shrink-0 whitespace-nowrap");
+	});
 });
+
 

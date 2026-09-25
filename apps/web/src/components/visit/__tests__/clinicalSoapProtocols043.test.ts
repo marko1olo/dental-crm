@@ -392,8 +392,8 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 	});
 
 	describe("5. Preset Collections Completeness", () => {
-		it("CLINICAL_FAST_PRESETS contains 5 key dental procedures with valid ICD-10", () => {
-			assert.equal(CLINICAL_FAST_PRESETS.length, 5);
+		it("CLINICAL_FAST_PRESETS contains essential dental procedures with valid ICD-10", () => {
+			assert.equal(CLINICAL_FAST_PRESETS.length, 7);
 			const ids = CLINICAL_FAST_PRESETS.map((p) => p.id);
 			assert.deepEqual(ids, [
 				"caries_dentin",
@@ -401,6 +401,8 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 				"periodontitis",
 				"extraction",
 				"hygiene",
+				"implant_crown_zirconia",
+				"enamel_wear_erosion",
 			]);
 
 			for (const preset of CLINICAL_FAST_PRESETS) {

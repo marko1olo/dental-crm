@@ -1433,7 +1433,7 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 				{/* Hover Quick Action Micro-HUD (Clinical Russian Presets) when no global stamp is active and not touch */}
 				{!activeStamp && onQuickStateChange && !isTouchScreen && (
 					<div
-						className={`tooth-hover-quick-hud absolute ${hudAlignClass} hidden group-hover:flex group-hover/badge:flex transition-all duration-200 z-40 items-center gap-1.5 px-2 py-1.5 rounded-2xl bg-[var(--odontogram-paper)]/95 border border-[var(--odontogram-border-strong)] shadow-2xl backdrop-blur-xl pointer-events-auto whitespace-nowrap ${
+						className={`tooth-hover-quick-hud absolute ${hudAlignClass} hidden group-hover:flex group-hover/badge:flex transition-all duration-150 z-40 items-center gap-1.5 px-2 py-1.5 rounded-2xl bg-[var(--odontogram-paper)]/95 border border-[var(--odontogram-border-strong)] shadow-2xl backdrop-blur-xl pointer-events-auto whitespace-nowrap ${
 							isTop ? "bottom-full mb-2" : "top-full mt-2"
 						}`}
 						onClick={(e) => e.stopPropagation()}
@@ -1476,6 +1476,20 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 					>
 						<span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block shadow-xs shrink-0" />
 						<span className="whitespace-nowrap shrink-0 font-bold">Пульпит</span>
+					</button>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+							onQuickStateChange(targets, "Periodontitis");
+						}}
+						className="px-3 py-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] rounded-xl bg-orange-500/15 hover:bg-orange-500 text-orange-800 dark:text-orange-300 hover:text-white border border-orange-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
+						title="Периодонтит"
+						data-testid={`quick-periodontitis-${number}`}
+					>
+						<span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block shadow-xs shrink-0" />
+						<span className="whitespace-nowrap shrink-0 font-bold">Периодонтит</span>
 					</button>
 					<button
 						type="button"
@@ -1836,6 +1850,20 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 								onClick={(e) => {
 									e.stopPropagation();
 									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+									onQuickStateChange(targets, "Periodontitis", surfaces);
+								}}
+								className="touch-quick-state-btn bg-orange-500/15 hover:bg-orange-500 text-orange-800 dark:text-orange-300 hover:text-white border border-orange-500/40"
+								title="Периодонтит"
+								data-testid={`touch-quick-periodontitis-${number}`}
+							>
+								<span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+								<span>Периодонтит</span>
+							</button>
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
 									onQuickStateChange(targets, "Crown", surfaces);
 								}}
 								className="touch-quick-state-btn bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40"
@@ -1843,6 +1871,20 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 							>
 								<span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
 								<span>Коронка</span>
+							</button>
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									const targets = selectedTeeth?.includes(number) && selectedTeeth.length > 0 ? selectedTeeth : [number];
+									onQuickStateChange(targets, "Implant", surfaces);
+								}}
+								className="touch-quick-state-btn bg-indigo-500/15 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/40"
+								title="Имплантат"
+								data-testid={`touch-quick-implant-${number}`}
+							>
+								<span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+								<span>Имплант</span>
 							</button>
 							<button
 								type="button"

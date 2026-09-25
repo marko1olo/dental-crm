@@ -58,6 +58,8 @@ export interface ClinicalVisitCompletionInput {
 	readonly discountPercent?: number | undefined;
 }
 
+import type { AutoVisitBomDeductionResult } from "@dental/shared";
+
 export interface ClinicalVisitCompletionResult {
 	readonly visitId: string;
 	readonly invoiceId: string;
@@ -76,6 +78,7 @@ export interface ClinicalVisitCompletionResult {
 	readonly sbpQrPayload: string;
 	readonly form043uSaved: boolean;
 	readonly completedAtIso: string;
+	readonly materialsDeduction?: AutoVisitBomDeductionResult | undefined;
 }
 
 export interface StandardPriceItem {

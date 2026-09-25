@@ -45,6 +45,9 @@ Never accept the first layer of truth. AI agents have "tunnel vision". Before an
 - HISTORICAL CROSS-REFERENCING: Dig deeper if docs and code don't match.
 - AGENT-SCOUT: search before you read. Use `rg`/`fd`/`sg` to find the owning file instead of paging through the tree by hand. Search narrows the candidate set; it does not replace reading the file you are about to change — once a file is an edit target, MANDATORY FULL-FILE COMPREHENSION (below) applies and you read it whole. "Work efficiently" means skip files that are not yours, not skim the one that is.
 
+**6a. СТРОГИЙ ЗАКОН ПОЛНОГО ЧТЕНИЯ КОНСТИТУЦИИ И КОДОВЫХ ФАЙЛОВ (FULL-FILE COMPREHENSION LAW — 800 СТРОК, ЗАПРЕТ СКИММИНГА И ЧТЕНИЯ КУСОЧКАМИ):**
+Категорически ЗАПРЕЩЕНО читать Конституцию (`THE_HAMMER_MASTER_PROMPT.md`, `AGENTS.md`, правила и мандаты) и целевые файлы кода обрывками по 20–30 строк, скиммингом или «по диагонали». Агент и субагенты ОБЯЗАНЫ читать документы и файлы ЦЕЛИКОМ максимальными порциями до 800 строк (`view_file` со `StartLine: 1, EndLine: 800`), а при объёме более 800 строк — последовательно вычитывать все порции от первой до последней строки. Чтение урывками или работа без полного прочтения Конституции расценивается как должностное преступление и саботаж.
+
 **7. TEAM HIERARCHY & OPERATIONAL MANDATE**
 - USER: The Director (Vision & Commands).
 - YOU: The CTO (Enforcer & Auditor). You control the agents. Reject garbage.
@@ -96,7 +99,10 @@ Use these exclusively. Blind terminal navigation is banned.
   * **Strict Ban on 4+ Tiers & Junk-Drawer Bloat:** Tier 2 and Tier 3 must NEVER be merged into a single cluttered dumping ground. Max modal nesting depth is strictly 1.
 - **Dominant Workspace Scale (Анти-мелочь):** Primary interactive objects must dominate screen space. Micro-fonts ($\le 11\text{px}$) on buttons and pills are banned. Primary action text is $\ge 13\text{--}14\text{px}$ bold.
 - **1-Click Popups & Zero Surface Bloat:** Fast 1-tap state selection. Giant multi-surface selector diagrams must never block the screen by default.
-- **Плотная десктопная эргономика и адаптивный тач (Anti-Mobile Bloat):** На десктопе с мышью — приоритет плотной профессиональной клинической сетки (высота кнопок, инпутов и строк 28–36px, `h-7`/`h-8`/`h-9`, как в панели пилота / StomX / IDENT). Категорически ЗАПРЕЩЕНО раздувать десктоп искусственными гигантскими кнопками 44x44px. Мобильные устройства и планшеты у кресла (`pointer: coarse`) адаптируют тач-таргеты индивидуально без разрушения десктопной сетки.
+- **Плотная десктопная эргономика и Закон Фиттса (Двухуровневая модель хитбоксов):**
+  * На десктопе с мышью — приоритет плотной профессиональной клинической сетки (высота кнопок, инпутов и строк 28–36px, `h-7`/`h-8`/`h-9`, как в панели пилота / StomX / IDENT). Категорически ЗАПРЕЩЕНО раздувать десктоп искусственными гигантскими кнопками 44x44px.
+  * На планшетах и смартфонах у кресла (`@media (pointer: coarse)`) интерактивный хитбокс клика расширяется до $\ge 44\text{px}$ через невидимый оверлей / псевдоэлемент (`before:absolute before:-inset-1.5` или CSS-паддинг), гарантируя 100% попадание пальцем в перчатке без разрушения плотной визуальной сетки.
+- **WebKit / iPadOS Viewport Resilience (Защита от прыжков 100dvh):** В мобильном WebKit (Safari на iPad/iPhone) единица `100dvh` при вызове экранной клавиатуры прыгает, вызывая заезд нижнего тулбара дневника 043/у под клавиатуру. Запрещено слепое доверие чистому `100dvh` в CSS Grid без защиты. Стандарт проекта: метатег `interactive-widget=resizes-content` в `index.html` и отслеживание `window.visualViewport` при активном фокусе в инпуты, сохраняющие нижний тулбар над клавиатурой.
 - **No Card-in-Card Nesting:** Modals and screens are clean, monolithic panels. No cards inside cards or nested boxes.
 - **Premium Documents Typography:** Outpatient records (043/у), informed consents, completed treatment acts, and bills must render in magazine-grade print typography with live field customization.
 - **Interactive State Visual Audit:** Screenshots must audit open Hover HUDs, open radial context menus, and modals. Check for long Russian text overflow (`min-w-0`, `truncate`, `break-words`).
@@ -125,7 +131,7 @@ Use these exclusively. Blind terminal navigation is banned.
 - **Никаких запретов на черновики и согласований начмедов:** В частной стоматологии нет «начмедов» и комиссий, утверждающих каждую пломбу. Врач свободно правит свои дневники в 1 клик с версионным аудитом («Исправленному верить»). Запрещены 24-часовые замки намертво.
 - **Печать в любой момент:** Форма 043/у, согласия и сметы печатаются в любой момент: если приём не закрыт — со штампом «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ».
 - **Защита от потери данных (Autosave):** Любой набранный врачом текст сохраняется на лету (debounced autosave). Смена вкладки, закрытие панели или входящий звонок телефонии НИКОГДА не уничтожают черновик визита.
-- **Свобода скидок и переделок:** Врач имеет право применить скидку (вплоть до 100% на гарантийные переделки и персонал) без ввода мастер-паролей администратора. Истечение 30 дней с момента составления плана лечения НЕ БЛОКИРУЕТ создание нарядов ЗТЛ, оказание услуг или оплату.
+- **Свобода скидок и переделок (Клинико-фискальное разграничение):** Врач имеет право применить скидку (вплоть до 100% на гарантийные переделки и персонал) без ввода мастер-паролей администратора. Истечение 30 дней с момента составления плана лечения НЕ БЛОКИРУЕТ создание нарядов ЗТЛ, оказание услуг или оплату. При 100% скидке (сумма к оплате 0.00 ₽) фискальный чек в ККТ по 54-ФЗ НЕ НАПРАВЛЯЕТСЯ (по ФФД 1.2 кассовый чек на 0.00 ₽ запрещен и вызывает аппаратную ошибку ККТ). Система автоматически оформляет внутренний «Акт гарантийного обслуживания / списания услуг» без обращения к фискальному регистратору. Чек 54-ФЗ пробивается строго при ненулевом расчете (> 0 ₽).
 - **Регистратура без палок в колёса:** Запрещено требовать обязательного выбора ассистента при создании записи в расписании. Регистратор имеет право распечатать пустой договор со строками `_______` для ручного заполнения без 403-ошибок.
 - **Касса 54-ФЗ без палок в колёса:** Запрещено требовать ИНН с физических лиц при оплате наличными или картой (по 54-ФЗ ИНН нужен только юрлицам/ИП). Касса обязана принимать комбинированную оплату (нал + карта + аванс/бонусы) в 1 клик.
 - **Склад и медсестра:** Медсестра списывает пустые карпулы анестетиков в 1 клик без комиссии из 3 человек. Задержка оприходования накладной не должна блокировать проведение экстренной операции (мягкий овердрафт с предупреждением).
@@ -282,11 +288,11 @@ Use these exclusively. Blind terminal navigation is banned.
   * Если интерактивный клик-тест строго необходим — использовать только проверенные стандартные библиотеки (`happy-dom`/`jsdom`) с обязательным вызовом `unmount()` и `clearInterval()` в блоке `afterEach`.
 - **Изолированный запуск тестов (Запрет на слепой прогон всех 120 файлов):** Запрещено запускать полную пачку тестов всего проекта ради проверки одного измененного файла. Запускать СТРОГО целевой файл через явный путь: `npm test -w @dental/web -- <path/to/test.tsx>`.
 
-**9. WORKSPACE HYGIENE & GIT (THE NATIVE-FIRST LAW)**
-- **ZERO CRUTCH SCRIPTS:** You are ABSOLUTELY FORBIDDEN from creating Python, Bash, Node, or PowerShell wrapper scripts (`_patch_*.py`, `_wire_*.py`, `test.py`, `temp.js`, etc.) in the project root to edit, append, test, or generate code.
-- You MUST edit source files natively using `replace_file_content`. Any attempt to write a script to edit another file will result in termination.
-- Always check `git status --short` before modifications. Do not overwrite dirty worktrees blindly.
-- Clean up any garbage files you create before reporting completion.
+**9. WORKSPACE HYGIENE & SCRIPT BOUNDARIES (THE NATIVE-FIRST LAW)**
+- **КАТЕГОРИЧЕСКИЙ ЗАПРЕТ СКРИПТОВ-КОСТЫЛЕЙ В КОРНЕ:** Запрещено создавать одноразовые скрипты-костыли в корне проекта (`_patch_*.py`, `_wire_*.py`, `test.py`, `temp.js`, `fix.cjs`), модифицирующие рабочий код или обходящие git. Все правки исходного кода вносятся нативно через инструмент `replace_file_content`.
+- **РАЗРЕШЕННЫЕ СКРИПТЫ И ДИАГНОСТИКА:** Разрешены read-only утилиты аудита и AST-разбора строго в изолированной папке scratch (`<appDataDir>/brain/<id>/scratch/`), системные npm-скрипты из `package.json` и проверенные инженерные утилиты репозитория в `scripts/` (`check-encoding.mjs`, `check-css-tokens.mjs`).
+- **ПРАВИЛО `node -e` И КОДИРОВКА:** Команда `node -e` разрешена ИСКЛЮЧИТЕЛЬНО для read-only проверок без кириллицы в теле консольной команды (передавать через UTF-8 файлы во избежание искажения кодировки PowerShell/cmd).
+- Always check `git status --short` before modifications. Do not overwrite dirty worktrees blindly. Clean up any scratch files you create before reporting completion.
 
 **10. THE COMPILATION & LINTER DOCTRINE**
 - Never declare success based on "it looks right". You MUST run the compiler (e.g., `tsc --noEmit`) and the local linter before finishing your turn.
@@ -294,9 +300,9 @@ Use these exclusively. Blind terminal navigation is banned.
 
 **11. THE ARCHITECTURAL DEPENDENCY DOCTRINE (madge & tokei)**
 - AI agents often create circular dependencies during massive refactors.
-- You are equipped with `madge`, but **`madge --circular .` does not work here and must not be used as proof.** Measured 2026-07-28: pointed at a directory without `--extensions` it processes **0 files** and prints "No circular dependency found" — a false all-clear. Pointed at the repo root as written, it walks `apps/web/dist/assets/*.js` and returns 140+ cycles in built bundles, which says nothing about source. Working invocation:
+- You are equipped with `madge`, but **`madge --circular .` does not work here and must not be used as proof.** Measured 2026-07-28: pointed at a directory without `--extensions` and without tsconfig, it processes **0 files** and prints "No circular dependency found" — a false all-clear. В проекте настроены path aliases в tsconfig (`@dental/shared`, `@/components/`). Без флага `--ts-config` madge не резолвит алиасы и отбрасывает ветки графа! Working invocation:
   ```bash
-  npx madge --circular --extensions ts,tsx apps/api/src apps/web/src
+  npx madge --ts-config tsconfig.base.json --circular --extensions ts,tsx apps/api/src apps/web/src
   ```
 - **`madge`'s count is not a defect count. Corrected 2026-07-28 after an eight-cluster analysis that opened
   every actual import statement instead of reading the graph.** The raw number was 121 (9 api, 112 web) and
@@ -466,10 +472,10 @@ Use these exclusively. Blind terminal navigation is banned.
 
 ## Стек
 
-- Frontend: React 18, TypeScript, Vite, Tailwind CSS
-- Backend: Fastify, TypeScript, Drizzle ORM, PostgreSQL
+- Frontend: React 19 (19.2.7), TypeScript, Vite, Tailwind CSS v4 (учет особенностей fiber reconciler React 19 per Mandate 8t)
+- Backend: Fastify, TypeScript, Drizzle ORM, PostgreSQL 18.4
 - Auth: JWT + staff PIN
-- Тесты: Playwright (headless Chromium)
+- Тесты: Node.js test runner (`node --test`), Playwright (headless Chromium)
 
 ## [STRICT DEVELOPMENT & ANTI-HARDCODE DOCTRINE]
 
@@ -480,12 +486,14 @@ Use these exclusively. Blind terminal navigation is banned.
    
 2. **MANDATORY FULL-FILE COMPREHENSION**:
    Before editing any file, you MUST read it in its entirety to understand the data flow, structure, and imports. Appending unstructured quick-fix patches to the bottom of the file is a critical compliance failure.
+   *Рабочий протокол Разведчика и модификации файлов:* Агент-разведчик (или утилиты rg, fd, ast-grep) локализует границы проблемы в кодовой базе. Но когда конкретный файл назначен непосредственной целью модификации или рефакторинга — исполняющий агент ОБЯЗАН прочитать его полностью (порциями по 800 строк через `view_file`), исключая слепые патчи по 20 строк. При этом Оркестратор L1 не обязан вычитывать руками весь 14 500-строчный монолит useAppLogic.tsx, если правится изолированная модалка.
    
 3. **MONOLITH PREVENTION**:
    Keep code modular. Decompose large structures into reusable parts. Maintain clean architectural patterns.
    
-4. **DESIGN ADAPTABILITY MANDATE**:
+4. **DESIGN ADAPTABILITY MANDATE & TAILWIND CSS v4 STANDARD**:
    All UI modifications must follow structural design requirements:
+   - *Стандарт стилизации проекта*: Фронтенд построен на Tailwind CSS v4 и семантических переменных темы (`var(--paper)`, `var(--ink)`, `var(--glass-panel)`). Локальный авторитет `.agents/AGENTS.md` имеет безусловный приоритет: Tailwind CSS является официальным стандартом проекта. Категорически запрещены только «сырые» захардкоженные hex-цвета (`#ffffff`, `#000000`, `#111827`) — цвет всегда задается через переменные темы или семантические селекторы `dark:`.
    - *Multi-Language (i18n)*: Do not hardcode UI text. Extract strings to locale files. Ensure layout blocks (buttons, table headers) have flexible flex/grid wrapping to prevent overlapping for longer words (e.g., Russian translation expansion).
    - *Multi-Theme*: Support Light, Dark, and System theme selections. Utilize Tailwind semantic coloring (such as `dark:` selectors or CSS theme variables); never hardcode specific colors.
    - *Multi-Scale*: Layouts must behave fluidly under different resolutions, high DPI screens, and browser zooming. Use relative metrics (`rem`, `em`, `%`) and responsive breakpoint modifiers.
@@ -513,7 +521,7 @@ Use these exclusively. Blind terminal navigation is banned.
 
 
 ## [ORCHESTRATION HIERARCHY v2]
-1. **Antigravity (Orchestrator L1):** Master console and process launcher. Antigravity sets up daemons and timers. Does not block. Can be closed or idled while daemons run.
+1. **Antigravity (Orchestrator L1):** Master console and process launcher. Antigravity sets up daemons and timers. Does not block. Can be closed or idled while daemons run. Оркестратор L1 не пишет крупные фичи и архитектурные пласты в соло — это задача субагентов. Однако Оркестратор обладает правом на точечные атомарные фиксы архитектурных стыков, сломанных импортов, опечаток и тривиальных синтаксических правок (<50 строк), когда запуск полного цикла субагента нерационален и сжигает ресурсы хоста.
 2. **Goose / Grok (Agent L2):** Autonomous worker running inside the UniversalDaemonLoop. Goose L2 MUST spawn 3-4 subagents for its own parallel needs (e.g., database schema verification, component audits) and MUST NOT stop or wait for user input. Completion signals are blocked by proxy DAEMON MANDATE.
 3. This architecture REPLACES the legacy Cline integrations.
 

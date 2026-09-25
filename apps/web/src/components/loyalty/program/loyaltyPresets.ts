@@ -288,6 +288,9 @@ export interface ReferralRewardPreset {
 	readonly referredFriendDiscountRub: number;
 	readonly minFriendSpendKop: number; // in kopecks, e.g. 250000 = 2 500 RUB
 	readonly descriptionRu: string;
+	readonly minInvoiceSpendKop?: number | undefined;
+	readonly referrerBonusKop?: number | undefined;
+	readonly invitedDiscountKop?: number | undefined;
 }
 
 export const DEFAULT_REFERRAL_PRESET: ReferralRewardPreset = {
@@ -295,9 +298,12 @@ export const DEFAULT_REFERRAL_PRESET: ReferralRewardPreset = {
 	titleRu: "Привёл друга / Члена семьи",
 	referrerRewardKop: 50000, // 500 ₽
 	referrerRewardRub: 500,
+	referrerBonusKop: 50000,
 	referredFriendDiscountKop: 50000, // 500 ₽
 	referredFriendDiscountRub: 500,
+	invitedDiscountKop: 50000,
 	minFriendSpendKop: 250000, // чек от 2 500 ₽
+	minInvoiceSpendKop: 250000,
 	descriptionRu: "Начисление 500 бонусов пациенту за приведённого первичного друга или родственника + 500 ₽ скидка другу на первый приём.",
 };
 

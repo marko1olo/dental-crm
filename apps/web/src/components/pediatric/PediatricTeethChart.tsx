@@ -82,7 +82,7 @@ export interface PediatricTeethChartProps {
 	/** Активный номер зуба (выделен в карте) */
 	readonly activeTooth?: number | null | undefined;
 	/** Обработчик выбора зуба */
-	readonly onSelectTooth: (toothNumber: number) => void;
+	readonly onSelectTooth?: ((toothNumber: number) => void) | undefined;
 	/** Режим прикуса: молочный (20 зубов) или сменный (с молярами 16, 26, 36, 46) */
 	readonly mode?: PediatricDentitionMode;
 	/** Обработчик переключения прикуса */
@@ -166,7 +166,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 			<button
 				key={tooth.toothNumber}
 				type="button"
-				onClick={() => onSelectTooth(tooth.toothNumber)}
+				onClick={() => onSelectTooth?.(tooth.toothNumber)}
 				className={`relative flex flex-col items-center justify-center rounded-xl border p-1 transition-all select-none cursor-pointer touch-manipulation min-w-[36px] sm:min-w-[42px] min-h-[44px] sm:min-h-[48px] active:scale-95 ${
 					isSelected
 						? "border-teal-600 bg-teal-50/90 text-teal-950 shadow-sm ring-2 ring-teal-500/40 dark:border-teal-400 dark:bg-teal-950/70 dark:text-teal-100 font-extrabold z-10"
@@ -203,7 +203,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 						style={{
 							backgroundColor: RESORPTION_STAGE_DEFINITIONS[resorption]?.badgeBg ?? "rgba(239, 68, 68, 0.15)",
 							color: RESORPTION_STAGE_DEFINITIONS[resorption]?.badgeColor ?? "#ef4444",
-							border: `1px solid ${RESORPTION_STAGE_DEFINITIONS[resorption]?.badgeBorder ?? "rgba(239, 68, 68, 0.35)"}`,
+							border: `1px solid ${RESORPTION_STAGE_DEFINITIONS[resorption]?.badgeColor ?? "rgba(239, 68, 68, 0.35)"}`,
 						}}
 						title={`Резорбция корня: ${resorption}% (${RESORPTION_STAGE_DEFINITIONS[resorption]?.descriptionRu})`}
 						data-testid={`tooth-resorption-badge-${tooth.toothNumber}`}

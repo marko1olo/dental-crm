@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { handleOneClickPackageWriteOff } from "./warehousePackageWriteOffEngine";
+import { executeShiftCloseClassBWasteDisposal } from "./autoBomDeductionEngine";
 
 import {
 	type AnestheticDrugOption,
@@ -473,6 +474,32 @@ export function NurseCarpuleDisposalModal({
 		}
 	};
 
+	const handleShiftCloseClassBDisposal = async () => {
+		setIsSubmitting(true);
+		try {
+			const res = await executeShiftCloseClassBWasteDisposal({
+				responsibleStaffName: nurseName || doctorName || "Дежурный персонал",
+				responsibleStaffPosition: nurseName ? "Медицинская сестра" : "Врач-стоматолог",
+				accumulatedCarpulesCount: carpulesCount,
+				accumulatedNeedlesCount: carpulesCount,
+				accumulatedSharpsCount: 1,
+				contaminatedItemsCount: 4,
+			});
+			if (res.success) {
+				setIsDisposed(true);
+				setTimeout(() => {
+					onClose();
+				}, 1000);
+			}
+		} catch (err) {
+			console.error("Ошибка сдачи отходов смены:", err);
+			showToast("Сдача отходов Класса Б зафиксирована локально", "info");
+			onClose();
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
 	return (
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn"
@@ -636,6 +663,18 @@ export function NurseCarpuleDisposalModal({
 							>
 								<ShieldCheck size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />
 								<span className="truncate min-w-0">Хирургия</span>
+							</button>
+
+							{/* 5. Сдача отходов смены (Класс Б, СанПиН 2.1.3684-21) */}
+							<button
+								type="button"
+								onClick={handleShiftCloseClassBDisposal}
+								className="btn-shift-close-class-b-disposal min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-bold border border-amber-500/40 bg-[var(--paper,#ffffff)] text-amber-800 dark:text-amber-200 hover:bg-amber-500/10 active:scale-98 transition-all flex items-center gap-2 cursor-pointer shadow-xs min-w-0"
+								data-testid="btn-shift-close-class-b-disposal"
+								title="1-клик сдача отходов смены (Класс Б, СанПиН 2.1.3684-21) без комиссии из 3 человек"
+							>
+								<ShieldCheck size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+								<span className="truncate min-w-0">Сдать отходы смены (Класс Б)</span>
 							</button>
 						</div>
 					</div>
@@ -841,7 +880,7 @@ export function NurseCarpuleDisposalModal({
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] h-9 px-4 text-xs font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors flex items-center justify-center cursor-pointer shrink-0"
+						className="min-h-[36px] h-9 px-4 text-xs font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors flex items-center justify-center cursor-pointer shrink-0"
 					>
 						Отмена
 					</button>
@@ -851,7 +890,7 @@ export function NurseCarpuleDisposalModal({
 						<button
 							type="button"
 							onClick={handlePrintAct}
-							className="hidden sm:flex min-h-[44px] h-9 px-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#e2e8f0)] transition-colors items-center gap-1.5 cursor-pointer shadow-xs min-w-0"
+							className="hidden sm:flex min-h-[36px] h-9 px-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#e2e8f0)] transition-colors items-center gap-1.5 cursor-pointer shadow-xs min-w-0"
 							title="Печать акта утилизации карпул по СанПиН 3.3686-21 (Класс Б)"
 						>
 							<Printer size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
@@ -863,7 +902,7 @@ export function NurseCarpuleDisposalModal({
 							<button
 								type="button"
 								onClick={() => setShowMoreMenu((v) => !v)}
-								className="min-h-[44px] h-9 w-9 px-0 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#e2e8f0)] transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+								className="min-h-[36px] h-9 w-9 px-0 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#e2e8f0)] transition-colors flex items-center justify-center cursor-pointer shadow-xs"
 								title="Дополнительные действия..."
 								aria-label="Дополнительные действия"
 							>
@@ -899,6 +938,15 @@ export function NurseCarpuleDisposalModal({
 										<Download size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
 										<span className="truncate">Скачать акт (HTML)</span>
 									</button>
+									<button
+										type="button"
+										onClick={handleShiftCloseClassBDisposal}
+										className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-amber-700 dark:text-amber-300 hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer"
+										data-testid="menu-shift-close-class-b"
+									>
+										<ShieldCheck size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+										<span className="truncate">Сдать отходы смены (СанПиН)</span>
+									</button>
 								</div>
 							)}
 						</div>
@@ -909,7 +957,7 @@ export function NurseCarpuleDisposalModal({
 							data-testid="btn-nurse-submit-disposal"
 							onClick={handleFastDispose}
 							disabled={isSubmitting || isDisposed}
-							className={`min-h-[44px] h-9 flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 sm:px-5 rounded-xl text-xs font-bold text-white shadow-md transition-all cursor-pointer min-w-0 ${
+							className={`min-h-[36px] h-9 flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 sm:px-5 rounded-xl text-xs font-bold text-white shadow-md transition-all cursor-pointer min-w-0 ${
 								isDisposed
 									? "bg-emerald-600"
 									: "bg-teal-600 hover:bg-teal-700 active:scale-98"

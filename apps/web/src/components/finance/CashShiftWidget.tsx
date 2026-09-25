@@ -42,6 +42,7 @@ import {
 } from "@dental/shared";
 import { OfflineFiscalBatchModal } from "./fiscal/OfflineFiscalBatchModal";
 import { ShiftCloseZReportModal } from "./fiscal/ShiftCloseZReportModal";
+import { CashRegisterModal } from "./CashRegisterModal";
 import "./CashShiftWidget.css";
 
 export interface CashShiftWidgetProps {
@@ -109,6 +110,7 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 	const [queuedItems, setQueuedItems] = useState<QueuedFiscalReceiptItem[]>([]);
 	const [isReportsMenuOpen, setIsReportsMenuOpen] = useState<boolean>(false);
 	const [isBottomActionsMenuOpen, setIsBottomActionsMenuOpen] = useState<boolean>(false);
+	const [isCashRegisterModalOpen, setIsCashRegisterModalOpen] = useState<boolean>(false);
 
 	// StomX Cash Flow State (Wave 118: 54-FZ Tag 1054 cash in/out presets)
 	const [isCashFlowModalOpen, setIsCashFlowModalOpen] = useState<boolean>(initialCashFlowModalOpen);
@@ -464,6 +466,37 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 		);
 	};
 
+	const renderCashRegisterModal = () => (
+		<CashRegisterModal
+			isOpen={isCashRegisterModalOpen}
+			onClose={() => setIsCashRegisterModalOpen(false)}
+			isShiftOpen={isShiftOpen}
+			shiftNumber={shiftNumber}
+			cashierFullName={cashierName}
+			cashierInn={cashierInn}
+			clinicLegalName={clinicName}
+			clinicInn={clinicInn}
+			clinicAddress={clinicRequisites.address}
+			kktRegNumber={clinicRequisites.kktRegNumber}
+			kktSerialNumber={clinicRequisites.kktSerialNumber}
+			fnSerial={clinicRequisites.fnSerialNumber}
+			ofdName={clinicRequisites.ofdName}
+			cashInDrawerRub={cashInDrawerRub}
+			cardSumRub={cardSumRub}
+			sbpSumRub={sbpSumRub}
+			advanceOffsetRub={advanceOffsetRub}
+			onOpenShift={async () => {
+				if (onOpenShift) await onOpenShift();
+				setIsShiftOpen(true);
+			}}
+			onCloseShift={async () => {
+				if (onCloseShift) await onCloseShift();
+				setIsShiftOpen(false);
+			}}
+			onPrintXReport={handleXReport}
+		/>
+	);
+
 	// Subscribe to live hardware offline queue manager
 	useEffect(() => {
 		const unsubscribe = FiscalReceiptQueueManager.subscribe((items) => {
@@ -815,6 +848,20 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 								<FileSpreadsheet size={13} className="shrink-0 text-[var(--brand)]" />
 								<span>Экспорт в 1С (CSV)</span>
 							</button>
+
+							<button
+								type="button"
+								onClick={() => {
+									setIsReportsMenuOpen(false);
+									setIsCashRegisterModalOpen(true);
+								}}
+								data-testid="btn-open-cash-register-modal"
+								className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[var(--ink)]"
+								title="Открыть АРМ кассового аппарата 54-ФЗ (сверка наличности, X/Z-лента)"
+							>
+								<Zap size={13} className="shrink-0 text-[var(--warning-fg,#b45309)]" />
+								<span>АРМ кассы 54-ФЗ</span>
+							</button>
 						</div>
 					</div>
 				</div>
@@ -857,6 +904,9 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 
 				{/* Модальное окно кассовых операций (Внесение/Изъятие StomX) */}
 				{renderCashFlowModal()}
+
+				{/* Модальное окно АРМ кассового аппарата 54-ФЗ */}
+				{renderCashRegisterModal()}
 			</div>
 		);
 	}
@@ -1126,6 +1176,20 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 							<Layers size={15} className="shrink-0 text-[var(--warning-fg)]" />
 							<span>Очередь чеков и сверка {pendingOfflineCount > 0 ? `(${pendingOfflineCount})` : ""}</span>
 						</button>
+
+						<button
+							type="button"
+							onClick={() => {
+								setIsBottomActionsMenuOpen(false);
+								setIsCashRegisterModalOpen(true);
+							}}
+							className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2.5 cursor-pointer text-[var(--ink)] transition-colors"
+							title="Открыть АРМ кассового аппарата 54-ФЗ (сверка наличности, X/Z-лента)"
+							data-testid="btn-open-cash-register-arm"
+						>
+							<Zap size={15} className="shrink-0 text-[var(--warning-fg)]" />
+							<span>АРМ кассы 54-ФЗ (Сверка / Лента)</span>
+						</button>
 					</div>
 				</div>
 
@@ -1180,6 +1244,9 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 
 			{/* Модальное окно кассовых операций (Внесение/Изъятие StomX) */}
 			{renderCashFlowModal()}
+
+			{/* Модальное окно АРМ кассового аппарата 54-ФЗ */}
+			{renderCashRegisterModal()}
 		</div>
 	);
 };

@@ -15,6 +15,7 @@ import {
 	EyeOff,
 	FileCheck,
 	FileText,
+	Loader2,
 	Package,
 	Printer,
 	QrCode,
@@ -437,13 +438,17 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 						{onConfirmExecuteWriteOff && actData.status !== "executed" && (
 							<button
 								type="button"
-								onClick={onConfirmExecuteWriteOff}
-								disabled={isExecuting}
+								onClick={() => {
+									if (!isExecuting) {
+										onConfirmExecuteWriteOff();
+									}
+								}}
+								aria-busy={isExecuting}
 								className={`flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] flex-1 sm:flex-initial rounded-xl text-xs font-bold text-white shadow-md cursor-pointer transition-all ${
 									hasDeficit
 										? "bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 border border-amber-400/50"
 										: "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500"
-								} disabled:opacity-50`}
+								}`}
 								title={
 									hasDeficit
 										? "Позиции будут списаны с отрицательным остатком до оприходования накладной медсестрой"
@@ -451,7 +456,9 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 								}
 								data-testid="execute-act-writeoff-btn"
 							>
-								{hasDeficit ? (
+								{isExecuting ? (
+									<Loader2 className="w-4 h-4 shrink-0 animate-spin" />
+								) : hasDeficit ? (
 									<AlertTriangle className="w-4 h-4 shrink-0 text-yellow-200" />
 								) : (
 									<Package className="w-4 h-4 shrink-0" />

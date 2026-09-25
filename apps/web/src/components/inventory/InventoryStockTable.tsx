@@ -448,7 +448,7 @@ export const InventoryStockTable: React.FC<InventoryStockTableProps> = ({
 													title="Остаток 0: списание разрешено в мягкий овердрафт без блокировки врача (Мандат 8n)"
 												>
 													<ShieldAlert size={10} />
-													<span>Мягкий овердрафт</span>
+													<span>Овердрафт (0-блокировка)</span>
 												</div>
 											)}
 										</td>

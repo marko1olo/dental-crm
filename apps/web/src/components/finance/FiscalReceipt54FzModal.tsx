@@ -19,6 +19,9 @@ import {
 	FileText,
 	Gift,
 	Layers,
+	MoreHorizontal,
+	ChevronDown,
+	Settings2,
 	Printer,
 	QrCode,
 	Receipt,
@@ -324,6 +327,14 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		}
 		return 0;
 	});
+	const [paymentMode, setPaymentMode] = useState<"cash" | "card" | "sbp" | "deposit" | "split">(() => {
+		if (initialMethod === "cash") return "cash";
+		if (initialMethod === "sbp") return "sbp";
+		if (initialMethod === "advance" || initialMethod === "deposit") return "deposit";
+		return "card";
+	});
+	const [isOverflowMenuOpen, setIsOverflowMenuOpen] = useState<boolean>(false);
+	const [showStomxSettings, setShowStomxSettings] = useState<boolean>(false);
 	const [certificateAmount, setCertificateAmount] = useState<number>(0);
 	const [insuranceAmount, setInsuranceAmount] = useState<number>(0);
 	const [guaranteeLetterNumber, setGuaranteeLetterNumber] = useState<string>("");
@@ -1448,7 +1459,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 													? "Акт сдачи-приемки выполненных работ (804н)"
 													: activeTab === "oneC"
 														? "1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 и 54-ФЗ"
-														: "Кассовый чек 54-ФЗ • Оплата визита"}
+														: "Кассовый чек 54-ФЗ · Фискализация 54-ФЗ & Прием платежей"}
 								</h3>
 								<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-bold shrink-0">
 									ФФД 1.2
@@ -1633,13 +1644,129 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 							{/* Left Column: Split Payment Builders */}
 							<div className="lg:col-span-7 space-y-4">
+								{/* Top Bar: Operations Popover & StomX Quick Requisites */}
+								<div className="flex items-center justify-between gap-2 flex-wrap pb-1">
+									<div className="text-xs text-[var(--muted,#64748b)] font-bold flex items-center gap-1.5">
+										<Coins size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+										<span>Кассовая операция 54-ФЗ</span>
+									</div>
+
+									{/* Secondary Actions / Overflow Menu Button («...») */}
+									<div className="relative">
+										<button
+											type="button"
+											onClick={() => setIsOverflowMenuOpen((prev) => !prev)}
+											className="h-8 px-2.5 rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+											title="Дополнительные операции: товарный чек, ручное подтверждение, статья ДДС StomX"
+											data-testid="btn-payment-overflow-menu"
+										>
+											<MoreHorizontal size={15} />
+											<span>Опции...</span>
+										</button>
+
+										{isOverflowMenuOpen && (
+											<div className="absolute right-0 top-full mt-1.5 w-72 rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] shadow-2xl p-2 z-40 space-y-1 text-xs">
+												<div className="px-2.5 py-1 text-[11px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
+													Вторичные операции 54-ФЗ
+												</div>
+												<button
+													type="button"
+													onClick={() => {
+														setIsOverflowMenuOpen(false);
+														void handlePrintSalesSlip();
+													}}
+													className="w-full h-8 px-2.5 rounded-lg font-bold text-left text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
+													data-testid="overflow-print-sales-slip"
+												>
+													<FileText size={14} className="text-teal-600 shrink-0" />
+													<span>Товарный чек (без ОФД)</span>
+												</button>
+												<button
+													type="button"
+													onClick={() => {
+														setIsOverflowMenuOpen(false);
+														void handleManualCardTerminalConfirm();
+													}}
+													disabled={isSubmittingManualCard}
+													className="w-full h-8 px-2.5 rounded-lg font-bold text-left text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2 cursor-pointer transition-colors"
+													data-testid="overflow-manual-card-confirm"
+												>
+													<CreditCard size={14} className="text-blue-600 shrink-0" />
+													<span>Подтвердить терминал вручную</span>
+												</button>
+												<button
+													type="button"
+													onClick={() => {
+														setIsOverflowMenuOpen(false);
+														void handleRetryFiscalizationWithoutBalanceImpact();
+													}}
+													disabled={isFiscalizing}
+													className="w-full h-8 px-2.5 rounded-lg font-bold text-left text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center gap-2 cursor-pointer transition-colors"
+													data-testid="overflow-retry-fiscal"
+												>
+													<Printer size={14} className="text-emerald-600 shrink-0" />
+													<span>Повторить чек без баланса</span>
+												</button>
+												<button
+													type="button"
+													onClick={() => {
+														setShowStomxSettings((prev) => !prev);
+														setIsOverflowMenuOpen(false);
+													}}
+													className="w-full h-8 px-2.5 rounded-lg font-bold text-left text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
+												>
+													<Settings2 size={14} className="text-amber-600 shrink-0" />
+													<span>{showStomxSettings ? "Скрыть кассу и ДДС StomX" : "Настроить кассу и ДДС StomX"}</span>
+												</button>
+												<button
+													type="button"
+													onClick={() => {
+														setIsOverflowMenuOpen(false);
+														handleCopyActData();
+													}}
+													className="w-full h-8 px-2.5 rounded-lg font-bold text-left text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
+												>
+													<Copy size={14} className="text-slate-500 shrink-0" />
+													<span>Копировать текст Акта (804н)</span>
+												</button>
+												<button
+													type="button"
+													onClick={() => {
+														setIsOverflowMenuOpen(false);
+														handleCopyCertData();
+													}}
+													className="w-full h-8 px-2.5 rounded-lg font-bold text-left text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2 cursor-pointer transition-colors"
+												>
+													<Copy size={14} className="text-indigo-500 shrink-0" />
+													<span>Копировать данные справки ФНС</span>
+												</button>
+											</div>
+										)}
+									</div>
+								</div>
+
 								{/* StomX Cash Flow (ДДС) & Cash Box Selector */}
-								<div className="p-3.5 rounded-2xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] space-y-2.5" data-testid="stomx-cash-flow-payment-bar">
-									<div className="flex items-center justify-between flex-wrap gap-2">
+								<div className={`p-2.5 rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] ${showStomxSettings ? "space-y-2" : "flex items-center justify-between flex-wrap gap-2"}`} data-testid="stomx-cash-flow-payment-bar">
+									<div className="flex items-center gap-2 flex-wrap">
 										<div className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink,#0f172a)] uppercase tracking-wider">
 											<Coins size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-											<span>Статья ДДС и Касса клиники:</span>
+											<span>ДДС:</span>
 										</div>
+										<select
+											value={selectedReceiptAlias}
+											onChange={(e) => setSelectedReceiptAlias(e.target.value as StomxReceiptTypeAlias)}
+											className="h-7 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] outline-none cursor-pointer max-w-[200px] truncate"
+											data-testid="select-receipt-category-all"
+										>
+											{STOMX_CASH_RECEIPT_CATEGORIES.map((cat) => (
+												<option key={cat.id} value={cat.alias}>
+													{cat.name} (ФФД: {cat.ffdCalculationSubject === 4 ? "Услуга" : cat.ffdCalculationSubject === 1 ? "Товар" : cat.ffdCalculationSubject === 3 ? "Аванс" : "Внереализ."})
+												</option>
+											))}
+										</select>
+									</div>
+
+									<div className="flex items-center gap-2">
 										<div className="flex items-center gap-1.5 text-xs text-[var(--muted,#64748b)]">
 											<Building2 size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
 											<span>Касса:</span>
@@ -1658,36 +1785,26 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										</div>
 									</div>
 
-									{/* 1-Click Fast Category Pills for Front Desk & Doctor */}
-									<div className="flex items-center gap-1.5 flex-wrap">
-										{STOMX_CASH_RECEIPT_CATEGORIES.slice(0, 5).map((cat) => (
-											<button
-												key={cat.id}
-												type="button"
-												onClick={() => setSelectedReceiptAlias(cat.alias)}
-												className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-													selectedReceiptAlias === cat.alias
-														? "bg-teal-600 text-white shadow-2xs"
-														: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] hover:border-teal-400"
-												}`}
-												data-testid={`btn-receipt-cat-${cat.alias}`}
-											>
-												<span>{cat.name}</span>
-											</button>
-										))}
-										<select
-											value={selectedReceiptAlias}
-											onChange={(e) => setSelectedReceiptAlias(e.target.value as StomxReceiptTypeAlias)}
-											className="h-7 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] outline-none cursor-pointer"
-											data-testid="select-receipt-category-all"
-										>
-											{STOMX_CASH_RECEIPT_CATEGORIES.map((cat) => (
-												<option key={cat.id} value={cat.alias}>
-													{cat.name} (ФФД: {cat.ffdCalculationSubject === 4 ? "Услуга" : cat.ffdCalculationSubject === 1 ? "Товар" : cat.ffdCalculationSubject === 3 ? "Аванс" : "Внереализ."})
-												</option>
+									{/* 1-Click Fast Category Pills when expanded */}
+									{showStomxSettings && (
+										<div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-[var(--border,#cbd5e1)]">
+											{STOMX_CASH_RECEIPT_CATEGORIES.slice(0, 5).map((cat) => (
+												<button
+													key={cat.id}
+													type="button"
+													onClick={() => setSelectedReceiptAlias(cat.alias)}
+													className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+														selectedReceiptAlias === cat.alias
+															? "bg-teal-600 text-white shadow-2xs"
+															: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] hover:border-teal-400"
+													}`}
+													data-testid={`btn-receipt-cat-${cat.alias}`}
+												>
+													<span>{cat.name}</span>
+												</button>
 											))}
-										</select>
-									</div>
+										</div>
+									)}
 								</div>
 
 								{/* Stage Filter Chips */}
@@ -1964,82 +2081,146 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									)}
 								</div>
 
-								{/* Экспресс-оплата в 1 клик (без 4-страничного визарда) & 54-ФЗ без палок в колёса */}
-								<div className="p-3.5 rounded-2xl border-2 border-teal-500/40 bg-teal-500/5 space-y-2.5" data-testid="express-payment-bar">
-									<div className="flex items-center justify-between flex-wrap gap-2">
-										<div className="flex items-center gap-2">
-											<Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
-											<span className="text-xs font-black text-[var(--ink,#0f172a)] uppercase tracking-wider">
-												Экспресс-оплата в 1 клик (чек фискализируется мгновенно):
-											</span>
-										</div>
-										<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 inline-flex items-center gap-1">
-											<ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-											<span>54-ФЗ: ИНН с физлиц НЕ требуется</span>
+								{/* macOS HIG Segmented Control (Hick's Law: [ Наличные | Карта | СБП | Баланс семьи | Сплит ]) */}
+								<div className="space-y-2.5">
+									<div className="flex items-center justify-between">
+										<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
+											Способ оплаты:
+										</span>
+										<span className="font-mono text-xs font-bold text-[var(--ink,#0f172a)]">
+											К оплате: {formatMoneyRu(totalSumRub)}
 										</span>
 									</div>
-									<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+
+									<div className="p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] grid grid-cols-5 gap-1 text-xs font-bold" data-testid="fiscal-segmented-control">
 										<button
 											type="button"
-											onClick={() => handleExecuteFiscalization("card")}
-											disabled={isFiscalizing}
-											className="h-10 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
-											data-testid="btn-express-pay-card"
-											title={isFiscalizing ? "Выполняется фискализация чека на ККТ..." : "Оплатить картой 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"}
+											onClick={() => {
+												setPaymentMode("cash");
+												selectSingleMethod("cash");
+											}}
+											className={`h-9 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer truncate ${
+												paymentMode === "cash"
+													? "bg-emerald-600 text-white shadow-xs"
+													: "text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))]"
+											}`}
+											data-testid="segment-cash"
 										>
-											<CreditCard className="w-4 h-4 shrink-0" />
-											<span>Оплатить картой (вся сумма)</span>
+											<Banknote size={15} className="shrink-0" />
+											<span className="truncate">Наличные</span>
 										</button>
+
 										<button
 											type="button"
-											onClick={() => handleExecuteFiscalization("cash")}
-											disabled={isFiscalizing}
-											className="h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
-											data-testid="btn-express-pay-cash"
-											title={isFiscalizing ? "Выполняется фискализация чека на ККТ..." : "Оплатить наличными 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"}
+											onClick={() => {
+												setPaymentMode("card");
+												selectSingleMethod("card");
+											}}
+											className={`h-9 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer truncate ${
+												paymentMode === "card"
+													? "bg-blue-600 text-white shadow-xs"
+													: "text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))]"
+											}`}
+											data-testid="segment-card"
 										>
-											<Banknote className="w-4 h-4 shrink-0" />
-											<span>Оплатить наличными (вся сумма)</span>
+											<CreditCard size={15} className="shrink-0" />
+											<span className="truncate">Карта</span>
 										</button>
+
 										<button
 											type="button"
-											onClick={() => handleExecuteFiscalization("sbp")}
-											disabled={isFiscalizing}
-											className="h-10 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
-											data-testid="btn-express-pay-sbp"
-											title={isFiscalizing ? "Выполняется фискализация чека на ККТ..." : "Оплатить через СБП QR 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"}
+											onClick={() => {
+												setPaymentMode("sbp");
+												selectSingleMethod("sbp");
+											}}
+											className={`h-9 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer truncate ${
+												paymentMode === "sbp"
+													? "bg-teal-600 text-white shadow-xs"
+													: "text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))]"
+											}`}
+											data-testid="segment-sbp"
 										>
-											<QrCode className="w-4 h-4 shrink-0" />
-											<span>Оплатить через СБП</span>
+											<QrCode size={15} className="shrink-0" />
+											<span className="truncate">СБП</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												setPaymentMode("deposit");
+												selectSingleMethod("deposit");
+											}}
+											className={`h-9 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer truncate ${
+												paymentMode === "deposit"
+													? "bg-amber-600 text-white shadow-xs"
+													: "text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))]"
+											}`}
+											data-testid="segment-deposit"
+										>
+											<Coins size={15} className="shrink-0" />
+											<span className="truncate">Баланс семьи</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => setPaymentMode("split")}
+											className={`h-9 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer truncate ${
+												paymentMode === "split"
+													? "bg-purple-600 text-white shadow-xs"
+													: "text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))]"
+											}`}
+											data-testid="segment-split"
+										>
+											<Layers size={15} className="shrink-0" />
+											<span className="truncate">Сплит</span>
 										</button>
 									</div>
-								</div>
-
-								<div className="flex items-center justify-between">
-									<h4 className="font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)]">
-										1. Способ оплаты (1 клик для 100% суммы)
-									</h4>
-									<span className="font-mono text-[var(--ink,#0f172a)] font-bold text-xs">
-										Сумма: {formatMoneyRu(totalSumRub)}
-									</span>
 								</div>
 
 								{/* 1-Click Fast Combined Payment Presets (Мандаты 8e, 8k, 8n) */}
-								<div className="flex items-center gap-1.5 flex-wrap p-2 rounded-xl bg-teal-500/5 border border-teal-500/20" data-testid="fiscal-presets-strip">
-									<span className="text-xs font-bold text-teal-800 dark:text-teal-300 flex items-center gap-1 shrink-0">
+								<div className="flex items-center gap-1.5 flex-wrap p-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)]" data-testid="fiscal-presets-strip">
+									<span className="text-xs font-bold text-[var(--muted,#64748b)] mr-1 flex items-center gap-1 shrink-0">
 										<Sparkles size={13} className="text-teal-600 dark:text-teal-400" />
 										<span>Пресеты:</span>
 									</span>
 									<button
 										type="button"
-										onClick={handleManualCardTerminalConfirm}
-										disabled={isSubmittingManualCard}
-										title={isSubmittingManualCard ? "Фиксация..." : "Зафиксировать оплату в CRM без повторного списания с карты, если терминал уже списал средства"}
-										className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-blue-500/40 text-blue-700 dark:text-blue-300 hover:bg-blue-50 hover:border-blue-500 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
-										data-testid="preset-manual-card-confirm"
+										onClick={() => {
+											applyCombinedPaymentPreset("exact_cash");
+											setPaymentMode("cash");
+										}}
+										className="h-7 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
+										data-testid="preset-exact-cash"
+										title="Оплатить наличными ровно в сумме чека (без сдачи)"
 									>
-										<CreditCard size={13} className="text-blue-600 dark:text-blue-400 shrink-0" />
-										<span>Карта подтверждена вручную</span>
+										<Banknote size={13} className="text-emerald-600 shrink-0" />
+										<span>Без сдачи</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											applyCombinedPaymentPreset("full_card");
+											setPaymentMode("card");
+										}}
+										className="h-7 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-blue-500/30 text-blue-700 dark:text-blue-300 hover:bg-blue-50 hover:border-blue-500 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
+										data-testid="preset-full-card"
+										title="Оплатить 100% картой через терминал"
+									>
+										<CreditCard size={13} className="text-blue-600 shrink-0" />
+										<span>100% карта</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											applyCombinedPaymentPreset("split_cash_card");
+											setPaymentMode("split");
+										}}
+										className="h-7 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
+										data-testid="preset-50-50-cash-card"
+										title="Разделить оплату ровно пополам: 50% наличные + 50% карта"
+									>
+										<Layers size={13} className="text-purple-600 shrink-0" />
+										<span>50/50 Нал+Карта</span>
 									</button>
 									<button
 										type="button"
@@ -2051,9 +2232,10 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 											setDepositAmount(0);
 											setCertificateAmount(0);
 											setInsuranceAmount(0);
+											setPaymentMode("split");
 											showToast("Применен пресет: Гарантия 100% (0 ₽, без фискального чека ККТ)", "info", 2500);
 										}}
-										className={`h-8 px-2.5 rounded-lg text-xs font-bold border transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1 ${
+										className={`h-7 px-2.5 rounded-lg text-xs font-bold border transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1 ${
 											selectedDiscountPreset === "warranty_100"
 												? "bg-purple-600 text-white border-purple-600 shadow-2xs"
 												: "bg-[var(--paper-strong,var(--paper,#ffffff))] border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-50 hover:border-purple-500"
@@ -2061,34 +2243,28 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										data-testid="preset-warranty-100"
 										title="Гарантийная переделка 100% (0 ₽, без фискального чека ККТ)"
 									>
-										<ShieldCheck size={13} className={selectedDiscountPreset === "warranty_100" ? "text-white shrink-0" : "text-purple-600 dark:text-purple-400 shrink-0"} />
+										<ShieldCheck size={13} className={selectedDiscountPreset === "warranty_100" ? "text-white shrink-0" : "text-purple-600 shrink-0"} />
 										<span>Гарантия (0 ₽)</span>
 									</button>
 									<button
 										type="button"
-										onClick={() => applyCombinedPaymentPreset("exact_cash")}
-										className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
-										data-testid="preset-exact-cash"
-										title="Оплатить наличными ровно в сумме чека (без сдачи)"
+										onClick={handleManualCardTerminalConfirm}
+										disabled={isSubmittingManualCard}
+										title={isSubmittingManualCard ? "Фиксация..." : "Зафиксировать оплату в CRM без повторного списания с карты"}
+										className="h-7 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-blue-500/30 text-blue-700 dark:text-blue-300 hover:bg-blue-50 hover:border-blue-500 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
+										data-testid="preset-manual-card-confirm"
 									>
-										<Zap size={13} className="text-amber-500 fill-amber-500 shrink-0" />
-										<span>Без сдачи</span>
-									</button>
-									<button
-										type="button"
-										onClick={() => applyCombinedPaymentPreset("full_card")}
-										className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-blue-500/30 text-blue-700 dark:text-blue-300 hover:bg-blue-50 hover:border-blue-500 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
-										data-testid="preset-full-card"
-										title="Оплатить 100% картой через терминал"
-									>
-										<Zap size={13} className="text-amber-500 fill-amber-500 shrink-0" />
-										<span>100% карта</span>
+										<CreditCard size={12} className="text-blue-600 shrink-0" />
+										<span>Карта вручную</span>
 									</button>
 									{patientDepositRub > 0 && (
 										<button
 											type="button"
-											onClick={() => applyCombinedPaymentPreset("advance_card")}
-											className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-teal-500/30 text-teal-700 dark:text-teal-300 hover:bg-teal-50 hover:border-teal-500 cursor-pointer transition-all shadow-2xs active:scale-95"
+											onClick={() => {
+												applyCombinedPaymentPreset("advance_card");
+												setPaymentMode("split");
+											}}
+											className="h-7 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-teal-500/30 text-teal-700 dark:text-teal-300 hover:bg-teal-50 hover:border-teal-500 cursor-pointer transition-all shadow-2xs active:scale-95"
 											title="Зачесть доступный депозит, а остаток списать с карты"
 										>
 											Аванс + Карта
@@ -2097,319 +2273,356 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									{patientDepositRub > 0 && (
 										<button
 											type="button"
-											onClick={() => applyCombinedPaymentPreset("advance_cash")}
-											className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer transition-all shadow-2xs active:scale-95"
+											onClick={() => {
+												applyCombinedPaymentPreset("advance_cash");
+												setPaymentMode("split");
+											}}
+											className="h-7 px-2 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer transition-all shadow-2xs active:scale-95"
 											title="Зачесть доступный депозит, а остаток принять наличными"
 										>
 											Аванс + Нал
 										</button>
 									)}
-									{patientDepositRub > 0 && (
-										<button
-											type="button"
-											onClick={() => applyCombinedPaymentPreset("advance_cash_card")}
-											className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-50 hover:border-purple-500 cursor-pointer transition-all shadow-2xs active:scale-95"
-											title="Зачесть доступный депозит, а остаток разделить 50% наличными и 50% картой"
-										>
-											Аванс + Нал + Карта
-										</button>
-									)}
-									<button
-										type="button"
-										onClick={() => applyCombinedPaymentPreset("split_cash_card")}
-										className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-all shadow-2xs active:scale-95"
-										data-testid="preset-50-50-cash-card"
-										title="Разделить оплату ровно пополам: 50% наличные + 50% карта"
-									>
-										50% Нал + 50% Карта
-									</button>
 								</div>
 
-								{/* Payment Methods Toolbar — Strictly 1 row 32–36px per Hick's Law */}
-								<div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] overflow-x-auto" data-testid="fiscal-payment-methods-toolbar">
-									<button
-										type="button"
-										onClick={() => selectSingleMethod("card")}
-										className={`h-8 sm:h-8.5 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap active:scale-95 shrink-0 ${
-											cardAmount === (totalSumRub - insuranceAmount) && cardAmount > 0
-												? "border-blue-600 bg-blue-600 text-white shadow-xs"
-												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:border-blue-400 text-[var(--ink,#0f172a)]"
-										}`}
-										data-testid="method-btn-card"
-									>
-										<CreditCard size={14} className={cardAmount === (totalSumRub - insuranceAmount) && cardAmount > 0 ? "text-white" : "text-blue-600 dark:text-blue-400"} />
-										<span>Карта (Безнал)</span>
-									</button>
-
-									<button
-										type="button"
-										onClick={() => selectSingleMethod("sbp")}
-										className={`h-8 sm:h-8.5 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap active:scale-95 shrink-0 ${
-											sbpAmount === (totalSumRub - insuranceAmount) && sbpAmount > 0
-												? "border-teal-600 bg-teal-600 text-white shadow-xs"
-												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:border-teal-400 text-[var(--ink,#0f172a)]"
-										}`}
-										data-testid="method-btn-sbp"
-									>
-										<QrCode size={14} className={sbpAmount === (totalSumRub - insuranceAmount) && sbpAmount > 0 ? "text-white" : "text-teal-600 dark:text-teal-400"} />
-										<span>СБП QR</span>
-									</button>
-
-									<button
-										type="button"
-										onClick={() => selectSingleMethod("cash")}
-										className={`h-8 sm:h-8.5 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap active:scale-95 shrink-0 ${
-											cashAmount === (totalSumRub - insuranceAmount) && cashAmount > 0
-												? "border-emerald-600 bg-emerald-600 text-white shadow-xs"
-												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
-										}`}
-										data-testid="method-btn-cash"
-									>
-										<Banknote size={14} className={cashAmount === (totalSumRub - insuranceAmount) && cashAmount > 0 ? "text-white" : "text-emerald-600 dark:text-emerald-400"} />
-										<span>Наличные (Касса)</span>
-									</button>
-
-									<button
-										type="button"
-										onClick={() => selectSingleMethod("deposit")}
-										className={`h-8 sm:h-8.5 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap active:scale-95 shrink-0 ${
-											depositAmount > 0
-												? "border-amber-600 bg-amber-600 text-white shadow-xs"
-												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:border-amber-400 text-[var(--ink,#0f172a)]"
-										}`}
-										data-testid="method-btn-deposit"
-									>
-										<Coins size={14} className={depositAmount > 0 ? "text-white" : "text-amber-600 dark:text-amber-400"} />
-										<span>Зачет аванса</span>
-									</button>
-
-									<button
-										type="button"
-										onClick={() => selectSingleMethod("certificate")}
-										className={`h-8 sm:h-8.5 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap active:scale-95 shrink-0 ${
-											certificateAmount === (totalSumRub - insuranceAmount) && certificateAmount > 0
-												? "border-purple-600 bg-purple-600 text-white shadow-xs"
-												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:border-purple-400 text-[var(--ink,#0f172a)]"
-										}`}
-										data-testid="method-btn-certificate"
-									>
-										<Gift size={14} className={certificateAmount === (totalSumRub - insuranceAmount) && certificateAmount > 0 ? "text-white" : "text-purple-600 dark:text-purple-400"} />
-										<span>Сертификат</span>
-									</button>
-
-									<button
-										type="button"
-										onClick={() => selectSingleMethod("insurance")}
-										className={`h-8 sm:h-8.5 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap active:scale-95 shrink-0 ${
-											insuranceAmount > 0
-												? "border-indigo-600 bg-indigo-600 text-white shadow-xs"
-												: "border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:border-indigo-400 text-[var(--ink,#0f172a)]"
-										}`}
-										data-testid="method-btn-insurance"
-									>
-										<ShieldCheck size={14} className={insuranceAmount > 0 ? "text-white" : "text-indigo-600 dark:text-indigo-400"} />
-										<span>ДМС / ГП</span>
-									</button>
-								</div>
-
-								{/* Detailed Split Payment Rows with Elevated min-h-[48px] Buttons */}
+								{/* Focused Mode Panel: Cash / Card / SBP / Deposit OR Full Split */}
 								<div className="space-y-3 pt-1">
-									{/* Bank Card */}
-									<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
-										<div className="flex items-center gap-3">
-											<div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-												<CreditCard size={18} />
+									{paymentMode === "cash" && (
+										<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-emerald-500/30 space-y-3" data-testid="panel-cash-focused">
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-2.5">
+													<div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+														<Banknote size={20} />
+													</div>
+													<div>
+														<span className="font-bold text-sm block text-[var(--ink,#0f172a)]">
+															Оплата наличными (Касса 54-ФЗ)
+														</span>
+														<span className="text-xs text-[var(--muted,#64748b)]">
+															Сумма чека: {formatMoneyRu(cashAmount)}
+														</span>
+													</div>
+												</div>
+												<div className="text-right">
+													<span className="text-xs text-[var(--muted,#64748b)] block">К оплате:</span>
+													<span className="text-lg font-black font-mono text-emerald-700 dark:text-emerald-300">
+														{formatMoneyRu(cashAmount)}
+													</span>
+												</div>
 											</div>
-											<div>
-												<span className="font-bold text-xs sm:text-sm block text-[var(--ink,#0f172a)]">
-													Безналичные / Эквайринг
-												</span>
-												<span className="text-xs text-[var(--muted,#64748b)]">
-													Банковская карта (Тег 1081)
-												</span>
+
+											{/* Cash Tendered & Change Calculator */}
+											<div className="p-3 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] space-y-2">
+												<div className="flex items-center justify-between flex-wrap gap-2">
+													<label className="text-xs font-semibold text-[var(--muted,#64748b)]">
+														Получено от пациента (₽):
+													</label>
+													<div className="flex items-center gap-1.5 flex-wrap">
+														<button
+															type="button"
+															onClick={() => setReceivedCashRub(cashAmount)}
+															className="h-6 px-2 rounded text-[11px] font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 cursor-pointer transition-colors"
+														>
+															Ровно без сдачи
+														</button>
+														{[500, 1000, 5000].map((val) => (
+															<button
+																key={val}
+																type="button"
+																onClick={() => setReceivedCashRub((prev) => (prev || cashAmount) + val)}
+																className="h-6 px-2 rounded text-[11px] font-semibold bg-[var(--paper-soft,#f8fafc)] hover:bg-slate-200 dark:hover:bg-slate-800 text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-colors"
+															>
+																+{val} ₽
+															</button>
+														))}
+													</div>
+												</div>
+
+												<div className="flex items-center gap-3">
+													<input
+														type="number"
+														min={0}
+														value={receivedCashRub || ""}
+														onChange={(e) => setReceivedCashRub(Math.max(0, Number(e.target.value) || 0))}
+														placeholder={cashAmount.toString()}
+														className="h-10 w-40 px-3 text-base font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
+													/>
+													<div className="flex-1 text-right">
+														{receivedCashRub >= cashAmount && receivedCashRub > 0 ? (
+															<div className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
+																Сдача: <span className="text-base font-mono font-black">{formatMoneyRu(receivedCashRub - cashAmount)}</span>
+															</div>
+														) : receivedCashRub > 0 ? (
+															<div className="text-xs font-bold text-amber-700 dark:text-amber-300">
+																К доплате: <span className="text-base font-mono font-black">{formatMoneyRu(cashAmount - receivedCashRub)}</span>
+															</div>
+														) : (
+															<div className="text-xs text-[var(--muted,#64748b)]">
+																Без сдачи
+															</div>
+														)}
+													</div>
+												</div>
 											</div>
 										</div>
+									)}
 
-										<div className="flex items-center gap-2">
-											<input
-												type="number"
-												min={0}
-												max={totalSumRub}
-												value={cardAmount || ""}
-												onChange={(e) => setCardAmount(Math.max(0, Number(e.target.value) || 0))}
-												placeholder="0"
-												className="h-9 w-28 sm:w-32 px-3 py-1.5 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
-											/>
-											{remainingRub > 0 && (
+									{paymentMode === "card" && (
+										<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-blue-500/30 space-y-3" data-testid="panel-card-focused">
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-2.5">
+													<div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+														<CreditCard size={20} />
+													</div>
+													<div>
+														<span className="font-bold text-sm block text-[var(--ink,#0f172a)]">
+															Безналичные / Эквайринг (Тег 1081)
+														</span>
+														<span className="text-xs text-[var(--muted,#64748b)]">
+															POS-терминал готов к приему оплаты
+														</span>
+													</div>
+												</div>
+												<div className="text-right">
+													<span className="text-xs text-[var(--muted,#64748b)] block">К списанию:</span>
+													<span className="text-lg font-black font-mono text-blue-700 dark:text-blue-300">
+														{formatMoneyRu(cardAmount)}
+													</span>
+												</div>
+											</div>
+
+											<div className="p-3 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] flex items-center justify-between flex-wrap gap-2 text-xs">
+												<span className="text-[var(--muted,#64748b)]">
+													Приложите банковскую карту или смартфон к терминалу эквайринга
+												</span>
 												<button
 													type="button"
-													onClick={() => handleFillRemaining("card")}
-													className="h-9 px-3 py-1.5 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transition-all active:scale-95 flex items-center gap-1 shadow-2xs"
-													title={`Добавить остаток ${formatMoneyRu(remainingRub)} на карту`}
-													data-testid="btn-fill-remaining-card"
+													onClick={handleManualCardTerminalConfirm}
+													disabled={isSubmittingManualCard}
+													className="h-8 px-3 rounded-lg text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition-colors cursor-pointer flex items-center gap-1.5"
 												>
-													<Sparkles size={13} />
-													<span>+Остаток</span>
+													<CreditCard size={13} />
+													<span>Подтвердить вручную (автономный POS)</span>
 												</button>
-											)}
-											{cardAmount < totalSumRub && (
-												<button
-													type="button"
-													onClick={() => selectSingleMethod("card")}
-													className="h-9 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-xl bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 cursor-pointer transition-colors flex items-center justify-center"
-													title="Внести всю сумму на карту"
-												>
-													Вся сумма
-												</button>
-											)}
-										</div>
-									</div>
-
-									{/* SBP Dynamic QR */}
-									<div className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
-										<div className="flex items-center gap-3">
-											<div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
-												<QrCode size={18} />
-											</div>
-											<div>
-												<span className="font-bold text-xs sm:text-sm block text-[var(--ink,#0f172a)]">
-													СБП / Плати QR
-												</span>
-												<span className="text-xs text-[var(--muted,#64748b)]">
-													Динамический QR НСПК (Тег 1081)
-												</span>
 											</div>
 										</div>
+									)}
 
-										<div className="flex items-center gap-2">
-											<input
-												type="number"
-												min={0}
-												max={totalSumRub}
-												value={sbpAmount || ""}
-												onChange={(e) => setSbpAmount(Math.max(0, Number(e.target.value) || 0))}
-												placeholder="0"
-												className="h-9 w-28 sm:w-32 px-3 py-1.5 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
-											/>
-											{remainingRub > 0 && (
-												<button
-													type="button"
-													onClick={() => handleFillRemaining("sbp")}
-													className="h-9 px-3 py-1.5 text-xs font-bold rounded-xl bg-teal-600 hover:bg-teal-700 text-white cursor-pointer transition-all active:scale-95 flex items-center gap-1 shadow-2xs"
-													title={`Добавить остаток ${formatMoneyRu(remainingRub)} в СБП`}
-													data-testid="btn-fill-remaining-sbp"
-												>
-													<Sparkles size={13} />
-													<span>+Остаток</span>
-												</button>
-											)}
-											{sbpAmount < totalSumRub && (
-												<button
-													type="button"
-													onClick={() => selectSingleMethod("sbp")}
-													className="h-9 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-xl bg-teal-500/10 text-teal-600 hover:bg-teal-500/20 cursor-pointer transition-colors flex items-center justify-center"
-												>
-													Вся сумма
-												</button>
-											)}
-										</div>
-									</div>
-
-									{/* Cash */}
-									<div className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
-										<div className="flex items-center gap-3">
-											<div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-												<Banknote size={18} />
+									{paymentMode === "sbp" && (
+										<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-teal-500/30 space-y-3" data-testid="panel-sbp-focused">
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-2.5">
+													<div className="p-2 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
+														<QrCode size={20} />
+													</div>
+													<div>
+														<span className="font-bold text-sm block text-[var(--ink,#0f172a)]">
+															Система быстрых платежей (СБП QR)
+														</span>
+														<span className="text-xs text-[var(--muted,#64748b)]">
+															Динамический QR НСПК сформирован справа
+														</span>
+													</div>
+												</div>
+												<div className="text-right">
+													<span className="text-xs text-[var(--muted,#64748b)] block">К оплате:</span>
+													<span className="text-lg font-black font-mono text-teal-700 dark:text-teal-300">
+														{formatMoneyRu(sbpAmount)}
+													</span>
+												</div>
 											</div>
-											<div>
-												<span className="font-bold text-xs sm:text-sm block text-[var(--ink,#0f172a)]">
-													Наличные
-												</span>
-												<span className="text-xs text-[var(--muted,#64748b)]">
-													Купюры / касса (Тег 1031)
-												</span>
-											</div>
+											<p className="text-xs text-[var(--muted,#64748b)] m-0">
+												Пациент сканирует QR камерой или через приложение любого банка РФ. Зачисление мгновенно без комиссии для пациента.
+											</p>
 										</div>
+									)}
 
-										<div className="flex items-center gap-2">
-											<input
-												type="number"
-												min={0}
-												max={totalSumRub}
-												value={cashAmount || ""}
-												onChange={(e) => {
-													const val = Math.max(0, Number(e.target.value) || 0);
-													setCashAmount(val);
-													if (receivedCashRub < val) setReceivedCashRub(val);
-												}}
-												placeholder="0"
-												className="h-9 w-28 sm:w-32 px-3 py-1.5 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
-											/>
-											{remainingRub > 0 && (
-												<button
-													type="button"
-													onClick={() => handleFillRemaining("cash")}
-													className="h-9 px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all active:scale-95 flex items-center gap-1 shadow-2xs"
-													title={`Добавить остаток ${formatMoneyRu(remainingRub)} наличными`}
-													data-testid="btn-fill-remaining-cash"
-												>
-													<Sparkles size={13} />
-													<span>+Остаток</span>
-												</button>
-											)}
-											{cashAmount < totalSumRub && (
-												<button
-													type="button"
-													onClick={() => selectSingleMethod("cash")}
-													className="h-9 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-xl bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 cursor-pointer transition-colors flex items-center justify-center"
-												>
-													Вся сумма
-												</button>
-											)}
-										</div>
-									</div>
-
-									{/* Patient Deposit / Prepaid */}
-									<div className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
-										<div className="flex items-center gap-3">
-											<div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-												<Coins size={18} />
+									{paymentMode === "deposit" && (
+										<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-amber-500/30 space-y-3" data-testid="panel-deposit-focused">
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-2.5">
+													<div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+														<Coins size={20} />
+													</div>
+													<div>
+														<span className="font-bold text-sm block text-[var(--ink,#0f172a)]">
+															Зачет аванса / Баланс семьи (Тег 1215)
+														</span>
+														<span className="text-xs text-[var(--muted,#64748b)]">
+															Доступно: {formatMoneyRu(patientDepositRub)}
+														</span>
+													</div>
+												</div>
+												<div className="text-right">
+													<span className="text-xs text-[var(--muted,#64748b)] block">К списанию:</span>
+													<span className="text-lg font-black font-mono text-amber-700 dark:text-amber-300">
+														{formatMoneyRu(depositAmount)}
+													</span>
+												</div>
 											</div>
-											<div>
-												<span className="font-bold text-xs sm:text-sm block text-[var(--ink,#0f172a)]">
-													Зачет аванса / Депозит
-												</span>
-												<span className="text-xs text-[var(--muted,#64748b)]">
-													Доступно: {formatMoneyRu(patientDepositRub)} (Тег 1215)
-												</span>
-											</div>
-										</div>
 
-										<div className="flex items-center gap-2">
-											<input
-												type="number"
-												min={0}
-												max={patientDepositRub}
-												value={depositAmount || ""}
-												onChange={(e) =>
-													setDepositAmount(
-														Math.max(0, Math.min(patientDepositRub, Number(e.target.value) || 0)),
-													)
-												}
-												placeholder="0"
-												className="h-9 w-28 sm:w-32 px-3 py-1.5 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
-											/>
-											{patientDepositRub > 0 && (
-												<button
-													type="button"
-													onClick={() => selectSingleMethod("deposit")}
-													className="h-9 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-xl bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 cursor-pointer transition-colors flex items-center justify-center"
-												>
-													Зачесть
-												</button>
+											{patientDepositRub < totalSumRub && (
+												<div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs flex items-center justify-between flex-wrap gap-2">
+													<span className="text-amber-900 dark:text-amber-200 font-medium">
+														Остаток к доплате: <strong>{formatMoneyRu(totalSumRub - depositAmount)}</strong>
+													</span>
+													<div className="flex items-center gap-1.5">
+														<button
+															type="button"
+															onClick={() => {
+																setCardAmount(totalSumRub - depositAmount);
+																setPaymentMode("split");
+															}}
+															className="h-7 px-2.5 rounded-lg font-bold bg-blue-600 text-white cursor-pointer transition-all active:scale-95"
+														>
+															+ Доплатить картой
+														</button>
+														<button
+															type="button"
+															onClick={() => {
+																setCashAmount(totalSumRub - depositAmount);
+																setPaymentMode("split");
+															}}
+															className="h-7 px-2.5 rounded-lg font-bold bg-emerald-600 text-white cursor-pointer transition-all active:scale-95"
+														>
+															+ Доплатить налом
+														</button>
+													</div>
+												</div>
 											)}
 										</div>
-									</div>
+									)}
+
+									{paymentMode === "split" && (
+										<div className="space-y-2.5" data-testid="panel-split-focused">
+											{/* Bank Card Row */}
+											<div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
+												<div className="flex items-center gap-2.5">
+													<CreditCard size={16} className="text-blue-600 shrink-0" />
+													<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
+														Карта (Тег 1081)
+													</span>
+												</div>
+												<div className="flex items-center gap-1.5">
+													<input
+														type="number"
+														min={0}
+														max={totalSumRub}
+														value={cardAmount || ""}
+														onChange={(e) => setCardAmount(Math.max(0, Number(e.target.value) || 0))}
+														placeholder="0"
+														className="h-8 w-28 px-2.5 text-xs font-mono font-bold rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
+													/>
+													{remainingRub > 0 && (
+														<button
+															type="button"
+															onClick={() => handleFillRemaining("card")}
+															className="h-8 px-2.5 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transition-all active:scale-95"
+															data-testid="btn-fill-remaining-card"
+														>
+															+Остаток
+														</button>
+													)}
+												</div>
+											</div>
+
+											{/* SBP Row */}
+											<div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
+												<div className="flex items-center gap-2.5">
+													<QrCode size={16} className="text-teal-600 shrink-0" />
+													<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
+														СБП QR (Тег 1081)
+													</span>
+												</div>
+												<div className="flex items-center gap-1.5">
+													<input
+														type="number"
+														min={0}
+														max={totalSumRub}
+														value={sbpAmount || ""}
+														onChange={(e) => setSbpAmount(Math.max(0, Number(e.target.value) || 0))}
+														placeholder="0"
+														className="h-8 w-28 px-2.5 text-xs font-mono font-bold rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
+													/>
+													{remainingRub > 0 && (
+														<button
+															type="button"
+															onClick={() => handleFillRemaining("sbp")}
+															className="h-8 px-2.5 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-700 text-white cursor-pointer transition-all active:scale-95"
+															data-testid="btn-fill-remaining-sbp"
+														>
+															+Остаток
+														</button>
+													)}
+												</div>
+											</div>
+
+											{/* Cash Row */}
+											<div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
+												<div className="flex items-center gap-2.5">
+													<Banknote size={16} className="text-emerald-600 shrink-0" />
+													<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
+														Наличные (Тег 1031)
+													</span>
+												</div>
+												<div className="flex items-center gap-1.5">
+													<input
+														type="number"
+														min={0}
+														max={totalSumRub}
+														value={cashAmount || ""}
+														onChange={(e) => {
+															const val = Math.max(0, Number(e.target.value) || 0);
+															setCashAmount(val);
+															if (receivedCashRub < val) setReceivedCashRub(val);
+														}}
+														placeholder="0"
+														className="h-8 w-28 px-2.5 text-xs font-mono font-bold rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
+													/>
+													{remainingRub > 0 && (
+														<button
+															type="button"
+															onClick={() => handleFillRemaining("cash")}
+															className="h-8 px-2.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all active:scale-95"
+															data-testid="btn-fill-remaining-cash"
+														>
+															+Остаток
+														</button>
+													)}
+												</div>
+											</div>
+
+											{/* Deposit Row */}
+											<div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] flex items-center justify-between gap-3">
+												<div className="flex items-center gap-2.5">
+													<Coins size={16} className="text-amber-600 shrink-0" />
+													<div>
+														<span className="text-xs font-bold block text-[var(--ink,#0f172a)]">
+															Зачет аванса (Тег 1215)
+														</span>
+														<span className="text-[11px] text-[var(--muted,#64748b)]">
+															Доступно: {formatMoneyRu(patientDepositRub)}
+														</span>
+													</div>
+												</div>
+												<div className="flex items-center gap-1.5">
+													<input
+														type="number"
+														min={0}
+														max={patientDepositRub}
+														value={depositAmount || ""}
+														onChange={(e) =>
+															setDepositAmount(
+																Math.max(0, Math.min(patientDepositRub, Number(e.target.value) || 0)),
+															)
+														}
+														placeholder="0"
+														className="h-8 w-28 px-2.5 text-xs font-mono font-bold rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
+													/>
+												</div>
+											</div>
+										</div>
+									)}
 								</div>
 
 								{/* Allocation Status Indicator */}
@@ -2636,27 +2849,46 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									</div>
 								</div>
 
-								{/* Action: Fiscalize */}
-								<div className="pt-2">
-									<button
-										type="button"
-										onClick={() => handleExecuteFiscalization()}
-										disabled={isFiscalizing}
-										title={
-											isFiscalizing
-												? "Выполняется фискализация чека на ККТ..."
-												: `Пробить чек 54-ФЗ на сумму ${formatMoneyRu(totalSumRub)}`
-										}
-										className="w-full min-h-[52px] flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99]"
-										data-testid="btn-execute-fiscalization btn-fiscalize-receipt"
-									>
-										<ShieldCheck size={18} />
-										<span>
-											{isFiscalizing
-												? "Фискализация на ККТ..."
-												: `Пробить чек на ${formatMoneyRu(totalSumRub)}`}
+								{/* Receipt Tender Summary Card */}
+								<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-2">
+									<div className="flex items-center justify-between text-xs font-bold">
+										<span className="text-[var(--muted,#64748b)]">Итого к оплате:</span>
+										<span className="text-base font-mono text-emerald-600 dark:text-emerald-400 font-black">
+											{formatMoneyRu(totalSumRub)}
 										</span>
-									</button>
+									</div>
+									<div className="text-[11.5px] text-[var(--muted,#64748b)] space-y-1 pt-1 border-t border-[var(--border,#cbd5e1)]">
+										{cashAmount > 0 && (
+											<div className="flex justify-between">
+												<span>Наличные:</span>
+												<strong className="font-mono text-[var(--ink,#0f172a)]">{formatMoneyRu(cashAmount)}</strong>
+											</div>
+										)}
+										{cardAmount > 0 && (
+											<div className="flex justify-between">
+												<span>Карта:</span>
+												<strong className="font-mono text-[var(--ink,#0f172a)]">{formatMoneyRu(cardAmount)}</strong>
+											</div>
+										)}
+										{sbpAmount > 0 && (
+											<div className="flex justify-between">
+												<span>СБП QR:</span>
+												<strong className="font-mono text-[var(--ink,#0f172a)]">{formatMoneyRu(sbpAmount)}</strong>
+											</div>
+										)}
+										{depositAmount > 0 && (
+											<div className="flex justify-between">
+												<span>Зачет аванса:</span>
+												<strong className="font-mono text-[var(--ink,#0f172a)]">{formatMoneyRu(depositAmount)}</strong>
+											</div>
+										)}
+										{insuranceAmount > 0 && (
+											<div className="flex justify-between">
+												<span>ДМС:</span>
+												<strong className="font-mono text-[var(--ink,#0f172a)]">{formatMoneyRu(insuranceAmount)}</strong>
+											</div>
+										)}
+									</div>
 								</div>
 							</div>
 						</div>
@@ -3698,11 +3930,18 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									type="button"
 									onClick={() => handleExecuteFiscalization()}
 									disabled={isFiscalizing}
+									data-testid="btn-execute-fiscalization btn-fiscalize-receipt"
 									title={isFiscalizing ? "Идет фискализация чека в ККТ..." : undefined}
 									className="h-9 px-5 rounded-xl font-bold text-xs bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
 								>
 									<ShieldCheck size={16} />
-									<span>{isFiscalizing ? "Фискализация..." : `Пробить чек на ${formatMoneyRu(totalSumRub)}`}</span>
+									<span>
+										{isFiscalizing
+											? "Фискализация..."
+											: totalSumRub === 0
+												? "Пробить чек 0.00 ₽ (Гарантия)"
+												: `Пробить чек на ${formatMoneyRu(totalSumRub)}`}
+									</span>
 								</button>
 							</div>
 						</>

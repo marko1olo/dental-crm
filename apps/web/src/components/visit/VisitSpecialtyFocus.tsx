@@ -132,22 +132,22 @@ export function VisitSpecialtyFocus() {
 				aria-label="Фокус специальности приема"
 			>
 				<div className="flex items-center gap-2 min-w-0">
-					<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] shrink-0">Фокус:</span>
+					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] shrink-0">Фокус:</span>
 					<strong className="font-semibold text-xs text-[var(--ink)] truncate">{currentSpecialtyLabel}</strong>
-					<span className="text-[11px] text-[var(--muted)] hidden sm:inline shrink-0">
+					<span className="text-xs text-[var(--muted)] hidden sm:inline shrink-0">
 						({activeDoctor?.fullName?.split(" ")[0] ?? "Врач"} · {activeChair?.name ?? "кресло"})
 					</span>
 				</div>
 				<div className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none">
 					{focusOptions.length === 0 ? (
-						<span className="text-[11px] text-[var(--muted)] truncate">
+						<span className="text-xs text-[var(--muted)] truncate">
 							Направления не настроены
 						</span>
 					) : null}
 					{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 					{focusOptions.map((option: any) => (
 						<button
-							className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${selectedSpecialty === option.specialty ? "bg-[var(--teal)] text-[var(--paper)] font-bold" : "bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)]"}`}
+							className={`px-2.5 py-1 min-h-[32px] sm:h-7 rounded text-xs font-medium transition-colors cursor-pointer ${selectedSpecialty === option.specialty ? "bg-[var(--teal)] text-[var(--paper)] font-bold" : "bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)]"}`}
 							type="button"
 							key={option.specialty}
 							aria-pressed={selectedSpecialty === option.specialty}
@@ -165,7 +165,7 @@ export function VisitSpecialtyFocus() {
 					<button
 						type="button"
 						onClick={() => setIsProtocolDrawerOpen((prev) => !prev)}
-						className="px-2 py-0.5 rounded text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border border-[var(--teal)]/40 bg-[var(--teal-surface,#f0fdfa)] dark:bg-teal-950/40 text-[var(--teal)] hover:bg-[var(--teal)] hover:text-white"
+						className="px-2.5 py-1 min-h-[32px] sm:h-7 rounded text-xs font-bold flex items-center gap-1 transition-all cursor-pointer border border-[var(--teal)]/40 bg-[var(--teal-surface,#f0fdfa)] dark:bg-teal-950/40 text-[var(--teal)] hover:bg-[var(--teal)] hover:text-white"
 						title="Развернуть специализированный протокол приема"
 						data-testid="toggle-specialty-protocol-drawer"
 					>

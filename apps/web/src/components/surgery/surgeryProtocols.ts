@@ -106,6 +106,9 @@ export interface StandardImplantationParams {
 	readonly lengthMm?: number;
 	readonly torqueNcm?: number;
 	readonly isq?: number;
+	readonly boneDensity?: string;
+	readonly lotNumber?: string;
+	readonly serialNumber?: string;
 	readonly capType?: "fdm" | "plug";
 	readonly sutureMaterial?: string;
 	readonly postOpXray?: boolean;
@@ -124,6 +127,11 @@ export function buildStandardImplantationProtocolText(
 	const len = params.lengthMm ?? 10.0;
 	const torque = params.torqueNcm ?? 35;
 	const isq = params.isq ?? 72;
+	const densityStr = params.boneDensity ? ` Плотность кости по Misch: ${params.boneDensity}.` : "";
+	const lotSnStr =
+		params.lotNumber || params.serialNumber
+			? ` LOT: ${params.lotNumber || "—"}, SN: ${params.serialNumber || "—"}.`
+			: "";
 	const capStr =
 		params.capType === "plug"
 			? "Установлен винт-заглушка (двухэтапный протокол с ушиванием наглухо)."
@@ -137,7 +145,7 @@ export function buildStandardImplantationProtocolText(
 	return (
 		`Инфильтрационная анестезия Артикаин 1:100 000 — 1.7 мл. Разрез по гребню альвеолярного отростка в области ${toothStr}, отслоен слизисто-надкостничный лоскут. ` +
 		`Препарирование ложа фрезами по хирургическому протоколу ${brand} с обильным охлаждением стерильным 0.9% NaCl (800 об/мин). ` +
-		`Установлен дентальный имплантат ${brand}${model} Ø ${dia} × ${len} мм. ` +
+		`Установлен дентальный имплантат ${brand}${model} Ø ${dia} × ${len} мм.${densityStr}${lotSnStr} ` +
 		`Первичная торк-стабильность ${torque} Н·см, RFA стабильность ISQ ${isq} (высокая первичная фиксация). ` +
 		`${capStr} ` +
 		`Мобилизация лоскута, наложены узловые швы ${suture} без натяжения. Гемостаз полный.${xrayStr} ` +

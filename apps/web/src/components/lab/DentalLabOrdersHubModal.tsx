@@ -14,7 +14,8 @@
  * • 1-клик экспорт в CSV (RFC 4180) и печать бланка наряда А4 для курьера лаборатории.
  */
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	FlaskConical,
 	Plus,
@@ -119,6 +120,70 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 			setOrders([...initialOrders]);
 		}
 	}, [initialOrders]);
+
+	// Live synchronization with PostgreSQL 18 lab orders (Mandates 8e, 8b, 8n)
+	useEffect(() => {
+		if (!isOpen || (initialOrders && initialOrders.length > 0)) return;
+		let cancelled = false;
+
+		async function loadLabOrders() {
+			try {
+				const query = currentPatientId ? `?patientId=${encodeURIComponent(currentPatientId)}` : "";
+				const res = await fetch(`/api/clinical/lab-orders${query}`, {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (!res.ok) return;
+				const data = await res.json();
+				if (cancelled || !data) return;
+
+				const list = Array.isArray(data)
+					? data
+					: Array.isArray(data?.orders)
+					? data.orders
+					: Array.isArray(data?.data)
+					? data.data
+					: [];
+
+				if (list.length > 0) {
+					const mapped: DentalLabWorkflowOrder[] = list.map((raw: any, idx: number) => {
+						const teethArr = raw.toothFdi
+							? String(raw.toothFdi)
+									.split(",")
+									.map((s: string) => parseInt(s.trim(), 10))
+									.filter((n: number) => !isNaN(n))
+							: [11];
+
+						return createDentalLabOrder({
+							patientId: raw.patientId || currentPatientId || `pat-${idx}`,
+							patientName: raw.patientName || currentPatientName || "Пациент",
+							patientChartNumber: raw.patientChartNumber || "043/у",
+							doctorId: raw.doctorId || "doc-current",
+							doctorName: raw.doctorName || currentDoctorName || "Врач-ортопед",
+							clinicName: "Стоматологическая клиника DENTE",
+							labName: raw.labName || "Основная ЗТЛ",
+							workTypeId: (raw.workTypeId as any) || "crown_emax",
+							selectedTeeth: teethArr.length > 0 ? teethArr : [11],
+							shadeCode: raw.colorVita || "A2",
+							pricePerUnitRub: Number(raw.priceRub) || 15000,
+							costPerUnitRub: Math.round((Number(raw.priceRub) || 15000) * 0.35),
+							initialStatus: raw.status === "completed" ? "installed_completed" : raw.status === "fitting" ? "fitting_scheduled" : "sent_to_lab",
+							expectedLabDate: raw.dueDate ? raw.dueDate.slice(0, 10) : undefined,
+							clinicalNotes: raw.clinicalNotes || undefined,
+						});
+					});
+
+					setOrders(mapped);
+				}
+			} catch (_e) {
+				// Silently retain current orders
+			}
+		}
+
+		void loadLabOrders();
+		return () => {
+			cancelled = true;
+		};
+	}, [isOpen, currentPatientId, currentPatientName, currentDoctorName, initialOrders]);
 
 	// Фильтры
 	const [searchQuery, setSearchQuery] = useState<string>("");
@@ -431,6 +496,37 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		setOrders((prev) => [created, ...prev]);
 		if (onSaveOrder) onSaveOrder(created);
 		showToast(`Наряд № ${created.orderNumber} успешно создан`);
+
+		// Persist lab order to PostgreSQL 18 backend (Mandates 8e, 8b, 8n)
+		const effectivePatientId = currentPatientId || created.patientId;
+		if (effectivePatientId) {
+			const teethStr = (teeth.length > 0 ? teeth : defaultTeeth).join(", ");
+			fetch("/api/clinical/lab-orders", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					patientId: effectivePatientId,
+					doctorId: "doc-current",
+					toothFdi: teethStr,
+					material: created.materialName || newWorkType,
+					colorVita: newShade,
+					dueDate: newExpectedLabDate ? new Date(newExpectedLabDate).toISOString() : null,
+					clinicalNotes: newClinicalNotes.trim() || `Наряд ЗТЛ: ${created.materialName}`,
+					priceRub: created.financials.patientPriceTotalRub || newPriceRub,
+				}),
+			})
+				.then(() => {
+					if (typeof window !== "undefined") {
+						window.dispatchEvent(new CustomEvent("dente-lab-order-created", { detail: created }));
+					}
+				})
+				.catch((err) => {
+					console.warn("[DentalLabHub] Order persistence error:", err);
+				});
+		}
 
 		// Сброс формы
 		setIsCreateModalOpen(false);

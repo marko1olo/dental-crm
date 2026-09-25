@@ -67,6 +67,7 @@ export interface RemdDocumentRecord {
 	status: RemdDocumentStatus;
 	doctorSignature?: GostSignatureInfo | undefined;
 	moSignature?: GostSignatureInfo | undefined;
+	clinicSignature?: GostSignatureInfo | undefined;
 	cdaPayload?: EgiszDentalCdaPayload | undefined;
 	registrationInfo?: RemdRegistrationInfo | undefined;
 	validationError?: RemdValidationError | undefined;

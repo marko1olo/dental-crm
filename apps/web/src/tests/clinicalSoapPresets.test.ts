@@ -331,4 +331,55 @@ describe("clinicalSoapPresets — Практичный клинический с
 		assert.equal(orthoNorm.category, "orthopedics");
 		assert.equal(orthoNorm.icd10, "Z46.3");
 	});
+
+	// ── ТЕСТ 23: Резекция верхушки корня (РВК) с ProRoot MTA и Bio-Oss (K04.8 + A16.07.007) ──
+	it("23. Протокол РВК (surgery_cystectomy_rvk) содержит A16.07.007, ProRoot MTA и барьерную мембрану", () => {
+		const rvk = getPresetById("surgery_cystectomy_rvk");
+		assert.ok(rvk, "Пресет surgery_cystectomy_rvk должен присутствовать в CLINICAL_SOAP_PRESETS");
+		assert.equal(rvk.category, "surgery");
+		assert.equal(rvk.icd10, "K04.8");
+		assert.equal(rvk.service804n?.code804n, "A16.07.007");
+		assert.ok(rvk.materialsToDeduct?.some((m) => m.name.toLowerCase().includes("mta") || m.name.toLowerCase().includes("proroot")));
+		assert.ok(rvk.materialsToDeduct?.some((m) => m.name.toLowerCase().includes("bio-oss")));
+	});
+
+	// ── ТЕСТ 24: Керамическая вкладка Inlay/Onlay E.max (K08.8 + A16.07.003) ──
+	it("24. Протокол вкладки (ortho_inlay_onlay_emax) содержит A16.07.003, RelyX/Variolink и силан", () => {
+		const inlay = getPresetById("ortho_inlay_onlay_emax");
+		assert.ok(inlay, "Пресет ortho_inlay_onlay_emax должен присутствовать в CLINICAL_SOAP_PRESETS");
+		assert.equal(inlay.category, "orthopedics");
+		assert.equal(inlay.icd10, "K08.8");
+		assert.equal(inlay.service804n?.code804n, "A16.07.003");
+		assert.ok(inlay.materialsToDeduct?.some((m) => m.name.toLowerCase().includes("e.max")));
+	});
+
+	// ── ТЕСТ 25: Мостовидный протез (K08.1 + A16.07.005) ──
+	it("25. Протокол мостовидного протеза (ortho_bridge_prosthetics) содержит A16.07.005 и оттискной силикон", () => {
+		const bridge = getPresetById("ortho_bridge_prosthetics");
+		assert.ok(bridge, "Пресет ortho_bridge_prosthetics должен присутствовать в CLINICAL_SOAP_PRESETS");
+		assert.equal(bridge.category, "orthopedics");
+		assert.equal(bridge.icd10, "K08.1");
+		assert.equal(bridge.service804n?.code804n, "A16.07.005");
+		assert.ok(bridge.materialsToDeduct?.some((m) => m.name.toLowerCase().includes("силикон") || m.name.toLowerCase().includes("honigum")));
+	});
+
+	// ── ТЕСТ 26: Вектор-терапия (K05.3 + A16.07.011.001) ──
+	it("26. Протокол Вектор-терапии (perio_vector_therapy) содержит A16.07.011.001 и Vector Polish Fluid", () => {
+		const vector = getPresetById("perio_vector_therapy");
+		assert.ok(vector, "Пресет perio_vector_therapy должен присутствовать в CLINICAL_SOAP_PRESETS");
+		assert.equal(vector.category, "periodontology");
+		assert.equal(vector.icd10, "K05.3");
+		assert.equal(vector.service804n?.code804n, "A16.07.011.001");
+		assert.ok(vector.materialsToDeduct?.some((m) => m.name.toLowerCase().includes("vector polish fluid")));
+	});
+
+	// ── ТЕСТ 27: Герметизация фиссур (Z01.2 + A16.07.057) ──
+	it("27. Протокол герметизации фиссур (pediatric_fissure_sealing) содержит A16.07.057 и герметик Clinpro/Fissurit", () => {
+		const fissure = getPresetById("pediatric_fissure_sealing");
+		assert.ok(fissure, "Пресет pediatric_fissure_sealing должен присутствовать в CLINICAL_SOAP_PRESETS");
+		assert.equal(fissure.category, "pediatric");
+		assert.equal(fissure.icd10, "Z01.2");
+		assert.equal(fissure.service804n?.code804n, "A16.07.057");
+		assert.ok(fissure.materialsToDeduct?.some((m) => m.name.toLowerCase().includes("герметик")));
+	});
 });

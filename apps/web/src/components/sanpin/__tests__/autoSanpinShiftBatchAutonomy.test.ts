@@ -343,7 +343,9 @@ describe("Auto-SanPiN & 1-Click Batch Shift Journal Automation (Mandates 8e, 8k,
 	// ─────────────────────────────────────────────────────────────────────────
 	describe("8. Mandate 8d pt 7: Zero Cartoon Emojis Audit across SanPiN", () => {
 		it("confirms zero cartoon emojis exist in apps/web/src/components/sanpin/", () => {
-			const sanpinDir = path.resolve(process.cwd(), "apps/web/src/components/sanpin");
+			const sanpinDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src/components/sanpin"))
+				? path.resolve(process.cwd(), "apps/web/src/components/sanpin")
+				: path.resolve(process.cwd(), "src/components/sanpin");
 
 			function scanDir(dir: string) {
 				const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -372,10 +374,11 @@ describe("Auto-SanPiN & 1-Click Batch Shift Journal Automation (Mandates 8e, 8k,
 	// ─────────────────────────────────────────────────────────────────────────
 	describe("9. Mandate 8v: Pure Tier 3 Cold Backoffice Isolation Audit", () => {
 		it("confirms SanPiN operations are decoupled and do not render popup blocks on doctor screens", () => {
-			const seniorNurseModal = path.resolve(
-				process.cwd(),
-				"apps/web/src/components/sanpin/kraft/SeniorNurseKraftUnsealModal.tsx",
-			);
+			const seniorNurseModal = fs.existsSync(
+				path.resolve(process.cwd(), "apps/web/src/components/sanpin/kraft/SeniorNurseKraftUnsealModal.tsx"),
+			)
+				? path.resolve(process.cwd(), "apps/web/src/components/sanpin/kraft/SeniorNurseKraftUnsealModal.tsx")
+				: path.resolve(process.cwd(), "src/components/sanpin/kraft/SeniorNurseKraftUnsealModal.tsx");
 			assert.ok(fs.existsSync(seniorNurseModal));
 			const modalContent = fs.readFileSync(seniorNurseModal, "utf8");
 			assert.ok(

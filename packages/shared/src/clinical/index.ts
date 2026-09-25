@@ -75,5 +75,8 @@ export {
   type PreAppointmentSummary,
 } from "./clinicalPlaybooksEngine.js";
 export * from "../warehouse/treatmentConsumablesEngine.js";
+export * from "../warehouse/default804nBomCatalog.js";
+export * from "../warehouse/autoVisitBomEngine.js";
 export * from "./photoProtocol.js";
+export * from "./soap/index.js";
 
