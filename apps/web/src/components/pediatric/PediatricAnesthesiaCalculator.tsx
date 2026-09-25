@@ -132,9 +132,9 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 
 		let alertMessageRu: string | undefined;
 		if (isOverdose) {
-			alertMessageRu = `⛔ ВНИМАНИЕ: ТОКСИЧЕСКАЯ ДОЗА! Введено ${totalDoseAdministeredMg} мг при допустимом максимуме ${maxAllowedTotalDoseMg} мг на вес ${safeWeight} кг. Риск системной интоксикации! Превышение заблокировано!`;
+			alertMessageRu = `ВНИМАНИЕ: ТОКСИЧЕСКАЯ ДОЗА! Введено ${totalDoseAdministeredMg} мг при допустимом максимуме ${maxAllowedTotalDoseMg} мг на вес ${safeWeight} кг. Риск системной интоксикации! Превышение заблокировано!`;
 		} else if (isUnderAge) {
-			alertMessageRu = `⚠️ Препарат противопоказан детям в возрасте до ${drug.minAgeYears} лет.`;
+			alertMessageRu = `Препарат противопоказан детям в возрасте до ${drug.minAgeYears} лет.`;
 		}
 
 		const formattedText043 = isOverdose
@@ -173,7 +173,7 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 
 	const handleApplyAnesthesia = useCallback(() => {
 		if (calculation.isOverdose) {
-			showToast("⛔ БЛОКИРОВКА: Нельзя внести токсическую дозу анестетика в карту 043/у! Уменьшите количество карпул.", "error", 4500);
+			showToast("БЛОКИРОВКА: Нельзя внести токсическую дозу анестетика в карту 043/у! Уменьшите количество карпул.", "error", 4500);
 			return;
 		}
 		onApplyToProtocol?.(calculation.formattedText043, calculation);
@@ -218,7 +218,7 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 							data-testid="anesthesia-overdose-badge"
 						>
 							<AlertOctagon className="h-4 w-4" />
-							<span>⛔ ТОКСИЧЕСКАЯ ДОЗА</span>
+							<span>ТОКСИЧЕСКАЯ ДОЗА</span>
 						</div>
 					) : (
 						<div
@@ -388,7 +388,7 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 						<AlertOctagon className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5 animate-bounce" />
 						<div className="space-y-1 min-w-0">
 							<div className="text-xs sm:text-sm font-black uppercase tracking-wider text-rose-600 dark:text-rose-300">
-								⛔ ПРЕВЫШЕНИЕ ТОКСИЧЕСКОЙ ДОЗЫ АНЕСТЕТИКА! БЛОКИРОВКА!
+								ПРЕВЫШЕНИЕ ТОКСИЧЕСКОЙ ДОЗЫ АНЕСТЕТИКА! БЛОКИРОВКА!
 							</div>
 							<p className="text-xs leading-relaxed font-semibold">
 								Введено <span className="underline font-mono">{calculation.totalDoseAdministeredMg} мг</span> ({calculation.carpulesAdministered} карп.) при максимально допустимой дозе <span className="font-mono">{calculation.maxAllowedTotalDoseMg} мг</span> (лимит {drug.maxDoseMgPerKg} мг/кг на вес {weightKg} кг).

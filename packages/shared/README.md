@@ -43,7 +43,7 @@
 | **`crypto`** | `src/crypto/` | Фасад КриптоПро ЭЦП (`cadespluginFacade.ts`), визуальный штамп открепленной подписи, SHA-256 хеширование. |
 | **`imaging`** | `src/imaging/` | 16-битный DICOM-парсер, WebWorker для 3D Multi-Planar Reconstruction (MPR), Hounsfield Unit (HU) окна, HEIC декодер. |
 | **`anesthesia`**| `src/anesthesia/` | Весовой калькулятор дозировки анестетика (артикаин, мепивакаин), контроль МДД, 1-клик списание ПКУ медсестрой. |
-| **`clinical`** | `src/clinical/` | Движок DDI безопасности лекарств (`clinicalDdiDrugSafetyEngine.ts`), аудит качества карт начмедом (`cmoEmkQualityAuditEngine.ts`). |
+| **`clinical`** | `src/clinical/` | Движок DDI безопасности лекарств (`clinicalDdiDrugSafetyEngine.ts`), экспертный аудит качества карт главным врачом (`cmoEmkQualityAuditEngine.ts`). |
 | **`curator`** | `src/curator/` | Движок куратора пациентов (`curatorEngine.ts`), сквозная воронка конверсии планов лечения. |
 | **`doctor`** | `src/doctor/` | Кокпит смены врача (`doctorShiftCockpitEngine.ts`), расчет выработки и сдельного % Net Revenue. |
 | **`sanpin`** | `src/sanpin/` | Журналы СанПиН 3.3686-21, тесты азопирама и фенолфталеина, контроль индикаторов автоклава B. |

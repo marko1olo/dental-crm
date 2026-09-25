@@ -71,7 +71,6 @@ export interface ToothContextDrawerProps {
 	readonly onUpdateToothStatus?: ((toothNumber: number, state: string) => void) | undefined;
 	readonly onApplyAnesthesia?: ((diaryText: string, result: AnesthesiaCalculationResult) => void) | undefined;
 	readonly onInsertToProtocol?: ((text: string) => void) | undefined;
-	readonly onBindKraftPackage?: ((pkg: any) => void) | undefined;
 	readonly onOpenFullRadiology?: ((toothNumber: number) => void) | undefined;
 	readonly onOpenFamilyBilling?: (() => void) | undefined;
 	readonly onOpenParentMemo?: (() => void) | undefined;
@@ -157,7 +156,6 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 	onUpdateToothStatus,
 	onApplyAnesthesia,
 	onInsertToProtocol,
-	onBindKraftPackage,
 	onOpenFullRadiology,
 	onOpenFamilyBilling,
 	onOpenParentMemo,
