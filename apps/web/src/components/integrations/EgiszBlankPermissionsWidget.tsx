@@ -195,9 +195,15 @@ export const EgiszBlankPermissionsWidget: React.FC = () => {
 				<div className="mt-3">
 					<button
 						type="button"
-						onClick={() => void load()}
-						disabled={isLoading}
-						className="h-8 px-3 rounded-lg font-semibold text-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--paper-soft,#f1f5f9)] hover:bg-[var(--paper-subtle,#e2e8f0)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] inline-flex items-center gap-1.5 transition-colors"
+						onClick={() => {
+							if (isLoading) {
+								showToast("Проверка прав доступа уже выполняется…", "info");
+								return;
+							}
+							void load();
+						}}
+						aria-busy={isLoading}
+						className="h-8 px-3 rounded-lg font-semibold text-xs cursor-pointer bg-[var(--paper-soft,#f1f5f9)] hover:bg-[var(--paper-subtle,#e2e8f0)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] inline-flex items-center gap-1.5 transition-colors"
 					>
 						<RefreshCcw size={13} className={isLoading ? "animate-spin" : ""} aria-hidden="true" />
 						Проверить права доступа
