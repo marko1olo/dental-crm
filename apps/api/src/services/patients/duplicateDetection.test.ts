@@ -101,6 +101,11 @@ describe("areSurnamesMatching", () => {
 		assert.equal(areSurnamesMatching("Белый", "Белая"), true);
 		assert.equal(areSurnamesMatching("Толстой", "Толстая"), true);
 	});
+	test("should match compound hyphenated surnames across genders", () => {
+		assert.equal(areSurnamesMatching("Петров-Водкин", "Петрова-Водкина"), true);
+		assert.equal(areSurnamesMatching("Салтыков-Щедрин", "Салтыкова-Щедрина"), true);
+		assert.equal(areSurnamesMatching("Мамин-Сибиряк", "Мамина-Сибиряк"), true);
+	});
 	test("should return false for different surnames", () => {
 		assert.equal(areSurnamesMatching("Иванов", "Петров"), false);
 		assert.equal(areSurnamesMatching("Сидоров", "Иванова"), false);

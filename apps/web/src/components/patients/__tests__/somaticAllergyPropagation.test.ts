@@ -3,6 +3,8 @@ import { describe, it } from "node:test";
 import {
 	getAnesthesiaAutopilotForPatient,
 	patientProfileToSomaticRiskProfile,
+	parseSafetyProfileFromText,
+	checkProcedureSafety,
 	type PatientClinicalSafetyProfile,
 } from "../safetyMath";
 import {
@@ -68,6 +70,78 @@ describe("Subagent 4: Somatic Safety & Allergy Propagation to Autopilot", () => 
 		const autopilot = getAnesthesiaAutopilotForPatient(profile, 75, 55);
 		assert.equal(autopilot.selectedDrugKey, "scandonest_3");
 		assert.equal(autopilot.drug.isAdrenalineFree, true);
+	});
+
+	it("parses severe hypertension stage 3, thyrotoxicosis, and beta-blockers from free clinical text", () => {
+		const text1 = "Диагноз: ГБ 3 стадии, кризовое течение, АД до 190/110";
+		const p1 = parseSafetyProfileFromText(text1);
+		assert.equal(p1.hasSevereHypertensionStage3, true);
+		assert.equal(p1.hasCardiovascularDisease, true);
+
+		const text2 = "Эндокринолог: Диффузный токсический зоб, тиреотоксикоз средней степени";
+		const p2 = parseSafetyProfileFromText(text2);
+		assert.equal(p2.hasThyrotoxicosis, true);
+		assert.equal(p2.hasCardiovascularDisease, true);
+
+		const text3 = "Постоянная терапия: принимает Конкор (бисопролол 5мг утром)";
+		const p3 = parseSafetyProfileFromText(text3);
+		assert.equal(p3.takesBetaBlockers, true);
+		assert.equal(p3.hasCardiovascularDisease, true);
+	});
+
+	it("autopilot diverts away from adrenaline when input is free text with severe hypertension or thyrotoxicosis", () => {
+		const ap1 = getAnesthesiaAutopilotForPatient("АГ 3 стадии, кризы", 80, 60);
+		assert.equal(ap1.selectedDrugKey, "scandonest_3");
+		assert.equal(ap1.drug.isAdrenalineFree, true);
+
+		const ap2 = getAnesthesiaAutopilotForPatient("Тиреотоксикоз", 65, 40);
+		assert.equal(ap2.selectedDrugKey, "scandonest_3");
+		assert.equal(ap2.drug.isAdrenalineFree, true);
+	});
+
+	it("checkProcedureSafety blocks adrenaline when patient has severe hypertension, thyrotoxicosis, or beta-blockers", () => {
+		const resHypertension = checkProcedureSafety("Анестезия Ультракаин Д-С форте 1:100 000", {
+			hasSevereHypertensionStage3: true,
+		});
+		assert.equal(resHypertension.isAllowed, false);
+		assert.equal(resHypertension.severity, "critical");
+		assert.match(resHypertension.warnings[0] ?? "", /адреналин/i);
+		assert.match(resHypertension.alternatives[0] ?? "", /Скандонест/i);
+
+		const resThyro = checkProcedureSafety("Ретракционная нить с адреналином", {
+			hasThyrotoxicosis: true,
+		});
+		assert.equal(resThyro.isAllowed, false);
+		assert.equal(resThyro.severity, "critical");
+
+		const resBeta = checkProcedureSafety("Анестезия Ультракаин Д-С", {
+			takesBetaBlockers: true,
+		});
+		assert.equal(resBeta.isAllowed, false);
+		assert.equal(resBeta.severity, "critical");
+	});
+
+	it("checkProcedureSafety blocks specific anesthetics when patient has drug allergy", () => {
+		const resArticaine = checkProcedureSafety("Инфильтрационная анестезия Ультракаин", {
+			hasArticaineAllergy: true,
+		});
+		assert.equal(resArticaine.isAllowed, false);
+		assert.equal(resArticaine.severity, "critical");
+		assert.match(resArticaine.warnings[0] ?? "", /Артикаин/i);
+
+		const resMepivacaine = checkProcedureSafety("Анестезия Скандонест 3%", {
+			hasMepivacaineAllergy: true,
+		});
+		assert.equal(resMepivacaine.isAllowed, false);
+		assert.equal(resMepivacaine.severity, "critical");
+		assert.match(resMepivacaine.warnings[0] ?? "", /Мепивакаин/i);
+
+		const resSulfite = checkProcedureSafety("Анестезия Септанест с адреналином", {
+			hasSulfiteAllergy: true,
+		});
+		assert.equal(resSulfite.isAllowed, false);
+		assert.equal(resSulfite.severity, "critical");
+		assert.match(resSulfite.warnings[0] ?? "", /сульфит/i);
 	});
 });
 

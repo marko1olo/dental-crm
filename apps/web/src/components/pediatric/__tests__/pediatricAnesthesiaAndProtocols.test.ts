@@ -32,6 +32,7 @@ import {
 	PRIMARY_LOWER_LEFT,
 	PRIMARY_LOWER_RIGHT,
 	isDeciduousTooth,
+	type SomaticRiskProfile,
 } from "@dental/shared";
 
 describe("Subagent 4: Pediatric Anesthesia Weight Safety Calculator", () => {
@@ -243,7 +244,7 @@ describe("Subagent 4: 20 Deciduous Teeth (FDI 51-85) Protocols", () => {
 
 describe("Subagent 4: Pediatric Anesthesia Somatic Contraindications & Allergies", () => {
 	it("identifies Articaine contraindication for child with Articaine allergy", () => {
-		const somaticProfile = { hasArticaineAllergy: true };
+		const somaticProfile: Partial<SomaticRiskProfile> = { hasArticaineAllergy: true };
 		const isArticaineContraindicated = Boolean(
 			somaticProfile.hasArticaineAllergy ||
 			somaticProfile.hasSulfiteAllergy,
@@ -252,14 +253,14 @@ describe("Subagent 4: Pediatric Anesthesia Somatic Contraindications & Allergies
 	});
 
 	it("identifies Articaine contraindication for child with Sulfite allergy or Asthma", () => {
-		const asthmaProfile = { hasBronchialAsthma: true };
-		const sulfiteProfile = { hasSulfiteAllergy: true };
+		const asthmaProfile: Partial<SomaticRiskProfile> = { hasBronchialAsthma: true };
+		const sulfiteProfile: Partial<SomaticRiskProfile> = { hasSulfiteAllergy: true };
 		expect(Boolean(asthmaProfile.hasBronchialAsthma)).toBe(true);
 		expect(Boolean(sulfiteProfile.hasSulfiteAllergy)).toBe(true);
 	});
 
 	it("identifies Mepivacaine contraindication for child with Mepivacaine allergy", () => {
-		const mepiProfile = { hasMepivacaineAllergy: true };
+		const mepiProfile: Partial<SomaticRiskProfile> = { hasMepivacaineAllergy: true };
 		expect(Boolean(mepiProfile.hasMepivacaineAllergy)).toBe(true);
 	});
 

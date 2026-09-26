@@ -364,25 +364,22 @@ export function OrthodonticProgressWidget({
 
 		setSaving(true);
 		try {
-			const updatedOrtho: OrthoData = {
-				...ortho,
-				currentAligner: nextCurrent,
-			};
-			const adminProfile = patient.administrativeProfile || {};
-			const resAdmin = await fetch(
-				`/api/patients/${patientId}/administrative-profile`,
+			const res = await fetch(
+				`/api/orthodontics/${patientId}/aligners/issue-set`,
 				{
-					method: "PUT",
+					method: "POST",
 					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
-						...adminProfile,
-						orthodonticProgress: serializeOrthoProgress(updatedOrtho),
+						alignerCount: count,
+						wearDaysPerAligner: days,
+						totalAligners: ortho.totalAligners,
+						note: `Плановая выдача сета капп (+${count})`,
 					}),
 				},
 			);
-			if (resAdmin.ok) {
+			if (res.ok) {
 				showToast(`Выдан сет капп №${fromAligner}–${nextCurrent} на ${days} дней`, "success");
 				await loadDashboard();
 			} else {

@@ -167,7 +167,7 @@ export function areSurnamesMatching(surnameA: string, surnameB: string): boolean
 	if (!a || !b) return false;
 	if (a === b) return true;
 
-	const stem = (s: string): string => {
+	const stemSingle = (s: string): string => {
 		const base = s.replace(/ё/g, "е");
 		if (base.endsWith("ова") || base.endsWith("ева")) return base.slice(0, -1);
 		if (base.endsWith("ина") || base.endsWith("ына")) return base.slice(0, -1);
@@ -189,6 +189,13 @@ export function areSurnamesMatching(surnameA: string, surnameB: string): boolean
 		if (base.endsWith("ый") || base.endsWith("ий") || base.endsWith("ой"))
 			return base.slice(0, -2);
 		return base;
+	};
+
+	const stem = (s: string): string => {
+		return s
+			.split("-")
+			.map(stemSingle)
+			.join("-");
 	};
 
 	return stem(a) === stem(b);

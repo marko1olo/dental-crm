@@ -83,9 +83,9 @@ export interface PediatricAnesthesiaCalculationResult {
 	readonly isSafe: boolean;
 	readonly isOverdose: boolean;
 	readonly isUnderAge: boolean;
-	readonly isContraindicated?: boolean;
-	readonly contraindicationReasonRu?: string;
-	readonly alertMessageRu?: string;
+	readonly isContraindicated?: boolean | undefined;
+	readonly contraindicationReasonRu?: string | undefined;
+	readonly alertMessageRu?: string | undefined;
 	readonly formattedText043: string;
 }
 
