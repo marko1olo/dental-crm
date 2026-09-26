@@ -1,133 +1,44 @@
 import type {
-  Appointment,
-  AppointmentReadiness,
-  Dashboard,
-  ResourceLoad,
-  ScheduleSuggestion,
-  StaffRole,
+  Appointment, AppointmentReadiness, Dashboard, ScheduleSuggestion, StaffRole,
 } from "@dental/shared";
-import {
-  Calendar,
-  LayoutGrid,
-  List,
-  Plus,
-  RefreshCw,
-  ShieldCheck,
-  Sparkles,
-  WifiOff,
-} from "lucide-react";
-import type { ChangeEvent, KeyboardEvent } from "react";
-import {
-  Fragment,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import {
-  appointmentScheduleMissingFields,
-  denteAdminSecretRequestHeaders,
-} from "./AppHelpers";
-import {
-  safeLocalStorageGetItem,
-  safeLocalStorageSetItem,
-} from "./lib/safeLocalStorage";
-import { EmptyState } from "./components/EmptyState";
-import { showToast } from "./components/GlobalToast";
-import { AppointmentCard } from "./components/schedule/AppointmentCard";
-import { AppointmentModal } from "./components/schedule/AppointmentModal";
-import { DayConfirmationsPanel } from "./components/schedule/DayConfirmationsPanel";
-import { DoctorCalendarSyncModal } from "./components/schedule/DoctorCalendarSyncModal";
-import { DoctorFreeSlotsModal } from "./components/schedule/DoctorFreeSlotsModal";
-import { FreedSlotsPanel } from "./components/schedule/FreedSlotsPanel";
-import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
-import { SlotConflictModal } from "./components/schedule/SlotConflictModal";
-import {
-  QuickBookingDrawer,
-  type QuickBookingSlotInfo,
-} from "./components/schedule/QuickBookingDrawer";
-import { PatientSearchModal } from "./components/schedule/PatientSearchModal";
-import { ScheduleClipboardPanel } from "./components/schedule/ScheduleClipboardPanel";
-import { ScheduleFilterStrip } from "./components/schedule/ScheduleFilterStrip";
-import {
-  ScheduleGrid,
-  type ChairDoctorShiftAssignment,
-  formatDoctorShortName,
-} from "./components/schedule/ScheduleGrid";
-import { ChairScheduleView } from "./components/schedule/ChairScheduleView";
-import {
-  QuickAddChairModal,
-  type QuickAddChairData,
-} from "./components/schedule/QuickAddChairModal";
-import type { QuickAddDoctorData } from "./components/schedule/QuickAddDoctorModal";
-import { ScheduleTimeline } from "./components/schedule/ScheduleTimeline";
-import { ScheduleShiftAnalytics } from "./components/schedule/ScheduleShiftAnalytics";
-import {
-  type DayGroupingAppointment,
-  formatDayTitle,
-  formatMinutesForHumans,
-  groupAppointmentsByClinicDay,
-  shiftDayKey,
-} from "./components/schedule/scheduleDayGrouping";
-import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
-import { TomorrowRemindersModal } from "./components/schedule/TomorrowRemindersModal";
-import {
-  DoctorShiftRosterModal,
-  type DoctorShift,
-  type StaffMember as RosterStaffMember,
-  type CabinetDefinition as RosterCabinetDefinition,
-  type ShiftArchetypeId,
-} from "./components/schedule/roster/DoctorShiftRosterModal";
-import { WaitlistDrawer } from "./components/schedule/WaitlistDrawer";
-import type { MedicalStaffRole } from "./components/schedule/roster/doctorShiftRosterPresets";
-import {
-  DEFAULT_CLINIC_STAFF,
-  CLINIC_CABINETS_CATALOG,
-} from "./components/schedule/roster/doctorShiftRosterPresets";
-import {
-  type TargetSlotInfo,
-  WaitlistQuickFillModal,
-} from "./components/schedule/WaitlistQuickFillModal";
-import { actionFailureToast } from "./lib/panelStateText";
+import { ShieldCheck } from "lucide-react";
+import type { KeyboardEvent } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { appointmentScheduleMissingFields } from "./AppHelpers";
 import { motionSafeScrollIntoView } from "./motionPreference";
-import { auth } from "./AppConstants";
-import { useAppLogicContext } from "./contexts/AppLogicContext";
-import { useScheduleRealtime } from "./hooks/useScheduleRealtime";
+import { showToast } from "./components/GlobalToast";
+import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
+import type { QuickBookingSlotInfo } from "./components/schedule/QuickBookingDrawer";
+import type { QuickAddChairData } from "./components/schedule/QuickAddChairModal";
+import {
+  type DayGroupingAppointment, formatDayTitle, groupAppointmentsByClinicDay, shiftDayKey,
+} from "./components/schedule/scheduleDayGrouping";
+import type { TargetSlotInfo } from "./components/schedule/WaitlistQuickFillModal";
 import { useScheduleStore } from "./store/scheduleStore";
 import { useSettingsStore } from "./store/settingsStore";
-import { useAppStore } from "./store/appStore";
-import { usePatientStore } from "./store/patientStore";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { useScheduleRealtime } from "./hooks/useScheduleRealtime";
+import {
+  buildChairDoctorAssignmentsFromShifts, buildChairDoctorAssignmentsByDate,
+} from "./components/schedule/view/scheduleViewShifts";
+import {
+  type AppointmentScheduleDraft, type AppointmentScheduleSaveState,
+  type TextFieldChangeEvent, type SelectChangeEvent, activeVisitLockedAppointmentStatuses,
+} from "./components/schedule/view/scheduleViewTypes";
+import { useScheduleRosterData } from "./components/schedule/view/useScheduleRosterData";
+import { useScheduleChairDoctorOps } from "./components/schedule/view/useScheduleChairDoctorOps";
+import { useScheduleShortcuts } from "./components/schedule/view/useScheduleShortcuts";
+import { useScheduleDayQueue } from "./components/schedule/view/useScheduleDayQueue";
+import { useScheduleFocus } from "./components/schedule/view/useScheduleFocus";
+import { ScheduleDisconnectedState } from "./components/schedule/view/ScheduleDisconnectedState";
+import { ScheduleViewToolbar } from "./components/schedule/view/ScheduleViewToolbar";
+import { ScheduleViewBody } from "./components/schedule/view/ScheduleViewBody";
+import { ScheduleViewModals } from "./components/schedule/view/ScheduleViewModals";
 
-/*
- * Отсюда убраны неиспользуемые ввозы Bot, Mic, useMemo, smartBookingParser,
- * DictationHints, SmartParsePreview и SmartMicrophoneButton. Весь разбор
- * диктовки живёт в NewAppointmentForm, и мёртвые ввозы здесь читались как
- * «голосовая запись сделана в этом файле»: следующий, кто пойдёт её править,
- * потерял бы время на поиск несуществующей разметки.
- */
-
-type AppointmentScheduleDraft = {
-  patientId: string;
-  doctorUserId: string;
-  assistantUserId: string;
-  chairId: string;
-  status: Appointment["status"];
-  startsAt: string;
-  endsAt: string;
-  reason: string;
-  comment: string;
-};
-
-// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-type AppointmentScheduleSaveState = "idle" | "saving" | "saved" | "error";
-type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
-// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
-const activeVisitLockedAppointmentStatuses = new Set<Appointment["status"]>([
-  "cancelled",
-  "no_show",
-]);
+// Zero-downtime re-exports of shifts, drafts, and lock contracts
+export { buildChairDoctorAssignmentsFromShifts, buildChairDoctorAssignmentsByDate } from "./components/schedule/view/scheduleViewShifts";
+export type { AppointmentScheduleDraft, AppointmentScheduleSaveState, TextFieldChangeEvent, SelectChangeEvent } from "./components/schedule/view/scheduleViewTypes";
+export { activeVisitLockedAppointmentStatuses } from "./components/schedule/view/scheduleViewTypes";
 
 export type ScheduleViewProps = {
   appointmentLabels: Record<Appointment["status"], string>;
@@ -155,7 +66,6 @@ export type ScheduleViewProps = {
     value: unknown,
   ) => Appointment["status"] | "all";
   openAppointmentEditor: (appointment: Appointment) => void;
-  /** Открывает раздел, где закрывают предупреждение смены. */
   openScheduleWarning: (
     warning: Dashboard["shiftIntelligence"]["scheduleWarnings"][number],
   ) => void;
@@ -194,124 +104,11 @@ export type ScheduleViewProps = {
     value: AppointmentScheduleDraft[K],
   ) => void;
   visibleScheduleSuggestions: ScheduleSuggestion[];
-  /** Перечитывание данных клиники: нужно для живого обновления сетки. */
   loadDashboard?: (options?: { adminSecret?: string }) => Promise<void>;
   setDashboard?:
     | React.Dispatch<React.SetStateAction<Dashboard>>
     | ((updater: (prev: Dashboard) => Dashboard) => void);
 };
-
-export function buildChairDoctorAssignmentsFromShifts(
-  shifts: DoctorShift[],
-  targetDateKey: string,
-): Record<string, ChairDoctorShiftAssignment> {
-  const assignments: Record<string, ChairDoctorShiftAssignment> = {};
-  const shiftsByChair: Record<string, DoctorShift[]> = {};
-
-  for (const shift of shifts) {
-    if (
-      shift.dateIso === targetDateKey &&
-      shift.chairId &&
-      shift.doctorId &&
-      shift.status !== "cancelled"
-    ) {
-      if (!shiftsByChair[shift.chairId]) {
-        shiftsByChair[shift.chairId] = [];
-      }
-      shiftsByChair[shift.chairId]!.push(shift);
-    }
-  }
-
-  for (const [chairId, chairShifts] of Object.entries(shiftsByChair)) {
-    if (chairShifts.length === 0) continue;
-    if (chairShifts.length === 1) {
-      const s = chairShifts[0]!;
-      const preset: "morning" | "evening" | "full" | "custom" =
-        s.archetypeId === "morning_shift"
-          ? "morning"
-          : s.archetypeId === "evening_shift"
-            ? "evening"
-            : "custom";
-      const hours = `${s.startTime}–${s.endTime}`;
-      const sH = Number.parseInt(s.startTime.slice(0, 2), 10) || 8;
-      const eH = Number.parseInt(s.endTime.slice(0, 2), 10) || 20;
-      assignments[chairId] = {
-        chairId,
-        doctorId: s.doctorId,
-        doctorName: s.doctorName,
-        doctorSpecialty: s.doctorRole,
-        shiftPreset: preset,
-        shiftLabel: s.customNotes || hours,
-        shiftHours: hours,
-        startHour: sH,
-        endHour: eH,
-        subShifts: [
-          {
-            doctorId: s.doctorId,
-            doctorName: s.doctorName,
-            doctorSpecialty: s.doctorRole,
-            startHour: sH,
-            endHour: eH,
-            shiftHours: hours,
-          },
-        ],
-      };
-    } else {
-      const sorted = [...chairShifts].sort((a, b) =>
-        a.startTime.localeCompare(b.startTime),
-      );
-      const primary = sorted[0]!;
-      const subShifts = sorted.map((s) => ({
-        doctorId: s.doctorId,
-        doctorName: s.doctorName,
-        doctorSpecialty: s.doctorRole,
-        startHour: Number.parseInt(s.startTime.slice(0, 2), 10) || 8,
-        endHour: Number.parseInt(s.endTime.slice(0, 2), 10) || 20,
-        shiftHours: `${s.startTime}–${s.endTime}`,
-      }));
-      const shortNamesComposite = sorted
-        .map(
-          (s) =>
-            `${s.startTime.slice(0, 2)}–${s.endTime.slice(0, 2)}: ${formatDoctorShortName(s.doctorName)}`,
-        )
-        .join(" / ");
-      const hoursComposite = sorted
-        .map((s) => `${s.startTime}–${s.endTime}`)
-        .join(" & ");
-
-      assignments[chairId] = {
-        chairId,
-        doctorId: primary.doctorId,
-        doctorName: sorted.map((s) => s.doctorName).join(" / "),
-        doctorSpecialty: primary.doctorRole,
-        shiftPreset: "custom",
-        shiftLabel: shortNamesComposite,
-        shiftHours: hoursComposite,
-        startHour: subShifts[0]!.startHour,
-        endHour: subShifts[subShifts.length - 1]!.endHour,
-        subShifts,
-      };
-    }
-  }
-
-  return assignments;
-}
-
-export function buildChairDoctorAssignmentsByDate(
-  shifts: DoctorShift[],
-): Record<string, Record<string, ChairDoctorShiftAssignment>> {
-  const dates = new Set<string>();
-  for (const s of shifts) {
-    if (s.dateIso && s.chairId && s.doctorId && s.status !== "cancelled") {
-      dates.add(s.dateIso);
-    }
-  }
-  const result: Record<string, Record<string, ChairDoctorShiftAssignment>> = {};
-  for (const dateIso of dates) {
-    result[dateIso] = buildChairDoctorAssignmentsFromShifts(shifts, dateIso);
-  }
-  return result;
-}
 
 export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   const logicContext = useAppLogicContext();
@@ -319,97 +116,21 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     typeof useAppLogicContext
   > &
     Partial<ScheduleViewProps>;
-  // Расписание перечитывается, когда запись создал или перенёс кто-то другой.
-  // Без этого второй администратор видел устаревшую сетку до перезагрузки.
-  //
-  // Берётся из props, а не из logicContext. ПРИЧИНА ЗДЕСЬ БЫЛА НАПИСАНА НЕВЕРНО:
-  // «активный экземпляр отрисован в App.tsx ВЫШЕ AppLogicProvider, поэтому там
-  // контекст пуст». Замерено: провайдер обнимает строки 2509–5070 App.tsx, а этот
-  // экран монтируется на 3910 — внутри. Пустого контекста не бывает и в принципе,
-  // useAppLogicContext() вне провайдера бросает исключение.
-  // Что остаётся верным: первая версия читала logicContext?.loadDashboard и молча
-  // ничего не делала — событие до страницы доходило, сетка не обновлялась. App.tsx
-  // передаёт loadDashboard явным пропсом, и его читаем именно оттуда.
+
   useScheduleRealtime(props.loadDashboard);
+
   const {
-    scheduleDoctorFilterId,
-    scheduleAssistantFilterId,
-    scheduleChairFilterId,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    scheduleDefaultDoctorUserId,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    scheduleDefaultAssistantUserId,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    scheduleDefaultChairId,
-    scheduleStatusFilter,
-    scheduleDateFilter,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    staffScheduleDrafts,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    staffScheduleSavingId,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    staffScheduleDirtyIds,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    staffScheduleSaveStates,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    chairScheduleDrafts,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    chairScheduleSavingId,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    chairScheduleDirtyIds,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    chairScheduleSaveStates,
-    appointmentScheduleDrafts,
-    appointmentScheduleDirtyIds,
-    appointmentScheduleSaveStates,
-    appointmentScheduleErrors,
-    newAppointmentDraft,
-    newAppointmentSaveState,
-    setScheduleDoctorFilterId,
-    setScheduleAssistantFilterId, // setScheduleAssistantFilterId(event.target.value || null) normalizedAppointmentStatus(event.target.value) normalizedAppointmentStatusFilter(event.target.value)
-    setScheduleChairFilterId,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    setScheduleDefaultDoctorUserId,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    setScheduleDefaultAssistantUserId,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    setScheduleDefaultChairId,
-    setScheduleStatusFilter,
+    scheduleDoctorFilterId, scheduleAssistantFilterId, scheduleChairFilterId,
+    scheduleStatusFilter, scheduleDateFilter, appointmentScheduleDrafts,
+    appointmentScheduleDirtyIds, appointmentScheduleSaveStates, appointmentScheduleErrors,
+    newAppointmentDraft, newAppointmentSaveState, setScheduleDoctorFilterId,
+    setScheduleAssistantFilterId, setScheduleChairFilterId, setScheduleStatusFilter,
     setScheduleDateFilter,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    setStaffScheduleDrafts,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    setStaffScheduleSavingId,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    setStaffScheduleDirtyIds,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    setStaffScheduleSaveStates,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    setChairScheduleDrafts,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    setChairScheduleSavingId,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    setChairScheduleDirtyIds,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    setChairScheduleSaveStates,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    setAppointmentScheduleDrafts,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    setAppointmentScheduleDirtyIds,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    setAppointmentScheduleSaveStates,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    setAppointmentScheduleErrors,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    setNewAppointmentDraft,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    setNewAppointmentSaveState,
   } = useScheduleStore();
+
   const {
     appointmentLabels,
     appointmentReadinessById,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    appointmentReadinessLabels,
     appointmentScheduleDraftFromAppointment,
     closeAppointmentEditor,
     createAppointmentFromDraft,
@@ -420,645 +141,49 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     lockScheduleAdminSession,
     newAppointmentError,
     normalizedAppointmentStatus,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    normalizedAppointmentStatusFilter,
     openAppointmentEditor,
     openScheduleWarning,
     patientName,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    recommendedActionPriorityLabels,
     resetNewAppointmentDraft,
     saveAppointmentSchedule,
     shiftWarnings,
     sortedAppointments,
-    // biome-ignore lint/correctness/noUnusedVariables: automated suppression
-    staffRoleLabels,
     toDateTimeLocalValue,
     unlockScheduleAdminSession,
     updateAppointmentScheduleDraft,
     updateNewAppointmentDraft,
     visibleScheduleSuggestions,
+    auth,
   } = props;
+
   const {
-    setScheduleAdminSecretDraft,
-    scheduleAdminSecretDraft,
-    scheduleAdminSecretSession,
-    scheduleAdminSecretDemand,
+    setScheduleAdminSecretDraft, scheduleAdminSecretDraft,
+    scheduleAdminSecretSession, scheduleAdminSecretDemand,
   } = useSettingsStore();
+
   const [showShiftAnalytics, setShowShiftAnalytics] = useState(false);
   const [isRosterModalOpen, setIsRosterModalOpen] = useState(false);
   const [isCalendarSyncModalOpen, setIsCalendarSyncModalOpen] = useState(false);
   const [isTomorrowRemindersOpen, setIsTomorrowRemindersOpen] = useState(false);
   const [isSmartAiOpen, setIsSmartAiOpen] = useState(false);
-
-  /**
-   * Сохраненные смены врачей в расписании (сохраняются в localStorage и передаются в DoctorShiftRosterModal)
-   */
-  const [savedDoctorShifts, setSavedDoctorShifts] = useState<DoctorShift[]>(
-    () => {
-      try {
-        const stored = safeLocalStorageGetItem("dente_doctor_shifts");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed;
-          }
-        }
-      } catch {
-        /* ignore parse error */
-      }
-      return [];
-    },
-  );
-
-  // Автоматическая гидратация смен с бэкенда при входе / смене сессии (Мандаты 8e, 8n)
-  useEffect(() => {
-    let isMounted = true;
-    async function hydratePersistedShifts() {
-      try {
-        if (typeof fetch === "undefined") return;
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-          ...(auth?.denteClinicalMutationHeaders
-            ? auth.denteClinicalMutationHeaders()
-            : {}),
-        };
-        const res = await fetch("/api/diary/shifts", { headers }).catch(
-          () => null,
-        );
-        if (res && res.ok) {
-          const data = await res.json().catch(() => null);
-          if (
-            isMounted &&
-            data &&
-            Array.isArray(data.shifts) &&
-            data.shifts.length > 0
-          ) {
-            setSavedDoctorShifts((prev) => {
-              if (prev.length === 0) {
-                try {
-                  safeLocalStorageSetItem(
-                    "dente_doctor_shifts",
-                    JSON.stringify(data.shifts),
-                  );
-                } catch (storageErr: unknown) {
-                  console.warn(
-                    "[ScheduleView] Error saving dente_doctor_shifts to storage:",
-                    storageErr,
-                  );
-                }
-                return data.shifts;
-              }
-              return prev;
-            });
-          }
-        }
-      } catch (fetchErr: unknown) {
-        console.warn(
-          "[ScheduleView] hydratePersistedShifts fetch error:",
-          fetchErr,
-        );
-      }
-    }
-    hydratePersistedShifts();
-    return () => {
-      isMounted = false;
-    };
-  }, [auth]);
-
-  const handleSaveDoctorShifts = useCallback(async (shifts: DoctorShift[]) => {
-    setSavedDoctorShifts(shifts);
-    try {
-      safeLocalStorageSetItem("dente_doctor_shifts", JSON.stringify(shifts));
-
-      // Group and sync date-keyed chair assignments so ScheduleGrid fallback state is completely coherent across all days
-      const shiftsByDate = buildChairDoctorAssignmentsByDate(shifts);
-      for (const [dateIsoKey, dateMap] of Object.entries(shiftsByDate)) {
-        safeLocalStorageSetItem(
-          `dente_chair_doctor_assignments_${dateIsoKey}`,
-          JSON.stringify(dateMap),
-        );
-      }
-    } catch {
-      /* ignore storage error */
-    }
-    try {
-      if (typeof fetch !== "undefined") {
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-          ...(auth?.denteClinicalMutationHeaders
-            ? auth.denteClinicalMutationHeaders()
-            : {}),
-        };
-        await fetch("/api/diary/shifts", {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ shifts }),
-        }).catch(() => {
-          /* soft catch if route is not implemented */
-        });
-      }
-    } catch {
-      /* soft catch */
-    }
-    showToast(
-      `График смен сохранен: обновлено ${shifts.length} смен`,
-      "success",
-      3500,
-    );
-  }, []);
-
-  /**
-   * Сопоставление реальных сотрудников клиники для матрицы сменности (Мандаты 8e, 8n)
-   */
-  const rosterStaffList: RosterStaffMember[] = useMemo(() => {
-    const rawStaff = (dashboard?.clinicSettings?.staff ?? []).filter(
-      (s) => s.active !== false,
-    );
-    if (rawStaff.length === 0) return DEFAULT_CLINIC_STAFF;
-
-    return rawStaff.map((s, index) => {
-      const isDoctor =
-        s.role === "doctor" ||
-        s.role === "owner" ||
-        (Array.isArray(s.specialties) &&
-          s.specialties.length > 0 &&
-          s.role !== "assistant");
-      const isAssistant = s.role === "assistant";
-
-      let role: MedicalStaffRole = "therapist";
-      if (isAssistant) {
-        role = "assistant";
-      } else if (s.specialties?.includes("surgeon")) {
-        role = "surgeon";
-      } else if (s.specialties?.includes("orthopedist")) {
-        role = "orthopedist";
-      } else if (s.specialties?.includes("orthodontist")) {
-        role = "orthodontist";
-      } else if (s.specialties?.includes("pediatric")) {
-        role = "pediatric";
-      } else if (
-        s.specialties?.includes("hygienist") ||
-        s.role === "hygienist"
-      ) {
-        role = "hygienist";
-      } else {
-        role = isDoctor ? "therapist" : "assistant";
-      }
-
-      const cleanName = (s.fullName || "")
-        .trim()
-        .replace(/^(д-р|доктор|врач)\s+/i, "");
-      const parts = cleanName.trim().split(/\s+/);
-      const lastName = parts[0] || (isDoctor ? "Врач" : "Сотрудник");
-      let shortName = lastName;
-      if (parts.length > 1 && parts[1]?.includes(".")) {
-        shortName = `${lastName} ${parts.slice(1).join(" ")}`.trim();
-      } else {
-        const initials = parts
-          .slice(1)
-          .map((p) => (p[0] ? `${p[0].toUpperCase()}.` : ""))
-          .join("");
-        shortName = `${lastName}${initials ? ` ${initials}` : ""}`;
-      }
-      if (isDoctor) {
-        shortName = `Д-р ${shortName}`;
-      }
-
-      const tabNumber =
-        (s as unknown as { tabNumber?: string }).tabNumber ||
-        String(101 + index).padStart(5, "0");
-
-      return {
-        id: s.id,
-        fullName: s.fullName,
-        shortName,
-        role,
-        tabNumber,
-        isDoctor,
-        isAssistant,
-        preferredChairId: (s as unknown as { preferredChairId?: string })
-          .preferredChairId,
-        defaultAssistantId: (s as unknown as { defaultAssistantId?: string })
-          .defaultAssistantId,
-        weeklyHourLimit: isDoctor ? 33 : 39,
-        avatarColor: s.color || (isDoctor ? "#0d9488" : "#64748b"),
-      };
-    });
-  }, [dashboard?.clinicSettings?.staff]);
-
-  /**
-   * Список активных врачей клиники для быстрого назначения и создания кресел (Мандаты 8e, 8n)
-   */
-  const scheduleDoctors = useMemo(() => {
-    return (dashboard?.clinicSettings?.staff ?? [])
-      .filter(
-        (s) =>
-          s.active !== false &&
-          (s.role === "doctor" ||
-            s.role === "owner" ||
-            (Array.isArray(s.specialties) &&
-              s.specialties.length > 0 &&
-              s.role !== "assistant")),
-      )
-      .map((s) => ({
-        id: s.id,
-        fullName: s.fullName,
-        role: s.role,
-        specialties: s.specialties,
-        active: s.active !== false,
-      }));
-  }, [dashboard?.clinicSettings?.staff]);
-
-  /**
-   * Сопоставление реальных кресел и кабинетов клиники (Мандаты 8e, 8n)
-   */
-  const rosterCabinets: RosterCabinetDefinition[] = useMemo(() => {
-    const rawChairs = (dashboard?.clinicSettings?.chairs ?? []).filter(
-      (c) => c.active !== false,
-    );
-    if (rawChairs.length === 0) return CLINIC_CABINETS_CATALOG;
-
-    const roomMap = new Map<string, typeof rawChairs>();
-    rawChairs.forEach((chair, idx) => {
-      const roomKey = chair.room?.trim() || `Кабинет ${idx + 1}`;
-      const existing = roomMap.get(roomKey);
-      if (existing) {
-        existing.push(chair);
-      } else {
-        roomMap.set(roomKey, [chair]);
-      }
-    });
-
-    let cabNum = 1;
-    const result: RosterCabinetDefinition[] = [];
-    for (const [roomName, chairsInRoom] of roomMap.entries()) {
-      const primarySpec = chairsInRoom[0]?.specialization;
-      const specialtyLabel =
-        primarySpec === "surgeon"
-          ? "Хирургия"
-          : primarySpec === "orthopedist"
-            ? "Ортопедия"
-            : primarySpec === "orthodontist"
-              ? "Ортодонтия"
-              : primarySpec === "pediatric"
-                ? "Детство"
-                : primarySpec === "hygienist"
-                  ? "Гигиена"
-                  : "Терапия";
-
-      result.push({
-        id: `cab-${cabNum}`,
-        number: cabNum,
-        name: roomName.startsWith("Кабинет") ? roomName : `Кабинет ${roomName}`,
-        specialty: specialtyLabel,
-        chairs: chairsInRoom.map((ch) => {
-          const equipmentParts = [
-            ch.hasMicroscope ? "Микроскоп" : "",
-            ch.hasSurgeryKit ? "Хирургический набор" : "",
-            ch.hasXraySensor ? "Визиограф" : "",
-            ch.notes || "",
-          ].filter(Boolean);
-          const equipment =
-            equipmentParts.length > 0
-              ? equipmentParts.join(", ")
-              : "Стоматологическая установка";
-
-          return {
-            id: ch.id,
-            name: ch.name,
-            equipment,
-          };
-        }),
-      });
-      cabNum++;
-    }
-    return result;
-  }, [dashboard?.clinicSettings?.chairs]);
-
-  /**
-   * Приемы для расчета матрицы загрузки кресел
-   */
-  const rosterAppointments = useMemo(() => {
-    return (dashboard?.appointments ?? sortedAppointments ?? []).map((app) => ({
-      chairId: app.chairId,
-      startsAt: app.startsAt,
-      endsAt: app.endsAt,
-      status: app.status,
-    }));
-  }, [dashboard?.appointments, sortedAppointments]);
-  /**
-   * Раскрыта ли форма со всеми полями записи.
-   *
-   * БЫЛО: здесь лежала мёртвая копия этого признака — настоящий жил внутри
-   * NewAppointmentForm. Поэтому «Повторить» у записи и «Записать на приём» из
-   * листа ожидания заполняли черновик и не открывали ничего: на экране не
-   * менялось НИЧЕГО, а черновик молча набирался, и кнопка «Создать запись»
-   * становилась активной с датой, которую человек не видел.
-   */
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  /**
-   * Просьба поставить фокус в форму, пришедшая ДО её раскрытия. Фокус нельзя
-   * ставить в том же обработчике, что раскрывает форму: React отрисует её
-   * позже, и document.querySelector в этот момент ещё ничего не находит —
-   * именно так «Записать на приём» и оставляло человека без поля времени.
-   */
-  const focusCreateFormRequestedRef = useRef(false);
-  /** Открыт ли лист ожидания. Экран есть, а войти в него было неоткуда. */
-  const [waitlistOpen, setWaitlistOpen] = useState(false);
-  /** Освободившееся окно для целевого подбора из листа ожидания. */
-  const [waitlistQuickFillSlot, setWaitlistQuickFillSlot] =
-    useState<TargetSlotInfo | null>(null);
-
-  const handleOpenWaitlistForSlot = useCallback((slot: TargetSlotInfo) => {
-    setWaitlistQuickFillSlot(slot);
-    setWaitlistOpen(true);
-  }, []);
-  /**
-   * Открыта ли панель утреннего обзвона / подтверждения приёмов.
-   *
-   * ПОЧЕМУ ОТКРЫТА ПО УМОЛЧАНИЮ, В ОТЛИЧИЕ ОТ СОСЕДНИХ ПАНЕЛЕЙ.
-   * Список обзвона — это то, ради чего регистратура открывает расписание утром.
-   * Прятать его за кнопкой значит требовать лишнего клика в единственный момент
-   * дня, когда он нужен всем.
-   *
-   * До 2026-08-06 панель монтировалась ДВАЖДЫ: аварийно из `App.tsx` (безусловно)
-   * и штатно отсюда. Две копии слали два независимых запроса и держали два
-   * несинхронных набора отметок «обзвонил» — администратор видел разные состояния
-   * в двух местах экрана. Дубль снят; осталась эта.
-   *
-   * Про цену: данные грузятся при МОНТАЖЕ (`DayConfirmationsPanel.tsx:148-167`,
-   * `useEffect` без условия раскрытия), поэтому открытая панель означает один
-   * `GET /api/schedule/day-confirmations` на каждый вход в расписание. Это ровно
-   * та цена, которая была всегда: аварийный монтаж в `App.tsx` слал этот запрос
-   * безусловно, а при раскрытии копии их было два. То есть здесь не рост
-   * нагрузки, а возврат к прежней с делением пополам.
-   */
   const [showConfirmationsPanel, setShowConfirmationsPanel] = useState(false);
-  /** Открыта ли панель освободившихся окон и кандидатов из листа ожидания. */
   const [showFreedSlotsPanel, setShowFreedSlotsPanel] = useState(false);
-  /** Открыта ли панель буфера расписания (копирование/вставка приёмов). */
   const [showClipboardPanel, setShowClipboardPanel] = useState(false);
-  /** Сигнал панели перечитать список после «В буфер» с карточки. */
   const [clipboardReloadToken, setClipboardReloadToken] = useState(0);
 
-  /** Быстрая 1-клик запись на прием (QuickBookingDrawer) */
-  const [quickBookingOpen, setQuickBookingOpen] = useState(false);
-  const [quickBookingSlot, setQuickBookingSlot] =
-    useState<QuickBookingSlotInfo | null>(null);
-
-  /** Модальное окно свободных окон врачей (DoctorFreeSlotsModal) */
-  const [doctorFreeSlotsOpen, setDoctorFreeSlotsOpen] = useState(false);
-
-  /** Настраиваемый шаг сетки расписания (15 / 30 / 60 мин, StomX parity) */
   const [scheduleGridStep, setScheduleGridStep] = useState<15 | 30 | 60>(30);
-
-  /** Детальное модальное окно записи (AppointmentModal) */
-  const [modalAppointment, setModalAppointment] = useState<Appointment | null>(
-    null,
-  );
-
-  useEffect(() => {
-    const handleOpenApptModal = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      const list = dashboard?.appointments ?? sortedAppointments ?? [];
-      const targetAppt =
-        (detail?.appointmentId
-          ? list.find((a) => a.id === detail.appointmentId)
-          : null) ||
-        list[0] ||
-        null;
-      if (targetAppt) {
-        setModalAppointment(targetAppt);
-      }
-    };
-    window.addEventListener(
-      "dente-open-appointment-modal",
-      handleOpenApptModal,
-    );
-    return () =>
-      window.removeEventListener(
-        "dente-open-appointment-modal",
-        handleOpenApptModal,
-      );
-  }, [dashboard?.appointments, sortedAppointments]);
-
-  /** Быстрое добавление и редактирование кресла прямо из расписания (StomX / DentalPRO parity) */
+  const [quickBookingOpen, setQuickBookingOpen] = useState(false);
+  const [quickBookingSlot, setQuickBookingSlot] = useState<QuickBookingSlotInfo | null>(null);
+  const [modalAppointment, setModalAppointment] = useState<Appointment | null>(null);
+  const [doctorFreeSlotsOpen, setDoctorFreeSlotsOpen] = useState(false);
   const [isQuickAddChairOpen, setIsQuickAddChairOpen] = useState(false);
-  const [editingChairData, setEditingChairData] =
-    useState<QuickAddChairData | null>(null);
-
-  const handleEditChairFromSchedule = useCallback(
-    (chairData: QuickAddChairData) => {
-      setEditingChairData(chairData);
-      setIsQuickAddChairOpen(true);
-    },
-    [],
-  );
-
-  const handleAddChairFromSchedule = useCallback(
-    async (chairData: QuickAddChairData) => {
-      // Сбросить фильтр кресла, чтобы созданное кресло сразу отобразилось в сетке
-      setScheduleChairFilterId(null);
-      const isUpdate = Boolean(chairData.id);
-
-      const applyLocalOptimisticChair = () => {
-        if (typeof props.setDashboard === "function") {
-          props.setDashboard((prev: any) => {
-            if (!prev?.clinicSettings) return prev;
-            if (isUpdate) {
-              return {
-                ...prev,
-                clinicSettings: {
-                  ...prev.clinicSettings,
-                  chairs: (prev.clinicSettings.chairs ?? []).map((c: any) =>
-                    c.id === chairData.id
-                      ? {
-                          ...c,
-                          name: chairData.name,
-                          room: chairData.roomNumber || chairData.room,
-                          roomNumber: chairData.roomNumber || chairData.room,
-                          specialization: chairData.specialization,
-                          color: chairData.color,
-                          active: chairData.isActive,
-                          isActive: chairData.isActive,
-                        }
-                      : c,
-                  ),
-                },
-              };
-            }
-            const localChair = {
-              id: `chair-local-${Date.now()}`,
-              name: chairData.name,
-              room: chairData.roomNumber || chairData.room,
-              specialization: chairData.specialization,
-              color: chairData.color,
-              active: chairData.isActive ?? true,
-              defaultDoctorId: chairData.defaultDoctorId || null,
-            };
-            return {
-              ...prev,
-              clinicSettings: {
-                ...prev.clinicSettings,
-                chairs: [...(prev.clinicSettings.chairs ?? []), localChair],
-              },
-            };
-          });
-        }
-      };
-
-      try {
-        const url = isUpdate
-          ? `/api/settings/chairs/${encodeURIComponent(chairData.id!)}`
-          : "/api/settings/chairs";
-        const method = isUpdate ? "PUT" : "POST";
-        const res = await fetch(url, {
-          method,
-          headers: denteAdminSecretRequestHeaders({
-            "Content-Type": "application/json",
-          }),
-          body: JSON.stringify({
-            name: chairData.name,
-            room: chairData.roomNumber || chairData.room,
-            specialization: chairData.specialization,
-            color: chairData.color,
-            defaultDoctorId: chairData.defaultDoctorId || null,
-            ...(isUpdate ? { active: chairData.isActive } : {}),
-          }),
-        });
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-        if (typeof props.loadDashboard === "function") {
-          await props.loadDashboard();
-        }
-        showToast(
-          isUpdate
-            ? `Параметры кресла «${chairData.name}» успешно обновлены`
-            : `Кресло «${chairData.name}» успешно добавлено в расписание`,
-          "success",
-          3500,
-        );
-      } catch (err) {
-        console.warn("Failed to add/update chair via QuickAddChairModal:", err);
-        applyLocalOptimisticChair();
-        showToast(
-          isUpdate
-            ? `Параметры кресла «${chairData.name}» обновлены локально`
-            : `Кресло «${chairData.name}» добавлено локально`,
-          "info",
-          3000,
-        );
-      } finally {
-        setEditingChairData(null);
-      }
-    },
-    [props.loadDashboard, props.setDashboard],
-  );
-
-  const handleAddDoctorFromSchedule = useCallback(
-    async (doctorData: QuickAddDoctorData) => {
-      const applyLocalOptimisticDoctor = () => {
-        if (typeof props.setDashboard === "function") {
-          props.setDashboard((prev: any) => {
-            if (!prev?.clinicSettings) return prev;
-            const newStaff = {
-              id: doctorData.id || `doc-local-${Date.now()}`,
-              organizationId:
-                prev.clinicSettings?.profile?.organizationId ||
-                "00000000-0000-4000-8000-000000000001",
-              fullName: doctorData.fullName,
-              role: "doctor",
-              specialties: [doctorData.specialty],
-              phone: doctorData.phone || null,
-              email: null,
-              active: true,
-              canSignMedicalRecords: true,
-              canManageMoney: false,
-              canManageImports: false,
-              color: doctorData.color,
-              preferredChairId: doctorData.preferredChairId || null,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            };
-            return {
-              ...prev,
-              clinicSettings: {
-                ...prev.clinicSettings,
-                staff: [...(prev.clinicSettings.staff ?? []), newStaff],
-              },
-            };
-          });
-        }
-      };
-
-      try {
-        const res = await fetch("/api/settings/staff", {
-          method: "POST",
-          headers: denteAdminSecretRequestHeaders({
-            "Content-Type": "application/json",
-          }),
-          body: JSON.stringify({
-            fullName: doctorData.fullName,
-            role: "doctor",
-            specialties: [doctorData.specialty],
-            phone: doctorData.phone || null,
-            color: doctorData.color,
-            preferredChairId: doctorData.preferredChairId || null,
-          }),
-        });
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-        const createdData = await res.json().catch(() => null);
-        if (typeof props.loadDashboard === "function") {
-          await props.loadDashboard();
-        }
-        showToast(
-          `Врач «${doctorData.fullName}» успешно добавлен в расписание`,
-          "success",
-          3500,
-        );
-        return createdData || { id: doctorData.id };
-      } catch (err) {
-        console.warn("Failed to add doctor via QuickAddDoctorModal:", err);
-        applyLocalOptimisticDoctor();
-        showToast(
-          `Врач «${doctorData.fullName}» добавлен локально`,
-          "info",
-          3000,
-        );
-        return { id: doctorData.id };
-      }
-    },
-    [props.loadDashboard, props.setDashboard],
-  );
-
-  /** Режим отображения: сетка по креслам (grid - дефолт для десктопа), лента (timeline - дефолт для мобайла) или режим по креслам (chairs - StomX паритет) */
-  const [scheduleViewMode, setScheduleViewMode] = useState<
-    "timeline" | "grid" | "chairs"
-  >(() => {
-    try {
-      const saved = safeLocalStorageGetItem("dente_schedule_view_mode");
-      if (saved === "timeline" || saved === "grid" || saved === "chairs")
-        return saved;
-      if (typeof window !== "undefined" && window.innerWidth < 640) {
-        return "timeline";
-      }
-    } catch {
-      /* ignore */
-    }
-    return "grid";
-  });
-
-  useEffect(() => {
-    try {
-      safeLocalStorageSetItem("dente_schedule_view_mode", scheduleViewMode);
-    } catch {
-      /* ignore */
-    }
-  }, [scheduleViewMode]);
+  const [editingChairData, setEditingChairData] = useState<QuickAddChairData | null>(null);
+  const [waitlistQuickFillSlot, setWaitlistQuickFillSlot] = useState<TargetSlotInfo | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [useManualSelects, setUseManualSelects] = useState(false);
+  const [isPatientSearchOpen, setIsPatientSearchOpen] = useState(false);
+  const [scheduleViewMode, setScheduleViewMode] = useState<"timeline" | "grid" | "chairs">("grid");
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
 
   const todayScheduleDate = useCallback(() => {
     const localNow = new Date();
@@ -1066,8 +191,22 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   }, []);
 
   const clinicToday = todayScheduleDate();
-  const currentDateKey =
-    scheduleDateFilter || clinicToday || todayScheduleDate();
+  const currentDateKey = scheduleDateFilter || clinicToday || todayScheduleDate();
+
+  const {
+    savedDoctorShifts,
+    setSavedDoctorShifts,
+    handleSaveDoctorShifts,
+    rosterStaffList,
+    scheduleDoctors,
+    rosterCabinets,
+    rosterAppointments,
+  } = useScheduleRosterData({
+    dashboard,
+    sortedAppointments,
+    auth,
+    currentDateKey,
+  });
 
   const computedChairDoctorAssignments = useMemo(() => {
     return buildChairDoctorAssignmentsFromShifts(
@@ -1076,446 +215,69 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     );
   }, [savedDoctorShifts, currentDateKey]);
 
-  const handleAssignChairDoctor = useCallback(
-    (chairId: string, assignment: ChairDoctorShiftAssignment | null) => {
-      const persistAndSyncShifts = (nextShifts: DoctorShift[]) => {
-        try {
-          safeLocalStorageSetItem(
-            "dente_doctor_shifts",
-            JSON.stringify(nextShifts),
-          );
-          const dateMap = buildChairDoctorAssignmentsFromShifts(
-            nextShifts,
-            currentDateKey,
-          );
-          safeLocalStorageSetItem(
-            `dente_chair_doctor_assignments_${currentDateKey}`,
-            JSON.stringify(dateMap),
-          );
-        } catch (storageErr: unknown) {
-          console.warn(
-            "[ScheduleView] Error persisting doctor shifts to storage:",
-            storageErr,
-          );
-        }
-        try {
-          if (typeof fetch !== "undefined") {
-            const headers: Record<string, string> = {
-              "Content-Type": "application/json",
-              ...(auth?.denteClinicalMutationHeaders
-                ? auth.denteClinicalMutationHeaders()
-                : {}),
-            };
-            fetch("/api/diary/shifts", {
-              method: "POST",
-              headers,
-              body: JSON.stringify({ shifts: nextShifts }),
-            }).catch((syncErr: unknown) => {
-              console.warn("[ScheduleView] Async shift sync failed:", syncErr);
-            });
-          }
-        } catch (networkErr: unknown) {
-          console.warn(
-            "[ScheduleView] Error initiating shift sync fetch:",
-            networkErr,
-          );
-        }
-      };
+  const {
+    handleEditChairFromSchedule,
+    handleAddChairFromSchedule,
+    handleAddDoctorFromSchedule,
+    handleAssignChairDoctor,
+  } = useScheduleChairDoctorOps({
+    loadDashboard: props.loadDashboard,
+    setDashboard: props.setDashboard,
+    setScheduleChairFilterId,
+    setEditingChairData,
+    setIsQuickAddChairOpen,
+    setSavedDoctorShifts,
+    currentDateKey,
+    auth,
+    showToast,
+  });
 
-      if (!assignment || !assignment.doctorId) {
-        setSavedDoctorShifts((prev) => {
-          const next = prev.filter(
-            (s) => !(s.dateIso === currentDateKey && s.chairId === chairId),
-          );
-          persistAndSyncShifts(next);
-          return next;
-        });
-      } else if (
-        (assignment.shiftPreset === "two_shifts" ||
-          (assignment.subShifts && assignment.subShifts.length > 1)) &&
-        assignment.subShifts &&
-        assignment.subShifts.length > 0
-      ) {
-        // Сохранение двух смен (утро + вечер) для двух врачей без потери вечернего врача (Defect 1)
-        const multiShifts: DoctorShift[] = assignment.subShifts.map(
-          (sub, idx) => {
-            const isEve =
-              idx > 0 ||
-              (sub.startHour ??
-                (Number.parseInt((sub as any).startTime?.slice(0, 2), 10) ||
-                  8)) >= 14;
-            const archetypeId: ShiftArchetypeId = isEve
-              ? "evening_shift"
-              : "morning_shift";
-            const suffix = isEve ? "eve" : "morn";
-            const sH =
-              sub.startHour ??
-              (Number.parseInt((sub as any).startTime?.slice(0, 2), 10) ||
-                (isEve ? 14 : 8));
-            const eH =
-              sub.endHour ??
-              (Number.parseInt((sub as any).endTime?.slice(0, 2), 10) ||
-                (isEve ? 20 : 14));
-            const startTime =
-              (sub as any).startTime || `${String(sH).padStart(2, "0")}:00`;
-            const endTime =
-              (sub as any).endTime || `${String(eH).padStart(2, "0")}:00`;
-            const doctorRole: MedicalStaffRole =
-              (sub.doctorSpecialty as MedicalStaffRole) || "therapist";
-            return {
-              id: `shift-${currentDateKey}-${chairId}-${suffix}`,
-              doctorId: sub.doctorId,
-              doctorName: sub.doctorName,
-              doctorRole,
-              assistantId: null,
-              assistantName: null,
-              cabinetId: chairId,
-              chairId: chairId,
-              dateIso: currentDateKey,
-              archetypeId,
-              startTime,
-              endTime,
-              durationHours: Math.max(1, eH - sH) || 6.0,
-              breakMinutes: 0,
-              isNight: false,
-              nightHours: 0,
-              status: "scheduled",
-            };
-          },
-        );
-        setSavedDoctorShifts((prev) => {
-          const filtered = prev.filter(
-            (s) => !(s.dateIso === currentDateKey && s.chairId === chairId),
-          );
-          const next = [...filtered, ...multiShifts];
-          persistAndSyncShifts(next);
-          return next;
-        });
-      } else {
-        const archetypeId: ShiftArchetypeId =
-          assignment.shiftPreset === "evening"
-            ? "evening_shift"
-            : "morning_shift";
-        const parts = assignment.shiftHours.split("–");
-        const startTime = parts[0]?.trim() || "08:00";
-        const endTime = parts[1]?.trim() || "20:00";
-        const suffix =
-          assignment.shiftPreset === "evening"
-            ? "eve"
-            : assignment.shiftPreset === "morning"
-              ? "morn"
-              : "full";
-        const doctorRole: MedicalStaffRole =
-          (assignment.doctorSpecialty as MedicalStaffRole) || "therapist";
-        const newShift: DoctorShift = {
-          id: `shift-${currentDateKey}-${chairId}-${suffix}`,
-          doctorId: assignment.doctorId,
-          doctorName: assignment.doctorName,
-          doctorRole,
-          assistantId: null,
-          assistantName: null,
-          cabinetId: chairId,
-          chairId: chairId,
-          dateIso: currentDateKey,
-          archetypeId,
-          startTime,
-          endTime,
-          durationHours:
-            Number.parseInt(endTime.slice(0, 2), 10) -
-              Number.parseInt(startTime.slice(0, 2), 10) || 6.0,
-          breakMinutes: 0,
-          isNight: false,
-          nightHours: 0,
-          status: "scheduled",
-        };
-        setSavedDoctorShifts((prev) => {
-          const filtered = prev.filter((s) => {
-            if (s.dateIso !== currentDateKey || s.chairId !== chairId)
-              return true;
-            if (assignment.shiftPreset === "full") return false;
-            if (
-              assignment.shiftPreset === "morning" &&
-              (s.archetypeId === "morning_shift" ||
-                s.id.endsWith("-morn") ||
-                s.id.endsWith("-full"))
-            )
-              return false;
-            if (
-              assignment.shiftPreset === "evening" &&
-              (s.archetypeId === "evening_shift" ||
-                s.id.endsWith("-eve") ||
-                s.id.endsWith("-full"))
-            )
-              return false;
-            return true;
-          });
-          const next = [...filtered, newShift];
-          persistAndSyncShifts(next);
-          return next;
-        });
-      }
-    },
-    [currentDateKey, auth],
-  );
+  const { focusNewAppointmentEditor } = useScheduleFocus({
+    showCreateForm,
+    setShowCreateForm,
+  });
 
-  /**
-   * 1-клик вставка экстренного слота для пациента с острой болью (CITO!)
-   */
-  const handleEmergencyCitoBooking = useCallback(() => {
-    const staff = dashboard?.clinicSettings?.staff ?? [];
-    const activeDoctors = staff.filter(
-      (m) => m.active && (m.role === "doctor" || m.role === "owner"),
-    );
-    const dutyDoctor =
-      (scheduleDoctorFilterId
-        ? activeDoctors.find((d) => d.id === scheduleDoctorFilterId)
-        : null) ||
-      activeDoctors.find(
-        (d) =>
-          d.specialties?.includes("therapist") ||
-          d.specialties?.includes("surgeon") ||
-          d.specialties?.includes("general"),
-      ) ||
-      activeDoctors[0] ||
-      null;
-
-    const chairs = (dashboard?.clinicSettings?.chairs ?? []).filter(
-      (c) => c.active,
-    );
-    const chair =
-      (scheduleChairFilterId
-        ? chairs.find((c) => c.id === scheduleChairFilterId)
-        : null) ||
-      chairs[0] ||
-      null;
-
-    const now = new Date();
-    const mins = now.getMinutes();
-    const roundedMins = Math.ceil(mins / 5) * 5;
-    now.setMinutes(roundedMins, 0, 0);
-    const hoursStr = String(now.getHours()).padStart(2, "0");
-    const minsStr = String(now.getMinutes()).padStart(2, "0");
-    const urgentTimeStr = `${hoursStr}:${minsStr}`;
-
-    const targetDate = scheduleDateFilter || clinicToday || todayScheduleDate();
-
-    setQuickBookingSlot({
-      dateKey: targetDate,
-      startTime: urgentTimeStr,
-      startsAt: `${targetDate}T${urgentTimeStr}:00.000Z`,
-      doctorUserId: dutyDoctor?.id || null,
-      chairId: chair?.id || null,
-      durationMinutes: 20,
-      reason: "CITO! Острая боль",
-      isCitoEmergency: true,
-    });
-    setQuickBookingOpen(true);
-    showToast(
-      "Экстренный прием CITO: выбран дежурный врач и срочный слот",
-      "info",
-      3500,
-    );
-  }, [
-    dashboard?.clinicSettings?.staff,
-    dashboard?.clinicSettings?.chairs,
+  const {
+    handleEmergencyCitoBooking,
+    waitlistCount,
+    repeatAppointment,
+    copyAppointmentToBuffer,
+  } = useScheduleShortcuts({
+    dashboard,
     scheduleDoctorFilterId,
     scheduleChairFilterId,
     scheduleDateFilter,
     clinicToday,
     todayScheduleDate,
-  ]);
-
-  /**
-   * Сколько человек стоит в очереди. Число живёт на кнопке, потому что очередь
-   * — это то, о чём забывают: администратор открывает лист ожидания, только
-   * если видит, что там кто-то есть. Перечитывается при закрытии ящика: именно
-   * там очередь и меняют.
-   */
-  const [waitlistCount, setWaitlistCount] = useState(0);
-  /*
-   * Отказ сервера здесь молчит намеренно: единственное последствие — кнопка без
-   * числа, а ругаться на весь экран из-за счётчика значит мешать работе.
-   * Настоящее сообщение об отказе показывает сам ящик, когда его открывают.
-   */
-  useEffect(() => {
-    if (waitlistOpen) return;
-    let cancelled = false;
-    void (async () => {
-      try {
-        const response = await fetch("/api/waitlist", {
-          headers: auth?.denteClinicalReadHeaders
-            ? auth.denteClinicalReadHeaders()
-            : {},
-        });
-        if (!response.ok) return;
-        const rows = await response.json();
-        if (!cancelled)
-          setWaitlistCount(Array.isArray(rows) ? rows?.length : 0);
-      } catch {
-        /* Сеть отвалилась: кнопка остаётся без числа, но открывается. */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [waitlistOpen, auth]);
-
-  const [useManualSelects, setUseManualSelects] = useState(false);
-  const [isPatientSearchOpen, setIsPatientSearchOpen] = useState(false);
-
-  // ── Reception Keyboard Navigation & Shortcuts (Arrow keys, N, Space, Escape, ⌘K)
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: globalThis.KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setIsPatientSearchOpen((prev) => !prev);
-        return;
-      }
-
-      const activeEl = document.activeElement;
-      const isInputFocused =
-        activeEl &&
-        (activeEl.tagName === "INPUT" ||
-          activeEl.tagName === "TEXTAREA" ||
-          activeEl.tagName === "SELECT" ||
-          activeEl.getAttribute("contenteditable") === "true");
-
-      if (e.key === "Escape") {
-        if (isPatientSearchOpen) {
-          setIsPatientSearchOpen(false);
-          return;
-        }
-        if (quickBookingOpen) {
-          setQuickBookingOpen(false);
-          return;
-        }
-        if (modalAppointment) {
-          setModalAppointment(null);
-          return;
-        }
-        if (waitlistOpen) {
-          setWaitlistOpen(false);
-          return;
-        }
-        if (showCreateForm) {
-          setShowCreateForm(false);
-          return;
-        }
-      }
-
-      if (isInputFocused) return;
-
-      if (
-        (e.key === "n" || e.key === "N" || e.key === "т" || e.key === "Т") &&
-        !e.ctrlKey &&
-        !e.metaKey
-      ) {
-        e.preventDefault();
-        setQuickBookingSlot({
-          dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
-          doctorUserId: scheduleDoctorFilterId || null,
-          chairId: scheduleChairFilterId || null,
-          durationMinutes: 30,
-        });
-        setQuickBookingOpen(true);
-        return;
-      }
-
-      if (
-        (e.key === "c" || e.key === "C" || e.key === "с" || e.key === "С") &&
-        !e.ctrlKey &&
-        !e.metaKey
-      ) {
-        e.preventDefault();
-        handleEmergencyCitoBooking();
-        return;
-      }
-
-      if (e.key === "ArrowDown" || e.key === "j") {
-        const focusableNodes = Array.from(
-          document.querySelectorAll<HTMLElement>(
-            "[data-timeline-focusable='true'], [data-appointment-id]",
-          ),
-        );
-        if (focusableNodes.length === 0) return;
-        e.preventDefault();
-        const currentIndex = focusableNodes.findIndex(
-          (n) =>
-            n === document.activeElement || n.contains(document.activeElement),
-        );
-        const nextIndex =
-          currentIndex < 0 ? 0 : (currentIndex + 1) % focusableNodes.length;
-        const target = focusableNodes[nextIndex];
-        target?.focus();
-        if (target) motionSafeScrollIntoView(target, { block: "nearest" });
-      } else if (e.key === "ArrowUp" || e.key === "k") {
-        const focusableNodes = Array.from(
-          document.querySelectorAll<HTMLElement>(
-            "[data-timeline-focusable='true'], [data-appointment-id]",
-          ),
-        );
-        if (focusableNodes.length === 0) return;
-        e.preventDefault();
-        const currentIndex = focusableNodes.findIndex(
-          (n) =>
-            n === document.activeElement || n.contains(document.activeElement),
-        );
-        const prevIndex =
-          currentIndex <= 0 ? focusableNodes.length - 1 : currentIndex - 1;
-        const target = focusableNodes[prevIndex];
-        target?.focus();
-        if (target) motionSafeScrollIntoView(target, { block: "nearest" });
-      }
-    };
-
-    const handleOpenQuickBookingEvent = () => {
-      setQuickBookingSlot({
-        dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
-        doctorUserId: scheduleDoctorFilterId || null,
-        chairId: scheduleChairFilterId || null,
-        durationMinutes: 30,
-      });
-      setQuickBookingOpen(true);
-    };
-
-    window.addEventListener("keydown", handleGlobalKeyDown);
-    window.addEventListener(
-      "dente-open-quick-booking",
-      handleOpenQuickBookingEvent,
-    );
-    return () => {
-      window.removeEventListener("keydown", handleGlobalKeyDown);
-      window.removeEventListener(
-        "dente-open-quick-booking",
-        handleOpenQuickBookingEvent,
-      );
-    };
-  }, [
+    auth,
+    setQuickBookingSlot,
+    setQuickBookingOpen,
+    showToast,
     isPatientSearchOpen,
+    setIsPatientSearchOpen,
     quickBookingOpen,
     modalAppointment,
+    setModalAppointment,
     waitlistOpen,
+    setWaitlistOpen,
     showCreateForm,
-    scheduleDateFilter,
-    clinicToday,
-    scheduleDoctorFilterId,
-    scheduleChairFilterId,
-  ]);
+    setShowCreateForm,
+    updateNewAppointmentDraft,
+    focusNewAppointmentEditor,
+    patientName,
+    setUseManualSelects,
+    setShowClipboardPanel,
+    setShowFreedSlotsPanel,
+    setShowConfirmationsPanel,
+    setClipboardReloadToken,
+  });
+
+  const handleOpenWaitlistForSlot = useCallback((slot: TargetSlotInfo) => {
+    setWaitlistQuickFillSlot(slot);
+    setWaitlistOpen(true);
+  }, []);
 
   const adminSecretReady = scheduleAdminSecretDraft.trim().length > 0;
-
-  /*
-    Поле секрета показываем только тогда, когда сервер действительно отказал в
-    изменении расписания, либо секрет уже введён и его надо дать забыть.
-
-    Раньше на экране постоянно висела строка «🔐 Разблокировать сохранение
-    расписания» — замок без объяснения, зачем он и что случится. Он не охранял
-    ничего: серверная проверка requireScheduleMutationAccess объявлена в
-    apps/api/src/routes/schedule.ts и не вызывается ни в одном маршруте, а
-    DENTE_SCHEDULE_ADMIN_SECRET не задан. Проверено живьём
-    (scratch/verify-schedule-lock.mjs): создание приёма и перенос времени
-    проходят без секрета и с заведомо неверным секретом.
-  */
   const scheduleAdminSecretNeeded =
     scheduleAdminSecretDemand?.length > 0 ||
     scheduleAdminSecretSession?.length > 0;
@@ -1524,182 +286,6 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
       ? "Сервер клиники не настроен на изменение расписания: в его настройках не задан секрет администратора. Секрет задаёт тот, кто устанавливал программу — без него запись не сохранится, сколько бы вы ни вводили здесь."
       : "Сервер клиники не принял изменение расписания без секрета администратора. Введите его, чтобы сохранить запись.";
 
-  /**
-   * Повторить запись: те же пациент, врач, ассистент, кресло, повод и
-   * длительность переносятся в форму новой записи, а дата — ближайший тот же
-   * день недели и то же время в БУДУЩЕМ.
-   *
-   * ПОЧЕМУ НЕ «ровно через неделю от прошлой записи», как было. Проверено в
-   * живом браузере на демо-клинике: первая карточка в расписании — приём от
-   * 28 января 2024 года (список показывает все дни и начинается с самого
-   * старого), и «Повторить» подставляла в форму 4 февраля 2024 года. Дата в
-   * прошлом, кнопка «Создать запись» при этом становилась активной — то есть
-   * администратору предлагали записать пациента на позапрошлый год.
-   * Сдвиг делается шагом ровно в неделю, поэтому день недели и время суток
-   * сохраняются: пациент, приходивший во вторник в 16:30, останется на вторник
-   * 16:30. В России нет перехода на летнее время, поэтому шаг в 7×24 часа не
-   * сдвигает местное время.
-   *
-   * Это замена «Буферу обмена переноса записей расписания». Тот показывал на
-   * экране пустую коробку с обещанием «из клика по визиту вы можете скопировать
-   * запись для быстрого вклеивания», хотя копировать было нечем: copyToBuffer
-   * не вызывался ни из одного места, вставки не существовало, а у таблицы
-   * schedule_clipboard_items во всём проекте нет ни одного писателя.
-   *
-   * Никакого нового контракта здесь нет: запись создаёт тот же
-   * POST /api/appointments, и охрана пересечений на нём работает.
-   */
-  const repeatAppointment = (appointment: Appointment) => {
-    const startsAtMs = Date.parse(appointment.startsAt);
-    const endsAtMs = Date.parse(appointment.endsAt);
-    const durationMs =
-      Number.isFinite(startsAtMs) &&
-      Number.isFinite(endsAtMs) &&
-      endsAtMs > startsAtMs
-        ? endsAtMs - startsAtMs
-        : (dashboard?.clinicSettings?.profile?.defaultVisitMinutes ?? 30) *
-          60_000;
-    const weekMs = 7 * 24 * 60 * 60_000;
-    const nextSameWeekdayMs = () => {
-      if (!Number.isFinite(startsAtMs)) return Date.now() + weekMs;
-      let candidate = startsAtMs + weekMs;
-      // Шагаем неделями, пока не окажемся в будущем: у старой записи одного
-      // прибавления недели не хватает, а записывать в прошлое нельзя.
-      const now = Date.now();
-      while (candidate <= now) candidate += weekMs;
-      return candidate;
-    };
-    const weekAhead = new Date(nextSameWeekdayMs());
-
-    /*
-      Ассистент: если в исходной записи его нет, ставим того, кого форма и так
-      подставляет по умолчанию (см. newAppointmentDraftFromDashboard: для не
-      соло-режима берётся первый активный ассистент). Иначе повтор оставлял бы
-      поле пустым, а форма тут же требовала «выберите ассистента» — и кнопка
-      «Создать запись» была бы заперта у записи, которая в базе живёт без
-      ассистента: сервер такие записи принимает.
-    */
-    const fallbackAssistant = (dashboard?.clinicSettings?.staff ?? []).find(
-      (member) => member.active && member.role === "assistant",
-    );
-    const repeatAssistantId =
-      appointment.assistantUserId ??
-      (dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
-        ? null
-        : (fallbackAssistant?.id ?? null));
-
-    updateNewAppointmentDraft("patientId", appointment.patientId);
-    updateNewAppointmentDraft("doctorUserId", appointment.doctorUserId);
-    updateNewAppointmentDraft("assistantUserId", repeatAssistantId ?? "");
-    updateNewAppointmentDraft("chairId", appointment.chairId);
-    updateNewAppointmentDraft("status", "planned");
-    updateNewAppointmentDraft("startsAt", weekAhead.toISOString());
-    updateNewAppointmentDraft(
-      "endsAt",
-      new Date(weekAhead.getTime() + durationMs).toISOString(),
-    );
-    updateNewAppointmentDraft("reason", appointment.reason ?? "");
-    updateNewAppointmentDraft("comment", "");
-    setUseManualSelects(true);
-    /*
-      БЫЛО: прокрутка искала ".appointment-create-form, .new-appointment-form" —
-      таких классов в разметке нет ни одного, поэтому не прокручивалось никуда.
-      Вместе с мёртвым признаком раскрытия формы это давало кнопку, от нажатия
-      которой на экране не менялось ничего.
-      Теперь форма раскрывается и курсор встаёт в поле «Начало»: дата уже
-      подставлена, и поправить её — единственное, что осталось.
-    */
-    focusNewAppointmentEditor();
-    /*
-      Сообщение обязательно: подставленные значения (врач, кресло, дата) уйдут в
-      базу как факт, и человек должен понимать, что именно он подтверждает.
-    */
-    showToast(
-      "Форма заполнена как в прошлой записи: тот же день недели и время, ближайший такой день впереди. Проверьте дату и время и нажмите «Создать запись».",
-      "info",
-      7000,
-    );
-  };
-
-  /**
-   * Копирует снимок приёма в серверный буфер (schedule_clipboard_items) и
-   * открывает панель «Буфер». Вставка — отдельным действием с выбором времени.
-   * Исходная запись в сетке не трогается.
-   */
-  const copyAppointmentToBuffer = async (appointment: Appointment) => {
-    const patientLabel = patientName
-      ? patientName(dashboard?.patients ?? [], appointment.patientId)
-      : "Пациент";
-    try {
-      let response: Response;
-      try {
-        response = await fetch("/api/schedule/clipboard-items", {
-          method: "POST",
-          headers: denteAdminSecretRequestHeaders({
-            "Content-Type": "application/json",
-          }),
-          body: JSON.stringify({ appointmentId: appointment.id }),
-        });
-      } catch {
-        showToast(
-          "Сервер клиники не ответил. Запись в буфер не скопирована.",
-          "error",
-        );
-        return;
-      }
-      if (!response.ok) {
-        const body = await response.json().catch((err) => {
-          showToast(
-            actionFailureToast(
-              "Не удалось прочитать ответ сервера",
-              (err as { status?: number })?.status ?? null,
-            ),
-            "error",
-          );
-          return null;
-        });
-        const serverMessage =
-          body && typeof body.message === "string" ? body.message.trim() : "";
-        if (serverMessage && /[а-яё]/i.test(serverMessage)) {
-          showToast(serverMessage, "error");
-        } else if (response.status === 401 || response.status === 403) {
-          showToast(
-            "Не удалось скопировать в буфер: нет прав. Введите секрет администратора расписания и повторите.",
-            "error",
-          );
-        } else {
-          showToast(
-            "Не удалось скопировать запись в буфер. Повторите, а если повторится — сообщите администратору.",
-            "error",
-          );
-        }
-        return;
-      }
-      showToast(
-        `«${patientLabel}» скопирован в буфер. Укажите новое время и нажмите «Вставить».`,
-        "success",
-        5000,
-      );
-      setShowClipboardPanel(true);
-      setShowFreedSlotsPanel(false);
-      setShowConfirmationsPanel(false);
-      setClipboardReloadToken((token) => token + 1);
-    } catch {
-      showToast(
-        "Не удалось скопировать запись в буфер. Повторите, а если повторится — сообщите администратору.",
-        "error",
-      );
-    }
-  };
-
-  /*
-    Одно правило на всю запись. Здесь и ниже в списке приёмов лежали ещё две
-
-    копии того же перечня «чего не хватает» — с расхождениями в тексте
-    («проверьте дату начала» против «проверьте дату начала приема») и без
-    различения «не выбрано» и «в клинике вообще нет». Правило живёт в
-    appointmentScheduleMissingFields, оттуда же его берёт сохранение.
-  */
   const appointmentDraftMissingSteps = (draft: AppointmentScheduleDraft) =>
     appointmentScheduleMissingFields(
       draft,
@@ -1710,20 +296,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
         patients: dashboard?.patients ?? [],
       },
     );
-  /**
-   * Разбор показанных приёмов по дням клиники: заголовок дня, свободные окна
-   * между приёмами и накладки.
-   *
-   * ЧТО БЫЛО НЕ ТАК. Фильтр по дате пуст по умолчанию, поэтому экран показывал
-   * подряд все приёмы клиники за всю её жизнь, а на карточке стояло только
-   * время. Проверено в живом браузере: наверху расписания демо-клиники висел
-   * приём от 28 января 2024 года и выглядел ровно как сегодняшний. Отсюда две
-   * настоящие потери: администратор не знал, какой день перед ним, и не видел
-   * ни дырок в дне, ни двух пациентов, посаженных на одно кресло.
-   *
-   * Разбор — в отдельном проверенном модуле (scheduleDayGrouping.ts): в
-   * арифметике времени ошибаются молча.
-   */
+
   const scheduleDayGroups = useMemo(
     () =>
       groupAppointmentsByClinicDay(
@@ -1747,142 +320,26 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
       toDateTimeLocalValue,
     ],
   );
-  /**
-   * ВЫБРАННЫЙ ДЕНЬ ОТБИРАЕТСЯ ЗДЕСЬ, И ЭТО ВЫНУЖДЕННО.
-   *
-   * ЧТО НАБЛЮДАЛОСЬ В ЖИВОМ БРАУЗЕРЕ (демо-клиника, 27 приёмов за 20 разных
-   * дней). Выбор дня — кнопкой «Сегодня», стрелками или вводом даты в поле —
-   * меняет значение в поле и в хранилище (подпись отбора рядом это показывает),
-   * но список приёмов остаётся тем же: 27 карточек за 20 дней. То есть поле даты
-   * на этом экране НЕ РАБОТАЛО вовсе, и «Сегодня» тоже: администратор выбирал
-   * день и продолжал видеть всю историю клиники, включая приёмы 2024 года.
-   *
-   * Причина живёт вне этого файла: список приходит пропсом sortedAppointments из
-   * App.tsx (useAppLogic), и до него изменение фильтра не доезжает. Правка
-   * App.tsx/useAppLogic мне не разрешена, поэтому день отбирается здесь — по
-   * тому же ключу дня, которым день уже посчитан для заголовков. Это не вторая
-   * копия правила фильтра: правило одно и лежит в scheduleDayGrouping.
-   *
-   * Отбор идемпотентен: если наверху фильтр когда-нибудь заработает, здесь
-   * останется тот же единственный день и ничего не изменится.
-   */
-  const effectiveSelectedDay = scheduleDateFilter.trim() || clinicToday;
-  const selectedDayKey = effectiveSelectedDay;
-  const visibleDayGroups = selectedDayKey
-    ? scheduleDayGroups.filter((group) => group.dateKey === selectedDayKey)
-    : scheduleDayGroups;
-  /** Сколько записей реально на экране. Подписи обязаны считать по нему, а не по всему списку. */
-  const visibleAppointmentCount = visibleDayGroups.reduce(
-    (sum, group) => sum + group.appointmentCount,
-    0,
-  );
-  /** Сколько накладок на экране. Это то, из-за чего приходят двое на одно время. */
-  const scheduleOverlapCount = visibleDayGroups.reduce(
-    (sum, group) => sum + group.overlapCount,
-    0,
-  );
-  /**
-   * Счетчики очереди смены StomX (Все, Ожидает приема, На приеме, Ожидает оплаты).
-   * Рассчитываются в реальном времени по записям выбранного дня с учетом фильтров врача/кресла.
-   */
-  const shiftQueueCounts = useMemo(() => {
-    let all = 0;
-    let arrived = 0;
-    let inTreatment = 0;
-    let awaitingPayment = 0;
 
-    for (const g of visibleDayGroups) {
-      for (const r of g.rows) {
-        if (r.kind === "appointment") {
-          const appt = r.appointment;
-          if (
-            scheduleDoctorFilterId &&
-            appt.doctorUserId !== scheduleDoctorFilterId
-          ) {
-            continue;
-          }
-          if (scheduleChairFilterId && appt.chairId !== scheduleChairFilterId) {
-            continue;
-          }
-          all++;
-          if (appt.status === "arrived") arrived++;
-          else if (appt.status === "in_treatment") inTreatment++;
-          else if (appt.status === "completed") {
-            const invoice =
-              appt.invoice ??
-              (appt as any)?.visit?.invoice ??
-              (Array.isArray((dashboard as any)?.invoices)
-                ? (dashboard as any).invoices.find(
-                    (inv: any) =>
-                      inv?.appointmentId === appt.id ||
-                      (inv?.visitId &&
-                        (inv.visitId === (appt as any)?.visitId ||
-                          inv.visitId === (appt as any)?.visit?.id)),
-                  )
-                : undefined);
-
-            const invoiceStatus = String(invoice?.status || "")
-              .toLowerCase()
-              .trim();
-            const isInvoicePaid =
-              invoiceStatus === "paid" || invoiceStatus === "fully_paid";
-
-            const directPaymentStatus = String(
-              (appt as any)?.paymentStatus ||
-                (appt as any)?.payment_status ||
-                "",
-            )
-              .toLowerCase()
-              .trim();
-            const isDirectPaid =
-              directPaymentStatus === "paid" ||
-              directPaymentStatus === "fully_paid";
-
-            const visitId = (appt as any)?.visitId || (appt as any)?.visit?.id;
-            const matchingPayments = Array.isArray((dashboard as any)?.payments)
-              ? (dashboard as any).payments.filter(
-                  (p: any) =>
-                    (p?.appointmentId && p.appointmentId === appt.id) ||
-                    (visitId && p?.visitId && p.visitId === visitId) ||
-                    (invoice?.id && p?.invoiceId && p.invoiceId === invoice.id),
-                )
-              : [];
-            const hasPaidPayment = matchingPayments.some((p: any) => {
-              const st = String(p?.status || "")
-                .toLowerCase()
-                .trim();
-              return st === "paid" || st === "completed" || st === "success";
-            });
-
-            const isPaid =
-              isInvoicePaid ||
-              isDirectPaid ||
-              hasPaidPayment ||
-              (appt as any)?.isPaid === true;
-
-            if (!isPaid) {
-              awaitingPayment++;
-            }
-          }
-        }
-      }
-    }
-    return { all, arrived, inTreatment, awaitingPayment };
-  }, [
+  const {
     visibleDayGroups,
+    visibleAppointmentCount,
+    scheduleOverlapCount,
+    shiftQueueCounts,
+  } = useScheduleDayQueue({
+    scheduleDayGroups,
+    scheduleDateFilter,
+    clinicToday,
     scheduleDoctorFilterId,
     scheduleChairFilterId,
     dashboard,
-  ]);
-  /**
-   * Шаг по дням. Раньше выбрать день можно было только полем даты, а пойти
-   * «на день назад» — никак: администратор, у которого заболел врач, не мог
-   * пролистать его неделю. Когда фильтр даты пуст, шаг считается от сегодня.
-   */
+  });
+
   const stepScheduleDay = (deltaDays: number) => {
     const base = scheduleDateFilter.trim() || clinicToday;
     setScheduleDateFilter(shiftDayKey(base, deltaDays));
   };
+
   const resetScheduleFilters = () => {
     setScheduleDateFilter("");
     setScheduleDoctorFilterId(null);
@@ -1890,87 +347,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     setScheduleChairFilterId(null);
     setScheduleStatusFilter("all");
   };
-  /**
-   * Поставить курсор в форму записи. Вызывается из пустого расписания
-   * («Новая запись»), из «Повторить» и из листа ожидания.
-   *
-   * БЫЛО (две ошибки подряд):
-   *  1) фокус уходил в невидимую легаси-форму (opacity 0, размер 0) — человек
-   *     терял место в интерфейсе, а программа чтения с экрана зачитывала поля,
-   *     которых на экране нет. Легаси-форма теперь удалена;
-   *  2) форму со всеми полями функция НЕ раскрывала. Если она была свёрнута (а
-   *     по умолчанию она свёрнута), курсор оставался в строке умного
-   *     бронирования, и «укажите время записи» было негде указать.
-   *
-   * Поэтому сначала раскрываем форму, а фокус ставим в следующем проходе
-   * отрисовки — через focusCreateFormRequestedRef и эффект ниже.
-   */
-  const focusVisibleCreateFormControl = useCallback(() => {
-    const wrapper = document.querySelector<HTMLElement>(
-      ".appointment-create-wrapper",
-    );
-    if (!wrapper) return;
 
-    const isVisible = (element: HTMLElement) => {
-      // Нативная проверка видимости без Layout Thrashing и цикла по предкам (C++ движок браузера)
-      if (
-        typeof (
-          element as unknown as {
-            checkVisibility?: (opts?: {
-              checkOpacity?: boolean;
-              checkVisibilityCSS?: boolean;
-            }) => boolean;
-          }
-        ).checkVisibility === "function"
-      ) {
-        return (
-          element as unknown as {
-            checkVisibility: (opts?: {
-              checkOpacity?: boolean;
-              checkVisibilityCSS?: boolean;
-            }) => boolean;
-          }
-        ).checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
-      }
-      if (element.offsetParent === null && element.style.position !== "fixed")
-        return false;
-      const rect = element.getBoundingClientRect();
-      if (rect.width < 1 || rect.height < 1) return false;
-      const style = window.getComputedStyle(element);
-      return (
-        style.display !== "none" &&
-        style.visibility !== "hidden" &&
-        Number.parseFloat(style.opacity) > 0
-      );
-    };
-
-    // Форма со всеми полями главнее строки умного бронирования: человека сюда
-    // привели, чтобы он поправил время, а поле «Начало» — первое в ней.
-    const scope =
-      wrapper.querySelector<HTMLElement>(".appointment-manual-form") ?? wrapper;
-    const target = Array.from(
-      scope.querySelectorAll<HTMLElement>("select, input, textarea, button"),
-    ).find(
-      (element) => !element.hasAttribute("disabled") && isVisible(element),
-    );
-
-    motionSafeScrollIntoView(target ?? scope, { block: "center" });
-    target?.focus({ preventScroll: true });
-  }, []);
-  const focusNewAppointmentEditor = () => {
-    if (!showCreateForm) {
-      focusCreateFormRequestedRef.current = true;
-      setShowCreateForm(true);
-      return;
-    }
-    focusVisibleCreateFormControl();
-  };
-  useEffect(() => {
-    if (!showCreateForm) return;
-    if (!focusCreateFormRequestedRef.current) return;
-    focusCreateFormRequestedRef.current = false;
-    focusVisibleCreateFormControl();
-  }, [showCreateForm, focusVisibleCreateFormControl]);
   const openScheduleSuggestion = (section: string) => {
     window.location.hash = section;
     const sectionId = section.replace(/^#/, "");
@@ -1980,12 +357,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
       });
     });
   };
-  // БЫЛО: считались только фильтр по дате и по статусу. Администратор нажимал
-  // чип конкретного врача, список падал с 40 записей до 3, а подпись продолжала
-  // сообщать «фильтры не ограничивают» и «показана вся очередь» — и человек
-  // делал вывод, что день пустой, и отказывал пациентам в приёме.
-  // Фильтры по врачу, ассистенту и креслу реально применяются к списку
-  // (см. sortedAppointments в useAppLogic), поэтому они обязаны быть здесь.
+
   const isNonTodayDateFilter = Boolean(
     scheduleDateFilter?.trim() && scheduleDateFilter.trim() !== clinicToday,
   );
@@ -1996,23 +368,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     scheduleAssistantFilterId,
     scheduleChairFilterId,
   ].filter((value): value is string => Boolean(value)).length;
-  /**
-   * ЧТО именно скрывает записи — словами, а не числом.
-   *
-   * БЫЛО: на экране висел чип «Фильтров: 2», и какие это фильтры, узнать было
-   * негде. Рядом лежала переменная scheduleFilteredSummary с текстом «записи
-   * скрыты фильтрами» — и она НЕ ВЫВОДИЛАСЬ НИГДЕ: считалась при каждой
-   * отрисовке и выбрасывалась. Администратор видел короткий список, не понимал
-   * причины и делал вывод, что день пустой.
-   *
-   * Фильтр по статусу и по ассистенту отдельно важен: кнопок для них на этом
-   * экране нет вовсе (они приходят из сохранённых настроек), поэтому без подписи
-   * человек не может даже догадаться, что список урезан.
-   */
+
   const staffFullNameById = (staffId: string | null) =>
     (dashboard?.clinicSettings?.staff ?? []).find(
       (member: { id: string }) => member?.id === staffId,
     )?.fullName ?? "неизвестный сотрудник";
+
   const activeScheduleFilterLabels = [
     isNonTodayDateFilter
       ? `день: ${formatDayTitle(scheduleDateFilter.trim())}`
@@ -2030,6 +391,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
       ? `только «${appointmentLabels?.[scheduleStatusFilter as Appointment["status"]] ?? scheduleStatusFilter}»`
       : null,
   ].filter((value): value is string => Boolean(value));
+
   const hasSummaryContent =
     activeScheduleFilterLabels.length > 0 ||
     (activeScheduleFilterLabels.length === 0 &&
@@ -2039,44 +401,15 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
   if (!dashboard) {
     return (
-      <div
-        className="panel schedule-panel min-w-0 max-w-full overflow-hidden"
-        id="schedule"
-        data-testid="schedule-view-disconnected-state"
-      >
-        <div className="panel-heading flex flex-wrap items-center justify-between gap-3 min-w-0">
-          <h2 className="truncate min-w-0">Расписание приемов</h2>
-          <span className="status-pill status-needs_review">нет связи</span>
-        </div>
-        <div className="p-8 sm:p-12 flex items-center justify-center min-h-[420px]">
-          <EmptyState
-            icon={
-              <WifiOff className="w-8 h-8 text-[var(--bad-fg,var(--danger))]" />
-            }
-            title="Нет связи с сервером"
-            description="Не удалось подключиться к серверу клиники. Расписание приемов временно недоступно. Проверьте подключение к сети и повторите попытку."
-            action={
-              <button
-                type="button"
-                onClick={() => {
-                  if (typeof props.loadDashboard === "function") {
-                    void props.loadDashboard();
-                  } else if (
-                    typeof logicContext?.loadDashboard === "function"
-                  ) {
-                    void logicContext.loadDashboard();
-                  }
-                }}
-                className="primary-button flex items-center justify-center gap-2 min-h-[44px] px-6 py-2.5 rounded-xl text-sm font-bold shadow-md cursor-pointer transition-all active:scale-95"
-                data-testid="btn-retry-schedule-connection"
-              >
-                <RefreshCw className="w-4 h-4" />
-                <span>Повторить подключение</span>
-              </button>
-            }
-          />
-        </div>
-      </div>
+      <ScheduleDisconnectedState
+        onRetry={() => {
+          if (typeof props.loadDashboard === "function") {
+            void props.loadDashboard();
+          } else if (typeof logicContext?.loadDashboard === "function") {
+            void logicContext.loadDashboard();
+          }
+        }}
+      />
     );
   }
 
@@ -2151,26 +484,21 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
       id="schedule"
       data-testid="schedule-view"
     >
-      {/* STRICTLY 1 MONOLITHIC 44px TOOLBAR ROW */}
-      <ScheduleFilterStrip
-        todayIso={clinicToday}
+      <ScheduleViewToolbar
+        clinicToday={clinicToday}
         scheduleDateFilter={scheduleDateFilter}
         setScheduleDateFilter={setScheduleDateFilter}
         stepScheduleDay={stepScheduleDay}
         activeScheduleFilterCount={activeScheduleFilterCount}
         resetScheduleFilters={resetScheduleFilters}
-        staffMembers={dashboard?.clinicSettings?.staff ?? []}
-        chairs={dashboard?.clinicSettings?.chairs ?? []}
-        isSoloDoctor={
-          dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
-        }
+        dashboard={dashboard}
         scheduleDoctorFilterId={scheduleDoctorFilterId}
         setScheduleDoctorFilterId={setScheduleDoctorFilterId}
         scheduleChairFilterId={scheduleChairFilterId}
         setScheduleChairFilterId={setScheduleChairFilterId}
         scheduleStatusFilter={scheduleStatusFilter}
-        queueCounts={shiftQueueCounts}
-        setScheduleStatusFilter={(status: string | null) => {
+        shiftQueueCounts={shiftQueueCounts}
+        setScheduleStatusFilter={(status) => {
           if (!setScheduleStatusFilter) return;
           if (!status || status === "all") {
             setScheduleStatusFilter("all");
@@ -2188,62 +516,41 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
             );
           }
         }}
-        chairDoctorAssignments={computedChairDoctorAssignments}
+        computedChairDoctorAssignments={computedChairDoctorAssignments}
         scheduleViewMode={scheduleViewMode}
         setScheduleViewMode={setScheduleViewMode}
-        gridStepMinutes={scheduleGridStep}
-        onGridStepChange={setScheduleGridStep}
-        activeFilterSummary={scheduleFilterSummaryNode}
+        scheduleGridStep={scheduleGridStep}
+        setScheduleGridStep={setScheduleGridStep}
+        scheduleFilterSummaryNode={scheduleFilterSummaryNode}
         isSmartAiOpen={isSmartAiOpen}
-        onToggleSmartAi={() => setIsSmartAiOpen((prev) => !prev)}
-        onOpenDoctorFreeSlots={() => setDoctorFreeSlotsOpen(true)}
-        onOpenPatientSearch={() => setIsPatientSearchOpen(true)}
-        onEmergencyCitoBooking={handleEmergencyCitoBooking}
-        onToggleShiftAnalytics={() => setShowShiftAnalytics((prev) => !prev)}
+        setIsSmartAiOpen={setIsSmartAiOpen}
+        setDoctorFreeSlotsOpen={setDoctorFreeSlotsOpen}
+        setIsPatientSearchOpen={setIsPatientSearchOpen}
+        handleEmergencyCitoBooking={handleEmergencyCitoBooking}
         showShiftAnalytics={showShiftAnalytics}
-        onOpenShiftRoster={() => setIsRosterModalOpen(true)}
-        onOpenWaitlist={() => setWaitlistOpen(true)}
+        setShowShiftAnalytics={setShowShiftAnalytics}
+        setIsRosterModalOpen={setIsRosterModalOpen}
+        setWaitlistOpen={setWaitlistOpen}
         waitlistCount={waitlistCount}
-        onToggleConfirmations={() => setShowConfirmationsPanel((prev) => !prev)}
         showConfirmationsPanel={showConfirmationsPanel}
-        onToggleFreedSlots={() => setShowFreedSlotsPanel((prev) => !prev)}
+        setShowConfirmationsPanel={setShowConfirmationsPanel}
         showFreedSlotsPanel={showFreedSlotsPanel}
-        onToggleClipboard={() => setShowClipboardPanel((prev) => !prev)}
+        setShowFreedSlotsPanel={setShowFreedSlotsPanel}
         showClipboardPanel={showClipboardPanel}
-        onOpenCalendarSync={() => setIsCalendarSyncModalOpen(true)}
-        onOpenTomorrowReminders={() => setIsTomorrowRemindersOpen(true)}
-        onOpenAddChair={() => setIsQuickAddChairOpen(true)}
-        onAddChair={handleAddChairFromSchedule}
-        onQuickBooking={() => {
-          setQuickBookingSlot({
-            dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
-            doctorUserId: scheduleDoctorFilterId || null,
-            chairId: scheduleChairFilterId || null,
-            durationMinutes: 30,
-          });
-          setQuickBookingOpen(true);
-        }}
+        setShowClipboardPanel={setShowClipboardPanel}
+        setIsCalendarSyncModalOpen={setIsCalendarSyncModalOpen}
+        setIsTomorrowRemindersOpen={setIsTomorrowRemindersOpen}
+        setIsQuickAddChairOpen={setIsQuickAddChairOpen}
+        handleAddChairFromSchedule={handleAddChairFromSchedule}
+        setQuickBookingSlot={setQuickBookingSlot}
+        setQuickBookingOpen={setQuickBookingOpen}
+        todayScheduleDate={todayScheduleDate}
+        clipboardReloadToken={clipboardReloadToken}
+        loadDashboard={props.loadDashboard}
+        shiftWarnings={shiftWarnings}
+        openScheduleWarning={openScheduleWarning}
       />
-      {showConfirmationsPanel && <DayConfirmationsPanel />}
-      {showFreedSlotsPanel && <FreedSlotsPanel />}
-      {showClipboardPanel && (
-        <ScheduleClipboardPanel
-          reloadToken={clipboardReloadToken}
-          onPasted={() => {
-            if (typeof props.loadDashboard === "function") {
-              void props.loadDashboard();
-            }
-          }}
-        />
-      )}
 
-      {showShiftAnalytics && (
-        <ScheduleShiftAnalytics
-          dashboard={dashboard}
-          shiftWarnings={shiftWarnings}
-          onOpenWarning={openScheduleWarning}
-        />
-      )}
       {scheduleAdminSecretNeeded ? (
         <fieldset
           className="appointment-editor schedule-admin-unlock min-w-0"
@@ -2304,17 +611,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 <button
                   className="secondary-button shrink-0 h-8 px-3.5"
                   type="button"
-                  onClick={() => {
-                    if (!adminSecretReady) {
-                      showToast(
-                        "Введите мастер-пароль администратора",
-                        "warning",
-                      );
-                      return;
-                    }
-                    unlockScheduleAdminSession();
-                  }}
-                  aria-describedby="schedule-admin-unlock-guidance"
+                  onClick={unlockScheduleAdminSession}
+                  aria-describedby={!adminSecretReady ? "schedule-admin-unlock-guidance" : undefined}
+                  disabled={!adminSecretReady}
                 >
                   <ShieldCheck aria-hidden="true" /> Запомнить и повторить
                   сохранение
@@ -2345,8 +644,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
         newAppointmentDraft={newAppointmentDraft}
         newAppointmentSaveState={newAppointmentSaveState}
         newAppointmentError={newAppointmentError}
-        // biome-ignore lint/suspicious/noExplicitAny: automated suppression
-        updateNewAppointmentDraft={updateNewAppointmentDraft as any}
+        updateNewAppointmentDraft={updateNewAppointmentDraft as unknown as (k: unknown, v: unknown) => void}
         createAppointmentFromDraft={createAppointmentFromDraft}
         resetNewAppointmentDraft={resetNewAppointmentDraft}
         toDateTimeLocalValue={toDateTimeLocalValue}
@@ -2360,547 +658,122 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
         chairDoctorAssignments={computedChairDoctorAssignments}
       />
 
-      {scheduleViewMode === "chairs" ? (
-        <ChairScheduleView
-          hideToolbar={true}
-          gridStepMinutes={scheduleGridStep}
-          onGridStepChange={setScheduleGridStep}
-          dashboard={dashboard}
-          dateKey={scheduleDateFilter || clinicToday || todayScheduleDate()}
-          appointments={dashboard?.appointments ?? []}
-          chairDoctorAssignments={
-            savedDoctorShifts.length > 0 ||
-            Object.keys(computedChairDoctorAssignments).length > 0
-              ? computedChairDoctorAssignments
-              : undefined
-          }
-          onAssignChairDoctor={handleAssignChairDoctor}
-          onAddChair={handleAddChairFromSchedule}
-          onAddDoctor={handleAddDoctorFromSchedule}
-          onOpenRosterModal={() => setIsRosterModalOpen(true)}
-          onSelectChair={(chairId) => setScheduleChairFilterId(chairId)}
-          onSlotClick={(slot) => {
-            setQuickBookingSlot(slot);
-            setQuickBookingOpen(true);
-          }}
-          onAppointmentClick={(appointment) => {
-            setModalAppointment(appointment);
-          }}
-          onAppointmentMove={async (appointmentId, updates) => {
-            if (updates.startsAt)
-              updateAppointmentScheduleDraft(
-                appointmentId,
-                "startsAt",
-                updates.startsAt,
-              );
-            if (updates.endsAt)
-              updateAppointmentScheduleDraft(
-                appointmentId,
-                "endsAt",
-                updates.endsAt,
-              );
-            if (updates.chairId !== undefined)
-              updateAppointmentScheduleDraft(
-                appointmentId,
-                "chairId",
-                updates.chairId,
-              );
-            if (updates.doctorUserId !== undefined)
-              updateAppointmentScheduleDraft(
-                appointmentId,
-                "doctorUserId",
-                updates.doctorUserId,
-              );
-            return await saveAppointmentSchedule(appointmentId, {
-              allowOverbooking: updates.allowOverbooking ?? true,
-              allowEmergencyOverride: true,
-            });
-          }}
-          onQuickStatusChange={async (appointmentId, status) => {
-            updateAppointmentScheduleDraft(appointmentId, "status", status);
-            const success = await saveAppointmentSchedule(appointmentId);
-            if (success) {
-              const p = dashboard?.appointments?.find(
-                (a) => a.id === appointmentId,
-              );
-              const pName =
-                p && patientName
-                  ? patientName(dashboard?.patients ?? [], p.patientId)
-                  : "Пациент";
-              const label = appointmentLabels[status] || status;
-              showToast(`«${pName}» — статус «${label}»`, "success", 3000);
-            }
-          }}
-          patientName={patientName}
-          formatTime={formatTime}
-          toDateTimeLocalValue={toDateTimeLocalValue}
-          appointmentLabels={appointmentLabels}
-          selectedChairId={scheduleChairFilterId}
-          selectedDoctorId={scheduleDoctorFilterId}
-        />
-      ) : scheduleViewMode === "grid" ? (
-        <ScheduleGrid
-          dashboard={dashboard}
-          hideInlineAddChair={true}
-          hideToolbar={true}
-          gridStepMinutes={scheduleGridStep}
-          onGridStepChange={setScheduleGridStep}
-          dateKey={scheduleDateFilter || clinicToday || todayScheduleDate()}
-          appointments={dashboard?.appointments ?? []}
-          onSlotClick={(slot) => {
-            setQuickBookingSlot(slot);
-            setQuickBookingOpen(true);
-          }}
-          onAppointmentClick={(appointment) => {
-            setModalAppointment(appointment);
-          }}
-          onAppointmentMove={async (appointmentId, updates) => {
-            if (updates.startsAt)
-              updateAppointmentScheduleDraft(
-                appointmentId,
-                "startsAt",
-                updates.startsAt,
-              );
-            if (updates.endsAt)
-              updateAppointmentScheduleDraft(
-                appointmentId,
-                "endsAt",
-                updates.endsAt,
-              );
-            if (updates.chairId !== undefined)
-              updateAppointmentScheduleDraft(
-                appointmentId,
-                "chairId",
-                updates.chairId,
-              );
-            if (updates.doctorUserId !== undefined)
-              updateAppointmentScheduleDraft(
-                appointmentId,
-                "doctorUserId",
-                updates.doctorUserId,
-              );
-            return await saveAppointmentSchedule(appointmentId, {
-              allowOverbooking: updates.allowOverbooking ?? true,
-              allowEmergencyOverride: true,
-            });
-          }}
-          onQuickStatusChange={async (appointmentId, status) => {
-            updateAppointmentScheduleDraft(appointmentId, "status", status);
-            const success = await saveAppointmentSchedule(appointmentId);
-            if (success) {
-              const p = dashboard?.appointments?.find(
-                (a) => a.id === appointmentId,
-              );
-              const pName =
-                p && patientName
-                  ? patientName(dashboard?.patients ?? [], p.patientId)
-                  : "Пациент";
-              const label = appointmentLabels[status] || status;
-              showToast(`«${pName}» — статус «${label}»`, "success", 3000);
-            }
-          }}
-          patientName={patientName}
-          formatTime={formatTime}
-          toDateTimeLocalValue={toDateTimeLocalValue}
-          appointmentLabels={appointmentLabels}
-          selectedChairId={scheduleChairFilterId}
-          selectedDoctorId={scheduleDoctorFilterId}
-          chairDoctorAssignments={
-            savedDoctorShifts.length > 0 ||
-            Object.keys(computedChairDoctorAssignments).length > 0
-              ? computedChairDoctorAssignments
-              : undefined
-          }
-          onAssignChairDoctor={handleAssignChairDoctor}
-          onOpenAddChair={() => {
-            setEditingChairData(null);
-            setIsQuickAddChairOpen(true);
-          }}
-          onAddChair={handleAddChairFromSchedule}
-          onEditChair={handleEditChairFromSchedule}
-          onAddDoctor={handleAddDoctorFromSchedule}
-          onOpenWaitlistForSlot={handleOpenWaitlistForSlot}
-        />
-      ) : (
-        <ScheduleTimeline
-          visibleDayGroups={visibleDayGroups}
-          dashboard={dashboard}
-          visibleScheduleSuggestions={visibleScheduleSuggestions}
-          appointmentReadinessById={appointmentReadinessById}
-          appointmentLabels={appointmentLabels}
-          appointmentScheduleDrafts={appointmentScheduleDrafts}
-          appointmentScheduleSaveStates={appointmentScheduleSaveStates}
-          appointmentScheduleErrors={appointmentScheduleErrors}
-          appointmentScheduleDirtyIds={appointmentScheduleDirtyIds}
-          editingAppointmentId={editingAppointmentId}
-          appointmentDraftFromAppointment={
-            appointmentScheduleDraftFromAppointment
-          }
-          appointmentDraftMissingSteps={appointmentDraftMissingSteps}
-          activeVisitLockedAppointmentStatuses={
-            activeVisitLockedAppointmentStatuses
-          }
-          openScheduleSuggestion={openScheduleSuggestion}
-          formatTime={formatTime}
-          patientName={patientName}
-          openAppointmentEditor={openAppointmentEditor}
-          repeatAppointment={repeatAppointment}
-          copyAppointmentToBuffer={copyAppointmentToBuffer}
-          closeAppointmentEditor={closeAppointmentEditor}
-          updateAppointmentScheduleDraft={
-            // biome-ignore lint/suspicious/noExplicitAny: automated suppression
-            updateAppointmentScheduleDraft as any
-          }
-          saveAppointmentSchedule={saveAppointmentSchedule}
-          normalizedAppointmentStatus={normalizedAppointmentStatus}
-          toDateTimeLocalValue={toDateTimeLocalValue}
-          fromDateTimeLocalValue={fromDateTimeLocalValue}
-          useManualSelects={useManualSelects}
-          onEmptySlotClick={(slot) => {
-            setQuickBookingSlot(slot);
-            setQuickBookingOpen(true);
-          }}
-          onNewAppointmentClick={() => {
-            setQuickBookingSlot({
-              dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
-              doctorUserId: scheduleDoctorFilterId || null,
-              chairId: scheduleChairFilterId || null,
-              durationMinutes: 30,
-            });
-            setQuickBookingOpen(true);
-          }}
-          stepScheduleDay={stepScheduleDay}
-          scheduleDateFilter={scheduleDateFilter}
-          clinicToday={clinicToday}
-          activeScheduleFilterCount={activeScheduleFilterCount}
-          resetScheduleFilters={resetScheduleFilters}
-          setScheduleDateFilter={setScheduleDateFilter}
-          todayScheduleDate={todayScheduleDate}
-        />
-      )}
-
-      {/* Модальные ящики и диалоги быстрой записи и редактирования */}
-      <QuickBookingDrawer
-        isOpen={quickBookingOpen}
-        onClose={() => setQuickBookingOpen(false)}
-        initialSlot={quickBookingSlot}
+      <ScheduleViewBody
+        scheduleViewMode={scheduleViewMode}
         dashboard={dashboard}
-        auth={auth}
-        toDateTimeLocalValue={toDateTimeLocalValue}
-        fromDateTimeLocalValue={fromDateTimeLocalValue}
-        chairDoctorAssignments={computedChairDoctorAssignments}
-      />
-
-      <AppointmentModal
-        isOpen={modalAppointment !== null}
-        appointment={modalAppointment}
-        dashboard={dashboard}
-        onClose={() => setModalAppointment(null)}
-        onSave={async (appointmentId, draft) => {
-          for (const [key, value] of Object.entries(draft)) {
-            updateAppointmentScheduleDraft(appointmentId, key, value);
-          }
-          return await saveAppointmentSchedule(appointmentId);
-        }}
-        repeatAppointment={repeatAppointment}
-        copyAppointmentToBuffer={copyAppointmentToBuffer}
+        scheduleDateFilter={scheduleDateFilter}
+        clinicToday={clinicToday}
+        todayScheduleDate={todayScheduleDate}
+        scheduleGridStep={scheduleGridStep}
+        setScheduleGridStep={setScheduleGridStep}
+        computedChairDoctorAssignments={computedChairDoctorAssignments}
+        savedDoctorShifts={savedDoctorShifts}
+        handleAssignChairDoctor={handleAssignChairDoctor}
+        handleAddChairFromSchedule={handleAddChairFromSchedule}
+        handleAddDoctorFromSchedule={handleAddDoctorFromSchedule}
+        handleEditChairFromSchedule={handleEditChairFromSchedule}
+        handleOpenWaitlistForSlot={handleOpenWaitlistForSlot}
+        setIsRosterModalOpen={setIsRosterModalOpen}
+        setScheduleChairFilterId={setScheduleChairFilterId}
+        scheduleChairFilterId={scheduleChairFilterId}
+        scheduleDoctorFilterId={scheduleDoctorFilterId}
+        setQuickBookingSlot={setQuickBookingSlot}
+        setQuickBookingOpen={setQuickBookingOpen}
+        setModalAppointment={setModalAppointment}
+        updateAppointmentScheduleDraft={updateAppointmentScheduleDraft}
+        saveAppointmentSchedule={saveAppointmentSchedule}
         patientName={patientName}
         formatTime={formatTime}
         toDateTimeLocalValue={toDateTimeLocalValue}
         fromDateTimeLocalValue={fromDateTimeLocalValue}
         appointmentLabels={appointmentLabels}
-        activeVisitLockedAppointmentStatuses={
-          activeVisitLockedAppointmentStatuses
-        }
+        showToast={showToast}
+        setEditingChairData={setEditingChairData}
+        setIsQuickAddChairOpen={setIsQuickAddChairOpen}
+        visibleDayGroups={visibleDayGroups}
+        visibleScheduleSuggestions={visibleScheduleSuggestions}
         appointmentReadinessById={appointmentReadinessById}
-        chairDoctorAssignments={computedChairDoctorAssignments}
-        onOpenWaitlistForSlot={handleOpenWaitlistForSlot}
+        appointmentScheduleDrafts={appointmentScheduleDrafts}
+        appointmentScheduleSaveStates={appointmentScheduleSaveStates}
+        appointmentScheduleErrors={appointmentScheduleErrors}
+        appointmentScheduleDirtyIds={appointmentScheduleDirtyIds}
+        editingAppointmentId={editingAppointmentId}
+        appointmentScheduleDraftFromAppointment={appointmentScheduleDraftFromAppointment}
+        appointmentDraftMissingSteps={appointmentDraftMissingSteps}
+        activeVisitLockedAppointmentStatuses={activeVisitLockedAppointmentStatuses}
+        openScheduleSuggestion={openScheduleSuggestion}
+        openAppointmentEditor={openAppointmentEditor}
+        repeatAppointment={repeatAppointment}
+        copyAppointmentToBuffer={copyAppointmentToBuffer}
+        closeAppointmentEditor={closeAppointmentEditor}
+        normalizedAppointmentStatus={normalizedAppointmentStatus}
+        useManualSelects={useManualSelects}
+        stepScheduleDay={stepScheduleDay}
+        activeScheduleFilterCount={activeScheduleFilterCount}
+        resetScheduleFilters={resetScheduleFilters}
+        setScheduleDateFilter={setScheduleDateFilter}
       />
 
-      <DoctorFreeSlotsModal
-        isOpen={doctorFreeSlotsOpen}
-        onClose={() => setDoctorFreeSlotsOpen(false)}
-        dashboard={dashboard}
-        initialDoctorId={scheduleDoctorFilterId}
-        onSelectSlot={(slot) => {
-          setQuickBookingSlot({
-            dateKey: slot.date,
-            startTime: slot.startTime,
-            startsAt: `${slot.date}T${slot.startTime}:00.000Z`,
-            doctorUserId: slot.doctorId || scheduleDoctorFilterId || null,
-            chairId: slot.chairId || null,
-            durationMinutes: slot.durationMinutes,
-          });
-          setQuickBookingOpen(true);
-        }}
-      />
-
-      <SlotConflictModal
-        isOpen={Boolean((logicContext as any)?.slotConflict)}
-        onClose={() => (logicContext as any)?.setSlotConflict?.(null)}
-        conflictMessage={(logicContext as any)?.slotConflict?.message}
-        suggestedSlots={
-          (logicContext as any)?.slotConflict?.suggestedSlots ?? []
-        }
-        onSelectSlot={(slotTime) => {
-          (logicContext as any)?.applySuggestedSlot?.(
-            slotTime,
-            (logicContext as any)?.slotConflict?.appointmentId,
-          );
-        }}
-        onOverbook={() => {
-          const apptId = (logicContext as any)?.slotConflict?.appointmentId;
-          if (apptId) {
-            void saveAppointmentSchedule(apptId, {
-              allowOverbooking: true,
-              allowEmergencyOverride: true,
-            });
-          } else {
-            void createAppointmentFromDraft({
-              allowOverbooking: true,
-              allowEmergencyOverride: true,
-            });
-          }
-          (logicContext as any)?.setSlotConflict?.(null);
-        }}
-      />
-
-      {/* Schedule Utilities & Widgets Panel */}
-      <div
-        className="schedule-widgets-container mt-6"
-        style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-      >
-        <UrgentScheduleRequestsWidget
-          onBookUrgentRequest={(request) => {
-            const targetDate =
-              scheduleDateFilter || clinicToday || todayScheduleDate();
-            const matchingDoc = (dashboard?.clinicSettings?.staff ?? []).find(
-              (s) =>
-                s.active &&
-                (s.role === "doctor" || s.role === "owner") &&
-                (s.fullName
-                  .toLowerCase()
-                  .includes(request.doctorName.toLowerCase()) ||
-                  request.doctorName
-                    .toLowerCase()
-                    .includes(s.fullName.toLowerCase())),
-            );
-            const dutyDoctor =
-              matchingDoc ||
-              (dashboard?.clinicSettings?.staff ?? []).find(
-                (s) =>
-                  s.active &&
-                  (s.role === "doctor" || s.role === "owner") &&
-                  (s.specialties?.includes("therapist") ||
-                    s.specialties?.includes("surgeon") ||
-                    s.specialties?.includes("general")),
-              ) ||
-              (dashboard?.clinicSettings?.staff ?? []).find(
-                (s) => s.active && (s.role === "doctor" || s.role === "owner"),
-              );
-            const chairs = (dashboard?.clinicSettings?.chairs ?? []).filter(
-              (c) => c.active,
-            );
-            const chair = chairs[0] || null;
-
-            const existingPatient = (dashboard?.patients ?? []).find(
-              (p) =>
-                p.status === "active" &&
-                p.fullName.toLowerCase() === request.patientName.toLowerCase(),
-            );
-
-            let startTime = request.preferredSlotTime || "";
-            if (!startTime || !/^\d{2}:\d{2}$/.test(startTime)) {
-              const now = new Date();
-              const roundedMins = Math.ceil(now.getMinutes() / 5) * 5;
-              now.setMinutes(roundedMins, 0, 0);
-              startTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-            }
-
-            setQuickBookingSlot({
-              dateKey: targetDate,
-              startTime,
-              startsAt: `${targetDate}T${startTime}:00.000Z`,
-              doctorUserId: dutyDoctor?.id || null,
-              chairId: chair?.id || null,
-              patientId: existingPatient?.id || null,
-              patientName: request.patientName,
-              durationMinutes: 20,
-              reason: `CITO! ${request.requestType || "Острая боль"}`,
-              isCitoEmergency: true,
-            });
-            setQuickBookingOpen(true);
-            showToast(
-              `Экстренная запись CITO для «${request.patientName}»: проверьте время и подтвердите запись в 1 клик`,
-              "info",
-              4000,
-            );
-          }}
-        />
-        {/*
-                Буфер расписания: раньше здесь висела пустая коробка без писателей.
-                Теперь — кнопка «Буфер» в шапке, «В буфер» на карточке, панель
-                ScheduleClipboardPanel и API POST/GET/DELETE/paste clipboard-items.
-              */}
-
-        {/*
-                Здесь стояли <ScheduleTimeReservationsWidget /> и
-                <CancellationReasonsTwoLevelWidget />: «Активные технические
-                брони кресел отсутствуют» и двухуровневый справочник причин
-                отмены. У таблиц schedule_time_reservations и
-                cancellation_reasons_two_level во всём проекте нет ни одного
-                писателя, в живой базе по нулю строк — заполниться они не могли.
-                Забронировать кресло было нечем, справочник причин негде
-                заполнить. Причина отмены записи спрашивается на самой отмене.
-              */}
-        {/*
-                Здесь стоял ExternalScheduleActionLogsWidget — «Лог внешних
-                сервисов записи (Забота 2.0 / LoyalMed AI Боты)». Убран, потому
-                что данных в нём не могло появиться никогда, ни при каком
-                действии пользователя:
-                  1. он запрашивал /api/schedule/external-schedule-action-logs,
-                     а такого маршрута в API нет — живой сервер отвечает 404
-                     (проверено запросом);
-                  2. даже если маршрут написать, таблица
-                     external_schedule_action_logs (schema.ts:1858) не имеет ни
-                     одного писателя во всём репозитории — ни drizzle-вставки,
-                     ни сырого INSERT;
-                  3. интеграции с внешними ботами записи, которая эти логи
-                     производила бы, в проекте нет. Придумывать её контракт
-                     нельзя.
-                То есть пользователь на экране расписания видел карточку с
-                заголовком и значком «Внешние боты записи», которая после
-                неудачного запроса молча показывала пустое состояние. Это не
-                недостающая функция, а интерфейс без функции.
-                Адрес остаётся в списке KNOWN_MISSING в
-                apps/api/src/tests/webCallsExistingRoutes.test.ts — запись стала
-                ненужной, но файл правит другой автор, поэтому не тронут.
-              */}
-      </div>
-      {/*
-        Ящик листа ожидания. Он существовал и умел всё нужное — добавить, снять,
-        перевести в запись, — но не был смонтирован ни в одном экране, поэтому
-        очередь нельзя было заполнить, а подбор кандидатов на освободившееся окно
-        всегда оказывался пустым.
-        Функции черновика новой записи передаются как есть: из листа ожидания
-        человека переводят в запись, и делается это тем же редактором, что и
-        обычная запись, — иначе появился бы второй путь создания приёма.
-        auth передаётся явно и это не формальность: без него запрос ушёл бы без
-        заголовков, получил 401, а ящик молча показал бы пустую очередь.
-        ПРЕЖНЕЕ ОБОСНОВАНИЕ БЫЛО НЕВЕРНЫМ — «этот экран отрисован ВЫШЕ
-        AppLogicProvider, контекст здесь пуст». Замерено: провайдер обнимает
-        строки 2509–5070 App.tsx, экран монтируется на 3910, то есть внутри; а
-        пустого контекста не бывает вовсе — useAppLogicContext() вне провайдера
-        бросает исключение (contexts/AppLogicContext.tsx). Пропс остаётся потому,
-        что тот же auth нужен ящику в вызовах вне рендера, где хука нет.
-      */}
-      <WaitlistDrawer
-        isOpen={waitlistOpen}
-        onClose={() => {
-          setWaitlistOpen(false);
-          setWaitlistQuickFillSlot(null);
-        }}
-        targetSlot={waitlistQuickFillSlot}
-        updateNewAppointmentDraft={updateNewAppointmentDraft}
-        focusNewAppointmentEditor={focusNewAppointmentEditor}
+      <ScheduleViewModals
+        quickBookingOpen={quickBookingOpen}
+        setQuickBookingOpen={setQuickBookingOpen}
+        quickBookingSlot={quickBookingSlot}
+        setQuickBookingSlot={setQuickBookingSlot}
+        modalAppointment={modalAppointment}
+        setModalAppointment={setModalAppointment}
+        doctorFreeSlotsOpen={doctorFreeSlotsOpen}
+        setDoctorFreeSlotsOpen={setDoctorFreeSlotsOpen}
+        isRosterModalOpen={isRosterModalOpen}
+        setIsRosterModalOpen={setIsRosterModalOpen}
+        isQuickAddChairOpen={isQuickAddChairOpen}
+        setIsQuickAddChairOpen={setIsQuickAddChairOpen}
+        isCalendarSyncModalOpen={isCalendarSyncModalOpen}
+        setIsCalendarSyncModalOpen={setIsCalendarSyncModalOpen}
+        isPatientSearchOpen={isPatientSearchOpen}
+        setIsPatientSearchOpen={setIsPatientSearchOpen}
+        isTomorrowRemindersOpen={isTomorrowRemindersOpen}
+        setIsTomorrowRemindersOpen={setIsTomorrowRemindersOpen}
+        waitlistOpen={waitlistOpen}
+        setWaitlistOpen={setWaitlistOpen}
+        waitlistQuickFillSlot={waitlistQuickFillSlot}
+        setWaitlistQuickFillSlot={setWaitlistQuickFillSlot}
+        editingChairData={editingChairData}
+        setEditingChairData={setEditingChairData}
         dashboard={dashboard}
         auth={auth}
-        onAppointmentCreated={() => {
-          if (typeof props.loadDashboard === "function") {
-            void props.loadDashboard();
-          }
-        }}
-      />
-      <WaitlistQuickFillModal
-        isOpen={waitlistQuickFillSlot !== null}
-        onClose={() => setWaitlistQuickFillSlot(null)}
-        targetSlot={waitlistQuickFillSlot}
+        loadDashboard={props.loadDashboard}
+        logicContext={logicContext}
+        scheduleDoctorFilterId={scheduleDoctorFilterId}
+        scheduleChairFilterId={scheduleChairFilterId}
+        scheduleDateFilter={scheduleDateFilter}
+        clinicToday={clinicToday}
+        todayScheduleDate={todayScheduleDate}
+        computedChairDoctorAssignments={computedChairDoctorAssignments}
+        savedDoctorShifts={savedDoctorShifts}
+        rosterStaffList={rosterStaffList}
+        rosterCabinets={rosterCabinets}
+        rosterAppointments={rosterAppointments}
+        scheduleDoctors={scheduleDoctors}
+        currentDateKey={currentDateKey}
+        formatTime={formatTime}
+        patientName={patientName}
+        toDateTimeLocalValue={toDateTimeLocalValue}
+        fromDateTimeLocalValue={fromDateTimeLocalValue}
+        appointmentLabels={appointmentLabels}
+        activeVisitLockedAppointmentStatuses={activeVisitLockedAppointmentStatuses}
+        appointmentReadinessById={appointmentReadinessById}
+        updateAppointmentScheduleDraft={updateAppointmentScheduleDraft}
+        saveAppointmentSchedule={saveAppointmentSchedule}
+        repeatAppointment={repeatAppointment}
+        copyAppointmentToBuffer={copyAppointmentToBuffer}
+        handleOpenWaitlistForSlot={handleOpenWaitlistForSlot}
         updateNewAppointmentDraft={updateNewAppointmentDraft}
         focusNewAppointmentEditor={focusNewAppointmentEditor}
-        dashboard={dashboard}
-        auth={auth}
+        createAppointmentFromDraft={createAppointmentFromDraft}
+        handleSaveDoctorShifts={handleSaveDoctorShifts}
+        handleAddChairFromSchedule={handleAddChairFromSchedule}
+        showToast={showToast}
       />
-      <DoctorShiftRosterModal
-        isOpen={isRosterModalOpen}
-        onClose={() => setIsRosterModalOpen(false)}
-        staffList={rosterStaffList}
-        cabinets={rosterCabinets}
-        initialShifts={
-          savedDoctorShifts.length > 0 ? savedDoctorShifts : undefined
-        }
-        appointments={rosterAppointments}
-        clinicName={
-          dashboard?.clinicSettings?.profile?.clinicName ||
-          dashboard?.clinicName
-        }
-        onSave={handleSaveDoctorShifts}
-        currentDate={currentDateKey}
-      />
-      <QuickAddChairModal
-        isOpen={isQuickAddChairOpen}
-        onClose={() => {
-          setIsQuickAddChairOpen(false);
-          setEditingChairData(null);
-        }}
-        onAddChair={handleAddChairFromSchedule}
-        initialData={editingChairData}
-        onUpdateChair={handleAddChairFromSchedule}
-        existingChairsCount={dashboard?.clinicSettings?.chairs?.length || 0}
-        branches={dashboard?.clinicSettings?.branches}
-        doctors={scheduleDoctors}
-      />
-      <DoctorCalendarSyncModal
-        isOpen={isCalendarSyncModalOpen}
-        onClose={() => setIsCalendarSyncModalOpen(false)}
-        dashboard={dashboard}
-        initialDoctorId={scheduleDoctorFilterId}
-      />
-      <PatientSearchModal
-        isOpen={isPatientSearchOpen}
-        patients={dashboard?.patients ?? []}
-        onClose={() => setIsPatientSearchOpen(false)}
-        onSelectPatientForBooking={(patient) => {
-          setIsPatientSearchOpen(false);
-          setQuickBookingSlot({
-            dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
-            doctorUserId: scheduleDoctorFilterId || null,
-            chairId: scheduleChairFilterId || null,
-            durationMinutes: 30,
-          });
-          updateNewAppointmentDraft("patientId", patient.id);
-          setQuickBookingOpen(true);
-          showToast(`Выбран пациент: ${patient.fullName}`, "info");
-        }}
-        onOpenPatientCard={(patientId) => {
-          setIsPatientSearchOpen(false);
-          usePatientStore.getState().setSelectedPatientId(patientId);
-          useAppStore.getState().setCurrentView("patients");
-        }}
-        onQuickBookNewPatient={(patient) => {
-          setIsPatientSearchOpen(false);
-          setQuickBookingSlot({
-            dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
-            doctorUserId: scheduleDoctorFilterId || null,
-            chairId: scheduleChairFilterId || null,
-            durationMinutes: 30,
-          });
-          updateNewAppointmentDraft("patientId", patient.id);
-          setQuickBookingOpen(true);
-          showToast(
-            `Быстрая запись нового пациента: ${patient.fullName}`,
-            "success",
-          );
-        }}
-        showToastFn={showToast}
-      />
-      {dashboard && (
-        <TomorrowRemindersModal
-          dashboard={dashboard}
-          isOpen={isTomorrowRemindersOpen}
-          onClose={() => setIsTomorrowRemindersOpen(false)}
-          targetDateIso={scheduleDateFilter || undefined}
-        />
-      )}
     </div>
   );
 }
