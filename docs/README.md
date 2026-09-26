@@ -19,7 +19,10 @@
 *   **[UI_STANDARDS.md](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)** — Стандарты вёрстки Apple/Mac HIG, Tailwind/Vanilla CSS токены, God Context `useAppLogic.tsx`.
 *   **[ARCHITECTURE.md (.agents)](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** — Архитектура монорепозитория, Fastify API, Vite + React 19, WebSocket-брокер, ALS контекст `withTenantCtx`.
 *   **[00-product-architecture.md](file:///C:/Clinic_MVP/dental-crm/docs/00-product-architecture.md)** — Продуктовая архитектура, роли пользователей и целевые бизнес-процессы.
-*   **[ARCHITECTURE.md (docs)](file:///C:/Clinic_MVP/dental-crm/docs/ARCHITECTURE.md)** — Базовая спецификация конечного автомата зуба (FDI 11–48) и финансовых инвариантов СБП.
+*   **[ARCHITECTURE.md (docs)](file:///C:/Clinic_MVP/dental-crm/docs/ARCHITECTURE.md)** — Архитектурный манифест DENTE CRM: стек технологий, 3-Tier доктрина, оптимизация под слабое железо, 54-ФЗ, 804н, 1051н, 043/у, КНД 1151156.
+*   **[DEPLOYMENT_GUIDE.md](file:///C:/Clinic_MVP/dental-crm/docs/DEPLOYMENT_GUIDE.md)** — Руководство по производственному развертыванию (On-Premises Mac/Windows vs Cloud VPS), Zero-Knowledge бэкапы, протокол блэкаутов, Wi-Fi планшеты.
+*   **[CLI_REFERENCE.md](file:///C:/Clinic_MVP/dental-crm/docs/CLI_REFERENCE.md)** — Полное руководство по консольной утилите DENTE CLI (`dente doctor`, `dente preflight`, `dente info`).
+*   **[installer/README.md](file:///C:/Clinic_MVP/dental-crm/installer/README.md)** — Корневое руководство по установке системных служб macOS (LaunchAgent) и Windows (WinSW Service).
 *   **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Реестр схемы PostgreSQL 18.4 (`.data/pg18`), 18 модулей, 203 таблицы Drizzle ORM, RLS и миграции.
 *   **[DATABASE_SETUP.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE_SETUP.md)** — Инфраструктура развёртывания локальной базы данных, polyfill `uuidv7()` и push-процедуры.
 *   **[COMMANDS_AND_TESTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/COMMANDS_AND_TESTS.md)** — Все консольные команды, 5-этапный typecheck, гейты кодировки и E2E smoke-тесты.
