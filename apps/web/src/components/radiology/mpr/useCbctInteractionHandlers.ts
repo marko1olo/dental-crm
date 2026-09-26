@@ -727,9 +727,20 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		}
 		const step = e.shiftKey ? 5 : 1;
 		const delta = (e.deltaY > 0 ? -1 : 1) * step;
-		if (viewport === "cross_section") {
+		if (viewport === "cross_section" || viewport === "panoramic") {
 			if (crossSections.length > 0) {
-				setActiveCrossSectionIdx((prev) => Math.max(0, Math.min(crossSections.length - 1, prev + delta)));
+				setActiveCrossSectionIdx((prev) => {
+					const nextIdx = Math.max(0, Math.min(crossSections.length - 1, prev + delta));
+					const cs = crossSections[nextIdx];
+					if (cs) {
+						setCrosshairMm((curr) => ({
+							x: cs.centerPointMm.x,
+							y: cs.centerPointMm.y,
+							z: curr.z,
+						}));
+					}
+					return nextIdx;
+				});
 			}
 			return;
 		}
@@ -750,7 +761,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 				return clampCoordinateToVolume({ x: nx, y: ny, z: nz }, volume);
 			});
 		}
-	}, [activeTool, crossSections.length, volume, setTransforms, setActiveCrossSectionIdx, setCrosshairMm]);
+	}, [activeTool, crossSections, volume, setTransforms, setActiveCrossSectionIdx, setCrosshairMm]);
 
 	return {
 		activeRotationHandle,

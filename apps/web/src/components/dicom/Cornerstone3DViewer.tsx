@@ -20,6 +20,7 @@ import {
 } from "../../utils/math/mprMath";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
+import { addCbctToFinanceAndPlan } from "../radiology/ctImplantIntegrationBridge";
 import {
 	archControlPointsOf,
 	type CtPlanningMarkup,
@@ -219,25 +220,11 @@ export function Cornerstone3DViewer({
 			try { cornerstoneDICOMImageLoader.wadouri.fileManager.purge(); } catch { /* Ignore */ }
 
 			const renderingEngine = new cornerstone.RenderingEngine(renderingEngineId);
+			const bg = [0, 0, 0] as cornerstone.Types.Point3;
 			const viewportInputArray = [
-				{
-					viewportId: VIEWPORT_IDS.axial,
-					type: cornerstone.Enums.ViewportType.ORTHOGRAPHIC,
-					element: axialRef.current as HTMLDivElement,
-					defaultOptions: { orientation: cornerstone.Enums.OrientationAxis.AXIAL, background: [0, 0, 0] as cornerstone.Types.Point3 },
-				},
-				{
-					viewportId: VIEWPORT_IDS.sagittal,
-					type: cornerstone.Enums.ViewportType.ORTHOGRAPHIC,
-					element: sagittalRef.current as HTMLDivElement,
-					defaultOptions: { orientation: cornerstone.Enums.OrientationAxis.SAGITTAL, background: [0, 0, 0] as cornerstone.Types.Point3 },
-				},
-				{
-					viewportId: VIEWPORT_IDS.coronal,
-					type: cornerstone.Enums.ViewportType.ORTHOGRAPHIC,
-					element: coronalRef.current as HTMLDivElement,
-					defaultOptions: { orientation: cornerstone.Enums.OrientationAxis.CORONAL, background: [0, 0, 0] as cornerstone.Types.Point3 },
-				},
+				{ viewportId: VIEWPORT_IDS.axial, type: cornerstone.Enums.ViewportType.ORTHOGRAPHIC, element: axialRef.current as HTMLDivElement, defaultOptions: { orientation: cornerstone.Enums.OrientationAxis.AXIAL, background: bg } },
+				{ viewportId: VIEWPORT_IDS.sagittal, type: cornerstone.Enums.ViewportType.ORTHOGRAPHIC, element: sagittalRef.current as HTMLDivElement, defaultOptions: { orientation: cornerstone.Enums.OrientationAxis.SAGITTAL, background: bg } },
+				{ viewportId: VIEWPORT_IDS.coronal, type: cornerstone.Enums.ViewportType.ORTHOGRAPHIC, element: coronalRef.current as HTMLDivElement, defaultOptions: { orientation: cornerstone.Enums.OrientationAxis.CORONAL, background: bg } },
 			];
 
 			renderingEngine.setViewports(viewportInputArray);
@@ -667,6 +654,14 @@ export function Cornerstone3DViewer({
 		showToast("Снимок среза сохранен на диск в высоком разрешении", "success");
 	};
 
+	const handleAddCbctToFinance = useCallback(() => {
+		const targetTooth = Number.parseInt(selectedFdiCode, 10) || undefined;
+		addCbctToFinanceAndPlan({
+			patientId: patientId ?? undefined,
+			toothFdi: targetTooth,
+		});
+	}, [patientId, selectedFdiCode]);
+
 	const panorexBanner = panorexIssue !== null
 		? { tone: "issue" as const, text: panoramicIssueLabels[panorexIssue] }
 		: archSummary !== null
@@ -749,6 +744,7 @@ export function Cornerstone3DViewer({
 				handleDownloadActiveSlice={handleDownloadActiveSlice}
 				onSaveMarkup={() => { void saveMarkupNow(); }}
 				onClose={onClose}
+				handleAddCbctToFinance={handleAddCbctToFinance}
 			/>
 
 			<CornerstoneHudOverlays
@@ -840,6 +836,7 @@ export function Cornerstone3DViewer({
 						handleExportSnapshotTo043={handleExportSnapshotTo043}
 						isExportingSnapshot={isExportingSnapshot}
 						aiProtocolLog={aiProtocolLog}
+						handleAddCbctToFinance={handleAddCbctToFinance}
 					/>
 				</div>
 			</div>

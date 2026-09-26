@@ -1,4 +1,3 @@
-import React from "react";
 import {
 	Activity,
 	AlertTriangle,
@@ -6,6 +5,7 @@ import {
 	FileText,
 	Loader2,
 	Plus,
+	Receipt,
 	ShieldAlert,
 	ShieldCheck,
 	Trash2,
@@ -43,6 +43,7 @@ export interface CornerstonePlanningQuadrantProps {
 	handleExportSnapshotTo043: () => void;
 	isExportingSnapshot: boolean;
 	aiProtocolLog: string | null;
+	handleAddCbctToFinance?: (() => void) | undefined;
 }
 
 export const CornerstonePlanningQuadrant: React.FC<CornerstonePlanningQuadrantProps> = ({
@@ -67,6 +68,7 @@ export const CornerstonePlanningQuadrant: React.FC<CornerstonePlanningQuadrantPr
 	handleExportSnapshotTo043,
 	isExportingSnapshot,
 	aiProtocolLog,
+	handleAddCbctToFinance,
 }) => {
 	return (
 		<>
@@ -722,6 +724,32 @@ export const CornerstonePlanningQuadrant: React.FC<CornerstonePlanningQuadrantPr
 							)}
 							<span>В карту 043/у</span>
 						</button>
+
+						{handleAddCbctToFinance && (
+							<button
+								type="button"
+								onClick={handleAddCbctToFinance}
+								data-testid="cbct-quadrant-add-finance-btn"
+								style={{
+									height: "24px",
+									padding: "0 8px",
+									borderRadius: "4px",
+									border: "none",
+									backgroundColor: "var(--teal-600, #0d9488)",
+									color: "#fff",
+									fontSize: "11px",
+									fontWeight: 600,
+									cursor: "pointer",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "4px",
+								}}
+								title="В 1 клик добавить услугу КЛКТ (A06.07.012, 3 800 ₽) в финансовый акт визита и смету плана лечения"
+							>
+								<Receipt className="w-3 h-3" />
+								<span>+ КТ в акт (804н)</span>
+							</button>
+						)}
 					</div>
 
 					<div

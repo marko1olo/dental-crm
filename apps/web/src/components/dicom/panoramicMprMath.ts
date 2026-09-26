@@ -30,7 +30,9 @@ import {
 	type VolumeSamplingData,
 	type CrossSectionGeometryParams,
 	type CrossSectionFrame,
+	type ExtendedMischClass,
 } from "@dental/shared/radiology";
+
 
 export interface Point2D {
 	x: number;
@@ -93,7 +95,8 @@ export interface MprCrosshairSync {
 	distanceToArchMm: number;
 }
 
-export type ExtendedMischClass = "D1" | "D2" | "D3" | "D4" | "D5";
+export type { ExtendedMischClass };
+
 
 export interface BoneDensityRecommendation {
 	mischClass: ExtendedMischClass;

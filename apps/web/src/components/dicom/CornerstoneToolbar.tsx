@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import {
 	Activity,
 	Camera,
@@ -6,6 +5,7 @@ import {
 	Loader2,
 	MoreHorizontal,
 	Plus,
+	Receipt,
 	Save,
 	X,
 } from "lucide-react";
@@ -37,6 +37,7 @@ export interface CornerstoneToolbarProps {
 	handleDownloadActiveSlice: () => void;
 	onSaveMarkup: () => void;
 	onClose?: (() => void) | undefined;
+	handleAddCbctToFinance?: (() => void) | undefined;
 }
 
 export const CornerstoneToolbar: React.FC<CornerstoneToolbarProps> = ({
@@ -60,6 +61,7 @@ export const CornerstoneToolbar: React.FC<CornerstoneToolbarProps> = ({
 	handleDownloadActiveSlice,
 	onSaveMarkup,
 	onClose,
+	handleAddCbctToFinance,
 }) => {
 	const [isSecondaryMenuOpen, setIsSecondaryMenuOpen] = useState(false);
 
@@ -538,6 +540,36 @@ export const CornerstoneToolbar: React.FC<CornerstoneToolbarProps> = ({
 								{isExportingSnapshot ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
 								<span>В карту 043/у</span>
 							</button>
+
+							{handleAddCbctToFinance && (
+								<button
+									type="button"
+									style={{
+										height: "30px",
+										padding: "0 10px",
+										borderRadius: "6px",
+										fontSize: "12px",
+										fontWeight: 500,
+										cursor: "pointer",
+										border: "none",
+										textAlign: "left",
+										backgroundColor: "transparent",
+										color: "var(--teal-400, #2dd4bf)",
+										display: "flex",
+										alignItems: "center",
+										gap: "6px",
+									}}
+									onClick={() => {
+										setIsSecondaryMenuOpen(false);
+										handleAddCbctToFinance();
+									}}
+									data-testid="cbct-toolbar-add-finance-btn"
+									title="В 1 клик добавить услугу КЛКТ (A06.07.012, 3 800 ₽) в финансовый акт визита и план лечения"
+								>
+									<Receipt className="w-3.5 h-3.5" />
+									<span>+ КТ в акт (804н)</span>
+								</button>
+							)}
 
 							<button
 								type="button"

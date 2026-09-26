@@ -3017,6 +3017,25 @@ export function ImagingView(props: ImagingViewProps) {
 						isOpen={true}
 						onClose={() => setIsCbctStudioOpen(false)}
 						patientName={activePatient?.fullName ?? "3D КЛКТ исследование"}
+						patientId={activePatient?.id}
+						onApplyToDiary043={(diaryText) => {
+							if (!diaryText) return;
+							try {
+								window.dispatchEvent(
+									new CustomEvent("dente-apply-soap-protocol", {
+										detail: {
+											soap: {
+												treatmentDescription: diaryText,
+											},
+											immediate: true,
+											mode: "smart_append",
+										},
+									}),
+								);
+							} catch {
+								// ignore
+							}
+						}}
 					/>
 				</Suspense>
 			)}

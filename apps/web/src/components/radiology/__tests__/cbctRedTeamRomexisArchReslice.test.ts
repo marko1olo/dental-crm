@@ -224,8 +224,14 @@ describe("CBCT Red Team Romexis Parity: Dental Arch & Reslice Engine", () => {
 			"CbctMprImplantStudioModal.tsx",
 		];
 
+		const getRadiologyDir = () => {
+			const direct = path.resolve(process.cwd(), "src/components/radiology");
+			if (fs.existsSync(direct)) return direct;
+			return path.resolve(process.cwd(), "apps/web/src/components/radiology");
+		};
+
 		it("verifies all modularized radiology source files strictly satisfy Mandate 8b (<= 800 lines)", () => {
-			const radiologyDir = path.resolve(process.cwd(), "src/components/radiology");
+			const radiologyDir = getRadiologyDir();
 			const mprDir = path.resolve(radiologyDir, "mpr");
 
 			for (const file of radiologyFiles) {
@@ -245,7 +251,8 @@ describe("CBCT Red Team Romexis Parity: Dental Arch & Reslice Engine", () => {
 		});
 
 		it("verifies useCbctInteractionHandlers.ts strictly satisfies Mandate 8b (<= 800 lines)", () => {
-			const handlerPath = path.resolve(process.cwd(), "src/components/radiology/mpr/useCbctInteractionHandlers.ts");
+			const radiologyDir = getRadiologyDir();
+			const handlerPath = path.resolve(radiologyDir, "mpr/useCbctInteractionHandlers.ts");
 			assert.ok(fs.existsSync(handlerPath), "useCbctInteractionHandlers.ts must exist");
 			const content = fs.readFileSync(handlerPath, "utf8");
 			const lines = content.split("\n").length;
@@ -257,7 +264,7 @@ describe("CBCT Red Team Romexis Parity: Dental Arch & Reslice Engine", () => {
 
 		it("verifies zero cartoon emojis in modularized radiology source code (Mandate 8d)", () => {
 			const emojiRegex = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-			const radiologyDir = path.resolve(process.cwd(), "src/components/radiology");
+			const radiologyDir = getRadiologyDir();
 
 			for (const file of [
 				"cbctArchSplineMath.ts",

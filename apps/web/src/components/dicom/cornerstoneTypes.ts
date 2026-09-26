@@ -1,10 +1,17 @@
 import { vec3 } from "gl-matrix";
-import type { MischClass } from "../../utils/dicom/boneQualityEngine";
+import {
+	classifyExtendedBoneDensity,
+	type ExtendedMischClass,
+	type MischClass,
+} from "../../utils/dicom/boneQualityEngine";
+
+
 import type { StoredImplant, WorldPoint3 } from "./ctPlanningPersistence";
 import { worldTriple } from "./ctPlanningPersistence";
 import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper";
 
-export type ExtendedMischClass = MischClass | "D5";
+export type { ExtendedMischClass };
+
 
 export interface ImplantData {
 	id: string;
@@ -40,52 +47,13 @@ export interface Cornerstone3DViewerProps {
 }
 
 export const MARKUP_SAVE_DEBOUNCE_MS = 1500;
-export const MANDIBULAR_NERVE_DANGER_THRESHOLD_MM = 2.0;
+import { MANDIBULAR_NERVE_DANGER_THRESHOLD_MM } from "../radiology/implantSafetyEngine";
+export { MANDIBULAR_NERVE_DANGER_THRESHOLD_MM };
 
-export function classifyExtendedBoneDensity(hu: number): {
-	mischClass: ExtendedMischClass;
-	label: string;
-	drillingRecommendation: string;
-} {
-	if (hu > 1250) {
-		return {
-			mischClass: "D1",
-			label: "D1 (>1250 HU) — Плотная кортикальная кость",
-			drillingRecommendation:
-				"Обязательна кортикальная фреза (Cortical Tap), низкие обороты (400–600 RPM) с обильным охлаждением. Высокий риск перегрева/остеонекроза!",
-		};
-	}
-	if (hu >= 850) {
-		return {
-			mischClass: "D2",
-			label: "D2 (850–1250 HU) — Пористая кортикальная и плотная губчатая",
-			drillingRecommendation:
-				"Стандартный хирургический протокол (800–1000 RPM). Идеальная первичная стабильность.",
-		};
-	}
-	if (hu >= 350) {
-		return {
-			mischClass: "D3",
-			label: "D3 (350–850 HU) — Тонкая кортикальная и мелкая губчатая",
-			drillingRecommendation:
-				"Стандартный протокол с финишным профильным сверлом (1000 RPM). Хороший прогноз остеоинтеграции.",
-		};
-	}
-	if (hu >= 150) {
-		return {
-			mischClass: "D4",
-			label: "D4 (150–350 HU) — Мягкая губчатая кость",
-			drillingRecommendation:
-				"Недопрепарирование (Under-drilling) на 1.0–1.5 мм меньше диаметра имплантата для компрессии кости и набора торка.",
-		};
-	}
-	return {
-		mischClass: "D5",
-		label: "D5 (<150 HU) — Сверхмягкая / резорбированная кость",
-		drillingRecommendation:
-			"Критическое недопрепарирование (Under-drilling) на 1.5–2.0 мм, костная конденсация остеотомами или бикортикальная фиксация.",
-	};
-}
+
+
+export { classifyExtendedBoneDensity };
+
 
 export function storedImplantsOf(implants: readonly ImplantData[]): StoredImplant[] {
 	const out: StoredImplant[] = [];
