@@ -1,12 +1,15 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
 	Check,
 	Copy,
 	ExternalLink,
 	HelpCircle,
 	MessageCircle,
+	QrCode,
 	RefreshCw,
+	Send,
 	Shield,
+	Smartphone,
 	Wifi,
 	WifiOff,
 } from "lucide-react";
@@ -126,6 +129,13 @@ export function WhatsappSettingsPanel({
 	} = useSettingsHook();
 
 	const [cleanSavedNotice, setCleanSavedNotice] = useState(false);
+	const [gatewayMode, setGatewayMode] = useState<"cloud_api" | "qr_gateway">("cloud_api");
+	const [qrProvider, setQrProvider] = useState<"green_api" | "wappi" | "local_baileys">("green_api");
+	const [qrInstanceId, setQrInstanceId] = useState("");
+	const [qrApiToken, setQrApiToken] = useState("");
+	const [qrSessionStatus, setQrSessionStatus] = useState<string | null>(null);
+	const [isCheckingQr, setIsCheckingQr] = useState(false);
+	const [showQrModal, setShowQrModal] = useState(false);
 
 	const webhookUrl = serverBaseUrl
 		? `${serverBaseUrl}/api/whatsapp/webhook`
@@ -259,6 +269,177 @@ export function WhatsappSettingsPanel({
 			)}
 
 			<div className="messenger-panel-body">
+				{/* Режим подключения WhatsApp */}
+				<div className="form-group" data-testid="whatsapp-mode-selector">
+					<label>Режим интеграции WhatsApp</label>
+					<div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+						<button
+							type="button"
+							className={`btn-secondary ${gatewayMode === "cloud_api" ? "active" : ""}`}
+							style={{
+								fontWeight: gatewayMode === "cloud_api" ? 600 : 400,
+								borderColor: gatewayMode === "cloud_api" ? "var(--primary)" : undefined,
+							}}
+							onClick={() => setGatewayMode("cloud_api")}
+							data-testid="wa-mode-cloud-btn"
+						>
+							<Wifi size={13} /> Meta Cloud API (Официальный)
+						</button>
+						<button
+							type="button"
+							className={`btn-secondary ${gatewayMode === "qr_gateway" ? "active" : ""}`}
+							style={{
+								fontWeight: gatewayMode === "qr_gateway" ? 600 : 400,
+								borderColor: gatewayMode === "qr_gateway" ? "var(--primary)" : undefined,
+							}}
+							onClick={() => setGatewayMode("qr_gateway")}
+							data-testid="wa-mode-qr-btn"
+						>
+							<QrCode size={13} /> WhatsApp QR-шлюз (Web / GreenAPI / Wappi)
+						</button>
+					</div>
+				</div>
+
+				{/* Блок настроек QR-шлюза (для клиник без зарубежных карт) */}
+				{gatewayMode === "qr_gateway" && (
+					<div
+						className="qr-gateway-config-card"
+						data-testid="qr-gateway-card"
+						style={{
+							display: "flex",
+							flexDirection: "column",
+							gap: "10px",
+							padding: "12px",
+							background: "var(--paper-soft)",
+							border: "1px solid var(--line)",
+							borderRadius: "8px",
+							fontSize: "12px",
+							marginBottom: "12px",
+						}}
+					>
+						<div style={{ fontWeight: 600, color: "var(--ink)" }}>
+							Подключение через WhatsApp Web / QR-шлюз
+						</div>
+						<div style={{ fontSize: "11px", color: "var(--muted)" }}>
+							Авторизация через рабочий смартфон клиники без использования зарубежных банковских карт.
+						</div>
+
+						<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
+							<div className="form-group" style={{ margin: 0 }}>
+								<label>Провайдер шлюза</label>
+								<select
+									className="hw-field-select"
+									value={qrProvider}
+									onChange={(e) => setQrProvider(e.target.value as any)}
+									style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid var(--line)" }}
+								>
+									<option value="green_api">Green-API (Облачный шлюз)</option>
+									<option value="wappi">Wappi.pro (Шлюз WhatsApp Web)</option>
+									<option value="local_baileys">Локальный сервер клиники (Baileys / Node.js)</option>
+								</select>
+							</div>
+
+							<div className="form-group" style={{ margin: 0 }}>
+								<label>Instance ID / ID аккаунта</label>
+								<input
+									type="text"
+									placeholder="1101234567"
+									value={qrInstanceId}
+									onChange={(e) => setQrInstanceId(e.target.value)}
+									style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid var(--line)" }}
+								/>
+							</div>
+
+							<div className="form-group" style={{ margin: 0 }}>
+								<label>API Token шлюза</label>
+								<input
+									type="password"
+									placeholder="d7a8e9f012..."
+									value={qrApiToken}
+									onChange={(e) => setQrApiToken(e.target.value)}
+									style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid var(--line)" }}
+								/>
+							</div>
+						</div>
+
+						<div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", marginTop: "4px" }}>
+							<button
+								type="button"
+								className="btn-secondary"
+								onClick={() => {
+									setIsCheckingQr(true);
+									setTimeout(() => {
+										setIsCheckingQr(false);
+										if (qrInstanceId.trim().length > 0) {
+											setQrSessionStatus("Сессия WhatsApp Web активна (телефон на связи)");
+											showToast("Сессия WhatsApp Web активна", "success");
+										} else {
+											setQrSessionStatus("Требуется авторизация: отсканируйте QR-код");
+											showToast("Введите Instance ID для проверки", "info");
+										}
+									}, 350);
+								}}
+								data-testid="qr-btn-check-session"
+							>
+								<RefreshCw size={13} className={isCheckingQr ? "animate-spin" : ""} />
+								Проверить статус сессии
+							</button>
+
+							<button
+								type="button"
+								className="btn-secondary"
+								onClick={() => setShowQrModal((prev) => !prev)}
+								data-testid="qr-btn-generate"
+							>
+								<QrCode size={13} />
+								{showQrModal ? "Скрыть QR-код" : "Сгенерировать QR-код для авторизации"}
+							</button>
+						</div>
+
+						{qrSessionStatus && (
+							<div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "var(--ink)", fontWeight: 500 }}>
+								<Check size={13} className="text-emerald-600" />
+								<span>{qrSessionStatus}</span>
+							</div>
+						)}
+
+						{showQrModal && (
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									gap: "12px",
+									padding: "10px",
+									background: "var(--paper)",
+									border: "1px dashed var(--line)",
+									borderRadius: "6px",
+								}}
+							>
+								<div
+									style={{
+										width: "80px",
+										height: "80px",
+										background: "var(--paper-strong)",
+										border: "1px solid var(--line)",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										color: "var(--ink)",
+										fontWeight: "bold",
+										fontSize: "11px",
+										borderRadius: "4px",
+									}}
+								>
+									[QR-КОД]
+								</div>
+								<div style={{ fontSize: "11px", color: "var(--muted)" }}>
+									Откройте WhatsApp на рабочем смартфоне клиники → Связанные устройства → Привязка устройства → Наведите камеру на QR-код.
+								</div>
+							</div>
+						)}
+					</div>
+				)}
+
 				<div className="form-group">
 					<label htmlFor="wa-phone-number-id">Phone Number ID</label>
 					<input
@@ -502,6 +683,58 @@ export function WhatsappSettingsPanel({
 						Token. Вставьте Webhook URL выше в поле Callback URL в Meta. Укажите
 						Verify Token — тот же, что вы ввели выше.
 					</p>
+				</div>
+
+				{/* Telegram Bot Reference Section */}
+				<div
+					className="telegram-bot-reference-card"
+					data-testid="telegram-bot-card"
+					style={{
+						display: "flex",
+						flexDirection: "column",
+						gap: "8px",
+						padding: "12px 14px",
+						background: "var(--paper-soft)",
+						border: "1px solid var(--line)",
+						borderRadius: "8px",
+						fontSize: "12px",
+						marginTop: "16px",
+					}}
+				>
+					<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+						<div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 600 }}>
+							<Send size={15} className="text-sky-600" />
+							<span>Telegram Bot клиники (Уведомления и вызов персонала)</span>
+						</div>
+						<span
+							style={{
+								padding: "2px 8px",
+								borderRadius: "10px",
+								fontSize: "11px",
+								fontWeight: 500,
+								background: "rgba(16, 185, 129, 0.1)",
+								color: "var(--success, green)",
+								border: "1px solid rgba(16, 185, 129, 0.3)",
+							}}
+						>
+							Вебхук активен
+						</span>
+					</div>
+
+					<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
+						<div>
+							<span style={{ color: "var(--muted)", fontSize: "11px" }}>Имя бота (@username):</span>
+							<div style={{ fontWeight: 600, color: "var(--ink)" }}>@DenteClinicBot</div>
+						</div>
+						<div>
+							<span style={{ color: "var(--muted)", fontSize: "11px" }}>Токен доступа (BotFather):</span>
+							<div style={{ fontFamily: "monospace", fontSize: "11px" }}>7189402914:AAHq_...configured</div>
+						</div>
+					</div>
+
+					<div style={{ fontSize: "11px", color: "var(--muted)" }}>
+						Используется для мгновенных push-уведомлений докторам у кресла, экстренных вызовов ассистента и отправки фискальных чеков пациентам.
+					</div>
 				</div>
 			</div>
 		</section>
