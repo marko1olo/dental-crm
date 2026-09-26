@@ -21,7 +21,7 @@ import {
 import {
 	applyQuickCheckoutPreset,
 	paymentsToSplitState,
-} from "../../payments/checkout/fastCheckoutEngine.js";
+} from "../../../payments/checkout/fastCheckoutEngine.js";
 import {
 	generateDynamicSbpQrPayload,
 	generateQrCodeSvg,
