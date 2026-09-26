@@ -18,6 +18,7 @@ import {
 	nameKey,
 } from "../services/patients/duplicateDetection.js";
 import { wsBroker } from "../services/websocketBroker.js";
+import { publicBookingQueueService } from "../services/publicBookingQueueService.js";
 import {
 	schemaIssuePhrase,
 	schemaRefusalMessage,
@@ -337,6 +338,7 @@ const bookingRequestSchema = z.object({
 		.trim()
 		.regex(/^\+?[0-9\s\-()]{7,20}$/, "Неверный формат номера телефона"),
 	comment: z.string().trim().max(500).optional(),
+	verificationCode: z.string().trim().min(4).max(8).optional(),
 });
 
 const publicBookingFieldLabels: Record<string, string> = {
@@ -346,12 +348,115 @@ const publicBookingFieldLabels: Record<string, string> = {
 	patientName: "имя пациента",
 	patientPhone: "телефон",
 	comment: "комментарий",
+	verificationCode: "код подтверждения",
 };
 
 export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 	// Root health/discovery endpoint
 	server.get("/", async (_request, reply) => {
 		return reply.send({ status: "ok", service: "public_booking" });
+	});
+
+	// Rate-limited OTP send endpoint (SMS / Flash call)
+	server.post("/send-otp", async (request, reply) => {
+		const sendOtpSchema = z.object({
+			phone: z.string().trim().min(7).max(25),
+			method: z.enum(["sms", "flash_call"]).default("sms"),
+			organizationId: z.string().uuid().optional(),
+		});
+
+		const parsed = sendOtpSchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.status(400).send({
+				error: "Некорректный номер телефона",
+				details: parsed.error.issues,
+			});
+		}
+
+		const clientIp = request.ip || "unknown";
+		const result = publicBookingQueueService.requestPhoneVerification(
+			parsed.data.phone,
+			parsed.data.method,
+			clientIp,
+			parsed.data.organizationId,
+		);
+
+		if (!result.allowed) {
+			return reply.status(429).send({
+				error: result.message,
+				cooldownSeconds: result.cooldownSeconds,
+			});
+		}
+
+		return reply.send({
+			success: true,
+			message: result.message,
+			cooldownSeconds: result.cooldownSeconds,
+			challengeId: result.challengeId,
+		});
+	});
+
+	// Cloud Relay / 24/7 intake endpoint (supports daytime direct or nighttime soft-hold queue)
+	server.post("/cloud-intake", async (request, reply) => {
+		const cloudIntakeSchema = z.object({
+			organizationId: z.string().uuid("Некорректный ID клиники"),
+			doctorId: z.string().uuid("Некорректный ID врача"),
+			startsAt: z.string().datetime({ offset: true }),
+			endsAt: z.string().datetime({ offset: true }),
+			patientName: z.string().trim().min(2).max(120),
+			patientPhone: z.string().trim().regex(/^\+?[0-9\s\-()]{7,20}$/, "Неверный формат номера телефона"),
+			comment: z.string().trim().max(500).optional(),
+			chairId: z.string().uuid().optional(),
+			serviceName: z.string().trim().max(100).optional(),
+			verificationCode: z.string().trim().min(4).max(8).optional(),
+			source: z.enum(["widget", "telegram", "tilda", "wordpress", "site"]).optional(),
+		});
+
+		const parsed = cloudIntakeSchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.status(400).send({
+				error: "Некорректные данные заявки",
+				details: parsed.error.issues,
+			});
+		}
+
+		try {
+			const receipt = await publicBookingQueueService.submitBooking(parsed.data);
+			return reply.status(receipt.status === "REJECTED_CONFLICT" ? 409 : 200).send(receipt);
+		} catch (err) {
+			return reply.status(400).send({ error: (err as Error).message });
+		}
+	});
+
+	// Graceful Bump 1-click accept endpoint
+	server.post("/accept-bump", async (request, reply) => {
+		const acceptBumpSchema = z.object({
+			organizationId: z.string().uuid(),
+			bookingId: z.string().uuid(),
+			chosenSlot: z.object({
+				startsAt: z.string().datetime({ offset: true }),
+				endsAt: z.string().datetime({ offset: true }),
+			}),
+		});
+
+		const parsed = acceptBumpSchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.status(400).send({
+				error: "Некорректные параметры переноса",
+				details: parsed.error.issues,
+			});
+		}
+
+		try {
+			const receipt = await publicBookingQueueService.acceptBumpedSlot(
+				parsed.data.organizationId,
+				parsed.data.bookingId,
+				parsed.data.chosenSlot,
+			);
+			return reply.status(receipt.status === "REJECTED_CONFLICT" ? 409 : 200).send(receipt);
+		} catch (err) {
+			return reply.status(400).send({ error: (err as Error).message });
+		}
 	});
 
 	// 1. Get doctors for an organization
@@ -699,8 +804,18 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 				),
 			});
 		}
-		const { doctorId, startsAt, endsAt, patientName, patientPhone, comment } =
+		const { doctorId, startsAt, endsAt, patientName, patientPhone, comment, verificationCode } =
 			parsed.data;
+
+		if (verificationCode) {
+			const check = publicBookingQueueService.verifyPhoneOtp(patientPhone, verificationCode);
+			if (!check.valid) {
+				return reply.status(400).send({
+					error: "Неверный код подтверждения",
+					message: check.error ?? "Код подтверждения не совпадает или истёк.",
+				});
+			}
+		}
 
 		const startDate = new Date(startsAt);
 		const endDate = new Date(endsAt);

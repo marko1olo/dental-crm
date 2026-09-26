@@ -38,6 +38,7 @@ import {
 	isValidPatientName,
 	isValidRuPhone,
 	normalizePhoneDigits,
+	sendOtpVerificationRequest,
 	toLocalDateString,
 } from "./publicBookingEngine";
 import "./bookingWidget.css";
@@ -90,6 +91,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 		comment: "",
 	});
 	const [otpSent, setOtpSent] = useState<boolean>(false);
+	const [otpSending, setOtpSending] = useState<boolean>(false);
 	const [otpCountdown, setOtpCountdown] = useState<number>(0);
 	const [submitting, setSubmitting] = useState<boolean>(false);
 	const [bookingError, setBookingError] = useState<string | null>(null);
@@ -164,14 +166,32 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 
 	const groupedSlots = useMemo(() => groupSlotsByDayPeriod(slots), [slots]);
 
-	const handleSendOtp = () => {
+	const handleSendOtp = async () => {
 		if (!isValidRuPhone(contacts.patientPhone)) {
 			setBookingError("Введите корректный номер мобильного телефона РФ");
 			return;
 		}
 		setBookingError(null);
-		setOtpSent(true);
-		setOtpCountdown(60);
+		setOtpSending(true);
+		try {
+			const res = await sendOtpVerificationRequest(
+				contacts.patientPhone,
+				contacts.verificationMethod,
+				organizationId,
+				apiBaseUrl,
+			);
+			if (!res.success) {
+				setBookingError(res.message);
+				if (res.cooldownSeconds && res.cooldownSeconds > 0) {
+					setOtpCountdown(res.cooldownSeconds);
+				}
+				return;
+			}
+			setOtpSent(true);
+			setOtpCountdown(res.cooldownSeconds ?? 60);
+		} finally {
+			setOtpSending(false);
+		}
 	};
 
 	const handleConfirmBooking = async () => {
@@ -206,6 +226,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 						patientName: contacts.patientName.trim(),
 						patientPhone: normalizePhoneDigits(contacts.patientPhone),
 						comment: contacts.comment.trim() || undefined,
+						verificationCode: contacts.verificationCode.trim() || undefined,
 					}),
 				});
 
@@ -653,6 +674,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 						{!otpSent ? (
 							<button
 								type="button"
+								disabled={otpSending}
 								onClick={handleSendOtp}
 								style={{
 									padding: "8px 12px",
@@ -662,14 +684,14 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 									color: "var(--primary, #0d9488)",
 									fontWeight: 600,
 									fontSize: "12px",
-									cursor: "pointer",
+									cursor: otpSending ? "wait" : "pointer",
 									display: "flex",
 									alignItems: "center",
 									justifyContent: "center",
 									gap: "6px",
 								}}
 							>
-								{contacts.verificationMethod === "sms" ? "Отправить проверочный SMS-код" : "Заказать звонок-сброс (последние 4 цифры)"}
+								{otpSending ? "Отправка..." : contacts.verificationMethod === "sms" ? "Отправить проверочный SMS-код" : "Заказать звонок-сброс (последние 4 цифры)"}
 							</button>
 						) : (
 							<div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -684,8 +706,8 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 								{otpCountdown > 0 ? (
 									<span style={{ fontSize: "11px", color: "var(--muted, #64748b)", whiteSpace: "nowrap" }}>Повтор {otpCountdown}с</span>
 								) : (
-									<button type="button" onClick={handleSendOtp} style={{ border: "none", background: "transparent", color: "var(--primary, #0d9488)", fontSize: "11px", fontWeight: 600, cursor: "pointer" }}>
-										Запросить снова
+									<button type="button" disabled={otpSending} onClick={handleSendOtp} style={{ border: "none", background: "transparent", color: "var(--primary, #0d9488)", fontSize: "11px", fontWeight: 600, cursor: "pointer" }}>
+										{otpSending ? "..." : "Запросить снова"}
 									</button>
 								)}
 							</div>

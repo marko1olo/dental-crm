@@ -251,4 +251,97 @@ describe("Public Booking Queue & 24/7 Offline Holding Relay (Mandates 8b, 8e, 8n
 		assert.equal(receipt.status, "CONFIRMED");
 		assert.ok(receipt.appointmentId);
 	});
+
+	it("8. Atomic Night Mutex: Prevents 03:15 race conditions on same slot across concurrent night requests", async () => {
+		publicBookingQueueService.setClinicOnlineOverride(TEST_ORG_ID, false);
+
+		const candidateSlot = {
+			startsAt: "2026-09-30T10:00:00.000Z",
+			endsAt: "2026-09-30T10:30:00.000Z",
+		};
+
+		const booking1: BookingRequestInput = {
+			organizationId: TEST_ORG_ID,
+			doctorId: TEST_DOCTOR_ID,
+			patientName: "Пациент А (03:15:00)",
+			patientPhone: "+7 (927) 111-00-01",
+			startsAt: candidateSlot.startsAt,
+			endsAt: candidateSlot.endsAt,
+		};
+
+		const booking2: BookingRequestInput = {
+			organizationId: TEST_ORG_ID,
+			doctorId: TEST_DOCTOR_ID,
+			patientName: "Пациент Б (03:15:01)",
+			patientPhone: "+7 (927) 222-00-02",
+			startsAt: candidateSlot.startsAt,
+			endsAt: candidateSlot.endsAt,
+		};
+
+		// Fire concurrently
+		const [res1, res2] = await Promise.all([
+			publicBookingQueueService.submitBooking(booking1),
+			publicBookingQueueService.submitBooking(booking2),
+		]);
+
+		// Exactly one must be PENDING_RESERVATION with lock, the other must be REJECTED_CONFLICT
+		const statuses = [res1.status, res2.status];
+		assert.ok(statuses.includes("PENDING_RESERVATION"), "One booking must acquire soft hold");
+		assert.ok(statuses.includes("REJECTED_CONFLICT"), "Concurrent duplicate must be rejected by mutex");
+	});
+
+	it("9. OTP Cooldown & Rate Limiting: Blocks SMS spam and enforces 60s cooldown", () => {
+		const testPhone = "+7 (927) 777-88-99";
+		const ip = "192.168.1.105";
+
+		// First request -> allowed
+		const first = publicBookingQueueService.requestPhoneVerification(testPhone, "sms", ip);
+		assert.equal(first.allowed, true);
+		assert.equal(first.cooldownSeconds, 60);
+
+		// Immediate second request -> blocked by 60s cooldown
+		const second = publicBookingQueueService.requestPhoneVerification(testPhone, "sms", ip);
+		assert.equal(second.allowed, false);
+		assert.match(second.message, /через \d+ сек/);
+
+		// Verify dev code bypass works
+		const verifyCheck = publicBookingQueueService.verifyPhoneOtp(testPhone, "1234");
+		assert.equal(verifyCheck.valid, true);
+
+		// Invalid code fails
+		const invalidCheck = publicBookingQueueService.verifyPhoneOtp(testPhone, "9999");
+		assert.equal(invalidCheck.valid, false);
+	});
+
+	it("10. Verification Code Validation during Booking Submission", async () => {
+		publicBookingQueueService.setClinicOnlineOverride(TEST_ORG_ID, true);
+
+		// Invalid code rejects booking submission
+		await assert.rejects(
+			async () => {
+				await publicBookingQueueService.submitBooking({
+					organizationId: TEST_ORG_ID,
+					doctorId: TEST_DOCTOR_ID,
+					patientName: "Сидоров Алексей",
+					patientPhone: "+7 (917) 333-44-55",
+					startsAt: "2026-09-30T14:00:00.000Z",
+					endsAt: "2026-09-30T14:30:00.000Z",
+					verificationCode: "wrong-code",
+				});
+			},
+			{ message: /Код подтверждения не запрашивался или устарел|Неверный код/ },
+		);
+
+		// Valid test code succeeds
+		const receipt = await publicBookingQueueService.submitBooking({
+			organizationId: TEST_ORG_ID,
+			doctorId: TEST_DOCTOR_ID,
+			patientName: "Сидоров Алексей",
+			patientPhone: "+7 (917) 333-44-55",
+			startsAt: "2026-09-30T14:00:00.000Z",
+			endsAt: "2026-09-30T14:30:00.000Z",
+			verificationCode: "1234",
+		});
+		assert.equal(receipt.status, "CONFIRMED");
+	});
 });

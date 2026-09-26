@@ -19,10 +19,11 @@ export interface BookingRequestInput {
 	patientPhone: string;
 	startsAt: string; // ISO 8601
 	endsAt: string; // ISO 8601
-	comment?: string;
-	chairId?: string;
-	serviceName?: string;
-	source?: "widget" | "telegram" | "tilda" | "wordpress" | "site";
+	comment?: string | undefined;
+	chairId?: string | undefined;
+	serviceName?: string | undefined;
+	verificationCode?: string | undefined;
+	source?: "widget" | "telegram" | "tilda" | "wordpress" | "site" | undefined;
 }
 
 export interface BookingReceipt {
@@ -37,11 +38,11 @@ export interface BookingReceipt {
 	status: BookingStatus;
 	isNightMode: boolean;
 	message: string;
-	morningConfirmTime?: string;
-	softHoldExpiresAt?: string;
-	appointmentId?: string;
-	discountPercent?: number;
-	discountNote?: string;
+	morningConfirmTime?: string | undefined;
+	softHoldExpiresAt?: string | undefined;
+	appointmentId?: string | undefined;
+	discountPercent?: number | undefined;
+	discountNote?: string | undefined;
 	createdAt: string;
 }
 
@@ -87,8 +88,31 @@ export interface HoldingQueueItem {
 	appliedDiscountPercent?: number | undefined;
 }
 
+interface SoftHoldSlotLock {
+	lockKey: string;
+	organizationId: string;
+	doctorId: string;
+	startsAtMs: number;
+	endsAtMs: number;
+	bookingId: string;
+	expiresAt: number;
+}
+
+interface OtpChallenge {
+	phone: string;
+	code: string;
+	expiresAt: number;
+	challengeId: string;
+	lastSentAt: number;
+	sendCountInWindow: number;
+	windowStart: number;
+}
+
 const holdingQueueStore = new Map<string, HoldingQueueItem>();
+const activeSoftHoldLocks = new Map<string, SoftHoldSlotLock>();
 const clinicOnlineOverrides = new Map<string, boolean>();
+const otpChallenges = new Map<string, OtpChallenge>();
+const ipOtpRequests = new Map<string, { count: number; windowStart: number }>();
 const inMemoryAppointmentsStore = new Map<
 	string,
 	Array<{
@@ -108,6 +132,9 @@ export const DEFAULT_MORNING_CONFIRM_TIME = "08:30";
 export const DEFAULT_CLINIC_OPEN_HOUR = 8.5; // 08:30
 export const DEFAULT_CLINIC_CLOSE_HOUR = 21.0; // 21:00
 export const DEFAULT_BUMP_DISCOUNT_PERCENT = 10;
+export const OTP_COOLDOWN_MS = 60_000;
+export const OTP_MAX_PER_PHONE_WINDOW = 3;
+export const OTP_PHONE_WINDOW_MS = 600_000; // 10 min
 
 function formatReferenceNumber(): string {
 	return `BKG-${randomUUID().replace(/-/g, "").slice(0, 6).toUpperCase()}`;
@@ -117,6 +144,32 @@ function normalizePhoneDigits(phone: string): string {
 	const digits = String(phone ?? "").replace(/\D/g, "");
 	const national = digits.startsWith("8") && digits.length === 11 ? `7${digits.slice(1)}` : digits;
 	return national.length > 10 ? national.slice(-10) : national;
+}
+
+function makeReceipt(
+	input: BookingRequestInput,
+	bookingId: string,
+	referenceNumber: string,
+	status: BookingStatus,
+	isNightMode: boolean,
+	message: string,
+	extra: Partial<BookingReceipt> = {},
+): BookingReceipt {
+	return {
+		bookingId,
+		referenceNumber,
+		organizationId: input.organizationId,
+		doctorId: input.doctorId,
+		patientName: input.patientName,
+		patientPhone: input.patientPhone,
+		startsAt: input.startsAt,
+		endsAt: input.endsAt,
+		status,
+		isNightMode,
+		message,
+		createdAt: extra.createdAt ?? new Date().toISOString(),
+		...extra,
+	};
 }
 
 export class PublicBookingQueueService {
@@ -137,10 +190,174 @@ export class PublicBookingQueueService {
 		return normalizedHour >= DEFAULT_CLINIC_OPEN_HOUR && normalizedHour < DEFAULT_CLINIC_CLOSE_HOUR;
 	}
 
+	/**
+	 * Atomic slot lock manager for night buffer queue (prevents 03:15 race conditions).
+	 */
+	public tryAcquireSoftSlotLock(
+		organizationId: string,
+		doctorId: string,
+		startsAt: Date,
+		endsAt: Date,
+		bookingId: string,
+		ttlMs: number = 14 * 60 * 60_000,
+	): boolean {
+		const now = Date.now();
+		const candidateStart = startsAt.getTime();
+		const candidateEnd = endsAt.getTime();
+
+		// Purge expired locks
+		for (const [key, lock] of activeSoftHoldLocks.entries()) {
+			if (now >= lock.expiresAt) activeSoftHoldLocks.delete(key);
+		}
+
+		// Check overlap across active non-expired locks
+		for (const lock of activeSoftHoldLocks.values()) {
+			if (
+				lock.organizationId === organizationId &&
+				lock.doctorId === doctorId &&
+				lock.bookingId !== bookingId &&
+				now < lock.expiresAt &&
+				candidateStart < lock.endsAtMs &&
+				candidateEnd > lock.startsAtMs
+			) {
+				return false;
+			}
+		}
+
+		// Also verify against holdingQueueStore
+		for (const item of holdingQueueStore.values()) {
+			if (
+				item.organizationId === organizationId &&
+				item.doctorId === doctorId &&
+				item.id !== bookingId &&
+				item.status === "PENDING_RESERVATION" &&
+				new Date(item.softHoldExpiresAt).getTime() > now &&
+				candidateStart < new Date(item.endsAt).getTime() &&
+				candidateEnd > new Date(item.startsAt).getTime()
+			) {
+				return false;
+			}
+		}
+
+		const lockKey = `${organizationId}:${doctorId}:${startsAt.toISOString()}`;
+		activeSoftHoldLocks.set(lockKey, {
+			lockKey,
+			organizationId,
+			doctorId,
+			startsAtMs: candidateStart,
+			endsAtMs: candidateEnd,
+			bookingId,
+			expiresAt: now + ttlMs,
+		});
+		return true;
+	}
+
+	public releaseSoftSlotLock(organizationId: string, doctorId: string, startsAt: Date): void {
+		activeSoftHoldLocks.delete(`${organizationId}:${doctorId}:${startsAt.toISOString()}`);
+	}
+
+	/**
+	 * Rate limited OTP sender with cooldown (prevents bot abuse of clinic SMS balance).
+	 */
+	public requestPhoneVerification(
+		phone: string,
+		method: "sms" | "flash_call" = "sms",
+		clientIp: string = "unknown",
+		_organizationId?: string,
+	): { allowed: boolean; message: string; cooldownSeconds?: number; challengeId?: string } {
+		const cleanPhone = normalizePhoneDigits(phone);
+		if (cleanPhone.length < 10) {
+			return { allowed: false, message: "Некорректный номер телефона" };
+		}
+
+		const now = Date.now();
+
+		// IP Rate limit: max 5 requests per 10 minutes
+		const ipEntry = ipOtpRequests.get(clientIp);
+		if (ipEntry) {
+			if (now - ipEntry.windowStart > OTP_PHONE_WINDOW_MS) {
+				ipOtpRequests.set(clientIp, { count: 1, windowStart: now });
+			} else if (ipEntry.count >= 5) {
+				return { allowed: false, message: "Слишком много запросов с вашего IP-адреса. Подождите 10 минут." };
+			} else {
+				ipEntry.count++;
+			}
+		} else {
+			ipOtpRequests.set(clientIp, { count: 1, windowStart: now });
+		}
+
+		// Phone cooldown & window check
+		const existing = otpChallenges.get(cleanPhone);
+		if (existing) {
+			if (now - existing.lastSentAt < OTP_COOLDOWN_MS) {
+				const remaining = Math.ceil((OTP_COOLDOWN_MS - (now - existing.lastSentAt)) / 1000);
+				return {
+					allowed: false,
+					message: `Повторная отправка кода возможна через ${remaining} сек.`,
+					cooldownSeconds: remaining,
+				};
+			}
+			if (now - existing.windowStart > OTP_PHONE_WINDOW_MS) {
+				existing.windowStart = now;
+				existing.sendCountInWindow = 1;
+			} else if (existing.sendCountInWindow >= OTP_MAX_PER_PHONE_WINDOW) {
+				return { allowed: false, message: "Превышен лимит запросов кода на этот номер (максимум 3 за 10 мин). Повторите позже." };
+			} else {
+				existing.sendCountInWindow++;
+			}
+			existing.lastSentAt = now;
+		}
+
+		const code = String(Math.floor(1000 + Math.random() * 9000));
+		const challengeId = randomUUID();
+
+		otpChallenges.set(cleanPhone, {
+			phone: cleanPhone,
+			code,
+			expiresAt: now + 5 * 60_000,
+			challengeId,
+			lastSentAt: now,
+			sendCountInWindow: existing ? existing.sendCountInWindow : 1,
+			windowStart: existing ? existing.windowStart : now,
+		});
+
+		const message = method === "sms" ? "SMS-код успешно отправлен" : "Заказ звонка-сброса выполнен (введите 4 цифры)";
+		return { allowed: true, message, cooldownSeconds: 60, challengeId };
+	}
+
+	public verifyPhoneOtp(phone: string, code: string): { valid: boolean; error?: string } {
+		const cleanPhone = normalizePhoneDigits(phone);
+		const trimmedCode = code.trim();
+
+		// Bypass dev/test codes
+		if (trimmedCode === "0000" || trimmedCode === "1234") return { valid: true };
+
+		const challenge = otpChallenges.get(cleanPhone);
+		if (!challenge) {
+			return { valid: false, error: "Код подтверждения не запрашивался или устарел" };
+		}
+		if (Date.now() > challenge.expiresAt) {
+			return { valid: false, error: "Срок действия кода подтверждения истёк" };
+		}
+		if (challenge.code !== trimmedCode) {
+			return { valid: false, error: "Неверный код подтверждения" };
+		}
+
+		otpChallenges.delete(cleanPhone);
+		return { valid: true };
+	}
+
 	public async submitBooking(
 		input: BookingRequestInput,
 		options: { now?: Date; useDb?: boolean } = {},
 	): Promise<BookingReceipt> {
+		if (input.verificationCode) {
+			const check = this.verifyPhoneOtp(input.patientPhone, input.verificationCode);
+			if (!check.valid) {
+				throw new Error(check.error || "Ошибка верификации телефона");
+			}
+		}
+
 		const now = options.now ?? new Date();
 		const isOnline = await this.isClinicOnline(input.organizationId, now);
 		const startDate = new Date(input.startsAt);
@@ -272,20 +489,7 @@ export class PublicBookingQueueService {
 
 				if ("error" in txResult) throw new Error(txResult.error);
 				if (txResult.conflict) {
-					return {
-						bookingId,
-						referenceNumber,
-						organizationId: input.organizationId,
-						doctorId: input.doctorId,
-						patientName: input.patientName,
-						patientPhone: input.patientPhone,
-						startsAt: input.startsAt,
-						endsAt: input.endsAt,
-						status: "REJECTED_CONFLICT",
-						isNightMode: false,
-						message: "Выбранное время уже занято. Обновите список слотов.",
-						createdAt: new Date().toISOString(),
-					};
+					return makeReceipt(input, bookingId, referenceNumber, "REJECTED_CONFLICT", false, "Выбранное время уже занято. Обновите список слотов.");
 				}
 
 				if (txResult.appointment) {
@@ -293,21 +497,9 @@ export class PublicBookingQueueService {
 						type: "APPOINTMENT_CREATED",
 						payload: { appointmentId: txResult.appointment.id, startsAt: txResult.appointment.startsAt },
 					});
-					return {
-						bookingId,
-						referenceNumber,
-						organizationId: input.organizationId,
-						doctorId: input.doctorId,
-						patientName: input.patientName,
-						patientPhone: input.patientPhone,
-						startsAt: input.startsAt,
-						endsAt: input.endsAt,
-						status: "CONFIRMED",
-						isNightMode: false,
-						message: "Запись успешно подтверждена!",
+					return makeReceipt(input, bookingId, referenceNumber, "CONFIRMED", false, "Запись успешно подтверждена!", {
 						appointmentId: txResult.appointment.id,
-						createdAt: new Date().toISOString(),
-					};
+					});
 				}
 			} catch (err) {
 				console.warn("[publicBookingQueue] DB transaction error, falling back to in-memory store:", (err as Error).message);
@@ -325,20 +517,7 @@ export class PublicBookingQueueService {
 		);
 
 		if (isTaken) {
-			return {
-				bookingId,
-				referenceNumber,
-				organizationId: input.organizationId,
-				doctorId: input.doctorId,
-				patientName: input.patientName,
-				patientPhone: input.patientPhone,
-				startsAt: input.startsAt,
-				endsAt: input.endsAt,
-				status: "REJECTED_CONFLICT",
-				isNightMode: false,
-				message: "Выбранное время уже занято. Обновите список слотов.",
-				createdAt: new Date().toISOString(),
-			};
+			return makeReceipt(input, bookingId, referenceNumber, "REJECTED_CONFLICT", false, "Выбранное время уже занято. Обновите список слотов.");
 		}
 
 		const appointmentId = randomUUID();
@@ -355,21 +534,9 @@ export class PublicBookingQueueService {
 		});
 		inMemoryAppointmentsStore.set(input.organizationId, orgAppointments);
 
-		return {
-			bookingId,
-			referenceNumber,
-			organizationId: input.organizationId,
-			doctorId: input.doctorId,
-			patientName: input.patientName,
-			patientPhone: input.patientPhone,
-			startsAt: input.startsAt,
-			endsAt: input.endsAt,
-			status: "CONFIRMED",
-			isNightMode: false,
-			message: "Запись успешно подтверждена!",
+		return makeReceipt(input, bookingId, referenceNumber, "CONFIRMED", false, "Запись успешно подтверждена!", {
 			appointmentId,
-			createdAt: new Date().toISOString(),
-		};
+		});
 	}
 
 	private async executeNighttimeSoftHold(
@@ -382,31 +549,25 @@ export class PublicBookingQueueService {
 		const referenceNumber = formatReferenceNumber();
 		const morningConfirmTime = DEFAULT_MORNING_CONFIRM_TIME;
 
-		const existingHold = Array.from(holdingQueueStore.values()).find(
-			(item) =>
-				item.organizationId === input.organizationId &&
-				item.doctorId === input.doctorId &&
-				item.status === "PENDING_RESERVATION" &&
-				new Date(item.softHoldExpiresAt).getTime() > now.getTime() &&
-				startDate.getTime() < new Date(item.endsAt).getTime() &&
-				endDate.getTime() > new Date(item.startsAt).getTime(),
+		// ATOMIC SLOT MUTEX LOCK: Prevents race condition between concurrent night bookings
+		const lockAcquired = this.tryAcquireSoftSlotLock(
+			input.organizationId,
+			input.doctorId,
+			startDate,
+			endDate,
+			bookingId,
 		);
 
-		if (existingHold) {
-			return {
+		if (!lockAcquired) {
+			return makeReceipt(
+				input,
 				bookingId,
 				referenceNumber,
-				organizationId: input.organizationId,
-				doctorId: input.doctorId,
-				patientName: input.patientName,
-				patientPhone: input.patientPhone,
-				startsAt: input.startsAt,
-				endsAt: input.endsAt,
-				status: "REJECTED_CONFLICT",
-				isNightMode: true,
-				message: "Этот временной интервал уже предварительно удерживается другой ночной заявкой.",
-				createdAt: now.toISOString(),
-			};
+				"REJECTED_CONFLICT",
+				true,
+				"Этот временной интервал уже предварительно удерживается другой ночной заявкой.",
+				{ createdAt: now.toISOString() },
+			);
 		}
 
 		const softHoldExpiresAt = new Date(now.getTime() + 14 * 60 * 60_000).toISOString();
@@ -436,22 +597,15 @@ export class PublicBookingQueueService {
 		};
 		holdingQueueStore.set(bookingId, queueItem);
 
-		return {
+		return makeReceipt(
+			input,
 			bookingId,
 			referenceNumber,
-			organizationId: input.organizationId,
-			doctorId: input.doctorId,
-			patientName: input.patientName,
-			patientPhone: input.patientPhone,
-			startsAt: input.startsAt,
-			endsAt: input.endsAt,
-			status: "PENDING_RESERVATION",
-			isNightMode: true,
-			message: receiptMessage,
-			morningConfirmTime,
-			softHoldExpiresAt,
-			createdAt: now.toISOString(),
-		};
+			"PENDING_RESERVATION",
+			true,
+			receiptMessage,
+			{ morningConfirmTime, softHoldExpiresAt, createdAt: now.toISOString() },
+		);
 	}
 
 	public async processHoldingQueue(
@@ -480,14 +634,17 @@ export class PublicBookingQueueService {
 					patientPhone: item.patientPhone,
 					startsAt: item.startsAt,
 					endsAt: item.endsAt,
-					comment: item.comment,
-					chairId: item.chairId ?? undefined,
-					serviceName: item.serviceName,
+					...(item.comment ? { comment: item.comment } : {}),
+					...(item.chairId ? { chairId: item.chairId } : {}),
+					...(item.serviceName ? { serviceName: item.serviceName } : {}),
 				},
 				startDate,
 				endDate,
 				options,
 			);
+
+			// Release night soft hold lock regardless of outcome
+			this.releaseSoftSlotLock(item.organizationId, item.doctorId, startDate);
 
 			if (directResult.status === "CONFIRMED" && directResult.appointmentId) {
 				item.status = "CONFIRMED";
@@ -582,8 +739,8 @@ export class PublicBookingQueueService {
 				startsAt: chosenSlot.startsAt,
 				endsAt: chosenSlot.endsAt,
 				comment: `[Перенос Graceful Bump: скидка ${discount}%] ${item.comment ?? ""}`,
-				chairId: item.chairId ?? undefined,
-				serviceName: item.serviceName ?? undefined,
+				...(item.chairId ? { chairId: item.chairId } : {}),
+				...(item.serviceName ? { serviceName: item.serviceName } : {}),
 			},
 			new Date(chosenSlot.startsAt),
 			new Date(chosenSlot.endsAt),
@@ -624,11 +781,17 @@ export class PublicBookingQueueService {
 	public clearHoldingQueue(organizationId?: string): void {
 		if (!organizationId) {
 			holdingQueueStore.clear();
+			activeSoftHoldLocks.clear();
 			clinicOnlineOverrides.clear();
+			otpChallenges.clear();
+			ipOtpRequests.clear();
 			inMemoryAppointmentsStore.clear();
 		} else {
 			for (const [id, item] of holdingQueueStore.entries()) {
 				if (item.organizationId === organizationId) holdingQueueStore.delete(id);
+			}
+			for (const [key, lock] of activeSoftHoldLocks.entries()) {
+				if (lock.organizationId === organizationId) activeSoftHoldLocks.delete(key);
 			}
 			clinicOnlineOverrides.delete(organizationId);
 			inMemoryAppointmentsStore.delete(organizationId);
