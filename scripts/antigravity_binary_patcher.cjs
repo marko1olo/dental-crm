@@ -62,6 +62,21 @@ const G2_SIGNATURE_PATCHED = Buffer.from([
   0xff, 0xd1                    // call rcx
 ]);
 
+// Gate 3: MaybeReviveAgent ConversationAnnotations null-check bypass (offset ~0x2240c83)
+// Eliminates fatal `je 0x142241721` when annotations are NULL, allowing startMessageWatcherLocked to execute.
+const G3_SIGNATURE_ORIGINAL = Buffer.from([
+  0x48, 0x85, 0xf6,             // test rsi, rsi
+  0x0f, 0x84, 0x98, 0x00, 0x00, 0x00, // je +0x98 (0x142241721)
+  0x90, 0x90,                   // nop nop
+  0x31, 0xc0                    // xor eax, eax
+]);
+const G3_SIGNATURE_PATCHED = Buffer.from([
+  0x48, 0x85, 0xf6,             // test rsi, rsi
+  0x90, 0x90, 0x90, 0x90, 0x90, 0x90, // nop x6 (bypass branch to ret)
+  0x90, 0x90,                   // nop nop
+  0x31, 0xc0                    // xor eax, eax
+]);
+
 function getSha256(filePath) {
   const hash = crypto.createHash("sha256");
   const data = fs.readFileSync(filePath);
@@ -103,8 +118,21 @@ function checkStatus(exePath) {
       g2_offset = g2_orig + 16;
     }
 
-    const allPatched = g1_status === "patched" && g2_status === "patched";
-    const nonePatched = g1_status === "original" && g2_status === "original";
+    // Check Gate 3 (MaybeReviveAgent ConversationAnnotations null-check bypass)
+    const g3_orig = buf.indexOf(G3_SIGNATURE_ORIGINAL);
+    const g3_patch = buf.indexOf(G3_SIGNATURE_PATCHED);
+    let g3_status = "unknown";
+    let g3_offset = -1;
+    if (g3_patch !== -1) {
+      g3_status = "patched";
+      g3_offset = g3_patch + 3;
+    } else if (g3_orig !== -1) {
+      g3_status = "original";
+      g3_offset = g3_orig + 3;
+    }
+
+    const allPatched = g1_status === "patched" && g2_status === "patched" && g3_status === "patched";
+    const nonePatched = g1_status === "original" && g2_status === "original" && g3_status === "original";
 
     let overallStatus = "partial";
     if (allPatched) overallStatus = "fully_patched";
@@ -123,6 +151,11 @@ function checkStatus(exePath) {
         name: "MaybeReviveAgent (NumGeneratorMetadatas index fix)",
         status: g2_status,
         offset: g2_offset !== -1 ? "0x" + g2_offset.toString(16) : "N/A"
+      },
+      gate3: {
+        name: "MaybeReviveAgent (ConversationAnnotations null-check bypass)",
+        status: g3_status,
+        offset: g3_offset !== -1 ? "0x" + g3_offset.toString(16) : "N/A"
       }
     };
   } catch (err) {
@@ -133,6 +166,7 @@ function checkStatus(exePath) {
 function applyPatchesToBuffer(buf) {
   let g1_patched = false;
   let g2_patched = false;
+  let g3_patched = false;
 
   const g1_idx = buf.indexOf(G1_SIGNATURE_ORIGINAL);
   if (g1_idx !== -1) {
@@ -149,13 +183,22 @@ function applyPatchesToBuffer(buf) {
     g2_patched = true;
   }
 
-  return { buf, g1_patched, g2_patched };
+  const g3_idx = buf.indexOf(G3_SIGNATURE_ORIGINAL);
+  if (g3_idx !== -1) {
+    const target = g3_idx + 3;
+    for (let i = 0; i < 6; i++) {
+      buf[target + i] = 0x90; // replace 6-byte JE with 6 NOPs
+    }
+    g3_patched = true;
+  }
+
+  return { buf, g1_patched, g2_patched, g3_patched };
 }
 
 function patchBinary(exePath) {
   const current = checkStatus(exePath);
   if (current.status === "fully_patched") {
-    console.log("[Antigravity Patcher] Binary is ALREADY FULLY PATCHED (both Gate 1 and Gate 2)!");
+    console.log("[Antigravity Patcher] Binary is ALREADY FULLY PATCHED (Gate 1, Gate 2, and Gate 3)!");
     return true;
   }
   if (current.status === "error" || current.status === "not_found") {
@@ -166,6 +209,7 @@ function patchBinary(exePath) {
   console.log("[Antigravity Patcher] Current Gate Status:");
   console.log(`  - Gate 1 (${current.gate1.name}): ${current.gate1.status} at ${current.gate1.offset}`);
   console.log(`  - Gate 2 (${current.gate2.name}): ${current.gate2.status} at ${current.gate2.offset}`);
+  console.log(`  - Gate 3 (${current.gate3.name}): ${current.gate3.status} at ${current.gate3.offset}`);
 
   // Create safe backup
   const backupPath = `${exePath}.bak_${Date.now()}`;
@@ -174,9 +218,9 @@ function patchBinary(exePath) {
 
   // Read full buffer
   const buf = fs.readFileSync(exePath);
-  const { g1_patched, g2_patched } = applyPatchesToBuffer(buf);
+  const { g1_patched, g2_patched, g3_patched } = applyPatchesToBuffer(buf);
 
-  console.log(`[Antigravity Patcher] Patch results: Gate 1 = ${g1_patched ? "PATCHED" : "ALREADY PATCHED"}, Gate 2 = ${g2_patched ? "PATCHED" : "ALREADY PATCHED"}`);
+  console.log(`[Antigravity Patcher] Patch results: Gate 1 = ${g1_patched ? "PATCHED" : "ALREADY PATCHED"}, Gate 2 = ${g2_patched ? "PATCHED" : "ALREADY PATCHED"}, Gate 3 = ${g3_patched ? "PATCHED" : "ALREADY PATCHED"}`);
 
   // Try direct write first
   try {
@@ -245,7 +289,7 @@ function undoPatch(exePath) {
 const args = process.argv.slice(2);
 const exeArg = args.find(a => !a.startsWith("--")) || DEFAULT_EXE_PATH;
 
-console.log("=== ANTIGRAVITY BINARY PATCHER & VALIDATOR (DUAL-GATE ENGINE) ===");
+console.log("=== ANTIGRAVITY BINARY PATCHER & VALIDATOR (TRIPLE-GATE ENGINE) ===");
 console.log(`Target: ${exeArg}`);
 
 if (args.includes("--undo")) {
@@ -260,12 +304,13 @@ if (args.includes("--undo")) {
   console.log("\nGate Breakdown:");
   console.log(`  1. ${info.gate1.name}: [${info.gate1.status.toUpperCase()}] at offset ${info.gate1.offset}`);
   console.log(`  2. ${info.gate2.name}: [${info.gate2.status.toUpperCase()}] at offset ${info.gate2.offset}`);
+  console.log(`  3. ${info.gate3.name}: [${info.gate3.status.toUpperCase()}] at offset ${info.gate3.offset}`);
 
   if (info.status === "fully_patched") {
-    console.log("\n[VERIFIED] Both resuscitation gates are safely patched! Subagents will revive 100% reliably.");
+    console.log("\n[VERIFIED] All 3 resuscitation gates are safely patched! Subagents will revive 100% reliably.");
   } else if (info.status === "partial") {
-    console.log("\n[WARNING] Only 1 of 2 gates is patched. Run with --patch to apply full resuscitation patch.");
+    console.log("\n[WARNING] Only partial gates are patched. Run with --patch to apply all 3 resuscitation gates.");
   } else if (info.status === "original") {
-    console.log("\n[INFO] Binary is unmodified original. Run with --patch to apply dual-gate resuscitation patch.");
+    console.log("\n[INFO] Binary is unmodified original. Run with --patch to apply triple-gate resuscitation patch.");
   }
 }

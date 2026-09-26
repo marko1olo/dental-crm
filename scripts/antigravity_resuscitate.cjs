@@ -43,7 +43,7 @@ function checkBinary() {
   }
   try {
     const out = execSync(`node "${patcherScript}" --check`, { encoding: "utf8" });
-    const isPatched = out.includes("FULLY_PATCHED") || (out.includes("Gate 1: [PATCHED]") && out.includes("Gate 2: [PATCHED]"));
+    const isPatched = out.includes("FULLY_PATCHED") || (out.includes("Gate 1: [PATCHED]") && out.includes("Gate 2: [PATCHED]") && out.includes("Gate 3: [PATCHED]"));
     return { ok: isPatched, output: out.trim() };
   } catch (err) {
     return { ok: false, message: err.message };
