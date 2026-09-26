@@ -28,19 +28,19 @@ import { SettingsAiTab } from "./SettingsAiTab";
 import { SettingsProfileTab } from "./SettingsProfileTab";
 import { SettingsProtocolsTab } from "./SettingsProtocolsTab";
 import { SettingsRulesTab } from "./SettingsRulesTab";
+import { DoctorClinicalPreferencesSection } from "./DoctorClinicalPreferencesSection";
 import {
 	useDoctorPreferencesStore,
 	type DoctorSpecialtyKey,
 } from "../../store/doctorPreferencesStore";
 import { showToast } from "../GlobalToast";
 
-export type DoctorSubTab =
-	| "profile"
-	| "protocols"
-	| "rules"
-	| "procedure-boms"
-	| "ai"
-	| "hardware";
+import {
+	DOCTOR_TABS,
+	type DoctorSubTab,
+	type DoctorTabDefinition,
+} from "./doctorSettingsTabs";
+export { DOCTOR_TABS, type DoctorSubTab, type DoctorTabDefinition };
 
 export interface DoctorSettingsSectionProps {
 	// biome-ignore lint/suspicious/noExplicitAny: props bag
@@ -48,50 +48,6 @@ export interface DoctorSettingsSectionProps {
 	readonly initialTab?: DoctorSubTab;
 	readonly onSelectTab?: (tab: string) => void;
 }
-
-const DOCTOR_TABS: Array<{
-	id: DoctorSubTab;
-	label: string;
-	description: string;
-	icon: React.ComponentType<{ size?: number; className?: string }>;
-}> = [
-	{
-		id: "profile",
-		label: "Мой профиль и подпись",
-		description: "ФИО, специализация, цвет в сетке, ЭЦП",
-		icon: User,
-	},
-	{
-		id: "protocols",
-		label: "Протоколы и дневники 043/у",
-		description: "Шаблоны лечения, SOAP-дневники, автозаполнение",
-		icon: FileText,
-	},
-	{
-		id: "rules",
-		label: "Клинические правила",
-		description: "Алерты безопасности, онкоскрининг, риски",
-		icon: Activity,
-	},
-	{
-		id: "procedure-boms",
-		label: "Техкарты расхода 804н",
-		description: "Нормы списания карпул, анестетиков и композитов",
-		icon: Layers,
-	},
-	{
-		id: "ai",
-		label: "Голос и ИИ-ассистент",
-		description: "Диктовка карты голосом, расшифровка рентгена",
-		icon: Bot,
-	},
-	{
-		id: "hardware",
-		label: "Оборудование кабинета",
-		description: "Визиограф, датчик, КТ и сетевые папки",
-		icon: HardDrive,
-	},
-];
 
 const SPECIALTY_PRESET_BUTTONS: readonly {
 	key: DoctorSpecialtyKey;
@@ -307,6 +263,29 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 				{activeSubTab === "profile" && (
 					<ErrorBoundary moduleName="Мой профиль">
 						<SettingsProfileTab props={props} />
+					</ErrorBoundary>
+				)}
+
+				{activeSubTab === "preferences" && (
+					<ErrorBoundary moduleName="Клинические пресеты">
+						<DoctorClinicalPreferencesSection
+							soundNotificationsMuted={
+								props?.soundNotificationsMuted ??
+								props?.appLogic?.soundNotificationsMuted
+							}
+							onToggleSoundMuted={
+								props?.setSoundNotificationsMuted ??
+								props?.appLogic?.setSoundNotificationsMuted
+							}
+							onTestOnlineBookingSound={
+								props?.testOnlineBookingSound ??
+								props?.appLogic?.testOnlineBookingSound
+							}
+							onTestSlotEndSound={
+								props?.testSlotEndSound ??
+								props?.appLogic?.testSlotEndSound
+							}
+						/>
 					</ErrorBoundary>
 				)}
 

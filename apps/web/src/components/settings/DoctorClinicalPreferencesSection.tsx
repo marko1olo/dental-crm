@@ -29,6 +29,7 @@ import {
 	type AdhesiveSystem,
 	type OdontogramNotation,
 	type DefaultDentition,
+	type DoctorSpecialtyKey,
 } from "../../store/doctorPreferencesStore";
 import { useThemeStore, type ThemeMode } from "../../store/themeStore";
 
@@ -101,9 +102,25 @@ const AVAILABLE_QUICK_PROTOCOLS = [
 	{ id: "caries_medium_k02_1", title: "Лечение среднего кариеса", icd: "К02.1" },
 	{ id: "caries_deep_k02_1", title: "Лечение глубокого кариеса", icd: "К02.1" },
 	{ id: "pulpitis_acute_k04_0", title: "Острый пульпит", icd: "К04.0" },
+	{ id: "periodontitis_chronic_k04_5", title: "Хронический периодонтит", icd: "К04.5" },
 	{ id: "extraction_simple_k08_1", title: "Удаление зуба простое", icd: "К08.1" },
-	{ id: "implant_installation_k08_1", title: "Дентальная имплантация и остеопластика", icd: "К08.1" },
+	{ id: "extraction_complex_k01_1", title: "Сложное атипичное удаление", icd: "К01.1" },
+	{ id: "implant_installation_k08_1", title: "Дентальная имплантация", icd: "К08.1" },
+	{ id: "bone_graft_sinus_k08_2", title: "Костная пластика: Синус-лифтинг", icd: "К08.2" },
+	{ id: "bone_graft_gbr_k08_2", title: "НКР альвеолярного гребня", icd: "К08.2" },
 	{ id: "prophy_hygiene_k05_0", title: "Комплексная гигиена", icd: "К05.0" },
+];
+
+const SPECIALTY_PRESET_ITEMS: readonly {
+	key: DoctorSpecialtyKey;
+	label: string;
+}[] = [
+	{ key: "therapist", label: "Терапевт" },
+	{ key: "surgeon", label: "Хирург-имплантолог" },
+	{ key: "orthopedist", label: "Ортопед" },
+	{ key: "orthodontist", label: "Ортодонт" },
+	{ key: "pediatric", label: "Детский врач" },
+	{ key: "universal", label: "Универсальный" },
 ];
 
 export function DoctorClinicalPreferencesSection({
@@ -114,6 +131,7 @@ export function DoctorClinicalPreferencesSection({
 }: DoctorClinicalPreferencesSectionProps) {
 	const preferences = useDoctorPreferencesStore((s) => s.preferences);
 	const updatePreferences = useDoctorPreferencesStore((s) => s.updatePreferences);
+	const applySpecialtyPreset = useDoctorPreferencesStore((s) => s.applySpecialtyPreset);
 	const themeMode = useThemeStore((s) => s.themeMode);
 	const setThemeMode = useThemeStore((s) => s.setThemeMode);
 
@@ -171,6 +189,42 @@ export function DoctorClinicalPreferencesSection({
 			</div>
 
 			<div className="space-y-6">
+				{/* 0. Быстрые пресеты по специальности врача (1 клик) */}
+				<div className="p-3.5 rounded-xl bg-gradient-to-r from-teal-500/10 via-[var(--paper-soft)] to-transparent border border-teal-500/25 space-y-2">
+					<div className="flex items-center justify-between">
+						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+							<Stethoscope size={15} className="text-teal-600 shrink-0" />
+							<span>Специализация врача (1-клик перенастройка всего кабинета)</span>
+						</span>
+						<span className="text-[11px] text-[var(--muted)]">
+							Мгновенная калибровка длительности, анестетиков и материалов
+						</span>
+					</div>
+					<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+						{SPECIALTY_PRESET_ITEMS.map((spec) => {
+							const isSelected = preferences.specialty === spec.key;
+							return (
+								<button
+									key={spec.key}
+									type="button"
+									onClick={() => {
+										applySpecialtyPreset(spec.key);
+										showToast(`Профиль врача: ${spec.label} активирован`, "success");
+									}}
+									className={`min-h-[44px] sm:min-h-[34px] px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer border ${
+										isSelected
+											? "bg-teal-600 text-white border-teal-600 shadow-2xs font-bold"
+											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-teal-500"
+									}`}
+								>
+									<span>{spec.label}</span>
+									{isSelected && <Check size={13} className="stroke-[3]" />}
+								</button>
+							);
+						})}
+					</div>
+				</div>
+
 				{/* 1. Длительность приёма по умолчанию */}
 				<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2">
 					<div className="flex items-center justify-between">

@@ -1,3 +1,4 @@
+import React from "react";
 import type { ChangeEvent } from "react";
 
 // biome-ignore lint/correctness/noUnusedVariables: automated suppression
