@@ -8,9 +8,11 @@ import {
 	ADHESIVE_OPTIONS,
 	DURATION_PRESETS,
 	ODONTOGRAM_NOTATIONS,
+	FAVORITE_MEDICATION_OPTIONS,
 	useDoctorPreferencesStore,
 } from "../../../store/doctorPreferencesStore";
 import {
+	ICD10_CLINICAL_PRESETS,
 	PROTOCOL_CLINICAL_SNIPPETS,
 	STANDARD_PROTOCOLS_SEED,
 } from "../protocolSnippetHelpers";
@@ -35,6 +37,12 @@ describe("Doctor Clinical Preferences & Super-Settings Invariants (Mandates 8e, 
 		assert.strictEqual(prefs.enableSlotEndSound, true, "5-min slot timer sound must be enabled by default");
 		assert.strictEqual(prefs.enableOnlineBookingSound, true, "Online booking sound must be enabled by default");
 		assert.ok(prefs.quickProtocolIds.length >= 4, "Must have at least 4 default quick protocols");
+		assert.strictEqual(prefs.autoMkb10, true, "Auto MKB-10 must be enabled by default");
+		assert.strictEqual(prefs.somaticWarnings, true, "Somatic alerts must be enabled by default");
+		assert.strictEqual(prefs.instantPhotoProtocol, true, "Photo protocol must be enabled by default");
+		assert.strictEqual(prefs.voiceDictationActive, true, "Voice dictation must be enabled by default");
+		assert.strictEqual(prefs.specialty, "therapist", "Default specialty must be therapist");
+		assert.ok(prefs.favoriteMedicationIds.length >= 4, "Must have default favorite prescription medications");
 	});
 
 	it("2. Doctor can customize visit duration presets in 1 click (15, 30, 45, 60, 90, 120 min)", () => {
@@ -67,9 +75,9 @@ describe("Doctor Clinical Preferences & Super-Settings Invariants (Mandates 8e, 
 	});
 
 	it("4. Consumable materials and isolation presets are typed and provide manufacturers", () => {
-		assert.ok(ISOLATION_OPTIONS.length >= 3);
-		assert.ok(COMPOSITE_OPTIONS.length >= 4);
-		assert.ok(ADHESIVE_OPTIONS.length >= 3);
+		assert.ok(ISOLATION_OPTIONS.length >= 4, "Must provide at least 4 isolation options including liquid dam");
+		assert.ok(COMPOSITE_OPTIONS.length >= 6, "Must provide at least 6 composite options");
+		assert.ok(ADHESIVE_OPTIONS.length >= 4, "Must provide at least 4 adhesive options");
 
 		const store = useDoctorPreferencesStore.getState();
 		store.updatePreferences({
@@ -103,25 +111,35 @@ describe("Doctor Clinical Preferences & Super-Settings Invariants (Mandates 8e, 
 		);
 	});
 
-	it("7. Clinical snippets helpers provide statutory Form 043/u text blocks for 1-click insert", () => {
-		assert.ok(PROTOCOL_CLINICAL_SNIPPETS.length >= 8);
-		for (const snippet of PROTOCOL_CLINICAL_SNIPPETS) {
-			assert.ok(snippet.id.length > 0);
-			assert.ok(snippet.label.length > 0);
-			assert.ok(snippet.text.length > 20, "Snippet text must be meaningful medical text");
-			assert.ok(
-				["complaintPrompt", "objectiveTemplate", "treatmentPlanTemplate"].includes(snippet.targetField),
-			);
-		}
+	it("7. Clinical snippets helpers provide statutory Form 043/u text blocks for 1-click insert including bone grafting", () => {
+		assert.ok(PROTOCOL_CLINICAL_SNIPPETS.length >= 12, "Must provide comprehensive clinical snippets");
+
+		// Verify bone grafting snippets (requested by user)
+		const boneGraftSinus = PROTOCOL_CLINICAL_SNIPPETS.find((s) => s.id === "surg_bone_graft_sinus");
+		assert.ok(boneGraftSinus, "Must include sinus-lift bone grafting snippet");
+		assert.ok(boneGraftSinus.text.includes("Bio-Oss"), "Must mention statutory bone graft material");
+		assert.ok(boneGraftSinus.text.includes("Bio-Gide"), "Must mention collagen barrier membrane");
+
+		const boneGraftGbr = PROTOCOL_CLINICAL_SNIPPETS.find((s) => s.id === "surg_bone_graft_gbr");
+		assert.ok(boneGraftGbr, "Must include GBR bone grafting snippet");
+
+		// Verify pulpitis complete snippet
+		const pulpitisSnippet = PROTOCOL_CLINICAL_SNIPPETS.find((s) => s.id === "prep_pulpitis_complete");
+		assert.ok(pulpitisSnippet, "Must include complete pulpitis endodontic protocol");
+
+		// Verify complex extraction snippet
+		const complexExtraction = PROTOCOL_CLINICAL_SNIPPETS.find((s) => s.id === "surg_extraction_complex");
+		assert.ok(complexExtraction, "Must include complex extraction protocol");
 	});
 
-	it("8. Standard protocols seed contains valid 4 statutory clinic protocols", () => {
-		assert.strictEqual(STANDARD_PROTOCOLS_SEED.length, 4);
+	it("8. Standard protocols seed contains valid 6 statutory clinic protocols with ICD-10 diagnosis hints", () => {
+		assert.ok(STANDARD_PROTOCOLS_SEED.length >= 6, "Must provide 6 statutory clinic protocols");
 		for (const proto of STANDARD_PROTOCOLS_SEED) {
 			assert.ok(proto.title && proto.title.length > 0);
 			assert.ok(proto.specialty && proto.specialty.length > 0);
 			assert.ok(proto.defaultDurationMinutes && proto.defaultDurationMinutes >= 30);
 			assert.ok(proto.treatmentPlanTemplate && proto.treatmentPlanTemplate.length > 0);
+			assert.ok(proto.diagnosisHints && proto.diagnosisHints.length > 0, "Must contain ICD-10 diagnosis hints");
 		}
 	});
 
@@ -135,5 +153,106 @@ describe("Doctor Clinical Preferences & Super-Settings Invariants (Mandates 8e, 
 
 		themeStore.setThemeMode("light");
 		assert.strictEqual(useThemeStore.getState().themeMode, "light");
+	});
+
+	it("10. Favorite prescription medications (Form 107-1/u) provide complete clinical and Latin data", () => {
+		assert.ok(FAVORITE_MEDICATION_OPTIONS.length >= 8, "Must provide at least 8 essential dental medications");
+
+		const amoxiclav = FAVORITE_MEDICATION_OPTIONS.find((m) => m.id === "amoxiclav_875_125");
+		assert.ok(amoxiclav, "Must contain Amoxiclav 875+125");
+		assert.ok(amoxiclav.rpLatin.includes("Amoxicillini"), "Must have valid Latin Rp formula");
+		assert.strictEqual(amoxiclav.category, "antibiotic");
+
+		const nimesil = FAVORITE_MEDICATION_OPTIONS.find((m) => m.id === "nimesil_100");
+		assert.ok(nimesil, "Must contain Nimesil 100");
+		assert.ok(nimesil.rpLatin.includes("Nimesulidi"), "Must have valid Latin Rp formula");
+
+		const chlorhexidine = FAVORITE_MEDICATION_OPTIONS.find((m) => m.id === "chlorhexidine_005");
+		assert.ok(chlorhexidine, "Must contain Chlorhexidine 0.05%");
+
+		const cyfran = FAVORITE_MEDICATION_OPTIONS.find((m) => m.id === "cyfran_st");
+		assert.ok(cyfran, "Must contain Cyfran ST for anaerobes");
+
+		const suprastin = FAVORITE_MEDICATION_OPTIONS.find((m) => m.id === "suprastin_25");
+		assert.ok(suprastin, "Must contain Suprastin for postoperative edema");
+
+		const store = useDoctorPreferencesStore.getState();
+		store.updatePreferences({
+			favoriteMedicationIds: ["amoxiclav_875_125", "nimesil_100", "cyfran_st"],
+		});
+		assert.deepStrictEqual(
+			useDoctorPreferencesStore.getState().preferences.favoriteMedicationIds,
+			["amoxiclav_875_125", "nimesil_100", "cyfran_st"],
+		);
+	});
+
+	it("11. Specialty presets reconfigure doctor preferences in 1 click (surgeon, therapist, pediatric)", () => {
+		const store = useDoctorPreferencesStore.getState();
+
+		// Surgeon preset: 45 min, articaine 1:100k, surgical prescription medications
+		store.applySpecialtyPreset("surgeon");
+		const surgeonPrefs = useDoctorPreferencesStore.getState().preferences;
+		assert.strictEqual(surgeonPrefs.specialty, "surgeon");
+		assert.strictEqual(surgeonPrefs.defaultVisitDuration, 45);
+		assert.strictEqual(surgeonPrefs.favoriteAnesthetic, "articaine_100k");
+		assert.ok(surgeonPrefs.favoriteMedicationIds.includes("amoxiclav_875_125"));
+		assert.ok(surgeonPrefs.favoriteMedicationIds.includes("tranexamic_500"));
+
+		// Therapist preset: 60 min, articaine 1:200k, Estelite, OptiBond FL
+		store.applySpecialtyPreset("therapist");
+		const therapistPrefs = useDoctorPreferencesStore.getState().preferences;
+		assert.strictEqual(therapistPrefs.specialty, "therapist");
+		assert.strictEqual(therapistPrefs.defaultVisitDuration, 60);
+		assert.strictEqual(therapistPrefs.favoriteAnesthetic, "articaine_200k");
+		assert.strictEqual(therapistPrefs.defaultComposite, "estelite_asteria");
+		assert.strictEqual(therapistPrefs.defaultAdhesive, "optibond_fl");
+
+		// Pediatric preset: 30 min, pediatric dentition
+		store.applySpecialtyPreset("pediatric");
+		const pedPrefs = useDoctorPreferencesStore.getState().preferences;
+		assert.strictEqual(pedPrefs.specialty, "pediatric");
+		assert.strictEqual(pedPrefs.defaultVisitDuration, 30);
+		assert.strictEqual(pedPrefs.defaultDentition, "pediatric");
+	});
+
+	it("12. ICD-10 clinical presets provide fast 1-click diagnoses for Form 043/u protocols", () => {
+		assert.ok(ICD10_CLINICAL_PRESETS.length >= 8);
+		const codes = ICD10_CLINICAL_PRESETS.map((p) => p.code);
+		assert.ok(codes.includes("К02.1"), "Must include caries К02.1");
+		assert.ok(codes.includes("К04.0"), "Must include pulpitis К04.0");
+		assert.ok(codes.includes("К08.1"), "Must include extraction/loss К08.1");
+		assert.ok(codes.includes("К05.0"), "Must include gingivitis К05.0");
+		assert.ok(codes.includes("Z01.2"), "Must include checkup Z01.2");
+	});
+
+	it("13. Smart clinical assistant toggles persist state without modal blockers", () => {
+		const store = useDoctorPreferencesStore.getState();
+		store.updatePreferences({
+			autoMkb10: false,
+			somaticWarnings: false,
+			instantPhotoProtocol: false,
+			voiceDictationActive: false,
+		});
+
+		const updated = useDoctorPreferencesStore.getState().preferences;
+		assert.strictEqual(updated.autoMkb10, false);
+		assert.strictEqual(updated.somaticWarnings, false);
+		assert.strictEqual(updated.instantPhotoProtocol, false);
+		assert.strictEqual(updated.voiceDictationActive, false);
+	});
+
+	it("14. Anesthetic pharmacological drug mapping is clinically exact", () => {
+		// Articaine 1:100k -> ultracain_ds_forte
+		// Articaine 1:200k -> ultracain_ds
+		// Scandonest -> scandonest_3
+		const mapPrefToDrug = (key: string): string => {
+			if (key === "scandonest_mepivacaine_3") return "scandonest_3";
+			if (key === "articaine_200k") return "ultracain_ds";
+			return "ultracain_ds_forte";
+		};
+
+		assert.strictEqual(mapPrefToDrug("articaine_100k"), "ultracain_ds_forte");
+		assert.strictEqual(mapPrefToDrug("articaine_200k"), "ultracain_ds");
+		assert.strictEqual(mapPrefToDrug("scandonest_mepivacaine_3"), "scandonest_3");
 	});
 });

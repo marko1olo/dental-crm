@@ -1,10 +1,11 @@
-import { MessageCircle } from "lucide-react";
+import { BellRing, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import "./SettingsMessengersTab.css";
 
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { MaxSettingsPanel } from "./MaxSettingsPanel.js";
+import { ReminderCadenceConfigPanel } from "./ReminderCadenceConfigPanel.js";
 import { SettingsMessageTemplatesTab } from "./SettingsMessageTemplatesTab.js";
 import { SettingsTelegramTab } from "./SettingsTelegramTab.js";
 import { WhatsappSettingsPanel } from "./WhatsappSettingsPanel.js";
@@ -14,7 +15,12 @@ interface StaffOption {
 	fullName: string;
 }
 
-type MessengerTabId = "telegram" | "whatsapp" | "max" | "templates";
+export type MessengerTabId =
+	| "cadence"
+	| "telegram"
+	| "whatsapp"
+	| "max"
+	| "templates";
 
 /*
  * Контракт вкладки: только то, что она реально читает из объединённого мешка.
@@ -54,7 +60,7 @@ export function SettingsMessengersTab({
 	const mergedBag = Object.assign({}, appLogic, derivations, incomingProps);
 	const props: MessengersMergedProps = mergedBag;
 	const [activeMessenger, setActiveMessenger] = useState<MessengerTabId>(
-		settingsTab === "telegram" ? "telegram" : "whatsapp",
+		settingsTab === "telegram" ? "telegram" : "cadence",
 	);
 
 	if (settingsTab !== "messengers" && settingsTab !== "telegram") return null;
@@ -67,11 +73,11 @@ export function SettingsMessengersTab({
 			<div className="import-copy">
 				<MessageCircle aria-hidden="true" />
 				<div>
-					<p className="eyebrow">Мессенджеры</p>
-					<h2>Интеграция с мессенджерами</h2>
+					<p className="eyebrow">Мессенджеры и каденции</p>
+					<h2>Уведомления и мессенджеры клиники</h2>
 					<p>
-						Настройте интеграцию с Telegram, WhatsApp Business и MAX для
-						автоматических уведомлений, рассылок и обратной связи с пациентами.
+						Настройка цепочек напоминаний пациентам (24ч до визита, 2ч с навигацией, 24ч после операции)
+						и шлюзов доставки через WhatsApp Business, Telegram, MAX (1C) и SMS.
 					</p>
 				</div>
 			</div>
@@ -81,6 +87,24 @@ export function SettingsMessengersTab({
 				role="tablist"
 				aria-label="Каналы мессенджеров"
 			>
+				<button
+					role="tab"
+					aria-selected={activeMessenger === "cadence"}
+					aria-controls="messenger-panel-cadence"
+					id="messenger-tab-cadence"
+					type="button"
+					onClick={() => setActiveMessenger("cadence")}
+					className={`messenger-channel-tab${activeMessenger === "cadence" ? " active" : ""}`}
+				>
+					<span
+						className="messenger-tab-badge bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200 rounded px-1.5 py-0.5 text-xs font-bold inline-flex items-center gap-0.5"
+						aria-hidden="true"
+					>
+						<BellRing size={11} /> 24h
+					</span>
+					Каденция напоминаний
+				</button>
+
 				<button
 					role="tab"
 					aria-selected={activeMessenger === "telegram"}
@@ -141,9 +165,19 @@ export function SettingsMessengersTab({
 					>
 						TXT
 					</span>
-					Шаблоны
+					Шаблоны сообщений
 				</button>
 			</div>
+
+			{activeMessenger === "cadence" && (
+				<div
+					id="messenger-panel-cadence"
+					role="tabpanel"
+					aria-labelledby="messenger-tab-cadence"
+				>
+					<ReminderCadenceConfigPanel />
+				</div>
+			)}
 
 			{activeMessenger === "telegram" && (
 				<div

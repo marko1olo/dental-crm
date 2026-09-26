@@ -1,8 +1,7 @@
 import React from "react";
-import { AlertTriangle, Minus, Plus, ShieldCheck, Syringe } from "lucide-react";
+import { AlertTriangle, Check, Minus, Plus, ShieldCheck, Star, Syringe } from "lucide-react";
 import { showToast } from "../../GlobalToast";
 import {
-	CARPULE_ANESTHESIA_PRESETS,
 	calculateAnesthesiaCarpulesSafety,
 	evaluateAnesthesiaRisk,
 } from "../../../lib/clinicalProtocols043";
@@ -12,25 +11,39 @@ import { useDoctorPreferencesStore } from "../../../store/doctorPreferencesStore
 export function EmkAnesthesiaSection({
 	visitNoteForm,
 	updateVisitNoteField,
-	isLocked,
+	isLocked: _isLocked,
 	patientAge,
-	patientGender,
+	patientGender: _patientGender,
 }: EmkSectionProps) {
 	const favoriteAnes = useDoctorPreferencesStore(
 		(s) => s.preferences.favoriteAnesthetic,
 	);
-	const initialDrugKey =
-		favoriteAnes === "scandonest_mepivacaine_3"
-			? "scandonest_3"
-			: favoriteAnes === "articaine_200k"
-				? "ultracain_ds_forte"
-				: "ultracain_ds";
-	const [selectedAnesDrugKey, setSelectedAnesDrugKey] =
-		React.useState<string>(initialDrugKey);
+
+	// Clinical pharmacology mapping:
+	// - Articaine 1:100k (Forte) -> "ultracain_ds_forte"
+	// - Articaine 1:200k (Standard/sparing) -> "ultracain_ds"
+	// - Mepivacaine 3% (Plain, zero adrenaline) -> "scandonest_3"
+	const resolveDrugKeyFromPreference = React.useCallback(
+		(key: string): string => {
+			if (key === "scandonest_mepivacaine_3") return "scandonest_3";
+			if (key === "articaine_200k") return "ultracain_ds";
+			return "ultracain_ds_forte";
+		},
+		[],
+	);
+
+	const [selectedAnesDrugKey, setSelectedAnesDrugKey] = React.useState<string>(() =>
+		resolveDrugKeyFromPreference(favoriteAnes),
+	);
 	const [carpuleCount, setCarpuleCount] = React.useState<number>(1);
 	const [patientWeightKg, setPatientWeightKg] = React.useState<number>(
 		patientAge && patientAge < 14 ? 30 : 70,
 	);
+
+	// Update selected drug key when doctor preference updates
+	React.useEffect(() => {
+		setSelectedAnesDrugKey(resolveDrugKeyFromPreference(favoriteAnes));
+	}, [favoriteAnes, resolveDrugKeyFromPreference]);
 
 	const anesthesiaSafety = React.useMemo(() => {
 		return calculateAnesthesiaCarpulesSafety({
@@ -52,6 +65,10 @@ export function EmkAnesthesiaSection({
 		showToast(`Анестезия (${name}) внесена в протокол`, "success", 2500);
 	};
 
+	const isUltracainDsFavorite = favoriteAnes === "articaine_200k";
+	const isUltracainForteFavorite = favoriteAnes === "articaine_100k";
+	const isScandonestFavorite = favoriteAnes === "scandonest_mepivacaine_3";
+
 	return (
 		<div className="flex flex-col gap-2.5 mt-1 min-w-0 max-w-full">
 			{/* Быстрый протокол анестезии (1-клик пресеты) — чистый разделитель без двойных рамок (Анти-Матрёшка) */}
@@ -62,52 +79,88 @@ export function EmkAnesthesiaSection({
 						<span>Анестезия:</span>
 					</span>
 
+					{/* 1. Ультракаин Д-С 1:200 000 (щадящий) */}
 					<button
 						type="button"
-						onClick={() =>
+						onClick={() => {
+							setSelectedAnesDrugKey("ultracain_ds");
 							handleApplyPreset(
 								"Ультракаин Д-С 1:200k, 1 карп.",
 								"Анестезия: инфильтрационная Sol. Ultracaini D-S 1:200 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое.",
-							)
-						}
-						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0"
+							);
+						}}
+						className={`min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0 ${
+							isUltracainDsFavorite
+								? "bg-teal-500/10 border-teal-500 text-[var(--ink)] font-bold ring-1 ring-teal-500/30"
+								: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
+						}`}
 						data-testid="btn-anes-ultracain-ds"
 						title="1 клик: внести стандартную анестезию 1:200 000 в протокол"
 					>
-						<Syringe size={12} className="text-blue-500 shrink-0" />
+						<Syringe size={12} className="text-teal-600 shrink-0" />
 						<span>Ультракаин 1:200k (1 карп.)</span>
+						{isUltracainDsFavorite && (
+							<span className="text-[10px] text-teal-700 dark:text-teal-300 font-bold flex items-center gap-0.5">
+								<Star size={10} className="fill-teal-500 text-teal-600" />
+								<span>Выбор врача</span>
+							</span>
+						)}
 					</button>
 
+					{/* 2. Ультракаин Форте 1:100 000 (глубокий) */}
 					<button
 						type="button"
-						onClick={() =>
+						onClick={() => {
+							setSelectedAnesDrugKey("ultracain_ds_forte");
 							handleApplyPreset(
 								"Ультракаин Форте 1:100k, 1 карп.",
 								"Анестезия: проводниковая/инфильтрационная Sol. Ultracaini D-S Forte 1:100 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое.",
-							)
-						}
-						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0"
+							);
+						}}
+						className={`min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0 ${
+							isUltracainForteFavorite
+								? "bg-teal-500/10 border-teal-500 text-[var(--ink)] font-bold ring-1 ring-teal-500/30"
+								: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
+						}`}
 						data-testid="btn-anes-ultracain-ds-forte"
 						title="1 клик: внести глубокую анестезию 1:100 000 в протокол"
 					>
 						<Syringe size={12} className="text-blue-500 shrink-0" />
 						<span>Ультракаин Форте (1 карп.)</span>
+						{isUltracainForteFavorite && (
+							<span className="text-[10px] text-teal-700 dark:text-teal-300 font-bold flex items-center gap-0.5">
+								<Star size={10} className="fill-teal-500 text-teal-600" />
+								<span>Выбор врача</span>
+							</span>
+						)}
 					</button>
 
+					{/* 3. Скандонест 3% (без адреналина) */}
 					<button
 						type="button"
-						onClick={() =>
+						onClick={() => {
+							setSelectedAnesDrugKey("scandonest_3");
 							handleApplyPreset(
 								"Скандонест 3% без адреналина, 1 карп.",
 								"Анестезия: инфильтрационная Sol. Scandonest 3% (без адреналина) — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание достаточное.",
-							)
-						}
-						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0"
+							);
+						}}
+						className={`min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0 ${
+							isScandonestFavorite
+								? "bg-teal-500/10 border-teal-500 text-[var(--ink)] font-bold ring-1 ring-teal-500/30"
+								: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
+						}`}
 						data-testid="btn-anes-scandonest-3"
 						title="1 клик: безадреналиновая анестезия для кардио-пациентов"
 					>
-						<Syringe size={12} className="text-blue-500 shrink-0" />
+						<Syringe size={12} className="text-amber-500 shrink-0" />
 						<span>Скандонест 3% (без адреналина)</span>
+						{isScandonestFavorite && (
+							<span className="text-[10px] text-teal-700 dark:text-teal-300 font-bold flex items-center gap-0.5">
+								<Star size={10} className="fill-teal-500 text-teal-600" />
+								<span>Выбор врача</span>
+							</span>
+						)}
 					</button>
 				</div>
 			</div>

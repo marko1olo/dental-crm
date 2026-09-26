@@ -4,6 +4,7 @@ import {
 	Clock,
 	FileText,
 	Palette,
+	Pill,
 	ShieldCheck,
 	Sparkles,
 	Stethoscope,
@@ -18,6 +19,7 @@ import {
 	ANESTHETIC_OPTIONS,
 	COMPOSITE_OPTIONS,
 	DURATION_PRESETS,
+	FAVORITE_MEDICATION_OPTIONS,
 	ISOLATION_OPTIONS,
 	ODONTOGRAM_NOTATIONS,
 	useDoctorPreferencesStore,
@@ -100,7 +102,7 @@ const AVAILABLE_QUICK_PROTOCOLS = [
 	{ id: "caries_deep_k02_1", title: "Лечение глубокого кариеса", icd: "К02.1" },
 	{ id: "pulpitis_acute_k04_0", title: "Острый пульпит", icd: "К04.0" },
 	{ id: "extraction_simple_k08_1", title: "Удаление зуба простое", icd: "К08.1" },
-	{ id: "implant_installation_k08_1", title: "Дентальная имплантация", icd: "К08.1" },
+	{ id: "implant_installation_k08_1", title: "Дентальная имплантация и остеопластика", icd: "К08.1" },
 	{ id: "prophy_hygiene_k05_0", title: "Комплексная гигиена", icd: "К05.0" },
 ];
 
@@ -126,6 +128,17 @@ export function DoctorClinicalPreferencesSection({
 		showToast(`Любимый анестетик: ${found?.badge ?? key}`, "success");
 	};
 
+	const handleMedicationToggle = (medId: string) => {
+		const current = preferences.favoriteMedicationIds || [];
+		const next = current.includes(medId)
+			? current.filter((id) => id !== medId)
+			: [...current, medId];
+		updatePreferences({ favoriteMedicationIds: next });
+		const found = FAVORITE_MEDICATION_OPTIONS.find((m) => m.id === medId);
+		const action = current.includes(medId) ? "удален из любимых" : "добавлен в любимые";
+		showToast(`${found?.tradeName ?? medId} ${action}`, "info");
+	};
+
 	const handleProtocolToggle = (protocolId: string) => {
 		const current = preferences.quickProtocolIds || [];
 		const next = current.includes(protocolId)
@@ -147,7 +160,7 @@ export function DoctorClinicalPreferencesSection({
 							Клинические настройки врача
 						</h3>
 						<p className="m-0 text-xs text-[var(--muted)]">
-							Персональные пресеты для приёма пациентов, дневника Формы 043/у и сетки расписания.
+							Персональные пресеты для приёма пациентов, рецептов 107-1/у, дневника 043/у и сетки расписания.
 						</p>
 					</div>
 				</div>
@@ -323,7 +336,61 @@ export function DoctorClinicalPreferencesSection({
 					</div>
 				</div>
 
-				{/* 4. Отображение зубной формулы / Одонтограмма */}
+				{/* 4. Любимые медикаменты для рецептов (Рецептурный бланк 107-1/у) */}
+				<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2.5">
+					<div className="flex items-center justify-between">
+						<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+							<Pill size={15} className="text-[var(--teal)]" />
+							<span>Любимые медикаменты для рецептов (Бланк 107-1/у)</span>
+						</label>
+						<span className="text-[11px] font-medium text-[var(--muted)]">
+							Быстрая выписка рецептов и назначений в 1 клик
+						</span>
+					</div>
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+						{FAVORITE_MEDICATION_OPTIONS.map((med) => {
+							const isFavorite = (preferences.favoriteMedicationIds || []).includes(med.id);
+							return (
+								<button
+									key={med.id}
+									type="button"
+									onClick={() => handleMedicationToggle(med.id)}
+									className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between gap-1 min-h-[44px] ${
+										isFavorite
+											? "bg-[var(--paper)] border-[var(--teal)] shadow-2xs ring-1 ring-[var(--teal)]"
+											: "bg-[var(--paper)] border-[var(--line)] opacity-75 hover:opacity-100 hover:border-[var(--teal)]/60"
+									}`}
+								>
+									<div className="flex items-start justify-between gap-1 w-full">
+										<span className="text-xs font-bold text-[var(--ink)] leading-snug">
+											{med.tradeName}
+										</span>
+										{isFavorite ? (
+											<span className="w-4 h-4 rounded-full bg-[var(--teal)] text-white flex items-center justify-center shrink-0">
+												<Check size={10} className="stroke-[3]" />
+											</span>
+										) : (
+											<span className="w-4 h-4 rounded-full border border-[var(--line)] shrink-0" />
+										)}
+									</div>
+									<span className="text-[10px] text-[var(--muted)] line-clamp-1">
+										{med.mnn}
+									</span>
+									<div className="flex items-center justify-between gap-1 mt-1 pt-1 border-t border-[var(--line)]/50">
+										<span className="text-[9px] font-mono font-bold text-[var(--teal)]">
+											{med.dosage}
+										</span>
+										<span className="text-[9px] text-[var(--muted)] font-medium">
+											{med.categoryLabel}
+										</span>
+									</div>
+								</button>
+							);
+						})}
+					</div>
+				</div>
+
+				{/* 5. Отображение зубной формулы / Одонтограмма */}
 				<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3">
 					<div className="flex items-center justify-between">
 						<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
@@ -404,7 +471,7 @@ export function DoctorClinicalPreferencesSection({
 					</div>
 				</div>
 
-				{/* 5. Быстрые шаблоны Формы 043/у */}
+				{/* 6. Быстрые шаблоны Формы 043/у */}
 				<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2">
 					<div className="flex items-center justify-between">
 						<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
@@ -450,7 +517,7 @@ export function DoctorClinicalPreferencesSection({
 					</div>
 				</div>
 
-				{/* 6. Тема оформления рабочего места */}
+				{/* 7. Тема оформления рабочего места */}
 				<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2">
 					<div className="flex items-center justify-between">
 						<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
@@ -488,7 +555,6 @@ export function DoctorClinicalPreferencesSection({
 											</span>
 										)}
 									</div>
-									{/* Мини-превью палитры темы */}
 									<div className="flex items-center gap-1 my-0.5">
 										<div
 											className="w-4 h-4 rounded-full border border-black/10 shrink-0"
@@ -518,7 +584,7 @@ export function DoctorClinicalPreferencesSection({
 					</div>
 				</div>
 
-				{/* 7. Звуковые оповещения таймера и онлайн-записи */}
+				{/* 8. Звуковые оповещения таймера и онлайн-записи */}
 				<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2.5">
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">

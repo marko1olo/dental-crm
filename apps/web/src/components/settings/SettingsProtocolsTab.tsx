@@ -1,7 +1,7 @@
 import type { ProtocolTemplate } from "@dental/shared";
 import {
+	Check,
 	ClipboardCheck,
-	Clock,
 	Edit2,
 	Plus,
 	Search,
@@ -22,27 +22,12 @@ import { AutoclaveLog257Modal } from "../sanpin/autoclaveLog/AutoclaveLog257Moda
 import "./SettingsProtocolsTab.css";
 import { logger } from "../../utils/logger";
 import {
+	ICD10_CLINICAL_PRESETS,
 	PROTOCOL_CLINICAL_SNIPPETS,
 	STANDARD_PROTOCOLS_SEED,
 	type ProtocolSnippet,
 } from "./protocolSnippetHelpers";
 
-/**
- * Отказ сервера человеческими словами.
- *
- * БЫЛО: `data.message || "Ошибка сохранения шаблона"` и `"Ошибка удаления"` —
- * ни причины, ни того, что делать. Хуже, что формулировка сервера бралась без
- * разбора: у API нет обработчика ненайденного адреса (apps/api/src/server.ts,
- * setNotFoundHandler отсутствует), поэтому Fastify сам отвечает английским
- * «Route POST:/api/settings/protocols not found» — и администратор клиники
- * читал бы именно это.
- *
- * Поэтому формулировку сервера берём только если она действительно по-русски:
- * ровно такую же проверку делает сам сервер в publicApiErrorMessage
- * (apps/api/src/server.ts:226-233), прежде чем показать текст исключения
- * человеку. Иначе причину называем по коду ответа общими для всех панелей
- * словами из lib/panelStateText.ts.
- */
 async function refusalMessage(
 	response: Response,
 	action: string,
@@ -53,12 +38,11 @@ async function refusalMessage(
 		if (typeof payload.message === "string")
 			serverMessage = payload.message.trim();
 	} catch {
-		// Тело не разобралось (HTML прокси, пустой ответ) — причина будет по коду.
+		// Тело не разобралось
 	}
 	if (serverMessage && /[А-Яа-яЁё]/.test(serverMessage)) {
 		return `${action}: ${serverMessage}`;
 	}
-	// Код ответа и техническая строка нужны поддержке, а не человеку у стойки.
 	logger.error(
 		`[SettingsProtocolsTab] ${response.url} ответил ${response.status}: ${serverMessage || "без сообщения"}`,
 	);
@@ -76,8 +60,6 @@ export function SettingsProtocolsTab() {
 		specialtyLabels,
 		documentLabels,
 		imagingKindLabels,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		applyProtocolTemplate,
 		auth,
 	} = mergedProps;
 
@@ -108,6 +90,7 @@ export function SettingsProtocolsTab() {
 			!q ||
 			t.title.toLowerCase().includes(q) ||
 			t.visitReason.toLowerCase().includes(q) ||
+			(t.diagnosisHints ?? []).some((h) => h.toLowerCase().includes(q)) ||
 			(t.safetyWarnings ?? []).some((w) => w.toLowerCase().includes(q));
 		const matchesSpecialty =
 			selectedSpecialtyFilter === "all" || t.specialty === selectedSpecialtyFilter;
@@ -154,25 +137,6 @@ export function SettingsProtocolsTab() {
 				? `/api/settings/protocols/${editingId}`
 				: "/api/settings/protocols";
 
-			/*
-			 * ЗАГОЛОВКИ БЕРУТСЯ У ОБЩЕГО ПОМОЩНИКА НАСТРОЕК, А НЕ СОБИРАЮТСЯ ЗДЕСЬ.
-			 *
-			 * БЫЛО: `"x-dente-admin-secret": clinicToken` с пометкой «for fallback
-			 * compatibility» — то есть токен клиники отправлялся ПОД ВИДОМ секрета
-			 * администратора настроек. Это работает ровно до тех пор, пока секрет на
-			 * сервере не задан: тогда охрана настроек пропускает запрос без него
-			 * вовсе. Как только установка получает DENTE_SETTINGS_ADMIN_SECRET —
-			 * а это и есть боевая установка, — сервер сравнивает присланное значение
-			 * с настоящим секретом, не находит совпадения и отвечает 403. Клиника
-			 * теряет возможность завести или исправить шаблон приёма, и причина
-			 * выглядит как «нет прав», хотя права есть.
-			 *
-			 * settingsAccessHeaders отправляет СЕССИОННЫЙ секрет домена настроек —
-			 * тот, который администратор ввёл в разблокировке, — и вместе с ним
-			 * токены клиники и сотрудника, каждый в своём заголовке. Секрета нет —
-			 * заголовка нет вовсе, и сервер отвечает своим человеческим отказом, а
-			 * не сравнивает мусор.
-			 */
 			const res = await fetch(url, {
 				method,
 				headers: auth.settingsAccessHeaders({
@@ -195,11 +159,6 @@ export function SettingsProtocolsTab() {
 			showToast("Шаблон сохранён", "success");
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
-			/*
-			 * Сюда попадает только обрыв до ответа. БЫЛО: `err.message ||
-			 * "Неизвестная ошибка"`, то есть в красной плашке появлялся английский
-			 * текст исключения браузера («Failed to fetch»).
-			 */
 			logger.error(err);
 			showToast(
 				actionFailureToast(
@@ -217,16 +176,12 @@ export function SettingsProtocolsTab() {
 	const handleDelete = async (id: string) => {
 		setLoading(true);
 		try {
-			// Тот же помощник, что при сохранении: удаление шло тем же путём и тем
-			// же образом упиралось бы в 403 в боевой установке.
 			const res = await fetch(`/api/settings/protocols/${id}`, {
 				method: "DELETE",
 				headers: auth.settingsAccessHeaders(),
 			});
 
 			if (!res.ok) {
-				// БЫЛО: «Ошибка удаления» на любой отказ — от нехватки прав до
-				// недоступного сервера. Шаблон при этом остаётся на месте.
 				showToast(await refusalMessage(res, "Шаблон не удалён"), "error");
 				setLoading(false);
 				return;
@@ -237,7 +192,6 @@ export function SettingsProtocolsTab() {
 			showToast("Шаблон удалён", "success");
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
-			// БЫЛО: `err.message` — английский текст исключения браузера.
 			logger.error(err);
 			showToast(
 				actionFailureToast(
@@ -288,7 +242,7 @@ export function SettingsProtocolsTab() {
 					<ClipboardCheck aria-hidden="true" />
 					<div>
 						<h2>{editingId ? "Редактирование шаблона" : "Новый шаблон"}</h2>
-						<p>Настройте параметры клинического протокола.</p>
+						<p>Конструктор протокола Формы 043/у: шаблоны жалоб, дневника, МКБ-10 и манипуляций.</p>
 					</div>
 				</div>
 
@@ -333,7 +287,7 @@ export function SettingsProtocolsTab() {
 						</select>
 					</label>
 					<label className="dente-label">
-						<span>Причина визита (по-умолчанию)</span>
+						<span>Причина визита (по умолчанию)</span>
 						<input
 							type="text"
 							className="dente-input"
@@ -361,7 +315,7 @@ export function SettingsProtocolsTab() {
 								}
 							/>
 							<div className="flex items-center gap-1 flex-wrap">
-								{[15, 30, 45, 60, 90].map((mins) => (
+								{[15, 30, 45, 60, 90, 120].map((mins) => (
 									<button
 										key={mins}
 										type="button"
@@ -385,10 +339,49 @@ export function SettingsProtocolsTab() {
 					</label>
 				</div>
 
-				<div style={{ marginTop: "1rem" }}>
+				<div style={{ marginTop: "1rem" }} className="space-y-4">
+					{/* МКБ-10 автоподстановка (быстрый выбор в 1 клик) */}
 					<label className="dente-label">
-						<div className="flex items-center justify-between flex-wrap gap-1">
-							<span>Шаблон жалоб (подсказка)</span>
+						<div className="flex items-center justify-between flex-wrap gap-1 mb-1.5">
+							<span className="font-bold">Коды диагнозов МКБ-10 (автоподстановка в дневник 043/у)</span>
+							<span className="text-[11px] text-[var(--muted)]">
+								1 клик для добавления или снятия диагноза
+							</span>
+						</div>
+						<div className="flex items-center gap-1.5 flex-wrap p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+							{ICD10_CLINICAL_PRESETS.map((icd) => {
+								const currentHints = editForm.diagnosisHints || [];
+								const isSelected = currentHints.includes(icd.code);
+								return (
+									<button
+										key={icd.code}
+										type="button"
+										onClick={() => {
+											const next = isSelected
+												? currentHints.filter((c) => c !== icd.code)
+												: [...currentHints, icd.code];
+											setEditForm((prev) => ({ ...prev, diagnosisHints: next }));
+										}}
+										className={`min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+											isSelected
+												? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs font-bold"
+												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
+										}`}
+										title={`${icd.code}: ${icd.title}`}
+									>
+										<span className="font-mono">{icd.code}</span>
+										<span className="text-[10px] opacity-90 hidden sm:inline">{icd.title}</span>
+										{isSelected && <Check size={12} className="stroke-[3]" />}
+									</button>
+								);
+							})}
+						</div>
+					</label>
+
+					{/* Шаблон жалоб с быстрыми сниппетами */}
+					<label className="dente-label">
+						<div className="flex items-center justify-between flex-wrap gap-1 mb-1">
+							<span>Шаблон жалоб (подсказка врачу)</span>
 							<div className="flex items-center gap-1 flex-wrap">
 								{PROTOCOL_CLINICAL_SNIPPETS.filter((s) => s.targetField === "complaintPrompt").map((s) => (
 									<button
@@ -415,7 +408,9 @@ export function SettingsProtocolsTab() {
 							}
 						/>
 					</label>
-					<label className="dente-label" style={{ marginTop: "1rem" }}>
+
+					{/* Шаблон объективного статуса */}
+					<label className="dente-label">
 						<span>Шаблон объективного статуса</span>
 						<textarea
 							className="dente-input"
@@ -429,22 +424,25 @@ export function SettingsProtocolsTab() {
 							}
 						/>
 					</label>
-					<label className="dente-label" style={{ marginTop: "1rem" }}>
-						<div className="flex items-center justify-between flex-wrap gap-1">
-							<span>Шаблон плана лечения и протокола манипуляции</span>
-							<div className="flex items-center gap-1 flex-wrap">
-								{PROTOCOL_CLINICAL_SNIPPETS.filter((s) => s.targetField === "treatmentPlanTemplate").slice(0, 4).map((s) => (
-									<button
-										key={s.id}
-										type="button"
-										onClick={() => handleAppendSnippet(s)}
-										className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[var(--paper-soft)] border border-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)] cursor-pointer"
-										title="Добавить готовый протокол"
-									>
-										+ {s.label}
-									</button>
-								))}
-							</div>
+
+					{/* Шаблон плана лечения с быстрыми блоками (кариес, пульпит, удаление, имплантация, костная пластика) */}
+					<label className="dente-label">
+						<div className="flex items-center justify-between flex-wrap gap-1 mb-1">
+							<span>Шаблон плана лечения и манипуляций (Форма 043/у)</span>
+							<span className="text-[11px] text-[var(--muted)]">Быстрые протоколы (1 клик):</span>
+						</div>
+						<div className="flex items-center gap-1 flex-wrap p-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] mb-2">
+							{PROTOCOL_CLINICAL_SNIPPETS.filter((s) => s.targetField === "treatmentPlanTemplate").map((s) => (
+								<button
+									key={s.id}
+									type="button"
+									onClick={() => handleAppendSnippet(s)}
+									className="px-2 py-1 rounded text-[10px] font-semibold bg-[var(--paper)] border border-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)] cursor-pointer shadow-2xs"
+									title={`Вставить: ${s.text}`}
+								>
+									+ {s.label}
+								</button>
+							))}
 						</div>
 						<textarea
 							className="dente-input"
@@ -501,8 +499,7 @@ export function SettingsProtocolsTab() {
 						<p className="eyebrow">Протоколы</p>
 						<h2>Шаблоны приема по специальностям</h2>
 						<p>
-							Настройте протоколы для ваших врачей, чтобы ускорить заполнение
-							карты.
+							Настройте протоколы для ускорения заполнения медкарты 043/у и автоподбора диагнозов МКБ-10.
 						</p>
 					</div>
 				</div>
@@ -513,7 +510,7 @@ export function SettingsProtocolsTab() {
 						style={{ display: "flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 						onClick={handleSeedStandardProtocols}
 						disabled={loading}
-						title="Подключить 4 стандартных протокола клиники в 1 клик"
+						title="Подключить стандартные протоколы клиники в 1 клик"
 					>
 						<Sparkles size={15} style={{ color: "var(--teal)" }} />
 						<span>Базовые протоколы (1 клик)</span>
@@ -540,18 +537,6 @@ export function SettingsProtocolsTab() {
 				</div>
 			</div>
 
-			{/*
-				ТРИ СОСТОЯНИЯ ВМЕСТО ОДНОГО.
-
-				БЫЛО: сразу `typedProtocolTemplates.map(...)`. У клиники без шаблонов
-				под заголовком не было НИЧЕГО — ни «шаблонов нет», ни подсказки, зачем
-				они нужны и с чего начать. Пустая вкладка выглядела как незагруженная.
-
-				Ветка «загружаем» — защита, а не наблюдаемое состояние: сегодня
-				App.tsx:2333 не пускает в рабочую оболочку без загруженного dashboard,
-				но тип у него nullable, и вкладка не должна утверждать «шаблонов нет»,
-				если данных клиники у неё вообще нет.
-			*/}
 			{!dashboard ? (
 				<EmptyState
 					icon={<ClipboardCheck aria-hidden="true" />}
@@ -584,7 +569,7 @@ export function SettingsProtocolsTab() {
 									minHeight: "44px",
 								}}
 							>
-								<Sparkles size={16} /> Подключить 4 базовых протокола клиники
+								<Sparkles size={16} /> Подключить базовые протоколы клиники
 							</button>
 							<button
 								className="secondary-button"
@@ -612,7 +597,7 @@ export function SettingsProtocolsTab() {
 								type="text"
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
-								placeholder="Быстрый поиск по названию или причине визита..."
+								placeholder="Быстрый поиск по названию, причине визита или МКБ-10..."
 								className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] min-h-[36px]"
 							/>
 						</div>
@@ -631,7 +616,7 @@ export function SettingsProtocolsTab() {
 									onClick={() => setSelectedSpecialtyFilter(f.key)}
 									className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer min-h-[32px] ${
 										selectedSpecialtyFilter === f.key
-											? "bg-[var(--teal)] text-white border-[var(--teal)]"
+											? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold"
 											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
 									}`}
 								>
@@ -650,9 +635,24 @@ export function SettingsProtocolsTab() {
 							{filteredTemplates.map((template) => (
 								<article className="protocol-settings-card" key={template.id}>
 									<div className="protocol-settings-head">
-										<span>
-											{specialtyLabels?.[template.specialty] ?? template.specialty}
-										</span>
+										<div className="flex items-center justify-between gap-1 flex-wrap mb-1">
+											<span>
+												{specialtyLabels?.[template.specialty] ?? template.specialty}
+											</span>
+											{(template.diagnosisHints ?? []).length > 0 && (
+												<div className="flex items-center gap-1 flex-wrap">
+													{template.diagnosisHints?.map((code) => (
+														<span
+															key={code}
+															className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-teal-500/15 text-teal-800 dark:text-teal-300 border border-teal-500/30"
+															title={`МКБ-10: ${code}`}
+														>
+															МКБ {code}
+														</span>
+													))}
+												</div>
+											)}
+										</div>
 										<strong>{template.title}</strong>
 										<p>
 											{template.visitReason} · {template.defaultDurationMinutes} мин

@@ -47,36 +47,11 @@ const CHANNEL_BADGES: Record<
 	MessageTemplateChannel,
 	{ label: string; badgeClass: string; headerClass: string; bubbleClass: string }
 > = {
-	telegram: {
-		label: "Telegram",
-		badgeClass: "badge-channel-tg",
-		headerClass: "phone-header-tg",
-		bubbleClass: "phone-bubble-tg",
-	},
-	whatsapp: {
-		label: "WhatsApp",
-		badgeClass: "badge-channel-wa",
-		headerClass: "phone-header-wa",
-		bubbleClass: "phone-bubble-wa",
-	},
-	max: {
-		label: "MAX (1С)",
-		badgeClass: "badge-channel-max",
-		headerClass: "phone-header-max",
-		bubbleClass: "phone-bubble-max",
-	},
-	sms: {
-		label: "SMS",
-		badgeClass: "badge-channel-sms",
-		headerClass: "phone-header-sms",
-		bubbleClass: "phone-bubble-sms",
-	},
-	email: {
-		label: "Email",
-		badgeClass: "badge-channel-email",
-		headerClass: "phone-header-email",
-		bubbleClass: "phone-bubble-email",
-	},
+	telegram: { label: "Telegram", badgeClass: "badge-channel-tg", headerClass: "phone-header-tg", bubbleClass: "phone-bubble-tg" },
+	whatsapp: { label: "WhatsApp", badgeClass: "badge-channel-wa", headerClass: "phone-header-wa", bubbleClass: "phone-bubble-wa" },
+	max: { label: "MAX (1С)", badgeClass: "badge-channel-max", headerClass: "phone-header-max", bubbleClass: "phone-bubble-max" },
+	sms: { label: "SMS", badgeClass: "badge-channel-sms", headerClass: "phone-header-sms", bubbleClass: "phone-bubble-sms" },
+	email: { label: "Email", badgeClass: "badge-channel-email", headerClass: "phone-header-email", bubbleClass: "phone-bubble-email" },
 };
 
 export function SettingsMessageTemplatesTab() {
@@ -243,43 +218,24 @@ export function SettingsMessageTemplatesTab() {
 
 		try {
 			const headers = auth
-				? auth.denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-					})
+				? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
 				: { "Content-Type": "application/json" };
 
-			if (editingId) {
-				const payload: UpdateMessageTemplateInput = {
-					title: draftTitle,
-					channel: draftChannel,
-					intent: draftScenario,
-					templateText: draftText,
-					isActive: draftIsActive,
-				};
-				const res = await fetch(`/api/v1/message-templates/${editingId}`, {
-					method: "PUT",
-					headers,
-					body: JSON.stringify(payload),
-				});
-				if (!res.ok) throw new Error("Не удалось обновить шаблон");
-				showToast("Шаблон сообщения успешно обновлён", "success");
-			} else {
-				const payload: CreateMessageTemplateInput = {
-					title: draftTitle,
-					channel: draftChannel,
-					intent: draftScenario,
-					templateText: draftText,
-					isActive: draftIsActive,
-				};
-				const res = await fetch("/api/v1/message-templates", {
-					method: "POST",
-					headers,
-					body: JSON.stringify(payload),
-				});
-				if (!res.ok) throw new Error("Не удалось создать шаблон");
-				showToast("Шаблон сообщения успешно создан", "success");
-			}
-
+			const payload: CreateMessageTemplateInput = {
+				title: draftTitle,
+				channel: draftChannel,
+				intent: draftScenario,
+				templateText: draftText,
+				isActive: draftIsActive,
+			};
+			const url = editingId ? `/api/v1/message-templates/${editingId}` : "/api/v1/message-templates";
+			const res = await fetch(url, {
+				method: editingId ? "PUT" : "POST",
+				headers,
+				body: JSON.stringify(payload),
+			});
+			if (!res.ok) throw new Error(editingId ? "Не удалось обновить шаблон" : "Не удалось создать шаблон");
+			showToast(editingId ? "Шаблон сообщения успешно обновлён" : "Шаблон сообщения успешно создан", "success");
 			setIsEditorOpen(false);
 			loadTemplates();
 		} catch (error) {
@@ -511,9 +467,37 @@ export function SettingsMessageTemplatesTab() {
 
 							{/* Macro Tags Picker Toolbar */}
 							<div className="macro-picker-section">
-								<div className="macro-picker-header">
-									<Tag size={14} /> Динамические макросы (клик для вставки):
+								<div className="macro-picker-header flex items-center justify-between">
+									<span className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink)]">
+										<Tag size={14} className="text-teal-600" /> Переменные шаблона (клик для вставки в текст):
+									</span>
+									<span className="text-[11px] text-[var(--muted)]">
+										Автоматически заменяются данными визита
+									</span>
 								</div>
+
+								{/* Quick Essential Macro Chips */}
+								<div className="flex items-center gap-1.5 flex-wrap pt-1 pb-1">
+									{[
+										{ key: "patient_name", label: "{patient_name} — Пациент" },
+										{ key: "doctor_name", label: "{doctor_name} — Врач" },
+										{ key: "time", label: "{time} — Время" },
+										{ key: "clinic_address", label: "{clinic_address} — Адрес" },
+										{ key: "appointment_date", label: "{appointment_date} — Дата" },
+										{ key: "portal_link", label: "{portal_link} — Подтверждение" },
+									].map((m) => (
+										<button
+											key={m.key}
+											type="button"
+											onClick={() => insertMacroAtCursor(m.key)}
+											className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 border border-teal-300 dark:border-teal-800 hover:bg-teal-100 cursor-pointer transition-colors"
+											title={`Вставить ${m.key} в позицию курсора`}
+										>
+											+{m.label}
+										</button>
+									))}
+								</div>
+
 								<div className="macro-tags-grid">
 									{DYNAMIC_MESSAGE_MACROS.map((macro) => (
 										<button
@@ -536,10 +520,14 @@ export function SettingsMessageTemplatesTab() {
 									id="draftText"
 									ref={textareaRef}
 									className="textarea-body"
-									placeholder="Введите текст сообщения с макросами..."
+									placeholder="Введите текст сообщения с макросами {patient_name}, {time}, {doctor_name}, {clinic_address}..."
 									value={draftText}
 									onChange={(e) => setDraftText(e.target.value)}
 									required
+									rows={5}
+									autoCapitalize="none"
+									autoCorrect="off"
+									spellCheck={false}
 								/>
 							</div>
 

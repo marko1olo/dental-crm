@@ -28,6 +28,11 @@ import { SettingsAiTab } from "./SettingsAiTab";
 import { SettingsProfileTab } from "./SettingsProfileTab";
 import { SettingsProtocolsTab } from "./SettingsProtocolsTab";
 import { SettingsRulesTab } from "./SettingsRulesTab";
+import {
+	useDoctorPreferencesStore,
+	type DoctorSpecialtyKey,
+} from "../../store/doctorPreferencesStore";
+import { showToast } from "../GlobalToast";
 
 export type DoctorSubTab =
 	| "profile"
@@ -88,6 +93,17 @@ const DOCTOR_TABS: Array<{
 	},
 ];
 
+const SPECIALTY_PRESET_BUTTONS: readonly {
+	key: DoctorSpecialtyKey;
+	label: string;
+}[] = [
+	{ key: "therapist", label: "Терапевт" },
+	{ key: "surgeon", label: "Хирург-имплантолог" },
+	{ key: "orthopedist", label: "Ортопед" },
+	{ key: "orthodontist", label: "Ортодонт" },
+	{ key: "pediatric", label: "Детский врач" },
+];
+
 export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 	props,
 	initialTab = "profile",
@@ -101,15 +117,29 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 		}
 	}, [initialTab]);
 
-	// Super-settings: clinical quick toggles
-	const [autoMkb10, setAutoMkb10] = useState(true);
-	const [somaticWarnings, setSomaticWarnings] = useState(true);
-	const [instantPhotoProtocol, setInstantPhotoProtocol] = useState(true);
-	const [voiceDictationActive, setVoiceDictationActive] = useState(true);
+	// Persisted doctor preferences and smart toggles
+	const preferences = useDoctorPreferencesStore((s) => s.preferences);
+	const updatePreferences = useDoctorPreferencesStore((s) => s.updatePreferences);
+	const applySpecialtyPreset = useDoctorPreferencesStore((s) => s.applySpecialtyPreset);
+
+	const autoMkb10 = preferences.autoMkb10;
+	const somaticWarnings = preferences.somaticWarnings;
+	const instantPhotoProtocol = preferences.instantPhotoProtocol;
+	const voiceDictationActive = preferences.voiceDictationActive;
+	const currentSpecialty = preferences.specialty;
 
 	const handleTabChange = (tabId: DoctorSubTab) => {
 		setActiveSubTab(tabId);
 		onSelectTab?.(tabId);
+	};
+
+	const handleToggleAssistant = (
+		key: "autoMkb10" | "somaticWarnings" | "instantPhotoProtocol" | "voiceDictationActive",
+		label: string,
+	) => {
+		const next = !preferences[key];
+		updatePreferences({ [key]: next });
+		showToast(`${label}: ${next ? "включено" : "выключено"}`, next ? "success" : "info");
 	};
 
 	return (
@@ -138,25 +168,31 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 				{/* Quick Clinical Specialty Presets */}
 				<div className="flex flex-wrap items-center gap-1.5 self-stretch md:self-auto">
 					<span className="text-xs text-[var(--muted)] mr-1 hidden lg:inline">Специализация:</span>
-					<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] cursor-pointer hover:border-teal-500 transition-colors">
-						Терапевт
-					</span>
-					<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] cursor-pointer hover:border-teal-500 transition-colors">
-						Хирург-имплантолог
-					</span>
-					<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] cursor-pointer hover:border-teal-500 transition-colors">
-						Ортопед
-					</span>
-					<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] cursor-pointer hover:border-teal-500 transition-colors">
-						Ортодонт
-					</span>
-					<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] cursor-pointer hover:border-teal-500 transition-colors">
-						Детский врач
-					</span>
+					{SPECIALTY_PRESET_BUTTONS.map((spec) => {
+						const isSelected = currentSpecialty === spec.key;
+						return (
+							<button
+								key={spec.key}
+								type="button"
+								onClick={() => {
+									applySpecialtyPreset(spec.key);
+									showToast(`Пресет «${spec.label}» активирован (настройки приёма обновлены)`, "success");
+								}}
+								className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer min-h-[30px] ${
+									isSelected
+										? "bg-teal-600 text-white border-teal-600 shadow-2xs font-bold"
+										: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:border-teal-500"
+								}`}
+								title={`Активировать пресет рабочего места для «${spec.label}»`}
+							>
+								{spec.label}
+							</button>
+						);
+					})}
 				</div>
 			</div>
 
-			{/* Super-Settings: 1-Click Smart Clinical Toggles */}
+			{/* Super-Settings: 1-Click Smart Clinical Toggles (Fully Persisted) */}
 			<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3">
 				<div className="flex items-center justify-between">
 					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
@@ -170,7 +206,7 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 					<button
 						type="button"
-						onClick={() => setAutoMkb10((prev) => !prev)}
+						onClick={() => handleToggleAssistant("autoMkb10", "МКБ-10 Автоподбор")}
 						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
 							autoMkb10
 								? "bg-teal-500/10 border-teal-500/40 text-[var(--ink)]"
@@ -188,7 +224,7 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 
 					<button
 						type="button"
-						onClick={() => setSomaticWarnings((prev) => !prev)}
+						onClick={() => handleToggleAssistant("somaticWarnings", "Соматические алерты")}
 						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
 							somaticWarnings
 								? "bg-emerald-500/10 border-emerald-500/40 text-[var(--ink)]"
@@ -206,7 +242,7 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 
 					<button
 						type="button"
-						onClick={() => setInstantPhotoProtocol((prev) => !prev)}
+						onClick={() => handleToggleAssistant("instantPhotoProtocol", "Быстрый фотопротокол")}
 						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
 							instantPhotoProtocol
 								? "bg-cyan-500/10 border-cyan-500/40 text-[var(--ink)]"
@@ -224,7 +260,7 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 
 					<button
 						type="button"
-						onClick={() => setVoiceDictationActive((prev) => !prev)}
+						onClick={() => handleToggleAssistant("voiceDictationActive", "Голосовая диктовка")}
 						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
 							voiceDictationActive
 								? "bg-purple-500/10 border-purple-500/40 text-[var(--ink)]"

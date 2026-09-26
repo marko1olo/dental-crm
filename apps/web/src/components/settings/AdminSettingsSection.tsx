@@ -26,19 +26,30 @@ import { ErrorBoundary } from "../ErrorBoundary";
 import { EgiszBlankPermissionsWidget } from "../integrations/EgiszBlankPermissionsWidget";
 import { YandexCalendarSyncsWidget } from "../integrations/YandexCalendarSyncsWidget";
 import { PublicBookingLinkPanel } from "./PublicBookingLinkPanel";
+import {
+	loadReminderCadenceSettings,
+	saveReminderCadenceSettings,
+} from "./ReminderCadenceConfigPanel";
 import { SettingsAccessTab } from "./SettingsAccessTab";
 import { SettingsBpmnTab } from "./SettingsBpmnTab";
 import { SettingsClinicTab } from "./SettingsClinicTab";
 import { SettingsMarketingTab } from "./SettingsMarketingTab";
+import { SettingsMessageTemplatesTab } from "./SettingsMessageTemplatesTab";
 import { SettingsMessengersTab } from "./SettingsMessengersTab";
 import { SettingsModulesTab } from "./SettingsModulesTab";
 import { SettingsStaffTab } from "./SettingsStaffTab";
+import { showToast } from "../GlobalToast";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../../lib/safeLocalStorage";
 
 export type AdminSubTab =
 	| "clinic"
 	| "staff"
 	| "access"
 	| "messengers"
+	| "templates"
 	| "booking"
 	| "modules"
 	| "marketing"
@@ -77,8 +88,14 @@ const ADMIN_TABS: Array<{
 	},
 	{
 		id: "messengers",
-		label: "Мессенджеры и рассылки",
+		label: "Мессенджеры и каденции",
 		description: "WhatsApp, Telegram, SMS и каденция напоминаний",
+		icon: MessageSquare,
+	},
+	{
+		id: "templates",
+		label: "Шаблоны сообщений",
+		description: "Тексты SMS, WhatsApp, Telegram и макросы {patient_name}, {time}",
 		icon: MessageSquare,
 	},
 	{
@@ -114,11 +131,63 @@ export const AdminSettingsSection: React.FC<AdminSettingsSectionProps> = ({
 		}
 	}, [initialTab]);
 
-	// Super-settings: 1-click admin toggles
-	const [remind24h, setRemind24h] = useState(true);
-	const [remind2h, setRemind2h] = useState(true);
-	const [onlineBookingEnabled, setOnlineBookingEnabled] = useState(true);
-	const [postVisitReviewRequest, setPostVisitReviewRequest] = useState(true);
+	// Persistent cadence settings
+	const [cadence, setCadence] = useState(loadReminderCadenceSettings);
+	const [onlineBookingEnabled, setOnlineBookingEnabled] = useState<boolean>(() => {
+		const val = safeLocalStorageGetItem("dente_online_booking_enabled");
+		return val === null ? true : val === "true";
+	});
+
+	const toggleRemind24h = () => {
+		const next = !cadence.remind24hEnabled;
+		const updated = { ...cadence, remind24hEnabled: next };
+		setCadence(updated);
+		saveReminderCadenceSettings(updated);
+		showToast(
+			next
+				? "Напоминание за 24ч с подтверждением включено"
+				: "Напоминание за 24ч отключено",
+			"info",
+		);
+	};
+
+	const toggleRemind2h = () => {
+		const next = !cadence.remind2hEnabled;
+		const updated = { ...cadence, remind2hEnabled: next };
+		setCadence(updated);
+		saveReminderCadenceSettings(updated);
+		showToast(
+			next
+				? "Напоминание за 2ч с геопозицией включено"
+				: "Напоминание за 2ч отключено",
+			"info",
+		);
+	};
+
+	const togglePostOp24h = () => {
+		const next = !cadence.postOp24hEnabled;
+		const updated = { ...cadence, postOp24hEnabled: next };
+		setCadence(updated);
+		saveReminderCadenceSettings(updated);
+		showToast(
+			next
+				? "Памятка и опрос 043/у через 24ч после операции включены"
+				: "Памятка после операции отключена",
+			"info",
+		);
+	};
+
+	const toggleOnlineBooking = () => {
+		const next = !onlineBookingEnabled;
+		setOnlineBookingEnabled(next);
+		safeLocalStorageSetItem("dente_online_booking_enabled", String(next));
+		showToast(
+			next
+				? "Виджет онлайн-записи активирован"
+				: "Виджет онлайн-записи временно приостановлен",
+			"info",
+		);
+	};
 
 	const handleTabChange = (tabId: AdminSubTab) => {
 		setActiveSubTab(tabId);
@@ -163,48 +232,70 @@ export const AdminSettingsSection: React.FC<AdminSettingsSectionProps> = ({
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 					<button
 						type="button"
-						onClick={() => setRemind24h((prev) => !prev)}
+						onClick={toggleRemind24h}
 						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
-							remind24h
+							cadence.remind24hEnabled
 								? "bg-blue-500/10 border-blue-500/40 text-[var(--ink)]"
 								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70"
 						}`}
+						title="Переключить напоминание за 24 часа"
 					>
 						<div className="flex items-center justify-between">
 							<span className="font-bold text-xs">За 24ч до приема</span>
-							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${remind24h ? "bg-blue-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
-								{remind24h ? "ВКЛ" : "ВЫКЛ"}
+							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${cadence.remind24hEnabled ? "bg-blue-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
+								{cadence.remind24hEnabled ? "ВКЛ" : "ВЫКЛ"}
 							</span>
 						</div>
-						<span className="text-[11px] text-[var(--muted)] mt-1">WhatsApp/SMS подтверждение</span>
+						<span className="text-[11px] text-[var(--muted)] mt-1">С кнопкой «Подтвердить визит»</span>
 					</button>
 
 					<button
 						type="button"
-						onClick={() => setRemind2h((prev) => !prev)}
+						onClick={toggleRemind2h}
 						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
-							remind2h
+							cadence.remind2hEnabled
 								? "bg-indigo-500/10 border-indigo-500/40 text-[var(--ink)]"
 								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70"
 						}`}
+						title="Переключить напоминание за 2 часа"
 					>
 						<div className="flex items-center justify-between">
 							<span className="font-bold text-xs">За 2ч до приема</span>
-							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${remind2h ? "bg-indigo-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
-								{remind2h ? "ВКЛ" : "ВЫКЛ"}
+							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${cadence.remind2hEnabled ? "bg-indigo-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
+								{cadence.remind2hEnabled ? "ВКЛ" : "ВЫКЛ"}
 							</span>
 						</div>
-						<span className="text-[11px] text-[var(--muted)] mt-1">Напоминание о выходе к врачу</span>
+						<span className="text-[11px] text-[var(--muted)] mt-1">Геопозиция и ссылка на карту</span>
 					</button>
 
 					<button
 						type="button"
-						onClick={() => setOnlineBookingEnabled((prev) => !prev)}
+						onClick={togglePostOp24h}
+						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
+							cadence.postOp24hEnabled
+								? "bg-teal-500/10 border-teal-500/40 text-[var(--ink)]"
+								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70"
+						}`}
+						title="Переключить опрос самочувствия после операции"
+					>
+						<div className="flex items-center justify-between">
+							<span className="font-bold text-xs">Через 24ч после операции</span>
+							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${cadence.postOp24hEnabled ? "bg-teal-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
+								{cadence.postOp24hEnabled ? "ВКЛ" : "ВЫКЛ"}
+							</span>
+						</div>
+						<span className="text-[11px] text-[var(--muted)] mt-1">Памятка и опрос 043/у</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={toggleOnlineBooking}
 						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
 							onlineBookingEnabled
 								? "bg-emerald-500/10 border-emerald-500/40 text-[var(--ink)]"
 								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70"
 						}`}
+						title="Переключить онлайн-запись"
 					>
 						<div className="flex items-center justify-between">
 							<span className="font-bold text-xs">Онлайн-запись</span>
@@ -213,24 +304,6 @@ export const AdminSettingsSection: React.FC<AdminSettingsSectionProps> = ({
 							</span>
 						</div>
 						<span className="text-[11px] text-[var(--muted)] mt-1">Виджет на сайте и в картах</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setPostVisitReviewRequest((prev) => !prev)}
-						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
-							postVisitReviewRequest
-								? "bg-teal-500/10 border-teal-500/40 text-[var(--ink)]"
-								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70"
-						}`}
-					>
-						<div className="flex items-center justify-between">
-							<span className="font-bold text-xs">Запрос отзыва (NPS)</span>
-							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${postVisitReviewRequest ? "bg-teal-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
-								{postVisitReviewRequest ? "ВКЛ" : "ВЫКЛ"}
-							</span>
-						</div>
-						<span className="text-[11px] text-[var(--muted)] mt-1">Через 2ч после завершения</span>
 					</button>
 				</div>
 			</div>
@@ -294,6 +367,12 @@ export const AdminSettingsSection: React.FC<AdminSettingsSectionProps> = ({
 					</ErrorBoundary>
 				)}
 
+				{activeSubTab === "templates" && (
+					<ErrorBoundary moduleName="Шаблоны сообщений">
+						<SettingsMessageTemplatesTab />
+					</ErrorBoundary>
+				)}
+
 				{activeSubTab === "booking" && (
 					<ErrorBoundary moduleName="Онлайн-запись">
 						<PublicBookingLinkPanel />
@@ -327,3 +406,5 @@ export const AdminSettingsSection: React.FC<AdminSettingsSectionProps> = ({
 		</div>
 	);
 };
+
+export default AdminSettingsSection;
