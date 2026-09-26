@@ -19,6 +19,14 @@ describe("MobileSelfCheckinModal Component & 1-Touch Checkin Flow", () => {
 
 		// Modal and Header
 		assert.ok(
+			html.includes("selfcheckin-modal-backdrop"),
+			"Renders modal backdrop",
+		);
+		assert.ok(
+			html.includes("auth-art-background"),
+			"Renders atmospheric auth-art background in lobby kiosk",
+		);
+		assert.ok(
 			html.includes("selfcheckin-modal-window"),
 			"Renders modal window",
 		);

@@ -26,6 +26,7 @@ import {
 	type SomaticRiskAlert,
 } from "./SomaticQuestionnaireEngine";
 import "./selfCheckin.css";
+import { AuthArtBackground } from "../../auth/AuthArtBackground";
 
 export interface MobileSelfCheckinModalProps {
 	isOpen: boolean;
@@ -409,6 +410,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 
 	return (
 		<div className="selfcheckin-modal-backdrop" onClick={onClose}>
+			<AuthArtBackground overlayAlpha={0.35} />
 			<div
 				className="selfcheckin-modal-window"
 				onClick={(e) => e.stopPropagation()}
