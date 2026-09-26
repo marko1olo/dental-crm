@@ -3,14 +3,18 @@
  *
  * Enables automatic discovery and zero-config pairing of clinic server over local network:
  * - Hardened physical adapter prioritization: Wired Ethernet / Wi-Fi with RFC 1918 private subnets
- * - Strict virtual adapter blacklist: Hyper-V, WSL, VirtualBox, Docker, TAP-Windows, vEthernet, ZeroTier, Tailscale, WireGuard
+ * - Cross-platform support: Windows, macOS (en0/en1, awdl, llw, utun), Linux (eth, wlan)
+ * - Strict virtual adapter blacklist: Hyper-V, WSL, VirtualBox, Docker, TAP-Windows, vEthernet,
+ *   ZeroTier, Tailscale, WireGuard, macOS awdl/llw/utun/bridge/gif/stf/anpi/ap
+ * - Inactive adapter rejection: filters unassigned IPs and link-local APIPA (169.254.x.x)
  * - Dual-probe UDP broadcast / SSDP responder on port 4101
  * - Exposes real LAN IP candidates for QR pairing modals and doctor/assistant tablet connections
  */
 
+import * as childProcess from "node:child_process";
+import * as crypto from "node:crypto";
 import * as dgram from "node:dgram";
 import * as os from "node:os";
-import * as crypto from "node:crypto";
 
 export interface LanInterfaceCandidate {
 	readonly name: string;
@@ -40,12 +44,76 @@ export interface LanDiscoveryMetadata {
 	readonly timestamp: string;
 }
 
+export interface LanEvaluationOptions {
+	readonly hardwarePorts?: ReadonlyMap<string, "ethernet" | "wifi">;
+	readonly isWifi?: boolean;
+	readonly isEthernet?: boolean;
+	readonly platform?: NodeJS.Platform;
+}
+
 const serverStartupTime = new Date().toISOString();
 const serverInstanceId = crypto.randomUUID();
 let activeUdpSocket: dgram.Socket | null = null;
 
+let macHardwarePortsCache: {
+	timestamp: number;
+	map: Map<string, "ethernet" | "wifi">;
+} | null = null;
+
+/**
+ * Parses macOS `/usr/sbin/networksetup -listallhardwareports` to determine
+ * whether a physical interface (e.g. en0, en1) is wired Ethernet or Wi-Fi.
+ */
+export function getMacOsHardwarePorts(forceRefresh = false): Map<string, "ethernet" | "wifi"> {
+	const now = Date.now();
+	if (!forceRefresh && macHardwarePortsCache && now - macHardwarePortsCache.timestamp < 30000) {
+		return macHardwarePortsCache.map;
+	}
+
+	const map = new Map<string, "ethernet" | "wifi">();
+	if (process.platform === "darwin") {
+		try {
+			const stdout = childProcess.execSync("/usr/sbin/networksetup -listallhardwareports", {
+				encoding: "utf8",
+				timeout: 2000,
+				stdio: ["ignore", "pipe", "ignore"],
+			});
+
+			const blocks = stdout.split(/Hardware Port:/i);
+			for (const block of blocks) {
+				const portMatch = block.match(/^\s*([^\n\r]+)/);
+				const deviceMatch = block.match(/Device:\s*([^\n\r]+)/i);
+				if (portMatch && deviceMatch) {
+					const portName = portMatch[1]?.trim() || "";
+					const device = deviceMatch[1]?.trim() || "";
+					if (/wi-fi|airport|wireless/i.test(portName)) {
+						map.set(device, "wifi");
+					} else if (/ethernet|lan/i.test(portName)) {
+						map.set(device, "ethernet");
+					}
+				}
+			}
+		} catch {
+			// Ignore if networksetup is unavailable, restricted, or timed out
+		}
+	}
+
+	macHardwarePortsCache = { timestamp: now, map };
+	return map;
+}
+
 /**
  * Strict regex blacklist of virtual adapters, container networks, VPN tunnels and fake loopbacks.
+ * Includes macOS-specific service/tunnel interfaces:
+ * - awdl: Apple Wireless Direct Link (AirDrop / AirPlay peer-to-peer mesh)
+ * - llw: Low Latency WLAN (Apple micro-mesh)
+ * - utun: User-space TUN / VPN tunnels
+ * - bridge: Thunderbolt and VM bridges
+ * - gif: Generic tunnel interface
+ * - stf: 6to4 tunnel interface
+ * - anpi: Apple Network Processing Interface
+ * - ap: Apple Wi-Fi Access Point mode interface
+ *
  * These interfaces must NEVER be selected as the clinic LAN server IP for tablet QR codes.
  */
 export const VIRTUAL_ADAPTER_PATTERNS: readonly RegExp[] = [
@@ -78,7 +146,13 @@ export const VIRTUAL_ADAPTER_PATTERNS: readonly RegExp[] = [
 	/virbr/i,
 	/dummy/i,
 	/^lo\d*$/i,
-	/^utun\d*$/i,
+	/^utun/i,
+	/^gif\d*$/i,
+	/^stf\d*$/i,
+	/^anpi\d*$/i,
+	/^ap\d*$/i,
+	/^br\d+$/i,
+	/^veth[0-9a-f]+$/i,
 ];
 
 /**
@@ -109,7 +183,7 @@ export function isPrivateIpv4(ip: string): boolean {
 	if (p0 === 127) return false;
 	// 0.0.0.0
 	if (p0 === 0) return false;
-	// Link-local / APIPA 169.254.0.0/16 (DHCP failure)
+	// Link-local / APIPA 169.254.0.0/16 (DHCP failure / unassigned)
 	if (p0 === 169 && p1 === 254) return false;
 	// Carrier Grade NAT 100.64.0.0/10 (Used by Tailscale & mobile ISP CGNAT)
 	if (p0 === 100 && p1 >= 64 && p1 <= 127) return false;
@@ -128,120 +202,199 @@ export function isPrivateIpv4(ip: string): boolean {
 
 /**
  * Evaluates an individual network interface candidate, calculates reliability score,
- * and detects virtual adapter markers (zero MAC, /32 netmask, blacklist names).
+ * and detects virtual adapter markers (zero MAC, /32 netmask, blacklist names, link-local).
  */
 export function evaluateInterfaceCandidate(
 	name: string,
 	iface: os.NetworkInterfaceInfo,
+	options?: LanEvaluationOptions,
 ): LanInterfaceCandidate {
-	const isVirtualName = isVirtualAdapterName(name);
-	const isZeroMac = !iface.mac || iface.mac === "00:00:00:00:00:00";
-	const isPointToPoint = iface.netmask === "255.255.255.255";
-	const isPrivate = isPrivateIpv4(iface.address);
-	const isInternal = iface.internal;
-	const isIpv4 = iface.family === "IPv4";
+	const rawAddress = iface?.address ? String(iface.address).trim() : "";
 
-	const isWifi = /wi-fi|wifi|wlan|беспроводн|wireless/i.test(name);
-	const isEthernet =
-		/ethernet|eth|en\d|сеть|локальн|подключение по локальной|lan/i.test(name) && !isWifi;
-
-	const isVirtual = isVirtualName || isZeroMac || isPointToPoint || isInternal;
-
-	if (!isIpv4) {
+	// Inactive / unassigned IP check
+	if (!rawAddress || rawAddress === "0.0.0.0") {
 		return {
 			name,
-			address: iface.address,
+			address: rawAddress || "0.0.0.0",
 			netmask: iface.netmask,
 			mac: iface.mac,
 			family: iface.family,
-			isWifi,
-			isEthernet,
+			isWifi: false,
+			isEthernet: false,
+			isVirtual: true,
+			score: -1000,
+			reason: "Inactive adapter (no IP assigned)",
+		};
+	}
+
+	// Link-local / APIPA 169.254.x.x check (DHCP unassigned or failed)
+	if (rawAddress.startsWith("169.254.")) {
+		return {
+			name,
+			address: rawAddress,
+			netmask: iface.netmask,
+			mac: iface.mac,
+			family: iface.family,
+			isWifi: false,
+			isEthernet: false,
+			isVirtual: true,
+			score: -400,
+			reason: `Link-local / APIPA address (inactive DHCP): ${rawAddress}`,
+		};
+	}
+
+	const isIpv4 = iface.family === "IPv4";
+	if (!isIpv4) {
+		return {
+			name,
+			address: rawAddress,
+			netmask: iface.netmask,
+			mac: iface.mac,
+			family: iface.family,
+			isWifi: false,
+			isEthernet: false,
 			isVirtual: true,
 			score: -1000,
 			reason: "Non-IPv4 interface",
 		};
 	}
 
-	if (isInternal) {
+	if (iface.internal) {
 		return {
 			name,
-			address: iface.address,
+			address: rawAddress,
 			netmask: iface.netmask,
 			mac: iface.mac,
 			family: iface.family,
-			isWifi,
-			isEthernet,
+			isWifi: false,
+			isEthernet: false,
 			isVirtual: true,
 			score: -1000,
 			reason: "Internal loopback",
 		};
 	}
 
+	const isVirtualName = isVirtualAdapterName(name);
 	if (isVirtualName) {
 		return {
 			name,
-			address: iface.address,
+			address: rawAddress,
 			netmask: iface.netmask,
 			mac: iface.mac,
 			family: iface.family,
-			isWifi,
-			isEthernet,
+			isWifi: false,
+			isEthernet: false,
 			isVirtual: true,
 			score: -500,
 			reason: `Matched virtual adapter blacklist: ${name}`,
 		};
 	}
 
+	const isZeroMac = !iface.mac || iface.mac === "00:00:00:00:00:00";
 	if (isZeroMac) {
 		return {
 			name,
-			address: iface.address,
+			address: rawAddress,
 			netmask: iface.netmask,
 			mac: iface.mac,
 			family: iface.family,
-			isWifi,
-			isEthernet,
+			isWifi: false,
+			isEthernet: false,
 			isVirtual: true,
 			score: -400,
 			reason: "Virtual/tunnel adapter (zero MAC)",
 		};
 	}
 
+	const isPointToPoint = iface.netmask === "255.255.255.255";
 	if (isPointToPoint) {
 		return {
 			name,
-			address: iface.address,
+			address: rawAddress,
 			netmask: iface.netmask,
 			mac: iface.mac,
 			family: iface.family,
-			isWifi,
-			isEthernet,
+			isWifi: false,
+			isEthernet: false,
 			isVirtual: true,
 			score: -300,
 			reason: "Point-to-point /32 tunnel (no local LAN subnet)",
 		};
 	}
 
+	const isPrivate = isPrivateIpv4(rawAddress);
 	if (!isPrivate) {
 		return {
 			name,
-			address: iface.address,
+			address: rawAddress,
 			netmask: iface.netmask,
 			mac: iface.mac,
 			family: iface.family,
-			isWifi,
-			isEthernet,
+			isWifi: false,
+			isEthernet: false,
 			isVirtual: false,
 			score: -100,
-			reason: `Non-RFC1918 address: ${iface.address}`,
+			reason: `Non-RFC1918 address: ${rawAddress}`,
 		};
+	}
+
+	const currentPlatform = options?.platform ?? process.platform;
+	const isMacPhysical =
+		/^en[01]$/i.test(name) || (currentPlatform === "darwin" && /^en\d+$/i.test(name));
+
+	// Hardware port lookup (either passed explicitly in options, or queried on macOS)
+	const hwPortType =
+		options?.hardwarePorts?.get(name) ??
+		(currentPlatform === "darwin" ? getMacOsHardwarePorts().get(name) : undefined);
+
+	let isWifi = false;
+	let isEthernet = false;
+
+	if (options?.isWifi !== undefined) {
+		isWifi = options.isWifi;
+		isEthernet = options.isEthernet ?? !options.isWifi;
+	} else if (options?.isEthernet !== undefined) {
+		isEthernet = options.isEthernet;
+		isWifi = !options.isEthernet;
+	} else if (hwPortType === "wifi") {
+		isWifi = true;
+		isEthernet = false;
+	} else if (hwPortType === "ethernet") {
+		isEthernet = true;
+		isWifi = false;
+	} else if (/wi-fi|wifi|wlan|беспроводн|wireless|airport/i.test(name)) {
+		isWifi = true;
+		isEthernet = false;
+	} else if (/ethernet|eth|сеть|локальн|подключение по локальной|lan/i.test(name)) {
+		isEthernet = true;
+		isWifi = false;
+	} else if (/^en1$/i.test(name)) {
+		// macOS default: en1 is typically Wi-Fi on Mac mini/iMac/Mac Pro
+		isWifi = true;
+		isEthernet = false;
+	} else if (/^en0$/i.test(name)) {
+		// macOS default: en0 is primary physical interface (Ethernet)
+		isEthernet = true;
+		isWifi = false;
 	}
 
 	let score = 0;
 	const reasonParts: string[] = [];
 
-	// Physical adapter type scoring — Wired Ethernet prioritized over Wi-Fi for clinic servers
-	if (isEthernet) {
+	// Physical adapter type scoring
+	// macOS physical en0/en1 with active RFC 1918 IPv4: +130 for wired Ethernet, +100 for Wi-Fi
+	if (isMacPhysical) {
+		if (isEthernet) {
+			score += 130;
+			reasonParts.push(`macOS physical Ethernet ${name} (+130)`);
+		} else if (isWifi) {
+			score += 100;
+			reasonParts.push(`macOS physical Wi-Fi ${name} (+100)`);
+		} else {
+			score += 100;
+			reasonParts.push(`macOS physical adapter ${name} (+100)`);
+		}
+	} else if (isEthernet) {
 		score += 120;
 		reasonParts.push("Ethernet adapter (+120)");
 	} else if (isWifi) {
@@ -253,13 +406,13 @@ export function evaluateInterfaceCandidate(
 	}
 
 	// Subnet prioritization
-	if (iface.address.startsWith("192.168.")) {
+	if (rawAddress.startsWith("192.168.")) {
 		score += 30;
 		reasonParts.push("Class C 192.168.x.x (+30)");
-	} else if (iface.address.startsWith("10.")) {
+	} else if (rawAddress.startsWith("10.")) {
 		score += 20;
 		reasonParts.push("Class A 10.x.x.x (+20)");
-	} else if (/^172\.(1[6-9]|2\d|3[01])\./.test(iface.address)) {
+	} else if (/^172\.(1[6-9]|2\d|3[01])\./.test(rawAddress)) {
 		score += 15;
 		reasonParts.push("Class B 172.16-31.x.x (+15)");
 	}
@@ -271,20 +424,20 @@ export function evaluateInterfaceCandidate(
 	}
 
 	// Windows Mobile Hotspot adapter detection bonus (192.168.137.1)
-	if (iface.address === "192.168.137.1") {
+	if (rawAddress === "192.168.137.1") {
 		score += 150;
 		reasonParts.push("Windows Mobile Hotspot gateway (+150)");
 	}
 
 	return {
 		name,
-		address: iface.address,
+		address: rawAddress,
 		netmask: iface.netmask,
 		mac: iface.mac,
 		family: iface.family,
 		isWifi,
 		isEthernet,
-		isVirtual,
+		isVirtual: false,
 		score,
 		reason: reasonParts.join("; "),
 	};
@@ -293,16 +446,19 @@ export function evaluateInterfaceCandidate(
 /**
  * Returns all network interfaces discovered on current machine, evaluated and sorted by priority.
  */
-export function getRankedLanInterfaces(): LanInterfaceCandidate[] {
+export function getRankedLanInterfaces(
+	customInterfaces?: NodeJS.Dict<os.NetworkInterfaceInfo[]>,
+	options?: LanEvaluationOptions,
+): LanInterfaceCandidate[] {
 	const candidates: LanInterfaceCandidate[] = [];
-	const interfaces = os.networkInterfaces();
+	const interfaces = customInterfaces || os.networkInterfaces();
 
 	for (const name of Object.keys(interfaces)) {
 		const ifaceList = interfaces[name];
 		if (!ifaceList) continue;
 
 		for (const iface of ifaceList) {
-			candidates.push(evaluateInterfaceCandidate(name, iface));
+			candidates.push(evaluateInterfaceCandidate(name, iface, options));
 		}
 	}
 
@@ -314,10 +470,13 @@ export function getRankedLanInterfaces(): LanInterfaceCandidate[] {
  * Enumerates valid, non-virtual physical IPv4 LAN addresses of the current machine,
  * prioritized for doctor/assistant tablet connections (Wired Ethernet first, then Wi-Fi).
  */
-export function getLocalLanAddresses(): string[] {
-	const ranked = getRankedLanInterfaces();
+export function getLocalLanAddresses(
+	customInterfaces?: NodeJS.Dict<os.NetworkInterfaceInfo[]>,
+	options?: LanEvaluationOptions,
+): string[] {
+	const ranked = getRankedLanInterfaces(customInterfaces, options);
 	const validPhysical = ranked
-		.filter((c) => !c.isVirtual && c.score > 0 && c.family === "IPv4")
+		.filter((c) => !c.isVirtual && c.score > 0 && c.family === "IPv4" && isPrivateIpv4(c.address))
 		.map((c) => c.address);
 
 	// Deduplicate preserving order
@@ -328,8 +487,11 @@ export function getLocalLanAddresses(): string[] {
 /**
  * Returns the single most reliable LAN IPv4 address for tablet QR code generation.
  */
-export function getPrimaryLanIp(): string {
-	const addresses = getLocalLanAddresses();
+export function getPrimaryLanIp(
+	customInterfaces?: NodeJS.Dict<os.NetworkInterfaceInfo[]>,
+	options?: LanEvaluationOptions,
+): string {
+	const addresses = getLocalLanAddresses(customInterfaces, options);
 	return addresses[0] || "127.0.0.1";
 }
 
