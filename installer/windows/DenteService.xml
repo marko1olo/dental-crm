@@ -1,0 +1,57 @@
+<service>
+  <!-- DENTE Dental CRM — WinSW v3.0 x64 Windows Service Configuration -->
+  <id>DenteCRMService</id>
+  <name>DENTE Dental CRM Server</name>
+  <description>DENTE Dental CRM — Высокопроизводительный сервер медицинской системы и базы данных (Fastify + PostgreSQL). Работает в Session 0 автономно под LocalSystem до входа пользователя в Windows, устойчив к блокировке экрана Win+L и выходу пользователей.</description>
+
+  <!-- Process Execution in Session 0 -->
+  <executable>%BASE%\bin\node\node.exe</executable>
+  <arguments>--max-old-space-size=2048 "%BASE%\scripts\service-bootstrap.mjs"</arguments>
+  <workingdirectory>%BASE%</workingdirectory>
+
+  <!-- Service Startup & Account Security -->
+  <startmode>Automatic</startmode>
+  <delayedAutoStart>true</delayedAutoStart>
+  <priority>Normal</priority>
+  <stoptimeout>20 sec</stoptimeout>
+  <stopparentprocessfirst>false</stopparentprocessfirst>
+
+  <!-- Run under Session 0 LocalSystem context before interactive logon -->
+  <serviceaccount>
+    <username>LocalSystem</username>
+  </serviceaccount>
+
+  <!-- System Dependencies: Wait for TCP/IP, DHCP and Network I/O -->
+  <depend>Tcpip</depend>
+  <depend>Dhcp</depend>
+  <depend>LanmanWorkstation</depend>
+
+  <!-- Automated Crash Recovery with Progressive Backoff -->
+  <onfailure action="restart" delay="5 sec" />
+  <onfailure action="restart" delay="15 sec" />
+  <onfailure action="restart" delay="30 sec" />
+  <resetfailure>1 hour</resetfailure>
+
+  <!-- Diagnostic Logging: Roll by 10 MB and Daily Time, Compress Archives -->
+  <log mode="roll-by-size-time">
+    <logpath>C:\ProgramData\DenteCRM\logs</logpath>
+    <sizeThreshold>10240</sizeThreshold>
+    <pattern>yyyyMMdd</pattern>
+    <autoRollAtTime>00:00:00</autoRollAtTime>
+    <zipOlderThanNumDays>14</zipOlderThanNumDays>
+    <zipDateFormat>yyyyMMdd</zipDateFormat>
+  </log>
+
+  <!-- Session 0 Environment Configuration -->
+  <env name="NODE_ENV" value="production" />
+  <env name="PORT" value="4000" />
+  <env name="API_PORT" value="4000" />
+  <env name="API_HOST" value="0.0.0.0" />
+  <env name="WEB_ORIGIN" value="http://localhost:4000,http://127.0.0.1:4000" />
+  <env name="DENTE_DATA_DIR" value="C:\ProgramData\DenteCRM\data" />
+  <env name="DENTE_CONFIG_DIR" value="C:\ProgramData\DenteCRM" />
+  <env name="DENTE_ENV_FILE" value="C:\ProgramData\DenteCRM\dente.env" />
+  <env name="DOCUMENT_STORAGE_PATH" value="C:\ProgramData\DenteCRM\data\storage\documents" />
+  <env name="ATTACHMENT_STORAGE_PATH" value="C:\ProgramData\DenteCRM\data\storage\attachments" />
+  <env name="PATH" value="%BASE%\bin\node;%BASE%\bin\postgres\bin;%PATH%" />
+</service>
