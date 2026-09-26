@@ -7,35 +7,115 @@
 }
 
 .PublicBookingWidget-glass-nav {
-	background: var(--glass-panel);
-	backdrop-filter: blur(16px);
-	-webkit-backdrop-filter: blur(16px);
-	border: 1px solid var(--glass-border);
-	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
 }
 
 [data-theme="dark"] .PublicBookingWidget-glass-nav,
 .dark .PublicBookingWidget-glass-nav {
-	background: var(--glass-panel);
-	backdrop-filter: blur(16px);
-	-webkit-backdrop-filter: blur(16px);
-	border: 1px solid var(--glass-border);
+	background: var(--paper-strong, #0f172a);
+	border: 1px solid var(--line, #1e293b);
 	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
 }
 
 .PublicBookingWidget-glass-card {
-	background: var(--glass-panel);
-	backdrop-filter: blur(16px);
-	-webkit-backdrop-filter: blur(16px);
-	border: 1px solid var(--glass-border);
-	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.12);
 }
 
 [data-theme="dark"] .PublicBookingWidget-glass-card,
 .dark .PublicBookingWidget-glass-card {
-	background: var(--glass-panel);
-	backdrop-filter: blur(16px);
-	-webkit-backdrop-filter: blur(16px);
-	border: 1px solid var(--glass-border);
+	background: var(--paper-strong, #0f172a);
+	border: 1px solid var(--line, #1e293b);
 	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+}
+
+/* ==========================================================================
+   100% Opaque Surfaces for WCAG AAA Readability against Atmospheric Artwork
+   (Mandate: Zero Bleed / Solid Clinical Contrast against AuthArtBackground)
+   ========================================================================== */
+
+/* Main Booking Widget Container (100% Opaque Solid Surface) */
+.PublicBookingWidget-root .dente-booking-widget {
+	background: var(--paper-strong, #ffffff);
+	border-color: var(--line, #e2e8f0);
+	opacity: 1;
+	box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="dark"] .PublicBookingWidget-root .dente-booking-widget,
+.dark .PublicBookingWidget-root .dente-booking-widget {
+	background: var(--paper-strong, #090d16);
+	border-color: var(--line, #1e293b);
+	box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.7);
+}
+
+/* 1. Карточка выбора врача (100% непрозрачность) */
+.PublicBookingWidget-root .dbw-doctor-card,
+.PublicBookingWidget-root .dbw-any-doctor-card {
+	background: var(--paper-strong, #ffffff);
+	opacity: 1;
+}
+
+[data-theme="dark"] .PublicBookingWidget-root .dbw-doctor-card,
+.dark .PublicBookingWidget-root .dbw-doctor-card,
+[data-theme="dark"] .PublicBookingWidget-root .dbw-any-doctor-card,
+.dark .PublicBookingWidget-root .dbw-any-doctor-card {
+	background: var(--paper-strong, #0f172a);
+}
+
+/* 2. Сетка свободных слотов времени и календарь (100% непрозрачность) */
+.PublicBookingWidget-root .dbw-calendar-container {
+	background: var(--paper, #f8fafc);
+	opacity: 1;
+}
+
+[data-theme="dark"] .PublicBookingWidget-root .dbw-calendar-container,
+.dark .PublicBookingWidget-root .dbw-calendar-container {
+	background: var(--paper-strong, #0f172a);
+}
+
+.PublicBookingWidget-root .dbw-slot-btn,
+.PublicBookingWidget-root .dbw-day-pill {
+	background: var(--paper-strong, #ffffff);
+	opacity: 1;
+}
+
+[data-theme="dark"] .PublicBookingWidget-root .dbw-slot-btn,
+.dark .PublicBookingWidget-root .dbw-slot-btn,
+[data-theme="dark"] .PublicBookingWidget-root .dbw-day-pill,
+.dark .PublicBookingWidget-root .dbw-day-pill {
+	background: var(--paper, #1e293b);
+}
+
+/* 3. Форма ввода телефона и контактных данных (100% непрозрачность) */
+.PublicBookingWidget-root .dbw-contacts-section,
+.PublicBookingWidget-root .dbw-input,
+.PublicBookingWidget-root .dbw-textarea,
+.PublicBookingWidget-root .dbw-tg-1tap-card {
+	background: var(--paper-strong, #ffffff);
+	opacity: 1;
+}
+
+[data-theme="dark"] .PublicBookingWidget-root .dbw-contacts-section,
+.dark .PublicBookingWidget-root .dbw-contacts-section,
+[data-theme="dark"] .PublicBookingWidget-root .dbw-input,
+.dark .PublicBookingWidget-root .dbw-input,
+[data-theme="dark"] .PublicBookingWidget-root .dbw-textarea,
+.dark .PublicBookingWidget-root .dbw-textarea,
+[data-theme="dark"] .PublicBookingWidget-root .dbw-tg-1tap-card,
+.dark .PublicBookingWidget-root .dbw-tg-1tap-card {
+	background: var(--paper, #1e293b);
+}
+
+/* 4. Кнопка подтверждения записи (WCAG AAA solid contrast) */
+.PublicBookingWidget-root .dbw-btn-confirm,
+.PublicBookingWidget-root .dbw-submit-btn {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	opacity: 1;
+	font-weight: 700;
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
 }

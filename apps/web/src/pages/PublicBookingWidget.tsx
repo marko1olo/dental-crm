@@ -135,7 +135,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 	return (
 		<div className="PublicBookingWidget-root min-h-screen relative overflow-hidden flex flex-col items-center justify-center p-3 sm:p-6 md:p-8">
 			{/* Shared Atmospheric Art Background Layer (Mandates 8p, 8n) */}
-			<AuthArtBackground />
+			<AuthArtBackground overlayAlpha={0.4} />
 
 			{/* Верхний переключатель режимов (Запись / Личный кабинет) */}
 			<div className="w-full max-w-2xl mb-4 flex items-center justify-between PublicBookingWidget-glass-nav p-1.5 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800/80">
@@ -223,6 +223,9 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 								<span>{isLoading ? "Отправка кода..." : "Получить код входа"}</span>
 								<ArrowRight className="w-4 h-4" />
 							</button>
+							<p className="text-[11px] text-center text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+								Нажимая «Получить код входа», вы подтверждаете согласие на обработку персональных данных в соответствии с <span className="font-semibold text-slate-700 dark:text-slate-300">152-ФЗ РФ</span>
+							</p>
 						</div>
 					) : (
 						<div className="space-y-4">

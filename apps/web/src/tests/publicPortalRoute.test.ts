@@ -231,3 +231,33 @@ test("страницу согласования сметы рендерит то
 	);
 });
 
+test("PublicBookingWidget интегрирует AuthArtBackground с overlayAlpha=0.4 и 100% непрозрачностью элементов", () => {
+	const widgetSource = readSource("pages/PublicBookingWidget.tsx");
+	assert.ok(
+		widgetSource.includes("<AuthArtBackground overlayAlpha={0.4} />"),
+		"PublicBookingWidget.tsx обязан внедрять AuthArtBackground с overlayAlpha={0.4} для стильного медицинского бэкдропа",
+	);
+
+	const cssSource = readSource("pages/PublicBookingWidget.css");
+	assert.ok(
+		cssSource.includes(".PublicBookingWidget-root .dbw-doctor-card") &&
+			cssSource.includes("opacity: 1;"),
+		"PublicBookingWidget.css обязан обеспечивать 100% непрозрачность карточки выбора врача",
+	);
+	assert.ok(
+		cssSource.includes(".PublicBookingWidget-root .dbw-calendar-container") &&
+			cssSource.includes(".PublicBookingWidget-root .dbw-slot-btn"),
+		"PublicBookingWidget.css обязан обеспечивать 100% непрозрачность сетки свободных слотов времени",
+	);
+	assert.ok(
+		cssSource.includes(".PublicBookingWidget-root .dbw-contacts-section") &&
+			cssSource.includes(".PublicBookingWidget-root .dbw-input"),
+		"PublicBookingWidget.css обязан обеспечивать 100% непрозрачность формы ввода телефона",
+	);
+	assert.ok(
+		cssSource.includes(".PublicBookingWidget-root .dbw-btn-confirm"),
+		"PublicBookingWidget.css обязан обеспечивать высококонтрастную кнопку подтверждения записи (WCAG AAA)",
+	);
+});
+
+
