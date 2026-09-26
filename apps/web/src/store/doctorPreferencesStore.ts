@@ -143,6 +143,14 @@ export interface DoctorPreferences {
 	specialty: DoctorSpecialtyKey;
 	// Form 107-1/u favorite prescription medications
 	favoriteMedicationIds: string[];
+	// Specialty favorite materials (90% CIS/RF market catalog)
+	favoriteImplantSystem?: string;
+	favoriteBoneMaterial?: string;
+	favoriteEndoFile?: string;
+	favoriteEndoSealer?: string;
+	favoriteBracketSystem?: string;
+	favoriteProsthoImpression?: string;
+	favoriteProsthoCement?: string;
 }
 
 export const DEFAULT_DOCTOR_PREFERENCES: DoctorPreferences = {
@@ -153,6 +161,13 @@ export const DEFAULT_DOCTOR_PREFERENCES: DoctorPreferences = {
 	defaultAdhesive: "optibond_fl",
 	defaultEtchant: "ultra_etch",
 	odontogramNotation: "fdi",
+	favoriteImplantSystem: "implant_osstem_tsiii",
+	favoriteBoneMaterial: "bone_bio_oss_spongiosa",
+	favoriteEndoFile: "endo_protaper_gold",
+	favoriteEndoSealer: "sealer_ah_plus",
+	favoriteBracketSystem: "damon_q2",
+	favoriteProsthoImpression: "silicone_elite_hd_plus",
+	favoriteProsthoCement: "cement_relyx_u200",
 	defaultDentition: "adult",
 	enableSlotEndSound: true,
 	enableOnlineBookingSound: true,

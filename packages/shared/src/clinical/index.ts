@@ -80,4 +80,5 @@ export * from "../warehouse/autoVisitBomEngine.js";
 export * from "./photoProtocol.js";
 export * from "./soap/index.js";
 export * from "./somaticSafetyEngine.js";
+export * from "./clinicalMarketMaterialsCatalog.js";
 

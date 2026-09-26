@@ -421,4 +421,142 @@ export const DEFAULT_804N_CONSUMABLE_LINKS: readonly ConsumableItemLink[] = [
 		costPriceKopecks: 800, // 8.00 ₽
 		notes: "Защита одежды пациента",
 	},
+
+	// ─── 9. ДЕНТАЛЬНАЯ ИМПЛАНТАЦИЯ (A16.07.054) ──────────────────────────────
+	{
+		id: "def-link-implant-fixture-osstem",
+		service804nCode: "A16.07.054",
+		serviceTitle: "Внутрикостная дентальная имплантация",
+		inventoryItemId: "mat-implant-osstem-tsiii",
+		itemName: "Дентальный имплантат Osstem TS-III SA (титан Grade 4)",
+		category: "other",
+		unit: "шт",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 850000, // 8 500.00 ₽ (#1 рынок РФ)
+		notes: "Стерильный имплантат с имплантоводом (Мандат 8e)",
+	},
+	{
+		id: "def-link-implant-healing-abutment",
+		service804nCode: "A16.07.054",
+		serviceTitle: "Внутрикостная дентальная имплантация",
+		inventoryItemId: "mat-healing-abutment-titanium",
+		itemName: "Формирователь десны титановый (Healing Abutment)",
+		category: "other",
+		unit: "шт",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 120000, // 1 200.00 ₽
+		notes: "Гингивопластика десневого края",
+	},
+	{
+		id: "def-link-implant-suture-prolene",
+		service804nCode: "A16.07.054",
+		serviceTitle: "Внутрикостная дентальная имплантация",
+		inventoryItemId: "mat-suture-prolene-50",
+		itemName: "Шовный материал Пролен (Prolene) 5-0 с колющей иглой",
+		category: "suture",
+		unit: "шт",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 45000, // 450.00 ₽
+		notes: "Монофиламентная асептическая фиксация лоскута",
+	},
+
+	// ─── 10. СИНУС-ЛИФТИНГ И КОСТНАЯ ПЛАСТИКА (A16.07.055 / A16.07.041) ─────
+	{
+		id: "def-link-bone-bio-oss",
+		service804nCode: "A16.07.055",
+		serviceTitle: "Синус-лифтинг (костная пластика)",
+		inventoryItemId: "mat-bone-bio-oss-05g",
+		itemName: "Ксеногенный остеопластический материал Geistlich Bio-Oss Spongiosa (0.5 г)",
+		category: "other",
+		unit: "pack",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 1150000, // 11 500.00 ₽ (#1 золотой стандарт)
+		notes: "Ксенографт натуральной депротеинизированной кости",
+	},
+	{
+		id: "def-link-membrane-bio-gide",
+		service804nCode: "A16.07.055",
+		serviceTitle: "Синус-лифтинг (костная пластика)",
+		inventoryItemId: "mat-membrane-bio-gide-1325",
+		itemName: "Резорбируемая коллагеновая мембрана Geistlich Bio-Gide (13x25 мм)",
+		category: "other",
+		unit: "шт",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 1280000, // 12 800.00 ₽
+		notes: "Двухслойная барьерная мембрана НКР",
+	},
+
+	// ─── 11. ОРТОДОНТИЯ: ФИКСАЦИЯ БРЕКЕТ-СИСТЕМЫ (A16.07.048) ───────────────
+	{
+		id: "def-link-ortho-brackets-damon",
+		service804nCode: "A16.07.048",
+		serviceTitle: "Фиксация брекет-системы",
+		inventoryItemId: "mat-brackets-damon-q2",
+		itemName: "Самолигирующая металлическая брекет-система Damon Q2 (Ormco, 1 челюсть)",
+		category: "other",
+		unit: "pack",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 2800000, // 28 000.00 ₽ (#1 рынок РФ)
+		notes: "Набор замков с пассивным самолигированием 0.022",
+	},
+	{
+		id: "def-link-ortho-archwire-cuniti",
+		service804nCode: "A16.07.048",
+		serviceTitle: "Фиксация брекет-системы",
+		inventoryItemId: "mat-archwire-cuniti-014",
+		itemName: "Ортодонтическая дуга Copper Ni-Ti .014 (Ormco)",
+		category: "other",
+		unit: "шт",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 120000, // 1 200.00 ₽
+		notes: "Термоактивная инициирующая дуга нивелирования",
+	},
+
+	// ─── 12. ОРТОПЕДИЯ: А-СИЛИКОНОВЫЙ ОТТИСК И ЦЕМЕНТИРОВКА (A02.07.010 / A16.07.004) ─
+	{
+		id: "def-link-prostho-asilicone-impression",
+		service804nCode: "A02.07.010",
+		serviceTitle: "Снятие оттиска с одной челюсти",
+		inventoryItemId: "mat-silicone-elite-hd-plus",
+		itemName: "А-силиконовая оттискная масса Elite HD+ Putty Soft + Light Body",
+		category: "other",
+		unit: "dose",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 65000, // 650.00 ₽ (#1 рынок РФ)
+		notes: "Прецизионный двухслойный оттиск",
+	},
+	{
+		id: "def-link-prostho-retraction-cord",
+		service804nCode: "A02.07.010",
+		serviceTitle: "Снятие оттиска с одной челюсти",
+		inventoryItemId: "mat-retraction-cord-ultrapak",
+		itemName: "Ретракционная вязаная нить Ultrapak #000 (Ultradent)",
+		category: "other",
+		unit: "dose",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 12000, // 120.00 ₽
+		notes: "Атравматичное раскрытие зубодесневой борозды",
+	},
+	{
+		id: "def-link-prostho-cement-relyx",
+		service804nCode: "A16.07.004",
+		serviceTitle: "Восстановление зуба коронкой",
+		inventoryItemId: "mat-cement-relyx-u200",
+		itemName: "Самоадгезивный универсальный композитный цемент RelyX U200 (3M)",
+		category: "composite",
+		unit: "dose",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 42000, // 420.00 ₽ (#1 рынок РФ)
+		notes: "Долговременная фиксация коронок и мостовидных протезов",
+	},
 ];

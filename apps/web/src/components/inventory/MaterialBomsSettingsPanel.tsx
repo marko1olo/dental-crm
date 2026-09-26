@@ -29,6 +29,7 @@ import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import type { InventoryItem } from "./useInventoryLogic.js";
 import { MaterialBomsDeleteModal } from "./MaterialBomsDeleteModal.js";
+import { MaterialBomsRuleModal } from "./MaterialBomsRuleModal.js";
 import "./MaterialBomsSettingsPanel.css";
 
 export interface ProcedureMaterialRuleViewItem {
@@ -653,132 +654,15 @@ export function MaterialBomsSettingsPanel({
 			)}
 
 			{/* MODAL: ADD / EDIT RULE */}
-			{modalState?.isOpen && (
-				<div className="material-boms-modal-backdrop">
-					<div className="material-boms-modal">
-						<div className="material-boms-modal-header">
-							<h3 className="material-boms-modal-title">
-								{modalState.ruleId ? "Изменить норму списания" : "Привязать материал к услуге 804н"}
-							</h3>
-							<button
-								type="button"
-								style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}
-								onClick={() => setModalState(null)}
-							>
-								<X size={20} />
-							</button>
-						</div>
-
-						<form onSubmit={handleSaveRule}>
-							<div className="material-boms-modal-body">
-								<div className="material-boms-form-group">
-									<label className="material-boms-form-label">Услуга приказа 804н *</label>
-									<select
-										className="material-boms-form-select"
-										value={modalState.serviceId}
-										onChange={(e) =>
-											setModalState({ ...modalState, serviceId: e.target.value })
-										}
-										required
-									>
-										{availableServices.map((s) => (
-											<option key={s.id} value={s.id}>
-												{s.code ? `[${s.code}] ` : ""}{s.title}
-											</option>
-										))}
-									</select>
-								</div>
-
-								<div className="material-boms-form-group">
-									<label className="material-boms-form-label">Складской материал *</label>
-									<select
-										className="material-boms-form-select"
-										value={modalState.inventoryItemId}
-										onChange={(e) =>
-											setModalState({
-												...modalState,
-												inventoryItemId: e.target.value,
-											})
-										}
-										required
-									>
-										{warehouseItems.map((it) => (
-											<option key={it.id} value={it.id}>
-												{it.name} (остаток: {it.stockQuantity} {it.unit || "шт."}, {Number(it.unitCostRub || 0)} ₽)
-											</option>
-										))}
-									</select>
-								</div>
-
-								<div className="material-boms-form-group">
-									<label className="material-boms-form-label">
-										Норма расхода на 1 услугу (в граммах, мл или штуках) *
-									</label>
-									<input
-										type="number"
-										step="0.0001"
-										min="0.0001"
-										className="material-boms-form-input"
-										value={modalState.quantityToDeduct}
-										onChange={(e) =>
-											setModalState({
-												...modalState,
-												quantityToDeduct: e.target.value,
-											})
-										}
-										placeholder="например: 0.35"
-										required
-									/>
-
-									{/* Quick Chips */}
-									<div className="material-boms-chips-row">
-										{[
-											{ label: "0.1 г/мл", val: "0.1" },
-											{ label: "0.35 г (пломба)", val: "0.35" },
-											{ label: "0.5 мл", val: "0.5" },
-											{ label: "1 шт/карп.", val: "1" },
-											{ label: "2 шт", val: "2" },
-											{ label: "15 мл (ирригация)", val: "15" },
-											{ label: "25 г (Air-Flow)", val: "25" },
-										].map((chip) => (
-											<button
-												key={chip.label}
-												type="button"
-												className="material-boms-chip"
-												onClick={() =>
-													setModalState({
-														...modalState,
-														quantityToDeduct: chip.val,
-													})
-												}
-											>
-												+{chip.label}
-											</button>
-										))}
-									</div>
-								</div>
-							</div>
-
-							<div className="material-boms-modal-footer">
-								<button
-									type="button"
-									className="material-boms-btn material-boms-btn-secondary"
-									onClick={() => setModalState(null)}
-								>
-									Отмена
-								</button>
-								<button
-									type="submit"
-									className="material-boms-btn material-boms-btn-primary"
-									disabled={isSaving}
-								>
-									{isSaving ? "Сохраняем..." : "Сохранить норму"}
-								</button>
-							</div>
-						</form>
-					</div>
-				</div>
-			)}
+			<MaterialBomsRuleModal
+				modalState={modalState}
+				availableServices={availableServices}
+				warehouseItems={warehouseItems}
+				isSaving={isSaving}
+				onClose={() => setModalState(null)}
+				onSave={handleSaveRule}
+				onChangeModalState={setModalState}
+			/>
 
 			{/* CONFIRM DELETE MODAL */}
 			<MaterialBomsDeleteModal

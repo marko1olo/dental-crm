@@ -67,13 +67,15 @@ export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeP
 export type AppointmentScheduleDraft = {
 	patientId: string;
 	doctorUserId: string;
-	assistantUserId: string;
+	assistantUserId?: string | null;
 	chairId: string;
 	status: Appointment["status"];
 	startsAt: string;
 	endsAt: string;
-	reason: string;
-	comment: string;
+	reason?: string;
+	comment?: string;
+	notes?: string;
+	cancellationReason?: string;
 };
 
 export function emptyAppointmentScheduleDraft(): AppointmentScheduleDraft {
@@ -160,4 +162,24 @@ export const defaultDicomFirstFrameViewerState: ImagingViewerState = {
 	panY: 0,
 	projection: "axial",
 	preset: "bone",
+};
+
+export type ClinicalMaterialPreferencesDraft = {
+	defaultImplantSystemId: string;
+	defaultBoneMaterialId: string;
+	defaultEndoFileId: string;
+	defaultEndoSealerId: string;
+	defaultBracketSystemId: string;
+	defaultProsthoImpressionId: string;
+	defaultProsthoCementId: string;
+};
+
+export const defaultClinicalMaterialPreferences: ClinicalMaterialPreferencesDraft = {
+	defaultImplantSystemId: "implant_osstem_tsiii",
+	defaultBoneMaterialId: "bone_bio_oss_spongiosa",
+	defaultEndoFileId: "endo_protaper_gold",
+	defaultEndoSealerId: "sealer_ah_plus",
+	defaultBracketSystemId: "damon_q2",
+	defaultProsthoImpressionId: "silicone_elite_hd_plus",
+	defaultProsthoCementId: "cement_relyx_u200",
 };
