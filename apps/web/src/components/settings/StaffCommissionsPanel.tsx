@@ -21,6 +21,7 @@ import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
+import { DoctorMotivationCalculator } from "./commissions/DoctorMotivationCalculator";
 
 type CommissionRate = {
 	userId: string;
@@ -405,6 +406,10 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 								<span>Без ставки: <strong>{withoutRate}</strong>. Пока процент не задан, отчёт выплат не включает этого врача в итог к выплате.</span>
 							</div>
 						) : null}
+						<div className="mb-4">
+							<DoctorMotivationCalculator />
+						</div>
+
 						{/* Десктопная таблица (>= 640px) */}
 						<div className="hidden sm:block overflow-x-auto">
 							<table

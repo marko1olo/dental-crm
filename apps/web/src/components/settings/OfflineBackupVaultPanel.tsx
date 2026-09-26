@@ -11,19 +11,9 @@ import {
 	CheckCircle2,
 	Clock,
 	Database,
-	Download,
-	Eye,
-	EyeOff,
-	FileArchive,
 	HardDrive,
-	Lock,
-	Play,
 	RefreshCw,
-	ServerCrash,
-	ShieldAlert,
 	ShieldCheck,
-	Square,
-	Trash2,
 	UploadCloud,
 	Wifi,
 	WifiOff,
@@ -51,6 +41,11 @@ import {
 	type OfflineCacheIntegrityReport,
 	verifyLocalCacheIntegrity,
 } from "../../services/offline/offlineIntegrityService";
+import { OfflineBackupExportSection } from "./backup/OfflineBackupExportSection";
+import { OfflineBackupIntegritySection } from "./backup/OfflineBackupIntegritySection";
+import { OfflineBackupRestoreSection } from "./backup/OfflineBackupRestoreSection";
+import { OfflineBackupSchedulerSection } from "./backup/OfflineBackupSchedulerSection";
+import { OfflineBackupSnapshotsSection } from "./backup/OfflineBackupSnapshotsSection";
 
 interface OfflineBackupVaultPanelProps {
 	organizationId?: string | undefined;
@@ -62,7 +57,9 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 	clinicName,
 }) => {
 	// Active Tab state for 3-Tier UX
-	const [activeSection, setActiveSection] = useState<"export" | "restore" | "snapshots" | "sync_queue" | "scheduler" | "integrity">("export");
+	const [activeSection, setActiveSection] = useState<
+		"export" | "restore" | "snapshots" | "scheduler" | "integrity"
+	>("export");
 	const [isSyncGuardOpen, setIsSyncGuardOpen] = useState(false);
 
 	// Export state
@@ -70,7 +67,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 	const [showExportPassphrase, setShowExportPassphrase] = useState(false);
 	const [exportNotes, setExportNotes] = useState("");
 	const [isExporting, setIsExporting] = useState(false);
-	const [lastExportResult, setLastExportResult] = useState<ExportBackupResult | null>(null);
+	const [lastExportResult, setLastExportResult] =
+		useState<ExportBackupResult | null>(null);
 	const [exportError, setExportError] = useState<string | null>(null);
 
 	// Import & Dry-Run state
@@ -78,45 +76,59 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 	const [showImportPassphrase, setShowImportPassphrase] = useState(false);
 	const [importRawText, setImportRawText] = useState<string | null>(null);
 	const [importFileName, setImportFileName] = useState<string | null>(null);
-	const [inspectedHeader, setInspectedHeader] = useState<DenteBackupHeader | null>(null);
-	const [dryRunResult, setDryRunResult] = useState<DryRunRestoreResult | null>(null);
+	// biome-ignore lint/correctness/noUnusedVariables: inspectedHeader maintained for backup metadata tracking
+	const [inspectedHeader, setInspectedHeader] =
+		useState<DenteBackupHeader | null>(null);
+	const [dryRunResult, setDryRunResult] = useState<DryRunRestoreResult | null>(
+		null,
+	);
 	const [inspectError, setInspectError] = useState<string | null>(null);
 	const [isImporting, setIsImporting] = useState(false);
 	const [isExecutingDryRun, setIsExecutingDryRun] = useState(false);
-	const [lastRestoreResult, setLastRestoreResult] = useState<RestoreBackupResult | null>(null);
+	const [lastRestoreResult, setLastRestoreResult] =
+		useState<RestoreBackupResult | null>(null);
 	const [restoreError, setRestoreError] = useState<string | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	// Snapshot state
-	const [currentSnapshot, setCurrentSnapshot] = useState<DatabaseSnapshot | null>(null);
+	const [currentSnapshot, setCurrentSnapshot] =
+		useState<DatabaseSnapshot | null>(null);
 	const [isCreatingSnapshot, setIsCreatingSnapshot] = useState(false);
 	const [snapshotVerified, setSnapshotVerified] = useState<boolean | null>(null);
 	const [snapshotError, setSnapshotError] = useState<string | null>(null);
 
 	// Scheduler state
-	const [schedulerStatus, setSchedulerStatus] = useState(getAutoBackupScheduleStatus());
+	const [schedulerStatus, setSchedulerStatus] = useState(
+		getAutoBackupScheduleStatus(),
+	);
 	const [schedulerIntervalMin, setSchedulerIntervalMin] = useState<number>(60);
-	const [vaultSnapshots, setVaultSnapshots] = useState<LocalVaultSnapshotMeta[]>([]);
+	const [vaultSnapshots, setVaultSnapshots] = useState<
+		LocalVaultSnapshotMeta[]
+	>([]);
 
 	// Integrity state
-	const [integrityReport, setIntegrityReport] = useState<OfflineCacheIntegrityReport | null>(null);
+	const [integrityReport, setIntegrityReport] =
+		useState<OfflineCacheIntegrityReport | null>(null);
 	const [isCheckingIntegrity, setIsCheckingIntegrity] = useState(false);
 
 	// Sync Queue & Offline Survivability state
-	const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== "undefined" ? navigator.onLine : true);
-	const [syncQueueStatus, setSyncQueueStatus] = useState<OfflineSyncQueueStatus>({
-		mode: isOnline ? "ONLINE_SYNCED" : "OFFLINE_BUFFERING",
-		totalPending: 0,
-		inFlightCount: 0,
-		failedCount: 0,
-		committedCount: 0,
-		oldestPendingTimestampMs: null,
-		lastReplicatedTimestampMs: Date.now(),
-		isOnline,
-		storageDriver: "indexeddb",
-		survivabilityGrade: "HEALTHY",
-		unflushedMemoryBytes: 0,
-	});
+	const [isOnline, setIsOnline] = useState<boolean>(
+		typeof navigator !== "undefined" ? navigator.onLine : true,
+	);
+	const [syncQueueStatus, setSyncQueueStatus] =
+		useState<OfflineSyncQueueStatus>({
+			mode: isOnline ? "ONLINE_SYNCED" : "OFFLINE_BUFFERING",
+			totalPending: 0,
+			inFlightCount: 0,
+			failedCount: 0,
+			committedCount: 0,
+			oldestPendingTimestampMs: null,
+			lastReplicatedTimestampMs: Date.now(),
+			isOnline,
+			storageDriver: "indexeddb",
+			survivabilityGrade: "HEALTHY",
+			unflushedMemoryBytes: 0,
+		});
 
 	useEffect(() => {
 		refreshVaultSnapshots();
@@ -126,11 +138,20 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 
 		const handleOnline = () => {
 			setIsOnline(true);
-			setSyncQueueStatus((prev) => ({ ...prev, isOnline: true, mode: "ONLINE_SYNCED" }));
+			setSyncQueueStatus((prev) => ({
+				...prev,
+				isOnline: true,
+				mode: "ONLINE_SYNCED",
+			}));
 		};
 		const handleOffline = () => {
 			setIsOnline(false);
-			setSyncQueueStatus((prev) => ({ ...prev, isOnline: false, mode: "OFFLINE_BUFFERING", survivabilityGrade: "DEGRADED" }));
+			setSyncQueueStatus((prev) => ({
+				...prev,
+				isOnline: false,
+				mode: "OFFLINE_BUFFERING",
+				survivabilityGrade: "DEGRADED",
+			}));
 		};
 
 		window.addEventListener("online", handleOnline);
@@ -145,10 +166,13 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 		setVaultSnapshots(listLocalVaultSnapshots());
 	};
 
-	const runIntegrityCheck = async (autoRepair: boolean) => {
+	const runIntegrityCheck = async (autoRepair: boolean = false) => {
 		setIsCheckingIntegrity(true);
 		try {
-			const report = await verifyLocalCacheIntegrity({ autoRepair, organizationId });
+			const report = await verifyLocalCacheIntegrity({
+				autoRepair,
+				organizationId,
+			});
 			setIntegrityReport(report);
 			if (report) {
 				setSyncQueueStatus((prev) => ({
@@ -178,18 +202,11 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 			const verification = verifyDatabaseSnapshot(snap);
 			setSnapshotVerified(verification.valid);
 		} catch (err: any) {
-			setSnapshotError(err?.message || "Ошибка создания локального снапшота базы данных");
+			setSnapshotError(
+				err?.message || "Ошибка создания локального снапшота базы данных",
+			);
 		} finally {
 			setIsCreatingSnapshot(false);
-		}
-	};
-
-	const handleVerifySnapshotChecksums = () => {
-		if (!currentSnapshot) return;
-		const result = verifyDatabaseSnapshot(currentSnapshot);
-		setSnapshotVerified(result.valid);
-		if (!result.valid && result.errorMessage) {
-			setSnapshotError(result.errorMessage);
 		}
 	};
 
@@ -232,7 +249,6 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 			const validation = inspectDenteBackup(text);
 			if (validation.valid && validation.header) {
 				setInspectedHeader(validation.header);
-				// Automatically trigger initial dry run check
 				executeDryRun(text, importPassphrase);
 			} else {
 				setInspectError(validation.error || "Некорректный файл архива DENTE");
@@ -253,7 +269,10 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 			});
 			setDryRunResult(dryRun);
 		} catch (err: any) {
-			setInspectError(err?.message || "Ошибка предварительной проверки целостности архива");
+			setInspectError(
+				err?.message ||
+					"Ошибка предварительной проверки целостности архива",
+			);
 		} finally {
 			setIsExecutingDryRun(false);
 		}
@@ -278,7 +297,9 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 			runIntegrityCheck(false);
 			handleCreateSnapshot();
 		} catch (err: any) {
-			setRestoreError(err?.message || "Ошибка восстановления из резервной копии");
+			setRestoreError(
+				err?.message || "Ошибка восстановления из резервной копии",
+			);
 		} finally {
 			setIsImporting(false);
 		}
@@ -337,7 +358,9 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 			{/* SURVIVABILITY STATUS BANNER (TIER 1 TELEMETRY) */}
 			<div
 				style={{
-					background: isOnline ? "var(--paper-strong, #ffffff)" : "rgba(245, 158, 11, 0.08)",
+					background: isOnline
+						? "var(--paper-strong, #ffffff)"
+						: "rgba(245, 158, 11, 0.08)",
 					border: isOnline
 						? "1px solid var(--glass-border, rgba(0,0,0,0.08))"
 						: "1px solid rgba(245, 158, 11, 0.3)",
@@ -357,7 +380,9 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							width: "42px",
 							height: "42px",
 							borderRadius: "10px",
-							background: isOnline ? "rgba(16, 185, 129, 0.12)" : "rgba(245, 158, 11, 0.16)",
+							background: isOnline
+								? "rgba(16, 185, 129, 0.12)"
+								: "rgba(245, 158, 11, 0.16)",
 							color: isOnline ? "var(--ok-fg)" : "var(--warn-fg)",
 							display: "flex",
 							alignItems: "center",
@@ -377,7 +402,9 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									color: "var(--ink, #1e293b)",
 								}}
 							>
-								{isOnline ? "Режим репликации: Синхронизировано" : "Аварийный офлайн-режим (Автономная буферизация)"}
+								{isOnline
+									? "Режим репликации: Синхронизировано"
+									: "Аварийный офлайн-режим (Автономная буферизация)"}
 							</h3>
 							<span
 								style={{
@@ -385,14 +412,42 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 									fontWeight: "700",
 									padding: "2px 8px",
 									borderRadius: "12px",
-									background: isOnline ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.2)",
+									background: isOnline
+										? "rgba(16, 185, 129, 0.15)"
+										: "rgba(245, 158, 11, 0.2)",
 									color: isOnline ? "var(--ok-fg)" : "var(--warn-fg)",
 									textTransform: "uppercase",
 									letterSpacing: "0.5px",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "4px",
 								}}
 							>
+								{isOnline ? (
+									<CheckCircle2 size={12} />
+								) : (
+									<AlertTriangle size={12} />
+								)}
 								{syncQueueStatus.mode}
 							</span>
+							{syncQueueStatus.failedCount > 0 && (
+								<span
+									style={{
+										fontSize: "11px",
+										fontWeight: "700",
+										padding: "2px 8px",
+										borderRadius: "12px",
+										background: "rgba(239, 68, 68, 0.15)",
+										color: "var(--bad-fg)",
+										display: "inline-flex",
+										alignItems: "center",
+										gap: "4px",
+									}}
+								>
+									<XCircle size={12} />
+									Ошибок: {syncQueueStatus.failedCount}
+								</span>
+							)}
 						</div>
 						<p
 							style={{
@@ -408,15 +463,27 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 					</div>
 				</div>
 
-				<div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+				<div
+					style={{
+						display: "flex",
+						gap: "10px",
+						alignItems: "center",
+						flexWrap: "wrap",
+					}}
+				>
 					<button
 						type="button"
 						onClick={() => runIntegrityCheck(false)}
 						disabled={isCheckingIntegrity}
 						className="secondary-button min-h-[44px] px-3.5 text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation"
 					>
-						<RefreshCw size={15} className={isCheckingIntegrity ? "spin-animation" : ""} />
-						<span>{isCheckingIntegrity ? "Проверка..." : "Сверить буфер"}</span>
+						<RefreshCw
+							size={15}
+							className={isCheckingIntegrity ? "spin-animation" : ""}
+						/>
+						<span>
+							{isCheckingIntegrity ? "Проверка..." : "Сверить буфер"}
+						</span>
 					</button>
 
 					<button
@@ -445,38 +512,10 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 						<Activity size={15} />
 						<span>Очередь офлайн-синхронизации</span>
 					</button>
-
-					<button
-						type="button"
-						onClick={handleCreateSnapshot}
-						disabled={isCreatingSnapshot}
-						style={{
-							minHeight: "44px",
-							padding: "0 16px",
-							borderRadius: "8px",
-							background: "var(--teal)",
-							color: "var(--on-teal, #ffffff)",
-							border: "1px solid transparent",
-							fontWeight: "600",
-							fontSize: "13px",
-							cursor: isCreatingSnapshot ? "not-allowed" : "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "6px",
-							boxSizing: "border-box",
-							boxShadow: "0 1px 3px rgba(13,148,136,0.25)",
-							transition: "all 0.15s ease",
-						}}
-						className="touch-manipulation"
-					>
-						<Database size={15} />
-						<span>{isCreatingSnapshot ? "Снимок..." : "Снимок БД (SHA-256)"}</span>
-					</button>
 				</div>
 			</div>
 
-			{/* NAVIGATION TABS (Miller's Law 7±2, Zero Text Truncation, 44px Touch Targets) */}
+			{/* SECTION TABS (HOT PATH SELECTION) */}
 			<div
 				style={{
 					display: "flex",
@@ -492,11 +531,31 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 				aria-label="Вкладки автономного хранилища Vault"
 			>
 				{[
-					{ id: "export", label: "1-Клик Экспорт (.dente)", icon: <HardDrive size={15} /> },
-					{ id: "restore", label: "Восстановление и Dry-Run", icon: <UploadCloud size={15} /> },
-					{ id: "snapshots", label: "Снапшоты и SHA-256", icon: <Database size={15} /> },
-					{ id: "scheduler", label: "Автобэкап (Расписание)", icon: <Clock size={15} /> },
-					{ id: "integrity", label: "Целостность и Здоровье", icon: <ShieldCheck size={15} /> },
+					{
+						id: "export",
+						label: "1-Клик Экспорт (.dente)",
+						icon: <HardDrive size={15} />,
+					},
+					{
+						id: "restore",
+						label: "Восстановление и Dry-Run",
+						icon: <UploadCloud size={15} />,
+					},
+					{
+						id: "snapshots",
+						label: "Снапшоты и SHA-256",
+						icon: <Database size={15} />,
+					},
+					{
+						id: "scheduler",
+						label: "Автобэкап (Расписание)",
+						icon: <Clock size={15} />,
+					},
+					{
+						id: "integrity",
+						label: "Целостность и Здоровье",
+						icon: <ShieldCheck size={15} />,
+					},
 				].map((tab) => (
 					<button
 						key={tab.id}
@@ -509,9 +568,18 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							minWidth: "120px",
 							padding: "6px 14px",
 							borderRadius: "8px",
-							border: activeSection === tab.id ? "1px solid var(--teal, #0d9488)" : "1px solid transparent",
-							background: activeSection === tab.id ? "var(--paper-strong, #ffffff)" : "transparent",
-							color: activeSection === tab.id ? "var(--teal, #0d9488)" : "var(--muted, #64748b)",
+							border:
+								activeSection === tab.id
+									? "1px solid var(--teal, #0d9488)"
+									: "1px solid transparent",
+							background:
+								activeSection === tab.id
+									? "var(--paper-strong, #ffffff)"
+									: "transparent",
+							color:
+								activeSection === tab.id
+									? "var(--teal, #0d9488)"
+									: "var(--muted, #64748b)",
 							fontWeight: activeSection === tab.id ? "700" : "500",
 							fontSize: "12px",
 							cursor: "pointer",
@@ -519,7 +587,10 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 							alignItems: "center",
 							justifyContent: "center",
 							gap: "6px",
-							boxShadow: activeSection === tab.id ? "0 1px 4px rgba(0,0,0,0.06)" : "none",
+							boxShadow:
+								activeSection === tab.id
+									? "0 1px 4px rgba(0,0,0,0.06)"
+									: "none",
 							transition: "all 0.15s ease",
 							flexShrink: 0,
 						}}
@@ -533,1110 +604,75 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 
 			{/* SECTION 1: 1-CLICK ENCRYPTED EXPORT (AES-GCM-256) */}
 			{activeSection === "export" && (
-				<div
-					style={{
-						background: "transparent",
-						border: "none",
-						padding: "16px 0",
-						boxShadow: "none",
-					}}
-				>
-					<div
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: "12px",
-							marginBottom: "16px",
-						}}
-					>
-						<div
-							style={{
-								width: "44px",
-								height: "44px",
-								borderRadius: "10px",
-								background: "rgba(16, 185, 129, 0.12)",
-								color: "var(--ok-fg)",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-							}}
-						>
-							<HardDrive size={24} />
-						</div>
-						<div>
-							<h3
-								style={{
-									margin: 0,
-									fontSize: "18px",
-									fontWeight: "600",
-									color: "var(--ink, #1e293b)",
-								}}
-							>
-								Зашифрованный экспорт базы клиники (.dente AES-GCM-256)
-							</h3>
-							<p
-								style={{
-									margin: "4px 0 0",
-									fontSize: "13px",
-									color: "var(--muted, #64748b)",
-								}}
-							>
-								1-клик сохранение на USB-флешку или сетевой диск без подключения к интернету
-							</p>
-						</div>
-					</div>
-
-					<div
-						style={{
-							display: "grid",
-							gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-							gap: "12px",
-							marginBottom: "16px",
-						}}
-					>
-						<div>
-							<label
-								style={{
-									display: "block",
-									fontSize: "12px",
-									fontWeight: "600",
-									marginBottom: "4px",
-									color: "var(--ink, #1e293b)",
-								}}
-							>
-								Мастер-пароль шифрования архива (опционально)
-							</label>
-							<div style={{ position: "relative" }}>
-								<input
-									type={showExportPassphrase ? "text" : "password"}
-									value={exportPassphrase}
-									onChange={(e) => setExportPassphrase(e.target.value)}
-									placeholder="По умолчанию — защищенный ключ клиники"
-									className="w-full h-11 min-h-[44px] pl-3 pr-12 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs box-border focus:outline-none focus:ring-2 focus:ring-teal-500"
-								/>
-								<button
-									type="button"
-									onClick={() => setShowExportPassphrase(!showExportPassphrase)}
-									className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors flex items-center justify-center cursor-pointer touch-manipulation absolute right-0 top-1/2 -translate-y-1/2"
-									aria-label={showExportPassphrase ? "Скрыть мастер-пароль" : "Показать мастер-пароль"}
-								>
-									{showExportPassphrase ? <EyeOff size={18} /> : <Eye size={18} />}
-								</button>
-							</div>
-						</div>
-
-						<div>
-							<label
-								style={{
-									display: "block",
-									fontSize: "12px",
-									fontWeight: "600",
-									marginBottom: "4px",
-									color: "var(--ink, #1e293b)",
-								}}
-							>
-								Заметка / метка смены архива
-							</label>
-							<input
-								type="text"
-								value={exportNotes}
-								onChange={(e) => setExportNotes(e.target.value)}
-								placeholder="Например: Плановый бэкап перед закрытием смены"
-								className="w-full h-11 min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs box-border focus:outline-none focus:ring-2 focus:ring-teal-500"
-							/>
-						</div>
-					</div>
-
-					<div style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center" }}>
-						<button
-							type="button"
-							onClick={() => handleExport(true)}
-							disabled={isExporting}
-							style={{
-								minHeight: "44px",
-								padding: "0 18px",
-								borderRadius: "8px",
-								background: "var(--ok-fg)",
-								color: "var(--on-teal, #ffffff)",
-								border: "none",
-								fontWeight: "600",
-								fontSize: "13px",
-								cursor: isExporting ? "not-allowed" : "pointer",
-								display: "inline-flex",
-								alignItems: "center",
-								justifyContent: "center",
-								gap: "8px",
-								boxShadow: "0 1px 3px rgba(5,150,105,0.2)",
-								boxSizing: "border-box",
-							}}
-							className="touch-manipulation"
-						>
-							<Download size={16} />
-							<span>{isExporting ? "Создание архива..." : "Выбрать диск / USB (.dente)"}</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => handleExport(false)}
-							disabled={isExporting}
-							className="secondary-button min-h-[44px] px-4 text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation"
-						>
-							<Download size={15} />
-							<span>Скачать в Загрузки</span>
-						</button>
-					</div>
-
-					{exportError && (
-						<div
-							style={{
-								marginTop: "16px",
-								padding: "12px",
-								borderRadius: "8px",
-								background: "rgba(239, 68, 68, 0.1)",
-								color: "var(--bad-fg)",
-								fontSize: "13px",
-								display: "flex",
-								alignItems: "center",
-								gap: "8px",
-							}}
-						>
-							<AlertTriangle size={18} />
-							{exportError}
-						</div>
-					)}
-
-					{lastExportResult && (
-						<div
-							style={{
-								marginTop: "16px",
-								padding: "16px",
-								borderRadius: "8px",
-								background: "rgba(16, 185, 129, 0.08)",
-								border: "1px solid rgba(16, 185, 129, 0.2)",
-							}}
-						>
-							<div
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: "8px",
-									color: "var(--ok-fg)",
-									fontWeight: "600",
-									fontSize: "14px",
-									marginBottom: "8px",
-								}}
-							>
-								<CheckCircle2 size={18} />
-								Архив успешно создан и зашифрован (AES-GCM-256)
-							</div>
-							<div
-								style={{
-									fontSize: "13px",
-									color: "var(--ink, #334155)",
-									display: "grid",
-									gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-									gap: "8px",
-								}}
-							>
-								<div>Файл: <strong>{lastExportResult.filename}</strong></div>
-								<div>Контейнер: <strong>{lastExportResult.header.magic}</strong></div>
-								<div>SHA-256: <strong>{lastExportResult.header.payloadSha256.substring(0, 16)}...</strong></div>
-								<div>Мутаций: <strong>{lastExportResult.stats.mutations}</strong></div>
-								<div>Черновиков: <strong>{lastExportResult.stats.drafts}</strong></div>
-								<div>Расписаний: <strong>{lastExportResult.stats.schedules ?? 0}</strong></div>
-								<div>Пациентов: <strong>{lastExportResult.stats.patients ?? 0}</strong></div>
-								<div>Клинический кэш: <strong>{lastExportResult.stats.clinicalCache}</strong></div>
-							</div>
-						</div>
-					)}
-				</div>
+				<OfflineBackupExportSection
+					exportPassphrase={exportPassphrase}
+					setExportPassphrase={setExportPassphrase}
+					showExportPassphrase={showExportPassphrase}
+					setShowExportPassphrase={setShowExportPassphrase}
+					exportNotes={exportNotes}
+					setExportNotes={setExportNotes}
+					isExporting={isExporting}
+					handleExport={handleExport}
+					exportError={exportError}
+					lastExportResult={lastExportResult}
+				/>
 			)}
 
 			{/* SECTION 2: DRY-RUN RESTORE CHECK & RESTORATION */}
 			{activeSection === "restore" && (
-				<div
-					style={{
-						background: "transparent",
-						border: "none",
-						padding: "16px 0",
-						boxShadow: "none",
-					}}
-				>
-					<div
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: "12px",
-							marginBottom: "16px",
-						}}
-					>
-						<div
-							style={{
-								width: "44px",
-								height: "44px",
-								borderRadius: "10px",
-								background: "rgba(13, 148, 136, 0.12)",
-								color: "var(--teal)",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-							}}
-						>
-							<UploadCloud size={24} />
-						</div>
-						<div>
-							<h3
-								style={{
-									margin: 0,
-									fontSize: "18px",
-									fontWeight: "600",
-									color: "var(--ink, #1e293b)",
-								}}
-							>
-								Безопасное восстановление и Dry-Run валидатор (.dente)
-							</h3>
-							<p
-								style={{
-									margin: "4px 0 0",
-									fontSize: "13px",
-									color: "var(--muted, #64748b)",
-								}}
-							>
-								Предварительная симуляция распаковки и сверка контрольной суммы SHA-256 перед записью в IndexedDB
-							</p>
-						</div>
-					</div>
-
-					<input
-						type="file"
-						ref={fileInputRef}
-						onChange={handleFileSelect}
-						accept=".dente,application/json"
-						style={{ display: "none" }}
-					/>
-
-					<div
-						onClick={() => fileInputRef.current?.click()}
-						style={{
-							border: "2px dashed var(--glass-border-strong, #cbd5e1)",
-							borderRadius: "10px",
-							padding: "24px",
-							textAlign: "center",
-							cursor: "pointer",
-							background: "var(--paper-strong, #ffffff)",
-							marginBottom: "16px",
-						}}
-					>
-						<FileArchive size={32} style={{ color: "var(--muted, #64748b)", marginBottom: "8px" }} />
-						<div style={{ fontSize: "14px", fontWeight: "500", color: "var(--ink, #1e293b)" }}>
-							{importFileName ? `Выбран файл: ${importFileName}` : "Нажмите, чтобы выбрать файл .dente с флешки или перетащите сюда"}
-						</div>
-						<div style={{ fontSize: "12px", color: "var(--muted, #64748b)", marginTop: "4px" }}>
-							Поддерживаются форматы DENTE_ENCRYPTED_BACKUP_V2 (AES-GCM-256) и V1
-						</div>
-					</div>
-
-					{inspectError && (
-						<div
-							style={{
-								marginBottom: "16px",
-								padding: "12px",
-								borderRadius: "8px",
-								background: "rgba(239, 68, 68, 0.1)",
-								color: "var(--bad-fg)",
-								fontSize: "13px",
-								display: "flex",
-								alignItems: "center",
-								gap: "8px",
-							}}
-						>
-							<AlertTriangle size={18} />
-							{inspectError}
-						</div>
-					)}
-
-					{/* DRY-RUN REPORT CARD */}
-					{dryRunResult && (
-						<div
-							style={{
-								marginBottom: "16px",
-								padding: "16px",
-								borderRadius: "8px",
-								background:
-									dryRunResult.integrityGrade === "EXCELLENT"
-										? "rgba(16, 185, 129, 0.06)"
-										: dryRunResult.integrityGrade === "WARNING"
-											? "rgba(245, 158, 11, 0.06)"
-											: "rgba(239, 68, 68, 0.06)",
-								border:
-									dryRunResult.integrityGrade === "EXCELLENT"
-										? "1px solid rgba(16, 185, 129, 0.25)"
-										: dryRunResult.integrityGrade === "WARNING"
-											? "1px solid rgba(245, 158, 11, 0.25)"
-											: "1px solid rgba(239, 68, 68, 0.25)",
-							}}
-						>
-							<div
-								style={{
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "space-between",
-									flexWrap: "wrap",
-									gap: "8px",
-									marginBottom: "10px",
-								}}
-							>
-								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-									{dryRunResult.integrityGrade === "EXCELLENT" ? (
-										<ShieldCheck size={20} color="var(--ok-fg)" />
-									) : dryRunResult.integrityGrade === "WARNING" ? (
-										<AlertTriangle size={20} color="var(--warn-fg)" />
-									) : (
-										<ShieldAlert size={20} color="var(--bad-fg)" />
-									)}
-									<span style={{ fontWeight: "600", fontSize: "14px", color: "var(--ink, #1e293b)" }}>
-										Результат Dry-Run симуляции:
-									</span>
-									<span
-										style={{
-											fontSize: "12px",
-											fontWeight: "700",
-											padding: "2px 8px",
-											borderRadius: "10px",
-											background:
-												dryRunResult.integrityGrade === "EXCELLENT"
-													? "var(--ok-fg)"
-													: dryRunResult.integrityGrade === "WARNING"
-														? "var(--warn-fg)"
-														: "var(--bad-fg)",
-											color: "var(--on-teal, #ffffff)",
-										}}
-									>
-										{dryRunResult.integrityGrade}
-									</span>
-								</div>
-								<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
-									Время проверки: {dryRunResult.executionDurationMs} мс
-								</div>
-							</div>
-
-							<div
-								style={{
-									fontSize: "13px",
-									color: "var(--ink, #334155)",
-									display: "grid",
-									gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-									gap: "8px",
-									marginBottom: "12px",
-								}}
-							>
-								<div>Контрольная сумма: <strong>{dryRunResult.checksumVerified ? "Подтверждена" : "Ошибка"}</strong></div>
-								<div>Всего объектов: <strong>{dryRunResult.totalRecordsCount}</strong></div>
-								<div>Мутаций: <strong>{dryRunResult.previewStats.mutations}</strong></div>
-								<div>Черновиков: <strong>{dryRunResult.previewStats.drafts}</strong></div>
-								<div>Клинический кэш: <strong>{dryRunResult.previewStats.clinicalCache}</strong></div>
-								<div>Пациентов: <strong>{dryRunResult.previewStats.patients ?? 0}</strong></div>
-							</div>
-
-							{dryRunResult.warnings.length > 0 && (
-								<div style={{ fontSize: "12px", color: "var(--warn-fg)", marginBottom: "8px" }}>
-									{dryRunResult.warnings.map((w, idx) => (
-										<div key={idx} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-											<AlertTriangle size={13} style={{ flexShrink: 0 }} />
-											<span>{w}</span>
-										</div>
-									))}
-								</div>
-							)}
-
-							{dryRunResult.errors.length > 0 && (
-								<div style={{ fontSize: "12px", color: "var(--bad-fg)" }}>
-									{dryRunResult.errors.map((err, idx) => (
-										<div key={idx} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-											<XCircle size={13} style={{ flexShrink: 0 }} />
-											<span>{err}</span>
-										</div>
-									))}
-								</div>
-							)}
-						</div>
-					)}
-
-					{importRawText && (
-						<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-							<div>
-								<label
-									style={{
-										display: "block",
-										fontSize: "13px",
-										fontWeight: "500",
-										marginBottom: "6px",
-										color: "var(--ink, #1e293b)",
-									}}
-								>
-									Пароль расшифровки архива
-								</label>
-								<div style={{ position: "relative", maxWidth: "420px" }}>
-									<input
-										type={showImportPassphrase ? "text" : "password"}
-										value={importPassphrase}
-										onChange={(e) => handlePassphraseChangeForDryRun(e.target.value)}
-										placeholder="По умолчанию — ключ клиники"
-										className="w-full h-11 min-h-[44px] pl-3 pr-12 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs box-border focus:outline-none focus:ring-2 focus:ring-teal-500"
-									/>
-									<button
-										type="button"
-										onClick={() => setShowImportPassphrase(!showImportPassphrase)}
-										className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors flex items-center justify-center cursor-pointer touch-manipulation absolute right-0 top-1/2 -translate-y-1/2"
-										aria-label={showImportPassphrase ? "Скрыть мастер-пароль" : "Показать мастер-пароль"}
-									>
-										{showImportPassphrase ? <EyeOff size={18} /> : <Eye size={18} />}
-									</button>
-								</div>
-							</div>
-
-							<div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
-								<button
-									type="button"
-									onClick={() => executeDryRun(importRawText, importPassphrase)}
-									disabled={isExecutingDryRun}
-									style={{
-										minHeight: "44px",
-										padding: "0 16px",
-										borderRadius: "8px",
-										background: "var(--paper, #f1f5f9)",
-										color: "var(--ink, #334155)",
-										border: "1px solid var(--glass-border, #cbd5e1)",
-										fontWeight: "500",
-										fontSize: "14px",
-										cursor: isExecutingDryRun ? "not-allowed" : "pointer",
-										display: "flex",
-										alignItems: "center",
-										gap: "6px",
-									}}
-								>
-									<ShieldCheck size={16} />
-									{isExecutingDryRun ? "Проверка..." : "Повторить Dry-Run тест"}
-								</button>
-
-								<button
-									type="button"
-									onClick={handleRestore}
-									disabled={isImporting || !dryRunResult?.dryRunSuccess}
-									style={{
-										minHeight: "44px",
-										padding: "0 20px",
-										borderRadius: "8px",
-										background: dryRunResult?.dryRunSuccess ? "var(--teal)" : "var(--muted, #94a3b8)",
-										color: "var(--on-teal, #ffffff)",
-										border: "none",
-										fontWeight: "600",
-										fontSize: "14px",
-										cursor: isImporting || !dryRunResult?.dryRunSuccess ? "not-allowed" : "pointer",
-										display: "flex",
-										alignItems: "center",
-										gap: "8px",
-										boxShadow: dryRunResult?.dryRunSuccess ? "0 2px 4px rgba(13,148,136,0.2)" : "none",
-									}}
-								>
-									<UploadCloud size={18} />
-									{isImporting ? "Восстановление..." : "Расшифровать и восстановить данные"}
-								</button>
-							</div>
-						</div>
-					)}
-
-					{restoreError && (
-						<div
-							style={{
-								marginTop: "16px",
-								padding: "12px",
-								borderRadius: "8px",
-								background: "rgba(239, 68, 68, 0.1)",
-								color: "var(--bad-fg)",
-								fontSize: "13px",
-								display: "flex",
-								alignItems: "center",
-								gap: "8px",
-							}}
-						>
-							<AlertTriangle size={18} />
-							{restoreError}
-						</div>
-					)}
-
-					{lastRestoreResult && (
-						<div
-							style={{
-								marginTop: "16px",
-								padding: "16px",
-								borderRadius: "8px",
-								background: "rgba(16, 185, 129, 0.08)",
-								border: "1px solid rgba(16, 185, 129, 0.2)",
-							}}
-						>
-							<div
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: "8px",
-									color: "var(--ok-fg)",
-									fontWeight: "600",
-									fontSize: "14px",
-									marginBottom: "8px",
-								}}
-							>
-								<CheckCircle2 size={18} />
-								Данные успешно восстановлены и проверены
-							</div>
-							<div
-								style={{
-									fontSize: "13px",
-									color: "var(--ink, #334155)",
-									display: "grid",
-									gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-									gap: "8px",
-								}}
-							>
-								<div>Мутаций: <strong>{lastRestoreResult.restoredCount.mutations}</strong></div>
-								<div>Черновиков: <strong>{lastRestoreResult.restoredCount.drafts}</strong></div>
-								<div>Расписаний: <strong>{lastRestoreResult.restoredCount.schedules}</strong></div>
-								<div>Пациентов: <strong>{lastRestoreResult.restoredCount.patients}</strong></div>
-								<div>Одонтограмм: <strong>{lastRestoreResult.restoredCount.odontograms}</strong></div>
-								<div>Клинический кэш: <strong>{lastRestoreResult.restoredCount.clinicalCache}</strong></div>
-							</div>
-						</div>
-					)}
-				</div>
+				<OfflineBackupRestoreSection
+					fileInputRef={fileInputRef}
+					handleFileSelect={handleFileSelect}
+					importFileName={importFileName}
+					inspectError={inspectError}
+					dryRunResult={dryRunResult}
+					importRawText={importRawText}
+					importPassphrase={importPassphrase}
+					showImportPassphrase={showImportPassphrase}
+					setShowImportPassphrase={setShowImportPassphrase}
+					handlePassphraseChangeForDryRun={handlePassphraseChangeForDryRun}
+					executeDryRun={executeDryRun}
+					isExecutingDryRun={isExecutingDryRun}
+					handleRestore={handleRestore}
+					isImporting={isImporting}
+					restoreError={restoreError}
+					lastRestoreResult={lastRestoreResult}
+				/>
 			)}
 
 			{/* SECTION 3: DATABASE SNAPSHOTS & MERKLE SHA-256 HASHES */}
 			{activeSection === "snapshots" && (
-				<div
-					style={{
-						background: "transparent",
-						border: "none",
-						padding: "16px 0",
-						boxShadow: "none",
-					}}
-				>
-					<div
-						style={{
-							display: "flex",
-							justifyContent: "space-between",
-							alignItems: "center",
-							flexWrap: "wrap",
-							gap: "12px",
-							marginBottom: "16px",
-						}}
-					>
-						<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-							<div
-								style={{
-									width: "44px",
-									height: "44px",
-									borderRadius: "10px",
-									background: "rgba(13, 148, 136, 0.12)",
-									color: "var(--teal)",
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-								}}
-							>
-								<Database size={24} />
-							</div>
-							<div>
-								<h3
-									style={{
-										margin: 0,
-										fontSize: "18px",
-										fontWeight: "600",
-										color: "var(--ink, #1e293b)",
-									}}
-								>
-									Моментальные слепки базы данных и SHA-256 хеширование
-								</h3>
-								<p
-									style={{
-										margin: "4px 0 0",
-										fontSize: "13px",
-										color: "var(--muted, #64748b)",
-									}}
-								>
-									Потабличный расчет контрольных сумм и корневой дайджест базы (IndexedDB / SQLite)
-								</p>
-							</div>
-						</div>
-
-						<div style={{ display: "flex", gap: "10px" }}>
-							<button
-								type="button"
-								onClick={handleCreateSnapshot}
-								disabled={isCreatingSnapshot}
-								style={{
-									minHeight: "44px",
-									padding: "0 18px",
-									borderRadius: "8px",
-									background: "var(--teal)",
-									color: "var(--on-teal, #ffffff)",
-									border: "none",
-									fontWeight: "600",
-									fontSize: "14px",
-									cursor: isCreatingSnapshot ? "not-allowed" : "pointer",
-									display: "flex",
-									alignItems: "center",
-									gap: "8px",
-								}}
-							>
-								<RefreshCw size={16} className={isCreatingSnapshot ? "spin-animation" : ""} />
-								{isCreatingSnapshot ? "Создание слепка..." : "Пересчитать хеши базы"}
-							</button>
-						</div>
-					</div>
-
-					{snapshotError && (
-						<div
-							style={{
-								marginBottom: "16px",
-								padding: "12px",
-								borderRadius: "8px",
-								background: "rgba(239, 68, 68, 0.1)",
-								color: "var(--bad-fg)",
-								fontSize: "13px",
-								display: "flex",
-								alignItems: "center",
-								gap: "8px",
-							}}
-						>
-							<AlertTriangle size={18} />
-							{snapshotError}
-						</div>
-					)}
-
-					{currentSnapshot && (
-						<div>
-							<div
-								style={{
-									display: "flex",
-									justifyContent: "space-between",
-									alignItems: "center",
-									flexWrap: "wrap",
-									padding: "14px 18px",
-									borderRadius: "8px",
-									background: snapshotVerified ? "rgba(16, 185, 129, 0.08)" : "rgba(245, 158, 11, 0.08)",
-									color: snapshotVerified ? "var(--ok-fg)" : "var(--warn-fg)",
-									marginBottom: "16px",
-									fontSize: "13px",
-								}}
-							>
-								<div>
-									<strong>Root Merkle SHA-256:</strong>{" "}
-									<code style={{ fontSize: "12px", wordBreak: "break-all" }}>
-										{currentSnapshot.metadata.rootSha256}
-									</code>
-								</div>
-								<div>
-									Слепок: <strong>{new Date(currentSnapshot.metadata.createdAtIso).toLocaleTimeString("ru-RU")}</strong> (Объектов: {currentSnapshot.metadata.totalRecords})
-								</div>
-							</div>
-
-							<div
-								style={{
-									display: "grid",
-									gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-									gap: "12px",
-								}}
-							>
-								{Object.entries(currentSnapshot.tables).map(([tableName, table]: [string, any]) => (
-									<div
-										key={tableName}
-										style={{
-											padding: "12px 14px",
-											background: "var(--paper, #f8fafc)",
-											border: "1px solid var(--glass-border, #e2e8f0)",
-											borderRadius: "8px",
-										}}
-									>
-										<div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-											<strong style={{ fontSize: "13px", color: "var(--ink, #1e293b)" }}>
-												{tableName}
-											</strong>
-											<span style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
-												{table.rowCount} записей
-											</span>
-										</div>
-										<div style={{ fontSize: "11px", color: "var(--muted, #64748b)", wordBreak: "break-all" }}>
-											SHA-256: <code>{table.tableSha256.substring(0, 24)}...</code>
-										</div>
-									</div>
-								))}
-							</div>
-						</div>
-					)}
-				</div>
+				<OfflineBackupSnapshotsSection
+					handleCreateSnapshot={handleCreateSnapshot}
+					isCreatingSnapshot={isCreatingSnapshot}
+					snapshotError={snapshotError}
+					currentSnapshot={currentSnapshot}
+					snapshotVerified={snapshotVerified}
+				/>
 			)}
 
 			{/* SECTION 4: AUTO-BACKUP SCHEDULER & ROLLING LOCAL SNAPSHOTS */}
 			{activeSection === "scheduler" && (
-				<div
-					style={{
-						background: "transparent",
-						border: "none",
-						padding: "16px 0",
-						boxShadow: "none",
-					}}
-				>
-					<div
-						style={{
-							display: "flex",
-							justifyContent: "space-between",
-							alignItems: "center",
-							flexWrap: "wrap",
-							gap: "12px",
-							marginBottom: "16px",
-						}}
-					>
-						<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-							<div
-								style={{
-									width: "44px",
-									height: "44px",
-									borderRadius: "10px",
-									background: "rgba(13, 148, 136, 0.12)",
-									color: "var(--teal)",
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-								}}
-							>
-								<Clock size={24} />
-							</div>
-							<div>
-								<h3
-									style={{
-										margin: 0,
-										fontSize: "18px",
-										fontWeight: "600",
-										color: "var(--ink, #1e293b)",
-									}}
-								>
-									Автоматическое периодическое резервирование (Планировщик бэкапов)
-								</h3>
-								<p
-									style={{
-										margin: "4px 0 0",
-										fontSize: "13px",
-										color: "var(--muted, #64748b)",
-									}}
-								>
-									Фоновое создание зашифрованных слепков в локальное защищенное хранилище
-								</p>
-							</div>
-						</div>
-
-						<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-							<select
-								value={schedulerIntervalMin}
-								onChange={(e) => setSchedulerIntervalMin(Number(e.target.value))}
-								disabled={schedulerStatus.isRunning}
-								className="min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
-							>
-								<option value={15}>Каждые 15 минут</option>
-								<option value={30}>Каждые 30 минут</option>
-								<option value={60}>Каждый 1 час</option>
-								<option value={360}>Каждые 6 часов</option>
-								<option value={720}>Каждые 12 часов</option>
-							</select>
-
-							<button
-								type="button"
-								onClick={handleToggleScheduler}
-								style={{
-									minHeight: "44px",
-									padding: "0 20px",
-									borderRadius: "8px",
-									background: schedulerStatus.isRunning ? "var(--bad-fg)" : "var(--teal)",
-									color: "var(--on-teal, #ffffff)",
-									border: "none",
-									fontWeight: "600",
-									fontSize: "14px",
-									cursor: "pointer",
-									display: "flex",
-									alignItems: "center",
-									gap: "8px",
-								}}
-							>
-								{schedulerStatus.isRunning ? (
-									<>
-										<Square size={16} /> Остановить автобэкап
-									</>
-								) : (
-									<>
-										<Play size={16} /> Запустить автобэкап
-									</>
-								)}
-							</button>
-						</div>
-					</div>
-
-					{schedulerStatus.isRunning && (
-						<div
-							style={{
-								padding: "12px 16px",
-								borderRadius: "8px",
-								background: "rgba(13, 148, 136, 0.08)",
-								fontSize: "13px",
-								color: "var(--teal)",
-								display: "flex",
-								alignItems: "center",
-								gap: "8px",
-								marginBottom: "16px",
-							}}
-						>
-							<RefreshCw size={16} className="spin-animation" />
-							Автобэкап по расписанию активен (интервал: {schedulerStatus.intervalMinutes} мин). Следующий снимок: {schedulerStatus.nextScheduledRunAt ? new Date(schedulerStatus.nextScheduledRunAt).toLocaleTimeString("ru-RU") : "скоро"}
-						</div>
-					)}
-
-					{vaultSnapshots.length > 0 && (
-						<div>
-							<h4 style={{ fontSize: "14px", fontWeight: "600", color: "var(--ink, #1e293b)", marginBottom: "12px" }}>
-								Недавние локальные снимки Vault ({vaultSnapshots.length})
-							</h4>
-							<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-								{vaultSnapshots.map((snap) => (
-									<div
-										key={snap.id}
-										style={{
-											display: "flex",
-											justifyContent: "space-between",
-											alignItems: "center",
-											padding: "12px 16px",
-											background: "var(--paper, #f8fafc)",
-											border: "1px solid var(--glass-border, #e2e8f0)",
-											borderRadius: "8px",
-										}}
-									>
-										<div>
-											<div style={{ fontSize: "13px", fontWeight: "600", color: "var(--ink, #1e293b)" }}>
-												{snap.filename}
-											</div>
-											<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
-												{new Date(snap.timestamp).toLocaleString("ru-RU")} · {Math.round(snap.sizeBytes / 1024)} КБ · {snap.itemsCount.mutations} мут., {snap.itemsCount.drafts} черн.
-											</div>
-										</div>
-
-										<div style={{ display: "flex", gap: "8px" }}>
-											<button
-												type="button"
-												onClick={() => handleRestoreSnapshot(snap.id)}
-												style={{
-													minHeight: "36px",
-													padding: "0 12px",
-													borderRadius: "6px",
-													background: "var(--teal)",
-													color: "var(--on-teal, #ffffff)",
-													border: "none",
-													fontSize: "12px",
-													fontWeight: "500",
-													cursor: "pointer",
-												}}
-											>
-												Загрузить в форму
-											</button>
-
-											<button
-												type="button"
-												onClick={() => handleDeleteSnapshot(snap.id)}
-												style={{
-													minHeight: "36px",
-													minWidth: "36px",
-													padding: "0",
-													borderRadius: "6px",
-													background: "rgba(239, 68, 68, 0.1)",
-													color: "var(--bad-fg)",
-													border: "none",
-													fontSize: "12px",
-													cursor: "pointer",
-													display: "flex",
-													alignItems: "center",
-													justifyContent: "center",
-												}}
-											>
-												<Trash2 size={16} />
-											</button>
-										</div>
-									</div>
-								))}
-							</div>
-						</div>
-					)}
-				</div>
+				<OfflineBackupSchedulerSection
+					schedulerIntervalMin={schedulerIntervalMin}
+					setSchedulerIntervalMin={setSchedulerIntervalMin}
+					schedulerStatus={schedulerStatus}
+					handleToggleScheduler={handleToggleScheduler}
+					vaultSnapshots={vaultSnapshots}
+					handleRestoreSnapshot={handleRestoreSnapshot}
+					handleDeleteSnapshot={handleDeleteSnapshot}
+				/>
 			)}
 
 			{/* SECTION 5: INTEGRITY & HEALTH DIAGNOSTICS */}
 			{activeSection === "integrity" && (
-				<div
-					style={{
-						background: "transparent",
-						border: "none",
-						padding: "16px 0",
-						boxShadow: "none",
+				<OfflineBackupIntegritySection
+					runIntegrityCheck={(attempt) => {
+						void runIntegrityCheck(attempt ?? false);
 					}}
-				>
-					<div
-						style={{
-							display: "flex",
-							justifyContent: "space-between",
-							alignItems: "center",
-							flexWrap: "wrap",
-							gap: "12px",
-							marginBottom: "16px",
-						}}
-					>
-						<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-							<div
-								style={{
-									width: "44px",
-									height: "44px",
-									borderRadius: "10px",
-									background: "rgba(13, 148, 136, 0.12)",
-									color: "var(--teal)",
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-								}}
-							>
-								<Database size={24} />
-							</div>
-							<div>
-								<h3
-									style={{
-										margin: 0,
-										fontSize: "18px",
-										fontWeight: "600",
-										color: "var(--ink, #1e293b)",
-									}}
-								>
-									Диагностика целостности локального хранилища (Integrity Engine)
-								</h3>
-								<p
-									style={{
-										margin: "4px 0 0",
-										fontSize: "13px",
-										color: "var(--muted, #64748b)",
-									}}
-								>
-									Сверка контрольных сумм полезной нагрузки, структуры таблиц и квоты браузера
-								</p>
-							</div>
-						</div>
-
-						<div style={{ display: "flex", gap: "10px" }}>
-							<button
-								type="button"
-								onClick={() => runIntegrityCheck(false)}
-								disabled={isCheckingIntegrity}
-								style={{
-									minHeight: "44px",
-									padding: "0 16px",
-									borderRadius: "8px",
-									background: "var(--paper, #f1f5f9)",
-									color: "var(--ink, #334155)",
-									border: "1px solid var(--glass-border, #cbd5e1)",
-									fontWeight: "500",
-									fontSize: "14px",
-									cursor: isCheckingIntegrity ? "not-allowed" : "pointer",
-									display: "flex",
-									alignItems: "center",
-									gap: "6px",
-								}}
-							>
-								<RefreshCw size={16} />
-								{isCheckingIntegrity ? "Проверка..." : "Проверить целостность"}
-							</button>
-
-							{integrityReport && !integrityReport.healthy && (
-								<button
-									type="button"
-									onClick={() => runIntegrityCheck(true)}
-									disabled={isCheckingIntegrity}
-									style={{
-										minHeight: "44px",
-										padding: "0 16px",
-										borderRadius: "8px",
-										background: "var(--warn-fg)",
-										color: "var(--on-teal, #ffffff)",
-										border: "none",
-										fontWeight: "600",
-										fontSize: "14px",
-										cursor: isCheckingIntegrity ? "not-allowed" : "pointer",
-										display: "flex",
-										alignItems: "center",
-										gap: "6px",
-									}}
-								>
-									<ShieldAlert size={16} />
-									Автовосстановление базы
-								</button>
-							)}
-						</div>
-					</div>
-
-					{integrityReport && (
-						<div>
-							<div
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: "8px",
-									marginBottom: "16px",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									background: integrityReport.healthy ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)",
-									color: integrityReport.healthy ? "var(--ok-fg)" : "var(--bad-fg)",
-									fontWeight: "600",
-									fontSize: "14px",
-								}}
-							>
-								{integrityReport.healthy ? <ShieldCheck size={20} /> : <AlertTriangle size={20} />}
-								{integrityReport.healthy
-									? `Все локальные записи целостны (проверено ${integrityReport.totalChecked} объектов)`
-									: `Обнаружены повреждения: ${integrityReport.corruptedCount} поврежденных записей из ${integrityReport.totalChecked}`}
-							</div>
-
-							<div
-								style={{
-									display: "grid",
-									gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-									gap: "12px",
-									fontSize: "13px",
-									color: "var(--ink, #334155)",
-									marginBottom: "16px",
-								}}
-							>
-								<div style={{ padding: "10px", background: "var(--paper, #f8fafc)", borderRadius: "6px" }}>
-									Мутации: <strong>{integrityReport.storesStats.mutationsCount}</strong>
-								</div>
-								<div style={{ padding: "10px", background: "var(--paper, #f8fafc)", borderRadius: "6px" }}>
-									Черновики: <strong>{integrityReport.storesStats.draftsCount}</strong>
-								</div>
-								<div style={{ padding: "10px", background: "var(--paper, #f8fafc)", borderRadius: "6px" }}>
-									Клинический кэш: <strong>{integrityReport.storesStats.clinicalCacheCount}</strong>
-								</div>
-								<div style={{ padding: "10px", background: "var(--paper, #f8fafc)", borderRadius: "6px" }}>
-									Расписания: <strong>{integrityReport.storesStats.schedulesCount}</strong>
-								</div>
-								<div style={{ padding: "10px", background: "var(--paper, #f8fafc)", borderRadius: "6px" }}>
-									Пациенты: <strong>{integrityReport.storesStats.patientsCount}</strong>
-								</div>
-								<div style={{ padding: "10px", background: "var(--paper, #f8fafc)", borderRadius: "6px" }}>
-									Свободно памяти: <strong>{integrityReport.storageEstimate.freeFormatted}</strong>
-								</div>
-							</div>
-						</div>
-					)}
-				</div>
+					isCheckingIntegrity={isCheckingIntegrity}
+					integrityReport={integrityReport}
+				/>
 			)}
 
 			<OfflineSyncGuardModal

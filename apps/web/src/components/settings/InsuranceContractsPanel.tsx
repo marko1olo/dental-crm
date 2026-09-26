@@ -7,9 +7,11 @@
  * в ./insuranceContractsPanelData.ts. Коротко: отказ чтения показывался как
  * «Договоров ДМС нет», а при отказе сохранения администратору печатался
  * английский машинный код сервера.
+ *
+ * Мандаты 8b, 8d: строго <= 800 строк, ноль мультяшных эмодзи.
  */
 
-import { Edit2, Plus, ShieldCheck, Trash2, X } from "lucide-react";
+import { Edit2, FileCheck2, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -20,6 +22,10 @@ import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 import {
+	InsuranceContractModal,
+	type ContractFormData,
+} from "./insurance/InsuranceContractModal";
+import {
 	INSURANCE_CONTRACTS_PANEL_SUBJECT,
 	type InsuranceContract,
 	type InsuranceContractsLoadState,
@@ -27,16 +33,6 @@ import {
 } from "./insuranceContractsPanelData";
 import { SettingsModuleDisabled } from "./SettingsModuleDisabled";
 import { INSURANCE_CONTRACTS_GATE } from "./settingsModuleGate";
-
-interface ContractFormData {
-	companyName: string;
-	policyNumberMask: string;
-	coverageTherapyPct: string;
-	coverageSurgeryPct: string;
-	coverageOrthoPct: string;
-	coverageHygienePct: string;
-	annualLimitRub: string;
-}
 
 const defaultForm = (): ContractFormData => ({
 	companyName: "",
@@ -46,6 +42,8 @@ const defaultForm = (): ContractFormData => ({
 	coverageOrthoPct: "0",
 	coverageHygienePct: "0",
 	annualLimitRub: "",
+	patientFranchisePct: "0",
+	requiresGuaranteeLetter: false,
 });
 
 const clampPct = (v: string) => Math.min(100, Math.max(0, parseFloat(v) || 0));
@@ -75,10 +73,6 @@ export const InsuranceContractsPanel: React.FC = () => {
 	const [editingContract, setEditingContract] =
 		useState<InsuranceContract | null>(null);
 	const [formData, setFormData] = useState<ContractFormData>(defaultForm());
-
-	const paperBg = "var(--paper)";
-	const paperSoftBg = "var(--paper-soft)";
-	const borderColor = "var(--line)";
 
 	const fetchContracts = useCallback(async () => {
 		setLoadState({ phase: "loading" });
@@ -134,6 +128,8 @@ export const InsuranceContractsPanel: React.FC = () => {
 			coverageHygienePct: String(contract.coverageHygienePct),
 			annualLimitRub:
 				contract.annualLimitRub != null ? String(contract.annualLimitRub) : "",
+			patientFranchisePct: String(contract.patientFranchisePct ?? 0),
+			requiresGuaranteeLetter: Boolean(contract.requiresGuaranteeLetter),
 		});
 		setShowModal(true);
 	};
@@ -152,6 +148,8 @@ export const InsuranceContractsPanel: React.FC = () => {
 			annualLimitRub: formData.annualLimitRub
 				? parseInt(formData.annualLimitRub, 10) || undefined
 				: undefined,
+			patientFranchisePct: clampPct(formData.patientFranchisePct),
+			requiresGuaranteeLetter: Boolean(formData.requiresGuaranteeLetter),
 		};
 
 		/*
@@ -237,28 +235,10 @@ export const InsuranceContractsPanel: React.FC = () => {
 
 	/*
 	 * ПАНЕЛЬ СПРАШИВАЕТ ТОТ ЖЕ ПРИЗНАК, ЧТО И КНОПКА ЕЁ ВКЛАДКИ.
-	 *
-	 * Кнопку «Страховые» отсеивает `if (!flags.hasInsuranceCoPay)` в SettingsView,
-	 * а панель признака не спрашивала — и открывалась по адресу
-	 * `#settings/insurance` при выключенном ДМС. Клиника, не работающая по ДМС,
-	 * видела экран договоров, которого в её меню нет. Источник признака тот же
-	 * (useWorkspaceProfile), поэтому разойтись им больше негде. Выход стоит ПОСЛЕ
-	 * всех хуков: правила хуков React не позволяют вернуться раньше их вызова —
-	 * поэтому сам признак прочитан выше, вместе с остальными хуками.
 	 */
 	if (!insuranceEnabled) {
 		return <SettingsModuleDisabled gate={INSURANCE_CONTRACTS_GATE} />;
 	}
-
-	const coverageCategories: Array<{
-		label: string;
-		key: keyof ContractFormData;
-	}> = [
-		{ label: "Терапия", key: "coverageTherapyPct" },
-		{ label: "Хирургия", key: "coverageSurgeryPct" },
-		{ label: "Ортодонтия", key: "coverageOrthoPct" },
-		{ label: "Гигиена", key: "coverageHygienePct" },
-	];
 
 	return (
 		<div className="py-2 text-slate-900 dark:text-slate-100">
@@ -270,8 +250,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 						Договоры ДМС
 					</h2>
 					<p className="mt-1.5 mb-0 text-sm text-slate-500 dark:text-slate-400">
-						Страховые компании и покрытие по категориям услуг. Используются в
-						Сравнительном конструкторе смет.
+						Страховые компании, процент покрытия по категориям, франшиза и гарантийные письма. Используются в Сравнительном конструкторе смет.
 					</p>
 				</div>
 				<button type="button" className="primary-button" onClick={openAddModal}>
@@ -281,12 +260,6 @@ export const InsuranceContractsPanel: React.FC = () => {
 
 			{/*
 				ТРИ СОСТОЯНИЯ, А НЕ ДВА.
-
-				БЫЛО: `isLoading ? загрузка : contracts.length === 0 ? «Договоров ДМС
-				нет» : список`. Под «нет» попадал и непрочитанный список — при 401 у
-				незакрытой смены или сбое базы экран навсегда утверждал, что у клиники
-				нет ни одного договора. Администратор заводил их заново (дубли) или
-				считал смету без страховой доли.
 			*/}
 			{loadState.phase === "failed" ? (
 				<PanelLoadFailure
@@ -329,430 +302,140 @@ export const InsuranceContractsPanel: React.FC = () => {
 				</div>
 			) : (
 				<div className="flex flex-col gap-3">
-					{contracts.map((contract) => (
-						<div
-							key={contract.id}
-							className="rounded-2xl p-5 flex flex-col gap-4 border"
-							style={{
-								borderColor: "var(--line)",
-								background: "var(--surface)",
-								color: "var(--ink)",
-							}}
-						>
-							<div className="flex justify-between items-start flex-wrap gap-3">
-								<div>
-									<h3 className="m-0 text-base font-semibold text-slate-900 dark:text-white">
-										{contract.companyName}
-									</h3>
-									{contract.policyNumberMask && (
-										<p className="mt-1 mb-0 text-xs text-slate-500 dark:text-slate-400">
-											Маска полиса: {contract.policyNumberMask}
-										</p>
-									)}
-									{contract.annualLimitRub != null && (
-										<p className="mt-1 mb-0 text-xs text-slate-500 dark:text-slate-400">
-											Годовой лимит:{" "}
-											{contract.annualLimitRub.toLocaleString("ru-RU")} ₽
-										</p>
-									)}
-								</div>
-								<div style={{ display: "flex", gap: 8 }}>
-									<button
-										type="button"
-										onClick={() => openEditModal(contract)}
-										style={{
-											background: "rgba(245,158,11,0.15)",
-											color: "var(--amber, #d97706)",
-											border: "none",
-											width: 44,
-											height: 44,
-											borderRadius: 8,
-											cursor: "pointer",
-											display: "flex",
-											alignItems: "center",
-											justifyContent: "center",
-										}}
-										title="Редактировать"
-									>
-										<Edit2 size={16} />
-									</button>
-									<button
-										type="button"
-										onClick={() => handleDeactivate(contract)}
-										style={{
-											background: "rgba(239,68,68,0.15)",
-											color: "var(--tomato, #ef4444)",
-											border: "none",
-											width: 44,
-											height: 44,
-											borderRadius: 8,
-											cursor: "pointer",
-											display: "flex",
-											alignItems: "center",
-											justifyContent: "center",
-										}}
-										title="Удалить"
-									>
-										<Trash2 size={16} />
-									</button>
-								</div>
-							</div>
-
-							{/* Coverage grid */}
-							<div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-								{[
-									{ label: "Терапия", val: contract.coverageTherapyPct },
-									{ label: "Хирургия", val: contract.coverageSurgeryPct },
-									{ label: "Ортодонтия", val: contract.coverageOrthoPct },
-									{ label: "Гигиена", val: contract.coverageHygienePct },
-								].map(({ label, val }) => (
-									<div
-										key={label}
-										className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3"
-									>
-										<div className="text-[11px] text-slate-500 dark:text-slate-400 mb-1">
-											{label}
-										</div>
-										<div
-											className={`text-xl font-bold ${val > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`}
-										>
-											{val}%
-										</div>
-										{/* Visual bar */}
-										<div className="h-1 rounded bg-slate-200 dark:bg-slate-700 mt-1.5 overflow-hidden">
-											<div
-												className={`h-full rounded transition-all duration-300 ${val > 0 ? "bg-emerald-500" : "bg-transparent"}`}
-												style={{ width: `${val}%` }}
-											/>
-										</div>
-									</div>
-								))}
-							</div>
-						</div>
-					))}
-				</div>
-			)}
-
-			{/* Add/Edit Modal */}
-			{showModal && (
-				<button
-					type="button"
-					style={{
-						position: "fixed",
-						inset: 0,
-						zIndex: 1000,
-						background: "rgba(0,0,0,0.5)",
-						backdropFilter: "blur(4px)",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						width: "100%",
-						border: "none",
-						padding: 0,
-						margin: 0,
-						textAlign: "inherit",
-						font: "inherit",
-					}}
-					onClick={(e) => e.target === e.currentTarget && setShowModal(false)}
-					onKeyDown={(e) => {
-						if (
-							e.target === e.currentTarget &&
-							(e.key === "Enter" || e.key === " ")
-						) {
-							setShowModal(false);
-						}
-					}}
-				>
-					<div
-						style={{
-							background: paperBg,
-							width: 520,
-							maxWidth: "95vw",
-							maxHeight: "90vh",
-							overflowY: "auto",
-							borderRadius: 20,
-							padding: 28,
-							border: `1px solid ${borderColor}`,
-							boxShadow: "0 32px 64px rgba(0,0,0,0.3)",
-						}}
-					>
-						<div
-							style={{
-								display: "flex",
-								justifyContent: "space-between",
-								alignItems: "center",
-								marginBottom: 24,
-							}}
-						>
-							<h2
+					{contracts.map((contract) => {
+						const franchiseVal = contract.patientFranchisePct ?? 0;
+						return (
+							<div
+								key={contract.id}
+								className="rounded-2xl p-5 flex flex-col gap-4 border"
 								style={{
-									margin: 0,
-									fontSize: 20,
-									fontWeight: 700,
+									borderColor: "var(--line)",
+									background: "var(--surface)",
 									color: "var(--ink)",
 								}}
 							>
-								{editingContract
-									? "Редактировать договор"
-									: "Добавить договор ДМС"}
-							</h2>
-							<button
-								type="button"
-								onClick={() => setShowModal(false)}
-								style={{
-									background: "none",
-									border: "none",
-									fontSize: 20,
-									cursor: "pointer",
-									color: "var(--muted)",
-									padding: 4,
-								}}
-							>
-								<X size={20} />
-							</button>
-						</div>
-
-						<form
-							onSubmit={handleSave}
-							style={{ display: "flex", flexDirection: "column", gap: 18 }}
-						>
-							{/* 1-клик шаблоны договоров топ-страховщиков */}
-							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>
-									Быстрые шаблоны договоров ДМС:
-								</span>
-								<div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-									{[
-										{ name: "АО «СОГАЗ»", mask: "СГЗ-####-######", limit: "100000", therapy: "100", surgery: "100", ortho: "50", hygiene: "100" },
-										{ name: "СПАО «Ингосстрах»", mask: "ИНГ-####-######", limit: "80000", therapy: "100", surgery: "80", ortho: "40", hygiene: "100" },
-										{ name: "СПАО «РЕСО-Гарантия»", mask: "РЕС-####-######", limit: "90000", therapy: "100", surgery: "90", ortho: "50", hygiene: "100" },
-										{ name: "АО «АльфаСтрахование»", mask: "АЛЬФА-####-######", limit: "120000", therapy: "100", surgery: "100", ortho: "60", hygiene: "100" },
-									].map((tmpl) => (
-										<button
-											key={tmpl.name}
-											type="button"
-											onClick={() => {
-												setFormData({
-													companyName: tmpl.name,
-													policyNumberMask: tmpl.mask,
-													annualLimitRub: tmpl.limit,
-													coverageTherapyPct: tmpl.therapy,
-													coverageSurgeryPct: tmpl.surgery,
-													coverageOrthoPct: tmpl.ortho,
-													coverageHygienePct: tmpl.hygiene,
-												});
-											}}
-											style={{
-												padding: "4px 8px",
-												borderRadius: 6,
-												border: "1px solid var(--line, #e2e8f0)",
-												background: "var(--paper-soft, #f8fafc)",
-												fontSize: 12,
-												fontWeight: 600,
-												color: "var(--ink)",
-												cursor: "pointer",
-											}}
-										>
-											+ {tmpl.name}
-										</button>
-									))}
-								</div>
-							</div>
-
-							{/* Company name */}
-							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label
-									htmlFor="insurance-company-name"
-									style={{
-										fontSize: 13,
-										color: "var(--muted)",
-										fontWeight: 500,
-									}}
-								>
-									Страховая компания *
-								</label>
-								<input
-									id="insurance-company-name"
-									type="text"
-									required
-									value={formData.companyName}
-									onChange={(e) =>
-										setFormData({ ...formData, companyName: e.target.value })
-									}
-									style={{
-										padding: "10px 14px",
-										borderRadius: 8,
-										border: `1px solid ${borderColor}`,
-										background: paperSoftBg,
-										color: "var(--ink)",
-										outline: "none",
-									}}
-									placeholder="СОГАЗ, Ингосстрах, АльфаСтрахование..."
-								/>
-							</div>
-
-							{/* Policy mask */}
-							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label
-									htmlFor="insurance-policy-mask"
-									style={{
-										fontSize: 13,
-										color: "var(--muted)",
-										fontWeight: 500,
-									}}
-								>
-									Маска номера полиса (опционально)
-								</label>
-								<input
-									id="insurance-policy-mask"
-									type="text"
-									value={formData.policyNumberMask}
-									onChange={(e) =>
-										setFormData({
-											...formData,
-											policyNumberMask: e.target.value,
-										})
-									}
-									style={{
-										padding: "10px 14px",
-										borderRadius: 8,
-										border: `1px solid ${borderColor}`,
-										background: paperSoftBg,
-										color: "var(--ink)",
-										outline: "none",
-									}}
-									placeholder="ХХХХ-ХХХХ-ХХХХ"
-								/>
-							</div>
-
-							{/* Coverage fields */}
-							<div>
-								<p
-									style={{
-										margin: "0 0 10px 0",
-										fontSize: 13,
-										fontWeight: 600,
-										color: "var(--ink)",
-									}}
-								>
-									Покрытие по категориям (%)
-								</p>
-								<div
-									style={{
-										display: "grid",
-										gridTemplateColumns: "1fr 1fr",
-										gap: 12,
-									}}
-								>
-									{coverageCategories.map(({ label, key }) => (
-										<div
-											key={key}
-											style={{
-												display: "flex",
-												flexDirection: "column",
-												gap: 5,
-											}}
-										>
-											<label
-												htmlFor={`insurance-coverage-${key}`}
-												style={{
-													fontSize: 12,
-													color: "var(--muted)",
-													fontWeight: 500,
-												}}
-											>
-												{label}
-											</label>
-											<div
-												style={{
-													display: "flex",
-													alignItems: "center",
-													gap: 8,
-												}}
-											>
-												<input
-													id={`insurance-coverage-${key}`}
-													type="number"
-													min="0"
-													max="100"
-													step="1"
-													value={formData[key]}
-													onChange={(e) =>
-														setFormData({ ...formData, [key]: e.target.value })
-													}
-													style={{
-														flex: 1,
-														padding: "9px 12px",
-														borderRadius: 8,
-														border: `1px solid ${borderColor}`,
-														background: paperSoftBg,
-														color: "var(--ink)",
-														outline: "none",
-													}}
-												/>
-												<span style={{ color: "var(--muted)", fontSize: 14 }}>
-													%
+								<div className="flex justify-between items-start flex-wrap gap-3">
+									<div>
+										<div className="flex items-center gap-2 flex-wrap">
+											<h3 className="m-0 text-base font-semibold text-slate-900 dark:text-white">
+												{contract.companyName}
+											</h3>
+											{franchiseVal > 0 ? (
+												<span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+													Франшиза {franchiseVal}% (со-оплата)
 												</span>
+											) : (
+												<span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+													Франшиза 0% (100% ДМС)
+												</span>
+											)}
+											{contract.requiresGuaranteeLetter && (
+												<span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 flex items-center gap-1">
+													<FileCheck2 size={12} />
+													ГП обязательно
+												</span>
+											)}
+										</div>
+										{contract.policyNumberMask && (
+											<p className="mt-1 mb-0 text-xs text-slate-500 dark:text-slate-400">
+												Маска полиса: {contract.policyNumberMask}
+											</p>
+										)}
+										{contract.annualLimitRub != null && (
+											<p className="mt-1 mb-0 text-xs text-slate-500 dark:text-slate-400">
+												Годовой лимит:{" "}
+												{contract.annualLimitRub.toLocaleString("ru-RU")} ₽
+											</p>
+										)}
+									</div>
+									<div style={{ display: "flex", gap: 8 }}>
+										<button
+											type="button"
+											onClick={() => openEditModal(contract)}
+											style={{
+												background: "rgba(245,158,11,0.15)",
+												color: "var(--amber, #d97706)",
+												border: "none",
+												width: 36,
+												height: 36,
+												borderRadius: 8,
+												cursor: "pointer",
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+											}}
+											title="Редактировать договор"
+										>
+											<Edit2 size={16} />
+										</button>
+										<button
+											type="button"
+											onClick={() => handleDeactivate(contract)}
+											style={{
+												background: "rgba(239,68,68,0.15)",
+												color: "var(--tomato, #ef4444)",
+												border: "none",
+												width: 36,
+												height: 36,
+												borderRadius: 8,
+												cursor: "pointer",
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+											}}
+											title="Убрать из работы"
+										>
+											<Trash2 size={16} />
+										</button>
+									</div>
+								</div>
+
+								{/* Coverage grid */}
+								<div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+									{[
+										{ label: "Терапия", val: contract.coverageTherapyPct },
+										{ label: "Хирургия", val: contract.coverageSurgeryPct },
+										{ label: "Ортодонтия", val: contract.coverageOrthoPct },
+										{ label: "Гигиена", val: contract.coverageHygienePct },
+									].map(({ label, val }) => (
+										<div
+											key={label}
+											className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3"
+										>
+											<div className="text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+												{label}
+											</div>
+											<div
+												className={`text-xl font-bold ${val > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`}
+											>
+												{val}%
+											</div>
+											{/* Visual bar */}
+											<div className="h-1 rounded bg-slate-200 dark:bg-slate-700 mt-1.5 overflow-hidden">
+												<div
+													className={`h-full rounded transition-all duration-300 ${val > 0 ? "bg-emerald-500" : "bg-transparent"}`}
+													style={{ width: `${val}%` }}
+												/>
 											</div>
 										</div>
 									))}
 								</div>
 							</div>
-
-							{/* Annual limit */}
-							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label
-									htmlFor="insurance-annual-limit"
-									style={{
-										fontSize: 13,
-										color: "var(--muted)",
-										fontWeight: 500,
-									}}
-								>
-									Годовой лимит (₽, опционально)
-								</label>
-								<input
-									id="insurance-annual-limit"
-									type="number"
-									min="0"
-									value={formData.annualLimitRub}
-									onChange={(e) =>
-										setFormData({ ...formData, annualLimitRub: e.target.value })
-									}
-									style={{
-										padding: "10px 14px",
-										borderRadius: 8,
-										border: `1px solid ${borderColor}`,
-										background: paperSoftBg,
-										color: "var(--ink)",
-										outline: "none",
-									}}
-									placeholder="120000"
-								/>
-							</div>
-
-							{/*
-								Кнопка молчала на время запроса: нажатие не давало никакого
-								отклика, и по второму-третьему нажатию уходило столько же
-								запросов на создание — то есть дубли договоров делались самой
-								кнопкой.
-							*/}
-							<button
-								type="submit"
-								className="primary-button"
-								disabled={isSaving}
-								style={{ justifyContent: "center", marginTop: 4 }}
-							>
-								{isSaving
-									? "Сохраняем…"
-									: editingContract
-										? "Сохранить изменения"
-										: "Добавить договор"}
-							</button>
-						</form>
-					</div>
-				</button>
+						);
+					})}
+				</div>
 			)}
+
+			{/* Add/Edit Modal */}
+			<InsuranceContractModal
+				isOpen={showModal}
+				isSaving={isSaving}
+				editingContract={editingContract}
+				formData={formData}
+				setFormData={setFormData}
+				onClose={() => setShowModal(false)}
+				onSave={handleSave}
+			/>
 		</div>
 	);
 };

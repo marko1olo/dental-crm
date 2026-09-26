@@ -22,6 +22,7 @@ import {
 	DollarSign,
 	FileSpreadsheet,
 	FileText,
+	HardDrive,
 	HardDriveDownload,
 	Layers,
 	LineChart,
@@ -39,8 +40,10 @@ import { AuditLogsPanel } from "../../AuditLogsPanel";
 import { ErrorBoundary } from "../ErrorBoundary";
 import { MaterialBomsSettingsPanel } from "../inventory/MaterialBomsSettingsPanel";
 import { showToast } from "../GlobalToast";
+import { TaxationAndFiscalizationCard } from "./clinic/TaxationAndFiscalizationCard";
 import { InsuranceContractsPanel } from "./InsuranceContractsPanel";
 import { MigrationWizard } from "./MigrationWizard";
+import { OfflineBackupVaultPanel } from "./OfflineBackupVaultPanel";
 import { SettingsAuditTab } from "./SettingsAuditTab";
 import { SettingsClinicTab } from "./SettingsClinicTab";
 import { SettingsImportsTab } from "./SettingsImportsTab";
@@ -57,6 +60,7 @@ export type OwnerSubTab =
 	| "insurance"
 	| "reporting"
 	| "imports"
+	| "backup"
 	| "audit"
 	| "sources";
 
@@ -116,6 +120,12 @@ const OWNER_TABS: Array<{
 		label: "Перенос данных",
 		description: "Миграция баз из IDENT, DentalPRO, Инфодент, StomX",
 		icon: HardDriveDownload,
+	},
+	{
+		id: "backup",
+		label: "Резервное копирование Vault",
+		description: "1-клик локальный бэкап, шифрование AES-GCM-256, расписание",
+		icon: HardDrive,
 	},
 	{
 		id: "audit",
@@ -348,7 +358,10 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 			<div className="pt-2">
 				{activeSubTab === "clinic" && (
 					<ErrorBoundary moduleName="Реквизиты и 54-ФЗ">
-						<SettingsClinicTab props={props} settingsTab="clinic" />
+						<div className="space-y-6">
+							<TaxationAndFiscalizationCard />
+							<SettingsClinicTab props={props} settingsTab="clinic" />
+						</div>
 					</ErrorBoundary>
 				)}
 
@@ -476,6 +489,12 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 								</div>
 							</details>
 						</div>
+					</ErrorBoundary>
+				)}
+
+				{activeSubTab === "backup" && (
+					<ErrorBoundary moduleName="Резервное копирование Vault">
+						<OfflineBackupVaultPanel />
 					</ErrorBoundary>
 				)}
 
