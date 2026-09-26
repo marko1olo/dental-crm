@@ -13,6 +13,7 @@
  * снять ниже роли нельзя (409 role_grants_authority).
  *
  * Индикация 152-ФЗ маскирования ПДн и изоляции финансовой отчётности клиники.
+ * Строгий барьер 323-ФЗ: подпись ЭМК запрещена для ассистентов и немедицинского персонала.
  */
 
 import {
@@ -20,10 +21,11 @@ import {
 	type StaffAuthorityFlagsDto,
 	type StaffAuthorityState,
 	canAccessFullPatientPii,
+	canSignMedicalRecords,
 	canViewFinancialReports,
 	staffAuthorityFlagKeys,
 } from "@dental/shared";
-import { CheckCircle2, Lock, Shield, ShieldAlert, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Lock, Shield, ShieldAlert, ShieldCheck } from "lucide-react";
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -212,6 +214,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 		flag: StaffAuthorityFlagKey,
 		nextValue: boolean,
 	) => {
+		// Барьер 1: То, что даёт роль, нельзя снять отдельной галочкой
 		if (!nextValue && row.roleDerived[flag]) {
 			const msg =
 				`Полномочие «${FLAG_TITLES[flag]}» даёт роль «${staffRoleTitle(row.role)}». ` +
@@ -220,6 +223,18 @@ export const StaffAuthorityPanel: React.FC = () => {
 			showToast(msg, "warning");
 			return;
 		}
+
+		// Барьер 2 (323-ФЗ): Право подписи ЭМК разрешено только дипломированным врачам-клиницистам
+		if (flag === "canSignMedicalRecords" && nextValue && !canSignMedicalRecords(row.role)) {
+			const msg =
+				`Полномочие «${FLAG_TITLES[flag]}» заблокировано требованиями 323-ФЗ: ` +
+				`для должности «${staffRoleTitle(row.role)}» подписание медицинской документации запрещено. ` +
+				"Право подписи ЭМК имеют исключительно врачи-клиницисты (роли: Врач, Главврач, Владелец).";
+			setSave({ kind: "failed", message: msg });
+			showToast(msg, "error");
+			return;
+		}
+
 		if (row.effective[flag] === nextValue) return;
 
 		setSave({ kind: "saving", staffId: row.staffId, flag });
@@ -344,6 +359,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 					<p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-1">
 						Персональные надбавки к роли: подпись ЭМК, касса 54-ФЗ, импорт данных.
 						То, что даёт роль, снять галочкой нельзя — смените роль в карточке.
+						Подпись ЭМК по 323-ФЗ доступна только дипломированным врачам.
 					</p>
 				</div>
 				<button
@@ -394,6 +410,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 								).length;
 								const isPiiFull = canAccessFullPatientPii(row.role);
 								const isPnlVisible = canViewFinancialReports(row.role);
+								const isMedicalDoctor = canSignMedicalRecords(row.role);
 
 								return (
 									<li
@@ -444,6 +461,17 @@ export const StaffAuthorityPanel: React.FC = () => {
 															<span>P&L: Скрыт (Изоляция)</span>
 														</span>
 													)}
+													{isMedicalDoctor ? (
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap">
+															<ShieldCheck size={12} className="shrink-0" />
+															<span>ЭМК: Врач (323-ФЗ)</span>
+														</span>
+													) : (
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+															<Lock size={12} className="shrink-0" />
+															<span>ЭМК: Без подписи</span>
+														</span>
+													)}
 												</div>
 											</div>
 										</div>
@@ -475,18 +503,28 @@ export const StaffAuthorityPanel: React.FC = () => {
 														save.staffId === row.staffId &&
 														save.flag === flag;
 													const lockedOn = byRole;
+													// 323-ФЗ Барьер: право подписи ЭМК запрещено для немедицинского персонала
+													const isLawLocked =
+														flag === "canSignMedicalRecords" &&
+														!canSignMedicalRecords(row.role);
+													const isInteractiveDisabled =
+														lockedOn || isLawLocked || isSaving;
 
 													return (
 														<label
 															key={flag}
-															className="flex items-start gap-3 text-sm cursor-pointer p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors min-h-[44px] touch-manipulation"
+															className={`flex items-start gap-3 text-sm p-2.5 rounded-xl transition-colors min-h-[44px] touch-manipulation ${
+																isLawLocked
+																	? "bg-slate-50/60 dark:bg-slate-800/30 opacity-80 cursor-not-allowed"
+																	: "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50"
+															}`}
 															data-testid={`staff-authority-flag-${row.staffId}-${flag}`}
 														>
 															<input
 																type="checkbox"
 																className="mt-1 w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-[var(--teal)] focus:ring-[var(--teal)]"
 																checked={on}
-																disabled={lockedOn || isSaving}
+																disabled={isInteractiveDisabled}
 																onChange={(e) => {
 																	void setFlag(row, flag, e.target.checked);
 																}}
@@ -494,7 +532,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 																data-testid={`staff-authority-check-${row.staffId}-${flag}`}
 															/>
 															<div className="flex-1 min-w-0">
-																<div className="flex items-center gap-2">
+																<div className="flex items-center gap-2 flex-wrap">
 																	<span className="font-semibold text-slate-900 dark:text-white">
 																		{FLAG_TITLES[flag]}
 																	</span>
@@ -519,7 +557,18 @@ export const StaffAuthorityPanel: React.FC = () => {
 																		</span>
 																	</span>
 																) : null}
-																{byGrant && on ? (
+																{isLawLocked ? (
+																	<span
+																		className="text-xs text-rose-700 dark:text-rose-300 flex items-center gap-1 mt-1 font-medium"
+																		data-testid={`staff-authority-law-lock-${row.staffId}-${flag}`}
+																	>
+																		<ShieldAlert size={12} className="shrink-0 text-rose-600 dark:text-rose-400" />
+																		<span>
+																			Запрещено 323-ФЗ: подпись ЭМК доступна исключительно врачам-клиницистам. Для должности «{staffRoleTitle(row.role)}» заблокировано.
+																		</span>
+																	</span>
+																) : null}
+																{byGrant && on && !isLawLocked ? (
 																	<span className="text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-1 mt-1 font-medium">
 																		<CheckCircle2 size={13} className="inline mr-1 shrink-0" />
 																		<span>Выдано персонально (надбавка к роли).</span>

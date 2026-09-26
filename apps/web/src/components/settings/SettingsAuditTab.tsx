@@ -5,11 +5,18 @@ import type {
 	LocalBridgeUsePlansResponse,
 } from "@dental/shared";
 import {
+	AlertTriangle,
 	Database,
+	Eye,
 	FileText,
 	History,
+	Lock,
+	LogOut,
+	ShieldAlert,
 	ShieldCheck,
 	SlidersHorizontal,
+	Upload,
+	UserCheck,
 } from "lucide-react";
 import { Suspense, lazy, useState } from "react";
 import { OfflineBackupVaultPanel } from "./OfflineBackupVaultPanel";
@@ -433,38 +440,99 @@ export function SettingsAuditTab(props: Record<string, any>) {
 				</div>
 			</div>
 
-			<div className="panel audit-panel">
+			{/* Панель аудита действий и 152-ФЗ журнала безопасности */}
+			<div className="panel audit-panel" data-testid="152fz-audit-panel">
 				<div className="panel-heading">
-					<h2>Аудит действий</h2>
+					<div>
+						<h2>Аудит действий и 152-ФЗ защита</h2>
+						<p className="text-xs text-slate-500 m-0 mt-0.5">
+							Криптографический реестр обращений: входы сотрудников, открытие карт 043/у, выгрузка ПДн и отзыв сессий.
+						</p>
+					</div>
 					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
 						<button
 							className="secondary-button"
 							type="button"
 							onClick={() => setIsAuditTrailOpen(true)}
 							style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem" }}
+							data-testid="open-152fz-audit-modal-btn"
 						>
 							<FileText size={16} aria-hidden="true" />
-							Журнал аудита 152-ФЗ
+							<span>Журнал 152-ФЗ / ФСТЭК</span>
 						</button>
 						<ShieldCheck aria-hidden="true" />
 					</div>
 				</div>
+
+				{/* 4 ключевых контура безопасности 152-ФЗ */}
+				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 p-3.5 bg-slate-50/80 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700/60 my-2 text-xs">
+					<div className="flex flex-col gap-1 p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+						<div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300">
+							<UserCheck size={14} className="shrink-0" />
+							<span>Авторизации</span>
+						</div>
+						<p className="text-[11px] text-slate-500 dark:text-slate-400 m-0 leading-normal">
+							Фиксация входов, IP-адресов и попыток подбора паролей.
+						</p>
+					</div>
+
+					<div className="flex flex-col gap-1 p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+						<div className="flex items-center gap-1.5 font-bold text-sky-700 dark:text-sky-300">
+							<Eye size={14} className="shrink-0" />
+							<span>Карты 043/у</span>
+						</div>
+						<p className="text-[11px] text-slate-500 dark:text-slate-400 m-0 leading-normal">
+							Учёт каждого открытия медкарты (врачебная тайна ст. 13 323-ФЗ).
+						</p>
+					</div>
+
+					<div className="flex flex-col gap-1 p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+						<div className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">
+							<Upload size={14} className="shrink-0" />
+							<span>Выгрузка ПДн</span>
+						</div>
+						<p className="text-[11px] text-slate-500 dark:text-slate-400 m-0 leading-normal">
+							Контроль экспорта базы пациентов и просмотра неэкранированных ПДн.
+						</p>
+					</div>
+
+					<div className="flex flex-col gap-1 p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+						<div className="flex items-center gap-1.5 font-bold text-purple-700 dark:text-purple-300">
+							<LogOut size={14} className="shrink-0" />
+							<span>Отзыв сессий</span>
+						</div>
+						<p className="text-[11px] text-slate-500 dark:text-slate-400 m-0 leading-normal">
+							Сброс параллельных сессий и блокировка уволенных сотрудников.
+						</p>
+					</div>
+				</div>
+
 				<div className="ops-list">
-					{typedAuditEvents.map((event) => (
-						<article className="ops-row" key={event.id}>
+					{typedAuditEvents.length > 0 ? (
+						typedAuditEvents.map((event) => (
+							<article className="ops-row" key={event.id}>
+								<ShieldCheck aria-hidden="true" />
+								<div>
+									<h3>
+										{event.reason ? "Системное событие" : "Запись аудита"}
+									</h3>
+									<p>
+										{event.reason ??
+											"Служебная запись без публичного описания"}
+									</p>
+								</div>
+								<span>{formatDateTime(event.createdAt)}</span>
+							</article>
+						))
+					) : (
+						<article className="ops-empty">
 							<ShieldCheck aria-hidden="true" />
-							<div>
-								<h3>
-									{event.reason ? "Системное событие" : "Запись аудита"}
-								</h3>
-								<p>
-									{event.reason ??
-										"Служебная запись без публичного описания"}
-								</p>
-							</div>
-							<span>{formatDateTime(event.createdAt)}</span>
+							<p>
+								Журнал криптографического аудита 152-ФЗ активен. Все обращения к картам 043/у,
+								авторизации и выгрузки фиксируются цепочкой SHA-256. Нажмите «Журнал 152-ФЗ / ФСТЭК» для полного отчёта.
+							</p>
 						</article>
-					))}
+					)}
 				</div>
 			</div>
 

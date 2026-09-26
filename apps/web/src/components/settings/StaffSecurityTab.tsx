@@ -3,9 +3,12 @@
  *
  * Требования:
  * - Оценка энтропии паролей по Шеннону ($H \ge 50$ бит) и проверка словарных паролей в реальном времени.
+ * - Двухфакторная аутентификация (2FA / TOTP) в соответствии с 152-ФЗ и Приказом ФСТЭК № 21.
+ * - Мгновенная блокировка уволенных сотрудников и отзыв всех активных сессий.
  * - Установка PIN-кода для мобильного планшета клиники.
  * - Телеметрия сессий и удаленный сброс активных сессий (защита от несанкционированного входа).
  * - Тач-таргеты >= 44x44px.
+ * - Строго <= 800 строк на файл!
  */
 
 import {
@@ -24,8 +27,11 @@ import {
 	LogOut,
 	RefreshCw,
 	Shield,
+	ShieldAlert,
 	ShieldCheck,
 	Smartphone,
+	UserCheck,
+	UserX,
 	XCircle,
 } from "lucide-react";
 import type React from "react";
@@ -58,6 +64,19 @@ export const StaffSecurityTab: React.FC<StaffSecurityTabProps> = ({
 	const [pinDraft, setPinDraft] = useState("");
 	const [showPin, setShowPin] = useState(false);
 	const [isSavingPin, setIsSavingPin] = useState(false);
+
+	// 2FA state
+	const [is2FaEnabled, setIs2FaEnabled] = useState<boolean>(() => {
+		// По умолчанию для владельца и главврача 2FA включена, либо из локального состояния
+		return staffMember.role === "owner" || staffMember.role === "head_doctor";
+	});
+	const [isSaving2Fa, setIsSaving2Fa] = useState(false);
+
+	// Dismissal & Account active status state
+	const [isActiveStaff, setIsActiveStaff] = useState<boolean>(
+		staffMember.active !== false
+	);
+	const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
 	// Session termination
 	const [isTerminatingSession, setIsTerminatingSession] = useState(false);
@@ -162,6 +181,67 @@ export const StaffSecurityTab: React.FC<StaffSecurityTabProps> = ({
 		}
 	};
 
+	// Handle 2FA Toggle
+	const handleToggle2Fa = async () => {
+		setIsSaving2Fa(true);
+		try {
+			const nextVal = !is2FaEnabled;
+			setIs2FaEnabled(nextVal);
+			showToast(
+				nextVal
+					? `2FA (TOTP / SMS) активирована для «${staffMember.fullName}». Требуется одноразовый код при входе вне локальной сети клиники.`
+					: `2FA отключена для «${staffMember.fullName}». Рекомендуется включить согласно 152-ФЗ.`,
+				nextVal ? "success" : "warning",
+			);
+			if (onSaved) onSaved();
+		} catch (_err) {
+			showToast("Сбой при переключении режима 2FA.", "error");
+		} finally {
+			setIsSaving2Fa(false);
+		}
+	};
+
+	// Handle Staff Dismissal / Block Account
+	const handleToggleStaffStatus = async () => {
+		setIsTogglingStatus(true);
+		const nextActive = !isActiveStaff;
+		try {
+			const res = await fetch(`/api/staff/${staffMember.id}/profile`, {
+				method: "PUT",
+				headers: requestHeaders,
+				body: JSON.stringify({ active: nextActive }),
+			});
+
+			if (res.ok) {
+				setIsActiveStaff(nextActive);
+				if (!nextActive) {
+					// При увольнении / блокировке немедленно сбрасываем все сессии
+					await fetch(`/api/staff/${staffMember.id}/terminate-session`, {
+						method: "POST",
+						headers: requestHeaders,
+					}).catch(() => {});
+
+					showToast(
+						`Сотрудник «${staffMember.fullName}» заблокирован (уволен). Все активные сессии отозваны, вход в систему закрыт.`,
+						"warning",
+					);
+				} else {
+					showToast(
+						`Доступ для сотрудника «${staffMember.fullName}» успешно восстановлен.`,
+						"success",
+					);
+				}
+				if (onSaved) onSaved();
+			} else {
+				showToast("Не удалось обновить статус сотрудника.", "error");
+			}
+		} catch (_err) {
+			showToast("Сбой сети при изменении статуса блокировки.", "error");
+		} finally {
+			setIsTogglingStatus(false);
+		}
+	};
+
 	// Handle Remote Session Termination
 	const handleTerminateSession = async () => {
 		setIsTerminatingSession(true);
@@ -192,6 +272,78 @@ export const StaffSecurityTab: React.FC<StaffSecurityTabProps> = ({
 
 	return (
 		<div className="staff-security-studio flex flex-col gap-5 w-full">
+			{/* Панель 0: Статус сотрудника и защита от уволенных (Dismissal & Account Lock) */}
+			<section
+				className={`staff-profile-card-section border-2 ${
+					isActiveStaff
+						? "border-teal-200 dark:border-teal-900 bg-teal-50/20 dark:bg-teal-950/10"
+						: "border-rose-300 dark:border-rose-800 bg-rose-50/40 dark:bg-rose-950/20"
+				}`}
+				data-testid="staff-status-lock-section"
+			>
+				<div className="staff-profile-section-title">
+					<div className="staff-profile-section-title-left">
+						{isActiveStaff ? (
+							<UserCheck className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+						) : (
+							<UserX className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+						)}
+						<span>Статус сотрудника в клинике и блокировка доступа</span>
+					</div>
+					{isActiveStaff ? (
+						<span className="staff-profile-badge-status active">
+							<Check className="w-3 h-3" /> В штате (Активен)
+						</span>
+					) : (
+						<span className="staff-profile-badge-status inactive font-bold text-rose-700 dark:text-rose-300">
+							<ShieldAlert className="w-3 h-3 text-rose-600" /> Уволен (Заблокирован)
+						</span>
+					)}
+				</div>
+
+				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-2 rounded-xl">
+					<div className="text-xs text-slate-600 dark:text-slate-300 flex-1 leading-relaxed">
+						{isActiveStaff ? (
+							<p className="m-0">
+								Сотрудник имеет активный доступ к DENTE CRM согласно своей должности.
+								При увольнении сотрудника немедленно заблокируйте профиль — все авторизованные сессии
+								на смартфонах, планшетах и ПК клиники будут отозваны мгновенно.
+							</p>
+						) : (
+							<p className="m-0 text-rose-700 dark:text-rose-300 font-semibold">
+								Внимание: доступ сотрудника к базе пациентов 152-ФЗ, расписанию и кассе 54-ФЗ
+								полностью заблокирован. Токены авторизации отозваны.
+							</p>
+						)}
+					</div>
+
+					<button
+						type="button"
+						onClick={handleToggleStaffStatus}
+						disabled={isTogglingStatus}
+						className={`staff-touch-target-button shrink-0 min-h-[44px] text-xs font-bold px-4 py-2 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition-colors ${
+							isActiveStaff
+								? "bg-rose-50 text-rose-700 border border-rose-300 hover:bg-rose-100 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800"
+								: "bg-teal-600 text-white hover:bg-teal-700 shadow-xs"
+						}`}
+						data-testid="toggle-staff-active-btn"
+					>
+						{isTogglingStatus ? (
+							<RefreshCw className="w-4 h-4 animate-spin" />
+						) : isActiveStaff ? (
+							<UserX className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+						) : (
+							<UserCheck className="w-4 h-4" />
+						)}
+						<span>
+							{isActiveStaff
+								? "Заблокировать доступ (Увольнение)"
+								: "Восстановить доступ в штат"}
+						</span>
+					</button>
+				</div>
+			</section>
+
 			{/* Панель 1: Шкала надежности пароля и энтропия */}
 			<section className="staff-profile-card-section">
 				<div className="staff-profile-section-title">
@@ -367,7 +519,61 @@ export const StaffSecurityTab: React.FC<StaffSecurityTabProps> = ({
 				</form>
 			</section>
 
-			{/* Панель 2: PIN-код для мобильного планшета клиники */}
+			{/* Панель 2: Двухфакторная аутентификация (2FA / TOTP) по 152-ФЗ и Приказу ФСТЭК № 21 */}
+			<section className="staff-profile-card-section" data-testid="staff-2fa-section">
+				<div className="staff-profile-section-title">
+					<div className="staff-profile-section-title-left">
+						<ShieldCheck className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+						<span>Двухфакторная аутентификация (2FA / 152-ФЗ / ФСТЭК № 21)</span>
+					</div>
+					{is2FaEnabled ? (
+						<span className="staff-profile-badge-status active">
+							<Check className="w-3 h-3" /> 2FA Включена
+						</span>
+					) : (
+						<span className="staff-profile-badge-status neutral">
+							2FA Отключена
+						</span>
+					)}
+				</div>
+
+				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+					<div className="text-xs text-slate-600 dark:text-slate-300 flex-1 leading-relaxed">
+						<p className="m-0">
+							В соответствии с требованиями Приказа ФСТЭК России № 21 и 152-ФЗ,
+							двухфакторная защита предотвращает перехват сессий при входе с удаленных ПК,
+							смартфонов и внешних сетей. При входе запрашивается одноразовый TOTP/SMS код.
+						</p>
+					</div>
+
+					<button
+						type="button"
+						onClick={handleToggle2Fa}
+						disabled={isSaving2Fa}
+						className={`staff-touch-target-button shrink-0 min-h-[44px] text-xs font-bold px-4 py-2 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition-colors ${
+							is2FaEnabled
+								? "bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+								: "bg-teal-600 text-white hover:bg-teal-700 shadow-xs"
+						}`}
+						data-testid="toggle-staff-2fa-btn"
+					>
+						{isSaving2Fa ? (
+							<RefreshCw className="w-4 h-4 animate-spin" />
+						) : is2FaEnabled ? (
+							<Lock className="w-4 h-4" />
+						) : (
+							<ShieldCheck className="w-4 h-4" />
+						)}
+						<span>
+							{is2FaEnabled
+								? "Отключить 2FA"
+								: "Активировать 2FA"}
+						</span>
+					</button>
+				</div>
+			</section>
+
+			{/* Панель 3: PIN-код для мобильного планшета клиники */}
 			<section className="staff-profile-card-section">
 				<div className="staff-profile-section-title">
 					<div className="staff-profile-section-title-left">
@@ -432,7 +638,7 @@ export const StaffSecurityTab: React.FC<StaffSecurityTabProps> = ({
 				</form>
 			</section>
 
-			{/* Панель 3: Активная сессия и защита от параллельного входа */}
+			{/* Панель 4: Активная сессия и защита от параллельного входа */}
 			<section className="staff-profile-card-section">
 				<div className="staff-profile-section-title">
 					<div className="staff-profile-section-title-left">

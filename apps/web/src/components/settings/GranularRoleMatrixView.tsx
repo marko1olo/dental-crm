@@ -6,7 +6,9 @@ import {
 	getAccessLevelBadge,
 } from "@dental/shared";
 import {
+	AlertTriangle,
 	Check,
+	Coins,
 	Lock,
 	Shield,
 	ShieldAlert,
@@ -46,6 +48,55 @@ const getCategoryForRole = (role: GranularStaffRole): RoleCategory => {
 	return CLINICAL_ROLES.includes(role) ? "clinical" : "administrative";
 };
 
+export interface SuperPermissionInfo {
+	readonly badge: string;
+	readonly hint: string;
+	readonly isCritical: boolean;
+}
+
+export const SUPER_PERMISSIONS_MAP: Record<string, SuperPermissionInfo> = {
+	"finance.reports_pnl": {
+		badge: "Супер-право: P&L клиники",
+		hint: "Коммерческая тайна: раскрывает прибыль, маржинальность и чистую выручку всей клиники.",
+		isCritical: true,
+	},
+	"payroll.view_all_staff": {
+		badge: "Супер-право: Чужие зарплаты",
+		hint: "Конфиденциально: доступ к зарплатным табелям, окладам и сдельной выработке всех коллег.",
+		isCritical: true,
+	},
+	"payroll.manage_rates": {
+		badge: "Супер-право: Управление ФОТ",
+		hint: "Финансовый контроль: установка индивидуальных процентов и условий списания ЗТЛ.",
+		isCritical: true,
+	},
+	"patients.pii_full": {
+		badge: "152-ФЗ: Полные ПДн",
+		hint: "Персональные данные: просмотр неэкранированных паспортов, номеров телефонов и адресов.",
+		isCritical: false,
+	},
+	"clinical.records.write": {
+		badge: "323-ФЗ: Подпись ЭМК",
+		hint: "Юридическая ответственность: постановка диагноза и подписание клинического протокола по 804н.",
+		isCritical: true,
+	},
+	"settings.staff_authority": {
+		badge: "Супер-право: Эскалация ролей",
+		hint: "Административный доступ: назначение ролей и выдача индивидуальных привилегий доступа.",
+		isCritical: true,
+	},
+	"finance.refunds": {
+		badge: "54-ФЗ: Возвраты из кассы",
+		hint: "Кассовая дисциплина: выдача наличных и безналичных возвратов по чекам 54-ФЗ.",
+		isCritical: false,
+	},
+	"finance.tariffs_manage": {
+		badge: "Супер-право: Прейскурант",
+		hint: "Ценовая политика: изменение цен на услуги 804н и технологических карт расходов.",
+		isCritical: true,
+	},
+};
+
 export interface GranularRoleMatrixViewProps {
 	readonly initialRole?: GranularStaffRole;
 	readonly initialModuleFilter?: string;
@@ -59,6 +110,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 }) => {
 	const [selectedMatrixRole, setSelectedMatrixRole] = useState<GranularStaffRole>(initialRole);
 	const [selectedModuleFilter, setSelectedModuleFilter] = useState<string>(initialModuleFilter);
+	const [onlySuperRights, setOnlySuperRights] = useState<boolean>(false);
 	const [activeCategory, setActiveCategory] = useState<RoleCategory>(() =>
 		getCategoryForRole(initialRole)
 	);
@@ -84,20 +136,29 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 	const activeRolePermissions = GRANULAR_ROLE_MATRIX[selectedMatrixRole] || {};
 
 	const filteredPermissions = PERMISSION_DEFINITIONS.filter((perm) => {
+		if (onlySuperRights && !SUPER_PERMISSIONS_MAP[perm.key]) return false;
 		if (selectedModuleFilter === "all") return true;
 		return perm.module === selectedModuleFilter;
 	});
 
 	const visibleRoles = activeCategory === "clinical" ? CLINICAL_ROLES : ADMINISTRATIVE_ROLES;
 
+	// Подсчет статистики полномочий для выбранной роли
+	const totalPermsCount = PERMISSION_DEFINITIONS.length;
+	const grantedPermsCount = PERMISSION_DEFINITIONS.filter((p) => {
+		const lvl = activeRolePermissions[p.key];
+		return lvl === "full" || lvl === "read" || lvl === "own";
+	}).length;
+	const blockedPermsCount = totalPermsCount - grantedPermsCount;
+
 	return (
 		<article
-			className={`flex flex-col gap-2.5 min-w-0 w-full pb-20 sm:pb-8 ${className}`}
+			className={`flex flex-col gap-3 min-w-0 w-full pb-20 sm:pb-8 ${className}`}
 			data-testid="granular-role-matrix-panel"
 		>
 			{/* TIER 1 CONTROLS: 2-Level Role Category Switcher + Role Tabs + Module Selector */}
 			<div className="flex flex-col gap-2 pb-2 border-b border-slate-200 dark:border-slate-800 min-w-0">
-				{/* Level 1: Category Selector + Module Filter */}
+				{/* Level 1: Category Selector + Module Filter + Super-Rights Filter */}
 				<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 min-w-0">
 					{/* Category Selector Tabs */}
 					<div
@@ -138,37 +199,54 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 						</button>
 					</div>
 
-					{/* Module Filter Dropdown */}
-					<div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-						<label
-							htmlFor="rbac-module-filter"
-							className="text-xs font-semibold text-slate-700 dark:text-slate-300 shrink-0"
+					{/* Filters: Super-Rights quick toggle & Module Filter */}
+					<div className="flex flex-wrap items-center gap-2 shrink-0 self-end sm:self-auto">
+						<button
+							type="button"
+							onClick={() => setOnlySuperRights(!onlySuperRights)}
+							className={`px-3 py-2 min-h-[44px] rounded-lg text-xs font-semibold border flex items-center gap-1.5 cursor-pointer touch-manipulation transition-colors ${
+								onlySuperRights
+									? "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-700 shadow-xs"
+									: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+							}`}
+							data-testid="rbac-filter-super-rights"
+							title="Фильтровать только полномочия повышенной ответственности (P&L, Зарплаты, 152-ФЗ, 323-ФЗ)"
 						>
-							Модуль:
-						</label>
-						<select
-							id="rbac-module-filter"
-							value={selectedModuleFilter}
-							onChange={(e) => setSelectedModuleFilter(e.target.value)}
-							className="px-3 py-2 h-11 min-h-[44px] rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white cursor-pointer touch-manipulation"
-							aria-label="Фильтр по функциональному модулю"
-						>
-							<option value="all">Все модули (22)</option>
-							<option value="clinical">ЭМК и протоколы</option>
-							<option value="schedule">Расписание и смены</option>
-							<option value="patients">Пациенты и 152-ФЗ</option>
-							<option value="finance_cashier">Касса 54-ФЗ</option>
-							<option value="finance_reports">P&L и финансы</option>
-							<option value="payroll">Зарплата и сделка</option>
-							<option value="inventory">Склад и СанПиН</option>
-							<option value="settings">Настройки клиники</option>
-							<option value="egisz">ЕГИСЗ Минздрава</option>
-							<option value="communications">Коммуникации</option>
-						</select>
+							<AlertTriangle size={14} className={onlySuperRights ? "text-amber-600 dark:text-amber-400" : "text-slate-400"} />
+							<span>Только супер-права</span>
+						</button>
+
+						<div className="flex items-center gap-1.5 shrink-0">
+							<label
+								htmlFor="rbac-module-filter"
+								className="text-xs font-semibold text-slate-700 dark:text-slate-300 shrink-0"
+							>
+								Модуль:
+							</label>
+							<select
+								id="rbac-module-filter"
+								value={selectedModuleFilter}
+								onChange={(e) => setSelectedModuleFilter(e.target.value)}
+								className="px-3 py-2 h-11 min-h-[44px] rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white cursor-pointer touch-manipulation"
+								aria-label="Фильтр по функциональному модулю"
+							>
+								<option value="all">Все модули ({PERMISSION_DEFINITIONS.length})</option>
+								<option value="clinical">ЭМК и протоколы</option>
+								<option value="schedule">Расписание и смены</option>
+								<option value="patients">Пациенты и 152-ФЗ</option>
+								<option value="finance_cashier">Касса 54-ФЗ</option>
+								<option value="finance_reports">P&L и финансы</option>
+								<option value="payroll">Зарплата и сделка</option>
+								<option value="inventory">Склад и СанПиН</option>
+								<option value="settings">Настройки клиники</option>
+								<option value="egisz">ЕГИСЗ Минздрава</option>
+								<option value="communications">Коммуникации</option>
+							</select>
+						</div>
 					</div>
 				</div>
 
-				{/* Level 2: Role Selector Tabs with Flex-Wrap (Zero Truncation Guarantee for 'Старший администратор' + 44px Touch Targets) */}
+				{/* Level 2: Role Selector Tabs */}
 				<div
 					className="flex flex-wrap items-center gap-2 py-1 min-w-0"
 					role="tablist"
@@ -200,7 +278,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 				</div>
 			</div>
 
-			{/* ACTIVE ROLE SUMMARY STRIP: Clean formatting on all viewports without orphan line */}
+			{/* ACTIVE ROLE SUMMARY STRIP & COUNTERS */}
 			<div className="py-2.5 px-3.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 min-w-0 text-xs">
 				<div className="flex flex-col gap-1 min-w-0 flex-1">
 					<div className="flex items-center gap-1.5 flex-wrap">
@@ -210,13 +288,19 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 						<span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-mono font-medium">
 							role: {activeRoleMeta.role}
 						</span>
+						<span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-800">
+							{grantedPermsCount} разрешено
+						</span>
+						<span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300 font-medium">
+							{blockedPermsCount} заблокировано
+						</span>
 					</div>
 					<p className="text-slate-700 dark:text-slate-300 text-[11px] leading-snug break-words m-0 min-w-0">
 						{activeRoleMeta.description}
 					</p>
 				</div>
 
-				<div className="flex items-center gap-1.5 shrink-0 self-start sm:self-auto mt-1 sm:mt-0">
+				<div className="flex items-center gap-1.5 shrink-0 self-start sm:self-auto mt-1 sm:mt-0 flex-wrap">
 					{activeRoleMeta.role === "doctor" && (
 						<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-purple-100 text-purple-900 dark:bg-purple-950/80 dark:text-purple-200 border border-purple-300 dark:border-purple-700 whitespace-nowrap shadow-xs">
 							<Lock size={12} className="shrink-0 text-purple-700 dark:text-purple-300" />
@@ -238,33 +322,126 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 				</div>
 			</div>
 
-			{/* MONOLITHIC PERMISSIONS REGISTRY TABLE (Desktop / Tablet >= 640px) */}
-			<div className="hidden sm:block overflow-x-auto min-w-0 border border-slate-200 dark:border-slate-800 rounded-xl">
+			{/* CRITICAL BARRIERS NOTIFICATION BANNER */}
+			{selectedMatrixRole === "doctor" && (
+				<div className="p-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs flex flex-col gap-1.5 text-teal-900 dark:text-teal-200" data-testid="doctor-security-barriers">
+					<div className="font-bold flex items-center gap-1.5 text-teal-800 dark:text-teal-300">
+						<ShieldCheck size={15} />
+						<span>Критические барьеры безопасности для роли «Врач»:</span>
+					</div>
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-700 dark:text-slate-300">
+						<div className="flex items-start gap-1.5">
+							<Lock size={13} className="text-purple-600 shrink-0 mt-0.5" />
+							<span><strong>Финансовая изоляция:</strong> P&L клиники, маржа и зарплаты коллег заблокированы. Доступна только личная сделка.</span>
+						</div>
+						<div className="flex items-start gap-1.5">
+							<Lock size={13} className="text-amber-600 shrink-0 mt-0.5" />
+							<span><strong>Защита прейскуранта:</strong> Прайс-лист открыт только для чтения; менять базовые цены услуг в актах запрещено.</span>
+						</div>
+						<div className="flex items-start gap-1.5">
+							<Check size={13} className="text-emerald-600 shrink-0 mt-0.5" />
+							<span><strong>323-ФЗ автономия:</strong> Полное право ведения ЭМК 043/у, подписи медицинских протоколов и отправки СЭМД в ЕГИСЗ.</span>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{selectedMatrixRole === "assistant" && (
+				<div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs flex flex-col gap-1.5 text-amber-900 dark:text-amber-200" data-testid="assistant-security-barriers">
+					<div className="font-bold flex items-center gap-1.5 text-amber-800 dark:text-amber-300">
+						<ShieldAlert size={15} />
+						<span>Критические барьеры безопасности для роли «Ассистент»:</span>
+					</div>
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-700 dark:text-slate-300">
+						<div className="flex items-start gap-1.5">
+							<Lock size={13} className="text-rose-600 shrink-0 mt-0.5" />
+							<span><strong>Запрет подписи 323-ФЗ:</strong> Подписание протоколов за врача строго запрещено (требуется врачебный диплом).</span>
+						</div>
+						<div className="flex items-start gap-1.5">
+							<Shield size={13} className="text-amber-600 shrink-0 mt-0.5" />
+							<span><strong>152-ФЗ маскирование:</strong> Паспорта, телефоны и адреса пациентов скрыты для защиты от утечек.</span>
+						</div>
+						<div className="flex items-start gap-1.5">
+							<Lock size={13} className="text-slate-600 shrink-0 mt-0.5" />
+							<span><strong>Финансовый блок:</strong> Кассовые операции 54-ФЗ, прием платежей и возвраты денежных средств закрыты.</span>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{(selectedMatrixRole === "senior_admin" || selectedMatrixRole === "registrar") && (
+				<div className="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-xs flex flex-col gap-1.5 text-sky-900 dark:text-sky-200" data-testid="admin-security-barriers">
+					<div className="font-bold flex items-center gap-1.5 text-sky-800 dark:text-sky-300">
+						<ShieldCheck size={15} />
+						<span>Критические барьеры безопасности для административного персонала:</span>
+					</div>
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-700 dark:text-slate-300">
+						<div className="flex items-start gap-1.5">
+							<Lock size={13} className="text-purple-600 shrink-0 mt-0.5" />
+							<span><strong>Изоляция зарплат и P&L:</strong> Администратор не видит зарплатные ведомости врачей и чистую прибыль клиники.</span>
+						</div>
+						<div className="flex items-start gap-1.5">
+							<Lock size={13} className="text-rose-600 shrink-0 mt-0.5" />
+							<span><strong>Запрет подписи ЭМК:</strong> Регистратор не имеет права подписывать клинические дневники и протоколы 804н.</span>
+						</div>
+						<div className="flex items-start gap-1.5">
+							<Coins size={13} className="text-teal-600 shrink-0 mt-0.5" />
+							<span><strong>Касса 54-ФЗ:</strong> Приём оплат наличными/картой, печать чеков и запись пациентов на приём.</span>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* MONOLITHIC PERMISSIONS REGISTRY TABLE WITH VISUAL GREEN/GRAY SWITCH TOGGLES (Desktop / Tablet >= 640px) */}
+			<div className="hidden sm:block overflow-x-auto min-w-0 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900">
 				<table className="w-full text-left text-xs border-collapse">
 					<thead>
 						<tr className="sticky top-0 bg-slate-100 dark:bg-slate-800/95 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold z-10">
-							<th className="py-2 px-3">Полномочие и назначение</th>
-							<th className="py-2 px-3 w-28">Модуль</th>
-							<th className="py-2 px-3 text-right w-44">Уровень доступа</th>
+							<th className="py-2.5 px-3">Полномочие и назначение</th>
+							<th className="py-2.5 px-3 w-28">Модуль</th>
+							<th className="py-2.5 px-3 text-right w-56">Статус и тумблер доступа</th>
 						</tr>
 					</thead>
-					<tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-slate-900">
+					<tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
 						{filteredPermissions.map((perm) => {
 							const level = activeRolePermissions[perm.key] || "none";
 							const badge = getAccessLevelBadge(level);
+							const superInfo = SUPER_PERMISSIONS_MAP[perm.key];
+							const isGranted = level === "full" || level === "read" || level === "own";
+
 							return (
 								<tr
 									key={perm.key}
-									className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+									className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
 									data-testid={`perm-row-${perm.key}`}
 								>
 									<td className="py-2 px-3">
-										<span className="font-bold text-slate-900 dark:text-white block leading-tight">
-											{perm.title}
-										</span>
+										<div className="flex items-center gap-2 flex-wrap">
+											<span className="font-bold text-slate-900 dark:text-white leading-tight">
+												{perm.title}
+											</span>
+											{superInfo && (
+												<span
+													className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+														superInfo.isCritical
+															? "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800"
+															: "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
+													}`}
+													title={superInfo.hint}
+												>
+													<AlertTriangle size={10} className="shrink-0" />
+													<span>{superInfo.badge}</span>
+												</span>
+											)}
+										</div>
 										<span className="text-[11px] text-slate-600 dark:text-slate-400 block mt-0.5 leading-normal">
 											{perm.description}
 										</span>
+										{superInfo && (
+											<span className="text-[10px] text-slate-500 dark:text-slate-400 italic block mt-0.5">
+												Защита: {superInfo.hint}
+											</span>
+										)}
 									</td>
 									<td className="py-2 px-3">
 										<span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
@@ -272,12 +449,37 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 										</span>
 									</td>
 									<td className="py-2 px-3 text-right">
-										<span
-											className={`inline-block px-2.5 py-0.5 rounded-md text-[11px] font-bold border ${badge.badgeClass} ${badge.borderClass}`}
-											data-testid={`perm-badge-${perm.key}-${level}`}
-										>
-											{badge.label}
-										</span>
+										{/* Зеленый/серый визуальный тумблер прав */}
+										<div className="inline-flex items-center gap-2 justify-end">
+											<span
+												className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border shadow-2xs ${badge.badgeClass} ${badge.borderClass}`}
+												data-testid={`perm-badge-${perm.key}-${level}`}
+											>
+												{isGranted ? (
+													<Check size={12} className="stroke-[3]" />
+												) : (
+													<Lock size={12} />
+												)}
+												<span>{badge.label}</span>
+											</span>
+
+											{/* Визуальный тумблер (Switch Indicator) */}
+											<div
+												className={`w-9 h-5 rounded-full p-0.5 transition-colors flex items-center ${
+													level === "full"
+														? "bg-emerald-500 justify-end"
+														: level === "read"
+															? "bg-sky-500 justify-center"
+															: level === "own"
+																? "bg-amber-500 justify-center"
+																: "bg-slate-300 dark:bg-slate-700 justify-start"
+												}`}
+												title={`Уровень доступа: ${badge.label}`}
+												aria-hidden="true"
+											>
+												<div className="w-4 h-4 rounded-full bg-white shadow-xs" />
+											</div>
+										</div>
 									</td>
 								</tr>
 							);
@@ -286,19 +488,24 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 				</table>
 			</div>
 
-			{/* COMPACT PERMISSION LIST (Mobile < 640px) */}
-			<div className="flex flex-col divide-y divide-slate-200 dark:divide-slate-800 sm:hidden min-w-0 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900" data-testid="rbac-mobile-cards">
+			{/* COMPACT PERMISSION LIST WITH GREEN/GRAY TOGGLES (Mobile < 640px) */}
+			<div
+				className="flex flex-col divide-y divide-slate-200 dark:divide-slate-800 sm:hidden min-w-0 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900"
+				data-testid="rbac-mobile-cards"
+			>
 				{filteredPermissions.map((perm) => {
 					const level = activeRolePermissions[perm.key] || "none";
 					const badge = getAccessLevelBadge(level);
-					const hasAccess = level !== "none";
+					const superInfo = SUPER_PERMISSIONS_MAP[perm.key];
+					const isGranted = level === "full" || level === "read" || level === "own";
+
 					return (
 						<div
 							key={`mobile-${perm.key}`}
 							className="p-3 flex flex-col gap-2 min-w-0 hover:bg-slate-50 dark:hover:bg-slate-800/30 touch-manipulation"
 							data-testid={`perm-card-mobile-${perm.key}`}
 						>
-							<div className="flex items-center justify-between gap-2 min-w-0">
+							<div className="flex items-start justify-between gap-2 min-w-0">
 								<div className="flex-1 min-w-0">
 									<div className="flex items-center gap-1.5 flex-wrap">
 										<span className="font-bold text-xs text-slate-900 dark:text-white break-words">
@@ -308,18 +515,48 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 											{perm.module}
 										</span>
 									</div>
-								</div>
-								<span
-									className={`shrink-0 inline-flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg text-xs font-bold border touch-manipulation ${badge.badgeClass} ${badge.borderClass}`}
-									data-testid={`perm-badge-mobile-${perm.key}-${level}`}
-								>
-									{hasAccess ? (
-										<Check size={14} className="stroke-[3]" />
-									) : (
-										<ShieldAlert size={14} />
+									{superInfo && (
+										<span
+											className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border mt-1 ${
+												superInfo.isCritical
+													? "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800"
+													: "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
+											}`}
+										>
+											<AlertTriangle size={10} className="shrink-0" />
+											<span>{superInfo.badge}</span>
+										</span>
 									)}
-									<span>{badge.label}</span>
-								</span>
+								</div>
+
+								{/* Mobile Toggle & Badge */}
+								<div className="flex items-center gap-2 shrink-0">
+									<span
+										className={`inline-flex items-center justify-center gap-1 px-2.5 py-1.5 min-h-[44px] rounded-lg text-xs font-bold border touch-manipulation ${badge.badgeClass} ${badge.borderClass}`}
+										data-testid={`perm-badge-mobile-${perm.key}-${level}`}
+									>
+										{isGranted ? (
+											<Check size={14} className="stroke-[3]" />
+										) : (
+											<Lock size={14} />
+										)}
+										<span>{badge.label}</span>
+									</span>
+									<div
+										className={`w-8 h-4 rounded-full p-0.5 transition-colors flex items-center ${
+											level === "full"
+												? "bg-emerald-500 justify-end"
+												: level === "read"
+													? "bg-sky-500 justify-center"
+													: level === "own"
+														? "bg-amber-500 justify-center"
+														: "bg-slate-300 dark:bg-slate-700 justify-start"
+										}`}
+										aria-hidden="true"
+									>
+										<div className="w-3 h-3 rounded-full bg-white shadow-xs" />
+									</div>
+								</div>
 							</div>
 							<p className="text-xs text-slate-600 dark:text-slate-400 m-0 leading-normal break-words min-w-0">
 								{perm.description}

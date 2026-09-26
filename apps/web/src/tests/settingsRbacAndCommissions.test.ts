@@ -14,6 +14,8 @@ import {
 	canAccessFullPatientPii,
 	canSignMedicalRecords,
 	getAccessLevelBadge,
+	hasPermission,
+	evaluatePasswordEntropy,
 	maskRussianPhone,
 	maskRussianPassport,
 	maskRussianSnils,
@@ -93,6 +95,40 @@ describe("Settings RBAC: 8 Clinical & Administrative Roles", () => {
 		assert.strictEqual(assistantMasked.snils, "•••-•••-••• 95");
 		assert.strictEqual(assistantMasked.address, "г. Санкт-Петербург, [ул. и дом скрыты 152-ФЗ]");
 	});
+
+	it("strictly enforces 323-FZ legal barrier: only doctors can sign medical records", () => {
+		// Non-medical personnel and assistants are legally prohibited from signing
+		assert.strictEqual(canSignMedicalRecords("assistant"), false);
+		assert.strictEqual(canSignMedicalRecords("senior_nurse"), false);
+		assert.strictEqual(canSignMedicalRecords("senior_admin"), false);
+		assert.strictEqual(canSignMedicalRecords("registrar"), false);
+		assert.strictEqual(canSignMedicalRecords("accountant"), false);
+
+		// Licensed clinical staff have full protocol signing authority
+		assert.strictEqual(canSignMedicalRecords("doctor"), true);
+		assert.strictEqual(canSignMedicalRecords("head_doctor"), true);
+		assert.strictEqual(canSignMedicalRecords("owner"), true);
+	});
+
+	it("strictly blocks ordinary doctors and front desk from modifying clinic tariffs or viewing P&L", () => {
+		// Tariffs: Doctors have read-only access (cannot overwrite base clinic prices)
+		assert.strictEqual(hasPermission("doctor", "finance.tariffs_manage", "full"), false);
+		assert.strictEqual(hasPermission("doctor", "finance.tariffs_manage", "read"), true);
+		assert.strictEqual(hasPermission("head_doctor", "finance.tariffs_manage", "full"), false);
+		assert.strictEqual(hasPermission("head_doctor", "finance.tariffs_manage", "read"), true);
+		assert.strictEqual(hasPermission("owner", "finance.tariffs_manage", "full"), true);
+
+		// P&L and Margin: blocked for front-desk and doctors
+		assert.strictEqual(hasPermission("senior_admin", "finance.reports_pnl", "read"), false);
+		assert.strictEqual(hasPermission("registrar", "finance.reports_pnl", "read"), false);
+		assert.strictEqual(hasPermission("doctor", "finance.reports_pnl", "read"), false);
+		assert.strictEqual(hasPermission("assistant", "finance.reports_pnl", "read"), false);
+
+		// P&L available to owner, head doctor, and accountant
+		assert.strictEqual(hasPermission("owner", "finance.reports_pnl", "read"), true);
+		assert.strictEqual(hasPermission("head_doctor", "finance.reports_pnl", "read"), true);
+		assert.strictEqual(hasPermission("accountant", "finance.reports_pnl", "read"), true);
+	});
 });
 
 describe("Doctor Piece-Rate & Motivation Calculation Engine", () => {
@@ -128,5 +164,24 @@ describe("Doctor Piece-Rate & Motivation Calculation Engine", () => {
 		assert.strictEqual(parseRublesToKopecks("350000"), 35000000);
 		assert.strictEqual(parseRublesToKopecks("1250,50"), 125050);
 		assert.strictEqual(parseRublesToKopecks("0.99"), 99);
+	});
+});
+
+describe("Staff Security & 152-FZ Password Entropy Guard", () => {
+	it("evaluates password Shannon entropy according to FSTEC Order #21 (H >= 50 bits)", () => {
+		// Weak and dictionary passwords must be rejected for medical staff
+		const weakResult = evaluatePasswordEntropy("123456");
+		assert.strictEqual(weakResult.isAcceptableForStaff, false);
+		assert.strictEqual(weakResult.level, "critical");
+
+		const dictResult = evaluatePasswordEntropy("password123");
+		assert.strictEqual(dictResult.isAcceptableForStaff, false);
+		assert.strictEqual(dictResult.isDictionaryMatch, true);
+
+		// High-entropy password meets 50-bit threshold
+		const strongResult = evaluatePasswordEntropy("DenteSecure!2026#Clinic");
+		assert.strictEqual(strongResult.isAcceptableForStaff, true);
+		assert.ok(strongResult.effectiveEntropyBits >= 50, "Entropy must be >= 50 bits");
+		assert.ok(strongResult.scorePercent >= 70, "Score percent must be >= 70");
 	});
 });

@@ -4,6 +4,7 @@ import {
 import {
 	Check,
 	Coins,
+	FileCheck,
 	Link as LinkIcon,
 	Lock,
 	Mail,
@@ -152,7 +153,7 @@ export function SettingsAccessTab({
 			</div>
 
 			{/* Ключевые гарантии безопасности системы */}
-			<div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3.5 min-w-0" data-testid="security-guarantees-grid">
+			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 min-w-0" data-testid="security-guarantees-grid">
 				<div className="p-3 sm:p-4 rounded-xl border border-teal-300 dark:border-teal-800 bg-teal-50/80 dark:bg-teal-950/40 flex flex-col gap-1.5 sm:gap-2 min-w-0">
 					<div className="flex items-center gap-2 text-teal-800 dark:text-teal-200 font-bold text-xs sm:text-sm">
 						<ShieldCheck size={16} className="shrink-0 sm:w-[18px] sm:h-[18px] text-teal-600 dark:text-teal-400" />
@@ -183,6 +184,17 @@ export function SettingsAccessTab({
 					<p className="text-[11px] sm:text-xs text-slate-700 dark:text-slate-300 m-0 leading-relaxed break-words min-w-0">
 						Расчёт мотивации (% от терапевтического/ортопедического приёма минус ЗТЛ и материалы)
 						ведётся строго в целых копейках с нулевой погрешностью округления.
+					</p>
+				</div>
+
+				<div className="p-3 sm:p-4 rounded-xl border border-blue-300 dark:border-blue-800 bg-blue-50/80 dark:bg-blue-950/40 flex flex-col gap-1.5 sm:gap-2 min-w-0">
+					<div className="flex items-center gap-2 text-blue-800 dark:text-blue-200 font-bold text-xs sm:text-sm">
+						<FileCheck size={16} className="shrink-0 sm:w-[18px] sm:h-[18px] text-blue-600 dark:text-blue-400" />
+						<span className="min-w-0 flex-1 break-words">323-ФЗ Подпись протоколов</span>
+					</div>
+					<p className="text-[11px] sm:text-xs text-slate-700 dark:text-slate-300 m-0 leading-relaxed break-words min-w-0">
+						Клинические протоколы, дневники и форму 043/у могут подписывать исключительно дипломированные врачи.
+						Ассистенты, регистраторы и немедицинский персонал законодательно лишены права подписи.
 					</p>
 				</div>
 			</div>
