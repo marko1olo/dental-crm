@@ -53,6 +53,12 @@
 	font-family: inherit;
 }
 
+.treatment-presenter-modal.treatment-presenter-fullscreen {
+	background: transparent;
+	position: fixed;
+	inset: 0;
+}
+
 /* Header */
 .treatment-presenter-header {
 	display: flex;

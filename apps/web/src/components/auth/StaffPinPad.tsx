@@ -19,6 +19,7 @@ import {
 	resolveStaffUnlockPhase,
 	STAFF_UNLOCK_LIST_SUBJECT,
 } from "./staffUnlockState";
+import { AuthArtBackground } from "./AuthArtBackground";
 
 interface StaffPinPadProps {
 	/**
@@ -270,8 +271,7 @@ export function StaffPinPad({
 
 	return (
 		<div className="auth-overlay">
-			<div className="auth-glow auth-glow--left"></div>
-			<div className="auth-glow auth-glow--right"></div>
+			<AuthArtBackground overlayAlpha={0.35} />
 
 			<div className="auth-modal auth-modal--wide animate-fade-in-up">
 				{/* Left Side: Staff Selector */}

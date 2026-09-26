@@ -60,6 +60,7 @@ import type {
 	TreatmentPlanTierId,
 } from "./types";
 import type { ToothData } from "../odontogram/ToothChart";
+import { AuthArtBackground } from "../auth/AuthArtBackground";
 import {
 	generate3TierPlanComparison,
 	computeTierInstallments,
@@ -654,6 +655,12 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 				className={`treatment-presenter-modal ${isFullscreen ? "treatment-presenter-fullscreen fixed inset-0 !max-w-none !max-h-none !w-screen !h-screen !rounded-none z-[1001]" : ""}`}
 				data-testid="treatment-presenter-modal-card"
 			>
+				{isFullscreen && (
+					<AuthArtBackground
+						settings={{ pack: "dental-epic", dynamicByTimeOfDay: true }}
+						overlayAlpha={0.45}
+					/>
+				)}
 				{/* Top Bar Header */}
 				<header className="treatment-presenter-header no-print">
 					<div className="treatment-presenter-header-main">

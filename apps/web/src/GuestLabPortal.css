@@ -1,12 +1,14 @@
 .guest-portal-container {
+	position: relative;
 	min-height: 100vh;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	padding: 24px;
-	background: var(--bg-default, var(--paper-soft));
+	background: transparent;
 	color: var(--text-primary, var(--ink));
 	font-family: inherit;
+	overflow-x: hidden;
 }
 
 .guest-portal-card {
