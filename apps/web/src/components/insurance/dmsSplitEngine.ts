@@ -160,19 +160,7 @@ export interface DmsReconciliationRegistry {
 	readonly totalPatientsCount: number;
 }
 
-/**
- * Преобразование копеек в рубли
- */
-export function kopecksToRubles(kopecks: number): number {
-	return Math.round(kopecks) / 100;
-}
-
-/**
- * Преобразование рублей в копейки (целочисленное округление)
- */
-export function rublesToKopecks(rubles: number): number {
-	return Math.round(rubles * 100);
-}
+export { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 
 /**
  * Форматирование суммы в рублях с копейками (например: "1 250,00 ₽")

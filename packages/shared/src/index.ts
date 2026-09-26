@@ -5,6 +5,7 @@ import {
 	type ClinicalToothState,
 } from "./clinical/stomtDefectsCatalog.js";
 
+export { kopecksToRubles } from "./money.js";
 export * from "./money.js";
 export * from "./moneyWordsRu.js";
 export * from "./fiscal/index.js";
@@ -2806,13 +2807,21 @@ export const communicationTaskSchema = z.object({
 	intent: communicationIntentSchema,
 	status: communicationStatusSchema,
 	priority: communicationPrioritySchema,
-	dueAt: z.string(),
+	dueAt: z
+		.union([z.string(), z.date()])
+		.transform((v) => (v instanceof Date ? v.toISOString() : v)),
 	title: z.string(),
 	body: z.string(),
 	workflowCode: communicationTaskWorkflowCodeSchema.nullable().optional(),
 	lastOutcome: communicationTaskOutcomeSchema.nullable().optional(),
-	lastEventAt: z.string().nullable(),
-	createdAt: z.string(),
+	lastEventAt: z
+		.union([z.string(), z.date()])
+		.nullable()
+		.optional()
+		.transform((v) => (v instanceof Date ? v.toISOString() : v ?? null)),
+	createdAt: z
+		.union([z.string(), z.date()])
+		.transform((v) => (v instanceof Date ? v.toISOString() : v)),
 });
 export type CommunicationTask = z.infer<typeof communicationTaskSchema>;
 

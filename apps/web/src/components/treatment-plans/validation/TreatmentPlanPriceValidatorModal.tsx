@@ -130,6 +130,10 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 		if (stages && stages.length > 0) {
 			return validateTreatmentPlanStarProtocols(stages);
 		}
+		const payloadItems = Array.isArray(planPayload?.items) ? planPayload.items : [];
+		if (payloadItems.length === 0) {
+			return validateTreatmentPlanStarProtocols([]);
+		}
 		// Если этапы не переданы напрямую, строим синтетическую структуру этапа из planPayload
 		const syntheticStage: TreatmentPlanStage = {
 			stageNumber: 1,
@@ -137,7 +141,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 			title: "Комплексный этап лечения",
 			subtitle: "Все манипуляции плана",
 			clinicalGoal: "Санация и реабилитация",
-			items: planPayload.items.map((it) => ({
+			items: payloadItems.map((it) => ({
 				id: it.itemId,
 				...(it.toothNumber !== undefined ? { toothNumber: it.toothNumber } : {}),
 				code804n: it.code804n,
@@ -150,19 +154,20 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 				phase: 1,
 				stageKind: "stage_1_therapy",
 			})),
-			totalRub: planPayload.items.reduce(
+			totalRub: payloadItems.reduce(
 				(acc, it) => acc + Math.max(0, it.planUnitPriceRub - it.planDiscountRub) * it.quantity,
 				0,
 			),
 			totalKopecks: 0 as any,
 			estimatedVisits: 3,
 			estimatedWeeks: 4,
-			order804nCodes: planPayload.items.map((i) => i.code804n),
+			order804nCodes: payloadItems.map((i) => i.code804n),
 		};
 		return validateTreatmentPlanStarProtocols([syntheticStage]);
 	}, [stages, planPayload]);
 
 	const filteredStarChecks = useMemo(() => {
+		if (!starValidation?.checks) return [];
 		if (protocolSeverityFilter === "warnings_errors") {
 			return starValidation.checks.filter((c) => c.status === "warning" || c.status === "error");
 		}
@@ -170,14 +175,15 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 			return starValidation.checks.filter((c) => c.status === "pass");
 		}
 		return starValidation.checks;
-	}, [starValidation.checks, protocolSeverityFilter]);
+	}, [starValidation?.checks, protocolSeverityFilter]);
 
 	const labTeeth = useMemo(() => {
-		const teeth = planPayload.items
+		const payloadItems = Array.isArray(planPayload?.items) ? planPayload.items : [];
+		const teeth = payloadItems
 			.map((i) => i.toothNumber)
 			.filter((t): t is number => typeof t === "number" && t > 0);
 		return teeth.length > 0 ? Array.from(new Set(teeth)) : [21];
-	}, [planPayload.items]);
+	}, [planPayload]);
 
 	if (!isOpen) return null;
 

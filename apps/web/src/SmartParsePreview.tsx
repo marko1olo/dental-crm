@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Check, CheckCircle2, X, Zap } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import {
@@ -533,20 +533,7 @@ export function SmartParsePreview({
 				>
 					<div className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700/60 p-3 flex justify-between items-center">
 						<h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-							<svg
-								aria-hidden="true"
-								className="w-4 h-4 text-emerald-500"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth={2}
-									d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-								/>
-							</svg>
+							<CheckCircle2 className="w-4 h-4 text-emerald-500" />
 							Результат распознавания
 						</h4>
 						<button
@@ -554,20 +541,7 @@ export function SmartParsePreview({
 							onClick={onClose}
 							className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
 						>
-							<svg
-								aria-hidden="true"
-								className="w-4 h-4"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth={2}
-									d="M6 18L18 6M6 6l12 12"
-								/>
-							</svg>
+							<X className="w-4 h-4" />
 						</button>
 					</div>
 
@@ -589,20 +563,7 @@ export function SmartParsePreview({
 							disabled={isAiLoading}
 							className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-medium text-sm py-2 px-3 rounded-lg transition-colors flex justify-center items-center gap-1"
 						>
-							<svg
-								aria-hidden="true"
-								className="w-4 h-4"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth={2}
-									d="M5 13l4 4L19 7"
-								/>
-							</svg>
+							<Check className="w-4 h-4" />
 							Применить
 						</button>
 						<button
@@ -611,20 +572,7 @@ export function SmartParsePreview({
 							disabled={isAiLoading}
 							className="flex-1 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900/60 dark:text-teal-300 text-teal-700 font-medium text-sm py-2 px-3 rounded-lg transition-colors flex justify-center items-center gap-1 border border-teal-200 dark:border-teal-800"
 						>
-							<svg
-								aria-hidden="true"
-								className="w-4 h-4"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth={2}
-									d="M13 10V3L4 14h7v7l9-11h-7z"
-								/>
-							</svg>
+							<Zap className="w-4 h-4" />
 							ИИ-Анализ
 						</button>
 						<button

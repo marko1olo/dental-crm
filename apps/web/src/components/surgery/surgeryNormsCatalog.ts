@@ -3,48 +3,19 @@
  * Стандарт: «Софт для врача, а не врач для софта. Любой барьер или лишний клик — это брак».
  */
 
-export interface SurgicalService804n {
-	readonly code: string;
-	readonly nameRu: string;
-	readonly name: string;
-	readonly priceRub: number;
-	readonly quantity: number;
-	readonly suggestedPriceRub?: number | undefined;
-	readonly toothNumber?: number | undefined;
-	readonly stageKind?: string | undefined;
-	readonly isPrimary?: boolean | undefined;
-}
+import type {
+	SurgicalService804n,
+	SurgicalOperationNorm,
+	SurgicalWarehouseOverdraftStatus,
+} from "@dental/shared";
 
-export interface SurgicalOperationNorm {
-	readonly id: string;
-	readonly title: string;
-	readonly shortBadge: string;
-	readonly category: "implant" | "extraction" | "perio_surgery" | "sinus_gbr" | "emergency";
-	readonly icd10: string;
-	readonly icd10Label: string;
-	readonly code804n?: string;
-	readonly code804nSubcode?: string;
-	readonly service804nTitle?: string;
-	readonly defaultToothFdi?: number;
-	readonly standardProtocolTextRu: string;
-	readonly anesthesiaDefaultRu: string;
-	readonly postOpRecommendationsRu: string;
-	readonly order804nServices?: readonly SurgicalService804n[];
-	readonly requiredMaterials: readonly {
-		readonly name: string;
-		readonly unit: string;
-		readonly quantity: number;
-		readonly isWarehouseCritical: boolean;
-	}[];
-}
+export type {
+	SurgicalService804n,
+	SurgicalOperationNorm,
+	SurgicalWarehouseOverdraftStatus,
+};
 
-export interface SurgicalWarehouseOverdraftStatus {
-	readonly hasOverdraft: boolean;
-	readonly warningRu: string;
-	readonly detailsRu: string;
-	readonly pendingItems: readonly string[];
-	readonly canProceed: true; // Всегда true: операция не блокируется!
-}
+
 
 /**
  * 1-клик каноническая норма дентальной имплантации (Mandate 8e СтАР, Номенклатура 804н A16.07.006).

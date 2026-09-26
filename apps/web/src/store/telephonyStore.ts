@@ -1,6 +1,9 @@
 import { create } from "zustand";
 import type {
+	CallHistoryItem,
 	CallTransferState,
+	IncomingCallPayload,
+	PlaybackSpeed,
 	TelephonyLineSession,
 	TelephonyStore,
 } from "./telephonyTypes";

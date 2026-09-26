@@ -142,13 +142,7 @@ export interface WarehouseTorg16WriteoffAct {
 // Конвертация валют и копеечная арифметика
 // ---------------------------------------------------------------------------
 
-export function kopecksToRubles(kopecks: number): number {
-	return Math.round(kopecks) / 100;
-}
-
-export function rublesToKopecks(rubles: number): number {
-	return Math.round(rubles * 100);
-}
+export { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 
 export function formatRubCurrency(rublesOrKopecks: number, isKopecks = false): string {
 	const rub = isKopecks ? kopecksToRubles(rublesOrKopecks) : rublesOrKopecks;

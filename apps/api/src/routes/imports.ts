@@ -10,6 +10,7 @@ import {
 	importPreviewRequestSchema,
 	importPreviewResponseSchema,
 	normalizeDate,
+	normalizePhone,
 	splitLine,
 } from "@dental/shared";
 import { eq } from "drizzle-orm";
@@ -107,17 +108,6 @@ function normalizeHeader(value: string) {
 		.replaceAll("_", " ")
 		.replaceAll("-", " ")
 		.replace(/\s+/g, " ");
-}
-
-function normalizePhone(value: string | null) {
-	if (!value) return null;
-	const digits = value.replace(/\D/g, "");
-	if (!digits) return null;
-	if (digits.length === 10) return `+7${digits}`;
-	if (digits.length === 11 && digits.startsWith("8"))
-		return `+7${digits.slice(1)}`;
-	if (digits.length === 11 && digits.startsWith("7")) return `+${digits}`;
-	return value.trim();
 }
 
 function escapeCsvCell(value: string | null) {

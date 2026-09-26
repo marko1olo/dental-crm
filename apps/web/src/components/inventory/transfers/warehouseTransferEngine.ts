@@ -86,19 +86,7 @@ export interface TransferTotalsSummary {
 	readonly hasDiscrepancy: boolean;
 }
 
-/**
- * Преобразование копеек в рубли
- */
-export function kopecksToRubles(kopecks: number): number {
-	return Math.round(kopecks) / 100;
-}
-
-/**
- * Преобразование рублей в копейки
- */
-export function rublesToKopecks(rubles: number): number {
-	return Math.round(rubles * 100);
-}
+export { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 
 /**
  * Форматирование суммы в рублях

@@ -4,7 +4,7 @@ import {
 	type VisitFlowStepStatus,
 	visitFlowStepStatusSchema,
 } from "@dental/shared";
-import { Check, Loader2, Minus, X } from "lucide-react";
+import { Check, Loader2, Minus, X, Zap } from "lucide-react";
 import type React from "react";
 import "./VisitFlowProgress.css";
 
@@ -149,21 +149,7 @@ export const VisitFlowProgress: React.FC<{
 		<div className="visit-flow-progress" data-testid="visit-flow-progress">
 			<div className="vfp-header">
 				<h4 className="vfp-title">
-					<svg
-						width="16"
-						height="16"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-					>
-						<title>Иконка ассистента</title>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M13 10V3L4 14h7v7l9-11h-7z"
-						/>
-					</svg>
+					<Zap className="w-4 h-4 text-amber-500 inline-block mr-1.5" />
 					Ассистент обработки приема
 				</h4>
 				{/*

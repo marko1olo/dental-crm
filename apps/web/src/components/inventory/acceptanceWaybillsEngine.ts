@@ -327,13 +327,7 @@ export function validateWaybillDraft(waybill: {
 // УТИЛИТЫ ДЕНЕЖНОГО ФОРМАТИРОВАНИЯ
 // ---------------------------------------------------------------------------
 
-export function kopecksToRubles(kopecks: number): number {
-	return Number((kopecks / 100).toFixed(2));
-}
-
-export function rublesToKopecks(rubles: number): number {
-	return Math.round(rubles * 100);
-}
+export { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 
 export function formatRubCurrency(kopecks: number): string {
 	const rub = kopecksToRubles(kopecks);

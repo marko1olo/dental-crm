@@ -9,6 +9,21 @@ export function normalizePhoneDigits(phone: string | null | undefined): string {
 }
 
 /**
+ * Normalizes phone string to standard international E.164-like Russian format (+7XXXXXXXXXX).
+ * Returns null if input is null or contains no digits.
+ */
+export function normalizePhone(value: string | null | undefined): string | null {
+	if (!value) return null;
+	const digits = String(value).replace(/\D/g, "");
+	if (!digits) return null;
+	if (digits.length === 10) return `+7${digits}`;
+	if (digits.length === 11 && digits.startsWith("8")) return `+7${digits.slice(1)}`;
+	if (digits.length === 11 && digits.startsWith("7")) return `+${digits}`;
+	if (digits.length >= 7 && digits.length <= 15) return `+${digits}`;
+	return null;
+}
+
+/**
  * Extracts the 10-digit national number suffix for Russian and standard phone numbers.
  * E.g., "+7 (916) 123-45-67" -> "9161234567"
  *       "89269876543"        -> "9269876543"

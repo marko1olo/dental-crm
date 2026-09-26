@@ -1,6 +1,7 @@
 import {
   Calendar,
   Clock,
+  Minus,
   Plus,
   UserPlus,
   X,
@@ -264,19 +265,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
               title="Свернуть шторку"
               aria-label="Свернуть"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
+              <Minus className="w-4 h-4" />
             </button>
 
             <button
@@ -443,14 +432,15 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
                 const targetMatchSlot = targetSlot;
 
                 // Fallback matched slot if no explicit targetSlot provided
-                const fallbackSlot =
-                  !targetMatchSlot &&
-                  ((item.preferredDoctorId
-                    ? ops.fallbackFreeSlots.find(
-                        (s) => s.doctorId === item.preferredDoctorId,
-                      )
-                    : null) ||
-                    ops.fallbackFreeSlots[0]);
+                const fallbackSlot = !targetMatchSlot
+                  ? (item.preferredDoctorId
+                      ? ops.fallbackFreeSlots.find(
+                          (s) => s.doctorId === item.preferredDoctorId,
+                        )
+                      : null) ||
+                    ops.fallbackFreeSlots[0] ||
+                    null
+                  : null;
 
                 return (
                   <WaitlistCandidateCard

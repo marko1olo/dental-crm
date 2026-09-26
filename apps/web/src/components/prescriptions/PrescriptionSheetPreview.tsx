@@ -1,3 +1,4 @@
+import type { PrescriptionDoctorUkep } from "@dental/shared";
 import React from "react";
 import {
 	AlertTriangle,
@@ -38,11 +39,7 @@ export interface PrescriptionSheetPreviewProps {
 	readonly isChronicSpecialCare: boolean;
 	readonly chronicPeriodicity: string;
 	readonly isUkepSigned: boolean;
-	readonly ukepSignature?: {
-		readonly certificateSerialNumber?: string | undefined;
-		readonly doctorFullName?: string | undefined;
-		readonly certificateIssuer?: string | undefined;
-	} | null | undefined;
+	readonly ukepSignature?: PrescriptionDoctorUkep | null | undefined;
 }
 
 export const PrescriptionSheetPreview: React.FC<PrescriptionSheetPreviewProps> = ({
