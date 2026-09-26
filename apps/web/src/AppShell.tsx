@@ -4,6 +4,8 @@ import { BootErrorBoundary } from "./bootErrorBoundary";
 import { GlobalToast } from "./components/GlobalToast";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
+import { ThemeBackground } from "./components/theme";
+import "./theme.css";
 
 const DentalWorkspace = lazy(() =>
 	import("./App").then((module) => ({ default: module.App })),
@@ -54,6 +56,7 @@ export function AppShell() {
 	return (
 		<BootErrorBoundary audience="clinic">
 			<ThemeController />
+			<ThemeBackground />
 			<Suspense
 				fallback={
 					<main className="boot-state" aria-busy="true">

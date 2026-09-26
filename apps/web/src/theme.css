@@ -1,0 +1,354 @@
+/* ==========================================================================
+   DENTE CRM — ATMOSPHERIC BACKGROUNDS & 10 THEMES INQUISITOR LAYER
+   Section VI & Mandate 8c: Zero Blinding White Spots & Pure Clinical Depth
+   ========================================================================== */
+
+/* ── 1. ATMOSPHERIC MESH GRADIENTS FOR ALL 10 THEMES ───────────────────── */
+
+:root,
+[data-theme="light"],
+html.light {
+	--mesh-bg:
+		radial-gradient(ellipse 80% 50% at 5% -10%, rgba(13, 148, 136, 0.08) 0%, transparent 60%),
+		radial-gradient(ellipse 60% 40% at 95% 105%, rgba(56, 189, 248, 0.06) 0%, transparent 50%),
+		radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.5) 0%, transparent 70%);
+	--theme-glow: rgba(13, 148, 136, 0.15);
+	--theme-ambient: rgba(56, 189, 248, 0.08);
+	--card-glass: rgba(255, 255, 255, 0.82);
+	--header-glass: rgba(255, 255, 255, 0.88);
+	--sidebar-glass: rgba(246, 250, 248, 0.92);
+	--slot-empty-bg: rgba(13, 148, 136, 0.03);
+	--slot-empty-border: rgba(13, 148, 136, 0.18);
+	--slot-hover-bg: rgba(13, 148, 136, 0.08);
+}
+
+[data-theme="dark"],
+html.dark {
+	--mesh-bg:
+		radial-gradient(ellipse 75% 50% at 85% -15%, rgba(45, 212, 191, 0.12) 0%, transparent 60%),
+		radial-gradient(ellipse 65% 45% at 10% 100%, rgba(20, 184, 166, 0.08) 0%, transparent 55%),
+		radial-gradient(circle at 50% 50%, rgba(16, 26, 25, 0.7) 0%, transparent 75%);
+	--theme-glow: rgba(45, 212, 191, 0.25);
+	--theme-ambient: rgba(20, 184, 166, 0.12);
+	--card-glass: rgba(16, 26, 25, 0.78);
+	--header-glass: rgba(13, 22, 21, 0.88);
+	--sidebar-glass: rgba(10, 18, 17, 0.94);
+	--slot-empty-bg: rgba(255, 255, 255, 0.03);
+	--slot-empty-border: rgba(45, 212, 191, 0.18);
+	--slot-hover-bg: rgba(45, 212, 191, 0.12);
+}
+
+[data-theme="night"],
+[data-theme="oled"] {
+	--mesh-bg:
+		radial-gradient(ellipse 65% 40% at 50% -10%, rgba(255, 255, 255, 0.04) 0%, transparent 60%),
+		radial-gradient(circle at 50% 50%, rgba(9, 9, 11, 0.6) 0%, transparent 70%);
+	--theme-glow: rgba(255, 255, 255, 0.12);
+	--theme-ambient: rgba(45, 212, 191, 0.08);
+	--card-glass: rgba(14, 14, 17, 0.85);
+	--header-glass: rgba(9, 9, 11, 0.92);
+	--sidebar-glass: rgba(0, 0, 0, 0.96);
+	--slot-empty-bg: rgba(255, 255, 255, 0.02);
+	--slot-empty-border: rgba(255, 255, 255, 0.14);
+	--slot-hover-bg: rgba(45, 212, 191, 0.12);
+}
+
+[data-theme="ocean"] {
+	--mesh-bg:
+		radial-gradient(ellipse 75% 55% at 15% -10%, rgba(56, 189, 248, 0.18) 0%, transparent 65%),
+		radial-gradient(ellipse 65% 50% at 90% 95%, rgba(30, 58, 138, 0.3) 0%, transparent 60%),
+		radial-gradient(circle at 50% 40%, rgba(12, 30, 61, 0.75) 0%, transparent 70%);
+	--theme-glow: rgba(56, 189, 248, 0.3);
+	--theme-ambient: rgba(30, 58, 138, 0.2);
+	--card-glass: rgba(12, 30, 61, 0.82);
+	--header-glass: rgba(8, 18, 38, 0.9);
+	--sidebar-glass: rgba(6, 13, 26, 0.95);
+	--slot-empty-bg: rgba(56, 189, 248, 0.04);
+	--slot-empty-border: rgba(56, 189, 248, 0.22);
+	--slot-hover-bg: rgba(56, 189, 248, 0.14);
+}
+
+[data-theme="sakura"] {
+	--mesh-bg:
+		radial-gradient(ellipse 70% 50% at 85% -10%, rgba(244, 114, 182, 0.16) 0%, transparent 60%),
+		radial-gradient(ellipse 65% 45% at 10% 105%, rgba(251, 207, 232, 0.25) 0%, transparent 55%),
+		radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
+	--theme-glow: rgba(219, 39, 119, 0.25);
+	--theme-ambient: rgba(244, 114, 182, 0.12);
+	--card-glass: rgba(255, 255, 255, 0.86);
+	--header-glass: rgba(255, 241, 242, 0.92);
+	--sidebar-glass: rgba(255, 228, 230, 0.94);
+	--slot-empty-bg: rgba(219, 39, 119, 0.03);
+	--slot-empty-border: rgba(244, 114, 182, 0.25);
+	--slot-hover-bg: rgba(219, 39, 119, 0.08);
+}
+
+[data-theme="emerald"] {
+	--mesh-bg:
+		radial-gradient(ellipse 75% 50% at 50% -15%, rgba(52, 211, 153, 0.16) 0%, transparent 60%),
+		radial-gradient(ellipse 60% 45% at 5% 95%, rgba(16, 185, 129, 0.12) 0%, transparent 55%),
+		radial-gradient(circle at 50% 50%, rgba(6, 44, 34, 0.7) 0%, transparent 75%);
+	--theme-glow: rgba(52, 211, 153, 0.28);
+	--theme-ambient: rgba(16, 185, 129, 0.15);
+	--card-glass: rgba(6, 44, 34, 0.82);
+	--header-glass: rgba(2, 32, 19, 0.9);
+	--sidebar-glass: rgba(1, 20, 11, 0.95);
+	--slot-empty-bg: rgba(52, 211, 153, 0.04);
+	--slot-empty-border: rgba(52, 211, 153, 0.22);
+	--slot-hover-bg: rgba(52, 211, 153, 0.14);
+}
+
+[data-theme="cyber_xray"] {
+	--mesh-bg:
+		radial-gradient(ellipse 80% 50% at 85% -10%, rgba(0, 240, 255, 0.2) 0%, transparent 60%),
+		radial-gradient(ellipse 65% 45% at 10% 100%, rgba(0, 180, 255, 0.14) 0%, transparent 55%),
+		radial-gradient(circle at 50% 50%, rgba(8, 16, 38, 0.7) 0%, transparent 75%);
+	--theme-glow: rgba(0, 240, 255, 0.4);
+	--theme-ambient: rgba(0, 180, 255, 0.25);
+	--card-glass: rgba(8, 16, 38, 0.85);
+	--header-glass: rgba(5, 10, 24, 0.92);
+	--sidebar-glass: rgba(2, 4, 10, 0.96);
+	--slot-empty-bg: rgba(0, 240, 255, 0.05);
+	--slot-empty-border: rgba(0, 240, 255, 0.3);
+	--slot-hover-bg: rgba(0, 240, 255, 0.16);
+}
+
+[data-theme="warm_sand"] {
+	--mesh-bg:
+		radial-gradient(ellipse 70% 50% at 80% -10%, rgba(245, 158, 11, 0.12) 0%, transparent 60%),
+		radial-gradient(ellipse 60% 45% at 10% 100%, rgba(254, 243, 199, 0.45) 0%, transparent 55%),
+		radial-gradient(circle at 50% 50%, rgba(255, 253, 245, 0.6) 0%, transparent 70%);
+	--theme-glow: rgba(217, 119, 6, 0.2);
+	--theme-ambient: rgba(245, 158, 11, 0.1);
+	--card-glass: rgba(255, 253, 245, 0.88);
+	--header-glass: rgba(254, 252, 232, 0.92);
+	--sidebar-glass: rgba(254, 243, 199, 0.94);
+	--slot-empty-bg: rgba(217, 119, 6, 0.03);
+	--slot-empty-border: rgba(245, 158, 11, 0.25);
+	--slot-hover-bg: rgba(217, 119, 6, 0.09);
+}
+
+[data-theme="calm_teal"] {
+	--mesh-bg:
+		radial-gradient(ellipse 75% 50% at 10% -10%, rgba(20, 184, 166, 0.12) 0%, transparent 60%),
+		radial-gradient(ellipse 65% 45% at 90% 100%, rgba(45, 212, 191, 0.1) 0%, transparent 55%),
+		radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
+	--theme-glow: rgba(20, 184, 166, 0.22);
+	--theme-ambient: rgba(45, 212, 191, 0.12);
+	--card-glass: rgba(255, 255, 255, 0.86);
+	--header-glass: rgba(240, 253, 250, 0.92);
+	--sidebar-glass: rgba(204, 251, 241, 0.94);
+	--slot-empty-bg: rgba(20, 184, 166, 0.03);
+	--slot-empty-border: rgba(20, 184, 166, 0.22);
+	--slot-hover-bg: rgba(20, 184, 166, 0.09);
+}
+
+[data-theme="contrast"] {
+	--mesh-bg: none;
+	--theme-glow: none;
+	--theme-ambient: none;
+	--card-glass: #ffffff;
+	--header-glass: #ffffff;
+	--sidebar-glass: #ffffff;
+	--slot-empty-bg: #ffffff;
+	--slot-empty-border: #000000;
+	--slot-hover-bg: #f4f4f5;
+}
+
+/* ── 2. BASE APP SHELL & WORKSPACE ATMOSPHERE ────────────────────────────── */
+
+.app-shell.dente-redesign,
+.webkit-grid-shell {
+	background-color: var(--bg);
+	background-image: var(--mesh-bg);
+	background-attachment: fixed;
+	background-size: 100% 100%;
+	background-repeat: no-repeat;
+	transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-shell.dente-redesign .workspace,
+.webkit-shell-content {
+	background: transparent !important;
+}
+
+/* ── 3. GLASS ELEVATION FOR SHELL HEADERS & SIDEBARS ─────────────────────── */
+
+.topbar,
+.workspace-topbar,
+.webkit-shell-header {
+	background: var(--header-glass) !important;
+	backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%);
+	-webkit-backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%);
+	border-bottom: 1px solid var(--glass-border);
+	box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.06);
+	transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar,
+.workspace-sidebar,
+.webkit-shell-sidebar {
+	background: var(--sidebar-glass) !important;
+	backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%);
+	-webkit-backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%);
+	border-right: 1px solid var(--glass-border);
+	box-shadow: var(--glass-shadow);
+	transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── 4. CARDS & PANELS GLASS ELEVATION (ANTI-DIRT & CRISP DEPTH) ─────────── */
+
+.panel,
+.card,
+.workspace-section,
+.schedule-panel,
+.patients-panel,
+.documents-panel,
+.visit-zone,
+.imaging-zone,
+.finance-zone,
+.marketing-zone,
+.settings-zone {
+	background: var(--card-glass);
+	backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%);
+	-webkit-backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%);
+	border: 1px solid var(--glass-border);
+	box-shadow: var(--glass-shadow);
+	border-radius: 14px;
+	color: var(--ink);
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── 5. SCHEDULE GRID & SLOTS (ELIMINATING MUDDY DULL GRAY DIRT) ─────────── */
+
+.schedule-cell,
+.schedule-slot-cell {
+	background: transparent;
+	transition: background-color 0.15s ease;
+}
+
+.schedule-cell-btn,
+.schedule-slot-empty,
+.schedule-empty-btn,
+.schedule-empty-slot-btn,
+.time-slot-empty,
+button[data-testid^="btn-slot-"] {
+	background-color: var(--slot-empty-bg) !important;
+	border: 1px dashed var(--slot-empty-border) !important;
+	color: var(--muted) !important;
+	border-radius: 8px;
+	font-weight: 500;
+	transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+	backdrop-filter: blur(4px);
+	-webkit-backdrop-filter: blur(4px);
+}
+
+.schedule-cell-btn:hover,
+.schedule-slot-empty:hover,
+.schedule-empty-btn:hover,
+.schedule-empty-slot-btn:hover,
+.time-slot-empty:hover,
+button[data-testid^="btn-slot-"]:hover {
+	background-color: var(--slot-hover-bg) !important;
+	border-color: var(--teal) !important;
+	border-style: solid !important;
+	color: var(--teal) !important;
+	box-shadow: 0 0 12px var(--teal-glow);
+}
+
+/* ── 6. ANTI-WHITE-SPOT PURGE FOR ALL DARK/TINTED THEMES ─────────────────── */
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark
+) {
+	/* Purge hardcoded Tailwind white surfaces */
+	.bg-white,
+	.bg-white\/80,
+	.bg-white\/90,
+	.bg-white\/95,
+	[class*="bg-white"] {
+		background-color: var(--paper-strong) !important;
+		color: var(--ink) !important;
+	}
+
+	/* Modal overlays & dialogs */
+	.modal-content,
+	.modal-panel,
+	.dialog-content,
+	.popover-content,
+	.dropdown-menu,
+	.context-menu {
+		background-color: var(--paper-strong) !important;
+		color: var(--ink) !important;
+		border-color: var(--line-strong) !important;
+	}
+
+	/* Form controls */
+	input:not([type="checkbox"]):not([type="radio"]),
+	select,
+	textarea {
+		background-color: var(--paper-strong) !important;
+		color: var(--ink) !important;
+		border-color: var(--line) !important;
+	}
+
+	input::placeholder,
+	textarea::placeholder {
+		color: var(--muted) !important;
+		opacity: 0.8;
+	}
+
+	/* Tables */
+	table,
+	thead,
+	tbody,
+	tr,
+	th,
+	td {
+		border-color: var(--line) !important;
+	}
+
+	th {
+		background-color: var(--paper-strong) !important;
+		color: var(--ink-2) !important;
+	}
+
+	tr:hover td {
+		background-color: var(--teal-surface) !important;
+	}
+
+	/* Badges & Chips */
+	.chip,
+	.badge,
+	.tag {
+		border-color: var(--line);
+	}
+}
+
+/* ── 7. ACCESSIBILITY & REDUCED MOTION SAFEGUARDS ────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+	.app-shell.dente-redesign,
+	.webkit-grid-shell,
+	.topbar,
+	.sidebar,
+	.panel,
+	.card {
+		transition: none !important;
+	}
+}
+
+/* Low-spec hardware: disable intensive filter effects on weak GPUs */
+[data-low-spec-tier="true"] .app-shell.dente-redesign,
+[data-low-spec-tier="true"] .panel,
+[data-low-spec-tier="true"] .card,
+[data-low-spec-tier="true"] .topbar,
+[data-low-spec-tier="true"] .sidebar {
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+}
