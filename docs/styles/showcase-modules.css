@@ -1,0 +1,512 @@
+/* ==========================================================================
+   DENTE Dental CRM — Showcase Modules & Doctor Autonomy
+   Interactive Comparison • 3D DICOM Canvas • 54-FZ Split Cashier • Schedule HIG
+   ========================================================================== */
+
+/* Section Spacing */
+.section {
+  padding: clamp(3rem, 6vw, 5.5rem) 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ==========================================================================
+   1. Doctor Autonomy Comparison Matrix
+   ========================================================================== */
+.autonomy-table-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  margin-top: 2rem;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.autonomy-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.autonomy-table th,
+.autonomy-table td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.autonomy-table th {
+  background: var(--bg-surface-raised);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.autonomy-table th.col-dente,
+.autonomy-table td.col-dente {
+  background: rgba(44, 202, 181, 0.04);
+  border-left: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--border-subtle);
+}
+
+.feature-title-cell {
+  font-weight: 600;
+  color: var(--text-main);
+  min-width: 220px;
+}
+
+.feature-sub {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-dim);
+  margin-top: 0.2rem;
+}
+
+.status-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.badge-win {
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--accent-success);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.badge-fail {
+  background: rgba(248, 113, 113, 0.12);
+  color: var(--accent-danger);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+}
+
+/* ==========================================================================
+   2. Interactive Modules Showcase (3D DICOM, 54-FZ Cashier, Schedule)
+   ========================================================================== */
+.modules-tabs-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-surface-raised);
+  padding: 0.35rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 2rem;
+  overflow-x: auto;
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.mod-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.mod-tab-btn:hover {
+  color: var(--text-main);
+  background: var(--bg-surface-hover);
+}
+
+.mod-tab-btn.active {
+  background: var(--bg-surface);
+  color: var(--accent-light);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.module-panel {
+  display: none;
+  animation: fadeIn 0.3s ease forwards;
+}
+.module-panel.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 3D DICOM Viewer Studio Card */
+.dicom-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.dicom-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  min-height: 480px;
+}
+
+.dicom-viewport {
+  position: relative;
+  background: #020609;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#dicomCanvas {
+  width: 100%;
+  height: 100%;
+  max-height: 520px;
+  display: block;
+}
+
+.dicom-hud-top {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  right: 1rem;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.dicom-hud-pill {
+  background: rgba(4, 16, 20, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  color: #a5f3fc;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.dicom-controls-sidebar {
+  background: var(--bg-surface-raised);
+  border-left: 1px solid var(--border-subtle);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.control-group-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 0.5rem;
+}
+
+.dicom-slider-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.slider-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.slider-value-badge {
+  font-family: var(--font-mono);
+  color: var(--accent-light);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--bg-surface);
+  border-radius: 3px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  cursor: pointer;
+  box-shadow: 0 0 6px var(--accent-glow);
+  transition: transform var(--transition-fast);
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.preset-chip-group {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.preset-chip {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-xs);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+.preset-chip:hover, .preset-chip.active {
+  background: var(--bg-surface-hover);
+  color: var(--accent-light);
+  border-color: var(--accent-primary);
+}
+
+/* ==========================================================================
+   3. Cash Desk 54-FZ & Split Payment Calculator
+   ========================================================================== */
+.cashier-calc-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  padding: 1.75rem;
+}
+
+.cashier-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.cashier-tenders {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tender-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  gap: 1rem;
+}
+
+.tender-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.tender-input-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.6rem;
+  width: 140px;
+}
+
+.tender-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: right;
+  outline: none;
+}
+
+.currency-sym {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-left: 0.35rem;
+}
+
+/* Fiscal Receipt Preview Ticket */
+.receipt-ticket {
+  background: #ffffff;
+  color: #111827;
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+  border: 1px dashed #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.receipt-header {
+  text-align: center;
+  border-bottom: 1px dashed #94a3b8;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.receipt-clinic-name {
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.receipt-total-row {
+  border-top: 1px dashed #94a3b8;
+  padding-top: 0.5rem;
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.guarantee-act-banner {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  color: var(--accent-success);
+  font-size: 0.8rem;
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+}
+.guarantee-act-banner.active {
+  display: flex;
+}
+
+/* ==========================================================================
+   4. Dense Clinical Schedule HIG & Patient Portal Cards
+   ========================================================================== */
+.schedule-preview-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.schedule-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-surface-raised);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.schedule-timeline-grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.timeline-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  height: 48px;
+  border-bottom: 1px solid var(--border-subtle);
+  align-items: center;
+}
+
+.timeline-time-cell {
+  padding: 0 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  border-right: 1px solid var(--border-subtle);
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.timeline-slot-cell {
+  padding: 0.25rem 0.75rem;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.appointment-chip {
+  width: 100%;
+  height: 36px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: transform var(--transition-fast);
+}
+.appointment-chip:hover {
+  transform: translateX(2px);
+}
+
+.chip-therapy {
+  background: rgba(56, 189, 248, 0.15);
+  border-left: 3px solid var(--accent-cyan);
+  color: var(--text-main);
+}
+
+.chip-surgery {
+  background: rgba(248, 113, 113, 0.15);
+  border-left: 3px solid var(--accent-danger);
+  color: var(--text-main);
+}
+
+.chip-ortho {
+  background: rgba(251, 191, 36, 0.15);
+  border-left: 3px solid var(--accent-warn);
+  color: var(--text-main);
+}

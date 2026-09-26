@@ -124,6 +124,12 @@
 *   **[.agents/handoff.md](file:///C:/Clinic_MVP/dental-crm/.agents/handoff.md)** — Оперативный handoff агентов.
 *   **[task.md](file:///C:/Clinic_MVP/dental-crm/task.md)** | **[implementation_plan.md](file:///C:/Clinic_MVP/dental-crm/implementation_plan.md)** — Текущие операционные планы и задачи.
 
+### 10. Витрина и Продуктовый Сайт (GitHub Pages Showcase)
+*   **[GitHub Pages Live Site](https://marko1olo.github.io/dental-crm/)** — Интерактивный сайт-витрина DENTE Dental CRM на GitHub Pages.
+*   **[index.html](file:///C:/Clinic_MVP/dental-crm/docs/index.html)** — Модульный корень витрины: интерактивная зубная формула FDI 11..48 с калькулятором сметы, переключатель 5 тем, автономия врача (Мандат 8e), симулятор 3D КЛКТ, сплит-касса 54-ФЗ и установщики macOS / Windows / CLI.
+*   **[styles/](file:///C:/Clinic_MVP/dental-crm/docs/styles/)** — Модульные стили (`variables.css`, `header-hero.css`, `showcase-modules.css`, `install-footer.css` — каждый строго <= 800 строк).
+*   **[scripts/](file:///C:/Clinic_MVP/dental-crm/docs/scripts/)** — Интерактивные движки (`theme.js`, `odontogram.js`, `dicom-viewer.js`, `cashier-calc.js`, `quickstart.js` — каждый строго <= 800 строк).
+
 ---
 
 ## 🚨 Фундаментальные Принципы Разработки
