@@ -351,7 +351,7 @@ export class PublicBookingQueueService {
 			startsAt: startDate,
 			endsAt: endDate,
 			status: "planned",
-			comment: input.comment,
+			comment: input.comment ?? undefined,
 		});
 		inMemoryAppointmentsStore.set(input.organizationId, orgAppointments);
 
@@ -425,8 +425,8 @@ export class PublicBookingQueueService {
 			patientPhone: input.patientPhone,
 			startsAt: input.startsAt,
 			endsAt: input.endsAt,
-			comment: input.comment,
-			serviceName: input.serviceName,
+			comment: input.comment ?? undefined,
+			serviceName: input.serviceName ?? undefined,
 			status: "PENDING_RESERVATION",
 			isNightMode: true,
 			createdAt: now.toISOString(),
@@ -583,7 +583,7 @@ export class PublicBookingQueueService {
 				endsAt: chosenSlot.endsAt,
 				comment: `[Перенос Graceful Bump: скидка ${discount}%] ${item.comment ?? ""}`,
 				chairId: item.chairId ?? undefined,
-				serviceName: item.serviceName,
+				serviceName: item.serviceName ?? undefined,
 			},
 			new Date(chosenSlot.startsAt),
 			new Date(chosenSlot.endsAt),
@@ -594,7 +594,7 @@ export class PublicBookingQueueService {
 			item.status = "BUMPED_CONFIRMED";
 			item.startsAt = chosenSlot.startsAt;
 			item.endsAt = chosenSlot.endsAt;
-			item.appointmentId = directResult.appointmentId;
+			item.appointmentId = directResult.appointmentId ?? undefined;
 			holdingQueueStore.set(item.id, item);
 
 			return {
