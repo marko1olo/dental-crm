@@ -1,22 +1,26 @@
 /* ==========================================================================
    DENTE CRM — ATMOSPHERIC BACKGROUNDS & 10 THEMES INQUISITOR LAYER
    Section VI & Mandate 8c: Zero Blinding White Spots & Pure Clinical Depth
+   Mandate 8b: Strictly <= 800 lines. UTF-8 without BOM.
    ========================================================================== */
 
-/* ── 1. ATMOSPHERIC MESH GRADIENTS FOR ALL 10 THEMES ───────────────────── */
+/* ── 1. ATMOSPHERIC MESH GRADIENTS & GLASS TOKENS FOR ALL 10 THEMES ─────── */
 
 :root,
 [data-theme="light"],
 html.light {
 	--mesh-bg:
-		radial-gradient(ellipse 80% 50% at 5% -10%, rgba(13, 148, 136, 0.08) 0%, transparent 60%),
-		radial-gradient(ellipse 60% 40% at 95% 105%, rgba(56, 189, 248, 0.06) 0%, transparent 50%),
-		radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.5) 0%, transparent 70%);
-	--theme-glow: rgba(13, 148, 136, 0.15);
-	--theme-ambient: rgba(56, 189, 248, 0.08);
-	--card-glass: rgba(255, 255, 255, 0.82);
-	--header-glass: rgba(255, 255, 255, 0.88);
-	--sidebar-glass: rgba(246, 250, 248, 0.92);
+		radial-gradient(ellipse 80% 55% at 5% -10%, rgba(13, 148, 136, 0.10) 0%, transparent 60%),
+		radial-gradient(ellipse 70% 50% at 95% 105%, rgba(56, 189, 248, 0.09) 0%, transparent 55%),
+		radial-gradient(circle at 50% 30%, rgba(240, 253, 250, 0.8) 0%, transparent 70%);
+	--theme-glow: rgba(13, 148, 136, 0.16);
+	--theme-ambient: rgba(56, 189, 248, 0.09);
+	--card-glass: rgba(255, 255, 255, 0.85);
+	--header-glass: rgba(255, 255, 255, 0.90);
+	--sidebar-glass: rgba(248, 250, 252, 0.92);
+	--glass-border: rgba(13, 148, 136, 0.15);
+	--glass-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 0 1px rgba(13, 148, 136, 0.1);
+	--glass-blur: blur(16px);
 	--slot-empty-bg: rgba(13, 148, 136, 0.03);
 	--slot-empty-border: rgba(13, 148, 136, 0.18);
 	--slot-hover-bg: rgba(13, 148, 136, 0.08);
@@ -25,14 +29,17 @@ html.light {
 [data-theme="dark"],
 html.dark {
 	--mesh-bg:
-		radial-gradient(ellipse 75% 50% at 85% -15%, rgba(45, 212, 191, 0.12) 0%, transparent 60%),
-		radial-gradient(ellipse 65% 45% at 10% 100%, rgba(20, 184, 166, 0.08) 0%, transparent 55%),
-		radial-gradient(circle at 50% 50%, rgba(16, 26, 25, 0.7) 0%, transparent 75%);
-	--theme-glow: rgba(45, 212, 191, 0.25);
-	--theme-ambient: rgba(20, 184, 166, 0.12);
-	--card-glass: rgba(16, 26, 25, 0.78);
-	--header-glass: rgba(13, 22, 21, 0.88);
-	--sidebar-glass: rgba(10, 18, 17, 0.94);
+		radial-gradient(ellipse 80% 55% at 85% -15%, rgba(45, 212, 191, 0.16) 0%, transparent 60%),
+		radial-gradient(ellipse 70% 50% at 10% 100%, rgba(20, 184, 166, 0.12) 0%, transparent 55%),
+		radial-gradient(circle at 50% 50%, rgba(16, 26, 25, 0.85) 0%, transparent 75%);
+	--theme-glow: rgba(45, 212, 191, 0.28);
+	--theme-ambient: rgba(20, 184, 166, 0.15);
+	--card-glass: rgba(16, 26, 25, 0.82);
+	--header-glass: rgba(13, 22, 21, 0.90);
+	--sidebar-glass: rgba(10, 18, 17, 0.95);
+	--glass-border: rgba(45, 212, 191, 0.18);
+	--glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 0 1px rgba(45, 212, 191, 0.15);
+	--glass-blur: blur(16px);
 	--slot-empty-bg: rgba(255, 255, 255, 0.03);
 	--slot-empty-border: rgba(45, 212, 191, 0.18);
 	--slot-hover-bg: rgba(45, 212, 191, 0.12);
@@ -41,106 +48,130 @@ html.dark {
 [data-theme="night"],
 [data-theme="oled"] {
 	--mesh-bg:
-		radial-gradient(ellipse 65% 40% at 50% -10%, rgba(255, 255, 255, 0.04) 0%, transparent 60%),
-		radial-gradient(circle at 50% 50%, rgba(9, 9, 11, 0.6) 0%, transparent 70%);
-	--theme-glow: rgba(255, 255, 255, 0.12);
-	--theme-ambient: rgba(45, 212, 191, 0.08);
-	--card-glass: rgba(14, 14, 17, 0.85);
-	--header-glass: rgba(9, 9, 11, 0.92);
-	--sidebar-glass: rgba(0, 0, 0, 0.96);
+		radial-gradient(ellipse 70% 45% at 50% -10%, rgba(251, 146, 60, 0.07) 0%, transparent 60%),
+		radial-gradient(circle at 50% 50%, rgba(9, 9, 11, 0.75) 0%, transparent 70%);
+	--theme-glow: rgba(255, 255, 255, 0.10);
+	--theme-ambient: rgba(251, 146, 60, 0.06);
+	--card-glass: rgba(14, 14, 18, 0.88);
+	--header-glass: rgba(9, 9, 11, 0.94);
+	--sidebar-glass: rgba(0, 0, 0, 0.98);
+	--glass-border: rgba(255, 255, 255, 0.12);
+	--glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.75);
+	--glass-blur: blur(16px);
 	--slot-empty-bg: rgba(255, 255, 255, 0.02);
 	--slot-empty-border: rgba(255, 255, 255, 0.14);
-	--slot-hover-bg: rgba(45, 212, 191, 0.12);
+	--slot-hover-bg: rgba(251, 146, 60, 0.12);
 }
 
 [data-theme="ocean"] {
 	--mesh-bg:
-		radial-gradient(ellipse 75% 55% at 15% -10%, rgba(56, 189, 248, 0.18) 0%, transparent 65%),
-		radial-gradient(ellipse 65% 50% at 90% 95%, rgba(30, 58, 138, 0.3) 0%, transparent 60%),
-		radial-gradient(circle at 50% 40%, rgba(12, 30, 61, 0.75) 0%, transparent 70%);
-	--theme-glow: rgba(56, 189, 248, 0.3);
-	--theme-ambient: rgba(30, 58, 138, 0.2);
+		radial-gradient(ellipse 85% 60% at 15% -10%, rgba(56, 189, 248, 0.26) 0%, transparent 65%),
+		radial-gradient(ellipse 75% 55% at 90% 95%, rgba(30, 58, 138, 0.45) 0%, transparent 60%),
+		radial-gradient(circle at 50% 40%, rgba(12, 30, 61, 0.85) 0%, transparent 75%),
+		radial-gradient(ellipse 50% 40% at 50% 10%, rgba(14, 165, 233, 0.18) 0%, transparent 50%);
+	--theme-glow: rgba(56, 189, 248, 0.38);
+	--theme-ambient: rgba(30, 58, 138, 0.28);
 	--card-glass: rgba(12, 30, 61, 0.82);
-	--header-glass: rgba(8, 18, 38, 0.9);
-	--sidebar-glass: rgba(6, 13, 26, 0.95);
+	--header-glass: rgba(8, 20, 44, 0.92);
+	--sidebar-glass: rgba(6, 14, 30, 0.96);
+	--glass-border: rgba(56, 189, 248, 0.24);
+	--glass-shadow: 0 16px 40px rgba(2, 6, 23, 0.6), 0 0 20px rgba(56, 189, 248, 0.12);
+	--glass-blur: blur(18px);
 	--slot-empty-bg: rgba(56, 189, 248, 0.04);
-	--slot-empty-border: rgba(56, 189, 248, 0.22);
-	--slot-hover-bg: rgba(56, 189, 248, 0.14);
+	--slot-empty-border: rgba(56, 189, 248, 0.25);
+	--slot-hover-bg: rgba(56, 189, 248, 0.16);
 }
 
 [data-theme="sakura"] {
 	--mesh-bg:
-		radial-gradient(ellipse 70% 50% at 85% -10%, rgba(244, 114, 182, 0.16) 0%, transparent 60%),
-		radial-gradient(ellipse 65% 45% at 10% 105%, rgba(251, 207, 232, 0.25) 0%, transparent 55%),
-		radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
-	--theme-glow: rgba(219, 39, 119, 0.25);
-	--theme-ambient: rgba(244, 114, 182, 0.12);
-	--card-glass: rgba(255, 255, 255, 0.86);
-	--header-glass: rgba(255, 241, 242, 0.92);
-	--sidebar-glass: rgba(255, 228, 230, 0.94);
+		radial-gradient(ellipse 80% 55% at 85% -10%, rgba(244, 114, 182, 0.22) 0%, transparent 60%),
+		radial-gradient(ellipse 70% 50% at 10% 105%, rgba(251, 207, 232, 0.40) 0%, transparent 55%),
+		radial-gradient(circle at 50% 50%, rgba(255, 253, 254, 0.75) 0%, transparent 70%);
+	--theme-glow: rgba(219, 39, 119, 0.26);
+	--theme-ambient: rgba(244, 114, 182, 0.16);
+	--card-glass: rgba(255, 253, 254, 0.88);
+	--header-glass: rgba(255, 245, 247, 0.93);
+	--sidebar-glass: rgba(255, 235, 238, 0.95);
+	--glass-border: rgba(244, 114, 182, 0.22);
+	--glass-shadow: 0 10px 30px -5px rgba(219, 39, 119, 0.08), 0 0 1px rgba(244, 114, 182, 0.15);
+	--glass-blur: blur(16px);
 	--slot-empty-bg: rgba(219, 39, 119, 0.03);
 	--slot-empty-border: rgba(244, 114, 182, 0.25);
-	--slot-hover-bg: rgba(219, 39, 119, 0.08);
+	--slot-hover-bg: rgba(219, 39, 119, 0.10);
 }
 
 [data-theme="emerald"] {
 	--mesh-bg:
-		radial-gradient(ellipse 75% 50% at 50% -15%, rgba(52, 211, 153, 0.16) 0%, transparent 60%),
-		radial-gradient(ellipse 60% 45% at 5% 95%, rgba(16, 185, 129, 0.12) 0%, transparent 55%),
-		radial-gradient(circle at 50% 50%, rgba(6, 44, 34, 0.7) 0%, transparent 75%);
-	--theme-glow: rgba(52, 211, 153, 0.28);
-	--theme-ambient: rgba(16, 185, 129, 0.15);
-	--card-glass: rgba(6, 44, 34, 0.82);
-	--header-glass: rgba(2, 32, 19, 0.9);
-	--sidebar-glass: rgba(1, 20, 11, 0.95);
+		radial-gradient(ellipse 80% 55% at 50% -15%, rgba(52, 211, 153, 0.24) 0%, transparent 60%),
+		radial-gradient(ellipse 65% 50% at 5% 95%, rgba(6, 78, 59, 0.42) 0%, transparent 55%),
+		radial-gradient(circle at 50% 50%, rgba(6, 44, 34, 0.85) 0%, transparent 75%),
+		radial-gradient(ellipse 45% 35% at 90% 20%, rgba(16, 185, 129, 0.16) 0%, transparent 50%);
+	--theme-glow: rgba(52, 211, 153, 0.32);
+	--theme-ambient: rgba(16, 185, 129, 0.20);
+	--card-glass: rgba(6, 44, 34, 0.84);
+	--header-glass: rgba(3, 34, 21, 0.92);
+	--sidebar-glass: rgba(2, 22, 13, 0.96);
+	--glass-border: rgba(52, 211, 153, 0.24);
+	--glass-shadow: 0 16px 40px rgba(1, 20, 11, 0.55), 0 0 18px rgba(52, 211, 153, 0.10);
+	--glass-blur: blur(18px);
 	--slot-empty-bg: rgba(52, 211, 153, 0.04);
-	--slot-empty-border: rgba(52, 211, 153, 0.22);
-	--slot-hover-bg: rgba(52, 211, 153, 0.14);
+	--slot-empty-border: rgba(52, 211, 153, 0.24);
+	--slot-hover-bg: rgba(52, 211, 153, 0.15);
 }
 
 [data-theme="cyber_xray"] {
 	--mesh-bg:
-		radial-gradient(ellipse 80% 50% at 85% -10%, rgba(0, 240, 255, 0.2) 0%, transparent 60%),
-		radial-gradient(ellipse 65% 45% at 10% 100%, rgba(0, 180, 255, 0.14) 0%, transparent 55%),
-		radial-gradient(circle at 50% 50%, rgba(8, 16, 38, 0.7) 0%, transparent 75%);
-	--theme-glow: rgba(0, 240, 255, 0.4);
-	--theme-ambient: rgba(0, 180, 255, 0.25);
-	--card-glass: rgba(8, 16, 38, 0.85);
-	--header-glass: rgba(5, 10, 24, 0.92);
-	--sidebar-glass: rgba(2, 4, 10, 0.96);
-	--slot-empty-bg: rgba(0, 240, 255, 0.05);
-	--slot-empty-border: rgba(0, 240, 255, 0.3);
-	--slot-hover-bg: rgba(0, 240, 255, 0.16);
+		radial-gradient(ellipse 85% 60% at 85% -10%, rgba(0, 240, 255, 0.25) 0%, transparent 60%),
+		radial-gradient(ellipse 70% 50% at 10% 100%, rgba(30, 27, 75, 0.45) 0%, transparent 55%),
+		radial-gradient(circle at 50% 50%, rgba(8, 16, 38, 0.85) 0%, transparent 75%),
+		radial-gradient(ellipse 45% 35% at 50% 0%, rgba(0, 240, 255, 0.15) 0%, transparent 50%);
+	--theme-glow: rgba(0, 240, 255, 0.42);
+	--theme-ambient: rgba(0, 180, 255, 0.28);
+	--card-glass: rgba(8, 16, 38, 0.84);
+	--header-glass: rgba(5, 11, 26, 0.93);
+	--sidebar-glass: rgba(2, 5, 14, 0.97);
+	--glass-border: rgba(0, 240, 255, 0.30);
+	--glass-shadow: 0 0 35px rgba(0, 240, 255, 0.14), 0 16px 40px rgba(0, 0, 0, 0.70);
+	--glass-blur: blur(18px);
+	--slot-empty-bg: rgba(0, 240, 255, 0.04);
+	--slot-empty-border: rgba(0, 240, 255, 0.32);
+	--slot-hover-bg: rgba(0, 240, 255, 0.18);
 }
 
 [data-theme="warm_sand"] {
 	--mesh-bg:
-		radial-gradient(ellipse 70% 50% at 80% -10%, rgba(245, 158, 11, 0.12) 0%, transparent 60%),
-		radial-gradient(ellipse 60% 45% at 10% 100%, rgba(254, 243, 199, 0.45) 0%, transparent 55%),
-		radial-gradient(circle at 50% 50%, rgba(255, 253, 245, 0.6) 0%, transparent 70%);
-	--theme-glow: rgba(217, 119, 6, 0.2);
-	--theme-ambient: rgba(245, 158, 11, 0.1);
+		radial-gradient(ellipse 75% 55% at 80% -10%, rgba(245, 158, 11, 0.18) 0%, transparent 60%),
+		radial-gradient(ellipse 65% 50% at 10% 100%, rgba(254, 243, 199, 0.65) 0%, transparent 55%),
+		radial-gradient(circle at 50% 50%, rgba(255, 253, 245, 0.75) 0%, transparent 70%);
+	--theme-glow: rgba(217, 119, 6, 0.22);
+	--theme-ambient: rgba(245, 158, 11, 0.14);
 	--card-glass: rgba(255, 253, 245, 0.88);
-	--header-glass: rgba(254, 252, 232, 0.92);
-	--sidebar-glass: rgba(254, 243, 199, 0.94);
+	--header-glass: rgba(254, 252, 232, 0.93);
+	--sidebar-glass: rgba(254, 243, 199, 0.95);
+	--glass-border: rgba(245, 158, 11, 0.22);
+	--glass-shadow: 0 10px 30px -5px rgba(180, 83, 9, 0.08), 0 0 1px rgba(245, 158, 11, 0.15);
+	--glass-blur: blur(16px);
 	--slot-empty-bg: rgba(217, 119, 6, 0.03);
 	--slot-empty-border: rgba(245, 158, 11, 0.25);
-	--slot-hover-bg: rgba(217, 119, 6, 0.09);
+	--slot-hover-bg: rgba(217, 119, 6, 0.10);
 }
 
 [data-theme="calm_teal"] {
 	--mesh-bg:
-		radial-gradient(ellipse 75% 50% at 10% -10%, rgba(20, 184, 166, 0.12) 0%, transparent 60%),
-		radial-gradient(ellipse 65% 45% at 90% 100%, rgba(45, 212, 191, 0.1) 0%, transparent 55%),
-		radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
-	--theme-glow: rgba(20, 184, 166, 0.22);
-	--theme-ambient: rgba(45, 212, 191, 0.12);
-	--card-glass: rgba(255, 255, 255, 0.86);
-	--header-glass: rgba(240, 253, 250, 0.92);
-	--sidebar-glass: rgba(204, 251, 241, 0.94);
+		radial-gradient(ellipse 80% 55% at 10% -10%, rgba(20, 184, 166, 0.16) 0%, transparent 60%),
+		radial-gradient(ellipse 70% 50% at 90% 100%, rgba(45, 212, 191, 0.14) 0%, transparent 55%),
+		radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.75) 0%, transparent 70%);
+	--theme-glow: rgba(20, 184, 166, 0.25);
+	--theme-ambient: rgba(45, 212, 191, 0.14);
+	--card-glass: rgba(255, 255, 255, 0.88);
+	--header-glass: rgba(240, 253, 250, 0.93);
+	--sidebar-glass: rgba(204, 251, 241, 0.95);
+	--glass-border: rgba(20, 184, 166, 0.20);
+	--glass-shadow: 0 10px 30px -5px rgba(20, 184, 166, 0.08);
+	--glass-blur: blur(16px);
 	--slot-empty-bg: rgba(20, 184, 166, 0.03);
 	--slot-empty-border: rgba(20, 184, 166, 0.22);
-	--slot-hover-bg: rgba(20, 184, 166, 0.09);
+	--slot-hover-bg: rgba(20, 184, 166, 0.10);
 }
 
 [data-theme="contrast"] {
@@ -150,20 +181,33 @@ html.dark {
 	--card-glass: #ffffff;
 	--header-glass: #ffffff;
 	--sidebar-glass: #ffffff;
+	--glass-border: #000000;
+	--glass-shadow: none;
+	--glass-blur: none;
 	--slot-empty-bg: #ffffff;
 	--slot-empty-border: #000000;
 	--slot-hover-bg: #f4f4f5;
 }
 
-/* ── 2. BASE APP SHELL & WORKSPACE ATMOSPHERE ────────────────────────────── */
+/* ── 2. BASE ROOT, HTML, BODY & WORKSPACE ATMOSPHERE ─────────────────────── */
+
+html,
+body {
+	background-color: var(--bg) !important;
+	background-image: var(--mesh-bg) !important;
+	background-attachment: fixed !important;
+	background-size: 100% 100% !important;
+	background-repeat: no-repeat !important;
+	min-height: 100%;
+}
 
 .app-shell.dente-redesign,
 .webkit-grid-shell {
-	background-color: var(--bg);
-	background-image: var(--mesh-bg);
-	background-attachment: fixed;
-	background-size: 100% 100%;
-	background-repeat: no-repeat;
+	position: relative;
+	z-index: 1;
+	background: transparent !important;
+	background-color: transparent !important;
+	background-image: none !important;
 	transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -178,10 +222,10 @@ html.dark {
 .workspace-topbar,
 .webkit-shell-header {
 	background: var(--header-glass) !important;
-	backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%);
-	-webkit-backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%);
-	border-bottom: 1px solid var(--glass-border);
-	box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.06);
+	backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%) !important;
+	-webkit-backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%) !important;
+	border-bottom: 1px solid var(--glass-border) !important;
+	box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.08) !important;
 	transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -189,10 +233,10 @@ html.dark {
 .workspace-sidebar,
 .webkit-shell-sidebar {
 	background: var(--sidebar-glass) !important;
-	backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%);
-	-webkit-backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%);
-	border-right: 1px solid var(--glass-border);
-	box-shadow: var(--glass-shadow);
+	backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%) !important;
+	-webkit-backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%) !important;
+	border-right: 1px solid var(--glass-border) !important;
+	box-shadow: var(--glass-shadow) !important;
 	transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -200,6 +244,7 @@ html.dark {
 
 .panel,
 .card,
+.section-card,
 .workspace-section,
 .schedule-panel,
 .patients-panel,
@@ -209,11 +254,11 @@ html.dark {
 .finance-zone,
 .marketing-zone,
 .settings-zone {
-	background: var(--card-glass);
-	backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%);
-	-webkit-backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%);
-	border: 1px solid var(--glass-border);
-	box-shadow: var(--glass-shadow);
+	background: var(--card-glass) !important;
+	backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%) !important;
+	-webkit-backdrop-filter: var(--glass-blur, blur(16px)) saturate(160%) !important;
+	border: 1px solid var(--glass-border) !important;
+	box-shadow: var(--glass-shadow) !important;
 	border-radius: 14px;
 	color: var(--ink);
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -253,10 +298,40 @@ button[data-testid^="btn-slot-"]:hover {
 	border-color: var(--teal) !important;
 	border-style: solid !important;
 	color: var(--teal) !important;
-	box-shadow: 0 0 12px var(--teal-glow);
+	box-shadow: 0 0 12px var(--teal-soft, rgba(13, 148, 136, 0.25));
 }
 
-/* ── 6. ANTI-WHITE-SPOT PURGE FOR ALL DARK/TINTED THEMES ─────────────────── */
+/* ── 6. ATMOSPHERIC DRIFT ANIMATIONS ─────────────────────────────────────── */
+
+@keyframes denteAmbientDriftTop {
+	0%, 100% {
+		transform: translate(0, 0) scale(1);
+	}
+	50% {
+		transform: translate(-3vw, 2vh) scale(1.04);
+	}
+}
+
+@keyframes denteAmbientDriftBottom {
+	0%, 100% {
+		transform: translate(0, 0) scale(1);
+	}
+	50% {
+		transform: translate(3vw, -2vh) scale(1.05);
+	}
+}
+
+.dente-ambient-orb-top {
+	animation: denteAmbientDriftTop 24s ease-in-out infinite;
+	will-change: transform;
+}
+
+.dente-ambient-orb-bottom {
+	animation: denteAmbientDriftBottom 28s ease-in-out infinite;
+	will-change: transform;
+}
+
+/* ── 7. ANTI-WHITE-SPOT PURGE FOR ALL DARK/TINTED THEMES ─────────────────── */
 
 :is(
 	[data-theme="dark"],
@@ -330,7 +405,7 @@ button[data-testid^="btn-slot-"]:hover {
 	}
 }
 
-/* ── 7. ACCESSIBILITY & REDUCED MOTION SAFEGUARDS ────────────────────────── */
+/* ── 8. ACCESSIBILITY & REDUCED MOTION SAFEGUARDS ────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
 	.app-shell.dente-redesign,
@@ -338,7 +413,10 @@ button[data-testid^="btn-slot-"]:hover {
 	.topbar,
 	.sidebar,
 	.panel,
-	.card {
+	.card,
+	.dente-ambient-orb-top,
+	.dente-ambient-orb-bottom {
+		animation: none !important;
 		transition: none !important;
 	}
 }
@@ -348,7 +426,9 @@ button[data-testid^="btn-slot-"]:hover {
 [data-low-spec-tier="true"] .panel,
 [data-low-spec-tier="true"] .card,
 [data-low-spec-tier="true"] .topbar,
-[data-low-spec-tier="true"] .sidebar {
+[data-low-spec-tier="true"] .sidebar,
+[data-low-spec-tier="true"] .dente-theme-background-layer {
 	backdrop-filter: none !important;
 	-webkit-backdrop-filter: none !important;
+	display: none !important;
 }

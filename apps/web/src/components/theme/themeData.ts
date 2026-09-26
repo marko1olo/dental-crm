@@ -11,6 +11,9 @@ export interface ThemeMetadata {
 	readonly secondaryDot: string;
 	readonly description: string;
 	readonly atmosphericGlow: string;
+	readonly secondaryGlow: string;
+	readonly accentGlow: string;
+	readonly refractiveMesh: string;
 }
 
 export const DENTE_THEMES: readonly ThemeMetadata[] = [
@@ -24,7 +27,10 @@ export const DENTE_THEMES: readonly ThemeMetadata[] = [
 		primaryDot: "#0d9488",
 		secondaryDot: "#f0f5f3",
 		description: "Базовая чистая клиническая тема с мягкими мятно-бирюзовыми акцентами для освещённых кабинетов.",
-		atmosphericGlow: "rgba(13, 148, 136, 0.15)",
+		atmosphericGlow: "rgba(13, 148, 136, 0.16)",
+		secondaryGlow: "rgba(56, 189, 248, 0.12)",
+		accentGlow: "rgba(45, 212, 191, 0.10)",
+		refractiveMesh: "radial-gradient(ellipse 80% 55% at 5% -10%, rgba(13, 148, 136, 0.10) 0%, transparent 60%), radial-gradient(ellipse 70% 50% at 95% 105%, rgba(56, 189, 248, 0.09) 0%, transparent 55%), radial-gradient(circle at 50% 30%, rgba(240, 253, 250, 0.8) 0%, transparent 70%)",
 	},
 	{
 		id: "dark",
@@ -36,7 +42,10 @@ export const DENTE_THEMES: readonly ThemeMetadata[] = [
 		primaryDot: "#2dd4bf",
 		secondaryDot: "#0f172a",
 		description: "Глубокий графитовый тон для снижения нагрузки на зрение врача при длительных 12-часовых сменах.",
-		atmosphericGlow: "rgba(45, 212, 191, 0.25)",
+		atmosphericGlow: "rgba(45, 212, 191, 0.24)",
+		secondaryGlow: "rgba(20, 184, 166, 0.18)",
+		accentGlow: "rgba(13, 148, 136, 0.18)",
+		refractiveMesh: "radial-gradient(ellipse 80% 55% at 85% -15%, rgba(45, 212, 191, 0.16) 0%, transparent 60%), radial-gradient(ellipse 70% 50% at 10% 100%, rgba(20, 184, 166, 0.12) 0%, transparent 55%), radial-gradient(circle at 50% 50%, rgba(16, 26, 25, 0.85) 0%, transparent 75%)",
 	},
 	{
 		id: "ocean",
@@ -48,7 +57,10 @@ export const DENTE_THEMES: readonly ThemeMetadata[] = [
 		primaryDot: "#38bdf8",
 		secondaryDot: "#0c1e3d",
 		description: "Глубоководный сине-стальной ультрамарин с мягкой неоновой подсветкой контуров и стеклянным лоском.",
-		atmosphericGlow: "rgba(56, 189, 248, 0.3)",
+		atmosphericGlow: "rgba(56, 189, 248, 0.38)",
+		secondaryGlow: "rgba(30, 58, 138, 0.42)",
+		accentGlow: "rgba(6, 182, 212, 0.28)",
+		refractiveMesh: "radial-gradient(ellipse 85% 60% at 15% -10%, rgba(56, 189, 248, 0.26) 0%, transparent 65%), radial-gradient(ellipse 75% 55% at 90% 95%, rgba(30, 58, 138, 0.45) 0%, transparent 60%), radial-gradient(circle at 50% 40%, rgba(12, 30, 61, 0.85) 0%, transparent 75%), radial-gradient(ellipse 50% 40% at 50% 10%, rgba(14, 165, 233, 0.18) 0%, transparent 50%)",
 	},
 	{
 		id: "sakura",
@@ -60,7 +72,10 @@ export const DENTE_THEMES: readonly ThemeMetadata[] = [
 		primaryDot: "#db2777",
 		secondaryDot: "#fff1f2",
 		description: "Пудрово-розовый премиальный интерьер для эстетической, детской стоматологии и ортодонтии.",
-		atmosphericGlow: "rgba(219, 39, 119, 0.22)",
+		atmosphericGlow: "rgba(244, 114, 182, 0.24)",
+		secondaryGlow: "rgba(251, 207, 232, 0.40)",
+		accentGlow: "rgba(219, 39, 119, 0.16)",
+		refractiveMesh: "radial-gradient(ellipse 80% 55% at 85% -10%, rgba(244, 114, 182, 0.22) 0%, transparent 60%), radial-gradient(ellipse 70% 50% at 10% 105%, rgba(251, 207, 232, 0.40) 0%, transparent 55%), radial-gradient(circle at 50% 50%, rgba(255, 253, 254, 0.75) 0%, transparent 70%)",
 	},
 	{
 		id: "emerald",
@@ -72,7 +87,10 @@ export const DENTE_THEMES: readonly ThemeMetadata[] = [
 		primaryDot: "#34d399",
 		secondaryDot: "#022c22",
 		description: "Хвойно-изумрудная палитра альпийского леса для максимального расслабления зрительного нерва хирурга.",
-		atmosphericGlow: "rgba(52, 211, 153, 0.28)",
+		atmosphericGlow: "rgba(52, 211, 153, 0.32)",
+		secondaryGlow: "rgba(6, 78, 59, 0.45)",
+		accentGlow: "rgba(16, 185, 129, 0.22)",
+		refractiveMesh: "radial-gradient(ellipse 80% 55% at 50% -15%, rgba(52, 211, 153, 0.24) 0%, transparent 60%), radial-gradient(ellipse 65% 50% at 5% 95%, rgba(6, 78, 59, 0.42) 0%, transparent 55%), radial-gradient(circle at 50% 50%, rgba(6, 44, 34, 0.85) 0%, transparent 75%), radial-gradient(ellipse 45% 35% at 90% 20%, rgba(16, 185, 129, 0.16) 0%, transparent 50%)",
 	},
 	{
 		id: "cyber_xray",
@@ -84,7 +102,10 @@ export const DENTE_THEMES: readonly ThemeMetadata[] = [
 		primaryDot: "#00f0ff",
 		secondaryDot: "#081026",
 		description: "Высококонтрастный кибернетический визиограф для детального изучения срезов КЛКТ, ОПТГ и прицельных снимков.",
-		atmosphericGlow: "rgba(0, 240, 255, 0.35)",
+		atmosphericGlow: "rgba(0, 240, 255, 0.38)",
+		secondaryGlow: "rgba(30, 27, 75, 0.48)",
+		accentGlow: "rgba(3, 105, 161, 0.32)",
+		refractiveMesh: "radial-gradient(ellipse 85% 60% at 85% -10%, rgba(0, 240, 255, 0.25) 0%, transparent 60%), radial-gradient(ellipse 70% 50% at 10% 100%, rgba(30, 27, 75, 0.45) 0%, transparent 55%), radial-gradient(circle at 50% 50%, rgba(8, 16, 38, 0.85) 0%, transparent 75%), radial-gradient(ellipse 45% 35% at 50% 0%, rgba(0, 240, 255, 0.15) 0%, transparent 50%)",
 	},
 	{
 		id: "night",
@@ -96,7 +117,10 @@ export const DENTE_THEMES: readonly ThemeMetadata[] = [
 		primaryDot: "#ffffff",
 		secondaryDot: "#000000",
 		description: "Абсолютный глубокий чёрный пиксель для OLED-экранов планшетов и моноблоков. Нулевой паразитный свет.",
-		atmosphericGlow: "rgba(255, 255, 255, 0.15)",
+		atmosphericGlow: "rgba(255, 255, 255, 0.08)",
+		secondaryGlow: "rgba(251, 146, 60, 0.06)",
+		accentGlow: "rgba(14, 165, 233, 0.04)",
+		refractiveMesh: "radial-gradient(ellipse 70% 45% at 50% -10%, rgba(251, 146, 60, 0.07) 0%, transparent 60%), radial-gradient(circle at 50% 50%, rgba(9, 9, 11, 0.75) 0%, transparent 70%)",
 	},
 	{
 		id: "warm_sand",
@@ -108,7 +132,10 @@ export const DENTE_THEMES: readonly ThemeMetadata[] = [
 		primaryDot: "#d97706",
 		secondaryDot: "#fefce8",
 		description: "Уютный шамотно-керамический оттенок натурального льна и тёплого песка для спокойного приёма.",
-		atmosphericGlow: "rgba(217, 119, 6, 0.2)",
+		atmosphericGlow: "rgba(245, 158, 11, 0.20)",
+		secondaryGlow: "rgba(254, 243, 199, 0.60)",
+		accentGlow: "rgba(217, 119, 6, 0.14)",
+		refractiveMesh: "radial-gradient(ellipse 75% 55% at 80% -10%, rgba(245, 158, 11, 0.18) 0%, transparent 60%), radial-gradient(ellipse 65% 50% at 10% 100%, rgba(254, 243, 199, 0.65) 0%, transparent 55%), radial-gradient(circle at 50% 50%, rgba(255, 253, 245, 0.75) 0%, transparent 70%)",
 	},
 	{
 		id: "calm_teal",
@@ -120,7 +147,10 @@ export const DENTE_THEMES: readonly ThemeMetadata[] = [
 		primaryDot: "#0f766e",
 		secondaryDot: "#f0fdfa",
 		description: "Скандинавская успокаивающая бирюза для снижения дентофобии и стресса у чувствительных пациентов.",
-		atmosphericGlow: "rgba(15, 118, 110, 0.2)",
+		atmosphericGlow: "rgba(20, 184, 166, 0.22)",
+		secondaryGlow: "rgba(45, 212, 191, 0.16)",
+		accentGlow: "rgba(13, 148, 136, 0.15)",
+		refractiveMesh: "radial-gradient(ellipse 80% 55% at 10% -10%, rgba(20, 184, 166, 0.16) 0%, transparent 60%), radial-gradient(ellipse 70% 50% at 90% 100%, rgba(45, 212, 191, 0.14) 0%, transparent 55%), radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.75) 0%, transparent 70%)",
 	},
 	{
 		id: "contrast",
@@ -133,5 +163,8 @@ export const DENTE_THEMES: readonly ThemeMetadata[] = [
 		secondaryDot: "#ffffff",
 		description: "Максимальный оптический контраст для слабовидящих врачей и пациентов по ГОСТ Р 52872-2019.",
 		atmosphericGlow: "none",
+		secondaryGlow: "none",
+		accentGlow: "none",
+		refractiveMesh: "none",
 	},
 ];
