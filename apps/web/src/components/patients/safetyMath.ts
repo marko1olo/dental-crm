@@ -1364,8 +1364,10 @@ export function patientProfileToSomaticRiskProfile(
 	const hasCardio = Boolean(
 		profile.hasCardiovascularDisease ||
 		profile.hasHypertension ||
+		profile.hasSevereHypertensionStage3 ||
 		profile.hasIhd ||
-		profile.hasArrhythmia,
+		profile.hasArrhythmia ||
+		profile.hasPacemakerExs,
 	);
 	const isPregnant = Boolean(
 		profile.pregnancyTrimester && profile.pregnancyTrimester !== "none",
@@ -1374,9 +1376,15 @@ export function patientProfileToSomaticRiskProfile(
 	return {
 		hasCardiovascularRisk: hasCardio,
 		hasHypertension: Boolean(profile.hasHypertension),
+		hasSevereHypertensionStage3: Boolean(profile.hasSevereHypertensionStage3),
 		hasIhd: Boolean(profile.hasIhd),
 		hasArrhythmia: Boolean(profile.hasArrhythmia),
-		hasSulfiteAllergy: Boolean(profile.hasSulfiteAllergy),
+		hasThyrotoxicosis: Boolean(profile.hasThyrotoxicosis),
+		takesBetaBlockers: Boolean(profile.takesBetaBlockers),
+		hasArticaineAllergy: Boolean(profile.hasArticaineAllergy),
+		hasMepivacaineAllergy: Boolean(profile.hasMepivacaineAllergy),
+		hasLidocaineAllergy: Boolean(profile.hasLidocaineAllergy),
+		hasSulfiteAllergy: Boolean(profile.hasSulfiteAllergy || profile.hasSulfitesAllergy),
 		hasBronchialAsthma: Boolean(profile.hasBronchialAsthma),
 		isPregnantOrLactating: isPregnant,
 		pregnancyTrimester: profile.pregnancyTrimester,

@@ -53,6 +53,7 @@ import {
 	PediatricAnesthesiaCalculator,
 	type PediatricAnesthesiaCalculationResult,
 } from "./PediatricAnesthesiaCalculator";
+import type { SomaticRiskProfile } from "../visit/anesthesiaCalculatorEngine";
 import { PediatricBraveryDiplomaModal } from "./PediatricBraveryDiplomaModal";
 
 /**
@@ -461,6 +462,10 @@ export interface VisitPediatricProtocolWidgetProps {
 	readonly representativePhone?: string | undefined;
 	/** Роль представителя ("Мать" | "Отец" | "Опекун" ...) */
 	readonly representativeRole?: string | undefined;
+	/** Соматический профиль риска ребенка */
+	readonly somaticProfile?: SomaticRiskProfile | undefined;
+	/** Текстовые аллергии из карты */
+	readonly allergies?: string | undefined;
 	/** Дополнительный CSS-класс контейнера */
 	readonly className?: string;
 }
@@ -484,6 +489,8 @@ export const VisitPediatricProtocolWidget: React.FC<
 	representativeFullName,
 	representativePhone,
 	representativeRole,
+	somaticProfile,
+	allergies,
 	className = "",
 }) => {
 	// 1. Санитизация активного зуба (по умолчанию 54) с проверкой квадрантов FDI
@@ -1493,6 +1500,8 @@ export const VisitPediatricProtocolWidget: React.FC<
 				<PediatricAnesthesiaCalculator
 					initialWeightKg={patientWeightKg || 20}
 					patientAgeYears={patientAgeYears}
+					somaticProfile={somaticProfile}
+					allergies={allergies}
 					onCalculationChange={setAnesthesiaCalculation}
 					onApplyToProtocol={(text) => {
 						setAnesthesiaText(text);

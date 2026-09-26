@@ -26,6 +26,11 @@ import {
 	formatSafetyProfileToDiaryText,
 	parseSafetyProfileFromText,
 } from "./safetyMath";
+import {
+	type AnamnesisPresetType,
+	DEFAULT_ANAMNESIS_PROFILE,
+	applyAnamnesisPreset,
+} from "./patientAnamnesisPresets";
 import "./safetyBanner.css";
 
 export interface PatientAnamnesisModalProps {
@@ -38,35 +43,6 @@ export interface PatientAnamnesisModalProps {
 	readonly onSyncToEmkDiary?: ((diarySnippet: string) => void) | undefined;
 }
 
-const DEFAULT_PROFILE: PatientClinicalSafetyProfile = {
-	hasLidocaineAllergy: false,
-	hasArticaineAllergy: false,
-	hasMepivacaineAllergy: false,
-	hasSulfiteAllergy: false,
-	hasAnaphylaxisHistory: false,
-	hasPacemakerExs: false,
-	hasCardiovascularDisease: false,
-	hasHypertension: false,
-	takesAnticoagulants: false,
-	anticoagulantName: "",
-	takesBisphosphonates: false,
-	bisphosphonateName: "",
-	pregnancyTrimester: "none",
-	hasDiabetesMellitus: false,
-	diabetesType: "unknown",
-	hasBronchialAsthma: false,
-	hasEpilepsy: false,
-	hasHepatitis: false,
-	hasHiv: false,
-	hasThyroidDisease: false,
-	hasPenicillinAllergy: false,
-	hasLatexAllergy: false,
-	hasNsaidAllergy: false,
-	customAllergyNotes: "",
-	customChronicNotes: "",
-	currentMedicationsList: "",
-};
-
 export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React.memo(
 	({
 		isOpen,
@@ -78,22 +54,22 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 		onSyncToEmkDiary,
 	}) => {
 		const [profile, setProfile] = useState<PatientClinicalSafetyProfile>(() => {
-			if (!initialProfile) return DEFAULT_PROFILE;
+			if (!initialProfile) return DEFAULT_ANAMNESIS_PROFILE;
 			if (typeof initialProfile === "string") {
-				return { ...DEFAULT_PROFILE, ...parseSafetyProfileFromText(initialProfile) };
+				return { ...DEFAULT_ANAMNESIS_PROFILE, ...parseSafetyProfileFromText(initialProfile) };
 			}
-			return { ...DEFAULT_PROFILE, ...initialProfile };
+			return { ...DEFAULT_ANAMNESIS_PROFILE, ...initialProfile };
 		});
 
 		// Синхронизация при открытии модального окна с новыми данными
 		useEffect(() => {
 			if (isOpen) {
 				if (!initialProfile) {
-					setProfile(DEFAULT_PROFILE);
+					setProfile(DEFAULT_ANAMNESIS_PROFILE);
 				} else if (typeof initialProfile === "string") {
-					setProfile({ ...DEFAULT_PROFILE, ...parseSafetyProfileFromText(initialProfile) });
+					setProfile({ ...DEFAULT_ANAMNESIS_PROFILE, ...parseSafetyProfileFromText(initialProfile) });
 				} else {
-					setProfile({ ...DEFAULT_PROFILE, ...initialProfile });
+					setProfile({ ...DEFAULT_ANAMNESIS_PROFILE, ...initialProfile });
 				}
 			}
 		}, [isOpen, initialProfile]);
@@ -129,91 +105,12 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 
 		// Быстрые клинические пресеты (1-Click шаблоны)
 		const applyPreset = useCallback(
-			(
-				presetType:
-					| "clean"
-					| "cardio"
-					| "anticoag"
-					| "bisphosphonate"
-					| "pregnant_2"
-					| "allergy_articaine"
-					| "allergy_penicillin"
-					| "allergy_nsaid"
-					| "allergy_latex",
-			) => {
-				switch (presetType) {
-					case "clean":
-						setProfile({
-							...DEFAULT_PROFILE,
-							customChronicNotes: "Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает. Физиологическая норма.",
-						});
-						showToast("Применен шаблон: Соматически здоров / норма (без особенностей)", "info");
-						break;
-					case "cardio":
-						setProfile((prev) => ({
-							...prev,
-							hasHypertension: true,
-							hasCardiovascularDisease: true,
-							hasPacemakerExs: true,
-						}));
-						showToast("Применен шаблон: ЭКС + Гипертоническая болезнь (Запрет УЗ)", "warning");
-						break;
-					case "anticoag":
-						setProfile((prev) => ({
-							...prev,
-							takesAnticoagulants: true,
-							anticoagulantName: "Ксарелто 20 мг (Ривароксабан)",
-							hasCardiovascularDisease: true,
-						}));
-						showToast("Применен шаблон: Прием антикоагулянтов (Риск кровотечения)", "warning");
-						break;
-					case "bisphosphonate":
-						setProfile((prev) => ({
-							...prev,
-							takesBisphosphonates: true,
-							bisphosphonateName: "Акласта (Золедроновая к-та)",
-						}));
-						showToast("Применен шаблон: Бисфосфонаты (Риск остеонекроза MRONJ)", "warning");
-						break;
-					case "pregnant_2":
-						setProfile((prev) => ({
-							...prev,
-							pregnancyTrimester: "trimester_2",
-							gestationalWeeks: 20,
-						}));
-						showToast("Применен шаблон: Беременность 2 триместр (Безопасное окно)", "info");
-						break;
-					case "allergy_articaine":
-						setProfile((prev) => ({
-							...prev,
-							hasArticaineAllergy: true,
-							hasBronchialAsthma: true,
-							hasSulfiteAllergy: true,
-						}));
-						showToast("Применен шаблон: Аллергия на Артикаин + Астма + Сульфиты", "error");
-						break;
-					case "allergy_penicillin":
-						setProfile((prev) => ({
-							...prev,
-							hasPenicillinAllergy: true,
-						}));
-						showToast("Применен пресет: Аллергия на пенициллины (Запрет Амоксиклава)", "warning");
-						break;
-					case "allergy_nsaid":
-						setProfile((prev) => ({
-							...prev,
-							hasNsaidAllergy: true,
-						}));
-						showToast("Применен пресет: Аллергия на НПВП (Запрет Кеторола/Аспирина)", "warning");
-						break;
-					case "allergy_latex":
-						setProfile((prev) => ({
-							...prev,
-							hasLatexAllergy: true,
-						}));
-						showToast("Применен пресет: Аллергия на латекс (Беслатексный режим)", "warning");
-						break;
-				}
+			(presetType: AnamnesisPresetType) => {
+				setProfile((prev) => {
+					const res = applyAnamnesisPreset(prev, presetType);
+					showToast(res.toastMessage, res.toastType);
+					return res.updatedProfile;
+				});
 			},
 			[],
 		);

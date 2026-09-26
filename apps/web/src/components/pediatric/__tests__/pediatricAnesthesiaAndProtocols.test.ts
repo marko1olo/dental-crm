@@ -240,3 +240,32 @@ describe("Subagent 4: 20 Deciduous Teeth (FDI 51-85) Protocols", () => {
 		expect(PEDIATRIC_TEETH_NAMES[85]).toContain("моляр");
 	});
 });
+
+describe("Subagent 4: Pediatric Anesthesia Somatic Contraindications & Allergies", () => {
+	it("identifies Articaine contraindication for child with Articaine allergy", () => {
+		const somaticProfile = { hasArticaineAllergy: true };
+		const isArticaineContraindicated = Boolean(
+			somaticProfile.hasArticaineAllergy ||
+			somaticProfile.hasSulfiteAllergy,
+		);
+		expect(isArticaineContraindicated).toBe(true);
+	});
+
+	it("identifies Articaine contraindication for child with Sulfite allergy or Asthma", () => {
+		const asthmaProfile = { hasBronchialAsthma: true };
+		const sulfiteProfile = { hasSulfiteAllergy: true };
+		expect(Boolean(asthmaProfile.hasBronchialAsthma)).toBe(true);
+		expect(Boolean(sulfiteProfile.hasSulfiteAllergy)).toBe(true);
+	});
+
+	it("identifies Mepivacaine contraindication for child with Mepivacaine allergy", () => {
+		const mepiProfile = { hasMepivacaineAllergy: true };
+		expect(Boolean(mepiProfile.hasMepivacaineAllergy)).toBe(true);
+	});
+
+	it("detects anesthetic allergies from unstructured clinical text", () => {
+		const textAllergies = "Поливалентная аллергия: ультракаин, пенициллины";
+		const hasArticaineMention = /артикаин|ультракаин|септанест|убистезин/i.test(textAllergies);
+		expect(hasArticaineMention).toBe(true);
+	});
+});

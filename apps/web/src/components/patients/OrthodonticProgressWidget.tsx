@@ -398,12 +398,60 @@ export function OrthodonticProgressWidget({
 
 	const handleQuickWireChange = async () => {
 		if (saving) return;
-		showToast("Смена дуги: CuNiTi .016\" (ВЧ+НЧ) зафиксирована в карте", "success");
+		setSaving(true);
+		try {
+			const res = await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
+				method: "POST",
+				headers: auth.denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					material: "CuNiTi",
+					section: ".016",
+					arch: "both",
+					note: "Плановая смена дуги (ВЧ + НЧ)",
+				}),
+			});
+			if (res.ok) {
+				showToast("Смена дуги: CuNiTi .016\" (ВЧ+НЧ) зафиксирована в карте", "success");
+				await loadDashboard();
+			} else {
+				showToast("Не удалось зафиксировать смену дуги", "error");
+			}
+		} catch (err) {
+			logger.error("[OrthodonticProgressWidget quickWireChange]", err);
+			showToast("Ошибка сети при смене дуги", "error");
+		} finally {
+			setSaving(false);
+		}
 	};
 
 	const handleQuickLigatureActivate = async () => {
 		if (saving) return;
-		showToast("Активация лигатур и замков аппаратуры зафиксирована", "success");
+		setSaving(true);
+		try {
+			const res = await fetch(`/api/orthodontics/${patientId}/ligatures-activate`, {
+				method: "POST",
+				headers: auth.denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					powerChain: true,
+					note: "Активация лигатур и эластической цепочки (Power Chain)",
+				}),
+			});
+			if (res.ok) {
+				showToast("Активация лигатур и замков аппаратуры зафиксирована", "success");
+				await loadDashboard();
+			} else {
+				showToast("Не удалось зафиксировать активацию аппаратуры", "error");
+			}
+		} catch (err) {
+			logger.error("[OrthodonticProgressWidget quickLigatureActivate]", err);
+			showToast("Ошибка сети при активации аппаратуры", "error");
+		} finally {
+			setSaving(false);
+		}
 	};
 
 	// Derived metrics

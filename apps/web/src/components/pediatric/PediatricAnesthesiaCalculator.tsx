@@ -7,7 +7,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	AlertOctagon,
 	AlertTriangle,
@@ -18,6 +18,7 @@ import {
 	Zap,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
+import type { SomaticRiskProfile } from "../visit/anesthesiaCalculatorEngine";
 
 export type PediatricAnestheticDrugId = "articaine_4" | "mepivacaine_3";
 
@@ -82,6 +83,8 @@ export interface PediatricAnesthesiaCalculationResult {
 	readonly isSafe: boolean;
 	readonly isOverdose: boolean;
 	readonly isUnderAge: boolean;
+	readonly isContraindicated?: boolean;
+	readonly contraindicationReasonRu?: string;
 	readonly alertMessageRu?: string;
 	readonly formattedText043: string;
 }
@@ -91,6 +94,10 @@ export interface PediatricAnesthesiaCalculatorProps {
 	readonly initialWeightKg?: number | undefined;
 	/** Возраст ребенка (лет) */
 	readonly patientAgeYears?: number | undefined;
+	/** Соматический профиль риска ребенка */
+	readonly somaticProfile?: SomaticRiskProfile | undefined;
+	/** Текстовые аллергии из карты ребенка */
+	readonly allergies?: string | undefined;
 	/** Обработчик изменения расчета */
 	readonly onCalculationChange?: ((result: PediatricAnesthesiaCalculationResult) => void) | undefined;
 	/** Обработчик вставки текста анестезии в протокол 043/у */
@@ -102,11 +109,48 @@ export interface PediatricAnesthesiaCalculatorProps {
 export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculatorProps> = ({
 	initialWeightKg = 20,
 	patientAgeYears = 6,
+	somaticProfile,
+	allergies,
 	onCalculationChange,
 	onApplyToProtocol,
 	className = "",
 }) => {
-	const [selectedDrugId, setSelectedDrugId] = useState<PediatricAnestheticDrugId>("articaine_4");
+	const articaineContraindicated = useMemo(() => {
+		if (somaticProfile?.hasArticaineAllergy) return true;
+		if (somaticProfile?.hasSulfiteAllergy) return true;
+		if (somaticProfile?.hasBronchialAsthma) return true;
+		if (somaticProfile?.hasThyrotoxicosis) return true;
+		if (somaticProfile?.hasSevereHypertensionStage3) return true;
+		if (allergies) {
+			const lower = allergies.toLowerCase();
+			if (/артикаин|ультракаин|септанест|убистезин|сульфит|метабисульфит|астма/i.test(lower)) {
+				return true;
+			}
+		}
+		return false;
+	}, [somaticProfile, allergies]);
+
+	const mepivacaineContraindicated = useMemo(() => {
+		if (somaticProfile?.hasMepivacaineAllergy) return true;
+		if (allergies) {
+			const lower = allergies.toLowerCase();
+			if (/мепивакаин|скандонест|мепивастезин/i.test(lower)) {
+				return true;
+			}
+		}
+		return false;
+	}, [somaticProfile, allergies]);
+
+	const [selectedDrugId, setSelectedDrugId] = useState<PediatricAnestheticDrugId>(() => {
+		return articaineContraindicated && !mepivacaineContraindicated ? "mepivacaine_3" : "articaine_4";
+	});
+
+	useEffect(() => {
+		if (articaineContraindicated && !mepivacaineContraindicated && selectedDrugId === "articaine_4") {
+			setSelectedDrugId("mepivacaine_3");
+		}
+	}, [articaineContraindicated, mepivacaineContraindicated, selectedDrugId]);
+
 	const [weightKg, setWeightKg] = useState<number>(initialWeightKg > 0 ? initialWeightKg : 20);
 	const [carpules, setCarpules] = useState<number>(0.5);
 
@@ -130,22 +174,37 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 		const isOverdose = totalDoseAdministeredMg > maxAllowedTotalDoseMg;
 		const isUnderAge = patientAgeYears < drug.minAgeYears;
 
+		const isContraindicated =
+			(selectedDrugId === "articaine_4" && articaineContraindicated) ||
+			(selectedDrugId === "mepivacaine_3" && mepivacaineContraindicated);
+
+		const contraindicationReasonRu =
+			selectedDrugId === "articaine_4" && articaineContraindicated
+				? "ПРОТИВОПОКАЗАНИЕ: В анамнезе указана аллергия на артикаин/сульфиты или астма/тиреотоксикоз! Рекомендуется Мепивакаин 3% без вазоконстриктора."
+				: selectedDrugId === "mepivacaine_3" && mepivacaineContraindicated
+					? "ПРОТИВОПОКАЗАНИЕ: В анамнезе указана аллергия на мепивакаин (скандонест)!"
+					: undefined;
+
 		let alertMessageRu: string | undefined;
-		if (isOverdose) {
+		if (isContraindicated) {
+			alertMessageRu = contraindicationReasonRu;
+		} else if (isOverdose) {
 			alertMessageRu = `ВНИМАНИЕ: ТОКСИЧЕСКАЯ ДОЗА! Введено ${totalDoseAdministeredMg} мг при допустимом максимуме ${maxAllowedTotalDoseMg} мг на вес ${safeWeight} кг. Риск системной интоксикации! Превышение заблокировано!`;
 		} else if (isUnderAge) {
 			alertMessageRu = `Препарат противопоказан детям в возрасте до ${drug.minAgeYears} лет.`;
 		}
 
-		const formattedText043 = isOverdose
-			? `[БЛОКИРОВКА АНЕСТЕЗИИ: Превышение токсической дозы ${totalDoseAdministeredMg} мг > ${maxAllowedTotalDoseMg} мг на вес ${safeWeight} кг]`
-			: [
-					`Анестезиологическое пособие: ${drug.nameRu}.`,
-					`• Введено: ${carpules} карп. (${totalVolumeMl} мл / ${totalDoseAdministeredMg} мг активного вещества).`,
-					`• Вес ребенка: ${safeWeight} кг. Предельно допустимая доза (MRD): ${maxAllowedTotalDoseMg} мг (${mrdPerKg} мг/кг).`,
-					`• Расход дозы: ${doseUtilizationPercent}% (макс. ${maxSafeCarpulesCount} карп.) — ДОЗА БЕЗОПАСНА.`,
-					`• Вазоконстриктор: ${drug.vasoconstrictorRu}.`,
-				].join("\n");
+		const formattedText043 = isContraindicated
+			? `[БЛОКИРОВКА АНЕСТЕЗИИ: ${contraindicationReasonRu}]`
+			: isOverdose
+				? `[БЛОКИРОВКА АНЕСТЕЗИИ: Превышение токсической дозы ${totalDoseAdministeredMg} мг > ${maxAllowedTotalDoseMg} мг на вес ${safeWeight} кг]`
+				: [
+						`Анестезиологическое пособие: ${drug.nameRu}.`,
+						`• Введено: ${carpules} карп. (${totalVolumeMl} мл / ${totalDoseAdministeredMg} мг активного вещества).`,
+						`• Вес ребенка: ${safeWeight} кг. Предельно допустимая доза (MRD): ${maxAllowedTotalDoseMg} мг (${mrdPerKg} мг/кг).`,
+						`• Расход дозы: ${doseUtilizationPercent}% (макс. ${maxSafeCarpulesCount} карп.) — ДОЗА БЕЗОПАСНА.`,
+						`• Вазоконстриктор: ${drug.vasoconstrictorRu}.`,
+					].join("\n");
 
 		const result: PediatricAnesthesiaCalculationResult = {
 			drug,
@@ -156,15 +215,25 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 			totalDoseAdministeredMg,
 			maxSafeCarpulesCount,
 			doseUtilizationPercent,
-			isSafe: !isOverdose && !isUnderAge,
+			isSafe: !isOverdose && !isUnderAge && !isContraindicated,
 			isOverdose,
 			isUnderAge,
+			isContraindicated,
+			contraindicationReasonRu,
 			...(alertMessageRu ? { alertMessageRu } : {}),
 			formattedText043,
 		};
 
 		return result;
-	}, [carpules, drug, patientAgeYears, weightKg]);
+	}, [
+		articaineContraindicated,
+		carpules,
+		drug,
+		mepivacaineContraindicated,
+		patientAgeYears,
+		selectedDrugId,
+		weightKg,
+	]);
 
 	// Уведомление родительского компонента при изменении расчета
 	React.useEffect(() => {
@@ -172,6 +241,10 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 	}, [calculation, onCalculationChange]);
 
 	const handleApplyAnesthesia = useCallback(() => {
+		if (calculation.isContraindicated) {
+			showToast(`БЛОКИРОВКА: ${calculation.contraindicationReasonRu}`, "error", 4500);
+			return;
+		}
 		if (calculation.isOverdose) {
 			showToast("БЛОКИРОВКА: Нельзя внести токсическую дозу анестетика в карту 043/у! Уменьшите количество карпул.", "error", 4500);
 			return;
@@ -212,7 +285,15 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 				</div>
 
 				<div className="flex items-center gap-1.5 shrink-0">
-					{calculation.isOverdose ? (
+					{calculation.isContraindicated ? (
+						<div
+							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600 text-white font-black text-xs animate-pulse shadow-sm"
+							data-testid="anesthesia-contraindicated-badge"
+						>
+							<ShieldAlert className="h-4 w-4" />
+							<span>ПРОТИВОПОКАЗАНО</span>
+						</div>
+					) : calculation.isOverdose ? (
 						<div
 							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600 text-white font-black text-xs animate-pulse shadow-sm"
 							data-testid="anesthesia-overdose-badge"
@@ -233,6 +314,19 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 			</div>
 
 			{/* ═════════════════════════════════════════════════════════════════ */}
+			{/* ПРЕДУПРЕЖДЕНИЕ О СОМАТИЧЕСКИХ ПРОТИВОПОКАЗАНИЯХ               */}
+			{/* ═════════════════════════════════════════════════════════════════ */}
+			{calculation.isContraindicated && (
+				<div
+					className="mb-3 p-3 rounded-xl border border-rose-300 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/50 text-rose-900 dark:text-rose-200 text-xs font-semibold flex items-center gap-2"
+					data-testid="anesthesia-contraindication-banner"
+				>
+					<ShieldAlert className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0" />
+					<span>{calculation.contraindicationReasonRu}</span>
+				</div>
+			)}
+
+			{/* ═════════════════════════════════════════════════════════════════ */}
 			{/* ВЫБОР ПРЕПАРАТА (АРТИКАИН 4% VS МЕПИВАКАИН 3%) */}
 			{/* ═════════════════════════════════════════════════════════════════ */}
 			<div className="mb-3">
@@ -243,6 +337,9 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 					{(["articaine_4", "mepivacaine_3"] as const).map((drugId) => {
 						const d = PEDIATRIC_ANESTHETIC_SPECS[drugId];
 						const isSelected = selectedDrugId === drugId;
+						const isContraindicatedDrug =
+							(drugId === "articaine_4" && articaineContraindicated) ||
+							(drugId === "mepivacaine_3" && mepivacaineContraindicated);
 						return (
 							<button
 								key={drugId}
@@ -257,7 +354,14 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 							>
 								<div className="flex items-center justify-between gap-1">
 									<span className="font-extrabold text-xs">{d.nameRu}</span>
-									{isSelected && <Check className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />}
+									<div className="flex items-center gap-1">
+										{isContraindicatedDrug && (
+											<span className="text-[10px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 px-1.5 py-0.5 rounded border border-rose-300 dark:border-rose-700/60">
+												Противопоказан
+											</span>
+										)}
+										{isSelected && <Check className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />}
+									</div>
 								</div>
 								<div className="text-[11px] text-[var(--muted,#64748b)] mt-0.5 flex items-center justify-between">
 									<span>{d.tradeNamesRu}</span>
@@ -449,16 +553,27 @@ export const PediatricAnesthesiaCalculator: React.FC<PediatricAnesthesiaCalculat
 				<button
 					type="button"
 					onClick={handleApplyAnesthesia}
-					disabled={calculation.isOverdose}
+					disabled={calculation.isOverdose || calculation.isContraindicated}
 					className={`min-h-[36px] sm:h-8 px-3 rounded-lg text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer select-none shadow-xs active:scale-95 ${
-						calculation.isOverdose
+						calculation.isOverdose || calculation.isContraindicated
 							? "bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed opacity-60"
 							: "bg-teal-600 hover:bg-teal-700 text-white"
 					}`}
-					title={calculation.isOverdose ? "Блокировка: превышена токсическая доза!" : "Внести расчет дозы анестезии в дневник 043/у"}
+					title={
+						calculation.isContraindicated
+							? `Блокировка: ${calculation.contraindicationReasonRu}`
+							: calculation.isOverdose
+								? "Блокировка: превышена токсическая доза!"
+								: "Внести расчет дозы анестезии в дневник 043/у"
+					}
 					data-testid="btn-apply-anesthesia-protocol"
 				>
-					{calculation.isOverdose ? (
+					{calculation.isContraindicated ? (
+						<>
+							<ShieldAlert className="h-3.5 w-3.5 text-rose-500" />
+							<span>Противопоказано</span>
+						</>
+					) : calculation.isOverdose ? (
 						<>
 							<ShieldAlert className="h-3.5 w-3.5" />
 							<span>Блокировка овердоза</span>
