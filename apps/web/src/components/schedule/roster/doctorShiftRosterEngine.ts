@@ -34,9 +34,9 @@ export interface DoctorShift {
 	breakMinutes: number;
 	isNight: boolean;
 	nightHours: number;
-	customNotes?: string;
+	customNotes?: string | undefined;
 	status: "scheduled" | "confirmed" | "completed" | "cancelled" | "absence";
-	absenceReason?: "sick_leave" | "vacation" | "unpaid_leave" | "training";
+	absenceReason?: "sick_leave" | "vacation" | "unpaid_leave" | "training" | undefined;
 }
 
 export type ConflictType =

@@ -11,6 +11,7 @@ import {
 	RUSSIAN_PRODUCTION_CALENDAR_2026,
 	type StaffMember,
 	type T13TimeCode,
+	type ShiftArchetypeId,
 } from "./doctorShiftRosterPresets";
 
 export interface DoctorShift {
@@ -23,16 +24,16 @@ export interface DoctorShift {
 	cabinetId: string;
 	chairId: string;
 	dateIso: string; // YYYY-MM-DD
-	archetypeId: string;
+	archetypeId: ShiftArchetypeId;
 	startTime: string; // HH:MM
 	endTime: string; // HH:MM
 	durationHours: number;
 	breakMinutes: number;
 	isNight: boolean;
 	nightHours: number;
-	customNotes?: string;
+	customNotes?: string | undefined;
 	status: "scheduled" | "confirmed" | "completed" | "cancelled" | "absence";
-	absenceReason?: "sick_leave" | "vacation" | "unpaid_leave" | "training";
+	absenceReason?: "sick_leave" | "vacation" | "unpaid_leave" | "training" | undefined;
 }
 
 export interface T13DayRecord {

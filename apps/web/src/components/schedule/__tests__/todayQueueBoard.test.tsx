@@ -15,6 +15,7 @@ import {
 	buildPatientShiftQueue,
 	PATIENT_SHIFT_QUEUE_TABS_META,
 	OPERATIONAL_STATUS_META,
+	type Appointment,
 	type PatientOperationalStatus,
 	type PatientQueueAction,
 } from "@dental/shared";
@@ -29,7 +30,7 @@ function hasCartoonEmojis(text: string): boolean {
 }
 
 describe("TodayQueueBoard — Operational Shift Queue UI & 0-Click Actions", () => {
-	const mockAppointments = [
+	const mockAppointments: Array<Partial<Appointment> & Record<string, any>> = [
 		{
 			id: "apt-1",
 			patientName: "Барабаш С.В.",
