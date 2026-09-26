@@ -2,29 +2,35 @@
  * restoreDisasterRecovery.ts — Автоматическое восстановление клиники при полной гибели оборудования
  *
  * СЦЕНАРИЙ АВАРИЙНОГО ВОССТАНОВЛЕНИЯ (152-ФЗ / 323-ФЗ):
- * 1. Компьютер клиники сгорел, украден или поврежден шифровальщиком-вымогателем.
- * 2. Врач/владелец клиники ставит DenteSetup.exe на новый чистый ноутбук.
+ * 1. Компьютер клиники сгорел, украден или зашифрован шифровальщиком-вымогателем.
+ * 2. Врач/владелец клиники ставит DenteSetup на новый чистый ноутбук.
  * 3. Достает из сейфа листок бумаги с 12 словами мнемоники BIP-39.
- * 4. Скрипт скачивает свежий зашифрованный снимок из S3 (Selectel / Yandex Cloud),
- *    проверяет целостность GCM Auth Tag, расшифровывает на лету и накатывает в PostgreSQL 18.
- * 5. Временные нормативы:
+ * 4. Скрипт скачивает зашифрованный снимок из S3 (Selectel / Yandex Cloud),
+ *    проверяет целостность GCM Auth Tag, расшифровывает на диск и накатывает в PostgreSQL 18.
+ * 5. ЗАЩИТА ОТ CRYPTOGRAPHIC DOOM PRINCIPLE:
+ *    Открытые данные попадают в psql ТОЛЬКО ПОСЛЕ полной проверки Auth Tag и gzip-декомпрессии!
+ * 6. ANTI-OOM STREAMING:
+ *    Дамп восстанавливается напрямую из проверенного файла на диске (psql -f) без
+ *    попыток загрузить гигабайты в оперативную память (payload.toString('utf8') исключен).
+ * 7. Нормативы:
  *    - RTO (Recovery Time Objective): <= 8 минут (полный запуск системы с нуля).
- *    - RPO (Recovery Point Objective): <= 15 минут (актуальность данных).
+ *    - RPO (Recovery Point Objective): определяется интервалом создания снимков
+ *      (при расписании каждые 15 минут потеря данных <= 15 минут).
  */
 
 import { spawn } from "node:child_process";
 import fs from "node:fs";
+import fsPromises from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import readline from "node:readline";
-import { Readable } from "node:stream";
-import { pipeline } from "node:stream/promises";
 import pg from "pg";
 import {
 	type CloudBackupMetadata,
 	type CloudBackupObjectInfo,
 	type IS3StorageAdapter,
-	restoreCloudBackup,
 	resolveS3Storage,
+	restoreCloudBackupToFile,
 	validateMnemonic,
 } from "../services/cloudBackupEngine.js";
 
@@ -48,7 +54,7 @@ export interface DisasterRecoveryResult {
 	restoredTablesCount: number;
 	restoredRowsCount: number;
 	verificationReport: string;
-	error?: string;
+	error?: string | undefined;
 }
 
 export async function runDisasterRecovery(options: DisasterRecoveryOptions): Promise<DisasterRecoveryResult> {
@@ -76,11 +82,9 @@ export async function runDisasterRecovery(options: DisasterRecoveryOptions): Pro
 
 	// 3. Поиск самого свежего бэкапа
 	let targetKey = options.backupKey;
-	let allBackups: CloudBackupObjectInfo[] = [];
-
 	if (!targetKey) {
 		const searchPrefix = options.orgId ? `backups/${options.orgId}/` : "backups/";
-		allBackups = await storage.list(searchPrefix);
+		const allBackups: CloudBackupObjectInfo[] = await storage.list(searchPrefix);
 		if (allBackups.length === 0) {
 			throw new Error(`В облаке не найдено ни одного бэкапа по префиксу '${searchPrefix}'.`);
 		}
@@ -91,43 +95,62 @@ export async function runDisasterRecovery(options: DisasterRecoveryOptions): Pro
 	if (!targetKey) {
 		throw new Error("Не удалось определить целевой файл резервной копии.");
 	}
-
 	log(`✓ Найден снимок базы данных: ${targetKey}`);
 
-	// 4. Скачивание и расшифровка Zero-Knowledge блоба на лету
-	log("⏳ Скачивание и расшифровка блоба AES-256-GCM...");
-	const blobBuffer = await storage.downloadBuffer(targetKey);
+	// 4. Потоковое скачивание, расшифровка AES-256-GCM и gzip-декомпрессия в изолированный файл на диске
+	// ЗАЩИТА ОТ CRYPTOGRAPHIC DOOM PRINCIPLE:
+	// Ни один байт незаверенных данных не поступит в PostgreSQL, пока GCM Auth Tag не подтвержден!
+	log("⏳ Потоковое скачивание, дешифрация AES-256-GCM и декомпрессия gzip на диске...");
+	const recoveryTempDir = path.join(os.tmpdir(), `dente_dr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
+	await fsPromises.mkdir(recoveryTempDir, { recursive: true });
+	const targetVerifiedSqlPath = path.join(recoveryTempDir, "verified_database_dump.sql");
 
-	const decrypted = await restoreCloudBackup({
-		mnemonic: cleanMnemonic,
-		backupBuffer: blobBuffer,
-		storage,
-		...(options.orgId ? { orgId: options.orgId } : {}),
-		...(options.ogrn ? { ogrn: options.ogrn } : {}),
-	});
+	let decryptedFile: { header: CloudBackupMetadata; verifiedPlaintextPath: string; plaintextSize: number };
+	try {
+		decryptedFile = await restoreCloudBackupToFile({
+			mnemonic: cleanMnemonic,
+			key: targetKey,
+			targetPlaintextPath: targetVerifiedSqlPath,
+			storage,
+			...(options.orgId ? { orgId: options.orgId } : {}),
+			...(options.ogrn ? { ogrn: options.ogrn } : {}),
+		});
+	} catch (err) {
+		await fsPromises.rm(recoveryTempDir, { recursive: true, force: true }).catch(() => {});
+		throw new Error(`КРИТИЧЕСКИЙ СБОЙ КРИПТОГРАФИИ: Аутентификация дампа провалена (возможна подделка данных или неверный ключ). Ошибка: ${err instanceof Error ? err.message : String(err)}`);
+	}
 
-	const { header, plaintext } = decrypted;
+	const { header, verifiedPlaintextPath, plaintextSize } = decryptedFile;
 	log(`✓ Блоб расшифрован. Аутентификационный тег GCM подтверждён. Снимок от ${header.createdAt}`);
+	log(`✓ Целостность проверена: ${(plaintextSize / 1024 / 1024).toFixed(2)} МБ (Anti-Cryptographic-Doom & Anti-OOM).`);
 
 	// 5. Расчет метрики RPO (Recovery Point Objective)
+	// ЧЕСТНЫЙ АУДИТ: RPO напрямую зависит от частоты создания снимков по расписанию!
 	const backupTimestamp = new Date(header.createdAt).getTime();
 	const rpoMinutes = Math.max(0, (Date.now() - backupTimestamp) / (1000 * 60));
-	log(`✓ Расчетная потеря данных (RPO): ${rpoMinutes.toFixed(1)} мин. (Норматив <= 15 мин).`);
+	log(`✓ Интервал с момента последнего снимка (RPO): ${rpoMinutes.toFixed(1)} мин.`);
+	log("ℹ [152-ФЗ / RPO АУДИТ] Фактическая потеря данных (RPO) определяется частотой снимков.");
+	log("  При расписании каждые 15 минут RPO <= 15 мин гарантирован. При суточном расписании RPO составляет до 24 ч.");
 
-	// 6. Накатывание данных в PostgreSQL 18
+	// 6. Накатывание данных в PostgreSQL 18 без OOM (прямой запуск psql -f verified_dump.sql)
 	let restoredTablesCount = 0;
 	let restoredRowsCount = 0;
 	const databaseUrl = options.databaseUrl || process.env.DATABASE_URL || "postgres://dental:dental@127.0.0.1:5432/dental_crm";
 
-	if (options.dryRun) {
-		log("ℹ [DRY-RUN] Режим симуляции: запись в PostgreSQL пропущена.");
-		restoredTablesCount = header.dumpStats?.populatedTables ?? 1;
-		restoredRowsCount = header.dumpStats?.dataRows ?? plaintext.length;
-	} else {
-		log("⏳ Восстановление схемы и клинических данных в PostgreSQL 18...");
-		const pgResult = await restorePayloadToPostgreSQL(plaintext, databaseUrl, log);
-		restoredTablesCount = pgResult.tablesCount;
-		restoredRowsCount = pgResult.rowsCount;
+	try {
+		if (options.dryRun) {
+			log("ℹ [DRY-RUN] Режим симуляции: запись в PostgreSQL пропущена.");
+			restoredTablesCount = header.dumpStats?.populatedTables ?? 1;
+			restoredRowsCount = header.dumpStats?.dataRows ?? Math.max(1, Math.round(plaintextSize / 200));
+		} else {
+			log("⏳ Восстановление схемы и клинических данных в PostgreSQL 18...");
+			const pgResult = await restoreVerifiedDumpToPostgres(verifiedPlaintextPath, databaseUrl, log);
+			restoredTablesCount = pgResult.tablesCount;
+			restoredRowsCount = pgResult.rowsCount;
+		}
+	} finally {
+		// Очистка расшифрованного дампа с диска после наката (персданные не должны оставаться во временных папках)
+		await fsPromises.rm(recoveryTempDir, { recursive: true, force: true }).catch(() => {});
 	}
 
 	// 7. Расчет общего времени восстановления (RTO)
@@ -142,11 +165,12 @@ export async function runDisasterRecovery(options: DisasterRecoveryOptions): Pro
 		` Организация:                ${header.orgId} (ОГРН: ${header.ogrn})`,
 		` ID бэкапа:                  ${header.backupId} (${header.backupType})`,
 		` Дата снимка:                ${header.createdAt}`,
-		` Размер дампа:               ${(plaintext.length / 1024 / 1024).toFixed(2)} МБ`,
+		` Размер дампа:               ${(plaintextSize / 1024 / 1024).toFixed(2)} МБ`,
 		` Таблиц в PostgreSQL:        ${restoredTablesCount}`,
 		` Записей данных:             ${restoredRowsCount}`,
 		` RTO (Время восстановления): ${rtoSeconds.toFixed(1)} сек. (<= 480с ПОЛНЫЙ УСПЕХ)`,
-		` RPO (Свежесть данных):      ${rpoMinutes.toFixed(1)} мин.`,
+		` RPO (Интервал снимка):      ${rpoMinutes.toFixed(1)} мин. (RPO <= 15 мин при расписании раз в 15 мин)`,
+		` Архитектура безопасности:   Anti-Doom Principle (GCM Verified), Stream Gzip, Anti-OOM`,
 		` Статус безопасности:        100% Zero-Knowledge соответствие 152-ФЗ`,
 		` Статус клиники:             ГОТОВА К ПРИЕМУ ПАЦИЕНТОВ У КРЕСЛА`,
 		"================================================================================",
@@ -166,33 +190,39 @@ export async function runDisasterRecovery(options: DisasterRecoveryOptions): Pro
 	};
 }
 
-async function restorePayloadToPostgreSQL(
-	payload: Buffer,
+async function restoreVerifiedDumpToPostgres(
+	sqlFilePath: string,
 	databaseUrl: string,
 	log: (msg: string) => void,
 ): Promise<{ tablesCount: number; rowsCount: number }> {
-	const contentStr = payload.toString("utf8");
-	const isSqlDump = /CREATE\s+TABLE|COPY\s+\S+\s+FROM|INSERT\s+INTO/i.test(contentStr);
+	// Считываем только первые 4 КБ для определения формата, избегая загрузки 2-4 ГБ в память
+	const fd = await fsPromises.open(sqlFilePath, "r");
+	const sampleBuf = Buffer.alloc(4096);
+	const { bytesRead } = await fd.read(sampleBuf, 0, 4096, 0);
+	await fd.close();
+	const sampleStr = sampleBuf.subarray(0, bytesRead).toString("utf8");
+
+	const isSqlDump = /CREATE\s+TABLE|COPY\s+\S+\s+FROM|INSERT\s+INTO|--\s+PostgreSQL/i.test(sampleStr);
 
 	if (isSqlDump) {
 		const psqlBinary = resolvePsqlBinary();
 		if (psqlBinary) {
 			log(`✓ Найден бинарный восстановитель: ${psqlBinary}`);
-			await runPsqlStream(psqlBinary, databaseUrl, payload);
+			await runPsqlFile(psqlBinary, databaseUrl, sqlFilePath);
 			return inspectDatabasePostgres(databaseUrl);
 		}
-		// Fallback: выполнение через прямое подключение node-postgres
-		log("ℹ psql.exe не найден в системе. Применяется встроенный отказоустойчивый транзакционный SQL-инжектор.");
-		return executeSqlStatementsViaPool(contentStr, databaseUrl);
+		log("ℹ psql.exe не найден. Применяется потоковый транзакционный SQL-инжектор.");
+		return executeSqlFileViaPool(sqlFilePath, databaseUrl);
 	}
 
-	// Если бэкап в формате структурированного JSON (Dente state snapshot)
+	// Структурированный JSON снимок (state snapshot)
 	try {
+		const contentStr = await fsPromises.readFile(sqlFilePath, "utf8");
 		const parsed = JSON.parse(contentStr);
 		log("✓ Распознан формат структурированного клинического слепка DENTE.");
 		return restoreJsonSnapshotViaPool(parsed, databaseUrl);
 	} catch {
-		return executeSqlStatementsViaPool(contentStr, databaseUrl);
+		return executeSqlFileViaPool(sqlFilePath, databaseUrl);
 	}
 }
 
@@ -207,10 +237,11 @@ function resolvePsqlBinary(): string | null {
 	return candidates[0] ?? null;
 }
 
-async function runPsqlStream(psqlBinary: string, databaseUrl: string, sqlPayload: Buffer): Promise<void> {
+async function runPsqlFile(psqlBinary: string, databaseUrl: string, sqlFilePath: string): Promise<void> {
 	return new Promise((resolve, reject) => {
-		const child = spawn(psqlBinary, ["--dbname", databaseUrl, "-q"], {
-			stdio: ["pipe", "pipe", "pipe"],
+		// psql -f file.sql не расходует память Node.js вовсе!
+		const child = spawn(psqlBinary, ["--dbname", databaseUrl, "-q", "-f", sqlFilePath], {
+			stdio: ["ignore", "pipe", "pipe"],
 		});
 
 		child.on("error", (err) => reject(new Error(`Ошибка запуска psql: ${err.message}`)));
@@ -224,7 +255,6 @@ async function runPsqlStream(psqlBinary: string, databaseUrl: string, sqlPayload
 			if (code === 0) {
 				resolve();
 			} else {
-				// Некоторые предупреждения psql выходят с ненулевым кодом при IF EXISTS, проверяем
 				if (stderrData.includes("ERROR") && !stderrData.includes("already exists")) {
 					reject(new Error(`psql завершился с ошибкой (код ${code}): ${stderrData}`));
 				} else {
@@ -232,26 +262,41 @@ async function runPsqlStream(psqlBinary: string, databaseUrl: string, sqlPayload
 				}
 			}
 		});
-
-		const inStream = Readable.from(sqlPayload);
-		inStream.pipe(child.stdin);
 	});
 }
 
-async function executeSqlStatementsViaPool(
-	sql: string,
+async function executeSqlFileViaPool(
+	sqlFilePath: string,
 	databaseUrl: string,
 ): Promise<{ tablesCount: number; rowsCount: number }> {
 	const client = new pg.Client({ connectionString: databaseUrl });
 	await client.connect();
+	const rl = readline.createInterface({
+		input: fs.createReadStream(sqlFilePath, { encoding: "utf8" }),
+		crlfDelay: Number.POSITIVE_INFINITY,
+	});
+
 	try {
 		await client.query("BEGIN");
-		await client.query(sql);
+		let currentStatement = "";
+		for await (const line of rl) {
+			const trimmed = line.trim();
+			if (!trimmed || trimmed.startsWith("--")) continue;
+			currentStatement += `${line}\n`;
+			if (trimmed.endsWith(";")) {
+				await client.query(currentStatement);
+				currentStatement = "";
+			}
+		}
+		if (currentStatement.trim()) {
+			await client.query(currentStatement);
+		}
 		await client.query("COMMIT");
 	} catch (e) {
 		await client.query("ROLLBACK").catch(() => {});
 		throw e;
 	} finally {
+		rl.close();
 		await client.end();
 	}
 	return inspectDatabasePostgres(databaseUrl);
@@ -266,7 +311,6 @@ async function restoreJsonSnapshotViaPool(
 	let rowsCount = 0;
 	try {
 		await client.query("BEGIN");
-		// Запись мета-метки восстановления
 		await client.query(
 			"CREATE TABLE IF NOT EXISTS dente_disaster_recovery_log (id serial primary key, restored_at timestamptz default now(), payload jsonb)",
 		);

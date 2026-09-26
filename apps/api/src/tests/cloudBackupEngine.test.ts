@@ -1,19 +1,21 @@
 /**
  * cloudBackupEngine.test.ts — Comprehensive Test Suite for Zero-Knowledge Cloud Backup & Disaster Recovery
  *
- * ТЕСТОВОЕ ПОКРЫТИЕ:
+ * ТЕСТОВОЕ ПОКРЫТИЕ (16 ТЕСТОВ + АУДИТ РЕДТИМА):
  * 1. Генерация и валидация мнемоники BIP-39 (12 слов, контрольная сумма SHA-256).
  * 2. Деривация мастер-ключа scrypt(mnemonic, salt="DENTE:" + ogrn + orgId).
- * 3. Потоковое Zero-Knowledge шифрование AES-256-GCM с защитой заголовка через AAD.
+ * 3. Потоковое сжатие gzip + AES-256-GCM Zero-Knowledge шифрование с AAD защитой заголовка.
  * 4. Полная проверка целостности GCM Auth Tag: гарантированное отклонение любых
- *    модифицированных, обрезанных или поддельных данных (152-ФЗ).
+ *    модифицированных, обрезанных или поддельных данных (152-ФЗ, Cryptographic Doom Principle).
  * 5. Ротация GFS: хранение 7 ежедневных, 4 еженедельных и 12 ежемесячных бэкапов.
- * 6. Полный сценарий Disaster Recovery: восстановление клиники по 12 словам за RTO <= 8 минут, RPO <= 15 минут.
+ * 6. Полный сценарий Disaster Recovery: восстановление клиники по 12 словам за RTO <= 8 минут,
+ *    с честным аудитом RPO и потоковым наложением без OOM.
  */
 
 import assert from "node:assert";
 import crypto from "node:crypto";
 import fs from "node:fs";
+import fsPromises from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
@@ -22,7 +24,6 @@ import {
 	BIP39_WORDLIST,
 	DENTE_ZK_MAGIC,
 	DENTE_ZK_VERSION,
-	GCM_TAG_LENGTH,
 	LocalMockS3Adapter,
 	buildClinicSalt,
 	createCloudBackup,
@@ -32,6 +33,7 @@ import {
 	mnemonicToEntropy,
 	parseContainerHeader,
 	restoreCloudBackup,
+	restoreCloudBackupToFile,
 	rotateCloudBackups,
 	validateMnemonic,
 } from "../services/cloudBackupEngine.js";
@@ -74,10 +76,8 @@ describe("CloudBackupEngine — Zero-Knowledge 152-ФЗ Backup & Disaster Recove
 		it("rejects mnemonics with checksum mismatch (corrupted word)", () => {
 			const valid = generateMnemonic();
 			const words = valid.split(" ");
-			// Swap word to another valid dictionary word to violate checksum
 			words[11] = words[11] === "zoo" ? "zone" : "zoo";
 			const corrupted = words.join(" ");
-			// Validate checksum
 			const isValid = validateMnemonic(corrupted);
 			assert.strictEqual(isValid, false, "Corrupted mnemonic must fail checksum check");
 		});
@@ -122,29 +122,25 @@ describe("CloudBackupEngine — Zero-Knowledge 152-ФЗ Backup & Disaster Recove
 		});
 	});
 
-	describe("3. Streaming AES-256-GCM Zero-Knowledge Encryption & Decryption", () => {
-		it("encrypts and decrypts realistic clinical data with 100% fidelity", async () => {
+	describe("3. Streaming AES-256-GCM Zero-Knowledge Encryption & Compression", () => {
+		it("encrypts and decrypts realistic clinical data with gzip compression", async () => {
 			const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "dente-zk-test-"));
 			const storage = new LocalMockS3Adapter(tempDir);
 			const mnemonic = generateMnemonic();
 
-			const clinicalPayload = Buffer.from(
-				JSON.stringify({
-					clinic: "ООО 'ДЕНТЕ СТОМАТОЛОГИЯ'",
-					patients: [
-						{ id: "p-1", fullName: "Барабаш С.В.", snils: "123-456-789 00", birthDate: "1985-04-12" },
-						{ id: "p-2", fullName: "Смирнова Е.А.", snils: "987-654-321 11", birthDate: "1992-11-20" },
-					],
-					visits: [
-						{ id: "v-101", tooth: 16, diagnosis: "K04.0 Пульпит", totalRub: 8500 },
-						{ id: "v-102", tooth: 21, diagnosis: "K02.1 Кариес дентина", totalRub: 4200 },
-					],
-					fiscalTransactions: [
-						{ receiptId: "rec-01", sumKopecks: 850000, ffd: "1.2", paymentType: "CARD" },
-					],
-				}),
-				"utf8",
-			);
+			// Повторяющиеся клинические записи для наглядной проверки компрессии gzip
+			const clinicalRecords = [];
+			for (let i = 0; i < 200; i++) {
+				clinicalRecords.push({
+					id: `p-${i}`,
+					fullName: `Пациент Тестовый-${i}`,
+					snils: "123-456-789 00",
+					diagnosis: "K02.1 Кариес дентина глубокий",
+					anamnesis: "Жалобы на боли от термических раздражителей",
+				});
+			}
+
+			const clinicalPayload = Buffer.from(JSON.stringify(clinicalRecords), "utf8");
 
 			const backup = await createCloudBackup({
 				mnemonic,
@@ -153,23 +149,28 @@ describe("CloudBackupEngine — Zero-Knowledge 152-ФЗ Backup & Disaster Recove
 				payload: clinicalPayload,
 				backupType: "daily",
 				storage,
-				dumpStats: { copyBlocks: 4, dataRows: 5, populatedTables: 3 },
+				dumpStats: { copyBlocks: 4, dataRows: clinicalRecords.length, populatedTables: 3 },
 			});
 
 			assert.ok(backup.key.startsWith(`backups/${TEST_ORG_ID}/daily/`));
-			assert.ok(backup.size > clinicalPayload.length, "Encrypted blob must include header and auth tag");
+			// Сжатие gzip должно сократить объем данных в разы
+			assert.ok(
+				backup.size < clinicalPayload.length,
+				`Gzip-сжатие должно уменьшить размер дампа (оригинал ${clinicalPayload.length}, сжатый ${backup.size})`,
+			);
 
-			// Read raw blob from storage and verify header
+			// Проверка метаданных заголовка
 			const rawBlob = await storage.downloadBuffer(backup.key);
-			const { header, offset } = parseContainerHeader(rawBlob);
+			const { header } = parseContainerHeader(rawBlob);
 
 			assert.strictEqual(header.magic, DENTE_ZK_MAGIC.trim());
 			assert.strictEqual(header.version, DENTE_ZK_VERSION);
 			assert.strictEqual(header.orgId, TEST_ORG_ID);
 			assert.strictEqual(header.ogrn, TEST_OGRN);
+			assert.strictEqual(header.compression, "gzip");
 			assert.strictEqual(header.algorithm, "aes-256-gcm");
 
-			// Decrypt backup
+			// Расшифровка и декомпрессия
 			const restoreResult = await restoreCloudBackup({
 				mnemonic,
 				orgId: TEST_ORG_ID,
@@ -182,7 +183,7 @@ describe("CloudBackupEngine — Zero-Knowledge 152-ФЗ Backup & Disaster Recove
 			fs.rmSync(tempDir, { recursive: true, force: true });
 		});
 
-		it("encrypts and decrypts streaming SQL dump", async () => {
+		it("encrypts and decrypts streaming SQL dump via verified file", async () => {
 			const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "dente-sql-test-"));
 			const storage = new LocalMockS3Adapter(tempDir);
 			const mnemonic = generateMnemonic();
@@ -205,19 +206,21 @@ describe("CloudBackupEngine — Zero-Knowledge 152-ФЗ Backup & Disaster Recove
 				storage,
 			});
 
-			const restored = await restoreCloudBackup({
+			const restoredFile = await restoreCloudBackupToFile({
 				mnemonic,
 				key: backup.key,
 				storage,
 			});
 
-			assert.strictEqual(restored.plaintext.toString("utf8"), sqlData.toString("utf8"));
+			const contentOnDisk = await fsPromises.readFile(restoredFile.verifiedPlaintextPath, "utf8");
+			assert.strictEqual(contentOnDisk, sqlData.toString("utf8"));
+			await fsPromises.unlink(restoredFile.verifiedPlaintextPath).catch(() => {});
 			fs.rmSync(tempDir, { recursive: true, force: true });
 		});
 	});
 
-	describe("4. Cryptographic Integrity & Tamper Detection (152-ФЗ / GCM Auth Tag)", () => {
-		it("detects and rejects ciphertext tampering", async () => {
+	describe("4. Cryptographic Integrity & Anti-Doom Principle (152-ФЗ / GCM Auth Tag)", () => {
+		it("detects and rejects ciphertext tampering without leaking unverified file", async () => {
 			const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "dente-tamper-test-"));
 			const storage = new LocalMockS3Adapter(tempDir);
 			const mnemonic = generateMnemonic();
@@ -234,23 +237,33 @@ describe("CloudBackupEngine — Zero-Knowledge 152-ФЗ Backup & Disaster Recove
 			const rawBlob = await storage.downloadBuffer(backup.key);
 			const { offset } = parseContainerHeader(rawBlob);
 
-			// Tamper a byte in the ciphertext portion (between header offset and trailing tag)
 			const tamperedBlob = Buffer.from(rawBlob);
 			const ciphertextIndex = offset + 5;
 			tamperedBlob[ciphertextIndex] = (tamperedBlob[ciphertextIndex] ?? 0) ^ 0xff;
 
+			const targetSuspectPath = path.join(tempDir, "suspect.sql");
+
 			await assert.rejects(
 				async () => {
-					await restoreCloudBackup({
+					await restoreCloudBackupToFile({
 						mnemonic,
 						orgId: TEST_ORG_ID,
 						ogrn: TEST_OGRN,
 						backupBuffer: tamperedBlob,
+						targetPlaintextPath: targetSuspectPath,
 						storage,
 					});
 				},
-				/Unsupported state or unable to authenticate data|Invalid GCM payload/i,
-				"Tampered ciphertext must cause GCM authentication failure",
+				/Unsupported state or unable to authenticate data|incorrect header check|Z_DATA_ERROR|Invalid GCM payload/i,
+				"Tampered ciphertext must cause authentication failure",
+			);
+
+			// CRYPTOGRAPHIC DOOM PRINCIPLE CHECK:
+			// Файл на диске ОБЯЗАН быть немедленно удален при ошибке аутентификации!
+			assert.strictEqual(
+				fs.existsSync(targetSuspectPath),
+				false,
+				"Unauthenticated file must NEVER remain on disk or be accessible to downstream psql",
 			);
 
 			fs.rmSync(tempDir, { recursive: true, force: true });
@@ -272,7 +285,6 @@ describe("CloudBackupEngine — Zero-Knowledge 152-ФЗ Backup & Disaster Recove
 
 			const rawBlob = await storage.downloadBuffer(backup.key);
 			const tamperedBlob = Buffer.from(rawBlob);
-			// Tamper last byte of the 16-byte auth tag
 			tamperedBlob[tamperedBlob.length - 1] = (tamperedBlob[tamperedBlob.length - 1] ?? 0) ^ 0x01;
 
 			await assert.rejects(
@@ -308,12 +320,12 @@ describe("CloudBackupEngine — Zero-Knowledge 152-ФЗ Backup & Disaster Recove
 			await assert.rejects(
 				async () => {
 					await restoreCloudBackup({
-						mnemonic: mnemonicBob, // Bob tries to decrypt Alice's data
+						mnemonic: mnemonicBob,
 						key: backup.key,
 						storage,
 					});
 				},
-				/Unsupported state or unable to authenticate data/i,
+				/Unsupported state or unable to authenticate data|incorrect header check|Z_DATA_ERROR/i,
 				"Wrong mnemonic must fail decryption without leaking plaintext",
 			);
 
@@ -327,7 +339,6 @@ describe("CloudBackupEngine — Zero-Knowledge 152-ФЗ Backup & Disaster Recove
 			const storage = new LocalMockS3Adapter(tempDir);
 			const mnemonic = generateMnemonic();
 
-			// 1. Create 10 daily backups
 			for (let i = 0; i < 10; i++) {
 				await createCloudBackup({
 					mnemonic,
@@ -337,11 +348,9 @@ describe("CloudBackupEngine — Zero-Knowledge 152-ФЗ Backup & Disaster Recove
 					backupType: "daily",
 					storage,
 				});
-				// Small delay to ensure distinct mtime
 				await new Promise((r) => setTimeout(r, 10));
 			}
 
-			// 2. Create 6 weekly backups
 			for (let i = 0; i < 6; i++) {
 				await createCloudBackup({
 					mnemonic,
@@ -354,7 +363,6 @@ describe("CloudBackupEngine — Zero-Knowledge 152-ФЗ Backup & Disaster Recove
 				await new Promise((r) => setTimeout(r, 10));
 			}
 
-			// 3. Create 15 monthly backups
 			let lastMonthlyBackup;
 			for (let i = 0; i < 15; i++) {
 				lastMonthlyBackup = await createCloudBackup({
@@ -368,10 +376,8 @@ describe("CloudBackupEngine — Zero-Knowledge 152-ФЗ Backup & Disaster Recove
 				await new Promise((r) => setTimeout(r, 10));
 			}
 
-			// Automatic rotation occurred on each backup creation
 			assert.ok(lastMonthlyBackup?.rotation.deleted.length! > 0, "createCloudBackup must prune excess backups during rotation");
 
-			// Add an extra unrotated file directly to test explicit rotateCloudBackups invocation
 			await storage.upload(`backups/${TEST_ORG_ID}/daily/dente_daily_000000000_old.dente.enc`, Buffer.from("old"));
 			const explicitRotation = await rotateCloudBackups(storage, TEST_ORG_ID);
 			assert.ok(explicitRotation.deleted.length > 0, "Explicit rotateCloudBackups must prune extra old files");
@@ -389,13 +395,12 @@ describe("CloudBackupEngine — Zero-Knowledge 152-ФЗ Backup & Disaster Recove
 		});
 	});
 
-	describe("6. Disaster Recovery Simulation (RTO <= 8 min, RPO <= 15 min)", () => {
+	describe("6. Disaster Recovery Simulation (RTO <= 8 min, Honest RPO & Anti-Doom)", () => {
 		it("runs complete automated disaster recovery protocol from cloud backup", async () => {
 			const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "dente-dr-test-"));
 			const storage = new LocalMockS3Adapter(tempDir);
 			const mnemonic = generateMnemonic();
 
-			// Generate a simulated complete database dump
 			const simulatedSqlDump = Buffer.from(
 				"-- DENTE CRM Complete PostgreSQL 18 Clinical Dump\n" +
 				"CREATE TABLE clinical_records (id text primary key, diagnosis text);\n" +
@@ -404,7 +409,6 @@ describe("CloudBackupEngine — Zero-Knowledge 152-ФЗ Backup & Disaster Recove
 				"utf8",
 			);
 
-			// Clinic uploads snapshot
 			const backup = await createCloudBackup({
 				mnemonic,
 				orgId: TEST_ORG_ID,
@@ -415,13 +419,12 @@ describe("CloudBackupEngine — Zero-Knowledge 152-ФЗ Backup & Disaster Recove
 				dumpStats: { copyBlocks: 1, dataRows: 2, populatedTables: 1 },
 			});
 
-			// Equipment dies. Doctor runs Disaster Recovery script on clean laptop
 			const recovery = await runDisasterRecovery({
 				mnemonic,
 				orgId: TEST_ORG_ID,
 				ogrn: TEST_OGRN,
 				storage,
-				dryRun: true, // Simulation dry-run
+				dryRun: true,
 				silent: true,
 			});
 
@@ -430,6 +433,7 @@ describe("CloudBackupEngine — Zero-Knowledge 152-ФЗ Backup & Disaster Recove
 			assert.ok(recovery.rtoSeconds < 480, `RTO must be <= 480s (8 min), got ${recovery.rtoSeconds}s`);
 			assert.ok(recovery.rpoMinutes < 15, `RPO must be <= 15 min, got ${recovery.rpoMinutes} min`);
 			assert.ok(recovery.verificationReport.includes("Zero-Knowledge соответствие 152-ФЗ"));
+			assert.ok(recovery.verificationReport.includes("Anti-Doom Principle"));
 
 			fs.rmSync(tempDir, { recursive: true, force: true });
 		});
