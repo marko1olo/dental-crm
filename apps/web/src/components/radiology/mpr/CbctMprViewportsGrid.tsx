@@ -18,6 +18,7 @@ import type { ViewLayoutMode } from "./cbctStudioTypes";
 export interface CbctMprViewportsGridProps {
 	readonly isSidebarOpen: boolean;
 	readonly mobileActiveTab: string;
+	readonly onSelectMobileTab?: ((tab: "axial" | "coronal" | "sagittal" | "panoramic" | "planner") => void) | undefined;
 	readonly volume: CbctVoxelVolume | null;
 	readonly dicomLoadingStatus: string | null;
 	readonly dicomProgress: number;
@@ -75,6 +76,7 @@ export interface CbctMprViewportsGridProps {
 export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 	isSidebarOpen,
 	mobileActiveTab,
+	onSelectMobileTab,
 	volume,
 	dicomLoadingStatus,
 	dicomProgress,
@@ -392,9 +394,34 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 
 	return (
 		<div className={`${isSidebarOpen ? "lg:col-span-8" : "lg:col-span-12"} ${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0 min-w-0 w-full h-full transition-all relative`}>
+			{/* Mobile Viewport Segmented Switcher (< lg screens) */}
+			<div className="flex lg:hidden items-center bg-zinc-900 border-b border-zinc-800 p-1 gap-1 overflow-x-auto shrink-0 select-none z-10" data-testid="cbct-mobile-viewport-tabs">
+				{[
+					{ id: "axial", label: "Аксиал" },
+					{ id: "coronal", label: "Коронал" },
+					{ id: "sagittal", label: "Сагиттал" },
+					{ id: "panoramic", label: "ОПТГ" },
+					{ id: "planner", label: "План" },
+				].map((tab) => (
+					<button
+						key={tab.id}
+						type="button"
+						onClick={() => onSelectMobileTab?.(tab.id as any)}
+						className={`flex-1 min-w-[56px] py-1.5 px-2 text-xs font-semibold rounded transition-colors text-center cursor-pointer ${
+							mobileActiveTab === tab.id
+								? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs font-bold"
+								: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60"
+						}`}
+						data-testid={`cbct-mobile-tab-${tab.id}`}
+					>
+						{tab.label}
+					</button>
+				))}
+			</div>
+
 			{!volume ? (
 				<div
-					className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[var(--paper-strong,#0f172a)] border border-dashed border-[var(--line,#334155)] rounded-lg m-1 select-none"
+					className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-zinc-950 border border-dashed border-zinc-800 rounded-lg m-1 select-none"
 					data-testid="cbct-empty-volume-dropzone"
 					onDragOver={(e) => e.preventDefault()}
 					onDrop={(e) => {
@@ -406,23 +433,23 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 				>
 					{dicomLoadingStatus ? (
 						<div className="flex flex-col items-center justify-center gap-3">
-							<div className="w-12 h-12 rounded-xl bg-[var(--paper,#18181b)] border border-[var(--line,#3f3f46)] flex items-center justify-center text-cyan-400 shadow-inner">
+							<div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400 shadow-inner">
 								<RotateCcw className="w-6 h-6 animate-spin text-cyan-400" />
 							</div>
-							<h3 className="text-sm font-bold text-[var(--ink,#f4f4f5)] mb-1">
+							<h3 className="text-sm font-bold text-zinc-100 mb-1">
 								{dicomLoadingStatus}
 							</h3>
-							<div className="w-64 h-2 bg-[var(--paper,#18181b)] rounded-full overflow-hidden border border-[var(--line,#3f3f46)]">
+							<div className="w-64 h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
 								<div
 									className="h-full bg-cyan-500 transition-all duration-200"
 									style={{ width: `${Math.max(5, Math.min(100, dicomProgress))}%` }}
 								/>
 							</div>
-							<span className="text-xs font-mono text-[var(--muted,#a1a1aa)]">{dicomProgress}%</span>
+							<span className="text-xs font-mono text-zinc-400">{dicomProgress}%</span>
 						</div>
 					) : (
 						<>
-							<div className="w-12 h-12 rounded-xl bg-[var(--paper,#18181b)] border border-[var(--line,#3f3f46)] flex items-center justify-center text-cyan-400 mb-3 shadow-inner">
+							<div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400 mb-3 shadow-inner">
 								<Box className="w-6 h-6" />
 							</div>
 							<h3 className="text-sm font-bold text-[var(--ink,#f4f4f5)] mb-1">

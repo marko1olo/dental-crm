@@ -6,7 +6,7 @@ export interface CbctSlabFlyoutProps {
 	readonly normalizedSlabMode: SlabProjectionMode;
 	readonly slabThicknessMm: number;
 	readonly onSelectSlabMode: (mode: SlabProjectionMode) => void;
-	readonly onChangeSlabThicknessMm?: (thicknessMm: number) => void;
+	readonly onChangeSlabThicknessMm?: ((thicknessMm: number) => void) | undefined;
 	readonly onClose: () => void;
 }
 
@@ -22,19 +22,19 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 			role="dialog"
 			aria-label="Настройки толщины среза и проекции MIP"
 			data-testid="cbct-slab-flyout"
-			className="absolute left-full ml-2 top-0 max-sm:top-auto max-sm:bottom-0 z-50 w-64 bg-[var(--paper-strong,#09090b)] border border-[var(--line,#27272a)] shadow-2xl rounded-xl p-3 text-[var(--ink,#f4f4f5)] max-sm:max-h-[calc(100vh-120px)] max-sm:overflow-y-auto"
+			className="absolute left-full ml-2 top-0 max-sm:top-auto max-sm:bottom-0 z-50 w-64 bg-zinc-950 border border-zinc-800 shadow-2xl rounded-xl p-3 text-zinc-100 max-sm:max-h-[calc(100vh-120px)] max-sm:overflow-y-auto"
 		>
-			<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#27272a)] mb-2.5">
+			<div className="flex items-center justify-between pb-2 border-b border-zinc-800 mb-2.5">
 				<div className="flex items-center gap-1.5">
 					<Layers className="w-4 h-4 text-cyan-400" />
-					<span className="text-xs font-bold text-[var(--ink,#f4f4f5)]">
+					<span className="text-xs font-bold text-zinc-100">
 						Толщина среза & MIP
 					</span>
 				</div>
 				<button
 					type="button"
 					onClick={onClose}
-					className="w-7 h-7 min-w-[28px] min-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center rounded-md text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] transition-colors cursor-pointer"
+					className="w-7 h-7 min-w-[28px] min-h-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
 					aria-label="Закрыть меню"
 				>
 					<X className="w-4 h-4" />
@@ -43,7 +43,7 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 
 			{/* Projection Modes */}
 			<div className="space-y-1.5 mb-3">
-				<span className="text-[10px] text-[var(--muted,#a1a1aa)] uppercase font-mono tracking-wider font-semibold">
+				<span className="text-[10px] text-zinc-400 uppercase font-mono tracking-wider font-semibold">
 					Режим проекции
 				</span>
 				<div className="grid grid-cols-2 gap-1">
@@ -52,8 +52,8 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 						onClick={() => onSelectSlabMode("single")}
 						className={`px-2 py-1.5 [@media(pointer:coarse)]:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
 							normalizedSlabMode === "single"
-								? "bg-[var(--paper-soft,#18181b)] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 font-bold"
-								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)]"
+								? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 font-bold"
+								: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-800"
 						}`}
 						data-testid="cbct-slab-mode-single"
 					>
@@ -64,8 +64,8 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 						onClick={() => onSelectSlabMode("mip")}
 						className={`px-2 py-1.5 [@media(pointer:coarse)]:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
 							normalizedSlabMode === "mip"
-								? "bg-[var(--paper-soft,#18181b)] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 font-bold"
-								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)]"
+								? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 font-bold"
+								: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-800"
 						}`}
 						data-testid="cbct-slab-mode-mip"
 					>
@@ -76,8 +76,8 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 						onClick={() => onSelectSlabMode("average")}
 						className={`px-2 py-1.5 [@media(pointer:coarse)]:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
 							normalizedSlabMode === "average"
-								? "bg-[var(--paper-soft,#18181b)] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 font-bold"
-								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)]"
+								? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 font-bold"
+								: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-800"
 						}`}
 						data-testid="cbct-slab-mode-average"
 					>
@@ -88,8 +88,8 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 						onClick={() => onSelectSlabMode("minip")}
 						className={`px-2 py-1.5 [@media(pointer:coarse)]:py-2 rounded-md text-xs font-semibold flex items-center justify-center transition-colors ${
 							normalizedSlabMode === "minip"
-								? "bg-[var(--paper-soft,#18181b)] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 font-bold"
-								: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)]"
+								? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 font-bold"
+								: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-800"
 						}`}
 						data-testid="cbct-slab-mode-minip"
 					>
@@ -101,10 +101,10 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 			{/* Slab Thickness Presets & Continuous Range Slider */}
 			<div className="space-y-2">
 				<div className="flex items-center justify-between text-xs">
-					<span className="text-[10px] text-[var(--muted,#a1a1aa)] uppercase font-mono tracking-wider font-semibold">
+					<span className="text-[10px] text-zinc-400 uppercase font-mono tracking-wider font-semibold">
 						Толщина сляба
 					</span>
-					<span className="font-mono text-cyan-300 font-bold text-xs bg-[var(--paper-soft,#18181b)] px-1.5 py-0.5 rounded border border-[var(--line,#27272a)]">
+					<span className="font-mono text-cyan-300 font-bold text-xs bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">
 						{slabThicknessMm.toFixed(1)} мм
 					</span>
 				</div>
@@ -119,8 +119,8 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 							data-testid={t === 15 ? "cbct-tool-slab-15mm" : `cbct-slab-thickness-${t}`}
 							className={`px-2 py-0.5 [@media(pointer:coarse)]:py-1 rounded text-[11px] font-mono transition-colors shrink-0 ${
 								Math.abs(slabThicknessMm - t) < 0.2
-									? "bg-[var(--paper-soft,#18181b)] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 font-bold"
-									: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-soft,#18181b)] border border-[var(--line,#27272a)]"
+									? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 font-bold"
+									: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-800"
 							}`}
 						>
 							<span data-testid={`cbct-slab-thickness-${t}`}>{t}мм</span>
@@ -137,7 +137,8 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 					onChange={(e) =>
 						onChangeSlabThicknessMm?.(Number.parseFloat(e.target.value))
 					}
-					className="w-full accent-cyan-400 min-h-[32px] cursor-pointer bg-transparent"
+					style={{ touchAction: "none" }}
+					className="w-full accent-cyan-400 min-h-[32px] cursor-pointer bg-transparent cbct-mpr-range-slider"
 					data-testid="cbct-slab-thickness-slider"
 				/>
 			</div>

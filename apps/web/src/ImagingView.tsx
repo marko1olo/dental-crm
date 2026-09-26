@@ -140,6 +140,11 @@ const PanoramicRendererWindow = lazyWithRetry(() =>
 		default: m.PanoramicRendererWindow,
 	})),
 );
+const CbctMprImplantStudioModal = lazyWithRetry(() =>
+	import("./components/radiology/CbctMprImplantStudioModal").then((m) => ({
+		default: m.CbctMprImplantStudioModal,
+	})),
+);
 const DicomArchiveUploader = lazyWithRetry(() =>
 	import("./components/dicom/DicomArchiveUploader").then((m) => ({
 		default: m.DicomArchiveUploader,
@@ -473,6 +478,7 @@ export function ImagingView(props: ImagingViewProps) {
 	const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
 	const [enhancementOn, setEnhancementOn] = useState(false);
 	const [isCbctWorkspaceOpen, setIsCbctWorkspaceOpen] = useState(false);
+	const [isCbctStudioOpen, setIsCbctStudioOpen] = useState(false);
 	const [isPanoramicWindowOpen, setIsPanoramicWindowOpen] = useState(false);
 	const [isMobileImagingMenuOpen, setIsMobileImagingMenuOpen] = useState(false);
 	const mobileImagingMenuRef = useRef<HTMLDivElement | null>(null);
@@ -1105,6 +1111,16 @@ export function ImagingView(props: ImagingViewProps) {
 					<button
 						className="secondary-button !hidden md:!inline-flex items-center gap-1 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 text-xs font-medium shrink-0 whitespace-nowrap"
 						type="button"
+						data-testid="imaging-open-cbct-studio"
+						onClick={() => setIsCbctStudioOpen(true)}
+						title="Romexis 3D КЛКТ Студия: панорама, срезы, импланты, нерв"
+					>
+						<Activity aria-hidden="true" className="w-3.5 h-3.5 text-cyan-400 shrink-0" />{" "}
+						<span>КЛКТ Студия 3D</span>
+					</button>
+					<button
+						className="secondary-button !hidden md:!inline-flex items-center gap-1 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 text-xs font-medium shrink-0 whitespace-nowrap"
+						type="button"
 						data-testid="imaging-open-panoramic"
 						onClick={() => setIsPanoramicWindowOpen(true)}
 						title="Открыть панорамную реконструкцию (ОПТГ)"
@@ -1228,6 +1244,18 @@ export function ImagingView(props: ImagingViewProps) {
 								>
 									<Activity size={14} className="text-teal-500 shrink-0" />
 									<span>3D MPR / КТ</span>
+								</button>
+								<button
+									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start font-medium border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
+									type="button"
+									data-testid="imaging-mobile-open-cbct-studio"
+									onClick={() => {
+										setIsMobileImagingMenuOpen(false);
+										setIsCbctStudioOpen(true);
+									}}
+								>
+									<Activity size={14} className="text-cyan-400 shrink-0" />
+									<span>КЛКТ Студия 3D</span>
 								</button>
 								<button
 									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start font-medium border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
@@ -2591,6 +2619,8 @@ export function ImagingView(props: ImagingViewProps) {
 										step="1"
 										type="range"
 										value={mprAxisDeg}
+										style={{ touchAction: "none" }}
+										className="cbct-mpr-range-slider"
 										onChange={(event) =>
 											setMprAxisDeg(clampMprAxisDeg(Number(event.target.value)))
 										}
@@ -2645,6 +2675,8 @@ export function ImagingView(props: ImagingViewProps) {
 										step="1"
 										type="range"
 										value={mprSlabMm}
+										style={{ touchAction: "none" }}
+										className="cbct-mpr-range-slider"
 										onChange={(event) =>
 											setMprSlabMm(clampMprSlabMm(Number(event.target.value)))
 										}
@@ -2708,6 +2740,8 @@ export function ImagingView(props: ImagingViewProps) {
 										type="range"
 										value={mprSafeSliceIndex}
 										aria-valuetext={mprSliceRangeValue}
+										style={{ touchAction: "none" }}
+										className="cbct-mpr-range-slider"
 										onChange={(event) =>
 											setMprSliceIndex(
 												clampMprSliceIndex(
@@ -2973,6 +3007,16 @@ export function ImagingView(props: ImagingViewProps) {
 						onClose={() => setIsCbctWorkspaceOpen(false)}
 						patientId={activePatient?.id ?? null}
 						{...(activePatient?.fullName ? { patientName: activePatient.fullName } : {})}
+					/>
+				</Suspense>
+			)}
+
+			{isCbctStudioOpen && (
+				<Suspense fallback={<div className="cbct-studio-modal fixed inset-0 z-50 flex items-center justify-center bg-black/90 text-cyan-400 text-xs font-mono">Загрузка Romexis 3D Студии...</div>}>
+					<CbctMprImplantStudioModal
+						isOpen={true}
+						onClose={() => setIsCbctStudioOpen(false)}
+						patientName={activePatient?.fullName ?? "3D КЛКТ исследование"}
 					/>
 				</Suspense>
 			)}

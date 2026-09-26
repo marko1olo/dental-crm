@@ -3565,10 +3565,7 @@ section.imaging-panel {
 .clinical-mpr-grid {
 	display: grid;
 	gap: 12px;
-	grid-template-columns: minmax(220px, 0.75fr) minmax(240px, 0.85fr) minmax(
-			280px,
-			1fr
-		);
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
 }
 
 .clinical-mpr-summary-grid {

@@ -59,14 +59,14 @@ export interface PanoramicRendererWindowProps {
 	 */
 	volume: PanoramicVolumeInput | null;
 	onClose: () => void;
-	thickness?: number;
-	blendMode?: "mip" | "average";
+	thickness?: number | undefined;
+	blendMode?: "mip" | "average" | undefined;
 	/** World-space Z extent of the unwrap. Defaults derived from the volume. */
-	zStartWorld?: number;
-	zEndWorld?: number;
-	zStepWorld?: number;
-	patientId?: string | null;
-	authHeaders?: Record<string, string>;
+	zStartWorld?: number | undefined;
+	zEndWorld?: number | undefined;
+	zStepWorld?: number | undefined;
+	patientId?: string | null | undefined;
+	authHeaders?: Record<string, string> | undefined;
 }
 
 /**

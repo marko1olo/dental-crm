@@ -77,28 +77,28 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 }) => {
 	return (
 		<header
-			className="h-9 min-h-[36px] px-2 sm:px-3 py-0.5 bg-[var(--paper-strong,#09090b)] border-b border-[var(--line,#27272a)] flex items-center justify-between shrink-0 gap-1.5 sm:gap-2 text-[var(--ink,#f4f4f5)] min-w-0 w-full max-w-full relative"
+			className="h-9 min-h-[36px] px-2 sm:px-3 py-0.5 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between shrink-0 gap-1.5 sm:gap-2 text-zinc-100 min-w-0 w-full max-w-full relative"
 		>
 			{/* Left: 3D Cube Icon + Title + Quiet Study Status */}
 			<div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink-0">
-				<div className="w-7 h-7 rounded bg-[var(--paper,#18181b)] border border-[var(--line,#27272a)] flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
+				<div className="w-7 h-7 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
 					<Box className="w-3.5 h-3.5" />
 				</div>
 				<div className="flex flex-col min-w-0 justify-center">
 					<div className="flex items-center gap-1">
 						<h2
 							id={`cbct-studio-title-${modalId}`}
-							className="text-xs font-bold text-[var(--ink,#f4f4f5)] tracking-wide flex items-center gap-1.5 whitespace-nowrap leading-none"
+							className="text-xs font-bold text-zinc-100 tracking-wide flex items-center gap-1.5 whitespace-nowrap leading-none"
 						>
 							<span className="hidden sm:inline">3D CBCT Studio</span>
 							<span className="sm:hidden font-bold">CBCT</span>
-							<span className="hidden lg:inline-block text-[9px] px-1 py-0.2 rounded bg-[var(--paper-soft,#27272a)] text-[var(--muted,#a1a1aa)] font-mono border border-[var(--line,#3f3f46)]">
+							<span className="hidden lg:inline-block text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-zinc-300 font-mono border border-zinc-700">
 								Romexis 6
 							</span>
 						</h2>
 					</div>
 					<p
-						className="text-[10px] text-[var(--muted,#a1a1aa)] truncate leading-none min-w-0 max-w-[110px] sm:max-w-[200px] lg:max-w-[320px]"
+						className="text-[10px] text-zinc-400 truncate leading-none min-w-0 max-w-[110px] sm:max-w-[200px] lg:max-w-[320px]"
 						data-testid="cbct-patient-metadata-badge"
 						id="cbct-patient-metadata-badge"
 						title={`${patientDisplayName || resolvedPatientName} • ${loadedSliceCount > 0 ? `${loadedSliceCount} срезов` : "Исследование не загружено"} • ${volume ? `${volume.spacingMm.x.toFixed(1)} мм` : "—"}`}
@@ -109,14 +109,14 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 			</div>
 
 			{/* Center: 4 Clean Workspace Modes (Romexis Segmented Switcher) */}
-			<div className="flex items-center bg-[var(--paper,#09090b)] p-0.5 rounded-lg border border-[var(--line,#27272a)] shrink-0 gap-0.5">
+			<div className="flex items-center bg-zinc-900 p-0.5 rounded-lg border border-zinc-800 shrink-0 gap-0.5">
 				<button
 					type="button"
 					onClick={() => handleSelectStudioMode("diagnostic")}
 					className={`px-2 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
 						studioMode === "diagnostic"
-							? "bg-[var(--paper-strong,#18181b)] text-cyan-400 border border-cyan-500/60 shadow-xs"
-							: "bg-transparent text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-strong,#18181b)]"
+							? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs"
+							: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
 					}`}
 					data-testid="cbct-mode-diagnostic-btn"
 					title="Режим общей 3D диагностики (панель свернута)"
@@ -129,8 +129,8 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 					onClick={() => handleSelectStudioMode("implant")}
 					className={`px-2 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
 						studioMode === "implant"
-							? "bg-[var(--paper-strong,#18181b)] text-cyan-400 border border-cyan-500/60 shadow-xs"
-							: "bg-transparent text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-strong,#18181b)]"
+							? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs"
+							: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
 					}`}
 					data-testid="cbct-mode-implant-btn"
 					title="Планирование имплантации и контроль нерва"
@@ -143,8 +143,8 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 					onClick={() => handleSelectStudioMode("endo")}
 					className={`px-1.5 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
 						studioMode === "endo"
-							? "bg-[var(--paper-strong,#18181b)] text-cyan-400 border border-cyan-500/60 shadow-xs"
-							: "bg-transparent text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-strong,#18181b)]"
+							? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs"
+							: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
 					}`}
 					data-testid="cbct-mode-endo-btn"
 					title="Эндодонтия: корневые каналы и апексы"
@@ -157,8 +157,8 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 					onClick={() => handleSelectStudioMode("tmj")}
 					className={`px-1.5 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
 						studioMode === "tmj"
-							? "bg-[var(--paper-strong,#18181b)] text-cyan-400 border border-cyan-500/60 shadow-xs"
-							: "bg-transparent text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper-strong,#18181b)]"
+							? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs"
+							: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
 					}`}
 					data-testid="cbct-mode-tmj-btn"
 					title="ВНЧС: суставные головки и ямки"
@@ -169,7 +169,7 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 			</div>
 
 			{/* Right: Primary Clinical Actions (В ЭМК, Панель), More Options Menu (...), Window Controls */}
-			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 sticky right-0 z-20 bg-[var(--paper-strong,#09090b)] pl-1.5 pr-2 sm:pr-2.5 shadow-[-6px_0_12px_rgba(9,9,11,0.9)]">
+			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 sticky right-0 z-20 bg-zinc-950 pl-1.5 pr-2 sm:pr-2.5 shadow-[-6px_0_12px_rgba(9,9,11,0.9)]">
 				{/* Primary Action 1: Clinical EMR Snapshot Export Button */}
 				<button
 					type="button"
@@ -188,8 +188,8 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 					onClick={() => setIsSidebarOpen((prev) => !prev)}
 					className={`px-2 sm:px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-colors border shadow-xs ${
 						isSidebarOpen
-							? "bg-[var(--paper,#18181b)] text-cyan-400 border-cyan-500/60"
-							: "bg-[var(--paper-strong,#09090b)] text-[var(--muted,#a1a1aa)] border-[var(--line,#27272a)] hover:text-[var(--ink,#f4f4f5)] hover:bg-[var(--paper,#18181b)]"
+							? "bg-zinc-900 text-cyan-400 border-cyan-500/60"
+							: "bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:bg-zinc-900"
 					}`}
 					title={isSidebarOpen ? "Скрыть боковую панель" : "Показать боковую панель"}
 					data-testid="cbct-toggle-sidebar-btn"
@@ -206,8 +206,8 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 						onClick={() => setIsStudioMenuOpen((prev) => !prev)}
 						className={`px-1.5 sm:px-2 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 border transition-colors cursor-pointer ${
 							isStudioMenuOpen
-								? "bg-[var(--paper,#18181b)] text-cyan-400 border-cyan-500/60"
-								: "bg-[var(--paper-strong,#09090b)] hover:bg-[var(--paper,#18181b)] text-[var(--ink,#e4e4e7)] border-[var(--line,#27272a)]"
+								? "bg-zinc-900 text-cyan-400 border-cyan-500/60"
+								: "bg-zinc-950 hover:bg-zinc-900 text-zinc-200 border-zinc-800"
 						}`}
 						data-testid="cbct-more-options-btn"
 						title="Дополнительные операции (Сброс, дуга, PDF, раскладка)"

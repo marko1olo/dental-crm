@@ -53,6 +53,5 @@ export function getDefaultViewportTransforms(): Record<CbctViewportType, Viewpor
 		sagittal: { ...DEFAULT_VIEWPORT_TRANSFORM },
 		panoramic: { ...DEFAULT_VIEWPORT_TRANSFORM },
 		cross_section: { ...DEFAULT_VIEWPORT_TRANSFORM },
-		crossSection: { ...DEFAULT_VIEWPORT_TRANSFORM },
 	};
 }

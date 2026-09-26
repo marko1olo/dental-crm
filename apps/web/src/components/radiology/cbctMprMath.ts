@@ -347,7 +347,7 @@ export function drawCalibratedMillimeterRulers(
 	const pxPerMmY = (1.0 / pixelSpacingMmY) * zoom;
 
 	ctx.save();
-	ctx.font = "bold 9px monospace";
+	ctx.font = "bold 11px monospace";
 	ctx.textBaseline = "top";
 
 	// WCAG AAA palette resolution for negative vs positive X-Ray LUT
@@ -494,12 +494,14 @@ export function drawCalibratedMillimeterRulers(
 		const barY = heightPx - (options.scaleBarOffsetY ?? 14);
 
 		ctx.save();
+		const padW = Math.max(barWidthPx + 14, 54);
+		const padH = 22;
 		ctx.fillStyle = scaleBarBg;
-		ctx.fillRect(barX - 4, barY - 12, barWidthPx + 8, 16);
+		ctx.fillRect(barX - 7, barY - 17, padW, padH);
 
-		ctx.strokeStyle = invertColors ? "rgba(9, 9, 11, 0.25)" : "rgba(6, 182, 212, 0.6)";
-		ctx.lineWidth = 1.0;
-		ctx.strokeRect(barX - 4, barY - 12, barWidthPx + 8, 16);
+		ctx.strokeStyle = invertColors ? "rgba(9, 9, 11, 0.35)" : "rgba(6, 182, 212, 0.8)";
+		ctx.lineWidth = 1.2;
+		ctx.strokeRect(barX - 7, barY - 17, padW, padH);
 
 		if (invertColors) {
 			ctx.shadowColor = haloColor;
@@ -515,16 +517,17 @@ export function drawCalibratedMillimeterRulers(
 		ctx.lineTo(barX + barWidthPx, barY - 4);
 		ctx.stroke();
 
+		ctx.font = "bold 11px monospace";
 		if (invertColors && typeof ctx.strokeText === "function") {
 			ctx.strokeStyle = haloColor;
 			ctx.lineWidth = 2.0;
 			ctx.textAlign = "center";
-			ctx.strokeText("10 mm", barX + barWidthPx / 2, barY - 11);
+			ctx.strokeText("10 mm", barX + barWidthPx / 2, barY - 14);
 		}
 
 		ctx.fillStyle = textColor;
 		ctx.textAlign = "center";
-		ctx.fillText("10 mm", barX + barWidthPx / 2, barY - 11);
+		ctx.fillText("10 mm", barX + barWidthPx / 2, barY - 14);
 		ctx.restore();
 	}
 

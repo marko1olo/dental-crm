@@ -670,7 +670,8 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 								step={1}
 								value={implantAngulationDeg}
 								onChange={(e) => setImplantAngulationDeg(Number.parseInt(e.target.value, 10))}
-								className="w-full accent-cyan-400 min-h-[44px] py-2 cursor-pointer bg-transparent"
+								style={{ touchAction: "none" }}
+								className="w-full accent-cyan-400 min-h-[44px] py-2 cursor-pointer bg-transparent cbct-mpr-range-slider"
 							/>
 						</div>
 
@@ -687,7 +688,8 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 								step={0.5}
 								value={implantEntryXOffsetMm}
 								onChange={(e) => setImplantEntryXOffsetMm(Number.parseFloat(e.target.value))}
-								className="w-full accent-cyan-400 min-h-[44px] py-2 cursor-pointer bg-transparent"
+								style={{ touchAction: "none" }}
+								className="w-full accent-cyan-400 min-h-[44px] py-2 cursor-pointer bg-transparent cbct-mpr-range-slider"
 							/>
 						</div>
 

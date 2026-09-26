@@ -690,15 +690,15 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 			setCrosshairMm((prev) => {
 				if (viewport === "axial") {
 					const nz = prev.z + delta * volume.spacingMm.z;
-					return { ...prev, z: Math.max(-volume.boundsMm.depth / 2, Math.min(volume.boundsMm.depth / 2, nz)) };
+					return { ...prev, z: Math.max(-volume.physicalSizeMm.z / 2, Math.min(volume.physicalSizeMm.z / 2, nz)) };
 				}
 				if (viewport === "coronal") {
 					const ny = prev.y + delta * volume.spacingMm.y;
-					return { ...prev, y: Math.max(-volume.boundsMm.height / 2, Math.min(volume.boundsMm.height / 2, ny)) };
+					return { ...prev, y: Math.max(-volume.physicalSizeMm.y / 2, Math.min(volume.physicalSizeMm.y / 2, ny)) };
 				}
 				if (viewport === "sagittal") {
 					const nx = prev.x + delta * volume.spacingMm.x;
-					return { ...prev, x: Math.max(-volume.boundsMm.width / 2, Math.min(volume.boundsMm.width / 2, nx)) };
+					return { ...prev, x: Math.max(-volume.physicalSizeMm.x / 2, Math.min(volume.physicalSizeMm.x / 2, nx)) };
 				}
 				return prev;
 			});

@@ -4,6 +4,7 @@ import {
 	buildPanoramicArch,
 	type PanoramicArchResult,
 } from "./panoramicArch";
+import { validateImplantNerveSafety } from "@dental/shared";
 
 /**
  * ПЛАНИРОВАНИЕ ИМПЛАНТАЦИИ ПЕРЕСТАЁТ УМИРАТЬ ВМЕСТЕ С ЭКРАНОМ.

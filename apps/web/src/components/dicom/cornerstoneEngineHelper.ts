@@ -299,7 +299,7 @@ export function generatePanorexVolumeInput(params: {
 		annotations =
 			cornerstoneTools.annotation.state.getAnnotations(
 				cornerstoneTools.SplineROITool.toolName,
-				element,
+				element as HTMLDivElement,
 			) ?? [];
 	} catch {
 		return { issue: "read_failed" };

@@ -362,7 +362,7 @@ export function drawSagittalMprOverlay(
 		heightPx: metadata.heightPx,
 		centerPx: centerScreen,
 		plane: "sagittal",
-		rotationDeg: obliqueAngles.sagittalAngleDeg,
+		rotationDeg: obliqueAngles.sagittalTiltDeg,
 		activeHandle:
 			activeRotationHandle?.plane === "sagittal"
 				? activeRotationHandle.handle

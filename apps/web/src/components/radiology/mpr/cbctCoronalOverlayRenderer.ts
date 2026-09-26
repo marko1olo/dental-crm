@@ -362,7 +362,7 @@ export function drawCoronalMprOverlay(
 		heightPx: metadata.heightPx,
 		centerPx: centerScreen,
 		plane: "coronal",
-		rotationDeg: obliqueAngles.coronalAngleDeg,
+		rotationDeg: obliqueAngles.coronalTiltDeg,
 		activeHandle:
 			activeRotationHandle?.plane === "coronal"
 				? activeRotationHandle.handle

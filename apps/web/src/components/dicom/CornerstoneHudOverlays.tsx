@@ -405,16 +405,36 @@ export const CornerstoneHudOverlays: React.FC<CornerstoneHudOverlaysProps> = ({
 							style={{
 								display: "flex",
 								alignItems: "center",
+								flexWrap: "wrap",
 								gap: "6px",
-								fontSize: "11px",
-								color: "var(--ink, #d4d4d8)",
-								borderTop: latestImplant ? "1px solid var(--line, rgba(255,255,255,0.1))" : "none",
+								fontSize: "12px",
+								fontWeight: 600,
+								color: "#f4f4f5",
+								borderTop: latestImplant ? "1px solid rgba(255,255,255,0.15)" : "none",
 								paddingTop: latestImplant ? "6px" : 0,
 							}}
 						>
-							<Ruler className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-							<span>
-								Гребень: H={activeCaliper.heightMm} мм, W={activeCaliper.crestWidthMm} мм ({activeCaliper.implantFeasibility.isAdequate ? "норма" : "дефицит"})
+							<div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+								<Ruler className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+								<span>Гребень:</span>
+							</div>
+							<span style={{ fontFamily: "monospace", color: "#38bdf8", background: "rgba(56,189,248,0.15)", padding: "1px 5px", borderRadius: "4px" }}>
+								H={activeCaliper.heightMm} мм
+							</span>
+							<span style={{ fontFamily: "monospace", color: "#38bdf8", background: "rgba(56,189,248,0.15)", padding: "1px 5px", borderRadius: "4px" }}>
+								W={activeCaliper.crestWidthMm} мм
+							</span>
+							<span
+								style={{
+									fontSize: "11px",
+									padding: "1px 6px",
+									borderRadius: "4px",
+									background: activeCaliper.implantFeasibility.isAdequate ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)",
+									color: activeCaliper.implantFeasibility.isAdequate ? "#4ade80" : "#f87171",
+									border: `1px solid ${activeCaliper.implantFeasibility.isAdequate ? "rgba(74,222,128,0.4)" : "rgba(248,113,113,0.4)"}`,
+								}}
+							>
+								{activeCaliper.implantFeasibility.isAdequate ? "Норма (кость достаточна)" : "Дефицит кости (GBR)"}
 							</span>
 						</div>
 					)}

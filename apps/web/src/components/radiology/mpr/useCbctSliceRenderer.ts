@@ -26,6 +26,7 @@ import type {
 	NerveSafetyAuditResult,
 	CrossSectionImplantPose,
 	MandibularCanalCrossSection,
+	VirtualImplantSpec,
 } from "../implantSafetyEngine";
 import type { CbctToolMode } from "../CbctLeftToolDock";
 import type { StudioMode, ViewLayoutMode } from "./cbctStudioTypes";
@@ -77,6 +78,7 @@ export interface UseCbctSliceRendererParams {
 	showDentalArch: boolean;
 	archCurve: DentalArchCurve;
 	activeCrossSection: CrossSectionSliceData | null;
+	currentImplantSpec: VirtualImplantSpec;
 	selectedArchAnchorIdx: number | null;
 	hoveredArchAnchorIdx: number | null;
 	isDraggingArchAnchor: number | null;
@@ -137,6 +139,7 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 		showDentalArch,
 		archCurve,
 		activeCrossSection,
+		currentImplantSpec,
 		selectedArchAnchorIdx,
 		hoveredArchAnchorIdx,
 		isDraggingArchAnchor,
@@ -323,7 +326,7 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 					if (!panoImgDataRef.current || panoImgDataRef.current.width !== pw || panoImgDataRef.current.height !== ph) {
 						panoImgDataRef.current = offCtx.createImageData(pw, ph);
 					}
-					panoImgDataRef.current.data.set(panoramicData.imageDataRgba);
+					panoImgDataRef.current.data.set(panoramicData.pixelData);
 					offCtx.putImageData(panoImgDataRef.current, 0, 0);
 				}
 				if (canvas.width !== pw || canvas.height !== ph) {
@@ -360,7 +363,7 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 					if (!crossSectionImgDataRef.current || crossSectionImgDataRef.current.width !== cw || crossSectionImgDataRef.current.height !== ch) {
 						crossSectionImgDataRef.current = offCtx.createImageData(cw, ch);
 					}
-					crossSectionImgDataRef.current.data.set(activeCrossSection.imageDataRgba);
+					crossSectionImgDataRef.current.data.set(activeCrossSection.pixelData);
 					offCtx.putImageData(crossSectionImgDataRef.current, 0, 0);
 				}
 				if (canvas.width !== cw || canvas.height !== ch) {
@@ -369,7 +372,7 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 				}
 				ctx.save();
 				ctx.clearRect(0, 0, canvas.width, canvas.height);
-				const transform = transforms.crossSection ?? DEFAULT_VIEWPORT_TRANSFORM;
+				const transform = transforms.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM;
 				ctx.translate(transform.panX, transform.panY);
 				ctx.scale(transform.zoom, transform.zoom);
 				ctx.drawImage(off, 0, 0);
@@ -508,20 +511,22 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 				}
 				ctx.clearRect(0, 0, pw, ph);
 				drawPanoramicOverlay(ctx, {
-					panoramicData,
-					archCurve,
-					crossSections,
-					activeCrossSectionIdx,
+					activePano: panoramicData,
+					volume,
 					crosshairMm,
 					transform: transforms.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM,
-					invertColors,
+					slabMode,
+					slabThicknessMm,
 					interpolatedNerve3D,
-					volume,
-					activeTool,
-					rulers,
-					activeRuler,
-					selectedMeasurement,
-					hoveredMeasurementHandle,
+					archCurve,
+					nervePoints,
+					studioMode,
+					activeCrossSection,
+					implant3DWorld,
+					nerveAuditResult,
+					crossSections,
+					hoveredToothMarkerFdi: null,
+					invertColors,
 				});
 			}
 		}
@@ -540,20 +545,16 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 				ctx.clearRect(0, 0, cw, ch);
 				drawCrossSectionOverlay(ctx, {
 					activeCrossSection,
-					currentImplantPose,
+					transform: transforms.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM,
+					studioMode,
 					currentCanal,
-					implant3DWorld,
+					currentImplantPose,
+					currentImplantSpec,
 					nerveAuditResult,
+					selectedMeasurement,
 					hoveredImplantPart,
 					dragImplantPart,
-					transform: transforms.crossSection ?? DEFAULT_VIEWPORT_TRANSFORM,
 					invertColors,
-					volume,
-					activeTool,
-					rulers,
-					activeRuler,
-					selectedMeasurement,
-					hoveredMeasurementHandle,
 				});
 			}
 		}

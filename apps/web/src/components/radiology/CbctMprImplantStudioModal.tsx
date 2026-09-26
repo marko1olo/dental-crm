@@ -295,18 +295,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			windowWidth,
 			windowLevel,
 			invert: invertColors,
-			focalTroughThicknessMm: slabThicknessMm,
-			targetToothFdi: activeCrossSection?.nearestToothFdi ?? null,
 		});
 		setPanoramicData(panoRes);
-		const crossSlices = generateCrossSectionSlices(volume, archCurve, {
-			sliceWidthMm: 24.0,
-			sliceHeightMm: 34.0,
-			sliceIntervalMm: 1.5,
+		const crossSlices = generateCrossSectionSlices(volume, archCurve, 1.5, crosshairMm.z, {
+			widthMm: 24.0,
+			heightMm: 34.0,
 			windowWidth,
 			windowLevel,
 			invert: invertColors,
-			thicknessMm: slabThicknessMm,
 		});
 		setCrossSections(crossSlices);
 	}, [volume, isOpen, archCurve, windowWidth, windowLevel, invertColors, slabThicknessMm, activeCrossSection?.nearestToothFdi]);
@@ -446,6 +442,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		showDentalArch,
 		archCurve,
 		activeCrossSection,
+		currentImplantSpec,
 		selectedArchAnchorIdx: null,
 		hoveredArchAnchorIdx: interactions.hoveredArchAnchorIdx,
 		isDraggingArchAnchor: interactions.isDraggingArchAnchor,
@@ -521,7 +518,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			implantPose: currentImplantPose,
 			mischResult: mischClassification,
 			huSampling: huSamplingResult,
-			containment: { isContained: true, buccalBoneDeficitMm: 0, lingualBoneDeficitMm: 0, requiredGbrWidthMm: 0, isPerforationRisk: false },
+			containment: { residualBuccalBoneMm: 2.0, residualLingualBoneMm: 2.0, isBuccalBoneAdequate: true, isLingualBoneAdequate: true, isApexContained: true, requiresGbrAugmentation: false },
 			nerveSafety: nerveAuditResult,
 			diary043Text: diaryText,
 			tonerSaving: true,
@@ -532,46 +529,33 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 	// Hotkeys hook
 	useCbctKeyboardShortcuts({
-		isOpen,
-		volume,
-		activeTool,
+		enabled: isOpen,
 		activeViewport,
-		setActiveTool,
 		setActiveViewport,
-		handleToggleMaximize: () => handleToggleMaximize(activeViewport),
-		handleScrollSlice: (direction, step) => {
+		onToggleMaximize: () => handleToggleMaximize(activeViewport),
+		onScrollSlice: (direction, step) => {
 			if (!volume) return;
 			const delta = (direction === "next" ? 1 : -1) * step;
 			setCrosshairMm((prev) => ({ ...prev, z: prev.z + delta * volume.spacingMm.z }));
 		},
-		handleKeyboardZoom: (direction) => {
+		onZoom: (direction) => {
 			setTransforms((prev) => ({
 				...prev,
 				[activeViewport]: applyStepZoom(prev[activeViewport] ?? DEFAULT_VIEWPORT_TRANSFORM, direction),
 			}));
 		},
-		handleResetTransform: () => handleFullResetViewport(activeViewport),
-		handleResetAll,
-		handleSelectPreset: (presetId) => {
-			setActivePreset(presetId);
-			const p = CBCT_HOUNSFIELD_PRESETS[presetId];
-			if (p) {
-				setWindowWidth(p.windowWidth);
-				setWindowLevel(p.windowLevel);
-			}
-		},
-		handleSelectPresetShortcut: (preset) => {
-			const id = preset === "bone" ? "bone_dense" : preset === "endo" ? "endo_contrast" : "soft_tissue";
+		onResetTransform: () => handleFullResetViewport(activeViewport),
+		onSelectPreset: (preset) => {
+			const id = preset === "bone" ? "bone_dense" : preset === "endo" ? "enamel_dentin" : "soft_tissue";
 			setActivePreset(id);
-			const p = CBCT_HOUNSFIELD_PRESETS[id];
+			const p = CBCT_HOUNSFIELD_PRESETS.find((pr) => pr.id === id);
 			if (p) {
 				setWindowWidth(p.windowWidth);
 				setWindowLevel(p.windowLevel);
 			}
 		},
-		handleToggleStudioMode: () => setStudioMode((prev) => (prev === "implant" ? "diagnostic" : "implant")),
-		handleTogglePanel: () => setIsSidebarOpen((prev) => !prev),
-		handleExportForm043Diary: handleExportToEmr,
+		onToggleMode: () => setStudioMode((prev) => (prev === "implant" ? "diagnostic" : "implant")),
+		onTogglePanel: () => setIsSidebarOpen((prev) => !prev),
 	});
 
 	if (!isOpen) return null;
@@ -580,12 +564,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		<div
 			id={`cbct-modal-${modalId}`}
 			data-testid="cbct-studio-modal"
-			className={`fixed inset-0 z-50 flex flex-col bg-[var(--paper-strong,#09090b)] text-[var(--ink,#f4f4f5)] font-sans select-none overflow-hidden ${
+			data-theme="dark"
+			style={{ colorScheme: "dark" }}
+			className={`fixed inset-0 z-50 flex flex-col bg-zinc-950 text-zinc-100 font-sans select-none overflow-hidden ${
 				isFullscreen ? "p-0" : "p-1 sm:p-2 bg-black/80 backdrop-blur-sm"
 			}`}
 		>
 			<div
-				className="flex-1 flex flex-col w-full h-full min-h-0 bg-[var(--paper-strong,#09090b)] border border-[var(--line,#27272a)] rounded-lg overflow-hidden shadow-2xl relative"
+				className="flex-1 flex flex-col w-full h-full min-h-0 bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden shadow-2xl relative"
 				onDragOver={(e) => {
 					e.preventDefault();
 					dicomLoader.setIsDragOverWindow(true);
@@ -625,23 +611,19 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					<CbctLeftToolDock
 						activeTool={activeTool}
 						onSelectTool={setActiveTool}
-						activePreset={activePreset}
+						activePresetId={activePreset}
 						onSelectPreset={(p) => {
 							setActivePreset(p);
-							const preset = CBCT_HOUNSFIELD_PRESETS[p];
+							const preset = CBCT_HOUNSFIELD_PRESETS.find((pr) => pr.id === p);
 							if (preset) {
 								setWindowWidth(preset.windowWidth);
 								setWindowLevel(preset.windowLevel);
 							}
 						}}
-						windowWidth={windowWidth}
-						windowLevel={windowLevel}
-						onWindowWidthChange={setWindowWidth}
-						onWindowLevelChange={setWindowLevel}
 						slabMode={slabMode}
-						onSlabModeChange={setSlabMode}
+						onSelectSlabMode={setSlabMode}
 						slabThicknessMm={slabThicknessMm}
-						onSlabThicknessChange={(th) => {
+						onChangeSlabThicknessMm={(th) => {
 							setSlabThicknessMm(th);
 							setArchCurve((prev) => ({ ...prev, focalTroughThicknessMm: th }));
 						}}
@@ -656,6 +638,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					<CbctMprViewportsGrid
 						isSidebarOpen={isSidebarOpen}
 						mobileActiveTab={mobileActiveTab}
+						onSelectMobileTab={setMobileActiveTab}
 						volume={volume}
 						dicomLoadingStatus={dicomLoader.dicomLoadingStatus}
 						dicomProgress={dicomLoader.dicomProgress}
@@ -760,23 +743,19 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						setSelectedLengthMm={setSelectedLengthMm}
 						implantEntryXOffsetMm={implantEntryXOffsetMm}
 						setImplantEntryXOffsetMm={setImplantEntryXOffsetMm}
-						implantEntryDepthMm={implantEntryDepthMm}
 						setImplantEntryDepthMm={setImplantEntryDepthMm}
-						isAudioEnabled={isAudioEnabled}
-						setIsAudioEnabled={setIsAudioEnabled}
 						handleExportToEmr={handleExportToEmr}
-						handleExportPdfReport={handleExportPdfReport}
+						handleExportPdfReport={() => { void handleExportPdfReport(); }}
 					/>
 				</main>
 
 				<CbctHotkeysStatusBar
-					activeTool={activeTool}
 					activeViewport={activeViewport}
-					activePreset={activePreset}
-					windowWidth={windowWidth}
-					windowLevel={windowLevel}
-					studioMode={studioMode}
-					isSidebarOpen={isSidebarOpen}
+					onToggleHelp={() => {}}
+					isPanelOpen={isSidebarOpen}
+					onTogglePanel={() => setIsSidebarOpen((prev) => !prev)}
+					isMaximized={maximizedViewport !== null}
+					onToggleMaximize={() => handleToggleMaximize(activeViewport)}
 				/>
 			</div>
 		</div>

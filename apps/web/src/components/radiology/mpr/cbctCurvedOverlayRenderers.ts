@@ -266,16 +266,17 @@ export function drawPanoramicOverlay(
 		for (const tick of fanTicks) {
 			const isHovered =
 				hoveredToothMarkerFdi !== null &&
-				tick.slice.nearestToothFdi === String(hoveredToothMarkerFdi);
+				tick.nearestToothFdi === String(hoveredToothMarkerFdi);
 			ctx.strokeStyle = isHovered
 				? "#38bdf8"
-				: tick.isHighlighted
+				: tick.isMajor
 					? "rgba(255, 255, 255, 0.7)"
 					: "rgba(255, 255, 255, 0.25)";
-			ctx.lineWidth = isHovered || tick.isHighlighted ? 1.5 : 1.0;
+			ctx.lineWidth = isHovered || tick.isMajor ? 1.5 : 1.0;
+			const tickHeightPx = tick.isMajor ? 10 : 5;
 			ctx.beginPath();
-			ctx.moveTo(tick.x, canvas.height - 1);
-			ctx.lineTo(tick.x, canvas.height - 1 - tick.heightPx);
+			ctx.moveTo(tick.panoX, canvas.height - 1);
+			ctx.lineTo(tick.panoX, canvas.height - 1 - tickHeightPx);
 			ctx.stroke();
 		}
 
