@@ -125,6 +125,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const [panoramicData, setPanoramicData] = useState<PanoramicReconstructionResult | null>(null);
 	const [crossSections, setCrossSections] = useState<CrossSectionSliceData[]>([]);
 	const [activeCrossSectionIdx, setActiveCrossSectionIdx] = useState<number>(0);
+	const [crossSectionStepMm, setCrossSectionStepMm] = useState<number>(1.5);
 
 	// Implant planning & nerve safety
 	const [selectedBrand, setSelectedBrand] = useState<ImplantBrandKey>("osstem");
@@ -260,7 +261,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			invert: invertColors,
 		});
 		setPanoramicData(panoRes);
-		const crossSlices = generateCrossSectionSlices(volume, archCurve, 1.5, crosshairMm.z, {
+		const crossSlices = generateCrossSectionSlices(volume, archCurve, crossSectionStepMm, crosshairMm.z, {
 			widthMm: 24.0,
 			heightMm: 34.0,
 			windowWidth,
@@ -268,7 +269,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			invert: invertColors,
 		});
 		setCrossSections(crossSlices);
-	}, [volume, isOpen, archCurve, windowWidth, windowLevel, invertColors, slabThicknessMm, activeCrossSection?.nearestToothFdi]);
+	}, [volume, isOpen, archCurve, crossSectionStepMm, windowWidth, windowLevel, invertColors, slabThicknessMm, activeCrossSection?.nearestToothFdi]);
 
 	const handleResetAll = useCallback(() => {
 		if (volume) setCrosshairMm({ x: 0, y: 0, z: 0 });
@@ -609,6 +610,17 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					isFullscreen={isFullscreen}
 					handleToggleFullscreenModal={() => setIsFullscreen((prev) => !prev)}
 					onClose={onClose}
+					activePresetId={activePreset}
+					onSelectPreset={(p) => {
+						setActivePreset(p);
+						const preset = CBCT_HOUNSFIELD_PRESETS.find((pr) => pr.id === p);
+						if (preset) {
+							setWindowWidth(preset.windowWidth);
+							setWindowLevel(preset.windowLevel);
+						}
+					}}
+					crossSectionStepMm={crossSectionStepMm}
+					onChangeCrossSectionStepMm={setCrossSectionStepMm}
 				/>
 
 				<main className="flex-1 flex min-h-0 w-full overflow-hidden relative">

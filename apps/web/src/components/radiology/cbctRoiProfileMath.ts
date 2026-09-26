@@ -318,3 +318,212 @@ export function sampleLineProfile(
 		trabecularMeanHU,
 	};
 }
+
+// ─── 3. TRANS-ALVEOLAR DUAL CORTICAL PLATE DETECTION (BUCCAL / LINGUAL) ─────
+
+export interface CorticalPlateMeasurement {
+	readonly startIndex: number;
+	readonly endIndex: number;
+	readonly thicknessMm: number;
+	readonly peakHU: number;
+	readonly meanHU: number;
+}
+
+export interface AlveolarCorticalPlatesResult {
+	readonly totalRidgeWidthMm: number;
+	readonly buccalPlate: CorticalPlateMeasurement | null;
+	readonly lingualPlate: CorticalPlateMeasurement | null;
+	readonly trabecularCore: {
+		readonly widthMm: number;
+		readonly meanHU: number;
+		readonly minHU: number;
+		readonly maxHU: number;
+		readonly mischClass: MischBoneDensity;
+	};
+	readonly isBuccalThinningRisk: boolean; // Buser et al. (2004) < 1.5mm rule
+	readonly isCorticalPerforationRisk: boolean;
+}
+
+/**
+ * Detects buccal (vestibular) and lingual (palatal/oral) cortical bone plates
+ * from a continuous trans-alveolar line profile, computing exact plate thicknesses,
+ * marrow core density (Misch class), and Buser et al. (2004) buccal containment risks.
+ */
+export function detectAlveolarCorticalPlates(
+	profile: CbctLineProfileResult,
+	corticalThresholdHU = 850,
+): AlveolarCorticalPlatesResult {
+	const samples = profile.samples;
+	const n = samples.length;
+	const step = profile.stepSizeMm > 0 ? profile.stepSizeMm : 0.25;
+
+	if (n < 3) {
+		return {
+			totalRidgeWidthMm: 0,
+			buccalPlate: null,
+			lingualPlate: null,
+			trabecularCore: {
+				widthMm: 0,
+				meanHU: profile.meanHU,
+				minHU: profile.minHU,
+				maxHU: profile.maxHU,
+				mischClass: classifyMischDensity(profile.meanHU),
+			},
+			isBuccalThinningRisk: true,
+			isCorticalPerforationRisk: true,
+		};
+	}
+
+	// 1. Scan from buccal side (index 0 forward)
+	let bStart = -1;
+	let bEnd = -1;
+	for (let i = 0; i < n; i++) {
+		if (samples[i]!.hu >= corticalThresholdHU) {
+			bStart = i;
+			break;
+		}
+	}
+	if (bStart !== -1) {
+		bEnd = bStart;
+		for (let i = bStart + 1; i < n; i++) {
+			if (samples[i]!.hu >= corticalThresholdHU) {
+				bEnd = i;
+			} else {
+				break;
+			}
+		}
+	}
+
+	// 2. Scan from lingual side (index n-1 backward)
+	let lStart = -1;
+	let lEnd = -1;
+	for (let i = n - 1; i >= 0; i--) {
+		if (samples[i]!.hu >= corticalThresholdHU) {
+			lEnd = i;
+			break;
+		}
+	}
+	if (lEnd !== -1) {
+		lStart = lEnd;
+		for (let i = lEnd - 1; i >= 0; i--) {
+			if (samples[i]!.hu >= corticalThresholdHU) {
+				lStart = i;
+			} else {
+				break;
+			}
+		}
+	}
+
+	// Prevent buccal and lingual plate overlap
+	let buccalPlate: CorticalPlateMeasurement | null = null;
+	let lingualPlate: CorticalPlateMeasurement | null = null;
+
+	if (bStart !== -1 && bEnd !== -1) {
+		if (lStart !== -1 && lEnd !== -1 && bStart === lStart && bEnd === lEnd) {
+			// Single dense cortical ridge (e.g. sharp knife-edge crest)
+			let peak = samples[bStart]!.hu;
+			let sum = 0;
+			for (let i = bStart; i <= bEnd; i++) {
+				const hu = samples[i]!.hu;
+				sum += hu;
+				if (hu > peak) peak = hu;
+			}
+			const count = bEnd - bStart + 1;
+			buccalPlate = {
+				startIndex: bStart,
+				endIndex: bEnd,
+				thicknessMm: Number((count * step).toFixed(2)),
+				peakHU: peak,
+				meanHU: Math.round(sum / count),
+			};
+		} else {
+			// Two distinct plates
+			let bPeak = samples[bStart]!.hu;
+			let bSum = 0;
+			for (let i = bStart; i <= bEnd; i++) {
+				const hu = samples[i]!.hu;
+				bSum += hu;
+				if (hu > bPeak) bPeak = hu;
+			}
+			const bCount = bEnd - bStart + 1;
+			buccalPlate = {
+				startIndex: bStart,
+				endIndex: bEnd,
+				thicknessMm: Number((bCount * step).toFixed(2)),
+				peakHU: bPeak,
+				meanHU: Math.round(bSum / bCount),
+			};
+
+			if (lStart !== -1 && lEnd !== -1 && lStart > bEnd) {
+				let lPeak = samples[lStart]!.hu;
+				let lSum = 0;
+				for (let i = lStart; i <= lEnd; i++) {
+					const hu = samples[i]!.hu;
+					lSum += hu;
+					if (hu > lPeak) lPeak = hu;
+				}
+				const lCount = lEnd - lStart + 1;
+				lingualPlate = {
+					startIndex: lStart,
+					endIndex: lEnd,
+					thicknessMm: Number((lCount * step).toFixed(2)),
+					peakHU: lPeak,
+					meanHU: Math.round(lSum / lCount),
+				};
+			}
+		}
+	}
+
+	// 3. Trabecular core between plates
+	const coreStart = buccalPlate ? buccalPlate.endIndex + 1 : 0;
+	const coreEnd = lingualPlate ? lingualPlate.startIndex - 1 : (buccalPlate ? n - 1 : n - 1);
+	let coreSum = 0;
+	let coreCount = 0;
+	let coreMin = 32767;
+	let coreMax = -32768;
+
+	if (coreStart <= coreEnd && coreStart < n && coreEnd >= 0) {
+		for (let i = coreStart; i <= coreEnd; i++) {
+			const hu = samples[i]!.hu;
+			coreSum += hu;
+			coreCount++;
+			if (hu < coreMin) coreMin = hu;
+			if (hu > coreMax) coreMax = hu;
+		}
+	}
+
+	const coreMeanHU = coreCount > 0 ? Math.round(coreSum / coreCount) : (buccalPlate?.meanHU ?? profile.meanHU);
+	const coreWidthMm = Number((Math.max(0, coreCount) * step).toFixed(2));
+
+	// 4. Total ridge width (from buccal plate start to lingual plate end)
+	let totalRidgeWidthMm = 0;
+	if (buccalPlate && lingualPlate) {
+		totalRidgeWidthMm = Number(((lingualPlate.endIndex - buccalPlate.startIndex + 1) * step).toFixed(2));
+	} else if (buccalPlate) {
+		totalRidgeWidthMm = buccalPlate.thicknessMm;
+	} else {
+		totalRidgeWidthMm = Number(profile.totalLengthMm.toFixed(2));
+	}
+
+	// 5. Clinical Safety & Buser et al. (2004) 1.5mm Buccal Containment
+	const buccalThickness = buccalPlate?.thicknessMm ?? 0;
+	const lingualThickness = lingualPlate?.thicknessMm ?? 0;
+	const isBuccalThinningRisk = buccalThickness < 1.5;
+	const isCorticalPerforationRisk = buccalThickness < 1.0 || lingualThickness < 1.0;
+
+	return {
+		totalRidgeWidthMm,
+		buccalPlate,
+		lingualPlate,
+		trabecularCore: {
+			widthMm: coreWidthMm,
+			meanHU: coreMeanHU,
+			minHU: coreCount > 0 ? coreMin : coreMeanHU,
+			maxHU: coreCount > 0 ? coreMax : coreMeanHU,
+			mischClass: classifyMischDensity(coreMeanHU),
+		},
+		isBuccalThinningRisk,
+		isCorticalPerforationRisk,
+	};
+}
+

@@ -251,3 +251,143 @@ export function transformWorldMmToIjkContinuous(
 		z: Number(k.toFixed(4)),
 	};
 }
+
+// ─── 4. ANISOTROPIC ANGULAR & COBB ANGLE CALIPER MATH ────────────────────────
+
+/**
+ * Calculates true physical 2D angle in degrees θ ∈ [0°, 180°] between 3 points
+ * on an anisotropic slice (e.g. Coronal or Sagittal where spacingX !== spacingY).
+ *
+ * Prevents geometric distortion where an isotropic 45° angle collapses to 26.6° on 1:2 voxels.
+ */
+export function calculateAnisotropicAngleBetween3Points2D(
+	p1: Point2D,
+	vertex: Point2D,
+	p2: Point2D,
+	spacingX = 1.0,
+	spacingY = 1.0,
+): number {
+	const sx = Number.isFinite(spacingX) && spacingX > 0 ? spacingX : 1.0;
+	const sy = Number.isFinite(spacingY) && spacingY > 0 ? spacingY : 1.0;
+
+	const v1x = (p1.x - vertex.x) * sx;
+	const v1y = (p1.y - vertex.y) * sy;
+	const v2x = (p2.x - vertex.x) * sx;
+	const v2y = (p2.y - vertex.y) * sy;
+
+	const len1 = Math.hypot(v1x, v1y);
+	const len2 = Math.hypot(v2x, v2y);
+
+	if (len1 < 1e-6 || len2 < 1e-6) return 0.0;
+
+	const dot = v1x * v2x + v1y * v2y;
+	const cosTheta = Math.max(-1.0, Math.min(1.0, dot / (len1 * len2)));
+	const angleRad = Math.acos(cosTheta);
+	const angleDeg = (angleRad * 180.0) / Math.PI;
+
+	return Number(angleDeg.toFixed(1));
+}
+
+/**
+ * Calculates 4-point Cobb Angle / intersection angle between two independent 2D line segments
+ * (e.g. Implant Axis Line vs Cortical Plate Ridge Line) in physical millimeter space.
+ *
+ * @param acuteOnly If true, returns acute angle θ ∈ [0°, 90°], standard for Cobb/ortho angles.
+ */
+export function calculateAngleBetween2Lines2D(
+	line1Start: Point2D,
+	line1End: Point2D,
+	line2Start: Point2D,
+	line2End: Point2D,
+	spacingX = 1.0,
+	spacingY = 1.0,
+	acuteOnly = false,
+): number {
+	const sx = Number.isFinite(spacingX) && spacingX > 0 ? spacingX : 1.0;
+	const sy = Number.isFinite(spacingY) && spacingY > 0 ? spacingY : 1.0;
+
+	const v1x = (line1End.x - line1Start.x) * sx;
+	const v1y = (line1End.y - line1Start.y) * sy;
+	const v2x = (line2End.x - line2Start.x) * sx;
+	const v2y = (line2End.y - line2Start.y) * sy;
+
+	const len1 = Math.hypot(v1x, v1y);
+	const len2 = Math.hypot(v2x, v2y);
+
+	if (len1 < 1e-6 || len2 < 1e-6) return 0.0;
+
+	let dot = (v1x * v2x + v1y * v2y) / (len1 * len2);
+	if (acuteOnly) {
+		dot = Math.abs(dot);
+	}
+	const cosTheta = Math.max(-1.0, Math.min(1.0, dot));
+	const angleDeg = (Math.acos(cosTheta) * 180.0) / Math.PI;
+
+	return Number(angleDeg.toFixed(1));
+}
+
+/**
+ * Calculates 3D angle between two arbitrary spatial lines (4 points) in world millimeters.
+ * Standard in 3D Slicer / ITI Consensus for 3D implant trajectory to cortical plate normal.
+ */
+export function calculateAngleBetween2Lines3D(
+	line1Start: Point3D,
+	line1End: Point3D,
+	line2Start: Point3D,
+	line2End: Point3D,
+	acuteOnly = false,
+): number {
+	const v1x = line1End.x - line1Start.x;
+	const v1y = line1End.y - line1Start.y;
+	const v1z = line1End.z - line1Start.z;
+
+	const v2x = line2End.x - line2Start.x;
+	const v2y = line2End.y - line2Start.y;
+	const v2z = line2End.z - line2Start.z;
+
+	const len1 = Math.hypot(v1x, v1y, v1z);
+	const len2 = Math.hypot(v2x, v2y, v2z);
+
+	if (len1 < 1e-6 || len2 < 1e-6) return 0.0;
+
+	let dot = (v1x * v2x + v1y * v2y + v1z * v2z) / (len1 * len2);
+	if (acuteOnly) {
+		dot = Math.abs(dot);
+	}
+	const cosTheta = Math.max(-1.0, Math.min(1.0, dot));
+	const angleDeg = (Math.acos(cosTheta) * 180.0) / Math.PI;
+
+	return Number(angleDeg.toFixed(1));
+}
+
+/**
+ * Calculates the clinical inclination angle of a virtual implant axis relative to
+ * a cortical plate surface normal in 3D world space (degrees).
+ */
+export function calculateImplantAngulationToPlane(
+	implantApexMm: Point3D,
+	implantPlatformMm: Point3D,
+	planeNormal: Point3D,
+): {
+	readonly angleToNormalDeg: number;
+	readonly angleToSurfaceDeg: number;
+} {
+	const axisX = implantApexMm.x - implantPlatformMm.x;
+	const axisY = implantApexMm.y - implantPlatformMm.y;
+	const axisZ = implantApexMm.z - implantPlatformMm.z;
+
+	const axisLen = Math.hypot(axisX, axisY, axisZ);
+	const normalLen = Math.hypot(planeNormal.x, planeNormal.y, planeNormal.z);
+
+	if (axisLen < 1e-6 || normalLen < 1e-6) {
+		return { angleToNormalDeg: 0, angleToSurfaceDeg: 90 };
+	}
+
+	const cosTheta = Math.abs((axisX * planeNormal.x + axisY * planeNormal.y + axisZ * planeNormal.z) / (axisLen * normalLen));
+	const clampedCos = Math.max(0.0, Math.min(1.0, cosTheta));
+	const angleToNormalDeg = Number(((Math.acos(clampedCos) * 180.0) / Math.PI).toFixed(1));
+	const angleToSurfaceDeg = Number((90.0 - angleToNormalDeg).toFixed(1));
+
+	return { angleToNormalDeg, angleToSurfaceDeg };
+}
+

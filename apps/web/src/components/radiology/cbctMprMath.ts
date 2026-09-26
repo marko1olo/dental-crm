@@ -180,6 +180,7 @@ export * from "./cbctOrthogonalSliceMath";
 export * from "./cbctVolumeLifecycleMath";
 export * from "./cbctAnisotropicCaliperMath";
 export * from "./cbctCoordinateMath";
+export * from "./cbctRoiProfileMath";
 
 // ─── FORWARDING RE-EXPORTS FOR OBLIQUE MPR ENGINE ────────────────────────────
 import { drawObliqueCrosshairWithRotationHandles } from "./cbctObliqueMath";

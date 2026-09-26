@@ -19,7 +19,7 @@ import {
 	Receipt,
 	X,
 } from "lucide-react";
-import type { CbctVoxelVolume, CbctViewportType } from "../cbctMprMath";
+import { CBCT_HOUNSFIELD_PRESETS, type CbctVoxelVolume, type CbctViewportType } from "../cbctMprMath";
 import type { StudioMode, ViewLayoutMode } from "./cbctStudioTypes";
 
 export interface CbctHeaderBarProps {
@@ -49,6 +49,10 @@ export interface CbctHeaderBarProps {
 	readonly isFullscreen: boolean;
 	readonly handleToggleFullscreenModal: () => void;
 	readonly onClose: () => void;
+	readonly activePresetId?: string | undefined;
+	readonly onSelectPreset?: ((presetId: string) => void) | undefined;
+	readonly crossSectionStepMm?: number | undefined;
+	readonly onChangeCrossSectionStepMm?: ((stepMm: number) => void) | undefined;
 }
 
 export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
@@ -78,6 +82,10 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 	isFullscreen,
 	handleToggleFullscreenModal,
 	onClose,
+	activePresetId,
+	onSelectPreset,
+	crossSectionStepMm,
+	onChangeCrossSectionStepMm,
 }) => {
 	return (
 		<header
@@ -379,6 +387,78 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 										<span>Раскладка 1+3 (Аксиал + MPR)</span>
 									</button>
 								</div>
+							)}
+
+							{/* 1-Click WW/WL Contrast Presets */}
+							{onSelectPreset && (
+								<>
+									<div className="h-px bg-zinc-800 my-0.5" />
+									<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+										Пресеты контраста (HU)
+									</div>
+									<div className="flex flex-col gap-0.5">
+										{CBCT_HOUNSFIELD_PRESETS.map((pr) => {
+											const isSelected = activePresetId === pr.id;
+											return (
+												<button
+													key={pr.id}
+													type="button"
+													onClick={() => {
+														onSelectPreset(pr.id);
+														setIsStudioMenuOpen(false);
+													}}
+													className={`w-full px-2 py-1 rounded text-xs font-semibold text-left flex items-center justify-between gap-1.5 transition-colors cursor-pointer ${
+														isSelected
+															? "text-cyan-400 bg-cyan-950/40 border border-cyan-500/40 shadow-xs"
+															: "text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800"
+													}`}
+													data-testid={`cbct-header-preset-${pr.id}`}
+													title={pr.descriptionRu}
+												>
+													<span className="truncate">{pr.label}</span>
+													<span className="text-[10px] text-zinc-500 font-mono shrink-0">
+														{pr.windowWidth}/{pr.windowLevel}
+													</span>
+												</button>
+											);
+										})}
+									</div>
+								</>
+							)}
+
+							{/* 1-Click Cross-Section Reslice Step Switcher */}
+							{onChangeCrossSectionStepMm && (
+								<>
+									<div className="h-px bg-zinc-800 my-0.5" />
+									<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500 flex items-center justify-between">
+										<span>Шаг кросс-секций</span>
+										<span className="text-cyan-400 font-mono text-[10px]">{crossSectionStepMm ?? 1.5} мм</span>
+									</div>
+									<div className="grid grid-cols-3 gap-1 px-1">
+										{[1.0, 1.5, 2.0].map((step) => {
+											const isCur = Math.abs((crossSectionStepMm ?? 1.5) - step) < 0.05;
+											return (
+												<button
+													key={step}
+													type="button"
+													onClick={() => {
+														onChangeCrossSectionStepMm(step);
+														setIsStudioMenuOpen(false);
+													}}
+													className={`py-1 px-1 rounded text-center text-xs font-semibold font-mono border transition-colors cursor-pointer ${
+														isCur
+															? "bg-zinc-800 text-cyan-400 border-cyan-500/60 shadow-xs"
+															: "bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:bg-zinc-800"
+													}`}
+													data-testid={`cbct-step-btn-${step}`}
+													title={step === 1.0 ? "Шаг 1.0 мм (Высокая точность / Имплантация)" : step === 1.5 ? "Шаг 1.5 мм (Стандарт Planmeca/Vatech)" : "Шаг 2.0 мм (Обзорный шаг)"}
+												>
+													{step.toFixed(1)} мм
+												</button>
+											);
+										})}
+									</div>
+								</>
 							)}
 						</div>
 					)}
