@@ -43,6 +43,7 @@ export interface UseVisitSaveOptions {
 	onSaveSuccess?: ((savedDraft?: VisitDraftAutosave | null) => void) | undefined;
 	onSaveError?: ((error: unknown) => void) | undefined;
 	silent?: boolean | undefined;
+	selectedSpecialty?: DentalSpecialty | string | null | undefined;
 }
 
 export interface UseVisitSaveReturn {
@@ -84,7 +85,8 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 
 	const setServerDraftSyncState = useVisitStore((s) => s.setServerDraftSyncState);
 	const setLastServerDraftSavedAt = useVisitStore((s) => s.setLastServerDraftSavedAt);
-	const selectedSpecialty = useVisitStore((s) => s.selectedSpecialty);
+	const storeSelectedSpecialty = useVisitStore((s) => s.selectedSpecialty);
+	const selectedSpecialty = options.selectedSpecialty ?? storeSelectedSpecialty;
 	const activeVisit = useAppStore((s) => s.dashboard?.activeVisit);
 
 	const computeSignature = useCallback((form?: VisitNoteForm, tr?: string): string => {

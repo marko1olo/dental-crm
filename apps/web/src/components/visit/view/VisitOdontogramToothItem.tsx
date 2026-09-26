@@ -131,15 +131,17 @@ export function VisitOdontogramToothItem({
 							/>
 							{geom.surfaces && (
 								<g opacity="0.6">
-									{geom.surfaces.map((s, idx) => (
-										<path
-											key={idx}
-											d={s.d}
-											fill={s.fill || "transparent"}
-											stroke="rgba(0,0,0,0.15)"
-											strokeWidth="0.8"
-										/>
-									))}
+									{Object.entries(geom.surfaces).map(([key, d]) =>
+										d ? (
+											<path
+												key={key}
+												d={d}
+												fill="transparent"
+												stroke="rgba(0,0,0,0.15)"
+												strokeWidth="0.8"
+											/>
+										) : null,
+									)}
 								</g>
 							)}
 						</g>

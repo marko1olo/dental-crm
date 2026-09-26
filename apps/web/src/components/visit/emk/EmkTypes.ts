@@ -3,13 +3,14 @@ import type React from "react";
 export interface EmkSectionProps {
 	visitNoteForm: Record<string, any>;
 	updateVisitNoteField: (fieldKey: string, value: any) => void;
-	isLocked: boolean;
-	isRevising?: boolean;
-	beginRevise?: () => void;
-	activeSpecialty?: string;
-	activeTooth?: number | null;
-	patientAge?: number | null;
-	patientGender?: string | null;
+	isLocked?: boolean | undefined;
+	disabled?: boolean | undefined;
+	isRevising?: boolean | undefined;
+	beginRevise?: (() => void) | undefined;
+	activeSpecialty?: string | undefined;
+	activeTooth?: number | null | undefined;
+	patientAge?: number | null | undefined;
+	patientGender?: string | null | undefined;
 }
 
 export interface DebouncedEmkTextareaProps {

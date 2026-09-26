@@ -10,7 +10,7 @@ import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
 import { showToast } from "../../GlobalToast";
 
 export interface EmkServicesSectionProps extends EmkSectionProps {
-	onOpenPriceSearchModal: () => void;
+	onOpenPriceSearchModal?: (() => void) | undefined;
 	activePatient?: {
 		id?: string;
 		fullName?: string;
@@ -26,7 +26,7 @@ export function EmkServicesSection({
 	updateVisitNoteField,
 	isLocked,
 	activeTooth,
-	onOpenPriceSearchModal,
+	onOpenPriceSearchModal = () => {},
 	activePatient,
 	activeDoctorName,
 	clinicLegalName,
@@ -52,7 +52,7 @@ export function EmkServicesSection({
 		const curr = visitNoteForm?.treatmentPlan || "";
 		const targetTooth = activeTooth ? ` (зуб ${activeTooth})` : "";
 		const lines = bundle.services
-			.map((s) => `• [${s.code804n}] ${s.title}${targetTooth} — ${s.quantity} усл. (${s.priceRub} ₽)`)
+			.map((s) => `• [${s.code804n}] ${s.title}${targetTooth} — 1 усл. (${s.priceRub} ₽)`)
 			.join("\n");
 		updateVisitNoteField("treatmentPlan", appendClinicalText(curr, `\nПакет «${bundle.title}»:\n${lines}`, "\n"));
 		showToast(`Пакет «${bundle.shortLabel}» добавлен в протокол`, "success", 2000);

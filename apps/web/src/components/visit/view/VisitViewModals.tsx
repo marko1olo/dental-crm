@@ -105,7 +105,7 @@ export function VisitViewModals({
 						setIsEndoModalOpen(false);
 						setEndoModalToothNumber(null);
 					}}
-					toothNumber={endoModalToothNumber}
+					toothNumber={Number(endoModalToothNumber)}
 					toothState={endoModalToothState}
 					patientId={
 						activePatient?.id ||
@@ -264,9 +264,16 @@ export function VisitViewModals({
 			<WarrantyPassportModal
 				isOpen={isWarrantyModalOpen}
 				onClose={() => setIsWarrantyModalOpen(false)}
-				patientId={activePatient?.id}
-				patientName={activePatient?.fullName}
-				doctorId={activeDoctor?.id}
+				patient={
+					activePatient
+						? {
+								id: activePatient.id,
+								fullName: activePatient.fullName,
+								birthDate: activePatient.birthDate,
+								phone: activePatient.phone,
+							}
+						: null
+				}
 				doctorName={activeDoctor?.fullName}
 				clinicName={
 					(
@@ -280,10 +287,10 @@ export function VisitViewModals({
 				initialDiagnosis={
 					visitNoteForm?.diagnosis || "Z01.2 Стоматологическое обследование"
 				}
-				onPassportCreated={(passport) => {
+				onCertificateIssued={(passport: any) => {
 					appendToEMKField(
 						"recommendations",
-						`Оформлен гарантийный паспорт № ${passport.passportNumber} (гарантия ${passport.warrantyMonths} мес. до ${passport.warrantyUntilDate}).`,
+						`Оформлен гарантийный паспорт № ${passport.passportNumber || passport.certificateId} (гарантия ${passport.warrantyMonths} мес. до ${passport.warrantyUntilDate}).`,
 					);
 					showToast("Гарантийный паспорт оформлен", "success");
 				}}
@@ -293,16 +300,22 @@ export function VisitViewModals({
 			<DoctorMobileShiftModal
 				isOpen={isDoctorShiftModalOpen}
 				onClose={() => setIsDoctorShiftModalOpen(false)}
-				doctorId={activeDoctor?.id}
-				doctorName={activeDoctor?.fullName}
+				initialDoctorId={activeDoctor?.id}
+				initialDoctorName={activeDoctor?.fullName}
 			/>
 
 			{/* Informed Consent Modal */}
 			<InformedConsentModal
 				isOpen={isInformedConsentModalOpen}
 				onClose={() => setIsInformedConsentModalOpen(false)}
-				patientName={activePatient?.fullName || activePatient?.name}
-				patientBirthDate={activePatient?.birthDate}
+				patient={
+					activePatient
+						? {
+								fullName: activePatient.fullName || activePatient.name,
+								birthDate: activePatient.birthDate,
+							}
+						: null
+				}
 				doctorName={activeDoctor?.fullName || activeDoctor?.name}
 				clinicName={
 					(

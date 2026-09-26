@@ -20,13 +20,16 @@ export function EmkAnesthesiaSection({
 
 	const patientWeightKg = 70; // Среднестатистический взрослый вес по умолчанию
 	const anesthesiaSafety = React.useMemo(() => {
-		return calculateAnesthesiaCarpulesSafety(selectedAnesDrugKey, carpuleCount, patientWeightKg);
+		return calculateAnesthesiaCarpulesSafety({
+			drugKey: selectedAnesDrugKey,
+			carpulesCount: carpuleCount,
+			patientWeightKg,
+		});
 	}, [selectedAnesDrugKey, carpuleCount, patientWeightKg]);
 
 	const anamnesis = visitNoteForm?.anamnesis || "";
 	const anesthesiaRisk = React.useMemo(() => {
-		const isCardio = /гипертон|давлен|ссз|инфаркт|ибс|стенокард/i.test(anamnesis);
-		return evaluateAnesthesiaRisk(isCardio, selectedAnesDrugKey);
+		return evaluateAnesthesiaRisk(anamnesis, selectedAnesDrugKey);
 	}, [anamnesis, selectedAnesDrugKey]);
 
 	const handleApplyPreset = (name: string, snippet: string) => {

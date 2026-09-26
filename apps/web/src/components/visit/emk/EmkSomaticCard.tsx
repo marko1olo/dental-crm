@@ -2,8 +2,10 @@ import React from "react";
 import { Activity, AlertTriangle, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
 import type { EmkSectionProps } from "./EmkTypes";
 
-export interface EmkSomaticCardProps extends EmkSectionProps {
-	onApplyPhysiologicalNorm: () => void;
+export interface EmkSomaticCardProps extends Partial<EmkSectionProps> {
+	onApplyPhysiologicalNorm?: (() => void) | undefined;
+	onFillNormQuick?: (() => void) | undefined;
+	patient?: any;
 	allergies?: string[];
 	somaticAlerts?: string[];
 	isCardioRisk?: boolean;
@@ -13,13 +15,16 @@ export interface EmkSomaticCardProps extends EmkSectionProps {
 export function EmkSomaticCard({
 	visitNoteForm,
 	updateVisitNoteField,
-	isLocked,
+	isLocked = false,
 	onApplyPhysiologicalNorm,
+	onFillNormQuick,
+	patient,
 	allergies = [],
 	somaticAlerts = [],
 	isCardioRisk = false,
 	cardioRiskMessage,
 }: EmkSomaticCardProps) {
+	const handleNorm = onApplyPhysiologicalNorm || onFillNormQuick;
 	const anamnesis = visitNoteForm?.anamnesis || "";
 	const isSomaticHealthy = anamnesis.includes("Соматически здоров") || anamnesis.includes("здоров");
 
@@ -38,7 +43,7 @@ export function EmkSomaticCard({
 
 				<button
 					type="button"
-					onClick={onApplyPhysiologicalNorm}
+					onClick={handleNorm}
 					data-testid="btn-fill-norm-quick"
 					title="Заполнить поля ЭМК стандартной физиологической нормой (соматически здоров)"
 					className="min-h-[32px] h-8 px-3 py-1 rounded-lg text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-white hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"

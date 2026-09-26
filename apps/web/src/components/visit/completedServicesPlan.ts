@@ -258,6 +258,7 @@ export interface ParsedCompletedLine {
 	quantity: number;
 	priceRub: number | null;
 }
+export type ParsedCompletedServiceLine = ParsedCompletedLine;
 
 /**
  * Разбирает строку «Выполнено: ...» из текста карты приёма.

@@ -151,7 +151,9 @@ describe("Sterilization Form 257/u Batch Reporting & Backoffice Archival (Сан
 	});
 
 	it("5. проверяет доступность журнала Формы 257/у из документов клиники (PrimaryIntakePackageModal, SettingsProtocolsTab, DocumentsView)", () => {
-		const webSrc = path.resolve(process.cwd(), "apps/web/src");
+		const webSrc = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))
+			? path.resolve(process.cwd(), "apps/web/src")
+			: path.resolve(process.cwd(), "src");
 
 		// PrimaryIntakePackageModal.tsx
 		const intakeModalPath = path.join(webSrc, "components/documents/PrimaryIntakePackageModal.tsx");
@@ -191,7 +193,9 @@ describe("Sterilization Form 257/u Batch Reporting & Backoffice Archival (Сан
 	});
 
 	it("6. подтверждает абсолютную чистоту рабочих экранов врача (VisitView, VisitSoapEditor, OdontogramModule, Мандаты 8e, 8v)", () => {
-		const webSrc = path.resolve(process.cwd(), "apps/web/src");
+		const webSrc = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))
+			? path.resolve(process.cwd(), "apps/web/src")
+			: path.resolve(process.cwd(), "src");
 
 		const visitViewPath = path.join(webSrc, "VisitView.tsx");
 		const visitViewContent = fs.readFileSync(visitViewPath, "utf8");

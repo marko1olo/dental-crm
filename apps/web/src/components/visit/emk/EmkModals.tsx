@@ -21,7 +21,7 @@ export function EmkSbpQrModal({
 	if (!isOpen) return null;
 
 	const sbpPayloadUrl = `https://qr.nspk.ru/AD1000${receiptNumber || "00000000"}?type=02&bank=100000000001&sum=${Math.round(totalNetRub * 100)}&cur=RUB&crc=8128`;
-	const sbpQrSvg = generateQrCodeSvg(sbpPayloadUrl, 200);
+	const sbpQrSvg = generateQrCodeSvg(sbpPayloadUrl, { size: 200 });
 
 	return (
 		<div

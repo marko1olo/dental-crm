@@ -172,8 +172,6 @@ export interface VisitViewProps {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visibleVisitSpecialtyFocusOptions: any;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitCloseChecklist: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitDraftBuildMissingSteps: any;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitDraftMissingFieldLabel: any;
@@ -208,4 +206,7 @@ export interface VisitViewProps {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	visitWorkflowSteps: any;
 	setToothState: (code: string, state: string) => void;
+	safeSpecialtyLabels?: Record<string, string> | undefined;
+	visitCloseChecklist?: any[] | undefined;
+	openCloseChecklistSection?: ((task: any) => void) | undefined;
 }

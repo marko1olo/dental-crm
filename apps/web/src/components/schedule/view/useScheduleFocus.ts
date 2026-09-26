@@ -1,5 +1,5 @@
 import { useRef, useCallback, useEffect } from "react";
-import { motionSafeScrollIntoView } from "../../../lib/motionSafeScroll";
+import { motionSafeScrollIntoView } from "../../../motionPreference";
 
 export interface UseScheduleFocusParams {
   showCreateForm: boolean;

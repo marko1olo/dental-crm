@@ -334,7 +334,7 @@ export function VisitEmkTab() {
 	}, [updateVisitNoteField]);
 
 	const handleSaveVisitNote = React.useCallback(async () => {
-		const foreignNoteText = peekNoteFormForeignVisit(openVisitId);
+		const foreignNoteText = peekNoteFormForeignVisit(openVisitId, Boolean(isVisitNoteDirty));
 		if (foreignNoteText) {
 			showToast(
 				"В полях остался текст предыдущего приёма. Скопируйте нужные данные",
@@ -384,7 +384,7 @@ export function VisitEmkTab() {
 		setIsCompletingVisit(true);
 		try {
 			const finalDiary = {
-				complaints: visitNoteForm?.complaints || "Жалоб нет",
+				complaint: visitNoteForm?.complaint || "Жалоб нет",
 				anamnesis:
 					visitNoteForm?.anamnesis ||
 					"Соматически здоров. Аллергоанамнез не отягощен.",
@@ -404,10 +404,13 @@ export function VisitEmkTab() {
 				patientId: activePatient?.id || "pat-default",
 				patientName: activePatient?.fullName || "Пациент",
 				doctorName: dashboard?.activeDoctor?.fullName || "Лечащий врач",
-				diary: finalDiary,
-				services: [],
-				anesthesia: null,
-				assistantUserId: null,
+				diary: {
+					anamnesis: finalDiary.anamnesis,
+					statusLocalis: finalDiary.objectiveStatus,
+					diagnosisIcd10: finalDiary.diagnosis,
+					treatmentDescription: finalDiary.treatmentPlan,
+				},
+				additionalServices: [],
 			});
 
 			setCompletionResult(result);
@@ -421,12 +424,12 @@ export function VisitEmkTab() {
 	}, [visitNoteForm, openVisitId, activePatient, dashboard]);
 
 	const totalNetRub = completionResult?.totalNetRub ?? 0;
-	const receiptNumber = completionResult?.fiscalReceipt54Fz?.receiptNumber ?? "00001";
+	const receiptNumber = completionResult?.receiptNumber ?? "00001";
 	const patientName = activePatient?.fullName ?? "Пациент";
 
-	const sbpPayloadUrl = `https://qr.nspk.ru/AD1000${receiptNumber}?type=02&bank=100000000004&sum=${Math.round(totalNetRub * 100)}&cur=RUB&crc=8128`;
+	const sbpPayloadUrl = completionResult?.sbpQrPayload || `https://qr.nspk.ru/AD1000${receiptNumber}?type=02&bank=100000000004&sum=${Math.round(totalNetRub * 100)}&cur=RUB&crc=8128`;
 	const sbpQrSvg = React.useMemo(() => {
-		return generateQrCodeSvg(sbpPayloadUrl, 200);
+		return generateQrCodeSvg(sbpPayloadUrl, { size: 200 });
 	}, [sbpPayloadUrl]);
 
 	return (
@@ -471,19 +474,19 @@ export function VisitEmkTab() {
 				<EmkComplaintsSection
 					visitNoteForm={visitNoteForm}
 					updateVisitNoteField={updateVisitNoteField}
-					disabled={isLocked}
+					isLocked={isLocked}
 				/>
 
 				<EmkObjectiveStatusSection
 					visitNoteForm={visitNoteForm}
 					updateVisitNoteField={updateVisitNoteField}
-					disabled={isLocked}
+					isLocked={isLocked}
 				/>
 
 				<EmkDiaryProtocolSection
 					visitNoteForm={visitNoteForm}
 					updateVisitNoteField={updateVisitNoteField}
-					disabled={isLocked}
+					isLocked={isLocked}
 				/>
 
 				{/* Анестезия: 1-клик пресеты с чистым разделителем border-t (Мандаты 8d, 8e) */}
@@ -550,7 +553,7 @@ export function VisitEmkTab() {
 				<EmkServicesSection
 					visitNoteForm={visitNoteForm}
 					updateVisitNoteField={updateVisitNoteField}
-					disabled={isLocked}
+					isLocked={isLocked}
 				/>
 			</div>
 

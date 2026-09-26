@@ -4,20 +4,23 @@ import { AlertTriangle, Check } from "lucide-react";
 export interface EmkPrintableForm043Props {
 	clinicSettings?: any;
 	activePatient?: any;
+	patient?: any;
 	activeVisit?: any;
 	isSignedVisit: boolean;
-	doctorName: string;
+	doctorName?: string | undefined;
 	visitNoteForm: Record<string, any>;
 }
 
 export function EmkPrintableForm043({
 	clinicSettings,
-	activePatient,
+	activePatient: propActivePatient,
+	patient,
 	activeVisit,
 	isSignedVisit,
-	doctorName,
+	doctorName = "Лечащий врач",
 	visitNoteForm,
 }: EmkPrintableForm043Props) {
+	const activePatient = propActivePatient ?? patient;
 	return (
 		<div id="visit-emk-print-a4" className="print-layer hidden print:block font-sans text-slate-900 bg-white p-6">
 			{/* Шапка клиники */}

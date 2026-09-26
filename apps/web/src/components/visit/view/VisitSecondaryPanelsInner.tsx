@@ -8,26 +8,26 @@ import { VisitNoteDraftPanel } from "../../../VisitNoteDraftPanel";
 export interface VisitSecondaryPanelsInnerProps {
 	// biome-ignore lint/suspicious/noExplicitAny: props
 	selectedProtocolTemplate: any;
-	safeSpecialtyLabels: Record<string, string>;
+	safeSpecialtyLabels?: Record<string, string> | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: props
 	dashboard: any;
-	specialtiesWithTemplates?: string[];
-	selectedSpecialty?: string;
-	setSelectedSpecialty?: (s: string) => void;
-	setSelectedProtocolId?: (id: string | null) => void;
+	specialtiesWithTemplates?: string[] | undefined;
+	selectedSpecialty?: string | undefined;
+	setSelectedSpecialty?: ((s: string) => void) | undefined;
+	setSelectedProtocolId?: ((id: string | null) => void) | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: props
-	specialtyProtocolTemplates?: any[];
+	specialtyProtocolTemplates?: any[] | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: props
-	applyProtocolTemplate?: (t: any) => void;
-	activeWorkspaceRole?: string;
+	applyProtocolTemplate?: ((t: any) => void) | undefined;
+	activeWorkspaceRole?: string | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: props
-	activeVisitClinicalRuleEvaluations?: any[];
-	clinicalRuleActionLabels?: Record<string, string>;
-	clinicalRuleSeverityLabels?: Record<string, string>;
-	staffRoleLabels?: Record<string, string>;
+	activeVisitClinicalRuleEvaluations?: any[] | undefined;
+	clinicalRuleActionLabels?: Record<string, string> | undefined;
+	clinicalRuleSeverityLabels?: Record<string, string> | undefined;
+	staffRoleLabels?: Record<string, string> | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: props
-	activeVisitClinicalRuleSummary?: any;
-	serviceTitle?: string;
+	activeVisitClinicalRuleSummary?: any | undefined;
+	serviceTitle?: string | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: props
 	activePatient: any;
 	// biome-ignore lint/suspicious/noExplicitAny: props
@@ -45,14 +45,14 @@ export interface VisitSecondaryPanelsInnerProps {
 	transcript: string;
 	setVisitNoteForm: React.Dispatch<React.SetStateAction<any>>;
 	// biome-ignore lint/suspicious/noExplicitAny: props
-	visitCloseChecklist?: any[];
+	visitCloseChecklist?: any[] | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: props
-	openCloseChecklistSection: (task: any) => void;
+	openCloseChecklistSection?: ((task: any) => void) | undefined;
 }
 
 export function VisitSecondaryPanelsInner({
 	selectedProtocolTemplate,
-	safeSpecialtyLabels,
+	safeSpecialtyLabels = {},
 	dashboard,
 	specialtiesWithTemplates,
 	selectedSpecialty,
@@ -79,7 +79,7 @@ export function VisitSecondaryPanelsInner({
 	transcript,
 	setVisitNoteForm,
 	visitCloseChecklist,
-	openCloseChecklistSection,
+	openCloseChecklistSection = () => {},
 }: VisitSecondaryPanelsInnerProps) {
 	return (
 		<>
@@ -155,7 +155,8 @@ export function VisitSecondaryPanelsInner({
 
 			<div className="clinical-rule-panel" aria-label="Клинические правила">
 				<DefaultClinicalRulePanel
-					actionLabels={clinicalRuleActionLabels}
+					context="visit"
+					actionLabels={clinicalRuleActionLabels as any}
 					evaluations={
 						activeWorkspaceRole === "doctor"
 							? (activeVisitClinicalRuleEvaluations || []).filter(
@@ -169,9 +170,9 @@ export function VisitSecondaryPanelsInner({
 							dashboard.activeVisit.patientId) ||
 						null
 					}
-					serviceTitle={serviceTitle}
-					severityLabels={clinicalRuleSeverityLabels}
-					staffRoleLabels={staffRoleLabels}
+					serviceTitle={typeof serviceTitle === "function" ? serviceTitle : (id: string) => String(id)}
+					severityLabels={clinicalRuleSeverityLabels as any}
+					staffRoleLabels={staffRoleLabels as any}
 					summary={activeVisitClinicalRuleSummary}
 				/>
 			</div>

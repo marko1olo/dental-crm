@@ -14,34 +14,45 @@ import {
 import { CLINICAL_SOAP_PRESETS, type ClinicalSoapPreset } from "../clinicalSoapPresets";
 
 export interface EmkToolbarProps {
-	activeEmkTab: string;
-	setActiveEmkTab: (tabId: string) => void;
-	onApplyPhysiologicalNorm: () => void;
-	onApplySoapPreset: (preset: ClinicalSoapPreset) => void;
-	onToggleStarProtocols: () => void;
-	isStarProtocolsOpen: boolean;
-	onToggleCopilot: () => void;
-	isCopilotOpen: boolean;
-	onScheduleNextVisit: (days: number) => void;
-	hasUnsavedChanges: boolean;
-	voicePilotNode?: React.ReactNode;
-	noteForm: Record<string, any>;
+	activeEmkTab?: string | undefined;
+	setActiveEmkTab?: ((tabId: string) => void) | undefined;
+	onApplyPhysiologicalNorm?: (() => void) | undefined;
+	onApplyNorm?: (() => void) | undefined;
+	onApplySoapPreset?: ((preset: ClinicalSoapPreset) => void) | undefined;
+	onToggleStarProtocols?: (() => void) | undefined;
+	isStarProtocolsOpen?: boolean | undefined;
+	onToggleCopilot?: (() => void) | undefined;
+	isCopilotOpen?: boolean | undefined;
+	onScheduleNextVisit?: ((days: number) => void) | undefined;
+	onScheduleNext?: (() => void) | undefined;
+	onPrint043?: (() => void) | undefined;
+	hasUnsavedChanges?: boolean | undefined;
+	voicePilotNode?: React.ReactNode | undefined;
+	noteForm?: Record<string, any> | undefined;
 }
 
 export function EmkToolbar({
-	activeEmkTab,
-	setActiveEmkTab,
+	activeEmkTab: propActiveEmkTab,
+	setActiveEmkTab: propSetActiveEmkTab,
 	onApplyPhysiologicalNorm,
-	onApplySoapPreset,
-	onToggleStarProtocols,
-	isStarProtocolsOpen,
-	onToggleCopilot,
-	isCopilotOpen,
-	onScheduleNextVisit,
-	hasUnsavedChanges,
+	onApplyNorm,
+	onApplySoapPreset = () => {},
+	onToggleStarProtocols = () => {},
+	isStarProtocolsOpen = false,
+	onToggleCopilot = () => {},
+	isCopilotOpen = false,
+	onScheduleNextVisit = () => {},
+	onScheduleNext,
+	onPrint043,
+	hasUnsavedChanges = false,
 	voicePilotNode,
-	noteForm,
+	noteForm = {},
 }: EmkToolbarProps) {
+	const [localActiveTab, setLocalActiveTab] = React.useState<string>("all");
+	const activeEmkTab = propActiveEmkTab ?? localActiveTab;
+	const setActiveEmkTab = propSetActiveEmkTab ?? setLocalActiveTab;
+	const handleApplyNorm = onApplyNorm || onApplyPhysiologicalNorm || (() => {});
+	const handleSchedule = onScheduleNext || (() => onScheduleNextVisit(5));
 	const [isExtraMenuOpen, setIsExtraMenuOpen] = React.useState<boolean>(false);
 	const menuRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -122,7 +133,7 @@ export function EmkToolbar({
 				<button
 					type="button"
 					data-testid="btn-quick-soap-norm"
-					onClick={onApplyPhysiologicalNorm}
+					onClick={handleApplyNorm}
 					className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
 					title="Соматически здоров / норма (1-клик): зафиксировать физиологическую норму по умолчанию в форме 043/у"
 				>
@@ -256,7 +267,7 @@ export function EmkToolbar({
 			<div className="flex items-center gap-1.5 shrink-0 ml-auto pr-1">
 				<button
 					type="button"
-					onClick={() => onScheduleNextVisit(5)}
+					onClick={() => handleSchedule()}
 					className="min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 rounded-lg text-[11px] sm:text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap min-w-max"
 					data-testid="btn-schedule-next-stage"
 					title="Записать пациента на следующий этап через 5 дней"
@@ -264,6 +275,19 @@ export function EmkToolbar({
 					<Calendar size={12} className="shrink-0 text-blue-500" />
 					<span>+5д</span>
 				</button>
+
+				{onPrint043 && (
+					<button
+						type="button"
+						onClick={onPrint043}
+						className="min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 rounded-lg text-[11px] sm:text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap min-w-max"
+						data-testid="btn-print-form-043"
+						title="Печать Карты стоматологического больного (Форма 043/у)"
+					>
+						<FileText size={12} className="shrink-0 text-[var(--teal)]" />
+						<span>043/у</span>
+					</button>
+				)}
 
 				<span
 					className={`visit-note-status-badge text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-md border transition-all shrink-0 flex-shrink-0 whitespace-nowrap min-w-max inline-flex items-center gap-1 ${
