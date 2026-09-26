@@ -9,7 +9,7 @@
  * - Раунд 85: QR-код для стойки регистрации, время визита 20px bold.
  */
 
-import type React from "react";
+import React from "react";
 import {
 	AlertCircle,
 	AlertTriangle,
@@ -51,6 +51,65 @@ export interface OverviewTabProps {
 	readonly onOpenSelfCheckin: () => void;
 	readonly onOpenBooking?: () => void;
 	readonly onOpenReschedule?: () => void;
+}
+
+export function getAppointmentCalendarDates(
+	dateIso?: string,
+	timeRu?: string,
+	durationMinutes = 60,
+): {
+	readonly startCompact: string;
+	readonly endCompact: string;
+	readonly startYandex: string;
+	readonly endYandex: string;
+} {
+	let rawDate = (dateIso || "2026-09-01").trim();
+	if (rawDate.includes("T")) {
+		const parts = rawDate.split("T");
+		rawDate = parts[0] || "2026-09-01";
+		if (!timeRu && parts[1]) {
+			timeRu = parts[1].slice(0, 5);
+		}
+	}
+	let rawTime = (timeRu || "14:30").trim();
+	let calculatedDuration = durationMinutes;
+	if (rawTime.includes("-")) {
+		const [startTimeStr, endTimeStr] = rawTime.split("-");
+		rawTime = startTimeStr?.trim() || "14:30";
+		if (endTimeStr?.trim()) {
+			const [endHStr, endMStr] = endTimeStr.trim().split(":");
+			const [startHStr, startMStr] = rawTime.split(":");
+			const sH = Number.parseInt(startHStr || "14", 10) || 14;
+			const sM = Number.parseInt(startMStr || "30", 10) || 30;
+			const eH = Number.parseInt(endHStr || "15", 10) || 15;
+			const eM = Number.parseInt(endMStr || "30", 10) || 30;
+			const diff = eH * 60 + eM - (sH * 60 + sM);
+			if (diff > 0) calculatedDuration = diff;
+		}
+	}
+
+	const [hStr, mStr] = rawTime.split(":");
+	const h = Number.parseInt(hStr || "14", 10) || 14;
+	const m = Number.parseInt(mStr || "30", 10) || 30;
+
+	const endMinutesTotal = h * 60 + m + calculatedDuration;
+	const endH = Math.floor(endMinutesTotal / 60) % 24;
+	const endM = endMinutesTotal % 60;
+
+	const pad = (n: number) => String(n).padStart(2, "0");
+	const compactDate = rawDate.slice(0, 10).replace(/-/g, "");
+	const startCompact = `${compactDate}T${pad(h)}${pad(m)}00`;
+	const endCompact = `${compactDate}T${pad(endH)}${pad(endM)}00`;
+
+	const startYandex = `${rawDate.slice(0, 10)}T${pad(h)}:${pad(m)}:00`;
+	const endYandex = `${rawDate.slice(0, 10)}T${pad(endH)}:${pad(endM)}:00`;
+
+	return {
+		startCompact,
+		endCompact,
+		startYandex,
+		endYandex,
+	};
 }
 
 export const OverviewTab: React.FC<OverviewTabProps> = ({
@@ -119,6 +178,22 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 							<strong className="pc-loyalty-val">{data.loyaltyTierRu}</strong>
 						</div>
 					</div>
+
+					{((data.familyBonusPool !== undefined && data.familyBonusPool > 0) ||
+						(data.familyBalanceRub !== undefined && data.familyBalanceRub > 0)) && (
+						<div className="pc-loyalty-pill family" data-testid="pc-family-pool-pill">
+							<Heart size={16} className="pc-icon-primary" />
+							<div className="pc-loyalty-text">
+								<span className="pc-loyalty-label">
+									{`Семейный счет${data.familyMembersCount ? ` (${data.familyMembersCount} чел.)` : ""}:`}
+								</span>
+								<strong className="pc-loyalty-val">
+									{data.familyBalanceRub !== undefined ? `${data.familyBalanceRub.toLocaleString("ru-RU")} ₽` : ""}
+									{data.familyBonusPool !== undefined ? ` • ${data.familyBonusPool.toLocaleString("ru-RU")} бонусов` : ""}
+								</strong>
+							</div>
+						</div>
+					)}
 				</div>
 			</div>
 
@@ -297,14 +372,21 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 								type="button"
 								className="pc-cal-btn"
 								onClick={() => {
-									const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//DENTE Dental CRM//Patient Cabinet//RU\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nBEGIN:VEVENT\r\nUID:dente-appt-${Date.now()}@dente.ru\r\nDTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z\r\nDTSTART:20260901T113000Z\r\nDTEND:20260901T123000Z\r\nSUMMARY:Прием в DENTE: ${summary.nextAppointment?.doctorName || "Врач"}\r\nDESCRIPTION:Прием: ${summary.nextAppointment?.titleRu || "Консультация"}\\nАдрес: ${summary.nextAppointment?.clinicName || "Клиника DENTE"}, ${summary.nextAppointment?.roomNumber || ""}\r\nLOCATION:${summary.nextAppointment?.clinicName || "Клиника DENTE"}, ${summary.nextAppointment?.roomNumber || ""}\r\nSTATUS:CONFIRMED\r\nBEGIN:VALARM\r\nTRIGGER:-PT2H\r\nACTION:DISPLAY\r\nDESCRIPTION:Напоминание о приеме в клинике DENTE через 2 часа\r\nEND:VALARM\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n`;
+									const timeSlot =
+										summary.nextAppointment?.timeRu ||
+										(summary.nextAppointment as any)?.timeSlot;
+									const calDates = getAppointmentCalendarDates(
+										summary.nextAppointment?.dateIso,
+										timeSlot,
+									);
+									const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//DENTE Dental CRM//Patient Cabinet//RU\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nBEGIN:VEVENT\r\nUID:dente-appt-${Date.now()}@dente.ru\r\nDTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z\r\nDTSTART:${calDates.startCompact}\r\nDTEND:${calDates.endCompact}\r\nSUMMARY:Прием в DENTE: ${summary.nextAppointment?.doctorName || "Врач"}\r\nDESCRIPTION:Прием: ${summary.nextAppointment?.titleRu || "Консультация"}\\nАдрес: ${summary.nextAppointment?.clinicName || "Клиника DENTE"}, ${summary.nextAppointment?.roomNumber || ""}\r\nLOCATION:${summary.nextAppointment?.clinicName || "Клиника DENTE"}, ${summary.nextAppointment?.roomNumber || ""}\r\nSTATUS:CONFIRMED\r\nBEGIN:VALARM\r\nTRIGGER:-PT2H\r\nACTION:DISPLAY\r\nDESCRIPTION:Напоминание о приеме в клинике DENTE через 2 часа\r\nEND:VALARM\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n`;
 									const blob = new Blob([ics], {
 										type: "text/calendar;charset=utf-8",
 									});
 									const url = URL.createObjectURL(blob);
 									const a = document.createElement("a");
 									a.href = url;
-									a.download = `Dente_Appointment_${summary.nextAppointment?.dateIso || "2026-09-01"}.ics`;
+									a.download = `Dente_Appointment_${(summary.nextAppointment?.dateIso || "2026-09-01").slice(0, 10)}.ics`;
 									a.click();
 									URL.revokeObjectURL(url);
 								}}
@@ -318,6 +400,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 								type="button"
 								className="pc-cal-btn"
 								onClick={() => {
+									const timeSlot =
+										summary.nextAppointment?.timeRu ||
+										(summary.nextAppointment as any)?.timeSlot;
+									const calDates = getAppointmentCalendarDates(
+										summary.nextAppointment?.dateIso,
+										timeSlot,
+									);
 									const title = encodeURIComponent(
 										`Прием в DENTE: ${summary.nextAppointment?.doctorName || "Врач"}`,
 									);
@@ -327,7 +416,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 									const location = encodeURIComponent(
 										`${summary.nextAppointment?.clinicName || "Клиника DENTE"}, ${summary.nextAppointment?.roomNumber || ""}`,
 									);
-									const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=20260901T113000Z/20260901T123000Z&details=${details}&location=${location}`;
+									const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${calDates.startCompact}/${calDates.endCompact}&details=${details}&location=${location}`;
 									window.open(url, "_blank");
 								}}
 								data-testid="next-appt-google-cal-btn"
@@ -340,6 +429,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 								type="button"
 								className="pc-cal-btn"
 								onClick={() => {
+									const timeSlot =
+										summary.nextAppointment?.timeRu ||
+										(summary.nextAppointment as any)?.timeSlot;
+									const calDates = getAppointmentCalendarDates(
+										summary.nextAppointment?.dateIso,
+										timeSlot,
+									);
 									const name = encodeURIComponent(
 										`Прием в DENTE: ${summary.nextAppointment?.doctorName || "Врач"}`,
 									);
@@ -349,7 +445,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 									const location = encodeURIComponent(
 										`${summary.nextAppointment?.clinicName || "Клиника DENTE"}, ${summary.nextAppointment?.roomNumber || ""}`,
 									);
-									const url = `https://calendar.yandex.ru/event/new?name=${name}&start_ts=2026-09-01T14:30:00&end_ts=2026-09-01T15:30:00&description=${desc}&location=${location}`;
+									const url = `https://calendar.yandex.ru/event/new?name=${name}&start_ts=${calDates.startYandex}&end_ts=${calDates.endYandex}&description=${desc}&location=${location}`;
 									window.open(url, "_blank");
 								}}
 								data-testid="next-appt-yandex-cal-btn"
