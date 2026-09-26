@@ -172,7 +172,7 @@ export function useScheduleRosterData({
         role = "pediatric";
       } else if (
         s.specialties?.includes("hygienist") ||
-        s.role === "hygienist"
+        (s.role as string) === "hygienist"
       ) {
         role = "hygienist";
       } else {

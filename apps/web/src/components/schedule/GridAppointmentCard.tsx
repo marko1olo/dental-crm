@@ -453,18 +453,18 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 				</div>
 			)}
 
-			{/* Compact Action Bar (Позвонить/Прием + Меню ...) — Strictly 1 primary action button + 1 menu button per Mandates 8c, 8d, 8e, 8p */}
-			<div className="flex items-center gap-1 pt-1 border-t border-[var(--line)]/50 mt-1">
+			{/* Compact Action Bar — Strictly <= 2 primary actions per card per Mandates 8c, 8d, 8e */}
+			<div className="flex items-center justify-between gap-1 pt-0.5 border-t border-[var(--line)]/40 mt-0.5 min-w-0">
 				{patObj?.phone ? (
 					<a
 						href={`tel:${patObj.phone}`}
 						onClick={(e) => e.stopPropagation()}
-						className="h-6 min-h-[24px] max-h-[24px] px-2 py-0.5 rounded-md border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+						className="h-5 min-h-[20px] max-h-[20px] px-1.5 py-0 rounded border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 						title={`Позвонить ${pName}: ${patObj.phone}`}
 						aria-label={`Позвонить ${pName}`}
 						data-testid={`appointment-action-call-${a.id}`}
 					>
-						<Phone size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<Phone size={10} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span className="whitespace-nowrap">Позвонить</span>
 					</a>
 				) : (
@@ -474,30 +474,30 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 							e.stopPropagation();
 							onAppointmentClick(a);
 						}}
-						className="h-6 min-h-[24px] max-h-[24px] px-2 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+						className="h-5 min-h-[20px] max-h-[20px] px-1.5 py-0 rounded border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 						title={`Открыть прием ${pName}`}
 						aria-label={`Открыть прием ${pName}`}
 						data-testid={`appointment-action-start-${a.id}`}
 					>
-						<User size={12} className="text-[var(--teal)] shrink-0" />
+						<User size={10} className="text-[var(--teal)] shrink-0" />
 						<span className="whitespace-nowrap">Прием</span>
 					</button>
 				)}
 
 				{/* Overflow Actions Dropdown Menu (...) */}
-				<div className="relative ml-auto">
+				<div className="relative ml-auto shrink-0">
 					<button
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
 							onToggleMenu(a.id);
 						}}
-						className="h-6 w-6 min-h-[24px] min-w-[24px] p-0 rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer select-none"
+						className="h-5 w-5 min-h-[20px] min-w-[20px] p-0 rounded border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer select-none"
 						title="Все действия и статусы визита"
 						aria-label="Дополнительные действия визита"
 						aria-expanded={isMenuOpen}
 					>
-						<MoreVertical size={13} />
+						<MoreVertical size={11} />
 					</button>
 
 					<GridAppointmentMenu

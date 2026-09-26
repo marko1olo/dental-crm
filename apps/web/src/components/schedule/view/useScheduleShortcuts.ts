@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Appointment, Dashboard } from "@dental/shared";
-import { motionSafeScrollIntoView } from "../../../lib/motionSafeScroll";
-import {
-  actionFailureToast,
-  denteAdminSecretRequestHeaders,
-} from "../../../AppHelpers";
+import { motionSafeScrollIntoView } from "../../../motionPreference";
+import { actionFailureToast } from "../../../lib/panelStateText";
+import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 
 export interface UseScheduleShortcutsParams {
@@ -33,7 +31,7 @@ export interface UseScheduleShortcutsParams {
   setShowCreateForm: (show: boolean) => void;
   updateNewAppointmentDraft: (key: string, val: any) => void;
   focusNewAppointmentEditor: () => void;
-  patientName?: (patients: any[], id: string) => string;
+  patientName?: (patients: any[], id: string | null | undefined) => string;
   setUseManualSelects: (use: boolean) => void;
   setShowClipboardPanel: (show: boolean) => void;
   setShowFreedSlotsPanel: (show: boolean) => void;
@@ -83,7 +81,7 @@ export function useScheduleShortcuts({
         (d) =>
           d.specialties?.includes("therapist") ||
           d.specialties?.includes("surgeon") ||
-          d.specialties?.includes("general"),
+          d.specialties?.includes("universal"),
       ) ||
       activeDoctors[0] ||
       null;
@@ -360,7 +358,7 @@ export function useScheduleShortcuts({
 
   const copyAppointmentToBuffer = async (appointment: Appointment) => {
     const patientLabel = patientName
-      ? patientName(dashboard?.patients ?? [], appointment.patientId)
+      ? patientName(dashboard?.patients ?? [], appointment.patientId ?? "")
       : "Пациент";
     try {
       let response: Response;

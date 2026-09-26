@@ -54,7 +54,7 @@ export const ScheduleShiftAnalytics: React.FC<ScheduleShiftAnalyticsProps> = ({
 
 	return (
 		<div
-			className={`schedule-command-grid min-w-0 ${className}`.trim()}
+			className={className ? `schedule-command-grid min-w-0 ${className}`.trim() : "schedule-command-grid"}
 			data-testid="schedule-shift-analytics"
 			role="region"
 			aria-label="Аналитика загрузки смены"

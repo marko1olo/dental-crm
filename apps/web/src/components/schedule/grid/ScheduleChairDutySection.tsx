@@ -13,14 +13,14 @@ import type { ChairDoctorShiftAssignment } from "./gridTypes";
 
 export interface ScheduleChairDutySectionProps {
   chair: any;
-  assignment?: ChairDoctorShiftAssignment;
+  assignment?: ChairDoctorShiftAssignment | undefined;
   hasDoctor: boolean;
   isToday: boolean;
   currentHour: number;
   doctors: Array<any>;
   suggestedDoctor: any | null;
   isSoloDoctor: boolean;
-  dateKey?: string;
+  dateKey?: string | undefined;
   openAssignModal: (chairId: string) => void;
   handleConfirmAssignDoctor: (
     chairId: string,

@@ -70,9 +70,9 @@ export interface StaffMember {
 	tabNumber: string;
 	isDoctor: boolean;
 	isAssistant: boolean;
-	preferredChairId?: string;
-	defaultAssistantId?: string;
-	preferredAssistantId?: string;
+	preferredChairId?: string | undefined;
+	defaultAssistantId?: string | undefined;
+	preferredAssistantId?: string | undefined;
 	weeklyHourLimit: number;
 	avatarColor: string;
 }

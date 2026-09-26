@@ -76,7 +76,18 @@ export function useScheduleAppointmentInteractions({
 
   const [internalMaintenanceBlocks, setInternalMaintenanceBlocks] = useState<
     ChairMaintenanceBlock[]
-  >([]);
+  >(() => {
+    try {
+      const raw = safeLocalStorageGetItem(
+        "dente_schedule_chair_maintenance_blocks",
+      );
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  });
   const effectiveMaintenanceBlocks =
     chairMaintenanceBlocks ?? internalMaintenanceBlocks;
 
@@ -149,7 +160,16 @@ export function useScheduleAppointmentInteractions({
       if (onAddChairMaintenance) {
         onAddChairMaintenance(newBlock);
       } else {
-        setInternalMaintenanceBlocks((prev) => [...prev, newBlock]);
+        setInternalMaintenanceBlocks((prev) => {
+          const next = [...prev, newBlock];
+          try {
+            safeLocalStorageSetItem(
+              "dente_schedule_chair_maintenance_blocks",
+              JSON.stringify(next),
+            );
+          } catch {}
+          return next;
+        });
       }
       const label =
         reason === "sanitation"
@@ -169,9 +189,16 @@ export function useScheduleAppointmentInteractions({
       if (onRemoveChairMaintenance) {
         onRemoveChairMaintenance(blockId);
       } else {
-        setInternalMaintenanceBlocks((prev) =>
-          prev.filter((b) => b.id !== blockId),
-        );
+        setInternalMaintenanceBlocks((prev) => {
+          const next = prev.filter((b) => b.id !== blockId);
+          try {
+            safeLocalStorageSetItem(
+              "dente_schedule_chair_maintenance_blocks",
+              JSON.stringify(next),
+            );
+          } catch {}
+          return next;
+        });
       }
       showToast("Техобслуживание завершено, кресло доступно", "success", 2500);
     },

@@ -22,6 +22,7 @@ import type { Appointment, Dashboard } from "@dental/shared";
 import {
   isAppointmentInChair,
   getNormalizedAppointmentStatusLabel,
+  formatDoctorShortName,
 } from ".././GridAppointmentCard";
 import { extractTeethList } from "./gridSlotMath";
 import { DEFAULT_SOLO_CHAIR } from "./gridConstants";

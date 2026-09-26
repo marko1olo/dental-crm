@@ -670,7 +670,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 
 	return (
 		<section
-			className="appointment-create-wrapper"
+			className="appointment-create-wrapper appointment-create-editor"
 			aria-label="Создание записи"
 		>
 			<div

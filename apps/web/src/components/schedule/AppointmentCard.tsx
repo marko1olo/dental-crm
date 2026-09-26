@@ -660,6 +660,9 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 		) {
 			e.preventDefault();
 			if (typeof window !== "undefined") {
+				if (appointmentPatient?.id) {
+					usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+				}
 				window.location.hash = "#radiology";
 				showToast(`Открыты снимки и КТ пациента ${appointmentPatientName}`, "info");
 			}
@@ -1576,6 +1579,9 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 											onClick={() => {
 												setIsCardMenuOpen(false);
 												if (typeof window !== "undefined") {
+													if (appointmentPatient?.id) {
+														usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+													}
 													window.location.hash = "#radiology";
 													showToast(`Открыты снимки и КТ пациента ${appointmentPatientName}`, "info");
 												}

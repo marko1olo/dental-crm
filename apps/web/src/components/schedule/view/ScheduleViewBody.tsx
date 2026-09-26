@@ -123,6 +123,7 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
   } = props;
 
   if (scheduleViewMode === "chairs") {
+    if (!dashboard) return null;
     return (
       <ChairScheduleView
         hideToolbar={true}

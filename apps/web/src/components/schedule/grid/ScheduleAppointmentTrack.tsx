@@ -208,7 +208,7 @@ export function ScheduleAppointmentTrack({
                     {cellMaintenance.map((mBlock) => {
                       const mReasonLabel =
                         mBlock.reason === "sanitation"
-                          ? "Санитарная обработка"
+                          ? "Санитарный буфер (СанПиН 3.3686-21)"
                           : mBlock.reason === "tech_break"
                             ? "Технический перерыв"
                             : mBlock.reason === "maintenance"
@@ -641,7 +641,7 @@ export function ScheduleAppointmentTrack({
                             durationMinutes: 30,
                           })
                         }
-                        className="schedule-empty-slot-btn group w-full h-full min-h-[30px] sm:min-h-[32px] rounded-lg border border-dashed border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--teal-soft,var(--paper-soft))] flex items-center justify-center gap-1 px-2 cursor-pointer transition-all"
+                        className="schedule-empty-slot-btn group w-full h-full min-h-[30px] sm:min-h-[32px] rounded-lg border border-dashed border-[var(--line)] bg-transparent hover:border-[var(--teal)] hover:bg-[var(--teal-soft,var(--paper-soft))] flex items-center justify-center gap-1 px-2 cursor-pointer transition-all"
                         title={`Записать на ${hour} (${chair.name})`}
                         aria-label={`Свободно на ${hour}, кресло ${chair.name}. Нажмите для быстрой записи`}
                         data-testid={`btn-slot-${chair.id}-${hour.replace(":", "")}`}
