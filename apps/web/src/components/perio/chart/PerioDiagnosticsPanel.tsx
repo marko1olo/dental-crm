@@ -1,4 +1,4 @@
-import type { OlearyPcrResult, PsrSextantResult } from "@dental/shared";
+import type { OlearyPcrSummary, PsrSextantResult } from "@dental/shared";
 import { ChevronUp, Layers } from "lucide-react";
 import React from "react";
 
@@ -7,7 +7,7 @@ export interface PerioDiagnosticsPanelProps {
 	readonly onCloseDiagnostics: () => void;
 	readonly psrSummaryText: string;
 	readonly psrSextants: Record<string, PsrSextantResult>;
-	readonly olearyPcr: OlearyPcrResult;
+	readonly olearyPcr: OlearyPcrSummary;
 }
 
 export const PerioDiagnosticsPanel: React.FC<PerioDiagnosticsPanelProps> = React.memo(({

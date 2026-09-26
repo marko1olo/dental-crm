@@ -37,6 +37,7 @@ export interface UsePerioKeyboardProbingOptions {
 		site: { toothNumber: number; siteKey: PerioSiteKey } | null,
 	) => void;
 	readonly setSelectedToothNumber: (toothNumber: number) => void;
+	readonly onSetAllIntact?: (() => void) | undefined;
 }
 
 export function usePerioKeyboardProbing({
@@ -51,6 +52,7 @@ export function usePerioKeyboardProbing({
 	moveToPreviousSite,
 	setFocusedSite,
 	setSelectedToothNumber,
+	onSetAllIntact,
 }: UsePerioKeyboardProbingOptions) {
 	return useCallback(
 		(e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -64,8 +66,54 @@ export function usePerioKeyboardProbing({
 				return;
 			}
 
+			// 1-Click Fast Healthy Norm Hotkey: Shift+N or Alt+N (Doctor Autonomy)
+			if (
+				(e.key === "N" || e.key === "n" || e.key === "Т" || e.key === "т") &&
+				(e.shiftKey || e.altKey)
+			) {
+				if (onSetAllIntact) {
+					e.preventDefault();
+					onSetAllIntact();
+					return;
+				}
+			}
+
+			// Dedicated Florida Probe 11 & 12 mm hotkeys: Shift+1 (11 mm), Shift+2 (12 mm)
+			const isShift11 =
+				e.shiftKey &&
+				(e.code === "Digit1" || e.code === "Numpad1" || e.key === "!" || e.key === "1");
+			const isShift12 =
+				e.shiftKey &&
+				(e.code === "Digit2" ||
+					e.code === "Numpad2" ||
+					e.key === "@" ||
+					e.key === '"' ||
+					e.key === "2");
+
+			if (isShift11 || isShift12) {
+				e.preventDefault();
+				const depth = isShift11 ? 11 : 12;
+				let target = focusedSite;
+				if (!target && probingSequence.length > 0) {
+					target = {
+						toothNumber: probingSequence[0]!.toothNumber,
+						siteKey: probingSequence[0]!.siteKey,
+					};
+					setFocusedSite(target);
+					setSelectedToothNumber(target.toothNumber);
+				}
+				if (target) {
+					updateToothSite(target.toothNumber, target.siteKey, () => ({
+						probingDepthMm: depth,
+					}));
+					moveToNextSite();
+				}
+				return;
+			}
+
 			const isNumpadOrDigit =
-				/^[0-9]$/.test(e.key) || /^Numpad[0-9]$/.test(e.code);
+				!e.shiftKey &&
+				(/^[0-9]$/.test(e.key) || /^Numpad[0-9]$/.test(e.code));
 
 			if (!focusedSite) {
 				if (isNumpadOrDigit) {
@@ -92,7 +140,7 @@ export function usePerioKeyboardProbing({
 					return;
 				}
 				if (
-					["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp", "Tab"].includes(
+					["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp", "Tab", "Enter"].includes(
 						e.key,
 					)
 				) {
@@ -104,7 +152,7 @@ export function usePerioKeyboardProbing({
 
 			const { toothNumber, siteKey } = focusedSite;
 
-			// Number entry (1..9, 0, NumPad 0..9) for direct probing depth
+			// Number entry (1..9, 0, NumPad 0..9) for direct probing depth (0 -> 10 mm)
 			if (isNumpadOrDigit) {
 				e.preventDefault();
 				const rawChar = /^[0-9]$/.test(e.key)
@@ -135,8 +183,14 @@ export function usePerioKeyboardProbing({
 				return;
 			}
 
-			// Key 'b' / 'B' / 'и' / 'И' toggles Bleeding on Probing
-			if (e.key === "b" || e.key === "B" || e.key === "и" || e.key === "И") {
+			// Spacebar or 'b' / 'B' / 'и' / 'И' toggles Bleeding on Probing (Florida Probe style)
+			if (
+				e.key === " " ||
+				e.key === "b" ||
+				e.key === "B" ||
+				e.key === "и" ||
+				e.key === "И"
+			) {
 				e.preventDefault();
 				updateToothSite(toothNumber, siteKey, (prev) => ({
 					bleedingOnProbing: !prev.bleedingOnProbing,

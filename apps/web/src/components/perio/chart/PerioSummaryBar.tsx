@@ -1,10 +1,10 @@
-import type { OlearyPcrResult, PerioChartSummary } from "@dental/shared";
+import type { OlearyPcrSummary, PerioChartSummary } from "@dental/shared";
 import { AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import React from "react";
 
 export interface PerioSummaryBarProps {
 	readonly summary: PerioChartSummary;
-	readonly olearyPcr: OlearyPcrResult;
+	readonly olearyPcr: OlearyPcrSummary;
 	readonly psrSummaryText: string;
 	readonly isDiagnosticsExpanded: boolean;
 	readonly onToggleDiagnostics: () => void;

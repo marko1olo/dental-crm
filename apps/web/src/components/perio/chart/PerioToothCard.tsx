@@ -12,6 +12,15 @@ import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols0
 import { probingDepthClasses, probingDepthTone } from "../perioHeatmap";
 import { PerioToothVisual } from "./PerioToothVisual";
 
+export const SITE_SHORT_RU: Record<PerioSiteKey, string> = {
+	distoBuccal: "ДВ",
+	midBuccal: "В",
+	mesioBuccal: "МВ",
+	distoLingual: "ДО",
+	midLingual: "О",
+	mesioLingual: "МО",
+};
+
 export interface PerioToothCardProps {
 	readonly tooth: PerioToothRecord;
 	readonly isUpper: boolean;
@@ -94,7 +103,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 						</span>
 					)}
 
-					{/* 1-Click Mobility Chip (по шкале Энтина 0..III) */}
+					{/* 1-Click Mobility Chip (по шкале Miller / Миллера 0..III) */}
 					{!isMissing && onCycleMobility && (
 						<button
 							type="button"
@@ -112,14 +121,15 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 											? "bg-orange-500/30 text-orange-200 border-orange-500/50 ring-1 ring-orange-400/40"
 											: "bg-rose-500/35 text-rose-200 border-rose-500/60 ring-1 ring-rose-400/50 font-black animate-pulse"
 							}`}
-							title={`Подвижность по Энтину: ${MOBILITY_GRADES[tooth.mobility]?.nameRu ?? "0"} (клик для смены 0 -> I -> II -> III)`}
+							title={`Подвижность по Miller (Миллеру): ${MOBILITY_GRADES[tooth.mobility]?.nameRu ?? "0"} (клик для смены 0 -> I -> II -> III)`}
 							aria-label={`Подвижность зуба ${tooth.toothNumber}: ${tooth.mobility}`}
+							data-testid={`tooth-${tooth.toothNumber}-mobility`}
 						>
 							M{tooth.mobility}
 						</button>
 					)}
 
-					{/* 1-Click Furcation Chip for Multi-Rooted Teeth (0..IV) */}
+					{/* 1-Click Furcation Chip for Multi-Rooted Teeth (Hamp I..IV) */}
 					{!isMissing &&
 						isFurcationEligibleTooth(tooth.toothNumber) &&
 						onCycleFurcation && (
@@ -139,8 +149,9 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 												? "bg-orange-500/30 text-orange-200 border-orange-500/50 ring-1 ring-orange-400/40"
 												: "bg-rose-600/35 text-rose-200 border-rose-500/60 ring-1 ring-rose-400/50 font-black"
 								}`}
-								title={`Вовлечение фуркации: ${FURCATION_GRADES[tooth.furcation]?.nameRu ?? "0"} (клик для смены 0 -> I -> II -> III -> IV)`}
+								title={`Фуркационный дефект по Hamp (Хэмпу): ${FURCATION_GRADES[tooth.furcation]?.nameRu ?? "0"} (клик для смены 0 -> I -> II -> III -> IV)`}
 								aria-label={`Фуркация зуба ${tooth.toothNumber}: ${tooth.furcation}`}
+								data-testid={`tooth-${tooth.toothNumber}-furcation`}
 							>
 								F{tooth.furcation}
 							</button>
@@ -148,7 +159,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 				</div>
 			</div>
 
-			{/* Vestibular / Buccal 3 Sites Row */}
+			{/* Vestibular / Buccal 3 Sites Row (MV, V, DV) */}
 			<div className="grid grid-cols-3 gap-0.5 w-full">
 				{buccalSiteKeys.map((sKey) => {
 					const site = tooth[sKey] ?? {
@@ -169,13 +180,17 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 								e.stopPropagation();
 								onFocusSite(sKey);
 							}}
-							className={`flex flex-col items-center justify-center py-1 px-0.5 rounded border transition-all ${
+							className={`flex flex-col items-center justify-center py-0.5 px-0.5 rounded border transition-all ${
 								isFocused
 									? "ring-2 ring-teal-400 bg-teal-500/25 border-teal-400 shadow-xs"
 									: probingDepthClasses(pd)
 							}`}
+							title={`${SITE_SHORT_RU[sKey]}: карман ${pd} мм, CAL ${calculateClinicalAttachmentLevel(pd, site.gingivalMarginMm ?? 0)} мм`}
 						>
-							<span className="font-mono text-[10px] font-black leading-none">
+							<span className="text-[7px] font-mono text-[var(--muted)] font-semibold leading-none select-none">
+								{SITE_SHORT_RU[sKey]}
+							</span>
+							<span className="font-mono text-[10px] font-black leading-none mt-0.5">
 								{pd}
 							</span>
 
@@ -266,13 +281,17 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 								e.stopPropagation();
 								onFocusSite(sKey);
 							}}
-							className={`flex flex-col items-center justify-center py-1 px-0.5 rounded border transition-all ${
+							className={`flex flex-col items-center justify-center py-0.5 px-0.5 rounded border transition-all ${
 								isFocused
 									? "ring-2 ring-teal-400 bg-teal-500/25 border-teal-400 shadow-xs"
 									: probingDepthClasses(pd)
 							}`}
+							title={`${SITE_SHORT_RU[sKey]}: карман ${pd} мм, CAL ${calculateClinicalAttachmentLevel(pd, site.gingivalMarginMm ?? 0)} мм`}
 						>
-							<span className="font-mono text-[10px] font-black leading-none">
+							<span className="text-[7px] font-mono text-[var(--muted)] font-semibold leading-none select-none">
+								{SITE_SHORT_RU[sKey]}
+							</span>
+							<span className="font-mono text-[10px] font-black leading-none mt-0.5">
 								{pd}
 							</span>
 
@@ -340,4 +359,4 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 
 
 export { PerioToothCard };
-export type { PerioToothCardProps };
+

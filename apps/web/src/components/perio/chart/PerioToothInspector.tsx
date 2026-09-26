@@ -107,10 +107,13 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 							)}
 						</button>
 
-						{/* Mobility Selector */}
+						{/* Mobility Selector (Miller 0..III) */}
 						<div className="flex items-center gap-1 bg-[var(--paper)] px-2 py-1 rounded-lg border border-[var(--line)]">
-							<span className="text-[11px] text-[var(--muted)]">
-								Подвижность:
+							<span
+								className="text-[11px] text-[var(--muted)]"
+								title="Классификация подвижности зубов по Miller (Миллеру): 0 (норма), I (до 1 мм), II (> 1 мм), III (выраженная + вертикальная подвижность)"
+							>
+								Подвижность (Miller):
 							</span>
 							{([0, 1, 2, 3] as const).map((grade) => (
 								<button
@@ -126,18 +129,22 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 											? "bg-teal-500 text-slate-950 font-black"
 											: "text-[var(--muted)] hover:text-[var(--ink)]"
 									}`}
-									title={MOBILITY_GRADES[grade]?.nameRu}
+									title={`Подвижность по Miller (Миллеру): ${MOBILITY_GRADES[grade]?.nameRu ?? grade}`}
+									data-testid={`inspector-mobility-${grade}`}
 								>
 									{grade === 0 ? "0" : MOBILITY_GRADES[grade]?.codeRu}
 								</button>
 							))}
 						</div>
 
-						{/* Furcation Selector (for multi-rooted) */}
+						{/* Furcation Selector (Hamp I..IV for multi-rooted) */}
 						{isFurcationEligibleTooth(selectedTooth.toothNumber) && (
 							<div className="flex items-center gap-1 bg-[var(--paper)] px-2 py-1 rounded-lg border border-[var(--line)]">
-								<span className="text-[11px] text-[var(--muted)]">
-									Фуркация:
+								<span
+									className="text-[11px] text-[var(--muted)]"
+									title="Классификация фуркационных дефектов по Hamp (Хэмпу): 0 (норма), I (до 3 мм), II (> 3 мм не насквозь), III (сквозной дефект), IV (сквозной с рецессией десны)"
+								>
+									Фуркация (Hamp):
 								</span>
 								{([0, 1, 2, 3, 4] as const).map((grade) => (
 									<button
@@ -153,7 +160,8 @@ export const PerioToothInspector: React.FC<PerioToothInspectorProps> = React.mem
 												? "bg-rose-500 text-white font-black"
 												: "text-[var(--muted)] hover:text-[var(--ink)]"
 										}`}
-										title={FURCATION_GRADES[grade]?.nameRu}
+										title={`Фуркационный дефект по Hamp (Хэмпу): ${FURCATION_GRADES[grade]?.nameRu ?? grade}`}
+										data-testid={`inspector-furcation-${grade}`}
 									>
 										{grade === 0 ? "0" : FURCATION_GRADES[grade]?.codeRu}
 									</button>

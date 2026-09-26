@@ -126,6 +126,77 @@ export function getFastProbingDepthTone(pd: number | null | undefined): HeatmapT
 }
 
 /**
+ * 4-Tier Florida Probe Clinical LUTs:
+ * <= 3 mm: #34d399 (emerald-400 / green)
+ * 4..5 mm: #fbbf24 (amber-400 / yellow)
+ * 6..7 mm: #f97316 (orange-500 / orange)
+ * >= 8 mm: #e11d48 (crimson / rose-600 / алый)
+ */
+export const CLINICAL_PROBING_DEPTH_HEX_LUT: readonly string[] = [
+	"#34d399", // 0 mm (green / healthy)
+	"#34d399", // 1 mm
+	"#34d399", // 2 mm
+	"#34d399", // 3 mm
+	"#fbbf24", // 4 mm (yellow / mild)
+	"#fbbf24", // 5 mm (yellow / mild)
+	"#f97316", // 6 mm (orange / moderate)
+	"#f97316", // 7 mm (orange / moderate)
+	"#e11d48", // 8 mm (crimson / алый / deep bone pocket)
+	"#e11d48", // 9 mm
+	"#e11d48", // 10 mm
+	"#e11d48", // 11 mm
+	"#e11d48", // 12 mm
+	"#e11d48", // 13 mm
+	"#e11d48", // 14 mm
+	"#e11d48", // 15 mm
+] as const;
+
+export const CLINICAL_PROBING_DEPTH_TONE_LUT: readonly HeatmapTone[] = [
+	"success", // 0
+	"success", // 1
+	"success", // 2
+	"success", // 3
+	"warning-low", // 4
+	"warning-low", // 5
+	"warning-high", // 6
+	"warning-high", // 7
+	"critical", // 8
+	"critical", // 9
+	"critical", // 10
+	"critical", // 11
+	"critical", // 12
+	"critical", // 13
+	"critical", // 14
+	"critical", // 15
+] as const;
+
+/**
+ * Fast O(1) 4-tier clinical Florida Probe hex color lookup.
+ */
+export function getFastClinicalProbingDepthHex(
+	pd: number | null | undefined,
+): string {
+	if (pd === null || pd === undefined || Number.isNaN(pd) || pd < 0) {
+		return NEUTRAL_HEX;
+	}
+	const intPd = Math.min(Math.floor(pd), MAX_LUT_DEPTH);
+	return CLINICAL_PROBING_DEPTH_HEX_LUT[intPd] ?? "#e11d48";
+}
+
+/**
+ * Fast O(1) 4-tier clinical Florida Probe tone lookup.
+ */
+export function getFastClinicalProbingDepthTone(
+	pd: number | null | undefined,
+): HeatmapTone {
+	if (pd === null || pd === undefined || Number.isNaN(pd) || pd < 0) {
+		return NEUTRAL_TONE;
+	}
+	const intPd = Math.min(Math.floor(pd), MAX_LUT_DEPTH);
+	return CLINICAL_PROBING_DEPTH_TONE_LUT[intPd] ?? "critical";
+}
+
+/**
  * Fast O(1) 32-bit packed color lookup for direct Canvas pixel manipulation.
  */
 export function getFastProbingDepthRgba32(pd: number | null | undefined): number {

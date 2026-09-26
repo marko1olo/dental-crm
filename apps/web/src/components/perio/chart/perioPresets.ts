@@ -8,7 +8,7 @@ import {
 } from "@dental/shared";
 import {
 	PERIO_PATHOLOGY_PRESETS,
-	type ClinicalSoapPreset,
+	type PerioPathologyPreset,
 } from "../../../lib/clinicalProtocols043";
 import { useVisitStore } from "../../../store/visitStore";
 import { showToast } from "../../GlobalToast";
@@ -31,7 +31,7 @@ export interface PresetApplyResult {
 		name: string;
 		price: number;
 		category: string;
-	};
+	} | undefined;
 }
 
 /**
@@ -102,7 +102,7 @@ export function applyTherapistPathologyPreset(
 	teeth: PerioToothRecord[],
 	presetId: string,
 ): PresetApplyResult | null {
-	const targetPreset: ClinicalSoapPreset | undefined =
+	const targetPreset: PerioPathologyPreset | undefined =
 		PERIO_PATHOLOGY_PRESETS.find((p) => p.id === presetId) ??
 		(presetId === "gingivitis_catarrhal"
 			? {

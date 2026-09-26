@@ -34,15 +34,31 @@ export const PerioHelpDrawer: React.FC<PerioHelpDrawerProps> = React.memo(({
 						1..9, 0
 					</kbd>{" "}
 					<span className="text-[var(--muted)]">
-						— ввод глубины кармана (мм) + авто-переход
+						— глубина кармана 1..10 мм + авто-переход
+					</span>
+				</div>
+				<div>
+					<kbd className="px-1.5 py-0.5 bg-[var(--paper)] rounded border border-[var(--line)] font-mono text-teal-400 font-bold">
+						Shift + 1 / 2
+					</kbd>{" "}
+					<span className="text-[var(--muted)]">
+						— глубокие карманы 11 мм и 12 мм
 					</span>
 				</div>
 				<div>
 					<kbd className="px-1.5 py-0.5 bg-[var(--paper)] rounded border border-[var(--line)] font-mono text-rose-400 font-bold">
-						B
+						B / Пробел
 					</kbd>{" "}
 					<span className="text-[var(--muted)]">
 						— вкл/выкл кровоточивость (BOP)
+					</span>
+				</div>
+				<div>
+					<kbd className="px-1.5 py-0.5 bg-[var(--paper)] rounded border border-[var(--line)] font-mono text-emerald-400 font-bold">
+						Shift + N
+					</kbd>{" "}
+					<span className="text-[var(--muted)]">
+						— 1-клик «Пародонт интактен / норма»
 					</span>
 				</div>
 				<div>
@@ -64,7 +80,7 @@ export const PerioHelpDrawer: React.FC<PerioHelpDrawerProps> = React.memo(({
 						M
 					</kbd>{" "}
 					<span className="text-[var(--muted)]">
-						— подвижность зуба (0..III по Энтину)
+						— подвижность по Miller (0..III ст.)
 					</span>
 				</div>
 				<div>
@@ -72,12 +88,12 @@ export const PerioHelpDrawer: React.FC<PerioHelpDrawerProps> = React.memo(({
 						F
 					</kbd>{" "}
 					<span className="text-[var(--muted)]">
-						— фуркационный дефект (0..IV)
+						— фуркация по Hamp (I..IV класс)
 					</span>
 				</div>
 				<div>
 					<kbd className="px-1.5 py-0.5 bg-[var(--paper)] rounded border border-[var(--line)] font-mono text-[var(--ink)] font-bold">
-						Стрелки / Tab
+						Стрелки / Tab / Enter
 					</kbd>{" "}
 					<span className="text-[var(--muted)]">— навигация по точкам</span>
 				</div>

@@ -380,6 +380,17 @@ export function usePerioChartLogic({
 		[readOnly, toothMap, updateToothProperties],
 	);
 
+	// ─── 1-Click Fast Presets ────────────────────────────────────────────────
+	const handleSetAllIntact = useCallback(() => {
+		if (readOnly) return;
+		setTeeth(createDefaultPerioTeeth(2));
+		showToast(
+			"Все 32 зуба установлены как интактные (глубина 2 мм, BOP 0%)",
+			"success",
+			4000,
+		);
+	}, [readOnly]);
+
 	// ─── Keyboard Event Handling (Hook) ───────────────────────────────────────
 	const handleKeyDown = usePerioKeyboardProbing({
 		readOnly,
@@ -393,6 +404,7 @@ export function usePerioChartLogic({
 		moveToPreviousSite,
 		setFocusedSite,
 		setSelectedToothNumber,
+		onSetAllIntact: handleSetAllIntact,
 	});
 
 	// ─── 1-Click PSR Screening & Clinical Presets (Mandates 8e, 8k) ───────────
@@ -425,17 +437,6 @@ export function usePerioChartLogic({
 		},
 		[readOnly],
 	);
-
-	// ─── 1-Click Fast Presets ────────────────────────────────────────────────
-	const handleSetAllIntact = useCallback(() => {
-		if (readOnly) return;
-		setTeeth(createDefaultPerioTeeth(2));
-		showToast(
-			"Все 32 зуба установлены как интактные (глубина 2 мм, BOP 0%)",
-			"success",
-			4000,
-		);
-	}, [readOnly]);
 
 	const handleMarkSelectedToothPathology = useCallback(
 		(depth = 5, hasBop = true) => {

@@ -1,7 +1,7 @@
 import React from "react";
 import { isFurcationEligibleTooth } from "@dental/shared";
 import { getToothConfig, getToothPath } from "../../../utils/math/toothGeometry";
-import { probingDepthHex, probingDepthTone } from "../perioHeatmap";
+import { probingDepthClinicalHex, probingDepthHex, probingDepthTone } from "../perioHeatmap";
 
 export interface PerioToothVisualProps {
 	readonly toothNumber: number;
@@ -109,7 +109,7 @@ const PerioToothVisual: React.FC<PerioToothVisualProps> = React.memo(({
 	const pocketFillRatio = Math.min(1, Math.max(0, (maxPd - 2) / 8));
 	const pocketFillHeight = Math.round(pocketFillRatio * 18);
 
-	const pocketColor = probingDepthHex(maxPd);
+	const pocketColor = probingDepthClinicalHex(maxPd);
 
 	return (
 		<svg width="28" height="34" viewBox="0 0 28 34">
@@ -198,4 +198,4 @@ PerioToothVisual.displayName = "PerioToothVisual";
 
 
 export { PerioToothVisual };
-export type { PerioToothVisualProps };
+

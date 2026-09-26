@@ -110,28 +110,34 @@ export const PerioKeypadDrawer: React.FC<PerioKeypadDrawerProps> = React.memo(({
 				</label>
 			</div>
 
-			{/* Large Touch/Glove NumPad 1..10 Buttons */}
+			{/* Large Touch/Glove NumPad 1..12 Buttons (Florida Probe 1-12 mm Range) */}
 			<div className="flex items-center gap-1 flex-wrap">
 				<span className="text-[11px] font-bold text-[var(--muted)] mr-1 hidden sm:inline">
-					NumPad:
+					NumPad (1–12 мм):
 				</span>
-				{[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((numVal) => {
+				{[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((numVal) => {
 					const isNorm = numVal <= 3;
-					const isMod = numVal <= 5;
+					const isMild = numVal <= 5;
+					const isMod = numVal <= 7;
 					return (
 						<button
 							key={numVal}
 							type="button"
 							disabled={readOnly}
 							onClick={() => onKeypadDepth(numVal)}
-							className={`min-w-[44px] min-h-[44px] sm:min-w-[38px] sm:min-h-0 sm:h-9 rounded-lg font-black text-xs sm:text-sm transition-all active:scale-95 cursor-pointer flex items-center justify-center border ${
+							className={`min-w-[44px] min-h-[44px] sm:min-w-[34px] sm:min-h-0 sm:h-9 rounded-lg font-black text-xs sm:text-sm transition-all active:scale-95 cursor-pointer flex items-center justify-center border ${
 								isNorm
 									? "bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/30"
-									: isMod
+									: isMild
 										? "bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border-amber-500/30"
-										: "bg-rose-500/20 hover:bg-rose-500/35 text-rose-300 border-rose-500/40"
+										: isMod
+											? "bg-orange-500/20 hover:bg-orange-500/35 text-orange-300 border-orange-500/40"
+											: "bg-red-600/25 hover:bg-red-600/40 text-red-200 border-red-500/50 shadow-xs"
 							}`}
-							title={`Ввести глубину кармана ${numVal} мм и перейти к след. точке (также цифры 1..9, 0 на клавиатуре)`}
+							title={`Ввести глубину кармана ${numVal} мм и перейти к след. точке (хоткей: ${
+								numVal <= 9 ? numVal : numVal === 10 ? "0" : `Shift+${numVal - 10}`
+							})`}
+							data-testid={`perio-keypad-depth-${numVal}`}
 						>
 							{numVal}
 						</button>

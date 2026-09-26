@@ -17,7 +17,8 @@ export type HeatmapTone =
 	| "success"
 	| "warning-low"
 	| "warning-high"
-	| "error";
+	| "error"
+	| "critical";
 
 export const TONE_TO_CLASS: Record<HeatmapTone, string> = {
 	neutral:
@@ -30,20 +31,34 @@ export const TONE_TO_CLASS: Record<HeatmapTone, string> = {
 		"bg-orange-50 ring-orange-500 text-orange-800 dark:bg-orange-900/50 dark:ring-orange-500 dark:text-orange-200 border-orange-300 dark:border-orange-700",
 	error:
 		"bg-rose-50 ring-rose-400 text-rose-800 dark:bg-rose-900/50 dark:ring-rose-500 dark:text-rose-200 border-rose-300 dark:border-rose-700",
+	critical:
+		"bg-red-50 ring-red-500 text-red-900 dark:bg-red-950/70 dark:ring-red-500 dark:text-red-200 border-red-400 dark:border-red-700 font-black shadow-xs",
 };
 
 export const TONE_TO_HEX: Record<HeatmapTone, string> = {
 	neutral: "#d1d5db", // gray-300
-	success: "#34d399", // emerald-400
-	"warning-low": "#fbbf24", // amber-400
-	"warning-high": "#f97316", // orange-500
-	error: "#fb7185", // rose-400
+	success: "#34d399", // emerald-400 (green <= 3 mm)
+	"warning-low": "#fbbf24", // amber-400 (yellow 4-5 mm)
+	"warning-high": "#f97316", // orange-500 (orange 6-7 mm)
+	error: "#fb7185", // rose-400 (deep pocket > 6 mm in legacy)
+	critical: "#e11d48", // rose-600 / crimson алый (severe deep bone pocket >= 8 mm)
 };
 
 /**
- * Maps probing depth in mm to discrete clinical heatmap tone.
+ * Standard discrete scale (DentalPin backward parity):
+ * - null/undefined -> 'neutral'
+ * - <= 3 mm -> 'success'
+ * - == 4 mm -> 'warning-low'
+ * - <= 6 mm -> 'warning-high'
+ * - > 6 mm  -> 'error'
  */
-export function probingDepthTone(pd: number | null | undefined): HeatmapTone {
+export function probingDepthTone(
+	pd: number | null | undefined,
+	mode: "standard" | "clinical" = "standard",
+): HeatmapTone {
+	if (mode === "clinical") {
+		return probingDepthClinicalTone(pd);
+	}
 	if (pd === null || pd === undefined) return "neutral";
 	if (pd <= 3) return "success";
 	if (pd === 4) return "warning-low";
@@ -52,15 +67,57 @@ export function probingDepthTone(pd: number | null | undefined): HeatmapTone {
 }
 
 /**
+ * Strict 4-tier clinical Florida Probe / AAP scale (User Directive & Periodontal Invariant):
+ * - null / undefined -> 'neutral' (#d1d5db)
+ * - <= 3 mm          -> 'success' (зеленый #34d399 / норма зубодесневой борозды)
+ * - 4..5 mm          -> 'warning-low' (желтый #fbbf24 / гингивит, начальный пародонтит)
+ * - 6..7 mm          -> 'warning-high' (оранжевый #f97316 / умеренный пародонтит)
+ * - >= 8 mm          -> 'critical' (алый #e11d48 / глубокий костный карман)
+ */
+export function probingDepthClinicalTone(
+	pd: number | null | undefined,
+): HeatmapTone {
+	if (pd === null || pd === undefined || Number.isNaN(pd)) return "neutral";
+	if (pd <= 3) return "success";
+	if (pd <= 5) return "warning-low";
+	if (pd <= 7) return "warning-high";
+	return "critical";
+}
+
+/**
  * Returns Tailwind class names matching DENTE design system in Light and Dark themes.
  */
-export function probingDepthClasses(pd: number | null | undefined): string {
-	return TONE_TO_CLASS[probingDepthTone(pd)];
+export function probingDepthClasses(
+	pd: number | null | undefined,
+	mode: "standard" | "clinical" = "standard",
+): string {
+	return TONE_TO_CLASS[probingDepthTone(pd, mode)];
+}
+
+/**
+ * Returns Tailwind class names for strict 4-tier clinical Florida Probe scale.
+ */
+export function probingDepthClinicalClasses(
+	pd: number | null | undefined,
+): string {
+	return TONE_TO_CLASS[probingDepthClinicalTone(pd)];
 }
 
 /**
  * Returns hex color code for SVG and Canvas rendering.
  */
-export function probingDepthHex(pd: number | null | undefined): string {
-	return TONE_TO_HEX[probingDepthTone(pd)];
+export function probingDepthHex(
+	pd: number | null | undefined,
+	mode: "standard" | "clinical" = "standard",
+): string {
+	return TONE_TO_HEX[probingDepthTone(pd, mode)];
+}
+
+/**
+ * Returns hex color code for strict 4-tier clinical Florida Probe scale.
+ */
+export function probingDepthClinicalHex(
+	pd: number | null | undefined,
+): string {
+	return TONE_TO_HEX[probingDepthClinicalTone(pd)];
 }
