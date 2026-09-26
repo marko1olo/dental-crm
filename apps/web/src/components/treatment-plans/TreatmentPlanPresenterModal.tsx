@@ -2176,7 +2176,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 											})}
 										</tbody>
 										<tfoot>
-											<tr style={{ fontWeight: "bold", fontSize: "10pt", background: "var(--paper-soft, #f8fafc)" }}>
+											<tr style={{ fontWeight: "bold", fontSize: "10pt", background: "var(--paper-soft, var(--paper))" }}>
 												<td colSpan={7} style={{ textAlign: "right", paddingRight: "8px" }}>
 													ИТОГО ПО СМЕТЕ:
 												</td>

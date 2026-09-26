@@ -555,6 +555,8 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 								handleShowCabinetToast("План лечения успешно согласован (ПЭП 63-ФЗ)!");
 							}}
 							onShowToast={handleShowCabinetToast}
+							onOpenClinicalScans={() => setShowClinicalPlanDetail((prev) => !prev)}
+							isClinicalScansOpen={showClinicalPlanDetail}
 						/>
 					)}
 
@@ -598,12 +600,16 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 					{/* Detailed Clinical Scans & Odontogram Accordion View */}
 					{showClinicalPlanDetail && (
-						<div style={{ marginTop: "16px", borderTop: "1px solid var(--pc-border)", paddingTop: "16px" }}>
+						<div
+							data-testid="clinical-scans-accordion-container"
+							style={{ marginTop: "16px", borderTop: "1px solid var(--pc-border)", paddingTop: "16px" }}
+						>
 							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
 								<strong style={{ fontSize: "0.9375rem" }}>Клиническая карта и рентген-снимки</strong>
 								<button
 									type="button"
 									className="pc-btn-secondary"
+									data-testid="hide-clinical-scans-btn"
 									onClick={() => setShowClinicalPlanDetail(false)}
 								>
 									Скрыть подробности
@@ -731,11 +737,11 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 							bottom: "24px",
 							left: "50%",
 							transform: "translateX(-50%)",
-							background: "var(--pc-surface, var(--paper-strong, #ffffff))",
-							color: "var(--pc-text-main, var(--ink, #0f172a))",
+							background: "var(--pc-surface, var(--paper-strong))",
+							color: "var(--pc-text-main, var(--ink))",
 							padding: "10px 18px",
 							borderRadius: "10px",
-							border: "1px solid var(--pc-border, var(--glass-border, #e2e8f0))",
+							border: "1px solid var(--pc-border, var(--line))",
 							boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
 							fontSize: "0.875rem",
 							fontWeight: 600,
