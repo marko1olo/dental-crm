@@ -37,11 +37,10 @@ test("Message Templates & Messengers Zero Cartoon Emoji Inquisition (Mandate 8d 
 		"2. SettingsMessageTemplatesTab contains 0 raw cartoon emojis (Mandate 8d pt 7)",
 		() => {
 			const lines = templatesSource.split("\n");
-			for (let i = 0; i < lines.length; i++) {
-				const line = lines[i];
+			for (const line of lines) {
 				assert.ok(
 					!emojiRegex.test(line),
-					`Found cartoon emoji on line ${i + 1} in SettingsMessageTemplatesTab.tsx: ${line.trim()}`,
+					`Found cartoon emoji in SettingsMessageTemplatesTab.tsx: ${line.trim()}`,
 				);
 			}
 		},
@@ -87,12 +86,81 @@ test("Message Templates & Messengers Zero Cartoon Emoji Inquisition (Mandate 8d 
 		"5. SettingsMessengersTab contains 0 raw cartoon emojis (Mandate 8d pt 7)",
 		() => {
 			const lines = messengersSource.split("\n");
-			for (let i = 0; i < lines.length; i++) {
-				const line = lines[i];
+			for (const [index, line] of lines.entries()) {
 				assert.ok(
 					!emojiRegex.test(line),
-					`Found cartoon emoji on line ${i + 1} in SettingsMessengersTab.tsx: ${line.trim()}`,
+					`Found cartoon emoji on line ${index + 1} in SettingsMessengersTab.tsx: ${line.trim()}`,
 				);
+			}
+		},
+	);
+
+	await t.test(
+		"6. SettingsMessageTemplatesTab contains 1-click essential macro chips {patient_name}, {doctor_name}, {time}, {clinic_address}",
+		() => {
+			assert.ok(
+				templatesSource.includes("{patient_name}"),
+				"Template editor must include {patient_name} macro",
+			);
+			assert.ok(
+				templatesSource.includes("{doctor_name}"),
+				"Template editor must include {doctor_name} macro",
+			);
+			assert.ok(
+				templatesSource.includes("{time}"),
+				"Template editor must include {time} macro",
+			);
+			assert.ok(
+				templatesSource.includes("{clinic_address}"),
+				"Template editor must include {clinic_address} macro",
+			);
+		},
+	);
+
+	await t.test(
+		"7. ReminderCadenceConfigPanel and PublicBookingLinkPanel strictly < 800 lines and 0 emojis",
+		() => {
+			const cadencePath = path.resolve(
+				srcDir,
+				"components/settings/ReminderCadenceConfigPanel.tsx",
+			);
+			const bookingPath = path.resolve(
+				srcDir,
+				"components/settings/PublicBookingLinkPanel.tsx",
+			);
+			const adminPath = path.resolve(
+				srcDir,
+				"components/settings/AdminSettingsSection.tsx",
+			);
+
+			const cadenceSource = fs.readFileSync(cadencePath, "utf-8");
+			const bookingSource = fs.readFileSync(bookingPath, "utf-8");
+			const adminSource = fs.readFileSync(adminPath, "utf-8");
+
+			assert.ok(
+				cadenceSource.split("\n").length < 800,
+				"ReminderCadenceConfigPanel must be < 800 lines",
+			);
+			assert.ok(
+				bookingSource.split("\n").length < 800,
+				"PublicBookingLinkPanel must be < 800 lines",
+			);
+			assert.ok(
+				adminSource.split("\n").length < 800,
+				"AdminSettingsSection must be < 800 lines",
+			);
+
+			for (const [file, src] of [
+				["cadence", cadenceSource],
+				["booking", bookingSource],
+				["admin", adminSource],
+			]) {
+				for (const line of src.split("\n")) {
+					assert.ok(
+						!emojiRegex.test(line),
+						`Found cartoon emoji in ${file}: ${line.trim()}`,
+					);
+				}
 			}
 		},
 	);
