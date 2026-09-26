@@ -58,7 +58,7 @@
 	align-items: center;
 	justify-content: center;
 	background: linear-gradient(135deg, var(--teal, #0d9488), var(--accent, #3b82f6));
-	color: #ffffff;
+	color: var(--on-teal, #ffffff);
 	flex-shrink: 0;
 }
 

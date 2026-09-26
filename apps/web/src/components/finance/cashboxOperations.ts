@@ -479,8 +479,10 @@ export interface CashChangeResult {
  * Если внесено ровно столько, сколько к оплате — режим «Без сдачи» (change = 0 ₽).
  */
 export function calculateCashChange(totalDueRub: number, receivedCashRub: number): CashChangeResult {
-	const dueKop = rubToKopecks(Math.max(0, totalDueRub));
-	const recKop = rubToKopecks(Math.max(0, receivedCashRub));
+	const safeDueRub = Number.isFinite(totalDueRub) ? Math.max(0, totalDueRub) : 0;
+	const safeRecRub = Number.isFinite(receivedCashRub) ? Math.max(0, receivedCashRub) : 0;
+	const dueKop = rubToKopecks(safeDueRub);
+	const recKop = rubToKopecks(safeRecRub);
 	const isExact = recKop === dueKop;
 	const isShortage = recKop < dueKop;
 	const changeKop = isShortage ? 0 : recKop - dueKop;

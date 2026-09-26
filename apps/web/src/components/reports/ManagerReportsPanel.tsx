@@ -75,6 +75,14 @@ async function readJson<T>(response: Response): Promise<T> {
 	return payload as T;
 }
 
+const RECEIVABLES_BUCKET_LABELS: Record<string, string> = {
+	current: "До 7 дней",
+	up_to_30: "До 30 дней",
+	up_to_90: "До 90 дней",
+	over_90: "Более 90 дней",
+	undated: "Без даты",
+};
+
 export async function fetchReportsSummary(
 	period: CalendarPeriod & { readonly granularity: "day" | "week" | "month" },
 	headers: Record<string, string>,
@@ -651,7 +659,7 @@ export function ManagerReportsPanel({
 													{money(row.debtRub)}
 												</td>
 												<td data-label="Срок">
-													{bucketLabels[row.bucket] ?? row.bucket}
+													{RECEIVABLES_BUCKET_LABELS[row.bucket] ?? row.bucket}
 												</td>
 												<td className="ops-num" data-label="Первая позиция">
 													{row.oldestChargeAt === null

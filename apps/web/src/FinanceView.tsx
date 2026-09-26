@@ -1,8 +1,7 @@
 import type { Dashboard, Patient, PaymentMethod } from "@dental/shared";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { TrendingUp, ReceiptText, ChevronDown, FileText, CreditCard, MoreHorizontal, ShieldCheck, Banknote, X } from "lucide-react";
+import { ChevronDown, FileText } from "lucide-react";
 import { money as formatMoney } from "./AppHelpers";
-import { denteAdminSecretRequestHeaders } from "./lib/denteRequestHeaders";
 import {
 	safeLocalStorageGetItem,
 	safeLocalStorageSetItem,
@@ -17,7 +16,6 @@ import { FamilyWalletPanel } from "./components/finance/FamilyWalletPanel";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { FinanceLedger } from "./FinanceLedger";
 
-import { InvoicesView } from "./components/billing/InvoicesView.js";
 import {
 	FinancePlanningOverview,
 	ServiceCatalogStrip,
@@ -25,16 +23,14 @@ import {
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { PaymentCapture } from "./PaymentCapture";
 import { rubAmountForInput } from "./components/payments/cashDeskAmounts.js";
+import { callCashShiftApi } from "./components/finance/cashShiftApi";
+import { FinanceToolbar } from "./components/finance/FinanceToolbar";
+import { FinanceInvoicesModal } from "./components/finance/FinanceInvoicesModal";
+import { FinanceCashboxModal } from "./components/finance/FinanceCashboxModal";
 
 const ManagerialPnlDashboardModal = lazy(() =>
 	import("./components/finance/pnl/ManagerialPnlDashboardModal").then((m) => ({
 		default: m.ManagerialPnlDashboardModal,
-	})),
-);
-
-const CashboxViewModal = lazy(() =>
-	import("./components/cashbox/CashboxView.js").then((m) => ({
-		default: m.CashboxView,
 	})),
 );
 
@@ -190,43 +186,6 @@ const EMPTY_CLINICAL_RULE_SUMMARY: Dashboard["clinicalRuleSummary"] = {
 	requiredServices: 0,
 	coveredRules: 0,
 };
-
-async function callCashShiftApi(
-	primaryUrl: string,
-	fallbackUrl: string,
-	payload: Record<string, unknown>,
-): Promise<void> {
-	const headers = denteAdminSecretRequestHeaders({
-		"Content-Type": "application/json",
-	});
-	try {
-		const res = await fetch(primaryUrl, {
-			method: "POST",
-			headers,
-			body: JSON.stringify(payload),
-		});
-		if (res.ok) return;
-		if (fallbackUrl && (res.status === 404 || res.status === 405)) {
-			await fetch(fallbackUrl, {
-				method: "POST",
-				headers,
-				body: JSON.stringify(payload),
-			});
-		}
-	} catch {
-		if (fallbackUrl) {
-			try {
-				await fetch(fallbackUrl, {
-					method: "POST",
-					headers,
-					body: JSON.stringify(payload),
-				});
-			} catch {
-				// Non-blocking: offline or standalone client resilience
-			}
-		}
-	}
-}
 
 export function FinanceView(rawProps?: FinanceViewComponentProps) {
 	const logicContext = useAppLogicContext();
@@ -552,151 +511,27 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 
 	return (
 		<div className="finance-panel border-0 bg-transparent p-0 shadow-none pb-32 max-sm:pb-48 max-w-full min-w-0 overflow-x-hidden" id="finance">
-			<div className="finance-monolithic-toolbar min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9 flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 border border-[var(--line)] bg-[var(--paper)] rounded-xl shadow-xs mb-1.5 sm:mb-2 flex-nowrap overflow-hidden shrink-0 select-none">
-				<div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
-					<span className="truncate text-xs sm:text-sm font-bold text-[var(--ink)] shrink-0">
-						<span className="sm:hidden">Оплаты</span>
-						<span className="hidden sm:inline">Оплаты и план</span>
-					</span>
-					<span className="text-[11px] sm:text-xs text-[var(--ink)] sm:text-[var(--muted)] min-w-0 flex-1 truncate font-semibold sm:font-normal" title={documentPatient?.fullName ?? "пациент не выбран"}>
-						·{" "}
-						<span className="sm:hidden tracking-tight">
-							{(() => {
-								const name = documentPatient?.fullName ?? "пациент не выбран";
-								if (!documentPatient?.fullName) return name;
-								const parts = name.trim().split(/\s+/);
-								if (parts.length >= 2) {
-									const initials = parts.slice(1).map((p: string) => (p[0] ? `${p[0]}.` : "")).filter(Boolean).join(" ");
-									return `${parts[0]} ${initials}`.trim();
-								}
-								return name;
-							})()}
-						</span>
-						<span className="hidden sm:inline">{documentPatient?.fullName ?? "пациент не выбран"}</span>
-					</span>
-					<button
-						type="button"
-						onClick={() => setIsCashShiftOpen((prev) => !prev)}
-						className={`inline-flex items-center gap-1.5 px-1.5 sm:px-2 py-0.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 select-none ${
-							isCashShiftOpen
-								? "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300"
-								: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong,rgba(0,0,0,0.15))]"
-						}`}
-						title={isCashShiftOpen ? "Скрыть панель кассовой смены" : "Открыть управление сменой ККТ 54-ФЗ"}
-						aria-expanded={isCashShiftOpen}
-						data-testid="btn-toggle-cash-shift"
-					>
-						<span
-							className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-								isShiftOpen ? "bg-emerald-500" : "bg-rose-500"
-							}`}
-						/>
-						<span className="sm:hidden">ККТ</span>
-						<span className="hidden sm:inline">ККТ 54-ФЗ</span>
-					</button>
-				</div>
-				<div className="finance-header-actions flex items-center gap-1.5 shrink-0 flex-nowrap">
-					{billingSummary && billingSummary.totalDueRub > 0 && (
-						<button
-							className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 inline-flex items-center gap-1 font-bold text-xs px-2 sm:px-2.5 py-0 cursor-pointer bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-500/20 active:scale-95 transition-all rounded-lg shrink-0"
-							type="button"
-							onClick={() => {
-								setPaymentAmount(rubAmountForInput(billingSummary.totalDueRub));
-								focusPaymentCapture();
-							}}
-							title={`1-клик оплата остатка долга: ${money(billingSummary.totalDueRub)}`}
-							aria-label="Оплатить долг"
-							data-testid="btn-finance-pay-debt-quick"
-						>
-							<CreditCard size={13} className="shrink-0 text-rose-600 dark:text-rose-400" />
-							<span className="truncate hidden sm:inline">Оплатить долг ({money(billingSummary.totalDueRub)})</span>
-							<span className="truncate sm:hidden">{money(billingSummary.totalDueRub)}</span>
-						</button>
-					)}
-					<button
-						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 inline-flex items-center gap-1 font-semibold text-xs px-2 sm:px-2.5 py-0 cursor-pointer rounded-lg shrink-0"
-						type="button"
-						onClick={() => setIsInvoicesOpen(true)}
-						aria-label="Счета и акты (804н)"
-						data-testid="btn-finance-open-invoices"
-					>
-						<ReceiptText size={13} className="shrink-0" />
-						<span className="truncate hidden sm:inline">Счета и акты (804н)</span>
-					</button>
-
-					{/* Поповер вторичных действий: P&L, Документы и Смена ККТ */}
-					<div className="relative shrink-0">
-						<button
-							type="button"
-							onClick={() => setIsFinanceOptionsOpen((prev) => !prev)}
-							data-testid="finance-toolbar-options-btn"
-							className="min-h-[44px] min-w-[44px] sm:min-w-0 sm:min-h-0 sm:h-7 w-11 sm:w-7 p-0 flex items-center justify-center shrink-0 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
-							title="Дополнительные финансовые отчеты и документы"
-							aria-label="Дополнительные действия"
-							aria-expanded={isFinanceOptionsOpen}
-						>
-							<MoreHorizontal size={15} className="shrink-0" aria-hidden="true" />
-						</button>
-						{isFinanceOptionsOpen && (
-							<div
-								className="absolute right-0 top-full mt-1 w-52 py-1.5 px-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg z-50 flex flex-col gap-1 text-left"
-								role="menu"
-							>
-								<button
-									type="button"
-									onClick={() => {
-										setIsFinanceOptionsOpen(false);
-										setIsPnlOpen(true);
-									}}
-									className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[32px]"
-									role="menuitem"
-								>
-									<TrendingUp size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-									<span>Управленческий P&L</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										setIsFinanceOptionsOpen(false);
-										onGoToDocuments();
-									}}
-									className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[32px]"
-									role="menuitem"
-								>
-									<FileText size={14} className="shrink-0 text-sky-600 dark:text-sky-400" />
-									<span>Документы</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										setIsFinanceOptionsOpen(false);
-										setIsCashboxOpen(true);
-									}}
-									className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[32px]"
-									role="menuitem"
-									data-testid="btn-finance-open-cashbox"
-								>
-									<Banknote size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />
-									<span>Касса 54-ФЗ (АРМ)</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										setIsFinanceOptionsOpen(false);
-										setIsCashShiftOpen((prev) => !prev);
-									}}
-									className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[32px]"
-									role="menuitem"
-									data-testid="menuitem-toggle-cash-shift"
-								>
-									<ShieldCheck size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />
-									<span>{isCashShiftOpen ? "Скрыть смену ККТ" : "Кассовая смена ККТ"}</span>
-								</button>
-							</div>
-						)}
-					</div>
-				</div>
-			</div>
+			<FinanceToolbar
+				documentPatient={documentPatient}
+				billingSummary={billingSummary}
+				isCashShiftOpen={isCashShiftOpen}
+				onToggleCashShift={() => setIsCashShiftOpen((prev) => !prev)}
+				isShiftOpen={isShiftOpen}
+				onPayDebtQuick={() => {
+					if (billingSummary?.totalDueRub) {
+						setPaymentAmount(rubAmountForInput(billingSummary.totalDueRub));
+						focusPaymentCapture();
+					}
+				}}
+				money={money}
+				onOpenInvoices={() => setIsInvoicesOpen(true)}
+				isFinanceOptionsOpen={isFinanceOptionsOpen}
+				onToggleFinanceOptions={() => setIsFinanceOptionsOpen((prev) => !prev)}
+				onCloseFinanceOptions={() => setIsFinanceOptionsOpen(false)}
+				onOpenPnl={() => setIsPnlOpen(true)}
+				onGoToDocuments={onGoToDocuments}
+				onOpenCashbox={() => setIsCashboxOpen(true)}
+			/>
 
 			{isCashShiftOpen && (
 				<div className="relative mb-3 animate-in fade-in duration-150" data-testid="cash-shift-panel-container">
@@ -908,71 +743,25 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				</Suspense>
 			)}
 
-			{isInvoicesOpen && (
-				<div
-					className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150"
-					role="dialog"
-					aria-modal="true"
-					aria-label="Счета и акты по номенклатуре 804н"
-					data-testid="modal-finance-invoices"
-				>
-					<div className="w-full max-w-5xl h-[92vh] max-h-[920px] rounded-2xl overflow-hidden shadow-2xl border border-[var(--line)] flex flex-col bg-[var(--paper)]">
-						<Suspense fallback={<div className="p-8 text-center text-xs text-[var(--muted)]">Загрузка модуля счетов 804н...</div>}>
-							<InvoicesView
-								currentDoctorName="Врач-стоматолог"
-								patientId={documentPatient?.id}
-								patientName={documentPatient?.fullName}
-								onClose={() => setIsInvoicesOpen(false)}
-							/>
-						</Suspense>
-					</div>
-				</div>
-			)}
+			<FinanceInvoicesModal
+				isOpen={isInvoicesOpen}
+				onClose={() => setIsInvoicesOpen(false)}
+				patientId={documentPatient?.id}
+				patientName={documentPatient?.fullName}
+			/>
 
-			{isCashboxOpen && (
-				<div
-					className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150"
-					role="dialog"
-					aria-modal="true"
-					aria-label="Касса 54-ФЗ и расчеты с пациентами"
-					data-testid="modal-finance-cashbox"
-					onClick={(e) => {
-						if (e.target === e.currentTarget) setIsCashboxOpen(false);
-					}}
-				>
-					<div className="w-full max-w-5xl h-[92vh] max-h-[920px] rounded-2xl overflow-hidden shadow-2xl border border-[var(--line)] flex flex-col bg-[var(--paper)]">
-						<header className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--line)] shrink-0 bg-[var(--paper-soft)]">
-							<div className="flex items-center gap-2">
-								<Banknote className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-								<h2 className="text-sm font-bold text-[var(--ink)]">АРМ Кассира · 54-ФЗ</h2>
-							</div>
-							<button
-								type="button"
-								onClick={() => setIsCashboxOpen(false)}
-								className="p-1 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors cursor-pointer"
-								aria-label="Закрыть окно кассы"
-								data-testid="btn-close-cashbox-modal"
-							>
-								<X size={16} />
-							</button>
-						</header>
-						<div className="flex-1 overflow-y-auto p-2 sm:p-4">
-							<Suspense fallback={<div className="p-8 text-center text-xs text-[var(--muted)]">Загрузка АРМ кассы 54-ФЗ...</div>}>
-								<CashboxViewModal
-									initialShiftOpen={isShiftOpen}
-									cashierName={paymentFiscalCashierName || "Врач-стоматолог / Кассир"}
-									clinicName={dashboard?.clinicSettings?.name || "Стоматология ДЕНТЕ Премиум"}
-									clinicInn={dashboard?.clinicSettings?.inn}
-									onPaymentComplete={() => {
-										void loadDashboard?.();
-										setIsCashboxOpen(false);
-									}}
-								/>
-							</Suspense>
-						</div>
-					</div>
-				</div>
-			)}
+			<FinanceCashboxModal
+				isOpen={isCashboxOpen}
+				onClose={() => setIsCashboxOpen(false)}
+				isShiftOpen={isShiftOpen}
+				cashierName={paymentFiscalCashierName || "Врач-стоматолог / Кассир"}
+				clinicName={dashboard?.clinicSettings?.name || "Стоматология ДЕНТЕ Премиум"}
+				clinicInn={dashboard?.clinicSettings?.inn}
+				onPaymentComplete={() => {
+					void loadDashboard?.();
+					setIsCashboxOpen(false);
+				}}
+			/>
 		</div>
 	);
 }

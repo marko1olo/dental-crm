@@ -123,7 +123,7 @@ export const PaymentCashView: React.FC<PaymentCashViewProps> = ({
 							<button
 								key={addBtn.amount}
 								type="button"
-								onClick={() => setReceivedCashRub((prev) => prev + addBtn.amount)}
+								onClick={() => setReceivedCashRub((prev) => (Number.isFinite(prev) ? prev : 0) + addBtn.amount)}
 								className="min-h-[44px] rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-200 cursor-pointer transition-all active:scale-95 font-mono truncate"
 								data-testid={addBtn.testId}
 								title={`Добавить ${addBtn.label.replace("+", "")} к внесенной сумме`}
@@ -199,8 +199,8 @@ export const PaymentCashView: React.FC<PaymentCashViewProps> = ({
 						? "Фиксация..."
 						: `Подтвердить прием ${
 								receivedCashRub > 0 && receivedCashRub < totalDueRub
-									? receivedCashRub.toLocaleString("ru-RU")
-									: totalDueRub.toLocaleString("ru-RU")
+									? receivedCashRub.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+									: totalDueRub.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 							} ₽ в кассу`}
 				</span>
 			</button>

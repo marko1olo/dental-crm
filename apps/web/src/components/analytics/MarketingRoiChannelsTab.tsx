@@ -22,7 +22,7 @@ export interface ChannelPerformanceRow {
 	profitKopecks: number;
 	romiFormatted: string;
 	romiStatus: string;
-	notes?: string;
+	notes?: string | undefined;
 }
 
 export interface MarketingRoiChannelsTabProps {

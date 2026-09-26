@@ -44,11 +44,11 @@ export const LostPatientsRecallCohortsTable: React.FC<
 						const rates = calculateRecallRates(cohort);
 						return (
 							<tr
-								key={`${cohort.cohortMonth}-${cohort.category}`}
+								key={`${cohort.cohortMonth || cohort.cohortLabel || cohort.cohortKey}-${cohort.category}`}
 								className="hover:bg-[var(--paper-soft)]/50 transition-colors"
 							>
 								<td className="p-2.5 font-bold">
-									{cohort.cohortMonth}
+									{cohort.cohortMonth || cohort.cohortLabel || cohort.cohortKey}
 								</td>
 								<td className="p-2.5">
 									<span className="px-2 py-0.5 rounded border text-[11px] bg-[var(--paper-soft)] border-[var(--line)]">

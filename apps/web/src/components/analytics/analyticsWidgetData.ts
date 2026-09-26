@@ -288,11 +288,13 @@ export function formatKopecksPerHour(kopecksPerHour: number): string {
 export type CohortTreatmentCategory =
 	| "sanitation"
 	| "implantation"
+	| "orthodontics"
 	| "general_therapy";
 
 export interface RecallCohortData {
 	readonly cohortKey: string;
 	readonly cohortLabel: string;
+	readonly cohortMonth?: string | undefined;
 	readonly category: CohortTreatmentCategory;
 	readonly categoryLabel: string;
 	readonly totalPatients: number;
@@ -308,20 +310,28 @@ export interface RecallCohortData {
  * Расчет процента возврата пациентов через 6 и 12 месяцев с определением статуса.
  */
 export function calculateRecallRates(
-	totalPatients: number,
-	returned6m: number,
-	returned12m: number,
+	totalOrCohort: number | { totalPatients: number; returned6m: number; returned12m: number },
+	returned6m?: number,
+	returned12m?: number,
 ): { rate6m: number; rate12m: number; healthTone: "ok" | "warn" | "bad" } {
+	if (typeof totalOrCohort === "object" && totalOrCohort !== null) {
+		return calculateRecallRates(
+			totalOrCohort.totalPatients,
+			totalOrCohort.returned6m,
+			totalOrCohort.returned12m,
+		);
+	}
+	const totalPatients = totalOrCohort;
 	if (!Number.isFinite(totalPatients) || totalPatients <= 0) {
 		return { rate6m: 0, rate12m: 0, healthTone: "bad" };
 	}
 	const safe6m = Math.max(
 		0,
-		Math.min(totalPatients, Number.isFinite(returned6m) ? returned6m : 0),
+		Math.min(totalPatients, Number.isFinite(returned6m) ? (returned6m as number) : 0),
 	);
 	const safe12m = Math.max(
 		0,
-		Math.min(totalPatients, Number.isFinite(returned12m) ? returned12m : 0),
+		Math.min(totalPatients, Number.isFinite(returned12m) ? (returned12m as number) : 0),
 	);
 
 	const rate6m = Math.round((safe6m / totalPatients) * 1000) / 10;

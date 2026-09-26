@@ -29,6 +29,12 @@ export interface PaymentModalFooterProps {
 	readonly isCheckingSbp: boolean;
 }
 
+const formatMoney = (rub: number) =>
+	(Number.isFinite(rub) ? (Object.is(rub, -0) ? 0 : rub) : 0).toLocaleString("ru-RU", {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+	});
+
 export const PaymentModalFooter: React.FC<PaymentModalFooterProps> = ({
 	totalDueRub,
 	discountRub,
@@ -57,11 +63,11 @@ export const PaymentModalFooter: React.FC<PaymentModalFooterProps> = ({
 			<div className="flex items-center gap-2 min-w-0">
 				<span className="text-xs text-[var(--muted,#64748b)] hidden sm:inline">К оплате:</span>
 				<span className="font-mono text-base sm:text-lg font-black text-[var(--ink,#0f172a)] truncate" data-testid="payment-modal-footer-total">
-					{totalDueRub.toLocaleString("ru-RU")} ₽
+					{formatMoney(totalDueRub)} ₽
 				</span>
 				{discountRub > 0 && (
 					<span className="text-xs text-amber-600 dark:text-amber-400 font-bold truncate">
-						(-{discountRub.toLocaleString("ru-RU")} ₽)
+						(-{formatMoney(discountRub)} ₽)
 					</span>
 				)}
 			</div>
@@ -89,10 +95,10 @@ export const PaymentModalFooter: React.FC<PaymentModalFooterProps> = ({
 							) : (
 								<>
 									<span className="sm:hidden">
-										Принять {receivedCashRub > 0 && receivedCashRub < totalDueRub ? receivedCashRub.toLocaleString("ru-RU") : totalDueRub.toLocaleString("ru-RU")} ₽
+										Принять {receivedCashRub > 0 && receivedCashRub < totalDueRub ? formatMoney(receivedCashRub) : formatMoney(totalDueRub)} ₽
 									</span>
 									<span className="hidden sm:inline">
-										Принять наличные ({receivedCashRub > 0 && receivedCashRub < totalDueRub ? receivedCashRub.toLocaleString("ru-RU") : totalDueRub.toLocaleString("ru-RU")} ₽)
+										Принять наличные ({receivedCashRub > 0 && receivedCashRub < totalDueRub ? formatMoney(receivedCashRub) : formatMoney(totalDueRub)} ₽)
 									</span>
 								</>
 							)}
@@ -119,8 +125,8 @@ export const PaymentModalFooter: React.FC<PaymentModalFooterProps> = ({
 								"Фиксация..."
 							) : (
 								<>
-									<span className="sm:hidden">Сплит {totalDueRub.toLocaleString("ru-RU")} ₽</span>
-									<span className="hidden sm:inline">Пробить сплит ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+									<span className="sm:hidden">Сплит {formatMoney(totalDueRub)} ₽</span>
+									<span className="hidden sm:inline">Пробить сплит ({formatMoney(totalDueRub)} ₽)</span>
 								</>
 							)}
 						</span>
@@ -146,13 +152,13 @@ export const PaymentModalFooter: React.FC<PaymentModalFooterProps> = ({
 								"Списание..."
 							) : patientDepositRub >= totalDueRub ? (
 								<>
-									<span className="sm:hidden">Депозит {totalDueRub.toLocaleString("ru-RU")} ₽</span>
-									<span className="hidden sm:inline">Списать с депозита ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+									<span className="sm:hidden">Депозит {formatMoney(totalDueRub)} ₽</span>
+									<span className="hidden sm:inline">Списать с депозита ({formatMoney(totalDueRub)} ₽)</span>
 								</>
 							) : (
 								<>
-									<span className="sm:hidden">Баланс {Math.min(totalDueRub, patientDepositRub + patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽</span>
-									<span className="hidden sm:inline">Зачесть баланс ({Math.min(totalDueRub, patientDepositRub + patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽)</span>
+									<span className="sm:hidden">Баланс {formatMoney(Math.min(totalDueRub, patientDepositRub + patientFamilyBalanceRub))} ₽</span>
+									<span className="hidden sm:inline">Зачесть баланс ({formatMoney(Math.min(totalDueRub, patientDepositRub + patientFamilyBalanceRub))} ₽)</span>
 								</>
 							)}
 						</span>
@@ -172,8 +178,8 @@ export const PaymentModalFooter: React.FC<PaymentModalFooterProps> = ({
 								"Фиксация..."
 							) : (
 								<>
-									<span className="sm:hidden">Карта {totalDueRub.toLocaleString("ru-RU")} ₽</span>
-									<span className="hidden sm:inline">Подтвердить оплату картой ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+									<span className="sm:hidden">Карта {formatMoney(totalDueRub)} ₽</span>
+									<span className="hidden sm:inline">Подтвердить оплату картой ({formatMoney(totalDueRub)} ₽)</span>
 								</>
 							)}
 						</span>
@@ -193,8 +199,8 @@ export const PaymentModalFooter: React.FC<PaymentModalFooterProps> = ({
 								"Проверка..."
 							) : (
 								<>
-									<span className="sm:hidden">СБП {totalDueRub.toLocaleString("ru-RU")} ₽</span>
-									<span className="hidden sm:inline">Подтвердить СБП ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+									<span className="sm:hidden">СБП {formatMoney(totalDueRub)} ₽</span>
+									<span className="hidden sm:inline">Подтвердить СБП ({formatMoney(totalDueRub)} ₽)</span>
 								</>
 							)}
 						</span>

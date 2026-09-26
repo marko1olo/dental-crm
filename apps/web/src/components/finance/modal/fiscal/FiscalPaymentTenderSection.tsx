@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { showToast } from "../../../GlobalToast";
 import type { LoyaltyDiscountPreset } from "../../fiscal/fiscal54fzEngine";
+import { kopecksToRub, rubToKopecks } from "@dental/shared";
 import { formatMoneyRu } from "./fiscalModalRefundLogic";
 
 export interface FiscalPaymentTenderSectionProps {
@@ -352,11 +353,11 @@ export const FiscalPaymentTenderSection: React.FC<FiscalPaymentTenderSectionProp
 								<div className="flex-1 text-right">
 									{receivedCashRub >= cashAmount && receivedCashRub > 0 ? (
 										<div className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
-											Сдача: <span className="text-base font-mono font-black">{formatMoneyRu(receivedCashRub - cashAmount)}</span>
+											Сдача: <span className="text-base font-mono font-black">{formatMoneyRu(kopecksToRub(Math.max(0, rubToKopecks(receivedCashRub) - rubToKopecks(cashAmount))))}</span>
 										</div>
 									) : receivedCashRub > 0 ? (
 										<div className="text-xs font-bold text-amber-700 dark:text-amber-300">
-											К доплате: <span className="text-base font-mono font-black">{formatMoneyRu(cashAmount - receivedCashRub)}</span>
+											К доплате: <span className="text-base font-mono font-black">{formatMoneyRu(kopecksToRub(Math.max(0, rubToKopecks(cashAmount) - rubToKopecks(receivedCashRub))))}</span>
 										</div>
 									) : (
 										<div className="text-xs text-[var(--muted,#64748b)]">

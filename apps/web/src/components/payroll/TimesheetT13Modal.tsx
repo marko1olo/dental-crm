@@ -59,49 +59,29 @@ export function staffToEmployeeInfo(staff: readonly any[]): EmployeeInfo[] {
 			const isDoctor = m.role === "doctor" || m.role === "owner" || !m.role;
 			const isAssistant = m.role === "assistant";
 
-			let positionRu = "Врач-стоматолог";
-			if (isAssistant) {
-				positionRu = "Ассистент врача-стоматолога";
-			} else if (m.role === "admin") {
-				positionRu = "Администратор клиники";
-			} else if (Array.isArray(m.specialties) && m.specialties.length > 0) {
-				const spec = m.specialties[0];
-				if (spec === "orthopedics" || spec === "orthopedist") {
-					positionRu = "Врач-стоматолог ортопед";
-				} else if (spec === "surgery" || spec === "surgeon") {
-					positionRu = "Врач-стоматолог хирург-имплантолог";
-				} else if (spec === "orthodontics" || spec === "orthodontist") {
-					positionRu = "Врач-стоматолог ортодонт";
-				} else if (spec === "pediatric") {
-					positionRu = "Детский врач-стоматолог";
-				} else if (spec === "periodontics") {
-					positionRu = "Врач-стоматолог пародонтолог";
-				} else if (spec === "hygiene" || spec === "hygienist") {
-					positionRu = "Гигиенист стоматологический";
-				} else if (spec === "general" || spec === "general_dentist") {
-					positionRu = "Врач-стоматолог общей практики";
-				} else {
-					positionRu = "Врач-стоматолог терапевт";
-				}
-			}
+			const spec = Array.isArray(m.specialties) && m.specialties.length > 0 ? String(m.specialties[0]) : "";
+			const positionRu = isAssistant
+				? "Ассистент врача-стоматолога"
+				: m.role === "admin"
+				? "Администратор клиники"
+				: (spec.includes("orthoped") ? "Врач-стоматолог ортопед"
+					: spec.includes("surg") ? "Врач-стоматолог хирург-имплантолог"
+					: spec.includes("orthodont") ? "Врач-стоматолог ортодонт"
+					: spec === "pediatric" ? "Детский врач-стоматолог"
+					: spec === "periodontics" ? "Врач-стоматолог пародонтолог"
+					: spec.includes("hyg") ? "Гигиенист стоматологический"
+					: spec.includes("general") ? "Врач-стоматолог общей практики"
+					: "Врач-стоматолог терапевт");
 
-			let departmentRu = "Клиническое отделение";
-			if (isAssistant) {
-				departmentRu = "Сестринская служба / ЦСО";
-			} else if (m.role === "admin") {
-				departmentRu = "Ресепшен и клиентский сервис";
-			} else if (Array.isArray(m.specialties) && m.specialties.length > 0) {
-				const spec = m.specialties[0];
-				if (spec === "orthopedics" || spec === "orthopedist") {
-					departmentRu = "Ортопедическое отделение";
-				} else if (spec === "surgery" || spec === "surgeon") {
-					departmentRu = "Хирургическое отделение";
-				} else if (spec === "orthodontics" || spec === "orthodontist") {
-					departmentRu = "Ортодонтическое отделение";
-				} else if (spec === "pediatric") {
-					departmentRu = "Детское отделение";
-				}
-			}
+			const departmentRu = isAssistant
+				? "Сестринская служба / ЦСО"
+				: m.role === "admin"
+				? "Ресепшен и клиентский сервис"
+				: (spec.includes("orthoped") ? "Ортопедическое отделение"
+					: spec.includes("surg") ? "Хирургическое отделение"
+					: spec.includes("orthodont") ? "Ортодонтическое отделение"
+					: spec === "pediatric" ? "Детское отделение"
+					: "Клиническое отделение");
 
 			// Art. 350 Labor Code RF: 33h week = 6.6h/day for dentists, 39h week = 7.8h/day for assistants, 40h = 8h/day for admins
 			const defaultShiftHours = isAssistant ? 7.8 : isDoctor ? 6.6 : 8.0;
@@ -712,7 +692,7 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 						<h3 className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider">
 							Сводная ведомость отработанного времени по персоналу ({monthLabelRu}):
 						</h3>
-						<div className="border border-[var(--line)] rounded-xl overflow-hidden bg-[var(--paper)]">
+						<div className="border border-[var(--line)] rounded-xl overflow-hidden overflow-x-auto bg-[var(--paper)]">
 							<table className="w-full text-left text-xs">
 								<thead className="bg-[var(--paper-soft)] border-b border-[var(--line)] text-[var(--muted)] font-semibold">
 									<tr>
@@ -766,26 +746,27 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 				</div>
 
 				{/* Footer */}
-				<div className="h-14 px-4 sm:px-5 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-3 overflow-x-auto whitespace-nowrap timesheet-no-print shrink-0">
+				<div className="min-h-[48px] sm:h-12 sm:min-h-0 px-3 sm:px-5 py-2 sm:py-0 border-t border-[var(--line)] bg-[var(--paper-soft)] flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-3 overflow-x-auto whitespace-nowrap timesheet-no-print shrink-0">
 					<div className="text-xs text-[var(--muted)]">
 						Ответственный за табель: <span className="font-bold text-[var(--ink)]">{resolvedEmployees.length <= 1 ? "Врач-руководитель (Соло-практика)" : "Главный врач"}</span>
 					</div>
-					<div className="flex items-center gap-2.5">
+					<div className="flex items-center gap-2">
 						<button
 							type="button"
 							onClick={handleExportCsv}
-							className="h-10 px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 transition-colors cursor-pointer"
+							className="min-h-[44px] sm:min-h-0 sm:h-8 px-3 sm:px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 transition-colors cursor-pointer"
 						>
-							<Download className="w-4 h-4 text-[var(--teal)]" />
-							Выгрузить форму Т-13 в CSV
+							<Download className="w-4 h-4 text-[var(--teal)] shrink-0" />
+							<span className="hidden sm:inline">Выгрузить форму Т-13 в CSV</span>
+							<span className="sm:hidden">Экспорт Т-13</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => window.print()}
-							className="h-10 px-4 rounded-xl bg-[var(--teal)] hover:opacity-90 text-[var(--on-teal)] text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							className="min-h-[44px] sm:min-h-0 sm:h-8 px-3 sm:px-4 rounded-xl bg-[var(--teal)] hover:opacity-90 text-[var(--on-teal)] text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 						>
-							<Printer className="w-4 h-4" />
-							Печать формы Т-13
+							<Printer className="w-4 h-4 shrink-0" />
+							<span>Печать формы Т-13</span>
 						</button>
 					</div>
 				</div>

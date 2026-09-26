@@ -5,8 +5,9 @@ import { mapTreatmentItemsToFiscalReceipt } from "../../order804nFiscalEngine";
  * Безупречное форматирование денежных сумм в рублях с копейками без артефактов округления.
  */
 export function formatMoneyRu(value: number): string {
+	const safeVal = Number.isFinite(value) ? (Object.is(value, -0) ? 0 : value) : 0;
 	return (
-		value.toLocaleString("ru-RU", {
+		safeVal.toLocaleString("ru-RU", {
 			minimumFractionDigits: 2,
 			maximumFractionDigits: 2,
 		}) + " ₽"

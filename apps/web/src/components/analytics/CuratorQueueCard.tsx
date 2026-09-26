@@ -24,15 +24,15 @@ export interface CuratorQueueCardProps {
 	readonly isOpenMenu: boolean;
 	readonly onToggleMenu: () => void;
 	readonly onCloseMenu: () => void;
-	readonly onOpenPatientCard?: (patientId: string) => void;
-	readonly onOpenPatientPlan?: (patientId: string, planId: string) => void;
+	readonly onOpenPatientCard?: ((patientId: string) => void) | undefined;
+	readonly onOpenPatientPlan?: ((patientId: string, planId: string) => void) | undefined;
 	readonly onAdvanceStage: (item: CuratorPatientQueueItem) => void;
 	readonly onAssignCurator: (target: {
 		patientId: string;
 		patientName: string;
 		planId: string;
 		planTitle: string;
-		currentCuratorId?: string | null;
+		currentCuratorId?: string | null | undefined;
 	}) => void;
 }
 

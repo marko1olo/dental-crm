@@ -57,8 +57,8 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: linear-gradient(135deg, var(--teal, #0d9488), #059669);
-	color: #ffffff;
+	background: linear-gradient(135deg, var(--teal, #0d9488), var(--ok, #059669));
+	color: var(--on-teal, #ffffff);
 	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
 	flex-shrink: 0;
 }
@@ -350,31 +350,31 @@
 
 .status-super-profitable {
 	background-color: rgba(16, 185, 129, 0.15);
-	color: #10b981;
+	color: var(--ok-fg, #10b981);
 	border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .status-profitable {
 	background-color: rgba(13, 148, 136, 0.15);
-	color: #14b8a6;
+	color: var(--teal, #14b8a6);
 	border: 1px solid rgba(13, 148, 136, 0.3);
 }
 
 .status-break-even {
 	background-color: rgba(245, 158, 11, 0.15);
-	color: #f59e0b;
+	color: var(--warn-fg, #f59e0b);
 	border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .status-loss {
 	background-color: rgba(239, 68, 68, 0.15);
-	color: #ef4444;
+	color: var(--bad-fg, #ef4444);
 	border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .status-organic {
 	background-color: rgba(168, 85, 247, 0.15);
-	color: #c084fc;
+	color: var(--accent, #c084fc);
 	border: 1px solid rgba(168, 85, 247, 0.3);
 }
 

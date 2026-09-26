@@ -22,6 +22,7 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import "./executiveDashboard.css";
+import "./onlineBookingAnalytics.css";
 import { OnlineBookingAdminComparison } from "./OnlineBookingAdminComparison";
 import { OnlineBookingChannelsTable } from "./OnlineBookingChannelsTable";
 import { OnlineBookingFunnelView } from "./OnlineBookingFunnelView";
