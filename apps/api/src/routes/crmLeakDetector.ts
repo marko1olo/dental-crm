@@ -14,7 +14,7 @@ import {
 	generateReactivationScript,
 	isClinicalObservationPause,
 } from "@dental/shared";
-import { and, desc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, lt, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
@@ -27,12 +27,14 @@ import { withTenantCtx } from "../db/rls.js";
 import {
 	appointments,
 	appointmentWaitlists,
+	clinics,
+	communicationTasks,
 	crmLeakDetectorLeads,
+	crmLeads,
 	patients,
 	treatmentPlans,
 	treatmentPlanStages,
 	users,
-	clinics,
 } from "../db/schema.js";
 import { getRequestIdentity } from "../security/identity.js";
 
@@ -523,4 +525,82 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 			});
 		});
 	});
+
+	/**
+	 * 8. GET /api/crm/leak-detector/stuck-audit — Аудит застрявших входящих лидов и просроченных задач
+	 */
+	app.get(
+		"/api/crm/leak-detector/stuck-audit",
+		async (req: FastifyRequest, reply: FastifyReply) => {
+			const orgId = await requireResolvedOrganizationId(
+				req,
+				reply,
+				"crm leak detector stuck audit",
+			);
+			if (!orgId) return;
+
+			return withTenantCtx(orgId, async (tx) => {
+				const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+				// 1. Lost inbound leads: status 'new' created > 24 hours ago
+				const lostLeads = await tx
+					.select({
+						id: crmLeads.id,
+						name: crmLeads.name,
+						phone: crmLeads.phone,
+						source: crmLeads.source,
+						status: crmLeads.status,
+						createdAt: crmLeads.createdAt,
+					})
+					.from(crmLeads)
+					.where(
+						and(
+							eq(crmLeads.organizationId, orgId),
+							eq(crmLeads.status, "new"),
+							lt(crmLeads.createdAt, oneDayAgo),
+						),
+					)
+					.orderBy(desc(crmLeads.createdAt))
+					.limit(20);
+
+				// 2. Stuck overdue communication tasks: needs_call or draft, dueAt < 24h ago
+				const overdueTasks = await tx
+					.select({
+						id: communicationTasks.id,
+						patientId: communicationTasks.patientId,
+						title: communicationTasks.title,
+						channel: communicationTasks.channel,
+						priority: communicationTasks.priority,
+						status: communicationTasks.status,
+						dueAt: communicationTasks.dueAt,
+						createdAt: communicationTasks.createdAt,
+					})
+					.from(communicationTasks)
+					.where(
+						and(
+							eq(communicationTasks.organizationId, orgId),
+							inArray(communicationTasks.status, [
+								"needs_call",
+								"queued",
+								"scheduled",
+							]),
+							lt(communicationTasks.dueAt, oneDayAgo),
+						),
+					)
+					.orderBy(desc(communicationTasks.dueAt))
+					.limit(20);
+
+				return reply.send({
+					success: true,
+					summary: {
+						lostLeadsCount: lostLeads.length,
+						overdueTasksCount: overdueTasks.length,
+						totalLeakRiskCount: lostLeads.length + overdueTasks.length,
+					},
+					lostLeads,
+					overdueTasks,
+				});
+			});
+		},
+	);
 }

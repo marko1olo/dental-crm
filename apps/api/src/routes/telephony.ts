@@ -1,16 +1,6 @@
-import { createHash, createHmac } from "node:crypto";
-import * as dns from "node:dns/promises";
-import * as http from "node:http";
-import * as https from "node:https";
-import { URL } from "node:url";
 import { and, eq, ilike, or, type SQL, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import {
-	namedDevelopmentModeActive,
-	requireClinicalReadAccess,
-	requireResolvedOrganizationId,
-} from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
@@ -19,15 +9,28 @@ import {
 	crmLeads,
 	patients,
 } from "../db/schema.js";
-import { getRequestIdentity } from "../security/identity.js";
-import { verifyWebhookSecret } from "../security/webhookAuth.js";
-import { wsBroker } from "../services/websocketBroker.js";
 import { MissedCallService } from "../services/telephony/missedCallService.js";
-import { TelephonyGatewayService } from "../services/telephony/telephonyGatewayService.js";
-import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
+import {
+	authenticatePbxWebhook,
+	isForbiddenPrivateIp,
+	normalizePhoneNumber,
+	type NormalizedPhone,
+	UUID_REGEX,
+	validateSsrfSafeRecordingUrl,
+} from "../services/telephony/telephonySecurity.js";
+import { wsBroker } from "../services/websocketBroker.js";
+import { telephonyRecordingRoutes } from "./telephonyRecordingRoutes.js";
+import { telephonySipRoutes } from "./telephonySipRoutes.js";
 
-const UUID_REGEX =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+// Re-export security utilities for backward compatibility
+export {
+	UUID_REGEX,
+	type NormalizedPhone,
+	normalizePhoneNumber,
+	authenticatePbxWebhook,
+	isForbiddenPrivateIp,
+	validateSsrfSafeRecordingUrl,
+};
 
 export const telephonyCallEventSchema = z.enum([
 	"ringing",
@@ -49,7 +52,6 @@ export const telephonyCallEventSchema = z.enum([
 ]);
 
 export type TelephonyCallEvent = z.infer<typeof telephonyCallEventSchema>;
-
 
 export const telephonyWebhookPayloadSchema = z.object({
 	event: z.string().optional(),
@@ -88,7 +90,9 @@ export const telephonyWebhookPayloadSchema = z.object({
 	signature: z.string().optional(),
 });
 
-export type TelephonyWebhookPayload = z.infer<typeof telephonyWebhookPayloadSchema>;
+export type TelephonyWebhookPayload = z.infer<
+	typeof telephonyWebhookPayloadSchema
+>;
 
 export const telephonySmsWebhookPayloadSchema = z.object({
 	from: z.string().optional(),
@@ -107,302 +111,13 @@ export type TelephonySmsWebhookPayload = z.infer<
 	typeof telephonySmsWebhookPayloadSchema
 >;
 
-export interface NormalizedPhone {
-	raw: string;
-	cleanDigits: string;
-	e164: string;
-	national10: string;
-	isValid: boolean;
-}
-
-export function normalizePhoneNumber(rawPhone?: string | null): NormalizedPhone {
-	if (!rawPhone || typeof rawPhone !== "string") {
-		return { raw: "", cleanDigits: "", e164: "", national10: "", isValid: false };
-	}
-
-	const raw = rawPhone.trim();
-	const cleanDigits = raw.replace(/\D/g, "");
-
-	if (cleanDigits.length < 7) {
-		return { raw, cleanDigits, e164: raw, national10: cleanDigits, isValid: false };
-	}
-
-	let national10 = "";
-	let e164 = "";
-
-	if (cleanDigits.length === 11) {
-		if (cleanDigits.startsWith("7") || cleanDigits.startsWith("8")) {
-			national10 = cleanDigits.slice(1);
-			e164 = `+7${national10}`;
-		} else {
-			national10 = cleanDigits.slice(-10);
-			e164 = `+${cleanDigits}`;
-		}
-	} else if (cleanDigits.length === 10) {
-		national10 = cleanDigits;
-		e164 = `+7${national10}`;
-	} else if (cleanDigits.length > 11) {
-		national10 = cleanDigits.slice(-10);
-		e164 = `+${cleanDigits}`;
-	} else {
-		national10 = cleanDigits;
-		e164 = `+7${cleanDigits}`;
-	}
-
-	return {
-		raw,
-		cleanDigits,
-		e164,
-		national10,
-		isValid: national10.length === 10 || cleanDigits.length >= 7,
-	};
-}
-
-function extractHeader(request: FastifyRequest, name: string): string | null {
-	const val = request.headers[name.toLowerCase()];
-	const res = Array.isArray(val) ? val[0] : val;
-	return typeof res === "string" && res.trim() ? res.trim() : null;
-}
-
-function extractQueryParam(request: FastifyRequest, name: string): string | null {
-	const query = request.query as Record<string, unknown> | undefined;
-	const val = query?.[name];
-	return typeof val === "string" && val.trim() ? val.trim() : null;
-}
-
-export async function authenticatePbxWebhook(
-	request: FastifyRequest,
-	reply: FastifyReply,
-	organizationId: string,
-	payload: TelephonyWebhookPayload,
-): Promise<boolean> {
-	if (namedDevelopmentModeActive()) {
-		const devSecret =
-			process.env.TELEPHONY_WEBHOOK_SECRET || process.env.DENTE_WEBHOOK_SECRET;
-		if (!devSecret) {
-			return true;
-		}
-	}
-
-	const primarySecret =
-		process.env.TELEPHONY_WEBHOOK_SECRET?.trim() ||
-		process.env.DENTE_WEBHOOK_SECRET?.trim();
-
-	const candidateTokens: string[] = [];
-
-	const hDente = extractHeader(request, "x-dente-webhook-secret");
-	const hWebhook =
-		extractHeader(request, "x-webhook-token") ||
-		extractHeader(request, "x-webhook-secret");
-	const hApiKey =
-		extractHeader(request, "x-api-key") || extractHeader(request, "api-key");
-	const hPbx =
-		extractHeader(request, "x-pbx-token") || extractHeader(request, "x-token");
-	const hAuth = extractHeader(request, "authorization");
-
-	if (hDente) candidateTokens.push(hDente);
-	if (hWebhook) candidateTokens.push(hWebhook);
-	if (hApiKey) candidateTokens.push(hApiKey);
-	if (hPbx) candidateTokens.push(hPbx);
-
-	if (hAuth) {
-		if (hAuth.startsWith("Bearer ")) {
-			candidateTokens.push(hAuth.slice(7).trim());
-		} else if (hAuth.startsWith("Basic ")) {
-			candidateTokens.push(hAuth.slice(6).trim());
-		} else {
-			candidateTokens.push(hAuth.trim());
-		}
-	}
-
-	const qSecret = extractQueryParam(request, "secret");
-	const qToken = extractQueryParam(request, "token");
-	const qApiKey =
-		extractQueryParam(request, "api_key") || extractQueryParam(request, "key");
-	const qSignature =
-		extractQueryParam(request, "signature") || extractQueryParam(request, "sign");
-
-	if (qSecret) candidateTokens.push(qSecret);
-	if (qToken) candidateTokens.push(qToken);
-	if (qApiKey) candidateTokens.push(qApiKey);
-
-	if (payload.api_key) candidateTokens.push(payload.api_key);
-	if (payload.vpbx_api_key) candidateTokens.push(payload.vpbx_api_key);
-
-	// Mango Office Check: sign = sha256(api_key + json + api_salt)
-	const mangoSign =
-		payload.sign || extractHeader(request, "x-mango-signature") || qSignature;
-	const mangoKey = payload.vpbx_api_key || payload.api_key;
-	const mangoSalt = process.env.MANGO_API_SALT?.trim() || primarySecret;
-
-	if (mangoSign && mangoKey && mangoSalt) {
-		const rawBodyStr =
-			typeof request.body === "string"
-				? request.body
-				: JSON.stringify(request.body);
-		const expectedMangoSign = createHash("sha256")
-			.update(`${mangoKey}${rawBodyStr}${mangoSalt}`)
-			.digest("hex");
-
-		if (timingSafeSecretEqual(mangoSign, expectedMangoSign)) {
-			return true;
-		}
-	}
-
-	// Zadarma MD5/SHA1 Check
-	const zadarmaSign =
-		payload.signature || extractHeader(request, "signature") || qSignature;
-	if (zadarmaSign && primarySecret) {
-		const callerId = payload.caller_id || payload.from || "";
-		const calledDid = payload.called_did || payload.to || "";
-		const callStart = String(payload.call_start || payload.timestamp || "");
-		const expectedZadarmaMd5 = createHash("md5")
-			.update(`${callerId}${calledDid}${callStart}${primarySecret}`)
-			.digest("hex");
-		const expectedZadarmaSha1 = createHmac("sha1", primarySecret)
-			.update(`${callerId}${calledDid}${callStart}`)
-			.digest("hex");
-
-		if (
-			timingSafeSecretEqual(zadarmaSign, expectedZadarmaMd5) ||
-			timingSafeSecretEqual(zadarmaSign, expectedZadarmaSha1)
-		) {
-			return true;
-		}
-	}
-
-	if (primarySecret) {
-		for (const candidate of candidateTokens) {
-			if (timingSafeSecretEqual(candidate, primarySecret)) {
-				return true;
-			}
-		}
-	}
-
-	if (!primarySecret) {
-		request.log.error(
-			{ organizationId, channel: "telephony" },
-			"PBX webhook rejected: TELEPHONY_WEBHOOK_SECRET is not configured on the server.",
-		);
-		reply.status(503).send({
-			error: "WebhookSecretNotConfigured",
-			message:
-				"Приём данных телефонии временно недоступен: клиника не подключила защищённую интеграцию. Обратитесь к администратору клиники.",
-		});
-		return false;
-	}
-
-	request.log.warn(
-		{ organizationId, ip: request.ip, url: request.url },
-		"[TelephonyAuth] Rejected PBX webhook with invalid signature or secret.",
-	);
-	reply.status(401).send({
-		error: "WebhookSecretMismatch",
-		message: "Неверный секрет или подпись вебхука телефонии.",
-	});
-	return false;
-}
-
-export function isForbiddenPrivateIp(ipAddress: string): boolean {
-	if (ipAddress.includes(".")) {
-		const parts = ipAddress.split(".").map((p) => Number.parseInt(p, 10));
-		if (
-			parts.length !== 4 ||
-			parts.some((p) => Number.isNaN(p) || p < 0 || p > 255)
-		) {
-			return true;
-		}
-		const b0 = parts[0];
-		const b1 = parts[1];
-		if (b0 === undefined || b1 === undefined) return true;
-
-		if (b0 === 0) return true;
-		if (b0 === 10) return true;
-		if (b0 === 100 && b1 >= 64 && b1 <= 127) return true;
-		if (b0 === 127) return true;
-		if (b0 === 169 && b1 === 254) return true;
-		if (b0 === 172 && b1 >= 16 && b1 <= 31) return true;
-		if (b0 === 192 && b1 === 168) return true;
-		if (b0 === 198 && (b1 === 18 || b1 === 19)) return true;
-		if (b0 >= 224 && b0 <= 239) return true;
-		if (b0 >= 240) return true;
-
-		return false;
-	}
-
-	const normalizedV6 = ipAddress.toLowerCase().trim();
-	if (
-		normalizedV6 === "::1" ||
-		normalizedV6 === "::" ||
-		normalizedV6.startsWith("fc00:") ||
-		normalizedV6.startsWith("fd00:") ||
-		normalizedV6.startsWith("fe80:") ||
-		normalizedV6.startsWith("::ffff:127.") ||
-		normalizedV6.startsWith("::ffff:10.") ||
-		normalizedV6.startsWith("::ffff:192.168.") ||
-		normalizedV6.startsWith("::ffff:172.") ||
-		normalizedV6.startsWith("::ffff:169.254.")
-	) {
-		return true;
-	}
-
-	return false;
-}
-
-export async function validateSsrfSafeRecordingUrl(
-	rawUrl: string,
-): Promise<{ valid: boolean; error?: string; parsedUrl?: URL }> {
-	let parsedUrl: URL;
-	try {
-		parsedUrl = new URL(rawUrl);
-	} catch {
-		return { valid: false, error: "Invalid URL syntax" };
-	}
-
-	if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
-		return { valid: false, error: `Disallowed protocol: ${parsedUrl.protocol}` };
-	}
-
-	if (!namedDevelopmentModeActive() && parsedUrl.protocol !== "https:") {
-		return { valid: false, error: "Production audio streaming requires HTTPS" };
-	}
-
-	const hostname = parsedUrl.hostname;
-	if (!hostname || hostname.trim() === "") {
-		return { valid: false, error: "Missing hostname" };
-	}
-
-	if (isForbiddenPrivateIp(hostname)) {
-		return {
-			valid: false,
-			error: "Access to private or local IP addresses is forbidden",
-		};
-	}
-
-	try {
-		const lookupResults = await dns.lookup(hostname, { all: true });
-		if (!lookupResults || lookupResults.length === 0) {
-			return { valid: false, error: "Hostname cannot be resolved via DNS" };
-		}
-
-		for (const record of lookupResults) {
-			if (isForbiddenPrivateIp(record.address)) {
-				return {
-					valid: false,
-					error: `Resolved IP ${record.address} belongs to a forbidden private network`,
-				};
-			}
-		}
-	} catch (dnsErr) {
-		return { valid: false, error: `DNS lookup failed for host ${hostname}` };
-	}
-
-	return { valid: true, parsedUrl };
-}
-
 export const telephonyRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
 ) => {
+	// Register SIP & WebRTC sub-routes
+	await server.register(telephonySipRoutes);
+	await server.register(telephonyRecordingRoutes);
+
 	// --------------------------------------------------------------------------
 	// PBX Call Webhook (supports /:organizationId/webhook and /:organizationId?/webhook)
 	// --------------------------------------------------------------------------
@@ -411,10 +126,7 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 		reply: FastifyReply,
 	) => {
 		const rawPayload = request.body;
-		if (
-			typeof rawPayload !== "object" ||
-			Array.isArray(rawPayload)
-		) {
+		if (typeof rawPayload !== "object" || Array.isArray(rawPayload)) {
 			return reply.status(400).send({
 				error: "InvalidPayload",
 				message: "Request body must be a JSON object",
@@ -422,15 +134,11 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 		}
 
 		if (rawPayload == null) {
-
 			return reply.status(400).send({
-
 				error: "Missing 'from' phone number",
-
-				message: "Missing or unparseable 'from' caller phone number in PBX payload",
-
+				message:
+					"Missing or unparseable 'from' caller phone number in PBX payload",
 			});
-
 		}
 
 		const parsed = telephonyWebhookPayloadSchema.safeParse(rawPayload);
@@ -542,8 +250,6 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 		}
 
 		// Replay protection: check event delivery timestamp.
-		// For post-call CDRs, data.call_start reflects when the call started minutes ago;
-		// use data.timestamp, data.call_end, or call_start + duration to avoid rejecting legitimate calls >5 min.
 		let rawTs = data.timestamp || data.call_end;
 		if (rawTs == null && data.call_start != null) {
 			const startNum =
@@ -604,7 +310,7 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 					? Math.max(0, Number.parseInt(String(rawDuration), 10) || 0)
 					: 0;
 
-			// Match Patient within this tenant (primary phone, national suffix, formatted phone & legal representative)
+			// Match Patient within this tenant
 			const searchPatient = await db
 				.select()
 				.from(patients)
@@ -621,13 +327,15 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 				)
 				.limit(1);
 
-			let matchedPatient = searchPatient[0] || null;
+			const matchedPatient = searchPatient[0] || null;
 
 			// Detect provider from payload fingerprint
 			const detectedProvider =
 				data.vpbx_api_key || data.sign || rawEvent.includes("mango")
 					? "mango"
-					: data.call_session_id || data.from_number || data.notification_name
+					: data.call_session_id ||
+							data.from_number ||
+							data.notification_name
 						? "uis"
 						: data.CallerIdNum || data.uniqueid || data.CalledIdNum
 							? "asterisk"
@@ -640,25 +348,32 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 
 				if (!matchedPatient && callerPhone.national10.length >= 7) {
 					try {
-						const existingLeads = await db
-							.select()
-							.from(crmLeads)
-							.where(
-								and(
-									eq(crmLeads.organizationId, resolvedOrgId),
-									or(
-										eq(crmLeads.phone, callerPhone.e164),
-										ilike(crmLeads.phone, `%${callerPhone.national10}%`),
-										sql`regexp_replace(coalesce(${crmLeads.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${callerPhone.national10}%`}`,
-									),
-								),
-							)
-							.limit(1);
+						matchedLead = await db.transaction(async (tx) => {
+							// Advisory lock per organization and national caller phone to serialize concurrent ringing webhooks
+							await tx.execute(
+								sql`SELECT pg_advisory_xact_lock(hashtext(${`telephony:lead:${resolvedOrgId}:${callerPhone.national10}`}))`,
+							);
 
-						if (existingLeads.length > 0) {
-							matchedLead = existingLeads[0] ?? null;
-						} else {
-							const insertedLeads = await db
+							const existingLeads = await tx
+								.select()
+								.from(crmLeads)
+								.where(
+									and(
+										eq(crmLeads.organizationId, resolvedOrgId),
+										or(
+											eq(crmLeads.phone, callerPhone.e164),
+											ilike(crmLeads.phone, `%${callerPhone.national10}%`),
+											sql`regexp_replace(coalesce(${crmLeads.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${callerPhone.national10}%`}`,
+										),
+									),
+								)
+								.limit(1);
+
+							if (existingLeads.length > 0) {
+								return existingLeads[0] ?? null;
+							}
+
+							const insertedLeads = await tx
 								.insert(crmLeads)
 								.values({
 									organizationId: resolvedOrgId,
@@ -670,8 +385,8 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 									notes: `Автоматический лид из входящего звонка АТС (${callId ? `call_id: ${callId}` : "прямой вызов"})`,
 								})
 								.returning();
-							matchedLead = insertedLeads[0] ?? null;
-						}
+							return insertedLeads[0] ?? null;
+						});
 					} catch (leadErr) {
 						request.log.warn(
 							{ leadErr, resolvedOrgId },
@@ -987,360 +702,5 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 		"/sms/webhook",
 		handleSmsWebhook,
 	);
-
-	// --------------------------------------------------------------------------
-	// Secure Call Recording Streaming Proxy (SSRF, Ownership & Permission Protected)
-	// --------------------------------------------------------------------------
-	server.get<{
-		Params: { eventId: string };
-	}>(
-		"/recordings/:eventId/stream",
-		{
-			config: {
-				tenantTxSelfManaged: true,
-			},
-		},
-		async (request, reply) => {
-			if (
-				!(await requireClinicalReadAccess(
-					request,
-					reply,
-					"stream call recording",
-				))
-			) {
-				return;
-			}
-
-			const orgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"stream call recording",
-			);
-			if (!orgId) return;
-
-			const { eventId } = request.params;
-			if (!UUID_REGEX.test(eventId)) {
-				return reply
-					.status(400)
-					.send({ error: "InvalidEventId", message: "Invalid event ID format" });
-			}
-
-			const eventRow = await withTenantCtx(orgId, async () => {
-				const rows = await db
-					.select({
-						id: communicationEvents.id,
-						recordingUrl: communicationEvents.recordingUrl,
-						audioFormat: communicationEvents.audioFormat,
-					})
-					.from(communicationEvents)
-					.where(
-						and(
-							eq(communicationEvents.id, eventId),
-							eq(communicationEvents.organizationId, orgId),
-						),
-					)
-					.limit(1);
-				return rows[0] || null;
-			});
-
-			if (!eventRow || !eventRow.recordingUrl) {
-				return reply.status(404).send({
-					error: "NotFound",
-					message: "Audio recording not found or inaccessible",
-				});
-			}
-
-			const ssrfVerification = await validateSsrfSafeRecordingUrl(
-				eventRow.recordingUrl,
-			);
-			if (!ssrfVerification.valid || !ssrfVerification.parsedUrl) {
-				request.log.error(
-					{
-						eventId,
-						url: eventRow.recordingUrl,
-						reason: ssrfVerification.error,
-					},
-					"[TelephonyStream] SSRF check rejected recording stream request",
-				);
-				return reply.status(403).send({
-					error: "ForbiddenRecordingUrl",
-					message:
-						"The requested audio recording URL failed security verification",
-				});
-			}
-
-			const targetUrl = ssrfVerification.parsedUrl;
-
-			return new Promise<void>((resolve) => {
-				const client = targetUrl.protocol === "https:" ? https : http;
-
-				const proxyReq = client.get(
-					targetUrl.href,
-					{
-						timeout: 10000,
-						headers: {
-							"User-Agent": "DenteDentalCRM-AudioProxy/1.0",
-						},
-					},
-					(proxyRes) => {
-						const statusCode = proxyRes.statusCode || 500;
-						if (statusCode < 200 || statusCode >= 300) {
-							reply.status(502).send({
-								error: "BadGateway",
-								message: `Upstream PBX audio server returned status ${statusCode}`,
-							});
-							return resolve();
-						}
-
-						const contentType =
-							proxyRes.headers["content-type"] ||
-							eventRow.audioFormat ||
-							"audio/mpeg";
-
-						if (
-							!contentType.startsWith("audio/") &&
-							!contentType.includes("ogg") &&
-							!contentType.includes("octet-stream")
-						) {
-							reply.status(403).send({
-								error: "InvalidContentType",
-								message: "Upstream resource is not a valid audio stream",
-							});
-							return resolve();
-						}
-
-						reply.raw.writeHead(200, {
-							"Content-Type": contentType,
-							"Content-Length": proxyRes.headers["content-length"] || "",
-							"Accept-Ranges": "bytes",
-							"Cache-Control": "private, no-cache, no-store, must-revalidate",
-							"X-Content-Type-Options": "nosniff",
-						});
-
-						proxyRes.pipe(reply.raw);
-
-						proxyRes.on("end", () => resolve());
-						proxyRes.on("error", (err) => {
-							request.log.error(
-								err,
-								"[TelephonyStream] Error in upstream audio pipe",
-							);
-							if (!reply.raw.headersSent) {
-								reply.status(500).send({
-									error: "StreamError",
-									message: "Failed to stream audio",
-								});
-							}
-							resolve();
-						});
-					},
-				);
-
-				proxyReq.on("timeout", () => {
-					proxyReq.destroy();
-					if (!reply.raw.headersSent) {
-						reply.status(504).send({
-							error: "GatewayTimeout",
-							message: "Timeout connecting to PBX audio server",
-						});
-					}
-					resolve();
-				});
-
-				proxyReq.on("error", (err) => {
-					request.log.error(
-						err,
-						"[TelephonyStream] Connection error to upstream recording server",
-					);
-					if (!reply.raw.headersSent) {
-						reply.status(502).send({
-							error: "BadGateway",
-							message: "Unable to connect to PBX audio storage",
-						});
-					}
-					resolve();
-				});
-			});
-		},
-	);
-
-	// --------------------------------------------------------------------------
-	// WebRTC SIP Credentials Provisioning (Local Asterisk / FreePBX)
-	// --------------------------------------------------------------------------
-	const handleSipCredentials = async (
-		request: FastifyRequest<{ Params: { organizationId?: string }; Body: { extension?: string; staffFullName?: string } }>,
-		reply: FastifyReply,
-	) => {
-		if (!(await requireClinicalReadAccess(request, reply, "provision sip credentials"))) {
-			return;
-		}
-		const orgId = await requireResolvedOrganizationId(request, reply, "provision sip credentials");
-		if (!orgId) return;
-
-		const body = (request.body || {}) as { extension?: string; staffFullName?: string };
-		const identity = getRequestIdentity(request);
-		const credentials = TelephonyGatewayService.generateWebRtcSipCredentials({
-			organizationId: orgId,
-			userId: identity.userId || "anonymous",
-			extension: body.extension,
-			staffFullName: body.staffFullName,
-		});
-
-		return reply.status(200).send({
-			success: true,
-			organizationId: orgId,
-			credentials,
-		});
-	};
-
-	server.post<{ Params: { organizationId: string }; Body: { extension?: string; staffFullName?: string } }>(
-		"/:organizationId/sip/credentials",
-		handleSipCredentials,
-	);
-	server.post<{ Params: { organizationId?: string }; Body: { extension?: string; staffFullName?: string } }>(
-		"/sip/credentials",
-		handleSipCredentials,
-	);
-
-	// --------------------------------------------------------------------------
-	// Telephony Gateway Health & Active Mode Status (Local vs Cloud Fallback)
-	// --------------------------------------------------------------------------
-	const handleSipStatus = async (
-		request: FastifyRequest<{ Params: { organizationId?: string } }>,
-		reply: FastifyReply,
-	) => {
-		if (!(await requireClinicalReadAccess(request, reply, "get telephony gateway status"))) {
-			return;
-		}
-		const orgId = await requireResolvedOrganizationId(request, reply, "get telephony gateway status");
-		if (!orgId) return;
-
-		const status = await TelephonyGatewayService.evaluateTelephonyGatewayStatus(orgId);
-		return reply.status(200).send({
-			success: true,
-			status,
-		});
-	};
-
-	server.get<{ Params: { organizationId: string } }>(
-		"/:organizationId/sip/status",
-		handleSipStatus,
-	);
-	server.get<{ Params: { organizationId?: string } }>(
-		"/sip/status",
-		handleSipStatus,
-	);
-
-	// --------------------------------------------------------------------------
-	// Seamless Failover Trigger (Toggle Local WebRTC SIP vs Cloud Webhooks)
-	// --------------------------------------------------------------------------
-	const handleSipFailover = async (
-		request: FastifyRequest<{ Params: { organizationId?: string }; Body: { forceCloudFallback?: boolean } }>,
-		reply: FastifyReply,
-	) => {
-		if (!(await requireClinicalReadAccess(request, reply, "set telephony failover"))) {
-			return;
-		}
-		const orgId = await requireResolvedOrganizationId(request, reply, "set telephony failover");
-		if (!orgId) return;
-
-		const body = (request.body || {}) as { forceCloudFallback?: boolean };
-		const force = Boolean(body.forceCloudFallback);
-
-		TelephonyGatewayService.setForcedFailover(orgId, force);
-		const status = await TelephonyGatewayService.evaluateTelephonyGatewayStatus(orgId);
-
-		return reply.status(200).send({
-			success: true,
-			failoverActive: force,
-			status,
-		});
-	};
-
-	server.post<{ Params: { organizationId: string }; Body: { forceCloudFallback?: boolean } }>(
-		"/:organizationId/sip/failover",
-		handleSipFailover,
-	);
-	server.post<{ Params: { organizationId?: string }; Body: { forceCloudFallback?: boolean } }>(
-		"/sip/failover",
-		handleSipFailover,
-	);
-
-	// --------------------------------------------------------------------------
-	// Asterisk AMI / ARI Event Bridge Ingestion
-	// --------------------------------------------------------------------------
-	const handleAsteriskAmiEvent = async (
-		request: FastifyRequest<{ Params: { organizationId?: string } }>,
-		reply: FastifyReply,
-	) => {
-		const orgId = request.params.organizationId || (await requireResolvedOrganizationId(request, reply, "asterisk ami event"));
-		if (!orgId) return;
-
-		const rawBody = (request.body || {}) as Record<string, unknown>;
-		const result = await withTenantCtx(orgId, async () => {
-			return await TelephonyGatewayService.processAsteriskAmiEvent(orgId, rawBody as any);
-		});
-
-		return reply.status(200).send(result);
-	};
-
-	server.post<{ Params: { organizationId: string } }>(
-		"/:organizationId/asterisk/ami-event",
-		handleAsteriskAmiEvent,
-	);
-	server.post<{ Params: { organizationId?: string } }>(
-		"/asterisk/ami-event",
-		handleAsteriskAmiEvent,
-	);
-
-	// --------------------------------------------------------------------------
-	// WebRTC SIP Call Transfer (Blind / Attended Transfer)
-	// --------------------------------------------------------------------------
-	const handleSipTransfer = async (
-		request: FastifyRequest<{
-			Params: { organizationId?: string };
-			Body: { callId?: string; targetExtensionOrPhone?: string; transferType?: "blind" | "attended" };
-		}>,
-		reply: FastifyReply,
-	) => {
-		if (!(await requireClinicalReadAccess(request, reply, "transfer sip call"))) {
-			return;
-		}
-		const orgId = await requireResolvedOrganizationId(request, reply, "transfer sip call");
-		if (!orgId) return;
-
-		const body = request.body || {};
-		const callId = (body.callId || "").trim();
-		const targetExtensionOrPhone = (body.targetExtensionOrPhone || "").trim();
-		const transferType = body.transferType === "attended" ? "attended" : "blind";
-
-		if (!callId || !targetExtensionOrPhone) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: "callId and targetExtensionOrPhone are required for call transfer",
-			});
-		}
-
-		const identity = getRequestIdentity(request);
-		const result = await TelephonyGatewayService.transferCall({
-			organizationId: orgId,
-			callId,
-			targetExtensionOrPhone,
-			transferType,
-			initiatedByUserId: identity.userId ?? undefined,
-		});
-
-		return reply.status(200).send(result);
-	};
-
-	server.post<{
-		Params: { organizationId: string };
-		Body: { callId?: string; targetExtensionOrPhone?: string; transferType?: "blind" | "attended" };
-	}>("/:organizationId/sip/transfer", handleSipTransfer);
-
-	server.post<{
-		Params: { organizationId?: string };
-		Body: { callId?: string; targetExtensionOrPhone?: string; transferType?: "blind" | "attended" };
-	}>("/sip/transfer", handleSipTransfer);
 };
 

@@ -1,1037 +1,13 @@
-import type { Appointment, InsuranceContract, Patient, PatientInsight, StaffMember } from "@dental/shared";
 import { create } from "zustand";
+import type {
+	CallTransferState,
+	TelephonyLineSession,
+	TelephonyStore,
+} from "./telephonyTypes";
+
+export * from "./telephonyTypes";
+export * from "./telephonyHelpers";
 
-export type TelephonyProvider = "mango" | "uis" | "asterisk" | "zadarma" | "sip" | "unknown";
-export type TelephonyCallStatus = "ringing" | "answered" | "connected" | "ended" | "rejected" | "missed";
-export type PlaybackSpeed = 1 | 1.25 | 1.5 | 2;
-export type CallTransferType = "blind" | "attended";
-
-export interface CallTransferState {
-	isTransferring: boolean;
-	targetExtension: string;
-	transferType: CallTransferType;
-	status: "idle" | "dialing" | "transferred" | "failed";
-	failureReason?: string | undefined;
-}
-
-export interface SpeechTranscriptUtterance {
-	speaker: "operator" | "patient";
-	startTimeSeconds: number;
-	endTimeSeconds: number;
-	text: string;
-	confidence: number;
-	sentiment: "neutral" | "positive" | "negative";
-}
-
-export interface IncomingCallPayload {
-	callId?: string | undefined;
-	phone: string;
-	patientId: string | null;
-	patientName: string;
-	provider?: TelephonyProvider | undefined;
-	timestamp?: string | undefined;
-	status?: TelephonyCallStatus | undefined;
-	durationSeconds?: number | undefined;
-	clinicPhone?: string | undefined;
-	recordingUrl?: string | undefined;
-	callStartedAt?: number | undefined;
-	transcript?: SpeechTranscriptUtterance[] | undefined;
-}
-
-export type CallOutcome =
-	| "booked"
-	| "callback_15m"
-	| "consultation"
-	| "spam"
-	| "accepted"
-	| "rejected"
-	| "dismissed"
-	| "transferred";
-
-export interface CallOutcomeConfig {
-	id: CallOutcome;
-	label: string;
-	shortLabel: string;
-	iconName: string;
-	color: string;
-	badgeBg: string;
-	badgeBorder: string;
-	descriptionRu: string;
-}
-
-export const CALL_OUTCOME_REGISTRY: Record<CallOutcome, CallOutcomeConfig> = {
-	booked: {
-		id: "booked",
-		label: "Записан на приём",
-		shortLabel: "Записан",
-		iconName: "CalendarCheck",
-		color: "#0d9488",
-		badgeBg: "rgba(13, 148, 136, 0.12)",
-		badgeBorder: "rgba(13, 148, 136, 0.35)",
-		descriptionRu: "Пациент успешно записан в расписание на консультацию или лечение",
-	},
-	callback_15m: {
-		id: "callback_15m",
-		label: "Перезвонить через 15 мин",
-		shortLabel: "Перезвонить",
-		iconName: "Clock",
-		color: "#eab308",
-		badgeBg: "rgba(234, 179, 8, 0.12)",
-		badgeBorder: "rgba(234, 179, 8, 0.35)",
-		descriptionRu: "Пациент занят или просил уточнить график врача и перезвонить позже",
-	},
-	consultation: {
-		id: "consultation",
-		label: "Консультация по ценам / услугам",
-		shortLabel: "Консультация",
-		iconName: "MessageCircle",
-		color: "#0284c7",
-		badgeBg: "rgba(2, 132, 199, 0.12)",
-		badgeBorder: "rgba(2, 132, 199, 0.35)",
-		descriptionRu: "Предоставлена справка по прейскуранту, режиму работы или врачам",
-	},
-	accepted: {
-		id: "accepted",
-		label: "Принят / Обработан",
-		shortLabel: "Обработан",
-		iconName: "CheckCircle2",
-		color: "#10b981",
-		badgeBg: "rgba(16, 185, 129, 0.12)",
-		badgeBorder: "rgba(16, 185, 129, 0.35)",
-		descriptionRu: "Звонок успешно завершён администратором или врачом",
-	},
-	rejected: {
-		id: "rejected",
-		label: "Отклонён",
-		shortLabel: "Отклонён",
-		iconName: "PhoneOff",
-		color: "#f43f5e",
-		badgeBg: "rgba(244, 63, 94, 0.12)",
-		badgeBorder: "rgba(244, 63, 94, 0.35)",
-		descriptionRu: "Вызов был отклонён администратором или завершён без результата",
-	},
-	dismissed: {
-		id: "dismissed",
-		label: "Пропущен / Свёрнут",
-		shortLabel: "Пропущен",
-		iconName: "BellOff",
-		color: "#64748b",
-		badgeBg: "rgba(100, 116, 139, 0.12)",
-		badgeBorder: "rgba(100, 116, 139, 0.35)",
-		descriptionRu: "Уведомление о звонке было закрыто без явного фиксирования исхода",
-	},
-	transferred: {
-		id: "transferred",
-		label: "Переведён на добавочный",
-		shortLabel: "Переведён",
-		iconName: "PhoneForwarded",
-		color: "#8b5cf6",
-		badgeBg: "rgba(139, 92, 246, 0.12)",
-		badgeBorder: "rgba(139, 92, 246, 0.35)",
-		descriptionRu: "Звонок перенаправлен на другого сотрудника или кабинет",
-	},
-	spam: {
-		id: "spam",
-		label: "Спам / Ошиблись",
-		shortLabel: "Спам / Ошибка",
-		iconName: "XCircle",
-		color: "#e11d48",
-		badgeBg: "rgba(225, 29, 72, 0.12)",
-		badgeBorder: "rgba(225, 29, 72, 0.35)",
-		descriptionRu: "Спам-звонок, рекламный робот или ошибочный номер",
-	},
-};
-
-export const CALL_OUTCOME_PRESETS = CALL_OUTCOME_REGISTRY;
-
-export interface CallHistoryItem extends IncomingCallPayload {
-	id: string;
-	status: TelephonyCallStatus;
-	actionTaken?: CallOutcome | undefined;
-	outcome?: CallOutcome | undefined;
-	outcomeNote?: string | undefined;
-	transferTarget?: string | undefined;
-	transcript?: SpeechTranscriptUtterance[] | undefined;
-	acutePain?: boolean | undefined;
-	callbackDueAt?: string | undefined;
-}
-
-export type TelephonyAgentState = "online" | "dnd" | "pause" | "offline";
-
-export interface TelephonyLineSession {
-	lineId: 1 | 2;
-	call: IncomingCallPayload | null;
-	state: "idle" | "ringing" | "connected" | "held";
-	durationSeconds: number;
-	isMuted: boolean;
-}
-
-export interface TelephonyStore {
-	activeCall: IncomingCallPayload | null;
-	callHistory: CallHistoryItem[];
-	agentState: TelephonyAgentState; // "online" | "dnd" | "pause" | "offline"
-	activeLineId: 1 | 2;
-	isHeld: boolean;
-	line1: TelephonyLineSession;
-	line2: TelephonyLineSession;
-	isCallHistoryModalOpen: boolean;
-	isCallDrawerOpen: boolean;
-	isMuted: boolean;
-	volumeLevel: number; // 0.0 to 1.0 (default 0.8)
-	playbackSpeed: PlaybackSpeed; // 1 | 1.25 | 1.5 | 2 (default 1)
-	activeRecordingUrl: string | null;
-	isPlayingRecording: boolean;
-	transferState: CallTransferState;
-	isWsConnected: boolean;
-
-	// Actions
-	setWsConnected: (connected: boolean) => void;
-	setAgentState: (agentState: TelephonyAgentState) => void;
-	switchLine: (lineId: 1 | 2) => void;
-	holdCall: () => void;
-	unholdCall: () => void;
-	toggleHold: () => void;
-	triggerIncomingCall: (call: IncomingCallPayload) => void;
-	answerCall: () => void;
-	connectCall: () => void;
-	acceptCall: () => void;
-	rejectCall: () => void;
-	endCall: (recordingUrl?: string | null) => void;
-	dismissCall: () => void;
-	recordCallOutcome: (outcome: CallOutcome, note?: string) => void;
-	logAcutePainCall: (phone: string, patientName?: string, reason?: string) => void;
-	startCallTransfer: (targetExtension: string, transferType?: CallTransferType) => void;
-	completeCallTransfer: () => void;
-	cancelCallTransfer: () => void;
-	openCallHistoryModal: () => void;
-	closeCallHistoryModal: () => void;
-	setIsCallDrawerOpen: (open: boolean) => void;
-	openCallDrawer: () => void;
-	closeCallDrawer: () => void;
-	toggleCallDrawer: () => void;
-	toggleMute: () => void;
-	setVolumeLevel: (volume: number) => void;
-	setPlaybackSpeed: (speed: PlaybackSpeed) => void;
-	cyclePlaybackSpeed: () => void;
-	playRecording: (url: string) => void;
-	stopRecording: () => void;
-	clearHistory: () => void;
-}
-
-/**
- * Normalizes phone string to clean numeric digits.
- */
-export function normalizePhoneDigits(phone: string | null | undefined): string {
-	if (!phone) return "";
-	return phone.replace(/\D/g, "");
-}
-
-/**
- * Extracts the 10-digit national number suffix for Russian and standard phone numbers.
- * E.g., "+7 (916) 123-45-67" -> "9161234567"
- *       "89269876543"        -> "9269876543"
- *       "9161234567"         -> "9161234567"
- */
-export function getNationalPhoneDigits(phone: string | null | undefined): string {
-	const digits = normalizePhoneDigits(phone);
-	if (digits.length >= 10) {
-		return digits.slice(-10);
-	}
-	return digits;
-}
-
-/**
- * Performs fuzzy phone number matching across different notations:
- * +7 / 8 / 7 / no prefix, spaces, brackets, dashes, leading zero-padding.
- */
-export function fuzzyMatchPhone(
-	phoneA: string | null | undefined,
-	phoneB: string | null | undefined,
-): boolean {
-	if (!phoneA || !phoneB) return false;
-	const digitsA = normalizePhoneDigits(phoneA);
-	const digitsB = normalizePhoneDigits(phoneB);
-
-	if (digitsA.length === 0 || digitsB.length === 0) return false;
-
-	// Exact digits match
-	if (digitsA === digitsB) return true;
-
-	// National 10-digit suffix match (Russia +7 / 8 prefix handling)
-	const natA = getNationalPhoneDigits(phoneA);
-	const natB = getNationalPhoneDigits(phoneB);
-
-	if (natA.length === 10 && natB.length === 10 && natA === natB) {
-		return true;
-	}
-
-	// 7-digit local number match only if both numbers are local 7-digit numbers
-	if (digitsA.length === 7 && digitsB.length === 7) {
-		return digitsA === digitsB;
-	}
-
-	return false;
-}
-
-/**
- * Formats a phone number for clinical UI presentation.
- * Example: "79991234567" -> "+7 (999) 123-45-67"
- */
-export function formatPhoneDisplay(phone: string | null | undefined): string {
-	if (!phone) return "—";
-	const digits = normalizePhoneDigits(phone);
-	if (digits.length === 11) {
-		const country = digits.startsWith("8") ? "+7" : `+${digits[0]}`;
-		const area = digits.slice(1, 4);
-		const p1 = digits.slice(4, 7);
-		const p2 = digits.slice(7, 9);
-		const p3 = digits.slice(9, 11);
-		return `${country} (${area}) ${p1}-${p2}-${p3}`;
-	}
-	if (digits.length === 10) {
-		const area = digits.slice(0, 3);
-		const p1 = digits.slice(3, 6);
-		const p2 = digits.slice(6, 8);
-		const p3 = digits.slice(8, 10);
-		return `+7 (${area}) ${p1}-${p2}-${p3}`;
-	}
-	return phone.trim();
-}
-
-/**
- * Extracts 2-letter uppercase initials from full name.
- * Example: "Иванов Иван Иванович" -> "ИИ"
- */
-export function formatPatientInitials(fullName: string | null | undefined): string {
-	if (!fullName || !fullName.trim()) return "??";
-	const parts = fullName.trim().split(/\s+/).filter(Boolean);
-	if (parts.length === 0) return "??";
-	if (parts.length === 1) {
-		const single = parts[0] ?? "";
-		return single.slice(0, 2).toUpperCase();
-	}
-	const first = parts[0] ?? "";
-	const second = parts[1] ?? "";
-	if (first[0] && second[0]) {
-		return (first[0] + second[0]).toUpperCase();
-	}
-	return (first.slice(0, 2) || "??").toUpperCase();
-}
-
-/**
- * Deterministic color palette generation for patient avatar.
- */
-export function getAvatarColor(name: string | null | undefined): {
-	bg: string;
-	text: string;
-	border: string;
-} {
-	const palettes = [
-		{ bg: "rgba(15, 118, 110, 0.15)", text: "#0f766e", border: "#14b8a6" }, // Teal
-		{ bg: "rgba(2, 132, 199, 0.15)", text: "#0284c7", border: "#38bdf8" }, // Sky
-		{ bg: "rgba(99, 102, 241, 0.15)", text: "#6366f1", border: "#818cf8" }, // Indigo
-		{ bg: "rgba(168, 85, 247, 0.15)", text: "#a855f7", border: "#c084fc" }, // Purple
-		{ bg: "rgba(236, 72, 153, 0.15)", text: "#ec4899", border: "#f472b6" }, // Pink
-		{ bg: "rgba(245, 158, 11, 0.15)", text: "#d97706", border: "#fbbf24" }, // Amber
-		{ bg: "rgba(168, 85, 247, 0.15)", text: "#059669", border: "#34d399" }, // Emerald
-	];
-
-	if (!name) return palettes[0]!;
-	let hash = 0;
-	for (let i = 0; i < name.length; i++) {
-		hash = (hash << 5) - hash + name.charCodeAt(i);
-		hash |= 0;
-	}
-	const index = Math.abs(hash) % palettes.length;
-	return palettes[index] ?? palettes[0]!;
-}
-
-/**
- * Searches and resolves a patient by phone number against a list of patients using fuzzy matching.
- * Checks primary phone and legal representative phone.
- */
-export function resolvePatientFromPhone(
-	patientsList: Patient[] | undefined | null,
-	phone: string | null | undefined,
-): Patient | null {
-	if (!patientsList || !phone) return null;
-	const cleanSearch = normalizePhoneDigits(phone);
-	if (cleanSearch.length < 7) return null;
-
-	for (const patient of patientsList) {
-		// 1. Match primary patient phone
-		if (patient.phone && fuzzyMatchPhone(patient.phone, phone)) {
-			return patient;
-		}
-
-		// 2. Match legal representative phone in administrative profile
-		const repPhone = patient.administrativeProfile?.legalRepresentativePhone;
-		if (repPhone && fuzzyMatchPhone(repPhone, phone)) {
-			return patient;
-		}
-	}
-	return null;
-}
-
-/**
- * Computes structured financial metrics for a patient.
- */
-export interface PatientFinancialSummary {
-	balanceRub: number;
-	formattedBalance: string;
-	hasDebt: boolean;
-	debtRub: number;
-	formattedDebt: string;
-	hasInsurance: boolean;
-	insuranceName: string | null;
-	policyNumber: string | null;
-}
-
-export function calculatePatientFinancialStatus(
-	patient: Patient | null | undefined,
-	insight?: PatientInsight | null | undefined,
-	insuranceContracts?: InsuranceContract[] | null | undefined,
-): PatientFinancialSummary {
-	if (!patient) {
-		return {
-			balanceRub: 0,
-			formattedBalance: "0 ₽",
-			hasDebt: false,
-			debtRub: 0,
-			formattedDebt: "0 ₽",
-			hasInsurance: false,
-			insuranceName: null,
-			policyNumber: null,
-		};
-	}
-
-	const balanceRub = Number(patient.balanceRub) || 0;
-	const insightDue = Number(insight?.balanceDueRub) || 0;
-	const debtRub = balanceRub < 0 ? Math.abs(balanceRub) : insightDue > 0 ? insightDue : 0;
-	const hasDebt = balanceRub < 0 || insightDue > 0;
-
-	const formatRub = (amount: number) =>
-		new Intl.NumberFormat("ru-RU", {
-			style: "currency",
-			currency: "RUB",
-			maximumFractionDigits: 0,
-		}).format(amount);
-
-	const formattedBalance = balanceRub > 0 ? `+${formatRub(balanceRub)}` : formatRub(balanceRub);
-	const formattedDebt = formatRub(debtRub);
-
-	const policyNumber = patient.administrativeProfile?.insurancePolicyNumber || null;
-
-	let insuranceName: string | null = null;
-	if (insuranceContracts && insuranceContracts.length > 0) {
-		const activeContract = insuranceContracts.find((c) => c.isActive);
-		if (activeContract) {
-			insuranceName = activeContract.companyName;
-		}
-	}
-
-	const hasInsurance = Boolean(policyNumber || insuranceName);
-
-	return {
-		balanceRub,
-		formattedBalance,
-		hasDebt,
-		debtRub,
-		formattedDebt,
-		hasInsurance,
-		insuranceName,
-		policyNumber,
-	};
-}
-
-/**
- * Resolves the last completed/past visit and attending doctor for a patient.
- */
-export interface PatientLastVisitSummary {
-	lastVisitDate: string | null;
-	formattedLastVisit: string;
-	doctorName: string | null;
-	doctorSpecialty: string | null;
-	appointmentReason: string | null;
-	isNewPatient: boolean;
-}
-
-export function resolvePatientLastVisit(
-	patientId: string | null | undefined,
-	appointments: Appointment[] | null | undefined,
-	staff: StaffMember[] | null | undefined,
-	nowIso = new Date().toISOString(),
-): PatientLastVisitSummary {
-	if (!patientId || !appointments || appointments.length === 0) {
-		return {
-			lastVisitDate: null,
-			formattedLastVisit: "Первичный приём (визитов нет)",
-			doctorName: null,
-			doctorSpecialty: null,
-			appointmentReason: null,
-			isNewPatient: true,
-		};
-	}
-
-	const patientAppointments = appointments
-		.filter((a) => a.patientId === patientId)
-		.filter((a) => {
-			const dateStr = a.startsAt || (a as any).startIso || (a as any).date;
-			return a.status === "completed" || (dateStr && dateStr <= nowIso);
-		})
-		.sort((a, b) => {
-			const timeA = new Date(a.startsAt || (a as any).startIso || 0).getTime() || 0;
-			const timeB = new Date(b.startsAt || (b as any).startIso || 0).getTime() || 0;
-			return timeB - timeA;
-		});
-
-	const latest = patientAppointments[0];
-	if (!latest) {
-		return {
-			lastVisitDate: null,
-			formattedLastVisit: "Первичный приём (визитов нет)",
-			doctorName: null,
-			doctorSpecialty: null,
-			appointmentReason: null,
-			isNewPatient: true,
-		};
-	}
-
-	let doctorName: string | null = null;
-	let doctorSpecialty: string | null = null;
-
-	const doctorId = latest.doctorUserId || (latest as any).doctorId;
-	if (doctorId && staff) {
-		const doctor = staff.find((s) => s.id === doctorId);
-		if (doctor) {
-			doctorName = doctor.fullName;
-			if (doctor.specialties && doctor.specialties.length > 0) {
-				doctorSpecialty = doctor.specialties[0] ?? null;
-			}
-		}
-	}
-
-	const rawDateStr = latest.startsAt || (latest as any).startIso;
-	const dateObj = rawDateStr ? new Date(rawDateStr) : null;
-	const isValidDate = dateObj && !isNaN(dateObj.getTime());
-
-	const formattedLastVisit = isValidDate
-		? new Intl.DateTimeFormat("ru-RU", {
-				day: "numeric",
-				month: "short",
-				year: "numeric",
-				hour: "2-digit",
-				minute: "2-digit",
-			}).format(dateObj)
-		: "Первичный приём (визитов нет)";
-
-	return {
-		lastVisitDate: rawDateStr || null,
-		formattedLastVisit,
-		doctorName,
-		doctorSpecialty,
-		appointmentReason: latest.reason || latest.comment || null,
-		isNewPatient: false,
-	};
-}
-
-/**
- * Resolves upcoming future appointment for a patient (for 1-click confirmation trigger).
- */
-export interface PatientUpcomingAppointmentSummary {
-	appointmentId: string;
-	startsAt: string;
-	endsAt: string;
-	formattedDate: string;
-	formattedTime: string;
-	doctorName: string | null;
-	chairName: string | null;
-	reason: string | null;
-	status: Appointment["status"];
-	isToday: boolean;
-	isTomorrow: boolean;
-}
-
-export function resolvePatientUpcomingAppointment(
-	patientId: string | null | undefined,
-	appointments: Appointment[] | null | undefined,
-	staff: StaffMember[] | null | undefined,
-	nowIso = new Date().toISOString(),
-): PatientUpcomingAppointmentSummary | null {
-	if (!patientId || !appointments || appointments.length === 0) return null;
-
-	const upcoming = appointments
-		.filter((a) => a.patientId === patientId)
-		.filter((a) => a.status === "planned" || a.status === "confirmed")
-		.filter((a) => {
-			const dateStr = a.startsAt || (a as any).startIso || (a as any).date;
-			return Boolean(dateStr && dateStr >= nowIso);
-		})
-		.sort((a, b) => {
-			const timeA = new Date(a.startsAt || (a as any).startIso || 0).getTime() || 0;
-			const timeB = new Date(b.startsAt || (b as any).startIso || 0).getTime() || 0;
-			return timeA - timeB;
-		});
-
-	const nextAppt = upcoming[0];
-	if (!nextAppt) return null;
-
-	let doctorName: string | null = null;
-	const doctorId = nextAppt.doctorUserId || (nextAppt as any).doctorId;
-	if (doctorId && staff) {
-		const doctor = staff.find((s) => s.id === doctorId);
-		if (doctor) doctorName = doctor.fullName;
-	}
-
-	const rawStartsAt = nextAppt.startsAt || (nextAppt as any).startIso || nowIso;
-	const rawEndsAt = nextAppt.endsAt || (nextAppt as any).endIso || rawStartsAt;
-	const dateObj = new Date(rawStartsAt);
-	const nowDate = new Date(nowIso);
-
-	const isValidDate = !isNaN(dateObj.getTime());
-	const isToday =
-		isValidDate &&
-		dateObj.getFullYear() === nowDate.getFullYear() &&
-		dateObj.getMonth() === nowDate.getMonth() &&
-		dateObj.getDate() === nowDate.getDate();
-
-	const tomorrowDate = new Date(nowDate);
-	tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-	const isTomorrow =
-		isValidDate &&
-		dateObj.getFullYear() === tomorrowDate.getFullYear() &&
-		dateObj.getMonth() === tomorrowDate.getMonth() &&
-		dateObj.getDate() === tomorrowDate.getDate();
-
-	const formattedDate = isValidDate
-		? new Intl.DateTimeFormat("ru-RU", {
-				day: "numeric",
-				month: "long",
-				weekday: "short",
-			}).format(dateObj)
-		: "";
-
-	const formattedTime = isValidDate
-		? new Intl.DateTimeFormat("ru-RU", {
-				hour: "2-digit",
-				minute: "2-digit",
-			}).format(dateObj)
-		: "";
-
-	return {
-		appointmentId: nextAppt.id,
-		startsAt: rawStartsAt,
-		endsAt: rawEndsAt,
-		formattedDate,
-		formattedTime,
-		doctorName,
-		chairName: null,
-		reason: nextAppt.reason || nextAppt.comment || null,
-		status: nextAppt.status,
-		isToday,
-		isTomorrow,
-	};
-}
-
-/**
- * Extracts and classifies structured somatic alerts, allergies, and contraindications for a patient.
- */
-export interface PatientSomaticAlert {
-	readonly id: string;
-	readonly label: string;
-	readonly category: "allergy" | "chronic" | "alert" | "pain" | "risk";
-	readonly severity: "high" | "medium" | "info";
-	readonly icon: string;
-}
-
-export function resolvePatientSomaticAlerts(
-	patient: Patient | null | undefined,
-	insight?: PatientInsight | null | undefined,
-): PatientSomaticAlert[] {
-	if (!patient && !insight) return [];
-
-	const alerts: PatientSomaticAlert[] = [];
-	const seenLabels = new Set<string>();
-
-	const addAlert = (
-		label: string,
-		category: PatientSomaticAlert["category"],
-		severity: PatientSomaticAlert["severity"],
-		icon: string,
-	) => {
-		const norm = label.trim().toLowerCase();
-		if (!norm || seenLabels.has(norm)) return;
-		seenLabels.add(norm);
-		alerts.push({
-			id: `alert-${alerts.length + 1}`,
-			label: label.trim(),
-			category,
-			severity,
-			icon,
-		});
-	};
-
-	// 1. Check direct allergies property if present
-	if (patient && (patient as any).allergies) {
-		const rawAllergies = (patient as any).allergies;
-		if (Array.isArray(rawAllergies)) {
-			for (const a of rawAllergies) {
-				if (typeof a === "string" && a.trim()) {
-					addAlert(a.trim(), "allergy", "high", "AlertTriangle");
-				}
-			}
-		} else if (typeof rawAllergies === "string" && rawAllergies.trim()) {
-			addAlert(rawAllergies.trim(), "allergy", "high", "AlertTriangle");
-		}
-	}
-
-	// 2. Check notes for allergies, somatics, contraindications
-	if (patient?.notes) {
-		const rawNotes = patient.notes;
-		const lower = rawNotes.toLowerCase();
-
-		// Specific allergy detections
-		if (
-			lower.includes("лидокаин") ||
-			lower.includes("анестети") ||
-			lower.includes("ультракаин") ||
-			lower.includes("новокаин") ||
-			lower.includes("артикаин")
-		) {
-			addAlert("Аллергия на анестетики (лидокаин / артикаин)", "allergy", "high", "AlertTriangle");
-		}
-		if (
-			lower.includes("пенициллин") ||
-			lower.includes("антибиотик") ||
-			lower.includes("амоксициллин")
-		) {
-			addAlert("Аллергия на пенициллиновый ряд", "allergy", "high", "AlertTriangle");
-		}
-		if (lower.includes("латекс")) {
-			addAlert("Непереносимость латекса (безлатексные перчатки)", "allergy", "medium", "AlertCircle");
-		}
-		if (
-			lower.includes("аллерги") &&
-			!lower.includes("лидокаин") &&
-			!lower.includes("пенициллин") &&
-			!lower.includes("латекс")
-		) {
-			addAlert(rawNotes, "allergy", "high", "AlertTriangle");
-		}
-
-		// Specific somatic pathology detections
-		if (lower.includes("беременн") || lower.includes("триместр")) {
-			addAlert("Беременность (ограничения по рентгену и адреналину)", "chronic", "high", "ShieldAlert");
-		}
-		if (
-			lower.includes("кардиостимулятор") ||
-			lower.includes("пейсмейкер") ||
-			lower.includes("электрокардиостимулятор")
-		) {
-			addAlert("Кардиостимулятор (запрет ультразвуковых скейлеров)", "chronic", "high", "ShieldAlert");
-		}
-		if (lower.includes("диабет") || lower.includes("сахарн")) {
-			addAlert("Сахарный диабет (риск замедленного заживления)", "chronic", "medium", "AlertCircle");
-		}
-		if (lower.includes("гипертон") || lower.includes("давлен") || lower.includes("аг ")) {
-			addAlert("Артериальная гипертензия", "chronic", "medium", "AlertCircle");
-		}
-		if (
-			lower.includes("антикоагулянт") ||
-			lower.includes("варфарин") ||
-			lower.includes("ксарелто") ||
-			lower.includes("кровотеч")
-		) {
-			addAlert("Прием антикоагулянтов (риск кровотечения)", "chronic", "high", "AlertTriangle");
-		}
-		if (lower.includes("гепатит") || lower.includes("вич") || lower.includes("вирусн")) {
-			addAlert("Особый санитарно-эпидемиологический режим", "alert", "high", "ShieldAlert");
-		}
-		if (
-			lower.includes("острая боль") ||
-			lower.includes("зубная боль") ||
-			lower.includes("пульпит") ||
-			lower.includes("периодонтит") ||
-			lower.includes("отек") ||
-			lower.includes("флюс")
-		) {
-			addAlert("Острая боль / Экстренное состояние", "pain", "high", "Zap");
-		}
-	}
-
-	// 3. Check clinical flags from PatientInsight
-	if (insight?.clinicalFlags && Array.isArray(insight.clinicalFlags)) {
-		for (const flag of insight.clinicalFlags) {
-			const lower = flag.toLowerCase();
-			const isPain =
-				lower.includes("бол") ||
-				lower.includes("пульпит") ||
-				lower.includes("периодонтит") ||
-				lower.includes("экстрен");
-			const isAllergy = lower.includes("аллерг");
-			const isHigh =
-				isAllergy ||
-				isPain ||
-				lower.includes("кардио") ||
-				lower.includes("беремен");
-			const severity: PatientSomaticAlert["severity"] = isHigh ? "high" : "medium";
-			const cat: PatientSomaticAlert["category"] = isPain
-				? "pain"
-				: isAllergy
-					? "allergy"
-					: "alert";
-			const icon = isPain ? "Zap" : isAllergy ? "AlertTriangle" : "ShieldAlert";
-			addAlert(flag, cat, severity, icon);
-		}
-	}
-
-	// 4. High risk level from PatientInsight
-	if (insight?.riskLevel === "high") {
-		if (insight.riskReasons && insight.riskReasons.length > 0) {
-			for (const reason of insight.riskReasons) {
-				addAlert(`Риск: ${reason}`, "risk", "high", "ShieldAlert");
-			}
-		} else {
-			addAlert("Высокий клинический / организационный риск", "risk", "high", "ShieldAlert");
-		}
-	}
-
-	return alerts;
-}
-
-/**
- * Resolves upcoming next visit date with full descriptive summary.
- */
-export interface PatientNextVisitSummary {
-	readonly hasNextVisit: boolean;
-	readonly appointmentId: string | null;
-	readonly formattedDate: string;
-	readonly formattedTime: string;
-	readonly doctorName: string | null;
-	readonly doctorSpecialty: string | null;
-	readonly reason: string | null;
-	readonly isToday: boolean;
-	readonly isTomorrow: boolean;
-	readonly startsAt: string | null;
-	readonly fullTextRu: string;
-}
-
-export function resolvePatientNextVisit(
-	patientId: string | null | undefined,
-	appointments: Appointment[] | null | undefined,
-	staff: StaffMember[] | null | undefined,
-	nowIso = new Date().toISOString(),
-): PatientNextVisitSummary {
-	if (!patientId || !appointments || appointments.length === 0) {
-		return {
-			hasNextVisit: false,
-			appointmentId: null,
-			formattedDate: "—",
-			formattedTime: "—",
-			doctorName: null,
-			doctorSpecialty: null,
-			reason: null,
-			isToday: false,
-			isTomorrow: false,
-			startsAt: null,
-			fullTextRu: "Следующий визит не запланирован",
-		};
-	}
-
-	const upcoming = appointments
-		.filter((a) => a.patientId === patientId)
-		.filter((a) => a.status === "planned" || a.status === "confirmed")
-		.filter((a) => a.startsAt >= nowIso)
-		.sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
-
-	const nextAppt = upcoming[0];
-	if (!nextAppt) {
-		return {
-			hasNextVisit: false,
-			appointmentId: null,
-			formattedDate: "—",
-			formattedTime: "—",
-			doctorName: null,
-			doctorSpecialty: null,
-			reason: null,
-			isToday: false,
-			isTomorrow: false,
-			startsAt: null,
-			fullTextRu: "Следующий визит не запланирован",
-		};
-	}
-
-	let doctorName: string | null = null;
-	let doctorSpecialty: string | null = null;
-	if (nextAppt.doctorUserId && staff) {
-		const doctor = staff.find((s) => s.id === nextAppt.doctorUserId);
-		if (doctor) {
-			doctorName = doctor.fullName;
-			if (doctor.specialties && doctor.specialties.length > 0) {
-				doctorSpecialty = doctor.specialties[0] ?? null;
-			}
-		}
-	}
-
-	const dateObj = new Date(nextAppt.startsAt);
-	const nowDate = new Date(nowIso);
-
-	const isToday =
-		dateObj.getFullYear() === nowDate.getFullYear() &&
-		dateObj.getMonth() === nowDate.getMonth() &&
-		dateObj.getDate() === nowDate.getDate();
-
-	const tomorrowDate = new Date(nowDate);
-	tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-	const isTomorrow =
-		dateObj.getFullYear() === tomorrowDate.getFullYear() &&
-		dateObj.getMonth() === tomorrowDate.getMonth() &&
-		dateObj.getDate() === tomorrowDate.getDate();
-
-	const formattedDate = new Intl.DateTimeFormat("ru-RU", {
-		day: "numeric",
-		month: "long",
-		weekday: "short",
-	}).format(dateObj);
-
-	const formattedTime = new Intl.DateTimeFormat("ru-RU", {
-		hour: "2-digit",
-		minute: "2-digit",
-	}).format(dateObj);
-
-	const prefix = isToday ? "Сегодня" : isTomorrow ? "Завтра" : formattedDate;
-	const docStr = doctorName ? ` (${doctorName})` : "";
-	const reasonStr = nextAppt.reason ? ` — ${nextAppt.reason}` : "";
-	const fullTextRu = `Следующий визит: ${prefix} в ${formattedTime}${docStr}${reasonStr}`;
-
-	return {
-		hasNextVisit: true,
-		appointmentId: nextAppt.id,
-		formattedDate,
-		formattedTime,
-		doctorName,
-		doctorSpecialty,
-		reason: nextAppt.reason || nextAppt.comment || null,
-		isToday,
-		isTomorrow,
-		startsAt: nextAppt.startsAt,
-		fullTextRu,
-	};
-}
-
-/**
- * Generates an appointment confirmation message for WhatsApp / SMS.
- */
-export function generateAppointmentConfirmationMessage(params: {
-	patientName: string;
-	doctorName?: string | null;
-	appointmentStartsAt: string;
-	clinicName?: string;
-	clinicAddress?: string | null;
-	templateType?: "confirmation" | "reminder" | "urgent";
-}): string {
-	const dateObj = new Date(params.appointmentStartsAt);
-	const formattedDate = dateObj.toLocaleDateString("ru-RU", {
-		day: "numeric",
-		month: "long",
-		weekday: "short",
-	});
-	const formattedTime = dateObj.toLocaleTimeString("ru-RU", {
-		hour: "2-digit",
-		minute: "2-digit",
-	});
-	const doctor = params.doctorName ? ` к врачу ${params.doctorName}` : "";
-	const clinic = params.clinicName || "клинике DENTE";
-	const address = params.clinicAddress ? ` (${params.clinicAddress})` : "";
-
-	if (params.templateType === "urgent") {
-		return `Здравствуйте, ${params.patientName}! Ждём вас на срочный приём в ${clinic}${address}: ${formattedDate} в ${formattedTime}${doctor}. При себе необходимо иметь паспорт. Подтвердите визит ответным сообщением ДА.`;
-	}
-
-	if (params.templateType === "reminder") {
-		return `Здравствуйте, ${params.patientName}! Напоминаем о сегодняшнем визите в ${clinic}: ${formattedDate} в ${formattedTime}${doctor}. Пожалуйста, приходите за 5-10 минут до начала приёма.`;
-	}
-
-	return `Здравствуйте, ${params.patientName}! Напоминаем о вашей записи в ${clinic}: ${formattedDate} в ${formattedTime}${doctor}. Подтверждаете визит? Ответьте ДА или позвоните нам.`;
-}
-
-/**
- * Creates a WhatsApp web/app link to trigger 1-click confirmation message.
- */
-export function generateWhatsAppConfirmationUrl(phone: string, text: string): string {
-	const clean = normalizePhoneDigits(phone);
-	let e164 = clean;
-	if (clean.length === 10) {
-		e164 = `7${clean}`;
-	} else if (clean.length === 11 && clean.startsWith("8")) {
-		e164 = `7${clean.slice(1)}`;
-	}
-	return `https://wa.me/${e164}?text=${encodeURIComponent(text)}`;
-}
-
-/**
- * Creates an SMS URI to trigger 1-click SMS client.
- */
-export function generateSmsConfirmationUrl(phone: string, text: string): string {
-	const clean = normalizePhoneDigits(phone);
-	let e164 = `+${clean}`;
-	if (clean.length === 10) {
-		e164 = `+7${clean}`;
-	} else if (clean.length === 11 && clean.startsWith("8")) {
-		e164 = `+7${clean.slice(1)}`;
-	}
-	return `sms:${e164}?body=${encodeURIComponent(text)}`;
-}
-
-/**
- * Creates a Telegram link for appointment confirmation.
- */
-export function generateTelegramConfirmationUrl(phone: string, text: string): string {
-	const clean = normalizePhoneDigits(phone);
-	let e164 = `+${clean}`;
-	if (clean.length === 10) {
-		e164 = `+7${clean}`;
-	} else if (clean.length === 11 && clean.startsWith("8")) {
-		e164 = `+7${clean.slice(1)}`;
-	}
-	return `https://t.me/share/url?url=${encodeURIComponent(e164)}&text=${encodeURIComponent(text)}`;
-}
-
-/**
- * Opens WhatsApp chat via wa.me link.
- */
-export function openWhatsAppChat(phone: string, text: string): void {
-	if (typeof window === "undefined") return;
-	const url = generateWhatsAppConfirmationUrl(phone, text);
-	window.open(url, "_blank");
-}
-
-/**
- * Formats duration in seconds to MM:SS string (or HH:MM:SS if >= 1 hour).
- */
-export function formatDurationTimer(totalSeconds: number): string {
-	if (!Number.isFinite(totalSeconds) || Number.isNaN(totalSeconds) || totalSeconds < 0) {
-		return "00:00";
-	}
-	const sec = Math.floor(totalSeconds);
-	const hours = Math.floor(sec / 3600);
-	const minutes = Math.floor((sec % 3600) / 60);
-	const remainingSeconds = sec % 60;
-
-	if (hours > 0) {
-		return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
-	}
-	return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
-}
-
-/**
- * Honest flat recording track indicator (normalized level 0.5)
- * Eliminates fake procedural Math.sin waveform diorama per Core Route item 11 / Mandate 8p.
- */
-export function generateWaveformBars(seed: string | null | undefined, count = 48): number[] {
-	const barCount = Math.max(1, count);
-	return new Array(barCount).fill(0.5);
-}
 
 const initialTransferState: CallTransferState = {
 	isTransferring: false,
@@ -1079,18 +55,106 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 
 	setWsConnected: (isWsConnected) => set({ isWsConnected }),
 	setAgentState: (agentState) => set({ agentState }),
-	switchLine: (lineId) => set({ activeLineId: lineId }),
-	holdCall: () => set({ isHeld: true }),
-	unholdCall: () => set({ isHeld: false }),
-	toggleHold: () => set((state) => ({ isHeld: !state.isHeld })),
+
+	switchLine: (targetLineId) => {
+		const { activeLineId, line1, line2 } = get();
+		if (activeLineId === targetLineId) return;
+
+		// When switching away from a connected call, put the previous line on hold
+		let updatedLine1 = { ...line1 };
+		let updatedLine2 = { ...line2 };
+
+		if (activeLineId === 1 && line1.state === "connected") {
+			updatedLine1 = { ...line1, state: "held" };
+		} else if (activeLineId === 2 && line2.state === "connected") {
+			updatedLine2 = { ...line2, state: "held" };
+		}
+
+		const targetLine = targetLineId === 1 ? updatedLine1 : updatedLine2;
+		set({
+			activeLineId: targetLineId,
+			line1: updatedLine1,
+			line2: updatedLine2,
+			activeCall: targetLine.call,
+			isHeld: targetLine.state === "held",
+		});
+	},
+
+	holdCall: () => {
+		const { activeLineId, line1, line2 } = get();
+		if (activeLineId === 1 && line1.call) {
+			set({
+				isHeld: true,
+				line1: { ...line1, state: "held" },
+			});
+		} else if (activeLineId === 2 && line2.call) {
+			set({
+				isHeld: true,
+				line2: { ...line2, state: "held" },
+			});
+		} else {
+			set({ isHeld: true });
+		}
+	},
+
+	unholdCall: () => {
+		const { activeLineId, line1, line2 } = get();
+		if (activeLineId === 1 && line1.call) {
+			set({
+				isHeld: false,
+				line1: { ...line1, state: "connected" },
+			});
+		} else if (activeLineId === 2 && line2.call) {
+			set({
+				isHeld: false,
+				line2: { ...line2, state: "connected" },
+			});
+		} else {
+			set({ isHeld: false });
+		}
+	},
+
+	toggleHold: () => {
+		const { isHeld } = get();
+		if (isHeld) {
+			get().unholdCall();
+		} else {
+			get().holdCall();
+		}
+	},
 
 	triggerIncomingCall: (call) => {
-		const id = call.callId || `call-${Date.now()}-${++telephonyCallSeq}`;
-		const historyItem: CallHistoryItem = {
+		const state = get();
+		const now = Date.now();
+
+		// Rapid duplicate suppression (within 2 seconds for identical callId or still ringing unhandled phone)
+		const latestHistory = state.callHistory[0];
+		if (
+			latestHistory &&
+			latestHistory.status === "ringing" &&
+			!latestHistory.actionTaken &&
+			latestHistory.callStartedAt &&
+			now - latestHistory.callStartedAt < 2000 &&
+			((call.callId && latestHistory.callId === call.callId) ||
+				(!call.callId && latestHistory.phone === call.phone))
+		) {
+			return;
+		}
+
+		const id = call.callId || `call-${now}-${++telephonyCallSeq}`;
+		const callStartedAt = call.callStartedAt ?? now;
+		const incomingPayload: IncomingCallPayload = {
 			...call,
 			id,
 			status: call.status ?? "ringing",
-			callStartedAt: call.callStartedAt ?? Date.now(),
+			callStartedAt,
+		};
+
+		const historyItem: CallHistoryItem = {
+			...incomingPayload,
+			id,
+			status: call.status ?? "ringing",
+			callStartedAt,
 			actionTaken: undefined,
 			transcript: undefined,
 		};
@@ -1107,126 +171,254 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 			}
 		}
 
-		set((state) => ({
-			activeCall: {
-				...call,
-				status: call.status ?? "ringing",
-				callStartedAt: call.callStartedAt ?? Date.now(),
-			},
+		// Two-line concurrency routing: line 1 vs line 2
+		let assignedLineId: 1 | 2 = 1;
+		let updatedLine1 = { ...state.line1 };
+		let updatedLine2 = { ...state.line2 };
+
+		if (state.line1.state === "idle") {
+			assignedLineId = 1;
+			updatedLine1 = {
+				lineId: 1,
+				call: incomingPayload,
+				state: "ringing",
+				durationSeconds: 0,
+				isMuted: false,
+			};
+		} else if (state.line2.state === "idle") {
+			assignedLineId = 2;
+			updatedLine2 = {
+				lineId: 2,
+				call: incomingPayload,
+				state: "ringing",
+				durationSeconds: 0,
+				isMuted: false,
+			};
+		} else {
+			// Both lines busy: override secondary line or queue
+			assignedLineId = state.activeLineId === 1 ? 2 : 1;
+			if (assignedLineId === 2) {
+				updatedLine2 = {
+					lineId: 2,
+					call: incomingPayload,
+					state: "ringing",
+					durationSeconds: 0,
+					isMuted: false,
+				};
+			} else {
+				updatedLine1 = {
+					lineId: 1,
+					call: incomingPayload,
+					state: "ringing",
+					durationSeconds: 0,
+					isMuted: false,
+				};
+			}
+		}
+
+		const isCurrentlyInCall =
+			Boolean(
+				state.activeCall &&
+					(state.activeCall.status === "connected" ||
+						state.activeCall.status === "answered" ||
+						state.line1.state === "connected" ||
+						state.line2.state === "connected"),
+			);
+
+		set({
+			activeCall: isCurrentlyInCall ? state.activeCall : incomingPayload,
+			activeLineId: isCurrentlyInCall ? state.activeLineId : assignedLineId,
+			line1: updatedLine1,
+			line2: updatedLine2,
 			callHistory: [historyItem, ...state.callHistory.slice(0, 49)],
 			transferState: initialTransferState,
-		}));
+		});
 	},
 
 	answerCall: () => {
-		const { activeCall, callHistory } = get();
+		const { activeCall, callHistory, activeLineId, line1, line2 } = get();
 		if (!activeCall) return;
 
-		const updatedHistory = callHistory.map((item, idx) => {
-			if (idx === 0 && item.phone === activeCall.phone) {
+		const updatedCallId = activeCall.id || activeCall.callId;
+		const updatedHistory = callHistory.map((item) => {
+			if (
+				(updatedCallId && (item.id === updatedCallId || item.callId === updatedCallId)) ||
+				item.phone === activeCall.phone
+			) {
 				return { ...item, status: "answered" as const };
 			}
 			return item;
 		});
 
+		const updatedCall = { ...activeCall, status: "answered" as const };
+		const updatedLine1 =
+			activeLineId === 1
+				? { ...line1, state: "connected" as const, call: updatedCall }
+				: line1;
+		const updatedLine2 =
+			activeLineId === 2
+				? { ...line2, state: "connected" as const, call: updatedCall }
+				: line2;
+
 		set({
-			activeCall: { ...activeCall, status: "answered" as const },
+			activeCall: updatedCall,
+			line1: updatedLine1,
+			line2: updatedLine2,
 			callHistory: updatedHistory,
 		});
 	},
 
 	connectCall: () => {
-		const { activeCall, callHistory } = get();
+		const { activeCall, callHistory, activeLineId, line1, line2 } = get();
 		if (!activeCall) return;
 
-		const updatedHistory = callHistory.map((item, idx) => {
-			if (idx === 0 && item.phone === activeCall.phone) {
+		const updatedCallId = activeCall.id || activeCall.callId;
+		const updatedHistory = callHistory.map((item) => {
+			if (
+				(updatedCallId && (item.id === updatedCallId || item.callId === updatedCallId)) ||
+				item.phone === activeCall.phone
+			) {
 				return { ...item, status: "connected" as const };
 			}
 			return item;
 		});
 
+		const updatedCall = { ...activeCall, status: "connected" as const };
+		const updatedLine1 =
+			activeLineId === 1
+				? { ...line1, state: "connected" as const, call: updatedCall }
+				: line1;
+		const updatedLine2 =
+			activeLineId === 2
+				? { ...line2, state: "connected" as const, call: updatedCall }
+				: line2;
+
 		set({
-			activeCall: { ...activeCall, status: "connected" as const },
+			activeCall: updatedCall,
+			line1: updatedLine1,
+			line2: updatedLine2,
 			callHistory: updatedHistory,
 		});
 	},
 
 	acceptCall: () => {
-		const { activeCall, callHistory } = get();
+		const { activeCall, callHistory, activeLineId, line1, line2 } = get();
 		if (!activeCall) return;
 
-		const updatedHistory = callHistory.map((item, idx) => {
-			if (idx === 0 && item.phone === activeCall.phone) {
-				return { ...item, status: "answered" as const, actionTaken: "accepted" as const };
+		const updatedCallId = activeCall.id || activeCall.callId;
+		const updatedHistory = callHistory.map((item) => {
+			if (
+				(updatedCallId && (item.id === updatedCallId || item.callId === updatedCallId)) ||
+				item.phone === activeCall.phone
+			) {
+				return {
+					...item,
+					status: "answered" as const,
+					actionTaken: "accepted" as const,
+				};
 			}
 			return item;
 		});
 
+		const updatedLine1 = activeLineId === 1 ? initialLine1 : line1;
+		const updatedLine2 = activeLineId === 2 ? initialLine2 : line2;
+
 		set({
 			activeCall: null,
+			line1: updatedLine1,
+			line2: updatedLine2,
 			callHistory: updatedHistory,
 			transferState: initialTransferState,
 		});
 	},
 
 	rejectCall: () => {
-		const { activeCall, callHistory } = get();
+		const { activeCall, callHistory, activeLineId, line1, line2 } = get();
 		if (!activeCall) return;
 
-		const updatedHistory = callHistory.map((item, idx) => {
-			if (idx === 0 && item.phone === activeCall.phone) {
-				return { ...item, status: "rejected" as const, actionTaken: "rejected" as const };
+		const updatedCallId = activeCall.id || activeCall.callId;
+		const updatedHistory = callHistory.map((item) => {
+			if (
+				(updatedCallId && (item.id === updatedCallId || item.callId === updatedCallId)) ||
+				item.phone === activeCall.phone
+			) {
+				return {
+					...item,
+					status: "rejected" as const,
+					actionTaken: "rejected" as const,
+				};
 			}
 			return item;
 		});
 
+		const updatedLine1 = activeLineId === 1 ? initialLine1 : line1;
+		const updatedLine2 = activeLineId === 2 ? initialLine2 : line2;
+
 		set({
 			activeCall: null,
+			line1: updatedLine1,
+			line2: updatedLine2,
 			callHistory: updatedHistory,
 			transferState: initialTransferState,
 		});
 	},
 
 	endCall: (recordingUrl?: string | null) => {
-		const { activeCall, callHistory } = get();
+		const { activeCall, callHistory, activeLineId, line1, line2 } = get();
 		if (!activeCall) return;
 
-		const updatedHistory = callHistory.map((item, idx) => {
-			if (idx === 0 && item.phone === activeCall.phone) {
+		const updatedCallId = activeCall.id || activeCall.callId;
+		const resolvedRecUrl =
+			recordingUrl || activeCall.recordingUrl || undefined;
+
+		const updatedHistory = callHistory.map((item) => {
+			if (
+				(updatedCallId && (item.id === updatedCallId || item.callId === updatedCallId)) ||
+				item.phone === activeCall.phone
+			) {
 				return {
 					...item,
 					status: "ended" as const,
 					actionTaken: item.actionTaken || ("accepted" as const),
-					recordingUrl: recordingUrl || item.recordingUrl || activeCall.recordingUrl,
+					recordingUrl: resolvedRecUrl || item.recordingUrl,
 				};
 			}
 			return item;
 		});
 
+		const updatedLine1 = activeLineId === 1 ? initialLine1 : line1;
+		const updatedLine2 = activeLineId === 2 ? initialLine2 : line2;
+
 		set({
-			activeCall: {
-				...activeCall,
-				status: "ended" as const,
-				recordingUrl: recordingUrl || activeCall.recordingUrl,
-			},
+			activeCall: null,
+			line1: updatedLine1,
+			line2: updatedLine2,
 			callHistory: updatedHistory,
 		});
 	},
 
 	dismissCall: () => {
-		const { activeCall, callHistory } = get();
+		const { activeCall, callHistory, activeLineId, line1, line2 } = get();
 		if (!activeCall) return;
 
-		const updatedHistory = callHistory.map((item, idx) => {
-			if (idx === 0 && item.phone === activeCall.phone) {
+		const updatedCallId = activeCall.id || activeCall.callId;
+		const updatedHistory = callHistory.map((item) => {
+			if (
+				(updatedCallId && (item.id === updatedCallId || item.callId === updatedCallId)) ||
+				item.phone === activeCall.phone
+			) {
 				return { ...item, actionTaken: "dismissed" as const };
 			}
 			return item;
 		});
 
+		const updatedLine1 = activeLineId === 1 ? initialLine1 : line1;
+		const updatedLine2 = activeLineId === 2 ? initialLine2 : line2;
+
 		set({
 			activeCall: null,
+			line1: updatedLine1,
+			line2: updatedLine2,
 			callHistory: updatedHistory,
 			transferState: initialTransferState,
 		});
@@ -1236,37 +428,47 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 		const { activeCall, callHistory } = get();
 		const now = Date.now();
 		const callbackDueAt =
-			outcome === "callback_15m" ? new Date(now + 15 * 60 * 1000).toISOString() : undefined;
+			outcome === "callback_15m"
+				? new Date(now + 15 * 60 * 1000).toISOString()
+				: undefined;
 
 		let updatedHistory = [...callHistory];
 		if (activeCall) {
+			const updatedCallId = activeCall.id || activeCall.callId;
 			let found = false;
-			updatedHistory = callHistory.map((item, idx) => {
-				if (idx === 0 && item.phone === activeCall.phone) {
+			updatedHistory = callHistory.map((item) => {
+				if (
+					(updatedCallId && (item.id === updatedCallId || item.callId === updatedCallId)) ||
+					item.phone === activeCall.phone
+				) {
 					found = true;
 					return {
 						...item,
-						status: outcome === "rejected" || outcome === "spam" ? ("rejected" as const) : ("answered" as const),
+						status:
+							outcome === "rejected" || outcome === "spam"
+								? ("rejected" as const)
+								: ("answered" as const),
 						actionTaken: outcome,
 						outcome,
-						outcomeNote: note || undefined,
-						callbackDueAt,
+						outcomeNote: note || item.outcomeNote,
+						callbackDueAt: callbackDueAt || item.callbackDueAt,
 					};
 				}
 				return item;
 			});
-			if (!found) {
-				const id = activeCall.callId || `call-${Date.now()}-${++telephonyCallSeq}`;
-				const newItem: CallHistoryItem = {
-					...activeCall,
-					id,
-					status: outcome === "rejected" || outcome === "spam" ? "rejected" : "answered",
+
+			if (!found && callHistory.length > 0) {
+				updatedHistory[0] = {
+					...callHistory[0]!,
+					status:
+						outcome === "rejected" || outcome === "spam"
+							? ("rejected" as const)
+							: ("answered" as const),
 					actionTaken: outcome,
 					outcome,
-					outcomeNote: note || undefined,
-					callbackDueAt,
+					outcomeNote: note || callHistory[0]!.outcomeNote,
+					callbackDueAt: callbackDueAt || callHistory[0]!.callbackDueAt,
 				};
-				updatedHistory = [newItem, ...updatedHistory.slice(0, 49)];
 			}
 		}
 
@@ -1277,63 +479,86 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 		});
 	},
 
-	logAcutePainCall: (phone, patientName, reason = "Острая боль / Экстренное обращение") => {
-		const id = `call-${Date.now()}-${++telephonyCallSeq}`;
-		const newItem: CallHistoryItem = {
-			id,
+	logAcutePainCall: (phone, patientName, reason) => {
+		const now = Date.now();
+		const item: CallHistoryItem = {
+			id: `pain-${now}-${++telephonyCallSeq}`,
 			phone,
 			patientId: null,
-			patientName: patientName || "Экстренный вызов (Острая боль)",
-			provider: "mango",
-			timestamp: new Date().toISOString(),
+			patientName: patientName || "Пациент с острой болью",
 			status: "answered",
-			actionTaken: "booked",
-			outcome: "booked",
-			outcomeNote: reason,
+			actionTaken: "accepted",
 			acutePain: true,
-			callStartedAt: Date.now(),
-			durationSeconds: 60,
-			transcript: undefined,
+			callStartedAt: now,
+			outcomeNote: reason || "Срочный звонок: острая зубная боль",
 		};
-
 		set((state) => ({
-			callHistory: [newItem, ...state.callHistory.slice(0, 49)],
+			callHistory: [item, ...state.callHistory.slice(0, 49)],
 		}));
 	},
 
 	startCallTransfer: (targetExtension, transferType = "blind") => {
-		const { activeCall, callHistory } = get();
-		if (!activeCall) return;
+		const { activeCall, callHistory, activeLineId, line1, line2 } = get();
+		if (transferType === "blind") {
+			const updatedCallId = activeCall?.id || activeCall?.callId;
+			const updatedHistory = callHistory.map((item) => {
+				if (
+					(updatedCallId &&
+						(item.id === updatedCallId || item.callId === updatedCallId)) ||
+					(activeCall && item.phone === activeCall.phone)
+				) {
+					return {
+						...item,
+						actionTaken: "transferred" as const,
+						outcome: "transferred" as const,
+						transferTarget: targetExtension,
+						outcomeNote: `Переведён на доб. ${targetExtension}`,
+					};
+				}
+				return item;
+			});
 
-		const updatedHistory = callHistory.map((item, idx) => {
-			if (idx === 0 && item.phone === activeCall.phone) {
-				return {
-					...item,
-					actionTaken: "transferred" as const,
-					transferTarget: targetExtension,
-				};
-			}
-			return item;
-		});
+			const updatedLine1 = activeLineId === 1 ? initialLine1 : line1;
+			const updatedLine2 = activeLineId === 2 ? initialLine2 : line2;
+
+			set({
+				activeCall: null,
+				line1: updatedLine1,
+				line2: updatedLine2,
+				callHistory: updatedHistory,
+				transferState: {
+					isTransferring: true,
+					targetExtension,
+					transferType: "blind",
+					status: "transferred",
+					failureReason: undefined,
+				},
+			});
+			return;
+		}
 
 		set({
 			transferState: {
 				isTransferring: true,
 				targetExtension,
-				transferType,
-				status: transferType === "blind" ? "transferred" : "dialing",
+				transferType: "attended",
+				status: "dialing",
 				failureReason: undefined,
 			},
-			activeCall: transferType === "blind" ? null : activeCall,
-			callHistory: updatedHistory,
 		});
 	},
 
 	completeCallTransfer: () => {
+		const { activeCall, transferState } = get();
+		if (activeCall) {
+			get().recordCallOutcome(
+				"transferred",
+				`Переведён на доб. ${transferState.targetExtension}`,
+			);
+		}
 		set({
-			activeCall: null,
 			transferState: {
-				...get().transferState,
+				...transferState,
 				isTransferring: false,
 				status: "transferred",
 			},
@@ -1341,34 +566,40 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 	},
 
 	cancelCallTransfer: () => {
-		set({
-			transferState: initialTransferState,
-		});
+		set({ transferState: initialTransferState });
 	},
 
 	openCallHistoryModal: () => set({ isCallHistoryModalOpen: true }),
 	closeCallHistoryModal: () => set({ isCallHistoryModalOpen: false }),
+
 	setIsCallDrawerOpen: (isCallDrawerOpen) => set({ isCallDrawerOpen }),
 	openCallDrawer: () => set({ isCallDrawerOpen: true }),
 	closeCallDrawer: () => set({ isCallDrawerOpen: false }),
-	toggleCallDrawer: () => set((state) => ({ isCallDrawerOpen: !state.isCallDrawerOpen })),
-	toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
-	setVolumeLevel: (volumeLevel) => set({ volumeLevel: Math.max(0, Math.min(1, volumeLevel)) }),
+	toggleCallDrawer: () =>
+		set((state) => ({ isCallDrawerOpen: !state.isCallDrawerOpen })),
 
+	toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
+	setVolumeLevel: (volumeLevel) =>
+		set({ volumeLevel: Math.max(0, Math.min(1, volumeLevel)) }),
 	setPlaybackSpeed: (playbackSpeed) => set({ playbackSpeed }),
 	cyclePlaybackSpeed: () => {
+		const speeds: PlaybackSpeed[] = [1, 1.25, 1.5, 2];
 		const current = get().playbackSpeed;
-		const next: PlaybackSpeed = current === 1 ? 1.25 : current === 1.25 ? 1.5 : current === 1.5 ? 2 : 1;
-		set({ playbackSpeed: next });
+		const nextIndex = (speeds.indexOf(current) + 1) % speeds.length;
+		set({ playbackSpeed: speeds[nextIndex] ?? 1 });
 	},
 
-	playRecording: (url) => set({ activeRecordingUrl: url, isPlayingRecording: true }),
-	stopRecording: () => set({ isPlayingRecording: false }),
+	playRecording: (url) =>
+		set({
+			activeRecordingUrl: url,
+			isPlayingRecording: true,
+		}),
+
+	stopRecording: () =>
+		set({
+			activeRecordingUrl: null,
+			isPlayingRecording: false,
+		}),
+
 	clearHistory: () => set({ callHistory: [] }),
 }));
-
-if (typeof window !== "undefined") {
-	(window as unknown as { useTelephonyStore: typeof useTelephonyStore }).useTelephonyStore =
-		useTelephonyStore;
-}
-

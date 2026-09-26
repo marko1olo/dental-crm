@@ -29,9 +29,9 @@ export interface BuildQuickTemplatesParams {
 	upcomingAppointment: {
 		formattedDate: string;
 		formattedTime: string;
-		doctorName?: string;
+		doctorName?: string | null | undefined;
 		startsAt: string;
-		reason?: string;
+		reason?: string | null | undefined;
 	} | null;
 	financialSummary: {
 		formattedDebt: string;

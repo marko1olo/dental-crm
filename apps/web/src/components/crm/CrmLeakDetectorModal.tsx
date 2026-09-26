@@ -36,6 +36,7 @@ import {
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { openWhatsAppChat } from "../../store/telephonyStore";
+import { CrmLeakDetectorDrawer } from "./CrmLeakDetectorDrawer";
 import "./CrmLeakDetectorModal.css";
 
 interface Props {
@@ -576,197 +577,27 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 					)}
 				</div>
 
-				{/* Модальное окно: Скрипт реактивации */}
-				{activeScriptLead && (
-					<div className="cld-modal-overlay">
-						<div
-							className="cld-modal-dialog"
-							style={{ maxWidth: "560px", height: "auto", maxHeight: "80vh" }}
-						>
-							<div className="cld-header">
-								<h3 className="cld-title">
-									<FileText size={16} className="text-blue-600" />
-									Скрипт реактивации: {activeScriptLead.patientFullName}
-								</h3>
-								<button
-									type="button"
-									className="cld-btn-close"
-									onClick={() => setActiveScriptLead(null)}
-								>
-									<X size={16} />
-								</button>
-							</div>
-							<div style={{ padding: "16px", overflowY: "auto" }}>
-								<div className="text-xs text-slate-500 mb-2 font-medium">
-									Персонализированный текст для администратора / сообщения:
-								</div>
-								<div
-									style={{
-										whiteSpace: "pre-wrap",
-										background: "var(--paper-strong, #f8fafc)",
-										padding: "12px",
-										borderRadius: "6px",
-										border: "1px solid var(--border, #e2e8f0)",
-										fontSize: "13px",
-										lineHeight: "1.5",
-									}}
-								>
-									{activeScriptLead.aiReactivationSuggestion}
-								</div>
-								<div className="flex justify-end gap-2 mt-4">
-									<button
-										type="button"
-										className="cld-btn-sync"
-										onClick={() => handleCopyScript(activeScriptLead.aiReactivationSuggestion)}
-									>
-										{copiedScript ? <Check size={14} /> : <Copy size={14} />}
-										{copiedScript ? "Скопировано!" : "Скопировать текст"}
-									</button>
-								</div>
-							</div>
-						</div>
-					</div>
-				)}
-
-				{/* Модальное окно: Фиксация контакта */}
-				{contactModalLead && (
-					<div className="cld-modal-overlay">
-						<div
-							className="cld-modal-dialog"
-							style={{ maxWidth: "520px", height: "auto", maxHeight: "80vh" }}
-						>
-							<div className="cld-header">
-								<h3 className="cld-title">
-									<Phone size={16} className="text-blue-600" />
-									Зафиксировать контакт: {contactModalLead.patientFullName}
-								</h3>
-								<button
-									type="button"
-									className="cld-btn-close"
-									onClick={() => setContactModalLead(null)}
-								>
-									<X size={16} />
-								</button>
-							</div>
-							<div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
-								<div>
-									<label className="text-xs font-semibold text-slate-600 block mb-1">
-										Канал связи:
-									</label>
-									<select
-										className="cld-filter-select w-full"
-										value={contactChannel}
-										onChange={(e) => setContactChannel(e.target.value as any)}
-									>
-										<option value="call">Телефонный звонок</option>
-										<option value="whatsapp">WhatsApp сообщение</option>
-										<option value="telegram">Telegram</option>
-										<option value="sms">SMS</option>
-									</select>
-								</div>
-								<div>
-									<label className="text-xs font-semibold text-slate-600 block mb-1">
-										Результат контакта (заметка администратора):
-									</label>
-									<textarea
-										rows={4}
-										className="w-full p-2 border border-slate-300 rounded text-sm"
-										placeholder="Дозвонились, пациент думает над датой / предложена гигиена в субботу..."
-										value={contactNotes}
-										onChange={(e) => setContactNotes(e.target.value)}
-									/>
-								</div>
-								<div className="flex justify-end gap-2 mt-2">
-									<button
-										type="button"
-										className="cld-action-btn"
-										onClick={() => setContactModalLead(null)}
-									>
-										Отмена
-									</button>
-									<button
-										type="button"
-										className="cld-btn-sync"
-										onClick={handleSaveContact}
-									>
-										Сохранить результат
-									</button>
-								</div>
-							</div>
-						</div>
-					</div>
-				)}
-
-				{/* Модальное окно: Отказ */}
-				{declineModalLead && (
-					<div className="cld-modal-overlay">
-						<div
-							className="cld-modal-dialog"
-							style={{ maxWidth: "520px", height: "auto", maxHeight: "80vh" }}
-						>
-							<div className="cld-header">
-								<h3 className="cld-title text-red-600">
-									<X size={16} />
-									Причина отказа: {declineModalLead.patientFullName}
-								</h3>
-								<button
-									type="button"
-									className="cld-btn-close"
-									onClick={() => setDeclineModalLead(null)}
-								>
-									<X size={16} />
-								</button>
-							</div>
-							<div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
-								<div>
-									<label className="text-xs font-semibold text-slate-600 block mb-1">
-										Регламентированная причина отказа:
-									</label>
-									<select
-										className="cld-filter-select w-full"
-										value={declineReason}
-										onChange={(e) => setDeclineReason(e.target.value as any)}
-									>
-										{Object.entries(DECLINE_REASON_LABELS_RU).map(([code, label]) => (
-											<option key={code} value={code}>
-												{label}
-											</option>
-										))}
-									</select>
-								</div>
-								<div>
-									<label className="text-xs font-semibold text-slate-600 block mb-1">
-										Комментарий (детали отказа):
-									</label>
-									<textarea
-										rows={3}
-										className="w-full p-2 border border-slate-300 rounded text-sm"
-										placeholder="Пояснение пациента..."
-										value={declineComment}
-										onChange={(e) => setDeclineComment(e.target.value)}
-									/>
-								</div>
-								<div className="flex justify-end gap-2 mt-2">
-									<button
-										type="button"
-										className="cld-action-btn"
-										onClick={() => setDeclineModalLead(null)}
-									>
-										Отмена
-									</button>
-									<button
-										type="button"
-										className="cld-btn-sync"
-										style={{ background: "#dc2626" }}
-										onClick={handleSaveDecline}
-									>
-										Подтвердить отказ
-									</button>
-								</div>
-							</div>
-						</div>
-					</div>
-				)}
+				{/* Панель действий реактивации (Инлайн-дровер вместо вложенных модалок по Мандату 8d) */}
+				<CrmLeakDetectorDrawer
+					activeScriptLead={activeScriptLead}
+					copiedScript={copiedScript}
+					onCopyScript={handleCopyScript}
+					onCloseScript={() => setActiveScriptLead(null)}
+					contactModalLead={contactModalLead}
+					contactChannel={contactChannel}
+					onSetContactChannel={setContactChannel}
+					contactNotes={contactNotes}
+					onSetContactNotes={setContactNotes}
+					onSaveContact={handleSaveContact}
+					onCloseContact={() => setContactModalLead(null)}
+					declineModalLead={declineModalLead}
+					declineReason={declineReason}
+					onSetDeclineReason={setDeclineReason}
+					declineComment={declineComment}
+					onSetDeclineComment={setDeclineComment}
+					onSaveDecline={handleSaveDecline}
+					onCloseDecline={() => setDeclineModalLead(null)}
+				/>
 			</div>
 		</div>
 	);

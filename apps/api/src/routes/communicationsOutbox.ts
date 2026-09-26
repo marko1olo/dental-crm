@@ -11,6 +11,7 @@
  * Администратор не мог ни отправить сообщение, ни узнать, почему оно не ушло.
  */
 
+import { createHash } from "node:crypto";
 import { and, desc, eq, gte, inArray, lte, type SQL, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
@@ -876,9 +877,11 @@ export async function registerCommunicationOutboxRoutes(app: FastifyInstance) {
 			});
 		}
 
+		const bodyHash = createHash("sha256").update(body).digest("hex").slice(0, 16);
+		const timeBucket = Math.floor(Date.now() / 60000);
 		const dedupeKey =
 			input.dedupeKey ??
-			`manual:${input.patientId ?? input.recipientAddress ?? "anon"}:${input.channel}:${input.intent}:${Date.now()}`;
+			`manual:${input.patientId ?? input.recipientAddress ?? "anon"}:${input.channel}:${input.intent}:${bodyHash}:${timeBucket}`;
 
 		const result = await enqueueMessage({
 			organizationId: context.organizationId,

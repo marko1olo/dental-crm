@@ -409,3 +409,39 @@
 	padding: 48px 16px;
 	color: var(--muted, #64748b);
 }
+
+.cld-modal-dialog {
+	position: relative;
+}
+
+.cld-drawer-backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(15, 23, 42, 0.45);
+	backdrop-filter: blur(2px);
+	display: flex;
+	justify-content: flex-end;
+	z-index: 40;
+}
+
+.cld-drawer-card {
+	width: 100%;
+	max-width: 480px;
+	height: 100%;
+	background: var(--paper, #ffffff);
+	border-left: 1px solid var(--border, #e2e8f0);
+	display: flex;
+	flex-direction: column;
+	box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
+	animation: cldSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cldSlideIn {
+	from {
+		transform: translateX(100%);
+	}
+	to {
+		transform: translateX(0);
+	}
+}
+

@@ -1,17 +1,21 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import { communicationEvents } from "../db/schema.js";
-import { getDailySmsQuota, incrementDailySmsQuota } from "../db/uisSmsChatQuotasQuery.js";
+import {
+	getDailySmsQuota,
+	incrementDailySmsQuota,
+} from "../db/uisSmsChatQuotasQuery.js";
 import { MessageTemplateEngine } from "../services/communications/MessageTemplateEngine.js";
 import { sendSmsViaUis } from "../services/uis/smsClient.js";
 
 const chatSendSchema = z.object({
 	patientId: z.string().uuid(),
 	message: z.string().min(1).max(2000),
+	idempotencyKey: z.string().min(1).max(128).optional(),
 });
 
 export async function registerChatRoutes(app: FastifyInstance) {
@@ -62,7 +66,10 @@ export async function registerChatRoutes(app: FastifyInstance) {
 			}
 
 			const [patient] = await db
-				.select({ phone: schema.patients.phone, status: schema.patients.status })
+				.select({
+					phone: schema.patients.phone,
+					status: schema.patients.status,
+				})
 				.from(schema.patients)
 				.where(
 					and(
@@ -96,13 +103,61 @@ export async function registerChatRoutes(app: FastifyInstance) {
 			}
 
 			// 152-ФЗ / 323-ФЗ ст. 13: Запрет передачи сведений, составляющих врачебную тайну, в открытых SMS
-			const leakCheck = MessageTemplateEngine.detectMedicalSecrecyLeaks(parsed.data.message);
+			const leakCheck = MessageTemplateEngine.detectMedicalSecrecyLeaks(
+				parsed.data.message,
+			);
 			if (leakCheck.hasLeak) {
 				return reply.code(422).send({
 					error: "MedicalSecrecyViolationError",
 					message: `Запрет передачи врачебной тайны по открытым SMS-каналам (323-ФЗ ст. 13, 152-ФЗ): обнаружены клинические данные (${leakCheck.reasons.join("; ")})`,
 					detectedTerms: leakCheck.detectedTerms,
 				});
+			}
+
+			// Concurrency & idempotency guard: prevent double-clicks and repeated quota deductions
+			const thirtySecAgo = new Date(Date.now() - 30 * 1000);
+			const duplicateConditions = [
+				eq(communicationEvents.message, parsed.data.message),
+			];
+			if (parsed.data.idempotencyKey) {
+				duplicateConditions.push(
+					sql`${communicationEvents.message} LIKE ${`%[idempotency:${parsed.data.idempotencyKey}]%`}`,
+				);
+			}
+
+			const recentSms = await db
+				.select({
+					id: communicationEvents.id,
+					status: communicationEvents.status,
+				})
+				.from(communicationEvents)
+				.where(
+					and(
+						eq(communicationEvents.organizationId, organizationId),
+						eq(communicationEvents.patientId, parsed.data.patientId),
+						eq(communicationEvents.channel, "sms"),
+						eq(communicationEvents.direction, "outbound"),
+						or(...duplicateConditions),
+						gt(communicationEvents.createdAt, thirtySecAgo),
+					),
+				)
+				.limit(1);
+
+			if (recentSms.length > 0) {
+				request.log.info(
+					{
+						patientId: parsed.data.patientId,
+						eventId: recentSms[0]?.id,
+					},
+					"[Chat] Duplicate SMS send blocked by idempotency guard (30s window)",
+				);
+				return {
+					success: true,
+					duplicate: true,
+					event: recentSms[0],
+					remainingQuota: quota.remaining,
+					message: "SMS уже отправлено (защита от повторной отправки)",
+				};
 			}
 
 			// Perform real UIS SMS dispatch (ZERO MOCKS)
@@ -113,6 +168,10 @@ export async function registerChatRoutes(app: FastifyInstance) {
 
 			await incrementDailySmsQuota(organizationId);
 
+			const messageToStore = parsed.data.idempotencyKey
+				? `${parsed.data.message} [idempotency:${parsed.data.idempotencyKey}]`
+				: parsed.data.message;
+
 			const [event] = await db
 				.insert(communicationEvents)
 				.values({
@@ -121,7 +180,7 @@ export async function registerChatRoutes(app: FastifyInstance) {
 					channel: "sms",
 					direction: "outbound",
 					status: "sent",
-					message: parsed.data.message,
+					message: messageToStore,
 				})
 				.returning();
 

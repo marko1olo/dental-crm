@@ -27,6 +27,14 @@ export const CallPlayer: React.FC<{
 			}
 		};
 
+		const handlePlay = () => {
+			setIsPlaying(true);
+		};
+
+		const handlePause = () => {
+			setIsPlaying(false);
+		};
+
 		const handleEnded = () => {
 			setIsPlaying(false);
 			setProgress(0);
@@ -34,6 +42,8 @@ export const CallPlayer: React.FC<{
 
 		audio.addEventListener("timeupdate", updateProgress);
 		audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+		audio.addEventListener("play", handlePlay);
+		audio.addEventListener("pause", handlePause);
 		audio.addEventListener("ended", handleEnded);
 
 		return () => {
@@ -46,21 +56,23 @@ export const CallPlayer: React.FC<{
 			}
 			audio.removeEventListener("timeupdate", updateProgress);
 			audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+			audio.removeEventListener("play", handlePlay);
+			audio.removeEventListener("pause", handlePause);
 			audio.removeEventListener("ended", handleEnded);
 		};
 	}, [durationSeconds]);
 
 	const togglePlayPause = () => {
-		if (audioRef.current) {
-			if (isPlaying) {
-				audioRef.current.pause();
-			} else {
-				// В браузерах play() возвращает Promise
-				audioRef.current.play().catch((err) => {
-					logger.error("Audio play failed:", err);
-				});
-			}
-			setIsPlaying(!isPlaying);
+		const audio = audioRef.current;
+		if (!audio) return;
+
+		if (audio.paused) {
+			audio.play().catch((err) => {
+				logger.error("Audio play failed:", err);
+				setIsPlaying(false);
+			});
+		} else {
+			audio.pause();
 		}
 	};
 

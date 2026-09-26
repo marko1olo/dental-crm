@@ -2,7 +2,7 @@ import {
 	communicationTaskSchema,
 	completeCommunicationTaskSchema,
 } from "@dental/shared";
-import { and, eq, ilike, asc, desc, sql } from "drizzle-orm";
+import { and, eq, gt, ilike, asc, desc, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
@@ -184,7 +184,23 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 				return updatedTask;
 			});
 
-			return communicationTaskSchema.parse(result);
+			return communicationTaskSchema.parse({
+				...result,
+				dueAt:
+					result.dueAt instanceof Date
+						? result.dueAt.toISOString()
+						: String(result.dueAt),
+				createdAt:
+					result.createdAt instanceof Date
+						? result.createdAt.toISOString()
+						: String(result.createdAt),
+				lastEventAt:
+					result.lastEventAt instanceof Date
+						? result.lastEventAt.toISOString()
+						: result.lastEventAt
+							? String(result.lastEventAt)
+							: null,
+			});
 		} catch (error) {
 			if (
 				error instanceof Error &&
@@ -474,6 +490,7 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 					"max",
 				])
 				.default("telegram"),
+			idempotencyKey: z.string().min(1).max(128).optional(),
 		});
 
 		const bodyParsed = sendMessageSchema.safeParse(request.body);
@@ -485,7 +502,7 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const { message, channel: resolvedChannel } = bodyParsed.data;
+		const { message, channel: resolvedChannel, idempotencyKey } = bodyParsed.data;
 
 		const secrecy = MessageTemplateEngine.detectMedicalSecrecyLeaks(message);
 		if (secrecy.hasLeak) {
@@ -496,13 +513,44 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 			});
 		}
 
+		// 15-second idempotency check to protect against rapid double-clicks
+		const fifteenSecAgo = new Date(Date.now() - 15 * 1000);
+		const trimmedMessage = message.trim();
+		const recentEvents = await db
+			.select({ id: communicationEvents.id, createdAt: communicationEvents.createdAt })
+			.from(communicationEvents)
+			.where(
+				and(
+					eq(communicationEvents.organizationId, orgId),
+					eq(communicationEvents.patientId, patientId),
+					eq(communicationEvents.channel, resolvedChannel),
+					eq(communicationEvents.direction, "outbound"),
+					eq(communicationEvents.message, trimmedMessage),
+					gt(communicationEvents.createdAt, fifteenSecAgo),
+				),
+			)
+			.limit(1);
+
+		if (recentEvents.length > 0) {
+			return reply.send({
+				success: true,
+				duplicate: true,
+				event: recentEvents[0],
+				message: "Сообщение уже отправлено (защита от повторной отправки)",
+			});
+		}
+
+		const messageToStore = idempotencyKey
+			? `${trimmedMessage} [idempotency:${idempotencyKey}]`
+			: trimmedMessage;
+
 		const inserted = await db.insert(communicationEvents).values({
 			organizationId: orgId,
 			patientId: patientId,
 			channel: resolvedChannel,
 			direction: "outbound",
 			status: "sent",
-			message: message.trim(),
+			message: messageToStore,
 		}).returning();
 
 		return reply.send({ success: true, event: inserted[0] });
