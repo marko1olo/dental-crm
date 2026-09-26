@@ -1,0 +1,293 @@
+/* ==========================================================================
+   TV Queue Billboard / Clinic Lobby Waiting Area Display CSS
+   Touch/TV 1080p/4K Responsive — WCAG AAA Readability from 3-5 Meters
+   ========================================================================== */
+
+.queue-billboard-container {
+	position: relative;
+	min-height: 100vh;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	background: transparent;
+	color: var(--ink, #0f172a);
+	font-family: inherit;
+	box-sizing: border-box;
+	overflow-x: hidden;
+	padding: 1.5rem 2rem;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TOP HEADER HUD (TV LOBBY CLOCK & CLINIC TITLE)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.queue-billboard-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1.25rem 2rem;
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+	margin-bottom: 1.5rem;
+}
+
+.queue-billboard-brand {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+
+.queue-billboard-logo-badge {
+	width: 48px;
+	height: 48px;
+	border-radius: 12px;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	color: var(--teal, #0d9488);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.queue-billboard-title {
+	margin: 0;
+	font-size: 1.75rem;
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	color: var(--ink, #0f172a);
+}
+
+.queue-billboard-subtitle {
+	margin: 0.25rem 0 0 0;
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+}
+
+.queue-billboard-clock-hud {
+	display: flex;
+	align-items: center;
+	gap: 2rem;
+}
+
+.queue-billboard-clock-time {
+	font-size: 2.25rem;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	color: var(--ink, #0f172a);
+	line-height: 1;
+}
+
+.queue-billboard-clock-date {
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	text-align: right;
+	margin-top: 0.25rem;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BILLBOARD SPLIT COLUMNS (INVITED / IN CHAIR vs WAITING IN LOBBY)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.queue-billboard-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1.75rem;
+	flex: 1;
+}
+
+@media (max-width: 900px) {
+	.queue-billboard-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.queue-billboard-column {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.queue-billboard-col-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.875rem 1.5rem;
+	border-radius: 12px;
+	font-size: 1.15rem;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.queue-billboard-col-header.invited {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+}
+
+.queue-billboard-col-header.waiting {
+	background: var(--paper-strong, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.queue-billboard-items-list {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	flex: 1;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   LARGE HIGH-CONTRAST TICKET CARDS (READABLE FROM 3-5 METERS)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.queue-ticket-card {
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	padding: 1.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.queue-ticket-card.invited {
+	border: 2px solid var(--teal, #0d9488);
+	background: var(--paper-strong, #ffffff);
+	box-shadow: 0 8px 24px rgba(13, 148, 136, 0.2);
+	animation: queueTicketPulse 3s infinite ease-in-out;
+}
+
+@keyframes queueTicketPulse {
+	0%, 100% {
+		border-color: var(--teal, #0d9488);
+		box-shadow: 0 8px 24px rgba(13, 148, 136, 0.2);
+	}
+	50% {
+		border-color: #10b981;
+		box-shadow: 0 12px 32px rgba(16, 185, 129, 0.35);
+	}
+}
+
+.queue-ticket-main {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+}
+
+.queue-ticket-number {
+	font-size: 2.75rem;
+	font-weight: 900;
+	letter-spacing: -0.02em;
+	color: var(--ink, #0f172a);
+	line-height: 1;
+}
+
+.queue-ticket-card.invited .queue-ticket-number {
+	color: var(--teal, #0d9488);
+}
+
+.queue-ticket-patient {
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--muted, #64748b);
+}
+
+.queue-ticket-destination {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 0.5rem;
+	text-align: right;
+}
+
+.queue-ticket-cabinet-badge {
+	font-size: 1.75rem;
+	font-weight: 800;
+	padding: 0.5rem 1.25rem;
+	border-radius: 12px;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	color: var(--teal, #0d9488);
+	border: 1px solid var(--teal, #0d9488);
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.queue-ticket-cabinet-badge.waiting {
+	background: var(--paper, #f8fafc);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	font-size: 1.35rem;
+}
+
+.queue-ticket-doctor {
+	font-size: 1.05rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.queue-ticket-status-pill {
+	font-size: 0.85rem;
+	font-weight: 700;
+	padding: 0.25rem 0.75rem;
+	border-radius: 9999px;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.queue-ticket-status-pill.invited {
+	background: rgba(16, 185, 129, 0.15);
+	color: #059669;
+}
+
+.queue-ticket-status-pill.waiting {
+	background: rgba(100, 116, 139, 0.12);
+	color: var(--muted, #64748b);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BOTTOM TICKER / ANNOUNCEMENT BAR
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.queue-billboard-ticker {
+	margin-top: 1.5rem;
+	padding: 1rem 1.75rem;
+	background: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 14px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 1.05rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+}
+
+.queue-billboard-ticker-left {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.queue-billboard-ticker-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: #10b981;
+	box-shadow: 0 0 10px #10b981;
+	animation: billboardDotBlink 2s infinite ease-in-out;
+}
+
+@keyframes billboardDotBlink {
+	0%, 100% { opacity: 1; transform: scale(1); }
+	50% { opacity: 0.4; transform: scale(0.85); }
+}
