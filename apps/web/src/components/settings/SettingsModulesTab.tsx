@@ -1,4 +1,5 @@
 import { Blocks } from "lucide-react";
+import { ScaleSovereigntyPresetsBar } from "./ScaleSovereigntyPresetsBar";
 import { WorkspaceFeaturesSelector } from "../workspace/WorkspaceFeaturesSelector";
 
 export function SettingsModulesTab() {
@@ -16,7 +17,8 @@ export function SettingsModulesTab() {
 				</div>
 			</header>
 
-			<div style={{ maxWidth: 700, margin: "0 auto", padding: "0 1rem" }}>
+			<div style={{ maxWidth: 860, margin: "0 auto", padding: "0 1rem" }}>
+				<ScaleSovereigntyPresetsBar />
 				<WorkspaceFeaturesSelector />
 			</div>
 		</section>

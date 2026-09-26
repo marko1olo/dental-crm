@@ -258,32 +258,48 @@ export async function applyWorkspacePreset(
 		// Local fallback for offline/MVP mode
 		const baseFlags = { ...useWorkspaceProfileStore.getState() };
 
-		if (presetName === "solo") {
+		if (presetName === "solo" || presetName === "solo_therapist") {
 			baseFlags.hasAssistants = false;
 			baseFlags.hasMultipleChairs = false;
+			baseFlags.hasDentalLab = false;
+			baseFlags.hasInsuranceCoPay = false;
 			baseFlags.hasPayrollModule = false;
 			baseFlags.hasMarketingModule = false;
+			baseFlags.hasAnalyticsModule = false;
+			baseFlags.hasInventoryModule = false;
 			baseFlags.hasOrthodontics = false;
 			baseFlags.hasGnathology = false;
 			baseFlags.hasTasks = false;
+			baseFlags.hasCsoScanner = false;
+			baseFlags.hasLeadsKanban = false;
+			baseFlags.hasOmnichannel = false;
+			baseFlags.hasClinicalRules = false;
+			baseFlags.hasEngineeringStatus = false;
 			baseFlags.numberOfDoctors = 1;
-		} else if (presetName === "clinic") {
+		} else if (presetName === "clinic" || presetName === "family_clinic") {
 			baseFlags.hasAssistants = true;
 			baseFlags.hasMultipleChairs = true;
+			baseFlags.hasDentalLab = true;
+			baseFlags.hasInsuranceCoPay = true;
 			baseFlags.hasPayrollModule = true;
 			baseFlags.hasMarketingModule = true;
 			baseFlags.hasAnalyticsModule = true;
+			baseFlags.hasInventoryModule = true;
 			baseFlags.hasTasks = true;
+			baseFlags.hasClinicalRules = true;
 			baseFlags.numberOfDoctors = 4;
 		} else if (presetName === "enterprise") {
 			baseFlags.hasAssistants = true;
 			baseFlags.hasMultipleChairs = true;
 			baseFlags.hasDentalLab = true;
+			baseFlags.hasInsuranceCoPay = true;
 			baseFlags.hasPayrollModule = true;
 			baseFlags.hasMarketingModule = true;
 			baseFlags.hasAnalyticsModule = true;
+			baseFlags.hasInventoryModule = true;
 			baseFlags.hasTasks = true;
 			baseFlags.hasOrthodontics = true;
+			baseFlags.hasClinicalRules = true;
 			baseFlags.numberOfDoctors = 10;
 		}
 
