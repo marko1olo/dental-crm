@@ -15,12 +15,14 @@
  * Для читаемых форматов проверяется содержимое до последнего поля, для
  * нечитаемых — что они опознаны точно и что инструкция оператору выдана.
  */
+import { randomUUID } from "node:crypto";
 import { mkdtemp, open, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { eq, sql } from "drizzle-orm";
 import { db, pool } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import {
 	migrationEntityLinks,
 	migrationQuarantineRecords,
@@ -88,11 +90,9 @@ function buildFptFile(
 ): { buffer: Buffer; pointers: number[] } {
 	const header = Buffer.alloc(blockSize);
 	header.writeUInt16BE(blockSize, 6);
-
 	const blocks: Buffer[] = [];
 	const pointers: number[] = [];
 	let nextBlock = 1;
-
 	for (const text of texts) {
 		const content = encodeSingleByte(text, encoding);
 		const total = 8 + content.length;
@@ -136,11 +136,9 @@ function buildDbtFile(
 		pointers.push(nextBlock);
 		nextBlock += blockCount;
 	}
-
 	header.writeUInt32LE(nextBlock, 0);
 	return { buffer: Buffer.concat([header, ...blocks]), pointers };
 }
-
 /**
  * Снимок DICOM Part 10.
  *
@@ -160,7 +158,6 @@ function buildDicomFile(values: {
 	manufacturer: string;
 }): Buffer {
 	const iso5 = (text: string): Buffer => encodeSingleByte(text, "iso-8859-5");
-
 	/** Элемент явной записи VR: группа, элемент, VR, длина, значение. */
 	const element = (
 		group: number,
@@ -180,9 +177,7 @@ function buildDicomFile(values: {
 		head.writeUInt16LE(padded.length, 6);
 		return Buffer.concat([head, padded]);
 	};
-
 	const ascii = (text: string): Buffer => Buffer.from(text, "latin1");
-
 	// Мета-группа: сначала её длина, затем сами элементы.
 	const metaElements = Buffer.concat([
 		element(0x0002, 0x0002, "UI", ascii("1.2.840.10008.5.1.4.1.1.1")),
@@ -200,7 +195,6 @@ function buildDicomFile(values: {
 			return length;
 		})(),
 	);
-
 	const dataset = Buffer.concat([
 		// Кодировка объявляется первой: без неё ФИО читается как latin1.
 		element(0x0008, 0x0005, "CS", ascii("ISO_IR 144")),
@@ -230,7 +224,6 @@ function buildDicomFile(values: {
 		dataset,
 	]);
 }
-
 /** Заголовок базы Firebird: тип страницы 1 и версия ODS. */
 function buildFirebirdHeader(odsVersion: number): Buffer {
 	const buffer = Buffer.alloc(4096);
@@ -240,7 +233,6 @@ function buildFirebirdHeader(odsVersion: number): Buffer {
 	buffer.write("FIREBIRD", 32, "latin1");
 	return buffer;
 }
-
 /** Заголовок базы Microsoft Access Jet 4. */
 function buildAccessJet4Header(): Buffer {
 	const buffer = Buffer.alloc(4096);
@@ -248,7 +240,6 @@ function buildAccessJet4Header(): Buffer {
 	buffer.write("Standard Jet DB", 4, "latin1");
 	return buffer;
 }
-
 /** Заголовок резервной копии MS SQL Server. */
 function buildMssqlBackupHeader(): Buffer {
 	const buffer = Buffer.alloc(4096);
@@ -256,7 +247,6 @@ function buildMssqlBackupHeader(): Buffer {
 	buffer.write("MSSQL_BACKUP_MEDIA", 64, "latin1");
 	return buffer;
 }
-
 /** Заголовок файловой базы 1С. */
 function buildOneCHeader(): Buffer {
 	const buffer = Buffer.alloc(4096);
@@ -264,21 +254,18 @@ function buildOneCHeader(): Buffer {
 	buffer.write("8.3.", 8, "latin1");
 	return buffer;
 }
-
 // ---------------------------------------------------------------------------
-
 const workDir = await mkdtemp(path.join(tmpdir(), "dente-formats-"));
 console.log(
 	`\n=== Настоящие форматы баз старых систем ===\nРабочий каталог: ${workDir}\n`,
 );
 
-const [org] = await db
-	.insert(organizations)
-	.values({ name: `E2E-formats-${Date.now()}` })
-	.returning();
-if (!org) throw new Error("Failed to create test organization");
-const ORG = org.id;
-
+const ORG = randomUUID();
+await withTenantCtx(ORG, async (tx) => {
+	await tx
+		.insert(organizations)
+		.values({ id: ORG, name: `E2E-formats-${Date.now()}` });
+});
 try {
 	// =====================================================================
 	console.log("--- 1. DBF FoxPro в cp866 с memo-файлом .FPT (Инфодент)");
@@ -292,7 +279,6 @@ try {
 		"Плановый осмотр. Жалоб нет. Рекомендована профессиональная гигиена.",
 	];
 	const fpt = buildFptFile(memoTexts, "ibm866");
-
 	const foxproFields: DbfFixtureField[] = [
 		{ name: "NKART", type: "I", length: 4 },
 		{ name: "FIO", type: "C", length: 44 },
@@ -332,7 +318,6 @@ try {
 			version: 0xf5,
 		},
 	);
-
 	const dbfPath = path.join(workDir, "PACIENT.DBF");
 	const fptPath = path.join(workDir, "PACIENT.FPT");
 	await writeFile(dbfPath, dbfWithMemo);
@@ -356,7 +341,6 @@ try {
 		byteSize: dbfWithMemo.length,
 	});
 	same("кодировка из байта 29", dbfShape.detectedEncoding, "ibm866");
-
 	const dbfBatches: string[][] = [];
 	for await (const batch of streamSourceRows({
 		filePath: dbfPath,
@@ -432,7 +416,6 @@ try {
 		dbase3Rows[1]?.[2] === dbtTexts[1],
 		(dbase3Rows[1]?.[2] ?? "").slice(0, 50),
 	);
-
 	// =====================================================================
 	console.log("--- 3. База SQLite с несколькими таблицами");
 	const sqlitePath = path.join(workDir, "clinic.db");
@@ -474,7 +457,6 @@ try {
 		insertVisit.run(1, 1, "2020-03-12", "Боль в 16");
 		database.close();
 	}
-
 	const sqliteHead = Buffer.alloc(4096);
 	{
 		const handle = await open(sqlitePath, "r");
@@ -486,7 +468,6 @@ try {
 		identifyFormat(sqliteHead, "clinic.db").id,
 		"sqlite",
 	);
-
 	const inspection = inspectSqlite(sqlitePath);
 	const ranked = rankTablesByRelevance(inspection.tables);
 	console.log(
@@ -502,7 +483,6 @@ try {
 		!ranked.some((t) => t.name === "settings"),
 		ranked.map((t) => t.name).join(","),
 	);
-
 	const sqliteShape = await detectSourceShape({
 		filePath: sqlitePath,
 		fileName: "clinic.db",
@@ -514,7 +494,6 @@ try {
 		(sqliteShape.availableTables?.length ?? 0) >= 2,
 		JSON.stringify(sqliteShape.availableTables),
 	);
-
 	const sqliteRows: string[][] = [];
 	for await (const batch of streamSourceRows({
 		filePath: sqlitePath,
@@ -705,14 +684,16 @@ try {
 	console.log(
 		`       создано ${migration.run.loadedRows}, карантин ${migration.run.quarantinedRows}`,
 	);
-	const loaded = await db
-		.select({
-			fullName: patients.fullName,
-			phone: patients.phone,
-			notes: patients.notes,
-		})
-		.from(patients)
-		.where(eq(patients.organizationId, ORG));
+	const loaded = await withTenantCtx(ORG, (tx) =>
+		tx
+			.select({
+				fullName: patients.fullName,
+				phone: patients.phone,
+				notes: patients.notes,
+			})
+			.from(patients)
+			.where(eq(patients.organizationId, ORG)),
+	);
 	same("перенесено 3 пациента", loaded.length, 3);
 	check(
 		"телефон нормализован",
@@ -747,10 +728,12 @@ try {
 	console.log(
 		`       создано ${sqliteMigration.run.loadedRows}, карантин ${sqliteMigration.run.quarantinedRows}`,
 	);
-	const afterSqlite = await db
-		.select({ n: sql<string>`count(*)` })
-		.from(patients)
-		.where(eq(patients.organizationId, ORG));
+	const afterSqlite = await withTenantCtx(ORG, (tx) =>
+		tx
+			.select({ n: sql<string>`count(*)` })
+			.from(patients)
+			.where(eq(patients.organizationId, ORG)),
+	);
 	check(
 		"пациенты из SQLite добавились",
 		Number(afterSqlite[0]?.n) >= 6,
@@ -772,33 +755,35 @@ try {
 	);
 } finally {
 	console.log("\n--- Уборка");
-	await db
-		.delete(patients)
-		.where(eq(patients.organizationId, ORG))
-		.catch(() => undefined);
-	const runs = await db
-		.select({ id: migrationRuns.id })
-		.from(migrationRuns)
-		.where(eq(migrationRuns.organizationId, ORG));
-	for (const run of runs) {
-		await db
-			.delete(migrationQuarantineRecords)
-			.where(eq(migrationQuarantineRecords.runId, run.id));
-		await db
-			.delete(migrationStagingRecords)
-			.where(eq(migrationStagingRecords.runId, run.id));
-		await db
-			.delete(migrationReconciliations)
-			.where(eq(migrationReconciliations.runId, run.id));
-	}
-	await db
-		.delete(migrationEntityLinks)
-		.where(eq(migrationEntityLinks.organizationId, ORG));
-	await pool.query("delete from audit_events where organization_id = $1", [
-		ORG,
-	]);
-	await db.delete(migrationRuns).where(eq(migrationRuns.organizationId, ORG));
-	await db.delete(organizations).where(eq(organizations.id, ORG));
+	await withTenantCtx(ORG, async (tx) => {
+		await tx
+			.delete(patients)
+			.where(eq(patients.organizationId, ORG))
+			.catch(() => undefined);
+		const runs = await tx
+			.select({ id: migrationRuns.id })
+			.from(migrationRuns)
+			.where(eq(migrationRuns.organizationId, ORG));
+		for (const run of runs) {
+			await tx
+				.delete(migrationQuarantineRecords)
+				.where(eq(migrationQuarantineRecords.runId, run.id));
+			await tx
+				.delete(migrationStagingRecords)
+				.where(eq(migrationStagingRecords.runId, run.id));
+			await tx
+				.delete(migrationReconciliations)
+				.where(eq(migrationReconciliations.runId, run.id));
+		}
+		await tx
+			.delete(migrationEntityLinks)
+			.where(eq(migrationEntityLinks.organizationId, ORG));
+		await tx.execute(
+			sql`delete from audit_events where organization_id = ${ORG}`,
+		);
+		await tx.delete(migrationRuns).where(eq(migrationRuns.organizationId, ORG));
+		await tx.delete(organizations).where(eq(organizations.id, ORG));
+	}).catch(() => undefined);
 	await rm(workDir, { recursive: true, force: true });
 	console.log("Убрано.");
 

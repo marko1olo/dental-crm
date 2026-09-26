@@ -101,9 +101,9 @@ const tabsUnderTest: readonly TabUnderTest[] = [
 	{
 		file: "SettingsImportsTab.tsx",
 		bagName: "props",
-		minimumDestructuredNames: 400,
-		everyNameMustBeRead: false,
-		measuredDeadNames: 251,
+		minimumDestructuredNames: 100,
+		everyNameMustBeRead: true,
+		measuredDeadNames: 0,
 	},
 ];
 

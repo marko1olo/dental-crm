@@ -5,6 +5,9 @@ import {
 	IdentJsonParser,
 	InfodentCsvParser,
 	SmartImportEngine,
+	detectCsvDelimiter,
+	parseCsv,
+	importProgressManager,
 } from "./index.js";
 
 describe("Legacy MIS Import Parsers and SmartImportEngine", () => {
@@ -101,6 +104,53 @@ describe("Legacy MIS Import Parsers and SmartImportEngine", () => {
 			assert.equal(result.patients.length, 1);
 			assert.equal(result.patients[0].fullName, "Васильев Василий Васильевич");
 			assert.equal(result.patients[0].phone, "+79219876543");
+		});
+	});
+
+	describe("Universal CsvParser", () => {
+		it("detects semicolons, commas, tabs, and pipes", () => {
+			assert.equal(detectCsvDelimiter("a;b;c\n1;2;3"), ";");
+			assert.equal(detectCsvDelimiter("a,b,c\n1,2,3"), ",");
+			assert.equal(detectCsvDelimiter("a\tb\tc\n1\t2\t3"), "\t");
+			assert.equal(detectCsvDelimiter("a|b|c\n1|2|3"), "|");
+		});
+
+		it("parses CSV with RFC 4180 quotes, escaped quotes, and newlines inside cells", () => {
+			const content = 'col1;col2;col3\n"val;1";"hello ""world""";"line1\nline2"';
+			const res = parseCsv(content, { delimiter: ";" });
+			assert.equal(res.rows.length, 1);
+			assert.equal(res.rows[0]["col1"], "val;1");
+			assert.equal(res.rows[0]["col2"], 'hello "world"');
+			assert.equal(res.rows[0]["col3"], "line1\nline2");
+		});
+	});
+
+	describe("SmartImportProgressManager (SSE Streaming)", () => {
+		it("tracks task events and notifies broadcast listeners", () => {
+			let receivedEvent: any = null;
+			const unsubscribe = (event: any) => {
+				receivedEvent = event;
+			};
+			importProgressManager.on("broadcast", unsubscribe);
+
+			importProgressManager.updateProgress({
+				taskId: "task-test-1",
+				phase: "parsing",
+				percent: 45,
+				processed: 450,
+				total: 1000,
+				message: "Разбор пациентов из выгрузки",
+			});
+
+			assert.ok(receivedEvent);
+			assert.equal(receivedEvent.taskId, "task-test-1");
+			assert.equal(receivedEvent.percent, 45);
+			assert.equal(receivedEvent.phase, "parsing");
+
+			const current = importProgressManager.getProgress("task-test-1");
+			assert.equal(current?.processed, 450);
+
+			importProgressManager.off("broadcast", unsubscribe);
 		});
 	});
 
