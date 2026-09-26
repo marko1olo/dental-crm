@@ -1,0 +1,25 @@
+{
+	"name": "@dental/cloud-relay",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"main": "dist/index.js",
+	"scripts": {
+		"build": "tsc",
+		"start": "node dist/index.js",
+		"dev": "tsx watch src/index.ts",
+		"test": "node --max-old-space-size=2048 --test-timeout=10000 --import tsx --test \"tests/**/*.test.ts\""
+	},
+	"dependencies": {
+		"dotenv": "^16.5.0",
+		"fastify": "^5.3.3",
+		"ws": "^8.21.0",
+		"zod": "^3.24.4"
+	},
+	"devDependencies": {
+		"@types/node": "^22.15.18",
+		"@types/ws": "^8.5.14",
+		"tsx": "^4.19.4",
+		"typescript": "^5.8.3"
+	}
+}
