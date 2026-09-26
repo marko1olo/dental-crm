@@ -19,6 +19,7 @@ import {
 	calculateAngleFromHandleDrag,
 	calculateAngleFromShiftDrag,
 	calculateCrosshairDragWorldMm,
+	clampCoordinateToVolume,
 	getCanvasPointerPos,
 	getRotationHandles,
 	hitTestCrosshairCenter,
@@ -688,19 +689,19 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		}
 		if (volume) {
 			setCrosshairMm((prev) => {
+				let nx = prev.x;
+				let ny = prev.y;
+				let nz = prev.z;
 				if (viewport === "axial") {
-					const nz = prev.z + delta * volume.spacingMm.z;
-					return { ...prev, z: Math.max(-volume.physicalSizeMm.z / 2, Math.min(volume.physicalSizeMm.z / 2, nz)) };
+					nz += delta * volume.spacingMm.z;
+				} else if (viewport === "coronal") {
+					ny += delta * volume.spacingMm.y;
+				} else if (viewport === "sagittal") {
+					nx += delta * volume.spacingMm.x;
+				} else {
+					return prev;
 				}
-				if (viewport === "coronal") {
-					const ny = prev.y + delta * volume.spacingMm.y;
-					return { ...prev, y: Math.max(-volume.physicalSizeMm.y / 2, Math.min(volume.physicalSizeMm.y / 2, ny)) };
-				}
-				if (viewport === "sagittal") {
-					const nx = prev.x + delta * volume.spacingMm.x;
-					return { ...prev, x: Math.max(-volume.physicalSizeMm.x / 2, Math.min(volume.physicalSizeMm.x / 2, nx)) };
-				}
-				return prev;
+				return clampCoordinateToVolume({ x: nx, y: ny, z: nz }, volume);
 			});
 		}
 	}, [activeTool, crossSections.length, volume, setTransforms, setActiveCrossSectionIdx, setCrosshairMm]);

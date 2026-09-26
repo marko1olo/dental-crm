@@ -182,28 +182,32 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 			const canvas = axialBaseCanvasRef.current;
 			const ctx = canvas.getContext("2d");
 			if (ctx) {
-				const { data, metadata } = extractObliqueMprSlice(volume, "axial", crosshairMm, obliqueAngles, {
+				const widthPx = volume.dimensions.width;
+				const heightPx = volume.dimensions.height;
+				if (!axialOffscreenRef.current) {
+					axialOffscreenRef.current = document.createElement("canvas");
+				}
+				const off = axialOffscreenRef.current;
+				if (off.width !== widthPx || off.height !== heightPx) {
+					off.width = widthPx;
+					off.height = heightPx;
+				}
+				const offCtx = off.getContext("2d");
+				if (offCtx) {
+					if (!axialImgDataRef.current || axialImgDataRef.current.width !== widthPx || axialImgDataRef.current.height !== heightPx) {
+						axialImgDataRef.current = offCtx.createImageData(widthPx, heightPx);
+					}
+				}
+				const { metadata } = extractObliqueMprSlice(volume, "axial", crosshairMm, obliqueAngles, {
 					windowWidth,
 					windowLevel,
 					invert: invertColors,
 					slabMode,
 					slabThicknessMm,
 					interpolation: "trilinear",
+					outputBuffer: axialImgDataRef.current?.data,
 				});
-				if (!axialOffscreenRef.current) {
-					axialOffscreenRef.current = document.createElement("canvas");
-				}
-				const off = axialOffscreenRef.current;
-				if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
-					off.width = metadata.widthPx;
-					off.height = metadata.heightPx;
-				}
-				const offCtx = off.getContext("2d");
-				if (offCtx) {
-					if (!axialImgDataRef.current || axialImgDataRef.current.width !== metadata.widthPx || axialImgDataRef.current.height !== metadata.heightPx) {
-						axialImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
-					}
-					axialImgDataRef.current.data.set(data);
+				if (offCtx && axialImgDataRef.current) {
 					offCtx.putImageData(axialImgDataRef.current, 0, 0);
 				}
 				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
@@ -225,28 +229,32 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 			const canvas = coronalBaseCanvasRef.current;
 			const ctx = canvas.getContext("2d");
 			if (ctx) {
-				const { data, metadata } = extractObliqueMprSlice(volume, "coronal", crosshairMm, obliqueAngles, {
+				const widthPx = volume.dimensions.width;
+				const heightPx = Math.max(1, Math.round((volume.dimensions.depth * volume.spacingMm.z) / (volume.spacingMm.x || 1.0)));
+				if (!coronalOffscreenRef.current) {
+					coronalOffscreenRef.current = document.createElement("canvas");
+				}
+				const off = coronalOffscreenRef.current;
+				if (off.width !== widthPx || off.height !== heightPx) {
+					off.width = widthPx;
+					off.height = heightPx;
+				}
+				const offCtx = off.getContext("2d");
+				if (offCtx) {
+					if (!coronalImgDataRef.current || coronalImgDataRef.current.width !== widthPx || coronalImgDataRef.current.height !== heightPx) {
+						coronalImgDataRef.current = offCtx.createImageData(widthPx, heightPx);
+					}
+				}
+				const { metadata } = extractObliqueMprSlice(volume, "coronal", crosshairMm, obliqueAngles, {
 					windowWidth,
 					windowLevel,
 					invert: invertColors,
 					slabMode,
 					slabThicknessMm,
 					interpolation: "trilinear",
+					outputBuffer: coronalImgDataRef.current?.data,
 				});
-				if (!coronalOffscreenRef.current) {
-					coronalOffscreenRef.current = document.createElement("canvas");
-				}
-				const off = coronalOffscreenRef.current;
-				if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
-					off.width = metadata.widthPx;
-					off.height = metadata.heightPx;
-				}
-				const offCtx = off.getContext("2d");
-				if (offCtx) {
-					if (!coronalImgDataRef.current || coronalImgDataRef.current.width !== metadata.widthPx || coronalImgDataRef.current.height !== metadata.heightPx) {
-						coronalImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
-					}
-					coronalImgDataRef.current.data.set(data);
+				if (offCtx && coronalImgDataRef.current) {
 					offCtx.putImageData(coronalImgDataRef.current, 0, 0);
 				}
 				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
@@ -268,28 +276,32 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 			const canvas = sagittalBaseCanvasRef.current;
 			const ctx = canvas.getContext("2d");
 			if (ctx) {
-				const { data, metadata } = extractObliqueMprSlice(volume, "sagittal", crosshairMm, obliqueAngles, {
+				const widthPx = volume.dimensions.height;
+				const heightPx = Math.max(1, Math.round((volume.dimensions.depth * volume.spacingMm.z) / (volume.spacingMm.y || 1.0)));
+				if (!sagittalOffscreenRef.current) {
+					sagittalOffscreenRef.current = document.createElement("canvas");
+				}
+				const off = sagittalOffscreenRef.current;
+				if (off.width !== widthPx || off.height !== heightPx) {
+					off.width = widthPx;
+					off.height = heightPx;
+				}
+				const offCtx = off.getContext("2d");
+				if (offCtx) {
+					if (!sagittalImgDataRef.current || sagittalImgDataRef.current.width !== widthPx || sagittalImgDataRef.current.height !== heightPx) {
+						sagittalImgDataRef.current = offCtx.createImageData(widthPx, heightPx);
+					}
+				}
+				const { metadata } = extractObliqueMprSlice(volume, "sagittal", crosshairMm, obliqueAngles, {
 					windowWidth,
 					windowLevel,
 					invert: invertColors,
 					slabMode,
 					slabThicknessMm,
 					interpolation: "trilinear",
+					outputBuffer: sagittalImgDataRef.current?.data,
 				});
-				if (!sagittalOffscreenRef.current) {
-					sagittalOffscreenRef.current = document.createElement("canvas");
-				}
-				const off = sagittalOffscreenRef.current;
-				if (off.width !== metadata.widthPx || off.height !== metadata.heightPx) {
-					off.width = metadata.widthPx;
-					off.height = metadata.heightPx;
-				}
-				const offCtx = off.getContext("2d");
-				if (offCtx) {
-					if (!sagittalImgDataRef.current || sagittalImgDataRef.current.width !== metadata.widthPx || sagittalImgDataRef.current.height !== metadata.heightPx) {
-						sagittalImgDataRef.current = offCtx.createImageData(metadata.widthPx, metadata.heightPx);
-					}
-					sagittalImgDataRef.current.data.set(data);
+				if (offCtx && sagittalImgDataRef.current) {
 					offCtx.putImageData(sagittalImgDataRef.current, 0, 0);
 				}
 				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {

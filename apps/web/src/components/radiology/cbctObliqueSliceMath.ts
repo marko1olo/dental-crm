@@ -87,10 +87,15 @@ export function sampleVoxelHUTrilinear(
 	const c1 = c01 * (1.0 - ty) + c11 * ty;
 
 	const rawHu = c0 * (1.0 - tz) + c1 * tz;
-	const slope = (volume as { rescaleSlope?: number }).rescaleSlope ?? 1;
-	const intercept = (volume as { rescaleIntercept?: number }).rescaleIntercept ?? 0;
-	const scaled = rawHu * slope + intercept;
-	return Math.max(-32768, Math.min(32767, Math.round(scaled)));
+	const rescaleSlope = (volume as { rescaleSlope?: number }).rescaleSlope;
+	const rescaleIntercept = (volume as { rescaleIntercept?: number }).rescaleIntercept;
+	if (rescaleSlope !== undefined || rescaleIntercept !== undefined) {
+		const slope = rescaleSlope ?? 1;
+		const intercept = rescaleIntercept ?? 0;
+		const scaled = rawHu * slope + intercept;
+		return Math.max(-1000, Math.min(3071, Math.round(scaled)));
+	}
+	return Math.max(-32768, Math.min(32767, Math.round(rawHu)));
 }
 
 /**

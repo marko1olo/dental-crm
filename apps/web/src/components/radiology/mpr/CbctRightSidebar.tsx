@@ -3,6 +3,7 @@ import {
 	Activity,
 	AlertTriangle,
 	Box,
+	Calendar,
 	Camera,
 	Check,
 	ChevronLeft,
@@ -11,6 +12,8 @@ import {
 	Compass,
 	FileText,
 	Info,
+	Printer,
+	Receipt,
 	RotateCcw,
 	Save,
 	Search,
@@ -92,6 +95,9 @@ export interface CbctRightSidebarProps {
 	readonly setImplantEntryDepthMm: React.Dispatch<React.SetStateAction<number>>;
 	readonly handleExportToEmr: () => void;
 	readonly handleExportPdfReport: () => void;
+	readonly handleExportToPlan: () => void;
+	readonly handleExportToSchedule: () => void;
+	readonly handleExportToFinance?: () => void;
 }
 
 export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
@@ -147,6 +153,9 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 	setImplantEntryDepthMm,
 	handleExportToEmr,
 	handleExportPdfReport,
+	handleExportToPlan,
+	handleExportToSchedule,
+	handleExportToFinance,
 }) => {
 	if (!isSidebarOpen && mobileActiveTab !== "planner") {
 		return null;
@@ -694,41 +703,61 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 						</div>
 
 						{/* 1-CLICK CLINICAL ACTION BUTTONS (TIER 1 HOT PATH) */}
-						<div className="flex flex-col gap-2 pt-2 border-t border-zinc-800">
-							<button
-								type="button"
-								onClick={() => {
-									showToast(`Имплантат ${currentImplantSpec.brand.toUpperCase()} Ø${currentImplantSpec.diameterMm}x${currentImplantSpec.lengthMm} сохранен в план лечения (${activeCrossSection?.nearestToothFdi ? `#${activeCrossSection.nearestToothFdi}` : "без зуба"})`, "success");
-								}}
-								className="w-full py-2.5 px-3 rounded-md bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-xs flex items-center justify-center gap-2 transition-colors min-h-[44px] shadow-sm shadow-cyan-600/30 cursor-pointer"
-								data-testid="add-implant-to-plan-btn"
-								title="Сохранить имплантат в план лечения"
-							>
-								<Save className="w-4 h-4" />
-								<span>Сохранить в план лечения (18 500 ₽)</span>
-							</button>
+						<div className="flex flex-col gap-1.5 pt-2 border-t border-zinc-800">
+							<div className="grid grid-cols-2 gap-1.5">
+								<button
+									type="button"
+									onClick={handleExportToPlan}
+									className="w-full py-2 px-2 rounded-md bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all min-h-[42px] shadow-sm shadow-cyan-500/20 active:scale-98 cursor-pointer"
+									data-testid="add-implant-to-plan-btn"
+									title="Сохранить имплантат и замеры кости в план лечения (МЗ РФ 804н A16.07.054) и зубную формулу"
+								>
+									<Save className="w-3.5 h-3.5 shrink-0" />
+									<span className="truncate">+ В план & смету</span>
+								</button>
+								<button
+									type="button"
+									onClick={handleExportToFinance}
+									className="w-full py-2 px-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all min-h-[42px] shadow-sm shadow-emerald-600/20 active:scale-98 cursor-pointer"
+									data-testid="cbct-btn-export-finance"
+									title="Добавить услугу КТ челюстей (A06.07.012, 3800 ₽) в финансовый акт визита и план"
+								>
+									<Check className="w-3.5 h-3.5 shrink-0" />
+									<span className="truncate">+ КТ в акт (804н)</span>
+								</button>
+							</div>
 
-							<div className="grid grid-cols-3 gap-1.5">
+							<div className="grid grid-cols-4 gap-1">
 								<button
 									type="button"
 									onClick={handleExportToEmr}
-									className="py-2 px-1.5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-100 border border-zinc-800 hover:border-cyan-500/60 text-[10px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px]"
+									className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-100 border border-zinc-800 hover:border-cyan-500/60 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
 									data-testid="cbct-btn-export-emr"
 									data-testid-legacy="copy-diary-btn"
-									title="Копировать снимок и протокол в карту 043/у"
+									title="Записать протокол КТ и замеры кости в ЭМК и дневник 043/у"
 								>
-									<Camera className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-									<span>В ЭМК</span>
+									<FileText className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+									<span className="truncate">В ЭМК</span>
+								</button>
+								<button
+									type="button"
+									onClick={handleExportToSchedule}
+									className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-emerald-300 hover:text-emerald-200 border border-zinc-800 hover:border-emerald-500/60 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
+									data-testid="cbct-btn-export-schedule"
+									title="Создать черновик записи на операцию имплантации в расписании"
+								>
+									<Calendar className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+									<span className="truncate">В запись</span>
 								</button>
 								<button
 									type="button"
 									onClick={handleExportPdfReport}
-									className="py-2 px-1.5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-zinc-800 hover:border-amber-500/60 text-[10px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px]"
+									className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-zinc-800 hover:border-amber-500/60 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
 									data-testid="cbct-btn-export-pdf"
 									title="Сформировать печатный A4 протокол / PDF"
 								>
-									<FileText className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-									<span>PDF Отчет</span>
+									<Printer className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+									<span className="truncate">PDF</span>
 								</button>
 								<button
 									type="button"
@@ -738,12 +767,12 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 										setImplantAngulationDeg(0);
 										showToast("Положение имплантата центрировано на гребне", "info");
 									}}
-									className="py-2 px-1.5 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-800 text-[10px] font-semibold flex items-center justify-center gap-1 transition-colors min-h-[44px]"
+									className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-800 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
 									data-testid="reset-center-btn"
 									title="Центрировать имплантат на гребне"
 								>
 									<Compass className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-									<span>Центр</span>
+									<span className="truncate">Центр</span>
 								</button>
 							</div>
 						</div>
