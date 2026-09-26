@@ -256,16 +256,15 @@ describe("Hardware Studio — Фискальные регистраторы 54-�
 
 		const receipt = emulator.printFiscalReceipt({
 			type: "sell",
-			taxationType: "usnIncome",
+			taxationType: "usn_income",
 			operator: { name: "Иванова А. С." },
 			items: [
 				{
-					type: "position",
 					name: "Прием (осмотр, консультация) врача-стоматолога",
 					price: 1500.0,
 					quantity: 1,
 					amount: 1500.0,
-					tax: { type: "none" },
+					tax: { type: "vat_none" },
 				},
 			],
 			total: 1500.0,
@@ -284,7 +283,14 @@ describe("Hardware Studio — Фискальные регистраторы 54-�
 		const res1 = shtrih.printReceipt({
 			operatorName: "Смирнова В. П.",
 			totalKopecks: 250000,
-			operationType: "income",
+			operationType: 1,
+			items: [
+				{
+					name: "Прием врача",
+					priceKopecks: 250000,
+					quantity: 1,
+				},
+			],
 		});
 
 		assert.equal(res1.success, true);

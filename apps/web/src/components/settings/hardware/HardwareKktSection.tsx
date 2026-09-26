@@ -107,16 +107,15 @@ export function HardwareKktSection() {
 					const emulator = new AtolKkt10Emulator();
 					const result = emulator.printFiscalReceipt({
 						type: "sell",
-						taxationType: "usnIncome",
+						taxationType: "usn_income",
 						operator: { name: cashier },
 						items: [
 							{
-								type: "position",
 								name: "Тестовая медицинская услуга (Первичный осмотр)",
 								price: 10.0,
 								quantity: 1,
 								amount: 10.0,
-								tax: { type: "none" },
+								tax: { type: "vat_none" },
 							},
 						],
 						total: 10.0,
@@ -140,8 +139,19 @@ export function HardwareKktSection() {
 					const shtrih = new ShtrihMKktEmulator();
 					const result = shtrih.printReceipt({
 						operatorName: cashier,
+						operationType: 1,
 						totalKopecks: 1000,
-						operationType: "income",
+						items: [
+							{
+								name: "Тестовая медицинская услуга (Первичный осмотр)",
+								priceKopecks: 1000,
+								quantity: 1,
+								vatRate: 6,
+								paymentMethod: 4,
+								paymentSubject: 4,
+							},
+						],
+						cashKopecks: 1000,
 					});
 					if (result.success && result.fiscalDocNum) {
 						const rec: TestReceiptResult = {
@@ -161,7 +171,7 @@ export function HardwareKktSection() {
 			}
 
 			// Real Hardware Printing
-			const printRes = await KktLanPrinterService.printFiscalReceipt({
+			const printRes = await KktLanPrinterService.printReceipt({
 				operationType: "income",
 				cashierFullName: cashier,
 				items: [

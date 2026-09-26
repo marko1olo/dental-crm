@@ -88,6 +88,7 @@ export type DoctorSpecialtyKey =
 	| "surgeon"
 	| "orthopedist"
 	| "orthodontist"
+	| "periodontist"
 	| "pediatric"
 	| "universal";
 
@@ -121,6 +122,9 @@ export interface FavoriteMedicationOption {
 	readonly dosage: string;
 	readonly signa: string;
 	readonly rpLatin: string;
+	readonly maxDailyDose?: string | undefined;
+	readonly maxDurationDays?: number | undefined;
+	readonly overdoseWarning?: string | undefined;
 }
 
 export interface DoctorPreferences {
@@ -230,6 +234,9 @@ export const FAVORITE_MEDICATION_OPTIONS: readonly FavoriteMedicationOption[] = 
 		dosage: "875/125 мг N. 14",
 		signa: "По 1 таблетке 2 раза в день во время еды, 7 дней.",
 		rpLatin: "Rp.: Tab. Amoxicillini et Acidi clavulanici 875/125 mg N. 14\nD.S. Внутрь по 1 таблетке 2 раза в день во время еды.",
+		maxDailyDose: "1750 мг/сут амоксициллина (по 1 таб. 2 раза)",
+		maxDurationDays: 14,
+		overdoseWarning: "Риск антибиотик-ассоциированной диареи и диспепсии. Принимать строго во время еды.",
 	},
 	{
 		id: "nimesil_100",
@@ -240,6 +247,35 @@ export const FAVORITE_MEDICATION_OPTIONS: readonly FavoriteMedicationOption[] = 
 		dosage: "100 мг N. 9 пакетики",
 		signa: "По 1 пакетику 2 раза в день после еды при болях, 3–5 дней.",
 		rpLatin: "Rp.: Nimesulidi 100 mg N. 9 in gran.\nD.S. Внутрь по 1 пакетику 2 раза в день после еды, растворив в 100 мл воды.",
+		maxDailyDose: "200 мг/сут (по 1 пакетику 2 раза)",
+		maxDurationDays: 5,
+		overdoseWarning: "Гепатотоксичность при превышении дозировки. Противопоказан детям до 12 лет и при язве ЖКТ.",
+	},
+	{
+		id: "nise_100",
+		tradeName: "Найз (100 мг)",
+		mnn: "Нимесулид",
+		category: "nsaid",
+		categoryLabel: "НПВП / Обезболивающее",
+		dosage: "100 мг N. 20 таб.",
+		signa: "По 1 таблетке 2 раза в день после еды при болях, не более 5 дней.",
+		rpLatin: "Rp.: Tab. Nimesulidi 100 mg N. 20\nD.S. Внутрь по 1 таблетке 2 раза в день после еды.",
+		maxDailyDose: "200 мг/сут (максимум 2 таблетки в день)",
+		maxDurationDays: 5,
+		overdoseWarning: "Защита ЖКТ: строго после еды. Противопоказан при острой язве и тяжелой печеночной недостаточности.",
+	},
+	{
+		id: "dexalgin_25",
+		tradeName: "Дексалгин (25 мг)",
+		mnn: "Декскетопрофен",
+		category: "nsaid",
+		categoryLabel: "НПВП быстрого действия (купирование боли)",
+		dosage: "25 мг N. 10 таб.",
+		signa: "По 1 таблетке каждые 8 часов при выраженной боли (макс 75 мг/сут, не более 3–5 дней).",
+		rpLatin: "Rp.: Tab. Dexketoprofeni 25 mg N. 10\nD.S. Внутрь по 1 таблетке каждые 8 часов при острой боли.",
+		maxDailyDose: "75 мг/сут (максимум 3 таблетки в день)",
+		maxDurationDays: 5,
+		overdoseWarning: "Быстрое анальгезирующее действие. Не превышать суточный лимит 75 мг во избежание гастропатии.",
 	},
 	{
 		id: "chlorhexidine_005",
@@ -250,6 +286,9 @@ export const FAVORITE_MEDICATION_OPTIONS: readonly FavoriteMedicationOption[] = 
 		dosage: "0.05% 100 мл",
 		signa: "Ротовые ванночки по 1 минуте 3 раза в день после еды, 7 дней (не полоскать активно!).",
 		rpLatin: "Rp.: Sol. Chlorhexidini bigluconatis 0.05% - 100 ml\nD.S. Для ротовых ванночек 3 раза в день.",
+		maxDailyDose: "3–4 ванночки по 10-15 мл",
+		maxDurationDays: 10,
+		overdoseWarning: "Не полоскать активно после удаления зуба! При курсе >10 дней возможно обратимое потемнение эмали.",
 	},
 	{
 		id: "cyfran_st",
@@ -260,6 +299,9 @@ export const FAVORITE_MEDICATION_OPTIONS: readonly FavoriteMedicationOption[] = 
 		dosage: "500/600 мг N. 10",
 		signa: "По 1 таблетке 2 раза в день после еды, 5 дней.",
 		rpLatin: "Rp.: Tab. 'Cyfran ST' N. 10\nD.S. Внутрь по 1 таблетке 2 раза в день.",
+		maxDailyDose: "1000 мг ципрофлоксацина + 1200 мг тинидазола",
+		maxDurationDays: 7,
+		overdoseWarning: "Категорически запрещен алкоголь (дисульфирамоподобный синдром тинидазола). Риск тендинита.",
 	},
 	{
 		id: "ibuprofen_400",
@@ -270,6 +312,9 @@ export const FAVORITE_MEDICATION_OPTIONS: readonly FavoriteMedicationOption[] = 
 		dosage: "400 мг N. 20",
 		signa: "По 1 таблетке 2-3 раза в день после еды, не более 1200 мг в сутки.",
 		rpLatin: "Rp.: Ibuprofeni 400 mg N. 20 in tab.\nD.S. По 1 таблетке 2-3 раза в день после еды.",
+		maxDailyDose: "1200 мг/сут (максимум 3 таблетки по 400 мг)",
+		maxDurationDays: 5,
+		overdoseWarning: "Не превышать 1200 мг в сутки без назначения врача. Принимать после приема пищи.",
 	},
 	{
 		id: "suprastin_25",
@@ -280,6 +325,9 @@ export const FAVORITE_MEDICATION_OPTIONS: readonly FavoriteMedicationOption[] = 
 		dosage: "25 мг N. 20",
 		signa: "По 1 таблетке на ночь во время еды, 3-5 дней для уменьшения отека.",
 		rpLatin: "Rp.: Tab. Chloropyramini 25 mg N. 20\nD.S. По 1 таблетке вечером во время еды.",
+		maxDailyDose: "100 мг/сут (по 1 таблетке до 4 раз)",
+		maxDurationDays: 7,
+		overdoseWarning: "Вызывает сонливость и седацию. Не садиться за руль, не комбинировать со спиртным.",
 	},
 	{
 		id: "holisal_gel",
@@ -290,6 +338,9 @@ export const FAVORITE_MEDICATION_OPTIONS: readonly FavoriteMedicationOption[] = 
 		dosage: "10 г туба",
 		signa: "Полоской 1 см наносить на десну 2-3 раза в день за 15 минут до еды.",
 		rpLatin: "Rp.: Gel. 'Cholisal' 10.0\nD.S. Наносить на десну 2-3 раза в день.",
+		maxDailyDose: "3–4 аппликации в сутки",
+		maxDurationDays: 14,
+		overdoseWarning: "Только местное нанесение. Не глотать в больших количествах.",
 	},
 	{
 		id: "tranexamic_500",
@@ -300,6 +351,9 @@ export const FAVORITE_MEDICATION_OPTIONS: readonly FavoriteMedicationOption[] = 
 		dosage: "500 мг N. 10",
 		signa: "По 1 таблетке 3 раза в день при подтекании лунки, 2-3 дня.",
 		rpLatin: "Rp.: Acidi tranexamici 500 mg N. 10\nD.S. Внутрь по 1 таблетке 3 раза в день.",
+		maxDailyDose: "1500 мг/сут (по 1 таб. 3 раза)",
+		maxDurationDays: 4,
+		overdoseWarning: "Противопоказан при тромбозах, тромбофлебите и инфаркте в анамнезе.",
 	},
 	{
 		id: "metrogyl_denta",
@@ -310,6 +364,9 @@ export const FAVORITE_MEDICATION_OPTIONS: readonly FavoriteMedicationOption[] = 
 		dosage: "20 г туба",
 		signa: "Наносить на область десен 2 раза в день после гигиены, 7–10 дней (не смывать).",
 		rpLatin: "Rp.: Gel. 'Metrogyl Denta' 20.0\nD.S. Наносить на десну 2 раза в день после чистки зубов.",
+		maxDailyDose: "2 аппликации в день",
+		maxDurationDays: 10,
+		overdoseWarning: "После нанесения не принимать пищу и не пить воду в течение 30 минут.",
 	},
 	{
 		id: "ketorol_express_10",
@@ -320,6 +377,9 @@ export const FAVORITE_MEDICATION_OPTIONS: readonly FavoriteMedicationOption[] = 
 		dosage: "10 мг N. 20 таб. дисперг.",
 		signa: "По 1 таблетке под язык при интенсивной боли (не более 4 таб. в сутки, не более 3-5 дней).",
 		rpLatin: "Rp.: Tab. Ketorolaci 10 mg N. 20\nD.S. Под язык по 1 таблетке при острой боли.",
+		maxDailyDose: "40 мг/сут (максимум 4 таблетки под язык)",
+		maxDurationDays: 5,
+		overdoseWarning: "Мощный анальгетик SOS. Строго не более 4 таблеток в сутки! Высокий риск НПВП-гастропатии.",
 	},
 	{
 		id: "azithromycin_500",
@@ -330,6 +390,9 @@ export const FAVORITE_MEDICATION_OPTIONS: readonly FavoriteMedicationOption[] = 
 		dosage: "500 мг N. 3",
 		signa: "По 1 таблетке 1 раз в сутки за 1 час до или через 2 часа после еды, 3 дня.",
 		rpLatin: "Rp.: Tab. Azithromycini 500 mg N. 3\nD.S. Внутрь по 1 таблетке 1 раз в день, курс 3 дня.",
+		maxDailyDose: "500 мг/сут (строго 1 таблетка в сутки)",
+		maxDurationDays: 3,
+		overdoseWarning: "Пролонгированный макролид. Не принимать чаще 1 раза в сутки. Курс ровно 3 дня.",
 	},
 ];
 
@@ -428,6 +491,20 @@ export const useDoctorPreferencesStore = create<DoctorPreferencesState>(
 						favoriteMedicationIds: [
 							"nimesil_100",
 							"holisal_gel",
+						],
+					};
+					break;
+				case "periodontist":
+					presetPatch = {
+						specialty,
+						defaultVisitDuration: 45,
+						favoriteAnesthetic: "articaine_200k",
+						defaultIsolation: "optragate",
+						favoriteMedicationIds: [
+							"chlorhexidine_005",
+							"metrogyl_denta",
+							"holisal_gel",
+							"nise_100",
 						],
 					};
 					break;

@@ -67,8 +67,8 @@ export const StaffSecurityTab: React.FC<StaffSecurityTabProps> = ({
 
 	// 2FA state
 	const [is2FaEnabled, setIs2FaEnabled] = useState<boolean>(() => {
-		// По умолчанию для владельца и главврача 2FA включена, либо из локального состояния
-		return staffMember.role === "owner" || staffMember.role === "head_doctor";
+		// По умолчанию для владельца 2FA включена, либо из локального состояния
+		return staffMember.role === "owner";
 	});
 	const [isSaving2Fa, setIsSaving2Fa] = useState(false);
 

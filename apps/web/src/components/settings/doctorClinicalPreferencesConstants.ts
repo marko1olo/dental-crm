@@ -98,6 +98,7 @@ export const SPECIALTY_PRESET_ITEMS: readonly SpecialtyPresetItem[] = [
 	{ key: "surgeon", label: "Хирург-имплантолог" },
 	{ key: "orthopedist", label: "Ортопед" },
 	{ key: "orthodontist", label: "Ортодонт" },
+	{ key: "periodontist", label: "Пародонтолог" },
 	{ key: "pediatric", label: "Детский врач" },
 	{ key: "universal", label: "Универсальный" },
 ];

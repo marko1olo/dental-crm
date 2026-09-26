@@ -25,7 +25,7 @@ import {
 	parseCryptoProError,
 	signBase64WithCertificate,
 } from "../../utils/cryptoPro";
-import type { DiaryState } from "../visit/useVisitDiary";
+import type { DiaryState } from "../useVisitDiaryLogic";
 import {
 	DENTAL_MEDICATIONS_CATALOG,
 	type DentalMedicationPreset,
@@ -478,14 +478,14 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 			if (patient?.id) {
 				signPrescriptionOnBackend(customSeriesNumber, {
 					pkcs7Signature: signature,
-					certificateSerialNumber: genuineUkep.certificateSerialNumber,
-					certificateThumbprint: genuineUkep.certificateThumbprint,
-					certificateIssuer: genuineUkep.certificateIssuer,
-					certificateValidFrom: genuineUkep.certificateValidFrom,
-					certificateValidTo: genuineUkep.certificateValidTo,
+					certificateSerialNumber: genuineUkep.certificateSerialNumber || undefined,
+					certificateThumbprint: genuineUkep.certificateThumbprint || undefined,
+					certificateIssuer: genuineUkep.certificateIssuer || undefined,
+					certificateValidFrom: genuineUkep.certificateValidFrom || undefined,
+					certificateValidTo: genuineUkep.certificateValidTo || undefined,
 					doctorSnils: genuineUkep.doctorSnils || undefined,
-					signatureAlgorithm: genuineUkep.signatureAlgorithm,
-					egiszDocumentId: genuineUkep.egiszDocumentId,
+					signatureAlgorithm: genuineUkep.signatureAlgorithm || undefined,
+					egiszDocumentId: genuineUkep.egiszDocumentId || undefined,
 				}).catch((e) => console.warn("[PrescriptionPrintModal] UKEP backend sync notice:", e));
 			}
 		} catch (err) {

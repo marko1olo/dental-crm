@@ -305,7 +305,7 @@ export function HardwareScannerSection() {
 							</div>
 							<div>
 								<span style={{ color: "var(--muted)", fontSize: "11px" }}>Криптохвост:</span>
-								<div style={{ fontWeight: 600 }}>{scanResult.parsedGs1.cryptoTail ? "Присутствует" : "—"}</div>
+								<div style={{ fontWeight: 600 }}>{scanResult.parsedGs1.cryptoKey || scanResult.parsedGs1.cryptoSignature ? "Присутствует" : "—"}</div>
 							</div>
 							<div>
 								<span style={{ color: "var(--muted)", fontSize: "11px" }}>Статус Честный ЗНАК:</span>

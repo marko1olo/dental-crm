@@ -57,6 +57,7 @@ const SPECIALTY_PRESET_BUTTONS: readonly {
 	{ key: "surgeon", label: "Хирург-имплантолог" },
 	{ key: "orthopedist", label: "Ортопед" },
 	{ key: "orthodontist", label: "Ортодонт" },
+	{ key: "periodontist", label: "Пародонтолог" },
 	{ key: "pediatric", label: "Детский врач" },
 ];
 

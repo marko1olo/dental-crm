@@ -53,6 +53,8 @@ export interface InsuranceContract {
 	annualLimitRub: number | null;
 	isActive: boolean;
 	createdAt: string;
+	patientFranchisePct?: number | undefined;
+	requiresGuaranteeLetter?: boolean | undefined;
 }
 
 /** Как называется содержимое панели для трёх состояний. */
@@ -155,6 +157,14 @@ export function normalizeInsuranceContract(
 		annualLimitRub: annualLimitOrNull(record.annualLimitRub),
 		isActive: record.isActive !== false,
 		createdAt: textOrNull(record.createdAt) ?? "",
+		patientFranchisePct:
+			record.patientFranchisePct !== undefined
+				? coveragePercent(record.patientFranchisePct)
+				: undefined,
+		requiresGuaranteeLetter:
+			record.requiresGuaranteeLetter !== undefined
+				? Boolean(record.requiresGuaranteeLetter)
+				: undefined,
 	};
 }
 

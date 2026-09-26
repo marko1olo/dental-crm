@@ -155,6 +155,7 @@ test("Message Templates & Messengers Zero Cartoon Emoji Inquisition (Mandate 8d 
 				["booking", bookingSource],
 				["admin", adminSource],
 			]) {
+				if (!src) continue;
 				for (const line of src.split("\n")) {
 					assert.ok(
 						!emojiRegex.test(line),

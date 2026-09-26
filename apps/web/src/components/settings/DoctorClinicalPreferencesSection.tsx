@@ -41,6 +41,11 @@ import {
 	THEME_OPTIONS,
 } from "./doctorClinicalPreferencesConstants";
 import { buildDoctorPersonalizedTherapySnippet } from "./protocolSnippetHelpers";
+import {
+	DoctorAnesthesiaToxicityCalculator,
+	DoctorForm043TemplatesSection,
+	DoctorPrescriptions107Section,
+} from "./doctor";
 
 interface DoctorClinicalPreferencesSectionProps {
 	soundNotificationsMuted?: boolean | undefined;
@@ -63,6 +68,9 @@ export function DoctorClinicalPreferencesSection({
 	const themeMode = useThemeStore((s) => s.themeMode);
 	const setThemeMode = useThemeStore((s) => s.setThemeMode);
 
+	const [clinicalSubTab, setClinicalSubTab] = useState<
+		"materials" | "anesthesia" | "templates_043" | "prescriptions_107"
+	>("materials");
 	const [activeMaterialTab, setActiveMaterialTab] = useState<MaterialCategoryTab>("composites");
 	const [materialSearchQuery, setMaterialSearchQuery] = useState<string>("");
 
@@ -238,8 +246,66 @@ export function DoctorClinicalPreferencesSection({
 					</div>
 				</div>
 
-				{/* 1. Длительность приёма по умолчанию */}
-				<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2">
+				{/* Подвкладки клинических настроек */}
+				<div className="flex items-center gap-1.5 border-b border-[var(--line)] pb-2 overflow-x-auto">
+					<button
+						type="button"
+						onClick={() => setClinicalSubTab("materials")}
+						className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border flex items-center gap-1.5 shrink-0 ${
+							clinicalSubTab === "materials"
+								? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs"
+								: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+						}`}
+					>
+						<Sparkles size={14} />
+						<span>Материалы и протокол ЕМК</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setClinicalSubTab("anesthesia")}
+						className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border flex items-center gap-1.5 shrink-0 ${
+							clinicalSubTab === "anesthesia"
+								? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs"
+								: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+						}`}
+					>
+						<Syringe size={14} />
+						<span>Токсичность анестезии</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setClinicalSubTab("templates_043")}
+						className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border flex items-center gap-1.5 shrink-0 ${
+							clinicalSubTab === "templates_043"
+								? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs"
+								: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+						}`}
+					>
+						<FileText size={14} />
+						<span>Шаблоны 043/у (Дневники)</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setClinicalSubTab("prescriptions_107")}
+						className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border flex items-center gap-1.5 shrink-0 ${
+							clinicalSubTab === "prescriptions_107"
+								? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs"
+								: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+						}`}
+					>
+						<Pill size={14} />
+						<span>Рецепты 107-1/у (Фармакопея)</span>
+					</button>
+				</div>
+
+				{clinicalSubTab === "anesthesia" && <DoctorAnesthesiaToxicityCalculator />}
+				{clinicalSubTab === "templates_043" && <DoctorForm043TemplatesSection />}
+				{clinicalSubTab === "prescriptions_107" && <DoctorPrescriptions107Section />}
+
+				{clinicalSubTab === "materials" && (
+					<>
+						{/* 1. Длительность приёма по умолчанию */}
+						<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2">
 					<div className="flex items-center justify-between">
 						<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 							<Clock size={15} className="text-[var(--teal)]" />
@@ -583,6 +649,8 @@ export function DoctorClinicalPreferencesSection({
 						})}
 					</div>
 				</div>
+					</>
+				)}
 
 				{/* 7. Тема оформления рабочего места */}
 				<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2">

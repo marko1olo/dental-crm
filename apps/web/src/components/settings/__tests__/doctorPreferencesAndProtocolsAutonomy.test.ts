@@ -144,21 +144,21 @@ describe("Doctor Clinical Preferences & Super-Settings Invariants (Mandates 8e, 
 		}
 
 		// Check Top 15 Composites in popularity order:
-		assert.strictEqual(COMPOSITE_OPTIONS[0].id, "filtek_ultimate"); // 1. Filtek Ultimate / Z250
-		assert.strictEqual(COMPOSITE_OPTIONS[1].id, "estelite_asteria"); // 2. Estelite Asteria
-		assert.strictEqual(COMPOSITE_OPTIONS[2].id, "gradia_direct"); // 3. Gradia Direct
-		assert.strictEqual(COMPOSITE_OPTIONS[3].id, "harmonize"); // 4. Harmonize
-		assert.strictEqual(COMPOSITE_OPTIONS[4].id, "charisma_classic"); // 5. Charisma Classic
-		assert.strictEqual(COMPOSITE_OPTIONS[5].id, "ceram_x_sphere_tec"); // 6. Ceram.x SphereTEC
-		assert.strictEqual(COMPOSITE_OPTIONS[6].id, "brilliant_everglow"); // 7. Brilliant EverGlow
-		assert.strictEqual(COMPOSITE_OPTIONS[7].id, "tetric_n_ceram"); // 8. Tetric N-Ceram
-		assert.strictEqual(COMPOSITE_OPTIONS[8].id, "omnichroma"); // 9. Omnichroma
-		assert.strictEqual(COMPOSITE_OPTIONS[9].id, "esthet_x_hd"); // 10. Esthet-X HD
-		assert.strictEqual(COMPOSITE_OPTIONS[10].id, "grandio_admira"); // 11. Grandio / Admira
-		assert.strictEqual(COMPOSITE_OPTIONS[11].id, "enamel_plus_hri"); // 12. Enamel Plus HRi
-		assert.strictEqual(COMPOSITE_OPTIONS[12].id, "clearfil_majesty_es2"); // 13. Clearfil Majesty ES-2
-		assert.strictEqual(COMPOSITE_OPTIONS[13].id, "spectrum_tph3"); // 14. Spectrum TPH3
-		assert.strictEqual(COMPOSITE_OPTIONS[14].id, "dentlight"); // 15. ДентЛайт (ВладМиВа)
+		assert.strictEqual(COMPOSITE_OPTIONS[0]!.id, "filtek_ultimate"); // 1. Filtek Ultimate / Z250
+		assert.strictEqual(COMPOSITE_OPTIONS[1]!.id, "estelite_asteria"); // 2. Estelite Asteria
+		assert.strictEqual(COMPOSITE_OPTIONS[2]!.id, "gradia_direct"); // 3. Gradia Direct
+		assert.strictEqual(COMPOSITE_OPTIONS[3]!.id, "harmonize"); // 4. Harmonize
+		assert.strictEqual(COMPOSITE_OPTIONS[4]!.id, "charisma_classic"); // 5. Charisma Classic
+		assert.strictEqual(COMPOSITE_OPTIONS[5]!.id, "ceram_x_sphere_tec"); // 6. Ceram.x SphereTEC
+		assert.strictEqual(COMPOSITE_OPTIONS[6]!.id, "brilliant_everglow"); // 7. Brilliant EverGlow
+		assert.strictEqual(COMPOSITE_OPTIONS[7]!.id, "tetric_n_ceram"); // 8. Tetric N-Ceram
+		assert.strictEqual(COMPOSITE_OPTIONS[8]!.id, "omnichroma"); // 9. Omnichroma
+		assert.strictEqual(COMPOSITE_OPTIONS[9]!.id, "esthet_x_hd"); // 10. Esthet-X HD
+		assert.strictEqual(COMPOSITE_OPTIONS[10]!.id, "grandio_admira"); // 11. Grandio / Admira
+		assert.strictEqual(COMPOSITE_OPTIONS[11]!.id, "enamel_plus_hri"); // 12. Enamel Plus HRi
+		assert.strictEqual(COMPOSITE_OPTIONS[12]!.id, "clearfil_majesty_es2"); // 13. Clearfil Majesty ES-2
+		assert.strictEqual(COMPOSITE_OPTIONS[13]!.id, "spectrum_tph3"); // 14. Spectrum TPH3
+		assert.strictEqual(COMPOSITE_OPTIONS[14]!.id, "dentlight"); // 15. ДентЛайт (ВладМиВа)
 
 		// Adhesives
 		assert.ok(ADHESIVE_OPTIONS.length >= 11, "Must provide at least 11 adhesive options");
@@ -172,21 +172,21 @@ describe("Doctor Clinical Preferences & Super-Settings Invariants (Mandates 8e, 
 		}
 
 		// Check Top 11 Adhesives in popularity order:
-		assert.strictEqual(ADHESIVE_OPTIONS[0].id, "optibond_fl"); // 1. OptiBond FL (IV поколение)
-		assert.strictEqual(ADHESIVE_OPTIONS[1].id, "clearfil_se_bond_2"); // 2. Clearfil SE Bond 2 (VI поколение)
-		assert.strictEqual(ADHESIVE_OPTIONS[2].id, "single_bond_universal"); // 3. Single Bond Universal (3M)
-		assert.strictEqual(ADHESIVE_OPTIONS[3].id, "prime_and_bond_universal"); // 4. Prime & Bond Universal
-		assert.strictEqual(ADHESIVE_OPTIONS[4].id, "g_premio_bond"); // 5. G-Premio BOND (GC)
-		assert.strictEqual(ADHESIVE_OPTIONS[5].id, "optibond_universal"); // 6. OptiBond Universal (Kerr)
-		assert.strictEqual(ADHESIVE_OPTIONS[6].id, "gluma_2bond"); // 7. Gluma 2Bond (Kulzer)
-		assert.strictEqual(ADHESIVE_OPTIONS[7].id, "tokuyama_universal_bond"); // 8. Tokuyama Universal Bond
-		assert.strictEqual(ADHESIVE_OPTIONS[8].id, "futurabond_u"); // 9. Futurabond U / M (Voco)
-		assert.strictEqual(ADHESIVE_OPTIONS[9].id, "adhese_universal"); // 10. Adhese Universal (Ivoclar)
-		assert.strictEqual(ADHESIVE_OPTIONS[10].id, "all_bond_universal"); // 11. All-Bond Universal (Bisco)
+		assert.strictEqual(ADHESIVE_OPTIONS[0]!.id, "optibond_fl"); // 1. OptiBond FL (IV поколение)
+		assert.strictEqual(ADHESIVE_OPTIONS[1]!.id, "clearfil_se_bond_2"); // 2. Clearfil SE Bond 2 (VI поколение)
+		assert.strictEqual(ADHESIVE_OPTIONS[2]!.id, "single_bond_universal"); // 3. Single Bond Universal (3M)
+		assert.strictEqual(ADHESIVE_OPTIONS[3]!.id, "prime_and_bond_universal"); // 4. Prime & Bond Universal
+		assert.strictEqual(ADHESIVE_OPTIONS[4]!.id, "g_premio_bond"); // 5. G-Premio BOND (GC)
+		assert.strictEqual(ADHESIVE_OPTIONS[5]!.id, "optibond_universal"); // 6. OptiBond Universal (Kerr)
+		assert.strictEqual(ADHESIVE_OPTIONS[6]!.id, "gluma_2bond"); // 7. Gluma 2Bond (Kulzer)
+		assert.strictEqual(ADHESIVE_OPTIONS[7]!.id, "tokuyama_universal_bond"); // 8. Tokuyama Universal Bond
+		assert.strictEqual(ADHESIVE_OPTIONS[8]!.id, "futurabond_u"); // 9. Futurabond U / M (Voco)
+		assert.strictEqual(ADHESIVE_OPTIONS[9]!.id, "adhese_universal"); // 10. Adhese Universal (Ivoclar)
+		assert.strictEqual(ADHESIVE_OPTIONS[10]!.id, "all_bond_universal"); // 11. All-Bond Universal (Bisco)
 
 		// Isolation
 		assert.ok(ISOLATION_OPTIONS.length >= 8, "Must provide at least 8 isolation options");
-		assert.strictEqual(ISOLATION_OPTIONS[0].id, "cofferdam"); // Sanctuary
+		assert.strictEqual(ISOLATION_OPTIONS[0]!.id, "cofferdam"); // Sanctuary
 		assert.ok(ISOLATION_OPTIONS.some((i) => i.id === "cofferdam_tor_vm")); // Тор ВМ
 		assert.ok(ISOLATION_OPTIONS.some((i) => i.id === "cofferdam_nic_tone")); // Nic Tone
 		assert.ok(ISOLATION_OPTIONS.some((i) => i.id === "cofferdam_ksk_dentech")); // KSK Dentech
@@ -197,10 +197,10 @@ describe("Doctor Clinical Preferences & Super-Settings Invariants (Mandates 8e, 
 
 		// Etchants
 		assert.ok(ETCHANT_OPTIONS.length >= 4, "Must provide at least 4 etching gel options");
-		assert.strictEqual(ETCHANT_OPTIONS[0].id, "ultra_etch"); // Ultra-Etch
-		assert.strictEqual(ETCHANT_OPTIONS[1].id, "scotchbond_etch"); // Scotchbond
-		assert.strictEqual(ETCHANT_OPTIONS[2].id, "total_etch"); // Total Etch
-		assert.strictEqual(ETCHANT_OPTIONS[3].id, "travis_vladmiva"); // Травис
+		assert.strictEqual(ETCHANT_OPTIONS[0]!.id, "ultra_etch"); // Ultra-Etch
+		assert.strictEqual(ETCHANT_OPTIONS[1]!.id, "scotchbond_etch"); // Scotchbond
+		assert.strictEqual(ETCHANT_OPTIONS[2]!.id, "total_etch"); // Total Etch
+		assert.strictEqual(ETCHANT_OPTIONS[3]!.id, "travis_vladmiva"); // Травис
 
 		// Test preference update
 		const store = useDoctorPreferencesStore.getState();
