@@ -1,13 +1,10 @@
 import {
 	AlertTriangle,
-	Bell,
 	Eye,
 	EyeOff,
 	KeyRound,
 	ShieldCheck,
 	User,
-	Volume2,
-	VolumeX,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
@@ -29,6 +26,8 @@ import {
 	passwordStrength,
 	type StaffProfile,
 } from "./settingsProfileLoad";
+import { DoctorClinicalPreferencesSection } from "./DoctorClinicalPreferencesSection";
+import { SettingsProfileYandexSection } from "./SettingsProfileYandexSection";
 
 interface SettingsProfileTabProps {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -110,77 +109,6 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 	const [newPin, setNewPin] = useState("");
 	const [confirmPin, setConfirmPin] = useState("");
 	const [pinLoading, setPinLoading] = useState(false);
-
-	// Yandex Calendar
-	const [yandexCalendarId, setYandexCalendarId] = useState("");
-	const [yandexCalendarToken, setYandexCalendarToken] = useState("");
-	const [yandexLoading, setYandexLoading] = useState(false);
-	const [yandexSyncLoading, setYandexSyncLoading] = useState(false);
-
-	useEffect(() => {
-		if (profile) {
-			setYandexCalendarId(profile.yandexCalendarId || "");
-			setYandexCalendarToken(
-				profile.yandexCalendarToken
-					? JSON.stringify(profile.yandexCalendarToken)
-					: "",
-			);
-		}
-	}, [profile]);
-
-	const handleUpdateYandexSettings = async (e: React.FormEvent) => {
-		e.preventDefault();
-		setYandexLoading(true);
-		try {
-			let parsedToken = null;
-			if (yandexCalendarToken.trim()) {
-				try {
-					parsedToken = JSON.parse(yandexCalendarToken);
-				} catch (_e) {
-					showToast("Токен должен быть валидным JSON объектом", "warning");
-					setYandexLoading(false);
-					return;
-				}
-			}
-			const r = await fetch("/api/integrations/yandex-calendar/settings", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					"x-dente-staff-token": readDenteStaffToken() ?? "",
-				},
-				body: JSON.stringify({
-					yandexCalendarId: yandexCalendarId || null,
-					yandexCalendarToken: parsedToken,
-				}),
-			});
-			if (!r.ok) throw new Error("Settings update failed");
-			showToast("Настройки Яндекс.Календаря сохранены", "success");
-		} catch (err) {
-			logger.error("[Yandex] update failed", err);
-			showToast("Ошибка сохранения настроек", "error");
-		} finally {
-			setYandexLoading(false);
-		}
-	};
-
-	const handleSyncYandexCalendar = async () => {
-		setYandexSyncLoading(true);
-		try {
-			const r = await fetch("/api/integrations/yandex-calendar/sync", {
-				method: "POST",
-				headers: {
-					"x-dente-staff-token": readDenteStaffToken() ?? "",
-				},
-			});
-			if (!r.ok) throw new Error("Sync failed");
-			showToast("Синхронизация Яндекс.Календаря запущена", "success");
-		} catch (err) {
-			logger.error("[Yandex] sync failed", err);
-			showToast("Ошибка запуска синхронизации", "error");
-		} finally {
-			setYandexSyncLoading(false);
-		}
-	};
 
 	const strength = passwordStrength(newPassword);
 	const _passwordMismatch = confirmPassword && newPassword !== confirmPassword;
@@ -463,6 +391,14 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 					</p>
 				</section>
 
+				{/* Клинические настройки врача (длительность приёма, любимый анестетик, материалы, одонтограмма, тема) */}
+				<DoctorClinicalPreferencesSection
+					soundNotificationsMuted={appLogic?.soundNotificationsMuted}
+					onToggleSoundMuted={appLogic?.setSoundNotificationsMuted}
+					onTestOnlineBookingSound={appLogic?.testOnlineBookingSound}
+					onTestSlotEndSound={appLogic?.testSlotEndSound}
+				/>
+
 				{/* Password */}
 				<section className="settings-section">
 					<div className="settings-section-header">
@@ -589,134 +525,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 				</section>
 
 				{/* Yandex Calendar */}
-				<section className="settings-section">
-					<div className="settings-section-header">
-						<h3>Яндекс.Календарь</h3>
-					</div>
-					<p
-						className="form-hint"
-						style={{
-							marginBottom: 16,
-							fontSize: 12,
-							color: "var(--text-secondary)",
-						}}
-					>
-						Подключите свой Яндекс.Календарь для синхронизации расписания
-						приёмов.
-					</p>
-					<form onSubmit={handleUpdateYandexSettings} className="form-grid">
-						<label className="form-span-1">
-							ID Календаря
-							<input
-								type="text"
-								value={yandexCalendarId}
-								onChange={(e) => setYandexCalendarId(e.target.value)}
-								placeholder="Yandex Calendar ID"
-								disabled={yandexLoading}
-								className="focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all"
-							/>
-						</label>
-						<label className="form-span-1">
-							Токен (JSON)
-							<input
-								type="text"
-								value={yandexCalendarToken}
-								onChange={(e) => setYandexCalendarToken(e.target.value)}
-								placeholder='{"access_token": "...", ...}'
-								disabled={yandexLoading}
-								className="focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all"
-							/>
-						</label>
-						<div className="form-actions form-span-2 flex gap-4 flex-wrap">
-							<button
-								className="primary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
-								type="submit"
-								disabled={yandexLoading}
-							>
-								{yandexLoading ? "Сохранение..." : "Сохранить настройки"}
-							</button>
-							<button
-								type="button"
-								className="secondary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
-								onClick={handleSyncYandexCalendar}
-								disabled={yandexSyncLoading || !yandexCalendarId}
-							>
-								{yandexSyncLoading ? "Запуск..." : "Запустить синхронизацию"}
-							</button>
-							<button
-								type="button"
-								className="secondary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
-								onClick={() => {
-									window.location.href =
-										"/api/integrations/yandex-calendar/auth";
-								}}
-							>
-								Подключить Яндекс.Календарь
-							</button>
-						</div>
-					</form>
-				</section>
-
-				{/* Sound Notifications Block (Feature #49) */}
-				<section className="settings-section">
-					<div className="flex items-center gap-2 mb-2">
-						<Bell size={18} className="text-[var(--teal)]" />
-						<h3 className="m-0">Звуковые оповещения</h3>
-					</div>
-					<p className="section-desc">
-						Дифференцированные звуковые сигналы: двойной восходящий аккорд при поступлении онлайн-записи с виджета и предупреждающий сигнал врачу за 5 минут до окончания текущего приёма.
-					</p>
-					<div className="settings-form-grid">
-						<div className="form-span-2 flex items-center justify-between p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)]">
-							<div className="flex items-center gap-3">
-								{appLogic?.soundNotificationsMuted ? (
-									<VolumeX size={20} className="text-slate-400" />
-								) : (
-									<Volume2 size={20} className="text-[var(--teal)]" />
-								)}
-								<div>
-									<div className="text-sm font-semibold text-[var(--ink)]">
-										Звуковые сигналы в браузере
-									</div>
-									<div className="text-xs text-[var(--muted)]">
-										{appLogic?.soundNotificationsMuted
-											? "Все звуковые сигналы отключены"
-											: "Синтез аудиосигналов через Web Audio API активен"}
-									</div>
-								</div>
-							</div>
-							<label className="relative inline-flex items-center cursor-pointer">
-								<input
-									type="checkbox"
-									checked={!appLogic?.soundNotificationsMuted}
-									onChange={(e) =>
-										appLogic?.setSoundNotificationsMuted?.(!e.target.checked)
-									}
-									className="sr-only peer"
-								/>
-								<div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--teal)]" />
-							</label>
-						</div>
-						<div className="form-actions form-span-2 flex gap-3 flex-wrap pt-2">
-							<button
-								type="button"
-								onClick={() => appLogic?.testOnlineBookingSound?.()}
-								disabled={appLogic?.soundNotificationsMuted}
-								className="secondary-button inline-flex items-center gap-2 text-xs py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
-							>
-								<Volume2 size={14} /> Проверить: Онлайн-запись (440→660 Гц)
-							</button>
-							<button
-								type="button"
-								onClick={() => appLogic?.testSlotEndSound?.()}
-								disabled={appLogic?.soundNotificationsMuted}
-								className="secondary-button inline-flex items-center gap-2 text-xs py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
-							>
-								<Volume2 size={14} /> Проверить: 5 мин до конца приёма (880→660 Гц)
-							</button>
-						</div>
-					</div>
-				</section>
+				<SettingsProfileYandexSection profile={profile} />
 
 				{/* PIN Security Block */}
 				<section className="settings-section">

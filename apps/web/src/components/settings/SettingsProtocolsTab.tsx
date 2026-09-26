@@ -1,5 +1,14 @@
 import type { ProtocolTemplate } from "@dental/shared";
-import { ClipboardCheck, Edit2, Plus, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
+import {
+	ClipboardCheck,
+	Clock,
+	Edit2,
+	Plus,
+	Search,
+	ShieldCheck,
+	Sparkles,
+	Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
@@ -12,6 +21,11 @@ import { showToast } from "../GlobalToast";
 import { AutoclaveLog257Modal } from "../sanpin/autoclaveLog/AutoclaveLog257Modal.js";
 import "./SettingsProtocolsTab.css";
 import { logger } from "../../utils/logger";
+import {
+	PROTOCOL_CLINICAL_SNIPPETS,
+	STANDARD_PROTOCOLS_SEED,
+	type ProtocolSnippet,
+} from "./protocolSnippetHelpers";
 
 /**
  * Отказ сервера человеческими словами.
@@ -76,6 +90,29 @@ export function SettingsProtocolsTab() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [isAutoclaveModalOpen, setIsAutoclaveModalOpen] = useState<boolean>(false);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [selectedSpecialtyFilter, setSelectedSpecialtyFilter] = useState<string>("all");
+
+	const handleAppendSnippet = (snippet: ProtocolSnippet) => {
+		setEditForm((prev) => {
+			const current = prev[snippet.targetField] || "";
+			const next = current ? `${current}\n${snippet.text}` : snippet.text;
+			return { ...prev, [snippet.targetField]: next };
+		});
+		showToast(`Добавлен блок: ${snippet.label}`, "info");
+	};
+
+	const filteredTemplates = typedProtocolTemplates.filter((t) => {
+		const q = searchQuery.trim().toLowerCase();
+		const matchesSearch =
+			!q ||
+			t.title.toLowerCase().includes(q) ||
+			t.visitReason.toLowerCase().includes(q) ||
+			(t.safetyWarnings ?? []).some((w) => w.toLowerCase().includes(q));
+		const matchesSpecialty =
+			selectedSpecialtyFilter === "all" || t.specialty === selectedSpecialtyFilter;
+		return matchesSearch && matchesSpecialty;
+	});
 
 	const handleCreateNew = () => {
 		setEditingId(null);
@@ -214,74 +251,10 @@ export function SettingsProtocolsTab() {
 	};
 
 	const handleSeedStandardProtocols = async () => {
-		const standardProtocols: Partial<ProtocolTemplate>[] = [
-			{
-				specialty: "therapist",
-				title: "Первичный осмотр и консультация",
-				visitReason: "Консультация и составление плана лечения",
-				defaultDurationMinutes: 30,
-				complaintPrompt: "Жалобы отсутствуют / профилактический осмотр",
-				objectiveTemplate:
-					"Слизистая оболочка полости рта бледно-розовая, умеренно увлажнена. Прикус физиологический. Зубные ряды интактны либо с дефектами.",
-				treatmentPlanTemplate:
-					"1. КЛКТ / ОПТГ\n2. Профгигиена\n3. Санация кариозных полостей",
-				requiredDocuments: ["informed_consent"],
-				suggestedImaging: ["opg"],
-				safetyWarnings: [],
-			},
-			{
-				specialty: "therapist",
-				title: "Лечение кариеса (световая пломба)",
-				visitReason: "Лечение кариеса",
-				defaultDurationMinutes: 60,
-				complaintPrompt:
-					"Кратковременные боли от температурных и химических раздражителей",
-				objectiveTemplate:
-					"На жевательной/контактной поверхности кариозная полость в пределах дентина. Зондирование безболезненно. Перкуссия отрицательна.",
-				treatmentPlanTemplate:
-					"Анестезия, препарирование, медикаментозная обработка, адгезивный протокол, послойная реставрация композитом, шлифовка, полировка.",
-				requiredDocuments: ["informed_consent"],
-				suggestedImaging: ["periapical"],
-				safetyWarnings: ["Аллергоанамнез на анестетики"],
-			},
-			{
-				specialty: "surgeon",
-				title: "Удаление зуба простое",
-				visitReason:
-					"Удаление зуба по ортодонтическим или терапевтическим показаниям",
-				defaultDurationMinutes: 45,
-				complaintPrompt: "Разрушение коронковой части зуба, подвижность",
-				objectiveTemplate:
-					"Коронка зуба разрушена более чем на 2/3. Перкуссия слабо чувствительна. Слизистая десны без выраженного воспаления.",
-				treatmentPlanTemplate:
-					"Инфильтрационная/проводниковая анестезия, синдесмотомия, удаление щипцами/элеватором, кюретаж лунки, гемостаз.",
-				requiredDocuments: [
-					"informed_consent",
-					"procedure_specific_consent_packet",
-				],
-				suggestedImaging: ["periapical", "cbct"],
-				safetyWarnings: ["Контроль АД", "Аллергоанамнез"],
-			},
-			{
-				specialty: "hygienist",
-				title: "Комплексная профессиональная гигиена",
-				visitReason: "Профгигиена полости рта",
-				defaultDurationMinutes: 45,
-				complaintPrompt: "Наличие пигментированного налета и зубного камня",
-				objectiveTemplate:
-					"Обильный над- и поддесневой зубной камень во фронтальном отделе нижней челюсти, пигментированный мягкий налет. Десневые сосочки гиперемированы.",
-				treatmentPlanTemplate:
-					"Ультразвуковой скейлинг, обработка аппаратом AirFlow, полировка пастами, аппликация реминерализующего геля.",
-				requiredDocuments: ["informed_consent"],
-				suggestedImaging: [],
-				safetyWarnings: [],
-			},
-		];
-
 		setLoading(true);
 		try {
 			let createdCount = 0;
-			for (const proto of standardProtocols) {
+			for (const proto of STANDARD_PROTOCOLS_SEED) {
 				const res = await fetch("/api/settings/protocols", {
 					method: "POST",
 					headers: auth.settingsAccessHeaders({
@@ -375,23 +348,61 @@ export function SettingsProtocolsTab() {
 					</label>
 					<label className="dente-label">
 						<span>Длительность (мин)</span>
-						<input
-							type="number"
-							className="dente-input"
-							value={editForm.defaultDurationMinutes || 30}
-							onChange={(e) =>
-								setEditForm((prev) => ({
-									...prev,
-									defaultDurationMinutes: parseInt(e.target.value, 10) || 30,
-								}))
-							}
-						/>
+						<div className="space-y-1.5">
+							<input
+								type="number"
+								className="dente-input"
+								value={editForm.defaultDurationMinutes || 30}
+								onChange={(e) =>
+									setEditForm((prev) => ({
+										...prev,
+										defaultDurationMinutes: parseInt(e.target.value, 10) || 30,
+									}))
+								}
+							/>
+							<div className="flex items-center gap-1 flex-wrap">
+								{[15, 30, 45, 60, 90].map((mins) => (
+									<button
+										key={mins}
+										type="button"
+										onClick={() =>
+											setEditForm((prev) => ({
+												...prev,
+												defaultDurationMinutes: mins,
+											}))
+										}
+										className={`px-2 py-0.5 rounded text-[11px] font-bold border transition-all cursor-pointer ${
+											editForm.defaultDurationMinutes === mins
+												? "bg-[var(--teal)] text-white border-[var(--teal)]"
+												: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
+										}`}
+									>
+										{mins} мин
+									</button>
+								))}
+							</div>
+						</div>
 					</label>
 				</div>
 
 				<div style={{ marginTop: "1rem" }}>
 					<label className="dente-label">
-						<span>Шаблон жалоб (подсказка)</span>
+						<div className="flex items-center justify-between flex-wrap gap-1">
+							<span>Шаблон жалоб (подсказка)</span>
+							<div className="flex items-center gap-1 flex-wrap">
+								{PROTOCOL_CLINICAL_SNIPPETS.filter((s) => s.targetField === "complaintPrompt").map((s) => (
+									<button
+										key={s.id}
+										type="button"
+										onClick={() => handleAppendSnippet(s)}
+										className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[var(--paper-soft)] border border-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)] cursor-pointer"
+										title="Добавить готовый текст жалоб"
+									>
+										+ {s.label}
+									</button>
+								))}
+							</div>
+						</div>
 						<textarea
 							className="dente-input"
 							rows={3}
@@ -419,10 +430,25 @@ export function SettingsProtocolsTab() {
 						/>
 					</label>
 					<label className="dente-label" style={{ marginTop: "1rem" }}>
-						<span>Шаблон плана лечения</span>
+						<div className="flex items-center justify-between flex-wrap gap-1">
+							<span>Шаблон плана лечения и протокола манипуляции</span>
+							<div className="flex items-center gap-1 flex-wrap">
+								{PROTOCOL_CLINICAL_SNIPPETS.filter((s) => s.targetField === "treatmentPlanTemplate").slice(0, 4).map((s) => (
+									<button
+										key={s.id}
+										type="button"
+										onClick={() => handleAppendSnippet(s)}
+										className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[var(--paper-soft)] border border-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)] cursor-pointer"
+										title="Добавить готовый протокол"
+									>
+										+ {s.label}
+									</button>
+								))}
+							</div>
+						</div>
 						<textarea
 							className="dente-input"
-							rows={3}
+							rows={4}
 							value={editForm.treatmentPlanTemplate || ""}
 							onChange={(e) =>
 								setEditForm((prev) => ({
@@ -577,100 +603,126 @@ export function SettingsProtocolsTab() {
 					}
 				/>
 			) : (
-				<div className="protocol-settings-grid">
-					{typedProtocolTemplates.map((template) => (
-						<article className="protocol-settings-card" key={template.id}>
-							<div className="protocol-settings-head">
-								<span>
-									{specialtyLabels?.[template.specialty] ?? template.specialty}
-								</span>
-								<strong>{template.title}</strong>
-								<p>
-									{template.visitReason} · {template.defaultDurationMinutes} мин
-								</p>
-							</div>
-							<section
-								className="protocol-token-row"
-								aria-label="Документы протокола"
-							>
-								{(template.requiredDocuments ?? []).map((kind) => (
-									<span key={kind}>{documentLabels?.[kind] ?? kind}</span>
-								))}
-							</section>
-							<section
-								className="protocol-token-row protocol-token-row-soft"
-								aria-label="Снимки протокола"
-							>
-								{(template.suggestedImaging ?? []).map((kind) => (
-									<span key={kind}>{imagingKindLabels?.[kind] ?? kind}</span>
-								))}
-							</section>
-							<ul>
-								{(template.safetyWarnings ?? []).slice(0, 2).map((warning) => (
-									<li key={warning}>{warning}</li>
-								))}
-							</ul>
-							<div
-								style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}
-							>
+				<>
+					{/* Поиск и быстрый фильтр по специальностям */}
+					<div className="flex items-center justify-between gap-3 flex-wrap my-4 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+						<div className="relative flex-1 min-w-[200px]">
+							<Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+							<input
+								type="text"
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
+								placeholder="Быстрый поиск по названию или причине визита..."
+								className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] min-h-[36px]"
+							/>
+						</div>
+						<div className="flex items-center gap-1 flex-wrap">
+							{[
+								{ key: "all", label: "Все" },
+								{ key: "therapist", label: "Терапевт" },
+								{ key: "surgeon", label: "Хирург" },
+								{ key: "orthopedist", label: "Ортопед" },
+								{ key: "hygienist", label: "Гигиенист" },
+								{ key: "universal", label: "Универсальный" },
+							].map((f) => (
 								<button
-									className="secondary-button"
+									key={f.key}
 									type="button"
-									style={{
-										minWidth: "44px",
-										minHeight: "44px",
-										display: "inline-flex",
-										alignItems: "center",
-										justifyContent: "center",
-									}}
-									onClick={() => handleEdit(template)}
-									title="Редактировать"
-									aria-label={`Редактировать шаблон «${template.title}»`}
+									onClick={() => setSelectedSpecialtyFilter(f.key)}
+									className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer min-h-[32px] ${
+										selectedSpecialtyFilter === f.key
+											? "bg-[var(--teal)] text-white border-[var(--teal)]"
+											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
+									}`}
 								>
-									<Edit2 size={16} />
+									{f.label}
 								</button>
-								{/*
-								КНОПКА УДАЛЕНИЯ СНОВА КРАСНАЯ.
+							))}
+						</div>
+					</div>
 
-								БЫЛО: className="danger-button" и цвета
-								var(--dente-red-10) / var(--dente-red-60). Правила
-								.danger-button нет ни в одном файле стилей, а имён
-								--dente-red-* не существует нигде в проекте: неизвестное
-								имя делает объявление недействительным, поэтому фон
-								становился прозрачным (background не наследуется), а
-								значок Trash2 — обычным цветом текста. Кнопка удаления
-								выглядела ровно как нейтральная иконка, ни одним пикселем
-								не предупреждая, что она сносит шаблон.
-
-								СТАЛО: форма и размер от .secondary-button — те же, что у
-								«Редактировать», без своей рамки и padding поверх, — а
-								цвета из объявленных семантических токенов --bad-bg и
-								--bad-fg (styles/dente-redesign.css:30, есть во всех трёх
-								темах).
-							*/}
-								<button
-									className="secondary-button"
-									type="button"
-									style={{
-										backgroundColor: "var(--bad-bg)",
-										color: "var(--bad-fg)",
-										minWidth: "44px",
-										minHeight: "44px",
-										display: "inline-flex",
-										alignItems: "center",
-										justifyContent: "center",
-									}}
-									onClick={() => handleDelete(template.id)}
-									title="Удалить"
-									aria-label={`Удалить шаблон «${template.title}»`}
-									disabled={loading}
-								>
-									<Trash2 size={16} />
-								</button>
-							</div>
-						</article>
-					))}
-				</div>
+					{filteredTemplates.length === 0 ? (
+						<div className="p-8 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">
+							Шаблоны протоколов по заданному запросу или специальности не найдены.
+						</div>
+					) : (
+						<div className="protocol-settings-grid">
+							{filteredTemplates.map((template) => (
+								<article className="protocol-settings-card" key={template.id}>
+									<div className="protocol-settings-head">
+										<span>
+											{specialtyLabels?.[template.specialty] ?? template.specialty}
+										</span>
+										<strong>{template.title}</strong>
+										<p>
+											{template.visitReason} · {template.defaultDurationMinutes} мин
+										</p>
+									</div>
+									<section
+										className="protocol-token-row"
+										aria-label="Документы протокола"
+									>
+										{(template.requiredDocuments ?? []).map((kind) => (
+											<span key={kind}>{documentLabels?.[kind] ?? kind}</span>
+										))}
+									</section>
+									<section
+										className="protocol-token-row protocol-token-row-soft"
+										aria-label="Снимки протокола"
+									>
+										{(template.suggestedImaging ?? []).map((kind) => (
+											<span key={kind}>{imagingKindLabels?.[kind] ?? kind}</span>
+										))}
+									</section>
+									<ul>
+										{(template.safetyWarnings ?? []).slice(0, 2).map((warning) => (
+											<li key={warning}>{warning}</li>
+										))}
+									</ul>
+									<div
+										style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}
+									>
+										<button
+											className="secondary-button"
+											type="button"
+											style={{
+												minWidth: "44px",
+												minHeight: "44px",
+												display: "inline-flex",
+												alignItems: "center",
+												justifyContent: "center",
+											}}
+											onClick={() => handleEdit(template)}
+											title="Редактировать"
+											aria-label={`Редактировать шаблон «${template.title}»`}
+										>
+											<Edit2 size={16} />
+										</button>
+										<button
+											className="secondary-button"
+											type="button"
+											style={{
+												backgroundColor: "var(--bad-bg)",
+												color: "var(--bad-fg)",
+												minWidth: "44px",
+												minHeight: "44px",
+												display: "inline-flex",
+												alignItems: "center",
+												justifyContent: "center",
+											}}
+											onClick={() => handleDelete(template.id)}
+											title="Удалить"
+											aria-label={`Удалить шаблон «${template.title}»`}
+											disabled={loading}
+										>
+											<Trash2 size={16} />
+										</button>
+									</div>
+								</article>
+							))}
+						</div>
+					)}
+				</>
 			)}
 
 			<AutoclaveLog257Modal

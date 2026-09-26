@@ -7,6 +7,7 @@ import {
 	evaluateAnesthesiaRisk,
 } from "../../../lib/clinicalProtocols043";
 import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
+import { useDoctorPreferencesStore } from "../../../store/doctorPreferencesStore";
 
 export function EmkAnesthesiaSection({
 	visitNoteForm,
@@ -15,7 +16,17 @@ export function EmkAnesthesiaSection({
 	patientAge,
 	patientGender,
 }: EmkSectionProps) {
-	const [selectedAnesDrugKey, setSelectedAnesDrugKey] = React.useState<string>("ultracain_ds");
+	const favoriteAnes = useDoctorPreferencesStore(
+		(s) => s.preferences.favoriteAnesthetic,
+	);
+	const initialDrugKey =
+		favoriteAnes === "scandonest_mepivacaine_3"
+			? "scandonest_3"
+			: favoriteAnes === "articaine_200k"
+				? "ultracain_ds_forte"
+				: "ultracain_ds";
+	const [selectedAnesDrugKey, setSelectedAnesDrugKey] =
+		React.useState<string>(initialDrugKey);
 	const [carpuleCount, setCarpuleCount] = React.useState<number>(1);
 	const [patientWeightKg, setPatientWeightKg] = React.useState<number>(
 		patientAge && patientAge < 14 ? 30 : 70,
