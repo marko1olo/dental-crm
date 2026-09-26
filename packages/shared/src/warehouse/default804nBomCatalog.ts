@@ -559,4 +559,115 @@ export const DEFAULT_804N_CONSUMABLE_LINKS: readonly ConsumableItemLink[] = [
 		costPriceKopecks: 42000, // 420.00 ₽ (#1 рынок РФ)
 		notes: "Долговременная фиксация коронок и мостовидных протезов",
 	},
+	{
+		id: "def-link-prostho-cement-panavia",
+		service804nCode: "A16.07.004.001",
+		serviceTitle: "Постоянная фиксация на композитный цемент двойного отверждения",
+		inventoryItemId: "mat-cement-panavia-v5",
+		itemName: "Композитный цемент двойного отверждения Panavia V5 (Kuraray, Япония)",
+		category: "composite",
+		unit: "dose",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 58000, // 580.00 ₽ (#2 рынок РФ, MDP праймер)
+		notes: "Высокоэстетичная фиксация керамических виниров и коронок e.max",
+	},
+
+	// ─── 13. ЭНДОДОНТИЯ: ВРЕМЕННЫЙ КАЛЬЦИЙ И ЭДТА (A16.07.030.002 / .003) ───
+	{
+		id: "def-link-endo-calasept",
+		service804nCode: "A16.07.030.002",
+		serviceTitle: "Временное пломбирование лекарственным препаратом корневого канала",
+		inventoryItemId: "mat-calcium-calasept",
+		itemName: "Гидроксид кальция паста рентгеноконтрастная Calasept (Nordiska Dental)",
+		category: "endo_file",
+		unit: "dose",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 18000, // 180.00 ₽ (#1 рынок РФ)
+		notes: "Антибактериальная временная дезинфекция каналов",
+	},
+	{
+		id: "def-link-endo-edta-gel",
+		service804nCode: "A16.07.030.003",
+		serviceTitle: "Хемомеханическая обработка корневого канала раствором ЭДТА",
+		inventoryItemId: "mat-endo-edta-17",
+		itemName: "Раствор ЭДТА 17% для удаления смазанного слоя (ЭндоЖи №2)",
+		category: "disinfectant",
+		unit: "ml",
+		quantityPerService: 2,
+		isMandatory: true,
+		costPriceKopecks: 8500, // 85.00 ₽
+		notes: "Хелатирование и раскрытие дентинных трубочек",
+	},
+
+	// ─── 14. ТЕРАПИЯ: ТЕКУЧИЙ НАНОКОМПОЗИТ / BULK FILL (A16.07.002.002) ─────
+	{
+		id: "def-link-caries-bulkfill-sdr",
+		service804nCode: "A16.07.002.002",
+		serviceTitle: "Восстановление зуба пломбой с текучим адаптивным слоем Bulk Fill",
+		inventoryItemId: "mat-composite-sdr-bulk",
+		itemName: "Текучий композит объемного внесения SDR Plus Bulk Fill Flowable (Dentsply)",
+		category: "composite",
+		unit: "compula",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 32000, // 320.00 ₽ (#1 SDR Bulk Fill)
+		notes: "Стресс-редуцирующая адаптивная база дна полости до 4 мм",
+	},
+
+	// ─── 15. ОРТОДОНТИЯ: МИНИ-ВИНТ / МИКРОИМПЛАНТАТ TAD (A16.07.093) ────────
+	{
+		id: "def-link-ortho-tad-bioray",
+		service804nCode: "A16.07.093",
+		serviceTitle: "Установка ортодонтического микроимплантата (мини-винта)",
+		inventoryItemId: "mat-tad-bioray-16x8",
+		itemName: "Ортодонтический микроимплантат Bio-Ray 1.6x8 мм (титан Grade 5)",
+		category: "other",
+		unit: "шт",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 240000, // 2 400.00 ₽ (#1 рынок РФ)
+		notes: "Скелетный анкораж для биомеханики дистализации и интрузии",
+	},
+
+	// ─── 16. ДЕНТАЛЬНАЯ ИМПЛАНТАЦИЯ: DENTIUM SUPERLINE (A16.07.054.002) ─────
+	{
+		id: "def-link-implant-fixture-dentium",
+		service804nCode: "A16.07.054.002",
+		serviceTitle: "Внутрикостная дентальная имплантация (Dentium SuperLine)",
+		inventoryItemId: "mat-implant-dentium-superline",
+		itemName: "Дентальный имплантат Dentium SuperLine SLA (Корея)",
+		category: "other",
+		unit: "шт",
+		quantityPerService: 1,
+		isMandatory: true,
+		costPriceKopecks: 820000, // 8 200.00 ₽ (#2 рынок РФ)
+		notes: "Конический имплантат с двойной резьбой и SLA-поверхностью",
+	},
 ];
+
+/**
+ * Returns canonical default BOM links for a given 804n service code.
+ */
+export function getDefaultBomLinksForService804n(
+	serviceCode: string,
+): readonly ConsumableItemLink[] {
+	if (!serviceCode) return [];
+	const trimmed = serviceCode.trim();
+	const exactMatches = DEFAULT_804N_CONSUMABLE_LINKS.filter(
+		(l) => l.service804nCode === trimmed,
+	);
+	if (exactMatches.length > 0) return exactMatches;
+
+	// Fallback to base code if subcode provided (e.g. A16.07.002.001 -> A16.07.002)
+	const parts = trimmed.split(".");
+	if (parts.length > 3) {
+		const baseCode = parts.slice(0, 3).join(".");
+		return DEFAULT_804N_CONSUMABLE_LINKS.filter(
+			(l) => l.service804nCode === baseCode,
+		);
+	}
+	return [];
+}
+

@@ -1,6 +1,6 @@
 /**
  * clinicalMarketMaterialsCatalog.ts — Единый канонический фасад клинических материалов
- * с охватом до 90% реального рынка РФ/СНГ с ранжированием строго по популярности.
+ * с охватом до 90%+ реального рынка РФ/СНГ с ранжированием строго по популярности.
  *
  * Соответствие стандартам:
  * - Mandate 8e: Doctor Autonomy (врач выбирает материал за 1 клик из топа популярных)
@@ -17,47 +17,76 @@ import {
 	type ClinicalMaterialDomain,
 } from "./materials/implantAndBoneMaterialsData.js";
 import {
+	SURGICAL_SUTURE_REGISTRY,
+	SURGICAL_HEMOSTATICS_REGISTRY,
+} from "./materials/surgerySutureAndHemostaticsData.js";
+import {
 	ENDODONTIC_MATERIALS_REGISTRY,
 	ORTHODONTIC_MATERIALS_REGISTRY,
 } from "./materials/endoAndOrthoMaterialsData.js";
 import { PROSTHODONTIC_MATERIALS_REGISTRY } from "./materials/prosthoMaterialsData.js";
+import {
+	THERAPY_COMPOSITES_REGISTRY,
+	THERAPY_ADHESIVES_REGISTRY,
+} from "./materials/therapyMaterialsData.js";
 
-export type { ClinicalMarketMaterialItem, ClinicalMarketMaterialItem as ClinicalMarketMaterial, ClinicalMaterialDomain };
+export type {
+	ClinicalMarketMaterialItem,
+	ClinicalMarketMaterialItem as ClinicalMarketMaterial,
+	ClinicalMaterialDomain,
+};
+
 export {
 	IMPLANT_SYSTEMS_MARKET_REGISTRY,
 	BONE_GRAFT_MEMBRANES_REGISTRY,
+	SURGICAL_SUTURE_REGISTRY,
+	SURGICAL_HEMOSTATICS_REGISTRY,
 	ENDODONTIC_MATERIALS_REGISTRY,
 	ORTHODONTIC_MATERIALS_REGISTRY,
 	PROSTHODONTIC_MATERIALS_REGISTRY,
+	THERAPY_COMPOSITES_REGISTRY,
+	THERAPY_ADHESIVES_REGISTRY,
 };
 
 /**
- * Полный объединенный реестр клинических материалов рынка РФ/СНГ
+ * Полный объединенный реестр клинических материалов рынка РФ/СНГ (охват 90%+)
  */
 export const ALL_CLINICAL_MARKET_MATERIALS: readonly ClinicalMarketMaterialItem[] = [
 	...IMPLANT_SYSTEMS_MARKET_REGISTRY,
 	...BONE_GRAFT_MEMBRANES_REGISTRY,
+	...SURGICAL_SUTURE_REGISTRY,
+	...SURGICAL_HEMOSTATICS_REGISTRY,
 	...ENDODONTIC_MATERIALS_REGISTRY,
 	...ORTHODONTIC_MATERIALS_REGISTRY,
 	...PROSTHODONTIC_MATERIALS_REGISTRY,
+	...THERAPY_COMPOSITES_REGISTRY,
+	...THERAPY_ADHESIVES_REGISTRY,
 ];
 
 export const CLINICAL_MATERIAL_DOMAINS: readonly { id: ClinicalMaterialDomain; labelRu: string }[] = [
 	{ id: "implant_system", labelRu: "Имплантационные системы" },
+	{ id: "bone_graft", labelRu: "Костные материалы (гранулы, блоки)" },
+	{ id: "bone_membrane", labelRu: "Барьерные мембраны" },
 	{ id: "bone_graft_membrane", labelRu: "Костные материалы и мембраны" },
-	{ id: "endo_file", labelRu: "Эндодонтия: Машинные файлы" },
-	{ id: "endo_sealer", labelRu: "Эндодонтия: Силеры" },
-	{ id: "endo_irrigation", labelRu: "Эндодонтия: Ирригация" },
+	{ id: "surg_suture", labelRu: "Хирургия: Шовный материал" },
+	{ id: "surg_hemostatic", labelRu: "Хирургия: Гемостатики" },
+	{ id: "therapy_composite", labelRu: "Терапия: Светоотверждаемые композиты" },
+	{ id: "therapy_adhesive", labelRu: "Терапия: Адгезивные системы" },
+	{ id: "endo_file", labelRu: "Эндодонтия: Машинные и реципрокные файлы" },
+	{ id: "endo_sealer", labelRu: "Эндодонтия: Силеры постоянные" },
+	{ id: "endo_irrigation", labelRu: "Эндодонтия: Ирригационные растворы" },
 	{ id: "endo_dressing", labelRu: "Эндодонтия: Временные вложения Ca(OH)2" },
 	{ id: "ortho_bracket", labelRu: "Ортодонтия: Брекет-системы" },
 	{ id: "ortho_archwire", labelRu: "Ортодонтия: Дуги" },
 	{ id: "ortho_aligner", labelRu: "Ортодонтия: Элайнеры" },
-	{ id: "ortho_miniscrew", labelRu: "Ортодонтия: Микровинты" },
-	{ id: "prostho_a_silicone", labelRu: "Ортопедия: А-силиконы" },
+	{ id: "ortho_miniscrew", labelRu: "Ортодонтия: Микровинты (TADs)" },
+	{ id: "prostho_a_silicone", labelRu: "Ортопедия: А-силиконы и полиэфиры" },
 	{ id: "prostho_c_silicone", labelRu: "Ортопедия: С-силиконы" },
+	{ id: "prostho_bite_reg", labelRu: "Ортопедия: Регистраторы прикуса" },
 	{ id: "prostho_cement_perm", labelRu: "Ортопедия: Постоянные цементы" },
 	{ id: "prostho_cement_temp", labelRu: "Ортопедия: Временные цементы" },
 	{ id: "prostho_retraction", labelRu: "Ортопедия: Ретракционные нити" },
+	{ id: "lab_cad_material", labelRu: "ЗТЛ: Конструкции и CAD/CAM материалы" },
 ];
 
 /**

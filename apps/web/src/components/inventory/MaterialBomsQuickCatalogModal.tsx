@@ -16,7 +16,16 @@ import {
 import { Award, Check, Layers, Search, X } from "lucide-react";
 import React, { useMemo, useState } from "react";
 
-export type MacroMaterialGroup = "all" | "implant" | "bone_graft" | "endo" | "ortho" | "prostho";
+export type MacroMaterialGroup =
+	| "all"
+	| "implant"
+	| "bone_graft"
+	| "surg"
+	| "endo"
+	| "ortho"
+	| "prostho"
+	| "therapy"
+	| "lab";
 
 export interface MaterialBomsQuickCatalogModalProps {
 	readonly isOpen: boolean;
@@ -26,11 +35,14 @@ export interface MaterialBomsQuickCatalogModalProps {
 
 const DOMAIN_TABS: readonly { readonly id: MacroMaterialGroup; readonly label: string }[] = [
 	{ id: "all", label: "Все направления" },
-	{ id: "implant", label: "Имплантаты (14 систем)" },
+	{ id: "implant", label: "Имплантаты (16 систем)" },
 	{ id: "bone_graft", label: "Костная пластика (НКР)" },
+	{ id: "surg", label: "Хирургия (швы/гемостаз)" },
 	{ id: "endo", label: "Эндодонтия (файлы/силеры)" },
-	{ id: "ortho", label: "Ортодонтия (брекеты/дуги)" },
+	{ id: "ortho", label: "Ортодонтия (брекеты/дуги/TAD)" },
 	{ id: "prostho", label: "Ортопедия (слепки/цементы)" },
+	{ id: "therapy", label: "Терапия (композиты/бонды)" },
+	{ id: "lab", label: "ЗТЛ / CAD/CAM (диоксид/e.max)" },
 ];
 
 export function MaterialBomsQuickCatalogModal({
@@ -48,12 +60,18 @@ export function MaterialBomsQuickCatalogModal({
 			list = list.filter((m) => m.domain === "implant_system");
 		} else if (activeGroup === "bone_graft") {
 			list = list.filter((m) => m.domain === "bone_graft_membrane");
+		} else if (activeGroup === "surg") {
+			list = list.filter((m) => m.domain === "surg_suture" || m.domain === "surg_hemostatic");
 		} else if (activeGroup === "endo") {
 			list = list.filter((m) => m.domain.startsWith("endo_"));
 		} else if (activeGroup === "ortho") {
 			list = list.filter((m) => m.domain.startsWith("ortho_"));
 		} else if (activeGroup === "prostho") {
 			list = list.filter((m) => m.domain.startsWith("prostho_"));
+		} else if (activeGroup === "therapy") {
+			list = list.filter((m) => m.domain.startsWith("therapy_"));
+		} else if (activeGroup === "lab") {
+			list = list.filter((m) => m.domain === "lab_cad_material");
 		}
 
 		return list;
