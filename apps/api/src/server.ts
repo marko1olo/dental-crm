@@ -133,6 +133,7 @@ import { registerWebsocketRoutes } from "./routes/websocket.js";
 import { registerWhatsappRoutes } from "./routes/whatsapp.js";
 import { registerWhatsappWebhookRoutes } from "./routes/whatsappWebhook.js";
 import { workspaceProfileRoutes } from "./routes/workspaceProfile.js";
+import { registerLanNetworkRoutes } from "./routes/lanNetwork.js";
 import { registerXrayRoutes } from "./routes/xray.js";
 import { registerYandexCalendarRoutes } from "./routes/yandexCalendar.js";
 import { authTokenSecret } from "./security/authSecret.js";
@@ -648,6 +649,7 @@ export async function createDenteApiApp(
 	});
 
 	await registerHealthRoutes(app);
+	await registerLanNetworkRoutes(app);
 	await registerMobileOtaRoutes(app);
 
 	await registerAiRoutes(app);
