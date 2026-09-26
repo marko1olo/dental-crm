@@ -24,54 +24,34 @@ import {
 	Search,
 	AlertTriangle,
 	Printer,
-	ChevronRight,
-	Calendar,
-	Camera,
 	CheckCircle2,
-	Eye,
 	RefreshCw,
-	Building2,
-	FileText,
-	Truck,
-	RotateCcw,
-	Send,
-	MessageSquare,
-	MoreHorizontal,
 } from "lucide-react";
 import "./dentalLabWorkflow.css";
 import {
-	OrthopedicWorkTypeId,
 	ORTHOPEDIC_WORK_TYPES,
-	LabWorkflowStatus,
+	type LabWorkflowStatus,
 	LAB_WORKFLOW_STATUSES,
-	LAB_WORKFLOW_STATUS_ORDER,
-	ALL_LAB_WORKFLOW_STATUSES,
-	DentalLabWorkflowOrder,
-	createDentalLabOrder,
+	type DentalLabWorkflowOrder,
 	advanceLabOrderStage,
 	advanceLabOrderTechStage,
 	sendOrderToWarrantyRework,
 	getNextLabProductionStage,
 	generateDentalLabOrderA4PrintBlank,
 	exportDentalLabOrdersToCsv,
-	formatRussianDate,
 } from "./dentalLabWorkflowEngine";
 import {
-	VITA_CLASSICAL_SHADES,
-	VITA_3D_MASTER_SHADES,
-	VITA_BLEACH_SHADES,
-	STUMP_SHADES_ND,
-	IMPLANT_PLATFORMS,
-	ABUTMENT_TYPE_OPTIONS,
-	FIXATION_TYPES,
 	LAB_TECHNOLOGICAL_STAGES,
 	LAB_TECHNOLOGICAL_STAGE_ORDER,
-	ImplantPlatformType,
-	AbutmentCategoryType,
-	FixationType,
-	LabTechnologicalStageId,
+	type LabTechnologicalStageId,
 } from "./orders/labWorkOrderPresets";
-import { sliceDomList } from "../../utils/domVirtualizationHelper";
+import { mapRawApiOrderToWorkflowOrder } from "./dentalLabApiMapper";
+import { DentalLabOrdersKanbanBoard } from "./DentalLabOrdersKanbanBoard";
+import { DentalLabCreateOrderModal } from "./DentalLabCreateOrderModal";
+import {
+	DentalLabOrderDetailsModal,
+	type ActionPromptState,
+} from "./DentalLabOrderDetailsModal";
 
 export interface DentalLabOrdersHubModalProps {
 	readonly isOpen: boolean;
@@ -93,7 +73,7 @@ const SAMPLE_LABS = [
 	"ArtDent Премиум Лаб",
 	"ZirconLab Pro",
 	"Центральная зуботехническая лаборатория",
-];
+] as const;
 
 export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = ({
 	isOpen,
@@ -115,7 +95,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	});
 
 	// Синхронизация при внешнем изменении initialOrders
-	React.useEffect(() => {
+	useEffect(() => {
 		if (initialOrders) {
 			setOrders([...initialOrders]);
 		}
@@ -145,47 +125,23 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 					: [];
 
 				if (list.length > 0) {
-					const mapped: DentalLabWorkflowOrder[] = list.map((raw: any, idx: number) => {
-						const teethArr = raw.toothFdi
-							? String(raw.toothFdi)
-									.split(",")
-									.map((s: string) => parseInt(s.trim(), 10))
-									.filter((n: number) => !isNaN(n))
-							: [11];
-
-						return createDentalLabOrder({
-							patientId: raw.patientId || currentPatientId || `pat-${idx}`,
-							patientName: raw.patientName || currentPatientName || "Пациент",
-							patientChartNumber: raw.patientChartNumber || "043/у",
-							doctorId: raw.doctorId || "doc-current",
-							doctorName: raw.doctorName || currentDoctorName || "Врач-ортопед",
-							clinicName: "Стоматологическая клиника DENTE",
-							labName: raw.labName || "Основная ЗТЛ",
-							workTypeId: (raw.workTypeId as any) || "crown_emax",
-							selectedTeeth: teethArr.length > 0 ? teethArr : [11],
-							shadeCode: raw.colorVita || "A2",
-							pricePerUnitRub: Number(raw.priceRub) || 15000,
-							costPerUnitRub: Math.round((Number(raw.priceRub) || 15000) * 0.35),
-							initialStatus: raw.status === "completed" ? "installed_completed" : raw.status === "fitting" ? "fitting_scheduled" : "sent_to_lab",
-							expectedLabDate: raw.dueDate ? raw.dueDate.slice(0, 10) : undefined,
-							clinicalNotes: raw.clinicalNotes || undefined,
-						});
-					});
-
+					const mapped: DentalLabWorkflowOrder[] = list.map((raw: any, idx: number) =>
+						mapRawApiOrderToWorkflowOrder(raw, idx, currentPatientId, currentPatientName, currentDoctorName),
+					);
 					setOrders(mapped);
 				}
-			} catch (_e) {
-				// Silently retain current orders
+			} catch (err) {
+				console.warn("[DentalLabOrdersHubModal] Failed to load live lab orders:", err);
 			}
 		}
 
-		void loadLabOrders();
+		loadLabOrders();
 		return () => {
 			cancelled = true;
 		};
-	}, [isOpen, currentPatientId, currentPatientName, currentDoctorName, initialOrders]);
+	}, [isOpen, initialOrders, currentPatientId, currentPatientName, currentDoctorName]);
 
-	// Фильтры
+	// Фильтры и поиск
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [selectedLab, setSelectedLab] = useState<string>("ALL");
 	const [selectedWorkType, setSelectedWorkType] = useState<string>("ALL");
@@ -193,70 +149,13 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	const [selectedDateRange, setSelectedDateRange] = useState<"ALL" | "today" | "week">("ALL");
 	const [onlyDelayedFilter, setOnlyDelayedFilter] = useState<boolean>(false);
 
-	// Модалка создания / деталей наряда
+	// Модальные окна
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
 	const [inspectingOrder, setInspectingOrder] = useState<DentalLabWorkflowOrder | null>(null);
 	const [warrantyReworkOrder, setWarrantyReworkOrder] = useState<DentalLabWorkflowOrder | null>(null);
-	const [warrantyReason, setWarrantyReason] = useState<string>("Скол керамической облицовки");
+	const [actionPrompt, setActionPrompt] = useState<ActionPromptState | null>(null);
 	const [activeCardMenuOrderId, setActiveCardMenuOrderId] = useState<string | null>(null);
-	// Прогрессивная DOM-подгрузка колонок канбана чанками по 40 элементов (Low-Spec HDD / Mandate 8n)
 	const [stageLimits, setStageLimits] = useState<Record<string, number>>({});
-
-	// Неблокирующие диалоги ввода (Мандат 8e / Anti-Blocking Prompt)
-	const [actionPrompt, setActionPrompt] = useState<{
-		order: DentalLabWorkflowOrder;
-		type: "bite_photo" | "technician_comment";
-		title: string;
-		label: string;
-		placeholder: string;
-	} | null>(null);
-	const [actionPromptValue, setActionPromptValue] = useState<string>("");
-
-	React.useEffect(() => {
-		if (!activeCardMenuOrderId) return;
-		const handleOutside = () => setActiveCardMenuOrderId(null);
-		document.addEventListener("click", handleOutside);
-		return () => document.removeEventListener("click", handleOutside);
-	}, [activeCardMenuOrderId]);
-
-	// Форма создания нового наряда
-	const [newPatientName, setNewPatientName] = useState<string>(() => currentPatientName || "");
-	const [newChartNumber, setNewChartNumber] = useState<string>("");
-	const [newDoctorName, setNewDoctorName] = useState<string>(() => currentDoctorName || "");
-	const [newLabName, setNewLabName] = useState<string>(SAMPLE_LABS[0] ?? "CAD/CAM Центр Дентал-Мастер");
-	const [newWorkType, setNewWorkType] = useState<OrthopedicWorkTypeId>("crown_emax");
-	const [newTeethInput, setNewTeethInput] = useState<string>(() =>
-		currentToothNumber ? String(currentToothNumber) : ""
-	);
-
-	// Синхронизация полей формы при изменении входящих контекстных пропсов
-	React.useEffect(() => {
-		if (currentPatientName !== undefined) setNewPatientName(currentPatientName);
-		if (currentDoctorName !== undefined) setNewDoctorName(currentDoctorName);
-		if (currentToothNumber !== undefined) setNewTeethInput(String(currentToothNumber));
-	}, [currentPatientName, currentDoctorName, currentToothNumber]);
-	const [newShade, setNewShade] = useState<string>("A2");
-	const [newStumpShade, setNewStumpShade] = useState<string>("ND2");
-	const [newPriceRub, setNewPriceRub] = useState<number>(24000);
-	const [newCostRub, setNewCostRub] = useState<number>(8000);
-	const [newDoctorPercent, setNewDoctorPercent] = useState<number>(20);
-	const [newInitialStatus, setNewInitialStatus] = useState<LabWorkflowStatus>("draft");
-	const [newExpectedLabDate, setNewExpectedLabDate] = useState<string>(() => {
-		const d = new Date();
-		d.setDate(d.getDate() + 5);
-		return d.toISOString().slice(0, 10);
-	});
-	const [newFittingDate, setNewFittingDate] = useState<string>(() => {
-		const d = new Date();
-		d.setDate(d.getDate() + 6);
-		return d.toISOString().slice(0, 10);
-	});
-	const [newAppointmentId, setNewAppointmentId] = useState<string>("");
-	const [newClinicalNotes, setNewClinicalNotes] = useState<string>("");
-	const [newImplantPlatform, setNewImplantPlatform] = useState<ImplantPlatformType | "">("");
-	const [newAbutmentType, setNewAbutmentType] = useState<AbutmentCategoryType | "">("");
-	const [newFixationType, setNewFixationType] = useState<FixationType | "">("");
-	const [newTechStage, setNewTechStage] = useState<LabTechnologicalStageId>("impression_scan");
 
 	// Всплывающие уведомления (Мандат 8e / Мгновенная обратная связь врачу)
 	const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -266,8 +165,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		setTimeout(() => setToastMessage(null), 3500);
 	}, []);
 
-	// ─── СТАТИСТИКА И ДЕТЕКЦИЯ ───────────────────────────────────────────────
-
+	// Статистика и детекция
 	const delayedOrders = useMemo(() => {
 		return orders.filter((ord) => ord.isDelayedAlert || ord.delayAlert.isDelayedAlert);
 	}, [orders]);
@@ -328,7 +226,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		});
 	}, [orders, onlyDelayedFilter, selectedLab, selectedWorkType, selectedStage, selectedDateRange, searchQuery]);
 
-	// Группировка по стадиям клинического цикла (включая гарантийную переделку)
+	// Группировка по стадиям клинического цикла
 	const ordersByStage = useMemo(() => {
 		const map: Record<LabWorkflowStatus, DentalLabWorkflowOrder[]> = {
 			draft: [],
@@ -342,7 +240,6 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 			if (map[ord.currentStage]) {
 				map[ord.currentStage].push(ord);
 			} else {
-				// Fallback для неизвестных статусов
 				map.draft.push(ord);
 			}
 		}
@@ -387,21 +284,18 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	}, [inspectingOrder, onSaveOrder, showToast]);
 
 	// Отправка на гарантийную переделку / рекламацию в ЗТЛ
-	const handleWarrantyReworkSubmit = useCallback((e?: React.FormEvent) => {
-		if (e) e.preventDefault();
-		if (!warrantyReworkOrder) return;
-
+	const handleWarrantyReworkSubmit = useCallback((order: DentalLabWorkflowOrder, reason: string) => {
 		const updated = sendOrderToWarrantyRework(
-			warrantyReworkOrder,
-			warrantyReason || "Гарантийная рекламация: скол / завышение прикуса",
+			order,
+			reason,
 			"Врач-ортопед",
 		);
 
-		setOrders((prev) => prev.map((o) => (o.id === warrantyReworkOrder.id ? updated : o)));
+		setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)));
 		if (onSaveOrder) onSaveOrder(updated);
-		showToast(`Наряд № ${warrantyReworkOrder.orderNumber}: оформлена гарантийная рекламация (0 ₽ для пациента)`);
+		showToast(`Наряд № ${order.orderNumber}: оформлена гарантийная рекламация (0 ₽ для пациента)`);
 		setWarrantyReworkOrder(null);
-	}, [warrantyReworkOrder, warrantyReason, onSaveOrder, showToast]);
+	}, [onSaveOrder, showToast]);
 
 	const handleAttachBitePhoto = useCallback((order: DentalLabWorkflowOrder) => {
 		setActionPrompt({
@@ -411,7 +305,6 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 			label: "URL фото окклюзии/прикуса или ссылка на снимок:",
 			placeholder: "https://...",
 		});
-		setActionPromptValue("");
 	}, []);
 
 	const handleTechnicianComment = useCallback((order: DentalLabWorkflowOrder) => {
@@ -422,20 +315,15 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 			label: "Клинические указания / уточнение для зубного техника:",
 			placeholder: "Укажите особенности анатомии, прозрачности, контактных пунктов...",
 		});
-		setActionPromptValue("");
 	}, []);
 
-	const handleActionPromptSubmit = useCallback((e?: React.FormEvent) => {
-		if (e) e.preventDefault();
-		if (!actionPrompt || !actionPromptValue.trim()) return;
-
-		const { order, type } = actionPrompt;
+	const handleActionPromptSubmit = useCallback((order: DentalLabWorkflowOrder, type: "bite_photo" | "technician_comment", value: string) => {
 		const prefix = type === "bite_photo" ? "[Фото прикуса]" : "[Технику]";
 		const toastText = type === "bite_photo" ? "фото прикуса сохранено" : "комментарий технику сохранен";
 
 		const updated: DentalLabWorkflowOrder = {
 			...order,
-			clinicalNotes: `${order.clinicalNotes ? `${order.clinicalNotes}\n` : ""}${prefix}: ${actionPromptValue.trim()}`,
+			clinicalNotes: `${order.clinicalNotes ? `${order.clinicalNotes}\n` : ""}${prefix}: ${value}`,
 		};
 
 		setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)));
@@ -443,8 +331,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		if (onSaveOrder) onSaveOrder(updated);
 		showToast(`Наряд № ${order.orderNumber}: ${toastText}`);
 		setActionPrompt(null);
-		setActionPromptValue("");
-	}, [actionPrompt, actionPromptValue, inspectingOrder, onSaveOrder, showToast]);
+	}, [inspectingOrder, onSaveOrder, showToast]);
 
 	const handleRepeatFitting = useCallback((order: DentalLabWorkflowOrder) => {
 		const updated = advanceLabOrderStage(order, "fitting_scheduled", "Врач-ортопед", "Назначена повторная клиническая примерка");
@@ -454,120 +341,62 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	}, [onSaveOrder, showToast]);
 
 	// Создание нового наряда
-	const handleCreateOrderSubmit = useCallback((e: React.FormEvent) => {
-		e.preventDefault();
-		if (!newPatientName.trim()) return;
-
-		const teeth = newTeethInput
-			.split(",")
-			.map((s) => parseInt(s.trim(), 10))
-			.filter((n) => !isNaN(n) && n >= 11 && n <= 48);
-
-		const defaultTeeth = currentToothNumber && !isNaN(Number(currentToothNumber))
-			? [Number(currentToothNumber)]
-			: [11];
-
-		const created = createDentalLabOrder({
-			patientId: currentPatientId || `pat-${Date.now()}`,
-			patientName: newPatientName.trim(),
-			patientChartNumber: newChartNumber.trim() || "043/у",
-			doctorId: "doc-current",
-			doctorName: newDoctorName.trim() || currentDoctorName?.trim() || "Врач-ортопед",
-			clinicName: "Стоматологическая клиника DENTE",
-			labName: newLabName,
-			workTypeId: newWorkType,
-			selectedTeeth: teeth.length > 0 ? teeth : defaultTeeth,
-			shadeCode: newShade,
-			stumpShadeCode: newStumpShade,
-			pricePerUnitRub: newPriceRub,
-			costPerUnitRub: newCostRub,
-			doctorPercent: newDoctorPercent,
-			initialStatus: newInitialStatus,
-			expectedLabDate: newExpectedLabDate,
-			fittingDate: newFittingDate,
-			appointmentId: newAppointmentId.trim() || undefined,
-			clinicalNotes: newClinicalNotes.trim() || undefined,
-			implantPlatform: newImplantPlatform || undefined,
-			abutmentType: newAbutmentType || undefined,
-			fixationType: newFixationType || undefined,
-			techStage: newTechStage,
-		});
-
+	const handleCreateOrder = useCallback((created: DentalLabWorkflowOrder) => {
 		setOrders((prev) => [created, ...prev]);
 		if (onSaveOrder) onSaveOrder(created);
 		showToast(`Наряд № ${created.orderNumber} успешно создан`);
 
 		// Persist lab order to PostgreSQL 18 backend (Mandates 8e, 8b, 8n)
-		const effectivePatientId = currentPatientId || created.patientId;
-		if (effectivePatientId) {
-			const teethStr = (teeth.length > 0 ? teeth : defaultTeeth).join(", ");
-			fetch("/api/clinical/lab-orders", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
-				body: JSON.stringify({
-					patientId: effectivePatientId,
-					doctorId: "doc-current",
-					toothFdi: teethStr,
-					material: created.materialName || newWorkType,
-					colorVita: newShade,
-					dueDate: newExpectedLabDate ? new Date(newExpectedLabDate).toISOString() : null,
-					clinicalNotes: newClinicalNotes.trim() || `Наряд ЗТЛ: ${created.materialName}`,
-					priceRub: created.financials.patientPriceTotalRub || newPriceRub,
-				}),
-			})
-				.then(() => {
-					if (typeof window !== "undefined") {
-						window.dispatchEvent(new CustomEvent("dente-lab-order-created", { detail: created }));
-					}
-				})
-				.catch((err) => {
-					console.warn("[DentalLabHub] Order persistence error:", err);
-				});
-		}
+		fetch("/api/clinical/lab-orders", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				...denteAdminSecretRequestHeaders(),
+			},
+			body: JSON.stringify({
+				orderNumber: created.orderNumber,
+				patientId: created.patientId,
+				patientName: created.patientName,
+				doctorId: created.doctorId,
+				doctorName: created.doctorName,
+				clinicName: created.clinicName,
+				labName: created.labName,
+				workTypeId: created.workTypeId,
+				materialName: created.materialName,
+				toothFdi: created.selectedTeeth.join(","),
+				shadeCode: created.shadeCode,
+				stumpShadeCode: created.stumpShadeCode,
+				priceRub: created.financials.patientPriceTotalRub,
+				costRub: created.financials.labCostTotalRub,
+				status: created.currentStage,
+				expectedLabDate: created.expectedLabDateIso,
+				fittingDate: created.fittingDate,
+				appointmentId: created.appointmentId,
+				clinicalNotes: created.clinicalNotes,
+				implantPlatform: created.implantPlatform,
+				abutmentType: created.abutmentType,
+				fixationType: created.fixationType,
+				techStage: created.techStage,
+			}),
+		}).catch((err) => {
+			console.warn("[DentalLabOrdersHubModal] Failed to persist lab order to backend:", err);
+		});
+	}, [onSaveOrder, showToast]);
 
-		// Сброс формы
-		setIsCreateModalOpen(false);
-		setNewPatientName(currentPatientName || "");
-		setNewChartNumber("");
-		setNewDoctorName(currentDoctorName || "");
-		setNewTeethInput(currentToothNumber ? String(currentToothNumber) : "");
-		setNewAppointmentId("");
-		setNewClinicalNotes("");
-		setNewImplantPlatform("");
-		setNewAbutmentType("");
-		setNewFixationType("");
-		setNewTechStage("impression_scan");
-	}, [
-		newPatientName,
-		newChartNumber,
-		newDoctorName,
-		newLabName,
-		newWorkType,
-		newTeethInput,
-		newShade,
-		newStumpShade,
-		newPriceRub,
-		newCostRub,
-		newDoctorPercent,
-		newInitialStatus,
-		newExpectedLabDate,
-		newFittingDate,
-		newAppointmentId,
-		newClinicalNotes,
-		newImplantPlatform,
-		newAbutmentType,
-		newFixationType,
-		newTechStage,
-		currentPatientId,
-		currentDoctorName,
-		currentPatientName,
-		currentToothNumber,
-		onSaveOrder,
-		showToast,
-	]);
+	// Печать строгого бланка А4
+	const handlePrintBlank = useCallback((order: DentalLabWorkflowOrder) => {
+		const html = generateDentalLabOrderA4PrintBlank(order);
+		const win = window.open("", "_blank");
+		if (win) {
+			win.document.open();
+			win.document.write(html);
+			win.document.close();
+			win.focus();
+			setTimeout(() => {
+				win.print();
+			}, 300);
+		}
+	}, []);
 
 	// Экспорт в CSV
 	const handleExportCsv = useCallback(() => {
@@ -575,128 +404,101 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement("a");
-		link.href = url;
-		link.download = `ZTL_Orders_Registry_${new Date().toISOString().slice(0, 10)}.csv`;
+		link.setAttribute("href", url);
+		link.setAttribute("download", `Наряды_ЗТЛ_DENTE_${new Date().toISOString().slice(0, 10)}.csv`);
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);
 		URL.revokeObjectURL(url);
-	}, [filteredOrders]);
-
-	// Печать бланка А4 для курьера
-	const handlePrintBlank = useCallback((order: DentalLabWorkflowOrder) => {
-		const html = generateDentalLabOrderA4PrintBlank(order);
-		const printWin = window.open("", "_blank", "width=850,height=1100");
-		if (printWin) {
-			printWin.document.write(html);
-			printWin.document.close();
-			printWin.focus();
-			setTimeout(() => {
-				printWin.print();
-			}, 300);
-		}
-	}, []);
+		showToast(`Экспортировано ${filteredOrders.length} нарядов в CSV`);
+	}, [filteredOrders, showToast]);
 
 	if (!isOpen) return null;
 
 	return (
-		<div className="ztl-hub-backdrop" role="dialog" aria-modal="true" aria-labelledby="ztl-hub-title">
-			<div className="ztl-hub-modal">
+		<div className="ztl-modal-overlay">
+			<div className="ztl-modal-container">
+				{/* ─── ВСПЛЫВАЮЩИЙ ТОСТ МГНОВЕННОЙ ОБРАТНОЙ СВЯЗИ (МАНДАТ 8E) ─── */}
 				{toastMessage && (
-					<div
-						style={{
-							position: "absolute",
-							top: "4.5rem",
-							right: "2rem",
-							zIndex: 10001,
-							background: "var(--ink, #0f172a)",
-							color: "var(--paper, #ffffff)",
-							padding: "0.5rem 1rem",
-							borderRadius: "8px",
-							boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
-							display: "flex",
-							alignItems: "center",
-							gap: "0.5rem",
-							fontSize: "0.8125rem",
-							fontWeight: 600,
-						}}
-					>
-						<CheckCircle2 size={16} style={{ color: "var(--ok-fg, #10b981)" }} />
+					<div className="ztl-toast" role="status">
+						<CheckCircle2 size={16} />
 						<span>{toastMessage}</span>
 					</div>
 				)}
-				{/* ─── 1. ШАПКА ХАБА ────────────────────────────────────────────── */}
-				<header className="ztl-hub-header">
-					<div className="ztl-hub-title-group min-w-0 flex-1">
-						<div className="ztl-hub-icon-wrap shrink-0">
+
+				{/* ─── 1. ВЕРХНЯЯ ШАПКА ХАБА ЗТЛ ───────────────────────────────── */}
+				<header className="ztl-modal-header">
+					<div className="ztl-header-left">
+						<div className="ztl-header-icon-badge">
 							<FlaskConical size={20} />
 						</div>
-						<div className="min-w-0 flex-1">
-							<h2 id="ztl-hub-title" className="ztl-hub-title truncate">
-								Центр наряд-заказов зуботехнической лаборатории (ЗТЛ)
+						<div>
+							<h2 className="ztl-modal-title">
+								Наряды в зуботехническую лабораторию (ЗТЛ)
 							</h2>
-							<p className="ztl-hub-subtitle truncate">
-								4 клинических статуса, сверка даты примерки с расписанием и целочисленный учет себестоимости
+							<p className="ztl-modal-subtitle">
+								Клинический ортопедический протокол • Сверка дедлайнов • Контроль себестоимости и ЗП
 							</p>
 						</div>
 					</div>
 
-					<div className="ztl-hub-stats-ribbon">
-						<div className="ztl-stat-pill">
-							<span>Всего:</span>
-							<span className="ztl-stat-value">{orders.length}</span>
+					<div className="ztl-header-kpi-strip">
+						<div className="ztl-kpi-item">
+							<span className="ztl-kpi-label">Всего нарядов</span>
+							<span className="ztl-kpi-value">{orders.length}</span>
 						</div>
-						<div className="ztl-stat-pill">
-							<span>В работе:</span>
-							<span className="ztl-stat-value">
-								{orders.filter((o) => o.currentStage !== "installed_completed").length}
-							</span>
-						</div>
-						<div className="ztl-stat-pill">
-							<span className={delayedOrders.length > 0 ? "ztl-stat-alert" : ""}>Задержек:</span>
-							<span className={delayedOrders.length > 0 ? "ztl-stat-value ztl-stat-alert" : "ztl-stat-value"}>
+						<div className="ztl-kpi-item">
+							<span className="ztl-kpi-label">Задержки ЗТЛ</span>
+							<span className={`ztl-kpi-value ${delayedOrders.length > 0 ? "has-alerts" : ""}`}>
 								{delayedOrders.length}
 							</span>
 						</div>
-						<div className="ztl-stat-pill">
-							<span>Себестоимость:</span>
-							<span className="ztl-stat-value">{totalLabCostRub.toLocaleString("ru-RU")} ₽</span>
+						<div className="ztl-kpi-item">
+							<span className="ztl-kpi-label">Затраты ЗТЛ</span>
+							<span className="ztl-kpi-value">{totalLabCostRub.toLocaleString("ru-RU")} ₽</span>
+						</div>
+						<div className="ztl-kpi-item">
+							<span className="ztl-kpi-label">Выручка клиники</span>
+							<span className="ztl-kpi-value highlighted">
+								{totalPatientPriceRub.toLocaleString("ru-RU")} ₽
+							</span>
 						</div>
 					</div>
 
-					<div className="ztl-hub-actions">
-						<button
-							type="button"
-							className="ztl-btn-primary"
-							onClick={() => setIsCreateModalOpen(true)}
-							title="Создать новый наряд-заказ в ЗТЛ"
-						>
-							<Plus size={14} />
-							<span>Новый наряд</span>
-						</button>
+					<div className="ztl-header-actions">
 						<button
 							type="button"
 							className="ztl-btn-secondary"
 							onClick={handleExportCsv}
-							title="Экспортировать наряды в Excel CSV"
+							title="Экспорт реестра в CSV (Excel)"
 						>
 							<Download size={14} />
-							<span>CSV</span>
+							<span>Экспорт CSV</span>
 						</button>
+
+						<button
+							type="button"
+							className="ztl-btn-primary"
+							onClick={() => setIsCreateModalOpen(true)}
+							title="Создать новый наряд в лабораторию"
+						>
+							<Plus size={14} />
+							<span>Новый наряд ЗТЛ</span>
+						</button>
+
 						<button
 							type="button"
 							className="ztl-btn-icon"
 							onClick={onClose}
-							aria-label="Закрыть окно"
-							title="Закрыть"
+							title="Закрыть окно"
 						>
 							<X size={18} />
 						</button>
 					</div>
 				</header>
 
-				{/* ─── 1b. МАНДАТ 8e: АВТОНОМИЯ ВРАЧА ПРИ ИСТЕЧЕНИИ ПЛАНА ЛЕЧЕНИЯ (>30 ДНЕЙ) ─── */}
-				{(isPlanExpired || (treatmentPlanAgeDays !== undefined && treatmentPlanAgeDays > 30)) && (
+				{/* ─── КЛИНИЧЕСКИЙ РЕГЛАМЕНТ АВТОНОМИИ ВРАЧА (МАНДАТ 8E) ─── */}
+				{(treatmentPlanAgeDays !== undefined && treatmentPlanAgeDays > 30) || isPlanExpired ? (
 					<div
 						style={{
 							background: "rgba(16, 185, 129, 0.08)",
@@ -717,7 +519,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 							<strong>Клинический регламент:</strong> План составлен более 30 дней назад{treatmentPlanAgeDays !== undefined ? ` (${treatmentPlanAgeDays} дн.)` : ""}, цены могут быть скорректированы, но это <strong>не блокирует</strong> оформление нарядов ЗТЛ, оказание услуг или взаиморасчеты (Мандат 8e).
 						</span>
 					</div>
-				)}
+				) : null}
 
 				{/* ─── 2. БАННЕР КРИТИЧЕСКИХ ЗАДЕРЖЕК ЗТЛ (isDelayedAlert) ────────── */}
 				{delayedOrders.length > 0 && (
@@ -740,7 +542,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 					</div>
 				)}
 
-				{/* ─── 3. ПАНЕЛЬ ФИЛЬТРОВ И ПОИСКА (ЗАКОН ХИКА: 1 СТРОКА 32-36PX) ──────────────────────────────── */}
+				{/* ─── 3. ПАНЕЛЬ ФИЛЬТРОВ И ПОИСКА ──────────────────────────────── */}
 				{orders.length > 0 && (
 					<section className="ztl-filter-bar" aria-label="Фильтры наряд-заказов">
 						<div className="ztl-search-input-wrap">
@@ -862,7 +664,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 					</section>
 				)}
 
-				{/* ─── 4. КАНБАН-ДОСКА (КЛИНИЧЕСКИЙ ЦИКЛ + ГАРАНТИЙНАЯ ПЕРЕДЕЛКА) ИЛИ ЧЕСТНЫЙ EMPTY STATE ──── */}
+				{/* ─── 4. КАНБАН-ДОСКА ИЛИ ЧЕСТНЫЙ EMPTY STATE ─────────────────── */}
 				{orders.length === 0 ? (
 					<main className="ztl-empty-state" role="status">
 						<div className="ztl-empty-icon-wrap">
@@ -883,1220 +685,51 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 						</button>
 					</main>
 				) : (
-					<main className="ztl-kanban-board">
-						{ALL_LAB_WORKFLOW_STATUSES.map((stageId) => {
-							const stageDef = LAB_WORKFLOW_STATUSES[stageId];
-							const stageOrders = ordersByStage[stageId] || [];
-							const stageLimit = stageLimits[stageId] ?? 40;
-							const stageSlice = sliceDomList(stageOrders, stageLimit, 0);
-
-							return (
-								<div key={stageId} className="ztl-kanban-column">
-									<div className="ztl-column-header">
-										<div className="ztl-column-title-wrap">
-											<span className="ztl-column-icon">
-												{stageId === "draft" && <FileText size={16} />}
-												{stageId === "sent_to_lab" && <Truck size={16} />}
-												{stageId === "fitting_scheduled" && <Calendar size={16} />}
-												{stageId === "installed_completed" && <CheckCircle2 size={16} />}
-												{stageId === "warranty_rework" && <RotateCcw size={16} />}
-											</span>
-											<h3 className="ztl-column-title">{stageDef.nameRu}</h3>
-										</div>
-										<span className={`ztl-column-count ${stageOrders.length > 0 ? "has-items" : ""}`}>
-											{stageOrders.length}
-										</span>
-									</div>
-
-									<div className="ztl-column-cards">
-										{stageSlice.visibleItems.map((order) => {
-											const hasDelay = order.isDelayedAlert || order.delayAlert.isDelayedAlert;
-											const preset = ORTHOPEDIC_WORK_TYPES[order.workTypeId] || ORTHOPEDIC_WORK_TYPES.crown_emax;
-
-											return (
-												<article
-													key={order.id}
-													className={`ztl-order-card ${hasDelay ? "has-delay-alert" : ""}`}
-													style={{
-														contentVisibility: "auto",
-														containIntrinsicSize: "1px 64px",
-														contain: "content",
-													}}
-												>
-													<div className="ztl-card-top-row">
-														<span className="ztl-card-order-num">{order.orderNumber}</span>
-														<span className="ztl-card-teeth-badge">
-															Зубы: {order.selectedTeeth.join(", ")}
-														</span>
-													</div>
-
-													{order.isWarrantyRework && (
-														<div style={{ marginTop: "4px", fontSize: "10.5px", color: "var(--bad-fg, #e11d48)", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
-															<RotateCcw size={11} />
-															<span className="truncate">ГАРАНТИЙНАЯ ПЕРЕДЕЛКА (0 ₽){order.originalOrderNumber ? ` • исх. № ${order.originalOrderNumber}` : ""}</span>
-														</div>
-													)}
-
-													<h4 className="ztl-card-patient-name truncate min-w-0" title={order.patientName}>
-														{order.patientName}
-													</h4>
-
-													<p className="ztl-card-doctor truncate min-w-0" title={order.doctorName}>
-														{order.doctorName}
-													</p>
-
-													<div className="ztl-card-work-type truncate min-w-0" title={`${preset.shortNameRu} (${order.shadeCode})`}>
-														{preset.shortNameRu} ({order.shadeCode})
-													</div>
-
-													<div className="ztl-card-lab-name min-w-0" title={order.labName}>
-														<Building2 size={11} className="shrink-0" />
-														<span className="truncate">{order.labName}</span>
-													</div>
-
-													{/* 8 технологических этапов ЗТЛ */}
-													<div style={{ marginTop: "4px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px" }}>
-														<span
-															style={{
-																fontSize: "10.5px",
-																fontWeight: 700,
-																color: LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.colorToken || "var(--teal, #3b82f6)",
-																background: "var(--teal-surface, rgba(59, 130, 246, 0.08))",
-																padding: "2px 6px",
-																borderRadius: "4px",
-																display: "inline-flex",
-																alignItems: "center",
-																gap: "4px",
-															}}
-															className="truncate min-w-0"
-															title={`Этап ${LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.stepNumber || 1} из 8: ${LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.departmentRu || ""}`}
-														>
-															<span className="shrink-0">Этап {LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.stepNumber || 1}/8:</span>
-															<span className="truncate">{LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.shortTitleRu || order.techStage}</span>
-														</span>
-													</div>
-
-													{/* Платформа имплантата / Абатмент / Фиксация */}
-													{(order.implantPlatform || order.abutmentType || order.fixationType) && (
-														<div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "4px", fontSize: "10px" }}>
-															{order.implantPlatform && (
-																<span style={{ background: "var(--paper-soft, #e0f2fe)", color: "var(--teal, #0369a1)", border: "1px solid var(--line, #bae6fd)", padding: "1px 5px", borderRadius: "3px", fontWeight: 600 }}>
-																	{order.implantPlatform === "conical" ? "Конус Морзе" : "Hex"}
-																</span>
-															)}
-															{order.abutmentType && (
-																<span style={{ background: "var(--paper-soft, #f3e8ff)", color: "var(--ink, #6b21a8)", border: "1px solid var(--line, #e9d5ff)", padding: "1px 5px", borderRadius: "3px", fontWeight: 600 }}>
-																	{ABUTMENT_TYPE_OPTIONS.find((a) => a.id === order.abutmentType)?.nameRu.split(" ")[0] || order.abutmentType}
-																</span>
-															)}
-															{order.fixationType && (
-																<span style={{ background: "var(--paper-soft, #fef3c7)", color: "var(--amber-fg, #92400e)", border: "1px solid var(--line, #fde68a)", padding: "1px 5px", borderRadius: "3px", fontWeight: 600 }}>
-																	{order.fixationType === "screw_retained" ? "Винтовая" : "Цементная"}
-																</span>
-															)}
-														</div>
-													)}
-
-													{/* Блок задержки ЗТЛ */}
-													{hasDelay && (
-														<div className="ztl-card-alert-badge" role="alert">
-															{order.delayAlert.alertMessageRu}
-														</div>
-													)}
-
-													{/* Даты готовности и примерки */}
-													<div className="ztl-card-dates-row">
-														<span title="Срок готовности из лаборатории">
-															ЗТЛ: <strong>{formatRussianDate(order.expectedLabDateIso)}</strong>
-														</span>
-														<span title="Дата назначенной примерки в расписании">
-															Примерка: <strong>{order.fittingDate ? formatRussianDate(order.fittingDate) : (order.scheduledVisitDateIso ? formatRussianDate(order.scheduledVisitDateIso) : "—")}</strong>
-														</span>
-													</div>
-
-													{/* Финансы: цена / себестоимость в копейках */}
-													<div className="ztl-card-price-row">
-														<span title="Стоимость для пациента" style={order.isWarrantyRework ? { color: "var(--teal, #10b981)", fontWeight: 700 } : undefined}>
-															{order.isWarrantyRework ? "0 ₽ (Гарантия)" : `${order.financials.patientPriceTotalRub.toLocaleString("ru-RU")} ₽`}
-														</span>
-														<span style={{ color: "var(--muted, #64748b)", fontSize: "10px" }} title="Себестоимость ЗТЛ">
-															Себест: {order.financials.labCostTotalRub.toLocaleString("ru-RU")} ₽
-														</span>
-													</div>
-
-													{/* Кнопки действий (Мандат 8d грех 3 — строго 2 кнопки прямого действия: Открыть + Сменить статус, вторичные в ...) */}
-													<div className="ztl-card-actions-row" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-														<button
-															type="button"
-															className="ztl-btn-card-action min-h-[36px] sm:min-h-0"
-															onClick={() => setInspectingOrder(order)}
-															title="Открыть спецификацию и детали наряда"
-															data-testid={`ztl-card-open-${order.id}`}
-														>
-															<Eye size={13} />
-															<span>Открыть</span>
-														</button>
-														{order.currentStage === "installed_completed" ? (
-															<button
-																type="button"
-																className="ztl-btn-card-action min-h-[36px] sm:min-h-0"
-																style={{ color: "var(--teal, #059669)", borderColor: "var(--teal-soft, #a7f3d0)", background: "var(--teal-surface, rgba(16, 185, 129, 0.08))", fontWeight: 700 }}
-																onClick={() => setInspectingOrder(order)}
-																title="Работа зафиксирована и сдана пациенту"
-																data-testid={`ztl-card-status-${order.id}`}
-															>
-																<CheckCircle2 size={13} />
-																<span>Сдано</span>
-															</button>
-														) : order.currentStage === "warranty_rework" ? (
-															<button
-																type="button"
-																className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
-																onClick={() => handleAdvanceStage(order)}
-																title="Отправить работу повторно в ЗТЛ"
-																data-testid={`ztl-card-status-${order.id}`}
-															>
-																<Send size={13} />
-																<span>В ЗТЛ</span>
-															</button>
-														) : order.currentStage === "draft" ? (
-															<button
-																type="button"
-																className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
-																onClick={() => handleAdvanceStage(order)}
-																title="Передать наряд и слепки в ЗТЛ"
-																data-testid={`ztl-card-status-${order.id}`}
-															>
-																<Send size={13} />
-																<span>В ЗТЛ</span>
-															</button>
-														) : order.currentStage === "sent_to_lab" ? (
-															<button
-																type="button"
-																className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
-																onClick={() => handleAdvanceStage(order)}
-																title="Назначить клиническую примерку"
-																data-testid={`ztl-card-status-${order.id}`}
-															>
-																<Calendar size={13} />
-																<span>Примерка</span>
-															</button>
-														) : order.currentStage === "fitting_scheduled" ? (
-															<button
-																type="button"
-																className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
-																onClick={() => handleAdvanceStage(order)}
-																title="Зафиксировать и сдать работу пациенту"
-																data-testid={`ztl-card-status-${order.id}`}
-															>
-																<CheckCircle2 size={13} />
-																<span>Сдать</span>
-															</button>
-														) : (
-															<button
-																type="button"
-																className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
-																onClick={() => handleAdvanceStage(order)}
-																title="Передвинуть на следующий клинический статус"
-																data-testid={`ztl-card-status-${order.id}`}
-															>
-																<ChevronRight size={13} />
-																<span>Далее</span>
-															</button>
-														)}
-
-														{/* Контекстное меню вторичных действий (...) */}
-														<div style={{ position: "relative", flexShrink: 0 }}>
-															<button
-																type="button"
-																className="ztl-btn-card-action min-h-[36px] sm:min-h-0 px-2"
-																style={{ minWidth: "32px", padding: "0 6px", flex: "none" }}
-																onClick={(e) => {
-																	e.stopPropagation();
-																	setActiveCardMenuOrderId((prev) => (prev === order.id ? null : order.id));
-																}}
-																title="Вторичные действия (Миллер: фото прикуса, комментарий технику, повторная примерка, рекламация)"
-																aria-expanded={activeCardMenuOrderId === order.id}
-																data-testid={`ztl-card-menu-btn-${order.id}`}
-															>
-																<MoreHorizontal size={13} />
-															</button>
-
-															{activeCardMenuOrderId === order.id && (
-																<div
-																	style={{
-																		position: "absolute",
-																		right: 0,
-																		bottom: "calc(100% + 4px)",
-																		background: "var(--paper, #ffffff)",
-																		border: "1px solid var(--line, #e2e8f0)",
-																		borderRadius: "8px",
-																		boxShadow: "0 10px 25px -5px rgba(0,0,0,0.18)",
-																		padding: "4px",
-																		zIndex: 50,
-																		minWidth: "210px",
-																		display: "flex",
-																		flexDirection: "column",
-																		gap: "2px",
-																	}}
-																	role="menu"
-																	onClick={(e) => e.stopPropagation()}
-																>
-																	<button
-																		type="button"
-																		style={{
-																			display: "flex",
-																			alignItems: "center",
-																			gap: "8px",
-																			padding: "8px 10px",
-																			borderRadius: "6px",
-																			border: "none",
-																			background: "transparent",
-																			color: "var(--ink, #0f172a)",
-																			fontSize: "12px",
-																			fontWeight: 500,
-																			cursor: "pointer",
-																			width: "100%",
-																			textAlign: "left",
-																			minHeight: "36px",
-																		}}
-																		onClick={() => {
-																			handlePrintBlank(order);
-																			setActiveCardMenuOrderId(null);
-																		}}
-																		title="Распечатать бланк наряда ЗТЛ-1 для курьера лаборатории"
-																		role="menuitem"
-																		data-testid={`ztl-card-print-a4-${order.id}`}
-																	>
-																		<Printer size={14} className="shrink-0 text-slate-600" />
-																		<span>Печать ЗТЛ-1 (А4)</span>
-																	</button>
-
-																	<button
-																		type="button"
-																		style={{
-																			display: "flex",
-																			alignItems: "center",
-																			gap: "8px",
-																			padding: "8px 10px",
-																			borderRadius: "6px",
-																			border: "none",
-																			background: "transparent",
-																			color: "var(--ink, #0f172a)",
-																			fontSize: "12px",
-																			fontWeight: 500,
-																			cursor: "pointer",
-																			width: "100%",
-																			textAlign: "left",
-																			minHeight: "36px",
-																		}}
-																		onClick={() => {
-																			setInspectingOrder(order);
-																			setActiveCardMenuOrderId(null);
-																		}}
-																		title="Просмотреть детали и спецификацию наряда"
-																		role="menuitem"
-																	>
-																		<Eye size={14} className="shrink-0 text-teal-600" />
-																		<span>Детали наряда</span>
-																	</button>
-
-																	<button
-																		type="button"
-																		style={{
-																			display: "flex",
-																			alignItems: "center",
-																			gap: "8px",
-																			padding: "8px 10px",
-																			borderRadius: "6px",
-																			border: "none",
-																			background: "transparent",
-																			color: "var(--ink, #0f172a)",
-																			fontSize: "12px",
-																			fontWeight: 500,
-																			cursor: "pointer",
-																			width: "100%",
-																			textAlign: "left",
-																			minHeight: "36px",
-																		}}
-																		onClick={() => {
-																			handleAttachBitePhoto(order);
-																			setActiveCardMenuOrderId(null);
-																		}}
-																		title="Прикрепить ссылку на фото окклюзии или прикуса"
-																		role="menuitem"
-																	>
-																		<Camera size={14} className="shrink-0 text-sky-600" />
-																		<span>Прикрепить фото прикуса</span>
-																	</button>
-
-																	<button
-																		type="button"
-																		style={{
-																			display: "flex",
-																			alignItems: "center",
-																			gap: "8px",
-																			padding: "8px 10px",
-																			borderRadius: "6px",
-																			border: "none",
-																			background: "transparent",
-																			color: "var(--ink, #0f172a)",
-																			fontSize: "12px",
-																			fontWeight: 500,
-																			cursor: "pointer",
-																			width: "100%",
-																			textAlign: "left",
-																			minHeight: "36px",
-																		}}
-																		onClick={() => {
-																			handleTechnicianComment(order);
-																			setActiveCardMenuOrderId(null);
-																		}}
-																		title="Добавить заметку или уточнение технику"
-																		role="menuitem"
-																	>
-																		<MessageSquare size={14} className="shrink-0 text-emerald-600" />
-																		<span>Комментарий технику</span>
-																	</button>
-
-																	<button
-																		type="button"
-																		style={{
-																			display: "flex",
-																			alignItems: "center",
-																			gap: "8px",
-																			padding: "8px 10px",
-																			borderRadius: "6px",
-																			border: "none",
-																			background: "transparent",
-																			color: "var(--ink, #0f172a)",
-																			fontSize: "12px",
-																			fontWeight: 500,
-																			cursor: "pointer",
-																			width: "100%",
-																			textAlign: "left",
-																			minHeight: "36px",
-																		}}
-																		onClick={() => {
-																			handleRepeatFitting(order);
-																			setActiveCardMenuOrderId(null);
-																		}}
-																		title="Назначить повторную примерку каркаса или реставрации"
-																		role="menuitem"
-																	>
-																		<RotateCcw size={14} className="shrink-0 text-orange-600" />
-																		<span>Повторная примерка</span>
-																	</button>
-
-																	{order.techStage !== "patient_fixation" && (
-																		<button
-																			type="button"
-																			style={{
-																				display: "flex",
-																				alignItems: "center",
-																				gap: "8px",
-																				padding: "8px 10px",
-																				borderRadius: "6px",
-																				border: "none",
-																				background: "transparent",
-																				color: "var(--ink, #0f172a)",
-																				fontSize: "12px",
-																				fontWeight: 500,
-																				cursor: "pointer",
-																				width: "100%",
-																				textAlign: "left",
-																				minHeight: "36px",
-																			}}
-																			onClick={() => {
-																				handleAdvanceTechStage(order);
-																				setActiveCardMenuOrderId(null);
-																			}}
-																			title="Перевести на следующий технологический этап ЗТЛ (1..8)"
-																			role="menuitem"
-																			data-testid={`ztl-card-tech-stage-${order.id}`}
-																		>
-																			<RefreshCw size={14} className="shrink-0 text-blue-600" />
-																			<span>Этап ЗТЛ (+1)</span>
-																		</button>
-																	)}
-
-																	<button
-																		type="button"
-																		style={{
-																			display: "flex",
-																			alignItems: "center",
-																			gap: "8px",
-																			padding: "8px 10px",
-																			borderRadius: "6px",
-																			border: "none",
-																			background: "transparent",
-																			color: "var(--bad-fg, #e11d48)",
-																			fontSize: "12px",
-																			fontWeight: 500,
-																			cursor: "pointer",
-																			width: "100%",
-																			textAlign: "left",
-																			minHeight: "36px",
-																		}}
-																		onClick={() => {
-																			setWarrantyReason("Скол керамической облицовки / несоответствие прикуса");
-																			setWarrantyReworkOrder(order);
-																			setActiveCardMenuOrderId(null);
-																		}}
-																		title="Отправить на гарантийную переделку / рекламацию (0 ₽)"
-																		role="menuitem"
-																		data-testid={`ztl-card-warranty-${order.id}`}
-																	>
-																		<RotateCcw size={14} className="shrink-0 text-rose-600" />
-																		<span>Рекламация (0 ₽)</span>
-																	</button>
-																</div>
-															)}
-														</div>
-													</div>
-												</article>
-											);
-										})}
-										{stageSlice.hasMore && (
-											<div style={{ padding: "8px 4px", textAlign: "center" }}>
-												<button
-													type="button"
-													className="ztl-chip"
-													style={{
-														width: "100%",
-														justifyContent: "center",
-														padding: "6px 10px",
-														fontSize: "11px",
-														fontWeight: 600,
-													}}
-													onClick={() =>
-														setStageLimits((prev) => ({
-															...prev,
-															[stageId]: (prev[stageId] ?? 40) + 40,
-														}))
-													}
-												>
-													Показать ещё 40 нарядов (показано {stageSlice.displayedCount} из {stageSlice.totalCount})
-												</button>
-											</div>
-										)}
-										{stageOrders.length === 0 && (
-											<div style={{ textAlign: "center", padding: "24px 8px", color: "var(--muted, #94a3b8)", fontSize: "11px" }}>
-												Нет нарядов в этом статусе
-											</div>
-										)}
-									</div>
-								</div>
-							);
-						})}
-					</main>
+					<DentalLabOrdersKanbanBoard
+						ordersByStage={ordersByStage}
+						stageLimits={stageLimits}
+						setStageLimits={setStageLimits}
+						activeCardMenuOrderId={activeCardMenuOrderId}
+						setActiveCardMenuOrderId={setActiveCardMenuOrderId}
+						onInspectOrder={setInspectingOrder}
+						onAdvanceStage={handleAdvanceStage}
+						onPrintBlank={handlePrintBlank}
+						onAttachBitePhoto={handleAttachBitePhoto}
+						onTechnicianComment={handleTechnicianComment}
+						onRepeatFitting={handleRepeatFitting}
+						onRequestWarrantyRework={setWarrantyReworkOrder}
+					/>
 				)}
 
 				{/* ─── 5. МОДАЛЬНОЕ ОКНО СОЗДАНИЯ НОВОГО НАКАЗА ──────────────────── */}
-				{isCreateModalOpen && (
-					<div className="ztl-detail-overlay">
-						<div className="ztl-detail-card">
-							<header className="ztl-detail-header">
-								<h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700 }}>
-									Оформление наряд-заказа в зуботехническую лабораторию (ЗТЛ)
-								</h3>
-								<button
-									type="button"
-									className="ztl-btn-icon"
-									onClick={() => setIsCreateModalOpen(false)}
-								>
-									<X size={16} />
-								</button>
-							</header>
+				<DentalLabCreateOrderModal
+					isOpen={isCreateModalOpen}
+					onClose={() => setIsCreateModalOpen(false)}
+					onCreateOrder={handleCreateOrder}
+					sampleLabs={SAMPLE_LABS}
+					currentDoctorName={currentDoctorName}
+					currentPatientName={currentPatientName}
+					currentPatientId={currentPatientId}
+					currentToothNumber={currentToothNumber}
+				/>
 
-							<form onSubmit={handleCreateOrderSubmit}>
-								<div className="ztl-detail-body">
-									<div className="ztl-form-grid-2">
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">Пациент (Ф.И.О.) *</label>
-											<input
-												type="text"
-												className="ztl-form-input"
-												required
-												placeholder="Ф.И.О. пациента"
-												value={newPatientName}
-												onChange={(e) => setNewPatientName(e.target.value)}
-											/>
-										</div>
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">№ Медкарты</label>
-											<input
-												type="text"
-												className="ztl-form-input"
-												placeholder="043/у-1234"
-												value={newChartNumber}
-												onChange={(e) => setNewChartNumber(e.target.value)}
-											/>
-										</div>
-									</div>
-
-									<div className="ztl-form-grid-2">
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">Врач-ортопед</label>
-											<input
-												type="text"
-												className="ztl-form-input"
-												placeholder="Ф.И.О. врача-ортопеда"
-												value={newDoctorName}
-												onChange={(e) => setNewDoctorName(e.target.value)}
-											/>
-										</div>
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">Лаборатория (ЗТЛ)</label>
-											<select
-												className="ztl-select"
-												style={{ width: "100%" }}
-												value={newLabName}
-												onChange={(e) => setNewLabName(e.target.value)}
-											>
-												{SAMPLE_LABS.map((lab) => (
-													<option key={lab} value={lab}>
-														{lab}
-													</option>
-												))}
-											</select>
-										</div>
-									</div>
-
-									<div className="ztl-form-grid-2">
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">Вид конструкции</label>
-											<select
-												className="ztl-select"
-												style={{ width: "100%" }}
-												value={newWorkType}
-												onChange={(e) => {
-													const val = e.target.value as OrthopedicWorkTypeId;
-													setNewWorkType(val);
-													const preset = ORTHOPEDIC_WORK_TYPES[val];
-													if (preset) {
-														setNewPriceRub(preset.defaultPriceKopecks / 100);
-														setNewCostRub(preset.defaultCostKopecks / 100);
-													}
-												}}
-											>
-												{Object.values(ORTHOPEDIC_WORK_TYPES).map((t) => (
-													<option key={t.id} value={t.id}>
-														{t.nameRu}
-													</option>
-												))}
-											</select>
-										</div>
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">Зубы по формуле FDI (через запятую)</label>
-											<input
-												type="text"
-												className="ztl-form-input"
-												placeholder="например: 11, 21"
-												value={newTeethInput}
-												onChange={(e) => setNewTeethInput(e.target.value)}
-											/>
-										</div>
-									</div>
-
-									<div className="ztl-form-grid-2">
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">Оттенок (VITA Classical / Bleach / 3D-Master)</label>
-											<div style={{ display: "flex", gap: "6px" }}>
-												<input
-													type="text"
-													className="ztl-form-input"
-													placeholder="A2, BL1, OM2, 2M2..."
-													value={newShade}
-													onChange={(e) => setNewShade(e.target.value.toUpperCase())}
-													list="vita-shades-datalist"
-													style={{ flex: 1 }}
-												/>
-												<select
-													className="ztl-select"
-													style={{ width: "140px" }}
-													value={newShade}
-													onChange={(e) => setNewShade(e.target.value)}
-												>
-													<optgroup label="VITA Classical (A1..D4)">
-														{VITA_CLASSICAL_SHADES.map((s) => (
-															<option key={s.code} value={s.code}>
-																{s.code} ({s.groupRu.split(":")[0]})
-															</option>
-														))}
-													</optgroup>
-													<optgroup label="VITA Bleach (OM / BL)">
-														{VITA_BLEACH_SHADES.map((s) => (
-															<option key={s.code} value={s.code}>
-																{s.code} (Bleach)
-															</option>
-														))}
-													</optgroup>
-													<optgroup label="VITA 3D-Master">
-														{VITA_3D_MASTER_SHADES.map((s) => (
-															<option key={s.code} value={s.code}>
-																{s.code}
-															</option>
-														))}
-													</optgroup>
-												</select>
-												<datalist id="vita-shades-datalist">
-													{VITA_CLASSICAL_SHADES.concat(VITA_BLEACH_SHADES, VITA_3D_MASTER_SHADES).map((s) => (
-														<option key={s.code} value={s.code} />
-													))}
-												</datalist>
-											</div>
-										</div>
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">Оттенок культи (ND1-ND9)</label>
-											<select
-												className="ztl-select"
-												style={{ width: "100%" }}
-												value={newStumpShade}
-												onChange={(e) => setNewStumpShade(e.target.value)}
-											>
-												{STUMP_SHADES_ND.map((nd) => (
-													<option key={nd.code} value={nd.code}>
-														{nd.code} — {nd.descriptionRu}
-													</option>
-												))}
-											</select>
-										</div>
-									</div>
-
-									<div className="ztl-form-grid-2">
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">Платформа имплантата</label>
-											<select
-												className="ztl-select"
-												style={{ width: "100%" }}
-												value={newImplantPlatform}
-												onChange={(e) => setNewImplantPlatform(e.target.value as ImplantPlatformType | "")}
-											>
-												<option value="">— Без имплантата (естественный зуб) —</option>
-												{IMPLANT_PLATFORMS.map((p) => (
-													<option key={p.id} value={p.id}>
-														{p.nameRu}
-													</option>
-												))}
-											</select>
-										</div>
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">Тип абатмента</label>
-											<select
-												className="ztl-select"
-												style={{ width: "100%" }}
-												value={newAbutmentType}
-												onChange={(e) => setNewAbutmentType(e.target.value as AbutmentCategoryType | "")}
-											>
-												<option value="">— Стандартный / не требуется —</option>
-												{ABUTMENT_TYPE_OPTIONS.map((a) => (
-													<option key={a.id} value={a.id}>
-														{a.nameRu} {a.angle > 0 ? `(${a.angle}°)` : ""}
-													</option>
-												))}
-											</select>
-										</div>
-									</div>
-
-									<div className="ztl-form-grid-2">
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">Тип фиксации</label>
-											<select
-												className="ztl-select"
-												style={{ width: "100%" }}
-												value={newFixationType}
-												onChange={(e) => setNewFixationType(e.target.value as FixationType | "")}
-											>
-												<option value="">— Не выбрано —</option>
-												{FIXATION_TYPES.map((f) => (
-													<option key={f.id} value={f.id}>
-														{f.nameRu}
-													</option>
-												))}
-											</select>
-										</div>
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">Первичный технологический этап ЗТЛ (1..8)</label>
-											<select
-												className="ztl-select"
-												style={{ width: "100%" }}
-												value={newTechStage}
-												onChange={(e) => setNewTechStage(e.target.value as LabTechnologicalStageId)}
-											>
-												{LAB_TECHNOLOGICAL_STAGE_ORDER.map((stageKey) => {
-													const sDef = LAB_TECHNOLOGICAL_STAGES[stageKey];
-													return (
-														<option key={stageKey} value={stageKey}>
-															Этап {sDef.stepNumber}: {sDef.nameRu} ({sDef.departmentRu})
-														</option>
-													);
-												})}
-											</select>
-										</div>
-									</div>
-
-									<div className="ztl-form-grid-2">
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">План готовности из ЗТЛ</label>
-											<input
-												type="date"
-												className="ztl-form-input"
-												value={newExpectedLabDate}
-												onChange={(e) => setNewExpectedLabDate(e.target.value)}
-											/>
-										</div>
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">Дата примерки в расписании (fittingDate)</label>
-											<input
-												type="date"
-												className="ztl-form-input"
-												value={newFittingDate}
-												onChange={(e) => setNewFittingDate(e.target.value)}
-											/>
-										</div>
-									</div>
-
-									<div className="ztl-form-grid-2">
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">ID приема в расписании (appointmentId)</label>
-											<input
-												type="text"
-												className="ztl-form-input"
-												placeholder="appt-8041"
-												value={newAppointmentId}
-												onChange={(e) => setNewAppointmentId(e.target.value)}
-											/>
-										</div>
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">Начальный статус</label>
-											<select
-												className="ztl-select"
-												style={{ width: "100%" }}
-												value={newInitialStatus}
-												onChange={(e) => setNewInitialStatus(e.target.value as LabWorkflowStatus)}
-											>
-												{LAB_WORKFLOW_STATUS_ORDER.map((st) => (
-													<option key={st} value={st}>
-														{LAB_WORKFLOW_STATUSES[st].nameRu}
-													</option>
-												))}
-											</select>
-										</div>
-									</div>
-
-									<div className="ztl-form-grid-2" style={{ background: "var(--paper-strong, #f8fafc)", padding: "10px", borderRadius: "6px" }}>
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">Стоимость за ед. (руб)</label>
-											<input
-												type="number"
-												className="ztl-form-input"
-												value={newPriceRub}
-												onChange={(e) => setNewPriceRub(Number(e.target.value))}
-											/>
-										</div>
-										<div className="ztl-form-group">
-											<label className="ztl-form-label">Себестоимость ЗТЛ за ед. (руб)</label>
-											<input
-												type="number"
-												className="ztl-form-input"
-												value={newCostRub}
-												onChange={(e) => setNewCostRub(Number(e.target.value))}
-											/>
-										</div>
-									</div>
-
-									<div className="ztl-form-group">
-										<label className="ztl-form-label">Клинические указания врачу и технику</label>
-										<textarea
-											className="ztl-form-input"
-											style={{ height: "60px", padding: "6px 10px", resize: "none" }}
-											placeholder="Особенности краевого прилегания, прозрачность, прикус..."
-											value={newClinicalNotes}
-											onChange={(e) => setNewClinicalNotes(e.target.value)}
-										/>
-									</div>
-								</div>
-
-								<footer className="ztl-detail-footer">
-									<button
-										type="button"
-										className="ztl-btn-secondary"
-										onClick={() => setIsCreateModalOpen(false)}
-									>
-										Отмена
-									</button>
-									<button type="submit" className="ztl-btn-primary">
-										<CheckCircle2 size={14} />
-										<span>Сформировать наряд</span>
-									</button>
-								</footer>
-							</form>
-						</div>
-					</div>
-				)}
-
-				{/* ─── 6. МОДАЛКА ПРОСМОТРА ДЕТАЛЕЙ НАКАЗА ───────────────────────── */}
-				{inspectingOrder && (
-					<div className="ztl-detail-overlay">
-						<div className="ztl-detail-card">
-							<header className="ztl-detail-header">
-								<h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700 }}>
-									Детали наряд-заказа № {inspectingOrder.orderNumber}
-								</h3>
-								<button
-									type="button"
-									className="ztl-btn-icon"
-									onClick={() => setInspectingOrder(null)}
-								>
-									<X size={16} />
-								</button>
-							</header>
-
-							<div className="ztl-detail-body">
-								{inspectingOrder.isWarrantyRework && (
-									<div style={{ background: "rgba(225, 29, 72, 0.08)", border: "1px solid rgba(225, 29, 72, 0.3)", color: "var(--bad-fg, #e11d48)", padding: "8px 12px", borderRadius: "6px", fontSize: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
-										<RotateCcw size={16} color="var(--bad-fg, #e11d48)" />
-										<div>
-											<strong>Гарантийная рекламация!</strong> Исходный наряд: <strong>№ {inspectingOrder.originalOrderNumber || inspectingOrder.originalOrderId}</strong>
-											{inspectingOrder.reworkReason && <div style={{ fontSize: "11px", marginTop: "2px" }}>Причина: {inspectingOrder.reworkReason}</div>}
-										</div>
-									</div>
-								)}
-
-								<div className="ztl-form-grid-2">
-									<div className="min-w-0">
-										<p style={{ margin: "0 0 2px 0", fontSize: "11px", color: "var(--muted, #64748b)" }}>Пациент:</p>
-										<p style={{ margin: 0, fontWeight: 700 }} className="truncate" title={inspectingOrder.patientName}>{inspectingOrder.patientName}</p>
-									</div>
-									<div className="min-w-0">
-										<p style={{ margin: "0 0 2px 0", fontSize: "11px", color: "var(--muted, #64748b)" }}>Врач-ортопед:</p>
-										<p style={{ margin: 0, fontWeight: 700 }} className="truncate" title={inspectingOrder.doctorName}>{inspectingOrder.doctorName}</p>
-									</div>
-								</div>
-
-								<div className="ztl-form-grid-2">
-									<div className="min-w-0">
-										<p style={{ margin: "0 0 2px 0", fontSize: "11px", color: "var(--muted, #64748b)" }}>Лаборатория:</p>
-										<p style={{ margin: 0, fontWeight: 600 }} className="truncate" title={inspectingOrder.labName}>{inspectingOrder.labName}</p>
-									</div>
-									<div className="min-w-0">
-										<p style={{ margin: "0 0 2px 0", fontSize: "11px", color: "var(--muted, #64748b)" }}>Конструкция:</p>
-										<p style={{ margin: 0, fontWeight: 600 }} className="truncate" title={inspectingOrder.materialName}>{inspectingOrder.materialName}</p>
-									</div>
-								</div>
-
-								<div className="ztl-form-grid-2">
-									<div>
-										<p style={{ margin: "0 0 2px 0", fontSize: "11px", color: "var(--muted, #64748b)" }}>Срок готовности ЗТЛ:</p>
-										<p style={{ margin: 0, fontWeight: 700, color: "var(--teal, #0d9488)" }}>{formatRussianDate(inspectingOrder.expectedLabDateIso)}</p>
-									</div>
-									<div>
-										<p style={{ margin: "0 0 2px 0", fontSize: "11px", color: "var(--muted, #64748b)" }}>Дата примерки / Прием:</p>
-										<p style={{ margin: 0, fontWeight: 700 }}>
-											{inspectingOrder.fittingDate ? formatRussianDate(inspectingOrder.fittingDate) : "—"}
-											{inspectingOrder.appointmentId ? ` (${inspectingOrder.appointmentId})` : ""}
-										</p>
-									</div>
-								</div>
-
-								{/* Параметры имплантации и фиксации */}
-								{(inspectingOrder.implantPlatform || inspectingOrder.abutmentType || inspectingOrder.fixationType) && (
-									<div style={{ background: "var(--paper-strong, #f8fafc)", padding: "10px", borderRadius: "6px" }}>
-										<h4 style={{ margin: "0 0 6px 0", fontSize: "12px", fontWeight: 700 }}>
-											Параметры имплантологической конструкции:
-										</h4>
-										<div className="ztl-form-grid-2" style={{ fontSize: "12px" }}>
-											{inspectingOrder.implantPlatform && (
-												<div>
-													Платформа имплантата: <strong>{inspectingOrder.implantPlatform === "conical" ? "Конус Морзе (Morse Taper)" : "Шестигранник (Hex)"}</strong>
-												</div>
-											)}
-											{inspectingOrder.abutmentType && (
-												<div>
-													Тип абатмента: <strong>{ABUTMENT_TYPE_OPTIONS.find((a) => a.id === inspectingOrder.abutmentType)?.nameRu || inspectingOrder.abutmentType}</strong>
-												</div>
-											)}
-											{inspectingOrder.fixationType && (
-												<div>
-													Тип фиксации: <strong>{inspectingOrder.fixationType === "screw_retained" ? "Винтовая (Screw-retained)" : "Цементная (Cement-retained)"}</strong>
-												</div>
-											)}
-										</div>
-									</div>
-								)}
-
-								{/* Маршрутный лист 8 технологических этапов ЗТЛ */}
-								<div style={{ background: "var(--paper-strong, #f8fafc)", padding: "10px", borderRadius: "6px" }}>
-									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-										<h4 style={{ margin: 0, fontSize: "12px", fontWeight: 700 }}>
-											Маршрутный лист 8 технологических этапов ЗТЛ:
-										</h4>
-										<span style={{ fontSize: "11px", fontWeight: 600, color: "var(--teal, #0d9488)" }}>
-											Текущий: {LAB_TECHNOLOGICAL_STAGES[inspectingOrder.techStage || "impression_scan"]?.shortTitleRu || inspectingOrder.techStage}
-										</span>
-									</div>
-									<div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px" }}>
-										{LAB_TECHNOLOGICAL_STAGE_ORDER.map((stageKey) => {
-											const sDef = LAB_TECHNOLOGICAL_STAGES[stageKey];
-											const currentStep = LAB_TECHNOLOGICAL_STAGES[inspectingOrder.techStage || "impression_scan"]?.stepNumber ?? 1;
-											const isDone = sDef.stepNumber < currentStep;
-											const isCurrent = sDef.stepNumber === currentStep;
-
-											return (
-												<button
-													key={stageKey}
-													type="button"
-													onClick={() => handleAdvanceTechStage(inspectingOrder, stageKey)}
-													style={{
-														padding: "6px",
-														borderRadius: "6px",
-														border: isCurrent ? "2px solid var(--teal, #0d9488)" : "1px solid var(--line, #e2e8f0)",
-														background: isCurrent ? "var(--teal-surface, #f0fdfa)" : isDone ? "var(--paper-soft, #f8fafc)" : "var(--paper, #ffffff)",
-														color: isCurrent ? "var(--teal, #0f766e)" : isDone ? "var(--muted, #64748b)" : "var(--ink, #0f172a)",
-														textAlign: "left",
-														cursor: "pointer",
-														fontSize: "10.5px",
-													}}
-													title={`${sDef.nameRu}\nЦех: ${sDef.departmentRu}\n${sDef.descriptionRu}`}
-												>
-													<div style={{ fontWeight: 700, display: "flex", justifyContent: "space-between" }}>
-														<span>№{sDef.stepNumber}</span>
-														<span style={{ fontSize: "9.5px", display: "inline-flex", alignItems: "center", gap: "2px", color: isDone ? "var(--teal, #059669)" : isCurrent ? "var(--teal, #0d9488)" : "var(--muted, #94a3b8)" }}>
-															{isDone ? <CheckCircle2 size={10} className="text-emerald-600 dark:text-emerald-400" /> : isCurrent ? "В РАБОТЕ" : "ОЖИДАНИЕ"}
-														</span>
-													</div>
-													<div style={{ marginTop: "2px", fontWeight: isCurrent ? 700 : 500 }} className="truncate">
-														{sDef.shortTitleRu}
-													</div>
-												</button>
-											);
-										})}
-									</div>
-								</div>
-
-								<div style={{ background: "var(--paper-strong, #f8fafc)", padding: "10px", borderRadius: "6px" }}>
-									<h4 style={{ margin: "0 0 6px 0", fontSize: "12px", fontWeight: 700 }}>
-										Финансовый расчет (в копейках):
-									</h4>
-									<div className="ztl-form-grid-2" style={{ fontSize: "12px" }}>
-										<div>Стоимость пациента: <strong>{inspectingOrder.financials.patientPriceTotalRub.toLocaleString("ru-RU")} ₽</strong></div>
-										<div>Себестоимость ЗТЛ: <strong>{inspectingOrder.financials.labCostTotalRub.toLocaleString("ru-RU")} ₽</strong></div>
-										<div>Маржа клиники: <strong style={{ color: "var(--teal, #0d9488)" }}>{inspectingOrder.financials.clinicGrossMarginRub.toLocaleString("ru-RU")} ₽</strong></div>
-										<div>ЗП врача ({inspectingOrder.financials.doctorPercent}%): <strong>{inspectingOrder.financials.doctorWageRub.toLocaleString("ru-RU")} ₽</strong></div>
-									</div>
-								</div>
-
-								{/* История стадий */}
-								<div>
-									<h4 style={{ margin: "0 0 6px 0", fontSize: "12px", fontWeight: 700 }}>
-										История статусов клинического цикла:
-									</h4>
-									<div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "11px" }}>
-										{inspectingOrder.stageHistory.map((hist, i) => (
-											<div key={i} style={{ borderLeft: "2px solid var(--teal, #0d9488)", paddingLeft: "8px" }}>
-												<span style={{ fontWeight: 700 }}>{LAB_WORKFLOW_STATUSES[hist.stage]?.nameRu || hist.stage}</span>
-												<span style={{ color: "var(--muted, #64748b)", marginLeft: "8px" }}>
-													{hist.timestampIso.slice(0, 16).replace("T", " ")} ({hist.authorName})
-												</span>
-												{hist.note && <div style={{ color: "var(--muted, #64748b)" }}>{hist.note}</div>}
-											</div>
-										))}
-									</div>
-								</div>
-							</div>
-
-							<footer className="ztl-detail-footer">
-								{inspectingOrder.currentStage === "installed_completed" && (
-									<button
-										type="button"
-										className="ztl-btn-secondary"
-										style={{ color: "var(--bad-fg, #e11d48)", borderColor: "var(--bad-line, #fecdd3)", fontWeight: 700 }}
-										onClick={() => {
-											const target = inspectingOrder;
-											setInspectingOrder(null);
-											setWarrantyReason("Скол керамической облицовки");
-											setWarrantyReworkOrder(target);
-										}}
-										title="Оформить рекламацию и отправить на гарантийную переделку"
-									>
-										<RotateCcw size={14} />
-										<span>Рекламация</span>
-									</button>
-								)}
-								<button
-									type="button"
-									className="ztl-btn-secondary"
-									onClick={() => {
-										handlePrintBlank(inspectingOrder);
-									}}
-								>
-									<Printer size={14} />
-									<span>Распечатать А4</span>
-								</button>
-								<button
-									type="button"
-									className="ztl-btn-primary"
-									onClick={() => setInspectingOrder(null)}
-								>
-									Закрыть
-								</button>
-							</footer>
-						</div>
-					</div>
-				)}
-
-				{/* ─── 7. МОДАЛЬНОЕ ОКНО ОФОРМЛЕНИЯ ГАРАНТИЙНОЙ РЕКЛАМАЦИИ В ЗТЛ ────── */}
-				{warrantyReworkOrder && (
-					<div className="ztl-detail-overlay">
-						<div className="ztl-detail-card" style={{ maxWidth: "480px" }}>
-							<header className="ztl-detail-header" style={{ borderBottom: "2px solid var(--bad-fg, #e11d48)" }}>
-								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-									<RotateCcw size={18} color="var(--bad-fg, #e11d48)" />
-									<h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--bad-fg, #e11d48)" }}>
-										Гарантийная рекламация наряда № {warrantyReworkOrder.orderNumber}
-									</h3>
-								</div>
-								<button
-									type="button"
-									className="ztl-btn-icon"
-									onClick={() => setWarrantyReworkOrder(null)}
-								>
-									<X size={16} />
-								</button>
-							</header>
-
-							<form onSubmit={handleWarrantyReworkSubmit}>
-								<div className="ztl-detail-body">
-									<p style={{ margin: "0 0 12px 0", fontSize: "12px", color: "var(--muted, #64748b)" }}>
-										Работа для пациента <strong>{warrantyReworkOrder.patientName}</strong> будет переведена в статус
-										«Гарантийная переделка» с сохранением ссылки на исходный наряд № {warrantyReworkOrder.orderNumber}.
-									</p>
-
-									<div className="ztl-form-group">
-										<label className="ztl-form-label">Причина рекламации / замечания врача *</label>
-										<select
-											className="ztl-select"
-											style={{ width: "100%", marginBottom: "8px" }}
-											value={warrantyReason}
-											onChange={(e) => setWarrantyReason(e.target.value)}
-										>
-											<option value="Скол керамической облицовки">Скол керамической облицовки</option>
-											<option value="Завышение прикуса / окклюзионный блок">Завышение прикуса / окклюзионный блок</option>
-											<option value="Несоответствие цвета / оттенка VITA">Несоответствие цвета / оттенка VITA</option>
-											<option value="Нарушение краевого прилегания (уступ)">Нарушение краевого прилегания (уступ)</option>
-											<option value="Балансирование каркаса на культе">Балансирование каркаса на культе</option>
-											<option value="Другая причина (указать вручную)">Другая причина (указать вручную)</option>
-										</select>
-
-										<textarea
-											className="ztl-form-input"
-											style={{ height: "70px", padding: "6px 10px", resize: "none" }}
-											placeholder="Уточнение дефекта для зубного техника..."
-											value={warrantyReason}
-											onChange={(e) => setWarrantyReason(e.target.value)}
-										/>
-									</div>
-								</div>
-
-								<footer className="ztl-detail-footer">
-									<button
-										type="button"
-										className="ztl-btn-secondary"
-										onClick={() => setWarrantyReworkOrder(null)}
-									>
-										Отмена
-									</button>
-									<button
-										type="submit"
-										className="ztl-btn-primary"
-										style={{ background: "var(--bad-fg, #e11d48)", borderColor: "var(--bad-border, #be123c)", color: "var(--paper-strong, #ffffff)" }}
-									>
-										<RotateCcw size={14} />
-										<span>Отправить на рекламацию</span>
-									</button>
-								</footer>
-							</form>
-						</div>
-					</div>
-				)}
-
-				{/* ─── 8. НЕБЛОКИРУЮЩИЙ ДИАЛОГ ВВОДА (ФОТО ПРИКУСА / КОММЕНТАРИЙ ТЕХНИКУ) ─── */}
-				{actionPrompt && (
-					<div className="ztl-detail-overlay" data-testid="ztl-action-prompt-modal">
-						<div className="ztl-detail-card" style={{ maxWidth: "480px" }}>
-							<header className="ztl-detail-header">
-								<h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700 }}>
-									{actionPrompt.title}
-								</h3>
-								<button
-									type="button"
-									className="ztl-btn-icon"
-									onClick={() => {
-										setActionPrompt(null);
-										setActionPromptValue("");
-									}}
-									aria-label="Закрыть"
-								>
-									<X size={16} />
-								</button>
-							</header>
-
-							<form onSubmit={handleActionPromptSubmit}>
-								<div className="ztl-detail-body">
-									<div className="ztl-form-group">
-										<label className="ztl-form-label">{actionPrompt.label}</label>
-										{actionPrompt.type === "bite_photo" ? (
-											<input
-												type="text"
-												className="ztl-form-input"
-												placeholder={actionPrompt.placeholder}
-												value={actionPromptValue}
-												onChange={(e) => setActionPromptValue(e.target.value)}
-												data-testid="ztl-action-prompt-input"
-												autoFocus
-												required
-											/>
-										) : (
-											<textarea
-												className="ztl-form-input"
-												style={{ height: "80px", padding: "8px 10px", resize: "none" }}
-												placeholder={actionPrompt.placeholder}
-												value={actionPromptValue}
-												onChange={(e) => setActionPromptValue(e.target.value)}
-												data-testid="ztl-action-prompt-input"
-												autoFocus
-												required
-											/>
-										)}
-									</div>
-								</div>
-
-								<footer className="ztl-detail-footer">
-									<button
-										type="button"
-										className="ztl-btn-secondary"
-										onClick={() => {
-											setActionPrompt(null);
-											setActionPromptValue("");
-										}}
-										data-testid="ztl-action-prompt-cancel"
-									>
-										Отмена
-									</button>
-									<button
-										type="submit"
-										className="ztl-btn-primary"
-										data-testid="ztl-action-prompt-submit"
-									>
-										<CheckCircle2 size={14} />
-										<span>Сохранить</span>
-									</button>
-								</footer>
-							</form>
-						</div>
-					</div>
-				)}
+				{/* ─── 6. ДЕТАЛИ НАКАЗА, РЕКЛАМАЦИЯ И ACTION PROMPT МОДАЛКИ ──────── */}
+				<DentalLabOrderDetailsModal
+					inspectingOrder={inspectingOrder}
+					onCloseInspect={() => setInspectingOrder(null)}
+					onPrintBlank={handlePrintBlank}
+					onAdvanceTechStage={handleAdvanceTechStage}
+					onOpenWarrantyRework={(ord) => {
+						setInspectingOrder(null);
+						setWarrantyReworkOrder(ord);
+					}}
+					warrantyReworkOrder={warrantyReworkOrder}
+					onCloseWarrantyRework={() => setWarrantyReworkOrder(null)}
+					onWarrantyReworkSubmit={handleWarrantyReworkSubmit}
+					actionPrompt={actionPrompt}
+					onCloseActionPrompt={() => setActionPrompt(null)}
+					onActionPromptSubmit={handleActionPromptSubmit}
+				/>
 			</div>
 		</div>
 	);

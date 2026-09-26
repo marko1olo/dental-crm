@@ -1,3 +1,4 @@
+import React from "react";
 import { Check, Palette, Sparkles, Layers, Sliders } from "lucide-react";
 import {
 	VITA_CLASSICAL_SHADES,

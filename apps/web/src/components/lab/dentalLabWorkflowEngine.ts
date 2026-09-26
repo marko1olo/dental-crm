@@ -8,7 +8,8 @@
  * 4. Бюгельные протезы с замковой фиксацией Bredent VKS / кламмерами
  * 5. Съемные акриловые протезы (Acry-Free / Ивокрил / Vertex)
  * 6. Индивидуальные титановые и циркониевые абатменты + коронка
- * 7. Элайнеры и ортодонтические каппы / сплинты
+ * 7. Временные фрезерованные / 3D-печатные коронки PMMA
+ * 8. Элайнеры и ортодонтические каппы / сплинты
  * 
  * 4 КЛИНИЧЕСКИХ СТАТУСА (WAVE 8 — ЧИСТЫЙ CLINICAL WORKFLOW):
  * 1. draft               — Черновик (оформление ортопедом)
@@ -39,8 +40,6 @@ import {
 	type LabImplantComponentsManifest,
 	formatImplantComponentsSummary,
 } from "./orders/labWorkOrderPresets";
-import { generateQrCodeSvg as sharedGenerateQrCodeSvg } from "@dental/shared";
-import { generateBarcodeSvg as canonicalCode128BarcodeSvg } from "./labMath";
 
 export type { ImplantPlatformType, AbutmentCategoryType, FixationType, LabTechnologicalStageId, LabImplantComponentsManifest };
 export {
@@ -52,16 +51,21 @@ export {
 	formatImplantComponentsSummary,
 };
 
+// ─── TRANSPARENT RE-EXPORTS (PHASE 1 DECOMPOSITION CONTRACT) ───────────────────
+export * from "./dentalLabWorkflowModel";
+export * from "./dentalLabWorkflowExport";
+
 // ─── 1. ТИПЫ И КАТАЛОГ ОРТОПЕДИЧЕСКИХ КОНСТРУКЦИЙ ────────────────────────────
 
 export type OrthopedicWorkTypeId =
-	| "crown_emax"          // Коронка IPS e.max Press / CAD
-	| "crown_zirconia"      // Коронка из диоксида циркония (Katana ML / Prettau)
-	| "metal_ceramic"       // Металлокерамика (Co-Cr фрезерованный/литой)
-	| "clasp_prosthesis"    // Бюгельный протез (замки Bredent / кламмеры)
-	| "removable_acrylic"   // Съемный акриловый протез (Acry-Free / Ивокрил)
-	| "custom_abutment"     // Индивидуальный абатмент (Ti-Base / ZrO₂) + коронка
-	| "aligners";           // Элайнеры / Ортодонтические каппы / Сплинты
+	| "crown_zirconia"      // #1 Коронка из диоксида циркония (Katana ML / Prettau)
+	| "crown_emax"          // #2 Коронка IPS e.max Press / CAD (дисиликат лития)
+	| "metal_ceramic"       // #3 Металлокерамика (Co-Cr фрезерованный/литой)
+	| "temporary_pmma"      // #4 Временная пластмассовая коронка PMMA CAD/CAM
+	| "clasp_prosthesis"    // #5 Бюгельный протез (замки Bredent / кламмеры)
+	| "custom_abutment"     // #6 Индивидуальный абатмент (Ti-Base / ZrO₂) + коронка
+	| "removable_acrylic"   // #7 Съемный акриловый протез (Acry-Free / Ивокрил)
+	| "aligners";           // #8 Элайнеры / Ортодонтические каппы / Сплинты
 
 export interface OrthopedicWorkTypeDefinition {
 	readonly id: OrthopedicWorkTypeId;
@@ -125,6 +129,21 @@ export const ORTHOPEDIC_WORK_TYPES: Record<OrthopedicWorkTypeId, OrthopedicWorkT
 		defaultPriceKopecks: 1400000, // 14 000 руб
 		defaultCostKopecks: 450000,   // 4 500 руб
 	},
+	temporary_pmma: {
+		id: "temporary_pmma",
+		nameRu: "Временная пластмассовая коронка PMMA (фрезерованная / 3D печать)",
+		shortNameRu: "Временная PMMA",
+		categoryRu: "Временное протезирование",
+		descriptionRu: "Высокоточная провизорная коронка из фрезерованного PMMA CAD/CAM или биосовместимого 3D-фотополимера для защиты препарированного зуба.",
+		icon: "clock",
+		defaultMaterialRu: "PMMA CAD/CAM фрезерованная / NextDent C&B",
+		standardTurnaroundWorkingDays: 2,
+		requiresFittingStage: false,
+		requiresStumpShade: false,
+		requiresImplantSystem: false,
+		defaultPriceKopecks: 250000, // 2 500 руб
+		defaultCostKopecks: 80000,   // 800 руб
+	},
 	clasp_prosthesis: {
 		id: "clasp_prosthesis",
 		nameRu: "Бюгельный протез с замковой фиксацией Bredent / кламмерами",
@@ -186,6 +205,28 @@ export const ORTHOPEDIC_WORK_TYPES: Record<OrthopedicWorkTypeId, OrthopedicWorkT
 		defaultCostKopecks: 550000,   // 5 500 руб
 	},
 };
+
+/**
+ * 90%+ CIS/RU market popularity catalog in descending order:
+ * #1 Katana STML/UTML ZrO2
+ * #2 IPS e.max CAD/Press
+ * #3 Metal-ceramic CoCr/NiCr
+ * #4 PMMA temporary (milled/3D printed)
+ * #5 Clasp dentures (Bredent/MK-1)
+ * #6 Custom Ti-Base abutments
+ * #7 Full acrylic dentures (Acry-Free/Ivocap/Vertex)
+ * #8 Aligners / Splints
+ */
+export const ORDERED_MARKET_ORTHOPEDIC_TYPES: readonly OrthopedicWorkTypeId[] = [
+	"crown_zirconia",
+	"crown_emax",
+	"metal_ceramic",
+	"temporary_pmma",
+	"clasp_prosthesis",
+	"custom_abutment",
+	"removable_acrylic",
+	"aligners",
+] as const;
 
 // ─── 2. 4 КЛИНИЧЕСКИХ СТАТУСА НАКАЗ-ЗАКАЗА ЗТЛ ───────────────────────────────
 
@@ -624,823 +665,4 @@ export function calculateLabWorkflowFinancials(
 		clinicNetProfitRub: clinicNetProfitKopecks / 100,
 		isBalanced: doctorWageKopecks + clinicNetProfitKopecks === doctorWageBaseKopecks,
 	};
-}
-
-// ─── 5. МОДЕЛЬ НАРЯД-ЗАКАЗА ЗТЛ И ФАБРИКА ─────────────────────────────────────
-
-export interface LabStlScanAttachment {
-	readonly id: string;
-	readonly fileName: string;
-	readonly fileSizeBytes?: number | undefined;
-	readonly fileSizeMb?: number | undefined;
-	readonly archType?: "upper" | "lower" | "bite" | "prep" | "antagonist" | undefined;
-	readonly type?: "upper_jaw" | "lower_jaw" | "bite_registration" | "prep_scan" | "other" | undefined;
-	readonly scanType?: "upper_jaw" | "lower_jaw" | "bite_registration" | "prep_scan" | "other" | undefined;
-	readonly uploadDateIso?: string | undefined;
-	readonly uploadedAtIso?: string | undefined;
-	readonly isEncrypted152Fz?: boolean | undefined;
-	readonly url?: string | undefined;
-	readonly downloadUrl?: string | undefined;
-}
-
-export interface DentalLabWorkflowOrder {
-	readonly id: string;
-	readonly orderNumber: string;
-	readonly organizationId?: string | undefined;
-	readonly clinicName: string;
-	readonly labName: string;
-	readonly labContactPhone?: string | undefined;
-	readonly patientId: string;
-	readonly patientName: string;
-	readonly patientChartNumber?: string | undefined;
-	readonly doctorId: string;
-	readonly doctorName: string;
-	readonly doctorPhone?: string | undefined;
-	readonly workTypeId: OrthopedicWorkTypeId;
-	readonly materialName: string;
-	readonly selectedTeeth: readonly number[];
-	readonly shadeSystem: "classical" | "3d_master" | "bleach";
-	readonly shadeCode: string;
-	readonly stumpShadeCode?: string | undefined;
-	readonly translucency: "HT" | "MT" | "LT" | "MO" | "HO";
-	readonly surfaceTexture: "high_gloss" | "microtexture" | "matte";
-	readonly occlusalScheme?: string | undefined;
-	readonly contactTightness?: string | undefined;
-	readonly implantPlatform?: ImplantPlatformType | undefined;
-	readonly abutmentType?: AbutmentCategoryType | string | undefined;
-	readonly fixationType?: FixationType | undefined;
-	readonly implantComponents?: LabImplantComponentsManifest | undefined;
-	readonly techStage?: LabTechnologicalStageId | undefined;
-	readonly techStageHistory?: ReadonlyArray<{
-		readonly stage: LabTechnologicalStageId;
-		readonly timestampIso: string;
-		readonly authorName: string;
-		readonly note?: string | undefined;
-	}> | undefined;
-	readonly currentStage: LabWorkflowStatus;
-	readonly stageHistory: ReadonlyArray<{
-		readonly stage: LabWorkflowStatus;
-		readonly timestampIso: string;
-		readonly authorName: string;
-		readonly note?: string | undefined;
-	}>;
-	readonly orderDateIso: string;
-	readonly expectedLabDateIso: string;
-	readonly scheduledVisitDateIso?: string | undefined;
-	readonly fittingDate?: string | undefined;
-	readonly fittingDateIso?: string | undefined;
-	readonly appointmentId?: string | undefined;
-	readonly financials: DentalLabWorkflowFinancials;
-	readonly delayAlert: LabDelayAlert;
-	readonly isDelayedAlert: boolean;
-	readonly clinicalNotes?: string | undefined;
-	readonly technicianNotes?: string | undefined;
-	readonly isUrgent?: boolean | undefined;
-	readonly originalOrderId?: string | undefined;
-	readonly originalOrderNumber?: string | undefined;
-	readonly isWarrantyRework?: boolean | undefined;
-	readonly reworkReason?: string | undefined;
-	readonly createdAtIso: string;
-	readonly updatedAtIso: string;
-}
-
-export interface CreateDentalLabOrderParams {
-	readonly patientId: string;
-	readonly patientName: string;
-	readonly patientChartNumber?: string | undefined;
-	readonly doctorId: string;
-	readonly doctorName: string;
-	readonly doctorPhone?: string | undefined;
-	readonly clinicName?: string | undefined;
-	readonly labName?: string | undefined;
-	readonly labContactPhone?: string | undefined;
-	readonly workTypeId: OrthopedicWorkTypeId;
-	readonly materialName?: string | undefined;
-	readonly selectedTeeth: number[];
-	readonly shadeSystem?: "classical" | "3d_master" | "bleach" | undefined;
-	readonly shadeCode?: string | undefined;
-	readonly stumpShadeCode?: string | undefined;
-	readonly translucency?: "HT" | "MT" | "LT" | "MO" | "HO" | undefined;
-	readonly surfaceTexture?: "high_gloss" | "microtexture" | "matte" | undefined;
-	readonly occlusalScheme?: string | undefined;
-	readonly contactTightness?: string | undefined;
-	readonly implantPlatform?: ImplantPlatformType | undefined;
-	readonly abutmentType?: AbutmentCategoryType | string | undefined;
-	readonly fixationType?: FixationType | undefined;
-	readonly implantComponents?: LabImplantComponentsManifest | undefined;
-	readonly techStage?: LabTechnologicalStageId | undefined;
-	readonly orderNumber?: string | undefined;
-	readonly sequenceNumber?: number | undefined;
-	readonly pricePerUnitRub?: number | undefined;
-	readonly costPerUnitRub?: number | undefined;
-	readonly pricePerUnitKopecks?: number | undefined;
-	readonly costPerUnitKopecks?: number | undefined;
-	readonly doctorPercent?: number | undefined;
-	readonly orderDate?: Date | string | undefined;
-	readonly expectedLabDate?: Date | string | undefined;
-	readonly scheduledVisitDate?: Date | string | undefined;
-	readonly fittingDate?: Date | string | undefined;
-	readonly appointmentId?: string | undefined;
-	readonly clinicalNotes?: string | undefined;
-	readonly technicianNotes?: string | undefined;
-	readonly isUrgent?: boolean | undefined;
-	readonly originalOrderId?: string | undefined;
-	readonly originalOrderNumber?: string | undefined;
-	readonly isWarrantyRework?: boolean | undefined;
-	readonly reworkReason?: string | undefined;
-	readonly initialStatus?: LabWorkflowStatus | undefined;
-}
-
-export function generateLabOrderNumber(sequence = 1, date = new Date()): string {
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const seq = String(sequence).padStart(4, "0");
-	return `ЗТЛ-${year}/${month}-${seq}`;
-}
-
-/**
- * Создание наряд-заказа ЗТЛ с расчетом всех дедлайнов, себестоимости и 4 клинических статусов.
- */
-export function createDentalLabOrder(params: CreateDentalLabOrderParams): DentalLabWorkflowOrder {
-	const orderDate = params.orderDate ? parseDateToMidnight(params.orderDate) : parseDateToMidnight(new Date());
-	const orderDateIso = formatDateToIsoDay(orderDate);
-
-	const preset = ORTHOPEDIC_WORK_TYPES[params.workTypeId] || ORTHOPEDIC_WORK_TYPES.crown_emax;
-	const teeth = params.selectedTeeth.length > 0 ? params.selectedTeeth : [11];
-	const unitsCount = teeth.length;
-
-	const expectedLabDate = params.expectedLabDate
-		? parseDateToMidnight(params.expectedLabDate)
-		: addWorkingDaysRu(orderDate, preset.standardTurnaroundWorkingDays);
-	const expectedLabDateIso = formatDateToIsoDay(expectedLabDate);
-
-	const scheduledVisitDate = params.scheduledVisitDate ? parseDateToMidnight(params.scheduledVisitDate) : undefined;
-	const scheduledVisitDateIso = scheduledVisitDate ? formatDateToIsoDay(scheduledVisitDate) : undefined;
-
-	const fittingDate = params.fittingDate
-		? parseDateToMidnight(params.fittingDate)
-		: (scheduledVisitDate || (preset.requiresFittingStage ? addWorkingDaysRu(expectedLabDate, 1) : undefined));
-	const fittingDateIso = fittingDate ? formatDateToIsoDay(fittingDate) : undefined;
-
-	const unitPriceKopecks = params.pricePerUnitKopecks ??
-		(params.pricePerUnitRub ? Math.round(params.pricePerUnitRub * 100) : preset.defaultPriceKopecks);
-	const unitCostKopecks = params.costPerUnitKopecks ??
-		(params.costPerUnitRub ? Math.round(params.costPerUnitRub * 100) : preset.defaultCostKopecks);
-
-	const financials = calculateLabWorkflowFinancials({
-		unitsCount,
-		pricePerUnitKopecks: unitPriceKopecks,
-		costPerUnitKopecks: unitCostKopecks,
-		doctorPercent: params.doctorPercent ?? 20,
-	});
-
-	const initialStage: LabWorkflowStatus = params.initialStatus || "draft";
-	const isInstalled = initialStage === "installed_completed";
-
-	const delayAlert = checkLabDeadlineAndAlert({
-		expectedLabDate,
-		scheduledVisitDate: scheduledVisitDate || fittingDate,
-		fittingDate,
-		appointmentId: params.appointmentId,
-		currentDate: orderDate,
-		isInstalledOrCompleted: isInstalled,
-		orderNumber: "",
-		patientName: params.patientName,
-		doctorName: params.doctorName,
-		labName: params.labName,
-	});
-
-	const seq = params.sequenceNumber ?? ((Math.floor(Date.now() / 1000) % 9000) + 1000);
-	const orderNumber = params.orderNumber || generateLabOrderNumber(seq, orderDate);
-	const id = `ztl-ord-${Date.now()}-${(params.patientId || "pat").replace(/[^a-zA-Z0-9]/g, "").slice(-4) || "0001"}`;
-	const nowIso = new Date().toISOString();
-	const techStage: LabTechnologicalStageId = params.techStage || "impression_scan";
-
-	return {
-		id,
-		orderNumber,
-		clinicName: params.clinicName || "Стоматологическая клиника DENTE",
-		labName: params.labName || "Центральная зуботехническая лаборатория",
-		labContactPhone: params.labContactPhone || "",
-		patientId: params.patientId,
-		patientName: params.patientName,
-		patientChartNumber: params.patientChartNumber || "043/у",
-		doctorId: params.doctorId,
-		doctorName: params.doctorName,
-		doctorPhone: params.doctorPhone,
-		workTypeId: params.workTypeId,
-		materialName: params.materialName || preset.defaultMaterialRu,
-		selectedTeeth: [...teeth],
-		shadeSystem: params.shadeSystem || "classical",
-		shadeCode: params.shadeCode || "A2",
-		stumpShadeCode: params.stumpShadeCode || (preset.requiresStumpShade ? "ND2" : undefined),
-		translucency: params.translucency || "MT",
-		surfaceTexture: params.surfaceTexture || "microtexture",
-		occlusalScheme: params.occlusalScheme || "Взаимно-защищенная окклюзия",
-		contactTightness: params.contactTightness || "Плотный (50 мкм Shimstock)",
-		implantPlatform: params.implantPlatform,
-		abutmentType: params.abutmentType,
-		fixationType: params.fixationType,
-		implantComponents: params.implantComponents,
-		currentStage: initialStage,
-		techStage,
-		stageHistory: [
-			{
-				stage: initialStage,
-				timestampIso: nowIso,
-				authorName: params.doctorName,
-				note: "Наряд первично сформирован врачом-ортопедом",
-			},
-		],
-		techStageHistory: [
-			{
-				stage: techStage,
-				timestampIso: nowIso,
-				authorName: params.doctorName,
-				note: "Первичный технологический этап ЗТЛ",
-			},
-		],
-		orderDateIso,
-		expectedLabDateIso,
-		scheduledVisitDateIso,
-		fittingDate: fittingDateIso,
-		fittingDateIso,
-		appointmentId: params.appointmentId,
-		financials,
-		delayAlert,
-		isDelayedAlert: delayAlert.isDelayedAlert,
-		clinicalNotes: params.clinicalNotes,
-		technicianNotes: params.technicianNotes,
-		isUrgent: params.isUrgent ?? false,
-		originalOrderId: params.originalOrderId,
-		originalOrderNumber: params.originalOrderNumber,
-		isWarrantyRework: params.isWarrantyRework ?? false,
-		reworkReason: params.reworkReason,
-		createdAtIso: nowIso,
-		updatedAtIso: nowIso,
-	};
-}
-
-/**
- * Перевод наряд-заказа на технологический этап ЗТЛ (1..8).
- */
-export function advanceLabOrderTechStage(
-	order: DentalLabWorkflowOrder,
-	newTechStage: LabTechnologicalStageId,
-	authorName: string,
-	note?: string,
-): DentalLabWorkflowOrder {
-	const nowIso = new Date().toISOString();
-	const stageInfo = LAB_TECHNOLOGICAL_STAGES[newTechStage];
-	const autoNote = note || `Перевод на технологический этап: ${stageInfo?.nameRu || newTechStage}`;
-
-	return {
-		...order,
-		techStage: newTechStage,
-		techStageHistory: [
-			...(order.techStageHistory || []),
-			{
-				stage: newTechStage,
-				timestampIso: nowIso,
-				authorName,
-				note: autoNote,
-			},
-		],
-		updatedAtIso: nowIso,
-	};
-}
-
-/**
- * Перевод наряд-заказа на следующий или целевой этап с пересчетом дедлайнов.
- */
-export function advanceLabOrderStage(
-	order: DentalLabWorkflowOrder,
-	newStage: LabWorkflowStatus,
-	authorName: string,
-	note?: string,
-	currentDate: Date = new Date(),
-): DentalLabWorkflowOrder {
-	const nowIso = new Date().toISOString();
-	const isInstalled = newStage === "installed_completed";
-	const isWarranty = newStage === "warranty_rework" || Boolean(order.isWarrantyRework);
-
-	const delayAlert = checkLabDeadlineAndAlert({
-		expectedLabDate: order.expectedLabDateIso,
-		scheduledVisitDate: order.scheduledVisitDateIso,
-		fittingDate: order.fittingDateIso || order.fittingDate,
-		appointmentId: order.appointmentId,
-		currentDate,
-		isInstalledOrCompleted: isInstalled,
-		orderNumber: order.orderNumber,
-		patientName: order.patientName,
-		doctorName: order.doctorName,
-		labName: order.labName,
-	});
-
-	const stageInfo = LAB_WORKFLOW_STATUSES[newStage];
-	const autoNote = note || `Перевод на этап: ${stageInfo?.nameRu || newStage}`;
-
-	return {
-		...order,
-		currentStage: newStage,
-		isWarrantyRework: isWarranty,
-		originalOrderId: order.originalOrderId || (newStage === "warranty_rework" ? order.id : undefined),
-		originalOrderNumber: order.originalOrderNumber || (newStage === "warranty_rework" ? order.orderNumber : undefined),
-		stageHistory: [
-			...order.stageHistory,
-			{
-				stage: newStage,
-				timestampIso: nowIso,
-				authorName,
-				note: autoNote,
-			},
-		],
-		delayAlert,
-		isDelayedAlert: delayAlert.isDelayedAlert,
-		updatedAtIso: nowIso,
-	};
-}
-
-/**
- * Отправка сданного наряд-заказа на гарантийную переделку / рекламацию в ЗТЛ.
- * Сохраняет прямую ссылку на исходный заказ-наряд, фиксирует причину рекламации
- * и пересчитывает плановый срок готовности доработки ЗТЛ (+4 рабочих дня).
- */
-export function sendOrderToWarrantyRework(
-	order: DentalLabWorkflowOrder,
-	reworkReason: string = "Гарантийная рекламация: скол керамики / завышение прикуса / краевое прилегание",
-	authorName: string = "Врач-ортопед",
-	currentDate: Date = new Date(),
-): DentalLabWorkflowOrder {
-	const nowIso = currentDate.toISOString();
-	const newExpectedDate = addWorkingDaysRu(currentDate, 4);
-	const newExpectedIso = formatDateToIsoDay(newExpectedDate);
-
-	const delayAlert = checkLabDeadlineAndAlert({
-		expectedLabDate: newExpectedIso,
-		scheduledVisitDate: undefined,
-		fittingDate: undefined,
-		appointmentId: undefined,
-		currentDate,
-		isInstalledOrCompleted: false,
-		orderNumber: order.orderNumber,
-		patientName: order.patientName,
-		doctorName: order.doctorName,
-		labName: order.labName,
-	});
-
-	const reworkNote = `Гарантийная переделка (исходный наряд № ${order.orderNumber}): ${reworkReason}`;
-
-	// Гарантийная переделка для пациента СТРОГО 0 ₽ (Мандат 8e / Без поборов с пациента)
-	const warrantyFinancials: DentalLabWorkflowFinancials = {
-		...order.financials,
-		patientPriceTotalKopecks: 0,
-		patientPriceTotalRub: 0,
-		pricePerUnitKopecks: 0,
-		clinicGrossMarginKopecks: 0,
-		clinicGrossMarginRub: 0,
-		grossMarginPercent: 0,
-		doctorWageBaseKopecks: 0,
-		doctorWageKopecks: 0,
-		doctorWageRub: 0,
-		clinicNetProfitKopecks: -order.financials.labCostKopecks,
-		clinicNetProfitRub: -order.financials.labCostTotalRub,
-		isBalanced: true,
-	};
-
-	return {
-		...order,
-		currentStage: "warranty_rework",
-		isWarrantyRework: true,
-		reworkReason,
-		originalOrderId: order.originalOrderId || order.id,
-		originalOrderNumber: order.originalOrderNumber || order.orderNumber,
-		financials: warrantyFinancials,
-		expectedLabDateIso: newExpectedIso,
-		stageHistory: [
-			...order.stageHistory,
-			{
-				stage: "warranty_rework",
-				timestampIso: nowIso,
-				authorName,
-				note: reworkNote,
-			},
-		],
-		delayAlert,
-		isDelayedAlert: delayAlert.isDelayedAlert,
-		updatedAtIso: nowIso,
-	};
-}
-
-// ─── 6. ВЕКТОРНЫЙ РЕНДЕР ОДОНТОГРАММЫ, ШТРИХКОДА И QR ─────────────────────────
-
-/**
- * 32-зубная формула FDI в виде компактного SVG вектора.
- */
-export function generateOdontogramSvg(selectedTeeth: readonly number[] = []): string {
-	const selectedSet = new Set(selectedTeeth);
-	const upperRight = [18, 17, 16, 15, 14, 13, 12, 11];
-	const upperLeft = [21, 22, 23, 24, 25, 26, 27, 28];
-	const lowerRight = [48, 47, 46, 45, 44, 43, 42, 41];
-	const lowerLeft = [31, 32, 33, 34, 35, 36, 37, 38];
-
-	const renderQuadrant = (teeth: number[], startX: number, startY: number) => {
-		return teeth
-			.map((num, i) => {
-				const x = startX + i * 30;
-				const isSel = selectedSet.has(num);
-				const bg = isSel ? "#0d9488" : "#f8fafc";
-				const stroke = isSel ? "#0f766e" : "#cbd5e1";
-				const textFill = isSel ? "#ffffff" : "#0f172a";
-
-				return `<g transform="translate(${x}, ${startY})">
-					<rect x="0" y="0" width="26" height="30" rx="4" fill="${bg}" stroke="${stroke}" stroke-width="1.5" />
-					<text x="13" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" text-anchor="middle" fill="${textFill}">${num}</text>
-				</g>`;
-			})
-			.join("");
-	};
-
-	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 86" width="520" height="86" style="max-width: 100%;">
-		<line x1="258" y1="4" x2="258" y2="82" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3 3" />
-		<line x1="8" y1="43" x2="508" y2="43" stroke="#cbd5e1" stroke-width="1" />
-		<text x="4" y="20" font-family="sans-serif" font-size="9" font-weight="700" fill="#64748b">ВЧ</text>
-		<text x="4" y="66" font-family="sans-serif" font-size="9" font-weight="700" fill="#64748b">НЧ</text>
-		${renderQuadrant(upperRight, 14, 6)}
-		${renderQuadrant(upperLeft, 264, 6)}
-		${renderQuadrant(lowerRight, 14, 48)}
-		${renderQuadrant(lowerLeft, 264, 48)}
-	</svg>`;
-}
-
-/**
- * Векторный штрихкод Code 128 (ISO/IEC 15417) для оптических сканеров.
- */
-export function generateBarcodeSvg(data: string, width = 220, height = 48): string {
-	return canonicalCode128BarcodeSvg(data, width, height);
-}
-
-/**
- * Векторный QR-код SVG для мобильных сканеров курьеров ЗТЛ по стандарту ISO/IEC 18004.
- */
-export function generateQrCodeSvg(content: string, size = 90): string {
-	return sharedGenerateQrCodeSvg(content || "DENTE-ZTL", { size, margin: 1 });
-}
-
-// ─── 7. ГЕНЕРАТОР ПЕЧАТНОГО БЛАНКА А4 ─────────────────────────────────────────
-
-/**
- * Генерация строгого печатного бланка наряд-заказа ЗТЛ формата А4 для курьера лаборатории.
- */
-export function generateDentalLabOrderA4PrintBlank(order: DentalLabWorkflowOrder): string {
-	const preset = ORTHOPEDIC_WORK_TYPES[order.workTypeId] || ORTHOPEDIC_WORK_TYPES.crown_emax;
-	const stage = LAB_WORKFLOW_STATUSES[order.currentStage] || LAB_WORKFLOW_STATUSES.draft;
-	const teethFormatted =
-		order.selectedTeeth.length > 0 ? [...order.selectedTeeth].sort((a, b) => a - b).join(", ") : "Не указаны";
-
-	const barcodeSvg = generateBarcodeSvg(order.orderNumber, 230, 48);
-	const qrSvg = generateQrCodeSvg(
-		`DENTE-ZTL:${order.orderNumber}|PATIENT:${order.patientName}|DOCTOR:${order.doctorName}|TEETH:${teethFormatted}|FITTING:${order.fittingDate || "N/A"}`,
-		85,
-	);
-	const odontogramSvg = generateOdontogramSvg(order.selectedTeeth);
-
-	return `<!DOCTYPE html>
-<html lang="ru">
-<head>
-	<meta charset="UTF-8">
-	<title>Наряд-заказ ЗТЛ № ${order.orderNumber}</title>
-	<style>
-		@page { size: A4 portrait; margin: 10mm 14mm; }
-		body {
-			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-			color: #0f172a;
-			background: #ffffff;
-			margin: 0;
-			padding: 4px;
-			font-size: 12px;
-			line-height: 1.35;
-		}
-		.header-table { width: 100%; border-bottom: 2px solid #0f172a; padding-bottom: 6px; margin-bottom: 8px; }
-		.title { font-size: 17px; font-weight: 800; text-transform: uppercase; margin: 0 0 2px 0; color: #0f172a; }
-		.subtitle { font-size: 11px; color: #475569; margin: 0; }
-		.section-title {
-			font-size: 11px;
-			font-weight: 700;
-			text-transform: uppercase;
-			background: #f1f5f9;
-			padding: 4px 8px;
-			margin: 8px 0 5px 0;
-			border-left: 4px solid #0d9488;
-		}
-		.grid-2 { display: table; width: 100%; margin-bottom: 5px; }
-		.col { display: table-cell; width: 50%; vertical-align: top; padding-right: 10px; }
-		.data-row { margin-bottom: 3px; font-size: 11.5px; }
-		.label { font-weight: 600; color: #475569; width: 150px; display: inline-block; }
-		.value { font-weight: 700; color: #0f172a; }
-		.box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; padding: 6px 8px; margin-top: 3px; }
-		.teeth-block { text-align: center; margin: 4px 0; }
-		.status-strip {
-			display: table;
-			width: 100%;
-			border: 1px solid #cbd5e1;
-			border-radius: 4px;
-			background: #f8fafc;
-			margin: 6px 0;
-			table-layout: fixed;
-		}
-		.status-cell {
-			display: table-cell;
-			text-align: center;
-			padding: 6px 4px;
-			font-size: 10px;
-			font-weight: 700;
-			border-right: 1px solid #e2e8f0;
-			color: #64748b;
-		}
-		.status-cell:last-child { border-right: none; }
-		.status-cell.active {
-			background: #0d9488;
-			color: #ffffff;
-		}
-		.signatures { margin-top: 16px; display: table; width: 100%; }
-		.sig-col { display: table-cell; width: 33.3%; padding: 0 8px; text-align: center; }
-		.sig-line { border-bottom: 1px solid #0f172a; margin-top: 28px; margin-bottom: 4px; }
-		.sig-sub { font-size: 9.5px; color: #64748b; }
-	</style>
-</head>
-<body>
-	<table class="header-table">
-		<tr>
-			<td style="vertical-align: middle;">
-				<h1 class="title">Наряд-заказ № ${order.orderNumber} ${order.isWarrantyRework ? '<span style="color: #f43f5e; font-size: 12px; background: #ffe4e6; border: 1px solid #f43f5e; border-radius: 4px; padding: 2px 8px; vertical-align: middle; margin-left: 8px;">ГАРАНТИЙНАЯ ПЕРЕДЕЛКА (0 ₽)</span>' : ''}</h1>
-				<p class="subtitle">${order.clinicName} • Зуботехническая лаборатория «${order.labName}»</p>
-			</td>
-			<td style="text-align: right; vertical-align: middle;">
-				${barcodeSvg}
-			</td>
-		</tr>
-	</table>
-
-	${order.isWarrantyRework ? `
-	<div class="box" style="background: #fff1f2; border: 1px solid #fecdd3; margin-bottom: 6px;">
-		<div class="data-row"><span class="label" style="color: #e11d48; width: 180px;">Основание переделки:</span> <span class="value" style="color: #9f1239;">${order.reworkReason || "Гарантийная рекламация: скол облицовки / коррекция прилегания"}</span></div>
-		${order.originalOrderNumber ? `<div class="data-row"><span class="label" style="color: #e11d48; width: 180px;">Исходный наряд-заказ:</span> <span class="value">№ ${order.originalOrderNumber}</span></div>` : ""}
-		<div class="data-row"><span class="label" style="color: #e11d48; width: 180px;">Стоимость для пациента:</span> <span class="value" style="color: #15803d; font-weight: 800;">0 ₽ (БЕЗУСЛОВНАЯ ГАРАНТИЯ КЛИНИКИ)</span></div>
-	</div>
-	` : ""}
-
-	<div class="grid-2">
-		<div class="col">
-			<div class="data-row"><span class="label">Пациент (Ф.И.О.):</span> <span class="value">${order.patientName}</span></div>
-			<div class="data-row"><span class="label">№ Медкарты:</span> <span class="value">${order.patientChartNumber || "—"}</span></div>
-			<div class="data-row"><span class="label">Врач-ортопед:</span> <span class="value">${order.doctorName}</span></div>
-			<div class="data-row"><span class="label">Телефон врача:</span> <span class="value">${order.doctorPhone || "—"}</span></div>
-		</div>
-		<div class="col">
-			<div class="data-row"><span class="label">Дата наряда:</span> <span class="value">${formatRussianDate(order.orderDateIso)}</span></div>
-			<div class="data-row"><span class="label">Срок сдачи ЗТЛ:</span> <span class="value" style="color: #0d9488;">${formatRussianDate(order.expectedLabDateIso)}</span></div>
-			<div class="data-row"><span class="label">Дата примерки:</span> <span class="value">${order.fittingDate ? formatRussianDate(order.fittingDate) : (order.scheduledVisitDateIso ? formatRussianDate(order.scheduledVisitDateIso) : "По согласованию")}</span></div>
-			<div class="data-row"><span class="label">Текущий статус:</span> <span class="value">${stage.nameRu}</span></div>
-		</div>
-	</div>
-
-	<!-- 5-Статусный трек клинического процесса -->
-	<div class="status-strip">
-		<div class="status-cell ${order.currentStage === "draft" ? "active" : ""}">
-			1. Черновик
-		</div>
-		<div class="status-cell ${order.currentStage === "sent_to_lab" ? "active" : ""}">
-			2. Отправлено в ЗТЛ
-		</div>
-		<div class="status-cell ${order.currentStage === "fitting_scheduled" ? "active" : ""}">
-			3. Примерка (${order.fittingDate ? formatRussianDate(order.fittingDate) : "Дата"})
-		</div>
-		<div class="status-cell ${order.currentStage === "installed_completed" ? "active" : ""}">
-			4. Сдано пациенту
-		</div>
-		<div class="status-cell ${order.currentStage === "warranty_rework" ? "active" : ""}" style="${order.currentStage === "warranty_rework" ? "background: #f43f5e; color: #ffffff;" : ""}">
-			5. Гарантия (0 ₽)
-		</div>
-	</div>
-
-	<div class="section-title">1. Зубная формула и локализация протезирования (FDI)</div>
-	<div class="teeth-block">
-		${odontogramSvg}
-		<p style="margin: 3px 0 0 0; font-size: 11px; font-weight: 700;">Выбранные зубы: ${teethFormatted} (всего единиц: ${order.financials.unitsCount})</p>
-	</div>
-
-	<div class="section-title">2. Спецификация ортопедической конструкции</div>
-	<div class="box">
-		<div class="data-row"><span class="label">Вид конструкции:</span> <span class="value">${preset.nameRu}</span></div>
-		<div class="data-row"><span class="label">Материал:</span> <span class="value">${order.materialName}</span></div>
-		<div class="data-row">
-			<span class="label">Оттенок (VITA):</span>
-			<span class="value" style="color: #0d9488; font-size: 12.5px;">${order.shadeCode} (${order.shadeSystem.toUpperCase()})</span>
-			${order.stumpShadeCode ? `<span style="margin-left: 14px;"><span class="label" style="width: auto;">Культя (ND):</span> <span class="value">${order.stumpShadeCode}</span></span>` : ""}
-		</div>
-		<div class="data-row">
-			<span class="label">Прозрачность:</span> <span class="value">${order.translucency}</span>
-			<span style="margin-left: 14px;"><span class="label" style="width: auto;">Текстура:</span> <span class="value">${order.surfaceTexture}</span></span>
-		</div>
-		${order.implantPlatform ? `<div class="data-row"><span class="label">Платформа имплантата:</span> <span class="value">${order.implantPlatform === "conical" ? "Конус Морзе (Conical Connection)" : "Шестигранник (Internal / External Hex)"}</span></div>` : ""}
-		${order.abutmentType ? `<div class="data-row"><span class="label">Тип абатмента:</span> <span class="value">${ABUTMENT_TYPE_OPTIONS.find((a) => a.id === order.abutmentType)?.nameRu || order.abutmentType}</span></div>` : ""}
-		${order.fixationType ? `<div class="data-row"><span class="label">Тип фиксации:</span> <span class="value">${order.fixationType === "screw_retained" ? "Винтовая фиксация (Screw-retained)" : "Цементная фиксация (Cement-retained)"}</span></div>` : ""}
-		${order.occlusalScheme ? `<div class="data-row"><span class="label">Окклюзия:</span> <span class="value">${order.occlusalScheme}</span></div>` : ""}
-		${order.contactTightness ? `<div class="data-row"><span class="label">Контакты:</span> <span class="value">${order.contactTightness}</span></div>` : ""}
-	</div>
-
-	${(order.implantComponents?.hasImplantComponents || order.workTypeId === "custom_abutment" || order.implantPlatform) ? `
-	<div class="section-title">3. Опись и накладная компонентов имплантационной системы</div>
-	<div class="box" style="padding: 4px 6px;">
-		<table style="width: 100%; border-collapse: collapse; font-size: 10px;">
-			<thead>
-				<tr style="border-bottom: 1px solid #cbd5e1; color: #475569; text-align: left;">
-					<th style="padding: 2px 4px;">Наименование компонента</th>
-					<th style="padding: 2px 4px; width: 90px; text-align: center;">Количество</th>
-					<th style="padding: 2px 4px; width: 140px;">Примечание</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr style="border-bottom: 1px solid #f1f5f9;">
-					<td style="padding: 2px 4px; font-weight: 600;">Трансферы слепочные (${order.implantComponents?.transfersType === "open_tray" ? "открытая ложка" : order.implantComponents?.transfersType === "closed_tray" ? "закрытая ложка" : "скан-боди / маркеры"})</td>
-					<td style="padding: 2px 4px; text-align: center; font-weight: 700;">${order.implantComponents?.transfersCount ?? (order.workTypeId === "custom_abutment" ? order.selectedTeeth.length : 0)} шт.</td>
-					<td style="padding: 2px 4px; color: #64748b;">Возврат в клинику</td>
-				</tr>
-				<tr style="border-bottom: 1px solid #f1f5f9;">
-					<td style="padding: 2px 4px; font-weight: 600;">Лабораторные аналоги имплантатов / Multi-Unit</td>
-					<td style="padding: 2px 4px; text-align: center; font-weight: 700;">${order.implantComponents?.analogsCount ?? (order.workTypeId === "custom_abutment" ? order.selectedTeeth.length : 0)} шт.</td>
-					<td style="padding: 2px 4px; color: #64748b;">Возврат на модели</td>
-				</tr>
-				<tr style="border-bottom: 1px solid #f1f5f9;">
-					<td style="padding: 2px 4px; font-weight: 600;">Формирователи десны (ФДМ)</td>
-					<td style="padding: 2px 4px; text-align: center; font-weight: 700;">${order.implantComponents?.healingAbutmentsCount ?? 0} шт.</td>
-					<td style="padding: 2px 4px; color: #64748b;">В стерильной таре</td>
-				</tr>
-				<tr style="border-bottom: 1px solid #f1f5f9;">
-					<td style="padding: 2px 4px; font-weight: 600;">Винты клинические / лабораторные</td>
-					<td style="padding: 2px 4px; text-align: center; font-weight: 700;">${order.implantComponents?.screwsCount ?? (order.workTypeId === "custom_abutment" ? order.selectedTeeth.length : 0)} шт.</td>
-					<td style="padding: 2px 4px; color: #64748b;">Усилие по паспорту системы</td>
-				</tr>
-				${order.implantComponents?.extraComponentsNotes ? `
-				<tr>
-					<td colspan="3" style="padding: 3px 4px; font-size: 9.5px; color: #0d9488; font-weight: 600;">
-						Дополнительно: ${order.implantComponents.extraComponentsNotes}
-					</td>
-				</tr>` : ""}
-			</tbody>
-		</table>
-	</div>
-	` : ""}
-
-	<div class="section-title">${(order.implantComponents?.hasImplantComponents || order.workTypeId === "custom_abutment" || order.implantPlatform) ? "4" : "3"}. Маршрутный лист 8 технологических этапов ЗТЛ</div>
-	<div class="box" style="padding: 4px 6px;">
-		<table style="width: 100%; border-collapse: collapse; font-size: 10px;">
-			<thead>
-				<tr style="border-bottom: 1px solid #cbd5e1; color: #475569; text-align: left;">
-					<th style="padding: 2px 4px; width: 20px;">№</th>
-					<th style="padding: 2px 4px;">Технологический этап ЗТЛ</th>
-					<th style="padding: 2px 4px; width: 130px;">Цех лаборатории</th>
-					<th style="padding: 2px 4px; width: 80px; text-align: center;">Статус</th>
-				</tr>
-			</thead>
-			<tbody>
-				${LAB_TECHNOLOGICAL_STAGE_ORDER.map((stageKey) => {
-					const sDef = LAB_TECHNOLOGICAL_STAGES[stageKey];
-					const isCurrent = order.techStage === stageKey;
-					const isDone = (sDef.stepNumber < (LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.stepNumber ?? 1));
-					const rowBg = isCurrent ? "#f0fdfa" : "transparent";
-					const statusText = isDone ? "ВЫПОЛНЕНО" : isCurrent ? "В РАБОТЕ" : "ОЖИДАНИЕ";
-					const statusColor = isDone ? "#059669" : isCurrent ? "#0d9488" : "#94a3b8";
-					return `<tr style="background: ${rowBg}; border-bottom: 1px solid #f1f5f9;">
-						<td style="padding: 2px 4px; font-weight: 700; color: #64748b;">${sDef.stepNumber}</td>
-						<td style="padding: 2px 4px; font-weight: ${isCurrent ? "700" : "500"}; color: ${isCurrent ? "#0f766e" : "#0f172a"};">${sDef.nameRu}</td>
-						<td style="padding: 2px 4px; color: #64748b;">${sDef.departmentRu}</td>
-						<td style="padding: 2px 4px; text-align: center; font-weight: 700; color: ${statusColor}; font-size: 9.5px;">${statusText}</td>
-					</tr>`;
-				}).join("")}
-			</tbody>
-		</table>
-	</div>
-
-	<div class="section-title">${(order.implantComponents?.hasImplantComponents || order.workTypeId === "custom_abutment" || order.implantPlatform) ? "5" : "4"}. Клинические указания врачу и лаборатории</div>
-	<div class="box" style="min-height: 32px;">
-		${order.clinicalNotes ? `<p style="margin: 0; font-size: 11.5px;">${order.clinicalNotes}</p>` : '<p style="margin: 0; color: #94a3b8; font-style: italic; font-size: 11.5px;">Изготовление строго по анатомическим нормам и силиконовому ключу.</p>'}
-	</div>
-
-	<div class="section-title">${(order.implantComponents?.hasImplantComponents || order.workTypeId === "custom_abutment" || order.implantPlatform) ? "6" : "5"}. Взаиморасчеты и финансовый контроль</div>
-	<div class="grid-2">
-		<div class="col">
-			<div class="data-row"><span class="label">Стоимость для пациента:</span> <span class="value" ${order.isWarrantyRework ? 'style="color: #15803d; font-weight: 800;"' : ''}>${order.financials.patientPriceTotalRub.toLocaleString("ru-RU")} ₽ ${order.isWarrantyRework ? '(0 ₽ гарантия)' : ''}</span></div>
-			<div class="data-row"><span class="label">Себестоимость ЗТЛ:</span> <span class="value">${order.financials.labCostTotalRub.toLocaleString("ru-RU")} ₽</span></div>
-			<div class="data-row"><span class="label">Маржа клиники:</span> <span class="value" style="color: #0d9488;">${order.financials.clinicGrossMarginRub.toLocaleString("ru-RU")} ₽ (${order.financials.grossMarginPercent}%)</span></div>
-			<div class="data-row" style="margin-top: 4px; font-size: 10.5px; color: #64748b;">
-				Автономия врача (Мандат 8e п. 7): Истечение 30 дней плана лечения не блокирует наряды ЗТЛ и оплату.
-			</div>
-		</div>
-		<div class="col" style="text-align: right;">
-			${qrSvg}
-		</div>
-	</div>
-
-	<div class="signatures">
-		<div class="sig-col">
-			<div class="sig-line"></div>
-			<div class="sig-sub">Врач-ортопед (${order.doctorName})</div>
-		</div>
-		<div class="sig-col">
-			<div class="sig-line"></div>
-			<div class="sig-sub">Курьер (Принял / Передал)</div>
-		</div>
-		<div class="sig-col">
-			<div class="sig-line"></div>
-			<div class="sig-sub">Зубной техник (${order.labName})</div>
-		</div>
-	</div>
-</body>
-</html>`;
-}
-
-// ─── 8. ЭКСПОРТ В CSV (RFC 4180 C UTF-8 BOM) ──────────────────────────────────
-
-/**
- * Экспорт реестра наряд-заказов ЗТЛ в CSV файл для бухгалтерии и аналитики.
- */
-export function exportDentalLabOrdersToCsv(orders: readonly DentalLabWorkflowOrder[]): string {
-	const headers = [
-		"Номер наряда",
-		"Пациент",
-		"№ Медкарты",
-		"Врач-ортопед",
-		"Лаборатория",
-		"Вид конструкции",
-		"Зубы (FDI)",
-		"Кол-во единиц",
-		"Оттенок (VITA)",
-		"Оттенок культи (ND)",
-		"Текущий статус",
-		"Дата наряда",
-		"План готовности ЗТЛ",
-		"Дата примерки",
-		"ID Приема",
-		"Статус дедлайна",
-		"Задержка ЗТЛ (Alert)",
-		"Стоимость пациента (руб)",
-		"Себестоимость ЗТЛ (руб)",
-		"Маржа клиники (руб)",
-		"ЗП врача (руб)",
-		"Платформа имплантата",
-		"Тип абатмента",
-		"Тип фиксации",
-		"Технологический этап ЗТЛ",
-		"Примечания",
-	];
-
-	const escapeCsv = (val: unknown): string => {
-		if (val === null || val === undefined) return '""';
-		const str = String(val).replace(/"/g, '""');
-		return `"${str}"`;
-	};
-
-	const rows = orders.map((ord) => {
-		const preset = ORTHOPEDIC_WORK_TYPES[ord.workTypeId] || ORTHOPEDIC_WORK_TYPES.crown_emax;
-		const stage = LAB_WORKFLOW_STATUSES[ord.currentStage] || LAB_WORKFLOW_STATUSES.draft;
-		const teethStr = ord.selectedTeeth.join(", ");
-		const implantPlatRu = ord.implantPlatform === "conical" ? "Конус Морзе" : ord.implantPlatform === "hex" ? "Шестигранник" : "—";
-		const abutmentRu = ord.abutmentType ? (ABUTMENT_TYPE_OPTIONS.find((a) => a.id === ord.abutmentType)?.nameRu || ord.abutmentType) : "—";
-		const fixationRu = ord.fixationType === "screw_retained" ? "Винтовая" : ord.fixationType === "cement_retained" ? "Цементная" : "—";
-		const techStageRu = ord.techStage ? (LAB_TECHNOLOGICAL_STAGES[ord.techStage]?.nameRu || ord.techStage) : "—";
-
-		return [
-			escapeCsv(ord.orderNumber),
-			escapeCsv(ord.patientName),
-			escapeCsv(ord.patientChartNumber || ""),
-			escapeCsv(ord.doctorName),
-			escapeCsv(ord.labName),
-			escapeCsv(preset.nameRu),
-			escapeCsv(teethStr),
-			escapeCsv(ord.financials.unitsCount),
-			escapeCsv(ord.shadeCode),
-			escapeCsv(ord.stumpShadeCode || ""),
-			escapeCsv(stage.nameRu),
-			escapeCsv(ord.orderDateIso),
-			escapeCsv(ord.expectedLabDateIso),
-			escapeCsv(ord.fittingDate || ord.scheduledVisitDateIso || ""),
-			escapeCsv(ord.appointmentId || ""),
-			escapeCsv(ord.delayAlert.status),
-			escapeCsv(ord.isDelayedAlert ? "ДА" : "НЕТ"),
-			escapeCsv(ord.financials.patientPriceTotalRub),
-			escapeCsv(ord.financials.labCostTotalRub),
-			escapeCsv(ord.financials.clinicGrossMarginRub),
-			escapeCsv(ord.financials.doctorWageRub),
-			escapeCsv(implantPlatRu),
-			escapeCsv(abutmentRu),
-			escapeCsv(fixationRu),
-			escapeCsv(techStageRu),
-			escapeCsv(ord.clinicalNotes || ""),
-		].join(";");
-	});
-
-	// UTF-8 BOM для корректного открытия в Excel на Windows
-	return `\uFEFF${headers.join(";")}\r\n${rows.join("\r\n")}`;
 }

@@ -705,8 +705,9 @@ export function OrthopedicsChairsidePanel({
 				{/* Действия ЗТЛ: 1-клик отправка + Конструктор */}
 				<div className="flex items-center gap-2 flex-wrap">
 					{labOrderSentNumber && (
-						<span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold px-2 py-1 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800">
-							✓ Отправлен {labOrderSentNumber}
+						<span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold px-2 py-1 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 inline-flex items-center gap-1">
+							<CheckCircle2 size={12} className="shrink-0" />
+							<span>Отправлен {labOrderSentNumber}</span>
 						</span>
 					)}
 

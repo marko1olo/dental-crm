@@ -1,0 +1,542 @@
+/**
+ * DentalLabOrdersKanbanBoard.tsx — 4-Column Clinical Kanban Board + Warranty Rework Column
+ * with DOM virtualization, card actions, and secondary Miller menus.
+ */
+
+import React from "react";
+import {
+	Calendar,
+	CheckCircle2,
+	Eye,
+	Building2,
+	FileText,
+	Truck,
+	RotateCcw,
+	Send,
+	ChevronRight,
+	MoreHorizontal,
+	Printer,
+	Camera,
+	MessageSquare,
+} from "lucide-react";
+import {
+	ORTHOPEDIC_WORK_TYPES,
+	type LabWorkflowStatus,
+	LAB_WORKFLOW_STATUSES,
+	ALL_LAB_WORKFLOW_STATUSES,
+	type DentalLabWorkflowOrder,
+	formatRussianDate,
+} from "./dentalLabWorkflowEngine";
+import {
+	ABUTMENT_TYPE_OPTIONS,
+	LAB_TECHNOLOGICAL_STAGES,
+} from "./orders/labWorkOrderPresets";
+import { sliceDomList } from "../../utils/domVirtualizationHelper";
+
+export interface DentalLabOrdersKanbanBoardProps {
+	readonly ordersByStage: Record<LabWorkflowStatus, DentalLabWorkflowOrder[]>;
+	readonly stageLimits: Record<string, number>;
+	readonly setStageLimits: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+	readonly activeCardMenuOrderId: string | null;
+	readonly setActiveCardMenuOrderId: React.Dispatch<React.SetStateAction<string | null>>;
+	readonly onInspectOrder: (order: DentalLabWorkflowOrder) => void;
+	readonly onAdvanceStage: (order: DentalLabWorkflowOrder) => void;
+	readonly onPrintBlank: (order: DentalLabWorkflowOrder) => void;
+	readonly onAttachBitePhoto: (order: DentalLabWorkflowOrder) => void;
+	readonly onTechnicianComment: (order: DentalLabWorkflowOrder) => void;
+	readonly onRepeatFitting: (order: DentalLabWorkflowOrder) => void;
+	readonly onRequestWarrantyRework: (order: DentalLabWorkflowOrder) => void;
+}
+
+export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProps> = ({
+	ordersByStage,
+	stageLimits,
+	setStageLimits,
+	activeCardMenuOrderId,
+	setActiveCardMenuOrderId,
+	onInspectOrder,
+	onAdvanceStage,
+	onPrintBlank,
+	onAttachBitePhoto,
+	onTechnicianComment,
+	onRepeatFitting,
+	onRequestWarrantyRework,
+}) => {
+	return (
+		<main className="ztl-kanban-board">
+			{ALL_LAB_WORKFLOW_STATUSES.map((stageId) => {
+				const stageDef = LAB_WORKFLOW_STATUSES[stageId];
+				const stageOrders = ordersByStage[stageId] || [];
+				const stageLimit = stageLimits[stageId] ?? 40;
+				const stageSlice = sliceDomList(stageOrders, stageLimit, 0);
+
+				return (
+					<div key={stageId} className="ztl-kanban-column">
+						<div className="ztl-column-header">
+							<div className="ztl-column-title-wrap">
+								<span className="ztl-column-icon">
+									{stageId === "draft" && <FileText size={16} />}
+									{stageId === "sent_to_lab" && <Truck size={16} />}
+									{stageId === "fitting_scheduled" && <Calendar size={16} />}
+									{stageId === "installed_completed" && <CheckCircle2 size={16} />}
+									{stageId === "warranty_rework" && <RotateCcw size={16} />}
+								</span>
+								<h3 className="ztl-column-title">{stageDef.nameRu}</h3>
+							</div>
+							<span className={`ztl-column-count ${stageOrders.length > 0 ? "has-items" : ""}`}>
+								{stageOrders.length}
+							</span>
+						</div>
+
+						<div className="ztl-column-cards">
+							{stageSlice.visibleItems.map((order) => {
+								const hasDelay = order.isDelayedAlert || order.delayAlert.isDelayedAlert;
+								const preset = ORTHOPEDIC_WORK_TYPES[order.workTypeId] || ORTHOPEDIC_WORK_TYPES.crown_emax;
+
+								return (
+									<article
+										key={order.id}
+										className={`ztl-order-card ${hasDelay ? "has-delay-alert" : ""}`}
+										style={{
+											contentVisibility: "auto",
+											containIntrinsicSize: "1px 64px",
+											contain: "content",
+										}}
+									>
+										<div className="ztl-card-top-row">
+											<span className="ztl-card-order-num">{order.orderNumber}</span>
+											<span className="ztl-card-teeth-badge">
+												Зубы: {order.selectedTeeth.join(", ")}
+											</span>
+										</div>
+
+										{order.isWarrantyRework && (
+											<div style={{ marginTop: "4px", fontSize: "10.5px", color: "var(--bad-fg, #e11d48)", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
+												<RotateCcw size={11} />
+												<span className="truncate">ГАРАНТИЙНАЯ ПЕРЕДЕЛКА (0 ₽){order.originalOrderNumber ? ` • исх. № ${order.originalOrderNumber}` : ""}</span>
+											</div>
+										)}
+
+										<h4 className="ztl-card-patient-name truncate min-w-0" title={order.patientName}>
+											{order.patientName}
+										</h4>
+
+										<p className="ztl-card-doctor truncate min-w-0" title={order.doctorName}>
+											{order.doctorName}
+										</p>
+
+										<div className="ztl-card-work-type truncate min-w-0" title={`${preset.shortNameRu} (${order.shadeCode})`}>
+											{preset.shortNameRu} ({order.shadeCode})
+										</div>
+
+										<div className="ztl-card-lab-name min-w-0" title={order.labName}>
+											<Building2 size={11} className="shrink-0" />
+											<span className="truncate">{order.labName}</span>
+										</div>
+
+										{/* 8 технологических этапов ЗТЛ */}
+										<div style={{ marginTop: "4px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px" }}>
+											<span
+												style={{
+													fontSize: "10.5px",
+													fontWeight: 700,
+													color: LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.colorToken || "var(--teal, #3b82f6)",
+													background: "var(--teal-surface, rgba(59, 130, 246, 0.08))",
+													padding: "2px 6px",
+													borderRadius: "4px",
+													display: "inline-flex",
+													alignItems: "center",
+													gap: "4px",
+												}}
+												className="truncate min-w-0"
+												title={`Этап ${LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.stepNumber || 1} из 8: ${LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.departmentRu || ""}`}
+											>
+												<span className="shrink-0">Этап {LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.stepNumber || 1}/8:</span>
+												<span className="truncate">{LAB_TECHNOLOGICAL_STAGES[order.techStage || "impression_scan"]?.shortTitleRu || order.techStage}</span>
+											</span>
+										</div>
+
+										{/* Платформа имплантата / Абатмент / Фиксация */}
+										{(order.implantPlatform || order.abutmentType || order.fixationType) && (
+											<div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "4px", fontSize: "10px" }}>
+												{order.implantPlatform && (
+													<span style={{ background: "var(--paper-soft, #e0f2fe)", color: "var(--teal, #0369a1)", border: "1px solid var(--line, #bae6fd)", padding: "1px 5px", borderRadius: "3px", fontWeight: 600 }}>
+														{order.implantPlatform === "conical" ? "Конус Морзе" : "Hex"}
+													</span>
+												)}
+												{order.abutmentType && (
+													<span style={{ background: "var(--paper-soft, #f3e8ff)", color: "var(--ink, #6b21a8)", border: "1px solid var(--line, #e9d5ff)", padding: "1px 5px", borderRadius: "3px", fontWeight: 600 }}>
+														{ABUTMENT_TYPE_OPTIONS.find((a) => a.id === order.abutmentType)?.nameRu.split(" ")[0] || order.abutmentType}
+													</span>
+												)}
+												{order.fixationType && (
+													<span style={{ background: "var(--paper-soft, #fef3c7)", color: "var(--amber-fg, #92400e)", border: "1px solid var(--line, #fde68a)", padding: "1px 5px", borderRadius: "3px", fontWeight: 600 }}>
+														{order.fixationType === "screw_retained" ? "Винтовая" : "Цементная"}
+													</span>
+												)}
+											</div>
+										)}
+
+										{/* Блок задержки ЗТЛ */}
+										{hasDelay && (
+											<div className="ztl-card-alert-badge" role="alert">
+												{order.delayAlert.alertMessageRu}
+											</div>
+										)}
+
+										{/* Даты готовности и примерки */}
+										<div className="ztl-card-dates-row">
+											<span title="Срок готовности из лаборатории">
+												ЗТЛ: <strong>{formatRussianDate(order.expectedLabDateIso)}</strong>
+											</span>
+											<span title="Дата назначенной примерки в расписании">
+												Примерка: <strong>{order.fittingDate ? formatRussianDate(order.fittingDate) : (order.scheduledVisitDateIso ? formatRussianDate(order.scheduledVisitDateIso) : "—")}</strong>
+											</span>
+										</div>
+
+										{/* Финансы: цена / себестоимость в копейках */}
+										<div className="ztl-card-price-row">
+											<span title="Стоимость для пациента" style={order.isWarrantyRework ? { color: "var(--teal, #10b981)", fontWeight: 700 } : undefined}>
+												{order.isWarrantyRework ? "0 ₽ (Гарантия)" : `${order.financials.patientPriceTotalRub.toLocaleString("ru-RU")} ₽`}
+											</span>
+											<span style={{ color: "var(--muted, #64748b)", fontSize: "10px" }} title="Себестоимость ЗТЛ">
+												Себест: {order.financials.labCostTotalRub.toLocaleString("ru-RU")} ₽
+											</span>
+										</div>
+
+										{/* Кнопки действий (Мандат 8d грех 3 — строго 2 кнопки прямого действия: Открыть + Сменить статус, вторичные в ...) */}
+										<div className="ztl-card-actions-row" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+											<button
+												type="button"
+												className="ztl-btn-card-action min-h-[36px] sm:min-h-0"
+												onClick={() => onInspectOrder(order)}
+												title="Открыть спецификацию и детали наряда"
+												data-testid={`ztl-card-open-${order.id}`}
+											>
+												<Eye size={13} />
+												<span>Открыть</span>
+											</button>
+											{order.currentStage === "installed_completed" ? (
+												<button
+													type="button"
+													className="ztl-btn-card-action min-h-[36px] sm:min-h-0"
+													style={{ color: "var(--teal, #059669)", borderColor: "var(--teal-soft, #a7f3d0)", background: "var(--teal-surface, rgba(16, 185, 129, 0.08))", fontWeight: 700 }}
+													onClick={() => onInspectOrder(order)}
+													title="Работа зафиксирована и сдана пациенту"
+													data-testid={`ztl-card-status-${order.id}`}
+												>
+													<CheckCircle2 size={13} />
+													<span>Сдано</span>
+												</button>
+											) : order.currentStage === "warranty_rework" ? (
+												<button
+													type="button"
+													className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
+													onClick={() => onAdvanceStage(order)}
+													title="Отправить работу повторно в ЗТЛ"
+													data-testid={`ztl-card-status-${order.id}`}
+												>
+													<Send size={13} />
+													<span>В ЗТЛ</span>
+												</button>
+											) : order.currentStage === "draft" ? (
+												<button
+													type="button"
+													className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
+													onClick={() => onAdvanceStage(order)}
+													title="Передать наряд и слепки в ЗТЛ"
+													data-testid={`ztl-card-status-${order.id}`}
+												>
+													<Send size={13} />
+													<span>В ЗТЛ</span>
+												</button>
+											) : order.currentStage === "sent_to_lab" ? (
+												<button
+													type="button"
+													className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
+													onClick={() => onAdvanceStage(order)}
+													title="Назначить клиническую примерку"
+													data-testid={`ztl-card-status-${order.id}`}
+												>
+													<Calendar size={13} />
+													<span>Примерка</span>
+												</button>
+											) : order.currentStage === "fitting_scheduled" ? (
+												<button
+													type="button"
+													className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
+													onClick={() => onAdvanceStage(order)}
+													title="Зафиксировать и сдать работу пациенту"
+													data-testid={`ztl-card-status-${order.id}`}
+												>
+													<CheckCircle2 size={13} />
+													<span>Сдать</span>
+												</button>
+											) : (
+												<button
+													type="button"
+													className="ztl-btn-card-action ztl-btn-advance min-h-[36px] sm:min-h-0"
+													onClick={() => onAdvanceStage(order)}
+													title="Передвинуть на следующий клинический статус"
+													data-testid={`ztl-card-status-${order.id}`}
+												>
+													<ChevronRight size={13} />
+													<span>Далее</span>
+												</button>
+											)}
+
+											{/* Контекстное меню вторичных действий (...) */}
+											<div style={{ position: "relative", flexShrink: 0 }}>
+												<button
+													type="button"
+													className="ztl-btn-card-action min-h-[36px] sm:min-h-0 px-2"
+													style={{ minWidth: "32px", padding: "0 6px", flex: "none" }}
+													onClick={(e) => {
+														e.stopPropagation();
+														setActiveCardMenuOrderId((prev) => (prev === order.id ? null : order.id));
+													}}
+													title="Вторичные действия (Миллер: фото прикуса, комментарий технику, повторная примерка, рекламация)"
+													aria-expanded={activeCardMenuOrderId === order.id}
+													data-testid={`ztl-card-menu-btn-${order.id}`}
+												>
+													<MoreHorizontal size={13} />
+												</button>
+
+												{activeCardMenuOrderId === order.id && (
+													<div
+														style={{
+															position: "absolute",
+															right: 0,
+															bottom: "calc(100% + 4px)",
+															background: "var(--paper, #ffffff)",
+															border: "1px solid var(--line, #e2e8f0)",
+															borderRadius: "8px",
+															boxShadow: "0 10px 25px -5px rgba(0,0,0,0.18)",
+															padding: "4px",
+															zIndex: 50,
+															minWidth: "210px",
+															display: "flex",
+															flexDirection: "column",
+															gap: "2px",
+														}}
+														role="menu"
+														onClick={(e) => e.stopPropagation()}
+													>
+														<button
+															type="button"
+															style={{
+																display: "flex",
+																alignItems: "center",
+																gap: "8px",
+																padding: "8px 10px",
+																borderRadius: "6px",
+																border: "none",
+																background: "transparent",
+																color: "var(--ink, #0f172a)",
+																fontSize: "12px",
+																fontWeight: 500,
+																cursor: "pointer",
+																width: "100%",
+																textAlign: "left",
+																minHeight: "36px",
+															}}
+															onClick={() => {
+																onPrintBlank(order);
+																setActiveCardMenuOrderId(null);
+															}}
+															title="Распечатать бланк наряда ЗТЛ-1 для курьера лаборатории"
+															role="menuitem"
+															data-testid={`ztl-card-print-a4-${order.id}`}
+														>
+															<Printer size={14} className="shrink-0 text-slate-600" />
+															<span>Печать ЗТЛ-1 (А4)</span>
+														</button>
+
+														<button
+															type="button"
+															style={{
+																display: "flex",
+																alignItems: "center",
+																gap: "8px",
+																padding: "8px 10px",
+																borderRadius: "6px",
+																border: "none",
+																background: "transparent",
+																color: "var(--ink, #0f172a)",
+																fontSize: "12px",
+																fontWeight: 500,
+																cursor: "pointer",
+																width: "100%",
+																textAlign: "left",
+																minHeight: "36px",
+															}}
+															onClick={() => {
+																onInspectOrder(order);
+																setActiveCardMenuOrderId(null);
+															}}
+															title="Просмотреть детали и спецификацию наряда"
+															role="menuitem"
+														>
+															<Eye size={14} className="shrink-0 text-teal-600" />
+															<span>Детали наряда</span>
+														</button>
+
+														<button
+															type="button"
+															style={{
+																display: "flex",
+																alignItems: "center",
+																gap: "8px",
+																padding: "8px 10px",
+																borderRadius: "6px",
+																border: "none",
+																background: "transparent",
+																color: "var(--ink, #0f172a)",
+																fontSize: "12px",
+																fontWeight: 500,
+																cursor: "pointer",
+																width: "100%",
+																textAlign: "left",
+																minHeight: "36px",
+															}}
+															onClick={() => {
+																onAttachBitePhoto(order);
+																setActiveCardMenuOrderId(null);
+															}}
+															title="Прикрепить фотографию окклюзии и прикуса"
+															role="menuitem"
+														>
+															<Camera size={14} className="shrink-0 text-blue-600" />
+															<span>Фото прикуса</span>
+														</button>
+
+														<button
+															type="button"
+															style={{
+																display: "flex",
+																alignItems: "center",
+																gap: "8px",
+																padding: "8px 10px",
+																borderRadius: "6px",
+																border: "none",
+																background: "transparent",
+																color: "var(--ink, #0f172a)",
+																fontSize: "12px",
+																fontWeight: 500,
+																cursor: "pointer",
+																width: "100%",
+																textAlign: "left",
+																minHeight: "36px",
+															}}
+															onClick={() => {
+																onTechnicianComment(order);
+																setActiveCardMenuOrderId(null);
+															}}
+															title="Написать клинический комментарий технику"
+															role="menuitem"
+														>
+															<MessageSquare size={14} className="shrink-0 text-amber-600" />
+															<span>Комментарий технику</span>
+														</button>
+
+														{order.currentStage === "fitting_scheduled" && (
+															<button
+																type="button"
+																style={{
+																	display: "flex",
+																	alignItems: "center",
+																	gap: "8px",
+																	padding: "8px 10px",
+																	borderRadius: "6px",
+																	border: "none",
+																	background: "transparent",
+																	color: "var(--ink, #0f172a)",
+																	fontSize: "12px",
+																	fontWeight: 500,
+																	cursor: "pointer",
+																	width: "100%",
+																	textAlign: "left",
+																	minHeight: "36px",
+																}}
+																onClick={() => {
+																	onRepeatFitting(order);
+																	setActiveCardMenuOrderId(null);
+																}}
+																title="Назначить повторную примерку в расписании"
+																role="menuitem"
+															>
+																<Calendar size={14} className="shrink-0 text-indigo-600" />
+																<span>Повторная примерка</span>
+															</button>
+														)}
+
+														<button
+															type="button"
+															style={{
+																display: "flex",
+																alignItems: "center",
+																gap: "8px",
+																padding: "8px 10px",
+																borderRadius: "6px",
+																border: "none",
+																background: "transparent",
+																color: "var(--bad-fg, #e11d48)",
+																fontSize: "12px",
+																fontWeight: 500,
+																cursor: "pointer",
+																width: "100%",
+																textAlign: "left",
+																minHeight: "36px",
+															}}
+															onClick={() => {
+																onRequestWarrantyRework(order);
+																setActiveCardMenuOrderId(null);
+															}}
+															title="Оформить гарантийную переделку / рекламацию"
+															role="menuitem"
+														>
+															<RotateCcw size={14} className="shrink-0 text-rose-600" />
+															<span>Рекламация (0 ₽)</span>
+														</button>
+													</div>
+												)}
+											</div>
+										</div>
+									</article>
+								);
+							})}
+							{stageSlice.hasMore && (
+								<div style={{ padding: "8px 4px", textAlign: "center" }}>
+									<button
+										type="button"
+										className="ztl-chip"
+										style={{
+											width: "100%",
+											justifyContent: "center",
+											padding: "6px 10px",
+											fontSize: "11px",
+											fontWeight: 600,
+										}}
+										onClick={() =>
+											setStageLimits((prev) => ({
+												...prev,
+												[stageId]: (prev[stageId] ?? 40) + 40,
+											}))
+										}
+									>
+										Показать ещё 40 нарядов (показано {stageSlice.displayedCount} из {stageSlice.totalCount})
+									</button>
+								</div>
+							)}
+							{stageOrders.length === 0 && (
+								<div style={{ textAlign: "center", padding: "24px 8px", color: "var(--muted, #94a3b8)", fontSize: "11px" }}>
+									Нет нарядов в этом статусе
+								</div>
+							)}
+						</div>
+					</div>
+				);
+			})}
+		</main>
+	);
+};
