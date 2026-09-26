@@ -123,11 +123,17 @@ export function CommunicationTaskCard({
 	}
 
 	function handleCompleteTask() {
+		console.log("[CommunicationTaskCard] handleCompleteTask invoked", { taskId: task.id, selectedOutcome, fnType: typeof completeCommunicationTask });
 		if (!selectedOutcome) {
 			showToast("Выберите результат звонка", "info");
 			return;
 		}
-		void completeCommunicationTask(task.id, selectedOutcome);
+		try {
+			const res = completeCommunicationTask(task.id, selectedOutcome);
+			console.log("[CommunicationTaskCard] completeCommunicationTask call result:", res);
+		} catch (err) {
+			console.error("[CommunicationTaskCard] completeCommunicationTask threw:", err);
+		}
 	}
 
 	return (
@@ -288,6 +294,8 @@ export function CommunicationTaskCard({
 									key={outcome}
 									type="button"
 									className={`quick-chip ${selectedOutcome === outcome ? "selected" : ""}`}
+									data-testid={`communication-outcome-${outcome}`}
+									data-outcome={outcome}
 									onClick={() =>
 										setSelectedOutcome(outcome as CommunicationTaskOutcome)
 									}
@@ -309,6 +317,7 @@ export function CommunicationTaskCard({
 						}
 						className="secondary-button"
 						type="button"
+						data-testid="communication-task-complete-btn"
 						onClick={handleCompleteTask}
 						disabled={communicationSaveInProgress}
 						style={{ minHeight: "44px" }}

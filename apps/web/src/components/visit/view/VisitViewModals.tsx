@@ -156,32 +156,34 @@ export function VisitViewModals({
 			/>
 
 			{/* Treatment Plan Price Lock & Pricelist Validator Modal */}
-			<TreatmentPlanPriceValidatorModal
-				isOpen={isPriceValidatorModalOpen}
-				onClose={() => setIsPriceValidatorModalOpen(false)}
-				planPayload={priceValidatorPlanPayload}
-				catalogPricelist={priceValidatorCatalogList}
-				onExportWorkOrder={(exportData) => {
-					appendToEMKField(
-						"treatmentPlan",
-						`Сформирован наряд-заказ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽. Фиксация цен: ${exportData.isApprovedByManager ? "Согласовано управляющим" : "По гарантии"}.`,
-					);
-					showToast(
-						`Зуботехнический наряд-заказ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽ добавлен в протокол приема.`,
-						"success",
-					);
-				}}
-				onExportCompletedAct={(exportData) => {
-					appendToEMKField(
-						"treatmentPlan",
-						`Сформирован акт выполненных работ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽.`,
-					);
-					showToast(
-						`Акт выполненных работ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽ готов к подписанию.`,
-						"success",
-					);
-				}}
-			/>
+			{isPriceValidatorModalOpen && (
+				<TreatmentPlanPriceValidatorModal
+					isOpen={isPriceValidatorModalOpen}
+					onClose={() => setIsPriceValidatorModalOpen(false)}
+					planPayload={priceValidatorPlanPayload}
+					catalogPricelist={priceValidatorCatalogList}
+					onExportWorkOrder={(exportData) => {
+						appendToEMKField(
+							"treatmentPlan",
+							`Сформирован наряд-заказ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽. Фиксация цен: ${exportData.isApprovedByManager ? "Согласовано управляющим" : "По гарантии"}.`,
+						);
+						showToast(
+							`Зуботехнический наряд-заказ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽ добавлен в протокол приема.`,
+							"success",
+						);
+					}}
+					onExportCompletedAct={(exportData) => {
+						appendToEMKField(
+							"treatmentPlan",
+							`Сформирован акт выполненных работ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽.`,
+						);
+						showToast(
+							`Акт выполненных работ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽ готов к подписанию.`,
+							"success",
+						);
+					}}
+				/>
+			)}
 
 			{/* Emergency Rescue / Anaphylaxis Anti-Shock Modal (Мандаты 8c, 8e) */}
 			<EmergencyRescueModal

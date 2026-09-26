@@ -1,4 +1,4 @@
-import { Activity, Camera, FileText, FolderInput, Image as ImageIcon, Layers, Plus, Scan, Trash2 } from "lucide-react";
+import { Activity, Camera, FileText, FolderInput, Image as ImageIcon, Layers, Plus, Receipt, Scan, Trash2 } from "lucide-react";
 import React, { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
@@ -53,6 +53,7 @@ const CephalometricAnalysisModal = React.lazy(() =>
 	})),
 );
 import { imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
+import { addCbctToFinanceAndPlan } from "../radiology/ctImplantIntegrationBridge";
 import {
 	type ClinicalPhotoAttachment,
 	generatePhotoProtocolAttachmentsStatement,
@@ -498,6 +499,22 @@ export function VisitDiagnosticsTab(props?: {
 				</button>
 				<button
 					type="button"
+					onClick={() => {
+						addCbctToFinanceAndPlan({
+							patientId: visitPatientId ?? activePatient?.id,
+							toothFdi: initialToothNumber || 16,
+							doctorName: dashboard?.activeDoctor?.fullName || ctx?.auth?.currentUser?.name,
+						});
+					}}
+					className="flex items-center gap-2 px-3.5 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation shrink-0 border border-emerald-500/50"
+					data-testid="btn-add-cbct-service-to-visit"
+					title="В 1 клик добавить услугу КЛКТ (A06.07.012, 3 800 ₽) в финансовый акт и смету плана лечения"
+				>
+					<Receipt size={16} />
+					<span>+ КЛКТ в смету/акт (804н)</span>
+				</button>
+				<button
+					type="button"
 					onClick={() => setIsRadiologyModalOpen(true)}
 					className="flex items-center gap-2 px-4 py-2.5 min-h-[48px] text-xs sm:text-sm font-bold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] cursor-pointer transition-all shadow-sm active:scale-95 touch-manipulation shrink-0"
 					data-testid="btn-open-radiology-referral-modal"
@@ -640,9 +657,13 @@ export function VisitDiagnosticsTab(props?: {
 				<CbctMprImplantStudioModal
 					isOpen={isCbctModalOpen}
 					onClose={() => setIsCbctModalOpen(false)}
-					patientName={activePatient?.fullName || undefined}
+					patientName={visitPatientName ?? activePatient?.fullName ?? undefined}
+					patientId={visitPatientId ?? activePatient?.id ?? undefined}
 					onApplyToDiary043={(diaryText) => {
 						if (!diaryText) return;
+						if (props?.onInsertToProtocol) {
+							props.onInsertToProtocol(diaryText);
+						}
 						try {
 							window.dispatchEvent(
 								new CustomEvent("dente-apply-soap-protocol", {
@@ -650,6 +671,7 @@ export function VisitDiagnosticsTab(props?: {
 										soap: {
 											treatmentDescription: diaryText,
 										},
+										immediate: true,
 										mode: "smart_append",
 									},
 								}),

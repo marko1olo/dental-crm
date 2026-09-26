@@ -23,7 +23,7 @@ import { showToast } from "../GlobalToast";
  * передаётся текстом и значком, а не только цветом.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 

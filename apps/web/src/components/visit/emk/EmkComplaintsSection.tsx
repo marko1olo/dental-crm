@@ -1,5 +1,5 @@
 import React from "react";
-import { FileText, PlusCircle, Sparkles } from "lucide-react";
+import { FileText, PlusCircle, ShieldCheck, Sparkles } from "lucide-react";
 import { DebouncedEmkTextarea } from "./DebouncedEmkTextarea";
 import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
 
@@ -45,6 +45,20 @@ export function EmkComplaintsSection({
 					<span className="text-[11px] text-[var(--muted)]">Симптомы со слов пациента</span>
 				</div>
 
+				{/* 0-Клик норма жалоб */}
+				<div className="flex items-center gap-1.5 flex-wrap p-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]" data-testid="emk-complaint-norm-bar">
+					<button
+						type="button"
+						data-testid="btn-emk-complaints-norm"
+						onClick={() => updateVisitNoteField("complaint", "Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).")}
+						className="px-2.5 py-1 rounded text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+						title="0-Клик: Жалоб нет (плановый осмотр)"
+					>
+						<ShieldCheck size={13} className="text-emerald-600" />
+						<span>0-Клик: Жалоб нет (профосмотр)</span>
+					</button>
+				</div>
+
 				<DebouncedEmkTextarea
 					fieldKey="complaint"
 					label="Жалобы пациента"
@@ -79,6 +93,20 @@ export function EmkComplaintsSection({
 						<span>Анамнез заболевания и жизни (Anamnesis morbi et vitae)</span>
 					</label>
 					<span className="text-[11px] text-[var(--muted)]">Развитие заболевания, аллергоанамнез</span>
+				</div>
+
+				{/* 0-Клик норма анамнеза */}
+				<div className="flex items-center gap-1.5 flex-wrap p-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]" data-testid="emk-anamnesis-norm-bar">
+					<button
+						type="button"
+						data-testid="btn-emk-anamnesis-norm"
+						onClick={() => updateVisitNoteField("anamnesis", "Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания со слов отрицает. Норма.")}
+						className="px-2.5 py-1 rounded text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+						title="0-Клик: Соматически здоров / норма"
+					>
+						<ShieldCheck size={13} className="text-emerald-600" />
+						<span>0-Клик: Соматически здоров / норма</span>
+					</button>
 				</div>
 
 				<DebouncedEmkTextarea

@@ -1,5 +1,5 @@
 import React from "react";
-import { Activity, PlusCircle, Stethoscope } from "lucide-react";
+import { Activity, PlusCircle, ShieldCheck, Sparkles, Stethoscope } from "lucide-react";
 import { DebouncedEmkTextarea } from "./DebouncedEmkTextarea";
 import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
 
@@ -34,6 +34,24 @@ export function EmkObjectiveStatusSection({
 		updateVisitNoteField(fieldKey, appendClinicalText(current, chipText, " "));
 	};
 
+	const handleApplyFullObjectiveNorm = () => {
+		const normText =
+			"Полость рта санирована / норма. Прикус физиологический / ортогнатический. Слизистая интактна (бледно-розовая, влажная, без патологических элементов). Регионарные лимфоузлы не увеличены, пальпация безболезненна. Движения в ВНЧС плавные, в полном объеме, безболезненные, щелчков нет.";
+		updateVisitNoteField("objectiveStatus", normText);
+	};
+
+	const handleApplySanitizedNorm = () => {
+		handleAddChip("objectiveStatus", "Полость рта санирована / норма. Твердые ткани зубов без видимых кариозных поражений.");
+	};
+
+	const handleApplyBiteNorm = () => {
+		handleAddChip("objectiveStatus", "Прикус физиологический / ортогнатический. Смыкание зубных рядов по I классу Энгля.");
+	};
+
+	const handleApplyMucosaNorm = () => {
+		handleAddChip("objectiveStatus", "Слизистая интактна: бледно-розовая, умеренно влажная, десневые сосочки плотные, без признаков воспаления.");
+	};
+
 	return (
 		<div className="flex flex-col gap-4">
 			{/* Объективный статус */}
@@ -44,6 +62,50 @@ export function EmkObjectiveStatusSection({
 						<span>Объективный статус (Objective / Status localis)</span>
 					</label>
 					<span className="text-[11px] text-[var(--muted)]">Внешний осмотр, СОПР, зубные ряды</span>
+				</div>
+
+				{/* 0-Клик пресеты физиологической нормы осмотра (Мандаты 8e, 8k: осмотр за 5 секунд) */}
+				<div className="flex items-center gap-1.5 flex-wrap p-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]" data-testid="emk-objective-norm-presets-bar">
+					<button
+						type="button"
+						data-testid="btn-emk-full-objective-norm"
+						onClick={handleApplyFullObjectiveNorm}
+						className="px-2.5 py-1 rounded text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+						title="0-Клик полная норма осмотра: санирована, прикус ортогнатический, слизистая интактна"
+					>
+						<ShieldCheck size={13} className="text-emerald-600" />
+						<span>0-Клик: Полная норма осмотра</span>
+					</button>
+					<button
+						type="button"
+						data-testid="btn-emk-sanitized-norm"
+						onClick={handleApplySanitizedNorm}
+						className="px-2 py-1 rounded text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-emerald-500 hover:text-emerald-700 transition-all cursor-pointer inline-flex items-center gap-1"
+						title="Полость рта санирована / норма"
+					>
+						<Sparkles size={11} className="text-emerald-500" />
+						<span>Полость рта санирована / норма</span>
+					</button>
+					<button
+						type="button"
+						data-testid="btn-emk-bite-norm"
+						onClick={handleApplyBiteNorm}
+						className="px-2 py-1 rounded text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-emerald-500 hover:text-emerald-700 transition-all cursor-pointer inline-flex items-center gap-1"
+						title="Прикус физиологический / ортогнатический"
+					>
+						<Sparkles size={11} className="text-blue-500" />
+						<span>Прикус физиологический / ортогнатический</span>
+					</button>
+					<button
+						type="button"
+						data-testid="btn-emk-mucosa-norm"
+						onClick={handleApplyMucosaNorm}
+						className="px-2 py-1 rounded text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-emerald-500 hover:text-emerald-700 transition-all cursor-pointer inline-flex items-center gap-1"
+						title="Слизистая интактна"
+					>
+						<Sparkles size={11} className="text-teal-500" />
+						<span>Слизистая интактна</span>
+					</button>
 				</div>
 
 				<DebouncedEmkTextarea

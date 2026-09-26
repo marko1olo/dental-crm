@@ -60,7 +60,7 @@ import {
 } from "../components/emr/templates/clinicalDiaryTemplatesEngine.js";
 import {
 	PHYSIOLOGICAL_NORM_PRESET,
-} from "../components/emr/templates/ClinicalDiaryTemplatesModal.js";
+} from "../components/emr/templates/clinicalDiaryTemplatesCatalogData.js";
 import {
 	FORM_043_PHYSIOLOGICAL_NORM,
 	createForm043PhysiologicalNorm,
@@ -806,6 +806,41 @@ describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisiti
 			assert.ok(source.includes("Выберите пациента из списка слева для открытия приёма 043/у"), "Кнопка 'Открыть приём' должна выводить информативное уведомление при нажатии");
 			assert.ok(source.includes('data-testid="patient-card-book-appointment-btn"'), "Кнопка 'Записать в расписание' должна присутствовать");
 			assert.ok(source.includes("Выберите пациента из списка слева для записи в расписание"), "Кнопка записи должна выводить информативное уведомление при нажатии");
+		});
+
+		it("8.10. EmkObjectiveStatusSection и EmkComplaintsSection: 0-клик пресеты нормы осмотра (санирована, прикус, слизистая)", () => {
+			const objPath = path.resolve(webSrcDir, "components/visit/emk/EmkObjectiveStatusSection.tsx");
+			const objSource = fs.readFileSync(objPath, "utf-8");
+			assert.ok(objSource.includes('data-testid="emk-objective-norm-presets-bar"'), "Панель 0-клик норм объективного статуса обязана присутствовать");
+			assert.ok(objSource.includes('data-testid="btn-emk-full-objective-norm"'), "Кнопка '0-Клик: Полная норма осмотра' обязана присутствовать");
+			assert.ok(objSource.includes('data-testid="btn-emk-sanitized-norm"'), "Кнопка 'Полость рта санирована / норма' обязана присутствовать");
+			assert.ok(objSource.includes('data-testid="btn-emk-bite-norm"'), "Кнопка 'Прикус физиологический / ортогнатический' обязана присутствовать");
+			assert.ok(objSource.includes('data-testid="btn-emk-mucosa-norm"'), "Кнопка 'Слизистая интактна' обязана присутствовать");
+
+			const compPath = path.resolve(webSrcDir, "components/visit/emk/EmkComplaintsSection.tsx");
+			const compSource = fs.readFileSync(compPath, "utf-8");
+			assert.ok(compSource.includes('data-testid="btn-emk-complaints-norm"'), "Кнопка 0-клик нормы жалоб обязана присутствовать");
+			assert.ok(compSource.includes('data-testid="btn-emk-anamnesis-norm"'), "Кнопка 0-клик нормы анамнеза обязана присутствовать");
+		});
+
+		it("8.11. VisitServiceBillingWidget.tsx строго <= 800 строк и отсутствие блокирующих window.alert/confirm", () => {
+			const billingWidgetPath = path.resolve(webSrcDir, "components/visit/VisitServiceBillingWidget.tsx");
+			const billingSource = fs.readFileSync(billingWidgetPath, "utf-8");
+			const billingLines = billingSource.split("\n").length;
+			assert.ok(billingLines <= 800, `VisitServiceBillingWidget.tsx обязан быть <= 800 строк (Мандат 8b), получено: ${billingLines}`);
+
+			// Проверка на отсутствие блокирующих window.alert и window.confirm в коде модулей ЭМК
+			const emkFiles = [
+				"components/visit/emk/EmkObjectiveStatusSection.tsx",
+				"components/visit/emk/EmkComplaintsSection.tsx",
+				"components/visit/emk/EmkSomaticCard.tsx",
+				"components/visit/emk/EmkDiaryProtocolSection.tsx",
+			];
+			for (const file of emkFiles) {
+				const src = fs.readFileSync(path.resolve(webSrcDir, file), "utf-8");
+				assert.ok(!src.includes("window.alert"), `${file} не должен содержать window.alert`);
+				assert.ok(!src.includes("window.confirm"), `${file} не должен содержать window.confirm`);
+			}
 		});
 	});
 });

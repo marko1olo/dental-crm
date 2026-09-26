@@ -58,7 +58,6 @@ import { ClinicalQuickPresetsBar } from "./ClinicalQuickPresetsBar";
 import { CryptoProSigner } from "./CryptoProSigner";
 import { realVisitFieldId } from "./visitIdentity";
 import type { RadiologySnapshotItem } from "./VisitSummaryModal";
-import { PeriodontogramChart } from "../perio/PeriodontogramChart";
 import "../../styles/visit-diary-043.css";
 
 // Lazy-loaded heavy secondary modals for low-spec hardware (4GB RAM, 5400 RPM HDD)
@@ -76,6 +75,9 @@ const VisitSummaryModal = lazy(() =>
 );
 const ClinicalDiaryTemplatesModal = lazy(() =>
 	import("../emr/templates").then((m) => ({ default: m.ClinicalDiaryTemplatesModal }))
+);
+const PeriodontogramChart = lazy(() =>
+	import("../perio/PeriodontogramChart").then((m) => ({ default: m.PeriodontogramChart }))
 );
 
 const COMPLAINT_QUICK_CHIPS = [
@@ -2156,23 +2158,32 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									<X size={16} />
 								</button>
 							</div>
-							<PeriodontogramChart
-								patientId={patientId}
-								patientName={patientFullName || "Пациент"}
-								organizationId={undefined}
-								doctorName={diaryDoctorFullName || sessionDoctorName || undefined}
-								onInsertToProtocol={(protocolText) => {
-									setDiary((prev) => ({
-										...prev,
-										statusLocalis: prev.statusLocalis
-											? `${prev.statusLocalis}\n\n${protocolText}`
-											: protocolText,
-									}));
-									scheduleDebouncedSave();
-									setIsTier3PerioModalOpen(false);
-									ctx.showToast?.("Пародонтограмма перенесена в дневник 043/у", "success");
-								}}
-							/>
+							<Suspense
+								fallback={
+									<div className="p-8 text-center text-sm text-[var(--muted)] flex items-center justify-center gap-2">
+										<BarChart2 className="w-5 h-5 animate-pulse text-teal-400" />
+										<span>Загрузка кабинета пародонтологии...</span>
+									</div>
+								}
+							>
+								<PeriodontogramChart
+									patientId={patientId}
+									patientName={patientFullName || "Пациент"}
+									organizationId={undefined}
+									doctorName={diaryDoctorFullName || sessionDoctorName || undefined}
+									onInsertToProtocol={(protocolText) => {
+										setDiary((prev) => ({
+											...prev,
+											statusLocalis: prev.statusLocalis
+												? `${prev.statusLocalis}\n\n${protocolText}`
+												: protocolText,
+										}));
+										scheduleDebouncedSave();
+										setIsTier3PerioModalOpen(false);
+										ctx.showToast?.("Пародонтограмма перенесена в дневник 043/у", "success");
+									}}
+								/>
+							</Suspense>
 						</div>
 					</div>,
 					document.body,
