@@ -507,7 +507,12 @@ function extractDateKey(isoString: string): string {
  * Builds the complete live shift queue data structure for the today queue board.
  */
 export function buildPatientShiftQueue(
-	appointments: Array<Partial<Appointment> & Record<string, any>>,
+	appointments: Array<
+		(Omit<Partial<Appointment>, "status"> & {
+			status?: AppointmentStatus | PatientOperationalStatus | string | null;
+		}) &
+			Record<string, any>
+	>,
 	options: PatientShiftQueueOptions = {},
 ): PatientShiftQueueResult {
 	const nowMs = options.nowMs ?? Date.now();

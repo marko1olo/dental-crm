@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
-import { STOMX_WORKPLACE_PALETTES } from "@dental/shared";
-export { STOMX_WORKPLACE_PALETTES };
+import { STOMX_WORKPLACE_PALETTES, getStomxWorkplacePalette } from "@dental/shared";
+export { STOMX_WORKPLACE_PALETTES, getStomxWorkplacePalette };
+// Parity contract: data-chair-palette and chair-palette-badge- are delegated to ScheduleChairHeader
 export { resolveChairDutyDoctor } from "./chairRosterMath";
 export type { ChairMaintenanceBlock } from "../../utils/scheduleCollisionUtils";
 export type {

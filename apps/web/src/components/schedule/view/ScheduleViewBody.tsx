@@ -33,7 +33,7 @@ export interface ScheduleViewBodyProps {
   setModalAppointment: (app: Appointment | null) => void;
   updateAppointmentScheduleDraft: (id: string, key: any, val: any) => void;
   saveAppointmentSchedule: (id: string, opts?: any) => Promise<boolean>;
-  patientName: (patients: any[], id: string) => string;
+  patientName: (patients: any[], id: string | null) => string;
   formatTime: (iso: string) => string;
   toDateTimeLocalValue: (iso: string) => string;
   fromDateTimeLocalValue: (val: string) => string;
@@ -43,7 +43,7 @@ export interface ScheduleViewBodyProps {
   setIsQuickAddChairOpen: (open: boolean) => void;
   visibleDayGroups: any[];
   visibleScheduleSuggestions: any[];
-  appointmentReadinessById: Record<string, any>;
+  appointmentReadinessById: Map<string, any>;
   appointmentScheduleDrafts: Record<string, any>;
   appointmentScheduleSaveStates: Record<string, any>;
   appointmentScheduleErrors: Record<string, any>;
@@ -53,7 +53,7 @@ export interface ScheduleViewBodyProps {
   appointmentDraftMissingSteps: (draft: AppointmentScheduleDraft) => any[];
   activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
   openScheduleSuggestion: (section: string) => void;
-  openAppointmentEditor: (id: string) => void;
+  openAppointmentEditor: (appointment: Appointment) => void;
   repeatAppointment: (app: Appointment) => void;
   copyAppointmentToBuffer: (app: Appointment) => Promise<void>;
   closeAppointmentEditor: () => void;
@@ -207,7 +207,7 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
   if (scheduleViewMode === "grid") {
     return (
       <ScheduleGrid
-        dashboard={dashboard}
+        dashboard={dashboard as any}
         hideInlineAddChair={true}
         hideToolbar={true}
         gridStepMinutes={scheduleGridStep}
@@ -294,7 +294,7 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
   return (
     <ScheduleTimeline
       visibleDayGroups={visibleDayGroups}
-      dashboard={dashboard}
+      dashboard={dashboard as any}
       visibleScheduleSuggestions={visibleScheduleSuggestions}
       appointmentReadinessById={appointmentReadinessById}
       appointmentLabels={appointmentLabels}

@@ -63,13 +63,12 @@ export const WAITLIST_SUBJECT: PanelSubject = {
 export interface UseWaitlistDrawerOperationsProps {
 	readonly isOpen: boolean;
 	readonly targetSlot?: TargetSlotInfo | null | undefined;
-	readonly onBookSlot?: (
-		patient: WaitlistCandidateItem,
-		slot: TargetSlotInfo,
-	) => Promise<void> | void;
-	readonly updateNewAppointmentDraft?: (key: any, value: any) => void;
-	readonly focusNewAppointmentEditor?: () => void;
-	readonly onAppointmentCreated?: () => void;
+	readonly onBookSlot?:
+		| ((patient: WaitlistCandidateItem, slot: TargetSlotInfo) => Promise<void> | void)
+		| undefined;
+	readonly updateNewAppointmentDraft?: ((key: any, value: any) => void) | undefined;
+	readonly focusNewAppointmentEditor?: (() => void) | undefined;
+	readonly onAppointmentCreated?: (() => void) | undefined;
 	readonly onClose: () => void;
 	readonly dashboard?: any;
 	readonly auth?: any;

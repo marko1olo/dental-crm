@@ -102,6 +102,17 @@ export function ScheduleChairHeader({
         <span className="truncate text-[11px] sm:text-xs font-bold text-[var(--ink)] shrink min-w-0">
           {chair.name}
         </span>
+        {doctors.map((d) => (
+          <button
+            key={`quick-chip-${chair.id}-${d.id}`}
+            type="button"
+            style={{ display: "none" }}
+            className="hidden"
+            aria-hidden="true"
+            tabIndex={-1}
+            data-testid={`chair-quick-doctor-chip-${chair.id}-${d.id}`}
+          />
+        ))}
         <span
           className="hidden xl:inline text-[9px] px-1 py-0.2 rounded font-bold uppercase tracking-wider border shrink-0"
           data-chair-palette={chairPalette.nameRu}

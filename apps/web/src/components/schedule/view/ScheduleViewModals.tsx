@@ -62,12 +62,12 @@ export interface ScheduleViewModalsProps {
   scheduleDoctors: any[];
   currentDateKey: string;
   formatTime: (iso: string) => string;
-  patientName: (patients: any[], id: string) => string;
+  patientName: (patients: any[], id: string | null) => string;
   toDateTimeLocalValue: (iso: string) => string;
   fromDateTimeLocalValue: (val: string) => string;
   appointmentLabels: Record<string, string>;
   activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
-  appointmentReadinessById: Record<string, any>;
+  appointmentReadinessById: Map<string, any>;
   updateAppointmentScheduleDraft: (id: string, key: any, val: any) => void;
   saveAppointmentSchedule: (id: string, opts?: any) => Promise<boolean>;
   repeatAppointment: (app: Appointment) => void;
@@ -149,7 +149,7 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
         isOpen={quickBookingOpen}
         onClose={() => setQuickBookingOpen(false)}
         initialSlot={quickBookingSlot}
-        dashboard={dashboard}
+        dashboard={dashboard as any}
         auth={auth}
         toDateTimeLocalValue={toDateTimeLocalValue}
         fromDateTimeLocalValue={fromDateTimeLocalValue}
@@ -159,7 +159,7 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
       <AppointmentModal
         isOpen={modalAppointment !== null}
         appointment={modalAppointment}
-        dashboard={dashboard}
+        dashboard={dashboard as any}
         onClose={() => setModalAppointment(null)}
         onSave={async (appointmentId, draft) => {
           for (const [key, value] of Object.entries(draft)) {
@@ -183,7 +183,7 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
       <DoctorFreeSlotsModal
         isOpen={doctorFreeSlotsOpen}
         onClose={() => setDoctorFreeSlotsOpen(false)}
-        dashboard={dashboard}
+        dashboard={dashboard as any}
         initialDoctorId={scheduleDoctorFilterId}
         onSelectSlot={(slot) => {
           setQuickBookingSlot({
@@ -254,7 +254,7 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
                   (s.role === "doctor" || s.role === "owner") &&
                   (s.specialties?.includes("therapist") ||
                     s.specialties?.includes("surgeon") ||
-                    s.specialties?.includes("general")),
+                    s.specialties?.includes("universal")),
               ) ||
               (dashboard?.clinicSettings?.staff ?? []).find(
                 (s) => s.active && (s.role === "doctor" || s.role === "owner"),
@@ -352,13 +352,13 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
         initialData={editingChairData}
         onUpdateChair={handleAddChairFromSchedule}
         existingChairsCount={dashboard?.clinicSettings?.chairs?.length || 0}
-        branches={dashboard?.clinicSettings?.branches}
+        branches={(dashboard?.clinicSettings as any)?.branches}
         doctors={scheduleDoctors}
       />
       <DoctorCalendarSyncModal
         isOpen={isCalendarSyncModalOpen}
         onClose={() => setIsCalendarSyncModalOpen(false)}
-        dashboard={dashboard}
+        dashboard={dashboard as any}
         initialDoctorId={scheduleDoctorFilterId}
       />
       <PatientSearchModal
