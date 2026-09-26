@@ -16,6 +16,7 @@ import {
 	PROTOCOL_CLINICAL_SNIPPETS,
 	STANDARD_PROTOCOLS_SEED,
 } from "../protocolSnippetHelpers";
+import { DOCTOR_TABS } from "../doctorSettingsTabs";
 import { useThemeStore } from "../../../store/themeStore";
 import { clearInMemoryStorageCache } from "../../../lib/safeLocalStorage";
 
@@ -156,7 +157,7 @@ describe("Doctor Clinical Preferences & Super-Settings Invariants (Mandates 8e, 
 	});
 
 	it("10. Favorite prescription medications (Form 107-1/u) provide complete clinical and Latin data", () => {
-		assert.ok(FAVORITE_MEDICATION_OPTIONS.length >= 8, "Must provide at least 8 essential dental medications");
+		assert.ok(FAVORITE_MEDICATION_OPTIONS.length >= 11, "Must provide at least 11 essential dental medications");
 
 		const amoxiclav = FAVORITE_MEDICATION_OPTIONS.find((m) => m.id === "amoxiclav_875_125");
 		assert.ok(amoxiclav, "Must contain Amoxiclav 875+125");
@@ -169,6 +170,21 @@ describe("Doctor Clinical Preferences & Super-Settings Invariants (Mandates 8e, 
 
 		const chlorhexidine = FAVORITE_MEDICATION_OPTIONS.find((m) => m.id === "chlorhexidine_005");
 		assert.ok(chlorhexidine, "Must contain Chlorhexidine 0.05%");
+
+		const metrogyl = FAVORITE_MEDICATION_OPTIONS.find((m) => m.id === "metrogyl_denta");
+		assert.ok(metrogyl, "Must contain Metrogyl Denta gel");
+		assert.strictEqual(metrogyl.category, "dental_gel");
+		assert.ok(metrogyl.rpLatin.includes("Metrogyl Denta"));
+
+		const ketorol = FAVORITE_MEDICATION_OPTIONS.find((m) => m.id === "ketorol_express_10");
+		assert.ok(ketorol, "Must contain Ketorol Express for acute SOS pain");
+		assert.strictEqual(ketorol.category, "nsaid");
+		assert.ok(ketorol.rpLatin.includes("Ketorolaci"));
+
+		const azithro = FAVORITE_MEDICATION_OPTIONS.find((m) => m.id === "azithromycin_500");
+		assert.ok(azithro, "Must contain Azithromycin for penicillin allergy");
+		assert.strictEqual(azithro.category, "antibiotic");
+		assert.ok(azithro.rpLatin.includes("Azithromycini"));
 
 		const cyfran = FAVORITE_MEDICATION_OPTIONS.find((m) => m.id === "cyfran_st");
 		assert.ok(cyfran, "Must contain Cyfran ST for anaerobes");
@@ -254,5 +270,19 @@ describe("Doctor Clinical Preferences & Super-Settings Invariants (Mandates 8e, 
 		assert.strictEqual(mapPrefToDrug("articaine_100k"), "ultracain_ds_forte");
 		assert.strictEqual(mapPrefToDrug("articaine_200k"), "ultracain_ds");
 		assert.strictEqual(mapPrefToDrug("scandonest_mepivacaine_3"), "scandonest_3");
+	});
+
+	it("15. Doctor workspace provides a dedicated 'preferences' subtab for 1-click clinical configuration", () => {
+		const prefTab = DOCTOR_TABS.find((t) => t.id === "preferences");
+		assert.ok(prefTab, "Doctor workspace must have a dedicated 'preferences' subtab");
+		assert.strictEqual(prefTab.label, "Клинические пресеты");
+	});
+
+	it("16. Default doctor quick protocols include bone grafting and implant surgery", () => {
+		const defs = DEFAULT_DOCTOR_PREFERENCES.quickProtocolIds;
+		assert.ok(defs.includes("bone_graft_sinus_k08_2"), "Must include sinus lift protocol");
+		assert.ok(defs.includes("implant_installation_k08_1"), "Must include implant installation protocol");
+		assert.ok(defs.includes("pulpitis_acute_k04_0"), "Must include acute pulpitis protocol");
+		assert.ok(defs.includes("caries_medium_k02_1"), "Must include caries protocol");
 	});
 });
