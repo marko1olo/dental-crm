@@ -1,0 +1,351 @@
+/* ==========================================================================
+   Header & Topbar Architecture Styles (apps/web/src/styles/modules/header.css)
+   Adheres to:
+   - DESIGNER_VISUAL_INQUISITION_BIBLE.md (The Single-Focus Law, Quiet UI)
+   - THE_HAMMER_MASTER_PROMPT.md (Desktop Density, Uniform 32px / 8px radius)
+   - Zero-Carnival, Zero-Encroachment, Pure Tokenized Palette
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   1. TELEMETRY SYSTEM SILENCE (Mandate 8c & Design Bible)
+   The LAN chip is relocated to the sidebar footer.
+   Hide network status indicator chip completely inside topbar.
+   ------------------------------------------------------------------------- */
+.topbar [data-testid="network-status-indicator"],
+.topbar .network-status-indicator {
+	display: none !important;
+}
+
+/* -------------------------------------------------------------------------
+   2. TOPBAR CONTAINER & GEOMETRY
+   Single row, 48px height, 0 pixel overlap, clear breathing room.
+   ------------------------------------------------------------------------- */
+.topbar {
+	height: 48px !important;
+	min-height: 48px !important;
+	max-height: 48px !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	gap: 12px !important;
+	padding: 0 16px !important;
+	box-sizing: border-box !important;
+	overflow: visible !important;
+}
+
+.topbar-context {
+	display: flex !important;
+	align-items: center !important;
+	min-width: 0 !important;
+	flex: 1 1 auto !important;
+	gap: 10px !important;
+	overflow: visible !important;
+}
+
+.topbar-clinic {
+	flex-shrink: 0 !important;
+	min-width: 120px !important;
+	max-width: 260px !important;
+	display: flex !important;
+	flex-direction: column !important;
+	justify-content: center !important;
+}
+
+.topbar-selectors {
+	display: flex !important;
+	align-items: center !important;
+	gap: 8px !important;
+	flex-shrink: 0 !important;
+	margin-right: 8px !important;
+}
+
+/* -------------------------------------------------------------------------
+   3. THE SINGLE-FOCUS LAW: EXACTLY ONE PRIMARY CTA IN TOPBAR (+ Запись)
+   Strictly single primary action with accent fill.
+   All neighboring controls are secondary/ghost buttons with uniform 32px height.
+   ------------------------------------------------------------------------- */
+.topbar .top-actions {
+	display: flex !important;
+	align-items: center !important;
+	gap: 8px !important;
+	flex-shrink: 0 !important;
+	margin-left: auto !important;
+	position: relative !important;
+}
+
+.topbar .top-actions .primary-button {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	padding: 0 14px !important;
+	border-radius: 8px !important;
+	font-size: 12px !important;
+	font-weight: 700 !important;
+	flex-shrink: 0 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	white-space: nowrap !important;
+	box-shadow: 0 2px 8px -2px var(--teal-ring, rgba(13, 148, 136, 0.4)) !important;
+	margin: 0 !important;
+}
+
+/* -------------------------------------------------------------------------
+   4. COPILOT / CLINICAL AI ASSISTANT (✨ ДЕНТА) — CALM SECONDARY BUTTON
+   Neutralized: no neon glow, no carnival mint background competing for focus.
+   Strict secondary styling with 32px height, 8px radius, var(--paper) background.
+   ------------------------------------------------------------------------- */
+#topbar-copilot-btn.topbar-copilot-button,
+.topbar .topbar-copilot-button {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	border-radius: 8px !important;
+	background-color: var(--paper) !important;
+	border: 1px solid var(--line) !important;
+	color: var(--ink) !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+	padding: 0 10px !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	flex-shrink: 0 !important;
+	transition: all 0.15s ease !important;
+}
+
+#topbar-copilot-btn.topbar-copilot-button:hover,
+.topbar .topbar-copilot-button:hover {
+	background-color: var(--paper-soft) !important;
+	border-color: var(--line-strong) !important;
+	color: var(--teal) !important;
+}
+
+#topbar-copilot-btn .animate-pulse {
+	animation: none !important;
+}
+
+/* -------------------------------------------------------------------------
+   5. THEME QUICK ACCESS WIDGET IN TOPBAR (Свет / Тьма)
+   Strict 32px height, 8px radius, 1px solid var(--line), var(--paper) background.
+   ------------------------------------------------------------------------- */
+.topbar .theme-topbar-control {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	padding: 0 10px !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+	flex-shrink: 0 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	transition: all 0.15s ease !important;
+}
+
+.topbar .theme-topbar-control:hover {
+	background: var(--paper-soft) !important;
+	border-color: var(--line-strong) !important;
+}
+
+/* -------------------------------------------------------------------------
+   6. WORKSPACE ACTIONS IN TOPBAR (Поиск, Голос, Справка)
+   Segmented buttons: strictly 32px height, 8px radius, uniform borders.
+   ------------------------------------------------------------------------- */
+.topbar .dnt-actions-mount--header {
+	flex-shrink: 0 !important;
+	display: flex !important;
+	align-items: center !important;
+}
+
+.topbar .dnt-actions[data-placement="header"] .dnt-actions__bar {
+	display: flex !important;
+	align-items: center !important;
+	gap: 8px !important;
+}
+
+.topbar .dnt-actions[data-placement="header"] .dnt-actions__control {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	padding: 0 10px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+	flex-shrink: 0 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	transition: all 0.15s ease !important;
+}
+
+.topbar .dnt-actions[data-placement="header"] .dnt-actions__control:hover {
+	background: var(--paper-soft) !important;
+	border-color: var(--line-strong) !important;
+	color: var(--ink) !important;
+}
+
+/* -------------------------------------------------------------------------
+   7. ROLE SWITCHER IN TOPBAR (Владелец / Врач / Администратор)
+   Strict 32px height, 8px radius, var(--paper) background.
+   ------------------------------------------------------------------------- */
+.topbar .workspace-role-switcher summary {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	border-radius: 8px !important;
+	padding: 0 10px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+	cursor: pointer !important;
+	box-sizing: border-box !important;
+	transition: all 0.15s ease !important;
+}
+
+.topbar .workspace-role-switcher summary:hover {
+	background: var(--paper-soft) !important;
+	border-color: var(--line-strong) !important;
+}
+
+/* -------------------------------------------------------------------------
+   8. NOTIFICATION BELL (Колокольчик)
+   Strict 32px height, 8px radius, clean secondary button.
+   ------------------------------------------------------------------------- */
+.topbar [data-testid="notification-bell-btn"],
+.topbar .notification-bell-btn {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	padding: 0 8px !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	flex-shrink: 0 !important;
+	box-sizing: border-box !important;
+	transition: all 0.15s ease !important;
+}
+
+.topbar [data-testid="notification-bell-btn"]:hover,
+.topbar .notification-bell-btn:hover {
+	background: var(--paper-soft) !important;
+	border-color: var(--line-strong) !important;
+}
+
+/* -------------------------------------------------------------------------
+   9. RECENT PATIENTS DROPDOWN (Clock 0)
+   Strict 32px height, 8px radius.
+   ------------------------------------------------------------------------- */
+.topbar .recent-patients-header-dropdown summary {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	padding: 0 8px !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 4px !important;
+	flex-shrink: 0 !important;
+	box-sizing: border-box !important;
+	transition: all 0.15s ease !important;
+}
+
+.topbar .recent-patients-header-dropdown summary:hover {
+	background: var(--paper-soft) !important;
+	border-color: var(--line-strong) !important;
+}
+
+/* -------------------------------------------------------------------------
+   10. CLINIC CONTROL PILL (АТС, 54-ФЗ, БД)
+   Strict 32px height, 8px radius, var(--paper) background.
+   No capsule 9999px border-radius! Clean component uniformity.
+   ------------------------------------------------------------------------- */
+.topbar .dnt-clinic-control-pill {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	font-size: 11px !important;
+	font-weight: 600 !important;
+	padding: 0 8px !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	flex-shrink: 0 !important;
+	box-sizing: border-box !important;
+	transition: all 0.15s ease !important;
+}
+
+.topbar .dnt-clinic-control-pill:hover {
+	background: var(--paper-soft) !important;
+	border-color: var(--line-strong) !important;
+}
+
+/* -------------------------------------------------------------------------
+   11. SECONDARY ACTION BUTTONS IN TOP ACTIONS (Прием, Смена, Замок)
+   Uniform 32px height, 8px radius.
+   ------------------------------------------------------------------------- */
+.topbar .top-actions .secondary-button,
+.topbar .top-actions .daily-top-button,
+.topbar .top-actions .doctor-shift-cockpit-button,
+.topbar .top-actions .compact-top-button {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	padding: 0 10px !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	flex-shrink: 0 !important;
+	box-sizing: border-box !important;
+	transition: all 0.15s ease !important;
+}
+
+.topbar .top-actions .secondary-button:hover:not(:disabled),
+.topbar .top-actions .daily-top-button:hover:not(:disabled),
+.topbar .top-actions .doctor-shift-cockpit-button:hover:not(:disabled),
+.topbar .top-actions .compact-top-button:hover:not(:disabled) {
+	background: var(--paper-soft) !important;
+	border-color: var(--line-strong) !important;
+	color: var(--teal) !important;
+}

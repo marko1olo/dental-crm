@@ -29,6 +29,7 @@ import { useTelephonyStore } from "../store/telephonyStore";
 import { useThemeStore } from "../store/themeStore";
 import { showToast } from "./GlobalToast";
 import "./Header.css";
+import "../styles/modules/header.css";
 
 export interface ClinicControlPillProps {
 	className?: string;
@@ -289,7 +290,7 @@ export function ClinicControlPill({
 			<button
 				type="button"
 				onClick={() => setIsOpen((prev) => !prev)}
-				className={`dnt-clinic-control-pill min-h-[44px] sm:min-h-[32px] sm:h-8 ${isOpen ? "dnt-clinic-control-pill--open" : ""}`}
+				className={`dnt-clinic-control-pill h-8 min-h-[32px] max-h-8 ${isOpen ? "dnt-clinic-control-pill--open" : ""}`}
 				aria-expanded={isOpen}
 				aria-label="Пульт управления клиникой (macOS Control Center)"
 				title="Открыть центр управления статусом клиники"
@@ -695,14 +696,27 @@ export function ClinicControlPill({
 
 							<button
 								type="button"
-								onClick={() =>
-									setThemeMode(themeMode === "dark" ? "light" : "dark")
-								}
+								onClick={() => {
+									setIsOpen(false);
+									if (typeof window !== "undefined") {
+										window.dispatchEvent(
+											new CustomEvent("dente:open-theme-switcher"),
+										);
+									}
+								}}
 								className="dnt-cc-btn dnt-cc-btn--secondary flex-1 !min-h-[44px]"
-								title="Сменить тему оформления"
+								title="Выбрать из 10 специализированных палитр оформления DENTE"
 							>
-								{themeMode === "dark" ? <Sun size={14} /> : <Moon size={14} />}
-								<span>{themeMode === "dark" ? "Светлая" : "Тёмная"}</span>
+								{themeMode === "dark" ||
+								themeMode === "night" ||
+								themeMode === "ocean" ||
+								themeMode === "cyber_xray" ||
+								themeMode === "emerald" ? (
+									<Moon size={14} className="text-[var(--teal)]" />
+								) : (
+									<Sun size={14} className="text-[var(--teal)]" />
+								)}
+								<span>Палитра (10 тем)</span>
 							</button>
 						</div>
 

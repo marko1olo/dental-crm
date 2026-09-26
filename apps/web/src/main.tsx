@@ -34,9 +34,11 @@ const WaitingLoungeSignage = React.lazy(() =>
 import "./styles/tailwind.css";
 import "./styles/main.css";
 import "./styles/shadow-analyst.css";
+import "./styles/modules/patients.css";
 import "./styles/patients-redesign.css";
 import "./styles/premium.css";
 import "./styles/dente-redesign.css";
+import "./styles/modules/header.css";
 import "./styles.css";
 // Псевдонимы необъявленных переменных и поверхности, зависящие от темы.
 import "./styles/token-aliases.css";
